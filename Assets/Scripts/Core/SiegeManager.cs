@@ -31,6 +31,7 @@ namespace StellarisClone.Core
             public float Progress;
             public bool Contested;   // защитник на месте — осада стоит
             public bool Active;      // осаждающие в системе прямо сейчас
+            public bool BaseHolding; // звёздная база ещё в строю — сначала её нужно подавить
         }
 
         private readonly Dictionary<int, Siege> _sieges = new Dictionary<int, Siege>();
@@ -110,6 +111,7 @@ namespace StellarisClone.Core
                     if (siege == null) continue;
                     siege.Active = false;
                     siege.Contested = false;
+                    siege.BaseHolding = false;
                     // Осада, которую прекратил мир, снимается сразу
                     if (!Diplomacy.AtWar(siege.Attacker, sys.OwnerId)) siege.Progress = 0f;
                     siege.Progress -= DecayPerDay;
@@ -125,9 +127,12 @@ namespace StellarisClone.Core
                     if (fresh) AnnounceSiege(sys, attacker);
                 }
 
+                // Пока звёздная база в строю, осада не идёт: её нужно подавить в бою
+                bool baseUp = CombatManager.Instance != null && CombatManager.Instance.IsStarbaseActive(sys.Id);
                 siege.Active = true;
-                siege.Contested = defended;
-                if (defended) continue;
+                siege.BaseHolding = baseUp;
+                siege.Contested = defended || baseUp;
+                if (siege.Contested) continue;
 
                 // Несколько кораблей осаждают быстрее (до ×2)
                 siege.Progress += Mathf.Min(2f, 1f + (ships - 1) * 0.25f);

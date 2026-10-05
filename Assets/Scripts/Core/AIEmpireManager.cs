@@ -574,6 +574,8 @@ namespace StellarisClone.Core
                 if (sys.OwnerId != AIOwnerId) continue;
                 foreach (var p in sys.Planets)
                 {
+                    // На планете уже что-то строится — ждём (одна стройка за раз, как у игрока)
+                    if (Builds != null && Builds.HasAnyJob(p)) continue;
                     if (p.Population <= 0 && p.CanColonize)
                     {
                         float s = p.HabitabilityPercent + p.MaxDistricts;
@@ -584,7 +586,7 @@ namespace StellarisClone.Core
                         float s = p.EnergyDeposit * (energyLow ? 3f : 1.1f) + p.MineralDeposit * Profile.ResourceWeight;
                         if (s > stationScore) { stationScore = s; bestStation = p; }
                     }
-                    if (p.Population > 0 && p.BuiltDistricts < p.MaxDistricts)
+                    if (p.Population > 0 && p.BuiltDistricts + p.PendingDistricts < p.MaxDistricts)
                     {
                         if (!NeedsDistrict(p, energyLow, out var type, out float urgency)) continue;
                         if (urgency > districtScore) { districtScore = urgency; bestDistrict = type; bestDistrictPlanet = p; }
@@ -606,7 +608,10 @@ namespace StellarisClone.Core
                 Minerals -= PlanetData.ColonyMineralsCost;
                 Alloys -= PlanetData.ColonyAlloysCost;
                 Influence -= PlanetData.ColonyInfluenceCost;
-                bestColony.SettleColony();
+                if (Builds != null)
+                    Builds.EnqueuePlanetJob(JobKind.Colony, AIOwnerId, bestColony, DistrictType.Urban, 0f,
+                        PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost);
+                else bestColony.SettleColony();
                 return true;
             }
 
@@ -646,24 +651,59 @@ namespace StellarisClone.Core
             if (Minerals < m || Alloys < a || p.BuiltDistricts >= p.MaxDistricts) return false;
             Minerals -= m;
             Alloys -= a;
-            p.Districts.Add(new DistrictData(t));
+            if (Builds != null) Builds.EnqueuePlanetJob(JobKind.District, AIOwnerId, p, t, 0f, m, a, 0f);
+            else p.Districts.Add(new DistrictData(t));
             return true;
+        }
+
+        private static ConstructionManager Builds => ConstructionManager.Instance;
+
+        /// <summary>Корабль ИИ заложен на верфи (по тем же срокам, что у игрока).</summary>
+        private void QueueShip(FleetType type, ShipClass hull, float energy, float alloys)
+        {
+            if (Builds == null)
+            {
+                if (type == FleetType.Military) CreateWarship(hull); else CreateCivilian(type);
+                return;
+            }
+            Builds.EnqueueShip(AIOwnerId, type, hull, null, energy, alloys);
+        }
+
+        /// <summary>Корабль готов — появляется у столицы.</summary>
+        public void LaunchShip(ConstructionJob job)
+        {
+            if (job.ShipType == FleetType.Military) CreateWarship(job.Hull);
+            else CreateCivilian(job.ShipType);
+            RecalculateEconomy();
+        }
+
+        private int QueuedShips(FleetType type)
+        {
+            if (Builds == null) return 0;
+            int n = 0;
+            foreach (var j in Builds.ShipQueue(AIOwnerId)) if (j.ShipType == type) n++;
+            return n;
         }
 
         private bool TryBuildStation(PlanetData p)
         {
             if (Minerals < FleetManager.MiningStationMinerals) return false;
             Minerals -= FleetManager.MiningStationMinerals;
-            p.HasMiningStation = true;
-            p.ParentSystem?.RecalculateHarvest();
+            if (Builds != null)
+                Builds.EnqueuePlanetJob(JobKind.MiningStation, AIOwnerId, p, DistrictType.Mining, 0f, FleetManager.MiningStationMinerals, 0f, 0f);
+            else
+            {
+                p.HasMiningStation = true;
+                p.ParentSystem?.RecalculateHarvest();
+            }
             return true;
         }
 
         /// <summary>Разведчики и строители: научная фракция держит двух разведчиков, всем нужен второй строитель при росте влияния.</summary>
         private void ThinkCivilianShips()
         {
-            int science = CountOwn(FleetType.Science);
-            int builders = CountOwn(FleetType.Constructor);
+            int science = CountOwn(FleetType.Science) + QueuedShips(FleetType.Science);
+            int builders = CountOwn(FleetType.Constructor) + QueuedShips(FleetType.Constructor);
             int wantScience = Personality == AIPersonality.Scientific ? 2 : 1;
             int wantBuilders = Influence > 90f ? 2 : 1;
 
@@ -675,14 +715,14 @@ namespace StellarisClone.Core
             {
                 Alloys -= sciCost;
                 EnergyCredits -= FleetManager.ScienceShipEnergy;
-                CreateCivilian(FleetType.Science);
+                QueueShip(FleetType.Science, ShipClass.Corvette, FleetManager.ScienceShipEnergy, sciCost);
             }
             else if (builders < wantBuilders && Alloys >= conCost + 30f && EnergyCredits >= FleetManager.ConstructorEnergy
                      && MonthlyEnergyIncome > 2f)
             {
                 Alloys -= conCost;
                 EnergyCredits -= FleetManager.ConstructorEnergy;
-                CreateCivilian(FleetType.Constructor);
+                QueueShip(FleetType.Constructor, ShipClass.Corvette, FleetManager.ConstructorEnergy, conCost);
             }
         }
 

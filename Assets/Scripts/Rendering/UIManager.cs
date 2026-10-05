@@ -981,12 +981,24 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 AddBodyLine("<color=#FFAA88>⚠  Требуется разведка научным кораблём</color>");
             }
 
+            var sb = CombatManager.Instance?.GetStarbase(system.Id);
+            if (sb != null)
+            {
+                AddBodyHeader("ЗВЁЗДНАЯ БАЗА");
+                string sbState = sb.Disabled
+                    ? $"<color=#FF6666>выведена из строя</color> · ремонт {sb.Hull / Mathf.Max(1f, sb.MaxHull) * 100f:0}% / 50%"
+                    : $"<color=#4DF08C>в строю</color> · корпус {sb.Hull:0}/{sb.MaxHull:0} · броня {sb.Armor:0}/{sb.MaxArmor:0} · щиты {sb.Shields:0}/{sb.MaxShields:0}";
+                AddBodyLine(sbState);
+                AddBodyLine($"<color=#8AA2A8>Огневая мощь:</color> {sb.Damage:0} урона · мощь {CombatManager.Instance.StarbasePower(system.Id):N0}");
+            }
+
             var siege = SiegeManager.Instance?.GetSiege(system.Id);
             if (siege != null && system.OwnerId >= 0)
             {
                 float need = SiegeManager.RequiredDays(system);
                 string who = siege.Attacker == 0 ? "Ваша осада" : "Враг осаждает систему";
-                string state = siege.Contested ? "приостановлена: на орбите флот защитника"
+                string state = siege.BaseHolding ? "приостановлена: звёздная база в строю"
+                             : siege.Contested ? "приостановлена: на орбите флот защитника"
                              : siege.Active ? $"{siege.Progress:0} / {need:0} дн."
                              : "осаждающие ушли, прогресс спадает";
                 AddBodyHeader("ОСАДА");
@@ -1177,7 +1189,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             {
                 if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_activePlanet))
                 {
-                    SystemViewManager.Instance?.SpawnStationOnActivePlanet(_activePlanet);
                     ShowPlanetInspector(_activePlanet, _activeSystem, openOverview: false);
                     RefreshResourceBar();
                 }
@@ -1388,7 +1399,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var rt = _shipyardPanel.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(520, 580);
+            rt.sizeDelta = new Vector2(520, 660);
 
             _shipyardGroup = _shipyardPanel.AddComponent<CanvasGroup>();
             _shipyardPanel.AddComponent<Image>().color = DS.BgDeep;
@@ -1442,10 +1453,47 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _shipyardRetrofitTxt = CreateText(retrofitBtn.transform, "⟳  МОДЕРНИЗИРОВАТЬ ФЛОТ (RETROFIT)", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             _shipyardRetrofitTxt.rectTransform.sizeDelta = rRt.sizeDelta;
 
+            // Очередь верфи
+            _shipyardQueue = CreateText(_shipyardPanel.transform, "", 10, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
+            var qRt = _shipyardQueue.rectTransform;
+            qRt.anchorMin = qRt.anchorMax = new Vector2(0.5f, 0.5f);
+            qRt.pivot = new Vector2(0.5f, 1f);
+            qRt.sizeDelta = new Vector2(440, 70);
+            qRt.anchoredPosition = new Vector2(0, -204);
+            _shipyardQueue.horizontalOverflow = HorizontalWrapMode.Wrap;
+
             _shipyardPanel.SetActive(false);
         }
 
         private readonly Dictionary<string, Text> _shipyardPrices = new Dictionary<string, Text>();
+        private Text _shipyardQueue;
+
+        private static FleetType KeyType(string key) => key == "science" ? FleetType.Science : key == "builder" ? FleetType.Constructor : FleetType.Military;
+        private static ShipClass KeyHull(string key) => key == "destroyer" ? ShipClass.Destroyer : key == "frigate" ? ShipClass.Frigate : ShipClass.Corvette;
+
+        private void RefreshShipyardQueue()
+        {
+            if (_shipyardQueue == null) return;
+            var cm = ConstructionManager.Instance;
+            var q = cm != null ? cm.ShipQueue(0) : new List<ConstructionJob>();
+            if (q.Count == 0)
+            {
+                _shipyardQueue.text = $"<color=#8AA2A8>Стапели свободны · одновременно строится {ConstructionManager.ShipyardSlots} корабля</color>";
+                return;
+            }
+            var sb = new StringBuilder($"<color=#F2C747><b>НА СТАПЕЛЯХ ({q.Count})</b></color>\n");
+            for (int i = 0; i < q.Count && i < 4; i++)
+            {
+                var j = q[i];
+                string name = j.ShipType == FleetType.Science ? "Научный корабль"
+                            : j.ShipType == FleetType.Constructor ? "Строительный корабль"
+                            : j.Hull == ShipClass.Destroyer ? "Эсминец" : j.Hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
+                string state = i < ConstructionManager.ShipyardSlots ? $"{Mathf.RoundToInt(j.Progress * 100f)}%" : "в очереди";
+                sb.Append($"{name} — {state}, готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(j))} дн.\n");
+            }
+            if (q.Count > 4) sb.Append($"<color=#8AA2A8>… и ещё {q.Count - 4}</color>");
+            _shipyardQueue.text = sb.ToString();
+        }
         private readonly Dictionary<string, Button> _shipyardButtons = new Dictionary<string, Button>();
 
         /// <summary>Цены верфи с учётом технологий и содержание, которое добавит корабль.</summary>
@@ -1480,9 +1528,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 alloys = FleetManager.ShipAlloyCost(alloys, 0);
                 kv.Value.text = locked != null
                     ? $"<color=#8AA2A8>{locked}</color>"
-                    : $"{alloys:0} спл. · {energy:0} гел.\n<color=#FF8888>содержание −{upkeep:0.#} гел./мес</color>";
+                    : $"{alloys:0} спл. · {energy:0} гел. · {ConstructionManager.ShipDays(KeyType(kv.Key), KeyHull(kv.Key)):0} дн.\n<color=#FF8888>содержание −{upkeep:0.#} гел./мес</color>";
                 if (_shipyardButtons.TryGetValue(kv.Key, out var b) && b != null) b.interactable = locked == null;
             }
+            RefreshShipyardQueue();
         }
 
         private void OpenShipyardModal()
@@ -1504,7 +1553,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     if (build())
                     {
                         RefreshResourceBar();
-                        CloseModal(_shipyardPanel);
+                        RefreshShipyardPrices();   // окно остаётся открытым — можно заложить ещё
                     }
                 });
 

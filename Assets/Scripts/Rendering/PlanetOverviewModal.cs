@@ -145,7 +145,6 @@ namespace StellarisClone.Rendering
             if (_planet == null) return;
             if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_planet))
             {
-                SystemViewManager.Instance?.SpawnStationOnActivePlanet(_planet);
                 Refresh();
             }
         }

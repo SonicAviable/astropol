@@ -27,7 +27,10 @@ namespace StellarisClone.Core
         private void ThinkShipbuilding()
         {
             if (SpawnSystem < 0) return;
-            float myPower = EmpireStats.MilitaryPower(AIOwnerId);
+            // Верфь занята — новые корпуса закладываем, когда освободится место
+            int queued = QueuedShips(FleetType.Military);
+            if (queued >= ConstructionManager.ShipyardSlots) return;
+            float myPower = EmpireStats.MilitaryPower(AIOwnerId) + queued * 200f;
             float playerPower = EmpireStats.MilitaryPower(0);
             int years = TimeManager.Instance != null ? Mathf.Max(0, TimeManager.Instance.Year - 2200) : 0;
 
@@ -56,8 +59,7 @@ namespace StellarisClone.Core
 
             Alloys -= cost;
             EnergyCredits -= FleetManager.WarshipEnergy;
-            CreateWarship(hull);
-            RecalculateEconomy();
+            QueueShip(FleetType.Military, hull, FleetManager.WarshipEnergy, cost);
         }
 
         private ShipClass PickHull()
@@ -83,8 +85,8 @@ namespace StellarisClone.Core
             {
                 if (!s.Data.InCombat || !checkedSystems.Add(s.Data.CurrentSystemId)) continue;
                 int sys = s.Data.CurrentSystemId;
-                float mine = fm.GetMilitaryPowerInSystem(AIOwnerId, sys);
-                float enemy = fm.GetMilitaryPowerInSystem(0, sys);
+                float mine = SidePower(AIOwnerId, sys);
+                float enemy = SidePower(0, sys);
                 if (enemy <= mine * Profile.RetreatRatio) continue;
 
                 int haven = SafeHaven(sys);
@@ -119,7 +121,8 @@ namespace StellarisClone.Core
                 int threat = FindThreat(out float threatPower);
                 if (threat >= 0)
                 {
-                    if (armyPower >= threatPower * 0.9f)
+                    float baseHelp = CombatManager.Instance != null ? CombatManager.Instance.StarbasePower(threat) : 0f;
+                    if (armyPower + baseHelp >= threatPower * 0.9f)
                     {
                         Mode = ArmyMode.Defend;
                         ArmyTargetSystemId = threat;
@@ -200,6 +203,16 @@ namespace StellarisClone.Core
             return best;
         }
 
+        /// <summary>Сила стороны в системе: её корабли плюс звёздная база, если система её.</summary>
+        private float SidePower(int owner, int systemId)
+        {
+            float p = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPowerInSystem(owner, systemId) : 0f;
+            var cm = CombatManager.Instance;
+            if (cm != null && systemId >= 0 && systemId < EmpireStats.Systems.Count && EmpireStats.Systems[systemId].OwnerId == owner)
+                p += cm.StarbasePower(systemId);
+            return p;
+        }
+
         /// <summary>Цель осады: система игрока у нашей границы, ценная и слабо защищённая.</summary>
         private int PickSiegeTarget(float armyPower)
         {
@@ -211,7 +224,8 @@ namespace StellarisClone.Core
             {
                 if (s.OwnerId != 0 || !s.HasStarbase) continue;
                 if (!fromRally.TryGetValue(s.Id, out int jumps)) continue;
-                float defense = fm.GetMilitaryPowerInSystem(0, s.Id);
+                // Оборона = флот игрока + звёздная база системы
+                float defense = SidePower(0, s.Id);
                 if (defense > armyPower * 0.8f) continue;
 
                 float score = -jumps * 4f - defense / Mathf.Max(1f, armyPower) * 40f;

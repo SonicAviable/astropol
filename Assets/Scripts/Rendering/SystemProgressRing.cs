@@ -112,7 +112,7 @@ namespace StellarisClone.Rendering
             if (sg.Contested || !sg.Active) col = Color.Lerp(col, Color.gray, 0.5f);
             _fills[key].fillAmount = Mathf.Clamp01(sg.Progress / Mathf.Max(1f, need));
             _fills[key].color = col;
-            string state = sg.Contested ? "бой" : !sg.Active ? "снята" : $"{Mathf.Max(0, need - sg.Progress):0}д";
+            string state = sg.BaseHolding ? "база" : sg.Contested ? "бой" : !sg.Active ? "снята" : $"{Mathf.Max(0, need - sg.Progress):0}д";
             _labels[key].text = $"<color=#{ColorUtility.ToHtmlStringRGB(col)}>Осада · {state}</color>";
         }
 

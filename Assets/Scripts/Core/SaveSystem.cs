@@ -58,6 +58,8 @@ namespace StellarisClone.Core
         public VictorySave Victory;
         public AISave AI;
         public List<SiegeSave> Sieges = new List<SiegeSave>();
+        public List<ConstructionJob> Jobs = new List<ConstructionJob>();
+        public List<StarbaseSave> Starbases = new List<StarbaseSave>();
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -153,6 +155,14 @@ namespace StellarisClone.Core
         public float FlatScience;
         public float TempBoost = 1f;
         public int TempBoostDays;
+    }
+
+    [Serializable]
+    public class StarbaseSave
+    {
+        public int System;
+        public float Hull, Armor, Shields;
+        public bool Disabled;
     }
 
     [Serializable]
@@ -382,6 +392,8 @@ namespace StellarisClone.Core
             s.Victory = VictoryManager.Instance != null ? VictoryManager.Instance.CaptureState() : null;
             s.AI = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.CaptureState() : null;
             if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
+            if (ConstructionManager.Instance != null) s.Jobs = ConstructionManager.Instance.CaptureState();
+            if (CombatManager.Instance != null) s.Starbases = CombatManager.Instance.CaptureStarbases();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -648,6 +660,8 @@ namespace StellarisClone.Core
 
             if (s.AI != null) AIEmpireManager.Instance?.RestoreState(s.AI, version);
             SiegeManager.Instance?.RestoreState(s.Sieges);
+            ConstructionManager.Instance?.RestoreState(s.Jobs);
+            CombatManager.Instance?.RestoreStarbases(s.Starbases);
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)

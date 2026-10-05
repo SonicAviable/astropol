@@ -336,16 +336,43 @@ namespace StellarisClone.Core
             int yard = PlayerShipyardSystem();
             if (yard < 0) { NotificationCenter.Show("Нет верфи", "У вас не осталось своих систем", NotificationCenter.Kind.Danger, 4f); return false; }
             eco.TrySpend(costEnergy, 0f, costAlloys, 0f);
-            var created = CreateFleetObject(shipName, yard, type);
-            if (type == FleetType.Military)
+            string designId = type == FleetType.Military ? ShipDesignManager.Instance?.GetLatestDesign(ShipClass.Corvette)?.Id : null;
+            QueueShip(type, ShipClass.Corvette, designId, costEnergy, costAlloys, shipName);
+            return true;
+        }
+
+        /// <summary>Заложить корабль игрока на верфи (готов через ShipDays дней).</summary>
+        private void QueueShip(FleetType type, ShipClass hull, string designId, float energy, float alloys, string what)
+        {
+            var cm = ConstructionManager.Instance;
+            if (cm == null) { LaunchPlayerShip(new ConstructionJob { ShipType = type, Hull = hull, DesignId = designId }); return; }
+            var job = cm.EnqueueShip(0, type, hull, designId, energy, alloys);
+            NotificationCenter.Show("Корабль заложен", $"{what} · готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(job))} дн.",
+                NotificationCenter.Kind.Info, 4f);
+        }
+
+        /// <summary>Спуск на воду: корабль появляется у верфи (или в любой своей системе).</summary>
+        public FleetView LaunchPlayerShip(ConstructionJob job)
+        {
+            int yard = PlayerShipyardSystem();
+            if (yard < 0) return null;
+            FleetView created;
+            if (job.ShipType == FleetType.Military)
             {
-                var design = ShipDesignManager.Instance?.GetLatestDesign(ShipClass.Corvette);
+                var design = (ShipDesignManager.Instance != null ? ShipDesignManager.Instance.GetDesign(job.DesignId) : null)
+                             ?? PlayerDesignFor(job.Hull);
+                string cls = job.Hull switch { ShipClass.Frigate => "Фрегат", ShipClass.Destroyer => "Эсминец", _ => "Корвет" };
+                created = CreateFleetObject($"{AllFleets.Count + 1}-й {cls}", yard, FleetType.Military);
                 if (design != null) created.Data.ApplyDesign(design);
             }
-
-            NotificationCenter.Show("Корабль построен", shipName, NotificationCenter.Kind.Success, 4f);
-            eco.RecalculateAll();
-            return true;
+            else
+            {
+                string name = job.ShipType == FleetType.Science ? $"НИС «Академик {AllFleets.Count + 1}»" : $"Строитель {AllFleets.Count + 1}";
+                created = CreateFleetObject(name, yard, job.ShipType);
+            }
+            NotificationCenter.Show("Корабль спущен на воду", $"{created.Data.Name} · {_generator.Systems[yard].Name}", NotificationCenter.Kind.Success, 4f);
+            EconomyManager.Instance?.RecalculateAll();
+            return created;
         }
 
         /// <summary>Проект игрока для корпуса: последний сохранённый или автоматический под изученные технологии.</summary>
@@ -395,10 +422,7 @@ namespace StellarisClone.Core
                 ShipClass.Destroyer => "Эсминец",
                 _ => "Корвет"
             };
-            var created = CreateFleetObject($"{AllFleets.Count + 1}-й {cls}", yard, FleetType.Military);
-            created.Data.ApplyDesign(design);
-            NotificationCenter.Show("Корабль построен", created.Data.Name, NotificationCenter.Kind.Success, 4f);
-            EconomyManager.Instance?.RecalculateAll();
+            QueueShip(FleetType.Military, design.HullClass, design.Id, WarshipEnergy, cost, $"{cls} «{design.Name}»");
             return true;
         }
 
@@ -788,7 +812,15 @@ namespace StellarisClone.Core
             if (eco == null) return false;
             if (!eco.CanAfford(0f, MiningStationMinerals, 0f, 0f)) return false;
 
+            if (planet.StationUnderConstruction) return false;
             eco.TrySpend(0f, MiningStationMinerals, 0f, 0f);
+            var cm = ConstructionManager.Instance;
+            if (cm != null)
+            {
+                cm.EnqueuePlanetJob(JobKind.MiningStation, 0, planet, DistrictType.Mining, 0f, MiningStationMinerals, 0f, 0f);
+                NotificationCenter.Show("Комплекс заложен", $"{planet.Name} · {ConstructionManager.MiningStationDays:0} дн.", NotificationCenter.Kind.Info, 3f);
+                return true;
+            }
             planet.HasMiningStation = true;
 
             if (_generator != null)

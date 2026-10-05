@@ -60,8 +60,9 @@ namespace StellarisClone.Rendering
         {
             public DistrictType Type;
             public Text Count, Worked, Cost, Reason;
-            public Button Build;
+            public Button Build, Cancel;
             public Image Bg;
+            public RectTransform Progress;
         }
 
         private class ActionButton
@@ -301,9 +302,46 @@ namespace StellarisClone.Rendering
                  : t == DistrictType.Industrial ? eco.FactionAlloyMult : 1f;
         }
 
+        private static ConstructionManager Builds => ConstructionManager.Instance;
+
+        /// <summary>Первый заказ этого типа в очереди планеты (идёт сейчас или ждёт).</summary>
+        private ConstructionJob FirstJob(JobKind kind, DistrictType? district = null)
+        {
+            if (Builds == null) return null;
+            foreach (var j in Builds.QueueFor(_planet))
+                if (j.Kind == kind && (district == null || j.District == district.Value)) return j;
+            return null;
+        }
+
+        private ConstructionJob LastJob(JobKind kind, DistrictType district)
+        {
+            if (Builds == null) return null;
+            ConstructionJob last = null;
+            foreach (var j in Builds.QueueFor(_planet))
+                if (j.Kind == kind && j.District == district) last = j;
+            return last;
+        }
+
         private void RefreshDistricts()
         {
-            _districtHeader.text = $"РАЙОНЫ   <color={LGBuild.Hex(CMuted)}>{_planet.BuiltDistricts} / {_planet.MaxDistricts}</color>";
+            int pendingAll = _planet.PendingDistricts;
+            var queue = Builds != null ? Builds.QueueFor(_planet) : new List<ConstructionJob>();
+            string queueText = "";
+            if (queue.Count > 0)
+            {
+                var cur = queue[0];
+                string what = cur.Kind switch
+                {
+                    JobKind.District => DistrictName(cur.District).ToLower() + " район",
+                    JobKind.MiningStation => "добывающий комплекс",
+                    JobKind.Colony => "колония",
+                    _ => "терраформинг"
+                };
+                queueText = $"   <color={LGBuild.Hex(CGold)}>строится {what} · {Mathf.CeilToInt(cur.DaysLeft)} дн." +
+                            (queue.Count > 1 ? $" · в очереди ещё {queue.Count - 1}" : "") + "</color>";
+            }
+            _districtHeader.text = $"РАЙОНЫ   <color={LGBuild.Hex(CMuted)}>{_planet.BuiltDistricts}" +
+                                   (pendingAll > 0 ? $"+{pendingAll}" : "") + $" / {_planet.MaxDistricts}</color>{queueText}";
             RebuildSlots();
 
             var eco = EconomyManager.Instance;
@@ -311,11 +349,33 @@ namespace StellarisClone.Rendering
             {
                 int count = _planet.GetDistrictCount(c.Type);
                 int worked = _planet.WorkedCount(c.Type);
-                c.Count.text = $"×{count}";
-                c.Worked.text = c.Type == DistrictType.Urban
-                    ? $"жильё +{count * DistrictInfo.HousingPopCapacity(c.Type)}"
-                    : count > 0 ? $"работают {worked} из {count}" : "не построены";
-                c.Worked.color = worked < count && c.Type != DistrictType.Urban ? CGold : CMuted;
+                int pending = Builds != null ? Builds.PendingDistricts(_planet, c.Type) : 0;
+                c.Count.text = pending > 0 ? $"×{count}<size=12><color={LGBuild.Hex(CGold)}> +{pending}</color></size>" : $"×{count}";
+
+                var job = FirstJob(JobKind.District, c.Type);
+                if (job != null)
+                {
+                    float days = Builds.DaysUntilDone(job);
+                    bool active = queue.Count > 0 && queue[0] == job;
+                    c.Worked.text = active ? $"строится · готов через {Mathf.CeilToInt(days)} дн." : $"в очереди · ~{Mathf.CeilToInt(days)} дн.";
+                    c.Worked.color = CGold;
+                    LGBuild.SetBar(c.Progress, active ? job.Progress : 0f, CGold);
+                }
+                else
+                {
+                    c.Worked.text = c.Type == DistrictType.Urban
+                        ? $"жильё +{count * DistrictInfo.HousingPopCapacity(c.Type)}"
+                        : count > 0 ? $"работают {worked} из {count}" : "не построены";
+                    c.Worked.color = worked < count && c.Type != DistrictType.Urban ? CGold : CMuted;
+                    LGBuild.SetBar(c.Progress, 0f);
+                }
+                c.Progress.parent.parent.gameObject.SetActive(job != null);
+
+                // Кнопка отмены последнего заказа этого типа
+                bool canCancel = pending > 0 && Owned;
+                c.Cancel.gameObject.SetActive(canCancel);
+                var brt = (RectTransform)c.Build.transform;
+                brt.offsetMax = new Vector2(canCancel ? -48 : -10, 38);
 
                 float mc = DistrictInfo.MineralsCost(c.Type), ac = DistrictInfo.AlloysCost(c.Type);
                 bool canPay = eco != null && eco.Minerals >= mc && eco.Alloys >= ac;
@@ -325,11 +385,12 @@ namespace StellarisClone.Rendering
                 string reason = !Surveyed ? "Нужна разведка"
                               : !Owned ? "Не ваша система"
                               : _planet.Population <= 0 ? "Сначала колония"
-                              : _planet.BuiltDistricts >= _planet.MaxDistricts ? "Нет места"
+                              : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? "Нет места"
+                              : queue.Count >= ConstructionManager.MaxPlanetQueue ? "Очередь заполнена"
                               : !canPay ? "Не хватает ресурсов"
                               : null;
                 c.Build.interactable = reason == null;
-                c.Reason.text = reason ?? "ПОСТРОИТЬ";
+                c.Reason.text = reason ?? (queue.Count > 0 ? "В ОЧЕРЕДЬ" : $"ПОСТРОИТЬ · {ConstructionManager.DistrictDays(c.Type):0} ДН.");
                 c.Reason.color = reason == null ? Color.white : CMuted;
             }
         }
@@ -339,15 +400,19 @@ namespace StellarisClone.Rendering
         /// <summary>Сегментная полоска слотов районов: занятые — цветом района, свободные — пустые.</summary>
         private void RebuildSlots()
         {
-            if (_slotsBuilt == _planet.BuiltDistricts && _slotsMax == _planet.MaxDistricts && _districtSlots.childCount > 0) return;
-            _slotsBuilt = _planet.BuiltDistricts;
+            int pendingN = _planet.PendingDistricts;
+            int key = _planet.BuiltDistricts * 100 + pendingN;
+            if (_slotsBuilt == key && _slotsMax == _planet.MaxDistricts && _districtSlots.childCount > 0) return;
+            _slotsBuilt = key;
             _slotsMax = _planet.MaxDistricts;
             LGBuild.Clear(_districtSlots);
             int max = Mathf.Max(1, _planet.MaxDistricts);
             float w = 1f / max;
             for (int i = 0; i < max; i++)
             {
-                Color col = i < _planet.Districts.Count ? DistrictInfo.Color(_planet.Districts[i].Type) : new Color(1f, 1f, 1f, 0.08f);
+                Color col = i < _planet.Districts.Count ? DistrictInfo.Color(_planet.Districts[i].Type)
+                          : i < _planet.Districts.Count + pendingN ? new Color(CGold.r, CGold.g, CGold.b, 0.35f)
+                          : new Color(1f, 1f, 1f, 0.08f);
                 var seg = LGBuild.Panel(_districtSlots, "Slot", col);
                 var rt = seg.rectTransform;
                 rt.anchorMin = new Vector2(i * w, 0);
@@ -363,19 +428,23 @@ namespace StellarisClone.Rendering
             var eco = EconomyManager.Instance;
             bool surveyed = Surveyed, owned = Owned;
 
+            ConstructionJob mineJob = FirstJob(JobKind.MiningStation), colJob = FirstJob(JobKind.Colony), terJob = FirstJob(JobKind.Terraform);
+
             // Добывающий комплекс
             if (_planet.HasMiningStation) SetAction(_mine, false, LGIcon.Check, "КОМПЛЕКС РАБОТАЕТ", true);
+            else if (mineJob != null) SetAction(_mine, true, LGIcon.Clock, $"СТРОИТСЯ · {Mathf.CeilToInt(Builds.DaysUntilDone(mineJob))} ДН.  ·  ОТМЕНИТЬ");
             else if (_planet.MineralDeposit + _planet.EnergyDeposit <= 0) SetAction(_mine, false, LGIcon.Minerals, "ЗАЛЕЖЕЙ НЕТ");
             else if (!surveyed) SetAction(_mine, false, LGIcon.Lock, "НУЖНА РАЗВЕДКА");
             else if (!owned) SetAction(_mine, false, LGIcon.Lock, "НЕ ВАША СИСТЕМА");
             else
             {
                 bool can = eco != null && eco.Minerals >= FleetManager.MiningStationMinerals;
-                SetAction(_mine, can, LGIcon.Industry, $"ДОБЫВАЮЩИЙ КОМПЛЕКС  ·  {FleetManager.MiningStationMinerals:0} титана");
+                SetAction(_mine, can, LGIcon.Industry, $"ДОБЫВАЮЩИЙ КОМПЛЕКС  ·  {FleetManager.MiningStationMinerals:0} титана · {ConstructionManager.MiningStationDays:0} дн.");
             }
 
             // Колония
             if (_planet.Population > 0) SetAction(_colony, false, LGIcon.Check, "КОЛОНИЯ ОСНОВАНА", true);
+            else if (colJob != null) SetAction(_colony, true, LGIcon.Clock, $"КОЛОНИСТЫ В ПУТИ · {Mathf.CeilToInt(Builds.DaysUntilDone(colJob))} ДН.  ·  ОТМЕНИТЬ");
             else if (!surveyed) SetAction(_colony, false, LGIcon.Lock, "НУЖНА РАЗВЕДКА");
             else if (!owned) SetAction(_colony, false, LGIcon.Lock, "НЕ ВАША СИСТЕМА");
             else if (!_planet.CanColonize) SetAction(_colony, false, LGIcon.Close, "НЕПРИГОДНА ДЛЯ ЖИЗНИ");
@@ -383,18 +452,19 @@ namespace StellarisClone.Rendering
             {
                 bool can = eco != null && eco.CanAfford(0f, PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost);
                 SetAction(_colony, can, LGIcon.Population,
-                    $"ОСНОВАТЬ КОЛОНИЮ  ·  {PlanetData.ColonyMineralsCost:0} титана, {PlanetData.ColonyAlloysCost:0} сплавов, {PlanetData.ColonyInfluenceCost:0} влияния");
+                    $"ОСНОВАТЬ КОЛОНИЮ  ·  {PlanetData.ColonyMineralsCost:0} тит., {PlanetData.ColonyAlloysCost:0} спл., {PlanetData.ColonyInfluenceCost:0} вл. · {ConstructionManager.ColonyDays:0} дн.");
             }
 
             // Терраформинг
-            if (!_planet.CanTerraform) SetAction(_terra, false, LGIcon.Close, "ТЕРРАФОРМИНГ НЕВОЗМОЖЕН");
+            if (terJob != null) SetAction(_terra, true, LGIcon.Clock, $"ТЕРРАФОРМИНГ · {Mathf.CeilToInt(Builds.DaysUntilDone(terJob))} ДН.  ·  ОТМЕНИТЬ");
+            else if (!_planet.CanTerraform) SetAction(_terra, false, LGIcon.Close, "ТЕРРАФОРМИНГ НЕВОЗМОЖЕН");
             else if (!surveyed) SetAction(_terra, false, LGIcon.Lock, "НУЖНА РАЗВЕДКА");
             else if (!owned) SetAction(_terra, false, LGIcon.Lock, "НЕ ВАША СИСТЕМА");
             else if (_planet.HabitabilityPercent >= 70) SetAction(_terra, false, LGIcon.Check, "ПЛАНЕТА УЖЕ ПРИГОДНА", true);
             else
             {
                 bool can = eco != null && eco.EnergyCredits >= 120f && eco.Minerals >= 90f && eco.Influence >= 10f;
-                SetAction(_terra, can, LGIcon.Planet, "ТЕРРАФОРМИРОВАТЬ  ·  120 гелия-3, 90 титана, 10 влияния");
+                SetAction(_terra, can, LGIcon.Planet, $"ТЕРРАФОРМИРОВАТЬ  ·  120 гел., 90 тит., 10 вл. · {ConstructionManager.TerraformDays:0} дн.");
             }
         }
 
@@ -418,18 +488,36 @@ namespace StellarisClone.Rendering
             if (_planet.TryBuildDistrict(t))
             {
                 SFXManager.Play("ui_click", 1f, 1.1f);
-                NotificationCenter.Show("Район построен", $"{DistrictInfo.Name(t).ToLower()} · {_planet.Name}", NotificationCenter.Kind.Success, 3f);
-                EconomyManager.Instance?.RecalculateAll();
                 Refresh();
             }
+        }
+
+        private void OnCancelDistrict(DistrictType t)
+        {
+            var job = LastJob(JobKind.District, t);
+            if (job == null) return;
+            Builds.Cancel(job);
+            SFXManager.Play("ui_click", 0.9f, 0.9f);
+            Refresh();
+        }
+
+        /// <summary>Отменить идущую стройку станции/колонии/терраформинга (кнопка действия во время стройки).</summary>
+        private bool TryCancel(JobKind kind)
+        {
+            var job = FirstJob(kind);
+            if (job == null) return false;
+            Builds.Cancel(job);
+            NotificationCenter.Show("Заказ отменён", "Ресурсы возвращены", NotificationCenter.Kind.Info, 3f);
+            Refresh();
+            return true;
         }
 
         private void OnMine()
         {
             if (_planet == null) return;
+            if (TryCancel(JobKind.MiningStation)) return;
             if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_planet))
             {
-                SystemViewManager.Instance?.SpawnStationOnActivePlanet(_planet);
                 Refresh();
                 BindHolo();
             }
@@ -437,21 +525,20 @@ namespace StellarisClone.Rendering
 
         private void OnColony()
         {
-            if (_planet != null && _planet.TryFoundColony())
+            if (_planet == null || TryCancel(JobKind.Colony)) return;
+            if (_planet.TryFoundColony())
             {
-                NotificationCenter.Show("Колония основана", _planet.Name, NotificationCenter.Kind.Success, 4f);
-                EconomyManager.Instance?.RecalculateAll();
+                NotificationCenter.Show("Колонисты отправлены", $"{_planet.Name} · колония через {ConstructionManager.ColonyDays:0} дн.", NotificationCenter.Kind.Info, 4f);
                 Refresh();
-                BindHolo();
             }
         }
 
         private void OnTerra()
         {
-            if (_planet != null && _planet.TryStartTerraform())
+            if (_planet == null || TryCancel(JobKind.Terraform)) return;
+            if (_planet.TryStartTerraform())
             {
-                NotificationCenter.Show("Терраформинг", $"{_planet.Name}: {_planet.ClassDisplayName.ToLower()}", NotificationCenter.Kind.Success, 4f);
-                BindHolo();
+                NotificationCenter.Show("Терраформинг начат", $"{_planet.Name} · {ConstructionManager.TerraformDays:0} дн.", NotificationCenter.Kind.Info, 4f);
                 Refresh();
             }
         }
@@ -717,14 +804,31 @@ namespace StellarisClone.Rendering
             brt.pivot = new Vector2(0.5f, 0);
             brt.offsetMin = new Vector2(10, 8);
             brt.offsetMax = new Vector2(-10, 38);
+            var cancel = LGBuild.Button(rt, "Cancel", UIManager.DS.BtnDanger, UIManager.DS.Red, () => OnCancelDistrict(type), LGIcon.Close, null, 10, 12f);
+            var crt = (RectTransform)cancel.transform;
+            crt.anchorMin = crt.anchorMax = new Vector2(1, 0);
+            crt.pivot = new Vector2(1, 0);
+            crt.sizeDelta = new Vector2(32, 30);
+            crt.anchoredPosition = new Vector2(-10, 8);
+            TooltipHelper.Attach(cancel.gameObject, "<b>Отменить</b>\nПоследний заказанный район этого типа. Ресурсы вернутся полностью.");
+            cancel.gameObject.SetActive(false);
+
+            var progHost = LGBuild.Rect(rt, "ProgressHost");
+            progHost.anchorMin = new Vector2(0, 0);
+            progHost.anchorMax = new Vector2(1, 0);
+            progHost.offsetMin = new Vector2(12, 42);
+            progHost.offsetMax = new Vector2(-12, 48);
+            var progress = LGBuild.Bar(progHost, CGold, 0f, 4f);
+
             TooltipHelper.Attach(btn.gameObject,
                 $"<b>{DistrictName(type)}</b>\n{DistrictEffect(type)}\n\n" +
+                $"Строительство: {ConstructionManager.DistrictDays(type):0} дн. (на планете — одна стройка за раз)\n" +
                 $"Стоимость: {DistrictInfo.MineralsCost(type)} титана, {DistrictInfo.AlloysCost(type)} сплавов\n" +
                 "<color=#8AA2A8>Каждый район — одно рабочее место. Производство идёт, только если на нём работают жители.</color>");
 
             return new DistrictCard
             {
-                Type = type, Count = count, Worked = worked, Cost = cost, Bg = bg, Build = btn,
+                Type = type, Count = count, Worked = worked, Cost = cost, Bg = bg, Build = btn, Cancel = cancel, Progress = progress,
                 Reason = btn.GetComponentInChildren<Text>()
             };
         }

@@ -440,7 +440,8 @@ namespace StellarisClone.Rendering
                             Id = "siege_att", Icon = LGIcon.Siege, Color = UIManager.DS.Green, Count = attack,
                             Title = "Идёт осада",
                             Body = $"{target.Name}: {(sg != null ? sg.Progress : 0f):0} / {SiegeManager.RequiredDays(target):0} дн." +
-                                   (sg != null && sg.Contested ? " Осада стоит — на орбите флот защитника." : " Не уводите флот до захвата."),
+                                   (sg != null && sg.BaseHolding ? " Осада стоит — сначала подавите звёздную базу."
+                                    : sg != null && sg.Contested ? " Осада стоит — на орбите флот защитника." : " Не уводите флот до захвата."),
                             ActionHint = "показать систему",
                             Action = () => Focus(target)
                         });
