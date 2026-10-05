@@ -23,7 +23,7 @@ namespace StellarisClone.Rendering
 
         private CanvasGroup _group;
         private RectTransform _artRt;
-        private Text _subtitle, _stage, _percent, _tip;
+        private Text _subtitle, _stage, _percent, _tip, _detail;
         private RectTransform _barFill, _barHead, _spinner;
         private CanvasGroup _tipGroup;
 
@@ -36,6 +36,13 @@ namespace StellarisClone.Rendering
         private AsyncOperation _op;
         private bool _booted;
         private int _framesSinceBoot;
+
+        // Темп полосы: 8–10 секунд (выход в меню — ~3 с), неравномерно — с рывками и паузами,
+        // как при настоящей загрузке. Реальный прогресс полоса никогда не обгоняет.
+        private float _duration;
+        private readonly System.Collections.Generic.List<Vector2> _curve = new System.Collections.Generic.List<Vector2>();
+        private string[] _stages;
+        private StellarisClone.Generation.GalaxyGenerator _gen;
 
         private static readonly Color Cyan = new Color(0.36f, 0.95f, 0.92f);
 
@@ -193,6 +200,13 @@ namespace StellarisClone.Rendering
             _percent.rectTransform.anchoredPosition = new Vector2(-96, 132);
             _percent.rectTransform.sizeDelta = new Vector2(200, 24);
 
+            _detail = NewText(root, "", 12, new Color(0.62f, 0.74f, 0.8f, 0.85f), TextAnchor.UpperLeft, false);
+            _detail.rectTransform.anchorMin = new Vector2(0, 0);
+            _detail.rectTransform.anchorMax = new Vector2(1, 0);
+            _detail.rectTransform.pivot = new Vector2(0, 1);
+            _detail.rectTransform.anchoredPosition = new Vector2(96, 116);
+            _detail.rectTransform.sizeDelta = new Vector2(-192, 18);
+
             // Вращающееся кольцо возле этапа
             var spin = NewImage(root, "Spinner", Cyan);
             spin.sprite = ArcSprite();
@@ -206,7 +220,7 @@ namespace StellarisClone.Rendering
             _tip.rectTransform.anchorMin = new Vector2(0, 0);
             _tip.rectTransform.anchorMax = new Vector2(1, 0);
             _tip.rectTransform.pivot = new Vector2(0, 1);
-            _tip.rectTransform.anchoredPosition = new Vector2(96, 100);
+            _tip.rectTransform.anchoredPosition = new Vector2(96, 88);
             _tip.rectTransform.sizeDelta = new Vector2(-192, 60);
             _tipGroup = _tip.gameObject.AddComponent<CanvasGroup>();
         }
@@ -229,8 +243,77 @@ namespace StellarisClone.Rendering
             _group.blocksRaycasts = true;
             _artRt.localScale = Vector3.one;
             _subtitle.text = Subtitle(kind);
+            _detail.text = "";
+            _gen = null;
+            _duration = kind == Kind.Menu ? UnityEngine.Random.Range(2.8f, 3.4f) : UnityEngine.Random.Range(8f, 10f);
+            _stages = StagesFor(kind);
+            BuildCurve();
             NextTip();
             Apply();
+        }
+
+        /// <summary>Подписи этапов: сменяются по ходу полосы.</summary>
+        private static string[] StagesFor(Kind kind) => kind switch
+        {
+            Kind.NewGame => new[]
+            {
+                "Инициализация ядра симуляции", "Генерация звёздных систем", "Прокладка гиперкоридоров",
+                "Расчёт орбит и планет", "Заселение империй", "Пробуждение империи-соперника",
+                "Синтез звукового ландшафта", "Подготовка командного интерфейса"
+            },
+            Kind.LoadGame => new[]
+            {
+                "Чтение архива сохранения", "Восстановление галактики", "Возвращение флотов на орбиты",
+                "Восстановление экономики", "Синхронизация дипломатии", "Пробуждение лидеров",
+                "Синтез звукового ландшафта", "Подготовка командного интерфейса"
+            },
+            Kind.Menu => new[] { "Сохранение состояния вселенной", "Возвращение в главное меню" },
+            _ => new[]
+            {
+                "Инициализация ядра", "Компиляция шейдеров стекла", "Подготовка звёздного неба",
+                "Генерация галактики", "Синтез звукового ландшафта", "Настройка музыки",
+                "Сборка интерфейса", "Последние штрихи"
+            }
+        };
+
+        /// <summary>
+        /// Кривая «время → прогресс» из нескольких отрезков случайной длины и крутизны:
+        /// где-то полоса бежит, где-то «задумывается» — выглядит как реальная загрузка ресурсов.
+        /// </summary>
+        private void BuildCurve()
+        {
+            _curve.Clear();
+            int n = _kind == Kind.Menu ? 3 : 9;
+            var dt = new float[n];
+            var dp = new float[n];
+            float sumT = 0f, sumP = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                dt[i] = UnityEngine.Random.Range(0.5f, 1.5f);
+                dp[i] = UnityEngine.Random.Range(0.2f, 1.4f);
+                sumT += dt[i]; sumP += dp[i];
+            }
+            float t = 0f, p = 0f;
+            _curve.Add(Vector2.zero);
+            for (int i = 0; i < n; i++)
+            {
+                t += dt[i] / sumT;
+                p += dp[i] / sumP;
+                _curve.Add(new Vector2(t, p));
+            }
+        }
+
+        private float CurveAt(float x)
+        {
+            x = Mathf.Clamp01(x);
+            for (int i = 1; i < _curve.Count; i++)
+            {
+                if (x > _curve[i].x) continue;
+                var a = _curve[i - 1]; var b = _curve[i];
+                float k = Mathf.InverseLerp(a.x, b.x, x);
+                return Mathf.Lerp(a.y, b.y, k * k * (3f - 2f * k));   // внутри отрезка — плавный разгон и торможение
+            }
+            return 1f;
         }
 
         private static string Subtitle(Kind kind)
@@ -260,7 +343,6 @@ namespace StellarisClone.Rendering
             _tip.text = "<color=#5CF2EB>СОВЕТ</color>   " + Tips[i];
         }
 
-        private float MinDuration => _kind == Kind.Launch ? 2.6f : _kind == Kind.Menu ? 0.9f : 1.6f;
 
         private void Update()
         {
@@ -296,22 +378,17 @@ namespace StellarisClone.Rendering
             float warm = _booted ? Mathf.Clamp01(_framesSinceBoot / 12f) : 0f;
             float target = scene * 0.2f + boot * 0.15f + galaxy * 0.15f + save * 0.12f + sfx * 0.3f + warm * 0.08f;
 
-            // Плавная полоса, не быстрее минимальной длительности (арт успевает «прозвучать»)
+            // Полоса идёт по «живой» кривой времени, но не обгоняет реальную загрузку
             float elapsed = Time.unscaledTime - _startTime;
-            float cap = Mathf.Clamp01(elapsed / MinDuration + 0.05f);
-            float goal = Mathf.Min(target, cap);
-            _shown = Mathf.Max(_shown, Mathf.MoveTowards(_shown, goal, dt * 1.2f));
+            float goal = Mathf.Min(target, CurveAt(elapsed / _duration));
+            _shown = Mathf.Max(_shown, Mathf.MoveTowards(_shown, goal, dt * 0.9f));
 
-            _stage.text = scene < 1f ? "Загрузка сектора…"
-                        : boot < 1f ? "Построение мира…"
-                        : galaxy < 1f ? (loadingSave ? "Восстановление карты галактики…" : "Генерация галактики…")
-                        : save < 1f ? "Восстановление империи…"
-                        : sfx < 1f ? $"Синтез звука   {sfx * 100f:0}%"
-                        : warm < 1f ? "Подготовка интерфейса…"
-                        : "Готово";
+            int si = Mathf.Clamp(Mathf.FloorToInt(_shown * _stages.Length), 0, _stages.Length - 1);
+            _stage.text = _shown >= 0.999f ? "Готово" : _stages[si] + Dots(elapsed);
             _percent.text = $"{_shown * 100f:0}%";
+            _detail.text = Detail(sfx);
 
-            bool done = target >= 0.999f && _shown >= 0.995f && elapsed >= MinDuration;
+            bool done = target >= 0.999f && _shown >= 0.995f && elapsed >= _duration;
             if (done) _hiding = true;
             if (_hiding)
             {
@@ -331,6 +408,27 @@ namespace StellarisClone.Rendering
 
             Apply();
             Animate(dt);
+        }
+
+        private static string Dots(float t) => new string('.', 1 + (int)(t * 2.5f) % 3);
+
+        /// <summary>Строка с живыми цифрами: что уже построено и сколько звуков синтезировано.</summary>
+        private string Detail(float sfx)
+        {
+            var sb = new System.Text.StringBuilder();
+            if (_booted && GalaxyView.IsBuilt)
+            {
+                if (_gen == null) _gen = FindAnyObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+                if (_gen != null)
+                {
+                    // Счётчики «докручиваются» вместе с полосой
+                    float k = Mathf.Clamp01(_shown * 1.6f);
+                    sb.Append($"звёздных систем {Mathf.RoundToInt(_gen.Systems.Count * k)}   ·   гиперкоридоров {Mathf.RoundToInt(_gen.Hyperlanes.Count * k)}   ·   ");
+                }
+            }
+            sb.Append($"звуков синтезировано {sfx * 100f:0}%");
+            if (_kind != Kind.Menu) sb.Append($"   ·   шейдеров {Mathf.RoundToInt(Mathf.Clamp01(_shown * 1.3f) * 48)}/48");
+            return sb.ToString();
         }
 
         private void Animate(float dt)
