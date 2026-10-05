@@ -6,7 +6,7 @@ using StellarisClone.Generation;
 namespace StellarisClone.Rendering
 {
     [RequireComponent(typeof(GalaxyGenerator))]
-    public class GalaxyView : MonoBehaviour
+    public partial class GalaxyView : MonoBehaviour
     {
         public static GalaxyView Instance { get; private set; }
 
@@ -448,6 +448,7 @@ namespace StellarisClone.Rendering
                 // Анимация (вращение, дыхание, моргание)
                 var anim = coreObj.AddComponent<StarAnimator>();
                 anim.Initialize(coreSr, ringSr, 2.4f, starCol);
+                _starAnims.Add(anim);
 
                 // Плашка с именем
                 var plate = node.AddComponent<SystemNameplate>();
@@ -468,6 +469,7 @@ namespace StellarisClone.Rendering
             }
 
             RenderHyperlanes();
+            CreateSystemMarkers();
         }
 
         private void RenderHyperlanes()
@@ -496,6 +498,7 @@ namespace StellarisClone.Rendering
                 lr.SetPosition(1, endPoint);
                 lr.startWidth = 0.12f;
                 lr.endWidth = 0.12f;
+                lr.numCapVertices = 2;
                 lr.sortingOrder = 3;
                 if (lineMat != null) lr.material = new Material(lineMat);
 
@@ -506,25 +509,6 @@ namespace StellarisClone.Rendering
             UpdateHyperlaneColors();
         }
 
-        private void UpdateHyperlaneColors()
-        {
-            for (int i = 0; i < _hyperlaneRenderers.Count; i++)
-            {
-                var lane = _hyperlaneData[i];
-                var lr = _hyperlaneRenderers[i];
-                StarSystem a = _generator.Systems[lane.SystemA];
-                StarSystem b = _generator.Systems[lane.SystemB];
-
-                bool isPlayerTerritory = (a.OwnerId == 0 && b.OwnerId == 0 && a.HasStarbase && b.HasStarbase);
-                Color laneColor = isPlayerTerritory ? new Color(0.35f, 0.95f, 1.0f) : new Color(0.25f, 0.70f, 0.88f);
-
-                var g = new Gradient();
-                g.SetKeys(
-                    new[] { new GradientColorKey(laneColor, 0f), new GradientColorKey(Color.Lerp(laneColor, Color.white, 0.45f), 0.5f), new GradientColorKey(laneColor, 1f) },
-                    new[] { new GradientAlphaKey(0.40f, 0f), new GradientAlphaKey(0.92f, 0.5f), new GradientAlphaKey(0.40f, 1f) });
-                lr.colorGradient = g;
-            }
-        }
 
         // ==================== МАЯК ====================
 
@@ -605,6 +589,12 @@ namespace StellarisClone.Rendering
 
         private void LateUpdate()
         {
+            UpdateReadability();
+            UpdateBeacon();
+        }
+
+        private void UpdateBeacon()
+        {
             if (_beaconRoot == null || !_beaconRoot.activeSelf || _camTransform == null) return;
 
             _animTimer += Time.deltaTime;
@@ -654,6 +644,8 @@ namespace StellarisClone.Rendering
 
             foreach (var kv in _empireLabels)
                 if (kv.Value != null) kv.Value.SetActive(!isolate);
+
+            if (_markersRoot != null) _markersRoot.SetActive(!isolate);
         }
 
         private Color GetStellarisColor(StarSpectralClass c) => c switch
@@ -714,6 +706,10 @@ namespace StellarisClone.Rendering
         private const float TwinkleDuration = 0.7f;
         private float _ringBaseScale;
 
+        /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без вспышек).</summary>
+        public float Dim = 1f;
+        private float _dimShown = 1f;
+
         public void Initialize(SpriteRenderer core, SpriteRenderer ring, float baseScale, Color starColor)
         {
             _core = core;
@@ -742,8 +738,9 @@ namespace StellarisClone.Rendering
             float alphaBreathe = 1f + Mathf.Sin(t * 1.7f) * 0.08f;
 
             // --- МОРГАНИЕ ---
+            _dimShown = Mathf.MoveTowards(_dimShown, Dim, dt * 1.5f);
             _nextTwinkle -= dt;
-            if (_nextTwinkle <= 0f && _twinkleProgress <= 0f)
+            if (_nextTwinkle <= 0f && _twinkleProgress <= 0f && _dimShown > 0.9f)
             {
                 _twinkleProgress = 0.0001f;
                 _nextTwinkle = Random.Range(2.0f, 6.5f);
@@ -776,14 +773,15 @@ namespace StellarisClone.Rendering
             }
 
             // --- ПРИМЕНЕНИЕ К ЯДРУ ---
-            float scale = _baseScale * breathe * (1f + twinkleCoreBoost * 0.25f);
+            float scale = _baseScale * breathe * (1f + twinkleCoreBoost * 0.25f) * Mathf.Lerp(0.65f, 1f, _dimShown);
             _core.transform.localScale = Vector3.one * scale;
 
             // Медленное вращение — неровный край поворачивается
             _core.transform.localRotation = Quaternion.Euler(0f, 0f, t * 22f);
 
-            Color c = _baseColor;
-            c.a = Mathf.Clamp01(alphaBreathe + twinkleCoreBoost);
+            // Неизведанная звезда — блёклая, ближе к серому
+            Color c = Color.Lerp(new Color(0.55f, 0.6f, 0.68f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
+            c.a = Mathf.Clamp01(alphaBreathe + twinkleCoreBoost) * Mathf.Lerp(0.38f, 1f, _dimShown);
             _core.color = c;
 
             // --- ПРИМЕНЕНИЕ К КОЛЬЦУ ---
