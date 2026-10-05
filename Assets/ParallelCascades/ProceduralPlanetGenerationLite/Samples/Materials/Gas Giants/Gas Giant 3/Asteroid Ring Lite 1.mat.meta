@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c7439ea0958522546a8c00aef25ba2df
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Gas Giants/Gas Giant 3/Asteroid Ring Lite 1.mat
+  uploadId: 850742

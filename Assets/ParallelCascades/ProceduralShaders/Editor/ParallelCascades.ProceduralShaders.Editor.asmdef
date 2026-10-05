@@ -1,0 +1,18 @@
+{
+    "name": "ParallelCascades.ProceduralShaders.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:de223e6dd233e7a4bb079fd546746339"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

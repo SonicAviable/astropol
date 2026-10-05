@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7eac78b7de597094c92988135b286f56
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Earth Baked/Earth C/Baked Earth C.mat
+  uploadId: 850742

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3c55134540398184f999dba8947beb9e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Procedural/Simplified Gas Giant/Gas Giant Material Simpler.mat
+  uploadId: 850742

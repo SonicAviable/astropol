@@ -1,0 +1,187 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Procedural Earth-like Planet
+  m_Shader: {fileID: -6465566751694194690, guid: 1840111816897394a880878f4cbc69e7, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _OCEAN_ENABLED
+  m_InvalidKeywords: []
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Cloud_Gradient_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Color_Gradient_Texture:
+        m_Texture: {fileID: 2800000, guid: 4b977b810d6621347b2c162bb2f7fccd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Heightmap_Cubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Land_Color_Gradient_Texture_A:
+        m_Texture: {fileID: 2800000, guid: 60ef6c04fe8ca1a4b8f1e2171564b69d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Land_Color_Gradient_Texture_B:
+        m_Texture: {fileID: 2800000, guid: 4ec879fbc1ed4ba4c98abd78aefe94ad, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Mountain_Gradient_Texture:
+        m_Texture: {fileID: 2800000, guid: f82795d12f6de4b48b3ced1bc1cff7fc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ocean_Gradient_Texture:
+        m_Texture: {fileID: 2800000, guid: 3b9992cfa5ba96b4fa0e9483d2999026, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Static_Cloud_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Static_Cubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Static_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BAKE_OUTPUT: 0
+    - _BAKE_TEXTURE_MODE: 0
+    - _CITY_LIGHTS_ENABLED: 0
+    - _CLOUDS_ENABLED: 0
+    - _CLOUD_DEBUG_STATE: 0
+    - _City_Density: 3000
+    - _City_Light_Transition_Threshold: 1
+    - _City_Lights_Power: 10
+    - _City_Power: 30
+    - _City_Strength: 10
+    - _Cloud_Blend_Edge: 0.02
+    - _Cloud_Mask_Blend: 0.1
+    - _Cloud_Movement_Amplitude: 0.05
+    - _Cloud_Movement_Frequency: 6
+    - _Cloud_Movement_Speed: 0.025
+    - _Cloud_Normal_Power: 1
+    - _Cloud_Normal_Strength: 0.005
+    - _Cloud_Shadow_Offset: 1
+    - _Cloud_Shadow_Strength: 1
+    - _Coastal_Area_Width: 0.1
+    - _Coastal_City_Density: 4600
+    - _Coastal_City_Power: 30
+    - _Coastal_City_Strength: 10
+    - _Continent_Scale: 0.6332185
+    - _Cubemap_Face: 5
+    - _Cubemap_Face_Resolution: 512
+    - _Darkness_Noise_Scale: 4
+    - _Elevation_Scale: 1.0013818
+    - _Float: 0
+    - _Fresnel_Power: 13
+    - _Heightmap_Contrast: 5
+    - _Heightmap_Cubemap_Face_Resolution: 2048
+    - _Heightmap_Cubemap_Offset: 0.2
+    - _Heightmap_Cubemap_Strength: 20
+    - _Ice_Caps_Blend: 20
+    - _Ice_Caps_Edge_Threshold: 0.35430035
+    - _Ice_Caps_Height: 0.94
+    - _Ice_Caps_Normal_Multiplier: 0.1
+    - _Light_Attenuation: 1
+    - _Light_DayNight_Threshold: 1
+    - _Mask_Noise_Scale: 8
+    - _Mountain_Peaks_Falloff: 0.7
+    - _Mountain_Peaks_Noise_Blend: 0.7
+    - _Mountains_Blend_Step: 0.1
+    - _Mountains_Strength: 2
+    - _NORMAL_MODE: 0
+    - _Night_Lights_Power: 11
+    - _Normal_Strength: 0.02
+    - _OCEAN_ENABLED: 1
+    - _Ocean_Land_Threshold: 0.151
+    - _Planet_Radius_For_Cloud_Shadow: 1
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _RENDER_MODE: 0
+    - _RENDER_STATIC_CLOUDS: 0
+    - _Ridge_Gain: 0.2
+    - _Ridge_Normal_Multiplier: 0.2
+    - _Ridge_Power: 4
+    - _Ridges_Mask_Scale: 4
+    - _Ridges_Scale: 4
+    - _Shadow_Bias: 1
+    - _Shadow_Offset: 0.05
+    - _Shallows_Width: 0.05
+    - _Surface_Color_Saturation: 0.4
+    - _Surface_Noise_Scale: 1
+    - _Surface_Normal_Multiplier: 0.01
+    m_Colors:
+    - _City_Lights_Color: {r: 2, g: 0.5671564, b: 0, a: 0}
+    - _Cloud_Color: {r: 1, g: 1, b: 1, a: 0}
+    - _Cloud_Speed_Mod: {r: 1.01, g: 0.97, b: 1, a: 0}
+    - _Clouds_Noise_Params: {r: 6, g: 0.5, b: 2, a: 4}
+    - _Clouds_Smoothstep: {r: 0, g: 0.75, b: 0, a: 0}
+    - _Coast_Smoothstep: {r: 0.1, g: 0.25, b: 0, a: 0}
+    - _Continent_NoiseParams: {r: 10, g: 0.6, b: 2, a: 0}
+    - _Elevation_NoiseParams: {r: 8, g: 0.5, b: 2, a: 1}
+    - _Fresnel_Color: {r: 0, g: 0.49159315, b: 0.47831863, a: 1}
+    - _Ice_Caps_Noise_Params: {r: 8, g: 0.5, b: 2, a: 6}
+    - _Ice_Caps_Smoothstep: {r: 0.91, g: 1, b: 0, a: 0}
+    - _Land_Color_Mix_Params: {r: 6, g: 0.5, b: 2, a: 2}
+    - _Land_Color_Noise_Params: {r: 8, g: 0.6, b: 2, a: 66}
+    - _Mountain_Peaks_Noise_Params: {r: 6, g: 0.7, b: 2, a: 100}
+    - _Mountains_Shape_Smoothstep: {r: 0, g: 0.9, b: 0, a: 0}
+    - _Night_Light_Color: {r: 2, g: 0.5671564, b: 0, a: 0}
+    - _Ocean_Color: {r: 0, g: 0.37948865, b: 0.3692413, a: 1}
+    - _Ocean_Depth_Smoothstep: {r: -1, g: 1, b: 0, a: 0}
+    - _Ocean_Land_Smoothstep: {r: 0, g: 0.05, b: 0, a: 0}
+    - _Randomization_Offset: {r: -167.50005, g: 36.37173, b: 398.6945, a: 0}
+    - _Ridge_Mask_Smoothstep: {r: -0.4, g: 0.1, b: 0, a: 0}
+    - _Shallows_Color: {r: 0, g: 0.49159315, b: 0.47831863, a: 1}
+    - _Shallows_Smoothstep: {r: 0.1, g: 0, b: 0, a: 0}
+    - _Smoothness_Smoothstep: {r: 1, g: -1, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!114 &8289295888900798944
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 10

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bfc310eb4714675429e9a6b3c11fc995
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Baked Planets Sample Scene.unity
+  uploadId: 850742

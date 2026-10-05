@@ -1,0 +1,12 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:VisualElement name="panel" style="flex-grow: 1; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 16px; padding-right: 16px; padding-bottom: 16px; padding-left: 16px;">
+        <ui:VisualElement name="header-box" style="flex-grow: 0; flex-direction: row; background-color: rgba(0, 0, 0, 0.1); height: 128px; margin-bottom: 16px; align-self: center; flex-shrink: 0; width: 100%;">
+            <ui:VisualElement name="logo" style="flex-grow: 0; background-image: resource(&apos;parallel_cascades_logo&apos;); width: 128px; height: 128px;" />
+            <ui:Label text="Procedural Planet Generation&#10;Lite Samples Pack" name="label" enable-rich-text="true" style="-unity-font-style: bold; font-size: 20px; -unity-text-align: middle-center; margin-left: 16px;" />
+        </ui:VisualElement>
+        <ui:Label text="Thank you for downloading Procedural Planet Generation - Lite Samples Pack" name="thank-you-label" style="-unity-font-style: bold; margin-bottom: 8px;" />
+        <ui:Label text="To get started, check out the sample scenes, or read the online &lt;a href=https://parallelcascades.com/procedural-planet-generation/lite-samples-pack&gt;&lt;u&gt;documentation&lt;/u&gt;&lt;/a&gt; for the most up to date information, guides and troubleshooting.&#10;&#10;To add new procedural celestial bodies in your scenes, use the Create Context Menu commands. For example, right right click anywhere in your hierarchy, and select &lt;b&gt;&quot;Parallel Cascades&gt;Procedural Planet Generation Lite...&quot;&lt;/b&gt; and choose your preferred planet." name="info1" enable-rich-text="true" style="-unity-font-style: normal; margin-bottom: 8px; white-space: normal;" />
+        <ui:Label text="If you encounter any issues, have questions, or need support, please get in touch at: support@parallelcascades.com." name="info3" enable-rich-text="true" style="-unity-font-style: normal; margin-bottom: 8px; white-space: normal;" />
+        <ui:Label text="Consider leaving a review on the Asset store if you are happy with this asset!" name="info4" enable-rich-text="true" style="-unity-font-style: normal; margin-bottom: 8px; white-space: normal;" />
+    </ui:VisualElement>
+</ui:UXML>

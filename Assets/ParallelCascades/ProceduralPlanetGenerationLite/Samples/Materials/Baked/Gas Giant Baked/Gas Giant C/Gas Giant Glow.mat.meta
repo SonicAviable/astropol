@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0ad5c2e821e6f1642b8eaa1f24e44434
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Gas Giant Baked/Gas Giant C/Gas Giant Glow.mat
+  uploadId: 850742

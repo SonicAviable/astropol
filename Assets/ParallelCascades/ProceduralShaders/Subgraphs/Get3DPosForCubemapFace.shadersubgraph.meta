@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 71088095d4492e9479526c2c037ea135
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 60072b568d64c40a485e0fc55012dc9f, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralShaders/Subgraphs/Get3DPosForCubemapFace.shadersubgraph
+  uploadId: 850742

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bb565bcbf40b7d5449a1662ab903f2a9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationCommon/URP Settings/DefaultVolumeProfile.asset
+  uploadId: 850742

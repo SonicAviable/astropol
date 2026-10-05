@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fedf85f70d8bb65448e06ebf3dbea410
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Stars/Star 2/Star Lite.mat
+  uploadId: 850742

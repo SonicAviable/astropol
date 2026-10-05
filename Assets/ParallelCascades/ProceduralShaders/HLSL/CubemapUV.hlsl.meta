@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: ceb90c23c6650db4893a3a8623c15300
+timeCreated: 1719323809
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralShaders/HLSL/CubemapUV.hlsl
+  uploadId: 850742

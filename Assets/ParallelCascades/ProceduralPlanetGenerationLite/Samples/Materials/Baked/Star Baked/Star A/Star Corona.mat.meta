@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5c193bf97e274e24696afd7bf30b1890
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Star Baked/Star A/Star Corona.mat
+  uploadId: 850742

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d71a978e815eb2646af82fcf14b408c6
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/CHANGELOG.md
+  uploadId: 850742

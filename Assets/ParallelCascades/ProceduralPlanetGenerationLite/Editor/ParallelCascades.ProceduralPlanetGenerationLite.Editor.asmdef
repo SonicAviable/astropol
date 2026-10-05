@@ -1,0 +1,20 @@
+{
+    "name": "ParallelCascades.ProceduralPlanetGenerationLite.Editor",
+    "rootNamespace": "",
+    "references": [
+    "GUID:807202b5c618441c9689bf26d7cfc815",
+    "GUID:ff7b28f53a0678d48a34d55618a8ff95",
+    "GUID:c9e5275b6e324ef3aa0128c00005595a",
+    "GUID:1b6aab0794c6d3644b764c126f5f1ea9"],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

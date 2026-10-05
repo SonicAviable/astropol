@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b77785e903eb89546b6725d73a19ae4d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Gas Giants/Gas Giant 3/Gas Giant Lite.mat
+  uploadId: 850742

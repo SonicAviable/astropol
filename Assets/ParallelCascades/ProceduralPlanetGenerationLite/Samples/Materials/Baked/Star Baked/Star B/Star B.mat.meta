@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 685a5b7f9632b3047b466753ad60ebd8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Star Baked/Star B/Star B.mat
+  uploadId: 850742

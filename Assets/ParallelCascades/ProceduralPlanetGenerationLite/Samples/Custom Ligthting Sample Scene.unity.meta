@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4173699ebbbc6934c940412643c0244d
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Custom Ligthting Sample Scene.unity
+  uploadId: 850742

@@ -1,0 +1,19 @@
+{
+    "name": "ParallelCascades.ProceduralPlanetGenerationCommon.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:c9e5275b6e324ef3aa0128c00005595a",
+        "GUID:3ae13be58e62afe4fa637eeffacdcf8f"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

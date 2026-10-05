@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d31e29148970a4f4faf137e95edb89b7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Stars/Blue Star/Star Material.mat
+  uploadId: 850742

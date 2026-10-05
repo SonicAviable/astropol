@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5e70fe4ada7b59b4da24f60dd86ecde8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Earth Baked/Earth C/Earth Glow.mat
+  uploadId: 850742

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 411ffaf473d806342acc7338d69d5ce9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationCommon/URP Settings/Sample Universal Render Pipeline Asset.asset
+  uploadId: 850742

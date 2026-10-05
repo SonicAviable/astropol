@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 23d0f4014d264fc98c4e14e248ca1921
+timeCreated: 1765381633
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralShaders/HLSL/DoubleWarp.hlsl
+  uploadId: 850742

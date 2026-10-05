@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 058c498e56a75824aa62026c9078169a
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/LICENSE.md
+  uploadId: 850742

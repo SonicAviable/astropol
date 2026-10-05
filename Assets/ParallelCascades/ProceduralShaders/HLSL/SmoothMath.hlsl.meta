@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 56e1567225494cf387a893a1eefc3311
+timeCreated: 1763937852
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralShaders/HLSL/SmoothMath.hlsl
+  uploadId: 850742

@@ -1,0 +1,26 @@
+﻿fileFormatVersion: 2
+guid: ef9120f34c11b854e9dd6c34506ef249
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 32
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Play
+  - Segoe UI Symbol
+  - Segoe UI
+  - Arial Unicode MS
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: d23a6372ea87bfe4aadf0844e4fdc44b, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  subsetRecipes: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

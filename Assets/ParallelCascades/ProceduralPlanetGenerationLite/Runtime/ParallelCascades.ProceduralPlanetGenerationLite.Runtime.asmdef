@@ -1,0 +1,15 @@
+{
+    "name": "ParallelCascades.ProceduralPlanetGenerationLite.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "GUID:807202b5c618441c9689bf26d7cfc815"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

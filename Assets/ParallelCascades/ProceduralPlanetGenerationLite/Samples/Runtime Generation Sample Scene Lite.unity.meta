@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 727a8795d22a0bd4991657e6a02b656b
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Runtime Generation Sample Scene Lite.unity
+  uploadId: 850742

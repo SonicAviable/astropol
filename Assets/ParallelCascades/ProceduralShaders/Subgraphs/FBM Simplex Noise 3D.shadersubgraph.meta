@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 0007a8b8ef6827e4998abd368ca9ff63
+timeCreated: 1719323832
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralShaders/Subgraphs/FBM Simplex Noise 3D.shadersubgraph
+  uploadId: 850742

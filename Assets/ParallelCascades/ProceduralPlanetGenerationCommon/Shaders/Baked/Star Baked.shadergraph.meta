@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: e915ab30771bd1044a4b715e61139f86
+timeCreated: 1768576387
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationCommon/Shaders/Baked/Star Baked.shadergraph
+  uploadId: 850742

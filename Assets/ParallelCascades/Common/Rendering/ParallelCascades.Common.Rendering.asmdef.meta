@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: fd0da52959e276d408f7b8a4080be717
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/Common/Rendering/ParallelCascades.Common.Rendering.asmdef
+  uploadId: 850742

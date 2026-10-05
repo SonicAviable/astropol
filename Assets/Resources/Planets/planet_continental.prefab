@@ -1,0 +1,198 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &607116814531090060
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8233973224624205233}
+  - component: {fileID: 6377732689895166269}
+  - component: {fileID: 7498512417860262342}
+  - component: {fileID: 8661239461039243684}
+  - component: {fileID: 7324291015792597508}
+  m_Layer: 0
+  m_Name: planet_continental
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8233973224624205233
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 607116814531090060}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 18.21419, y: 12.749932, z: 18.214191}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &6377732689895166269
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 607116814531090060}
+  m_Mesh: {fileID: 2865741508147930167, guid: fc4f6b2891735cc4eb1c2fd1a1017b8d, type: 3}
+--- !u!23 &7498512417860262342
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 607116814531090060}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 402c5044c1bd8c544870f97569b66ced, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8661239461039243684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 607116814531090060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 359c6c4a2cd7446ba38187068207e34d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ParallelCascades.ProceduralPlanetGenerationLite.Runtime::ParallelCascades.ProceduralPlanetGenerationLite.Runtime.ProceduralEarthLikePlanetLite
+  m_renderer: {fileID: 7498512417860262342}
+  m_colorSeed: 224
+  m_featuresSeed: 224
+  m_landColor:
+    m_colorGradientTexture: {fileID: 2800000, guid: acf9fbd403754d849abd5f67019b22e0, type: 3}
+    m_colorGradient:
+      serializedVersion: 2
+      key0: {r: 0.3909705, g: 0.31379324, b: 0.70018137, a: 1}
+      key1: {r: 0.60549676, g: 0.5555046, b: 0.8057903, a: 1}
+      key2: {r: 0.23706403, g: 0.19026779, b: 0.4245533, a: 0}
+      key3: {r: 0.78833735, g: 0.7615151, b: 0.89580077, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 18508
+      ctime2: 56587
+      ctime3: 65535
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 4
+      m_NumAlphaKeys: 2
+  m_surface:
+    m_continentScaleRange: {x: 0.5, y: 2}
+    m_elevationScaleRange: {x: 0.6, y: 1.5}
+    m_oceanLandThresholdRange: {x: 0, y: 0.4}
+    m_iceCapsEdgeThresholdRange: {x: 0.1, y: 0.45}
+  m_oceanColorsPalette:
+    serializedVersion: 2
+    key0: {r: 0, g: 0.1, b: 0.4, a: 1}
+    key1: {r: 0, g: 0.6, b: 0.5, a: 1}
+    key2: {r: 0.2, g: 0.15, b: 0.15, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 32768
+    ctime2: 65535
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 3
+    m_NumAlphaKeys: 2
+  m_fresnel:
+    m_fresnelIntensity: 1
+  m_glow:
+    m_glow: {fileID: 7324291015792597508}
+--- !u!114 &7324291015792597508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 607116814531090060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61df9695e844a444393410a128b74156, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ParallelCascades.ProceduralPlanetGenerationCommon.Runtime::ParallelCascades.ProceduralPlanetGenerationCommon.Runtime.PlanetGlow
+  m_meshRadius: 0.5
+  m_effectScale: 1.5
+  m_densityFalloff: 12.5
+  m_material: {fileID: 2100000, guid: 366765031921c454db787a149c50cb94, type: 2}
+  m_renderPassEvent: 450
+  m_color: {r: 0, g: 0.55377334, b: 0.49075466, a: 1}

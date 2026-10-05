@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1b6aab0794c6d3644b764c126f5f1ea9
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Runtime/ParallelCascades.ProceduralPlanetGenerationLite.Runtime.asmdef
+  uploadId: 850742

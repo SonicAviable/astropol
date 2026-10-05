@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 2af2008550ec8ce4bbb0bda41615d0f8
+timeCreated: 1734689838
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationCommon/Shaders/HLSL/PlanetGlow.hlsl
+  uploadId: 850742

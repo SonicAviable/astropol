@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6da7c06148763a14a8a7972d12e45218
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Procedural/Earth-like/Planet Glow Material.mat
+  uploadId: 850742

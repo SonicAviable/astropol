@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 0c4633d324374766ab399eb558649fa4
+timeCreated: 1768576387
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationCommon/Shaders/Baked/Gas Giant Baked.shadergraph
+  uploadId: 850742

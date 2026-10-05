@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: ef371d6744b57c443811a17b801eec77
+timeCreated: 1731103714
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationCommon/Shaders/HLSL/AsteroidRing.hlsl
+  uploadId: 850742

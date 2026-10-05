@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d5bf04f37c17629478289cfe7993db13
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Gas Giant Baked/Gas Giant B/Gas Giant Baked B.mat
+  uploadId: 850742

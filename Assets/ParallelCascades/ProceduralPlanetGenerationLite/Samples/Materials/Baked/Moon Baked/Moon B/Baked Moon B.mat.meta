@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0eb8e79e0013f1543b81df2eeaafff72
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Baked/Moon Baked/Moon B/Baked Moon B.mat
+  uploadId: 850742

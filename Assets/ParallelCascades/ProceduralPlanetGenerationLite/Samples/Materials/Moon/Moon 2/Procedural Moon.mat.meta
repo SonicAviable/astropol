@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c64ffe60335d0944d95d3e4a80d7c0f9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 296362
+  packageName: Procedural Planet Generation - Lite
+  packageVersion: 3.1.0
+  assetPath: Assets/ParallelCascades/ProceduralPlanetGenerationLite/Samples/Materials/Moon/Moon 2/Procedural Moon.mat
+  uploadId: 850742

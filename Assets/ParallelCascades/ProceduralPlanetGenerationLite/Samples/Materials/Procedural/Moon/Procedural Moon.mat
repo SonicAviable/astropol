@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-5282484015304927295
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 10
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Procedural Moon
+  m_Shader: {fileID: -6465566751694194690, guid: 362dfe78a3e535e408e0aa6c2efb44a7, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _Color_Gradient_Texture:
+        m_Texture: {fileID: 2800000, guid: 27f153e71ebffc94cbc9e005643c9472, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Heightmap_Cubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Static_Cubemap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Color_Saturation: 0.4
+    - _Crater_Normal_Multiplier: 0.5
+    - _Craters_A_Density: 6.754924
+    - _Craters_A_Rim_Steepness: 1
+    - _Craters_A_Rim_Width: 0.5
+    - _Craters_B_Density: 10.027194
+    - _Craters_B_Rim_Steepness: 1
+    - _Craters_B_Rim_Width: 0.5
+    - _Cubemap_Face: 0
+    - _Cubemap_Face_Resolution: 2048
+    - _Filtering_Detail_Level: 1
+    - _Heightmap_Contrast: 5.09768
+    - _Heightmap_Cubemap_Face_Resolution: 2048
+    - _Heightmap_Cubemap_Offset: 0.2
+    - _Heightmap_Cubemap_Strength: 20
+    - _NORMAL_MODE: 0
+    - _Normal_Strength: 0.02
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _RENDER_MODE: 0
+    - _Ridge_Gain: -0.1
+    - _Ridge_Normal_Multiplier: 0.2
+    - _Ridge_Power: 10
+    - _Ridges_Mask_Scale: 7.700511
+    - _Ridges_Scale: 4.6703978
+    - _Surface_Color_Saturation: 0.4
+    - _Surface_Noise_Scale: 0.51701266
+    - _Surface_Normal_Multiplier: 0.03
+    m_Colors:
+    - _Crater_B_Radius_Range: {r: 0.1, g: 0.2, b: 0, a: 0}
+    - _Craters_A_Depth_Range: {r: -0.5, g: -1, b: 0, a: 0}
+    - _Craters_A_Radius_Range: {r: 0.05, g: 0.2, b: 0, a: 0}
+    - _Craters_A_Smoothness_Range: {r: 0, g: 0.2, b: 0, a: 0}
+    - _Craters_B_Depth_Range: {r: -1, g: -2, b: 0, a: 0}
+    - _Craters_B_Smoothness_Range: {r: 0, g: 0.2, b: 0, a: 0}
+    - _Randomization_Offset: {r: 0, g: 0, b: 0, a: 0}
+    - _Ridge_Mask_Smoothstep: {r: -0.4, g: 0.1, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
