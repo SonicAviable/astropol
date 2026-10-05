@@ -65,6 +65,7 @@ namespace StellarisClone.Rendering
             CreateProceduralSprites();
             CreateOrganicBorderPlane();
             RenderGalaxy();
+            CreateBackdrop();
             CreateHolographicBeacon();
             RefreshTerritoryVisuals();
             UIManager.Instance?.RefreshOutliner();
@@ -667,6 +668,8 @@ namespace StellarisClone.Rendering
                 if (kv.Value != null) kv.Value.SetActive(!isolate);
 
             if (_markersRoot != null) _markersRoot.SetActive(!isolate);
+            if (_diskPlane != null) _diskPlane.SetActive(!isolate);
+            ApplySkyMood(isolate);
         }
 
         private Color GetStellarisColor(StarSpectralClass c) => c switch
