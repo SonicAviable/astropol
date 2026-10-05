@@ -76,7 +76,10 @@ namespace StellarisClone.Rendering
         private float _anim;
         private Color _owner;      // цвет владельца
         private Color _accent;     // цвет глифа/действия
-        private string _styleKey;
+        // Последний применённый стиль — чтобы не перекрашивать значок каждый кадр
+        private Sprite _styleGlyph;
+        private int _styleOwner = int.MinValue;
+        private bool _styleCombat;
         private bool _selected;
         private float _selectPunch;
         private float _selectFlash;   // 1 → 0 после выделения
@@ -394,9 +397,10 @@ namespace StellarisClone.Rendering
             _accent = typeCol;
 
             var glyph = GlyphFor(d, out float gScale);
-            string key = $"{glyph.GetInstanceID()}|{d.OwnerId}|{d.InCombat}";
-            if (key == _styleKey) return;
-            _styleKey = key;
+            if (glyph == _styleGlyph && d.OwnerId == _styleOwner && d.InCombat == _styleCombat) return;
+            _styleGlyph = glyph;
+            _styleOwner = d.OwnerId;
+            _styleCombat = d.InCombat;
 
             _glyphSr.sprite = glyph;
             _glyphSr.transform.localScale = Vector3.one * gScale;
