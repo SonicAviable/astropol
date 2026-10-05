@@ -477,7 +477,9 @@ namespace StellarisClone.Rendering
             _hyperlanesParent = new GameObject("Hyperlanes");
             _hyperlanesParent.transform.SetParent(transform, false);
 
-            Shader lineShader = GetLineShader();
+            // Шейдер спрайтов: учитывает цвет вершин и прозрачность (URP Unlit непрозрачен
+            // и игнорирует градиент — коридоры получались одинаково белыми)
+            Shader lineShader = GetSpriteShader();
             Material lineMat = lineShader != null ? new Material(lineShader) : null;
 
             foreach (var lane in _generator.Hyperlanes)
@@ -677,12 +679,24 @@ namespace StellarisClone.Rendering
             if (Camera.main != null) _cam = Camera.main.transform;
         }
 
+        private TextMesh _text;
+        private Color _baseColor;
+
         private void LateUpdate()
         {
             if (_cam == null) return;
             float dist = Vector3.Distance(_cam.position, transform.position);
             float scale = Mathf.Clamp(dist * 0.008f, 0.85f, 2.6f);
             transform.localScale = Vector3.one * scale;
+
+            // Как в Stellaris: название империи — для обзора издалека, вблизи плавно исчезает
+            if (_text == null) { _text = GetComponent<TextMesh>(); if (_text != null) _baseColor = _text.color; }
+            if (_text == null) return;
+            float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(95f, 150f, dist));
+            var c = _baseColor; c.a *= a;
+            _text.color = c;
+            var mr = GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = a > 0.01f;
         }
     }
 
@@ -705,6 +719,10 @@ namespace StellarisClone.Rendering
         private float _twinkleProgress;       // 0..1, 0 = не мигает
         private const float TwinkleDuration = 0.7f;
         private float _ringBaseScale;
+
+        private Camera _cam;
+        private const float MinSpritePx = 26f;
+        private const float SpriteWorldSize = 2.56f;   // спрайт 256 px при 100 px/ед.
 
         /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без вспышек).</summary>
         public float Dim = 1f;
@@ -774,6 +792,15 @@ namespace StellarisClone.Rendering
 
             // --- ПРИМЕНЕНИЕ К ЯДРУ ---
             float scale = _baseScale * breathe * (1f + twinkleCoreBoost * 0.25f) * Mathf.Lerp(0.65f, 1f, _dimShown);
+            // Издалека звезда не должна исчезать: минимум ~26 px спрайта (ядро ~8 px), неизведанные — меньше
+            if (_cam == null) _cam = Camera.main;
+            if (_cam != null)
+            {
+                float dist = Vector3.Distance(_cam.transform.position, transform.position);
+                float wpp = 2f * dist * Mathf.Tan(_cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+                float minScale = wpp * MinSpritePx / SpriteWorldSize * Mathf.Lerp(0.7f, 1f, _dimShown);
+                scale = Mathf.Max(scale, minScale * breathe);
+            }
             _core.transform.localScale = Vector3.one * scale;
 
             // Медленное вращение — неровный край поворачивается
