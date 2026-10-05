@@ -56,7 +56,8 @@ namespace StellarisClone.Rendering
             {
                 var s = _generator.Systems[i];
                 if (_starAnims[i] == null) continue;
-                _starAnims[i].Dim = IsKnownToPlayer(s) ? 1f : s.OwnerId > 0 ? 0.6f : 0.25f;
+                // Как в Stellaris: неизведанные звёзды видны, только чуть блёклее
+                _starAnims[i].Dim = IsKnownToPlayer(s) ? 1f : s.OwnerId > 0 ? 0.85f : 0.7f;
             }
 
             while (_laneWidthPx.Count < _hyperlaneRenderers.Count) _laneWidthPx.Add(1.8f);
@@ -73,23 +74,24 @@ namespace StellarisClone.Rendering
                 float alphaA, alphaB, px;
                 if (a.OwnerId == 0 && b.OwnerId == 0)
                 {
-                    c = new Color(0.40f, 0.95f, 1.00f);          // внутренние коридоры империи игрока
-                    alphaA = alphaB = 0.78f;
-                    px = 2.4f;
+                    c = new Color(0.30f, 1.00f, 0.95f);          // внутренние коридоры империи игрока
+                    alphaA = alphaB = 0.9f;
+                    px = 2.2f;
                 }
                 else if (a.OwnerId > 0 && a.OwnerId == b.OwnerId)
                 {
                     c = new Color(1.00f, 0.52f, 0.46f);          // коридоры чужой империи
-                    alphaA = ka ? 0.55f : 0.28f;
-                    alphaB = kb ? 0.55f : 0.28f;
+                    alphaA = ka ? 0.7f : 0.45f;
+                    alphaB = kb ? 0.7f : 0.45f;
                     px = 2.0f;
                 }
                 else
                 {
-                    c = new Color(0.60f, 0.78f, 1.00f);          // нейтральные / пограничные
-                    alphaA = ka ? 0.55f : 0.08f;
-                    alphaB = kb ? 0.55f : 0.08f;
-                    px = 1.9f;
+                    // Нейтральные: светлые, почти белые; к неизведанному концу — серее и тише
+                    c = ka && kb ? new Color(0.80f, 0.88f, 1.00f) : new Color(0.72f, 0.76f, 0.84f);
+                    alphaA = ka ? 0.62f : 0.3f;
+                    alphaB = kb ? 0.62f : 0.3f;
+                    px = 1.6f;
                 }
                 _laneWidthPx[i] = px;
 

@@ -34,6 +34,7 @@ namespace StellarisClone.Rendering
         private Color _currentBeaconColor = new Color(0.3f, 0.9f, 1f, 1f);
 
         private Sprite _starCoreSprite;
+        private Sprite _starHotSprite;
         private Sprite _starRingSprite;
         private Sprite _beaconOuterSprite;
         private Sprite _beaconInnerSprite;
@@ -74,9 +75,27 @@ namespace StellarisClone.Rendering
         private void CreateProceduralSprites()
         {
             _starCoreSprite    = GenerateStarSprite(256);
+            _starHotSprite     = GenerateHotCoreSprite(64);
             _starRingSprite    = GenerateTwinkleRingSprite(256);
             _beaconOuterSprite = GenerateOuterBeaconSprite(256);
             _beaconInnerSprite = GenerateInnerRingSprite(256);
+        }
+
+        /// <summary>Раскалённое белое ядро звезды (рисуется поверх цветного ореола, как в Stellaris).</summary>
+        private static Sprite GenerateHotCoreSprite(int res)
+        {
+            var tex = new Texture2D(res, res, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            float c = (res - 1) * 0.5f;
+            for (int y = 0; y < res; y++)
+            for (int x = 0; x < res; x++)
+            {
+                float n = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;   // 0..1
+                float a = Mathf.Exp(-n * n * 9f) + Mathf.Exp(-n * n * 40f) * 0.6f;
+                a *= 1f - Mathf.SmoothStep(0.8f, 1f, n);
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(a)));
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, res, res), new Vector2(0.5f, 0.5f), 100);
         }
 
         /// <summary>
@@ -445,9 +464,19 @@ namespace StellarisClone.Rendering
                 ringSr.enabled = false;
                 ringObj.AddComponent<BillboardLookAt>();
 
+                // Белое «горячее» ядро поверх цветного ореола — звезда читается с любого зума
+                var hotObj = new GameObject("StarHot");
+                hotObj.transform.SetParent(node.transform, false);
+                var hotSr = hotObj.AddComponent<SpriteRenderer>();
+                hotSr.sprite = _starHotSprite;
+                if (spriteShader != null) hotSr.material = new Material(spriteShader);
+                hotSr.sortingOrder = 17;
+                hotObj.AddComponent<BillboardLookAt>();
+
                 // Анимация (вращение, дыхание, моргание)
                 var anim = coreObj.AddComponent<StarAnimator>();
                 anim.Initialize(coreSr, ringSr, 2.4f, starCol);
+                anim.Hot = hotSr;
                 _starAnims.Add(anim);
 
                 // Плашка с именем
@@ -721,7 +750,10 @@ namespace StellarisClone.Rendering
         private float _ringBaseScale;
 
         private Camera _cam;
-        private const float MinSpritePx = 32f;
+        private const float MinSpritePx = 40f;     // цветной ореол
+        private const float HotPx = 10f;            // белое ядро
+        private const float HotSpriteWorld = 0.64f; // спрайт ядра 64 px при 100 px/ед.
+        public SpriteRenderer Hot;
         private const float SpriteWorldSize = 2.56f;   // спрайт 256 px при 100 px/ед.
 
         /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без вспышек).</summary>
@@ -807,9 +839,22 @@ namespace StellarisClone.Rendering
             _core.transform.localRotation = Quaternion.Euler(0f, 0f, t * 22f);
 
             // Неизведанная звезда — блёклая, ближе к серому
-            Color c = Color.Lerp(new Color(0.55f, 0.6f, 0.68f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
-            c.a = Mathf.Clamp01(alphaBreathe + twinkleCoreBoost) * Mathf.Lerp(0.38f, 1f, _dimShown);
+            Color c = Color.Lerp(new Color(0.62f, 0.66f, 0.74f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
+            c.a = Mathf.Clamp01(alphaBreathe + twinkleCoreBoost) * Mathf.Lerp(0.45f, 1f, _dimShown);
             _core.color = c;
+
+            // Белое ядро: постоянный экранный размер, лёгкий оттенок класса звезды
+            if (Hot != null && _cam != null)
+            {
+                float d = Vector3.Distance(_cam.transform.position, transform.position);
+                float w = 2f * d * Mathf.Tan(_cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+                float hs = Mathf.Max(_baseScale * 0.35f, w * HotPx / HotSpriteWorld) * Mathf.Lerp(0.8f, 1f, _dimShown)
+                         * (1f + twinkleCoreBoost * 0.35f);
+                Hot.transform.localScale = Vector3.one * hs;
+                var hc = Color.Lerp(Color.white, _baseColor, 0.22f);
+                hc.a = Mathf.Lerp(0.7f, 1f, _dimShown);
+                Hot.color = hc;
+            }
 
             // --- ПРИМЕНЕНИЕ К КОЛЬЦУ ---
             if (_ring != null)
