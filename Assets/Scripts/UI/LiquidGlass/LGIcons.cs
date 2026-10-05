@@ -18,7 +18,9 @@ namespace StellarisClone.Rendering
         // Режимы карты
         MapSimple, MapPolitical, MapResources, MapLanes, MapExplored,
         // Меню
-        Save, Load, Speaker, Monitor, Dice, Info, Power, Trash
+        Save, Load, Speaker, Monitor, Dice, Info, Power, Trash,
+        // Дипломатия
+        Swords, Peace, Handshake, Gift, Border, Betrayal, Siege, Wrench
     }
 
     /// <summary>
@@ -543,6 +545,72 @@ namespace StellarisClone.Rendering
                             U(Box(p, V(-0.2f, -0.22f), V(0.05f, 0.42f)), Box(p, V(0.2f, -0.22f), V(0.05f, 0.42f)))),
                         Box(p, V(0f, 0.6f), V(0.76f, 0.08f), 0.04f),
                         Box(p, V(0f, 0.76f), V(0.22f, 0.09f), 0.04f));
+
+                case LGIcon.Swords:
+                    return p => U(
+                        Segment(p, V(-0.72f, -0.72f), V(0.62f, 0.62f), 0.09f),
+                        Segment(p, V(0.72f, -0.72f), V(-0.62f, 0.62f), 0.09f),
+                        Triangle(p, V(0.52f, 0.72f), V(0.85f, 0.85f), V(0.72f, 0.52f)),
+                        Triangle(p, V(-0.52f, 0.72f), V(-0.85f, 0.85f), V(-0.72f, 0.52f)),
+                        Segment(p, V(-0.78f, -0.42f), V(-0.42f, -0.78f), 0.08f),
+                        Segment(p, V(0.78f, -0.42f), V(0.42f, -0.78f), 0.08f));
+
+                case LGIcon.Peace:
+                    return p => U(Ring(p, Vector2.zero, 0.78f, 0.1f),
+                                  Mathf.Max(Segment(p, V(0f, 0.78f), V(0f, -0.78f), 0.09f), Circle(p, Vector2.zero, 0.8f)),
+                                  Segment(p, V(0f, -0.05f), V(-0.55f, -0.55f), 0.09f),
+                                  Segment(p, V(0f, -0.05f), V(0.55f, -0.55f), 0.09f));
+
+                case LGIcon.Handshake:
+                    return p => U(
+                        Box(Rot(p - V(-0.38f, 0.02f), 28f), Vector2.zero, V(0.46f, 0.17f), 0.12f),
+                        Box(Rot(p - V(0.38f, 0.02f), -28f), Vector2.zero, V(0.46f, 0.17f), 0.12f),
+                        Box(p, V(0f, -0.12f), V(0.3f, 0.2f), 0.14f),
+                        Box(p, V(-0.86f, 0.3f), V(0.1f, 0.3f), 0.04f),
+                        Box(p, V(0.86f, 0.3f), V(0.1f, 0.3f), 0.04f));
+
+                case LGIcon.Gift:
+                    return p => U(
+                        Sub(Box(p, V(0f, -0.3f), V(0.7f, 0.52f), 0.08f), Box(p, V(0f, -0.3f), V(0.08f, 0.6f))),
+                        Sub(Box(p, V(0f, 0.36f), V(0.82f, 0.16f), 0.06f), Box(p, V(0f, 0.36f), V(0.08f, 0.3f))),
+                        Ring(p, V(-0.24f, 0.7f), 0.18f, 0.07f), Ring(p, V(0.24f, 0.7f), 0.18f, 0.07f));
+
+                case LGIcon.Border:
+                    return p => U(
+                        Segment(p, V(-0.9f, -0.8f), V(-0.9f, 0.8f), 0.06f),
+                        Segment(p, V(0.9f, -0.8f), V(0.9f, 0.8f), 0.06f),
+                        Box(p, V(0f, 0.5f), V(0.1f, 0.24f), 0.04f),
+                        Box(p, V(0f, 0f), V(0.1f, 0.14f), 0.04f),
+                        Box(p, V(0f, -0.5f), V(0.1f, 0.24f), 0.04f),
+                        Triangle(p, V(-0.75f, 0.25f), V(-0.25f, 0f), V(-0.75f, -0.25f)),
+                        Triangle(p, V(0.75f, 0.25f), V(0.25f, 0f), V(0.75f, -0.25f)));
+
+                case LGIcon.Betrayal:
+                    return p =>
+                    {
+                        float heart = U(Circle(p, V(-0.36f, 0.3f), 0.4f), Circle(p, V(0.36f, 0.3f), 0.4f),
+                                        Triangle(p, V(-0.76f, 0.2f), V(0.76f, 0.2f), V(0f, -0.85f)));
+                        float crack = U(Segment(p, V(0.05f, 0.75f), V(-0.12f, 0.25f), 0.07f),
+                                        Segment(p, V(-0.12f, 0.25f), V(0.14f, -0.1f), 0.07f),
+                                        Segment(p, V(0.14f, -0.1f), V(-0.04f, -0.9f), 0.07f));
+                        return Sub(heart, crack);
+                    };
+
+                case LGIcon.Siege:
+                    return p => U(Ring(p, Vector2.zero, 0.42f, 0.08f),
+                                  Triangle(p, V(0f, 0.98f), V(-0.18f, 0.6f), V(0.18f, 0.6f)),
+                                  Triangle(p, V(0f, -0.98f), V(-0.18f, -0.6f), V(0.18f, -0.6f)),
+                                  Triangle(p, V(0.98f, 0f), V(0.6f, -0.18f), V(0.6f, 0.18f)),
+                                  Triangle(p, V(-0.98f, 0f), V(-0.6f, -0.18f), V(-0.6f, 0.18f)),
+                                  Circle(p, Vector2.zero, 0.14f));
+
+                case LGIcon.Wrench:
+                    return p =>
+                    {
+                        float handle = Segment(p, V(-0.66f, -0.66f), V(0.2f, 0.2f), 0.13f);
+                        float head = Sub(Circle(p, V(0.42f, 0.42f), 0.38f), Box(Rot(p - V(0.58f, 0.58f), -45f), Vector2.zero, V(0.12f, 0.36f)));
+                        return U(handle, head);
+                    };
             }
             return p => Circle(p, Vector2.zero, 0.6f);
         }

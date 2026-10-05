@@ -8,7 +8,12 @@ namespace StellarisClone.Core
         public static TimeManager Instance { get; private set; }
         public event Action<int, int, int> OnDayPassed;
 
-        [SerializeField] private float baseSecondsPerDay = 1.0f;
+        /// <summary>Реальных секунд на игровой день при скорости ×1 (партия 2200–2235 ≈ 2,6 ч на ×1, ≈ 40 мин на ×4).</summary>
+        public const float DefaultSecondsPerDay = 0.75f;
+
+        [SerializeField] private float secondsPerDay = DefaultSecondsPerDay;
+
+        public float SecondsPerDay => secondsPerDay;
 
         private float _timer;
         private int _currentSpeed = 1;
@@ -30,7 +35,7 @@ namespace StellarisClone.Core
             HandleInput();
             if (_currentSpeed == 0) return;
 
-            float interval = baseSecondsPerDay / _currentSpeed;
+            float interval = secondsPerDay / _currentSpeed;
             _timer += Time.deltaTime;
             if (_timer >= interval)
             {

@@ -268,7 +268,7 @@ _font = GameFont.Regular;
             foreach (var m in mods)
             {
                 var captured = m;
-                var go = Btn(_picker.transform, $"{captured.Name}  ({captured.AlloyCost:0} ⬢)", new Vector2(300, 30), UIManager.DS.BtnPrimary, () =>
+                var go = Btn(_picker.transform, $"{captured.Name}  ({FleetManager.ShipAlloyCost(captured.AlloyCost, 0):0} спл.)", new Vector2(300, 30), UIManager.DS.BtnPrimary, () =>
                 {
                     slots[index] = captured.Id;
                     ShipDesignManager.Instance.Recalc(_draft);
@@ -298,7 +298,9 @@ _font = GameFont.Regular;
                 $"DPS: <color=#33E6CC><b>{_draft.Dps:0.0}</b></color>\n" +
                 $"Уклонение: {_draft.Evasion:0}%\n" +
                 $"Энергобаланс: <color={powerCol}>{_draft.PowerBalance:+0.0;-0.0}</color>\n" +
-                $"Стоимость: <color=#F2C747>{_draft.AlloyCost:0} сплавов</color>\n\n" +
+                $"Стоимость: <color=#F2C747>{FleetManager.ShipAlloyCost(_draft.AlloyCost, 0):0} сплавов</color>\n" +
+                $"Содержание: <color=#FF8888>{FleetData.UpkeepFor(FleetType.Military, _draft.HullClass):0.#} гелия-3/мес</color>, " +
+                $"флотский лимит {EmpireEconomy.NavalSize(_draft.HullClass)}\n\n" +
                 (_draft.IsPowerValid
                     ? "<color=#4DF08C>Реактор держит нагрузку.</color>"
                     : "<color=#FF5555>Перегрузка энергосети. Усильте реактор.</color>");

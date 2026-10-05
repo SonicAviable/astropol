@@ -199,9 +199,8 @@ namespace StellarisClone.Core
 
             float offerV = OfferValue();
             float requestV = RequestValue();
-            float rel = ai.RelationsWithPlayer;
 
-            float acceptRatio = Mathf.Clamp(0.70f + rel / 200f, 0.55f, 1.05f);
+            float acceptRatio = AcceptRatio(ai);
             float threshold = requestV * acceptRatio;
 
             if (requestV <= 0.01f)
@@ -226,6 +225,14 @@ namespace StellarisClone.Core
                 _fairnessText.text = $"<color=#FF8888>AI откажет · нужно +{need:0} ценности</color>";
                 _fairnessTargetColor = UIManager.DS.Red;
             }
+        }
+
+        /// <summary>Какую долю запрошенного нужно предложить: зависит от отношения и характера ИИ.</summary>
+        private static float AcceptRatio(AIEmpireManager ai)
+        {
+            float ratio = Mathf.Clamp(0.70f + ai.Opinion / 200f, 0.55f, 1.05f);
+            if (ai.Personality == AIPersonality.Trader) ratio *= 0.92f;
+            return ratio;
         }
 
         private void ChangeGive(ref int field, int delta, float available, ref float flashTimer)
@@ -299,15 +306,19 @@ namespace StellarisClone.Core
                 return;
             }
 
-            float rel = ai.RelationsWithPlayer;
-            float acceptRatio = Mathf.Clamp(0.70f + rel / 200f, 0.55f, 1.05f);
+            if (ai.AtWar)
+            {
+                ShowStatus("Во время войны торговля невозможна.", UIManager.DS.Red);
+                return;
+            }
+            float acceptRatio = AcceptRatio(ai);
             bool accepted = offerV >= requestV * acceptRatio;
 
             if (!accepted)
             {
                 ShowStatus("Предложение отвергнуто.", UIManager.DS.Red);
                 StartCoroutine(ShakeRoot(0.25f, 8f));
-                ai.RelationsWithPlayer = Mathf.Clamp(ai.RelationsWithPlayer - 2f, -100f, 40f);
+                ai.RegisterTrade(-1f);
                 Refresh();
                 return;
             }
@@ -328,7 +339,8 @@ namespace StellarisClone.Core
             ai.AddStock("alloys",    _giveAlloys);
             ai.AddStock("influence", _giveInfluence);
 
-            ai.RelationsWithPlayer = Mathf.Clamp(ai.RelationsWithPlayer + 1.5f, -100f, 40f);
+            // Выгодная для ИИ сделка улучшает отношение (торговая фракция ценит это сильнее)
+            ai.RegisterTrade(1.5f + (offerV - requestV) / 60f);
 
             NotificationCenter.Show("Сделка заключена",
                 $"Отдано: ⚡{_giveEnergy} ◆{_giveMinerals} ⬢{_giveAlloys} ★{_giveInfluence}   ·   " +

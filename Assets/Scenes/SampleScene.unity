@@ -568,7 +568,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e406cb888d1b2141b9bf4494d8d8518, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StellarisClone.Core.TimeManager
-  baseSecondsPerDay: 1
+  secondsPerDay: 0.75
 --- !u!114 &699953281
 MonoBehaviour:
   m_ObjectHideFlags: 0

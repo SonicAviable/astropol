@@ -105,6 +105,7 @@ namespace StellarisClone.Core
             EnsureComp<AIEmpireManager>("[Managers] AIEmpireManager");
             EnsureComp<CombatManager>("[Managers] CombatManager");
             EnsureComp<SystemViewManager>("[Managers] SystemViewManager");
+            EnsureComp<SiegeManager>("[Managers] SiegeManager");
             EnsureComp<VictoryManager>("[Managers] VictoryManager");
         }
 

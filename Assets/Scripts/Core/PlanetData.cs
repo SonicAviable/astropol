@@ -84,6 +84,13 @@ namespace StellarisClone.Core
         public int MaxDistricts;
         public List<DistrictData> Districts = new List<DistrictData>();
 
+        /// <summary>Система, в которой находится планета (проставляется при генерации/загрузке).</summary>
+        [NonSerialized] public StarSystem ParentSystem;
+
+        /// <summary>Владелец планеты = владелец системы (-1 — ничья).</summary>
+        public int OwnerId => ParentSystem != null ? ParentSystem.OwnerId : -1;
+        public bool IsPlayerOwned => OwnerId == 0;
+
         public int BuiltDistricts => Districts.Count;
 
         public int HousingCapacity
@@ -182,6 +189,7 @@ namespace StellarisClone.Core
 
         public bool CanBuildDistrict(DistrictType t)
         {
+            if (!IsPlayerOwned) return false;
             if (BuiltDistricts >= MaxDistricts) return false;
             var eco = EconomyManager.Instance;
             if (eco == null) return false;
@@ -226,12 +234,23 @@ namespace StellarisClone.Core
 
         public bool CanTerraform => Type == PlanetType.Barren || Type == PlanetType.Molten || Type == PlanetType.Desert;
 
+        public const float ColonyMineralsCost = 80f;
+        public const float ColonyAlloysCost = 20f;
+        public const float ColonyInfluenceCost = 25f;
+
         public bool TryFoundColony()
         {
-            if (!CanColonize) return false;
+            if (!CanColonize || !IsPlayerOwned) return false;
             var eco = EconomyManager.Instance;
-            if (eco == null || !eco.CanAfford(0f, 80f, 20f, 25f)) return false;
-            if (!eco.TrySpend(0f, 80f, 20f, 25f)) return false;
+            if (eco == null || !eco.CanAfford(0f, ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost)) return false;
+            if (!eco.TrySpend(0f, ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost)) return false;
+            SettleColony();
+            return true;
+        }
+
+        /// <summary>Заселить планету (без оплаты — её проверяет вызывающий).</summary>
+        public void SettleColony()
+        {
             Population = 2;
             PopGrowthProgress = 0f;
             if (Districts.Count == 0)
@@ -239,12 +258,11 @@ namespace StellarisClone.Core
                 Districts.Add(new DistrictData(DistrictType.Urban));
                 Districts.Add(new DistrictData(DistrictType.Mining));
             }
-            return true;
         }
 
         public bool TryStartTerraform()
         {
-            if (!CanTerraform || TerraformingInProgress) return false;
+            if (!CanTerraform || TerraformingInProgress || !IsPlayerOwned) return false;
             var eco = EconomyManager.Instance;
             if (eco == null || !eco.CanAfford(120f, 90f, 0f, 10f)) return false;
             if (!eco.TrySpend(120f, 90f, 0f, 10f)) return false;

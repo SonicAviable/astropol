@@ -5,7 +5,17 @@ using StellarisClone.Rendering;
 
 namespace StellarisClone.Core
 {
-    public class AIEmpireManager : MonoBehaviour
+    /// <summary>
+    /// Империя-соперник. Играет по тем же правилам, что и игрок:
+    ///   • своя экономика — колонии, районы, добывающие станции, содержание флота и форпостов;
+    ///   • свои исследования и бонусы технологий (EmpireBonuses);
+    ///   • разведка и экспансия по ценности систем;
+    ///   • флот, который собирается в группу, защищает границы, осаждает и отступает при слабости
+    ///     (AIEmpireManager.Military.cs);
+    ///   • дипломатия с объяснимым отношением, пактами, войной и миром (AIEmpireManager.Diplomacy.cs).
+    /// Характер (воинственный / научный / торговый) зависит от фракции.
+    /// </summary>
+    public partial class AIEmpireManager : MonoBehaviour
     {
         public static AIEmpireManager Instance { get; private set; }
 
@@ -13,38 +23,74 @@ namespace StellarisClone.Core
         private GalaxyGenerator _generator;
 
         public int CapitalSystemId { get; private set; } = -1;
+        public bool IsEliminated { get; private set; }
 
-        // === ИМЯ AI-ИМПЕРИИ (выбирается при старте из фракций, не занятых игроком) ===
         public string AIName { get; private set; } = "Неизвестная империя";
         public string AITitle { get; private set; } = "";
         public Color AIEmpireColor { get; private set; } = new Color(0.95f, 0.25f, 0.20f);
+        public FactionInfo Faction { get; private set; }
 
-        public float EnergyCredits = 200f;
-        public float Minerals = 300f;
-        public float Alloys = 80f;
-        public float Influence = 35f;
-        public float MonthlyAlloysIncome = 7f;
-        public float MonthlyInfluenceIncome = 3f;
+        public AIPersonality Personality { get; private set; } = AIPersonality.Militarist;
+        public AIProfile Profile { get; private set; } = AIProfile.Get(AIPersonality.Militarist);
 
-        public float RelationsWithPlayer = 8f;
-        public bool IsHostileToPlayer => RelationsWithPlayer < 0f;
+        /// <summary>Бонусы технологий, изученных ИИ.</summary>
+        public EmpireBonuses Bonuses { get; private set; } = new EmpireBonuses();
 
-        private const float StarbaseAlloysCost = 50f;
-        private const float StarbaseInfluenceCost = 25f;
-        private const float CorvetteAlloysCost = 60f;
-        private const float MiningAlloysCost = 35f;
+        // ==================== ЭКОНОМИКА ====================
 
-        private FleetView _aiScienceShip;
-        private FleetView _aiConstructorShip;
-        private readonly List<FleetView> _warFleets = new List<FleetView>();
+        public float EnergyCredits = 220f;
+        public float Minerals = 280f;
+        public float Alloys = 160f;
+        public float Influence = 60f;
 
-        private int _surveyTargetSysId = -1;
-        private int _buildTargetSysId = -1;
-        private int _warTargetSysId = -1;
-        private float _decisionTimer = 5f;
+        public float BaseEnergyIncome = 15f;
+        public float BaseMineralsIncome = 10f;
+        public float BaseAlloysIncome = 5f;
+        public float BaseInfluenceIncome = 3f;
+
+        private EmpireEconomy.Report _report;
+        private bool _bankrupt;
+
+        /// <summary>Множитель доходов ИИ от сложности.</summary>
+        private static float IncomeMult => GameSession.Settings.AIIncome;
+
+        private float FactionEnergy => Faction != null ? Faction.EnergyBonus : 1f;
+        private float FactionMinerals => Faction != null ? Faction.MineralBonus : 1f;
+        private float FactionAlloys => Faction != null ? Faction.AlloyBonus : 1f;
+        private float FactionInfluence => Faction != null ? Faction.InfluenceBonus : 1f;
+
+        public EmpireEconomy.Report Report => _report;
+        public bool IsBankrupt => _bankrupt;
+        public float MonthlyEnergyIncome => (BaseEnergyIncome + _report.Energy) * IncomeMult - _report.Upkeep;
+        public float MonthlyMineralsIncome => (BaseMineralsIncome + _report.Minerals) * IncomeMult;
+        public float MonthlyAlloysIncome => (BaseAlloysIncome + _report.Alloys) * IncomeMult;
+        public float MonthlyInfluenceIncome => BaseInfluenceIncome * FactionInfluence * IncomeMult;
+
+        // ==================== НАУКА ====================
+
+        private readonly HashSet<string> _researched = new HashSet<string>();
+        private List<Technology> _techTree;
+        public Technology CurrentTech { get; private set; }
+        public float TechProgress { get; private set; }
+        private int _researchSlots = 3;
+
+        public int ResearchedCount => _researched.Count;
+        public bool HasTech(string id) => _researched.Contains(id);
+
+        public float MonthlyScience =>
+            (TechnologyManager.BaseScience + EmpireStats.Population(AIOwnerId) * TechnologyManager.SciencePerPop)
+            * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult;
+
+        /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
+        private float ResearchThroughput => Mathf.Pow(_researchSlots, 1f - TechnologyManager.SlotSplitExponent);
+
+        private int _scienceWarnLevel;
+
+        // ==================== ПРОЧЕЕ ====================
+
+        private float _decisionTimer = 3f;
         private int _warFleetSerial = 1;
-
-        private float _lastRelationBucket = 8f;
+        private readonly Dictionary<ShipClass, ShipDesign> _designs = new Dictionary<ShipClass, ShipDesign>();
 
         private void Awake()
         {
@@ -57,20 +103,32 @@ namespace StellarisClone.Core
             _generator = FindFirstObjectByType<GalaxyGenerator>();
             if (TimeManager.Instance != null)
                 TimeManager.Instance.OnDayPassed += HandleDayPassed;
+            CombatManager.OnShipDestroyed += HandleShipDestroyed;
+            SiegeManager.OnSystemCaptured += HandleSystemCaptured;
         }
 
         private void OnDestroy()
         {
             if (TimeManager.Instance != null)
                 TimeManager.Instance.OnDayPassed -= HandleDayPassed;
+            CombatManager.OnShipDestroyed -= HandleShipDestroyed;
+            SiegeManager.OnSystemCaptured -= HandleSystemCaptured;
         }
 
-        // ==================== ВЫБОР ИМЕНИ ====================
-
-        private void PickAIName()
+        private List<Technology> TechTree
         {
-            FactionInfo playerFaction = null;
-            if (UIManager.Instance != null) playerFaction = UIManager.Instance.SelectedFaction;
+            get
+            {
+                if (_techTree == null) _techTree = TechnologyManager.BuildTechTree();
+                return _techTree;
+            }
+        }
+
+        // ==================== СТАРТ ====================
+
+        private void PickFaction()
+        {
+            FactionInfo playerFaction = UIManager.Instance != null ? UIManager.Instance.SelectedFaction : null;
 
             var candidates = new List<FactionInfo>();
             foreach (var f in FactionRegistry.AvailableFactions)
@@ -78,102 +136,91 @@ namespace StellarisClone.Core
                 if (playerFaction != null && f.Name == playerFaction.Name) continue;
                 candidates.Add(f);
             }
+            if (candidates.Count == 0) candidates.AddRange(FactionRegistry.AvailableFactions);
 
-            if (candidates.Count == 0)
-            {
-                // На всякий случай — если игрок ещё не выбрал фракцию
-                foreach (var f in FactionRegistry.AvailableFactions) candidates.Add(f);
-            }
+            SetFaction(candidates[Random.Range(0, candidates.Count)]);
+            Debug.Log($"<color=#FFAA66>[AI]</color> Империя-противник: <b>{AIName}</b> ({AITitle}), характер: {Profile.Name}");
+        }
 
-            var pick = candidates[Random.Range(0, candidates.Count)];
-            AIName = pick.Name;
-            AITitle = pick.Title;
-            AIEmpireColor = pick.EmpireColor;
-
-            Debug.Log($"<color=#FFAA66>[AI]</color> Империя-противник: <b>{AIName}</b> ({AITitle})");
+        private void SetFaction(FactionInfo f)
+        {
+            Faction = f;
+            AIName = f.Name;
+            AITitle = f.Title;
+            AIEmpireColor = f.EmpireColor;
+            Personality = AIProfile.FromFactionName(f.Name);
+            Profile = AIProfile.Get(Personality);
         }
 
         public void InitializeAIEmpire()
         {
             if (_generator == null || _generator.Systems.Count == 0) return;
 
-            // Название выбираем в момент спавна
-            PickAIName();
-
-            // Сложность: доходы, запасы и стартовое отношение
-            var st = GameSession.Settings;
-            MonthlyAlloysIncome *= st.AIIncome;
-            MonthlyInfluenceIncome *= st.AIIncome;
-            Alloys *= st.AIIncome;
-            if (st.Difficulty == 0) RelationsWithPlayer = 20f;
-            else if (st.Difficulty == 2) RelationsWithPlayer = 2f;
-            _lastRelationBucket = RelationsWithPlayer;
+            PickFaction();
 
             int bestSysId = -1;
             float maxDist = -1f;
             Vector3 playerPos = _generator.Systems[0].Position;
-
             for (int i = 1; i < _generator.Systems.Count; i++)
             {
                 float d = Vector3.Distance(playerPos, _generator.Systems[i].Position);
-                if (d > maxDist)
-                {
-                    maxDist = d;
-                    bestSysId = i;
-                }
+                if (d > maxDist) { maxDist = d; bestSysId = i; }
             }
+            if (bestSysId == -1) return;
 
-            if (bestSysId != -1)
+            CapitalSystemId = bestSysId;
+            var capital = _generator.Systems[CapitalSystemId];
+            capital.OwnerId = AIOwnerId;
+            capital.HasStarbase = true;
+            capital.IsSurveyed = true;
+            capital.GeneratePlanets();
+            foreach (var p in capital.Planets)
             {
-                CapitalSystemId = bestSysId;
-                var aiCapital = _generator.Systems[CapitalSystemId];
-
-                aiCapital.OwnerId = AIOwnerId;
-                aiCapital.HasStarbase = true;
-                aiCapital.IsSurveyed = true;
-
-                _aiScienceShip = CreateAIFleet($"{AIName} · Разведчик", CapitalSystemId, FleetType.Science);
-                _aiConstructorShip = CreateAIFleet($"{AIName} · Строитель", CapitalSystemId, FleetType.Constructor);
-                _warFleets.Add(CreateAIFleet($"{AIName} · Авангард", CapitalSystemId, FleetType.Military));
-
-                GalaxyView.Instance?.RefreshTerritoryVisuals();
+                if (!p.CanColonize) continue;
+                p.SetupAsStartingColony(pop: 6, urban: 3, mining: 1, generator: 1, industrial: 1);
+                break;
             }
+
+            var st = GameSession.Settings;
+            EnergyCredits *= st.AIIncome;
+            Minerals *= st.AIIncome;
+            Alloys *= st.AIIncome;
+            InitDiplomacy();
+
+            CreateCivilian(FleetType.Science);
+            CreateCivilian(FleetType.Constructor);
+            CreateWarship(ShipClass.Corvette);
+            if (Personality == AIPersonality.Militarist || st.Difficulty == 2) CreateWarship(ShipClass.Corvette);
+
+            RecalculateEconomy();
+            GalaxyView.Instance?.RefreshTerritoryVisuals();
         }
 
-        private FleetView CreateAIFleet(string fleetName, int startSystemId, FleetType type)
-        {
-            FleetView view;
-            if (FleetManager.Instance != null)
-            {
-                view = FleetManager.Instance.CreateOwnedFleet(fleetName, startSystemId, type, AIOwnerId);
-            }
-            else
-            {
-                GameObject fleetObj = new GameObject($"AIFleet_{fleetName}");
-                fleetObj.transform.SetParent(transform);
-                var data = new FleetData(900 + _warFleetSerial, fleetName, startSystemId, type);
-                data.OwnerId = AIOwnerId;
-                data.ApplyDefaultCombatStats(type);
-                view = fleetObj.AddComponent<FleetView>();
-                view.Initialize(data, _generator);
-            }
-            return view;
-        }
+        // ==================== ЕЖЕДНЕВНЫЙ ЦИКЛ ====================
 
         private void HandleDayPassed(int day, int month, int year)
         {
+            if (!UIManager.IsGameStarted) return;
             if (CapitalSystemId == -1)
             {
                 InitializeAIEmpire();
                 return;
             }
+            if (IsEliminated) return;
+            if (EmpireStats.SystemCount(AIOwnerId) == 0)
+            {
+                IsEliminated = true;
+                if (AtWar) MakePeace(silent: true);
+                NotificationCenter.Show("Соперник повержен", $"{AIName} потерял все системы", NotificationCenter.Kind.Success, 10f);
+                RaiseDiplomacyChanged();
+                return;
+            }
 
-            Alloys += MonthlyAlloysIncome / 30f;
-            Influence += MonthlyInfluenceIncome / 30f;
-            EnergyCredits += 6f / 30f;
-            Minerals += 8f / 30f;
+            RecalculateEconomy();
+            TickResearch(year);
+            DailyDiplomacy();
 
-            UpdateRelations();
+            if (day == 1) MonthlyTick();
 
             _decisionTimer -= 1f;
             if (_decisionTimer <= 0f)
@@ -183,364 +230,642 @@ namespace StellarisClone.Core
             }
         }
 
-        private void UpdateRelations()
+        private void MonthlyTick()
         {
-            int playerPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
-            int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(AIOwnerId) : 120;
+            EnergyCredits += MonthlyEnergyIncome;
+            Minerals += MonthlyMineralsIncome;
+            Alloys += MonthlyAlloysIncome;
+            Influence += MonthlyInfluenceIncome;
 
-            if (playerPow > aiPow * 1.15f)
-                RelationsWithPlayer -= 1.6f * GameSession.Settings.AIAggression;
-            else
-                RelationsWithPlayer += 0.15f;
-
-            RelationsWithPlayer = Mathf.Clamp(RelationsWithPlayer, -100f, 40f);
-
-            int bucket = RelationsWithPlayer < -60f ? 0
-                       : RelationsWithPlayer < -30f ? 1
-                       : RelationsWithPlayer < 0f   ? 2
-                       : RelationsWithPlayer < 20f  ? 3
-                       : 4;
-
-            int oldBucket = _lastRelationBucket < -60f ? 0
-                          : _lastRelationBucket < -30f ? 1
-                          : _lastRelationBucket < 0f   ? 2
-                          : _lastRelationBucket < 20f  ? 3
-                          : 4;
-
-            if (bucket != oldBucket)
+            if (EnergyCredits < 0f)
             {
-                if (bucket < oldBucket)
-                {
-                    string msg = bucket switch
-                    {
-                        0 => $"{AIName} готовится к войне",
-                        1 => $"{AIName} враждебен",
-                        2 => $"{AIName} охладел к вам",
-                        _ => "Отношения меняются"
-                    };
-                    NotificationCenter.Show("Отношения ухудшились", msg, NotificationCenter.Kind.Warning, 5f);
-                }
-                else
-                {
-                    NotificationCenter.Show("Отношения улучшились",
-                        $"Текущее значение: {RelationsWithPlayer:0}",
-                        NotificationCenter.Kind.Success, 4f);
-                }
+                EnergyCredits = 0f;
+                _bankrupt = true;
+                // Казна пуста — распускаем самый дорогой в содержании корабль
+                if (MonthlyEnergyIncome < 0f) DisbandCostliestShip();
             }
-            _lastRelationBucket = RelationsWithPlayer;
+            else if (_bankrupt && EnergyCredits > 60f) _bankrupt = false;
 
-            DetectLocalEncounters();
-        }
-
-        private void DetectLocalEncounters()
-        {
-            if (_generator == null || FleetManager.Instance == null) return;
-            foreach (var sys in _generator.Systems)
-            {
-                if (sys.OwnerId == 0) continue;
-                var fleets = FleetManager.Instance.GetFleetsInSystem(sys.Id);
-                bool hasPlayer = false, hasAi = false;
-                foreach (var f in fleets)
-                {
-                    if (f.Data.OwnerId == 0) hasPlayer = true;
-                    if (f.Data.OwnerId == AIOwnerId) hasAi = true;
-                }
-                if (hasPlayer && hasAi && sys.OwnerId != 0)
-                    RelationsWithPlayer -= 4f;
-            }
+            MonthlyDiplomacy();
         }
 
         private void ThinkAndAct()
         {
             if (_generator == null) return;
-            PruneDeadWarFleets();
-
             ThinkSurvey();
             ThinkClaim();
             ThinkEconomy();
-            ThinkMilitarize();
-            ThinkWar();
+            ThinkCivilianShips();
+            ThinkShipbuilding();
+            ThinkMilitary();
         }
+
+        private void RecalculateEconomy()
+        {
+            _report = EmpireEconomy.Compute(AIOwnerId, CapitalSystemId, FactionEnergy, FactionMinerals, FactionAlloys,
+                                            Bonuses, _bankrupt);
+        }
+
+        // ==================== ФЛОТЫ ====================
+
+        private IEnumerable<FleetView> OwnFleets(FleetType type)
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) yield break;
+            foreach (var f in fm.AllFleets)
+            {
+                if (f?.Data == null || f.Data.Destroyed || f.Data.OwnerId != AIOwnerId) continue;
+                if (f.Data.Type == type) yield return f;
+            }
+        }
+
+        private List<FleetView> WarShips()
+        {
+            var list = new List<FleetView>();
+            foreach (var f in OwnFleets(FleetType.Military)) list.Add(f);
+            return list;
+        }
+
+        private int CountOwn(FleetType type)
+        {
+            int n = 0;
+            foreach (var _ in OwnFleets(type)) n++;
+            return n;
+        }
+
+        private static bool IsIdle(FleetData d)
+            => d.State == FleetState.Orbiting && d.Path.Count == 0 && !d.InCombat;
+
+        private int SpawnSystem
+        {
+            get
+            {
+                var cap = EmpireStats.GetSystem(CapitalSystemId);
+                return cap != null && cap.OwnerId == AIOwnerId ? CapitalSystemId : -1;
+            }
+        }
+
+        private FleetView CreateCivilian(FleetType type)
+        {
+            if (FleetManager.Instance == null || SpawnSystem < 0) return null;
+            string name = type == FleetType.Science ? $"{AIName} · Разведчик" : $"{AIName} · Строитель";
+            return FleetManager.Instance.CreateOwnedFleet(name, SpawnSystem, type, AIOwnerId);
+        }
+
+        private FleetView CreateWarship(ShipClass hull)
+        {
+            if (FleetManager.Instance == null || SpawnSystem < 0) return null;
+            var fv = FleetManager.Instance.CreateOwnedFleet($"{AIName} · Крыло {_warFleetSerial++}", SpawnSystem,
+                                                             FleetType.Military, AIOwnerId, hull);
+            fv.Data.ApplyDesign(GetDesign(hull));
+            return fv;
+        }
+
+        /// <summary>Проект корабля ИИ под его технологии и любимое оружие.</summary>
+        public ShipDesign GetDesign(ShipClass hull)
+        {
+            if (_designs.TryGetValue(hull, out var d) && d != null) return d;
+            var dm = ShipDesignManager.Instance;
+            if (dm == null) return null;
+            string cls = hull == ShipClass.Destroyer ? "Эсминец" : hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
+            d = dm.CreateAutoDesign(hull, Profile.PreferredWeapon, Profile.SecondaryWeapon, HasTech, $"{AIName} · {cls}");
+            _designs[hull] = d;
+            return d;
+        }
+
+        private void DisbandCostliestShip()
+        {
+            FleetView worst = null;
+            foreach (var f in OwnFleets(FleetType.Military))
+            {
+                if (f.Data.InCombat) continue;
+                if (worst == null || f.Data.UpkeepEnergy > worst.Data.UpkeepEnergy) worst = f;
+            }
+            if (worst != null) FleetManager.Instance?.DisbandFleet(worst);
+        }
+
+        // ==================== РАЗВЕДКА ====================
 
         private void ThinkSurvey()
         {
-            if (_aiScienceShip == null || _aiScienceShip.Data == null || _aiScienceShip.Data.Destroyed)
-            {
-                _aiScienceShip = CreateAIFleet($"{AIName} · Разведчик", CapitalSystemId, FleetType.Science);
-                _surveyTargetSysId = -1;
-            }
+            var claimed = new HashSet<int>();
+            foreach (var f in OwnFleets(FleetType.Science))
+                if (f.Data.SurveyTargetSystemId >= 0) claimed.Add(f.Data.SurveyTargetSystemId);
 
-            if (_aiScienceShip.Data.State == FleetState.Orbiting && _surveyTargetSysId == -1 && !_aiScienceShip.Data.InCombat)
+            foreach (var ship in OwnFleets(FleetType.Science))
             {
-                int bestSurveyTarget = FindBestSystemToSurvey();
-                if (bestSurveyTarget != -1)
+                var d = ship.Data;
+                if (d.SurveyTargetSystemId >= 0)
                 {
-                    _surveyTargetSysId = bestSurveyTarget;
-                    _aiScienceShip.Data.SurveyTargetSystemId = bestSurveyTarget;
-                    FleetManager.Instance?.IssueMoveOrder(_aiScienceShip, bestSurveyTarget);
+                    var t = EmpireStats.GetSystem(d.SurveyTargetSystemId);
+                    if (t == null || t.IsSurveyed) { d.SurveyTargetSystemId = -1; if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting; }
+                    else continue;
                 }
-            }
+                if (!IsIdle(d)) continue;
 
-            if (_surveyTargetSysId != -1 && _surveyTargetSysId < _generator.Systems.Count
-                && _generator.Systems[_surveyTargetSysId].IsSurveyed)
-            {
-                _surveyTargetSysId = -1;
+                int target = FindBestSurveyTarget(d.CurrentSystemId, claimed);
+                if (target < 0) continue;
+                claimed.Add(target);
+                d.SurveyTargetSystemId = target;
+                if (d.CurrentSystemId == target)
+                {
+                    d.State = FleetState.Surveying;
+                    d.DaysRemainingSurvey = d.TotalSurveyDays;
+                }
+                else FleetManager.Instance?.IssueMoveOrder(ship, target);
             }
         }
+
+        /// <summary>
+        /// Куда лететь разведчику: ближайшие неизученные системы, богатые связями (ворота дальше),
+        /// и в первую очередь — соседи собственной территории (кандидаты в форпосты).
+        /// </summary>
+        private int FindBestSurveyTarget(int from, HashSet<int> claimed)
+        {
+            var dist = Distances(from, 8);
+            int best = -1;
+            float bestScore = float.MinValue;
+            foreach (var kv in dist)
+            {
+                var sys = EmpireStats.GetSystem(kv.Key);
+                if (sys == null || sys.IsSurveyed || claimed.Contains(sys.Id)) continue;
+                if (sys.OwnerId == 0 && AtWar) continue;
+                float score = sys.ConnectedSystemIds.Count * 1.5f - kv.Value * 3f;
+                if (BordersOwn(sys)) score += 6f;
+                if (sys.OwnerId >= 0) score -= 4f;
+                if (score > bestScore) { bestScore = score; best = sys.Id; }
+            }
+            return best;
+        }
+
+        // ==================== ЭКСПАНСИЯ ====================
 
         private void ThinkClaim()
         {
-            if (_aiConstructorShip == null || _aiConstructorShip.Data == null || _aiConstructorShip.Data.Destroyed)
-            {
-                _aiConstructorShip = CreateAIFleet($"{AIName} · Строитель", CapitalSystemId, FleetType.Constructor);
-                _buildTargetSysId = -1;
-            }
+            float influence = FleetManager.OutpostInfluenceCost(AIOwnerId);
+            var claimed = new HashSet<int>();
+            foreach (var f in OwnFleets(FleetType.Constructor))
+                if (f.Data.BuildTargetSystemId >= 0) claimed.Add(f.Data.BuildTargetSystemId);
 
-            if (_aiConstructorShip.Data.State == FleetState.Orbiting && _buildTargetSysId == -1 && !_aiConstructorShip.Data.InCombat)
+            foreach (var ship in OwnFleets(FleetType.Constructor))
             {
-                if (Alloys >= StarbaseAlloysCost && Influence >= StarbaseInfluenceCost)
+                var d = ship.Data;
+                if (d.BuildTargetSystemId >= 0)
                 {
-                    int bestBuildTarget = FindBestSystemToClaim();
-                    if (bestBuildTarget != -1)
+                    var t = EmpireStats.GetSystem(d.BuildTargetSystemId);
+                    if (t == null || t.OwnerId >= 0)
                     {
-                        Alloys -= StarbaseAlloysCost;
-                        Influence -= StarbaseInfluenceCost;
-                        _buildTargetSysId = bestBuildTarget;
-                        _aiConstructorShip.Data.BuildTargetSystemId = bestBuildTarget;
-                        FleetManager.Instance?.IssueMoveOrder(_aiConstructorShip, bestBuildTarget);
+                        // Цель заняли раньше — часть ресурсов возвращается
+                        if (t != null && t.OwnerId != AIOwnerId) Alloys += FleetManager.StarbaseAlloysCost * 0.5f;
+                        d.BuildTargetSystemId = -1;
+                        if (d.State == FleetState.Constructing) d.State = FleetState.Orbiting;
                     }
+                    else continue;
                 }
-            }
+                if (!IsIdle(d)) continue;
+                if (Alloys < FleetManager.StarbaseAlloysCost || Influence < influence) continue;
+                // Не уходим в минус по энергии ради нового форпоста
+                if (MonthlyEnergyIncome - EmpireEconomy.OutpostUpkeep < 0f && EnergyCredits < 150f) continue;
 
-            if (_buildTargetSysId != -1 && _buildTargetSysId < _generator.Systems.Count)
-            {
-                var targetSys = _generator.Systems[_buildTargetSysId];
-                if (targetSys.OwnerId == AIOwnerId)
-                    _buildTargetSysId = -1;
+                int target = FindBestClaimTarget(claimed);
+                if (target < 0) continue;
+                claimed.Add(target);
+
+                Alloys -= FleetManager.StarbaseAlloysCost;
+                Influence -= influence;
+                d.BuildTargetSystemId = target;
+                if (d.CurrentSystemId == target)
+                {
+                    d.State = FleetState.Constructing;
+                    d.DaysRemainingConstruction = d.TotalConstructionDays;
+                }
+                else FleetManager.Instance?.IssueMoveOrder(ship, target);
             }
         }
+
+        private int FindBestClaimTarget(HashSet<int> claimed)
+        {
+            int best = -1;
+            float bestScore = float.MinValue;
+            var fromCapital = Distances(CapitalSystemId, 30);
+            foreach (var sys in EmpireStats.Systems)
+            {
+                if (sys.OwnerId != -1 || !sys.IsSurveyed || claimed.Contains(sys.Id)) continue;
+                if (!BordersOwn(sys)) continue;
+                if (AtWar && FleetManager.Instance != null && FleetManager.Instance.GetMilitaryPowerInSystem(0, sys.Id) > 0f) continue;
+                float score = SystemValue(sys);
+                if (fromCapital.TryGetValue(sys.Id, out int jumps)) score -= jumps * 1.2f;
+                if (score > bestScore) { bestScore = score; best = sys.Id; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Ценность системы для ИИ: залежи, пригодные для жизни миры, звезда, число гиперкоридоров
+        /// и соседство с игроком (воинственные тянутся к фронту, остальные — избегают).
+        /// </summary>
+        public float SystemValue(StarSystem sys)
+        {
+            if (sys == null) return 0f;
+            sys.GeneratePlanets();
+            float v = 0f;
+            foreach (var p in sys.Planets)
+            {
+                v += (p.EnergyDeposit * 1.1f + p.MineralDeposit) * Profile.ResourceWeight;
+                if (p.CanColonize) v += (6f + p.HabitabilityPercent * 0.12f) * Profile.ColonyWeight;
+            }
+            v += sys.SpectralClass switch
+            {
+                StarSpectralClass.ClassG => 2f,
+                StarSpectralClass.ClassK => 1f,
+                StarSpectralClass.ClassB => 1.5f,
+                StarSpectralClass.BlackHole => 3f,
+                _ => 0f
+            };
+            v += Mathf.Max(0, sys.ConnectedSystemIds.Count - 2) * 1.2f;
+
+            bool nearPlayer = false;
+            foreach (int id in sys.ConnectedSystemIds)
+            {
+                var n = EmpireStats.GetSystem(id);
+                if (n != null && n.OwnerId == 0) { nearPlayer = true; break; }
+            }
+            if (nearPlayer) v += Profile.FrontierBias * 2f;
+            return v;
+        }
+
+        private bool BordersOwn(StarSystem sys)
+        {
+            foreach (int id in sys.ConnectedSystemIds)
+            {
+                var n = EmpireStats.GetSystem(id);
+                if (n != null && n.OwnerId == AIOwnerId) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Расстояния в прыжках от системы (BFS по гиперкоридорам).</summary>
+        private Dictionary<int, int> Distances(int from, int maxDepth)
+        {
+            var dist = new Dictionary<int, int>();
+            var systems = EmpireStats.Systems;
+            if (from < 0 || from >= systems.Count) return dist;
+            var q = new Queue<int>();
+            dist[from] = 0;
+            q.Enqueue(from);
+            while (q.Count > 0)
+            {
+                int cur = q.Dequeue();
+                int dcur = dist[cur];
+                if (dcur >= maxDepth) continue;
+                foreach (int n in systems[cur].ConnectedSystemIds)
+                {
+                    if (n < 0 || n >= systems.Count || dist.ContainsKey(n)) continue;
+                    dist[n] = dcur + 1;
+                    q.Enqueue(n);
+                }
+            }
+            return dist;
+        }
+
+        /// <summary>BFS сразу от многих систем: расстояние до ближайшей из них.</summary>
+        private Dictionary<int, int> DistancesFromOwner(int owner, int maxDepth)
+        {
+            var dist = new Dictionary<int, int>();
+            var systems = EmpireStats.Systems;
+            var q = new Queue<int>();
+            foreach (var s in systems)
+                if (s.OwnerId == owner) { dist[s.Id] = 0; q.Enqueue(s.Id); }
+            while (q.Count > 0)
+            {
+                int cur = q.Dequeue();
+                int dcur = dist[cur];
+                if (dcur >= maxDepth) continue;
+                foreach (int n in systems[cur].ConnectedSystemIds)
+                {
+                    if (n < 0 || n >= systems.Count || dist.ContainsKey(n)) continue;
+                    dist[n] = dcur + 1;
+                    q.Enqueue(n);
+                }
+            }
+            return dist;
+        }
+
+        // ==================== ЭКОНОМИЧЕСКИЕ РЕШЕНИЯ ====================
 
         private void ThinkEconomy()
         {
-            if (Alloys < MiningAlloysCost) return;
+            // За один «ход» — до двух построек, чтобы ИИ не тратил всё разом
+            for (int i = 0; i < 2; i++)
+                if (!TryEconomyAction()) break;
+        }
 
-            foreach (var sys in _generator.Systems)
+        private bool TryEconomyAction()
+        {
+            bool energyLow = MonthlyEnergyIncome < 4f || (_bankrupt && MonthlyEnergyIncome < 10f);
+            const float mineralReserve = 40f;
+
+            PlanetData bestColony = null, bestStation = null, bestDistrictPlanet = null;
+            float colonyScore = float.MinValue, stationScore = float.MinValue, districtScore = float.MinValue;
+            DistrictType bestDistrict = DistrictType.Urban;
+
+            foreach (var sys in EmpireStats.Systems)
             {
                 if (sys.OwnerId != AIOwnerId) continue;
-                sys.GeneratePlanets();
                 foreach (var p in sys.Planets)
                 {
-                    if (p.HasMiningStation) continue;
-                    if (p.EnergyDeposit <= 0 && p.MineralDeposit <= 0) continue;
-                    Alloys -= MiningAlloysCost;
-                    p.HasMiningStation = true;
-                    MonthlyAlloysIncome += 1.2f + p.MineralDeposit * 0.15f;
-                    sys.RecalculateHarvest();
-                    return;
-                }
-            }
-        }
-
-        private void ThinkMilitarize()
-        {
-            int playerPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
-            int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(AIOwnerId) : 0;
-            if (playerPow <= aiPow + 40) return;
-            if (Alloys < CorvetteAlloysCost) return;
-            if (_warFleets.Count >= 6) return;
-
-            Alloys -= CorvetteAlloysCost;
-            var fleet = CreateAIFleet($"{AIName} · Крыло {_warFleetSerial++}", CapitalSystemId, FleetType.Military);
-            _warFleets.Add(fleet);
-        }
-
-        private void ThinkWar()
-        {
-            if (!IsHostileToPlayer) return;
-            PruneDeadWarFleets();
-            var hunter = GetIdleWarFleet();
-            if (hunter == null) return;
-
-            int target = FindPlayerBorderOutpost();
-            if (target < 0) return;
-            _warTargetSysId = target;
-            FleetManager.Instance?.IssueMoveOrder(hunter, target);
-
-            if (hunter.Data.CurrentSystemId == target && hunter.Data.State == FleetState.Orbiting)
-            {
-                var sys = _generator.Systems[target];
-                bool playerMilitaryPresent = false;
-                if (FleetManager.Instance != null)
-                {
-                    foreach (var f in FleetManager.Instance.GetFleetsInSystem(target))
+                    if (p.Population <= 0 && p.CanColonize)
                     {
-                        if (f.Data.OwnerId == 0 && f.Data.Type == FleetType.Military)
-                            playerMilitaryPresent = true;
+                        float s = p.HabitabilityPercent + p.MaxDistricts;
+                        if (s > colonyScore) { colonyScore = s; bestColony = p; }
                     }
-                }
-                if (!playerMilitaryPresent)
-                {
-                    sys.OwnerId = AIOwnerId;
-                    sys.HasStarbase = true;
-                    GalaxyView.Instance?.RefreshTerritoryVisuals();
-                    MonthlyAlloysIncome += 1.5f;
-                    NotificationCenter.Show("Система потеряна",
-                        $"{sys.Name} захвачена: {AIName}",
-                        NotificationCenter.Kind.Danger, 8f);
-                }
-            }
-        }
-
-        private FleetView GetIdleWarFleet()
-        {
-            foreach (var f in _warFleets)
-            {
-                if (f == null || f.Data == null || f.Data.Destroyed) continue;
-                if (f.Data.InCombat) continue;
-                if (f.Data.State == FleetState.Orbiting && f.Data.Path.Count == 0)
-                    return f;
-            }
-            return null;
-        }
-
-        private void PruneDeadWarFleets()
-        {
-            _warFleets.RemoveAll(f => f == null || f.Data == null || f.Data.Destroyed);
-        }
-
-        private int FindPlayerBorderOutpost()
-        {
-            int best = -1;
-            float bestDist = float.MaxValue;
-            Vector3 origin = _generator.Systems[CapitalSystemId].Position;
-
-            foreach (var s in _generator.Systems)
-            {
-                if (s.OwnerId != 0 || !s.HasStarbase) continue;
-                bool adjacentToAi = false;
-                foreach (int n in s.ConnectedSystemIds)
-                {
-                    if (n >= 0 && n < _generator.Systems.Count && _generator.Systems[n].OwnerId == AIOwnerId)
+                    if (!p.HasMiningStation && (p.EnergyDeposit > 0 || p.MineralDeposit > 0))
                     {
-                        adjacentToAi = true;
-                        break;
+                        float s = p.EnergyDeposit * (energyLow ? 3f : 1.1f) + p.MineralDeposit * Profile.ResourceWeight;
+                        if (s > stationScore) { stationScore = s; bestStation = p; }
                     }
-                }
-                if (!adjacentToAi) continue;
-                float d = Vector3.Distance(origin, s.Position);
-                if (d < bestDist) { bestDist = d; best = s.Id; }
-            }
-            return best;
-        }
-
-        private int FindBestSystemToSurvey()
-        {
-            List<int> borderSystems = GetAIBorderConnectedSystems();
-            int best = -1;
-            float highestScore = -1f;
-
-            foreach (int sysId in borderSystems)
-            {
-                var sys = _generator.Systems[sysId];
-                if (!sys.IsSurveyed && sys.OwnerId == -1)
-                {
-                    float score = sys.ConnectedSystemIds.Count * 10f - Vector3.Distance(sys.Position, Vector3.zero) * 0.1f;
-                    if (score > highestScore)
+                    if (p.Population > 0 && p.BuiltDistricts < p.MaxDistricts)
                     {
-                        highestScore = score;
-                        best = sysId;
+                        if (!NeedsDistrict(p, energyLow, out var type, out float urgency)) continue;
+                        if (urgency > districtScore) { districtScore = urgency; bestDistrict = type; bestDistrictPlanet = p; }
                     }
                 }
             }
-            return best;
+
+            // 1. Энергетический кризис — сначала генераторы и станции на гелии
+            if (energyLow)
+            {
+                if (bestDistrictPlanet != null && bestDistrict == DistrictType.Generator && TryBuildDistrict(bestDistrictPlanet, bestDistrict)) return true;
+                if (bestStation != null && bestStation.EnergyDeposit > 0 && TryBuildStation(bestStation)) return true;
+            }
+
+            // 2. Колония — главный источник населения (наука, рабочие руки, флотский лимит)
+            if (bestColony != null && Minerals >= PlanetData.ColonyMineralsCost + mineralReserve
+                && Alloys >= PlanetData.ColonyAlloysCost && Influence >= PlanetData.ColonyInfluenceCost)
+            {
+                Minerals -= PlanetData.ColonyMineralsCost;
+                Alloys -= PlanetData.ColonyAlloysCost;
+                Influence -= PlanetData.ColonyInfluenceCost;
+                bestColony.SettleColony();
+                return true;
+            }
+
+            // 3. Районы на колониях
+            if (bestDistrictPlanet != null && TryBuildDistrict(bestDistrictPlanet, bestDistrict)) return true;
+
+            // 4. Добывающие станции
+            if (bestStation != null && Minerals >= FleetManager.MiningStationMinerals + mineralReserve && TryBuildStation(bestStation)) return true;
+
+            return false;
         }
 
-        private int FindBestSystemToClaim()
+        /// <summary>Какой район нужен колонии: жильё, если тесно; иначе — то, чего не хватает империи.</summary>
+        private bool NeedsDistrict(PlanetData p, bool energyLow, out DistrictType type, out float urgency)
         {
-            List<int> borderSystems = GetAIBorderConnectedSystems();
-            int best = -1;
-            int bestResources = -1;
+            type = DistrictType.Urban;
+            urgency = 0f;
+            int housing = p.HousingCapacity;
+            int idle = p.IdlePops;
 
-            foreach (int sysId in borderSystems)
+            if (p.Population >= housing) { type = DistrictType.Urban; urgency = 6f; }
+            else if (idle > 0)
             {
-                var sys = _generator.Systems[sysId];
-                if (sys.IsSurveyed && sys.OwnerId == -1)
-                {
-                    int resSum = sys.TotalMinerals + sys.TotalEnergy;
-                    if (resSum > bestResources)
-                    {
-                        bestResources = resSum;
-                        best = sysId;
-                    }
-                }
+                urgency = 4f + idle;
+                if (energyLow) type = DistrictType.Generator;
+                else if (MonthlyMineralsIncome < 15f) type = DistrictType.Mining;
+                else if (MonthlyAlloysIncome < 10f) type = DistrictType.Industrial;
+                else type = Profile.PreferredDistrict == DistrictType.Urban ? DistrictType.Generator : Profile.PreferredDistrict;
             }
-            return best;
+            else return false;
+            return true;
         }
 
-        private List<int> GetAIBorderConnectedSystems()
+        private bool TryBuildDistrict(PlanetData p, DistrictType t)
         {
-            List<int> list = new List<int>();
-            foreach (var s in _generator.Systems)
+            float m = DistrictInfo.MineralsCost(t), a = DistrictInfo.AlloysCost(t);
+            if (Minerals < m || Alloys < a || p.BuiltDistricts >= p.MaxDistricts) return false;
+            Minerals -= m;
+            Alloys -= a;
+            p.Districts.Add(new DistrictData(t));
+            return true;
+        }
+
+        private bool TryBuildStation(PlanetData p)
+        {
+            if (Minerals < FleetManager.MiningStationMinerals) return false;
+            Minerals -= FleetManager.MiningStationMinerals;
+            p.HasMiningStation = true;
+            p.ParentSystem?.RecalculateHarvest();
+            return true;
+        }
+
+        /// <summary>Разведчики и строители: научная фракция держит двух разведчиков, всем нужен второй строитель при росте влияния.</summary>
+        private void ThinkCivilianShips()
+        {
+            int science = CountOwn(FleetType.Science);
+            int builders = CountOwn(FleetType.Constructor);
+            int wantScience = Personality == AIPersonality.Scientific ? 2 : 1;
+            int wantBuilders = Influence > 90f ? 2 : 1;
+
+            float sciCost = FleetManager.ShipAlloyCost(FleetManager.ScienceShipAlloys, AIOwnerId);
+            float conCost = FleetManager.ShipAlloyCost(FleetManager.ConstructorAlloys, AIOwnerId);
+
+            if (science < wantScience && HasUnsurveyedNearby() && Alloys >= sciCost + 30f && EnergyCredits >= FleetManager.ScienceShipEnergy
+                && MonthlyEnergyIncome > 2f)
             {
-                if (s.OwnerId == AIOwnerId)
-                {
-                    foreach (int neighbor in s.ConnectedSystemIds)
-                    {
-                        if (!list.Contains(neighbor) && _generator.Systems[neighbor].OwnerId == -1)
-                            list.Add(neighbor);
-                    }
-                }
+                Alloys -= sciCost;
+                EnergyCredits -= FleetManager.ScienceShipEnergy;
+                CreateCivilian(FleetType.Science);
             }
-            return list;
+            else if (builders < wantBuilders && Alloys >= conCost + 30f && EnergyCredits >= FleetManager.ConstructorEnergy
+                     && MonthlyEnergyIncome > 2f)
+            {
+                Alloys -= conCost;
+                EnergyCredits -= FleetManager.ConstructorEnergy;
+                CreateCivilian(FleetType.Constructor);
+            }
+        }
+
+        private bool HasUnsurveyedNearby()
+        {
+            if (CapitalSystemId < 0) return false;
+            foreach (var kv in Distances(CapitalSystemId, 8))
+            {
+                var s = EmpireStats.GetSystem(kv.Key);
+                if (s != null && !s.IsSurveyed) return true;
+            }
+            return false;
+        }
+
+        // ==================== ИССЛЕДОВАНИЯ ====================
+
+        private void TickResearch(int year)
+        {
+            if (CurrentTech == null) PickNextTech();
+            if (CurrentTech == null) return;
+
+            float gain = MonthlyScience * ResearchThroughput / 30f / TechnologyManager.YearPenaltyMultiplier(CurrentTech, year);
+            TechProgress += gain;
+            if (TechProgress < CurrentTech.Cost) return;
+
+            var done = CurrentTech;
+            _researched.Add(done.Id);
+            CurrentTech = null;
+            TechProgress = 0f;
+
+            var before = Bonuses.Clone();
+            if (TechEffects.Apply(Bonuses, done.BonusKey)) _researchSlots = Mathf.Min(6, _researchSlots + 1);
+            if (TechEffects.AffectsDurability(done.BonusKey)) FleetManager.Instance?.RescaleDurability(AIOwnerId, before, Bonuses);
+            _designs.Clear();   // новые модули и корпуса
+
+            WarnAboutScience();
+        }
+
+        private void WarnAboutScience()
+        {
+            var vm = VictoryManager.Instance;
+            if (vm == null) return;
+            int left = vm.ScienceRequired - ResearchedCount;
+            int level = left <= 2 ? 2 : left <= 5 ? 1 : 0;
+            if (level > _scienceWarnLevel)
+                NotificationCenter.Show("Научная гонка", $"{AIName}: до научной победы осталось {Mathf.Max(0, left)} техн.",
+                    NotificationCenter.Kind.Warning, 7f);
+            _scienceWarnLevel = level;
+        }
+
+        /// <summary>Выбор технологии: вес категории по характеру, делённый на трудоёмкость.</summary>
+        private void PickNextTech()
+        {
+            int year = TimeManager.Instance != null ? TimeManager.Instance.Year : 2200;
+            bool threatened = AtWar || EmpireStats.MilitaryPower(0) > EmpireStats.MilitaryPower(AIOwnerId) * 1.2f;
+            Technology best = null;
+            float bestScore = float.MinValue;
+            foreach (var t in TechTree)
+            {
+                if (_researched.Contains(t.Id)) continue;
+                bool ok = true;
+                foreach (var req in t.RequiredTechIds) if (!_researched.Contains(req)) { ok = false; break; }
+                if (!ok) continue;
+
+                float w = Profile.TechWeight(t.Category);
+                if (threatened && (t.Category == TechCategory.Weapons || t.Category == TechCategory.Defense)) w *= 1.6f;
+                if (t.BonusKey == "slot+1") w *= Personality == AIPersonality.Scientific ? 1.6f : 1.2f;
+                float score = w * 1000f / (t.Cost * TechnologyManager.YearPenaltyMultiplier(t, year)) * Random.Range(0.85f, 1.15f);
+                if (score > bestScore) { bestScore = score; best = t; }
+            }
+            CurrentTech = best;
+            TechProgress = 0f;
+        }
+
+        // ==================== СОБЫТИЯ ====================
+
+        private void HandleSystemCaptured(StarSystem sys, int oldOwner, int newOwner)
+        {
+            if (oldOwner == AIOwnerId)
+            {
+                if (AtWar) { _systemsLostInWar++; WarWeariness += 8f * Profile.WearinessRate; }
+                if (sys.Id == CapitalSystemId) RelocateCapital();
+            }
+            else if (newOwner == AIOwnerId && AtWar) _systemsTakenInWar++;
+            RaiseDiplomacyChanged();
+        }
+
+        private void HandleShipDestroyed(FleetData ship, int killer)
+        {
+            if (!AtWar || ship == null) return;
+            if (ship.OwnerId == AIOwnerId) { _shipsLostInWar++; WarWeariness += 2f * Profile.WearinessRate; }
+            else if (ship.OwnerId == 0) { _playerShipsLostInWar++; WarWeariness = Mathf.Max(0f, WarWeariness - 0.5f); }
+        }
+
+        /// <summary>Столица пала — правительство переезжает в самую населённую систему.</summary>
+        private void RelocateCapital()
+        {
+            int best = -1, bestPop = -1;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != AIOwnerId) continue;
+                int pop = 0;
+                foreach (var p in s.Planets) pop += Mathf.Max(0, p.Population);
+                if (pop > bestPop) { bestPop = pop; best = s.Id; }
+            }
+            if (best < 0) return;
+            CapitalSystemId = best;
+            _capitalLost = true;
+            NotificationCenter.Show("Столица врага пала", $"{AIName} переносит столицу в {EmpireStats.GetSystem(best)?.Name}",
+                NotificationCenter.Kind.Success, 7f);
         }
 
         // ==================== СОХРАНЕНИЕ ====================
 
-        public AISave CaptureState() => new AISave
+        public AISave CaptureState()
         {
-            Capital = CapitalSystemId, Name = AIName, Title = AITitle, Color = AIEmpireColor,
-            Energy = EnergyCredits, Minerals = Minerals, Alloys = Alloys, Influence = Influence,
-            AlloysIncome = MonthlyAlloysIncome, InfluenceIncome = MonthlyInfluenceIncome,
-            Relations = RelationsWithPlayer, LastRelationBucket = _lastRelationBucket,
-            WarFleetSerial = _warFleetSerial
-        };
+            var s = new AISave
+            {
+                Capital = CapitalSystemId, Name = AIName, Title = AITitle, Color = AIEmpireColor,
+                Personality = (int)Personality, Eliminated = IsEliminated,
+                Energy = EnergyCredits, Minerals = Minerals, Alloys = Alloys, Influence = Influence,
+                BaseEnergy = BaseEnergyIncome, BaseMinerals = BaseMineralsIncome,
+                BaseAlloys = BaseAlloysIncome, BaseInfluence = BaseInfluenceIncome,
+                Bankrupt = _bankrupt,
+                Relations = Opinion, LastRelationBucket = _lastOpinionBucket,
+                WarFleetSerial = _warFleetSerial,
+                CurrentTech = CurrentTech?.Id, TechProgress = TechProgress, ResearchSlots = _researchSlots,
+                ScienceWarnLevel = _scienceWarnLevel
+            };
+            s.Researched.AddRange(_researched);
+            CaptureDiplomacy(s);
+            CaptureMilitary(s);
+            return s;
+        }
 
-        /// <summary>Восстановить империю ИИ; флоты уже созданы FleetManager — привязываем их по типу.</summary>
-        public void RestoreState(AISave s)
+        /// <summary>Восстановить империю ИИ; флоты уже созданы FleetManager из сохранения.</summary>
+        public void RestoreState(AISave s, int version)
         {
             if (s == null) return;
             if (_generator == null) _generator = FindFirstObjectByType<GalaxyGenerator>();
             CapitalSystemId = s.Capital;
-            if (!string.IsNullOrEmpty(s.Name)) AIName = s.Name;
-            AITitle = s.Title ?? "";
+
+            FactionInfo faction = null;
+            foreach (var f in FactionRegistry.AvailableFactions) if (f.Name == s.Name) faction = f;
+            if (faction != null) SetFaction(faction);
+            else if (!string.IsNullOrEmpty(s.Name)) AIName = s.Name;
+            AITitle = s.Title ?? AITitle;
             AIEmpireColor = s.Color;
+            IsEliminated = s.Eliminated;
+
             EnergyCredits = s.Energy; Minerals = s.Minerals; Alloys = s.Alloys; Influence = s.Influence;
-            MonthlyAlloysIncome = s.AlloysIncome; MonthlyInfluenceIncome = s.InfluenceIncome;
-            RelationsWithPlayer = s.Relations;
-            _lastRelationBucket = s.LastRelationBucket;
             _warFleetSerial = Mathf.Max(1, s.WarFleetSerial);
 
-            _aiScienceShip = null;
-            _aiConstructorShip = null;
-            _warFleets.Clear();
-            _surveyTargetSysId = _buildTargetSysId = _warTargetSysId = -1;
-            if (FleetManager.Instance == null) return;
-            foreach (var f in FleetManager.Instance.AllFleets)
+            Bonuses = new EmpireBonuses();
+            _researched.Clear();
+            _researchSlots = 3;
+            CurrentTech = null;
+            TechProgress = 0f;
+
+            if (version >= 2)
             {
-                if (f?.Data == null || f.Data.OwnerId != AIOwnerId) continue;
-                switch (f.Data.Type)
+                BaseEnergyIncome = s.BaseEnergy; BaseMineralsIncome = s.BaseMinerals;
+                BaseAlloysIncome = s.BaseAlloys; BaseInfluenceIncome = s.BaseInfluence;
+                _bankrupt = s.Bankrupt;
+                foreach (var id in s.Researched)
                 {
-                    case FleetType.Science:
-                        if (_aiScienceShip == null) { _aiScienceShip = f; _surveyTargetSysId = f.Data.SurveyTargetSystemId; }
-                        break;
-                    case FleetType.Constructor:
-                        if (_aiConstructorShip == null) { _aiConstructorShip = f; _buildTargetSysId = f.Data.BuildTargetSystemId; }
-                        break;
-                    default:
-                        _warFleets.Add(f);
-                        break;
+                    var t = TechTree.Find(x => x.Id == id);
+                    if (t == null) continue;
+                    _researched.Add(id);
+                    if (TechEffects.Apply(Bonuses, t.BonusKey)) _researchSlots++;
                 }
+                _researchSlots = Mathf.Max(s.ResearchSlots, Mathf.Min(6, _researchSlots));
+                if (!string.IsNullOrEmpty(s.CurrentTech))
+                {
+                    CurrentTech = TechTree.Find(x => x.Id == s.CurrentTech);
+                    TechProgress = s.TechProgress;
+                }
+                _scienceWarnLevel = s.ScienceWarnLevel;
             }
+            RestoreDiplomacy(s, version);
+            RestoreMilitary(s);
+            _designs.Clear();
+            RecalculateEconomy();
         }
 
         // ==================== API ДЛЯ ТОРГОВЛИ ====================

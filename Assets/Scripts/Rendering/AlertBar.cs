@@ -259,13 +259,20 @@ namespace StellarisClone.Rendering
             // 1. Энергия
             if (eco != null && (eco.IsBankrupt || eco.MonthlyEnergyIncome < 0f))
             {
+                float months = eco.MonthsUntilEmpty;
+                string forecast = float.IsInfinity(months) ? ""
+                    : months < 1f ? " Казна опустеет меньше чем через месяц!"
+                    : $" Казна опустеет примерно через {Mathf.CeilToInt(months)} мес.";
+                var rep = eco.Report;
                 _current.Add(new AlertInfo
                 {
-                    Id = "energy", Icon = LGIcon.Energy, Color = UIManager.DS.Red,
-                    Title = eco.IsBankrupt ? "Банкротство!" : "Дефицит гелия-3",
+                    Id = "energy", Icon = LGIcon.Energy, Color = eco.IsBankrupt || eco.BankruptcyLooming ? UIManager.DS.Red : UIManager.DS.Gold,
+                    Title = eco.IsBankrupt ? "Банкротство!" : eco.BankruptcyLooming ? "Угроза банкротства" : "Дефицит гелия-3",
                     Body = eco.IsBankrupt
                         ? "Запасы энергии исчерпаны — производство урезано вдвое. Долгое банкротство приведёт к поражению."
-                        : $"Расход превышает доход ({eco.MonthlyEnergyIncome:0.#} / мес). Стройте генераторные районы и добывающие станции или сократите флот.",
+                        : $"Расход превышает доход ({eco.MonthlyEnergyIncome:0.#} / мес).{forecast} " +
+                          $"Содержание: флот {rep.FleetUpkeep + rep.CivilianUpkeep:0.#}, форпосты {rep.OutpostUpkeepTotal:0.#}. " +
+                          "Стройте генераторы и добывающие станции или сократите флот.",
                     ActionHint = "открыть обзор империи",
                     Action = () => UIManager.Instance?.OpenEmpireOverviewModal()
                 });
@@ -385,9 +392,63 @@ namespace StellarisClone.Rendering
                     });
                 }
 
-                // 8. Угроза
+                // 8. Дипломатическое предложение
                 var ai = AIEmpireManager.Instance;
-                if (ai != null && ai.IsHostileToPlayer && fm.GetMilitaryPower(0) < fm.GetMilitaryPower(AIEmpireManager.AIOwnerId))
+                if (ai != null && ai.PendingOffer != AIEmpireManager.OfferKind.None)
+                {
+                    bool peace = ai.PendingOffer == AIEmpireManager.OfferKind.Peace;
+                    _current.Add(new AlertInfo
+                    {
+                        Id = "offer", Icon = peace ? LGIcon.Peace : LGIcon.Handshake, Color = UIManager.DS.Green,
+                        Title = peace ? $"{ai.AIName} предлагает мир" : $"{ai.AIName} предлагает пакт",
+                        Body = $"Причина: {ai.PendingOfferReason}. Предложение в силе ещё {ai.PendingOfferDays} дн.",
+                        ActionHint = "открыть дипломатию",
+                        Action = () => DiplomacyModal.Instance?.Open()
+                    });
+                }
+
+                // 9. Осады
+                var sm = SiegeManager.Instance;
+                if (sm != null)
+                {
+                    StarSystem lost = null, taking = null; int defend = 0, attack = 0;
+                    foreach (var sg in sm.Sieges)
+                    {
+                        var sys = sg.SystemId >= 0 && sg.SystemId < gen.Systems.Count ? gen.Systems[sg.SystemId] : null;
+                        if (sys == null || !sg.Active) continue;
+                        if (sys.OwnerId == 0) { defend++; if (lost == null) lost = sys; }
+                        else if (sg.Attacker == 0) { attack++; if (taking == null) taking = sys; }
+                    }
+                    if (lost != null)
+                    {
+                        var target = lost;
+                        _current.Add(new AlertInfo
+                        {
+                            Id = "siege_def", Icon = LGIcon.Siege, Color = UIManager.DS.Red, Count = defend,
+                            Title = "Ваша система в осаде",
+                            Body = $"{target.Name}: враг блокирует систему. Если не прислать военный флот, через {SiegeManager.RequiredDays(target):0} дн. осады она перейдёт к противнику.",
+                            ActionHint = "показать систему",
+                            Action = () => Focus(target)
+                        });
+                    }
+                    if (taking != null)
+                    {
+                        var target = taking;
+                        var sg = sm.GetSiege(target.Id);
+                        _current.Add(new AlertInfo
+                        {
+                            Id = "siege_att", Icon = LGIcon.Siege, Color = UIManager.DS.Green, Count = attack,
+                            Title = "Идёт осада",
+                            Body = $"{target.Name}: {(sg != null ? sg.Progress : 0f):0} / {SiegeManager.RequiredDays(target):0} дн." +
+                                   (sg != null && sg.Contested ? " Осада стоит — на орбите флот защитника." : " Не уводите флот до захвата."),
+                            ActionHint = "показать систему",
+                            Action = () => Focus(target)
+                        });
+                    }
+                }
+
+                // 10. Угроза
+                if (ai != null && ai.AtWar && fm.GetMilitaryPower(0) < fm.GetMilitaryPower(AIEmpireManager.AIOwnerId))
                 {
                     _current.Add(new AlertInfo
                     {

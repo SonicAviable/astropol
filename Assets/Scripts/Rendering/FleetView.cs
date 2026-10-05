@@ -410,7 +410,7 @@ namespace StellarisClone.Rendering
 
             if (Data.State == FleetState.InHyperlane)
             {
-                float speedBonus = TechnologyManager.Instance != null ? TechnologyManager.Instance.HyperlaneSpeedMultiplier : 1.0f;
+                float speedBonus = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed;
                 speedBonus *= Mathf.Max(0.5f, Data.HyperSpeed);
                 Data.DaysRemainingInTransit -= 1f * speedBonus;
                 if (Data.DaysRemainingInTransit <= 0f) ArriveAtTargetSystem();
@@ -424,7 +424,7 @@ namespace StellarisClone.Rendering
 
             if (Data.State == FleetState.Surveying)
             {
-                Data.DaysRemainingSurvey -= 1f;
+                Data.DaysRemainingSurvey -= EmpireBonuses.For(Data.OwnerId).SurveySpeed;
                 if (Data.DaysRemainingSurvey <= 0f) CompleteSurvey();
             }
 
@@ -478,8 +478,14 @@ namespace StellarisClone.Rendering
             int sysId = Data.BuildTargetSystemId;
             Data.BuildTargetSystemId = -1;
 
-            if (FleetManager.Instance != null && sysId >= 0)
-                FleetManager.Instance.ClaimSystem(sysId, Data.OwnerId);
+            if (FleetManager.Instance != null && sysId >= 0
+                && !FleetManager.Instance.ClaimSystem(sysId, Data.OwnerId) && Data.OwnerId == 0)
+            {
+                // Систему успели занять — половина сплавов возвращается
+                var eco = EconomyManager.Instance;
+                if (eco != null) { eco.Alloys += FleetManager.StarbaseAlloysCost * 0.5f; eco.RaiseResourcesChanged(); }
+                NotificationCenter.Show("Форпост не построен", "Систему уже заняли. Возвращено 50% сплавов", NotificationCenter.Kind.Warning, 5f);
+            }
 
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;

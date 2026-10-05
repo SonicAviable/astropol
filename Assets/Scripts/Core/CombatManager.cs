@@ -25,7 +25,6 @@ namespace StellarisClone.Core
         private UnityEngine.UI.Text _hudBody;
         private UnityEngine.UI.Button _ftlBtn;
         private Font _font;
-        private float _ftlFailLock;
 
         private class FloatingDmg
         {
@@ -70,7 +69,7 @@ namespace StellarisClone.Core
             bool involvesAi = (a.OwnerId == AIEmpireManager.AIOwnerId) || (b.OwnerId == AIEmpireManager.AIOwnerId);
             bool involvesPlayer = a.OwnerId == 0 || b.OwnerId == 0;
             if (involvesAi && involvesPlayer)
-                return ai == null || ai.IsHostileToPlayer;
+                return ai == null || ai.AtWar;
             return true;
         }
 
@@ -155,7 +154,9 @@ namespace StellarisClone.Core
             if (a.FireCooldown > 0f) return;
             a.FireCooldown = 1f / Mathf.Max(0.2f, a.FireRate);
 
-            float evadeChance = Mathf.Clamp01(d.Evasion / 100f);
+            var ab = EmpireBonuses.For(a.OwnerId);
+            var db = EmpireBonuses.For(d.OwnerId);
+            float evadeChance = Mathf.Clamp01((d.Evasion * db.EvasionMult - ab.Accuracy) / 100f);
             if (Random.value < evadeChance * 0.45f)
             {
                 SpawnFloater(defender.transform.position, "МИМО", new Color(0.7f, 0.85f, 0.9f));
@@ -163,12 +164,12 @@ namespace StellarisClone.Core
                 return;
             }
 
-            float dealt = ApplyLayeredDamage(d, a.Damage, a.PrimaryWeapon);
+            float dealt = ApplyLayeredDamage(d, a.Damage * ab.DamageMult(a.PrimaryWeapon), a.PrimaryWeapon);
             SpawnBeam(attacker.transform.position, defender.transform.position, WeaponColor(a.PrimaryWeapon), 0.18f);
             SpawnFloater(defender.transform.position, $"-{dealt:0}", WeaponColor(a.PrimaryWeapon));
 
             if (d.HullPoints <= 0f)
-                DestroyFleet(defender);
+                DestroyFleet(defender, a.OwnerId);
         }
 
         public static float ApplyLayeredDamage(FleetData target, float raw, WeaponDamageType type)
@@ -210,14 +211,19 @@ namespace StellarisClone.Core
             return shown;
         }
 
-        private void DestroyFleet(FleetView fv)
+        /// <summary>Корабль уничтожен в бою (владелец, кем уничтожен).</summary>
+        public static event System.Action<FleetData, int> OnShipDestroyed;
+
+        private void DestroyFleet(FleetView fv, int killerOwner)
         {
             if (fv?.Data == null) return;
             fv.Data.Destroyed = true;
             fv.Data.InCombat = false;
             SpawnFloater(fv.transform.position, "УНИЧТОЖЕН", UIManager.DS.Red);
+            OnShipDestroyed?.Invoke(fv.Data, killerOwner);
 
-            string ownerName = fv.Data.OwnerId == 0 ? "Ваш корабль" : "USAF";
+            string ownerName = fv.Data.OwnerId == 0 ? "Ваш корабль"
+                : AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Противник";
             NotificationCenter.Show("Корабль уничтожен",
                 $"{ownerName}: {fv.Data.Name}",
                 fv.Data.OwnerId == 0 ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Success,
@@ -229,16 +235,24 @@ namespace StellarisClone.Core
             Destroy(fv.gameObject, 0.15f);
         }
 
-        public bool TryEmergencyFtl(FleetView fleet)
+        private readonly Dictionary<int, float> _ftlLocks = new Dictionary<int, float>();
+
+        public bool TryEmergencyFtl(FleetView fleet) => TryEmergencyFtl(fleet, -1);
+
+        /// <summary>
+        /// Экстренный прыжок из боя (72% успеха, после сбоя — пауза). Флот уходит в соседнюю
+        /// систему — свою, если есть; preferredTarget — куда лететь дальше после прыжка.
+        /// </summary>
+        public bool TryEmergencyFtl(FleetView fleet, int preferredTarget)
         {
             if (fleet?.Data == null || !fleet.Data.InCombat) return false;
-            if (_ftlFailLock > Time.unscaledTime) return false;
+            if (_ftlLocks.TryGetValue(fleet.Data.Id, out float lockUntil) && lockUntil > Time.unscaledTime) return false;
             if (_generator == null) return false;
 
             bool success = Random.value < 0.72f;
             if (!success)
             {
-                _ftlFailLock = Time.unscaledTime + 2.4f;
+                _ftlLocks[fleet.Data.Id] = Time.unscaledTime + 2.4f;
                 SpawnFloater(fleet.transform.position, "СБОЙ ГПД", UIManager.DS.Gold);
                 return false;
             }
@@ -256,6 +270,11 @@ namespace StellarisClone.Core
             fleet.Data.InCombat = false;
             fleet.Data.Path.Clear();
             FleetManager.Instance?.IssueMoveOrder(fleet, escape);
+            if (preferredTarget >= 0 && preferredTarget != escape)
+            {
+                var tail = GalaxyPathfinder.FindPath(escape, preferredTarget, _generator);
+                if (tail != null) foreach (int step in tail) fleet.Data.Path.Enqueue(step);
+            }
             SpawnFloater(fleet.transform.position, "ГПД АКТИВИРОВАН", UIManager.DS.NeonCyan);
             return true;
         }

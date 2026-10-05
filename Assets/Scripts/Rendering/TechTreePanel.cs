@@ -762,13 +762,14 @@ namespace StellarisClone.Rendering
             subTxt.rectTransform.sizeDelta = new Vector2(0, 16);
 
             float penalty = tm.GetYearPenalty(tech);
-            int days = Mathf.RoundToInt(tech.BaseDays * penalty);
+            int days = tm.EstimateDays(tech);
+            string daysText = isResearched ? "изучено" : $"~{TechnologyManager.FormatDays(days)}";
             var clock = LGIcons.Create(infoBox.transform, LGIcon.Clock, 12f, ST.Gold);
             clock.rectTransform.anchorMin = clock.rectTransform.anchorMax = new Vector2(0, 0);
             clock.rectTransform.pivot = new Vector2(0, 0);
             clock.rectTransform.anchoredPosition = new Vector2(0, 4);
 
-            var costTxt = MakeLabel(infoBox.transform, $"{days} дн.", 10, FontStyle.Bold, ST.Gold, TextAnchor.LowerLeft);
+            var costTxt = MakeLabel(infoBox.transform, daysText, 10, FontStyle.Bold, ST.Gold, TextAnchor.LowerLeft);
             costTxt.rectTransform.anchorMin = new Vector2(0, 0);
             costTxt.rectTransform.anchorMax = new Vector2(1, 0);
             costTxt.rectTransform.pivot = new Vector2(0.5f, 0);
@@ -845,7 +846,12 @@ namespace StellarisClone.Rendering
             var fx = obj.AddComponent<TechCardFX>();
             fx.Init(bgImg, borderOutline, borderColor, isCurrent);
 
-            TooltipHelper.Attach(obj, $"<b>{tech.Name}</b>\n{tech.Description}\n\n{TechCategoryInfo.Name(tech.Category)} ({tierStr})\nБазовое время: {days} дн.");
+            string penaltyNote = penalty > 1.01f ? $"\n<color=#FFAA88>Технология опережает время: ×{penalty:0.0} к сроку</color>" : "";
+            TooltipHelper.Attach(obj,
+                $"<b>{tech.Name}</b>\n{tech.Description}\n\n{TechCategoryInfo.Name(tech.Category)} ({tierStr})\n" +
+                $"Стоимость: {tech.Cost:0} очков науки (×{TechnologyManager.TierCostFactor(tech.Tier):0.#} за уровень)\n" +
+                $"Срок при текущей скорости науки ({tm.MonthlyResearchIncome:0.#}/мес): <b>{TechnologyManager.FormatDays(days)}</b>" +
+                penaltyNote);
 
             return new TechCardView
             {
@@ -984,9 +990,12 @@ namespace StellarisClone.Rendering
                 if (isCur && card.ProgressBar != null)
                 {
                     card.ProgressBar.anchorMax = new Vector2(card.Data.ProgressNormalized, 1f);
-                    float penalty = tm.GetYearPenalty(card.Data);
-                    int remaining = Mathf.Max(0, (int)(card.Data.BaseDays * penalty - card.Data.AccumulatedDays));
-                    card.Cost.text = $"<color=#20EBB0>В ПРОЦЕССЕ · {remaining} дн.</color>";
+                    int remaining = tm.EstimateDays(card.Data);
+                    bool queued = true;
+                    foreach (var slot in tm.Slots) if (slot.CurrentTech == card.Data) queued = false;
+                    card.Cost.text = queued
+                        ? $"<color=#F2C747>В ОЧЕРЕДИ · ~{TechnologyManager.FormatDays(remaining)}</color>"
+                        : $"<color=#20EBB0>В ПРОЦЕССЕ · ~{TechnologyManager.FormatDays(remaining)}</color>";
                 }
             }
         }

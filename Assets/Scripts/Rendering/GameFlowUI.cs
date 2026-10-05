@@ -305,39 +305,45 @@ namespace StellarisClone.Rendering
             float y = 0f;
             if (vm != null)
             {
-                GoalRow(ref y, LGIcon.Starbase, "Доминирование", $"Постройте форпосты в {vm.DominationRequired} системах.",
+                GoalRow(ref y, LGIcon.Starbase, "Доминирование",
+                        $"Постройте форпосты в {vm.DominationRequired} системах. У соперника: {vm.RivalDominationProgress}.",
                         vm.DominationProgress, vm.DominationRequired, UIManager.DS.NeonCyan);
-                GoalRow(ref y, LGIcon.Research, "Научная победа", $"Изучите {vm.ScienceRequired} технологий.",
+                GoalRow(ref y, LGIcon.Research, "Научная победа",
+                        $"Изучите {vm.ScienceRequired} технологий. У соперника: {vm.RivalScienceProgress}.",
                         vm.ScienceProgress, vm.ScienceRequired, UIManager.DS.Green);
-                GoalRow(ref y, LGIcon.Clock, "Выживание", $"Продержитесь {vm.SurvivalYearsRequired} лет.",
-                        vm.YearsElapsed, vm.SurvivalYearsRequired, UIManager.DS.Gold);
+                int me = vm.PlayerScore, rival = vm.RivalScore;
+                GoalRow(ref y, LGIcon.Trophy, $"Очки к {VictoryManager.EndYear} году",
+                        $"Осталось {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}. Ваш счёт {me}, у соперника {rival}. " +
+                        $"Очки: система {EmpireStats.ScorePerSystem}, житель {EmpireStats.ScorePerPop}, технология {EmpireStats.ScorePerTech}, флот — 1 за {Mathf.RoundToInt(1f / EmpireStats.ScorePerPower)} мощи.",
+                        me, Mathf.Max(1, me + rival), UIManager.DS.Gold, $"{me} : {rival}", 112f);
             }
 
             var lose = LGBuild.Panel(_pageHost, "Lose", new Color(0.30f, 0.06f, 0.08f, 0.9f));
-            lose.rectTransform.TopBand(y + 4, 74);
+            lose.rectTransform.TopBand(y + 4, 84);
             LG.Platter(lose.gameObject, 16f).SetRim(new Color(1f, 0.4f, 0.42f, 0.45f));
             var wi = LGIcons.Create(lose.transform, LGIcon.Warning, 20, UIManager.DS.Red);
             wi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(20, 20));
             var lt = LGBuild.Label(lose.transform,
-                "<b>Поражение</b>\nпотеря всех систем или " + (vm != null ? vm.BankruptcyLimit : 6) + " месяцев банкротства (энергия ниже нуля).",
+                "<b>Поражение</b>\nпотеря всех систем, " + (vm != null ? vm.BankruptcyLimit : 6) + " мес. банкротства, " +
+                "соперник первым добился доминирования или научной победы, или у него больше очков в " + VictoryManager.EndYear + " году.",
                 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
             lt.rectTransform.Stretch(48, 6, 14, 6);
 
             BackButton();
         }
 
-        private void GoalRow(ref float y, LGIcon icon, string title, string desc, int cur, int req, Color col)
+        private void GoalRow(ref float y, LGIcon icon, string title, string desc, int cur, int req, Color col, string valueText = null, float height = 84f)
         {
             var row = LGBuild.Panel(_pageHost, "Goal", UIManager.DS.BgSlot);
-            row.rectTransform.TopBand(y, 84);
+            row.rectTransform.TopBand(y, height);
             LG.Platter(row.gameObject, 16f).SetRim(new Color(col.r, col.g, col.b, 0.3f));
             var ic = LGIcons.Create(row.transform, icon, 26, col);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 6), new Vector2(26, 26));
             var body = LGBuild.Rect(row.transform, "Body");
             body.Stretch(56, 10, 16, 10);
             LGBuild.Label(body, $"<b>{title}</b>", 14, UIManager.DS.TextPrimary, TextAnchor.UpperLeft);
-            LGBuild.Label(body, $"{Mathf.Min(cur, req)} / {req}", 14, col, TextAnchor.UpperRight, bold: true);
-            var d = LGBuild.Label(body, desc, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
+            LGBuild.Label(body, valueText ?? $"{Mathf.Min(cur, req)} / {req}", 14, col, TextAnchor.UpperRight, bold: true);
+            var d = LGBuild.Label(body, desc, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, wrap: true);
             d.rectTransform.offsetMax = new Vector2(0, -22);
             var barHost = LGBuild.Rect(body, "Bar");
             barHost.anchorMin = new Vector2(0, 0);
@@ -345,7 +351,7 @@ namespace StellarisClone.Rendering
             barHost.offsetMin = new Vector2(0, 2);
             barHost.offsetMax = new Vector2(0, 12);
             LGBuild.Bar(barHost, col, cur / (float)Mathf.Max(1, req), 7f);
-            y += 94f;
+            y += height + 10f;
         }
 
         private void BuildControlsPage()
@@ -450,9 +456,7 @@ namespace StellarisClone.Rendering
             if (_end == null) return;
             if (_pauseOpen) ClosePause(resume: false);
 
-            bool victory = outcome == VictoryManager.Outcome.Domination
-                        || outcome == VictoryManager.Outcome.Science
-                        || outcome == VictoryManager.Outcome.Survival;
+            bool victory = VictoryManager.IsVictory(outcome);
             Color col = victory ? UIManager.DS.Gold : UIManager.DS.Red;
 
             _endFx.SetRim(new Color(col.r, col.g, col.b, 0.75f));
@@ -493,8 +497,8 @@ namespace StellarisClone.Rendering
                 $"<color=#8AA2A8>Империя:</color>  <b>{empire}</b>\n" +
                 $"<color=#8AA2A8>Дата:</color>  {date}   ·   <color=#8AA2A8>лет у власти:</color> {(vm != null ? vm.YearsElapsed : 0)}\n" +
                 $"<color=#8AA2A8>Систем:</color>  {systems}   ·   <color=#8AA2A8>колоний:</color> {colonies}   ·   <color=#8AA2A8>население:</color> {pop}\n" +
-                $"<color=#8AA2A8>Технологий изучено:</color>  {(vm != null ? vm.ScienceProgress : 0)}\n" +
-                $"<color=#8AA2A8>Мощь флота:</color>  {power:N0}";
+                $"<color=#8AA2A8>Технологий изучено:</color>  {(vm != null ? vm.ScienceProgress : 0)}   ·   <color=#8AA2A8>мощь флота:</color> {power:N0}\n" +
+                $"<color=#8AA2A8>Очки:</color>  <b>{(vm != null ? vm.PlayerScore : 0)}</b>   ·   <color=#8AA2A8>у соперника:</color> {(vm != null ? vm.RivalScore : 0)}";
         }
 
         // ================================================================ Трекер целей
@@ -511,7 +515,7 @@ namespace StellarisClone.Rendering
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => { OpenPause(); ShowPage(Page.Goals); });
             LG.Glass(_tracker, 18f).SetRim(new Color(1f, 0.85f, 0.5f, 0.22f));
-            TooltipHelper.Attach(_tracker, "<b>Цели империи</b>\nПрогресс к трём путям победы.\n\n<color=#8AA2A8>ЛКМ — подробнее</color>");
+            TooltipHelper.Attach(_tracker, "<b>Цели империи</b>\nПрогресс к победе.\n\n<color=#8AA2A8>ЛКМ — подробнее</color>");
             var mo = LG.Motion(_tracker, LGAppear.Kind.SlideRight);
             mo.distance = 30f;
             mo.delay = 0.2f;
@@ -526,7 +530,7 @@ namespace StellarisClone.Rendering
 
             _domVal = TrackerRow(rt, 34, LGIcon.Starbase, "Доминирование", UIManager.DS.NeonCyan, out _domBar);
             _sciVal = TrackerRow(rt, 60, LGIcon.Research, "Наука", UIManager.DS.Green, out _sciBar);
-            _survVal = TrackerRow(rt, 86, LGIcon.Clock, "Выживание", UIManager.DS.Gold, out _survBar);
+            _survVal = TrackerRow(rt, 86, LGIcon.Trophy, $"Очки · {VictoryManager.EndYear}", UIManager.DS.Gold, out _survBar);
 
             LG.Skin(_tracker.transform);
             _tracker.SetActive(false);
@@ -567,13 +571,23 @@ namespace StellarisClone.Rendering
 
             var vm = VictoryManager.Instance;
             if (vm == null) return;
-            int d = vm.DominationProgress, s = vm.ScienceProgress, y = vm.YearsElapsed;
+            int d = vm.DominationProgress, s = vm.ScienceProgress;
+            int me = vm.PlayerScore, rival = vm.RivalScore;
             _domVal.text = $"{d} / {vm.DominationRequired}";
             _sciVal.text = $"{s} / {vm.ScienceRequired}";
-            _survVal.text = $"{y} / {vm.SurvivalYearsRequired} лет";
+            _survVal.text = me >= rival ? $"{me} : {rival}" : $"<color=#FF6A6A>{me} : {rival}</color>";
             LGBuild.SetBar(_domBar, d / (float)Mathf.Max(1, vm.DominationRequired));
             LGBuild.SetBar(_sciBar, s / (float)Mathf.Max(1, vm.ScienceRequired));
-            LGBuild.SetBar(_survBar, y / (float)Mathf.Max(1, vm.SurvivalYearsRequired));
+            LGBuild.SetBar(_survBar, me / (float)Mathf.Max(1, me + rival));
+
+            var tip = _tracker.GetComponent<TooltipTrigger>();
+            if (tip != null)
+                tip.SetText(
+                    "<b>Цели империи</b>\n" +
+                    $"Доминирование: вы {d}, соперник {vm.RivalDominationProgress} из {vm.DominationRequired} систем\n" +
+                    $"Наука: вы {s}, соперник {vm.RivalScienceProgress} из {vm.ScienceRequired} технологий\n" +
+                    $"Очки: {me} против {rival}; подсчёт через {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)} ({VictoryManager.EndYear})\n\n" +
+                    "<color=#8AA2A8>Если соперник первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>");
         }
 
         // ================================================================ Перезапуск / выход

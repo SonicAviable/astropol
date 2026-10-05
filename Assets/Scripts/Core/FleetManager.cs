@@ -21,8 +21,20 @@ namespace StellarisClone.Core
 
         private int _fleetIdCounter = 1;
 
-        private const float StarbaseAlloysCost = 50f;
-        private const float StarbaseInfluenceCost = 25f;
+        public const float StarbaseAlloysCost = 50f;
+        public const float StarbaseInfluenceCost = 25f;
+
+        public const float ScienceShipAlloys = 100f, ScienceShipEnergy = 50f;
+        public const float ConstructorAlloys = 80f, ConstructorEnergy = 20f;
+        public const float WarshipEnergy = 10f;
+
+        /// <summary>Влияние на форпост с учётом технологий владельца.</summary>
+        public static float OutpostInfluenceCost(int owner)
+            => Mathf.Max(5f, StarbaseInfluenceCost - EmpireBonuses.For(owner).OutpostInfluenceDiscount);
+
+        /// <summary>Цена корабля в сплавах с учётом технологий владельца.</summary>
+        public static float ShipAlloyCost(float baseCost, int owner)
+            => Mathf.Round(baseCost * Mathf.Max(0.3f, EmpireBonuses.For(owner).ShipCostMult));
 
         [Header("События и аномалии")]
         [Range(0f, 1f)] [SerializeField] private float surveyAnomalyChance = 0.7f;
@@ -45,10 +57,67 @@ namespace StellarisClone.Core
             if (_generator.Systems.Count == 0)
                 _generator.GenerateGalaxy();
 
+            if (TimeManager.Instance != null)
+                TimeManager.Instance.OnDayPassed += HandleDayPassed;
+
             // При загрузке флоты и экономику восстанавливает SaveLoader
             if (GameSession.IsLoading) return;
 
             SetupStartingEconomyAndFleets();
+        }
+
+        private void OnDestroy()
+        {
+            if (TimeManager.Instance != null)
+                TimeManager.Instance.OnDayPassed -= HandleDayPassed;
+        }
+
+        // ==================== РЕМОНТ ====================
+
+        /// <summary>Щиты восстанавливаются вне боя везде.</summary>
+        public const float ShieldRegenPerDay = 0.20f;
+        /// <summary>Корпус и броня чинятся только на своей территории.</summary>
+        public const float RepairPerDayOwn = 0.05f;
+        /// <summary>У колонии (верфи, доки) — вдвое быстрее.</summary>
+        public const float RepairPerDayColony = 0.10f;
+
+        private void HandleDayPassed(int day, int month, int year)
+        {
+            if (_generator == null) return;
+            foreach (var f in _allFleets)
+            {
+                var d = f?.Data;
+                if (d == null || d.Destroyed || d.InCombat) continue;
+
+                d.ShieldPoints = Mathf.Min(d.MaxShieldPoints, d.ShieldPoints + d.MaxShieldPoints * ShieldRegenPerDay);
+
+                if (d.State == FleetState.InHyperlane) continue;
+                float rate = RepairRateAt(d.CurrentSystemId, d.OwnerId);
+                if (rate <= 0f) continue;
+                d.HullPoints = Mathf.Min(d.MaxHullPoints, d.HullPoints + d.MaxHullPoints * rate);
+                d.ArmorPoints = Mathf.Min(d.MaxArmorPoints, d.ArmorPoints + d.MaxArmorPoints * rate);
+            }
+        }
+
+        /// <summary>Скорость ремонта (доля в день) для корабля владельца в системе.</summary>
+        public float RepairRateAt(int systemId, int ownerId)
+        {
+            if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return 0f;
+            var sys = _generator.Systems[systemId];
+            if (sys.OwnerId != ownerId) return 0f;
+            foreach (var p in sys.Planets) if (p.Population > 0) return RepairPerDayColony;
+            return RepairPerDayOwn;
+        }
+
+        public bool NeedsRepair(FleetData d)
+            => d != null && (d.HullPoints < d.MaxHullPoints - 0.5f || d.ArmorPoints < d.MaxArmorPoints - 0.5f);
+
+        /// <summary>Пересчитать прочность флота владельца после технологии брони/щитов.</summary>
+        public void RescaleDurability(int owner, EmpireBonuses before, EmpireBonuses after)
+        {
+            foreach (var f in _allFleets)
+                if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == owner)
+                    CombatMath.RescaleDurability(f.Data, before, after);
         }
 
         public int NextFleetId => _fleetIdCounter;
@@ -146,14 +215,38 @@ namespace StellarisClone.Core
                 SelectFleet(null);
         }
 
+        /// <summary>Распустить корабль (банкротство, сокращение флота).</summary>
+        public void DisbandFleet(FleetView view)
+        {
+            if (view?.Data == null) return;
+            view.Data.Destroyed = true;
+            NotifyFleetDestroyed(view);
+            Destroy(view.gameObject);
+        }
+
+        /// <summary>Боевая мощь владельца с учётом технологий и текущих повреждений.</summary>
         public int GetMilitaryPower(int ownerId)
         {
-            int sum = 0;
+            float sum = 0f;
             foreach (var f in _allFleets)
             {
                 if (f?.Data == null || f.Data.Destroyed) continue;
                 if (f.Data.OwnerId == ownerId && f.Data.Type == FleetType.Military)
-                    sum += f.Data.MilitaryPower;
+                    sum += CombatMath.Power(f.Data);
+            }
+            return Mathf.RoundToInt(sum);
+        }
+
+        /// <summary>Боевая мощь владельца в конкретной системе (на орбите, не в пути).</summary>
+        public float GetMilitaryPowerInSystem(int ownerId, int systemId)
+        {
+            float sum = 0f;
+            foreach (var f in _allFleets)
+            {
+                var d = f?.Data;
+                if (d == null || d.Destroyed || d.OwnerId != ownerId || d.Type != FleetType.Military) continue;
+                if (d.State == FleetState.InHyperlane || d.CurrentSystemId != systemId) continue;
+                sum += CombatMath.Power(d);
             }
             return sum;
         }
@@ -178,6 +271,23 @@ namespace StellarisClone.Core
             return ShipDesignManager.Instance.TryRetrofit(fleet.Data);
         }
 
+        /// <summary>Где строятся корабли игрока: столица, а если она потеряна — самая населённая своя система.</summary>
+        public int PlayerShipyardSystem()
+        {
+            if (_generator == null) return -1;
+            var cap = _generator.Systems.Count > EconomyManager.PlayerCapitalId ? _generator.Systems[EconomyManager.PlayerCapitalId] : null;
+            if (cap != null && cap.OwnerId == 0) return cap.Id;
+            int best = -1, bestPop = -1;
+            foreach (var s in _generator.Systems)
+            {
+                if (s.OwnerId != 0) continue;
+                int pop = 0;
+                foreach (var p in s.Planets) pop += Mathf.Max(0, p.Population);
+                if (pop > bestPop) { bestPop = pop; best = s.Id; }
+            }
+            return best;
+        }
+
         public bool BuildShip(FleetType type)
         {
             var eco = EconomyManager.Instance;
@@ -190,15 +300,15 @@ namespace StellarisClone.Core
             switch (type)
             {
                 case FleetType.Science:
-                    costAlloys = 100f; costEnergy = 50f;
+                    costAlloys = ScienceShipAlloys; costEnergy = ScienceShipEnergy;
                     shipName = $"НИС «Академик {AllFleets.Count + 1}»";
                     break;
                 case FleetType.Constructor:
-                    costAlloys = 80f; costEnergy = 20f;
+                    costAlloys = ConstructorAlloys; costEnergy = ConstructorEnergy;
                     shipName = $"Строитель {AllFleets.Count + 1}";
                     break;
                 case FleetType.Military:
-                    costAlloys = 60f; costEnergy = 10f;
+                    costAlloys = 60f; costEnergy = WarshipEnergy;
                     shipName = $"{AllFleets.Count + 1}-й Корвет";
                     break;
             }
@@ -208,17 +318,20 @@ namespace StellarisClone.Core
                 var design = ShipDesignManager.Instance.GetLatestDesign(ShipClass.Corvette);
                 if (design != null) costAlloys = design.AlloyCost;
             }
+            costAlloys = ShipAlloyCost(costAlloys, 0);
 
             if (!eco.CanAfford(costEnergy, 0f, costAlloys, 0f))
             {
                 NotificationCenter.Show("Недостаточно ресурсов",
-                    $"Нужно {costAlloys} ⬢  и  {costEnergy} ⚡",
+                    $"Нужно {costAlloys} сплавов и {costEnergy} гелия-3",
                     NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
 
+            int yard = PlayerShipyardSystem();
+            if (yard < 0) { NotificationCenter.Show("Нет верфи", "У вас не осталось своих систем", NotificationCenter.Kind.Danger, 4f); return false; }
             eco.TrySpend(costEnergy, 0f, costAlloys, 0f);
-            var created = CreateFleetObject(shipName, 0, type);
+            var created = CreateFleetObject(shipName, yard, type);
             if (type == FleetType.Military)
             {
                 var design = ShipDesignManager.Instance?.GetLatestDesign(ShipClass.Corvette);
@@ -226,6 +339,39 @@ namespace StellarisClone.Core
             }
 
             NotificationCenter.Show("Корабль построен", shipName, NotificationCenter.Kind.Success, 4f);
+            eco.RecalculateAll();
+            return true;
+        }
+
+        /// <summary>Проект игрока для корпуса: последний сохранённый или автоматический под изученные технологии.</summary>
+        public ShipDesign PlayerDesignFor(ShipClass cls)
+        {
+            var dm = ShipDesignManager.Instance;
+            if (dm == null) return null;
+            var d = dm.GetLatestDesign(cls);
+            if (d != null) return d;
+            var tm = TechnologyManager.Instance;
+            string name = cls == ShipClass.Destroyer ? "Эсминец «Типовой»" : cls == ShipClass.Frigate ? "Фрегат «Типовой»" : "Корвет «Типовой»";
+            return dm.CreateAutoDesign(cls, WeaponDamageType.Kinetic, WeaponDamageType.Energy,
+                id => tm != null && tm.FindTech(id) != null && tm.FindTech(id).IsResearched, name);
+        }
+
+        /// <summary>Построить боевой корабль заданного класса (эсминцы — только после технологии).</summary>
+        public bool BuildWarship(ShipClass cls)
+        {
+            if (cls == ShipClass.Destroyer && !(TechnologyManager.Instance?.DestroyerUnlocked ?? false))
+            {
+                NotificationCenter.Show("Эсминцы недоступны", "Изучите «Верфи класса „Эсминец“»", NotificationCenter.Kind.Warning, 4f);
+                return false;
+            }
+            var design = PlayerDesignFor(cls);
+            if (design == null) return false;
+            if (!BuildShipFromDesign(design))
+            {
+                NotificationCenter.Show("Недостаточно ресурсов",
+                    $"Нужно {ShipAlloyCost(design.AlloyCost, 0):0} сплавов и {WarshipEnergy:0} гелия-3", NotificationCenter.Kind.Warning, 4f);
+                return false;
+            }
             return true;
         }
 
@@ -233,17 +379,21 @@ namespace StellarisClone.Core
         {
             var eco = EconomyManager.Instance;
             if (eco == null || design == null || !design.IsPowerValid) return false;
-            if (!eco.CanAfford(10f, 0f, design.AlloyCost, 0f)) return false;
-            eco.TrySpend(10f, 0f, design.AlloyCost, 0f);
+            int yard = PlayerShipyardSystem();
+            if (yard < 0) return false;
+            float cost = ShipAlloyCost(design.AlloyCost, 0);
+            if (!eco.CanAfford(WarshipEnergy, 0f, cost, 0f)) return false;
+            eco.TrySpend(WarshipEnergy, 0f, cost, 0f);
             string cls = design.HullClass switch
             {
                 ShipClass.Frigate => "Фрегат",
                 ShipClass.Destroyer => "Эсминец",
                 _ => "Корвет"
             };
-            var created = CreateFleetObject($"{AllFleets.Count + 1}-й {cls}", 0, FleetType.Military);
+            var created = CreateFleetObject($"{AllFleets.Count + 1}-й {cls}", yard, FleetType.Military);
             created.Data.ApplyDesign(design);
             NotificationCenter.Show("Корабль построен", created.Data.Name, NotificationCenter.Kind.Success, 4f);
+            EconomyManager.Instance?.RecalculateAll();
             return true;
         }
 
@@ -447,6 +597,15 @@ namespace StellarisClone.Core
                 }
                 NotificationCenter.Show("Разведка завершена", sys.Name, NotificationCenter.Kind.Success, 4f);
             }
+            else if (ownerId == AIEmpireManager.AIOwnerId && AIEmpireManager.Instance != null)
+            {
+                // ИИ получает за разведку те же трофеи, что и игрок
+                var ai = AIEmpireManager.Instance;
+                ai.AddStock("minerals", 75f);
+                ai.AddStock("alloys", 40f);
+                ai.AddStock("influence", 15f);
+                ai.AddStock("energy", 25f);
+            }
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             OnSystemSurveyCompleted?.Invoke(sys);
@@ -472,10 +631,11 @@ namespace StellarisClone.Core
             if (!system.IsSurveyed) return false;
 
             var eco = EconomyManager.Instance;
-            if (eco == null || !eco.CanAfford(0f, 0f, StarbaseAlloysCost, StarbaseInfluenceCost))
+            float influence = OutpostInfluenceCost(0);
+            if (eco == null || !eco.CanAfford(0f, 0f, StarbaseAlloysCost, influence))
             {
                 NotificationCenter.Show("Недостаточно ресурсов",
-                    $"Форпост: {StarbaseAlloysCost} ⬢ + {StarbaseInfluenceCost} ★",
+                    $"Форпост: {StarbaseAlloysCost} сплавов + {influence} влияния",
                     NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
@@ -496,7 +656,7 @@ namespace StellarisClone.Core
 
             if (builder == null) return false;
 
-            eco.TrySpend(0f, 0f, StarbaseAlloysCost, StarbaseInfluenceCost);
+            eco.TrySpend(0f, 0f, StarbaseAlloysCost, influence);
             builder.Data.BuildTargetSystemId = targetSystemId;
 
             if (builder.Data.CurrentSystemId == targetSystemId
@@ -517,30 +677,41 @@ namespace StellarisClone.Core
             if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return false;
 
             var system = _generator.Systems[systemId];
+            // Пока строили, систему мог занять кто-то другой
+            if (system.OwnerId >= 0 && system.OwnerId != ownerId) return false;
             system.OwnerId = ownerId;
             system.HasStarbase = true;
             system.IsSurveyed = true;
+            system.GeneratePlanets();
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             OnStarbaseBuilt?.Invoke();
+            EconomyManager.Instance?.RecalculateAll();
 
             if (ownerId == 0)
-                NotificationCenter.Show("Форпост построен", system.Name, NotificationCenter.Kind.Success, 5f);
+                NotificationCenter.Show("Форпост построен", $"{system.Name} · содержание −{EmpireEconomy.OutpostUpkeep:0.#} Гелия-3/мес",
+                    NotificationCenter.Kind.Success, 5f);
 
             return true;
         }
 
+        public const float MiningStationMinerals = 50f;
+
         public bool BuildMiningStationOnPlanet(PlanetData planet)
         {
             if (planet == null || planet.HasMiningStation) return false;
+            if (!planet.IsPlayerOwned)
+            {
+                NotificationCenter.Show("Станция недоступна", "Система не принадлежит вам", NotificationCenter.Kind.Warning, 4f);
+                return false;
+            }
 
             var eco = EconomyManager.Instance;
             if (eco == null) return false;
-            if (!eco.CanAfford(0f, 50f, 0f, 0f)) return false;
+            if (!eco.CanAfford(0f, MiningStationMinerals, 0f, 0f)) return false;
 
-            eco.TrySpend(0f, 50f, 0f, 0f);
+            eco.TrySpend(0f, MiningStationMinerals, 0f, 0f);
             planet.HasMiningStation = true;
-            eco.AddIncome(planet.EnergyDeposit, planet.MineralDeposit, 0f, 0f);
 
             if (_generator != null)
             {
@@ -556,6 +727,7 @@ namespace StellarisClone.Core
             }
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
+            eco.RecalculateAll();
             NotificationCenter.Show("Добывающий комплекс", planet.Name + " активен", NotificationCenter.Kind.Success, 4f);
             return true;
         }

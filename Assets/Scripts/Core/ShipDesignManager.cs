@@ -146,6 +146,46 @@ namespace StellarisClone.Core
             return d;
         }
 
+        private static string WeaponModuleFor(WeaponDamageType t) => t switch
+        {
+            WeaponDamageType.Energy => "wpn_laser_red",
+            WeaponDamageType.Kinetic => "wpn_autocannon",
+            _ => "wpn_missile"
+        };
+
+        /// <summary>
+        /// Автопроект для ИИ: оружие по вкусу фракции, броня и щиты через слот, реакторы до
+        /// положительного баланса энергии. hasTech — технологии владельца проекта.
+        /// </summary>
+        public ShipDesign CreateAutoDesign(ShipClass cls, WeaponDamageType primary, WeaponDamageType secondary,
+                                           Func<string, bool> hasTech, string name)
+        {
+            var hull = GetHull(cls);
+            if (hull == null) return null;
+            var d = new ShipDesign { Id = "auto_" + cls + "_" + Guid.NewGuid().ToString("N").Substring(0, 6), Name = name, HullClass = cls };
+            FillEmptySlots(d, hull);
+
+            for (int i = 0; i < d.WeaponModuleIds.Count; i++)
+                d.WeaponModuleIds[i] = WeaponModuleFor(i % 2 == 0 ? primary : secondary);
+            for (int i = 0; i < d.DefenseModuleIds.Count; i++)
+                d.DefenseModuleIds[i] = i % 2 == 0 ? "def_armor" : "def_shield";
+
+            string reactor = hasTech != null && hasTech("rct_fus_1") ? "utl_reactor_fus" : "utl_reactor";
+            string engine = hasTech != null && hasTech("prp_eng_1") ? "utl_engine" : "utl_engine_basic";
+            for (int i = 0; i < d.UtilityModuleIds.Count; i++)
+                d.UtilityModuleIds[i] = i == 0 ? reactor : engine;
+            d.Recalculate(hull, _modules);
+
+            // Не хватает энергии — двигатели меняем на реакторы, затем щиты на броню, затем оружие на экономное
+            for (int i = d.UtilityModuleIds.Count - 1; i >= 1 && !d.IsPowerValid; i--)
+            { d.UtilityModuleIds[i] = reactor; d.Recalculate(hull, _modules); }
+            for (int i = 0; i < d.DefenseModuleIds.Count && !d.IsPowerValid; i++)
+                if (d.DefenseModuleIds[i] == "def_shield") { d.DefenseModuleIds[i] = "def_armor"; d.Recalculate(hull, _modules); }
+            for (int i = 0; i < d.WeaponModuleIds.Count && !d.IsPowerValid; i++)
+            { d.WeaponModuleIds[i] = "wpn_autocannon"; d.Recalculate(hull, _modules); }
+            return d;
+        }
+
         private void FillEmptySlots(ShipDesign d, HullBlueprint hull)
         {
             while (d.WeaponModuleIds.Count < hull.WeaponSlots) d.WeaponModuleIds.Add("");

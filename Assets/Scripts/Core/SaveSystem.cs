@@ -57,6 +57,7 @@ namespace StellarisClone.Core
         public TechSave Tech;
         public VictorySave Victory;
         public AISave AI;
+        public List<SiegeSave> Sieges = new List<SiegeSave>();
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -146,10 +147,19 @@ namespace StellarisClone.Core
         public List<string> ProgressIds = new List<string>();
         public List<float> ProgressDays = new List<float>();
         public List<SlotSave> Slots = new List<SlotSave>();
+        /// <summary>Только версия 1: старая база науки (35 + бонусы событий).</summary>
         public float BaseMonthlyScience;
-        public float ResearchMult = 1f, HyperlaneMult = 1f, MiningMult = 1f, ShipBuildMult = 1f;
-        public float StarbaseDiscount;
-        public bool DestroyerUnlocked;
+        public float FlatScience;
+        public float TempBoost = 1f;
+        public int TempBoostDays;
+    }
+
+    [Serializable]
+    public class SiegeSave
+    {
+        public int System;
+        public int Attacker;
+        public float Progress;
     }
 
     [Serializable]
@@ -167,6 +177,7 @@ namespace StellarisClone.Core
         public int StartYear;
         public int BankruptMonths;
         public bool Started;
+        public int ScoreWarnLevel;
     }
 
     [Serializable]
@@ -175,10 +186,33 @@ namespace StellarisClone.Core
         public int Capital = -1;
         public string Name, Title;
         public Color Color;
+        public int Personality;
+        public bool Eliminated;
         public float Energy, Minerals, Alloys, Influence;
-        public float AlloysIncome, InfluenceIncome;
+        public float BaseEnergy = 15f, BaseMinerals = 10f, BaseAlloys = 5f, BaseInfluence = 3f;
+        public bool Bankrupt;
         public float Relations, LastRelationBucket;
         public int WarFleetSerial;
+
+        // Наука
+        public List<string> Researched = new List<string>();
+        public string CurrentTech;
+        public float TechProgress;
+        public int ResearchSlots = 3;
+        public int ScienceWarnLevel;
+
+        // Дипломатия
+        public bool AtWar, Pact, CapitalLost;
+        public int TruceDays;
+        public float Weariness;
+        public int WarMonths, SystemsLost, SystemsTaken, ShipsLost, PlayerShipsLost;
+        public int Offer, OfferDays, OfferCooldown, WarCooldown;
+        public string OfferReason;
+        public List<string> MemoryKeys = new List<string>();
+        public List<float> MemoryValues = new List<float>();
+
+        // Флот
+        public int ArmyMode, ArmyTarget = -1, Rally = -1;
     }
 
     /// <summary>Строка списка сохранений.</summary>
@@ -194,7 +228,8 @@ namespace StellarisClone.Core
 
     public static class SaveSystem
     {
-        public const int FormatVersion = 1;
+        /// <summary>2 — экономика от территории, наука в очках, дипломатия и осады.</summary>
+        public const int FormatVersion = 2;
         public const string AutosaveSlot = "autosave";
         private const string Ext = ".sav";
 
@@ -345,6 +380,7 @@ namespace StellarisClone.Core
             s.Tech = TechnologyManager.Instance != null ? TechnologyManager.Instance.CaptureState() : null;
             s.Victory = VictoryManager.Instance != null ? VictoryManager.Instance.CaptureState() : null;
             s.AI = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.CaptureState() : null;
+            if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -516,7 +552,9 @@ namespace StellarisClone.Core
             d.HullPoints = f.HP; d.ArmorPoints = f.Armor; d.ShieldPoints = f.Shield;
             d.MaxHullPoints = f.MaxHP; d.MaxArmorPoints = f.MaxArmor; d.MaxShieldPoints = f.MaxShield;
             d.Damage = f.Damage; d.FireRate = f.FireRate; d.Evasion = f.Evasion;
-            d.HyperSpeed = f.HyperSpeed; d.UpkeepEnergy = f.Upkeep;
+            d.HyperSpeed = f.HyperSpeed;
+            // Содержание — производное от типа и корпуса (в старых сохранениях ставки были другими)
+            d.UpkeepEnergy = FleetData.UpkeepFor(d.Type, d.HullClass);
             d.PrimaryWeapon = (WeaponDamageType)f.Weapon;
             d.InCombat = false;
             d.FireCooldown = 0f;
@@ -573,7 +611,7 @@ namespace StellarisClone.Core
             var file = GameSession.PendingLoad;
             if (file == null) { Destroy(gameObject); return; }
 
-            try { Apply(file.State); }
+            try { Apply(file.State, file.Version); }
             catch (Exception e)
             {
                 Debug.LogError("[Save] Ошибка восстановления: " + e);
@@ -582,13 +620,14 @@ namespace StellarisClone.Core
             Destroy(gameObject);
         }
 
-        private static void Apply(GameState s)
+        private static void Apply(GameState s, int version)
         {
             var time = TimeManager.Instance;
             if (time != null) { time.SetDate(s.Day, s.Month, s.Year); time.SetSpeed(0); }
 
-            if (s.Economy != null) EconomyManager.Instance?.RestoreState(s.Economy);
-            if (s.Tech != null) TechnologyManager.Instance?.RestoreState(s.Tech);
+            // Технологии раньше экономики: от них зависят бонусы и перевод старых сохранений
+            if (s.Tech != null) TechnologyManager.Instance?.RestoreState(s.Tech, version);
+            if (s.Economy != null) EconomyManager.Instance?.RestoreState(s.Economy, version);
             if (s.Designs != null && s.Designs.Count > 0 && ShipDesignManager.Instance != null)
             {
                 var designs = new List<ShipDesign>();
@@ -603,7 +642,8 @@ namespace StellarisClone.Core
                 fm.SetNextFleetId(s.FleetIdCounter);
             }
 
-            if (s.AI != null) AIEmpireManager.Instance?.RestoreState(s.AI);
+            if (s.AI != null) AIEmpireManager.Instance?.RestoreState(s.AI, version);
+            SiegeManager.Instance?.RestoreState(s.Sieges);
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)

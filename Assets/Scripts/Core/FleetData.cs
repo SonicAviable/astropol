@@ -65,13 +65,7 @@ namespace StellarisClone.Core
 
         public void ApplyDefaultCombatStats(FleetType type)
         {
-            switch (type)
-            {
-                case FleetType.Military:    UpkeepEnergy = 2.5f; break;
-                case FleetType.Constructor: UpkeepEnergy = 1.5f; break;
-                case FleetType.Science:     UpkeepEnergy = 1.0f; break;
-                default:                    UpkeepEnergy = 1.0f; break;
-            }
+            UpkeepEnergy = UpkeepFor(type, HullClass);
 
             if (type != FleetType.Military)
             {
@@ -101,6 +95,25 @@ namespace StellarisClone.Core
             Evasion = 12f;
             PrimaryWeapon = WeaponDamageType.Kinetic;
             MilitaryPower = 120;
+            CombatMath.ApplyDurability(this);
+        }
+
+        /// <summary>
+        /// Ежемесячное содержание в Гелии-3. Чем крупнее корпус — тем дороже флот обходится казне.
+        /// </summary>
+        public static float UpkeepFor(FleetType type, ShipClass hull)
+        {
+            switch (type)
+            {
+                case FleetType.Constructor: return 2f;
+                case FleetType.Science:     return 1.5f;
+            }
+            return hull switch
+            {
+                ShipClass.Destroyer => 8f,
+                ShipClass.Frigate   => 5f,
+                _                   => 3f
+            };
         }
 
         public void ApplyDesign(ShipDesign design)
@@ -119,12 +132,8 @@ namespace StellarisClone.Core
             HyperSpeed = design.Speed;
             MilitaryPower = Mathf.RoundToInt(design.Dps * 12f + design.Hull * 0.35f + design.Armor * 0.2f + design.Shields * 0.15f);
 
-            UpkeepEnergy = design.HullClass switch
-            {
-                ShipClass.Destroyer => 5.5f,
-                ShipClass.Frigate   => 3.5f,
-                _                   => 2.5f
-            };
+            UpkeepEnergy = UpkeepFor(FleetType.Military, design.HullClass);
+            CombatMath.ApplyDurability(this);
         }
 
         public float IntegrityNormalized => Mathf.Clamp01(HullPoints / Mathf.Max(1f, MaxHullPoints));

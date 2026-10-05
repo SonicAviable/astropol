@@ -79,12 +79,20 @@ namespace StellarisClone.Core
                     type, currentRadius, speed, size, col, energy, minerals));
             }
             HasGeneratedPlanets = true;
+            LinkPlanets();
             RecalculateHarvest();
+        }
+
+        /// <summary>Проставить планетам ссылку на систему (владелец, принадлежность).</summary>
+        public void LinkPlanets()
+        {
+            foreach (var p in Planets) p.ParentSystem = this;
         }
 
         /// <summary>Пересчитать запасы системы по планетам (после загрузки).</summary>
         public void RestoreDerivedTotals()
         {
+            LinkPlanets();
             TotalEnergy = 0;
             TotalMinerals = 0;
             foreach (var p in Planets)

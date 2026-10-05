@@ -303,7 +303,7 @@ namespace StellarisClone.Rendering
 
             _domText = VictoryRow(block.transform, 38, LGIcon.Starbase, "Доминирование", UIManager.DS.NeonCyan, out _domBar);
             _sciText = VictoryRow(block.transform, 88, LGIcon.Research, "Наука", CResearch, out _sciBar);
-            _survText = VictoryRow(block.transform, 138, LGIcon.Clock, "Выживание", CEnergy, out _survBar);
+            _survText = VictoryRow(block.transform, 138, LGIcon.Trophy, $"Очки · {VictoryManager.EndYear}", CEnergy, out _survBar);
 
             _warnText = LGBuild.Label(block.transform, "", 10, UIManager.DS.TextMuted, TextAnchor.LowerLeft, wrap: true);
             _warnText.rectTransform.Stretch(18, 10, 18, 0);
@@ -477,16 +477,17 @@ namespace StellarisClone.Rendering
             var vm = VictoryManager.Instance;
             if (vm != null)
             {
-                int dom = vm.DominationProgress, sci = vm.ScienceProgress, yrs = vm.YearsElapsed;
+                int dom = vm.DominationProgress, sci = vm.ScienceProgress;
+                int me = vm.PlayerScore, rival = vm.RivalScore;
                 _domText.text = $"{dom} / {vm.DominationRequired} систем";
                 _sciText.text = $"{sci} / {vm.ScienceRequired} техн.";
-                _survText.text = $"{yrs} / {vm.SurvivalYearsRequired} лет";
+                _survText.text = me >= rival ? $"{me} : {rival}" : $"<color=#FF6A6A>{me} : {rival}</color>";
                 LGBuild.SetBar(_domBar, dom / (float)Mathf.Max(1, vm.DominationRequired));
                 LGBuild.SetBar(_sciBar, sci / (float)Mathf.Max(1, vm.ScienceRequired));
-                LGBuild.SetBar(_survBar, yrs / (float)Mathf.Max(1, vm.SurvivalYearsRequired));
+                LGBuild.SetBar(_survBar, me / (float)Mathf.Max(1, me + rival));
                 _warnText.text = vm.BankruptMonths > 0
                     ? $"<color=#FF6A6A>Банкротство: {vm.BankruptMonths} из {vm.BankruptcyLimit} мес. до краха экономики</color>"
-                    : "Поражение: потеря всех систем или долгое банкротство.";
+                    : $"Соперник: {vm.RivalDominationProgress} систем, {vm.RivalScienceProgress} техн. Подсчёт очков через {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}.";
             }
         }
 
@@ -697,7 +698,7 @@ namespace StellarisClone.Rendering
                     float hp = d.IntegrityNormalized;
                     BarCell(row, 0.68f, 0.86f, hp,
                         hp > 0.5f ? UIManager.DS.Green : hp > 0.25f ? CGold : UIManager.DS.Red, $"{hp * 100f:0}%");
-                    TextCell(row, 0.86f, 1f, d.Type == FleetType.Military ? d.MilitaryPower.ToString("N0") : "—",
+                    TextCell(row, 0.86f, 1f, d.Type == FleetType.Military ? Mathf.RoundToInt(CombatMath.Power(d)).ToString("N0") : "—",
                         CGold, TextAnchor.MiddleRight, 14, true);
                 }
             }
@@ -712,7 +713,18 @@ namespace StellarisClone.Rendering
                 case FleetState.Surveying: return $"Разведка ({Mathf.Max(0, d.DaysRemainingSurvey):0} дн.)";
                 case FleetState.Constructing: return $"Строительство ({Mathf.Max(0, d.DaysRemainingConstruction):0} дн.)";
             }
-            return d.InCombat ? "<color=#FF6060>В бою</color>" : "На орбите — ждёт приказа";
+            if (d.InCombat) return "<color=#FF6060>В бою</color>";
+            var fm = FleetManager.Instance;
+            if (fm != null && fm.NeedsRepair(d))
+            {
+                float rate = fm.RepairRateAt(d.CurrentSystemId, d.OwnerId);
+                return rate > 0f ? $"<color=#5CF59A>Ремонт · {rate * 100f:0}% в день</color>"
+                                 : "<color=#FFAA55>Повреждён — ремонт только на своей территории</color>";
+            }
+            var siege = SiegeManager.Instance?.GetSiege(d.CurrentSystemId);
+            if (siege != null && siege.Attacker == d.OwnerId && d.Type == FleetType.Military)
+                return $"<color=#5CF59A>Осада · {siege.Progress:0} дн.</color>";
+            return "На орбите — ждёт приказа";
         }
 
         private string SystemName(int id)
@@ -790,13 +802,13 @@ namespace StellarisClone.Rendering
 
             var head = TopRow(card.transform, 20, 64, 100, 20);
             LGBuild.Label(head, ai.AIName.ToUpper(), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            float rel = ai.RelationsWithPlayer;
-            string status = rel <= -60 ? "<color=#FF5A5A>ВОЙНА</color>"
-                          : rel <= -20 ? "<color=#FF9060>Холодная война</color>"
-                          : rel < 10 ? "<color=#8AA2A8>Нейтралитет</color>"
-                          : rel < 30 ? "<color=#5CF59A>Тёплые отношения</color>"
-                          : "<color=#4DF2DB>Союзнический курс</color>";
-            LGBuild.Label(head, $"{ai.AITitle}   ·   {status}", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
+            float rel = ai.Opinion;
+            string status = ai.AtWar ? "<color=#FF5A5A>ВОЙНА</color>"
+                          : ai.HasPact ? "<color=#4DF2DB>Пакт о ненападении</color>"
+                          : ai.TruceDays > 0 ? "<color=#5CF59A>Перемирие</color>"
+                          : "<color=#8AA2A8>Мир</color>";
+            LGBuild.Label(head, $"{ai.AITitle}   ·   {ai.Profile.Name.ToLower()} империя   ·   {status}   ·   {AIEmpireManager.OpinionLabel(rel).ToLower()}",
+                          12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
 
             int myPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
             int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(AIEmpireManager.AIOwnerId) : 0;
@@ -808,7 +820,7 @@ namespace StellarisClone.Rendering
                     else if (s.OwnerId == AIEmpireManager.AIOwnerId) aiSys++;
                 }
 
-            float relN = Mathf.InverseLerp(-100f, 40f, rel);
+            float relN = Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, rel);
             CompareRow(card.transform, 104, "Отношения", relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}");
             CompareRow(card.transform, 150, "Военная мощь: вы / они", myPow + aiPow > 0 ? myPow / (float)(myPow + aiPow) : 0.5f,
                 UIManager.DS.NeonCyan, $"{myPow:N0} / {aiPow:N0}");

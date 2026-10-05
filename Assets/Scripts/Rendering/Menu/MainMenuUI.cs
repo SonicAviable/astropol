@@ -552,7 +552,7 @@ namespace StellarisClone.Rendering
                 _ngGoals.text =
                     $"<b><color=#E8F6FA>Пути к победе</color></b>   " +
                     $"<color=#4DF2DB>форпосты в {_ng.DominationTarget} системах</color>  ·  " +
-                    $"<color=#5CF599>25 технологий</color>  ·  <color=#FFCC52>50 лет у власти</color>";
+                    $"<color=#5CF599>25 технологий</color>  ·  <color=#FFCC52>больше очков, чем у соперника, в 2235 году</color>";
         }
 
         // ================================================================ Об игре
@@ -571,14 +571,14 @@ namespace StellarisClone.Rendering
             Step(left, ref y, LGIcon.Research, "4 · Изучайте технологии",
                  "Три слота исследований работают параллельно. Не оставляйте их пустыми — следите за алертами под верхней панелью.");
             Step(left, ref y, LGIcon.Fleet, "5 · Защищайтесь",
-                 "Соседняя империя наблюдает за вашей мощью. Стройте флот, торгуйте и следите за отношениями.");
+                 "Соседняя империя наблюдает за вашей мощью. Флот стоит энергии, а войны выигрываются осадой: держите корабли в системе врага без его защитников.");
 
             var right = LGBuild.Rect(page, "Side");
             right.Column(0.54f, 1f, 14, 0);
             float ry = LGControls.Section(right, 0f, "ПУТИ К ПОБЕДЕ", LGIcon.Trophy);
             Goal(right, ref ry, LGIcon.Starbase, "Доминирование", "Форпосты в 25 / 40 / 60 системах — по размеру галактики", UIManager.DS.NeonCyan);
             Goal(right, ref ry, LGIcon.Research, "Научная победа", "Изучите 25 технологий", UIManager.DS.Green);
-            Goal(right, ref ry, LGIcon.Clock, "Выживание", "Продержитесь у власти 50 лет", UIManager.DS.Gold);
+            Goal(right, ref ry, LGIcon.Trophy, "Очки в 2235 году", "Обгоните соперника по системам, населению, науке и флоту. Соперник тоже может победить — наукой или экспансией", UIManager.DS.Gold);
 
             ry += 6f;
             ry = LGControls.Section(right, ry, "УПРАВЛЕНИЕ", LGIcon.Menu);

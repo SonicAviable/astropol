@@ -917,7 +917,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             string owner = system.OwnerId == 0
                 ? $"<color=#33E6CC>◆  Под контролем {_selectedFaction?.Name ?? "Империи"}</color>"
                 : system.OwnerId == AIEmpireManager.AIOwnerId
-                    ? "<color=#FF5555>◆  Территория врага</color>"
+                    ? $"<color=#FF5555>◆  Территория: {AIEmpireManager.Instance?.AIName ?? "соперник"}</color>"
                     : "<color=#8AA2A8>◆  Нейтральный фронтир</color>";
             _inspStatus.text = owner;
 
@@ -941,6 +941,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 AddBodyLine("<color=#FFAA88>⚠  Требуется разведка научным кораблём</color>");
             }
 
+            var siege = SiegeManager.Instance?.GetSiege(system.Id);
+            if (siege != null && system.OwnerId >= 0)
+            {
+                float need = SiegeManager.RequiredDays(system);
+                string who = siege.Attacker == 0 ? "Ваша осада" : "Враг осаждает систему";
+                string state = siege.Contested ? "приостановлена: на орбите флот защитника"
+                             : siege.Active ? $"{siege.Progress:0} / {need:0} дн."
+                             : "осаждающие ушли, прогресс спадает";
+                AddBodyHeader("ОСАДА");
+                AddBodyLine($"<color={(siege.Attacker == 0 ? "#4DF08C" : "#FF6666")}>{who}</color>: {state}");
+            }
+
             AddBodyHeader("УПРАВЛЕНИЕ");
             if (!_isInSystemMode && system.OwnerId < 0)
             {
@@ -949,9 +961,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 else
                     AddBodyLine("Заложите форпост, чтобы присоединить систему.");
             }
-            else
+            else if (system.OwnerId == 0)
             {
                 AddBodyLine("Система под вашим контролем.");
+                var fm = FleetManager.Instance;
+                if (fm != null) AddBodyLine($"<color=#8AA2A8>Ремонт кораблей здесь:</color> {fm.RepairRateAt(system.Id, 0) * 100f:0}% в день");
+            }
+            else
+            {
+                var ai = AIEmpireManager.Instance;
+                AddBodyLine(ai != null && ai.AtWar
+                    ? $"Чтобы захватить систему, держите здесь военный флот без защитников ({SiegeManager.RequiredDays(system):0} дн. осады)."
+                    : "Чужая система. Захват возможен только во время войны — осадой.");
             }
 
             CommitBody();
@@ -1064,6 +1085,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     _inspActionBtn.interactable = false;
                     _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
                     _inspActionBtnText.text = "✕  ТРЕБУЕТСЯ РАЗВЕДКА СИСТЕМЫ";
+                }
+                else if (!planet.IsPlayerOwned)
+                {
+                    _inspActionBtn.interactable = false;
+                    _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
+                    _inspActionBtnText.text = "✕  СИСТЕМА НЕ ПРИНАДЛЕЖИТ ВАМ";
                 }
                 else
                 {
@@ -1189,19 +1216,29 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             string netColor = net >= 0f ? StatFormat.GreenHex : StatFormat.RedHex;
             string warn = eco.IsBankrupt
-                ? "<color=#FF5555>⚠  БАНКРОТСТВО — производство урезано вдвое</color>\n\n"
-                : "";
+                ? "<color=#FF5555><b>БАНКРОТСТВО</b> — производство урезано вдвое</color>\n\n"
+                : eco.BankruptcyLooming
+                    ? $"<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{Mathf.Max(1, Mathf.CeilToInt(eco.MonthsUntilEmpty))} мес.</color>\n\n"
+                    : "";
+            var rep = eco.Report;
+            string overCap = rep.NavalUsed > rep.NavalCapacity
+                ? $"  <color=#FF8888>(перебор лимита: ×{rep.OverCapacityMult:0.##})</color>" : "";
 
             _energyTip.SetText(
                 $"<b>Гелий-3</b>\n" +
                 warn +
                 $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.EnergyCredits}</b>\n" +
                 $"<color=#8AA2A8>База империи:</color> {eco.BaseEnergyIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Планеты:</color>     {eco.PlanetEnergyOutput:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Содержание флота:</color> <color=#FF8888>-{GetFleetUpkeep():0.#}</color> / мес\n" +
-                $"<color=#8AA2A8>Содержание форпостов:</color> <color=#FF8888>-{GetStarbaseUpkeep():0.#}</color> / мес\n" +
+                $"<color=#8AA2A8>Районы-генераторы:</color> {eco.PlanetEnergyOutput:+0;-0;0} / мес\n" +
+                $"<color=#8AA2A8>Добывающие станции:</color> {eco.StationEnergyOutput:+0;-0;0} / мес\n" +
+                (eco.TechEnergyOutput > 0f ? $"<color=#8AA2A8>Реакторные технологии:</color> {eco.TechEnergyOutput:+0;-0;0} / мес\n" : "") +
+                $"<color=#8AA2A8>Военный флот:</color> <color=#FF8888>-{rep.FleetUpkeep:0.#}</color> / мес{overCap}\n" +
+                $"<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{rep.CivilianUpkeep:0.#}</color> / мес\n" +
+                $"<color=#8AA2A8>Форпосты ({rep.Outposts} × {EmpireEconomy.OutpostUpkeep:0.#}):</color> <color=#FF8888>-{rep.OutpostUpkeepTotal:0.#}</color> / мес\n" +
                 $"<color=#8AA2A8>──────────────</color>\n" +
-                $"<color=#8AA2A8>Чистый доход:</color> <color={netColor}><b>{net:+0.#;-0.#;0} / мес</b></color>"
+                $"<color=#8AA2A8>Чистый доход:</color> <color={netColor}><b>{net:+0.#;-0.#;0} / мес</b></color>\n\n" +
+                $"<color=#8AA2A8>Флотский лимит: {rep.NavalUsed} / {rep.NavalCapacity} (корвет 1, фрегат 2, эсминец 3; +{EmpireEconomy.NavalCapacityPerColony} за колонию). " +
+                "Сверх лимита содержание всего военного флота растёт.</color>"
             );
         }
     }
@@ -1215,7 +1252,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 $"<b>Титан</b>\n" +
                 $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Minerals}</b>\n" +
                 $"<color=#8AA2A8>База:</color> {eco.BaseMineralsIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Планеты:</color> {eco.PlanetMineralsOutput:+0;-0;0} / мес\n" +
+                $"<color=#8AA2A8>Горные районы:</color> {eco.PlanetMineralsOutput:+0;-0;0} / мес\n" +
+                $"<color=#8AA2A8>Добывающие станции:</color> {eco.StationMineralsOutput:+0;-0;0} / мес\n" +
                 $"<color=#8AA2A8>──────────────</color>\n" +
                 $"<color=#8AA2A8>Итого:</color> {StatFormat.Income(eco.MonthlyMineralsIncome)}"
             );
@@ -1245,7 +1283,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 $"<b>Влияние</b>\n" +
                 $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Influence}</b>\n" +
                 $"<color=#8AA2A8>Доход:</color> {StatFormat.Income(eco.MonthlyInfluenceIncome)}\n\n" +
-                "<color=#8AA2A8><i>Расходуется на форпосты (25 ★), колонии (25 ★) и терраформинг.</i></color>"
+                $"<color=#8AA2A8><i>Расходуется на форпосты ({FleetManager.OutpostInfluenceCost(0):0}), колонии ({PlanetData.ColonyInfluenceCost:0}), " +
+                $"пакты ({AIEmpireManager.PactInfluenceCost:0}), мирные предложения ({AIEmpireManager.PeaceInfluenceCost:0}) и терраформинг.</i></color>"
             );
     }
 
@@ -1259,12 +1298,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             int active = 0;
             foreach (var s in tm.Slots) if (s.CurrentTech != null && !s.IsPaused) active++;
 
+            float mult = tm.GlobalResearchSpeedMultiplier;
             _researchTip.SetText(
                 $"<b>Наука</b>\n" +
-                $"<color=#8AA2A8>Доход:</color> +{tm.MonthlyResearchIncome:0.#} / мес\n" +
+                $"<color=#8AA2A8>Администрация:</color> +{TechnologyManager.BaseScience:0.#}\n" +
+                $"<color=#8AA2A8>Население ({tm.Population} × {TechnologyManager.SciencePerPop:0.#}):</color> +{tm.ScienceFromPopulation:0.#}\n" +
+                (tm.FlatScience > 0f ? $"<color=#8AA2A8>Открытия и события:</color> +{tm.FlatScience:0.#}\n" : "") +
+                (Mathf.Abs(mult - 1f) > 0.01f ? $"<color=#8AA2A8>Множитель технологий и событий:</color> ×{mult:0.##}\n" : "") +
+                $"<color=#8AA2A8>──────────────</color>\n" +
+                $"<color=#8AA2A8>Итого:</color> <b>+{tm.MonthlyResearchIncome:0.#} / мес</b>\n" +
                 $"<color=#8AA2A8>Активных слотов:</color> {active} / {tm.Slots.Count}\n\n" +
-                "<color=#8AA2A8><i>Скорость делится между слотами с пенальти — " +
-                "один слот идёт в 2 раза быстрее, чем каждый из двух.</i></color>"
+                "<color=#8AA2A8><i>Наука растёт вместе с населением — заселяйте планеты и стройте жильё. " +
+                "Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</i></color>"
             );
         }
     }
@@ -1272,34 +1317,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
 // ==================== ХЕЛПЕРЫ ДЛЯ ТУЛТИПОВ ====================
 
-private float GetFleetUpkeep()
-{
-    float sum = 0f;
-    var fm = FleetManager.Instance;
-    if (fm == null) return 0f;
-    foreach (var f in fm.AllFleets)
-    {
-        if (f?.Data == null || f.Data.Destroyed) continue;
-        if (f.Data.OwnerId != 0) continue;
-        sum += f.Data.UpkeepEnergy;
-    }
-    return sum;
-}
 
-private float GetStarbaseUpkeep()
-{
-    var gen = FindAnyObjectByType<GalaxyGenerator>();
-    if (gen == null) return 0f;
-
-    float sum = 0f;
-    foreach (var sys in gen.Systems)
-    {
-        if (sys.OwnerId != 0 || !sys.HasStarbase) continue;
-        if (sys.Id == 0) continue;    // столица бесплатна
-        sum += 1.5f;
-    }
-    return sum;
-}
         // ==================== ОБЗОР ИМПЕРИИ ====================
         // Окно вынесено в EmpireOverviewWindow (шапка, ресурсы, правитель, статистика,
         // прогресс к победе и вкладки колоний / флотов / границ / соперника).
@@ -1326,7 +1344,7 @@ private float GetStarbaseUpkeep()
             var rt = _shipyardPanel.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(520, 460);
+            rt.sizeDelta = new Vector2(520, 580);
 
             _shipyardGroup = _shipyardPanel.AddComponent<CanvasGroup>();
             _shipyardPanel.AddComponent<Image>().color = DS.BgDeep;
@@ -1353,9 +1371,11 @@ private float GetStarbaseUpkeep()
             cRt.pivot = new Vector2(1, 0.5f);
             cRt.anchoredPosition = new Vector2(-14, 0);
 
-            CreateShipyardOption(_shipyardPanel.transform, "НАУЧНЫЙ КОРАБЛЬ",      "100 Спл.   50 Гел.", 110, FleetType.Science);
-            CreateShipyardOption(_shipyardPanel.transform, "СТРОИТЕЛЬНЫЙ КОРАБЛЬ", "80 Спл.   20 Гел.",  48, FleetType.Constructor);
-            CreateShipyardOption(_shipyardPanel.transform, "БОЕВОЙ КОРВЕТ",        "по проекту",        -14, FleetType.Military);
+            CreateShipyardOption(_shipyardPanel.transform, "НАУЧНЫЙ КОРАБЛЬ",      178, "science",  () => FleetManager.Instance != null && FleetManager.Instance.BuildShip(FleetType.Science));
+            CreateShipyardOption(_shipyardPanel.transform, "СТРОИТЕЛЬНЫЙ КОРАБЛЬ", 118, "builder",  () => FleetManager.Instance != null && FleetManager.Instance.BuildShip(FleetType.Constructor));
+            CreateShipyardOption(_shipyardPanel.transform, "БОЕВОЙ КОРВЕТ",         58, "corvette", () => FleetManager.Instance != null && FleetManager.Instance.BuildShip(FleetType.Military));
+            CreateShipyardOption(_shipyardPanel.transform, "ФРЕГАТ",                -2, "frigate",  () => FleetManager.Instance != null && FleetManager.Instance.BuildWarship(ShipClass.Frigate));
+            CreateShipyardOption(_shipyardPanel.transform, "ЭСМИНЕЦ",              -62, "destroyer",() => FleetManager.Instance != null && FleetManager.Instance.BuildWarship(ShipClass.Destroyer));
 
             var designBtn = CreateButton(_shipyardPanel.transform, "OpenDesigner", new Vector2(440, 40),
                 DS.BtnPrimary, DS.BtnPrimaryHi, () =>
@@ -1365,7 +1385,7 @@ private float GetStarbaseUpkeep()
                 });
             var dRt = designBtn.GetComponent<RectTransform>();
             dRt.anchorMin = dRt.anchorMax = new Vector2(0.5f, 0.5f);
-            dRt.anchoredPosition = new Vector2(0, -72);
+            dRt.anchoredPosition = new Vector2(0, -126);
             var dTxt = CreateText(designBtn.transform, "◆  ОТКРЫТЬ КОНСТРУКТОР КОРАБЛЕЙ", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             dTxt.rectTransform.sizeDelta = dRt.sizeDelta;
 
@@ -1373,7 +1393,7 @@ private float GetStarbaseUpkeep()
                 DS.BtnSuccess, DS.Gold, OnRetrofitClicked);
             var rRt = retrofitBtn.GetComponent<RectTransform>();
             rRt.anchorMin = rRt.anchorMax = new Vector2(0.5f, 0.5f);
-            rRt.anchoredPosition = new Vector2(0, -122);
+            rRt.anchoredPosition = new Vector2(0, -176);
             _shipyardRetrofitBtn = retrofitBtn.GetComponent<Button>();
             _shipyardRetrofitTxt = CreateText(retrofitBtn.transform, "⟳  МОДЕРНИЗИРОВАТЬ ФЛОТ (RETROFIT)", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             _shipyardRetrofitTxt.rectTransform.sizeDelta = rRt.sizeDelta;
@@ -1381,21 +1401,63 @@ private float GetStarbaseUpkeep()
             _shipyardPanel.SetActive(false);
         }
 
+        private readonly Dictionary<string, Text> _shipyardPrices = new Dictionary<string, Text>();
+        private readonly Dictionary<string, Button> _shipyardButtons = new Dictionary<string, Button>();
+
+        /// <summary>Цены верфи с учётом технологий и содержание, которое добавит корабль.</summary>
+        private void RefreshShipyardPrices()
+        {
+            var eco = EconomyManager.Instance;
+            var fm = FleetManager.Instance;
+            foreach (var kv in _shipyardPrices)
+            {
+                float alloys, energy, upkeep;
+                string locked = null;
+                switch (kv.Key)
+                {
+                    case "science":
+                        alloys = FleetManager.ScienceShipAlloys; energy = FleetManager.ScienceShipEnergy;
+                        upkeep = FleetData.UpkeepFor(FleetType.Science, ShipClass.Corvette);
+                        break;
+                    case "builder":
+                        alloys = FleetManager.ConstructorAlloys; energy = FleetManager.ConstructorEnergy;
+                        upkeep = FleetData.UpkeepFor(FleetType.Constructor, ShipClass.Corvette);
+                        break;
+                    default:
+                        var cls = kv.Key == "destroyer" ? ShipClass.Destroyer : kv.Key == "frigate" ? ShipClass.Frigate : ShipClass.Corvette;
+                        var design = fm != null ? fm.PlayerDesignFor(cls) : null;
+                        alloys = design != null ? design.AlloyCost : 60f; energy = FleetManager.WarshipEnergy;
+                        upkeep = eco != null ? EmpireEconomy.ExtraUpkeepForShip(eco.Report, cls)
+                                             : FleetData.UpkeepFor(FleetType.Military, cls);
+                        if (cls == ShipClass.Destroyer && !(TechnologyManager.Instance?.DestroyerUnlocked ?? false))
+                            locked = "нужна технология «Верфи класса „Эсминец“»";
+                        break;
+                }
+                alloys = FleetManager.ShipAlloyCost(alloys, 0);
+                kv.Value.text = locked != null
+                    ? $"<color=#8AA2A8>{locked}</color>"
+                    : $"{alloys:0} спл. · {energy:0} гел.\n<color=#FF8888>содержание −{upkeep:0.#} гел./мес</color>";
+                if (_shipyardButtons.TryGetValue(kv.Key, out var b) && b != null) b.interactable = locked == null;
+            }
+        }
+
         private void OpenShipyardModal()
         {
             ShowModalDim();
             MapModeController.HideGlobal();
+            RefreshShipyardPrices();
             RefreshRetrofitButton();
             LG.Show(_shipyardPanel);
             _shipyardPanel.transform.SetAsLastSibling();
         }
 
-        private void CreateShipyardOption(Transform parent, string shipTitle, string price, float yPos, FleetType type)
+        private void CreateShipyardOption(Transform parent, string shipTitle, float yPos, string key, System.Func<bool> build)
         {
-            var btn = CreateButton(parent, $"Buy_{type}", new Vector2(440, 52),
+            string price = "";
+            var btn = CreateButton(parent, $"Buy_{key}", new Vector2(440, 52),
                 DS.BgSlot, DS.BtnPrimaryHi, () =>
                 {
-                    if (FleetManager.Instance != null && FleetManager.Instance.BuildShip(type))
+                    if (build())
                     {
                         RefreshResourceBar();
                         CloseModal(_shipyardPanel);
@@ -1409,11 +1471,13 @@ private float GetStarbaseUpkeep()
 
             var tName = CreateText(btn.transform, shipTitle, 13, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
             tName.rectTransform.anchorMin = new Vector2(0, 0);
-            tName.rectTransform.anchorMax = new Vector2(0.55f, 1);
+            tName.rectTransform.anchorMax = new Vector2(0.45f, 1);
             tName.rectTransform.offsetMin = new Vector2(16, 0);
 
-            var tPrice = CreateText(btn.transform, price, 12, FontStyle.Bold, DS.Gold, TextAnchor.MiddleRight);
-            tPrice.rectTransform.anchorMin = new Vector2(0.55f, 0);
+            var tPrice = CreateText(btn.transform, price, 11, FontStyle.Bold, DS.Gold, TextAnchor.MiddleRight);
+            _shipyardPrices[key] = tPrice;
+            _shipyardButtons[key] = btn.GetComponent<Button>();
+            tPrice.rectTransform.anchorMin = new Vector2(0.45f, 0);
             tPrice.rectTransform.anchorMax = new Vector2(1, 1);
             tPrice.rectTransform.offsetMax = new Vector2(-16, 0);
         }
