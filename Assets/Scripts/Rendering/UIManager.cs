@@ -920,7 +920,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     if (planet.TryBuildDistrict(capturedDt))
                     {
                         RefreshResourceBar();
-                        ShowPlanetInspector(planet, _activeSystem);
+                        ShowPlanetInspector(planet, _activeSystem, openOverview: false);
                     }
                 });
 
@@ -1055,7 +1055,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private void OnSystemSelected(StarSystem system) => ShowSystemPanel(system);
 
-        public void ShowPlanetInspector(PlanetData planet, StarSystem parentSystem)
+        public void ShowPlanetInspector(PlanetData planet, StarSystem parentSystem, bool openOverview = true)
         {
             if (planet == null) return;
             if (_inspBodyText == null || _inspTitle == null || _inspStatus == null) return;
@@ -1155,7 +1155,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspTargetAlpha = 1f;
             _inspectorGroup.blocksRaycasts = true;
 
-            PlanetOverviewModal.Instance?.Open(planet, parentSystem);
+            // Клик по планете сразу открывает полноэкранный обзор (без промежуточного окна)
+            if (openOverview) PlanetFocusOverlay.Instance?.Open(planet, parentSystem);
         }
 
         private void OnViewModeChanged(bool inSystem)
@@ -1177,7 +1178,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_activePlanet))
                 {
                     SystemViewManager.Instance?.SpawnStationOnActivePlanet(_activePlanet);
-                    ShowPlanetInspector(_activePlanet, _activeSystem);
+                    ShowPlanetInspector(_activePlanet, _activeSystem, openOverview: false);
                     RefreshResourceBar();
                 }
             }
