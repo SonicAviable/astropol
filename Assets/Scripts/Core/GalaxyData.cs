@@ -19,7 +19,12 @@ namespace StellarisClone.Core
 
         public int OwnerId = -1;
         public bool HasStarbase;
+        /// <summary>Система изучена игроком (видны планеты, можно строить форпост).</summary>
         public bool IsSurveyed = false;
+        /// <summary>Система изучена ИИ. Отдельно от игрока: чужая разведка не «закрывает» систему для вас.</summary>
+        public bool SurveyedByAI = false;
+
+        public bool IsSurveyedBy(int owner) => owner == 0 ? IsSurveyed : SurveyedByAI;
 
         public int TotalEnergy { get; private set; }
         public int TotalMinerals { get; private set; }

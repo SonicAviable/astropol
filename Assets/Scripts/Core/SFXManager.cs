@@ -98,9 +98,13 @@ namespace StellarisClone.Core
             foreach (Sfx id in Enum.GetValues(typeof(Sfx))) defs.Add((id, SfxLibrary.Def(id)));
             // Порядок: Ui → Stinger → World (боевые нужны только в игре)
             foreach (var bus in new[] { SfxBus.Ui, SfxBus.Stinger, SfxBus.World })
+            {
+                // Заставка новой партии нужна сразу после меню — считаем её первой среди «стингеров»
+                if (bus == SfxBus.Stinger) order.Add(Key(Sfx.GameStart, 0));
                 foreach (var (id, def) in defs)
-                    if (def.Bus == bus)
+                    if (def.Bus == bus && id != Sfx.GameStart)
                         for (int v = 0; v < def.Variants; v++) order.Add(Key(id, v));
+            }
 
             // Несколько рабочих потоков; порядок примерно сохраняется (интерфейс готов первым)
             int workers = Mathf.Clamp(SystemInfo.processorCount - 1, 1, 4);

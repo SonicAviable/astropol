@@ -310,24 +310,43 @@ namespace StellarisClone.Core.Audio
             }
         }
 
-        /// <summary>Подмешать реверберацию (хвост ложится в оставшуюся часть буфера).</summary>
-        public void ApplyReverb(float wet, float room, float damp, float dry = 1f)
+        /// <summary>
+        /// Подмешать реверберацию (хвост ложится в оставшуюся часть буфера).
+        /// preDelay — отделяет звук от хвоста; lowCut — срез низов на входе ревера, чтобы хвост не «гудел».
+        /// </summary>
+        public void ApplyReverb(float wet, float room, float damp, float dry = 1f, float preDelay = 0.02f, float lowCut = 0f)
         {
             if (wet <= 0f) return;
             var rv = new Reverb(Sr, room, damp);
-            // Предзадержка 20 мс через кольцевой буфер сухого сигнала — звук «отделяется» от хвоста
-            int pre = Math.Max(1, (int)(0.02f * Sr));
+            int pre = Math.Max(1, (int)(preDelay * Sr));
             var ringL = new float[pre]; var ringR = new float[pre];
+            var hl = new Svf(SvfMode.HighPass); var hr = new Svf(SvfMode.HighPass);
             int idx = 0;
             for (int i = 0; i < L.Length; i++)
             {
                 float dl = L[i], dr = R[i];
                 float inL = ringL[idx], inR = ringR[idx];
+                if (lowCut > 0f) { inL = hl.Process(inL, lowCut, 0.6f, Sr); inR = hr.Process(inR, lowCut, 0.6f, Sr); }
                 ringL[idx] = dl; ringR[idx] = dr;
                 if (++idx >= pre) idx = 0;
                 rv.Process(inL, inR, out float wl, out float wr);
                 L[i] = dl * dry + wl * wet * 3f;   // 3 — штатный масштаб «мокрого» сигнала Freeverb
                 R[i] = dr * dry + wr * wet * 3f;
+            }
+        }
+
+        /// <summary>Подмешать другой буфер со сдвигом (offset может быть отрицательным), при желании — задом наперёд.</summary>
+        public void MixFrom(Stereo src, int offset, float gain = 1f, bool reverse = false)
+        {
+            int n = src.Length;
+            for (int k = 0; k < n; k++)
+            {
+                int i = offset + k;
+                if (i < 0) continue;
+                if (i >= L.Length) break;
+                int j = reverse ? n - 1 - k : k;
+                L[i] += src.L[j] * gain;
+                R[i] += src.R[j] * gain;
             }
         }
 
@@ -347,6 +366,18 @@ namespace StellarisClone.Core.Audio
                 L[i] += dl * wet;
                 R[i] += dr * wet;
                 if (++idx >= d) idx = 0;
+            }
+        }
+
+        /// <summary>Плавно увести в ноль последние seconds секунд (квадратичный фейд).</summary>
+        public void FadeTail(float seconds)
+        {
+            int n = Math.Min(L.Length, Math.Max(1, (int)(seconds * Sr)));
+            for (int k = 0; k < n; k++)
+            {
+                int i = L.Length - 1 - k;
+                float x = (float)k / n, g = x * x;
+                L[i] *= g; R[i] *= g;
             }
         }
 
@@ -393,9 +424,10 @@ namespace StellarisClone.Core.Audio
         /// Финализация: DC-фильтр, нормализация к пику, обрезка тишины в хвосте, страховочные фейды
         /// (2 мс на входе, 25 мс на выходе) — первый и последний сэмпл гарантированно нулевые.
         /// </summary>
-        public float[] Finish(float peakDb = -1f)
+        public float[] Finish(float peakDb = -1f, float lowPassHz = 0f)
         {
             DcBlock();
+            if (lowPassHz > 0f) Filter(SvfMode.LowPass, lowPassHz, 0.6f);
             float peak = Peak();
             if (peak > 1e-6f) Gain((float)Math.Pow(10, peakDb / 20f) / peak);
 

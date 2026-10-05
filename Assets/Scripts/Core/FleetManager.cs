@@ -681,7 +681,9 @@ namespace StellarisClone.Core
         {
             if (systemId < 0 || systemId >= _generator.Systems.Count) return;
             var sys = _generator.Systems[systemId];
-            sys.IsSurveyed = true;
+            // Разведка у каждой стороны своя: исследование ИИ не делает систему изученной для игрока
+            if (ownerId == 0) sys.IsSurveyed = true;
+            else sys.SurveyedByAI = true;
 
             if (ownerId == 0)
             {
@@ -782,6 +784,7 @@ namespace StellarisClone.Core
             system.OwnerId = ownerId;
             system.HasStarbase = true;
             system.IsSurveyed = true;
+            system.SurveyedByAI = true;
             system.GeneratePlanets();
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();

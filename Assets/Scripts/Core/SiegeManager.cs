@@ -163,6 +163,7 @@ namespace StellarisClone.Core
             sys.OwnerId = newOwner;
             sys.HasStarbase = true;
             sys.IsSurveyed = true;
+            sys.SurveyedByAI = true;
             _sieges.Remove(sys.Id);
 
             // Незаконченные стройки в захваченной системе прерываются

@@ -459,7 +459,6 @@ namespace StellarisClone.Rendering
             else
             {
                 SnapToCurrentSystem();
-                SFXManager.PlayAt(Sfx.FtlArrive, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);
 
                 if (Data.Type == FleetType.Constructor && Data.BuildTargetSystemId == Data.CurrentSystemId)
                 {
@@ -479,11 +478,7 @@ namespace StellarisClone.Rendering
                     Data.MarkEvent(FleetData.FleetEvent.Arrived);
                     if (more) FleetManager.Instance?.AdvanceQueue(this);
                     else if (Data.HasPlayerOrder && Data.OwnerId == 0)
-                    {
-                        Data.HasPlayerOrder = false;
-                        NotificationCenter.Show("Флот прибыл", $"{Data.Name} → {_generator.Systems[Data.CurrentSystemId].Name}",
-                            NotificationCenter.Kind.Info, 2.5f);
-                    }
+                        Data.HasPlayerOrder = false;   // прибытие видно по значку флота — без уведомления
                 }
             }
         }

@@ -81,6 +81,8 @@ namespace StellarisClone.Core
         public int OwnerId;
         public bool HasStarbase;
         public bool IsSurveyed;
+        public bool SurveyedByAI;
+        public int SurveyVer;      // 0 — старое сохранение (разведка была общей)
         public List<PlanetSave> Planets = new List<PlanetSave>();
     }
 
@@ -457,7 +459,8 @@ namespace StellarisClone.Core
             {
                 Id = sys.Id, Name = sys.Name, Position = sys.Position, Spectral = (int)sys.SpectralClass,
                 HasGeneratedPlanets = sys.HasGeneratedPlanets, OwnerId = sys.OwnerId,
-                HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed
+                HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed,
+                SurveyedByAI = sys.SurveyedByAI, SurveyVer = 1
             };
             ss.Connected.AddRange(sys.ConnectedSystemIds);
             foreach (var p in sys.Planets)
@@ -517,6 +520,7 @@ namespace StellarisClone.Core
                 var sys = new StarSystem(ss.Id, ss.Name, ss.Position, (StarSpectralClass)ss.Spectral)
                 {
                     OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, IsSurveyed = ss.IsSurveyed,
+                    SurveyedByAI = ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed,
                     HasGeneratedPlanets = ss.HasGeneratedPlanets
                 };
                 sys.ConnectedSystemIds.AddRange(ss.Connected);

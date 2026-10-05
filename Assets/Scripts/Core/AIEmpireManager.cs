@@ -173,6 +173,7 @@ namespace StellarisClone.Core
             capital.OwnerId = AIOwnerId;
             capital.HasStarbase = true;
             capital.IsSurveyed = true;
+            capital.SurveyedByAI = true;
             capital.GeneratePlanets();
             foreach (var p in capital.Planets)
             {
@@ -358,7 +359,7 @@ namespace StellarisClone.Core
                 if (d.SurveyTargetSystemId >= 0)
                 {
                     var t = EmpireStats.GetSystem(d.SurveyTargetSystemId);
-                    if (t == null || t.IsSurveyed) { d.SurveyTargetSystemId = -1; if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting; }
+                    if (t == null || t.SurveyedByAI) { d.SurveyTargetSystemId = -1; if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting; }
                     else continue;
                 }
                 if (!IsIdle(d)) continue;
@@ -388,7 +389,7 @@ namespace StellarisClone.Core
             foreach (var kv in dist)
             {
                 var sys = EmpireStats.GetSystem(kv.Key);
-                if (sys == null || sys.IsSurveyed || claimed.Contains(sys.Id)) continue;
+                if (sys == null || sys.SurveyedByAI || claimed.Contains(sys.Id)) continue;
                 if (sys.OwnerId == 0 && AtWar) continue;
                 float score = sys.ConnectedSystemIds.Count * 1.5f - kv.Value * 3f;
                 if (BordersOwn(sys)) score += 6f;
@@ -450,7 +451,7 @@ namespace StellarisClone.Core
             var fromCapital = Distances(CapitalSystemId, 30);
             foreach (var sys in EmpireStats.Systems)
             {
-                if (sys.OwnerId != -1 || !sys.IsSurveyed || claimed.Contains(sys.Id)) continue;
+                if (sys.OwnerId != -1 || !sys.SurveyedByAI || claimed.Contains(sys.Id)) continue;
                 if (!BordersOwn(sys)) continue;
                 if (AtWar && FleetManager.Instance != null && FleetManager.Instance.GetMilitaryPowerInSystem(0, sys.Id) > 0f) continue;
                 float score = SystemValue(sys);
@@ -732,7 +733,7 @@ namespace StellarisClone.Core
             foreach (var kv in Distances(CapitalSystemId, 8))
             {
                 var s = EmpireStats.GetSystem(kv.Key);
-                if (s != null && !s.IsSurveyed) return true;
+                if (s != null && !s.SurveyedByAI) return true;
             }
             return false;
         }
