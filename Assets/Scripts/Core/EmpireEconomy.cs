@@ -42,7 +42,8 @@ namespace StellarisClone.Core
             bonuses ??= new EmpireBonuses();
             float penalty = bankrupt ? 0.5f : 1f;
 
-            int colonies = 0, en = 0, min = 0, al = 0, stE = 0, stM = 0;
+            int colonies = 0, stE = 0, stM = 0;
+            float en = 0f, min = 0f, al = 0f;
             foreach (var sys in EmpireStats.Systems)
             {
                 if (sys.OwnerId != owner) continue;
@@ -53,9 +54,10 @@ namespace StellarisClone.Core
                     if (p.Type == PlanetType.GasGiant || p.Type == PlanetType.Molten) continue;
                     if (p.Population <= 0) continue;
                     colonies++;
-                    min += p.ProducedMineralsPerMonth;
-                    en += p.ProducedEnergyPerMonth;
-                    al += p.ProducedAlloysPerMonth;
+                    // Губернатор планеты увеличивает её производство
+                    min += p.ProducedMineralsPerMonth * LeaderManager.PlanetOutputMult(p, "minerals");
+                    en += p.ProducedEnergyPerMonth * LeaderManager.PlanetOutputMult(p, "energy");
+                    al += p.ProducedAlloysPerMonth * LeaderManager.PlanetOutputMult(p, "alloys");
                 }
             }
 

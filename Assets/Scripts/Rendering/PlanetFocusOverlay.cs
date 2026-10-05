@@ -166,7 +166,9 @@ namespace StellarisClone.Rendering
         private void RefreshHeader()
         {
             _title.text = _planet.Name.ToUpper();
-            _subtitle.text = $"{_planet.ClassDisplayName}   ·   система {(_system != null ? _system.Name : "?")}";
+            var gov = LeaderManager.Instance?.GovernorOf(_planet);
+            string govText = gov != null ? $"   ·   <color=#FFCC52>губернатор {gov.Name}, ур. {gov.Level}</color>" : "";
+            _subtitle.text = $"{_planet.ClassDisplayName}   ·   система {(_system != null ? _system.Name : "?")}{govText}";
 
             int owner = _system != null ? _system.OwnerId : -1;
             Color oc = owner == 0 ? FleetIndicator.OwnColor : owner > 0 ? FleetIndicator.EnemyColor : CMuted;

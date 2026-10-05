@@ -151,7 +151,7 @@ namespace StellarisClone.Core
         public float ScienceFromPopulation => _population * SciencePerPop;
 
         public float MonthlyResearchIncome =>
-            (BaseScience + ScienceFromPopulation + FlatScience) * Bonuses.ResearchMult * TempBoost;
+            (BaseScience + ScienceFromPopulation + FlatScience) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0);
 
         private readonly List<Technology> _allTechs = new List<Technology>();
         public IReadOnlyList<Technology> AllTechs => _allTechs;

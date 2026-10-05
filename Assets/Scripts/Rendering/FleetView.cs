@@ -413,6 +413,7 @@ namespace StellarisClone.Rendering
             {
                 float speedBonus = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed;
                 speedBonus *= Mathf.Max(0.5f, Data.HyperSpeed);
+                speedBonus *= LeaderManager.HyperSpeedMult(Data);
                 Data.DaysRemainingInTransit -= 1f * speedBonus;
                 if (Data.DaysRemainingInTransit <= 0f) ArriveAtTargetSystem();
             }
@@ -425,7 +426,8 @@ namespace StellarisClone.Rendering
 
             if (Data.State == FleetState.Surveying)
             {
-                Data.DaysRemainingSurvey -= EmpireBonuses.For(Data.OwnerId).SurveySpeed;
+                Data.DaysRemainingSurvey -= EmpireBonuses.For(Data.OwnerId).SurveySpeed * LeaderManager.SurveySpeedMult(Data);
+                LeaderManager.Instance?.OnSurveyDay(Data);
                 if (Data.DaysRemainingSurvey <= 0f) CompleteSurvey();
             }
 
@@ -512,7 +514,10 @@ namespace StellarisClone.Rendering
             Data.SurveyTargetSystemId = -1;
 
             if (FleetManager.Instance != null && sysId >= 0)
-                FleetManager.Instance.CompleteSystemSurvey(sysId, Data.OwnerId);
+            {
+                LeaderManager.Instance?.OnSurveyComplete(Data);
+                FleetManager.Instance.CompleteSystemSurvey(sysId, Data.OwnerId, LeaderManager.SurveyRewardMult(Data.Id));
+            }
 
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;

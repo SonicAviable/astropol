@@ -16,11 +16,11 @@ namespace StellarisClone.Rendering
     ///   • справа — вкладки «Колонии / Флоты / Границы / Соперник» с кликабельными строками
     ///     (клик — камера к объекту, окно закрывается).
     /// </summary>
-    public class EmpireOverviewWindow : MonoBehaviour
+    public partial class EmpireOverviewWindow : MonoBehaviour
     {
         public static EmpireOverviewWindow Instance { get; private set; }
 
-        private enum Tab { Colonies, Fleets, Borders, Rival }
+        private enum Tab { Colonies, Fleets, Leaders, Borders, Rival }
 
         private GameObject _root;
         private Text _title, _subtitle;
@@ -338,8 +338,9 @@ namespace StellarisClone.Rendering
             tabsRow.TopBand(0, 40);
             AddTab(tabsRow, Tab.Colonies, LGIcon.Planet, "КОЛОНИИ", 0);
             AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, "ФЛОТЫ", 1);
-            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 2);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИК", 3);
+            AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, "ЛИДЕРЫ", 2);
+            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 3);
+            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИК", 4);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -359,11 +360,13 @@ namespace StellarisClone.Rendering
         private void AddTab(RectTransform row, Tab tab, LGIcon icon, string label, int index)
         {
             var bgImg = LGBuild.Panel(row, "Tab_" + tab, UIManager.DS.BtnNeutral, raycast: true);
-            bgImg.rectTransform.Column(index / 4f, (index + 1) / 4f, index == 0 ? 0 : 4, index == 3 ? 0 : 4);
+            const int TabCount = 5;
+            bgImg.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 0 : 4, index == TabCount - 1 ? 0 : 4);
             var b = bgImg.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() =>
             {
                 _tab = tab;
+                _assignLeaderId = -1;
                 RefreshTabs();
                 RebuildList();
                 SFXManager.Play(Sfx.UiTab);
@@ -523,6 +526,7 @@ namespace StellarisClone.Rendering
             {
                 case Tab.Colonies: BuildColonies(); break;
                 case Tab.Fleets: BuildFleets(); break;
+                case Tab.Leaders: BuildLeaders(); break;
                 case Tab.Borders: BuildBorders(); break;
                 case Tab.Rival: BuildRival(); break;
             }

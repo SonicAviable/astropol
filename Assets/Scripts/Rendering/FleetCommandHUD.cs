@@ -164,7 +164,12 @@ namespace StellarisClone.Rendering
             _icon.sprite = LGIcons.Get(TypeIcon(d.Type));
             _icon.color = TypeColor(d.Type);
             _title.text = d.Name;
-            _subtitle.text = $"{TypeName(d.Type)}   ·   {StateText(d)}";
+            // Лидер на борту: учёный или адмирал-флагман
+            var leader = LeaderManager.Instance?.LeaderOfShip(d.Id);
+            string lead = leader != null
+                ? $"   ·   <color=#FFCC52>{LeaderManager.ClassName(leader.Class)} {leader.Name}, ур. {leader.Level}</color>"
+                : "";
+            _subtitle.text = $"{TypeName(d.Type)}   ·   {StateText(d)}{lead}";
             _power.text = d.Type == FleetType.Military ? $"Мощь {Mathf.RoundToInt(CombatMath.Power(d)):N0}" : "";
             SetHp(d.HullPoints + d.ArmorPoints, d.MaxHullPoints + d.MaxArmorPoints,
                   $"Корпус {d.HullPoints:0}/{d.MaxHullPoints:0} · броня {d.ArmorPoints:0} · щиты {d.ShieldPoints:0}");

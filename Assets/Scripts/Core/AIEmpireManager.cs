@@ -745,7 +745,8 @@ namespace StellarisClone.Core
             if (CurrentTech == null) PickNextTech();
             if (CurrentTech == null) return;
 
-            float gain = MonthlyScience * ResearchThroughput / 30f / TechnologyManager.YearPenaltyMultiplier(CurrentTech, year);
+            float gain = MonthlyScience * LeaderManager.ResearchMult(AIOwnerId) * ResearchThroughput / 30f
+                       / TechnologyManager.YearPenaltyMultiplier(CurrentTech, year);
             TechProgress += gain;
             if (TechProgress < CurrentTech.Cost) return;
 

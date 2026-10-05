@@ -269,7 +269,8 @@ namespace StellarisClone.Core
                     if (used >= ShipyardSlots) continue;
                     shipSlots[j.Owner] = used + 1;
                 }
-                j.DaysLeft -= 1f;
+                // Губернатор планеты ускоряет стройку на ней
+                j.DaysLeft -= j.IsPlanetJob ? LeaderManager.BuildSpeedMult(j.SystemId, j.PlanetIndex) : 1f;
                 if (j.DaysLeft <= 0f) done.Add(j);
             }
 

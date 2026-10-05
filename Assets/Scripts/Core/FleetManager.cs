@@ -677,7 +677,7 @@ namespace StellarisClone.Core
 
         public void CompleteSystemSurvey(int systemId) => CompleteSystemSurvey(systemId, 0);
 
-        public void CompleteSystemSurvey(int systemId, int ownerId)
+        public void CompleteSystemSurvey(int systemId, int ownerId, float rewardMult = 1f)
         {
             if (systemId < 0 || systemId >= _generator.Systems.Count) return;
             var sys = _generator.Systems[systemId];
@@ -690,10 +690,11 @@ namespace StellarisClone.Core
                 var eco = EconomyManager.Instance;
                 if (eco != null)
                 {
-                    eco.Minerals += 75f;
-                    eco.Alloys += 40f;
-                    eco.Influence += 15f;
-                    eco.EnergyCredits += 25f;
+                    // Учёный на корабле увеличивает трофеи разведки
+                    eco.Minerals += 75f * rewardMult;
+                    eco.Alloys += 40f * rewardMult;
+                    eco.Influence += 15f * rewardMult;
+                    eco.EnergyCredits += 25f * rewardMult;
                     eco.RaiseResourcesChanged();
                 }
                 SFXManager.Play(Sfx.SurveyComplete);
@@ -703,10 +704,10 @@ namespace StellarisClone.Core
             {
                 // ИИ получает за разведку те же трофеи, что и игрок
                 var ai = AIEmpireManager.Instance;
-                ai.AddStock("minerals", 75f);
-                ai.AddStock("alloys", 40f);
-                ai.AddStock("influence", 15f);
-                ai.AddStock("energy", 25f);
+                ai.AddStock("minerals", 75f * rewardMult);
+                ai.AddStock("alloys", 40f * rewardMult);
+                ai.AddStock("influence", 15f * rewardMult);
+                ai.AddStock("energy", 25f * rewardMult);
             }
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();

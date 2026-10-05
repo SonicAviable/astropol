@@ -275,7 +275,8 @@ namespace StellarisClone.Core
             if (shooter.Fleet != null)
             {
                 var d = shooter.Fleet.Data;
-                damage = d.Damage; fireRate = d.FireRate; weapon = d.PrimaryWeapon;
+                damage = d.Damage; fireRate = d.FireRate * LeaderManager.AdmiralFireRateMult(d.OwnerId, battle.SystemId);
+                weapon = d.PrimaryWeapon;
                 cooldown = d.FireCooldown;
             }
             else
@@ -341,7 +342,8 @@ namespace StellarisClone.Core
             if (target.Fleet != null)
             {
                 var db = EmpireBonuses.For(target.Owner);
-                float evade = Mathf.Clamp01((target.Fleet.Data.Evasion * db.EvasionMult - ab.Accuracy) / 100f);
+                float evade = Mathf.Clamp01((target.Fleet.Data.Evasion * db.EvasionMult
+                                             * LeaderManager.AdmiralEvasionMult(target.Owner, battle.SystemId) - ab.Accuracy) / 100f);
                 if (Random.value < evade * 0.45f)
                 {
                     SpawnBeam(from, to, wc, 0.12f);
@@ -352,6 +354,7 @@ namespace StellarisClone.Core
             }
 
             float raw = damage * ab.DamageMult(weapon);
+            if (shooter.Fleet != null) raw *= LeaderManager.AdmiralDamageMult(shooter.Owner, battle.SystemId);
             float shieldBefore = target.Fleet != null ? target.Fleet.Data.ShieldPoints : target.Base.Shields;
             float dealt;
             if (target.Fleet != null) dealt = ApplyLayeredDamage(target.Fleet.Data, raw, weapon);
@@ -362,6 +365,7 @@ namespace StellarisClone.Core
             SpawnFloater(to, $"-{dealt:0}", wc);
 
             Side(battle, shooter.Owner).DamageDealt += dealt;
+            if (shooter.Fleet != null) LeaderManager.Instance?.OnDamageDealt(shooter.Owner, battle.SystemId, dealt);
             Side(battle, target.Owner).DamageTaken += dealt;
 
             if (target.Fleet != null)
@@ -371,6 +375,7 @@ namespace StellarisClone.Core
             else if (target.Base.Hull <= 0f && !target.Base.Disabled)
             {
                 DisableStarbase(target.Base, shooter.Owner);
+                LeaderManager.Instance?.OnKill(shooter.Owner, battle.SystemId);
                 Side(battle, shooter.Owner).Kills++;
             }
         }
@@ -395,7 +400,7 @@ namespace StellarisClone.Core
         {
             var d = fv.Data;
             int escape = EscapeSystem(d);
-            if (escape >= 0 && Random.value < DisengageChance(d))
+            if (escape >= 0 && Random.value < DisengageChance(d) * LeaderManager.AdmiralDisengageMult(d.OwnerId, battle.SystemId))
             {
                 d.HullPoints = d.MaxHullPoints * 0.12f;
                 d.ArmorPoints = 0f;
@@ -415,6 +420,7 @@ namespace StellarisClone.Core
 
             Side(battle, d.OwnerId).Lost++;
             Side(battle, killer).Kills++;
+            LeaderManager.Instance?.OnKill(killer, battle.SystemId);
             DestroyFleet(fv, killer);
         }
 
