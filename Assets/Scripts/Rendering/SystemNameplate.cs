@@ -159,7 +159,7 @@ namespace StellarisClone.Rendering
         public string GetTooltipContent()
         {
             string owner = _data.OwnerId == 0 ? "Ваша империя"
-                         : _data.OwnerId > 0 ? "Другая империя"
+                         : _data.OwnerId > 0 ? (AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Другая империя")
                          : "Нейтральная";
 
             string tip = $"<b>{_data.Name}</b>\n" +
@@ -177,7 +177,40 @@ namespace StellarisClone.Rendering
                 tip += "\n<color=#FFAA88>Требуется разведка</color>\n";
             }
 
+            tip += FleetsLine() + EtaLine();
             return tip;
+        }
+
+        /// <summary>Флоты на орбите (свои и чужие).</summary>
+        private string FleetsLine()
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return "";
+            int own = 0, enemy = 0;
+            foreach (var f in fm.GetFleetsInSystem(_data.Id))
+                if (f.Data.OwnerId == 0) own++; else enemy++;
+            if (own == 0 && enemy == 0) return "";
+            return $"\n<color=#AAB4C0>Флоты:</color> " +
+                   (own > 0 ? $"<color=#39EBDB>ваши {own}</color>" : "") +
+                   (own > 0 && enemy > 0 ? "  ·  " : "") +
+                   (enemy > 0 ? $"<color=#FF6666>чужие {enemy}</color>" : "") + "\n";
+        }
+
+        /// <summary>Сколько лететь сюда выделенному флоту.</summary>
+        private string EtaLine()
+        {
+            var fm = FleetManager.Instance;
+            var f = fm != null ? fm.SelectedFleet : null;
+            if (f?.Data == null) return "";
+            var gen = FindAnyObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            int from = f.Data.State == FleetState.InHyperlane ? f.Data.TargetSystemId : f.Data.CurrentSystemId;
+            if (from == _data.Id) return "";
+            var path = GalaxyPathfinder.FindPath(from, _data.Id, gen);
+            if (path == null) return "";
+            float days = path.Count * FleetRoute.DaysPerJump(f.Data);
+            if (f.Data.State == FleetState.InHyperlane) days += f.Data.DaysRemainingInTransit / FleetRoute.JumpSpeed(f.Data);
+            return $"\n<color=#4DF2DB>{f.Data.Name}: ~{FleetRoute.FormatDays(days)} ({path.Count} прыжк.)</color>\n" +
+                   "<color=#8AA2A8>ПКМ — лететь, Shift+ПКМ — в очередь</color>";
         }
 
         private void UpdateHoverTooltip()

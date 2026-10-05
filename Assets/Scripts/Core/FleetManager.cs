@@ -15,6 +15,7 @@ namespace StellarisClone.Core
         public static event Action<StarSystem> OnSystemSurveyCompleted;
 
         private GalaxyGenerator _generator;
+        /// <summary>Главный выделенный флот (первый в выделении).</summary>
         public FleetView SelectedFleet { get; private set; }
         private readonly List<FleetView> _allFleets = new List<FleetView>();
         public IReadOnlyList<FleetView> AllFleets => _allFleets;
@@ -211,8 +212,12 @@ namespace StellarisClone.Core
         {
             if (view == null) return;
             _allFleets.Remove(view);
-            if (SelectedFleet == view)
-                SelectFleet(null);
+            if (_selection.Contains(view))
+            {
+                var next = new List<FleetView>(_selection);
+                next.Remove(view);
+                ApplySelection(next);
+            }
         }
 
         /// <summary>Распустить корабль (банкротство, сокращение флота).</summary>
@@ -397,103 +402,61 @@ namespace StellarisClone.Core
             return true;
         }
 
-        private void Update()
-        {
-            if (!UIManager.IsGameStarted) return;
-            HandleSelectionAndOrders();
-        }
+        // ==================== ВЫДЕЛЕНИЕ ====================
+        // Ввод мышью (клик, рамка, Shift, ПКМ) — в FleetSelectionController; здесь — состояние и приказы.
 
-        private void HandleSelectionAndOrders()
-        {
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-            if (Camera.main == null) return;
+        private readonly List<FleetView> _selection = new List<FleetView>();
+        public IReadOnlyList<FleetView> SelectedFleets => _selection;
+        public static event Action OnSelectionChanged;
 
-            if (Input.GetMouseButtonDown(0))
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit[] hits = Physics.RaycastAll(ray, 1000f);
-
-                FleetView foundFleet = null;
-                float bestDist = float.MaxValue;
-                foreach (var h in hits)
-                {
-                    var fv = h.collider.GetComponentInParent<FleetView>();
-                    if (fv != null && h.distance < bestDist) { foundFleet = fv; bestDist = h.distance; }
-                }
-                if (foundFleet != null)
-                {
-                    if (foundFleet.Data != null && foundFleet.Data.OwnerId != 0) return;
-                    SelectFleet(foundFleet);
-                    return;
-                }
-            }
-
-            if (Input.GetMouseButtonDown(1) && SelectedFleet != null)
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                RaycastHit[] hits = Physics.RaycastAll(ray, 1000f);
-
-                StarSystem targetSystem = null;
-                float bestDist = float.MaxValue;
-
-                foreach (var h in hits)
-                {
-                    if (h.collider.GetComponentInParent<FleetView>() != null) continue;
-                    var selector = h.collider.GetComponentInParent<StarSystemSelector>();
-                    if (selector?.Data != null && h.distance < bestDist)
-                    {
-                        targetSystem = selector.Data;
-                        bestDist = h.distance;
-                    }
-                }
-
-                if (targetSystem == null) return;
-
-                var fleet = SelectedFleet;
-
-                if (fleet.Data.Type == FleetType.Science
-                    && !targetSystem.IsSurveyed
-                    && targetSystem.OwnerId == -1)
-                {
-                    if (!OrderSurveySystem(targetSystem.Id, fleet))
-                        IssueMoveOrder(fleet, targetSystem.Id);
-                    return;
-                }
-
-                if (fleet.Data.Type == FleetType.Constructor
-                    && targetSystem.OwnerId == -1
-                    && targetSystem.IsSurveyed)
-                {
-                    if (!OrderBuildStarbase(targetSystem.Id, fleet))
-                        IssueMoveOrder(fleet, targetSystem.Id);
-                    return;
-                }
-
-                IssueMoveOrder(fleet, targetSystem.Id);
-            }
-        }
+        public bool IsSelected(FleetView f) => f != null && _selection.Contains(f);
 
         public void SelectFleet(FleetView fleet)
         {
-            if (fleet == null)
-            {
-                if (SelectedFleet == null) return;
-                SelectedFleet.SetSelected(false);
-                SelectedFleet = null;
-                SFXManager.Play("ui_deselect", 0.7f, 1f);
-                OnFleetSelected?.Invoke(null);
-                return;
-            }
+            if (fleet == null) { SetSelection(null); return; }
+            SetSelection(new[] { fleet });
+        }
 
-            if (SelectedFleet == fleet) return;
+        /// <summary>Заменить (или дополнить) выделение. Выделять можно только свои флоты.</summary>
+        public void SetSelection(IEnumerable<FleetView> fleets, bool additive = false)
+        {
+            var next = new List<FleetView>();
+            if (additive) next.AddRange(_selection);
+            if (fleets != null)
+                foreach (var f in fleets)
+                    if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == 0 && !next.Contains(f)) next.Add(f);
+            ApplySelection(next);
+        }
 
-            if (SelectedFleet != null) SelectedFleet.SetSelected(false);
-            SelectedFleet = fleet;
-            SelectedFleet.SetSelected(true);
-            SelectedFleet.UpdatePathVisuals();
+        public void ToggleInSelection(FleetView f)
+        {
+            if (f?.Data == null || f.Data.OwnerId != 0) return;
+            var next = new List<FleetView>(_selection);
+            if (!next.Remove(f)) next.Add(f);
+            ApplySelection(next);
+        }
 
-            PlayFleetSelectSFX(fleet.Data.Type);
-            OnFleetSelected?.Invoke(SelectedFleet);
+        private void ApplySelection(List<FleetView> next)
+        {
+            var oldPrimary = SelectedFleet;
+            foreach (var f in _selection)
+                if (f != null && !next.Contains(f)) f.SetSelected(false);
+            foreach (var f in next)
+                if (!_selection.Contains(f)) f.SetSelected(true);
+
+            bool changed = next.Count != _selection.Count;
+            if (!changed)
+                for (int i = 0; i < next.Count; i++) if (next[i] != _selection[i]) { changed = true; break; }
+
+            _selection.Clear();
+            _selection.AddRange(next);
+            SelectedFleet = _selection.Count > 0 ? _selection[0] : null;
+
+            if (!changed) return;
+            if (SelectedFleet == null) SFXManager.Play("ui_deselect", 0.7f, 1f);
+            else if (SelectedFleet != oldPrimary) PlayFleetSelectSFX(SelectedFleet.Data.Type);
+            if (SelectedFleet != oldPrimary) OnFleetSelected?.Invoke(SelectedFleet);
+            OnSelectionChanged?.Invoke();
         }
 
         private void PlayFleetSelectSFX(FleetType type)
@@ -511,6 +474,121 @@ namespace StellarisClone.Core
 
             if (!SFXManager.Has(baseName)) return;
             SFXManager.Play(baseName, 1f, type == FleetType.Constructor ? 1.0f : 1.05f);
+        }
+
+        // ==================== ПРИКАЗЫ ====================
+
+        /// <summary>
+        /// ПКМ по системе для всех выделенных флотов. queue — Shift: добавить пункт в очередь.
+        /// Научные корабли сами начинают разведку неизученной системы, строитель (один) — форпост.
+        /// </summary>
+        public void CommandSelection(int systemId, bool queue)
+        {
+            if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return;
+            var target = _generator.Systems[systemId];
+            bool builderAssigned = false;
+
+            foreach (var fleet in new List<FleetView>(_selection))
+            {
+                if (fleet?.Data == null || fleet.Data.Destroyed) continue;
+                var d = fleet.Data;
+
+                if (!queue && d.Type == FleetType.Science && !target.IsSurveyed && target.OwnerId == -1)
+                {
+                    d.OrderQueue.Clear();
+                    d.HasPlayerOrder = false;
+                    if (OrderSurveySystem(systemId, fleet)) continue;
+                }
+                if (!queue && !builderAssigned && d.Type == FleetType.Constructor && target.OwnerId == -1 && target.IsSurveyed)
+                {
+                    d.OrderQueue.Clear();
+                    d.HasPlayerOrder = false;
+                    if (OrderBuildStarbase(systemId, fleet)) { builderAssigned = true; continue; }
+                }
+                CommandMove(fleet, systemId, queue);
+            }
+        }
+
+        public void CommandMove(FleetView fleet, int systemId, bool queue)
+        {
+            if (fleet?.Data == null) return;
+            var d = fleet.Data;
+            if (queue && (d.IsBusy || d.OrderQueue.Count > 0))
+            {
+                // Повтор той же точки в конце очереди не нужен
+                int lastQueued = d.OrderQueue.Count > 0 ? d.OrderQueue[d.OrderQueue.Count - 1] : d.CurrentDestination;
+                if (lastQueued != systemId) d.OrderQueue.Add(systemId);
+                d.HasPlayerOrder = d.OwnerId == 0;
+                fleet.UpdatePathVisuals();
+                return;
+            }
+            d.OrderQueue.Clear();
+            if (d.InCombat) return;   // из боя — только экстренный прыжок
+            d.Path.Clear();           // новый приказ отменяет старый маршрут (в т.ч. «остаться здесь»)
+            IssueMoveOrder(fleet, systemId);
+            d.HasPlayerOrder = d.OwnerId == 0 && d.Path.Count > 0;
+            fleet.UpdatePathVisuals();
+        }
+
+        /// <summary>Стоп: сбросить маршрут и очередь (корабль в гиперкоридоре долетит до ближайшей системы).</summary>
+        public void StopFleet(FleetView fleet)
+        {
+            if (fleet?.Data == null) return;
+            fleet.Data.Path.Clear();
+            fleet.Data.OrderQueue.Clear();
+            fleet.Data.HasPlayerOrder = false;
+            fleet.UpdatePathVisuals();
+        }
+
+        public void ClearQueue(FleetView fleet)
+        {
+            if (fleet?.Data == null) return;
+            fleet.Data.OrderQueue.Clear();
+            fleet.UpdatePathVisuals();
+        }
+
+        /// <summary>Пропустить текущую цель и сразу лететь к следующей из очереди.</summary>
+        public void SkipToNext(FleetView fleet)
+        {
+            if (fleet?.Data == null) return;
+            var d = fleet.Data;
+            if (d.OrderQueue.Count == 0) { StopFleet(fleet); return; }
+            int next = d.OrderQueue[0];
+            d.OrderQueue.RemoveAt(0);
+            d.Path.Clear();
+            StartLeg(fleet, next);
+        }
+
+        /// <summary>Флот освободился (прибыл, закончил разведку/стройку) — следующий пункт очереди.</summary>
+        public void AdvanceQueue(FleetView fleet)
+        {
+            var d = fleet?.Data;
+            if (d == null || d.Destroyed || d.OrderQueue.Count == 0) return;
+            if (d.State != FleetState.Orbiting || d.Path.Count > 0) return;
+            int next = d.OrderQueue[0];
+            d.OrderQueue.RemoveAt(0);
+            StartLeg(fleet, next);
+        }
+
+        private void StartLeg(FleetView fleet, int target)
+        {
+            var d = fleet.Data;
+            if (_generator != null && d.Type == FleetType.Science && target >= 0 && target < _generator.Systems.Count)
+            {
+                var sys = _generator.Systems[target];
+                if (!sys.IsSurveyed && sys.OwnerId == -1) d.SurveyTargetSystemId = target;
+            }
+            if (d.CurrentSystemId == target && d.State == FleetState.Orbiting)
+            {
+                if (d.SurveyTargetSystemId == target)
+                {
+                    d.State = FleetState.Surveying;
+                    d.DaysRemainingSurvey = d.TotalSurveyDays;
+                }
+                else AdvanceQueue(fleet);
+                return;
+            }
+            IssueMoveOrder(fleet, target);
         }
 
         public void IssueMoveOrder(FleetView fleet, int targetSystemId)

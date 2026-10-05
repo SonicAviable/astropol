@@ -126,6 +126,9 @@ namespace StellarisClone.Core
             EnsureComp<ShipDesignerModal>("[UI] ShipDesignerModal");
             EnsureComp<PlanetOverviewModal>("[UI] PlanetOverviewModal");
             EnsureComp<NotificationCenter>("[UI] NotificationCenter");
+            EnsureComp<FleetSelectionController>("[UI] FleetSelectionController");
+            EnsureComp<FleetRouteOverlay>("[UI] FleetRouteOverlay");
+            EnsureComp<FleetCommandHUD>("[UI] FleetCommandHUD");
         }
 
         private static void EnsureComp<T>(string name) where T : Component

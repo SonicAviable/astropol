@@ -105,6 +105,7 @@ namespace StellarisClone.Core
         public string Name;
         public int Type, Owner, Current, Target, State;
         public List<int> Path = new List<int>();
+        public List<int> Queue = new List<int>();
         public float DaysTransit, TotalTransit;
         public int MilitaryPower;
         public int BuildTarget;
@@ -480,6 +481,7 @@ namespace StellarisClone.Core
                 Upkeep = d.UpkeepEnergy, Weapon = (int)d.PrimaryWeapon
             };
             f.Path.AddRange(d.Path);
+            f.Queue.AddRange(d.OrderQueue);
             return f;
         }
 
@@ -537,6 +539,8 @@ namespace StellarisClone.Core
             d.State = (FleetState)f.State;
             d.Path.Clear();
             foreach (int p in f.Path) d.Path.Enqueue(p);
+            d.OrderQueue.Clear();
+            if (f.Queue != null) d.OrderQueue.AddRange(f.Queue);
             d.DaysRemainingInTransit = f.DaysTransit;
             d.TotalDaysForTransit = f.TotalTransit > 0f ? f.TotalTransit : 15f;
             d.MilitaryPower = f.MilitaryPower;

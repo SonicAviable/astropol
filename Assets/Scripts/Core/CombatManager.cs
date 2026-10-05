@@ -374,7 +374,7 @@ namespace StellarisClone.Core
             rt.anchorMin = new Vector2(0.5f, 0f);
             rt.anchorMax = new Vector2(0.5f, 0f);
             rt.pivot = new Vector2(0.5f, 0f);
-            rt.anchoredPosition = new Vector2(0, 28);
+            rt.anchoredPosition = new Vector2(0, 142);   // над панелью выделенного флота
             rt.sizeDelta = new Vector2(520, 92);
 
             _hudGroup = _hud.AddComponent<CanvasGroup>();

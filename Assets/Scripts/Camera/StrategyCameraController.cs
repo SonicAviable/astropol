@@ -70,6 +70,11 @@ namespace StellarisClone.Cam
         public static bool EdgeScrollingSetting = false;
         public static float PanSpeedSetting = 1f;
 
+        // ---- Плавная панорама ----
+        private Vector3 _panVelocity;
+        private const float PanAcceleration = 10f;
+        private bool _boundsFromGalaxy;
+
         private void Awake()
         {
             _targetHeight = transform.position.y;
@@ -127,6 +132,7 @@ namespace StellarisClone.Cam
             if (IsTransitioning) return;
 
             // 4. Обычный режим галактики
+            FitBoundsToGalaxy();
             HandleGalaxyMovement();
             HandleGalaxyZoomToCursor();
             HandleGalaxyRotation();
@@ -242,7 +248,12 @@ namespace StellarisClone.Cam
             Vector3 dir = forward * v + right * h;
             if (dir.sqrMagnitude > 1f) dir.Normalize();
 
-            Vector3 newPos = transform.position + dir * (speed * Time.deltaTime);
+            // Разгон и торможение вместо мгновенного старта/остановки
+            Vector3 targetVel = dir * speed;
+            _panVelocity = Vector3.Lerp(_panVelocity, targetVel, 1f - Mathf.Exp(-PanAcceleration * Time.deltaTime));
+            if (_panVelocity.sqrMagnitude < 0.0001f) return;
+
+            Vector3 newPos = transform.position + _panVelocity * Time.deltaTime;
             newPos = ClampToBounds(newPos);
             transform.position = newPos;
         }
@@ -311,7 +322,9 @@ namespace StellarisClone.Cam
             Vector3 worldPoint = ray.GetPoint(enter);
 
             float oldHeight = _targetHeight;
-            _targetHeight -= scroll * zoomSpeed * 10f;
+            // Скорость зума зависит от высоты: у карты — точно, издалека — быстро
+            float heightK = Mathf.Lerp(0.45f, 2.2f, Mathf.InverseLerp(minHeight, maxHeight, _targetHeight));
+            _targetHeight -= scroll * zoomSpeed * 10f * heightK;
             _targetHeight = Mathf.Clamp(_targetHeight, minHeight, maxHeight);
 
             float heightDelta = _targetHeight - oldHeight;
@@ -352,8 +365,11 @@ namespace StellarisClone.Cam
         public void FocusOn(Vector3 worldPos)
         {
             _focusStartPos = transform.position;
-            _focusTargetPos = new Vector3(worldPos.x, transform.position.y, worldPos.z - 25f);
-            _focusTargetPos = ClampToBounds(_focusTargetPos);
+            // Сдвигаем камеру так, чтобы точка оказалась в центре экрана (с учётом наклона и высоты)
+            Vector3 shift = worldPos - GroundCenter(transform.position);
+            shift.y = 0f;
+            _focusTargetPos = ClampToBounds(transform.position + shift);
+            _panVelocity = Vector3.zero;
             _focusTimer = 0f;
             _isFocusing = true;
         }
@@ -374,16 +390,42 @@ namespace StellarisClone.Cam
 
         // ==================== ВСПОМОГАТЕЛЬНОЕ ====================
 
+        /// <summary>Точка плоскости галактики (y = 0) в центре экрана при заданной позиции камеры.</summary>
+        private Vector3 GroundCenter(Vector3 camPos)
+        {
+            Vector3 f = transform.forward;
+            if (f.y > -0.05f) return new Vector3(camPos.x, 0f, camPos.z);
+            float t = -camPos.y / f.y;
+            return camPos + f * t;
+        }
+
+        /// <summary>Граница камеры — по реальному радиусу галактики (+ небольшой запас).</summary>
+        private void FitBoundsToGalaxy()
+        {
+            if (_boundsFromGalaxy) return;
+            var gen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            if (gen == null || gen.GalaxyRadius <= 1f) return;
+            galaxyBoundsRadius = gen.GalaxyRadius + 20f;
+            _boundsFromGalaxy = true;
+        }
+
+        /// <summary>
+        /// Ограничение по краям галактики: держим в пределах радиуса не саму камеру,
+        /// а точку, на которую она смотрит, — так край карты можно рассмотреть при любом наклоне.
+        /// </summary>
         private Vector3 ClampToBounds(Vector3 pos)
         {
             if (!limitToBounds) return pos;
 
-            Vector2 flat = new Vector2(pos.x, pos.z);
+            Vector3 center = GroundCenter(pos);
+            Vector3 offset = pos - center;
+            Vector2 flat = new Vector2(center.x, center.z);
             if (flat.magnitude > galaxyBoundsRadius)
             {
                 flat = flat.normalized * galaxyBoundsRadius;
-                pos.x = flat.x;
-                pos.z = flat.y;
+                center.x = flat.x;
+                center.z = flat.y;
+                pos = center + offset;
             }
             return pos;
         }

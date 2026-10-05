@@ -453,9 +453,8 @@ namespace StellarisClone.Rendering
                 var plate = node.AddComponent<SystemNameplate>();
                 plate.Initialize(system);
                 _nameplates[system.Id] = plate;
-// Значок флотов в системе
-var badge = node.AddComponent<SystemFleetBadge>();
-badge.Initialize(system);
+                // Счётчики флотов показывают сами значки флотов (FleetIndicator сливает корабли
+                // одной орбиты в один значок с цифрой), отдельный значок над звездой не нужен.
                 // Коллайдер и селектор
                 var col = node.AddComponent<SphereCollider>();
                 col.radius = 3.5f;

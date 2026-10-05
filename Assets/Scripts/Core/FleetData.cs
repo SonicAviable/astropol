@@ -52,6 +52,42 @@ namespace StellarisClone.Core
         public float FireCooldown;
         public bool Destroyed;
 
+        // ==================== ОЧЕРЕДЬ ПРИКАЗОВ ====================
+
+        /// <summary>Следующие пункты назначения (Shift+ПКМ), после текущего маршрута.</summary>
+        public readonly List<int> OrderQueue = new List<int>();
+
+        /// <summary>Маршрут задан игроком — по прибытии показать уведомление.</summary>
+        public bool HasPlayerOrder;
+
+        public enum FleetEvent { None, Arrived, Surveyed, Built }
+
+        /// <summary>Последнее завершённое действие (для вспышки значка). Время — Time.unscaledTime.</summary>
+        [System.NonSerialized] public FleetEvent LastEvent;
+        [System.NonSerialized] public float LastEventTime = -100f;
+
+        public void MarkEvent(FleetEvent e)
+        {
+            LastEvent = e;
+            LastEventTime = Time.unscaledTime;
+        }
+
+        /// <summary>Куда флот летит сейчас (конец текущего маршрута); -1 — стоит на месте.</summary>
+        public int CurrentDestination
+        {
+            get
+            {
+                int last = -1;
+                foreach (int step in Path) last = step;
+                if (last >= 0) return last;
+                if (State == FleetState.InHyperlane && TargetSystemId >= 0) return TargetSystemId;
+                return -1;
+            }
+        }
+
+        /// <summary>Есть ли у флота незавершённое дело (полёт, разведка, стройка).</summary>
+        public bool IsBusy => Path.Count > 0 || State != FleetState.Orbiting;
+
         public FleetData(int id, string name, int startSystemId, FleetType type = FleetType.Military)
         {
             Id = id;

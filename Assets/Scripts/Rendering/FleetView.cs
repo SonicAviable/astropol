@@ -388,8 +388,8 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            _pathLine.enabled = selected;
-            UpdatePathVisuals();
+            // Маршрут рисует FleetRouteOverlay (пунктир, стрелки, дни); старая сплошная линия не нужна
+            _pathLine.enabled = false;
         }
 
         private void SnapToCurrentSystem()
@@ -469,6 +469,19 @@ namespace StellarisClone.Rendering
                     Data.State = FleetState.Surveying;
                     Data.DaysRemainingSurvey = Data.TotalSurveyDays;
                 }
+
+                if (Data.State == FleetState.Orbiting)
+                {
+                    bool more = Data.OrderQueue.Count > 0;
+                    Data.MarkEvent(FleetData.FleetEvent.Arrived);
+                    if (more) FleetManager.Instance?.AdvanceQueue(this);
+                    else if (Data.HasPlayerOrder && Data.OwnerId == 0)
+                    {
+                        Data.HasPlayerOrder = false;
+                        NotificationCenter.Show("Флот прибыл", $"{Data.Name} → {_generator.Systems[Data.CurrentSystemId].Name}",
+                            NotificationCenter.Kind.Info, 2.5f);
+                    }
+                }
             }
         }
 
@@ -489,6 +502,8 @@ namespace StellarisClone.Rendering
 
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;
+            Data.MarkEvent(FleetData.FleetEvent.Built);
+            FleetManager.Instance?.AdvanceQueue(this);
         }
 
         private void CompleteSurvey()
@@ -502,6 +517,8 @@ namespace StellarisClone.Rendering
 
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;
+            Data.MarkEvent(FleetData.FleetEvent.Surveyed);
+            FleetManager.Instance?.AdvanceQueue(this);
         }
 
         private void Update()
@@ -515,6 +532,9 @@ namespace StellarisClone.Rendering
                 _statusBadge.transform.rotation = _camTransform.rotation;
                 float dist = Vector3.Distance(transform.position, _camTransform.position);
                 _statusBadge.transform.localScale = Vector3.one * Mathf.Clamp(dist / 40f, 0.8f, 3.5f);
+                // Издалека состояние показывает значок флота — текст только мешал бы
+                bool near = dist < 70f;
+                if (_statusBadge.gameObject.activeSelf != near) _statusBadge.gameObject.SetActive(near);
             }
 
             if (Data.State == FleetState.InHyperlane && Data.TargetSystemId != -1)
