@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using StellarisClone.Core;
 using StellarisClone.Cam;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -89,6 +90,7 @@ namespace StellarisClone.Rendering
             _cameraController?.EnterSystemMode(system.Position);
 
             BuildSystemContent(system);
+            SFXManager.Play(Sfx.SystemEnter);
             OnViewModeChanged?.Invoke(true);
         }
 
@@ -100,6 +102,7 @@ namespace StellarisClone.Rendering
             _isTransitioningToGalaxy = true;
 
             _cameraController?.ReturnToGalaxyView(_savedCamPos, _savedCamRot);
+            SFXManager.Play(Sfx.SystemExit);
 
             OnViewModeChanged?.Invoke(false);
 
@@ -441,6 +444,7 @@ namespace StellarisClone.Rendering
 
                 if (Data != null)
                 {
+                    SFXManager.Play(Sfx.SystemSelect, 0.9f, 1.26f);
                     Instance.SelectPlanet(InstanceRef);
                     UIManager.Instance?.ShowPlanetInspector(Data, ParentSystem);
                     OnPlanetSelected?.Invoke(Data, ParentSystem);

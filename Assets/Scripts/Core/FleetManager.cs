@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using StellarisClone.Generation;
 using StellarisClone.Rendering;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
@@ -477,7 +478,7 @@ namespace StellarisClone.Core
             SelectedFleet = _selection.Count > 0 ? _selection[0] : null;
 
             if (!changed) return;
-            if (SelectedFleet == null) SFXManager.Play("ui_deselect", 0.7f, 1f);
+            if (SelectedFleet == null) SFXManager.Play(Sfx.UiBack, 0.6f);
             else if (SelectedFleet != oldPrimary) PlayFleetSelectSFX(SelectedFleet.Data.Type);
             if (SelectedFleet != oldPrimary) OnFleetSelected?.Invoke(SelectedFleet);
             OnSelectionChanged?.Invoke();
@@ -485,19 +486,13 @@ namespace StellarisClone.Core
 
         private void PlayFleetSelectSFX(FleetType type)
         {
-            string baseName = type switch
+            SFXManager.Play(type switch
             {
-                FleetType.Military    => "unit_select_military",
-                FleetType.Science     => "unit_select_science",
-                FleetType.Constructor => "unit_select_constructor",
-                _                     => "unit_select"
-            };
-
-            string[] candidates = { $"{baseName}_1", $"{baseName}_2", $"{baseName}_3" };
-            SFXManager.PlayRandom(candidates, 1f);
-
-            if (!SFXManager.Has(baseName)) return;
-            SFXManager.Play(baseName, 1f, type == FleetType.Constructor ? 1.0f : 1.05f);
+                FleetType.Military    => Sfx.SelectMilitary,
+                FleetType.Science     => Sfx.SelectScience,
+                FleetType.Constructor => Sfx.SelectConstructor,
+                _                     => Sfx.UiConfirm
+            });
         }
 
         // ==================== ПРИКАЗЫ ====================
@@ -511,6 +506,7 @@ namespace StellarisClone.Core
             if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return;
             var target = _generator.Systems[systemId];
             bool builderAssigned = false;
+            if (_selection.Count > 0) SFXManager.Play(queue ? Sfx.OrderQueue : Sfx.OrderMove);
 
             foreach (var fleet in new List<FleetView>(_selection))
             {
@@ -558,6 +554,7 @@ namespace StellarisClone.Core
         public void StopFleet(FleetView fleet)
         {
             if (fleet?.Data == null) return;
+            if (fleet.Data.OwnerId == 0 && (fleet.Data.Path.Count > 0 || fleet.Data.OrderQueue.Count > 0)) SFXManager.Play(Sfx.OrderStop);
             fleet.Data.Path.Clear();
             fleet.Data.OrderQueue.Clear();
             fleet.Data.HasPlayerOrder = false;
@@ -697,6 +694,7 @@ namespace StellarisClone.Core
                     eco.EnergyCredits += 25f;
                     eco.RaiseResourcesChanged();
                 }
+                SFXManager.Play(Sfx.SurveyComplete);
                 NotificationCenter.Show("Разведка завершена", sys.Name, NotificationCenter.Kind.Success, 4f);
             }
             else if (ownerId == AIEmpireManager.AIOwnerId && AIEmpireManager.Instance != null)

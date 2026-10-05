@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Core;
+using StellarisClone.Core.Audio;
 
 namespace StellarisClone.Rendering
 {
@@ -114,7 +115,7 @@ namespace StellarisClone.Rendering
             }
             _armedOverwrite = false;
             _highlight = slot;   // список перестроится событием сохранения — строка вспыхнет
-            if (SaveSystem.Save(name)) SFXManager.Play("ui_click", 0.8f, 0.85f);
+            if (SaveSystem.Save(name)) SFXManager.Play(Sfx.UiConfirm);
             _highlight = null;
             UpdateSaveLabel();
         }

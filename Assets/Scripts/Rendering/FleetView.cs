@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Core;
 using StellarisClone.Generation;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -436,6 +437,7 @@ namespace StellarisClone.Rendering
             if (Data.Path.Count == 0) return;
             Data.TargetSystemId = Data.Path.Dequeue();
             Data.State = FleetState.InHyperlane;
+            SFXManager.PlayAt(Sfx.FtlJump, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);
             Data.DaysRemainingInTransit = Data.TotalDaysForTransit;
 
             _engineTrail.emitting = true;
@@ -457,6 +459,7 @@ namespace StellarisClone.Rendering
             else
             {
                 SnapToCurrentSystem();
+                SFXManager.PlayAt(Sfx.FtlArrive, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);
 
                 if (Data.Type == FleetType.Constructor && Data.BuildTargetSystemId == Data.CurrentSystemId)
                 {
@@ -491,8 +494,9 @@ namespace StellarisClone.Rendering
             int sysId = Data.BuildTargetSystemId;
             Data.BuildTargetSystemId = -1;
 
-            if (FleetManager.Instance != null && sysId >= 0
-                && !FleetManager.Instance.ClaimSystem(sysId, Data.OwnerId) && Data.OwnerId == 0)
+            bool claimed = FleetManager.Instance != null && sysId >= 0 && FleetManager.Instance.ClaimSystem(sysId, Data.OwnerId);
+            if (claimed && Data.OwnerId == 0) SFXManager.Play(Sfx.OutpostBuilt);
+            if (FleetManager.Instance != null && sysId >= 0 && !claimed && Data.OwnerId == 0)
             {
                 // Систему успели занять — половина сплавов возвращается
                 var eco = EconomyManager.Instance;

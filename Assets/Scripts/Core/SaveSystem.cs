@@ -638,6 +638,7 @@ namespace StellarisClone.Core
 
         private static void Apply(GameState s, int version)
         {
+            GameAudio.Suppress(2f);   // восстановление состояния не должно «звучать» (война, захваты, уведомления)
             var time = TimeManager.Instance;
             if (time != null) { time.SetDate(s.Day, s.Month, s.Year); time.SetSpeed(0); }
 

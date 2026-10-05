@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Rendering;
+using StellarisClone.Core.Audio;
 
 namespace StellarisClone.Core
 {
@@ -126,7 +127,8 @@ namespace StellarisClone.Core
         {
             if (_boxObj == null) return;
 
-            // Новый шаг — вспышка неоновой кромки и мягкое проявление текста
+            // Новый шаг — вспышка неоновой кромки, мягкое проявление текста и негромкий сигнал
+            if (s > 1) SFXManager.Play(Sfx.UiConfirm, 0.6f);
             _stepPulse = 1f;
             _textFade = 0f;
             if (_stepText != null) _stepText.text = s >= 1 && s <= StepCount ? $"{s} / {StepCount}" : "";

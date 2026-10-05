@@ -188,8 +188,7 @@ namespace StellarisClone.Rendering
             if (!Input.GetMouseButtonDown(1) || overUi || fm.SelectedFleets.Count == 0) return;
             var target = RaycastSystem();
             if (target == null) return;
-            fm.CommandSelection(target.Id, shift);
-            SFXManager.Play("ui_click", 0.8f, shift ? 1.2f : 1.0f);
+            fm.CommandSelection(target.Id, shift);   // звук приказа — внутри
         }
 
         // ==================== Клавиши ====================

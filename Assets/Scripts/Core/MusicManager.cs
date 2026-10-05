@@ -94,6 +94,11 @@ private void LoadTracksFromResources()
             musicVolume = Mathf.Clamp01(v);
         }
 
+        private float _duck;
+
+        /// <summary>Приглушение музыки (0 — нет, 1 — тишина) на время важных звуков. Вызывает SFXManager каждый кадр.</summary>
+        public void SetDuck(float amount) => _duck = Mathf.Clamp01(amount);
+
         // ==================== ЛОГИКА ====================
 
         private void Update()
@@ -109,8 +114,11 @@ private void LoadTracksFromResources()
                 return;
             }
 
-            // Плавно поднимаем громкость активного источника к целевому
-            active.volume = Mathf.MoveTowards(active.volume, musicVolume, Time.unscaledDeltaTime / fadeDuration);
+            // Плавно ведём громкость активного источника к целевой (с учётом приглушения);
+            // уход вниз быстрый (~0,3 с), возврат — плавный
+            float target = musicVolume * (1f - _duck);
+            float rate = active.volume > target ? Mathf.Max(musicVolume, 0.05f) * 3f : 1f / fadeDuration;
+            active.volume = Mathf.MoveTowards(active.volume, target, Time.unscaledDeltaTime * rate);
 
             // Плавно опускаем громкость неактивного
             var other = _usingA ? _sourceB : _sourceA;

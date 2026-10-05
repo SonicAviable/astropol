@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
@@ -50,10 +51,23 @@ namespace StellarisClone.Core
             var flow = StellarisClone.Rendering.GameFlowUI.Instance;
             if (flow != null && flow.BlocksTimeHotkeys) return;
 
-            if (Input.GetKeyDown(KeyCode.Space)) SetSpeed(_currentSpeed == 0 ? 1 : 0);
-            if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeed(1);
-            if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeed(2);
-            if (Input.GetKeyDown(KeyCode.Alpha3)) SetSpeed(4);
+            if (Input.GetKeyDown(KeyCode.Space)) SetSpeedByPlayer(_currentSpeed == 0 ? 1 : 0);
+            if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeedByPlayer(1);
+            if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeedByPlayer(2);
+            if (Input.GetKeyDown(KeyCode.Alpha3)) SetSpeedByPlayer(4);
+        }
+
+        /// <summary>Смена скорости игроком (клавиши, кнопки) — со звуком паузы/запуска/ускорения.</summary>
+        public void SetSpeedByPlayer(int speed)
+        {
+            int s = Mathf.Clamp(speed, 0, 4);
+            if (s != _currentSpeed)
+            {
+                if (s == 0) SFXManager.Play(Sfx.TimePause);
+                else if (_currentSpeed == 0) SFXManager.Play(Sfx.TimeResume);
+                else SFXManager.Play(Sfx.TimeSpeed, 1f, s > _currentSpeed ? 1.12f : 0.88f);
+            }
+            SetSpeed(s);
         }
 
         public void SetSpeed(int speed)

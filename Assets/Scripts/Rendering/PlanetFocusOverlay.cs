@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -487,7 +488,6 @@ namespace StellarisClone.Rendering
             if (_planet == null || _planet.Population <= 0) return;
             if (_planet.TryBuildDistrict(t))
             {
-                SFXManager.Play("ui_click", 1f, 1.1f);
                 Refresh();
             }
         }
@@ -496,8 +496,7 @@ namespace StellarisClone.Rendering
         {
             var job = LastJob(JobKind.District, t);
             if (job == null) return;
-            Builds.Cancel(job);
-            SFXManager.Play("ui_click", 0.9f, 0.9f);
+            Builds.Cancel(job);   // звук отмены — в ConstructionManager
             Refresh();
         }
 

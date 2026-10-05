@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 using StellarisClone.Cam;
 using StellarisClone.Generation;
 
@@ -322,8 +323,20 @@ namespace StellarisClone.Rendering
 
         public void ShowModalDimPublic() => ShowModalDim();
         public void HideModalDimPublic() => HideModalDim();
-        private void ShowModalDim() { if (_modalDim != null) LG.Show(_modalDim); }
-        private void HideModalDim() { if (_modalDim != null) LG.Hide(_modalDim); }
+        // Затемнение — общая точка всех модальных окон, здесь же их звук открытия/закрытия
+        private void ShowModalDim()
+        {
+            if (_modalDim == null) return;
+            if (!LG.IsVisible(_modalDim)) SFXManager.Play(Sfx.WindowOpen);
+            LG.Show(_modalDim);
+        }
+
+        private void HideModalDim()
+        {
+            if (_modalDim == null) return;
+            if (LG.IsVisible(_modalDim)) SFXManager.Play(Sfx.WindowClose);
+            LG.Hide(_modalDim);
+        }
 
         /// <summary>Применяет Liquid Glass к модальному окну: стекло, пружинное появление.</summary>
         private static void StyleModalWindow(GameObject window, Color? rim = null)
@@ -543,7 +556,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             LGIcons.IconLabel(diploBtn.transform, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 10, DS.Gold, Color.white, 15f);
         }
 
-        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeed(s); }
+        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
 
         private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip)
         {

@@ -258,8 +258,10 @@ namespace StellarisClone.Rendering
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LGInteractive : MonoBehaviour,
-        IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+        IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
+        /// <summary>Озвучка: тихий «тик» при наведении, клик при нажатии, отказ — по неактивной кнопке.</summary>
+        public bool sounds = true;
         public bool animateScale = true;
         public float hoverScale = 1.035f;
         public float pressScale = 0.955f;
@@ -291,7 +293,19 @@ namespace StellarisClone.Rendering
             _active = false;
         }
 
-        public void OnPointerEnter(PointerEventData e) { _over = true; Wake(); }
+        public void OnPointerEnter(PointerEventData e)
+        {
+            _over = true; Wake();
+            if (sounds && _selectable != null && _selectable.IsInteractable())
+                StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiHover);
+        }
+
+        public void OnPointerClick(PointerEventData e)
+        {
+            if (!sounds || _selectable == null || e.button != PointerEventData.InputButton.Left) return;
+            if (_selectable.IsInteractable()) StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiClick);
+            else StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiDenied, 0.7f);
+        }
         public void OnPointerExit(PointerEventData e) { _over = false; _down = false; Wake(); }
         public void OnPointerDown(PointerEventData e) { if (e.button == PointerEventData.InputButton.Left) { _down = true; Wake(); } }
         public void OnPointerUp(PointerEventData e) { _down = false; Wake(); }

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -149,6 +150,7 @@ namespace StellarisClone.Rendering
 
             ToggleWorldNameplates(false);
 
+            SFXManager.Play(Sfx.WindowOpen);
             LG.Show(_dimmer);
             LG.Show(_windowRoot);
             _dimmer.transform.SetAsLastSibling();
@@ -334,7 +336,7 @@ namespace StellarisClone.Rendering
                 UpdateWatermarkArt();
                 _videoBg?.SetBranch(GetBranchKey(_currentBranch));
                 if (_scrollContent != null) _scrollContent.anchoredPosition = Vector2.zero;
-                SFXManager.Play("ui_click", 1f, 1.05f);
+                SFXManager.Play(Sfx.UiTab);
             });
 
             _tabRefs[branch] = new TabButtonRef { Bg = bg, Label = txt, Fx = tabFx };
@@ -832,14 +834,14 @@ namespace StellarisClone.Rendering
                     {
                         tm.AssignTech(capturedTech);
                         RebuildTree();
-                        SFXManager.Play("ui_click", 1f, 1.1f);
+                        SFXManager.Play(Sfx.ResearchStart);
                     });
                 }
                 else
                 {
                     tm.AssignTech(capturedTech);
                     RebuildTree();
-                    SFXManager.Play("ui_click", 1f, 1.1f);
+                    SFXManager.Play(Sfx.ResearchStart);
                 }
             });
 

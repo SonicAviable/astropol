@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Rendering;
 using StellarisClone.Generation;
+using StellarisClone.Core.Audio;
 
 namespace StellarisClone.Core
 {
@@ -345,16 +346,19 @@ namespace StellarisClone.Core
                 {
                     SpawnBeam(from, to, wc, 0.12f);
                     SpawnFloater(to, "МИМО", new Color(0.7f, 0.85f, 0.9f));
+                    if (Random.value < 0.5f) SFXManager.PlayAt(WeaponSfx(weapon), from, 0.8f);
                     return;
                 }
             }
 
             float raw = damage * ab.DamageMult(weapon);
+            float shieldBefore = target.Fleet != null ? target.Fleet.Data.ShieldPoints : target.Base.Shields;
             float dealt;
             if (target.Fleet != null) dealt = ApplyLayeredDamage(target.Fleet.Data, raw, weapon);
             else dealt = ApplyLayeredDamage(target.Base, raw, weapon);
 
             SpawnBeam(from, to, wc, 0.18f);
+            ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer);
             SpawnFloater(to, $"-{dealt:0}", wc);
 
             Side(battle, shooter.Owner).DamageDealt += dealt;
@@ -403,6 +407,7 @@ namespace StellarisClone.Core
                 FleetManager.Instance?.IssueMoveOrder(fv, escape);
                 Side(battle, d.OwnerId).Disengaged++;
                 SpawnFloater(fv.transform.position, "ВЫХОД ИЗ БОЯ", UIManager.DS.Gold);
+                SFXManager.PlayAt(Sfx.Disengage, fv.transform.position);
                 if (d.OwnerId == 0)
                     NotificationCenter.Show("Корабль вышел из боя", $"{d.Name} тяжело повреждён и отходит на ремонт", NotificationCenter.Kind.Warning, 4f);
                 return;
@@ -436,6 +441,8 @@ namespace StellarisClone.Core
             fv.Data.InCombat = false;
             SpawnExplosion(fv.transform.position, fv.Data.HullClass);
             SpawnFloater(fv.transform.position, "УНИЧТОЖЕН", UIManager.DS.Red);
+            bool big = fv.Data.Type == FleetType.Military && fv.Data.HullClass != ShipClass.Corvette;
+            SFXManager.PlayAt(big ? Sfx.ExplosionLarge : Sfx.ExplosionSmall, fv.transform.position, fv.Data.OwnerId == 0 ? 1f : 0.9f);
             OnShipDestroyed?.Invoke(fv.Data, killerOwner);
 
             string ownerName = fv.Data.OwnerId == 0 ? "Ваш корабль"
@@ -465,6 +472,7 @@ namespace StellarisClone.Core
             {
                 _ftlLocks[fleet.Data.Id] = Time.unscaledTime + 2.4f;
                 SpawnFloater(fleet.transform.position, "СБОЙ ГПД", UIManager.DS.Gold);
+                SFXManager.PlayAt(Sfx.FtlFail, fleet.transform.position);
                 return false;
             }
 
@@ -484,6 +492,7 @@ namespace StellarisClone.Core
             var battle = GetBattle(fleet.Data.CurrentSystemId);
             if (battle != null) Side(battle, fleet.Data.OwnerId).Disengaged++;
             SpawnFloater(fleet.transform.position, "ГПД АКТИВИРОВАН", UIManager.DS.NeonCyan);
+            SFXManager.PlayAt(Sfx.Disengage, fleet.transform.position);
             return true;
         }
 
@@ -544,6 +553,7 @@ namespace StellarisClone.Core
 
             if (b.PlayerInvolved)
             {
+                SFXManager.Play(Sfx.BattleStart);
                 var sys = _generator.Systems[sysId];
                 NotificationCenter.Show("Сражение!", $"Бой в системе {sys.Name}. Выделите флот, чтобы следить за боем и при необходимости отступить",
                     NotificationCenter.Kind.Danger, 6f);
@@ -594,6 +604,8 @@ namespace StellarisClone.Core
             }
             bool won = me.Ships > 0 && enemyLeft == 0;
             bool lost = me.Ships == 0 && enemyLeft > 0;
+            if (won && enemyLost + enemyDisengaged > 0) SFXManager.Play(Sfx.BattleVictory);
+            else if (lost) SFXManager.Play(Sfx.BattleDefeat);
             string title = won ? $"Победа при {sys.Name}" : lost ? $"Поражение при {sys.Name}" : $"Бой при {sys.Name} завершён";
             string body = $"{Mathf.CeilToInt(b.Days)} дн. · уничтожено врагов: {enemyLost}" +
                           (enemyDisengaged > 0 ? $" (бежало {enemyDisengaged})" : "") +
@@ -676,6 +688,7 @@ namespace StellarisClone.Core
             sb.Shields = 0f;
             var sys = _generator.Systems[sb.SystemId];
             SpawnExplosion(sys.Position + Vector3.up * 1.2f, ShipClass.Destroyer);
+            SFXManager.PlayAt(Sfx.StarbaseDown, sys.Position, 1f);
             if (sys.OwnerId == 0)
                 NotificationCenter.Show("Звёздная база выведена из строя", $"{sys.Name}: враг может начать осаду", NotificationCenter.Kind.Danger, 7f);
             else if (attacker == 0)
@@ -746,6 +759,29 @@ namespace StellarisClone.Core
         }
 
         // ==================== ЭФФЕКТЫ ====================
+
+        private static Sfx WeaponSfx(WeaponDamageType t) => t switch
+        {
+            WeaponDamageType.Energy => Sfx.WeaponEnergy,
+            WeaponDamageType.Kinetic => Sfx.WeaponKinetic,
+            _ => Sfx.WeaponMissile
+        };
+
+        /// <summary>
+        /// Звук выстрела у стрелка и попадания у цели. В крупных боях выстрелов очень много —
+        /// часть пропускается (плюс лимит голосов в SFXManager), чтобы не было «каши».
+        /// </summary>
+        private static void ShotSound(WeaponDamageType weapon, Vector3 from, Vector3 to, bool shieldHit, bool heavyTarget)
+        {
+            if (Random.value < 0.75f) SFXManager.PlayAt(WeaponSfx(weapon), from);
+            if (Random.value < 0.55f)
+            {
+                // Ракеты долетают с задержкой — звук попадания чуть позже
+                var sfx = shieldHit ? Sfx.HitShield : Sfx.HitArmor;
+                float pitch = heavyTarget ? 0.85f : 1f;
+                SFXManager.PlayAt(sfx, to, 1f, pitch);
+            }
+        }
 
         private static Color WeaponColor(WeaponDamageType t) => t switch
         {

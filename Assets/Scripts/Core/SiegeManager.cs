@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Rendering;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
@@ -145,6 +146,7 @@ namespace StellarisClone.Core
 
         private static void AnnounceSiege(StarSystem sys, int attacker)
         {
+            if (sys.OwnerId == 0 || attacker == 0) SFXManager.Play(Sfx.SiegeStart);
             if (sys.OwnerId == 0)
                 NotificationCenter.Show("Осада!", $"Враг блокирует {sys.Name}. Пришлите военный флот, чтобы снять осаду",
                     NotificationCenter.Kind.Danger, 7f);

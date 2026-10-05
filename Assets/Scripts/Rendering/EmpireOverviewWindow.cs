@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using StellarisClone.Cam;
 using StellarisClone.Core;
 using StellarisClone.Generation;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -365,7 +366,7 @@ namespace StellarisClone.Rendering
                 _tab = tab;
                 RefreshTabs();
                 RebuildList();
-                SFXManager.Play("ui_click", 1f, 1.05f);
+                SFXManager.Play(Sfx.UiTab);
             });
             var fx = LG.Button(bgImg.gameObject, new Color(0.45f, 0.95f, 0.9f, 0.25f), 20f);
             var t = LGIcons.IconLabel(bgImg.transform, icon, label, 12, Color.white, UIManager.DS.TextMuted, 15f);

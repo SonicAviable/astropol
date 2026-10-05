@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Rendering;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
@@ -186,6 +187,7 @@ namespace StellarisClone.Core
             };
             if (kind == JobKind.Terraform) p.TerraformingInProgress = true;
             _jobs.Add(job);
+            if (owner == 0) SFXManager.Play(Sfx.BuildQueued);
             OnQueuesChanged?.Invoke();
             return job;
         }
@@ -199,6 +201,7 @@ namespace StellarisClone.Core
                 DaysTotal = days, DaysLeft = days, Energy = energy, Alloys = alloys
             };
             _jobs.Add(job);
+            if (owner == 0) SFXManager.Play(Sfx.BuildQueued);
             OnQueuesChanged?.Invoke();
             return job;
         }
@@ -207,6 +210,7 @@ namespace StellarisClone.Core
         public void Cancel(ConstructionJob job)
         {
             if (job == null || !_jobs.Remove(job)) return;
+            if (job.Owner == 0) SFXManager.Play(Sfx.UiBack);
             Refund(job);
             if (job.Kind == JobKind.Terraform)
             {
