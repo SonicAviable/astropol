@@ -105,6 +105,50 @@ namespace StellarisClone.Rendering
             RefreshMarkerData();
         }
 
+        // ==================== НАЗВАНИЕ ИМПЕРИИ ИИ ====================
+
+        /// <summary>Название соседней империи поверх её территории — как у игрока (видно издалека, гаснет вблизи).</summary>
+        private void UpdateAIEmpireLabel(List<StarSystem> aiSystems)
+        {
+            _empireLabels.TryGetValue(1, out var labelObj);
+            if (aiSystems == null || aiSystems.Count == 0)
+            {
+                if (labelObj != null) labelObj.SetActive(false);
+                return;
+            }
+
+            Vector3 sum = Vector3.zero;
+            foreach (var s in aiSystems) sum += s.Position;
+            Vector3 center = sum / aiSystems.Count;
+            center.y = -0.15f;
+
+            string raw = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Соседняя империя";
+            var sb = new System.Text.StringBuilder(raw.Length * 2);
+            foreach (char ch in raw.ToUpper()) { sb.Append(ch); if (ch != ' ') sb.Append(' '); }
+            string text = sb.ToString().Trim();
+
+            if (labelObj == null)
+            {
+                labelObj = new GameObject("EmpireLabel_1");
+                labelObj.transform.SetParent(transform, true);
+                var tm = labelObj.AddComponent<TextMesh>();
+                tm.fontSize = 52;
+                tm.characterSize = 0.38f;
+                tm.fontStyle = FontStyle.Bold;
+                tm.anchor = TextAnchor.MiddleCenter;
+                tm.alignment = TextAlignment.Center;
+                var ec = FleetIndicator.EnemyColor;
+                tm.color = new Color(ec.r, ec.g, ec.b, 0.6f);
+                labelObj.GetComponent<MeshRenderer>().sortingOrder = 6;
+                labelObj.AddComponent<EmpireLabelScaler>();
+                _empireLabels[1] = labelObj;
+            }
+            labelObj.SetActive(true);
+            labelObj.GetComponent<TextMesh>().text = text;
+            labelObj.transform.position = center;
+            labelObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        }
+
         // ==================== ЗНАЧКИ ПОСЕЛЕНИЙ ====================
 
         private void CreateSystemMarkers()

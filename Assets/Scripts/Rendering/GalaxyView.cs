@@ -274,9 +274,12 @@ namespace StellarisClone.Rendering
             var col = _organicBorderPlane.GetComponent<Collider>();
             if (col != null) Destroy(col);
 
-            Shader borderShader = Shader.Find("Stellaris/OrganicBorders");
-            if (borderShader == null) borderShader = Shader.Find("Unlit/Transparent");
+            // Шейдер лежит в Resources — попадает в сборку без ручной настройки «Always Included»
+            Shader borderShader = Resources.Load<Shader>("Shaders/StellarisOrganicBorder");
+            if (borderShader == null) borderShader = Shader.Find("Stellaris/OrganicBorders");
+            if (borderShader == null) { Debug.LogWarning("[GalaxyView] Шейдер границ не найден"); Destroy(_organicBorderPlane); _organicBorderPlane = null; return; }
             _borderMat = new Material(borderShader);
+            _claimRadius = ComputeClaimRadius();
 
             var mr = _organicBorderPlane.GetComponent<MeshRenderer>();
             mr.material = _borderMat;
@@ -306,62 +309,36 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            var pStars = new Vector4[40];
-            int pStarCount = Mathf.Min(playerSystems.Count, 40);
-            var pIds = new HashSet<int>();
-
-            for (int i = 0; i < pStarCount; i++)
-            {
-                var s = playerSystems[i];
-                pStars[i] = new Vector4(s.Position.x, s.Position.z, 22.0f, 0f);
-                pIds.Add(s.Id);
-            }
-
-            var pSegs = new Vector4[40];
-            int pSegCount = 0;
+            // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1 ИИ).
+            // Вдоль коридоров между своими системами добавляем промежуточные точки —
+            // территория не рвётся на длинных переходах (как в Stellaris).
+            const int MaxSys = 192;
+            var sys = new Vector4[MaxSys];
+            int count = 0;
+            foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
+            foreach (var s in enemySystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 1f, 0f);
             foreach (var lane in _generator.Hyperlanes)
             {
-                if (pIds.Contains(lane.SystemA) && pIds.Contains(lane.SystemB) && pSegCount < 40)
+                var a = _generator.Systems[lane.SystemA];
+                var b = _generator.Systems[lane.SystemB];
+                if (!a.HasStarbase || !b.HasStarbase || a.OwnerId < 0 || a.OwnerId != b.OwnerId) continue;
+                float owner = a.OwnerId == 0 ? 0f : 1f;
+                int steps = Mathf.FloorToInt(Vector3.Distance(a.Position, b.Position) / (_claimRadius * 0.9f));
+                for (int k = 1; k <= steps && count < MaxSys; k++)
                 {
-                    var a = _generator.Systems[lane.SystemA].Position;
-                    var b = _generator.Systems[lane.SystemB].Position;
-                    pSegs[pSegCount++] = new Vector4(a.x, a.z, b.x, b.z);
+                    Vector3 m = Vector3.Lerp(a.Position, b.Position, k / (float)(steps + 1));
+                    sys[count++] = new Vector4(m.x, m.z, owner, 0f);
                 }
             }
-
-            var eStars = new Vector4[40];
-            int eStarCount = Mathf.Min(enemySystems.Count, 40);
-            var eIds = new HashSet<int>();
-            for (int i = 0; i < eStarCount; i++)
-            {
-                var s = enemySystems[i];
-                eStars[i] = new Vector4(s.Position.x, s.Position.z, 22.0f, 0f);
-                eIds.Add(s.Id);
-            }
-
-            var eSegs = new Vector4[40];
-            int eSegCount = 0;
-            foreach (var lane in _generator.Hyperlanes)
-            {
-                if (eIds.Contains(lane.SystemA) && eIds.Contains(lane.SystemB) && eSegCount < 40)
-                {
-                    var a = _generator.Systems[lane.SystemA].Position;
-                    var b = _generator.Systems[lane.SystemB].Position;
-                    eSegs[eSegCount++] = new Vector4(a.x, a.z, b.x, b.z);
-                }
-            }
-
-            _borderMat.SetInt("_PlayerStarCount", pStarCount);
-            _borderMat.SetVectorArray("_PlayerStars", pStars);
-            _borderMat.SetInt("_PlayerSegmentCount", pSegCount);
-            _borderMat.SetVectorArray("_PlayerSegments", pSegs);
-
-            _borderMat.SetInt("_EnemyStarCount", eStarCount);
-            _borderMat.SetVectorArray("_EnemyStars", eStars);
-            _borderMat.SetInt("_EnemySegmentCount", eSegCount);
-            _borderMat.SetVectorArray("_EnemySegments", eSegs);
+            _borderMat.SetVectorArray("_Sys", sys);
+            _borderMat.SetFloat("_SysCount", count);
+            _borderMat.SetFloat("_ClaimRadius", _claimRadius);
+            _borderMat.SetFloat("_Smooth", _claimRadius);
+            _borderMat.SetColor("_PlayerColor", FleetIndicator.OwnColor);
+            _borderMat.SetColor("_EnemyColor", FleetIndicator.EnemyColor);
 
             UpdateEmpireLabel(playerSystems);
+            UpdateAIEmpireLabel(enemySystems);
 
             foreach (var kvp in _nameplates)
                 if (kvp.Value != null) kvp.Value.UpdateVisuals();
@@ -370,6 +347,19 @@ namespace StellarisClone.Rendering
         }
 
         public void RefreshSystemBorders() => RefreshTerritoryVisuals();
+
+        private float _claimRadius = 15f;
+
+        /// <summary>Радиус «владения» системы: ~70% медианной длины коридора (территория доходит примерно до середины пути).</summary>
+        private float ComputeClaimRadius()
+        {
+            if (_generator == null || _generator.Hyperlanes.Count == 0) return 15f;
+            var lens = new List<float>();
+            foreach (var l in _generator.Hyperlanes)
+                lens.Add(Vector3.Distance(_generator.Systems[l.SystemA].Position, _generator.Systems[l.SystemB].Position));
+            lens.Sort();
+            return Mathf.Clamp(lens[lens.Count / 2] * 0.7f, 10f, 24f);
+        }
 
         private void UpdateEmpireLabel(List<StarSystem> playerSystems)
 {
