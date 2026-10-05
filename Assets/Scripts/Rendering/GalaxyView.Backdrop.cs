@@ -18,6 +18,8 @@ namespace StellarisClone.Rendering
         private const float DiskHalfExtent = 1.3f;      // половина стороны диска в радиусах галактики
 
         private GameObject _diskPlane;
+        private GameObject _dustStars;
+        private Material _diskMat, _dustStarsMat;
         private Material _skyInstance;
         private float _skyExposure = 1f;
         private Color _skyTint = new Color(0.5f, 0.5f, 0.5f, 0.5f);
@@ -124,18 +126,6 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // 3. Неразрешённые звёзды вокруг систем (~30 на систему)
-            int dots = _generator.Systems.Count * 30;
-            for (int d = 0; d < dots; d++)
-            {
-                var s = _generator.Systems[rng.Next(_generator.Systems.Count)];
-                float x = s.Position.x + Gauss(rng) * 0.11f * R;
-                float z = s.Position.z + Gauss(rng) * 0.11f * R;
-                int i = (int)((x + half) * tpu), j = (int)((z + half) * tpu);
-                if (i < 1 || j < 1 || i >= N - 1 || j >= N - 1) continue;
-                float b = 0.25f + (float)rng.NextDouble() * 0.55f;
-                AddDot(px, N, i, j, b);
-            }
 
             var tex = new Texture2D(N, N, TextureFormat.RGBA32, true)
             {
@@ -158,24 +148,71 @@ namespace StellarisClone.Rendering
 
             var mat = new Material(GetSpriteShader()) { mainTexture = tex };
             mat.renderQueue = 2960;          // под территориями (2980), коридорами и звёздами (3000)
+            _diskMat = mat;
             var mr = _diskPlane.GetComponent<MeshRenderer>();
             mr.sharedMaterial = mat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
             mr.sortingOrder = -20;
+
+            BuildDustStars(R, rng);
         }
 
-        private static void AddDot(Color32[] px, int n, int i, int j, float b)
+        /// <summary>
+        /// Неразрешённые звёзды галактики — облако точек (по 1 пикселю на любом зуме): плотнее вокруг систем
+        /// и в рукавах, лёгкий тёплый оттенок ближе к ядру. Одна сетка, один вызов отрисовки.
+        /// </summary>
+        private void BuildDustStars(float R, System.Random rng)
         {
-            void Add(int x, int y, float k)
+            int count = Mathf.Min(60000, _generator.Systems.Count * 70);
+            var verts = new Vector3[count];
+            var cols = new Color32[count];
+            var idx = new int[count];
+            for (int k = 0; k < count; k++)
             {
-                int idx = y * n + x;
-                var c = px[idx];
-                byte v(byte ch, float tint) => (byte)Mathf.Min(255, ch + 255f * b * k * tint);
-                px[idx] = new Color32(v(c.r, 0.85f), v(c.g, 0.9f), v(c.b, 1f), (byte)Mathf.Min(255, c.a + 255f * b * k));
+                var s = _generator.Systems[rng.Next(_generator.Systems.Count)];
+                float x = s.Position.x + Gauss(rng) * 0.12f * R;
+                float z = s.Position.z + Gauss(rng) * 0.12f * R;
+                verts[k] = new Vector3(x, -0.6f, z);
+                float r = new Vector2(x, z).magnitude / R;
+                float b = 0.25f + (float)(rng.NextDouble() * rng.NextDouble()) * 0.75f;   // больше тусклых, мало ярких
+                Color c = Color.Lerp(new Color(0.78f, 0.84f, 1f), new Color(1f, 0.88f, 0.7f), Mathf.Exp(-r * r / 0.08f));
+                cols[k] = new Color(c.r, c.g, c.b, b);
+                idx[k] = k;
             }
-            Add(i, j, 1f);
-            Add(i + 1, j, 0.25f); Add(i - 1, j, 0.25f); Add(i, j + 1, 0.25f); Add(i, j - 1, 0.25f);
+            var mesh = new Mesh { name = "GalaxyDustStars" };
+            if (count > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.vertices = verts;
+            mesh.colors32 = cols;
+            mesh.SetIndices(idx, MeshTopology.Points, 0);
+            mesh.bounds = new Bounds(Vector3.zero, new Vector3(R * 3f, 2f, R * 3f));
+
+            _dustStars = new GameObject("GalaxyDustStars");
+            _dustStars.transform.SetParent(transform, false);
+            _dustStars.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = _dustStars.AddComponent<MeshRenderer>();
+            _dustStarsMat = new Material(GetSpriteShader());
+            _dustStarsMat.renderQueue = 2965;
+            mr.sharedMaterial = _dustStarsMat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
+
+        /// <summary>
+        /// Пыль и ядро — для обзора: вблизи растянутая текстура превращается в муть, поэтому гаснет.
+        /// Заливка территорий вблизи тоже почти исчезает — остаётся только кромка.
+        /// </summary>
+        private void UpdateBackdropZoom(Camera cam)
+        {
+            float h = cam.transform.position.y;
+            float far = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(45f, 170f, h));
+            if (_diskMat != null) _diskMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.08f, 1f, far));
+            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.45f, 1f, far));
+            if (_borderMat != null)
+            {
+                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.05f, 0.22f, far));
+                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(0.05f, 0.14f, far));
+            }
         }
 
         private static float Fbm(float x, float y)

@@ -16,6 +16,7 @@ Shader "Stellaris/OrganicBorders"
         _Smooth ("Smooth Union", Float) = 12
         _LinePx ("Border Width (px)", Float) = 2.6
         _FillAlpha ("Fill Alpha", Float) = 0.22
+        _BandAlpha ("Edge Band Alpha", Float) = 0.14
     }
     SubShader
     {
@@ -42,6 +43,7 @@ Shader "Stellaris/OrganicBorders"
             float _Smooth;
             float _LinePx;
             float _FillAlpha;
+            float _BandAlpha;
 
             float _SysCount;
             float4 _Sys[192];
@@ -96,7 +98,7 @@ Shader "Stellaris/OrganicBorders"
                 // Заливка: прозрачнее в глубине, плотнее у края (ширина полосы — в мировых единицах)
                 float inside = smoothstep(-0.5, 0.5, ePx);
                 float band = 1.0 - smoothstep(0.0, _ClaimRadius * 0.45, e);
-                float fillA = inside * (_FillAlpha + 0.14 * band);
+                float fillA = inside * (_FillAlpha + _BandAlpha * band);
 
                 float a = max(max(fillA, lineA * 0.95), outer);
                 fixed3 fillRgb = col * lerp(0.5, 0.85, band);

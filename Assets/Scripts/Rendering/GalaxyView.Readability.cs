@@ -239,6 +239,7 @@ namespace StellarisClone.Rendering
             if (cam == null || _generator == null) return;
             Vector3 camPos = cam.transform.position;
             float dt = Time.unscaledDeltaTime;
+            UpdateBackdropZoom(cam);
 
             // Флоты игрока — раз в 0,25 с
             _fleetScanTimer -= dt;

@@ -669,6 +669,7 @@ namespace StellarisClone.Rendering
 
             if (_markersRoot != null) _markersRoot.SetActive(!isolate);
             if (_diskPlane != null) _diskPlane.SetActive(!isolate);
+            if (_dustStars != null) _dustStars.SetActive(!isolate);
             ApplySkyMood(isolate);
         }
 
