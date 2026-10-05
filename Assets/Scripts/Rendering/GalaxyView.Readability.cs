@@ -87,9 +87,9 @@ namespace StellarisClone.Rendering
                 else
                 {
                     c = new Color(0.60f, 0.78f, 1.00f);          // нейтральные / пограничные
-                    alphaA = ka ? 0.45f : 0.05f;
-                    alphaB = kb ? 0.45f : 0.05f;
-                    px = 1.7f;
+                    alphaA = ka ? 0.55f : 0.08f;
+                    alphaB = kb ? 0.55f : 0.08f;
+                    px = 1.9f;
                 }
                 _laneWidthPx[i] = px;
 

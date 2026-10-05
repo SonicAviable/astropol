@@ -721,7 +721,7 @@ namespace StellarisClone.Rendering
         private float _ringBaseScale;
 
         private Camera _cam;
-        private const float MinSpritePx = 26f;
+        private const float MinSpritePx = 32f;
         private const float SpriteWorldSize = 2.56f;   // спрайт 256 px при 100 px/ед.
 
         /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без вспышек).</summary>

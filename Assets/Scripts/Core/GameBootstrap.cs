@@ -43,6 +43,7 @@ namespace StellarisClone.Core
         public static void ConfigureGenerator(GalaxyGenerator gen, NewGameSettings s)
         {
             gen.Configure(s.StarCount, s.Radius, s.MinStarDistance);
+            gen.Shape = (StellarisClone.Generation.GalaxyShape)Mathf.Clamp(s.Shape, 0, 3);
             TrySetField(gen, "maxConnectionDistance", 30f);
             TrySetField(gen, "maxConnectionsPerStar", 4);
         }

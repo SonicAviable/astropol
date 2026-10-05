@@ -12,9 +12,11 @@ namespace StellarisClone.Core
         public int Difficulty = 1;     // 0 лёгкая · 1 нормальная · 2 сложная
         public int Seed;
         public bool Tutorial = true;
+        public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
 
         public static readonly string[] SizeNames = { "Малая", "Средняя", "Большая" };
         public static readonly string[] DifficultyNames = { "Лёгкая", "Нормальная", "Сложная" };
+        public static readonly string[] ShapeNames = { "Эллипс", "Спираль · 2 рукава", "Спираль · 4 рукава", "Кольцо" };
 
         public int StarCount => GalaxySize == 0 ? 50 : GalaxySize == 2 ? 120 : 80;
         public float Radius => GalaxySize == 0 ? 120f : GalaxySize == 2 ? 178f : 160f;

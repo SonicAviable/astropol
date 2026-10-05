@@ -484,6 +484,9 @@ namespace StellarisClone.Rendering
             }
             LGControls.Selector(LGControls.Row(left, ref y, "Размер", "Сколько звёздных систем в галактике", 270f),
                 sizes, _ng.GalaxySize, i => { _ng.GalaxySize = i; RefreshNewGame(); });
+            LGControls.Selector(LGControls.Row(left, ref y, "Форма", "Расположение звёзд: рукава спирали дают узкие проходы и фронты", 270f),
+                NewGameSettings.ShapeNames, Mathf.Clamp(_ng.Shape, 0, NewGameSettings.ShapeNames.Length - 1),
+                i => { _ng.Shape = i; RefreshNewGame(); });
 
             var seedHost = LGControls.Row(left, ref y, "Зерно генерации", "Одинаковое зерно — одинаковая карта", 270f);
             var inputHost = LGBuild.Rect(seedHost, "SeedInput");
@@ -983,7 +986,7 @@ namespace StellarisClone.Rendering
             _capRing = Marker(P(systems[0]), UIManager.DS.NeonCyan, "ВЫ");
             if (ai != 0) _aiRing = Marker(P(systems[ai]), UIManager.DS.Red, "СОПЕРНИК");
 
-            _caption.text = $"{NewGameSettings.SizeNames[s.GalaxySize]} галактика   ·   {systems.Count} систем   ·   {lanes.Count} гиперкоридоров   ·   сид {s.Seed}";
+            _caption.text = $"{NewGameSettings.SizeNames[s.GalaxySize]} галактика   ·   {NewGameSettings.ShapeNames[Mathf.Clamp(s.Shape, 0, 3)].ToLower()}   ·   {systems.Count} систем   ·   {lanes.Count} гиперкоридоров   ·   сид {s.Seed}";
         }
 
         private RectTransform Marker(Vector2 pos, Color col, string label)
