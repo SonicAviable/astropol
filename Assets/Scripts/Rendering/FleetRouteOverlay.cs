@@ -363,6 +363,12 @@ namespace StellarisClone.Rendering
 
         private bool NearPolyline(List<Vector3> pts, Vector2 mouse, float px)
         {
+            // Над самими системами показываем их подсказку, а не маршрута
+            for (int i = 1; i < pts.Count; i++)
+            {
+                Vector3 sp = _cam.WorldToScreenPoint(pts[i]);
+                if (sp.z > 0f && Vector2.Distance(mouse, sp) < 22f) return false;
+            }
             for (int i = 0; i < pts.Count - 1; i++)
             {
                 Vector3 a = _cam.WorldToScreenPoint(pts[i]);

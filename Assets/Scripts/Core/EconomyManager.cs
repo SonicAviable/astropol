@@ -49,6 +49,9 @@ namespace StellarisClone.Core
         public int   NavalUsed              => _report.NavalUsed;
         public int   NavalCapacity          => _report.NavalCapacity;
         public bool  IsBankrupt             => _bankrupt;
+        public float FactionEnergyMult      => _factionEnergyMult;
+        public float FactionMineralMult     => _factionMineralMult;
+        public float FactionAlloyMult       => _factionAlloyMult;
 
         /// <summary>Через сколько месяцев казна опустеет при текущем балансе (∞ — если доход положительный).</summary>
         public float MonthsUntilEmpty

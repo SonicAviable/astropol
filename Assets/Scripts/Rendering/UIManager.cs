@@ -745,9 +745,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var bodyBox = new GameObject("BodyBox");
             bodyBox.transform.SetParent(insp.transform, false);
             var bbRt = bodyBox.AddComponent<RectTransform>();
-            bbRt.anchorMin = new Vector2(0.03f, 0.18f);
-            bbRt.anchorMax = new Vector2(0.97f, 0.72f);
-            bbRt.offsetMin = bbRt.offsetMax = Vector2.zero;
+            _inspBodyRect = bbRt;
+            bbRt.anchorMin = Vector2.zero;
+            bbRt.anchorMax = Vector2.one;
+            bbRt.offsetMin = new Vector2(13, 120);
+            bbRt.offsetMax = new Vector2(-13, -62);
 
             var bbBg = bodyBox.AddComponent<Image>();
             bbBg.color = DS.BgSlot;
@@ -767,9 +769,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var distRow = new GameObject("DistrictRow");
             distRow.transform.SetParent(insp.transform, false);
             var drRt = distRow.AddComponent<RectTransform>();
-            drRt.anchorMin = new Vector2(0.03f, 0.10f);
-            drRt.anchorMax = new Vector2(0.97f, 0.17f);
-            drRt.offsetMin = drRt.offsetMax = Vector2.zero;
+            _inspDistrictRect = drRt;
+            drRt.anchorMin = new Vector2(0, 0);
+            drRt.anchorMax = new Vector2(1, 0);
+            drRt.pivot = new Vector2(0.5f, 0);
+            drRt.offsetMin = new Vector2(13, 60);
+            drRt.offsetMax = new Vector2(-13, 100);
 
             var hl = distRow.AddComponent<HorizontalLayoutGroup>();
             hl.childForceExpandWidth = true;
@@ -800,8 +805,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             sbRt.pivot = new Vector2(0.5f, 0);
             sbRt.anchoredPosition = new Vector2(0, 48);
             _inspShipyardBtn = shipyardBtn.GetComponent<Button>();
-            var sbTxt = CreateText(shipyardBtn.transform, "⚙   ОРБИТАЛЬНАЯ ВЕРФЬ", 10, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            sbTxt.rectTransform.sizeDelta = sbRt.sizeDelta;
+            LGIcons.IconLabel(shipyardBtn.transform, LGIcon.Shipyard, "ОРБИТАЛЬНАЯ ВЕРФЬ", 10, DS.NeonCyan, Color.white, 14f);
 
             var exitBtn = CreateButton(insp.transform, "ExitSystemBtn", new Vector2(395, 28),
                 DS.BtnDanger, DS.Red, () => SystemViewManager.Instance?.ExitToGalaxyView());
@@ -811,8 +815,39 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             ebRt.pivot = new Vector2(0.5f, 0);
             ebRt.anchoredPosition = new Vector2(0, 48);
             _inspExitBtn = exitBtn.GetComponent<Button>();
-            var ebTxt = CreateText(exitBtn.transform, "◀   ВЕРНУТЬСЯ В ГАЛАКТИКУ", 10, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            ebTxt.rectTransform.sizeDelta = ebRt.sizeDelta;
+            LGIcons.IconLabel(exitBtn.transform, LGIcon.Back, "ВЕРНУТЬСЯ В ГАЛАКТИКУ", 10, Color.white, Color.white, 13f);
+            exitBtn.SetActive(false);
+        }
+
+        private RectTransform _inspBodyRect, _inspDistrictRect;
+
+        /// <summary>
+        /// Кнопки инспектора складываются снизу вверх (только видимые), над ними — ряд районов,
+        /// а текст занимает всё оставшееся место. Кнопки больше не лежат друг на друге.
+        /// </summary>
+        private void LayoutInspector()
+        {
+            if (_inspBodyRect == null) return;
+            float y = 12f;
+            void Stack(Button b, float h)
+            {
+                if (b == null || !b.gameObject.activeSelf) return;
+                var rt = (RectTransform)b.transform;
+                rt.anchoredPosition = new Vector2(0, y);
+                y += h + 6f;
+            }
+            Stack(_inspActionBtn, 32f);
+            Stack(_inspShipyardBtn, 28f);
+            Stack(_inspExitBtn, 28f);
+
+            bool districts = _districtRowRoot != null && _districtRowRoot.transform.childCount > 0;
+            if (districts)
+            {
+                _inspDistrictRect.offsetMin = new Vector2(13, y + 2f);
+                _inspDistrictRect.offsetMax = new Vector2(-13, y + 44f);
+                y += 50f;
+            }
+            _inspBodyRect.offsetMin = new Vector2(13, y + 4f);
         }
 
         private void ClearInspectorBody()
@@ -823,7 +858,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (_districtRowRoot != null)
             {
                 for (int i = _districtRowRoot.transform.childCount - 1; i >= 0; i--)
-                    Destroy(_districtRowRoot.transform.GetChild(i).gameObject);
+                {
+                    // Отцепляем сразу: Destroy отложен до конца кадра, а раскладка считает детей сейчас
+                    var child = _districtRowRoot.transform.GetChild(i);
+                    child.SetParent(null, false);
+                    Destroy(child.gameObject);
+                }
             }
         }
 
@@ -1008,6 +1048,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _inspActionBtn.gameObject.SetActive(false);
             }
 
+            LayoutInspector();
             _inspTargetAlpha = 1f;
             _inspectorGroup.blocksRaycasts = true;
         }
@@ -1110,6 +1151,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _inspActionBtnText.text = "✓  КОМПЛЕКС ФУНКЦИОНИРУЕТ";
             }
 
+            LayoutInspector();
             _inspTargetAlpha = 1f;
             _inspectorGroup.blocksRaycasts = true;
 
@@ -1120,6 +1162,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             _isInSystemMode = inSystem;
             _inspExitBtn.gameObject.SetActive(inSystem);
+            LayoutInspector();
 
             if (!inSystem && _activeSystem != null)
                 ShowSystemPanel(_activeSystem);

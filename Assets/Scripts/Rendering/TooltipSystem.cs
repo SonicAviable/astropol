@@ -138,10 +138,17 @@ namespace StellarisClone.Rendering
             if (_root == null) BuildTooltipUI();
             if (_root == null) return;
             if (_isLocked) return;
+            if (_suppressed) return;
 
             _pendingText = text;
             _hoverTimer = 0f;
         }
+
+        // После клика по карте подсказка не всплывает, пока мышь не сдвинется:
+        // ПКМ по системе — это приказ флоту, а не просьба показать справку.
+        private bool _suppressed;
+        private Vector2 _suppressPos;
+        private const float SuppressMovePx = 14f;
 
         private void RequestHide()
         {
@@ -203,10 +210,25 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            if (Input.GetMouseButtonDown(1) && !string.IsNullOrEmpty(_pendingText))
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool click = Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
+
+            // Закрепление ПКМ — только для подсказок интерфейса (на карте ПКМ отдаёт приказ)
+            if (Input.GetMouseButtonDown(1) && overUi && !string.IsNullOrEmpty(_pendingText))
             {
                 TriggerOpen(_pendingText, true);
             }
+            else if (click && !overUi && !_isLocked)
+            {
+                _suppressed = true;
+                _suppressPos = Input.mousePosition;
+                _pendingText = "";
+                _hoverTimer = 0f;
+                StartClosingAnimation();
+            }
+
+            if (_suppressed && Vector2.Distance(_suppressPos, Input.mousePosition) > SuppressMovePx)
+                _suppressed = false;
 
             if (_isLocked && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Escape)))
             {

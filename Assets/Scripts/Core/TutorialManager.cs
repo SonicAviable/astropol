@@ -49,19 +49,21 @@ namespace StellarisClone.Core
             _boxObj = new GameObject("[UI] TutorialBox");
             _boxObj.transform.SetParent(canvas.transform, false);
 
+            // Компактная карточка в левом нижнем углу: не перекрывает панель флота,
+            // миникарту и инспектор системы
             var rt = _boxObj.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0f);
-            rt.anchorMax = new Vector2(0.5f, 0f);
-            rt.pivot = new Vector2(0.5f, 0f);
-            rt.sizeDelta = new Vector2(560f, 130f);
-            rt.anchoredPosition = new Vector2(-40f, 20f);
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0f, 0f);
+            rt.sizeDelta = new Vector2(420f, 168f);
+            rt.anchoredPosition = new Vector2(16f, 16f);
 
             var bgImg = _boxObj.AddComponent<Image>();
             bgImg.color = UIManager.DS.BgDeep;
             bgImg.raycastTarget = false;
             _fx = LG.Glass(_boxObj, 22f);
             _fx.SetRim(new Color(0.45f, 0.95f, 0.90f, 0.5f));
-            var motion = LG.Motion(_boxObj, LGAppear.Kind.SlideDown);
+            var motion = LG.Motion(_boxObj, LGAppear.Kind.SlideLeft);
             motion.distance = 34f;
             motion.inDuration = 0.5f;
 
@@ -92,7 +94,15 @@ namespace StellarisClone.Core
             tRt.anchorMin = Vector2.zero;
             tRt.anchorMax = Vector2.one;
             tRt.offsetMin = new Vector2(16, 0);
-            tRt.offsetMax = new Vector2(-16, 0);
+            tRt.offsetMax = new Vector2(-130, 0);
+
+            // Номер шага и кнопка «Пропустить обучение»
+            _stepText = LGBuild.Label(hGo.transform, "", 10, UIManager.DS.TextMuted, TextAnchor.MiddleRight, bold: true);
+            _stepText.rectTransform.Stretch(0, 0, 44, 0);
+            var skip = LGBuild.Button(hGo.transform, "Skip", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
+                                      SkipTutorial, LGIcon.Close, null, 9, 11f);
+            ((RectTransform)skip.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(24, 22));
+            TooltipHelper.Attach(skip.gameObject, "<b>Пропустить обучение</b>\nПодсказки больше не появятся в этой партии.");
 
             var dGo = new GameObject("Desc");
             dGo.transform.SetParent(_boxObj.transform, false);
@@ -119,6 +129,7 @@ namespace StellarisClone.Core
             // Новый шаг — вспышка неоновой кромки и мягкое проявление текста
             _stepPulse = 1f;
             _textFade = 0f;
+            if (_stepText != null) _stepText.text = s >= 1 && s <= StepCount ? $"{s} / {StepCount}" : "";
 
             switch (s)
             {
@@ -126,41 +137,40 @@ namespace StellarisClone.Core
                     _boxObj.SetActive(true);
                     _titleText.text = "Шаг 1: Галактическое время";
                     _descText.text = "Добро пожаловать, Командующий!\n" +
-                                     "Управление временем: ПРОБЕЛ — пауза/пуск, клавиши 1, 2, 3 — скорость.\n" +
-                                     "Нажмите любую из этих клавиш, чтобы продолжить.";
+                                     "ПРОБЕЛ — пауза и пуск времени, клавиши 1, 2, 3 — скорость.\n" +
+                                     "<i>Нажмите любую из этих клавиш, чтобы продолжить.</i>";
                     break;
 
                 case 2:
                     _boxObj.SetActive(true);
                     _titleText.text = "Шаг 2: Сенсорная разведка";
-                    _descText.text = "Выберите нейтральную (серую) систему кликом ЛКМ,\n" +
-                                     "затем отправьте туда научный корабль (зелёный).\n\n" +
-                                     "<i>Научный корабль выделяется ЛКМ, приказ — ПКМ по системе.</i>";
+                    _descText.text = "Выделите научный корабль — щёлкните ЛКМ по его значку.\n" +
+                                     "Затем ПКМ по соседней серой (неизученной) системе — корабль полетит на разведку.\n" +
+                                     "<i>Пунктир показывает маршрут и дни в пути.</i>";
                     break;
 
                 case 3:
                     _boxObj.SetActive(true);
                     _titleText.text = "Шаг 3: Пограничный форпост";
-                    _descText.text = "Научный корабль ушёл на разведку.\n\n" +
-                                     "Как только система будет изучена, выберите оранжевый строительный корабль\n" +
-                                     "и отправьте его в ту же систему — постройте аванпост.";
+                    _descText.text = "Разведчик в пути. Когда система будет изучена, выделите строительный корабль " +
+                                     "и ПКМ по ней — он заложит форпост.\n" +
+                                     "<i>Каждый форпост стоит 2 гелия-3 в месяц — следите за балансом.</i>";
                     break;
 
                 case 4:
                     _boxObj.SetActive(true);
                     _titleText.text = "Шаг 4: Разведка звёздной системы";
-                    _descText.text = "Аванпост построен!\n\n" +
-                                     "Сделайте ДВОЙНОЙ клик по любой звезде,\n" +
-                                     "чтобы войти в систему и увидеть её планеты.";
+                    _descText.text = "Форпост построен — граница расширилась!\n" +
+                                     "Сделайте ДВОЙНОЙ клик по звезде, чтобы войти в систему, " +
+                                     "и выберите планету — откроется её обзор с районами.";
                     break;
 
                 case 5:
                     _boxObj.SetActive(true);
                     _titleText.text = "Обучение завершено!";
-                    _descText.text = "Основы освоены.\n\n" +
-                                     "• Исследуйте технологии (⚛ ИССЛЕДОВАНИЯ в топ-баре)\n" +
-                                     "• Расширяйте границы через аванпосты\n" +
-                                     "• Проектируйте корабли в ⚙ КОНСТРУКТОРЕ\n\n" +
+                    _descText.text = "• Исследования — кнопка в верхней панели\n" +
+                                     "• Районы и колонии — в обзоре планеты\n" +
+                                     "• Флот: рамка ЛКМ, Shift+ПКМ — очередь приказов\n" +
                                      "<i>Подсказка закроется через 8 секунд.</i>";
                     Invoke(nameof(HideBox), 8f);
                     break;
@@ -174,6 +184,17 @@ namespace StellarisClone.Core
         private void HideBox()
         {
             if (_boxObj != null) LG.Hide(_boxObj);
+        }
+
+        private Text _stepText;
+        private const int StepCount = 5;
+
+        /// <summary>Закрыть обучение досрочно.</summary>
+        public void SkipTutorial()
+        {
+            _step = 0;
+            CancelInvoke(nameof(HideBox));
+            HideBox();
         }
 
         private LiquidGlassEffect _fx;
@@ -200,6 +221,8 @@ namespace StellarisClone.Core
         private void Update()
         {
             AnimateStepTransition();
+
+            if (_step <= 0) return;
 
             // Шаг 1 → 2: нажатие клавиш времени
             if (_step == 1)

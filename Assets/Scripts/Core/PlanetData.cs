@@ -158,6 +158,19 @@ namespace StellarisClone.Core
             ind = Mathf.Min(GetDistrictCount(DistrictType.Industrial), pool);
         }
 
+        /// <summary>Сколько районов данного типа обеспечены рабочими.</summary>
+        public int WorkedCount(DistrictType t)
+        {
+            DistributeWorkers(out int u, out int m, out int g, out int i);
+            return t switch
+            {
+                DistrictType.Urban => u,
+                DistrictType.Mining => m,
+                DistrictType.Generator => g,
+                _ => i
+            };
+        }
+
         public int ProducedMineralsPerMonth
         {
             get
@@ -205,7 +218,20 @@ namespace StellarisClone.Core
             return true;
         }
 
-        public float PopGrowthBaseSpeedPctPerMonth => 4f + (HousingCapacity - Population) * 0.4f;
+        /// <summary>Скорость роста населения (% к следующему жителю в месяц); 0 — если нет жилья или колонии.</summary>
+        public float PopGrowthBaseSpeedPctPerMonth =>
+            Population <= 0 || HousingCapacity <= Population ? 0f : 4f + (HousingCapacity - Population) * 0.4f;
+
+        /// <summary>Сколько месяцев до следующего жителя (-1 — рост остановлен).</summary>
+        public int MonthsToNextPop
+        {
+            get
+            {
+                float speed = PopGrowthBaseSpeedPctPerMonth;
+                if (speed <= 0f) return -1;
+                return Mathf.Max(1, Mathf.CeilToInt((100f - PopGrowthProgress) / speed));
+            }
+        }
 
         public int PlanetSize => MaxDistricts;
 
