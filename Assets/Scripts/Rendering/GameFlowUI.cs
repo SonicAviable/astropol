@@ -117,7 +117,7 @@ namespace StellarisClone.Rendering
         private void HandleEscape()
         {
             var ui = UIManager.Instance;
-            if (ui == null || !UIManager.IsGameStarted || SceneFader.IsBusy) return;
+            if (ui == null || !UIManager.IsGameStarted || SceneFader.IsBusy || LoadingScreen.IsActive) return;
             var sel = UnityEngine.EventSystems.EventSystem.current != null ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
             if (sel != null && sel.GetComponent<InputField>() != null && sel.GetComponent<InputField>().isFocused) return;
 

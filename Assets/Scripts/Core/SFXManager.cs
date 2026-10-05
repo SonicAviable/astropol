@@ -109,6 +109,8 @@ namespace StellarisClone.Core
             // Несколько рабочих потоков; порядок примерно сохраняется (интерфейс готов первым)
             int workers = Mathf.Clamp(SystemInfo.processorCount - 1, 1, 4);
             int next = -1;
+            s_prewarmTotal = order.Count;
+            s_prewarmDone = 0;
             for (int w = 0; w < workers; w++)
             {
                 Task.Run(() =>
@@ -124,12 +126,19 @@ namespace StellarisClone.Core
                             _ready.Enqueue(key);
                         }
                         catch (Exception e) { Debug.LogWarning($"[SFX] Ошибка синтеза {(Sfx)(key >> 4)}: {e.Message}"); }
+                        Interlocked.Increment(ref s_prewarmDone);
                     }
                 }, token);
             }
         }
 
         private static int Key(Sfx id, int variant) => ((int)id << 4) | variant;
+
+        private static int s_prewarmTotal, s_prewarmDone;
+
+        /// <summary>Доля уже синтезированных звуков (0..1) — для экрана загрузки.</summary>
+        public static float PrewarmProgress => s_prewarmTotal <= 0 ? (Instance != null ? 0f : 1f)
+                                                 : Mathf.Clamp01(s_prewarmDone / (float)s_prewarmTotal);
 
         private float[] Pcm(int key)
         {

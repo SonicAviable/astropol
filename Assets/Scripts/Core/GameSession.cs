@@ -129,7 +129,10 @@ namespace StellarisClone.Core
         {
             if (s_reloading) return;
             s_reloading = true;
-            StellarisClone.Rendering.SceneFader.FadeOutThen(DoReload);
+            var kind = Mode == StartMode.LoadGame ? StellarisClone.Rendering.LoadingScreen.Kind.LoadGame
+                     : Mode == StartMode.NewGame ? StellarisClone.Rendering.LoadingScreen.Kind.NewGame
+                     : StellarisClone.Rendering.LoadingScreen.Kind.Menu;
+            StellarisClone.Rendering.LoadingScreen.Begin(kind, DoReload);
         }
 
         private static void DoReload()
@@ -137,17 +140,19 @@ namespace StellarisClone.Core
             Time.timeScale = 1f;
             SceneManager.sceneLoaded += OnSceneReloaded;
 
+            // Асинхронно — экран загрузки показывает реальный прогресс
             var scene = SceneManager.GetActiveScene();
-            if (scene.buildIndex >= 0)
+            AsyncOperation op;
+            if (scene.buildIndex >= 0) op = SceneManager.LoadSceneAsync(scene.buildIndex);
+            else
             {
-                SceneManager.LoadScene(scene.buildIndex);
-                return;
-            }
 #if UNITY_EDITOR
-            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
+                op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
 #else
-            SceneManager.LoadScene(0);
+                op = SceneManager.LoadSceneAsync(0);
 #endif
+            }
+            StellarisClone.Rendering.LoadingScreen.TrackSceneLoad(op);
         }
 
         private static void OnSceneReloaded(Scene scene, LoadSceneMode mode)

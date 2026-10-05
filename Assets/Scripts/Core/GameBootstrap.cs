@@ -21,8 +21,9 @@ namespace StellarisClone.Core
             Debug.Log($"<color=#5F5>[Bootstrap]</color> === Старт инициализации ({GameSession.Mode}) ===");
             ShaderCache.Diagnose();
 
-            // Чёрный экран → мягкое проявление (и при запуске, и после перехода между партиями)
-            SceneFader.RevealFromBlack(GameSession.Mode == GameSession.StartMode.MainMenu ? 1.4f : 0.8f);
+            // Экран загрузки: при запуске игры показываем сразу; при переходах между партиями
+            // он уже на экране (GameSession.Reload) и сам уйдёт, когда всё будет готово
+            if (!LoadingScreen.IsActive) LoadingScreen.ShowImmediate(LoadingScreen.Kind.Launch);
 
             EnsureCamera();
             EnsureCoreManagers();
@@ -37,6 +38,7 @@ namespace StellarisClone.Core
                 new GameObject("[Save] Loader").AddComponent<SaveLoader>();
 
             Debug.Log("<color=#5F5>[Bootstrap]</color> === Все менеджеры готовы ===");
+            LoadingScreen.NotifyBooted();
         }
 
         /// <summary>Те же параметры, что у генерации партии (для предпросмотра в меню «Новая игра»).</summary>

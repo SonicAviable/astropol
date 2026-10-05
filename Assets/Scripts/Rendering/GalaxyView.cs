@@ -47,8 +47,12 @@ namespace StellarisClone.Rendering
         private static Shader GetSpriteShader() => ShaderCache.Sprite ?? Shader.Find("Sprites/Default");
         private static Shader GetLineShader()   => ShaderCache.Unlit ?? Shader.Find("Sprites/Default");
 
+        /// <summary>Карта построена (звёзды, коридоры, фон) — для экрана загрузки.</summary>
+        public static bool IsBuilt { get; private set; }
+
         private void Awake()
         {
+            IsBuilt = false;
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
         }
@@ -69,6 +73,7 @@ namespace StellarisClone.Rendering
             CreateHolographicBeacon();
             RefreshTerritoryVisuals();
             UIManager.Instance?.RefreshOutliner();
+            IsBuilt = true;
         }
 
         // ==================== СПРАЙТЫ ====================
