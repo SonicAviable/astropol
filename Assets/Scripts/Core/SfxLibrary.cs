@@ -128,9 +128,9 @@ namespace StellarisClone.Core.Audio
             S(Sfx.SystemSelect, 0.22f, 2, 0.08f, 0.01f);
             S(Sfx.SystemEnter, 0.34f, 1, 0.40f, 0f);
             S(Sfx.SystemExit, 0.30f, 1, 0.40f, 0f);
-            S(Sfx.SelectMilitary, 0.42f, 1, 0.10f, 0.03f, 2);
-            S(Sfx.SelectScience, 0.34f, 1, 0.10f, 0.02f, 2);
-            S(Sfx.SelectConstructor, 0.38f, 1, 0.10f, 0.03f, 2);
+            S(Sfx.SelectMilitary, 0.28f, 1, 0.10f, 0.01f);
+            S(Sfx.SelectScience, 0.28f, 1, 0.10f, 0.01f);
+            S(Sfx.SelectConstructor, 0.28f, 1, 0.10f, 0.01f);
             S(Sfx.OrderMove, 0.26f, 2, 0.07f, 0.01f);
             S(Sfx.OrderQueue, 0.20f, 2, 0.05f, 0.01f);
             S(Sfx.OrderStop, 0.24f, 1, 0.08f, 0.01f);
@@ -718,51 +718,17 @@ namespace StellarisClone.Core.Audio
                     lp = 9000f;
                     break;
                 }
+                // Выбор корабля — «спутниковый» пинг: чистый тон с эхом. Тип корабля слышен по высоте:
+                // военный ниже, научный выше, строитель посередине.
                 case Sfx.SelectMilitary:
-                {
-                    b = new Stereo(0.9f, sr);
-                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.002f, 0.02f, 0.4f, 0.02f, 0.04f), Color = NoiseColor.White, Gain = 0.3f,
-                        Filter = SvfMode.BandPass, Cutoff = Const(2500f), Q = 2f }, seed);
-                    float n1 = variant == 0 ? 76 : 74, n2 = variant == 0 ? 81 : 79;
-                    Tone(b, new ToneLayer { Start = 0.03f, Env = new Adsr(0.003f, 0.02f, 0.7f, 0.03f, 0.03f), Wave = Wave.Square, PulseWidth = 0.25f,
-                        Freq = Const(Note.Hz(n1)), Gain = 0.25f, Filter = SvfMode.LowPass, Cutoff = Const(3000f) }, rng);
-                    Tone(b, new ToneLayer { Start = 0.10f, Env = new Adsr(0.003f, 0.02f, 0.7f, 0.05f, 0.04f), Wave = Wave.Square, PulseWidth = 0.25f,
-                        Freq = Const(Note.Hz(n2)), Gain = 0.25f, Filter = SvfMode.LowPass, Cutoff = Const(3000f) }, rng);
-                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.06f, 0.1f, 0.6f, 0.15f, 0.35f), Color = NoiseColor.Brown, Gain = 0.7f,
-                        Filter = SvfMode.LowPass, Cutoff = Const(150f) }, seed + 5);
-                    Thump(b, rng, 0f, 110f, 55f, 0.08f, 0.18f, 0.5f);
-                    Modal(b, rng, 0f, 320f, new[] { 1f, 2.32f, 4.25f, 6.63f }, 0.12f, 0.2f);
-                    b.ApplyReverb(0.12f, 0.4f, 0.5f);
+                    b = SatellitePing(sr, rng, 0.89f);
                     break;
-                }
                 case Sfx.SelectScience:
-                {
-                    b = new Stereo(1.1f, sr);
-                    float[] scale = { 84, 86, 88, 91, 93, 96 };
-                    for (int i = 0; i < 6; i++)
-                    {
-                        float m = scale[(i * (variant + 2) + variant) % scale.Length];
-                        if (i == 5) m = 96;
-                        Bell(b, rng, i * 0.035f, m, 0.18f, 0.22f, i % 2 == 0 ? -0.4f : 0.4f, 2f, 0.7f);
-                    }
-                    Tone(b, new ToneLayer { Env = new Adsr(0.05f, 0.1f, 0.5f, 0.1f, 0.3f), Freq = Const(1760f), Gain = 0.06f,
-                        Amp = t => 0.6f + 0.4f * (float)Math.Sin(t * 2 * Math.PI * 18) }, rng);
-                    b.ApplyPingPong(0.09f, 0.35f, 0.28f, 5000f);
-                    b.ApplyReverb(0.18f, 0.6f, 0.5f);
+                    b = SatellitePing(sr, rng, 1.12f);
                     break;
-                }
                 case Sfx.SelectConstructor:
-                {
-                    b = new Stereo(1.0f, sr);
-                    Modal(b, rng, 0f, 180f + variant * 25f, new[] { 1f, 1.47f, 2.09f, 2.56f, 3.9f }, 0.45f, 0.45f);
-                    NoiseL(b, new NoiseLayer { Start = 0.05f, Env = new Adsr(0.02f, 0.1f, 0.5f, 0.1f, 0.25f), Color = NoiseColor.White, Gain = 0.22f,
-                        Filter = SvfMode.BandPass, Cutoff = Glide(6000f, 2500f, 0.3f), Q = 1.2f, Width = 0.8f }, seed);
-                    Tone(b, new ToneLayer { Start = 0.1f, Env = new Adsr(0.03f, 0.05f, 0.6f, 0.08f, 0.08f), Wave = Wave.Saw,
-                        Freq = Glide(400f, 600f, 0.15f), Gain = 0.13f, Filter = SvfMode.LowPass, Cutoff = Const(1500f) }, rng);
-                    Thump(b, rng, 0f, 90f, 50f, 0.1f, 0.2f, 0.5f);
-                    b.ApplyReverb(0.15f, 0.45f, 0.5f);
+                    b = SatellitePing(sr, rng, 1f);
                     break;
-                }
                 case Sfx.OrderMove:
                 {
                     b = new Stereo(1.5f, sr);
@@ -1215,6 +1181,17 @@ namespace StellarisClone.Core.Audio
             }
 
             return b.Finish(-1f, lp);
+        }
+
+        /// <summary>«Спутниковый» пинг: синус с лёгким падением высоты, тихий обертон, пинг-понг эхо и зал.</summary>
+        private static Stereo SatellitePing(int sr, Noise rng, float k)
+        {
+            var b = new Stereo(1.8f, sr);
+            Tone(b, new ToneLayer { Env = Adsr.Pluck(0.004f, 0.9f, 4f), Freq = Glide(1350f * k, 1300f * k, 0.2f), Gain = 0.5f }, rng);
+            Tone(b, new ToneLayer { Env = Adsr.Pluck(0.002f, 0.25f, 5f), Freq = Const(2637f * k), Gain = 0.12f }, rng);
+            b.ApplyPingPong(0.19f, 0.38f, 0.32f, 3500f);
+            b.ApplyReverb(0.28f, 0.8f, 0.5f);
+            return b;
         }
 
         /// <summary>
