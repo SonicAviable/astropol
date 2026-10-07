@@ -173,6 +173,11 @@ namespace StellarisClone.Core
             ["ghost_signal"]             = "Rift",
             ["distress_signal"]          = "Distress",
             ["distress_survivors"]       = "Distress",
+            ["rival_defector"]           = "Defector",
+            ["colony_festival"]          = "Festival",
+            ["colony_quake"]             = "Quake",
+            ["colony_plague"]            = "Plague",
+            ["trade_delegation"]         = "Trade",
         };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
