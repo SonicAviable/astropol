@@ -106,13 +106,25 @@ namespace StellarisClone.Core
         {
             EnsureComp<ShipDesignManager>("[Managers] ShipDesignManager");
             EnsureComp<FleetManager>("[Managers] FleetManager");
-            EnsureComp<AIEmpireManager>("[Managers] AIEmpireManager");
+            EnsureRivals();
             EnsureComp<CombatManager>("[Managers] CombatManager");
             EnsureComp<SystemViewManager>("[Managers] SystemViewManager");
             EnsureComp<SiegeManager>("[Managers] SiegeManager");
             EnsureComp<ConstructionManager>("[Managers] ConstructionManager");
             EnsureComp<LeaderManager>("[Managers] LeaderManager");
             EnsureComp<VictoryManager>("[Managers] VictoryManager");
+        }
+
+        /// <summary>Империи-соперники: по одному объекту на каждого (владельцы 1, 2, …).</summary>
+        private static void EnsureRivals()
+        {
+            AIEmpireManager.All.RemoveAll(a => a == null);   // объекты прошлой сцены уже уничтожены
+            if (AIEmpireManager.All.Count > 0) return;
+            for (int owner = 1; owner <= AIEmpireManager.RivalCount; owner++)
+            {
+                var go = new GameObject($"[Managers] AIEmpire {owner}");
+                go.AddComponent<AIEmpireManager>().Configure(owner);
+            }
         }
 
         private static void EnsureUI()

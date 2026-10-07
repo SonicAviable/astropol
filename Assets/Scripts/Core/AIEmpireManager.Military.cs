@@ -30,32 +30,32 @@ namespace StellarisClone.Core
             // Верфь занята — новые корпуса закладываем, когда освободится место
             int queued = QueuedShips(FleetType.Military);
             if (queued >= ConstructionManager.ShipyardSlots) return;
-            float myPower = EmpireStats.MilitaryPower(AIOwnerId) + queued * 200f;
-            float playerPower = EmpireStats.MilitaryPower(0);
+            float myPower = EmpireStats.MilitaryPower(OwnerId) + queued * 200f;
+            float rivalPower = RivalPowerForBuild();
             int years = TimeManager.Instance != null ? Mathf.Max(0, TimeManager.Instance.Year - 2200) : 0;
 
-            // Желаемая мощь: не отставать от игрока (с поправкой на характер) и расти со временем
+            // Желаемая мощь: не отставать от самого опасного соседа (с поправкой на характер) и расти со временем
             float baseline = (350f + years * 140f) * Profile.FleetShare * 2f;
-            float desired = Mathf.Max(baseline, playerPower * Profile.DesiredPowerRatio);
-            if (AtWar) desired *= 1.3f;
+            float desired = Mathf.Max(baseline, rivalPower * Profile.DesiredPowerRatio);
+            if (AtWarWithAnyone) desired *= 1.3f;
             if (myPower >= desired) return;
 
             ShipClass hull = PickHull();
             var design = GetDesign(hull);
             if (design == null) return;
-            float cost = FleetManager.ShipAlloyCost(design.AlloyCost, AIOwnerId);
+            float cost = FleetManager.ShipAlloyCost(design.AlloyCost, OwnerId);
 
             // Сплавы: часть бюджета держим на форпосты и районы (у воинственных — меньше)
             float reserve = Mathf.Lerp(120f, 30f, Profile.FleetShare);
-            if (AtWar) reserve *= 0.4f;
+            if (AtWarWithAnyone) reserve *= 0.4f;
             if (Alloys < cost + reserve || EnergyCredits < FleetManager.WarshipEnergy) return;
 
             // Содержание: «больше кораблей — меньше энергии» действует и на ИИ
             float extra = EmpireEconomy.ExtraUpkeepForShip(_report, hull);
-            bool desperate = AtWar && EnergyCredits > 250f;
+            bool desperate = AtWarWithAnyone && EnergyCredits > 250f;
             if (MonthlyEnergyIncome - extra < 1f && !desperate) return;
             if (_report.NavalUsed + EmpireEconomy.NavalSize(hull) > _report.NavalCapacity
-                && !(AtWar && Personality == AIPersonality.Militarist)) return;
+                && !(AtWarWithAnyone && Personality == AIPersonality.Militarist)) return;
 
             Alloys -= cost;
             EnergyCredits -= FleetManager.WarshipEnergy;
@@ -85,8 +85,8 @@ namespace StellarisClone.Core
             {
                 if (!s.Data.InCombat || !checkedSystems.Add(s.Data.CurrentSystemId)) continue;
                 int sys = s.Data.CurrentSystemId;
-                float mine = SidePower(AIOwnerId, sys);
-                float enemy = SidePower(0, sys);
+                float mine = SidePower(OwnerId, sys);
+                float enemy = EnemyPowerIn(sys);
                 if (enemy <= mine * Profile.RetreatRatio) continue;
 
                 int haven = SafeHaven(sys);
@@ -97,7 +97,7 @@ namespace StellarisClone.Core
             }
             if (retreated)
             {
-                if (Mode != ArmyMode.Retreat)
+                if (Mode != ArmyMode.Retreat && AtWar)
                     NotificationCenter.Show("Враг отступает", $"Флот {AIName} уходит из боя на ремонт", NotificationCenter.Kind.Info, 4f);
                 Mode = ArmyMode.Retreat;
                 ArmyTargetSystemId = SafeHaven(CapitalSystemId);
@@ -116,7 +116,7 @@ namespace StellarisClone.Core
             }
 
             // 3. Защита своих систем
-            if (AtWar)
+            if (AtWarWithAnyone)
             {
                 int threat = FindThreat(out float threatPower);
                 if (threat >= 0)
@@ -138,7 +138,7 @@ namespace StellarisClone.Core
             }
 
             // 4. Наступление
-            if (AtWar)
+            if (AtWarWithAnyone)
             {
                 _rallySystemId = StagingSystem();
                 if (Mode == ArmyMode.Attack && IsValidSiegeTarget(ArmyTargetSystemId))
@@ -178,7 +178,7 @@ namespace StellarisClone.Core
         private bool IsValidSiegeTarget(int sysId)
         {
             var s = EmpireStats.GetSystem(sysId);
-            return s != null && s.OwnerId == 0 && s.HasStarbase;
+            return s != null && IsEnemy(s.OwnerId) && s.HasStarbase;
         }
 
         /// <summary>Самая опасная угроза: наша система с вражеским флотом (осада, колонии — важнее).</summary>
@@ -190,8 +190,8 @@ namespace StellarisClone.Core
             float bestPriority = 0f;
             foreach (var s in EmpireStats.Systems)
             {
-                if (s.OwnerId != AIOwnerId) continue;
-                float enemy = fm.GetMilitaryPowerInSystem(0, s.Id);
+                if (s.OwnerId != OwnerId) continue;
+                float enemy = EnemyFleetPowerIn(s.Id);
                 if (enemy <= 0f) continue;
                 float priority = 100f;
                 foreach (var p in s.Planets) if (p.Population > 0) priority += 50f + p.Population * 5f;
@@ -222,16 +222,17 @@ namespace StellarisClone.Core
             float bestScore = float.MinValue;
             foreach (var s in EmpireStats.Systems)
             {
-                if (s.OwnerId != 0 || !s.HasStarbase) continue;
+                if (!IsEnemy(s.OwnerId) || !s.HasStarbase) continue;
                 if (!fromRally.TryGetValue(s.Id, out int jumps)) continue;
-                // Оборона = флот игрока + звёздная база системы
-                float defense = SidePower(0, s.Id);
+                // Оборона = флот владельца системы + её звёздная база
+                float defense = SidePower(s.OwnerId, s.Id);
                 if (defense > armyPower * 0.8f) continue;
 
                 float score = -jumps * 4f - defense / Mathf.Max(1f, armyPower) * 40f;
                 if (BordersOwn(s)) score += 20f;
                 foreach (var p in s.Planets) if (p.Population > 0) score += 15f + p.Population * 2f;
-                if (s.Id == EconomyManager.PlayerCapitalId) score -= 10f;
+                var owner = For(s.OwnerId);
+                if (s.OwnerId == 0 ? s.Id == EconomyManager.PlayerCapitalId : owner != null && s.Id == owner.CapitalSystemId) score -= 10f;
                 if (score > bestScore) { bestScore = score; best = s.Id; }
             }
             return best;
@@ -246,7 +247,7 @@ namespace StellarisClone.Core
             foreach (var kv in dist)
             {
                 var s = EmpireStats.GetSystem(kv.Key);
-                if (s == null || s.OwnerId != AIOwnerId) continue;
+                if (s == null || s.OwnerId != OwnerId) continue;
                 if (kv.Value < dAny) { dAny = kv.Value; bestAny = s.Id; }
                 bool colony = false;
                 foreach (var p in s.Planets) if (p.Population > 0) { colony = true; break; }
@@ -256,14 +257,16 @@ namespace StellarisClone.Core
             return bestAny >= 0 ? bestAny : CapitalSystemId;
         }
 
-        /// <summary>Своя система, ближайшая к территории игрока, — точка сбора и охраны границы.</summary>
+        /// <summary>Своя система, ближайшая к территории главного противника, — точка сбора и охраны границы.</summary>
         private int StagingSystem()
         {
-            var toPlayer = DistancesFromOwner(0, 40);
+            int focus = FocusRival();
+            if (focus < 0) return CapitalSystemId;
+            var toPlayer = DistancesFromOwner(focus, 40);
             int best = -1, bestDist = int.MaxValue, bestColonies = -1;
             foreach (var s in EmpireStats.Systems)
             {
-                if (s.OwnerId != AIOwnerId) continue;
+                if (s.OwnerId != OwnerId) continue;
                 if (!toPlayer.TryGetValue(s.Id, out int d)) continue;
                 int colonies = 0;
                 foreach (var p in s.Planets) if (p.Population > 0) colonies++;

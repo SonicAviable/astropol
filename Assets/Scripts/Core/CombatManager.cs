@@ -456,10 +456,13 @@ namespace StellarisClone.Core
             SFXManager.PlayAt(big ? Sfx.ExplosionLarge : Sfx.ExplosionSmall, fv.transform.position, fv.Data.OwnerId == 0 ? 1f : 0.9f);
             OnShipDestroyed?.Invoke(fv.Data, killerOwner);
 
-            string ownerName = fv.Data.OwnerId == 0 ? "Ваш корабль"
-                : AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Противник";
-            NotificationCenter.Show("Корабль уничтожен", $"{ownerName}: {fv.Data.Name}",
-                fv.Data.OwnerId == 0 ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Success, 4f);
+            // Игрока касаются только его потери и его победы — бои соседей между собой без уведомлений
+            if (fv.Data.OwnerId == 0 || killerOwner == 0)
+            {
+                string ownerName = fv.Data.OwnerId == 0 ? "Ваш корабль" : AIEmpireManager.NameOf(fv.Data.OwnerId, "Противник");
+                NotificationCenter.Show("Корабль уничтожен", $"{ownerName}: {fv.Data.Name}",
+                    fv.Data.OwnerId == 0 ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Success, 4f);
+            }
 
             FleetManager.Instance?.NotifyFleetDestroyed(fv);
             Destroy(fv.gameObject, 0.15f);
@@ -630,8 +633,8 @@ namespace StellarisClone.Core
         private bool IsCapital(StarSystem sys)
         {
             if (sys.OwnerId == 0) return sys.Id == EconomyManager.PlayerCapitalId;
-            var ai = AIEmpireManager.Instance;
-            return ai != null && sys.OwnerId == AIEmpireManager.AIOwnerId && sys.Id == ai.CapitalSystemId;
+            var ai = AIEmpireManager.For(sys.OwnerId);
+            return ai != null && sys.Id == ai.CapitalSystemId;
         }
 
         /// <summary>Параметры базы: форпост — скромная батарея, колонии и столица укреплены сильнее.</summary>
@@ -1084,16 +1087,17 @@ namespace StellarisClone.Core
             foreach (var kv in b.Sides) if (kv.Key != 0 && (enemy == null || kv.Value.Power > enemy.Power)) enemy = kv.Value;
             enemy ??= new SideStats();
 
-            string enemyName = enemy.Owner == AIEmpireManager.AIOwnerId && AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Противник";
+            string enemyName = AIEmpireManager.For(enemy.Owner)?.AIName ?? "Противник";
             _myLabel.text = UIManager.Instance?.SelectedFaction?.Name ?? "Ваш флот";
             _enemyLabel.text = enemyName;
             _myEmblem.color = new Color(0.05f, 0.25f, 0.24f);
-            _enemyEmblem.color = new Color(0.3f, 0.06f, 0.06f);
+            Color ec = FleetIndicator.OwnerColor(enemy.Owner);
+            _enemyEmblem.color = new Color(ec.r * 0.3f, ec.g * 0.3f, ec.b * 0.3f);
 
             _myStats.text = SideLine(me);
             _enemyStats.text = SideLine(enemy);
             LGBuild.SetBar(_myHp, me.StartHp > 0 ? me.Hp / me.StartHp : 0f);
-            LGBuild.SetBar(_enemyHp, enemy.StartHp > 0 ? enemy.Hp / enemy.StartHp : 0f);
+            LGBuild.SetBar(_enemyHp, enemy.StartHp > 0 ? enemy.Hp / enemy.StartHp : 0f, ec);
 
             float total = me.Power + enemy.Power;
             float share = total > 0f ? me.Power / total : 0.5f;

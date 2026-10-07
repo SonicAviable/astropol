@@ -15,7 +15,7 @@ namespace StellarisClone.Core
 
         private static float _suppressUntil;
         private bool _knownDiplo;
-        private bool _wasAtWar, _hadPact;
+        private int _wars, _pacts;
 
         /// <summary>Заглушить событийные звуки на время (например, пока применяется загруженное сохранение).</summary>
         public static void Suppress(float seconds) => _suppressUntil = Mathf.Max(_suppressUntil, Time.unscaledTime + seconds);
@@ -91,19 +91,20 @@ namespace StellarisClone.Core
         /// <summary>Дипломатия: отслеживаем переходы состояния (объявление войны, мир, пакт).</summary>
         private void Update()
         {
-            var ai = AIEmpireManager.Instance;
-            if (ai == null || !UIManager.IsGameStarted) { _knownDiplo = false; return; }
-            bool war = ai.AtWar, pact = ai.HasPact;
+            if (AIEmpireManager.All.Count == 0 || !UIManager.IsGameStarted) { _knownDiplo = false; return; }
+            // Войны и пакты игрока с любой из империй ИИ
+            int war = 0, pact = 0;
+            foreach (var ai in AIEmpireManager.All) { if (ai.AtWar) war++; if (ai.HasPact) pact++; }
             if (!_knownDiplo || Suppressed)
             {
                 _knownDiplo = true;
-                _wasAtWar = war; _hadPact = pact;
+                _wars = war; _pacts = pact;
                 return;
             }
-            if (war && !_wasAtWar) SFXManager.Play(Sfx.WarDeclared);
-            else if (!war && _wasAtWar) SFXManager.Play(Sfx.PeaceSigned);
-            else if (pact && !_hadPact) SFXManager.Play(Sfx.PactSigned);
-            _wasAtWar = war; _hadPact = pact;
+            if (war > _wars) SFXManager.Play(Sfx.WarDeclared);
+            else if (war < _wars) SFXManager.Play(Sfx.PeaceSigned);
+            else if (pact > _pacts) SFXManager.Play(Sfx.PactSigned);
+            _wars = war; _pacts = pact;
         }
     }
 }

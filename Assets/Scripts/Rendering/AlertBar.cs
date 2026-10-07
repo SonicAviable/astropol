@@ -392,18 +392,19 @@ namespace StellarisClone.Rendering
                     });
                 }
 
-                // 8. Дипломатическое предложение
-                var ai = AIEmpireManager.Instance;
-                if (ai != null && ai.PendingOffer != AIEmpireManager.OfferKind.None)
+                // 8. Дипломатические предложения (от каждой империи ИИ — своё)
+                foreach (var ai in AIEmpireManager.All)
                 {
+                    if (ai.PendingOffer == AIEmpireManager.OfferKind.None) continue;
                     bool peace = ai.PendingOffer == AIEmpireManager.OfferKind.Peace;
+                    int owner = ai.OwnerId;
                     _current.Add(new AlertInfo
                     {
-                        Id = "offer", Icon = peace ? LGIcon.Peace : LGIcon.Handshake, Color = UIManager.DS.Green,
+                        Id = "offer_" + owner, Icon = peace ? LGIcon.Peace : LGIcon.Handshake, Color = UIManager.DS.Green,
                         Title = peace ? $"{ai.AIName} предлагает мир" : $"{ai.AIName} предлагает пакт",
                         Body = $"Причина: {ai.PendingOfferReason}. Предложение в силе ещё {ai.PendingOfferDays} дн.",
                         ActionHint = "открыть дипломатию",
-                        Action = () => DiplomacyModal.Instance?.Open()
+                        Action = () => DiplomacyModal.Instance?.Open(owner)
                     });
                 }
 
@@ -448,16 +449,22 @@ namespace StellarisClone.Rendering
                     }
                 }
 
-                // 10. Угроза
-                if (ai != null && ai.AtWar && fm.GetMilitaryPower(0) < fm.GetMilitaryPower(AIEmpireManager.AIOwnerId))
+                // 10. Угроза: самая сильная из враждебных империй, если она сильнее вас
+                AIEmpireManager threat = null;
+                foreach (var ai in AIEmpireManager.Alive)
+                    if (ai.AtWar && fm.GetMilitaryPower(ai.OwnerId) > fm.GetMilitaryPower(0)
+                        && (threat == null || fm.GetMilitaryPower(ai.OwnerId) > fm.GetMilitaryPower(threat.OwnerId)))
+                        threat = ai;
+                if (threat != null)
                 {
+                    var t = threat;
                     _current.Add(new AlertInfo
                     {
                         Id = "threat", Icon = LGIcon.Fleet, Color = UIManager.DS.Red,
-                        Title = $"Угроза: {ai.AIName}",
-                        Body = $"Враждебная империя сильнее ({fm.GetMilitaryPower(AIEmpireManager.AIOwnerId):N0} против {fm.GetMilitaryPower(0):N0}). Стройте флот на верфи столицы или предложите мир.",
+                        Title = $"Угроза: {t.AIName}",
+                        Body = $"Враждебная империя сильнее ({fm.GetMilitaryPower(t.OwnerId):N0} против {fm.GetMilitaryPower(0):N0}). Стройте флот на верфи столицы или предложите мир.",
                         ActionHint = "открыть дипломатию",
-                        Action = () => DiplomacyModal.Instance?.Open()
+                        Action = () => DiplomacyModal.Instance?.Open(t.OwnerId)
                     });
                 }
             }

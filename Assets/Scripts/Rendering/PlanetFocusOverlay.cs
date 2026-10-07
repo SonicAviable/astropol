@@ -171,9 +171,9 @@ namespace StellarisClone.Rendering
             _subtitle.text = $"{_planet.ClassDisplayName}   ·   система {(_system != null ? _system.Name : "?")}{govText}";
 
             int owner = _system != null ? _system.OwnerId : -1;
-            Color oc = owner == 0 ? FleetIndicator.OwnColor : owner > 0 ? FleetIndicator.EnemyColor : CMuted;
+            Color oc = owner >= 0 ? FleetIndicator.OwnerColor(owner) : CMuted;
             string on = owner == 0 ? (UIManager.Instance?.SelectedFaction?.Name ?? "Ваша империя")
-                      : owner > 0 ? (AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Соперник")
+                      : owner > 0 ? AIEmpireManager.NameOf(owner)
                       : "Нейтральный фронтир";
             _ownerText.text = on;
             _ownerText.color = oc;

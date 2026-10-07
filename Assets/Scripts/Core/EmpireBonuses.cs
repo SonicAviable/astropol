@@ -52,8 +52,8 @@ namespace StellarisClone.Core
         public static EmpireBonuses For(int ownerId)
         {
             if (ownerId == 0) return TechnologyManager.Instance != null ? TechnologyManager.Instance.Bonuses : Neutral;
-            if (ownerId == AIEmpireManager.AIOwnerId && AIEmpireManager.Instance != null) return AIEmpireManager.Instance.Bonuses;
-            return Neutral;
+            var ai = AIEmpireManager.For(ownerId);
+            return ai != null ? ai.Bonuses : Neutral;
         }
 
         private static readonly EmpireBonuses Neutral = new EmpireBonuses();

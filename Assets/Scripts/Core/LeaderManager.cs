@@ -594,12 +594,15 @@ namespace StellarisClone.Core
             if (day == 1)
             {
                 // Содержание
-                int player = CountFor(0), ai = CountFor(AIEmpireManager.AIOwnerId);
+                int player = CountFor(0);
                 var eco = EconomyManager.Instance;
                 if (eco != null && player > 0) { eco.EnergyCredits -= player * UpkeepEnergy; eco.RaiseResourcesChanged(); }
-                if (ai > 0) AIEmpireManager.Instance?.SpendStock("energy", ai * UpkeepEnergy);
-
-                AIThink();
+                foreach (var rival in AIEmpireManager.Alive)
+                {
+                    int n = CountFor(rival.OwnerId);
+                    if (n > 0) rival.SpendStock("energy", n * UpkeepEnergy);
+                    AIThink(rival);
+                }
 
                 if (month == 1)
                 {
@@ -625,18 +628,17 @@ namespace StellarisClone.Core
         // ==================== ИИ ====================
 
         /// <summary>ИИ раз в месяц нанимает (когда хватает влияния) и расставляет лидеров по лучшим постам.</summary>
-        private void AIThink()
+        private void AIThink(AIEmpireManager ai)
         {
-            var ai = AIEmpireManager.Instance;
             if (ai == null) return;
-            int owner = AIEmpireManager.AIOwnerId;
+            int owner = ai.OwnerId;
 
             if (CountFor(owner) < 4 && ai.GetStock("influence") >= HireInfluence + 40f)
             {
                 int sci = 0, adm = 0, gov = 0;
                 foreach (var l in _s.Leaders)
                     if (l.Owner == owner) { if (l.Class == LeaderClass.Scientist) sci++; else if (l.Class == LeaderClass.Admiral) adm++; else gov++; }
-                LeaderClass want = adm == 0 && ai.AtWar ? LeaderClass.Admiral
+                LeaderClass want = adm == 0 && ai.AtWarWithAnyone ? LeaderClass.Admiral
                                  : sci == 0 ? LeaderClass.Scientist
                                  : adm == 0 ? LeaderClass.Admiral
                                  : gov == 0 ? LeaderClass.Governor

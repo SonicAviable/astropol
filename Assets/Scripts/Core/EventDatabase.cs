@@ -217,26 +217,24 @@ namespace StellarisClone.Core
             return new EventContext { Ship = pick, System = EmpireStats.GetSystem(pick.CurrentSystemId), Leader = Leaders?.LeaderOfShip(pick.Id) };
         }
 
-        private static EventContext RivalCtx(bool needPeace)
+        /// <summary>Случайная империя ИИ, подходящая событию (needPeace — только те, с кем мир; border — только соседи).</summary>
+        private static EventContext RivalCtx(bool needPeace, bool needBorder = false)
         {
-            var ai = AIEmpireManager.Instance;
-            if (ai == null || ai.IsEliminated) return null;
-            if (needPeace && ai.AtWar) return null;
-            if (EmpireStats.SystemCount(AIEmpireManager.AIOwnerId) == 0) return null;
-            return new EventContext { Rival = AIEmpireManager.AIOwnerId };
+            var list = new List<AIEmpireManager>();
+            foreach (var ai in AIEmpireManager.Alive)
+            {
+                if (needPeace && ai.AtWar) continue;
+                if (EmpireStats.SystemCount(ai.OwnerId) == 0) continue;
+                if (needBorder && EmpireStats.SharedBorderCount(ai.OwnerId, 0) == 0) continue;
+                list.Add(ai);
+            }
+            var pick = RandomOf(list);
+            return pick != null ? new EventContext { Rival = pick.OwnerId } : null;
         }
 
-        private static string RivalName(int owner)
-        {
-            var ai = AIEmpireManager.Instance;
-            return ai != null && owner == AIEmpireManager.AIOwnerId ? ai.AIName : "соседняя империя";
-        }
+        private static string RivalName(int owner) => AIEmpireManager.NameOf(owner, "соседняя империя");
 
-        private static void Opinion(int rival, float delta)
-        {
-            var ai = AIEmpireManager.Instance;
-            if (ai != null && rival == AIEmpireManager.AIOwnerId) ai.AddMemory("incident", delta);
-        }
+        private static void Opinion(int rival, float delta) => AIEmpireManager.For(rival)?.AddMemory("incident", delta);
 
         private static FleetData FindShip(int id)
         {
@@ -693,11 +691,7 @@ namespace StellarisClone.Core
             Add(new Template
             {
                 Id = "border_incident", When = Trigger.Monthly, Weight = 0.8f,
-                FindContext = () =>
-                {
-                    var c = RivalCtx(true);
-                    return c != null && EmpireStats.SharedBorderCount(c.Rival, 0) > 0 ? c : null;
-                },
+                FindContext = () => RivalCtx(true, true),
                 Build = c => Ev("border_incident", "ПОГРАНИЧНЫЙ ИНЦИДЕНТ",
                     $"Патрульный корвет империи {RivalName(c.Rival)} открыл предупредительный огонь по нашему транспорту у самой " +
                     "границы. Никто не пострадал, но в эфире уже требуют ответа.",

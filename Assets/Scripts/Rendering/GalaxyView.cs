@@ -298,13 +298,18 @@ namespace StellarisClone.Rendering
 
             var playerSystems = new List<StarSystem>();
             var enemySystems = new List<StarSystem>();
+            var byOwner = new Dictionary<int, List<StarSystem>>();
 
             foreach (var s in _generator.Systems)
             {
                 if (s.OwnerId == 0 && s.HasStarbase)
                     playerSystems.Add(s);
                 else if (s.OwnerId > 0 && s.HasStarbase)
+                {
                     enemySystems.Add(s);
+                    if (!byOwner.TryGetValue(s.OwnerId, out var l)) byOwner[s.OwnerId] = l = new List<StarSystem>();
+                    l.Add(s);
+                }
             }
 
             if (playerSystems.Count == 0)
@@ -315,20 +320,20 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1 ИИ).
+            // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1 и 2 — империи ИИ).
             // Вдоль коридоров между своими системами добавляем промежуточные точки —
             // территория не рвётся на длинных переходах (как в Stellaris).
             const int MaxSys = 192;
             var sys = new Vector4[MaxSys];
             int count = 0;
             foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
-            foreach (var s in enemySystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 1f, 0f);
+            foreach (var s in enemySystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, Mathf.Min(2, s.OwnerId), 0f);
             foreach (var lane in _generator.Hyperlanes)
             {
                 var a = _generator.Systems[lane.SystemA];
                 var b = _generator.Systems[lane.SystemB];
                 if (!a.HasStarbase || !b.HasStarbase || a.OwnerId < 0 || a.OwnerId != b.OwnerId) continue;
-                float owner = a.OwnerId == 0 ? 0f : 1f;
+                float owner = Mathf.Min(2, a.OwnerId);
                 int steps = Mathf.FloorToInt(Vector3.Distance(a.Position, b.Position) / (_claimRadius * 0.9f));
                 for (int k = 1; k <= steps && count < MaxSys; k++)
                 {
@@ -341,10 +346,12 @@ namespace StellarisClone.Rendering
             _borderMat.SetFloat("_ClaimRadius", _claimRadius);
             _borderMat.SetFloat("_Smooth", _claimRadius);
             _borderMat.SetColor("_PlayerColor", FleetIndicator.OwnColor);
-            _borderMat.SetColor("_EnemyColor", FleetIndicator.EnemyColor);
+            _borderMat.SetColor("_EnemyColor", FleetIndicator.OwnerColor(1));
+            _borderMat.SetColor("_Enemy2Color", FleetIndicator.OwnerColor(2));
 
             UpdateEmpireLabel(playerSystems);
-            UpdateAIEmpireLabel(enemySystems);
+            foreach (var ai in AIEmpireManager.All)
+                UpdateAIEmpireLabel(ai, byOwner.TryGetValue(ai.OwnerId, out var owned) ? owned : null);
 
             foreach (var kvp in _nameplates)
                 if (kvp.Value != null) kvp.Value.UpdateVisuals();
@@ -596,7 +603,7 @@ namespace StellarisClone.Rendering
 
                     _currentBeaconColor = next.Data.OwnerId == 0
                         ? new Color(0.20f, 0.95f, 1f, 1f)
-                        : (next.Data.OwnerId > 0 ? new Color(1f, 0.35f, 0.35f, 1f) : new Color(0.40f, 0.85f, 1f, 0.95f));
+                        : (next.Data.OwnerId > 0 ? FleetIndicator.OwnerColor(next.Data.OwnerId) : new Color(0.40f, 0.85f, 1f, 0.95f));
 
                     _deployProgress = 0f;
                     _animTimer = 0f;

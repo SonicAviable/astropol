@@ -146,15 +146,21 @@ namespace StellarisClone.Core
         }
     }
 
-    /// <summary>Отношения сторон: война между игроком и ИИ — состояние, а не порог мнения.</summary>
+    /// <summary>
+    /// Отношения сторон: война — состояние, а не порог мнения. Игрок воюет с каждым ИИ отдельно,
+    /// империи ИИ — между собой (AIRelations). Неизвестные владельцы (будущие монстры) враждебны всем.
+    /// </summary>
     public static class Diplomacy
     {
         public static bool AtWar(int a, int b)
         {
             if (a == b || a < 0 || b < 0) return false;
-            var ai = AIEmpireManager.Instance;
-            if ((a == 0 && b == AIEmpireManager.AIOwnerId) || (b == 0 && a == AIEmpireManager.AIOwnerId))
-                return ai != null && ai.AtWar;
+            if (a == 0 || b == 0)
+            {
+                var ai = AIEmpireManager.For(a == 0 ? b : a);
+                return ai != null ? ai.AtWar : true;
+            }
+            if (AIEmpireManager.IsAI(a) && AIEmpireManager.IsAI(b)) return AIRelations.AtWar(a, b);
             return true;
         }
     }

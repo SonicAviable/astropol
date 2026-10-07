@@ -224,7 +224,7 @@ public static void ShowGlobal()
         private Color GetColorForSystem(StarSystem sys)
         {
             if (sys.OwnerId == 0) return UIManager.DS.NeonCyan;
-            if (sys.OwnerId > 0) return UIManager.DS.Red;
+            if (sys.OwnerId > 0) return FleetIndicator.OwnerColor(sys.OwnerId);
             if (sys.IsSurveyed) return UIManager.DS.TextMuted;
             return new Color(0.45f, 0.60f, 0.75f, 1f);
         }

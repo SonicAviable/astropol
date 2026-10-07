@@ -5,7 +5,7 @@ using StellarisClone.Generation;
 namespace StellarisClone.Core
 {
     /// <summary>
-    /// Сводная статистика империй (игрок — 0, ИИ — AIOwnerId): население, системы, колонии,
+    /// Сводная статистика империй (игрок — 0, империи ИИ — 1, 2, …): население, системы, колонии,
     /// очки партии. Используется наукой, победой, ИИ и интерфейсом.
     /// </summary>
     public static class EmpireStats
@@ -69,7 +69,7 @@ namespace StellarisClone.Core
         public static int TechCount(int owner)
         {
             if (owner == 0) return TechnologyManager.Instance != null ? TechnologyManager.Instance.ResearchedCount : 0;
-            var ai = AIEmpireManager.Instance;
+            var ai = AIEmpireManager.For(owner);
             return ai != null ? ai.ResearchedCount : 0;
         }
 

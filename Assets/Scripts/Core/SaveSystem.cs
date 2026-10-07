@@ -56,7 +56,10 @@ namespace StellarisClone.Core
         public EconomySave Economy;
         public TechSave Tech;
         public VictorySave Victory;
+        /// <summary>Только старые сохранения (одна империя ИИ).</summary>
         public AISave AI;
+        public List<AISave> AIs = new List<AISave>();
+        public List<AIRelations.PairState> AIPairs = new List<AIRelations.PairState>();
         public List<SiegeSave> Sieges = new List<SiegeSave>();
         public List<ConstructionJob> Jobs = new List<ConstructionJob>();
         public List<StarbaseSave> Starbases = new List<StarbaseSave>();
@@ -83,7 +86,8 @@ namespace StellarisClone.Core
         public int OwnerId;
         public bool HasStarbase;
         public bool IsSurveyed;
-        public bool SurveyedByAI;
+        public bool SurveyedByAI;  // до версии 2: один флаг на всех ИИ
+        public int AISurvey;       // с версии 2: бит на каждую империю ИИ
         public int SurveyVer;      // 0 — старое сохранение (разведка была общей)
         public List<PlanetSave> Planets = new List<PlanetSave>();
     }
@@ -203,6 +207,7 @@ namespace StellarisClone.Core
     [Serializable]
     public class AISave
     {
+        public int Owner = 1;
         public int Capital = -1;
         public string Name, Title;
         public Color Color;
@@ -399,7 +404,8 @@ namespace StellarisClone.Core
             s.Economy = EconomyManager.Instance != null ? EconomyManager.Instance.CaptureState() : null;
             s.Tech = TechnologyManager.Instance != null ? TechnologyManager.Instance.CaptureState() : null;
             s.Victory = VictoryManager.Instance != null ? VictoryManager.Instance.CaptureState() : null;
-            s.AI = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.CaptureState() : null;
+            foreach (var ai in AIEmpireManager.All) s.AIs.Add(ai.CaptureState());
+            s.AIPairs = AIRelations.Capture();
             if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
             if (ConstructionManager.Instance != null) s.Jobs = ConstructionManager.Instance.CaptureState();
             if (CombatManager.Instance != null) s.Starbases = CombatManager.Instance.CaptureStarbases();
@@ -469,7 +475,7 @@ namespace StellarisClone.Core
                 Id = sys.Id, Name = sys.Name, Position = sys.Position, Spectral = (int)sys.SpectralClass,
                 HasGeneratedPlanets = sys.HasGeneratedPlanets, OwnerId = sys.OwnerId,
                 HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed,
-                SurveyedByAI = sys.SurveyedByAI, SurveyVer = 1
+                AISurvey = sys.AISurveyMask, SurveyVer = 2
             };
             ss.Connected.AddRange(sys.ConnectedSystemIds);
             foreach (var p in sys.Planets)
@@ -535,7 +541,7 @@ namespace StellarisClone.Core
                 var sys = new StarSystem(ss.Id, ss.Name, ss.Position, (StarSpectralClass)ss.Spectral)
                 {
                     OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, IsSurveyed = ss.IsSurveyed,
-                    SurveyedByAI = ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed,
+                    AISurveyMask = ss.SurveyVer >= 2 ? ss.AISurvey : (ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed) ? ~1 : 0,
                     HasGeneratedPlanets = ss.HasGeneratedPlanets
                 };
                 sys.ConnectedSystemIds.AddRange(ss.Connected);
@@ -713,7 +719,21 @@ namespace StellarisClone.Core
                 fm.SetNextFleetId(s.FleetIdCounter);
             }
 
-            if (s.AI != null) AIEmpireManager.Instance?.RestoreState(s.AI, version);
+            if (s.AIs != null && s.AIs.Count > 0)
+            {
+                foreach (var a in s.AIs) AIEmpireManager.For(a.Owner)?.RestoreState(a, version);
+                // Империи, которых не было в той партии, не появляются посреди игры
+                foreach (var ai in new List<AIEmpireManager>(AIEmpireManager.All))
+                    if (s.AIs.Find(x => x.Owner == ai.OwnerId) == null) ai.RemoveFromGame();
+            }
+            else if (s.AI != null)
+            {
+                // Старое сохранение «один на один»: вторую империю ИИ убираем
+                AIEmpireManager.For(1)?.RestoreState(s.AI, version);
+                foreach (var ai in new List<AIEmpireManager>(AIEmpireManager.All))
+                    if (ai.OwnerId != 1) ai.RemoveFromGame();
+            }
+            AIRelations.Restore(s.AIPairs);
             SiegeManager.Instance?.RestoreState(s.Sieges);
             ConstructionManager.Instance?.RestoreState(s.Jobs);
             CombatManager.Instance?.RestoreStarbases(s.Starbases);

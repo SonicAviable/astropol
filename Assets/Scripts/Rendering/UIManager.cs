@@ -970,8 +970,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             string owner = system.OwnerId == 0
                 ? $"<color=#33E6CC>◆  Под контролем {_selectedFaction?.Name ?? "Империи"}</color>"
-                : system.OwnerId == AIEmpireManager.AIOwnerId
-                    ? $"<color=#FF5555>◆  Территория: {AIEmpireManager.Instance?.AIName ?? "соперник"}</color>"
+                : system.OwnerId > 0
+                    ? $"<color={LGBuild.Hex(FleetIndicator.OwnerColor(system.OwnerId))}>◆  Территория: {AIEmpireManager.NameOf(system.OwnerId, "соперник")}</color>"
                     : "<color=#8AA2A8>◆  Нейтральный фронтир</color>";
             _inspStatus.text = owner;
 
@@ -1035,7 +1035,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
             else
             {
-                var ai = AIEmpireManager.Instance;
+                var ai = AIEmpireManager.For(system.OwnerId);
                 AddBodyLine(ai != null && ai.AtWar
                     ? $"Чтобы захватить систему, держите здесь военный флот без защитников ({SiegeManager.RequiredDays(system):0} дн. осады)."
                     : "Чужая система. Захват возможен только во время войны — осадой.");

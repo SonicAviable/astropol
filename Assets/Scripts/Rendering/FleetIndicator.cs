@@ -96,6 +96,14 @@ namespace StellarisClone.Rendering
         public static readonly Color OwnColor = new Color(0.22f, 0.92f, 0.86f);
         public static readonly Color EnemyColor = new Color(1.00f, 0.30f, 0.30f);
 
+        /// <summary>Цвет владельца на карте: игрок — бирюза, у каждой империи ИИ — свой, ничейное — серое.</summary>
+        public static Color OwnerColor(int owner)
+        {
+            if (owner == 0) return OwnColor;
+            if (owner > 0) return AIEmpireManager.MapColorFor(owner);
+            return new Color(0.75f, 0.75f, 0.8f);
+        }
+
         public void Init(FleetView fleet)
         {
             _fleet = fleet;
@@ -381,9 +389,7 @@ namespace StellarisClone.Rendering
         private void RefreshStyle()
         {
             var d = _fleet.Data;
-            _owner = d.OwnerId == 0 ? OwnColor
-                   : d.OwnerId == AIEmpireManager.AIOwnerId ? EnemyColor
-                   : new Color(0.75f, 0.75f, 0.8f);
+            _owner = OwnerColor(d.OwnerId);
 
             Color typeCol = d.Type switch
             {

@@ -121,8 +121,7 @@ namespace StellarisClone.Rendering
                 var f = UIManager.Instance != null ? UIManager.Instance.SelectedFaction : null;
                 return f != null ? Color.Lerp(f.EmpireColor, FleetIndicator.OwnColor, 0.35f) : FleetIndicator.OwnColor;
             }
-            var ai = AIEmpireManager.Instance;
-            return ai != null ? ai.AIEmpireColor : FleetIndicator.EnemyColor;
+            return FleetIndicator.OwnerColor(d.OwnerId);
         }
 
         private List<FleetRoute.Node> RouteFor(FleetView f)

@@ -50,8 +50,16 @@ namespace StellarisClone.Core
 
         public void BindHost(Canvas modalCanvas) { _host = modalCanvas; }
 
-        public void Open()
+        private int _partnerOwner = -1;
+
+        /// <summary>Торговый партнёр — выбранная империя ИИ (по умолчанию первая).</summary>
+        private AIEmpireManager Partner => AIEmpireManager.For(_partnerOwner) ?? AIEmpireManager.Instance;
+
+        public void Open() => Open(-1);
+
+        public void Open(int partnerOwner)
         {
+            _partnerOwner = partnerOwner;
             if (_host == null)
             {
                 var modal = GameObject.Find("ModalCanvas");
@@ -60,7 +68,7 @@ namespace StellarisClone.Core
             if (_host == null) return;
             if (_root == null) Build();
 
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (_titleText != null && ai != null)
                 _titleText.text = $"◆  ТОРГОВЫЙ КАНАЛ · {ai.AIName.ToUpper()}";
 
@@ -177,7 +185,7 @@ namespace StellarisClone.Core
         private void Refresh()
         {
             var eco = EconomyManager.Instance;
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (eco == null || ai == null) return;
 
             _giveEnergyTxt.text    = $"{_giveEnergy} / {(int)eco.EnergyCredits}";
@@ -278,7 +286,7 @@ namespace StellarisClone.Core
         private void TryPropose()
         {
             var eco = EconomyManager.Instance;
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (eco == null || ai == null) return;
 
             float offerV = OfferValue();
@@ -591,17 +599,17 @@ namespace StellarisClone.Core
             else
             {
                 BuildRow(col.transform, "⚡", "Энергия",  UIManager.DS.Gold,     ref _getEnergyTxt,
-                    () => ChangeGet(ref _getEnergy, -25, AIEmpireManager.Instance.EnergyCredits, ref _flashGetE),
-                    () => ChangeGet(ref _getEnergy,  25, AIEmpireManager.Instance.EnergyCredits, ref _flashGetE));
+                    () => ChangeGet(ref _getEnergy, -25, Partner.EnergyCredits, ref _flashGetE),
+                    () => ChangeGet(ref _getEnergy,  25, Partner.EnergyCredits, ref _flashGetE));
                 BuildRow(col.transform, "◆", "Титан",    UIManager.DS.NeonCyan, ref _getMineralsTxt,
-                    () => ChangeGet(ref _getMinerals, -25, AIEmpireManager.Instance.Minerals, ref _flashGetM),
-                    () => ChangeGet(ref _getMinerals,  25, AIEmpireManager.Instance.Minerals, ref _flashGetM));
+                    () => ChangeGet(ref _getMinerals, -25, Partner.Minerals, ref _flashGetM),
+                    () => ChangeGet(ref _getMinerals,  25, Partner.Minerals, ref _flashGetM));
                 BuildRow(col.transform, "⬢", "Сплавы",   UIManager.DS.Gold,     ref _getAlloysTxt,
-                    () => ChangeGet(ref _getAlloys, -25, AIEmpireManager.Instance.Alloys, ref _flashGetA),
-                    () => ChangeGet(ref _getAlloys,  25, AIEmpireManager.Instance.Alloys, ref _flashGetA));
+                    () => ChangeGet(ref _getAlloys, -25, Partner.Alloys, ref _flashGetA),
+                    () => ChangeGet(ref _getAlloys,  25, Partner.Alloys, ref _flashGetA));
                 BuildRow(col.transform, "★", "Влияние",  UIManager.DS.Red,      ref _getInfluenceTxt,
-                    () => ChangeGet(ref _getInfluence, -10, AIEmpireManager.Instance.Influence, ref _flashGetI),
-                    () => ChangeGet(ref _getInfluence,  10, AIEmpireManager.Instance.Influence, ref _flashGetI));
+                    () => ChangeGet(ref _getInfluence, -10, Partner.Influence, ref _flashGetI),
+                    () => ChangeGet(ref _getInfluence,  10, Partner.Influence, ref _flashGetI));
             }
         }
 

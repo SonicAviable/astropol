@@ -17,9 +17,52 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager : MonoBehaviour
     {
-        public static AIEmpireManager Instance { get; private set; }
+        /// <summary>Сколько империй-соперников в партии (вместе с игроком — три).</summary>
+        public const int RivalCount = 2;
 
-        public const int AIOwnerId = 1;
+        /// <summary>Все империи ИИ, по возрастанию номера владельца (1, 2, …).</summary>
+        public static readonly List<AIEmpireManager> All = new List<AIEmpireManager>();
+
+        /// <summary>Первая империя ИИ — для мест, где нужен «какой-нибудь соперник».</summary>
+        public static AIEmpireManager Instance => All.Count > 0 ? All[0] : null;
+
+        public static AIEmpireManager For(int owner)
+        {
+            foreach (var a in All) if (a.OwnerId == owner) return a;
+            return null;
+        }
+
+        public static bool IsAI(int owner) => For(owner) != null;
+
+        public static string NameOf(int owner, string fallback = "Соперник") => For(owner)?.AIName ?? fallback;
+
+        /// <summary>Живые империи ИИ (не потерявшие все системы).</summary>
+        public static IEnumerable<AIEmpireManager> Alive
+        {
+            get { foreach (var a in All) if (!a.IsEliminated && a.CapitalSystemId >= 0) yield return a; }
+        }
+
+        /// <summary>Номер владельца систем и флотов этой империи (игрок — 0).</summary>
+        public int OwnerId { get; private set; } = 1;
+
+        /// <summary>Цвет на карте: у каждого соперника свой, чтобы границы не сливались.</summary>
+        public Color MapColor => MapColorFor(OwnerId);
+
+        public static Color MapColorFor(int owner) => owner == 2 ? new Color(0.74f, 0.48f, 1f) : new Color(1f, 0.30f, 0.30f);
+
+        /// <summary>Убрать империю из партии (её не было в загружаемом сохранении).</summary>
+        public void RemoveFromGame()
+        {
+            All.Remove(this);
+            Destroy(gameObject);
+        }
+
+        public void Configure(int owner)
+        {
+            OwnerId = owner;
+            All.Sort((a, b) => a.OwnerId.CompareTo(b.OwnerId));
+        }
+
         private GalaxyGenerator _generator;
 
         public int CapitalSystemId { get; private set; } = -1;
@@ -78,7 +121,7 @@ namespace StellarisClone.Core
         public bool HasTech(string id) => _researched.Contains(id);
 
         public float MonthlyScience =>
-            (TechnologyManager.BaseScience + EmpireStats.Population(AIOwnerId) * TechnologyManager.SciencePerPop)
+            (TechnologyManager.BaseScience + EmpireStats.Population(OwnerId) * TechnologyManager.SciencePerPop)
             * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult;
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
@@ -94,8 +137,8 @@ namespace StellarisClone.Core
 
         private void Awake()
         {
-            if (Instance == null) Instance = this;
-            else { Destroy(gameObject); return; }
+            if (!All.Contains(this)) All.Add(this);
+            if (All.Count == 1) AIRelations.Reset();
         }
 
         private void Start()
@@ -109,6 +152,7 @@ namespace StellarisClone.Core
 
         private void OnDestroy()
         {
+            All.Remove(this);
             if (TimeManager.Instance != null)
                 TimeManager.Instance.OnDayPassed -= HandleDayPassed;
             CombatManager.OnShipDestroyed -= HandleShipDestroyed;
@@ -134,7 +178,10 @@ namespace StellarisClone.Core
             foreach (var f in FactionRegistry.AvailableFactions)
             {
                 if (playerFaction != null && f.Name == playerFaction.Name) continue;
-                candidates.Add(f);
+                bool taken = false;
+                foreach (var other in All)
+                    if (other != this && other.Faction != null && other.Faction.Name == f.Name) { taken = true; break; }
+                if (!taken) candidates.Add(f);
             }
             if (candidates.Count == 0) candidates.AddRange(FactionRegistry.AvailableFactions);
 
@@ -158,22 +205,29 @@ namespace StellarisClone.Core
 
             PickFaction();
 
+            // Столица — свободная система, максимально далёкая от ближайшей уже занятой столицы
+            var capitals = new List<Vector3> { _generator.Systems[EconomyManager.PlayerCapitalId].Position };
+            foreach (var other in All)
+                if (other != this && other.CapitalSystemId >= 0) capitals.Add(_generator.Systems[other.CapitalSystemId].Position);
+
             int bestSysId = -1;
             float maxDist = -1f;
-            Vector3 playerPos = _generator.Systems[0].Position;
-            for (int i = 1; i < _generator.Systems.Count; i++)
+            for (int i = 0; i < _generator.Systems.Count; i++)
             {
-                float d = Vector3.Distance(playerPos, _generator.Systems[i].Position);
+                var s = _generator.Systems[i];
+                if (s.OwnerId >= 0 || s.ConnectedSystemIds.Count == 0) continue;
+                float d = float.MaxValue;
+                foreach (var c in capitals) d = Mathf.Min(d, Vector3.Distance(c, s.Position));
                 if (d > maxDist) { maxDist = d; bestSysId = i; }
             }
             if (bestSysId == -1) return;
 
             CapitalSystemId = bestSysId;
             var capital = _generator.Systems[CapitalSystemId];
-            capital.OwnerId = AIOwnerId;
+            capital.OwnerId = OwnerId;
             capital.HasStarbase = true;
             capital.IsSurveyed = true;
-            capital.SurveyedByAI = true;
+            capital.MarkSurveyedBy(OwnerId);
             capital.GeneratePlanets();
             foreach (var p in capital.Planets)
             {
@@ -202,17 +256,20 @@ namespace StellarisClone.Core
         private void HandleDayPassed(int day, int month, int year)
         {
             if (!UIManager.IsGameStarted) return;
+            // Отношения между империями ИИ ведёт одна (первая) из них, чтобы не считать дважды
+            if (All.Count > 0 && All[0] == this) AIRelations.Tick(day);
             if (CapitalSystemId == -1)
             {
                 InitializeAIEmpire();
                 return;
             }
             if (IsEliminated) return;
-            if (EmpireStats.SystemCount(AIOwnerId) == 0)
+            if (EmpireStats.SystemCount(OwnerId) == 0)
             {
                 IsEliminated = true;
                 if (AtWar) MakePeace(silent: true);
-                NotificationCenter.Show("Соперник повержен", $"{AIName} потерял все системы", NotificationCenter.Kind.Success, 10f);
+                AIRelations.EndAllWars(OwnerId);
+                NotificationCenter.Show("Империя повержена", $"{AIName} потерял все системы", NotificationCenter.Kind.Success, 10f);
                 RaiseDiplomacyChanged();
                 return;
             }
@@ -263,7 +320,7 @@ namespace StellarisClone.Core
 
         private void RecalculateEconomy()
         {
-            _report = EmpireEconomy.Compute(AIOwnerId, CapitalSystemId, FactionEnergy, FactionMinerals, FactionAlloys,
+            _report = EmpireEconomy.Compute(OwnerId, CapitalSystemId, FactionEnergy, FactionMinerals, FactionAlloys,
                                             Bonuses, _bankrupt);
         }
 
@@ -275,7 +332,7 @@ namespace StellarisClone.Core
             if (fm == null) yield break;
             foreach (var f in fm.AllFleets)
             {
-                if (f?.Data == null || f.Data.Destroyed || f.Data.OwnerId != AIOwnerId) continue;
+                if (f?.Data == null || f.Data.Destroyed || f.Data.OwnerId != OwnerId) continue;
                 if (f.Data.Type == type) yield return f;
             }
         }
@@ -302,7 +359,7 @@ namespace StellarisClone.Core
             get
             {
                 var cap = EmpireStats.GetSystem(CapitalSystemId);
-                return cap != null && cap.OwnerId == AIOwnerId ? CapitalSystemId : -1;
+                return cap != null && cap.OwnerId == OwnerId ? CapitalSystemId : -1;
             }
         }
 
@@ -310,14 +367,14 @@ namespace StellarisClone.Core
         {
             if (FleetManager.Instance == null || SpawnSystem < 0) return null;
             string name = type == FleetType.Science ? $"{AIName} · Разведчик" : $"{AIName} · Строитель";
-            return FleetManager.Instance.CreateOwnedFleet(name, SpawnSystem, type, AIOwnerId);
+            return FleetManager.Instance.CreateOwnedFleet(name, SpawnSystem, type, OwnerId);
         }
 
         private FleetView CreateWarship(ShipClass hull)
         {
             if (FleetManager.Instance == null || SpawnSystem < 0) return null;
             var fv = FleetManager.Instance.CreateOwnedFleet($"{AIName} · Крыло {_warFleetSerial++}", SpawnSystem,
-                                                             FleetType.Military, AIOwnerId, hull);
+                                                             FleetType.Military, OwnerId, hull);
             fv.Data.ApplyDesign(GetDesign(hull));
             return fv;
         }
@@ -359,7 +416,7 @@ namespace StellarisClone.Core
                 if (d.SurveyTargetSystemId >= 0)
                 {
                     var t = EmpireStats.GetSystem(d.SurveyTargetSystemId);
-                    if (t == null || t.SurveyedByAI) { d.SurveyTargetSystemId = -1; if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting; }
+                    if (t == null || t.IsSurveyedBy(OwnerId)) { d.SurveyTargetSystemId = -1; if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting; }
                     else continue;
                 }
                 if (!IsIdle(d)) continue;
@@ -389,8 +446,8 @@ namespace StellarisClone.Core
             foreach (var kv in dist)
             {
                 var sys = EmpireStats.GetSystem(kv.Key);
-                if (sys == null || sys.SurveyedByAI || claimed.Contains(sys.Id)) continue;
-                if (sys.OwnerId == 0 && AtWar) continue;
+                if (sys == null || sys.IsSurveyedBy(OwnerId) || claimed.Contains(sys.Id)) continue;
+                if (IsEnemy(sys.OwnerId)) continue;
                 float score = sys.ConnectedSystemIds.Count * 1.5f - kv.Value * 3f;
                 if (BordersOwn(sys)) score += 6f;
                 if (sys.OwnerId >= 0) score -= 4f;
@@ -403,7 +460,7 @@ namespace StellarisClone.Core
 
         private void ThinkClaim()
         {
-            float influence = FleetManager.OutpostInfluenceCost(AIOwnerId);
+            float influence = FleetManager.OutpostInfluenceCost(OwnerId);
             var claimed = new HashSet<int>();
             foreach (var f in OwnFleets(FleetType.Constructor))
                 if (f.Data.BuildTargetSystemId >= 0) claimed.Add(f.Data.BuildTargetSystemId);
@@ -417,7 +474,7 @@ namespace StellarisClone.Core
                     if (t == null || t.OwnerId >= 0)
                     {
                         // Цель заняли раньше — часть ресурсов возвращается
-                        if (t != null && t.OwnerId != AIOwnerId) Alloys += FleetManager.StarbaseAlloysCost * 0.5f;
+                        if (t != null && t.OwnerId != OwnerId) Alloys += FleetManager.StarbaseAlloysCost * 0.5f;
                         d.BuildTargetSystemId = -1;
                         if (d.State == FleetState.Constructing) d.State = FleetState.Orbiting;
                     }
@@ -451,9 +508,9 @@ namespace StellarisClone.Core
             var fromCapital = Distances(CapitalSystemId, 30);
             foreach (var sys in EmpireStats.Systems)
             {
-                if (sys.OwnerId != -1 || !sys.SurveyedByAI || claimed.Contains(sys.Id)) continue;
+                if (sys.OwnerId != -1 || !sys.IsSurveyedBy(OwnerId) || claimed.Contains(sys.Id)) continue;
                 if (!BordersOwn(sys)) continue;
-                if (AtWar && FleetManager.Instance != null && FleetManager.Instance.GetMilitaryPowerInSystem(0, sys.Id) > 0f) continue;
+                if (EnemyFleetPowerIn(sys.Id) > 0f) continue;
                 float score = SystemValue(sys);
                 if (fromCapital.TryGetValue(sys.Id, out int jumps)) score -= jumps * 1.2f;
                 if (score > bestScore) { bestScore = score; best = sys.Id; }
@@ -463,7 +520,7 @@ namespace StellarisClone.Core
 
         /// <summary>
         /// Ценность системы для ИИ: залежи, пригодные для жизни миры, звезда, число гиперкоридоров
-        /// и соседство с игроком (воинственные тянутся к фронту, остальные — избегают).
+        /// и соседство с другими империями (воинственные тянутся к фронту, остальные — избегают).
         /// </summary>
         public float SystemValue(StarSystem sys)
         {
@@ -485,13 +542,13 @@ namespace StellarisClone.Core
             };
             v += Mathf.Max(0, sys.ConnectedSystemIds.Count - 2) * 1.2f;
 
-            bool nearPlayer = false;
+            bool nearRival = false;
             foreach (int id in sys.ConnectedSystemIds)
             {
                 var n = EmpireStats.GetSystem(id);
-                if (n != null && n.OwnerId == 0) { nearPlayer = true; break; }
+                if (n != null && n.OwnerId >= 0 && n.OwnerId != OwnerId) { nearRival = true; break; }
             }
-            if (nearPlayer) v += Profile.FrontierBias * 2f;
+            if (nearRival) v += Profile.FrontierBias * 2f;
             return v;
         }
 
@@ -500,7 +557,7 @@ namespace StellarisClone.Core
             foreach (int id in sys.ConnectedSystemIds)
             {
                 var n = EmpireStats.GetSystem(id);
-                if (n != null && n.OwnerId == AIOwnerId) return true;
+                if (n != null && n.OwnerId == OwnerId) return true;
             }
             return false;
         }
@@ -572,7 +629,7 @@ namespace StellarisClone.Core
 
             foreach (var sys in EmpireStats.Systems)
             {
-                if (sys.OwnerId != AIOwnerId) continue;
+                if (sys.OwnerId != OwnerId) continue;
                 foreach (var p in sys.Planets)
                 {
                     // На планете уже что-то строится — ждём (одна стройка за раз, как у игрока)
@@ -610,7 +667,7 @@ namespace StellarisClone.Core
                 Alloys -= PlanetData.ColonyAlloysCost;
                 Influence -= PlanetData.ColonyInfluenceCost;
                 if (Builds != null)
-                    Builds.EnqueuePlanetJob(JobKind.Colony, AIOwnerId, bestColony, DistrictType.Urban, 0f,
+                    Builds.EnqueuePlanetJob(JobKind.Colony, OwnerId, bestColony, DistrictType.Urban, 0f,
                         PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost);
                 else bestColony.SettleColony();
                 return true;
@@ -652,7 +709,7 @@ namespace StellarisClone.Core
             if (Minerals < m || Alloys < a || p.BuiltDistricts >= p.MaxDistricts) return false;
             Minerals -= m;
             Alloys -= a;
-            if (Builds != null) Builds.EnqueuePlanetJob(JobKind.District, AIOwnerId, p, t, 0f, m, a, 0f);
+            if (Builds != null) Builds.EnqueuePlanetJob(JobKind.District, OwnerId, p, t, 0f, m, a, 0f);
             else p.Districts.Add(new DistrictData(t));
             return true;
         }
@@ -667,7 +724,7 @@ namespace StellarisClone.Core
                 if (type == FleetType.Military) CreateWarship(hull); else CreateCivilian(type);
                 return;
             }
-            Builds.EnqueueShip(AIOwnerId, type, hull, null, energy, alloys);
+            Builds.EnqueueShip(OwnerId, type, hull, null, energy, alloys);
         }
 
         /// <summary>Корабль готов — появляется у столицы.</summary>
@@ -682,7 +739,7 @@ namespace StellarisClone.Core
         {
             if (Builds == null) return 0;
             int n = 0;
-            foreach (var j in Builds.ShipQueue(AIOwnerId)) if (j.ShipType == type) n++;
+            foreach (var j in Builds.ShipQueue(OwnerId)) if (j.ShipType == type) n++;
             return n;
         }
 
@@ -691,7 +748,7 @@ namespace StellarisClone.Core
             if (Minerals < FleetManager.MiningStationMinerals) return false;
             Minerals -= FleetManager.MiningStationMinerals;
             if (Builds != null)
-                Builds.EnqueuePlanetJob(JobKind.MiningStation, AIOwnerId, p, DistrictType.Mining, 0f, FleetManager.MiningStationMinerals, 0f, 0f);
+                Builds.EnqueuePlanetJob(JobKind.MiningStation, OwnerId, p, DistrictType.Mining, 0f, FleetManager.MiningStationMinerals, 0f, 0f);
             else
             {
                 p.HasMiningStation = true;
@@ -708,8 +765,8 @@ namespace StellarisClone.Core
             int wantScience = Personality == AIPersonality.Scientific ? 2 : 1;
             int wantBuilders = Influence > 90f ? 2 : 1;
 
-            float sciCost = FleetManager.ShipAlloyCost(FleetManager.ScienceShipAlloys, AIOwnerId);
-            float conCost = FleetManager.ShipAlloyCost(FleetManager.ConstructorAlloys, AIOwnerId);
+            float sciCost = FleetManager.ShipAlloyCost(FleetManager.ScienceShipAlloys, OwnerId);
+            float conCost = FleetManager.ShipAlloyCost(FleetManager.ConstructorAlloys, OwnerId);
 
             if (science < wantScience && HasUnsurveyedNearby() && Alloys >= sciCost + 30f && EnergyCredits >= FleetManager.ScienceShipEnergy
                 && MonthlyEnergyIncome > 2f)
@@ -733,7 +790,7 @@ namespace StellarisClone.Core
             foreach (var kv in Distances(CapitalSystemId, 8))
             {
                 var s = EmpireStats.GetSystem(kv.Key);
-                if (s != null && !s.SurveyedByAI) return true;
+                if (s != null && !s.IsSurveyedBy(OwnerId)) return true;
             }
             return false;
         }
@@ -745,7 +802,7 @@ namespace StellarisClone.Core
             if (CurrentTech == null) PickNextTech();
             if (CurrentTech == null) return;
 
-            float gain = MonthlyScience * LeaderManager.ResearchMult(AIOwnerId) * ResearchThroughput / 30f
+            float gain = MonthlyScience * LeaderManager.ResearchMult(OwnerId) * ResearchThroughput / 30f
                        / TechnologyManager.YearPenaltyMultiplier(CurrentTech, year);
             TechProgress += gain;
             if (TechProgress < CurrentTech.Cost) return;
@@ -757,7 +814,7 @@ namespace StellarisClone.Core
 
             var before = Bonuses.Clone();
             if (TechEffects.Apply(Bonuses, done.BonusKey)) _researchSlots = Mathf.Min(6, _researchSlots + 1);
-            if (TechEffects.AffectsDurability(done.BonusKey)) FleetManager.Instance?.RescaleDurability(AIOwnerId, before, Bonuses);
+            if (TechEffects.AffectsDurability(done.BonusKey)) FleetManager.Instance?.RescaleDurability(OwnerId, before, Bonuses);
             _designs.Clear();   // новые модули и корпуса
 
             WarnAboutScience();
@@ -779,7 +836,7 @@ namespace StellarisClone.Core
         private void PickNextTech()
         {
             int year = TimeManager.Instance != null ? TimeManager.Instance.Year : 2200;
-            bool threatened = AtWar || EmpireStats.MilitaryPower(0) > EmpireStats.MilitaryPower(AIOwnerId) * 1.2f;
+            bool threatened = AtWarWithAnyone || RivalPowerForBuild() > EmpireStats.MilitaryPower(OwnerId) * 1.2f;
             Technology best = null;
             float bestScore = float.MinValue;
             foreach (var t in TechTree)
@@ -803,38 +860,42 @@ namespace StellarisClone.Core
 
         private void HandleSystemCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
-            if (oldOwner == AIOwnerId)
+            if (oldOwner == OwnerId)
             {
-                if (AtWar) { _systemsLostInWar++; WarWeariness += 8f * Profile.WearinessRate; }
-                if (sys.Id == CapitalSystemId) RelocateCapital();
+                if (AtWar && newOwner == 0) { _systemsLostInWar++; WarWeariness += 8f * Profile.WearinessRate; }
+                if (IsAI(newOwner)) AIRelations.AddWeariness(OwnerId, newOwner, 8f * Profile.WearinessRate);
+                if (sys.Id == CapitalSystemId) RelocateCapital(newOwner);
             }
-            else if (newOwner == AIOwnerId && AtWar) _systemsTakenInWar++;
+            else if (newOwner == OwnerId && AtWar && oldOwner == 0) _systemsTakenInWar++;
             RaiseDiplomacyChanged();
         }
 
         private void HandleShipDestroyed(FleetData ship, int killer)
         {
-            if (!AtWar || ship == null) return;
-            if (ship.OwnerId == AIOwnerId) { _shipsLostInWar++; WarWeariness += 2f * Profile.WearinessRate; }
-            else if (ship.OwnerId == 0) { _playerShipsLostInWar++; WarWeariness = Mathf.Max(0f, WarWeariness - 0.5f); }
+            if (ship == null) return;
+            if (ship.OwnerId == OwnerId && IsAI(killer)) AIRelations.AddWeariness(OwnerId, killer, 2f * Profile.WearinessRate);
+            if (!AtWar) return;
+            if (ship.OwnerId == OwnerId && killer == 0) { _shipsLostInWar++; WarWeariness += 2f * Profile.WearinessRate; }
+            else if (ship.OwnerId == 0 && killer == OwnerId) { _playerShipsLostInWar++; WarWeariness = Mathf.Max(0f, WarWeariness - 0.5f); }
         }
 
         /// <summary>Столица пала — правительство переезжает в самую населённую систему.</summary>
-        private void RelocateCapital()
+        private void RelocateCapital(int conqueror)
         {
             int best = -1, bestPop = -1;
             foreach (var s in EmpireStats.Systems)
             {
-                if (s.OwnerId != AIOwnerId) continue;
+                if (s.OwnerId != OwnerId) continue;
                 int pop = 0;
                 foreach (var p in s.Planets) pop += Mathf.Max(0, p.Population);
                 if (pop > bestPop) { bestPop = pop; best = s.Id; }
             }
             if (best < 0) return;
             CapitalSystemId = best;
-            _capitalLost = true;
-            NotificationCenter.Show("Столица врага пала", $"{AIName} переносит столицу в {EmpireStats.GetSystem(best)?.Name}",
-                NotificationCenter.Kind.Success, 7f);
+            if (conqueror == 0) _capitalLost = true;
+            string by = conqueror == 0 ? "" : $" под ударом {For(conqueror)?.AIName ?? "соседей"}";
+            NotificationCenter.Show($"Столица {AIName} пала", $"Империя{by} переносит столицу в {EmpireStats.GetSystem(best)?.Name}",
+                conqueror == 0 ? NotificationCenter.Kind.Success : NotificationCenter.Kind.Info, 7f);
         }
 
         // ==================== СОХРАНЕНИЕ ====================
@@ -843,7 +904,7 @@ namespace StellarisClone.Core
         {
             var s = new AISave
             {
-                Capital = CapitalSystemId, Name = AIName, Title = AITitle, Color = AIEmpireColor,
+                Owner = OwnerId, Capital = CapitalSystemId, Name = AIName, Title = AITitle, Color = AIEmpireColor,
                 Personality = (int)Personality, Eliminated = IsEliminated,
                 Energy = EnergyCredits, Minerals = Minerals, Alloys = Alloys, Influence = Influence,
                 BaseEnergy = BaseEnergyIncome, BaseMinerals = BaseMineralsIncome,

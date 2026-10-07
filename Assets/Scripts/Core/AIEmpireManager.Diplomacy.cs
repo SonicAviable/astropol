@@ -18,6 +18,7 @@ namespace StellarisClone.Core
 
         public static event Action OnDiplomacyChanged;
         private static void RaiseDiplomacyChanged() => OnDiplomacyChanged?.Invoke();
+        public static void NotifyDiplomacyChanged() => OnDiplomacyChanged?.Invoke();
 
         // ==================== СОСТОЯНИЕ ====================
 
@@ -119,7 +120,7 @@ namespace StellarisClone.Core
             if (diff == 0) Add("Сложность: лёгкая", "Соперник изначально настроен миролюбиво", 10f, LGIcon.Info);
             else if (diff == 2) Add("Сложность: сложная", "Соперник изначально подозрителен", -10f, LGIcon.Info);
 
-            float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(AIOwnerId));
+            float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId));
             float playerPow = EmpireStats.MilitaryPower(0);
             float ratio = playerPow / myPow;
             if (ratio > 1.15f)
@@ -132,11 +133,11 @@ namespace StellarisClone.Core
                 Add("Вы выглядите слабыми", "Воинственная империя видит в слабом соседе добычу", -12f * AggressionFactor, LGIcon.Target);
             }
 
-            int border = EmpireStats.SharedBorderCount(AIOwnerId, 0);
+            int border = EmpireStats.SharedBorderCount(OwnerId, 0);
             if (border > 0)
                 Add($"Общая граница ({border} сист.)", "Соседство порождает споры за территорию", -Mathf.Min(18f, border * 3f), LGIcon.Border);
 
-            int mySys = EmpireStats.SystemCount(AIOwnerId), playerSys = EmpireStats.SystemCount(0);
+            int mySys = EmpireStats.SystemCount(OwnerId), playerSys = EmpireStats.SystemCount(0);
             if (playerSys >= 5 && playerSys > mySys * 1.25f)
                 Add("Вы расширяетесь быстрее", $"У вас {playerSys} систем против их {mySys}", Personality == AIPersonality.Militarist ? -8f : -5f, LGIcon.Starbase);
 
@@ -147,6 +148,11 @@ namespace StellarisClone.Core
                 Add("Выгодный сосед", "Торговая империя ценит партнёров у самой границы", 6f, LGIcon.Trade);
 
             if (HasPact) Add("Пакт о ненападении", "Действующий договор укрепляет доверие", 15f, LGIcon.Handshake);
+            foreach (var other in Alive)
+            {
+                if (other == this || !other.AtWar || !AIRelations.AtWar(OwnerId, other.OwnerId)) continue;
+                Add($"Общий враг: {other.AIName}", "Вы оба воюете с этой империей", 12f, LGIcon.Swords);
+            }
             if (TruceDays > 0 && !AtWar) Add($"Перемирие ({Mathf.CeilToInt(TruceDays / 30f)} мес.)", "Мирный договор ещё в силе", 5f, LGIcon.Peace);
             if (AtWar) Add("Идёт война", "Между вашими империями открытый конфликт", -40f, LGIcon.Swords);
 
@@ -194,7 +200,7 @@ namespace StellarisClone.Core
                     if (d == null || d.Destroyed || d.OwnerId != 0 || d.Type != FleetType.Military) continue;
                     if (d.State == FleetState.InHyperlane) continue;
                     var s = EmpireStats.GetSystem(d.CurrentSystemId);
-                    if (s != null && s.OwnerId == AIOwnerId) intruders++;
+                    if (s != null && s.OwnerId == OwnerId) intruders++;
                 }
                 if (intruders > 0)
                 {
@@ -259,7 +265,7 @@ namespace StellarisClone.Core
 
         // ==================== РЕШЕНИЯ ИИ ====================
 
-        private float PowerRatio => EmpireStats.MilitaryPower(AIOwnerId) / Mathf.Max(1f, EmpireStats.MilitaryPower(0));
+        private float PowerRatio => EmpireStats.MilitaryPower(OwnerId) / Mathf.Max(1f, EmpireStats.MilitaryPower(0));
 
         /// <summary>Порог мнения для войны: на высокой сложности ИИ вспыльчивее.</summary>
         private float WarThreshold => Profile.WarOpinionThreshold / AggressionFactor;
@@ -267,7 +273,9 @@ namespace StellarisClone.Core
         private void ConsiderWar()
         {
             if (TruceDays > 0 || _warCooldownDays > 0 || _bankrupt) return;
-            if (EmpireStats.SharedBorderCount(AIOwnerId, 0) == 0 && Personality != AIPersonality.Militarist) return;
+            // Уже воюет с другим ИИ — второй фронт откроет только при большом перевесе
+            if (WarsWithAIs > 0 && PowerRatio < Profile.WarPowerRatio * 1.5f) return;
+            if (EmpireStats.SharedBorderCount(OwnerId, 0) == 0 && Personality != AIPersonality.Militarist) return;
             float ratio = PowerRatio;
             if (Opinion > WarThreshold || ratio < Profile.WarPowerRatio) return;
             if (HasPact && !(Personality == AIPersonality.Militarist && Opinion <= -60f && ratio >= 1.6f)) return;
@@ -338,7 +346,7 @@ namespace StellarisClone.Core
             TruceDays = TruceLengthDays;
             _offerCooldownDays = 180;
             AddMemory("grudge", -15f);
-            SiegeManager.Instance?.ClearSieges(0, AIOwnerId);
+            SiegeManager.Instance?.ClearSieges(0, OwnerId);
             Mode = ArmyMode.Gather;
             ArmyTargetSystemId = -1;
             RecomputeOpinion();
@@ -366,7 +374,7 @@ namespace StellarisClone.Core
             if (!AtWar) { e.Blocker = "Вы не воюете"; return e; }
 
             Add("Усталость от войны", $"{WarWeariness:0}% — растёт со временем и потерями", WarWeariness * 0.6f, LGIcon.Clock);
-            float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(AIOwnerId));
+            float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId));
             float balance = Mathf.Clamp((EmpireStats.MilitaryPower(0) / myPow - 1f) * 40f, -40f, 40f);
             Add("Соотношение сил", balance >= 0 ? "Ваш флот сильнее — продолжать опасно" : "Их флот сильнее — они рассчитывают на победу", balance, LGIcon.Fleet);
             if (_systemsLostInWar > 0) Add("Потерянные системы", $"Захвачено вами: {_systemsLostInWar}", _systemsLostInWar * 6f, LGIcon.Starbase);

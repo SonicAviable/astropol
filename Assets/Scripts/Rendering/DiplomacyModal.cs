@@ -6,8 +6,9 @@ using StellarisClone.Rendering;
 namespace StellarisClone.Core
 {
     /// <summary>
-    /// Окно дипломатии. Три колонки:
-    ///   • слева — соперник: характер, статус (мир / пакт / война / перемирие), отношение, сравнение сил;
+    /// Окно дипломатии. Вкладки в шапке — по одной на каждую империю ИИ. Три колонки:
+    ///   • слева — соперник: характер, статус (мир / пакт / война / перемирие), отношение, его войны и миры
+    ///     с другими империями ИИ, сравнение сил;
     ///   • в центре — «Почему так»: каждое слагаемое отношения ИИ с иконкой, пояснением и величиной;
     ///   • справа — действия (подарки, пакт, война, мир, торговля), входящее предложение ИИ
     ///     и прогноз: примут ли ваше предложение и почему.
@@ -23,7 +24,11 @@ namespace StellarisClone.Core
         private Text _title;
         private RectTransform _left, _reasons, _actions;
         private Text _reasonsTotal;
+        private RectTransform _tabs;
+        private int _rivalOwner = -1;
         private float _refreshTimer;
+
+        private AIEmpireManager Current => AIEmpireManager.For(_rivalOwner) ?? AIEmpireManager.Instance;
         private bool _dirty;
 
         private static readonly Color CGold = UIManager.DS.Gold;
@@ -46,8 +51,12 @@ namespace StellarisClone.Core
 
         public void BindHost(Canvas modalCanvas) { _host = modalCanvas; }
 
-        public void Open()
+        public void Open() => Open(-1);
+
+        /// <summary>Открыть на вкладке конкретной империи (-1 — оставить текущую).</summary>
+        public void Open(int rivalOwner)
         {
+            if (rivalOwner > 0) _rivalOwner = rivalOwner;
             if (_host == null)
             {
                 var modal = GameObject.Find("ModalCanvas");
@@ -104,6 +113,12 @@ namespace StellarisClone.Core
             hi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(22, 22));
             _title = LGBuild.Label(header.transform, "ДИПЛОМАТИЯ", 16, CGold, TextAnchor.MiddleLeft, bold: true);
             _title.rectTransform.Stretch(56, 0, 70, 0);
+            _tabs = LGBuild.Rect(header.transform, "Tabs");
+            _tabs.anchorMin = new Vector2(1, 0.5f);
+            _tabs.anchorMax = new Vector2(1, 0.5f);
+            _tabs.pivot = new Vector2(1, 0.5f);
+            _tabs.anchoredPosition = new Vector2(-60, 0);
+            _tabs.sizeDelta = new Vector2(520, 34);
             var close = LGBuild.Button(header.transform, "Close", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
                                        Close, LGIcon.Close, null, 12, 15f);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(32, 32));
@@ -147,26 +162,59 @@ namespace StellarisClone.Core
 
         private string _signature;
 
-        private static string Signature()
+        private string Signature()
         {
-            var ai = AIEmpireManager.Instance;
+            var ai = Current;
             var eco = EconomyManager.Instance;
             if (ai == null) return "";
-            return $"{Mathf.RoundToInt(ai.Opinion)}|{ai.AtWar}|{ai.HasPact}|{ai.TruceDays / 30}|{ai.PendingOffer}|{ai.PendingOfferDays / 10}|" +
+            string rel = "";
+            foreach (var o in AIEmpireManager.All)
+                if (o != ai) rel += $"{AIRelations.AtWar(ai.OwnerId, o.OwnerId)}{AIRelations.TruceDays(ai.OwnerId, o.OwnerId) / 30}{o.IsEliminated}|";
+            return $"{ai.OwnerId}|{rel}{Mathf.RoundToInt(ai.Opinion)}|{ai.AtWar}|{ai.HasPact}|{ai.TruceDays / 30}|{ai.PendingOffer}|{ai.PendingOfferDays / 10}|" +
                    $"{Mathf.RoundToInt(ai.WarWeariness)}|{ai.OpinionBreakdown.Count}|{ai.IsEliminated}|" +
                    (eco != null ? $"{(int)(eco.Influence / 5)}|{(int)(eco.EnergyCredits / 50)}|{(int)(eco.Alloys / 25)}" : "");
         }
 
         private void Refresh()
         {
-            var ai = AIEmpireManager.Instance;
+            var ai = Current;
             if (ai == null || _root == null) return;
+            _rivalOwner = ai.OwnerId;
             _signature = Signature();
-            _title.text = $"ДИПЛОМАТИЯ  ·  {ai.AIName.ToUpper()}";
+            _title.text = "ДИПЛОМАТИЯ";
+            BuildTabs(ai);
             BuildLeft(ai);
             BuildReasons(ai);
             BuildActions(ai);
             LG.Skin(_root.transform);
+        }
+
+        // ---------- Вкладки империй ----------
+
+        private void BuildTabs(AIEmpireManager current)
+        {
+            LGBuild.Clear(_tabs);
+            int n = AIEmpireManager.All.Count;
+            if (n == 0) return;
+            float w = Mathf.Min(250f, 520f / n);
+            for (int i = 0; i < n; i++)
+            {
+                var ai = AIEmpireManager.All[i];
+                bool sel = ai == current;
+                Color mc = ai.MapColor;
+                string state = ai.IsEliminated ? "повержен" : ai.AtWar ? "война" : ai.HasPact ? "пакт" : "мир";
+                var b = LGBuild.Button(_tabs, "Tab_" + ai.OwnerId,
+                    sel ? new Color(mc.r * 0.35f, mc.g * 0.35f, mc.b * 0.35f, 1f) : UIManager.DS.BtnNeutral,
+                    new Color(mc.r, mc.g, mc.b, sel ? 0.85f : 0.3f),
+                    () => { _rivalOwner = ai.OwnerId; Refresh(); },
+                    null, $"<color={LGBuild.Hex(mc)}>◆</color>  {ai.AIName.ToUpper()}  <color=#8AA2A8>· {state}</color>", 10);
+                var rt = (RectTransform)b.transform;
+                rt.anchorMin = new Vector2(1, 0);
+                rt.anchorMax = new Vector2(1, 1);
+                rt.pivot = new Vector2(1, 0.5f);
+                rt.sizeDelta = new Vector2(w - 6f, 0);
+                rt.anchoredPosition = new Vector2(-(n - 1 - i) * w, 0);
+            }
         }
 
         // ---------- Левая колонка ----------
@@ -198,6 +246,7 @@ namespace StellarisClone.Core
 
             // Статус
             StatusChip(ai, ref y);
+            NeighbourRelations(ai, ref y);
 
             // Отношение
             var op = LGBuild.Panel(_left, "Opinion", UIManager.DS.BgSlot);
@@ -218,10 +267,10 @@ namespace StellarisClone.Core
             y += 80f;
 
             // Сравнение сил
-            int myPow = Mathf.RoundToInt(EmpireStats.MilitaryPower(0)), aiPow = Mathf.RoundToInt(EmpireStats.MilitaryPower(AIEmpireManager.AIOwnerId));
-            int mySys = EmpireStats.SystemCount(0), aiSys = EmpireStats.SystemCount(AIEmpireManager.AIOwnerId);
+            int myPow = Mathf.RoundToInt(EmpireStats.MilitaryPower(0)), aiPow = Mathf.RoundToInt(EmpireStats.MilitaryPower(ai.OwnerId));
+            int mySys = EmpireStats.SystemCount(0), aiSys = EmpireStats.SystemCount(ai.OwnerId);
             int myTech = EmpireStats.TechCount(0), aiTech = ai.ResearchedCount;
-            int myScore = EmpireStats.Score(0).Total, aiScore = EmpireStats.Score(AIEmpireManager.AIOwnerId).Total;
+            int myScore = EmpireStats.Score(0).Total, aiScore = EmpireStats.Score(ai.OwnerId).Total;
             Compare(ref y, LGIcon.Fleet, "Флот", myPow, aiPow);
             Compare(ref y, LGIcon.Starbase, "Системы", mySys, aiSys);
             Compare(ref y, LGIcon.Research, "Технологии", myTech, aiTech);
@@ -251,6 +300,36 @@ namespace StellarisClone.Core
             var s = LGBuild.Label(chip.transform, sub, 10, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
             s.rectTransform.Stretch(52, 4, 10, 30);
             y += 72f;
+        }
+
+        /// <summary>Как эта империя живёт с другими империями ИИ: война, перемирие или мир и отношение.</summary>
+        private void NeighbourRelations(AIEmpireManager ai, ref float y)
+        {
+            foreach (var other in AIEmpireManager.All)
+            {
+                if (other == ai || other.IsEliminated || ai.IsEliminated) continue;
+                bool war = AIRelations.AtWar(ai.OwnerId, other.OwnerId);
+                int truce = AIRelations.TruceDays(ai.OwnerId, other.OwnerId);
+                var reasons = new List<string>();
+                float op = AIRelations.Opinion(ai, other, reasons);
+                Color col = war ? UIManager.DS.Red : truce > 0 ? UIManager.DS.Green : OpinionColor(op);
+                string state = war ? "воюют" : truce > 0 ? $"перемирие {Mathf.CeilToInt(truce / 30f)} мес." : "мир";
+
+                var row = LGBuild.Panel(_left, "Neighbour", new Color(col.r * 0.12f, col.g * 0.12f, col.b * 0.12f, 0.95f));
+                row.rectTransform.TopBand(y, 36);
+                LG.Platter(row.gameObject, 12f).SetRim(new Color(col.r, col.g, col.b, 0.35f));
+                var ic = LGIcons.Create(row.transform, war ? LGIcon.Swords : LGIcon.Diplomacy, 16, col);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(16, 16));
+                var t = LGBuild.Label(row.transform, $"С империей <color={LGBuild.Hex(other.MapColor)}>{other.AIName}</color>: <b>{state}</b>",
+                    11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
+                t.rectTransform.Stretch(36, 0, 50, 0);
+                var v = LGBuild.Label(row.transform, $"{op:+0;-0;0}", 12, col, TextAnchor.MiddleRight, bold: true);
+                v.rectTransform.Stretch(0, 0, 12, 0);
+                TooltipHelper.Attach(row.gameObject, $"<b>{ai.AIName} и {other.AIName}</b>\nОтношение {op:+0;-0;0}: " +
+                    (reasons.Count > 0 ? string.Join(", ", reasons) : "нейтрально") +
+                    "\n<color=#8AA2A8>Соседи-ИИ сами воюют и мирятся. Пока они заняты друг другом, у вас развязаны руки.</color>");
+                y += 42f;
+            }
         }
 
         private void Compare(ref float y, LGIcon icon, string label, int mine, int theirs)
@@ -381,7 +460,7 @@ namespace StellarisClone.Core
 
             Action(ref y, LGIcon.Trade, "ТОРГОВЫЙ КАНАЛ", UIManager.DS.BtnPrimary, alive && !atWar,
                 atWar ? "Во время войны торговля закрыта" : $"Выгодные для них сделки улучшают отношение{(ai.Personality == AIPersonality.Trader ? " (торговцы ценят это вдвое)" : "")}",
-                () => { Close(); TradeModal.Instance?.Open(); });
+                () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); });
 
             if (alive) Forecast(ai, ref y);
         }

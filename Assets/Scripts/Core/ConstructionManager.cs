@@ -231,9 +231,9 @@ namespace StellarisClone.Core
                 eco.Alloys += job.Alloys; eco.Influence += job.Influence;
                 eco.RaiseResourcesChanged();
             }
-            else if (job.Owner == AIEmpireManager.AIOwnerId && AIEmpireManager.Instance != null)
+            else if (AIEmpireManager.For(job.Owner) != null)
             {
-                var ai = AIEmpireManager.Instance;
+                var ai = AIEmpireManager.For(job.Owner);
                 ai.AddStock("energy", job.Energy); ai.AddStock("minerals", job.Minerals);
                 ai.AddStock("alloys", job.Alloys); ai.AddStock("influence", job.Influence);
             }
@@ -327,7 +327,7 @@ namespace StellarisClone.Core
             var fm = FleetManager.Instance;
             if (fm == null) return;
             if (j.Owner == 0) fm.LaunchPlayerShip(j);
-            else if (j.Owner == AIEmpireManager.AIOwnerId) AIEmpireManager.Instance?.LaunchShip(j);
+            else AIEmpireManager.For(j.Owner)?.LaunchShip(j);
         }
 
         /// <summary>Захваченная система: незавершённые стройки прежнего владельца сгорают.</summary>

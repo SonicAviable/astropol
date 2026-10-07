@@ -555,7 +555,7 @@ namespace StellarisClone.Rendering
                 _ngGoals.text =
                     $"<b><color=#E8F6FA>Пути к победе</color></b>   " +
                     $"<color=#4DF2DB>форпосты в {_ng.DominationTarget} системах</color>  ·  " +
-                    $"<color=#5CF599>25 технологий</color>  ·  <color=#FFCC52>больше очков, чем у соперника, в 2235 году</color>";
+                    $"<color=#5CF599>25 технологий</color>  ·  <color=#FFCC52>больше очков, чем у каждого соперника, в 2235 году</color>";
         }
 
         // ================================================================ Об игре
@@ -581,7 +581,7 @@ namespace StellarisClone.Rendering
             float ry = LGControls.Section(right, 0f, "ПУТИ К ПОБЕДЕ", LGIcon.Trophy);
             Goal(right, ref ry, LGIcon.Starbase, "Доминирование", "Форпосты в 25 / 40 / 60 системах — по размеру галактики", UIManager.DS.NeonCyan);
             Goal(right, ref ry, LGIcon.Research, "Научная победа", "Изучите 25 технологий", UIManager.DS.Green);
-            Goal(right, ref ry, LGIcon.Trophy, "Очки в 2235 году", "Обгоните соперника по системам, населению, науке и флоту. Соперник тоже может победить — наукой или экспансией", UIManager.DS.Gold);
+            Goal(right, ref ry, LGIcon.Trophy, "Очки в 2235 году", "Обгоните обоих соперников по системам, населению, науке и флоту. Любой из них тоже может победить — наукой или экспансией", UIManager.DS.Gold);
 
             ry += 6f;
             ry = LGControls.Section(right, ry, "УПРАВЛЕНИЕ", LGIcon.Menu);
@@ -855,7 +855,7 @@ namespace StellarisClone.Rendering
 
         private struct Item { public RectTransform Rt; public Graphic G; public float Delay; public float Alpha; public bool Pop; }
         private readonly List<Item> _items = new List<Item>();
-        private RectTransform _capRing, _aiRing;
+        private RectTransform _capRing, _aiRing, _aiRing2;
 
         public void Build(RectTransform host)
         {
@@ -904,13 +904,14 @@ namespace StellarisClone.Rendering
             float pulse = 1f + 0.12f * Mathf.Sin(_t * 3f);
             if (_capRing != null && _t > 0.9f) _capRing.localScale = new Vector3(pulse, pulse, 1f);
             if (_aiRing != null && _t > 0.9f) _aiRing.localScale = new Vector3(2f - pulse, 2f - pulse, 1f);
+            if (_aiRing2 != null && _t > 0.9f) _aiRing2.localScale = new Vector3(2f - pulse, 2f - pulse, 1f);
         }
 
         private void Rebuild(NewGameSettings s)
         {
             if (_layer != null) Destroy(_layer.gameObject);
             _items.Clear();
-            _capRing = _aiRing = null;
+            _capRing = _aiRing = _aiRing2 = null;
             _t = 0f;
 
             _layer = LGBuild.Rect(_area, "Layer");
@@ -959,13 +960,22 @@ namespace StellarisClone.Rendering
                 _items.Add(new Item { Rt = rt, G = img, Delay = 0.15f + d * 0.55f, Alpha = 0.16f, Pop = false });
             }
 
-            // Столица игрока — система 0, столица соперника — самая дальняя (как у ИИ)
-            int ai = 0;
-            float far = -1f;
-            for (int i = 1; i < systems.Count; i++)
+            // Столица игрока — система 0; столицы соперников — как в игре: каждая следующая
+            // максимально далека от ближайшей уже занятой столицы
+            var caps = new List<int> { 0 };
+            for (int r = 0; r < AIEmpireManager.RivalCount; r++)
             {
-                float dd = Vector3.Distance(systems[0].Position, systems[i].Position);
-                if (dd > far) { far = dd; ai = i; }
+                int best = -1;
+                float far = -1f;
+                for (int i = 1; i < systems.Count; i++)
+                {
+                    if (caps.Contains(i) || systems[i].ConnectedSystemIds.Count == 0) continue;
+                    float dd = float.MaxValue;
+                    foreach (int c in caps) dd = Mathf.Min(dd, Vector3.Distance(systems[c].Position, systems[i].Position));
+                    if (dd > far) { far = dd; best = i; }
+                }
+                if (best < 0) break;
+                caps.Add(best);
             }
 
             foreach (var sys in systems)
@@ -984,7 +994,8 @@ namespace StellarisClone.Rendering
             }
 
             _capRing = Marker(P(systems[0]), UIManager.DS.NeonCyan, "ВЫ");
-            if (ai != 0) _aiRing = Marker(P(systems[ai]), UIManager.DS.Red, "СОПЕРНИК");
+            if (caps.Count > 1) _aiRing = Marker(P(systems[caps[1]]), AIEmpireManager.MapColorFor(1), "СОПЕРНИК");
+            if (caps.Count > 2) _aiRing2 = Marker(P(systems[caps[2]]), AIEmpireManager.MapColorFor(2), "СОПЕРНИК");
 
             _caption.text = $"{NewGameSettings.SizeNames[s.GalaxySize]} галактика   ·   {NewGameSettings.ShapeNames[Mathf.Clamp(s.Shape, 0, 3)].ToLower()}   ·   {systems.Count} систем   ·   {lanes.Count} гиперкоридоров   ·   сид {s.Seed}";
         }

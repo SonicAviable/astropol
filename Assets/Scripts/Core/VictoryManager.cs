@@ -6,10 +6,10 @@ namespace StellarisClone.Core
 {
     /// <summary>
     /// Условия конца партии.
-    ///   Победа: доминирование (форпосты в N системах), научная (N технологий), разгром соперника,
-    ///           или больше очков, чем у ИИ, к 1 января 2235 года.
-    ///   Поражение: потеря всех систем, долгое банкротство, ИИ первым добился доминирования или
-    ///              научной победы, или у ИИ больше очков в 2235 году.
+    ///   Победа: доминирование (форпосты в N системах), научная (N технологий), разгром всех соперников,
+    ///           или больше очков, чем у каждой империи ИИ, к 1 января 2235 года.
+    ///   Поражение: потеря всех систем, долгое банкротство, любой ИИ первым добился доминирования или
+    ///              научной победы, или у кого-то из ИИ больше очков в 2235 году.
     /// </summary>
     public class VictoryManager : MonoBehaviour
     {
@@ -55,11 +55,33 @@ namespace StellarisClone.Core
 
         public int DominationProgress => EmpireStats.SystemCount(0);
         public int ScienceProgress => EmpireStats.TechCount(0);
-        public int RivalDominationProgress => EmpireStats.SystemCount(AIEmpireManager.AIOwnerId);
-        public int RivalScienceProgress => EmpireStats.TechCount(AIEmpireManager.AIOwnerId);
+        /// <summary>Лучший из живых соперников по показателю (null — соперников не осталось).</summary>
+        public static AIEmpireManager LeadingRival(System.Func<int, int> metric)
+        {
+            AIEmpireManager best = null;
+            int bestValue = int.MinValue;
+            foreach (var ai in AIEmpireManager.Alive)
+            {
+                int v = metric(ai.OwnerId);
+                if (v > bestValue) { bestValue = v; best = ai; }
+            }
+            return best;
+        }
+
+        private static int Best(System.Func<int, int> metric)
+        {
+            var r = LeadingRival(metric);
+            return r != null ? metric(r.OwnerId) : 0;
+        }
+
+        public int RivalDominationProgress => Best(EmpireStats.SystemCount);
+        public int RivalScienceProgress => Best(EmpireStats.TechCount);
 
         public int PlayerScore => EmpireStats.Score(0).Total;
-        public int RivalScore => EmpireStats.Score(AIEmpireManager.AIOwnerId).Total;
+        public int RivalScore => Best(o => EmpireStats.Score(o).Total);
+        public string RivalScoreLeaderName => LeadingRival(o => EmpireStats.Score(o).Total)?.AIName ?? "Соперник";
+
+        private string _rivalName = "Соперник";
 
         public int YearsElapsed
         {
@@ -151,20 +173,26 @@ namespace StellarisClone.Core
             // === ПОБЕДЫ ИГРОКА ===
             if (DominationProgress >= dominationSystemsRequired) { Finish(Outcome.Domination); return; }
             if (ScienceProgress >= scienceTechsRequired) { Finish(Outcome.Science); return; }
-            var ai = AIEmpireManager.Instance;
-            if (ai != null && ai.IsEliminated) { Finish(Outcome.Conquest); return; }
+            bool anyRivals = AIEmpireManager.All.Count > 0;
+            bool anyAlive = false;
+            foreach (var _ in AIEmpireManager.Alive) { anyAlive = true; break; }
+            bool allStarted = true;
+            foreach (var a in AIEmpireManager.All) if (a.CapitalSystemId < 0 && !a.IsEliminated) allStarted = false;
+            if (anyRivals && allStarted && !anyAlive) { _rivalName = "Все соперники"; Finish(Outcome.Conquest); return; }
 
             // === ПОБЕДЫ ИИ ===
-            if (ai != null && !ai.IsEliminated)
-            {
-                if (RivalDominationProgress >= dominationSystemsRequired) { Finish(Outcome.DefeatRivalDomination); return; }
-                if (RivalScienceProgress >= scienceTechsRequired) { Finish(Outcome.DefeatRivalScience); return; }
-            }
+            var dom = LeadingRival(EmpireStats.SystemCount);
+            if (dom != null && EmpireStats.SystemCount(dom.OwnerId) >= dominationSystemsRequired)
+            { _rivalName = dom.AIName; Finish(Outcome.DefeatRivalDomination); return; }
+            var sci = LeadingRival(EmpireStats.TechCount);
+            if (sci != null && EmpireStats.TechCount(sci.OwnerId) >= scienceTechsRequired)
+            { _rivalName = sci.AIName; Finish(Outcome.DefeatRivalScience); return; }
 
             // === ПОДСЧЁТ ОЧКОВ В 2235 ГОДУ ===
             if (year >= EndYear)
             {
-                Finish(ai != null && RivalScore > PlayerScore ? Outcome.DefeatScore : Outcome.Score);
+                _rivalName = RivalScoreLeaderName;
+                Finish(anyAlive && RivalScore > PlayerScore ? Outcome.DefeatScore : Outcome.Score);
                 return;
             }
             WarnAboutScore(year, month);
@@ -180,7 +208,7 @@ namespace StellarisClone.Core
             int me = PlayerScore, rival = RivalScore;
             bool ahead = me >= rival;
             NotificationCenter.Show($"До подсчёта очков: {left} {YearsWord(left)}",
-                $"Ваш счёт {me}, у соперника {rival}. {(ahead ? "Вы впереди — удержите отрыв" : "Соперник впереди — наращивайте системы, население и науку")}",
+                $"Ваш счёт {me}, у лучшего соперника ({RivalScoreLeaderName}) {rival}. {(ahead ? "Вы впереди — удержите отрыв" : "Соперник впереди — наращивайте системы, население и науку")}",
                 ahead ? NotificationCenter.Kind.Info : NotificationCenter.Kind.Warning, 8f);
         }
 
@@ -196,7 +224,7 @@ namespace StellarisClone.Core
         {
             _finished = true;
 
-            string rival = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Соперник";
+            string rival = _rivalName;
             string title, body;
             switch (outcome)
             {
@@ -209,12 +237,12 @@ namespace StellarisClone.Core
                     body = $"Изучено {scienceTechsRequired} технологий.";
                     break;
                 case Outcome.Conquest:
-                    title = "★ ПОБЕДА — СОПЕРНИК ПОВЕРЖЕН";
-                    body = $"{rival} потерял все свои системы.";
+                    title = "★ ПОБЕДА — СОПЕРНИКИ ПОВЕРЖЕНЫ";
+                    body = "Все империи-соперники потеряли свои системы.";
                     break;
                 case Outcome.Score:
                     title = "★ ПОБЕДА ПО ОЧКАМ";
-                    body = $"{EndYear} год: ваш счёт {PlayerScore} против {RivalScore} у соперника.";
+                    body = $"{EndYear} год: ваш счёт {PlayerScore} — больше, чем у любого соперника (лучший — {RivalScore}).";
                     break;
                 case Outcome.DefeatEliminated:
                     title = "✕ ПОРАЖЕНИЕ — УНИЧТОЖЕНЫ";
@@ -222,7 +250,7 @@ namespace StellarisClone.Core
                     break;
                 case Outcome.DefeatScore:
                     title = "✕ ПОРАЖЕНИЕ ПО ОЧКАМ";
-                    body = $"{EndYear} год: у соперника {RivalScore} очков против ваших {PlayerScore}.";
+                    body = $"{EndYear} год: у {rival} {RivalScore} очков против ваших {PlayerScore}.";
                     break;
                 case Outcome.DefeatRivalScience:
                     title = "✕ ПОРАЖЕНИЕ — НАУЧНЫЙ ПРОРЫВ СОПЕРНИКА";

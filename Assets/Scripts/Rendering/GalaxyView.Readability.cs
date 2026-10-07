@@ -80,7 +80,7 @@ namespace StellarisClone.Rendering
                 }
                 else if (a.OwnerId > 0 && a.OwnerId == b.OwnerId)
                 {
-                    c = new Color(1.00f, 0.52f, 0.46f);          // коридоры чужой империи
+                    c = Color.Lerp(FleetIndicator.OwnerColor(a.OwnerId), Color.white, 0.18f);   // коридоры чужой империи — её цветом
                     alphaA = ka ? 0.7f : 0.45f;
                     alphaB = kb ? 0.7f : 0.45f;
                     px = 2.0f;
@@ -107,10 +107,11 @@ namespace StellarisClone.Rendering
 
         // ==================== НАЗВАНИЕ ИМПЕРИИ ИИ ====================
 
-        /// <summary>Название соседней империи поверх её территории — как у игрока (видно издалека, гаснет вблизи).</summary>
-        private void UpdateAIEmpireLabel(List<StarSystem> aiSystems)
+        /// <summary>Название империи ИИ поверх её территории — как у игрока (видно издалека, гаснет вблизи).</summary>
+        private void UpdateAIEmpireLabel(AIEmpireManager ai, List<StarSystem> aiSystems)
         {
-            _empireLabels.TryGetValue(1, out var labelObj);
+            int key = ai.OwnerId;
+            _empireLabels.TryGetValue(key, out var labelObj);
             if (aiSystems == null || aiSystems.Count == 0)
             {
                 if (labelObj != null) labelObj.SetActive(false);
@@ -122,14 +123,14 @@ namespace StellarisClone.Rendering
             Vector3 center = sum / aiSystems.Count;
             center.y = -0.15f;
 
-            string raw = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Соседняя империя";
+            string raw = ai.AIName;
             var sb = new System.Text.StringBuilder(raw.Length * 2);
             foreach (char ch in raw.ToUpper()) { sb.Append(ch); if (ch != ' ') sb.Append(' '); }
             string text = sb.ToString().Trim();
 
             if (labelObj == null)
             {
-                labelObj = new GameObject("EmpireLabel_1");
+                labelObj = new GameObject($"EmpireLabel_{key}");
                 labelObj.transform.SetParent(transform, true);
                 var tm = labelObj.AddComponent<TextMesh>();
                 tm.fontSize = 52;
@@ -137,11 +138,11 @@ namespace StellarisClone.Rendering
                 tm.fontStyle = FontStyle.Bold;
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.alignment = TextAlignment.Center;
-                var ec = FleetIndicator.EnemyColor;
+                var ec = FleetIndicator.OwnerColor(key);
                 tm.color = new Color(ec.r, ec.g, ec.b, 0.6f);
                 labelObj.GetComponent<MeshRenderer>().sortingOrder = 6;
                 labelObj.AddComponent<EmpireLabelScaler>();
-                _empireLabels[1] = labelObj;
+                _empireLabels[key] = labelObj;
             }
             labelObj.SetActive(true);
             labelObj.GetComponent<TextMesh>().text = text;
@@ -192,8 +193,8 @@ namespace StellarisClone.Rendering
         private static bool IsCapital(StarSystem s)
         {
             if (s.OwnerId == 0) return s.Id == EconomyManager.PlayerCapitalId;
-            var ai = AIEmpireManager.Instance;
-            return ai != null && s.OwnerId == AIEmpireManager.AIOwnerId && s.Id == ai.CapitalSystemId;
+            var ai = AIEmpireManager.For(s.OwnerId);
+            return ai != null && s.Id == ai.CapitalSystemId;
         }
 
         /// <summary>Тип значка для каждой системы (столица / колония / форпост).</summary>
@@ -219,7 +220,7 @@ namespace StellarisClone.Rendering
         private static void ApplyMarkerStyle(SysMarker m)
         {
             if (m.Kind == MarkerKind.None) return;
-            Color owner = m.Sys.OwnerId == 0 ? FleetIndicator.OwnColor : FleetIndicator.EnemyColor;
+            Color owner = FleetIndicator.OwnerColor(m.Sys.OwnerId);
             m.Icon.sprite = LGIcons.Get(m.Kind == MarkerKind.Capital ? LGIcon.Star : m.Kind == MarkerKind.Colony ? LGIcon.Planet : LGIcon.Starbase);
             m.Icon.transform.localScale = Vector3.one * (m.Kind == MarkerKind.Outpost ? 0.5f : 0.62f);
             // Прозрачность сохраняем — ею управляет плавное появление по зуму

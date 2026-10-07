@@ -340,7 +340,7 @@ namespace StellarisClone.Rendering
             AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, "ФЛОТЫ", 1);
             AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, "ЛИДЕРЫ", 2);
             AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 3);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИК", 4);
+            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИКИ", 4);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -792,10 +792,13 @@ namespace StellarisClone.Rendering
 
         private void BuildRival()
         {
-            var ai = AIEmpireManager.Instance;
-            if (ai == null) { Empty("Соперники пока не обнаружены."); return; }
+            if (AIEmpireManager.All.Count == 0) { Empty("Соперники пока не обнаружены."); return; }
+            foreach (var ai in AIEmpireManager.All) BuildRivalCard(ai);
+        }
 
-            Color ac = ai.AIEmpireColor;
+        private void BuildRivalCard(AIEmpireManager ai)
+        {
+            Color ac = ai.MapColor;
             var card = LGBuild.Panel(_list, "RivalCard", UIManager.DS.BgSlot);
             LGBuild.Height(card.gameObject, 300);
             LG.Platter(card.gameObject, 18f).SetRim(new Color(ac.r, ac.g, ac.b, 0.4f));
@@ -808,7 +811,8 @@ namespace StellarisClone.Rendering
             var head = TopRow(card.transform, 20, 64, 100, 20);
             LGBuild.Label(head, ai.AIName.ToUpper(), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             float rel = ai.Opinion;
-            string status = ai.AtWar ? "<color=#FF5A5A>ВОЙНА</color>"
+            string status = ai.IsEliminated ? "<color=#F2C747>ПОВЕРЖЕН</color>"
+                          : ai.AtWar ? "<color=#FF5A5A>ВОЙНА</color>"
                           : ai.HasPact ? "<color=#4DF2DB>Пакт о ненападении</color>"
                           : ai.TruceDays > 0 ? "<color=#5CF59A>Перемирие</color>"
                           : "<color=#8AA2A8>Мир</color>";
@@ -816,13 +820,13 @@ namespace StellarisClone.Rendering
                           12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
 
             int myPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
-            int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(AIEmpireManager.AIOwnerId) : 0;
+            int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(ai.OwnerId) : 0;
             int mySys = 0, aiSys = 0;
             if (_gen != null)
                 foreach (var s in _gen.Systems)
                 {
                     if (s.OwnerId == 0) mySys++;
-                    else if (s.OwnerId == AIEmpireManager.AIOwnerId) aiSys++;
+                    else if (s.OwnerId == ai.OwnerId) aiSys++;
                 }
 
             float relN = Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, rel);
@@ -834,10 +838,10 @@ namespace StellarisClone.Rendering
 
             var btnRow = TopRow(card.transform, 246, 38, 20, 20);
             var dip = LGBuild.Button(btnRow, "Diplomacy", new Color(0.42f, 0.32f, 0.10f), CGold,
-                () => { Close(); DiplomacyModal.Instance?.Open(); }, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 11);
+                () => { Close(); DiplomacyModal.Instance?.Open(ai.OwnerId); }, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 11);
             ((RectTransform)dip.transform).Column(0f, 0.49f);
             var trade = LGBuild.Button(btnRow, "Trade", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan,
-                () => { Close(); TradeModal.Instance?.Open(); }, LGIcon.Trade, "ТОРГОВЛЯ", 11);
+                () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); }, LGIcon.Trade, "ТОРГОВЛЯ", 11);
             ((RectTransform)trade.transform).Column(0.51f, 1f);
         }
 

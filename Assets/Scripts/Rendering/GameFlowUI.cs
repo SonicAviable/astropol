@@ -306,14 +306,14 @@ namespace StellarisClone.Rendering
             if (vm != null)
             {
                 GoalRow(ref y, LGIcon.Starbase, "Доминирование",
-                        $"Постройте форпосты в {vm.DominationRequired} системах. У соперника: {vm.RivalDominationProgress}.",
+                        $"Постройте форпосты в {vm.DominationRequired} системах. У лучшего соперника: {vm.RivalDominationProgress}.",
                         vm.DominationProgress, vm.DominationRequired, UIManager.DS.NeonCyan);
                 GoalRow(ref y, LGIcon.Research, "Научная победа",
-                        $"Изучите {vm.ScienceRequired} технологий. У соперника: {vm.RivalScienceProgress}.",
+                        $"Изучите {vm.ScienceRequired} технологий. У лучшего соперника: {vm.RivalScienceProgress}.",
                         vm.ScienceProgress, vm.ScienceRequired, UIManager.DS.Green);
                 int me = vm.PlayerScore, rival = vm.RivalScore;
                 GoalRow(ref y, LGIcon.Trophy, $"Очки к {VictoryManager.EndYear} году",
-                        $"Осталось {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}. Ваш счёт {me}, у соперника {rival}. " +
+                        $"Осталось {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}. Ваш счёт {me}, у лучшего соперника {rival}. " +
                         $"Очки: система {EmpireStats.ScorePerSystem}, житель {EmpireStats.ScorePerPop}, технология {EmpireStats.ScorePerTech}, флот — 1 за {Mathf.RoundToInt(1f / EmpireStats.ScorePerPower)} мощи.",
                         me, Mathf.Max(1, me + rival), UIManager.DS.Gold, $"{me} : {rival}", 112f);
             }
@@ -325,7 +325,7 @@ namespace StellarisClone.Rendering
             wi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(20, 20));
             var lt = LGBuild.Label(lose.transform,
                 "<b>Поражение</b>\nпотеря всех систем, " + (vm != null ? vm.BankruptcyLimit : 6) + " мес. банкротства, " +
-                "соперник первым добился доминирования или научной победы, или у него больше очков в " + VictoryManager.EndYear + " году.",
+                "любой из соперников первым добился доминирования или научной победы, или у кого-то из них больше очков в " + VictoryManager.EndYear + " году.",
                 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
             lt.rectTransform.Stretch(48, 6, 14, 6);
 
@@ -501,7 +501,7 @@ namespace StellarisClone.Rendering
                 $"<color=#8AA2A8>Дата:</color>  {date}   ·   <color=#8AA2A8>лет у власти:</color> {(vm != null ? vm.YearsElapsed : 0)}\n" +
                 $"<color=#8AA2A8>Систем:</color>  {systems}   ·   <color=#8AA2A8>колоний:</color> {colonies}   ·   <color=#8AA2A8>население:</color> {pop}\n" +
                 $"<color=#8AA2A8>Технологий изучено:</color>  {(vm != null ? vm.ScienceProgress : 0)}   ·   <color=#8AA2A8>мощь флота:</color> {power:N0}\n" +
-                $"<color=#8AA2A8>Очки:</color>  <b>{(vm != null ? vm.PlayerScore : 0)}</b>   ·   <color=#8AA2A8>у соперника:</color> {(vm != null ? vm.RivalScore : 0)}";
+                $"<color=#8AA2A8>Очки:</color>  <b>{(vm != null ? vm.PlayerScore : 0)}</b>   ·   <color=#8AA2A8>у лучшего соперника:</color> {(vm != null ? vm.RivalScore : 0)}";
         }
 
         // ================================================================ Трекер целей
@@ -590,7 +590,7 @@ namespace StellarisClone.Rendering
                     $"Доминирование: вы {d}, соперник {vm.RivalDominationProgress} из {vm.DominationRequired} систем\n" +
                     $"Наука: вы {s}, соперник {vm.RivalScienceProgress} из {vm.ScienceRequired} технологий\n" +
                     $"Очки: {me} против {rival}; подсчёт через {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)} ({VictoryManager.EndYear})\n\n" +
-                    "<color=#8AA2A8>Если соперник первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>");
+                    "<color=#8AA2A8>Если любой из соперников первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>");
         }
 
         // ================================================================ Перезапуск / выход

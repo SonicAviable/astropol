@@ -21,10 +21,27 @@ namespace StellarisClone.Core
         public bool HasStarbase;
         /// <summary>Система изучена игроком (видны планеты, можно строить форпост).</summary>
         public bool IsSurveyed = false;
-        /// <summary>Система изучена ИИ. Отдельно от игрока: чужая разведка не «закрывает» систему для вас.</summary>
-        public bool SurveyedByAI = false;
+        /// <summary>
+        /// Какие империи ИИ изучили систему (бит на номер владельца). Разведка у каждой империи своя:
+        /// чужая не «закрывает» систему ни для вас, ни для другого ИИ.
+        /// </summary>
+        public int AISurveyMask;
 
-        public bool IsSurveyedBy(int owner) => owner == 0 ? IsSurveyed : SurveyedByAI;
+        public bool IsSurveyedBy(int owner)
+            => owner == 0 ? IsSurveyed : owner > 0 && owner < 31 && (AISurveyMask & (1 << owner)) != 0;
+
+        public void MarkSurveyedBy(int owner)
+        {
+            if (owner == 0) IsSurveyed = true;
+            else if (owner > 0 && owner < 31) AISurveyMask |= 1 << owner;
+        }
+
+        /// <summary>Система стала чьей-то территорией — её знают все.</summary>
+        public void MarkSurveyedByAll()
+        {
+            IsSurveyed = true;
+            AISurveyMask = ~1;
+        }
 
         public int TotalEnergy { get; private set; }
         public int TotalMinerals { get; private set; }

@@ -68,8 +68,8 @@ namespace StellarisClone.Core
         private static bool IsCapital(StarSystem sys)
         {
             if (sys.OwnerId == 0) return sys.Id == EconomyManager.PlayerCapitalId;
-            var ai = AIEmpireManager.Instance;
-            return ai != null && sys.OwnerId == AIEmpireManager.AIOwnerId && sys.Id == ai.CapitalSystemId;
+            var ai = AIEmpireManager.For(sys.OwnerId);
+            return ai != null && sys.Id == ai.CapitalSystemId;
         }
 
         private void HandleDay(int day, int month, int year)
@@ -162,8 +162,7 @@ namespace StellarisClone.Core
             int oldOwner = sys.OwnerId;
             sys.OwnerId = newOwner;
             sys.HasStarbase = true;
-            sys.IsSurveyed = true;
-            sys.SurveyedByAI = true;
+            sys.MarkSurveyedByAll();
             _sieges.Remove(sys.Id);
 
             // Незаконченные стройки в захваченной системе прерываются

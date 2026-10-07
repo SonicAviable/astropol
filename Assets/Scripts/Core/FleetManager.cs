@@ -683,7 +683,7 @@ namespace StellarisClone.Core
             var sys = _generator.Systems[systemId];
             // Разведка у каждой стороны своя: исследование ИИ не делает систему изученной для игрока
             if (ownerId == 0) sys.IsSurveyed = true;
-            else sys.SurveyedByAI = true;
+            else sys.MarkSurveyedBy(ownerId);
 
             if (ownerId == 0)
             {
@@ -700,10 +700,10 @@ namespace StellarisClone.Core
                 SFXManager.Play(Sfx.SurveyComplete);
                 NotificationCenter.Show("Разведка завершена", sys.Name, NotificationCenter.Kind.Success, 4f);
             }
-            else if (ownerId == AIEmpireManager.AIOwnerId && AIEmpireManager.Instance != null)
+            else if (AIEmpireManager.For(ownerId) != null)
             {
                 // ИИ получает за разведку те же трофеи, что и игрок
-                var ai = AIEmpireManager.Instance;
+                var ai = AIEmpireManager.For(ownerId);
                 ai.AddStock("minerals", 75f * rewardMult);
                 ai.AddStock("alloys", 40f * rewardMult);
                 ai.AddStock("influence", 15f * rewardMult);
@@ -784,8 +784,7 @@ namespace StellarisClone.Core
             if (system.OwnerId >= 0 && system.OwnerId != ownerId) return false;
             system.OwnerId = ownerId;
             system.HasStarbase = true;
-            system.IsSurveyed = true;
-            system.SurveyedByAI = true;
+            system.MarkSurveyedByAll();
             system.GeneratePlanets();
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();

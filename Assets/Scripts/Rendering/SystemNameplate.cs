@@ -137,7 +137,7 @@ namespace StellarisClone.Rendering
             else if (_data.OwnerId == 0)
                 _titleBase = UIManager.DS.NeonCyan;
             else if (_data.OwnerId > 0)
-                _titleBase = UIManager.DS.Red;
+                _titleBase = Color.Lerp(FleetIndicator.OwnerColor(_data.OwnerId), Color.white, 0.12f);
             else if (!GalaxyView.IsKnownToPlayer(_data))
                 _titleBase = new Color(0.58f, 0.64f, 0.72f, 0.8f);   // неизведанная — блёклая
             else
@@ -187,7 +187,7 @@ namespace StellarisClone.Rendering
         public string GetTooltipContent()
         {
             string owner = _data.OwnerId == 0 ? "Ваша империя"
-                         : _data.OwnerId > 0 ? (AIEmpireManager.Instance != null ? AIEmpireManager.Instance.AIName : "Другая империя")
+                         : _data.OwnerId > 0 ? AIEmpireManager.NameOf(_data.OwnerId, "Другая империя")
                          : "Нейтральная";
 
             string tip = $"<b>{_data.Name}</b>\n" +
