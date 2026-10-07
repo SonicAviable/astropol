@@ -372,30 +372,47 @@ namespace StellarisClone.Rendering
 
         // ==================== ОРБИТЫ / ОЧИСТКА / ОБНОВЛЕНИЕ ====================
 
+        /// <summary>
+        /// Орбита — тонкая едва заметная линия; за планетой тянется светлый «след», который гаснет по ходу
+        /// орбиты (кольцо — ребёнок пивота и вращается вместе с планетой, поэтому след всегда позади неё).
+        /// </summary>
         private void CreateOrbitRing(Transform parent, float radius)
         {
             GameObject ring = new GameObject("OrbitRing");
             ring.transform.SetParent(parent, false);
 
+            const int N = 160;
             var lr = ring.AddComponent<LineRenderer>();
             lr.useWorldSpace = false;
             lr.loop = true;
-            lr.startWidth = 0.15f;
-            lr.endWidth = 0.15f;
-            lr.positionCount = 64;
-            for (int i = 0; i < 64; i++)
+            lr.startWidth = 0.07f;
+            lr.endWidth = 0.07f;
+            lr.numCapVertices = 0;
+            lr.positionCount = N;
+            // Планета стоит в (r, 0, 0) и движется в сторону убывания угла — след лежит при угле > 0
+            for (int i = 0; i < N; i++)
             {
-                float a = i / 64f * Mathf.PI * 2f;
+                float a = i / (float)N * Mathf.PI * 2f;
                 lr.SetPosition(i, new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
             }
-            var lineShader = GetLineShader();
-            if (lineShader != null)
-            {
-                var mat = new Material(lineShader);
-                var teal = UIManager.DS.NeonTeal;
-                mat.color = new Color(teal.r, teal.g, teal.b, 0.25f);
-                lr.material = mat;
-            }
+            var c = new Color(0.78f, 0.86f, 1f);
+            var g = new Gradient();
+            g.SetKeys(
+                new[] { new GradientColorKey(c, 0f), new GradientColorKey(c, 1f) },
+                new[]
+                {
+                    new GradientAlphaKey(0.42f, 0f),
+                    new GradientAlphaKey(0.16f, 0.06f),
+                    new GradientAlphaKey(0.06f, 0.22f),
+                    new GradientAlphaKey(0.035f, 0.5f),
+                    new GradientAlphaKey(0.035f, 1f)
+                });
+            lr.colorGradient = g;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            // Sprites/Default учитывает цвет и прозрачность вершин (URP Unlit — нет)
+            var shader = ShaderCache.Sprite ?? Shader.Find("Sprites/Default");
+            if (shader != null) lr.material = new Material(shader);
         }
 
         private void ClearSystemContent()

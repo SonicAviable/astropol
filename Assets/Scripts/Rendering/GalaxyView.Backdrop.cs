@@ -416,8 +416,12 @@ namespace StellarisClone.Rendering
             }
             if (_borderMat != null)
             {
-                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.05f, 0.22f, far));
-                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(0.05f, 0.14f, far));
+                // Линейное цветовое пространство: малая альфа на чёрном выглядит намного плотнее,
+                // поэтому заливка вблизи — едва заметная дымка, остаётся тонкая кромка
+                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.008f, 0.07f, far));
+                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(0.02f, 0.07f, far));
+                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 2.2f, far));
+                _borderMat.SetFloat("_LineAlpha", Mathf.Lerp(0.5f, 0.85f, far));
             }
         }
 
