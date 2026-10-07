@@ -184,8 +184,11 @@ namespace StellarisClone.Core
                     duck = Mathf.Max(duck, v.Duck * Mathf.Clamp01(left / 0.8f));
                 }
             }
-            MusicManager.Instance?.SetDuck(duck);
+            MusicManager.Instance?.SetDuck(Mathf.Max(duck, ExternalDuck));
         }
+
+        /// <summary>Внешнее приглушение музыки (0..1) — например, пока говорит советник обучения.</summary>
+        public static float ExternalDuck;
 
         // ==================== ПУБЛИЧНОЕ API ====================
 

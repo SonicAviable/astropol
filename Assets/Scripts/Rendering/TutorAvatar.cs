@@ -21,6 +21,8 @@ namespace StellarisClone.Rendering
 
         /// <summary>Пока true — глаза ярче, волна «говорит».</summary>
         public bool Speaking;
+        /// <summary>Громкость голоса 0..1 (если звучит озвучка); &lt; 0 — волна рисуется сама.</summary>
+        public float VoiceLevel = -1f;
 
         private RectTransform _rt;
         private RawImage _art, _scan;
@@ -171,7 +173,7 @@ namespace StellarisClone.Rendering
             _flash = Mathf.MoveTowards(_flash, 0f, dt * 2.2f);
 
             // Глаза: ровное свечение, при речи — ярче и «модулируется»
-            float noise = Mathf.PerlinNoise(t * 7f, _seed);
+            float noise = VoiceLevel >= 0f ? VoiceLevel : Mathf.PerlinNoise(t * 7f, _seed);
             float eyeA = 0.35f + 0.12f * Mathf.Sin(t * 2.1f) + _speak * (0.25f + 0.25f * noise) + _flash * 0.4f;
             var ec = new Color(Cyan.r, Cyan.g, Cyan.b, Mathf.Clamp01(eyeA));
             _eyeL.color = ec;
@@ -219,6 +221,7 @@ namespace StellarisClone.Rendering
             {
                 float mid = 1f - Mathf.Abs(i - (Bars - 1) * 0.5f) / (Bars * 0.5f);
                 float n = Mathf.PerlinNoise(i * 0.7f + _seed, t * 9f);
+                if (VoiceLevel >= 0f) n = Mathf.Clamp01(VoiceLevel * (0.55f + 0.9f * n));
                 float amp = Mathf.Lerp(0.06f, 0.35f + 0.65f * n * (0.4f + 0.6f * mid), _speak);
                 float half = Mathf.Max(1f, amp * 12f);
                 _bars[i].rectTransform.offsetMin = new Vector2(1.5f, -half);

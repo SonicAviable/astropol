@@ -22,7 +22,8 @@ namespace StellarisClone.Core
     {
         public static TutorialManager Instance { get; private set; }
 
-        private const float TypeSpeed = 75f;                     // символов в секунду
+        private const float TypeSpeed = 75f;                     // символов в секунду (без озвучки)
+        private const string VoicePref = "tutorial.voice";
         private const float CompleteDelay = 1.1f;                // пауза после выполненного задания
         private const float CardW = 600f, CardH = 214f, AvatarW = 150f;
 
@@ -65,6 +66,14 @@ namespace StellarisClone.Core
         // --- набор текста ---
         private string _fullText = "";
         private float _typed;
+        private float _typeSpeed = TypeSpeed;
+        private int _visibleLen;                                  // длина текста без rich-тегов
+
+        // --- озвучка: роботизированный голос (Resources/Audio/Tutorial, см. Tools/tutorial_voice) ---
+        private AudioSource _voice;
+        private bool _voiceOn = true, _voicePaused;
+        private Image _muteIcon;
+        private readonly float[] _samples = new float[256];
 
         // --- состояние заданий ---
         private int _speedAtEnter;
@@ -97,6 +106,8 @@ namespace StellarisClone.Core
         {
             _active = false;
             _index = -1;
+            if (_voice != null) _voice.Stop();
+            SFXManager.ExternalDuck = 0f;
             if (_root != null) LG.Hide(_card.gameObject, () => { if (_root != null) _root.SetActive(false); });
         }
 
@@ -288,6 +299,7 @@ namespace StellarisClone.Core
 
             _title.text = s.Title;
             _fullText = s.Text ?? "";
+            _visibleLen = System.Text.RegularExpressions.Regex.Replace(_fullText, "<[^>]+>", "").Length;
             _typed = 0f;
             _body.text = "";
             _stepLabel.text = $"ШАГ {index + 1} / {_steps.Count}";
@@ -303,6 +315,40 @@ namespace StellarisClone.Core
             _cardFx?.SetPulse(1f);
             _pulse = 1f;
             if (index > 0) SFXManager.Play(Sfx.UiConfirm, 0.6f);
+
+            // Голос: фраза шага; текст набирается в такт речи
+            _typeSpeed = TypeSpeed;
+            var clip = Resources.Load<AudioClip>($"Audio/Tutorial/tut_{index + 1:00}");
+            if (clip != null)
+            {
+                _typeSpeed = Mathf.Clamp(_visibleLen / Mathf.Max(1f, clip.length - 0.8f), 30f, 110f);
+            }
+            PlayVoice(clip);
+        }
+
+        private void PlayVoice(AudioClip clip)
+        {
+            if (_voice == null) return;
+            _voice.Stop();
+            _voicePaused = false;
+            if (clip == null || !_voiceOn) return;
+            _voice.clip = clip;
+            _voice.volume = Mathf.Clamp01(GameSettings.SfxVolume * 1.25f);
+            _voice.Play();
+        }
+
+        private void ToggleVoice()
+        {
+            _voiceOn = !_voiceOn;
+            PlayerPrefs.SetInt(VoicePref, _voiceOn ? 1 : 0);
+            if (!_voiceOn && _voice != null) _voice.Stop();
+            RefreshMute();
+        }
+
+        private void RefreshMute()
+        {
+            if (_muteIcon == null) return;
+            _muteIcon.color = _voiceOn ? UIManager.DS.NeonCyan : new Color(0.55f, 0.6f, 0.62f, 0.55f);
         }
 
         private void SetTask(string text, bool done)
@@ -315,7 +361,7 @@ namespace StellarisClone.Core
         private void Next()
         {
             if (!_active) return;
-            if (_typed < _fullText.Length) { _typed = _fullText.Length; return; }   // сначала — дописать текст
+            if (_typed < _visibleLen) { _typed = _visibleLen; return; }   // сначала — дописать текст
             Go(_index + 1);
         }
 
@@ -339,14 +385,24 @@ namespace StellarisClone.Core
             _cardGroup.alpha = Mathf.MoveTowards(_cardGroup.alpha, blocked ? 0f : 1f, dt * 6f);
             _cardGroup.blocksRaycasts = !blocked;
 
-            // Набор текста (щелчок по тексту или «Далее» дописывает его сразу)
-            if (_typed < _fullText.Length)
+            // Голос замолкает под паузой и событиями и продолжает после
+            if (_voice != null)
             {
-                _typed = Mathf.Min(_fullText.Length, _typed + dt * TypeSpeed);
+                if (blocked && _voice.isPlaying) { _voice.Pause(); _voicePaused = true; }
+                else if (!blocked && _voicePaused) { _voice.UnPause(); _voicePaused = false; }
+            }
+            bool talking = _voice != null && _voice.isPlaying;
+            SFXManager.ExternalDuck = talking ? 0.6f : 0f;
+            if (_avatar != null) _avatar.VoiceLevel = talking ? VoiceLevel() : -1f;
+
+            // Набор текста (щелчок по тексту или «Далее» дописывает его сразу)
+            if (_typed < _visibleLen && !blocked)
+            {
+                _typed = Mathf.Min(_visibleLen, _typed + dt * _typeSpeed);
                 _body.text = Reveal(_fullText, Mathf.FloorToInt(_typed));
             }
             else if (_body.text != _fullText) _body.text = _fullText;
-            if (_avatar != null) _avatar.Speaking = _typed < _fullText.Length;
+            if (_avatar != null) _avatar.Speaking = talking || _typed < _visibleLen;
 
             // Задание
             if (s.Done != null && _completeTimer < 0f && SafeDone(s))
@@ -354,6 +410,7 @@ namespace StellarisClone.Core
                 _completeTimer = CompleteDelay;
                 SetTask(s.Task, true);
                 SFXManager.Play(Sfx.NotifySuccess, 0.55f);
+                PlayVoice(Resources.Load<AudioClip>($"Audio/Tutorial/tut_ok_{UnityEngine.Random.Range(1, 4)}"));
                 _cardFx?.SetPulse(1f);
             }
             if (_completeTimer >= 0f)
@@ -367,6 +424,16 @@ namespace StellarisClone.Core
             UpdateHighlight(s, blocked, dt);
 
             _pulse = Mathf.MoveTowards(_pulse, 0f, dt * 1.5f);
+        }
+
+        /// <summary>Громкость звучащей фразы 0..1 — по ней «говорит» аватар.</summary>
+        private float VoiceLevel()
+        {
+            _voice.GetOutputData(_samples, 0);
+            float sum = 0f;
+            for (int i = 0; i < _samples.Length; i++) sum += _samples[i] * _samples[i];
+            float rms = Mathf.Sqrt(sum / _samples.Length) / Mathf.Max(0.05f, _voice.volume);
+            return Mathf.Clamp01(rms * 4f);
         }
 
         private static bool SafeDone(Step s)
@@ -639,6 +706,15 @@ namespace StellarisClone.Core
         private void BuildUI()
         {
             if (_root != null) Destroy(_root);
+            if (_voice == null)
+            {
+                _voice = gameObject.AddComponent<AudioSource>();
+                _voice.playOnAwake = false;
+                _voice.spatialBlend = 0f;
+                _voice.ignoreListenerPause = true;
+                _voice.priority = 16;
+            }
+            _voiceOn = PlayerPrefs.GetInt(VoicePref, 1) == 1;
             _root = new GameObject("[UI] Tutorial");
             _root.transform.SetParent(transform, false);
             var canvas = _root.AddComponent<Canvas>();
@@ -717,18 +793,24 @@ namespace StellarisClone.Core
 
             // Полоса прогресса по верхнему краю
             var progHost = LGBuild.Rect(rt, "Progress");
-            progHost.TopBand(10, 3, x, 46);
+            progHost.TopBand(10, 3, x, 78);
             _progress = LGBuild.Bar(progHost, UIManager.DS.NeonCyan, 0f, 3f);
 
             var who = LGBuild.Label(rt, "ОРАКУЛ-7  ·  ИИ-СОВЕТНИК", 10, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
             who.rectTransform.TopBand(18, 16, x, 46);
             _stepLabel = LGBuild.Label(rt, "", 10, UIManager.DS.TextMuted, TextAnchor.UpperRight, bold: true);
-            _stepLabel.rectTransform.TopBand(18, 16, x, 46);
+            _stepLabel.rectTransform.TopBand(18, 16, x, 78);
 
             var close = LGBuild.Button(rt, "Close", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
                                        SkipTutorial, LGIcon.Close, null, 9, 12f);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -10), new Vector2(28, 26));
             TooltipHelper.Attach(close.gameObject, "<b>Закрыть обучение</b>\nПодсказки больше не появятся в этой партии.");
+
+            var mute = LGBuild.Button(rt, "Voice", new Color(0.10f, 0.18f, 0.20f), UIManager.DS.NeonCyan, ToggleVoice, LGIcon.Speaker, null, 9, 12f);
+            ((RectTransform)mute.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-42, -10), new Vector2(28, 26));
+            foreach (var img in mute.GetComponentsInChildren<Image>())
+                if (img.gameObject != mute.gameObject) { _muteIcon = img; break; }
+            TooltipHelper.Attach(mute.gameObject, "<b>Голос советника</b>\nВключить или выключить озвучку обучения.");
 
             _title = LGBuild.Label(rt, "", 17, Color.white, TextAnchor.UpperLeft, bold: true);
             _title.rectTransform.TopBand(36, 24, x, 16);
@@ -740,7 +822,7 @@ namespace StellarisClone.Core
             _body.raycastTarget = true;
             var skipType = _body.gameObject.AddComponent<Button>();
             skipType.transition = Selectable.Transition.None;
-            skipType.onClick.AddListener(() => _typed = _fullText.Length);
+            skipType.onClick.AddListener(() => _typed = _visibleLen);
 
             // Задание
             var taskRow = LGBuild.Rect(rt, "Task");
@@ -762,6 +844,7 @@ namespace StellarisClone.Core
             TooltipHelper.Attach(_show.gameObject, "Навести камеру на цель");
 
             LG.Skin(rt);
+            RefreshMute();
         }
 
         // ==================================================================== СПРАЙТЫ
