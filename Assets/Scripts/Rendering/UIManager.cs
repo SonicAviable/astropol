@@ -11,7 +11,7 @@ using StellarisClone.Generation;
 
 namespace StellarisClone.Rendering
 {
-    public class UIManager : MonoBehaviour
+    public partial class UIManager : MonoBehaviour
     {
         public static UIManager Instance { get; private set; }
         public static bool IsGameStarted { get; private set; }
@@ -80,19 +80,13 @@ namespace StellarisClone.Rendering
         private RectTransform _inspectorRect;
         private CanvasGroup _inspectorGroup;
         private Text _inspTitle, _inspStatus, _inspActionBtnText;
-        private Text _inspBodyText;
         private GameObject _districtRowRoot;
         private Button _inspActionBtn;
         private Image _inspActionBtnBg;
         private Button _inspExitBtn;
         private Button _inspShipyardBtn;
         private float _inspTargetAlpha;
-        private readonly StringBuilder _bodySb = new StringBuilder();
 
-        private GameObject _shipyardPanel;
-        private CanvasGroup _shipyardGroup;
-        private Button _shipyardRetrofitBtn;
-        private Text _shipyardRetrofitTxt;
 
         private GameObject _rewardPopUp;
         private Text _rewardText;
@@ -131,6 +125,7 @@ namespace StellarisClone.Rendering
             BuildTopBar();
             BuildStellarisLeftInspector();
             BuildShipyardModal();
+            new GameObject("[UI] BuildProgressBadge").AddComponent<BuildProgressBadge>().Init(_canvas);
             BuildEmpireOverviewModal();
             BuildEventPopupModal();
             BuildRewardNotification();
@@ -221,6 +216,7 @@ namespace StellarisClone.Rendering
             _generator = FindAnyObjectByType<GalaxyGenerator>();
 
             StarSystemSelector.OnSystemSelected += OnSystemSelected;
+            FleetSelectionController.OnEmptyClick += HandleEmptyMapClick;
             SystemViewManager.OnViewModeChanged += OnViewModeChanged;
 
             if (TimeManager.Instance != null)
@@ -230,7 +226,6 @@ namespace StellarisClone.Rendering
                 EconomyManager.Instance.OnResourcesChanged += RefreshResourceBar;
 
             AnomalyEventSystem.OnEventTriggered += HandleAnomalyEvent;
-            FleetManager.OnFleetSelected += HandleFleetSelectedForRetrofit;
 
             BindAuxiliaryUi();
             RefreshResourceBar();
@@ -239,13 +234,13 @@ namespace StellarisClone.Rendering
         private void OnDestroy()
         {
             StarSystemSelector.OnSystemSelected -= OnSystemSelected;
+            FleetSelectionController.OnEmptyClick -= HandleEmptyMapClick;
             SystemViewManager.OnViewModeChanged -= OnViewModeChanged;
 
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.OnResourcesChanged -= RefreshResourceBar;
 
             AnomalyEventSystem.OnEventTriggered -= HandleAnomalyEvent;
-            FleetManager.OnFleetSelected -= HandleFleetSelectedForRetrofit;
         }
 
         private void EnsureEventSystemExists()
@@ -313,8 +308,8 @@ namespace StellarisClone.Rendering
 
         public Canvas HudCanvas => _canvas;
         public Canvas ModalCanvas => _modalCanvas;
-        public bool IsShipyardOpen => _shipyardPanel != null && LG.IsVisible(_shipyardPanel);
-        public void CloseShipyard() { if (IsShipyardOpen) CloseModal(_shipyardPanel); }
+        public bool IsShipyardOpen => ShipyardWindow.Instance != null && ShipyardWindow.Instance.IsOpen;
+        public void CloseShipyard() { if (IsShipyardOpen) ShipyardWindow.Instance.Close(); }
 
         /// <summary>Открыто окно, которое нельзя закрыть по Esc (выбор фракции, советник, событие).</summary>
         public bool IsBlockingFlowOpen =>
@@ -439,44 +434,6 @@ if (TradeModal.Instance == null)
 }
 else TradeModal.Instance.BindHost(_modalCanvas);
 }
-
-        private void HandleFleetSelectedForRetrofit(FleetView fleet) => RefreshRetrofitButton();
-
-        private void RefreshRetrofitButton()
-        {
-            if (_shipyardRetrofitBtn == null || _shipyardRetrofitTxt == null) return;
-            var fleet = FleetManager.Instance?.SelectedFleet;
-            var dm = ShipDesignManager.Instance;
-            if (fleet?.Data == null || fleet.Data.OwnerId != 0 || fleet.Data.Type != FleetType.Military || dm == null)
-            {
-                _shipyardRetrofitBtn.interactable = false;
-                _shipyardRetrofitTxt.text = "⟳  ВЫБЕРИТЕ ЭСКАДРУ СТАРОГО ОБРАЗЦА";
-                return;
-            }
-
-            float cost = dm.RetrofitCost(fleet.Data);
-            bool can = dm.CanRetrofit(fleet.Data);
-            if (cost <= 0.01f)
-            {
-                _shipyardRetrofitBtn.interactable = false;
-                _shipyardRetrofitTxt.text = "✓  ФЛОТ СООТВЕТСТВУЕТ АКТУАЛЬНОМУ ПРОЕКТУ";
-                return;
-            }
-
-            _shipyardRetrofitBtn.interactable = can;
-            _shipyardRetrofitTxt.text = can
-                ? $"⟳  МОДЕРНИЗИРОВАТЬ ФЛОТ (RETROFIT)  ·  {cost:0} ⬢"
-                : $"✕  МОДЕРНИЗАЦИЯ  ·  НЕ ХВАТАЕТ {cost:0} ⬢";
-        }
-
-        private void OnRetrofitClicked()
-        {
-            if (FleetManager.Instance != null && FleetManager.Instance.TryRetrofitSelectedFleet())
-            {
-                RefreshResourceBar();
-                RefreshRetrofitButton();
-            }
-        }
 
         // ==================== TOPBAR ====================
 
@@ -696,11 +653,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             insp.transform.SetParent(_canvas.transform, false);
 
             _inspectorRect = insp.AddComponent<RectTransform>();
-            _inspectorRect.anchorMin = new Vector2(0, 0.5f);
-            _inspectorRect.anchorMax = new Vector2(0, 0.5f);
-            _inspectorRect.pivot = new Vector2(0, 0.5f);
-            _inspectorRect.anchoredPosition = new Vector2(16, -15);
-            _inspectorRect.sizeDelta = new Vector2(430, 590);
+            _inspectorRect.anchorMin = new Vector2(0, 1);
+            _inspectorRect.anchorMax = new Vector2(0, 1);
+            _inspectorRect.pivot = new Vector2(0, 1);
+            _inspectorRect.anchoredPosition = InspectorRestPos;
+            _inspectorRect.sizeDelta = new Vector2(InspectorWidth, 420);
 
             _inspectorGroup = insp.AddComponent<CanvasGroup>();
             _inspectorGroup.alpha = 0f;
@@ -746,11 +703,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspStatus.rectTransform.offsetMin = new Vector2(16, 0);
             _inspStatus.rectTransform.offsetMax = new Vector2(-40, 0);
 
-            var closeBtn = CreateCloseButton(header.transform, 26f, () =>
-                {
-                    _inspTargetAlpha = 0f;
-                    _inspectorGroup.blocksRaycasts = false;
-                });
+            var closeBtn = CreateCloseButton(header.transform, 26f, HideInspector);
             var cRt = closeBtn.GetComponent<RectTransform>();
             cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
             cRt.pivot = new Vector2(1, 0.5f);
@@ -766,19 +719,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bbRt.offsetMax = new Vector2(-13, -62);
 
             var bbBg = bodyBox.AddComponent<Image>();
-            bbBg.color = DS.BgSlot;
+            bbBg.color = new Color(0, 0, 0, 0);
             bbBg.raycastTarget = false;
-            LG.Platter(bodyBox, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.22f));
-
-            _inspBodyText = CreateText(bodyBox.transform, "", 11, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
-            _inspBodyText.rectTransform.anchorMin = Vector2.zero;
-            _inspBodyText.rectTransform.anchorMax = Vector2.one;
-            _inspBodyText.rectTransform.offsetMin = new Vector2(12, 12);
-            _inspBodyText.rectTransform.offsetMax = new Vector2(-12, -12);
-            _inspBodyText.lineSpacing = 1.35f;
-            _inspBodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _inspBodyText.verticalOverflow = VerticalWrapMode.Truncate;
-            _inspBodyText.supportRichText = true;
+            _inspBodyGroup = bodyBox.AddComponent<CanvasGroup>();
+            // Содержимое — стопка карточек; если не помещается, прокручивается
+            _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 0);
 
             var distRow = new GameObject("DistrictRow");
             distRow.transform.SetParent(insp.transform, false);
@@ -862,12 +807,21 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 y += 50f;
             }
             _inspBodyRect.offsetMin = new Vector2(13, y + 4f);
+            FitInspectorHeight(y + 4f);
         }
 
         private void ClearInspectorBody()
         {
-            _bodySb.Length = 0;
-            if (_inspBodyText != null) _inspBodyText.text = "";
+            if (_inspStack != null)
+            {
+                _inspStack.anchoredPosition = Vector2.zero;   // новая система — с начала списка
+                for (int i = _inspStack.childCount - 1; i >= 0; i--)
+                {
+                    var child = _inspStack.GetChild(i);
+                    child.SetParent(null, false);
+                    Destroy(child.gameObject);
+                }
+            }
 
             if (_districtRowRoot != null)
             {
@@ -881,21 +835,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
         }
 
-        private void AddBodyHeader(string text)
-        {
-            if (_bodySb.Length > 0) _bodySb.Append('\n');
-            _bodySb.Append($"<color=#{ColorUtility.ToHtmlStringRGB(DS.Gold)}><b>◆  {text}</b></color>\n");
-        }
+        private void AddBodyHeader(string text) => InspSection(text, LGIcon.Info);
 
-        private void AddBodyLine(string text)
-        {
-            _bodySb.Append(text).Append('\n');
-        }
+        private void AddBodyLine(string text) => InspText(text);
 
-        private void CommitBody()
-        {
-            if (_inspBodyText != null) _inspBodyText.text = _bodySb.ToString();
-        }
+        private void CommitBody() { }
 
         private void AddDistrictRowFor(PlanetData planet)
         {
@@ -961,7 +905,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         public void ShowSystemPanel(StarSystem system)
         {
             if (system == null) return;
-            if (_inspBodyText == null || _inspTitle == null || _inspStatus == null) return;
+            if (_inspStack == null || _inspTitle == null || _inspStatus == null) return;
 
             _activeSystem = system;
             _activePlanet = null;
@@ -978,70 +922,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             PulseInspectorContent();
             ClearInspectorBody();
 
-            AddBodyHeader("СТАТУС СИСТЕМЫ");
-            AddBodyLine($"<color=#8AA2A8>Класс звезды:</color> {system.SpectralClass}");
-            AddBodyLine($"<color=#8AA2A8>Орбитальных тел:</color> {system.Planets.Count}");
-            AddBodyLine($"<color=#8AA2A8>Гиперкоридоров:</color> {system.ConnectedSystemIds.Count}");
-
-            AddBodyHeader("РЕСУРСЫ");
-            if (system.IsSurveyed)
-            {
-                system.RecalculateHarvest();
-                AddBodyLine($"<color=#8AA2A8>Добыча:</color> <color=#4DF08C>◆ {system.HarvestedMinerals}  ⚡ {system.HarvestedEnergy}</color>");
-                AddBodyLine($"<color=#8AA2A8>Потенциал:</color> <color=#33E6CC>◆ {system.PotentialMinerals}  ⚡ {system.PotentialEnergy}</color>");
-            }
-            else
-            {
-                AddBodyLine("<color=#FFAA88>⚠  Требуется разведка научным кораблём</color>");
-            }
-
-            var sb = CombatManager.Instance?.GetStarbase(system.Id);
-            if (sb != null)
-            {
-                AddBodyHeader("ЗВЁЗДНАЯ БАЗА");
-                string sbState = sb.Disabled
-                    ? $"<color=#FF6666>выведена из строя</color> · ремонт {sb.Hull / Mathf.Max(1f, sb.MaxHull) * 100f:0}% / 50%"
-                    : $"<color=#4DF08C>в строю</color> · корпус {sb.Hull:0}/{sb.MaxHull:0} · броня {sb.Armor:0}/{sb.MaxArmor:0} · щиты {sb.Shields:0}/{sb.MaxShields:0}";
-                AddBodyLine(sbState);
-                AddBodyLine($"<color=#8AA2A8>Огневая мощь:</color> {sb.Damage:0} урона · мощь {CombatManager.Instance.StarbasePower(system.Id):N0}");
-            }
-
-            var siege = SiegeManager.Instance?.GetSiege(system.Id);
-            if (siege != null && system.OwnerId >= 0)
-            {
-                float need = SiegeManager.RequiredDays(system);
-                string who = siege.Attacker == 0 ? "Ваша осада" : "Враг осаждает систему";
-                string state = siege.BaseHolding ? "приостановлена: звёздная база в строю"
-                             : siege.Contested ? "приостановлена: на орбите флот защитника"
-                             : siege.Active ? $"{siege.Progress:0} / {need:0} дн."
-                             : "осаждающие ушли, прогресс спадает";
-                AddBodyHeader("ОСАДА");
-                AddBodyLine($"<color={(siege.Attacker == 0 ? "#4DF08C" : "#FF6666")}>{who}</color>: {state}");
-            }
-
-            AddBodyHeader("УПРАВЛЕНИЕ");
-            if (!_isInSystemMode && system.OwnerId < 0)
-            {
-                if (!system.IsSurveyed)
-                    AddBodyLine("Отправьте научный корабль для изучения системы.");
-                else
-                    AddBodyLine("Заложите форпост, чтобы присоединить систему.");
-            }
-            else if (system.OwnerId == 0)
-            {
-                AddBodyLine("Система под вашим контролем.");
-                var fm = FleetManager.Instance;
-                if (fm != null) AddBodyLine($"<color=#8AA2A8>Ремонт кораблей здесь:</color> {fm.RepairRateAt(system.Id, 0) * 100f:0}% в день");
-            }
-            else
-            {
-                var ai = AIEmpireManager.For(system.OwnerId);
-                AddBodyLine(ai != null && ai.AtWar
-                    ? $"Чтобы захватить систему, держите здесь военный флот без защитников ({SiegeManager.RequiredDays(system):0} дн. осады)."
-                    : "Чужая система. Захват возможен только во время войны — осадой.");
-            }
-
-            CommitBody();
+            BuildSystemCards(system);
 
             _inspShipyardBtn.gameObject.SetActive(system.OwnerId == 0 && !_isInSystemMode);
 
@@ -1084,7 +965,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         public void ShowPlanetInspector(PlanetData planet, StarSystem parentSystem, bool openOverview = true)
         {
             if (planet == null) return;
-            if (_inspBodyText == null || _inspTitle == null || _inspStatus == null) return;
+            if (_inspStack == null || _inspTitle == null || _inspStatus == null) return;
 
             _activePlanet = planet;
             if (parentSystem != null) _activeSystem = parentSystem;
@@ -1232,7 +1113,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private float _inspShow, _inspShowV;
         private float _inspBodyFade = 1f;
-        private static readonly Vector2 InspectorRestPos = new Vector2(16, -15);
+        private const float InspectorWidth = 430f;
+        private static readonly Vector2 InspectorRestPos = new Vector2(16, -(TopBarMargin + TopBarHeight + 14f));
 
         private void Update()
         {
@@ -1250,12 +1132,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             // Смена содержимого — мягкое "проявление" текста вместо мгновенной подмены
-            if (_inspBodyText != null && _inspBodyFade < 1f)
+            if (_inspBodyGroup != null && _inspBodyFade < 1f)
             {
                 _inspBodyFade = Mathf.MoveTowards(_inspBodyFade, 1f, dt * 4.5f);
-                var c = _inspBodyText.color;
-                c.a = LGEase.OutCubic(_inspBodyFade);
-                _inspBodyText.color = c;
+                _inspBodyGroup.alpha = LGEase.OutCubic(_inspBodyFade);
             }
 
             UpdateSpeedControl();
@@ -1403,191 +1283,17 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             EmpireOverviewWindow.Instance?.Open();
         }
 
-                // ==================== ВЕРФЬ ====================
+        // ==================== ВЕРФЬ ====================
+        // Окно вынесено в ShipyardWindow (заказ кораблей, стапели, модернизация).
 
         private void BuildShipyardModal()
         {
-            _shipyardPanel = new GameObject("ShipyardModal");
-            _shipyardPanel.transform.SetParent(_modalCanvas.transform, false);
-
-            var rt = _shipyardPanel.AddComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(520, 660);
-
-            _shipyardGroup = _shipyardPanel.AddComponent<CanvasGroup>();
-            _shipyardPanel.AddComponent<Image>().color = DS.BgDeep;
-            StyleModalWindow(_shipyardPanel, new Color(0.45f, 0.95f, 0.90f, 0.40f));
-
-            var header = new GameObject("Header");
-            header.transform.SetParent(_shipyardPanel.transform, false);
-            var hbRt = header.AddComponent<RectTransform>();
-            hbRt.anchorMin = new Vector2(0, 1);
-            hbRt.anchorMax = new Vector2(1, 1);
-            hbRt.pivot = new Vector2(0.5f, 1);
-            hbRt.sizeDelta = new Vector2(0, 52);
-            header.AddComponent<Image>().color = DS.BgHeader;
-            LG.Header(header);
-
-            var title = CreateText(header.transform, "⚙   ОРБИТАЛЬНАЯ ВЕРФЬ ФЛОТА", 13, FontStyle.Bold, DS.NeonCyan, TextAnchor.MiddleLeft);
-            title.rectTransform.anchorMin = Vector2.zero;
-            title.rectTransform.anchorMax = Vector2.one;
-            title.rectTransform.offsetMin = new Vector2(22, 0);
-
-            var closeBtn = CreateCloseButton(header.transform, 28f, () => CloseModal(_shipyardPanel));
-            var cRt = closeBtn.GetComponent<RectTransform>();
-            cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
-            cRt.pivot = new Vector2(1, 0.5f);
-            cRt.anchoredPosition = new Vector2(-14, 0);
-
-            CreateShipyardOption(_shipyardPanel.transform, "НАУЧНЫЙ КОРАБЛЬ",      178, "science",  () => FleetManager.Instance != null && FleetManager.Instance.BuildShip(FleetType.Science));
-            CreateShipyardOption(_shipyardPanel.transform, "СТРОИТЕЛЬНЫЙ КОРАБЛЬ", 118, "builder",  () => FleetManager.Instance != null && FleetManager.Instance.BuildShip(FleetType.Constructor));
-            CreateShipyardOption(_shipyardPanel.transform, "БОЕВОЙ КОРВЕТ",         58, "corvette", () => FleetManager.Instance != null && FleetManager.Instance.BuildShip(FleetType.Military));
-            CreateShipyardOption(_shipyardPanel.transform, "ФРЕГАТ",                -2, "frigate",  () => FleetManager.Instance != null && FleetManager.Instance.BuildWarship(ShipClass.Frigate));
-            CreateShipyardOption(_shipyardPanel.transform, "ЭСМИНЕЦ",              -62, "destroyer",() => FleetManager.Instance != null && FleetManager.Instance.BuildWarship(ShipClass.Destroyer));
-
-            var designBtn = CreateButton(_shipyardPanel.transform, "OpenDesigner", new Vector2(440, 40),
-                DS.BtnPrimary, DS.BtnPrimaryHi, () =>
-                {
-                    LG.Hide(_shipyardPanel);
-                    ShipDesignerModal.Instance?.Open();
-                });
-            var dRt = designBtn.GetComponent<RectTransform>();
-            dRt.anchorMin = dRt.anchorMax = new Vector2(0.5f, 0.5f);
-            dRt.anchoredPosition = new Vector2(0, -126);
-            var dTxt = CreateText(designBtn.transform, "◆  ОТКРЫТЬ КОНСТРУКТОР КОРАБЛЕЙ", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            dTxt.rectTransform.sizeDelta = dRt.sizeDelta;
-
-            var retrofitBtn = CreateButton(_shipyardPanel.transform, "RetrofitBtn", new Vector2(440, 40),
-                DS.BtnSuccess, DS.Gold, OnRetrofitClicked);
-            var rRt = retrofitBtn.GetComponent<RectTransform>();
-            rRt.anchorMin = rRt.anchorMax = new Vector2(0.5f, 0.5f);
-            rRt.anchoredPosition = new Vector2(0, -176);
-            _shipyardRetrofitBtn = retrofitBtn.GetComponent<Button>();
-            _shipyardRetrofitTxt = CreateText(retrofitBtn.transform, "⟳  МОДЕРНИЗИРОВАТЬ ФЛОТ (RETROFIT)", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            _shipyardRetrofitTxt.rectTransform.sizeDelta = rRt.sizeDelta;
-
-            // Очередь верфи
-            _shipyardQueue = CreateText(_shipyardPanel.transform, "", 10, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
-            var qRt = _shipyardQueue.rectTransform;
-            qRt.anchorMin = qRt.anchorMax = new Vector2(0.5f, 0.5f);
-            qRt.pivot = new Vector2(0.5f, 1f);
-            qRt.sizeDelta = new Vector2(440, 70);
-            qRt.anchoredPosition = new Vector2(0, -204);
-            _shipyardQueue.horizontalOverflow = HorizontalWrapMode.Wrap;
-
-            _shipyardPanel.SetActive(false);
+            var go = new GameObject("[UI] ShipyardWindow");
+            go.transform.SetParent(transform, false);
+            go.AddComponent<ShipyardWindow>().Build(_modalCanvas);
         }
 
-        private readonly Dictionary<string, Text> _shipyardPrices = new Dictionary<string, Text>();
-        private Text _shipyardQueue;
-
-        private static FleetType KeyType(string key) => key == "science" ? FleetType.Science : key == "builder" ? FleetType.Constructor : FleetType.Military;
-        private static ShipClass KeyHull(string key) => key == "destroyer" ? ShipClass.Destroyer : key == "frigate" ? ShipClass.Frigate : ShipClass.Corvette;
-
-        private void RefreshShipyardQueue()
-        {
-            if (_shipyardQueue == null) return;
-            var cm = ConstructionManager.Instance;
-            var q = cm != null ? cm.ShipQueue(0) : new List<ConstructionJob>();
-            if (q.Count == 0)
-            {
-                _shipyardQueue.text = $"<color=#8AA2A8>Стапели свободны · одновременно строится {ConstructionManager.ShipyardSlots} корабля</color>";
-                return;
-            }
-            var sb = new StringBuilder($"<color=#F2C747><b>НА СТАПЕЛЯХ ({q.Count})</b></color>\n");
-            for (int i = 0; i < q.Count && i < 4; i++)
-            {
-                var j = q[i];
-                string name = j.ShipType == FleetType.Science ? "Научный корабль"
-                            : j.ShipType == FleetType.Constructor ? "Строительный корабль"
-                            : j.Hull == ShipClass.Destroyer ? "Эсминец" : j.Hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
-                string state = i < ConstructionManager.ShipyardSlots ? $"{Mathf.RoundToInt(j.Progress * 100f)}%" : "в очереди";
-                sb.Append($"{name} — {state}, готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(j))} дн.\n");
-            }
-            if (q.Count > 4) sb.Append($"<color=#8AA2A8>… и ещё {q.Count - 4}</color>");
-            _shipyardQueue.text = sb.ToString();
-        }
-        private readonly Dictionary<string, Button> _shipyardButtons = new Dictionary<string, Button>();
-
-        /// <summary>Цены верфи с учётом технологий и содержание, которое добавит корабль.</summary>
-        private void RefreshShipyardPrices()
-        {
-            var eco = EconomyManager.Instance;
-            var fm = FleetManager.Instance;
-            foreach (var kv in _shipyardPrices)
-            {
-                float alloys, energy, upkeep;
-                string locked = null;
-                switch (kv.Key)
-                {
-                    case "science":
-                        alloys = FleetManager.ScienceShipAlloys; energy = FleetManager.ScienceShipEnergy;
-                        upkeep = FleetData.UpkeepFor(FleetType.Science, ShipClass.Corvette);
-                        break;
-                    case "builder":
-                        alloys = FleetManager.ConstructorAlloys; energy = FleetManager.ConstructorEnergy;
-                        upkeep = FleetData.UpkeepFor(FleetType.Constructor, ShipClass.Corvette);
-                        break;
-                    default:
-                        var cls = kv.Key == "destroyer" ? ShipClass.Destroyer : kv.Key == "frigate" ? ShipClass.Frigate : ShipClass.Corvette;
-                        var design = fm != null ? fm.PlayerDesignFor(cls) : null;
-                        alloys = design != null ? design.AlloyCost : 60f; energy = FleetManager.WarshipEnergy;
-                        upkeep = eco != null ? EmpireEconomy.ExtraUpkeepForShip(eco.Report, cls)
-                                             : FleetData.UpkeepFor(FleetType.Military, cls);
-                        if (cls == ShipClass.Destroyer && !(TechnologyManager.Instance?.DestroyerUnlocked ?? false))
-                            locked = "нужна технология «Верфи класса „Эсминец“»";
-                        break;
-                }
-                alloys = FleetManager.ShipAlloyCost(alloys, 0);
-                kv.Value.text = locked != null
-                    ? $"<color=#8AA2A8>{locked}</color>"
-                    : $"{alloys:0} спл. · {energy:0} гел. · {ConstructionManager.ShipDays(KeyType(kv.Key), KeyHull(kv.Key)):0} дн.\n<color=#FF8888>содержание −{upkeep:0.#} гел./мес</color>";
-                if (_shipyardButtons.TryGetValue(kv.Key, out var b) && b != null) b.interactable = locked == null;
-            }
-            RefreshShipyardQueue();
-        }
-
-        private void OpenShipyardModal()
-        {
-            ShowModalDim();
-            MapModeController.HideGlobal();
-            RefreshShipyardPrices();
-            RefreshRetrofitButton();
-            LG.Show(_shipyardPanel);
-            _shipyardPanel.transform.SetAsLastSibling();
-        }
-
-        private void CreateShipyardOption(Transform parent, string shipTitle, float yPos, string key, System.Func<bool> build)
-        {
-            string price = "";
-            var btn = CreateButton(parent, $"Buy_{key}", new Vector2(440, 52),
-                DS.BgSlot, DS.BtnPrimaryHi, () =>
-                {
-                    if (build())
-                    {
-                        RefreshResourceBar();
-                        RefreshShipyardPrices();   // окно остаётся открытым — можно заложить ещё
-                    }
-                });
-
-            var rt = btn.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0, yPos);
-
-            var tName = CreateText(btn.transform, shipTitle, 13, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
-            tName.rectTransform.anchorMin = new Vector2(0, 0);
-            tName.rectTransform.anchorMax = new Vector2(0.45f, 1);
-            tName.rectTransform.offsetMin = new Vector2(16, 0);
-
-            var tPrice = CreateText(btn.transform, price, 11, FontStyle.Bold, DS.Gold, TextAnchor.MiddleRight);
-            _shipyardPrices[key] = tPrice;
-            _shipyardButtons[key] = btn.GetComponent<Button>();
-            tPrice.rectTransform.anchorMin = new Vector2(0.45f, 0);
-            tPrice.rectTransform.anchorMax = new Vector2(1, 1);
-            tPrice.rectTransform.offsetMax = new Vector2(-16, 0);
-        }
+        private void OpenShipyardModal() => ShipyardWindow.Instance?.Open();
 
         private void OpenTechModal()
         {

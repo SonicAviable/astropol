@@ -25,9 +25,20 @@ namespace StellarisClone.Rendering
         private RenderTexture _rt;
         private string _loadedClip = "";
         private bool _isOpen;
+        private TechTreeBackdrop _backdrop;
 
         public void Initialize(RectTransform videoZone)
         {
+            // Процедурный фон под видео: для веток без ролика он и есть фон
+            var bd = new GameObject("Backdrop");
+            bd.transform.SetParent(videoZone, false);
+            var bdRt = bd.AddComponent<RectTransform>();
+            bdRt.anchorMin = Vector2.zero;
+            bdRt.anchorMax = Vector2.one;
+            bdRt.offsetMin = bdRt.offsetMax = Vector2.zero;
+            _backdrop = bd.AddComponent<TechTreeBackdrop>();
+            _backdrop.Initialize(bdRt);
+
             var go = new GameObject("VideoLayer");
             go.transform.SetParent(videoZone, false);
 
@@ -68,6 +79,7 @@ namespace StellarisClone.Rendering
         /// <summary>Установить видео для ветки: "all", "physics", "society", "engineering".</summary>
         public void SetBranch(string clipKey)
         {
+            _backdrop?.SetBranch(clipKey);
             string path = Path.Combine(Application.streamingAssetsPath, "TechVideos", $"tech_{clipKey}.mp4");
             if (!File.Exists(path))
             {
@@ -100,6 +112,7 @@ namespace StellarisClone.Rendering
         public void OnOpen(string startClip)
         {
             _isOpen = true;
+            _backdrop?.SetActive(true);
             SetBranch(startClip);
             if (string.IsNullOrEmpty(_loadedClip)) return;   // видео для ветки нет
             if (_player.isPrepared && !_player.isPlaying) _player.Play();
@@ -109,6 +122,7 @@ namespace StellarisClone.Rendering
         public void OnClose()
         {
             _isOpen = false;
+            _backdrop?.SetActive(false);
             if (_player != null && _player.isPlaying) _player.Pause();
             StartCoroutine(FadeTo(0f));
         }

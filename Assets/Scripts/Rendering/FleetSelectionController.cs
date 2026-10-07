@@ -17,6 +17,9 @@ namespace StellarisClone.Rendering
     /// </summary>
     public class FleetSelectionController : MonoBehaviour
     {
+        /// <summary>ЛКМ по пустому месту карты (не по системе, флоту или интерфейсу) — закрыть панели выбора.</summary>
+        public static event System.Action OnEmptyClick;
+
         public static FleetSelectionController Instance { get; private set; }
 
         private const float DragThresholdPx = 8f;
@@ -106,6 +109,7 @@ namespace StellarisClone.Rendering
                 else if (!shift && !_pressOnStar && !overUi)
                 {
                     fm.SetSelection(null);
+                    if (RaycastSystem() == null) OnEmptyClick?.Invoke();
                 }
             }
         }
