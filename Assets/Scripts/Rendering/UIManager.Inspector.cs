@@ -39,7 +39,7 @@ namespace StellarisClone.Rendering
             LayoutRebuilder.ForceRebuildLayoutImmediate(_inspStack);
             float content = LayoutUtility.GetPreferredHeight(_inspStack);
             float canvasH = ((RectTransform)_canvas.transform).rect.height;
-            float maxH = Mathf.Max(320f, canvasH - (TopBarMargin + TopBarHeight + 14f) - 200f);
+            float maxH = Mathf.Max(320f, canvasH - InspectorTop - 196f);
             float h = Mathf.Clamp(62f + content + bottomArea + 6f, 240f, maxH);
             _inspectorRect.sizeDelta = new Vector2(InspectorWidth, h);
         }

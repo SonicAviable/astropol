@@ -50,7 +50,7 @@ namespace StellarisClone.Rendering
         private bool _isOpen;
         private float _refreshTimer;
 
-        private const float PlanetSize = 420f;
+        private const float PlanetSize = 520f;
         private static readonly Color CGold = UIManager.DS.Gold;
         private static readonly Color CMuted = UIManager.DS.TextMuted;
         private static readonly Color CMinerals = new Color(0.20f, 0.90f, 0.80f);
@@ -106,6 +106,7 @@ namespace StellarisClone.Rendering
             _root.transform.SetAsLastSibling();
 
             UIManager.Instance?.ShowModalDimPublic();
+            UIManager.Instance?.SetOverlayMode(true);
             MapModeController.HideGlobal();
             GalaxyMinimap.HideGlobal();
         }
@@ -120,6 +121,7 @@ namespace StellarisClone.Rendering
             PlanetHoloStudio.Instance?.Hide();
             MapModeController.ShowGlobal();
             UIManager.Instance?.HideModalDimPublic();
+            UIManager.Instance?.SetOverlayMode(false);
             GalaxyMinimap.ShowGlobal();
         }
 
@@ -679,13 +681,13 @@ namespace StellarisClone.Rendering
         private void BuildLeft(RectTransform rt)
         {
             var col = Column(rt, "Left", true);
-            var surface = Card(col, "Surface", 0, 300, LGIcon.Planet, "ПОВЕРХНОСТЬ", CGold, LGAppear.Kind.SlideLeft, 0.06f);
+            var surface = Card(col, "Surface", 0, 250, LGIcon.Planet, "ПОВЕРХНОСТЬ", CGold, LGAppear.Kind.SlideLeft, 0.06f);
             _habBar = BarRow(surface, 44, "Пригодность для жизни", UIManager.DS.Green, out _habValue);
             _sizeBar = BarRow(surface, 82, "Районы (размер планеты)", UIManager.DS.NeonCyan, out _sizeValue);
             _surfaceText = Body(surface, 124, 12);
 
-            var deposits = Card(col, "Deposits", 312, 180, LGIcon.Minerals, "ПРИРОДНЫЕ ЗАЛЕЖИ", CMinerals, LGAppear.Kind.SlideLeft, 0.12f);
-            _depositText = Body(deposits, 44, 40);
+            var deposits = Card(col, "Deposits", 262, 132, LGIcon.Minerals, "ПРИРОДНЫЕ ЗАЛЕЖИ", CMinerals, LGAppear.Kind.SlideLeft, 0.12f);
+            _depositText = Body(deposits, 44, 36);
             _stationText = LGBuild.Label(deposits, "", 11, CMuted, TextAnchor.LowerLeft, wrap: true);
             _stationText.rectTransform.Stretch(18, 14, 18, 0);
         }
@@ -693,7 +695,7 @@ namespace StellarisClone.Rendering
         private void BuildRight(RectTransform rt)
         {
             var col = Column(rt, "Right", false);
-            var pop = Card(col, "Population", 0, 300, LGIcon.Population, "НАСЕЛЕНИЕ", UIManager.DS.NeonCyan, LGAppear.Kind.SlideRight, 0.06f);
+            var pop = Card(col, "Population", 0, 250, LGIcon.Population, "НАСЕЛЕНИЕ", UIManager.DS.NeonCyan, LGAppear.Kind.SlideRight, 0.06f);
             _popBig = LGBuild.Label(pop, "", 34, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             _popBig.rectTransform.Stretch(18, 0, 18, 42);
 
@@ -716,7 +718,7 @@ namespace StellarisClone.Rendering
             _growthText.rectTransform.offsetMin = new Vector2(18, 8);
             _growthText.rectTransform.offsetMax = new Vector2(-18, 50);
 
-            var prod = Card(col, "Production", 312, 180, LGIcon.Industry, "ПРОИЗВОДСТВО В МЕСЯЦ", CGold, LGAppear.Kind.SlideRight, 0.12f);
+            var prod = Card(col, "Production", 262, 150, LGIcon.Industry, "ПРОИЗВОДСТВО В МЕСЯЦ", CGold, LGAppear.Kind.SlideRight, 0.12f);
             _productionText = Body(prod, 44, 10, 13);
         }
 

@@ -93,6 +93,26 @@ camGo.transform.localRotation = Quaternion.Euler(4f, 0f, 0f);
                 _planetInstance.transform.Rotate(Vector3.up * _autoSpin * Time.unscaledDeltaTime, Space.Self);
         }
 
+        /// <summary>
+        /// Подогнать модель под кадр по её реальным границам: у процедурных префабов размер меша
+        /// не совпадает с planet.Size, и планета выходила то крошечной, то обрезанной.
+        /// </summary>
+        private static void FitToFrame(Transform model, float targetDiameter)
+        {
+            var renderers = model.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return;
+            var b = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
+            float d = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
+            if (d < 0.01f) return;
+            float k = targetDiameter / d;
+            Vector3 pivot = model.position;
+            model.localScale *= k;
+            // Центр модели — в центр кадра (у некоторых префабов пивот смещён)
+            Vector3 newCenter = pivot + (b.center - pivot) * k;
+            if (model.parent != null) model.position += model.parent.position - newCenter;
+        }
+
         public void ShowPlanet(PlanetData planet, Material sourceMat)
         {
             ClearPlanet();
@@ -117,6 +137,7 @@ _planetInstance.transform.localScale = Vector3.one * scale;
                 // Убираем коллайдеры префаба
                 foreach (var c in _planetInstance.GetComponentsInChildren<Collider>())
                     Destroy(c);
+                FitToFrame(_planetInstance.transform, 2.9f);
             }
             else
             {
@@ -124,7 +145,7 @@ _planetInstance.transform.localScale = Vector3.one * scale;
                 _planetInstance = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 _planetInstance.name = "HoloPlanet_Fallback";
                 _planetInstance.transform.SetParent(_stage, false);
-                _planetInstance.transform.localScale = Vector3.one * 1.85f;
+                _planetInstance.transform.localScale = Vector3.one * 2.9f;
                 Destroy(_planetInstance.GetComponent<Collider>());
 
                 var rend = _planetInstance.GetComponent<MeshRenderer>();

@@ -168,6 +168,9 @@ namespace StellarisClone.Rendering
         private CanvasGroup _hudGroup;
         private Coroutine _hudFade;
 
+        /// <summary>Полноэкранный обзор (планета) прячет весь HUD, чтобы панели не просвечивали.</summary>
+        public void SetOverlayMode(bool on) => SetHudVisible(!on);
+
         private void SetHudVisible(bool visible, bool instant = false)
         {
             if (_hudGroup == null) return;
@@ -719,11 +722,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bbRt.offsetMax = new Vector2(-13, -62);
 
             var bbBg = bodyBox.AddComponent<Image>();
-            bbBg.color = new Color(0, 0, 0, 0);
+            bbBg.color = DS.BgSlot;
             bbBg.raycastTarget = false;
+            // Непрозрачная подложка: подписи карты не должны просвечивать сквозь карточки
+            LG.Platter(bodyBox, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
             _inspBodyGroup = bodyBox.AddComponent<CanvasGroup>();
             // Содержимое — стопка карточек; если не помещается, прокручивается
-            _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 0);
+            _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 10);
 
             var distRow = new GameObject("DistrictRow");
             distRow.transform.SetParent(insp.transform, false);
@@ -1114,7 +1119,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private float _inspShow, _inspShowV;
         private float _inspBodyFade = 1f;
         private const float InspectorWidth = 430f;
-        private static readonly Vector2 InspectorRestPos = new Vector2(16, -(TopBarMargin + TopBarHeight + 14f));
+        /// <summary>Под панелью режимов карты (она стоит на 66…108 px от верха).</summary>
+        private const float InspectorTop = 118f;
+        private static readonly Vector2 InspectorRestPos = new Vector2(16, -InspectorTop);
 
         private void Update()
         {
