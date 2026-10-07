@@ -32,12 +32,12 @@ namespace StellarisClone.Rendering
             public static readonly Color BgRowOdd      = new Color(0.060f, 0.118f, 0.155f, 0.75f);
             public static readonly Color BgVisor       = new Color(0.018f, 0.045f, 0.065f, 0.95f);
 
-            // Неон
-            public static readonly Color NeonCyan      = new Color(0.30f, 0.95f, 0.86f, 1.00f);
+            // Акценты (приглушённый неон)
+            public static readonly Color NeonCyan      = new Color(0.40f, 0.86f, 0.82f, 1.00f);
             public static readonly Color NeonTeal      = new Color(0.36f, 0.88f, 0.82f, 0.55f);
-            public static readonly Color Gold          = new Color(1.00f, 0.80f, 0.32f, 1.00f);
-            public static readonly Color Green         = new Color(0.36f, 0.96f, 0.60f, 1.00f);
-            public static readonly Color Red           = new Color(1.00f, 0.36f, 0.38f, 1.00f);
+            public static readonly Color Gold          = new Color(0.95f, 0.78f, 0.40f, 1.00f);
+            public static readonly Color Green         = new Color(0.44f, 0.88f, 0.60f, 1.00f);
+            public static readonly Color Red           = new Color(0.95f, 0.42f, 0.42f, 1.00f);
 
             // Текст
             public static readonly Color TextPrimary   = new Color(0.94f, 0.98f, 1.00f, 1.00f);
@@ -535,7 +535,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Капсула с тонкой неоновой кромкой цвета ресурса
             LG.Chip(badge, new Color(accentCol.r, accentCol.g, accentCol.b, 0.50f));
-            badge.AddComponent<LGInteractive>().hoverScale = 1.04f;
+            badge.AddComponent<LGInteractive>().hoverScale = 1.02f;
 
             tip = badge.AddComponent<TooltipTrigger>();
 

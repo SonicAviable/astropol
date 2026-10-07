@@ -158,7 +158,7 @@ namespace StellarisClone.Rendering
             v.Fx = LG.Button(v.Bg.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.75f), Size * 0.5f);
             v.Fx.FillMultiplier = 1.4f;
             v.Fx.GlowMultiplier = 0.8f;
-            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.08f;
+            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.03f;
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
 
             v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 22f, Color.Lerp(a.Color, Color.white, 0.15f));

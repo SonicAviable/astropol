@@ -409,7 +409,7 @@ namespace StellarisClone.Rendering
             _endFx = LG.Glass(_end, 28f);
             var m = LG.Motion(_end, LGAppear.Kind.Pop);
             m.inDuration = 0.7f;
-            m.fromScale = 0.85f;
+            m.fromScale = 0.95f;
 
             var iconBg = LGBuild.Panel(rt, "IconBg", new Color(0.2f, 0.16f, 0.05f));
             iconBg.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -36), new Vector2(96, 96));

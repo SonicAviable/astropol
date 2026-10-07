@@ -55,7 +55,7 @@ namespace StellarisClone.Rendering
         public float inDuration = 0.38f;
         public float outDuration = 0.2f;
         public float distance = 28f;
-        public float fromScale = 0.94f;
+        public float fromScale = 0.975f;
         [Tooltip("Задержка появления (для каскада панелей).")]
         public float delay = 0f;
         public bool playOnEnable = true;
@@ -233,7 +233,7 @@ namespace StellarisClone.Rendering
             _cg.alpha = Mathf.Lerp(_startAlpha, 1f, a);
 
             if (_rt == null) return;
-            float spring = LGEase.OutBack(k, 1.15f);
+            float spring = LGEase.OutBack(k, 0.35f);
             if (UsesScale)
                 _rt.localScale = _restScale * Mathf.LerpUnclamped(kind == Kind.Pop ? fromScale : 0.985f, 1f, spring);
             if (UsesPosition)
@@ -263,8 +263,8 @@ namespace StellarisClone.Rendering
         /// <summary>Озвучка: тихий «тик» при наведении, клик при нажатии, отказ — по неактивной кнопке.</summary>
         public bool sounds = true;
         public bool animateScale = true;
-        public float hoverScale = 1.035f;
-        public float pressScale = 0.955f;
+        public float hoverScale = 1.012f;
+        public float pressScale = 0.98f;
 
         private LiquidGlassEffect _fx;
         private Selectable _selectable;
@@ -324,8 +324,8 @@ namespace StellarisClone.Rendering
             float th = can && _over ? 1f : 0f;
             float tp = can && _down ? 1f : 0f;
 
-            _h = LGEase.Spring(_h, th, ref _hv, 3.2f, 0.55f, dt);
-            _p = LGEase.Spring(_p, tp, ref _pv, 5.0f, 0.6f, dt);
+            _h = LGEase.Spring(_h, th, ref _hv, 3.2f, 0.95f, dt);
+            _p = LGEase.Spring(_p, tp, ref _pv, 5.0f, 0.95f, dt);
 
             if (_fx == null) _fx = GetComponent<LiquidGlassEffect>();
             if (_fx != null) _fx.SetHover(Mathf.Clamp01(_h + _p * 0.4f));

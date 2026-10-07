@@ -288,6 +288,14 @@ namespace StellarisClone.Rendering
 
         private float BaseRadius(Role r, float w, float h)
         {
+            float br = RawRadius(r, w, h);
+            // Линии и точки остаются круглыми; всё остальное — сдержанные, «приборные» углы
+            if (r == Role.Line || r == Role.Dot) return br;
+            return Mathf.Min(br * LGTone.RadiusScale, LGTone.MaxRadius);
+        }
+
+        private float RawRadius(Role r, float w, float h)
+        {
             float minS = Mathf.Min(w, h);
             float maxS = Mathf.Max(w, h);
             if (radius >= 0f) return Mathf.Min(radius, minS * 0.5f);
@@ -470,6 +478,12 @@ namespace StellarisClone.Rendering
                 s.ShadowRadius = Mathf.Max(s.ShadowRadius, 22f);
             }
 
+            // Общий тон интерфейса: меньше бликов, свечения и преломления, панели плотнее
+            if (s.Mode == 0) { s.Fill = Mathf.Max(s.Fill, LGTone.GlassFill); s.Refraction *= LGTone.Refraction; }
+            else if (s.Mode == 1) s.Fill *= LGTone.PlatterFill;
+            s.Specular *= LGTone.Specular;
+            s.Glow *= LGTone.Glow;
+
             s.Fill *= fillMultiplier;
             s.Glow = Mathf.Clamp01(s.Glow * glowMultiplier + _pulse * 0.6f);
             s.Shadow *= shadowMultiplier;
@@ -644,6 +658,28 @@ namespace StellarisClone.Rendering
 
     /// <summary>Пометка: не превращать этот Image (и, опционально, его детей) в стекло.</summary>
     [DisallowMultipleComponent]
+    /// <summary>
+    /// Общий «тон» стекла для всей игры. Меньше значения — строже и «приборнее» интерфейс,
+    /// больше — мягче и игрушечнее. Меняется в одном месте.
+    /// </summary>
+    public static class LGTone
+    {
+        /// <summary>Множитель скругления углов (кроме линий и точек).</summary>
+        public const float RadiusScale = 0.45f;
+        /// <summary>Предельный радиус угла, px.</summary>
+        public const float MaxRadius = 10f;
+        /// <summary>Множитель бликов (френель, свет сверху, кромка).</summary>
+        public const float Specular = 0.4f;
+        /// <summary>Множитель неонового свечения вокруг элементов.</summary>
+        public const float Glow = 0.5f;
+        /// <summary>Множитель преломления и хроматической аберрации стекла.</summary>
+        public const float Refraction = 0.35f;
+        /// <summary>Минимальная плотность больших стеклянных окон (меньше просвечивают).</summary>
+        public const float GlassFill = 0.62f;
+        /// <summary>Множитель плотности вложенных пластин.</summary>
+        public const float PlatterFill = 1.3f;
+    }
+
     public sealed class LGIgnore : MonoBehaviour
     {
         public bool includeChildren = true;
