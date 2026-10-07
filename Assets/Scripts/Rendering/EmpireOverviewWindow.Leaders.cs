@@ -78,7 +78,7 @@ namespace StellarisClone.Rendering
                 var t = LeaderManager.Trait(id);
                 if (t == null) continue;
                 if (traits.Length > 0) traits.Append(", ");
-                traits.Append(t.Name);
+                traits.Append(t.Negative ? $"<color=#FF7A7A>{t.Name}</color>" : t.Name);
             }
             TextCell(row, 0.42f, 0.60f, traits.ToString(), CGold, TextAnchor.MiddleLeft, 11, true);
             TextCell(row, 0.60f, 0.78f, hired ? PostText(l) : "—", UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
@@ -161,7 +161,7 @@ namespace StellarisClone.Rendering
             foreach (var id in l.Traits)
             {
                 var t = LeaderManager.Trait(id);
-                if (t != null) sb.Append($"\n<color=#FFCC52>{t.Name}</color> — {t.Desc}");
+                if (t != null) sb.Append($"\n<color={(t.Negative ? "#FF7A7A" : "#FFCC52")}>{t.Name}</color> — {t.Desc}");
             }
             sb.Append("\n\n<color=#8AA2A8>");
             sb.Append(l.Class switch

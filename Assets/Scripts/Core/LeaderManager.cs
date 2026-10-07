@@ -77,6 +77,9 @@ namespace StellarisClone.Core
         {
             public string Id, Name, Desc;
             public LeaderClass Class;
+            /// <summary>Черта появляется только из событий, не выпадает случайно при найме и повышении.</summary>
+            public bool EventOnly;
+            public bool Negative;
         }
 
         public static readonly TraitDef[] TraitDefs =
@@ -96,6 +99,14 @@ namespace StellarisClone.Core
             new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = "Геолог", Desc = "+15% к минералам планеты" },
             new TraitDef { Id = "gov_energy", Class = LeaderClass.Governor, Name = "Энергетик", Desc = "+15% к энергии планеты" },
             new TraitDef { Id = "gov_admin", Class = LeaderClass.Governor, Name = "Администратор", Desc = "+6% ко всему производству планеты" },
+
+            // Черты из событий
+            new TraitDef { Id = "sci_brilliant", Class = LeaderClass.Scientist, Name = "Гений", Desc = "+10% к скорости разведки, +4% к науке в совете", EventOnly = true },
+            new TraitDef { Id = "sci_scarred", Class = LeaderClass.Scientist, Name = "Травмирован", Desc = "−15% к скорости разведки", EventOnly = true, Negative = true },
+            new TraitDef { Id = "adm_veteran", Class = LeaderClass.Admiral, Name = "Ветеран", Desc = "+6% к урону и +6% к уклонению соединения", EventOnly = true },
+            new TraitDef { Id = "adm_reckless", Class = LeaderClass.Admiral, Name = "Безрассудный", Desc = "+8% к урону, −15% к шансу выйти из боя", EventOnly = true },
+            new TraitDef { Id = "gov_honest", Class = LeaderClass.Governor, Name = "Неподкупный", Desc = "+5% ко всему производству планеты", EventOnly = true },
+            new TraitDef { Id = "gov_corrupt", Class = LeaderClass.Governor, Name = "Коррупционер", Desc = "−10% ко всему производству планеты", EventOnly = true, Negative = true },
         };
 
         public static TraitDef Trait(string id)
@@ -182,7 +193,7 @@ namespace StellarisClone.Core
         private string RandomTrait(LeaderClass cls, Leader except)
         {
             var pool = new List<string>();
-            foreach (var t in TraitDefs) if (t.Class == cls && (except == null || !except.Has(t.Id))) pool.Add(t.Id);
+            foreach (var t in TraitDefs) if (t.Class == cls && !t.EventOnly && (except == null || !except.Has(t.Id))) pool.Add(t.Id);
             return pool.Count == 0 ? null : pool[_rng.Next(pool.Count)];
         }
 
@@ -349,7 +360,8 @@ namespace StellarisClone.Core
         {
             var l = Instance?.LeaderOfShip(d.Id);
             if (l == null || l.Class != LeaderClass.Scientist) return 1f;
-            return 1f + l.Level * 0.05f + (l.Has("sci_cartographer") ? 0.25f : 0f);
+            return 1f + l.Level * 0.05f + (l.Has("sci_cartographer") ? 0.25f : 0f)
+                      + (l.Has("sci_brilliant") ? 0.10f : 0f) - (l.Has("sci_scarred") ? 0.15f : 0f);
         }
 
         public static float SurveyRewardMult(int shipId)
@@ -363,14 +375,15 @@ namespace StellarisClone.Core
         {
             var l = Instance?.CouncilScientist(owner);
             if (l == null) return 1f;
-            return 1f + l.Level * 0.02f + (l.Has("sci_analyst") ? 0.06f : 0f);
+            return 1f + l.Level * 0.02f + (l.Has("sci_analyst") ? 0.06f : 0f) + (l.Has("sci_brilliant") ? 0.04f : 0f);
         }
 
         public static float AdmiralDamageMult(int owner, int systemId)
         {
             var l = Instance?.AdmiralAt(owner, systemId);
             if (l == null) return 1f;
-            return 1f + l.Level * 0.03f + (l.Has("adm_aggressive") ? 0.10f : 0f);
+            return 1f + l.Level * 0.03f + (l.Has("adm_aggressive") ? 0.10f : 0f)
+                      + (l.Has("adm_veteran") ? 0.06f : 0f) + (l.Has("adm_reckless") ? 0.08f : 0f);
         }
 
         public static float AdmiralFireRateMult(int owner, int systemId)
@@ -383,13 +396,15 @@ namespace StellarisClone.Core
         public static float AdmiralEvasionMult(int owner, int systemId)
         {
             var l = Instance?.AdmiralAt(owner, systemId);
-            return l != null && l.Has("adm_cautious") ? 1.10f : 1f;
+            if (l == null) return 1f;
+            return (l.Has("adm_cautious") ? 1.10f : 1f) * (l.Has("adm_veteran") ? 1.06f : 1f);
         }
 
         public static float AdmiralDisengageMult(int owner, int systemId)
         {
             var l = Instance?.AdmiralAt(owner, systemId);
-            return l != null && l.Has("adm_cautious") ? 1.15f : 1f;
+            if (l == null) return 1f;
+            return (l.Has("adm_cautious") ? 1.15f : 1f) * (l.Has("adm_reckless") ? 0.85f : 1f);
         }
 
         public static float HyperSpeedMult(FleetData d)
@@ -404,7 +419,8 @@ namespace StellarisClone.Core
         {
             var l = Instance?.GovernorOf(p);
             if (l == null) return 1f;
-            float m = 1f + l.Level * 0.03f + (l.Has("gov_admin") ? 0.06f : 0f);
+            float m = 1f + l.Level * 0.03f + (l.Has("gov_admin") ? 0.06f : 0f)
+                         + (l.Has("gov_honest") ? 0.05f : 0f) - (l.Has("gov_corrupt") ? 0.10f : 0f);
             if (resource == "energy" && l.Has("gov_energy")) m += 0.15f;
             if (resource == "minerals" && l.Has("gov_geologist")) m += 0.15f;
             if (resource == "alloys" && l.Has("gov_industrialist")) m += 0.15f;
@@ -441,6 +457,66 @@ namespace StellarisClone.Core
                 }
                 Changed();
             }
+        }
+
+        // ==================== ДЛЯ СОБЫТИЙ ====================
+
+        public IEnumerable<Leader> Of(int owner)
+        {
+            foreach (var l in _s.Leaders) if (l.Owner == owner) yield return l;
+        }
+
+        public void GrantXp(Leader l, float xp) => GainXp(l, xp);
+
+        /// <summary>Дать черту (если её ещё нет). Отрицательная черта вытесняет свою «противоположность».</summary>
+        public bool GiveTrait(Leader l, string traitId)
+        {
+            var def = Trait(traitId);
+            if (l == null || def == null || l.Has(traitId)) return false;
+            if (traitId == "gov_corrupt") l.Traits.Remove("gov_honest");
+            if (traitId == "gov_honest") l.Traits.Remove("gov_corrupt");
+            l.Traits.Add(traitId);
+            if (l.Owner == 0)
+                NotificationCenter.Show(def.Negative ? "Лидер получил изъян" : "Лидер получил черту",
+                    $"{ClassName(l.Class)} {l.Name}: «{def.Name}» — {def.Desc}",
+                    def.Negative ? NotificationCenter.Kind.Warning : NotificationCenter.Kind.Success, 5f);
+            Changed();
+            return true;
+        }
+
+        public void RemoveTrait(Leader l, string traitId)
+        {
+            if (l != null && l.Traits.Remove(traitId)) Changed();
+        }
+
+        /// <summary>Лидер покидает службу (уход в отставку, гибель в событии).</summary>
+        public void Retire(Leader l, string title, string message)
+        {
+            if (l == null || !_s.Leaders.Remove(l)) return;
+            if (l.Owner == 0) NotificationCenter.Show(title, message, NotificationCenter.Kind.Info, 6f);
+            Changed();
+        }
+
+        /// <summary>Лидер поступает на службу без оплаты (перебежчик, спасённый). null — нет мест.</summary>
+        public Leader RecruitFree(int owner, LeaderClass cls, int level, string traitId)
+        {
+            if (owner == 0 && CountFor(0) >= MaxLeaders) return null;
+            var l = Generate(owner, cls);
+            level = Mathf.Clamp(level, 1, MaxLevel);
+            l.Level = level;
+            l.Xp = LevelXp[level - 1];
+            if (!string.IsNullOrEmpty(traitId) && Trait(traitId) != null && !l.Has(traitId))
+            {
+                if (Trait(traitId).Class == cls && l.Traits.Count > 0) l.Traits[0] = traitId; else l.Traits.Add(traitId);
+            }
+            if (level >= 3 && l.Traits.Count < 2)
+            {
+                string t = RandomTrait(cls, l);
+                if (t != null) l.Traits.Add(t);
+            }
+            _s.Leaders.Add(l);
+            Changed();
+            return l;
         }
 
         public void OnSurveyDay(FleetData ship) => GainXp(LeaderOfShip(ship.Id), 1.5f);

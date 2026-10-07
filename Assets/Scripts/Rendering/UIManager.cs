@@ -72,6 +72,7 @@ namespace StellarisClone.Rendering
 
         private GameObject _eventPopupModal;
         private Transform _eventOptionsHolder;
+        private RectTransform _eventDescBox, _eventOptionsRt;
         private Text _eventTitleText;
         private Text _eventDescText;
         private Image _eventAccentBar;
@@ -2151,6 +2152,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             var descBox = new GameObject("DescriptionBox");
             descBox.transform.SetParent(_eventPopupModal.transform, false);
             var dRt = descBox.AddComponent<RectTransform>();
+            _eventDescBox = dRt;
             dRt.anchorMin = new Vector2(0, 0);
             dRt.anchorMax = new Vector2(1, 1);
             dRt.offsetMin = new Vector2(20, 170);
@@ -2170,6 +2172,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             var optionsBox = new GameObject("Options");
             optionsBox.transform.SetParent(_eventPopupModal.transform, false);
             var oRt = optionsBox.AddComponent<RectTransform>();
+            _eventOptionsRt = oRt;
             oRt.anchorMin = new Vector2(0, 0);
             oRt.anchorMax = new Vector2(1, 0);
             oRt.pivot = new Vector2(0.5f, 0);
@@ -2197,6 +2200,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             HideModalDim();
             MapModeController.ShowGlobal();
             Time.timeScale = 1f;
+            AnomalyEventSystem.Instance?.NotifyClosed();
         }
 
         private void ShowEventPopup(GameEventData ev)
@@ -2211,7 +2215,19 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                 _eventTitleText.text = $"◆  {ev.Title}";
                 _eventTitleText.color = accent;
             }
-            if (_eventDescText != null) _eventDescText.text = ev.Description;
+            if (_eventDescText != null)
+                _eventDescText.text = string.IsNullOrEmpty(ev.Subtitle)
+                    ? ev.Description
+                    : $"<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";
+
+            // Высота блока вариантов — по их числу, описание занимает остальное
+            int optCount = 0;
+            if (ev.Options != null) foreach (var o in ev.Options) if (o != null) optCount++;
+            float optsH = Mathf.Max(1, optCount) * 44f + Mathf.Max(0, optCount - 1) * 8f + 16f;
+            if (_eventOptionsRt != null) _eventOptionsRt.sizeDelta = new Vector2(0, optsH);
+            if (_eventDescBox != null) _eventDescBox.offsetMin = new Vector2(20, 12 + optsH + 8);
+            var popupRt = _eventPopupModal.GetComponent<RectTransform>();
+            popupRt.sizeDelta = new Vector2(650f, Mathf.Max(420f, 52f + 10f + 190f + 20f + optsH));
 
             if (_eventOptionsHolder != null)
             {
@@ -2226,12 +2242,15 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                 {
                     if (opt == null) continue;
                     idx++;
-                    Color optHover = idx == 1 ? DS.BtnSuccess : idx == 2 ? DS.BtnPrimaryHi : DS.Gold;
+                    bool available = opt.Available;
+                    bool special = !string.IsNullOrEmpty(opt.Requirement);
+                    Color optHover = !available ? DS.BtnDisabled : special ? DS.Gold : idx == 1 ? DS.BtnSuccess : idx == 2 ? DS.BtnPrimaryHi : DS.NeonCyan;
                     var capturedOpt = opt;
 
                     var btnGo = CreateButton(_eventOptionsHolder, $"Opt_{idx}", new Vector2(0, 44),
-                        DS.BgSlot, optHover, () =>
+                        available ? DS.BgSlot : new Color(DS.BgSlot.r, DS.BgSlot.g, DS.BgSlot.b, 0.45f), optHover, () =>
                         {
+                            if (!capturedOpt.Available) return;
                             try { capturedOpt.OnSelect?.Invoke(); }
                             catch (System.Exception e) { Debug.LogWarning($"[Event] OnSelect: {e.Message}"); }
                             CloseEventPopup();
@@ -2239,19 +2258,28 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                     var le = btnGo.GetComponent<LayoutElement>();
                     if (le == null) le = btnGo.AddComponent<LayoutElement>();
                     le.preferredHeight = 44f;
+                    var sel = btnGo.GetComponent<Selectable>();
+                    if (sel != null) sel.interactable = available;
 
-                    var label = CreateText(btnGo.transform, opt.OptionText, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
+                    // Особые варианты (черта лидера, ресурсы) помечены золотой плашкой, недоступные — приглушены
+                    string tag = !special ? "" : available
+                        ? $"<color=#F2C747>[{opt.Requirement}]</color>  "
+                        : $"<color=#8AA2A8>[{opt.Requirement}]</color>  ";
+                    string text = available ? opt.OptionText : $"<color=#6F8790>{opt.OptionText}</color>";
+                    var label = CreateText(btnGo.transform, tag + text, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
                     label.rectTransform.anchorMin = Vector2.zero;
                     label.rectTransform.anchorMax = Vector2.one;
                     label.rectTransform.offsetMin = new Vector2(12, 0);
                     label.rectTransform.offsetMax = new Vector2(-12, 0);
                     label.supportRichText = true;
 
-                    if (!string.IsNullOrEmpty(opt.ResultTooltip))
+                    string tip = opt.ResultTooltip ?? "";
+                    if (special) tip = (available ? "<color=#F2C747>Особый вариант: " : "<color=#FF8A8A>Недоступно — требуется: ") + opt.Requirement + "</color>\n" + tip;
+                    if (!string.IsNullOrEmpty(tip))
                     {
                         var tt = btnGo.GetComponent<TooltipTrigger>();
-                        if (tt == null) TooltipHelper.Attach(btnGo, opt.ResultTooltip);
-                        else tt.SetText(opt.ResultTooltip);
+                        if (tt == null) TooltipHelper.Attach(btnGo, tip);
+                        else tt.SetText(tip);
                     }
                 }
             }

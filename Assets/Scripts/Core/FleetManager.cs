@@ -677,7 +677,7 @@ namespace StellarisClone.Core
 
         public void CompleteSystemSurvey(int systemId) => CompleteSystemSurvey(systemId, 0);
 
-        public void CompleteSystemSurvey(int systemId, int ownerId, float rewardMult = 1f)
+        public void CompleteSystemSurvey(int systemId, int ownerId, float rewardMult = 1f, FleetData surveyor = null)
         {
             if (systemId < 0 || systemId >= _generator.Systems.Count) return;
             var sys = _generator.Systems[systemId];
@@ -718,7 +718,7 @@ namespace StellarisClone.Core
                 if (AnomalyEventSystem.Instance != null)
                 {
                     if (UnityEngine.Random.value < surveyAnomalyChance)
-                        AnomalyEventSystem.Instance.TriggerEventForSurvey(sys);
+                        AnomalyEventSystem.Instance.TriggerEventForSurvey(sys, surveyor);
                 }
             }
         }

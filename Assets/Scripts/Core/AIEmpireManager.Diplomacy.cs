@@ -77,6 +77,7 @@ namespace StellarisClone.Core
             ["aggression"] = new MemoryInfo { Label = "Агрессия", Detail = "Вы первыми объявили им войну", Icon = LGIcon.Warning, MonthlyDecay = 0.05f, Min = -30f, Max = 0f },
             ["pactcancel"] = new MemoryInfo { Label = "Расторгнутый пакт", Detail = "Вы в одностороннем порядке вышли из пакта", Icon = LGIcon.Handshake, MonthlyDecay = 0.1f, Min = -20f, Max = 0f },
             ["rejected"]   = new MemoryInfo { Label = "Отвергнутое предложение", Detail = "Вы отклонили их дипломатическое предложение", Icon = LGIcon.Close, MonthlyDecay = 0.2f, Min = -15f, Max = 0f },
+            ["incident"]   = new MemoryInfo { Label = "Инциденты", Detail = "Как вы повели себя в пограничных и дипломатических происшествиях", Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
         };
 
         public void AddMemory(string key, float delta)

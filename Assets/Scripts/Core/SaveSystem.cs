@@ -61,6 +61,7 @@ namespace StellarisClone.Core
         public List<ConstructionJob> Jobs = new List<ConstructionJob>();
         public List<StarbaseSave> Starbases = new List<StarbaseSave>();
         public LeaderState Leaders;
+        public EventState Events;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -403,6 +404,7 @@ namespace StellarisClone.Core
             if (ConstructionManager.Instance != null) s.Jobs = ConstructionManager.Instance.CaptureState();
             if (CombatManager.Instance != null) s.Starbases = CombatManager.Instance.CaptureStarbases();
             if (LeaderManager.Instance != null) s.Leaders = LeaderManager.Instance.CaptureState();
+            if (AnomalyEventSystem.Instance != null) s.Events = AnomalyEventSystem.Instance.CaptureState();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -716,6 +718,7 @@ namespace StellarisClone.Core
             ConstructionManager.Instance?.RestoreState(s.Jobs);
             CombatManager.Instance?.RestoreStarbases(s.Starbases);
             LeaderManager.Instance?.RestoreState(s.Leaders);
+            AnomalyEventSystem.Instance?.RestoreState(s.Events);
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)

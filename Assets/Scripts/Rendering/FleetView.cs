@@ -516,7 +516,7 @@ namespace StellarisClone.Rendering
             if (FleetManager.Instance != null && sysId >= 0)
             {
                 LeaderManager.Instance?.OnSurveyComplete(Data);
-                FleetManager.Instance.CompleteSystemSurvey(sysId, Data.OwnerId, LeaderManager.SurveyRewardMult(Data.Id));
+                FleetManager.Instance.CompleteSystemSurvey(sysId, Data.OwnerId, LeaderManager.SurveyRewardMult(Data.Id), Data);
             }
 
             _laserBeam.enabled = false;
