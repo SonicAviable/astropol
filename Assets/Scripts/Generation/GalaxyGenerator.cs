@@ -82,6 +82,7 @@ namespace StellarisClone.Generation
         {
             int attempts = 0;
             int maxAttempts = starCount * 50;
+            var names = new StarNameGenerator();
 
             while (Systems.Count < starCount && attempts < maxAttempts)
             {
@@ -102,7 +103,7 @@ namespace StellarisClone.Generation
                 if (!tooClose)
                 {
                     StarSpectralClass spectral = (StarSpectralClass)Random.Range(0, 5);
-                    Systems.Add(new StarSystem(Systems.Count, $"Система-{Systems.Count + 1}", pos, spectral));
+                    Systems.Add(new StarSystem(Systems.Count, names.Next(), pos, spectral));
                 }
             }
         }
