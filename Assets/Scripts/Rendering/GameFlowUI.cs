@@ -137,6 +137,10 @@ namespace StellarisClone.Rendering
             if (ui.IsShipyardOpen) { ui.CloseShipyard(); return; }
             if (ui.IsBlockingFlowOpen) return;
 
+            // В режиме системы Esc возвращает на карту галактики (меню паузы — следующим нажатием)
+            var svm = SystemViewManager.Instance;
+            if (svm != null && svm.IsInSystemView) { svm.ExitToGalaxyView(); return; }
+
             OpenPause();
         }
 
