@@ -18,7 +18,7 @@ namespace StellarisClone.Rendering
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color PanelBg = new Color(0.015f, 0.03f, 0.045f, 0.86f);
+        private static readonly Color PanelBg = new Color(0.016f, 0.03f, 0.044f, 0.97f);
 
         private Action<FactionInfo> _onChoose;
         private Action _onBack;
@@ -147,7 +147,7 @@ namespace StellarisClone.Rendering
 
         private void BuildLeft(RectTransform rt)
         {
-            var title = LGBuild.Label(rt, "<color=#F2A33A>:</color> НОВАЯ ИГРА / ВЫБОР ИМПЕРИИ", 30, Primary, TextAnchor.UpperLeft, bold: true);
+            var title = LGBuild.Label(rt, "НОВАЯ ИГРА / ВЫБОР ИМПЕРИИ", 30, Primary, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(44, -36), new Vector2(760, 40));
             var sub = LGBuild.Label(rt, "Выберите цивилизацию, которую поведёте к звёздам", 14, Muted, TextAnchor.UpperLeft);
             sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -78), new Vector2(760, 22));
@@ -190,7 +190,7 @@ namespace StellarisClone.Rendering
             var info = LGBuild.Panel(rt, "GameInfo", PanelBg);
             info.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(44f, -344f), new Vector2(380f, 112f));
             var ifx = LG.Platter(info.gameObject, 4f);
-            ifx.FillMultiplier = 2.6f;
+            ifx.FillMultiplier = 3f;
             var ih = LGBuild.Label(info.transform, "<color=#F2A33A>■</color> ПАРАМЕТРЫ ГАЛАКТИКИ", 13, Primary, TextAnchor.UpperLeft, bold: true);
             ih.rectTransform.TopBand(10, 20, 14, 10);
             var it = LGBuild.Label(info.transform,
@@ -212,7 +212,7 @@ namespace StellarisClone.Rendering
             pr.offsetMin = new Vector2(-560f, 110f);
             pr.offsetMax = new Vector2(-34f, -48f);
             var pfx = LG.Platter(panel.gameObject, 4f);
-            pfx.FillMultiplier = 2.4f;
+            pfx.FillMultiplier = 3f;
             pfx.SpecularMultiplier = 0.2f;
             _infoGroup = panel.gameObject.AddComponent<CanvasGroup>();
 
@@ -328,7 +328,7 @@ namespace StellarisClone.Rendering
 
             // Правитель
             LGBuild.Clear(_leaderHost);
-            LeaderPortraitView.Create(_leaderHost, leader, 1f, new Vector4(0f, 0f, 0.12f, 0f), false, false, true);
+            LeaderPortraitView.Create(_leaderHost, leader, 1f, new Vector4(0.14f, 0.14f, 0.30f, 0f), false, false, true);
 
             // Информация
             _emblem.color = Color.Lerp(ec, new Color(0.6f, 0.2f, 0.05f), 0.25f);

@@ -412,7 +412,7 @@ namespace StellarisClone.Rendering
             _portraitKey = key;
             LGBuild.Clear(_portraitHost);
             // Здесь правитель не моргает и стоит без фона своей картинки — в сцене своей империи
-            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0f, 0f, 0.16f, 0f), false, false, true);
+            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0.14f, 0.14f, 0.30f, 0f), false, false, true);
             if (v == null) LGIcons.Create(_portraitHost, LGIcon.Leader, 260, new Color(1f, 1f, 1f, 0.15f));
         }
 
