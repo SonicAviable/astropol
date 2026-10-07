@@ -73,7 +73,7 @@ namespace StellarisClone.Rendering
             if (ui == null) return;
             BuildPauseMenu(ui.ModalCanvas.transform);
             BuildEndScreen(ui.ModalCanvas.transform);
-            BuildTracker(ui.HudCanvas.transform);
+            // Трекер целей на HUD убран: прогресс к победе — в меню Esc (страница «Цели»), справа — аутлайнер
 
             // Алерты под верхней панелью (свободный слот науки, простаивающие корабли и т.д.)
             _alerts = gameObject.AddComponent<AlertBar>();
