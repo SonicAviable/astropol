@@ -123,6 +123,11 @@ namespace StellarisClone.Core
         public float HP, Armor, Shield, MaxHP, MaxArmor, MaxShield;
         public float Damage, FireRate, Evasion, HyperSpeed, Upkeep;
         public int Weapon;
+        // Орудия по отдельности (с версии с независимыми орудиями; в старых сохранениях пусто)
+        public List<int> WType = new List<int>();
+        public List<float> WDamage = new List<float>();
+        public List<float> WRate = new List<float>();
+        public float Accuracy;
     }
 
     [Serializable]
@@ -494,9 +499,15 @@ namespace StellarisClone.Core
                 Hull = (int)d.HullClass, DesignId = d.DesignId, DesignAlloyCost = d.DesignAlloyCost,
                 HP = d.HullPoints, Armor = d.ArmorPoints, Shield = d.ShieldPoints,
                 MaxHP = d.MaxHullPoints, MaxArmor = d.MaxArmorPoints, MaxShield = d.MaxShieldPoints,
-                Damage = d.Damage, FireRate = d.FireRate, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed,
+                Damage = d.Damage, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed, Accuracy = d.Accuracy,
                 Upkeep = d.UpkeepEnergy, Weapon = (int)d.PrimaryWeapon
             };
+            foreach (var w in d.Weapons)
+            {
+                f.WType.Add((int)w.Type);
+                f.WDamage.Add(w.Damage);
+                f.WRate.Add(w.FireRate);
+            }
             f.Path.AddRange(d.Path);
             f.Queue.AddRange(d.OrderQueue);
             return f;
@@ -573,16 +584,51 @@ namespace StellarisClone.Core
             d.DesignAlloyCost = f.DesignAlloyCost;
             d.HullPoints = f.HP; d.ArmorPoints = f.Armor; d.ShieldPoints = f.Shield;
             d.MaxHullPoints = f.MaxHP; d.MaxArmorPoints = f.MaxArmor; d.MaxShieldPoints = f.MaxShield;
-            d.Damage = f.Damage; d.FireRate = f.FireRate; d.Evasion = f.Evasion;
+            d.Evasion = f.Evasion;
+            d.Accuracy = f.Accuracy;
             d.HyperSpeed = f.HyperSpeed;
+            d.SetWeapons(RestoreWeapons(f, d));
             // Содержание — производное от типа и корпуса (в старых сохранениях ставки были другими)
             d.UpkeepEnergy = FleetData.UpkeepFor(d.Type, d.HullClass);
-            d.PrimaryWeapon = (WeaponDamageType)f.Weapon;
             d.InCombat = false;
-            d.FireCooldown = 0f;
             d.Destroyed = false;
             // Корабль «в пути» без цели — просто стоит на орбите
             if (d.State == FleetState.InHyperlane && d.TargetSystemId < 0) d.State = FleetState.Orbiting;
+        }
+
+        /// <summary>
+        /// Орудия корабля из сохранения. В старых сохранениях урон и скорострельность всех орудий
+        /// хранились суммами — берём орудия из проекта, а если проекта нет (автопроекты ИИ),
+        /// делим суммы поровну на слоты оружия корпуса.
+        /// </summary>
+        private static List<WeaponMount> RestoreWeapons(FleetSave f, FleetData d)
+        {
+            var list = new List<WeaponMount>();
+            if (f.WType != null && f.WType.Count > 0)
+            {
+                for (int i = 0; i < f.WType.Count && i < f.WDamage.Count && i < f.WRate.Count; i++)
+                    list.Add(new WeaponMount((WeaponDamageType)f.WType[i], f.WDamage[i], f.WRate[i]));
+                return list;
+            }
+            if (d.Type != FleetType.Military || f.Damage <= 0f) return list;
+
+            var dm = ShipDesignManager.Instance;
+            var design = dm != null ? dm.GetDesign(f.DesignId) : null;
+            if (design != null)
+            {
+                dm.Recalc(design);
+                if (design.Mounts.Count > 0)
+                {
+                    if (f.Accuracy <= 0f) d.Accuracy = design.Accuracy;
+                    return design.Mounts;
+                }
+            }
+
+            var hull = dm != null ? dm.GetHull(d.HullClass) : null;
+            int n = Mathf.Max(1, hull != null ? hull.WeaponSlots : 1);
+            for (int i = 0; i < n; i++)
+                list.Add(new WeaponMount((WeaponDamageType)f.Weapon, f.Damage / n, Mathf.Max(0.1f, f.FireRate / n)));
+            return list;
         }
 
         public static ShipDesign BuildDesign(DesignSave ds)

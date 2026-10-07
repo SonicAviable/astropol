@@ -39,17 +39,18 @@ namespace StellarisClone.Core
         public float MaxHullPoints = 80f;
         public float MaxArmorPoints = 20f;
         public float MaxShieldPoints = 30f;
+        /// <summary>Суммарный урон одного залпа всех орудий (0 — корабль безоружен).</summary>
         public float Damage = 8f;
-        public float FireRate = 1f;
         public float Evasion = 12f;
+        public float Accuracy;
         public WeaponDamageType PrimaryWeapon = WeaponDamageType.Kinetic;
         public float HyperSpeed = 1f;
+        public readonly List<WeaponMount> Weapons = new List<WeaponMount>();
 
         // Ежемесячное содержание (энергия)
         public float UpkeepEnergy = 1f;
 
         public bool InCombat;
-        public float FireCooldown;
         public bool Destroyed;
 
         // ==================== ОЧЕРЕДЬ ПРИКАЗОВ ====================
@@ -108,8 +109,7 @@ namespace StellarisClone.Core
                 HullPoints = MaxHullPoints = 40f;
                 ArmorPoints = MaxArmorPoints = 8f;
                 ShieldPoints = MaxShieldPoints = 0f;
-                Damage = 0f;
-                FireRate = 0f;
+                SetWeapons(null);
                 Evasion = 8f;
                 MilitaryPower = 0;
                 return;
@@ -126,12 +126,31 @@ namespace StellarisClone.Core
             HullPoints = MaxHullPoints = 80f;
             ArmorPoints = MaxArmorPoints = 20f;
             ShieldPoints = MaxShieldPoints = 30f;
-            Damage = 8f;
-            FireRate = 1f;
+            SetWeapons(new[] { new WeaponMount(WeaponDamageType.Kinetic, 8f, 1f) });
             Evasion = 12f;
-            PrimaryWeapon = WeaponDamageType.Kinetic;
+            Accuracy = 0f;
             MilitaryPower = 120;
             CombatMath.ApplyDurability(this);
+        }
+
+        /// <summary>Заменить орудия (копии — у каждого корабля своя перезарядка).</summary>
+        public void SetWeapons(IEnumerable<WeaponMount> mounts)
+        {
+            Weapons.Clear();
+            Damage = 0f;
+            if (mounts != null)
+                foreach (var m in mounts)
+                {
+                    if (m == null || m.Damage <= 0f) continue;
+                    Weapons.Add(new WeaponMount(m.Type, m.Damage, m.FireRate));
+                    Damage += m.Damage;
+                }
+            PrimaryWeapon = ShipDesign.DominantType(Weapons, WeaponDamageType.Kinetic);
+        }
+
+        public float Dps
+        {
+            get { float s = 0f; foreach (var w in Weapons) s += w.Dps; return s; }
         }
 
         /// <summary>
@@ -161,10 +180,9 @@ namespace StellarisClone.Core
             MaxHullPoints = HullPoints = design.Hull;
             MaxArmorPoints = ArmorPoints = design.Armor;
             MaxShieldPoints = ShieldPoints = design.Shields;
-            Damage = design.Damage;
-            FireRate = design.FireRate;
+            SetWeapons(design.Mounts);
             Evasion = design.Evasion;
-            PrimaryWeapon = design.PrimaryWeapon;
+            Accuracy = design.Accuracy;
             HyperSpeed = design.Speed;
             MilitaryPower = Mathf.RoundToInt(design.Dps * 12f + design.Hull * 0.35f + design.Armor * 0.2f + design.Shields * 0.15f);
 

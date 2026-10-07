@@ -117,7 +117,8 @@ namespace StellarisClone.Core
         {
             if (d == null || d.Destroyed || d.Type != FleetType.Military) return 0f;
             var b = EmpireBonuses.For(d.OwnerId);
-            float dps = d.Damage * d.FireRate * b.DamageMult(d.PrimaryWeapon);
+            float dps = 0f;
+            foreach (var w in d.Weapons) dps += w.Dps * b.DamageMult(w.Type);
             return dps * 12f + d.HullPoints * 0.35f + d.ArmorPoints * 0.2f + d.ShieldPoints * 0.15f;
         }
 

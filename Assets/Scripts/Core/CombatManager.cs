@@ -31,8 +31,12 @@ namespace StellarisClone.Core
 
         /// <summary>Длина боевого раунда, игровых дней.</summary>
         public const float RoundDays = 0.1f;
-        /// <summary>Выстрелов в день на единицу скорострельности (FireRate проекта — «в секунду»).</summary>
-        public const float ShotsPerDay = 1.5f;
+        /// <summary>
+        /// Выстрелов в день на единицу скорострельности орудия. Раньше урон и скорострельность всех
+        /// орудий корабля перемножались суммами; теперь каждое орудие стреляет само, а темп
+        /// поднят вдвое, чтобы корвет с двумя орудиями воевал так же быстро, как прежде.
+        /// </summary>
+        public const float ShotsPerDay = 3f;
         /// <summary>Сколько дней без перестрелки, чтобы бой считался завершённым.</summary>
         private const float BattleEndQuietDays = 0.5f;
 
@@ -267,38 +271,38 @@ namespace StellarisClone.Core
             return false;
         }
 
+        /// <summary>Каждое орудие корабля стреляет само: своим типом урона и со своей перезарядкой.</summary>
         private void FireRound(Combatant shooter, List<Combatant> parts, Battle battle, float dt)
         {
-            float damage, fireRate;
-            WeaponDamageType weapon;
-            float cooldown;
             if (shooter.Fleet != null)
             {
                 var d = shooter.Fleet.Data;
-                damage = d.Damage; fireRate = d.FireRate * LeaderManager.AdmiralFireRateMult(d.OwnerId, battle.SystemId);
-                weapon = d.PrimaryWeapon;
-                cooldown = d.FireCooldown;
+                float rateMult = LeaderManager.AdmiralFireRateMult(d.OwnerId, battle.SystemId);
+                foreach (var w in d.Weapons)
+                    w.Cooldown = FireWeapon(shooter, parts, battle, dt, w.Damage, w.FireRate * rateMult, w.Type, w.Cooldown);
             }
             else
             {
-                damage = shooter.Base.Damage; fireRate = shooter.Base.FireRate; weapon = shooter.Base.Weapon;
-                cooldown = shooter.Base.Cooldown;
+                var b = shooter.Base;
+                b.Cooldown = FireWeapon(shooter, parts, battle, dt, b.Damage, b.FireRate, b.Weapon, b.Cooldown);
             }
-            if (damage <= 0f || fireRate <= 0f) return;
+        }
 
+        private float FireWeapon(Combatant shooter, List<Combatant> parts, Battle battle, float dt,
+                                 float damage, float fireRate, WeaponDamageType weapon, float cooldown)
+        {
+            if (damage <= 0f || fireRate <= 0f) return 0f;
             cooldown -= dt;
             int shots = 0;
             while (cooldown <= 0f && shots < 4)
             {
                 var target = PickTarget(shooter, parts);
-                if (!target.HasValue) { cooldown = 0f; break; }
+                if (!target.HasValue) return 0f;
                 Shoot(shooter, target.Value, damage, weapon, battle);
                 cooldown += 1f / Mathf.Max(0.05f, fireRate * ShotsPerDay);
                 shots++;
             }
-
-            if (shooter.Fleet != null) shooter.Fleet.Data.FireCooldown = cooldown;
-            else shooter.Base.Cooldown = cooldown;
+            return cooldown;
         }
 
         /// <summary>Выбор цели: прежняя, если жива; иначе случайная с весом по размеру.</summary>
@@ -342,8 +346,9 @@ namespace StellarisClone.Core
             if (target.Fleet != null)
             {
                 var db = EmpireBonuses.For(target.Owner);
+                float accuracy = ab.Accuracy + (shooter.Fleet != null ? shooter.Fleet.Data.Accuracy : 0f);
                 float evade = Mathf.Clamp01((target.Fleet.Data.Evasion * db.EvasionMult
-                                             * LeaderManager.AdmiralEvasionMult(target.Owner, battle.SystemId) - ab.Accuracy) / 100f);
+                                             * LeaderManager.AdmiralEvasionMult(target.Owner, battle.SystemId) - accuracy) / 100f);
                 if (Random.value < evade * 0.45f)
                 {
                     SpawnBeam(from, to, wc, 0.12f);

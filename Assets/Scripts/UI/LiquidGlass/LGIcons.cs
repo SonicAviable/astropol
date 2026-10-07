@@ -20,7 +20,9 @@ namespace StellarisClone.Rendering
         // Меню
         Save, Load, Speaker, Monitor, Dice, Info, Power, Trash,
         // Дипломатия
-        Swords, Peace, Handshake, Gift, Border, Betrayal, Siege, Wrench
+        Swords, Peace, Handshake, Gift, Border, Betrayal, Siege, Wrench,
+        // Модули и корпуса кораблей
+        Laser, Cannon, Missile, ShieldDome, ArmorPlate, Thruster, Corvette, Frigate, Destroyer
     }
 
     /// <summary>
@@ -610,6 +612,77 @@ namespace StellarisClone.Rendering
                         float handle = Segment(p, V(-0.66f, -0.66f), V(0.2f, 0.2f), 0.13f);
                         float head = Sub(Circle(p, V(0.42f, 0.42f), 0.38f), Box(Rot(p - V(0.58f, 0.58f), -45f), Vector2.zero, V(0.12f, 0.36f)));
                         return U(handle, head);
+                    };
+
+                case LGIcon.Laser:
+                    return p =>
+                    {
+                        Vector2 q = Rot(p, -35f);
+                        return U(Box(q, V(-0.62f, 0f), V(0.26f, 0.2f), 0.07f),
+                                 Segment(q, V(-0.36f, 0f), V(0.62f, 0f), 0.075f),
+                                 Ring(q, V(0.72f, 0f), 0.2f, 0.055f),
+                                 Circle(q, V(0.72f, 0f), 0.08f));
+                    };
+
+                case LGIcon.Cannon:
+                    return p => U(
+                        Box(p, V(-0.3f, -0.66f), V(0.56f, 0.16f), 0.06f),
+                        Mathf.Max(Circle(p, V(-0.3f, -0.5f), 0.36f), -(p.y + 0.5f)),
+                        Segment(p, V(-0.24f, -0.3f), V(0.5f, 0.42f), 0.12f),
+                        Circle(p, V(0.74f, 0.68f), 0.1f),
+                        Circle(p, V(0.9f, 0.32f), 0.08f));
+
+                case LGIcon.Missile:
+                    return p =>
+                    {
+                        Vector2 q = Rot(p, -45f);
+                        return U(Segment(q, V(-0.62f, 0f), V(0.4f, 0f), 0.16f),
+                                 Triangle(q, V(0.38f, 0.16f), V(0.38f, -0.16f), V(0.94f, 0f)),
+                                 Triangle(q, V(-0.3f, 0.12f), V(-0.68f, 0.12f), V(-0.76f, 0.48f)),
+                                 Triangle(q, V(-0.3f, -0.12f), V(-0.68f, -0.12f), V(-0.76f, -0.48f)));
+                    };
+
+                case LGIcon.ShieldDome:
+                    return p => U(
+                        Mathf.Max(Ring(p, V(0f, -0.55f), 1.0f, 0.08f), -(p.y + 0.55f)),
+                        Mathf.Max(Ring(p, V(0f, -0.55f), 0.68f, 0.07f), -(p.y + 0.55f)),
+                        Triangle(p, V(0f, 0.08f), V(-0.3f, -0.62f), V(0.3f, -0.62f)));
+
+                case LGIcon.ArmorPlate:
+                    return p => Sub(Hexagon(p, 0.86f),
+                                    U(Segment(p, Vector2.zero, V(0f, 1f), 0.05f),
+                                      Segment(p, Vector2.zero, Rot(V(0f, 1f), 120f), 0.05f),
+                                      Segment(p, Vector2.zero, Rot(V(0f, 1f), 240f), 0.05f),
+                                      Circle(p, Vector2.zero, 0.16f)));
+
+                case LGIcon.Thruster:
+                    return p => U(
+                        Poly(p, V(-0.3f, 0.9f), V(0.3f, 0.9f), V(0.52f, 0.28f), V(-0.52f, 0.28f)),
+                        Circle(p, V(0f, 0f), 0.26f),
+                        Triangle(p, V(-0.26f, 0f), V(0.26f, 0f), V(0f, -0.96f)),
+                        Triangle(p, V(-0.5f, 0.12f), V(-0.32f, 0.12f), V(-0.46f, -0.58f)),
+                        Triangle(p, V(0.5f, 0.12f), V(0.32f, 0.12f), V(0.46f, -0.58f)));
+
+                case LGIcon.Corvette:
+                    return p => Sub(Triangle(p, V(0f, 0.92f), V(-0.46f, -0.66f), V(0.46f, -0.66f)),
+                                    Triangle(p, V(0f, -0.26f), V(-0.22f, -0.7f), V(0.22f, -0.7f)));
+
+                case LGIcon.Frigate:
+                    return p => U(
+                        Poly(p, V(0f, 0.96f), V(0.24f, 0.4f), V(0.24f, -0.72f), V(-0.24f, -0.72f), V(-0.24f, 0.4f)),
+                        Box(p, V(-0.58f, -0.22f), V(0.13f, 0.42f), 0.08f),
+                        Box(p, V(0.58f, -0.22f), V(0.13f, 0.42f), 0.08f),
+                        Box(p, V(0f, -0.12f), V(0.5f, 0.06f)));
+
+                case LGIcon.Destroyer:
+                    return p =>
+                    {
+                        float hull = Poly(p, V(0f, 0.98f), V(0.3f, 0.3f), V(0.6f, -0.5f), V(0.6f, -0.78f),
+                                          V(-0.6f, -0.78f), V(-0.6f, -0.5f), V(-0.3f, 0.3f));
+                        hull = Sub(hull, U(Triangle(p, V(0f, -0.36f), V(-0.26f, -0.84f), V(0.26f, -0.84f)),
+                                           Segment(p, V(0f, 0.55f), V(0f, -0.1f), 0.045f)));
+                        return U(hull, Box(p, V(-0.76f, -0.3f), V(0.07f, 0.34f), 0.04f),
+                                       Box(p, V(0.76f, -0.3f), V(0.07f, 0.34f), 0.04f));
                     };
             }
             return p => Circle(p, Vector2.zero, 0.6f);
