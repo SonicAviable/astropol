@@ -115,6 +115,10 @@ namespace StellarisClone.Rendering
         /// </summary>
         public static LeaderPortraitView Create(Transform parent, LeaderPortraits.Entry entry, float zoom = 1.6f,
                                                 float fadeLeft = 0f, bool glitches = true)
+            => Create(parent, entry, zoom, new Vector4(fadeLeft, 0f, 0f, 0f), glitches);
+
+        /// <summary>То же, но с мягкими краями со всех сторон (left, right, bottom, top — доли кадра).</summary>
+        public static LeaderPortraitView Create(Transform parent, LeaderPortraits.Entry entry, float zoom, Vector4 fade, bool glitches)
         {
             if (entry == null || entry.Texture == null) return null;
             var rt = LGBuild.Rect(parent, "LeaderPortrait");
@@ -123,11 +127,11 @@ namespace StellarisClone.Rendering
             img.raycastTarget = false;
             LG.Ignore(rt.gameObject);
             var v = rt.gameObject.AddComponent<LeaderPortraitView>();
-            v.Setup(entry, zoom, fadeLeft, glitches);
+            v.Setup(entry, zoom, fade, glitches);
             return v;
         }
 
-        private void Setup(LeaderPortraits.Entry entry, float zoom, float fadeLeft, bool glitches)
+        private void Setup(LeaderPortraits.Entry entry, float zoom, Vector4 fade, bool glitches)
         {
             _img = GetComponent<RawImage>();
             _entry = entry;
@@ -144,7 +148,7 @@ namespace StellarisClone.Rendering
                 _mat.SetColor("_Accent", entry.Accent);
                 _mat.SetVector("_EyeL", entry.EyeL);
                 _mat.SetVector("_EyeR", entry.EyeR);
-                _mat.SetFloat("_FadeLeft", fadeLeft);
+                _mat.SetVector("_Fade", fade);
                 _img.material = _mat;
             }
 

@@ -235,6 +235,9 @@ namespace StellarisClone.Core
         public string OfferReason;
         public List<string> MemoryKeys = new List<string>();
         public List<float> MemoryValues = new List<float>();
+        public List<Agreement> Agreements = new List<Agreement>();
+        public Deal PendingDeal;
+        public int TradeOfferCooldown = 240;
 
         // Флот
         public int ArmyMode, ArmyTarget = -1, Rally = -1;

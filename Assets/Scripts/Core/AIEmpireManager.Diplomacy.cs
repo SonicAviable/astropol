@@ -14,7 +14,7 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager
     {
-        public enum OfferKind { None, Peace, Pact }
+        public enum OfferKind { None, Peace, Pact, Trade, Demand }
 
         public static event Action OnDiplomacyChanged;
         private static void RaiseDiplomacyChanged() => OnDiplomacyChanged?.Invoke();
@@ -187,6 +187,7 @@ namespace StellarisClone.Core
             if (PendingOffer != OfferKind.None && --_offerDays <= 0)
             {
                 PendingOffer = OfferKind.None;
+                PendingDeal = null;
                 _offerCooldownDays = 120;
             }
 
@@ -253,12 +254,14 @@ namespace StellarisClone.Core
             else WarWeariness = Mathf.Max(0f, WarWeariness - 5f);
 
             RecomputeOpinion();
+            MonthlyAgreements();
 
             if (AtWar) ConsiderPeaceOffer();
             else
             {
                 ConsiderWar();
                 if (!AtWar) ConsiderPactOffer();
+                if (!AtWar) ConsiderTradeOffer();
             }
             RaiseDiplomacyChanged();
         }
@@ -322,15 +325,18 @@ namespace StellarisClone.Core
 
         private void Offer(OfferKind kind, string reason)
         {
-            PendingOffer = kind;
-            PendingOfferReason = reason;
-            _offerDays = 60;
+            // Мир и пакт тоже ложатся на стол переговоров как договор
+            var d = new Deal();
+            d.Treaties.Add(new DealItem(kind == OfferKind.Peace ? DealItemKind.Peace : DealItemKind.Pact, 0f));
+            SetPendingDeal(d, kind, reason);
         }
 
         private void StartWar()
         {
             AtWar = true;
             PendingOffer = OfferKind.None;
+            PendingDeal = null;
+            BreakAgreements();
             _warMonths = 0;
             _systemsLostInWar = _systemsTakenInWar = _shipsLostInWar = _playerShipsLostInWar = 0;
             _capitalLost = false;
@@ -343,6 +349,7 @@ namespace StellarisClone.Core
         {
             AtWar = false;
             PendingOffer = OfferKind.None;
+            PendingDeal = null;
             TruceDays = TruceLengthDays;
             _offerCooldownDays = 180;
             AddMemory("grudge", -15f);
@@ -486,6 +493,7 @@ namespace StellarisClone.Core
         {
             var kind = PendingOffer;
             PendingOffer = OfferKind.None;
+            PendingDeal = null;
             if (kind == OfferKind.Peace && AtWar) MakePeace();
             else if (kind == OfferKind.Pact && !AtWar)
             {
@@ -500,6 +508,7 @@ namespace StellarisClone.Core
         {
             if (PendingOffer == OfferKind.None) return;
             PendingOffer = OfferKind.None;
+            PendingDeal = null;
             _offerCooldownDays = 180;
             AddMemory("rejected", -5f);
         }
@@ -520,6 +529,7 @@ namespace StellarisClone.Core
             s.Offer = (int)PendingOffer; s.OfferReason = PendingOfferReason; s.OfferDays = _offerDays;
             s.OfferCooldown = _offerCooldownDays; s.WarCooldown = _warCooldownDays;
             foreach (var kv in _memory) { s.MemoryKeys.Add(kv.Key); s.MemoryValues.Add(kv.Value); }
+            CaptureDeals(s);
         }
 
         private void RestoreDiplomacy(AISave s, int version)
@@ -537,11 +547,18 @@ namespace StellarisClone.Core
                 AtWar = s.AtWar; HasPact = s.Pact; TruceDays = s.TruceDays; WarWeariness = s.Weariness;
                 _warMonths = s.WarMonths; _systemsLostInWar = s.SystemsLost; _systemsTakenInWar = s.SystemsTaken;
                 _shipsLostInWar = s.ShipsLost; _playerShipsLostInWar = s.PlayerShipsLost; _capitalLost = s.CapitalLost;
-                PendingOffer = (OfferKind)Mathf.Clamp(s.Offer, 0, 2); PendingOfferReason = s.OfferReason ?? "";
+                PendingOffer = (OfferKind)Mathf.Clamp(s.Offer, 0, 4); PendingOfferReason = s.OfferReason ?? "";
                 _offerDays = s.OfferDays; _offerCooldownDays = s.OfferCooldown; _warCooldownDays = s.WarCooldown;
                 for (int i = 0; i < s.MemoryKeys.Count && i < s.MemoryValues.Count; i++)
                     if (MemoryTable.ContainsKey(s.MemoryKeys[i])) _memory[s.MemoryKeys[i]] = s.MemoryValues[i];
             }
+            RestoreDeals(s);
+            // Старое сохранение: предложение мира/пакта без стола переговоров
+            if (PendingOffer == OfferKind.Peace || PendingOffer == OfferKind.Pact)
+            {
+                if (PendingDeal == null) { string r = PendingOfferReason; int days = _offerDays; Offer(PendingOffer, r); _offerDays = days; }
+            }
+            else if (PendingOffer != OfferKind.None && PendingDeal == null) PendingOffer = OfferKind.None;
             RecomputeOpinion();
             _lastOpinionBucket = Opinion;
         }

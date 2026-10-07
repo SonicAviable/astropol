@@ -104,9 +104,9 @@ namespace StellarisClone.Core
 
         public EmpireEconomy.Report Report => _report;
         public bool IsBankrupt => _bankrupt;
-        public float MonthlyEnergyIncome => (BaseEnergyIncome + _report.Energy) * IncomeMult - _report.Upkeep;
-        public float MonthlyMineralsIncome => (BaseMineralsIncome + _report.Minerals) * IncomeMult;
-        public float MonthlyAlloysIncome => (BaseAlloysIncome + _report.Alloys) * IncomeMult;
+        public float MonthlyEnergyIncome => (BaseEnergyIncome + _report.Energy) * IncomeMult - _report.Upkeep + DealIncome("energy");
+        public float MonthlyMineralsIncome => (BaseMineralsIncome + _report.Minerals) * IncomeMult + DealIncome("minerals");
+        public float MonthlyAlloysIncome => (BaseAlloysIncome + _report.Alloys) * IncomeMult + DealIncome("alloys");
         public float MonthlyInfluenceIncome => BaseInfluenceIncome * FactionInfluence * IncomeMult;
 
         // ==================== НАУКА ====================
@@ -122,7 +122,7 @@ namespace StellarisClone.Core
 
         public float MonthlyScience =>
             (TechnologyManager.BaseScience + EmpireStats.Population(OwnerId) * TechnologyManager.SciencePerPop)
-            * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult;
+            * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult;
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
         private float ResearchThroughput => Mathf.Pow(_researchSlots, 1f - TechnologyManager.SlotSplitExponent);

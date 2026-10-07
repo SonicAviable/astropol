@@ -31,9 +31,13 @@ namespace StellarisClone.Core
 
         private EmpireEconomy.Report _report;
 
-        public float MonthlyEnergyIncome    => BaseEnergyIncome + _report.Energy - _report.Upkeep;
-        public float MonthlyMineralsIncome  => BaseMineralsIncome + _report.Minerals;
-        public float MonthlyAlloysIncome    => BaseAlloysIncome + _report.Alloys;
+        public float MonthlyEnergyIncome    => BaseEnergyIncome + _report.Energy - _report.Upkeep + DealEnergy;
+        public float MonthlyMineralsIncome  => BaseMineralsIncome + _report.Minerals + DealMinerals;
+        public float MonthlyAlloysIncome    => BaseAlloysIncome + _report.Alloys + DealAlloys;
+        /// <summary>Выплаты и торговые соглашения с другими империями (+ получаем, − платим).</summary>
+        public float DealEnergy   => AIEmpireManager.PlayerDealIncome("energy");
+        public float DealMinerals => AIEmpireManager.PlayerDealIncome("minerals");
+        public float DealAlloys   => AIEmpireManager.PlayerDealIncome("alloys");
         public float MonthlyInfluenceIncome => BaseInfluenceIncome;
 
         public EmpireEconomy.Report Report  => _report;

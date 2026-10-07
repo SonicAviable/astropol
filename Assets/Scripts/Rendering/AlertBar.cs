@@ -396,12 +396,19 @@ namespace StellarisClone.Rendering
                 foreach (var ai in AIEmpireManager.All)
                 {
                     if (ai.PendingOffer == AIEmpireManager.OfferKind.None) continue;
-                    bool peace = ai.PendingOffer == AIEmpireManager.OfferKind.Peace;
+                    var kind = ai.PendingOffer;
                     int owner = ai.OwnerId;
+                    var (icon, color, title) = kind switch
+                    {
+                        AIEmpireManager.OfferKind.Peace => (LGIcon.Peace, UIManager.DS.Green, $"{ai.AIName} предлагает мир"),
+                        AIEmpireManager.OfferKind.Pact => (LGIcon.Handshake, UIManager.DS.Green, $"{ai.AIName} предлагает пакт"),
+                        AIEmpireManager.OfferKind.Demand => (LGIcon.Warning, UIManager.DS.Red, $"{ai.AIName} требует дань"),
+                        _ => (LGIcon.Trade, UIManager.DS.Gold, $"{ai.AIName} предлагает сделку")
+                    };
                     _current.Add(new AlertInfo
                     {
-                        Id = "offer_" + owner, Icon = peace ? LGIcon.Peace : LGIcon.Handshake, Color = UIManager.DS.Green,
-                        Title = peace ? $"{ai.AIName} предлагает мир" : $"{ai.AIName} предлагает пакт",
+                        Id = "offer_" + owner, Icon = icon, Color = color,
+                        Title = title,
                         Body = $"Причина: {ai.PendingOfferReason}. Предложение в силе ещё {ai.PendingOfferDays} дн.",
                         ActionHint = "открыть дипломатию",
                         Action = () => DiplomacyModal.Instance?.Open(owner)

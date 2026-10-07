@@ -27,6 +27,7 @@ Shader "Astropolity/UI/LeaderPortrait"
         _Motion ("Motion amount", Range(0,1)) = 1
         _UvRect ("Visible uv rect (x, y, w, h)", Vector) = (0,0,1,1)
         _FadeLeft ("Fade left edge (0..1 of width)", Float) = 0
+        _Fade ("Edge fade (left, right, bottom, top)", Vector) = (0,0,0,0)
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -102,6 +103,7 @@ Shader "Astropolity/UI/LeaderPortrait"
             float4 _EyeL, _EyeR;
             float _T, _Blink, _Glitch, _Breath, _Motion, _FadeLeft;
             float4 _UvRect;
+            float4 _Fade;
             static float2 s_dx, s_dy;   // градиенты uv — для выборок внутри ветвлений
             float4 _ClipRect;
 
@@ -216,10 +218,15 @@ Shader "Astropolity/UI/LeaderPortrait"
                 col *= IN.color;
 
                 // Мягкий левый край — когда портрет лежит поверх другой картинки
-                if (_FadeLeft > 0.001)
+                float4 fade = max(_Fade, float4(_FadeLeft, 0, 0, 0));
+                if (dot(fade, 1.0) > 0.001)
                 {
                     float lx = (IN.uv.x - _UvRect.x) / max(_UvRect.z, 1e-5);
-                    col.a *= smoothstep(0.0, _FadeLeft, lx);
+                    float ly = (IN.uv.y - _UvRect.y) / max(_UvRect.w, 1e-5);
+                    if (fade.x > 0.001) col.a *= smoothstep(0.0, fade.x, lx);
+                    if (fade.y > 0.001) col.a *= smoothstep(0.0, fade.y, 1.0 - lx);
+                    if (fade.z > 0.001) col.a *= smoothstep(0.0, fade.z, ly);
+                    if (fade.w > 0.001) col.a *= smoothstep(0.0, fade.w, 1.0 - ly);
                 }
 
                 #ifdef UNITY_UI_CLIP_RECT

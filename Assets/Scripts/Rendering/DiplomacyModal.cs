@@ -1,38 +1,60 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using StellarisClone.Rendering;
+using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
-namespace StellarisClone.Core
+namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Окно дипломатии. Вкладки в шапке — по одной на каждую империю ИИ. Три колонки:
-    ///   • слева — соперник: характер, статус (мир / пакт / война / перемирие), отношение, его войны и миры
-    ///     с другими империями ИИ, сравнение сил;
-    ///   • в центре — «Почему так»: каждое слагаемое отношения ИИ с иконкой, пояснением и величиной;
-    ///   • справа — действия (подарки, пакт, война, мир, торговля), входящее предложение ИИ
-    ///     и прогноз: примут ли ваше предложение и почему.
-    /// Все значки — векторные иконки LGIcons, без символов шрифта.
+    /// Переговоры в духе Master of Orion: правитель во весь рост в центре, его реплика,
+    /// отношение и действующие соглашения, а внизу — стол переговоров: что может дать он,
+    /// что можете дать вы и сама сделка. Кнопка «Что вас устроит?» просит ИИ дописать условия.
+    /// Предложения ИИ (обмен, договоры, требование дани, мир, пакт) открываются здесь же.
     /// </summary>
     public class DiplomacyModal : MonoBehaviour
     {
         public static DiplomacyModal Instance { get; private set; }
         public bool IsOpen => _root != null && LG.IsVisible(_root);
 
+        private static Color Primary => UIManager.DS.TextPrimary;
+        private static Color Muted => UIManager.DS.TextMuted;
+        private static Color Cyan => UIManager.DS.NeonCyan;
+        private static Color Gold => UIManager.DS.Gold;
+        private static Color Green => UIManager.DS.Green;
+        private static Color Red => UIManager.DS.Red;
+        private static readonly Color PanelBg = new Color(0.020f, 0.038f, 0.055f, 0.90f);
+        private static readonly Color RowBg = new Color(0.045f, 0.075f, 0.100f, 0.92f);
+
+        private const float SidePanelW = 440f, CenterW = 680f, BottomH = 300f, BottomY = 104f;
+
         private Canvas _host;
         private GameObject _root;
-        private Text _title;
-        private RectTransform _left, _reasons, _actions;
-        private Text _reasonsTotal;
-        private RectTransform _tabs;
-        private int _rivalOwner = -1;
+        private TechTreeBackdrop _backdrop;
+        private RectTransform _portraitHost, _infoLeft, _infoRight, _tabs;
+        private RectTransform _aiList, _playerList, _tableAI, _tablePlayer, _centerPanel;
+        private Text _aiListTitle, _speechName, _speechText, _speechState, _reaction, _fee, _tableTitle, _colAI;
+        private Image _speechStateBg;
+        private RectTransform _reactionBar;
+        private Button _btnBalance, _btnBack, _btnPropose;
+        private Text _lblBalance, _lblBack, _lblPropose;
+        private Image _imgBalance, _imgBack, _imgPropose;
+
+        private int _owner = -1;
+        private Deal _deal = new Deal();
+        private bool _viewingOffer;
+        private string _speechFull = "";
+        private float _speechShown;
+        private string _signature = "";
         private float _refreshTimer;
-
-        private AIEmpireManager Current => AIEmpireManager.For(_rivalOwner) ?? AIEmpireManager.Instance;
         private bool _dirty;
+        private float _confirmUntil;
+        private string _confirmAction;
+        private string _portraitKey;
 
-        private static readonly Color CGold = UIManager.DS.Gold;
-        private static readonly Color CMuted = UIManager.DS.TextMuted;
+        private AIEmpireManager Current => AIEmpireManager.For(_owner) ?? AIEmpireManager.Instance;
 
         private void Awake()
         {
@@ -53,10 +75,12 @@ namespace StellarisClone.Core
 
         public void Open() => Open(-1);
 
-        /// <summary>Открыть на вкладке конкретной империи (-1 — оставить текущую).</summary>
-        public void Open(int rivalOwner)
+        /// <summary>Открыть переговоры с конкретной империей (-1 — с последней).</summary>
+        public void Open(int owner)
         {
-            if (rivalOwner > 0) _rivalOwner = rivalOwner;
+            if (owner > 0) _owner = owner;
+            if (Current == null) return;
+            _owner = Current.OwnerId;
             if (_host == null)
             {
                 var modal = GameObject.Find("ModalCanvas");
@@ -65,499 +89,912 @@ namespace StellarisClone.Core
             if (_host == null) return;
             if (_root == null) Build();
 
-            Refresh();
+            bool wasOpen = IsOpen;
             LG.Show(_root);
             _root.transform.SetAsLastSibling();
-            UIManager.Instance?.ShowModalDimPublic();
-            MapModeController.HideGlobal();
+            if (!wasOpen)
+            {
+                UIManager.Instance?.SetOverlayMode(true);
+                MapModeController.HideGlobal();
+                SFXManager.Play(Sfx.WindowOpen);
+            }
+            _backdrop.SetActive(true);
+            SwitchTo(_owner);
         }
 
         public void Close()
         {
-            if (_root == null) return;
+            if (_root == null || !IsOpen) return;
             LG.Hide(_root);
-            UIManager.Instance?.HideModalDimPublic();
+            _backdrop.SetActive(false);
+            UIManager.Instance?.SetOverlayMode(false);
             MapModeController.ShowGlobal();
+            SFXManager.Play(Sfx.WindowClose);
+        }
+
+        private void SwitchTo(int owner)
+        {
+            _owner = owner;
+            var ai = Current;
+            if (ai == null) return;
+            _deal = new Deal();
+            _viewingOffer = ai.PendingDeal != null;
+            Color ec = ai.AIEmpireColor;
+            _backdrop.SetColors(ec, Color.Lerp(ec, new Color(0.3f, 0.4f, 1f), 0.5f));
+            BuildPortrait(ai);
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            if (_viewingOffer) Say(DiplomacyLines.Get(leader, DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
+            else Say(DiplomacyLines.Get(leader, DiplomacyLines.GreetingFor(ai)));
+            RefreshAll();
         }
 
         private void Update()
         {
             if (!IsOpen) return;
+
+            // Реплика печатается
+            if (_speechShown < _speechFull.Length)
+            {
+                _speechShown = Mathf.Min(_speechFull.Length, _speechShown + Time.unscaledDeltaTime * 55f);
+                _speechText.text = _speechFull.Substring(0, Mathf.FloorToInt(_speechShown));
+            }
+
+            if (_confirmAction != null && Time.unscaledTime > _confirmUntil) { _confirmAction = null; RefreshInfo(); }
+
             _refreshTimer -= Time.unscaledDeltaTime;
             if (!_dirty && _refreshTimer > 0f) return;
             _refreshTimer = 1f;
-            // Перестраиваем окно только когда что-то заметно изменилось (иначе мигали бы подсказки)
-            string sig = Signature();
+            var ai = Current;
+            if (ai == null) return;
+            string sig = Signature(ai);
             if (!_dirty && sig == _signature) return;
             _dirty = false;
-            Refresh();
+            // Предложение ИИ пропало (истекло/исполнено) — возвращаемся к обычному столу
+            if (_viewingOffer && ai.PendingDeal == null) _viewingOffer = false;
+            if (!_viewingOffer && ai.PendingDeal != null && _deal.IsEmpty)
+            {
+                _viewingOffer = true;
+                Say(DiplomacyLines.Get(LeaderPortraits.ForFaction(ai.Faction), DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
+            }
+            RefreshAll();
+        }
+
+        private string Signature(AIEmpireManager ai)
+        {
+            var eco = EconomyManager.Instance;
+            return $"{ai.OwnerId}|{Mathf.RoundToInt(ai.Opinion)}|{ai.AtWar}|{ai.HasPact}|{ai.TruceDays / 30}|{ai.PendingOffer}|{ai.PendingOfferDays / 10}|" +
+                   $"{ai.Agreements.Count}|{ai.IsEliminated}|{(int)ai.EnergyCredits / 25}|{(int)ai.Minerals / 25}|{(int)ai.Alloys / 25}|{(int)ai.Influence / 10}|" +
+                   (eco != null ? $"{(int)eco.EnergyCredits / 25}|{(int)eco.Minerals / 25}|{(int)eco.Alloys / 25}|{(int)eco.Influence / 10}" : "");
+        }
+
+        private void Say(string line)
+        {
+            _speechFull = line ?? "";
+            _speechShown = 0f;
+            if (_speechText != null) _speechText.text = "";
         }
 
         // ================================================================ Каркас
 
+        private static Image GlassPanel(Transform parent, string name, Color rim)
+        {
+            var p = LGBuild.Panel(parent, name, PanelBg, raycast: true);
+            var fx = LG.Platter(p.gameObject, 6f);
+            fx.SetRim(rim);
+            fx.FillMultiplier = 2.6f;
+            fx.SpecularMultiplier = 0.2f;
+            return p;
+        }
+
         private void Build()
         {
             var rt = LGBuild.Rect(_host.transform, "DiplomacyModal");
-            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1120, 770));
+            rt.Stretch();
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
-            _root.AddComponent<Image>().color = UIManager.DS.BgDeep;
-            LG.Glass(_root, 26f).SetRim(LG.Palette.GoldRim);
-            LG.Motion(_root, LGAppear.Kind.Pop);
+            var bg = _root.AddComponent<Image>();
+            bg.color = new Color(0.008f, 0.014f, 0.022f, 1f);
+            bg.raycastTarget = true;
+            LG.Ignore(_root, includeChildren: false);
+            LG.Motion(_root, LGAppear.Kind.Fade);
 
-            // Шапка
-            var header = LGBuild.Panel(rt, "Header", UIManager.DS.BgHeader);
-            header.rectTransform.TopBand(0, 56);
-            LG.Header(header.gameObject);
-            var hi = LGIcons.Create(header.transform, LGIcon.Diplomacy, 22, CGold);
-            hi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(22, 22));
-            _title = LGBuild.Label(header.transform, "ДИПЛОМАТИЯ", 16, CGold, TextAnchor.MiddleLeft, bold: true);
-            _title.rectTransform.Stretch(56, 0, 70, 0);
-            _tabs = LGBuild.Rect(header.transform, "Tabs");
-            _tabs.anchorMin = new Vector2(1, 0.5f);
-            _tabs.anchorMax = new Vector2(1, 0.5f);
-            _tabs.pivot = new Vector2(1, 0.5f);
-            _tabs.anchoredPosition = new Vector2(-60, 0);
-            _tabs.sizeDelta = new Vector2(520, 34);
-            var close = LGBuild.Button(header.transform, "Close", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
-                                       Close, LGIcon.Close, null, 12, 15f);
-            ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(32, 32));
+            var bd = LGBuild.Rect(rt, "Backdrop");
+            bd.Stretch();
+            _backdrop = bd.gameObject.AddComponent<TechTreeBackdrop>();
+            _backdrop.Initialize(bd);
 
-            var body = LGBuild.Rect(rt, "Body");
-            body.Stretch(18, 18, 18, 72);
+            // Правитель во весь рост
+            _portraitHost = LGBuild.Rect(rt, "Leader");
+            _portraitHost.anchorMin = _portraitHost.anchorMax = new Vector2(0.5f, 1f);
+            _portraitHost.pivot = new Vector2(0.5f, 1f);
+            _portraitHost.sizeDelta = new Vector2(640f, 954f);
+            _portraitHost.anchoredPosition = new Vector2(0f, -6f);
 
-            // Левая колонка — соперник
-            _left = LGBuild.Rect(body, "Left");
-            _left.Column(0f, 0.31f, 0, 8);
+            // Затемнение снизу — под панелями стола
+            var shade = LGBuild.Panel(rt, "BottomShade", new Color(0f, 0.01f, 0.02f, 0.55f));
+            shade.rectTransform.anchorMin = new Vector2(0f, 0f);
+            shade.rectTransform.anchorMax = new Vector2(1f, 0f);
+            shade.rectTransform.pivot = new Vector2(0.5f, 0f);
+            shade.rectTransform.sizeDelta = new Vector2(0f, BottomY + BottomH + 30f);
+            LG.Ignore(shade.gameObject);
 
-            // Центр — причины отношения
-            var mid = LGBuild.Panel(body, "Reasons", UIManager.DS.BgSlot);
-            mid.rectTransform.Column(0.31f, 0.66f, 8, 8);
-            LG.Platter(mid.gameObject, 18f);
-            var mh = LGBuild.Rect(mid.transform, "Head");
-            mh.TopBand(12, 22, 16, 16);
-            var mhi = LGIcons.Create(mh, LGIcon.Info, 15, UIManager.DS.NeonCyan);
-            mhi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(15, 15));
-            var mht = LGBuild.Label(mh, "ПОЧЕМУ ТАКОЕ ОТНОШЕНИЕ", 11, UIManager.DS.NeonCyan, TextAnchor.MiddleLeft, bold: true);
-            mht.rectTransform.offsetMin = new Vector2(22, 0);
-            var listHost = LGBuild.Rect(mid.transform, "ListHost");
-            listHost.Stretch(8, 46, 8, 40);
-            _reasons = LGBuild.ScrollList(listHost, 6f, 4);
-            var totalRow = LGBuild.Rect(mid.transform, "Total");
-            totalRow.anchorMin = new Vector2(0, 0);
-            totalRow.anchorMax = new Vector2(1, 0);
-            totalRow.offsetMin = new Vector2(16, 10);
-            totalRow.offsetMax = new Vector2(-16, 40);
-            _reasonsTotal = LGBuild.Label(totalRow, "", 13, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold: true);
+            BuildInfoLeft(rt);
+            BuildInfoRight(rt);
+            BuildSpeech(rt);
+            BuildBottom(rt);
 
-            // Правая колонка — действия
-            _actions = LGBuild.Rect(body, "Actions");
-            _actions.Column(0.66f, 1f, 8, 0);
+            var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
+            ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -20), new Vector2(38, 38));
+            TooltipHelper.Attach(close.gameObject, "Закрыть  <color=#8AA2A8>(Esc)</color>");
 
-            LG.Skin(_root.transform);
             _root.SetActive(false);
+        }
+
+        private void BuildInfoLeft(RectTransform rt)
+        {
+            _infoLeft = LGBuild.Rect(rt, "InfoLeft");
+            _infoLeft.anchorMin = _infoLeft.anchorMax = new Vector2(0, 1);
+            _infoLeft.pivot = new Vector2(0, 1);
+            _infoLeft.sizeDelta = new Vector2(430f, 420f);
+            _infoLeft.anchoredPosition = new Vector2(34f, -26f);
+        }
+
+        private void BuildInfoRight(RectTransform rt)
+        {
+            _infoRight = LGBuild.Rect(rt, "InfoRight");
+            _infoRight.anchorMin = _infoRight.anchorMax = new Vector2(1, 1);
+            _infoRight.pivot = new Vector2(1, 1);
+            _infoRight.sizeDelta = new Vector2(440f, 360f);
+            _infoRight.anchoredPosition = new Vector2(-76f, -26f);
+
+            _tabs = LGBuild.Rect(rt, "Tabs");
+            _tabs.anchorMin = _tabs.anchorMax = new Vector2(1, 1);
+            _tabs.pivot = new Vector2(1, 1);
+            _tabs.sizeDelta = new Vector2(440f, 64f);
+            _tabs.anchoredPosition = new Vector2(-76f, -392f);
+        }
+
+        private void BuildSpeech(RectTransform rt)
+        {
+            var box = GlassPanel(rt, "Speech", new Color(1f, 1f, 1f, 0.10f));
+            var b = box.rectTransform;
+            b.anchorMin = b.anchorMax = new Vector2(0.5f, 1f);
+            b.pivot = new Vector2(1f, 1f);
+            b.sizeDelta = new Vector2(380f, 118f);
+            b.anchoredPosition = new Vector2(-110f, -250f);
+
+            _speechName = LGBuild.Label(b, "", 15, Primary, TextAnchor.UpperLeft, bold: true);
+            _speechName.rectTransform.TopBand(12, 22, 18, 150);
+            _speechStateBg = LGBuild.Panel(b, "State", new Color(0.1f, 0.2f, 0.2f, 1f));
+            _speechStateBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -12), new Vector2(128, 22));
+            var sfx = LG.Platter(_speechStateBg.gameObject, 4f);
+            sfx.FillMultiplier = 2.6f;
+            _speechState = LGBuild.Label(_speechStateBg.transform, "", 11, Primary, TextAnchor.MiddleCenter, bold: true);
+            _speechText = LGBuild.Label(b, "", 15, new Color(0.88f, 0.93f, 0.96f), TextAnchor.UpperLeft, wrap: true);
+            _speechText.supportRichText = false;
+            _speechText.rectTransform.Stretch(18, 10, 18, 42);
+        }
+
+        private void BuildBottom(RectTransform rt)
+        {
+            // Слева — что может дать ИИ
+            var left = GlassPanel(rt, "AIItems", new Color(1f, 1f, 1f, 0.10f));
+            Place(left.rectTransform, -(CenterW * 0.5f + 20f + SidePanelW * 0.5f), SidePanelW);
+            _aiListTitle = PanelHeader(left.rectTransform, "", TextAnchor.MiddleLeft);
+            var lh = LGBuild.Rect(left.rectTransform, "List");
+            lh.Stretch(6, 6, 6, 50);
+            _aiList = LGBuild.ScrollList(lh, 4f, 4);
+
+            // Справа — что можете дать вы
+            var right = GlassPanel(rt, "PlayerItems", new Color(1f, 1f, 1f, 0.10f));
+            Place(right.rectTransform, CenterW * 0.5f + 20f + SidePanelW * 0.5f, SidePanelW);
+            var rtt = PanelHeader(right.rectTransform, "ВЫ", TextAnchor.MiddleRight);
+            rtt.color = Gold;
+            var rh = LGBuild.Rect(right.rectTransform, "List");
+            rh.Stretch(6, 6, 6, 50);
+            _playerList = LGBuild.ScrollList(rh, 4f, 4);
+
+            // Центр — стол переговоров
+            var center = GlassPanel(rt, "Table", new Color(Cyan.r, Cyan.g, Cyan.b, 0.25f));
+            _centerPanel = center.rectTransform;
+            Place(_centerPanel, 0f, CenterW);
+            _tableTitle = PanelHeader(_centerPanel, "СТОЛ ПЕРЕГОВОРОВ", TextAnchor.MiddleCenter);
+
+            var cols = LGBuild.Rect(_centerPanel, "Cols");
+            cols.Stretch(10, 66, 10, 50);
+            var cl = LGBuild.Rect(cols, "ColAI");
+            cl.Column(0f, 0.5f, 0, 6);
+            var cr = LGBuild.Rect(cols, "ColPlayer");
+            cr.Column(0.5f, 1f, 6, 0);
+            _colAI = ColumnHead(cl, "ОНИ ДАЮТ");
+            ColumnHead(cr, "ВЫ ДАЁТЕ");
+            var divider = LGBuild.Panel(cols, "Divider", new Color(1f, 1f, 1f, 0.08f));
+            divider.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            divider.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            divider.rectTransform.sizeDelta = new Vector2(1f, 0f);
+            LG.Ignore(divider.gameObject);
+            var clh = LGBuild.Rect(cl, "List");
+            clh.Stretch(0, 0, 0, 24);
+            _tableAI = LGBuild.ScrollList(clh, 4f, 2);
+            var crh = LGBuild.Rect(cr, "List");
+            crh.Stretch(0, 0, 0, 24);
+            _tablePlayer = LGBuild.ScrollList(crh, 4f, 2);
+
+            // Реакция собеседника и стоимость переговоров
+            var foot = LGBuild.Rect(_centerPanel, "Reaction");
+            foot.anchorMin = new Vector2(0, 0);
+            foot.anchorMax = new Vector2(1, 0);
+            foot.pivot = new Vector2(0.5f, 0);
+            foot.offsetMin = new Vector2(16, 10);
+            foot.offsetMax = new Vector2(-16, 58);
+            _reaction = LGBuild.Label(foot, "", 13, Primary, TextAnchor.UpperLeft, bold: true);
+            _reaction.rectTransform.TopBand(0, 20);
+            _fee = LGBuild.Label(foot, "", 11, Muted, TextAnchor.UpperRight);
+            _fee.rectTransform.TopBand(2, 18);
+            var barHost = LGBuild.Rect(foot, "Bar");
+            barHost.TopBand(28, 8);
+            _reactionBar = LGBuild.Bar(barHost, Green, 0f, 6f);
+
+            // Кнопки
+            (_btnBalance, _imgBalance, _lblBalance) = ActionButton(rt, "Balance", new Vector2(0f, BottomY - 52f), new Vector2(CenterW, 40f), OnBalanceClicked);
+            (_btnBack, _imgBack, _lblBack) = ActionButton(rt, "Back", new Vector2(-(CenterW * 0.25f + 4f), BottomY - 100f), new Vector2(CenterW * 0.5f - 8f, 40f), OnBackClicked);
+            (_btnPropose, _imgPropose, _lblPropose) = ActionButton(rt, "Propose", new Vector2(CenterW * 0.25f + 4f, BottomY - 100f), new Vector2(CenterW * 0.5f - 8f, 40f), OnProposeClicked);
+        }
+
+        private static void Place(RectTransform r, float x, float w)
+        {
+            r.anchorMin = r.anchorMax = new Vector2(0.5f, 0f);
+            r.pivot = new Vector2(0.5f, 0f);
+            r.sizeDelta = new Vector2(w, BottomH);
+            r.anchoredPosition = new Vector2(x, BottomY);
+        }
+
+        private static Text PanelHeader(RectTransform panel, string text, TextAnchor anchor)
+        {
+            var head = LGBuild.Rect(panel, "Header");
+            head.TopBand(0, 44, 18, 18);
+            var t = LGBuild.Label(head, text, 20, Primary, anchor, bold: true);
+            var line = LGBuild.Panel(panel, "Line", new Color(1f, 1f, 1f, 0.10f));
+            line.rectTransform.TopBand(44, 1, 14, 14);
+            LG.Ignore(line.gameObject);
+            return t;
+        }
+
+        private static Text ColumnHead(RectTransform col, string text)
+        {
+            var t = LGBuild.Label(col, text, 11, Muted, TextAnchor.UpperCenter, bold: true);
+            t.rectTransform.TopBand(0, 18);
+            return t;
+        }
+
+        private static (Button, Image, Text) ActionButton(RectTransform parent, string name, Vector2 pos, Vector2 size, System.Action onClick)
+        {
+            var b = LGBuild.Button(parent, name, new Color(0.08f, 0.30f, 0.32f, 0.96f), new Color(1f, 1f, 1f, 0.18f), onClick, null, " ", 14, 4f);
+            var r = (RectTransform)b.transform;
+            r.anchorMin = r.anchorMax = new Vector2(0.5f, 0f);
+            r.pivot = new Vector2(0.5f, 0f);
+            r.sizeDelta = size;
+            r.anchoredPosition = pos;
+            var fx = b.GetComponent<LiquidGlassEffect>();
+            if (fx != null) { fx.SpecularMultiplier = 0.3f; fx.GlowMultiplier = 0.3f; fx.FillMultiplier = 2.4f; }
+            return (b, b.GetComponent<Image>(), b.GetComponentInChildren<Text>());
         }
 
         // ================================================================ Обновление
 
-        private string _signature;
-
-        private string Signature()
+        private void BuildPortrait(AIEmpireManager ai)
         {
-            var ai = Current;
-            var eco = EconomyManager.Instance;
-            if (ai == null) return "";
-            string rel = "";
-            foreach (var o in AIEmpireManager.All)
-                if (o != ai) rel += $"{AIRelations.AtWar(ai.OwnerId, o.OwnerId)}{AIRelations.TruceDays(ai.OwnerId, o.OwnerId) / 30}{o.IsEliminated}|";
-            return $"{ai.OwnerId}|{rel}{Mathf.RoundToInt(ai.Opinion)}|{ai.AtWar}|{ai.HasPact}|{ai.TruceDays / 30}|{ai.PendingOffer}|{ai.PendingOfferDays / 10}|" +
-                   $"{Mathf.RoundToInt(ai.WarWeariness)}|{ai.OpinionBreakdown.Count}|{ai.IsEliminated}|" +
-                   (eco != null ? $"{(int)(eco.Influence / 5)}|{(int)(eco.EnergyCredits / 50)}|{(int)(eco.Alloys / 25)}" : "");
-        }
-
-        private void Refresh()
-        {
-            var ai = Current;
-            if (ai == null || _root == null) return;
-            _rivalOwner = ai.OwnerId;
-            _signature = Signature();
-            _title.text = "ДИПЛОМАТИЯ";
-            BuildTabs(ai);
-            BuildLeft(ai);
-            BuildReasons(ai);
-            BuildActions(ai);
-            LG.Skin(_root.transform);
-        }
-
-        // ---------- Вкладки империй ----------
-
-        private void BuildTabs(AIEmpireManager current)
-        {
-            LGBuild.Clear(_tabs);
-            int n = AIEmpireManager.All.Count;
-            if (n == 0) return;
-            float w = Mathf.Min(250f, 520f / n);
-            for (int i = 0; i < n; i++)
-            {
-                var ai = AIEmpireManager.All[i];
-                bool sel = ai == current;
-                Color mc = ai.MapColor;
-                string state = ai.IsEliminated ? "повержен" : ai.AtWar ? "война" : ai.HasPact ? "пакт" : "мир";
-                var b = LGBuild.Button(_tabs, "Tab_" + ai.OwnerId,
-                    sel ? new Color(mc.r * 0.35f, mc.g * 0.35f, mc.b * 0.35f, 1f) : UIManager.DS.BtnNeutral,
-                    new Color(mc.r, mc.g, mc.b, sel ? 0.85f : 0.3f),
-                    () => { _rivalOwner = ai.OwnerId; Refresh(); },
-                    null, $"<color={LGBuild.Hex(mc)}>◆</color>  {ai.AIName.ToUpper()}  <color=#8AA2A8>· {state}</color>", 10);
-                var rt = (RectTransform)b.transform;
-                rt.anchorMin = new Vector2(1, 0);
-                rt.anchorMax = new Vector2(1, 1);
-                rt.pivot = new Vector2(1, 0.5f);
-                rt.sizeDelta = new Vector2(w - 6f, 0);
-                rt.anchoredPosition = new Vector2(-(n - 1 - i) * w, 0);
-            }
-        }
-
-        // ---------- Левая колонка ----------
-
-        private void BuildLeft(AIEmpireManager ai)
-        {
-            LGBuild.Clear(_left);
-            Color ac = ai.AIEmpireColor;
-            float y = 0f;
-
-            // Карточка империи: живой портрет правителя слева, сведения справа
             var leader = LeaderPortraits.ForFaction(ai.Faction);
-            const float PortW = 118f, PortH = 164f;
-            var card = LGBuild.Panel(_left, "Empire", UIManager.DS.BgSlot);
-            card.rectTransform.TopBand(y, PortH + 76f);
-            LG.Platter(card.gameObject, 18f).SetRim(new Color(ac.r, ac.g, ac.b, 0.45f));
-
-            var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.01f, 0.02f, 0.03f, 1f));
-            frame.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -12), new Vector2(PortW, PortH));
-            var ffx = LG.Platter(frame.gameObject, 8f);
-            ffx.SetRim(new Color(ac.r, ac.g, ac.b, 0.55f));
-            ffx.FillMultiplier = 3f;
-            var portHost = LG.RoundedMask(frame.transform, 8f, 1f);
-            var portrait = LeaderPortraitView.Create(portHost, leader, zoom: 1.45f);
-            if (portrait == null) LGIcons.Create(frame.transform, LGIcon.Leader, 46, Color.Lerp(ac, Color.white, 0.3f));
-            else if (ai.AtWar) portrait.GetComponent<RawImage>().color = new Color(1f, 0.86f, 0.84f, 1f);
-
-            float tx = PortW + 24f;
-            var name = LGBuild.Label(card.transform, ai.AIName.ToUpper(), 14, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true, wrap: true);
-            name.rectTransform.TopBand(12, 38, tx, 10);
-            var title = LGBuild.Label(card.transform, ai.AITitle, 11, CMuted, TextAnchor.UpperLeft);
-            title.rectTransform.TopBand(50, 16, tx, 10);
-            if (leader != null)
-            {
-                var ln = LGBuild.Label(card.transform, leader.Name, 13, Color.Lerp(ac, Color.white, 0.45f), TextAnchor.UpperLeft, bold: true);
-                ln.rectTransform.TopBand(76, 18, tx, 10);
-                var lt = LGBuild.Label(card.transform, leader.Title, 10, CMuted, TextAnchor.UpperLeft, wrap: true);
-                lt.rectTransform.TopBand(95, 28, tx, 10);
-            }
-            var pers = LGBuild.Label(card.transform, $"<color={LGBuild.Hex(CGold)}>Характер: {ai.Profile.Name.ToLower()}</color>", 11,
-                                     UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            pers.rectTransform.TopBand(PortH - 8f, 18, tx, 10);
-            string quote = leader != null ? $"<i>«{leader.Quote}»</i>  " : "";
-            var sum = LGBuild.Label(card.transform, quote + ai.Profile.Summary, 10, CMuted, TextAnchor.UpperLeft, wrap: true);
-            sum.rectTransform.Stretch(14, 8, 14, PortH + 20f);
-            y += PortH + 86f;
-
-            // Статус
-            StatusChip(ai, ref y);
-            NeighbourRelations(ai, ref y);
-
-            // Отношение
-            var op = LGBuild.Panel(_left, "Opinion", UIManager.DS.BgSlot);
-            op.rectTransform.TopBand(y, 70);
-            LG.Platter(op.gameObject, 16f);
-            float o = ai.Opinion;
-            Color oc = OpinionColor(o);
-            var ol = LGBuild.Label(op.transform, "ОТНОШЕНИЕ К ВАМ", 10, CMuted, TextAnchor.UpperLeft, bold: true);
-            ol.rectTransform.Stretch(14, 0, 14, 10);
-            var ov = LGBuild.Label(op.transform, $"<b>{o:+0;-0;0}</b>  {AIEmpireManager.OpinionLabel(o)}", 15, oc, TextAnchor.UpperRight);
-            ov.rectTransform.Stretch(14, 0, 14, 8);
-            var barHost = LGBuild.Rect(op.transform, "Bar");
-            barHost.anchorMin = new Vector2(0, 0);
-            barHost.anchorMax = new Vector2(1, 0);
-            barHost.offsetMin = new Vector2(14, 12);
-            barHost.offsetMax = new Vector2(-14, 24);
-            LGBuild.Bar(barHost, oc, Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, o), 8f);
-            y += 80f;
-
-            // Сравнение сил
-            int myPow = Mathf.RoundToInt(EmpireStats.MilitaryPower(0)), aiPow = Mathf.RoundToInt(EmpireStats.MilitaryPower(ai.OwnerId));
-            int mySys = EmpireStats.SystemCount(0), aiSys = EmpireStats.SystemCount(ai.OwnerId);
-            int myTech = EmpireStats.TechCount(0), aiTech = ai.ResearchedCount;
-            int myScore = EmpireStats.Score(0).Total, aiScore = EmpireStats.Score(ai.OwnerId).Total;
-            Compare(ref y, LGIcon.Fleet, "Флот", myPow, aiPow);
-            Compare(ref y, LGIcon.Starbase, "Системы", mySys, aiSys);
-            Compare(ref y, LGIcon.Research, "Технологии", myTech, aiTech);
-            Compare(ref y, LGIcon.Trophy, "Очки", myScore, aiScore);
+            string key = leader?.Key ?? "";
+            if (key == _portraitKey) return;
+            _portraitKey = key;
+            LGBuild.Clear(_portraitHost);
+            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0.22f, 0.22f, 0.30f, 0.05f), true);
+            if (v == null) LGIcons.Create(_portraitHost, LGIcon.Leader, 260, new Color(1f, 1f, 1f, 0.15f));
         }
 
-        private void StatusChip(AIEmpireManager ai, ref float y)
+        private void RefreshAll()
         {
-            LGIcon icon; string text; Color col; string sub;
-            if (ai.IsEliminated) { icon = LGIcon.Trophy; text = "ПОВЕРЖЕН"; col = CGold; sub = "Империя потеряла все системы"; }
-            else if (ai.AtWar)
-            {
-                icon = LGIcon.Swords; text = "ВОЙНА"; col = UIManager.DS.Red;
-                sub = $"{ai.WarMonths} мес. · усталость {ai.WarWeariness:0}% · захвачено вами {ai.SystemsLostInWar}, ими {ai.SystemsTakenInWar}";
-            }
-            else if (ai.HasPact) { icon = LGIcon.Handshake; text = "ПАКТ О НЕНАПАДЕНИИ"; col = UIManager.DS.NeonCyan; sub = "Договор действует, пока его не расторгнут"; }
-            else if (ai.TruceDays > 0) { icon = LGIcon.Peace; text = "ПЕРЕМИРИЕ"; col = UIManager.DS.Green; sub = $"Войну нельзя объявить ещё {Mathf.CeilToInt(ai.TruceDays / 30f)} мес."; }
-            else { icon = LGIcon.Peace; text = "МИР"; col = UIManager.DS.Green; sub = "Войны нет, но и договоров тоже"; }
-
-            var chip = LGBuild.Panel(_left, "Status", new Color(col.r * 0.22f, col.g * 0.22f, col.b * 0.22f, 1f));
-            chip.rectTransform.TopBand(y, 62);
-            LG.Platter(chip.gameObject, 16f).SetRim(new Color(col.r, col.g, col.b, 0.6f));
-            var ic = LGIcons.Create(chip.transform, icon, 26, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(26, 26));
-            var t = LGBuild.Label(chip.transform, text, 14, col, TextAnchor.UpperLeft, bold: true);
-            t.rectTransform.Stretch(52, 0, 10, 10);
-            var s = LGBuild.Label(chip.transform, sub, 10, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            s.rectTransform.Stretch(52, 4, 10, 30);
-            y += 72f;
+            var ai = Current;
+            if (ai == null) return;
+            _signature = Signature(ai);
+            RefreshInfo();
+            RefreshTabs();
+            RefreshSpeechHeader(ai);
+            RefreshItemLists();
+            RefreshTable();
         }
 
-        /// <summary>Как эта империя живёт с другими империями ИИ: война, перемирие или мир и отношение.</summary>
-        private void NeighbourRelations(AIEmpireManager ai, ref float y)
+        // ---------- Левый верх: отношение и соглашения ----------
+
+        private void RefreshInfo()
         {
+            var ai = Current;
+            LGBuild.Clear(_infoLeft);
+            LGBuild.Clear(_infoRight);
+            if (ai == null) return;
+
+            float y = 0f;
+            Color oc = OpinionColor(ai.Opinion);
+            var cap = LGBuild.Label(_infoLeft, "ОТНОШЕНИЕ", 15, Primary, TextAnchor.UpperLeft, bold: true);
+            cap.rectTransform.TopBand(y, 20, 0, 0);
+            var val = LGBuild.Label(_infoLeft, $"{AIEmpireManager.OpinionLabel(ai.Opinion).ToUpper()}  {ai.Opinion:+0;-0;0}", 12, oc, TextAnchor.UpperRight, bold: true);
+            val.rectTransform.TopBand(y + 2, 18, 0, 110);
+            var barHost = LGBuild.Rect(_infoLeft, "Bar");
+            barHost.TopBand(y + 26, 8, 0, 110);
+            LGBuild.Bar(barHost, oc, Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, ai.Opinion), 6f);
+            var hit = LGBuild.Panel(_infoLeft, "Hit", new Color(0, 0, 0, 0.01f), raycast: true);
+            hit.rectTransform.TopBand(y, 40, 0, 110);
+            LG.Ignore(hit.gameObject);
+            TooltipHelper.Attach(hit.gameObject, OpinionTooltip(ai));
+            y += 50f;
+
+            // Состояние
+            (string state, Color sc, LGIcon si) = StateOf(ai);
+            var chip = LGBuild.Panel(_infoLeft, "State", new Color(sc.r * 0.15f, sc.g * 0.15f, sc.b * 0.15f, 0.95f));
+            chip.rectTransform.TopBand(y, 30, 0, 110);
+            var cfx = LG.Platter(chip.gameObject, 4f);
+            cfx.SetRim(new Color(sc.r, sc.g, sc.b, 0.5f));
+            cfx.FillMultiplier = 2.6f;
+            var sic = LGIcons.Create(chip.transform, si, 15, sc);
+            sic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(15, 15));
+            var st = LGBuild.Label(chip.transform, state, 12, sc, TextAnchor.MiddleLeft, bold: true);
+            st.rectTransform.Stretch(32, 0, 8, 0);
+            y += 40f;
+
+            // Действующие соглашения
+            var ah = LGBuild.Label(_infoLeft, "СОГЛАШЕНИЯ", 11, Muted, TextAnchor.UpperLeft, bold: true);
+            ah.rectTransform.TopBand(y, 16, 0, 0);
+            y += 20f;
+            if (ai.Agreements.Count == 0 && !ai.HasPact)
+            {
+                var none = LGBuild.Label(_infoLeft, "Нет действующих договоров", 12, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.UpperLeft);
+                none.rectTransform.TopBand(y, 18, 0, 0);
+                y += 22f;
+            }
+            if (ai.HasPact) { InfoLine(ref y, LGIcon.Handshake, Cyan, "Пакт о ненападении  ·  бессрочно"); }
+            foreach (var a in ai.Agreements)
+            {
+                string text = DealCatalog.IsPayment(a.Kind)
+                    ? $"{(a.PlayerPays ? "Вы платите" : "Вам платят")} {a.Amount:0} {DealCatalog.Name(DealCatalog.ResourceBase(a.Kind)).ToLower()}/мес  ·  {DealCatalog.Months(a.MonthsLeft)}"
+                    : $"{DealCatalog.Name(a.Kind)}  ·  {DealCatalog.Months(a.MonthsLeft)}";
+                InfoLine(ref y, DealCatalog.Icon(a.Kind), a.PlayerPays ? Red : DealCatalog.Tint(a.Kind), text);
+            }
+
+            // Соседи-ИИ
+            y += 6f;
             foreach (var other in AIEmpireManager.All)
             {
                 if (other == ai || other.IsEliminated || ai.IsEliminated) continue;
                 bool war = AIRelations.AtWar(ai.OwnerId, other.OwnerId);
                 int truce = AIRelations.TruceDays(ai.OwnerId, other.OwnerId);
-                var reasons = new List<string>();
-                float op = AIRelations.Opinion(ai, other, reasons);
-                Color col = war ? UIManager.DS.Red : truce > 0 ? UIManager.DS.Green : OpinionColor(op);
-                string state = war ? "воюют" : truce > 0 ? $"перемирие {Mathf.CeilToInt(truce / 30f)} мес." : "мир";
-
-                var row = LGBuild.Panel(_left, "Neighbour", new Color(col.r * 0.12f, col.g * 0.12f, col.b * 0.12f, 0.95f));
-                row.rectTransform.TopBand(y, 36);
-                LG.Platter(row.gameObject, 12f).SetRim(new Color(col.r, col.g, col.b, 0.35f));
-                var ic = LGIcons.Create(row.transform, war ? LGIcon.Swords : LGIcon.Diplomacy, 16, col);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(16, 16));
-                var t = LGBuild.Label(row.transform, $"С империей <color={LGBuild.Hex(other.MapColor)}>{other.AIName}</color>: <b>{state}</b>",
-                    11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-                t.rectTransform.Stretch(36, 0, 50, 0);
-                var v = LGBuild.Label(row.transform, $"{op:+0;-0;0}", 12, col, TextAnchor.MiddleRight, bold: true);
-                v.rectTransform.Stretch(0, 0, 12, 0);
-                TooltipHelper.Attach(row.gameObject, $"<b>{ai.AIName} и {other.AIName}</b>\nОтношение {op:+0;-0;0}: " +
-                    (reasons.Count > 0 ? string.Join(", ", reasons) : "нейтрально") +
-                    "\n<color=#8AA2A8>Соседи-ИИ сами воюют и мирятся. Пока они заняты друг другом, у вас развязаны руки.</color>");
-                y += 42f;
+                string s = war ? "воюют" : truce > 0 ? "перемирие" : "мир";
+                InfoLine(ref y, war ? LGIcon.Swords : LGIcon.Diplomacy, war ? Red : Muted,
+                    $"С <color={LGBuild.Hex(other.MapColor)}>{other.AIName}</color>: {s}");
             }
-        }
 
-        private void Compare(ref float y, LGIcon icon, string label, int mine, int theirs)
-        {
-            var row = LGBuild.Rect(_left, "Cmp_" + label);
-            row.TopBand(y, 34, 4, 4);
-            var ic = LGIcons.Create(row, icon, 14, CMuted);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -1), new Vector2(14, 14));
-            var l = LGBuild.Label(row, label, 11, CMuted, TextAnchor.UpperLeft, bold: true);
-            l.rectTransform.offsetMin = new Vector2(20, 0);
-            string mc = mine >= theirs ? LGBuild.Hex(UIManager.DS.Green) : LGBuild.Hex(UIManager.DS.TextPrimary);
-            string tc = theirs > mine ? LGBuild.Hex(UIManager.DS.Red) : LGBuild.Hex(UIManager.DS.TextPrimary);
-            LGBuild.Label(row, $"<color={mc}>вы {mine:N0}</color>  /  <color={tc}>они {theirs:N0}</color>", 11,
-                          UIManager.DS.TextPrimary, TextAnchor.UpperRight, bold: true);
-            var host = LGBuild.Rect(row, "Bar");
-            host.anchorMin = new Vector2(0, 0);
-            host.anchorMax = new Vector2(1, 0);
-            host.offsetMin = new Vector2(20, 2);
-            host.offsetMax = new Vector2(0, 10);
-            float share = mine + theirs > 0 ? mine / (float)(mine + theirs) : 0.5f;
-            LGBuild.Bar(host, UIManager.DS.NeonCyan, share, 6f);
-            y += 40f;
-        }
-
-        private static Color OpinionColor(float o)
-            => Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, Mathf.InverseLerp(-60f, 50f, o));
-
-        // ---------- Центр: причины ----------
-
-        private void BuildReasons(AIEmpireManager ai)
-        {
-            LGBuild.Clear(_reasons);
-            if (ai.OpinionBreakdown.Count == 0)
+            // Правый верх: империя
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            float ry = 0f;
+            var nm = LGBuild.Label(_infoRight, ai.AIName.ToUpper(), 26, Color.Lerp(ai.AIEmpireColor, Color.white, 0.25f), TextAnchor.UpperRight, bold: true);
+            nm.rectTransform.TopBand(ry, 34);
+            ry += 36f;
+            var ti = LGBuild.Label(_infoRight, ai.AITitle, 13, Muted, TextAnchor.UpperRight);
+            ti.rectTransform.TopBand(ry, 18);
+            ry += 26f;
+            if (leader != null)
             {
-                var empty = LGBuild.Label(_reasons, "Особых причин нет — нейтральное отношение.", 11, CMuted, TextAnchor.MiddleCenter);
-                LGBuild.Height(empty.gameObject, 40);
+                var ln = LGBuild.Label(_infoRight, $"{leader.Title}  <b>{leader.Name}</b>", 13, Primary, TextAnchor.UpperRight);
+                ln.rectTransform.TopBand(ry, 18);
+                ry += 22f;
             }
-            foreach (var m in ai.OpinionBreakdown) ReasonRow(_reasons, m, true);
+            var pers = LGBuild.Label(_infoRight, $"Характер: {ai.Profile.Name.ToLower()}", 12, Gold, TextAnchor.UpperRight, bold: true);
+            pers.rectTransform.TopBand(ry, 18);
+            TooltipHelper.Attach(pers.gameObject, ai.Profile.Summary);
+            pers.raycastTarget = true;
+            ry += 24f;
+            var cmp = LGBuild.Label(_infoRight,
+                $"Флот {EmpireStats.MilitaryPower(ai.OwnerId):0}  ·  систем {EmpireStats.SystemCount(ai.OwnerId)}  ·  технологий {ai.ResearchedCount}",
+                12, Muted, TextAnchor.UpperRight);
+            cmp.rectTransform.TopBand(ry, 18);
+            ry += 30f;
 
-            float o = ai.Opinion;
-            _reasonsTotal.text = $"Итого: <color={LGBuild.Hex(OpinionColor(o))}>{o:+0;-0;0}</color>   " +
-                                 $"<color={LGBuild.Hex(CMuted)}>({AIEmpireManager.OpinionLabel(o).ToLower()}, шкала −100…+100)</color>";
-        }
-
-        private static void ReasonRow(Transform parent, OpinionModifier m, bool tall)
-        {
-            Color vc = m.Value >= 0f ? UIManager.DS.Green : UIManager.DS.Red;
-            var row = LGBuild.Panel(parent, "Reason", m.Value >= 0f ? new Color(0.05f, 0.14f, 0.12f, 0.9f) : new Color(0.16f, 0.06f, 0.08f, 0.9f));
-            LGBuild.Height(row.gameObject, tall ? 52 : 34);
-            LG.Platter(row.gameObject, 12f).SetRim(new Color(vc.r, vc.g, vc.b, 0.3f));
-
-            float isz = tall ? 30 : 22;
-            var badge = LGBuild.Panel(row.transform, "Badge", new Color(vc.r * 0.3f, vc.g * 0.3f, vc.b * 0.3f, 1f));
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(isz, isz));
-            LG.Platter(badge.gameObject, isz * 0.5f).FillMultiplier = 2f;
-            LGIcons.Create(badge.transform, m.Icon, isz * 0.55f, Color.Lerp(vc, Color.white, 0.25f));
-
-            var val = LGBuild.Label(row.transform, $"{m.Value:+0;-0;0}", tall ? 15 : 12, vc, TextAnchor.MiddleRight, bold: true);
-            val.rectTransform.Stretch(0, 0, 12, 0);
-
-            float left = isz + 18;
-            if (tall)
+            // Война / пакт — с подтверждением повторным щелчком
+            if (!ai.IsEliminated)
             {
-                var l = LGBuild.Label(row.transform, m.Label, 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-                l.rectTransform.Stretch(left, 0, 52, 8);
-                var d = LGBuild.Label(row.transform, m.Detail, 10, CMuted, TextAnchor.UpperLeft, wrap: true);
-                d.rectTransform.Stretch(left, 2, 52, 26);
-            }
-            else
-            {
-                var l = LGBuild.Label(row.transform, m.Label, 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-                l.rectTransform.Stretch(left, 0, 48, 0);
-                TooltipHelper.Attach(row.gameObject, $"<b>{m.Label}</b>\n{m.Detail}");
+                if (ai.HasPact)
+                    DangerButton(ref ry, "cancelpact", "РАСТОРГНУТЬ ПАКТ", "Отношение ухудшится; после этого войну можно объявить без вероломства",
+                        () => { ai.PlayerCancelPact(); });
+                if (!ai.AtWar)
+                {
+                    string blocker = ai.WarBlocker;
+                    DangerButton(ref ry, "war", ai.HasPact ? "ОБЪЯВИТЬ ВОЙНУ (НАРУШИТЬ ПАКТ)" : "ОБЪЯВИТЬ ВОЙНУ",
+                        blocker ?? (ai.HasPact ? "Нарушение пакта — тяжёлое вероломство: −40 к отношению надолго" : "Объявление войны рвёт все соглашения и ухудшает отношение"),
+                        blocker != null ? null : () =>
+                        {
+                            if (ai.PlayerDeclareWar())
+                            {
+                                SFXManager.Play(Sfx.WarDeclared);
+                                _deal = new Deal();
+                                Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.AtWar));
+                            }
+                        });
+                }
             }
         }
 
-        // ---------- Правая колонка: действия и прогноз ----------
-
-        private void BuildActions(AIEmpireManager ai)
+        private void InfoLine(ref float y, LGIcon icon, Color col, string text)
         {
-            LGBuild.Clear(_actions);
+            var row = LGBuild.Rect(_infoLeft, "Line");
+            row.TopBand(y, 20, 0, 0);
+            var ic = LGIcons.Create(row, icon, 14, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
+            var t = LGBuild.Label(row, text, 12, Primary, TextAnchor.MiddleLeft);
+            t.rectTransform.Stretch(22, 0, 0, 0);
+            y += 22f;
+        }
+
+        private void DangerButton(ref float y, string id, string label, string tip, System.Action act)
+        {
+            bool confirming = _confirmAction == id && Time.unscaledTime <= _confirmUntil;
+            var b = LGBuild.Button(_infoRight, "Danger_" + id,
+                act == null ? UIManager.DS.BtnDisabled : confirming ? UIManager.DS.BtnDanger : new Color(0.22f, 0.06f, 0.08f, 0.9f),
+                new Color(Red.r, Red.g, Red.b, act == null ? 0.15f : 0.45f), () =>
+                {
+                    if (act == null) return;
+                    if (_confirmAction == id && Time.unscaledTime <= _confirmUntil)
+                    {
+                        _confirmAction = null;
+                        act();
+                        RefreshAll();
+                    }
+                    else
+                    {
+                        _confirmAction = id;
+                        _confirmUntil = Time.unscaledTime + 3f;
+                        RefreshInfo();
+                    }
+                }, LGIcon.Swords, confirming ? "ТОЧНО? НАЖМИТЕ ЕЩЁ РАЗ" : label, 11, 4f);
+            var r = (RectTransform)b.transform;
+            r.anchorMin = new Vector2(1, 1);
+            r.anchorMax = new Vector2(1, 1);
+            r.pivot = new Vector2(1, 1);
+            r.sizeDelta = new Vector2(300f, 32f);
+            r.anchoredPosition = new Vector2(0f, -y);
+            b.interactable = act != null;
+            TooltipHelper.Attach(b.gameObject, $"<b>{label}</b>\n{tip}");
+            y += 38f;
+        }
+
+        private void RefreshTabs()
+        {
+            LGBuild.Clear(_tabs);
+            var all = AIEmpireManager.All;
+            if (all.Count <= 1) return;
+            float x = 0f;
+            for (int i = all.Count - 1; i >= 0; i--)
+            {
+                var ai = all[i];
+                bool on = ai.OwnerId == _owner;
+                Color mc = ai.MapColor;
+                var b = LGBuild.Panel(_tabs, "Tab_" + ai.OwnerId, on ? new Color(mc.r * 0.25f, mc.g * 0.25f, mc.b * 0.25f, 1f) : PanelBg, raycast: true);
+                b.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-x, 0), new Vector2(64, 64));
+                var fx = LG.Platter(b.gameObject, 6f);
+                fx.SetRim(new Color(mc.r, mc.g, mc.b, on ? 0.9f : 0.3f));
+                fx.FillMultiplier = 2.6f;
+                var mask = LG.RoundedMask(b.transform, 6f, 2f);
+                var v = LeaderPortraitView.Create(mask, LeaderPortraits.ForFaction(ai.Faction), 2.2f, 0f, false);
+                if (v == null) LGIcons.Create(b.transform, LGIcon.Leader, 30, mc);
+                else if (ai.IsEliminated) v.GetComponent<RawImage>().color = new Color(0.4f, 0.4f, 0.4f, 1f);
+                var btn = b.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                int owner = ai.OwnerId;
+                btn.onClick.AddListener(() => { if (owner != _owner) { SFXManager.Play(Sfx.UiTab); SwitchTo(owner); } });
+                string st = ai.IsEliminated ? "повержена" : ai.AtWar ? "война" : ai.HasPact ? "пакт" : "мир";
+                TooltipHelper.Attach(b.gameObject, $"<b>{ai.AIName}</b>\n{st} · отношение {ai.Opinion:+0;-0;0}" +
+                    (ai.PendingOffer != AIEmpireManager.OfferKind.None ? "\n<color=#F2C747>Ждёт ответа на предложение</color>" : ""));
+                if (ai.PendingOffer != AIEmpireManager.OfferKind.None)
+                {
+                    var dot = LGBuild.Panel(b.transform, "Dot", Gold);
+                    dot.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-4, -4), new Vector2(10, 10));
+                    LG.Dot(dot.gameObject);
+                }
+                x += 72f;
+            }
+        }
+
+        private void RefreshSpeechHeader(AIEmpireManager ai)
+        {
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            _speechName.text = $"{(leader != null ? leader.Name : ai.AIName)} говорит:";
+            (string state, Color sc, _) = StateOf(ai);
+            _speechState.text = state.Split(' ')[0];
+            _speechState.color = sc;
+            _speechStateBg.color = new Color(sc.r * 0.15f, sc.g * 0.15f, sc.b * 0.15f, 1f);
+        }
+
+        private static (string, Color, LGIcon) StateOf(AIEmpireManager ai)
+        {
+            if (ai.IsEliminated) return ("ПОВЕРЖЕНА", Muted, LGIcon.Trophy);
+            if (ai.AtWar) return ($"ВОЙНА · {ai.WarMonths} мес. · усталость {ai.WarWeariness:0}%", Red, LGIcon.Swords);
+            if (ai.HasPact) return ("ПАКТ О НЕНАПАДЕНИИ", Cyan, LGIcon.Handshake);
+            if (ai.TruceDays > 0) return ($"ПЕРЕМИРИЕ · {Mathf.CeilToInt(ai.TruceDays / 30f)} мес.", Green, LGIcon.Peace);
+            return ("МИР", Green, LGIcon.Peace);
+        }
+
+        private static Color OpinionColor(float o) =>
+            o <= -60f ? Red : o <= -20f ? new Color(1f, 0.55f, 0.35f) : o < 10f ? Gold : o < 35f ? new Color(0.6f, 0.9f, 0.5f) : Green;
+
+        private static string OpinionTooltip(AIEmpireManager ai)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"<b>Отношение {ai.Opinion:+0;-0;0}</b>  ·  {AIEmpireManager.OpinionLabel(ai.Opinion)}\n");
+            foreach (var m in ai.OpinionBreakdown)
+            {
+                string c = m.Value >= 0 ? "#6FE09A" : "#FF8080";
+                sb.Append($"<color={c}>{m.Value:+0;-0;0}</color>  {m.Label}\n");
+            }
+            sb.Append("<color=#8AA2A8>Чем лучше отношение, тем охотнее они идут на сделки</color>");
+            return sb.ToString();
+        }
+
+        // ---------- Списки предметов торга ----------
+
+        private void RefreshItemLists()
+        {
+            var ai = Current;
+            LGBuild.Clear(_aiList);
+            LGBuild.Clear(_playerList);
+            if (ai == null) return;
+            _aiListTitle.text = ai.AIName.ToUpper();
+            _aiListTitle.color = Color.Lerp(ai.AIEmpireColor, Color.white, 0.25f);
+            _colAI.text = $"{ai.AIName.ToUpper()} ДАЁТ";
+
             var eco = EconomyManager.Instance;
-            float y = 0f;
+            bool frozen = _viewingOffer || ai.IsEliminated;
+
+            foreach (var k in DealCatalog.Resources)
+            {
+                string r = DealCatalog.ResourceKey(k);
+                float aiHas = ai.Stock(r);
+                float pHas = PlayerStock(r);
+                ItemRow(_aiList, k, true, $"{aiHas:0}", !frozen && aiHas >= DealCatalog.Step(k),
+                    aiHas < DealCatalog.Step(k) ? "У них почти ничего нет" : null);
+                ItemRow(_playerList, k, false, $"{pHas:0}", !frozen && pHas >= DealCatalog.Step(k),
+                    pHas < DealCatalog.Step(k) ? "У вас почти ничего нет" : null);
+            }
+            foreach (var k in DealCatalog.Payments)
+            {
+                ItemRow(_aiList, k, true, "в месяц", !frozen && !ai.AtWar, ai.AtWar ? "Во время войны — только мир" : null);
+                ItemRow(_playerList, k, false, "в месяц", !frozen && !ai.AtWar, ai.AtWar ? "Во время войны — только мир" : null);
+            }
+            foreach (var k in DealCatalog.TreatyKinds)
+            {
+                if (k == DealItemKind.Peace && !ai.AtWar) continue;
+                if (k == DealItemKind.Pact && ai.HasPact) continue;
+                ai.TreatyValue(k, out string block);
+                string status = ai.HasAgreement(k) ? "действует" : "договор";
+                ItemRow(_aiList, k, true, status, !frozen && block == null, block);
+                ItemRow(_playerList, k, false, status, !frozen && block == null, block);
+            }
+        }
+
+        private static float PlayerStock(string r)
+        {
+            var eco = EconomyManager.Instance;
+            if (eco == null) return 0f;
+            return r switch
+            {
+                "energy" => eco.EnergyCredits,
+                "minerals" => eco.Minerals,
+                "alloys" => eco.Alloys,
+                "influence" => eco.Influence,
+                _ => 0f
+            };
+        }
+
+        private void ItemRow(RectTransform list, DealItemKind k, bool fromAI, string right, bool enabled, string blocker)
+        {
+            bool onTable = DealCatalog.IsTreaty(k) ? _deal.HasTreaty(k) : _deal.Find(fromAI, k) != null;
+            Color tint = DealCatalog.Tint(k);
+            var row = LGBuild.Panel(list, "Item_" + k, onTable ? new Color(0.06f, 0.14f, 0.16f, 0.95f) : RowBg, raycast: true);
+            LGBuild.Height(row.gameObject, 30f);
+            LG.Ignore(row.gameObject, includeChildren: false);
+            float a = enabled ? 1f : 0.4f;
+            var ic = LGIcons.Create(row.transform, DealCatalog.Icon(k), 16, new Color(tint.r, tint.g, tint.b, a));
+            ic.rectTransform.At(new Vector2(fromAI ? 0 : 1, 0.5f), new Vector2(fromAI ? 0 : 1, 0.5f), new Vector2(fromAI ? 10 : -10, 0), new Vector2(16, 16));
+            var name = LGBuild.Label(row.transform, DealCatalog.Name(k), 14, new Color(Primary.r, Primary.g, Primary.b, a),
+                fromAI ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight);
+            name.rectTransform.Stretch(fromAI ? 34 : 90, 0, fromAI ? 90 : 34, 0);
+            var r = LGBuild.Label(row.transform, right, 11, new Color(Muted.r, Muted.g, Muted.b, a),
+                fromAI ? TextAnchor.MiddleRight : TextAnchor.MiddleLeft);
+            r.rectTransform.Stretch(fromAI ? 0 : 10, 0, fromAI ? 10 : 0, 0);
+            if (onTable)
+            {
+                var mark = LGBuild.Panel(row.transform, "OnTable", Cyan);
+                mark.rectTransform.anchorMin = new Vector2(fromAI ? 0 : 1, 0);
+                mark.rectTransform.anchorMax = new Vector2(fromAI ? 0 : 1, 1);
+                mark.rectTransform.pivot = new Vector2(fromAI ? 0 : 1, 0.5f);
+                mark.rectTransform.sizeDelta = new Vector2(3f, -8f);
+                LG.Ignore(mark.gameObject);
+            }
+
+            var btn = row.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.interactable = enabled;
+            btn.onClick.AddListener(() => AddToTable(k, fromAI));
+            string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
+            if (blocker != null) tip += $"\n<color=#FF8080>{blocker}</color>";
+            else if (!enabled && _viewingOffer) tip += "\n<color=#8AA2A8>Сначала ответьте на их предложение или измените его</color>";
+            TooltipHelper.Attach(row.gameObject, tip);
+        }
+
+        private void AddToTable(DealItemKind k, bool fromAI)
+        {
+            if (_viewingOffer) return;
+            if (DealCatalog.IsTreaty(k))
+            {
+                if (_deal.HasTreaty(k)) _deal.Treaties.RemoveAll(t => t.Kind == k);
+                else _deal.Treaties.Add(new DealItem(k, 0f));
+            }
+            else
+            {
+                var have = _deal.Find(fromAI, k);
+                if (have != null) Adjust(have, fromAI, +1);
+                else _deal.Side(fromAI).Add(new DealItem(k, DealCatalog.Step(k)));
+            }
+            SFXManager.Play(Sfx.UiClick);
+            RefreshItemLists();
+            RefreshTable();
+        }
+
+        private void Adjust(DealItem item, bool fromAI, int dir)
+        {
+            float step = DealCatalog.Step(item.Kind);
+            float max = float.MaxValue;
+            if (DealCatalog.IsResource(item.Kind))
+            {
+                string r = DealCatalog.ResourceKey(item.Kind);
+                max = fromAI ? Current.Stock(r) : PlayerStock(r);
+                max = Mathf.Floor(max / step) * step;
+            }
+            item.Amount = Mathf.Clamp(item.Amount + dir * step, 0f, Mathf.Max(step, max));
+            if (item.Amount <= 0f) _deal.Side(fromAI).Remove(item);
+        }
+
+        // ---------- Стол переговоров ----------
+
+        private Deal Shown => _viewingOffer && Current?.PendingDeal != null ? Current.PendingDeal : _deal;
+
+        private void RefreshTable()
+        {
+            var ai = Current;
+            LGBuild.Clear(_tableAI);
+            LGBuild.Clear(_tablePlayer);
+            if (ai == null) return;
+            var d = Shown;
+            bool ro = _viewingOffer;
+
+            foreach (var t in d.Treaties) { TableRow(_tableAI, t, true, ro, true); TableRow(_tablePlayer, t, false, ro, true); }
+            foreach (var i in d.FromAI) TableRow(_tableAI, i, true, ro, false);
+            foreach (var i in d.FromPlayer) TableRow(_tablePlayer, i, false, ro, false);
+            if (d.FromAI.Count == 0 && d.Treaties.Count == 0) EmptyNote(_tableAI, ro ? "ничего" : "щёлкните по их списку слева");
+            if (d.FromPlayer.Count == 0 && d.Treaties.Count == 0) EmptyNote(_tablePlayer, ro ? "ничего" : "щёлкните по своему списку справа");
+
+            if (_viewingOffer)
+            {
+                var kind = ai.PendingOffer;
+                _tableTitle.text = kind == AIEmpireManager.OfferKind.Demand ? "ТРЕБОВАНИЕ" : "ИХ ПРЕДЛОЖЕНИЕ";
+                _tableTitle.color = kind == AIEmpireManager.OfferKind.Demand ? Red : Gold;
+                _reaction.text = $"<color={LGBuild.Hex(Gold)}>Ответ ждут ещё {ai.PendingOfferDays} дн.</color>  ·  {ai.PendingOfferReason}";
+                _fee.text = kind == AIEmpireManager.OfferKind.Demand ? "<color=#FF8080>Отказ ухудшит отношение</color>" : "";
+                _reactionBar.parent.gameObject.SetActive(false);
+
+                SetButton(_btnBalance, _imgBalance, _lblBalance, "ИЗМЕНИТЬ УСЛОВИЯ", new Color(0.08f, 0.22f, 0.30f, 0.96f), kind == AIEmpireManager.OfferKind.Trade);
+                SetButton(_btnBack, _imgBack, _lblBack, "ОТКЛОНИТЬ", new Color(0.36f, 0.10f, 0.12f, 0.96f), true);
+                SetButton(_btnPropose, _imgPropose, _lblPropose, "ПРИНЯТЬ", new Color(0.10f, 0.38f, 0.24f, 0.96f), true);
+                return;
+            }
+
+            _tableTitle.text = "СТОЛ ПЕРЕГОВОРОВ";
+            _tableTitle.color = Primary;
+            _reactionBar.parent.gameObject.SetActive(true);
+            float cost = AIEmpireManager.ProposalCost(d);
+            _fee.text = cost > 0f ? $"Переговоры: −{cost:0} влияния" : "";
+
+            if (d.IsEmpty)
+            {
+                _reaction.text = "<color=#8AA2A8>Положите на стол то, что хотите получить или отдать</color>";
+                LGBuild.SetBar(_reactionBar, 0f);
+            }
+            else
+            {
+                var v = ai.Evaluate(d);
+                string verdict;
+                Color vc;
+                if (v.Blocker != null) { verdict = v.Blocker; vc = Red; }
+                else if (d.IsGift) { verdict = "Примут с благодарностью"; vc = Green; }
+                else if (v.Accept) { verdict = v.Balance - v.Required > 25f ? "Согласятся с радостью" : "Согласятся"; vc = Green; }
+                else if (v.Willingness > 0.35f) { verdict = "Колеблются — добавьте что-нибудь"; vc = Gold; }
+                else { verdict = "Откажут"; vc = Red; }
+                _reaction.text = $"Реакция: <color={LGBuild.Hex(vc)}>{verdict}</color>";
+                LGBuild.SetBar(_reactionBar, v.Blocker != null ? 0.05f : v.Willingness, vc);
+            }
+
             bool alive = !ai.IsEliminated;
-
-            if (ai.PendingOffer != AIEmpireManager.OfferKind.None && alive)
-                OfferPanel(ai, ref y);
-
-            bool atWar = ai.AtWar;
-            Action(ref y, LGIcon.Gift, $"ПОДАРОК  ·  {AIEmpireManager.GiftEnergyAmount:0} гелия-3", UIManager.DS.BtnSuccess,
-                alive && !atWar && eco != null && eco.EnergyCredits >= AIEmpireManager.GiftEnergyAmount,
-                atWar ? "Во время войны подарки не принимают" : "Улучшает отношение (эффект постепенно забывается)",
-                () => ai.PlayerGiftEnergy());
-            Action(ref y, LGIcon.Gift, $"ПОДАРОК  ·  {AIEmpireManager.GiftAlloysAmount:0} сплавов", new Color(0.10f, 0.30f, 0.38f),
-                alive && !atWar && eco != null && eco.Alloys >= AIEmpireManager.GiftAlloysAmount,
-                atWar ? "Во время войны подарки не принимают" : "Сплавы ценятся выше энергии",
-                () => ai.PlayerGiftAlloys());
-
-            if (ai.HasPact)
-                Action(ref y, LGIcon.Handshake, "РАСТОРГНУТЬ ПАКТ", new Color(0.30f, 0.22f, 0.10f), alive,
-                    "Отношение ухудшится; объявить войну после этого можно без обвинений в вероломстве",
-                    ai.PlayerCancelPact);
-            else
-            {
-                var pe = ai.EvaluatePact();
-                Action(ref y, LGIcon.Handshake, $"ПАКТ О НЕНАПАДЕНИИ  ·  {AIEmpireManager.PactInfluenceCost:0} влияния", UIManager.DS.BtnPrimary,
-                    alive && pe.Blocker == null && eco != null && eco.Influence >= AIEmpireManager.PactInfluenceCost,
-                    pe.Blocker ?? (pe.Accept ? "Согласятся" : $"Откажут: готовность {pe.Score:+0;-0;0} из 0"),
-                    () => ai.PlayerProposePact(out _));
-            }
-
-            if (atWar)
-            {
-                var ev = ai.EvaluatePeace();
-                Action(ref y, LGIcon.Peace, $"ПРЕДЛОЖИТЬ МИР  ·  {AIEmpireManager.PeaceInfluenceCost:0} влияния", new Color(0.14f, 0.38f, 0.32f),
-                    alive && eco != null && eco.Influence >= AIEmpireManager.PeaceInfluenceCost,
-                    ev.Accept ? "Согласятся" : $"Откажут: готовность {ev.Score:0} из {ev.Threshold:0}",
-                    () => ai.PlayerProposePeace(out _));
-            }
-            else
-            {
-                string blocker = ai.WarBlocker;
-                string tip = blocker ?? (ai.HasPact ? "Нарушение пакта — тяжёлое вероломство: −40 к отношению надолго"
-                                                    : "Объявление войны ухудшит отношение. Захватывайте системы осадой: флот на орбите без защитников");
-                Action(ref y, LGIcon.Swords, ai.HasPact ? "ОБЪЯВИТЬ ВОЙНУ (НАРУШИТЬ ПАКТ)" : "ОБЪЯВИТЬ ВОЙНУ", UIManager.DS.BtnDanger,
-                    alive && blocker == null, tip, () => ai.PlayerDeclareWar());
-            }
-
-            Action(ref y, LGIcon.Trade, "ТОРГОВЫЙ КАНАЛ", UIManager.DS.BtnPrimary, alive && !atWar,
-                atWar ? "Во время войны торговля закрыта" : $"Выгодные для них сделки улучшают отношение{(ai.Personality == AIPersonality.Trader ? " (торговцы ценят это вдвое)" : "")}",
-                () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); });
-
-            if (alive) Forecast(ai, ref y);
+            SetButton(_btnBalance, _imgBalance, _lblBalance, "ЧТО ВАС УСТРОИТ?", new Color(0.08f, 0.30f, 0.32f, 0.96f), alive);
+            SetButton(_btnBack, _imgBack, _lblBack, d.IsEmpty ? "НАЗАД" : "ОЧИСТИТЬ", new Color(0.08f, 0.22f, 0.26f, 0.96f), true);
+            SetButton(_btnPropose, _imgPropose, _lblPropose, d.IsGift ? "ПОДАРИТЬ" : "ПРЕДЛОЖИТЬ", new Color(0.08f, 0.30f, 0.32f, 0.96f), alive && !d.IsEmpty);
         }
 
-        private void OfferPanel(AIEmpireManager ai, ref float y)
+        private static void SetButton(Button b, Image img, Text lbl, string text, Color tint, bool enabled)
         {
-            bool peace = ai.PendingOffer == AIEmpireManager.OfferKind.Peace;
-            Color col = peace ? UIManager.DS.Green : UIManager.DS.NeonCyan;
-            var panel = LGBuild.Panel(_actions, "Offer", new Color(col.r * 0.2f, col.g * 0.2f, col.b * 0.2f, 1f));
-            panel.rectTransform.TopBand(y, 118);
-            var fx = LG.Platter(panel.gameObject, 16f);
-            fx.SetRim(new Color(col.r, col.g, col.b, 0.8f));
-            fx.SetPulse(0.4f);
-            var ic = LGIcons.Create(panel.transform, peace ? LGIcon.Peace : LGIcon.Handshake, 22, col);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -12), new Vector2(22, 22));
-            var t = LGBuild.Label(panel.transform, peace ? "ОНИ ПРЕДЛАГАЮТ МИР" : "ОНИ ПРЕДЛАГАЮТ ПАКТ", 12, col, TextAnchor.UpperLeft, bold: true);
-            t.rectTransform.Stretch(42, 0, 10, 14);
-            var r = LGBuild.Label(panel.transform, $"Причина: {ai.PendingOfferReason}. Ответ ждут ещё {ai.PendingOfferDays} дн.", 10,
-                                  UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            r.rectTransform.Stretch(12, 44, 12, 40);
-
-            var row = LGBuild.Rect(panel.transform, "Btns");
-            row.anchorMin = new Vector2(0, 0);
-            row.anchorMax = new Vector2(1, 0);
-            row.offsetMin = new Vector2(10, 8);
-            row.offsetMax = new Vector2(-10, 40);
-            var yes = LGBuild.Button(row, "Accept", UIManager.DS.BtnSuccess, UIManager.DS.Green, () => { ai.AcceptOffer(); Refresh(); },
-                                     LGIcon.Check, "ПРИНЯТЬ", 11);
-            ((RectTransform)yes.transform).Column(0f, 0.5f, 0, 4);
-            var no = LGBuild.Button(row, "Decline", UIManager.DS.BtnDanger, UIManager.DS.Red, () => { ai.DeclineOffer(); Refresh(); },
-                                    LGIcon.Close, "ОТКЛОНИТЬ", 11);
-            ((RectTransform)no.transform).Column(0.5f, 1f, 4, 0);
-            y += 128f;
-        }
-
-        private void Action(ref float y, LGIcon icon, string label, Color tint, bool enabled, string tip, System.Action onClick)
-        {
-            var b = LGBuild.Button(_actions, "Act", enabled ? tint : UIManager.DS.BtnDisabled,
-                                   new Color(Mathf.Min(1f, tint.r * 2.2f), Mathf.Min(1f, tint.g * 2.2f), Mathf.Min(1f, tint.b * 2.2f), enabled ? 0.7f : 0.25f),
-                                   () => { onClick?.Invoke(); SFXManager.Play("ui_click", 1f, 1.05f); Refresh(); },
-                                   icon, label, 11);
-            ((RectTransform)b.transform).TopBand(y, 38);
+            lbl.text = text;
+            img.color = enabled ? tint : UIManager.DS.BtnDisabled;
+            lbl.color = enabled ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             b.interactable = enabled;
-            if (!string.IsNullOrEmpty(tip)) TooltipHelper.Attach(b.gameObject, $"<b>{label}</b>\n{tip}");
-            y += 44f;
         }
 
-        /// <summary>Прогноз: примут ли мир (во время войны) или пакт (в мирное время) и почему.</summary>
-        private void Forecast(AIEmpireManager ai, ref float y)
+        private static void EmptyNote(RectTransform list, string text)
         {
-            var e = ai.AtWar ? ai.EvaluatePeace() : ai.EvaluatePact();
-            if (e.Reasons == null) return;
-            string what = ai.AtWar ? "МИР" : "ПАКТ";
+            var t = LGBuild.Label(list, text, 12, new Color(Muted.r, Muted.g, Muted.b, 0.55f), TextAnchor.MiddleCenter);
+            t.fontStyle = FontStyle.Italic;
+            LGBuild.Height(t.gameObject, 30f);
+        }
 
-            var panel = LGBuild.Panel(_actions, "Forecast", UIManager.DS.BgSlot);
-            panel.rectTransform.anchorMin = new Vector2(0, 0);
-            panel.rectTransform.anchorMax = new Vector2(1, 1);
-            panel.rectTransform.offsetMin = new Vector2(0, 0);
-            panel.rectTransform.offsetMax = new Vector2(0, -(y + 6));
-            LG.Platter(panel.gameObject, 16f);
+        private void TableRow(RectTransform list, DealItem item, bool fromAI, bool readOnly, bool treaty)
+        {
+            Color tint = DealCatalog.Tint(item.Kind);
+            var row = LGBuild.Panel(list, "Row", RowBg);
+            LGBuild.Height(row.gameObject, 32f);
+            var fx = LG.Platter(row.gameObject, 4f);
+            fx.SetRim(new Color(tint.r, tint.g, tint.b, 0.25f));
+            fx.FillMultiplier = 2.6f;
+            fx.SpecularMultiplier = 0.2f;
 
-            Color verdict = e.Blocker != null ? CMuted : e.Accept ? UIManager.DS.Green : UIManager.DS.Red;
-            var head = LGBuild.Rect(panel.transform, "Head");
-            head.TopBand(10, 20, 12, 12);
-            var hi = LGIcons.Create(head, e.Accept && e.Blocker == null ? LGIcon.Check : LGIcon.Warning, 14, verdict);
-            hi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            string verdictText = e.Blocker ?? (e.Accept ? "согласятся" : "откажут");
-            var ht = LGBuild.Label(head, $"ПРОГНОЗ: {what} — {verdictText}", 11, verdict, TextAnchor.MiddleLeft, bold: true);
-            ht.rectTransform.offsetMin = new Vector2(20, 0);
+            var ic = LGIcons.Create(row.transform, treaty ? LGIcon.Handshake : DealCatalog.Icon(item.Kind), 15, tint);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(15, 15));
+            string text = treaty ? DealCatalog.Name(item.Kind) : DealCatalog.Describe(item);
+            var t = LGBuild.Label(row.transform, text, 13, Primary, TextAnchor.MiddleLeft);
+            t.rectTransform.Stretch(30, 0, readOnly ? 8 : (treaty ? 34 : 86), 0);
+            TooltipHelper.Attach(row.gameObject, $"<b>{DealCatalog.Name(item.Kind)}</b>\n{DealCatalog.Hint(item.Kind)}" + (treaty ? "\n<color=#8AA2A8>Договор взаимный — действует для обеих сторон</color>" : ""));
+            row.raycastTarget = true;
+            if (readOnly) return;
 
-            if (e.Blocker != null) return;
+            float x = -6f;
+            SmallButton(row.rectTransform, LGIcon.Close, ref x, () =>
+            {
+                if (treaty) _deal.Treaties.Remove(item); else _deal.Side(fromAI).Remove(item);
+                SFXManager.Play(Sfx.UiBack);
+                RefreshItemLists(); RefreshTable();
+            });
+            if (treaty) return;
+            SmallText(row.rectTransform, "+", ref x, () => { Adjust(item, fromAI, +1); RefreshTable(); });
+            SmallText(row.rectTransform, "−", ref x, () => { Adjust(item, fromAI, -1); RefreshItemLists(); RefreshTable(); });
+        }
 
-            var sc = LGBuild.Label(panel.transform, $"Готовность {e.Score:+0;-0;0} — нужно не меньше {e.Threshold:0}", 10, CMuted, TextAnchor.UpperLeft);
-            sc.rectTransform.Stretch(14, 0, 12, 34);
+        private static void SmallButton(RectTransform row, LGIcon icon, ref float x, System.Action act)
+        {
+            var b = LGBuild.Button(row, "Btn", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.12f), act, icon, null, 6, 3f);
+            ((RectTransform)b.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(x, 0), new Vector2(22, 22));
+            x -= 26f;
+        }
 
-            var host = LGBuild.Rect(panel.transform, "List");
-            host.Stretch(6, 6, 6, 52);
-            var list = LGBuild.ScrollList(host, 4f, 2);
-            foreach (var m in e.Reasons) ReasonRow(list, m, false);
+        private static void SmallText(RectTransform row, string label, ref float x, System.Action act)
+        {
+            var b = LGBuild.Button(row, "Btn", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.12f), act, null, label, 14, 3f);
+            ((RectTransform)b.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(x, 0), new Vector2(22, 22));
+            x -= 26f;
+        }
+
+        // ================================================================ Действия
+
+        private void OnBalanceClicked()
+        {
+            var ai = Current;
+            if (ai == null) return;
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            if (_viewingOffer)
+            {
+                // Взять их предложение за основу встречного
+                _deal = ai.PendingDeal.Clone();
+                _deal.ByAI = false;
+                _viewingOffer = false;
+                SFXManager.Play(Sfx.UiClick);
+                RefreshItemLists(); RefreshTable();
+                return;
+            }
+            var result = ai.BalanceDeal(_deal, out string reason);
+            if (result == null)
+            {
+                Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.NoDeal) + (reason != null ? $" ({reason.ToLower()})" : ""));
+                SFXManager.Play(Sfx.UiDenied);
+                StartCoroutine(Shake(_centerPanel));
+                return;
+            }
+            _deal = result;
+            Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.Counter));
+            SFXManager.Play(Sfx.UiConfirm);
+            RefreshItemLists(); RefreshTable();
+        }
+
+        private void OnBackClicked()
+        {
+            var ai = Current;
+            if (ai == null) return;
+            if (_viewingOffer)
+            {
+                bool demand = ai.PendingOffer == AIEmpireManager.OfferKind.Demand;
+                ai.DeclinePendingDeal();
+                _viewingOffer = false;
+                SFXManager.Play(Sfx.UiBack);
+                Say(DiplomacyLines.Get(LeaderPortraits.ForFaction(ai.Faction), demand ? DiplomacyLines.Kind.AtWar : DiplomacyLines.Kind.Reject));
+                RefreshAll();
+                return;
+            }
+            if (!_deal.IsEmpty)
+            {
+                _deal.Clear();
+                SFXManager.Play(Sfx.UiBack);
+                RefreshItemLists(); RefreshTable();
+                return;
+            }
+            Close();
+        }
+
+        private void OnProposeClicked()
+        {
+            var ai = Current;
+            if (ai == null) return;
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+
+            if (_viewingOffer)
+            {
+                var kind = ai.PendingOffer;
+                if (ai.AcceptPendingDeal())
+                {
+                    _viewingOffer = false;
+                    SFXManager.Play(kind == AIEmpireManager.OfferKind.Peace ? Sfx.PeaceSigned
+                        : kind == AIEmpireManager.OfferKind.Pact ? Sfx.PactSigned : Sfx.UiConfirm);
+                    Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.Accept));
+                }
+                else SFXManager.Play(Sfx.UiDenied);
+                RefreshAll();
+                return;
+            }
+
+            if (_deal.IsEmpty) return;
+            bool gift = _deal.IsGift;
+            bool peace = _deal.HasTreaty(DealItemKind.Peace), pact = _deal.HasTreaty(DealItemKind.Pact);
+            if (ai.PlayerPropose(_deal, out var verdict))
+            {
+                SFXManager.Play(peace ? Sfx.PeaceSigned : pact ? Sfx.PactSigned : Sfx.UiConfirm);
+                Say(DiplomacyLines.Get(leader, gift ? DiplomacyLines.Kind.Gift : DiplomacyLines.Kind.Accept));
+                _deal = new Deal();
+            }
+            else
+            {
+                SFXManager.Play(Sfx.UiDenied);
+                string line = DiplomacyLines.Get(leader, DiplomacyLines.Kind.Reject);
+                if (verdict.Blocker != null) line += $" ({verdict.Blocker.ToLower()})";
+                Say(line);
+                StartCoroutine(Shake(_centerPanel));
+            }
+            RefreshAll();
+        }
+
+        private static IEnumerator Shake(RectTransform r)
+        {
+            if (r == null) yield break;
+            Vector2 basePos = r.anchoredPosition;
+            float t = 0f;
+            while (t < 0.3f)
+            {
+                t += Time.unscaledDeltaTime;
+                r.anchoredPosition = basePos + new Vector2(Mathf.Sin(t * 70f) * 7f * (1f - t / 0.3f), 0f);
+                yield return null;
+            }
+            r.anchoredPosition = basePos;
         }
     }
 }

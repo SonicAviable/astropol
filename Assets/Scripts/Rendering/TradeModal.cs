@@ -59,6 +59,8 @@ namespace StellarisClone.Core
 
         public void Open(int partnerOwner)
         {
+            // Торговля теперь идёт за столом переговоров в окне дипломатии
+            if (DiplomacyModal.Instance != null) { DiplomacyModal.Instance.Open(partnerOwner); return; }
             _partnerOwner = partnerOwner;
             if (_host == null)
             {

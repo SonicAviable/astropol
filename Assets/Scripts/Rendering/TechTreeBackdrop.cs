@@ -65,6 +65,9 @@ namespace StellarisClone.Rendering
 
         public void SetBranch(string key) => (_targetA, _targetB) = BranchColors(key);
 
+        /// <summary>Произвольная пара цветов (например, цвета империи в окне дипломатии).</summary>
+        public void SetColors(Color a, Color b) { _targetA = a; _targetB = b; }
+
         public void SetActive(bool on) => _active = on;
 
         private void Update()
