@@ -2,11 +2,11 @@
 """
 Озвучка обучения: голос ИИ-советника ОРАКУЛ-7.
 
-Синтез — RHVoice (голос yuriy), затем мягкая обработка «бортового ИИ» через ffmpeg:
+Синтез — RHVoice (голос artemiy), затем мягкая обработка «бортового ИИ» через ffmpeg:
 компрессия, едва заметный синтетический блеск (очень короткое эхо), лёгкое
 пространство отсека, разборчивость в верхней середине и тихий сигнал связи
 перед фразой. Без кольцевой модуляции и «битого» звука — голос звучит живо.
-Другие подходящие голоса: artemiy, mikhail, pavel (мужские), victoria, tatiana,
+Другие подходящие голоса: yuriy, mikhail, pavel (мужские), victoria, tatiana,
 elena (женские) — поменяйте VOICE/RATE и перезапустите скрипт.
 Результат — Assets/Resources/Audio/Tutorial/*.ogg (TutorialManager грузит их по имени).
 
@@ -20,8 +20,8 @@ import sys
 import tempfile
 import uuid
 
-VOICE = "yuriy"
-RATE = 100        # % скорости речи RHVoice (у yuriy спокойный темп и так)
+VOICE = "artemiy"
+RATE = 92         # % скорости речи RHVoice (artemiy по умолчанию говорит бодро)
 OUT = "Assets/Resources/Audio/Tutorial"
 
 LINES = {
