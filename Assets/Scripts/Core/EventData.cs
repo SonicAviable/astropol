@@ -61,6 +61,8 @@ namespace StellarisClone.Core
         public List<EventOption> Options;
         /// <summary>Строка над описанием: где и с кем это случилось.</summary>
         public string Subtitle;
+        /// <summary>Иллюстрация из Resources/UI/Events (null — окно без картинки).</summary>
+        public string Art;
 
         public GameEventData(string id, string title, string description, AnomalyType anomaly, List<EventOption> options)
         {

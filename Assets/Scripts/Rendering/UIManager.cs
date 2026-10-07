@@ -1904,6 +1904,9 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             _eventDescText.verticalOverflow = VerticalWrapMode.Truncate;
             _eventDescText.lineSpacing = 1.15f;
 
+            // Иллюстрация события — между шапкой и описанием (показывается, если у события есть арт)
+            _eventFx = EventPopupFX.Create(rt, 62f, 20f, EventArtHeight, dRt);
+
             var optionsBox = new GameObject("Options");
             optionsBox.transform.SetParent(_eventPopupModal.transform, false);
             var oRt = optionsBox.AddComponent<RectTransform>();
@@ -1928,6 +1931,8 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
         }
 
         private LiquidGlassEffect _eventWindowFx;
+        private EventPopupFX _eventFx;
+        private const float EventArtHeight = 220f;
 
         private void CloseEventPopup()
         {
@@ -1955,14 +1960,22 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                     ? ev.Description
                     : $"<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";
 
+            bool hasArt = _eventFx != null && _eventFx.SetArt(ev.Art, accent);
+            float artH = hasArt ? EventArtHeight + 10f : 0f;
+
             // Высота блока вариантов — по их числу, описание занимает остальное
             int optCount = 0;
             if (ev.Options != null) foreach (var o in ev.Options) if (o != null) optCount++;
             float optsH = Mathf.Max(1, optCount) * 44f + Mathf.Max(0, optCount - 1) * 8f + 16f;
             if (_eventOptionsRt != null) _eventOptionsRt.sizeDelta = new Vector2(0, optsH);
-            if (_eventDescBox != null) _eventDescBox.offsetMin = new Vector2(20, 12 + optsH + 8);
+            if (_eventDescBox != null)
+            {
+                _eventDescBox.offsetMin = new Vector2(20, 12 + optsH + 8);
+                _eventDescBox.offsetMax = new Vector2(-20, -62 - artH);
+            }
             var popupRt = _eventPopupModal.GetComponent<RectTransform>();
-            popupRt.sizeDelta = new Vector2(650f, Mathf.Max(420f, 52f + 10f + 190f + 20f + optsH));
+            popupRt.sizeDelta = new Vector2(650f, Mathf.Max(420f, 52f + 10f + 190f + 20f + optsH) + artH);
+            _eventFx?.ClearOptions();
 
             if (_eventOptionsHolder != null)
             {
@@ -2007,6 +2020,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                     label.rectTransform.offsetMin = new Vector2(12, 0);
                     label.rectTransform.offsetMax = new Vector2(-12, 0);
                     label.supportRichText = true;
+                    _eventFx?.AddOption(btnGo, label.rectTransform);
 
                     string tip = opt.ResultTooltip ?? "";
                     if (special) tip = (available ? "<color=#F2C747>Особый вариант: " : "<color=#FF8A8A>Недоступно — требуется: ") + opt.Requirement + "</color>\n" + tip;
@@ -2022,6 +2036,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             LG.Show(_eventPopupModal);
             _eventPopupModal.transform.SetAsLastSibling();
             LG.Skin(_eventPopupModal.transform);
+            _eventFx?.Play();
         }
 
         private void HandleAnomalyEvent(GameEventData ev)

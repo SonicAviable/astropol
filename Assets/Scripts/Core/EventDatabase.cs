@@ -160,7 +160,20 @@ namespace StellarisClone.Core
         private static List<EventOption> Opts(params EventOption[] o) => new List<EventOption>(o);
 
         private static GameEventData Ev(string id, string title, string text, AnomalyType type, List<EventOption> options)
-            => new GameEventData(id, title, text, type, options);
+            => new GameEventData(id, title, text, type, options) { Art = _art.TryGetValue(id, out var a) ? a : null };
+
+        /// <summary>Иллюстрации событий (файлы в Resources/UI/Events).</summary>
+        private static readonly Dictionary<string, string> _art = new Dictionary<string, string>
+        {
+            ["ancient_derelict_cruiser"] = "Derelict",
+            ["alien_amoeba_belt"]        = "Amoeba",
+            ["precursor_relic"]          = "Relic",
+            ["spatial_rift"]             = "Rift",
+            ["rift_stabilized"]          = "Rift",
+            ["ghost_signal"]             = "Rift",
+            ["distress_signal"]          = "Distress",
+            ["distress_survivors"]       = "Distress",
+        };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
 
