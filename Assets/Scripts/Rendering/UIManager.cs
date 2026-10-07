@@ -98,6 +98,8 @@ namespace StellarisClone.Rendering
 
         private const float TopBarHeight = 44f;
         private const float TopBarMargin = 10f;
+        /// <summary>Левый край верхней панели: правее карточки правителя (RulerBadge).</summary>
+        public const float TopBarLeft = TopBarMargin + RulerBadge.Width + 8f;
         private const float StarbaseAlloysCost = 50f;
         private const float StarbaseInfluenceCost = 25f;
 
@@ -446,11 +448,15 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var bar = new GameObject("TopBar");
             bar.transform.SetParent(_canvas.transform, false);
             var rt = bar.AddComponent<RectTransform>();
+            // Слева от капсулы — карточка правителя на высоту панели и ряда режимов карты
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(1, 1);
             rt.pivot = new Vector2(0.5f, 1);
-            rt.sizeDelta = new Vector2(-TopBarMargin * 2f, TopBarHeight);
-            rt.anchoredPosition = new Vector2(0, -TopBarMargin);
+            rt.offsetMin = new Vector2(TopBarLeft, -TopBarMargin - TopBarHeight);
+            rt.offsetMax = new Vector2(-TopBarMargin, -TopBarMargin);
+
+            // Правитель империи — живой портрет; клик открывает обзор империи
+            RulerBadge.Create(_canvas.transform, new Vector2(TopBarMargin, -TopBarMargin), OpenEmpireOverviewModal);
 
             var bg = bar.AddComponent<Image>();
             bg.color = DS.BgDeep;
@@ -460,9 +466,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             barMotion.distance = 22f;
             barMotion.inDuration = 0.55f;
 
-            // Правитель империи — живой портрет; клик открывает обзор империи
-            RulerBadge.Create(bar.transform, OpenEmpireOverviewModal);
-
             // Дата — в стеклянной капсуле
             var dateChip = new GameObject("DateChip");
             dateChip.transform.SetParent(bar.transform, false);
@@ -470,7 +473,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dcRt.anchorMin = dcRt.anchorMax = new Vector2(0, 0.5f);
             dcRt.pivot = new Vector2(0, 0.5f);
             dcRt.sizeDelta = new Vector2(96, 30);
-            dcRt.anchoredPosition = new Vector2(166, 0);
+            dcRt.anchoredPosition = new Vector2(8, 0);
             var dcImg = dateChip.AddComponent<Image>();
             dcImg.color = DS.BgVisor;
             dcImg.raycastTarget = false;
@@ -478,9 +481,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _dateText = LGIcons.IconLabel(dateChip.transform, LGIcon.Calendar, "01.01.2200", 13, DS.TextMuted, DS.TextPrimary, 13f);
 
-            BuildSpeedControl(bar.transform, 270f);
+            BuildSpeedControl(bar.transform, 112f);
 
-            float startX = 400f;
+            float startX = 242f;
             _energyVal    = CreateResourceBadge(bar.transform, LGIcon.Energy, "ГЕЛИЙ-3", DS.Gold,     ref startX, out _energyTip);
             _mineralsVal  = CreateResourceBadge(bar.transform, LGIcon.Minerals, "ТИТАН", DS.NeonCyan, ref startX, out _mineralsTip);
             _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, "СПЛАВЫ", new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);

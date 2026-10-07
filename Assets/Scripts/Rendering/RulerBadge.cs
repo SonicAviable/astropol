@@ -6,14 +6,16 @@ using StellarisClone.Core;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Карточка правителя в левом углу верхней панели вместо кнопки «Обзор империи»:
+    /// Карточка правителя в левом верхнем углу экрана (слева от верхней панели и ряда режимов карты,
+    /// на их общую высоту) вместо кнопки «Обзор империи»:
     /// живой портрет (моргание, дыхание, помехи — LeaderPortraitView), рамка цвета фракции,
     /// которая медленно «дышит» и разгорается при наведении. Клик открывает обзор империи.
     /// Пока фракция не выбрана (или у неё нет портрета) — значок глобуса.
     /// </summary>
     public sealed class RulerBadge : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        public const float Width = 150f, Height = 96f;
+        /// <summary>Высота = верхняя панель (44) + зазор (12) + ряд режимов карты (42).</summary>
+        public const float Width = 150f, Height = 98f;
 
         private LiquidGlassEffect _fx;
         private RectTransform _portraitHost;
@@ -23,10 +25,10 @@ namespace StellarisClone.Rendering
         private Color _accent = UIManager.DS.NeonCyan;
         private float _hover, _hoverTarget;
 
-        public static RulerBadge Create(Transform bar, System.Action onClick)
+        public static RulerBadge Create(Transform canvas, Vector2 topLeft, System.Action onClick)
         {
-            var rt = LGBuild.Rect(bar, "RulerBadge");
-            rt.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, 4), new Vector2(Width, Height));
+            var rt = LGBuild.Rect(canvas, "RulerBadge");
+            rt.At(new Vector2(0, 1), new Vector2(0, 1), topLeft, new Vector2(Width, Height));
 
             var bg = rt.gameObject.AddComponent<Image>();
             bg.color = new Color(0.01f, 0.025f, 0.035f, 1f);
@@ -37,6 +39,9 @@ namespace StellarisClone.Rendering
             var badge = rt.gameObject.AddComponent<RulerBadge>();
             badge._fx = LG.Button(rt.gameObject, new Color(0.3f, 0.9f, 0.9f, 0.6f), 16f);
             if (badge._fx != null) badge._fx.FillMultiplier = 2.6f;
+            var motion = LG.Motion(rt.gameObject, LGAppear.Kind.SlideUp);
+            motion.distance = 22f;
+            motion.inDuration = 0.55f;
             badge.Build(rt);
             return badge;
         }

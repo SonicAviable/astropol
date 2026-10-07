@@ -89,7 +89,7 @@ namespace StellarisClone.Rendering
             rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 1);
             rt.sizeDelta = new Vector2(424, 42);
-            rt.anchoredPosition = new Vector2(176, -66);             // правее карточки правителя (RulerBadge)
+            rt.anchoredPosition = new Vector2(UIManager.TopBarLeft, -66);   // под верхней панелью, правее карточки правителя
 
             var bg = root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
