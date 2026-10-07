@@ -1,6 +1,5 @@
 # Вырезка правителей из фона (GrabCut по маске силуэта + подсказки головы/фона).
-# Запуск: python3 cut.py (пути — к Assets/Resources/Leaders). Пишет matte_<key>.npy и превью;
-# затем маска кладётся в альфа-канал Leaders/leader_<key>_fx.png в половинном разрешении.
+# Запуск: python3 cut.py. Пишет matte_<key>.npy; маска кладётся в альфу Leaders/leader_<key>_fx.png.
 import cv2, numpy as np
 from PIL import Image
 L='/home/user/astropol/Assets/Resources/Leaders/'
@@ -47,7 +46,17 @@ for key in ('xarn','astrea','aquila'):
     Y=np.arange(h)[:,None].astype(np.float32)
     cx,cy,rx,ry=HEAD[key]
     head=np.clip(((cy+ry*0.35)-Y)/80.0,0,1)
-    m=m*(1-head)+np.maximum(m,soft)*head
+    m=m*(1-head)+soft*head
+    # Белая форма Астреи: тёмные пиксели у края силуэта — это остатки фона, убираем
+    if key=='astrea':
+        lum=(img[...,2]*0.2126+img[...,1]*0.7152+img[...,0]*0.0722)/255.0
+        core=cv2.erode((m>0.5).astype(np.uint8),np.ones((101,101),np.uint8)).astype(np.float32)
+        band=(m>0.01)&(core<0.5)
+        body=(Y>650)[...,0] if Y.ndim==3 else (np.arange(h)[:,None]>650)&np.ones((1,w),bool)
+        k=np.clip((lum-0.22)/0.18,0,1)
+        sel=band&body
+        m=np.where(sel,m*k,m)
+        m=cv2.GaussianBlur(m,(0,0),1.5)
     np.save(f'matte_{key}.npy',m)
     # превью: на сером и на цветном фоне
     rgb=img[...,::-1].astype(np.float32)

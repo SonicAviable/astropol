@@ -35,6 +35,14 @@ namespace StellarisClone.Rendering
         private readonly List<(Image bg, LiquidGlassEffect fx, Text name, FactionInfo f, RectTransform rt)> _cardUi =
             new List<(Image, LiquidGlassEffect, Text, FactionInfo, RectTransform)>();
         private CanvasGroup _infoGroup, _frameGroup;
+
+        // Эффекты: пылинки в воздухе, свечение за рамкой, блик по рамке, вспышка «приёма сигнала»
+        private struct Mote { public RectTransform Rt; public Image Img; public Vector2 Pos, Vel; public float Size, Phase; }
+        private readonly List<Mote> _motes = new List<Mote>();
+        private RectTransform _motesLayer, _sweep;
+        private Image _halo, _flash;
+        private float _flashT = 1f, _sweepT;
+        private Color _accent = Color.white;
         private float _fade = 1f;
 
         // ==================== ЛОР ====================
@@ -134,6 +142,14 @@ namespace StellarisClone.Rendering
             shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
             shadeB.rectTransform.sizeDelta = new Vector2(0, 300);
             LG.Ignore(shadeB.gameObject);
+
+            BuildMotes(rt);
+            _halo = LGBuild.Panel(rt, "Halo", Color.white);
+            _halo.sprite = RadialSprite();
+            _halo.rectTransform.anchorMin = _halo.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            _halo.rectTransform.sizeDelta = new Vector2(1250f, 1250f);
+            _halo.rectTransform.anchoredPosition = new Vector2(-420f, 70f);
+            LG.Ignore(_halo.gameObject);
 
             BuildInfo(rt);
             BuildFrame(rt);
@@ -258,6 +274,22 @@ namespace StellarisClone.Rendering
             _scan.color = new Color(1f, 1f, 1f, 0.05f);
             _scan.raycastTarget = false;
             LG.Ignore(sc.gameObject);
+
+            // Диагональный блик, пробегающий по портрету
+            _sweep = LGBuild.Rect(mask, "Sweep");
+            _sweep.anchorMin = _sweep.anchorMax = new Vector2(0.5f, 0.5f);
+            _sweep.sizeDelta = new Vector2(180f, 1400f);
+            _sweep.localRotation = Quaternion.Euler(0, 0, -24f);
+            var sw = _sweep.gameObject.AddComponent<Image>();
+            sw.sprite = BandSprite();
+            sw.color = new Color(1f, 1f, 1f, 0.10f);
+            sw.raycastTarget = false;
+            LG.Ignore(_sweep.gameObject);
+
+            // Вспышка при смене собеседника
+            _flash = LGBuild.Panel(mask, "Flash", new Color(1f, 1f, 1f, 0f));
+            _flash.rectTransform.Stretch();
+            LG.Ignore(_flash.gameObject);
 
             // Шапка и подвал рамки
             var head = LGBuild.Panel(_frame, "Head", new Color(0f, 0f, 0f, 0.55f));
@@ -437,7 +469,102 @@ namespace StellarisClone.Rendering
             _desc.text = lore?.Story ?? StripBonuses(f.Description);
             _quote.text = leader != null ? $"«{leader.Quote}»" : "";
 
+            _accent = ec;
+            _halo.color = new Color(ec.r, ec.g, ec.b, 0.0f);
+            if (!instant) { _flashT = 0f; _sweepT = 0f; }
+            foreach (var m in _motes) m.Img.color = new Color(light.r, light.g, light.b, 0f);
+
             _fade = instant ? 1f : 0f;
+        }
+
+        private void BuildMotes(RectTransform rt)
+        {
+            _motesLayer = LGBuild.Rect(rt, "Motes");
+            _motesLayer.Stretch();
+            var rnd = new System.Random(7);
+            for (int i = 0; i < 56; i++)
+            {
+                var img = LGBuild.Panel(_motesLayer, "Mote", new Color(1f, 1f, 1f, 0f));
+                img.sprite = RadialSprite();
+                LG.Ignore(img.gameObject);
+                float size = 4f + (float)rnd.NextDouble() * (rnd.NextDouble() < 0.15 ? 26f : 9f);
+                img.rectTransform.anchorMin = img.rectTransform.anchorMax = Vector2.zero;
+                img.rectTransform.sizeDelta = new Vector2(size, size);
+                _motes.Add(new Mote
+                {
+                    Rt = img.rectTransform, Img = img, Size = size,
+                    Pos = new Vector2((float)rnd.NextDouble(), (float)rnd.NextDouble()),
+                    Vel = new Vector2(((float)rnd.NextDouble() - 0.5f) * 0.006f, 0.006f + (float)rnd.NextDouble() * 0.014f),
+                    Phase = (float)rnd.NextDouble() * 10f
+                });
+            }
+        }
+
+        private void AnimateEffects(float dt, float t)
+        {
+            var size = ((RectTransform)transform).rect.size;
+            Color a = Color.Lerp(_accent, Color.white, 0.35f);
+            for (int i = 0; i < _motes.Count; i++)
+            {
+                var m = _motes[i];
+                m.Pos += m.Vel * dt;
+                m.Pos.x += Mathf.Sin(t * 0.4f + m.Phase) * 0.0006f;
+                if (m.Pos.y > 1.05f) { m.Pos.y = -0.05f; m.Pos.x = Mathf.Repeat(m.Pos.x + 0.37f, 1f); }
+                if (m.Pos.x < -0.05f) m.Pos.x = 1.05f; else if (m.Pos.x > 1.05f) m.Pos.x = -0.05f;
+                m.Rt.anchoredPosition = new Vector2(m.Pos.x * size.x, m.Pos.y * size.y);
+                float tw = 0.5f + 0.5f * Mathf.Sin(t * 1.3f + m.Phase * 2f);
+                float big = m.Size > 14f ? 0.35f : 1f;   // крупные — мягкие «боке», мелкие — яркие искры
+                m.Img.color = new Color(a.r, a.g, a.b, (0.10f + 0.35f * tw) * big * Mathf.Clamp01(m.Pos.y * 3f));
+                _motes[i] = m;
+            }
+
+            // Свечение за рамкой медленно пульсирует
+            _halo.color = new Color(_accent.r, _accent.g, _accent.b, 0.16f + 0.05f * Mathf.Sin(t * 0.9f));
+            _frameFx.GlowMultiplier = 0.8f + 0.5f * (0.5f + 0.5f * Mathf.Sin(t * 1.6f));
+            foreach (var b in _brackets) { var c = b.color; c.a = 0.65f + 0.35f * Mathf.Sin(t * 2.4f); b.color = c; }
+
+            // Блик проходит по портрету раз в ~7 секунд
+            _sweepT += dt;
+            float p = Mathf.Repeat(_sweepT, 7f) / 1.4f;
+            _sweep.gameObject.SetActive(p < 1f);
+            if (p < 1f) _sweep.anchoredPosition = new Vector2(Mathf.Lerp(-520f, 520f, p), 0f);
+
+            // Вспышка «сигнал принят» после смены фракции
+            if (_flashT < 1f)
+            {
+                _flashT = Mathf.MoveTowards(_flashT, 1f, dt * 2.2f);
+                float f = 1f - _flashT;
+                _flash.color = new Color(Mathf.Lerp(1f, _accent.r, 0.4f), Mathf.Lerp(1f, _accent.g, 0.4f), Mathf.Lerp(1f, _accent.b, 0.4f), f * f * 0.45f);
+                _frame.localScale = Vector3.one * (1f + 0.025f * f * f);
+            }
+            else _frame.localScale = Vector3.one;
+
+            // Выбранная карточка мерцает рамкой
+            for (int i = 0; i < _cardUi.Count; i++)
+            {
+                if (i != _index) continue;
+                Color cc = _cardUi[i].f.EmpireColor;
+                _cardUi[i].fx.SetRim(new Color(cc.r, cc.g, cc.b, 0.6f + 0.35f * Mathf.Sin(t * 3f)));
+            }
+        }
+
+        private static Sprite s_band;
+
+        /// <summary>Вертикальная полоса с мягкими краями — для блика.</summary>
+        private static Sprite BandSprite()
+        {
+            if (s_band != null) return s_band;
+            const int n = 64;
+            var tex = new Texture2D(n, 4, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
+            for (int x = 0; x < n; x++)
+            {
+                float d = Mathf.Abs(x / (n - 1f) * 2f - 1f);
+                float a = Mathf.Pow(1f - d, 2.2f);
+                for (int y = 0; y < 4; y++) tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+            }
+            tex.Apply();
+            s_band = Sprite.Create(tex, new Rect(0, 0, n, 4), new Vector2(0.5f, 0.5f));
+            return s_band;
         }
 
         private static IEnumerable<(LGIcon, string)> BonusTraits(FactionInfo f)
@@ -492,6 +619,7 @@ namespace StellarisClone.Rendering
             if (_bgA != null) { _bgA.rectTransform.localScale = Vector3.one * zoom; _bgB.rectTransform.localScale = Vector3.one * zoom; }
 
             if (_scan != null) _scan.uvRect = new Rect(0f, -t * 0.08f, 1f, 260f);
+            if (_motesLayer != null) AnimateEffects(dt, t);
             if (_liveDot != null) { var c = _liveDot.color; c.a = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(t * 2.2f)); _liveDot.color = c; }
 
             if (_fade >= 1f) return;
