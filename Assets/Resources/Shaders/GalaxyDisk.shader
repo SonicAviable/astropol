@@ -66,7 +66,7 @@ Shader "Astropolity/GalaxyDisk"
             // Шум пыли, повёрнутый на угол, зависящий от радиуса (внутри — быстрее)
             float Dust(float2 p, float r, float t)
             {
-                float ang = t * 0.045 / (r + 0.25);
+                float ang = t * 0.11 / (r + 0.25);
                 float2 q = Rot(p, ang);
                 return Fbm(q * 5.5 + 2.3);
             }
@@ -78,7 +78,7 @@ Shader "Astropolity/GalaxyDisk"
                 float r = length(p);
 
                 // два слоя со сдвигом на полпериода — рисунок течёт без бесконечной накрутки
-                const float Period = 90.0;
+                const float Period = 45.0;
                 float ph = frac(_T / Period);
                 float t1 = ph * Period, t2 = frac(ph + 0.5) * Period;
                 float w = abs(ph * 2.0 - 1.0);
@@ -90,8 +90,8 @@ Shader "Astropolity/GalaxyDisk"
 
                 // дыхание ядра
                 float core = exp(-r * r / (2.0 * 0.07 * 0.07)) + 0.35 * exp(-r * r / (2.0 * 0.16 * 0.16));
-                float pulse = 0.5 + 0.5 * sin(_T * 0.55) * 0.6 + 0.2 * sin(_T * 1.3 + 1.1);
-                float coreA = core * 0.22 * pulse;
+                float pulse = 0.6 + 0.4 * sin(_T * 0.9);
+                float coreA = core * 0.3 * pulse;
                 col = (col * a + _CoreColor.rgb * coreA) / max(a + coreA, 1e-4);
                 a = saturate(a + coreA);
 

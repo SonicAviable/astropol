@@ -28,6 +28,7 @@ namespace StellarisClone.Rendering
         private GameObject _coreRoot;
         private Material _coreMat;
         private SpriteRenderer _coreBulge;
+        private float _coreBulgeBase = 1f;
         private readonly List<(Material mat, float baseIntensity)> _nebulaMats = new List<(Material, float)>();
         private Material _skyInstance;
         private float _skyExposure = 1f;
@@ -202,7 +203,8 @@ namespace StellarisClone.Rendering
             var b = new GameObject("CoreBulge");
             b.transform.SetParent(_coreRoot.transform, false);
             b.transform.position = new Vector3(0f, 0.5f, 0f);
-            b.transform.localScale = Vector3.one * (R * 0.16f / 0.64f);
+            _coreBulgeBase = R * 0.16f / 0.64f;
+            b.transform.localScale = Vector3.one * _coreBulgeBase;
             _coreBulge = b.AddComponent<SpriteRenderer>();
             _coreBulge.sprite = _starHotSprite;
             _coreBulge.sharedMaterial = new Material(GetSpriteShader());
@@ -347,8 +349,9 @@ namespace StellarisClone.Rendering
             }
             if (_coreBulge != null)
             {
-                float pulse = 1f + 0.05f * Mathf.Sin(t * 0.5f);
+                float pulse = 1f + 0.2f * Mathf.Sin(t * 0.9f);
                 _coreBulge.color = new Color(1f, 0.86f, 0.62f, Mathf.Lerp(0.25f, 0.5f, far) * pulse);
+                _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
             foreach (var (m, k) in _nebulaMats)
             {
