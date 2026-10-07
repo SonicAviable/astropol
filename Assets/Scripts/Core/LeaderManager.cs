@@ -27,6 +27,8 @@ namespace StellarisClone.Core
         public int SystemId = -1;
         public int PlanetIndex = -1;
         public int Seed;
+        /// <summary>Ключ портрета из Resources/Leaders/Pool (подбирается при первом показе, см. LeaderFaces).</summary>
+        public string Portrait;
 
         public bool Has(string trait) => Traits.Contains(trait);
         public float XpToNext => Level >= LeaderManager.MaxLevel ? 0f : LeaderManager.LevelXp[Level] - Xp;

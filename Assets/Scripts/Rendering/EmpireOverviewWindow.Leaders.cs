@@ -66,7 +66,7 @@ namespace StellarisClone.Rendering
         {
             Color col = ClassColor(l.Class);
             var row = Row(null, new Color(col.r, col.g, col.b, hired ? 0.3f : 0.16f));
-            IconCell(row, 0f, 0.06f, ClassIcon(l.Class), col);
+            PortraitCell(row, 0f, 0.06f, l, col);
             TwoLine(row, 0.06f, 0.29f, l.Name, $"{LeaderManager.ClassName(l.Class)} · {l.Age} {AgeWord(l.Age)}");
 
             string lvl = l.Level >= LeaderManager.MaxLevel ? $"ур. {l.Level} · максимум" : $"ур. {l.Level}";
@@ -118,6 +118,28 @@ namespace StellarisClone.Rendering
             }
 
             TooltipHelper.Attach(row.gameObject, LeaderTooltip(l));
+        }
+
+        /// <summary>Лицо лидера в скруглённой рамке цвета класса; без портрета — иконка класса.</summary>
+        private static void PortraitCell(RectTransform row, float x0, float x1, Leader l, Color col)
+        {
+            var face = LeaderFaces.For(l);
+            if (face == null) { IconCell(row, x0, x1, ClassIcon(l.Class), col); return; }
+
+            var c = Cell(row, x0, x1);
+            LG.Ignore(c.gameObject);
+            var frame = LGBuild.Rect(c, "Portrait");
+            frame.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(40, 40));
+
+            var outer = LG.RoundedMask(frame, 10f);
+            LGBuild.Panel(outer, "Ring", new Color(col.r, col.g, col.b, 0.85f)).rectTransform.Stretch();
+            var inner = LG.RoundedMask(outer, 9f, 1.5f);
+            var art = new GameObject("Face").AddComponent<RawImage>();
+            art.transform.SetParent(inner, false);
+            art.rectTransform.Stretch();
+            art.texture = face.Texture;
+            art.uvRect = LeaderFaces.FaceUv(face);
+            art.raycastTarget = false;
         }
 
         private static string AgeWord(int n)
