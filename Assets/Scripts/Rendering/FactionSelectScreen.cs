@@ -8,29 +8,33 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Выбор цивилизации в духе Master of Orion: слева — плитки фракций с портретами правителей,
-    /// в центре — правитель во весь рост на фоне космоса, справа — герб, лидер, особенности и описание.
-    /// Внизу: «Назад», «Случайная империя», «Дальше».
-    /// Фон: Resources/Factions/bg_&lt;ключ правителя&gt; (если есть), иначе общая заставка UI/LoadingArt.
+    /// Выбор цивилизации. Фон — зал фракции (Resources/Factions/bg_&lt;ключ&gt; или Diplomacy/bg_&lt;ключ&gt;),
+    /// плавно сменяется при выборе. Слева — досье фракции; справа — правитель в рамке «канала связи»
+    /// (целый портрет с живыми эффектами, угловые скобы, развёртка, индикатор эфира);
+    /// внизу по центру — карточки фракций, по краям — «Назад», «Случайная империя», «Дальше».
     /// </summary>
     public class FactionSelectScreen : MonoBehaviour
     {
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
-        private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color PanelBg = new Color(0.016f, 0.03f, 0.044f, 0.97f);
+        private static readonly Color PanelBg = new Color(0.016f, 0.03f, 0.044f, 0.82f);
 
         private Action<FactionInfo> _onChoose;
         private Action _onBack;
         private int _index;
 
-        private RawImage _bg;
-        private RectTransform _leaderHost, _tiles, _traits;
-        private Image _glow, _emblem;
-        private Image _emblemIcon;
-        private Text _name, _leader, _tagline, _desc, _quote;
-        private readonly List<(Image bg, LiquidGlassEffect fx, Text label, FactionInfo f)> _tileUi = new List<(Image, LiquidGlassEffect, Text, FactionInfo)>();
-        private CanvasGroup _infoGroup, _leaderGroup;
+        private RawImage _bgA, _bgB;
+        private bool _bgFront;
+        private float _bgMix = 1f;
+        private RectTransform _frame, _portraitHost, _traits, _cards;
+        private LiquidGlassEffect _frameFx, _infoFx;
+        private Image _accentBar, _emblem, _emblemIcon, _liveDot;
+        private readonly List<Image> _brackets = new List<Image>();
+        private RawImage _scan;
+        private Text _name, _leader, _tagline, _desc, _quote, _frameTitle, _frameSub;
+        private readonly List<(Image bg, LiquidGlassEffect fx, Text name, FactionInfo f, RectTransform rt)> _cardUi =
+            new List<(Image, LiquidGlassEffect, Text, FactionInfo, RectTransform)>();
+        private CanvasGroup _infoGroup, _frameGroup;
         private float _fade = 1f;
 
         // ==================== ЛОР ====================
@@ -104,172 +108,246 @@ namespace StellarisClone.Rendering
 
             var rt = (RectTransform)transform;
             rt.Stretch();
-            var root = gameObject;
-            root.AddComponent<CanvasGroup>();
-            var bgImg = root.AddComponent<Image>();
+            gameObject.AddComponent<CanvasGroup>();
+            var bgImg = gameObject.AddComponent<Image>();
             bgImg.color = new Color(0.005f, 0.01f, 0.02f, 1f);
             bgImg.raycastTarget = true;
-            LG.Ignore(root, includeChildren: false);
-            LG.Motion(root, LGAppear.Kind.Fade);
+            LG.Ignore(gameObject, includeChildren: false);
+            LG.Motion(gameObject, LGAppear.Kind.Fade);
 
-            // Фон: космос и планета
-            var bgRt = LGBuild.Rect(rt, "Background");
-            bgRt.Stretch();
-            _bg = bgRt.gameObject.AddComponent<RawImage>();
-            _bg.raycastTarget = false;
-            LG.Ignore(bgRt.gameObject);
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.005f, 0.01f, 0.02f, 0.35f));
-            dim.rectTransform.Stretch();
-            LG.Ignore(dim.gameObject);
+            // Фон: два слоя для плавной смены зала
+            _bgA = BgLayer(rt, "BgA");
+            _bgB = BgLayer(rt, "BgB");
+            // Затемнение слева (под текст) и снизу (под карточки) — фон остаётся красивым, текст читается
+            var shadeL = LGBuild.Panel(rt, "ShadeLeft", Color.white);
+            shadeL.sprite = GradientSprite(true);
+            shadeL.color = new Color(0.004f, 0.008f, 0.016f, 0.92f);
+            shadeL.rectTransform.anchorMin = new Vector2(0, 0);
+            shadeL.rectTransform.anchorMax = new Vector2(0.62f, 1);
+            shadeL.rectTransform.offsetMin = shadeL.rectTransform.offsetMax = Vector2.zero;
+            LG.Ignore(shadeL.gameObject);
+            var shadeB = LGBuild.Panel(rt, "ShadeBottom", Color.white);
+            shadeB.sprite = GradientSprite(false);
+            shadeB.color = new Color(0.004f, 0.008f, 0.016f, 0.9f);
+            shadeB.rectTransform.anchorMin = new Vector2(0, 0);
+            shadeB.rectTransform.anchorMax = new Vector2(1, 0);
+            shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
+            shadeB.rectTransform.sizeDelta = new Vector2(0, 300);
+            LG.Ignore(shadeB.gameObject);
 
-            // Свечение за правителем
-            _glow = LGBuild.Panel(rt, "Glow", Color.white);
-            _glow.sprite = RadialSprite();
-            _glow.rectTransform.anchorMin = _glow.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            _glow.rectTransform.sizeDelta = new Vector2(1100f, 1100f);
-            _glow.rectTransform.anchoredPosition = new Vector2(-40f, 20f);
-            LG.Ignore(_glow.gameObject);
-
-            // Правитель
-            _leaderHost = LGBuild.Rect(rt, "Leader");
-            _leaderHost.anchorMin = _leaderHost.anchorMax = new Vector2(0.5f, 0f);
-            _leaderHost.pivot = new Vector2(0.5f, 0f);
-            _leaderHost.sizeDelta = new Vector2(660f, 984f);
-            _leaderHost.anchoredPosition = new Vector2(-40f, 0f);
-            _leaderGroup = _leaderHost.gameObject.AddComponent<CanvasGroup>();
-
-            BuildLeft(rt);
-            BuildRight(rt);
-            BuildBottom(rt);
+            BuildInfo(rt);
+            BuildFrame(rt);
+            BuildCards(rt);
+            BuildButtons(rt);
 
             Select(0, instant: true);
         }
 
-        private void BuildLeft(RectTransform rt)
+        private static RawImage BgLayer(RectTransform rt, string name)
         {
-            var title = LGBuild.Label(rt, "НОВАЯ ИГРА / ВЫБОР ИМПЕРИИ", 30, Primary, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(44, -36), new Vector2(760, 40));
-            var sub = LGBuild.Label(rt, "Выберите цивилизацию, которую поведёте к звёздам", 14, Muted, TextAnchor.UpperLeft);
-            sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -78), new Vector2(760, 22));
+            var r = LGBuild.Rect(rt, name);
+            r.Stretch();
+            var img = r.gameObject.AddComponent<RawImage>();
+            img.raycastTarget = false;
+            LG.Ignore(r.gameObject);
+            return img;
+        }
 
-            _tiles = LGBuild.Rect(rt, "Tiles");
-            _tiles.anchorMin = _tiles.anchorMax = new Vector2(0, 1);
-            _tiles.pivot = new Vector2(0, 1);
-            _tiles.sizeDelta = new Vector2(380f, 210f);
-            _tiles.anchoredPosition = new Vector2(44f, -122f);
+        // ---------- Досье слева ----------
 
+        private void BuildInfo(RectTransform rt)
+        {
+            var title = LGBuild.Label(rt, "НОВАЯ ИГРА  ·  ВЫБОР ИМПЕРИИ", 15, Muted, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(64, -40), new Vector2(700, 22));
+
+            var panel = LGBuild.Panel(rt, "Info", PanelBg, raycast: true);
+            var pr = panel.rectTransform;
+            pr.anchorMin = new Vector2(0, 0);
+            pr.anchorMax = new Vector2(0, 1);
+            pr.pivot = new Vector2(0, 0.5f);
+            pr.offsetMin = new Vector2(64f, 190f);
+            pr.offsetMax = new Vector2(724f, -76f);
+            _infoFx = LG.Platter(panel.gameObject, 6f);
+            _infoFx.FillMultiplier = 2.8f;
+            _infoFx.SpecularMultiplier = 0.2f;
+            _infoGroup = panel.gameObject.AddComponent<CanvasGroup>();
+
+            _accentBar = LGBuild.Panel(pr, "Accent", Color.white);
+            _accentBar.rectTransform.anchorMin = new Vector2(0, 0);
+            _accentBar.rectTransform.anchorMax = new Vector2(0, 1);
+            _accentBar.rectTransform.offsetMin = new Vector2(0, 18);
+            _accentBar.rectTransform.offsetMax = new Vector2(4, -18);
+            LG.Ignore(_accentBar.gameObject);
+
+            _emblem = LGBuild.Panel(pr, "Emblem", Color.white);
+            _emblem.sprite = HexSprite();
+            _emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(30, -28), new Vector2(70, 70));
+            LG.Ignore(_emblem.gameObject);
+            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 36, Color.white);
+
+            _name = LGBuild.Label(pr, "", 34, Primary, TextAnchor.UpperLeft, bold: true);
+            FitText(_name, 22);
+            _name.rectTransform.TopBand(26, 42, 118, 24);
+            _leader = LGBuild.Label(pr, "", 15, Primary, TextAnchor.UpperLeft);
+            _leader.rectTransform.TopBand(72, 22, 120, 24);
+            _tagline = LGBuild.Label(pr, "", 15, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft);
+            _tagline.fontStyle = FontStyle.Italic;
+            _tagline.rectTransform.TopBand(120, 22, 32, 24);
+
+            Heading(pr, "ОСОБЕННОСТИ", 160f);
+            _traits = LGBuild.Rect(pr, "Traits");
+            _traits.TopBand(196, 196, 32, 24);
+
+            Heading(pr, "ИСТОРИЯ", 400f);
+            _desc = LGBuild.Label(pr, "", 14, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
+            _desc.lineSpacing = 1.18f;
+            _desc.rectTransform.Stretch(32, 74, 28, 436);
+            _quote = LGBuild.Label(pr, "", 14, Muted, TextAnchor.LowerLeft, wrap: true);
+            _quote.fontStyle = FontStyle.Italic;
+            _quote.rectTransform.anchorMin = new Vector2(0, 0);
+            _quote.rectTransform.anchorMax = new Vector2(1, 0);
+            _quote.rectTransform.pivot = new Vector2(0.5f, 0);
+            _quote.rectTransform.offsetMin = new Vector2(32, 18);
+            _quote.rectTransform.offsetMax = new Vector2(-28, 62);
+        }
+
+        private static void Heading(RectTransform parent, string text, float top)
+        {
+            var t = LGBuild.Label(parent, text, 13, Muted, TextAnchor.UpperLeft, bold: true);
+            t.rectTransform.TopBand(top, 18, 32, 24);
+            var l = LGBuild.Panel(parent, "Line", new Color(1f, 1f, 1f, 0.10f));
+            l.rectTransform.TopBand(top + 24, 1, 32, 24);
+            LG.Ignore(l.gameObject);
+        }
+
+        private static void FitText(Text t, int min)
+        {
+            t.verticalOverflow = VerticalWrapMode.Truncate;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            t.resizeTextForBestFit = true;
+            t.resizeTextMinSize = min;
+            t.resizeTextMaxSize = t.fontSize;
+        }
+
+        // ---------- Правитель: рамка канала связи ----------
+
+        private void BuildFrame(RectTransform rt)
+        {
+            _frame = LGBuild.Rect(rt, "Frame");
+            _frame.anchorMin = _frame.anchorMax = new Vector2(1, 0.5f);
+            _frame.pivot = new Vector2(1, 0.5f);
+            _frame.sizeDelta = new Vector2(540f, 780f);
+            _frame.anchoredPosition = new Vector2(-150f, 70f);
+            _frameGroup = _frame.gameObject.AddComponent<CanvasGroup>();
+
+            var back = LGBuild.Panel(_frame, "Back", new Color(0.01f, 0.02f, 0.03f, 0.95f));
+            back.rectTransform.Stretch();
+            _frameFx = LG.Platter(back.gameObject, 8f);
+            _frameFx.FillMultiplier = 3f;
+            _frameFx.SpecularMultiplier = 0.2f;
+
+            var mask = LG.RoundedMask(_frame, 8f, 2f);
+            _portraitHost = LGBuild.Rect(mask, "Portrait");
+            _portraitHost.Stretch();
+
+            // Развёртка поверх портрета
+            var sc = LGBuild.Rect(mask, "Scan");
+            sc.Stretch();
+            _scan = sc.gameObject.AddComponent<RawImage>();
+            _scan.texture = ScanTexture();
+            _scan.color = new Color(1f, 1f, 1f, 0.05f);
+            _scan.raycastTarget = false;
+            LG.Ignore(sc.gameObject);
+
+            // Шапка и подвал рамки
+            var head = LGBuild.Panel(_frame, "Head", new Color(0f, 0f, 0f, 0.55f));
+            head.rectTransform.TopBand(0, 40);
+            LG.Ignore(head.gameObject);
+            _liveDot = LGBuild.Panel(head.transform, "Live", Color.white);
+            _liveDot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(10, 10));
+            LG.Dot(_liveDot.gameObject);
+            _frameTitle = LGBuild.Label(head.transform, "", 12, Primary, TextAnchor.MiddleLeft, bold: true);
+            _frameTitle.rectTransform.Stretch(34, 0, 14, 0);
+
+            var foot = LGBuild.Panel(_frame, "Foot", Color.white);
+            foot.sprite = GradientSprite(false);
+            foot.color = new Color(0f, 0f, 0f, 0.85f);
+            foot.rectTransform.anchorMin = new Vector2(0, 0);
+            foot.rectTransform.anchorMax = new Vector2(1, 0);
+            foot.rectTransform.pivot = new Vector2(0.5f, 0);
+            foot.rectTransform.sizeDelta = new Vector2(0, 110);
+            LG.Ignore(foot.gameObject);
+            _frameSub = LGBuild.Label(foot.transform, "", 13, Primary, TextAnchor.LowerLeft);
+            _frameSub.rectTransform.Stretch(20, 16, 20, 0);
+
+            // Угловые скобы
+            for (int i = 0; i < 4; i++)
+            {
+                bool right = i % 2 == 1, top = i < 2;
+                foreach (bool horiz in new[] { true, false })
+                {
+                    var b = LGBuild.Panel(_frame, "Bracket", Color.white);
+                    var r = b.rectTransform;
+                    r.anchorMin = r.anchorMax = new Vector2(right ? 1 : 0, top ? 1 : 0);
+                    r.pivot = new Vector2(right ? 1 : 0, top ? 1 : 0);
+                    r.sizeDelta = horiz ? new Vector2(46, 3) : new Vector2(3, 46);
+                    r.anchoredPosition = new Vector2(right ? 8 : -8, top ? 8 : -8);
+                    LG.Ignore(b.gameObject);
+                    _brackets.Add(b);
+                }
+            }
+        }
+
+        // ---------- Карточки фракций ----------
+
+        private void BuildCards(RectTransform rt)
+        {
+            _cards = LGBuild.Rect(rt, "Cards");
+            _cards.anchorMin = _cards.anchorMax = new Vector2(0.5f, 0f);
+            _cards.pivot = new Vector2(0.5f, 0f);
+            _cards.anchoredPosition = new Vector2(-150f, 30f);
             var factions = FactionRegistry.AvailableFactions;
-            const float tw = 122f, th = 200f, gap = 7f;
+            const float w = 270f, h = 116f, gap = 16f;
+            _cards.sizeDelta = new Vector2(factions.Length * (w + gap) - gap, h + 12f);
             for (int i = 0; i < factions.Length; i++)
             {
                 var f = factions[i];
                 int idx = i;
-                var tile = LGBuild.Panel(_tiles, "Tile_" + i, PanelBg, raycast: true);
-                tile.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * (tw + gap), 0f), new Vector2(tw, th));
-                var fx = LG.Platter(tile.gameObject, 4f);
-                fx.FillMultiplier = 2.6f;
+                var card = LGBuild.Panel(_cards, "Card_" + i, PanelBg, raycast: true);
+                card.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(i * (w + gap), 0f), new Vector2(w, h));
+                var fx = LG.Platter(card.gameObject, 6f);
+                fx.FillMultiplier = 2.8f;
                 fx.SpecularMultiplier = 0.2f;
 
-                var label = LGBuild.Label(tile.transform, ShortName(f), 15, Cyan, TextAnchor.UpperLeft, bold: true);
-                label.rectTransform.TopBand(8, 22, 10, 6);
-                // Эмблема-«печать» за головой правителя — как в референсе
-                var crest = LGIcons.Create(tile.transform, LoreFor(f)?.Emblem ?? LGIcon.Leader, 92, new Color(f.EmpireColor.r, f.EmpireColor.g, f.EmpireColor.b, 0.25f));
-                crest.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -38), new Vector2(92, 92));
-                var host = LGBuild.Rect(tile.transform, "Leader");
-                host.Stretch(2, 2, 2, 34);
-                LeaderPortraitView.Create(host, LeaderPortraits.ForFaction(f), 1.9f, new Vector4(0f, 0f, 0.1f, 0f), false, false, true);
+                var thumb = LGBuild.Panel(card.transform, "Thumb", new Color(0f, 0f, 0f, 0.6f));
+                thumb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(96, 96));
+                LG.Platter(thumb.gameObject, 4f).FillMultiplier = 3f;
+                var tm = LG.RoundedMask(thumb.transform, 4f, 1f);
+                LeaderPortraitView.Create(tm, LeaderPortraits.ForFaction(f), 2.1f, Vector4.zero, false, true, false);
 
-                var btn = tile.gameObject.AddComponent<Button>();
+                var name = LGBuild.Label(card.transform, f.Name.ToUpper(), 15, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
+                FitText(name, 11);
+                name.rectTransform.Stretch(118, 46, 10, 14);
+                var title = LGBuild.Label(card.transform, f.Title, 12, Muted, TextAnchor.LowerLeft);
+                title.rectTransform.Stretch(118, 14, 10, 70);
+
+                var btn = card.gameObject.AddComponent<Button>();
                 btn.transition = Selectable.Transition.None;
                 btn.onClick.AddListener(() => { if (idx != _index) { SFXManager.Play(Sfx.UiTab); Select(idx); } });
-                _tileUi.Add((tile, fx, label, f));
+                _cardUi.Add((card, fx, name, f, card.rectTransform));
             }
-
-            // Параметры партии — под плитками
-            var gs = GameSession.Settings;
-            var info = LGBuild.Panel(rt, "GameInfo", PanelBg);
-            info.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(44f, -344f), new Vector2(380f, 112f));
-            var ifx = LG.Platter(info.gameObject, 4f);
-            ifx.FillMultiplier = 3f;
-            var ih = LGBuild.Label(info.transform, "<color=#F2A33A>■</color> ПАРАМЕТРЫ ГАЛАКТИКИ", 13, Primary, TextAnchor.UpperLeft, bold: true);
-            ih.rectTransform.TopBand(10, 20, 14, 10);
-            var it = LGBuild.Label(info.transform,
-                $"Размер: <b>{NewGameSettings.SizeNames[Mathf.Clamp(gs.GalaxySize, 0, 2)]}</b>  ·  систем: <b>{gs.StarCount}</b>\n" +
-                $"Сложность: <b>{NewGameSettings.DifficultyNames[Mathf.Clamp(gs.Difficulty, 0, 2)]}</b>  ·  сид: <b>{gs.Seed}</b>\n" +
-                $"Обучение: <b>{(gs.Tutorial ? "включено" : "выключено")}</b>",
-                13, Muted, TextAnchor.UpperLeft, wrap: true);
-            it.lineSpacing = 1.2f;
-            it.rectTransform.Stretch(14, 8, 10, 36);
         }
 
-        private void BuildRight(RectTransform rt)
+        private void BuildButtons(RectTransform rt)
         {
-            var panel = LGBuild.Panel(rt, "Info", PanelBg, raycast: true);
-            var pr = panel.rectTransform;
-            pr.anchorMin = new Vector2(1, 0);
-            pr.anchorMax = new Vector2(1, 1);
-            pr.pivot = new Vector2(1, 0.5f);
-            pr.offsetMin = new Vector2(-560f, 110f);
-            pr.offsetMax = new Vector2(-34f, -48f);
-            var pfx = LG.Platter(panel.gameObject, 4f);
-            pfx.FillMultiplier = 3f;
-            pfx.SpecularMultiplier = 0.2f;
-            _infoGroup = panel.gameObject.AddComponent<CanvasGroup>();
-
-            // Шапка: герб, название, лидер
-            var head = LGBuild.Panel(pr, "Head", new Color(0f, 0f, 0f, 0.35f));
-            head.rectTransform.TopBand(0, 112);
-            LG.Ignore(head.gameObject);
-            _emblem = LGBuild.Panel(head.transform, "Emblem", Color.white);
-            _emblem.sprite = HexSprite();
-            _emblem.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(76, 76));
-            LG.Ignore(_emblem.gameObject);
-            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 40, Color.white);
-            _name = LGBuild.Label(head.transform, "", 30, Primary, TextAnchor.UpperLeft, bold: true);
-            _name.rectTransform.Stretch(116, 0, 14, 22);
-            _leader = LGBuild.Label(head.transform, "", 15, Primary, TextAnchor.UpperLeft);
-            _leader.rectTransform.Stretch(118, 0, 14, 64);
-
-            _tagline = LGBuild.Label(pr, "", 15, new Color(0.82f, 0.88f, 0.92f), TextAnchor.UpperLeft);
-            _tagline.rectTransform.TopBand(132, 22, 24, 20);
-
-            var th = LGBuild.Label(pr, "<color=#F2A33A>■</color> ОСОБЕННОСТИ:", 16, Primary, TextAnchor.UpperLeft, bold: true);
-            th.rectTransform.TopBand(174, 22, 22, 20);
-            Line(pr, 200f);
-            _traits = LGBuild.Rect(pr, "Traits");
-            _traits.TopBand(210, 230, 22, 20);
-
-            var dh = LGBuild.Label(pr, "<color=#F2A33A>■</color> ОПИСАНИЕ:", 16, Primary, TextAnchor.UpperLeft, bold: true);
-            dh.rectTransform.TopBand(450, 22, 22, 20);
-            Line(pr, 476f);
-            _desc = LGBuild.Label(pr, "", 14, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
-            _desc.lineSpacing = 1.15f;
-            _desc.rectTransform.Stretch(24, 70, 22, 490);
-            _quote = LGBuild.Label(pr, "", 14, Muted, TextAnchor.LowerLeft, wrap: true);
-            _quote.fontStyle = FontStyle.Italic;
-            _quote.rectTransform.Stretch(24, 18, 22, 0);
-            _quote.rectTransform.anchorMax = new Vector2(1, 0);
-            _quote.rectTransform.offsetMax = new Vector2(-22, 62);
-        }
-
-        private static void Line(RectTransform parent, float top)
-        {
-            var l = LGBuild.Panel(parent, "Line", new Color(0.36f, 0.86f, 0.82f, 0.35f));
-            l.rectTransform.TopBand(top, 1.5f, 22, 20);
-            LG.Ignore(l.gameObject);
-        }
-
-        private void BuildBottom(RectTransform rt)
-        {
-            Btn(rt, "Back", LGIcon.Back, "НАЗАД", new Vector2(0, 0), new Vector2(0, 0), new Vector2(34, 34), 190f, () => _onBack?.Invoke());
-            Btn(rt, "Random", LGIcon.Dice, "СЛУЧАЙНАЯ ИМПЕРИЯ", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-282, 34), 280f, () =>
+            Btn(rt, "Back", LGIcon.Back, "НАЗАД", new Vector2(0, 0), new Vector2(0, 0), new Vector2(64, 40), 180f, () => _onBack?.Invoke());
+            Btn(rt, "Random", LGIcon.Dice, "СЛУЧАЙНАЯ", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-290, 40), 220f, () =>
             {
                 int n = FactionRegistry.AvailableFactions.Length;
-                int pick = (_index + UnityEngine.Random.Range(1, Mathf.Max(2, n))) % n;
                 SFXManager.Play(Sfx.UiTab);
-                Select(pick);
+                Select((_index + UnityEngine.Random.Range(1, Mathf.Max(2, n))) % n);
             });
-            Btn(rt, "Next", LGIcon.Play, "ДАЛЬШЕ", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-34, 34), 236f, () =>
+            Btn(rt, "Next", LGIcon.Play, "ДАЛЬШЕ", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-64, 40), 214f, () =>
             {
                 SFXManager.Play(Sfx.UiConfirm);
                 _onChoose?.Invoke(FactionRegistry.AvailableFactions[_index]);
@@ -278,10 +356,10 @@ namespace StellarisClone.Rendering
 
         private static void Btn(RectTransform rt, string name, LGIcon icon, string label, Vector2 anchor, Vector2 pivot, Vector2 pos, float w, Action act)
         {
-            var b = LGBuild.Button(rt, name, new Color(0.06f, 0.30f, 0.30f, 0.95f), new Color(0.36f, 0.86f, 0.82f, 0.45f), act, icon, label, 17, 4f);
-            ((RectTransform)b.transform).At(anchor, pivot, pos, new Vector2(w, 54f));
+            var b = LGBuild.Button(rt, name, new Color(0.05f, 0.10f, 0.13f, 0.95f), new Color(1f, 1f, 1f, 0.25f), act, icon, label, 15, 4f);
+            ((RectTransform)b.transform).At(anchor, pivot, pos, new Vector2(w, 50f));
             var fx = b.GetComponent<LiquidGlassEffect>();
-            if (fx != null) { fx.SpecularMultiplier = 0.3f; fx.FillMultiplier = 2.4f; }
+            if (fx != null) { fx.SpecularMultiplier = 0.3f; fx.FillMultiplier = 2.6f; }
         }
 
         // ==================== ВЫБОР ====================
@@ -292,12 +370,6 @@ namespace StellarisClone.Rendering
             return l != null && LoreByKey.TryGetValue(l.Key, out var lore) ? lore : null;
         }
 
-        private static string ShortName(FactionInfo f)
-        {
-            var parts = f.Name.Split(' ');
-            return parts[parts.Length - 1].ToUpper();
-        }
-
         private void Select(int index, bool instant = false)
         {
             var factions = FactionRegistry.AvailableFactions;
@@ -306,53 +378,68 @@ namespace StellarisClone.Rendering
             var leader = LeaderPortraits.ForFaction(f);
             var lore = LoreFor(f);
             Color ec = f.EmpireColor;
+            Color light = Color.Lerp(ec, Color.white, 0.25f);
 
-            for (int i = 0; i < _tileUi.Count; i++)
+            for (int i = 0; i < _cardUi.Count; i++)
             {
                 bool on = i == _index;
-                var t = _tileUi[i];
-                Color c = t.f.EmpireColor;
-                t.bg.color = on ? new Color(0.03f + c.r * 0.12f, 0.06f + c.g * 0.12f, 0.08f + c.b * 0.12f, 0.95f) : PanelBg;
-                t.fx.SetRim(on ? new Color(c.r, c.g, c.b, 0.95f) : new Color(1f, 1f, 1f, 0.10f));
-                t.fx.GlowMultiplier = on ? 1f : 0f;
-                t.label.color = on ? Color.Lerp(c, Color.white, 0.2f) : Cyan;
+                var c = _cardUi[i];
+                Color cc = c.f.EmpireColor;
+                c.bg.color = on ? new Color(0.02f + cc.r * 0.10f, 0.04f + cc.g * 0.10f, 0.06f + cc.b * 0.10f, 0.94f) : PanelBg;
+                c.fx.SetRim(on ? new Color(cc.r, cc.g, cc.b, 0.95f) : new Color(1f, 1f, 1f, 0.10f));
+                c.fx.GlowMultiplier = on ? 1f : 0f;
+                c.name.color = on ? Color.Lerp(cc, Color.white, 0.3f) : Primary;
             }
 
-            // Фон: родной мир фракции, если художник его положил
-            var tex = leader != null ? Resources.Load<Texture2D>("Factions/bg_" + leader.Key) : null;
+            // Фон-зал фракции со сменой через затухание
+            Texture tex = null;
+            if (leader != null)
+            {
+                tex = Resources.Load<Texture2D>("Factions/bg_" + leader.Key);
+                if (tex == null) tex = Resources.Load<Texture2D>("Diplomacy/bg_" + leader.Key);
+            }
             if (tex == null) tex = Resources.Load<Texture2D>("UI/LoadingArt");
-            _bg.texture = tex;
-            _bg.enabled = tex != null;
-            if (tex != null) Cover(_bg, tex);
-            _glow.color = new Color(ec.r, ec.g, ec.b, 0.22f);
+            var front = _bgFront ? _bgA : _bgB;
+            front.texture = tex;
+            if (tex != null) Cover(front, tex);
+            front.transform.SetSiblingIndex(_bgFront ? 1 : 0);
+            (_bgFront ? _bgB : _bgA).transform.SetSiblingIndex(0);
+            front.transform.SetSiblingIndex(1);
+            _bgFront = !_bgFront;
+            _bgMix = instant ? 1f : 0f;
+            front.color = new Color(1f, 1f, 1f, instant ? 1f : 0f);
 
-            // Правитель
-            LGBuild.Clear(_leaderHost);
-            LeaderPortraitView.Create(_leaderHost, leader, 1f, new Vector4(0.14f, 0.14f, 0.30f, 0f), false, false, true);
+            // Правитель — целый портрет с эффектами
+            LGBuild.Clear(_portraitHost);
+            LeaderPortraitView.Create(_portraitHost, leader, 1.12f, Vector4.zero, true, true, false);
+            _frameFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.7f));
+            foreach (var b in _brackets) b.color = light;
+            _liveDot.color = ec;
+            _frameTitle.text = leader != null ? $"ПРЯМАЯ СВЯЗЬ  ·  {leader.Name.ToUpper()}" : "ПРЯМАЯ СВЯЗЬ";
+            _frameSub.text = leader != null ? $"<b>{leader.Name}</b>\n<color=#9FB2BC>{leader.Title}</color>" : f.Title;
 
-            // Информация
-            _emblem.color = Color.Lerp(ec, new Color(0.6f, 0.2f, 0.05f), 0.25f);
+            // Досье
+            _accentBar.color = ec;
+            _infoFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.25f));
+            _emblem.color = Color.Lerp(ec, new Color(0.6f, 0.2f, 0.05f), 0.2f);
             _emblemIcon.sprite = LGIcons.Get(lore?.Emblem ?? LGIcon.Leader);
-            _emblemIcon.color = new Color(0.06f, 0.04f, 0.03f, 0.9f);
+            _emblemIcon.color = new Color(0.05f, 0.04f, 0.03f, 0.9f);
             _name.text = f.Name.ToUpper();
-            _name.color = Color.Lerp(ec, Color.white, 0.15f);
-            _leader.text = leader != null
-                ? $"<color=#8AA2A8>Лидер:</color> <b>{leader.Name}</b>  <color=#8AA2A8>· {leader.Title.ToLower()}</color>"
-                : $"<color=#8AA2A8>{f.Title}</color>";
-            _tagline.text = lore?.Tagline ?? f.Title;
+            _name.color = light;
+            _leader.text = leader != null ? $"<color=#8AA2A8>{f.Title}  ·  правитель:</color> <b>{leader.Name}</b>" : f.Title;
+            _tagline.text = lore?.Tagline ?? "";
 
             LGBuild.Clear(_traits);
             float y = 0f;
             foreach (var (icon, text) in BonusTraits(f)) Trait(ref y, icon, text, new Color(0.44f, 0.88f, 0.60f));
-            if (lore != null) foreach (var (icon, text) in lore.Traits) Trait(ref y, icon, text, Color.Lerp(ec, Color.white, 0.3f));
+            if (lore != null) foreach (var (icon, text) in lore.Traits) Trait(ref y, icon, text, light);
 
             _desc.text = lore?.Story ?? StripBonuses(f.Description);
-            _quote.text = leader != null ? $"«{leader.Quote}»  — {leader.Name}" : "";
+            _quote.text = leader != null ? $"«{leader.Quote}»" : "";
 
             _fade = instant ? 1f : 0f;
         }
 
-        /// <summary>Бонусы фракции из её числовых множителей.</summary>
         private static IEnumerable<(LGIcon, string)> BonusTraits(FactionInfo f)
         {
             if (f.EnergyBonus > 1.001f) yield return (LGIcon.Energy, $"+{(f.EnergyBonus - 1f) * 100f:0}% к добыче гелия-3");
@@ -364,15 +451,12 @@ namespace StellarisClone.Rendering
         private void Trait(ref float y, LGIcon icon, string text, Color col)
         {
             var row = LGBuild.Rect(_traits, "Trait");
-            row.TopBand(y, 28);
-            var badge = LGBuild.Panel(row, "Badge", new Color(col.r * 0.2f, col.g * 0.2f, col.b * 0.2f, 1f));
-            badge.sprite = HexSprite();
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(24, 24));
-            LG.Ignore(badge.gameObject);
-            var ic = LGIcons.Create(badge.transform, icon, 13, col);
-            var t = LGBuild.Label(row, text.ToUpper(), 14, new Color(0.84f, 0.90f, 0.94f), TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(34, 0, 0, 0);
-            y += 31f;
+            row.TopBand(y, 26);
+            var ic = LGIcons.Create(row, icon, 16, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
+            var t = LGBuild.Label(row, text, 15, new Color(0.86f, 0.91f, 0.94f), TextAnchor.MiddleLeft);
+            t.rectTransform.Stretch(28, 0, 0, 0);
+            y += 30f;
         }
 
         private static string StripBonuses(string d)
@@ -394,18 +478,69 @@ namespace StellarisClone.Rendering
 
         private void Update()
         {
+            float dt = Time.unscaledDeltaTime;
+            float t = Time.unscaledTime;
+
+            if (_bgMix < 1f)
+            {
+                _bgMix = Mathf.MoveTowards(_bgMix, 1f, dt * 2f);
+                var front = _bgFront ? _bgB : _bgA;   // последний назначенный слой
+                front.color = new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 1f, _bgMix));
+            }
+            // Фон чуть «дышит» — медленный наезд
+            float zoom = 1.03f + 0.015f * Mathf.Sin(t * 0.07f);
+            if (_bgA != null) { _bgA.rectTransform.localScale = Vector3.one * zoom; _bgB.rectTransform.localScale = Vector3.one * zoom; }
+
+            if (_scan != null) _scan.uvRect = new Rect(0f, -t * 0.08f, 1f, 260f);
+            if (_liveDot != null) { var c = _liveDot.color; c.a = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(t * 2.2f)); _liveDot.color = c; }
+
             if (_fade >= 1f) return;
-            _fade = Mathf.MoveTowards(_fade, 1f, Time.unscaledDeltaTime * 3.5f);
+            _fade = Mathf.MoveTowards(_fade, 1f, dt * 3f);
             float k = Mathf.SmoothStep(0f, 1f, _fade);
-            if (_leaderGroup != null) _leaderGroup.alpha = k;
-            if (_infoGroup != null) _infoGroup.alpha = Mathf.Lerp(0.35f, 1f, k);
-            _leaderHost.anchoredPosition = new Vector2(-40f + (1f - k) * 30f, 0f);
+            if (_frameGroup != null) _frameGroup.alpha = k;
+            if (_infoGroup != null) _infoGroup.alpha = Mathf.Lerp(0.3f, 1f, k);
+            _frame.anchoredPosition = new Vector2(-150f + (1f - k) * 24f, 70f);
         }
 
         private void OnEnable()
         {
-            if (_leaderGroup != null) _leaderGroup.alpha = 1f;
+            if (_frameGroup != null) _frameGroup.alpha = 1f;
             if (_infoGroup != null) _infoGroup.alpha = 1f;
+        }
+
+        // ==================== ТЕКСТУРЫ ====================
+
+        private static Texture2D s_scan;
+        private static readonly Dictionary<bool, Sprite> s_grad = new Dictionary<bool, Sprite>();
+
+        /// <summary>Тонкие горизонтальные линии развёртки (повторяется по вертикали).</summary>
+        private static Texture2D ScanTexture()
+        {
+            if (s_scan != null) return s_scan;
+            s_scan = new Texture2D(1, 4, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.DontSave };
+            s_scan.SetPixels32(new[] { new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 60), new Color32(255, 255, 255, 0), new Color32(255, 255, 255, 0) });
+            s_scan.Apply();
+            return s_scan;
+        }
+
+        /// <summary>Градиент прозрачности: horizontal — слева направо, иначе снизу вверх.</summary>
+        private static Sprite GradientSprite(bool horizontal)
+        {
+            if (s_grad.TryGetValue(horizontal, out var sp) && sp != null) return sp;
+            const int n = 64;
+            var tex = new Texture2D(horizontal ? n : 2, horizontal ? 2 : n, TextureFormat.RGBA32, false)
+                { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
+            for (int i = 0; i < n; i++)
+            {
+                float a = Mathf.Pow(1f - i / (n - 1f), 1.4f);
+                var c = new Color(1f, 1f, 1f, a);
+                if (horizontal) { tex.SetPixel(i, 0, c); tex.SetPixel(i, 1, c); }
+                else { tex.SetPixel(0, i, c); tex.SetPixel(1, i, c); }
+            }
+            tex.Apply();
+            sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            s_grad[horizontal] = sp;
+            return sp;
         }
 
         // ==================== ПРОЦЕДУРНЫЕ СПРАЙТЫ ====================
