@@ -2,9 +2,12 @@
 """
 Озвучка обучения: голос ИИ-советника ОРАКУЛ-7.
 
-Синтез — RHVoice (голос aleksandr-hq), затем «роботизация» через ffmpeg:
-лёгкое понижение тона, короткое металлическое эхо, кольцевая модуляция,
-немного «цифрового» огрубления и сигнал канала связи в начале фразы.
+Синтез — RHVoice (голос yuriy), затем мягкая обработка «бортового ИИ» через ffmpeg:
+компрессия, едва заметный синтетический блеск (очень короткое эхо), лёгкое
+пространство отсека, разборчивость в верхней середине и тихий сигнал связи
+перед фразой. Без кольцевой модуляции и «битого» звука — голос звучит живо.
+Другие подходящие голоса: artemiy, mikhail, pavel (мужские), victoria, tatiana,
+elena (женские) — поменяйте VOICE/RATE и перезапустите скрипт.
 Результат — Assets/Resources/Audio/Tutorial/*.ogg (TutorialManager грузит их по имени).
 
 Нужно: RHVoice-test (apt: rhvoice rhvoice-russian) и ffmpeg.
@@ -17,7 +20,8 @@ import sys
 import tempfile
 import uuid
 
-VOICE = "aleksandr-hq"
+VOICE = "yuriy"
+RATE = 100        # % скорости речи RHVoice (у yuriy спокойный темп и так)
 OUT = "Assets/Resources/Audio/Tutorial"
 
 LINES = {
@@ -54,23 +58,21 @@ LINES = {
     "tut_ok_3": "Задача принята.",
 }
 
-# Роботизация голоса (вход — моно 24 кГц от RHVoice)
+# Мягкая обработка «бортового ИИ» (вход — моно от RHVoice)
 ROBOT = ",".join([
-    "highpass=f=120",
-    "asetrate=24000*0.94,aresample=24000,atempo=1/0.94",          # чуть ниже тон, тот же темп
-    "aecho=0.8:0.7:7|13:0.32|0.22",                                # короткое металлическое эхо
-    "aeval='val(0)*(0.78+0.22*sin(2*PI*68*t))':c=same",            # кольцевая модуляция
-    "acrusher=bits=12:mode=log:aa=1:mix=0.22",                     # лёгкое цифровое огрубление
-    "aecho=0.8:0.4:55:0.12",                                       # «отсек» связи
-    "lowpass=f=7200",
+    "highpass=f=90",
+    "acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120",  # ровная громкость
+    "aecho=0.85:0.6:5|9:0.14|0.10",                                # едва заметный синтетический блеск
+    "aecho=0.8:0.5:45|80:0.10|0.06",                               # лёгкое пространство отсека
+    "equalizer=f=3200:t=q:w=1.2:g=2",                              # разборчивость
+    "lowpass=f=9500",
     "aresample=44100",
 ])
 
-# Сигнал канала связи перед фразой: два коротких тона и пауза
-BEEP = ("sine=f=1650:d=0.05:sample_rate=44100[b1];sine=f=2200:d=0.05:sample_rate=44100[b2];"
-        "anullsrc=r=44100:cl=mono:d=0.03[g1];anullsrc=r=44100:cl=mono:d=0.12[g2];"
-        "[b1]volume=0.18[b1v];[b2]volume=0.18[b2v];"
-        "[b1v][g1][b2v][g2]concat=n=4:v=0:a=1[beep]")
+# Тихий сигнал канала связи перед фразой: один короткий мягкий тон и пауза
+BEEP = ("sine=f=1320:d=0.07:sample_rate=44100[b1];anullsrc=r=44100:cl=mono:d=0.14[g1];"
+        "[b1]afade=t=in:d=0.01,afade=t=out:st=0.04:d=0.03,volume=0.10[b1v];"
+        "[b1v][g1]concat=n=2:v=0:a=1[beep]")
 
 META = """fileFormatVersion: 2
 guid: {guid}
@@ -107,7 +109,7 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         for name, text in LINES.items():
             raw = os.path.join(tmp, name + ".wav")
-            run(["RHVoice-test", "-p", VOICE, "-o", raw], input=text.encode("utf-8"))
+            run(["RHVoice-test", "-p", VOICE, "-r", str(RATE), "-q", "max", "-o", raw], input=text.encode("utf-8"))
             dst = os.path.join(OUT, name + ".ogg")
             beep = not name.startswith("tut_ok")
             graph = (f"{BEEP};[0:a]{ROBOT}[v];[beep][v]concat=n=2:v=0:a=1,loudnorm=I=-16:TP=-1.5[out]"

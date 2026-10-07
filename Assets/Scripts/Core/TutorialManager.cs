@@ -69,7 +69,7 @@ namespace StellarisClone.Core
         private float _typeSpeed = TypeSpeed;
         private int _visibleLen;                                  // длина текста без rich-тегов
 
-        // --- озвучка: роботизированный голос (Resources/Audio/Tutorial, см. Tools/tutorial_voice) ---
+        // --- озвучка: голос бортового ИИ (Resources/Audio/Tutorial, см. Tools/tutorial_voice) ---
         private AudioSource _voice;
         private bool _voiceOn = true, _voicePaused;
         private Image _muteIcon;
