@@ -20,9 +20,9 @@ namespace StellarisClone.Core
         /// <summary>Система захвачена: система, прежний владелец, новый владелец.</summary>
         public static event Action<StarSystem, int, int> OnSystemCaptured;
 
-        public const float BaseSiegeDays = 12f;
+        public const float BaseSiegeDays = 12f * GamePace.SiegeMult;
         public const float SiegeDaysPerColony = 8f;
-        public const float CapitalSiegeDays = 20f;
+        public const float CapitalSiegeDays = 20f * GamePace.SiegeMult;
         public const float DecayPerDay = 2f;
 
         public class Siege

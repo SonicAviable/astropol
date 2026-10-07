@@ -579,14 +579,14 @@ namespace StellarisClone.Core
             d.OrderQueue.Clear();
             if (f.Queue != null) d.OrderQueue.AddRange(f.Queue);
             d.DaysRemainingInTransit = f.DaysTransit;
-            d.TotalDaysForTransit = f.TotalTransit > 0f ? f.TotalTransit : 15f;
+            d.TotalDaysForTransit = GamePace.JumpDays;          // темп берётся текущий, а не из старого сохранения
             d.MilitaryPower = f.MilitaryPower;
             d.BuildTargetSystemId = f.BuildTarget;
             d.DaysRemainingConstruction = f.DaysConstruction;
-            d.TotalConstructionDays = f.TotalConstruction > 0f ? f.TotalConstruction : 25f;
+            d.TotalConstructionDays = GamePace.OutpostDays;
             d.SurveyTargetSystemId = f.SurveyTarget;
             d.DaysRemainingSurvey = f.DaysSurvey;
-            d.TotalSurveyDays = f.TotalSurvey > 0f ? f.TotalSurvey : 20f;
+            d.TotalSurveyDays = GamePace.SurveyDays;
             d.HullClass = (ShipClass)f.Hull;
             d.DesignId = f.DesignId;
             d.DesignAlloyCost = f.DesignAlloyCost;

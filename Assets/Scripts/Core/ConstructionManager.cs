@@ -61,8 +61,8 @@ namespace StellarisClone.Core
 
         public static float ShipDays(FleetType type, ShipClass hull)
         {
-            if (type == FleetType.Science) return 60f;
-            if (type == FleetType.Constructor) return 60f;
+            if (type == FleetType.Science) return GamePace.CivilianShipDays;
+            if (type == FleetType.Constructor) return GamePace.CivilianShipDays;
             return hull == ShipClass.Destroyer ? 150f : hull == ShipClass.Frigate ? 100f : 60f;
         }
 

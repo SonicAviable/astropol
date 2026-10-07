@@ -9,8 +9,8 @@ namespace StellarisClone.Core
         public static TimeManager Instance { get; private set; }
         public event Action<int, int, int> OnDayPassed;
 
-        /// <summary>Реальных секунд на игровой день при скорости ×1 (партия 2200–2235 ≈ 2,6 ч на ×1, ≈ 40 мин на ×4).</summary>
-        public const float DefaultSecondsPerDay = 0.75f;
+        /// <summary>Реальных секунд на игровой день при скорости ×1 (партия 2200–2235 ≈ 3,5 ч на ×1, ≈ 53 мин на ×4).</summary>
+        public const float DefaultSecondsPerDay = GamePace.SecondsPerDay;
 
         [SerializeField] private float secondsPerDay = DefaultSecondsPerDay;
 
@@ -29,6 +29,8 @@ namespace StellarisClone.Core
         {
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
+            // Темп задаётся в GamePace; старое значение, сохранённое в сцене, не должно его перебивать
+            secondsPerDay = DefaultSecondsPerDay;
         }
 
         private void Update()

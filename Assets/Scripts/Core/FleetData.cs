@@ -18,16 +18,16 @@ namespace StellarisClone.Core
 
         public Queue<int> Path = new Queue<int>();
         public float DaysRemainingInTransit;
-        public float TotalDaysForTransit = 15f;
+        public float TotalDaysForTransit = GamePace.JumpDays;
         public int MilitaryPower = 120;
 
         public int BuildTargetSystemId = -1;
         public float DaysRemainingConstruction = 0f;
-        public float TotalConstructionDays = 25f;
+        public float TotalConstructionDays = GamePace.OutpostDays;
 
         public int SurveyTargetSystemId = -1;
         public float DaysRemainingSurvey = 0f;
-        public float TotalSurveyDays = 20f;
+        public float TotalSurveyDays = GamePace.SurveyDays;
 
         public ShipClass HullClass = ShipClass.Corvette;
         public string DesignId;

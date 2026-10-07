@@ -139,7 +139,7 @@ namespace StellarisClone.Core
 
             if (speed > 0)
             {
-                float secondsPerDay = tm != null ? tm.SecondsPerDay : 0.75f;
+                float secondsPerDay = tm != null ? tm.SecondsPerDay : GamePace.SecondsPerDay;
                 _clock += dt * speed / Mathf.Max(0.05f, secondsPerDay);
                 int rounds = 0;
                 while (_clock >= RoundDays && rounds < 8)
