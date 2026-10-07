@@ -29,7 +29,9 @@ namespace StellarisClone.Rendering
         private Material _coreMat;
         private SpriteRenderer _coreBulge;
         private float _coreBulgeBase = 1f;
-        private readonly List<(Material mat, float baseIntensity)> _nebulaMats = new List<(Material, float)>();
+        private readonly List<(Material mat, float baseIntensity, int layer)> _nebulaMats = new List<(Material, float, int)>();
+        private readonly List<Material> _darkDustMats = new List<Material>();
+        private readonly List<float> _darkDustBase = new List<float>();
         private Material _skyInstance;
         private float _skyExposure = 1f;
         private Color _skyTint = new Color(0.5f, 0.5f, 0.5f, 0.5f);
@@ -234,43 +236,83 @@ namespace StellarisClone.Rendering
             if (shader == null) return;
             _nebulaRoot = new GameObject("GalaxyNebulae");
             _nebulaRoot.transform.SetParent(transform, false);
-
-            int count = 6 + rng.Next(3);
             int pal = rng.Next(NebulaPalette.Length);
+
+            // Слои по высоте — при движении камеры проплывают с разной скоростью (параллакс):
+            //   0 — глубокие (далеко под картой, крупные, тусклые)
+            //   1 — средние (под диском)
+            //   2 — клочья над картой (ближе к камере, мелкие, тонкие; вблизи растворяются)
+            void Layer(int layer, int count, float yMin, float yMax, float sMin, float sMax, float dMin, float dMax, float iMin, float iMax)
+            {
+                for (int k = 0; k < count; k++)
+                {
+                    float ang = (k + (float)rng.NextDouble() * 0.7f) / count * Mathf.PI * 2f + layer * 0.9f;
+                    float dist = R * (dMin + (float)rng.NextDouble() * (dMax - dMin));
+                    float y = yMin + (float)rng.NextDouble() * (yMax - yMin);
+                    float size = R * (sMin + (float)rng.NextDouble() * (sMax - sMin));
+                    var q = Quad("Nebula_" + layer + "_" + k, _nebulaRoot.transform,
+                        new Vector3(Mathf.Cos(ang) * dist, y, Mathf.Sin(ang) * dist),
+                        (float)rng.NextDouble() * 360f, new Vector2(size * (1f + (float)rng.NextDouble() * 0.6f), size));
+
+                    var m = new Material(shader);
+                    int ci = pal + k + layer * 2;
+                    m.SetColor("_ColorA", NebulaPalette[ci % NebulaPalette.Length]);
+                    m.SetColor("_ColorB", NebulaPalette[(ci + 1 + rng.Next(2)) % NebulaPalette.Length]);
+                    m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
+                    m.SetFloat("_Scale", (layer == 2 ? 3.6f : 2.4f) + (float)rng.NextDouble() * 1.4f);
+                    m.renderQueue = layer == 0 ? 2940 : layer == 1 ? 2950 : 2996;
+                    _nebulaMats.Add((m, iMin + (float)rng.NextDouble() * (iMax - iMin), layer));
+                    q.GetComponent<MeshRenderer>().sharedMaterial = m;
+                }
+            }
+
+            Layer(0, 4, -R * 0.32f, -R * 0.2f, 0.6f, 0.9f, 0.4f, 1.0f, 0.16f, 0.26f);
+            Layer(1, 5, -6f, -1.5f, 0.32f, 0.55f, 0.55f, 1.05f, 0.2f, 0.34f);
+            Layer(2, 5, R * 0.05f, R * 0.11f, 0.16f, 0.3f, 0.3f, 1.0f, 0.08f, 0.14f);
+
+            BuildDarkDust(R, rng);
+        }
+
+        /// <summary>Тёмные пылевые облака над диском и ядром, вытянуты вдоль рукавов (по касательной).</summary>
+        private void BuildDarkDust(float R, System.Random rng)
+        {
+            var shader = Resources.Load<Shader>("Shaders/GalaxyDarkDust");
+            if (shader == null) return;
+            int count = 7;
             for (int k = 0; k < count; k++)
             {
-                // по кругу вокруг центра с разбросом — чтобы облака не слипались в одну кучу
-                float ang = (k + (float)rng.NextDouble() * 0.6f) / count * Mathf.PI * 2f;
-                float dist = R * (0.55f + (float)rng.NextDouble() * 0.5f);     // подальше от ядра
-                var pos = new Vector3(Mathf.Cos(ang) * dist, -1.2f - k * 0.05f, Mathf.Sin(ang) * dist);
-                float size = R * (0.35f + (float)rng.NextDouble() * 0.3f);
-
-                var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                q.name = "Nebula_" + k;
-                var col = q.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-                q.transform.SetParent(_nebulaRoot.transform, false);
-                q.transform.position = pos;
-                q.transform.rotation = Quaternion.Euler(90f, (float)rng.NextDouble() * 360f, 0f);
-                q.transform.localScale = new Vector3(size * (1f + (float)rng.NextDouble() * 0.6f), size, 1f);
-
+                float ang = (k + (float)rng.NextDouble() * 0.8f) / count * Mathf.PI * 2f;
+                float dist = R * (0.12f + (float)rng.NextDouble() * 0.7f);
+                float len = R * (0.35f + (float)rng.NextDouble() * 0.35f) * Mathf.Lerp(0.6f, 1f, dist / R);
+                // длинная ось — по касательной к окружности (вдоль рукава), с небольшим разбросом
+                float yaw = -ang * Mathf.Rad2Deg + 90f + ((float)rng.NextDouble() - 0.5f) * 40f;
+                var q = Quad("DarkDust_" + k, _nebulaRoot.transform,
+                    new Vector3(Mathf.Cos(ang) * dist, -0.25f + k * 0.02f, Mathf.Sin(ang) * dist), yaw, new Vector2(len, len * 0.45f));
                 var m = new Material(shader);
-                var a = NebulaPalette[(pal + k) % NebulaPalette.Length];
-                var b = NebulaPalette[(pal + k + 1 + rng.Next(2)) % NebulaPalette.Length];
-                m.SetColor("_ColorA", a);
-                m.SetColor("_ColorB", b);
                 m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
-                m.SetFloat("_Scale", 2.4f + (float)rng.NextDouble() * 1.4f);
-                m.renderQueue = 2950;
-                float intensity = 0.22f + (float)rng.NextDouble() * 0.16f;
-                _nebulaMats.Add((m, intensity));
-
-                var mr = q.GetComponent<MeshRenderer>();
-                mr.sharedMaterial = m;
-                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                mr.receiveShadows = false;
-                mr.sortingOrder = -30;
+                m.SetFloat("_Opacity", 0.45f + (float)rng.NextDouble() * 0.25f);
+                m.SetColor("_Tint", Color.Lerp(new Color(0.05f, 0.03f, 0.035f), new Color(0.02f, 0.025f, 0.05f), (float)rng.NextDouble()));
+                m.renderQueue = 2963;    // над диском (2960) и ядром (2962), под коридорами и звёздами
+                _darkDustMats.Add(m);
+                _darkDustBase.Add(m.GetFloat("_Opacity"));
+                q.GetComponent<MeshRenderer>().sharedMaterial = m;
             }
+        }
+
+        private static GameObject Quad(string name, Transform parent, Vector3 pos, float yaw, Vector2 size)
+        {
+            var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            q.name = name;
+            var col = q.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            q.transform.SetParent(parent, false);
+            q.transform.position = pos;
+            q.transform.rotation = Quaternion.Euler(90f, yaw, 0f);
+            q.transform.localScale = new Vector3(size.x, size.y, 1f);
+            var mr = q.GetComponent<MeshRenderer>();
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            return q;
         }
 
         /// <summary>
@@ -300,7 +342,13 @@ namespace StellarisClone.Rendering
                     x = s.Position.x + Gauss(rng) * 0.12f * R;
                     z = s.Position.z + Gauss(rng) * 0.12f * R;
                 }
-                verts[k] = new Vector3(x, -0.6f, z);
+                // Толщина: диск тоньше к краю, ядро — вздутый шар (балдж)
+                float rr = new Vector2(x, z).magnitude / R;
+                float thick = k < coreCount
+                    ? R * 0.055f * Mathf.Exp(-rr * rr / 0.03f) + R * 0.012f
+                    : R * Mathf.Lerp(0.035f, 0.012f, Mathf.Clamp01(rr));
+                float y = Gauss(rng) * thick;
+                verts[k] = new Vector3(x, y - 0.6f, z);
                 float r = new Vector2(x, z).magnitude / R;
                 float b = 0.25f + (float)(rng.NextDouble() * rng.NextDouble()) * 0.75f;   // больше тусклых, мало ярких
                 Color c = Color.Lerp(new Color(0.78f, 0.84f, 1f), new Color(1f, 0.88f, 0.7f), Mathf.Exp(-r * r / 0.08f));
@@ -312,7 +360,7 @@ namespace StellarisClone.Rendering
             mesh.vertices = verts;
             mesh.colors32 = cols;
             mesh.SetIndices(idx, MeshTopology.Points, 0);
-            mesh.bounds = new Bounds(Vector3.zero, new Vector3(R * 3f, 2f, R * 3f));
+            mesh.bounds = new Bounds(Vector3.zero, new Vector3(R * 3f, R * 0.6f, R * 3f));
 
             _dustStars = new GameObject("GalaxyDustStars");
             _dustStars.transform.SetParent(transform, false);
@@ -342,6 +390,14 @@ namespace StellarisClone.Rendering
             if (_diskMat != null) _diskMat.SetFloat("_T", t);
             if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
             float nebK = Mathf.Lerp(0.5f, 1f, far);
+            // клочья над картой близко к камере — вблизи растворяются, чтобы не мешать
+            float wispK = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(55f, 130f, h));
+            float dustK = Mathf.Lerp(0.55f, 1f, far);
+            for (int i = 0; i < _darkDustMats.Count; i++)
+            {
+                _darkDustMats[i].SetFloat("_T", t);
+                _darkDustMats[i].SetFloat("_Opacity", _darkDustBase[i] * dustK);
+            }
             if (_coreMat != null)
             {
                 _coreMat.SetFloat("_T", t);
@@ -353,10 +409,10 @@ namespace StellarisClone.Rendering
                 _coreBulge.color = new Color(1f, 0.86f, 0.62f, Mathf.Lerp(0.25f, 0.5f, far) * pulse);
                 _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
-            foreach (var (m, k) in _nebulaMats)
+            foreach (var (m, k, layer) in _nebulaMats)
             {
                 m.SetFloat("_T", t);
-                m.SetFloat("_Intensity", k * nebK);
+                m.SetFloat("_Intensity", k * (layer == 2 ? wispK : nebK));
             }
             if (_borderMat != null)
             {

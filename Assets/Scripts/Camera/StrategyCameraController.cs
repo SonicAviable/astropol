@@ -23,6 +23,13 @@ namespace StellarisClone.Cam
         [Header("Вращение")]
         [SerializeField] private float rotationSpeed = 90f;
 
+        [Header("Наклон от зума (как в Stellaris)")]
+        [Tooltip("Наклон у самой карты: камера смотрит вдоль плоскости — видна перспектива")]
+        [SerializeField] private float nearPitch = 44f;
+        [Tooltip("Наклон издалека: почти сверху — видна вся спираль")]
+        [SerializeField] private float farPitch = 74f;
+        [SerializeField] private float pitchSmooth = 4f;
+
         [Header("Границы")]
         [SerializeField] private bool limitToBounds = true;
         [SerializeField] private float galaxyBoundsRadius = 180f;
@@ -138,6 +145,28 @@ namespace StellarisClone.Cam
             HandleGalaxyRotation();
             HandleDrag();
             HandleShortcuts();
+            ApplyZoomPitch();
+        }
+
+        /// <summary>
+        /// Наклон камеры зависит от высоты: вблизи — пологий взгляд с перспективой, издалека — почти сверху.
+        /// Точка карты в центре экрана при смене наклона остаётся на месте.
+        /// </summary>
+        private void ApplyZoomPitch()
+        {
+            var e = transform.eulerAngles;
+            float pitch = e.x > 180f ? e.x - 360f : e.x;
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(minHeight, maxHeight, transform.position.y));
+            float target = Mathf.Lerp(nearPitch, farPitch, k);
+            float next = Mathf.Lerp(pitch, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * pitchSmooth));
+            if (Mathf.Abs(next - pitch) < 0.005f) return;
+
+            Vector3 before = GroundCenter(transform.position);
+            transform.rotation = Quaternion.Euler(next, e.y, 0f);
+            Vector3 after = GroundCenter(transform.position);
+            Vector3 d = before - after;
+            d.y = 0f;
+            transform.position += d;
         }
 
         // ==================== РЕЖИМ СИСТЕМЫ ====================
