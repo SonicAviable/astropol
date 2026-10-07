@@ -537,7 +537,9 @@ namespace StellarisClone.Core
                 ? new[] { DealItemKind.TradeTreaty, DealItemKind.Charts, DealItemKind.ResearchTreaty }
                 : Personality == AIPersonality.Scientific
                     ? new[] { DealItemKind.ResearchTreaty, DealItemKind.Charts, DealItemKind.TradeTreaty }
-                    : new[] { DealItemKind.Charts, DealItemKind.TradeTreaty };
+                    : Personality == AIPersonality.Mystic
+                        ? new[] { DealItemKind.Charts, DealItemKind.ResearchTreaty }
+                        : new[] { DealItemKind.Charts, DealItemKind.TradeTreaty };
             foreach (var k in order)
             {
                 float v = TreatyValue(k, out string block);

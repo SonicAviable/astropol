@@ -104,6 +104,22 @@ namespace StellarisClone.Rendering
                         "Через век компания стала государством, а совет директоров — правительством.\n\n" +
                         "Аквилой правит генеральный директор, а законы здесь пишутся как контракты. Синдикат покупает " +
                         "то, что другие берут силой, и превращает в прибыль даже чужие войны."
+            },
+            ["iridia"] = new Lore
+            {
+                Tagline = "Загадочны, прозорливы, терпеливы",
+                Emblem = LGIcon.Sensors,
+                Traits = new[]
+                {
+                    (LGIcon.Influence, "Теократия: огромное влияние"),
+                    (LGIcon.Sensors, "Провидцы: видят угрозы заранее"),
+                    (LGIcon.Defense, "Крепкая оборона, редко нападают первыми"),
+                    (LGIcon.Diplomacy, "Дипломатия: говорят загадками, помнят всё")
+                },
+                Story = "Иридийцы выросли в светящихся лесах мира-сада Иридия, где каждое живое существо излучает свет. " +
+                        "Их кожа вспыхивает в такт мыслям, а самые одарённые видят обрывки грядущего.\n\n" +
+                        "Правит Оракулом Верховная провидица Аурэлия. Говорят, она знает исход любой войны ещё до первого выстрела, " +
+                        "поэтому Оракул так редко сражается — и почти никогда не проигрывает."
             }
         };
 
@@ -339,7 +355,10 @@ namespace StellarisClone.Rendering
             _cards.pivot = new Vector2(0.5f, 0f);
             _cards.anchoredPosition = new Vector2(-150f, 30f);
             var factions = FactionRegistry.AvailableFactions;
-            const float w = 270f, h = 116f, gap = 16f;
+            bool compact = factions.Length > 3;
+            float w = compact ? 236f : 270f, gap = compact ? 12f : 16f, thumbSize = compact ? 80f : 96f;
+            float textX = 10f + thumbSize + 12f;
+            const float h = 116f;
             _cards.sizeDelta = new Vector2(factions.Length * (w + gap) - gap, h + 12f);
             for (int i = 0; i < factions.Length; i++)
             {
@@ -352,16 +371,17 @@ namespace StellarisClone.Rendering
                 fx.SpecularMultiplier = 0.2f;
 
                 var thumb = LGBuild.Panel(card.transform, "Thumb", new Color(0f, 0f, 0f, 0.6f));
-                thumb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(96, 96));
+                thumb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(thumbSize, thumbSize));
                 LG.Platter(thumb.gameObject, 4f).FillMultiplier = 3f;
                 var tm = LG.RoundedMask(thumb.transform, 4f, 1f);
                 LeaderPortraitView.Create(tm, LeaderPortraits.ForFaction(f), 2.1f, Vector4.zero, false, true, false);
 
-                var name = LGBuild.Label(card.transform, f.Name.ToUpper(), 15, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
-                FitText(name, 11);
-                name.rectTransform.Stretch(118, 46, 10, 14);
-                var title = LGBuild.Label(card.transform, f.Title, 12, Muted, TextAnchor.LowerLeft);
-                title.rectTransform.Stretch(118, 14, 10, 70);
+                var name = LGBuild.Label(card.transform, f.Name.ToUpper(), compact ? 14 : 15, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
+                FitText(name, 10);
+                name.rectTransform.Stretch(textX, 46, 10, 14);
+                var title = LGBuild.Label(card.transform, f.Title, compact ? 11 : 12, Muted, TextAnchor.LowerLeft, wrap: true);
+                FitText(title, 9);
+                title.rectTransform.Stretch(textX, 14, 10, 70);
 
                 var btn = card.gameObject.AddComponent<Button>();
                 btn.transition = Selectable.Transition.None;

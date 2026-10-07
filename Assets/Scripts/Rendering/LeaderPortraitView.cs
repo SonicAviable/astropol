@@ -68,13 +68,26 @@ namespace StellarisClone.Rendering
             Face = Uv(660, 610)
         };
 
-        /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила).</summary>
+        public static readonly Entry Iridia = new Entry
+        {
+            Key = "iridia",
+            Name = "Аурэлия",
+            Title = "Верховная Оракул Иридия",
+            Quote = "Я уже видела, чем закончится наш разговор. Но продолжайте — мне интересно, как вы к этому придёте.",
+            Accent = new Color(0.72f, 0.52f, 1f),
+            EyeL = Eye(515, 421, 30, 13),
+            EyeR = Eye(658, 406, 40, 14),
+            Face = Uv(590, 460)
+        };
+
+        /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила / Иридия).</summary>
         public static Entry ForFaction(string factionName)
         {
             if (string.IsNullOrEmpty(factionName)) return null;
             if (factionName.Contains("Ксарн")) return Xarn;
             if (factionName.Contains("Астре")) return Astrea;
             if (factionName.Contains("Аквил")) return Aquila;
+            if (factionName.Contains("Ирид")) return Iridia;
             return null;
         }
 

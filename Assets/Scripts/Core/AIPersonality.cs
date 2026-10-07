@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace StellarisClone.Core
 {
-    public enum AIPersonality { Militarist, Scientific, Trader }
+    public enum AIPersonality { Militarist, Scientific, Trader, Mystic }
 
     /// <summary>
-    /// Характер ИИ определяется фракцией: Ксарн — воинственный, Астрея — научная, Аквила — торговая.
+    /// Характер ИИ определяется фракцией: Ксарн — воинственный, Астрея — научная, Аквила — торговая, Иридия — мистическая.
     /// Профиль задаёт, на что тратятся ресурсы, что изучается в первую очередь и как ИИ ведёт себя в дипломатии.
     /// </summary>
     public class AIProfile
@@ -66,6 +66,7 @@ namespace StellarisClone.Core
             if (factionName.Contains("Ксарн")) return AIPersonality.Militarist;
             if (factionName.Contains("Астре")) return AIPersonality.Scientific;
             if (factionName.Contains("Аквил")) return AIPersonality.Trader;
+            if (factionName.Contains("Ирид")) return AIPersonality.Mystic;
             return AIPersonality.Militarist;
         }
 
@@ -110,6 +111,25 @@ namespace StellarisClone.Core
                     p.TechWeights[TechCategory.Construction] = 2f;
                     p.TechWeights[TechCategory.Propulsion] = 1.5f;
                     p.TechWeights[TechCategory.Colonization] = 2f;
+                    break;
+
+                case AIPersonality.Mystic:
+                    p.Name = "Мистическая";
+                    p.Summary = "Видит угрозы заранее. Держит крепкую оборону, сторонится чужих границ, редко начинает войну первой, но долго помнит обиды.";
+                    p.FleetShare = 0.45f; p.ScienceMult = 1.2f;
+                    p.ColonyWeight = 1.2f; p.ResourceWeight = 1f; p.FrontierBias = -3f;
+                    p.PreferredDistrict = DistrictType.Generator;
+                    p.DesiredPowerRatio = 1f; p.RetreatRatio = 1.3f;
+                    p.PreferredWeapon = WeaponDamageType.Energy; p.SecondaryWeapon = WeaponDamageType.Explosive;
+                    p.BaseOpinion = 0f; p.ThreatSensitivity = 1.4f;
+                    p.WarOpinionThreshold = -45f; p.WarPowerRatio = 1.4f;
+                    p.WearinessRate = 1.2f; p.PeaceWeariness = 55f; p.PeaceBias = 0f;
+                    p.PactOpinion = 10f; p.TradeOpinionMult = 0.9f; p.GiftOpinionMult = 1.15f;
+                    p.TechWeights[TechCategory.Sensors] = 3f;
+                    p.TechWeights[TechCategory.Society] = 2.5f;
+                    p.TechWeights[TechCategory.Defense] = 2.5f;
+                    p.TechWeights[TechCategory.Reactor] = 1.8f;
+                    p.TechWeights[TechCategory.Doctrine] = 1.5f;
                     break;
 
                 default:
