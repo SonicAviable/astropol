@@ -69,6 +69,8 @@ namespace StellarisClone.Rendering
         {
             BuildCanvas();
             BuildBackdrop();
+            // Живое небо за галактикой и пылинки под кнопками; игровые подсказки карты в меню скрыты
+            gameObject.AddComponent<MenuAtmosphere>().Init(_root);
             BuildLogo();
             BuildMenu();
             BuildWindow();
