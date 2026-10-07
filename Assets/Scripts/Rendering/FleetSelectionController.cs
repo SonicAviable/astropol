@@ -187,9 +187,15 @@ namespace StellarisClone.Rendering
 
         // ==================== ПКМ: приказы ====================
 
+        private Vector2 _rightPressPos;
+        private bool _rightPressOverUi;
+
         private void HandleRightMouse(FleetManager fm, bool shift, bool overUi)
         {
-            if (!Input.GetMouseButtonDown(1) || overUi || fm.SelectedFleets.Count == 0) return;
+            // приказ — по отпусканию, если правой кнопкой не тянули карту
+            if (Input.GetMouseButtonDown(1)) { _rightPressPos = Input.mousePosition; _rightPressOverUi = overUi; }
+            if (!Input.GetMouseButtonUp(1) || _rightPressOverUi || overUi || fm.SelectedFleets.Count == 0) return;
+            if (Vector2.Distance(_rightPressPos, Input.mousePosition) > 6f || StellarisClone.Cam.StrategyCameraController.RightButtonDragged) return;
             var target = RaycastSystem();
             if (target == null) return;
             fm.CommandSelection(target.Id, shift);   // звук приказа — внутри

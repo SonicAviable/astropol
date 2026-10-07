@@ -82,7 +82,7 @@ Shader "Astropolity/GalaxyCore"
                 float2 fr = frac(q * 38.0) - 0.5;
                 float h = Hash(cell);
                 float tw = 0.5 + 0.5 * sin(_T * (1.2 + h * 2.5) + h * 40.0);
-                float spark = step(0.86, h) * exp(-dot(fr, fr) * 60.0) * tw * tw
+                float spark = step(0.9, h) * exp(-dot(fr, fr) * 180.0) * tw * tw
                             * exp(-r * r / (2.0 * 0.4 * 0.4)) * smoothstep(0.04, 0.12, r) * (0.4 + arm);
 
                 float hot = exp(-r * r / (2.0 * 0.035 * 0.035)) * 2.2;

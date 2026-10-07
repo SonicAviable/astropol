@@ -266,8 +266,8 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            Layer(0, 4, -R * 0.32f, -R * 0.2f, 0.6f, 0.9f, 0.4f, 1.0f, 0.16f, 0.26f);
-            Layer(1, 5, -6f, -1.5f, 0.32f, 0.55f, 0.55f, 1.05f, 0.2f, 0.34f);
+            Layer(0, 4, -R * 0.32f, -R * 0.2f, 0.55f, 0.8f, 0.5f, 1.0f, 0.09f, 0.14f);
+            Layer(1, 5, -6f, -1.5f, 0.3f, 0.5f, 0.6f, 1.05f, 0.14f, 0.24f);
             Layer(2, 5, R * 0.05f, R * 0.11f, 0.16f, 0.3f, 0.3f, 1.0f, 0.08f, 0.14f);
 
             BuildDarkDust(R, rng);
@@ -278,19 +278,19 @@ namespace StellarisClone.Rendering
         {
             var shader = Resources.Load<Shader>("Shaders/GalaxyDarkDust");
             if (shader == null) return;
-            int count = 7;
+            int count = 5;
             for (int k = 0; k < count; k++)
             {
                 float ang = (k + (float)rng.NextDouble() * 0.8f) / count * Mathf.PI * 2f;
-                float dist = R * (0.12f + (float)rng.NextDouble() * 0.7f);
-                float len = R * (0.35f + (float)rng.NextDouble() * 0.35f) * Mathf.Lerp(0.6f, 1f, dist / R);
+                float dist = R * (0.38f + (float)rng.NextDouble() * 0.45f);   // не вокруг ядра — иначе читается тёмным кольцом
+                float len = R * (0.28f + (float)rng.NextDouble() * 0.25f);
                 // длинная ось — по касательной к окружности (вдоль рукава), с небольшим разбросом
                 float yaw = -ang * Mathf.Rad2Deg + 90f + ((float)rng.NextDouble() - 0.5f) * 40f;
                 var q = Quad("DarkDust_" + k, _nebulaRoot.transform,
-                    new Vector3(Mathf.Cos(ang) * dist, -0.25f + k * 0.02f, Mathf.Sin(ang) * dist), yaw, new Vector2(len, len * 0.45f));
+                    new Vector3(Mathf.Cos(ang) * dist, -0.25f + k * 0.02f, Mathf.Sin(ang) * dist), yaw, new Vector2(len, len * 0.32f));
                 var m = new Material(shader);
                 m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
-                m.SetFloat("_Opacity", 0.45f + (float)rng.NextDouble() * 0.25f);
+                m.SetFloat("_Opacity", 0.22f + (float)rng.NextDouble() * 0.12f);
                 m.SetColor("_Tint", Color.Lerp(new Color(0.05f, 0.03f, 0.035f), new Color(0.02f, 0.025f, 0.05f), (float)rng.NextDouble()));
                 m.renderQueue = 2963;    // над диском (2960) и ядром (2962), под коридорами и звёздами
                 _darkDustMats.Add(m);
@@ -392,7 +392,7 @@ namespace StellarisClone.Rendering
             float nebK = Mathf.Lerp(0.5f, 1f, far);
             // клочья над картой близко к камере — вблизи растворяются, чтобы не мешать
             float wispK = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(55f, 130f, h));
-            float dustK = Mathf.Lerp(0.55f, 1f, far);
+            float dustK = Mathf.Lerp(0.25f, 1f, far);
             for (int i = 0; i < _darkDustMats.Count; i++)
             {
                 _darkDustMats[i].SetFloat("_T", t);
@@ -401,12 +401,12 @@ namespace StellarisClone.Rendering
             if (_coreMat != null)
             {
                 _coreMat.SetFloat("_T", t);
-                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.55f, 1f, far));
+                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.08f, 1f, far));   // вблизи ядро не заливает карту
             }
             if (_coreBulge != null)
             {
                 float pulse = 1f + 0.2f * Mathf.Sin(t * 0.9f);
-                _coreBulge.color = new Color(1f, 0.86f, 0.62f, Mathf.Lerp(0.25f, 0.5f, far) * pulse);
+                _coreBulge.color = new Color(1f, 0.86f, 0.62f, Mathf.Lerp(0.03f, 0.5f, far) * pulse);
                 _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
             foreach (var (m, k, layer) in _nebulaMats)

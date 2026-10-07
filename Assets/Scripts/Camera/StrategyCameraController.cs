@@ -25,9 +25,9 @@ namespace StellarisClone.Cam
 
         [Header("Наклон от зума (как в Stellaris)")]
         [Tooltip("Наклон у самой карты: камера смотрит вдоль плоскости — видна перспектива")]
-        [SerializeField] private float nearPitch = 44f;
+        [SerializeField] private float nearPitch = 56f;
         [Tooltip("Наклон издалека: почти сверху — видна вся спираль")]
-        [SerializeField] private float farPitch = 74f;
+        [SerializeField] private float farPitch = 72f;
         [SerializeField] private float pitchSmooth = 4f;
 
         [Header("Границы")]
@@ -64,8 +64,6 @@ namespace StellarisClone.Cam
 
         // ---- Плавный зум ----
         private float _targetHeight;
-        private bool _isDraggingMiddle;
-        private Vector3 _dragOrigin;
 
         // ---- Фокус ----
         private Vector3 _focusStartPos;
@@ -251,7 +249,8 @@ namespace StellarisClone.Cam
         private void HandleGalaxyMovement()
         {
             float speedMult = Input.GetKey(KeyCode.LeftShift) ? fastPanMultiplier : 1f;
-            float zoomMult = 1f + (transform.position.y - minHeight) * panZoomFactor * 0.01f;
+            // скорость пропорциональна высоте: издалека карта пролистывается быстро, вблизи — точно
+            float zoomMult = Mathf.Lerp(0.6f, 3.2f, Mathf.InverseLerp(minHeight, maxHeight, transform.position.y));
             float speed = panSpeed * PanSpeedSetting * speedMult * zoomMult;
 
             float h = Input.GetAxisRaw("Horizontal");
@@ -287,39 +286,100 @@ namespace StellarisClone.Cam
             transform.position = newPos;
         }
 
+        // ---- Перетаскивание карты: «взял и тащишь» ----
+        private bool _grabbing;
+        private int _grabButton = -1;
+        private Vector3 _grabWorld;
+        private Vector2 _grabPressPos;
+        private bool _grabMoved;
+        private Vector3 _glideVel;
+        private const float GrabThresholdPx = 6f;
+
+        /// <summary>Правая кнопка тянула карту (для приказов флотам: клик без перетаскивания — приказ).</summary>
+        public static bool RightButtonDragged { get; private set; }
+
+        /// <summary>
+        /// Средняя или правая кнопка: точка карты под курсором «прилипает» к нему, после отпускания карта
+        /// чуть скользит по инерции. Правая кнопка начинает тянуть только после сдвига на несколько пикселей —
+        /// короткий клик остаётся приказом флоту.
+        /// </summary>
         private void HandleDrag()
         {
-            // Блокируем захват перетаскивания средней кнопкой мыши над UI
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            float dt = Mathf.Max(Time.unscaledDeltaTime, 1e-4f);
+
+            if (!_grabbing && !overUi)
             {
-                _isDraggingMiddle = false;
+                int btn = Input.GetMouseButtonDown(2) ? 2 : Input.GetMouseButtonDown(1) ? 1 : -1;
+                if (btn >= 0 && TryGroundUnderCursor(out _grabWorld))
+                {
+                    _grabbing = true;
+                    _grabButton = btn;
+                    _grabPressPos = Input.mousePosition;
+                    _grabMoved = btn == 2;
+                    _glideVel = Vector3.zero;
+                    if (btn == 1) RightButtonDragged = false;
+                }
+            }
+
+            if (_grabbing)
+            {
+                if (!Input.GetMouseButton(_grabButton))
+                {
+                    _grabbing = false;
+                    if (_grabButton == 1) RightButtonDragged = _grabMoved;
+                    return;
+                }
+                if (!_grabMoved && Vector2.Distance(_grabPressPos, Input.mousePosition) > GrabThresholdPx)
+                {
+                    _grabMoved = true;
+                    TryGroundUnderCursor(out _grabWorld);    // без рывка на величину порога
+                }
+                if (!_grabMoved) return;
+
+                if (TryGroundUnderCursor(out var now))
+                {
+                    Vector3 d = _grabWorld - now;
+                    d.y = 0f;
+                    Vector3 before = transform.position;
+                    transform.position = ClampToBounds(transform.position + d);
+                    Vector3 v = (transform.position - before) / dt;
+                    _glideVel = Vector3.Lerp(_glideVel, v, 0.35f);
+                    _isFocusing = false;
+                }
                 return;
             }
 
-            if (Input.GetMouseButtonDown(2))
+            // инерция после отпускания
+            if (_glideVel.sqrMagnitude > 0.01f)
             {
-                _isDraggingMiddle = true;
-                _dragOrigin = Input.mousePosition;
+                transform.position = ClampToBounds(transform.position + _glideVel * dt);
+                _glideVel *= Mathf.Exp(-dt * 5f);
             }
-            if (Input.GetMouseButtonUp(2))
-            {
-                _isDraggingMiddle = false;
-            }
+        }
 
-            if (_isDraggingMiddle)
-            {
-                Vector3 delta = Input.mousePosition - _dragOrigin;
-                _dragOrigin = Input.mousePosition;
+        private bool TryGroundUnderCursor(out Vector3 point)
+        {
+            point = Vector3.zero;
+            var cam = Camera.main;
+            if (cam == null) return false;
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Mathf.Abs(ray.direction.y) < 0.02f) return false;
+            float t = -ray.origin.y / ray.direction.y;
+            if (t <= 0f) return false;
+            point = ray.GetPoint(t);
+            return true;
+        }
 
-                float zoomMult = transform.position.y * 0.0025f;
-                Vector3 forward = transform.forward; forward.y = 0f; forward.Normalize();
-                Vector3 right = transform.right; right.y = 0f; right.Normalize();
-
-                Vector3 move = (-right * delta.x - forward * delta.y)
-                             * zoomMult * middleMouseDragSensitivity;
-                Vector3 newPos = ClampToBounds(transform.position + move);
-                transform.position = newPos;
-            }
+        /// <summary>Мгновенно поставить точку карты в центр экрана (миникарта, перетаскивание по ней).</summary>
+        public void CenterOnImmediate(Vector3 worldPos)
+        {
+            if (IsSystemMode || IsReturningFromSystem) return;
+            Vector3 shift = worldPos - GroundCenter(transform.position);
+            shift.y = 0f;
+            _isFocusing = false;
+            _glideVel = Vector3.zero;
+            transform.position = ClampToBounds(transform.position + shift);
         }
 
         private void HandleGalaxyZoomToCursor()
