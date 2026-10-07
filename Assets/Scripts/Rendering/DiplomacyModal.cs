@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
         private GameObject _root;
         private TechTreeBackdrop _backdrop;
         private RawImage _scene;
-        private Image _sceneShade;
+        private Image _sceneShade, _leaderGlow;
         private RectTransform _portraitHost, _infoLeft, _infoRight, _tabs;
         private RectTransform _aiList, _playerList, _tableAI, _tablePlayer, _centerPanel;
         private Text _aiListTitle, _speechName, _speechText, _speechState, _reaction, _fee, _tableTitle, _colAI;
@@ -124,6 +124,7 @@ namespace StellarisClone.Rendering
             Color ec = ai.AIEmpireColor;
             _backdrop.SetColors(ec, Color.Lerp(ec, new Color(0.3f, 0.4f, 1f), 0.5f));
             ApplyScene(ai);
+            _leaderGlow.color = new Color(ec.r, ec.g, ec.b, 0.20f);
             BuildPortrait(ai);
             var leader = LeaderPortraits.ForFaction(ai.Faction);
             if (_viewingOffer) Say(DiplomacyLines.Get(leader, DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
@@ -215,6 +216,14 @@ namespace StellarisClone.Rendering
             _sceneShade = LGBuild.Panel(rt, "SceneShade", new Color(0.005f, 0.01f, 0.018f, 0.35f));
             _sceneShade.rectTransform.Stretch();
             LG.Ignore(_sceneShade.gameObject);
+
+            // Мягкий свет цвета империи за фигурой — вырезанный правитель «стоит» в сцене, а не наклеен
+            _leaderGlow = LGBuild.Panel(rt, "LeaderGlow", Color.white);
+            _leaderGlow.sprite = FactionSelectScreen.RadialSprite();
+            _leaderGlow.rectTransform.anchorMin = _leaderGlow.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            _leaderGlow.rectTransform.sizeDelta = new Vector2(1100f, 1100f);
+            _leaderGlow.rectTransform.anchoredPosition = new Vector2(0f, -420f);
+            LG.Ignore(_leaderGlow.gameObject);
 
             // Правитель во весь рост
             _portraitHost = LGBuild.Rect(rt, "Leader");
