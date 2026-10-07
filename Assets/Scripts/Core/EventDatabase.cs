@@ -178,6 +178,11 @@ namespace StellarisClone.Core
             ["colony_quake"]             = "Quake",
             ["colony_plague"]            = "Plague",
             ["trade_delegation"]         = "Trade",
+            ["dormant_probe"]            = "Probe",
+            ["leader_breakthrough"]      = "Breakthrough",
+            ["admiral_drills"]           = "Drills",
+            ["governor_corruption"]      = "Corruption",
+            ["leader_aging"]             = "Aging",
         };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
