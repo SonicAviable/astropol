@@ -407,7 +407,8 @@ namespace StellarisClone.Core
 
         private void UpdateHighlight(Step s, bool blocked, float dt)
         {
-            bool has = !blocked && TryTargetRect(s, out var target);
+            Rect target = default;
+            bool has = !blocked && TryTargetRect(s, out target);
             if (has)
             {
                 if (!_holeValid) { _hole = Inflate(target, 40f); _holeValid = true; }
