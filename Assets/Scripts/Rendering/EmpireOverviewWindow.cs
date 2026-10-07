@@ -30,6 +30,8 @@ namespace StellarisClone.Rendering
         private readonly Text[] _resIncome = new Text[5];
         private Text _leaderName, _leaderTitle, _leaderPower, _leaderDoctrine;
         private Image _portrait, _portraitIcon;
+        private RectTransform _portraitHost;
+        private string _portraitKey;
         private readonly Dictionary<string, Text> _stats = new Dictionary<string, Text>();
         private RectTransform _domBar, _sciBar, _survBar;
         private Text _domText, _sciText, _survText, _warnText;
@@ -223,12 +225,13 @@ namespace StellarisClone.Rendering
             Caption(card.transform, 12, "ПРАВИТЕЛЬ ИМПЕРИИ", UIManager.DS.TextMuted);
 
             _portrait = LGBuild.Panel(card.transform, "Portrait", new Color(0.2f, 0.4f, 0.5f));
-            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(18, -40), new Vector2(96, 112));
-            LG.Platter(_portrait.gameObject, 16f).FillMultiplier = 2.2f;
+            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(18, -38), new Vector2(104, 146));
+            LG.Platter(_portrait.gameObject, 8f).FillMultiplier = 2.2f;
             _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 56, Color.white);
+            _portraitHost = LG.RoundedMask(_portrait.transform, 8f, 1f);
 
             var info = LGBuild.Rect(card.transform, "Info");
-            info.Stretch(130, 14, 16, 40);
+            info.Stretch(136, 14, 16, 40);
             _leaderName = LGBuild.Label(info, "", 16, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             _leaderTitle = LGBuild.Label(info, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
             _leaderTitle.rectTransform.offsetMax = new Vector2(0, -24);
@@ -433,8 +436,17 @@ namespace StellarisClone.Rendering
         {
             var f = Faction;
             Color fc = f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
-            _leaderName.text = f?.Name ?? "Империя";
-            _leaderTitle.text = f?.Title ?? "";
+            var leader = LeaderPortraits.ForFaction(f);
+            _leaderName.text = leader != null ? leader.Name : f?.Name ?? "Империя";
+            _leaderTitle.text = leader != null ? leader.Title : f?.Title ?? "";
+            string key = leader?.Key ?? "";
+            if (key != _portraitKey)
+            {
+                _portraitKey = key;
+                LGBuild.Clear(_portraitHost);
+                bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.5f) != null;
+                _portraitIcon.gameObject.SetActive(!ok);
+            }
             _leaderDoctrine.text = f?.Description ?? "";
             _portrait.color = new Color(fc.r * 0.4f, fc.g * 0.4f, fc.b * 0.4f, 1f);
             _portrait.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(fc.r, fc.g, fc.b, 0.6f));

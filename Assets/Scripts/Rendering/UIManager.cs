@@ -1500,6 +1500,28 @@ vOutline.effectDistance = new Vector2(1f, -1f);
                 };
                 videoBg.Preload(videoKey);
 
+                // Правитель фракции: живой портрет поверх правой части видео, имя — снизу слева
+                var leader = LeaderPortraits.ForFaction(f);
+                if (leader != null)
+                {
+                    var lz = LGBuild.Rect(videoMask, "LeaderZone");
+                    lz.anchorMin = new Vector2(0.40f, 0f);
+                    lz.anchorMax = Vector2.one;
+                    lz.offsetMin = lz.offsetMax = Vector2.zero;
+                    LeaderPortraitView.Create(lz, leader, zoom: 1.7f, fadeLeft: 0.4f, glitches: false);
+
+                    var cap = LGBuild.Rect(videoMask, "LeaderCaption");
+                    cap.anchorMin = new Vector2(0f, 0f);
+                    cap.anchorMax = new Vector2(0.62f, 0f);
+                    cap.pivot = new Vector2(0f, 0f);
+                    cap.offsetMin = new Vector2(10f, 8f);
+                    cap.offsetMax = new Vector2(0f, 44f);
+                    var ln = LGBuild.Label(cap, leader.Name, 13, Color.white, TextAnchor.UpperLeft, bold: true);
+                    ln.rectTransform.TopBand(0, 18);
+                    var lt = LGBuild.Label(cap, leader.Title, 10, Color.Lerp(f.EmpireColor, Color.white, 0.55f), TextAnchor.UpperLeft, wrap: true);
+                    lt.rectTransform.TopBand(18, 18);
+                }
+
                 // Описание
                 // Описание — панель расширена вниз и вверх
 var descBox = new GameObject("DescBox");

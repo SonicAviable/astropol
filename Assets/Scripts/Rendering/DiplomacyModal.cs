@@ -98,7 +98,7 @@ namespace StellarisClone.Core
         private void Build()
         {
             var rt = LGBuild.Rect(_host.transform, "DiplomacyModal");
-            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1120, 690));
+            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1120, 770));
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             _root.AddComponent<Image>().color = UIManager.DS.BgDeep;
@@ -225,24 +225,42 @@ namespace StellarisClone.Core
             Color ac = ai.AIEmpireColor;
             float y = 0f;
 
-            // Карточка империи
+            // Карточка империи: живой портрет правителя слева, сведения справа
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            const float PortW = 118f, PortH = 164f;
             var card = LGBuild.Panel(_left, "Empire", UIManager.DS.BgSlot);
-            card.rectTransform.TopBand(y, 156);
+            card.rectTransform.TopBand(y, PortH + 76f);
             LG.Platter(card.gameObject, 18f).SetRim(new Color(ac.r, ac.g, ac.b, 0.45f));
-            var emblem = LGBuild.Panel(card.transform, "Emblem", new Color(ac.r * 0.4f, ac.g * 0.4f, ac.b * 0.4f));
-            emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -14), new Vector2(58, 58));
-            LG.Platter(emblem.gameObject, 29f).FillMultiplier = 2.4f;
-            LGIcons.Create(emblem.transform, LGIcon.Leader, 30, Color.Lerp(ac, Color.white, 0.3f));
-            var name = LGBuild.Label(card.transform, ai.AIName.ToUpper(), 15, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            name.rectTransform.Stretch(84, 0, 10, 16);
+
+            var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.01f, 0.02f, 0.03f, 1f));
+            frame.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -12), new Vector2(PortW, PortH));
+            var ffx = LG.Platter(frame.gameObject, 8f);
+            ffx.SetRim(new Color(ac.r, ac.g, ac.b, 0.55f));
+            ffx.FillMultiplier = 3f;
+            var portHost = LG.RoundedMask(frame.transform, 8f, 1f);
+            var portrait = LeaderPortraitView.Create(portHost, leader, zoom: 1.45f);
+            if (portrait == null) LGIcons.Create(frame.transform, LGIcon.Leader, 46, Color.Lerp(ac, Color.white, 0.3f));
+            else if (ai.AtWar) portrait.GetComponent<RawImage>().color = new Color(1f, 0.86f, 0.84f, 1f);
+
+            float tx = PortW + 24f;
+            var name = LGBuild.Label(card.transform, ai.AIName.ToUpper(), 14, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true, wrap: true);
+            name.rectTransform.TopBand(12, 38, tx, 10);
             var title = LGBuild.Label(card.transform, ai.AITitle, 11, CMuted, TextAnchor.UpperLeft);
-            title.rectTransform.Stretch(84, 0, 10, 38);
+            title.rectTransform.TopBand(50, 16, tx, 10);
+            if (leader != null)
+            {
+                var ln = LGBuild.Label(card.transform, leader.Name, 13, Color.Lerp(ac, Color.white, 0.45f), TextAnchor.UpperLeft, bold: true);
+                ln.rectTransform.TopBand(76, 18, tx, 10);
+                var lt = LGBuild.Label(card.transform, leader.Title, 10, CMuted, TextAnchor.UpperLeft, wrap: true);
+                lt.rectTransform.TopBand(95, 28, tx, 10);
+            }
             var pers = LGBuild.Label(card.transform, $"<color={LGBuild.Hex(CGold)}>Характер: {ai.Profile.Name.ToLower()}</color>", 11,
                                      UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            pers.rectTransform.Stretch(84, 0, 10, 56);
-            var sum = LGBuild.Label(card.transform, ai.Profile.Summary, 10, CMuted, TextAnchor.UpperLeft, wrap: true);
-            sum.rectTransform.Stretch(14, 8, 14, 86);
-            y += 166f;
+            pers.rectTransform.TopBand(PortH - 8f, 18, tx, 10);
+            string quote = leader != null ? $"<i>«{leader.Quote}»</i>  " : "";
+            var sum = LGBuild.Label(card.transform, quote + ai.Profile.Summary, 10, CMuted, TextAnchor.UpperLeft, wrap: true);
+            sum.rectTransform.Stretch(14, 8, 14, PortH + 20f);
+            y += PortH + 86f;
 
             // Статус
             StatusChip(ai, ref y);
