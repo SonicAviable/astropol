@@ -25,6 +25,9 @@ namespace StellarisClone.Rendering
         private GameObject _dustStars;
         private Material _diskMat, _dustStarsMat;
         private GameObject _nebulaRoot;
+        private GameObject _coreRoot;
+        private Material _coreMat;
+        private SpriteRenderer _coreBulge;
         private readonly List<(Material mat, float baseIntensity)> _nebulaMats = new List<(Material, float)>();
         private Material _skyInstance;
         private float _skyExposure = 1f;
@@ -165,6 +168,46 @@ namespace StellarisClone.Rendering
 
             BuildDustStars(R, rng);
             BuildNebulae(R, rng);
+            BuildGalaxyCore(R);
+        }
+
+        // ==================== ЯДРО ГАЛАКТИКИ ====================
+
+        /// <summary>
+        /// Ядро: плоский квад с шейдером GalaxyCore (раскалённый центр, балдж, закрученные рукава с
+        /// пылевыми прожилками) + объёмное свечение-билборд, чтобы ядро читалось шаром при наклоне камеры.
+        /// </summary>
+        private void BuildGalaxyCore(float R)
+        {
+            var shader = Resources.Load<Shader>("Shaders/GalaxyCore");
+            if (shader == null) return;
+            _coreRoot = new GameObject("GalaxyCore");
+            _coreRoot.transform.SetParent(transform, false);
+
+            var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            q.name = "CoreDisk";
+            var col = q.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            q.transform.SetParent(_coreRoot.transform, false);
+            q.transform.position = new Vector3(0f, -0.5f, 0f);
+            q.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            q.transform.localScale = new Vector3(R * 1.2f, R * 1.2f, 1f);
+            _coreMat = new Material(shader);
+            _coreMat.renderQueue = 2962;
+            var mr = q.GetComponent<MeshRenderer>();
+            mr.sharedMaterial = _coreMat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+
+            var b = new GameObject("CoreBulge");
+            b.transform.SetParent(_coreRoot.transform, false);
+            b.transform.position = new Vector3(0f, 0.5f, 0f);
+            b.transform.localScale = Vector3.one * (R * 0.16f / 0.64f);
+            _coreBulge = b.AddComponent<SpriteRenderer>();
+            _coreBulge.sprite = _starHotSprite;
+            _coreBulge.sharedMaterial = new Material(GetSpriteShader());
+            _coreBulge.sortingOrder = 5;
+            b.AddComponent<BillboardLookAt>();
         }
 
         // ==================== ТУМАННОСТИ РЕГИОНОВ ====================
@@ -196,9 +239,9 @@ namespace StellarisClone.Rendering
             {
                 // по кругу вокруг центра с разбросом — чтобы облака не слипались в одну кучу
                 float ang = (k + (float)rng.NextDouble() * 0.6f) / count * Mathf.PI * 2f;
-                float dist = R * (0.25f + (float)rng.NextDouble() * 0.75f);
+                float dist = R * (0.55f + (float)rng.NextDouble() * 0.5f);     // подальше от ядра
                 var pos = new Vector3(Mathf.Cos(ang) * dist, -1.2f - k * 0.05f, Mathf.Sin(ang) * dist);
-                float size = R * (0.55f + (float)rng.NextDouble() * 0.6f);
+                float size = R * (0.35f + (float)rng.NextDouble() * 0.3f);
 
                 var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 q.name = "Nebula_" + k;
@@ -217,7 +260,7 @@ namespace StellarisClone.Rendering
                 m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
                 m.SetFloat("_Scale", 2.4f + (float)rng.NextDouble() * 1.4f);
                 m.renderQueue = 2950;
-                float intensity = 0.35f + (float)rng.NextDouble() * 0.25f;
+                float intensity = 0.22f + (float)rng.NextDouble() * 0.16f;
                 _nebulaMats.Add((m, intensity));
 
                 var mr = q.GetComponent<MeshRenderer>();
@@ -235,14 +278,26 @@ namespace StellarisClone.Rendering
         private void BuildDustStars(float R, System.Random rng)
         {
             int count = Mathf.Min(60000, _generator.Systems.Count * 70);
+            int coreCount = Mathf.Min(9000, count / 2);         // плотное звёздное скопление ядра
+            count += coreCount;
             var verts = new Vector3[count];
             var cols = new Color32[count];
             var idx = new int[count];
             for (int k = 0; k < count; k++)
             {
-                var s = _generator.Systems[rng.Next(_generator.Systems.Count)];
-                float x = s.Position.x + Gauss(rng) * 0.12f * R;
-                float z = s.Position.z + Gauss(rng) * 0.12f * R;
+                float x, z;
+                if (k < coreCount)
+                {
+                    float sg = rng.NextDouble() < 0.6 ? 0.06f : 0.14f;
+                    x = Gauss(rng) * sg * R;
+                    z = Gauss(rng) * sg * R;
+                }
+                else
+                {
+                    var s = _generator.Systems[rng.Next(_generator.Systems.Count)];
+                    x = s.Position.x + Gauss(rng) * 0.12f * R;
+                    z = s.Position.z + Gauss(rng) * 0.12f * R;
+                }
                 verts[k] = new Vector3(x, -0.6f, z);
                 float r = new Vector2(x, z).magnitude / R;
                 float b = 0.25f + (float)(rng.NextDouble() * rng.NextDouble()) * 0.75f;   // больше тусклых, мало ярких
@@ -285,6 +340,16 @@ namespace StellarisClone.Rendering
             if (_diskMat != null) _diskMat.SetFloat("_T", t);
             if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
             float nebK = Mathf.Lerp(0.5f, 1f, far);
+            if (_coreMat != null)
+            {
+                _coreMat.SetFloat("_T", t);
+                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.55f, 1f, far));
+            }
+            if (_coreBulge != null)
+            {
+                float pulse = 1f + 0.05f * Mathf.Sin(t * 0.5f);
+                _coreBulge.color = new Color(1f, 0.86f, 0.62f, Mathf.Lerp(0.25f, 0.5f, far) * pulse);
+            }
             foreach (var (m, k) in _nebulaMats)
             {
                 m.SetFloat("_T", t);

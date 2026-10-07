@@ -11,7 +11,7 @@ Shader "Astropolity/GalaxyDisk"
         _Color ("Tint", Color) = (1,1,1,1)
         _T ("Time", Float) = 0
         _RadiusUv ("Galaxy radius in uv", Float) = 0.385
-        _Swirl ("Swirl strength", Float) = 0.55
+        _Swirl ("Swirl strength", Float) = 0.4
         _CoreColor ("Core color", Color) = (1, 0.82, 0.55, 1)
     }
     SubShader
@@ -68,9 +68,7 @@ Shader "Astropolity/GalaxyDisk"
             {
                 float ang = t * 0.045 / (r + 0.25);
                 float2 q = Rot(p, ang);
-                // вытягиваем вдоль окружности — получаются волокна
-                float2 polarish = float2(length(q) * 9.0, 0.0) + q * 3.2;
-                return Fbm(polarish + q * 6.0);
+                return Fbm(q * 5.5 + 2.3);
             }
 
             fixed4 frag(v2f i) : SV_Target
