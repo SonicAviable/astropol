@@ -150,13 +150,16 @@ namespace StellarisClone.Rendering
 
         private void HideMapClutter()
         {
-            foreach (var name in new[] { "Hyperlanes", "TacticalHologramBeacon" })
+            foreach (var name in new[] { "Hyperlanes", "TacticalHologramBeacon", "EmpireLabel_0", "EmpireLabel_1", "EmpireLabel_2", "EmpireLabel_3" })
             {
                 var go = GameObject.Find(name);
                 if (go != null) Hide(go);
             }
             foreach (var fv in FindObjectsByType<FleetView>(FindObjectsSortMode.None)) Hide(fv.gameObject);
             foreach (var np in FindObjectsByType<SystemNameplate>(FindObjectsSortMode.None)) Hide(np.gameObject);
+            foreach (var fi in FindObjectsByType<FleetIndicator>(FindObjectsSortMode.None)) Hide(fi.gameObject);
+            foreach (var fb in FindObjectsByType<SystemFleetBadge>(FindObjectsSortMode.None)) Hide(fb.gameObject);
+            foreach (var pr in FindObjectsByType<SystemProgressRing>(FindObjectsSortMode.None)) Hide(pr.gameObject);
             var fim = FindAnyObjectByType<FleetIndicatorManager>();
             if (fim != null) Hide(fim.gameObject);
         }
