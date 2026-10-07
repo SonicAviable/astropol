@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
 
         private enum Panel { None, NewGame, Load, Settings, About }
 
-        public const string Version = "v1.0 · ранний доступ";
+        public const string Version = "v1.1 · ранний доступ";
 
         private RectTransform _root;
         private RectTransform _window, _body;
@@ -74,7 +74,6 @@ namespace StellarisClone.Rendering
             BuildLogo();
             BuildMenu();
             BuildWindow();
-            BuildNewsCard();
             BuildFooter();
 
             var cam = Camera.main;
@@ -643,47 +642,7 @@ namespace StellarisClone.Rendering
             y += 72f;
         }
 
-        // ================================================================ «Что нового» и подвал
-
-        private void BuildNewsCard()
-        {
-            var card = LGBuild.Panel(_root, "News", UIManager.DS.BgDeep, raycast: true);
-            card.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-70, 76), new Vector2(390, 196));
-            _news = card.gameObject;
-            var fx = LG.Glass(_news, 22f);
-            fx.SetRim(new Color(1f, 0.82f, 0.36f, 0.28f));
-            var mo = LG.Motion(_news, LGAppear.Kind.SlideUp);
-            mo.distance = 24f;
-            mo.delay = 1.6f;
-            mo.inDuration = 0.6f;
-
-            var head = LGBuild.Rect(card.transform, "Head");
-            head.TopBand(16, 20, 20, 20);
-            var hi = LGIcons.Create(head, LGIcon.Star, 15, UIManager.DS.Gold);
-            hi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(15, 15));
-            var ht = LGBuild.Label(head, "ЧТО НОВОГО", 12, UIManager.DS.Gold, TextAnchor.MiddleLeft, bold: true);
-            ht.rectTransform.offsetMin = new Vector2(22, 0);
-            LGBuild.Label(head, Version, 10, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
-
-            string[] items =
-            {
-                "Главное меню, сохранения и автосохранение",
-                "Настройки графики, звука и интерфейса",
-                "Новый интерфейс «жидкое стекло»",
-                "Алерты событий под верхней панелью",
-            };
-            float y = 50f;
-            foreach (var s in items)
-            {
-                var r = LGBuild.Rect(card.transform, "Item");
-                r.TopBand(y, 22, 20, 16);
-                var ic = LGIcons.Create(r, LGIcon.Check, 12, UIManager.DS.Green);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(1, 0), new Vector2(12, 12));
-                var t = LGBuild.Label(r, s, 12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-                t.rectTransform.offsetMin = new Vector2(22, 0);
-                y += 32f;
-            }
-        }
+        // ================================================================ Подвал
 
         private void BuildFooter()
         {

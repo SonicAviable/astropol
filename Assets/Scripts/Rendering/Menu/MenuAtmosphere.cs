@@ -323,7 +323,7 @@ namespace StellarisClone.Rendering
 
         private void HideMapClutter()
         {
-            foreach (var name in new[] { "Hyperlanes", "EmpireLabel_0", "EmpireLabel_1", "EmpireLabel_2", "EmpireLabel_3" })
+            foreach (var name in new[] { "Hyperlanes", "StellarisOrganicBorderPlane", "EmpireLabel_0", "EmpireLabel_1", "EmpireLabel_2", "EmpireLabel_3" })
             {
                 var go = GameObject.Find(name);
                 if (go != null) Hide(go);
