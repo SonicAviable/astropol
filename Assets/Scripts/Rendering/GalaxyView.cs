@@ -24,6 +24,8 @@ namespace StellarisClone.Rendering
         private readonly Dictionary<int, GameObject> _empireLabels = new Dictionary<int, GameObject>();
 
         private GameObject _beaconRoot;
+        /// <summary>Маяк выбранной системы (главное меню прячет его).</summary>
+        public GameObject BeaconRoot => _beaconRoot;
         private SpriteRenderer _beaconOuterSr;
         private SpriteRenderer _beaconInnerSr;
         private LineRenderer _beaconVerticalBeam;

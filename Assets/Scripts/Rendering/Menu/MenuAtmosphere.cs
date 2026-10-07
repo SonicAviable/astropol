@@ -30,6 +30,8 @@ namespace StellarisClone.Rendering
         private readonly List<Mote> _motes = new List<Mote>();
         private RectTransform _overlay;
         private readonly List<GameObject> _hidden = new List<GameObject>();
+        private readonly HashSet<GameObject> _hiddenSet = new HashSet<GameObject>();
+        private bool _beaconWasOn;
         private float _hideTimer, _t;
 
         private static readonly Color[] Palette =
@@ -315,7 +317,7 @@ namespace StellarisClone.Rendering
 
         private void HideMapClutter()
         {
-            foreach (var name in new[] { "Hyperlanes", "TacticalHologramBeacon", "EmpireLabel_0", "EmpireLabel_1", "EmpireLabel_2", "EmpireLabel_3" })
+            foreach (var name in new[] { "Hyperlanes", "EmpireLabel_0", "EmpireLabel_1", "EmpireLabel_2", "EmpireLabel_3" })
             {
                 var go = GameObject.Find(name);
                 if (go != null) Hide(go);
@@ -327,19 +329,35 @@ namespace StellarisClone.Rendering
             foreach (var pr in FindObjectsByType<SystemProgressRing>(FindObjectsSortMode.None)) Hide(pr.gameObject);
             var fim = FindAnyObjectByType<FleetIndicatorManager>();
             if (fim != null) Hide(fim.gameObject);
+            var fro = FindAnyObjectByType<FleetRouteOverlay>();
+            if (fro != null) Hide(fro.gameObject);
+            var markers = GameObject.Find("SystemMarkers");
+            if (markers != null) Hide(markers);
         }
 
         private void Hide(GameObject go)
         {
             if (go == null || !go.activeSelf) return;
             go.SetActive(false);
-            _hidden.Add(go);
+            if (_hiddenSet.Add(go)) _hidden.Add(go);
+        }
+
+        /// <summary>Игра может снова включить спрятанное (выбор системы, обновление маркеров) — держим выключенным каждый кадр.</summary>
+        private void LateUpdate()
+        {
+            for (int i = 0; i < _hidden.Count; i++)
+                if (_hidden[i] != null && _hidden[i].activeSelf) _hidden[i].SetActive(false);
+            var beacon = GalaxyView.Instance != null ? GalaxyView.Instance.BeaconRoot : null;
+            if (beacon != null && beacon.activeSelf) { beacon.SetActive(false); _beaconWasOn = true; }
         }
 
         private void OnDestroy()
         {
             foreach (var go in _hidden) if (go != null) go.SetActive(true);
             _hidden.Clear();
+            _hiddenSet.Clear();
+            if (_beaconWasOn && GalaxyView.Instance != null && GalaxyView.Instance.BeaconRoot != null)
+                GalaxyView.Instance.BeaconRoot.SetActive(true);
             if (_nebulaMat != null) Destroy(_nebulaMat);
             if (_planet != null && _planet.material != null) Destroy(_planet.material);
             if (_meteor != null && _meteor.sprite != null) { Destroy(_meteor.sprite.texture); Destroy(_meteor.sprite); }
