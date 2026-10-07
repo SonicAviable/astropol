@@ -17,7 +17,8 @@ namespace StellarisClone.Core
             public string Key;
             public LeaderClass Class;
             public bool Female;
-            /// <summary>Квадрат вокруг лица в пикселях исходника 1342×2000: центр и сторона.</summary>
+            /// <summary>Квадрат вокруг лица в пикселях исходника 1342×2000 (у файлов другого размера с тем же
+            /// соотношением 2:3 — в пересчёте на 1342×2000): центр и сторона.</summary>
             public Vector2 Center;
             public float Size;
 
@@ -34,6 +35,11 @@ namespace StellarisClone.Core
             new Face { Key = "sci_3", Class = LeaderClass.Scientist, Female = false, Center = new Vector2(680, 610), Size = 760 },
             new Face { Key = "sci_4", Class = LeaderClass.Scientist, Female = true,  Center = new Vector2(585, 590), Size = 640 },
             new Face { Key = "adm_1", Class = LeaderClass.Admiral,   Female = false, Center = new Vector2(680, 650), Size = 760 },
+            new Face { Key = "adm_2", Class = LeaderClass.Admiral,   Female = true,  Center = new Vector2(680, 585), Size = 665 },
+            new Face { Key = "adm_3", Class = LeaderClass.Admiral,   Female = false, Center = new Vector2(690, 560), Size = 660 },
+            new Face { Key = "adm_4", Class = LeaderClass.Admiral,   Female = false, Center = new Vector2(680, 560), Size = 700 },
+            new Face { Key = "gov_1", Class = LeaderClass.Governor,  Female = false, Center = new Vector2(680, 580), Size = 700 },
+            new Face { Key = "gov_2", Class = LeaderClass.Governor,  Female = true,  Center = new Vector2(660, 560), Size = 640 },
         };
 
         /// <summary>Женские имена из генератора лидеров (остальные считаются мужскими).</summary>
