@@ -38,6 +38,7 @@ namespace StellarisClone.Rendering
         private Sprite _starCoreSprite;
         private Sprite _starHotSprite;
         private Sprite _starRingSprite;
+        private Sprite _starFlareSprite, _starCoronaSprite, _accretionSprite;
         private Sprite _beaconOuterSprite;
         private Sprite _beaconInnerSprite;
 
@@ -85,6 +86,9 @@ namespace StellarisClone.Rendering
             _starCoreSprite    = GenerateStarSprite(256);
             _starHotSprite     = GenerateHotCoreSprite(64);
             _starRingSprite    = GenerateTwinkleRingSprite(256);
+            _starFlareSprite   = StarFx.FlareSprite(256);
+            _starCoronaSprite  = StarFx.CoronaSprite(256);
+            _accretionSprite   = StarFx.AccretionSprite(256);
             _beaconOuterSprite = GenerateOuterBeaconSprite(256);
             _beaconInnerSprite = GenerateInnerRingSprite(256);
         }
@@ -445,11 +449,23 @@ namespace StellarisClone.Rendering
                 node.transform.SetParent(transform, false);
 
                 Color starCol = GetStellarisColor(system.SpectralClass);
+                bool blackHole = system.SpectralClass == StarSpectralClass.BlackHole;
+                float sizeMul = StarFx.SizeMul(system.SpectralClass);
+                float baseScale = 2.4f * sizeMul;
+
+                // Корона: мягкие лучи вокруг звезды, медленно вращается (под ядром)
+                var coronaObj = new GameObject("StarCorona");
+                coronaObj.transform.SetParent(node.transform, false);
+                var coronaSr = coronaObj.AddComponent<SpriteRenderer>();
+                coronaSr.sprite = blackHole ? _accretionSprite : _starCoronaSprite;
+                if (spriteShader != null) coronaSr.material = new Material(spriteShader);
+                coronaSr.color = blackHole ? new Color(1f, 0.62f, 0.3f, 0.9f) : new Color(starCol.r, starCol.g, starCol.b, 0.4f);
+                coronaSr.sortingOrder = 14;
 
                 // Ядро — компактная точка с неровным краем
                 var coreObj = new GameObject("StarCore");
                 coreObj.transform.SetParent(node.transform, false);
-                coreObj.transform.localScale = Vector3.one * 2.4f;
+                coreObj.transform.localScale = Vector3.one * baseScale;
                 var coreSr = coreObj.AddComponent<SpriteRenderer>();
                 coreSr.sprite = _starCoreSprite;
                 if (spriteShader != null) coreSr.material = new Material(spriteShader);
@@ -478,10 +494,27 @@ namespace StellarisClone.Rendering
                 hotSr.sortingOrder = 17;
                 hotObj.AddComponent<BillboardLookAt>();
 
-                // Анимация (вращение, дыхание, моргание)
+                // Блик с лучами поверх (у чёрной дыры — нет)
+                SpriteRenderer flareSr = null;
+                if (!blackHole)
+                {
+                    var flareObj = new GameObject("StarFlare");
+                    flareObj.transform.SetParent(node.transform, false);
+                    flareSr = flareObj.AddComponent<SpriteRenderer>();
+                    flareSr.sprite = _starFlareSprite;
+                    if (spriteShader != null) flareSr.material = new Material(spriteShader);
+                    flareSr.sortingOrder = 18;
+                }
+
+                // Анимация (вращение, дыхание, корона, блик)
                 var anim = coreObj.AddComponent<StarAnimator>();
-                anim.Initialize(coreSr, ringSr, 2.4f, starCol);
+                anim.Initialize(coreSr, ringSr, baseScale, blackHole ? new Color(0.08f, 0.05f, 0.12f) : starCol);
                 anim.Hot = hotSr;
+                anim.Corona = coronaSr;
+                anim.Flare = flareSr;
+                anim.SizeMul = sizeMul;
+                anim.IsBlackHole = blackHole;
+                if (blackHole) hotSr.enabled = false;
                 _starAnims.Add(anim);
 
                 // Плашка с именем
@@ -684,6 +717,8 @@ namespace StellarisClone.Rendering
             if (_markersRoot != null) _markersRoot.SetActive(!isolate);
             if (_diskPlane != null) _diskPlane.SetActive(!isolate);
             if (_dustStars != null) _dustStars.SetActive(!isolate);
+            if (_nebulaRoot != null) _nebulaRoot.SetActive(!isolate);
+            if (_miniRoot != null) _miniRoot.SetActive(!isolate);
             ApplySkyMood(isolate);
         }
 
@@ -738,10 +773,12 @@ namespace StellarisClone.Rendering
     }
 
     /// <summary>
-    /// Аниматор звезды:
-    ///   • медленно вращает неровный край — звезда «живая», не сфера
-    ///   • дышит размером (±5%) и яркостью (±8%)
-    ///   • раз в 2–6 секунд коротко мигает с расходящимся кольцом
+    /// Аниматор звезды («живые звёзды»):
+    ///   • медленно вращает неровный край и дышит размером/яркостью — плавно, без миганий
+    ///   • корона из мягких лучей медленно поворачивается и «дышит»
+    ///   • блик с лучами поверх: виден сильнее вблизи, едва заметно поворачивается
+    ///   • размер — по классу звезды (красные карлики меньше, голубые гиганты крупнее)
+    ///   • чёрная дыра: тёмное ядро и вращающийся аккреционный диск
     ///   • у каждой звезды свой ритм и фаза (не пульсируют синхронно)
     /// </summary>
     public class StarAnimator : MonoBehaviour
@@ -752,21 +789,22 @@ namespace StellarisClone.Rendering
         private Color _baseColor;
         private float _phase;
         private float _speed;
-        private float _nextTwinkle;
-        private float _twinkleProgress;       // 0..1, 0 = не мигает
-        private const float TwinkleDuration = 0.7f;
-        private float _ringBaseScale;
 
         private Camera _cam;
         private const float MinSpritePx = 40f;     // цветной ореол
         private const float HotPx = 10f;            // белое ядро
         private const float HotSpriteWorld = 0.64f; // спрайт ядра 64 px при 100 px/ед.
-        public SpriteRenderer Hot;
         private const float SpriteWorldSize = 2.56f;   // спрайт 256 px при 100 px/ед.
+        public SpriteRenderer Hot;
+        public SpriteRenderer Corona;
+        public SpriteRenderer Flare;
+        public float SizeMul = 1f;
+        public bool IsBlackHole;
 
-        /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без вспышек).</summary>
+        /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без бликов).</summary>
         public float Dim = 1f;
         private float _dimShown = 1f;
+        private float _scale, _near;
 
         public void Initialize(SpriteRenderer core, SpriteRenderer ring, float baseScale, Color starColor)
         {
@@ -774,14 +812,10 @@ namespace StellarisClone.Rendering
             _ring = ring;
             _baseScale = baseScale;
             _baseColor = starColor;
-            _ringBaseScale = baseScale * 0.4f;
-
             _phase = Random.Range(0f, 6.28f);
             _speed = Random.Range(0.35f, 0.75f);
-            _nextTwinkle = Random.Range(1.5f, 5.0f);
-            _twinkleProgress = 0f;
-
             if (_core != null) _core.color = _baseColor;
+            if (_ring != null) _ring.enabled = false;
         }
 
         private void Update()
@@ -790,97 +824,151 @@ namespace StellarisClone.Rendering
 
             float dt = Time.unscaledDeltaTime;
             float t = Time.unscaledTime * _speed + _phase;
-
-            // --- ДЫХАНИЕ ---
-            float breathe = 1f + Mathf.Sin(t * 1.4f) * 0.05f;
-            float alphaBreathe = 1f + Mathf.Sin(t * 1.7f) * 0.08f;
-
-            // --- МОРГАНИЕ ---
             _dimShown = Mathf.MoveTowards(_dimShown, Dim, dt * 1.5f);
-            _nextTwinkle -= dt;
-            if (_nextTwinkle <= 0f && _twinkleProgress <= 0f && _dimShown > 0.9f)
-            {
-                _twinkleProgress = 0.0001f;
-                _nextTwinkle = Random.Range(2.0f, 6.5f);
-            }
 
-            float twinkleCoreBoost = 0f;
-            float ringAlpha = 0f;
-            float ringScale = 0f;
+            // --- ДЫХАНИЕ (медленно, мягко) ---
+            float breathe = 1f + Mathf.Sin(t * 0.9f) * 0.04f;
+            float alphaBreathe = 1f + Mathf.Sin(t * 1.1f) * 0.06f;
 
-            if (_twinkleProgress > 0f)
-            {
-                _twinkleProgress += dt / TwinkleDuration;
-
-                if (_twinkleProgress >= 1f)
-                {
-                    _twinkleProgress = 0f;
-                }
-                else
-                {
-                    // Пик в начале, длинный хвост затухания
-                    float p = _twinkleProgress;
-                    float peak = Mathf.Exp(-Mathf.Pow((p - 0.12f) / 0.20f, 2f));
-
-                    twinkleCoreBoost = peak * 0.8f;
-                    ringAlpha = peak * 0.8f;
-
-                    // Кольцо расходится от центра к краю
-                    ringScale = Mathf.Lerp(0.6f, 4.5f, p);
-                }
-            }
-
-            // --- ПРИМЕНЕНИЕ К ЯДРУ ---
-            float scale = _baseScale * breathe * (1f + twinkleCoreBoost * 0.25f) * Mathf.Lerp(0.65f, 1f, _dimShown);
-            // Издалека звезда не должна исчезать: минимум ~26 px спрайта (ядро ~8 px), неизведанные — меньше
+            float scale = _baseScale * breathe * Mathf.Lerp(0.65f, 1f, _dimShown);
             if (_cam == null) _cam = Camera.main;
+            float dist = 100f;
             if (_cam != null)
             {
-                float dist = Vector3.Distance(_cam.transform.position, transform.position);
+                dist = Vector3.Distance(_cam.transform.position, transform.position);
                 float wpp = 2f * dist * Mathf.Tan(_cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
-                float minScale = wpp * MinSpritePx / SpriteWorldSize * Mathf.Lerp(0.7f, 1f, _dimShown);
+                float minScale = wpp * MinSpritePx * Mathf.Sqrt(SizeMul) / SpriteWorldSize * Mathf.Lerp(0.7f, 1f, _dimShown);
                 scale = Mathf.Max(scale, minScale * breathe);
             }
+            _scale = scale;
+            _near = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(60f, 210f, dist));
             _core.transform.localScale = Vector3.one * scale;
 
-            // Медленное вращение — неровный край поворачивается
-            _core.transform.localRotation = Quaternion.Euler(0f, 0f, t * 22f);
-
             // Неизведанная звезда — блёклая, ближе к серому
-            Color c = Color.Lerp(new Color(0.62f, 0.66f, 0.74f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
-            c.a = Mathf.Clamp01(alphaBreathe + twinkleCoreBoost) * Mathf.Lerp(0.45f, 1f, _dimShown);
+            Color c = IsBlackHole ? _baseColor : Color.Lerp(new Color(0.62f, 0.66f, 0.74f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
+            c.a = Mathf.Clamp01(alphaBreathe) * Mathf.Lerp(0.45f, 1f, _dimShown);
             _core.color = c;
 
             // Белое ядро: постоянный экранный размер, лёгкий оттенок класса звезды
-            if (Hot != null && _cam != null)
+            if (Hot != null && Hot.enabled && _cam != null)
             {
-                float d = Vector3.Distance(_cam.transform.position, transform.position);
-                float w = 2f * d * Mathf.Tan(_cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
-                float hs = Mathf.Max(_baseScale * 0.35f, w * HotPx / HotSpriteWorld) * Mathf.Lerp(0.8f, 1f, _dimShown)
-                         * (1f + twinkleCoreBoost * 0.35f);
+                float w = 2f * dist * Mathf.Tan(_cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+                float hs = Mathf.Max(_baseScale * 0.35f, w * HotPx * Mathf.Sqrt(SizeMul) / HotSpriteWorld) * Mathf.Lerp(0.8f, 1f, _dimShown);
                 Hot.transform.localScale = Vector3.one * hs;
                 var hc = Color.Lerp(Color.white, _baseColor, 0.22f);
                 hc.a = Mathf.Lerp(0.7f, 1f, _dimShown);
                 Hot.color = hc;
             }
 
-            // --- ПРИМЕНЕНИЕ К КОЛЬЦУ ---
-            if (_ring != null)
+            // Корона: больше ядра, медленно дышит (у чёрной дыры — аккреционный диск)
+            if (Corona != null)
             {
-                if (ringAlpha > 0.01f)
-                {
-                    _ring.enabled = true;
-                    _ring.transform.localScale = Vector3.one * (_ringBaseScale * ringScale);
-                    _ring.transform.localRotation = Quaternion.identity;
-                    Color rc = _baseColor;
-                    rc.a = ringAlpha;
-                    _ring.color = rc;
-                }
-                else if (_ring.enabled)
-                {
-                    _ring.enabled = false;
-                }
+                float cb = 1f + Mathf.Sin(t * 0.6f + 1.3f) * 0.07f;
+                Corona.transform.localScale = Vector3.one * scale * (IsBlackHole ? 1.5f : 1.35f) * cb;
+                var cc = IsBlackHole ? new Color(1f, 0.62f, 0.3f) : _baseColor;
+                cc.a = (IsBlackHole ? 0.85f : 0.20f + 0.22f * _near) * Mathf.Lerp(0.35f, 1f, _dimShown) * (0.9f + 0.1f * cb);
+                Corona.color = cc;
+            }
+
+            // Блик: заметнее вблизи, у неизведанных почти нет
+            if (Flare != null)
+            {
+                float fb = 1f + Mathf.Sin(t * 0.7f + 2.1f) * 0.06f;
+                Flare.transform.localScale = Vector3.one * scale * 1.25f * fb;
+                var fc = Color.Lerp(Color.white, _baseColor, 0.45f);
+                fc.a = (0.18f + 0.42f * _near) * _dimShown * _dimShown;
+                Flare.color = fc;
             }
         }
+
+        private void LateUpdate()
+        {
+            if (_cam == null) return;
+            var rot = _cam.transform.rotation;
+            float t = Time.unscaledTime;
+            // повороты в плоскости экрана: корона и блик в разные стороны, медленно
+            if (Corona != null)
+                Corona.transform.rotation = rot * Quaternion.Euler(0f, 0f, IsBlackHole ? -t * 28f + _phase * 57f : t * 4f * _speed + _phase * 57f);
+            if (Flare != null)
+                Flare.transform.rotation = rot * Quaternion.Euler(0f, 0f, -t * 1.5f * _speed + _phase * 20f);
+        }
+    }
+
+    /// <summary>Процедурные спрайты «живых звёзд»: корона, блик с лучами, аккреционный диск; размеры по классам.</summary>
+    public static class StarFx
+    {
+        public static float SizeMul(StarSpectralClass c) => c switch
+        {
+            StarSpectralClass.ClassM => 0.80f,
+            StarSpectralClass.ClassK => 0.90f,
+            StarSpectralClass.ClassG => 1.00f,
+            StarSpectralClass.ClassA => 1.12f,
+            StarSpectralClass.ClassB => 1.32f,
+            _ => 1.1f
+        };
+
+        private static Sprite Make(int res, System.Func<float, float, float> alpha, string name)
+        {
+            var tex = new Texture2D(res, res, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = name };
+            var px = new Color32[res * res];
+            float c = (res - 1) * 0.5f;
+            for (int y = 0; y < res; y++)
+            for (int x = 0; x < res; x++)
+            {
+                float dx = (x - c) / c, dy = (y - c) / c;
+                float a = Mathf.Clamp01(alpha(dx, dy));
+                px[y * res + x] = new Color(1f, 1f, 1f, a);
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            return Sprite.Create(tex, new Rect(0, 0, res, res), new Vector2(0.5f, 0.5f), 100);
+        }
+
+        /// <summary>Блик: 4 длинных тонких луча + 4 коротких диагональных + маленькое свечение.</summary>
+        public static Sprite FlareSprite(int res) => Make(res, (x, y) =>
+        {
+            float r = Mathf.Sqrt(x * x + y * y);
+            if (r > 1f) return 0f;
+            float fade = 1f - Mathf.SmoothStep(0.75f, 1f, r);
+            float ax = Mathf.Abs(x), ay = Mathf.Abs(y);
+            float spikeH = Mathf.Exp(-ay * ay * 9000f) * Mathf.Pow(1f - ax, 3f);
+            float spikeV = Mathf.Exp(-ax * ax * 9000f) * Mathf.Pow(1f - ay, 3f);
+            float u = (x + y) * 0.7071f, v = (x - y) * 0.7071f;
+            float au = Mathf.Abs(u), av = Mathf.Abs(v);
+            float diag = (Mathf.Exp(-av * av * 14000f) * Mathf.Pow(Mathf.Max(0f, 1f - au * 1.8f), 3f)
+                        + Mathf.Exp(-au * au * 14000f) * Mathf.Pow(Mathf.Max(0f, 1f - av * 1.8f), 3f)) * 0.45f;
+            float glow = Mathf.Exp(-r * r * 60f) * 0.6f;
+            return (spikeH + spikeV + diag + glow) * fade;
+        }, "StarFlare");
+
+        /// <summary>Корона: мягкие неровные лучи разной длины вокруг звезды.</summary>
+        public static Sprite CoronaSprite(int res) => Make(res, (x, y) =>
+        {
+            float r = Mathf.Sqrt(x * x + y * y);
+            if (r > 1f) return 0f;
+            float ang = Mathf.Atan2(y, x);
+            // бесшовный шум по углу: выборка по окружности
+            float n = Mathf.PerlinNoise(Mathf.Cos(ang) * 3f + 10f, Mathf.Sin(ang) * 3f + 10f) * 0.6f
+                    + Mathf.PerlinNoise(Mathf.Cos(ang) * 9f + 30f, Mathf.Sin(ang) * 9f + 30f) * 0.4f;
+            float len = 0.35f + n * 0.55f;
+            float rays = Mathf.Exp(-r / Mathf.Max(0.05f, len) * 3.2f);
+            float inner = Mathf.Exp(-r * r * 18f) * 0.5f;
+            float fade = 1f - Mathf.SmoothStep(0.8f, 1f, r);
+            return (rays * (0.55f + 0.45f * n) + inner) * fade;
+        }, "StarCorona");
+
+        /// <summary>Аккреционный диск чёрной дыры: яркое кольцо с завихрениями и тёмный центр.</summary>
+        public static Sprite AccretionSprite(int res) => Make(res, (x, y) =>
+        {
+            float r = Mathf.Sqrt(x * x + y * y);
+            if (r > 1f) return 0f;
+            float ang = Mathf.Atan2(y, x);
+            float swirl = Mathf.PerlinNoise(Mathf.Cos(ang + r * 6f) * 4f + 5f, Mathf.Sin(ang + r * 6f) * 4f + 5f);
+            float ring = Mathf.Exp(-Mathf.Pow((r - 0.36f) / 0.07f, 2f)) * (0.6f + 0.6f * swirl);
+            float halo = Mathf.Exp(-Mathf.Pow((r - 0.36f) / 0.25f, 2f)) * 0.35f * swirl;
+            float photon = Mathf.Exp(-Mathf.Pow((r - 0.27f) / 0.015f, 2f)) * 0.9f;
+            float fade = 1f - Mathf.SmoothStep(0.8f, 1f, r);
+            return (ring + halo + photon) * fade;
+        }, "Accretion");
     }
 }

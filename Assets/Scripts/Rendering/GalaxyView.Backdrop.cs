@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Core;
 
@@ -10,6 +11,9 @@ namespace StellarisClone.Rendering
     ///   • под картой — «диск галактики»: текстура, построенная по реальным позициям систем.
     ///     Рукава спирали, кольцо или эллипс светятся звёздной пылью сами собой, в центре — тёплое
     ///     ядро, вокруг систем — тысячи мелких неразрешённых звёзд.
+    ///   • диск живой (шейдер GalaxyDisk): пыль медленно закручивается, ядро дышит светом;
+    ///     неразрешённые звёзды спокойно мерцают (TwinklePoints);
+    ///   • под диском — цветные туманности регионов (GalaxyNebula): облака медленно текут.
     /// Текстура строится один раз (≈0,1–0,2 с) и детерминирована по расположению систем.
     /// </summary>
     public partial class GalaxyView
@@ -20,6 +24,8 @@ namespace StellarisClone.Rendering
         private GameObject _diskPlane;
         private GameObject _dustStars;
         private Material _diskMat, _dustStarsMat;
+        private GameObject _nebulaRoot;
+        private readonly List<(Material mat, float baseIntensity)> _nebulaMats = new List<(Material, float)>();
         private Material _skyInstance;
         private float _skyExposure = 1f;
         private Color _skyTint = new Color(0.5f, 0.5f, 0.5f, 0.5f);
@@ -146,7 +152,9 @@ namespace StellarisClone.Rendering
             _diskPlane.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             _diskPlane.transform.localScale = new Vector3(half * 2f, half * 2f, 1f);
 
-            var mat = new Material(GetSpriteShader()) { mainTexture = tex };
+            var diskShader = Resources.Load<Shader>("Shaders/GalaxyDisk");
+            var mat = new Material(diskShader != null ? diskShader : GetSpriteShader()) { mainTexture = tex };
+            if (diskShader != null) mat.SetFloat("_RadiusUv", R / (2f * half));
             mat.renderQueue = 2960;          // под территориями (2980), коридорами и звёздами (3000)
             _diskMat = mat;
             var mr = _diskPlane.GetComponent<MeshRenderer>();
@@ -156,6 +164,68 @@ namespace StellarisClone.Rendering
             mr.sortingOrder = -20;
 
             BuildDustStars(R, rng);
+            BuildNebulae(R, rng);
+        }
+
+        // ==================== ТУМАННОСТИ РЕГИОНОВ ====================
+
+        private static readonly Color[] NebulaPalette =
+        {
+            new Color(0.15f, 0.75f, 0.80f),   // бирюза
+            new Color(0.70f, 0.25f, 0.85f),   // фиолет
+            new Color(1.00f, 0.50f, 0.22f),   // янтарь
+            new Color(0.25f, 0.40f, 1.00f),   // синий
+            new Color(0.95f, 0.25f, 0.40f),   // малиновый
+            new Color(0.35f, 0.90f, 0.55f)    // зелёный
+        };
+
+        /// <summary>
+        /// Несколько больших цветных облаков под диском: у каждого региона галактики свой оттенок.
+        /// Расположение и цвета детерминированы картой.
+        /// </summary>
+        private void BuildNebulae(float R, System.Random rng)
+        {
+            var shader = Resources.Load<Shader>("Shaders/GalaxyNebula");
+            if (shader == null) return;
+            _nebulaRoot = new GameObject("GalaxyNebulae");
+            _nebulaRoot.transform.SetParent(transform, false);
+
+            int count = 6 + rng.Next(3);
+            int pal = rng.Next(NebulaPalette.Length);
+            for (int k = 0; k < count; k++)
+            {
+                // по кругу вокруг центра с разбросом — чтобы облака не слипались в одну кучу
+                float ang = (k + (float)rng.NextDouble() * 0.6f) / count * Mathf.PI * 2f;
+                float dist = R * (0.25f + (float)rng.NextDouble() * 0.75f);
+                var pos = new Vector3(Mathf.Cos(ang) * dist, -1.2f - k * 0.05f, Mathf.Sin(ang) * dist);
+                float size = R * (0.55f + (float)rng.NextDouble() * 0.6f);
+
+                var q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                q.name = "Nebula_" + k;
+                var col = q.GetComponent<Collider>();
+                if (col != null) Destroy(col);
+                q.transform.SetParent(_nebulaRoot.transform, false);
+                q.transform.position = pos;
+                q.transform.rotation = Quaternion.Euler(90f, (float)rng.NextDouble() * 360f, 0f);
+                q.transform.localScale = new Vector3(size * (1f + (float)rng.NextDouble() * 0.6f), size, 1f);
+
+                var m = new Material(shader);
+                var a = NebulaPalette[(pal + k) % NebulaPalette.Length];
+                var b = NebulaPalette[(pal + k + 1 + rng.Next(2)) % NebulaPalette.Length];
+                m.SetColor("_ColorA", a);
+                m.SetColor("_ColorB", b);
+                m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
+                m.SetFloat("_Scale", 2.4f + (float)rng.NextDouble() * 1.4f);
+                m.renderQueue = 2950;
+                float intensity = 0.35f + (float)rng.NextDouble() * 0.25f;
+                _nebulaMats.Add((m, intensity));
+
+                var mr = q.GetComponent<MeshRenderer>();
+                mr.sharedMaterial = m;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+                mr.sortingOrder = -30;
+            }
         }
 
         /// <summary>
@@ -191,7 +261,8 @@ namespace StellarisClone.Rendering
             _dustStars.transform.SetParent(transform, false);
             _dustStars.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = _dustStars.AddComponent<MeshRenderer>();
-            _dustStarsMat = new Material(GetSpriteShader());
+            var twinkle = Resources.Load<Shader>("Shaders/TwinklePoints");
+            _dustStarsMat = new Material(twinkle != null ? twinkle : GetSpriteShader());
             _dustStarsMat.renderQueue = 2965;
             mr.sharedMaterial = _dustStarsMat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -208,6 +279,17 @@ namespace StellarisClone.Rendering
             float far = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(45f, 170f, h));
             if (_diskMat != null) _diskMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.08f, 1f, far));
             if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.45f, 1f, far));
+
+            // Живой фон: время для шейдеров, туманности чуть тише вблизи
+            float t = Time.unscaledTime;
+            if (_diskMat != null) _diskMat.SetFloat("_T", t);
+            if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
+            float nebK = Mathf.Lerp(0.5f, 1f, far);
+            foreach (var (m, k) in _nebulaMats)
+            {
+                m.SetFloat("_T", t);
+                m.SetFloat("_Intensity", k * nebK);
+            }
             if (_borderMat != null)
             {
                 _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.05f, 0.22f, far));

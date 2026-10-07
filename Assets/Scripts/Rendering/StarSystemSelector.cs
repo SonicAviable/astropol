@@ -26,7 +26,7 @@ private void OnMouseDown()
     if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         return;
 
-    if (Data == null) return;
+    if (Data == null || MenuAtmosphere.IsActive) return;
 
     // Звук клика
     SFXManager.Play(Sfx.SystemSelect);

@@ -11,8 +11,14 @@ namespace StellarisClone.Rendering
     /// более сильным параллаксом, дышащим светом лимба и полярными сияниями; изредка пролетают метеоры.
     /// Без картинки — процедурная туманность. Поверх — пылинки. Игровые подсказки карты в меню прячутся.
     /// </summary>
+    [DefaultExecutionOrder(10000)]   // LateUpdate — после всех игровых скриптов, чтобы спрятанное не успело отрисоваться
     public class MenuAtmosphere : MonoBehaviour
     {
+        /// <summary>Главное меню открыто: клики по звёздам карты под ним игнорируются.</summary>
+        public static bool IsActive { get; private set; }
+        private void OnEnable() => IsActive = true;
+        private void OnDisable() => IsActive = false;
+
         private Canvas _sky;
         private RectTransform _skyRoot;
         private TechTreeBackdrop _backdrop;
