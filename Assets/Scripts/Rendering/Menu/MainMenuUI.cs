@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
 
         private enum Panel { None, NewGame, Load, Settings, About }
 
-        public const string Version = "v0.9 · ранний доступ";
+        public const string Version = "v1.0";
 
         private RectTransform _root;
         private RectTransform _window, _body;
