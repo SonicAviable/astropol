@@ -46,6 +46,7 @@ namespace StellarisClone.Rendering
             var rt = LGBuild.Rect(hud, "[UI] FleetCommandHUD");
             rt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 18), new Vector2(640, 112));
             _root = rt.gameObject;
+            UIAnchors.Register(UIAnchors.FleetHud, rt);
             var bg = _root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;

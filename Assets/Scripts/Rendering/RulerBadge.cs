@@ -29,6 +29,7 @@ namespace StellarisClone.Rendering
         {
             var rt = LGBuild.Rect(canvas, "RulerBadge");
             rt.At(new Vector2(0, 1), new Vector2(0, 1), topLeft, new Vector2(Width, Height));
+            UIAnchors.Register(UIAnchors.Ruler, rt);
 
             var bg = rt.gameObject.AddComponent<Image>();
             bg.color = new Color(0.01f, 0.025f, 0.035f, 1f);

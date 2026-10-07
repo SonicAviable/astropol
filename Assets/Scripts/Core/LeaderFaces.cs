@@ -81,14 +81,8 @@ namespace StellarisClone.Core
             var lm = LeaderManager.Instance;
             if (lm != null)
             {
-                void Count(IReadOnlyList<Leader> list)
-                {
-                    foreach (var o in list)
-                        if (o != l && o.Owner == l.Owner && !string.IsNullOrEmpty(o.Portrait))
-                            used[o.Portrait] = used.TryGetValue(o.Portrait, out int n) ? n + 1 : 1;
-                }
-                Count(lm.All);
-                Count(lm.Candidates);
+                CountUsed(lm.All, l, used);
+                CountUsed(lm.Candidates, l, used);
             }
 
             // Наименее занятые лица подходящего класса и пола; среди равных — по зерну лидера
@@ -103,6 +97,13 @@ namespace StellarisClone.Core
             }
             if (best.Count == 0) return null;
             return best[Math.Abs(l.Seed + l.Id * 7919) % best.Count];
+        }
+
+        private static void CountUsed(IReadOnlyList<Leader> list, Leader self, Dictionary<string, int> used)
+        {
+            foreach (var o in list)
+                if (o != self && o.Owner == self.Owner && !string.IsNullOrEmpty(o.Portrait))
+                    used[o.Portrait] = used.TryGetValue(o.Portrait, out int n) ? n + 1 : 1;
         }
 
         /// <summary>uv-прямоугольник квадратной вырезки вокруг лица (zoom &gt; 1 — крупнее).</summary>

@@ -815,12 +815,40 @@ namespace StellarisClone.Rendering
             LGBuild.Height(card.gameObject, 300);
             LG.Platter(card.gameObject, 18f).SetRim(new Color(ac.r, ac.g, ac.b, 0.4f));
 
-            var emblem = LGBuild.Panel(card.transform, "Emblem", new Color(ac.r * 0.4f, ac.g * 0.4f, ac.b * 0.4f));
-            emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(64, 64));
-            LG.Platter(emblem.gameObject, 32f).FillMultiplier = 2.4f;
-            LGIcons.Create(emblem.transform, LGIcon.Leader, 34, Color.Lerp(ac, Color.white, 0.3f));
+            // Живой портрет правителя слева (как в дипломатии); без портрета — эмблема
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            float x0 = 20f;
+            if (leader != null && leader.Texture != null)
+            {
+                const float PortW = 128f, PortH = 214f;
+                var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.01f, 0.02f, 0.03f, 1f));
+                frame.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(PortW, PortH));
+                var ffx = LG.Platter(frame.gameObject, 12f);
+                ffx.SetRim(new Color(ac.r, ac.g, ac.b, 0.6f));
+                ffx.FillMultiplier = 3f;
+                var portHost = LG.RoundedMask(frame.transform, 12f, 1.5f);
+                var portrait = LeaderPortraitView.Create(portHost, leader, zoom: 1.35f);
+                if (portrait != null && ai.AtWar) portrait.GetComponent<RawImage>().color = new Color(1f, 0.86f, 0.84f, 1f);
 
-            var head = TopRow(card.transform, 20, 64, 100, 20);
+                var nameShade = LGBuild.Panel(portHost, "Shade", new Color(0.01f, 0.02f, 0.03f, 1f));
+                nameShade.sprite = MenuArt.VerticalFade;
+                nameShade.rectTransform.anchorMin = Vector2.zero;
+                nameShade.rectTransform.anchorMax = new Vector2(1, 0.35f);
+                nameShade.rectTransform.offsetMin = nameShade.rectTransform.offsetMax = Vector2.zero;
+                var ln = LGBuild.Label(portHost, leader.Name, 11, Color.Lerp(ac, Color.white, 0.5f), TextAnchor.LowerCenter, bold: true);
+                ln.rectTransform.Stretch(4, 8, 4, 0);
+                TooltipHelper.Attach(frame.gameObject, $"<b>{leader.Name}</b>\n{leader.Title}\n<i>«{leader.Quote}»</i>");
+                x0 = 20f + PortW + 18f;
+            }
+            else
+            {
+                var emblem = LGBuild.Panel(card.transform, "Emblem", new Color(ac.r * 0.4f, ac.g * 0.4f, ac.b * 0.4f));
+                emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(64, 64));
+                LG.Platter(emblem.gameObject, 32f).FillMultiplier = 2.4f;
+                LGIcons.Create(emblem.transform, LGIcon.Leader, 34, Color.Lerp(ac, Color.white, 0.3f));
+            }
+
+            var head = TopRow(card.transform, 20, 64, x0 > 20f ? x0 : 100, 20);
             LGBuild.Label(head, ai.AIName.ToUpper(), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             float rel = ai.Opinion;
             string status = ai.IsEliminated ? "<color=#F2C747>ПОВЕРЖЕН</color>"
@@ -842,11 +870,11 @@ namespace StellarisClone.Rendering
                 }
 
             float relN = Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, rel);
-            CompareRow(card.transform, 104, "Отношения", relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}");
+            CompareRow(card.transform, 104, "Отношения", relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}", x0);
             CompareRow(card.transform, 150, "Военная мощь: вы / они", myPow + aiPow > 0 ? myPow / (float)(myPow + aiPow) : 0.5f,
-                UIManager.DS.NeonCyan, $"{myPow:N0} / {aiPow:N0}");
+                UIManager.DS.NeonCyan, $"{myPow:N0} / {aiPow:N0}", x0);
             CompareRow(card.transform, 196, "Системы: вы / они", mySys + aiSys > 0 ? mySys / (float)(mySys + aiSys) : 0.5f,
-                CGold, $"{mySys} / {aiSys}");
+                CGold, $"{mySys} / {aiSys}", x0);
 
             var btnRow = TopRow(card.transform, 246, 38, 20, 20);
             var dip = LGBuild.Button(btnRow, "Diplomacy", new Color(0.42f, 0.32f, 0.10f), CGold,
@@ -857,9 +885,9 @@ namespace StellarisClone.Rendering
             ((RectTransform)trade.transform).Column(0.51f, 1f);
         }
 
-        private static void CompareRow(Transform parent, float top, string label, float value, Color col, string valueText)
+        private static void CompareRow(Transform parent, float top, string label, float value, Color col, string valueText, float left = 20f)
         {
-            var row = TopRow(parent, top, 38, 20, 20);
+            var row = TopRow(parent, top, 38, left, 20);
             LGBuild.Label(row, label, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
             LGBuild.Label(row, valueText, 12, UIManager.DS.TextPrimary, TextAnchor.UpperRight, bold: true);
             var host = LGBuild.Rect(row, "BarHost");

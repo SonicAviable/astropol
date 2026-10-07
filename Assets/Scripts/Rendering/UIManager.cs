@@ -496,6 +496,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tbRt.anchorMin = tbRt.anchorMax = new Vector2(0, 0.5f);
             tbRt.pivot = new Vector2(0, 0.5f);
             tbRt.anchoredPosition = new Vector2(startX + 8, 0);
+            UIAnchors.Register(UIAnchors.Tech, tbRt);
             LGIcons.IconLabel(techBtn.transform, LGIcon.Research, "ИССЛЕДОВАНИЯ", 10, DS.NeonCyan, Color.white, 15f);
 
             var designBtn = CreateButton(bar.transform, "DesignBtn", new Vector2(146, 32),
@@ -504,6 +505,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dbRt.anchorMin = dbRt.anchorMax = new Vector2(0, 0.5f);
             dbRt.pivot = new Vector2(0, 0.5f);
             dbRt.anchoredPosition = new Vector2(startX + 150, 0);
+            UIAnchors.Register(UIAnchors.Designer, dbRt);
             LGIcons.IconLabel(designBtn.transform, LGIcon.Gear, "КОНСТРУКТОР", 10, DS.NeonCyan, Color.white, 15f);
 
             var diploBtn = CreateButton(bar.transform, "DiploBtn", new Vector2(146, 32),
@@ -512,6 +514,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dpRt.anchorMin = dpRt.anchorMax = new Vector2(0, 0.5f);
             dpRt.pivot = new Vector2(0, 0.5f);
             dpRt.anchoredPosition = new Vector2(startX + 304, 0);
+            UIAnchors.Register(UIAnchors.Diplomacy, dpRt);
             LGIcons.IconLabel(diploBtn.transform, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 10, DS.Gold, Color.white, 15f);
         }
 
@@ -536,6 +539,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             badge.AddComponent<LGInteractive>().hoverScale = 1.02f;
 
             tip = badge.AddComponent<TooltipTrigger>();
+            UIAnchors.Register(UIAnchors.Resources, rt);
 
             var ic = LGIcons.Create(badge.transform, icon, 16, accentCol);
             ic.rectTransform.anchorMin = ic.rectTransform.anchorMax = new Vector2(0, 0.5f);
@@ -570,6 +574,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tRt.pivot = new Vector2(0, 0.5f);
             tRt.sizeDelta = new Vector2(SpeedSegW * 4f + SpeedSegPad * 2f, 30f);
             tRt.anchoredPosition = new Vector2(xPos, 0);
+            UIAnchors.Register(UIAnchors.Speed, tRt);
             var tImg = track.AddComponent<Image>();
             tImg.color = DS.BgVisor;
             tImg.raycastTarget = false;
