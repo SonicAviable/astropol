@@ -22,12 +22,14 @@ namespace StellarisClone.Rendering
 
         // ==================== РАЗМЕТКА ====================
 
-        private const float WinW = 1640f, WinH = 940f;
-        private const float HeaderH = 66f, Pad = 14f, Gap = 12f;
-        private const float LeftW = 300f, RightW = 350f;
-        private const float TabsH = 58f, TierHeadH = 26f;
-        private const float LaneHeadW = 120f, CardW = 186f, CardH = 58f, RowH = 68f;
-        private const float LanePadV = 9f, LaneGap = 10f;
+        private const float WinW = 1840f, WinH = 1010f;
+        private const float HeaderH = 70f, Pad = 14f, Gap = 12f;
+        private const float LeftW = 320f, RightW = 390f;
+        private const float TabsH = 62f, TierHeadH = 28f;
+        private const float LaneHeadW = 128f, CardW = 216f;
+        private const float LanePadV = 8f, LaneGap = 10f, RowGap = 10f;
+        /// <summary>Высота области дерева: строки растягиваются, чтобы ветка заняла её целиком.</summary>
+        private const float TreeH = WinH - HeaderH - 8f - Pad - (TabsH + 8f + TierHeadH + 4f);
         private const float DoubleClick = 0.4f;
         private static readonly string[] TierNames = { "БАЗОВЫЕ", "УРОВЕНЬ I", "УРОВЕНЬ II", "УРОВЕНЬ III" };
 
@@ -38,7 +40,14 @@ namespace StellarisClone.Rendering
         private static Color Green => UIManager.DS.Green;
         private static Color Red => UIManager.DS.Red;
         private static readonly Color Orange = new Color(1f, 0.66f, 0.50f);
-        private static readonly Color WireIdle = new Color(0.36f, 0.50f, 0.60f, 0.42f);
+        private static readonly Color WireIdle = new Color(0.40f, 0.52f, 0.60f, 0.38f);
+        private static readonly Color CardBg = new Color(0.045f, 0.075f, 0.100f, 0.97f);
+        private static readonly Color CardBgDone = new Color(0.040f, 0.095f, 0.085f, 0.97f);
+        private static readonly Color CardBgLocked = new Color(0.035f, 0.050f, 0.065f, 0.95f);
+        private static readonly Color PanelBg = new Color(0.025f, 0.045f, 0.062f, 0.94f);
+        private static readonly Color Dim = new Color(0.46f, 0.55f, 0.61f, 1f);
+
+        private float _rowH = 84f, _cardH = 74f;
 
         private static float CenterW => WinW - Pad * 2f - LeftW - RightW - Gap * 2f;
         private static float ColW => (CenterW - LaneHeadW - 8f) / 4f;
@@ -85,7 +94,8 @@ namespace StellarisClone.Rendering
             public LiquidGlassEffect Fx;
             public CanvasGroup Group;
             public Text Status;
-            public Image StateIcon, Accent;
+            public Image StateIcon, Accent, Bg, Icon;
+            public Text Name;
             public RectTransform Bar;
             public GameObject BarHost, Frame;
             public TechCardFX Hover;
@@ -155,6 +165,7 @@ namespace StellarisClone.Rendering
             LG.Show(_window);
             _dimmer.transform.SetAsLastSibling();
             _window.transform.SetAsLastSibling();
+            FitToScreen();
 
             _backdrop.SetActive(true);
             _backdrop.SetBranch(TechBranchInfo.Key(s_branch));
@@ -177,6 +188,15 @@ namespace StellarisClone.Rendering
             ToggleWorldNameplates(true);
             UIManager.Instance?.HideModalDimPublic();
             MapModeController.ShowGlobal();
+        }
+
+        /// <summary>Окно рассчитано на 1840×1010; на узких экранах — равномерно уменьшается.</summary>
+        private void FitToScreen()
+        {
+            var canvasRt = (RectTransform)_canvas.transform;
+            Vector2 size = canvasRt.rect.size;
+            float k = Mathf.Min(1f, (size.x - 40f) / WinW, (size.y - 30f) / WinH);
+            _window.transform.localScale = Vector3.one * Mathf.Max(0.5f, k);
         }
 
         private static void ToggleWorldNameplates(bool visible)
@@ -235,6 +255,10 @@ namespace StellarisClone.Rendering
             bd.Stretch();
             _backdrop = bd.gameObject.AddComponent<TechTreeBackdrop>();
             _backdrop.Initialize(bd);
+            // Затемнение поверх фона: космос — лишь фактура, читаемость важнее
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.012f, 0.022f, 0.032f, 0.62f));
+            shade.rectTransform.Stretch();
+            LG.Ignore(shade.gameObject);
 
             BuildHeader();
             BuildSlotsColumn();
@@ -247,15 +271,17 @@ namespace StellarisClone.Rendering
             var head = LGBuild.Rect(_window.transform, "Header");
             head.TopBand(0, HeaderH);
 
-            var badge = LGBuild.Panel(head, "Badge", new Color(0.04f, 0.16f, 0.18f, 1f));
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(42, 42));
-            LG.Platter(badge.gameObject, 12f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f));
+            var badge = LGBuild.Panel(head, "Badge", PanelBg);
+            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(44, 44));
+            var bfx = LG.Platter(badge.gameObject, 10f);
+            bfx.SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f));
+            bfx.FillMultiplier = 3f;
             LGIcons.Create(badge.transform, LGIcon.Research, 26, Cyan);
 
-            var title = LGBuild.Label(head, "ИССЛЕДОВАНИЯ", 20, Primary, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.Stretch(76, 0, 520, 12);
-            _headerSub = LGBuild.Label(head, "", 11, Muted, TextAnchor.LowerLeft);
-            _headerSub.rectTransform.Stretch(76, 12, 420, 0);
+            var title = LGBuild.Label(head, "ИССЛЕДОВАНИЯ", 22, Primary, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.Stretch(78, 0, 520, 12);
+            _headerSub = LGBuild.Label(head, "", 13, Muted, TextAnchor.LowerLeft);
+            _headerSub.rectTransform.Stretch(78, 12, 440, 0);
 
             var line = LGBuild.Panel(head, "Line", new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
@@ -274,16 +300,16 @@ namespace StellarisClone.Rendering
         private void BuildSearch(RectTransform head)
         {
             var box = LGBuild.Panel(head, "SearchBox", UIManager.DS.BgVisor, raycast: true);
-            box.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-70, 0), new Vector2(270, 36));
+            box.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-72, 0), new Vector2(300, 38));
             LG.Apply(box.gameObject, LiquidGlassEffect.Role.Field).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f));
 
             var ic = LGIcons.Create(box.transform, LGIcon.Target, 14, Muted);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
 
-            var placeholder = LGBuild.Label(box.transform, "Поиск технологии или эффекта…", 12, new Color(Muted.r, Muted.g, Muted.b, 0.7f));
+            var placeholder = LGBuild.Label(box.transform, "Поиск технологии или эффекта…", 13, new Color(Muted.r, Muted.g, Muted.b, 0.7f));
             placeholder.fontStyle = FontStyle.Italic;
             placeholder.rectTransform.Stretch(34, 0, 12, 0);
-            var input = LGBuild.Label(box.transform, "", 12, Primary);
+            var input = LGBuild.Label(box.transform, "", 13, Primary);
             input.supportRichText = false;
             input.rectTransform.Stretch(34, 0, 12, 0);
 
@@ -295,26 +321,29 @@ namespace StellarisClone.Rendering
 
         private RectTransform Column(string name, float x0, float width)
         {
-            var col = LGBuild.Panel(_window.transform, name, new Color(0.02f, 0.05f, 0.07f, 0.74f), raycast: true);
+            var col = LGBuild.Panel(_window.transform, name, PanelBg, raycast: true);
             var rt = col.rectTransform;
             rt.anchorMin = new Vector2(0, 0);
             rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 1);
             rt.offsetMin = new Vector2(x0, Pad);
             rt.offsetMax = new Vector2(x0 + width, -HeaderH - 8f);
-            LG.Platter(col.gameObject, 18f).SetRim(new Color(1f, 1f, 1f, 0.10f));
+            var fx = LG.Platter(col.gameObject, 12f);
+            fx.SetRim(new Color(1f, 1f, 1f, 0.10f));
+            fx.FillMultiplier = 3f;
+            fx.SpecularMultiplier = 0.25f;
             return rt;
         }
 
         private static Text ColumnTitle(RectTransform col, string text, LGIcon icon, Color tint)
         {
             var head = LGBuild.Rect(col, "Title");
-            head.TopBand(12, 22, 16, 16);
-            var ic = LGIcons.Create(head, icon, 15, tint);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(15, 15));
-            var t = LGBuild.Label(head, text, 11, tint, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.Stretch(22, 0, 0, 0);
-            var right = LGBuild.Label(head, "", 11, Muted, TextAnchor.MiddleRight, bold: true);
+            head.TopBand(12, 24, 16, 16);
+            var ic = LGIcons.Create(head, icon, 16, tint);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
+            var t = LGBuild.Label(head, text, 13, Primary, TextAnchor.MiddleLeft, bold: true);
+            t.rectTransform.Stretch(24, 0, 0, 0);
+            var right = LGBuild.Label(head, "", 13, Muted, TextAnchor.MiddleRight, bold: true);
             return right;
         }
 
@@ -326,17 +355,19 @@ namespace StellarisClone.Rendering
             _slotsCount = ColumnTitle(col, "НАУЧНЫЕ СЛОТЫ", LGIcon.Research, Cyan);
 
             var host = LGBuild.Rect(col, "ListHost");
-            host.Stretch(6, 74, 6, 42);
+            host.Stretch(6, 84, 6, 44);
             _slotsList = LGBuild.ScrollList(host, 8f, 6);
 
-            var foot = LGBuild.Panel(col, "Footer", new Color(0.03f, 0.08f, 0.10f, 0.9f));
+            var foot = LGBuild.Panel(col, "Footer", CardBg);
             foot.rectTransform.anchorMin = new Vector2(0, 0);
             foot.rectTransform.anchorMax = new Vector2(1, 0);
             foot.rectTransform.pivot = new Vector2(0.5f, 0);
             foot.rectTransform.offsetMin = new Vector2(10, 10);
-            foot.rectTransform.offsetMax = new Vector2(-10, 66);
-            LG.Platter(foot.gameObject, 12f).SetRim(new Color(1f, 1f, 1f, 0.08f));
-            _slotsFooter = LGBuild.Label(foot.transform, "", 10, Muted, TextAnchor.MiddleLeft, wrap: true);
+            foot.rectTransform.offsetMax = new Vector2(-10, 76);
+            var ffx = LG.Platter(foot.gameObject, 8f);
+            ffx.SetRim(new Color(1f, 1f, 1f, 0.07f));
+            ffx.FillMultiplier = 3f;
+            _slotsFooter = LGBuild.Label(foot.transform, "", 11, Muted, TextAnchor.MiddleLeft, wrap: true);
             _slotsFooter.rectTransform.Stretch(12, 4, 10, 4);
         }
 
@@ -368,7 +399,7 @@ namespace StellarisClone.Rendering
                 cell.pivot = new Vector2(0, 0.5f);
                 cell.sizeDelta = new Vector2(ColW, 0);
                 cell.anchoredPosition = new Vector2(LaneHeadW + t * ColW, 0);
-                var lbl = LGBuild.Label(cell, "", 10, Muted, TextAnchor.MiddleCenter, bold: true);
+                var lbl = LGBuild.Label(cell, "", 12, Dim, TextAnchor.MiddleCenter, bold: true);
                 lbl.raycastTarget = true;
                 _tierLabels.Add(lbl);
                 TooltipHelper.Attach(lbl.gameObject,
@@ -410,7 +441,7 @@ namespace StellarisClone.Rendering
         private void BuildTab(RectTransform parent, TechBranch b, float x, float w)
         {
             Color bc = TechBranchInfo.Color(b);
-            var bg = LGBuild.Panel(parent, "Tab_" + b, UIManager.DS.BgSlot, raycast: true);
+            var bg = LGBuild.Panel(parent, "Tab_" + b, PanelBg, raycast: true);
             var rt = bg.rectTransform;
             rt.anchorMin = new Vector2(0, 0);
             rt.anchorMax = new Vector2(0, 1);
@@ -418,26 +449,31 @@ namespace StellarisClone.Rendering
             rt.sizeDelta = new Vector2(w, 0);
             rt.anchoredPosition = new Vector2(x, 0);
             var btn = bg.gameObject.AddComponent<Button>();
-            var fx = LG.Button(bg.gameObject, new Color(bc.r, bc.g, bc.b, 0.3f), 14f);
+            var fx = LG.Button(bg.gameObject, new Color(bc.r, bc.g, bc.b, 0.3f), 10f, animateScale: false);
+            fx.FillMultiplier = 2.6f;
+            fx.SpecularMultiplier = 0.3f;
             btn.onClick.AddListener(() => SwitchBranch(b));
 
-            var ic = LGIcons.Create(rt, BranchIcon(b), 26, bc);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(26, 26));
+            var ic = LGIcons.Create(rt, BranchIcon(b), 28, bc);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(28, 28));
 
             var tab = new TabUi { Branch = b, Bg = bg, Fx = fx };
-            tab.Name = LGBuild.Label(rt, TechBranchInfo.Name(b), 14, Primary, TextAnchor.UpperLeft, bold: true);
-            tab.Name.rectTransform.Stretch(54, 0, 110, 9);
-            tab.Motto = LGBuild.Label(rt, TechBranchInfo.Motto(b), 10, Muted, TextAnchor.LowerLeft);
-            tab.Motto.rectTransform.Stretch(54, 9, 110, 0);
-            tab.Count = LGBuild.Label(rt, "", 13, bc, TextAnchor.UpperRight, bold: true);
+            tab.Name = LGBuild.Label(rt, TechBranchInfo.Name(b), 16, Primary, TextAnchor.UpperLeft, bold: true);
+            tab.Name.rectTransform.Stretch(58, 0, 120, 9);
+            tab.Motto = LGBuild.Label(rt, TechBranchInfo.Motto(b), 12, Muted, TextAnchor.LowerLeft);
+            tab.Motto.rectTransform.Stretch(58, 9, 16, 0);
+            tab.Count = LGBuild.Label(rt, "", 15, bc, TextAnchor.UpperRight, bold: true);
             tab.Count.rectTransform.Stretch(0, 0, 16, 9);
 
             var barHost = LGBuild.Rect(rt, "Bar");
             barHost.anchorMin = barHost.anchorMax = new Vector2(1, 0);
             barHost.pivot = new Vector2(1, 0);
-            barHost.sizeDelta = new Vector2(86, 6);
-            barHost.anchoredPosition = new Vector2(-16, 12);
-            tab.Bar = LGBuild.Bar(barHost, bc, 0f, 5f);
+            barHost.anchorMin = new Vector2(0, 0);
+            barHost.anchorMax = new Vector2(1, 0);
+            barHost.pivot = new Vector2(0.5f, 0);
+            barHost.offsetMin = new Vector2(10, 2);
+            barHost.offsetMax = new Vector2(-10, 5);
+            tab.Bar = LGBuild.Bar(barHost, bc, 0f, 3f);
             _tabs.Add(tab);
         }
 
@@ -454,23 +490,29 @@ namespace StellarisClone.Rendering
         {
             var col = Column("DetailColumn", WinW - Pad - RightW, RightW);
 
-            _detailBadge = LGBuild.Panel(col, "Badge", new Color(0.05f, 0.12f, 0.16f, 1f));
+            _detailBadge = LGBuild.Panel(col, "Badge", CardBg);
             _detailBadge.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -16), new Vector2(64, 64));
-            _detailBadgeFx = LG.Platter(_detailBadge.gameObject, 16f);
+            _detailBadgeFx = LG.Platter(_detailBadge.gameObject, 8f);
+            _detailBadgeFx.FillMultiplier = 3f;
+            _detailBadgeFx.SpecularMultiplier = 0.2f;
             _detailIcon = LGIcons.Create(_detailBadge.transform, LGIcon.Research, 38, Cyan);
 
-            _detailName = LGBuild.Label(col, "", 16, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
-            _detailName.rectTransform.TopBand(16, 44, 92, 16);
-            _detailSub = LGBuild.Label(col, "", 10, Muted, TextAnchor.UpperLeft, bold: true);
-            _detailSub.rectTransform.TopBand(62, 16, 92, 16);
+            _detailName = LGBuild.Label(col, "", 19, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
+            FitText(_detailName, 14);
+            _detailName.rectTransform.TopBand(16, 48, 92, 16);
+            _detailSub = LGBuild.Label(col, "", 12, Dim, TextAnchor.UpperLeft, bold: true);
+            FitText(_detailSub, 9);
+            _detailSub.rectTransform.TopBand(64, 18, 92, 16);
 
-            _pillBg = LGBuild.Panel(col, "Pill", new Color(0.1f, 0.2f, 0.2f, 1f));
-            _pillBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -90), new Vector2(RightW - 32, 26));
-            LG.Chip(_pillBg.gameObject, new Color(1f, 1f, 1f, 0.2f), 13f);
-            _pillText = LGBuild.Label(_pillBg.transform, "", 11, Primary, TextAnchor.MiddleCenter, bold: true);
+            _pillBg = LGBuild.Panel(col, "Pill", CardBg);
+            _pillBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -92), new Vector2(RightW - 32, 28));
+            var pfx = LG.Platter(_pillBg.gameObject, 6f);
+            pfx.FillMultiplier = 3f;
+            pfx.SpecularMultiplier = 0.2f;
+            _pillText = LGBuild.Label(_pillBg.transform, "", 13, Primary, TextAnchor.MiddleCenter, bold: true);
 
             var host = LGBuild.Rect(col, "DetailHost");
-            host.Stretch(6, 104, 6, 124);
+            host.Stretch(6, 108, 6, 128);
             _detailList = LGBuild.ScrollList(host, 6f, 10);
 
             (_primaryBtn, _primaryImg, _primaryLabel) = ActionButton(col, "Primary", 56f, 40f, () => _primaryAction?.Invoke());
@@ -479,7 +521,9 @@ namespace StellarisClone.Rendering
 
         private static (Button, Image, Text) ActionButton(RectTransform col, string name, float bottom, float h, System.Action onClick)
         {
-            var btn = LGBuild.Button(col, name, UIManager.DS.BtnPrimary, new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f), onClick, null, " ", 12);
+            var btn = LGBuild.Button(col, name, UIManager.DS.BtnPrimary, new Color(1f, 1f, 1f, 0.18f), onClick, null, " ", 13, 6f);
+            var fx = btn.GetComponent<LiquidGlassEffect>();
+            if (fx != null) { fx.SpecularMultiplier = 0.3f; fx.GlowMultiplier = 0.3f; fx.FillMultiplier = 2.2f; }
             var rt = (RectTransform)btn.transform;
             rt.anchorMin = new Vector2(0, 0);
             rt.anchorMax = new Vector2(1, 0);
@@ -578,9 +622,9 @@ namespace StellarisClone.Rendering
                 }
                 bool on = tab.Branch == s_branch;
                 Color bc = TechBranchInfo.Color(tab.Branch);
-                tab.Bg.color = on ? new Color(bc.r * 0.20f, bc.g * 0.20f, bc.b * 0.20f, 1f) : new Color(0.04f, 0.08f, 0.11f, 0.85f);
-                tab.Fx.SetRim(new Color(bc.r, bc.g, bc.b, on ? 0.9f : 0.18f));
-                tab.Fx.GlowMultiplier = on ? 2.0f : 0.5f;
+                tab.Bg.color = on ? new Color(0.03f + bc.r * 0.10f, 0.05f + bc.g * 0.10f, 0.07f + bc.b * 0.10f, 0.97f) : PanelBg;
+                tab.Fx.SetRim(new Color(bc.r, bc.g, bc.b, on ? 0.75f : 0.12f));
+                tab.Fx.GlowMultiplier = on ? 0.8f : 0f;
                 tab.Name.color = on ? Primary : Muted;
                 tab.Count.text = $"{done} / {total}";
                 LGBuild.SetBar(tab.Bar, total > 0 ? done / (float)total : 0f);
@@ -620,7 +664,9 @@ namespace StellarisClone.Rendering
             _cards.Clear();
             _builtBranch = s_branch;
 
-            float y = 0f;
+            // Собираем дорожки и подбираем высоту строки так, чтобы ветка заполнила окно
+            var lanes = new List<(TechCategory cat, List<Technology> techs, int rows)>();
+            int totalRows = 0;
             foreach (var cat in TechBranchInfo.Lanes(s_branch))
             {
                 var techs = new List<Technology>();
@@ -628,18 +674,29 @@ namespace StellarisClone.Rendering
                 foreach (var t in tm.AllTechs)
                     if (t.Category == cat) { techs.Add(t); rows = Mathf.Max(rows, t.GridColumn + 1); }
                 if (techs.Count == 0) continue;
+                lanes.Add((cat, techs, rows));
+                totalRows += rows;
+            }
+            if (lanes.Count == 0) return;
+            float fixedH = lanes.Count * (LanePadV * 2f - RowGap) + (lanes.Count - 1) * LaneGap + 4f;
+            _rowH = Mathf.Clamp(Mathf.Floor((TreeH - fixedH) / Mathf.Max(1, totalRows)), 74f, 116f);
+            _cardH = Mathf.Min(_rowH - RowGap, 78f);
 
-                float laneH = rows * RowH - (RowH - CardH) + LanePadV * 2f;
+            float y = 0f;
+            foreach (var (cat, techs, rows) in lanes)
+            {
+                float laneH = rows * _rowH - RowGap + LanePadV * 2f;
                 BuildLane(cat, techs, y, laneH);
+                float inset = (_rowH - RowGap - _cardH) * 0.5f;
                 foreach (var t in techs)
                 {
                     float cx = LaneHeadW + Mathf.Clamp(t.Tier, 0, 3) * ColW + (ColW - CardW) * 0.5f;
-                    float cy = -(y + LanePadV + t.GridColumn * RowH);
+                    float cy = -(y + LanePadV + t.GridColumn * _rowH + inset);
                     _cards[t.Id] = BuildCard(t, new Vector2(cx, cy), tm);
                 }
                 y += laneH + LaneGap;
             }
-            _treeContent.sizeDelta = new Vector2(0, Mathf.Max(0f, y - LaneGap + 6f));
+            _treeContent.sizeDelta = new Vector2(0, Mathf.Max(0f, y - LaneGap + 4f));
 
             foreach (var c in _cards.Values)
                 foreach (var req in c.Tech.RequiredTechIds)
@@ -649,54 +706,61 @@ namespace StellarisClone.Rendering
         private void BuildLane(TechCategory cat, List<Technology> techs, float y, float h)
         {
             Color cc = TechCategoryInfo.Color(cat);
-            var lane = LGBuild.Panel(_lanesLayer, "Lane_" + cat, new Color(cc.r * 0.07f, cc.g * 0.07f, cc.b * 0.07f, 0.55f));
+            var lane = LGBuild.Panel(_lanesLayer, "Lane_" + cat, new Color(0.030f, 0.050f, 0.068f, 0.80f));
             var rt = lane.rectTransform;
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(1, 1);
             rt.pivot = new Vector2(0.5f, 1);
             rt.offsetMin = new Vector2(0, -y - h);
             rt.offsetMax = new Vector2(0, -y);
-            LG.Platter(lane.gameObject, 14f).SetRim(new Color(cc.r, cc.g, cc.b, 0.14f));
+            var lfx = LG.Platter(lane.gameObject, 8f);
+            lfx.SetRim(new Color(1f, 1f, 1f, 0.06f));
+            lfx.FillMultiplier = 2.6f;
+            lfx.SpecularMultiplier = 0.2f;
 
-            // Заголовок направления — слева, по центру дорожки
-            var head = LGBuild.Panel(rt, "Head", new Color(cc.r * 0.12f, cc.g * 0.12f, cc.b * 0.12f, 0.9f));
-            var hrt = head.rectTransform;
-            hrt.anchorMin = new Vector2(0, 0);
-            hrt.anchorMax = new Vector2(0, 1);
-            hrt.pivot = new Vector2(0, 0.5f);
-            hrt.offsetMin = new Vector2(6, 6);
-            hrt.offsetMax = new Vector2(LaneHeadW - 8f, -6);
-            LG.Platter(head.gameObject, 11f).SetRim(new Color(cc.r, cc.g, cc.b, 0.3f));
+            // Тонкая цветная метка направления слева
+            var mark = LGBuild.Panel(rt, "Mark", new Color(cc.r, cc.g, cc.b, 0.85f));
+            mark.rectTransform.anchorMin = new Vector2(0, 0);
+            mark.rectTransform.anchorMax = new Vector2(0, 1);
+            mark.rectTransform.offsetMin = new Vector2(0, 10);
+            mark.rectTransform.offsetMax = new Vector2(3, -10);
+            LG.Ignore(mark.gameObject);
 
             int done = 0;
             foreach (var t in techs) if (t.IsResearched) done++;
 
-            var group = LGBuild.Rect(hrt, "Group");
-            group.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(LaneHeadW - 22f, 92f));
-            var ic = LGIcons.Create(group, LGIcons.ForTechCategory(cat), 26, cc);
-            ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(26, 26));
-            var nm = LGBuild.Label(group, TechCategoryInfo.Name(cat), 10, Primary, TextAnchor.MiddleCenter, bold: true, wrap: true);
-            FitText(nm, 8);
-            nm.rectTransform.TopBand(30, 30);
-            var cnt = LGBuild.Label(group, $"{done} / {techs.Count}", 10, cc, TextAnchor.MiddleCenter, bold: true);
-            cnt.rectTransform.TopBand(62, 14);
+            var group = LGBuild.Rect(rt, "Head");
+            group.anchorMin = new Vector2(0, 0.5f);
+            group.anchorMax = new Vector2(0, 0.5f);
+            group.pivot = new Vector2(0, 0.5f);
+            group.sizeDelta = new Vector2(LaneHeadW - 16f, 96f);
+            group.anchoredPosition = new Vector2(12f, 0f);
+            var ic = LGIcons.Create(group, LGIcons.ForTechCategory(cat), 24, cc);
+            ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(24, 24));
+            var nm = LGBuild.Label(group, TechCategoryInfo.Name(cat), 12, Primary, TextAnchor.MiddleCenter, bold: true, wrap: true);
+            FitText(nm, 9);
+            nm.rectTransform.TopBand(28, 34);
+            var cnt = LGBuild.Label(group, $"{done} / {techs.Count}", 12, Dim, TextAnchor.MiddleCenter, bold: true);
+            cnt.rectTransform.TopBand(64, 16);
             var barHost = LGBuild.Rect(group, "Bar");
-            barHost.TopBand(80, 6, 12, 12);
-            LGBuild.Bar(barHost, cc, done / (float)Mathf.Max(1, techs.Count), 4f);
+            barHost.TopBand(84, 6, 14, 14);
+            LGBuild.Bar(barHost, cc, done / (float)Mathf.Max(1, techs.Count), 3f);
         }
 
         private CardUi BuildCard(Technology t, Vector2 pos, TechnologyManager tm)
         {
             Color cc = TechCategoryInfo.Color(t.Category);
-            var bg = LGBuild.Panel(_cardsLayer, "Card_" + t.Id, UIManager.DS.BgSlot, raycast: true);
+            var bg = LGBuild.Panel(_cardsLayer, "Card_" + t.Id, CardBg, raycast: true);
             var rt = bg.rectTransform;
-            rt.At(new Vector2(0, 1), new Vector2(0, 1), pos, new Vector2(CardW, CardH));
+            rt.At(new Vector2(0, 1), new Vector2(0, 1), pos, new Vector2(CardW, _cardH));
 
-            var c = new CardUi { Tech = t, Rt = rt };
+            var c = new CardUi { Tech = t, Rt = rt, Bg = bg };
             c.Group = bg.gameObject.AddComponent<CanvasGroup>();
             var btn = bg.gameObject.AddComponent<Button>();
-            c.Fx = LG.Button(bg.gameObject, new Color(cc.r, cc.g, cc.b, 0.45f), 12f, animateScale: false);
-            c.Fx.FillMultiplier = 0.8f;
+            btn.transition = Selectable.Transition.None;
+            c.Fx = LG.Platter(bg.gameObject, 8f);
+            c.Fx.FillMultiplier = 3f;
+            c.Fx.SpecularMultiplier = 0.2f;
             c.Hover = bg.gameObject.AddComponent<TechCardFX>();
             var captured = t;
             btn.onClick.AddListener(() => OnCardClick(captured));
@@ -704,40 +768,38 @@ namespace StellarisClone.Rendering
             // Рамка выбора
             var frame = LGBuild.Panel(rt, "Frame", new Color(1f, 1f, 1f, 0.02f));
             frame.rectTransform.Stretch(-3, -3, -3, -3);
-            LG.Border(frame.gameObject, new Color(1f, 1f, 1f, 0.9f));
+            LG.Border(frame.gameObject, new Color(1f, 1f, 1f, 0.85f));
             c.Frame = frame.gameObject;
             c.Frame.SetActive(t == _selected);
 
             c.Accent = LGBuild.Panel(rt, "Accent", cc);
             c.Accent.rectTransform.anchorMin = new Vector2(0, 0);
             c.Accent.rectTransform.anchorMax = new Vector2(0, 1);
-            c.Accent.rectTransform.offsetMin = new Vector2(0, 12);
-            c.Accent.rectTransform.offsetMax = new Vector2(3, -12);
-            LG.Fill(c.Accent.gameObject);
+            c.Accent.rectTransform.offsetMin = new Vector2(0, 8);
+            c.Accent.rectTransform.offsetMax = new Vector2(3, -8);
+            LG.Ignore(c.Accent.gameObject);
 
-            var badge = LGBuild.Panel(rt, "Badge", new Color(cc.r * 0.15f, cc.g * 0.15f, cc.b * 0.15f, 1f));
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(9, 0), new Vector2(34, 34));
-            LG.Platter(badge.gameObject, 10f).SetRim(new Color(cc.r, cc.g, cc.b, 0.4f));
-            LGIcons.Create(badge.transform, LGIcons.ForTechCategory(t.Category), 20, cc);
+            c.Icon = LGIcons.Create(rt, LGIcons.ForTechCategory(t.Category), 26, cc);
+            c.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28, 0), new Vector2(26, 26));
 
-            var name = LGBuild.Label(rt, t.Name, 11, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
-            name.lineSpacing = 0.9f;
-            FitText(name, 9);
-            name.rectTransform.Stretch(51, 22, 7, 6);
+            c.Name = LGBuild.Label(rt, t.Name, 13, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
+            c.Name.lineSpacing = 0.92f;
+            FitText(c.Name, 10);
+            c.Name.rectTransform.Stretch(52, 26, 10, 8);
 
-            c.Status = LGBuild.Label(rt, "", 10, Muted, TextAnchor.LowerLeft, wrap: true);
-            FitText(c.Status, 8);
-            c.Status.rectTransform.Stretch(51, 9, 24, CardH - 23);
+            c.Status = LGBuild.Label(rt, "", 12, Muted, TextAnchor.LowerLeft, wrap: true);
+            FitText(c.Status, 9);
+            c.Status.rectTransform.Stretch(52, 10, 26, _cardH - 28);
 
-            c.StateIcon = LGIcons.Create(rt, LGIcon.Lock, 13, Muted);
-            c.StateIcon.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-8, 9), new Vector2(13, 13));
+            c.StateIcon = LGIcons.Create(rt, LGIcon.Lock, 14, Muted);
+            c.StateIcon.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-9, 11), new Vector2(14, 14));
 
             var barHost = LGBuild.Rect(rt, "Progress");
             barHost.anchorMin = new Vector2(0, 0);
             barHost.anchorMax = new Vector2(1, 0);
             barHost.pivot = new Vector2(0.5f, 0);
-            barHost.offsetMin = new Vector2(51, 3);
-            barHost.offsetMax = new Vector2(-8, 7);
+            barHost.offsetMin = new Vector2(52, 4);
+            barHost.offsetMax = new Vector2(-10, 8);
             c.Bar = LGBuild.Bar(barHost, Cyan, 0f, 3f);
             c.BarHost = barHost.gameObject;
 
@@ -775,27 +837,26 @@ namespace StellarisClone.Rendering
             var t = c.Tech;
             Color cc = TechCategoryInfo.Color(t.Category);
             var st = StateOf(t, tm, out var slot, out int qpos);
-            bool match = Matches(t);
             bool searching = !string.IsNullOrEmpty(_search);
 
-            Color rim, accent;
-            float alpha = 1f;
+            Color rim, accent, bg = CardBg, nameCol = Primary, iconTint = cc;
             bool showBar = false;
             float progress = t.ProgressNormalized;
             LGIcon icon = LGIcon.Lock;
-            Color iconCol = Muted;
+            Color iconCol = Dim;
             string status;
 
             switch (st)
             {
                 case CardState.Researched:
-                    rim = new Color(Green.r, Green.g, Green.b, 0.7f);
+                    rim = new Color(Green.r, Green.g, Green.b, 0.35f);
                     accent = Green;
+                    bg = CardBgDone;
                     icon = LGIcon.Check; iconCol = Green;
                     status = $"<color={LGBuild.Hex(Green)}>Изучено</color>";
                     break;
                 case CardState.Researching:
-                    rim = new Color(Cyan.r, Cyan.g, Cyan.b, 0.9f);
+                    rim = new Color(Cyan.r, Cyan.g, Cyan.b, 0.85f);
                     accent = Cyan;
                     icon = slot.IsPaused ? LGIcon.Pause : LGIcon.Play; iconCol = slot.IsPaused ? Gold : Cyan;
                     showBar = true;
@@ -805,36 +866,42 @@ namespace StellarisClone.Rendering
                         : $"<color={LGBuild.Hex(Cyan)}>{progress * 100f:0}% · ~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>";
                     break;
                 case CardState.Queued:
-                    rim = new Color(Gold.r, Gold.g, Gold.b, 0.75f);
+                    rim = new Color(Gold.r, Gold.g, Gold.b, 0.6f);
                     accent = Gold;
                     icon = LGIcon.Clock; iconCol = Gold;
                     showBar = progress > 0.001f;
-                    status = $"<color={LGBuild.Hex(Gold)}>#{qpos + 1} в очереди · ~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>";
+                    status = $"<color={LGBuild.Hex(Gold)}>Очередь {qpos + 1} · ~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>";
                     break;
                 case CardState.Available:
-                    rim = new Color(cc.r, cc.g, cc.b, 0.5f);
+                    rim = new Color(1f, 1f, 1f, 0.16f);
                     accent = cc;
-                    icon = LGIcon.Research; iconCol = new Color(cc.r, cc.g, cc.b, 0.8f);
+                    icon = LGIcon.Clock; iconCol = Dim;
                     showBar = progress > 0.001f;
                     float pen = tm.GetYearPenalty(t);
-                    status = $"~{TechnologyManager.FormatDays(tm.EstimateDays(t))}" +
-                             (pen > 1.01f ? $"  <color={LGBuild.Hex(Orange)}>×{pen:0.0}</color>" : "");
+                    status = $"<color=#C9D6DD>~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>" +
+                             (pen > 1.01f ? $"  <color={LGBuild.Hex(Orange)}>×{pen:0.0} рано</color>" : "");
                     break;
                 default:
-                    rim = new Color(1f, 1f, 1f, 0.08f);
-                    accent = new Color(0.4f, 0.48f, 0.55f, 0.6f);
-                    alpha = 0.62f;
-                    status = $"Нужно: {MissingReqName(t, tm)}";
+                    rim = new Color(1f, 1f, 1f, 0.06f);
+                    accent = new Color(0.30f, 0.36f, 0.42f, 1f);
+                    bg = CardBgLocked;
+                    nameCol = Dim;
+                    iconTint = new Color(cc.r * 0.55f, cc.g * 0.55f, cc.b * 0.55f, 1f);
+                    status = $"<color=#7F8E98>Нужно: {MissingReqName(t, tm)}</color>";
                     break;
             }
 
+            float alpha = 1f;
             if (searching)
             {
-                if (match) rim = new Color(Gold.r, Gold.g, Gold.b, 0.95f);
-                else alpha = 0.2f;
+                if (Matches(t)) rim = new Color(Gold.r, Gold.g, Gold.b, 0.95f);
+                else alpha = 0.25f;
             }
 
             c.Group.alpha = alpha;
+            c.Bg.color = bg;
+            c.Name.color = nameCol;
+            c.Icon.color = iconTint;
             c.Accent.color = accent;
             c.StateIcon.sprite = LGIcons.Get(icon);
             c.StateIcon.color = iconCol;
@@ -860,44 +927,39 @@ namespace StellarisClone.Rendering
             Color bc = TechBranchInfo.Color(s_branch);
             bool done = from.Tech.IsResearched;
             bool flowing = done && StateOf(to.Tech, tm, out _, out _) == CardState.Researching;
-            Color col = done ? new Color(bc.r, bc.g, bc.b, to.Tech.IsResearched ? 0.85f : 0.6f) : WireIdle;
+            Color col = done ? new Color(bc.r, bc.g, bc.b, to.Tech.IsResearched ? 0.75f : 0.55f) : WireIdle;
 
-            Vector2 a = from.Rt.anchoredPosition + new Vector2(CardW, -CardH * 0.5f);
-            Vector2 b = to.Rt.anchoredPosition + new Vector2(0f, -CardH * 0.5f);
-            if (b.x <= a.x + 4f)
+            Vector2 a = from.Rt.anchoredPosition + new Vector2(CardW, -_cardH * 0.5f);
+            Vector2 b = to.Rt.anchoredPosition + new Vector2(0f, -_cardH * 0.5f);
+            if (b.x <= a.x + 4f || Mathf.Abs(a.y - b.y) < 0.5f)
             {
-                Segment(a, b, col, done, flowing);
+                Segment(a, b, col, flowing);
                 return;
             }
             float midX = b.x - (ColW - CardW) * 0.5f;
-            if (Mathf.Abs(a.y - b.y) < 0.5f)
-            {
-                Segment(a, b, col, done, flowing);
-                return;
-            }
-            Segment(a, new Vector2(midX, a.y), col, done, false);
-            Segment(new Vector2(midX, a.y), new Vector2(midX, b.y), col, done, false);
-            Segment(new Vector2(midX, b.y), b, col, done, flowing);
+            Segment(a, new Vector2(midX, a.y), col, false);
+            Segment(new Vector2(midX, a.y), new Vector2(midX, b.y), col, false);
+            Segment(new Vector2(midX, b.y), b, col, flowing);
         }
 
-        private void Segment(Vector2 a, Vector2 b, Color col, bool bright, bool pulse)
+        /// <summary>Провод — плоская линия в 2 px, без свечения: схема должна читаться, а не сиять.</summary>
+        private void Segment(Vector2 a, Vector2 b, Color col, bool pulse)
         {
             var img = LGBuild.Panel(_wiresLayer, "Wire", col);
+            LG.Ignore(img.gameObject);
             var rt = img.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 0.5f);
             Vector2 d = b - a;
             float len = d.magnitude;
-            rt.sizeDelta = new Vector2(len + 1f, bright ? 2.4f : 1.6f);
-            rt.anchoredPosition = a;
+            rt.sizeDelta = new Vector2(len + 2f, 2f);
+            rt.anchoredPosition = a - d.normalized;
             rt.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
-            LG.Line(img.gameObject).Intensity = bright ? 0.9f : 0.25f;
 
             if (!pulse || len < 12f) return;
             var dot = LGBuild.Panel(rt, "Pulse", Color.white);
-            dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(10f, 6f));
-            LG.Dot(dot.gameObject);
-            dot.gameObject.AddComponent<WirePulseAnimator>().Init(dot.rectTransform, len, col);
+            dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(8f, 4f));
+            dot.gameObject.AddComponent<WirePulseAnimator>().Init(dot.rectTransform, len, Color.Lerp(col, Color.white, 0.5f));
         }
 
         // ==================== СЛОТЫ ====================
@@ -928,31 +990,32 @@ namespace StellarisClone.Rendering
         {
             var bg = LGBuild.Panel(_slotsList, name, tint, raycast: true);
             LGBuild.Height(bg.gameObject, h);
-            LG.Platter(bg.gameObject, 14f).SetRim(rim);
+            var fx = LG.Platter(bg.gameObject, 8f);
+            fx.SetRim(rim);
+            fx.FillMultiplier = 3f;
+            fx.SpecularMultiplier = 0.2f;
             return bg.rectTransform;
         }
 
         private void BuildFreeSlot(int i)
         {
-            var rt = SlotCard("Free" + i, 70f, new Color(0.08f, 0.07f, 0.03f, 0.55f), new Color(Gold.r, Gold.g, Gold.b, 0.45f));
-            var ic = LGIcons.Create(rt, LGIcon.Research, 20, Gold);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -12), new Vector2(20, 20));
-            var t = LGBuild.Label(rt, $"СЛОТ {i + 1}  ·  СВОБОДЕН", 11, Gold, TextAnchor.UpperLeft, bold: true);
-            t.rectTransform.Stretch(40, 0, 10, 14);
-            var hint = LGBuild.Label(rt, "Выберите технологию в дереве: двойной щелчок или «Исследовать».", 10, Muted, TextAnchor.UpperLeft, wrap: true);
-            hint.rectTransform.Stretch(12, 6, 12, 38);
+            var rt = SlotCard("Free" + i, 66f, CardBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.22f));
+            var t = LGBuild.Label(rt, $"СЛОТ {i + 1}  ·  <color={LGBuild.Hex(Cyan)}>СВОБОДЕН</color>", 12, Dim, TextAnchor.UpperLeft, bold: true);
+            t.rectTransform.Stretch(14, 0, 10, 11);
+            var hint = LGBuild.Label(rt, "Выберите технологию в дереве — двойной щелчок или «Исследовать».", 12, Muted, TextAnchor.UpperLeft, wrap: true);
+            hint.rectTransform.Stretch(14, 4, 12, 31);
         }
 
         private void BuildLockedSlot(int i, Technology opener)
         {
-            var rt = SlotCard("Locked" + i, 50f, new Color(0.02f, 0.04f, 0.06f, 0.6f), new Color(1f, 1f, 1f, 0.07f));
-            var ic = LGIcons.Create(rt, LGIcon.Lock, 16, new Color(Muted.r, Muted.g, Muted.b, 0.6f));
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(16, 16));
-            var t = LGBuild.Label(rt, $"СЛОТ {i + 1}  ·  ЗАКРЫТ", 10, new Color(Muted.r, Muted.g, Muted.b, 0.8f), TextAnchor.UpperLeft, bold: true);
-            t.rectTransform.Stretch(40, 0, 10, 9);
-            var sub = LGBuild.Label(rt, opener != null ? $"Откроет: {opener.Name}" : "Откроется технологией", 10,
-                new Color(Muted.r, Muted.g, Muted.b, 0.65f), TextAnchor.LowerLeft);
-            sub.rectTransform.Stretch(40, 9, 10, 0);
+            var rt = SlotCard("Locked" + i, 52f, CardBgLocked, new Color(1f, 1f, 1f, 0.05f));
+            var ic = LGIcons.Create(rt, LGIcon.Lock, 15, Dim);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(15, 15));
+            var t = LGBuild.Label(rt, $"СЛОТ {i + 1}  ·  ЗАКРЫТ", 12, Dim, TextAnchor.UpperLeft, bold: true);
+            t.rectTransform.Stretch(40, 0, 10, 8);
+            var sub = LGBuild.Label(rt, opener != null ? $"Откроет: {opener.Name}" : "Откроется технологией", 11,
+                new Color(Dim.r, Dim.g, Dim.b, 0.85f), TextAnchor.LowerLeft);
+            sub.rectTransform.Stretch(40, 8, 10, 0);
             if (opener != null)
             {
                 var b = rt.gameObject.AddComponent<Button>();
@@ -965,62 +1028,62 @@ namespace StellarisClone.Rendering
         {
             var t = s.CurrentTech;
             Color cc = TechCategoryInfo.Color(t.Category);
-            float h = 104f + s.Queue.Count * 24f + (s.Queue.Count > 0 ? 6f : 0f);
-            var rt = SlotCard("Slot" + i, h, new Color(0.03f, 0.10f, 0.13f, 0.92f),
-                s.IsPaused ? new Color(Gold.r, Gold.g, Gold.b, 0.55f) : new Color(Cyan.r, Cyan.g, Cyan.b, 0.5f));
+            float h = 112f + s.Queue.Count * 26f + (s.Queue.Count > 0 ? 6f : 0f);
+            var rt = SlotCard("Slot" + i, h, CardBg,
+                s.IsPaused ? new Color(Gold.r, Gold.g, Gold.b, 0.45f) : new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f));
             var sel = rt.gameObject.AddComponent<Button>();
             sel.transition = Selectable.Transition.None;
             sel.onClick.AddListener(() => Reveal(t));
 
-            var lbl = LGBuild.Label(rt, $"СЛОТ {i + 1}" + (s.IsPaused ? $"  ·  <color={LGBuild.Hex(Gold)}>ПАУЗА</color>" : ""), 9, Muted, TextAnchor.UpperLeft, bold: true);
-            lbl.rectTransform.Stretch(12, 0, 70, 9);
+            var lbl = LGBuild.Label(rt, $"СЛОТ {i + 1}" + (s.IsPaused ? $"  ·  <color={LGBuild.Hex(Gold)}>ПАУЗА</color>" : ""), 11, Dim, TextAnchor.UpperLeft, bold: true);
+            lbl.rectTransform.Stretch(14, 0, 70, 10);
 
             int idx = i;
-            var pause = LGBuild.Button(rt, "Pause", UIManager.DS.BtnNeutral, new Color(Gold.r, Gold.g, Gold.b, 0.4f),
+            var pause = LGBuild.Button(rt, "Pause", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.15f),
                 () => { TechnologyManager.Instance?.ToggleSlotPause(idx); SFXManager.Play(Sfx.UiClick); },
                 s.IsPaused ? LGIcon.Play : LGIcon.Pause, null, 8);
-            ((RectTransform)pause.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-38, -6), new Vector2(24, 24));
+            ((RectTransform)pause.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-40, -7), new Vector2(26, 26));
             TooltipHelper.Attach(pause.gameObject, s.IsPaused ? "Продолжить исследование" : "Приостановить слот: наука перейдёт к остальным");
-            var cancel = LGBuild.Button(rt, "Cancel", UIManager.DS.BtnDanger, new Color(Red.r, Red.g, Red.b, 0.45f),
+            var cancel = LGBuild.Button(rt, "Cancel", UIManager.DS.BtnNeutral, new Color(Red.r, Red.g, Red.b, 0.3f),
                 () => { TechnologyManager.Instance?.CancelCurrent(idx); SFXManager.Play(Sfx.UiBack); },
                 LGIcon.Close, null, 8);
-            ((RectTransform)cancel.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-8, -6), new Vector2(24, 24));
+            ((RectTransform)cancel.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-9, -7), new Vector2(26, 26));
             TooltipHelper.Attach(cancel.gameObject, "Отменить. Накопленный прогресс сохранится в технологии.");
 
-            var badge = LGBuild.Panel(rt, "Badge", new Color(cc.r * 0.15f, cc.g * 0.15f, cc.b * 0.15f, 1f));
-            badge.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -28), new Vector2(36, 36));
-            LG.Platter(badge.gameObject, 10f).SetRim(new Color(cc.r, cc.g, cc.b, 0.45f));
-            LGIcons.Create(badge.transform, LGIcons.ForTechCategory(t.Category), 21, cc);
+            var ic = LGIcons.Create(rt, LGIcons.ForTechCategory(t.Category), 26, cc);
+            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(29, -53), new Vector2(26, 26));
 
-            var name = LGBuild.Label(rt, t.Name, 12, Primary, TextAnchor.MiddleLeft, bold: true, wrap: true);
-            name.lineSpacing = 0.9f;
-            name.rectTransform.TopBand(26, 40, 56, 10);
+            var name = LGBuild.Label(rt, t.Name, 14, Primary, TextAnchor.MiddleLeft, bold: true, wrap: true);
+            name.lineSpacing = 0.92f;
+            FitText(name, 11);
+            name.rectTransform.TopBand(34, 38, 52, 12);
 
             var barHost = LGBuild.Rect(rt, "Bar");
-            barHost.TopBand(72, 8, 12, 12);
+            barHost.TopBand(78, 6, 14, 14);
             var su = new SlotUi { Index = i };
-            su.Bar = LGBuild.Bar(barHost, s.IsPaused ? Gold : Cyan, s.ProgressNormalized, 6f);
-            su.Stats = LGBuild.Label(rt, SlotStats(tm, s), 10, Primary, TextAnchor.UpperLeft);
-            su.Stats.rectTransform.TopBand(83, 16, 12, 12);
+            su.Bar = LGBuild.Bar(barHost, s.IsPaused ? Gold : Cyan, s.ProgressNormalized, 4f);
+            su.Stats = LGBuild.Label(rt, SlotStats(tm, s), 12, Primary, TextAnchor.UpperLeft);
+            su.Stats.rectTransform.TopBand(88, 18, 14, 12);
             _slotUis.Add(su);
 
             for (int q = 0; q < s.Queue.Count; q++)
             {
                 var qt = s.Queue[q];
-                var row = LGBuild.Panel(rt, "Q" + q, new Color(0f, 0.03f, 0.05f, 0.55f), raycast: true);
-                row.rectTransform.TopBand(106 + q * 24, 20, 10, 10);
+                var row = LGBuild.Panel(rt, "Q" + q, new Color(0.02f, 0.035f, 0.05f, 1f), raycast: true);
+                row.rectTransform.TopBand(114 + q * 26, 22, 10, 10);
                 LG.Ignore(row.gameObject, includeChildren: false);
                 var rb = row.gameObject.AddComponent<Button>();
                 rb.transition = Selectable.Transition.None;
                 rb.onClick.AddListener(() => Reveal(qt));
 
-                var qn = LGBuild.Label(row.transform, $"<color={LGBuild.Hex(Gold)}>{q + 1}</color>   {qt.Name}", 10, Primary, TextAnchor.MiddleLeft);
-                qn.rectTransform.Stretch(8, 0, 90, 0);
-                var qe = LGBuild.Label(row.transform, "~" + TechnologyManager.FormatDays(tm.EstimateDays(qt)), 9, Muted, TextAnchor.MiddleRight);
-                qe.rectTransform.Stretch(0, 0, 26, 0);
-                var rm = LGBuild.Button(row.transform, "Remove", new Color(0.2f, 0.06f, 0.08f, 1f), new Color(Red.r, Red.g, Red.b, 0.35f),
+                var qn = LGBuild.Label(row.transform, $"<color={LGBuild.Hex(Gold)}>{q + 1}.</color>  {qt.Name}", 12, Primary, TextAnchor.MiddleLeft);
+                FitText(qn, 9);
+                qn.rectTransform.Stretch(8, 0, 92, 0);
+                var qe = LGBuild.Label(row.transform, "~" + TechnologyManager.FormatDays(tm.EstimateDays(qt)), 11, Muted, TextAnchor.MiddleRight);
+                qe.rectTransform.Stretch(0, 0, 28, 0);
+                var rm = LGBuild.Button(row.transform, "Remove", UIManager.DS.BtnNeutral, new Color(Red.r, Red.g, Red.b, 0.3f),
                     () => { TechnologyManager.Instance?.RemoveFromQueue(qt); SFXManager.Play(Sfx.UiBack); }, LGIcon.Close, null, 6);
-                ((RectTransform)rm.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-3, 0), new Vector2(16, 16));
+                ((RectTransform)rm.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-3, 0), new Vector2(18, 18));
             }
         }
 
@@ -1057,7 +1120,7 @@ namespace StellarisClone.Rendering
                 _detailIcon.color = Muted;
                 _detailBadgeFx.SetRim(new Color(1f, 1f, 1f, 0.15f));
                 _pillBg.gameObject.SetActive(false);
-                Paragraph("Щёлкните по карточке в дереве, чтобы увидеть, что даёт технология, сколько она стоит и что откроет дальше.", 12, Muted);
+                Paragraph("Щёлкните по карточке в дереве, чтобы увидеть, что даёт технология, сколько она стоит и что откроет дальше.", 13, Muted);
                 SetButtons(tm);
                 return;
             }
@@ -1069,12 +1132,11 @@ namespace StellarisClone.Rendering
                               $"{TechCategoryInfo.Name(t.Category)}  ·  {(t.Tier == 0 ? "БАЗОВАЯ" : "УРОВЕНЬ " + Roman(t.Tier))}";
             _detailIcon.sprite = LGIcons.Get(LGIcons.ForTechCategory(t.Category));
             _detailIcon.color = cc;
-            _detailBadge.color = new Color(cc.r * 0.15f, cc.g * 0.15f, cc.b * 0.15f, 1f);
-            _detailBadgeFx.SetRim(new Color(cc.r, cc.g, cc.b, 0.6f));
+            _detailBadgeFx.SetRim(new Color(cc.r, cc.g, cc.b, 0.45f));
             _pillBg.gameObject.SetActive(true);
 
             Section("ЭФФЕКТ", LGIcon.Info, cc);
-            Paragraph(TechConfirmDialog.ColorizeModifiers(t.Description), 12, Primary);
+            Paragraph(TechConfirmDialog.ColorizeModifiers(t.Description), 14, Primary);
 
             Section("СТОИМОСТЬ", LGIcon.Clock, Gold);
             int year = TimeManager.Instance != null ? TimeManager.Instance.Year : 2200;
@@ -1124,7 +1186,7 @@ namespace StellarisClone.Rendering
             if (TechFlavorDatabase.Has(t.Id))
             {
                 Section("ДОСЬЕ", LGIcon.Info, Muted);
-                var f = Paragraph(TechFlavorDatabase.Get(t.Id), 11, new Color(Muted.r, Muted.g, Muted.b, 0.95f));
+                var f = Paragraph(TechFlavorDatabase.Get(t.Id), 12, Muted);
                 f.fontStyle = FontStyle.Italic;
             }
 
@@ -1145,7 +1207,7 @@ namespace StellarisClone.Rendering
             };
             _pillText.text = text;
             _pillText.color = col;
-            _pillBg.color = new Color(col.r * 0.14f, col.g * 0.14f, col.b * 0.14f, 1f);
+            _pillBg.color = new Color(0.03f + col.r * 0.07f, 0.05f + col.g * 0.07f, 0.07f + col.b * 0.07f, 0.97f);
         }
 
         private void SetButtons(TechnologyManager tm)
@@ -1228,12 +1290,12 @@ namespace StellarisClone.Rendering
         private void Section(string text, LGIcon icon, Color tint)
         {
             var row = LGBuild.Rect(_detailList, "Section");
-            LGBuild.Height(row.gameObject, 26f);
-            var ic = LGIcons.Create(row, icon, 12, tint);
-            ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(2, 3), new Vector2(12, 12));
-            var t = LGBuild.Label(row, text, 10, tint, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.Stretch(20, 2, 0, 0);
-            var line = LGBuild.Panel(row, "Line", new Color(tint.r, tint.g, tint.b, 0.25f));
+            LGBuild.Height(row.gameObject, 32f);
+            var ic = LGIcons.Create(row, icon, 13, tint);
+            ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(2, 5), new Vector2(13, 13));
+            var t = LGBuild.Label(row, text, 12, Dim, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.Stretch(22, 4, 0, 0);
+            var line = LGBuild.Panel(row, "Line", new Color(1f, 1f, 1f, 0.08f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
             line.rectTransform.anchorMax = new Vector2(1, 0);
             line.rectTransform.offsetMin = Vector2.zero;
@@ -1251,11 +1313,12 @@ namespace StellarisClone.Rendering
         private RectTransform Row(LGIcon icon, Color col, string text)
         {
             var row = LGBuild.Rect(_detailList, "Row");
-            LGBuild.Height(row.gameObject, 22f);
-            var ic = LGIcons.Create(row, icon, 14, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(14, 14));
-            var t = LGBuild.Label(row, text, 11, Primary, TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(24, 0, 0, 0);
+            LGBuild.Height(row.gameObject, 26f);
+            var ic = LGIcons.Create(row, icon, 15, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(15, 15));
+            var t = LGBuild.Label(row, text, 13, Primary, TextAnchor.MiddleLeft);
+            FitText(t, 10);
+            t.rectTransform.Stretch(26, 0, 0, 0);
             return row;
         }
 
@@ -1312,7 +1375,7 @@ namespace StellarisClone.Rendering
             float viewH = ((RectTransform)_treeScroll.transform).rect.height;
             float top = -c.Rt.anchoredPosition.y;
             float cur = _treeContent.anchoredPosition.y;
-            if (top < cur || top + CardH > cur + viewH)
+            if (top < cur || top + _cardH > cur + viewH)
             {
                 float maxY = Mathf.Max(0f, _treeContent.sizeDelta.y - viewH);
                 _treeContent.anchoredPosition = new Vector2(0f, Mathf.Clamp(top - viewH * 0.4f, 0f, maxY));
@@ -1423,7 +1486,7 @@ namespace StellarisClone.Rendering
             private void Update()
             {
                 float k = Time.unscaledDeltaTime * 14f;
-                transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one * (_hovered ? 1.035f : 1f), k);
+                transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one * (_hovered ? 1.02f : 1f), k);
                 if (Fx == null) return;
                 Color want = _hovered ? new Color(1f, 1f, 1f, 0.85f)
                     : Pulse ? new Color(BaseRim.r, BaseRim.g, BaseRim.b, 0.55f + Mathf.Sin(Time.unscaledTime * 4.5f) * 0.35f)

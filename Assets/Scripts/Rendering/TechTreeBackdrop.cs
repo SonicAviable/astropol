@@ -42,7 +42,7 @@ namespace StellarisClone.Rendering
             _starsFar = Layer("StarsFar", s_stars, true);
             _starsNear = Layer("StarsNear", s_stars, true);
             _vignette = Layer("Vignette", s_vignette, false);
-            _vignette.color = new Color(0f, 0f, 0f, 0.85f);
+            _vignette.color = new Color(0f, 0f, 0f, 0.95f);
 
             (_colA, _colB) = BranchColors("all");
             _targetA = _colA; _targetB = _colB;
@@ -85,21 +85,21 @@ namespace StellarisClone.Rendering
 
             _nebulaA.uvRect = new Rect(_t * 0.006f, _t * 0.0015f, 1f, 1f / aspect * 2f);
             _nebulaB.uvRect = new Rect(-_t * 0.004f + 0.37f, 0.21f - _t * 0.001f, 1.55f, 1.55f / aspect * 2f);
-            _nebulaA.color = new Color(_colA.r, _colA.g, _colA.b, 0.42f);
-            _nebulaB.color = new Color(_colB.r, _colB.g, _colB.b, 0.30f);
+            _nebulaA.color = new Color(_colA.r, _colA.g, _colA.b, 0.16f);
+            _nebulaB.color = new Color(_colB.r, _colB.g, _colB.b, 0.10f);
 
             float pulse = 0.85f + 0.15f * Mathf.Sin(_t * 0.6f);
-            _glow.color = new Color(_colA.r, _colA.g, _colA.b, 0.20f * pulse);
+            _glow.color = new Color(_colA.r, _colA.g, _colA.b, 0.07f * pulse);
 
             float cell = 72f;
             _grid.uvRect = new Rect(_t * 0.01f, _t * 0.004f, Mathf.Max(1f, size.x / cell), Mathf.Max(1f, size.y / cell));
-            _grid.color = new Color(_colA.r, _colA.g, _colA.b, 0.07f);
+            _grid.color = new Color(_colA.r, _colA.g, _colA.b, 0.035f);
 
             float tw = 0.75f + 0.25f * Mathf.Sin(_t * 1.7f);
             _starsFar.uvRect = new Rect(_t * 0.002f, 0f, Mathf.Max(1f, size.x / 512f), Mathf.Max(1f, size.y / 256f));
-            _starsFar.color = new Color(0.8f, 0.88f, 1f, 0.35f);
+            _starsFar.color = new Color(0.8f, 0.88f, 1f, 0.14f);
             _starsNear.uvRect = new Rect(0.5f + _t * 0.005f, 0.3f, Mathf.Max(1f, size.x / 800f), Mathf.Max(1f, size.y / 400f));
-            _starsNear.color = new Color(1f, 1f, 1f, 0.55f * tw);
+            _starsNear.color = new Color(1f, 1f, 1f, 0.22f * tw);
         }
 
         // ==================== ТЕКСТУРЫ ====================
