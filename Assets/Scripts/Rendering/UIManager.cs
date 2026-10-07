@@ -460,13 +460,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             barMotion.distance = 22f;
             barMotion.inDuration = 0.55f;
 
-            var overviewBtn = CreateButton(bar.transform, "EmpireOverviewBtn", new Vector2(150, 32),
-                new Color(0.12f, 0.40f, 0.48f, 1f), DS.NeonCyan, OpenEmpireOverviewModal);
-            var ovRt = overviewBtn.GetComponent<RectTransform>();
-            ovRt.anchorMin = ovRt.anchorMax = new Vector2(0, 0.5f);
-            ovRt.pivot = new Vector2(0, 0.5f);
-            ovRt.anchoredPosition = new Vector2(8, 0);
-            LGIcons.IconLabel(overviewBtn.transform, LGIcon.Globe, "ОБЗОР ИМПЕРИИ", 10, DS.NeonCyan, Color.white, 15f);
+            // Правитель империи — живой портрет; клик открывает обзор империи
+            RulerBadge.Create(bar.transform, OpenEmpireOverviewModal);
 
             // Дата — в стеклянной капсуле
             var dateChip = new GameObject("DateChip");
