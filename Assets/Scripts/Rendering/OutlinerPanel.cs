@@ -13,7 +13,7 @@ namespace StellarisClone.Rendering
     /// Аутлайнер справа, как в Stellaris: исследования, стройки, военные флоты, научные и строительные
     /// корабли — с состоянием и таймерами. Секции сворачиваются (запоминается), вся панель — тоже.
     /// Щелчок по флоту выделяет его и наводит камеру; по стройке — камера на систему;
-    /// по исследованию — открывает дерево технологий. Простаивающие корабли и бои пульсируют.
+    /// по исследованию — открывает дерево технологий. Простаивающие корабли и бои выделены цветом (без мигания).
     /// Строки обновляются на месте, поэтому анимации (блики на полосах, пульс) не сбиваются.
     /// </summary>
     public class OutlinerPanel : MonoBehaviour
@@ -570,7 +570,7 @@ namespace StellarisClone.Rendering
                 v.BarHost = barHost.gameObject;
                 v.Fill = LGBuild.Bar(barHost, Cyan, 0f, 4f);
                 v.Fill.gameObject.AddComponent<RectMask2D>();
-                var shine = LGBuild.Panel(v.Fill, "Shine", new Color(1f, 1f, 1f, 0.55f));
+                var shine = LGBuild.Panel(v.Fill, "Shine", new Color(1f, 1f, 1f, 0.28f));
                 shine.sprite = FactionSelectScreen.RadialSprite();
                 shine.raycastTarget = false;
                 v.Shine = shine.rectTransform;
@@ -616,26 +616,22 @@ namespace StellarisClone.Rendering
             float t = Time.unscaledTime;
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
 
-            // блик по шапке раз в несколько секунд, дыхание линии и иконки
-            float sw = Mathf.Repeat(t * 0.22f, 1.8f) - 0.45f;
+            // Спокойно: редкий мягкий блик по шапке (раз в ~12 с), никаких пульсаций
+            float sw = Mathf.Repeat(t, 12f) / 2.4f - 0.45f;
             _sweep.anchorMin = new Vector2(sw, -0.6f);
             _sweep.anchorMax = new Vector2(sw + 0.35f, 1.6f);
-            float breath = 0.5f + 0.5f * Mathf.Sin(t * 1.6f);
-            _headLine.color = new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f + 0.35f * breath);
-            _headIcon.color = Color.Lerp(Cyan, Color.white, 0.25f * breath);
-            if (_alertChip.activeSelf)
-            {
-                float p = 0.5f + 0.5f * Mathf.Sin(t * 4f);
-                _alertText.color = Color.Lerp(Gold, Color.white, 0.35f * p);
-            }
 
             if (_collapsed) return;
 
-            // плавная высота тела
+            // высота тела подстраивается плавно и замирает, когда дошла до цели
             float avail = Mathf.Max(60f, _root.rect.height - HeadH - 4f);
             float target = Mathf.Min(_bodyTarget, avail);
-            _bodyH = _bodyH <= 0f ? target : Mathf.Lerp(_bodyH, target, 1f - Mathf.Exp(-dt * 12f));
-            _body.sizeDelta = new Vector2(0, _bodyH);
+            if (Mathf.Abs(_bodyH - target) > 0.5f)
+            {
+                _bodyH = _bodyH <= 0f ? target : Mathf.Lerp(_bodyH, target, 1f - Mathf.Exp(-dt * 14f));
+                if (Mathf.Abs(_bodyH - target) <= 0.5f) _bodyH = target;
+                _body.sizeDelta = new Vector2(0, _bodyH);
+            }
 
             foreach (var sv in _secViews)
             {
@@ -649,19 +645,18 @@ namespace StellarisClone.Rendering
             foreach (var v in _rowViews)
             {
                 float h = v.Hover.Amount(dt);
-                float pulse = v.Danger ? 0.5f + 0.5f * Mathf.Sin(t * 7f + v.Phase)
-                            : v.Warn ? 0.5f + 0.5f * Mathf.Sin(t * 3f + v.Phase) : 0f;
                 var bg = v.Danger ? RowDangerBg : v.Warn ? RowWarnBg : RowBg;
-                v.Bg.color = new Color(bg.r + 0.05f * h + 0.04f * pulse, bg.g + 0.07f * h + 0.02f * pulse, bg.b + 0.08f * h, bg.a);
+                v.Bg.color = new Color(bg.r + 0.05f * h, bg.g + 0.07f * h, bg.b + 0.08f * h, bg.a);
                 var a = v.Accent;
-                v.Stripe.color = new Color(a.r, a.g, a.b, (v.Warn || v.Danger) ? 0.45f + 0.55f * pulse : 0.55f + 0.45f * h);
-                v.Glow.color = new Color(a.r, a.g, a.b, 0.14f + 0.12f * h + 0.22f * pulse);
+                v.Stripe.color = new Color(a.r, a.g, a.b, (v.Warn || v.Danger) ? 0.95f : 0.55f + 0.45f * h);
+                v.Glow.color = new Color(a.r, a.g, a.b, 0.14f + 0.12f * h);
                 float sc = 1f + 0.08f * h;
                 v.Icon.rectTransform.localScale = new Vector3(sc, sc, 1f);
 
+                // блик по полосе прогресса — медленный, тусклый, раз в ~7 с
                 if (v.Shine != null)
                 {
-                    float x = Mathf.Repeat(t * 0.45f + v.Phase, 2.2f) - 0.6f;
+                    float x = Mathf.Repeat(t + v.Phase * 3f, 7f) / 1.6f - 0.4f;
                     v.Shine.anchorMin = new Vector2(x, -1f);
                     v.Shine.anchorMax = new Vector2(x + 0.25f, 2f);
                 }
