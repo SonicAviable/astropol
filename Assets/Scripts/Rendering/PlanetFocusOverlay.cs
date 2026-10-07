@@ -27,6 +27,10 @@ namespace StellarisClone.Rendering
 
         private Text _title, _subtitle, _ownerText;
         private Image _ownerIcon;
+        private GameObject _govChip;
+        private LeaderThumb _govFace;
+        private Image _govIcon;
+        private Text _govText;
 
         // Левая колонка
         private Text _surfaceText, _depositText, _stationText;
@@ -171,6 +175,13 @@ namespace StellarisClone.Rendering
             var gov = LeaderManager.Instance?.GovernorOf(_planet);
             string govText = gov != null ? $"   ·   <color=#FFCC52>губернатор {gov.Name}, ур. {gov.Level}</color>" : "";
             _subtitle.text = $"{_planet.ClassDisplayName}   ·   система {(_system != null ? _system.Name : "?")}{govText}";
+            _govChip.SetActive(gov != null);
+            if (gov != null)
+            {
+                bool face = _govFace.Set(gov, LeaderThumb.ClassColor(gov.Class));
+                _govIcon.enabled = !face;
+                _govText.text = $"<color=#8AA2A8>Губернатор</color>  {gov.Name} · ур. {gov.Level}";
+            }
 
             int owner = _system != null ? _system.OwnerId : -1;
             Color oc = owner >= 0 ? FleetIndicator.OwnerColor(owner) : CMuted;
@@ -599,6 +610,20 @@ namespace StellarisClone.Rendering
             _ownerIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(18, 18));
             _ownerText = LGBuild.Label(chip.transform, "", 12, Color.white, TextAnchor.MiddleLeft, bold: true);
             _ownerText.rectTransform.Stretch(42, 0, 12, 0);
+
+            // Губернатор колонии — лицо и имя рядом с владельцем
+            var gov = LGBuild.Panel(rt, "Governor", UIManager.DS.BgSlot);
+            gov.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(348, -84), new Vector2(250, 34));
+            LG.Chip(gov.gameObject, new Color(1f, 0.80f, 0.32f, 0.3f));
+            _govChip = gov.gameObject;
+            var faceHost = LGBuild.Rect(gov.transform, "Face");
+            faceHost.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(28, 28));
+            _govFace = LeaderThumb.Create(faceHost, 14f);
+            _govIcon = LGIcons.Create(faceHost, LGIcon.Leader, 18, CGold);
+            _govText = LGBuild.Label(gov.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _govText.rectTransform.Stretch(40, 0, 10, 0);
+            _govText.supportRichText = true;
+            _govChip.SetActive(false);
         }
 
         private void BuildPlanet(RectTransform rt)

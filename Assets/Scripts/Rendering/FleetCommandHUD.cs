@@ -17,7 +17,8 @@ namespace StellarisClone.Rendering
         public static FleetCommandHUD Instance { get; private set; }
 
         private GameObject _root;
-        private Image _iconBg, _icon;
+        private Image _iconBg, _icon, _badgeBg, _badge;
+        private LeaderThumb _leaderFace;
         private Text _title, _subtitle, _hpText, _route, _power;
         private RectTransform _hpBar;
         private Button _btnStop, _btnNext, _btnClear;
@@ -57,6 +58,15 @@ namespace StellarisClone.Rendering
             _iconBg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 6), new Vector2(60, 60));
             LG.Platter(_iconBg.gameObject, 30f).FillMultiplier = 2.2f;
             _icon = LGIcons.Create(_iconBg.transform, LGIcon.Ship, 32, FleetIndicator.OwnColor);
+
+            // Лидер на борту: его лицо вместо иконки, тип флота — значком в углу
+            _leaderFace = LeaderThumb.Create(_iconBg.transform, 30f, 2f);
+            _leaderFace.Hide();
+            _badgeBg = LGBuild.Panel(_iconBg.transform, "TypeBadge", new Color(0.03f, 0.08f, 0.10f));
+            _badgeBg.rectTransform.At(new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(-6, 6), new Vector2(24, 24));
+            LG.Platter(_badgeBg.gameObject, 12f).FillMultiplier = 2.2f;
+            _badge = LGIcons.Create(_badgeBg.transform, LGIcon.Ship, 14, FleetIndicator.OwnColor);
+            _badgeBg.gameObject.SetActive(false);
 
             var body = LGBuild.Rect(rt, "Body");
             body.Stretch(90, 10, 236, 10);
@@ -166,6 +176,15 @@ namespace StellarisClone.Rendering
             _title.text = d.Name;
             // Лидер на борту: учёный или адмирал-флагман
             var leader = LeaderManager.Instance?.LeaderOfShip(d.Id);
+            bool face = leader != null && _leaderFace.Set(leader, LeaderThumb.ClassColor(leader.Class));
+            if (!face) _leaderFace.Hide();
+            _icon.enabled = !face;
+            _badgeBg.gameObject.SetActive(face);
+            if (face)
+            {
+                _badge.sprite = _icon.sprite;
+                _badge.color = _icon.color;
+            }
             string lead = leader != null
                 ? $"   ·   <color=#FFCC52>{LeaderManager.ClassName(leader.Class)} {leader.Name}, ур. {leader.Level}</color>"
                 : "";
@@ -192,6 +211,9 @@ namespace StellarisClone.Rendering
             }
             _icon.sprite = LGIcons.Get(LGIcon.Fleet);
             _icon.color = FleetIndicator.OwnColor;
+            _icon.enabled = true;
+            _leaderFace.Hide();
+            _badgeBg.gameObject.SetActive(false);
             _title.text = $"Выделено: {sel.Count} {FleetWord(sel.Count)}";
             var parts = new List<string>();
             if (mil > 0) parts.Add($"военных {mil}");
