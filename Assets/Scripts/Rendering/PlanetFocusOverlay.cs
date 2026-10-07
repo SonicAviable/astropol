@@ -33,12 +33,14 @@ namespace StellarisClone.Rendering
         private Text _govText;
 
         // Левая колонка
-        private Text _surfaceText, _depositText, _stationText;
+        private Text _surfaceText, _stationText;
+        private ResLine[] _deposits;          // титан, гелий-3
         private RectTransform _habBar, _sizeBar;
         private Text _habValue, _sizeValue;
 
         // Правая колонка
         private Text _popBig, _popText, _growthText, _productionText;
+        private ResLine[] _production;        // титан, гелий-3, сплавы, наука
         private RectTransform _housingBar, _growthBar;
 
         // Районы
@@ -64,10 +66,52 @@ namespace StellarisClone.Rendering
         private class DistrictCard
         {
             public DistrictType Type;
-            public Text Count, Worked, Cost, Reason;
+            public Text Count, Worked, Reason;
+            public ResLine MinCost, AlloyCost;
             public Button Build, Cancel;
             public Image Bg;
             public RectTransform Progress;
+        }
+
+        /// <summary>Строка «иконка ресурса + текст» (обычный Text не умеет картинки внутри строки).</summary>
+        private class ResLine
+        {
+            public GameObject Go;
+            public Image Icon;
+            public Text Text;
+
+            public void Set(string text, Color? textColor = null)
+            {
+                Go.SetActive(true);
+                Text.text = text;
+                Text.color = textColor ?? UIManager.DS.TextPrimary;
+            }
+
+            public void Hide() => Go.SetActive(false);
+        }
+
+        private static ResLine MakeResLine(RectTransform parent, LGIcon icon, Color col, float iconSize, int fontSize, bool bold = false)
+        {
+            var rt = LGBuild.Rect(parent, "Res_" + icon);
+            var ic = LGIcons.Create(rt, icon, iconSize, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(iconSize, iconSize));
+            ic.raycastTarget = false;
+            var t = LGBuild.Label(rt, "", fontSize, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold);
+            t.rectTransform.Stretch(iconSize + 7, 0, 0, 0);
+            t.supportRichText = true;
+            return new ResLine { Go = rt.gameObject, Icon = ic, Text = t };
+        }
+
+        /// <summary>Строки ресурсов столбиком в карточке: с отступа top, по step пикселей.</summary>
+        private static ResLine[] ResColumn(RectTransform card, float top, float step, int fontSize, params (LGIcon icon, Color col)[] items)
+        {
+            var lines = new ResLine[items.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                lines[i] = MakeResLine(card, items[i].icon, items[i].col, fontSize + 5, fontSize);
+                ((RectTransform)lines[i].Go.transform).TopBand(top + i * step, step - 2, 18, 18);
+            }
+            return lines;
         }
 
         private class ActionButton
@@ -199,7 +243,7 @@ namespace StellarisClone.Rendering
             if (!Surveyed)
             {
                 _surfaceText.text = $"<color={LGBuild.Hex(new Color(1f, 0.67f, 0.53f))}>Данные засекречены.</color>\n\nОтправьте научный корабль, чтобы изучить систему.";
-                _depositText.text = "";
+                foreach (var l in _deposits) l.Hide();
                 _stationText.text = "";
                 LGBuild.SetBar(_habBar, 0f);
                 LGBuild.SetBar(_sizeBar, 0f);
@@ -231,9 +275,8 @@ namespace StellarisClone.Rendering
 
             var b = Bonuses();
             float fM = FactionMult(DistrictType.Mining), fE = FactionMult(DistrictType.Generator);
-            _depositText.text =
-                $"<color={LGBuild.Hex(CMinerals)}>Титан</color>   <b>{_planet.MineralDeposit}</b>   <color={m}>→ {_planet.MineralDeposit * fM * b.MineralsMult:0.#}/мес со станции</color>\n" +
-                $"<color={LGBuild.Hex(CEnergy)}>Гелий-3</color>   <b>{_planet.EnergyDeposit}</b>   <color={m}>→ {_planet.EnergyDeposit * fE:0.#}/мес со станции</color>";
+            _deposits[0].Set($"<color={LGBuild.Hex(CMinerals)}>Титан</color>   <b>{_planet.MineralDeposit}</b>   <color={m}>→ {_planet.MineralDeposit * fM * b.MineralsMult:0.#}/мес со станции</color>");
+            _deposits[1].Set($"<color={LGBuild.Hex(CEnergy)}>Гелий-3</color>   <b>{_planet.EnergyDeposit}</b>   <color={m}>→ {_planet.EnergyDeposit * fE:0.#}/мес со станции</color>");
             _stationText.text = _planet.HasMiningStation
                 ? $"<color={LGBuild.Hex(UIManager.DS.Green)}>Добывающий комплекс работает</color>"
                 : _planet.MineralDeposit + _planet.EnergyDeposit > 0
@@ -253,9 +296,16 @@ namespace StellarisClone.Rendering
                 _growthText.text = "";
                 LGBuild.SetBar(_housingBar, 0f);
                 LGBuild.SetBar(_growthBar, 0f);
-                _productionText.text = _planet.HasMiningStation
-                    ? StationProduction()
-                    : $"<color={m}>Производства нет</color>";
+                if (_planet.HasMiningStation)
+                {
+                    StationProduction();
+                    _productionText.text = "";
+                }
+                else
+                {
+                    foreach (var l in _production) l.Hide();
+                    _productionText.text = $"<color={m}>Производства нет</color>";
+                }
                 return;
             }
 
@@ -287,24 +337,25 @@ namespace StellarisClone.Rendering
             var tm = TechnologyManager.Instance;
             float science = pop * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
             bool bankrupt = EconomyManager.Instance != null && EconomyManager.Instance.IsBankrupt && Owned;
-            _productionText.text =
-                ProdLine("Титан", CMinerals, minerals) +
-                ProdLine("Гелий-3", CEnergy, energy) +
-                ProdLine("Сплавы", CAlloys, alloys) +
-                ProdLine("Наука", UIManager.DS.Green, science) +
-                (bankrupt ? $"\n<color={LGBuild.Hex(UIManager.DS.Red)}>Банкротство: производство урезано вдвое</color>" : "");
+            _production[0].Set(ProdLine("Титан", CMinerals, minerals));
+            _production[1].Set(ProdLine("Гелий-3", CEnergy, energy));
+            _production[2].Set(ProdLine("Сплавы", CAlloys, alloys));
+            _production[3].Set(ProdLine("Наука", UIManager.DS.Green, science));
+            _productionText.text = bankrupt ? $"<color={LGBuild.Hex(UIManager.DS.Red)}>Банкротство: производство урезано вдвое</color>" : "";
         }
 
-        private string StationProduction()
+        private void StationProduction()
         {
             var b = Bonuses();
-            return ProdLine("Титан", CMinerals, _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult) +
-                   ProdLine("Гелий-3", CEnergy, _planet.EnergyDeposit * FactionMult(DistrictType.Generator));
+            _production[0].Set(ProdLine("Титан", CMinerals, _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult));
+            _production[1].Set(ProdLine("Гелий-3", CEnergy, _planet.EnergyDeposit * FactionMult(DistrictType.Generator)));
+            _production[2].Hide();
+            _production[3].Hide();
         }
 
         private static string ProdLine(string name, Color c, float v)
             => $"<color={LGBuild.Hex(c)}>{name}</color>   " +
-               (v > 0.01f ? $"<b>+{v:0.#}</b>" : $"<color={LGBuild.Hex(CMuted)}>0</color>") + "\n";
+               (v > 0.01f ? $"<b>+{v:0.#}</b>" : $"<color={LGBuild.Hex(CMuted)}>0</color>");
 
         private EmpireBonuses Bonuses() => EmpireBonuses.For(_system != null ? _system.OwnerId : 0);
 
@@ -395,8 +446,8 @@ namespace StellarisClone.Rendering
 
                 float mc = DistrictInfo.MineralsCost(c.Type), ac = DistrictInfo.AlloysCost(c.Type);
                 bool canPay = eco != null && eco.Minerals >= mc && eco.Alloys >= ac;
-                c.Cost.text = $"<color={(eco != null && eco.Minerals >= mc ? LGBuild.Hex(CMinerals) : LGBuild.Hex(UIManager.DS.Red))}>{mc:0} титана</color>  ·  " +
-                              $"<color={(eco != null && eco.Alloys >= ac ? LGBuild.Hex(CAlloys) : LGBuild.Hex(UIManager.DS.Red))}>{ac:0} сплавов</color>";
+                c.MinCost.Set($"{mc:0}", eco != null && eco.Minerals >= mc ? CMinerals : UIManager.DS.Red);
+                c.AlloyCost.Set($"{ac:0}", eco != null && eco.Alloys >= ac ? CAlloys : UIManager.DS.Red);
 
                 string reason = !Surveyed ? "Нужна разведка"
                               : !Owned ? "Не ваша система"
@@ -712,7 +763,7 @@ namespace StellarisClone.Rendering
             _surfaceText = Body(surface, 124, 12);
 
             var deposits = Card(col, "Deposits", 262, 132, LGIcon.Minerals, "ПРИРОДНЫЕ ЗАЛЕЖИ", CMinerals, LGAppear.Kind.SlideLeft, 0.12f);
-            _depositText = Body(deposits, 44, 36);
+            _deposits = ResColumn(deposits, 42, 26, 12, (LGIcon.Minerals, CMinerals), (LGIcon.Energy, CEnergy));
             _stationText = LGBuild.Label(deposits, "", 11, CMuted, TextAnchor.LowerLeft, wrap: true);
             _stationText.rectTransform.Stretch(18, 14, 18, 0);
         }
@@ -743,8 +794,12 @@ namespace StellarisClone.Rendering
             _growthText.rectTransform.offsetMin = new Vector2(18, 8);
             _growthText.rectTransform.offsetMax = new Vector2(-18, 50);
 
-            var prod = Card(col, "Production", 262, 150, LGIcon.Industry, "ПРОИЗВОДСТВО В МЕСЯЦ", CGold, LGAppear.Kind.SlideRight, 0.12f);
-            _productionText = Body(prod, 44, 10, 13);
+            var prod = Card(col, "Production", 262, 176, LGIcon.Industry, "ПРОИЗВОДСТВО В МЕСЯЦ", CGold, LGAppear.Kind.SlideRight, 0.12f);
+            _production = ResColumn(prod, 42, 26, 13,
+                (LGIcon.Minerals, CMinerals), (LGIcon.Energy, CEnergy), (LGIcon.Alloys, CAlloys), (LGIcon.Research, UIManager.DS.Green));
+            // Сообщения: «производства нет», банкротство
+            _productionText = LGBuild.Label(prod, "", 11, UIManager.DS.TextPrimary, TextAnchor.LowerLeft, wrap: true);
+            _productionText.rectTransform.Stretch(18, 12, 18, 0);
         }
 
         private void BuildBottom(RectTransform rt)
@@ -821,8 +876,11 @@ namespace StellarisClone.Rendering
             effect.rectTransform.Stretch(62, 0, 12, 32);
             var worked = LGBuild.Label(rt, "", 10, CMuted, TextAnchor.UpperLeft);
             worked.rectTransform.Stretch(12, 0, 12, 62);
-            var cost = LGBuild.Label(rt, "", 10, Color.white, TextAnchor.UpperLeft);
-            cost.rectTransform.Stretch(12, 0, 12, 78);
+            // Стоимость: [титан] 60   [сплавы] 20
+            var minCost = MakeResLine(rt, LGIcon.Minerals, CMinerals, 14, 11, bold: true);
+            ((RectTransform)minCost.Go.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -76), new Vector2(70, 16));
+            var alloyCost = MakeResLine(rt, LGIcon.Alloys, CAlloys, 14, 11, bold: true);
+            ((RectTransform)alloyCost.Go.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(84, -76), new Vector2(70, 16));
 
             var btn = LGBuild.Button(rt, "Build", new Color(dc.r * 0.45f, dc.g * 0.45f, dc.b * 0.45f), new Color(dc.r, dc.g, dc.b, 0.75f),
                                      () => OnBuildDistrict(type), LGIcon.Construction, "ПОСТРОИТЬ", 11);
@@ -856,7 +914,7 @@ namespace StellarisClone.Rendering
 
             return new DistrictCard
             {
-                Type = type, Count = count, Worked = worked, Cost = cost, Bg = bg, Build = btn, Cancel = cancel, Progress = progress,
+                Type = type, Count = count, Worked = worked, MinCost = minCost, AlloyCost = alloyCost, Bg = bg, Build = btn, Cancel = cancel, Progress = progress,
                 Reason = btn.GetComponentInChildren<Text>()
             };
         }
