@@ -42,6 +42,11 @@ namespace StellarisClone.Rendering
         // Подкрашивать материалы модели в цвет фракции (текстуры сохраняются)
         private const bool TintPrefabMaterials = true;
 
+        // false — процедурные модели ShipMeshFactory (корабли узнаются по силуэту);
+        // true — префабы из Resources/Prefabs/Ships, если они есть
+        private const bool UsePrefabModels = false;
+        private ShipMeshFactory.ShipVisual _visual;
+
         private bool _usesCustomModel;
         // =============================================================
 
@@ -88,7 +93,7 @@ namespace StellarisClone.Rendering
 
             Color shipColor = GetBaseColorForType();
 
-            GameObject prefab = LoadShipPrefab(Data.Type);
+            GameObject prefab = UsePrefabModels ? LoadShipPrefab(Data.Type) : null;
             if (prefab != null)
             {
                 _usesCustomModel = true;
@@ -97,7 +102,7 @@ namespace StellarisClone.Rendering
             else
             {
                 _usesCustomModel = false;
-                CreateProceduralShipMesh(litShader, shipColor);
+                _visual = ShipMeshFactory.Build(transform, Data.Type, Data.HullClass, FleetIndicator.OwnerColor(Data.OwnerId));
             }
 
             // Собираем рендереры ПОСЛЕ создания/инстанса модели
@@ -157,65 +162,6 @@ namespace StellarisClone.Rendering
                 }
                 r.materials = mats;
             }
-        }
-
-        private void CreateProceduralShipMesh(Shader litShader, Color shipColor)
-        {
-            if (Data.Type == FleetType.Constructor)
-            {
-                var hull = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                hull.transform.SetParent(transform, false);
-                hull.transform.localScale = new Vector3(1.5f, 0.6f, 2.2f);
-                CreatePod(new Vector3(-1.1f, 0f, 0f));
-                CreatePod(new Vector3( 1.1f, 0f, 0f));
-            }
-            else if (Data.Type == FleetType.Science)
-            {
-                var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.SetParent(transform, false);
-                sphere.transform.localScale = new Vector3(1.2f, 1.2f, 1.5f);
-
-                var dish = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                dish.transform.SetParent(transform, false);
-                dish.transform.localPosition = new Vector3(0f, 0.6f, -0.4f);
-                dish.transform.localScale = new Vector3(0.9f, 0.1f, 0.9f);
-                dish.transform.localRotation = Quaternion.Euler(35f, 0f, 0f);
-            }
-            else
-            {
-                var hull = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                hull.transform.SetParent(transform, false);
-                hull.transform.localScale = new Vector3(0.8f, 1.0f, 0.8f);
-                hull.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-
-                var bridge = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                bridge.transform.SetParent(transform, false);
-                bridge.transform.localPosition = new Vector3(0f, 0.35f, -0.4f);
-                bridge.transform.localScale = new Vector3(0.5f, 0.3f, 0.7f);
-            }
-
-            // Убираем коллайдеры у примитивов (на корне свой BoxCollider)
-            foreach (var c in GetComponentsInChildren<Collider>())
-                if (c.gameObject != gameObject) Destroy(c);
-
-            _renderers = GetComponentsInChildren<MeshRenderer>();
-            Material mat = new Material(litShader);
-            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", shipColor);
-            if (mat.HasProperty("_Color")) mat.color = shipColor;
-            mat.EnableKeyword("_EMISSION");
-            if (mat.HasProperty("_EmissionColor"))
-                mat.SetColor("_EmissionColor", shipColor * 0.6f);
-
-            foreach (var r in _renderers) r.material = mat;
-        }
-
-        private void CreatePod(Vector3 localPos)
-        {
-            var pod = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            pod.transform.SetParent(transform, false);
-            pod.transform.localPosition = localPos;
-            pod.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
-            pod.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         }
 
         private void CreateEngineTrail()
@@ -364,7 +310,11 @@ namespace StellarisClone.Rendering
             Color baseCol = GetBaseColorForType();
             Color selectedCol = new Color(1f, 0.95f, 0.3f);
 
-            if (_usesCustomModel)
+            if (_visual != null)
+            {
+                _visual.SetSelected(selected);
+            }
+            else if (_usesCustomModel)
             {
                 // Для 3D-модели меняем только свечение — базовый цвет и текстуры сохраняются.
                 Color glow = selected ? selectedCol : baseCol;
@@ -528,6 +478,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             _animTime += Time.deltaTime;
+            _visual?.Tick(_animTime);
 
             transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, 6f * Time.deltaTime);
 
