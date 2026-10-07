@@ -28,6 +28,7 @@ Shader "Astropolity/UI/LeaderPortrait"
         _UvRect ("Visible uv rect (x, y, w, h)", Vector) = (0,0,1,1)
         _FadeLeft ("Fade left edge (0..1 of width)", Float) = 0
         _Fade ("Edge fade (left, right, bottom, top)", Vector) = (0,0,0,0)
+        _Cutout ("Cut the figure out of its background (FX alpha)", Range(0,1)) = 0
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -104,6 +105,7 @@ Shader "Astropolity/UI/LeaderPortrait"
             float _T, _Blink, _Glitch, _Breath, _Motion, _FadeLeft;
             float4 _UvRect;
             float4 _Fade;
+            float _Cutout;
             static float2 s_dx, s_dy;   // градиенты uv — для выборок внутри ветвлений
             float4 _ClipRect;
 
@@ -214,6 +216,16 @@ Shader "Astropolity/UI/LeaderPortrait"
                 // Сбой: лёгкое смещение каналов
                 if (_Glitch > 0.001)
                     col.r = lerp(col.r, Sharp(uv + float2(0.004 * _Glitch, 0)).r, _Glitch);
+
+                // Фигура без фона картинки: маска — в альфе FX-текстуры (без гамма-преобразования)
+                if (_Cutout > 0.001)
+                {
+                    float matte = tex2D(_FxTex, uv).a;   // по итоговым uv — маска дышит вместе с фигурой
+                    col.a *= lerp(1.0, matte, _Cutout);
+                    // Тонкая «кромка» цвета акцента по краю силуэта — фигура не выглядит вырезанной ножницами
+                    float edge = saturate(matte * (1.0 - matte) * 4.0);
+                    col.rgb += _Accent.rgb * edge * 0.12 * _Cutout;
+                }
 
                 col *= IN.color;
 

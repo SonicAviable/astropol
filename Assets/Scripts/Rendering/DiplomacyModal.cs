@@ -33,6 +33,8 @@ namespace StellarisClone.Rendering
         private Canvas _host;
         private GameObject _root;
         private TechTreeBackdrop _backdrop;
+        private RawImage _scene;
+        private Image _sceneShade;
         private RectTransform _portraitHost, _infoLeft, _infoRight, _tabs;
         private RectTransform _aiList, _playerList, _tableAI, _tablePlayer, _centerPanel;
         private Text _aiListTitle, _speechName, _speechText, _speechState, _reaction, _fee, _tableTitle, _colAI;
@@ -121,6 +123,7 @@ namespace StellarisClone.Rendering
             _viewingOffer = ai.PendingDeal != null;
             Color ec = ai.AIEmpireColor;
             _backdrop.SetColors(ec, Color.Lerp(ec, new Color(0.3f, 0.4f, 1f), 0.5f));
+            ApplyScene(ai);
             BuildPortrait(ai);
             var leader = LeaderPortraits.ForFaction(ai.Faction);
             if (_viewingOffer) Say(DiplomacyLines.Get(leader, DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
@@ -202,6 +205,16 @@ namespace StellarisClone.Rendering
             bd.Stretch();
             _backdrop = bd.gameObject.AddComponent<TechTreeBackdrop>();
             _backdrop.Initialize(bd);
+
+            // Сцена империи (зал переговоров) — Resources/Diplomacy/bg_<ключ правителя>; если нет — процедурный фон
+            var sc = LGBuild.Rect(rt, "Scene");
+            sc.Stretch();
+            _scene = sc.gameObject.AddComponent<RawImage>();
+            _scene.raycastTarget = false;
+            LG.Ignore(sc.gameObject);
+            _sceneShade = LGBuild.Panel(rt, "SceneShade", new Color(0.005f, 0.01f, 0.018f, 0.35f));
+            _sceneShade.rectTransform.Stretch();
+            LG.Ignore(_sceneShade.gameObject);
 
             // Правитель во весь рост
             _portraitHost = LGBuild.Rect(rt, "Leader");
@@ -389,8 +402,26 @@ namespace StellarisClone.Rendering
             if (key == _portraitKey) return;
             _portraitKey = key;
             LGBuild.Clear(_portraitHost);
-            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0.22f, 0.22f, 0.30f, 0.05f), true);
+            // Здесь правитель не моргает и стоит без фона своей картинки — в сцене своей империи
+            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0f, 0f, 0.16f, 0f), false, false, true);
             if (v == null) LGIcons.Create(_portraitHost, LGIcon.Leader, 260, new Color(1f, 1f, 1f, 0.15f));
+        }
+
+        /// <summary>Фон-сцена империи, кадрированная «cover» под экран.</summary>
+        private void ApplyScene(AIEmpireManager ai)
+        {
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            var tex = leader != null ? Resources.Load<Texture2D>("Diplomacy/bg_" + leader.Key) : null;
+            _scene.texture = tex;
+            _scene.enabled = tex != null;
+            _sceneShade.enabled = tex != null;
+            if (tex == null) return;
+            var size = ((RectTransform)_root.transform).rect.size;
+            float screen = size.y > 1f ? size.x / size.y : 16f / 9f;
+            float img = tex.width / (float)Mathf.Max(1, tex.height);
+            _scene.uvRect = screen > img
+                ? new Rect(0f, (1f - img / screen) * 0.5f, 1f, img / screen)
+                : new Rect((1f - screen / img) * 0.5f, 0f, screen / img, 1f);
         }
 
         private void RefreshAll()
@@ -583,7 +614,7 @@ namespace StellarisClone.Rendering
                 fx.SetRim(new Color(mc.r, mc.g, mc.b, on ? 0.9f : 0.3f));
                 fx.FillMultiplier = 2.6f;
                 var mask = LG.RoundedMask(b.transform, 6f, 2f);
-                var v = LeaderPortraitView.Create(mask, LeaderPortraits.ForFaction(ai.Faction), 2.2f, 0f, false);
+                var v = LeaderPortraitView.Create(mask, LeaderPortraits.ForFaction(ai.Faction), 2.2f, Vector4.zero, false, false, false);
                 if (v == null) LGIcons.Create(b.transform, LGIcon.Leader, 30, mc);
                 else if (ai.IsEliminated) v.GetComponent<RawImage>().color = new Color(0.4f, 0.4f, 0.4f, 1f);
                 var btn = b.gameObject.AddComponent<Button>();

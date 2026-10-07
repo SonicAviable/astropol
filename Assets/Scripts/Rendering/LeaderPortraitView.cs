@@ -102,6 +102,7 @@ namespace StellarisClone.Rendering
         private bool _doubleBlink;
         private float _nextGlitch, _glitchStart = -1f;
         private bool _glitches = true;
+        private bool _blinks = true;
 
         private const float BlinkClose = 0.07f, BlinkHold = 0.03f, BlinkOpen = 0.10f;
         private static readonly int IdT = Shader.PropertyToID("_T");
@@ -119,6 +120,14 @@ namespace StellarisClone.Rendering
 
         /// <summary>То же, но с мягкими краями со всех сторон (left, right, bottom, top — доли кадра).</summary>
         public static LeaderPortraitView Create(Transform parent, LeaderPortraits.Entry entry, float zoom, Vector4 fade, bool glitches)
+            => Create(parent, entry, zoom, fade, glitches, true, false);
+
+        /// <summary>
+        /// Полная версия: blinks — моргание, cutout — вырезать фигуру из фона картинки
+        /// (маска фигуры лежит в альфа-канале FX-текстуры), чтобы правитель стоял в своей сцене.
+        /// </summary>
+        public static LeaderPortraitView Create(Transform parent, LeaderPortraits.Entry entry, float zoom, Vector4 fade,
+                                                bool glitches, bool blinks, bool cutout)
         {
             if (entry == null || entry.Texture == null) return null;
             var rt = LGBuild.Rect(parent, "LeaderPortrait");
@@ -127,7 +136,9 @@ namespace StellarisClone.Rendering
             img.raycastTarget = false;
             LG.Ignore(rt.gameObject);
             var v = rt.gameObject.AddComponent<LeaderPortraitView>();
+            v._blinks = blinks;
             v.Setup(entry, zoom, fade, glitches);
+            if (v._mat != null) v._mat.SetFloat("_Cutout", cutout ? 1f : 0f);
             return v;
         }
 
@@ -204,7 +215,7 @@ namespace StellarisClone.Rendering
 
             // Моргание: закрыть → задержать → открыть; иногда дважды подряд
             float blink = 0f;
-            if (_blinkStart < 0f && now >= _nextBlink) { _blinkStart = now; }
+            if (_blinks && _blinkStart < 0f && now >= _nextBlink) { _blinkStart = now; }
             if (_blinkStart >= 0f)
             {
                 float t = now - _blinkStart;
