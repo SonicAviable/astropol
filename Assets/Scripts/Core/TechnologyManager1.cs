@@ -7,7 +7,59 @@ namespace StellarisClone.Core
     public enum TechCategory
     {
         Weapons, Defense, Propulsion, Sensors,
-        Industry, Reactor, Construction, Society
+        Industry, Reactor, Construction, Society,
+        Colonization, Doctrine
+    }
+
+    /// <summary>Три ветки науки, как в Stellaris: каждая — несколько направлений (категорий).</summary>
+    public enum TechBranch { Physics, Society, Engineering }
+
+    public static class TechBranchInfo
+    {
+        public static readonly TechBranch[] All = { TechBranch.Physics, TechBranch.Society, TechBranch.Engineering };
+
+        public static TechBranch Of(TechCategory c) => c switch
+        {
+            TechCategory.Reactor or TechCategory.Sensors or TechCategory.Propulsion => TechBranch.Physics,
+            TechCategory.Society or TechCategory.Colonization or TechCategory.Doctrine => TechBranch.Society,
+            _ => TechBranch.Engineering
+        };
+
+        /// <summary>Направления ветки в порядке отображения сверху вниз.</summary>
+        public static TechCategory[] Lanes(TechBranch b) => b switch
+        {
+            TechBranch.Physics => new[] { TechCategory.Reactor, TechCategory.Sensors, TechCategory.Propulsion },
+            TechBranch.Society => new[] { TechCategory.Society, TechCategory.Colonization, TechCategory.Doctrine },
+            _ => new[] { TechCategory.Weapons, TechCategory.Defense, TechCategory.Industry, TechCategory.Construction }
+        };
+
+        public static string Name(TechBranch b) => b switch
+        {
+            TechBranch.Physics => "ФИЗИКА",
+            TechBranch.Society => "ОБЩЕСТВО",
+            _ => "ИНЖЕНЕРИЯ"
+        };
+
+        public static string Motto(TechBranch b) => b switch
+        {
+            TechBranch.Physics => "Энергия, вычисления и движение",
+            TechBranch.Society => "Наука, экспансия и доктрина флота",
+            _ => "Оружие, броня, промышленность и верфи"
+        };
+
+        public static Color Color(TechBranch b) => b switch
+        {
+            TechBranch.Physics => new Color(0.42f, 0.66f, 1.00f),
+            TechBranch.Society => new Color(0.36f, 0.95f, 0.58f),
+            _ => new Color(1.00f, 0.68f, 0.30f)
+        };
+
+        public static string Key(TechBranch b) => b switch
+        {
+            TechBranch.Physics => "physics",
+            TechBranch.Society => "society",
+            _ => "engineering"
+        };
     }
 
     public static class TechCategoryInfo
@@ -17,11 +69,13 @@ namespace StellarisClone.Core
             TechCategory.Weapons      => "ОРУЖИЕ",
             TechCategory.Defense      => "ЗАЩИТА",
             TechCategory.Propulsion   => "ДВИГАТЕЛИ",
-            TechCategory.Sensors      => "СЕНСОРЫ",
+            TechCategory.Sensors      => "СЕНСОРЫ И ИИ",
             TechCategory.Industry     => "ПРОМЫШЛЕННОСТЬ",
-            TechCategory.Reactor      => "РЕАКТОРЫ",
-            TechCategory.Construction => "СТРОИТЕЛЬСТВО",
-            TechCategory.Society      => "ОБЩЕСТВО",
+            TechCategory.Reactor      => "ЭНЕРГЕТИКА",
+            TechCategory.Construction => "ВЕРФИ",
+            TechCategory.Society      => "НАУКА И УПРАВЛЕНИЕ",
+            TechCategory.Colonization => "ЭКСПАНСИЯ",
+            TechCategory.Doctrine     => "ВОЕННАЯ ДОКТРИНА",
             _ => "?"
         };
         public static string Icon(TechCategory c) => c switch
@@ -34,6 +88,8 @@ namespace StellarisClone.Core
             TechCategory.Reactor      => "⚛",
             TechCategory.Construction => "✦",
             TechCategory.Society      => "★",
+            TechCategory.Colonization => "◎",
+            TechCategory.Doctrine     => "▲",
             _ => "?"
         };
         public static Color Color(TechCategory c) => c switch
@@ -46,6 +102,8 @@ namespace StellarisClone.Core
             TechCategory.Reactor      => new Color(0.78f, 0.58f, 1.00f),
             TechCategory.Construction => new Color(0.65f, 0.85f, 0.45f),
             TechCategory.Society      => new Color(0.45f, 1.00f, 0.65f),
+            TechCategory.Colonization => new Color(0.40f, 0.90f, 0.85f),
+            TechCategory.Doctrine     => new Color(0.95f, 0.85f, 0.45f),
             _ => UnityEngine.Color.white
         };
     }
@@ -119,7 +177,7 @@ namespace StellarisClone.Core
         public const float SlotSplitExponent = 0.7f;
 
         /// <summary>
-        /// Множитель стоимости по уровню: базовые ×1, Tier 1 ×4.4, Tier 2 ×9. Ранние технологии
+        /// Множитель стоимости по уровню: базовые ×1, Tier 1 ×4.4, Tier 2 ×9, Tier 3 ×13. Ранние технологии
         /// изучаются за месяцы, поздние — за годы: научная победа достижима ближе к 2220-м.
         /// </summary>
         public static float TierCostFactor(int tier) => tier <= 0 ? 1f : tier == 1 ? 4.4f : 9f + (tier - 2) * 4f;
@@ -190,79 +248,151 @@ namespace StellarisClone.Core
                      int tier, int col, float days, string[] reqs, int year, string bonusKey)
                 => list.Add(new Technology(id, name, cat, desc, tier, col, days, reqs, year, bonusKey));
 
-            // --- WEAPONS ---
-            Add("wpn_kin_1", "Кинетические орудия I", TechCategory.Weapons,
-                "Базовые рельсовые пушки. +10% урона кинетического оружия.", 0, 0, 60f, null, 2200, "weap_kin_1");
-            Add("wpn_kin_2", "Кинетические орудия II", TechCategory.Weapons,
-                "Улучшенные рельсы. +15% урона кинетического оружия.", 1, 0, 90f, new[]{"wpn_kin_1"}, 2205, "weap_kin_2");
-            Add("wpn_las_1", "Лазерные батареи I", TechCategory.Weapons,
-                "Первые лазеры. +10% урона энергооружия, +5 точности.", 0, 1, 70f, null, 2200, "weap_las_1");
-            Add("wpn_las_2", "Лазерные батареи II", TechCategory.Weapons,
-                "Улучшенные лазеры. +15% урона энергооружия, +5 точности.", 1, 1, 100f, new[]{"wpn_las_1"}, 2205, "weap_las_2");
-            Add("wpn_pls_1", "Плазменные орудия", TechCategory.Weapons,
-                "Разряд плазмы. +20% урона всего оружия.", 2, 2, 140f, new[]{"wpn_kin_2","wpn_las_2"}, 2210, "weap_pls_1");
+            // Уровни: базовые (2200), I (2205), II (2210), III (2218). Внутри направления
+            // GridColumn — номер дорожки (строки), по которой технология идёт слева направо.
+            const int Y0 = 2200, Y1 = 2205, Y2 = 2210, Y3 = 2218;
 
-            // --- DEFENSE ---
-            Add("def_arm_1", "Титановая броня I", TechCategory.Defense,
-                "Базовая броня. +10% прочности корпуса и брони.", 0, 0, 60f, null, 2200, "def_arm_1");
-            Add("def_arm_2", "Титановая броня II", TechCategory.Defense,
-                "Усиленная броня. +15% прочности корпуса и брони.", 1, 0, 90f, new[]{"def_arm_1"}, 2205, "def_arm_2");
-            Add("def_shl_1", "Энергощиты I", TechCategory.Defense,
-                "Первые щиты. +10% щитов.", 0, 1, 80f, null, 2200, "def_shl_1");
-            Add("def_shl_2", "Энергощиты II", TechCategory.Defense,
-                "Улучшенные щиты. +15% щитов.", 1, 1, 110f, new[]{"def_shl_1"}, 2205, "def_shl_2");
+            // ======================= ФИЗИКА =======================
 
-            // --- PROPULSION ---
-            Add("prp_hyp_1", "Гипердвигатели I", TechCategory.Propulsion,
-                "+15% скорости гиперпрыжков.", 0, 0, 70f, null, 2200, "prp_hyp_1");
-            Add("prp_hyp_2", "Гипердвигатели II", TechCategory.Propulsion,
-                "+20% скорости гиперпрыжков (итого +35%).", 1, 0, 120f, new[]{"prp_hyp_1"}, 2205, "prp_hyp_2");
-            Add("prp_eng_1", "Импульсные двигатели", TechCategory.Propulsion,
-                "+10% уклонения кораблей. Открывает модуль «Импульсный двигатель».", 0, 1, 60f, null, 2200, "prp_eng_1");
-
-            // --- SENSORS ---
-            Add("sen_bas_1", "Сенсорные массивы", TechCategory.Sensors,
-                "+5 точности орудий, +20% скорости разведки систем.", 0, 0, 50f, null, 2200, "sen_bas_1");
-            Add("sen_ai_1", "Простейший ИИ", TechCategory.Sensors,
-                "+1 слот исследования.", 1, 1, 100f, new[]{"sen_bas_1"}, 2205, "slot+1");
-            Add("sen_ai_2", "Продвинутый ИИ", TechCategory.Sensors,
-                "+1 слот исследования.", 2, 1, 180f, new[]{"sen_ai_1"}, 2210, "slot+1");
-
-            // --- INDUSTRY ---
-            Add("ind_min_1", "Плазменные буры", TechCategory.Industry,
-                "+20% добычи титана.", 0, 0, 80f, null, 2200, "ind_min_1");
-            Add("ind_min_2", "Глубокое обогащение", TechCategory.Industry,
-                "+15% добычи титана (итого +35%).", 1, 0, 130f, new[]{"ind_min_1"}, 2205, "ind_min_2");
-            Add("ind_all_1", "Сплавы нового поколения", TechCategory.Industry,
-                "+20% производства сплавов.", 0, 1, 80f, null, 2200, "ind_all_1");
-
-            // --- REACTOR ---
+            // --- ЭНЕРГЕТИКА ---
             Add("rct_fus_1", "Термоядерные реакторы I", TechCategory.Reactor,
-                "+4 Гелия-3 в месяц. Открывает термоядерный реактор кораблей.", 0, 0, 70f, null, 2200, "rct_fus_1");
+                "+4 Гелия-3 в месяц. Открывает термоядерный реактор кораблей.", 0, 0, 70f, null, Y0, "rct_fus_1");
             Add("rct_fus_2", "Термоядерные реакторы II", TechCategory.Reactor,
-                "+8 Гелия-3 в месяц.", 1, 0, 120f, new[]{"rct_fus_1"}, 2205, "rct_fus_2");
-            Add("rct_ant_1", "Антиматерия I", TechCategory.Reactor,
-                "+12 Гелия-3 в месяц.", 2, 0, 200f, new[]{"rct_fus_2"}, 2210, "rct_ant_1");
+                "+8 Гелия-3 в месяц.", 1, 0, 120f, new[]{"rct_fus_1"}, Y1, "rct_fus_2");
+            Add("rct_ant_1", "Антиматерия", TechCategory.Reactor,
+                "+12 Гелия-3 в месяц. Открывает реактор на антиматерии.", 2, 0, 200f, new[]{"rct_fus_2"}, Y2, "rct_ant_1");
+            Add("rct_zpe_1", "Энергия нулевой точки", TechCategory.Reactor,
+                "+18 Гелия-3 в месяц.", 3, 0, 220f, new[]{"rct_ant_1"}, Y3, "rct_zpe_1");
+            Add("rct_sc_1", "Сверхпроводники", TechCategory.Reactor,
+                "+10% щитов, +3 Гелия-3 в месяц.", 1, 1, 110f, new[]{"rct_fus_1"}, Y1, "rct_sc_1");
 
-            // --- CONSTRUCTION ---
-            Add("cns_sta_1", "Орбитальные верфи", TechCategory.Construction,
-                "-20% стоимости кораблей в сплавах.", 0, 0, 90f, null, 2200, "cns_sta_1");
-            Add("cns_col_1", "Колониальный устав", TechCategory.Construction,
-                "-10 Влияния на форпосты.", 0, 1, 70f, null, 2200, "cns_col_1");
-            Add("cns_dst_1", "Верфи класса «Эсминец»", TechCategory.Construction,
-                "Открывает постройку эсминцев.", 1, 1, 150f, new[]{"cns_sta_1"}, 2205, "cns_dst_1");
+            // --- СЕНСОРЫ И ИИ ---
+            Add("sen_bas_1", "Сенсорные массивы", TechCategory.Sensors,
+                "+5 точности орудий, +20% скорости разведки систем.", 0, 0, 50f, null, Y0, "sen_bas_1");
+            Add("sen_grv_1", "Гравиметрия", TechCategory.Sensors,
+                "+5 точности орудий, +20% скорости разведки систем.", 1, 0, 100f, new[]{"sen_bas_1"}, Y1, "sen_grv_1");
+            Add("sen_tac_1", "Тактические вычислители", TechCategory.Sensors,
+                "+10 точности орудий.", 2, 0, 160f, new[]{"sen_grv_1"}, Y2, "sen_tac_1");
+            Add("sen_ai_1", "Простейший ИИ", TechCategory.Sensors,
+                "+1 слот исследования.", 1, 1, 100f, new[]{"sen_bas_1"}, Y1, "slot+1");
+            Add("sen_ai_2", "Продвинутый ИИ", TechCategory.Sensors,
+                "+1 слот исследования.", 2, 1, 180f, new[]{"sen_ai_1"}, Y2, "slot+1");
+            Add("sen_qc_1", "Квантовые вычисления", TechCategory.Sensors,
+                "+20% скорости исследований.", 3, 1, 200f, new[]{"sen_ai_2"}, Y3, "sen_qc_1");
 
-            // --- SOCIETY ---
+            // --- ДВИГАТЕЛИ ---
+            Add("prp_hyp_1", "Гипердвигатели I", TechCategory.Propulsion,
+                "+15% скорости гиперпрыжков.", 0, 0, 70f, null, Y0, "prp_hyp_1");
+            Add("prp_hyp_2", "Гипердвигатели II", TechCategory.Propulsion,
+                "+20% скорости гиперпрыжков (итого +35%).", 1, 0, 120f, new[]{"prp_hyp_1"}, Y1, "prp_hyp_2");
+            Add("prp_fld_1", "Складки пространства", TechCategory.Propulsion,
+                "+25% скорости гиперпрыжков (итого +60%).", 2, 0, 170f, new[]{"prp_hyp_2"}, Y2, "prp_fld_1");
+            Add("prp_eng_1", "Импульсные двигатели", TechCategory.Propulsion,
+                "+10% уклонения кораблей. Открывает модуль «Импульсный двигатель».", 0, 1, 60f, null, Y0, "prp_eng_1");
+            Add("prp_ion_1", "Ионные маневровые", TechCategory.Propulsion,
+                "+10% уклонения кораблей.", 1, 1, 100f, new[]{"prp_eng_1"}, Y1, "prp_ion_1");
+            Add("prp_inr_1", "Инерционные компенсаторы", TechCategory.Propulsion,
+                "+15% уклонения кораблей.", 2, 1, 160f, new[]{"prp_ion_1"}, Y2, "prp_inr_1");
+
+            // ======================= ОБЩЕСТВО =======================
+
+            // --- НАУКА И УПРАВЛЕНИЕ ---
             Add("soc_admin_1", "Административные системы", TechCategory.Society,
-                "+1 слот исследования.", 0, 0, 100f, null, 2200, "slot+1");
+                "+1 слот исследования.", 0, 0, 100f, null, Y0, "slot+1");
             Add("soc_admin_2", "Бюрократическая реформа", TechCategory.Society,
-                "+1 слот исследования.", 1, 0, 180f, new[]{"soc_admin_1"}, 2205, "slot+1");
+                "+1 слот исследования.", 1, 0, 180f, new[]{"soc_admin_1"}, Y1, "slot+1");
             Add("soc_sci_1", "Научные институты", TechCategory.Society,
-                "+15% скорости исследований.", 0, 1, 90f, null, 2200, "soc_sci_1");
+                "+15% скорости исследований.", 0, 1, 90f, null, Y0, "soc_sci_1");
             Add("soc_sci_2", "Нейросетевое планирование", TechCategory.Society,
-                "+25% скорости исследований.", 1, 1, 150f, new[]{"soc_sci_1"}, 2205, "soc_sci_2");
-            Add("soc_geo_1", "Звёздная геодезия", TechCategory.Society,
-                "+35% скорости разведки систем.", 0, 2, 100f, null, 2200, "soc_geo_1");
+                "+25% скорости исследований.", 1, 1, 150f, new[]{"soc_sci_1"}, Y1, "soc_sci_2");
+            Add("soc_sci_3", "Академия Звёздного Совета", TechCategory.Society,
+                "+20% скорости исследований.", 2, 1, 170f, new[]{"soc_sci_2"}, Y2, "soc_sci_3");
+            Add("soc_sci_4", "Коллективный разум", TechCategory.Society,
+                "+30% скорости исследований.", 3, 1, 240f, new[]{"soc_sci_3", "sen_ai_2"}, Y3, "soc_sci_4");
+
+            // --- ЭКСПАНСИЯ ---
+            Add("soc_geo_1", "Звёздная геодезия", TechCategory.Colonization,
+                "+35% скорости разведки систем.", 0, 0, 100f, null, Y0, "soc_geo_1");
+            Add("col_xgeo_1", "Ксеногеология", TechCategory.Colonization,
+                "+15% добычи титана, +15% скорости разведки систем.", 1, 0, 110f, new[]{"soc_geo_1"}, Y1, "col_xgeo_1");
+            Add("col_hab_1", "Орбитальные поселения", TechCategory.Colonization,
+                "+10% добычи титана, +10% производства сплавов.", 2, 0, 180f, new[]{"col_xgeo_1"}, Y2, "col_hab_1");
+            Add("cns_col_1", "Колониальный устав", TechCategory.Colonization,
+                "-10 Влияния на форпосты.", 0, 1, 70f, null, Y0, "cns_col_1");
+            Add("col_frt_1", "Пограничные протоколы", TechCategory.Colonization,
+                "-5 Влияния на форпосты, +10% скорости гиперпрыжков.", 1, 1, 100f, new[]{"cns_col_1"}, Y1, "col_frt_1");
+
+            // --- ВОЕННАЯ ДОКТРИНА ---
+            Add("doc_flt_1", "Флотская доктрина", TechCategory.Doctrine,
+                "+5 точности орудий, +5% уклонения кораблей.", 0, 0, 60f, null, Y0, "doc_flt_1");
+            Add("doc_drl_1", "Учения флота", TechCategory.Doctrine,
+                "+10% урона всего оружия.", 1, 0, 110f, new[]{"doc_flt_1"}, Y1, "doc_drl_1");
+            Add("doc_net_1", "Командная сеть", TechCategory.Doctrine,
+                "+10% урона всего оружия, +5 точности орудий.", 2, 0, 170f, new[]{"doc_drl_1"}, Y2, "doc_net_1");
+            Add("doc_log_1", "Военная логистика", TechCategory.Doctrine,
+                "-5% стоимости кораблей в сплавах, +10% скорости гиперпрыжков.", 1, 1, 100f, new[]{"doc_flt_1"}, Y1, "doc_log_1");
+
+            // ======================= ИНЖЕНЕРИЯ =======================
+
+            // --- ОРУЖИЕ ---
+            Add("wpn_kin_1", "Кинетические орудия I", TechCategory.Weapons,
+                "Базовые рельсовые пушки. +10% урона кинетического оружия.", 0, 0, 60f, null, Y0, "weap_kin_1");
+            Add("wpn_kin_2", "Кинетические орудия II", TechCategory.Weapons,
+                "Улучшенные рельсы. +15% урона кинетического оружия. Открывает рельсотрон.", 1, 0, 90f, new[]{"wpn_kin_1"}, Y1, "weap_kin_2");
+            Add("wpn_kin_3", "Масс-драйверы", TechCategory.Weapons,
+                "+20% урона кинетического оружия.", 2, 0, 160f, new[]{"wpn_kin_2"}, Y2, "weap_kin_3");
+            Add("wpn_las_1", "Лазерные батареи I", TechCategory.Weapons,
+                "Первые лазеры. +10% урона энергооружия, +5 точности.", 0, 1, 70f, null, Y0, "weap_las_1");
+            Add("wpn_las_2", "Лазерные батареи II", TechCategory.Weapons,
+                "Улучшенные лазеры. +15% урона энергооружия, +5 точности. Открывает синий лазер.", 1, 1, 100f, new[]{"wpn_las_1"}, Y1, "weap_las_2");
+            Add("wpn_las_3", "Рентгеновские лазеры", TechCategory.Weapons,
+                "+20% урона энергооружия, +5 точности.", 2, 1, 170f, new[]{"wpn_las_2"}, Y2, "weap_las_3");
+            Add("wpn_pls_1", "Плазменные орудия", TechCategory.Weapons,
+                "Разряд плазмы. +20% урона всего оружия. Открывает плазменную пушку и торпеды.", 2, 2, 140f, new[]{"wpn_kin_2","wpn_las_2"}, Y2, "weap_pls_1");
+            Add("wpn_lnc_1", "Лэнс-орудия", TechCategory.Weapons,
+                "+25% урона всего оружия.", 3, 2, 240f, new[]{"wpn_pls_1"}, Y3, "weap_lnc_1");
+
+            // --- ЗАЩИТА ---
+            Add("def_arm_1", "Титановая броня I", TechCategory.Defense,
+                "Базовая броня. +10% прочности корпуса и брони.", 0, 0, 60f, null, Y0, "def_arm_1");
+            Add("def_arm_2", "Титановая броня II", TechCategory.Defense,
+                "Усиленная броня. +15% прочности корпуса и брони. Открывает керамостальную броню.", 1, 0, 90f, new[]{"def_arm_1"}, Y1, "def_arm_2");
+            Add("def_arm_3", "Нейтрониевая броня", TechCategory.Defense,
+                "+20% прочности корпуса и брони.", 2, 0, 160f, new[]{"def_arm_2"}, Y2, "def_arm_3");
+            Add("def_aeg_1", "Протокол «Эгида»", TechCategory.Defense,
+                "+15% прочности корпуса, брони и щитов.", 3, 0, 230f, new[]{"def_arm_3","def_shl_3"}, Y3, "def_aeg_1");
+            Add("def_shl_1", "Энергощиты I", TechCategory.Defense,
+                "Первые щиты. +10% щитов.", 0, 1, 80f, null, Y0, "def_shl_1");
+            Add("def_shl_2", "Энергощиты II", TechCategory.Defense,
+                "Улучшенные щиты. +15% щитов. Открывает усиленный дефлектор.", 1, 1, 110f, new[]{"def_shl_1"}, Y1, "def_shl_2");
+            Add("def_shl_3", "Гиперщиты", TechCategory.Defense,
+                "+20% щитов.", 2, 1, 170f, new[]{"def_shl_2"}, Y2, "def_shl_3");
+
+            // --- ПРОМЫШЛЕННОСТЬ ---
+            Add("ind_min_1", "Плазменные буры", TechCategory.Industry,
+                "+20% добычи титана.", 0, 0, 80f, null, Y0, "ind_min_1");
+            Add("ind_min_2", "Глубокое обогащение", TechCategory.Industry,
+                "+15% добычи титана (итого +35%).", 1, 0, 130f, new[]{"ind_min_1"}, Y1, "ind_min_2");
+            Add("ind_min_3", "Астероидные комбинаты", TechCategory.Industry,
+                "+20% добычи титана.", 2, 0, 170f, new[]{"ind_min_2"}, Y2, "ind_min_3");
+            Add("ind_all_1", "Сплавы нового поколения", TechCategory.Industry,
+                "+20% производства сплавов.", 0, 1, 80f, null, Y0, "ind_all_1");
+            Add("ind_all_2", "Нанофабрикация", TechCategory.Industry,
+                "+15% производства сплавов.", 1, 1, 120f, new[]{"ind_all_1"}, Y1, "ind_all_2");
+            Add("ind_all_3", "Автоматические кузни", TechCategory.Industry,
+                "+20% производства сплавов.", 2, 1, 180f, new[]{"ind_all_2"}, Y2, "ind_all_3");
+            Add("ind_meg_1", "Мегаинженерия", TechCategory.Industry,
+                "+25% производства сплавов, +15% добычи титана.", 3, 1, 250f, new[]{"ind_all_3","ind_min_3"}, Y3, "ind_meg_1");
+
+            // --- ВЕРФИ ---
+            Add("cns_sta_1", "Орбитальные верфи", TechCategory.Construction,
+                "-20% стоимости кораблей в сплавах.", 0, 0, 90f, null, Y0, "cns_sta_1");
+            Add("cns_dst_1", "Верфи класса «Эсминец»", TechCategory.Construction,
+                "Открывает постройку эсминцев.", 1, 0, 150f, new[]{"cns_sta_1"}, Y1, "cns_dst_1");
+            Add("cns_dck_1", "Орбитальные доки", TechCategory.Construction,
+                "-10% стоимости кораблей в сплавах.", 2, 0, 160f, new[]{"cns_dst_1"}, Y2, "cns_dck_1");
+            Add("cns_mod_1", "Модульное строительство", TechCategory.Construction,
+                "-8% стоимости кораблей в сплавах.", 1, 1, 110f, new[]{"cns_sta_1"}, Y1, "cns_mod_1");
             return list;
         }
 

@@ -90,6 +90,7 @@ namespace StellarisClone.Core
                     p.TechWeights[TechCategory.Sensors] = 2.5f;
                     p.TechWeights[TechCategory.Reactor] = 2f;
                     p.TechWeights[TechCategory.Defense] = 1.5f;
+                    p.TechWeights[TechCategory.Colonization] = 1.8f;
                     break;
 
                 case AIPersonality.Trader:
@@ -108,6 +109,7 @@ namespace StellarisClone.Core
                     p.TechWeights[TechCategory.Reactor] = 2.5f;
                     p.TechWeights[TechCategory.Construction] = 2f;
                     p.TechWeights[TechCategory.Propulsion] = 1.5f;
+                    p.TechWeights[TechCategory.Colonization] = 2f;
                     break;
 
                 default:
@@ -126,6 +128,7 @@ namespace StellarisClone.Core
                     p.TechWeights[TechCategory.Defense] = 2.5f;
                     p.TechWeights[TechCategory.Construction] = 2f;
                     p.TechWeights[TechCategory.Propulsion] = 1.5f;
+                    p.TechWeights[TechCategory.Doctrine] = 2.5f;
                     break;
             }
             return p;

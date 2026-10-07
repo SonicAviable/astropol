@@ -71,34 +71,65 @@ namespace StellarisClone.Core
                 case "weap_kin_2": b.KineticDamage += 0.15f; break;
                 case "weap_las_1": b.EnergyDamage += 0.10f; b.Accuracy += 5f; break;
                 case "weap_las_2": b.EnergyDamage += 0.15f; b.Accuracy += 5f; break;
+                case "weap_kin_3": b.KineticDamage += 0.20f; break;
+                case "weap_las_3": b.EnergyDamage += 0.20f; b.Accuracy += 5f; break;
                 case "weap_pls_1": b.AllDamage += 0.20f; break;
+                case "weap_lnc_1": b.AllDamage += 0.25f; break;
 
                 case "def_arm_1": b.HullMult += 0.10f; b.ArmorMult += 0.10f; break;
                 case "def_arm_2": b.HullMult += 0.15f; b.ArmorMult += 0.15f; break;
                 case "def_shl_1": b.ShieldMult += 0.10f; break;
                 case "def_shl_2": b.ShieldMult += 0.15f; break;
+                case "def_arm_3": b.HullMult += 0.20f; b.ArmorMult += 0.20f; break;
+                case "def_shl_3": b.ShieldMult += 0.20f; break;
+                case "def_aeg_1": b.HullMult += 0.15f; b.ArmorMult += 0.15f; b.ShieldMult += 0.15f; break;
 
                 case "prp_hyp_1": b.HyperlaneSpeed += 0.15f; break;
                 case "prp_hyp_2": b.HyperlaneSpeed += 0.20f; break;
                 case "prp_eng_1": b.EvasionMult += 0.10f; break;
+                case "prp_fld_1": b.HyperlaneSpeed += 0.25f; break;
+                case "prp_ion_1": b.EvasionMult += 0.10f; break;
+                case "prp_inr_1": b.EvasionMult += 0.15f; break;
 
                 case "sen_bas_1": b.Accuracy += 5f; b.SurveySpeed += 0.20f; break;
+                case "sen_grv_1": b.Accuracy += 5f; b.SurveySpeed += 0.20f; break;
+                case "sen_tac_1": b.Accuracy += 10f; break;
+                case "sen_qc_1": b.ResearchMult += 0.20f; break;
 
                 case "ind_min_1": b.MineralsMult += 0.20f; break;
                 case "ind_min_2": b.MineralsMult += 0.15f; break;
+                case "ind_min_3": b.MineralsMult += 0.20f; break;
                 case "ind_all_1": b.AlloysMult += 0.20f; break;
+                case "ind_all_2": b.AlloysMult += 0.15f; break;
+                case "ind_all_3": b.AlloysMult += 0.20f; break;
+                case "ind_meg_1": b.AlloysMult += 0.25f; b.MineralsMult += 0.15f; break;
 
                 case "rct_fus_1": b.EnergyFlat += 4f; break;
                 case "rct_fus_2": b.EnergyFlat += 8f; break;
                 case "rct_ant_1": b.EnergyFlat += 12f; break;
+                case "rct_zpe_1": b.EnergyFlat += 18f; break;
+                case "rct_sc_1": b.EnergyFlat += 3f; b.ShieldMult += 0.10f; break;
 
                 case "cns_sta_1": b.ShipCostMult -= 0.20f; break;
                 case "cns_col_1": b.OutpostInfluenceDiscount += 10f; break;
                 case "cns_dst_1": b.DestroyerUnlocked = true; break;
+                case "cns_dck_1": b.ShipCostMult -= 0.10f; break;
+                case "cns_mod_1": b.ShipCostMult -= 0.08f; break;
 
                 case "soc_sci_1": b.ResearchMult += 0.15f; break;
                 case "soc_sci_2": b.ResearchMult += 0.25f; break;
+                case "soc_sci_3": b.ResearchMult += 0.20f; break;
+                case "soc_sci_4": b.ResearchMult += 0.30f; break;
                 case "soc_geo_1": b.SurveySpeed += 0.35f; break;
+
+                case "col_xgeo_1": b.MineralsMult += 0.15f; b.SurveySpeed += 0.15f; break;
+                case "col_hab_1": b.MineralsMult += 0.10f; b.AlloysMult += 0.10f; break;
+                case "col_frt_1": b.OutpostInfluenceDiscount += 5f; b.HyperlaneSpeed += 0.10f; break;
+
+                case "doc_flt_1": b.Accuracy += 5f; b.EvasionMult += 0.05f; break;
+                case "doc_drl_1": b.AllDamage += 0.10f; break;
+                case "doc_net_1": b.AllDamage += 0.10f; b.Accuracy += 5f; break;
+                case "doc_log_1": b.ShipCostMult -= 0.05f; b.HyperlaneSpeed += 0.10f; break;
 
                 case "slot+1": return true;
             }
@@ -107,7 +138,8 @@ namespace StellarisClone.Core
 
         /// <summary>Технология меняет прочность кораблей — нужно пересчитать существующий флот.</summary>
         public static bool AffectsDurability(string key)
-            => key == "def_arm_1" || key == "def_arm_2" || key == "def_shl_1" || key == "def_shl_2";
+            => key == "def_arm_1" || key == "def_arm_2" || key == "def_arm_3" || key == "def_shl_1" || key == "def_shl_2"
+            || key == "def_shl_3" || key == "def_aeg_1" || key == "rct_sc_1";
     }
 
     /// <summary>Боевая оценка кораблей с учётом технологий и текущих повреждений.</summary>

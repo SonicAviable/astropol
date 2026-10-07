@@ -125,7 +125,7 @@ namespace StellarisClone.Rendering
         /// Ищет в тексте «+N%», «−N%», «+N» и «−N» и красит их зелёным / красным.
         /// Понимает как дефис «-», так и минус «−».
         /// </summary>
-        private static string ColorizeModifiers(string text)
+        public static string ColorizeModifiers(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
 

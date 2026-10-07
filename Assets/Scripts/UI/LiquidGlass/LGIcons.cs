@@ -120,6 +120,8 @@ namespace StellarisClone.Rendering
                 case StellarisClone.Core.TechCategory.Reactor:      return LGIcon.Reactor;
                 case StellarisClone.Core.TechCategory.Construction: return LGIcon.Construction;
                 case StellarisClone.Core.TechCategory.Society:      return LGIcon.Society;
+                case StellarisClone.Core.TechCategory.Colonization: return LGIcon.Planet;
+                case StellarisClone.Core.TechCategory.Doctrine:     return LGIcon.Target;
             }
             return LGIcon.Research;
         }

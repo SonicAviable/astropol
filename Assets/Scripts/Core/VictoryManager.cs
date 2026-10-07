@@ -26,7 +26,7 @@ namespace StellarisClone.Core
 
         [Header("Условия победы")]
         [SerializeField] private int dominationSystemsRequired = 40;
-        [SerializeField] private int scienceTechsRequired = 25;
+        [SerializeField] private int scienceTechsRequired = 40;
 
         [Header("Условия поражения")]
         [SerializeField] private int bankruptcyMonthsRequired = 6;
@@ -107,7 +107,7 @@ namespace StellarisClone.Core
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             dominationSystemsRequired = GameSession.Settings.DominationTarget;
-            scienceTechsRequired = 25;
+            scienceTechsRequired = 40;
         }
 
         public VictorySave CaptureState() => new VictorySave
