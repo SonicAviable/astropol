@@ -115,8 +115,7 @@ namespace StellarisClone.Core
                 return;
             }
 
-            // 3. Защита своих систем
-            if (AtWarWithAnyone)
+            // 3. Защита своих систем (в мирное время — от пиратов)
             {
                 int threat = FindThreat(out float threatPower);
                 if (threat >= 0)

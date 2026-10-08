@@ -87,6 +87,9 @@ namespace StellarisClone.Core
     public class EventState
     {
         public int MonthsSinceEvent;
+        /// <summary>Месяцев с последнего решения фракции (первое — через год после начала).</summary>
+        public int MonthsSinceFaction = 12;
+        /// <summary>Сыгранные одноразовые события и флаги цепочек («flag:…»).</summary>
         public List<string> Fired = new List<string>();
         public List<PendingEventSave> Pending = new List<PendingEventSave>();
     }

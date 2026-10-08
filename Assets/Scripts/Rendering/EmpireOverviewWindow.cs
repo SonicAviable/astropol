@@ -20,7 +20,7 @@ namespace StellarisClone.Rendering
     {
         public static EmpireOverviewWindow Instance { get; private set; }
 
-        private enum Tab { Colonies, Fleets, Leaders, Borders, Rival }
+        private enum Tab { Colonies, Fleets, Leaders, Borders, Rival, Effects }
 
         private GameObject _root;
         private Text _title, _subtitle;
@@ -344,6 +344,7 @@ namespace StellarisClone.Rendering
             AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, "ЛИДЕРЫ", 2);
             AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 3);
             AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИКИ", 4);
+            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, "ЭФФЕКТЫ", 5);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -363,7 +364,7 @@ namespace StellarisClone.Rendering
         private void AddTab(RectTransform row, Tab tab, LGIcon icon, string label, int index)
         {
             var bgImg = LGBuild.Panel(row, "Tab_" + tab, UIManager.DS.BtnNeutral, raycast: true);
-            const int TabCount = 5;
+            const int TabCount = 6;
             bgImg.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 0 : 4, index == TabCount - 1 ? 0 : 4);
             var b = bgImg.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() =>
@@ -541,6 +542,7 @@ namespace StellarisClone.Rendering
                 case Tab.Leaders: BuildLeaders(); break;
                 case Tab.Borders: BuildBorders(); break;
                 case Tab.Rival: BuildRival(); break;
+                case Tab.Effects: BuildEffects(); break;
             }
             LG.Skin(_list);
         }
@@ -798,6 +800,47 @@ namespace StellarisClone.Rendering
                 case StarSpectralClass.BlackHole: return "Чёрная дыра";
             }
             return c.ToString();
+        }
+
+        // ---------- Эффекты и угрозы ----------
+
+        private void BuildEffects()
+        {
+            HeaderCols((0.06f, 0.42f, "ЭФФЕКТ", TextAnchor.MiddleLeft),
+                       (0.42f, 0.84f, "ДЕЙСТВИЕ", TextAnchor.MiddleLeft),
+                       (0.84f, 1f, "ОСТАЛОСЬ", TextAnchor.MiddleRight));
+            int n = 0;
+            foreach (var e in EmpireEffects.Active)
+            {
+                n++;
+                var row = Row(null, new Color(0.95f, 0.78f, 0.35f, 0.3f));
+                IconCell(row, 0f, 0.06f, LGIcon.Clock, CGold);
+                TwoLine(row, 0.06f, 0.42f, e.Title, e.Detail);
+                TextCell(row, 0.42f, 0.84f, EmpireEffects.Summary(e), UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
+                TextCell(row, 0.84f, 1f, $"{e.MonthsLeft} мес.", UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
+            }
+
+            var tm = ThreatManager.Instance;
+            if (tm != null && tm.RaidsSoFar > 0)
+            {
+                Color pc = Threats.ColorOf(Threats.PirateOwner);
+                void Threat(string title, string sub, string what, string left)
+                {
+                    n++;
+                    var row = Row(null, new Color(pc.r, pc.g, pc.b, 0.3f));
+                    IconCell(row, 0f, 0.06f, LGIcon.Warning, pc);
+                    TwoLine(row, 0.06f, 0.42f, title, sub);
+                    TextCell(row, 0.42f, 0.84f, what, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
+                    TextCell(row, 0.84f, 1f, left, UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
+                }
+                Threat("Пиратская угроза", $"налётов: {tm.RaidsSoFar}", "Банды грабят слабо защищённые пограничные колонии", "");
+                if (tm.TributeActive) Threat("Дань пиратам", "пираты", "Пираты не нападают на ваши системы", $"{tm.TributeMonths} мес.");
+                if (tm.BountyActive) Threat("Награда за пиратов", "охота", "+40 энергии и +4 влияния за каждый уничтоженный корабль", $"{tm.BountyMonths} мес.");
+                if (tm.PrivateerRaids > 0) Threat("Каперские грамоты", "пираты", "Налёты направлены на соперников", $"{tm.PrivateerRaids} нал.");
+            }
+
+            if (n == 0)
+                Empty("Действующих эффектов нет.\n\nЗаконы, указы и контракты появляются из решений фракции (раз в два года) и событий.");
         }
 
         // ---------- Соперник ----------

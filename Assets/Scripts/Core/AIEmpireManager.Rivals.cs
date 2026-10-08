@@ -39,6 +39,7 @@ namespace StellarisClone.Core
             float p = 0f;
             foreach (int o in OtherEmpires())
                 if (IsEnemy(o)) p += fm.GetMilitaryPowerInSystem(o, systemId);
+            foreach (int o in Threats.Owners) p += fm.GetMilitaryPowerInSystem(o, systemId);
             return p;
         }
 

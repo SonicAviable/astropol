@@ -20,6 +20,8 @@ namespace StellarisClone.Core
         /// <summary>Сколько месяцев затишья гарантированно проходит между ежемесячными событиями.</summary>
         private const int QuietMonths = 3;
         private const float MonthlyChance = 0.3f;
+        /// <summary>Как часто фракция игрока принимает своё большое решение (закон, смотр, собрание, видение).</summary>
+        private const int FactionDecisionMonths = 24;
 
         private EventState _s = new EventState();
         private readonly Queue<GameEventData> _queue = new Queue<GameEventData>();
@@ -30,6 +32,9 @@ namespace StellarisClone.Core
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            // Новая сцена — новая партия: статические системы начинают с чистого листа (загрузка восстановит их позже)
+            EmpireEffects.Reset();
+            if (GetComponent<ThreatManager>() == null) gameObject.AddComponent<ThreatManager>();
         }
 
         private void Start() => TrySubscribe();
@@ -136,6 +141,12 @@ namespace StellarisClone.Core
             }
 
             if (day != 1) return;
+            EmpireEffects.MonthlyTick();
+            if (++_s.MonthsSinceFaction >= FactionDecisionMonths)
+            {
+                var decision = EventDatabase.FactionDecision();
+                if (decision != null) { _s.MonthsSinceFaction = 0; Fire(decision); }
+            }
             _s.MonthsSinceEvent++;
             if (_s.MonthsSinceEvent < QuietMonths || _showing || UnityEngine.Random.value > MonthlyChance) return;
             var ev = EventDatabase.RollMonthly(_s);

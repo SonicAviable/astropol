@@ -788,6 +788,14 @@ namespace StellarisClone.Core
             OnTechProgressUpdated?.Invoke();
         }
 
+        /// <summary>Снять ранее добавленную ежемесячную науку (окончание временного эффекта).</summary>
+        public void RemoveMonthlyScience(float amount)
+        {
+            if (amount <= 0) return;
+            FlatScience = Mathf.Max(0f, FlatScience - amount);
+            OnTechProgressUpdated?.Invoke();
+        }
+
         /// <summary>Временное ускорение науки на заданное число дней.</summary>
         public void ApplyTempResearchBoost(float multiplier, int days = 30)
         {

@@ -25,6 +25,18 @@ namespace StellarisClone.Core
 
     public static class FactionRegistry
     {
+        /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia (null — неизвестна).</summary>
+        public static string KeyOf(FactionInfo f)
+        {
+            string n = f?.Name;
+            if (string.IsNullOrEmpty(n)) return null;
+            if (n.Contains("Ксарн")) return "xarn";
+            if (n.Contains("Астре")) return "astrea";
+            if (n.Contains("Аквил")) return "aquila";
+            if (n.Contains("Ирид")) return "iridia";
+            return null;
+        }
+
         public static readonly FactionInfo[] AvailableFactions = new FactionInfo[]
         {
             new FactionInfo(

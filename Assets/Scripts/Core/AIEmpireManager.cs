@@ -34,7 +34,7 @@ namespace StellarisClone.Core
 
         public static bool IsAI(int owner) => For(owner) != null;
 
-        public static string NameOf(int owner, string fallback = "Соперник") => For(owner)?.AIName ?? fallback;
+        public static string NameOf(int owner, string fallback = "Соперник") => For(owner)?.AIName ?? Threats.NameOf(owner) ?? fallback;
 
         /// <summary>Живые империи ИИ (не потерявшие все системы).</summary>
         public static IEnumerable<AIEmpireManager> Alive
@@ -54,6 +54,7 @@ namespace StellarisClone.Core
         /// </summary>
         public static Color MapColorFor(int owner)
         {
+            if (Threats.IsThreat(owner)) return Threats.ColorOf(owner);
             var f = For(owner)?.Faction;
             if (f != null)
             {
@@ -467,6 +468,7 @@ namespace StellarisClone.Core
                 var sys = EmpireStats.GetSystem(kv.Key);
                 if (sys == null || sys.IsSurveyedBy(OwnerId) || claimed.Contains(sys.Id)) continue;
                 if (IsEnemy(sys.OwnerId)) continue;
+                if (EnemyFleetPowerIn(sys.Id) > 0f) continue;   // левиафан или вражеский флот — разведчика не посылаем
                 float score = sys.ConnectedSystemIds.Count * 1.5f - kv.Value * 3f;
                 if (BordersOwn(sys)) score += 6f;
                 if (sys.OwnerId >= 0) score -= 4f;

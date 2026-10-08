@@ -56,7 +56,7 @@ namespace StellarisClone.Core
             {
                 var d = f?.Data;
                 if (d == null || d.Destroyed || d.Type != FleetType.Military || d.OwnerId == OwnerId) continue;
-                if (d.State == FleetState.InHyperlane) continue;
+                if (d.State == FleetState.InHyperlane || Threats.IsThreat(d.OwnerId)) continue;
                 if (!IsEnemy(d.OwnerId) && d.OwnerId != focus) continue;
                 var s = EmpireStats.GetSystem(d.CurrentSystemId);
                 if (s == null || !(s.OwnerId == OwnerId || s.IsSurveyedBy(OwnerId))) continue;

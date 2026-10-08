@@ -11,7 +11,7 @@ namespace StellarisClone.Core
     /// и какие варианты предлагает. Часть вариантов открывается только лидеру с нужной чертой
     /// или классом — так лидеры становятся частью историй, а не только множителями.
     /// </summary>
-    public static class EventDatabase
+    public static partial class EventDatabase
     {
         private enum Trigger { Survey, Monthly, Chain }
 
@@ -287,6 +287,10 @@ namespace StellarisClone.Core
             AddColonyEvents();
             AddMilitaryEvents();
             AddDiplomaticEvents();
+            AddFactionDecisions();
+            AddThreatEvents();
+            AddPrecursorChain();
+            AddLeaderAmbitions();
         }
 
         // -------------------- Разведка --------------------

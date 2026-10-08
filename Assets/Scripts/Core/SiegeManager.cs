@@ -103,7 +103,11 @@ namespace StellarisClone.Core
                 int attacker = -1, ships = 0;
                 if (here != null)
                     foreach (var kv in here)
+                    {
+                        // Пираты и чудовища систем не захватывают — только грабят и сражаются
+                        if (Threats.IsThreat(kv.Key)) continue;
                         if (Diplomacy.AtWar(kv.Key, sys.OwnerId) && kv.Value > ships) { attacker = kv.Key; ships = kv.Value; }
+                    }
 
                 _sieges.TryGetValue(sys.Id, out var siege);
 
