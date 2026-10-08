@@ -65,9 +65,15 @@ namespace StellarisClone.Rendering
                     active[sysId] = f;
             }
 
+            // Осады — отдельное кольцо (ключ со сдвигом, чтобы не пересекаться со стройкой)
+            var sieges = new HashSet<int>();
+            if (SiegeManager.Instance != null)
+                foreach (var sg in SiegeManager.Instance.Sieges)
+                    if (sg.Progress > 0f) sieges.Add(SiegeKeyOffset + sg.SystemId);
+
             var toRemove = new List<int>();
             foreach (var kv in _rings)
-                if (!active.ContainsKey(kv.Key)) toRemove.Add(kv.Key);
+                if (!active.ContainsKey(kv.Key) && !sieges.Contains(kv.Key)) toRemove.Add(kv.Key);
 
             foreach (int id in toRemove)
             {
@@ -82,10 +88,37 @@ namespace StellarisClone.Rendering
                 else
                     UpdateRingVisual(kv.Key, kv.Value);
             }
+
+            foreach (int key in sieges)
+            {
+                if (!_rings.ContainsKey(key)) CreateRing(key, null);
+                else UpdateSiegeVisual(key);
+            }
         }
 
-        private void CreateRing(int sysId, FleetView fleet)
+        private const int SiegeKeyOffset = 100000;
+        private static int SystemOf(int key) => key >= SiegeKeyOffset ? key - SiegeKeyOffset : key;
+
+        private void UpdateSiegeVisual(int key)
         {
+            if (!_fills.ContainsKey(key)) return;
+            int sysId = SystemOf(key);
+            var sg = SiegeManager.Instance?.GetSiege(sysId);
+            if (sg == null || sysId < 0 || sysId >= _gen.Systems.Count) return;
+            var sys = _gen.Systems[sysId];
+            float need = SiegeManager.RequiredDays(sys);
+            bool mine = sg.Attacker == 0;
+            Color col = mine ? new Color(0.35f, 1f, 0.55f) : new Color(1f, 0.35f, 0.35f);
+            if (sg.Contested || !sg.Active) col = Color.Lerp(col, Color.gray, 0.5f);
+            _fills[key].fillAmount = Mathf.Clamp01(sg.Progress / Mathf.Max(1f, need));
+            _fills[key].color = col;
+            string state = sg.BaseHolding ? "база" : sg.Contested ? "бой" : !sg.Active ? "снята" : $"{Mathf.Max(0, need - sg.Progress):0}д";
+            _labels[key].text = $"<color=#{ColorUtility.ToHtmlStringRGB(col)}>Осада · {state}</color>";
+        }
+
+        private void CreateRing(int key, FleetView fleet)
+        {
+            int sysId = SystemOf(key);
             var sys = _gen.Systems[sysId];
 
             var root = new GameObject($"ProgressRing_{sys.Name}");
@@ -131,11 +164,19 @@ namespace StellarisClone.Rendering
             o.effectColor = new Color(0, 0, 0, 0.9f);
             o.effectDistance = new Vector2(1f, -1f);
 
-            _rings[sysId] = root;
-            _fills[sysId] = fImg;
-            _labels[sysId] = lTxt;
+            if (key >= SiegeKeyOffset)
+            {
+                // Кольцо осады — снаружи кольца стройки, подпись выше
+                bgRt.sizeDelta = fRt.sizeDelta = new Vector2(RingSize * 1.25f, RingSize * 1.25f);
+                lRt.anchoredPosition = new Vector2(0, RingSize * 0.7f + 10f);
+            }
 
-            UpdateRingVisual(sysId, fleet);
+            _rings[key] = root;
+            _fills[key] = fImg;
+            _labels[key] = lTxt;
+
+            if (key >= SiegeKeyOffset) UpdateSiegeVisual(key);
+            else UpdateRingVisual(key, fleet);
         }
 
         private static Sprite _cachedRingSprite;
@@ -209,7 +250,7 @@ namespace StellarisClone.Rendering
                 var ring = kv.Value;
                 if (ring == null) continue;
 
-                var sys = _gen.Systems[kv.Key];
+                var sys = _gen.Systems[SystemOf(kv.Key)];
                 ring.transform.position = sys.Position + new Vector3(0, 0.5f, 0);
                 ring.transform.rotation = _cam.transform.rotation;
 
@@ -217,6 +258,7 @@ namespace StellarisClone.Rendering
                 float scale = Mathf.Clamp(dist / 40f, 0.55f, 2.0f);
                 ring.transform.localScale = Vector3.one * scale;
 
+                if (kv.Key >= SiegeKeyOffset) { UpdateSiegeVisual(kv.Key); continue; }
                 var fleet = FindFleetForSystem(kv.Key);
                 if (fleet != null) UpdateRingVisual(kv.Key, fleet);
             }

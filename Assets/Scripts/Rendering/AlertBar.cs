@@ -158,7 +158,7 @@ namespace StellarisClone.Rendering
             v.Fx = LG.Button(v.Bg.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.75f), Size * 0.5f);
             v.Fx.FillMultiplier = 1.4f;
             v.Fx.GlowMultiplier = 0.8f;
-            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.08f;
+            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.03f;
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
 
             v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 22f, Color.Lerp(a.Color, Color.white, 0.15f));
@@ -259,13 +259,20 @@ namespace StellarisClone.Rendering
             // 1. Энергия
             if (eco != null && (eco.IsBankrupt || eco.MonthlyEnergyIncome < 0f))
             {
+                float months = eco.MonthsUntilEmpty;
+                string forecast = float.IsInfinity(months) ? ""
+                    : months < 1f ? " Казна опустеет меньше чем через месяц!"
+                    : $" Казна опустеет примерно через {Mathf.CeilToInt(months)} мес.";
+                var rep = eco.Report;
                 _current.Add(new AlertInfo
                 {
-                    Id = "energy", Icon = LGIcon.Energy, Color = UIManager.DS.Red,
-                    Title = eco.IsBankrupt ? "Банкротство!" : "Дефицит гелия-3",
+                    Id = "energy", Icon = LGIcon.Energy, Color = eco.IsBankrupt || eco.BankruptcyLooming ? UIManager.DS.Red : UIManager.DS.Gold,
+                    Title = eco.IsBankrupt ? "Банкротство!" : eco.BankruptcyLooming ? "Угроза банкротства" : "Дефицит гелия-3",
                     Body = eco.IsBankrupt
                         ? "Запасы энергии исчерпаны — производство урезано вдвое. Долгое банкротство приведёт к поражению."
-                        : $"Расход превышает доход ({eco.MonthlyEnergyIncome:0.#} / мес). Стройте генераторные районы и добывающие станции или сократите флот.",
+                        : $"Расход превышает доход ({eco.MonthlyEnergyIncome:0.#} / мес).{forecast} " +
+                          $"Содержание: флот {rep.FleetUpkeep + rep.CivilianUpkeep:0.#}, форпосты {rep.OutpostUpkeepTotal:0.#}. " +
+                          "Стройте генераторы и добывающие станции или сократите флот.",
                     ActionHint = "открыть обзор империи",
                     Action = () => UIManager.Instance?.OpenEmpireOverviewModal()
                 });
@@ -385,17 +392,86 @@ namespace StellarisClone.Rendering
                     });
                 }
 
-                // 8. Угроза
-                var ai = AIEmpireManager.Instance;
-                if (ai != null && ai.IsHostileToPlayer && fm.GetMilitaryPower(0) < fm.GetMilitaryPower(AIEmpireManager.AIOwnerId))
+                // 8. Дипломатические предложения (от каждой империи ИИ — своё)
+                foreach (var ai in AIEmpireManager.All)
                 {
+                    if (ai.PendingOffer == AIEmpireManager.OfferKind.None || !Contacts.PlayerMet(ai.OwnerId)) continue;
+                    var kind = ai.PendingOffer;
+                    int owner = ai.OwnerId;
+                    var (icon, color, title) = kind switch
+                    {
+                        AIEmpireManager.OfferKind.Peace => (LGIcon.Peace, UIManager.DS.Green, $"{ai.AIName} предлагает мир"),
+                        AIEmpireManager.OfferKind.Pact => (LGIcon.Handshake, UIManager.DS.Green, $"{ai.AIName} предлагает пакт"),
+                        AIEmpireManager.OfferKind.Demand => (LGIcon.Warning, UIManager.DS.Red, $"{ai.AIName} требует дань"),
+                        _ => (LGIcon.Trade, UIManager.DS.Gold, $"{ai.AIName} предлагает сделку")
+                    };
+                    _current.Add(new AlertInfo
+                    {
+                        Id = "offer_" + owner, Icon = icon, Color = color,
+                        Title = title,
+                        Body = $"Причина: {ai.PendingOfferReason}. Предложение в силе ещё {ai.PendingOfferDays} дн.",
+                        ActionHint = "открыть дипломатию",
+                        Action = () => DiplomacyModal.Instance?.Open(owner)
+                    });
+                }
+
+                // 9. Осады
+                var sm = SiegeManager.Instance;
+                if (sm != null)
+                {
+                    StarSystem lost = null, taking = null; int defend = 0, attack = 0;
+                    foreach (var sg in sm.Sieges)
+                    {
+                        var sys = sg.SystemId >= 0 && sg.SystemId < gen.Systems.Count ? gen.Systems[sg.SystemId] : null;
+                        if (sys == null || !sg.Active) continue;
+                        if (sys.OwnerId == 0) { defend++; if (lost == null) lost = sys; }
+                        else if (sg.Attacker == 0) { attack++; if (taking == null) taking = sys; }
+                    }
+                    if (lost != null)
+                    {
+                        var target = lost;
+                        _current.Add(new AlertInfo
+                        {
+                            Id = "siege_def", Icon = LGIcon.Siege, Color = UIManager.DS.Red, Count = defend,
+                            Title = "Ваша система в осаде",
+                            Body = $"{target.Name}: враг блокирует систему. Если не прислать военный флот, через {SiegeManager.RequiredDays(target):0} дн. осады она перейдёт к противнику.",
+                            ActionHint = "показать систему",
+                            Action = () => Focus(target)
+                        });
+                    }
+                    if (taking != null)
+                    {
+                        var target = taking;
+                        var sg = sm.GetSiege(target.Id);
+                        _current.Add(new AlertInfo
+                        {
+                            Id = "siege_att", Icon = LGIcon.Siege, Color = UIManager.DS.Green, Count = attack,
+                            Title = "Идёт осада",
+                            Body = $"{target.Name}: {(sg != null ? sg.Progress : 0f):0} / {SiegeManager.RequiredDays(target):0} дн." +
+                                   (sg != null && sg.BaseHolding ? " Осада стоит — сначала подавите звёздную базу."
+                                    : sg != null && sg.Contested ? " Осада стоит — на орбите флот защитника." : " Не уводите флот до захвата."),
+                            ActionHint = "показать систему",
+                            Action = () => Focus(target)
+                        });
+                    }
+                }
+
+                // 10. Угроза: самая сильная из враждебных империй, если она сильнее вас
+                AIEmpireManager threat = null;
+                foreach (var ai in AIEmpireManager.Alive)
+                    if (ai.AtWar && fm.GetMilitaryPower(ai.OwnerId) > fm.GetMilitaryPower(0)
+                        && (threat == null || fm.GetMilitaryPower(ai.OwnerId) > fm.GetMilitaryPower(threat.OwnerId)))
+                        threat = ai;
+                if (threat != null)
+                {
+                    var t = threat;
                     _current.Add(new AlertInfo
                     {
                         Id = "threat", Icon = LGIcon.Fleet, Color = UIManager.DS.Red,
-                        Title = $"Угроза: {ai.AIName}",
-                        Body = $"Враждебная империя сильнее ({fm.GetMilitaryPower(AIEmpireManager.AIOwnerId):N0} против {fm.GetMilitaryPower(0):N0}). Стройте флот на верфи столицы или предложите мир.",
+                        Title = $"Угроза: {t.AIName}",
+                        Body = $"Враждебная империя сильнее ({fm.GetMilitaryPower(t.OwnerId):N0} против {fm.GetMilitaryPower(0):N0}). Стройте флот на верфи столицы или предложите мир.",
                         ActionHint = "открыть дипломатию",
-                        Action = () => DiplomacyModal.Instance?.Open()
+                        Action = () => DiplomacyModal.Instance?.Open(t.OwnerId)
                     });
                 }
             }

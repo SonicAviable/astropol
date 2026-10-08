@@ -84,6 +84,13 @@ namespace StellarisClone.Core
         public int MaxDistricts;
         public List<DistrictData> Districts = new List<DistrictData>();
 
+        /// <summary>Система, в которой находится планета (проставляется при генерации/загрузке).</summary>
+        [NonSerialized] public StarSystem ParentSystem;
+
+        /// <summary>Владелец планеты = владелец системы (-1 — ничья).</summary>
+        public int OwnerId => ParentSystem != null ? ParentSystem.OwnerId : -1;
+        public bool IsPlayerOwned => OwnerId == 0;
+
         public int BuiltDistricts => Districts.Count;
 
         public int HousingCapacity
@@ -137,18 +144,32 @@ namespace StellarisClone.Core
 
         private void DistributeWorkers(out int urban, out int mining, out int gen, out int ind)
         {
+            // Жители сначала идут на добычу и производство, городские рабочие места — последними
             int pool = Population;
-
-            urban = Mathf.Min(GetDistrictCount(DistrictType.Urban), pool);
-            pool -= urban;
-
-            mining = Mathf.Min(GetDistrictCount(DistrictType.Mining), pool);
-            pool -= mining;
 
             gen = Mathf.Min(GetDistrictCount(DistrictType.Generator), pool);
             pool -= gen;
 
+            mining = Mathf.Min(GetDistrictCount(DistrictType.Mining), pool);
+            pool -= mining;
+
             ind = Mathf.Min(GetDistrictCount(DistrictType.Industrial), pool);
+            pool -= ind;
+
+            urban = Mathf.Min(GetDistrictCount(DistrictType.Urban), pool);
+        }
+
+        /// <summary>Сколько районов данного типа обеспечены рабочими.</summary>
+        public int WorkedCount(DistrictType t)
+        {
+            DistributeWorkers(out int u, out int m, out int g, out int i);
+            return t switch
+            {
+                DistrictType.Urban => u,
+                DistrictType.Mining => m,
+                DistrictType.Generator => g,
+                _ => i
+            };
         }
 
         public int ProducedMineralsPerMonth
@@ -182,7 +203,9 @@ namespace StellarisClone.Core
 
         public bool CanBuildDistrict(DistrictType t)
         {
-            if (BuiltDistricts >= MaxDistricts) return false;
+            if (!IsPlayerOwned) return false;
+            if (BuiltDistricts + PendingDistricts >= MaxDistricts) return false;
+            if (Builds != null && Builds.QueueFor(this).Count >= ConstructionManager.MaxPlanetQueue) return false;
             var eco = EconomyManager.Instance;
             if (eco == null) return false;
             return eco.Minerals >= DistrictInfo.MineralsCost(t) && eco.Alloys >= DistrictInfo.AlloysCost(t);
@@ -193,11 +216,25 @@ namespace StellarisClone.Core
             if (!CanBuildDistrict(t)) return false;
             var eco = EconomyManager.Instance;
             if (!eco.TrySpend(0, DistrictInfo.MineralsCost(t), DistrictInfo.AlloysCost(t), 0)) return false;
-            Districts.Add(new DistrictData(t));
+            if (Builds == null) { Districts.Add(new DistrictData(t)); return true; }
+            Builds.EnqueuePlanetJob(JobKind.District, 0, this, t, 0f, DistrictInfo.MineralsCost(t), DistrictInfo.AlloysCost(t), 0f);
             return true;
         }
 
-        public float PopGrowthBaseSpeedPctPerMonth => 4f + (HousingCapacity - Population) * 0.4f;
+        /// <summary>Скорость роста населения (% к следующему жителю в месяц); 0 — если нет жилья или колонии.</summary>
+        public float PopGrowthBaseSpeedPctPerMonth =>
+            Population <= 0 || HousingCapacity <= Population ? 0f : 4f + (HousingCapacity - Population) * 0.4f;
+
+        /// <summary>Сколько месяцев до следующего жителя (-1 — рост остановлен).</summary>
+        public int MonthsToNextPop
+        {
+            get
+            {
+                float speed = PopGrowthBaseSpeedPctPerMonth;
+                if (speed <= 0f) return -1;
+                return Mathf.Max(1, Mathf.CeilToInt((100f - PopGrowthProgress) / speed));
+            }
+        }
 
         public int PlanetSize => MaxDistricts;
 
@@ -226,12 +263,35 @@ namespace StellarisClone.Core
 
         public bool CanTerraform => Type == PlanetType.Barren || Type == PlanetType.Molten || Type == PlanetType.Desert;
 
+        public const float ColonyMineralsCost = 80f;
+        public const float ColonyAlloysCost = 20f;
+        public const float ColonyInfluenceCost = 25f;
+
+        public const float TerraformEnergyCost = 120f;
+        public const float TerraformMineralsCost = 90f;
+        public const float TerraformInfluenceCost = 10f;
+
+        private static ConstructionManager Builds => ConstructionManager.Instance;
+
+        /// <summary>Колонисты уже в пути (заказ в очереди строительства).</summary>
+        public bool IsColonizing => Builds != null && Builds.HasJob(this, JobKind.Colony);
+        public bool StationUnderConstruction => Builds != null && Builds.HasJob(this, JobKind.MiningStation);
+        public int PendingDistricts => Builds != null ? Builds.PendingDistricts(this) : 0;
+
+        /// <summary>Заказать колонию: ресурсы сразу, колонисты прибудут через ColonyDays.</summary>
         public bool TryFoundColony()
         {
-            if (!CanColonize) return false;
+            if (!CanColonize || !IsPlayerOwned || IsColonizing || Builds == null) return false;
             var eco = EconomyManager.Instance;
-            if (eco == null || !eco.CanAfford(0f, 80f, 20f, 25f)) return false;
-            if (!eco.TrySpend(0f, 80f, 20f, 25f)) return false;
+            if (eco == null || !eco.CanAfford(0f, ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost)) return false;
+            if (!eco.TrySpend(0f, ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost)) return false;
+            Builds.EnqueuePlanetJob(JobKind.Colony, 0, this, DistrictType.Urban, 0f, ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost);
+            return true;
+        }
+
+        /// <summary>Заселить планету (без оплаты — её проверяет вызывающий).</summary>
+        public void SettleColony()
+        {
             Population = 2;
             PopGrowthProgress = 0f;
             if (Districts.Count == 0)
@@ -239,16 +299,22 @@ namespace StellarisClone.Core
                 Districts.Add(new DistrictData(DistrictType.Urban));
                 Districts.Add(new DistrictData(DistrictType.Mining));
             }
-            return true;
         }
 
         public bool TryStartTerraform()
         {
-            if (!CanTerraform || TerraformingInProgress) return false;
+            if (!CanTerraform || TerraformingInProgress || !IsPlayerOwned || Builds == null) return false;
             var eco = EconomyManager.Instance;
-            if (eco == null || !eco.CanAfford(120f, 90f, 0f, 10f)) return false;
-            if (!eco.TrySpend(120f, 90f, 0f, 10f)) return false;
-            TerraformingInProgress = true;
+            if (eco == null || !eco.CanAfford(TerraformEnergyCost, TerraformMineralsCost, 0f, TerraformInfluenceCost)) return false;
+            if (!eco.TrySpend(TerraformEnergyCost, TerraformMineralsCost, 0f, TerraformInfluenceCost)) return false;
+            Builds.EnqueuePlanetJob(JobKind.Terraform, 0, this, DistrictType.Urban,
+                                    TerraformEnergyCost, TerraformMineralsCost, 0f, TerraformInfluenceCost);
+            return true;
+        }
+
+        /// <summary>Шаг терраформинга (по завершении заказа): расплавленный → бесплодный → пустынный → континентальный.</summary>
+        public void ApplyTerraformStep()
+        {
             if (Type == PlanetType.Molten) Type = PlanetType.Barren;
             else if (Type == PlanetType.Barren) Type = PlanetType.Desert;
             else if (Type == PlanetType.Desert) Type = PlanetType.Continental;
@@ -259,7 +325,6 @@ namespace StellarisClone.Core
                 PlanetColor = new Color(0.85f, 0.75f, 0.35f);
             else
                 PlanetColor = new Color(0.5f, 0.5f, 0.55f);
-            return true;
         }
     }
 }

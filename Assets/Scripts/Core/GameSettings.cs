@@ -107,7 +107,7 @@ namespace StellarisClone.Core
             FpsIndex = PlayerPrefs.GetInt("set.fps", 1);
             Quality = PlayerPrefs.GetInt("set.quality", QualitySettings.GetQualityLevel());
             GlassBlur = PlayerPrefs.GetInt("set.blur", 1) == 1;
-            Glow = PlayerPrefs.GetFloat("set.glow", 0.35f);
+            Glow = PlayerPrefs.GetFloat("set.glow", 0.2f);
 
             MasterVolume = PlayerPrefs.GetFloat("set.master", 1f);
             MusicVolume = PlayerPrefs.GetFloat("set.music", 0.45f);

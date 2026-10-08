@@ -16,6 +16,7 @@ namespace StellarisClone.Rendering
         private Font _font;
         private GalaxyView _galaxyView;
         private MapMode _active = MapMode.Simple;
+        public MapMode Active => _active;
         private readonly Dictionary<MapMode, Image> _buttonBgs = new Dictionary<MapMode, Image>();
         private readonly Dictionary<MapMode, Image> _buttonAccents = new Dictionary<MapMode, Image>();
         private readonly Dictionary<MapMode, LiquidGlassEffect> _buttonFx = new Dictionary<MapMode, LiquidGlassEffect>();
@@ -89,7 +90,8 @@ namespace StellarisClone.Rendering
             rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 1);
             rt.sizeDelta = new Vector2(424, 42);
-            rt.anchoredPosition = new Vector2(20, -66);
+            rt.anchoredPosition = new Vector2(UIManager.TopBarLeft, -66);
+            UIAnchors.Register(UIAnchors.MapModes, rt);   // под верхней панелью, правее карточки правителя
 
             var bg = root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
@@ -8,9 +9,18 @@ namespace StellarisClone.Core
         public static TimeManager Instance { get; private set; }
         public event Action<int, int, int> OnDayPassed;
 
-        [SerializeField] private float baseSecondsPerDay = 1.0f;
+        /// <summary>Реальных секунд на игровой день при скорости ×1 (партия 2200–2235 ≈ 3,5 ч на ×1, ≈ 53 мин на ×4).</summary>
+        public const float DefaultSecondsPerDay = GamePace.SecondsPerDay;
+
+        [SerializeField] private float secondsPerDay = DefaultSecondsPerDay;
+
+        public float SecondsPerDay => secondsPerDay;
 
         private float _timer;
+        private float _lastInterval;
+
+        /// <summary>Доля текущего дня (0…1) — для плавной анимации между дневными тиками; на паузе замирает.</summary>
+        public float DayFraction => _lastInterval > 0f ? Mathf.Clamp01(_timer / _lastInterval) : 0f;
         private int _currentSpeed = 1;
         private int _day = 1, _month = 1, _year = 2200;
 
@@ -23,6 +33,8 @@ namespace StellarisClone.Core
         {
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
+            // Темп задаётся в GamePace; старое значение, сохранённое в сцене, не должно его перебивать
+            secondsPerDay = DefaultSecondsPerDay;
         }
 
         private void Update()
@@ -30,7 +42,10 @@ namespace StellarisClone.Core
             HandleInput();
             if (_currentSpeed == 0) return;
 
-            float interval = baseSecondsPerDay / _currentSpeed;
+            float interval = secondsPerDay / _currentSpeed;
+            // При смене скорости сохраняем долю дня, чтобы анимация не прыгала
+            if (_lastInterval > 0f && !Mathf.Approximately(interval, _lastInterval)) _timer *= interval / _lastInterval;
+            _lastInterval = interval;
             _timer += Time.deltaTime;
             if (_timer >= interval)
             {
@@ -45,10 +60,23 @@ namespace StellarisClone.Core
             var flow = StellarisClone.Rendering.GameFlowUI.Instance;
             if (flow != null && flow.BlocksTimeHotkeys) return;
 
-            if (Input.GetKeyDown(KeyCode.Space)) SetSpeed(_currentSpeed == 0 ? 1 : 0);
-            if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeed(1);
-            if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeed(2);
-            if (Input.GetKeyDown(KeyCode.Alpha3)) SetSpeed(4);
+            if (Input.GetKeyDown(KeyCode.Space)) SetSpeedByPlayer(_currentSpeed == 0 ? 1 : 0);
+            if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeedByPlayer(1);
+            if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeedByPlayer(2);
+            if (Input.GetKeyDown(KeyCode.Alpha3)) SetSpeedByPlayer(4);
+        }
+
+        /// <summary>Смена скорости игроком (клавиши, кнопки) — со звуком паузы/запуска/ускорения.</summary>
+        public void SetSpeedByPlayer(int speed)
+        {
+            int s = Mathf.Clamp(speed, 0, 4);
+            if (s != _currentSpeed)
+            {
+                if (s == 0) SFXManager.Play(Sfx.TimePause);
+                else if (_currentSpeed == 0) SFXManager.Play(Sfx.TimeResume);
+                else SFXManager.Play(Sfx.TimeSpeed, 1f, s > _currentSpeed ? 1.12f : 0.88f);
+            }
+            SetSpeed(s);
         }
 
         public void SetSpeed(int speed)

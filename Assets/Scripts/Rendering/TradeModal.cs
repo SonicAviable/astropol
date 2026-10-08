@@ -50,8 +50,18 @@ namespace StellarisClone.Core
 
         public void BindHost(Canvas modalCanvas) { _host = modalCanvas; }
 
-        public void Open()
+        private int _partnerOwner = -1;
+
+        /// <summary>Торговый партнёр — выбранная империя ИИ (по умолчанию первая).</summary>
+        private AIEmpireManager Partner => AIEmpireManager.For(_partnerOwner) ?? AIEmpireManager.Instance;
+
+        public void Open() => Open(-1);
+
+        public void Open(int partnerOwner)
         {
+            // Торговля теперь идёт за столом переговоров в окне дипломатии
+            if (DiplomacyModal.Instance != null) { DiplomacyModal.Instance.Open(partnerOwner); return; }
+            _partnerOwner = partnerOwner;
             if (_host == null)
             {
                 var modal = GameObject.Find("ModalCanvas");
@@ -60,7 +70,7 @@ namespace StellarisClone.Core
             if (_host == null) return;
             if (_root == null) Build();
 
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (_titleText != null && ai != null)
                 _titleText.text = $"◆  ТОРГОВЫЙ КАНАЛ · {ai.AIName.ToUpper()}";
 
@@ -177,7 +187,7 @@ namespace StellarisClone.Core
         private void Refresh()
         {
             var eco = EconomyManager.Instance;
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (eco == null || ai == null) return;
 
             _giveEnergyTxt.text    = $"{_giveEnergy} / {(int)eco.EnergyCredits}";
@@ -199,9 +209,8 @@ namespace StellarisClone.Core
 
             float offerV = OfferValue();
             float requestV = RequestValue();
-            float rel = ai.RelationsWithPlayer;
 
-            float acceptRatio = Mathf.Clamp(0.70f + rel / 200f, 0.55f, 1.05f);
+            float acceptRatio = AcceptRatio(ai);
             float threshold = requestV * acceptRatio;
 
             if (requestV <= 0.01f)
@@ -226,6 +235,14 @@ namespace StellarisClone.Core
                 _fairnessText.text = $"<color=#FF8888>AI откажет · нужно +{need:0} ценности</color>";
                 _fairnessTargetColor = UIManager.DS.Red;
             }
+        }
+
+        /// <summary>Какую долю запрошенного нужно предложить: зависит от отношения и характера ИИ.</summary>
+        private static float AcceptRatio(AIEmpireManager ai)
+        {
+            float ratio = Mathf.Clamp(0.70f + ai.Opinion / 200f, 0.55f, 1.05f);
+            if (ai.Personality == AIPersonality.Trader) ratio *= 0.92f;
+            return ratio;
         }
 
         private void ChangeGive(ref int field, int delta, float available, ref float flashTimer)
@@ -271,7 +288,7 @@ namespace StellarisClone.Core
         private void TryPropose()
         {
             var eco = EconomyManager.Instance;
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (eco == null || ai == null) return;
 
             float offerV = OfferValue();
@@ -299,15 +316,19 @@ namespace StellarisClone.Core
                 return;
             }
 
-            float rel = ai.RelationsWithPlayer;
-            float acceptRatio = Mathf.Clamp(0.70f + rel / 200f, 0.55f, 1.05f);
+            if (ai.AtWar)
+            {
+                ShowStatus("Во время войны торговля невозможна.", UIManager.DS.Red);
+                return;
+            }
+            float acceptRatio = AcceptRatio(ai);
             bool accepted = offerV >= requestV * acceptRatio;
 
             if (!accepted)
             {
                 ShowStatus("Предложение отвергнуто.", UIManager.DS.Red);
                 StartCoroutine(ShakeRoot(0.25f, 8f));
-                ai.RelationsWithPlayer = Mathf.Clamp(ai.RelationsWithPlayer - 2f, -100f, 40f);
+                ai.RegisterTrade(-1f);
                 Refresh();
                 return;
             }
@@ -328,7 +349,8 @@ namespace StellarisClone.Core
             ai.AddStock("alloys",    _giveAlloys);
             ai.AddStock("influence", _giveInfluence);
 
-            ai.RelationsWithPlayer = Mathf.Clamp(ai.RelationsWithPlayer + 1.5f, -100f, 40f);
+            // Выгодная для ИИ сделка улучшает отношение (торговая фракция ценит это сильнее)
+            ai.RegisterTrade(1.5f + (offerV - requestV) / 60f);
 
             NotificationCenter.Show("Сделка заключена",
                 $"Отдано: ⚡{_giveEnergy} ◆{_giveMinerals} ⬢{_giveAlloys} ★{_giveInfluence}   ·   " +
@@ -579,17 +601,17 @@ namespace StellarisClone.Core
             else
             {
                 BuildRow(col.transform, "⚡", "Энергия",  UIManager.DS.Gold,     ref _getEnergyTxt,
-                    () => ChangeGet(ref _getEnergy, -25, AIEmpireManager.Instance.EnergyCredits, ref _flashGetE),
-                    () => ChangeGet(ref _getEnergy,  25, AIEmpireManager.Instance.EnergyCredits, ref _flashGetE));
+                    () => ChangeGet(ref _getEnergy, -25, Partner.EnergyCredits, ref _flashGetE),
+                    () => ChangeGet(ref _getEnergy,  25, Partner.EnergyCredits, ref _flashGetE));
                 BuildRow(col.transform, "◆", "Титан",    UIManager.DS.NeonCyan, ref _getMineralsTxt,
-                    () => ChangeGet(ref _getMinerals, -25, AIEmpireManager.Instance.Minerals, ref _flashGetM),
-                    () => ChangeGet(ref _getMinerals,  25, AIEmpireManager.Instance.Minerals, ref _flashGetM));
+                    () => ChangeGet(ref _getMinerals, -25, Partner.Minerals, ref _flashGetM),
+                    () => ChangeGet(ref _getMinerals,  25, Partner.Minerals, ref _flashGetM));
                 BuildRow(col.transform, "⬢", "Сплавы",   UIManager.DS.Gold,     ref _getAlloysTxt,
-                    () => ChangeGet(ref _getAlloys, -25, AIEmpireManager.Instance.Alloys, ref _flashGetA),
-                    () => ChangeGet(ref _getAlloys,  25, AIEmpireManager.Instance.Alloys, ref _flashGetA));
+                    () => ChangeGet(ref _getAlloys, -25, Partner.Alloys, ref _flashGetA),
+                    () => ChangeGet(ref _getAlloys,  25, Partner.Alloys, ref _flashGetA));
                 BuildRow(col.transform, "★", "Влияние",  UIManager.DS.Red,      ref _getInfluenceTxt,
-                    () => ChangeGet(ref _getInfluence, -10, AIEmpireManager.Instance.Influence, ref _flashGetI),
-                    () => ChangeGet(ref _getInfluence,  10, AIEmpireManager.Instance.Influence, ref _flashGetI));
+                    () => ChangeGet(ref _getInfluence, -10, Partner.Influence, ref _flashGetI),
+                    () => ChangeGet(ref _getInfluence,  10, Partner.Influence, ref _flashGetI));
             }
         }
 

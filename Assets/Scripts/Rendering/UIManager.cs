@@ -5,12 +5,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 using StellarisClone.Cam;
 using StellarisClone.Generation;
 
 namespace StellarisClone.Rendering
 {
-    public class UIManager : MonoBehaviour
+    public partial class UIManager : MonoBehaviour
     {
         public static UIManager Instance { get; private set; }
         public static bool IsGameStarted { get; private set; }
@@ -31,12 +32,12 @@ namespace StellarisClone.Rendering
             public static readonly Color BgRowOdd      = new Color(0.060f, 0.118f, 0.155f, 0.75f);
             public static readonly Color BgVisor       = new Color(0.018f, 0.045f, 0.065f, 0.95f);
 
-            // Неон
-            public static readonly Color NeonCyan      = new Color(0.30f, 0.95f, 0.86f, 1.00f);
+            // Акценты (приглушённый неон)
+            public static readonly Color NeonCyan      = new Color(0.40f, 0.86f, 0.82f, 1.00f);
             public static readonly Color NeonTeal      = new Color(0.36f, 0.88f, 0.82f, 0.55f);
-            public static readonly Color Gold          = new Color(1.00f, 0.80f, 0.32f, 1.00f);
-            public static readonly Color Green         = new Color(0.36f, 0.96f, 0.60f, 1.00f);
-            public static readonly Color Red           = new Color(1.00f, 0.36f, 0.38f, 1.00f);
+            public static readonly Color Gold          = new Color(0.95f, 0.78f, 0.40f, 1.00f);
+            public static readonly Color Green         = new Color(0.44f, 0.88f, 0.60f, 1.00f);
+            public static readonly Color Red           = new Color(0.95f, 0.42f, 0.42f, 1.00f);
 
             // Текст
             public static readonly Color TextPrimary   = new Color(0.94f, 0.98f, 1.00f, 1.00f);
@@ -60,7 +61,7 @@ namespace StellarisClone.Rendering
 
         private GameObject _factionSelectionModal;
         private GameObject _advisorIntroModal;
-        private Text _advisorText;
+        private AdvisorIntroWindow _advisorIntro;
         private FactionInfo _selectedFaction;
 
         public FactionInfo SelectedFaction => _selectedFaction;
@@ -71,6 +72,7 @@ namespace StellarisClone.Rendering
 
         private GameObject _eventPopupModal;
         private Transform _eventOptionsHolder;
+        private RectTransform _eventDescBox, _eventOptionsRt;
         private Text _eventTitleText;
         private Text _eventDescText;
         private Image _eventAccentBar;
@@ -78,19 +80,13 @@ namespace StellarisClone.Rendering
         private RectTransform _inspectorRect;
         private CanvasGroup _inspectorGroup;
         private Text _inspTitle, _inspStatus, _inspActionBtnText;
-        private Text _inspBodyText;
         private GameObject _districtRowRoot;
         private Button _inspActionBtn;
         private Image _inspActionBtnBg;
         private Button _inspExitBtn;
         private Button _inspShipyardBtn;
         private float _inspTargetAlpha;
-        private readonly StringBuilder _bodySb = new StringBuilder();
 
-        private GameObject _shipyardPanel;
-        private CanvasGroup _shipyardGroup;
-        private Button _shipyardRetrofitBtn;
-        private Text _shipyardRetrofitTxt;
 
         private GameObject _rewardPopUp;
         private Text _rewardText;
@@ -102,6 +98,8 @@ namespace StellarisClone.Rendering
 
         private const float TopBarHeight = 44f;
         private const float TopBarMargin = 10f;
+        /// <summary>Левый край верхней панели: правее карточки правителя (RulerBadge).</summary>
+        public const float TopBarLeft = TopBarMargin + RulerBadge.Width + 8f;
         private const float StarbaseAlloysCost = 50f;
         private const float StarbaseInfluenceCost = 25f;
 
@@ -129,6 +127,9 @@ namespace StellarisClone.Rendering
             BuildTopBar();
             BuildStellarisLeftInspector();
             BuildShipyardModal();
+            new GameObject("[UI] BuildProgressBadge").AddComponent<BuildProgressBadge>().Init(_canvas);
+            new GameObject("[UI] SystemPlanetTags").AddComponent<SystemPlanetTags>().Init(_canvas);
+            new GameObject("[UI] Outliner").AddComponent<OutlinerPanel>().Init(_canvas);
             BuildEmpireOverviewModal();
             BuildEventPopupModal();
             BuildRewardNotification();
@@ -170,6 +171,9 @@ namespace StellarisClone.Rendering
 
         private CanvasGroup _hudGroup;
         private Coroutine _hudFade;
+
+        /// <summary>Полноэкранный обзор (планета) прячет весь HUD, чтобы панели не просвечивали.</summary>
+        public void SetOverlayMode(bool on) => SetHudVisible(!on);
 
         private void SetHudVisible(bool visible, bool instant = false)
         {
@@ -219,6 +223,7 @@ namespace StellarisClone.Rendering
             _generator = FindAnyObjectByType<GalaxyGenerator>();
 
             StarSystemSelector.OnSystemSelected += OnSystemSelected;
+            FleetSelectionController.OnEmptyClick += HandleEmptyMapClick;
             SystemViewManager.OnViewModeChanged += OnViewModeChanged;
 
             if (TimeManager.Instance != null)
@@ -228,7 +233,6 @@ namespace StellarisClone.Rendering
                 EconomyManager.Instance.OnResourcesChanged += RefreshResourceBar;
 
             AnomalyEventSystem.OnEventTriggered += HandleAnomalyEvent;
-            FleetManager.OnFleetSelected += HandleFleetSelectedForRetrofit;
 
             BindAuxiliaryUi();
             RefreshResourceBar();
@@ -237,13 +241,13 @@ namespace StellarisClone.Rendering
         private void OnDestroy()
         {
             StarSystemSelector.OnSystemSelected -= OnSystemSelected;
+            FleetSelectionController.OnEmptyClick -= HandleEmptyMapClick;
             SystemViewManager.OnViewModeChanged -= OnViewModeChanged;
 
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.OnResourcesChanged -= RefreshResourceBar;
 
             AnomalyEventSystem.OnEventTriggered -= HandleAnomalyEvent;
-            FleetManager.OnFleetSelected -= HandleFleetSelectedForRetrofit;
         }
 
         private void EnsureEventSystemExists()
@@ -311,8 +315,8 @@ namespace StellarisClone.Rendering
 
         public Canvas HudCanvas => _canvas;
         public Canvas ModalCanvas => _modalCanvas;
-        public bool IsShipyardOpen => _shipyardPanel != null && LG.IsVisible(_shipyardPanel);
-        public void CloseShipyard() { if (IsShipyardOpen) CloseModal(_shipyardPanel); }
+        public bool IsShipyardOpen => ShipyardWindow.Instance != null && ShipyardWindow.Instance.IsOpen;
+        public void CloseShipyard() { if (IsShipyardOpen) ShipyardWindow.Instance.Close(); }
 
         /// <summary>Открыто окно, которое нельзя закрыть по Esc (выбор фракции, советник, событие).</summary>
         public bool IsBlockingFlowOpen =>
@@ -322,8 +326,20 @@ namespace StellarisClone.Rendering
 
         public void ShowModalDimPublic() => ShowModalDim();
         public void HideModalDimPublic() => HideModalDim();
-        private void ShowModalDim() { if (_modalDim != null) LG.Show(_modalDim); }
-        private void HideModalDim() { if (_modalDim != null) LG.Hide(_modalDim); }
+        // Затемнение — общая точка всех модальных окон, здесь же их звук открытия/закрытия
+        private void ShowModalDim()
+        {
+            if (_modalDim == null) return;
+            if (!LG.IsVisible(_modalDim)) SFXManager.Play(Sfx.WindowOpen);
+            LG.Show(_modalDim);
+        }
+
+        private void HideModalDim()
+        {
+            if (_modalDim == null) return;
+            if (LG.IsVisible(_modalDim)) SFXManager.Play(Sfx.WindowClose);
+            LG.Hide(_modalDim);
+        }
 
         /// <summary>Применяет Liquid Glass к модальному окну: стекло, пружинное появление.</summary>
         private static void StyleModalWindow(GameObject window, Color? rim = null)
@@ -426,44 +442,6 @@ if (TradeModal.Instance == null)
 else TradeModal.Instance.BindHost(_modalCanvas);
 }
 
-        private void HandleFleetSelectedForRetrofit(FleetView fleet) => RefreshRetrofitButton();
-
-        private void RefreshRetrofitButton()
-        {
-            if (_shipyardRetrofitBtn == null || _shipyardRetrofitTxt == null) return;
-            var fleet = FleetManager.Instance?.SelectedFleet;
-            var dm = ShipDesignManager.Instance;
-            if (fleet?.Data == null || fleet.Data.OwnerId != 0 || fleet.Data.Type != FleetType.Military || dm == null)
-            {
-                _shipyardRetrofitBtn.interactable = false;
-                _shipyardRetrofitTxt.text = "⟳  ВЫБЕРИТЕ ЭСКАДРУ СТАРОГО ОБРАЗЦА";
-                return;
-            }
-
-            float cost = dm.RetrofitCost(fleet.Data);
-            bool can = dm.CanRetrofit(fleet.Data);
-            if (cost <= 0.01f)
-            {
-                _shipyardRetrofitBtn.interactable = false;
-                _shipyardRetrofitTxt.text = "✓  ФЛОТ СООТВЕТСТВУЕТ АКТУАЛЬНОМУ ПРОЕКТУ";
-                return;
-            }
-
-            _shipyardRetrofitBtn.interactable = can;
-            _shipyardRetrofitTxt.text = can
-                ? $"⟳  МОДЕРНИЗИРОВАТЬ ФЛОТ (RETROFIT)  ·  {cost:0} ⬢"
-                : $"✕  МОДЕРНИЗАЦИЯ  ·  НЕ ХВАТАЕТ {cost:0} ⬢";
-        }
-
-        private void OnRetrofitClicked()
-        {
-            if (FleetManager.Instance != null && FleetManager.Instance.TryRetrofitSelectedFleet())
-            {
-                RefreshResourceBar();
-                RefreshRetrofitButton();
-            }
-        }
-
         // ==================== TOPBAR ====================
 
         private void BuildTopBar()
@@ -472,11 +450,15 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var bar = new GameObject("TopBar");
             bar.transform.SetParent(_canvas.transform, false);
             var rt = bar.AddComponent<RectTransform>();
+            // Слева от капсулы — карточка правителя на высоту панели и ряда режимов карты
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(1, 1);
             rt.pivot = new Vector2(0.5f, 1);
-            rt.sizeDelta = new Vector2(-TopBarMargin * 2f, TopBarHeight);
-            rt.anchoredPosition = new Vector2(0, -TopBarMargin);
+            rt.offsetMin = new Vector2(TopBarLeft, -TopBarMargin - TopBarHeight);
+            rt.offsetMax = new Vector2(-TopBarMargin, -TopBarMargin);
+
+            // Правитель империи — живой портрет; клик открывает обзор империи
+            RulerBadge.Create(_canvas.transform, new Vector2(TopBarMargin, -TopBarMargin), OpenEmpireOverviewModal);
 
             var bg = bar.AddComponent<Image>();
             bg.color = DS.BgDeep;
@@ -486,14 +468,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             barMotion.distance = 22f;
             barMotion.inDuration = 0.55f;
 
-            var overviewBtn = CreateButton(bar.transform, "EmpireOverviewBtn", new Vector2(150, 32),
-                new Color(0.12f, 0.40f, 0.48f, 1f), DS.NeonCyan, OpenEmpireOverviewModal);
-            var ovRt = overviewBtn.GetComponent<RectTransform>();
-            ovRt.anchorMin = ovRt.anchorMax = new Vector2(0, 0.5f);
-            ovRt.pivot = new Vector2(0, 0.5f);
-            ovRt.anchoredPosition = new Vector2(8, 0);
-            LGIcons.IconLabel(overviewBtn.transform, LGIcon.Globe, "ОБЗОР ИМПЕРИИ", 10, DS.NeonCyan, Color.white, 15f);
-
             // Дата — в стеклянной капсуле
             var dateChip = new GameObject("DateChip");
             dateChip.transform.SetParent(bar.transform, false);
@@ -501,7 +475,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dcRt.anchorMin = dcRt.anchorMax = new Vector2(0, 0.5f);
             dcRt.pivot = new Vector2(0, 0.5f);
             dcRt.sizeDelta = new Vector2(96, 30);
-            dcRt.anchoredPosition = new Vector2(166, 0);
+            dcRt.anchoredPosition = new Vector2(8, 0);
             var dcImg = dateChip.AddComponent<Image>();
             dcImg.color = DS.BgVisor;
             dcImg.raycastTarget = false;
@@ -509,9 +483,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _dateText = LGIcons.IconLabel(dateChip.transform, LGIcon.Calendar, "01.01.2200", 13, DS.TextMuted, DS.TextPrimary, 13f);
 
-            BuildSpeedControl(bar.transform, 270f);
+            BuildSpeedControl(bar.transform, 112f);
 
-            float startX = 400f;
+            float startX = 242f;
             _energyVal    = CreateResourceBadge(bar.transform, LGIcon.Energy, "ГЕЛИЙ-3", DS.Gold,     ref startX, out _energyTip);
             _mineralsVal  = CreateResourceBadge(bar.transform, LGIcon.Minerals, "ТИТАН", DS.NeonCyan, ref startX, out _mineralsTip);
             _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, "СПЛАВЫ", new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);
@@ -524,6 +498,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tbRt.anchorMin = tbRt.anchorMax = new Vector2(0, 0.5f);
             tbRt.pivot = new Vector2(0, 0.5f);
             tbRt.anchoredPosition = new Vector2(startX + 8, 0);
+            UIAnchors.Register(UIAnchors.Tech, tbRt);
             LGIcons.IconLabel(techBtn.transform, LGIcon.Research, "ИССЛЕДОВАНИЯ", 10, DS.NeonCyan, Color.white, 15f);
 
             var designBtn = CreateButton(bar.transform, "DesignBtn", new Vector2(146, 32),
@@ -532,6 +507,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dbRt.anchorMin = dbRt.anchorMax = new Vector2(0, 0.5f);
             dbRt.pivot = new Vector2(0, 0.5f);
             dbRt.anchoredPosition = new Vector2(startX + 150, 0);
+            UIAnchors.Register(UIAnchors.Designer, dbRt);
             LGIcons.IconLabel(designBtn.transform, LGIcon.Gear, "КОНСТРУКТОР", 10, DS.NeonCyan, Color.white, 15f);
 
             var diploBtn = CreateButton(bar.transform, "DiploBtn", new Vector2(146, 32),
@@ -540,10 +516,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dpRt.anchorMin = dpRt.anchorMax = new Vector2(0, 0.5f);
             dpRt.pivot = new Vector2(0, 0.5f);
             dpRt.anchoredPosition = new Vector2(startX + 304, 0);
+            UIAnchors.Register(UIAnchors.Diplomacy, dpRt);
             LGIcons.IconLabel(diploBtn.transform, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 10, DS.Gold, Color.white, 15f);
         }
 
-        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeed(s); }
+        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
 
         private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip)
         {
@@ -561,9 +538,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Капсула с тонкой неоновой кромкой цвета ресурса
             LG.Chip(badge, new Color(accentCol.r, accentCol.g, accentCol.b, 0.50f));
-            badge.AddComponent<LGInteractive>().hoverScale = 1.04f;
+            badge.AddComponent<LGInteractive>().hoverScale = 1.02f;
 
             tip = badge.AddComponent<TooltipTrigger>();
+            UIAnchors.Register(UIAnchors.Resources, rt);
 
             var ic = LGIcons.Create(badge.transform, icon, 16, accentCol);
             ic.rectTransform.anchorMin = ic.rectTransform.anchorMax = new Vector2(0, 0.5f);
@@ -598,6 +576,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tRt.pivot = new Vector2(0, 0.5f);
             tRt.sizeDelta = new Vector2(SpeedSegW * 4f + SpeedSegPad * 2f, 30f);
             tRt.anchoredPosition = new Vector2(xPos, 0);
+            UIAnchors.Register(UIAnchors.Speed, tRt);
             var tImg = track.AddComponent<Image>();
             tImg.color = DS.BgVisor;
             tImg.raycastTarget = false;
@@ -682,11 +661,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             insp.transform.SetParent(_canvas.transform, false);
 
             _inspectorRect = insp.AddComponent<RectTransform>();
-            _inspectorRect.anchorMin = new Vector2(0, 0.5f);
-            _inspectorRect.anchorMax = new Vector2(0, 0.5f);
-            _inspectorRect.pivot = new Vector2(0, 0.5f);
-            _inspectorRect.anchoredPosition = new Vector2(16, -15);
-            _inspectorRect.sizeDelta = new Vector2(430, 590);
+            _inspectorRect.anchorMin = new Vector2(0, 1);
+            _inspectorRect.anchorMax = new Vector2(0, 1);
+            _inspectorRect.pivot = new Vector2(0, 1);
+            _inspectorRect.anchoredPosition = InspectorRestPos;
+            _inspectorRect.sizeDelta = new Vector2(InspectorWidth, 420);
 
             _inspectorGroup = insp.AddComponent<CanvasGroup>();
             _inspectorGroup.alpha = 0f;
@@ -732,11 +711,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspStatus.rectTransform.offsetMin = new Vector2(16, 0);
             _inspStatus.rectTransform.offsetMax = new Vector2(-40, 0);
 
-            var closeBtn = CreateCloseButton(header.transform, 26f, () =>
-                {
-                    _inspTargetAlpha = 0f;
-                    _inspectorGroup.blocksRaycasts = false;
-                });
+            var closeBtn = CreateCloseButton(header.transform, 26f, HideInspector);
             var cRt = closeBtn.GetComponent<RectTransform>();
             cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
             cRt.pivot = new Vector2(1, 0.5f);
@@ -745,31 +720,30 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var bodyBox = new GameObject("BodyBox");
             bodyBox.transform.SetParent(insp.transform, false);
             var bbRt = bodyBox.AddComponent<RectTransform>();
-            bbRt.anchorMin = new Vector2(0.03f, 0.18f);
-            bbRt.anchorMax = new Vector2(0.97f, 0.72f);
-            bbRt.offsetMin = bbRt.offsetMax = Vector2.zero;
+            _inspBodyRect = bbRt;
+            bbRt.anchorMin = Vector2.zero;
+            bbRt.anchorMax = Vector2.one;
+            bbRt.offsetMin = new Vector2(13, 120);
+            bbRt.offsetMax = new Vector2(-13, -62);
 
             var bbBg = bodyBox.AddComponent<Image>();
             bbBg.color = DS.BgSlot;
             bbBg.raycastTarget = false;
-            LG.Platter(bodyBox, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.22f));
-
-            _inspBodyText = CreateText(bodyBox.transform, "", 11, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
-            _inspBodyText.rectTransform.anchorMin = Vector2.zero;
-            _inspBodyText.rectTransform.anchorMax = Vector2.one;
-            _inspBodyText.rectTransform.offsetMin = new Vector2(12, 12);
-            _inspBodyText.rectTransform.offsetMax = new Vector2(-12, -12);
-            _inspBodyText.lineSpacing = 1.35f;
-            _inspBodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _inspBodyText.verticalOverflow = VerticalWrapMode.Truncate;
-            _inspBodyText.supportRichText = true;
+            // Непрозрачная подложка: подписи карты не должны просвечивать сквозь карточки
+            LG.Platter(bodyBox, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            _inspBodyGroup = bodyBox.AddComponent<CanvasGroup>();
+            // Содержимое — стопка карточек; если не помещается, прокручивается
+            _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 10);
 
             var distRow = new GameObject("DistrictRow");
             distRow.transform.SetParent(insp.transform, false);
             var drRt = distRow.AddComponent<RectTransform>();
-            drRt.anchorMin = new Vector2(0.03f, 0.10f);
-            drRt.anchorMax = new Vector2(0.97f, 0.17f);
-            drRt.offsetMin = drRt.offsetMax = Vector2.zero;
+            _inspDistrictRect = drRt;
+            drRt.anchorMin = new Vector2(0, 0);
+            drRt.anchorMax = new Vector2(1, 0);
+            drRt.pivot = new Vector2(0.5f, 0);
+            drRt.offsetMin = new Vector2(13, 60);
+            drRt.offsetMax = new Vector2(-13, 100);
 
             var hl = distRow.AddComponent<HorizontalLayoutGroup>();
             hl.childForceExpandWidth = true;
@@ -800,8 +774,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             sbRt.pivot = new Vector2(0.5f, 0);
             sbRt.anchoredPosition = new Vector2(0, 48);
             _inspShipyardBtn = shipyardBtn.GetComponent<Button>();
-            var sbTxt = CreateText(shipyardBtn.transform, "⚙   ОРБИТАЛЬНАЯ ВЕРФЬ", 10, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            sbTxt.rectTransform.sizeDelta = sbRt.sizeDelta;
+            LGIcons.IconLabel(shipyardBtn.transform, LGIcon.Shipyard, "ОРБИТАЛЬНАЯ ВЕРФЬ", 10, DS.NeonCyan, Color.white, 14f);
 
             var exitBtn = CreateButton(insp.transform, "ExitSystemBtn", new Vector2(395, 28),
                 DS.BtnDanger, DS.Red, () => SystemViewManager.Instance?.ExitToGalaxyView());
@@ -811,37 +784,72 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             ebRt.pivot = new Vector2(0.5f, 0);
             ebRt.anchoredPosition = new Vector2(0, 48);
             _inspExitBtn = exitBtn.GetComponent<Button>();
-            var ebTxt = CreateText(exitBtn.transform, "◀   ВЕРНУТЬСЯ В ГАЛАКТИКУ", 10, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            ebTxt.rectTransform.sizeDelta = ebRt.sizeDelta;
+            LGIcons.IconLabel(exitBtn.transform, LGIcon.Back, "ВЕРНУТЬСЯ В ГАЛАКТИКУ", 10, Color.white, Color.white, 13f);
+            exitBtn.SetActive(false);
+        }
+
+        private RectTransform _inspBodyRect, _inspDistrictRect;
+
+        /// <summary>
+        /// Кнопки инспектора складываются снизу вверх (только видимые), над ними — ряд районов,
+        /// а текст занимает всё оставшееся место. Кнопки больше не лежат друг на друге.
+        /// </summary>
+        private void LayoutInspector()
+        {
+            if (_inspBodyRect == null) return;
+            float y = 12f;
+            void Stack(Button b, float h)
+            {
+                if (b == null || !b.gameObject.activeSelf) return;
+                var rt = (RectTransform)b.transform;
+                rt.anchoredPosition = new Vector2(0, y);
+                y += h + 6f;
+            }
+            Stack(_inspActionBtn, 32f);
+            Stack(_inspShipyardBtn, 28f);
+            Stack(_inspExitBtn, 28f);
+
+            bool districts = _districtRowRoot != null && _districtRowRoot.transform.childCount > 0;
+            if (districts)
+            {
+                _inspDistrictRect.offsetMin = new Vector2(13, y + 2f);
+                _inspDistrictRect.offsetMax = new Vector2(-13, y + 44f);
+                y += 50f;
+            }
+            _inspBodyRect.offsetMin = new Vector2(13, y + 4f);
+            FitInspectorHeight(y + 4f);
         }
 
         private void ClearInspectorBody()
         {
-            _bodySb.Length = 0;
-            if (_inspBodyText != null) _inspBodyText.text = "";
+            if (_inspStack != null)
+            {
+                _inspStack.anchoredPosition = Vector2.zero;   // новая система — с начала списка
+                for (int i = _inspStack.childCount - 1; i >= 0; i--)
+                {
+                    var child = _inspStack.GetChild(i);
+                    child.SetParent(null, false);
+                    Destroy(child.gameObject);
+                }
+            }
 
             if (_districtRowRoot != null)
             {
                 for (int i = _districtRowRoot.transform.childCount - 1; i >= 0; i--)
-                    Destroy(_districtRowRoot.transform.GetChild(i).gameObject);
+                {
+                    // Отцепляем сразу: Destroy отложен до конца кадра, а раскладка считает детей сейчас
+                    var child = _districtRowRoot.transform.GetChild(i);
+                    child.SetParent(null, false);
+                    Destroy(child.gameObject);
+                }
             }
         }
 
-        private void AddBodyHeader(string text)
-        {
-            if (_bodySb.Length > 0) _bodySb.Append('\n');
-            _bodySb.Append($"<color=#{ColorUtility.ToHtmlStringRGB(DS.Gold)}><b>◆  {text}</b></color>\n");
-        }
+        private void AddBodyHeader(string text) => InspSection(text, LGIcon.Info);
 
-        private void AddBodyLine(string text)
-        {
-            _bodySb.Append(text).Append('\n');
-        }
+        private void AddBodyLine(string text) => InspText(text);
 
-        private void CommitBody()
-        {
-            if (_inspBodyText != null) _inspBodyText.text = _bodySb.ToString();
-        }
+        private void CommitBody() { }
 
         private void AddDistrictRowFor(PlanetData planet)
         {
@@ -880,7 +888,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     if (planet.TryBuildDistrict(capturedDt))
                     {
                         RefreshResourceBar();
-                        ShowPlanetInspector(planet, _activeSystem);
+                        ShowPlanetInspector(planet, _activeSystem, openOverview: false);
                     }
                 });
 
@@ -907,7 +915,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         public void ShowSystemPanel(StarSystem system)
         {
             if (system == null) return;
-            if (_inspBodyText == null || _inspTitle == null || _inspStatus == null) return;
+            if (_inspStack == null || _inspTitle == null || _inspStatus == null) return;
 
             _activeSystem = system;
             _activePlanet = null;
@@ -916,45 +924,15 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             string owner = system.OwnerId == 0
                 ? $"<color=#33E6CC>◆  Под контролем {_selectedFaction?.Name ?? "Империи"}</color>"
-                : system.OwnerId == AIEmpireManager.AIOwnerId
-                    ? "<color=#FF5555>◆  Территория врага</color>"
+                : system.OwnerId > 0
+                    ? $"<color={LGBuild.Hex(FleetIndicator.OwnerColor(system.OwnerId))}>◆  Территория: {AIEmpireManager.NameOf(system.OwnerId, "соперник")}</color>"
                     : "<color=#8AA2A8>◆  Нейтральный фронтир</color>";
             _inspStatus.text = owner;
 
             PulseInspectorContent();
             ClearInspectorBody();
 
-            AddBodyHeader("СТАТУС СИСТЕМЫ");
-            AddBodyLine($"<color=#8AA2A8>Класс звезды:</color> {system.SpectralClass}");
-            AddBodyLine($"<color=#8AA2A8>Орбитальных тел:</color> {system.Planets.Count}");
-            AddBodyLine($"<color=#8AA2A8>Гиперкоридоров:</color> {system.ConnectedSystemIds.Count}");
-
-            AddBodyHeader("РЕСУРСЫ");
-            if (system.IsSurveyed)
-            {
-                system.RecalculateHarvest();
-                AddBodyLine($"<color=#8AA2A8>Добыча:</color> <color=#4DF08C>◆ {system.HarvestedMinerals}  ⚡ {system.HarvestedEnergy}</color>");
-                AddBodyLine($"<color=#8AA2A8>Потенциал:</color> <color=#33E6CC>◆ {system.PotentialMinerals}  ⚡ {system.PotentialEnergy}</color>");
-            }
-            else
-            {
-                AddBodyLine("<color=#FFAA88>⚠  Требуется разведка научным кораблём</color>");
-            }
-
-            AddBodyHeader("УПРАВЛЕНИЕ");
-            if (!_isInSystemMode && system.OwnerId < 0)
-            {
-                if (!system.IsSurveyed)
-                    AddBodyLine("Отправьте научный корабль для изучения системы.");
-                else
-                    AddBodyLine("Заложите форпост, чтобы присоединить систему.");
-            }
-            else
-            {
-                AddBodyLine("Система под вашим контролем.");
-            }
-
-            CommitBody();
+            BuildSystemCards(system);
 
             _inspShipyardBtn.gameObject.SetActive(system.OwnerId == 0 && !_isInSystemMode);
 
@@ -987,21 +965,22 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _inspActionBtn.gameObject.SetActive(false);
             }
 
+            LayoutInspector();
             _inspTargetAlpha = 1f;
             _inspectorGroup.blocksRaycasts = true;
         }
 
         private void OnSystemSelected(StarSystem system) => ShowSystemPanel(system);
 
-        public void ShowPlanetInspector(PlanetData planet, StarSystem parentSystem)
+        public void ShowPlanetInspector(PlanetData planet, StarSystem parentSystem, bool openOverview = true)
         {
             if (planet == null) return;
-            if (_inspBodyText == null || _inspTitle == null || _inspStatus == null) return;
+            if (_inspStack == null || _inspTitle == null || _inspStatus == null) return;
 
             _activePlanet = planet;
             if (parentSystem != null) _activeSystem = parentSystem;
 
-            _inspTitle.text = planet.Name.ToUpper();
+            _inspTitle.text = PlanetNames.Title(planet.Name);
             _inspStatus.text = "<color=#E5B842>◆  Планетарный объект</color>";
 
             bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;
@@ -1065,6 +1044,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
                     _inspActionBtnText.text = "✕  ТРЕБУЕТСЯ РАЗВЕДКА СИСТЕМЫ";
                 }
+                else if (!planet.IsPlayerOwned)
+                {
+                    _inspActionBtn.interactable = false;
+                    _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
+                    _inspActionBtnText.text = "✕  СИСТЕМА НЕ ПРИНАДЛЕЖИТ ВАМ";
+                }
                 else
                 {
                     var eco = EconomyManager.Instance;
@@ -1083,16 +1068,19 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _inspActionBtnText.text = "✓  КОМПЛЕКС ФУНКЦИОНИРУЕТ";
             }
 
+            LayoutInspector();
             _inspTargetAlpha = 1f;
             _inspectorGroup.blocksRaycasts = true;
 
-            PlanetOverviewModal.Instance?.Open(planet, parentSystem);
+            // Клик по планете сразу открывает полноэкранный обзор (без промежуточного окна)
+            if (openOverview) PlanetFocusOverlay.Instance?.Open(planet, parentSystem);
         }
 
         private void OnViewModeChanged(bool inSystem)
         {
             _isInSystemMode = inSystem;
             _inspExitBtn.gameObject.SetActive(inSystem);
+            LayoutInspector();
 
             if (!inSystem && _activeSystem != null)
                 ShowSystemPanel(_activeSystem);
@@ -1106,8 +1094,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             {
                 if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_activePlanet))
                 {
-                    SystemViewManager.Instance?.SpawnStationOnActivePlanet(_activePlanet);
-                    ShowPlanetInspector(_activePlanet, _activeSystem);
+                    ShowPlanetInspector(_activePlanet, _activeSystem, openOverview: false);
                     RefreshResourceBar();
                 }
             }
@@ -1136,7 +1123,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private float _inspShow, _inspShowV;
         private float _inspBodyFade = 1f;
-        private static readonly Vector2 InspectorRestPos = new Vector2(16, -15);
+        private const float InspectorWidth = 430f;
+        /// <summary>Под панелью режимов карты (она стоит на 66…108 px от верха).</summary>
+        private const float InspectorTop = 118f;
+        private static readonly Vector2 InspectorRestPos = new Vector2(16, -InspectorTop);
 
         private void Update()
         {
@@ -1154,12 +1144,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             // Смена содержимого — мягкое "проявление" текста вместо мгновенной подмены
-            if (_inspBodyText != null && _inspBodyFade < 1f)
+            if (_inspBodyGroup != null && _inspBodyFade < 1f)
             {
                 _inspBodyFade = Mathf.MoveTowards(_inspBodyFade, 1f, dt * 4.5f);
-                var c = _inspBodyText.color;
-                c.a = LGEase.OutCubic(_inspBodyFade);
-                _inspBodyText.color = c;
+                _inspBodyGroup.alpha = LGEase.OutCubic(_inspBodyFade);
             }
 
             UpdateSpeedControl();
@@ -1189,19 +1177,29 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             string netColor = net >= 0f ? StatFormat.GreenHex : StatFormat.RedHex;
             string warn = eco.IsBankrupt
-                ? "<color=#FF5555>⚠  БАНКРОТСТВО — производство урезано вдвое</color>\n\n"
-                : "";
+                ? "<color=#FF5555><b>БАНКРОТСТВО</b> — производство урезано вдвое</color>\n\n"
+                : eco.BankruptcyLooming
+                    ? $"<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{Mathf.Max(1, Mathf.CeilToInt(eco.MonthsUntilEmpty))} мес.</color>\n\n"
+                    : "";
+            var rep = eco.Report;
+            string overCap = rep.NavalUsed > rep.NavalCapacity
+                ? $"  <color=#FF8888>(перебор лимита: ×{rep.OverCapacityMult:0.##})</color>" : "";
 
             _energyTip.SetText(
                 $"<b>Гелий-3</b>\n" +
                 warn +
                 $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.EnergyCredits}</b>\n" +
                 $"<color=#8AA2A8>База империи:</color> {eco.BaseEnergyIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Планеты:</color>     {eco.PlanetEnergyOutput:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Содержание флота:</color> <color=#FF8888>-{GetFleetUpkeep():0.#}</color> / мес\n" +
-                $"<color=#8AA2A8>Содержание форпостов:</color> <color=#FF8888>-{GetStarbaseUpkeep():0.#}</color> / мес\n" +
+                $"<color=#8AA2A8>Районы-генераторы:</color> {eco.PlanetEnergyOutput:+0;-0;0} / мес\n" +
+                $"<color=#8AA2A8>Добывающие станции:</color> {eco.StationEnergyOutput:+0;-0;0} / мес\n" +
+                (eco.TechEnergyOutput > 0f ? $"<color=#8AA2A8>Реакторные технологии:</color> {eco.TechEnergyOutput:+0;-0;0} / мес\n" : "") +
+                $"<color=#8AA2A8>Военный флот:</color> <color=#FF8888>-{rep.FleetUpkeep:0.#}</color> / мес{overCap}\n" +
+                $"<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{rep.CivilianUpkeep:0.#}</color> / мес\n" +
+                $"<color=#8AA2A8>Форпосты ({rep.Outposts} × {EmpireEconomy.OutpostUpkeep:0.#}):</color> <color=#FF8888>-{rep.OutpostUpkeepTotal:0.#}</color> / мес\n" +
                 $"<color=#8AA2A8>──────────────</color>\n" +
-                $"<color=#8AA2A8>Чистый доход:</color> <color={netColor}><b>{net:+0.#;-0.#;0} / мес</b></color>"
+                $"<color=#8AA2A8>Чистый доход:</color> <color={netColor}><b>{net:+0.#;-0.#;0} / мес</b></color>\n\n" +
+                $"<color=#8AA2A8>Флотский лимит: {rep.NavalUsed} / {rep.NavalCapacity} (корвет 1, фрегат 2, эсминец 3; +{EmpireEconomy.NavalCapacityPerColony} за колонию). " +
+                "Сверх лимита содержание всего военного флота растёт.</color>"
             );
         }
     }
@@ -1215,7 +1213,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 $"<b>Титан</b>\n" +
                 $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Minerals}</b>\n" +
                 $"<color=#8AA2A8>База:</color> {eco.BaseMineralsIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Планеты:</color> {eco.PlanetMineralsOutput:+0;-0;0} / мес\n" +
+                $"<color=#8AA2A8>Горные районы:</color> {eco.PlanetMineralsOutput:+0;-0;0} / мес\n" +
+                $"<color=#8AA2A8>Добывающие станции:</color> {eco.StationMineralsOutput:+0;-0;0} / мес\n" +
                 $"<color=#8AA2A8>──────────────</color>\n" +
                 $"<color=#8AA2A8>Итого:</color> {StatFormat.Income(eco.MonthlyMineralsIncome)}"
             );
@@ -1245,7 +1244,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 $"<b>Влияние</b>\n" +
                 $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Influence}</b>\n" +
                 $"<color=#8AA2A8>Доход:</color> {StatFormat.Income(eco.MonthlyInfluenceIncome)}\n\n" +
-                "<color=#8AA2A8><i>Расходуется на форпосты (25 ★), колонии (25 ★) и терраформинг.</i></color>"
+                $"<color=#8AA2A8><i>Расходуется на форпосты ({FleetManager.OutpostInfluenceCost(0):0}), колонии ({PlanetData.ColonyInfluenceCost:0}), " +
+                $"пакты ({AIEmpireManager.PactInfluenceCost:0}), мирные предложения ({AIEmpireManager.PeaceInfluenceCost:0}) и терраформинг.</i></color>"
             );
     }
 
@@ -1259,12 +1259,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             int active = 0;
             foreach (var s in tm.Slots) if (s.CurrentTech != null && !s.IsPaused) active++;
 
+            float mult = tm.GlobalResearchSpeedMultiplier;
             _researchTip.SetText(
                 $"<b>Наука</b>\n" +
-                $"<color=#8AA2A8>Доход:</color> +{tm.MonthlyResearchIncome:0.#} / мес\n" +
+                $"<color=#8AA2A8>Администрация:</color> +{TechnologyManager.BaseScience:0.#}\n" +
+                $"<color=#8AA2A8>Население ({tm.Population} × {TechnologyManager.SciencePerPop:0.#}):</color> +{tm.ScienceFromPopulation:0.#}\n" +
+                (tm.FlatScience > 0f ? $"<color=#8AA2A8>Открытия и события:</color> +{tm.FlatScience:0.#}\n" : "") +
+                (Mathf.Abs(mult - 1f) > 0.01f ? $"<color=#8AA2A8>Множитель технологий и событий:</color> ×{mult:0.##}\n" : "") +
+                $"<color=#8AA2A8>──────────────</color>\n" +
+                $"<color=#8AA2A8>Итого:</color> <b>+{tm.MonthlyResearchIncome:0.#} / мес</b>\n" +
                 $"<color=#8AA2A8>Активных слотов:</color> {active} / {tm.Slots.Count}\n\n" +
-                "<color=#8AA2A8><i>Скорость делится между слотами с пенальти — " +
-                "один слот идёт в 2 раза быстрее, чем каждый из двух.</i></color>"
+                "<color=#8AA2A8><i>Наука растёт вместе с населением — заселяйте планеты и стройте жильё. " +
+                "Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</i></color>"
             );
         }
     }
@@ -1272,34 +1278,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
 // ==================== ХЕЛПЕРЫ ДЛЯ ТУЛТИПОВ ====================
 
-private float GetFleetUpkeep()
-{
-    float sum = 0f;
-    var fm = FleetManager.Instance;
-    if (fm == null) return 0f;
-    foreach (var f in fm.AllFleets)
-    {
-        if (f?.Data == null || f.Data.Destroyed) continue;
-        if (f.Data.OwnerId != 0) continue;
-        sum += f.Data.UpkeepEnergy;
-    }
-    return sum;
-}
 
-private float GetStarbaseUpkeep()
-{
-    var gen = FindAnyObjectByType<GalaxyGenerator>();
-    if (gen == null) return 0f;
-
-    float sum = 0f;
-    foreach (var sys in gen.Systems)
-    {
-        if (sys.OwnerId != 0 || !sys.HasStarbase) continue;
-        if (sys.Id == 0) continue;    // столица бесплатна
-        sum += 1.5f;
-    }
-    return sum;
-}
         // ==================== ОБЗОР ИМПЕРИИ ====================
         // Окно вынесено в EmpireOverviewWindow (шапка, ресурсы, правитель, статистика,
         // прогресс к победе и вкладки колоний / флотов / границ / соперника).
@@ -1316,107 +1295,17 @@ private float GetStarbaseUpkeep()
             EmpireOverviewWindow.Instance?.Open();
         }
 
-                // ==================== ВЕРФЬ ====================
+        // ==================== ВЕРФЬ ====================
+        // Окно вынесено в ShipyardWindow (заказ кораблей, стапели, модернизация).
 
         private void BuildShipyardModal()
         {
-            _shipyardPanel = new GameObject("ShipyardModal");
-            _shipyardPanel.transform.SetParent(_modalCanvas.transform, false);
-
-            var rt = _shipyardPanel.AddComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(520, 460);
-
-            _shipyardGroup = _shipyardPanel.AddComponent<CanvasGroup>();
-            _shipyardPanel.AddComponent<Image>().color = DS.BgDeep;
-            StyleModalWindow(_shipyardPanel, new Color(0.45f, 0.95f, 0.90f, 0.40f));
-
-            var header = new GameObject("Header");
-            header.transform.SetParent(_shipyardPanel.transform, false);
-            var hbRt = header.AddComponent<RectTransform>();
-            hbRt.anchorMin = new Vector2(0, 1);
-            hbRt.anchorMax = new Vector2(1, 1);
-            hbRt.pivot = new Vector2(0.5f, 1);
-            hbRt.sizeDelta = new Vector2(0, 52);
-            header.AddComponent<Image>().color = DS.BgHeader;
-            LG.Header(header);
-
-            var title = CreateText(header.transform, "⚙   ОРБИТАЛЬНАЯ ВЕРФЬ ФЛОТА", 13, FontStyle.Bold, DS.NeonCyan, TextAnchor.MiddleLeft);
-            title.rectTransform.anchorMin = Vector2.zero;
-            title.rectTransform.anchorMax = Vector2.one;
-            title.rectTransform.offsetMin = new Vector2(22, 0);
-
-            var closeBtn = CreateCloseButton(header.transform, 28f, () => CloseModal(_shipyardPanel));
-            var cRt = closeBtn.GetComponent<RectTransform>();
-            cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
-            cRt.pivot = new Vector2(1, 0.5f);
-            cRt.anchoredPosition = new Vector2(-14, 0);
-
-            CreateShipyardOption(_shipyardPanel.transform, "НАУЧНЫЙ КОРАБЛЬ",      "100 Спл.   50 Гел.", 110, FleetType.Science);
-            CreateShipyardOption(_shipyardPanel.transform, "СТРОИТЕЛЬНЫЙ КОРАБЛЬ", "80 Спл.   20 Гел.",  48, FleetType.Constructor);
-            CreateShipyardOption(_shipyardPanel.transform, "БОЕВОЙ КОРВЕТ",        "по проекту",        -14, FleetType.Military);
-
-            var designBtn = CreateButton(_shipyardPanel.transform, "OpenDesigner", new Vector2(440, 40),
-                DS.BtnPrimary, DS.BtnPrimaryHi, () =>
-                {
-                    LG.Hide(_shipyardPanel);
-                    ShipDesignerModal.Instance?.Open();
-                });
-            var dRt = designBtn.GetComponent<RectTransform>();
-            dRt.anchorMin = dRt.anchorMax = new Vector2(0.5f, 0.5f);
-            dRt.anchoredPosition = new Vector2(0, -72);
-            var dTxt = CreateText(designBtn.transform, "◆  ОТКРЫТЬ КОНСТРУКТОР КОРАБЛЕЙ", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            dTxt.rectTransform.sizeDelta = dRt.sizeDelta;
-
-            var retrofitBtn = CreateButton(_shipyardPanel.transform, "RetrofitBtn", new Vector2(440, 40),
-                DS.BtnSuccess, DS.Gold, OnRetrofitClicked);
-            var rRt = retrofitBtn.GetComponent<RectTransform>();
-            rRt.anchorMin = rRt.anchorMax = new Vector2(0.5f, 0.5f);
-            rRt.anchoredPosition = new Vector2(0, -122);
-            _shipyardRetrofitBtn = retrofitBtn.GetComponent<Button>();
-            _shipyardRetrofitTxt = CreateText(retrofitBtn.transform, "⟳  МОДЕРНИЗИРОВАТЬ ФЛОТ (RETROFIT)", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            _shipyardRetrofitTxt.rectTransform.sizeDelta = rRt.sizeDelta;
-
-            _shipyardPanel.SetActive(false);
+            var go = new GameObject("[UI] ShipyardWindow");
+            go.transform.SetParent(transform, false);
+            go.AddComponent<ShipyardWindow>().Build(_modalCanvas);
         }
 
-        private void OpenShipyardModal()
-        {
-            ShowModalDim();
-            MapModeController.HideGlobal();
-            RefreshRetrofitButton();
-            LG.Show(_shipyardPanel);
-            _shipyardPanel.transform.SetAsLastSibling();
-        }
-
-        private void CreateShipyardOption(Transform parent, string shipTitle, string price, float yPos, FleetType type)
-        {
-            var btn = CreateButton(parent, $"Buy_{type}", new Vector2(440, 52),
-                DS.BgSlot, DS.BtnPrimaryHi, () =>
-                {
-                    if (FleetManager.Instance != null && FleetManager.Instance.BuildShip(type))
-                    {
-                        RefreshResourceBar();
-                        CloseModal(_shipyardPanel);
-                    }
-                });
-
-            var rt = btn.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0, yPos);
-
-            var tName = CreateText(btn.transform, shipTitle, 13, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
-            tName.rectTransform.anchorMin = new Vector2(0, 0);
-            tName.rectTransform.anchorMax = new Vector2(0.55f, 1);
-            tName.rectTransform.offsetMin = new Vector2(16, 0);
-
-            var tPrice = CreateText(btn.transform, price, 12, FontStyle.Bold, DS.Gold, TextAnchor.MiddleRight);
-            tPrice.rectTransform.anchorMin = new Vector2(0.55f, 0);
-            tPrice.rectTransform.anchorMax = new Vector2(1, 1);
-            tPrice.rectTransform.offsetMax = new Vector2(-16, 0);
-        }
+        private void OpenShipyardModal() => ShipyardWindow.Instance?.Open();
 
         private void OpenTechModal()
         {
@@ -1427,420 +1316,48 @@ private float GetStarbaseUpkeep()
 
         // ==================== ФРАКЦИЯ ====================
 
+        /// <summary>Выбор цивилизации — полноэкранный экран в духе Master of Orion (FactionSelectScreen).</summary>
         private void BuildFactionSelectionModal()
         {
-            _factionSelectionModal = new GameObject("FactionSelectionModal");
-            _factionSelectionModal.transform.SetParent(_modalCanvas.transform, false);
-
-            var rt = _factionSelectionModal.AddComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(1120, 660);
-
-            _factionSelectionModal.AddComponent<Image>().color = DS.BgDeep;
-            StyleModalWindow(_factionSelectionModal, new Color(0.45f, 0.95f, 0.90f, 0.45f));
-
-            // ===== ЗАГОЛОВОК =====
-            var header = new GameObject("Header");
-            header.transform.SetParent(_factionSelectionModal.transform, false);
-            var hbRt = header.AddComponent<RectTransform>();
-            hbRt.anchorMin = new Vector2(0, 1);
-            hbRt.anchorMax = new Vector2(1, 1);
-            hbRt.pivot = new Vector2(0.5f, 1);
-            hbRt.sizeDelta = new Vector2(0, 66);
-            hbRt.anchoredPosition = Vector2.zero;
-            header.AddComponent<Image>().color = DS.BgHeader;
-            LG.Header(header);
-
-            var headerLine = new GameObject("HeaderLine");
-            headerLine.transform.SetParent(header.transform, false);
-            var hlRt = headerLine.AddComponent<RectTransform>();
-            hlRt.anchorMin = new Vector2(0, 0);
-            hlRt.anchorMax = new Vector2(1, 0);
-            hlRt.pivot = new Vector2(0.5f, 0.5f);
-            hlRt.sizeDelta = new Vector2(-120, 1.5f);
-            hlRt.anchoredPosition = Vector2.zero;
-            headerLine.AddComponent<Image>().color = DS.NeonCyan;
-            LG.Line(headerLine, hairline: true);
-
-            var title = CreateText(header.transform, "◆  ВЫБОР ЦИВИЛИЗАЦИИ  ◆", 22, FontStyle.Bold, DS.NeonCyan, TextAnchor.MiddleCenter);
-            title.rectTransform.anchorMin = Vector2.zero;
-            title.rectTransform.anchorMax = Vector2.one;
-            title.rectTransform.offsetMin = new Vector2(40, 0);
-            title.rectTransform.offsetMax = new Vector2(-40, 0);
-
-            // Возврат в главное меню (передумал с параметрами галактики)
-            var backBtn = LGBuild.Button(header.transform, "BackToMenu", DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f, 0.45f),
-                ReturnToMainMenuFromSetup, LGIcon.Back, "МЕНЮ", 11);
-            ((RectTransform)backBtn.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(112, 36));
-
-            // ===== КАРТОЧКИ =====
-            const float CardW = 320f;
-            const float CardH = 500f;
-            const float CardGap = 30f;
-            const float CardY = 8f;
-
-            int count = FactionRegistry.AvailableFactions.Length;
-            float totalW = count * CardW + (count - 1) * CardGap;
-            float startX = -totalW * 0.5f + CardW * 0.5f;
-
-            var cards = new List<RectTransform>(count);
-            var groups = new List<CanvasGroup>(count);
-            var hovers = new List<FactionCardHover>(count);
-
-            for (int i = 0; i < count; i++)
-            {
-                var f = FactionRegistry.AvailableFactions[i];
-                float cx = startX + i * (CardW + CardGap);
-
-                var card = new GameObject($"Card_{f.Name}");
-                card.transform.SetParent(_factionSelectionModal.transform, false);
-
-                var cRt = card.AddComponent<RectTransform>();
-                cRt.anchorMin = cRt.anchorMax = new Vector2(0.5f, 0.5f);
-                cRt.pivot = new Vector2(0.5f, 0.5f);
-                cRt.sizeDelta = new Vector2(CardW, CardH);
-                cRt.anchoredPosition = new Vector2(cx, CardY);
-
-                var cardGroup = card.AddComponent<CanvasGroup>();
-                cardGroup.alpha = 1f;
-
-                var cardBg = card.AddComponent<Image>();
-                cardBg.color = DS.BgSlot;
-                cardBg.raycastTarget = true;
-
-                // Outline остаётся "источником" цвета кромки: FactionCardHover анимирует его,
-                // а LiquidGlassEffect превращает в неоновую обводку и свечение карточки.
-                var cardOutline = card.AddComponent<Outline>();
-                cardOutline.effectColor = Color.Lerp(f.EmpireColor, new Color(0.02f, 0.06f, 0.08f), 0.55f);
-                cardOutline.effectDistance = new Vector2(1.5f, -1.5f);
-                LG.Platter(card, 20f).GlowMultiplier = 3f;
-
-                // Плашка с названием
-                var namePlate = new GameObject("NamePlate");
-                namePlate.transform.SetParent(card.transform, false);
-                var npRt = namePlate.AddComponent<RectTransform>();
-                npRt.anchorMin = new Vector2(0, 1);
-                npRt.anchorMax = new Vector2(1, 1);
-                npRt.pivot = new Vector2(0.5f, 1);
-                npRt.sizeDelta = new Vector2(0, 48);
-                npRt.anchoredPosition = Vector2.zero;
-
-                var npImg = namePlate.AddComponent<Image>();
-                npImg.color = Color.Lerp(f.EmpireColor, Color.black, 0.45f);
-                npImg.raycastTarget = false;
-                LG.Header(namePlate).FillMultiplier = 1.8f;
-
-                string roman = i switch { 0 => "I", 1 => "II", 2 => "III", 3 => "IV", _ => (i + 1).ToString() };
-
-                var numCircle = new GameObject("NumCircle");
-                numCircle.transform.SetParent(namePlate.transform, false);
-                var ncRt = numCircle.AddComponent<RectTransform>();
-                ncRt.anchorMin = ncRt.anchorMax = new Vector2(0, 0.5f);
-                ncRt.pivot = new Vector2(0, 0.5f);
-                ncRt.sizeDelta = new Vector2(34, 34);
-                ncRt.anchoredPosition = new Vector2(8, 0);
-
-                var ncImg = numCircle.AddComponent<Image>();
-                ncImg.color = new Color(0f, 0f, 0f, 0.55f);
-                ncImg.raycastTarget = false;
-                var ncFx = LG.Platter(numCircle, 17f);
-                ncFx.SetRim(new Color(f.EmpireColor.r, f.EmpireColor.g, f.EmpireColor.b, 0.9f));
-                ncFx.GlowMultiplier = 0f;
-
-                var ncTxt = CreateText(numCircle.transform, roman, 14, FontStyle.Bold, f.EmpireColor, TextAnchor.MiddleCenter);
-                ncTxt.rectTransform.anchorMin = Vector2.zero;
-                ncTxt.rectTransform.anchorMax = Vector2.one;
-                ncTxt.rectTransform.offsetMin = Vector2.zero;
-                ncTxt.rectTransform.offsetMax = Vector2.zero;
-
-                var nameTxt = CreateText(namePlate.transform, f.Name.ToUpper(), 14, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-                nameTxt.rectTransform.anchorMin = Vector2.zero;
-                nameTxt.rectTransform.anchorMax = Vector2.one;
-                nameTxt.rectTransform.offsetMin = new Vector2(50, 0);
-                nameTxt.rectTransform.offsetMax = new Vector2(-10, 0);
-
-                // Подзаголовок
-                var subTitle = new GameObject("SubTitle");
-                subTitle.transform.SetParent(card.transform, false);
-                var stRt = subTitle.AddComponent<RectTransform>();
-                stRt.anchorMin = new Vector2(0, 1);
-                stRt.anchorMax = new Vector2(1, 1);
-                stRt.pivot = new Vector2(0.5f, 1);
-                stRt.sizeDelta = new Vector2(0, 22);
-                stRt.anchoredPosition = new Vector2(0, -48);
-
-                var stBg = subTitle.AddComponent<Image>();
-                stBg.color = new Color(0.02f, 0.06f, 0.08f, 0.9f);
-                stBg.raycastTarget = false;
-                LG.Apply(subTitle, LiquidGlassEffect.Role.Header, 0f);
-
-                var stTxt = CreateText(subTitle.transform, f.Title, 11, FontStyle.Italic, f.EmpireColor, TextAnchor.MiddleCenter);
-                stTxt.rectTransform.anchorMin = Vector2.zero;
-                stTxt.rectTransform.anchorMax = Vector2.one;
-                stTxt.rectTransform.offsetMin = new Vector2(6, 0);
-                stTxt.rectTransform.offsetMax = new Vector2(-6, 0);
-
-                // Видео-зона
-                var videoZone = new GameObject("VideoZone");
-videoZone.transform.SetParent(card.transform, false);
-var vRt = videoZone.AddComponent<RectTransform>();
-vRt.anchorMin = new Vector2(0, 1);
-vRt.anchorMax = new Vector2(1, 1);
-vRt.pivot = new Vector2(0.5f, 1);
-vRt.sizeDelta = new Vector2(-16, 156);         // было 170 → 156
-vRt.anchoredPosition = new Vector2(0, -72);    // было -78 → -72
-
-var vBg = videoZone.AddComponent<Image>();
-vBg.color = new Color(0.008f, 0.020f, 0.028f, 1f); 
-vBg.raycastTarget = false;
-
-var vOutline = videoZone.AddComponent<Outline>();
-vOutline.effectColor = new Color(f.EmpireColor.r, f.EmpireColor.g, f.EmpireColor.b, 0.35f);
-vOutline.effectDistance = new Vector2(1f, -1f);
-
-                LG.Platter(videoZone, 14f);
-                var videoMask = LG.RoundedMask(videoZone.transform, 14f, 1f);
-
-                var videoHost = new GameObject("VideoHost");
-                videoHost.transform.SetParent(videoZone.transform, false);
-                var videoBg = videoHost.AddComponent<FactionVideoBackground>();
-                videoBg.Initialize(videoMask);
-
-                string videoKey = i switch
-                {
-                    0 => "un",
-                    1 => "chinvar",
-                    2 => "orion",
-                    _ => "un"
-                };
-                videoBg.Preload(videoKey);
-
-                // Описание
-                // Описание — панель расширена вниз и вверх
-var descBox = new GameObject("DescBox");
-descBox.transform.SetParent(card.transform, false);
-var dBgRt = descBox.AddComponent<RectTransform>();
-dBgRt.anchorMin = new Vector2(0, 0);
-dBgRt.anchorMax = new Vector2(1, 1);
-dBgRt.offsetMin = new Vector2(14, 60);                     // было 120 — опустили вниз ближе к кнопке
-dBgRt.offsetMax = new Vector2(-14, -(72 + 156 + 8));       // видеозона уменьшена, панель выше
-
-var dBgImg = descBox.AddComponent<Image>();
-dBgImg.color = new Color(0.008f, 0.025f, 0.035f, 0.85f);
-dBgImg.raycastTarget = false;
-
-var dBorder = descBox.AddComponent<Outline>();
-dBorder.effectColor = new Color(f.EmpireColor.r * 0.5f, f.EmpireColor.g * 0.5f, f.EmpireColor.b * 0.5f, 0.4f);
-dBorder.effectDistance = new Vector2(0.8f, -0.8f);
-
-var descTxt = CreateText(descBox.transform, f.Description, 10, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);  // было 11 — уменьшили
-descTxt.rectTransform.anchorMin = Vector2.zero;
-descTxt.rectTransform.anchorMax = Vector2.one;
-descTxt.rectTransform.offsetMin = new Vector2(10, 6);
-descTxt.rectTransform.offsetMax = new Vector2(-10, -6);
-descTxt.lineSpacing = 1.2f;                                  // было 1.35 — плотнее
-descTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
-descTxt.verticalOverflow = VerticalWrapMode.Overflow;
-descTxt.supportRichText = true;
-
-                // Кнопка
-                var selectBtn = CreateButton(card.transform, "SelectBtn", new Vector2(-12, 44),
-    DS.BtnPrimary, DS.BtnPrimaryHi, () => OnFactionChosen(f));
-
-var sRt = selectBtn.GetComponent<RectTransform>();
-sRt.anchorMin = new Vector2(0, 0);
-sRt.anchorMax = new Vector2(1, 0);
-sRt.pivot = new Vector2(0.5f, 0);
-sRt.offsetMin = new Vector2(6, 6);
-sRt.offsetMax = new Vector2(-6, 6 + 44);
-
-                var btnImg = selectBtn.GetComponent<Image>();
-                if (btnImg != null)
-                    btnImg.color = Color.Lerp(f.EmpireColor, Color.black, 0.55f);
-                LG.Button(selectBtn, new Color(f.EmpireColor.r, f.EmpireColor.g, f.EmpireColor.b, 0.75f));
-
-                var tBtn = CreateText(selectBtn.transform, "▶  ПРИНЯТЬ КОМАНДОВАНИЕ", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-                tBtn.rectTransform.anchorMin = Vector2.zero;
-                tBtn.rectTransform.anchorMax = Vector2.one;
-                tBtn.rectTransform.offsetMin = Vector2.zero;
-                tBtn.rectTransform.offsetMax = Vector2.zero;
-
-                // Hover / фокус
-                var hover = card.AddComponent<FactionCardHover>();
-                hover.Configure(cRt, cardOutline, cardGroup, f.EmpireColor, videoBg);
-
-                int capturedIndex = i;
-                var trigger = card.AddComponent<UnityEngine.EventSystems.EventTrigger>();
-
-                var enterEntry = new UnityEngine.EventSystems.EventTrigger.Entry
-                {
-                    eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter
-                };
-                enterEntry.callback.AddListener(_ => SetFocusedFaction(capturedIndex, hovers));
-                trigger.triggers.Add(enterEntry);
-
-                cards.Add(cRt);
-                groups.Add(cardGroup);
-                hovers.Add(hover);
-            }
-
-            // Нижняя полоса со слоганом
-            var footer = new GameObject("Footer");
-            footer.transform.SetParent(_factionSelectionModal.transform, false);
-            var fRt = footer.AddComponent<RectTransform>();
-            fRt.anchorMin = new Vector2(0, 0);
-            fRt.anchorMax = new Vector2(1, 0);
-            fRt.pivot = new Vector2(0.5f, 0);
-            fRt.sizeDelta = new Vector2(0, 36);
-            fRt.anchoredPosition = Vector2.zero;
-
-            var fBg = footer.AddComponent<Image>();
-            fBg.color = DS.BgVisor;
-            fBg.raycastTarget = false;
-            LG.Header(footer);
-
-            var fLine = new GameObject("TopLine");
-            fLine.transform.SetParent(footer.transform, false);
-            var flRt = fLine.AddComponent<RectTransform>();
-            flRt.anchorMin = new Vector2(0, 1);
-            flRt.anchorMax = new Vector2(1, 1);
-            flRt.pivot = new Vector2(0.5f, 0.5f);
-            flRt.sizeDelta = new Vector2(-120, 1.2f);
-            flRt.anchoredPosition = Vector2.zero;
-            fLine.AddComponent<Image>().color = new Color(0.36f, 0.88f, 0.82f, 0.35f);
-            LG.Line(fLine, hairline: true);
-
-            var gs = GameSession.Settings;
-            string galaxyInfo = $"{NewGameSettings.SizeNames[Mathf.Clamp(gs.GalaxySize, 0, 2)].ToUpper()} ГАЛАКТИКА · {gs.StarCount} СИСТЕМ · " +
-                                $"СЛОЖНОСТЬ: {NewGameSettings.DifficultyNames[Mathf.Clamp(gs.Difficulty, 0, 2)].ToUpper()} · СИД {gs.Seed}";
-            var footerTxt = CreateText(footer.transform, "ВЫБЕРИТЕ ПУТЬ, КОТОРЫМ ПОВЕДЁТЕ СВОЮ ЦИВИЛИЗАЦИЮ В ГЛУБИНЫ ГАЛАКТИКИ   ·   " + galaxyInfo,
-                                       10, FontStyle.Italic, DS.TextMuted, TextAnchor.MiddleCenter);
-            footerTxt.rectTransform.anchorMin = Vector2.zero;
-            footerTxt.rectTransform.anchorMax = Vector2.one;
-            footerTxt.rectTransform.offsetMin = new Vector2(20, 0);
-            footerTxt.rectTransform.offsetMax = new Vector2(-20, 0);
-
-            SetFocusedFaction(0, hovers);
-
-            StartCoroutine(AnimateFactionCardsIn(cards, groups));
-        }
-
-        private void SetFocusedFaction(int index, List<FactionCardHover> hovers)
-        {
-            for (int i = 0; i < hovers.Count; i++)
-            {
-                if (hovers[i] == null) continue;
-                hovers[i].SetFocused(i == index);
-            }
-        }
-
-        private IEnumerator AnimateFactionCardsIn(List<RectTransform> cards, List<CanvasGroup> groups)
-        {
-            const float dur = 0.32f;
-            const float stagger = 0.07f;
-
-            var finalPositions = new Vector2[cards.Count];
-            for (int i = 0; i < cards.Count; i++)
-            {
-                finalPositions[i] = cards[i].anchoredPosition;
-                groups[i].alpha = 0f;
-                cards[i].anchoredPosition = finalPositions[i] + new Vector2(0, -25f);
-                cards[i].localScale = Vector3.one * 0.94f;
-            }
-
-            yield return null;
-
-            for (int i = 0; i < cards.Count; i++)
-            {
-                float t = 0f;
-                Vector2 startPos = cards[i].anchoredPosition;
-                Vector3 startScale = cards[i].localScale;
-
-                while (t < dur)
-                {
-                    t += Time.unscaledDeltaTime;
-                    float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / dur));
-                    groups[i].alpha = k;
-                    cards[i].anchoredPosition = Vector2.Lerp(startPos, finalPositions[i], k);
-                    cards[i].localScale = Vector3.Lerp(startScale, Vector3.one, k);
-                    yield return null;
-                }
-
-                groups[i].alpha = 1f;
-                cards[i].anchoredPosition = finalPositions[i];
-                cards[i].localScale = Vector3.one;
-
-                if (i < cards.Count - 1)
-                    yield return new WaitForSecondsRealtime(stagger);
-            }
+            var rt = LGBuild.Rect(_modalCanvas.transform, "FactionSelectionModal");
+            _factionSelectionModal = rt.gameObject;
+            var screen = _factionSelectionModal.AddComponent<FactionSelectScreen>();
+            screen.Build(OnFactionChosen, ReturnToMainMenuFromSetup);
         }
 
         private void OnFactionChosen(FactionInfo faction)
         {
             _selectedFaction = faction;
             LG.Hide(_factionSelectionModal);
-
-            if (EconomyManager.Instance != null)
-                EconomyManager.Instance.ApplyFactionBonuses(faction);
-
+            // Бонусы применяются при вступлении в должность: из передачи можно вернуться и выбрать другую
             OpenAdvisorIntroModal(faction);
         }
 
         private void BuildAdvisorIntroModal()
         {
-            _advisorIntroModal = new GameObject("AdvisorIntroModal");
-            _advisorIntroModal.transform.SetParent(_modalCanvas.transform, false);
-
-            var rt = _advisorIntroModal.AddComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(660, 340);
-
-            _advisorIntroModal.AddComponent<Image>().color = DS.BgDeep;
-            StyleModalWindow(_advisorIntroModal, new Color(0.45f, 0.95f, 0.90f, 0.45f));
-
-            _advisorText = CreateText(_advisorIntroModal.transform, "", 13, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
-            _advisorText.rectTransform.anchorMin = new Vector2(0, 0);
-            _advisorText.rectTransform.anchorMax = new Vector2(1, 1);
-            _advisorText.rectTransform.offsetMin = new Vector2(28, 75);
-            _advisorText.rectTransform.offsetMax = new Vector2(-28, -25);
-            _advisorText.lineSpacing = 1.35f;
-            _advisorText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _advisorText.supportRichText = true;
-
-            var startBtn = CreateButton(_advisorIntroModal.transform, "StartGameBtn",
-                new Vector2(280, 40), DS.BtnSuccess, DS.NeonCyan, () =>
-                {
-                    LG.Hide(_advisorIntroModal);
-                    HideModalDim();
-                    Time.timeScale = 1f;
-                    SpawnInGameHUD();
-                    if (GameSession.Settings.Tutorial) TutorialManager.Instance?.BeginTutorial();
-                });
-
-            var sRt = startBtn.GetComponent<RectTransform>();
-            sRt.anchorMin = new Vector2(0.5f, 0);
-            sRt.anchorMax = new Vector2(0.5f, 0);
-            sRt.pivot = new Vector2(0.5f, 0);
-            sRt.anchoredPosition = new Vector2(0, 18);
-
-            var sTxt = CreateText(startBtn.transform, "▶  ВСТУПИТЬ В ДОЛЖНОСТЬ", 12, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            sTxt.rectTransform.sizeDelta = sRt.sizeDelta;
-
-            _advisorIntroModal.SetActive(false);
+            // «Входящая передача» от правителя: живой портрет, текст по буквам, бонусы, эффекты сигнала
+            _advisorIntro = AdvisorIntroWindow.Create(_modalCanvas.transform, () =>
+            {
+                if (EconomyManager.Instance != null && _selectedFaction != null)
+                    EconomyManager.Instance.ApplyFactionBonuses(_selectedFaction);
+                HideModalDim();
+                Time.timeScale = 1f;
+                SpawnInGameHUD();
+                if (GameSession.Settings.Tutorial) TutorialManager.Instance?.BeginTutorial();
+            },
+            onBack: () =>
+            {
+                // Назад к выбору цивилизации; затемнение остаётся
+                LG.Show(_factionSelectionModal);
+                _factionSelectionModal.transform.SetAsLastSibling();
+            });
+            _advisorIntroModal = _advisorIntro.gameObject;
         }
 
         private void OpenAdvisorIntroModal(FactionInfo faction)
         {
             ShowModalDim();
-            LG.Show(_advisorIntroModal);
-            _advisorIntroModal.transform.SetAsLastSibling();
-
-            _advisorText.text = $"Приветствую, Командующий!\n\n" +
-                                $"Бортовой тактический сервер развернут. Государственный суверенитет: <b>{faction.Name}</b> ({faction.Title}).\n\n" +
-                                $"• Доктрина цивилизации: {faction.Description}\n\n" +
-                                $"Все сенсоры на связи. Готовьте научный корабль к разведке приграничных систем.";
+            _advisorIntro.Open(faction);
         }
 
         // ==================== REWARD ====================
@@ -1981,6 +1498,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             var descBox = new GameObject("DescriptionBox");
             descBox.transform.SetParent(_eventPopupModal.transform, false);
             var dRt = descBox.AddComponent<RectTransform>();
+            _eventDescBox = dRt;
             dRt.anchorMin = new Vector2(0, 0);
             dRt.anchorMax = new Vector2(1, 1);
             dRt.offsetMin = new Vector2(20, 170);
@@ -1997,9 +1515,13 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             _eventDescText.verticalOverflow = VerticalWrapMode.Truncate;
             _eventDescText.lineSpacing = 1.15f;
 
+            // Иллюстрация события — между шапкой и описанием (показывается, если у события есть арт)
+            _eventFx = EventPopupFX.Create(rt, 62f, 20f, EventArtHeight, dRt);
+
             var optionsBox = new GameObject("Options");
             optionsBox.transform.SetParent(_eventPopupModal.transform, false);
             var oRt = optionsBox.AddComponent<RectTransform>();
+            _eventOptionsRt = oRt;
             oRt.anchorMin = new Vector2(0, 0);
             oRt.anchorMax = new Vector2(1, 0);
             oRt.pivot = new Vector2(0.5f, 0);
@@ -2020,6 +1542,8 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
         }
 
         private LiquidGlassEffect _eventWindowFx;
+        private EventPopupFX _eventFx;
+        private const float EventArtHeight = 220f;
 
         private void CloseEventPopup()
         {
@@ -2027,6 +1551,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             HideModalDim();
             MapModeController.ShowGlobal();
             Time.timeScale = 1f;
+            AnomalyEventSystem.Instance?.NotifyClosed();
         }
 
         private void ShowEventPopup(GameEventData ev)
@@ -2041,7 +1566,27 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                 _eventTitleText.text = $"◆  {ev.Title}";
                 _eventTitleText.color = accent;
             }
-            if (_eventDescText != null) _eventDescText.text = ev.Description;
+            if (_eventDescText != null)
+                _eventDescText.text = string.IsNullOrEmpty(ev.Subtitle)
+                    ? ev.Description
+                    : $"<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";
+
+            bool hasArt = _eventFx != null && _eventFx.SetArt(ev.Art, accent);
+            float artH = hasArt ? EventArtHeight + 10f : 0f;
+
+            // Высота блока вариантов — по их числу, описание занимает остальное
+            int optCount = 0;
+            if (ev.Options != null) foreach (var o in ev.Options) if (o != null) optCount++;
+            float optsH = Mathf.Max(1, optCount) * 44f + Mathf.Max(0, optCount - 1) * 8f + 16f;
+            if (_eventOptionsRt != null) _eventOptionsRt.sizeDelta = new Vector2(0, optsH);
+            if (_eventDescBox != null)
+            {
+                _eventDescBox.offsetMin = new Vector2(20, 12 + optsH + 8);
+                _eventDescBox.offsetMax = new Vector2(-20, -62 - artH);
+            }
+            var popupRt = _eventPopupModal.GetComponent<RectTransform>();
+            popupRt.sizeDelta = new Vector2(650f, Mathf.Max(420f, 52f + 10f + 190f + 20f + optsH) + artH);
+            _eventFx?.ClearOptions();
 
             if (_eventOptionsHolder != null)
             {
@@ -2056,12 +1601,15 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                 {
                     if (opt == null) continue;
                     idx++;
-                    Color optHover = idx == 1 ? DS.BtnSuccess : idx == 2 ? DS.BtnPrimaryHi : DS.Gold;
+                    bool available = opt.Available;
+                    bool special = !string.IsNullOrEmpty(opt.Requirement);
+                    Color optHover = !available ? DS.BtnDisabled : special ? DS.Gold : idx == 1 ? DS.BtnSuccess : idx == 2 ? DS.BtnPrimaryHi : DS.NeonCyan;
                     var capturedOpt = opt;
 
                     var btnGo = CreateButton(_eventOptionsHolder, $"Opt_{idx}", new Vector2(0, 44),
-                        DS.BgSlot, optHover, () =>
+                        available ? DS.BgSlot : new Color(DS.BgSlot.r, DS.BgSlot.g, DS.BgSlot.b, 0.45f), optHover, () =>
                         {
+                            if (!capturedOpt.Available) return;
                             try { capturedOpt.OnSelect?.Invoke(); }
                             catch (System.Exception e) { Debug.LogWarning($"[Event] OnSelect: {e.Message}"); }
                             CloseEventPopup();
@@ -2069,19 +1617,29 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
                     var le = btnGo.GetComponent<LayoutElement>();
                     if (le == null) le = btnGo.AddComponent<LayoutElement>();
                     le.preferredHeight = 44f;
+                    var sel = btnGo.GetComponent<Selectable>();
+                    if (sel != null) sel.interactable = available;
 
-                    var label = CreateText(btnGo.transform, opt.OptionText, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
+                    // Особые варианты (черта лидера, ресурсы) помечены золотой плашкой, недоступные — приглушены
+                    string tag = !special ? "" : available
+                        ? $"<color=#F2C747>[{opt.Requirement}]</color>  "
+                        : $"<color=#8AA2A8>[{opt.Requirement}]</color>  ";
+                    string text = available ? opt.OptionText : $"<color=#6F8790>{opt.OptionText}</color>";
+                    var label = CreateText(btnGo.transform, tag + text, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
                     label.rectTransform.anchorMin = Vector2.zero;
                     label.rectTransform.anchorMax = Vector2.one;
                     label.rectTransform.offsetMin = new Vector2(12, 0);
                     label.rectTransform.offsetMax = new Vector2(-12, 0);
                     label.supportRichText = true;
+                    _eventFx?.AddOption(btnGo, label.rectTransform);
 
-                    if (!string.IsNullOrEmpty(opt.ResultTooltip))
+                    string tip = opt.ResultTooltip ?? "";
+                    if (special) tip = (available ? "<color=#F2C747>Особый вариант: " : "<color=#FF8A8A>Недоступно — требуется: ") + opt.Requirement + "</color>\n" + tip;
+                    if (!string.IsNullOrEmpty(tip))
                     {
                         var tt = btnGo.GetComponent<TooltipTrigger>();
-                        if (tt == null) TooltipHelper.Attach(btnGo, opt.ResultTooltip);
-                        else tt.SetText(opt.ResultTooltip);
+                        if (tt == null) TooltipHelper.Attach(btnGo, tip);
+                        else tt.SetText(tip);
                     }
                 }
             }
@@ -2089,6 +1647,7 @@ sRt.offsetMax = new Vector2(-6, 6 + 44);
             LG.Show(_eventPopupModal);
             _eventPopupModal.transform.SetAsLastSibling();
             LG.Skin(_eventPopupModal.transform);
+            _eventFx?.Play();
         }
 
         private void HandleAnomalyEvent(GameEventData ev)

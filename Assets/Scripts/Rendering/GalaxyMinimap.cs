@@ -224,7 +224,7 @@ public static void ShowGlobal()
         private Color GetColorForSystem(StarSystem sys)
         {
             if (sys.OwnerId == 0) return UIManager.DS.NeonCyan;
-            if (sys.OwnerId > 0) return UIManager.DS.Red;
+            if (sys.OwnerId > 0) return FleetIndicator.OwnerColor(sys.OwnerId);
             if (sys.IsSurveyed) return UIManager.DS.TextMuted;
             return new Color(0.45f, 0.60f, 0.75f, 1f);
         }
@@ -250,7 +250,12 @@ public static void ShowGlobal()
 
             foreach (var sys in _gen.Systems)
                 if (_dots.TryGetValue(sys.Id, out var img))
-                    img.color = GetColorForSystem(sys);
+                {
+                    // Туман войны: неисследованных систем на миникарте нет
+                    bool known = Vision.PlayerKnows(sys.Id);
+                    if (img.enabled != known) img.enabled = known;
+                    if (known) img.color = GetColorForSystem(sys);
+                }
 
             Vector3 camPos = _cam.transform.position;
             float half = (mapSize * 0.5f) - 28f;
@@ -272,16 +277,22 @@ public static void ShowGlobal()
 
             float x = norm.x * galaxyRadius;
             float z = norm.y * galaxyRadius;
-            _cam.transform.position = new Vector3(x, _cam.transform.position.y, z - 25f);
+            var ctl = _cam.GetComponent<StellarisClone.Cam.StrategyCameraController>();
+            if (ctl != null) ctl.CenterOnImmediate(new Vector3(x, 0f, z));
+            else _cam.transform.position = new Vector3(x, _cam.transform.position.y, z - 25f);
         }
     }
 
-    public class MinimapClickHandler : MonoBehaviour, IPointerClickHandler
+    /// <summary>Миникарта: щелчок переносит камеру, перетаскивание — ведёт её за курсором.</summary>
+    public class MinimapClickHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
     {
         private GalaxyMinimap _map;
         public void Init(GalaxyMinimap map) => _map = map;
 
-        public void OnPointerClick(PointerEventData e)
+        public void OnPointerDown(PointerEventData e) => Move(e);
+        public void OnDrag(PointerEventData e) => Move(e);
+
+        private void Move(PointerEventData e)
         {
             if (e.button != PointerEventData.InputButton.Left) return;
             var rt = transform as RectTransform;

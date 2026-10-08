@@ -84,6 +84,7 @@ namespace StellarisClone.Core
         private void Push(string title, string body, Kind kind, float duration)
         {
             if (_stack == null) return;
+            SFXManager.Notify(kind);
 
             Color accent = kind switch
             {

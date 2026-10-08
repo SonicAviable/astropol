@@ -26,9 +26,9 @@ namespace StellarisClone.Rendering
         public bool backdropEnabled = true;
         [Tooltip("Если размытый фон под стеклом перевёрнут — включите.")]
         public bool flipBackdrop = false;
-        [Range(0f, 1f)] public float vibrancy = 0.6f;
+        [Range(0f, 1f)] public float vibrancy = 0.25f;
         [Tooltip("Сила неонового свечения вокруг стекла (0 — без ореола).")]
-        [Range(0f, 1.5f)] public float glowStrength = 0.35f;
+        [Range(0f, 1.5f)] public float glowStrength = 0.2f;
 
         [Header("Light")]
         [Tooltip("Базовый угол света в градусах (90 — сверху, 135 — сверху-слева).")]

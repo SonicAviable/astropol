@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -25,10 +26,10 @@ private void OnMouseDown()
     if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         return;
 
-    if (Data == null) return;
+    if (Data == null || MenuAtmosphere.IsActive) return;
 
     // Звук клика
-    SFXManager.Play("ui_click", 0.9f, UnityEngine.Random.Range(0.96f, 1.04f));
+    SFXManager.Play(Sfx.SystemSelect);
 
     // 1. Активируем анимированный прицел выбора на галактической карте
     if (GalaxyView.Instance != null)
@@ -42,7 +43,6 @@ private void OnMouseDown()
     // 3. Проверка на двойной клик для входа внутрь звёздной системы к планетам
     if (Time.time - _lastClickTime < DoubleClickThreshold)
     {
-        SFXManager.Play("ui_open", 1f, 1f);   // звук «открытия» системы
         OnSystemEntered?.Invoke(Data);
     }
 

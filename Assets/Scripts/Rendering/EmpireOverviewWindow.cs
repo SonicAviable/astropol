@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using StellarisClone.Cam;
 using StellarisClone.Core;
 using StellarisClone.Generation;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -15,11 +16,11 @@ namespace StellarisClone.Rendering
     ///   • справа — вкладки «Колонии / Флоты / Границы / Соперник» с кликабельными строками
     ///     (клик — камера к объекту, окно закрывается).
     /// </summary>
-    public class EmpireOverviewWindow : MonoBehaviour
+    public partial class EmpireOverviewWindow : MonoBehaviour
     {
         public static EmpireOverviewWindow Instance { get; private set; }
 
-        private enum Tab { Colonies, Fleets, Borders, Rival }
+        private enum Tab { Colonies, Fleets, Leaders, Borders, Rival, Effects }
 
         private GameObject _root;
         private Text _title, _subtitle;
@@ -29,6 +30,8 @@ namespace StellarisClone.Rendering
         private readonly Text[] _resIncome = new Text[5];
         private Text _leaderName, _leaderTitle, _leaderPower, _leaderDoctrine;
         private Image _portrait, _portraitIcon;
+        private RectTransform _portraitHost;
+        private string _portraitKey;
         private readonly Dictionary<string, Text> _stats = new Dictionary<string, Text>();
         private RectTransform _domBar, _sciBar, _survBar;
         private Text _domText, _sciText, _survText, _warnText;
@@ -222,12 +225,13 @@ namespace StellarisClone.Rendering
             Caption(card.transform, 12, "ПРАВИТЕЛЬ ИМПЕРИИ", UIManager.DS.TextMuted);
 
             _portrait = LGBuild.Panel(card.transform, "Portrait", new Color(0.2f, 0.4f, 0.5f));
-            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(18, -40), new Vector2(96, 112));
-            LG.Platter(_portrait.gameObject, 16f).FillMultiplier = 2.2f;
+            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(18, -38), new Vector2(104, 146));
+            LG.Platter(_portrait.gameObject, 8f).FillMultiplier = 2.2f;
             _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 56, Color.white);
+            _portraitHost = LG.RoundedMask(_portrait.transform, 8f, 1f);
 
             var info = LGBuild.Rect(card.transform, "Info");
-            info.Stretch(130, 14, 16, 40);
+            info.Stretch(136, 14, 16, 40);
             _leaderName = LGBuild.Label(info, "", 16, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             _leaderTitle = LGBuild.Label(info, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
             _leaderTitle.rectTransform.offsetMax = new Vector2(0, -24);
@@ -303,7 +307,7 @@ namespace StellarisClone.Rendering
 
             _domText = VictoryRow(block.transform, 38, LGIcon.Starbase, "Доминирование", UIManager.DS.NeonCyan, out _domBar);
             _sciText = VictoryRow(block.transform, 88, LGIcon.Research, "Наука", CResearch, out _sciBar);
-            _survText = VictoryRow(block.transform, 138, LGIcon.Clock, "Выживание", CEnergy, out _survBar);
+            _survText = VictoryRow(block.transform, 138, LGIcon.Trophy, $"Очки · {VictoryManager.EndYear}", CEnergy, out _survBar);
 
             _warnText = LGBuild.Label(block.transform, "", 10, UIManager.DS.TextMuted, TextAnchor.LowerLeft, wrap: true);
             _warnText.rectTransform.Stretch(18, 10, 18, 0);
@@ -337,8 +341,10 @@ namespace StellarisClone.Rendering
             tabsRow.TopBand(0, 40);
             AddTab(tabsRow, Tab.Colonies, LGIcon.Planet, "КОЛОНИИ", 0);
             AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, "ФЛОТЫ", 1);
-            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 2);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИК", 3);
+            AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, "ЛИДЕРЫ", 2);
+            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 3);
+            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИКИ", 4);
+            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, "ЭФФЕКТЫ", 5);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -358,14 +364,16 @@ namespace StellarisClone.Rendering
         private void AddTab(RectTransform row, Tab tab, LGIcon icon, string label, int index)
         {
             var bgImg = LGBuild.Panel(row, "Tab_" + tab, UIManager.DS.BtnNeutral, raycast: true);
-            bgImg.rectTransform.Column(index / 4f, (index + 1) / 4f, index == 0 ? 0 : 4, index == 3 ? 0 : 4);
+            const int TabCount = 6;
+            bgImg.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 0 : 4, index == TabCount - 1 ? 0 : 4);
             var b = bgImg.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() =>
             {
                 _tab = tab;
+                _assignLeaderId = -1;
                 RefreshTabs();
                 RebuildList();
-                SFXManager.Play("ui_click", 1f, 1.05f);
+                SFXManager.Play(Sfx.UiTab);
             });
             var fx = LG.Button(bgImg.gameObject, new Color(0.45f, 0.95f, 0.9f, 0.25f), 20f);
             var t = LGIcons.IconLabel(bgImg.transform, icon, label, 12, Color.white, UIManager.DS.TextMuted, 15f);
@@ -429,8 +437,17 @@ namespace StellarisClone.Rendering
         {
             var f = Faction;
             Color fc = f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
-            _leaderName.text = f?.Name ?? "Империя";
-            _leaderTitle.text = f?.Title ?? "";
+            var leader = LeaderPortraits.ForFaction(f);
+            _leaderName.text = leader != null ? leader.Name : f?.Name ?? "Империя";
+            _leaderTitle.text = leader != null ? leader.Title : f?.Title ?? "";
+            string key = leader?.Key ?? "";
+            if (key != _portraitKey)
+            {
+                _portraitKey = key;
+                LGBuild.Clear(_portraitHost);
+                bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.5f) != null;
+                _portraitIcon.gameObject.SetActive(!ok);
+            }
             _leaderDoctrine.text = f?.Description ?? "";
             _portrait.color = new Color(fc.r * 0.4f, fc.g * 0.4f, fc.b * 0.4f, 1f);
             _portrait.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(fc.r, fc.g, fc.b, 0.6f));
@@ -477,16 +494,17 @@ namespace StellarisClone.Rendering
             var vm = VictoryManager.Instance;
             if (vm != null)
             {
-                int dom = vm.DominationProgress, sci = vm.ScienceProgress, yrs = vm.YearsElapsed;
+                int dom = vm.DominationProgress, sci = vm.ScienceProgress;
+                int me = vm.PlayerScore, rival = vm.RivalScore;
                 _domText.text = $"{dom} / {vm.DominationRequired} систем";
                 _sciText.text = $"{sci} / {vm.ScienceRequired} техн.";
-                _survText.text = $"{yrs} / {vm.SurvivalYearsRequired} лет";
+                _survText.text = me >= rival ? $"{me} : {rival}" : $"<color=#FF6A6A>{me} : {rival}</color>";
                 LGBuild.SetBar(_domBar, dom / (float)Mathf.Max(1, vm.DominationRequired));
                 LGBuild.SetBar(_sciBar, sci / (float)Mathf.Max(1, vm.ScienceRequired));
-                LGBuild.SetBar(_survBar, yrs / (float)Mathf.Max(1, vm.SurvivalYearsRequired));
+                LGBuild.SetBar(_survBar, me / (float)Mathf.Max(1, me + rival));
                 _warnText.text = vm.BankruptMonths > 0
                     ? $"<color=#FF6A6A>Банкротство: {vm.BankruptMonths} из {vm.BankruptcyLimit} мес. до краха экономики</color>"
-                    : "Поражение: потеря всех систем или долгое банкротство.";
+                    : $"Соперник: {vm.RivalDominationProgress} систем, {vm.RivalScienceProgress} техн. Подсчёт очков через {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}.";
             }
         }
 
@@ -521,8 +539,10 @@ namespace StellarisClone.Rendering
             {
                 case Tab.Colonies: BuildColonies(); break;
                 case Tab.Fleets: BuildFleets(); break;
+                case Tab.Leaders: BuildLeaders(); break;
                 case Tab.Borders: BuildBorders(); break;
                 case Tab.Rival: BuildRival(); break;
+                case Tab.Effects: BuildEffects(); break;
             }
             LG.Skin(_list);
         }
@@ -697,7 +717,7 @@ namespace StellarisClone.Rendering
                     float hp = d.IntegrityNormalized;
                     BarCell(row, 0.68f, 0.86f, hp,
                         hp > 0.5f ? UIManager.DS.Green : hp > 0.25f ? CGold : UIManager.DS.Red, $"{hp * 100f:0}%");
-                    TextCell(row, 0.86f, 1f, d.Type == FleetType.Military ? d.MilitaryPower.ToString("N0") : "—",
+                    TextCell(row, 0.86f, 1f, d.Type == FleetType.Military ? Mathf.RoundToInt(CombatMath.Power(d)).ToString("N0") : "—",
                         CGold, TextAnchor.MiddleRight, 14, true);
                 }
             }
@@ -712,7 +732,18 @@ namespace StellarisClone.Rendering
                 case FleetState.Surveying: return $"Разведка ({Mathf.Max(0, d.DaysRemainingSurvey):0} дн.)";
                 case FleetState.Constructing: return $"Строительство ({Mathf.Max(0, d.DaysRemainingConstruction):0} дн.)";
             }
-            return d.InCombat ? "<color=#FF6060>В бою</color>" : "На орбите — ждёт приказа";
+            if (d.InCombat) return "<color=#FF6060>В бою</color>";
+            var fm = FleetManager.Instance;
+            if (fm != null && fm.NeedsRepair(d))
+            {
+                float rate = fm.RepairRateAt(d.CurrentSystemId, d.OwnerId);
+                return rate > 0f ? $"<color=#5CF59A>Ремонт · {rate * 100f:0}% в день</color>"
+                                 : "<color=#FFAA55>Повреждён — ремонт только на своей территории</color>";
+            }
+            var siege = SiegeManager.Instance?.GetSiege(d.CurrentSystemId);
+            if (siege != null && siege.Attacker == d.OwnerId && d.Type == FleetType.Military)
+                return $"<color=#5CF59A>Осада · {siege.Progress:0} дн.</color>";
+            return "На орбите — ждёт приказа";
         }
 
         private string SystemName(int id)
@@ -771,62 +802,149 @@ namespace StellarisClone.Rendering
             return c.ToString();
         }
 
+        // ---------- Эффекты и угрозы ----------
+
+        private void BuildEffects()
+        {
+            HeaderCols((0.06f, 0.42f, "ЭФФЕКТ", TextAnchor.MiddleLeft),
+                       (0.42f, 0.84f, "ДЕЙСТВИЕ", TextAnchor.MiddleLeft),
+                       (0.84f, 1f, "ОСТАЛОСЬ", TextAnchor.MiddleRight));
+            int n = 0;
+            foreach (var e in EmpireEffects.Active)
+            {
+                n++;
+                var row = Row(null, new Color(0.95f, 0.78f, 0.35f, 0.3f));
+                IconCell(row, 0f, 0.06f, LGIcon.Clock, CGold);
+                TwoLine(row, 0.06f, 0.42f, e.Title, e.Detail);
+                TextCell(row, 0.42f, 0.84f, EmpireEffects.Summary(e), UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
+                TextCell(row, 0.84f, 1f, $"{e.MonthsLeft} мес.", UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
+            }
+
+            var tm = ThreatManager.Instance;
+            if (tm != null && tm.RaidsSoFar > 0)
+            {
+                Color pc = Threats.ColorOf(Threats.PirateOwner);
+                void Threat(string title, string sub, string what, string left)
+                {
+                    n++;
+                    var row = Row(null, new Color(pc.r, pc.g, pc.b, 0.3f));
+                    IconCell(row, 0f, 0.06f, LGIcon.Warning, pc);
+                    TwoLine(row, 0.06f, 0.42f, title, sub);
+                    TextCell(row, 0.42f, 0.84f, what, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
+                    TextCell(row, 0.84f, 1f, left, UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
+                }
+                Threat("Пиратская угроза", $"налётов: {tm.RaidsSoFar}", "Банды грабят слабо защищённые пограничные колонии", "");
+                if (tm.TributeActive) Threat("Дань пиратам", "пираты", "Пираты не нападают на ваши системы", $"{tm.TributeMonths} мес.");
+                if (tm.BountyActive) Threat("Награда за пиратов", "охота", "+40 энергии и +4 влияния за каждый уничтоженный корабль", $"{tm.BountyMonths} мес.");
+                if (tm.PrivateerRaids > 0) Threat("Каперские грамоты", "пираты", "Налёты направлены на соперников", $"{tm.PrivateerRaids} нал.");
+            }
+
+            if (n == 0)
+                Empty("Действующих эффектов нет.\n\nЗаконы, указы и контракты появляются из решений фракции (раз в два года) и событий.");
+        }
+
         // ---------- Соперник ----------
 
         private void BuildRival()
         {
-            var ai = AIEmpireManager.Instance;
-            if (ai == null) { Empty("Соперники пока не обнаружены."); return; }
+            int met = 0;
+            foreach (var ai in AIEmpireManager.All)
+                if (Contacts.PlayerMet(ai.OwnerId)) { BuildRivalCard(ai); met++; }
+            int unknown = Contacts.UnmetByPlayer;
+            if (met == 0)
+                Empty("Других цивилизаций мы пока не встречали.\n\nОтправляйте научные корабли в неизведанные системы: " +
+                      "контакт случится, как только наши корабли или границы увидят чужую империю." +
+                      (unknown > 0 ? $"\n\nПо данным дальней разведки в галактике есть ещё цивилизаций: {unknown}." : ""));
+            else if (unknown > 0)
+                Empty($"Ещё не встречено цивилизаций: {unknown}. Продолжайте разведку.");
+        }
 
-            Color ac = ai.AIEmpireColor;
+        private void BuildRivalCard(AIEmpireManager ai)
+        {
+            Color ac = ai.MapColor;
             var card = LGBuild.Panel(_list, "RivalCard", UIManager.DS.BgSlot);
             LGBuild.Height(card.gameObject, 300);
             LG.Platter(card.gameObject, 18f).SetRim(new Color(ac.r, ac.g, ac.b, 0.4f));
 
-            var emblem = LGBuild.Panel(card.transform, "Emblem", new Color(ac.r * 0.4f, ac.g * 0.4f, ac.b * 0.4f));
-            emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(64, 64));
-            LG.Platter(emblem.gameObject, 32f).FillMultiplier = 2.4f;
-            LGIcons.Create(emblem.transform, LGIcon.Leader, 34, Color.Lerp(ac, Color.white, 0.3f));
+            // Живой портрет правителя слева (как в дипломатии); без портрета — эмблема
+            var leader = LeaderPortraits.ForFaction(ai.Faction);
+            float x0 = 20f;
+            if (leader != null && leader.Texture != null)
+            {
+                const float PortW = 128f, PortH = 214f;
+                var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.01f, 0.02f, 0.03f, 1f));
+                frame.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(PortW, PortH));
+                var ffx = LG.Platter(frame.gameObject, 12f);
+                ffx.SetRim(new Color(ac.r, ac.g, ac.b, 0.6f));
+                ffx.FillMultiplier = 3f;
+                var portHost = LG.RoundedMask(frame.transform, 12f, 1.5f);
+                var portrait = LeaderPortraitView.Create(portHost, leader, zoom: 1.35f);
+                if (portrait != null && ai.AtWar) portrait.GetComponent<RawImage>().color = new Color(1f, 0.86f, 0.84f, 1f);
 
-            var head = TopRow(card.transform, 20, 64, 100, 20);
+                var nameShade = LGBuild.Panel(portHost, "Shade", new Color(0.01f, 0.02f, 0.03f, 1f));
+                nameShade.sprite = MenuArt.VerticalFade;
+                nameShade.rectTransform.anchorMin = Vector2.zero;
+                nameShade.rectTransform.anchorMax = new Vector2(1, 0.35f);
+                nameShade.rectTransform.offsetMin = nameShade.rectTransform.offsetMax = Vector2.zero;
+                var ln = LGBuild.Label(portHost, leader.Name, 11, Color.Lerp(ac, Color.white, 0.5f), TextAnchor.LowerCenter, bold: true);
+                ln.rectTransform.Stretch(4, 8, 4, 0);
+                TooltipHelper.Attach(frame.gameObject, $"<b>{leader.Name}</b>\n{leader.Title}\n<i>«{leader.Quote}»</i>");
+                x0 = 20f + PortW + 18f;
+            }
+            else
+            {
+                var emblem = LGBuild.Panel(card.transform, "Emblem", new Color(ac.r * 0.4f, ac.g * 0.4f, ac.b * 0.4f));
+                emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(64, 64));
+                LG.Platter(emblem.gameObject, 32f).FillMultiplier = 2.4f;
+                LGIcons.Create(emblem.transform, LGIcon.Leader, 34, Color.Lerp(ac, Color.white, 0.3f));
+            }
+
+            var head = TopRow(card.transform, 20, 64, x0 > 20f ? x0 : 100, 20);
             LGBuild.Label(head, ai.AIName.ToUpper(), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            float rel = ai.RelationsWithPlayer;
-            string status = rel <= -60 ? "<color=#FF5A5A>ВОЙНА</color>"
-                          : rel <= -20 ? "<color=#FF9060>Холодная война</color>"
-                          : rel < 10 ? "<color=#8AA2A8>Нейтралитет</color>"
-                          : rel < 30 ? "<color=#5CF59A>Тёплые отношения</color>"
-                          : "<color=#4DF2DB>Союзнический курс</color>";
-            LGBuild.Label(head, $"{ai.AITitle}   ·   {status}", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
+            float rel = ai.Opinion;
+            string status = ai.IsEliminated ? "<color=#F2C747>ПОВЕРЖЕН</color>"
+                          : ai.AtWar ? "<color=#FF5A5A>ВОЙНА</color>"
+                          : ai.HasPact ? "<color=#4DF2DB>Пакт о ненападении</color>"
+                          : ai.TruceDays > 0 ? "<color=#5CF59A>Перемирие</color>"
+                          : "<color=#8AA2A8>Мир</color>";
+            if (AICoalition.IsMember(ai.OwnerId)) status += "   ·   <color=#FF9A5A>в коалиции</color>";
+            var sub = LGBuild.Label(head, $"{ai.AITitle}   ·   {ai.Profile.Name.ToLower()} империя   ·   {status}   ·   {AIEmpireManager.OpinionLabel(rel).ToLower()}",
+                          12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
+            if (!string.IsNullOrEmpty(ai.TacticsNote))
+            {
+                sub.raycastTarget = true;
+                TooltipHelper.Attach(sub.gameObject, ai.TacticsNote);
+            }
 
             int myPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
-            int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(AIEmpireManager.AIOwnerId) : 0;
+            int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(ai.OwnerId) : 0;
             int mySys = 0, aiSys = 0;
             if (_gen != null)
                 foreach (var s in _gen.Systems)
                 {
                     if (s.OwnerId == 0) mySys++;
-                    else if (s.OwnerId == AIEmpireManager.AIOwnerId) aiSys++;
+                    else if (s.OwnerId == ai.OwnerId) aiSys++;
                 }
 
-            float relN = Mathf.InverseLerp(-100f, 40f, rel);
-            CompareRow(card.transform, 104, "Отношения", relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}");
+            float relN = Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, rel);
+            CompareRow(card.transform, 104, "Отношения", relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}", x0);
             CompareRow(card.transform, 150, "Военная мощь: вы / они", myPow + aiPow > 0 ? myPow / (float)(myPow + aiPow) : 0.5f,
-                UIManager.DS.NeonCyan, $"{myPow:N0} / {aiPow:N0}");
+                UIManager.DS.NeonCyan, $"{myPow:N0} / {aiPow:N0}", x0);
             CompareRow(card.transform, 196, "Системы: вы / они", mySys + aiSys > 0 ? mySys / (float)(mySys + aiSys) : 0.5f,
-                CGold, $"{mySys} / {aiSys}");
+                CGold, $"{mySys} / {aiSys}", x0);
 
             var btnRow = TopRow(card.transform, 246, 38, 20, 20);
             var dip = LGBuild.Button(btnRow, "Diplomacy", new Color(0.42f, 0.32f, 0.10f), CGold,
-                () => { Close(); DiplomacyModal.Instance?.Open(); }, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 11);
+                () => { Close(); DiplomacyModal.Instance?.Open(ai.OwnerId); }, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 11);
             ((RectTransform)dip.transform).Column(0f, 0.49f);
             var trade = LGBuild.Button(btnRow, "Trade", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan,
-                () => { Close(); TradeModal.Instance?.Open(); }, LGIcon.Trade, "ТОРГОВЛЯ", 11);
+                () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); }, LGIcon.Trade, "ТОРГОВЛЯ", 11);
             ((RectTransform)trade.transform).Column(0.51f, 1f);
         }
 
-        private static void CompareRow(Transform parent, float top, string label, float value, Color col, string valueText)
+        private static void CompareRow(Transform parent, float top, string label, float value, Color col, string valueText, float left = 20f)
         {
-            var row = TopRow(parent, top, 38, 20, 20);
+            var row = TopRow(parent, top, 38, left, 20);
             LGBuild.Label(row, label, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
             LGBuild.Label(row, valueText, 12, UIManager.DS.TextPrimary, TextAnchor.UpperRight, bold: true);
             var host = LGBuild.Rect(row, "BarHost");

@@ -92,7 +92,7 @@ namespace StellarisClone.Rendering
                 : _system.OwnerId == 0 ? "Суверенитет империи"
                 : "Оккупация соперника";
 
-            _title.text = _planet.Name.ToUpper();
+            _title.text = PlanetNames.Title(_planet.Name);
             _subtitle.text = $"{_planet.ClassDisplayName}  ·  {sov}";
 
             float dist = _planet.OrbitRadius;
@@ -145,7 +145,6 @@ namespace StellarisClone.Rendering
             if (_planet == null) return;
             if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_planet))
             {
-                SystemViewManager.Instance?.SpawnStationOnActivePlanet(_planet);
                 Refresh();
             }
         }

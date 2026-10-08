@@ -20,6 +20,7 @@ namespace StellarisClone.Rendering
         private GameObject _planetInstance;
         private Light _keyLight;
         private Light _rimLight;
+        private Light _fillLight;
         private int _layer;
         private bool _dragging;
         private Vector3 _lastMouse;
@@ -54,8 +55,9 @@ namespace StellarisClone.Rendering
             HoloCamera.allowMSAA = false;
 
             transform.position = new Vector3(0f, -4800f, 0f);
-            camGo.transform.localPosition = new Vector3(0f, 0.2f, -6.5f);
-camGo.transform.localRotation = Quaternion.Euler(4f, 0f, 0f);
+            // Камера строго напротив центра — планета в центре кадра и своего кольца
+            camGo.transform.localPosition = new Vector3(0f, 0f, -6.5f);
+            camGo.transform.localRotation = Quaternion.identity;
 
             _stage = new GameObject("HoloStage").transform;
             _stage.SetParent(transform, false);
@@ -82,6 +84,16 @@ camGo.transform.localRotation = Quaternion.Euler(4f, 0f, 0f);
             _rimLight.intensity = 0.85f;
             _rimLight.cullingMask = 1 << _layer;
 
+            // Мягкая заливка спереди-снизу: ночная сторона остаётся тёмной, но читается как шар
+            var fillGo = new GameObject("HoloFillLight");
+            fillGo.transform.SetParent(transform, false);
+            fillGo.transform.localRotation = Quaternion.Euler(-12f, -25f, 0f);
+            _fillLight = fillGo.AddComponent<Light>();
+            _fillLight.type = LightType.Directional;
+            _fillLight.color = new Color(0.30f, 0.42f, 0.60f);
+            _fillLight.intensity = 0.35f;
+            _fillLight.cullingMask = 1 << _layer;
+
             SetLayerRecursively(gameObject, _layer);
             ExcludeFromMainCameras();
         }
@@ -91,6 +103,26 @@ camGo.transform.localRotation = Quaternion.Euler(4f, 0f, 0f);
             if (!HoloCamera.enabled || _planetInstance == null) return;
             if (!_dragging)
                 _planetInstance.transform.Rotate(Vector3.up * _autoSpin * Time.unscaledDeltaTime, Space.Self);
+        }
+
+        /// <summary>
+        /// Подогнать модель под кадр по её реальным границам: у процедурных префабов размер меша
+        /// не совпадает с planet.Size, и планета выходила то крошечной, то обрезанной.
+        /// </summary>
+        private static void FitToFrame(Transform model, float targetDiameter)
+        {
+            var renderers = model.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return;
+            var b = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
+            float d = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
+            if (d < 0.01f) return;
+            float k = targetDiameter / d;
+            Vector3 pivot = model.position;
+            model.localScale *= k;
+            // Центр модели — в центр кадра (у некоторых префабов пивот смещён)
+            Vector3 newCenter = pivot + (b.center - pivot) * k;
+            if (model.parent != null) model.position += model.parent.position - newCenter;
         }
 
         public void ShowPlanet(PlanetData planet, Material sourceMat)
@@ -117,6 +149,7 @@ _planetInstance.transform.localScale = Vector3.one * scale;
                 // Убираем коллайдеры префаба
                 foreach (var c in _planetInstance.GetComponentsInChildren<Collider>())
                     Destroy(c);
+                FitToFrame(_planetInstance.transform, 3.1f);
             }
             else
             {
@@ -124,7 +157,7 @@ _planetInstance.transform.localScale = Vector3.one * scale;
                 _planetInstance = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 _planetInstance.name = "HoloPlanet_Fallback";
                 _planetInstance.transform.SetParent(_stage, false);
-                _planetInstance.transform.localScale = Vector3.one * 1.85f;
+                _planetInstance.transform.localScale = Vector3.one * 3.1f;
                 Destroy(_planetInstance.GetComponent<Collider>());
 
                 var rend = _planetInstance.GetComponent<MeshRenderer>();
@@ -143,6 +176,7 @@ _planetInstance.transform.localScale = Vector3.one * scale;
             HoloCamera.enabled = true;
             _keyLight.enabled = true;
             _rimLight.enabled = true;
+            _fillLight.enabled = true;
         }
 
         private static GameObject LoadPlanetPrefabFor(PlanetData planet)
@@ -176,6 +210,7 @@ _planetInstance.transform.localScale = Vector3.one * scale;
             if (HoloCamera != null) HoloCamera.enabled = false;
             if (_keyLight != null) _keyLight.enabled = false;
             if (_rimLight != null) _rimLight.enabled = false;
+            if (_fillLight != null) _fillLight.enabled = false;
             ClearPlanet();
         }
 

@@ -25,6 +25,18 @@ namespace StellarisClone.Core
 
     public static class FactionRegistry
     {
+        /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia (null — неизвестна).</summary>
+        public static string KeyOf(FactionInfo f)
+        {
+            string n = f?.Name;
+            if (string.IsNullOrEmpty(n)) return null;
+            if (n.Contains("Ксарн")) return "xarn";
+            if (n.Contains("Астре")) return "astrea";
+            if (n.Contains("Аквил")) return "aquila";
+            if (n.Contains("Ирид")) return "iridia";
+            return null;
+        }
+
         public static readonly FactionInfo[] AvailableFactions = new FactionInfo[]
         {
             new FactionInfo(
@@ -57,7 +69,18 @@ namespace StellarisClone.Core
                 "<b>+30% к Минералам</b>\n" +
                 "<b>+15% к Энергии</b>",
                 new Color(1.00f, 0.75f, 0.15f),
-                1.15f, 1.30f, 1.00f, 1.00f)
+                1.15f, 1.30f, 1.00f, 1.00f),
+
+            new FactionInfo(
+                "Иридийский Оракул",
+                "Теократия Провидцев",
+                "Древняя раса провидцев с мира-сада Иридия. Их кожа светится в такт мыслям, " +
+                "а правит ими Верховная Оракул, читающая нити будущего. " +
+                "Оракул редко начинает войну первым — он заранее знает, чем она закончится.\n\n" +
+                "<b>+40% к Влиянию</b>\n" +
+                "<b>+10% к Энергии</b>",
+                new Color(0.66f, 0.42f, 1.00f),
+                1.10f, 1.00f, 1.00f, 1.40f)
         };
     }
 }

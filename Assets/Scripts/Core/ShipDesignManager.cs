@@ -96,7 +96,56 @@ namespace StellarisClone.Core
                 "Базовая тяга.",
                 ModuleSlotType.Utility, "",
                 0, 0, 0, 0, 0, 3f, 0.12f, 0, 2f, 10f));
+
+            // ---- Улучшенные модули: открываются технологиями ----
+
+            AddMod(new ShipModule("wpn_railgun", "Рельсотрон",
+                "Тяжёлые кинетические болванки. Быстро срывают щиты.",
+                ModuleSlotType.Weapon, "wpn_kin_2",
+                0, 0, 0, 13f, 1.05f, 0, 0, 0, 5f, 26f, WeaponDamageType.Kinetic));
+
+            AddMod(new ShipModule("wpn_laser_blue", "Синий лазер",
+                "Сфокусированный луч высокой энергии. Прожигает броню.",
+                ModuleSlotType.Weapon, "wpn_las_2",
+                0, 0, 0, 14f, 0.85f, 0, 0, 0, 6f, 28f, WeaponDamageType.Energy));
+
+            AddMod(new ShipModule("wpn_plasma", "Плазменная пушка",
+                "Медленный, но сокрушительный разряд плазмы по броне.",
+                ModuleSlotType.Weapon, "wpn_pls_1",
+                0, 0, 0, 26f, 0.6f, 0, 0, 0, 10f, 42f, WeaponDamageType.Energy));
+
+            AddMod(new ShipModule("wpn_torpedo", "Торпедный аппарат",
+                "Тяжёлые боеголовки, бьют по всем слоям защиты.",
+                ModuleSlotType.Weapon, "wpn_pls_1",
+                0, 0, 0, 30f, 0.38f, 0, 0, 0, 7f, 38f, WeaponDamageType.Explosive));
+
+            AddMod(new ShipModule("def_armor_2", "Керамостальная броня",
+                "Толстые плиты: много брони, корабль чуть тяжелее.",
+                ModuleSlotType.Defense, "def_arm_2",
+                12f, 80f, 0, 0, 0, -3f, 0, 0, 0, 32f));
+
+            AddMod(new ShipModule("def_shield_2", "Усиленный дефлектор",
+                "Мощное поле, но прожорливое по энергии.",
+                ModuleSlotType.Defense, "def_shl_2",
+                0, 0, 72f, 0, 0, 2f, 0, 0, 12f, 34f));
+
+            AddMod(new ShipModule("utl_reactor_ant", "Реактор антиматерии",
+                "Огромная выработка энергии для тяжёлых проектов.",
+                ModuleSlotType.Utility, "rct_ant_1",
+                0, 0, 0, 0, 0, 0, 0, 44f, 0, 60f));
+
+            AddMod(new ShipModule("utl_targeting", "Компьютер наведения",
+                "Снижает уклонение целей на 10 пунктов.",
+                ModuleSlotType.Utility, "sen_bas_1",
+                0, 0, 0, 0, 0, 0, 0, 0, 3f, 20f) { Accuracy = 10f });
         }
+
+        public static string DamageTypeName(WeaponDamageType t) => t switch
+        {
+            WeaponDamageType.Energy => "энергия",
+            WeaponDamageType.Kinetic => "кинетика",
+            _ => "взрыв"
+        };
 
         private void AddMod(ShipModule m) => _modules[m.Id] = m;
 
@@ -121,15 +170,39 @@ namespace StellarisClone.Core
 
         public ShipDesign GetDesign(string id) => _saved.Find(d => d.Id == id);
 
+        /// <summary>
+        /// Основной проект корпуса — последний сохранённый (по нему строит верфь и идёт модернизация).
+        /// Раньше брался самый дорогой, и дешёвый новый проект никогда не шёл в производство.
+        /// </summary>
         public ShipDesign GetLatestDesign(ShipClass hull)
         {
-            ShipDesign best = null;
-            foreach (var d in _saved)
-            {
-                if (d.HullClass != hull) continue;
-                if (best == null || d.AlloyCost >= best.AlloyCost) best = d;
-            }
-            return best;
+            for (int i = _saved.Count - 1; i >= 0; i--)
+                if (_saved[i].HullClass == hull) return _saved[i];
+            return null;
+        }
+
+        public List<ShipDesign> DesignsFor(ShipClass hull)
+        {
+            var list = new List<ShipDesign>();
+            foreach (var d in _saved) if (d.HullClass == hull) list.Add(d);
+            return list;
+        }
+
+        /// <summary>Сделать проект основным для своего корпуса.</summary>
+        public void MakePrimary(ShipDesign d)
+        {
+            if (d == null || !_saved.Remove(d)) return;
+            _saved.Add(d);
+            OnDesignsChanged?.Invoke();
+        }
+
+        /// <summary>Удалить проект (последний проект корпуса удалить нельзя — верфи нужен чертёж).</summary>
+        public bool DeleteDesign(ShipDesign d)
+        {
+            if (d == null || DesignsFor(d.HullClass).Count <= 1) return false;
+            bool ok = _saved.Remove(d);
+            if (ok) OnDesignsChanged?.Invoke();
+            return ok;
         }
 
         public ShipDesign CreateDraft(ShipClass hullClass)
@@ -143,6 +216,65 @@ namespace StellarisClone.Core
             };
             FillEmptySlots(d, hull);
             d.Recalculate(hull, _modules);
+            return d;
+        }
+
+        private static bool Available(ShipModule m, Func<string, bool> hasTech)
+            => string.IsNullOrEmpty(m.RequiredTechId) || (hasTech != null && hasTech(m.RequiredTechId));
+
+        /// <summary>Лучший доступный модуль слота по оценке score (null — подходящих нет).</summary>
+        private string Best(ModuleSlotType slot, Func<ShipModule, bool> filter, Func<ShipModule, float> score, Func<string, bool> hasTech)
+        {
+            ShipModule best = null;
+            foreach (var m in _modules.Values)
+            {
+                if (m.SlotType != slot || !filter(m) || !Available(m, hasTech)) continue;
+                if (best == null || score(m) > score(best)) best = m;
+            }
+            return best?.Id;
+        }
+
+        private string BestWeapon(WeaponDamageType t, Func<string, bool> hasTech)
+            => Best(ModuleSlotType.Weapon, m => m.DamageType == t, m => m.Dps, hasTech)
+               ?? (t == WeaponDamageType.Energy ? "wpn_laser_red" : t == WeaponDamageType.Kinetic ? "wpn_autocannon" : "wpn_missile");
+
+        /// <summary>
+        /// Автопроект для ИИ: лучшее изученное оружие по вкусу фракции (основное и запасное
+        /// вперемешку), броня и щиты через слот, реактор, затем двигатель или компьютер наведения;
+        /// при нехватке энергии — больше реакторов, броня вместо щитов, экономные орудия.
+        /// hasTech — технологии владельца проекта.
+        /// </summary>
+        public ShipDesign CreateAutoDesign(ShipClass cls, WeaponDamageType primary, WeaponDamageType secondary,
+                                           Func<string, bool> hasTech, string name)
+        {
+            var hull = GetHull(cls);
+            if (hull == null) return null;
+            var d = new ShipDesign { Id = "auto_" + cls + "_" + Guid.NewGuid().ToString("N").Substring(0, 6), Name = name, HullClass = cls };
+            FillEmptySlots(d, hull);
+
+            string wPrimary = BestWeapon(primary, hasTech), wSecondary = BestWeapon(secondary, hasTech);
+            for (int i = 0; i < d.WeaponModuleIds.Count; i++)
+                d.WeaponModuleIds[i] = i % 2 == 0 ? wPrimary : wSecondary;
+
+            string armor = Best(ModuleSlotType.Defense, m => m.Armor > 0f, m => m.Armor, hasTech) ?? "def_armor";
+            string shield = Best(ModuleSlotType.Defense, m => m.Shields > 0f, m => m.Shields, hasTech) ?? "def_shield";
+            for (int i = 0; i < d.DefenseModuleIds.Count; i++)
+                d.DefenseModuleIds[i] = i % 2 == 0 ? armor : shield;
+
+            string reactor = Best(ModuleSlotType.Utility, m => m.PowerProduce > 0f, m => m.PowerProduce, hasTech) ?? "utl_reactor";
+            string engine = Best(ModuleSlotType.Utility, m => m.SpeedBonus > 0f, m => m.Evasion + m.SpeedBonus * 10f, hasTech) ?? "utl_engine_basic";
+            string targeting = Best(ModuleSlotType.Utility, m => m.Accuracy > 0f, m => m.Accuracy, hasTech);
+            for (int i = 0; i < d.UtilityModuleIds.Count; i++)
+                d.UtilityModuleIds[i] = i == 0 ? reactor : i == 2 && targeting != null ? targeting : engine;
+            d.Recalculate(hull, _modules);
+
+            // Не хватает энергии — двигатели и прицелы меняем на реакторы, затем щиты на броню, затем оружие на экономное
+            for (int i = d.UtilityModuleIds.Count - 1; i >= 1 && !d.IsPowerValid; i--)
+            { d.UtilityModuleIds[i] = reactor; d.Recalculate(hull, _modules); }
+            for (int i = 0; i < d.DefenseModuleIds.Count && !d.IsPowerValid; i++)
+                if (d.DefenseModuleIds[i] == shield) { d.DefenseModuleIds[i] = armor; d.Recalculate(hull, _modules); }
+            for (int i = 0; i < d.WeaponModuleIds.Count && !d.IsPowerValid; i++)
+            { d.WeaponModuleIds[i] = "wpn_autocannon"; d.Recalculate(hull, _modules); }
             return d;
         }
 

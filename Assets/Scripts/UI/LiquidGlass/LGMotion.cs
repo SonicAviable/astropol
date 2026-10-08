@@ -55,7 +55,7 @@ namespace StellarisClone.Rendering
         public float inDuration = 0.38f;
         public float outDuration = 0.2f;
         public float distance = 28f;
-        public float fromScale = 0.94f;
+        public float fromScale = 0.975f;
         [Tooltip("Задержка появления (для каскада панелей).")]
         public float delay = 0f;
         public bool playOnEnable = true;
@@ -74,6 +74,9 @@ namespace StellarisClone.Rendering
         private Vector2 _restPos;
         private Vector3 _restScale = Vector3.one;
         private bool _restCaptured;
+        // Позицию покоя берём в первом кадре анимации: LG.Motion добавляют до того, как
+        // вызывающий код расставит элемент, и ранний снимок возвращал его на старое место
+        private bool _pendingCapture;
         private System.Action _onHidden;
 
         public bool IsHiding => _state == State.Out;
@@ -154,7 +157,8 @@ namespace StellarisClone.Rendering
             }
             else
             {
-                CaptureRest();
+                _pendingCapture = true;
+                _restCaptured = false;
             }
 
             _state = State.In;
@@ -181,7 +185,7 @@ namespace StellarisClone.Rendering
                 _onHidden += onHidden;
                 return;
             }
-            if (_state == State.Idle) CaptureRest();
+            if (_state == State.Idle || _pendingCapture) { CaptureRest(); _pendingCapture = false; }
 
             _state = State.Out;
             _t = 0f;
@@ -197,6 +201,7 @@ namespace StellarisClone.Rendering
 
             if (_state == State.In)
             {
+                if (_pendingCapture) { CaptureRest(); _pendingCapture = false; }
                 if (_delayLeft > 0f)
                 {
                     _delayLeft -= dt;
@@ -232,8 +237,8 @@ namespace StellarisClone.Rendering
             float a = LGEase.OutCubic(Mathf.Clamp01(t * 1.6f));
             _cg.alpha = Mathf.Lerp(_startAlpha, 1f, a);
 
-            if (_rt == null) return;
-            float spring = LGEase.OutBack(k, 1.15f);
+            if (_rt == null || _pendingCapture) return;
+            float spring = LGEase.OutBack(k, 0.35f);
             if (UsesScale)
                 _rt.localScale = _restScale * Mathf.LerpUnclamped(kind == Kind.Pop ? fromScale : 0.985f, 1f, spring);
             if (UsesPosition)
@@ -258,11 +263,13 @@ namespace StellarisClone.Rendering
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LGInteractive : MonoBehaviour,
-        IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+        IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
+        /// <summary>Озвучка: тихий «тик» при наведении, клик при нажатии, отказ — по неактивной кнопке.</summary>
+        public bool sounds = true;
         public bool animateScale = true;
-        public float hoverScale = 1.035f;
-        public float pressScale = 0.955f;
+        public float hoverScale = 1.012f;
+        public float pressScale = 0.98f;
 
         private LiquidGlassEffect _fx;
         private Selectable _selectable;
@@ -291,7 +298,19 @@ namespace StellarisClone.Rendering
             _active = false;
         }
 
-        public void OnPointerEnter(PointerEventData e) { _over = true; Wake(); }
+        public void OnPointerEnter(PointerEventData e)
+        {
+            _over = true; Wake();
+            if (sounds && _selectable != null && _selectable.IsInteractable())
+                StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiHover);
+        }
+
+        public void OnPointerClick(PointerEventData e)
+        {
+            if (!sounds || _selectable == null || e.button != PointerEventData.InputButton.Left) return;
+            if (_selectable.IsInteractable()) StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiClick);
+            else StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiDenied, 0.7f);
+        }
         public void OnPointerExit(PointerEventData e) { _over = false; _down = false; Wake(); }
         public void OnPointerDown(PointerEventData e) { if (e.button == PointerEventData.InputButton.Left) { _down = true; Wake(); } }
         public void OnPointerUp(PointerEventData e) { _down = false; Wake(); }
@@ -310,8 +329,8 @@ namespace StellarisClone.Rendering
             float th = can && _over ? 1f : 0f;
             float tp = can && _down ? 1f : 0f;
 
-            _h = LGEase.Spring(_h, th, ref _hv, 3.2f, 0.55f, dt);
-            _p = LGEase.Spring(_p, tp, ref _pv, 5.0f, 0.6f, dt);
+            _h = LGEase.Spring(_h, th, ref _hv, 3.2f, 0.95f, dt);
+            _p = LGEase.Spring(_p, tp, ref _pv, 5.0f, 0.95f, dt);
 
             if (_fx == null) _fx = GetComponent<LiquidGlassEffect>();
             if (_fx != null) _fx.SetHover(Mathf.Clamp01(_h + _p * 0.4f));

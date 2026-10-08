@@ -1,17 +1,52 @@
+using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Core;
 
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Голографический значок флота в духе Stellaris: глиф типа, кольца, стебель к кораблю.
+    /// Значок флота в духе Stellaris:
+    ///   • постоянный экранный размер — читается и при большом отдалении; контрастная тёмная обводка;
+    ///   • фон и кромка — цвет владельца (свои — бирюза, враг — красный);
+    ///   • глиф — тип флота, а во время действия — само действие (разведка, стройка, бой, прыжок);
+    ///   • корабли одного владельца и типа на одной орбите сливаются в один значок со счётчиком;
+    ///   • у военных — сила под значком, у повреждённых — полоска прочности;
+    ///   • при выделении — пульсирующее кольцо, вспышка и яркая линия к кораблю;
+    ///   • по завершении действия — короткая вспышка с галочкой.
+    /// Значки не перекрывают друг друга: раскладка расталкивает их в экранных координатах.
     /// </summary>
     public class FleetIndicator : MonoBehaviour
     {
+        // ==================== РЕЕСТР И РАСКЛАДКА ====================
+
+        public static readonly List<FleetIndicator> All = new List<FleetIndicator>();
+
+        /// <summary>Диаметр значка на экране, пикселей.</summary>
+        public const float IconPixels = 46f;
+        private const float BadgeWorldSize = 0.86f;   // диаметр обводки при масштабе 1
+        private const float MinSeparationPx = IconPixels * 1.08f;
+
+        private static int s_layoutFrame = -1;
+
+        public FleetView Fleet => _fleet;
+        /// <summary>Значок виден (лидер группы); остальные корабли группы его не рисуют.</summary>
+        public bool IsLeader { get; private set; } = true;
+        /// <summary>Корабли, которые представляет значок (сам флот + слитые с ним).</summary>
+        public readonly List<FleetView> Members = new List<FleetView>();
+        /// <summary>Центр значка на экране и его радиус (для выбора кликом и рамкой).</summary>
+        public Vector2 ScreenPos { get; private set; }
+        public float ScreenRadius => IconPixels * 0.5f * _sizeMul;
+        public bool OnScreen { get; private set; }
+
+        private Vector3 _anchorWorld;     // точка над кораблём до раскладки
+        private Vector2 _layoutOffsetPx;  // смещение после расталкивания
+        private float _sizeMul = 1f;
+
         private FleetView _fleet;
-        private Transform _cam;
+        private Camera _camera;
         private Transform _badge;
 
+        private SpriteRenderer _outlineSr;
         private SpriteRenderer _bloomSr;
         private SpriteRenderer _discSr;
         private SpriteRenderer _rimSr;
@@ -20,50 +55,108 @@ namespace StellarisClone.Rendering
         private SpriteRenderer _glyphSr;
         private SpriteRenderer _sweepSr;
         private SpriteRenderer _pipSr;
+        private SpriteRenderer _pulseSr;
+        private SpriteRenderer _flashSr;
         private LineRenderer _stem;
-        private Transform[] _orbiters;
-        private SpriteRenderer[] _orbiterSr;
+
+        // Счётчик кораблей
+        private GameObject _countRoot;
+        private SpriteRenderer _countBg;
+        private TextMesh _countText, _countShadow;
+
+        // Сила флота
+        private GameObject _powerRoot;
+        private SpriteRenderer _powerIcon;
+        private TextMesh _powerText, _powerShadow;
+
+        // Прочность
+        private GameObject _hpRoot;
+        private SpriteRenderer _hpBg, _hpFill;
 
         private float _anim;
-        private Color _accent;
-        private FleetType _type;
-        private FleetState _state;
-        private bool _combat;
+        private Color _owner;      // цвет владельца
+        private Color _accent;     // цвет глифа/действия
+        // Последний применённый стиль — чтобы не перекрашивать значок каждый кадр
+        private Sprite _styleGlyph;
+        private int _styleOwner = int.MinValue;
+        private bool _styleCombat;
         private bool _selected;
         private float _selectPunch;
+        private float _selectFlash;   // 1 → 0 после выделения
+        private float _eventSeen = -100f;
+        private float _eventFlash;    // 1 → 0 после завершения действия
 
         private static Sprite _bloomSp, _discSp, _rimSp, _ringSp, _dashSp;
         private static Sprite _scienceSp, _militarySp, _constructorSp;
-        private static Sprite _sweepSp, _sparkSp, _pipSp;
+        private static Sprite _sweepSp, _sparkSp, _pipSp, _squareSp;
         private static Material _spriteMat;
         private static Material _lineMat;
+        private static Font _font;
+
+        public static readonly Color OwnColor = new Color(0.22f, 0.92f, 0.86f);
+        public static readonly Color EnemyColor = new Color(1.00f, 0.30f, 0.30f);
+
+        /// <summary>Цвет владельца на карте: игрок — бирюза, у каждой империи ИИ — свой, ничейное — серое.</summary>
+        public static Color OwnerColor(int owner)
+        {
+            if (owner == 0) return OwnColor;
+            if (owner > 0) return AIEmpireManager.MapColorFor(owner);
+            return new Color(0.75f, 0.75f, 0.8f);
+        }
 
         public void Init(FleetView fleet)
         {
             _fleet = fleet;
-            _cam = Camera.main != null ? Camera.main.transform : null;
+            _camera = Camera.main;
             EnsureArt();
+            if (_squareSp == null) _squareSp = SquareSprite();
+            if (_font == null) _font = GameFont.Bold;
 
             _badge = new GameObject("Badge").transform;
             _badge.SetParent(transform, false);
 
-            _bloomSr = Layer(_badge, "Bloom", _bloomSp, 40, 1.32f);
-            _discSr  = Layer(_badge, "Disc",  _discSp,  41, 0.78f);
-            _rimSr   = Layer(_badge, "Rim",   _rimSp,   42, 0.82f);
-            _ringA   = Layer(_badge, "RingA", _dashSp,  43, 0.96f);
-            _ringB   = Layer(_badge, "RingB", _ringSp,  44, 1.08f);
-            _sweepSr = Layer(_badge, "Sweep", _sweepSp, 45, 0.90f);
-            _glyphSr = Layer(_badge, "Glyph", _scienceSp, 46, 0.70f);
+            _bloomSr   = Layer(_badge, "Bloom",   _bloomSp, 40, 1.30f);
+            _outlineSr = Layer(_badge, "Outline", _discSp,  41, 1.02f);
+            _discSr    = Layer(_badge, "Disc",    _discSp,  42, 0.80f);
+            _rimSr     = Layer(_badge, "Rim",     _rimSp,   43, 0.84f);
+            _ringA     = Layer(_badge, "RingA",   _dashSp,  44, 0.98f);
+            _ringB     = Layer(_badge, "RingB",   _ringSp,  44, 1.10f);
+            _sweepSr   = Layer(_badge, "Sweep",   _sweepSp, 45, 0.90f);
+            _glyphSr   = Layer(_badge, "Glyph",   _scienceSp, 46, 0.70f);
+            _pulseSr   = Layer(_badge, "Pulse",   _ringSp,  47, 1.0f);
+            _flashSr   = Layer(_badge, "Flash",   _bloomSp, 48, 1.0f);
+            _pulseSr.enabled = false;
+            _flashSr.enabled = false;
 
             _pipSr = Layer(transform, "ShipPip", _pipSp, 39, 0.22f);
 
-            _orbiters = new Transform[3];
-            _orbiterSr = new SpriteRenderer[3];
-            for (int i = 0; i < 3; i++)
-            {
-                _orbiterSr[i] = Layer(_badge, $"Orbiter{i}", _sparkSp, 47, 0.18f);
-                _orbiters[i] = _orbiterSr[i].transform;
-            }
+            // Счётчик — кружок в правом верхнем углу
+            _countRoot = new GameObject("Count");
+            _countRoot.transform.SetParent(_badge, false);
+            _countRoot.transform.localPosition = new Vector3(0.36f, 0.34f, -0.03f);
+            _countBg = Layer(_countRoot.transform, "Bg", _discSp, 49, 0.42f);
+            _countShadow = MakeText(_countRoot.transform, "Shadow", 50, new Vector3(0.012f, -0.012f, 0f), TextAnchor.MiddleCenter, 0.036f);
+            _countText = MakeText(_countRoot.transform, "Num", 51, Vector3.zero, TextAnchor.MiddleCenter, 0.036f);
+            _countRoot.SetActive(false);
+
+            // Прочность — полоска под значком
+            _hpRoot = new GameObject("Hp");
+            _hpRoot.transform.SetParent(_badge, false);
+            _hpRoot.transform.localPosition = new Vector3(0f, -0.56f, -0.02f);
+            _hpBg = Layer(_hpRoot.transform, "Bg", _squareSp, 47, 1f);
+            _hpBg.transform.localScale = new Vector3(0.74f, 0.10f, 1f);
+            _hpBg.color = new Color(0f, 0.02f, 0.04f, 0.9f);
+            _hpFill = Layer(_hpRoot.transform, "Fill", _squareSp, 48, 1f);
+            _hpRoot.SetActive(false);
+
+            // Сила — иконка оружия и число
+            _powerRoot = new GameObject("Power");
+            _powerRoot.transform.SetParent(_badge, false);
+            _powerRoot.transform.localPosition = new Vector3(0f, -0.76f, -0.02f);
+            _powerIcon = Layer(_powerRoot.transform, "Icon", LGIcons.Get(LGIcon.Weapons), 49, 0.17f);
+            _powerShadow = MakeText(_powerRoot.transform, "Shadow", 49, new Vector3(0.01f, -0.01f, 0f), TextAnchor.MiddleLeft, 0.028f);
+            _powerText = MakeText(_powerRoot.transform, "Num", 50, Vector3.zero, TextAnchor.MiddleLeft, 0.028f);
+            _powerRoot.SetActive(false);
 
             var stemGo = new GameObject("Stem");
             stemGo.transform.SetParent(transform, false);
@@ -78,8 +171,13 @@ namespace StellarisClone.Rendering
             _stem.sortingOrder = 38;
             if (_lineMat != null) _stem.material = _lineMat;
 
-            RefreshStyle(true);
+            _eventSeen = fleet.Data != null ? fleet.Data.LastEventTime : -100f;
+            Members.Add(fleet);
+            All.Add(this);
+            RefreshStyle();
         }
+
+        private void OnDestroy() => All.Remove(this);
 
         private static SpriteRenderer Layer(Transform parent, string name, Sprite sp, int order, float scale)
         {
@@ -93,173 +191,358 @@ namespace StellarisClone.Rendering
             return sr;
         }
 
+        private static TextMesh MakeText(Transform parent, string name, int order, Vector3 pos, TextAnchor anchor, float charSize)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos + new Vector3(0f, 0f, -0.01f);
+            var tm = go.AddComponent<TextMesh>();
+            tm.font = _font;
+            tm.fontSize = 64;
+            tm.characterSize = charSize;
+            tm.fontStyle = FontStyle.Bold;
+            tm.anchor = anchor;
+            tm.alignment = TextAlignment.Center;
+            var mr = go.GetComponent<MeshRenderer>();
+            if (_font != null) mr.sharedMaterial = _font.material;
+            mr.sortingOrder = order;
+            return tm;
+        }
+
+        // ==================== ЦИКЛ ====================
+
         private void LateUpdate()
         {
             if (_fleet == null) { Destroy(gameObject); return; }
-            if (_fleet.Data == null) return;
+            var data = _fleet.Data;
+            if (data == null) return;
+            if (_camera == null) _camera = Camera.main;
+            if (_camera == null) return;
 
-            _anim += Time.unscaledDeltaTime;
-            bool sel = FleetManager.Instance != null && FleetManager.Instance.SelectedFleet == _fleet;
-            _selectPunch = Mathf.MoveTowards(_selectPunch, sel ? 1f : 0f, Time.unscaledDeltaTime * 6f);
+            if (s_layoutFrame != Time.frameCount) Layout(_camera);
 
-            if (_type != _fleet.Data.Type || _state != _fleet.Data.State
-                || _combat != _fleet.Data.InCombat || _selected != sel)
-                RefreshStyle(false);
+            float dt = Time.unscaledDeltaTime;
+            _anim += dt;
+
+            bool sel = false;
+            var fm = FleetManager.Instance;
+            if (fm != null) foreach (var m in Members) if (fm.IsSelected(m)) { sel = true; break; }
+            if (sel && !_selected) _selectFlash = 1f;
             _selected = sel;
+            _selectPunch = Mathf.MoveTowards(_selectPunch, sel ? 1f : 0f, dt * 6f);
+            _selectFlash = Mathf.MoveTowards(_selectFlash, 0f, dt / 0.35f);
 
-            PlaceAndBillboard();
-            Animate();
+            if (data.LastEventTime > _eventSeen + 0.01f)
+            {
+                _eventSeen = data.LastEventTime;
+                if (data.LastEvent != FleetData.FleetEvent.None) _eventFlash = 1f;
+            }
+            _eventFlash = Mathf.MoveTowards(_eventFlash, 0f, dt / 1.6f);
+
+            _badge.gameObject.SetActive(IsLeader);
+            _stem.enabled = IsLeader;
+
+            RefreshStyle();
+            Place();
+            if (IsLeader)
+            {
+                Animate();
+                RefreshInfo();
+            }
         }
 
-        private void PlaceAndBillboard()
+        /// <summary>
+        /// Раскладка всех значков на кадр: слить стоящие вместе корабли одного владельца и типа,
+        /// затем растолкать пересекающиеся значки на экране.
+        /// </summary>
+        private static void Layout(Camera cam)
         {
-            if (_cam == null && Camera.main != null) _cam = Camera.main.transform;
+            s_layoutFrame = Time.frameCount;
+            All.RemoveAll(i => i == null || i._fleet == null);
 
-            Vector3 ship = _fleet.transform.position;
-            float hover = Mathf.Sin(_anim * 2.15f) * 0.10f + Mathf.Sin(_anim * 1.07f) * 0.04f;
-            Vector3 iconPos = ship + Vector3.up * (2.15f + hover + _selectPunch * 0.12f);
-            transform.position = iconPos;
-
-            if (_cam != null)
+            var groups = new Dictionary<long, FleetIndicator>();
+            foreach (var ind in All)
             {
-                transform.rotation = _cam.rotation;
-                float dist = Vector3.Distance(iconPos, _cam.position);
-                float scale = Mathf.Clamp(dist * 0.010f, 0.55f, 1.22f) * (1f + _selectPunch * 0.08f);
-                transform.localScale = Vector3.one * scale;
+                ind.Members.Clear();
+                ind.Members.Add(ind._fleet);
+                ind.IsLeader = true;
+                // Туман войны: значок чужого флота вне видимости не показывается и ни с кем не сливается
+                if (!Vision.CanSeeFleet(0, ind._fleet.Data)) { ind.IsLeader = false; ind.Members.Clear(); }
             }
+            foreach (var ind in All)
+            {
+                var d = ind._fleet.Data;
+                if (d == null || d.Destroyed || d.State == FleetState.InHyperlane) continue;
+                if (!Vision.CanSeeFleet(0, d)) continue;
+                long key = ((long)d.CurrentSystemId << 16) | ((long)(d.OwnerId + 8) << 4) | (long)d.Type;
+                if (!groups.TryGetValue(key, out var leader)) { groups[key] = ind; continue; }
+                // Лидер — корабль с меньшим Id (значок не «прыгает» между кораблями)
+                if (d.Id < leader._fleet.Data.Id)
+                {
+                    ind.Members.Clear();
+                    ind.Members.AddRange(leader.Members);
+                    ind.Members.Insert(0, ind._fleet);
+                    leader.IsLeader = false;
+                    leader.Members.Clear();
+                    groups[key] = ind;
+                }
+                else
+                {
+                    leader.Members.Add(ind._fleet);
+                    ind.IsLeader = false;
+                    ind.Members.Clear();
+                }
+            }
+
+            // Экранные позиции лидеров
+            var leaders = new List<FleetIndicator>();
+            foreach (var ind in All)
+            {
+                ind._anchorWorld = ind._fleet.transform.position + Vector3.up * 2.2f;
+                ind._layoutOffsetPx = Vector2.zero;
+                if (!ind.IsLeader) { ind.OnScreen = false; continue; }
+                Vector3 sp = cam.WorldToScreenPoint(ind._anchorWorld);
+                ind.OnScreen = sp.z > 0f && sp.x > -60 && sp.y > -60 && sp.x < Screen.width + 60 && sp.y < Screen.height + 60;
+                ind.ScreenPos = sp;
+                ind._layoutOffsetPx = Vector2.zero;
+                if (ind.OnScreen) leaders.Add(ind);
+            }
+
+            // Расталкивание (несколько проходов попарно)
+            for (int pass = 0; pass < 4; pass++)
+            {
+                for (int i = 0; i < leaders.Count; i++)
+                for (int j = i + 1; j < leaders.Count; j++)
+                {
+                    var a = leaders[i]; var b = leaders[j];
+                    Vector2 pa = a.ScreenPos + a._layoutOffsetPx, pb = b.ScreenPos + b._layoutOffsetPx;
+                    Vector2 delta = pb - pa;
+                    float dist = delta.magnitude;
+                    float need = MinSeparationPx * Mathf.Max(a._sizeMul, b._sizeMul);
+                    if (dist >= need) continue;
+                    Vector2 dir = dist > 0.01f ? delta / dist : new Vector2(a._fleet.Data.Id < b._fleet.Data.Id ? 1f : -1f, 0f);
+                    // Расталкиваем в основном по горизонтали — так значки выстраиваются в ряд
+                    dir = new Vector2(dir.x, dir.y * 0.35f);
+                    if (dir.sqrMagnitude < 0.0001f) dir = Vector2.right;
+                    dir.Normalize();
+                    Vector2 push = dir * (need - dist) * 0.5f;
+                    a._layoutOffsetPx -= push;
+                    b._layoutOffsetPx += push;
+                }
+            }
+            foreach (var l in leaders) l.ScreenPos += l._layoutOffsetPx;
+        }
+
+        private static float WorldPerPixel(Camera cam, float distance)
+            => 2f * distance * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+
+        private void Place()
+        {
+            Vector3 ship = _fleet.transform.position;
+            Transform ct = _camera.transform;
+            float dist = Mathf.Max(1f, Vector3.Distance(_anchorWorld, ct.position));
+            float wpp = WorldPerPixel(_camera, dist);
+
+            float hover = (Mathf.Sin(_anim * 2.15f) * 0.10f + Mathf.Sin(_anim * 1.07f) * 0.04f) * wpp * 20f;
+            Vector3 offset = ct.right * (_layoutOffsetPx.x * wpp) + ct.up * (_layoutOffsetPx.y * wpp + hover);
+            Vector3 iconPos = _anchorWorld + offset;
+            transform.position = iconPos;
+            transform.rotation = ct.rotation;
+
+            _sizeMul = 1f + _selectPunch * 0.12f;
+            float scale = IconPixels * _sizeMul * wpp / BadgeWorldSize;
+            transform.localScale = Vector3.one * scale;
 
             _pipSr.transform.position = ship + Vector3.up * 0.95f;
-            _pipSr.transform.rotation = transform.rotation;
+            _pipSr.transform.rotation = ct.rotation;
+            _pipSr.transform.localScale = Vector3.one * Mathf.Clamp(0.22f / scale, 0.08f, 0.6f);
 
-            if (_stem != null)
-            {
-                _stem.SetPosition(0, ship + Vector3.up * 1.05f);
-                _stem.SetPosition(1, iconPos);
-                float w = Mathf.Lerp(0.018f, 0.032f, _selectPunch);
-                _stem.startWidth = w;
-                _stem.endWidth = w * 0.25f;
-            }
+            _stem.SetPosition(0, ship + Vector3.up * 1.05f);
+            _stem.SetPosition(1, iconPos - ct.up * (BadgeWorldSize * 0.5f * scale));
+            float w = Mathf.Lerp(1.6f, 3.2f, _selectPunch) * wpp;
+            _stem.startWidth = w * 0.4f;
+            _stem.endWidth = w;
         }
 
-        private void RefreshStyle(bool forceGlyph)
+        // ==================== ВНЕШНИЙ ВИД ====================
+
+        private Sprite GlyphFor(FleetData d, out float scale)
         {
-            var data = _fleet.Data;
-            _type = data.Type;
-            _state = data.State;
-            _combat = data.InCombat;
-            bool ai = data.OwnerId != 0;
-
-            switch (data.Type)
+            if (_eventFlash > 0.35f) { scale = 0.40f; return LGIcons.Get(LGIcon.Check); }
+            if (d.InCombat) { scale = 0.42f; return LGIcons.Get(LGIcon.Swords); }
+            switch (d.State)
             {
-                case FleetType.Science:
-                    _accent = ai ? new Color(0.55f, 1f, 0.70f) : new Color(0.20f, 1.00f, 0.62f);
-                    if (forceGlyph) _glyphSr.sprite = _scienceSp;
-                    break;
-                case FleetType.Constructor:
-                    _accent = ai ? new Color(1f, 0.58f, 0.22f) : new Color(1.00f, 0.78f, 0.28f);
-                    if (forceGlyph) _glyphSr.sprite = _constructorSp;
-                    break;
-                default:
-                    _accent = ai ? new Color(1f, 0.28f, 0.30f) : new Color(0.22f, 0.92f, 1.00f);
-                    if (forceGlyph) _glyphSr.sprite = _militarySp;
-                    break;
+                case FleetState.Surveying: scale = 0.42f; return LGIcons.Get(LGIcon.Sensors);
+                case FleetState.Constructing: scale = 0.42f; return LGIcons.Get(LGIcon.Construction);
+                case FleetState.InHyperlane: scale = 0.40f; return LGIcons.Get(LGIcon.Fast);
             }
+            var siege = SiegeManager.Instance != null ? SiegeManager.Instance.GetSiege(d.CurrentSystemId) : null;
+            if (d.Type == FleetType.Military && siege != null && siege.Attacker == d.OwnerId && siege.Active)
+            { scale = 0.42f; return LGIcons.Get(LGIcon.Siege); }
 
-            if (data.InCombat) _accent = new Color(1f, 0.18f, 0.16f);
-            else if (data.State == FleetState.InHyperlane)
-                _accent = Color.Lerp(_accent, new Color(1f, 0.86f, 0.32f), 0.4f);
-
-            _discSr.color = new Color(0.012f, 0.045f, 0.06f, 0.92f);
-            _rimSr.color = Color.Lerp(_accent, Color.white, 0.25f);
-            _glyphSr.color = Color.Lerp(_accent, Color.white, 0.45f);
-            _bloomSr.color = new Color(_accent.r, _accent.g, _accent.b, 0.42f);
-            _ringA.color = _accent;
-            _ringB.color = new Color(_accent.r, _accent.g, _accent.b, 0.7f);
-            _sweepSr.color = new Color(_accent.r, _accent.g, _accent.b, 0.35f);
-            _pipSr.color = _accent;
-            if (_stem != null)
+            scale = 0.70f;
+            return d.Type switch
             {
-                var c = new Color(_accent.r, _accent.g, _accent.b, 0.75f);
-                _stem.startColor = c;
-                _stem.endColor = new Color(c.r, c.g, c.b, 0.12f);
-                if (_stem.material != null) _stem.material.color = c;
-            }
+                FleetType.Science => _scienceSp,
+                FleetType.Constructor => _constructorSp,
+                _ => _militarySp
+            };
+        }
 
-            bool scienceFx = data.Type == FleetType.Science || data.State == FleetState.Surveying;
-            _sweepSr.enabled = scienceFx;
-            _ringB.enabled = true;
-            for (int i = 0; i < _orbiters.Length; i++)
-                _orbiterSr[i].color = Color.Lerp(_accent, Color.white, 0.5f);
+        private void RefreshStyle()
+        {
+            var d = _fleet.Data;
+            _owner = OwnerColor(d.OwnerId);
+
+            Color typeCol = d.Type switch
+            {
+                FleetType.Science => new Color(0.45f, 1f, 0.62f),
+                FleetType.Constructor => new Color(1f, 0.82f, 0.36f),
+                _ => new Color(0.92f, 0.98f, 1f)
+            };
+            if (_eventFlash > 0.35f) typeCol = new Color(0.45f, 1f, 0.55f);
+            else if (d.InCombat) typeCol = new Color(1f, 0.55f, 0.35f);
+            else if (d.State == FleetState.InHyperlane) typeCol = Color.Lerp(typeCol, new Color(1f, 0.88f, 0.4f), 0.5f);
+            _accent = typeCol;
+
+            var glyph = GlyphFor(d, out float gScale);
+            if (glyph == _styleGlyph && d.OwnerId == _styleOwner && d.InCombat == _styleCombat) return;
+            _styleGlyph = glyph;
+            _styleOwner = d.OwnerId;
+            _styleCombat = d.InCombat;
+
+            _glyphSr.sprite = glyph;
+            _glyphSr.transform.localScale = Vector3.one * gScale;
+            _glyphSr.transform.localRotation = Quaternion.identity;
+
+            _outlineSr.color = new Color(0f, 0.01f, 0.02f, 0.88f);
+            _discSr.color = new Color(_owner.r * 0.16f, _owner.g * 0.16f, _owner.b * 0.16f, 0.96f);
+            _countBg.color = Color.Lerp(_owner, Color.white, 0.15f);
+            _countText.color = new Color(0.02f, 0.05f, 0.07f, 1f);
+            _countShadow.color = new Color(1f, 1f, 1f, 0f);
+            _powerIcon.color = Color.Lerp(_owner, Color.white, 0.35f);
+            _powerText.color = Color.white;
+            _powerShadow.color = new Color(0f, 0f, 0f, 0.9f);
+            _pipSr.color = _owner;
+            _sweepSr.enabled = d.State == FleetState.Surveying;
         }
 
         private void Animate()
         {
-            var data = _fleet.Data;
-            bool busy = data.State == FleetState.Surveying || data.State == FleetState.Constructing
-                        || data.State == FleetState.InHyperlane || data.InCombat;
-
-            float beat = data.InCombat ? 8.5f : busy ? 4.4f : 2.35f;
+            var d = _fleet.Data;
+            bool busy = d.State != FleetState.Orbiting || d.InCombat;
+            float beat = d.InCombat ? 8.5f : busy ? 4.4f : 2.35f;
             float breathe = 0.5f + 0.5f * Mathf.Sin(_anim * beat);
-            float flicker = 0.92f + Mathf.PerlinNoise(_anim * 7.5f, 0.3f) * 0.08f;
 
-            _bloomSr.color = new Color(_accent.r, _accent.g, _accent.b,
-                (0.22f + breathe * 0.14f + _selectPunch * 0.12f) * flicker);
-            _bloomSr.transform.localScale = Vector3.one * (1.28f + breathe * 0.06f + _selectPunch * 0.08f);
+            Color rimCol = d.InCombat ? Color.Lerp(_owner, new Color(1f, 0.2f, 0.15f), 0.5f + 0.5f * breathe) : _owner;
+            _rimSr.color = Color.Lerp(rimCol, Color.white, 0.12f + breathe * 0.15f + _selectPunch * 0.25f);
+            _bloomSr.color = new Color(rimCol.r, rimCol.g, rimCol.b, 0.18f + breathe * 0.10f + _selectPunch * 0.18f);
+            _bloomSr.transform.localScale = Vector3.one * (1.24f + breathe * 0.05f + _selectPunch * 0.1f);
 
-            _rimSr.color = Color.Lerp(_accent, Color.white, 0.2f + breathe * 0.2f);
-            float rimScale = 0.82f + breathe * 0.015f;
-            _rimSr.transform.localScale = Vector3.one * rimScale;
-
-            float spinA = data.Type == FleetType.Science ? 42f : data.Type == FleetType.Constructor ? -28f : 16f;
-            float spinB = data.Type == FleetType.Science ? -26f : 11f;
-            if (data.InCombat) { spinA = 110f; spinB = -80f; }
-            if (data.State == FleetState.Surveying) spinA = 85f;
+            float spinA = d.Type == FleetType.Science ? 42f : d.Type == FleetType.Constructor ? -28f : 16f;
+            if (d.InCombat) spinA = 110f;
+            if (d.State == FleetState.Surveying) spinA = 85f;
             _ringA.transform.localRotation = Quaternion.Euler(0, 0, _anim * spinA);
-            _ringB.transform.localRotation = Quaternion.Euler(0, 0, _anim * spinB);
-            _ringA.color = new Color(_accent.r, _accent.g, _accent.b, 0.55f + breathe * 0.35f);
-            _ringB.color = new Color(_accent.r, _accent.g, _accent.b, 0.35f + (1f - breathe) * 0.3f);
+            _ringB.transform.localRotation = Quaternion.Euler(0, 0, -_anim * spinA * 0.6f);
+            _ringA.color = new Color(rimCol.r, rimCol.g, rimCol.b, (busy ? 0.65f : 0.35f) + breathe * 0.25f);
+            _ringB.color = new Color(rimCol.r, rimCol.g, rimCol.b, _selectPunch * (0.5f + 0.4f * breathe));
 
-            float gPulse = 0.68f + Mathf.Sin(_anim * beat * 0.5f) * 0.03f + _selectPunch * 0.04f;
-            _glyphSr.transform.localScale = Vector3.one * gPulse;
-            if (data.Type == FleetType.Constructor)
-                _glyphSr.transform.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(_anim * 1.8f) * 12f);
-            else if (data.Type == FleetType.Science)
-                _glyphSr.transform.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(_anim * 1.4f) * 4f);
-            else
-                _glyphSr.transform.localRotation = Quaternion.identity;
-            _glyphSr.color = Color.Lerp(_accent, Color.white, 0.35f + breathe * 0.25f) * flicker;
+            _glyphSr.color = Color.Lerp(_accent, Color.white, 0.25f + breathe * 0.2f);
+            if (d.State == FleetState.Constructing)
+                _glyphSr.transform.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(_anim * 3f) * 10f);
 
             if (_sweepSr.enabled)
             {
                 _sweepSr.transform.localRotation = Quaternion.Euler(0, 0, -_anim * 95f);
-                float sa = 0.12f + 0.28f * (0.5f + 0.5f * Mathf.Sin(_anim * 3.2f));
-                _sweepSr.color = new Color(_accent.r, _accent.g, _accent.b, sa);
+                _sweepSr.color = new Color(_accent.r, _accent.g, _accent.b, 0.12f + 0.28f * breathe);
             }
 
-            float orbitR = 0.36f + 0.02f * Mathf.Sin(_anim * 2f);
-            float orbitSpd = data.Type == FleetType.Science ? 1.8f : data.Type == FleetType.Constructor ? 1.1f : 0.85f;
-            if (data.InCombat) orbitSpd = 3.2f;
-            for (int i = 0; i < _orbiters.Length; i++)
+            // Выделение: кольцо, которое расходится волнами
+            _pulseSr.enabled = _selectPunch > 0.01f;
+            if (_pulseSr.enabled)
             {
-                float a = _anim * orbitSpd + i * Mathf.PI * 2f / 3f;
-                _orbiters[i].localPosition = new Vector3(Mathf.Cos(a) * orbitR, Mathf.Sin(a) * orbitR, -0.02f);
-                float twinkle = 0.45f + 0.55f * Mathf.Sin(_anim * 6f + i * 2.1f);
-                var c = Color.Lerp(_accent, Color.white, 0.55f);
-                c.a = twinkle;
-                _orbiterSr[i].color = c;
-                _orbiters[i].localScale = Vector3.one * (0.09f + twinkle * 0.04f);
+                float t = Mathf.Repeat(_anim / 1.1f, 1f);
+                _pulseSr.transform.localScale = Vector3.one * Mathf.Lerp(0.95f, 1.55f, t);
+                _pulseSr.color = new Color(_owner.r, _owner.g, _owner.b, (1f - t) * 0.85f * _selectPunch);
             }
 
-            _pipSr.transform.localScale = Vector3.one * (0.20f + breathe * 0.03f);
-            _pipSr.color = new Color(_accent.r, _accent.g, _accent.b, 0.7f + breathe * 0.3f);
-
-            if (_stem != null)
+            // Вспышка при выделении или по завершении действия
+            float flash = Mathf.Max(_selectFlash, _eventFlash > 0.35f ? (_eventFlash - 0.35f) / 0.65f : 0f);
+            _flashSr.enabled = flash > 0.01f;
+            if (_flashSr.enabled)
             {
-                float sa = (0.45f + breathe * 0.25f + _selectPunch * 0.2f) * flicker;
-                var top = new Color(_accent.r, _accent.g, _accent.b, sa);
-                _stem.startColor = top;
-                _stem.endColor = new Color(_accent.r, _accent.g, _accent.b, 0.08f);
+                Color fc = _selectFlash >= _eventFlash ? Color.Lerp(_owner, Color.white, 0.5f) : new Color(0.5f, 1f, 0.6f);
+                _flashSr.color = new Color(fc.r, fc.g, fc.b, flash * 0.9f);
+                _flashSr.transform.localScale = Vector3.one * Mathf.Lerp(2.4f, 1.1f, flash);
             }
+
+            float sa = 0.45f + breathe * 0.2f + _selectPunch * 0.35f;
+            _stem.startColor = new Color(_owner.r, _owner.g, _owner.b, 0.15f);
+            _stem.endColor = new Color(_owner.r, _owner.g, _owner.b, sa);
+            _pipSr.color = new Color(_owner.r, _owner.g, _owner.b, 0.7f + breathe * 0.3f);
+        }
+
+        /// <summary>Счётчик кораблей, сила и прочность группы.</summary>
+        private void RefreshInfo()
+        {
+            int count = 0;
+            float power = 0f, hp = 0f, hpMax = 0f;
+            bool military = false;
+            foreach (var m in Members)
+            {
+                var d = m?.Data;
+                if (d == null || d.Destroyed) continue;
+                count++;
+                if (d.Type == FleetType.Military) { military = true; power += CombatMath.Power(d); }
+                hp += d.HullPoints + d.ArmorPoints;
+                hpMax += d.MaxHullPoints + d.MaxArmorPoints;
+            }
+
+            bool showCount = count > 1;
+            if (_countRoot.activeSelf != showCount) _countRoot.SetActive(showCount);
+            if (showCount)
+            {
+                string c = count.ToString();
+                if (_countText.text != c) { _countText.text = c; _countShadow.text = c; }
+            }
+
+            if (_powerRoot.activeSelf != military) _powerRoot.SetActive(military);
+            if (military)
+            {
+                string p = Mathf.RoundToInt(power).ToString();
+                if (_powerText.text != p) { _powerText.text = p; _powerShadow.text = p; }
+                // Иконка + число по центру под значком
+                float textW = p.Length * 0.10f;
+                float total = 0.2f + textW;
+                _powerIcon.transform.localPosition = new Vector3(-total * 0.5f + 0.08f, 0f, 0f);
+                _powerText.transform.localPosition = new Vector3(-total * 0.5f + 0.19f, 0f, -0.01f);
+                _powerShadow.transform.localPosition = _powerText.transform.localPosition + new Vector3(0.01f, -0.01f, 0.005f);
+            }
+
+            float frac = hpMax > 0f ? Mathf.Clamp01(hp / hpMax) : 1f;
+            bool showHp = frac < 0.995f;
+            if (_hpRoot.activeSelf != showHp) _hpRoot.SetActive(showHp);
+            if (showHp)
+            {
+                const float W = 0.70f;
+                _hpFill.transform.localScale = new Vector3(W * frac, 0.06f, 1f);
+                _hpFill.transform.localPosition = new Vector3(-W * 0.5f + W * frac * 0.5f, 0f, -0.005f);
+                _hpFill.color = frac > 0.6f ? new Color(0.36f, 0.96f, 0.5f)
+                              : frac > 0.3f ? new Color(1f, 0.82f, 0.3f)
+                              : new Color(1f, 0.32f, 0.3f);
+            }
+            // Если полоски нет — сила поднимается ближе к значку
+            _powerRoot.transform.localPosition = new Vector3(0f, showHp ? -0.76f : -0.62f, -0.02f);
+        }
+
+        private static Sprite SquareSprite()
+        {
+            var t = new Texture2D(4, 4, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, hideFlags = HideFlags.DontSave };
+            var px = new Color[16];
+            for (int i = 0; i < px.Length; i++) px[i] = Color.white;
+            t.SetPixels(px);
+            t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
         }
 
         // ==================== ART ====================
@@ -294,6 +577,27 @@ namespace StellarisClone.Rendering
         // === ПУБЛИЧНЫЕ ГЕТТЕРЫ ДЛЯ ГЛИФОВ ===
         // Используются в SystemFleetBadge, чтобы значки над системами
         // выглядели точно так же, как значки над кораблями.
+
+        public static Sprite GetDiscSprite()
+        {
+            EnsureArt();
+            return _discSp;
+        }
+
+        public static Sprite GetRingSprite()
+        {
+            EnsureArt();
+            return _rimSp;
+        }
+
+        public static Material SpriteMaterial
+        {
+            get
+            {
+                EnsureArt();
+                return _spriteMat;
+            }
+        }
 
         public static Sprite GetScienceSprite()
         {

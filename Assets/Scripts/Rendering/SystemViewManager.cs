@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using StellarisClone.Core;
 using StellarisClone.Cam;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -43,6 +44,9 @@ namespace StellarisClone.Rendering
 
         private readonly List<PlanetInstance> _activePlanets = new List<PlanetInstance>();
         private PlanetInstance _currentSelectedPlanet;
+
+        /// <summary>Планеты текущей системы на сцене (для меток SystemPlanetTags).</summary>
+        public IReadOnlyList<PlanetInstance> ActivePlanets => _activePlanets;
 
         private static Shader GetLitShader() => ShaderCache.Lit;
         private static Shader GetLineShader() => ShaderCache.Unlit;
@@ -89,6 +93,7 @@ namespace StellarisClone.Rendering
             _cameraController?.EnterSystemMode(system.Position);
 
             BuildSystemContent(system);
+            SFXManager.Play(Sfx.SystemEnter);
             OnViewModeChanged?.Invoke(true);
         }
 
@@ -100,6 +105,7 @@ namespace StellarisClone.Rendering
             _isTransitioningToGalaxy = true;
 
             _cameraController?.ReturnToGalaxyView(_savedCamPos, _savedCamRot);
+            SFXManager.Play(Sfx.SystemExit);
 
             OnViewModeChanged?.Invoke(false);
 
@@ -156,6 +162,53 @@ namespace StellarisClone.Rendering
                 // Если на планете уже стоит станция — восстановить
                 if (planet.HasMiningStation)
                     SpawnStationVisual(pInstance.PlanetTransform, planet);
+            }
+
+            AddAsteroids(system);
+            StarbaseVisuals.SpawnInSystemView(_systemContainer.transform, system);
+        }
+
+        /// <summary>
+        /// Астероиды системы (одинаковые при каждом входе — зависят от номера системы):
+        /// пояс в самом широком промежутке между орбитами или за последней планетой,
+        /// у газовых гигантов — «троянцы», два скопления на ±60° по орбите, движущиеся вместе с планетой.
+        /// </summary>
+        private void AddAsteroids(StarSystem system)
+        {
+            if (!AsteroidAssets.Ready || _systemContainer == null) return;
+            var rng = new System.Random(system.Id * 7919 + 131);
+
+            if (rng.NextDouble() < 0.6)
+            {
+                var radii = new List<float>();
+                foreach (var p in system.Planets) radii.Add(p.OrbitRadius);
+                radii.Sort();
+                float inner = 0f, outer = 0f, bestGap = 0f;
+                for (int i = 0; i + 1 < radii.Count; i++)
+                {
+                    float gap = radii[i + 1] - radii[i];
+                    if (gap > bestGap) { bestGap = gap; inner = radii[i] + 2.4f; outer = radii[i + 1] - 2.4f; }
+                }
+                if (bestGap < 7f || rng.NextDouble() < 0.35)
+                {
+                    float last = radii.Count > 0 ? radii[radii.Count - 1] : 10f;
+                    inner = last + 4f;
+                    outer = last + 4f + 4f + (float)rng.NextDouble() * 4f;
+                }
+                int count = Mathf.Clamp(Mathf.RoundToInt((outer + inner) * 0.5f * (outer - inner) * 2.2f), 220, 700);
+                AsteroidField.CreateBelt(_systemContainer.transform, inner, outer, count, rng.Next(), 0.10f, 0.55f, 0.9f);
+            }
+
+            foreach (var inst in _activePlanets)
+            {
+                if (inst?.Data == null || inst.Pivot == null || inst.Data.Type != PlanetType.GasGiant) continue;
+                if (rng.NextDouble() > 0.5) continue;
+                float r = inst.Data.OrbitRadius;
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    var at = Quaternion.Euler(0f, 60f * side, 0f) * new Vector3(r, 0f, 0f);
+                    AsteroidField.CreateCluster(inst.Pivot, at, 1.8f, 16 + rng.Next(10), rng.Next(), 0.08f, 0.32f, 0.35f);
+                }
             }
         }
 
@@ -369,30 +422,47 @@ namespace StellarisClone.Rendering
 
         // ==================== ОРБИТЫ / ОЧИСТКА / ОБНОВЛЕНИЕ ====================
 
+        /// <summary>
+        /// Орбита — тонкая едва заметная линия; за планетой тянется светлый «след», который гаснет по ходу
+        /// орбиты (кольцо — ребёнок пивота и вращается вместе с планетой, поэтому след всегда позади неё).
+        /// </summary>
         private void CreateOrbitRing(Transform parent, float radius)
         {
             GameObject ring = new GameObject("OrbitRing");
             ring.transform.SetParent(parent, false);
 
+            const int N = 160;
             var lr = ring.AddComponent<LineRenderer>();
             lr.useWorldSpace = false;
             lr.loop = true;
-            lr.startWidth = 0.15f;
-            lr.endWidth = 0.15f;
-            lr.positionCount = 64;
-            for (int i = 0; i < 64; i++)
+            lr.startWidth = 0.07f;
+            lr.endWidth = 0.07f;
+            lr.numCapVertices = 0;
+            lr.positionCount = N;
+            // Планета стоит в (r, 0, 0) и движется в сторону убывания угла — след лежит при угле > 0
+            for (int i = 0; i < N; i++)
             {
-                float a = i / 64f * Mathf.PI * 2f;
+                float a = i / (float)N * Mathf.PI * 2f;
                 lr.SetPosition(i, new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
             }
-            var lineShader = GetLineShader();
-            if (lineShader != null)
-            {
-                var mat = new Material(lineShader);
-                var teal = UIManager.DS.NeonTeal;
-                mat.color = new Color(teal.r, teal.g, teal.b, 0.25f);
-                lr.material = mat;
-            }
+            var c = new Color(0.78f, 0.86f, 1f);
+            var g = new Gradient();
+            g.SetKeys(
+                new[] { new GradientColorKey(c, 0f), new GradientColorKey(c, 1f) },
+                new[]
+                {
+                    new GradientAlphaKey(0.42f, 0f),
+                    new GradientAlphaKey(0.16f, 0.06f),
+                    new GradientAlphaKey(0.06f, 0.22f),
+                    new GradientAlphaKey(0.035f, 0.5f),
+                    new GradientAlphaKey(0.035f, 1f)
+                });
+            lr.colorGradient = g;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            // Sprites/Default учитывает цвет и прозрачность вершин (URP Unlit — нет)
+            var shader = ShaderCache.Sprite ?? Shader.Find("Sprites/Default");
+            if (shader != null) lr.material = new Material(shader);
         }
 
         private void ClearSystemContent()
@@ -441,6 +511,7 @@ namespace StellarisClone.Rendering
 
                 if (Data != null)
                 {
+                    SFXManager.Play(Sfx.SystemSelect, 0.9f, 1.26f);
                     Instance.SelectPlanet(InstanceRef);
                     UIManager.Instance?.ShowPlanetInspector(Data, ParentSystem);
                     OnPlanetSelected?.Invoke(Data, ParentSystem);

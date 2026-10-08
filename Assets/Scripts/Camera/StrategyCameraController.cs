@@ -16,12 +16,19 @@ namespace StellarisClone.Cam
         [Header("Зум")]
         [SerializeField] private float zoomSpeed = 25f;
         [SerializeField] private float zoomSmooth = 12f;
-        [SerializeField] private float minHeight = 18f;
+        [SerializeField] private float minHeight = 9f;
         [SerializeField] private float maxHeight = 240f;
         [SerializeField] private float zoomToCursorStrength = 0.85f;
 
         [Header("Вращение")]
         [SerializeField] private float rotationSpeed = 90f;
+
+        [Header("Наклон от зума (как в Stellaris)")]
+        [Tooltip("Наклон у самой карты: камера смотрит вдоль плоскости — видна перспектива")]
+        [SerializeField] private float nearPitch = 56f;
+        [Tooltip("Наклон издалека: почти сверху — видна вся спираль")]
+        [SerializeField] private float farPitch = 72f;
+        [SerializeField] private float pitchSmooth = 4f;
 
         [Header("Границы")]
         [SerializeField] private bool limitToBounds = true;
@@ -32,7 +39,7 @@ namespace StellarisClone.Cam
 
         [Header("Режим системы")]
         [SerializeField] private float systemZoomSpeed = 35f;
-        [SerializeField] private float minSystemDistance = 20f;
+        [SerializeField] private float minSystemDistance = 13f;
         [SerializeField] private float maxSystemDistance = 140f;
         [SerializeField] private float systemTransitionSpeed = 6f;
         [SerializeField] private float returnFromSystemDuration = 0.45f;
@@ -57,8 +64,6 @@ namespace StellarisClone.Cam
 
         // ---- Плавный зум ----
         private float _targetHeight;
-        private bool _isDraggingMiddle;
-        private Vector3 _dragOrigin;
 
         // ---- Фокус ----
         private Vector3 _focusStartPos;
@@ -69,6 +74,11 @@ namespace StellarisClone.Cam
         /// <summary>Настройки игрока (меню «Настройки»).</summary>
         public static bool EdgeScrollingSetting = false;
         public static float PanSpeedSetting = 1f;
+
+        // ---- Плавная панорама ----
+        private Vector3 _panVelocity;
+        private const float PanAcceleration = 10f;
+        private bool _boundsFromGalaxy;
 
         private void Awake()
         {
@@ -127,11 +137,34 @@ namespace StellarisClone.Cam
             if (IsTransitioning) return;
 
             // 4. Обычный режим галактики
+            FitBoundsToGalaxy();
             HandleGalaxyMovement();
             HandleGalaxyZoomToCursor();
             HandleGalaxyRotation();
             HandleDrag();
             HandleShortcuts();
+            ApplyZoomPitch();
+        }
+
+        /// <summary>
+        /// Наклон камеры зависит от высоты: вблизи — пологий взгляд с перспективой, издалека — почти сверху.
+        /// Точка карты в центре экрана при смене наклона остаётся на месте.
+        /// </summary>
+        private void ApplyZoomPitch()
+        {
+            var e = transform.eulerAngles;
+            float pitch = e.x > 180f ? e.x - 360f : e.x;
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(minHeight, maxHeight, transform.position.y));
+            float target = Mathf.Lerp(nearPitch, farPitch, k);
+            float next = Mathf.Lerp(pitch, target, 1f - Mathf.Exp(-Time.unscaledDeltaTime * pitchSmooth));
+            if (Mathf.Abs(next - pitch) < 0.005f) return;
+
+            Vector3 before = GroundCenter(transform.position);
+            transform.rotation = Quaternion.Euler(next, e.y, 0f);
+            Vector3 after = GroundCenter(transform.position);
+            Vector3 d = before - after;
+            d.y = 0f;
+            transform.position += d;
         }
 
         // ==================== РЕЖИМ СИСТЕМЫ ====================
@@ -190,11 +223,11 @@ namespace StellarisClone.Cam
                 return;
 
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Abs(scroll) > 0.01f)
-                _systemDistance -= scroll * systemZoomSpeed * 10f;
+            if (Mathf.Abs(scroll) > 0.001f)
+                _systemDistance *= Mathf.Pow(1f - ZoomStepPerNotch, scroll * 10f);
 
-            if (Input.GetKey(KeyCode.R)) _systemDistance -= systemZoomSpeed * Time.deltaTime;
-            if (Input.GetKey(KeyCode.F)) _systemDistance += systemZoomSpeed * Time.deltaTime;
+            if (Input.GetKey(KeyCode.R)) _systemDistance -= systemZoomSpeed * Time.unscaledDeltaTime;
+            if (Input.GetKey(KeyCode.F)) _systemDistance += systemZoomSpeed * Time.unscaledDeltaTime;
 
             _systemDistance = Mathf.Clamp(_systemDistance, minSystemDistance, maxSystemDistance);
             UpdateSystemCameraTransform();
@@ -206,7 +239,7 @@ namespace StellarisClone.Cam
             Vector3 offset = rot * new Vector3(0, 0, -_systemDistance);
             Vector3 target = _systemCenter + offset;
 
-            float t = 1f - Mathf.Exp(-systemTransitionSpeed * Time.deltaTime);
+            float t = 1f - Mathf.Exp(-systemTransitionSpeed * Time.unscaledDeltaTime);
             transform.position = Vector3.Lerp(transform.position, target, t);
             transform.rotation = Quaternion.Slerp(transform.rotation, rot, t);
         }
@@ -216,7 +249,8 @@ namespace StellarisClone.Cam
         private void HandleGalaxyMovement()
         {
             float speedMult = Input.GetKey(KeyCode.LeftShift) ? fastPanMultiplier : 1f;
-            float zoomMult = 1f + (transform.position.y - minHeight) * panZoomFactor * 0.01f;
+            // скорость пропорциональна высоте: издалека карта пролистывается быстро, вблизи — точно
+            float zoomMult = Mathf.Lerp(0.6f, 3.2f, Mathf.InverseLerp(minHeight, maxHeight, transform.position.y));
             float speed = panSpeed * PanSpeedSetting * speedMult * zoomMult;
 
             float h = Input.GetAxisRaw("Horizontal");
@@ -242,87 +276,153 @@ namespace StellarisClone.Cam
             Vector3 dir = forward * v + right * h;
             if (dir.sqrMagnitude > 1f) dir.Normalize();
 
-            Vector3 newPos = transform.position + dir * (speed * Time.deltaTime);
+            // Разгон и торможение вместо мгновенного старта/остановки
+            Vector3 targetVel = dir * speed;
+            _panVelocity = Vector3.Lerp(_panVelocity, targetVel, 1f - Mathf.Exp(-PanAcceleration * Time.deltaTime));
+            if (_panVelocity.sqrMagnitude < 0.0001f) return;
+
+            Vector3 newPos = transform.position + _panVelocity * Time.deltaTime;
             newPos = ClampToBounds(newPos);
             transform.position = newPos;
         }
 
+        // ---- Перетаскивание карты: «взял и тащишь» ----
+        private bool _grabbing;
+        private int _grabButton = -1;
+        private Vector3 _grabWorld;
+        private Vector2 _grabPressPos;
+        private bool _grabMoved;
+        private Vector3 _glideVel;
+        private const float GrabThresholdPx = 6f;
+
+        /// <summary>Правая кнопка тянула карту (для приказов флотам: клик без перетаскивания — приказ).</summary>
+        public static bool RightButtonDragged { get; private set; }
+
+        /// <summary>
+        /// Средняя или правая кнопка: точка карты под курсором «прилипает» к нему, после отпускания карта
+        /// чуть скользит по инерции. Правая кнопка начинает тянуть только после сдвига на несколько пикселей —
+        /// короткий клик остаётся приказом флоту.
+        /// </summary>
         private void HandleDrag()
         {
-            // Блокируем захват перетаскивания средней кнопкой мыши над UI
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            float dt = Mathf.Max(Time.unscaledDeltaTime, 1e-4f);
+
+            if (!_grabbing && !overUi)
             {
-                _isDraggingMiddle = false;
+                int btn = Input.GetMouseButtonDown(2) ? 2 : Input.GetMouseButtonDown(1) ? 1 : -1;
+                if (btn >= 0 && TryGroundUnderCursor(out _grabWorld))
+                {
+                    _grabbing = true;
+                    _grabButton = btn;
+                    _grabPressPos = Input.mousePosition;
+                    _grabMoved = btn == 2;
+                    _glideVel = Vector3.zero;
+                    _zoomShift = Vector3.zero;
+                    if (btn == 1) RightButtonDragged = false;
+                }
+            }
+
+            if (_grabbing)
+            {
+                if (!Input.GetMouseButton(_grabButton))
+                {
+                    _grabbing = false;
+                    if (_grabButton == 1) RightButtonDragged = _grabMoved;
+                    return;
+                }
+                if (!_grabMoved && Vector2.Distance(_grabPressPos, Input.mousePosition) > GrabThresholdPx)
+                {
+                    _grabMoved = true;
+                    TryGroundUnderCursor(out _grabWorld);    // без рывка на величину порога
+                }
+                if (!_grabMoved) return;
+
+                if (TryGroundUnderCursor(out var now))
+                {
+                    Vector3 d = _grabWorld - now;
+                    d.y = 0f;
+                    Vector3 before = transform.position;
+                    transform.position = ClampToBounds(transform.position + d);
+                    Vector3 v = (transform.position - before) / dt;
+                    _glideVel = Vector3.Lerp(_glideVel, v, 0.35f);
+                    _isFocusing = false;
+                }
                 return;
             }
 
-            if (Input.GetMouseButtonDown(2))
+            // инерция после отпускания
+            if (_glideVel.sqrMagnitude > 0.01f)
             {
-                _isDraggingMiddle = true;
-                _dragOrigin = Input.mousePosition;
-            }
-            if (Input.GetMouseButtonUp(2))
-            {
-                _isDraggingMiddle = false;
-            }
-
-            if (_isDraggingMiddle)
-            {
-                Vector3 delta = Input.mousePosition - _dragOrigin;
-                _dragOrigin = Input.mousePosition;
-
-                float zoomMult = transform.position.y * 0.0025f;
-                Vector3 forward = transform.forward; forward.y = 0f; forward.Normalize();
-                Vector3 right = transform.right; right.y = 0f; right.Normalize();
-
-                Vector3 move = (-right * delta.x - forward * delta.y)
-                             * zoomMult * middleMouseDragSensitivity;
-                Vector3 newPos = ClampToBounds(transform.position + move);
-                transform.position = newPos;
+                transform.position = ClampToBounds(transform.position + _glideVel * dt);
+                _glideVel *= Mathf.Exp(-dt * 5f);
             }
         }
+
+        private bool TryGroundUnderCursor(out Vector3 point)
+        {
+            point = Vector3.zero;
+            var cam = Camera.main;
+            if (cam == null) return false;
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Mathf.Abs(ray.direction.y) < 0.02f) return false;
+            float t = -ray.origin.y / ray.direction.y;
+            if (t <= 0f) return false;
+            point = ray.GetPoint(t);
+            return true;
+        }
+
+        /// <summary>Мгновенно поставить точку карты в центр экрана (миникарта, перетаскивание по ней).</summary>
+        public void CenterOnImmediate(Vector3 worldPos)
+        {
+            if (IsSystemMode || IsReturningFromSystem) return;
+            Vector3 shift = worldPos - GroundCenter(transform.position);
+            shift.y = 0f;
+            _isFocusing = false;
+            _glideVel = Vector3.zero;
+            _zoomShift = Vector3.zero;
+            transform.position = ClampToBounds(transform.position + shift);
+        }
+
+        /// <summary>Доля высоты, на которую приближает один щелчок колеса (одинаково отзывчиво на любой высоте).</summary>
+        private const float ZoomStepPerNotch = 0.16f;
+        /// <summary>Скорость доводки зума (1/с): камера скользит к цели за ~0,4 с, без рывков.</summary>
+        private const float ZoomGlide = 7.5f;
+        /// <summary>Боковой сдвиг к курсору, который камера ещё пройдёт вместе с высотой.</summary>
+        private Vector3 _zoomShift;
 
         private void HandleGalaxyZoomToCursor()
         {
-            // Блокируем скролл галактики колесиком, если курсор находится над UI
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            // Колесо над интерфейсом не зумит карту, но начатое движение доводится до конца
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            float scroll = overUi ? 0f : Input.GetAxis("Mouse ScrollWheel");
+
+            if (Mathf.Abs(scroll) > 0.001f && Camera.main != null)
             {
-                Vector3 p = transform.position;
-                p.y = Mathf.Lerp(p.y, _targetHeight, Time.deltaTime * zoomSmooth);
-                transform.position = p;
-                return;
+                float oldHeight = _targetHeight;
+                // Пропорциональный шаг: щелчок колеса — та же доля пути у самой карты и издалека
+                _targetHeight = Mathf.Clamp(_targetHeight * Mathf.Pow(1f - ZoomStepPerNotch, scroll * 10f), minHeight, maxHeight);
+
+                // Точка под курсором остаётся под курсором: копим сдвиг и проходим его вместе с высотой
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float enter))
+                {
+                    Vector3 shift = ray.GetPoint(enter) - (transform.position + _zoomShift);
+                    shift.y = 0f;
+                    float k = (oldHeight - _targetHeight) / Mathf.Max(1f, oldHeight);
+                    _zoomShift += shift * k * zoomToCursorStrength;
+                }
             }
 
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Abs(scroll) < 0.01f)
-            {
-                Vector3 p = transform.position;
-                p.y = Mathf.Lerp(p.y, _targetHeight, Time.deltaTime * zoomSmooth);
-                transform.position = p;
-                return;
-            }
-
-            if (Camera.main == null) return;
-
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Plane plane = new Plane(Vector3.up, Vector3.zero);
-            float enter = 0f;
-            plane.Raycast(ray, out enter);
-            Vector3 worldPoint = ray.GetPoint(enter);
-
-            float oldHeight = _targetHeight;
-            _targetHeight -= scroll * zoomSpeed * 10f;
-            _targetHeight = Mathf.Clamp(_targetHeight, minHeight, maxHeight);
-
-            float heightDelta = _targetHeight - oldHeight;
-            Vector3 shift = worldPoint - transform.position;
-            shift.y = 0f;
-            Vector3 move = shift * (heightDelta / Mathf.Max(1f, oldHeight)) * zoomToCursorStrength;
-
-            Vector3 newPos = transform.position + move;
-            newPos.y = Mathf.Lerp(transform.position.y, _targetHeight, Time.deltaTime * zoomSmooth);
-            newPos = ClampToBounds(newPos);
-            transform.position = newPos;
+            // Высота и сдвиг доводятся одной экспонентой по реальному времени — плавно и на паузе тоже
+            float t = 1f - Mathf.Exp(-ZoomGlide * Time.unscaledDeltaTime);
+            Vector3 p = transform.position;
+            Vector3 step = _zoomShift * t;
+            _zoomShift -= step;
+            if (_zoomShift.sqrMagnitude < 1e-4f) _zoomShift = Vector3.zero;
+            p += step;
+            p.y = Mathf.Lerp(p.y, _targetHeight, t);
+            transform.position = ClampToBounds(p);
         }
 
         private void HandleGalaxyRotation()
@@ -352,8 +452,12 @@ namespace StellarisClone.Cam
         public void FocusOn(Vector3 worldPos)
         {
             _focusStartPos = transform.position;
-            _focusTargetPos = new Vector3(worldPos.x, transform.position.y, worldPos.z - 25f);
-            _focusTargetPos = ClampToBounds(_focusTargetPos);
+            // Сдвигаем камеру так, чтобы точка оказалась в центре экрана (с учётом наклона и высоты)
+            Vector3 shift = worldPos - GroundCenter(transform.position);
+            shift.y = 0f;
+            _focusTargetPos = ClampToBounds(transform.position + shift);
+            _panVelocity = Vector3.zero;
+            _zoomShift = Vector3.zero;
             _focusTimer = 0f;
             _isFocusing = true;
         }
@@ -374,16 +478,44 @@ namespace StellarisClone.Cam
 
         // ==================== ВСПОМОГАТЕЛЬНОЕ ====================
 
+        /// <summary>Точка плоскости галактики (y = 0) в центре экрана при заданной позиции камеры.</summary>
+        private Vector3 GroundCenter(Vector3 camPos)
+        {
+            Vector3 f = transform.forward;
+            if (f.y > -0.05f) return new Vector3(camPos.x, 0f, camPos.z);
+            float t = -camPos.y / f.y;
+            return camPos + f * t;
+        }
+
+        /// <summary>Граница камеры — по реальному радиусу галактики (+ небольшой запас).</summary>
+        private void FitBoundsToGalaxy()
+        {
+            if (_boundsFromGalaxy) return;
+            var gen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            if (gen == null || gen.GalaxyRadius <= 1f) return;
+            galaxyBoundsRadius = gen.GalaxyRadius + 20f;
+            // Большая галактика целиком помещается на экран с самой дальней высоты
+            maxHeight = Mathf.Max(maxHeight, gen.GalaxyRadius * 1.5f);
+            _boundsFromGalaxy = true;
+        }
+
+        /// <summary>
+        /// Ограничение по краям галактики: держим в пределах радиуса не саму камеру,
+        /// а точку, на которую она смотрит, — так край карты можно рассмотреть при любом наклоне.
+        /// </summary>
         private Vector3 ClampToBounds(Vector3 pos)
         {
             if (!limitToBounds) return pos;
 
-            Vector2 flat = new Vector2(pos.x, pos.z);
+            Vector3 center = GroundCenter(pos);
+            Vector3 offset = pos - center;
+            Vector2 flat = new Vector2(center.x, center.z);
             if (flat.magnitude > galaxyBoundsRadius)
             {
                 flat = flat.normalized * galaxyBoundsRadius;
-                pos.x = flat.x;
-                pos.z = flat.y;
+                center.x = flat.x;
+                center.z = flat.y;
+                pos = center + offset;
             }
             return pos;
         }

@@ -97,11 +97,11 @@ namespace StellarisClone.Rendering
 
             // Стоимость
             float penalty = tm != null ? tm.GetYearPenalty(tech) : 1f;
-            int days = Mathf.RoundToInt(tech.BaseDays * penalty);
+            int days = tm != null ? tm.EstimateDays(tech) : -1;
 
             string penaltyNote = "";
             if (penalty > 1.01f)
-                penaltyNote = $"  <color=#FFAA88>· штраф за год ×{penalty:0.0}</color>";
+                penaltyNote = $"  <color=#FFAA88>· опережает время ×{penalty:0.0}</color>";
 
             int slotCount = tm != null ? tm.Slots.Count : 0;
             int freeSlots = 0;
@@ -116,7 +116,8 @@ namespace StellarisClone.Rendering
 
             _costText.text =
                 $"<color=#F2C747><b>СТОИМОСТЬ</b></color>\n" +
-                $"Время исследования: <b>{days} дн.</b>{penaltyNote}\n" +
+                $"Время исследования: <b>~{TechnologyManager.FormatDays(days)}</b>{penaltyNote}\n" +
+                $"<color=#8AA2A8>{tech.Cost:0} очков науки · наука {(tm != null ? tm.MonthlyResearchIncome : 0f):0.#}/мес</color>\n" +
                 $"{slotNote}";
         }
 
@@ -124,7 +125,7 @@ namespace StellarisClone.Rendering
         /// Ищет в тексте «+N%», «−N%», «+N» и «−N» и красит их зелёным / красным.
         /// Понимает как дефис «-», так и минус «−».
         /// </summary>
-        private static string ColorizeModifiers(string text)
+        public static string ColorizeModifiers(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
 
