@@ -9,7 +9,7 @@ namespace StellarisClone.Rendering
     /// Карточка правителя в левом верхнем углу экрана (слева от верхней панели и ряда режимов карты,
     /// на их общую высоту) вместо кнопки «Обзор империи»:
     /// живой портрет (моргание, дыхание, помехи — LeaderPortraitView), рамка цвета фракции,
-    /// которая медленно «дышит» и разгорается при наведении. Клик открывает обзор империи.
+    /// которая медленно «дышит» и разгорается при наведении — вместе с огнями и узорами портрета. Клик открывает обзор империи.
     /// Пока фракция не выбрана (или у неё нет портрета) — значок глобуса.
     /// </summary>
     public sealed class RulerBadge : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -19,6 +19,7 @@ namespace StellarisClone.Rendering
 
         private LiquidGlassEffect _fx;
         private RectTransform _portraitHost;
+        private LeaderPortraitView _portrait;
         private Image _fallbackIcon, _edge;
         private Text _name;
         private string _key;
@@ -92,7 +93,8 @@ namespace StellarisClone.Rendering
             _key = key;
 
             LGBuild.Clear(_portraitHost);
-            bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.75f) != null;
+            _portrait = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.75f);
+            bool ok = _portrait != null;
             _fallbackIcon.gameObject.SetActive(!ok);
 
             _accent = leader != null ? leader.Accent : f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
@@ -116,6 +118,7 @@ namespace StellarisClone.Rendering
             float a = Mathf.Lerp(0.35f + 0.2f * pulse, 0.95f, _hover);
             _fx?.SetRim(new Color(_accent.r, _accent.g, _accent.b, a));
             _edge.color = new Color(_accent.r, _accent.g, _accent.b, Mathf.Lerp(0.45f + 0.3f * pulse, 1f, _hover));
+            if (_portrait != null) _portrait.Glow = Mathf.SmoothStep(0f, 1f, _hover);   // огни и узоры портрета разгораются
         }
     }
 }

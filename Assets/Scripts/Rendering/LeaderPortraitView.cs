@@ -122,6 +122,10 @@ namespace StellarisClone.Rendering
         private static readonly int IdBlink = Shader.PropertyToID("_Blink");
         private static readonly int IdGlitch = Shader.PropertyToID("_Glitch");
         private static readonly int IdUvRect = Shader.PropertyToID("_UvRect");
+        private static readonly int IdGlow = Shader.PropertyToID("_Glow");
+
+        /// <summary>Подсветка огней и узоров портрета (0..1) — например, при наведении на карточку.</summary>
+        public float Glow { get; set; }
 
         /// <summary>
         /// Создать портрет на всю площадь родителя. zoom 1 — по ширине картинки (в полный рост),
@@ -257,6 +261,7 @@ namespace StellarisClone.Rendering
                 }
             }
             SetF(rm, IdGlitch, Mathf.Max(0f, glitch));
+            SetF(rm, IdGlow, Mathf.Clamp01(Glow));
         }
 
         private void SetF(Material rendering, int id, float v)

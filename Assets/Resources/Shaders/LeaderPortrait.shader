@@ -4,11 +4,11 @@
 //   • медленный наезд камеры и лёгкий параллакс фона относительно фигуры
 //   • дыхание: плечи и грудь чуть поднимаются, голова едва покачивается
 //   • моргание: веко из размытого тона кожи + линия ресниц (координаты глаз — из кода)
-//   • мерцание огней интерьера и контрового света (маска R из _FxTex)
+//   • мерцание огней интерьера и контрового света (маска R из _FxTex); при наведении они разгораются (_Glow)
 //   • едва заметная полоса развёртки «канала связи» и редкий сбой сигнала
 //
 // _FxTex: R — огни и контровой свет, G — силуэт фигуры, B — вес дыхания.
-// Параметры анимации выставляет LeaderPortraitView каждый кадр (_T, _Blink, _Glitch).
+// Параметры анимации выставляет LeaderPortraitView каждый кадр (_T, _Blink, _Glitch, _Glow).
 Shader "Astropolity/UI/LeaderPortrait"
 {
     Properties
@@ -29,6 +29,7 @@ Shader "Astropolity/UI/LeaderPortrait"
         _FadeLeft ("Fade left edge (0..1 of width)", Float) = 0
         _Fade ("Edge fade (left, right, bottom, top)", Vector) = (0,0,0,0)
         _Cutout ("Cut the figure out of its background (FX alpha)", Range(0,1)) = 0
+        _Glow ("Hover glow of the lights (FX R)", Range(0,1)) = 0
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -106,6 +107,7 @@ Shader "Astropolity/UI/LeaderPortrait"
             float4 _UvRect;
             float4 _Fade;
             float _Cutout;
+            float _Glow;
             static float2 s_dx, s_dy;   // градиенты uv — для выборок внутри ветвлений
             float4 _ClipRect;
 
@@ -129,6 +131,16 @@ Shader "Astropolity/UI/LeaderPortrait"
                 m.rgb = LinearToGammaSpace(m.rgb);
                 #endif
                 return m;
+            }
+
+            // Размытая маска огней (мип-уровень) — ореол вокруг светящихся деталей
+            float FxHalo(float2 uv)
+            {
+                float r = tex2Dlod(_FxTex, float4(uv, 0, 3.0)).r;
+                #ifndef UNITY_COLORSPACE_GAMMA
+                r = LinearToGammaSpace(float3(r, r, r)).r;
+                #endif
+                return r;
             }
 
             float3 Blur(float2 uv) { return tex2Dlod(_MainTex, float4(uv, 0, 4.0)).rgb; }
@@ -207,6 +219,16 @@ Shader "Astropolity/UI/LeaderPortrait"
                 float flicker = 0.08 * sin(t * 1.7) + 0.05 * sin(t * 5.3 + uv.y * 9.0) + 0.04 * sin(t * 13.1 + uv.x * 21.0);
                 col.rgb += col.rgb * lights * flicker * 2.0 * m;
                 col.rgb += _Accent.rgb * lights * 0.05 * (0.5 + 0.5 * sin(t * 0.8 + uv.y * 24.0)) * m;
+
+                // 6b. При наведении огни и узоры разгораются, вокруг них — мягкий ореол цвета акцента
+                if (_Glow > 0.001)
+                {
+                    float pulse = 0.85 + 0.15 * sin(t * 3.2);
+                    float g = _Glow * pulse;
+                    col.rgb += (col.rgb * 1.4 + _Accent.rgb * 0.5) * lights * g;
+                    col.rgb += _Accent.rgb * FxHalo(uv) * 0.45 * g;
+                    col.rgb *= 1.0 + 0.06 * _Glow;
+                }
 
                 // 7. Еле заметная полоса развёртки канала связи
                 float sweep = frac(uv.y * 0.5 - t * 0.035);
