@@ -152,6 +152,9 @@ namespace StellarisClone.Core
                 _playerVersion++;
                 OnPlayerChanged?.Invoke();
             }
+
+            // Кого стороны впервые увидели — с теми знакомятся (первый контакт)
+            Contacts.DetectFrom(fresh);
         }
 
         private static void Spread(HashSet<int> set, int from, int jumps)

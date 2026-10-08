@@ -133,6 +133,7 @@ namespace StellarisClone.Core
                 p.WearA = Mathf.Max(0f, p.WearA - 5f);
                 p.WearB = Mathf.Max(0f, p.WearB - 5f);
                 if (p.TruceDays > 0 || p.CooldownDays > 0) continue;
+                if (!Contacts.Met(a.OwnerId, b.OwnerId)) continue;   // незнакомцы не воюют
                 if (EmpireStats.SharedBorderCount(a.OwnerId, b.OwnerId) == 0) continue;
 
                 float opinion = Opinion(a, b);
@@ -166,8 +167,10 @@ namespace StellarisClone.Core
             p.AtWar = true;
             p.WarMonths = 0;
             p.WearA = p.WearB = 0f;
-            NotificationCenter.Show("Война соседей", $"{attacker.AIName} объявляет войну империи {defender.AIName}",
-                NotificationCenter.Kind.Warning, 8f);
+            if (Contacts.PlayerMet(attacker.OwnerId) || Contacts.PlayerMet(defender.OwnerId))
+                NotificationCenter.Show("Война соседей",
+                    $"{Contacts.NameForPlayer(attacker.OwnerId)} объявляет войну: {Contacts.NameForPlayer(defender.OwnerId)}",
+                    NotificationCenter.Kind.Warning, 8f);
             AIEmpireManager.NotifyDiplomacyChanged();
         }
 
@@ -178,8 +181,10 @@ namespace StellarisClone.Core
             p.CooldownDays = 2 * 360;
             p.Grudge = Mathf.Max(-40f, p.Grudge - 15f);
             SiegeManager.Instance?.ClearSieges(a.OwnerId, b.OwnerId);
-            NotificationCenter.Show("Мир между соседями", $"{a.AIName} и {b.AIName} заключили мир. Перемирие — 3 года",
-                NotificationCenter.Kind.Info, 7f);
+            if (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId))
+                NotificationCenter.Show("Мир между соседями",
+                    $"{Contacts.NameForPlayer(a.OwnerId)} и {Contacts.NameForPlayer(b.OwnerId)} заключили мир. Перемирие — 3 года",
+                    NotificationCenter.Kind.Info, 7f);
             AIEmpireManager.NotifyDiplomacyChanged();
         }
 

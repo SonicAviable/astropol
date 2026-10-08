@@ -82,6 +82,21 @@ namespace StellarisClone.Rendering
         {
             if (owner > 0) _owner = owner;
             if (Current == null) return;
+            // До первого контакта империи в дипломатии нет — открываем первую знакомую
+            if (!Contacts.PlayerMet(Current.OwnerId))
+            {
+                int known = -1;
+                foreach (var a in AIEmpireManager.All) if (Contacts.PlayerMet(a.OwnerId)) { known = a.OwnerId; break; }
+                if (known < 0)
+                {
+                    SFXManager.Play(Sfx.UiDenied);
+                    NotificationCenter.Show("Контактов нет",
+                        "Мы ещё не встретили другие цивилизации. Исследуйте галактику — контакт случится, когда наши корабли или границы увидят чужую империю",
+                        NotificationCenter.Kind.Info, 6f);
+                    return;
+                }
+                _owner = known;
+            }
             _owner = Current.OwnerId;
             if (_host == null)
             {
@@ -102,6 +117,16 @@ namespace StellarisClone.Rendering
             }
             _backdrop.SetActive(true);
             SwitchTo(_owner);
+        }
+
+        /// <summary>Первый контакт: правитель выходит на связь с особым приветствием.</summary>
+        public void OpenFirstContact(int owner)
+        {
+            Open(owner);
+            if (!IsOpen || _owner != owner) return;
+            var ai = Current;
+            if (ai != null && ai.PendingDeal == null)
+                Say(DiplomacyLines.Get(LeaderPortraits.ForFaction(ai.Faction), DiplomacyLines.Kind.FirstContact));
         }
 
         public void Close()
@@ -515,6 +540,12 @@ namespace StellarisClone.Rendering
             foreach (var other in AIEmpireManager.All)
             {
                 if (other == ai || other.IsEliminated || ai.IsEliminated) continue;
+                if (!Contacts.PlayerMet(other.OwnerId)) continue;   // о незнакомых нам империях не рассказываем
+                if (!Contacts.Met(ai.OwnerId, other.OwnerId))
+                {
+                    InfoLine(ref y, LGIcon.Diplomacy, Muted, $"С <color={LGBuild.Hex(other.MapColor)}>{other.AIName}</color>: не знакомы");
+                    continue;
+                }
                 bool war = AIRelations.AtWar(ai.OwnerId, other.OwnerId);
                 int truce = AIRelations.TruceDays(ai.OwnerId, other.OwnerId);
                 string s = war ? "воюют" : truce > 0 ? "перемирие" : "мир";
@@ -652,7 +683,8 @@ namespace StellarisClone.Rendering
         private void RefreshTabs()
         {
             LGBuild.Clear(_tabs);
-            var all = AIEmpireManager.All;
+            var all = new List<AIEmpireManager>();
+            foreach (var a in AIEmpireManager.All) if (Contacts.PlayerMet(a.OwnerId)) all.Add(a);
             if (all.Count <= 1) return;
             float x = 0f;
             for (int i = all.Count - 1; i >= 0; i--)

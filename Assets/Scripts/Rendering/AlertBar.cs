@@ -395,7 +395,7 @@ namespace StellarisClone.Rendering
                 // 8. Дипломатические предложения (от каждой империи ИИ — своё)
                 foreach (var ai in AIEmpireManager.All)
                 {
-                    if (ai.PendingOffer == AIEmpireManager.OfferKind.None) continue;
+                    if (ai.PendingOffer == AIEmpireManager.OfferKind.None || !Contacts.PlayerMet(ai.OwnerId)) continue;
                     var kind = ai.PendingOffer;
                     int owner = ai.OwnerId;
                     var (icon, color, title) = kind switch

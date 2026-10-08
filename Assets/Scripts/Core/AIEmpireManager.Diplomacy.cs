@@ -257,6 +257,13 @@ namespace StellarisClone.Core
                 if (Mathf.Abs(v) < 0.5f) _memory.Remove(k);
                 else _memory[k] = v;
             }
+            // Незнакомы с игроком — никаких переговоров, требований и войн (как до первого контакта в Civilization)
+            if (!Contacts.PlayerMet(OwnerId))
+            {
+                if (PendingOffer != OfferKind.None) { PendingOffer = OfferKind.None; PendingDeal = null; }
+                return;
+            }
+
             // Годы мира под пактом копят доверие
             if (HasPact && !AtWar && Smart >= 1) AddMemory("trust", 0.7f);
 

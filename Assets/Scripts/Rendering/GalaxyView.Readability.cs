@@ -112,7 +112,7 @@ namespace StellarisClone.Rendering
         {
             int key = ai.OwnerId;
             _empireLabels.TryGetValue(key, out var labelObj);
-            if (aiSystems == null || aiSystems.Count == 0)
+            if (aiSystems == null || aiSystems.Count == 0 || !Contacts.PlayerMet(ai.OwnerId))
             {
                 if (labelObj != null) labelObj.SetActive(false);
                 return;

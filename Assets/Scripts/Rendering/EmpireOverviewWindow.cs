@@ -847,8 +847,16 @@ namespace StellarisClone.Rendering
 
         private void BuildRival()
         {
-            if (AIEmpireManager.All.Count == 0) { Empty("Соперники пока не обнаружены."); return; }
-            foreach (var ai in AIEmpireManager.All) BuildRivalCard(ai);
+            int met = 0;
+            foreach (var ai in AIEmpireManager.All)
+                if (Contacts.PlayerMet(ai.OwnerId)) { BuildRivalCard(ai); met++; }
+            int unknown = Contacts.UnmetByPlayer;
+            if (met == 0)
+                Empty("Других цивилизаций мы пока не встречали.\n\nОтправляйте научные корабли в неизведанные системы: " +
+                      "контакт случится, как только наши корабли или границы увидят чужую империю." +
+                      (unknown > 0 ? $"\n\nПо данным дальней разведки в галактике есть ещё цивилизаций: {unknown}." : ""));
+            else if (unknown > 0)
+                Empty($"Ещё не встречено цивилизаций: {unknown}. Продолжайте разведку.");
         }
 
         private void BuildRivalCard(AIEmpireManager ai)

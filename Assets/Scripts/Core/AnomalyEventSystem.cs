@@ -38,6 +38,8 @@ namespace StellarisClone.Core
             if (GetComponent<AutoExplore>() == null) gameObject.AddComponent<AutoExplore>();
             if (GetComponent<StarbaseVisuals>() == null) gameObject.AddComponent<StarbaseVisuals>();
             Vision.Reset();
+            Contacts.Reset();
+            if (GetComponent<ContactGreeter>() == null) gameObject.AddComponent<ContactGreeter>();
             if (GetComponent<VisionTicker>() == null) gameObject.AddComponent<VisionTicker>();
         }
 

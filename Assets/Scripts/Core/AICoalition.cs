@@ -62,7 +62,8 @@ namespace StellarisClone.Core
         public static bool AreAllies(int a, int b) => a != b && IsMember(a) && IsMember(b);
 
         /// <summary>«вас» или «империи Имя» — для фразы «коалиция против …».</summary>
-        public static string TargetPhrase => TargetOwner == 0 ? "вас" : "империи " + AIEmpireManager.NameOf(TargetOwner);
+        public static string TargetPhrase => TargetOwner == 0 ? "вас"
+            : Contacts.PlayerMet(TargetOwner) ? "империи " + AIEmpireManager.NameOf(TargetOwner) : "неизвестной цивилизации";
 
         public static void Reset()
         {
@@ -179,6 +180,7 @@ namespace StellarisClone.Core
         private static bool WantsIn(AIEmpireManager ai)
         {
             if (ai.IsEliminated || ai.OwnerId == TargetOwner) return false;
+            if (!Contacts.Met(ai.OwnerId, TargetOwner)) return false;   // против незнакомца союз не собирают
             if (TargetOwner == 0 && ai.HasPact) return false;
             if (PlayerMember && ai.AtWar) return false;
             return OpinionToTarget(ai) <= JoinThreshold(ai) && (!PlayerOrganized || ai.Opinion > -25f);

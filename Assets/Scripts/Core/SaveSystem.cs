@@ -62,6 +62,8 @@ namespace StellarisClone.Core
         public List<AIRelations.PairState> AIPairs = new List<AIRelations.PairState>();
         public CoalitionSave Coalition;
         public List<ExploredSave> Explored = new List<ExploredSave>();
+        /// <summary>Знакомства цивилизаций (null — старое сохранение: все знакомы).</summary>
+        public List<long> Contacts;
         public List<SiegeSave> Sieges = new List<SiegeSave>();
         public List<ConstructionJob> Jobs = new List<ConstructionJob>();
         public List<StarbaseSave> Starbases = new List<StarbaseSave>();
@@ -420,6 +422,7 @@ namespace StellarisClone.Core
             s.AIPairs = AIRelations.Capture();
             s.Coalition = AICoalition.Capture();
             s.Explored = Vision.Capture();
+            s.Contacts = global::StellarisClone.Core.Contacts.Capture();
             if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
             if (ConstructionManager.Instance != null) s.Jobs = ConstructionManager.Instance.CaptureState();
             if (CombatManager.Instance != null) s.Starbases = CombatManager.Instance.CaptureStarbases();
@@ -758,6 +761,7 @@ namespace StellarisClone.Core
             AIRelations.Restore(s.AIPairs);
             AICoalition.Restore(s.Coalition);
             Vision.Restore(s.Explored);
+            global::StellarisClone.Core.Contacts.Restore(s.Contacts);
             SiegeManager.Instance?.RestoreState(s.Sieges);
             ConstructionManager.Instance?.RestoreState(s.Jobs);
             CombatManager.Instance?.RestoreStarbases(s.Starbases);
