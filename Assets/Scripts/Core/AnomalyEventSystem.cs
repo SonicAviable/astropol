@@ -36,6 +36,7 @@ namespace StellarisClone.Core
             EmpireEffects.Reset();
             if (GetComponent<ThreatManager>() == null) gameObject.AddComponent<ThreatManager>();
             if (GetComponent<AutoExplore>() == null) gameObject.AddComponent<AutoExplore>();
+            if (GetComponent<StarbaseVisuals>() == null) gameObject.AddComponent<StarbaseVisuals>();
             Vision.Reset();
             if (GetComponent<VisionTicker>() == null) gameObject.AddComponent<VisionTicker>();
         }

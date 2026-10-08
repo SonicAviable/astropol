@@ -165,6 +165,7 @@ namespace StellarisClone.Rendering
             }
 
             AddAsteroids(system);
+            StarbaseVisuals.SpawnInSystemView(_systemContainer.transform, system);
         }
 
         /// <summary>

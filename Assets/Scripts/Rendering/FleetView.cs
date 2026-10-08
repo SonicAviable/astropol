@@ -938,11 +938,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Строительная площадка станции: своя точка у каждой системы, недалеко от звезды.</summary>
-        private static Vector3 ConstructionSite(Vector3 star)
-        {
-            float a = Mathf.Repeat(star.x * 0.37f + star.z * 0.61f, 6.2832f);
-            return star + new Vector3(Mathf.Cos(a) * 2.7f, 0.35f, Mathf.Sin(a) * 2.7f);
-        }
+        private static Vector3 ConstructionSite(Vector3 star) => StarbaseVisuals.SiteFor(star);
 
         /// <summary>Монтаж: корабль висит рядом с площадкой носом к ней и понемногу подруливает, удерживая позицию.</summary>
         private void ConstructionHold(Vector3 star, Vector3 site)

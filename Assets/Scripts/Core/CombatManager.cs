@@ -203,7 +203,7 @@ namespace StellarisClone.Core
             public bool Armed => Fleet != null ? Fleet.Data.Type == FleetType.Military && Fleet.Data.Damage > 0f : !Base.Disabled;
             public bool Alive => Fleet != null ? Fleet.Data != null && !Fleet.Data.Destroyed : !Base.Disabled;
             public int Key => Fleet != null ? Fleet.Data.Id : -1000 - Base.SystemId;
-            public Vector3 Position(GalaxyGenerator g) => Fleet != null ? Fleet.transform.position : g.Systems[Base.SystemId].Position + Vector3.up * 1.2f;
+            public Vector3 Position(GalaxyGenerator g) => Fleet != null ? Fleet.transform.position : StarbaseVisuals.SiteFor(g.Systems[Base.SystemId].Position) + Vector3.up * 0.3f;
         }
 
         private void CombatRound(float dt)
@@ -463,7 +463,7 @@ namespace StellarisClone.Core
             {
                 if (_viewById.TryGetValue(st.TargetKey, out var tv) && tv != null) aim = tv.transform.position;
             }
-            else if (st.TargetKey != int.MinValue) aim += Vector3.up * 1.2f;   // звёздная база
+            else if (st.TargetKey != int.MinValue) aim = StarbaseVisuals.SiteFor(aim) + Vector3.up * 0.3f;   // звёздная база
             return true;
         }
 
@@ -1049,7 +1049,7 @@ namespace StellarisClone.Core
             sb.Shields = 0f;
             var sys = _generator.Systems[sb.SystemId];
             if (ShowFx(sb.SystemId, sys.Position))
-                CombatFx.Instance.ShipDestroyed(sys.Position + Vector3.up * 1.2f, 1.9f, FleetIndicator.OwnerColor(sys.OwnerId));
+                CombatFx.Instance.ShipDestroyed(StarbaseVisuals.SiteFor(sys.Position) + Vector3.up * 0.3f, 1.9f, FleetIndicator.OwnerColor(sys.OwnerId));
             SFXManager.PlayAt(Sfx.StarbaseDown, sys.Position, 1f);
             if (sys.OwnerId == 0)
                 NotificationCenter.Show("Звёздная база выведена из строя", $"{sys.Name}: враг может начать осаду", NotificationCenter.Kind.Danger, 7f);
