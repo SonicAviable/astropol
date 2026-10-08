@@ -163,6 +163,52 @@ namespace StellarisClone.Rendering
                 if (planet.HasMiningStation)
                     SpawnStationVisual(pInstance.PlanetTransform, planet);
             }
+
+            AddAsteroids(system);
+        }
+
+        /// <summary>
+        /// Астероиды системы (одинаковые при каждом входе — зависят от номера системы):
+        /// пояс в самом широком промежутке между орбитами или за последней планетой,
+        /// у газовых гигантов — «троянцы», два скопления на ±60° по орбите, движущиеся вместе с планетой.
+        /// </summary>
+        private void AddAsteroids(StarSystem system)
+        {
+            if (!AsteroidAssets.Ready || _systemContainer == null) return;
+            var rng = new System.Random(system.Id * 7919 + 131);
+
+            if (rng.NextDouble() < 0.6)
+            {
+                var radii = new List<float>();
+                foreach (var p in system.Planets) radii.Add(p.OrbitRadius);
+                radii.Sort();
+                float inner = 0f, outer = 0f, bestGap = 0f;
+                for (int i = 0; i + 1 < radii.Count; i++)
+                {
+                    float gap = radii[i + 1] - radii[i];
+                    if (gap > bestGap) { bestGap = gap; inner = radii[i] + 2.4f; outer = radii[i + 1] - 2.4f; }
+                }
+                if (bestGap < 7f || rng.NextDouble() < 0.35)
+                {
+                    float last = radii.Count > 0 ? radii[radii.Count - 1] : 10f;
+                    inner = last + 4f;
+                    outer = last + 4f + 4f + (float)rng.NextDouble() * 4f;
+                }
+                int count = Mathf.Clamp(Mathf.RoundToInt((outer + inner) * 0.5f * (outer - inner) * 2.2f), 220, 700);
+                AsteroidField.CreateBelt(_systemContainer.transform, inner, outer, count, rng.Next(), 0.10f, 0.55f, 0.9f);
+            }
+
+            foreach (var inst in _activePlanets)
+            {
+                if (inst?.Data == null || inst.Pivot == null || inst.Data.Type != PlanetType.GasGiant) continue;
+                if (rng.NextDouble() > 0.5) continue;
+                float r = inst.Data.OrbitRadius;
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    var at = Quaternion.Euler(0f, 60f * side, 0f) * new Vector3(r, 0f, 0f);
+                    AsteroidField.CreateCluster(inst.Pivot, at, 1.8f, 16 + rng.Next(10), rng.Next(), 0.08f, 0.32f, 0.35f);
+                }
+            }
         }
 
         /// <summary>

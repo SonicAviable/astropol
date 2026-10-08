@@ -6,7 +6,7 @@ Shader "Stellaris/OrganicBorders"
     //  • Между двумя империями граница проходит посередине, у каждой стороны — своя цветная кромка.
     //  • Кромка постоянной толщины в пикселях экрана (fwidth), заливка полупрозрачная
     //    и светлее у края — как «подсвеченная» граница в Stellaris.
-    //  • До 192 точек (xy — позиция X/Z, z — владелец: 0 игрок, 1 и 2 — империи ИИ): системы плюс промежуточные
+    //  • До 384 точек (xy — позиция X/Z, z — владелец: 0 игрок, 1–3 — империи ИИ): системы плюс промежуточные
     //    точки вдоль своих коридоров, чтобы территория не рвалась на длинных переходах.
     Properties
     {
@@ -52,7 +52,7 @@ Shader "Stellaris/OrganicBorders"
             float _LineAlpha;
 
             float _SysCount;
-            float4 _Sys[192];
+            float4 _Sys[384];
 
             v2f vert (appdata_t v)
             {
@@ -76,7 +76,7 @@ Shader "Stellaris/OrganicBorders"
                 int n = (int)_SysCount;
 
                 [loop]
-                for (int k = 0; k < 192; k++)
+                for (int k = 0; k < 384; k++)
                 {
                     if (k >= n) break;
                     float4 s = _Sys[k];

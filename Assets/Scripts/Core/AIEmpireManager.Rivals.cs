@@ -32,14 +32,25 @@ namespace StellarisClone.Core
             foreach (var o in Alive) if (o != this) yield return o.OwnerId;
         }
 
+        /// <summary>Последняя увиденная сила врагов в системах, которых ИИ сейчас не видит (туман войны).</summary>
+        private readonly Dictionary<int, float> _lastSeenEnemy = new Dictionary<int, float>();
+
+        /// <summary>
+        /// Сила вражеских флотов в системе. Под туманом войны ИИ знает её, только пока видит систему;
+        /// иначе опирается на то, что видел там в последний раз.
+        /// </summary>
         private float EnemyFleetPowerIn(int systemId)
         {
             var fm = FleetManager.Instance;
             if (fm == null) return 0f;
+            if (!Vision.IsVisible(OwnerId, systemId))
+                return _lastSeenEnemy.TryGetValue(systemId, out float known) ? known : 0f;
             float p = 0f;
             foreach (int o in OtherEmpires())
                 if (IsEnemy(o)) p += fm.GetMilitaryPowerInSystem(o, systemId);
             foreach (int o in Threats.Owners) p += fm.GetMilitaryPowerInSystem(o, systemId);
+            if (p > 0f) _lastSeenEnemy[systemId] = p;
+            else _lastSeenEnemy.Remove(systemId);
             return p;
         }
 

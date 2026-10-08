@@ -58,8 +58,7 @@ namespace StellarisClone.Core
                 if (d == null || d.Destroyed || d.Type != FleetType.Military || d.OwnerId == OwnerId) continue;
                 if (d.State == FleetState.InHyperlane || Threats.IsThreat(d.OwnerId)) continue;
                 if (!IsEnemy(d.OwnerId) && d.OwnerId != focus) continue;
-                var s = EmpireStats.GetSystem(d.CurrentSystemId);
-                if (s == null || !(s.OwnerId == OwnerId || s.IsSurveyedBy(OwnerId))) continue;
+                if (!Vision.CanSeeFleet(OwnerId, d)) continue;           // разведданные — только о видимых кораблях
                 seen.Add(d);
             }
             _intelShips = seen.Count;
@@ -132,6 +131,7 @@ namespace StellarisClone.Core
                 if (d == null || d.Destroyed || d.Type != FleetType.Military) continue;
                 if (d.State == FleetState.InHyperlane || d.CurrentSystemId != sysId) continue;
                 if (enemies ? !IsEnemy(d.OwnerId) : d.OwnerId != OwnerId) continue;
+                if (enemies && !Vision.CanSeeFleet(OwnerId, d)) continue;
                 list.Add(d);
             }
             return list;
@@ -161,6 +161,7 @@ namespace StellarisClone.Core
                 var d = f?.Data;
                 if (d == null || d.Destroyed || d.Type != FleetType.Military || !IsEnemy(d.OwnerId)) continue;
                 if (d.State != FleetState.InHyperlane && d.Path.Count == 0) continue;
+                if (!Vision.CanSeeFleet(OwnerId, d)) continue;           // перехватить можно только замеченный флот
                 int dest = FinalDestination(d);
                 var s = EmpireStats.GetSystem(dest);
                 if (s == null || s.OwnerId != OwnerId) continue;

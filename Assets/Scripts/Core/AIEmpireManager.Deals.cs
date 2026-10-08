@@ -435,6 +435,9 @@ namespace StellarisClone.Core
                 bool p = s.IsSurveyedBy(0), me = s.IsSurveyedBy(OwnerId);
                 if (me && !p) { s.MarkSurveyedBy(0); toPlayer++; }
                 if (p && !me) { s.MarkSurveyedBy(OwnerId); toAI++; }
+                // Карты открывают и туман войны: всё, что знала одна сторона, теперь знает и другая
+                if (Vision.IsExplored(OwnerId, s.Id)) Vision.MarkExplored(0, s.Id);
+                if (Vision.IsExplored(0, s.Id)) Vision.MarkExplored(OwnerId, s.Id);
             }
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             NotificationCenter.Show("Обмен картами", $"Получены данные о {toPlayer} сист., передано {toAI}", NotificationCenter.Kind.Info, 6f);

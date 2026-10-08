@@ -18,10 +18,11 @@ namespace StellarisClone.Core
         public static readonly string[] DifficultyNames = { "Лёгкая", "Нормальная", "Сложная" };
         public static readonly string[] ShapeNames = { "Эллипс", "Спираль · 2 рукава", "Спираль · 4 рукава", "Кольцо" };
 
-        public int StarCount => GalaxySize == 0 ? 50 : GalaxySize == 2 ? 120 : 80;
-        public float Radius => GalaxySize == 0 ? 120f : GalaxySize == 2 ? 178f : 160f;
+        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя
+        public int StarCount => GalaxySize == 0 ? 85 : GalaxySize == 2 ? 230 : 150;
+        public float Radius => GalaxySize == 0 ? 158f : GalaxySize == 2 ? 248f : 218f;
         public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
-        public int DominationTarget => GalaxySize == 0 ? 25 : GalaxySize == 2 ? 60 : 40;
+        public int DominationTarget => GalaxySize == 0 ? 40 : GalaxySize == 2 ? 110 : 72;
 
         /// <summary>Множитель доходов ИИ.</summary>
         public float AIIncome => Difficulty == 0 ? 0.7f : Difficulty == 2 ? 1.5f : 1f;

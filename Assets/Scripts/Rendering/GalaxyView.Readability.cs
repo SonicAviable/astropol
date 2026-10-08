@@ -37,7 +37,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Игрок знает систему: изучил её сам или владеет ею.</summary>
-        public static bool IsKnownToPlayer(StarSystem s) => s != null && (s.IsSurveyed || s.OwnerId == 0);
+        public static bool IsKnownToPlayer(StarSystem s) => s != null && Vision.PlayerKnows(s.Id) && (s.IsSurveyed || s.OwnerId == 0);
 
         private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
 
@@ -204,7 +204,7 @@ namespace StellarisClone.Rendering
             {
                 var s = m.Sys;
                 MarkerKind kind = MarkerKind.None;
-                if (s.OwnerId >= 0 && s.HasStarbase)
+                if (s.OwnerId >= 0 && s.HasStarbase && (s.OwnerId == 0 || Vision.PlayerKnows(s.Id)))
                 {
                     bool colony = false;
                     if (s.Planets != null)
@@ -242,6 +242,8 @@ namespace StellarisClone.Rendering
             float dt = Time.unscaledDeltaTime;
             UpdateBackdropZoom(cam);
             UpdateMiniSystems(cam);
+            UpdateAsteroidFields(cam);
+            UpdateFog();
 
             // Флоты игрока — раз в 0,25 с
             _fleetScanTimer -= dt;

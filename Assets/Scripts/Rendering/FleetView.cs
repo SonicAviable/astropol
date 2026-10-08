@@ -591,8 +591,45 @@ namespace StellarisClone.Rendering
             FleetManager.Instance?.AdvanceQueue(this);
         }
 
+        // Туман войны: чужой флот вне видимости игрока целиком уходит на невидимый слой, его огни гаснут
+        private bool _fogHidden;
+        private Dictionary<GameObject, int> _fogLayers;
+        private Dictionary<Light, int> _fogLights;
+
+        private void ApplyFogVisibility()
+        {
+            bool hide = Data != null && Data.OwnerId != 0 && !Vision.CanSeeFleet(0, Data);
+            if (hide == _fogHidden) return;
+            _fogHidden = hide;
+            if (hide)
+            {
+                _fogLayers = new Dictionary<GameObject, int>();
+                foreach (var t in GetComponentsInChildren<Transform>(true))
+                {
+                    _fogLayers[t.gameObject] = t.gameObject.layer;
+                    t.gameObject.layer = Vision.HiddenLayer;
+                }
+                _fogLights = new Dictionary<Light, int>();
+                foreach (var l in GetComponentsInChildren<Light>(true))
+                {
+                    _fogLights[l] = l.cullingMask;
+                    l.cullingMask = 0;
+                }
+            }
+            else
+            {
+                if (_fogLayers != null)
+                    foreach (var kv in _fogLayers) if (kv.Key != null) kv.Key.layer = kv.Value;
+                if (_fogLights != null)
+                    foreach (var kv in _fogLights) if (kv.Key != null) kv.Key.cullingMask = kv.Value;
+                _fogLayers = null;
+                _fogLights = null;
+            }
+        }
+
         private void Update()
         {
+            ApplyFogVisibility();
             _animTime += Time.deltaTime;
             _visual?.Tick(_animTime);
 

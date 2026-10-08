@@ -250,7 +250,12 @@ public static void ShowGlobal()
 
             foreach (var sys in _gen.Systems)
                 if (_dots.TryGetValue(sys.Id, out var img))
-                    img.color = GetColorForSystem(sys);
+                {
+                    // Туман войны: неисследованных систем на миникарте нет
+                    bool known = Vision.PlayerKnows(sys.Id);
+                    if (img.enabled != known) img.enabled = known;
+                    if (known) img.color = GetColorForSystem(sys);
+                }
 
             Vector3 camPos = _cam.transform.position;
             float half = (mapSize * 0.5f) - 28f;

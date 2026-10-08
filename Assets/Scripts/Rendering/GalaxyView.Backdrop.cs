@@ -172,6 +172,7 @@ namespace StellarisClone.Rendering
             BuildDustStars(R, rng);
             BuildNebulae(R, rng);
             BuildGalaxyCore(R);
+            BuildAsteroidFields(R, rng);
         }
 
         // ==================== ЯДРО ГАЛАКТИКИ ====================

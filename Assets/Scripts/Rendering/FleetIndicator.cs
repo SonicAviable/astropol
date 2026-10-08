@@ -266,11 +266,14 @@ namespace StellarisClone.Rendering
                 ind.Members.Clear();
                 ind.Members.Add(ind._fleet);
                 ind.IsLeader = true;
+                // Туман войны: значок чужого флота вне видимости не показывается и ни с кем не сливается
+                if (!Vision.CanSeeFleet(0, ind._fleet.Data)) { ind.IsLeader = false; ind.Members.Clear(); }
             }
             foreach (var ind in All)
             {
                 var d = ind._fleet.Data;
                 if (d == null || d.Destroyed || d.State == FleetState.InHyperlane) continue;
+                if (!Vision.CanSeeFleet(0, d)) continue;
                 long key = ((long)d.CurrentSystemId << 16) | ((long)(d.OwnerId + 8) << 4) | (long)d.Type;
                 if (!groups.TryGetValue(key, out var leader)) { groups[key] = ind; continue; }
                 // Лидер — корабль с меньшим Id (значок не «прыгает» между кораблями)

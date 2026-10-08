@@ -613,8 +613,9 @@ namespace StellarisClone.Core
             var dist = new Dictionary<int, int>();
             var systems = EmpireStats.Systems;
             var q = new Queue<int>();
+            // Туман войны: ИИ знает только те чужие системы, которые исследовал
             foreach (var s in systems)
-                if (s.OwnerId == owner) { dist[s.Id] = 0; q.Enqueue(s.Id); }
+                if (s.OwnerId == owner && (owner == OwnerId || Vision.IsExplored(OwnerId, s.Id))) { dist[s.Id] = 0; q.Enqueue(s.Id); }
             while (q.Count > 0)
             {
                 int cur = q.Dequeue();

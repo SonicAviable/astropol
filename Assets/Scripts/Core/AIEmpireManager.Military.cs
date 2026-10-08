@@ -242,9 +242,10 @@ namespace StellarisClone.Core
             foreach (var s in EmpireStats.Systems)
             {
                 if (!IsEnemy(s.OwnerId) || !s.HasStarbase) continue;
+                if (!Vision.IsExplored(OwnerId, s.Id)) continue;          // туман войны: о неисследованном ИИ не знает
                 if (!fromRally.TryGetValue(s.Id, out int jumps)) continue;
-                // Оборона = флот владельца системы + её звёздная база
-                float defense = SidePower(s.OwnerId, s.Id);
+                // Оборона = известная сила флотов в системе (видимая или последняя увиденная) + звёздная база
+                float defense = EnemyFleetPowerIn(s.Id) + (CombatManager.Instance != null ? CombatManager.Instance.StarbasePower(s.Id) : 0f);
                 float edgeArmy = armyPower * MatchupVs(myData, s.Id);
                 if (defense > edgeArmy * 0.8f) continue;
 

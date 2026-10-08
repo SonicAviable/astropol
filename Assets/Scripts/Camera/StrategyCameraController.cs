@@ -495,6 +495,8 @@ namespace StellarisClone.Cam
             var gen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
             if (gen == null || gen.GalaxyRadius <= 1f) return;
             galaxyBoundsRadius = gen.GalaxyRadius + 20f;
+            // Большая галактика целиком помещается на экран с самой дальней высоты
+            maxHeight = Mathf.Max(maxHeight, gen.GalaxyRadius * 1.5f);
             _boundsFromGalaxy = true;
         }
 

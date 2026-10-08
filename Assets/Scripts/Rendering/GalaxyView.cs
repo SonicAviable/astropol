@@ -310,7 +310,7 @@ namespace StellarisClone.Rendering
             {
                 if (s.OwnerId == 0 && s.HasStarbase)
                     playerSystems.Add(s);
-                else if (s.OwnerId > 0 && s.HasStarbase)
+                else if (s.OwnerId > 0 && s.HasStarbase && FogAllows(s))
                 {
                     enemySystems.Add(s);
                     if (!byOwner.TryGetValue(s.OwnerId, out var l)) byOwner[s.OwnerId] = l = new List<StarSystem>();
@@ -329,7 +329,7 @@ namespace StellarisClone.Rendering
             // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1–3 — империи ИИ).
             // Вдоль коридоров между своими системами добавляем промежуточные точки —
             // территория не рвётся на длинных переходах (как в Stellaris).
-            const int MaxSys = 192;
+            const int MaxSys = 384;
             var sys = new Vector4[MaxSys];
             int count = 0;
             foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
@@ -339,6 +339,7 @@ namespace StellarisClone.Rendering
                 var a = _generator.Systems[lane.SystemA];
                 var b = _generator.Systems[lane.SystemB];
                 if (!a.HasStarbase || !b.HasStarbase || a.OwnerId < 0 || a.OwnerId != b.OwnerId) continue;
+                if (!FogAllows(a) || !FogAllows(b)) continue;
                 float owner = Mathf.Min(3, a.OwnerId);
                 int steps = Mathf.FloorToInt(Vector3.Distance(a.Position, b.Position) / (_claimRadius * 0.9f));
                 for (int k = 1; k <= steps && count < MaxSys; k++)
@@ -721,6 +722,10 @@ namespace StellarisClone.Rendering
             if (_nebulaRoot != null) _nebulaRoot.SetActive(!isolate);
             if (_coreRoot != null) _coreRoot.SetActive(!isolate);
             if (_miniRoot != null) _miniRoot.SetActive(!isolate);
+            if (_asteroidRoot != null) _asteroidRoot.SetActive(!isolate);
+            _isolated = isolate;
+            _isolatedId = activeSystemId;
+            if (Vision.Active) ApplyFog();     // туман поверх изоляции: неисследованное остаётся скрытым
             ApplySkyMood(isolate);
         }
 
