@@ -11,6 +11,7 @@ namespace StellarisClone.Rendering
     /// Панель выделенного флота внизу экрана: имя, тип, состояние, прочность, сила, маршрут
     /// и кнопки «Стоп», «Следующая цель», «Очистить очередь», «Камера», «Снять выделение».
     /// При мультивыделении — «Выделено: N флотов», состав, суммарная сила и средняя прочность.
+    /// Для научных кораблей — переключатель авторазведки (панель расширяется под него).
     /// </summary>
     public class FleetCommandHUD : MonoBehaviour
     {
@@ -21,7 +22,11 @@ namespace StellarisClone.Rendering
         private LeaderThumb _leaderFace;
         private Text _title, _subtitle, _hpText, _route, _power;
         private RectTransform _hpBar;
-        private Button _btnStop, _btnNext, _btnClear;
+        private Button _btnStop, _btnNext, _btnClear, _btnAuto;
+        private RectTransform _rootRt, _body;
+        private Image _autoIcon, _autoGlow;
+        private Text _autoLabel;
+        private const float BaseWidth = 640f, AutoExtra = 74f;
         private float _timer;
         private GalaxyGenerator _gen;
 
@@ -46,6 +51,7 @@ namespace StellarisClone.Rendering
             var rt = LGBuild.Rect(hud, "[UI] FleetCommandHUD");
             rt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 18), new Vector2(640, 112));
             _root = rt.gameObject;
+            _rootRt = rt;
             UIAnchors.Register(UIAnchors.FleetHud, rt);
             var bg = _root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
@@ -71,6 +77,7 @@ namespace StellarisClone.Rendering
 
             var body = LGBuild.Rect(rt, "Body");
             body.Stretch(90, 10, 236, 10);
+            _body = body;
             _title = LGBuild.Label(body, "", 15, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             _subtitle = LGBuild.Label(body, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
             _subtitle.rectTransform.offsetMax = new Vector2(0, -21);
@@ -105,8 +112,61 @@ namespace StellarisClone.Rendering
             IconButton(btns, 2, 1, LGIcon.Close, "Снять выделение", "Щелчок ЛКМ по пустому месту делает то же самое",
                 () => FleetManager.Instance?.SetSelection(null));
 
+            BuildAutoButton(btns);
+
             LG.Skin(_root.transform);
             _root.SetActive(false);
+        }
+
+        /// <summary>Высокая кнопка-переключатель «Авторазведка» слева от сетки кнопок.</summary>
+        private void BuildAutoButton(RectTransform btns)
+        {
+            _btnAuto = LGBuild.Button(btns, "AutoExplore", UIManager.DS.BtnNeutral, new Color(0.45f, 1f, 0.62f, 0.6f),
+                () => { AutoExplore.Toggle(FleetManager.Instance.SelectedFleets); SFXManager.Play("ui_click", 0.9f, 1.05f); Refresh(); },
+                null, null, 11, 14f);
+            var rt = (RectTransform)_btnAuto.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
+            rt.pivot = new Vector2(0, 0.5f);
+            rt.sizeDelta = new Vector2(66, 84);
+            rt.anchoredPosition = new Vector2(-AutoExtra, 0f);
+
+            _autoGlow = LGBuild.Panel(rt, "On", new Color(0.45f, 1f, 0.62f, 0.9f));
+            _autoGlow.raycastTarget = false;
+            _autoGlow.rectTransform.anchorMin = new Vector2(0.2f, 0f);
+            _autoGlow.rectTransform.anchorMax = new Vector2(0.8f, 0f);
+            _autoGlow.rectTransform.offsetMin = new Vector2(0, 6);
+            _autoGlow.rectTransform.offsetMax = new Vector2(0, 9);
+
+            _autoIcon = LGIcons.Create(rt, LGIcon.Sensors, 24, Color.white);
+            _autoIcon.raycastTarget = false;
+            _autoIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 12), new Vector2(24, 24));
+            _autoLabel = LGBuild.Label(rt, "АВТО", 10, Color.white, TextAnchor.LowerCenter, bold: true);
+            _autoLabel.raycastTarget = false;
+            _autoLabel.rectTransform.Stretch(2, 13, 2, 0);
+            TooltipHelper.Attach(_btnAuto.gameObject,
+                "<b>Авторазведка</b>\nНаучный корабль сам выбирает ближайшую неизученную систему и исследует её, затем следующую. " +
+                "Обходит видимые угрозы и владения врагов. Любой ручной приказ выключает режим.");
+            _btnAuto.gameObject.SetActive(false);
+        }
+
+        private void RefreshAuto(IReadOnlyList<FleetView> sel)
+        {
+            if (_btnAuto == null) return;
+            bool science = false;
+            foreach (var f in sel) if (f?.Data != null && f.Data.Type == FleetType.Science && f.Data.OwnerId == 0) { science = true; break; }
+            if (_btnAuto.gameObject.activeSelf != science)
+            {
+                _btnAuto.gameObject.SetActive(science);
+                _rootRt.sizeDelta = new Vector2(BaseWidth + (science ? AutoExtra : 0f), _rootRt.sizeDelta.y);
+                _body.offsetMax = new Vector2(-(236f + (science ? AutoExtra : 0f)), _body.offsetMax.y);
+            }
+            if (!science) return;
+            bool on = AutoExplore.AnyOn(sel);
+            Color green = new Color(0.45f, 1f, 0.62f);
+            _autoGlow.gameObject.SetActive(on);
+            _autoIcon.color = on ? green : new Color(0.85f, 0.92f, 0.95f);
+            _autoLabel.color = on ? green : new Color(0.85f, 0.92f, 0.95f);
+            _autoLabel.text = on ? "АВТО ВКЛ" : "АВТО";
         }
 
         private Button IconButton(RectTransform parent, int col, int row, LGIcon icon, string title, string tip, System.Action onClick)
@@ -166,6 +226,7 @@ namespace StellarisClone.Rendering
             _btnStop.interactable = anyRoute;
             _btnNext.interactable = anyQueue;
             _btnClear.interactable = anyQueue;
+            RefreshAuto(sel);
         }
 
         private void ShowSingle(FleetView f)
@@ -189,7 +250,8 @@ namespace StellarisClone.Rendering
             string lead = leader != null
                 ? $"   ·   <color=#FFCC52>{LeaderManager.ClassName(leader.Class)} {leader.Name}, ур. {leader.Level}</color>"
                 : "";
-            _subtitle.text = $"{TypeName(d.Type)}   ·   {StateText(d)}{lead}";
+            string auto = d.AutoExplore ? "   ·   <color=#73FF9E>авторазведка</color>" : "";
+            _subtitle.text = $"{TypeName(d.Type)}   ·   {StateText(d)}{auto}{lead}";
             _power.text = d.Type == FleetType.Military ? $"Мощь {Mathf.RoundToInt(CombatMath.Power(d)):N0}" : "";
             SetHp(d.HullPoints + d.ArmorPoints, d.MaxHullPoints + d.MaxArmorPoints,
                   $"Корпус {d.HullPoints:0}/{d.MaxHullPoints:0} · броня {d.ArmorPoints:0} · щиты {d.ShieldPoints:0}");

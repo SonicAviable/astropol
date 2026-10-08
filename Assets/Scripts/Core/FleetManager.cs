@@ -512,6 +512,7 @@ namespace StellarisClone.Core
             {
                 if (fleet?.Data == null || fleet.Data.Destroyed) continue;
                 var d = fleet.Data;
+                d.AutoExplore = false;   // ручной приказ выключает авторазведку
 
                 if (!queue && d.Type == FleetType.Science && !target.IsSurveyed && target.OwnerId == -1)
                 {

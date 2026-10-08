@@ -52,6 +52,8 @@ namespace StellarisClone.Core
 
         public bool InCombat;
         public bool Destroyed;
+        /// <summary>Научный корабль игрока сам выбирает и исследует неизученные системы.</summary>
+        public bool AutoExplore;
 
         // ==================== ОЧЕРЕДЬ ПРИКАЗОВ ====================
 

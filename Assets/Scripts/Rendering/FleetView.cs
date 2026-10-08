@@ -561,6 +561,34 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>
+        /// Перехват в коридоре: флот выходит из прыжка в системе systemId — у цели (прилетел раньше)
+        /// или у точки отправления (возвращается; цель снова становится первым пунктом маршрута).
+        /// Там его держит перехват, а маршрут продолжится после боя.
+        /// </summary>
+        public void DropOutOfLane(int systemId)
+        {
+            if (Data == null || Data.State != FleetState.InHyperlane) return;
+            int target = Data.TargetSystemId;
+            if (systemId == target)
+            {
+                Data.CurrentSystemId = target;
+            }
+            else if (target >= 0)
+            {
+                var rest = new List<int>(Data.Path);
+                Data.Path.Clear();
+                Data.Path.Enqueue(target);
+                foreach (int step in rest) Data.Path.Enqueue(step);
+            }
+            Data.TargetSystemId = -1;
+            Data.State = FleetState.Orbiting;
+            Data.DaysRemainingInTransit = 0f;
+            SnapToCurrentSystem(instant: false);
+            if (Data.Path.Count == 0 && Data.OrderQueue.Count > 0) FleetManager.Instance?.AdvanceQueue(this);
+            else if (Data.Path.Count == 0 && Data.OwnerId == 0) Data.HasPlayerOrder = false;
+        }
+
         private bool Pinned() => CombatManager.Instance != null && CombatManager.Instance.IsInterdicted(Data, Data.CurrentSystemId);
 
         private void CompleteConstruction()

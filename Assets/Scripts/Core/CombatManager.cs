@@ -23,6 +23,9 @@ namespace StellarisClone.Core
     ///   • Бой неспешный: сначала фаза сближения (бьют ракеты, лучи ещё не достают), затем огневой контакт.
     ///     Стороны выстраиваются друг против друга, корабли маневрируют на своих позициях.
     ///   • Экстренный прыжок — только после разгона ГПД (3 дня боя) и стоит 10% корпуса.
+    ///   • Перехват в коридоре: враждебные военные флоты, встретившиеся в одном гиперкоридоре
+    ///     (навстречу друг другу или когда догоняющий настиг цель), выходят из прыжка в ближайшей
+    ///     системе и сражаются там. Аварийный прыжок из боя перехватить нельзя.
     /// </summary>
     public class CombatManager : MonoBehaviour
     {
@@ -118,6 +121,10 @@ namespace StellarisClone.Core
         private readonly Dictionary<int, int> _targets = new Dictionary<int, int>();
         // Корабли, вышедшие из боя: их не трогают, пока они не покинут систему
         private readonly HashSet<int> _disengaged = new HashSet<int>();
+        // Ушедшие аварийным прыжком: в коридоре их не перехватывают, пока не долетят
+        private readonly HashSet<int> _escaping = new HashSet<int>();
+        // Взаимный порядок пар враждебных флотов в коридоре: смена знака — флоты встретились
+        private readonly Dictionary<(int, int, int, int), int> _laneOrder = new Dictionary<(int, int, int, int), int>();
         // Сколько дней корабль уже в бою (разгон ГПД, фаза сближения)
         private readonly Dictionary<int, float> _combatDays = new Dictionary<int, float>();
         // Приказ на отступление: прыжок, как только ГПД разгонится (id → куда лететь дальше)
@@ -213,11 +220,18 @@ namespace StellarisClone.Core
                 var d = fv?.Data;
                 if (d == null || d.Destroyed) continue;
                 _viewById[d.Id] = fv;
-                if (d.State == FleetState.InHyperlane) { _disengaged.Remove(d.Id); continue; }
+                if (d.State == FleetState.InHyperlane)
+                {
+                    if (_disengaged.Remove(d.Id)) _escaping.Add(d.Id);
+                    continue;
+                }
+                _escaping.Remove(d.Id);
                 if (_disengaged.Contains(d.Id)) continue;
                 if (!bySystem.TryGetValue(d.CurrentSystemId, out var list)) bySystem[d.CurrentSystemId] = list = new List<FleetView>();
                 list.Add(fv);
             }
+
+            CheckLaneEncounters(fm, bySystem);
 
             var engaged = new HashSet<int>();
             var activeSystems = new HashSet<int>();
@@ -292,6 +306,88 @@ namespace StellarisClone.Core
                 if (b.QuietDays >= BattleEndQuietDays) ended.Add(b);
             }
             foreach (var b in ended) EndBattle(b);
+        }
+
+        // ==================== ПЕРЕХВАТ В КОРИДОРЕ ====================
+
+        /// <summary>Положение флота в коридоре: 0 — у системы lo, 1 — у другого конца.</summary>
+        private static float LanePos(FleetData d, int lo)
+        {
+            float t = Mathf.Clamp01(1f - d.DaysRemainingInTransit / Mathf.Max(0.01f, d.TotalDaysForTransit));
+            return d.CurrentSystemId == lo ? t : 1f - t;
+        }
+
+        /// <summary>
+        /// Враждебные военные флоты в одном коридоре: встречные — когда поравнялись, попутные — когда
+        /// догоняющий настиг. Оба выходят из прыжка в ближайшей к месту встречи системе; там их держит перехват,
+        /// и начинается бой. Флоты, вышедшие из боя аварийным прыжком, не перехватываются.
+        /// </summary>
+        private void CheckLaneEncounters(FleetManager fm, Dictionary<int, List<FleetView>> bySystem)
+        {
+            var lanes = new Dictionary<long, List<FleetView>>();
+            foreach (var fv in fm.AllFleets)
+            {
+                var d = fv?.Data;
+                if (d == null || d.Destroyed || d.State != FleetState.InHyperlane || d.TargetSystemId < 0) continue;
+                if (d.Type != FleetType.Military || _escaping.Contains(d.Id)) continue;
+                long key = (long)Mathf.Min(d.CurrentSystemId, d.TargetSystemId) * 100000L + Mathf.Max(d.CurrentSystemId, d.TargetSystemId);
+                if (!lanes.TryGetValue(key, out var list)) lanes[key] = list = new List<FleetView>();
+                list.Add(fv);
+            }
+
+            var seen = new HashSet<(int, int, int, int)>();
+            List<(FleetView a, FleetView b, int sys)> meets = null;
+            foreach (var kv in lanes)
+            {
+                var list = kv.Value;
+                if (list.Count < 2) continue;
+                list.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
+                int lo = (int)(kv.Key / 100000L), hi = (int)(kv.Key % 100000L);
+                for (int i = 0; i < list.Count; i++)
+                    for (int j = i + 1; j < list.Count; j++)
+                    {
+                        FleetData a = list[i].Data, b = list[j].Data;
+                        if (!Diplomacy.AtWar(a.OwnerId, b.OwnerId) || (a.Damage <= 0f && b.Damage <= 0f)) continue;
+                        if (a.OwnerId == Threats.LeviathanOwner || b.OwnerId == Threats.LeviathanOwner) continue;
+                        float pa = LanePos(a, lo), pb = LanePos(b, lo);
+                        var pk = (a.Id, b.Id, a.CurrentSystemId, b.CurrentSystemId);
+                        seen.Add(pk);
+                        int sign = pa < pb ? -1 : 1;
+                        bool opposite = a.CurrentSystemId != b.CurrentSystemId;
+                        bool met = opposite && Mathf.Abs(pa - pb) < 0.04f;
+                        if (_laneOrder.TryGetValue(pk, out int prev) && prev != sign) met = true;
+                        _laneOrder[pk] = sign;
+                        if (met) (meets ??= new List<(FleetView, FleetView, int)>()).Add((list[i], list[j], (pa + pb) * 0.5f < 0.5f ? lo : hi));
+                    }
+            }
+
+            if (_laneOrder.Count > seen.Count)
+            {
+                var stale = new List<(int, int, int, int)>();
+                foreach (var k in _laneOrder.Keys) if (!seen.Contains(k)) stale.Add(k);
+                foreach (var k in stale) _laneOrder.Remove(k);
+            }
+            if (meets == null) return;
+
+            foreach (var m in meets)
+            {
+                // Флот мог уже выйти из прыжка из-за другой встречи в этом раунде
+                if (m.a.Data.State == FleetState.InHyperlane) m.a.DropOutOfLane(m.sys);
+                if (m.b.Data.State == FleetState.InHyperlane) m.b.DropOutOfLane(m.sys);
+                foreach (var fv in new[] { m.a, m.b })
+                {
+                    if (fv.Data.CurrentSystemId != m.sys || fv.Data.State == FleetState.InHyperlane) continue;
+                    if (!bySystem.TryGetValue(m.sys, out var here)) bySystem[m.sys] = here = new List<FleetView>();
+                    if (!here.Contains(fv)) here.Add(fv);
+                }
+                if ((m.a.Data.OwnerId == 0 || m.b.Data.OwnerId == 0) && _generator != null)
+                {
+                    var enemy = m.a.Data.OwnerId == 0 ? m.b.Data : m.a.Data;
+                    NotificationCenter.Show("Перехват в коридоре",
+                        $"{AIEmpireManager.NameOf(enemy.OwnerId, "Противник")}: флоты сошлись в гиперкоридоре — бой у {_generator.Systems[m.sys].Name}",
+                        NotificationCenter.Kind.Danger, 5f);
+                }
+            }
         }
 
         // ==================== СТРОЙ ====================
@@ -1014,6 +1110,8 @@ namespace StellarisClone.Core
             _battles.Clear();
             _targets.Clear();
             _disengaged.Clear();
+            _escaping.Clear();
+            _laneOrder.Clear();
             _combatDays.Clear();
             _pendingFtl.Clear();
             _stations.Clear();

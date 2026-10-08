@@ -35,6 +35,7 @@ namespace StellarisClone.Core
             // Новая сцена — новая партия: статические системы начинают с чистого листа (загрузка восстановит их позже)
             EmpireEffects.Reset();
             if (GetComponent<ThreatManager>() == null) gameObject.AddComponent<ThreatManager>();
+            if (GetComponent<AutoExplore>() == null) gameObject.AddComponent<AutoExplore>();
             Vision.Reset();
             if (GetComponent<VisionTicker>() == null) gameObject.AddComponent<VisionTicker>();
         }

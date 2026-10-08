@@ -137,6 +137,7 @@ namespace StellarisClone.Core
         public List<float> WDamage = new List<float>();
         public List<float> WRate = new List<float>();
         public float Accuracy;
+        public bool AutoExplore;
     }
 
     [Serializable]
@@ -522,7 +523,7 @@ namespace StellarisClone.Core
                 Hull = (int)d.HullClass, DesignId = d.DesignId, DesignAlloyCost = d.DesignAlloyCost,
                 HP = d.HullPoints, Armor = d.ArmorPoints, Shield = d.ShieldPoints,
                 MaxHP = d.MaxHullPoints, MaxArmor = d.MaxArmorPoints, MaxShield = d.MaxShieldPoints,
-                Damage = d.Damage, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed, Accuracy = d.Accuracy,
+                Damage = d.Damage, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed, Accuracy = d.Accuracy, AutoExplore = d.AutoExplore,
                 Upkeep = d.UpkeepEnergy, Weapon = (int)d.PrimaryWeapon
             };
             foreach (var w in d.Weapons)
@@ -609,6 +610,7 @@ namespace StellarisClone.Core
             d.MaxHullPoints = f.MaxHP; d.MaxArmorPoints = f.MaxArmor; d.MaxShieldPoints = f.MaxShield;
             d.Evasion = f.Evasion;
             d.Accuracy = f.Accuracy;
+            d.AutoExplore = f.AutoExplore;
             d.HyperSpeed = f.HyperSpeed;
             d.SetWeapons(RestoreWeapons(f, d));
             // Содержание — производное от типа и корпуса (в старых сохранениях ставки были другими)

@@ -395,6 +395,11 @@ namespace StellarisClone.Rendering
                         break;
                 }
 
+                if (d.AutoExplore && !d.InCombat)
+                {
+                    if (row.Warn) { row.Status = $"Авторазведка: {here}"; row.Warn = false; }
+                    else row.Status = "Авто · " + row.Status;
+                }
                 if (d.InCombat && d.State != FleetState.Orbiting) row.Status = "БОЙ · " + row.Status;
                 if (d.InCombat) { row.Danger = true; row.Warn = false; }
 
