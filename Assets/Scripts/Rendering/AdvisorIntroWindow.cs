@@ -16,6 +16,7 @@ namespace StellarisClone.Rendering
     ///     бонусы фракции чипами с иконками, первая задача и кнопка «Вступить в должность»;
     ///   • фоном — медленно всплывающие частицы данных и проходящая полоса сканирования, кромка «дышит».
     /// Клик по окну, Пробел или Enter — сразу допечатать текст; после этого Enter — вступить в должность.
+    /// «Назад» или Esc — вернуться к выбору цивилизации.
     /// Всё на unscaled time: до старта партии время стоит.
     /// </summary>
     public sealed class AdvisorIntroWindow : MonoBehaviour
@@ -36,7 +37,7 @@ namespace StellarisClone.Rendering
         private readonly List<(RectTransform rt, CanvasGroup g)> _chips = new List<(RectTransform, CanvasGroup)>();
         private readonly List<Mote> _motes = new List<Mote>();
 
-        private System.Action _onStart;
+        private System.Action _onStart, _onBack;
         private Color _accent = UIManager.DS.NeonCyan;
         private string _fullText = "";
         private int _visibleTotal, _shown = -1;
@@ -52,12 +53,13 @@ namespace StellarisClone.Rendering
 
         // ================================================================ Создание
 
-        public static AdvisorIntroWindow Create(Transform modalCanvas, System.Action onStart)
+        public static AdvisorIntroWindow Create(Transform modalCanvas, System.Action onStart, System.Action onBack = null)
         {
             var rt = LGBuild.Rect(modalCanvas, "AdvisorIntroModal");
             rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(W, H));
             var w = rt.gameObject.AddComponent<AdvisorIntroWindow>();
             w._onStart = onStart;
+            w._onBack = onBack;
             w.Build(rt);
             rt.gameObject.SetActive(false);
             return w;
@@ -233,6 +235,11 @@ namespace StellarisClone.Rendering
             var brt = (RectTransform)_startBtn.transform;
             brt.At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(300, 46));
             _buttonGroup = _startBtn.gameObject.AddComponent<CanvasGroup>();
+
+            // Назад — к выбору цивилизации (доступно сразу, не ждёт конца текста)
+            var back = LGBuild.Button(right, "BackBtn", new Color(0.10f, 0.22f, 0.26f), UIManager.DS.NeonCyan, Back, LGIcon.Back, "НАЗАД", 12);
+            ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(0, 0), Vector2.zero, new Vector2(150, 46));
+            TooltipHelper.Attach(back.gameObject, "<b>Назад</b>\nВернуться к выбору цивилизации  (Esc)");
         }
 
         private static Texture2D s_scan;
@@ -355,6 +362,16 @@ namespace StellarisClone.Rendering
             _onStart?.Invoke();
         }
 
+        private void Back()
+        {
+            if (_closing || _onBack == null) return;
+            _closing = true;
+            _group.interactable = _group.blocksRaycasts = false;
+            if (_flashLine != null) _flashLine.gameObject.SetActive(false);
+            SFXManager.Play(Sfx.UiBack);
+            _onBack.Invoke();
+        }
+
         private void CompleteTyping()
         {
             if (_closing || _t < _typeStart) return;
@@ -377,7 +394,8 @@ namespace StellarisClone.Rendering
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) Confirm();
+            if (Input.GetKeyDown(KeyCode.Escape)) Back();
+            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) Confirm();
             else if (Input.GetKeyDown(KeyCode.Space)) CompleteTyping();
 
             AnimateOpen();

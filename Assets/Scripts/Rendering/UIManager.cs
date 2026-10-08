@@ -1329,10 +1329,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             _selectedFaction = faction;
             LG.Hide(_factionSelectionModal);
-
-            if (EconomyManager.Instance != null)
-                EconomyManager.Instance.ApplyFactionBonuses(faction);
-
+            // Бонусы применяются при вступлении в должность: из передачи можно вернуться и выбрать другую
             OpenAdvisorIntroModal(faction);
         }
 
@@ -1341,10 +1338,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             // «Входящая передача» от правителя: живой портрет, текст по буквам, бонусы, эффекты сигнала
             _advisorIntro = AdvisorIntroWindow.Create(_modalCanvas.transform, () =>
             {
+                if (EconomyManager.Instance != null && _selectedFaction != null)
+                    EconomyManager.Instance.ApplyFactionBonuses(_selectedFaction);
                 HideModalDim();
                 Time.timeScale = 1f;
                 SpawnInGameHUD();
                 if (GameSession.Settings.Tutorial) TutorialManager.Instance?.BeginTutorial();
+            },
+            onBack: () =>
+            {
+                // Назад к выбору цивилизации; затемнение остаётся
+                LG.Show(_factionSelectionModal);
+                _factionSelectionModal.transform.SetAsLastSibling();
             });
             _advisorIntroModal = _advisorIntro.gameObject;
         }
