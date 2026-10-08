@@ -128,6 +128,7 @@ namespace StellarisClone.Rendering
             BuildStellarisLeftInspector();
             BuildShipyardModal();
             new GameObject("[UI] BuildProgressBadge").AddComponent<BuildProgressBadge>().Init(_canvas);
+            new GameObject("[UI] SystemPlanetTags").AddComponent<SystemPlanetTags>().Init(_canvas);
             new GameObject("[UI] Outliner").AddComponent<OutlinerPanel>().Init(_canvas);
             BuildEmpireOverviewModal();
             BuildEventPopupModal();

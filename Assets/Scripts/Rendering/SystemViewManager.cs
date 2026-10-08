@@ -45,6 +45,9 @@ namespace StellarisClone.Rendering
         private readonly List<PlanetInstance> _activePlanets = new List<PlanetInstance>();
         private PlanetInstance _currentSelectedPlanet;
 
+        /// <summary>Планеты текущей системы на сцене (для меток SystemPlanetTags).</summary>
+        public IReadOnlyList<PlanetInstance> ActivePlanets => _activePlanets;
+
         private static Shader GetLitShader() => ShaderCache.Lit;
         private static Shader GetLineShader() => ShaderCache.Unlit;
 
