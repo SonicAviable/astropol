@@ -669,9 +669,42 @@ namespace StellarisClone.Rendering
             }
         }
 
+        // Повреждения: дым и огонь из точек на корпусе, пока корабль не починят
+        private float _damageTimer;
+        private Vector3[] _damageAnchors;
+
+        private void TickDamageFx()
+        {
+            if (Data == null || Data.Destroyed || _fogHidden || Data.MaxHullPoints <= 0f) return;
+            float frac = Data.HullPoints / Data.MaxHullPoints;
+            if (frac >= 0.6f) return;
+            if ((_damageTimer -= Time.unscaledDeltaTime) > 0f) return;
+            float severity = Mathf.Clamp01((0.6f - frac) / 0.6f);
+            _damageTimer = Mathf.Lerp(0.32f, 0.09f, severity);
+            if (!CombatFx.CanShow(transform.position)) return;
+            if (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView) return;
+            if (_damageAnchors == null)
+            {
+                var b = new Bounds(transform.position, Vector3.zero);
+                if (_renderers != null) foreach (var r in _renderers) if (r != null && r.enabled) b.Encapsulate(r.bounds);
+                _damageAnchors = new Vector3[3];
+                for (int i = 0; i < _damageAnchors.Length; i++)
+                {
+                    var p = b.center + Vector3.Scale(Random.insideUnitSphere, b.extents * 0.55f);
+                    _damageAnchors[i] = transform.InverseTransformPoint(p);
+                }
+            }
+            // Чем тяжелее повреждения, тем больше очагов
+            int fires = severity > 0.66f ? 3 : severity > 0.33f ? 2 : 1;
+            float size = Data.Type != FleetType.Military ? 0.8f
+                       : Data.HullClass == ShipClass.Destroyer ? 1.5f : Data.HullClass == ShipClass.Frigate ? 1.15f : 0.85f;
+            CombatFx.Instance.ShipDamage(transform, _damageAnchors[Random.Range(0, fires)], severity, size);
+        }
+
         private void Update()
         {
             ApplyFogVisibility();
+            TickDamageFx();
             _animTime += Time.deltaTime;
             _visual?.Tick(_animTime);
 

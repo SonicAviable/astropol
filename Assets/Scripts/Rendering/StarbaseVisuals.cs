@@ -166,6 +166,10 @@ namespace StellarisClone.Rendering
         private bool _synced;
         private object _systemsRef;
 
+        /// <summary>Модель станции системы (для щита и эффектов попаданий); null — не построена или не показана.</summary>
+        public Transform StationOf(int systemId)
+            => _entries.TryGetValue(systemId, out var e) && e.Go != null && e.Go.activeInHierarchy ? e.Go.transform : null;
+
         /// <summary>Площадка станции у звезды (там же строитель собирает каркас; оттуда стреляет база).</summary>
         public static Vector3 SiteFor(Vector3 star)
         {

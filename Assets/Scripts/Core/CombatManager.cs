@@ -620,7 +620,7 @@ namespace StellarisClone.Core
                 {
                     if (show)
                     {
-                        CombatFx.Instance.Fire(weapon, from, to, wc, false, CombatFx.Impact.None, size);
+                        CombatFx.Instance.Fire(weapon, from, to, wc, false, CombatFx.Impact.None, size, null, FxTransform(shooter));
                         if (Random.value < 0.5f) SFXManager.PlayAt(WeaponSfx(weapon), from, 0.8f, GunPitch(shooter));
                     }
                     return;
@@ -630,13 +630,17 @@ namespace StellarisClone.Core
             float raw = damage * ab.DamageMult(weapon);
             if (shooter.Fleet != null) raw *= LeaderManager.AdmiralDamageMult(shooter.Owner, battle.SystemId);
             float shieldBefore = target.Fleet != null ? target.Fleet.Data.ShieldPoints : target.Base.Shields;
+            float armorBefore = target.Fleet != null ? target.Fleet.Data.ArmorPoints : target.Base.Armor;
             float dealt;
             if (target.Fleet != null) dealt = ApplyLayeredDamage(target.Fleet.Data, raw, weapon);
             else dealt = ApplyLayeredDamage(target.Base, raw, weapon);
 
             if (show)
             {
-                CombatFx.Instance.Fire(weapon, from, to, wc, true, shieldBefore > 0f ? CombatFx.Impact.Shield : CombatFx.Impact.Hull, size);
+                float shieldAfter = target.Fleet != null ? target.Fleet.Data.ShieldPoints : target.Base.Shields;
+                var impact = shieldBefore > 0f ? CombatFx.Impact.Shield : armorBefore > 0f ? CombatFx.Impact.Armor : CombatFx.Impact.Hull;
+                CombatFx.Instance.Fire(weapon, from, to, wc, true, impact, size, FxTransform(target), FxTransform(shooter),
+                                       shieldBefore > 0f && shieldAfter <= 0f);
                 ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer, GunPitch(shooter));
                 // Числа урона — изредка и только для крупных попаданий: картину боя рисуют эффекты
                 if (dealt >= 12f && Random.value < 0.22f) SpawnFloater(to, $"-{dealt:0}", Color.Lerp(wc, Color.white, 0.35f));
@@ -657,6 +661,10 @@ namespace StellarisClone.Core
                 Side(battle, shooter.Owner).Kills++;
             }
         }
+
+        /// <summary>Носитель эффектов: корабль или модель станции (снаряды доводятся до неё, щит рисуется вокруг).</summary>
+        private static Transform FxTransform(Combatant c)
+            => c.Fleet != null ? c.Fleet.transform : StarbaseVisuals.Instance != null ? StarbaseVisuals.Instance.StationOf(c.Base.SystemId) : null;
 
         /// <summary>Эффекты боя рисуются, только если игрок видит систему и камера достаточно близко.</summary>
         private static bool ShowFx(int systemId, Vector3 at)
@@ -763,6 +771,7 @@ namespace StellarisClone.Core
                 float size = fv.Data.Type != FleetType.Military ? 0.8f
                            : fv.Data.HullClass == ShipClass.Destroyer ? 1.5f : fv.Data.HullClass == ShipClass.Frigate ? 1.15f : 0.85f;
                 CombatFx.Instance.ShipDestroyed(fv.transform.position, size, FleetIndicator.OwnerColor(fv.Data.OwnerId));
+                CombatFx.Instance.Wreck(fv.transform, size);
                 SpawnFloater(fv.transform.position, "УНИЧТОЖЕН", UIManager.DS.Red);
             }
             bool big = fv.Data.Type == FleetType.Military && fv.Data.HullClass != ShipClass.Corvette;
