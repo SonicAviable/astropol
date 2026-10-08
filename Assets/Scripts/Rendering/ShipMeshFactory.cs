@@ -51,10 +51,12 @@ namespace StellarisClone.Rendering
 
         public static ShipVisual Build(Transform parent, FleetType type, ShipClass hull, Color owner)
         {
-            // Тяжёлый военный корпус — готовая модель крейсера «Харбингер», если она есть в проекте
-            if (type == FleetType.Military && hull == ShipClass.Destroyer)
+            // Военные корабли — готовая модель крейсера «Харбингер», если она есть в проекте;
+            // классы различаются размером (корвет меньше, эсминец крупнее)
+            if (type == FleetType.Military)
             {
-                var model = HarbingerModel.Build(parent, owner);
+                float length = hull == ShipClass.Destroyer ? 3.6f : hull == ShipClass.Frigate ? 3.3f : 3.0f;
+                var model = HarbingerModel.Build(parent, owner, length);
                 if (model != null) return model;
             }
 

@@ -4,8 +4,8 @@ using UnityEngine;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Готовая модель линейного крейсера «Харбингер» (Resources/Models/Ships/Harbinger) — тяжёлый
-    /// военный корпус вместо процедурного силуэта.
+    /// Готовая модель линейного крейсера «Харбингер» (Resources/Models/Ships/Harbinger) — все военные
+    /// корабли вместо процедурных силуэтов; класс корпуса задаёт только длину.
     ///
     /// В FBX нет ссылок на текстуры, поэтому материалы собираются здесь по именам слотов:
     ///   • обшивка, техника, двигатели — трим-листы 011…032 (albedo + metallic/smoothness + нормали 01…03);
@@ -17,8 +17,8 @@ namespace StellarisClone.Rendering
     public static class HarbingerModel
     {
         private const string Folder = "Models/Ships/Harbinger/";
-        /// <summary>Длина корабля в единицах карты (процедурный эсминец ≈ 3.5).</summary>
-        public const float Length = 3.6f;
+        /// <summary>Длина по умолчанию в единицах карты (процедурный эсминец ≈ 3.5).</summary>
+        public const float DefaultLength = 3.6f;
 
         private static GameObject s_prefab;
         private static bool s_missing;
@@ -38,7 +38,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Собрать модель под parent; null — если модели нет (тогда остаётся процедурный корпус).</summary>
-        public static ShipMeshFactory.ShipVisual Build(Transform parent, Color owner)
+        public static ShipMeshFactory.ShipVisual Build(Transform parent, Color owner, float length = DefaultLength)
         {
             if (!Available) return null;
 
@@ -85,13 +85,13 @@ namespace StellarisClone.Rendering
             mr.sharedMaterials = mats;
             v.Hull = mats.Length > 0 ? mats[0] : null;
 
-            Orient(root, pivot, mr, mf.sharedMesh, engineSub, redSub);
+            Orient(root, pivot, mr, mf.sharedMesh, engineSub, redSub, length);
             return v;
         }
 
         // ================================================================ Ориентация и размер
 
-        private static void Orient(Transform root, Transform pivot, Renderer mr, Mesh mesh, int engineSub, int redSub)
+        private static void Orient(Transform root, Transform pivot, Renderer mr, Mesh mesh, int engineSub, int redSub, float length)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace StellarisClone.Rendering
 
             var b = BoundsIn(root, mr, mesh.bounds);
             float len = Mathf.Max(b.size.z, 0.0001f);
-            pivot.localScale *= Length / len;
+            pivot.localScale *= length / len;
             b = BoundsIn(root, mr, mesh.bounds);
             pivot.localPosition -= b.center;
         }
