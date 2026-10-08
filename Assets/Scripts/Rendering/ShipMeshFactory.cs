@@ -19,6 +19,10 @@ namespace StellarisClone.Rendering
             public Material Hull, Accent, Glow;
             public Renderer Nav;
             public Color AccentColor, GlowColor;
+            /// <summary>Мигающий маяк готовой модели (материал огня вместо отдельного меша Nav).</summary>
+            public Material BlinkMat;
+            public Color BlinkColor;
+            private bool _blinkOn = true;
 
             public void SetSelected(bool on)
             {
@@ -29,7 +33,15 @@ namespace StellarisClone.Rendering
             /// <summary>Мигание навигационных огней (вызывать каждый кадр).</summary>
             public void Tick(float t)
             {
-                if (Nav != null) Nav.enabled = Mathf.Repeat(t, 1.6f) < 0.12f || Mathf.Repeat(t - 0.25f, 1.6f) < 0.08f;
+                bool on = Mathf.Repeat(t, 1.6f) < 0.12f || Mathf.Repeat(t - 0.25f, 1.6f) < 0.08f;
+                if (Nav != null) Nav.enabled = on;
+                if (BlinkMat != null && on != _blinkOn)
+                {
+                    _blinkOn = on;
+                    var c = on ? BlinkColor : BlinkColor * 0.04f;
+                    if (BlinkMat.HasProperty("_BaseColor")) BlinkMat.SetColor("_BaseColor", c);
+                    if (BlinkMat.HasProperty("_Color")) BlinkMat.SetColor("_Color", c);
+                }
             }
         }
 
@@ -39,6 +51,13 @@ namespace StellarisClone.Rendering
 
         public static ShipVisual Build(Transform parent, FleetType type, ShipClass hull, Color owner)
         {
+            // Тяжёлый военный корпус — готовая модель крейсера «Харбингер», если она есть в проекте
+            if (type == FleetType.Military && hull == ShipClass.Destroyer)
+            {
+                var model = HarbingerModel.Build(parent, owner);
+                if (model != null) return model;
+            }
+
             var mesh = GetMesh(type, hull);
             var go = new GameObject("ShipModel");
             go.transform.SetParent(parent, false);
@@ -207,7 +226,7 @@ namespace StellarisClone.Rendering
 
         // ================================================================ МАТЕРИАЛЫ
 
-        private static Material LitMat(Color baseCol, Color emission, float metallic, float smooth)
+        internal static Material LitMat(Color baseCol, Color emission, float metallic, float smooth)
         {
             var m = new Material(ShaderCache.Lit) { hideFlags = HideFlags.DontSave };
             if (m.HasProperty("_Metallic")) m.SetFloat("_Metallic", metallic);
@@ -217,7 +236,7 @@ namespace StellarisClone.Rendering
             return m;
         }
 
-        private static Material GlowMat(Color c)
+        internal static Material GlowMat(Color c)
         {
             var m = new Material(ShaderCache.Unlit) { hideFlags = HideFlags.DontSave };
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
