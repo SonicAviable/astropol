@@ -223,11 +223,11 @@ namespace StellarisClone.Cam
                 return;
 
             float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Abs(scroll) > 0.01f)
-                _systemDistance -= scroll * systemZoomSpeed * 10f;
+            if (Mathf.Abs(scroll) > 0.001f)
+                _systemDistance *= Mathf.Pow(1f - ZoomStepPerNotch, scroll * 10f);
 
-            if (Input.GetKey(KeyCode.R)) _systemDistance -= systemZoomSpeed * Time.deltaTime;
-            if (Input.GetKey(KeyCode.F)) _systemDistance += systemZoomSpeed * Time.deltaTime;
+            if (Input.GetKey(KeyCode.R)) _systemDistance -= systemZoomSpeed * Time.unscaledDeltaTime;
+            if (Input.GetKey(KeyCode.F)) _systemDistance += systemZoomSpeed * Time.unscaledDeltaTime;
 
             _systemDistance = Mathf.Clamp(_systemDistance, minSystemDistance, maxSystemDistance);
             UpdateSystemCameraTransform();
@@ -239,7 +239,7 @@ namespace StellarisClone.Cam
             Vector3 offset = rot * new Vector3(0, 0, -_systemDistance);
             Vector3 target = _systemCenter + offset;
 
-            float t = 1f - Mathf.Exp(-systemTransitionSpeed * Time.deltaTime);
+            float t = 1f - Mathf.Exp(-systemTransitionSpeed * Time.unscaledDeltaTime);
             transform.position = Vector3.Lerp(transform.position, target, t);
             transform.rotation = Quaternion.Slerp(transform.rotation, rot, t);
         }
@@ -318,6 +318,7 @@ namespace StellarisClone.Cam
                     _grabPressPos = Input.mousePosition;
                     _grabMoved = btn == 2;
                     _glideVel = Vector3.zero;
+                    _zoomShift = Vector3.zero;
                     if (btn == 1) RightButtonDragged = false;
                 }
             }
@@ -379,52 +380,49 @@ namespace StellarisClone.Cam
             shift.y = 0f;
             _isFocusing = false;
             _glideVel = Vector3.zero;
+            _zoomShift = Vector3.zero;
             transform.position = ClampToBounds(transform.position + shift);
         }
 
+        /// <summary>Доля высоты, на которую приближает один щелчок колеса (одинаково отзывчиво на любой высоте).</summary>
+        private const float ZoomStepPerNotch = 0.16f;
+        /// <summary>Скорость доводки зума (1/с): камера скользит к цели за ~0,4 с, без рывков.</summary>
+        private const float ZoomGlide = 7.5f;
+        /// <summary>Боковой сдвиг к курсору, который камера ещё пройдёт вместе с высотой.</summary>
+        private Vector3 _zoomShift;
+
         private void HandleGalaxyZoomToCursor()
         {
-            // Блокируем скролл галактики колесиком, если курсор находится над UI
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            // Колесо над интерфейсом не зумит карту, но начатое движение доводится до конца
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            float scroll = overUi ? 0f : Input.GetAxis("Mouse ScrollWheel");
+
+            if (Mathf.Abs(scroll) > 0.001f && Camera.main != null)
             {
-                Vector3 p = transform.position;
-                p.y = Mathf.Lerp(p.y, _targetHeight, Time.deltaTime * zoomSmooth);
-                transform.position = p;
-                return;
+                float oldHeight = _targetHeight;
+                // Пропорциональный шаг: щелчок колеса — та же доля пути у самой карты и издалека
+                _targetHeight = Mathf.Clamp(_targetHeight * Mathf.Pow(1f - ZoomStepPerNotch, scroll * 10f), minHeight, maxHeight);
+
+                // Точка под курсором остаётся под курсором: копим сдвиг и проходим его вместе с высотой
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float enter))
+                {
+                    Vector3 shift = ray.GetPoint(enter) - (transform.position + _zoomShift);
+                    shift.y = 0f;
+                    float k = (oldHeight - _targetHeight) / Mathf.Max(1f, oldHeight);
+                    _zoomShift += shift * k * zoomToCursorStrength;
+                }
             }
 
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (Mathf.Abs(scroll) < 0.01f)
-            {
-                Vector3 p = transform.position;
-                p.y = Mathf.Lerp(p.y, _targetHeight, Time.deltaTime * zoomSmooth);
-                transform.position = p;
-                return;
-            }
-
-            if (Camera.main == null) return;
-
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Plane plane = new Plane(Vector3.up, Vector3.zero);
-            float enter = 0f;
-            plane.Raycast(ray, out enter);
-            Vector3 worldPoint = ray.GetPoint(enter);
-
-            float oldHeight = _targetHeight;
-            // Скорость зума зависит от высоты: у карты — точно, издалека — быстро
-            float heightK = Mathf.Lerp(0.45f, 2.2f, Mathf.InverseLerp(minHeight, maxHeight, _targetHeight));
-            _targetHeight -= scroll * zoomSpeed * 10f * heightK;
-            _targetHeight = Mathf.Clamp(_targetHeight, minHeight, maxHeight);
-
-            float heightDelta = _targetHeight - oldHeight;
-            Vector3 shift = worldPoint - transform.position;
-            shift.y = 0f;
-            Vector3 move = shift * (heightDelta / Mathf.Max(1f, oldHeight)) * zoomToCursorStrength;
-
-            Vector3 newPos = transform.position + move;
-            newPos.y = Mathf.Lerp(transform.position.y, _targetHeight, Time.deltaTime * zoomSmooth);
-            newPos = ClampToBounds(newPos);
-            transform.position = newPos;
+            // Высота и сдвиг доводятся одной экспонентой по реальному времени — плавно и на паузе тоже
+            float t = 1f - Mathf.Exp(-ZoomGlide * Time.unscaledDeltaTime);
+            Vector3 p = transform.position;
+            Vector3 step = _zoomShift * t;
+            _zoomShift -= step;
+            if (_zoomShift.sqrMagnitude < 1e-4f) _zoomShift = Vector3.zero;
+            p += step;
+            p.y = Mathf.Lerp(p.y, _targetHeight, t);
+            transform.position = ClampToBounds(p);
         }
 
         private void HandleGalaxyRotation()
@@ -459,6 +457,7 @@ namespace StellarisClone.Cam
             shift.y = 0f;
             _focusTargetPos = ClampToBounds(transform.position + shift);
             _panVelocity = Vector3.zero;
+            _zoomShift = Vector3.zero;
             _focusTimer = 0f;
             _isFocusing = true;
         }
