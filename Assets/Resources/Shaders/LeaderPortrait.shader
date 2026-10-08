@@ -220,13 +220,16 @@ Shader "Astropolity/UI/LeaderPortrait"
                 col.rgb += col.rgb * lights * flicker * 2.0 * m;
                 col.rgb += _Accent.rgb * lights * 0.05 * (0.5 + 0.5 * sin(t * 0.8 + uv.y * 24.0)) * m;
 
-                // 6b. При наведении огни и узоры разгораются, вокруг них — мягкий ореол цвета акцента
+                // 6b. При наведении узоры на фигуре разгораются, вокруг них — мягкий ореол цвета акцента.
+                // Ореол и сильное свечение — только по точной маске силуэта (альфа FX): огни интерьера
+                // за спиной лишь слегка оживают, иначе за головой появлялось цветное пятно с артефактами сжатия.
                 if (_Glow > 0.001)
                 {
                     float pulse = 0.85 + 0.15 * sin(t * 3.2);
                     float g = _Glow * pulse;
-                    col.rgb += (col.rgb * 1.4 + _Accent.rgb * 0.5) * lights * g;
-                    col.rgb += _Accent.rgb * FxHalo(uv) * 0.45 * g;
+                    float onFigure = tex2D(_FxTex, uv).a;
+                    col.rgb += (col.rgb * 1.4 + _Accent.rgb * 0.5) * lights * g * lerp(0.2, 1.0, onFigure);
+                    col.rgb += _Accent.rgb * FxHalo(uv) * 0.45 * g * onFigure;
                     col.rgb *= 1.0 + 0.06 * _Glow;
                 }
 

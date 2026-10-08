@@ -93,7 +93,8 @@ namespace StellarisClone.Rendering
             _key = key;
 
             LGBuild.Clear(_portraitHost);
-            _portrait = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.75f);
+            // Свой правитель — без «сбоев канала связи»: на маленькой карточке они выглядят как полосы у края лица
+            _portrait = LeaderPortraitView.Create(_portraitHost, leader, 1.75f, Vector4.zero, false);
             bool ok = _portrait != null;
             _fallbackIcon.gameObject.SetActive(!ok);
 
