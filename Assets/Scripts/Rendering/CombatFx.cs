@@ -244,6 +244,32 @@ namespace StellarisClone.Rendering
             }
         }
 
+        // ==================== ОБЩИЕ РЕСУРСЫ ====================
+
+        /// <summary>Мягкое свечение, тонкое кольцо, аддитивные материалы — для других эффектов (работа кораблей).</summary>
+        public Sprite GlowSprite => _glow;
+        public Sprite RingSprite => _ring;
+        public Material SpriteMaterial => _addMat;
+        public Material LineMaterial => _lineMat;
+
+        /// <summary>Сварочные искры: короткая вспышка и разлетающиеся угольки.</summary>
+        public void Sparks(Vector3 at, Color col, int count, float size)
+        {
+            if (_active.Count >= MaxActive) return;
+            Spawn(Kind.Flash, at, Color.Lerp(col, Color.white, 0.6f), size * 1.6f, 0.16f, _glow);
+            for (int i = 0; i < count; i++)
+            {
+                var e = Spawn(Kind.Ember, at, Color.Lerp(col, new Color(1f, 0.95f, 0.8f), Random.value * 0.6f),
+                              Random.Range(0.04f, 0.09f) * size * 2f, Random.Range(0.3f, 0.65f), _glow);
+                e.Vel = Random.onUnitSphere * Random.Range(1.2f, 3.2f) * size;
+                e.Vel.y = Mathf.Abs(e.Vel.y) * 0.6f;
+            }
+        }
+
+        /// <summary>Короткая точка-отметка (например, обнаруженный сканером объект).</summary>
+        public void Blip(Vector3 at, Color col, float size, float life)
+            => Spawn(Kind.Flash, at, col, size, life, _glow);
+
         // ==================== ПОМОЩНИКИ ====================
 
         private class FxLight { public Light L; public float Age, Life, Peak; }

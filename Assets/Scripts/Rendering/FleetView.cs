@@ -65,8 +65,9 @@ namespace StellarisClone.Rendering
         private bool _gliding;
         // Бой: скорость манёвра, собственные часы «танца» и флаг, чтобы после боя вернуться на орбиту
         private Vector3 _combatVel;
-        private float _combatClock;
+        private float _combatClock, _workClock;
         private bool _wasInCombat;
+        private ShipWorkFx _work;
         private static Mesh s_plumeQuad;
         private static Shader s_plumeShader;
         private static readonly int IdThrottle = Shader.PropertyToID("_Throttle");
@@ -83,6 +84,7 @@ namespace StellarisClone.Rendering
             CreateStatusBadge();
             CreateTypeIcon();
             CreateWorkVFX();
+            if (Data.Type != FleetType.Military) _work = ShipWorkFx.Attach(transform);
             SnapToCurrentSystem();
             SetupTooltip();
 
@@ -684,85 +686,50 @@ namespace StellarisClone.Rendering
                 if (_statusBadge.gameObject.activeSelf != near) _statusBadge.gameObject.SetActive(near);
             }
 
-            // Бой закончился — корабль возвращается на своё место на орбите
-            if (_wasInCombat && !Data.InCombat)
+            // Бой или работа закончились — корабль возвращается на своё место на орбите
+            bool working = Data.State == FleetState.Surveying || Data.State == FleetState.Constructing;
+            if (_wasInCombat && !Data.InCombat && !working)
             {
                 _wasInCombat = false;
                 _combatVel = Vector3.zero;
                 if (Data.State != FleetState.InHyperlane) SnapToCurrentSystem(instant: false);
             }
 
+            // Над кораблём — только имя выделенного; состояние показывают значок флота, панель флота и эффекты
+            _statusBadge.text = _isSelected && !Data.InCombat ? $"<color=#9FF5EE>{Data.Name}</color>" : "";
+            _laserBeam.enabled = false;
+            _workLight.intensity = 0f;
+
             if (Data.State == FleetState.InHyperlane && Data.TargetSystemId != -1)
             {
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
+                _work?.Stop();
                 Fly();
-                string targetSysName = _generator.Systems[Data.TargetSystemId].Name;
-                _statusBadge.text = $"<color=#FE3>Прыжок ➔ {targetSysName}</color>\n<color=#FFF>{Mathf.Max(0, (int)Data.DaysRemainingInTransit)} дн.</color>";
             }
             else if (Data.InCombat)
             {
                 _wasInCombat = true;
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
+                _work?.Stop();
                 CombatManeuver();
-                var cm = CombatManager.Instance;
-                string ftl = cm == null ? "" : cm.IsRetreating(Data)
-                    ? (cm.FtlReadyIn(Data) > 0f ? $" · <color=#F2C747>отход через {cm.FtlReadyIn(Data):0.0} дн.</color>" : " · <color=#F2C747>прыжок!</color>")
-                    : cm.FtlReadyIn(Data) > 0f ? $" · ГПД {cm.FtlReadyIn(Data):0.0} дн." : "";
-                _statusBadge.text =
-                    $"<color=#FF5555>БОЙ</color>{ftl}\n" +
-                    $"<color=#FFF>Корпус {Data.HullPoints:0} · Щиты {Data.ShieldPoints:0} · Броня {Data.ArmorPoints:0}</color>";
             }
             else if (Data.State == FleetState.Surveying)
             {
-                EnginesIdle();
-                transform.Rotate(Vector3.up, 24f * Time.deltaTime, Space.World);
-
-                Vector3 sysCenter = _generator.Systems[Data.CurrentSystemId].Position;
-                Vector3 scanPoint = sysCenter + new Vector3(Mathf.Cos(_animTime * 2.5f) * 4f, 0, Mathf.Sin(_animTime * 2.5f) * 4f);
-
-                _laserBeam.enabled = true;
-                _laserBeam.startColor = new Color(0.2f, 1f, 0.5f, 0.8f);
-                _laserBeam.endColor = new Color(0.2f, 1f, 0.5f, 0.05f);
-                _laserBeam.SetPosition(0, transform.position);
-                _laserBeam.SetPosition(1, scanPoint);
-
-                _workLight.color = new Color(0.2f, 1f, 0.5f);
-                _workLight.intensity = 1.8f + Mathf.PingPong(_animTime * 4f, 1.2f);
-
-                _statusBadge.text = $"<color=#3FE>Разведка системы</color>\n<color=#FFF>{(int)Data.DaysRemainingSurvey} дн.</color>";
+                _wasInCombat = true;
+                Vector3 star = _generator.Systems[Data.CurrentSystemId].Position;
+                SurveyPatrol(star);
+                _work?.Survey(star, 1f - Data.DaysRemainingSurvey / Mathf.Max(0.01f, Data.TotalSurveyDays));
             }
             else if (Data.State == FleetState.Constructing)
             {
-                EnginesIdle();
-                transform.Rotate(Vector3.up, 15f * Time.deltaTime, Space.World);
-
-                Vector3 sysCenter = _generator.Systems[Data.CurrentSystemId].Position;
-                Vector3 sparkOffset = Random.insideUnitSphere * 0.8f;
-
-                _laserBeam.enabled = true;
-                _laserBeam.startColor = new Color(1f, 0.6f, 0.1f, 0.9f);
-                _laserBeam.endColor = new Color(1f, 0.9f, 0.3f, 0.6f);
-                _laserBeam.SetPosition(0, transform.position);
-                _laserBeam.SetPosition(1, sysCenter + sparkOffset);
-
-                _workLight.color = new Color(1f, 0.7f, 0.2f);
-                _workLight.intensity = Random.Range(1.0f, 3.5f);
-
-                _statusBadge.text = $"<color=#FE4>Монтаж аванпоста</color>\n<color=#FFF>{(int)Data.DaysRemainingConstruction} дн.</color>";
+                _wasInCombat = true;
+                Vector3 star = _generator.Systems[Data.CurrentSystemId].Position;
+                Vector3 site = ConstructionSite(star);
+                ConstructionHold(star, site);
+                _work?.Construct(site, 1f - Data.DaysRemainingConstruction / Mathf.Max(0.01f, Data.TotalConstructionDays));
             }
             else
             {
-                _engineTrail.emitting = false;
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
+                _work?.Stop();
                 Hold();
-
-                if (_isSelected)
-                    _statusBadge.text = $"<color=#00FFFF>{Data.Name}</color>";
-                else
-                    _statusBadge.text = "";
             }
         }
 
@@ -910,9 +877,17 @@ namespace StellarisClone.Rendering
                          + axis * (Mathf.Sin(t * 0.7f + seed * 1.3f) * amp * 0.45f)
                          + Vector3.up * (Mathf.Sin(t * 1.3f + seed * 2.1f) * 0.18f);
 
+            Steer(goal, aim, smooth, maxSpeed, turn, 0.08f, dt);
+        }
+
+        /// <summary>
+        /// Плавный выход в точку goal: скорость по SmoothDamp, на переходе нос по ходу, на месте — на aim;
+        /// крен в разворотах и при боковом смещении, маршевые вперёд, тормозные назад, idle — тяга на месте.
+        /// </summary>
+        private void Steer(Vector3 goal, Vector3 aim, float smooth, float maxSpeed, float turn, float idle, float dt)
+        {
             transform.position = Vector3.SmoothDamp(transform.position, goal, ref _combatVel, smooth, maxSpeed, dt);
 
-            // Нос: на переходе — по ходу, на позиции — на цель
             Vector3 vel = Flat(_combatVel);
             bool transit = (goal - transform.position).sqrMagnitude > 4f && vel.sqrMagnitude > 0.5f;
             Vector3 look = transit ? vel : Flat(aim - transform.position);
@@ -929,14 +904,60 @@ namespace StellarisClone.Rendering
                 transform.rotation = next * Quaternion.Euler(0f, 0f, _bank);
             }
 
-            // Тяга: вперёд — маршевые, назад — тормозные; в бою двигатели не глохнут совсем
             float along = Vector3.Dot(_combatVel, transform.forward);
-            float main = 0.08f + Mathf.Clamp01(along / 3f) * 0.8f;
+            float main = idle + Mathf.Clamp01(along / 3f) * 0.8f;
             float retro = Mathf.Clamp01(-along / 2.5f);
             _throttle = Mathf.MoveTowards(_throttle, main, 2.5f * dt);
             _retro = Mathf.MoveTowards(_retro, retro, 2.5f * dt);
             ApplyThrottle(_throttle, _retro);
             _engineTrail.emitting = _combatVel.sqrMagnitude > 1.4f;
+        }
+
+        private float WorkDt()
+        {
+            var tm = TimeManager.Instance;
+            return tm != null && tm.CurrentSpeed == 0 ? 0f : Time.deltaTime;
+        }
+
+        /// <summary>
+        /// Разведка: корабль неспешно облетает звезду по широкой орбите носом по курсу, слегка меняя высоту;
+        /// сенсоры (ShipWorkFx) направлены на центр системы.
+        /// </summary>
+        private void SurveyPatrol(Vector3 star)
+        {
+            _gliding = false;
+            float dt = WorkDt();
+            if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
+            _workClock += dt;
+            float seed = Mathf.Repeat(Data.Id * 0.618034f, 1f) * 6.2832f;
+            float a = seed + _workClock * 0.16f;
+            const float r = 4.6f;
+            Vector3 goal = star + new Vector3(Mathf.Cos(a) * r, 0.8f + 0.2f * Mathf.Sin(_workClock * 0.5f), Mathf.Sin(a) * r);
+            Vector3 ahead = star + new Vector3(Mathf.Cos(a + 0.6f) * r, 0.8f, Mathf.Sin(a + 0.6f) * r);
+            Steer(goal, ahead, 1.3f, 3f, 55f, 0.12f, dt);
+        }
+
+        /// <summary>Строительная площадка станции: своя точка у каждой системы, недалеко от звезды.</summary>
+        private static Vector3 ConstructionSite(Vector3 star)
+        {
+            float a = Mathf.Repeat(star.x * 0.37f + star.z * 0.61f, 6.2832f);
+            return star + new Vector3(Mathf.Cos(a) * 2.7f, 0.35f, Mathf.Sin(a) * 2.7f);
+        }
+
+        /// <summary>Монтаж: корабль висит рядом с площадкой носом к ней и понемногу подруливает, удерживая позицию.</summary>
+        private void ConstructionHold(Vector3 star, Vector3 site)
+        {
+            _gliding = false;
+            float dt = WorkDt();
+            if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
+            _workClock += dt;
+            Vector3 outward = Flat(site - star);
+            outward = outward.sqrMagnitude > 0.01f ? outward.normalized : Vector3.forward;
+            Vector3 side = new Vector3(-outward.z, 0f, outward.x);
+            Vector3 goal = site + outward * 2.5f + Vector3.up * 0.6f
+                         + side * (Mathf.Sin(_workClock * 0.35f) * 0.45f)
+                         + Vector3.up * (Mathf.Sin(_workClock * 0.6f) * 0.12f);
+            Steer(goal, site, 1.4f, 3f, 50f, 0.06f, dt);
         }
 
         private void EnginesIdle()
