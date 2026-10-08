@@ -715,6 +715,11 @@ namespace StellarisClone.Core
                 ShipDesignManager.Instance.RestoreDesigns(designs);
             }
 
+            if (s.AIs != null && s.AIs.Count > 0)
+                foreach (var a in s.AIs) AIEmpireManager.For(a.Owner)?.RestoreFaction(a);
+            else if (s.AI != null)
+                AIEmpireManager.For(1)?.RestoreFaction(s.AI);
+
             var fm = FleetManager.Instance;
             if (fm != null)
             {

@@ -326,20 +326,20 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1 и 2 — империи ИИ).
+            // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1–3 — империи ИИ).
             // Вдоль коридоров между своими системами добавляем промежуточные точки —
             // территория не рвётся на длинных переходах (как в Stellaris).
             const int MaxSys = 192;
             var sys = new Vector4[MaxSys];
             int count = 0;
             foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
-            foreach (var s in enemySystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, Mathf.Min(2, s.OwnerId), 0f);
+            foreach (var s in enemySystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, Mathf.Min(3, s.OwnerId), 0f);
             foreach (var lane in _generator.Hyperlanes)
             {
                 var a = _generator.Systems[lane.SystemA];
                 var b = _generator.Systems[lane.SystemB];
                 if (!a.HasStarbase || !b.HasStarbase || a.OwnerId < 0 || a.OwnerId != b.OwnerId) continue;
-                float owner = Mathf.Min(2, a.OwnerId);
+                float owner = Mathf.Min(3, a.OwnerId);
                 int steps = Mathf.FloorToInt(Vector3.Distance(a.Position, b.Position) / (_claimRadius * 0.9f));
                 for (int k = 1; k <= steps && count < MaxSys; k++)
                 {
@@ -354,6 +354,7 @@ namespace StellarisClone.Rendering
             _borderMat.SetColor("_PlayerColor", FleetIndicator.OwnColor);
             _borderMat.SetColor("_EnemyColor", FleetIndicator.OwnerColor(1));
             _borderMat.SetColor("_Enemy2Color", FleetIndicator.OwnerColor(2));
+            _borderMat.SetColor("_Enemy3Color", FleetIndicator.OwnerColor(3));
 
             UpdateEmpireLabel(playerSystems);
             foreach (var ai in AIEmpireManager.All)

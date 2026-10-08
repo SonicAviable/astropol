@@ -17,8 +17,8 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager : MonoBehaviour
     {
-        /// <summary>Сколько империй-соперников в партии (вместе с игроком — три).</summary>
-        public const int RivalCount = 2;
+        /// <summary>Сколько империй-соперников в партии (вместе с игроком — четыре, все фракции).</summary>
+        public const int RivalCount = 3;
 
         /// <summary>Все империи ИИ, по возрастанию номера владельца (1, 2, …).</summary>
         public static readonly List<AIEmpireManager> All = new List<AIEmpireManager>();
@@ -48,7 +48,24 @@ namespace StellarisClone.Core
         /// <summary>Цвет на карте: у каждого соперника свой, чтобы границы не сливались.</summary>
         public Color MapColor => MapColorFor(OwnerId);
 
-        public static Color MapColorFor(int owner) => owner == 2 ? new Color(0.74f, 0.48f, 1f) : new Color(1f, 0.30f, 0.30f);
+        /// <summary>
+        /// Цвет фракции империи; бирюзовый занят игроком, поэтому Республика на карте синяя.
+        /// Пока фракции нет (превью в меню) — цвет по номеру владельца.
+        /// </summary>
+        public static Color MapColorFor(int owner)
+        {
+            var f = For(owner)?.Faction;
+            if (f != null)
+            {
+                Color c = f.EmpireColor;
+                if (Mathf.Abs(c.r - 0.22f) + Mathf.Abs(c.g - 0.92f) + Mathf.Abs(c.b - 0.86f) < 0.5f)
+                    return new Color(0.40f, 0.58f, 1f);
+                return c;
+            }
+            return owner == 2 ? new Color(0.74f, 0.48f, 1f)
+                 : owner == 3 ? new Color(1f, 0.74f, 0.25f)
+                 : new Color(1f, 0.30f, 0.30f);
+        }
 
         /// <summary>Убрать империю из партии (её не было в загружаемом сохранении).</summary>
         public void RemoveFromGame()
@@ -922,6 +939,14 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Восстановить империю ИИ; флоты уже созданы FleetManager из сохранения.</summary>
+        /// <summary>Фракция из сохранения — до создания флотов, чтобы корабли сразу получили её цвет.</summary>
+        public void RestoreFaction(AISave s)
+        {
+            if (s == null) return;
+            foreach (var f in FactionRegistry.AvailableFactions)
+                if (f.Name == s.Name) { SetFaction(f); return; }
+        }
+
         public void RestoreState(AISave s, int version)
         {
             if (s == null) return;

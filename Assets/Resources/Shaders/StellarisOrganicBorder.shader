@@ -13,6 +13,7 @@ Shader "Stellaris/OrganicBorders"
         _PlayerColor ("Player Color", Color) = (0.22, 0.92, 0.86, 1.0)
         _EnemyColor ("Enemy Color", Color) = (1.0, 0.30, 0.30, 1.0)
         _Enemy2Color ("Second Enemy Color", Color) = (0.74, 0.48, 1.0, 1.0)
+        _Enemy3Color ("Third Enemy Color", Color) = (1.0, 0.74, 0.25, 1.0)
         _ClaimRadius ("Claim Radius", Float) = 15
         _Smooth ("Smooth Union", Float) = 12
         _LinePx ("Border Width (px)", Float) = 2.6
@@ -42,6 +43,7 @@ Shader "Stellaris/OrganicBorders"
             fixed4 _PlayerColor;
             fixed4 _EnemyColor;
             fixed4 _Enemy2Color;
+            fixed4 _Enemy3Color;
             float _ClaimRadius;
             float _Smooth;
             float _LinePx;
@@ -70,7 +72,7 @@ Shader "Stellaris/OrganicBorders"
             fixed4 frag (v2f i) : SV_Target
             {
                 float2 p = i.worldPos.xz;
-                float d0 = 10000.0, d1 = 10000.0, d2 = 10000.0;
+                float d0 = 10000.0, d1 = 10000.0, d2 = 10000.0, d3 = 10000.0;
                 int n = (int)_SysCount;
 
                 [loop]
@@ -81,14 +83,23 @@ Shader "Stellaris/OrganicBorders"
                     float d = distance(p, s.xy) - _ClaimRadius;
                     if (s.z < 0.5)      d0 = smin(d0, d, _Smooth);
                     else if (s.z < 1.5) d1 = smin(d1, d, _Smooth);
-                    else                d2 = smin(d2, d, _Smooth);
+                    else if (s.z < 2.5) d2 = smin(d2, d, _Smooth);
+                    else                d3 = smin(d3, d, _Smooth);
                 }
 
-                // Своя территория — ближайшая; граница — посередине до второй по близости
-                bool own0 = d0 <= d1 && d0 <= d2;
-                bool own1 = !own0 && d1 <= d2;
-                float dSelf = min(d0, min(d1, d2));
-                float dOther = own0 ? min(d1, d2) : (own1 ? min(d0, d2) : min(d0, d1));
+                // Своя территория — ближайшая (при равенстве — меньший номер владельца);
+                // граница — посередине до второй по близости
+                float dSelf = d0;
+                int own = 0;
+                fixed3 col = _PlayerColor.rgb;
+                if (d1 < dSelf) { dSelf = d1; own = 1; col = _EnemyColor.rgb; }
+                if (d2 < dSelf) { dSelf = d2; own = 2; col = _Enemy2Color.rgb; }
+                if (d3 < dSelf) { dSelf = d3; own = 3; col = _Enemy3Color.rgb; }
+                float dOther = 10000.0;
+                if (own != 0) dOther = min(dOther, d0);
+                if (own != 1) dOther = min(dOther, d1);
+                if (own != 2) dOther = min(dOther, d2);
+                if (own != 3) dOther = min(dOther, d3);
                 // Расстояние до края своей территории (положительно внутри):
                 // либо внешний край, либо середина между двумя империями
                 float e = min(-dSelf, (dOther - dSelf) * 0.5);
@@ -96,8 +107,6 @@ Shader "Stellaris/OrganicBorders"
                 float px = max(fwidth(e), 1e-4);
                 float ePx = e / px;                       // то же расстояние, но в пикселях экрана
                 if (ePx < -3.0) discard;
-
-                fixed3 col = own0 ? _PlayerColor.rgb : (own1 ? _EnemyColor.rgb : _Enemy2Color.rgb);
 
                 // Кромка: яркая линия у самого края, лёгкий ореол снаружи
                 float lineA = 1.0 - smoothstep(_LinePx * 0.5, _LinePx * 0.5 + 1.2, abs(ePx - _LinePx * 0.5));
