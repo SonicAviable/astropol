@@ -212,6 +212,20 @@ namespace StellarisClone.Core
             Instance.PlayInternal(id, volumeScale * screenAtt * zoomAtt, pitch, pan);
         }
 
+        /// <summary>Звук в мире с задержкой (реальное время): попадание, когда снаряд долетел.</summary>
+        public static void PlayAtDelayed(Sfx id, Vector3 worldPos, float delay, float volumeScale = 1f, float pitch = 1f)
+        {
+            if (Instance == null) return;
+            if (delay <= 0.01f) { PlayAt(id, worldPos, volumeScale, pitch); return; }
+            Instance.StartCoroutine(Instance.DelayedAt(id, worldPos, delay, volumeScale, pitch));
+        }
+
+        private System.Collections.IEnumerator DelayedAt(Sfx id, Vector3 pos, float delay, float volumeScale, float pitch)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            PlayAt(id, pos, volumeScale, pitch);
+        }
+
         /// <summary>Проиграть с задержкой (реальное время).</summary>
         public static void PlayDelayed(Sfx id, float delay, float volumeScale = 1f, float pitch = 1f)
         {

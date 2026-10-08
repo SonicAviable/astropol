@@ -147,11 +147,11 @@ namespace StellarisClone.Core.Audio
             S(Sfx.ResearchComplete, 0.40f, 1, 0.80f, 0f, 1, 3, SfxBus.Stinger, 0.45f);
             S(Sfx.ResearchStart, 0.22f, 1, 0.10f, 0f);
 
-            S(Sfx.WeaponKinetic, 0.22f, 5, 0.045f, 0.06f, 3, 0, SfxBus.World);
-            S(Sfx.WeaponEnergy, 0.18f, 5, 0.045f, 0.06f, 3, 0, SfxBus.World);
-            S(Sfx.WeaponMissile, 0.20f, 4, 0.08f, 0.05f, 2, 0, SfxBus.World);
-            S(Sfx.HitShield, 0.14f, 4, 0.05f, 0.08f, 3, 0, SfxBus.World);
-            S(Sfx.HitArmor, 0.16f, 4, 0.05f, 0.08f, 3, 0, SfxBus.World);
+            S(Sfx.WeaponKinetic, 0.24f, 5, 0.05f, 0.05f, 3, 0, SfxBus.World);
+            S(Sfx.WeaponEnergy, 0.2f, 5, 0.05f, 0.05f, 3, 0, SfxBus.World);
+            S(Sfx.WeaponMissile, 0.2f, 4, 0.09f, 0.05f, 3, 0, SfxBus.World);
+            S(Sfx.HitShield, 0.15f, 4, 0.06f, 0.05f, 3, 0, SfxBus.World);
+            S(Sfx.HitArmor, 0.17f, 4, 0.06f, 0.05f, 3, 0, SfxBus.World);
             S(Sfx.ExplosionSmall, 0.40f, 4, 0.07f, 0.06f, 3, 2, SfxBus.World);
             S(Sfx.ExplosionLarge, 0.48f, 2, 0.25f, 0.04f, 2, 3, SfxBus.World);
             S(Sfx.StarbaseDown, 0.52f, 1, 1.00f, 0f, 1, 3, SfxBus.World, 0.4f);
@@ -915,70 +915,97 @@ namespace StellarisClone.Core.Audio
                 }
 
                 // ───────────────────── БОЙ ─────────────────────
+                // Оружие звучит тяжело и «издалека»: короткий треск, плотный шумовой залп, удар в саб, тёмный хвост.
+                // Никаких музыкальных глиссандо — тон задают шум, фильтры и саб.
                 case Sfx.WeaponKinetic:
                 {
-                    b = new Stereo(1.1f, sr);
-                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0008f, 0.012f, 6f), Color = NoiseColor.White, Gain = 0.45f,
-                        Filter = SvfMode.HighPass, Cutoff = Const(1500f), Width = 0.3f }, seed);
-                    Thump(b, rng, 0f, 120f + variant * 10f, 40f, 0.12f, 0.28f, 1f);
-                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.002f, 0.3f, 5f), Color = NoiseColor.Brown, Gain = 0.55f,
-                        Filter = SvfMode.LowPass, Cutoff = Const(450f) }, seed + 1);
-                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.001f, 0.02f, 6f), Color = NoiseColor.White, Gain = 0.2f,
-                        Filter = SvfMode.BandPass, Cutoff = Const(3500f), Q = 2f }, seed + 2);
-                    Modal(b, rng, 0f, 600f * rng.Range(0.85f, 1.15f), new[] { 1f, 1.7f, 2.9f }, 0.1f, 0.08f);
-                    b.Saturate(0.6f);
-                    b.ApplyReverb(0.2f, 0.75f, 0.5f, 1f, 0.02f, 200f);
-                    lp = 9000f;
+                    // Масс-драйвер: щелчок разряда, взрывной выброс, удар в грудь, механический лязг затвора, гул отдачи
+                    b = new Stereo(1.5f, sr);
+                    float k = 1f + variant * 0.06f;
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0004f, 0.008f, 6f), Color = NoiseColor.White, Gain = 0.35f,
+                        Filter = SvfMode.HighPass, Cutoff = Const(2500f), Width = 0.3f }, seed);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0006f, 0.03f, 6f), Gain = 0.12f,
+                        Filter = SvfMode.BandPass, Cutoff = Glide(6000f, 2500f, 0.03f), Q = 1.2f, Width = 0.5f }, seed + 4);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.001f, 0.2f, 5f), Gain = 0.85f,
+                        Filter = SvfMode.LowPass, Cutoff = Glide(3500f * k, 280f, 0.13f), Q = 0.8f, Width = 0.5f }, seed + 1);
+                    Thump(b, rng, 0f, 78f * k, 36f, 0.08f, 0.38f, 1f);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.004f, 0.65f, 4f), Color = NoiseColor.Brown, Gain = 0.6f,
+                        Filter = SvfMode.LowPass, Cutoff = Const(190f) }, seed + 2);
+                    NoiseL(b, new NoiseLayer { Start = 0.035f, Env = Adsr.Pluck(0.001f, 0.045f, 6f), Color = NoiseColor.White, Gain = 0.13f,
+                        Filter = SvfMode.BandPass, Cutoff = Const(950f * k), Q = 3f, Pan = 0.15f }, seed + 3);
+                    b.Saturate(1.0f);
+                    b.ApplyReverb(0.3f, 0.88f, 0.6f, 1f, 0.025f, 120f);
+                    lp = 7000f;
                     break;
                 }
                 case Sfx.WeaponEnergy:
                 {
-                    b = new Stereo(1.1f, sr);
-                    float top = 900f * (1f + variant * 0.1f);
-                    var env = new Adsr(0.003f, 0.05f, 0.5f, 0.05f, 0.16f);
-                    Tone(b, new ToneLayer { Env = env, Wave = Wave.Saw, Unison = 3, DetuneCents = 14f, Freq = Glide(top, 160f, 0.18f), Gain = 0.25f,
-                        Filter = SvfMode.LowPass, Cutoff = Glide(5000f, 500f, 0.18f), Q = 2.2f }, rng);
-                    Tone(b, new ToneLayer { Env = env, Freq = Glide(300f, 70f, 0.18f), Gain = 0.45f }, rng);
-                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.001f, 0.05f, 5f), Gain = 0.12f, Filter = SvfMode.BandPass, Cutoff = Const(2500f) }, seed);
-                    b.ApplyPingPong(0.09f, 0.2f, 0.12f, 3000f);
-                    b.ApplyReverb(0.2f, 0.75f, 0.5f, 1f, 0.02f, 200f);
-                    lp = 9000f;
-                    break;
-                }
-                case Sfx.HitShield:
-                {
-                    b = new Stereo(1.0f, sr);
-                    float c = 520f * (1f + variant * 0.08f);
-                    Tone(b, new ToneLayer { Env = new Adsr(0.002f, 0.06f, 0.4f, 0.05f, 0.25f), Freq = Glide(c, c * 0.72f, 0.3f), Gain = 0.3f,
-                        FmRatio = 2.7f, FmIndex = t => 0.2f + 1.2f * (float)Math.Exp(-t * 18f) }, rng);
-                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.002f, 0.05f, 0.4f, 0.03f, 0.15f), Gain = 0.25f, Filter = SvfMode.BandPass,
-                        Cutoff = Glide(2800f, 900f, 0.2f), Q = 1.6f, Width = 0.8f }, seed);
-                    Crackle(b, rng, 0f, 0.14f, 300f, 0.08f, 2600f);
-                    b.ApplyReverb(0.22f, 0.7f, 0.5f, 1f, 0.02f, 300f);
+                    // Плазменное копьё: треск разряда, глухой «тумм», гудящий электрический выброс с дрожью сети и искры
+                    b = new Stereo(1.4f, sr);
+                    float k = 1f + variant * 0.07f;
+                    var env = new Adsr(0.002f, 0.05f, 0.55f, 0.08f, 0.24f);
+                    Func<float, float> mains = t => 1f - 0.38f * (0.5f + 0.5f * (float)Math.Sin(2.0 * Math.PI * 85.0 * t));
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0005f, 0.02f, 6f), Color = NoiseColor.White, Gain = 0.3f,
+                        Filter = SvfMode.BandPass, Cutoff = Const(3200f), Q = 1f, Width = 0.4f }, seed);
+                    Thump(b, rng, 0f, 105f * k, 48f, 0.06f, 0.26f, 0.72f);
+                    NoiseL(b, new NoiseLayer { Env = env, Gain = 0.6f, Filter = SvfMode.BandPass,
+                        Cutoff = Glide(1800f * k, 650f, 0.28f), Q = 1.2f, Width = 0.7f, Amp = mains }, seed + 1);
+                    Tone(b, new ToneLayer { Env = env, Wave = Wave.Saw, Unison = 3, DetuneCents = 9f, Spread = 0.7f,
+                        Freq = Const(55f * k), Gain = 0.2f, Filter = SvfMode.LowPass, Cutoff = Const(420f), Q = 1.4f, Drive = 1.5f, Amp = mains }, rng);
+                    Crackle(b, rng, 0.01f, 0.28f, 900f, 0.06f, 4500f);
+                    b.Saturate(0.6f);
+                    b.ApplyReverb(0.28f, 0.86f, 0.6f, 1f, 0.02f, 140f);
                     lp = 8000f;
                     break;
                 }
                 case Sfx.WeaponMissile:
                 {
-                    b = new Stereo(1.2f, sr);
-                    Thump(b, rng, 0f, 200f, 80f, 0.06f, 0.1f, 0.5f);
-                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.001f, 0.05f, 5f), Color = NoiseColor.White, Gain = 0.3f,
-                        Filter = SvfMode.HighPass, Cutoff = Const(1500f) }, seed);
-                    NoiseL(b, new NoiseLayer { Start = 0.02f, Env = new Adsr(0.06f, 0.1f, 0.6f, 0.15f, 0.3f), Gain = 0.6f, Filter = SvfMode.BandPass,
-                        Cutoff = Glide(600f, 3000f + variant * 400f, 0.45f), Q = 1.6f, Width = 0.6f }, seed + 1);
-                    Tone(b, new ToneLayer { Env = new Adsr(0.05f, 0.1f, 0.5f, 0.15f, 0.3f), Wave = Wave.Saw, Unison = 2, DetuneCents = 20f,
-                        Freq = Const(90f), Gain = 0.15f, Filter = SvfMode.LowPass, Cutoff = Const(500f) }, rng);
-                    b.ApplyReverb(0.2f, 0.6f, 0.5f);
+                    // Пуск ракеты: хлопок зажигания и рёв двигателя, который уходит вдаль (фильтр закрывается)
+                    b = new Stereo(1.9f, sr);
+                    float k = 1f + variant * 0.08f;
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0005f, 0.012f, 6f), Color = NoiseColor.White, Gain = 0.22f,
+                        Filter = SvfMode.HighPass, Cutoff = Const(2000f) }, seed);
+                    Thump(b, rng, 0f, 88f, 40f, 0.05f, 0.22f, 0.75f);
+                    var roar = new Adsr(0.012f, 0.1f, 0.8f, 0.25f, 0.95f, 3f);
+                    Func<float, float> burn = t => 1f - 0.16f * (float)Math.Sin(2.0 * Math.PI * 23.0 * t) - 0.08f * (float)Math.Sin(2.0 * Math.PI * 37.0 * t);
+                    NoiseL(b, new NoiseLayer { Env = roar, Gain = 0.6f, Filter = SvfMode.LowPass, Width = 0.7f, Amp = burn,
+                        Cutoff = t => t < 0.22f ? Note.ExpLerp(900f, 2300f * k, t / 0.22f) : Note.ExpLerp(2300f * k, 420f, (t - 0.22f) / 0.95f) }, seed + 1);
+                    NoiseL(b, new NoiseLayer { Env = roar, Color = NoiseColor.Brown, Gain = 0.65f, Filter = SvfMode.LowPass,
+                        Cutoff = Const(260f), Amp = burn }, seed + 2);
+                    b.Saturate(0.7f);
+                    b.ApplyReverb(0.3f, 0.88f, 0.6f, 1f, 0.03f, 120f);
+                    lp = 8000f;
+                    break;
+                }
+                case Sfx.HitShield:
+                {
+                    // Щит гасит удар: глухой «вумф», вспышка поля с дрожью, электрическое шипение
+                    b = new Stereo(1.3f, sr);
+                    float k = 1f + variant * 0.07f;
+                    Thump(b, rng, 0f, 88f * k, 42f, 0.07f, 0.3f, 0.75f);
+                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.002f, 0.04f, 0.45f, 0.05f, 0.32f), Gain = 0.5f, Filter = SvfMode.BandPass,
+                        Cutoff = Glide(1500f * k, 420f, 0.32f), Q = 1.4f, Width = 0.9f }, seed);
+                    Tone(b, new ToneLayer { Env = new Adsr(0.004f, 0.05f, 0.5f, 0.1f, 0.4f), Freq = Const(118f * k), Gain = 0.16f,
+                        Amp = t => 1f - 0.5f * (0.5f + 0.5f * (float)Math.Sin(2.0 * Math.PI * 14.0 * t)) }, rng);
+                    Crackle(b, rng, 0f, 0.3f, 1400f, 0.07f, 5200f);
+                    b.ApplyReverb(0.26f, 0.84f, 0.6f, 1f, 0.02f, 140f);
+                    lp = 9000f;
                     break;
                 }
                 case Sfx.HitArmor:
                 {
-                    b = new Stereo(0.9f, sr);
-                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0008f, 0.03f, 6f), Color = NoiseColor.White, Gain = 0.7f,
-                        Filter = SvfMode.BandPass, Cutoff = Const(2500f), Q = 0.8f }, seed);
-                    Modal(b, rng, 0f, rng.Range(160f, 260f), new[] { 1f, 2.4f, 3.9f, 5.6f, 7.3f }, 0.35f, 0.35f);
-                    Thump(b, rng, 0f, 120f, 60f, 0.05f, 0.12f, 0.5f);
-                    b.ApplyReverb(0.15f, 0.5f, 0.5f);
+                    // Пробитие брони: треск, тяжёлый удар, низкий стон металла корпуса, сыплющиеся обломки
+                    b = new Stereo(1.3f, sr);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0005f, 0.016f, 6f), Color = NoiseColor.White, Gain = 0.4f,
+                        Filter = SvfMode.BandPass, Cutoff = Const(3000f), Q = 0.7f }, seed);
+                    Thump(b, rng, 0f, 96f, 40f, 0.06f, 0.3f, 0.95f);
+                    Modal(b, rng, 0f, rng.Range(70f, 95f), new[] { 1f, 1.47f, 2.09f, 2.81f }, 0.55f, 0.2f);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.003f, 0.42f, 4f), Color = NoiseColor.Brown, Gain = 0.45f,
+                        Filter = SvfMode.LowPass, Cutoff = Const(300f) }, seed + 1);
+                    Crackle(b, rng, 0.02f, 0.45f, 160f, 0.18f, 2200f);
+                    b.Saturate(0.7f);
+                    b.ApplyReverb(0.24f, 0.85f, 0.6f, 1f, 0.02f, 100f);
+                    lp = 8000f;
                     break;
                 }
                 case Sfx.ExplosionSmall:
@@ -1200,28 +1227,36 @@ namespace StellarisClone.Core.Audio
         /// </summary>
         private static Stereo Explosion(int sr, Noise rng, int seed, float size, int variant, float seconds = -1f)
         {
-            var b = new Stereo(seconds > 0f ? seconds : 1.6f + size * 1.4f, sr);
-            float body = 0.55f * size + 0.15f;
-            NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0008f, 0.03f, 6f), Color = NoiseColor.White, Gain = 0.5f,
-                Filter = SvfMode.HighPass, Cutoff = Const(1500f), Width = 0.4f }, seed);
-            NoiseL(b, new NoiseLayer { Env = new Adsr(0.003f, 0.15f * size, 0.5f, 0.1f * size, body, 4f), Gain = 0.9f, Filter = SvfMode.LowPass,
-                Cutoff = Glide(5000f + variant * 600f, 250f, body), Q = 0.9f, Width = 0.6f }, seed + 1);
-            Thump(b, rng, 0f, 80f / Math.Max(1f, size * 0.7f), 26f, 0.25f * size, 0.5f * size + 0.1f, 1f);
-            NoiseL(b, new NoiseLayer { Env = new Adsr(0.01f, 0.2f * size, 0.6f, 0.2f * size, 0.8f * size, 4f), Color = NoiseColor.Brown, Gain = 0.8f,
-                Filter = SvfMode.LowPass, Cutoff = Const(220f) }, seed + 2);
-            Crackle(b, rng, 0.05f, 0.9f * size, 60f, 0.25f, 3000f);
+            var b = new Stereo(seconds > 0f ? seconds : 2.0f + size * 1.6f, sr);
+            float body = 0.6f * size + 0.2f;
+            // Короткий треск детонации
+            NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0006f, 0.02f, 6f), Color = NoiseColor.White, Gain = 0.3f,
+                Filter = SvfMode.HighPass, Cutoff = Const(2500f), Width = 0.4f }, seed);
+            // Огненный шар: плотный шум, фильтр закрывается
+            NoiseL(b, new NoiseLayer { Env = new Adsr(0.003f, 0.16f * size, 0.55f, 0.12f * size, body, 4f), Gain = 0.95f, Filter = SvfMode.LowPass,
+                Cutoff = Glide(3200f + variant * 400f, 180f, body), Q = 0.9f, Width = 0.7f }, seed + 1);
+            // Середина: «мясо» взрыва
+            NoiseL(b, new NoiseLayer { Env = new Adsr(0.004f, 0.1f * size, 0.5f, 0.08f * size, 0.6f * size, 4f), Gain = 0.45f, Filter = SvfMode.BandPass,
+                Cutoff = Glide(900f, 250f, 0.5f * size), Q = 0.8f, Width = 0.8f }, seed + 5);
+            // Удар и волна давления в саб
+            Thump(b, rng, 0f, 66f / Math.Max(1f, size * 0.7f), 24f, 0.3f * size, 0.6f * size + 0.15f, 1f);
+            Tone(b, new ToneLayer { Env = new Adsr(0.01f, 0.2f, 0.6f, 0.15f * size, 0.9f * size, 3f), Freq = Glide(40f, 27f, 1.2f * size), Gain = 0.45f }, rng);
+            // Долгий рокот
+            NoiseL(b, new NoiseLayer { Env = new Adsr(0.02f, 0.25f * size, 0.65f, 0.3f * size, 1.1f * size, 4f), Color = NoiseColor.Brown, Gain = 0.85f,
+                Filter = SvfMode.LowPass, Cutoff = Const(200f) }, seed + 2);
+            Crackle(b, rng, 0.06f, 1.1f * size, 70f, 0.22f, 2400f);
             if (size > 1.5f)
             {
                 // Вторичные детонации
-                Thump(b, rng, 0.25f + variant * 0.05f, 65f, 30f, 0.2f, 0.6f, 0.6f);
-                NoiseL(b, new NoiseLayer { Start = 0.25f, Env = new Adsr(0.003f, 0.1f, 0.4f, 0.05f, 0.5f), Gain = 0.5f, Filter = SvfMode.LowPass,
-                    Cutoff = Glide(3500f, 300f, 0.6f), Width = 0.8f, Pan = -0.3f }, seed + 3);
-                Thump(b, rng, 0.55f, 55f, 28f, 0.2f, 0.7f, 0.5f);
-                NoiseL(b, new NoiseLayer { Start = 0.55f, Env = new Adsr(0.003f, 0.1f, 0.4f, 0.05f, 0.6f), Gain = 0.45f, Filter = SvfMode.LowPass,
-                    Cutoff = Glide(3000f, 250f, 0.7f), Width = 0.8f, Pan = 0.3f }, seed + 4);
+                Thump(b, rng, 0.25f + variant * 0.05f, 60f, 28f, 0.2f, 0.7f, 0.6f);
+                NoiseL(b, new NoiseLayer { Start = 0.25f, Env = new Adsr(0.003f, 0.1f, 0.4f, 0.05f, 0.6f), Gain = 0.5f, Filter = SvfMode.LowPass,
+                    Cutoff = Glide(2600f, 220f, 0.6f), Width = 0.8f, Pan = -0.3f }, seed + 3);
+                Thump(b, rng, 0.55f, 52f, 26f, 0.2f, 0.8f, 0.5f);
+                NoiseL(b, new NoiseLayer { Start = 0.55f, Env = new Adsr(0.003f, 0.1f, 0.4f, 0.05f, 0.7f), Gain = 0.45f, Filter = SvfMode.LowPass,
+                    Cutoff = Glide(2300f, 200f, 0.7f), Width = 0.8f, Pan = 0.3f }, seed + 4);
             }
-            b.Saturate(0.8f);
-            b.ApplyReverb(size > 1.5f ? 0.42f : 0.28f, size > 1.5f ? 0.9f : 0.75f, 0.5f);
+            b.Saturate(0.9f);
+            b.ApplyReverb(size > 1.5f ? 0.42f : 0.32f, size > 1.5f ? 0.92f : 0.86f, 0.6f, 1f, 0.03f, 60f);
             return b;
         }
     }

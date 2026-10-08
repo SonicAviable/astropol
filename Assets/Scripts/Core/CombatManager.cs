@@ -621,7 +621,7 @@ namespace StellarisClone.Core
                     if (show)
                     {
                         CombatFx.Instance.Fire(weapon, from, to, wc, false, CombatFx.Impact.None, size);
-                        if (Random.value < 0.5f) SFXManager.PlayAt(WeaponSfx(weapon), from, 0.8f);
+                        if (Random.value < 0.5f) SFXManager.PlayAt(WeaponSfx(weapon), from, 0.8f, GunPitch(shooter));
                     }
                     return;
                 }
@@ -637,7 +637,7 @@ namespace StellarisClone.Core
             if (show)
             {
                 CombatFx.Instance.Fire(weapon, from, to, wc, true, shieldBefore > 0f ? CombatFx.Impact.Shield : CombatFx.Impact.Hull, size);
-                ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer);
+                ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer, GunPitch(shooter));
                 // Числа урона — изредка и только для крупных попаданий: картину боя рисуют эффекты
                 if (dealt >= 12f && Random.value < 0.22f) SpawnFloater(to, $"-{dealt:0}", Color.Lerp(wc, Color.white, 0.35f));
             }
@@ -1134,19 +1134,30 @@ namespace StellarisClone.Core
             _ => Sfx.WeaponMissile
         };
 
-        /// <summary>
-        /// Звук выстрела у стрелка и попадания у цели. В крупных боях выстрелов очень много —
-        /// часть пропускается (плюс лимит голосов в SFXManager), чтобы не было «каши».
-        /// </summary>
-        private static void ShotSound(WeaponDamageType weapon, Vector3 from, Vector3 to, bool shieldHit, bool heavyTarget)
+        /// <summary>Калибр на слух: орудия эсминцев и баз ниже и тяжелее, корветов — суше и выше.</summary>
+        private static float GunPitch(Combatant shooter)
         {
-            if (Random.value < 0.75f) SFXManager.PlayAt(WeaponSfx(weapon), from);
+            if (shooter.Fleet == null) return 0.78f;
+            var h = shooter.Fleet.Data.HullClass;
+            return h == ShipClass.Destroyer ? 0.84f : h == ShipClass.Frigate ? 0.94f : 1.04f;
+        }
+
+        /// <summary>
+        /// Звук выстрела у стрелка и попадания у цели — когда снаряд долетел (как в эффектах: трассер, ракета по дуге).
+        /// В крупных боях выстрелов очень много — часть пропускается (плюс лимит голосов в SFXManager), чтобы не было «каши».
+        /// </summary>
+        private static void ShotSound(WeaponDamageType weapon, Vector3 from, Vector3 to, bool shieldHit, bool heavyTarget, float gunPitch)
+        {
+            if (Random.value < 0.75f) SFXManager.PlayAt(WeaponSfx(weapon), from, 1f, gunPitch);
             if (Random.value < 0.55f)
             {
-                // Ракеты долетают с задержкой — звук попадания чуть позже
                 var sfx = shieldHit ? Sfx.HitShield : Sfx.HitArmor;
                 float pitch = heavyTarget ? 0.85f : 1f;
-                SFXManager.PlayAt(sfx, to, 1f, pitch);
+                float dist = Vector3.Distance(from, to);
+                float delay = weapon == WeaponDamageType.Explosive ? 0.75f + dist * 0.03f
+                            : weapon == WeaponDamageType.Kinetic ? 0.22f + dist * 0.012f
+                            : 0.02f;
+                SFXManager.PlayAtDelayed(sfx, to, delay, 1f, pitch);
             }
         }
 
