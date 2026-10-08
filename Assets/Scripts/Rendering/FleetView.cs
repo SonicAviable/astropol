@@ -63,6 +63,10 @@ namespace StellarisClone.Rendering
         private float _throttle, _retro, _bank, _nozzleRadius = 0.12f, _retroRadius = 0.06f;
         private Vector3 _orbitSpot;
         private bool _gliding;
+        // Бой: скорость манёвра, собственные часы «танца» и флаг, чтобы после боя вернуться на орбиту
+        private Vector3 _combatVel;
+        private float _combatClock;
+        private bool _wasInCombat;
         private static Mesh s_plumeQuad;
         private static Shader s_plumeShader;
         private static readonly int IdThrottle = Shader.PropertyToID("_Throttle");
@@ -479,7 +483,8 @@ namespace StellarisClone.Rendering
         {
             if (Data.InCombat) return;
             if (Data.Destroyed) return;
-            if (Data.State == FleetState.Orbiting && Data.Path.Count > 0)
+            // Перехват: из системы с вооружённым врагом военный корабль не уходит, пока не выйдет из боя
+            if (Data.State == FleetState.Orbiting && Data.Path.Count > 0 && !Pinned())
                 StartNextJump();
 
             if (Data.State == FleetState.InHyperlane)
@@ -520,7 +525,12 @@ namespace StellarisClone.Rendering
             Data.CurrentSystemId = Data.TargetSystemId;
             Data.TargetSystemId = -1;
             Data.State = FleetState.Orbiting;
-            if (Data.Path.Count > 0)
+            if (Data.Path.Count > 0 && Pinned())
+            {
+                // Враг в системе — флот останавливается и принимает бой, маршрут продолжит после
+                SnapToCurrentSystem(instant: false);
+            }
+            else if (Data.Path.Count > 0)
             {
                 StartNextJump();
             }
@@ -550,6 +560,8 @@ namespace StellarisClone.Rendering
                 }
             }
         }
+
+        private bool Pinned() => CombatManager.Instance != null && CombatManager.Instance.IsInterdicted(Data, Data.CurrentSystemId);
 
         private void CompleteConstruction()
         {
@@ -644,6 +656,14 @@ namespace StellarisClone.Rendering
                 if (_statusBadge.gameObject.activeSelf != near) _statusBadge.gameObject.SetActive(near);
             }
 
+            // Бой закончился — корабль возвращается на своё место на орбите
+            if (_wasInCombat && !Data.InCombat)
+            {
+                _wasInCombat = false;
+                _combatVel = Vector3.zero;
+                if (Data.State != FleetState.InHyperlane) SnapToCurrentSystem(instant: false);
+            }
+
             if (Data.State == FleetState.InHyperlane && Data.TargetSystemId != -1)
             {
                 _laserBeam.enabled = false;
@@ -651,6 +671,20 @@ namespace StellarisClone.Rendering
                 Fly();
                 string targetSysName = _generator.Systems[Data.TargetSystemId].Name;
                 _statusBadge.text = $"<color=#FE3>Прыжок ➔ {targetSysName}</color>\n<color=#FFF>{Mathf.Max(0, (int)Data.DaysRemainingInTransit)} дн.</color>";
+            }
+            else if (Data.InCombat)
+            {
+                _wasInCombat = true;
+                _laserBeam.enabled = false;
+                _workLight.intensity = 0f;
+                CombatManeuver();
+                var cm = CombatManager.Instance;
+                string ftl = cm == null ? "" : cm.IsRetreating(Data)
+                    ? (cm.FtlReadyIn(Data) > 0f ? $" · <color=#F2C747>отход через {cm.FtlReadyIn(Data):0.0} дн.</color>" : " · <color=#F2C747>прыжок!</color>")
+                    : cm.FtlReadyIn(Data) > 0f ? $" · ГПД {cm.FtlReadyIn(Data):0.0} дн." : "";
+                _statusBadge.text =
+                    $"<color=#FF5555>БОЙ</color>{ftl}\n" +
+                    $"<color=#FFF>Корпус {Data.HullPoints:0} · Щиты {Data.ShieldPoints:0} · Броня {Data.ArmorPoints:0}</color>";
             }
             else if (Data.State == FleetState.Surveying)
             {
@@ -689,15 +723,6 @@ namespace StellarisClone.Rendering
                 _workLight.intensity = Random.Range(1.0f, 3.5f);
 
                 _statusBadge.text = $"<color=#FE4>Монтаж аванпоста</color>\n<color=#FFF>{(int)Data.DaysRemainingConstruction} дн.</color>";
-            }
-            else if (Data.InCombat)
-            {
-                EnginesIdle();
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
-                _statusBadge.text =
-                    $"<color=#FF5555>БОЙ</color>\n" +
-                    $"<color=#FFF>Корпус {Data.HullPoints:0} · Щиты {Data.ShieldPoints:0} · Броня {Data.ArmorPoints:0}</color>";
             }
             else
             {
@@ -821,6 +846,69 @@ namespace StellarisClone.Rendering
             _retro = Mathf.MoveTowards(_retro, 0f, 2f * Time.deltaTime);
             ApplyThrottle(_throttle, _retro);
             _engineTrail.emitting = _throttle > 0.05f;
+        }
+
+        /// <summary>
+        /// Манёвры в бою: корабль выходит на своё место в строю и там не стоит столбом — смещается вбок,
+        /// вперёд-назад и по высоте (корветы резво, эсминцы степенно), держа нос на цели. На переходах
+        /// смотрит по ходу, кренится в разворотах, работает маршевыми и тормозными. На паузе замирает.
+        /// </summary>
+        private void CombatManeuver()
+        {
+            var cm = CombatManager.Instance;
+            if (cm == null || !cm.TryGetCombatStation(Data, out Vector3 station, out Vector3 aim)) { EnginesIdle(); return; }
+            _gliding = false;
+
+            var tm = TimeManager.Instance;
+            float dt = tm != null && tm.CurrentSpeed == 0 ? 0f : Time.deltaTime;
+            if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
+            _combatClock += dt;
+
+            bool military = Data.Type == FleetType.Military;
+            var hull = Data.HullClass;
+            float amp = !military ? 0.35f : hull == ShipClass.Corvette ? 1.3f : hull == ShipClass.Frigate ? 0.9f : 0.55f;
+            float freq = !military ? 0.25f : hull == ShipClass.Corvette ? 0.55f : hull == ShipClass.Frigate ? 0.4f : 0.28f;
+            float smooth = !military ? 1.4f : hull == ShipClass.Corvette ? 0.8f : hull == ShipClass.Frigate ? 1.1f : 1.5f;
+            float maxSpeed = !military ? 4f : hull == ShipClass.Corvette ? 7f : hull == ShipClass.Frigate ? 5.5f : 4f;
+            float turn = !military ? 70f : hull == ShipClass.Corvette ? 130f : hull == ShipClass.Frigate ? 95f : 60f;
+
+            Vector3 axis = Flat(aim - station);
+            axis = axis.sqrMagnitude > 0.01f ? axis.normalized : Vector3.forward;
+            Vector3 side = new Vector3(-axis.z, 0f, axis.x);
+            float seed = Mathf.Repeat(Data.Id * 0.618034f, 1f) * 6.2832f;
+            float t = _combatClock * freq;
+            Vector3 goal = station
+                         + side * (Mathf.Sin(t + seed) * amp)
+                         + axis * (Mathf.Sin(t * 0.7f + seed * 1.3f) * amp * 0.45f)
+                         + Vector3.up * (Mathf.Sin(t * 1.3f + seed * 2.1f) * 0.18f);
+
+            transform.position = Vector3.SmoothDamp(transform.position, goal, ref _combatVel, smooth, maxSpeed, dt);
+
+            // Нос: на переходе — по ходу, на позиции — на цель
+            Vector3 vel = Flat(_combatVel);
+            bool transit = (goal - transform.position).sqrMagnitude > 4f && vel.sqrMagnitude > 0.5f;
+            Vector3 look = transit ? vel : Flat(aim - transform.position);
+            Vector3 fwdBefore = Flat(transform.forward);
+            if (look.sqrMagnitude > 0.0001f && fwdBefore.sqrMagnitude > 0.0001f)
+            {
+                Quaternion level = Quaternion.LookRotation(fwdBefore.normalized, Vector3.up);
+                Quaternion want = Quaternion.LookRotation(look.normalized, Vector3.up);
+                Quaternion next = Quaternion.RotateTowards(level, want, turn * dt);
+                float yawRate = Vector3.SignedAngle(level * Vector3.forward, next * Vector3.forward, Vector3.up) / dt;
+                float lateral = Vector3.Dot(vel, next * Vector3.right);
+                float targetBank = Mathf.Clamp(-yawRate * 0.3f - lateral * 5f, -MaxBankDeg, MaxBankDeg);
+                _bank = Mathf.Lerp(_bank, targetBank, 1f - Mathf.Exp(-3.5f * dt));
+                transform.rotation = next * Quaternion.Euler(0f, 0f, _bank);
+            }
+
+            // Тяга: вперёд — маршевые, назад — тормозные; в бою двигатели не глохнут совсем
+            float along = Vector3.Dot(_combatVel, transform.forward);
+            float main = 0.08f + Mathf.Clamp01(along / 3f) * 0.8f;
+            float retro = Mathf.Clamp01(-along / 2.5f);
+            _throttle = Mathf.MoveTowards(_throttle, main, 2.5f * dt);
+            _retro = Mathf.MoveTowards(_retro, retro, 2.5f * dt);
+            ApplyThrottle(_throttle, _retro);
+            _engineTrail.emitting = _combatVel.sqrMagnitude > 1.4f;
         }
 
         private void EnginesIdle()

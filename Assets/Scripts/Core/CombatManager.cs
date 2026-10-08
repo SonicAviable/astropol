@@ -18,6 +18,11 @@ namespace StellarisClone.Core
     ///     на ремонт с остатком прочности, иначе погибает.
     ///   • Звёздная база, потерявшая корпус, выводится из строя — только после этого возможна осада.
     ///   • По итогам — отчёт о битве; на карте над системой горит значок сражения.
+    ///   • Перехват: военный флот, прибывший в систему с вооружённым врагом или действующей вражеской
+    ///     базой, останавливается и принимает бой — сквозь противника не пролететь, «догонялок» нет.
+    ///   • Бой неспешный: сначала фаза сближения (бьют ракеты, лучи ещё не достают), затем огневой контакт.
+    ///     Стороны выстраиваются друг против друга, корабли маневрируют на своих позициях.
+    ///   • Экстренный прыжок — только после разгона ГПД (3 дня боя) и стоит 10% корпуса.
     /// </summary>
     public class CombatManager : MonoBehaviour
     {
@@ -36,7 +41,14 @@ namespace StellarisClone.Core
         /// орудий корабля перемножались суммами; теперь каждое орудие стреляет само, а темп
         /// поднят вдвое, чтобы корвет с двумя орудиями воевал так же быстро, как прежде.
         /// </summary>
-        public const float ShotsPerDay = 3f;
+        public const float ShotsPerDay = 1f;
+        /// <summary>Фаза сближения в начале боя (дней): лучи почти не достают, кинетика — вполсилы.</summary>
+        public const float ApproachDays = 0.8f;
+        /// <summary>Разгон гиперпривода в бою до экстренного прыжка, дней.</summary>
+        public const float FtlSpoolDays = 3f;
+        /// <summary>Цена экстренного прыжка — доля максимального корпуса.</summary>
+        private const float FtlHullCost = 0.10f;
+        private const float FtlSuccess = 0.8f;
         /// <summary>Сколько дней без перестрелки, чтобы бой считался завершённым.</summary>
         private const float BattleEndQuietDays = 0.5f;
 
@@ -44,7 +56,6 @@ namespace StellarisClone.Core
         public static event System.Action<FleetData, int> OnShipDestroyed;
 
         private GalaxyGenerator _generator;
-        private readonly List<LineRenderer> _beams = new List<LineRenderer>();
         private readonly List<FloatingDmg> _floaters = new List<FloatingDmg>();
         private GameObject _fxRoot;
         private Font _font;
@@ -74,6 +85,9 @@ namespace StellarisClone.Core
             public int SystemId;
             public float Days;
             public float QuietDays;
+            public float BaseAngle;
+            public readonly List<int> SideOrder = new List<int>();
+            public bool Approach => Days < ApproachDays;
             public readonly Dictionary<int, SideStats> Sides = new Dictionary<int, SideStats>();
             public bool PlayerInvolved => Sides.ContainsKey(0);
             public GameObject Marker;
@@ -104,6 +118,14 @@ namespace StellarisClone.Core
         private readonly Dictionary<int, int> _targets = new Dictionary<int, int>();
         // Корабли, вышедшие из боя: их не трогают, пока они не покинут систему
         private readonly HashSet<int> _disengaged = new HashSet<int>();
+        // Сколько дней корабль уже в бою (разгон ГПД, фаза сближения)
+        private readonly Dictionary<int, float> _combatDays = new Dictionary<int, float>();
+        // Приказ на отступление: прыжок, как только ГПД разгонится (id → куда лететь дальше)
+        private readonly Dictionary<int, int> _pendingFtl = new Dictionary<int, int>();
+        // Позиции в боевом строю и цели — для манёвров FleetView
+        private struct Station { public int SystemId; public Vector3 Pos; public int TargetKey; }
+        private readonly Dictionary<int, Station> _stations = new Dictionary<int, Station>();
+        private readonly Dictionary<int, FleetView> _viewById = new Dictionary<int, FleetView>();
 
         // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
 
@@ -151,7 +173,6 @@ namespace StellarisClone.Core
                 if (_clock > RoundDays * 8) _clock = 0f;
             }
 
-            TickBeams(Time.unscaledDeltaTime);
             TickFloaters(Time.unscaledDeltaTime);
             UpdateMarkers();
             RefreshHud();
@@ -186,10 +207,12 @@ namespace StellarisClone.Core
 
             // Флоты на орбитах по системам
             var bySystem = new Dictionary<int, List<FleetView>>();
+            _viewById.Clear();
             foreach (var fv in fm.AllFleets)
             {
                 var d = fv?.Data;
                 if (d == null || d.Destroyed) continue;
+                _viewById[d.Id] = fv;
                 if (d.State == FleetState.InHyperlane) { _disengaged.Remove(d.Id); continue; }
                 if (_disengaged.Contains(d.Id)) continue;
                 if (!bySystem.TryGetValue(d.CurrentSystemId, out var list)) bySystem[d.CurrentSystemId] = list = new List<FleetView>();
@@ -198,6 +221,7 @@ namespace StellarisClone.Core
 
             var engaged = new HashSet<int>();
             var activeSystems = new HashSet<int>();
+            _stations.Clear();
 
             foreach (var kv in bySystem)
             {
@@ -225,6 +249,13 @@ namespace StellarisClone.Core
                     {
                         p.Fleet.Data.InCombat = true;
                         engaged.Add(p.Fleet.Data.Id);
+                        if (!_combatDays.TryGetValue(p.Fleet.Data.Id, out float cd))
+                        {
+                            // Вступая в бой, орудия открывают огонь вразнобой, а не единым залпом
+                            foreach (var w in p.Fleet.Data.Weapons)
+                                if (w.FireRate > 0f) w.Cooldown = Random.value / (w.FireRate * ShotsPerDay);
+                        }
+                        _combatDays[p.Fleet.Data.Id] = cd + dt;
                     }
                 }
 
@@ -237,11 +268,20 @@ namespace StellarisClone.Core
                 }
 
                 UpdateSideStats(battle, parts);
+                AssignStations(battle, parts, sys);
             }
 
             // Корабли, которые больше не в бою
             foreach (var fv in fm.AllFleets)
                 if (fv?.Data != null && fv.Data.InCombat && !engaged.Contains(fv.Data.Id)) fv.Data.InCombat = false;
+            if (_combatDays.Count > 0)
+            {
+                List<int> gone = null;
+                foreach (var id in _combatDays.Keys) if (!engaged.Contains(id)) (gone ??= new List<int>()).Add(id);
+                if (gone != null) foreach (var id in gone) { _combatDays.Remove(id); _pendingFtl.Remove(id); }
+            }
+
+            ProcessPendingFtl();
 
             // Завершение боёв
             var ended = new List<Battle>();
@@ -253,6 +293,124 @@ namespace StellarisClone.Core
             }
             foreach (var b in ended) EndBattle(b);
         }
+
+        // ==================== СТРОЙ ====================
+
+        private static float StationRadius(FleetData d)
+        {
+            if (d.Type != FleetType.Military) return 5.0f;
+            return d.HullClass == ShipClass.Destroyer ? 4.3f : d.HullClass == ShipClass.Frigate ? 3.6f : 3.0f;
+        }
+
+        /// <summary>
+        /// Стороны встают друг против друга (вторая — напротив первой, третья и четвёртая — с флангов),
+        /// внутри стороны — линиями по классам: корветы впереди, эсминцы в глубине, гражданские в тылу.
+        /// </summary>
+        private void AssignStations(Battle battle, List<Combatant> parts, StarSystem sys)
+        {
+            if (battle.SideOrder.Count == 0 && sys.OwnerId >= 0)
+                foreach (var p in parts) if (p.Owner == sys.OwnerId) { battle.SideOrder.Add(sys.OwnerId); break; }
+            foreach (var p in parts)
+                if (!battle.SideOrder.Contains(p.Owner)) battle.SideOrder.Add(p.Owner);
+
+            var groups = new Dictionary<long, List<FleetData>>();
+            foreach (var p in parts)
+            {
+                if (p.Fleet == null || !p.Alive) continue;
+                var d = p.Fleet.Data;
+                int cls = d.Type != FleetType.Military ? 3 : (int)d.HullClass;
+                long key = (long)p.Owner * 8 + cls;
+                if (!groups.TryGetValue(key, out var g)) groups[key] = g = new List<FleetData>();
+                g.Add(d);
+            }
+
+            const int PerRow = 6;
+            foreach (var g in groups.Values)
+            {
+                g.Sort((x, y) => x.Id.CompareTo(y.Id));
+                int side = battle.SideOrder.IndexOf(g[0].OwnerId);
+                float angle = battle.BaseAngle + SideAngle(side);
+                var dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0f, Mathf.Sin(angle * Mathf.Deg2Rad));
+                var perp = new Vector3(-dir.z, 0f, dir.x);
+                for (int i = 0; i < g.Count; i++)
+                {
+                    var d = g[i];
+                    int row = i / PerRow, col = i % PerRow;
+                    int inRow = Mathf.Min(PerRow, g.Count - row * PerRow);
+                    float lateral = (col - (inRow - 1) * 0.5f) * 1.0f;
+                    float radial = StationRadius(d) + row * 0.8f;
+                    float lift = d.HullClass == ShipClass.Corvette ? 0.75f : d.HullClass == ShipClass.Frigate ? 0.5f : 0.3f;
+                    var pos = sys.Position + dir * radial + perp * lateral + Vector3.up * (lift + (row % 2) * 0.35f);
+                    _stations[d.Id] = new Station
+                    {
+                        SystemId = sys.Id,
+                        Pos = pos,
+                        TargetKey = _targets.TryGetValue(d.Id, out int t) ? t : int.MinValue
+                    };
+                }
+            }
+        }
+
+        private static float SideAngle(int side) => side switch
+        {
+            0 => 0f, 1 => 180f, 2 => 90f, 3 => 270f, _ => 45f + 90f * (side - 4)
+        };
+
+        /// <summary>Место корабля в боевом строю и точка, куда он целится. false — корабль не в бою.</summary>
+        public bool TryGetCombatStation(FleetData d, out Vector3 station, out Vector3 aim)
+        {
+            station = aim = Vector3.zero;
+            if (d == null || !_stations.TryGetValue(d.Id, out var st) || st.SystemId != d.CurrentSystemId) return false;
+            station = st.Pos;
+            aim = _generator != null ? _generator.Systems[st.SystemId].Position : st.Pos;
+            if (st.TargetKey >= 0)
+            {
+                if (_viewById.TryGetValue(st.TargetKey, out var tv) && tv != null) aim = tv.transform.position;
+            }
+            else if (st.TargetKey != int.MinValue) aim += Vector3.up * 1.2f;   // звёздная база
+            return true;
+        }
+
+        // ==================== ПЕРЕХВАТ ====================
+
+        /// <summary>
+        /// Держит ли система этот флот: военный корабль не может пройти через систему, где стоит
+        /// вооружённый враг или действует вражеская звёздная база, — он останавливается и принимает бой.
+        /// Выходящие из боя (аварийный прыжок, отход на ремонт) не задерживаются.
+        /// </summary>
+        public bool IsInterdicted(FleetData d, int systemId)
+        {
+            if (d == null || d.Destroyed || d.Type != FleetType.Military || _generator == null) return false;
+            if (systemId < 0 || systemId >= _generator.Systems.Count || _disengaged.Contains(d.Id)) return false;
+            var sys = _generator.Systems[systemId];
+            if (sys.OwnerId >= 0 && sys.OwnerId != d.OwnerId && Diplomacy.AtWar(d.OwnerId, sys.OwnerId) && IsStarbaseActive(systemId))
+                return true;
+            var fm = FleetManager.Instance;
+            if (fm == null) return false;
+            foreach (var fv in fm.AllFleets)
+            {
+                var o = fv?.Data;
+                if (o == null || o.Destroyed || o == d || o.CurrentSystemId != systemId || o.State == FleetState.InHyperlane) continue;
+                if (o.Type != FleetType.Military || o.Damage <= 0f || _disengaged.Contains(o.Id)) continue;
+                if (o.OwnerId == Threats.LeviathanOwner) continue;   // стражи не преследуют проходящих — бьют только тех, кто остановился
+                if (Diplomacy.AtWar(d.OwnerId, o.OwnerId)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Корабль выходит из боя (аварийный прыжок или отход на ремонт) — его не задерживают.</summary>
+        public bool IsDisengaging(FleetData d) => d != null && _disengaged.Contains(d.Id);
+
+        /// <summary>Сколько дней ещё разгоняться ГПД до экстренного прыжка (0 — готов).</summary>
+        public float FtlReadyIn(FleetData d)
+        {
+            if (d == null) return FtlSpoolDays;
+            _combatDays.TryGetValue(d.Id, out float days);
+            return Mathf.Max(0f, FtlSpoolDays - days);
+        }
+
+        /// <summary>Отдан ли кораблю приказ на отступление (ждёт разгона ГПД).</summary>
+        public bool IsRetreating(FleetData d) => d != null && _pendingFtl.ContainsKey(d.Id);
 
         private static bool HasFight(List<Combatant> parts)
         {
@@ -278,8 +436,10 @@ namespace StellarisClone.Core
             {
                 var d = shooter.Fleet.Data;
                 float rateMult = LeaderManager.AdmiralFireRateMult(d.OwnerId, battle.SystemId);
+                _combatDays.TryGetValue(d.Id, out float inBattle);
+                bool approach = inBattle < ApproachDays;
                 foreach (var w in d.Weapons)
-                    w.Cooldown = FireWeapon(shooter, parts, battle, dt, w.Damage, w.FireRate * rateMult, w.Type, w.Cooldown);
+                    w.Cooldown = FireWeapon(shooter, parts, battle, dt, w.Damage, w.FireRate * rateMult * (approach ? ApproachRate(w.Type) : 1f), w.Type, w.Cooldown);
             }
             else
             {
@@ -287,6 +447,14 @@ namespace StellarisClone.Core
                 b.Cooldown = FireWeapon(shooter, parts, battle, dt, b.Damage, b.FireRate, b.Weapon, b.Cooldown);
             }
         }
+
+        /// <summary>На сближении ракеты бьют в полную силу, кинетика — вполсилы, лучи почти не достают.</summary>
+        private static float ApproachRate(WeaponDamageType t) => t switch
+        {
+            WeaponDamageType.Explosive => 1f,
+            WeaponDamageType.Kinetic => 0.5f,
+            _ => 0.2f
+        };
 
         private float FireWeapon(Combatant shooter, List<Combatant> parts, Battle battle, float dt,
                                  float damage, float fireRate, WeaponDamageType weapon, float cooldown)
@@ -341,6 +509,9 @@ namespace StellarisClone.Core
             var ab = EmpireBonuses.For(shooter.Owner);
             Vector3 from = shooter.Position(_generator), to = target.Position(_generator);
             Color wc = WeaponColor(weapon);
+            bool show = ShowFx(battle.SystemId, to);
+            float size = HitSize(target);
+            if (show) from = Muzzle(shooter, from, to);
 
             // Уклонение (у базы его нет)
             if (target.Fleet != null)
@@ -351,9 +522,11 @@ namespace StellarisClone.Core
                                              * LeaderManager.AdmiralEvasionMult(target.Owner, battle.SystemId) - accuracy) / 100f);
                 if (Random.value < evade * 0.45f)
                 {
-                    SpawnBeam(from, to, wc, 0.12f);
-                    SpawnFloater(to, "МИМО", new Color(0.7f, 0.85f, 0.9f));
-                    if (Random.value < 0.5f) SFXManager.PlayAt(WeaponSfx(weapon), from, 0.8f);
+                    if (show)
+                    {
+                        CombatFx.Instance.Fire(weapon, from, to, wc, false, CombatFx.Impact.None, size);
+                        if (Random.value < 0.5f) SFXManager.PlayAt(WeaponSfx(weapon), from, 0.8f);
+                    }
                     return;
                 }
             }
@@ -365,9 +538,13 @@ namespace StellarisClone.Core
             if (target.Fleet != null) dealt = ApplyLayeredDamage(target.Fleet.Data, raw, weapon);
             else dealt = ApplyLayeredDamage(target.Base, raw, weapon);
 
-            SpawnBeam(from, to, wc, 0.18f);
-            ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer);
-            SpawnFloater(to, $"-{dealt:0}", wc);
+            if (show)
+            {
+                CombatFx.Instance.Fire(weapon, from, to, wc, true, shieldBefore > 0f ? CombatFx.Impact.Shield : CombatFx.Impact.Hull, size);
+                ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer);
+                // Числа урона — изредка и только для крупных попаданий: картину боя рисуют эффекты
+                if (dealt >= 12f && Random.value < 0.22f) SpawnFloater(to, $"-{dealt:0}", Color.Lerp(wc, Color.white, 0.35f));
+            }
 
             Side(battle, shooter.Owner).DamageDealt += dealt;
             if (shooter.Fleet != null) LeaderManager.Instance?.OnDamageDealt(shooter.Owner, battle.SystemId, dealt);
@@ -383,6 +560,33 @@ namespace StellarisClone.Core
                 LeaderManager.Instance?.OnKill(shooter.Owner, battle.SystemId);
                 Side(battle, shooter.Owner).Kills++;
             }
+        }
+
+        /// <summary>Эффекты боя рисуются, только если игрок видит систему и камера достаточно близко.</summary>
+        private static bool ShowFx(int systemId, Vector3 at)
+        {
+            if (!Vision.PlayerSees(systemId)) return false;
+            if (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView) return false;
+            return CombatFx.CanShow(at);
+        }
+
+        private static float HitSize(Combatant c)
+        {
+            if (c.Fleet == null) return 1.7f;
+            var d = c.Fleet.Data;
+            if (d.Type != FleetType.Military) return 0.8f;
+            return d.HullClass == ShipClass.Destroyer ? 1.25f : d.HullClass == ShipClass.Frigate ? 0.95f : 0.72f;
+        }
+
+        /// <summary>Точка выстрела: орудие на борту, обращённом к цели (у базы — по окружности станции).</summary>
+        private static Vector3 Muzzle(Combatant shooter, Vector3 from, Vector3 to)
+        {
+            Vector3 dir = to - from;
+            dir.y = 0f;
+            dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.forward;
+            Vector3 side = new Vector3(-dir.z, 0f, dir.x);
+            float reach = shooter.Fleet == null ? 1.1f : shooter.Fleet.Data.HullClass == ShipClass.Destroyer ? 0.55f : 0.35f;
+            return from + dir * reach + side * Random.Range(-reach, reach) + Vector3.up * Random.Range(0.05f, 0.25f);
         }
 
         private static SideStats Side(Battle b, int owner)
@@ -414,10 +618,15 @@ namespace StellarisClone.Core
                 d.Path.Clear();
                 d.OrderQueue.Clear();
                 _disengaged.Add(d.Id);
+                _stations.Remove(d.Id);
+                _pendingFtl.Remove(d.Id);
                 FleetManager.Instance?.IssueMoveOrder(fv, escape);
                 Side(battle, d.OwnerId).Disengaged++;
-                SpawnFloater(fv.transform.position, "ВЫХОД ИЗ БОЯ", UIManager.DS.Gold);
-                SFXManager.PlayAt(Sfx.Disengage, fv.transform.position);
+                if (ShowFx(battle.SystemId, fv.transform.position))
+                {
+                    SpawnFloater(fv.transform.position, "ВЫХОД ИЗ БОЯ", UIManager.DS.Gold);
+                    SFXManager.PlayAt(Sfx.Disengage, fv.transform.position);
+                }
                 if (d.OwnerId == 0)
                     NotificationCenter.Show("Корабль вышел из боя", $"{d.Name} тяжело повреждён и отходит на ремонт", NotificationCenter.Kind.Warning, 4f);
                 return;
@@ -450,8 +659,16 @@ namespace StellarisClone.Core
             if (fv?.Data == null) return;
             fv.Data.Destroyed = true;
             fv.Data.InCombat = false;
-            SpawnExplosion(fv.transform.position, fv.Data.HullClass);
-            SpawnFloater(fv.transform.position, "УНИЧТОЖЕН", UIManager.DS.Red);
+            _stations.Remove(fv.Data.Id);
+            _pendingFtl.Remove(fv.Data.Id);
+            _combatDays.Remove(fv.Data.Id);
+            if (ShowFx(fv.Data.CurrentSystemId, fv.transform.position))
+            {
+                float size = fv.Data.Type != FleetType.Military ? 0.8f
+                           : fv.Data.HullClass == ShipClass.Destroyer ? 1.5f : fv.Data.HullClass == ShipClass.Frigate ? 1.15f : 0.85f;
+                CombatFx.Instance.ShipDestroyed(fv.transform.position, size, FleetIndicator.OwnerColor(fv.Data.OwnerId));
+                SpawnFloater(fv.transform.position, "УНИЧТОЖЕН", UIManager.DS.Red);
+            }
             bool big = fv.Data.Type == FleetType.Military && fv.Data.HullClass != ShipClass.Corvette;
             SFXManager.PlayAt(big ? Sfx.ExplosionLarge : Sfx.ExplosionSmall, fv.transform.position, fv.Data.OwnerId == 0 ? 1f : 0.9f);
             OnShipDestroyed?.Invoke(fv.Data, killerOwner);
@@ -468,45 +685,79 @@ namespace StellarisClone.Core
             Destroy(fv.gameObject, 0.15f);
         }
 
-        private readonly Dictionary<int, float> _ftlLocks = new Dictionary<int, float>();
-
         public bool TryEmergencyFtl(FleetView fleet) => TryEmergencyFtl(fleet, -1);
 
         /// <summary>
-        /// Экстренный прыжок из боя по приказу (72% успеха, после сбоя — пауза 2,4 с).
-        /// Корабль уходит в соседнюю систему — свою, если есть; preferredTarget — куда лететь дальше.
+        /// Приказ на экстренный прыжок из боя. Гиперпривод должен разогнаться (3 дня боя): до того корабль
+        /// держит строй и ждёт, прыжок выполняется сам, как только ГПД готов (80% успеха, сбой — ещё полдня разгона).
+        /// Прыжок стоит 10% корпуса. Корабль уходит в соседнюю систему — свою, если есть; preferredTarget — куда дальше.
+        /// true — прыжок совершён прямо сейчас.
         /// </summary>
         public bool TryEmergencyFtl(FleetView fleet, int preferredTarget)
         {
-            if (fleet?.Data == null || !fleet.Data.InCombat) return false;
-            if (_ftlLocks.TryGetValue(fleet.Data.Id, out float lockUntil) && lockUntil > Time.unscaledTime) return false;
-            if (_generator == null) return false;
-
-            if (Random.value >= 0.72f)
+            if (fleet?.Data == null || !fleet.Data.InCombat || _generator == null) return false;
+            var d = fleet.Data;
+            bool fresh = !_pendingFtl.ContainsKey(d.Id);
+            _pendingFtl[d.Id] = preferredTarget;
+            if (FtlReadyIn(d) > 0f)
             {
-                _ftlLocks[fleet.Data.Id] = Time.unscaledTime + 2.4f;
-                SpawnFloater(fleet.transform.position, "СБОЙ ГПД", UIManager.DS.Gold);
-                SFXManager.PlayAt(Sfx.FtlFail, fleet.transform.position);
+                if (fresh && ShowFx(d.CurrentSystemId, fleet.transform.position))
+                    SpawnFloater(fleet.transform.position, "РАЗГОН ГПД", UIManager.DS.NeonCyan);
+                return false;
+            }
+            return ExecuteFtl(fleet, preferredTarget);
+        }
+
+        /// <summary>Корабли с приказом на отступление прыгают, как только разгонится гиперпривод.</summary>
+        private void ProcessPendingFtl()
+        {
+            if (_pendingFtl.Count == 0) return;
+            var ready = new List<KeyValuePair<int, int>>();
+            foreach (var kv in _pendingFtl)
+                if (_viewById.TryGetValue(kv.Key, out var fv) && fv?.Data != null && fv.Data.InCombat && FtlReadyIn(fv.Data) <= 0f)
+                    ready.Add(kv);
+            foreach (var kv in ready) ExecuteFtl(_viewById[kv.Key], kv.Value);
+        }
+
+        private bool ExecuteFtl(FleetView fleet, int preferredTarget)
+        {
+            var d = fleet.Data;
+            bool show = ShowFx(d.CurrentSystemId, fleet.transform.position);
+            if (Random.value >= FtlSuccess)
+            {
+                // Сбой: гиперпривод снова разгоняется полдня
+                _combatDays[d.Id] = Mathf.Max(0f, FtlSpoolDays - 0.5f);
+                if (show)
+                {
+                    SpawnFloater(fleet.transform.position, "СБОЙ ГПД", UIManager.DS.Gold);
+                    SFXManager.PlayAt(Sfx.FtlFail, fleet.transform.position);
+                }
                 return false;
             }
 
-            int escape = EscapeSystem(fleet.Data);
-            if (escape < 0) return false;
+            int escape = EscapeSystem(d);
+            if (escape < 0) { _pendingFtl.Remove(d.Id); return false; }
 
-            fleet.Data.InCombat = false;
-            fleet.Data.Path.Clear();
-            fleet.Data.OrderQueue.Clear();
-            _disengaged.Add(fleet.Data.Id);
+            _pendingFtl.Remove(d.Id);
+            d.HullPoints = Mathf.Max(1f, d.HullPoints - d.MaxHullPoints * FtlHullCost);
+            d.InCombat = false;
+            d.Path.Clear();
+            d.OrderQueue.Clear();
+            _disengaged.Add(d.Id);
+            _stations.Remove(d.Id);
             FleetManager.Instance?.IssueMoveOrder(fleet, escape);
             if (preferredTarget >= 0 && preferredTarget != escape)
             {
                 var tail = GalaxyPathfinder.FindPath(escape, preferredTarget, _generator);
-                if (tail != null) foreach (int step in tail) fleet.Data.Path.Enqueue(step);
+                if (tail != null) foreach (int step in tail) d.Path.Enqueue(step);
             }
-            var battle = GetBattle(fleet.Data.CurrentSystemId);
-            if (battle != null) Side(battle, fleet.Data.OwnerId).Disengaged++;
-            SpawnFloater(fleet.transform.position, "ГПД АКТИВИРОВАН", UIManager.DS.NeonCyan);
-            SFXManager.PlayAt(Sfx.Disengage, fleet.transform.position);
+            var battle = GetBattle(d.CurrentSystemId);
+            if (battle != null) Side(battle, d.OwnerId).Disengaged++;
+            if (show)
+            {
+                SpawnFloater(fleet.transform.position, "ГПД АКТИВИРОВАН", UIManager.DS.NeonCyan);
+                SFXManager.PlayAt(Sfx.Disengage, fleet.transform.position);
+            }
             return true;
         }
 
@@ -560,7 +811,7 @@ namespace StellarisClone.Core
         private Battle EnsureBattle(int sysId, List<Combatant> parts)
         {
             if (_battles.TryGetValue(sysId, out var b)) return b;
-            b = new Battle { SystemId = sysId };
+            b = new Battle { SystemId = sysId, BaseAngle = Random.Range(0f, 360f) };
             _battles[sysId] = b;
             UpdateSideStats(b, parts);
             foreach (var s in b.Sides.Values) { s.StartShips = s.Ships; s.StartHp = s.Hp; }
@@ -701,7 +952,8 @@ namespace StellarisClone.Core
             sb.Hull = 0f;
             sb.Shields = 0f;
             var sys = _generator.Systems[sb.SystemId];
-            SpawnExplosion(sys.Position + Vector3.up * 1.2f, ShipClass.Destroyer);
+            if (ShowFx(sb.SystemId, sys.Position))
+                CombatFx.Instance.ShipDestroyed(sys.Position + Vector3.up * 1.2f, 1.9f, FleetIndicator.OwnerColor(sys.OwnerId));
             SFXManager.PlayAt(Sfx.StarbaseDown, sys.Position, 1f);
             if (sys.OwnerId == 0)
                 NotificationCenter.Show("Звёздная база выведена из строя", $"{sys.Name}: враг может начать осаду", NotificationCenter.Kind.Danger, 7f);
@@ -762,6 +1014,9 @@ namespace StellarisClone.Core
             _battles.Clear();
             _targets.Clear();
             _disengaged.Clear();
+            _combatDays.Clear();
+            _pendingFtl.Clear();
+            _stations.Clear();
             if (_generator == null) _generator = FindFirstObjectByType<GalaxyGenerator>();
             if (list == null) return;
             foreach (var s in list)
@@ -803,79 +1058,6 @@ namespace StellarisClone.Core
             WeaponDamageType.Kinetic => new Color(1f, 0.85f, 0.35f, 1f),
             _ => new Color(0.45f, 1f, 0.55f, 1f)
         };
-
-        private void SpawnBeam(Vector3 from, Vector3 to, Color col, float width)
-        {
-            if (_beams.Count > 160) return;   // крупные сражения — не захламляем сцену
-            var go = new GameObject("CombatBeam");
-            go.transform.SetParent(_fxRoot.transform, false);
-            var lr = go.AddComponent<LineRenderer>();
-            lr.positionCount = 2;
-            lr.useWorldSpace = true;
-            lr.startWidth = width;
-            lr.endWidth = width * 0.35f;
-            Vector3 jitter = Random.insideUnitSphere * 0.35f;
-            lr.SetPosition(0, from + Vector3.up * 0.4f);
-            lr.SetPosition(1, to + Vector3.up * 0.4f + jitter);
-            var sh = ShaderCache.Unlit;
-            if (sh != null) lr.material = new Material(sh) { color = col };
-            lr.startColor = col;
-            lr.endColor = new Color(col.r, col.g, col.b, 0.15f);
-            _beams.Add(lr);
-        }
-
-        private void SpawnExplosion(Vector3 pos, ShipClass hull)
-        {
-            var go = new GameObject("Explosion");
-            go.transform.SetParent(_fxRoot.transform, false);
-            go.transform.position = pos;
-            var ps = go.AddComponent<ParticleSystem>();
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main = ps.main;
-            main.duration = 0.6f;
-            main.loop = false;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.9f);
-            float size = hull == ShipClass.Destroyer ? 1.6f : hull == ShipClass.Frigate ? 1.2f : 0.9f;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(2f * size, 7f * size);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.25f * size, 0.7f * size);
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.4f), new Color(1f, 0.35f, 0.15f));
-            main.useUnscaledTime = true;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            var emission = ps.emission;
-            emission.rateOverTime = 0f;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)(30 * size)) });
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.3f;
-            var col = ps.colorOverLifetime;
-            col.enabled = true;
-            var g = new Gradient();
-            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(new Color(1f, 0.4f, 0.1f), 1f) },
-                      new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
-            col.color = g;
-            var r = go.GetComponent<ParticleSystemRenderer>();
-            var sh = ShaderCache.Sprite;
-            if (sh != null) r.material = new Material(sh);
-            ps.Play();
-            Destroy(go, 2f);
-        }
-
-        private void TickBeams(float dt)
-        {
-            for (int i = _beams.Count - 1; i >= 0; i--)
-            {
-                var lr = _beams[i];
-                if (lr == null) { _beams.RemoveAt(i); continue; }
-                var c0 = lr.startColor;
-                c0.a -= dt * 4f;
-                lr.startColor = c0;
-                if (c0.a <= 0.02f)
-                {
-                    Destroy(lr.gameObject);
-                    _beams.RemoveAt(i);
-                }
-            }
-        }
 
         private void SpawnFloater(Vector3 pos, string text, Color col)
         {
@@ -1013,8 +1195,9 @@ namespace StellarisClone.Core
             var retreat = LGBuild.Button(row, "Retreat", UIManager.DS.BtnDanger, UIManager.DS.Red, RetreatAll, LGIcon.Warning, "ОТСТУПИТЬ", 10);
             ((RectTransform)retreat.transform).Column(0.42f, 1f, 3, 0);
             TooltipHelper.Attach(retreat.gameObject,
-                "<b>Экстренное отступление</b>\nКаждый ваш корабль в бою пытается совершить аварийный прыжок (72% успеха). " +
-                "Сбой — повторная попытка через пару секунд.");
+                "<b>Экстренное отступление</b>\nКорабли не могут уйти сразу: гиперпривод разгоняется 3 дня боя. " +
+                "После приказа корабли держат строй и прыгают сами, как только ГПД готов (80% успеха, сбой — ещё полдня разгона). " +
+                "Аварийный прыжок стоит 10% корпуса.");
 
             LG.Skin(_hud.transform);
             _hud.SetActive(false);
@@ -1106,9 +1289,33 @@ namespace StellarisClone.Core
             _balanceText.text = ratio >= 1.1f ? $"<color=#5CF59A>ПЕРЕВЕС ×{ratio:0.0}</color>"
                               : ratio <= 0.9f ? $"<color=#FF6A6A>ВРАГ СИЛЬНЕЕ ×{1f / Mathf.Max(0.01f, ratio):0.0}</color>"
                               : "<color=#F2C747>РАВНЫЕ СИЛЫ</color>";
+            _balanceText.text += b.Approach ? "\n<size=10><color=#7FD8FF>СБЛИЖЕНИЕ</color></size>" : "\n<size=10><color=#FF8A6A>ОГНЕВОЙ КОНТАКТ</color></size>";
 
-            _hudFooter.text = $"Урон: нанесено {me.DamageDealt:N0} · получено {me.DamageTaken:N0}   ·   " +
+            _hudFooter.text = FtlLine(b.SystemId) + "\n" +
+                              $"Урон: нанесено {me.DamageDealt:N0} · получено {me.DamageTaken:N0}   ·   " +
                               $"уничтожено {me.Kills} · потеряно {me.Lost}" + (me.Disengaged > 0 ? $" · вышло из боя {me.Disengaged}" : "");
+        }
+
+        /// <summary>Готовность гиперпривода наших кораблей в этом бою.</summary>
+        private string FtlLine(int systemId)
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return "";
+            float slowest = 0f;
+            int ships = 0, retreating = 0;
+            foreach (var f in fm.AllFleets)
+            {
+                var d = f?.Data;
+                if (d == null || d.OwnerId != 0 || !d.InCombat || d.CurrentSystemId != systemId) continue;
+                ships++;
+                if (IsRetreating(d)) retreating++;
+                slowest = Mathf.Max(slowest, FtlReadyIn(d));
+            }
+            if (ships == 0) return "";
+            if (retreating > 0)
+                return slowest > 0f ? $"<color=#F2C747>Отступление: прыжок через {slowest:0.0} дн. ({retreating} кор.)</color>"
+                                    : $"<color=#F2C747>Отступление: корабли уходят прыжком ({retreating} кор.)</color>";
+            return slowest > 0f ? $"<color=#7FD8FF>ГПД: разгон {slowest:0.0} дн.</color>" : "<color=#5CF59A>ГПД готов к экстренному прыжку</color>";
         }
 
         private static string SideLine(SideStats s)
@@ -1129,16 +1336,20 @@ namespace StellarisClone.Core
             var fm = FleetManager.Instance;
             if (fm == null || _hudSystem < 0) return;
             int tried = 0, ok = 0;
+            float wait = 0f;
             foreach (var f in new List<FleetView>(fm.AllFleets))
             {
                 var d = f?.Data;
                 if (d == null || d.OwnerId != 0 || !d.InCombat || d.CurrentSystemId != _hudSystem) continue;
                 tried++;
                 if (TryEmergencyFtl(f)) ok++;
+                else wait = Mathf.Max(wait, FtlReadyIn(d));
             }
-            if (tried > 0)
-                NotificationCenter.Show("Отступление", $"Ушли из боя: {ok} из {tried}. Остальные пробуют снова через пару секунд",
-                    ok == tried ? NotificationCenter.Kind.Info : NotificationCenter.Kind.Warning, 4f);
+            if (tried == 0) return;
+            string body = ok == tried ? $"Все корабли ушли прыжком ({ok})"
+                        : wait > 0f ? $"Ушли сразу: {ok} из {tried}. Остальные держат строй и прыгнут, как только разгонится ГПД (≈{wait:0.0} дн.)"
+                        : $"Ушли сразу: {ok} из {tried}. У остальных сбой ГПД — повтор через полдня";
+            NotificationCenter.Show("Отступление", body, ok == tried ? NotificationCenter.Kind.Info : NotificationCenter.Kind.Warning, 5f);
         }
 
         private void HideHud()
