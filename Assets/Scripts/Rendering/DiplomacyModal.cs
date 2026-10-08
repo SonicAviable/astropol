@@ -501,8 +501,12 @@ namespace StellarisClone.Rendering
                 InfoLine(ref y, DealCatalog.Icon(a.Kind), a.PlayerPays ? Red : DealCatalog.Tint(a.Kind), text);
             }
 
-            if (AICoalition.IsMember(ai.OwnerId))
-                InfoLine(ref y, LGIcon.Swords, Red, $"В коалиции против {AICoalition.LeaderPhrase}");
+            if (AICoalition.IsActive)
+            {
+                string role = AICoalition.IsMember(ai.OwnerId) ? "участник" : AICoalition.IsTarget(ai.OwnerId) ? "цель" : "вне коалиции";
+                string you = AICoalition.PlayerMember ? "  ·  вы в союзе" : "";
+                InfoLine(ref y, LGIcon.Swords, CoalitionTone, $"Коалиция против {AICoalition.TargetPhrase}: {role}{you}");
+            }
             if (!string.IsNullOrEmpty(ai.TacticsNote))
                 InfoLine(ref y, LGIcon.Target, Muted, ai.TacticsNote);
 
@@ -565,6 +569,36 @@ namespace StellarisClone.Rendering
                             }
                         });
                 }
+                BuildCoalitionActions(ref ry, ai);
+            }
+        }
+
+        private static readonly Color CoalitionTone = new Color(1f, 0.62f, 0.36f);
+
+        /// <summary>Коалиция: вступить в действующую, собрать свою против этой империи или выйти.</summary>
+        private void BuildCoalitionActions(ref float ry, AIEmpireManager ai)
+        {
+            if (GameSession.Settings.Difficulty < 1) return;
+            if (AICoalition.PlayerMember)
+            {
+                bool owner = AICoalition.PlayerOrganized;
+                DangerButton(ref ry, "coalleave", owner ? "РАСПУСТИТЬ КОАЛИЦИЮ" : "ПОКИНУТЬ КОАЛИЦИЮ",
+                    "Союзники запомнят, что вы бросили общее дело: отношение ухудшится",
+                    () => { SFXManager.Play(Sfx.UiTab); AICoalition.PlayerLeave(); }, LGIcon.Close, CoalitionTone);
+            }
+            else if (AICoalition.IsActive && AICoalition.TargetOwner != 0)
+            {
+                string b = AICoalition.JoinBlocker();
+                DangerButton(ref ry, "coaljoin", "ВСТУПИТЬ В КОАЛИЦИЮ",
+                    b ?? $"Присоединитесь к союзу против {AICoalition.TargetPhrase}: союзники лучше к вам относятся, но отношения с целью ухудшатся. Стоит {AICoalition.JoinCost:0} влияния",
+                    b != null ? null : () => { SFXManager.Play(Sfx.UiConfirm); AICoalition.PlayerJoin(); }, LGIcon.Handshake, CoalitionTone);
+            }
+            else if (!AICoalition.IsActive && AICoalition.TargetOwner < 0)
+            {
+                string b = AICoalition.OrganizeBlocker(ai);
+                DangerButton(ref ry, "coalorg", "СОЗДАТЬ КОАЛИЦИЮ ПРОТИВ НИХ",
+                    b ?? $"Соберёт соперников, которым эта империя неприятна. Стоит {AICoalition.OrganizeCost:0} влияния; союзники нападут сами, когда накопят силы",
+                    b != null ? null : () => { SFXManager.Play(Sfx.UiConfirm); AICoalition.PlayerOrganize(ai); }, LGIcon.Swords, CoalitionTone);
             }
         }
 
@@ -579,12 +613,16 @@ namespace StellarisClone.Rendering
             y += 22f;
         }
 
-        private void DangerButton(ref float y, string id, string label, string tip, System.Action act)
+        private void DangerButton(ref float y, string id, string label, string tip, System.Action act,
+                                  LGIcon icon = LGIcon.Swords, Color? tone = null)
         {
             bool confirming = _confirmAction == id && Time.unscaledTime <= _confirmUntil;
+            Color tc = tone ?? Red;
+            Color idle = tone.HasValue ? new Color(tc.r * 0.20f, tc.g * 0.20f, tc.b * 0.20f, 0.9f) : new Color(0.22f, 0.06f, 0.08f, 0.9f);
+            Color sure = tone.HasValue ? new Color(tc.r * 0.45f, tc.g * 0.45f, tc.b * 0.45f, 0.95f) : UIManager.DS.BtnDanger;
             var b = LGBuild.Button(_infoRight, "Danger_" + id,
-                act == null ? UIManager.DS.BtnDisabled : confirming ? UIManager.DS.BtnDanger : new Color(0.22f, 0.06f, 0.08f, 0.9f),
-                new Color(Red.r, Red.g, Red.b, act == null ? 0.15f : 0.45f), () =>
+                act == null ? UIManager.DS.BtnDisabled : confirming ? sure : idle,
+                new Color(tc.r, tc.g, tc.b, act == null ? 0.15f : 0.45f), () =>
                 {
                     if (act == null) return;
                     if (_confirmAction == id && Time.unscaledTime <= _confirmUntil)
@@ -599,7 +637,7 @@ namespace StellarisClone.Rendering
                         _confirmUntil = Time.unscaledTime + 3f;
                         RefreshInfo();
                     }
-                }, LGIcon.Swords, confirming ? "ТОЧНО? НАЖМИТЕ ЕЩЁ РАЗ" : label, 11, 4f);
+                }, icon, confirming ? "ТОЧНО? НАЖМИТЕ ЕЩЁ РАЗ" : label, 11, 4f);
             var r = (RectTransform)b.transform;
             r.anchorMin = new Vector2(1, 1);
             r.anchorMax = new Vector2(1, 1);

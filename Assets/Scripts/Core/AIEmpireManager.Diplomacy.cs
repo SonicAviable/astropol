@@ -78,6 +78,8 @@ namespace StellarisClone.Core
             ["aggression"] = new MemoryInfo { Label = "Агрессия", Detail = "Вы первыми объявили им войну", Icon = LGIcon.Warning, MonthlyDecay = 0.05f, Min = -30f, Max = 0f },
             ["pactcancel"] = new MemoryInfo { Label = "Расторгнутый пакт", Detail = "Вы в одностороннем порядке вышли из пакта", Icon = LGIcon.Handshake, MonthlyDecay = 0.1f, Min = -20f, Max = 0f },
             ["rejected"]   = new MemoryInfo { Label = "Отвергнутое предложение", Detail = "Вы отклонили их дипломатическое предложение", Icon = LGIcon.Close, MonthlyDecay = 0.2f, Min = -15f, Max = 0f },
+            ["coalitionleft"] = new MemoryInfo { Label = "Выход из коалиции", Detail = "Вы бросили общее дело", Icon = LGIcon.Close, MonthlyDecay = 0.1f, Min = -30f, Max = 0f },
+            ["separate"]   = new MemoryInfo { Label = "Сепаратный мир", Detail = "Вы вышли из войны, оставив союзников одних", Icon = LGIcon.Peace, MonthlyDecay = 0.06f, Min = -40f, Max = 0f },
             ["trust"]      = new MemoryInfo { Label = "Годы добрососедства", Detail = "Долгий пакт и спокойные границы сближают, но одно предательство обнуляет доверие", Icon = LGIcon.Handshake, MonthlyDecay = 0.01f, Min = 0f, Max = 20f },
             ["incident"]   = new MemoryInfo { Label = "Инциденты", Detail = "Как вы повели себя в пограничных и дипломатических происшествиях", Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
         };
@@ -154,8 +156,12 @@ namespace StellarisClone.Core
                 if (other == this || !other.AtWar || !AIRelations.AtWar(OwnerId, other.OwnerId)) continue;
                 Add($"Общий враг: {other.AIName}", "Вы оба воюете с этой империей", 12f, LGIcon.Swords);
             }
-            if (AICoalition.IsMember(OwnerId) && AICoalition.LeaderOwner == 0)
-                Add("Коалиция против вас", "Соперники объединились против слишком сильного игрока", -15f, LGIcon.Swords);
+            if (AICoalition.IsMember(OwnerId) && AICoalition.TargetOwner == 0)
+                Add("Коалиция против вас", "Соперники объединились против вас", -15f, LGIcon.Swords);
+            if (AICoalition.AreAllies(0, OwnerId))
+                Add("Союзник по коалиции", "Вы вместе выступаете против общего врага", 15f, LGIcon.Handshake);
+            if (AICoalition.IsTarget(OwnerId) && AICoalition.PlayerMember)
+                Add("Вы в коалиции против них", "Вы объединились с их врагами", -20f, LGIcon.Swords);
             if (TruceDays > 0 && !AtWar) Add($"Перемирие ({Mathf.CeilToInt(TruceDays / 30f)} мес.)", "Мирный договор ещё в силе", 5f, LGIcon.Peace);
             if (AtWar) Add("Идёт война", "Между вашими империями открытый конфликт", -40f, LGIcon.Swords);
 
@@ -284,6 +290,8 @@ namespace StellarisClone.Core
         private void ConsiderWar()
         {
             if (TruceDays > 0 || _warCooldownDays > 0 || _bankrupt) return;
+            // Союзник по коалиции на игрока не нападает
+            if (AICoalition.AreAllies(0, OwnerId)) return;
             // Уже воюет с другим ИИ — второй фронт откроет только при большом перевесе
             if (WarsWithAIs > 0 && PowerRatio < Profile.WarPowerRatio * 1.5f) return;
             if (EmpireStats.SharedBorderCount(OwnerId, 0) == 0 && Personality != AIPersonality.Militarist) return;
@@ -380,6 +388,7 @@ namespace StellarisClone.Core
             Mode = ArmyMode.Gather;
             ArmyTargetSystemId = -1;
             RecomputeOpinion();
+            if (!silent) AICoalition.OnPlayerPeace(OwnerId);
             if (!silent)
                 NotificationCenter.Show("Мир заключён", $"{AIName} прекращает военные действия. Перемирие — 3 года",
                     NotificationCenter.Kind.Success, 8f);
@@ -412,7 +421,7 @@ namespace StellarisClone.Core
             if (_capitalLost) Add("Потеря столицы", "Правительство в изгнании", 25f, LGIcon.Warning);
             Add("Отношение к вам", OpinionLabel(Opinion), Opinion * 0.2f, LGIcon.Diplomacy);
             if (Mathf.Abs(Profile.PeaceBias) > 0.1f) Add($"Характер: {Profile.Name.ToLower()}", Profile.PeaceBias > 0 ? "Предпочитают договариваться" : "Не любят отступать", Profile.PeaceBias, LGIcon.Leader);
-            if (AICoalition.IsMember(OwnerId) && AICoalition.LeaderOwner == 0)
+            if (AICoalition.IsMember(OwnerId) && AICoalition.TargetOwner == 0)
                 Add("Союзники по коалиции", "Остальные члены коалиции требуют довести войну до конца", -12f, LGIcon.Swords);
             if (_warMonths < 3) Add("Война только началась", "Первые месяцы стороны ещё надеются на победу", -20f, LGIcon.Calendar);
             return e;

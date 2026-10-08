@@ -60,6 +60,7 @@ namespace StellarisClone.Core
         public AISave AI;
         public List<AISave> AIs = new List<AISave>();
         public List<AIRelations.PairState> AIPairs = new List<AIRelations.PairState>();
+        public CoalitionSave Coalition;
         public List<SiegeSave> Sieges = new List<SiegeSave>();
         public List<ConstructionJob> Jobs = new List<ConstructionJob>();
         public List<StarbaseSave> Starbases = new List<StarbaseSave>();
@@ -413,6 +414,7 @@ namespace StellarisClone.Core
             s.Victory = VictoryManager.Instance != null ? VictoryManager.Instance.CaptureState() : null;
             foreach (var ai in AIEmpireManager.All) s.AIs.Add(ai.CaptureState());
             s.AIPairs = AIRelations.Capture();
+            s.Coalition = AICoalition.Capture();
             if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
             if (ConstructionManager.Instance != null) s.Jobs = ConstructionManager.Instance.CaptureState();
             if (CombatManager.Instance != null) s.Starbases = CombatManager.Instance.CaptureStarbases();
@@ -746,6 +748,7 @@ namespace StellarisClone.Core
                     if (ai.OwnerId != 1) ai.RemoveFromGame();
             }
             AIRelations.Restore(s.AIPairs);
+            AICoalition.Restore(s.Coalition);
             SiegeManager.Instance?.RestoreState(s.Sieges);
             ConstructionManager.Instance?.RestoreState(s.Jobs);
             CombatManager.Instance?.RestoreStarbases(s.Starbases);
