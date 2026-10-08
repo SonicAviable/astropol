@@ -241,6 +241,10 @@ namespace StellarisClone.Core
 
         // Флот
         public int ArmyMode, ArmyTarget = -1, Rally = -1;
+
+        // Тактика: какое оружие ставят на новые корабли (-1 — по вкусу фракции)
+        public int DesignPrimary = -1, DesignSecondary = -1;
+        public string TacticsNote;
     }
 
     /// <summary>Строка списка сохранений.</summary>

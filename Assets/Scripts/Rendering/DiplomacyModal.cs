@@ -501,6 +501,11 @@ namespace StellarisClone.Rendering
                 InfoLine(ref y, DealCatalog.Icon(a.Kind), a.PlayerPays ? Red : DealCatalog.Tint(a.Kind), text);
             }
 
+            if (AICoalition.IsMember(ai.OwnerId))
+                InfoLine(ref y, LGIcon.Swords, Red, $"В коалиции против {AICoalition.LeaderPhrase}");
+            if (!string.IsNullOrEmpty(ai.TacticsNote))
+                InfoLine(ref y, LGIcon.Target, Muted, ai.TacticsNote);
+
             // Соседи-ИИ
             y += 6f;
             foreach (var other in AIEmpireManager.All)

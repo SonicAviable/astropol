@@ -78,6 +78,7 @@ namespace StellarisClone.Core
             ["aggression"] = new MemoryInfo { Label = "Агрессия", Detail = "Вы первыми объявили им войну", Icon = LGIcon.Warning, MonthlyDecay = 0.05f, Min = -30f, Max = 0f },
             ["pactcancel"] = new MemoryInfo { Label = "Расторгнутый пакт", Detail = "Вы в одностороннем порядке вышли из пакта", Icon = LGIcon.Handshake, MonthlyDecay = 0.1f, Min = -20f, Max = 0f },
             ["rejected"]   = new MemoryInfo { Label = "Отвергнутое предложение", Detail = "Вы отклонили их дипломатическое предложение", Icon = LGIcon.Close, MonthlyDecay = 0.2f, Min = -15f, Max = 0f },
+            ["trust"]      = new MemoryInfo { Label = "Годы добрососедства", Detail = "Долгий пакт и спокойные границы сближают, но одно предательство обнуляет доверие", Icon = LGIcon.Handshake, MonthlyDecay = 0.01f, Min = 0f, Max = 20f },
             ["incident"]   = new MemoryInfo { Label = "Инциденты", Detail = "Как вы повели себя в пограничных и дипломатических происшествиях", Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
         };
 
@@ -153,6 +154,8 @@ namespace StellarisClone.Core
                 if (other == this || !other.AtWar || !AIRelations.AtWar(OwnerId, other.OwnerId)) continue;
                 Add($"Общий враг: {other.AIName}", "Вы оба воюете с этой империей", 12f, LGIcon.Swords);
             }
+            if (AICoalition.IsMember(OwnerId) && AICoalition.LeaderOwner == 0)
+                Add("Коалиция против вас", "Соперники объединились против слишком сильного игрока", -15f, LGIcon.Swords);
             if (TruceDays > 0 && !AtWar) Add($"Перемирие ({Mathf.CeilToInt(TruceDays / 30f)} мес.)", "Мирный договор ещё в силе", 5f, LGIcon.Peace);
             if (AtWar) Add("Идёт война", "Между вашими империями открытый конфликт", -40f, LGIcon.Swords);
 
@@ -241,10 +244,15 @@ namespace StellarisClone.Core
             var keys = new List<string>(_memory.Keys);
             foreach (var k in keys)
             {
-                float v = _memory[k] * (1f - MemoryTable[k].MonthlyDecay);
+                float decay = MemoryTable[k].MonthlyDecay;
+                // Мистики помнят обиды вдвое дольше
+                if (Personality == AIPersonality.Mystic && _memory[k] < 0f) decay *= 0.5f;
+                float v = _memory[k] * (1f - decay);
                 if (Mathf.Abs(v) < 0.5f) _memory.Remove(k);
                 else _memory[k] = v;
             }
+            // Годы мира под пактом копят доверие
+            if (HasPact && !AtWar && Smart >= 1) AddMemory("trust", 0.7f);
 
             if (AtWar)
             {
@@ -295,6 +303,18 @@ namespace StellarisClone.Core
             NotificationCenter.Show(broke ? "ВЕРОЛОМНОЕ НАПАДЕНИЕ" : "ВОЙНА ОБЪЯВЛЕНА",
                 $"{AIName} объявляет вам войну. Причины: {string.Join(", ", reasons)}",
                 NotificationCenter.Kind.Danger, 10f);
+        }
+
+        /// <summary>Вступление в войну по обязательству коалиции против игрока (после предупреждения в несколько месяцев).</summary>
+        public bool CoalitionDeclareWar()
+        {
+            if (AtWar || _bankrupt || IsEliminated || TruceDays > 360 || _warCooldownDays > 0) return false;
+            TruceDays = 0;
+            StartWar();
+            NotificationCenter.Show("КОАЛИЦИЯ ОБЪЯВИЛА ВОЙНУ",
+                $"{AIName} вступает в войну против вас вместе с остальными соперниками",
+                NotificationCenter.Kind.Danger, 10f);
+            return true;
         }
 
         private void ConsiderPeaceOffer()
@@ -352,7 +372,10 @@ namespace StellarisClone.Core
             PendingDeal = null;
             TruceDays = TruceLengthDays;
             _offerCooldownDays = 180;
-            AddMemory("grudge", -15f);
+            // Чем больше крови пролито, тем дольше помнят: потерянные системы и корабли добавляют обиду
+            float bloodshed = Smart >= 1 ? Mathf.Min(25f, _systemsLostInWar * 4f + _shipsLostInWar * 0.4f) : 0f;
+            AddMemory("grudge", -15f - bloodshed);
+            AddMemory("trust", -100f);
             SiegeManager.Instance?.ClearSieges(0, OwnerId);
             Mode = ArmyMode.Gather;
             ArmyTargetSystemId = -1;
@@ -389,6 +412,8 @@ namespace StellarisClone.Core
             if (_capitalLost) Add("Потеря столицы", "Правительство в изгнании", 25f, LGIcon.Warning);
             Add("Отношение к вам", OpinionLabel(Opinion), Opinion * 0.2f, LGIcon.Diplomacy);
             if (Mathf.Abs(Profile.PeaceBias) > 0.1f) Add($"Характер: {Profile.Name.ToLower()}", Profile.PeaceBias > 0 ? "Предпочитают договариваться" : "Не любят отступать", Profile.PeaceBias, LGIcon.Leader);
+            if (AICoalition.IsMember(OwnerId) && AICoalition.LeaderOwner == 0)
+                Add("Союзники по коалиции", "Остальные члены коалиции требуют довести войну до конца", -12f, LGIcon.Swords);
             if (_warMonths < 3) Add("Война только началась", "Первые месяцы стороны ещё надеются на победу", -20f, LGIcon.Calendar);
             return e;
         }
@@ -442,7 +467,7 @@ namespace StellarisClone.Core
         {
             if (WarBlocker != null) return false;
             bool betrayal = HasPact;
-            if (betrayal) { HasPact = false; AddMemory("betrayal", -40f); }
+            if (betrayal) { HasPact = false; AddMemory("betrayal", -40f); AddMemory("trust", -100f); }
             AddMemory("aggression", -15f);
             StartWar();
             NotificationCenter.Show(betrayal ? "ВЫ НАРУШИЛИ ПАКТ" : "ВОЙНА ОБЪЯВЛЕНА",

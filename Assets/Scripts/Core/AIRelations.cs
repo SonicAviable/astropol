@@ -32,7 +32,11 @@ namespace StellarisClone.Core
 
         private static readonly List<PairState> _pairs = new List<PairState>();
 
-        public static void Reset() => _pairs.Clear();
+        public static void Reset()
+        {
+            _pairs.Clear();
+            AICoalition.Reset();
+        }
 
         private static PairState Get(int a, int b, bool create)
         {
@@ -71,6 +75,10 @@ namespace StellarisClone.Core
             if (border > 0) Add($"общая граница ({border})", -Mathf.Min(18f, border * 3f));
             float pa = Mathf.Max(1f, EmpireStats.MilitaryPower(a.OwnerId)), pb = Mathf.Max(1f, EmpireStats.MilitaryPower(b.OwnerId));
             if (pa / pb > 1.5f || pb / pa > 1.5f) Add("перекос сил", -6f);
+            if (AICoalition.AreAllies(a.OwnerId, b.OwnerId)) Add("союзники по коалиции", 20f);
+            else if (AICoalition.IsActive && (AICoalition.IsTarget(a.OwnerId) && AICoalition.IsMember(b.OwnerId)
+                                              || AICoalition.IsTarget(b.OwnerId) && AICoalition.IsMember(a.OwnerId)))
+                Add("коалиция против сильнейшего", -15f);
             if (p != null)
             {
                 if (p.Grudge < -0.5f) Add("старые обиды", p.Grudge);
@@ -94,6 +102,7 @@ namespace StellarisClone.Core
 
         private static void Monthly()
         {
+            AICoalition.MonthlyUpdate();
             var alive = new List<AIEmpireManager>(AIEmpireManager.Alive);
             for (int i = 0; i < alive.Count; i++)
             for (int j = i + 1; j < alive.Count; j++)
@@ -102,6 +111,13 @@ namespace StellarisClone.Core
                 var b = alive[j];
                 var p = Get(a.OwnerId, b.OwnerId, true);
                 p.Grudge *= 0.96f;
+
+                // Союзники по коалиции мирятся и друг на друга не нападают
+                if (AICoalition.AreAllies(a.OwnerId, b.OwnerId))
+                {
+                    if (p.AtWar) MakePeace(p, a, b);
+                    continue;
+                }
 
                 if (p.AtWar)
                 {
@@ -133,6 +149,16 @@ namespace StellarisClone.Core
             float need = attacker.Profile.WarPowerRatio * (attacker.AtWar ? 1.5f : 1f);   // уже воюет с игроком — второй фронт осторожнее
             if (ratio < need) return false;
             return UnityEngine.Random.value < 0.3f;
+        }
+
+        /// <summary>Вступление в войну по обязательству коалиции: перемирие не мешает, если оно почти истекло.</summary>
+        public static bool CoalitionWar(AIEmpireManager attacker, AIEmpireManager defender)
+        {
+            var p = Get(attacker.OwnerId, defender.OwnerId, true);
+            if (p == null || p.AtWar || p.TruceDays > 360 || attacker.IsBankrupt) return false;
+            p.TruceDays = 0;
+            StartWar(p, attacker, defender);
+            return true;
         }
 
         private static void StartWar(PairState p, AIEmpireManager attacker, AIEmpireManager defender)

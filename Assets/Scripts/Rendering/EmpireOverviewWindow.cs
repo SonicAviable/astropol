@@ -856,8 +856,14 @@ namespace StellarisClone.Rendering
                           : ai.HasPact ? "<color=#4DF2DB>Пакт о ненападении</color>"
                           : ai.TruceDays > 0 ? "<color=#5CF59A>Перемирие</color>"
                           : "<color=#8AA2A8>Мир</color>";
-            LGBuild.Label(head, $"{ai.AITitle}   ·   {ai.Profile.Name.ToLower()} империя   ·   {status}   ·   {AIEmpireManager.OpinionLabel(rel).ToLower()}",
+            if (AICoalition.IsMember(ai.OwnerId)) status += "   ·   <color=#FF9A5A>в коалиции</color>";
+            var sub = LGBuild.Label(head, $"{ai.AITitle}   ·   {ai.Profile.Name.ToLower()} империя   ·   {status}   ·   {AIEmpireManager.OpinionLabel(rel).ToLower()}",
                           12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
+            if (!string.IsNullOrEmpty(ai.TacticsNote))
+            {
+                sub.raycastTarget = true;
+                TooltipHelper.Attach(sub.gameObject, ai.TacticsNote);
+            }
 
             int myPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
             int aiPow = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(ai.OwnerId) : 0;

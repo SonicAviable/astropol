@@ -214,6 +214,7 @@ namespace StellarisClone.Core
             AIEmpireColor = f.EmpireColor;
             Personality = AIProfile.FromFactionName(f.Name);
             Profile = AIProfile.Get(Personality);
+            ResetTactics();
         }
 
         public void InitializeAIEmpire()
@@ -322,6 +323,7 @@ namespace StellarisClone.Core
             else if (_bankrupt && EnergyCredits > 60f) _bankrupt = false;
 
             MonthlyDiplomacy();
+            MonthlyTactics();
         }
 
         private void ThinkAndAct()
@@ -403,7 +405,7 @@ namespace StellarisClone.Core
             var dm = ShipDesignManager.Instance;
             if (dm == null) return null;
             string cls = hull == ShipClass.Destroyer ? "Эсминец" : hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
-            d = dm.CreateAutoDesign(hull, Profile.PreferredWeapon, Profile.SecondaryWeapon, HasTech, $"{AIName} · {cls}");
+            d = dm.CreateAutoDesign(hull, DesignPrimary, DesignSecondary, HasTech, $"{AIName} · {cls}");
             _designs[hull] = d;
             return d;
         }

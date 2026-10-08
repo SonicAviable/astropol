@@ -85,7 +85,7 @@ namespace StellarisClone.Core
             {
                 if (!s.Data.InCombat || !checkedSystems.Add(s.Data.CurrentSystemId)) continue;
                 int sys = s.Data.CurrentSystemId;
-                float mine = SidePower(OwnerId, sys);
+                float mine = SidePower(OwnerId, sys) * MatchupAt(sys);
                 float enemy = EnemyPowerIn(sys);
                 if (enemy <= mine * Profile.RetreatRatio) continue;
 
@@ -122,7 +122,8 @@ namespace StellarisClone.Core
                 if (threat >= 0)
                 {
                     float baseHelp = CombatManager.Instance != null ? CombatManager.Instance.StarbasePower(threat) : 0f;
-                    if (armyPower + baseHelp >= threatPower * 0.9f)
+                    float edge = MatchupVs(DataOf(ships), threat);
+                    if (armyPower * edge + baseHelp >= threatPower * 0.9f)
                     {
                         Mode = ArmyMode.Defend;
                         ArmyTargetSystemId = threat;
@@ -134,6 +135,24 @@ namespace StellarisClone.Core
                     _rallySystemId = SafeHaven(CapitalSystemId);
                     MoveAll(ships, _rallySystemId);
                     return;
+                }
+            }
+
+            // 3б. Перехват: сложный ИИ встречает вражеский флот, пока тот ещё в гиперкоридоре
+            if (Smart >= 2 && AtWarWithAnyone)
+            {
+                int dest = FindIncoming(out float incomingPower, out var incoming);
+                if (dest >= 0)
+                {
+                    float help = CombatManager.Instance != null ? CombatManager.Instance.StarbasePower(dest) : 0f;
+                    float edge = AITactics.MatchupFactor(DataOf(ships), incoming);
+                    if (armyPower * edge + help >= incomingPower * 0.9f)
+                    {
+                        Mode = ArmyMode.Defend;
+                        ArmyTargetSystemId = dest;
+                        MoveAll(ships, dest);
+                        return;
+                    }
                 }
             }
 
@@ -153,7 +172,7 @@ namespace StellarisClone.Core
 
                 if (assembled >= armyPower * AssembleFraction && AverageIntegrity(ships) > 0.6f)
                 {
-                    int target = PickSiegeTarget(armyPower);
+                    int target = PickSiegeTarget(armyPower, ships);
                     if (target >= 0)
                     {
                         Mode = ArmyMode.Attack;
@@ -214,9 +233,10 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Цель осады: система игрока у нашей границы, ценная и слабо защищённая.</summary>
-        private int PickSiegeTarget(float armyPower)
+        private int PickSiegeTarget(float armyPower, List<FleetView> ships)
         {
             var fm = FleetManager.Instance;
+            var myData = DataOf(ships);
             var fromRally = Distances(_rallySystemId >= 0 ? _rallySystemId : CapitalSystemId, 12);
             int best = -1;
             float bestScore = float.MinValue;
@@ -226,9 +246,10 @@ namespace StellarisClone.Core
                 if (!fromRally.TryGetValue(s.Id, out int jumps)) continue;
                 // Оборона = флот владельца системы + её звёздная база
                 float defense = SidePower(s.OwnerId, s.Id);
-                if (defense > armyPower * 0.8f) continue;
+                float edgeArmy = armyPower * MatchupVs(myData, s.Id);
+                if (defense > edgeArmy * 0.8f) continue;
 
-                float score = -jumps * 4f - defense / Mathf.Max(1f, armyPower) * 40f;
+                float score = -jumps * 4f - defense / Mathf.Max(1f, edgeArmy) * 40f;
                 if (BordersOwn(s)) score += 20f;
                 foreach (var p in s.Planets) if (p.Population > 0) score += 15f + p.Population * 2f;
                 var owner = For(s.OwnerId);
@@ -323,6 +344,7 @@ namespace StellarisClone.Core
             s.ArmyMode = (int)Mode;
             s.ArmyTarget = ArmyTargetSystemId;
             s.Rally = _rallySystemId;
+            CaptureTactics(s);
         }
 
         private void RestoreMilitary(AISave s)
@@ -330,6 +352,7 @@ namespace StellarisClone.Core
             Mode = (ArmyMode)Mathf.Clamp(s.ArmyMode, 0, 3);
             ArmyTargetSystemId = s.ArmyTarget;
             _rallySystemId = s.Rally;
+            RestoreTactics(s);
         }
     }
 }
