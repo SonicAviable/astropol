@@ -61,7 +61,7 @@ namespace StellarisClone.Rendering
 
         private GameObject _factionSelectionModal;
         private GameObject _advisorIntroModal;
-        private Text _advisorText;
+        private AdvisorIntroWindow _advisorIntro;
         private FactionInfo _selectedFaction;
 
         public FactionInfo SelectedFaction => _selectedFaction;
@@ -1338,58 +1338,21 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private void BuildAdvisorIntroModal()
         {
-            _advisorIntroModal = new GameObject("AdvisorIntroModal");
-            _advisorIntroModal.transform.SetParent(_modalCanvas.transform, false);
-
-            var rt = _advisorIntroModal.AddComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(660, 340);
-
-            _advisorIntroModal.AddComponent<Image>().color = DS.BgDeep;
-            StyleModalWindow(_advisorIntroModal, new Color(0.45f, 0.95f, 0.90f, 0.45f));
-
-            _advisorText = CreateText(_advisorIntroModal.transform, "", 13, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
-            _advisorText.rectTransform.anchorMin = new Vector2(0, 0);
-            _advisorText.rectTransform.anchorMax = new Vector2(1, 1);
-            _advisorText.rectTransform.offsetMin = new Vector2(28, 75);
-            _advisorText.rectTransform.offsetMax = new Vector2(-28, -25);
-            _advisorText.lineSpacing = 1.35f;
-            _advisorText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _advisorText.supportRichText = true;
-
-            var startBtn = CreateButton(_advisorIntroModal.transform, "StartGameBtn",
-                new Vector2(280, 40), DS.BtnSuccess, DS.NeonCyan, () =>
-                {
-                    LG.Hide(_advisorIntroModal);
-                    HideModalDim();
-                    Time.timeScale = 1f;
-                    SpawnInGameHUD();
-                    if (GameSession.Settings.Tutorial) TutorialManager.Instance?.BeginTutorial();
-                });
-
-            var sRt = startBtn.GetComponent<RectTransform>();
-            sRt.anchorMin = new Vector2(0.5f, 0);
-            sRt.anchorMax = new Vector2(0.5f, 0);
-            sRt.pivot = new Vector2(0.5f, 0);
-            sRt.anchoredPosition = new Vector2(0, 18);
-
-            var sTxt = CreateText(startBtn.transform, "▶  ВСТУПИТЬ В ДОЛЖНОСТЬ", 12, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
-            sTxt.rectTransform.sizeDelta = sRt.sizeDelta;
-
-            _advisorIntroModal.SetActive(false);
+            // «Входящая передача» от правителя: живой портрет, текст по буквам, бонусы, эффекты сигнала
+            _advisorIntro = AdvisorIntroWindow.Create(_modalCanvas.transform, () =>
+            {
+                HideModalDim();
+                Time.timeScale = 1f;
+                SpawnInGameHUD();
+                if (GameSession.Settings.Tutorial) TutorialManager.Instance?.BeginTutorial();
+            });
+            _advisorIntroModal = _advisorIntro.gameObject;
         }
 
         private void OpenAdvisorIntroModal(FactionInfo faction)
         {
             ShowModalDim();
-            LG.Show(_advisorIntroModal);
-            _advisorIntroModal.transform.SetAsLastSibling();
-
-            _advisorText.text = $"Приветствую, Командующий!\n\n" +
-                                $"Бортовой тактический сервер развернут. Государственный суверенитет: <b>{faction.Name}</b> ({faction.Title}).\n\n" +
-                                $"• Доктрина цивилизации: {faction.Description}\n\n" +
-                                $"Все сенсоры на связи. Готовьте научный корабль к разведке приграничных систем.";
+            _advisorIntro.Open(faction);
         }
 
         // ==================== REWARD ====================
