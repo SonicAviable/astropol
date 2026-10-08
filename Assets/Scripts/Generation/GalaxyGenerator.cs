@@ -83,6 +83,7 @@ namespace StellarisClone.Generation
             int attempts = 0;
             int maxAttempts = starCount * 50;
             var names = new StarNameGenerator();
+            PlanetNames.Reset();
 
             while (Systems.Count < starCount && attempts < maxAttempts)
             {

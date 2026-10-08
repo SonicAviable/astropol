@@ -71,6 +71,9 @@ namespace StellarisClone.Rendering
             public Button Build, Cancel;
             public Image Bg;
             public RectTransform Progress;
+            /// <summary>Клетки районов: заполненная — на районе работают, контур — простаивает, золото — строится.</summary>
+            public RectTransform Pips;
+            public int PipKey = -1;
         }
 
         /// <summary>Строка «иконка ресурса + текст» (обычный Text не умеет картинки внутри строки).</summary>
@@ -215,7 +218,7 @@ namespace StellarisClone.Rendering
 
         private void RefreshHeader()
         {
-            _title.text = _planet.Name.ToUpper();
+            _title.text = PlanetNames.Title(_planet.Name);
             var gov = LeaderManager.Instance?.GovernorOf(_planet);
             string govText = gov != null ? $"   ·   <color=#FFCC52>губернатор {gov.Name}, ур. {gov.Level}</color>" : "";
             _subtitle.text = $"{_planet.ClassDisplayName}   ·   система {(_system != null ? _system.Name : "?")}{govText}";
@@ -418,6 +421,7 @@ namespace StellarisClone.Rendering
                 int worked = _planet.WorkedCount(c.Type);
                 int pending = Builds != null ? Builds.PendingDistricts(_planet, c.Type) : 0;
                 c.Count.text = pending > 0 ? $"×{count}<size=12><color={LGBuild.Hex(CGold)}> +{pending}</color></size>" : $"×{count}";
+                RebuildPips(c, count, c.Type == DistrictType.Urban ? count : worked, pending);
 
                 var job = FirstJob(JobKind.District, c.Type);
                 if (job != null)
@@ -457,6 +461,33 @@ namespace StellarisClone.Rendering
                 c.Build.interactable = reason == null;
                 c.Reason.text = reason ?? (queue.Count > 0 ? "В ОЧЕРЕДЬ" : $"ПОСТРОИТЬ · {ConstructionManager.DistrictDays(c.Type):0} ДН.");
                 c.Reason.color = reason == null ? Color.white : CMuted;
+            }
+        }
+
+        private void RebuildPips(DistrictCard c, int count, int worked, int pending)
+        {
+            int key = count * 10000 + worked * 100 + pending;
+            if (c.PipKey == key) return;
+            c.PipKey = key;
+            LGBuild.Clear(c.Pips);
+            Color dc = DistrictInfo.Color(c.Type);
+            int total = Mathf.Min(12, count + pending);
+            const float S = 14f, G = 4f;
+            for (int i = 0; i < total; i++)
+            {
+                bool building = i >= count;
+                bool busy = !building && i < worked;
+                var pip = LGBuild.Panel(c.Pips, "Pip",
+                    building ? new Color(CGold.r, CGold.g, CGold.b, 0.30f)
+                    : busy ? new Color(dc.r, dc.g, dc.b, 0.95f) : new Color(dc.r * 0.25f, dc.g * 0.25f, dc.b * 0.25f, 0.9f));
+                var r = pip.rectTransform;
+                r.anchorMin = r.anchorMax = new Vector2(1, 0.5f);
+                r.pivot = new Vector2(1, 0.5f);
+                r.sizeDelta = new Vector2(S, S);
+                r.anchoredPosition = new Vector2(-(total - 1 - i) * (S + G), 0);
+                LG.Platter(pip.gameObject, 3f).SetRim(building ? new Color(CGold.r, CGold.g, CGold.b, 0.9f)
+                                                     : new Color(dc.r, dc.g, dc.b, busy ? 0.9f : 0.55f));
+                LG.Ignore(pip.gameObject);
             }
         }
 
@@ -801,9 +832,9 @@ namespace StellarisClone.Rendering
 
             var deposits = Card(rt, "Deposits", LGIcon.Minerals, "ПРИРОДНЫЕ ЗАЛЕЖИ", CMinerals, LGAppear.Kind.SlideLeft, 0.12f);
             PlaceBottom(deposits, LeftShare * 0.5f, LeftShare, Gap * 0.5f, Gap * 0.5f);
-            _deposits = ResColumn(deposits, 46, 30, 12, (LGIcon.Minerals, CMinerals), (LGIcon.Energy, CEnergy));
-            _stationText = LGBuild.Label(deposits, "", 11, CMuted, TextAnchor.LowerLeft, wrap: true);
-            _stationText.rectTransform.Stretch(18, 16, 18, 0);
+            _deposits = ResColumn(deposits, 48, 36, 13, (LGIcon.Minerals, CMinerals), (LGIcon.Energy, CEnergy));
+            _stationText = LGBuild.Label(deposits, "", 12, CMuted, TextAnchor.UpperLeft, wrap: true);
+            _stationText.rectTransform.Stretch(18, 16, 18, 130);
         }
 
         private static void PlaceBottom(RectTransform r, float x0, float x1, float padL, float padR)
@@ -926,13 +957,20 @@ namespace StellarisClone.Rendering
             info.anchorMin = new Vector2(0, 0);
             info.anchorMax = new Vector2(1, 1);
             info.offsetMin = new Vector2(74, 10);
-            info.offsetMax = new Vector2(-420, -8);
+            info.offsetMax = new Vector2(-650, -8);
             var name = LGBuild.Label(info, DistrictName(type), 13, Color.white, TextAnchor.UpperLeft, bold: true);
             name.rectTransform.TopBand(0, 18);
             var effect = LGBuild.Label(info, DistrictEffect(type), 11, CMuted, TextAnchor.UpperLeft, wrap: true);
             effect.rectTransform.TopBand(20, 30);
             var worked = LGBuild.Label(info, "", 11, CMuted, TextAnchor.LowerLeft);
             worked.rectTransform.Stretch(0, 6, 0, 0);
+
+            // Клетки районов — заполняют середину строки наглядной занятостью
+            var pips = LGBuild.Rect(rt, "Pips");
+            pips.anchorMin = pips.anchorMax = new Vector2(1, 0.5f);
+            pips.pivot = new Vector2(1, 0.5f);
+            pips.anchoredPosition = new Vector2(-424, 0);
+            pips.sizeDelta = new Vector2(220, 16);
 
             // Количество — крупно, перед стоимостью
             var count = LGBuild.Label(rt, "", 22, dc, TextAnchor.MiddleRight, bold: true);
@@ -972,7 +1010,7 @@ namespace StellarisClone.Rendering
 
             return new DistrictCard
             {
-                Type = type, Count = count, Worked = worked, MinCost = minCost, AlloyCost = alloyCost, Bg = bg, Build = btn, Cancel = cancel, Progress = progress,
+                Type = type, Count = count, Worked = worked, MinCost = minCost, AlloyCost = alloyCost, Bg = bg, Build = btn, Cancel = cancel, Progress = progress, Pips = pips,
                 Reason = btn.GetComponentInChildren<Text>()
             };
         }

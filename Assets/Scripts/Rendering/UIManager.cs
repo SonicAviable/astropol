@@ -980,7 +980,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _activePlanet = planet;
             if (parentSystem != null) _activeSystem = parentSystem;
 
-            _inspTitle.text = planet.Name.ToUpper();
+            _inspTitle.text = PlanetNames.Title(planet.Name);
             _inspStatus.text = "<color=#E5B842>◆  Планетарный объект</color>";
 
             bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;

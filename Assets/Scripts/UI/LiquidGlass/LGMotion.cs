@@ -74,6 +74,9 @@ namespace StellarisClone.Rendering
         private Vector2 _restPos;
         private Vector3 _restScale = Vector3.one;
         private bool _restCaptured;
+        // Позицию покоя берём в первом кадре анимации: LG.Motion добавляют до того, как
+        // вызывающий код расставит элемент, и ранний снимок возвращал его на старое место
+        private bool _pendingCapture;
         private System.Action _onHidden;
 
         public bool IsHiding => _state == State.Out;
@@ -154,7 +157,8 @@ namespace StellarisClone.Rendering
             }
             else
             {
-                CaptureRest();
+                _pendingCapture = true;
+                _restCaptured = false;
             }
 
             _state = State.In;
@@ -181,7 +185,7 @@ namespace StellarisClone.Rendering
                 _onHidden += onHidden;
                 return;
             }
-            if (_state == State.Idle) CaptureRest();
+            if (_state == State.Idle || _pendingCapture) { CaptureRest(); _pendingCapture = false; }
 
             _state = State.Out;
             _t = 0f;
@@ -197,6 +201,7 @@ namespace StellarisClone.Rendering
 
             if (_state == State.In)
             {
+                if (_pendingCapture) { CaptureRest(); _pendingCapture = false; }
                 if (_delayLeft > 0f)
                 {
                     _delayLeft -= dt;
@@ -232,7 +237,7 @@ namespace StellarisClone.Rendering
             float a = LGEase.OutCubic(Mathf.Clamp01(t * 1.6f));
             _cg.alpha = Mathf.Lerp(_startAlpha, 1f, a);
 
-            if (_rt == null) return;
+            if (_rt == null || _pendingCapture) return;
             float spring = LGEase.OutBack(k, 0.35f);
             if (UsesScale)
                 _rt.localScale = _restScale * Mathf.LerpUnclamped(kind == Kind.Pop ? fromScale : 0.985f, 1f, spring);
