@@ -74,18 +74,20 @@ namespace StellarisClone.Rendering
 
             var src = mr.sharedMaterials;
             var mats = new Material[src.Length];
-            int engineSub = -1, redSub = -1;
+            int engineSub = -1, redSub = -1, retroSub = -1;
             for (int i = 0; i < src.Length; i++)
             {
                 string n = src[i] != null ? src[i].name : "";
                 if (n.StartsWith("MainEngineGlow")) engineSub = i;
                 if (n.StartsWith("redLight")) redSub = i;
+                if (n.StartsWith("RevEngineGlow")) retroSub = i;
                 mats[i] = MaterialFor(n, v);
             }
             mr.sharedMaterials = mats;
             v.Hull = mats.Length > 0 ? mats[0] : null;
 
             Orient(root, pivot, mr, mf.sharedMesh, engineSub, redSub, length);
+            FindNozzles(v, root, mr, mf.sharedMesh, engineSub, retroSub, length);
             return v;
         }
 
@@ -111,6 +113,48 @@ namespace StellarisClone.Rendering
             pivot.localScale *= length / len;
             b = BoundsIn(root, mr, mesh.bounds);
             pivot.localPosition -= b.center;
+        }
+
+        // Пять маршевых сопел стоят шевроном: доля ширины блока сопел и глубина от самого заднего (0) вперёд (1).
+        private static readonly Vector2[] MainPattern =
+        {
+            new Vector2(0f, 0f), new Vector2(-0.227f, 0.56f), new Vector2(0.227f, 0.56f), new Vector2(-0.465f, 1f), new Vector2(0.465f, 1f)
+        };
+
+        /// <summary>Сопла по свечению самой модели (подмеши MainEngineGlow и RevEngineGlow).</summary>
+        private static void FindNozzles(ShipMeshFactory.ShipVisual v, Transform root, Renderer mr, Mesh mesh, int engineSub, int retroSub, float length)
+        {
+            try
+            {
+                if (engineSub >= 0 && engineSub < mesh.subMeshCount)
+                {
+                    var b = BoundsIn(root, mr, mesh.GetSubMesh(engineSub).bounds);
+                    v.Nozzles = new Vector3[MainPattern.Length];
+                    for (int i = 0; i < MainPattern.Length; i++)
+                        v.Nozzles[i] = new Vector3(b.center.x + MainPattern[i].x * b.size.x, b.center.y, b.min.z + MainPattern[i].y * b.size.z);
+                    v.NozzleRadius = Mathf.Max(0.02f, b.size.y * 0.5f);
+                }
+                if (retroSub >= 0 && retroSub < mesh.subMeshCount)
+                {
+                    var b = BoundsIn(root, mr, mesh.GetSubMesh(retroSub).bounds);
+                    float off = b.size.x * 0.462f;
+                    v.RetroNozzles = new[] { new Vector3(b.center.x - off, b.center.y, b.max.z), new Vector3(b.center.x + off, b.center.y, b.max.z) };
+                    v.RetroRadius = Mathf.Max(0.02f, b.size.y * 0.5f);
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Harbinger] Не удалось найти сопла: " + e.Message);
+            }
+            // Запасной вариант — пять сопел у кормы по пропорциям модели
+            if (v.Nozzles.Length == 0)
+            {
+                float k = length / 3.6f;
+                v.Nozzles = new Vector3[MainPattern.Length];
+                for (int i = 0; i < MainPattern.Length; i++)
+                    v.Nozzles[i] = new Vector3(MainPattern[i].x * 1.16f * k, 0.08f * k, (-1.72f + MainPattern[i].y * 0.11f) * k);
+                v.NozzleRadius = 0.04f * k;
+            }
         }
 
         private static Vector3 SubCenter(Transform root, Renderer mr, Mesh mesh, int sub)

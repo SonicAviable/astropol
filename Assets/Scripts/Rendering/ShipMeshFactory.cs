@@ -22,6 +22,10 @@ namespace StellarisClone.Rendering
             /// <summary>Мигающий маяк готовой модели (материал огня вместо отдельного меша Nav).</summary>
             public Material BlinkMat;
             public Color BlinkColor;
+            /// <summary>Маршевые сопла (локально, тяга назад по −Z) и тормозные (струя вперёд, +Z).</summary>
+            public Vector3[] Nozzles = new Vector3[0];
+            public Vector3[] RetroNozzles = new Vector3[0];
+            public float NozzleRadius = 0.12f, RetroRadius = 0.06f;
             private bool _blinkOn = true;
 
             public void SetSelected(bool on)
@@ -87,7 +91,34 @@ namespace StellarisClone.Rendering
             nr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             nr.sharedMaterial = GlowMat(new Color(1f, 0.92f, 0.85f));
             v.Nav = nr;
+            SetNozzles(v, type, hull);
             return v;
+        }
+
+        /// <summary>Сопла процедурных корпусов — там же, где светящиеся призмы двигателей в мешах ниже.</summary>
+        private static void SetNozzles(ShipVisual v, FleetType type, ShipClass hull)
+        {
+            switch (type)
+            {
+                case FleetType.Constructor:
+                    v.Nozzles = new[] { new Vector3(-0.28f, 0.02f, -1.6f), new Vector3(0.28f, 0.02f, -1.6f) };
+                    v.NozzleRadius = 0.13f;
+                    v.RetroNozzles = new[] { new Vector3(-0.3f, 0.02f, 1.1f), new Vector3(0.3f, 0.02f, 1.1f) };
+                    break;
+                case FleetType.Science:
+                    v.Nozzles = new[] { new Vector3(0f, 0f, -1.65f) };
+                    v.NozzleRadius = 0.14f;
+                    v.RetroNozzles = new[] { new Vector3(-0.18f, 0f, 0.9f), new Vector3(0.18f, 0f, 0.9f) };
+                    break;
+                default:
+                    float s = hull == ShipClass.Destroyer ? 1.18f : hull == ShipClass.Frigate ? 1.08f : 1f;
+                    int n = hull == ShipClass.Destroyer ? 3 : 2;
+                    v.Nozzles = new Vector3[n];
+                    for (int i = 0; i < n; i++)
+                        v.Nozzles[i] = new Vector3(n == 2 ? (i == 0 ? -0.3f : 0.3f) * s : (i - 1) * 0.36f * s, 0.02f, -1.86f * s);
+                    v.RetroNozzles = new[] { new Vector3(-0.45f * s, 0.02f, 0.4f * s), new Vector3(0.45f * s, 0.02f, 0.4f * s) };
+                    break;
+            }
         }
 
         // ================================================================ МОДЕЛИ

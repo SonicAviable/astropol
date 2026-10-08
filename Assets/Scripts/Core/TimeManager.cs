@@ -17,6 +17,10 @@ namespace StellarisClone.Core
         public float SecondsPerDay => secondsPerDay;
 
         private float _timer;
+        private float _lastInterval;
+
+        /// <summary>Доля текущего дня (0…1) — для плавной анимации между дневными тиками; на паузе замирает.</summary>
+        public float DayFraction => _lastInterval > 0f ? Mathf.Clamp01(_timer / _lastInterval) : 0f;
         private int _currentSpeed = 1;
         private int _day = 1, _month = 1, _year = 2200;
 
@@ -39,6 +43,9 @@ namespace StellarisClone.Core
             if (_currentSpeed == 0) return;
 
             float interval = secondsPerDay / _currentSpeed;
+            // При смене скорости сохраняем долю дня, чтобы анимация не прыгала
+            if (_lastInterval > 0f && !Mathf.Approximately(interval, _lastInterval)) _timer *= interval / _lastInterval;
+            _lastInterval = interval;
             _timer += Time.deltaTime;
             if (_timer >= interval)
             {

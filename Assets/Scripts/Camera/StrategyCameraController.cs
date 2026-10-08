@@ -16,7 +16,7 @@ namespace StellarisClone.Cam
         [Header("Зум")]
         [SerializeField] private float zoomSpeed = 25f;
         [SerializeField] private float zoomSmooth = 12f;
-        [SerializeField] private float minHeight = 18f;
+        [SerializeField] private float minHeight = 9f;
         [SerializeField] private float maxHeight = 240f;
         [SerializeField] private float zoomToCursorStrength = 0.85f;
 
@@ -39,7 +39,7 @@ namespace StellarisClone.Cam
 
         [Header("Режим системы")]
         [SerializeField] private float systemZoomSpeed = 35f;
-        [SerializeField] private float minSystemDistance = 20f;
+        [SerializeField] private float minSystemDistance = 13f;
         [SerializeField] private float maxSystemDistance = 140f;
         [SerializeField] private float systemTransitionSpeed = 6f;
         [SerializeField] private float returnFromSystemDuration = 0.45f;
