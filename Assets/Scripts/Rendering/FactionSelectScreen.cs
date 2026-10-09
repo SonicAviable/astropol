@@ -120,6 +120,22 @@ namespace StellarisClone.Rendering
                         "Их кожа вспыхивает в такт мыслям, а самые одарённые видят обрывки грядущего.\n\n" +
                         "Правит Оракулом Верховная провидица Аурэлия. Говорят, она знает исход любой войны ещё до первого выстрела, " +
                         "поэтому Оракул так редко сражается — и почти никогда не проигрывает."
+            },
+            ["terraan"] = new Lore
+            {
+                Tagline = "Древни, терпеливы, неуступчивы",
+                Emblem = LGIcon.Planet,
+                Traits = new[]
+                {
+                    (LGIcon.Wrench, "Живая броня: корабли сами заживают"),
+                    (LGIcon.Sensors, "Мицелий: разведка быстрее, сенсоры дальше"),
+                    (LGIcon.Starbase, "Живые форпосты дешевле; «Пробуждение сада»"),
+                    (LGIcon.Warning, "Медленный рост, боятся энергии")
+                },
+                Story = "Тэрра'ан — древнейшая из живых цивилизаций галактики. Их миры — огромные сады, где корни связывают континенты, " +
+                        "а деревья хранят память веков. Корабли здесь не собирают, а выращивают из биокоры, и раны их заживают сами.\n\n" +
+                        "Решения принимает весь Конклав через сеть мицелия, а голос его — старейшая Исинна Кральтэр, Хранительница Корней. " +
+                        "Конклав не спешит и терпеливо ждёт, пока соседи истощат себя войнами. Но если сад под угрозой — пробуждается всё, что в нём спало."
             }
         };
 
@@ -356,7 +372,8 @@ namespace StellarisClone.Rendering
             _cards.anchoredPosition = new Vector2(-150f, 30f);
             var factions = FactionRegistry.AvailableFactions;
             bool compact = factions.Length > 3;
-            float w = compact ? 236f : 270f, gap = compact ? 12f : 16f, thumbSize = compact ? 80f : 96f;
+            bool tight = factions.Length > 4;
+            float w = tight ? 214f : compact ? 236f : 270f, gap = tight ? 10f : compact ? 12f : 16f, thumbSize = tight ? 72f : compact ? 80f : 96f;
             float textX = 10f + thumbSize + 12f;
             const float h = 116f;
             _cards.sizeDelta = new Vector2(factions.Length * (w + gap) - gap, h + 12f);
@@ -593,6 +610,8 @@ namespace StellarisClone.Rendering
             if (f.MineralBonus > 1.001f) yield return (LGIcon.Minerals, $"+{(f.MineralBonus - 1f) * 100f:0}% к добыче титана");
             if (f.AlloyBonus > 1.001f) yield return (LGIcon.Alloys, $"+{(f.AlloyBonus - 1f) * 100f:0}% к производству сплавов");
             if (f.InfluenceBonus > 1.001f) yield return (LGIcon.Influence, $"+{(f.InfluenceBonus - 1f) * 100f:0}% к влиянию");
+            if (FactionRegistry.IsTerraan(f)) yield return (LGIcon.Defense, "+15% корпус, +10% щиты (биокора)");
+            if (f.MineralBonus < 0.999f) yield return (LGIcon.Minerals, $"−{(1f - f.MineralBonus) * 100f:0}% к добыче титана");
         }
 
         private void Trait(ref float y, LGIcon icon, string text, Color col)

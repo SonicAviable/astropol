@@ -17,8 +17,8 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager : MonoBehaviour
     {
-        /// <summary>Сколько империй-соперников в партии (вместе с игроком — четыре, все фракции).</summary>
-        public const int RivalCount = 3;
+        /// <summary>Сколько империй-соперников в партии (вместе с игроком — пять, все фракции).</summary>
+        public const int RivalCount = 4;
 
         /// <summary>Все империи ИИ, по возрастанию номера владельца (1, 2, …).</summary>
         public static readonly List<AIEmpireManager> All = new List<AIEmpireManager>();
@@ -65,6 +65,7 @@ namespace StellarisClone.Core
             }
             return owner == 2 ? new Color(0.74f, 0.48f, 1f)
                  : owner == 3 ? new Color(1f, 0.74f, 0.25f)
+                 : owner == 4 ? new Color(0.44f, 0.86f, 0.34f)
                  : new Color(1f, 0.30f, 0.30f);
         }
 
@@ -495,14 +496,14 @@ namespace StellarisClone.Core
                     if (t == null || t.OwnerId >= 0)
                     {
                         // Цель заняли раньше — часть ресурсов возвращается
-                        if (t != null && t.OwnerId != OwnerId) Alloys += FleetManager.StarbaseAlloysCost * 0.5f;
+                        if (t != null && t.OwnerId != OwnerId) Alloys += FactionTraits.StarbaseAlloys(OwnerId) * 0.5f;
                         d.BuildTargetSystemId = -1;
                         if (d.State == FleetState.Constructing) d.State = FleetState.Orbiting;
                     }
                     else continue;
                 }
                 if (!IsIdle(d)) continue;
-                if (Alloys < FleetManager.StarbaseAlloysCost || Influence < influence) continue;
+                if (Alloys < FactionTraits.StarbaseAlloys(OwnerId) || Influence < influence) continue;
                 // Не уходим в минус по энергии ради нового форпоста
                 if (MonthlyEnergyIncome - EmpireEconomy.OutpostUpkeep < 0f && EnergyCredits < 150f) continue;
 
@@ -510,12 +511,13 @@ namespace StellarisClone.Core
                 if (target < 0) continue;
                 claimed.Add(target);
 
-                Alloys -= FleetManager.StarbaseAlloysCost;
+                Alloys -= FactionTraits.StarbaseAlloys(OwnerId);
                 Influence -= influence;
                 d.BuildTargetSystemId = target;
                 if (d.CurrentSystemId == target)
                 {
                     d.State = FleetState.Constructing;
+                    d.TotalConstructionDays = FactionTraits.OutpostDays(OwnerId);
                     d.DaysRemainingConstruction = d.TotalConstructionDays;
                 }
                 else FleetManager.Instance?.IssueMoveOrder(ship, target);

@@ -951,12 +951,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     var eco = EconomyManager.Instance;
                     float finalInfluenceCost = StarbaseInfluenceCost
                         - (TechnologyManager.Instance != null ? TechnologyManager.Instance.StarbaseCostDiscount : 0f);
-                    bool canAfford = eco != null && eco.Alloys >= StarbaseAlloysCost && eco.Influence >= finalInfluenceCost;
+                    float outpostAlloys = FactionTraits.StarbaseAlloys(0);
+                    bool canAfford = eco != null && eco.Alloys >= outpostAlloys && eco.Influence >= finalInfluenceCost;
 
                     _inspActionBtn.interactable = canAfford;
                     _inspActionBtnBg.color = canAfford ? DS.BtnPrimary : new Color(0.15f, 0.20f, 0.25f);
                     _inspActionBtnText.text = canAfford
-                        ? $"▶  ФОРПОСТ ({(int)StarbaseAlloysCost} ⬢ · {(int)finalInfluenceCost} ★)"
+                        ? $"▶  ФОРПОСТ ({(int)outpostAlloys} ⬢ · {(int)finalInfluenceCost} ★)"
                         : "✕  НЕДОСТАТОЧНО РЕСУРСОВ";
                 }
             }

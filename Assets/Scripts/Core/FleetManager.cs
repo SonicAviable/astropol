@@ -93,6 +93,16 @@ namespace StellarisClone.Core
 
                 d.ShieldPoints = Mathf.Min(d.MaxShieldPoints, d.ShieldPoints + d.MaxShieldPoints * ShieldRegenPerDay);
 
+                // Живая броня Конклава: корпус заживает сам, где бы корабль ни был
+                if (FactionTraits.IsTerraan(d.OwnerId))
+                {
+                    bool home = d.State != FleetState.InHyperlane && d.CurrentSystemId >= 0 && d.CurrentSystemId < _generator.Systems.Count
+                                && _generator.Systems[d.CurrentSystemId].OwnerId == d.OwnerId;
+                    float heal = home ? FactionTraits.LivingArmorOwnPerDay : FactionTraits.LivingArmorPerDay;
+                    d.HullPoints = Mathf.Min(d.MaxHullPoints, d.HullPoints + d.MaxHullPoints * heal);
+                    d.ArmorPoints = Mathf.Min(d.MaxArmorPoints, d.ArmorPoints + d.MaxArmorPoints * heal * 0.5f);
+                }
+
                 if (d.State == FleetState.InHyperlane) continue;
                 float rate = RepairRateAt(d.CurrentSystemId, d.OwnerId);
                 if (rate <= 0f) continue;
@@ -736,10 +746,11 @@ namespace StellarisClone.Core
 
             var eco = EconomyManager.Instance;
             float influence = OutpostInfluenceCost(0);
-            if (eco == null || !eco.CanAfford(0f, 0f, StarbaseAlloysCost, influence))
+            float alloys = FactionTraits.StarbaseAlloys(0);
+            if (eco == null || !eco.CanAfford(0f, 0f, alloys, influence))
             {
                 NotificationCenter.Show("Недостаточно ресурсов",
-                    $"Форпост: {StarbaseAlloysCost} сплавов + {influence} влияния",
+                    $"Форпост: {alloys:0} сплавов + {influence} влияния",
                     NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
@@ -760,13 +771,14 @@ namespace StellarisClone.Core
 
             if (builder == null) return false;
 
-            eco.TrySpend(0f, 0f, StarbaseAlloysCost, influence);
+            eco.TrySpend(0f, 0f, alloys, influence);
             builder.Data.BuildTargetSystemId = targetSystemId;
 
             if (builder.Data.CurrentSystemId == targetSystemId
                 && builder.Data.State == FleetState.Orbiting)
             {
                 builder.Data.State = FleetState.Constructing;
+                builder.Data.TotalConstructionDays = FactionTraits.OutpostDays(builder.Data.OwnerId);
                 builder.Data.DaysRemainingConstruction = builder.Data.TotalConstructionDays;
             }
             else

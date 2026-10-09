@@ -411,7 +411,12 @@ namespace StellarisClone.Core
                     case DealItemKind.ResearchTreaty:
                     case DealItemKind.TradeTreaty:
                         if (!HasAgreement(t.Kind))
-                            Agreements.Add(new Agreement { Kind = t.Kind, MonthsLeft = DealCatalog.TreatyMonths });
+                        {
+                            int months = DealCatalog.TreatyMonths;
+                            // Дипломатия корней: договоры с Конклавом держатся дольше
+                            if (FactionTraits.IsTerraan(OwnerId) || FactionTraits.IsTerraan(0)) months = Mathf.RoundToInt(months * FactionTraits.TreatyLength);
+                            Agreements.Add(new Agreement { Kind = t.Kind, MonthsLeft = months });
+                        }
                         break;
                     case DealItemKind.Charts:
                         ShareCharts();
@@ -542,6 +547,8 @@ namespace StellarisClone.Core
                     ? new[] { DealItemKind.ResearchTreaty, DealItemKind.Charts, DealItemKind.TradeTreaty }
                     : Personality == AIPersonality.Mystic
                         ? new[] { DealItemKind.Charts, DealItemKind.ResearchTreaty }
+                    : Personality == AIPersonality.Gardener
+                        ? new[] { DealItemKind.ResearchTreaty, DealItemKind.TradeTreaty, DealItemKind.Charts }
                         : new[] { DealItemKind.Charts, DealItemKind.TradeTreaty };
             foreach (var k in order)
             {

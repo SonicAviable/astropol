@@ -605,7 +605,7 @@ namespace StellarisClone.Rendering
             {
                 // Систему успели занять — половина сплавов возвращается
                 var eco = EconomyManager.Instance;
-                if (eco != null) { eco.Alloys += FleetManager.StarbaseAlloysCost * 0.5f; eco.RaiseResourcesChanged(); }
+                if (eco != null) { eco.Alloys += FactionTraits.StarbaseAlloys(0) * 0.5f; eco.RaiseResourcesChanged(); }
                 NotificationCenter.Show("Форпост не построен", "Систему уже заняли. Возвращено 50% сплавов", NotificationCenter.Kind.Warning, 5f);
             }
 
@@ -774,6 +774,13 @@ namespace StellarisClone.Rendering
             float rate = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed;
             rate *= Mathf.Max(0.5f, Data.HyperSpeed);
             rate *= LeaderManager.HyperSpeedMult(Data);
+            // Пробуждение сада: мицелий Конклава опутывает вражеские корабли, уходящие из его системы
+            var cm = CombatManager.Instance;
+            if (cm != null && Data.CurrentSystemId >= 0 && cm.IsGardenAwake(Data.CurrentSystemId))
+            {
+                int sysOwner = _generator.Systems[Data.CurrentSystemId].OwnerId;
+                if (sysOwner != Data.OwnerId && Diplomacy.AtWar(Data.OwnerId, sysOwner)) rate *= FactionTraits.GardenSlow;
+            }
             return rate;
         }
 

@@ -83,6 +83,7 @@ namespace StellarisClone.Core
             _art["decision_aquila"] = "Trade";
             _art["aquila_dividends"] = "Trade";
             _art["decision_iridia"] = "Rift";
+            _art["decision_terraan"] = "Amoeba";
             _art["pirate_haven"] = "Distress";
             _art["leviathan_slain"] = "Amoeba";
             _art["precursor_signal"] = "Relic";
@@ -259,6 +260,52 @@ namespace StellarisClone.Core
                                         hostile ? NotificationCenter.Kind.Warning : NotificationCenter.Kind.Info, 9f);
                                 }
                                 EmpireEffects.Add("vision_iridia", "Видение войны", "Видения Оракула", 24, alloys: 4 * k);
+                            })));
+                }
+            });
+
+            // ---- Конклав Тэрра'ан: Совет Корней ----
+            Add(new Template
+            {
+                Id = "decision_terraan", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    var near = UnsurveyedNearPlayer(4);
+                    int damaged = 0;
+                    var fm = FleetManager.Instance;
+                    if (fm != null)
+                        foreach (var f in fm.AllFleets)
+                            if (f?.Data != null && f.Data.OwnerId == 0 && !f.Data.Destroyed &&
+                                (f.Data.HullPoints < f.Data.MaxHullPoints || f.Data.ArmorPoints < f.Data.MaxArmorPoints)) damaged++;
+                    return Ev("decision_terraan", "СОВЕТ КОРНЕЙ",
+                        "Раз в два года Конклав сплетает корни всех миров в единый Совет. Сквозь мицелий звучат миллионы голосов, " +
+                        "и Хранительница Исинна Кральтэр выслушивает каждый — это занимает недели. Совет может направить соки сада лишь в одну сторону. " +
+                        "Куда потечёт сила Конклава в этот раз?",
+                        AnomalyType.AlienFauna, Opts(
+                            new EventOption("СПОРЫ В ПУСТОТУ", $"Споры мицелия разносят разведку на 4 прыжка от границ: изучено систем — {near.Count}.", () =>
+                            {
+                                foreach (var s in near) { s.GeneratePlanets(); s.MarkSurveyedBy(0); s.IsSurveyed = true; Vision.MarkExplored(0, s.Id); }
+                                GalaxyView.Instance?.RefreshTerritoryVisuals();
+                                NotificationCenter.Show("Споры в пустоту", $"Мицелий изучил {near.Count} сист.", NotificationCenter.Kind.Success, 6f);
+                            }, "Нет неизученных систем рядом", () => near.Count > 0),
+                            new EventOption("ПРОБУЖДЕНИЕ РОЩ", $"Все ваши корабли мгновенно заживают ({damaged} повреждено), щиты полны; +{R(3 * k)} сплавов в месяц на 24 месяца.", () =>
+                            {
+                                if (fm != null)
+                                    foreach (var f in fm.AllFleets)
+                                    {
+                                        var d = f?.Data;
+                                        if (d == null || d.OwnerId != 0 || d.Destroyed) continue;
+                                        d.HullPoints = d.MaxHullPoints; d.ArmorPoints = d.MaxArmorPoints; d.ShieldPoints = d.MaxShieldPoints;
+                                    }
+                                EmpireEffects.Add("council_terraan", "Пробуждение рощ", "Совет Корней", 24, alloys: 3 * k);
+                            }),
+                            new EventOption("ДОЛГИЙ СЕЗОН", $"Сады плодоносят: +{R(6 * k)} минералов и +{R(2 * k)} влияния в месяц на 24 месяца.",
+                                () => EmpireEffects.Add("council_terraan", "Долгий сезон", "Совет Корней", 24, minerals: 6 * k, influence: 2 * k)),
+                            new EventOption("ПАМЯТЬ ДРЕВНИХ", $"Старейшие деревья делятся знанием: +{R(180 * k)} науки и +{R(3 * k)} науки в месяц на 24 месяца.", () =>
+                            {
+                                Science(180 * k);
+                                EmpireEffects.Add("council_terraan", "Память древних", "Совет Корней", 24, science: 3 * k);
                             })));
                 }
             });

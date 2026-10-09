@@ -816,7 +816,7 @@ namespace StellarisClone.Rendering
 
         private struct Item { public RectTransform Rt; public Graphic G; public float Delay; public float Alpha; public bool Pop; }
         private readonly List<Item> _items = new List<Item>();
-        private RectTransform _capRing, _aiRing, _aiRing2, _aiRing3;
+        private RectTransform _capRing, _aiRing, _aiRing2, _aiRing3, _aiRing4;
 
         public void Build(RectTransform host)
         {
@@ -867,13 +867,14 @@ namespace StellarisClone.Rendering
             if (_aiRing != null && _t > 0.9f) _aiRing.localScale = new Vector3(2f - pulse, 2f - pulse, 1f);
             if (_aiRing2 != null && _t > 0.9f) _aiRing2.localScale = new Vector3(2f - pulse, 2f - pulse, 1f);
             if (_aiRing3 != null && _t > 0.9f) _aiRing3.localScale = new Vector3(2f - pulse, 2f - pulse, 1f);
+            if (_aiRing4 != null && _t > 0.9f) _aiRing4.localScale = new Vector3(2f - pulse, 2f - pulse, 1f);
         }
 
         private void Rebuild(NewGameSettings s)
         {
             if (_layer != null) Destroy(_layer.gameObject);
             _items.Clear();
-            _capRing = _aiRing = _aiRing2 = _aiRing3 = null;
+            _capRing = _aiRing = _aiRing2 = _aiRing3 = _aiRing4 = null;
             _t = 0f;
 
             _layer = LGBuild.Rect(_area, "Layer");
@@ -959,6 +960,7 @@ namespace StellarisClone.Rendering
             if (caps.Count > 1) _aiRing = Marker(P(systems[caps[1]]), AIEmpireManager.MapColorFor(1), "СОПЕРНИК");
             if (caps.Count > 2) _aiRing2 = Marker(P(systems[caps[2]]), AIEmpireManager.MapColorFor(2), "СОПЕРНИК");
             if (caps.Count > 3) _aiRing3 = Marker(P(systems[caps[3]]), AIEmpireManager.MapColorFor(3), "СОПЕРНИК");
+            if (caps.Count > 4) _aiRing4 = Marker(P(systems[caps[4]]), AIEmpireManager.MapColorFor(4), "СОПЕРНИК");
 
             _caption.text = $"{NewGameSettings.SizeNames[s.GalaxySize]} галактика   ·   {NewGameSettings.ShapeNames[Mathf.Clamp(s.Shape, 0, 3)].ToLower()}   ·   {systems.Count} систем   ·   {lanes.Count} гиперкоридоров   ·   сид {s.Seed}";
         }

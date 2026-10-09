@@ -602,7 +602,7 @@ namespace StellarisClone.Core
             d.MilitaryPower = f.MilitaryPower;
             d.BuildTargetSystemId = f.BuildTarget;
             d.DaysRemainingConstruction = f.DaysConstruction;
-            d.TotalConstructionDays = GamePace.OutpostDays;
+            d.TotalConstructionDays = Mathf.Max(FactionTraits.OutpostDays(d.OwnerId), f.DaysConstruction);
             d.SurveyTargetSystemId = f.SurveyTarget;
             d.DaysRemainingSurvey = f.DaysSurvey;
             d.TotalSurveyDays = GamePace.SurveyDays;

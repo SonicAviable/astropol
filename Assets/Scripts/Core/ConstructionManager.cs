@@ -194,7 +194,7 @@ namespace StellarisClone.Core
 
         public ConstructionJob EnqueueShip(int owner, FleetType type, ShipClass hull, string designId, float energy, float alloys)
         {
-            float days = ShipDays(type, hull);
+            float days = ShipDays(type, hull) * FactionTraits.BuildTimeMult(owner);
             var job = new ConstructionJob
             {
                 Id = _nextId++, Kind = JobKind.Ship, Owner = owner, ShipType = type, Hull = hull, DesignId = designId,

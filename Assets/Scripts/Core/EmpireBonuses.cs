@@ -48,12 +48,23 @@ namespace StellarisClone.Core
 
         public EmpireBonuses Clone() => (EmpireBonuses)MemberwiseClone();
 
-        /// <summary>Бонусы владельца флота/системы (0 — игрок, иначе ИИ).</summary>
+        /// <summary>Фракция, чьи черты уже наложены на эти бонусы (FactionTraits).</summary>
+        [NonSerialized] public FactionInfo TraitsOf;
+
+        /// <summary>Бонусы владельца флота/системы (0 — игрок, иначе ИИ). Черты фракции накладываются автоматически.</summary>
         public static EmpireBonuses For(int ownerId)
         {
-            if (ownerId == 0) return TechnologyManager.Instance != null ? TechnologyManager.Instance.Bonuses : Neutral;
-            var ai = AIEmpireManager.For(ownerId);
-            return ai != null ? ai.Bonuses : Neutral;
+            EmpireBonuses b;
+            if (ownerId == 0) b = TechnologyManager.Instance != null ? TechnologyManager.Instance.Bonuses : null;
+            else b = AIEmpireManager.For(ownerId)?.Bonuses;
+            if (b == null) return Neutral;
+            var f = FactionTraits.FactionOf(ownerId);
+            if (!ReferenceEquals(b.TraitsOf, f))
+            {
+                FactionTraits.Sync(b, b.TraitsOf, f);
+                b.TraitsOf = f;
+            }
+            return b;
         }
 
         private static readonly EmpireBonuses Neutral = new EmpireBonuses();

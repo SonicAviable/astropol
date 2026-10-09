@@ -541,7 +541,7 @@ namespace StellarisClone.Rendering
                 SetChip(c++, LGIcon.Construction, CCon, $"{d.TotalConstructionDays:0} дн.", "<b>Монтаж форпоста</b>\nСколько дней строится звёздная база");
                 SetChip(c++, LGIcon.Influence, new Color(0.75f, 0.6f, 1f), $"{FleetManager.OutpostInfluenceCost(d.OwnerId):0}",
                     "<b>Цена форпоста</b>\nВлияние за новую систему");
-                SetChip(c++, LGIcon.Alloys, new Color(0.85f, 0.7f, 1f), $"{FleetManager.StarbaseAlloysCost:0}", "<b>Сплавы на форпост</b>");
+                SetChip(c++, LGIcon.Alloys, new Color(0.85f, 0.7f, 1f), $"{FactionTraits.StarbaseAlloys(d.OwnerId):0}", "<b>Сплавы на форпост</b>");
             }
             SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), $"{FleetRoute.DaysPerJump(d):0} дн/прыжок",
                 $"<b>Скорость</b>\nДней на один гиперпрыжок · содержание {d.UpkeepEnergy:0.#} энергии в месяц");

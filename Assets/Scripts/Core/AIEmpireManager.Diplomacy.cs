@@ -253,6 +253,8 @@ namespace StellarisClone.Core
                 float decay = MemoryTable[k].MonthlyDecay;
                 // Мистики помнят обиды вдвое дольше
                 if (Personality == AIPersonality.Mystic && _memory[k] < 0f) decay *= 0.5f;
+                // Конклав мыслит веками: и добро, и зло помнит дольше всех
+                if (Personality == AIPersonality.Gardener) decay *= 0.6f;
                 float v = _memory[k] * (1f - decay);
                 if (Mathf.Abs(v) < 0.5f) _memory.Remove(k);
                 else _memory[k] = v;

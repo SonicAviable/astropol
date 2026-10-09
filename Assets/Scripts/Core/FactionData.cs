@@ -25,7 +25,7 @@ namespace StellarisClone.Core
 
     public static class FactionRegistry
     {
-        /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia (null — неизвестна).</summary>
+        /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia, terraan (null — неизвестна).</summary>
         public static string KeyOf(FactionInfo f)
         {
             string n = f?.Name;
@@ -34,8 +34,11 @@ namespace StellarisClone.Core
             if (n.Contains("Астре")) return "astrea";
             if (n.Contains("Аквил")) return "aquila";
             if (n.Contains("Ирид")) return "iridia";
+            if (n.Contains("Тэрра")) return "terraan";
             return null;
         }
+
+        public static bool IsTerraan(FactionInfo f) => KeyOf(f) == "terraan";
 
         public static readonly FactionInfo[] AvailableFactions = new FactionInfo[]
         {
@@ -80,7 +83,20 @@ namespace StellarisClone.Core
                 "<b>+40% к Влиянию</b>\n" +
                 "<b>+10% к Энергии</b>",
                 new Color(0.66f, 0.42f, 1.00f),
-                1.10f, 1.00f, 1.00f, 1.40f)
+                1.10f, 1.00f, 1.00f, 1.40f),
+
+            new FactionInfo(
+                "Хлорофиловый Конклав Тэрра'ан",
+                "Живой Конклав Корней",
+                "Древнейшая из живых цивилизаций. Их миры — огромные сады, корабли выращены из биокоры, " +
+                "а решения принимает весь Конклав через сеть мицелия. Тэрра'ан не спешит — и переживает тех, кто спешит.\n\n" +
+                "<b>Живая броня:</b> корпус сам заживает вне боя\n" +
+                "<b>+15% корпус, +10% щиты, +25% влияние</b>\n" +
+                "<b>Разведка +20%, форпосты −20% сплавов</b>\n" +
+                "<color=#E7A0A0>Стройка +20% дольше · гиперскорость −10%\n" +
+                "уязвимы к энергии +15% · минералы −15%</color>",
+                new Color(0.44f, 0.86f, 0.34f),
+                1.00f, 0.85f, 1.00f, 1.25f)
         };
     }
 }

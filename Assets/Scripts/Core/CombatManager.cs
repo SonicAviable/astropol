@@ -112,6 +112,8 @@ namespace StellarisClone.Core
             public bool Disabled;
             public float Cooldown;
             public int TargetFleetId = -1;
+            /// <summary>Пробуждение сада (Конклав Тэрра'ан): сколько дней ещё действует и перезарядка.</summary>
+            public int GardenDays, GardenCooldown;
             public float Integrity => (Hull + Armor) / Mathf.Max(1f, MaxHull + MaxArmor);
         }
 
@@ -629,6 +631,7 @@ namespace StellarisClone.Core
 
             float raw = damage * ab.DamageMult(weapon);
             if (shooter.Fleet != null) raw *= LeaderManager.AdmiralDamageMult(shooter.Owner, battle.SystemId);
+            if (target.Fleet != null) raw *= FactionTraits.IncomingDamage(target.Owner, weapon);   // биокора Конклава боится энергии
             float shieldBefore = target.Fleet != null ? target.Fleet.Data.ShieldPoints : target.Base.Shields;
             float armorBefore = target.Fleet != null ? target.Fleet.Data.ArmorPoints : target.Base.Armor;
             float dealt;
@@ -1004,7 +1007,7 @@ namespace StellarisClone.Core
             float oldMaxHull = sb.MaxHull, oldMaxArmor = sb.MaxArmor, oldMaxShields = sb.MaxShields;
 
             sb.MaxHull = (400f + colonies * 150f) * k * b.HullMult;
-            sb.MaxArmor = (200f + colonies * 60f) * k * b.ArmorMult;
+            sb.MaxArmor = (200f + colonies * 60f) * k * b.ArmorMult * (sb.GardenDays > 0 ? FactionTraits.GardenArmor : 1f);
             sb.MaxShields = (150f + colonies * 40f) * k * b.ShieldMult;
             sb.Damage = (9f + colonies * 4f) * k;
             sb.FireRate = 1f;
@@ -1066,10 +1069,71 @@ namespace StellarisClone.Core
                 NotificationCenter.Show("Вражеская база подавлена", $"{sys.Name}: держите флот на орбите — идёт осада", NotificationCenter.Kind.Success, 6f);
         }
 
+        /// <summary>Пробуждение сада действует в системе: враги уходят отсюда медленнее.</summary>
+        public bool IsGardenAwake(int systemId)
+            => _starbases.TryGetValue(systemId, out var sb) && sb.GardenDays > 0;
+
+        /// <summary>
+        /// Пробуждение сада: враг в системе Конклава — база на 3 дня получает +30% брони,
+        /// мицелий опутывает вражеские флоты (из системы они уходят на 15% медленнее). Перезарядка 15 дней.
+        /// </summary>
+        private void TickGardens()
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return;
+            var hostiles = new Dictionary<int, int>();   // система → владелец вражеского флота
+            foreach (var fv in fm.AllFleets)
+            {
+                var d = fv?.Data;
+                if (d == null || d.Destroyed || d.State == FleetState.InHyperlane || d.Type != FleetType.Military) continue;
+                if (d.CurrentSystemId < 0 || d.CurrentSystemId >= _generator.Systems.Count) continue;
+                int sysOwner = _generator.Systems[d.CurrentSystemId].OwnerId;
+                if (sysOwner >= 0 && sysOwner != d.OwnerId && Diplomacy.AtWar(d.OwnerId, sysOwner)) hostiles[d.CurrentSystemId] = d.OwnerId;
+            }
+
+            foreach (var sys in _generator.Systems)
+            {
+                if (sys.OwnerId < 0 || !sys.HasStarbase || !FactionTraits.IsTerraan(sys.OwnerId)) continue;
+                var sb = GetStarbase(sys.Id);
+                if (sb == null) continue;
+                if (sb.GardenCooldown > 0) sb.GardenCooldown--;
+                if (sb.GardenDays > 0)
+                {
+                    if (--sb.GardenDays == 0) ApplyStarbaseTemplate(sb, sys);
+                    continue;
+                }
+                if (sb.GardenCooldown > 0 || sb.Disabled || !hostiles.TryGetValue(sys.Id, out int enemy)) continue;
+
+                sb.GardenDays = FactionTraits.GardenDays;
+                sb.GardenCooldown = 15;
+                float before = sb.MaxArmor;
+                ApplyStarbaseTemplate(sb, sys);
+                sb.Armor = Mathf.Min(sb.MaxArmor, sb.Armor + (sb.MaxArmor - before));
+                GardenFx(sys);
+                if (sys.OwnerId == 0)
+                    NotificationCenter.Show("Пробуждение сада", $"{sys.Name}: враг в наших корнях. База укреплена на 3 дня, мицелий опутывает чужие флоты",
+                        NotificationCenter.Kind.Success, 6f);
+                else if (enemy == 0)
+                    NotificationCenter.Show("Пробуждение сада", $"{sys.Name}: сад Конклава проснулся — база укреплена, наши корабли вязнут в мицелии",
+                        NotificationCenter.Kind.Warning, 6f);
+            }
+        }
+
+        private void GardenFx(StarSystem sys)
+        {
+            Vector3 pos = StarbaseVisuals.SiteFor(sys.Position);
+            if (!ShowFx(sys.Id, pos)) return;
+            var green = new Color(0.45f, 1f, 0.45f);
+            CombatFx.Instance.Blip(pos, green, 7f, 1.4f);
+            CombatFx.Instance.Sparks(pos, green, 18, 1.4f);
+            SFXManager.PlayAt(Sfx.Anomaly, pos, 0.6f);
+        }
+
         /// <summary>Ежедневный ремонт баз вне боя (выведенная из строя база оживает на половине прочности).</summary>
         private void HandleDay(int day, int month, int year)
         {
             if (_generator == null) return;
+            TickGardens();
             var remove = new List<int>();
             foreach (var kv in _starbases)
             {

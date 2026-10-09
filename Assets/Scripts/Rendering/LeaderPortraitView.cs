@@ -80,7 +80,19 @@ namespace StellarisClone.Rendering
             Face = Uv(590, 460)
         };
 
-        /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила / Иридия).</summary>
+        public static readonly Entry Terraan = new Entry
+        {
+            Key = "terraan",
+            Name = "Исинна Кральтэр",
+            Title = "Хранительница Корней Конклава",
+            Quote = "Корни не спешат. Но они всегда добираются до воды. Говорите — у меня есть века.",
+            Accent = new Color(0.50f, 0.92f, 0.42f),
+            EyeL = Eye(405, 458, 34, 30),
+            EyeR = Eye(686, 447, 44, 34),
+            Face = Uv(548, 520)
+        };
+
+        /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила / Иридия / Тэрра'ан).</summary>
         public static Entry ForFaction(string factionName)
         {
             if (string.IsNullOrEmpty(factionName)) return null;
@@ -88,6 +100,7 @@ namespace StellarisClone.Rendering
             if (factionName.Contains("Астре")) return Astrea;
             if (factionName.Contains("Аквил")) return Aquila;
             if (factionName.Contains("Ирид")) return Iridia;
+            if (factionName.Contains("Тэрра")) return Terraan;
             return null;
         }
 

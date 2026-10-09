@@ -120,8 +120,9 @@ namespace StellarisClone.Core
                 {
                     var d = f?.Data;
                     if (d == null || d.Destroyed || !fresh.TryGetValue(d.OwnerId, out var set)) continue;
-                    if (d.CurrentSystemId >= 0) Spread(set, d.CurrentSystemId, 1);
-                    if (d.State == FleetState.InHyperlane && d.TargetSystemId >= 0) Spread(set, d.TargetSystemId, 1);
+                    int jumps = FactionTraits.VisionJumps(d);   // мицелий Конклава: научные корабли видят дальше
+                    if (d.CurrentSystemId >= 0) Spread(set, d.CurrentSystemId, jumps);
+                    if (d.State == FleetState.InHyperlane && d.TargetSystemId >= 0) Spread(set, d.TargetSystemId, jumps);
                 }
 
             // Союзники по коалиции делятся тем, что видят
@@ -134,6 +135,22 @@ namespace StellarisClone.Core
                     var shared = new HashSet<int>();
                     foreach (int o in allies) shared.UnionWith(fresh[o]);
                     foreach (int o in allies) fresh[o].UnionWith(shared);
+
+                    // Дипломатия корней: если в союзе Конклав, союзники делятся и всей разведанной картой
+                    bool roots = false;
+                    foreach (int o in allies) if (FactionTraits.IsTerraan(o)) { roots = true; break; }
+                    if (roots)
+                    {
+                        var known = new HashSet<int>();
+                        foreach (int o in allies) known.UnionWith(Set(_explored, o));
+                        foreach (int o in allies)
+                        {
+                            var ex = Set(_explored, o);
+                            int before = ex.Count;
+                            ex.UnionWith(known);
+                            if (o == 0 && ex.Count != before) { _playerVersion++; OnPlayerChanged?.Invoke(); }
+                        }
+                    }
                 }
             }
 
