@@ -7,6 +7,9 @@
 //   • мерцание огней интерьера и контрового света (маска R из _FxTex); при наведении они разгораются (_Glow)
 //   • едва заметная полоса развёртки «канала связи» и редкий сбой сигнала
 //
+//   • голограмма (_Holo): оттенок цвета _HoloColor, строки развёртки, бегущая полоса и лёгкое мерцание —
+//     правитель на проекторе в комнате переговоров
+//
 // _FxTex: R — огни и контровой свет, G — силуэт фигуры, B — вес дыхания.
 // Параметры анимации выставляет LeaderPortraitView каждый кадр (_T, _Blink, _Glitch, _Glow).
 Shader "Astropolity/UI/LeaderPortrait"
@@ -30,6 +33,8 @@ Shader "Astropolity/UI/LeaderPortrait"
         _Fade ("Edge fade (left, right, bottom, top)", Vector) = (0,0,0,0)
         _Cutout ("Cut the figure out of its background (FX alpha)", Range(0,1)) = 0
         _Glow ("Hover glow of the lights (FX R)", Range(0,1)) = 0
+        _Holo ("Hologram", Range(0,1)) = 0
+        _HoloColor ("Hologram color", Color) = (0.35, 0.9, 1, 1)
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -108,6 +113,8 @@ Shader "Astropolity/UI/LeaderPortrait"
             float4 _Fade;
             float _Cutout;
             float _Glow;
+            float _Holo;
+            fixed4 _HoloColor;
             static float2 s_dx, s_dy;   // градиенты uv — для выборок внутри ветвлений
             float4 _ClipRect;
 
@@ -250,6 +257,19 @@ Shader "Astropolity/UI/LeaderPortrait"
                     // Тонкая «кромка» цвета акцента по краю силуэта — фигура не выглядит вырезанной ножницами
                     float edge = saturate(matte * (1.0 - matte) * 4.0);
                     col.rgb += _Accent.rgb * edge * 0.12 * _Cutout;
+                }
+
+                // Голограмма: цвет проектора поверх тонов фигуры, строки развёртки, бегущая полоса, мерцание
+                if (_Holo > 0.001)
+                {
+                    float lum = dot(col.rgb, float3(0.299, 0.587, 0.114));
+                    float3 holo = _HoloColor.rgb * (0.30 + lum * 1.35);
+                    col.rgb = lerp(col.rgb, holo, _Holo * 0.6);
+                    float lines = 0.80 + 0.20 * sin(IN.uv.y * 950.0 - t * 5.0);
+                    col.rgb *= lerp(1.0, lines, _Holo);
+                    float hb = exp(-pow((frac(IN.uv.y * 0.7 - t * 0.10) - 0.5) * 16.0, 2.0));
+                    col.rgb += _HoloColor.rgb * hb * 0.20 * _Holo;
+                    col.a *= lerp(1.0, 0.86 + 0.05 * sin(t * 11.0) + 0.03 * sin(t * 37.0), _Holo);
                 }
 
                 col *= IN.color;

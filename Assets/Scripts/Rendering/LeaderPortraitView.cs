@@ -136,6 +136,17 @@ namespace StellarisClone.Rendering
         private static readonly int IdGlitch = Shader.PropertyToID("_Glitch");
         private static readonly int IdUvRect = Shader.PropertyToID("_UvRect");
         private static readonly int IdGlow = Shader.PropertyToID("_Glow");
+        private static readonly int IdHolo = Shader.PropertyToID("_Holo");
+        private static readonly int IdHoloColor = Shader.PropertyToID("_HoloColor");
+        private float _holo;
+        private Color _holoColor = new Color(0.35f, 0.9f, 1f, 1f);
+
+        /// <summary>Голограмма: amount 0..1 и цвет проектора (комната переговоров).</summary>
+        public void SetHologram(float amount, Color color)
+        {
+            _holo = Mathf.Clamp01(amount);
+            _holoColor = color;
+        }
 
         /// <summary>Подсветка огней и узоров портрета (0..1) — например, при наведении на карточку.</summary>
         public float Glow { get; set; }
@@ -242,6 +253,9 @@ namespace StellarisClone.Rendering
             var rm = _img.materialForRendering;
             if (rm == _mat) rm = null;
             SetF(rm, IdT, now + _seed);
+            SetF(rm, IdHolo, _holo);
+            _mat.SetColor(IdHoloColor, _holoColor);
+            if (rm != null) rm.SetColor(IdHoloColor, _holoColor);
 
             // Моргание: закрыть → задержать → открыть; иногда дважды подряд
             float blink = 0f;

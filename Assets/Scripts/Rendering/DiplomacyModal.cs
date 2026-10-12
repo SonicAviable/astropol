@@ -13,6 +13,8 @@ namespace StellarisClone.Rendering
     /// отношение и действующие соглашения, а внизу — стол переговоров: что может дать он,
     /// что можете дать вы и сама сделка. Кнопка «Что вас устроит?» просит ИИ дописать условия.
     /// Предложения ИИ (обмен, договоры, требование дани, мир, пакт) открываются здесь же.
+    /// Сцена — комната переговоров: два правителя голограммами друг напротив друга (вы — слева, собеседник — справа)
+    /// на светящихся площадках-проекторах, между ними — голографический стол с вращающейся проекцией.
     /// </summary>
     public class DiplomacyModal : MonoBehaviour
     {
@@ -36,6 +38,12 @@ namespace StellarisClone.Rendering
         private RawImage _scene;
         private Image _sceneShade, _leaderGlow;
         private RectTransform _portraitHost, _infoLeft, _infoRight, _tabs;
+        // Комната переговоров: наш правитель, свечения и площадки обеих сторон, голостол
+        private RectTransform _playerHost, _tableSpinA, _tableSpinB;
+        private Image _playerGlow, _padAI, _padPlayer, _coneAI, _conePlayer, _tableGlow, _tableRingA, _tableRingB;
+        private string _playerKey;
+        private float _holoT;
+        private const float LeaderX = 290f, LeaderW = 480f, LeaderH = 716f;
         private RectTransform _aiList, _playerList, _tableAI, _tablePlayer, _centerPanel;
         private Text _aiListTitle, _speechName, _speechText, _speechState, _reaction, _fee, _tableTitle, _colAI;
         private Image _speechStateBg;
@@ -150,7 +158,18 @@ namespace StellarisClone.Rendering
             _backdrop.SetColors(ec, Color.Lerp(ec, new Color(0.3f, 0.4f, 1f), 0.5f));
             ApplyScene(ai);
             _leaderGlow.color = new Color(ec.r, ec.g, ec.b, 0.20f);
+            Color oc = FleetIndicator.OwnColor;
+            _playerGlow.color = new Color(oc.r, oc.g, oc.b, 0.16f);
+            _padAI.color = new Color(ec.r, ec.g, ec.b, 0.85f);
+            _padPlayer.color = new Color(oc.r, oc.g, oc.b, 0.85f);
+            _coneAI.color = new Color(ec.r, ec.g, ec.b, 0.10f);
+            _conePlayer.color = new Color(oc.r, oc.g, oc.b, 0.10f);
+            Color mix = Color.Lerp(oc, ec, 0.5f);
+            _tableGlow.color = new Color(mix.r, mix.g, mix.b, 0.30f);
+            _tableRingA.color = new Color(mix.r, mix.g, mix.b, 0.70f);
+            _tableRingB.color = new Color(ec.r, ec.g, ec.b, 0.55f);
             BuildPortrait(ai);
+            BuildPlayerPortrait();
             var leader = LeaderPortraits.ForFaction(ai.Faction);
             if (_viewingOffer) Say(DiplomacyLines.Get(leader, DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
             else Say(DiplomacyLines.Get(leader, DiplomacyLines.GreetingFor(ai)));
@@ -160,6 +179,14 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (!IsOpen) return;
+
+            // Голостол вращается, площадки чуть «дышат»
+            _holoT += Time.unscaledDeltaTime;
+            if (_tableSpinA != null) _tableSpinA.localRotation = Quaternion.Euler(0, 0, _holoT * 14f);
+            if (_tableSpinB != null) _tableSpinB.localRotation = Quaternion.Euler(0, 0, -_holoT * 22f);
+            float breathe = 1f + Mathf.Sin(_holoT * 2.2f) * 0.03f;
+            if (_padAI != null) _padAI.rectTransform.localScale = new Vector3(breathe, breathe, 1f);
+            if (_padPlayer != null) _padPlayer.rectTransform.localScale = new Vector3(breathe, breathe, 1f);
 
             // Реплика печатается
             if (_speechShown < _speechFull.Length)
@@ -242,20 +269,44 @@ namespace StellarisClone.Rendering
             _sceneShade.rectTransform.Stretch();
             LG.Ignore(_sceneShade.gameObject);
 
-            // Мягкий свет цвета империи за фигурой — вырезанный правитель «стоит» в сцене, а не наклеен
-            _leaderGlow = LGBuild.Panel(rt, "LeaderGlow", Color.white);
-            _leaderGlow.sprite = FactionSelectScreen.RadialSprite();
-            _leaderGlow.rectTransform.anchorMin = _leaderGlow.rectTransform.anchorMax = new Vector2(0.5f, 1f);
-            _leaderGlow.rectTransform.sizeDelta = new Vector2(1100f, 1100f);
-            _leaderGlow.rectTransform.anchoredPosition = new Vector2(0f, -420f);
-            LG.Ignore(_leaderGlow.gameObject);
+            // Комната переговоров: свет за фигурами, площадки-проекторы, конусы света и голостол
+            _playerGlow = Glow(rt, "PlayerGlow", new Vector2(-LeaderX, -380f), 900f);
+            _leaderGlow = Glow(rt, "LeaderGlow", new Vector2(LeaderX, -380f), 900f);
+            float padY = BottomY + BottomH + 18f;
+            _conePlayer = Holo(rt, "ConePlayer", ConeSprite(), new Vector2(-LeaderX, padY), new Vector2(340f, 520f), new Vector2(0.5f, 0f));
+            _coneAI = Holo(rt, "ConeAI", ConeSprite(), new Vector2(LeaderX, padY), new Vector2(340f, 520f), new Vector2(0.5f, 0f));
 
-            // Правитель во весь рост
+            // Правители: мы — слева (зеркально, лицом к собеседнику), собеседник — справа
+            _playerHost = LGBuild.Rect(rt, "PlayerLeader");
+            _playerHost.anchorMin = _playerHost.anchorMax = new Vector2(0.5f, 1f);
+            _playerHost.pivot = new Vector2(0.5f, 1f);
+            _playerHost.sizeDelta = new Vector2(LeaderW, LeaderH);
+            _playerHost.anchoredPosition = new Vector2(-LeaderX, -40f);
+            _playerHost.localScale = new Vector3(-1f, 1f, 1f);
             _portraitHost = LGBuild.Rect(rt, "Leader");
             _portraitHost.anchorMin = _portraitHost.anchorMax = new Vector2(0.5f, 1f);
             _portraitHost.pivot = new Vector2(0.5f, 1f);
-            _portraitHost.sizeDelta = new Vector2(640f, 954f);
-            _portraitHost.anchoredPosition = new Vector2(0f, -6f);
+            _portraitHost.sizeDelta = new Vector2(LeaderW, LeaderH);
+            _portraitHost.anchoredPosition = new Vector2(LeaderX, -40f);
+
+            // Площадки-проекторы под фигурами (эллипсы над столом сделок)
+            _padPlayer = Holo(rt, "PadPlayer", PadSprite(), new Vector2(-LeaderX, padY), new Vector2(360f, 70f), new Vector2(0.5f, 0.5f));
+            _padAI = Holo(rt, "PadAI", PadSprite(), new Vector2(LeaderX, padY), new Vector2(360f, 70f), new Vector2(0.5f, 0.5f));
+
+            // Голостол между правителями: «диск» в перспективе (круги в сплюснутом контейнере), вращаются навстречу
+            var table = LGBuild.Rect(rt, "HoloTable");
+            table.anchorMin = table.anchorMax = new Vector2(0.5f, 0f);
+            table.pivot = new Vector2(0.5f, 0.5f);
+            table.sizeDelta = new Vector2(440f, 440f);
+            table.anchoredPosition = new Vector2(0f, padY + 40f);
+            table.localScale = new Vector3(1f, 0.30f, 1f);
+            _tableGlow = Holo(table, "Glow", FactionSelectScreen.RadialSprite(), Vector2.zero, new Vector2(520f, 520f), new Vector2(0.5f, 0.5f), true);
+            _tableSpinA = LGBuild.Rect(table, "SpinA");
+            _tableSpinA.Stretch();
+            _tableRingA = Holo(_tableSpinA, "RingA", DashRingSprite(), Vector2.zero, new Vector2(440f, 440f), new Vector2(0.5f, 0.5f), true);
+            _tableSpinB = LGBuild.Rect(table, "SpinB");
+            _tableSpinB.Stretch();
+            _tableRingB = Holo(_tableSpinB, "RingB", PadSprite(), Vector2.zero, new Vector2(300f, 300f), new Vector2(0.5f, 0.5f), true);
 
             // Затемнение снизу — под панелями стола
             var shade = LGBuild.Panel(rt, "BottomShade", new Color(0f, 0.01f, 0.02f, 0.55f));
@@ -306,9 +357,9 @@ namespace StellarisClone.Rendering
             var box = GlassPanel(rt, "Speech", new Color(1f, 1f, 1f, 0.10f));
             var b = box.rectTransform;
             b.anchorMin = b.anchorMax = new Vector2(0.5f, 1f);
-            b.pivot = new Vector2(1f, 1f);
-            b.sizeDelta = new Vector2(380f, 118f);
-            b.anchoredPosition = new Vector2(-110f, -250f);
+            b.pivot = new Vector2(0.5f, 1f);
+            b.sizeDelta = new Vector2(370f, 124f);
+            b.anchoredPosition = new Vector2(0f, -34f);   // между правителями, над голостолом
 
             _speechName = LGBuild.Label(b, "", 15, Primary, TextAnchor.UpperLeft, bold: true);
             _speechName.rectTransform.TopBand(12, 22, 18, 150);
@@ -437,8 +488,118 @@ namespace StellarisClone.Rendering
             _portraitKey = key;
             LGBuild.Clear(_portraitHost);
             // Здесь правитель не моргает и стоит без фона своей картинки — в сцене своей империи
-            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0.14f, 0.14f, 0.30f, 0f), false, false, true);
+            var v = LeaderPortraitView.Create(_portraitHost, leader, 1f, new Vector4(0.10f, 0.10f, 0.32f, 0f), false, false, true);
             if (v == null) LGIcons.Create(_portraitHost, LGIcon.Leader, 260, new Color(1f, 1f, 1f, 0.15f));
+            else v.SetHologram(0.45f, Color.Lerp(ai.AIEmpireColor, Color.white, 0.35f));
+        }
+
+        /// <summary>Наш правитель — голограмма слева, лицом к собеседнику (строится один раз на фракцию).</summary>
+        private void BuildPlayerPortrait()
+        {
+            var faction = UIManager.Instance?.SelectedFaction;
+            var leader = LeaderPortraits.ForFaction(faction);
+            string key = leader?.Key ?? "";
+            if (key == _playerKey) return;
+            _playerKey = key;
+            LGBuild.Clear(_playerHost);
+            var v = LeaderPortraitView.Create(_playerHost, leader, 1f, new Vector4(0.10f, 0.10f, 0.32f, 0f), false, false, true);
+            if (v == null) LGIcons.Create(_playerHost, LGIcon.Leader, 220, new Color(1f, 1f, 1f, 0.12f));
+            else v.SetHologram(0.6f, Color.Lerp(FleetIndicator.OwnColor, Color.white, 0.3f));
+        }
+
+        // ================================================================ Голо-элементы комнаты
+
+        private static Image Glow(RectTransform rt, string name, Vector2 pos, float size)
+        {
+            var g = LGBuild.Panel(rt, name, Color.clear);
+            g.sprite = FactionSelectScreen.RadialSprite();
+            g.raycastTarget = false;
+            g.rectTransform.anchorMin = g.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            g.rectTransform.sizeDelta = new Vector2(size, size);
+            g.rectTransform.anchoredPosition = pos;
+            LG.Ignore(g.gameObject);
+            return g;
+        }
+
+        /// <summary>Голо-слой: у стола (inParent) — по центру контейнера, иначе — от низа экрана.</summary>
+        private static Image Holo(RectTransform parent, string name, Sprite sp, Vector2 pos, Vector2 size, Vector2 pivot, bool inParent = false)
+        {
+            var img = LGBuild.Panel(parent, name, Color.clear);
+            img.sprite = sp;
+            img.raycastTarget = false;
+            var r = img.rectTransform;
+            r.anchorMin = r.anchorMax = inParent ? new Vector2(0.5f, 0.5f) : new Vector2(0.5f, 0f);
+            r.pivot = pivot;
+            r.sizeDelta = size;
+            r.anchoredPosition = pos;
+            LG.Ignore(img.gameObject);
+            return img;
+        }
+
+        private static Sprite s_pad, s_cone, s_dash;
+
+        private static Sprite MakeSprite(int w, int h, System.Func<float, float, float> alpha, string name)
+        {
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true)
+            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = name, hideFlags = HideFlags.DontSave };
+            var px = new Color32[w * h];
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float u = (x + 0.5f) / w * 2f - 1f, v = (y + 0.5f) / h * 2f - 1f;
+                px[y * w + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(alpha(u, v)) * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            var sp = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100);
+            sp.hideFlags = HideFlags.DontSave;
+            return sp;
+        }
+
+        /// <summary>Площадка проектора: два кольца и мягкое свечение внутри.</summary>
+        private static Sprite PadSprite()
+        {
+            if (s_pad != null) return s_pad;
+            s_pad = MakeSprite(256, 256, (u, v) =>
+            {
+                float d = Mathf.Sqrt(u * u + v * v);
+                float ring1 = Mathf.Exp(-Mathf.Pow((d - 0.94f) / 0.022f, 2f));
+                float ring2 = Mathf.Exp(-Mathf.Pow((d - 0.70f) / 0.014f, 2f)) * 0.7f;
+                float fill = Mathf.Clamp01(1f - d) * 0.35f;
+                return Mathf.Max(Mathf.Max(ring1, ring2), fill);
+            }, "DiploPad");
+            return s_pad;
+        }
+
+        /// <summary>Конус света проектора: ярче у основания, гаснет вверх и к краям.</summary>
+        private static Sprite ConeSprite()
+        {
+            if (s_cone != null) return s_cone;
+            s_cone = MakeSprite(64, 128, (u, v) =>
+            {
+                float up = (v + 1f) * 0.5f;                    // 0 — низ, 1 — верх
+                float width = Mathf.Lerp(0.55f, 1f, up);       // конус расширяется вверх
+                float side = Mathf.Clamp01(1f - Mathf.Abs(u) / width);
+                return side * side * Mathf.Pow(1f - up, 1.6f);
+            }, "DiploCone");
+            return s_cone;
+        }
+
+        /// <summary>Пунктирное кольцо голостола с делениями.</summary>
+        private static Sprite DashRingSprite()
+        {
+            if (s_dash != null) return s_dash;
+            s_dash = MakeSprite(512, 512, (u, v) =>
+            {
+                float d = Mathf.Sqrt(u * u + v * v);
+                float ang = (Mathf.Atan2(v, u) * Mathf.Rad2Deg + 360f) % 360f;
+                float ring = Mathf.Exp(-Mathf.Pow((d - 0.95f) / 0.012f, 2f));
+                float dash = Mathf.Repeat(ang, 6f) < 3.6f ? 1f : 0.15f;
+                float ticks = Mathf.Repeat(ang + 1f, 30f) < 2f && d > 0.84f && d < 0.93f ? 0.8f : 0f;
+                float inner = Mathf.Exp(-Mathf.Pow((d - 0.55f) / 0.01f, 2f)) * 0.6f;
+                return Mathf.Max(ring * dash, Mathf.Max(ticks, inner));
+            }, "DiploDash");
+            return s_dash;
         }
 
         /// <summary>Фон-сцена империи, кадрированная «cover» под экран.</summary>
