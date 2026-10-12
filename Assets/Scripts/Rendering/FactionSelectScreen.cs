@@ -387,6 +387,12 @@ namespace StellarisClone.Rendering
                 fx.FillMultiplier = 2.8f;
                 fx.SpecularMultiplier = 0.2f;
 
+                // Водяной знак — герб фракции в правой части карточки
+                var crestMark = FactionEmblems.Create(card.transform, FactionEmblems.ForFaction(f), h - 18f,
+                    new Color(f.EmpireColor.r, f.EmpireColor.g, f.EmpireColor.b, 0.16f), "Crest");
+                if (crestMark != null)
+                    crestMark.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-6, 0), new Vector2(h - 18f, h - 18f));
+
                 var thumb = LGBuild.Panel(card.transform, "Thumb", new Color(0f, 0f, 0f, 0.6f));
                 thumb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(thumbSize, thumbSize));
                 LG.Platter(thumb.gameObject, 4f).FillMultiplier = 3f;
@@ -490,9 +496,22 @@ namespace StellarisClone.Rendering
             // Досье
             _accentBar.color = ec;
             _infoFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.25f));
-            _emblem.color = Color.Lerp(ec, new Color(0.6f, 0.2f, 0.05f), 0.2f);
-            _emblemIcon.sprite = LGIcons.Get(lore?.Emblem ?? LGIcon.Leader);
-            _emblemIcon.color = new Color(0.05f, 0.04f, 0.03f, 0.9f);
+            // Герб фракции (если есть картинка) вместо шестигранника со значком
+            var crest = FactionEmblems.ForFaction(f);
+            if (crest != null)
+            {
+                _emblem.color = Color.clear;
+                _emblemIcon.sprite = crest;
+                _emblemIcon.rectTransform.sizeDelta = new Vector2(72, 72);
+                _emblemIcon.color = light;
+            }
+            else
+            {
+                _emblem.color = Color.Lerp(ec, new Color(0.6f, 0.2f, 0.05f), 0.2f);
+                _emblemIcon.sprite = LGIcons.Get(lore?.Emblem ?? LGIcon.Leader);
+                _emblemIcon.rectTransform.sizeDelta = new Vector2(36, 36);
+                _emblemIcon.color = new Color(0.05f, 0.04f, 0.03f, 0.9f);
+            }
             _name.text = f.Name.ToUpper();
             _name.color = light;
             _leader.text = leader != null ? $"<color=#8AA2A8>{f.Title}  ·  правитель:</color> <b>{leader.Name}</b>" : f.Title;

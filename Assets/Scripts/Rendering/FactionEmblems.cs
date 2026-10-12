@@ -25,6 +25,7 @@ namespace StellarisClone.Rendering
                 sp.name = "Emblem_" + key;
                 sp.hideFlags = HideFlags.DontSave;
             }
+            else Debug.LogWarning($"[FactionEmblems] Не найден герб Resources/Factions/emblem_{key}.png — проверьте, что файл импортирован (Assets → Refresh).");
             s_cache[key] = sp;
             return sp;
         }
