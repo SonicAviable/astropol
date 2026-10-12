@@ -65,8 +65,8 @@ namespace StellarisClone.Rendering
             var tex = Resources.Load<Texture2D>("UI/Icons/res_" + file);
             if (tex == null) return null;
             tex.wrapMode = TextureWrapMode.Clamp;
-            // Тот же мировой размер, что у векторных иконок (2 ед.), — для значков на карте
-            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 0.5f);
+            // Тот же мировой размер, что у векторных иконок (Res px при 100 px/ед. = 0.96 ед.), — для значков на карте
+            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
             sp.hideFlags = HideFlags.DontSave;
             return sp;
         }
