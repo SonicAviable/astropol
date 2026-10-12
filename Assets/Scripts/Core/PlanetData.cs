@@ -8,6 +8,39 @@ namespace StellarisClone.Core
 
     public enum DistrictType { Urban, Mining, Generator, Industrial }
 
+    /// <summary>Приоритет колонии: куда жители идут работать в первую очередь и что строит автостройка.</summary>
+    public enum ColonyFocus { Balanced, Minerals, Energy, Industry }
+
+    public static class ColonyFocusInfo
+    {
+        public static readonly ColonyFocus[] All = { ColonyFocus.Balanced, ColonyFocus.Minerals, ColonyFocus.Energy, ColonyFocus.Industry };
+
+        public static string Name(ColonyFocus f) => f switch
+        {
+            ColonyFocus.Minerals => "Добыча титана",
+            ColonyFocus.Energy   => "Энергетика",
+            ColonyFocus.Industry => "Промышленность",
+            _ => "Равномерно"
+        };
+
+        public static string Desc(ColonyFocus f) => f switch
+        {
+            ColonyFocus.Minerals => "Жители сначала идут в шахты; автостройка ставит горнодобывающие районы",
+            ColonyFocus.Energy   => "Жители сначала идут на генераторы; автостройка ставит энергорайоны",
+            ColonyFocus.Industry => "Жители сначала идут на заводы; автостройка ставит промышленные районы",
+            _ => "Рабочие места заполняются по порядку; автостройка держит районы в равновесии"
+        };
+
+        /// <summary>Район, которому приоритет отдаёт первые рабочие руки (null — равномерно).</summary>
+        public static DistrictType? District(ColonyFocus f) => f switch
+        {
+            ColonyFocus.Minerals => DistrictType.Mining,
+            ColonyFocus.Energy   => DistrictType.Generator,
+            ColonyFocus.Industry => DistrictType.Industrial,
+            _ => (DistrictType?)null
+        };
+    }
+
     public static class DistrictInfo
     {
         public static string Name(DistrictType t) => t switch
@@ -84,6 +117,11 @@ namespace StellarisClone.Core
         public int MaxDistricts;
         public List<DistrictData> Districts = new List<DistrictData>();
 
+        /// <summary>Приоритет колонии (распределение рабочих и выбор автостройки).</summary>
+        public ColonyFocus Focus;
+        /// <summary>Автостройка: когда очередь пуста, колония сама заказывает нужный район.</summary>
+        public bool AutoBuild;
+
         /// <summary>Система, в которой находится планета (проставляется при генерации/загрузке).</summary>
         [NonSerialized] public StarSystem ParentSystem;
 
@@ -144,19 +182,26 @@ namespace StellarisClone.Core
 
         private void DistributeWorkers(out int urban, out int mining, out int gen, out int ind)
         {
-            // Жители сначала идут на добычу и производство, городские рабочие места — последними
+            // Жители сначала идут на добычу и производство (первым — район приоритета колонии),
+            // городские рабочие места — последними
             int pool = Population;
-
-            gen = Mathf.Min(GetDistrictCount(DistrictType.Generator), pool);
-            pool -= gen;
-
-            mining = Mathf.Min(GetDistrictCount(DistrictType.Mining), pool);
-            pool -= mining;
-
-            ind = Mathf.Min(GetDistrictCount(DistrictType.Industrial), pool);
-            pool -= ind;
+            gen = mining = ind = 0;
+            var first = ColonyFocusInfo.District(Focus);
+            if (first.HasValue) Take(first.Value, ref pool, ref mining, ref gen, ref ind);
+            if (first != DistrictType.Generator) Take(DistrictType.Generator, ref pool, ref mining, ref gen, ref ind);
+            if (first != DistrictType.Mining) Take(DistrictType.Mining, ref pool, ref mining, ref gen, ref ind);
+            if (first != DistrictType.Industrial) Take(DistrictType.Industrial, ref pool, ref mining, ref gen, ref ind);
 
             urban = Mathf.Min(GetDistrictCount(DistrictType.Urban), pool);
+        }
+
+        private void Take(DistrictType t, ref int pool, ref int mining, ref int gen, ref int ind)
+        {
+            int n = Mathf.Min(GetDistrictCount(t), pool);
+            pool -= n;
+            if (t == DistrictType.Mining) mining = n;
+            else if (t == DistrictType.Generator) gen = n;
+            else ind = n;
         }
 
         /// <summary>Сколько районов данного типа обеспечены рабочими.</summary>
@@ -219,6 +264,40 @@ namespace StellarisClone.Core
             if (Builds == null) { Districts.Add(new DistrictData(t)); return true; }
             Builds.EnqueuePlanetJob(JobKind.District, 0, this, t, 0f, DistrictInfo.MineralsCost(t), DistrictInfo.AlloysCost(t), 0f);
             return true;
+        }
+
+        /// <summary>
+        /// Что заказала бы автостройка сейчас (null — ничего не нужно): тесно — жильё,
+        /// есть безработные — рабочие места по приоритету, при «Равномерно» — самого редкого вида.
+        /// Учитывает районы, уже стоящие в очереди.
+        /// </summary>
+        public DistrictType? AutoBuildChoice()
+        {
+            if (Population <= 0 || BuiltDistricts + PendingDistricts >= MaxDistricts) return null;
+            int housing = HousingCapacity, jobs = WorkerSlots;
+            if (Builds != null)
+                foreach (var j in Builds.QueueFor(this))
+                {
+                    if (j.Kind != JobKind.District) continue;
+                    housing += DistrictInfo.HousingPopCapacity(j.District);
+                    jobs++;
+                }
+            if (Population >= jobs)
+            {
+                var f = ColonyFocusInfo.District(Focus);
+                if (f.HasValue) return f.Value;
+                DistrictType best = DistrictType.Mining;
+                int bestN = int.MaxValue;
+                foreach (var t in new[] { DistrictType.Mining, DistrictType.Generator, DistrictType.Industrial })
+                {
+                    int n = GetDistrictCount(t) + (Builds != null ? Builds.PendingDistricts(this, t) : 0);
+                    if (t == DistrictType.Industrial) n *= 2;   // заводы дороже — их вдвое меньше
+                    if (n < bestN) { bestN = n; best = t; }
+                }
+                return best;
+            }
+            if (housing - Population <= 1) return DistrictType.Urban;
+            return null;
         }
 
         /// <summary>Скорость роста населения (% к следующему жителю в месяц); 0 — если нет жилья или колонии.</summary>

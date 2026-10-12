@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Core;
+using StellarisClone.Generation;
 using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
@@ -15,6 +16,9 @@ namespace StellarisClone.Rendering
     ///     (что даёт, сколько работает, стоимость, постройка в один клик) и действия —
     ///     добывающий комплекс, колонизация и терраформинг.
     /// Все значки — векторные иконки LGIcons, все числа — с учётом бонусов фракции и технологий.
+    /// Удобства управления: переключение между своими колониями (стрелки в шапке, Tab / Shift+Tab),
+    /// приоритет колонии (куда жители идут работать) и автостройка районов — в шапке списка районов.
+    /// Открывается и из системы, и прямо с карты галактики кликом по планете.
     /// </summary>
     public class PlanetFocusOverlay : MonoBehaviour
     {
@@ -50,6 +54,15 @@ namespace StellarisClone.Rendering
 
         // Действия
         private ActionButton _mine, _colony, _terra;
+
+        // Переключение колоний, приоритет, автостройка
+        private GameObject _switcher, _colonyControls;
+        private Text _switchText;
+        private Image[] _focusBg;
+        private Image _autoBg, _autoIcon;
+        private Text _autoText;
+        private readonly List<PlanetData> _colonies = new List<PlanetData>();
+        private GalaxyGenerator _gen;
 
         private PlanetData _planet;
         private StarSystem _system;
@@ -180,6 +193,12 @@ namespace StellarisClone.Rendering
         {
             if (!_isOpen) return;
             if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                bool back = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                StepColony(back ? -1 : 1);
+                return;
+            }
             _refreshTimer -= Time.unscaledDeltaTime;
             if (_refreshTimer <= 0f)
             {
@@ -214,6 +233,85 @@ namespace StellarisClone.Rendering
             RefreshRight();
             RefreshDistricts();
             RefreshActions();
+            RefreshColonyControls();
+        }
+
+        // ================================================================ Колонии: переключение, приоритет, автостройка
+
+        /// <summary>Колонии игрока по порядку систем — для стрелок «предыдущая / следующая».</summary>
+        private void CollectColonies()
+        {
+            _colonies.Clear();
+            if (_gen == null) _gen = FindAnyObjectByType<GalaxyGenerator>();
+            if (_gen == null) return;
+            foreach (var sys in _gen.Systems)
+            {
+                if (sys.OwnerId != 0) continue;
+                foreach (var p in sys.Planets)
+                    if (p.Population > 0) _colonies.Add(p);
+            }
+        }
+
+        private void StepColony(int dir)
+        {
+            CollectColonies();
+            if (_colonies.Count == 0) return;
+            int i = _colonies.IndexOf(_planet);
+            int next = i < 0 ? (dir > 0 ? 0 : _colonies.Count - 1) : (i + dir + _colonies.Count) % _colonies.Count;
+            var p = _colonies[next];
+            if (p == _planet) return;
+            SFXManager.Play(Sfx.SystemSelect);
+            _planet = p;
+            _system = p.ParentSystem;
+            TooltipSystem.Hide();
+            Refresh();
+            BindHolo();
+        }
+
+        private void SetFocus(ColonyFocus f)
+        {
+            if (_planet == null || !Owned) return;
+            _planet.Focus = f;
+            EconomyManager.Instance?.RaiseResourcesChanged();
+            Refresh();
+        }
+
+        private void ToggleAutoBuild()
+        {
+            if (_planet == null || !Owned) return;
+            _planet.AutoBuild = !_planet.AutoBuild;
+            // Включили — первый заказ сразу, если очередь пуста и ресурсы есть
+            if (_planet.AutoBuild && Builds != null && !Builds.HasAnyJob(_planet))
+            {
+                var t = _planet.AutoBuildChoice();
+                if (t.HasValue) _planet.TryBuildDistrict(t.Value);
+            }
+            Refresh();
+        }
+
+        private void RefreshColonyControls()
+        {
+            CollectColonies();
+            int idx = _colonies.IndexOf(_planet);
+            _switcher.SetActive(_colonies.Count > 1 || (_colonies.Count == 1 && idx < 0));
+            _switchText.text = idx >= 0
+                ? $"КОЛОНИЯ  {idx + 1} / {_colonies.Count}"
+                : $"КОЛОНИЙ  {_colonies.Count}";
+
+            bool show = Owned && _planet.Population > 0;
+            _colonyControls.SetActive(show);
+            if (!show) return;
+            for (int i = 0; i < _focusBg.Length; i++)
+            {
+                bool on = ColonyFocusInfo.All[i] == _planet.Focus;
+                _focusBg[i].color = on ? new Color(0.16f, 0.52f, 0.56f) : new Color(0.07f, 0.13f, 0.17f);
+            }
+            bool auto = _planet.AutoBuild;
+            _autoBg.color = auto ? new Color(0.14f, 0.46f, 0.30f) : new Color(0.07f, 0.13f, 0.17f);
+            _autoIcon.sprite = LGIcons.Get(auto ? LGIcon.Check : LGIcon.Construction);
+            _autoIcon.color = auto ? UIManager.DS.Green : CMuted;
+            _autoText.text = auto ? "АВТОСТРОЙКА" : "АВТОСТРОЙКА  ВЫКЛ.";
+            _autoText.color = auto ? Color.white : CMuted;
         }
 
         private void RefreshHeader()
@@ -704,6 +802,22 @@ namespace StellarisClone.Rendering
             _govText.rectTransform.Stretch(40, 0, 10, 0);
             _govText.supportRichText = true;
             _govChip.SetActive(false);
+
+            // Переключение между колониями — справа в шапке
+            var sw = LGBuild.Rect(rt, "ColonySwitch");
+            sw.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-40, -30), new Vector2(270, 40));
+            _switcher = sw.gameObject;
+            var prev = LGBuild.Button(sw, "Prev", new Color(0.10f, 0.28f, 0.32f), UIManager.DS.NeonCyan, () => StepColony(-1), LGIcon.Back, null, 12);
+            ((RectTransform)prev.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(40, 40));
+            var nextBtn = LGBuild.Button(sw, "Next", new Color(0.10f, 0.28f, 0.32f), UIManager.DS.NeonCyan, () => StepColony(1), LGIcon.Back, null, 12);
+            ((RectTransform)nextBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(40, 40));
+            foreach (var img in nextBtn.GetComponentsInChildren<Image>(true))      // стрелка «назад», зеркально — «вперёд»
+                if (img.gameObject != nextBtn.gameObject) img.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+            _switchText = LGBuild.Label(sw, "", 12, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
+            _switchText.rectTransform.Stretch(48, 0, 48, 0);
+            TooltipHelper.Attach(prev.gameObject, "<b>Предыдущая колония</b>\nShift+Tab");
+            TooltipHelper.Attach(nextBtn.gameObject, "<b>Следующая колония</b>\nTab");
+            LG.Motion(sw.gameObject, LGAppear.Kind.Fade).delay = 0.12f;
         }
 
         // ---------------------------------------------------------------- Раскладка
@@ -899,6 +1013,8 @@ namespace StellarisClone.Rendering
             hic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
             _districtHeader = LGBuild.Label(head, "", 13, CGold, TextAnchor.MiddleLeft, bold: true);
             _districtHeader.rectTransform.offsetMin = new Vector2(24, 0);
+            _districtHeader.rectTransform.offsetMax = new Vector2(-370, 0);
+            BuildColonyControls(head);
             _districtSlots = LGBuild.Rect(p, "Slots");
             _districtSlots.TopBand(44, 8, 20, 20);
 
@@ -925,6 +1041,45 @@ namespace StellarisClone.Rendering
             _mine = BuildAction(actions, 0f, 1f / 3f, UIManager.DS.BtnSuccess, OnMine);
             _colony = BuildAction(actions, 1f / 3f, 2f / 3f, UIManager.DS.BtnPrimary, OnColony);
             _terra = BuildAction(actions, 2f / 3f, 1f, new Color(0.22f, 0.20f, 0.36f), OnTerra);
+        }
+
+        /// <summary>
+        /// Справа в шапке районов: приоритет колонии (четыре кнопки-значка) и переключатель автостройки.
+        /// </summary>
+        private void BuildColonyControls(RectTransform head)
+        {
+            var host = LGBuild.Rect(head, "ColonyControls");
+            host.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(362, 28));
+            _colonyControls = host.gameObject;
+
+            var lbl = LGBuild.Label(host, "ПРИОРИТЕТ", 10, CMuted, TextAnchor.MiddleLeft, bold: true);
+            lbl.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(70, 28));
+
+            LGIcon[] icons = { LGIcon.Globe, LGIcon.Minerals, LGIcon.Energy, LGIcon.Alloys };
+            Color[] cols = { UIManager.DS.NeonCyan, CMinerals, CEnergy, CAlloys };
+            _focusBg = new Image[ColonyFocusInfo.All.Length];
+            for (int i = 0; i < _focusBg.Length; i++)
+            {
+                var f = ColonyFocusInfo.All[i];
+                var b = LGBuild.Button(host, "Focus", new Color(0.07f, 0.13f, 0.17f), new Color(cols[i].r, cols[i].g, cols[i].b, 0.6f),
+                                       () => SetFocus(f), icons[i], null, 10, 8f);
+                ((RectTransform)b.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(72 + i * 34, 0), new Vector2(30, 26));
+                foreach (var img in b.GetComponentsInChildren<Image>(true)) if (img.gameObject != b.gameObject) img.color = cols[i];
+                _focusBg[i] = b.GetComponent<Image>();
+                TooltipHelper.Attach(b.gameObject, $"<b>Приоритет: {ColonyFocusInfo.Name(f)}</b>\n{ColonyFocusInfo.Desc(f)}");
+            }
+
+            var auto = LGBuild.Button(host, "Auto", new Color(0.07f, 0.13f, 0.17f), new Color(0.40f, 1f, 0.62f, 0.55f), ToggleAutoBuild, null, null, 10, 8f);
+            ((RectTransform)auto.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(146, 26));
+            _autoBg = auto.GetComponent<Image>();
+            _autoIcon = LGIcons.Create(auto.transform, LGIcon.Construction, 13, CMuted);
+            _autoIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(9, 0), new Vector2(13, 13));
+            _autoText = LGBuild.Label(auto.transform, "", 10, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _autoText.rectTransform.Stretch(28, 0, 6, 0);
+            TooltipHelper.Attach(auto.gameObject,
+                "<b>Автостройка</b>\nКогда очередь пуста, колония раз в месяц сама заказывает район:\n" +
+                "• тесно — городской район (жильё);\n• есть безработные — район по приоритету колонии.\n" +
+                "<color=#8AA2A8>Ресурсы списываются как при обычном заказе. Ручные заказы не мешают.</color>");
         }
 
         /// <summary>

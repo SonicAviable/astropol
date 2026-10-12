@@ -67,7 +67,7 @@ namespace StellarisClone.Rendering
                 _pressed = true;
                 _dragging = false;
                 _pressPos = Input.mousePosition;
-                _pressOnStar = RaycastSystem() != null;
+                _pressOnStar = RaycastSystem() != null || GalaxyView.HoveredMiniPlanet != null;
             }
 
             if (_pressed && Input.GetMouseButton(0))

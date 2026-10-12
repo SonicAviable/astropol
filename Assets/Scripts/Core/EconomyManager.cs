@@ -148,6 +148,7 @@ namespace StellarisClone.Core
             }
 
             ProcessColonyGrowth();
+            ProcessAutoBuild();
 
             if (logMonthlyReport)
             {
@@ -215,6 +216,26 @@ namespace StellarisClone.Core
                     }
                 }
             }
+        }
+
+        // ==================== АВТОСТРОЙКА ====================
+
+        /// <summary>Колонии игрока с включённой автостройкой раз в месяц заказывают нужный район, если их очередь пуста.</summary>
+        private void ProcessAutoBuild()
+        {
+            if (_generator == null || ConstructionManager.Instance == null) return;
+            bool any = false;
+            foreach (var sys in _generator.Systems)
+            {
+                if (sys.OwnerId != 0) continue;
+                foreach (var p in sys.Planets)
+                {
+                    if (!p.AutoBuild || ConstructionManager.Instance.HasAnyJob(p)) continue;
+                    var t = p.AutoBuildChoice();
+                    if (t.HasValue && p.TryBuildDistrict(t.Value)) any = true;
+                }
+            }
+            if (any) Recalculate();
         }
 
         // ==================== API ====================

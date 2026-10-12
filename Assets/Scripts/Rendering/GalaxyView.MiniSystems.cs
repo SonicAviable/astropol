@@ -9,6 +9,8 @@ namespace StellarisClone.Rendering
     /// звёзд проступают тонкие орбиты, по ним медленно идут планеты системы. Планеты — маленькие шарики
     /// с текстурой из генератора (континентальные, пустынные, газовые гиганты…), освещённой стороной к звезде.
     /// Издалека всё плавно гаснет — остаются точки звёзд. Создаётся лениво, только для видимых систем.
+    /// Планеты живые: при наведении — кольцо подсветки и карточка с характеристиками (PlanetHoverCard),
+    /// клик открывает экран планеты сразу с карты, без захода в систему. У колоний — значок с числом жителей.
     /// </summary>
     public partial class GalaxyView
     {
@@ -26,7 +28,15 @@ namespace StellarisClone.Rendering
             public float[] Radius, Speed, Phase, Size;
             public float Alpha;
             public bool Wanted;
+            public TextMesh[] PopTags;
         }
+
+        /// <summary>Планета мини-системы под курсором (null — нет). Звёзды и выбор флотов уступают ей клик.</summary>
+        public static PlanetData HoveredMiniPlanet { get; private set; }
+
+        private SpriteRenderer _miniHoverRing;
+        private PlanetData _miniPressed;
+        private Vector2 _miniPressPos;
 
         private GameObject _miniRoot;
         private readonly Dictionary<int, MiniSys> _minis = new Dictionary<int, MiniSys>();
@@ -44,7 +54,7 @@ namespace StellarisClone.Rendering
             bool off = zoomK <= 0.001f || MenuAtmosphere.IsActive
                        || (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView);
 
-            if (off && _miniLive.Count == 0) return;
+            if (off && _miniLive.Count == 0) { ClearMiniHover(); return; }
             if (_miniRoot == null)
             {
                 _miniRoot = new GameObject("MiniSystems");
@@ -98,7 +108,133 @@ namespace StellarisClone.Rendering
                 }
                 AnimateMini(m, cam, camPos, camRot, time);
             }
+
+            UpdateMiniHover(cam, off);
         }
+
+        // ==================== НАВЕДЕНИЕ И КЛИК ====================
+
+        private void UpdateMiniHover(Camera cam, bool off)
+        {
+            MiniSys hs = null;
+            int hi = -1;
+            bool blocked = off || cam == null
+                           || (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen)
+                           || (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject());
+            Vector2 mouse = Input.mousePosition;
+            if (!blocked && !FleetUnderCursor(mouse))
+            {
+                float best = float.MaxValue;
+                foreach (var m in _miniLive)
+                {
+                    if (m.Alpha < 0.6f) continue;
+                    float wpp = WorldPerPixel(cam, Vector3.Distance(cam.transform.position, m.Sys.Position));
+                    for (int i = 0; i < m.Planets.Length; i++)
+                    {
+                        var sp = cam.WorldToScreenPoint(m.Planets[i].transform.position);
+                        if (sp.z <= 0f) continue;
+                        float rPx = Mathf.Max(m.Planets[i].transform.localScale.x * 0.32f / wpp, 9f) + 3f;
+                        float d = Vector2.Distance(mouse, sp);
+                        if (d <= rPx && d < best) { best = d; hs = m; hi = i; }
+                    }
+                }
+            }
+
+            var planet = hs != null ? hs.Sys.Planets[hi] : null;
+            HoveredMiniPlanet = planet;
+            if (planet == null)
+            {
+                PlanetHoverCard.Hide();
+                if (_miniHoverRing != null) _miniHoverRing.enabled = false;
+                if (Input.GetMouseButtonUp(0)) _miniPressed = null;
+                return;
+            }
+
+            var tr = hs.Planets[hi].transform;
+            Vector3 scr = cam.WorldToScreenPoint(tr.position);
+            PlanetHoverCard.Show(planet, hs.Sys.Id * 100 + hi, scr);
+
+            if (_miniHoverRing == null)
+            {
+                var go = new GameObject("MiniHoverRing");
+                go.transform.SetParent(_miniRoot.transform, false);
+                _miniHoverRing = go.AddComponent<SpriteRenderer>();
+                _miniHoverRing.sprite = HoverRingSprite();
+                _miniHoverRing.sharedMaterial = _miniSpriteMat;
+                _miniHoverRing.sortingOrder = 13;
+            }
+            _miniHoverRing.enabled = true;
+            var rt = _miniHoverRing.transform;
+            rt.position = tr.position;
+            rt.rotation = cam.transform.rotation;
+            float pulse = 1f + Mathf.Sin(Time.unscaledTime * 5f) * 0.05f;
+            rt.localScale = tr.localScale * 1.55f * pulse;
+            Color rc = planet.OwnerId >= 0 ? Color.Lerp(FleetIndicator.OwnerColor(planet.OwnerId), Color.white, 0.3f) : new Color(0.8f, 0.9f, 1f);
+            rc.a = 0.9f;
+            _miniHoverRing.color = rc;
+
+            // Клик (без перетаскивания камеры) — экран планеты прямо с карты
+            if (Input.GetMouseButtonDown(0)) { _miniPressed = planet; _miniPressPos = mouse; }
+            if (Input.GetMouseButtonUp(0))
+            {
+                bool click = _miniPressed == planet && Vector2.Distance(_miniPressPos, mouse) < 8f;
+                _miniPressed = null;
+                if (click && PlanetFocusOverlay.Instance != null)
+                {
+                    SFXManager.Play(StellarisClone.Core.Audio.Sfx.SystemSelect);
+                    PlanetHoverCard.Hide();
+                    _miniHoverRing.enabled = false;
+                    PlanetFocusOverlay.Instance.Open(planet, hs.Sys);
+                }
+            }
+        }
+
+        private void ClearMiniHover()
+        {
+            if (HoveredMiniPlanet == null) return;
+            HoveredMiniPlanet = null;
+            _miniPressed = null;
+            PlanetHoverCard.Hide();
+            if (_miniHoverRing != null) _miniHoverRing.enabled = false;
+        }
+
+        /// <summary>Значок флота под курсором — флоты выбираются раньше планет.</summary>
+        private static bool FleetUnderCursor(Vector2 mouse)
+        {
+            foreach (var ind in FleetIndicator.All)
+            {
+                if (ind == null || !ind.IsLeader || !ind.OnScreen) continue;
+                if (Vector2.Distance(mouse, ind.ScreenPos) <= ind.ScreenRadius + 3f) return true;
+            }
+            return false;
+        }
+
+        private static Sprite s_hoverRing;
+
+        private static Sprite HoverRingSprite()
+        {
+            if (s_hoverRing != null) return s_hoverRing;
+            const int R = 64;
+            var tex = new Texture2D(R, R, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "MiniHoverRing" };
+            var px = new Color32[R * R];
+            float c = (R - 1) * 0.5f;
+            for (int y = 0; y < R; y++)
+            for (int x = 0; x < R; x++)
+            {
+                float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;   // 0 — центр, 1 — край
+                float ring = Mathf.Clamp01(1f - Mathf.Abs(d - 0.86f) / 0.06f);
+                float glow = Mathf.Clamp01(1f - Mathf.Abs(d - 0.86f) / 0.16f) * 0.35f;
+                byte a = (byte)Mathf.RoundToInt(Mathf.Clamp01(Mathf.Max(ring, glow)) * 255f);
+                px[y * R + x] = new Color32(255, 255, 255, a);
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            s_hoverRing = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), 100);
+            return s_hoverRing;
+        }
+
+        /// <summary>Шарик планеты для интерфейса (тот же, что на карте).</summary>
+        public static Sprite PlanetIcon(PlanetType type, int seed) => PlanetSphereSprite(type, seed);
 
         private MiniSys CreateMini(StarSystem s)
         {
@@ -109,7 +245,8 @@ namespace StellarisClone.Rendering
                 Orbits = new LineRenderer[n],
                 Planets = new SpriteRenderer[n],
                 Tints = new Color[n],
-                Radius = new float[n], Speed = new float[n], Phase = new float[n], Size = new float[n]
+                Radius = new float[n], Speed = new float[n], Phase = new float[n], Size = new float[n],
+                PopTags = new TextMesh[n]
             };
             m.Root = new GameObject($"Mini_{s.Id}");
             m.Root.transform.SetParent(_miniRoot.transform, false);
@@ -191,7 +328,47 @@ namespace StellarisClone.Rendering
                 var tint = m.Tints[i];
                 tint.a = a;
                 sr.color = tint;
+
+                PopTag(m, i, local, size, wpp, camRot, a);
             }
+        }
+
+        /// <summary>У колонии — число жителей справа сверху от шарика, цветом хозяина, постоянного экранного размера.</summary>
+        private void PopTag(MiniSys m, int i, Vector3 local, float size, float wpp, Quaternion camRot, float a)
+        {
+            var p = m.Sys.Planets[i];
+            var tag = m.PopTags[i];
+            if (p.Population <= 0)
+            {
+                if (tag != null && tag.gameObject.activeSelf) tag.gameObject.SetActive(false);
+                return;
+            }
+            if (tag == null)
+            {
+                var go = new GameObject("PopTag");
+                go.transform.SetParent(m.Root.transform, false);
+                tag = go.AddComponent<TextMesh>();
+                tag.font = GameFont.Bold;
+                tag.fontSize = 64;
+                tag.characterSize = 0.1f;
+                tag.fontStyle = FontStyle.Bold;
+                tag.anchor = TextAnchor.LowerLeft;
+                var mr = go.GetComponent<MeshRenderer>();
+                if (tag.font != null) mr.sharedMaterial = tag.font.material;
+                mr.sortingOrder = 14;
+                m.PopTags[i] = tag;
+            }
+            if (!tag.gameObject.activeSelf) tag.gameObject.SetActive(true);
+            string txt = p.Population.ToString();
+            if (tag.text != txt) tag.text = txt;
+            Color c = Color.Lerp(FleetIndicator.OwnerColor(p.OwnerId), Color.white, 0.35f);
+            c.a = a;
+            tag.color = c;
+            float r = size * 0.5f;
+            var t = tag.transform;
+            t.localPosition = local + camRot * new Vector3(r * 0.7f + wpp * 2f, r * 0.7f, 0f);
+            t.rotation = camRot;
+            t.localScale = Vector3.one * (13f * wpp / 0.64f);
         }
 
         // ==================== ШАРИКИ ПЛАНЕТ ====================

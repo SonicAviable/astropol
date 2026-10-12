@@ -328,6 +328,8 @@ namespace StellarisClone.Rendering
                 var trigger = hit.collider.GetComponentInParent<WorldTooltipTrigger>();
                 if (trigger == this) hitThis = true;
             }
+            // Над планетой мини-системы своя карточка — подсказка звезды не нужна
+            if (hitThis && GalaxyView.HoveredMiniPlanet != null) hitThis = false;
 
             if (hitThis)
             {

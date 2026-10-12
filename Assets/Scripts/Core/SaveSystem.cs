@@ -112,6 +112,8 @@ namespace StellarisClone.Core
         public float PopGrowth;
         public int MaxDistricts;
         public List<int> Districts = new List<int>();
+        public int Focus;
+        public bool AutoBuild;
     }
 
     [Serializable]
@@ -504,7 +506,8 @@ namespace StellarisClone.Core
                     Name = p.Name, Type = (int)p.Type, OrbitRadius = p.OrbitRadius, OrbitSpeed = p.OrbitSpeed,
                     Size = p.Size, Color = p.PlanetColor, Energy = p.EnergyDeposit, Minerals = p.MineralDeposit,
                     HasMiningStation = p.HasMiningStation, Terraforming = p.TerraformingInProgress,
-                    Population = p.Population, PopGrowth = p.PopGrowthProgress, MaxDistricts = p.MaxDistricts
+                    Population = p.Population, PopGrowth = p.PopGrowthProgress, MaxDistricts = p.MaxDistricts,
+                    Focus = (int)p.Focus, AutoBuild = p.AutoBuild
                 };
                 foreach (var d in p.Districts) ps.Districts.Add((int)d.Type);
                 ss.Planets.Add(ps);
@@ -573,7 +576,9 @@ namespace StellarisClone.Core
                         TerraformingInProgress = ps.Terraforming,
                         Population = ps.Population,
                         PopGrowthProgress = ps.PopGrowth,
-                        MaxDistricts = ps.MaxDistricts
+                        MaxDistricts = ps.MaxDistricts,
+                        Focus = (ColonyFocus)ps.Focus,
+                        AutoBuild = ps.AutoBuild
                     };
                     foreach (int d in ps.Districts) p.Districts.Add(new DistrictData((DistrictType)d));
                     sys.Planets.Add(p);

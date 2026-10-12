@@ -27,6 +27,8 @@ private void OnMouseDown()
         return;
 
     if (Data == null || MenuAtmosphere.IsActive) return;
+    // Под курсором планета мини-системы — клик её (откроет экран планеты)
+    if (GalaxyView.HoveredMiniPlanet != null) return;
 
     // Звук клика
     SFXManager.Play(Sfx.SystemSelect);
