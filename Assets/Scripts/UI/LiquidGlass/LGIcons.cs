@@ -40,10 +40,35 @@ namespace StellarisClone.Rendering
         public static Sprite Get(LGIcon icon)
         {
             if (s_Cache.TryGetValue(icon, out var s) && s != null) return s;
-            s = Build(Shape(icon));
+            s = ArtIcon(icon) ?? Build(Shape(icon));
             s.name = "LGIcon_" + icon;
             s_Cache[icon] = s;
             return s;
+        }
+
+        /// <summary>
+        /// Рисованные иконки ресурсов (Resources/UI/Icons/res_*.png — белый силуэт на прозрачном фоне):
+        /// если картинка есть, она заменяет векторную иконку во всём интерфейсе; цвет по-прежнему задаёт Image.color.
+        /// </summary>
+        private static Sprite ArtIcon(LGIcon icon)
+        {
+            string file = icon switch
+            {
+                LGIcon.Energy => "energy",
+                LGIcon.Minerals => "minerals",
+                LGIcon.Alloys => "alloys",
+                LGIcon.Influence => "influence",
+                LGIcon.Research => "research",
+                _ => null
+            };
+            if (file == null) return null;
+            var tex = Resources.Load<Texture2D>("UI/Icons/res_" + file);
+            if (tex == null) return null;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            // Тот же мировой размер, что у векторных иконок (2 ед.), — для значков на карте
+            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 0.5f);
+            sp.hideFlags = HideFlags.DontSave;
+            return sp;
         }
 
         /// <summary>Создаёт Image-иконку заданного размера (по центру родителя, если не перемещать).</summary>
