@@ -252,7 +252,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Раскладка всех значков на кадр: слить стоящие вместе корабли одного владельца и типа,
+        /// Раскладка всех значков на кадр: слить стоящие вместе (и летящие вместе по коридору) корабли одного владельца и типа,
         /// затем растолкать пересекающиеся значки на экране.
         /// </summary>
         private static void Layout(Camera cam)
@@ -292,6 +292,25 @@ namespace StellarisClone.Rendering
                     ind.IsLeader = false;
                     ind.Members.Clear();
                 }
+            }
+
+            // Летящие вместе по одному коридору — тоже один значок (группы те же, что у строя FleetFormation)
+            var byFleet = new Dictionary<FleetView, FleetIndicator>();
+            foreach (var ind in All) byFleet[ind._fleet] = ind;
+            foreach (var ind in All)
+            {
+                var d = ind._fleet.Data;
+                if (!FleetFormation.Travels(d) || !Vision.CanSeeFleet(0, d)) continue;
+                var slot = FleetFormation.Get(ind._fleet);
+                if (slot.Count <= 1) continue;
+                // Значок держит первый видимый флот группы (по номеру) — не «прыгает» между кораблями
+                FleetIndicator lead = null;
+                foreach (var m in slot.Members)
+                    if (m != null && byFleet.TryGetValue(m, out var li) && Vision.CanSeeFleet(0, m.Data)) { lead = li; break; }
+                if (lead == null || lead == ind) continue;
+                lead.Members.Add(ind._fleet);
+                ind.IsLeader = false;
+                ind.Members.Clear();
             }
 
             // Экранные позиции лидеров

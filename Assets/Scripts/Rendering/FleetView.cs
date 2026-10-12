@@ -762,7 +762,7 @@ namespace StellarisClone.Rendering
             string label = "";
             if (_isSelected && !Data.InCombat)
             {
-                var slot = FleetFormation.Holds(Data) ? FleetFormation.Get(this) : default;
+                var slot = FleetFormation.Holds(Data) || FleetFormation.Travels(Data) ? FleetFormation.Get(this) : default;
                 if (slot.SelectedCount <= 1) label = $"<color=#9FF5EE>{Data.Name}</color>";
                 else if (slot.FirstSelected == this)
                     label = $"<color=#9FF5EE>{Data.Name}</color>  <color=#6FB9B3>+{slot.SelectedCount - 1}</color>";
@@ -849,11 +849,19 @@ namespace StellarisClone.Rendering
 
             Vector3 targetPos = Vector3.Lerp(origin, destination, TravelDistance(t));
             targetPos.y += 0.5f;
-            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-10f * Time.deltaTime));
 
             // Разворот на курс: нос — по коридору, крен — в сторону поворота
             Vector3 dir = destination - origin;
             dir.y = 0f;
+
+            // Попутчики по коридору идут клином за ведущим, а не друг в друге
+            var slot = FleetFormation.Get(this);
+            if (slot.Index > 0 && dir.sqrMagnitude > 0.0001f)
+            {
+                float spacing = Data.Type == FleetType.Military ? 4.0f : 2.6f;
+                targetPos += Quaternion.LookRotation(dir.normalized, Vector3.up) * FleetFormation.LocalOffset(slot.Index, spacing);
+            }
+            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-10f * Time.deltaTime));
             float alignment = 1f;
             if (dir.sqrMagnitude > 0.0001f)
             {
