@@ -105,14 +105,15 @@ namespace StellarisClone.Rendering
 
             lr.SetPosition(0, a);
             lr.SetPosition(1, b);
-            float w = 0.34f * strength + 0.06f;
+            // Тонкая линия: сердцевина — волосок по центру ширины, остальное — мягкий ореол
+            float w = 0.16f + 0.08f * strength;
             lr.startWidth = lr.endWidth = w;
             lr.enabled = true;
 
             _routeMpb.Clear();
             _routeMpb.SetColor(IdRouteColor, new Color(col.r, col.g, col.b, Mathf.Clamp01(strength)));
             _routeMpb.SetFloat(IdRouteLen, len);
-            _routeMpb.SetFloat(IdRouteSpeed, 5.5f);
+            _routeMpb.SetFloat(IdRouteSpeed, 4f);
             lr.SetPropertyBlock(_routeMpb);
         }
     }
