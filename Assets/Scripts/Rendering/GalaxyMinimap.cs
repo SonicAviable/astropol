@@ -19,6 +19,7 @@ namespace StellarisClone.Rendering
         private RectTransform _root;
         private RectTransform _dotsArea;
         private RectTransform _viewRect;
+        private static Sprite s_bezel;
         private CanvasGroup _group;
         private readonly Dictionary<int, Image> _dots = new Dictionary<int, Image>();
         private GalaxyGenerator _gen;
@@ -112,6 +113,19 @@ public static void ShowGlobal()
             var motion = LG.Motion(root, LGAppear.Kind.SlideDown);
             motion.distance = 30f;
 
+            // Безель: тонкое кольцо с делениями вокруг карты, крупные метки — по сторонам света
+            var bz = new GameObject("Bezel");
+            bz.transform.SetParent(root.transform, false);
+            var bzRt = bz.AddComponent<RectTransform>();
+            bzRt.anchorMin = bzRt.anchorMax = new Vector2(0.5f, 0.5f);
+            bzRt.pivot = new Vector2(0.5f, 0.5f);
+            bzRt.sizeDelta = new Vector2(mapSize + 14f, mapSize + 14f);
+            var bzImg = bz.AddComponent<Image>();
+            bzImg.sprite = BezelSprite();
+            bzImg.color = new Color(0.45f, 0.95f, 0.90f, 0.55f);
+            bzImg.raycastTarget = false;
+            LG.Ignore(bz);
+
             // Внутренний "колодец" карты — чуть темнее, с мягкой кромкой
             var well = new GameObject("MapWell");
             well.transform.SetParent(root.transform, false);
@@ -184,6 +198,32 @@ public static void ShowGlobal()
 
             var clicker = root.AddComponent<MinimapClickHandler>();
             clicker.Init(this);
+        }
+
+        private static Sprite BezelSprite()
+        {
+            if (s_bezel != null) return s_bezel;
+            const int n = 512;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, true)
+            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "MinimapBezel", hideFlags = HideFlags.DontSave };
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f;
+                float d = Mathf.Sqrt(u * u + v * v);
+                float ang = (Mathf.Atan2(v, u) * Mathf.Rad2Deg + 360f) % 360f;
+                float ring = Mathf.Exp(-Mathf.Pow((d - 0.985f) / 0.006f, 2f));
+                float tick = Mathf.Repeat(ang + 0.6f, 6f) < 1.2f && d > 0.955f && d < 0.978f ? 0.55f : 0f;
+                float major = Mathf.Repeat(ang + 1.5f, 90f) < 3f && d > 0.93f && d < 0.98f ? 1f : 0f;
+                float a = Mathf.Max(ring, Mathf.Max(tick, major));
+                px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(a) * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            s_bezel = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100);
+            s_bezel.hideFlags = HideFlags.DontSave;
+            return s_bezel;
         }
 
         private void TryBuildDots()

@@ -163,11 +163,11 @@ Shader "Astropolity/UI/LiquidGlass"
             // r = (TR, BR, TL, BL)
             float SdRoundBox(float2 p, float2 b, float4 r)
             {
-                // Голо-стиль: срезанные углы (фаска 45°) — крупные слева сверху и справа снизу, малые на других двух.
+                // Голо-стиль: срезаны два угла (фаска 45°) — слева сверху и справа снизу; два других — острые.
                 // Круги и капсулы (радиус ≈ половине стороны) остаются круглыми.
                 float rMax = max(max(r.x, r.y), max(r.z, r.w));
                 bool chamfer = _LGHolo > 0.5 && rMax < 0.9 * min(b.x, b.y);
-                if (chamfer) r *= float4(0.35, 1.0, 1.0, 0.35);
+                if (chamfer) r = min(r * float4(0.0, 1.6, 1.6, 0.0), min(b.x, b.y) * 0.8);
                 r.xy = (p.x > 0.0) ? r.xy : r.zw;
                 r.x  = (p.y > 0.0) ? r.x  : r.y;
                 if (chamfer)
@@ -282,8 +282,8 @@ Shader "Astropolity/UI/LiquidGlass"
                     bodyCol += lerp(float3(1,1,1), rim.rgb, 0.5) * pow(edge, 6.0) * 0.14 * specMul; // френель
                     bodyA = (_LGBackdropReady < 0.5) ? max(0.9, fill) : 1.0;
 
-                    // Голо-стиль: лёгкая вертикальная растяжка — к верху окна светлее (как панели приборов)
-                    if (_LGHolo > 0.5) bodyCol *= 0.92 + 0.10 * saturate(yN * 0.5 + 0.5);
+                    // Голо-стиль: вертикальная растяжка — к верху окна светлее, к низу глубже (как панели приборов)
+                    if (_LGHolo > 0.5) bodyCol *= 0.84 + 0.22 * saturate(yN * 0.5 + 0.5);
                 }
                 else if (mode < 1.5)
                 {
@@ -324,7 +324,8 @@ Shader "Astropolity/UI/LiquidGlass"
                     // цветные кнопки и плашки остаются как есть
                     float bodyLum = dot(bodyCol, float3(0.2126, 0.7152, 0.0722));
                     float darkW = 1.0 - smoothstep(0.10, 0.35, bodyLum);
-                    bodyCol = lerp(bodyCol, bodyCol * 1.6 + float3(0.060, 0.070, 0.080), saturate(_LGBrightness) * darkW);
+                    // Подъём — в глубокий сине-бирюзовый, а не в серый: панели остаются «стеклом», а не картоном
+                    bodyCol = lerp(bodyCol, bodyCol * 1.45 + float3(0.014, 0.032, 0.046), saturate(_LGBrightness) * darkW);
 
                     // Мягкая подсветка края, обращённого к свету
                     float soft = saturate(1.0 - insidePx / 16.0) * pow(saturate(facing), 2.0) * 0.16 * specMul;
@@ -379,36 +380,55 @@ Shader "Astropolity/UI/LiquidGlass"
                 acc = float4(bodyCol * bA, bA) + acc * (1.0 - bA);
                 acc = float4(strokeCol * strokeA, strokeA) + acc * (1.0 - strokeA);
 
-                // Голо-стиль: двойная рамка окна — тонкая внутренняя линия в 5 px от кромки
+                // Голо-стиль окон: световая полоса по верхней кромке с мягким отсветом вниз
+                // и редкий блик, раз в несколько секунд пробегающий по ней (у каждого окна — своя фаза)
                 if (mode < 0.5 && _LGHolo > 0.5)
                 {
-                    float inner = 1.0 - smoothstep(0.45, 1.25, abs(insidePx - 5.0));
-                    float inA = inner * cov * rim.a * 0.55;
-                    float3 inC = lerp(rim.rgb, float3(1, 1, 1), 0.15);
-                    acc = float4(inC * inA, inA) + acc * (1.0 - inA);
+                    float3 lc = lerp(rim.rgb, float3(1, 1, 1), 0.35);
+                    float u = p.x / b.x;
+                    float topPx = (b.y - p.y) * pxPerUnit;
+                    float spread = 1.0 - smoothstep(0.30, 1.0, abs(u + 0.2));
+                    float strip = (1.0 - smoothstep(0.6, 1.8, abs(topPx - 1.0))) * spread;
+                    float seed = frac(b.x * 0.0137 + b.y * 0.0071);
+                    float gT = frac(_Time.y * 0.09 + seed);
+                    float gK = (u - lerp(-1.4, 1.4, gT)) / 0.12;
+                    float glint = exp(-gK * gK) * (1.0 - smoothstep(0.0, 2.5, topPx));
+                    float la = saturate((strip * 0.75 + glint) * cov * rim.a * 1.7);
+                    acc = float4(lc * la, la) + acc * (1.0 - la);
+                    acc.rgb += lc * exp(-topPx / 26.0) * 0.07 * spread * cov * rim.a;
                 }
 
-                // Голо-стиль: уголки-скобки у крупных окон (L-образные, чуть внутри кромки)
-                if (mode < 0.5 && _LGHolo > 0.5)
+                // Голо-стиль: срезанные углы окон и кнопок светятся — яркая кромка среза и отсвет внутрь
+                if (mode < 1.5 && _LGHolo > 0.5)
                 {
-                    float sidePx = minB * 2.0 * pxPerUnit;
-                    if (sidePx > 70.0)
+                    float rMx = max(max(r4.x, r4.y), max(r4.z, r4.w));
+                    if (rMx < 0.9 * minB)
                     {
-                        float2 e = (b - abs(p)) * pxPerUnit - 9.0;          // от линии скобок внутрь, px (внутри двойной рамки)
-                        float L = clamp(sidePx * 0.10, 12.0, 34.0);
-                        float th = 1.8;
-                        float inBox = (1.0 - smoothstep(L, L + 1.0, e.x)) * (1.0 - smoothstep(L, L + 1.0, e.y))
-                                    * smoothstep(-1.0, 0.0, min(e.x, e.y));
-                        float lx = 1.0 - smoothstep(th * 0.5, th * 0.5 + 1.0, abs(e.x - th * 0.5));
-                        float ly = 1.0 - smoothstep(th * 0.5, th * 0.5 + 1.0, abs(e.y - th * 0.5));
-                        float brA = inBox * max(lx, ly) * cov * 0.9;
-                        float3 brC = lerp(rim.rgb, float3(0.55, 1.0, 0.95), 0.45) * 1.15;
-                        acc = float4(brC * brA, brA) + acc * (1.0 - brA);
+                        float4 rc4 = min(r4 * float4(0.0, 1.6, 1.6, 0.0), minB * 0.8);
+                        float rc = (p.x > 0.0) ? ((p.y > 0.0) ? rc4.x : rc4.y) : ((p.y > 0.0) ? rc4.z : rc4.w);
+                        if (rc * pxPerUnit > 3.0)
+                        {
+                            float2 a2 = abs(p);
+                            float cutPx = (a2.x + a2.y - (b.x + b.y - rc)) * 0.70710678 * pxPerUnit;   // 0 — на срезе, < 0 — внутри
+                            float k = (mode < 0.5 ? 1.0 : 0.6) * rim.a * 1.8;
+                            float ca = saturate((1.0 - smoothstep(0.0, 2.2, -cutPx)) * cov * k);
+                            float3 cc = lerp(rim.rgb, float3(1, 1, 1), 0.45);
+                            acc = float4(cc * ca, ca) + acc * (1.0 - ca);
+                            acc.rgb += rim.rgb * exp(-max(-cutPx, 0.0) / 7.0) * 0.14 * k * cov;
+                        }
                     }
                 }
 
+                // Едва заметная развёртка по окнам — фактура голографического стекла
+                if (mode < 0.5 && _LGHolo > 0.5)
+                    acc.rgb *= 1.0 - 0.035 * cov * step(frac(IN.pos.y / 3.0), 0.34);
+
                 acc.rgb += glintA;
                 acc.a = saturate(acc.a + glintA * 0.4);
+
+                // Дизеринг — без ступенек на плавных градиентах тёмных панелей
+                float dz = frac(sin(dot(IN.pos.xy, float2(12.9898, 78.233))) * 43758.5453);
+                acc.rgb += (dz - 0.5) / 255.0 * acc.a;
 
                 acc *= opacity;
 

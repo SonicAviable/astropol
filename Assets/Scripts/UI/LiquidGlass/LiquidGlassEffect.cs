@@ -302,8 +302,10 @@ namespace StellarisClone.Rendering
         private float BaseRadius(Role r, float w, float h)
         {
             float br = RawRadius(r, w, h);
-            // Линии и точки остаются круглыми; всё остальное — сдержанные, «приборные» углы
+            // Линии и точки остаются круглыми; явно заданные круги и капсулы (радиус ≈ половине стороны) — тоже;
+            // всё остальное — сдержанные, «приборные» углы
             if (r == Role.Line || r == Role.Dot) return br;
+            if (radius >= 0f && br >= Mathf.Min(w, h) * 0.45f) return br;
             return Mathf.Min(br * LGTone.RadiusScale, LGTone.MaxRadius);
         }
 
@@ -369,7 +371,7 @@ namespace StellarisClone.Rendering
                     s.ShadowRadius = maxS >= 500f ? 30f : 18f;
                     s.Specular = 1f;
                     s.Refraction = 1f;
-                    s.Border = 2.0f;   // внешняя «металлическая» кромка двойной рамки
+                    s.Border = 1.2f;   // тонкая точная кромка; верх и срезанные углы подсвечивает шейдер
                     s.GlowRadius = 12f;
                     s.Rim = hasOutline ? outlineCol : new Color(0.45f, 0.95f, 0.90f, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;

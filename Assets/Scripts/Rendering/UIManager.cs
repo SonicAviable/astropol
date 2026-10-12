@@ -456,7 +456,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             RulerBadge.Create(_canvas.transform, new Vector2(TopBarMargin, -TopBarMargin), OpenEmpireOverviewModal);
 
             // Ресурсы — единая рамка по центру сверху
-            const float cellW = 128f, resH = 54f;
+            const float cellW = 128f, resH = 58f;
             var bar = new GameObject("TopBar");
             bar.transform.SetParent(_canvas.transform, false);
             var rt = bar.AddComponent<RectTransform>();
@@ -521,26 +521,41 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 6 * 44f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 6 * 46f);
             mRt.anchoredPosition = new Vector2(TopBarMargin, -(TopBarMargin + RulerBadge.Height + 10f));
             LG.Motion(menu, LGAppear.Kind.SlideLeft).distance = 22f;
 
+            // Пункт меню: тёмное стекло, светящаяся планка слева, значок в своей «ячейке», подпись капслоком с разрядкой
             float y = 0f;
             void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip)
             {
-                var b = CreateButton(menu.transform, name, new Vector2(NavMenuW, 38), new Color(0.05f, 0.12f, 0.15f), accent, act);
+                var b = CreateButton(menu.transform, name, new Vector2(NavMenuW, 40), new Color(0.012f, 0.040f, 0.055f, 0.92f), accent, act);
                 var bRt = b.GetComponent<RectTransform>();
                 bRt.anchorMin = bRt.anchorMax = new Vector2(0, 1);
                 bRt.pivot = new Vector2(0, 1);
                 bRt.anchoredPosition = new Vector2(0, -y);
-                y += 44f;
-                var ic = LGIcons.Create(b.transform, icon, 16f, accent);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(16, 16));
-                var t = CreateText(b.transform, label, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
+                y += 46f;
+
+                var bar = LGBuild.Panel(b.transform, "Accent", new Color(accent.r, accent.g, accent.b, 0.95f));
+                bar.rectTransform.anchorMin = new Vector2(0, 0.5f);
+                bar.rectTransform.anchorMax = new Vector2(0, 0.5f);
+                bar.rectTransform.pivot = new Vector2(0, 0.5f);
+                bar.rectTransform.sizeDelta = new Vector2(2.5f, 22f);
+                bar.rectTransform.anchoredPosition = new Vector2(3f, 0f);
+                LG.Line(bar.gameObject);
+
+                var tile = LGBuild.Panel(b.transform, "IconTile", new Color(accent.r * 0.16f, accent.g * 0.16f, accent.b * 0.16f, 0.95f));
+                tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(28, 28));
+                LG.Chip(tile.gameObject, new Color(accent.r, accent.g, accent.b, 0.45f));
+                var ic = LGIcons.Create(tile.transform, icon, 15f, accent);
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
+
+                var t = CreateText(b.transform, label.ToUpper(), 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
                 t.rectTransform.anchorMin = Vector2.zero;
                 t.rectTransform.anchorMax = Vector2.one;
-                t.rectTransform.offsetMin = new Vector2(38, 0);
+                t.rectTransform.offsetMin = new Vector2(50, 0);
                 t.rectTransform.offsetMax = new Vector2(-6, 0);
+                t.Track(1.0f);
                 if (anchorId != null) UIAnchors.Register(anchorId, bRt);
                 TooltipHelper.Attach(b, tip);
             }
@@ -572,7 +587,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
             rt.pivot = new Vector2(0, 0.5f);
             rt.anchoredPosition = new Vector2(xPos, 0);
-            rt.sizeDelta = new Vector2(124, 44);
+            rt.sizeDelta = new Vector2(124, 48);
 
             var img = badge.AddComponent<Image>();
             img.color = new Color(0, 0, 0, 0);
@@ -596,21 +611,22 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 LG.Ignore(sep);
             }
 
-            var cap = CreateText(badge.transform, label, 9, FontStyle.Bold, new Color(accentCol.r, accentCol.g, accentCol.b, 0.9f), TextAnchor.UpperCenter);
+            var cap = CreateText(badge.transform, label, 10, FontStyle.Bold, new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f), TextAnchor.UpperCenter);
             cap.rectTransform.anchorMin = Vector2.zero;
             cap.rectTransform.anchorMax = Vector2.one;
             cap.rectTransform.offsetMin = new Vector2(4, 0);
             cap.rectTransform.offsetMax = new Vector2(-4, -3);
+            cap.Track(1.4f);
 
-            var ic = LGIcons.Create(badge.transform, icon, 15, accentCol);
+            var ic = LGIcons.Create(badge.transform, icon, 17, accentCol);
             ic.rectTransform.anchorMin = ic.rectTransform.anchorMax = new Vector2(0, 0);
             ic.rectTransform.pivot = new Vector2(0, 0);
-            ic.rectTransform.anchoredPosition = new Vector2(12, 5);
+            ic.rectTransform.anchoredPosition = new Vector2(10, 4);
 
-            var val = CreateText(badge.transform, "0", 12, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
+            var val = CreateText(badge.transform, "0", 15, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
             val.rectTransform.anchorMin = Vector2.zero;
             val.rectTransform.anchorMax = Vector2.one;
-            val.rectTransform.offsetMin = new Vector2(32, 4);
+            val.rectTransform.offsetMin = new Vector2(32, 2);
             val.rectTransform.offsetMax = new Vector2(-4, 0);
 
             xPos += 128f;
@@ -1189,7 +1205,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         /// <summary>Под панелью режимов карты (она стоит на 66…108 px от верха).</summary>
         private const float InspectorTop = 118f;
         /// <summary>Ширина левого меню экранов; панель системы стоит правее него.</summary>
-        public const float NavMenuW = 176f;
+        public const float NavMenuW = 200f;
         private static readonly Vector2 InspectorRestPos = new Vector2(TopBarMargin + NavMenuW + 10f, -InspectorTop);
 
         private void Update()
@@ -1235,7 +1251,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_energyVal != null)
     {
         float net = eco.MonthlyEnergyIncome;
-        _energyVal.text = $"{(int)eco.EnergyCredits}  {StatFormat.Colored(net, "")}";
+        _energyVal.text = $"{(int)eco.EnergyCredits}  <size=11>{StatFormat.Colored(net, "")}</size>";
 
         if (_energyTip != null)
         {
@@ -1271,7 +1287,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === МИНЕРАЛЫ ===
     if (_mineralsVal != null)
     {
-        _mineralsVal.text = $"{(int)eco.Minerals}  {StatFormat.Colored(eco.MonthlyMineralsIncome, "")}";
+        _mineralsVal.text = $"{(int)eco.Minerals}  <size=11>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>";
         if (_mineralsTip != null)
             _mineralsTip.SetText(
                 $"<b>Титан</b>\n" +
@@ -1287,7 +1303,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === СПЛАВЫ ===
     if (_alloysVal != null)
     {
-        _alloysVal.text = $"{(int)eco.Alloys}  {StatFormat.Colored(eco.MonthlyAlloysIncome, "")}";
+        _alloysVal.text = $"{(int)eco.Alloys}  <size=11>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>";
         if (_alloysTip != null)
             _alloysTip.SetText(
                 $"<b>Сплавы</b>\n" +
@@ -1302,7 +1318,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === ВЛИЯНИЕ ===
     if (_influenceVal != null)
     {
-        _influenceVal.text = $"{(int)eco.Influence}  {StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}";
+        _influenceVal.text = $"{(int)eco.Influence}  <size=11>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>";
         if (_influenceTip != null)
             _influenceTip.SetText(
                 $"<b>Влияние</b>\n" +

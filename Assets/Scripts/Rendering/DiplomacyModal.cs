@@ -376,6 +376,7 @@ namespace StellarisClone.Rendering
             LG.Glass(p.gameObject, 14f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f));
             _tableTitle = LGBuild.Label(_centerPanel, "НА СТОЛЕ ПЕРЕГОВОРОВ", 13, Primary, TextAnchor.MiddleCenter, bold: true);
             _tableTitle.rectTransform.TopBand(8, 22, 14, 14);
+            _tableTitle.Track(2f);
             Line(_centerPanel, 34f, 0.3f, 12f);
 
             var cols = LGBuild.Rect(_centerPanel, "Cols");
@@ -422,7 +423,7 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(influenceHit.gameObject,
                 "<b>Влияние</b>\nВаш запас влияния. Каждое предложение сделки стоит влияния — чем крупнее сделка, тем дороже переговоры");
 
-            var ah = LGBuild.Label(p, "ДЕЙСТВУЮЩИЕ СОГЛАШЕНИЯ", 12, Muted, TextAnchor.MiddleLeft, bold: true);
+            var ah = LGBuild.Label(p, "ДЕЙСТВУЮЩИЕ СОГЛАШЕНИЯ", 12, Muted, TextAnchor.MiddleLeft, bold: true).Track(1.2f);
             ah.rectTransform.TopBand(206, 18, 16, 16);
             Line(p, 228f, 0.22f, 16f);
             _agreements = LGBuild.Rect(p, "Agreements");
@@ -433,7 +434,7 @@ namespace StellarisClone.Rendering
         private void BuildGrids(RectTransform rt)
         {
             RectTransform a;
-            (a, _aiGridTitle) = FramedPanel(rt, "TheyGive", new Vector2(1, 1), new Vector2(-Edge, -64f), new Vector2(SideW, 222f), "");
+            (a, _aiGridTitle) = FramedPanel(rt, "TheyGive", new Vector2(1, 1), new Vector2(-Edge, -300f), new Vector2(SideW, 222f), "");   // выше — место уведомлений
             _aiGrid = LGBuild.Rect(a, "Grid");
             _aiGrid.TopBand(50f, CellSize * 2f + CellGap, 16, 16);
 
@@ -442,7 +443,7 @@ namespace StellarisClone.Rendering
             _playerGrid = LGBuild.Rect(b, "Grid");
             _playerGrid.TopBand(50f, CellSize * 2f + CellGap, 16, 16);
 
-            var cl = LGBuild.Label(b, "ШАНС СОГЛАСИЯ", 12, Primary, TextAnchor.MiddleLeft, bold: true);
+            var cl = LGBuild.Label(b, "ШАНС СОГЛАСИЯ", 12, Primary, TextAnchor.MiddleLeft, bold: true).Track(1.2f);
             cl.rectTransform.TopBand(222, 18, 16, 16);
             _chanceVal = LGBuild.Label(b, "—", 14, Primary, TextAnchor.MiddleRight, bold: true);
             _chanceVal.rectTransform.TopBand(222, 18, 16, 16);
@@ -478,6 +479,7 @@ namespace StellarisClone.Rendering
             LG.Platter(head.gameObject, 10f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.15f));
             var ht = LGBuild.Label(b, "ДИАЛОГ", 13, Primary, TextAnchor.MiddleCenter, bold: true);
             ht.rectTransform.TopBand(4, 26, 0, 0);
+            ht.Track(2.5f);
 
             _speechStateBg = LGBuild.Panel(b, "State", new Color(0.1f, 0.2f, 0.2f, 1f));
             _speechStateBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -7), new Vector2(120, 20));
@@ -560,6 +562,7 @@ namespace StellarisClone.Rendering
             LG.Platter(head.gameObject, 12f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.15f));
             var t = LGBuild.Label(r, title, 14, Primary, TextAnchor.MiddleLeft, bold: true);
             t.rectTransform.TopBand(4, 32, 16, 40);
+            t.Track(1.5f);
             var mark = LGIcons.Create(r, LGIcon.Diplomacy, 14, new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f));
             mark.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -13), new Vector2(14, 14));
             Line(r, 37f, 0.45f, 4f);
@@ -593,7 +596,7 @@ namespace StellarisClone.Rendering
             val.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), center + new Vector2(0f, 6f), new Vector2(s, 28));
             var sub = LGBuild.Label(parent, "", 9, Muted, TextAnchor.MiddleCenter, bold: true);
             sub.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), center + new Vector2(0f, -16f), new Vector2(s - 26f, 14));
-            var lbl = LGBuild.Label(parent, label, 12, Primary, TextAnchor.MiddleCenter, bold: true);
+            var lbl = LGBuild.Label(parent, label, 12, Primary, TextAnchor.MiddleCenter, bold: true).Track(1.5f);
             lbl.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), center + new Vector2(0f, -s * 0.5f - 14f), new Vector2(150, 18));
             return (fill, val, sub, track);
         }
@@ -602,6 +605,7 @@ namespace StellarisClone.Rendering
         {
             var t = LGBuild.Label(col, text, 11, Muted, TextAnchor.UpperCenter, bold: true);
             t.rectTransform.TopBand(0, 18);
+            t.Track(1.2f);
             return t;
         }
 

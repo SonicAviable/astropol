@@ -109,7 +109,7 @@ namespace StellarisClone.Rendering
             var btnObj = new GameObject($"MapModeBtn_{mode}");
             btnObj.transform.SetParent(parent, false);
 
-            const float R = 146f, D = 38f;
+            const float R = 154f, D = 36f;   // снаружи безеля мини-карты (радиус 127)
             var rt = btnObj.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);

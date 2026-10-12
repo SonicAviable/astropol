@@ -153,8 +153,9 @@ namespace StellarisClone.Rendering
 
             _headIcon = LGIcons.Create(head.transform, LGIcon.Menu, 14, Cyan);
             _headIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
-            var ht = LGBuild.Label(head.transform, "АУТЛАЙНЕР", 12, Primary, TextAnchor.MiddleLeft, bold: true);
+            var ht = LGBuild.Label(head.transform, "ПЛАНИРОВЩИК", 12, Primary, TextAnchor.MiddleLeft, bold: true);
             ht.rectTransform.Stretch(34, 0, 90, 0);
+            ht.Track(1.6f);
 
             // плашка «требует внимания»
             var chip = LGBuild.Panel(head.transform, "Alert", new Color(0.30f, 0.20f, 0.04f, 0.95f));

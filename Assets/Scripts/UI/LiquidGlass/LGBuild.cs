@@ -202,6 +202,16 @@ namespace StellarisClone.Rendering
             return le;
         }
 
+        /// <summary>Разрядка заголовка (px между буквами) — см. LGTracking.</summary>
+        public static Text Track(this Text t, float spacing = 1.6f)
+        {
+            if (t == null) return null;
+            var tr = t.GetComponent<LGTracking>();
+            if (tr == null) tr = t.gameObject.AddComponent<LGTracking>();
+            tr.Spacing = spacing;
+            return t;
+        }
+
         public static string Hex(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c);
 
         public static string Signed(float v, string fmt = "0.#")
