@@ -45,6 +45,8 @@ namespace StellarisClone.Rendering
     /// Плавное появление/исчезновение панели: прозрачность + пружинный масштаб (+ сдвиг).
     /// Появление запускается само в OnEnable — любой SetActive(true) уже анимирован.
     /// Для исчезновения используйте LG.Hide(go) вместо SetActive(false).
+    /// Окна (Pop/Fade от 360×220) включаются как голограмма: рамка появляется сразу, содержимое
+    /// «печатается» сверху вниз за светящейся линией развёртки, по окну бегут гаснущие строки и короткое мерцание.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LGAppear : MonoBehaviour
@@ -61,6 +63,8 @@ namespace StellarisClone.Rendering
         public bool playOnEnable = true;
         [Tooltip("Блокировать клики во время исчезновения.")]
         public bool manageRaycasts = true;
+        [Tooltip("Голографическое включение окна (развёртка сверху вниз).")]
+        public bool holoReveal = true;
 
         private enum State { Idle, In, Out }
 
@@ -79,6 +83,16 @@ namespace StellarisClone.Rendering
         private bool _pendingCapture;
         private System.Action _onHidden;
 
+        // ---- голографическое включение
+        private const float HoloDuration = 0.5f;
+        private float _holoT = -1f;
+        private RectMask2D _holoMask;
+        private bool _holoOwnMask;
+        private RectTransform _holoFx, _holoLine;
+        private RawImage _holoStripes;
+        private Image _holoGlow, _holoCore;
+        private static Texture2D s_stripes;
+
         public bool IsHiding => _state == State.Out;
         public bool IsAnimating => _state != State.Idle;
 
@@ -96,6 +110,7 @@ namespace StellarisClone.Rendering
 
         private void OnDisable()
         {
+            EndHolo();
             if (_state != State.Idle) RestoreRest();
             _state = State.Idle;
             var cb = _onHidden;
@@ -167,6 +182,7 @@ namespace StellarisClone.Rendering
             _startProgress = progress;
             _startAlpha = progress <= 0f ? 0f : _cg.alpha;
             if (manageRaycasts) _cg.blocksRaycasts = true;
+            if (progress <= 0f) StartHolo();
             ApplyIn(0f);
         }
 
@@ -187,6 +203,7 @@ namespace StellarisClone.Rendering
             }
             if (_state == State.Idle || _pendingCapture) { CaptureRest(); _pendingCapture = false; }
 
+            EndHolo();
             _state = State.Out;
             _t = 0f;
             _startAlpha = _cg.alpha;
@@ -195,6 +212,13 @@ namespace StellarisClone.Rendering
         }
 
         private void Update()
+        {
+            UpdateState();
+            // Голограмма — после обычного проявления, чтобы мерцание ложилось поверх прозрачности
+            if (_holoT >= 0f) TickHolo(_state == State.In && _delayLeft > 0f ? 0f : Time.unscaledDeltaTime);
+        }
+
+        private void UpdateState()
         {
             if (_state == State.Idle) return;
             float dt = Time.unscaledDeltaTime;
@@ -229,6 +253,108 @@ namespace StellarisClone.Rendering
                     cb?.Invoke();
                 }
             }
+        }
+
+        // ==================== Голографическое включение ====================
+
+        private bool WantsHolo()
+        {
+            if (!holoReveal || _rt == null || (kind != Kind.Pop && kind != Kind.Fade)) return false;
+            var r = _rt.rect;
+            return r.width >= 360f && r.height >= 220f;
+        }
+
+        private void StartHolo()
+        {
+            EndHolo();
+            if (!WantsHolo()) return;
+
+            // Маска раскрытия: содержимое окна (дети) показывается сверху вниз; фон самого окна виден сразу
+            _holoMask = GetComponent<RectMask2D>();
+            _holoOwnMask = _holoMask == null;
+            if (_holoOwnMask)
+            {
+                _holoMask = gameObject.AddComponent<RectMask2D>();
+                _holoMask.softness = new Vector2Int(0, 26);
+            }
+
+            _holoFx = LGBuild.Rect(transform, "HoloReveal");
+            _holoFx.Stretch();
+            var le = _holoFx.gameObject.AddComponent<LayoutElement>();
+            le.ignoreLayout = true;
+            LG.Ignore(_holoFx.gameObject);
+
+            // Гаснущие строки развёртки по всему окну
+            var st = LGBuild.Rect(_holoFx, "Stripes");
+            st.Stretch();
+            _holoStripes = st.gameObject.AddComponent<RawImage>();
+            _holoStripes.texture = StripeTex();
+            _holoStripes.raycastTarget = false;
+
+            // Линия развёртки: мягкий ореол и яркая сердцевина
+            _holoLine = LGBuild.Rect(_holoFx, "ScanLine");
+            _holoLine.anchorMin = new Vector2(0f, 1f);
+            _holoLine.anchorMax = new Vector2(1f, 1f);
+            _holoLine.pivot = new Vector2(0.5f, 0.5f);
+            _holoLine.sizeDelta = new Vector2(0f, 40f);
+            _holoGlow = LGBuild.Panel(_holoLine, "Glow", Color.clear);
+            _holoGlow.sprite = FactionSelectScreen.RadialSprite();
+            _holoGlow.rectTransform.Stretch(-40f, 0f, -40f, 0f);
+            _holoCore = LGBuild.Panel(_holoLine, "Core", Color.clear);
+            _holoCore.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            _holoCore.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            _holoCore.rectTransform.sizeDelta = new Vector2(0f, 2f);
+
+            _holoT = 0f;
+            TickHolo(0f);
+        }
+
+        private void TickHolo(float dt)
+        {
+            if (_holoFx == null || _rt == null) { EndHolo(); return; }
+            _holoT += dt / HoloDuration;
+            float t = Mathf.Clamp01(_holoT);
+            float h = _rt.rect.height;
+            float edge = h * LGEase.OutCubic(t);                      // сколько уже «напечатано» сверху, px
+
+            if (_holoOwnMask && _holoMask != null)
+                _holoMask.padding = new Vector4(0f, Mathf.Max(0f, h - edge - 14f), 0f, 0f);
+
+            _holoFx.SetAsLastSibling();                               // поверх содержимого, которое окно достроило после показа
+            _holoLine.anchoredPosition = new Vector2(0f, -edge);
+            Color c = UIManager.DS.NeonCyan;
+            float lineA = 1f - Mathf.SmoothStep(0.75f, 1f, t);
+            _holoGlow.color = new Color(c.r, c.g, c.b, 0.35f * lineA);
+            _holoCore.color = new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f), 0.9f * lineA);
+            _holoStripes.color = new Color(c.r, c.g, c.b, 0.16f * (1f - t));
+            _holoStripes.uvRect = new Rect(0f, -Time.unscaledTime * 1.5f, 1f, Mathf.Max(1f, h / 3f));
+
+            // Короткое цифровое мерцание в начале (поверх обычного проявления)
+            if (t < 0.3f && _cg != null && Mathf.PerlinNoise(Time.unscaledTime * 38f, 0.37f) < 0.38f)
+                _cg.alpha *= 0.55f;
+
+            if (_holoT >= 1f) EndHolo();
+        }
+
+        private void EndHolo()
+        {
+            _holoT = -1f;
+            if (_holoFx != null) Destroy(_holoFx.gameObject);
+            _holoFx = null;
+            if (_holoOwnMask && _holoMask != null) Destroy(_holoMask);
+            _holoMask = null;
+            _holoOwnMask = false;
+        }
+
+        /// <summary>Строки развёртки: одна светлая на три пикселя.</summary>
+        private static Texture2D StripeTex()
+        {
+            if (s_stripes != null) return s_stripes;
+            s_stripes = new Texture2D(1, 3, TextureFormat.RGBA32, false)
+            { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Point, name = "HoloStripes", hideFlags = HideFlags.DontSave };
+            s_stripes.SetPixels32(new[] { new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 0), new Color32(255, 255, 255, 0) });
+            s_stripes.Apply(false);
+            return s_stripes;
         }
 
         private void ApplyIn(float t)

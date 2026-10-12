@@ -574,6 +574,7 @@ namespace StellarisClone.Rendering
         {
             UpdateReadability();
             UpdateBeacon();
+            UpdateRoutes();
         }
 
         // ==================== РЕЖИМЫ ====================

@@ -546,6 +546,7 @@ namespace StellarisClone.Rendering
             Data.TargetSystemId = Data.Path.Dequeue();
             Data.State = FleetState.InHyperlane;
             SFXManager.PlayAt(Sfx.FtlJump, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);
+            if (ShowJumpFx()) JumpFx.Departure(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));
             Data.DaysRemainingInTransit = Data.TotalDaysForTransit;
 
             _gliding = false;
@@ -553,6 +554,7 @@ namespace StellarisClone.Rendering
 
         private void ArriveAtTargetSystem()
         {
+            if (ShowJumpFx()) JumpFx.Arrival(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));
             Data.CurrentSystemId = Data.TargetSystemId;
             Data.TargetSystemId = -1;
             Data.State = FleetState.Orbiting;
@@ -600,6 +602,7 @@ namespace StellarisClone.Rendering
         public void DropOutOfLane(int systemId)
         {
             if (Data == null || Data.State != FleetState.InHyperlane) return;
+            if (ShowJumpFx()) JumpFx.Arrival(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));   // выбит из коридора
             int target = Data.TargetSystemId;
             if (systemId == target)
             {
@@ -618,6 +621,22 @@ namespace StellarisClone.Rendering
             SnapToCurrentSystem(instant: false);
             if (Data.Path.Count == 0 && Data.OrderQueue.Count > 0) FleetManager.Instance?.AdvanceQueue(this);
             else if (Data.Path.Count == 0 && Data.OwnerId == 0) Data.HasPlayerOrder = false;
+        }
+
+        /// <summary>Эффекты прыжка видны на карте галактики — для своих флотов и тех чужих, кого мы видим.</summary>
+        private bool ShowJumpFx()
+        {
+            if (Data == null || Data.Destroyed) return false;
+            if (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView) return false;
+            return Data.OwnerId == 0 || Vision.CanSeeFleet(0, Data);
+        }
+
+        /// <summary>Направление текущего коридора (откуда → куда).</summary>
+        private Vector3 LaneDir()
+        {
+            int a = Data.CurrentSystemId, b = Data.TargetSystemId;
+            if (a < 0 || b < 0 || a >= _generator.Systems.Count || b >= _generator.Systems.Count) return transform.forward;
+            return _generator.Systems[b].Position - _generator.Systems[a].Position;
         }
 
         private bool Pinned() => CombatManager.Instance != null && CombatManager.Instance.IsInterdicted(Data, Data.CurrentSystemId);
