@@ -14,6 +14,8 @@ namespace StellarisClone.Rendering
     /// связи — «шинами» между карточками. Слева — научные слоты с прогрессом и очередями,
     /// справа — досье выбранной технологии: эффект, стоимость, требования, что открывает.
     /// Щелчок — выбрать, двойной щелчок или кнопка — исследовать (или поставить в очередь).
+    /// Вид дерева — «созвездие»: технологии — светящиеся круглые узлы со значком направления и кольцом прогресса,
+    /// связи — прямые светящиеся линии от звезды к звезде; подложки дорожек почти прозрачны.
     /// </summary>
     public class TechTreePanel : MonoBehaviour
     {
@@ -99,7 +101,12 @@ namespace StellarisClone.Rendering
             public RectTransform Bar;
             public GameObject BarHost, Frame;
             public TechCardFX Hover;
+            public Image Disc, Glow;   // узел-звезда и его свечение (Accent — кольцо прогресса)
         }
+
+        /// <summary>Диаметр узла-звезды при текущей высоте строки.</summary>
+        private float NodeD => Mathf.Clamp(_cardH - 16f, 42f, 58f);
+        private const float NodeX = 8f;   // отступ узла от левого края ячейки
         private readonly Dictionary<string, CardUi> _cards = new Dictionary<string, CardUi>();
 
         // Слоты
@@ -706,17 +713,21 @@ namespace StellarisClone.Rendering
         private void BuildLane(TechCategory cat, List<Technology> techs, float y, float h)
         {
             Color cc = TechCategoryInfo.Color(cat);
-            var lane = LGBuild.Panel(_lanesLayer, "Lane_" + cat, new Color(0.030f, 0.050f, 0.068f, 0.80f));
+            // Созвездие: дорожка — лишь лёгкая полоса фона, граф висит в пространстве
+            var lane = LGBuild.Panel(_lanesLayer, "Lane_" + cat, new Color(cc.r, cc.g, cc.b, 0.025f));
             var rt = lane.rectTransform;
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(1, 1);
             rt.pivot = new Vector2(0.5f, 1);
             rt.offsetMin = new Vector2(0, -y - h);
             rt.offsetMax = new Vector2(0, -y);
-            var lfx = LG.Platter(lane.gameObject, 8f);
-            lfx.SetRim(new Color(1f, 1f, 1f, 0.06f));
-            lfx.FillMultiplier = 2.6f;
-            lfx.SpecularMultiplier = 0.2f;
+            LG.Ignore(lane.gameObject, includeChildren: false);
+            var sepLine = LGBuild.Panel(rt, "Sep", new Color(cc.r, cc.g, cc.b, 0.10f));
+            sepLine.rectTransform.anchorMin = new Vector2(0, 0);
+            sepLine.rectTransform.anchorMax = new Vector2(1, 0);
+            sepLine.rectTransform.offsetMin = new Vector2(LaneHeadW, 0);
+            sepLine.rectTransform.offsetMax = new Vector2(-10, 1);
+            LG.Ignore(sepLine.gameObject);
 
             // Тонкая цветная метка направления слева
             var mark = LGBuild.Panel(rt, "Mark", new Color(cc.r, cc.g, cc.b, 0.85f));
@@ -747,65 +758,126 @@ namespace StellarisClone.Rendering
             LGBuild.Bar(barHost, cc, done / (float)Mathf.Max(1, techs.Count), 3f);
         }
 
+        /// <summary>
+        /// Узел-звезда: прозрачная ячейка (ловит клики), в ней слева — свечение, кольцо прогресса,
+        /// стеклянный диск со значком направления и значок состояния; справа — название и состояние.
+        /// </summary>
         private CardUi BuildCard(Technology t, Vector2 pos, TechnologyManager tm)
         {
             Color cc = TechCategoryInfo.Color(t.Category);
-            var bg = LGBuild.Panel(_cardsLayer, "Card_" + t.Id, CardBg, raycast: true);
+            float N = NodeD;
+            var bg = LGBuild.Panel(_cardsLayer, "Node_" + t.Id, new Color(0f, 0f, 0f, 0f), raycast: true);
             var rt = bg.rectTransform;
             rt.At(new Vector2(0, 1), new Vector2(0, 1), pos, new Vector2(CardW, _cardH));
+            LG.Ignore(bg.gameObject, includeChildren: false);
 
             var c = new CardUi { Tech = t, Rt = rt, Bg = bg };
             c.Group = bg.gameObject.AddComponent<CanvasGroup>();
             var btn = bg.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
-            c.Fx = LG.Platter(bg.gameObject, 8f);
-            c.Fx.FillMultiplier = 3f;
-            c.Fx.SpecularMultiplier = 0.2f;
-            c.Hover = bg.gameObject.AddComponent<TechCardFX>();
             var captured = t;
             btn.onClick.AddListener(() => OnCardClick(captured));
 
-            // Рамка выбора
-            var frame = LGBuild.Panel(rt, "Frame", new Color(1f, 1f, 1f, 0.02f));
-            frame.rectTransform.Stretch(-3, -3, -3, -3);
-            LG.Border(frame.gameObject, new Color(1f, 1f, 1f, 0.85f));
+            var nodeCenter = new Vector2(NodeX + N * 0.5f, 0f);
+            var mid = new Vector2(0, 0.5f);
+
+            c.Glow = Star(rt, "Glow", GlowSprite(), Color.clear, nodeCenter, N * 2.3f);
+            var track = Star(rt, "Track", RingSprite(), new Color(1f, 1f, 1f, 0.10f), nodeCenter, N + 10f);
+            c.Accent = Star(rt, "Ring", RingSprite(), cc, nodeCenter, N + 10f);
+            c.Accent.type = Image.Type.Filled;
+            c.Accent.fillMethod = Image.FillMethod.Radial360;
+            c.Accent.fillOrigin = (int)Image.Origin360.Top;
+            c.Accent.fillClockwise = true;
+
+            c.Disc = LGBuild.Panel(rt, "Disc", CardBg);
+            c.Disc.rectTransform.At(mid, new Vector2(0.5f, 0.5f), nodeCenter, new Vector2(N, N));
+            c.Fx = LG.Platter(c.Disc.gameObject, N * 0.5f);
+            c.Fx.FillMultiplier = 3f;
+            c.Fx.SpecularMultiplier = 0.6f;
+            c.Hover = bg.gameObject.AddComponent<TechCardFX>();
+
+            c.Icon = LGIcons.Create(c.Disc.transform, LGIcons.ForTechCategory(t.Category), N * 0.46f, cc);
+            c.StateIcon = LGIcons.Create(rt, LGIcon.Lock, 13, Muted);
+            c.StateIcon.rectTransform.At(mid, new Vector2(0.5f, 0.5f), nodeCenter + new Vector2(N * 0.36f, -N * 0.36f), new Vector2(13, 13));
+
+            // Рамка выбора — кольцо вокруг звезды
+            var frame = Star(rt, "Frame", RingSprite(), new Color(1f, 1f, 1f, 0.9f), nodeCenter, N + 22f);
             c.Frame = frame.gameObject;
             c.Frame.SetActive(t == _selected);
 
-            c.Accent = LGBuild.Panel(rt, "Accent", cc);
-            c.Accent.rectTransform.anchorMin = new Vector2(0, 0);
-            c.Accent.rectTransform.anchorMax = new Vector2(0, 1);
-            c.Accent.rectTransform.offsetMin = new Vector2(0, 8);
-            c.Accent.rectTransform.offsetMax = new Vector2(3, -8);
-            LG.Ignore(c.Accent.gameObject);
-
-            c.Icon = LGIcons.Create(rt, LGIcons.ForTechCategory(t.Category), 26, cc);
-            c.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(28, 0), new Vector2(26, 26));
-
-            c.Name = LGBuild.Label(rt, t.Name, 13, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
+            float textX = NodeX + N + 12f;
+            c.Name = LGBuild.Label(rt, t.Name, 12, Primary, TextAnchor.LowerLeft, bold: true, wrap: true);
             c.Name.lineSpacing = 0.92f;
-            FitText(c.Name, 10);
-            c.Name.rectTransform.Stretch(52, 26, 10, 8);
+            FitText(c.Name, 9);
+            c.Name.rectTransform.anchorMin = new Vector2(0, 0.5f);
+            c.Name.rectTransform.anchorMax = new Vector2(1, 1);
+            c.Name.rectTransform.offsetMin = new Vector2(textX, 1);
+            c.Name.rectTransform.offsetMax = new Vector2(-2, -4);
 
-            c.Status = LGBuild.Label(rt, "", 12, Muted, TextAnchor.LowerLeft, wrap: true);
-            FitText(c.Status, 9);
-            c.Status.rectTransform.Stretch(52, 10, 26, _cardH - 28);
+            c.Status = LGBuild.Label(rt, "", 10, Muted, TextAnchor.UpperLeft, wrap: true);
+            FitText(c.Status, 8);
+            c.Status.rectTransform.anchorMin = new Vector2(0, 0);
+            c.Status.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            c.Status.rectTransform.offsetMin = new Vector2(textX, 2);
+            c.Status.rectTransform.offsetMax = new Vector2(-2, -2);
 
-            c.StateIcon = LGIcons.Create(rt, LGIcon.Lock, 14, Muted);
-            c.StateIcon.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-9, 11), new Vector2(14, 14));
-
+            // Линейная полоса больше не нужна — прогресс показывает кольцо
             var barHost = LGBuild.Rect(rt, "Progress");
-            barHost.anchorMin = new Vector2(0, 0);
-            barHost.anchorMax = new Vector2(1, 0);
-            barHost.pivot = new Vector2(0.5f, 0);
-            barHost.offsetMin = new Vector2(52, 4);
-            barHost.offsetMax = new Vector2(-10, 8);
+            barHost.sizeDelta = Vector2.zero;
             c.Bar = LGBuild.Bar(barHost, Cyan, 0f, 3f);
             c.BarHost = barHost.gameObject;
+            c.BarHost.SetActive(false);
 
             TooltipHelper.Attach(bg.gameObject, CardTooltip(t, tm));
             UpdateCardStatus(c, tm);
             return c;
+        }
+
+        /// <summary>Декоративный круглый слой узла (без лучей и стекла).</summary>
+        private static Image Star(RectTransform parent, string name, Sprite sp, Color col, Vector2 center, float size)
+        {
+            var img = LGBuild.Panel(parent, name, col);
+            img.sprite = sp;
+            img.raycastTarget = false;
+            img.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), center, new Vector2(size, size));
+            LG.Ignore(img.gameObject);
+            return img;
+        }
+
+        private static Sprite s_ring, s_glow;
+
+        private static Sprite RingSprite()
+        {
+            if (s_ring != null) return s_ring;
+            s_ring = CircleSprite(256, (d, half) => Mathf.Clamp01(2.6f * 0.5f + 0.5f - Mathf.Abs(d - (1f - 4f / half)) * half), "TechRing");
+            return s_ring;
+        }
+
+        private static Sprite GlowSprite()
+        {
+            if (s_glow != null) return s_glow;
+            s_glow = CircleSprite(128, (d, half) => { float k = Mathf.Clamp01(1f - d); return k * k * k; }, "TechGlow");
+            return s_glow;
+        }
+
+        private static Sprite CircleSprite(int res, System.Func<float, float, float> alpha, string name)
+        {
+            var tex = new Texture2D(res, res, TextureFormat.RGBA32, true)
+            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = name, hideFlags = HideFlags.DontSave };
+            var px = new Color32[res * res];
+            float c = (res - 1) * 0.5f;
+            for (int y = 0; y < res; y++)
+            for (int x = 0; x < res; x++)
+            {
+                float dx = (x - c) / c, dy = (y - c) / c;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                px[y * res + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(alpha(d, c)) * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            var sp = Sprite.Create(tex, new Rect(0, 0, res, res), new Vector2(0.5f, 0.5f), 100);
+            sp.hideFlags = HideFlags.DontSave;
+            return sp;
         }
 
         private static string CardTooltip(Technology t, TechnologyManager tm)
@@ -899,15 +971,25 @@ namespace StellarisClone.Rendering
             }
 
             c.Group.alpha = alpha;
-            c.Bg.color = bg;
+            c.Disc.color = bg;
             c.Name.color = nameCol;
             c.Icon.color = iconTint;
-            c.Accent.color = accent;
             c.StateIcon.sprite = LGIcons.Get(icon);
             c.StateIcon.color = iconCol;
             c.Status.text = status;
-            c.BarHost.SetActive(showBar);
-            if (showBar) LGBuild.SetBar(c.Bar, progress, st == CardState.Researching ? Cyan : new Color(Gold.r, Gold.g, Gold.b, 0.8f));
+
+            // Кольцо: изучено — полное, изучается/в очереди — доля прогресса; свечение — по состоянию
+            c.Accent.color = st == CardState.Locked ? new Color(accent.r, accent.g, accent.b, 0.35f) : accent;
+            c.Accent.fillAmount = st == CardState.Researched ? 1f : showBar ? progress : st == CardState.Available ? 1f : 0f;
+            if (st == CardState.Available) c.Accent.color = new Color(accent.r, accent.g, accent.b, 0.45f);
+            c.Glow.color = st switch
+            {
+                CardState.Researched => new Color(Green.r, Green.g, Green.b, 0.20f),
+                CardState.Researching => new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f),
+                CardState.Queued => new Color(Gold.r, Gold.g, Gold.b, 0.22f),
+                CardState.Available => new Color(cc.r, cc.g, cc.b, 0.12f),
+                _ => Color.clear
+            };
             c.Hover.Fx = c.Fx;
             c.Hover.SetBase(rim, st == CardState.Researching && !slot.IsPaused);
         }
@@ -922,28 +1004,27 @@ namespace StellarisClone.Rendering
             return "—";
         }
 
+        /// <summary>Связь созвездия: прямая светящаяся линия от края одной звезды к краю другой.</summary>
         private void DrawWire(CardUi from, CardUi to, TechnologyManager tm)
         {
             Color bc = TechBranchInfo.Color(s_branch);
             bool done = from.Tech.IsResearched;
             bool flowing = done && StateOf(to.Tech, tm, out _, out _) == CardState.Researching;
-            Color col = done ? new Color(bc.r, bc.g, bc.b, to.Tech.IsResearched ? 0.75f : 0.55f) : WireIdle;
+            Color col = done ? new Color(bc.r, bc.g, bc.b, to.Tech.IsResearched ? 0.85f : 0.6f) : WireIdle;
 
-            Vector2 a = from.Rt.anchoredPosition + new Vector2(CardW, -_cardH * 0.5f);
-            Vector2 b = to.Rt.anchoredPosition + new Vector2(0f, -_cardH * 0.5f);
-            if (b.x <= a.x + 4f || Mathf.Abs(a.y - b.y) < 0.5f)
-            {
-                Segment(a, b, col, flowing);
-                return;
-            }
-            float midX = b.x - (ColW - CardW) * 0.5f;
-            Segment(a, new Vector2(midX, a.y), col, false);
-            Segment(new Vector2(midX, a.y), new Vector2(midX, b.y), col, false);
-            Segment(new Vector2(midX, b.y), b, col, flowing);
+            float N = NodeD;
+            Vector2 ca = from.Rt.anchoredPosition + new Vector2(NodeX + N * 0.5f, -_cardH * 0.5f);
+            Vector2 cb = to.Rt.anchoredPosition + new Vector2(NodeX + N * 0.5f, -_cardH * 0.5f);
+            Vector2 dir = (cb - ca).normalized;
+            float r = N * 0.5f + 7f;
+            Vector2 a = ca + dir * r, b = cb - dir * r;
+            if ((b - a).sqrMagnitude < 4f) return;
+            if (done) Segment(a, b, new Color(col.r, col.g, col.b, col.a * 0.22f), false, 7f);   // ореол
+            Segment(a, b, col, flowing, done ? 2f : 1.4f);
         }
 
-        /// <summary>Провод — плоская линия в 2 px, без свечения: схема должна читаться, а не сиять.</summary>
-        private void Segment(Vector2 a, Vector2 b, Color col, bool pulse)
+        /// <summary>Отрезок связи заданной толщины; pulse — бегущая к цели «капля».</summary>
+        private void Segment(Vector2 a, Vector2 b, Color col, bool pulse, float width = 2f)
         {
             var img = LGBuild.Panel(_wiresLayer, "Wire", col);
             LG.Ignore(img.gameObject);
@@ -952,13 +1033,13 @@ namespace StellarisClone.Rendering
             rt.pivot = new Vector2(0, 0.5f);
             Vector2 d = b - a;
             float len = d.magnitude;
-            rt.sizeDelta = new Vector2(len + 2f, 2f);
-            rt.anchoredPosition = a - d.normalized;
+            rt.sizeDelta = new Vector2(len, width);
+            rt.anchoredPosition = a;
             rt.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
 
             if (!pulse || len < 12f) return;
             var dot = LGBuild.Panel(rt, "Pulse", Color.white);
-            dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(8f, 4f));
+            dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(10f, 4f));
             dot.gameObject.AddComponent<WirePulseAnimator>().Init(dot.rectTransform, len, Color.Lerp(col, Color.white, 0.5f));
         }
 
