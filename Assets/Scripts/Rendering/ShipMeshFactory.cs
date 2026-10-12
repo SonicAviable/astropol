@@ -26,12 +26,17 @@ namespace StellarisClone.Rendering
             public Vector3[] Nozzles = new Vector3[0];
             public Vector3[] RetroNozzles = new Vector3[0];
             public float NozzleRadius = 0.12f, RetroRadius = 0.06f;
+            /// <summary>У модели нет полос цвета владельца — выбор подсвечивает обшивку (материал Hull свой у корабля).</summary>
+            public bool SelectTintsHull;
+            public Color HullEmission;
             private bool _blinkOn = true;
 
             public void SetSelected(bool on)
             {
                 var a = on ? new Color(1f, 0.95f, 0.35f) : AccentColor;
                 Set(Accent, a, a * (on ? 1.2f : 0.45f));
+                if (SelectTintsHull && Hull != null && Hull.HasProperty("_EmissionColor"))
+                    Hull.SetColor("_EmissionColor", on ? HullEmission + new Color(0.42f, 0.36f, 0.08f) : HullEmission);
             }
 
             /// <summary>Мигание навигационных огней (вызывать каждый кадр).</summary>
@@ -61,6 +66,12 @@ namespace StellarisClone.Rendering
             {
                 float length = hull == ShipClass.Destroyer ? 3.6f : hull == ShipClass.Frigate ? 3.3f : 3.0f;
                 var model = HarbingerModel.Build(parent, owner, length);
+                if (model != null) return model;
+            }
+            // Научные корабли — готовая модель зонда «Марс-3», если она есть в проекте
+            if (type == FleetType.Science)
+            {
+                var model = Mars3Model.Build(parent, owner);
                 if (model != null) return model;
             }
 
