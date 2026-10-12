@@ -16,7 +16,7 @@ namespace StellarisClone.Rendering
     {
         private const float MiniShowHeight = 90f;    // выше — мини-систем нет
         private const float MiniFullHeight = 52f;    // ниже — видны полностью
-        private const float MiniInnerOrbit = 1.75f, MiniOrbitStep = 0.62f;
+        private const float MiniInnerOrbit = 2.1f, MiniOrbitStep = 0.82f;
 
         private class MiniSys
         {
@@ -260,8 +260,9 @@ namespace StellarisClone.Rendering
                 m.Radius[i] = r;
                 m.Speed[i] = Mathf.Clamp(p.OrbitSpeed, 4f, 25f) * 0.22f / Mathf.Sqrt(i + 1f);   // град/с
                 m.Phase[i] = (float)rng.NextDouble() * 360f;
-                m.Size[i] = p.Type == PlanetType.GasGiant ? Mathf.Clamp(p.Size * 0.13f, 0.28f, 0.42f)
-                                                          : Mathf.Clamp(p.Size * 0.13f, 0.15f, 0.24f);
+                // Планеты крупные — видно тип мира без захода в систему (газовые гиганты заметно больше)
+                m.Size[i] = p.Type == PlanetType.GasGiant ? Mathf.Clamp(p.Size * 0.32f, 0.72f, 0.98f)
+                                                          : Mathf.Clamp(p.Size * 0.36f, 0.40f, 0.62f);
 
                 // орбита
                 var og = new GameObject("Orbit");
@@ -317,7 +318,7 @@ namespace StellarisClone.Rendering
                 var local = new Vector3(Mathf.Cos(ang) * m.Radius[i], 0.1f, Mathf.Sin(ang) * m.Radius[i]);
                 var sr = m.Planets[i];
                 sr.transform.localPosition = local;
-                float size = Mathf.Max(m.Size[i], wpp * 6f);
+                float size = Mathf.Max(m.Size[i], wpp * 12f);   // издалека — не меньше 12 пикселей
                 sr.transform.localScale = Vector3.one * (size / 0.64f);
 
                 // освещённая сторона — к звезде (в плоскости экрана)
@@ -382,7 +383,7 @@ namespace StellarisClone.Rendering
             _ => PlanetVisualType.Ice
         };
 
-        /// <summary>Спрайт-шарик 64×64: текстура планеты на сфере, свет справа, мягкий край атмосферы.</summary>
+        /// <summary>Спрайт-шарик 128×128 (0,64 ед. в мире): текстура планеты на сфере, свет справа, мягкий край атмосферы.</summary>
         private static Sprite PlanetSphereSprite(PlanetType type, int seed)
         {
             var vt = VisualFor(type, seed);
@@ -391,7 +392,7 @@ namespace StellarisClone.Rendering
             if (s_miniPlanetSprites.TryGetValue(key, out var cached) && cached != null) return cached;
 
             var src = PlanetTextureFactory.GeneratePlanetTexture(vt, 4242 + key * 97);
-            const int R = 64;
+            const int R = 128;
             var tex = new Texture2D(R, R, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "MiniPlanet_" + key };
             var px = new Color32[R * R];
             var L = new Vector3(1f, 0.25f, 0.45f).normalized;
@@ -430,7 +431,7 @@ namespace StellarisClone.Rendering
             tex.SetPixels32(px);
             tex.Apply(true);
             Object.Destroy(src);
-            var sp = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), 100);
+            var sp = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), R / 0.64f);
             s_miniPlanetSprites[key] = sp;
             return sp;
         }
