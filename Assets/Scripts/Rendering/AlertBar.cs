@@ -13,14 +13,15 @@ namespace StellarisClone.Rendering
     ///   • появляются "выпрыгивая" с пружинным перелётом и волной-кольцом;
     ///   • пока свежие — пульсируют неоном;
     ///   • при наведении — подсказка, по клику — переход к нужному действию;
+    ///   • правый клик — скрыть: алерт не вернётся, пока проблема не исчезнет (и тогда сможет появиться снова);
     ///   • когда проблема решена — сжимаются и тают, соседи плавно съезжаются.
     /// </summary>
     public class AlertBar : MonoBehaviour
     {
         public static AlertBar Instance { get; private set; }
 
-        private const float Size = 42f;
-        private const float Gap = 10f;
+        private const float Size = 40f;
+        private const float Gap = 8f;
         private const float EvalInterval = 0.5f;
 
         private struct AlertInfo
@@ -57,6 +58,7 @@ namespace StellarisClone.Rendering
         private RectTransform _root;
         private readonly List<AlertView> _views = new List<AlertView>();
         private readonly List<AlertInfo> _current = new List<AlertInfo>();
+        private readonly HashSet<string> _dismissed = new HashSet<string>();
         private float _evalTimer;
         private GalaxyGenerator _gen;
 
@@ -64,7 +66,8 @@ namespace StellarisClone.Rendering
         {
             Instance = this;
             _root = LGBuild.Rect(hud, "[UI] AlertBar");
-            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -112), new Vector2(10, Size));   // под рамками ресурсов и даты
+            // Под рамкой даты (она кончается на 114 px от верха) с зазором — не наезжает и при «выпрыгивании»
+            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -126), new Vector2(10, Size));
             _root.gameObject.SetActive(false);
         }
 
@@ -88,6 +91,9 @@ namespace StellarisClone.Rendering
             {
                 _evalTimer = EvalInterval;
                 Evaluate();
+                // Скрытые правым кликом: забываем, когда проблема ушла; пока она есть — не показываем
+                _dismissed.RemoveWhere(id => !_current.Exists(a => a.Id == id));
+                _current.RemoveAll(a => _dismissed.Contains(a.Id));
                 Sync();
             }
             Animate(dt);
@@ -118,7 +124,7 @@ namespace StellarisClone.Rendering
                     SFXManager.Play("ui_click", 0.6f, 1.35f);
                 }
                 view.Action = a.Action;
-                view.Tip.SetText($"<b>{a.Title}</b>\n{a.Body}\n\n<color=#8AA2A8>ЛКМ — {a.ActionHint}</color>");
+                view.Tip.SetText($"<b>{a.Title}</b>\n{a.Body}\n\n<color=#8AA2A8>ЛКМ — {a.ActionHint}  ·  ПКМ — скрыть</color>");
                 view.Count.text = a.Count > 1 ? a.Count.ToString() : "";
                 view.Count.transform.parent.gameObject.SetActive(a.Count > 1);
             }
@@ -148,20 +154,30 @@ namespace StellarisClone.Rendering
             var ripple = LGBuild.Panel(rt, "Ripple", new Color(0, 0, 0, 0));
             ripple.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size, Size));
             v.RippleFx = LG.Border(ripple.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
-            v.RippleFx.Radius = Size * 0.5f;
+            v.RippleFx.Radius = 10f;   // та же форма, что у плитки
             v.Ripple = ripple.rectTransform;
 
+            // Плитка в стиле HUD: тёмное тело, кромка и срезанные углы цвета алерта, снизу — полоска важности
             v.Bg = LGBuild.Panel(rt, "Bg", new Color(a.Color.r * 0.28f, a.Color.g * 0.28f, a.Color.b * 0.28f, 1f), raycast: true);
             v.Bg.rectTransform.Stretch();
             var btn = v.Bg.gameObject.AddComponent<Button>();
             btn.onClick.AddListener(() => { v.Action?.Invoke(); SFXManager.Play("ui_click", 1f, 1.05f); });
-            v.Fx = LG.Button(v.Bg.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.75f), Size * 0.5f);
-            v.Fx.FillMultiplier = 1.4f;
+            v.Bg.gameObject.AddComponent<AlertRightClick>().OnRight = () => Dismiss(v.Id);
+            v.Fx = LG.Button(v.Bg.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.85f), 10f);
             v.Fx.GlowMultiplier = 0.8f;
-            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.03f;
+            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.04f;
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
 
-            v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 22f, Color.Lerp(a.Color, Color.white, 0.15f));
+            v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 20f, Color.Lerp(a.Color, Color.white, 0.2f));
+            v.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(20f, 20f));
+            var sev = LGBuild.Panel(v.Bg.transform, "Severity", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
+            sev.sprite = FactionSelectScreen.RadialSprite();
+            sev.rectTransform.anchorMin = new Vector2(0.15f, 0f);
+            sev.rectTransform.anchorMax = new Vector2(0.85f, 0f);
+            sev.rectTransform.sizeDelta = new Vector2(0f, 2f);
+            sev.rectTransform.anchoredPosition = new Vector2(0f, 4f);
+            sev.raycastTarget = false;
+            LG.Ignore(sev.gameObject);
 
             // Счётчик (например, число простаивающих кораблей)
             var badge = LGBuild.Panel(v.Bg.transform, "Badge", new Color(0.9f, 0.25f, 0.28f, 1f));
@@ -178,6 +194,17 @@ namespace StellarisClone.Rendering
             rt.anchoredPosition = new Vector2(v.X, 0);
             rt.localScale = Vector3.one * 0.2f;
             return v;
+        }
+
+        /// <summary>Скрыть алерт правым кликом — до тех пор, пока проблема не исчезнет.</summary>
+        private void Dismiss(string id)
+        {
+            if (string.IsNullOrEmpty(id) || !_dismissed.Add(id)) return;
+            SFXManager.Play("ui_click", 0.5f, 0.8f);
+            foreach (var v in _views)
+                if (v.Id == id && !v.Dying) { v.Dying = true; v.DieT = 0f; v.Group.blocksRaycasts = false; }
+            _current.RemoveAll(a => a.Id == id);
+            TooltipSystem.Hide();
         }
 
         private static float TargetX(int index, int count)
@@ -512,6 +539,17 @@ namespace StellarisClone.Rendering
             var cam = FindAnyObjectByType<StrategyCameraController>();
             if (cam != null) cam.FocusOn(fv.transform.position);
             FleetManager.Instance?.SelectFleet(fv);
+        }
+    }
+
+    /// <summary>Правый клик по алерту (кнопка Unity реагирует только на левый).</summary>
+    public sealed class AlertRightClick : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHandler
+    {
+        public System.Action OnRight;
+
+        public void OnPointerClick(UnityEngine.EventSystems.PointerEventData e)
+        {
+            if (e.button == UnityEngine.EventSystems.PointerEventData.InputButton.Right) OnRight?.Invoke();
         }
     }
 }
