@@ -12,11 +12,16 @@ namespace StellarisClone.Rendering
     public static class FactionEmblems
     {
         private static readonly Dictionary<string, Sprite> s_cache = new Dictionary<string, Sprite>();
+        private static readonly HashSet<string> s_warned = new HashSet<string>();
+
+        /// <summary>Перезагрузка домена в Play Mode выключена — кэш чистим на каждом запуске сами.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCache() { s_cache.Clear(); s_warned.Clear(); }
 
         public static Sprite ForKey(string key)
         {
             if (string.IsNullOrEmpty(key)) return null;
-            if (s_cache.TryGetValue(key, out var sp)) return sp;
+            if (s_cache.TryGetValue(key, out var sp) && sp != null) return sp;
             var tex = Resources.Load<Texture2D>("Factions/emblem_" + key);
             if (tex != null)
             {
@@ -25,7 +30,13 @@ namespace StellarisClone.Rendering
                 sp.name = "Emblem_" + key;
                 sp.hideFlags = HideFlags.DontSave;
             }
-            else Debug.LogWarning($"[FactionEmblems] Не найден герб Resources/Factions/emblem_{key}.png — проверьте, что файл импортирован (Assets → Refresh).");
+            else
+            {
+                // Отсутствие не запоминаем: файл могли импортировать позже
+                if (s_warned.Add(key))
+                    Debug.LogWarning($"[FactionEmblems] Не найден герб Resources/Factions/emblem_{key}.png — проверьте, что файл импортирован (Assets → Refresh).");
+                return null;
+            }
             s_cache[key] = sp;
             return sp;
         }

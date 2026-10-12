@@ -35,6 +35,13 @@ namespace StellarisClone.Rendering
         private const int Res = 96;
         private static readonly Dictionary<LGIcon, Sprite> s_Cache = new Dictionary<LGIcon, Sprite>();
 
+        /// <summary>
+        /// В проекте выключена перезагрузка домена при входе в Play Mode — статический кэш переживал запуски
+        /// и держал векторные иконки, даже когда появлялись рисованные. Чистим его в начале каждого запуска.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCache() => s_Cache.Clear();
+
         // ------------------------------------------------------------------ API
 
         public static Sprite Get(LGIcon icon)
