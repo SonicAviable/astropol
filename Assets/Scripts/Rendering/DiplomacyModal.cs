@@ -208,7 +208,7 @@ namespace StellarisClone.Rendering
             var leader = LeaderPortraits.ForFaction(ai.Faction);
             _dialogPortrait.texture = leader != null ? leader.Texture : null;
             _dialogPortrait.enabled = _dialogPortrait.texture != null;
-            _dialogPortrait.uvRect = new Rect(0.28f, 0.50f, 0.44f, 0.44f);   // лицо — верхняя середина кадра
+            _dialogPortrait.uvRect = LeaderPortraits.FaceUv(leader, 0.44f);   // лицо крупно, без растяжения (окно квадратное)
             if (_viewingOffer) Say(DiplomacyLines.Get(leader, DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
             else Say(DiplomacyLines.Get(leader, DiplomacyLines.GreetingFor(ai)));
             RefreshAll();

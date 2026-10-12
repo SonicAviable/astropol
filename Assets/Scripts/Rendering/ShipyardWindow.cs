@@ -61,9 +61,15 @@ namespace StellarisClone.Rendering
 
         // ==================== ОТКРЫТИЕ ====================
 
-        public void Open()
+        /// <summary>Система, из панели которой открыта верфь: заказанные корабли появятся у неё (−1 — главная верфь).</summary>
+        private int _yardRequest = -1;
+
+        public void Open() => Open(-1);
+
+        public void Open(int systemId)
         {
             if (_root == null) return;
+            _yardRequest = systemId;
             UIManager.Instance?.ShowModalDimPublic();
             MapModeController.HideGlobal();
             _queueSig = "";
@@ -253,7 +259,7 @@ namespace StellarisClone.Rendering
         {
             var fm = FleetManager.Instance;
             var eco = EconomyManager.Instance;
-            int yard = fm != null ? fm.PlayerShipyardSystem() : -1;
+            int yard = fm != null ? fm.YardFor(_yardRequest) : -1;
             var yardSys = EmpireStats.GetSystem(yard);
             _subtitle.text = yardSys != null
                 ? $"Верфь в системе {yardSys.Name}  ·  одновременно строится {ConstructionManager.ShipyardSlots} корабля  ·  готовые корабли появляются у верфи"
@@ -322,7 +328,7 @@ namespace StellarisClone.Rendering
         {
             var fm = FleetManager.Instance;
             if (fm == null) return;
-            bool ok = o.Type == FleetType.Military && o.Hull != ShipClass.Corvette ? fm.BuildWarship(o.Hull) : fm.BuildShip(o.Type);
+            bool ok = o.Type == FleetType.Military && o.Hull != ShipClass.Corvette ? fm.BuildWarship(o.Hull, _yardRequest) : fm.BuildShip(o.Type, _yardRequest);
             if (ok) { _queueSig = ""; Refresh(); }
         }
 

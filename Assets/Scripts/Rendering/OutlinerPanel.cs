@@ -43,6 +43,10 @@ namespace StellarisClone.Rendering
             new Color(1.00f, 0.70f, 0.36f)
         };
 
+        /// <summary>Правую колонку заняла панель выбранной системы — планировщик плавно уходит и возвращается после.</summary>
+        public static bool Yield;
+        private CanvasGroup _group;
+
         private RectTransform _root, _list, _body, _sweep, _headRt;
         private Image _headIcon, _headLine;
         private Text _toggleLabel, _alertText;
@@ -81,6 +85,7 @@ namespace StellarisClone.Rendering
             _root.pivot = new Vector2(1, 1);
             _root.offsetMin = new Vector2(-Width - 10f, Bottom);
             _root.offsetMax = new Vector2(-10f, -Top);
+            _group = _root.gameObject.AddComponent<CanvasGroup>();
             var mo = LG.Motion(_root.gameObject, LGAppear.Kind.SlideRight);
             mo.distance = 30f;
             mo.delay = 0.15f;
@@ -180,7 +185,7 @@ namespace StellarisClone.Rendering
                 SFXManager.Play(Sfx.UiClick);
                 ApplyCollapsed();
             });
-            TooltipHelper.Attach(head.gameObject, "Свернуть или развернуть аутлайнер");
+            TooltipHelper.Attach(head.gameObject, "Свернуть или развернуть планировщик");
         }
 
         private void ApplyCollapsed()
@@ -197,6 +202,12 @@ namespace StellarisClone.Rendering
             bool show = UIManager.IsGameStarted && (SystemViewManager.Instance == null || !SystemViewManager.Instance.IsInSystemView);
             if (_root.gameObject.activeSelf != show) _root.gameObject.SetActive(show);
             if (!show) return;
+            float targetA = Yield ? 0f : 1f;
+            if (_group != null && !Mathf.Approximately(_group.alpha, targetA))
+            {
+                _group.alpha = Mathf.MoveTowards(_group.alpha, targetA, Time.unscaledDeltaTime * 6f);
+                _group.blocksRaycasts = _group.interactable = _group.alpha > 0.5f;
+            }
 
             Animate();
             _timer -= Time.unscaledDeltaTime;

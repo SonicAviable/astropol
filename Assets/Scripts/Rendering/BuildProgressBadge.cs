@@ -101,7 +101,7 @@ namespace StellarisClone.Rendering
                 if (lead == null || q[i].DaysLeft < lead.DaysLeft) lead = q[i];
             if (lead == null) return false;
 
-            var sys = EmpireStats.GetSystem(fm.PlayerShipyardSystem());
+            var sys = EmpireStats.GetSystem(fm.YardFor(lead.SystemId));   // над верфью, где строится ведущий корабль
             if (sys == null) return false;
             if (_cam == null) _cam = Camera.main;
             if (_cam == null) return false;

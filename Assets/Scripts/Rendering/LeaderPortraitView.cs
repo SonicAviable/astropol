@@ -105,6 +105,20 @@ namespace StellarisClone.Rendering
         }
 
         public static Entry ForFaction(FactionInfo f) => f != null ? ForFaction(f.Name) : null;
+
+        /// <summary>
+        /// Кадр «лицо крупно» для RawImage: центр — точка лица правителя, ширина — доля кадра,
+        /// высота — по пропорциям картинки и окна (frameAspect = ширина / высота окна), без растяжения.
+        /// </summary>
+        public static Rect FaceUv(Entry e, float widthFrac = 0.42f, float frameAspect = 1f)
+        {
+            var tex = e?.Texture;
+            Vector2 c = e != null && e.Face != Vector2.zero ? e.Face : new Vector2(0.5f, 0.72f);
+            float w = Mathf.Clamp01(widthFrac);
+            float h = tex != null && tex.height > 0 ? w * tex.width / (float)tex.height / Mathf.Max(0.05f, frameAspect) : w / Mathf.Max(0.05f, frameAspect);
+            if (h > 1f) { w /= h; h = 1f; }
+            return new Rect(Mathf.Clamp(c.x - w * 0.5f, 0f, 1f - w), Mathf.Clamp(c.y - h * 0.5f, 0f, 1f - h), w, h);
+        }
     }
 
     /// <summary>

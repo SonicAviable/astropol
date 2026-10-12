@@ -304,7 +304,18 @@ namespace StellarisClone.Core
             return best;
         }
 
-        public bool BuildShip(FleetType type)
+        /// <summary>Своя система может служить верфью: корабли, заказанные в её панели, появляются у неё.</summary>
+        public bool IsPlayerYard(int systemId)
+        {
+            var s = EmpireStats.GetSystem(systemId);
+            return s != null && s.OwnerId == 0;
+        }
+
+        /// <summary>Верфь заказа: выбранная система, если она наша, иначе главная верфь.</summary>
+        public int YardFor(int requestedSystem) => IsPlayerYard(requestedSystem) ? requestedSystem : PlayerShipyardSystem();
+
+        /// <param name="systemId">Система, на верфи которой заказан корабль (−1 — главная верфь).</param>
+        public bool BuildShip(FleetType type, int systemId = -1)
         {
             var eco = EconomyManager.Instance;
             if (eco == null) return false;
@@ -344,28 +355,29 @@ namespace StellarisClone.Core
                 return false;
             }
 
-            int yard = PlayerShipyardSystem();
+            int yard = YardFor(systemId);
             if (yard < 0) { NotificationCenter.Show("Нет верфи", "У вас не осталось своих систем", NotificationCenter.Kind.Danger, 4f); return false; }
             eco.TrySpend(costEnergy, 0f, costAlloys, 0f);
             string designId = type == FleetType.Military ? ShipDesignManager.Instance?.GetLatestDesign(ShipClass.Corvette)?.Id : null;
-            QueueShip(type, ShipClass.Corvette, designId, costEnergy, costAlloys, shipName);
+            QueueShip(type, ShipClass.Corvette, designId, costEnergy, costAlloys, shipName, yard);
             return true;
         }
 
         /// <summary>Заложить корабль игрока на верфи (готов через ShipDays дней).</summary>
-        private void QueueShip(FleetType type, ShipClass hull, string designId, float energy, float alloys, string what)
+        private void QueueShip(FleetType type, ShipClass hull, string designId, float energy, float alloys, string what, int yard)
         {
             var cm = ConstructionManager.Instance;
-            if (cm == null) { LaunchPlayerShip(new ConstructionJob { ShipType = type, Hull = hull, DesignId = designId }); return; }
-            var job = cm.EnqueueShip(0, type, hull, designId, energy, alloys);
-            NotificationCenter.Show("Корабль заложен", $"{what} · готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(job))} дн.",
+            if (cm == null) { LaunchPlayerShip(new ConstructionJob { ShipType = type, Hull = hull, DesignId = designId, SystemId = yard }); return; }
+            var job = cm.EnqueueShip(0, type, hull, designId, energy, alloys, yard);
+            var ys = EmpireStats.GetSystem(yard);
+            NotificationCenter.Show("Корабль заложен", $"{what} · {(ys != null ? ys.Name + " · " : "")}готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(job))} дн.",
                 NotificationCenter.Kind.Info, 4f);
         }
 
-        /// <summary>Спуск на воду: корабль появляется у верфи (или в любой своей системе).</summary>
+        /// <summary>Спуск на воду: корабль появляется у верфи, где заложен (если систему потеряли — у главной верфи).</summary>
         public FleetView LaunchPlayerShip(ConstructionJob job)
         {
-            int yard = PlayerShipyardSystem();
+            int yard = YardFor(job.SystemId);
             if (yard < 0) return null;
             FleetView created;
             if (job.ShipType == FleetType.Military)
@@ -400,7 +412,7 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Построить боевой корабль заданного класса (эсминцы — только после технологии).</summary>
-        public bool BuildWarship(ShipClass cls)
+        public bool BuildWarship(ShipClass cls, int systemId = -1)
         {
             if (cls == ShipClass.Destroyer && !(TechnologyManager.Instance?.DestroyerUnlocked ?? false))
             {
@@ -409,7 +421,7 @@ namespace StellarisClone.Core
             }
             var design = PlayerDesignFor(cls);
             if (design == null) return false;
-            if (!BuildShipFromDesign(design))
+            if (!BuildShipFromDesign(design, systemId))
             {
                 NotificationCenter.Show("Недостаточно ресурсов",
                     $"Нужно {ShipAlloyCost(design.AlloyCost, 0):0} сплавов и {WarshipEnergy:0} гелия-3", NotificationCenter.Kind.Warning, 4f);
@@ -418,11 +430,11 @@ namespace StellarisClone.Core
             return true;
         }
 
-        public bool BuildShipFromDesign(ShipDesign design)
+        public bool BuildShipFromDesign(ShipDesign design, int systemId = -1)
         {
             var eco = EconomyManager.Instance;
             if (eco == null || design == null || !design.IsPowerValid) return false;
-            int yard = PlayerShipyardSystem();
+            int yard = YardFor(systemId);
             if (yard < 0) return false;
             float cost = ShipAlloyCost(design.AlloyCost, 0);
             if (!eco.CanAfford(WarshipEnergy, 0f, cost, 0f)) return false;
@@ -433,7 +445,7 @@ namespace StellarisClone.Core
                 ShipClass.Destroyer => "Эсминец",
                 _ => "Корвет"
             };
-            QueueShip(FleetType.Military, design.HullClass, design.Id, WarshipEnergy, cost, $"{cls} «{design.Name}»");
+            QueueShip(FleetType.Military, design.HullClass, design.Id, WarshipEnergy, cost, $"{cls} «{design.Name}»", yard);
             return true;
         }
 

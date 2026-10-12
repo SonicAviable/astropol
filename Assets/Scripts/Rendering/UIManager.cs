@@ -521,7 +521,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 6 * 46f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 6 * 46f + 30f);
+            _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
+            _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
+            _navItems.Clear();
             mRt.anchoredPosition = new Vector2(TopBarMargin, -(TopBarMargin + RulerBadge.Height + 10f));
             LG.Motion(menu, LGAppear.Kind.SlideLeft).distance = 22f;
 
@@ -529,7 +532,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             float y = 0f;
             void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip)
             {
-                var b = CreateButton(menu.transform, name, new Vector2(NavMenuW, 40), new Color(0.012f, 0.040f, 0.055f, 0.92f), accent, act);
+                var b = CreateButton(menu.transform, name, new Vector2(_navW, 40), new Color(0.012f, 0.040f, 0.055f, 0.92f), accent, act);
                 var bRt = b.GetComponent<RectTransform>();
                 bRt.anchorMin = bRt.anchorMax = new Vector2(0, 1);
                 bRt.pivot = new Vector2(0, 1);
@@ -556,6 +559,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 t.rectTransform.offsetMin = new Vector2(50, 0);
                 t.rectTransform.offsetMax = new Vector2(-6, 0);
                 t.Track(1.0f);
+                t.enabled = !_navCollapsed;
+                _navItems.Add((bRt, t));
                 if (anchorId != null) UIAnchors.Register(anchorId, bRt);
                 TooltipHelper.Attach(b, tip);
             }
@@ -566,6 +571,57 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavDesign", LGIcon.Gear, "Конструктор судов", DS.NeonCyan, () => ShipDesignerModal.Instance?.Open(), UIAnchors.Designer, "<b>Конструктор судов</b>\nПроекты кораблей");
             Item("NavFleet", LGIcon.Fleet, "Флот", DS.NeonCyan, SelectAllWarships, null, "<b>Флот</b>\nВыделить все военные флоты");
             Item("NavVictory", LGIcon.Trophy, "Путь к победе", DS.Gold, VictoryPathWindow.Toggle, null, "<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>");
+
+            // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
+            var tg = CreateButton(menu.transform, "NavToggle", new Vector2(_navW, 24), new Color(0.010f, 0.030f, 0.042f, 0.85f), DS.TextMuted, ToggleNavMenu);
+            var tgRt = tg.GetComponent<RectTransform>();
+            tgRt.anchorMin = tgRt.anchorMax = new Vector2(0, 1);
+            tgRt.pivot = new Vector2(0, 1);
+            tgRt.anchoredPosition = new Vector2(0, -y);
+            _navToggleIcon = LGIcons.Create(tg.transform, LGIcon.Back, 11f, DS.TextMuted);
+            _navToggleIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(NavMenuCollapsedW * 0.5f, 0), new Vector2(11, 11));
+            _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
+            var tt = CreateText(tg.transform, "СВЕРНУТЬ", 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleLeft);
+            tt.rectTransform.anchorMin = Vector2.zero;
+            tt.rectTransform.anchorMax = Vector2.one;
+            tt.rectTransform.offsetMin = new Vector2(50, 0);
+            tt.rectTransform.offsetMax = new Vector2(-6, 0);
+            tt.Track(1.4f);
+            tt.enabled = !_navCollapsed;
+            _navItems.Add((tgRt, tt));
+            TooltipHelper.Attach(tg, "Свернуть или развернуть меню");
+        }
+
+        // ---------- Сворачиваемое левое меню ----------
+
+        private const float NavMenuCollapsedW = 52f;
+        private readonly List<(RectTransform rt, Text label)> _navItems = new List<(RectTransform, Text)>();
+        private bool _navCollapsed;
+        private float _navW = NavMenuW;
+        private Image _navToggleIcon;
+
+        private void ToggleNavMenu()
+        {
+            _navCollapsed = !_navCollapsed;
+            PlayerPrefs.SetInt("nav.collapsed", _navCollapsed ? 1 : 0);
+            SFXManager.Play(Sfx.UiClick);
+            if (_navToggleIcon != null) _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
+            // Подписи прячем сразу при сворачивании и показываем, когда меню уже раскрылось (см. UpdateNavMenu)
+            if (_navCollapsed) foreach (var it in _navItems) it.label.enabled = false;
+        }
+
+        /// <summary>Плавная смена ширины меню (только пока идёт анимация — в покое канвас не трогаем).</summary>
+        private void UpdateNavMenu(float dt)
+        {
+            float target = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
+            if (Mathf.Approximately(_navW, target)) return;
+            _navW = Mathf.MoveTowards(_navW, target, dt * 900f);
+            foreach (var it in _navItems)
+            {
+                if (it.rt == null) continue;
+                it.rt.sizeDelta = new Vector2(_navW, it.rt.sizeDelta.y);
+                if (!_navCollapsed && Mathf.Approximately(_navW, target) && it.label != null) it.label.enabled = true;
+            }
         }
 
         private void SelectAllWarships()
@@ -737,10 +793,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var insp = new GameObject("StarbaseInspector");
             insp.transform.SetParent(_canvas.transform, false);
 
+            // Справа, в колонке планировщика (он уступает место, пока панель открыта)
             _inspectorRect = insp.AddComponent<RectTransform>();
-            _inspectorRect.anchorMin = new Vector2(0, 1);
-            _inspectorRect.anchorMax = new Vector2(0, 1);
-            _inspectorRect.pivot = new Vector2(0, 1);
+            _inspectorRect.anchorMin = new Vector2(1, 1);
+            _inspectorRect.anchorMax = new Vector2(1, 1);
+            _inspectorRect.pivot = new Vector2(1, 1);
             _inspectorRect.anchoredPosition = InspectorRestPos;
             _inspectorRect.sizeDelta = new Vector2(InspectorWidth, 420);
 
@@ -1204,9 +1261,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private const float InspectorWidth = 430f;
         /// <summary>Под панелью режимов карты (она стоит на 66…108 px от верха).</summary>
         private const float InspectorTop = 118f;
-        /// <summary>Ширина левого меню экранов; панель системы стоит правее него.</summary>
+        /// <summary>Ширина левого меню экранов (в развёрнутом виде).</summary>
         public const float NavMenuW = 200f;
-        private static readonly Vector2 InspectorRestPos = new Vector2(TopBarMargin + NavMenuW + 10f, -InspectorTop);
+        /// <summary>Панель системы — у правого края, в колонке планировщика.</summary>
+        private static readonly Vector2 InspectorRestPos = new Vector2(-TopBarMargin, -InspectorTop);
 
         private void Update()
         {
@@ -1215,11 +1273,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bool inspSettled = Mathf.Abs(_inspShow - _inspTargetAlpha) < 0.001f && Mathf.Abs(_inspShowV) < 0.001f;
             if (_inspectorGroup != null && !inspSettled)
             {
-                // Инспектор выезжает слева на пружине и "проявляется"
+                // Инспектор выезжает справа на пружине и "проявляется"
                 _inspShow = LGEase.Spring(_inspShow, _inspTargetAlpha, ref _inspShowV, 2.4f, 0.78f, dt);
                 float k = Mathf.Clamp01(_inspShow);
                 _inspectorGroup.alpha = LGEase.OutCubic(k);
-                _inspectorRect.anchoredPosition = InspectorRestPos + new Vector2(-(1f - k) * 40f, 0f);
+                _inspectorRect.anchoredPosition = InspectorRestPos + new Vector2((1f - k) * 40f, 0f);
                 _inspectorRect.localScale = Vector3.one * Mathf.LerpUnclamped(0.965f, 1f, _inspShow);
             }
 
@@ -1231,6 +1289,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             UpdateSpeedControl();
+            UpdateNavMenu(dt);
+            OutlinerPanel.Yield = _inspTargetAlpha > 0.5f;
 
             if (TimeManager.Instance != null && _dateText != null)
                 _dateText.text = TimeManager.Instance.GetFormattedDate();
@@ -1385,7 +1445,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             go.AddComponent<ShipyardWindow>().Build(_modalCanvas);
         }
 
-        private void OpenShipyardModal() => ShipyardWindow.Instance?.Open();
+        /// <summary>Верфь выбранной системы: корабли появятся у неё.</summary>
+        private void OpenShipyardModal() => ShipyardWindow.Instance?.Open(_activeSystem != null ? _activeSystem.Id : -1);
 
         private void OpenTechModal()
         {

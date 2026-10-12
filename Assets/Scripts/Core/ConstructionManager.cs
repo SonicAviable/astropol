@@ -192,12 +192,13 @@ namespace StellarisClone.Core
             return job;
         }
 
-        public ConstructionJob EnqueueShip(int owner, FleetType type, ShipClass hull, string designId, float energy, float alloys)
+        /// <param name="systemId">Верфь, где заложен корабль: там он и появится (−1 — главная верфь владельца).</param>
+        public ConstructionJob EnqueueShip(int owner, FleetType type, ShipClass hull, string designId, float energy, float alloys, int systemId = -1)
         {
             float days = ShipDays(type, hull) * FactionTraits.BuildTimeMult(owner);
             var job = new ConstructionJob
             {
-                Id = _nextId++, Kind = JobKind.Ship, Owner = owner, ShipType = type, Hull = hull, DesignId = designId,
+                Id = _nextId++, Kind = JobKind.Ship, Owner = owner, SystemId = systemId, ShipType = type, Hull = hull, DesignId = designId,
                 DaysTotal = days, DaysLeft = days, Energy = energy, Alloys = alloys
             };
             _jobs.Add(job);

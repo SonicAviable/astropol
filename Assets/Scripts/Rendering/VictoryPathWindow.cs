@@ -348,7 +348,8 @@ namespace StellarisClone.Rendering
             var portrait = leadKnown ? PortraitOf(lead.Owner) : null;
             c.Portrait.texture = portrait != null ? portrait.Texture : null;
             c.Portrait.enabled = c.Portrait.texture != null;
-            c.Portrait.uvRect = new Rect(0.30f, 0.52f, 0.40f, 0.40f);   // лицо: верхняя середина кадра
+            var pr = c.Portrait.rectTransform.rect;
+            c.Portrait.uvRect = LeaderPortraits.FaceUv(portrait, 0.40f, pr.height > 1f ? pr.width / pr.height : 1f);   // лицо крупно, без растяжения
             c.PortraitFallback.enabled = !c.Portrait.enabled;
 
             // Рейтинг
