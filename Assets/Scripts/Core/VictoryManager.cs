@@ -5,11 +5,14 @@ using StellarisClone.Rendering;
 namespace StellarisClone.Core
 {
     /// <summary>
-    /// Условия конца партии.
-    ///   Победа: доминирование (форпосты в N системах), научная (N технологий), разгром всех соперников,
-    ///           или больше очков, чем у каждой империи ИИ, к 1 января 2235 года.
-    ///   Поражение: потеря всех систем, долгое банкротство, любой ИИ первым добился доминирования или
-    ///              научной победы, или у кого-то из ИИ больше очков в 2235 году.
+    /// Условия конца партии (пути к победе — экран VictoryPathWindow). Партия рассчитана на 1–2 часа:
+    /// подсчёт очков через 25 лет (2225), пороги остальных побед — так, чтобы их можно было взять раньше.
+    ///   Победа: доминирование (форпосты примерно в трети систем), технологическая (32 технологии),
+    ///           военная (все соперники повержены), экономическая (45% валового продукта галактики 2 года подряд),
+    ///           дипломатическая (Галактический совет в 2210/2215/2220 — две трети голосов за вас),
+    ///           по очкам — больше, чем у каждого соперника, к 1 января 2225 года.
+    ///   Поражение: потеря всех систем, долгое банкротство, ИИ первым добился доминирования,
+    ///              технологической или экономической победы, или у кого-то из ИИ больше очков в 2225 году.
     /// </summary>
     public class VictoryManager : MonoBehaviour
     {
@@ -17,12 +20,20 @@ namespace StellarisClone.Core
 
         public enum Outcome
         {
-            None, Domination, Science, Score, Conquest,
-            DefeatEliminated, DefeatBankruptcy, DefeatScore, DefeatRivalScience, DefeatRivalDomination
+            None, Domination, Science, Score, Conquest, Economic, Diplomatic,
+            DefeatEliminated, DefeatBankruptcy, DefeatScore, DefeatRivalScience, DefeatRivalDomination, DefeatRivalEconomic
         }
 
         /// <summary>Год подсчёта очков.</summary>
-        public const int EndYear = 2235;
+        public const int EndYear = 2225;
+        /// <summary>Технологическая победа: столько изученных технологий (из 58).</summary>
+        public const int ScienceTarget = 32;
+        /// <summary>Экономическая победа: доля валового продукта галактики, удерживаемая EconomyMonths месяцев подряд.</summary>
+        public const float EconomyShare = 0.45f;
+        public const int EconomyMonths = 24;
+        /// <summary>Галактический совет: первое заседание, интервал, доля голосов для избрания лидером.</summary>
+        public const int CouncilFirstYear = 2210, CouncilEvery = 5;
+        public const float CouncilShare = 2f / 3f;
 
         [Header("Условия победы")]
         [SerializeField] private int dominationSystemsRequired = 40;
@@ -37,12 +48,41 @@ namespace StellarisClone.Core
         private bool _finished;
         private bool _started;
         private int _scoreWarnLevel;
+        private int _econMonths, _rivalEconOwner = -1, _rivalEconMonths;
+
+        public int EconMonths => _econMonths;
+        public int RivalEconMonths => _rivalEconMonths;
+        public int RivalEconOwner => _rivalEconOwner;
+
+        /// <summary>Ближайшее заседание Галактического совета (год), 0 — заседаний больше не будет.</summary>
+        public static int NextCouncilYear(int year)
+        {
+            for (int y = CouncilFirstYear; y < EndYear; y += CouncilEvery) if (y > year) return y;
+            return 0;
+        }
+
+        /// <summary>
+        /// Голосование, будь оно сейчас: за вас — ваши голоса и голоса империй с пактом о ненападении
+        /// или хорошим мнением (от 40) без войны; остальные голосуют против.
+        /// </summary>
+        public static void CouncilForecast(out int forPlayer, out int total)
+        {
+            forPlayer = EmpireStats.Votes(0);
+            total = forPlayer;
+            foreach (var ai in AIEmpireManager.Alive)
+            {
+                int v = EmpireStats.Votes(ai.OwnerId);
+                total += v;
+                if (!ai.AtWar && (ai.HasPact || ai.Opinion >= 40f)) forPlayer += v;
+            }
+        }
 
         /// <summary>Победа/поражение наступили (передаётся в экран итогов).</summary>
         public static event System.Action<Outcome, string, string> OnGameFinished;
 
         public static bool IsVictory(Outcome o) =>
-            o == Outcome.Domination || o == Outcome.Science || o == Outcome.Score || o == Outcome.Conquest;
+            o == Outcome.Domination || o == Outcome.Science || o == Outcome.Score || o == Outcome.Conquest
+            || o == Outcome.Economic || o == Outcome.Diplomatic;
 
         // ==================== ПРОГРЕСС (для HUD целей и обзора империи) ====================
 
@@ -107,12 +147,13 @@ namespace StellarisClone.Core
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             dominationSystemsRequired = GameSession.Settings.DominationTarget;
-            scienceTechsRequired = 40;
+            scienceTechsRequired = ScienceTarget;
         }
 
         public VictorySave CaptureState() => new VictorySave
         {
-            StartYear = _startYear, BankruptMonths = _bankruptMonths, Started = _started, ScoreWarnLevel = _scoreWarnLevel
+            StartYear = _startYear, BankruptMonths = _bankruptMonths, Started = _started, ScoreWarnLevel = _scoreWarnLevel,
+            EconMonths = _econMonths, RivalEconOwner = _rivalEconOwner, RivalEconMonths = _rivalEconMonths
         };
 
         public void RestoreState(VictorySave s)
@@ -122,6 +163,9 @@ namespace StellarisClone.Core
             _bankruptMonths = s.BankruptMonths;
             _started = s.Started;
             _scoreWarnLevel = s.ScoreWarnLevel;
+            _econMonths = s.EconMonths;
+            _rivalEconOwner = s.RivalEconOwner;
+            _rivalEconMonths = s.RivalEconMonths;
         }
 
         private void Start()
@@ -180,6 +224,21 @@ namespace StellarisClone.Core
             foreach (var a in AIEmpireManager.All) if (a.CapitalSystemId < 0 && !a.IsEliminated) allStarted = false;
             if (anyRivals && allStarted && !anyAlive) { _rivalName = "Все соперники"; Finish(Outcome.Conquest); return; }
 
+            // === ЭКОНОМИКА: доля валового продукта галактики, месяцы подряд ===
+            if (TrackEconomy()) return;
+
+            // === ГАЛАКТИЧЕСКИЙ СОВЕТ: 1 января года заседания ===
+            if (month == 1 && year >= CouncilFirstYear && year < EndYear && (year - CouncilFirstYear) % CouncilEvery == 0 && anyAlive)
+            {
+                CouncilForecast(out int pro, out int total);
+                int need = Mathf.CeilToInt(total * CouncilShare);
+                if (pro >= need) { Finish(Outcome.Diplomatic); return; }
+                NotificationCenter.Show("Галактический совет",
+                    $"Лидер галактики не избран: за вас {pro} из {total} голосов (нужно {need}). " +
+                    (NextCouncilYear(year) > 0 ? $"Следующее заседание — {NextCouncilYear(year)} год." : "Заседаний больше не будет."),
+                    NotificationCenter.Kind.Info, 8f);
+            }
+
             // === ПОБЕДЫ ИИ ===
             var dom = LeadingRival(EmpireStats.SystemCount);
             if (dom != null && EmpireStats.SystemCount(dom.OwnerId) >= dominationSystemsRequired)
@@ -196,6 +255,37 @@ namespace StellarisClone.Core
                 return;
             }
             WarnAboutScore(year, month);
+        }
+
+        /// <summary>Месяц экономики: свои и лучшего соперника месяцы над порогом. true — партия окончена.</summary>
+        private bool TrackEconomy()
+        {
+            float me = EmpireStats.GdpShare(0);
+            if (me >= EconomyShare)
+            {
+                _econMonths++;
+                if (_econMonths >= EconomyMonths) { Finish(Outcome.Economic); return true; }
+                if (_econMonths == 1 || _econMonths == EconomyMonths / 2 || _econMonths == EconomyMonths - 3)
+                    NotificationCenter.Show("Экономическое превосходство",
+                        $"Ваша доля в продукте галактики {me * 100f:0}%. До экономической победы: {EconomyMonths - _econMonths} мес.",
+                        NotificationCenter.Kind.Success, 6f);
+            }
+            else _econMonths = 0;
+
+            var top = LeadingRival(o => Mathf.RoundToInt(EmpireStats.GdpShare(o) * 1000f));
+            float rs = top != null ? EmpireStats.GdpShare(top.OwnerId) : 0f;
+            if (top != null && rs >= EconomyShare)
+            {
+                if (_rivalEconOwner != top.OwnerId) { _rivalEconOwner = top.OwnerId; _rivalEconMonths = 0; }
+                _rivalEconMonths++;
+                if (_rivalEconMonths >= EconomyMonths) { _rivalName = top.AIName; Finish(Outcome.DefeatRivalEconomic); return true; }
+                if (_rivalEconMonths == 1 || _rivalEconMonths == EconomyMonths / 2 || _rivalEconMonths == EconomyMonths - 3)
+                    NotificationCenter.Show("Экономика соперника",
+                        $"{top.AIName}: {rs * 100f:0}% продукта галактики. Через {EconomyMonths - _rivalEconMonths} мес. — их экономическая победа",
+                        NotificationCenter.Kind.Warning, 7f);
+            }
+            else { _rivalEconOwner = -1; _rivalEconMonths = 0; }
+            return false;
         }
 
         private void WarnAboutScore(int year, int month)
@@ -239,6 +329,18 @@ namespace StellarisClone.Core
                 case Outcome.Conquest:
                     title = "★ ПОБЕДА — СОПЕРНИКИ ПОВЕРЖЕНЫ";
                     body = "Все империи-соперники потеряли свои системы.";
+                    break;
+                case Outcome.Economic:
+                    title = "★ ПОБЕДА — ЭКОНОМИЧЕСКАЯ";
+                    body = $"{EconomyMonths / 12} года подряд ваша империя давала {EconomyShare * 100f:0}% продукта галактики.";
+                    break;
+                case Outcome.Diplomatic:
+                    title = "★ ПОБЕДА — ДИПЛОМАТИЧЕСКАЯ";
+                    body = "Галактический совет избрал вас лидером галактики.";
+                    break;
+                case Outcome.DefeatRivalEconomic:
+                    title = "✕ ПОРАЖЕНИЕ — ЭКОНОМИКА СОПЕРНИКА";
+                    body = $"{rival} {EconomyMonths / 12} года подряд давал {EconomyShare * 100f:0}% продукта галактики.";
                     break;
                 case Outcome.Score:
                     title = "★ ПОБЕДА ПО ОЧКАМ";

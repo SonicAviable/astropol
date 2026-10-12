@@ -22,7 +22,8 @@ namespace StellarisClone.Core
         public int StarCount => GalaxySize == 0 ? 85 : GalaxySize == 2 ? 230 : 150;
         public float Radius => GalaxySize == 0 ? 158f : GalaxySize == 2 ? 248f : 218f;
         public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
-        public int DominationTarget => GalaxySize == 0 ? 40 : GalaxySize == 2 ? 110 : 72;
+        /// <summary>Доминирование — около трети систем галактики (партия рассчитана на 1–2 часа).</summary>
+        public int DominationTarget => GalaxySize == 0 ? 30 : GalaxySize == 2 ? 80 : 52;
 
         /// <summary>Множитель доходов ИИ.</summary>
         public float AIIncome => Difficulty == 0 ? 0.7f : Difficulty == 2 ? 1.5f : 1f;

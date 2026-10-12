@@ -329,7 +329,7 @@ namespace StellarisClone.Rendering
             wi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(20, 20));
             var lt = LGBuild.Label(lose.transform,
                 "<b>Поражение</b>\nпотеря всех систем, " + (vm != null ? vm.BankruptcyLimit : 6) + " мес. банкротства, " +
-                "любой из соперников первым добился доминирования или научной победы, или у кого-то из них больше очков в " + VictoryManager.EndYear + " году.",
+                "любой из соперников первым добился доминирования, технологической или экономической победы, или у кого-то из них больше очков в " + VictoryManager.EndYear + " году.",
                 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
             lt.rectTransform.Stretch(48, 6, 14, 6);
 

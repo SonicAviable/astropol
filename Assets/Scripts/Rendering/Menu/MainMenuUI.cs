@@ -556,7 +556,8 @@ namespace StellarisClone.Rendering
                 _ngGoals.text =
                     $"<b><color=#E8F6FA>Пути к победе</color></b>   " +
                     $"<color=#4DF2DB>форпосты в {_ng.DominationTarget} системах</color>  ·  " +
-                    $"<color=#5CF599>40 технологий</color>  ·  <color=#FFCC52>больше очков, чем у каждого соперника, в 2235 году</color>";
+                    $"<color=#5CF599>{VictoryManager.ScienceTarget} технологий</color>  ·  <color=#7FD8FF>экономика и совет</color>  ·  " +
+                    $"<color=#FFCC52>больше очков, чем у каждого соперника, в {VictoryManager.EndYear} году</color>";
         }
 
         // ================================================================ Об игре
@@ -580,9 +581,9 @@ namespace StellarisClone.Rendering
             var right = LGBuild.Rect(page, "Side");
             right.Column(0.54f, 1f, 14, 0);
             float ry = LGControls.Section(right, 0f, "ПУТИ К ПОБЕДЕ", LGIcon.Trophy);
-            Goal(right, ref ry, LGIcon.Starbase, "Доминирование", "Форпосты в 25 / 40 / 60 системах — по размеру галактики", UIManager.DS.NeonCyan);
-            Goal(right, ref ry, LGIcon.Research, "Научная победа", "Изучите 40 технологий", UIManager.DS.Green);
-            Goal(right, ref ry, LGIcon.Trophy, "Очки в 2235 году", "Обгоните обоих соперников по системам, населению, науке и флоту. Любой из них тоже может победить — наукой или экспансией", UIManager.DS.Gold);
+            Goal(right, ref ry, LGIcon.Starbase, "Доминирование", "Форпосты в 30 / 52 / 80 системах — по размеру галактики", UIManager.DS.NeonCyan);
+            Goal(right, ref ry, LGIcon.Research, "Технологическая", $"Изучите {VictoryManager.ScienceTarget} технологий · экономическая — {VictoryManager.EconomyShare * 100f:0}% продукта галактики 2 года · дипломатическая — 2/3 голосов совета", UIManager.DS.Green);
+            Goal(right, ref ry, LGIcon.Trophy, $"Очки в {VictoryManager.EndYear} году", "Обгоните соперников по системам, населению, науке и флоту. Соперники тоже могут победить — наукой, экспансией или экономикой", UIManager.DS.Gold);
 
             ry += 6f;
             ry = LGControls.Section(right, ry, "УПРАВЛЕНИЕ", LGIcon.Menu);

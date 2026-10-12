@@ -211,6 +211,9 @@ namespace StellarisClone.Core
         public int BankruptMonths;
         public bool Started;
         public int ScoreWarnLevel;
+        public int EconMonths;
+        public int RivalEconOwner = -1;
+        public int RivalEconMonths;
     }
 
     [Serializable]

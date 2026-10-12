@@ -97,6 +97,40 @@ namespace StellarisClone.Core
             Military = Mathf.RoundToInt(MilitaryPower(owner) * ScorePerPower)
         };
 
+        // ==================== ЭКОНОМИКА И ГОЛОСА (пути к победе) ====================
+
+        /// <summary>
+        /// Валовой продукт империи за месяц — одинаково для игрока и ИИ: добыча и производство районов
+        /// (сплавы весомее), добывающие комплексы, услуги населения и доход форпостов.
+        /// </summary>
+        public static float Gdp(int owner)
+        {
+            float g = 0f;
+            foreach (var s in Systems)
+            {
+                if (s.OwnerId != owner) continue;
+                if (s.HasStarbase) g += 1f;
+                foreach (var p in s.Planets)
+                {
+                    g += p.ProducedMineralsPerMonth + p.ProducedEnergyPerMonth + p.ProducedAlloysPerMonth * 1.5f;
+                    if (p.HasMiningStation) g += p.MineralDeposit + p.EnergyDeposit;
+                    g += p.Population * 0.5f;
+                }
+            }
+            return g;
+        }
+
+        /// <summary>Доля империи в валовом продукте галактики (империи, без угроз), 0..1.</summary>
+        public static float GdpShare(int owner)
+        {
+            float total = Gdp(0);
+            foreach (var ai in AIEmpireManager.All) if (!ai.IsEliminated) total += Gdp(ai.OwnerId);
+            return total > 0.01f ? Gdp(owner) / total : 0f;
+        }
+
+        /// <summary>Голоса империи в Галактическом совете: 1 + население / 8 + системы / 4.</summary>
+        public static int Votes(int owner) => 1 + Population(owner) / 8 + SystemCount(owner) / 4;
+
         /// <summary>Есть ли у владельца система, соседняя с системой другого владельца.</summary>
         public static int SharedBorderCount(int a, int b)
         {

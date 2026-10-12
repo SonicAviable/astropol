@@ -518,6 +518,17 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             dpRt.anchoredPosition = new Vector2(startX + 304, 0);
             UIAnchors.Register(UIAnchors.Diplomacy, dpRt);
             LGIcons.IconLabel(diploBtn.transform, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 10, DS.Gold, Color.white, 15f);
+
+            // Путь к победе — все условия победы и кто к ним ближе (клавиша V)
+            if (VictoryPathWindow.Instance == null) new GameObject("[UI] VictoryPathWindow").AddComponent<VictoryPathWindow>();
+            var winBtn = CreateButton(bar.transform, "VictoryBtn", new Vector2(158, 32),
+                new Color(0.30f, 0.24f, 0.08f), DS.Gold, VictoryPathWindow.Toggle);
+            var wbRt = winBtn.GetComponent<RectTransform>();
+            wbRt.anchorMin = wbRt.anchorMax = new Vector2(0, 0.5f);
+            wbRt.pivot = new Vector2(0, 0.5f);
+            wbRt.anchoredPosition = new Vector2(startX + 458, 0);
+            LGIcons.IconLabel(winBtn.transform, LGIcon.Trophy, "ПУТЬ К ПОБЕДЕ", 10, DS.Gold, Color.white, 15f);
+            TooltipHelper.Attach(winBtn, "<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>");
         }
 
         private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
