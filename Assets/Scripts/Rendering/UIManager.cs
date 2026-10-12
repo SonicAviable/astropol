@@ -793,7 +793,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 "<b>Быстро</b>\nКлавиша: 2",
                 "<b>Очень быстро</b>\nКлавиша: 3"
             };
-            int[] speeds = { 0, 1, 2, 3 };
+            int[] speeds = { 0, 1, 2, 4 };   // как клавиши: 3 — самая быстрая скорость ×4
             for (int i = 0; i < 4; i++)
             {
                 int captured = speeds[i];

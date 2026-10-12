@@ -645,7 +645,7 @@ namespace StellarisClone.Rendering
             }
         }
 
-        private static readonly int[] TierYears = { 2200, 2205, 2210, 2218 };
+        private static readonly int[] TierYears = { 2200, 2208, 2216, 2229 };
 
         private void RefreshTiers()
         {

@@ -168,7 +168,7 @@ namespace StellarisClone.Core
         // ==================== БАЛАНС ====================
 
         /// <summary>Очков науки на «день» табличной трудоёмкости.</summary>
-        public const float CostPerRawDay = 3.3f;
+        public const float CostPerRawDay = 6.0f;   // было 3.3 при 25-летней партии; дерево растянуто на 40 лет
         /// <summary>Наука без населения (администрация, архивы).</summary>
         public const float BaseScience = 20f;
         /// <summary>Наука с каждой единицы населения.</summary>
@@ -178,7 +178,7 @@ namespace StellarisClone.Core
 
         /// <summary>
         /// Множитель стоимости по уровню: базовые ×1, Tier 1 ×4.4, Tier 2 ×9, Tier 3 ×13. Ранние технологии
-        /// изучаются за месяцы, поздние — за годы: научная победа достижима ближе к 2220-м.
+        /// изучаются за месяцы, поздние — за годы: научная победа достижима ближе к 2230-м.
         /// </summary>
         public static float TierCostFactor(int tier) => tier <= 0 ? 1f : tier == 1 ? 4.4f : 9f + (tier - 2) * 4f;
 
@@ -249,9 +249,9 @@ namespace StellarisClone.Core
                      int tier, int col, float days, string[] reqs, int year, string bonusKey)
                 => list.Add(new Technology(id, name, cat, desc, tier, col, days, reqs, year, bonusKey));
 
-            // Уровни: базовые (2200), I (2205), II (2210), III (2218). Внутри направления
+            // Уровни: базовые (2200), I (2208), II (2216), III (2229) — под 40-летнюю партию. Внутри направления
             // GridColumn — номер дорожки (строки), по которой технология идёт слева направо.
-            const int Y0 = 2200, Y1 = 2205, Y2 = 2210, Y3 = 2218;
+            const int Y0 = 2200, Y1 = 2208, Y2 = 2216, Y3 = 2229;
 
             // ======================= ФИЗИКА =======================
 
