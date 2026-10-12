@@ -403,6 +403,14 @@ namespace StellarisClone.Rendering
             _subtitle.text = $"<color={LGBuild.Hex(fc)}>{f?.Title ?? "Правительство"}</color>   ·   Обзор империи   ·   {date}";
             _emblem.color = new Color(fc.r * 0.45f, fc.g * 0.45f, fc.b * 0.45f, 1f);
             _emblemIcon.color = Color.Lerp(fc, Color.white, 0.35f);
+            // Герб фракции вместо общего значка правителя
+            var crest = FactionEmblems.ForFaction(f);
+            if (crest != null && _emblemIcon.sprite != crest)
+            {
+                _emblemIcon.sprite = crest;
+                _emblemIcon.preserveAspect = true;
+                _emblemIcon.rectTransform.sizeDelta = new Vector2(42, 42);
+            }
         }
 
         private void RefreshResources()

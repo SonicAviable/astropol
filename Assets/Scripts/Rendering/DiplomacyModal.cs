@@ -56,6 +56,8 @@ namespace StellarisClone.Rendering
         private RectTransform _tableSpinA, _tableSpinB;
         private Image _padAI, _padPlayer, _coneAI, _conePlayer, _tableGlow, _tableRim, _tableBaseRim, _tableRingA, _tableRingB, _beam;
         private string _playerKey, _portraitKey;
+        // Гербы: у названия империи и «проекции» на площадках под правителями
+        private Image _empireCrest, _padCrestAI, _padCrestPlayer;
         // Статус отношений: кольца доверия и влияния
         private Image _gaugeTrust, _gaugeInfluence, _trustHit;
         private Text _gaugeTrustVal, _gaugeTrustSub, _gaugeInfluenceVal, _gaugeInfluenceSub;
@@ -203,6 +205,9 @@ namespace StellarisClone.Rendering
             _tableRingA.color = new Color(mix.r, mix.g, mix.b, 0.60f);
             _tableRingB.color = new Color(mix.r, mix.g, mix.b, 0.40f);
             _beam.color = new Color(mix.r, mix.g, mix.b, 0.22f);
+            SetCrest(_empireCrest, FactionEmblems.ForFaction(ai.Faction), Color.Lerp(ec, Color.white, 0.25f));
+            SetCrest(_padCrestAI, FactionEmblems.ForFaction(ai.Faction), new Color(ec.r, ec.g, ec.b, 0.75f));
+            SetCrest(_padCrestPlayer, FactionEmblems.ForOwner(0), new Color(oc.r, oc.g, oc.b, 0.75f));
             BuildPortrait(ai);
             BuildPlayerPortrait();
             var leader = LeaderPortraits.ForFaction(ai.Faction);
@@ -311,6 +316,9 @@ namespace StellarisClone.Rendering
             _portraitHost = LeaderHost(rt, "Leader", LeaderX);
             _padPlayer = Holo(rt, "PadPlayer", PadSprite(), new Vector2(-LeaderX, TableY + 10f), new Vector2(250f, 54f), new Vector2(0.5f, 0.5f));
             _padAI = Holo(rt, "PadAI", PadSprite(), new Vector2(LeaderX, TableY + 10f), new Vector2(250f, 54f), new Vector2(0.5f, 0.5f));
+            // Гербы лежат на площадках (сплюснуты, как и стол, — в перспективе)
+            _padCrestPlayer = Holo(rt, "PadCrestPlayer", null, new Vector2(-LeaderX, TableY + 10f), new Vector2(118f, 30f), new Vector2(0.5f, 0.5f));
+            _padCrestAI = Holo(rt, "PadCrestAI", null, new Vector2(LeaderX, TableY + 10f), new Vector2(118f, 30f), new Vector2(0.5f, 0.5f));
 
             BuildDealHolo(rt);
             BuildEmpirePanel(rt);
@@ -328,6 +336,14 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(close.gameObject, "Закрыть  <color=#8AA2A8>(Esc)</color>");
 
             _root.SetActive(false);
+        }
+
+        private static void SetCrest(Image img, Sprite crest, Color c)
+        {
+            if (img == null) return;
+            img.sprite = crest;
+            img.color = c;
+            img.enabled = crest != null;
         }
 
         private static RectTransform LeaderHost(RectTransform rt, string name, float x)
@@ -406,6 +422,14 @@ namespace StellarisClone.Rendering
             RectTransform p;
             (p, _empireTitle) = FramedPanel(rt, "Empire", new Vector2(0, 1), new Vector2(Edge, -Edge), new Vector2(SideW, 450f), "");
             _empireTitle.fontSize = 16;
+            _empireTitle.rectTransform.TopBand(4, 32, 46, 40);
+            var crt = LGBuild.Rect(p, "Crest");
+            crt.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(14, -20), new Vector2(26, 26));
+            _empireCrest = crt.gameObject.AddComponent<Image>();
+            _empireCrest.preserveAspect = true;
+            _empireCrest.raycastTarget = false;
+            _empireCrest.enabled = false;
+            LG.Ignore(crt.gameObject);
             _infoLeft = LGBuild.Rect(p, "Info");
             _infoLeft.Stretch(16, 12, 16, 48);
         }

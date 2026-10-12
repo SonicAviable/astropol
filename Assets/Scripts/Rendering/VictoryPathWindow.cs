@@ -45,7 +45,7 @@ namespace StellarisClone.Rendering
         private class Row
         {
             public GameObject Go;
-            public Image Bg, Dot;
+            public Image Bg, Dot, Crest;
             public Text Rank, Name, Value;
             public RectTransform Bar;
         }
@@ -232,6 +232,14 @@ namespace StellarisClone.Rendering
                 r.Dot = LGBuild.Panel(rt, "Dot", Color.white);
                 r.Dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34, 4), new Vector2(10, 10));
                 LG.Chip(r.Dot.gameObject, new Color(1f, 1f, 1f, 0.3f));
+                // Герб известной империи — на месте цветной точки
+                var crt = LGBuild.Rect(rt, "Crest");
+                crt.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34, 2), new Vector2(20, 20));
+                r.Crest = crt.gameObject.AddComponent<Image>();
+                r.Crest.preserveAspect = true;
+                r.Crest.raycastTarget = false;
+                r.Crest.enabled = false;
+                LG.Ignore(crt.gameObject);
                 r.Name = LGBuild.Label(rt, "", 12, Color.white, TextAnchor.UpperLeft, bold: true);
                 r.Name.rectTransform.Stretch(46, 0, 6, 6);
                 r.Value = LGBuild.Label(rt, "", 11, Muted, TextAnchor.LowerLeft);
@@ -363,6 +371,11 @@ namespace StellarisClone.Rendering
                 r.Rank.text = (i + 1).ToString();
                 r.Rank.color = i == 0 ? c.Accent : Muted;
                 r.Dot.color = known ? OwnerCol(e.Owner) : new Color(0.5f, 0.55f, 0.6f);
+                var crest = known ? FactionEmblems.ForOwner(e.Owner) : null;
+                r.Crest.sprite = crest;
+                r.Crest.enabled = crest != null;
+                r.Crest.color = known ? Color.Lerp(OwnerCol(e.Owner), Color.white, 0.2f) : Color.white;
+                r.Dot.enabled = crest == null;
                 r.Name.text = me ? "ВЫ · " + NameOf(0) : known ? NameOf(e.Owner) : "НЕИЗВЕСТНО";
                 r.Name.color = me ? Color.white : known ? Color.Lerp(OwnerCol(e.Owner), Color.white, 0.4f) : Muted;
                 r.Value.text = alive ? e.Text : "Повержена";

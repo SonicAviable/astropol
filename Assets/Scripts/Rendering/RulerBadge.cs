@@ -20,7 +20,7 @@ namespace StellarisClone.Rendering
         private LiquidGlassEffect _fx;
         private RectTransform _portraitHost;
         private LeaderPortraitView _portrait;
-        private Image _fallbackIcon, _edge;
+        private Image _fallbackIcon, _edge, _emblem;
         private Text _name;
         private string _key;
         private Color _accent = UIManager.DS.NeonCyan;
@@ -71,6 +71,18 @@ namespace StellarisClone.Rendering
             var caption = LGBuild.Label(mask, "ОБЗОР ИМПЕРИИ", 8, UIManager.DS.TextMuted, TextAnchor.LowerLeft, bold: true);
             caption.rectTransform.Stretch(9, 7, 6, 0);
 
+            // Герб фракции в правом верхнем углу
+            var em = LGBuild.Rect(mask, "Emblem");
+            em.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-7, -7), new Vector2(28, 28));
+            _emblem = em.gameObject.AddComponent<Image>();
+            _emblem.preserveAspect = true;
+            _emblem.raycastTarget = false;
+            _emblem.enabled = false;
+            var es = em.gameObject.AddComponent<Shadow>();
+            es.effectColor = new Color(0f, 0f, 0f, 0.7f);
+            es.effectDistance = new Vector2(1f, -1f);
+            LG.Ignore(em.gameObject);
+
             // Светящаяся кромка снизу цвета фракции
             _edge = LGBuild.Panel(mask, "Edge", Color.white);
             _edge.rectTransform.anchorMin = Vector2.zero;
@@ -101,6 +113,10 @@ namespace StellarisClone.Rendering
             _accent = leader != null ? leader.Accent : f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
             _fallbackIcon.color = Color.Lerp(_accent, Color.white, 0.3f);
             _name.text = leader != null ? leader.Name : f != null ? f.Name : "";
+            var emblem = FactionEmblems.ForFaction(f);
+            _emblem.sprite = emblem;
+            _emblem.enabled = emblem != null;
+            _emblem.color = Color.Lerp(_accent, Color.white, 0.25f);
             _name.color = Color.Lerp(_accent, Color.white, 0.55f);
 
             string tip = leader != null

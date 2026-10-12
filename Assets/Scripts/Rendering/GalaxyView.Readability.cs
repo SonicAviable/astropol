@@ -148,6 +148,34 @@ namespace StellarisClone.Rendering
             labelObj.GetComponent<TextMesh>().text = text;
             labelObj.transform.position = center;
             labelObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            var lc = FleetIndicator.OwnerColor(key);
+            EnsureEmpireEmblem(labelObj, key, new Color(lc.r, lc.g, lc.b, 0.45f));
+        }
+
+        /// <summary>Герб империи над её названием на карте — лежит в плоскости галактики, масштабируется вместе с подписью.</summary>
+        private static void EnsureEmpireEmblem(GameObject label, int owner, Color color)
+        {
+            var sp = FactionEmblems.ForOwner(owner);
+            var t = label.transform.Find("Emblem");
+            if (sp == null) { if (t != null) t.gameObject.SetActive(false); return; }
+            SpriteRenderer sr;
+            if (t == null)
+            {
+                var go = new GameObject("Emblem");
+                go.transform.SetParent(label.transform, false);
+                go.transform.localPosition = new Vector3(0f, 3.6f, 0f);    // над строкой названия (в плоскости карты — к северу)
+                go.transform.localScale = Vector3.one * 3.4f;
+                sr = go.AddComponent<SpriteRenderer>();
+                sr.sortingOrder = 6;
+                sr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            else
+            {
+                sr = t.GetComponent<SpriteRenderer>();
+                t.gameObject.SetActive(true);
+            }
+            sr.sprite = sp;
+            sr.color = color;
         }
 
         // ==================== ЗНАЧКИ ПОСЕЛЕНИЙ ====================

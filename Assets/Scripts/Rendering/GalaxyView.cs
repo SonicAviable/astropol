@@ -403,6 +403,7 @@ namespace StellarisClone.Rendering
 
     labelObj.transform.position = centerWorld;
     labelObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+    EnsureEmpireEmblem(labelObj, 0, new Color(0.35f, 0.95f, 1.0f, 0.5f));
 }
 
         // ==================== ОТРИСОВКА ====================
@@ -660,7 +661,23 @@ namespace StellarisClone.Rendering
             _text.color = c;
             var mr = GetComponent<MeshRenderer>();
             if (mr != null) mr.enabled = a > 0.01f;
+
+            // Герб над названием гаснет вместе с ним
+            if (_emblem == null)
+            {
+                var t = transform.Find("Emblem");
+                if (t != null && (_emblem = t.GetComponent<SpriteRenderer>()) != null) _emblemBase = _emblem.color;
+            }
+            if (_emblem != null)
+            {
+                var ec = _emblemBase; ec.a *= a;
+                _emblem.color = ec;
+                _emblem.enabled = a > 0.01f;
+            }
         }
+
+        private SpriteRenderer _emblem;
+        private Color _emblemBase;
     }
 
     /// <summary>
