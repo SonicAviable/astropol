@@ -148,6 +148,12 @@ namespace StellarisClone.Core
 
         private int _scienceWarnLevel;
 
+        /// <summary>
+        /// Темп исследований ИИ. ИИ ведёт одну технологию за раз и берёт самые дешёвые — без поправки
+        /// сильная империя обгоняла игрока по числу технологий вдвое и выигрывала науку слишком рано.
+        /// </summary>
+        private const float AIResearchPace = 0.8f;
+
         // ==================== ПРОЧЕЕ ====================
 
         private float _decisionTimer = 3f;
@@ -826,7 +832,7 @@ namespace StellarisClone.Core
             if (CurrentTech == null) PickNextTech();
             if (CurrentTech == null) return;
 
-            float gain = MonthlyScience * LeaderManager.ResearchMult(OwnerId) * ResearchThroughput / 30f
+            float gain = MonthlyScience * LeaderManager.ResearchMult(OwnerId) * ResearchThroughput / 30f * AIResearchPace
                        / TechnologyManager.YearPenaltyMultiplier(CurrentTech, year);
             TechProgress += gain;
             if (TechProgress < CurrentTech.Cost) return;
