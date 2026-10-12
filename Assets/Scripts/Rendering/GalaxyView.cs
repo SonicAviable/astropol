@@ -26,9 +26,6 @@ namespace StellarisClone.Rendering
         private GameObject _beaconRoot;
         /// <summary>Маяк выбранной системы (главное меню прячет его).</summary>
         public GameObject BeaconRoot => _beaconRoot;
-        private SpriteRenderer _beaconOuterSr;
-        private SpriteRenderer _beaconInnerSr;
-        private LineRenderer _beaconVerticalBeam;
         private Transform _camTransform;
         private int _selectedSystemId = -1;
         private float _animTimer;
@@ -39,8 +36,7 @@ namespace StellarisClone.Rendering
         private Sprite _starHotSprite;
         private Sprite _starRingSprite;
         private Sprite _starFlareSprite, _starCoronaSprite, _accretionSprite;
-        private Sprite _beaconOuterSprite;
-        private Sprite _beaconInnerSprite;
+        private Sprite _beaconOuterSprite;   // прицел системы в режиме системы (SystemViewManager)
 
         private MapModeController.MapMode _currentMapMode = MapModeController.MapMode.Simple;
         public MapModeController.MapMode CurrentMapMode => _currentMapMode;
@@ -90,7 +86,6 @@ namespace StellarisClone.Rendering
             _starCoronaSprite  = StarFx.CoronaSprite(256);
             _accretionSprite   = StarFx.AccretionSprite(256);
             _beaconOuterSprite = GenerateOuterBeaconSprite(256);
-            _beaconInnerSprite = GenerateInnerRingSprite(256);
         }
 
         /// <summary>Раскалённое белое ядро звезды (рисуется поверх цветного ореола, как в Stellaris).</summary>
@@ -231,38 +226,6 @@ namespace StellarisClone.Rendering
                     if (gapDist > 14f)
                     {
                         tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * 0.95f));
-                        continue;
-                    }
-                }
-                tex.SetPixel(x, y, Color.clear);
-            }
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, res, res), new Vector2(0.5f, 0.5f), 100);
-        }
-
-        private Sprite GenerateInnerRingSprite(int res)
-        {
-            var tex = new Texture2D(res, res, TextureFormat.RGBA32, false)
-            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
-            Vector2 c = new Vector2(res * 0.5f, res * 0.5f);
-            float rTarget = res * 0.33f;
-            float lineW = res * 0.014f;
-
-            for (int y = 0; y < res; y++)
-            for (int x = 0; x < res; x++)
-            {
-                Vector2 p = new Vector2(x, y);
-                float d = Vector2.Distance(p, c);
-                float delta = Mathf.Abs(d - rTarget);
-                if (delta < lineW)
-                {
-                    float a = Mathf.Clamp01(1f - (delta / lineW));
-                    float angle = Mathf.Atan2(y - c.y, x - c.x) * Mathf.Rad2Deg;
-                    if (angle < 0) angle += 360f;
-                    float dashPattern = Mathf.Repeat(angle, 30f);
-                    if (dashPattern < 18f)
-                    {
-                        tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * 0.85f));
                         continue;
                     }
                 }
@@ -586,46 +549,8 @@ namespace StellarisClone.Rendering
         }
 
 
-        // ==================== МАЯК ====================
-
-        private void CreateHolographicBeacon()
-        {
-            _beaconRoot = new GameObject("TacticalHologramBeacon");
-            _beaconRoot.transform.SetParent(transform, false);
-
-            Shader spriteShader = GetSpriteShader();
-            Shader lineShader = GetLineShader();
-
-            var outerObj = new GameObject("OuterBeaconRing");
-            outerObj.transform.SetParent(_beaconRoot.transform, false);
-            outerObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            _beaconOuterSr = outerObj.AddComponent<SpriteRenderer>();
-            _beaconOuterSr.sprite = _beaconOuterSprite;
-            if (spriteShader != null) _beaconOuterSr.material = new Material(spriteShader);
-            _beaconOuterSr.sortingOrder = 25;
-
-            var innerObj = new GameObject("InnerBeaconRing");
-            innerObj.transform.SetParent(_beaconRoot.transform, false);
-            innerObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            _beaconInnerSr = innerObj.AddComponent<SpriteRenderer>();
-            _beaconInnerSr.sprite = _beaconInnerSprite;
-            if (spriteShader != null) _beaconInnerSr.material = new Material(spriteShader);
-            _beaconInnerSr.sortingOrder = 26;
-
-            var beamObj = new GameObject("VerticalBeaconBeam");
-            beamObj.transform.SetParent(_beaconRoot.transform, false);
-            _beaconVerticalBeam = beamObj.AddComponent<LineRenderer>();
-            _beaconVerticalBeam.useWorldSpace = false;
-            _beaconVerticalBeam.positionCount = 2;
-            _beaconVerticalBeam.SetPosition(0, new Vector3(0, -8f, 0));
-            _beaconVerticalBeam.SetPosition(1, new Vector3(0, 8f, 0));
-            _beaconVerticalBeam.startWidth = 0.12f;
-            _beaconVerticalBeam.endWidth = 0.12f;
-            _beaconVerticalBeam.sortingOrder = 24;
-            if (lineShader != null) _beaconVerticalBeam.material = new Material(lineShader);
-
-            _beaconRoot.SetActive(false);
-        }
+        // ==================== ВЫБОР СИСТЕМЫ ====================
+        // Сам прицел — в GalaxyView.Selection.cs
 
         public void SelectSystem(int systemId)
         {
@@ -637,25 +562,7 @@ namespace StellarisClone.Rendering
             if (_selectedSystemId != -1 && _nameplates.TryGetValue(_selectedSystemId, out var next))
             {
                 next.SetSelected(true);
-
-                if (_beaconRoot != null)
-                {
-                    _beaconRoot.transform.position = _generator.Systems[_selectedSystemId].Position;
-                    _beaconRoot.SetActive(true);
-
-                    _currentBeaconColor = next.Data.OwnerId == 0
-                        ? new Color(0.20f, 0.95f, 1f, 1f)
-                        : (next.Data.OwnerId > 0 ? FleetIndicator.OwnerColor(next.Data.OwnerId) : new Color(0.40f, 0.85f, 1f, 0.95f));
-
-                    _deployProgress = 0f;
-                    _animTimer = 0f;
-
-                    var beamGradient = new Gradient();
-                    beamGradient.SetKeys(
-                        new[] { new GradientColorKey(_currentBeaconColor, 0f), new GradientColorKey(_currentBeaconColor, 1f) },
-                        new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.85f, 0.5f), new GradientAlphaKey(0f, 1f) });
-                    _beaconVerticalBeam.colorGradient = beamGradient;
-                }
+                ShowSelection(_generator.Systems[_selectedSystemId]);
             }
             else if (_beaconRoot != null)
             {
@@ -667,35 +574,6 @@ namespace StellarisClone.Rendering
         {
             UpdateReadability();
             UpdateBeacon();
-        }
-
-        private void UpdateBeacon()
-        {
-            if (_beaconRoot == null || !_beaconRoot.activeSelf || _camTransform == null) return;
-
-            _animTimer += Time.deltaTime;
-            if (_deployProgress < 1f)
-                _deployProgress = Mathf.Clamp01(_deployProgress + Time.deltaTime * 3.5f);
-
-            float dist = Vector3.Distance(_beaconRoot.transform.position, _camTransform.position);
-            float baseTargetScale = Mathf.Clamp(dist * 0.052f, 2.4f, 6.5f);
-            float deployCurve = Mathf.Sin(_deployProgress * Mathf.PI * 0.5f);
-            float currentScale = baseTargetScale * Mathf.Lerp(0.3f, 1.0f, deployCurve);
-
-            _beaconOuterSr.transform.Rotate(Vector3.forward, 24f * Time.deltaTime, Space.Self);
-            _beaconInnerSr.transform.Rotate(Vector3.forward, -38f * Time.deltaTime, Space.Self);
-            _beaconOuterSr.transform.localScale = Vector3.one * currentScale;
-            _beaconInnerSr.transform.localScale = Vector3.one * currentScale;
-
-            float pulse = Mathf.Sin(_animTimer * 4.0f) * 0.18f + 0.82f;
-            var cOuter = _currentBeaconColor; cOuter.a = 0.92f * pulse;
-            _beaconOuterSr.color = cOuter;
-            var cInner = _currentBeaconColor; cInner.a = 0.75f * pulse;
-            _beaconInnerSr.color = cInner;
-
-            float beamWidth = Mathf.Lerp(0.06f, 0.12f, (Mathf.Sin(_animTimer * 5f) + 1f) * 0.5f);
-            _beaconVerticalBeam.startWidth = beamWidth;
-            _beaconVerticalBeam.endWidth = beamWidth;
         }
 
         // ==================== РЕЖИМЫ ====================
