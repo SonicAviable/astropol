@@ -182,7 +182,7 @@ namespace StellarisClone.Rendering
             {
                 _collapsed = !_collapsed;
                 PlayerPrefs.SetInt("outliner.collapsed", _collapsed ? 1 : 0);
-                SFXManager.Play(Sfx.UiClick);
+                SFXManager.Play(Sfx.PanelSlide);
                 ApplyCollapsed();
             });
             TooltipHelper.Attach(head.gameObject, "Свернуть или развернуть планировщик");

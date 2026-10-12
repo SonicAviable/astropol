@@ -604,7 +604,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             _navCollapsed = !_navCollapsed;
             PlayerPrefs.SetInt("nav.collapsed", _navCollapsed ? 1 : 0);
-            SFXManager.Play(Sfx.UiClick);
+            SFXManager.Play(Sfx.PanelSlide);
             if (_navToggleIcon != null) _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
             // Подписи прячем сразу при сворачивании и показываем, когда меню уже раскрылось (см. UpdateNavMenu)
             if (_navCollapsed) foreach (var it in _navItems) it.label.enabled = false;

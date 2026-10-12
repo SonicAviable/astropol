@@ -234,8 +234,12 @@ namespace StellarisClone.Rendering
             // Реплика печатается
             if (_speechShown < _speechFull.Length)
             {
+                int before = Mathf.FloorToInt(_speechShown);
                 _speechShown = Mathf.Min(_speechFull.Length, _speechShown + Time.unscaledDeltaTime * 55f);
-                _speechText.text = _speechFull.Substring(0, Mathf.FloorToInt(_speechShown));
+                int now = Mathf.FloorToInt(_speechShown);
+                _speechText.text = _speechFull.Substring(0, now);
+                // Телетайп: тихий тик на каждую третью букву (пробелы молчат)
+                if (now / 3 != before / 3 && now > 0 && !char.IsWhiteSpace(_speechFull[now - 1])) SFXManager.Play(Sfx.TextTick);
             }
 
             if (_confirmAction != null && Time.unscaledTime > _confirmUntil) { _confirmAction = null; RefreshActions(); }
@@ -1298,9 +1302,10 @@ namespace StellarisClone.Rendering
         private void AddToTable(DealItemKind k, bool fromAI)
         {
             if (_viewingOffer) return;
+            bool removed = false;
             if (DealCatalog.IsTreaty(k))
             {
-                if (_deal.HasTreaty(k)) _deal.Treaties.RemoveAll(t => t.Kind == k);
+                if (_deal.HasTreaty(k)) { _deal.Treaties.RemoveAll(t => t.Kind == k); removed = true; }
                 else _deal.Treaties.Add(new DealItem(k, 0f));
             }
             else
@@ -1309,7 +1314,7 @@ namespace StellarisClone.Rendering
                 if (have != null) Adjust(have, fromAI, +1);
                 else _deal.Side(fromAI).Add(new DealItem(k, DealCatalog.Step(k)));
             }
-            SFXManager.Play(Sfx.UiClick);
+            SFXManager.Play(removed ? Sfx.DealRemove : Sfx.DealPlace);
             RefreshDeal();
         }
 
@@ -1443,7 +1448,7 @@ namespace StellarisClone.Rendering
             SmallButton(row.rectTransform, LGIcon.Close, ref x, () =>
             {
                 if (treaty) _deal.Treaties.Remove(item); else _deal.Side(fromAI).Remove(item);
-                SFXManager.Play(Sfx.UiBack);
+                SFXManager.Play(Sfx.DealRemove);
                 RefreshDeal();
             });
             if (treaty) return;
@@ -1533,7 +1538,7 @@ namespace StellarisClone.Rendering
                 {
                     _viewingOffer = false;
                     SFXManager.Play(kind == AIEmpireManager.OfferKind.Peace ? Sfx.PeaceSigned
-                        : kind == AIEmpireManager.OfferKind.Pact ? Sfx.PactSigned : Sfx.UiConfirm);
+                        : kind == AIEmpireManager.OfferKind.Pact ? Sfx.PactSigned : Sfx.DealAccepted);
                     Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.Accept));
                 }
                 else SFXManager.Play(Sfx.UiDenied);
@@ -1546,7 +1551,7 @@ namespace StellarisClone.Rendering
             bool peace = _deal.HasTreaty(DealItemKind.Peace), pact = _deal.HasTreaty(DealItemKind.Pact);
             if (ai.PlayerPropose(_deal, out var verdict))
             {
-                SFXManager.Play(peace ? Sfx.PeaceSigned : pact ? Sfx.PactSigned : Sfx.UiConfirm);
+                SFXManager.Play(peace ? Sfx.PeaceSigned : pact ? Sfx.PactSigned : Sfx.DealAccepted);
                 Say(DiplomacyLines.Get(leader, gift ? DiplomacyLines.Kind.Gift : DiplomacyLines.Kind.Accept));
                 _deal = new Deal();
             }

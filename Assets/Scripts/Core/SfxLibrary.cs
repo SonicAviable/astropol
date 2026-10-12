@@ -25,6 +25,8 @@ namespace StellarisClone.Core.Audio
         // Стратегия
         WarDeclared, PeaceSigned, PactSigned, SiegeStart, SystemCaptured, SystemLost,
         GameVictory, GameDefeat, GameStart,
+        // Интерфейс-голограмма (добавлены в конец — номера прежних звуков не сдвигаются)
+        HoloScan, TextTick, PanelSlide, AlertPop, AlertDismiss, DealPlace, DealRemove, DealAccepted, MapHover,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -170,6 +172,17 @@ namespace StellarisClone.Core.Audio
             S(Sfx.GameVictory, 0.50f, 1, 5.00f, 0f, 1, 3, SfxBus.Stinger, 0.85f);
             S(Sfx.GameDefeat, 0.48f, 1, 5.00f, 0f, 1, 3, SfxBus.Stinger, 0.85f);
             S(Sfx.GameStart, 0.46f, 1, 3.00f, 0f, 1, 3, SfxBus.Stinger, 0.6f);
+
+            // Голографический интерфейс: всё тише основных звуков — фактура, а не события
+            S(Sfx.HoloScan, 0.13f, 1, 0.25f, 0.02f);
+            S(Sfx.TextTick, 0.05f, 2, 0.035f, 0.08f, 3, 0);
+            S(Sfx.PanelSlide, 0.18f, 1, 0.12f, 0.03f);
+            S(Sfx.AlertPop, 0.20f, 2, 0.20f, 0.01f);
+            S(Sfx.AlertDismiss, 0.18f, 2, 0.12f, 0.02f);
+            S(Sfx.DealPlace, 0.24f, 2, 0.05f, 0.02f, 2);
+            S(Sfx.DealRemove, 0.20f, 2, 0.05f, 0.02f);
+            S(Sfx.DealAccepted, 0.34f, 1, 0.50f, 0f, 1, 2);
+            S(Sfx.MapHover, 0.06f, 1, 0.12f, 0.03f, 2, 0);
             return d;
         }
 
@@ -1201,6 +1214,110 @@ namespace StellarisClone.Core.Audio
                     lp = 12000f;
                     break;
                 }
+                // ───────────────────── ГОЛОГРАФИЧЕСКИЙ ИНТЕРФЕЙС ─────────────────────
+                case Sfx.HoloScan:
+                {
+                    // Включение голограммы окна: шумовая развёртка снизу вверх, «цифровое» стаккато, стеклянная точка в конце
+                    b = new Stereo(1.2f, sr);
+                    Breath(b, seed, 0f, 0.4f, 500f, 5200f, 0.35f, 2.2f, 0.7f);
+                    Tone(b, new ToneLayer { Env = new Adsr(0.01f, 0.05f, 0.8f, 0.25f, 0.08f), Wave = Wave.Square, Freq = Glide(900f, 2200f, 0.34f),
+                        Gain = 0.07f, Filter = SvfMode.BandPass, Cutoff = Glide(1200f, 3000f, 0.34f), Q = 2f, Amp = Stutter(26f, 0.45f) }, rng);
+                    Glass(b, rng, 0.34f, 90, 0.5f, 0.12f, 0.2f, 0.004f, 0.6f);
+                    b.ApplyReverb(0.16f, 0.7f, 0.55f, 1f, 0.02f, 400f);
+                    lp = 10000f;
+                    break;
+                }
+                case Sfx.TextTick:
+                {
+                    // Печать реплики: короткий сухой «тик» телетайпа
+                    b = new Stereo(0.12f, sr);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0008f, 0.012f, 6f), Gain = 0.5f, Filter = SvfMode.BandPass,
+                        Cutoff = Const(3000f + variant * 400f), Q = 1.6f, Width = 0.3f }, seed);
+                    Tone(b, new ToneLayer { Env = Adsr.Pluck(0.001f, 0.018f, 6f), Freq = Const(1700f + variant * 150f), Gain = 0.12f }, rng);
+                    lp = 9000f;
+                    break;
+                }
+                case Sfx.PanelSlide:
+                {
+                    // Сервопривод панели: воздух, гул мотора и щелчок фиксатора
+                    b = new Stereo(0.6f, sr);
+                    Breath(b, seed, 0f, 0.2f, 500f, 1900f, 0.4f, 1.0f, 0.5f);
+                    Tone(b, new ToneLayer { Env = new Adsr(0.02f, 0.05f, 0.7f, 0.1f, 0.06f), Wave = Wave.Saw, Freq = Glide(150f, 240f, 0.18f),
+                        Gain = 0.08f, Filter = SvfMode.LowPass, Cutoff = Const(900f), Q = 1.2f }, rng);
+                    NoiseL(b, new NoiseLayer { Start = 0.19f, Env = Adsr.Pluck(0.001f, 0.02f, 6f), Gain = 0.3f, Filter = SvfMode.BandPass,
+                        Cutoff = Const(1800f), Q = 1f }, seed + 1);
+                    b.ApplyReverb(0.1f, 0.5f, 0.6f, 1f, 0.015f, 300f);
+                    lp = 9000f;
+                    break;
+                }
+                case Sfx.AlertPop:
+                {
+                    // Новый алерт: двойной «радарный» блип с эхом
+                    b = new Stereo(1.2f, sr);
+                    Glass(b, rng, 0f, 86, 0.35f, 0.3f, -0.2f, 0.003f, 0.8f);
+                    Glass(b, rng, 0.08f, 90, 0.45f, 0.26f, 0.2f, 0.003f, 0.8f);
+                    b.ApplyPingPong(0.12f, 0.22f, 0.15f, 4000f);
+                    b.ApplyReverb(0.16f, 0.7f, 0.5f, 1f, 0.02f, 400f);
+                    lp = 10000f;
+                    break;
+                }
+                case Sfx.AlertDismiss:
+                {
+                    // Алерт скрыт: мягкий падающий блип и выдох
+                    b = new Stereo(0.8f, sr);
+                    Glass(b, rng, 0f, 81, 0.3f, 0.25f, 0f, 0.003f, 0.6f);
+                    Tone(b, new ToneLayer { Env = Adsr.Pluck(0.004f, 0.12f, 4f), Freq = Glide(700f, 380f, 0.1f), Gain = 0.15f }, rng);
+                    Breath(b, seed, 0f, 0.14f, 2200f, 600f, 0.2f, 1.0f, 0.15f);
+                    b.ApplyReverb(0.12f, 0.6f, 0.55f, 1f, 0.02f, 300f);
+                    lp = 9000f;
+                    break;
+                }
+                case Sfx.DealPlace:
+                {
+                    // Предмет лёг на голостол: мягкий удар, стеклянная нота, всплеск вверх
+                    b = new Stereo(1.0f, sr);
+                    Thump(b, rng, 0f, 180f, 90f, 0.06f, 0.12f, 0.35f);
+                    Glass(b, rng, 0.01f, 81 + (variant % 2) * 4, 0.45f, 0.26f, 0.15f, 0.003f, 0.8f);
+                    Breath(b, seed, 0f, 0.1f, 900f, 2800f, 0.15f, 1.2f, 0.3f);
+                    b.ApplyReverb(0.16f, 0.7f, 0.55f, 1f, 0.02f, 300f);
+                    lp = 10000f;
+                    break;
+                }
+                case Sfx.DealRemove:
+                {
+                    // Предмет убран со стола: нота вниз и «втягивание»
+                    b = new Stereo(0.9f, sr);
+                    Glass(b, rng, 0f, 78, 0.35f, 0.22f, -0.15f, 0.003f, 0.6f);
+                    Glass(b, rng, 0.05f, 74, 0.4f, 0.18f, 0.15f, 0.003f, 0.5f);
+                    Breath(b, seed, 0f, 0.12f, 2600f, 700f, 0.15f, 1.1f, 0.2f);
+                    b.ApplyReverb(0.14f, 0.65f, 0.55f, 1f, 0.02f, 300f);
+                    lp = 9000f;
+                    break;
+                }
+                case Sfx.DealAccepted:
+                {
+                    // Сделка заключена: восходящее арпеджио, металлический «звон кредитов», тёплый аккорд
+                    b = new Stereo(2.4f, sr);
+                    float[] arp = { 74, 78, 81, 86 };
+                    for (int i = 0; i < arp.Length; i++) Glass(b, rng, i * 0.06f, arp[i], 0.9f, 0.22f, -0.3f + i * 0.2f, 0.003f);
+                    Modal(b, rng, 0f, 1320f, new[] { 1f, 2.76f, 5.4f }, 0.25f, 0.08f, 0.3f);
+                    Pad(b, rng, 0.1f, new float[] { 50, 57, 62 }, new Adsr(0.05f, 0.3f, 0.5f, 0.2f, 0.9f, 3f), 0.1f, 1200f);
+                    b.ApplyPingPong(0.14f, 0.25f, 0.12f, 3500f);
+                    b.ApplyReverb(0.3f, 0.85f, 0.5f, 1f, 0.03f, 250f);
+                    lp = 11000f;
+                    break;
+                }
+                case Sfx.MapHover:
+                {
+                    // Наведение на систему: тихий «сонар» с эхом
+                    b = new Stereo(0.9f, sr);
+                    Tone(b, new ToneLayer { Env = Adsr.Pluck(0.003f, 0.18f, 4f), Freq = Glide(1180f + variant * 60f, 1120f + variant * 60f, 0.1f), Gain = 0.3f }, rng);
+                    b.ApplyPingPong(0.11f, 0.2f, 0.18f, 3000f);
+                    b.ApplyReverb(0.14f, 0.7f, 0.5f, 1f, 0.02f, 400f);
+                    lp = 8000f;
+                    break;
+                }
+
                 default:
                     b = new Stereo(0.2f, sr);
                     Tone(b, new ToneLayer { Env = Adsr.Pluck(0.002f, 0.08f), Freq = Const(1000f), Gain = 0.3f }, rng);

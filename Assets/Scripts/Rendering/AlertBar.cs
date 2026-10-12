@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Cam;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 using StellarisClone.Generation;
 
 namespace StellarisClone.Rendering
@@ -121,7 +122,7 @@ namespace StellarisClone.Rendering
                 {
                     view = CreateView(a);
                     _views.Add(view);
-                    SFXManager.Play("ui_click", 0.6f, 1.35f);
+                    SFXManager.Play(Sfx.AlertPop);
                 }
                 view.Action = a.Action;
                 view.Tip.SetText($"<b>{a.Title}</b>\n{a.Body}\n\n<color=#8AA2A8>ЛКМ — {a.ActionHint}  ·  ПКМ — скрыть</color>");
@@ -200,7 +201,7 @@ namespace StellarisClone.Rendering
         private void Dismiss(string id)
         {
             if (string.IsNullOrEmpty(id) || !_dismissed.Add(id)) return;
-            SFXManager.Play("ui_click", 0.5f, 0.8f);
+            SFXManager.Play(Sfx.AlertDismiss);
             foreach (var v in _views)
                 if (v.Id == id && !v.Dying) { v.Dying = true; v.DieT = 0f; v.Group.blocksRaycasts = false; }
             _current.RemoveAll(a => a.Id == id);

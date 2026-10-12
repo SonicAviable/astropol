@@ -1,5 +1,6 @@
 using UnityEngine;
 using StellarisClone.Core;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -179,6 +180,7 @@ namespace StellarisClone.Rendering
 
         public void SetHovered(bool hovered)
         {
+            if (hovered && !_isHovered) SFXManager.Play(Sfx.MapHover);   // тихий «сонар»
             _isHovered = hovered;
             UpdateHoverTooltip();
         }

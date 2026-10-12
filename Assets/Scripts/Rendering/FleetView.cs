@@ -565,7 +565,11 @@ namespace StellarisClone.Rendering
 
         private void ArriveAtTargetSystem()
         {
-            if (ShowJumpFx()) JumpFx.Arrival(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));
+            if (ShowJumpFx())
+            {
+                JumpFx.Arrival(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));
+                if (Data.Path.Count == 0) SFXManager.PlayAt(Sfx.FtlArrive, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);   // пролётом — без звука
+            }
             Data.CurrentSystemId = Data.TargetSystemId;
             Data.TargetSystemId = -1;
             Data.State = FleetState.Orbiting;

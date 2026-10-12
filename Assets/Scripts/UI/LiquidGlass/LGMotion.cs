@@ -306,6 +306,7 @@ namespace StellarisClone.Rendering
             _holoCore.rectTransform.sizeDelta = new Vector2(0f, 2f);
 
             _holoT = 0f;
+            StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.HoloScan);
             TickHolo(0f);
         }
 
