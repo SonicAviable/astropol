@@ -268,7 +268,9 @@ namespace StellarisClone.Rendering
         /// <summary>Озвучка: тихий «тик» при наведении, клик при нажатии, отказ — по неактивной кнопке.</summary>
         public bool sounds = true;
         public bool animateScale = true;
-        public float hoverScale = 1.012f;
+        public float hoverScale = 1.022f;
+        /// <summary>Длительность пробега блика по кнопке при наведении, с.</summary>
+        public float sweepDuration = 0.55f;
         public float pressScale = 0.98f;
 
         private LiquidGlassEffect _fx;
@@ -277,6 +279,7 @@ namespace StellarisClone.Rendering
         private float _h, _hv, _p, _pv;
         private Vector3 _baseScale = Vector3.one;
         private bool _active;
+        private float _sweepT = -1f;   // <0 — блик не идёт
 
         private void Awake()
         {
@@ -293,7 +296,8 @@ namespace StellarisClone.Rendering
         {
             _over = _down = false;
             _h = _hv = _p = _pv = 0f;
-            if (_fx != null) _fx.SetHover(0f);
+            if (_fx != null) { _fx.SetHover(0f); _fx.SetSweep(0f); }
+            _sweepT = -1f;
             if (animateScale && _active) transform.localScale = _baseScale;
             _active = false;
         }
@@ -301,7 +305,9 @@ namespace StellarisClone.Rendering
         public void OnPointerEnter(PointerEventData e)
         {
             _over = true; Wake();
-            if (sounds && _selectable != null && _selectable.IsInteractable())
+            bool can = _selectable == null || _selectable.IsInteractable();
+            if (can && _selectable != null) _sweepT = 0f;   // по кнопке пробегает блик
+            if (sounds && _selectable != null && can)
                 StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiHover);
         }
 
@@ -335,6 +341,14 @@ namespace StellarisClone.Rendering
             if (_fx == null) _fx = GetComponent<LiquidGlassEffect>();
             if (_fx != null) _fx.SetHover(Mathf.Clamp01(_h + _p * 0.4f));
 
+            if (_sweepT >= 0f)
+            {
+                _sweepT += dt / Mathf.Max(0.05f, sweepDuration);
+                float t = _sweepT >= 1f ? 0f : Mathf.SmoothStep(0f, 1f, _sweepT);
+                if (_fx != null) _fx.SetSweep(_sweepT >= 1f ? 0f : Mathf.Max(0.001f, t));
+                if (_sweepT >= 1f) _sweepT = -1f;
+            }
+
             if (animateScale)
             {
                 float s = 1f + (hoverScale - 1f) * _h + (pressScale - 1f) * _p;
@@ -343,7 +357,7 @@ namespace StellarisClone.Rendering
 
             bool settled = Mathf.Abs(_h - th) < 0.002f && Mathf.Abs(_hv) < 0.002f
                         && Mathf.Abs(_p - tp) < 0.002f && Mathf.Abs(_pv) < 0.002f;
-            if (settled && th == 0f && tp == 0f)
+            if (settled && th == 0f && tp == 0f && _sweepT < 0f)
             {
                 if (animateScale) transform.localScale = _baseScale;
                 if (_fx != null) _fx.SetHover(0f);

@@ -188,7 +188,9 @@ Shader "Astropolity/UI/LiquidGlass"
                 float4 rr = min(IN.radii, minB);                     // TL TR BR BL
                 float4 r4 = float4(rr.y, rr.z, rr.x, rr.w);          // → TR BR TL BL
 
-                float mode     = IN.p2.x;
+                float modeRaw  = floor(IN.p2.x + 0.5);
+                float mode     = fmod(modeRaw, 4.0);                 // режим — младшие 2 бита
+                float sweep    = floor(modeRaw / 4.0);               // блик: 0 — нет, 1..63 — положение
                 float fill     = IN.p0.x;
                 float glow     = IN.p0.y;
                 float shadow   = IN.p0.z;
@@ -311,9 +313,22 @@ Shader "Astropolity/UI/LiquidGlass"
                     float soft = saturate(1.0 - insidePx / 16.0) * pow(saturate(facing), 2.0) * 0.16 * specMul;
                     bodyCol += soft;
                     // Hover: внутренний неон + блик под курсором
-                    bodyCol += rim.rgb * exp(-insidePx / max(glowR * 1.2, 1.0)) * hover * glow * 0.3;
+                    bodyCol += rim.rgb * exp(-insidePx / max(glowR * 1.2, 1.0)) * hover * max(glow, 0.12) * 0.45;
                     bodyCol += lerp(float3(1,1,1), rim.rgb, 0.3) * ptrGlow * 0.10;
-                    bodyCol += hover * 0.035;
+                    bodyCol += hover * 0.05;
+
+                    // Блик при наведении: наклонная полоса света один раз пробегает слева направо
+                    if (sweep > 0.5)
+                    {
+                        float swT = (sweep - 1.0) / 62.0;
+                        float swPos = lerp(-0.35, 1.35, swT);
+                        float swU = (p.x / b.x) * 0.5 + 0.5;                       // 0..1 по ширине
+                        float swSkew = (yN * 0.5) * 0.45 * b.y / max(b.x, 1.0);   // наклон ~25°
+                        float swK = (swU + swSkew - swPos) / 0.09;
+                        float swBand = exp(-swK * swK);
+                        float swFade = smoothstep(0.0, 0.12, swT) * (1.0 - smoothstep(0.85, 1.0, swT));
+                        bodyCol += lerp(float3(1,1,1), rim.rgb, 0.35) * swBand * swFade * 0.32 * cov;
+                    }
                 }
 
                 // --- Тень ---
@@ -323,7 +338,7 @@ Shader "Astropolity/UI/LiquidGlass"
 
                 // --- Внешнее свечение ---
                 float outside = max(d, 0.0);
-                float glowA = glow * _LGGlowStrength * (1.0 + hover * 0.9) * exp(-outside / glowR) * (1.0 - cov) * rim.a;
+                float glowA = glow * _LGGlowStrength * (1.0 + hover * 1.5) * exp(-outside / glowR) * (1.0 - cov) * rim.a;
                 float3 glowC = rim.rgb;
 
                 // --- Обводка ---
@@ -331,8 +346,8 @@ Shader "Astropolity/UI/LiquidGlass"
                 float stroke = (bw > 0.001) ? saturate(0.5 - strokeD * pxPerUnit) : 0.0;
                 float f01 = saturate(facing * 0.5 + 0.5);
                 float3 strokeCol = lerp(rim.rgb, float3(1,1,1), pow(saturate(facing), 3.0) * 0.55 * specMul)
-                                   * (0.8 + 0.35 * hover);
-                float strokeA = saturate(stroke * rim.a * (0.65 + 0.45 * f01 + 0.35 * hover));
+                                   * (0.8 + 0.55 * hover);
+                float strokeA = saturate(stroke * rim.a * (0.65 + 0.45 * f01 + 0.55 * hover));
 
                 // --- Блик по кромке (двигается со светом) ---
                 float glintMask = saturate(1.0 - insidePx / 2.6) * cov;

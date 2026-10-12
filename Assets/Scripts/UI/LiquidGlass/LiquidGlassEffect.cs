@@ -37,6 +37,7 @@ namespace StellarisClone.Rendering
         [SerializeField] private bool forceHairline;
 
         private float _hover;
+        private int _sweepQ;   // 0 — блика нет, 1..63 — положение полосы блика (пробегает по кнопке при наведении)
         private float _pulse;
         private Image _image;
         private Selectable _selectable;
@@ -98,6 +99,18 @@ namespace StellarisClone.Rendering
             h = Mathf.Clamp01(h);
             if (Mathf.Abs(_hover - h) < 0.002f) return;
             _hover = h;
+            Dirty();
+        }
+
+        /// <summary>
+        /// Световой блик, пробегающий по элементу: t 0..1 — от левого края к правому, ≤0 — блика нет.
+        /// Передаётся в шейдер в старших битах байта режима (режим занимает только 0..3).
+        /// </summary>
+        public void SetSweep(float t)
+        {
+            int q = t <= 0f ? 0 : Mathf.Clamp(Mathf.RoundToInt(t * 62f) + 1, 1, 63);
+            if (q == _sweepQ) return;
+            _sweepQ = q;
             Dirty();
         }
 
@@ -580,7 +593,7 @@ namespace StellarisClone.Rendering
             var uv3 = new Vector4(
                 Pack3(s.Fill, s.Glow, s.Shadow),
                 Pack3(s.Specular, s.Refraction, _hover),
-                PackRaw(s.Mode, Mathf.RoundToInt(s.Border * 32f), s.Flags),
+                PackRaw(s.Mode + 4 * _sweepQ, Mathf.RoundToInt(s.Border * 32f), s.Flags),
                 PackRaw(Mathf.RoundToInt(s.GlowRadius), Mathf.RoundToInt(s.ShadowRadius), Mathf.RoundToInt(intensity * 255f)));
 
             vh.Clear();
