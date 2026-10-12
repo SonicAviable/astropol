@@ -63,6 +63,9 @@ namespace StellarisClone.Rendering
         private float _throttle, _retro, _bank, _nozzleRadius = 0.12f, _retroRadius = 0.06f;
         private Vector3 _orbitSpot;
         private bool _gliding;
+        // Строй на орбите (FleetFormation): базовая точка типа флота, место в группе и общий курс группы
+        private Vector3 _anchor, _formHeading;
+        private int _formIndex = -1, _formSystem = -1;
         // Бой: скорость манёвра, собственные часы «танца» и флаг, чтобы после боя вернуться на орбиту
         private Vector3 _combatVel;
         private float _combatClock, _workClock;
@@ -429,6 +432,8 @@ namespace StellarisClone.Rendering
             };
         }
 
+        public bool IsSelected => _isSelected;
+
         public void SetSelected(bool selected)
         {
             _isSelected = selected;
@@ -476,9 +481,33 @@ namespace StellarisClone.Rendering
             Vector3 pos = _generator.Systems[Data.CurrentSystemId].Position;
             float offsetX = Data.Type == FleetType.Constructor ? -2.8f : (Data.Type == FleetType.Science ? 0f : 2.8f);
             float offsetZ = Data.Type == FleetType.Science ? -3.0f : 2.0f;
-            _orbitSpot = pos + new Vector3(offsetX, 0.5f, offsetZ);
+            _anchor = pos + new Vector3(offsetX, 0.5f, offsetZ);
+            // Группа смотрит к звезде с доворотом по орбите — клин тянется наружу, от звезды и соседних групп
+            Vector3 inward = new Vector3(-offsetX, 0f, -offsetZ).normalized;
+            _formHeading = Quaternion.Euler(0f, 30f, 0f) * inward;
+            _formIndex = Mathf.Max(0, FleetFormation.Get(this).Index);
+            _formSystem = Data.CurrentSystemId;
+            _orbitSpot = FormationSpot(_formIndex);
             _gliding = !instant;
             if (instant) transform.position = _orbitSpot;
+        }
+
+        private Vector3 FormationSpot(int index)
+        {
+            float spacing = Data.Type == FleetType.Military ? 4.0f : 2.6f;
+            Vector3 off = FleetFormation.LocalOffset(index, spacing);
+            return _anchor + Quaternion.LookRotation(_formHeading, Vector3.up) * off;
+        }
+
+        /// <summary>Флоты прибыли или ушли — корабль переходит на новое место в строю своей группы.</summary>
+        private void UpdateFormation()
+        {
+            if (_formSystem != Data.CurrentSystemId) { SnapToCurrentSystem(instant: false); return; }
+            int index = FleetFormation.Get(this).Index;
+            if (index == _formIndex) return;
+            _formIndex = index;
+            _orbitSpot = FormationSpot(index);
+            _gliding = true;
         }
 
         private void HandleDayPassed(int day, int month, int year)
@@ -728,8 +757,17 @@ namespace StellarisClone.Rendering
                 if (Data.State != FleetState.InHyperlane) SnapToCurrentSystem(instant: false);
             }
 
-            // Над кораблём — только имя выделенного; состояние показывают значок флота, панель флота и эффекты
-            _statusBadge.text = _isSelected && !Data.InCombat ? $"<color=#9FF5EE>{Data.Name}</color>" : "";
+            // Над кораблём — только имя выделенного; состояние показывают значок флота, панель флота и эффекты.
+            // В строю подпись одна на группу: над первым выделенным флотом, с числом остальных выделенных
+            string label = "";
+            if (_isSelected && !Data.InCombat)
+            {
+                var slot = FleetFormation.Holds(Data) ? FleetFormation.Get(this) : default;
+                if (slot.SelectedCount <= 1) label = $"<color=#9FF5EE>{Data.Name}</color>";
+                else if (slot.FirstSelected == this)
+                    label = $"<color=#9FF5EE>{Data.Name}</color>  <color=#6FB9B3>+{slot.SelectedCount - 1}</color>";
+            }
+            if (_statusBadge.text != label) _statusBadge.text = label;
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;
 
@@ -848,6 +886,7 @@ namespace StellarisClone.Rendering
         /// <summary>На орбите: дойти до своего места на маневровых, выровнять крен, слегка «дышать».</summary>
         private void Hold()
         {
+            UpdateFormation();
             float main = 0f;
             if (_gliding)
             {
@@ -871,8 +910,10 @@ namespace StellarisClone.Rendering
                 transform.position += new Vector3(0, Mathf.Sin(_animTime * 1.3f) * 0.0015f, 0);
             }
 
-            // Выравниваем крен и тангаж — корабль стоит ровно
+            // Выравниваем крен и тангаж — корабль стоит ровно; на месте разворачивается по курсу своей группы
             Vector3 fwd = Flat(transform.forward);
+            if (!_gliding && _formHeading.sqrMagnitude > 0.0001f && fwd.sqrMagnitude > 0.0001f)
+                fwd = Vector3.RotateTowards(fwd.normalized, _formHeading, TurnRateDeg * 0.5f * Mathf.Deg2Rad * Time.deltaTime, 0f);
             if (fwd.sqrMagnitude > 0.0001f)
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(fwd.normalized, Vector3.up), 1f - Mathf.Exp(-2.5f * Time.deltaTime));
             _bank = Mathf.Lerp(_bank, 0f, 1f - Mathf.Exp(-3f * Time.deltaTime));
