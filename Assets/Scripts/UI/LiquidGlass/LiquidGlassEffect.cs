@@ -314,12 +314,13 @@ namespace StellarisClone.Rendering
             if (radius >= 0f) return Mathf.Min(radius, minS * 0.5f);
             switch (r)
             {
-                case Role.Glass:   return Mathf.Min(minS * 0.5f, maxS >= 500f ? 24f : 18f);
+                // Голо-стиль: строгие окна и кнопки с малым скруглением (как панели приборов), не капсулы
+                case Role.Glass:   return Mathf.Min(minS * 0.5f, maxS >= 500f ? 10f : 8f);
                 case Role.Platter:
-                case Role.Header:  return Mathf.Clamp(minS * 0.25f, 6f, 14f);
-                case Role.Button:  return h <= 48f ? h * 0.5f : 14f;
+                case Role.Header:  return Mathf.Clamp(minS * 0.2f, 3f, 8f);
+                case Role.Button:  return Mathf.Min(h * 0.5f, 6f);
                 case Role.Field:
-                case Role.Chip:    return minS * 0.5f;
+                case Role.Chip:    return Mathf.Min(minS * 0.5f, 6f);
                 case Role.Line:
                 case Role.Dot:     return minS * 0.5f;
                 case Role.Fill:    return Mathf.Min(minS * 0.5f, 8f);
@@ -369,7 +370,7 @@ namespace StellarisClone.Rendering
                     s.Refraction = 1f;
                     s.Border = 1.2f;
                     s.GlowRadius = 12f;
-                    s.Rim = hasOutline ? outlineCol : new Color(1f, 1f, 1f, 0.22f);
+                    s.Rim = hasOutline ? outlineCol : new Color(0.45f, 0.95f, 0.90f, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;
                     break;
 
@@ -378,7 +379,7 @@ namespace StellarisClone.Rendering
                     s.Fill = 0.32f;
                     s.Specular = 0.55f;
                     s.Border = 1f;
-                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : new Color(1f, 1f, 1f, 0.09f);
+                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : new Color(0.45f, 0.95f, 0.90f, 0.12f);
                     s.Glow = hasOutline ? 0.10f * (distBoost - 1f) : 0f;
                     s.GlowRadius = 8f;
                     break;

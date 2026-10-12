@@ -114,6 +114,7 @@ Shader "Astropolity/UI/LiquidGlass"
             float _LGVibrancy;
             float _LGGlowStrength;   // общий регулятор неонового свечения
             float _LGBrightness;     // подъём яркости тёмных панелей (0 — исходный тёмный вид, 1 — максимум)
+            float _LGHolo;           // голографический стиль окон: уголки-скобки и сетка (0 — выкл.)
 
             // 3 байта в одном float (точно представимо до 2^24)
             float3 Unpack3(float v)
@@ -267,6 +268,15 @@ Shader "Astropolity/UI/LiquidGlass"
                     bodyCol *= 1.0 + 0.08 * yN * specMul;                                       // свет сверху
                     bodyCol += lerp(float3(1,1,1), rim.rgb, 0.5) * pow(edge, 6.0) * 0.14 * specMul; // френель
                     bodyA = (_LGBackdropReady < 0.5) ? max(0.9, fill) : 1.0;
+
+                    // Голо-стиль: едва заметная координатная сетка по стеклу (шаг 28 px)
+                    if (_LGHolo > 0.5)
+                    {
+                        float2 gp = p * pxPerUnit / 28.0;
+                        float2 gl = abs(frac(gp) - 0.5) * 28.0;                 // от центра ячейки, px (линия — на 14)
+                        float grid = smoothstep(12.8, 13.8, max(gl.x, gl.y));
+                        bodyCol += float3(0.35, 0.85, 0.90) * grid * 0.030 * saturate(depth * 3.0);
+                    }
                 }
                 else if (mode < 1.5)
                 {
@@ -361,6 +371,26 @@ Shader "Astropolity/UI/LiquidGlass"
                 float bA = bodyA * cov;
                 acc = float4(bodyCol * bA, bA) + acc * (1.0 - bA);
                 acc = float4(strokeCol * strokeA, strokeA) + acc * (1.0 - strokeA);
+
+                // Голо-стиль: уголки-скобки у крупных окон (L-образные, чуть внутри кромки)
+                if (mode < 0.5 && _LGHolo > 0.5)
+                {
+                    float sidePx = minB * 2.0 * pxPerUnit;
+                    if (sidePx > 70.0)
+                    {
+                        float2 e = (b - abs(p)) * pxPerUnit - 5.0;          // от линии скобок внутрь, px
+                        float L = clamp(sidePx * 0.10, 12.0, 34.0);
+                        float th = 1.8;
+                        float inBox = (1.0 - smoothstep(L, L + 1.0, e.x)) * (1.0 - smoothstep(L, L + 1.0, e.y))
+                                    * smoothstep(-1.0, 0.0, min(e.x, e.y));
+                        float lx = 1.0 - smoothstep(th * 0.5, th * 0.5 + 1.0, abs(e.x - th * 0.5));
+                        float ly = 1.0 - smoothstep(th * 0.5, th * 0.5 + 1.0, abs(e.y - th * 0.5));
+                        float brA = inBox * max(lx, ly) * cov * 0.9;
+                        float3 brC = lerp(rim.rgb, float3(0.55, 1.0, 0.95), 0.45) * 1.15;
+                        acc = float4(brC * brA, brA) + acc * (1.0 - brA);
+                    }
+                }
+
                 acc.rgb += glintA;
                 acc.a = saturate(acc.a + glintA * 0.4);
 
