@@ -19,7 +19,11 @@ namespace StellarisClone.Rendering
         private Light _workLight;
         private float _animTime;
 
-        private TextMesh _statusBadge;
+        // Ярлык над кораблём: пластина со значком класса и именем, рядом — «+N» выделенных в строю
+        private Transform _tagRoot;
+        private WorldChip _tag, _tagExtra;
+        private string _tagName;
+        private int _tagCount = -1;
         private Transform _camTransform;
 
         private WorldTooltipTrigger _worldTooltip;
@@ -330,17 +334,24 @@ namespace StellarisClone.Rendering
 
         private void CreateStatusBadge()
         {
-            GameObject badgeObj = new GameObject("FleetStatusBadge");
+            GameObject badgeObj = new GameObject("FleetTag");
             badgeObj.transform.SetParent(transform, false);
             badgeObj.transform.localPosition = new Vector3(0, 4.55f, 0);
+            _tagRoot = badgeObj.transform;
 
-            _statusBadge = badgeObj.AddComponent<TextMesh>();
-            _statusBadge.fontSize = 22;
-            _statusBadge.characterSize = 0.12f;
-            _statusBadge.alignment = TextAlignment.Center;
-            _statusBadge.anchor = TextAnchor.MiddleCenter;
-            _statusBadge.color = Color.white;
-            _statusBadge.text = "";
+            Color oc = Data.OwnerId == 0 ? UIManager.DS.NeonCyan : FleetIndicator.OwnerColor(Data.OwnerId);
+            _tag = WorldChip.Create(_tagRoot, "Tag", 60, true, true);
+            _tag.Height = 0.5f;
+            _tag.SetIcon(Data.Type == FleetType.Science ? LGIcon.Sensors
+                       : Data.Type == FleetType.Constructor ? LGIcon.Construction
+                       : ModuleVisuals.HullIcon(Data.HullClass));
+            _tag.SetColors(new Color(0.015f, 0.04f, 0.055f, 0.86f), new Color(oc.r, oc.g, oc.b, 0.55f), oc, oc, new Color(0.92f, 0.97f, 1f));
+            _tag.SetAlpha(0f);
+
+            _tagExtra = WorldChip.Create(_tagRoot, "Extra", 60, false, false);
+            _tagExtra.Height = 0.42f;
+            _tagExtra.SetColors(new Color(oc.r * 0.25f, oc.g * 0.25f, oc.b * 0.25f, 0.9f), new Color(oc.r, oc.g, oc.b, 0.7f), oc, oc, oc);
+            _tagExtra.SetAlpha(0f);
         }
 
         private void CreateTypeIcon()
@@ -623,6 +634,29 @@ namespace StellarisClone.Rendering
             else if (Data.Path.Count == 0 && Data.OwnerId == 0) Data.HasPlayerOrder = false;
         }
 
+        /// <summary>Ярлык над кораблём: пересобирается только при смене текста, по центру над кораблём.</summary>
+        private void UpdateTag(string label, int more, bool near)
+        {
+            if (_tag == null) return;
+            bool show = near && !string.IsNullOrEmpty(label);
+            if (show && (label != _tagName || more != _tagCount))
+            {
+                _tagName = label;
+                _tagCount = more;
+                _tag.Set(label, 0.27f);
+                float total = _tag.Width;
+                if (more > 0)
+                {
+                    _tagExtra.Set($"+{more}", 0.24f);
+                    total += 0.08f + _tagExtra.Width;
+                    _tagExtra.CenterOn(total * 0.5f - _tagExtra.Width * 0.5f, 0f);
+                }
+                _tag.CenterOn(-total * 0.5f + _tag.Width * 0.5f, 0f);
+            }
+            _tag.SetAlpha(show ? 1f : 0f);
+            _tagExtra.SetAlpha(show && more > 0 ? 1f : 0f);
+        }
+
         /// <summary>Эффекты прыжка видны на карте галактики — для своих флотов и тех чужих, кого мы видим.</summary>
         private bool ShowJumpFx()
         {
@@ -757,14 +791,14 @@ namespace StellarisClone.Rendering
             _visual?.Tick(_animTime);
 
 
-            if (_camTransform != null && _statusBadge != null)
+            bool tagNear = false;
+            if (_camTransform != null && _tagRoot != null)
             {
-                _statusBadge.transform.rotation = _camTransform.rotation;
+                _tagRoot.rotation = _camTransform.rotation;
                 float dist = Vector3.Distance(transform.position, _camTransform.position);
-                _statusBadge.transform.localScale = Vector3.one * Mathf.Clamp(dist / 40f, 0.8f, 3.5f);
-                // Издалека состояние показывает значок флота — текст только мешал бы
-                bool near = dist < 70f;
-                if (_statusBadge.gameObject.activeSelf != near) _statusBadge.gameObject.SetActive(near);
+                _tagRoot.localScale = Vector3.one * Mathf.Clamp(dist / 40f, 0.8f, 3.5f);
+                // Издалека состояние показывает значок флота — ярлык только мешал бы
+                tagNear = dist < 70f;
             }
 
             // Бой или работа закончились — корабль возвращается на своё место на орбите
@@ -779,14 +813,14 @@ namespace StellarisClone.Rendering
             // Над кораблём — только имя выделенного; состояние показывают значок флота, панель флота и эффекты.
             // В строю подпись одна на группу: над первым выделенным флотом, с числом остальных выделенных
             string label = "";
+            int more = 0;
             if (_isSelected && !Data.InCombat)
             {
                 var slot = FleetFormation.Holds(Data) || FleetFormation.Travels(Data) ? FleetFormation.Get(this) : default;
-                if (slot.SelectedCount <= 1) label = $"<color=#9FF5EE>{Data.Name}</color>";
-                else if (slot.FirstSelected == this)
-                    label = $"<color=#9FF5EE>{Data.Name}</color>  <color=#6FB9B3>+{slot.SelectedCount - 1}</color>";
+                if (slot.SelectedCount <= 1) label = Data.Name;
+                else if (slot.FirstSelected == this) { label = Data.Name; more = slot.SelectedCount - 1; }
             }
-            if (_statusBadge.text != label) _statusBadge.text = label;
+            UpdateTag(label, more, tagNear);
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;
 

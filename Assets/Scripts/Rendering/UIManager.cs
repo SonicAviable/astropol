@@ -456,7 +456,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             RulerBadge.Create(_canvas.transform, new Vector2(TopBarMargin, -TopBarMargin), OpenEmpireOverviewModal);
 
             // Ресурсы — единая рамка по центру сверху
-            const float cellW = 128f, resH = 58f;
+            const float cellW = 148f, resH = 64f;
             var bar = new GameObject("TopBar");
             bar.transform.SetParent(_canvas.transform, false);
             var rt = bar.AddComponent<RectTransform>();
@@ -634,16 +634,20 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             fm.SetSelection(list);
         }
 
-        /// <summary>Ячейка рамки ресурсов: подпись сверху, значок и число снизу (как в референсе).</summary>
+        /// <summary>
+        /// Ячейка рамки ресурсов: значок в круглом «гнезде» со свечением цвета ресурса, подпись с разрядкой,
+        /// крупное значение (прирост — мельче), снизу — светящаяся черта цвета ресурса, гаснущая к краям.
+        /// </summary>
         private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip)
         {
+            const float w = 144f, h = 54f;
             var badge = new GameObject($"Badge_{label}");
             badge.transform.SetParent(parent, false);
             var rt = badge.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
             rt.pivot = new Vector2(0, 0.5f);
             rt.anchoredPosition = new Vector2(xPos, 0);
-            rt.sizeDelta = new Vector2(124, 48);
+            rt.sizeDelta = new Vector2(w, h);
 
             var img = badge.AddComponent<Image>();
             img.color = new Color(0, 0, 0, 0);
@@ -653,40 +657,93 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tip = badge.AddComponent<TooltipTrigger>();
             UIAnchors.Register(UIAnchors.Resources, rt);
 
-            // Разделитель между ячейками
+            // Разделитель между ячейками — гаснет к концам
             if (xPos > 20f)
             {
-                var sep = new GameObject("Sep");
-                sep.transform.SetParent(badge.transform, false);
-                var sRt = sep.AddComponent<RectTransform>();
-                sRt.anchorMin = new Vector2(0, 0.15f); sRt.anchorMax = new Vector2(0, 0.85f);
-                sRt.sizeDelta = new Vector2(1, 0);
-                var sImg = sep.AddComponent<Image>();
-                sImg.color = new Color(0.45f, 0.95f, 0.90f, 0.22f);
-                sImg.raycastTarget = false;
-                LG.Ignore(sep);
+                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.45f, 0.95f, 0.90f, 0.35f));
+                sep.rectTransform.anchorMin = new Vector2(0, 0.08f);
+                sep.rectTransform.anchorMax = new Vector2(0, 0.92f);
+                sep.rectTransform.sizeDelta = new Vector2(2f, 0f);
+                sep.rectTransform.anchoredPosition = Vector2.zero;
             }
 
-            var cap = CreateText(badge.transform, label, 10, FontStyle.Bold, new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f), TextAnchor.UpperCenter);
+            // Гнездо значка: мягкое свечение, тёмный диск, кольцо цвета ресурса
+            var halo = HudSprite(badge.transform, "Halo", FactionSelectScreen.RadialSprite(), new Color(accentCol.r, accentCol.g, accentCol.b, 0.22f));
+            halo.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(60, 60));
+            var disc = HudSprite(badge.transform, "Socket", SocketSprite(true), new Color(0.015f, 0.04f, 0.055f, 0.95f));
+            disc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(36, 36));
+            var ring = HudSprite(badge.transform, "Ring", SocketSprite(false), new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f));
+            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(36, 36));
+            var ic = LGIcons.Create(badge.transform, icon, 17, accentCol);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(17, 17));
+
+            var cap = CreateText(badge.transform, label, 10, FontStyle.Bold, new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f), TextAnchor.UpperLeft);
             cap.rectTransform.anchorMin = Vector2.zero;
             cap.rectTransform.anchorMax = Vector2.one;
-            cap.rectTransform.offsetMin = new Vector2(4, 0);
-            cap.rectTransform.offsetMax = new Vector2(-4, -3);
+            cap.rectTransform.offsetMin = new Vector2(56, 0);
+            cap.rectTransform.offsetMax = new Vector2(-4, -8);
             cap.Track(1.4f);
 
-            var ic = LGIcons.Create(badge.transform, icon, 17, accentCol);
-            ic.rectTransform.anchorMin = ic.rectTransform.anchorMax = new Vector2(0, 0);
-            ic.rectTransform.pivot = new Vector2(0, 0);
-            ic.rectTransform.anchoredPosition = new Vector2(10, 4);
-
-            var val = CreateText(badge.transform, "0", 15, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
+            var val = CreateText(badge.transform, "0", 17, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
             val.rectTransform.anchorMin = Vector2.zero;
             val.rectTransform.anchorMax = Vector2.one;
-            val.rectTransform.offsetMin = new Vector2(32, 2);
+            val.rectTransform.offsetMin = new Vector2(56, 9);
             val.rectTransform.offsetMax = new Vector2(-4, 0);
+            var vs = val.gameObject.AddComponent<Shadow>();
+            vs.effectColor = new Color(0f, 0f, 0f, 0.6f);
+            vs.effectDistance = new Vector2(0f, -1f);
 
-            xPos += 128f;
+            // Светящаяся черта цвета ресурса под ячейкой
+            var under = HudSprite(badge.transform, "Underline", FactionSelectScreen.RadialSprite(), new Color(accentCol.r, accentCol.g, accentCol.b, 0.65f));
+            under.rectTransform.anchorMin = new Vector2(0.06f, 0f);
+            under.rectTransform.anchorMax = new Vector2(0.94f, 0f);
+            under.rectTransform.sizeDelta = new Vector2(0f, 2f);
+            under.rectTransform.anchoredPosition = new Vector2(0f, 2f);
+
+            xPos += w + 4f;
             return val;
+        }
+
+        private static Image HudSprite(Transform parent, string name, Sprite sp, Color c)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>();
+            var im = go.AddComponent<Image>();
+            im.sprite = sp;
+            im.color = c;
+            im.raycastTarget = false;
+            LG.Ignore(go);
+            return im;
+        }
+
+        private static Sprite s_socketDisc, s_socketRing;
+
+        /// <summary>Гнездо значка ресурса: filled — тёмный диск, иначе — тонкое кольцо с внутренним отсветом.</summary>
+        private static Sprite SocketSprite(bool filled)
+        {
+            if (filled && s_socketDisc != null) return s_socketDisc;
+            if (!filled && s_socketRing != null) return s_socketRing;
+            const int n = 96;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, true)
+            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = filled ? "HudSocketDisc" : "HudSocketRing", hideFlags = HideFlags.DontSave };
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f;
+                float d = Mathf.Sqrt(u * u + v * v);
+                float a = filled
+                    ? Mathf.Clamp01((0.94f - d) * 40f)
+                    : Mathf.Max(Mathf.Clamp01(1f - Mathf.Abs(d - 0.90f) / 0.05f), Mathf.Pow(Mathf.Clamp01((d - 0.55f) / 0.33f), 3f) * 0.35f * (d < 0.9f ? 1f : 0f));
+                px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(a) * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            var sp = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+            sp.hideFlags = HideFlags.DontSave;
+            if (filled) s_socketDisc = sp; else s_socketRing = sp;
+            return sp;
         }
 
         // ---------- Скорость времени: сегментный контрол с "жидким" ползунком ----------
@@ -1311,7 +1368,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_energyVal != null)
     {
         float net = eco.MonthlyEnergyIncome;
-        _energyVal.text = $"{(int)eco.EnergyCredits}  <size=11>{StatFormat.Colored(net, "")}</size>";
+        _energyVal.text = $"{(int)eco.EnergyCredits}  <size=12>{StatFormat.Colored(net, "")}</size>";
 
         if (_energyTip != null)
         {
@@ -1347,7 +1404,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === МИНЕРАЛЫ ===
     if (_mineralsVal != null)
     {
-        _mineralsVal.text = $"{(int)eco.Minerals}  <size=11>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>";
+        _mineralsVal.text = $"{(int)eco.Minerals}  <size=12>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>";
         if (_mineralsTip != null)
             _mineralsTip.SetText(
                 $"<b>Титан</b>\n" +
@@ -1363,7 +1420,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === СПЛАВЫ ===
     if (_alloysVal != null)
     {
-        _alloysVal.text = $"{(int)eco.Alloys}  <size=11>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>";
+        _alloysVal.text = $"{(int)eco.Alloys}  <size=12>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>";
         if (_alloysTip != null)
             _alloysTip.SetText(
                 $"<b>Сплавы</b>\n" +
@@ -1378,7 +1435,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === ВЛИЯНИЕ ===
     if (_influenceVal != null)
     {
-        _influenceVal.text = $"{(int)eco.Influence}  <size=11>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>";
+        _influenceVal.text = $"{(int)eco.Influence}  <size=12>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>";
         if (_influenceTip != null)
             _influenceTip.SetText(
                 $"<b>Влияние</b>\n" +

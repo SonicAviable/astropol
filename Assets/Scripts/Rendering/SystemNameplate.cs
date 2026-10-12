@@ -12,7 +12,10 @@ namespace StellarisClone.Rendering
         private GameObject _plateRoot;
         private TextMesh _titleMesh;
         private TextMesh _titleShadow;
-        private TextMesh _resMesh;
+        // Добыча системы — плашки со значками: титан (бирюзовый) и гелий-3 (золотой)
+        private WorldChip _chipMin, _chipEn;
+        private string _resKey;
+        private bool _hasMin, _hasEn;
         private bool _isSelected;
         private bool _isHovered;
         private bool _tooltipShown;
@@ -24,8 +27,8 @@ namespace StellarisClone.Rendering
         private const float MidFrom = 165f, MidTo = 205f;     // владения и системы с вашими флотами
         private const float ResFrom = 60f, ResTo = 85f;       // строка добычи
         private float _alpha = 1f, _resAlpha = 1f;
-        private Color _titleBase = Color.white, _resBase = Color.white;
-        private MeshRenderer _titleMr, _shadowMr, _resMr;
+        private Color _titleBase = Color.white;
+        private MeshRenderer _titleMr, _shadowMr;
 
         public void Initialize(StarSystem data)
         {
@@ -45,8 +48,8 @@ namespace StellarisClone.Rendering
             _plateRoot.transform.SetParent(transform, false);
             _plateRoot.transform.localPosition = new Vector3(0, -3.2f, 0);
 
-          Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-            ?? Font.CreateDynamicFontFromOSFont("Arial", 64);
+            // Шрифт игры (Play), как во всём интерфейсе; запасной — встроенный
+            Font font = GameFont.Bold ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             var shadowObj = new GameObject("TitleShadow");
             shadowObj.transform.SetParent(_plateRoot.transform, false);
@@ -63,6 +66,7 @@ namespace StellarisClone.Rendering
             _titleShadow.color = new Color(0f, 0f, 0f, 0.95f);
 
             var mrShadow = shadowObj.GetComponent<MeshRenderer>();
+            if (font != null) mrShadow.sharedMaterial = font.material;
             mrShadow.sortingOrder = 49;
             _shadowMr = mrShadow;
 
@@ -80,52 +84,69 @@ namespace StellarisClone.Rendering
             _titleMesh.text = _data.Name;
 
             var mrTitle = titleObj.GetComponent<MeshRenderer>();
+            if (font != null) mrTitle.sharedMaterial = font.material;
             mrTitle.sortingOrder = 50;
             _titleMr = mrTitle;
 
-            var resObj = new GameObject("ResText");
-            resObj.transform.SetParent(_plateRoot.transform, false);
-            resObj.transform.localPosition = new Vector3(0, -1.1f, 0);
-
-            _resMesh = resObj.AddComponent<TextMesh>();
-            _resMesh.font = font;
-            _resMesh.fontSize = 38;
-            _resMesh.characterSize = 0.12f;
-            _resMesh.fontStyle = FontStyle.Bold;
-            _resMesh.anchor = TextAnchor.MiddleCenter;
-            _resMesh.alignment = TextAlignment.Center;
-
-            var mrRes = resObj.GetComponent<MeshRenderer>();
-            mrRes.sortingOrder = 50;
-            _resMr = mrRes;
+            var resRow = new GameObject("Resources");
+            resRow.transform.SetParent(_plateRoot.transform, false);
+            resRow.transform.localPosition = new Vector3(0, -1.15f, 0);
+            _chipMin = WorldChip.Create(resRow.transform, "Titan", 46, false, true);
+            _chipMin.SetIcon(LGIcon.Minerals);
+            _chipEn = WorldChip.Create(resRow.transform, "Helium", 46, false, true);
+            _chipEn.SetIcon(LGIcon.Energy);
+            _chipMin.SetAlpha(0f);
+            _chipEn.SetAlpha(0f);
 
             UpdateResourceBadge();
         }
 
         public void UpdateResourceBadge()
         {
-            if (_resMesh == null || _data == null) return;
+            if (_chipMin == null || _data == null) return;
 
-            if (!_data.IsSurveyed)
+            // Добыча, а если ещё ничего не добывается — залежи (бледнее)
+            int min = 0, en = 0;
+            bool potential = false;
+            if (_data.IsSurveyed)
             {
-                _resMesh.text = "";
-                return;
+                min = _data.HarvestedMinerals;
+                en = _data.HarvestedEnergy;
+                if (min <= 0 && en <= 0)
+                {
+                    min = _data.PotentialMinerals;
+                    en = _data.PotentialEnergy;
+                    potential = min > 0 || en > 0;
+                }
             }
 
-            string res = "";
-            if (_data.HarvestedMinerals > 0) res += $"◆{_data.HarvestedMinerals} ";
-            if (_data.HarvestedEnergy > 0)   res += $"⚡{_data.HarvestedEnergy} ";
+            _hasMin = min > 0;
+            _hasEn = en > 0;
+            string key = $"{min}|{en}|{potential}";
+            if (key == _resKey) { ApplyAlpha(); return; }
+            _resKey = key;
 
-            if (string.IsNullOrEmpty(res) && (_data.PotentialMinerals > 0 || _data.PotentialEnergy > 0))
-            {
-                if (_data.PotentialMinerals > 0) res += $"◆{_data.PotentialMinerals} ";
-                if (_data.PotentialEnergy > 0)   res += $"⚡{_data.PotentialEnergy} ";
-            }
+            Color cyan = UIManager.DS.NeonCyan, gold = UIManager.DS.Gold;
+            float dim = potential ? 0.55f : 1f;
+            StyleChip(_chipMin, cyan, dim);
+            StyleChip(_chipEn, gold, dim);
 
-            _resMesh.text = res;
-            var resCol = UIManager.DS.NeonCyan;
-            _resBase = new Color(resCol.r, resCol.g, resCol.b, 0.95f);
+            float gap = 0.14f, total = 0f;
+            if (min > 0) { _chipMin.Set(min.ToString(), 0.38f); total += _chipMin.Width; }
+            if (en > 0) { _chipEn.Set(en.ToString(), 0.38f); total += (total > 0f ? gap : 0f) + _chipEn.Width; }
+            float x = -total * 0.5f;
+            if (min > 0) { _chipMin.CenterOn(x + _chipMin.Width * 0.5f, 0f); x += _chipMin.Width + gap; }
+            if (en > 0) _chipEn.CenterOn(x + _chipEn.Width * 0.5f, 0f);
             ApplyAlpha();
+        }
+
+        private static void StyleChip(WorldChip c, Color col, float dim)
+        {
+            c.SetColors(new Color(0.015f, 0.04f, 0.055f, 0.80f * dim),
+                        new Color(col.r, col.g, col.b, 0.45f * dim),
+                        col,
+                        new Color(col.r, col.g, col.b, dim),
+                        new Color(Mathf.Lerp(col.r, 1f, 0.55f), Mathf.Lerp(col.g, 1f, 0.55f), Mathf.Lerp(col.b, 1f, 0.55f), dim));
         }
 
         public void UpdateVisuals()
@@ -174,12 +195,14 @@ namespace StellarisClone.Rendering
             var t = _titleBase; t.a *= _alpha;
             _titleMesh.color = t;
             if (_titleShadow != null) _titleShadow.color = new Color(0f, 0f, 0f, 0.95f * _alpha);
-            if (_resMesh != null) { var r = _resBase; r.a *= _resAlpha; _resMesh.color = r; }
             bool on = _alpha > 0.01f;
             if (_titleMr != null && _titleMr.enabled != on) _titleMr.enabled = on;
             if (_shadowMr != null && _shadowMr.enabled != on) _shadowMr.enabled = on;
-            bool resOn = _resAlpha > 0.01f;
-            if (_resMr != null && _resMr.enabled != resOn) _resMr.enabled = resOn;
+            if (_chipMin != null)
+            {
+                _chipMin.SetAlpha(_hasMin ? _resAlpha : 0f);
+                _chipEn.SetAlpha(_hasEn ? _resAlpha : 0f);
+            }
         }
 
         private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
