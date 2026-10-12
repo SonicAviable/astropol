@@ -47,22 +47,23 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Рисованные иконки ресурсов (Resources/UI/Icons/res_*.png — белый силуэт на прозрачном фоне):
-        /// если картинка есть, она заменяет векторную иконку во всём интерфейсе; цвет по-прежнему задаёт Image.color.
+        /// Рисованные иконки (белый силуэт на прозрачном фоне): если картинка есть, она заменяет векторную
+        /// иконку во всём интерфейсе; цвет по-прежнему задаёт Image.color.
+        /// Ресурсы — Resources/UI/Icons/res_&lt;ресурс&gt;.png, остальные — Resources/UI/Icons/&lt;имя LGIcon в нижнем регистре&gt;.png
+        /// (например, population.png, starbase.png, swords.png).
         /// </summary>
         private static Sprite ArtIcon(LGIcon icon)
         {
             string file = icon switch
             {
-                LGIcon.Energy => "energy",
-                LGIcon.Minerals => "minerals",
-                LGIcon.Alloys => "alloys",
-                LGIcon.Influence => "influence",
-                LGIcon.Research => "research",
-                _ => null
+                LGIcon.Energy => "res_energy",
+                LGIcon.Minerals => "res_minerals",
+                LGIcon.Alloys => "res_alloys",
+                LGIcon.Influence => "res_influence",
+                LGIcon.Research => "res_research",
+                _ => icon.ToString().ToLowerInvariant()
             };
-            if (file == null) return null;
-            var tex = Resources.Load<Texture2D>("UI/Icons/res_" + file);
+            var tex = Resources.Load<Texture2D>("UI/Icons/" + file);
             if (tex == null) return null;
             tex.wrapMode = TextureWrapMode.Clamp;
             // Тот же мировой размер, что у векторных иконок (Res px при 100 px/ед. = 0.96 ед.), — для значков на карте
