@@ -192,8 +192,9 @@ namespace StellarisClone.Rendering
             LG.Header(header.gameObject);
             var hIcon = LGIcons.Create(header.transform, LGIcon.Shipyard, 20, Neon);
             hIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(20, 20));
-            var title = LGBuild.Label(header.transform, "КОНСТРУКТОР КОРАБЛЕЙ", 15, Neon, TextAnchor.MiddleLeft, bold: true);
+            var title = LGBuild.Label(header.transform, "КОНСТРУКТОР КОРАБЛЕЙ", 15, Primary, TextAnchor.MiddleLeft, bold: true);
             title.rectTransform.Stretch(52, 0, 0, 0);
+            title.Track(2.2f);
             var hint = LGBuild.Label(header.transform, "каждое орудие стреляет своим типом урона · кинетика срывает щиты, энергия жжёт броню, ракеты бьют всё",
                 10, Muted, TextAnchor.MiddleRight);
             hint.rectTransform.Stretch(0, 0, 60, 0);
@@ -302,6 +303,7 @@ namespace StellarisClone.Rendering
             host.TopBand(top, 20f, 14f, 14f);
             var t = LGBuild.Label(host, text, 10, Gold, TextAnchor.MiddleLeft, bold: true);
             t.rectTransform.Stretch();
+            t.Track(1.6f);
             var line = LGBuild.Panel(host, "Line", new Color(Gold.r, Gold.g, Gold.b, 0.22f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
             line.rectTransform.anchorMax = new Vector2(1, 0);
@@ -477,6 +479,7 @@ namespace StellarisClone.Rendering
             _blueprint.texture = studio.Target;
             _silhouette.enabled = studio.Target == null;
 
+            _calloutN = 0;
             float y = 0f;
             y = SlotGroup("ОРУЖИЕ", LGIcon.Weapons, _draft.WeaponModuleIds, ModuleSlotType.Weapon, y);
             y = SlotGroup("ЗАЩИТА", LGIcon.Defense, _draft.DefenseModuleIds, ModuleSlotType.Defense, y);
@@ -500,14 +503,15 @@ namespace StellarisClone.Rendering
                 int col = i % 3, row = i / 3;
                 var mod = ShipDesignManager.Instance.GetModule(slots[i]);
                 float top = y + row * (cardH + gap);
-                SlotCard(mod, type, col, top, cardH, () => OpenPicker(type, idx, slots));
-                Callout(type, i, col, top, mod);
+                int n = ++_calloutN;
+                SlotCard(mod, type, col, top, cardH, n, () => OpenPicker(type, idx, slots));
+                Callout(type, i, mod, n);
             }
             int rows = (slots.Count + 2) / 3;
             return y + rows * (cardH + gap) + 4f;
         }
 
-        private void SlotCard(ShipModule mod, ModuleSlotType type, int col, float top, float h, System.Action onClick)
+        private void SlotCard(ShipModule mod, ModuleSlotType type, int col, float top, float h, int number, System.Action onClick)
         {
             Color tint = mod != null ? ModuleVisuals.Tint(mod) : Muted;
             var btn = LGBuild.Button(_slotArea, "Slot", mod != null ? new Color(tint.r * 0.12f, tint.g * 0.12f, tint.b * 0.12f, 0.95f) : new Color(0.04f, 0.08f, 0.1f, 0.8f),
@@ -518,6 +522,10 @@ namespace StellarisClone.Rendering
             rt.pivot = new Vector2(0.5f, 1f);
             rt.offsetMin = new Vector2(col == 0 ? 0f : 4f, -top - h);
             rt.offsetMax = new Vector2(col == 2 ? 0f : -4f, -top);
+
+            // Номер слота — совпадает с меткой на чертеже корпуса
+            var num = LGBuild.Label(btn.transform, number.ToString("00"), 9, new Color(tint.r, tint.g, tint.b, mod != null ? 0.9f : 0.5f), TextAnchor.LowerRight, bold: true);
+            num.rectTransform.Stretch(0, 4, 7, 0);
 
             if (mod == null)
             {
@@ -531,7 +539,7 @@ namespace StellarisClone.Rendering
             var name = LGBuild.Label(btn.transform, mod.Name, 10, Primary, TextAnchor.UpperLeft, bold: true);
             name.rectTransform.Stretch(34, 0, 30, 5);
             var stats = LGBuild.Label(btn.transform, ModuleVisuals.StatLine(mod), 8, Muted, TextAnchor.LowerLeft);
-            stats.rectTransform.Stretch(34, 5, 4, 0);
+            stats.rectTransform.Stretch(34, 5, 22, 0);
             if (mod.PowerDraw > 0f)
             {
                 var pw = LGBuild.Label(btn.transform, $"<color=#FFCC52>−{mod.PowerDraw:0}</color>", 10, Gold, TextAnchor.UpperRight, bold: true);
@@ -540,11 +548,14 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(btn.gameObject, ModuleTooltip(mod) + "\n\n<color=#8AA2A8>Щёлкните, чтобы заменить.</color>");
         }
 
+        private int _calloutN;
+
         /// <summary>
-        /// Выноска чертежа: от верха карточки слота к точке на корпусе — оружие в носовой части,
-        /// защита — в середине, вспомогательные системы — в корме (нос — справа).
+        /// Метка на чертеже, как на технической схеме: точка на корпусе и номер слота рядом с ней (тот же номер — на карточке).
+        /// Оружие — в носовой части, защита — в середине, вспомогательные системы — в корме (нос — справа).
+        /// Без длинных выносок через весь чертёж — они путались и пересекались.
         /// </summary>
-        private void Callout(ModuleSlotType type, int index, int col, float cardTop, ShipModule mod)
+        private void Callout(ModuleSlotType type, int index, ShipModule mod, int number)
         {
             if (_callouts == null) return;
             var area = _callouts.rect;
@@ -556,27 +567,32 @@ namespace StellarisClone.Rendering
                 ModuleSlotType.Defense => 0.42f + index * 0.07f,
                 _ => 0.16f + index * 0.08f
             };
-            float fy = 0.40f + (index % 2) * 0.18f;
+            bool up = index % 2 == 0;
+            float fy = up ? 0.40f : 0.58f;
             var anchor = new Vector2(SidePad + fx * viewW, -(ViewTop + fy * ViewH));
-            float colW = viewW / 3f;
-            var from = new Vector2(SidePad + (col + 0.5f) * colW, -(SlotsTop + cardTop));
 
             Color c = mod != null ? ModuleVisuals.Tint(mod) : Muted;
-            float alpha = mod != null ? 0.55f : 0.18f;
-            var line = LGBuild.Panel(_callouts, "Callout", new Color(c.r, c.g, c.b, alpha));
-            var lr = line.rectTransform;
-            lr.anchorMin = lr.anchorMax = new Vector2(0, 1);
-            lr.pivot = new Vector2(0, 0.5f);
-            Vector2 d = anchor - from;
-            lr.sizeDelta = new Vector2(d.magnitude, 1.2f);
-            lr.anchoredPosition = from;
-            lr.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
-            line.raycastTarget = false;
+            float a = mod != null ? 0.95f : 0.4f;
 
-            var dot = LGBuild.Panel(_callouts, "Point", new Color(c.r, c.g, c.b, mod != null ? 0.95f : 0.35f));
+            var dot = LGBuild.Panel(_callouts, "Point", new Color(c.r, c.g, c.b, a));
             dot.sprite = DotSprite();
             dot.raycastTarget = false;
             dot.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), anchor, new Vector2(11, 11));
+
+            // Короткая косая выноска к номеру: вверх-вправо у верхних точек, вниз-вправо у нижних
+            var dir = new Vector2(1f, up ? 1f : -1f).normalized;
+            var tick = LGBuild.Panel(_callouts, "Tick", new Color(c.r, c.g, c.b, a * 0.7f));
+            var tr = tick.rectTransform;
+            tr.anchorMin = tr.anchorMax = new Vector2(0, 1);
+            tr.pivot = new Vector2(0, 0.5f);
+            tr.sizeDelta = new Vector2(16f, 1.2f);
+            tr.anchoredPosition = anchor + dir * 5f;
+            tr.localRotation = Quaternion.Euler(0, 0, up ? 45f : -45f);
+            tick.raycastTarget = false;
+            LG.Ignore(tick.gameObject);
+
+            var lbl = LGBuild.Label(_callouts, number.ToString("00"), 10, new Color(c.r, c.g, c.b, a), TextAnchor.MiddleLeft, bold: true);
+            lbl.rectTransform.At(new Vector2(0, 1), new Vector2(0f, 0.5f), anchor + dir * 19f + new Vector2(2f, 0f), new Vector2(24, 14));
         }
 
         private static Sprite s_grid, s_dot;

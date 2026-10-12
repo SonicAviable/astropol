@@ -231,7 +231,7 @@ namespace StellarisClone.Rendering
             public Vector4 Radii;     // TL TR BR BL
             public float Fill, Glow, Shadow, Specular, Refraction, Border, GlowRadius, ShadowRadius;
             public Color Rim;
-            public int Flags;         // 1 hairline, 2 border-only, 4 no-specular
+            public int Flags;         // 1 hairline, 2 border-only, 4 no-specular, 8 «приборная» кнопка
             public bool ForceOpaqueVertex;
         }
 
@@ -544,6 +544,34 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>
+        /// «Приборная» кнопка вместо цветной заливки: тёмное тело, цвет кнопки — только акцент
+        /// (кромка, полоска слева, мягкая подсветка от левого края, светящиеся срезанные углы).
+        /// Цвет берётся из заливки, а если она нейтральная (серая/тёмная) — из цвета кромки.
+        /// </summary>
+        private void TacticalButton(ref Style s, ref Color32 c32)
+        {
+            Color tint = c32;
+            Color.RGBToHSV(tint, out float h, out float sat, out float val);
+            bool neutral = sat < 0.25f || val < 0.16f;
+            float wash = 0.14f;
+            if (neutral && useRimOverride)
+            {
+                Color.RGBToHSV(rimOverride, out float rh, out float rs, out float rv);
+                if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.06f : 0.03f; }
+            }
+            // Сила кромки — как просили (выбранная кнопка ярче невыбранной), но в «приборных» пределах
+            float rimA = neutral ? 0.32f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.35f, 0.3f, 0.85f) : 0.8f;
+            Color accent = neutral ? new Color(0.60f, 0.84f, 0.90f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.9f), 1f);
+            Color body = Color.Lerp(new Color(0.014f, 0.032f, 0.045f), accent, neutral ? 0.03f : wash);
+            body.a = tint.a;
+            c32 = body;
+            s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
+            s.Fill = Mathf.Max(s.Fill, 0.92f);
+            s.Glow *= 0.35f;
+            s.Flags |= 8;
+        }
+
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }
 
         private static Color LightRim(Color tint, float a)
@@ -575,6 +603,7 @@ namespace StellarisClone.Rendering
 
             Style s = Resolve(r, (Color)c32);
             if (s.ForceOpaqueVertex) c32.a = 255;
+            if (ResolveRole() == Role.Button) TacticalButton(ref s, ref c32);
 
             Color rim = s.Rim;
             if (QualitySettings.activeColorSpace == ColorSpace.Linear && !IsGammaVertexCanvas())

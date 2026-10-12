@@ -223,6 +223,7 @@ Shader "Astropolity/UI/LiquidGlass"
                 bool fHairline   = BitSet(flags, 1.0) > 0.5;
                 bool fBorderOnly = BitSet(flags, 2.0) > 0.5;
                 bool fNoSpecular = BitSet(flags, 4.0) > 0.5;
+                bool fTactical   = BitSet(flags, 8.0) > 0.5;   // «приборная» кнопка: тёмное тело, цвет — акцентом
 
                 // --- Метрики пикселя ---
                 float unitPx = max(length(float2(ddx(p.x), ddy(p.x))), 1e-4);  // юнитов на пиксель
@@ -291,6 +292,22 @@ Shader "Astropolity/UI/LiquidGlass"
                     bodyCol = tint + 0.025 + 0.045 * saturate(yN * 0.5 + 0.5) * specMul;
                     bodyCol += lerp(float3(1,1,1), rim.rgb, 0.5) * pow(edge, 5.0) * 0.08 * specMul;
                     bodyA = fill;
+
+                    if (fTactical)
+                    {
+                        float tu = (p.x / b.x) * 0.5 + 0.5;          // 0 — левый край, 1 — правый
+                        float tv = yN * 0.5 + 0.5;                   // 0 — низ, 1 — верх
+                        bodyCol = tint * (0.78 + 0.40 * tv);                                         // свет сверху
+                        bodyCol += rim.rgb * pow(saturate(1.0 - tu), 1.6) * (0.07 + 0.12 * hover);  // подсветка от левого края
+                        bodyCol += rim.rgb * pow(saturate(tv), 8.0) * 0.06;                          // блик верхней грани
+                        // Полоска-акцент слева — только у широких кнопок
+                        if (b.x > 24.0 && b.x > b.y * 1.6)
+                        {
+                            float lx = (p.x + b.x) * pxPerUnit;
+                            float barA = (smoothstep(2.0, 3.0, lx) - smoothstep(4.5, 5.5, lx)) * (1.0 - smoothstep(0.50, 0.62, abs(yN)));
+                            bodyCol = lerp(bodyCol, rim.rgb * 1.25, barA * saturate(rim.a * 1.4));
+                        }
+                    }
                 }
                 else if (mode < 2.5)
                 {
@@ -366,6 +383,7 @@ Shader "Astropolity/UI/LiquidGlass"
                 float3 strokeCol = lerp(rim.rgb, float3(1,1,1), pow(saturate(facing), 3.0) * 0.55 * specMul)
                                    * (0.8 + 0.55 * hover);
                 float strokeA = saturate(stroke * rim.a * (0.65 + 0.45 * f01 + 0.55 * hover));
+                if (fTactical) strokeA *= 0.55 + 0.45 * hover;   // кромка сдержанная, ярко горят срезанные углы
 
                 // --- Блик по кромке (двигается со светом) ---
                 float glintMask = saturate(1.0 - insidePx / 2.6) * cov;
