@@ -713,7 +713,7 @@ namespace StellarisClone.Rendering
                     Color col = d.Type == FleetType.Military ? UIManager.DS.Red
                               : d.Type == FleetType.Science ? CResearch : CGold;
                     LGIcon icon = d.Type == FleetType.Military ? LGIcon.Fleet
-                                : d.Type == FleetType.Science ? LGIcon.Sensors : LGIcon.Construction;
+                                : d.Type == FleetType.Science ? LGIcon.ScienceShip : LGIcon.ConstructorShip;
                     string type = d.Type == FleetType.Military ? "Боевой флот"
                                 : d.Type == FleetType.Science ? "Научный корабль" : "Строительный корабль";
                     var captured = fv;

@@ -359,8 +359,8 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => LGIcon.Minerals,
             JobKind.Colony => LGIcon.Planet,
             JobKind.Terraform => LGIcon.Globe,
-            _ => j.ShipType == FleetType.Science ? LGIcon.Sensors
-               : j.ShipType == FleetType.Constructor ? LGIcon.Construction : ModuleVisuals.HullIcon(j.Hull)
+            _ => j.ShipType == FleetType.Science ? LGIcon.ScienceShip
+               : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull)
         };
 
         private void CollectFleets(List<Row>[] sections)

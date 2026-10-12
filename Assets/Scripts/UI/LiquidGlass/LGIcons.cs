@@ -22,7 +22,9 @@ namespace StellarisClone.Rendering
         // Дипломатия
         Swords, Peace, Handshake, Gift, Border, Betrayal, Siege, Wrench,
         // Модули и корпуса кораблей
-        Laser, Cannon, Missile, ShieldDome, ArmorPlate, Thruster, Corvette, Frigate, Destroyer
+        Laser, Cannon, Missile, ShieldDome, ArmorPlate, Thruster, Corvette, Frigate, Destroyer,
+        // Гражданские корабли (рисованные: Resources/UI/Icons/scienceship.png, constructorship.png)
+        ScienceShip, ConstructorShip
     }
 
     /// <summary>
@@ -292,6 +294,10 @@ namespace StellarisClone.Rendering
         {
             switch (icon)
             {
+                // Векторный запас для гражданских кораблей — значки их работы
+                case LGIcon.ScienceShip: return Shape(LGIcon.Sensors);
+                case LGIcon.ConstructorShip: return Shape(LGIcon.Construction);
+
                 case LGIcon.Energy:
                     return p => U(
                         Poly(p, V(0.34f, 0.98f), V(-0.52f, -0.08f), V(0.14f, -0.08f)),

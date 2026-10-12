@@ -66,7 +66,7 @@ namespace StellarisClone.Rendering
             : j.Hull == ShipClass.Destroyer ? "Эсминец" : j.Hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
 
         private static LGIcon ShipIcon(ConstructionJob j) =>
-            j.ShipType == FleetType.Science ? LGIcon.Sensors : j.ShipType == FleetType.Constructor ? LGIcon.Construction : ModuleVisuals.HullIcon(j.Hull);
+            j.ShipType == FleetType.Science ? LGIcon.ScienceShip : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull);
 
         private void LateUpdate()
         {

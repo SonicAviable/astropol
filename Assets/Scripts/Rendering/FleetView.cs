@@ -342,8 +342,8 @@ namespace StellarisClone.Rendering
             Color oc = Data.OwnerId == 0 ? UIManager.DS.NeonCyan : FleetIndicator.OwnerColor(Data.OwnerId);
             _tag = WorldChip.Create(_tagRoot, "Tag", 60, true, true);
             _tag.Height = 0.5f;
-            _tag.SetIcon(Data.Type == FleetType.Science ? LGIcon.Sensors
-                       : Data.Type == FleetType.Constructor ? LGIcon.Construction
+            _tag.SetIcon(Data.Type == FleetType.Science ? LGIcon.ScienceShip
+                       : Data.Type == FleetType.Constructor ? LGIcon.ConstructorShip
                        : ModuleVisuals.HullIcon(Data.HullClass));
             _tag.SetColors(new Color(0.015f, 0.04f, 0.055f, 0.86f), new Color(oc.r, oc.g, oc.b, 0.55f), oc, oc, new Color(0.92f, 0.97f, 1f));
             _tag.SetAlpha(0f);

@@ -253,7 +253,7 @@ namespace StellarisClone.Rendering
             : hull == ShipClass.Destroyer ? "Эсминец" : hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
 
         private static LGIcon ShipIcon(FleetType type, ShipClass hull) =>
-            type == FleetType.Science ? LGIcon.Sensors : type == FleetType.Constructor ? LGIcon.Construction : ModuleVisuals.HullIcon(hull);
+            type == FleetType.Science ? LGIcon.ScienceShip : type == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(hull);
 
         private void Refresh()
         {

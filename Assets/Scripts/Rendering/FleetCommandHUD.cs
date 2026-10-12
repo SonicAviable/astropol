@@ -659,8 +659,8 @@ namespace StellarisClone.Rendering
 
         private static LGIcon TypeIcon(FleetData d) => d.Type switch
         {
-            FleetType.Science => LGIcon.Sensors,
-            FleetType.Constructor => LGIcon.Construction,
+            FleetType.Science => LGIcon.ScienceShip,
+            FleetType.Constructor => LGIcon.ConstructorShip,
             _ => d.HullClass == ShipClass.Destroyer ? LGIcon.Destroyer : d.HullClass == ShipClass.Frigate ? LGIcon.Frigate : LGIcon.Corvette
         };
 
