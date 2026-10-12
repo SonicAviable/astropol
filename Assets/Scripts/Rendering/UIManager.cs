@@ -41,7 +41,7 @@ namespace StellarisClone.Rendering
 
             // Текст
             public static readonly Color TextPrimary   = new Color(0.94f, 0.98f, 1.00f, 1.00f);
-            public static readonly Color TextMuted     = new Color(0.62f, 0.74f, 0.80f, 1.00f);
+            public static readonly Color TextMuted     = new Color(0.72f, 0.82f, 0.88f, 1.00f);
             public static readonly Color TextShadow    = new Color(0.000f, 0.020f, 0.035f, 0.55f);
 
             // Оттенки стеклянных кнопок

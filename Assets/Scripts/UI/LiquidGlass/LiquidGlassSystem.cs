@@ -29,6 +29,8 @@ namespace StellarisClone.Rendering
         [Range(0f, 1f)] public float vibrancy = 0.25f;
         [Tooltip("Сила неонового свечения вокруг стекла (0 — без ореола).")]
         [Range(0f, 1.5f)] public float glowStrength = 0.2f;
+        [Tooltip("Насколько светлее тёмные панели (0 — исходный тёмный вид).")]
+        [Range(0f, 1f)] public float brightness = 0.5f;
 
         [Header("Light")]
         [Tooltip("Базовый угол света в градусах (90 — сверху, 135 — сверху-слева).")]
@@ -47,6 +49,7 @@ namespace StellarisClone.Rendering
         private static readonly int PointerId = Shader.PropertyToID("_LGPointer");
         private static readonly int VibrancyId = Shader.PropertyToID("_LGVibrancy");
         private static readonly int GlowStrengthId = Shader.PropertyToID("_LGGlowStrength");
+        private static readonly int BrightnessId = Shader.PropertyToID("_LGBrightness");
 
         private LiquidGlassBackdropPass _pass;
         private float _scanTimer;
@@ -142,6 +145,7 @@ namespace StellarisClone.Rendering
             Shader.SetGlobalFloat(BackdropFlipId, flipBackdrop ? 1f : 0f);
             Shader.SetGlobalFloat(VibrancyId, vibrancy);
             Shader.SetGlobalFloat(GlowStrengthId, glowStrength);
+            Shader.SetGlobalFloat(BrightnessId, brightness);
 
             Vector2 ptr = new Vector2(0.5f, 0.5f);
             if (Screen.width > 0 && Screen.height > 0)

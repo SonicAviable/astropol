@@ -189,6 +189,9 @@ namespace StellarisClone.Rendering
             LGControls.Selector(LGControls.Row(_content, ref y, "Масштаб интерфейса", "Крупнее — для больших экранов и 4K"),
                 scales, GameSettings.UIScaleIndex, GameSettings.SetUIScale);
 
+            LGControls.Slider(LGControls.Row(_content, ref y, "Яркость интерфейса", "Светлее панели окон, кнопок и списков"),
+                GameSettings.UIBrightness, 0f, 1f, Percent, GameSettings.SetUIBrightness);
+
             LGControls.Switch(LGControls.Row(_content, ref y, "Всплывающие подсказки", "Пояснения при наведении на элементы"),
                 GameSettings.Tooltips, GameSettings.SetTooltips);
 

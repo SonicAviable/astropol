@@ -113,6 +113,7 @@ Shader "Astropolity/UI/LiquidGlass"
             float4 _LGPointer;    // xy — курсор в screen UV
             float _LGVibrancy;
             float _LGGlowStrength;   // общий регулятор неонового свечения
+            float _LGBrightness;     // подъём яркости тёмных панелей (0 — исходный тёмный вид, 1 — максимум)
 
             // 3 байта в одном float (точно представимо до 2^24)
             float3 Unpack3(float v)
@@ -300,6 +301,12 @@ Shader "Astropolity/UI/LiquidGlass"
 
                 if (mode < 1.5)
                 {
+                    // Яркость интерфейса: светлеют только тёмные стекло и пластины,
+                    // цветные кнопки и плашки остаются как есть
+                    float bodyLum = dot(bodyCol, float3(0.2126, 0.7152, 0.0722));
+                    float darkW = 1.0 - smoothstep(0.10, 0.35, bodyLum);
+                    bodyCol = lerp(bodyCol, bodyCol * 1.6 + float3(0.060, 0.070, 0.080), saturate(_LGBrightness) * darkW);
+
                     // Мягкая подсветка края, обращённого к свету
                     float soft = saturate(1.0 - insidePx / 16.0) * pow(saturate(facing), 2.0) * 0.16 * specMul;
                     bodyCol += soft;
