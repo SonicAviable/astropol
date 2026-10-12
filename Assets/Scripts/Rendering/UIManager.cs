@@ -687,6 +687,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
         }
 
+        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
+
         private void UpdateSpeedControl()
         {
             if (_speedThumb == null) return;
