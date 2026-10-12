@@ -91,6 +91,10 @@ namespace StellarisClone.Rendering
         private Text _pickerTitle, _statusText;
         private InputField _nameInput;
         private Image _silhouette;
+        // Чертёж: каркас корабля из ShipHoloStudio, выноски от слотов к точкам на корпусе
+        private RawImage _blueprint;
+        private RectTransform _callouts;
+        private const float ViewTop = 56f, ViewH = 220f, SlotsTop = ViewTop + ViewH + 10f, SidePad = 16f;
         private Button _deleteBtn;
 
         private static Color Muted => UIManager.DS.TextMuted;
@@ -129,6 +133,7 @@ namespace StellarisClone.Rendering
         {
             if (_picker != null) _picker.SetActive(false);
             if (_root != null) LG.Hide(_root);
+            ShipHoloStudio.Instance?.Hide();
             UIManager.Instance?.HideModalDimPublic();
         }
 
@@ -226,10 +231,33 @@ namespace StellarisClone.Rendering
                 _statusText.text = "<color=#F2C747>Есть несохранённые изменения.</color>";
             });
 
-            _silhouette = LGIcons.Create(center, LGIcon.Corvette, 330f, new Color(Neon.r, Neon.g, Neon.b, 0.05f), "Silhouette");
-            _silhouette.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20f), new Vector2(330f, 330f));
+            // Чертёжная сетка: мелкие клетки по 16, крупные по 64
+            var grid = LGBuild.Panel(center, "BlueprintGrid", new Color(0.35f, 0.85f, 0.95f, 1f));
+            grid.sprite = GridSprite();
+            grid.type = Image.Type.Tiled;
+            grid.raycastTarget = false;
+            grid.rectTransform.Stretch(6, 6, 6, 6);
+            LG.Ignore(grid.gameObject);
+
+            // Значок корпуса остаётся запасным вариантом, если модель не отрисуется
+            _silhouette = LGIcons.Create(center, LGIcon.Corvette, 200f, new Color(Neon.r, Neon.g, Neon.b, 0.06f), "Silhouette");
+            _silhouette.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ViewTop - ViewH * 0.5f), new Vector2(200f, 200f));
+
+            var view = LGBuild.Rect(center, "ShipView");
+            view.TopBand(ViewTop, ViewH, SidePad, SidePad);
+            _blueprint = view.gameObject.AddComponent<RawImage>();
+            _blueprint.raycastTarget = false;
+            var add = Resources.Load<Shader>("Shaders/UIAdditive");
+            if (add != null) _blueprint.material = new Material(add) { name = "BlueprintAdditive" };
+            LG.Ignore(view.gameObject);
+            var viewTag = LGBuild.Label(center, "СХЕМА КОРПУСА", 9, new Color(Neon.r, Neon.g, Neon.b, 0.55f), TextAnchor.UpperRight, bold: true);
+            viewTag.rectTransform.TopBand(ViewTop + 4f, 14f, SidePad, SidePad + 6f);
+
+            _callouts = LGBuild.Rect(center, "Callouts");
+            _callouts.Stretch();
+            LG.Ignore(_callouts.gameObject);
             _slotArea = LGBuild.Rect(center, "Slots");
-            _slotArea.Stretch(16, 12, 16, 62);
+            _slotArea.Stretch(SidePad, 12, SidePad, SlotsTop);
 
             BuildPicker(center);
 
@@ -439,8 +467,15 @@ namespace StellarisClone.Rendering
         {
             if (_slotArea == null) return;
             LGBuild.Clear(_slotArea);
+            if (_callouts != null) LGBuild.Clear(_callouts);
             if (_draft == null || ShipDesignManager.Instance == null) return;
             _silhouette.sprite = LGIcons.Get(ModuleVisuals.HullIcon(_draft.HullClass));
+
+            // Каркас корабля на чертеже
+            var studio = ShipHoloStudio.Ensure();
+            studio.Show(_draft.HullClass, new Color(0.40f, 0.92f, 1f, 1f));
+            _blueprint.texture = studio.Target;
+            _silhouette.enabled = studio.Target == null;
 
             float y = 0f;
             y = SlotGroup("ОРУЖИЕ", LGIcon.Weapons, _draft.WeaponModuleIds, ModuleSlotType.Weapon, y);
@@ -451,23 +486,25 @@ namespace StellarisClone.Rendering
         private float SlotGroup(string title, LGIcon icon, List<string> slots, ModuleSlotType type, float y)
         {
             var head = LGBuild.Rect(_slotArea, "Group");
-            head.TopBand(y, 22f);
+            head.TopBand(y, 20f);
             var hic = LGIcons.Create(head, icon, 13f, Gold);
             hic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(13, 13));
             var ht = LGBuild.Label(head, $"{title}  <color=#8AA2A8>· слотов {slots.Count}</color>", 10, Gold, TextAnchor.MiddleLeft, bold: true);
             ht.rectTransform.Stretch(20, 0, 0, 0);
-            y += 26f;
+            y += 22f;
 
-            const float cardH = 48f, gap = 8f;
+            const float cardH = 40f, gap = 6f;
             for (int i = 0; i < slots.Count; i++)
             {
                 int idx = i;
-                int col = i % 2, row = i / 2;
+                int col = i % 3, row = i / 3;
                 var mod = ShipDesignManager.Instance.GetModule(slots[i]);
-                SlotCard(mod, type, col, y + row * (cardH + gap), cardH, () => OpenPicker(type, idx, slots));
+                float top = y + row * (cardH + gap);
+                SlotCard(mod, type, col, top, cardH, () => OpenPicker(type, idx, slots));
+                Callout(type, i, col, top, mod);
             }
-            int rows = (slots.Count + 1) / 2;
-            return y + rows * (cardH + gap) + 6f;
+            int rows = (slots.Count + 2) / 3;
+            return y + rows * (cardH + gap) + 4f;
         }
 
         private void SlotCard(ShipModule mod, ModuleSlotType type, int col, float top, float h, System.Action onClick)
@@ -476,31 +513,117 @@ namespace StellarisClone.Rendering
             var btn = LGBuild.Button(_slotArea, "Slot", mod != null ? new Color(tint.r * 0.12f, tint.g * 0.12f, tint.b * 0.12f, 0.95f) : new Color(0.04f, 0.08f, 0.1f, 0.8f),
                 new Color(tint.r, tint.g, tint.b, mod != null ? 0.55f : 0.18f), onClick);
             var rt = (RectTransform)btn.transform;
-            rt.anchorMin = new Vector2(col * 0.5f, 1f);
-            rt.anchorMax = new Vector2(col * 0.5f + 0.5f, 1f);
+            rt.anchorMin = new Vector2(col / 3f, 1f);
+            rt.anchorMax = new Vector2((col + 1) / 3f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
-            rt.offsetMin = new Vector2(col == 0 ? 0f : 5f, -top - h);
-            rt.offsetMax = new Vector2(col == 0 ? -5f : 0f, -top);
+            rt.offsetMin = new Vector2(col == 0 ? 0f : 4f, -top - h);
+            rt.offsetMax = new Vector2(col == 2 ? 0f : -4f, -top);
 
             if (mod == null)
             {
-                var plus = LGBuild.Label(btn.transform, "+  пустой слот", 11, new Color(Muted.r, Muted.g, Muted.b, 0.75f), TextAnchor.MiddleCenter);
+                var plus = LGBuild.Label(btn.transform, "+  пустой слот", 10, new Color(Muted.r, Muted.g, Muted.b, 0.75f), TextAnchor.MiddleCenter);
                 plus.fontStyle = FontStyle.Italic;
                 return;
             }
 
-            var icon = LGIcons.Create(btn.transform, ModuleVisuals.Icon(mod), 26f, tint);
-            icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(26, 26));
-            var name = LGBuild.Label(btn.transform, mod.Name, 11, Primary, TextAnchor.UpperLeft, bold: true);
-            name.rectTransform.Stretch(44, 0, 44, 7);
-            var stats = LGBuild.Label(btn.transform, ModuleVisuals.StatLine(mod), 9, Muted, TextAnchor.LowerLeft);
-            stats.rectTransform.Stretch(44, 7, 6, 0);
+            var icon = LGIcons.Create(btn.transform, ModuleVisuals.Icon(mod), 20f, tint);
+            icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(20, 20));
+            var name = LGBuild.Label(btn.transform, mod.Name, 10, Primary, TextAnchor.UpperLeft, bold: true);
+            name.rectTransform.Stretch(34, 0, 30, 5);
+            var stats = LGBuild.Label(btn.transform, ModuleVisuals.StatLine(mod), 8, Muted, TextAnchor.LowerLeft);
+            stats.rectTransform.Stretch(34, 5, 4, 0);
             if (mod.PowerDraw > 0f)
             {
                 var pw = LGBuild.Label(btn.transform, $"<color=#FFCC52>−{mod.PowerDraw:0}</color>", 10, Gold, TextAnchor.UpperRight, bold: true);
                 pw.rectTransform.Stretch(0, 0, 10, 7);
             }
             TooltipHelper.Attach(btn.gameObject, ModuleTooltip(mod) + "\n\n<color=#8AA2A8>Щёлкните, чтобы заменить.</color>");
+        }
+
+        /// <summary>
+        /// Выноска чертежа: от верха карточки слота к точке на корпусе — оружие в носовой части,
+        /// защита — в середине, вспомогательные системы — в корме (нос — справа).
+        /// </summary>
+        private void Callout(ModuleSlotType type, int index, int col, float cardTop, ShipModule mod)
+        {
+            if (_callouts == null) return;
+            var area = _callouts.rect;
+            float w = area.width > 1f ? area.width : 504f;
+            float viewW = w - SidePad * 2f;
+            float fx = type switch
+            {
+                ModuleSlotType.Weapon => 0.66f + index * 0.07f,
+                ModuleSlotType.Defense => 0.42f + index * 0.07f,
+                _ => 0.16f + index * 0.08f
+            };
+            float fy = 0.40f + (index % 2) * 0.18f;
+            var anchor = new Vector2(SidePad + fx * viewW, -(ViewTop + fy * ViewH));
+            float colW = viewW / 3f;
+            var from = new Vector2(SidePad + (col + 0.5f) * colW, -(SlotsTop + cardTop));
+
+            Color c = mod != null ? ModuleVisuals.Tint(mod) : Muted;
+            float alpha = mod != null ? 0.55f : 0.18f;
+            var line = LGBuild.Panel(_callouts, "Callout", new Color(c.r, c.g, c.b, alpha));
+            var lr = line.rectTransform;
+            lr.anchorMin = lr.anchorMax = new Vector2(0, 1);
+            lr.pivot = new Vector2(0, 0.5f);
+            Vector2 d = anchor - from;
+            lr.sizeDelta = new Vector2(d.magnitude, 1.2f);
+            lr.anchoredPosition = from;
+            lr.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+            line.raycastTarget = false;
+
+            var dot = LGBuild.Panel(_callouts, "Point", new Color(c.r, c.g, c.b, mod != null ? 0.95f : 0.35f));
+            dot.sprite = DotSprite();
+            dot.raycastTarget = false;
+            dot.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), anchor, new Vector2(11, 11));
+        }
+
+        private static Sprite s_grid, s_dot;
+
+        /// <summary>Клетка чертёжной сетки 64×64: тонкие линии каждые 16 px, линия посильнее по краю клетки.</summary>
+        private static Sprite GridSprite()
+        {
+            if (s_grid != null) return s_grid;
+            const int R = 64;
+            var tex = new Texture2D(R, R, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.DontSave };
+            var px = new Color32[R * R];
+            for (int y = 0; y < R; y++)
+            for (int x = 0; x < R; x++)
+            {
+                byte a = 0;
+                if (x == 0 || y == 0) a = 46;
+                else if (x % 16 == 0 || y % 16 == 0) a = 18;
+                px[y * R + x] = new Color32(255, 255, 255, a);
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false);
+            s_grid = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            s_grid.hideFlags = HideFlags.DontSave;
+            return s_grid;
+        }
+
+        /// <summary>Точка выноски: яркое ядро и мягкий ореол.</summary>
+        private static Sprite DotSprite()
+        {
+            if (s_dot != null) return s_dot;
+            const int R = 32;
+            var tex = new Texture2D(R, R, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, hideFlags = HideFlags.DontSave };
+            var px = new Color32[R * R];
+            float c = (R - 1) * 0.5f;
+            for (int y = 0; y < R; y++)
+            for (int x = 0; x < R; x++)
+            {
+                float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;
+                float core = Mathf.Clamp01((0.38f - d) * 12f);
+                float ring = Mathf.Exp(-Mathf.Pow((d - 0.72f) / 0.07f, 2f)) * 0.8f;
+                px[y * R + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(Mathf.Max(core, ring)) * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            s_dot = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), 100f);
+            s_dot.hideFlags = HideFlags.DontSave;
+            return s_dot;
         }
 
         private static string ModuleTooltip(ShipModule m)
