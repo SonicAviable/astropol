@@ -299,7 +299,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Слот территории в шейдере границ: 0 — игрок, 1–4 — империи ИИ, 5 — угрозы (пираты, левиафаны).</summary>
-        private static float BorderSlot(int owner) => owner >= 1 && owner <= 4 ? owner : 5f;
+        private static float BorderSlot(int owner) => owner >= 0 && owner <= 4 ? owner : 5f;
 
         public void RefreshTerritoryVisuals()
         {
@@ -329,7 +329,7 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // Территории: все системы со звёздной базой, z — владелец (0 игрок, 1–3 — империи ИИ).
+            // Территории: все системы со звёздной базой, z — слот владельца (BorderSlot: 0 игрок, 1–4 — империи ИИ, 5 — угрозы).
             // Вдоль коридоров между своими системами добавляем промежуточные точки —
             // территория не рвётся на длинных переходах (как в Stellaris).
             const int MaxSys = 384;
