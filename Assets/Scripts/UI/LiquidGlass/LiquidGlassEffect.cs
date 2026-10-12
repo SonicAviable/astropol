@@ -315,12 +315,13 @@ namespace StellarisClone.Rendering
             switch (r)
             {
                 // Голо-стиль: строгие окна и кнопки с малым скруглением (как панели приборов), не капсулы
-                case Role.Glass:   return Mathf.Min(minS * 0.5f, maxS >= 500f ? 10f : 8f);
+                // Голо-стиль: размер фаски срезанного угла (шейдер режет 45°: крупно — слева сверху и справа снизу)
+                case Role.Glass:   return Mathf.Min(minS * 0.3f, maxS >= 500f ? 22f : 16f);
                 case Role.Platter:
-                case Role.Header:  return Mathf.Clamp(minS * 0.2f, 3f, 8f);
-                case Role.Button:  return Mathf.Min(h * 0.5f, 6f);
+                case Role.Header:  return Mathf.Clamp(minS * 0.2f, 4f, 10f);
+                case Role.Button:  return Mathf.Min(h * 0.35f, 10f);
                 case Role.Field:
-                case Role.Chip:    return Mathf.Min(minS * 0.5f, 6f);
+                case Role.Chip:    return Mathf.Min(minS * 0.35f, 7f);
                 case Role.Line:
                 case Role.Dot:     return minS * 0.5f;
                 case Role.Fill:    return Mathf.Min(minS * 0.5f, 8f);
@@ -368,7 +369,7 @@ namespace StellarisClone.Rendering
                     s.ShadowRadius = maxS >= 500f ? 30f : 18f;
                     s.Specular = 1f;
                     s.Refraction = 1f;
-                    s.Border = 1.2f;
+                    s.Border = 2.0f;   // внешняя «металлическая» кромка двойной рамки
                     s.GlowRadius = 12f;
                     s.Rim = hasOutline ? outlineCol : new Color(0.45f, 0.95f, 0.90f, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;

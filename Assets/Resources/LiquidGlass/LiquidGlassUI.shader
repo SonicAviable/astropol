@@ -163,8 +163,21 @@ Shader "Astropolity/UI/LiquidGlass"
             // r = (TR, BR, TL, BL)
             float SdRoundBox(float2 p, float2 b, float4 r)
             {
+                // Голо-стиль: срезанные углы (фаска 45°) — крупные слева сверху и справа снизу, малые на других двух.
+                // Круги и капсулы (радиус ≈ половине стороны) остаются круглыми.
+                float rMax = max(max(r.x, r.y), max(r.z, r.w));
+                bool chamfer = _LGHolo > 0.5 && rMax < 0.9 * min(b.x, b.y);
+                if (chamfer) r *= float4(0.35, 1.0, 1.0, 0.35);
                 r.xy = (p.x > 0.0) ? r.xy : r.zw;
                 r.x  = (p.y > 0.0) ? r.x  : r.y;
+                if (chamfer)
+                {
+                    float2 a = abs(p);
+                    float2 qs = a - b;
+                    float box = min(max(qs.x, qs.y), 0.0) + length(max(qs, 0.0));
+                    float cut = (a.x + a.y - (b.x + b.y - r.x)) * 0.70710678;
+                    return max(box, cut);
+                }
                 float2 q = abs(p) - b + r.x;
                 return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
             }
@@ -269,14 +282,8 @@ Shader "Astropolity/UI/LiquidGlass"
                     bodyCol += lerp(float3(1,1,1), rim.rgb, 0.5) * pow(edge, 6.0) * 0.14 * specMul; // френель
                     bodyA = (_LGBackdropReady < 0.5) ? max(0.9, fill) : 1.0;
 
-                    // Голо-стиль: едва заметная координатная сетка по стеклу (шаг 28 px)
-                    if (_LGHolo > 0.5)
-                    {
-                        float2 gp = p * pxPerUnit / 28.0;
-                        float2 gl = abs(frac(gp) - 0.5) * 28.0;                 // от центра ячейки, px (линия — на 14)
-                        float grid = smoothstep(12.8, 13.8, max(gl.x, gl.y));
-                        bodyCol += float3(0.35, 0.85, 0.90) * grid * 0.030 * saturate(depth * 3.0);
-                    }
+                    // Голо-стиль: лёгкая вертикальная растяжка — к верху окна светлее (как панели приборов)
+                    if (_LGHolo > 0.5) bodyCol *= 0.92 + 0.10 * saturate(yN * 0.5 + 0.5);
                 }
                 else if (mode < 1.5)
                 {
@@ -372,13 +379,22 @@ Shader "Astropolity/UI/LiquidGlass"
                 acc = float4(bodyCol * bA, bA) + acc * (1.0 - bA);
                 acc = float4(strokeCol * strokeA, strokeA) + acc * (1.0 - strokeA);
 
+                // Голо-стиль: двойная рамка окна — тонкая внутренняя линия в 5 px от кромки
+                if (mode < 0.5 && _LGHolo > 0.5)
+                {
+                    float inner = 1.0 - smoothstep(0.45, 1.25, abs(insidePx - 5.0));
+                    float inA = inner * cov * rim.a * 0.55;
+                    float3 inC = lerp(rim.rgb, float3(1, 1, 1), 0.15);
+                    acc = float4(inC * inA, inA) + acc * (1.0 - inA);
+                }
+
                 // Голо-стиль: уголки-скобки у крупных окон (L-образные, чуть внутри кромки)
                 if (mode < 0.5 && _LGHolo > 0.5)
                 {
                     float sidePx = minB * 2.0 * pxPerUnit;
                     if (sidePx > 70.0)
                     {
-                        float2 e = (b - abs(p)) * pxPerUnit - 5.0;          // от линии скобок внутрь, px
+                        float2 e = (b - abs(p)) * pxPerUnit - 9.0;          // от линии скобок внутрь, px (внутри двойной рамки)
                         float L = clamp(sidePx * 0.10, 12.0, 34.0);
                         float th = 1.8;
                         float inBox = (1.0 - smoothstep(L, L + 1.0, e.x)) * (1.0 - smoothstep(L, L + 1.0, e.y))
