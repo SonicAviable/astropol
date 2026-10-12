@@ -115,8 +115,8 @@ namespace StellarisClone.Core.Audio
             S(Sfx.UiBack, 0.26f, 2, 0.06f, 0.01f);
             S(Sfx.UiDenied, 0.32f, 1, 0.15f, 0f);
             S(Sfx.UiTab, 0.22f, 2, 0.05f, 0.03f, 2);
-            S(Sfx.WindowOpen, 0.24f, 2, 0.12f, 0.01f);
-            S(Sfx.WindowClose, 0.20f, 2, 0.12f, 0.01f);
+            S(Sfx.WindowOpen, 0.30f, 2, 0.12f, 0.015f);
+            S(Sfx.WindowClose, 0.26f, 2, 0.12f, 0.015f);
 
             S(Sfx.NotifyInfo, 0.26f, 2, 0.30f, 0f, 1, 1);
             S(Sfx.NotifySuccess, 0.32f, 2, 0.35f, 0f, 1, 2);
@@ -174,7 +174,7 @@ namespace StellarisClone.Core.Audio
             S(Sfx.GameStart, 0.46f, 1, 3.00f, 0f, 1, 3, SfxBus.Stinger, 0.6f);
 
             // Голографический интерфейс: всё тише основных звуков — фактура, а не события
-            S(Sfx.HoloScan, 0.13f, 1, 0.25f, 0.02f);
+            S(Sfx.HoloScan, 0.07f, 1, 0.25f, 0.02f);
             S(Sfx.TextTick, 0.05f, 2, 0.035f, 0.08f, 3, 0);
             S(Sfx.PanelSlide, 0.18f, 1, 0.12f, 0.03f);
             S(Sfx.AlertPop, 0.20f, 2, 0.20f, 0.01f);
@@ -587,22 +587,35 @@ namespace StellarisClone.Core.Audio
                 }
                 case Sfx.WindowOpen:
                 {
-                    b = new Stereo(2.0f, sr);
-                    Breath(b, seed, 0f, 0.45f, 250f, 2200f, 0.5f, 0.9f, 0.55f);
-                    Sub(b, rng, 0f, 73.4f, new Adsr(0.12f, 0.15f, 0.6f, 0.05f, 0.35f, 3f), 0.3f);
-                    Glass(b, rng, 0.16f, 86, 1.1f, 0.09f, -0.35f, 0.012f);
-                    Glass(b, rng, 0.20f, 93, 1.0f, 0.05f, 0.35f, 0.012f);
-                    b.ApplyReverb(0.28f, 0.85f, 0.5f, 1f, 0.03f, 250f);
-                    lp = 11000f;
+                    // Открытие панели «как в больших играх»: коротко и сухо, слоями —
+                    // щелчок атаки → короткий вдох воздуха вверх → мягкий «ток» с телом → щелчок фиксатора
+                    // → тёплая короткая «подложка» в ре (не колокольчики) → маленькая комната без длинного хвоста
+                    b = new Stereo(0.9f, sr);
+                    NoiseL(b, new NoiseLayer { Env = Adsr.Pluck(0.0006f, 0.006f, 6f), Color = NoiseColor.White, Gain = 0.22f,
+                        Filter = SvfMode.HighPass, Cutoff = Const(3200f), Width = 0.3f }, seed);
+                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.11f, 0.001f, 1f, 0f, 0.05f, 2.5f), Gain = 0.42f, Filter = SvfMode.BandPass,
+                        Cutoff = Glide(600f, 3600f, 0.16f), Q = 1.3f, Width = 0.8f }, seed + 1);
+                    Tone(b, new ToneLayer { Start = 0.10f, Env = Adsr.Pluck(0.002f, 0.12f, 5f), Freq = Glide(150f, 72f, 0.05f), Gain = 0.5f }, rng);
+                    Modal(b, rng, 0.15f, 2300f, new[] { 1f, 1.53f, 2.71f }, 0.05f, 0.05f, 0.25f);
+                    foreach (float m in new float[] { 62, 69 })
+                        Tone(b, new ToneLayer { Start = 0.10f, Env = new Adsr(0.012f, 0.14f, 0.25f, 0.02f, 0.22f, 3f), Wave = Wave.Saw, Unison = 3,
+                            DetuneCents = 8f, Freq = Const(Note.Hz(m)), Gain = 0.07f, Filter = SvfMode.LowPass, Cutoff = Glide(1400f, 500f, 0.3f), Q = 0.9f }, rng);
+                    Sub(b, rng, 0.10f, 55f, Adsr.Pluck(0.004f, 0.22f, 4f), 0.18f);
+                    b.ApplyReverb(0.1f, 0.45f, 0.6f, 1f, 0.012f, 300f);
+                    lp = 12000f;
                     break;
                 }
                 case Sfx.WindowClose:
                 {
-                    b = new Stereo(1.4f, sr);
-                    Breath(b, seed, 0f, 0.3f, 2000f, 300f, 0.45f, 0.9f, 0.2f);
-                    Sub(b, rng, 0f, 110f, new Adsr(0.01f, 0.08f, 0.4f, 0f, 0.2f), 0.22f, 55f);
-                    b.ApplyReverb(0.2f, 0.75f, 0.55f, 1f, 0.02f, 250f);
-                    lp = 10000f;
+                    // Закрытие: короткий выдох воздуха вниз → мягкий «ток» → щелчок фиксатора; короче открытия
+                    b = new Stereo(0.7f, sr);
+                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.01f, 0.001f, 1f, 0f, 0.12f, 3f), Gain = 0.36f, Filter = SvfMode.BandPass,
+                        Cutoff = Glide(3200f, 500f, 0.13f), Q = 1.2f, Width = 0.8f }, seed);
+                    Tone(b, new ToneLayer { Start = 0.08f, Env = Adsr.Pluck(0.002f, 0.1f, 5f), Freq = Glide(125f, 58f, 0.05f), Gain = 0.45f }, rng);
+                    Modal(b, rng, 0.09f, 1800f, new[] { 1f, 1.53f, 2.71f }, 0.04f, 0.045f, -0.2f);
+                    Sub(b, rng, 0.08f, 49f, Adsr.Pluck(0.004f, 0.16f, 4f), 0.14f);
+                    b.ApplyReverb(0.08f, 0.4f, 0.6f, 1f, 0.01f, 300f);
+                    lp = 11000f;
                     break;
                 }
 
@@ -1217,14 +1230,12 @@ namespace StellarisClone.Core.Audio
                 // ───────────────────── ГОЛОГРАФИЧЕСКИЙ ИНТЕРФЕЙС ─────────────────────
                 case Sfx.HoloScan:
                 {
-                    // Включение голограммы окна: шумовая развёртка снизу вверх, «цифровое» стаккато, стеклянная точка в конце
-                    b = new Stereo(1.2f, sr);
-                    Breath(b, seed, 0f, 0.4f, 500f, 5200f, 0.35f, 2.2f, 0.7f);
-                    Tone(b, new ToneLayer { Env = new Adsr(0.01f, 0.05f, 0.8f, 0.25f, 0.08f), Wave = Wave.Square, Freq = Glide(900f, 2200f, 0.34f),
-                        Gain = 0.07f, Filter = SvfMode.BandPass, Cutoff = Glide(1200f, 3000f, 0.34f), Q = 2f, Amp = Stutter(26f, 0.45f) }, rng);
-                    Glass(b, rng, 0.34f, 90, 0.5f, 0.12f, 0.2f, 0.004f, 0.6f);
-                    b.ApplyReverb(0.16f, 0.7f, 0.55f, 1f, 0.02f, 400f);
-                    lp = 10000f;
+                    // Голограмма окна: едва заметное высокое «мерцание данных» поверх звука открытия
+                    b = new Stereo(0.6f, sr);
+                    NoiseL(b, new NoiseLayer { Start = 0.05f, Env = new Adsr(0.12f, 0.001f, 1f, 0f, 0.2f, 3f), Gain = 0.3f, Filter = SvfMode.BandPass,
+                        Cutoff = Glide(3000f, 7500f, 0.3f), Q = 1.6f, Width = 1f, Amp = t => 0.7f + 0.3f * (float)Math.Sin(t * 6.283f * 38f) }, seed);
+                    b.ApplyReverb(0.08f, 0.4f, 0.6f, 1f, 0.01f, 600f);
+                    lp = 12000f;
                     break;
                 }
                 case Sfx.TextTick:
