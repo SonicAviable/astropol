@@ -399,12 +399,14 @@ namespace StellarisClone.Rendering
             if (d.Type == FleetType.Military && siege != null && siege.Attacker == d.OwnerId && siege.Active)
             { scale = 0.42f; return LGIcons.Get(LGIcon.Siege); }
 
-            scale = 0.70f;
+            // Тип корабля — те же значки, что во всём интерфейсе (рисованные, если есть): корвет/фрегат/эсминец,
+            // научный и строительный корабль
+            scale = 0.62f;
             return d.Type switch
             {
-                FleetType.Science => _scienceSp,
-                FleetType.Constructor => _constructorSp,
-                _ => _militarySp
+                FleetType.Science => LGIcons.Get(LGIcon.ScienceShip),
+                FleetType.Constructor => LGIcons.Get(LGIcon.ConstructorShip),
+                _ => LGIcons.Get(ModuleVisuals.HullIcon(d.HullClass))
             };
         }
 
@@ -618,23 +620,10 @@ namespace StellarisClone.Rendering
             }
         }
 
-        public static Sprite GetScienceSprite()
-        {
-            EnsureArt();
-            return _scienceSp;
-        }
-
-        public static Sprite GetMilitarySprite()
-        {
-            EnsureArt();
-            return _militarySp;
-        }
-
-        public static Sprite GetConstructorSprite()
-        {
-            EnsureArt();
-            return _constructorSp;
-        }
+        // Значки типов над системами — те же, что у кораблей и в интерфейсе
+        public static Sprite GetScienceSprite() => LGIcons.Get(LGIcon.ScienceShip);
+        public static Sprite GetMilitarySprite() => LGIcons.Get(LGIcon.Frigate);
+        public static Sprite GetConstructorSprite() => LGIcons.Get(LGIcon.ConstructorShip);
 
         private static Texture2D Blank(int s)
         {
