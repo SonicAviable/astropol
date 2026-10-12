@@ -444,95 +444,126 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         // ==================== TOPBAR ====================
 
+        /// <summary>
+        /// Главный экран по референсу дизайна:
+        ///   • слева сверху — карточка правителя (как герб), под ней вертикальное меню экранов;
+        ///   • сверху по центру — рамка ресурсов: подпись над значением;
+        ///   • под ней — рамка с датой и скоростью времени.
+        /// </summary>
         private void BuildTopBar()
         {
-            // Парящая стеклянная капсула с отступом от краёв экрана
-            var bar = new GameObject("TopBar");
-            bar.transform.SetParent(_canvas.transform, false);
-            var rt = bar.AddComponent<RectTransform>();
-            // Слева от капсулы — карточка правителя на высоту панели и ряда режимов карты
-            rt.anchorMin = new Vector2(0, 1);
-            rt.anchorMax = new Vector2(1, 1);
-            rt.pivot = new Vector2(0.5f, 1);
-            rt.offsetMin = new Vector2(TopBarLeft, -TopBarMargin - TopBarHeight);
-            rt.offsetMax = new Vector2(-TopBarMargin, -TopBarMargin);
-
             // Правитель империи — живой портрет; клик открывает обзор империи
             RulerBadge.Create(_canvas.transform, new Vector2(TopBarMargin, -TopBarMargin), OpenEmpireOverviewModal);
 
+            // Ресурсы — единая рамка по центру сверху
+            const float cellW = 128f, resH = 54f;
+            var bar = new GameObject("TopBar");
+            bar.transform.SetParent(_canvas.transform, false);
+            var rt = bar.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.sizeDelta = new Vector2(cellW * 5f + 24f, resH);
+            rt.anchoredPosition = new Vector2(0f, -8f);
             var bg = bar.AddComponent<Image>();
             bg.color = DS.BgDeep;
             bg.raycastTarget = false;
-            LG.Glass(bar, TopBarHeight * 0.5f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.32f));
-            var barMotion = LG.Motion(bar, LGAppear.Kind.SlideUp);
+            LG.Glass(bar, 14f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.55f));
+            var barMotion = LG.Motion(bar, LGAppear.Kind.SlideDown);
             barMotion.distance = 22f;
             barMotion.inDuration = 0.55f;
 
-            // Дата — в стеклянной капсуле
-            var dateChip = new GameObject("DateChip");
-            dateChip.transform.SetParent(bar.transform, false);
-            var dcRt = dateChip.AddComponent<RectTransform>();
-            dcRt.anchorMin = dcRt.anchorMax = new Vector2(0, 0.5f);
-            dcRt.pivot = new Vector2(0, 0.5f);
-            dcRt.sizeDelta = new Vector2(96, 30);
-            dcRt.anchoredPosition = new Vector2(8, 0);
-            var dcImg = dateChip.AddComponent<Image>();
-            dcImg.color = DS.BgVisor;
-            dcImg.raycastTarget = false;
-            LG.Chip(dateChip, LG.Palette.GlassRimSoft);
-
-            _dateText = LGIcons.IconLabel(dateChip.transform, LGIcon.Calendar, "01.01.2200", 13, DS.TextMuted, DS.TextPrimary, 13f);
-
-            BuildSpeedControl(bar.transform, 112f);
-
-            float startX = 242f;
+            float startX = 12f;
             _energyVal    = CreateResourceBadge(bar.transform, LGIcon.Energy, "ГЕЛИЙ-3", DS.Gold,     ref startX, out _energyTip);
             _mineralsVal  = CreateResourceBadge(bar.transform, LGIcon.Minerals, "ТИТАН", DS.NeonCyan, ref startX, out _mineralsTip);
             _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, "СПЛАВЫ", new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);
             _influenceVal = CreateResourceBadge(bar.transform, LGIcon.Influence, "ВЛИЯНИЕ", new Color(1.00f, 0.48f, 0.58f), ref startX, out _influenceTip);
             _researchVal  = CreateResourceBadge(bar.transform, LGIcon.Research, "НАУКА", DS.Green,    ref startX, out _researchTip);
 
-            var techBtn = CreateButton(bar.transform, "TechBtn", new Vector2(134, 32),
-                DS.BtnPrimary, DS.NeonCyan, OpenTechModal);
-            var tbRt = techBtn.GetComponent<RectTransform>();
-            tbRt.anchorMin = tbRt.anchorMax = new Vector2(0, 0.5f);
-            tbRt.pivot = new Vector2(0, 0.5f);
-            tbRt.anchoredPosition = new Vector2(startX + 8, 0);
-            UIAnchors.Register(UIAnchors.Tech, tbRt);
-            LGIcons.IconLabel(techBtn.transform, LGIcon.Research, "ИССЛЕДОВАНИЯ", 10, DS.NeonCyan, Color.white, 15f);
+            // Дата и скорость — рамка под ресурсами
+            var time = new GameObject("TimeBar");
+            time.transform.SetParent(_canvas.transform, false);
+            var tRt = time.AddComponent<RectTransform>();
+            tRt.anchorMin = tRt.anchorMax = new Vector2(0.5f, 1f);
+            tRt.pivot = new Vector2(0.5f, 1f);
+            tRt.sizeDelta = new Vector2(262f, 38f);
+            tRt.anchoredPosition = new Vector2(0f, -8f - resH - 4f);
+            var tBg = time.AddComponent<Image>();
+            tBg.color = DS.BgDeep;
+            tBg.raycastTarget = false;
+            LG.Glass(time, 10f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.45f));
+            LG.Motion(time, LGAppear.Kind.SlideDown).distance = 18f;
 
-            var designBtn = CreateButton(bar.transform, "DesignBtn", new Vector2(146, 32),
-                DS.BtnPrimary, DS.NeonCyan, () => ShipDesignerModal.Instance?.Open());
-            var dbRt = designBtn.GetComponent<RectTransform>();
-            dbRt.anchorMin = dbRt.anchorMax = new Vector2(0, 0.5f);
-            dbRt.pivot = new Vector2(0, 0.5f);
-            dbRt.anchoredPosition = new Vector2(startX + 150, 0);
-            UIAnchors.Register(UIAnchors.Designer, dbRt);
-            LGIcons.IconLabel(designBtn.transform, LGIcon.Gear, "КОНСТРУКТОР", 10, DS.NeonCyan, Color.white, 15f);
+            var dateChip = new GameObject("DateChip");
+            dateChip.transform.SetParent(time.transform, false);
+            var dcRt = dateChip.AddComponent<RectTransform>();
+            dcRt.anchorMin = dcRt.anchorMax = new Vector2(0, 0.5f);
+            dcRt.pivot = new Vector2(0, 0.5f);
+            dcRt.sizeDelta = new Vector2(112, 28);
+            dcRt.anchoredPosition = new Vector2(8, 0);
+            var dcImg = dateChip.AddComponent<Image>();
+            dcImg.color = DS.BgVisor;
+            dcImg.raycastTarget = false;
+            LG.Chip(dateChip, LG.Palette.GlassRimSoft);
+            _dateText = LGIcons.IconLabel(dateChip.transform, LGIcon.Calendar, "01.01.2200", 13, DS.TextMuted, DS.TextPrimary, 13f);
 
-            var diploBtn = CreateButton(bar.transform, "DiploBtn", new Vector2(146, 32),
-                new Color(0.42f, 0.32f, 0.10f), DS.Gold, () => DiplomacyModal.Instance?.Open());
-            var dpRt = diploBtn.GetComponent<RectTransform>();
-            dpRt.anchorMin = dpRt.anchorMax = new Vector2(0, 0.5f);
-            dpRt.pivot = new Vector2(0, 0.5f);
-            dpRt.anchoredPosition = new Vector2(startX + 304, 0);
-            UIAnchors.Register(UIAnchors.Diplomacy, dpRt);
-            LGIcons.IconLabel(diploBtn.transform, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 10, DS.Gold, Color.white, 15f);
+            BuildSpeedControl(time.transform, 128f);
 
-            // Путь к победе — все условия победы и кто к ним ближе (клавиша V)
-            if (VictoryPathWindow.Instance == null) new GameObject("[UI] VictoryPathWindow").AddComponent<VictoryPathWindow>();
-            var winBtn = CreateButton(bar.transform, "VictoryBtn", new Vector2(158, 32),
-                new Color(0.30f, 0.24f, 0.08f), DS.Gold, VictoryPathWindow.Toggle);
-            var wbRt = winBtn.GetComponent<RectTransform>();
-            wbRt.anchorMin = wbRt.anchorMax = new Vector2(0, 0.5f);
-            wbRt.pivot = new Vector2(0, 0.5f);
-            wbRt.anchoredPosition = new Vector2(startX + 458, 0);
-            LGIcons.IconLabel(winBtn.transform, LGIcon.Trophy, "ПУТЬ К ПОБЕДЕ", 10, DS.Gold, Color.white, 15f);
-            TooltipHelper.Attach(winBtn, "<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>");
+            BuildNavMenu();
         }
 
-        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
+        /// <summary>Вертикальное меню экранов слева (как в референсе): значок и название, золотая кромка у «Путь к победе».</summary>
+        private void BuildNavMenu()
+        {
+            if (VictoryPathWindow.Instance == null) new GameObject("[UI] VictoryPathWindow").AddComponent<VictoryPathWindow>();
 
+            var menu = new GameObject("NavMenu");
+            menu.transform.SetParent(_canvas.transform, false);
+            var mRt = menu.AddComponent<RectTransform>();
+            mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
+            mRt.pivot = new Vector2(0, 1);
+            mRt.sizeDelta = new Vector2(NavMenuW, 6 * 44f);
+            mRt.anchoredPosition = new Vector2(TopBarMargin, -(TopBarMargin + RulerBadge.Height + 10f));
+            LG.Motion(menu, LGAppear.Kind.SlideLeft).distance = 22f;
+
+            float y = 0f;
+            void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip)
+            {
+                var b = CreateButton(menu.transform, name, new Vector2(NavMenuW, 38), new Color(0.05f, 0.12f, 0.15f), accent, act);
+                var bRt = b.GetComponent<RectTransform>();
+                bRt.anchorMin = bRt.anchorMax = new Vector2(0, 1);
+                bRt.pivot = new Vector2(0, 1);
+                bRt.anchoredPosition = new Vector2(0, -y);
+                y += 44f;
+                var ic = LGIcons.Create(b.transform, icon, 16f, accent);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(16, 16));
+                var t = CreateText(b.transform, label, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
+                t.rectTransform.anchorMin = Vector2.zero;
+                t.rectTransform.anchorMax = Vector2.one;
+                t.rectTransform.offsetMin = new Vector2(38, 0);
+                t.rectTransform.offsetMax = new Vector2(-6, 0);
+                if (anchorId != null) UIAnchors.Register(anchorId, bRt);
+                TooltipHelper.Attach(b, tip);
+            }
+
+            Item("NavEmpire", LGIcon.Globe, "Империя", DS.NeonCyan, OpenEmpireOverviewModal, null, "<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика");
+            Item("NavTech", LGIcon.Research, "Технологии", DS.NeonCyan, OpenTechModal, UIAnchors.Tech, "<b>Технологии</b>\nИсследования и очереди");
+            Item("NavDiplo", LGIcon.Diplomacy, "Дипломатия", DS.Gold, () => DiplomacyModal.Instance?.Open(), UIAnchors.Diplomacy, "<b>Дипломатия</b>\nПереговоры, сделки, договоры");
+            Item("NavDesign", LGIcon.Gear, "Конструктор судов", DS.NeonCyan, () => ShipDesignerModal.Instance?.Open(), UIAnchors.Designer, "<b>Конструктор судов</b>\nПроекты кораблей");
+            Item("NavFleet", LGIcon.Fleet, "Флот", DS.NeonCyan, SelectAllWarships, null, "<b>Флот</b>\nВыделить все военные флоты");
+            Item("NavVictory", LGIcon.Trophy, "Путь к победе", DS.Gold, VictoryPathWindow.Toggle, null, "<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>");
+        }
+
+        private void SelectAllWarships()
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return;
+            var list = new List<FleetView>();
+            foreach (var f in fm.AllFleets)
+                if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == 0 && f.Data.Type == FleetType.Military) list.Add(f);
+            fm.SetSelection(list);
+        }
+
+        /// <summary>Ячейка рамки ресурсов: подпись сверху, значок и число снизу (как в референсе).</summary>
         private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip)
         {
             var badge = new GameObject($"Badge_{label}");
@@ -541,31 +572,48 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
             rt.pivot = new Vector2(0, 0.5f);
             rt.anchoredPosition = new Vector2(xPos, 0);
-            rt.sizeDelta = new Vector2(120, 30);
+            rt.sizeDelta = new Vector2(124, 44);
 
             var img = badge.AddComponent<Image>();
-            img.color = DS.BgSlot;
+            img.color = new Color(0, 0, 0, 0);
             img.raycastTarget = true;
-
-            // Капсула с тонкой неоновой кромкой цвета ресурса
-            LG.Chip(badge, new Color(accentCol.r, accentCol.g, accentCol.b, 0.50f));
-            badge.AddComponent<LGInteractive>().hoverScale = 1.02f;
+            LG.Ignore(badge, includeChildren: false);
 
             tip = badge.AddComponent<TooltipTrigger>();
             UIAnchors.Register(UIAnchors.Resources, rt);
 
-            var ic = LGIcons.Create(badge.transform, icon, 16, accentCol);
-            ic.rectTransform.anchorMin = ic.rectTransform.anchorMax = new Vector2(0, 0.5f);
-            ic.rectTransform.pivot = new Vector2(0, 0.5f);
-            ic.rectTransform.anchoredPosition = new Vector2(11, 0);
+            // Разделитель между ячейками
+            if (xPos > 20f)
+            {
+                var sep = new GameObject("Sep");
+                sep.transform.SetParent(badge.transform, false);
+                var sRt = sep.AddComponent<RectTransform>();
+                sRt.anchorMin = new Vector2(0, 0.15f); sRt.anchorMax = new Vector2(0, 0.85f);
+                sRt.sizeDelta = new Vector2(1, 0);
+                var sImg = sep.AddComponent<Image>();
+                sImg.color = new Color(0.45f, 0.95f, 0.90f, 0.22f);
+                sImg.raycastTarget = false;
+                LG.Ignore(sep);
+            }
 
-            var val = CreateText(badge.transform, "0", 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
+            var cap = CreateText(badge.transform, label, 9, FontStyle.Bold, new Color(accentCol.r, accentCol.g, accentCol.b, 0.9f), TextAnchor.UpperCenter);
+            cap.rectTransform.anchorMin = Vector2.zero;
+            cap.rectTransform.anchorMax = Vector2.one;
+            cap.rectTransform.offsetMin = new Vector2(4, 0);
+            cap.rectTransform.offsetMax = new Vector2(-4, -3);
+
+            var ic = LGIcons.Create(badge.transform, icon, 15, accentCol);
+            ic.rectTransform.anchorMin = ic.rectTransform.anchorMax = new Vector2(0, 0);
+            ic.rectTransform.pivot = new Vector2(0, 0);
+            ic.rectTransform.anchoredPosition = new Vector2(12, 5);
+
+            var val = CreateText(badge.transform, "0", 12, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
             val.rectTransform.anchorMin = Vector2.zero;
             val.rectTransform.anchorMax = Vector2.one;
-            val.rectTransform.offsetMin = new Vector2(33, 0);
-            val.rectTransform.offsetMax = new Vector2(-8, 0);
+            val.rectTransform.offsetMin = new Vector2(32, 4);
+            val.rectTransform.offsetMax = new Vector2(-4, 0);
 
-            xPos += 126f;
+            xPos += 128f;
             return val;
         }
 
@@ -1138,7 +1186,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private const float InspectorWidth = 430f;
         /// <summary>Под панелью режимов карты (она стоит на 66…108 px от верха).</summary>
         private const float InspectorTop = 118f;
-        private static readonly Vector2 InspectorRestPos = new Vector2(16, -InspectorTop);
+        /// <summary>Ширина левого меню экранов; панель системы стоит правее него.</summary>
+        public const float NavMenuW = 176f;
+        private static readonly Vector2 InspectorRestPos = new Vector2(TopBarMargin + NavMenuW + 10f, -InspectorTop);
 
         private void Update()
         {

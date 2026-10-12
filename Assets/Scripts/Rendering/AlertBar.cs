@@ -64,7 +64,7 @@ namespace StellarisClone.Rendering
         {
             Instance = this;
             _root = LGBuild.Rect(hud, "[UI] AlertBar");
-            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -64), new Vector2(10, Size));
+            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -112), new Vector2(10, Size));   // под рамками ресурсов и даты
             _root.gameObject.SetActive(false);
         }
 

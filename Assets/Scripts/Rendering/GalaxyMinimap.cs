@@ -96,10 +96,11 @@ public static void ShowGlobal()
             var root = new GameObject("GalaxyMinimap");
             root.transform.SetParent(_canvas.transform, false);
             _root = root.AddComponent<RectTransform>();
-            _root.anchorMin = _root.anchorMax = new Vector2(1, 0);
-            _root.pivot = new Vector2(1, 0);
+            // Круглая мини-карта слева внизу (как в референсе); вокруг неё дугой — режимы карты (MapModeController)
+            _root.anchorMin = _root.anchorMax = new Vector2(0, 0);
+            _root.pivot = new Vector2(0, 0);
             _root.sizeDelta = new Vector2(mapSize, mapSize);
-            _root.anchoredPosition = new Vector2(-padding, padding);
+            _root.anchoredPosition = new Vector2(padding, padding);
 
             _group = root.AddComponent<CanvasGroup>();
             _group.blocksRaycasts = true;
@@ -107,7 +108,7 @@ public static void ShowGlobal()
             var bg = root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(root, 24f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.40f));
+            LG.Glass(root, mapSize * 0.5f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.55f));
             var motion = LG.Motion(root, LGAppear.Kind.SlideDown);
             motion.distance = 30f;
 
@@ -116,11 +117,11 @@ public static void ShowGlobal()
             well.transform.SetParent(root.transform, false);
             var wRt = well.AddComponent<RectTransform>();
             wRt.anchorMin = Vector2.zero; wRt.anchorMax = Vector2.one;
-            wRt.offsetMin = new Vector2(8, 8); wRt.offsetMax = new Vector2(-8, -30);
+            wRt.offsetMin = new Vector2(10, 10); wRt.offsetMax = new Vector2(-10, -10);
             var wImg = well.AddComponent<Image>();
             wImg.color = UIManager.DS.BgVisor;
             wImg.raycastTarget = false;
-            LG.Platter(well, 16f);
+            LG.Platter(well, mapSize * 0.5f - 10f);
 
             var titleBgGO = new GameObject("TitleBg");
             titleBgGO.transform.SetParent(root.transform, false);
@@ -134,6 +135,7 @@ public static void ShowGlobal()
             tbImg.color = new Color(0, 0, 0, 0);
             tbImg.raycastTarget = false;
             LG.Ignore(titleBgGO, includeChildren: false);
+            titleBgGO.SetActive(false);   // у круглой карты нет шапки
 
             var titleGO = new GameObject("Title");
             titleGO.transform.SetParent(titleBgGO.transform, false);
@@ -160,8 +162,8 @@ public static void ShowGlobal()
             _dotsArea = dotsRoot.AddComponent<RectTransform>();
             _dotsArea.anchorMin = Vector2.zero;
             _dotsArea.anchorMax = Vector2.one;
-            _dotsArea.offsetMin = new Vector2(10, 10);
-            _dotsArea.offsetMax = new Vector2(-10, -28);
+            _dotsArea.offsetMin = new Vector2(12, 12);
+            _dotsArea.offsetMax = new Vector2(-12, -12);
 
             var v = new GameObject("ViewRect");
             v.transform.SetParent(_dotsArea.transform, false);

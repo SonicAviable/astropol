@@ -85,39 +85,37 @@ namespace StellarisClone.Rendering
             // CanvasGroup — для возможного fade в будущем
             _group = root.AddComponent<CanvasGroup>();
 
+            // Режимы карты — круглые значки дугой вокруг круглой мини-карты слева внизу (как в референсе).
+            // Корень совпадает с мини-картой (240 × 240, отступ 22 — как в GalaxyMinimap).
             var rt = root.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0, 1);
-            rt.anchorMax = new Vector2(0, 1);
-            rt.pivot = new Vector2(0, 1);
-            rt.sizeDelta = new Vector2(424, 42);
-            rt.anchoredPosition = new Vector2(UIManager.TopBarLeft, -66);
-            UIAnchors.Register(UIAnchors.MapModes, rt);   // под верхней панелью, правее карточки правителя
-
-            var bg = root.AddComponent<Image>();
-            bg.color = UIManager.DS.BgDeep;
-            bg.raycastTarget = false;
-            LG.Glass(root, 21f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.30f));
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 0);
+            rt.pivot = new Vector2(0, 0);
+            rt.sizeDelta = new Vector2(240, 240);
+            rt.anchoredPosition = new Vector2(22, 22);
+            UIAnchors.Register(UIAnchors.MapModes, rt);
             var motion = LG.Motion(root, LGAppear.Kind.SlideUp);
             motion.distance = 16f;
 
-            CreateModeButton(root.transform, MapMode.Simple,     "★", "ПРОСТОЙ",  new Color(0.80f, 0.88f, 0.92f), 6);
-            CreateModeButton(root.transform, MapMode.Political,  "◆", "ПОЛИТИКА", UIManager.DS.NeonCyan,  89);
-            CreateModeButton(root.transform, MapMode.Resources,  "⬢", "РЕСУРСЫ",  UIManager.DS.Gold,      172);
-            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", "КОРИДОРЫ", AccentOrange,           255);
-            CreateModeButton(root.transform, MapMode.Explored,   "◉", "РАЗВЕДКА", UIManager.DS.Green,     338);
+            CreateModeButton(root.transform, MapMode.Simple,     "★", "ПРОСТОЙ",  new Color(0.80f, 0.88f, 0.92f), 100f);
+            CreateModeButton(root.transform, MapMode.Political,  "◆", "ПОЛИТИКА", UIManager.DS.NeonCyan,  75f);
+            CreateModeButton(root.transform, MapMode.Resources,  "⬢", "РЕСУРСЫ",  UIManager.DS.Gold,      50f);
+            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", "КОРИДОРЫ", AccentOrange,           25f);
+            CreateModeButton(root.transform, MapMode.Explored,   "◉", "РАЗВЕДКА", UIManager.DS.Green,     0f);
         }
 
-        private void CreateModeButton(Transform parent, MapMode mode, string icon, string label, Color accent, float xPos)
+        /// <summary>Круглая кнопка режима на дуге вокруг мини-карты; angleDeg — угол от центра карты (0 — вправо, 90 — вверх).</summary>
+        private void CreateModeButton(Transform parent, MapMode mode, string icon, string label, Color accent, float angleDeg)
         {
             var btnObj = new GameObject($"MapModeBtn_{mode}");
             btnObj.transform.SetParent(parent, false);
 
+            const float R = 146f, D = 38f;
             var rt = btnObj.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0, 0.5f);
-            rt.anchorMax = new Vector2(0, 0.5f);
-            rt.pivot = new Vector2(0, 0.5f);
-            rt.sizeDelta = new Vector2(80, 30);
-            rt.anchoredPosition = new Vector2(xPos, 0);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(D, D);
+            float a = angleDeg * Mathf.Deg2Rad;
+            rt.anchoredPosition = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * R;
 
             var bg = btnObj.AddComponent<Image>();
             bg.color = UIManager.DS.BtnNeutral;
@@ -126,7 +124,7 @@ namespace StellarisClone.Rendering
             var btn = btnObj.AddComponent<Button>();
             var captured = mode;
             btn.onClick.AddListener(() => ApplyMode(captured));
-            _buttonFx[mode] = LG.Button(btnObj, new Color(accent.r, accent.g, accent.b, 0.3f));
+            _buttonFx[mode] = LG.Button(btnObj, new Color(accent.r, accent.g, accent.b, 0.45f), D * 0.5f);
             _buttonAccentColors[mode] = accent;
 
             // Светящаяся "капля"-индикатор под активным режимом
@@ -136,8 +134,8 @@ namespace StellarisClone.Rendering
             sRt.anchorMin = new Vector2(0.5f, 0);
             sRt.anchorMax = new Vector2(0.5f, 0);
             sRt.pivot = new Vector2(0.5f, 0.5f);
-            sRt.sizeDelta = new Vector2(26f, 2.2f);
-            sRt.anchoredPosition = new Vector2(0, 3.5f);
+            sRt.sizeDelta = new Vector2(14f, 2.2f);
+            sRt.anchoredPosition = new Vector2(0, 5f);
             var sImg = accentStrip.AddComponent<Image>();
             sImg.color = accent;
             sImg.raycastTarget = false;
@@ -151,18 +149,8 @@ namespace StellarisClone.Rendering
                 MapMode.Explored   => LGIcon.MapExplored,
                 _                  => LGIcon.MapSimple
             };
-            var iconImg = LGIcons.Create(btnObj.transform, iconId, 15f, accent);
-            iconImg.rectTransform.anchorMin = iconImg.rectTransform.anchorMax = new Vector2(0, 0.5f);
-            iconImg.rectTransform.pivot = new Vector2(0, 0.5f);
-            iconImg.rectTransform.anchoredPosition = new Vector2(11, 1);
-
-            var lbl = MakeText(btnObj.transform, label, 9, FontStyle.Bold, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-            lbl.rectTransform.anchorMin = new Vector2(0, 0.5f);
-            lbl.rectTransform.anchorMax = new Vector2(1, 0.5f);
-            lbl.rectTransform.pivot = new Vector2(0, 0.5f);
-            lbl.rectTransform.offsetMin = new Vector2(32, 0);
-            lbl.rectTransform.offsetMax = new Vector2(-4, 0);
-            lbl.rectTransform.sizeDelta = new Vector2(-36, 20);
+            var iconImg = LGIcons.Create(btnObj.transform, iconId, 18f, accent);
+            iconImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 1), new Vector2(18, 18));
 
             _buttonBgs[mode] = bg;
             _buttonAccents[mode] = sImg;
@@ -176,7 +164,7 @@ namespace StellarisClone.Rendering
                 MapMode.Explored   => "Режим разведки — изученные и неизученные секторы",
                 _ => ""
             };
-            TooltipHelper.Attach(btnObj, tip);
+            TooltipHelper.Attach(btnObj, $"<b>{label}</b>\n{tip}");
         }
 
         private Text MakeText(Transform parent, string txt, int size, FontStyle style, Color col, TextAnchor anchor)
