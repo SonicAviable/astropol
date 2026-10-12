@@ -30,7 +30,7 @@ namespace StellarisClone.Rendering
         private static readonly Color PanelBg = new Color(0.020f, 0.038f, 0.055f, 0.90f);
         private static readonly Color RowBg = new Color(0.045f, 0.075f, 0.100f, 0.92f);
 
-        private const float SidePanelW = 440f, CenterW = 680f, BottomH = 300f, BottomY = 104f;
+        private const float SidePanelW = 440f, CenterW = 680f, BottomH = 340f, BottomY = 104f;
 
         private Canvas _host;
         private GameObject _root;
@@ -42,6 +42,11 @@ namespace StellarisClone.Rendering
         private RectTransform _playerHost, _tableSpinA, _tableSpinB;
         private Image _playerGlow, _padAI, _padPlayer, _coneAI, _conePlayer, _tableGlow, _tableRingA, _tableRingB;
         private string _playerKey;
+        // Референс-раскладка: статус отношений (кольца), портрет в диалоге, быстрые действия у голостола
+        private Image _gaugeTrust, _gaugeChance;
+        private Text _gaugeTrustVal, _gaugeChanceVal;
+        private RawImage _dialogPortrait;
+        private readonly List<(DealItemKind kind, Button btn, Image bg)> _quick = new List<(DealItemKind, Button, Image)>();
         private float _holoT;
         private const float LeaderX = 290f, LeaderW = 480f, LeaderH = 716f;
         private RectTransform _aiList, _playerList, _tableAI, _tablePlayer, _centerPanel;
@@ -170,6 +175,10 @@ namespace StellarisClone.Rendering
             _tableRingB.color = new Color(ec.r, ec.g, ec.b, 0.55f);
             BuildPortrait(ai);
             BuildPlayerPortrait();
+            var face = LeaderPortraits.ForFaction(ai.Faction);
+            _dialogPortrait.texture = face != null ? face.Texture : null;
+            _dialogPortrait.enabled = _dialogPortrait.texture != null;
+            _dialogPortrait.uvRect = new Rect(0.30f, 0.54f, 0.40f, 0.40f);   // лицо — верхняя середина кадра
             var leader = LeaderPortraits.ForFaction(ai.Faction);
             if (_viewingOffer) Say(DiplomacyLines.Get(leader, DiplomacyLines.OfferLine(ai.PendingOffer, ai.PendingDeal)));
             else Say(DiplomacyLines.Get(leader, DiplomacyLines.GreetingFor(ai)));
@@ -298,7 +307,7 @@ namespace StellarisClone.Rendering
             table.anchorMin = table.anchorMax = new Vector2(0.5f, 0f);
             table.pivot = new Vector2(0.5f, 0.5f);
             table.sizeDelta = new Vector2(440f, 440f);
-            table.anchoredPosition = new Vector2(0f, padY + 40f);
+            table.anchoredPosition = new Vector2(0f, padY + 80f);
             table.localScale = new Vector3(1f, 0.30f, 1f);
             _tableGlow = Holo(table, "Glow", FactionSelectScreen.RadialSprite(), Vector2.zero, new Vector2(520f, 520f), new Vector2(0.5f, 0.5f), true);
             _tableSpinA = LGBuild.Rect(table, "SpinA");
@@ -318,8 +327,10 @@ namespace StellarisClone.Rendering
 
             BuildInfoLeft(rt);
             BuildInfoRight(rt);
-            BuildSpeech(rt);
+            BuildStatus(rt);
             BuildBottom(rt);
+            BuildSpeech(rt);          // диалог — в шапке центральной панели, как в референсе
+            BuildQuickActions(rt, padY);
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -20), new Vector2(38, 38));
@@ -330,47 +341,185 @@ namespace StellarisClone.Rendering
 
         private void BuildInfoLeft(RectTransform rt)
         {
+            var frame = FramedPanel(rt, "InfoLeftFrame", new Vector2(0, 1), new Vector2(20f, -14f), new Vector2(458f, 452f), "ОТНОШЕНИЯ", TextAnchor.MiddleLeft);
             _infoLeft = LGBuild.Rect(rt, "InfoLeft");
             _infoLeft.anchorMin = _infoLeft.anchorMax = new Vector2(0, 1);
             _infoLeft.pivot = new Vector2(0, 1);
-            _infoLeft.sizeDelta = new Vector2(430f, 420f);
-            _infoLeft.anchoredPosition = new Vector2(34f, -26f);
+            _infoLeft.sizeDelta = new Vector2(430f, 396f);
+            _infoLeft.anchoredPosition = new Vector2(34f, -60f);
         }
 
         private void BuildInfoRight(RectTransform rt)
         {
+            FramedPanel(rt, "InfoRightFrame", new Vector2(1, 1), new Vector2(-62f, -14f), new Vector2(468f, 392f), "ИМПЕРИЯ", TextAnchor.MiddleRight);
             _infoRight = LGBuild.Rect(rt, "InfoRight");
             _infoRight.anchorMin = _infoRight.anchorMax = new Vector2(1, 1);
             _infoRight.pivot = new Vector2(1, 1);
-            _infoRight.sizeDelta = new Vector2(440f, 360f);
-            _infoRight.anchoredPosition = new Vector2(-76f, -26f);
+            _infoRight.sizeDelta = new Vector2(440f, 340f);
+            _infoRight.anchoredPosition = new Vector2(-76f, -58f);
 
             _tabs = LGBuild.Rect(rt, "Tabs");
             _tabs.anchorMin = _tabs.anchorMax = new Vector2(1, 1);
             _tabs.pivot = new Vector2(1, 1);
             _tabs.sizeDelta = new Vector2(440f, 64f);
-            _tabs.anchoredPosition = new Vector2(-76f, -392f);
+            _tabs.anchoredPosition = new Vector2(-76f, -416f);
         }
 
+        /// <summary>
+        /// «Диалог» — шапка центральной панели (как в референсе): портрет собеседника, имя, состояние и реплика;
+        /// ниже — сама сделка.
+        /// </summary>
         private void BuildSpeech(RectTransform rt)
         {
-            var box = GlassPanel(rt, "Speech", new Color(1f, 1f, 1f, 0.10f));
-            var b = box.rectTransform;
-            b.anchorMin = b.anchorMax = new Vector2(0.5f, 1f);
-            b.pivot = new Vector2(0.5f, 1f);
-            b.sizeDelta = new Vector2(370f, 124f);
-            b.anchoredPosition = new Vector2(0f, -34f);   // между правителями, над голостолом
+            var b = LGBuild.Rect(_centerPanel, "Dialog");
+            b.TopBand(0, 98, 0, 0);
 
-            _speechName = LGBuild.Label(b, "", 15, Primary, TextAnchor.UpperLeft, bold: true);
-            _speechName.rectTransform.TopBand(12, 22, 18, 150);
+            var pf = LGBuild.Panel(b, "PortraitFrame", new Color(0.03f, 0.07f, 0.09f, 1f));
+            pf.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -12), new Vector2(78, 78));
+            LG.Platter(pf.gameObject, 8f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f));
+            var pm = LGBuild.Rect(pf.transform, "Mask");
+            pm.Stretch(3, 3, 3, 3);
+            pm.gameObject.AddComponent<RectMask2D>();
+            _dialogPortrait = pm.gameObject.AddComponent<RawImage>();
+            _dialogPortrait.raycastTarget = false;
+            LG.Ignore(pm.gameObject);
+
+            _speechName = LGBuild.Label(b, "", 13, Primary, TextAnchor.UpperLeft, bold: true);
+            _speechName.rectTransform.TopBand(12, 20, 104, 150);
             _speechStateBg = LGBuild.Panel(b, "State", new Color(0.1f, 0.2f, 0.2f, 1f));
-            _speechStateBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -12), new Vector2(128, 22));
+            _speechStateBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -10), new Vector2(128, 22));
             var sfx = LG.Platter(_speechStateBg.gameObject, 4f);
             sfx.FillMultiplier = 2.6f;
             _speechState = LGBuild.Label(_speechStateBg.transform, "", 11, Primary, TextAnchor.MiddleCenter, bold: true);
-            _speechText = LGBuild.Label(b, "", 15, new Color(0.88f, 0.93f, 0.96f), TextAnchor.UpperLeft, wrap: true);
+            _speechText = LGBuild.Label(b, "", 13, new Color(0.88f, 0.93f, 0.96f), TextAnchor.UpperLeft, wrap: true);
             _speechText.supportRichText = false;
-            _speechText.rectTransform.Stretch(18, 10, 18, 42);
+            _speechText.rectTransform.Stretch(104, 6, 16, 36);
+
+            var line = LGBuild.Panel(_centerPanel, "DialogLine", new Color(Cyan.r, Cyan.g, Cyan.b, 0.22f));
+            line.rectTransform.TopBand(98, 1, 14, 14);
+            LG.Ignore(line.gameObject);
+        }
+
+        /// <summary>Рамка-панель со шапкой (заголовок и линия под ним) — как панели референса.</summary>
+        private static Image FramedPanel(RectTransform rt, string name, Vector2 anchor, Vector2 pos, Vector2 size, string title, TextAnchor align)
+        {
+            var p = LGBuild.Panel(rt, name, PanelBg, raycast: false);
+            var r = p.rectTransform;
+            r.anchorMin = r.anchorMax = anchor;
+            r.pivot = anchor;
+            r.sizeDelta = size;
+            r.anchoredPosition = pos;
+            LG.Glass(p.gameObject, 18f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f));
+            var head = LGBuild.Rect(r, "Head");
+            head.TopBand(8, 28, 18, 18);
+            LGBuild.Label(head, title, 14, Primary, align, bold: true);
+            var line = LGBuild.Panel(r, "Line", new Color(Cyan.r, Cyan.g, Cyan.b, 0.25f));
+            line.rectTransform.TopBand(38, 1, 12, 12);
+            LG.Ignore(line.gameObject);
+            return p;
+        }
+
+        /// <summary>«Статус отношений»: два кольца — доверие (отношение) и шанс согласия на сделку на столе.</summary>
+        private void BuildStatus(RectTransform rt)
+        {
+            var p = FramedPanel(rt, "Status", new Vector2(0, 1), new Vector2(20f, -476f), new Vector2(458f, 150f), "СТАТУС ОТНОШЕНИЙ", TextAnchor.MiddleLeft);
+            (_gaugeTrust, _gaugeTrustVal) = Gauge(p.rectTransform, new Vector2(120f, -94f), "ДОВЕРИЕ");
+            (_gaugeChance, _gaugeChanceVal) = Gauge(p.rectTransform, new Vector2(338f, -94f), "ШАНС СОГЛАСИЯ");
+        }
+
+        private static (Image, Text) Gauge(RectTransform parent, Vector2 center, string label)
+        {
+            var track = LGBuild.Panel(parent, "Track", new Color(1f, 1f, 1f, 0.08f));
+            track.sprite = RingSprite();
+            track.raycastTarget = false;
+            track.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), center, new Vector2(84, 84));
+            LG.Ignore(track.gameObject);
+            var fill = LGBuild.Panel(parent, "Fill", Cyan);
+            fill.sprite = RingSprite();
+            fill.raycastTarget = false;
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Radial360;
+            fill.fillOrigin = (int)Image.Origin360.Bottom;
+            fill.fillClockwise = true;
+            fill.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), center, new Vector2(84, 84));
+            LG.Ignore(fill.gameObject);
+            var val = LGBuild.Label(parent, "", 15, Color.white, TextAnchor.MiddleCenter, bold: true);
+            val.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), center, new Vector2(84, 30));
+            var lbl = LGBuild.Label(parent, label, 10, Muted, TextAnchor.MiddleLeft, bold: true);
+            lbl.rectTransform.At(new Vector2(0, 1), new Vector2(0f, 0.5f), center + new Vector2(50f, 0f), new Vector2(160, 20));
+            return (fill, val);
+        }
+
+        /// <summary>Кнопки быстрых действий дугой у переднего края голостола — кладут договор на стол (или убирают).</summary>
+        private void BuildQuickActions(RectTransform rt, float padY)
+        {
+            (DealItemKind k, LGIcon icon, string label)[] defs =
+            {
+                (DealItemKind.Pact, LGIcon.Handshake, "ПАКТ"),
+                (DealItemKind.TradeTreaty, LGIcon.Trade, "ТОРГОВЫЙ ДОГОВОР"),
+                (DealItemKind.ResearchTreaty, LGIcon.Research, "НАУЧНЫЙ ДОГОВОР"),
+                (DealItemKind.Charts, LGIcon.MapExplored, "ЗВЁЗДНЫЕ КАРТЫ"),
+                (DealItemKind.Peace, LGIcon.Peace, "МИР"),
+            };
+            for (int i = 0; i < defs.Length; i++)
+            {
+                var d = defs[i];
+                float t = (i - (defs.Length - 1) * 0.5f) / ((defs.Length - 1) * 0.5f);   // −1..1
+                var b = LGBuild.Button(rt, "Quick", new Color(0.06f, 0.16f, 0.20f), new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f),
+                                       () => AddToTable(d.k, false), d.icon, d.label, 9);
+                var r = (RectTransform)b.transform;
+                r.anchorMin = r.anchorMax = new Vector2(0.5f, 0f);
+                r.pivot = new Vector2(0.5f, 0.5f);
+                r.sizeDelta = new Vector2(150f, 30f);
+                r.anchoredPosition = new Vector2(t * 330f, padY + 26f + t * t * 26f);
+                r.localRotation = Quaternion.Euler(0, 0, -t * 7f);   // повторяют изгиб края стола
+                TooltipHelper.Attach(b.gameObject, $"<b>{DealCatalog.Name(d.k)}</b>\nПоложить на стол переговоров (повторный щелчок — убрать)");
+                _quick.Add((d.k, b, b.GetComponent<Image>()));
+            }
+        }
+
+        private void RefreshQuickActions()
+        {
+            var ai = Current;
+            foreach (var q in _quick)
+            {
+                bool show = ai != null && !ai.IsEliminated && !_viewingOffer &&
+                            (q.kind == DealItemKind.Peace ? ai.AtWar : !ai.AtWar && !(q.kind == DealItemKind.Pact && ai.HasPact));
+                q.btn.gameObject.SetActive(show);
+                bool on = _deal.HasTreaty(q.kind);
+                q.bg.color = on ? new Color(0.40f, 0.30f, 0.08f) : new Color(0.06f, 0.16f, 0.20f);
+            }
+        }
+
+        /// <summary>Кольца статуса: доверие из отношения, шанс — из реакции на текущую сделку.</summary>
+        private void RefreshStatus(AIEmpireManager ai)
+        {
+            if (_gaugeTrust == null || ai == null) return;
+            float trust = Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, ai.Opinion);
+            Color oc = OpinionColor(ai.Opinion);
+            _gaugeTrust.fillAmount = trust;
+            _gaugeTrust.color = oc;
+            _gaugeTrustVal.text = $"{ai.Opinion:+0;-0;0}";
+            _gaugeTrustVal.color = oc;
+            bool hasChance = _reactionBar != null && _reactionBar.parent.gameObject.activeSelf && !_deal.IsEmpty;
+            float chance = hasChance ? Mathf.Clamp01(_reactionBar.anchorMax.x) : 0f;
+            _gaugeChance.fillAmount = chance;
+            _gaugeChance.color = Color.Lerp(Red, Green, chance);
+            _gaugeChanceVal.text = hasChance ? $"{chance * 100f:0}%" : "—";
+            _gaugeChanceVal.color = hasChance ? Color.white : Muted;
+        }
+
+        private static Sprite s_ring;
+
+        private static Sprite RingSprite()
+        {
+            if (s_ring != null) return s_ring;
+            s_ring = MakeSprite(256, 256, (u, v) =>
+            {
+                float d = Mathf.Sqrt(u * u + v * v);
+                return Mathf.Clamp01(1f - Mathf.Abs(d - 0.86f) / 0.07f * 1.2f);
+            }, "DiploGauge");
+            return s_ring;
         }
 
         private void BuildBottom(RectTransform rt)
@@ -396,10 +545,11 @@ namespace StellarisClone.Rendering
             var center = GlassPanel(rt, "Table", new Color(Cyan.r, Cyan.g, Cyan.b, 0.25f));
             _centerPanel = center.rectTransform;
             Place(_centerPanel, 0f, CenterW);
-            _tableTitle = PanelHeader(_centerPanel, "СТОЛ ПЕРЕГОВОРОВ", TextAnchor.MiddleCenter);
+            _tableTitle = LGBuild.Label(_centerPanel, "СТОЛ ПЕРЕГОВОРОВ", 10, Primary, TextAnchor.UpperCenter, bold: true);
+            _tableTitle.rectTransform.TopBand(104, 16, 14, 14);
 
             var cols = LGBuild.Rect(_centerPanel, "Cols");
-            cols.Stretch(10, 66, 10, 50);
+            cols.Stretch(10, 66, 10, 122);
             var cl = LGBuild.Rect(cols, "ColAI");
             cl.Column(0f, 0.5f, 0, 6);
             var cr = LGBuild.Rect(cols, "ColPlayer");
@@ -629,6 +779,8 @@ namespace StellarisClone.Rendering
             RefreshSpeechHeader(ai);
             RefreshItemLists();
             RefreshTable();
+            RefreshQuickActions();
+            RefreshStatus(ai);
         }
 
         // ---------- Левый верх: отношение и соглашения ----------
@@ -1022,6 +1174,8 @@ namespace StellarisClone.Rendering
             SFXManager.Play(Sfx.UiClick);
             RefreshItemLists();
             RefreshTable();
+            RefreshQuickActions();
+            RefreshStatus(Current);
         }
 
         private void Adjust(DealItem item, bool fromAI, int dir)
