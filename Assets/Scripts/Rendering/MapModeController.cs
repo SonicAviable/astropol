@@ -10,7 +10,10 @@ namespace StellarisClone.Rendering
     {
         public static MapModeController Instance { get; private set; }
 
-        public enum MapMode { Simple, Political, Resources, Hyperlanes, Explored }
+        public enum MapMode { Simple, Political, Resources, Hyperlanes, Explored, Intel }
+
+        /// <summary>Цвет шпионажа (как в окне шпионажа).</summary>
+        public static readonly Color SpyPurple = new Color(0.74f, 0.56f, 1f);
 
         private Canvas _canvas;
         private Font _font;
@@ -101,6 +104,7 @@ namespace StellarisClone.Rendering
             CreateModeButton(root.transform, MapMode.Resources,  "⬢", "РЕСУРСЫ",  UIManager.DS.Gold,      50f);
             CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", "КОРИДОРЫ", AccentOrange,           25f);
             CreateModeButton(root.transform, MapMode.Explored,   "◉", "РАЗВЕДКА", UIManager.DS.Green,     0f);
+            CreateModeButton(root.transform, MapMode.Intel,      "✦", "ШПИОНАЖ",  SpyPurple,             -25f);
         }
 
         /// <summary>Круглая кнопка режима на дуге вокруг мини-карты; angleDeg — угол от центра карты (0 — вправо, 90 — вверх).</summary>
@@ -147,6 +151,7 @@ namespace StellarisClone.Rendering
                 MapMode.Resources  => LGIcon.MapResources,
                 MapMode.Hyperlanes => LGIcon.MapLanes,
                 MapMode.Explored   => LGIcon.MapExplored,
+                MapMode.Intel      => LGIcon.Betrayal,
                 _                  => LGIcon.MapSimple
             };
             var iconImg = LGIcons.Create(btnObj.transform, iconId, 18f, accent);
@@ -162,6 +167,7 @@ namespace StellarisClone.Rendering
                 MapMode.Resources  => "Режим ресурсов — подсветка залежей энергии и минералов",
                 MapMode.Hyperlanes => "Режим коридоров — выделенные гиперлинии",
                 MapMode.Explored   => "Режим разведки — изученные и неизученные секторы",
+                MapMode.Intel      => "Режим шпионажа — зоны ваших разведсетей и куда они расползаются. В остальных режимах на карте видны только портреты агентов",
                 _ => ""
             };
             TooltipHelper.Attach(btnObj, $"<b>{label}</b>\n{tip}");
@@ -187,6 +193,9 @@ namespace StellarisClone.Rendering
             o.effectDistance = new Vector2(1f, -1f);
             return t;
         }
+
+        /// <summary>Переключить режим карты (как кнопкой).</summary>
+        public void SetMode(MapMode mode) => ApplyMode(mode);
 
         private void ApplyMode(MapMode mode)
         {

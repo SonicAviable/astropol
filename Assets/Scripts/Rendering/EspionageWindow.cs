@@ -503,12 +503,14 @@ namespace StellarisClone.Rendering
                 cur.rectTransform.sizeDelta = new Vector2(150, 16);
                 cur.rectTransform.anchoredPosition = new Vector2(-166, 0);
             }
+            // Контрразведка — сразу; внедрение — игрок сам выбирает на карте систему, откуда строить сеть
             var btn = LGBuild.Button(row, "Go", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f), () =>
             {
+                if (target > 0) { SpyNetworkView.BeginPick(a, target); return; }
                 LeaderManager.Instance?.AssignSpy(a, target);
                 SFXManager.Play(Sfx.UiConfirm);
                 Rebuild();
-            }, null, "НАЗНАЧИТЬ", 11);
+            }, target > 0 ? LGIcon.Target : (LGIcon?)null, target > 0 ? "ВЫБРАТЬ СИСТЕМУ" : "НАЗНАЧИТЬ", 11);
             ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(140, 34));
         }
 
@@ -591,20 +593,18 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(box, LGIcon.Target, 22, Purple);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(22, 22));
             var name = LGBuild.Label(box, cur != null ? cur.Name : "—", 14, Color.white, TextAnchor.UpperLeft, bold: true);
-            name.rectTransform.TopBand(9, 20, 56, 200);
+            name.rectTransform.TopBand(9, 20, 56, 210);
             var sub = LGBuild.Label(box, cur != null
                     ? $"{Role(cur, ai.OwnerId)}сеть здесь <color=#BD8FFF>{EspionageManager.NetworkAt(cur.Id):0}%</color>"
                     : "Агенту некуда встать — у империи нет систем", 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            sub.rectTransform.TopBand(31, 16, 56, 200);
+            sub.rectTransform.TopBand(31, 16, 56, 210);
             if (cur != null)
             {
-                var show = LGBuild.Button(box, "ShowOnMap", UIManager.DS.BtnNeutral, new Color(Purple.r, Purple.g, Purple.b, 0.6f), () =>
-                {
-                    Close();
-                    var cam = FindFirstObjectByType<StellarisClone.Cam.StrategyCameraController>();
-                    if (cam != null) cam.FocusOn(cur.Position);
-                }, LGIcon.Globe, "НА КАРТЕ", 11);
-                ((RectTransform)show.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(130, 32));
+                var show = LGBuild.Button(box, "PickOnMap", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f),
+                    () => SpyNetworkView.BeginPick(a, ai.OwnerId), LGIcon.Target, "СМЕНИТЬ НА КАРТЕ", 11);
+                ((RectTransform)show.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(180, 32));
+                show.interactable = a.OpKind < 0;
+                if (a.OpKind >= 0) TooltipHelper.Attach(show.gameObject, "Во время операции агент не может сменить систему");
             }
 
             // Куда ещё можно перебраться: самые весомые системы цели (столица, колонии), потом — где сеть сильнее

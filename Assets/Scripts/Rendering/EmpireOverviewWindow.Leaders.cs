@@ -253,7 +253,7 @@ namespace StellarisClone.Rendering
                         int target = ai.OwnerId;
                         Target(LGIcon.Betrayal, Contacts.NameForPlayer(target),
                                $"Внедрение · отношение {ai.Opinion:+0;-0;0} · защита цели {EspionageManager.TargetCounter(ai) * 100f:0}%",
-                               lm.SpyOn(0, target), () => lm.AssignSpy(l, target));
+                               lm.SpyOn(0, target), () => { Close(); SpyNetworkView.BeginPick(l, target); });   // систему игрок выбирает на карте
                     }
                     break;
 

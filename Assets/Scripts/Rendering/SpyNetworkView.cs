@@ -11,6 +11,9 @@ namespace StellarisClone.Rendering
     ///   • золотые пунктирные линии от системы агента к соседям: туда сеть расползается, пунктир бежит наружу;
     ///   • значок агента рядом со звездой — портрет в фиолетовой рамке и сила сети в системе (▲ — растёт);
     ///     при наведении — подсказка с разбором прироста, по клику открывается окно шпионажа на этом агенте.
+    /// Зона и пунктир видны только в режиме карты «Шпионаж», в остальных — одни значки агентов.
+    /// Выбор системы для агента (BeginPick) — тоже здесь: системы цели помечены пульсирующими кольцами,
+    /// ЛКМ рядом со звездой выбирает (даже под туманом войны), ПКМ или Esc — отмена.
     /// В виде системы и в меню всё скрыто. Зона перерисовывается, только когда сеть изменилась (раз в месяц).
     /// </summary>
     public class SpyNetworkView : MonoBehaviour
@@ -25,9 +28,12 @@ namespace StellarisClone.Rendering
         private static readonly Color Gold = new Color(0.95f, 0.78f, 0.40f);
         private static readonly Color AgentRing = new Color(0.74f, 0.56f, 1f);
 
+        public static SpyNetworkView Instance { get; private set; }
+
         private class AgentVis
         {
             public int LeaderId, System = -1;
+            public bool Busy;
             public readonly List<LineRenderer> Lines = new List<LineRenderer>();
             public RectTransform Badge;
             public LeaderThumb Thumb;
@@ -45,24 +51,47 @@ namespace StellarisClone.Rendering
         private string _netKey = "";
         private float _scan;
 
+        // Выбор системы для агента
+        private Leader _pickAgent;
+        private int _pickOwner = -1;
+        private readonly List<KeyValuePair<StarSystem, SpriteRenderer>> _pickMarks = new List<KeyValuePair<StarSystem, SpriteRenderer>>();
+        private StarSystem _pickHover;
+        private RectTransform _banner;
+        private Text _bannerText;
+        private Sprite _ringSprite;
+        private Material _markMat;
+
+        public static bool IsPicking => Instance != null && Instance._pickOwner >= 0;
+
+        private void Awake() => Instance = this;
+
         private void Start()
         {
             var sh = ShaderCache.Sprite ?? Shader.Find("Sprites/Default");
-            if (sh != null)
+            if (sh != null) _zoneMat = new Material(sh) { name = "SpyZone" };
+            // Пунктир — шейдер, который учитывает сдвиг текстуры (Sprites/Default его игнорирует): так штрихи бегут
+            var add = Resources.Load<Shader>("Shaders/CombatAdditive") ?? sh;
+            if (add != null)
             {
-                _zoneMat = new Material(sh) { name = "SpyZone" };
-                _lineMat = new Material(sh) { name = "SpyLanes", mainTexture = DashTexture() };
+                _lineMat = new Material(add) { name = "SpyLanes", mainTexture = DashTexture() };
+                _lineMat.renderQueue = 3000;                 // вместе со спрайтами карты — порядок по sortingOrder
+                _markMat = new Material(add) { name = "SpyPickMarks", renderQueue = 3000 };
             }
+            var ringTex = Resources.Load<Texture2D>("UI/Cursors/fx_ring");
+            if (ringTex != null) _ringSprite = Sprite.Create(ringTex, new Rect(0, 0, ringTex.width, ringTex.height), new Vector2(0.5f, 0.5f), ringTex.width);
 
             var cgo = new GameObject("[UI] SpyNetworkBadges");
             _canvas = cgo.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 20;                      // под интерфейсом (100), над картой
             cgo.AddComponent<GraphicRaycaster>();
+            BuildBanner();
         }
 
         private void OnDestroy()
         {
+            if (Instance == this) Instance = null;
+            ClearPickMarks();
             if (_canvas != null) Destroy(_canvas.gameObject);
             if (_zoneTex != null) Destroy(_zoneTex);
         }
@@ -71,20 +100,27 @@ namespace StellarisClone.Rendering
         {
             bool hidden = !UIManager.IsGameStarted || MenuAtmosphere.IsActive
                           || (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView);
-            if (_zone != null) _zone.SetActive(!hidden);
+            bool intel = !hidden && GalaxyView.Instance != null
+                         && GalaxyView.Instance.CurrentMapMode == MapModeController.MapMode.Intel;
             if (_canvas != null) _canvas.enabled = !hidden;
-            if (hidden) { foreach (var v in _agents.Values) SetLines(v, false); return; }
+            if (hidden && IsPicking) EndPick();
 
             _scan -= Time.unscaledDeltaTime;
-            if (_scan <= 0f)
+            if (_scan <= 0f && !hidden)
             {
                 _scan = 0.5f;
                 RefreshZone();
                 RefreshAgents();
             }
 
+            // Зона и пунктир — только в режиме «Шпионаж»
+            if (_zone != null && _zone.activeSelf != (intel && _netKey.Length > 0)) _zone.SetActive(intel && _netKey.Length > 0);
+            foreach (var v in _agents.Values) SetLines(v, intel && !v.Busy);
+            if (hidden) return;
+
             if (_lineMat != null) _lineMat.mainTextureOffset = new Vector2(-Time.unscaledTime * 0.9f, 0f);
             PlaceBadges();
+            if (IsPicking) UpdatePick();
         }
 
         // ==================== ЗОНА СЕТИ ====================
@@ -114,6 +150,7 @@ namespace StellarisClone.Rendering
             if (pts.Count == 0)
             {
                 if (_zone != null) _zone.SetActive(false);
+                _netKey = "";
                 return;
             }
             BuildZone(pts, vals, ids);
@@ -225,7 +262,154 @@ namespace StellarisClone.Rendering
             if (_zoneSr.sprite != null) Destroy(_zoneSr.sprite);
             _zoneSr.sprite = Sprite.Create(_zoneTex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), ppu);
             _zone.transform.position = new Vector3((minX + maxX) * 0.5f, pts[0].y - 0.05f, (minZ + maxZ) * 0.5f);
-            _zone.SetActive(true);
+        }
+
+        // ==================== ВЫБОР СИСТЕМЫ ДЛЯ АГЕНТА ====================
+
+        /// <summary>
+        /// Игрок сам выбирает на карте систему империи owner, откуда агент будет строить сеть
+        /// (новое внедрение или перенос внутри той же империи). Окна закрываются, карта — в режиме «Шпионаж».
+        /// </summary>
+        public static void BeginPick(Leader agent, int owner)
+        {
+            if (Instance == null || agent == null || owner <= 0) return;
+            Instance.StartPick(agent, owner);
+        }
+
+        private void StartPick(Leader agent, int owner)
+        {
+            ClearPickMarks();
+            _pickAgent = agent;
+            _pickOwner = owner;
+            _pickHover = null;
+            EspionageWindow.Instance?.Close();
+            MapModeController.Instance?.SetMode(MapModeController.MapMode.Intel);
+
+            StarSystem focus = EmpireStats.GetSystem(agent.TargetOwner == owner ? agent.TargetSystem : EspionageManager.SuggestSystem(owner));
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != owner || _ringSprite == null) continue;
+                var go = new GameObject("SpyPickMark");
+                go.transform.SetParent(transform, false);
+                go.transform.position = s.Position + Vector3.up * 0.1f;
+                go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = _ringSprite;
+                if (_markMat != null) sr.sharedMaterial = _markMat;
+                sr.sortingOrder = 13;
+                _pickMarks.Add(new KeyValuePair<StarSystem, SpriteRenderer>(s, sr));
+            }
+            if (_pickMarks.Count == 0)
+            {
+                NotificationCenter.Show("Некуда внедриться", "У этой империи нет систем", NotificationCenter.Kind.Warning, 4f);
+                EndPick();
+                return;
+            }
+            if (focus != null)
+            {
+                var cam = FindFirstObjectByType<StellarisClone.Cam.StrategyCameraController>();
+                if (cam != null) cam.FocusOn(focus.Position);
+            }
+            string who = Contacts.NameForPlayer(owner);
+            _bannerText.text = $"<b>{agent.Name}</b>: выберите систему империи <color={LGBuild.Hex(FleetIndicator.OwnerColor(owner))}>{who}</color>, откуда строить разведсеть" +
+                               "   <color=#8AA2A8>ЛКМ — выбрать · ПКМ или Esc — отмена</color>";
+            _banner.gameObject.SetActive(true);
+        }
+
+        private void UpdatePick()
+        {
+            bool alive = false;
+            foreach (var a in EspionageManager.PlayerAgents()) if (a == _pickAgent) { alive = true; break; }
+            if (!alive || Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) { EndPick(); return; }
+
+            if (_cam == null) _cam = Camera.main;
+            float k = Screen.height / 1080f;
+            _banner.localScale = Vector3.one * k;
+
+            // Звезда-кандидат под курсором: ближайшая к точке на плоскости карты
+            _pickHover = null;
+            var ray = _cam.ScreenPointToRay(Input.mousePosition);
+            float planeY = _pickMarks[0].Key.Position.y;
+            if (Mathf.Abs(ray.direction.y) > 1e-4f)
+            {
+                Vector3 p = ray.origin + ray.direction * ((planeY - ray.origin.y) / ray.direction.y);
+                float best = 5f;
+                foreach (var m in _pickMarks)
+                {
+                    float d = Vector2.Distance(new Vector2(p.x, p.z), new Vector2(m.Key.Position.x, m.Key.Position.z));
+                    if (d < best) { best = d; _pickHover = m.Key; }
+                }
+            }
+
+            float t = Time.unscaledTime;
+            var purple = MapModeController.SpyPurple;
+            foreach (var m in _pickMarks)
+            {
+                bool hov = m.Key == _pickHover;
+                float pulse = 1f + 0.08f * Mathf.Sin(t * 4f + m.Key.Id);
+                m.Value.transform.localScale = Vector3.one * (hov ? 8f : 5.5f) * pulse;
+                m.Value.transform.rotation = Quaternion.Euler(90f, t * (hov ? 60f : 20f), 0f);
+                float a = hov ? 1f : 0.55f;
+                m.Value.color = new Color(purple.r * a, purple.g * a, purple.b * a, a);
+            }
+
+            bool overUi = UnityEngine.EventSystems.EventSystem.current != null
+                          && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+            if (!Input.GetMouseButtonDown(0) || overUi) return;
+            if (_pickHover != null) { Confirm(_pickHover); return; }
+            NotificationCenter.Show("Не та система", $"Нужна система империи {Contacts.NameForPlayer(_pickOwner)} — они помечены кольцами", NotificationCenter.Kind.Info, 3f);
+        }
+
+        private void Confirm(StarSystem s)
+        {
+            var a = _pickAgent;
+            int owner = _pickOwner;
+            EndPick();
+            if (a.Post == LeaderPost.Spy && a.TargetOwner == owner)
+            {
+                if (EspionageManager.Instance == null || !EspionageManager.Instance.Relocate(a, s.Id)) return;
+            }
+            else
+            {
+                LeaderManager.Instance?.AssignSpy(a, owner, s.Id);
+                SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiConfirm);
+            }
+            NotificationCenter.Show("Агент на месте", $"{a.Name} строит разведсеть из системы {s.Name}", NotificationCenter.Kind.Success, 5f);
+            _scan = 0f;
+        }
+
+        private void EndPick()
+        {
+            _pickAgent = null;
+            _pickOwner = -1;
+            _pickHover = null;
+            ClearPickMarks();
+            if (_banner != null) _banner.gameObject.SetActive(false);
+        }
+
+        private void ClearPickMarks()
+        {
+            foreach (var m in _pickMarks) if (m.Value != null) Destroy(m.Value.gameObject);
+            _pickMarks.Clear();
+        }
+
+        private void BuildBanner()
+        {
+            var bg = LGBuild.Panel(_canvas.transform, "SpyPickBanner", new Color(0.04f, 0.05f, 0.09f, 0.92f));
+            _banner = bg.rectTransform;
+            _banner.anchorMin = _banner.anchorMax = new Vector2(0.5f, 1f);
+            _banner.pivot = new Vector2(0.5f, 1f);
+            _banner.sizeDelta = new Vector2(860f, 34f);
+            _banner.anchoredPosition = new Vector2(0f, -200f * Screen.height / 1080f);
+            var rim = LGBuild.Panel(_banner, "Rim", new Color(0.74f, 0.56f, 1f, 0.8f));
+            rim.rectTransform.anchorMin = new Vector2(0f, 0f);
+            rim.rectTransform.anchorMax = new Vector2(1f, 0f);
+            rim.rectTransform.sizeDelta = new Vector2(0f, 2f);
+            _bannerText = LGBuild.Label(_banner, "", 13, Color.white, TextAnchor.MiddleCenter);
+            _bannerText.rectTransform.Stretch(12, 0, 12, 0);
+            _bannerText.raycastTarget = false;
+            LG.Ignore(_banner.gameObject);
+            _banner.gameObject.SetActive(false);
         }
 
         // ==================== АГЕНТЫ: ПУНКТИР И ЗНАЧКИ ====================
@@ -252,7 +436,7 @@ namespace StellarisClone.Rendering
                     _agents[a.Id] = v;
                 }
                 if (v.System != a.TargetSystem) BuildLines(v, a.TargetSystem);
-                SetLines(v, a.OpKind < 0);
+                v.Busy = a.OpKind >= 0;
                 UpdateBadge(v, a);
             }
         }
