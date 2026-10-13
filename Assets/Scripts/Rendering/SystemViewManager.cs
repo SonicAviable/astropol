@@ -26,6 +26,8 @@ namespace StellarisClone.Rendering
         private bool _isTransitioningToGalaxy;
         /// <summary>Система, чей спрайт звезды на карте спрятан под 3D-модель (чёрная дыра); −1 — нет.</summary>
         private int _hiddenStarId = -1;
+        /// <summary>Отладка (редактор и dev-сборка): показать модель чёрной дыры в любой системе — Ctrl+B в виде системы.</summary>
+        private bool _previewBlackHole;
 
         // Масштаб процедурной планеты относительно planet.Size (подбирается)
         // Ассет обычно создаёт сферу диаметром 1 unit — при Size 1.1-3.0 надо уменьшать
@@ -118,6 +120,7 @@ namespace StellarisClone.Rendering
         private void CompleteReturnToGalaxy()
         {
             _isTransitioningToGalaxy = false;
+            _previewBlackHole = false;
             ClearSystemContent();
             GalaxyView.Instance?.SetSystemIsolation(-1, false);
         }
@@ -140,7 +143,7 @@ namespace StellarisClone.Rendering
             starLight.intensity = 2.5f;
 
             // Чёрная дыра: объёмная модель вместо спрайта карты, планеты подсвечены тёплым светом диска
-            if (system.SpectralClass == StarSpectralClass.BlackHole
+            if ((system.SpectralClass == StarSpectralClass.BlackHole || _previewBlackHole)
                 && BlackHoleModel.Build(_systemContainer.transform) != null)
             {
                 starLight.color = new Color(1f, 0.72f, 0.48f);
@@ -509,6 +512,17 @@ namespace StellarisClone.Rendering
 
                 if (_currentSelectedPlanet != null && _currentSelectedPlanet.SelectionIndicator != null)
                     _currentSelectedPlanet.SelectionIndicator.transform.Rotate(Vector3.forward, 25f * Time.deltaTime);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Ctrl+B — посмотреть чёрную дыру в текущей системе (данные системы не меняются)
+                if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+                    && CurrentSystem != null)
+                {
+                    _previewBlackHole = !_previewBlackHole;
+                    BuildSystemContent(CurrentSystem);
+                    Debug.Log("[BlackHole] Предпросмотр модели: " + (_previewBlackHole ? "вкл" : "выкл"));
+                }
+#endif
             }
         }
 
