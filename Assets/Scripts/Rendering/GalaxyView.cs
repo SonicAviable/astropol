@@ -585,6 +585,15 @@ namespace StellarisClone.Rendering
 #endif
         }
 
+        /// <summary>На системе стоит отладочный предпросмотр чёрной дыры (F8 на карте).</summary>
+        public bool IsBlackHolePreview(int systemId)
+        {
+            int i = _generator.Systems.FindIndex(s => s.Id == systemId);
+            if (i < 0 || i >= _starNodes.Count || _starNodes[i] == null) return false;
+            var m = _starNodes[i].GetComponent<MapBlackHole>();
+            return m != null && m.Preview;
+        }
+
         /// <summary>Отладка: поставить/убрать модель чёрной дыры на выбранной системе (данные системы не меняются).</summary>
         private void TogglePreviewBlackHole()
         {

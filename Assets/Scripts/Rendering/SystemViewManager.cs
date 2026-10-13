@@ -143,7 +143,8 @@ namespace StellarisClone.Rendering
             starLight.intensity = 2.5f;
 
             // Чёрная дыра: объёмная модель вместо спрайта карты, планеты подсвечены тёплым светом диска
-            if ((system.SpectralClass == StarSpectralClass.BlackHole || _previewBlackHole)
+            bool mapPreview = GalaxyView.Instance != null && GalaxyView.Instance.IsBlackHolePreview(system.Id);
+            if ((system.SpectralClass == StarSpectralClass.BlackHole || _previewBlackHole || mapPreview)
                 && BlackHoleModel.Build(_systemContainer.transform) != null)
             {
                 starLight.color = new Color(1f, 0.72f, 0.48f);

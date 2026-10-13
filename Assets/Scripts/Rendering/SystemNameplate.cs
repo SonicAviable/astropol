@@ -252,6 +252,13 @@ namespace StellarisClone.Rendering
 
         private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
 
+        /// <summary>Отладочный предпросмотр чёрной дыры (F8): класс звезды настоящий, подменена только картинка.</summary>
+        private string PreviewNote()
+        {
+            var m = GetComponent<MapBlackHole>();
+            return m != null && m.Preview ? " <color=#FFB070>(предпросмотр чёрной дыры, F8)</color>" : "";
+        }
+
         public string GetTooltipContent()
         {
             string owner = _data.OwnerId == 0 ? "Ваша империя"
@@ -259,7 +266,7 @@ namespace StellarisClone.Rendering
                          : "Нейтральная";
 
             string tip = $"<b>{_data.Name}</b>\n" +
-                         $"<color=#AAB4C0>Класс:</color> {EmpireOverviewWindow.StarClass(_data.SpectralClass)}\n" +
+                         $"<color=#AAB4C0>Класс:</color> {EmpireOverviewWindow.StarClass(_data.SpectralClass)}{PreviewNote()}\n" +
                          $"<color=#AAB4C0>Владелец:</color> {owner}\n";
 
             if (_data.IsSurveyed)

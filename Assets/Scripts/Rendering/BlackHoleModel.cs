@@ -14,7 +14,7 @@ namespace StellarisClone.Rendering
     /// Светятся слои шейдером Astropolity/FX/BlackHole, горизонт — непрозрачный чёрный.
     ///
     /// Камера смотрит на карту сверху, а линза читается под низким углом — поэтому диск всегда повёрнут к камере
-    /// так, что она видит его под <see cref="BlackHoleFacing.ViewElevation"/>: дуги встают над и под горизонтом.
+    /// так, что она видит его под <see cref="BlackHoleFacing.Elevation"/>: дуги встают над и под горизонтом.
     /// </summary>
     public static class BlackHoleModel
     {
@@ -48,15 +48,20 @@ namespace StellarisClone.Rendering
             }
         }
 
-        /// <summary>Собрать модель под parent (в его центре); null — если модели нет (тогда остаётся спрайт карты).</summary>
-        public static GameObject Build(Transform parent, float radius = DefaultRadius)
+        /// <summary>
+        /// Собрать модель под parent (в его центре); null — если модели нет (тогда остаётся спрайт карты).
+        /// withRings = false — без внешнего кольца и обломков (на карте они сплющиваются в плоское «кольцо Сатурна»
+        /// и забивают ядро с дугами линзы). elevation — под каким углом к диску смотрит камера.
+        /// </summary>
+        public static GameObject Build(Transform parent, float radius = DefaultRadius, bool withRings = true,
+                                       float elevation = BlackHoleFacing.DefaultElevation)
         {
             if (!Available) return null;
 
             var root = new GameObject("BlackHole");
             root.transform.SetParent(parent, false);
             root.transform.localScale = Vector3.one * radius;
-            root.AddComponent<BlackHoleFacing>();
+            root.AddComponent<BlackHoleFacing>().Elevation = elevation;
 
             // Диск и кольца медленно вращаются вокруг оси; горизонт — сфера, его крутить незачем
             var spin = new GameObject("Spin").transform;
@@ -74,6 +79,7 @@ namespace StellarisClone.Rendering
             {
                 var mat = s_materials[i];
                 if (mat == null) continue;
+                if (!withRings && (s_names[i] == "ring" || s_names[i] == "debris")) continue;
                 var go = new GameObject(s_names[i]);
                 go.transform.SetParent(s_names[i] == "horizon" ? root.transform : spin, false);
                 go.AddComponent<MeshFilter>().sharedMesh = s_meshes[i];
@@ -206,12 +212,14 @@ namespace StellarisClone.Rendering
     }
 
     /// <summary>
-    /// Диск поворачивается к камере: она видит его под <see cref="ViewElevation"/> над плоскостью диска,
+    /// Диск поворачивается к камере: она видит его под <see cref="Elevation"/> над плоскостью диска,
     /// диск лежит горизонтально на экране. Дыра симметрична, так что «правильной» стороны у неё нет.
     /// </summary>
     public class BlackHoleFacing : MonoBehaviour
     {
-        public const float ViewElevation = 17f;
+        public const float DefaultElevation = 17f;
+        /// <summary>Угол камеры над плоскостью диска, градусы.</summary>
+        public float Elevation = DefaultElevation;
         private Camera _cam;
 
         private void LateUpdate()
@@ -225,7 +233,7 @@ namespace StellarisClone.Rendering
             Vector3 up = Vector3.ProjectOnPlane(ct.up, toCam);
             if (up.sqrMagnitude < 1e-6f) return;
             up.Normalize();
-            float e = ViewElevation * Mathf.Deg2Rad;
+            float e = Elevation * Mathf.Deg2Rad;
             Vector3 normal = toCam * Mathf.Sin(e) + up * Mathf.Cos(e);
             Vector3 side = Vector3.Cross(up, toCam);
             transform.rotation = Quaternion.LookRotation(Vector3.Cross(side, normal), normal);
@@ -240,8 +248,12 @@ namespace StellarisClone.Rendering
     public class MapBlackHole : MonoBehaviour
     {
         public const string ModelName = "BlackHoleMap";
-        /// <summary>Радиус внешнего кольца — внутри первой орбиты мини-системы (2,1).</summary>
-        private const float Radius = 2.4f;
+        /// <summary>
+        /// Масштаб модели (радиус внешнего кольца, которого на карте нет): светящийся диск выходит на ~2,4 —
+        /// крупнее короны обычной звезды, ядро с дугами линзы хорошо читается вблизи.
+        /// </summary>
+        private const float Radius = 3.4f;
+        private const float Elevation = 20f;
         private const float ShowHeight = 90f, FullHeight = 52f;   // как у мини-систем
 
         /// <summary>Отладочный предпросмотр (F8) на обычной звезде.</summary>
@@ -290,7 +302,7 @@ namespace StellarisClone.Rendering
 
         private bool Create()
         {
-            _model = BlackHoleModel.Build(transform, Radius);
+            _model = BlackHoleModel.Build(transform, Radius, withRings: false, elevation: Elevation);
             if (_model == null)
             {
                 _failed = true;
