@@ -42,17 +42,11 @@ namespace StellarisClone.Core
             new Face { Key = "gov_2", Class = LeaderClass.Governor,  Female = true,  Center = new Vector2(660, 560), Size = 640 },
         };
 
-        /// <summary>Женские имена из генератора лидеров (остальные считаются мужскими).</summary>
-        private static readonly HashSet<string> FemaleNames = new HashSet<string>
-        {
-            "Аира", "Лира", "Тесса", "Мира", "Ния", "Рейна", "Эла", "Нова", "Селена", "Иса", "Вега"
-        };
-
         public static bool IsFemale(Leader l)
         {
             if (l == null || string.IsNullOrEmpty(l.Name)) return false;
             int sp = l.Name.IndexOf(' ');
-            return FemaleNames.Contains(sp > 0 ? l.Name.Substring(0, sp) : l.Name);
+            return LeaderManager.IsFemaleName(sp > 0 ? l.Name.Substring(0, sp) : l.Name);
         }
 
         private static Face Find(string key)
