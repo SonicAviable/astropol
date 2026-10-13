@@ -7,21 +7,45 @@ using StellarisClone.Core;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Курсор игры вместо системного (Resources/UI/Cursors, рисует Tools/cursors/make_cursors.py):
-    ///   • стрелка — по умолчанию;
-    ///   • подсвеченная стрелка — над тем, что можно нажать: кнопки интерфейса, звёзды, свои флоты, планеты;
-    ///   • прицел — выделен флот и курсор на звезде: ПКМ отправит его туда.
-    /// Размер курсора — по высоте экрана (32 / 48 / 64 px). Создаётся сам при запуске.
+    /// Курсор игры, нарисованный поверх всего интерфейса (системный скрыт) — с эффектами, которых не умеет
+    /// аппаратный курсор. Картинки — Resources/UI/Cursors (рисует Tools/cursors/make_cursors.py).
+    ///   • голографическая стрелка со свечением и мерцающей звёздочкой на острие;
+    ///   • шлейф звёздной пыли при движении;
+    ///   • наведение на то, что можно нажать (кнопки, звёзды, свои флоты, планеты): орбита со спутником вокруг острия;
+    ///   • клик — ударная волна и искры;
+    ///   • выделен флот и курсор на звезде — вращающийся прицел (ПКМ отправит флот туда).
+    /// Размеры заданы для высоты экрана 1080 и масштабируются. Создаётся сам при запуске.
     /// </summary>
     public class GameCursor : MonoBehaviour
     {
         private enum Kind { Arrow, Hover, Move }
-        private static readonly string[] Names = { "arrow", "hover", "move" };
 
-        private readonly Texture2D[] _tex = new Texture2D[3];
-        private int _size;
-        private Kind _kind;
-        private bool _applied;
+        /// <summary>Остриё стрелки в долях картинки (от левого верхнего угла) — как ARROW[0] в make_cursors.py.</summary>
+        private static readonly Vector2 ArrowTip = new Vector2(0.10f, 0.06f);
+        private const float ArrowSize = 40f;
+        private static readonly Color Cyan = new Color(0.43f, 0.89f, 1f);
+        private static readonly Color Violet = new Color(0.67f, 0.43f, 1f);
+
+        private class Mote
+        {
+            public RectTransform Rt;
+            public Image Img;
+            public Vector2 Pos, Vel;
+            public float Age, Life, Size;
+            public Color From, To;
+            public bool Ripple;
+        }
+
+        private RectTransform _glow, _arrow, _sparkle, _ring, _sat, _target;
+        private Image _glowImg, _arrowImg, _sparkleImg, _ringImg, _satImg, _targetImg;
+        private Sprite _dot, _ripple;
+        private Material _additive;
+        private readonly List<Mote> _motes = new List<Mote>();
+        private RectTransform _moteRoot;
+
+        private float _hover, _move;
+        private Vector2 _lastSpawn;
+        private bool _hasLast;
         private Camera _cam;
         private PointerEventData _ped;
         private EventSystem _pedSystem;
@@ -33,34 +57,164 @@ namespace StellarisClone.Rendering
             if (FindFirstObjectByType<GameCursor>() != null) return;
             var go = new GameObject("[UI] GameCursor");
             DontDestroyOnLoad(go);
+            var canvas = go.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = short.MaxValue;     // поверх любого окна
             go.AddComponent<GameCursor>();
         }
 
-        private void Update()
+        private void Awake()
         {
-            int size = Screen.height <= 1100 ? 32 : Screen.height <= 1500 ? 48 : 64;
-            if (size != _size)
+            var arrow = Sprite_("cursor_arrow");
+            if (arrow == null)
             {
-                _size = size;
-                for (int i = 0; i < _tex.Length; i++) _tex[i] = Load(Names[i], size);
-                _applied = false;
+                Debug.LogWarning("[GameCursor] Нет Resources/UI/Cursors/cursor_arrow.png — остаётся системный курсор.");
+                enabled = false;
+                return;
             }
+            var add = Resources.Load<Shader>("Shaders/UIAdditive");
+            if (add != null) _additive = new Material(add) { name = "CursorAdditive" };
+            _dot = Sprite_("fx_dot");
+            _ripple = Sprite_("fx_ripple");
 
-            var kind = Detect();
-            if (_applied && kind == _kind) return;
-            _kind = kind;
-            _applied = true;
-
-            var t = _tex[(int)kind] ?? _tex[(int)Kind.Arrow];
-            if (t == null) { Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto); return; }
-            // Остриё стрелки — в левом верхнем углу картинки, у прицела точка — в центре
-            var hotspot = kind == Kind.Move ? new Vector2(t.width * 0.5f, t.height * 0.5f)
-                                            : new Vector2(t.width * 0.086f, t.height * 0.068f);
-            Cursor.SetCursor(t, hotspot, CursorMode.Auto);
+            _moteRoot = Layer("Motes", null, false, out _);
+            _ring = Layer("Ring", Sprite_("fx_ring"), true, out _ringImg);
+            _sat = Layer("Satellite", _dot, true, out _satImg);
+            _glow = Layer("Glow", Sprite_("cursor_arrow_glow"), true, out _glowImg);
+            _arrow = Layer("Arrow", arrow, false, out _arrowImg);
+            _target = Layer("Target", Sprite_("cursor_target"), false, out _targetImg);
+            _sparkle = Layer("Sparkle", Sprite_("fx_sparkle"), true, out _sparkleImg);
+            _arrow.pivot = _glow.pivot = new Vector2(ArrowTip.x, 1f - ArrowTip.y);
         }
 
-        private void OnEnable() => _applied = false;
-        private void OnDisable() => Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+        private void OnEnable() => Cursor.visible = false;
+        private void OnDisable() => Cursor.visible = true;
+        private void OnApplicationFocus(bool focus) { if (focus && enabled) Cursor.visible = false; }
+
+        private void Update()
+        {
+            if (_arrowImg == null) return;
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            float t = Time.unscaledTime;
+            float k = Screen.height / 1080f;
+            Vector2 tip = Input.mousePosition;
+
+            var kind = Detect();
+            _hover = Mathf.MoveTowards(_hover, kind == Kind.Hover ? 1f : 0f, dt * 7f);
+            _move = Mathf.MoveTowards(_move, kind == Kind.Move ? 1f : 0f, dt * 7f);
+            float arrowK = 1f - _move;
+
+            // Стрелка и её свечение
+            float a = ArrowSize * k * (1f + 0.06f * _hover);
+            Place(_arrow, tip, a, 0f);
+            Place(_glow, tip, a, 0f);
+            _arrowImg.color = new Color(1f, 1f, 1f, arrowK);
+            if (_glowImg != null)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(t * 3f);
+                _glowImg.color = Glow(Color.white, (0.35f + 0.5f * _hover + 0.12f * pulse) * arrowK);
+            }
+
+            // Звёздочка на острие: мерцает и медленно вращается
+            if (_sparkleImg != null)
+            {
+                float sp = (15f + 9f * _hover + 4f * _move) * k * (0.85f + 0.2f * Mathf.Sin(t * 5.3f));
+                Place(_sparkle, tip, sp, t * 40f);
+                _sparkleImg.color = Glow(Color.white, 0.65f + 0.35f * Mathf.Sin(t * 7.1f) * Mathf.Sin(t * 2.3f));
+            }
+
+            // Орбита: при наведении — вокруг острия, при приказе — крупнее и фиолетовая вокруг прицела
+            float ringSize = Mathf.Lerp(50f, 88f, _move) * k * Mathf.Lerp(0.7f, 1f, Mathf.Max(_hover, _move));
+            if (_ringImg != null)
+            {
+                Place(_ring, tip, ringSize, -t * 55f);
+                _ringImg.color = Glow(Color.Lerp(Cyan, Violet, _move), Mathf.Max(_hover * 0.85f, _move * 0.55f));
+            }
+            if (_satImg != null)
+            {
+                float orbit = ringSize * 0.40f;
+                Place(_sat, tip + new Vector2(Mathf.Cos(t * 3f), Mathf.Sin(t * 3f)) * orbit, 10f * k, 0f);
+                _satImg.color = Glow(Color.white, _hover);
+            }
+
+            // Прицел приказа флоту
+            if (_targetImg != null)
+            {
+                Place(_target, tip, 56f * k * (1f + 0.05f * Mathf.Sin(t * 4f)), t * 25f);
+                _targetImg.color = new Color(1f, 1f, 1f, _move);
+            }
+
+            if (_dot != null)
+            {
+                Trail(tip, k);
+                if (Input.GetMouseButtonDown(0)) Burst(tip, k, Cyan);
+                if (Input.GetMouseButtonDown(1)) Burst(tip, k, Violet);
+            }
+            UpdateMotes(dt);
+        }
+
+        // ==================== ШЛЕЙФ И ИСКРЫ ====================
+
+        private void Trail(Vector2 tip, float k)
+        {
+            if (!_hasLast) { _lastSpawn = tip; _hasLast = true; return; }
+            float step = 7f * k;
+            float len = (tip - _lastSpawn).magnitude;
+            if (len < step) return;
+            int n = Mathf.Min(6, Mathf.FloorToInt(len / step));
+            for (int i = 1; i <= n; i++)
+            {
+                var p = Vector2.Lerp(_lastSpawn, tip, i / (float)n) + Random.insideUnitCircle * 2f * k;
+                Spawn(p, Random.insideUnitCircle * 12f * k, Random.Range(0.35f, 0.55f), Random.Range(7f, 12f) * k,
+                      Color.Lerp(Color.white, Cyan, 0.6f), Violet, false);
+            }
+            _lastSpawn = tip;
+        }
+
+        private void Burst(Vector2 tip, float k, Color c)
+        {
+            if (_ripple != null) Spawn(tip, Vector2.zero, 0.4f, 100f * k, c, c, true);
+            for (int i = 0; i < 7; i++)
+            {
+                float ang = (i / 7f + Random.Range(-0.04f, 0.04f)) * Mathf.PI * 2f;
+                var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                Spawn(tip + dir * 4f * k, dir * Random.Range(130f, 190f) * k, Random.Range(0.28f, 0.4f), 8f * k, Color.white, c, false);
+            }
+        }
+
+        private void Spawn(Vector2 pos, Vector2 vel, float life, float size, Color from, Color to, bool ripple)
+        {
+            Mote m = null;
+            foreach (var x in _motes) if (x.Age >= x.Life) { m = x; break; }
+            if (m == null)
+            {
+                if (_motes.Count >= 64) return;
+                var rt = Layer("Mote", _dot, true, out var img, _moteRoot);
+                m = new Mote { Rt = rt, Img = img };
+                _motes.Add(m);
+            }
+            m.Pos = pos; m.Vel = vel; m.Age = 0f; m.Life = life; m.Size = size;
+            m.From = from; m.To = to; m.Ripple = ripple;
+            m.Img.sprite = ripple ? _ripple : _dot;
+            m.Rt.gameObject.SetActive(true);
+        }
+
+        private void UpdateMotes(float dt)
+        {
+            foreach (var m in _motes)
+            {
+                if (m.Age >= m.Life) continue;
+                m.Age += dt;
+                float u = Mathf.Clamp01(m.Age / m.Life);
+                if (u >= 1f) { m.Rt.gameObject.SetActive(false); continue; }
+                m.Pos += m.Vel * dt;
+                m.Vel *= Mathf.Max(0f, 1f - 3.5f * dt);
+                float size = m.Ripple ? m.Size * Mathf.Lerp(0.15f, 1f, 1f - (1f - u) * (1f - u)) : m.Size * (1f - u * 0.7f);
+                Place(m.Rt, m.Pos, size, 0f);
+                float alpha = m.Ripple ? (1f - u) * 0.9f : Mathf.Pow(1f - u, 1.5f) * 0.85f;
+                m.Img.color = Glow(Color.Lerp(m.From, m.To, u), alpha);
+            }
+        }
 
         // ==================== ЧТО ПОД КУРСОРОМ ====================
 
@@ -116,28 +270,45 @@ namespace StellarisClone.Rendering
             return false;
         }
 
-        // ==================== ТЕКСТУРЫ ====================
+        // ==================== ПОСТРОЕНИЕ ====================
+
+        private RectTransform Layer(string name, Sprite sprite, bool additive, out Image img, Transform parent = null)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent != null ? parent : transform, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            img = null;
+            if (sprite == null) return rt;
+            img = go.AddComponent<Image>();
+            img.sprite = sprite;
+            img.raycastTarget = false;
+            if (additive && _additive != null) img.material = _additive;
+            return rt;
+        }
 
         /// <summary>
-        /// Курсору нужна читаемая RGBA32-текстура без мипмапов (так настроен импорт в .meta);
-        /// если импорт другой — копируем картинку через RenderTexture, чтобы курсор не пропал.
+        /// Яркость свечения. Шейдер UIAdditive умножает цвет на альфу, так что гасим только RGB — иначе яркость
+        /// уходила бы в квадрат. Без шейдера (обычное смешивание) текстуры свечений прозрачны по яркости — тоже верно.
         /// </summary>
-        private static Texture2D Load(string name, int size)
-        {
-            var t = Resources.Load<Texture2D>($"UI/Cursors/cursor_{name}_{size}");
-            if (t == null) return null;
-            if (t.isReadable && t.format == TextureFormat.RGBA32 && t.mipmapCount == 1) return t;
+        private static Color Glow(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
 
-            var rt = RenderTexture.GetTemporary(t.width, t.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-            var prev = RenderTexture.active;
-            Graphics.Blit(t, rt);
-            RenderTexture.active = rt;
-            var copy = new Texture2D(t.width, t.height, TextureFormat.RGBA32, false) { name = t.name + "_cursor" };
-            copy.ReadPixels(new Rect(0, 0, t.width, t.height), 0, 0);
-            copy.Apply();
-            RenderTexture.active = prev;
-            RenderTexture.ReleaseTemporary(rt);
-            return copy;
+        private static void Place(RectTransform rt, Vector2 screen, float size, float angle)
+        {
+            rt.position = screen;
+            rt.sizeDelta = new Vector2(size, size);
+            rt.localRotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
+        private static Sprite Sprite_(string name)
+        {
+            var tex = Resources.Load<Texture2D>("UI/Cursors/" + name);
+            if (tex == null) return null;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            var s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+            s.hideFlags = HideFlags.DontSave;
+            return s;
         }
     }
 }
