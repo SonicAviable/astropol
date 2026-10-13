@@ -5,7 +5,7 @@ using UnityEngine;
 namespace StellarisClone.Core
 {
     /// <summary>
-    /// Портреты лидеров (учёных, адмиралов, губернаторов) из Resources/Leaders/Pool.
+    /// Портреты лидеров (учёных, адмиралов, губернаторов, агентов) из Resources/Leaders/Pool.
     /// Портрет подбирается по классу и полу (по имени) при первом показе и запоминается в лидере —
     /// так он попадает в сохранение. Среди лидеров одной империи стараемся не повторять лица.
     /// Если подходящего портрета нет, лидер остаётся без него и интерфейс рисует иконку класса.
@@ -40,6 +40,10 @@ namespace StellarisClone.Core
             new Face { Key = "adm_4", Class = LeaderClass.Admiral,   Female = false, Center = new Vector2(680, 560), Size = 700 },
             new Face { Key = "gov_1", Class = LeaderClass.Governor,  Female = false, Center = new Vector2(680, 580), Size = 700 },
             new Face { Key = "gov_2", Class = LeaderClass.Governor,  Female = true,  Center = new Vector2(660, 560), Size = 640 },
+            new Face { Key = "agt_1", Class = LeaderClass.Agent,     Female = false, Center = new Vector2(690, 500), Size = 660 },
+            new Face { Key = "agt_2", Class = LeaderClass.Agent,     Female = true,  Center = new Vector2(680, 640), Size = 680 },
+            new Face { Key = "agt_3", Class = LeaderClass.Agent,     Female = false, Center = new Vector2(690, 560), Size = 660 },
+            new Face { Key = "agt_4", Class = LeaderClass.Agent,     Female = true,  Center = new Vector2(700, 520), Size = 660 },
         };
 
         public static bool IsFemale(Leader l)
@@ -61,7 +65,9 @@ namespace StellarisClone.Core
         {
             if (l == null) return null;
             var face = Find(l.Portrait);
-            if (face != null && (face.Class == l.Class || l.Class == LeaderClass.Agent) && face.Texture != null) return face;
+            // Агент с чужим (одолженным) лицом получает своё, как только есть портреты агентов его пола
+            bool borrowed = face != null && l.Class == LeaderClass.Agent && face.Class != LeaderClass.Agent && HasOwn(l);
+            if (face != null && !borrowed && (face.Class == l.Class || l.Class == LeaderClass.Agent) && face.Texture != null) return face;
 
             face = Pick(l);
             l.Portrait = face?.Key;
@@ -79,19 +85,28 @@ namespace StellarisClone.Core
                 CountUsed(lm.Candidates, l, used);
             }
 
-            // Наименее занятые лица подходящего класса и пола; среди равных — по зерну лидера
+            // Наименее занятые лица подходящего класса и пола; среди равных — по зерну лидера.
+            // Если своих портретов класса нет (раньше — у агентов), берутся лица любых лидеров нужного пола.
+            bool own = HasOwn(l);
             var best = new List<Face>();
             int bestUse = int.MaxValue;
             foreach (var f in All)
             {
-                // Агентам портретов своего класса нет — берутся лица любых лидеров нужного пола
-                if ((f.Class != l.Class && l.Class != LeaderClass.Agent) || f.Female != female || f.Texture == null) continue;
+                if ((own ? f.Class != l.Class : l.Class != LeaderClass.Agent && f.Class != l.Class) || f.Female != female || f.Texture == null) continue;
                 int n = used.TryGetValue(f.Key, out int u) ? u : 0;
                 if (n < bestUse) { bestUse = n; best.Clear(); }
                 if (n == bestUse) best.Add(f);
             }
             if (best.Count == 0) return null;
             return best[Math.Abs(l.Seed + l.Id * 7919) % best.Count];
+        }
+
+        /// <summary>Есть ли портреты класса лидера его пола.</summary>
+        private static bool HasOwn(Leader l)
+        {
+            bool female = IsFemale(l);
+            foreach (var f in All) if (f.Class == l.Class && f.Female == female && f.Texture != null) return true;
+            return false;
         }
 
         private static void CountUsed(IReadOnlyList<Leader> list, Leader self, Dictionary<string, int> used)
