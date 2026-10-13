@@ -8,10 +8,10 @@ namespace StellarisClone.Rendering
     /// <summary>
     /// Разведсеть на карте галактики, как в Hearts of Iron 4:
     ///   • зона сети — бирюзовый «живой» контур вокруг систем, где у вас есть сеть, с лёгкой заливкой (сильнее сеть — ярче);
-    ///   • золотые пунктирные линии от системы агента к соседям: туда сеть расползается, пунктир бежит наружу;
+    ///   • потоки данных от системы агента к соседям (туда сеть расползается): по бирюзовому каналу бегут кометы света;
     ///   • значок агента рядом со звездой — портрет в фиолетовой рамке и сила сети в системе (▲ — растёт);
     ///     при наведении — подсказка с разбором прироста, по клику открывается окно шпионажа на этом агенте.
-    /// Зона и пунктир видны только в режиме карты «Шпионаж», в остальных — одни значки агентов.
+    /// Зона и потоки данных видны только в режиме карты «Шпионаж», в остальных — одни значки агентов.
     /// Выбор системы для агента (BeginPick) — тоже здесь: системы цели помечены пульсирующими кольцами,
     /// ЛКМ рядом со звездой выбирает (даже под туманом войны), ПКМ или Esc — отмена.
     /// В виде системы и в меню всё скрыто. Зона перерисовывается, только когда сеть изменилась (раз в месяц).
@@ -25,7 +25,6 @@ namespace StellarisClone.Rendering
         private const float Threshold = 0.45f;
 
         private static readonly Color Teal = new Color(0.40f, 0.86f, 0.82f);
-        private static readonly Color Gold = new Color(0.95f, 0.78f, 0.40f);
         private static readonly Color AgentRing = new Color(0.74f, 0.56f, 1f);
 
         public static SpyNetworkView Instance { get; private set; }
@@ -69,11 +68,11 @@ namespace StellarisClone.Rendering
         {
             var sh = ShaderCache.Sprite ?? Shader.Find("Sprites/Default");
             if (sh != null) _zoneMat = new Material(sh) { name = "SpyZone" };
-            // Пунктир — шейдер, который учитывает сдвиг текстуры (Sprites/Default его игнорирует): так штрихи бегут
+            // Потоки данных — шейдер, который учитывает сдвиг текстуры (Sprites/Default его игнорирует): так кометы бегут
             var add = Resources.Load<Shader>("Shaders/CombatAdditive") ?? sh;
             if (add != null)
             {
-                _lineMat = new Material(add) { name = "SpyLanes", mainTexture = DashTexture() };
+                _lineMat = new Material(add) { name = "SpyLanes", mainTexture = StreamTexture() };
                 _lineMat.renderQueue = 3000;                 // вместе со спрайтами карты — порядок по sortingOrder
                 _markMat = new Material(add) { name = "SpyPickMarks", renderQueue = 3000 };
             }
@@ -113,12 +112,12 @@ namespace StellarisClone.Rendering
                 RefreshAgents();
             }
 
-            // Зона и пунктир — только в режиме «Шпионаж»
+            // Зона и потоки — только в режиме «Шпионаж»
             if (_zone != null && _zone.activeSelf != (intel && _netKey.Length > 0)) _zone.SetActive(intel && _netKey.Length > 0);
             foreach (var v in _agents.Values) SetLines(v, intel && !v.Busy);
             if (hidden) return;
 
-            if (_lineMat != null) _lineMat.mainTextureOffset = new Vector2(-Time.unscaledTime * 0.9f, 0f);
+            if (_lineMat != null) _lineMat.mainTextureOffset = new Vector2(-Time.unscaledTime * 0.45f, 0f);
             PlaceBadges();
             if (IsPicking) UpdatePick();
         }
@@ -457,21 +456,20 @@ namespace StellarisClone.Rendering
                 var lr = go.AddComponent<LineRenderer>();
                 lr.sharedMaterial = _lineMat;
                 lr.textureMode = LineTextureMode.Tile;
-                lr.textureScale = new Vector2(0.45f, 1f);
+                lr.textureScale = new Vector2(0.12f, 1f);                       // одна комета на ~8 единиц
                 lr.alignment = LineAlignment.TransformZ;
                 go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);       // лента лежит в плоскости карты
-                lr.widthMultiplier = 0.5f;
+                lr.widthMultiplier = 0.9f;
                 lr.numCapVertices = 0;
                 lr.sortingOrder = 12;
-                // от края звезды к краю соседней — пунктир не залезает на сами звёзды
+                // от края звезды к краю соседней — поток не залезает на сами звёзды
                 Vector3 dir = (n.Position - s.Position).normalized;
                 lr.positionCount = 2;
                 lr.SetPosition(0, s.Position + dir * 2.2f + Vector3.up * 0.05f);
                 lr.SetPosition(1, n.Position - dir * 2.2f + Vector3.up * 0.05f);
-                var c = Gold; c.a = 0.85f;
-                lr.startColor = c;
-                c.a = 0.35f;
-                lr.endColor = c;
+                // бирюзовый поток интерфейса: ярко у агента, к соседу гаснет
+                lr.startColor = new Color(1f, 1f, 1f, 0.95f);                   // цвет — в самой текстуре
+                lr.endColor = new Color(1f, 1f, 1f, 0.35f);
                 v.Lines.Add(lr);
             }
         }
@@ -575,17 +573,31 @@ namespace StellarisClone.Rendering
             if (v.Badge != null) Destroy(v.Badge.gameObject);
         }
 
-        /// <summary>Пунктир: штрих 60% периода, мягкие концы; повторяется вдоль линии.</summary>
-        private static Texture2D DashTexture()
+        /// <summary>
+        /// Поток данных: слабый светящийся канал и бегущие по нему «кометы» — яркая голова и длинный гаснущий хвост
+        /// (одна на период текстуры). Поперёк — мягкий профиль, края растворяются.
+        /// </summary>
+        private static Texture2D StreamTexture()
         {
-            const int w = 32, h = 4;
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear, name = "SpyDash" };
+            const int w = 128, h = 16;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear, name = "SpyStream" };
             var px = new Color32[w * h];
             for (int x = 0; x < w; x++)
             {
-                float u = x / (float)w;
-                float a = u < 0.6f ? Mathf.Clamp01(Mathf.Min(u, 0.6f - u) * 30f) : 0f;
-                for (int y = 0; y < h; y++) px[y * w + x] = new Color32(255, 255, 255, (byte)(a * 255));
+                // голова у u = 0,92, хвост тянется назад (к началу периода) — кометы летят по направлению линии
+                float d = x / (float)w - 0.92f;
+                float tail = d <= 0f ? Mathf.Exp(d / 0.18f) : 0f;
+                float head = Mathf.Exp(-(d / 0.014f) * (d / 0.014f));
+                for (int y = 0; y < h; y++)
+                {
+                    float v = (y + 0.5f) / h - 0.5f, v2 = v * v;
+                    float a = 0.14f * Mathf.Exp(-v2 / 0.03f)                              // слабый канал
+                            + 0.75f * tail * Mathf.Exp(-v2 / (0.006f + 0.02f * tail))     // хвост сужается
+                            + head * Mathf.Exp(-v2 / 0.02f);                              // яркая голова
+                    float white = Mathf.Clamp01(head + 0.35f * tail);
+                    var c = Color.Lerp(Teal, Color.white, white);
+                    px[y * w + x] = new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), (byte)(Mathf.Clamp01(a) * 255));
+                }
             }
             tex.SetPixels32(px);
             tex.Apply(false);

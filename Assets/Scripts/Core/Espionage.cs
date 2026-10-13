@@ -63,8 +63,9 @@ namespace StellarisClone.Core
     ///   • Разведсеть, как в Hearts of Iron: агент стоит в конкретной системе цели и каждый месяц строит сеть —
     ///     сильнее всего в своей системе, слабее у соседей по гиперкоридорам (×0,6) и у их соседей (×0,3).
     ///     Без агента сеть тает. Сила сети в империи — среднее по её системам (столица весит втрое, колонии вдвое),
-    ///     поэтому важно, откуда строить. С 20% сеть даёт обзор всей территории цели и её флотов,
-    ///     с 50% — полное досье (запасы, доходы, наука, мощь). Системы с сетью от 15% видны и сами по себе.
+    ///     поэтому важно, откуда строить. Награды по порогам: 15% в системе — она видна; 20% — обзор всей территории
+    ///     и флотов цели; 25% — «Диверсия»; 30% — «перехват чертежей» (известные цели технологии +25% к скорости);
+    ///     40% — «Кража технологии»; 50% — досье (запасы, доходы, наука, мощь) и «Раздор».
     ///   • Операции — «Кража технологии», «Диверсия», «Раздор»: стоят влияния, идут несколько месяцев, шанс успеха
     ///     зависит от агента, его уровня, черт, внедрённости, технологий и контрразведки цели. Провал — агент либо
     ///     схвачен (скандал, отношения падают), либо «сгорел» и половина сети потеряна.
@@ -81,6 +82,8 @@ namespace StellarisClone.Core
 
         public const float AIOpInfluence = 15f;
         public const float IntelCover = 20f, DeepIntelCover = 50f;
+        /// <summary>С этой силы сети — «перехват чертежей»: технологии, известные цели, изучаются быстрее.</summary>
+        public const float BlueprintCover = 30f, BlueprintBoost = 0.25f;
         /// <summary>С какой силы сети система видна на карте сама по себе.</summary>
         public const float LocalIntel = 15f;
         public const float NetDecayPerMonth = 2f;
@@ -163,6 +166,22 @@ namespace StellarisClone.Core
         }
 
         // ==================== РАЗВЕДСЕТЬ ====================
+
+        /// <summary>
+        /// Множитель скорости исследования: технология известна империи, где ваша сеть ≥ 30%, — +25%
+        /// (агенты пересылают чертежи). Один и тот же бонус, сколько бы таких империй ни было.
+        /// </summary>
+        public static float ResearchBoost(Technology tech)
+        {
+            if (tech == null) return 1f;
+            foreach (var a in PlayerAgents())
+            {
+                if (a.Post != LeaderPost.Spy || a.TargetOwner <= 0 || a.Cover < BlueprintCover) continue;
+                var ai = AIEmpireManager.For(a.TargetOwner);
+                if (ai != null && !ai.IsEliminated && ai.HasTech(tech.Id)) return 1f + BlueprintBoost;
+            }
+            return 1f;
+        }
 
         /// <summary>Сила вашей разведсети в системе, 0–100.</summary>
         public static float NetworkAt(int systemId)
@@ -486,6 +505,9 @@ namespace StellarisClone.Core
                 if (was < IntelCover && a.Cover >= IntelCover)
                     NotificationCenter.Show("Разведсеть раскинута",
                         $"Сеть {a.Name} в империи {ai.AIName} достигла {IntelCover:0}%: вся их территория и флоты теперь у вас на виду.", NotificationCenter.Kind.Success, 7f);
+                else if (was < BlueprintCover && a.Cover >= BlueprintCover)
+                    NotificationCenter.Show("Перехват чертежей",
+                        $"Сеть {a.Name} достигла {BlueprintCover:0}%: технологии, известные {ai.AIName}, вы изучаете на {BlueprintBoost * 100f:0}% быстрее.", NotificationCenter.Kind.Success, 7f);
                 else if (was < DeepIntelCover && a.Cover >= DeepIntelCover)
                     NotificationCenter.Show("Глубокое внедрение",
                         $"Сеть {a.Name} достигла {DeepIntelCover:0}%: досье на {ai.AIName} открыто, доступны все операции.", NotificationCenter.Kind.Success, 7f);

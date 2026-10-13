@@ -614,7 +614,7 @@ namespace StellarisClone.Core
 
         private float DaysFor(Technology tech, float pointsLeft, int activeSlots)
         {
-            float perDay = DailyPointsPerSlot(activeSlots) / YearPenaltyMultiplier(tech, GetCurrentYear());
+            float perDay = DailyPointsPerSlot(activeSlots) / YearPenaltyMultiplier(tech, GetCurrentYear()) * EspionageManager.ResearchBoost(tech);
             if (perDay <= 0.0001f) return float.PositiveInfinity;
             return pointsLeft / perDay;
         }
@@ -704,7 +704,8 @@ namespace StellarisClone.Core
             {
                 if (slot.CurrentTech == null || slot.IsPaused) continue;
 
-                slot.Progress += perSlot / YearPenaltyMultiplier(slot.CurrentTech, year);
+                // Разведсеть: технологию, известную цели, изучаем быстрее (EspionageManager.ResearchBoost)
+                slot.Progress += perSlot / YearPenaltyMultiplier(slot.CurrentTech, year) * EspionageManager.ResearchBoost(slot.CurrentTech);
                 slot.CurrentTech.Progress = slot.Progress;
 
                 if (slot.Progress >= slot.CurrentTech.Cost)

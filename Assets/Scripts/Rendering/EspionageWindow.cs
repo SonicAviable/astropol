@@ -428,14 +428,19 @@ namespace StellarisClone.Rendering
             LGBuild.Clear(_detail);
             if (a == null) { BuildHelp(); return; }
 
-            // Заголовок агента
-            var head = Block(66, new Color(Purple.r * 0.12f, Purple.g * 0.10f, Purple.b * 0.16f, 0.95f));
+            // Заголовок агента: портрет, имя, уровень, черты
+            var head = Block(72, new Color(Purple.r * 0.12f, Purple.g * 0.10f, Purple.b * 0.16f, 0.95f));
+            var face = LGBuild.Rect(head, "Face");
+            face.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(52, 52));
+            var thumb = LeaderThumb.Create(face, 26f, 2f);
+            bool hasFace = thumb.Set(a, LeaderThumb.ClassColor(LeaderClass.Agent));
+            float x0 = hasFace ? 80f : 18f;
             var hn = LGBuild.Label(head, a.Name, 20, Color.white, TextAnchor.UpperLeft, bold: true);
-            hn.rectTransform.TopBand(8, 28, 18, 18);
+            hn.rectTransform.TopBand(9, 28, x0, 18);
             var hs = LGBuild.Label(head, $"Агент · уровень {a.Level} · {LeaderManager.LevelBonusText(a)}", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            hs.rectTransform.TopBand(36, 16, 18, 18);
+            hs.rectTransform.TopBand(37, 16, x0, 18);
             var ht = LGBuild.Label(head, TraitsLine(a), 11, UIManager.DS.Gold, TextAnchor.UpperLeft);
-            ht.rectTransform.TopBand(50, 14, 18, 18);
+            ht.rectTransform.TopBand(53, 14, x0, 18);
 
             if (a.Post != LeaderPost.Spy) { BuildAssignment(a); return; }
             if (a.TargetOwner == 0) { BuildCounter(a); return; }
@@ -458,9 +463,10 @@ namespace StellarisClone.Rendering
         private void BuildHelp()
         {
             Heading("КАК ЭТО РАБОТАЕТ", Purple);
-            Paragraph("Агент — четвёртый класс лидеров. Его можно внедрить в любую империю, которую вы встретили.");
-            Paragraph("• Агент строит разведсеть из выбранной системы цели; сеть расползается к соседям по гиперкоридорам, без агента тает. На карте видно её зону.\n• С сетью 20% вы видите всю территорию и все флоты цели, с 50% открывается досье.\n• Операции: кража технологии, диверсия, раздор между двумя империями.", 12, 86);
-            Paragraph("Провал грозит поимкой и скандалом. Агент дома, шифрование и «Криптография» защищают вас от чужих агентов: ИИ тоже шпионит.", 12, 40, UIManager.DS.TextMuted);
+            Paragraph("Агент строит разведсеть из выбранной вами системы чужой империи: сильнее всего там, слабее у соседей по гиперкоридорам. Без агента сеть тает. Зону сети видно на карте в режиме «Шпионаж».", 12, 52);
+            Heading("ЧТО ДАЁТ РАЗВЕДКА", Purple);
+            Ladder(0f);
+            Paragraph("Провал операции грозит поимкой агента и скандалом. Агент дома (контрразведка) и технологии шифрования защищают вас: ИИ тоже шпионит.", 12, 40, UIManager.DS.TextMuted);
         }
 
         // ---- Не назначен: выбор поста ----
@@ -532,60 +538,112 @@ namespace StellarisClone.Rendering
         {
             var ai = AIEmpireManager.For(a.TargetOwner);
             if (ai == null) { RecallButton(a); return; }
-            var es = EspionageManager.Instance;
             Color oc = FleetIndicator.OwnerColor(ai.OwnerId);
+            var sys = EmpireStats.GetSystem(a.TargetSystem);
 
-            Heading($"ВНЕДРЁН В ИМПЕРИЮ  ·  {ai.AIName.ToUpper()}", oc);
+            Heading($"ВНЕДРЁН  ·  {ai.AIName.ToUpper()}", oc);
 
-            // Прикрытие и защита цели
-            var cover = Block(86, new Color(0.05f, 0.07f, 0.10f, 0.95f));
-            var ct = LGBuild.Label(cover, $"РАЗВЕДСЕТЬ В ИМПЕРИИ  <color=#BD8FFF>{a.Cover:0}%</color>", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            ct.rectTransform.TopBand(10, 18, 18, 18);
-            var bh = LGBuild.Rect(cover, "CoverBar");
-            bh.TopBand(34, 8, 18, 18);
+            // Сила сети: крупная цифра, как растёт, шкала с порогами наград
+            var box = Block(104, new Color(0.05f, 0.06f, 0.10f, 0.95f));
+            var big = LGBuild.Label(box, $"{a.Cover:0}%", 34, Purple, TextAnchor.UpperLeft, bold: true);
+            big.rectTransform.TopBand(6, 42, 18, 18);
+            var cap = LGBuild.Label(box, "РАЗВЕДСЕТЬ В ИМПЕРИИ", 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true).Track();
+            cap.rectTransform.TopBand(48, 14, 18, 18);
+            string grow = a.OpKind >= 0
+                ? "<color=#F2C766>Агент занят операцией — сеть заморожена</color>"
+                : $"Растёт: <color=#66F59E>+{EspionageManager.BuildRate(a).Total:0.#}</color> в месяц в системе {sys?.Name ?? "—"}, у соседей ×0,6";
+            var st = LGBuild.Label(box,
+                $"{grow}\nЗащита цели <color=#FF9F7A>{EspionageManager.TargetCounter(ai) * 100f:0}%</color>   ·   отношение {ai.Opinion:+0;-0;0}",
+                11, UIManager.DS.TextPrimary, TextAnchor.UpperLeft);
+            st.rectTransform.TopBand(12, 36, 130, 18);
+            st.lineSpacing = 1.2f;
+            var bh = LGBuild.Rect(box, "NetBar");
+            bh.TopBand(70, 8, 18, 18);
             LGBuild.Bar(bh, Purple, a.Cover / 100f, 8f);
-            // Отметки порогов 20 / 50
-            foreach (float m in new[] { EspionageManager.IntelCover, EspionageManager.DeepIntelCover })
+            foreach (var m in Milestones)
             {
-                var tick = LGBuild.Panel(bh, "Tick", new Color(1f, 1f, 1f, 0.55f));
-                tick.rectTransform.anchorMin = new Vector2(m / 100f, 0);
-                tick.rectTransform.anchorMax = new Vector2(m / 100f, 1);
-                tick.rectTransform.sizeDelta = new Vector2(2f, 6f);
+                bool got = a.Cover >= m.Cover;
+                var tick = LGBuild.Panel(bh, "Tick", got ? new Color(1f, 1f, 1f, 0.85f) : new Color(1f, 1f, 1f, 0.35f));
+                tick.rectTransform.anchorMin = new Vector2(m.Cover / 100f, 0);
+                tick.rectTransform.anchorMax = new Vector2(m.Cover / 100f, 1);
+                tick.rectTransform.sizeDelta = new Vector2(2f, 8f);
                 LG.Ignore(tick.gameObject);
+                var tl = LGBuild.Label(bh, $"{m.Cover:0}", 9, got ? Purple : UIManager.DS.TextMuted, TextAnchor.UpperCenter, bold: got);
+                tl.rectTransform.anchorMin = tl.rectTransform.anchorMax = new Vector2(m.Cover / 100f, 0);
+                tl.rectTransform.pivot = new Vector2(0.5f, 1f);
+                tl.rectTransform.sizeDelta = new Vector2(30f, 12f);
+                tl.rectTransform.anchoredPosition = new Vector2(0f, -4f);
             }
-            bool intel = a.Cover >= EspionageManager.IntelCover, deep = a.Cover >= EspionageManager.DeepIntelCover;
-            var cs = LGBuild.Label(cover,
-                $"{(intel ? "<color=#66F59E>✓</color>" : "<color=#8AA2A8>○</color>")} обзор территории и флотов (20%)    " +
-                $"{(deep ? "<color=#66F59E>✓</color>" : "<color=#8AA2A8>○</color>")} досье (50%)    " +
-                $"Защита цели: <color=#FF9F7A>{EspionageManager.TargetCounter(ai) * 100f:0}%</color>    Отношение: {ai.Opinion:+0;-0;0}",
-                11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            cs.rectTransform.TopBand(52, 18, 18, 18);
-            var gain = LGBuild.Label(cover, a.OpKind >= 0 ? "Агент занят операцией — сеть не растёт (но и не тает)" :
-                $"Прирост в системе агента: +{EspionageManager.BuildRate(a).Total:0.#} в месяц, у соседей ×0,6, дальше ×0,3. Сила в империи — среднее по её системам (столица ×3, колонии ×2)",
-                10, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            gain.rectTransform.TopBand(68, 14, 18, 18);
+
+            Heading("ЧТО ДАЁТ РАЗВЕДКА", Purple);
+            Ladder(a.Cover);
 
             BuildRegion(a, ai);
 
             // Досье
             Heading("ДОСЬЕ", UIManager.DS.TextMuted);
-            if (deep) BuildDossier(ai);
-            else Paragraph("Досье закрыто. Оно откроется, когда разведсеть в империи достигнет 50%.", 12, 28, UIManager.DS.TextMuted);
+            if (a.Cover >= EspionageManager.DeepIntelCover) BuildDossier(ai);
+            else Paragraph($"Досье закрыто — откроется при сети {EspionageManager.DeepIntelCover:0}%.", 12, 26, UIManager.DS.TextMuted);
 
             // Операции
             Heading("ОПЕРАЦИИ", Purple);
             if (a.OpKind >= 0) BuildActiveOp(a, ai);
-            else foreach (SpyOp op in new[] { SpyOp.Steal, SpyOp.Sabotage, SpyOp.Discord }) OpRow(a, ai, op);
+            else foreach (SpyOp op in new[] { SpyOp.Sabotage, SpyOp.Steal, SpyOp.Discord }) OpRow(a, ai, op);
 
             if (_discordPick && a.OpKind < 0) BuildDiscordPick(a, ai);
             RecallButton(a);
+        }
+
+        // ---- Награды разведсети по порогам ----
+
+        private struct Milestone
+        {
+            public float Cover;
+            public LGIcon Icon;
+            public string Title, Desc;
+        }
+
+        private static readonly Milestone[] Milestones =
+        {
+            new Milestone { Cover = EspionageManager.LocalIntel, Icon = LGIcon.Star, Title = "Системы на виду",
+                Desc = "Системы, где сеть от 15%, видны на карте сквозь туман войны" },
+            new Milestone { Cover = EspionageManager.IntelCover, Icon = LGIcon.Globe, Title = "Обзор",
+                Desc = "Вся территория империи и все её флоты — у вас на карте" },
+            new Milestone { Cover = 25f, Icon = LGIcon.Wrench, Title = "Операция «Диверсия»",
+                Desc = "Удар по верфям и складам: цель теряет сплавы и гелий-3" },
+            new Milestone { Cover = EspionageManager.BlueprintCover, Icon = LGIcon.Research, Title = "Перехват чертежей",
+                Desc = "Технологии, которые они уже знают, вы изучаете на 25% быстрее" },
+            new Milestone { Cover = 40f, Icon = LGIcon.Target, Title = "Операция «Кража технологии»",
+                Desc = "Агент выкрадывает технологию, которой у вас нет" },
+            new Milestone { Cover = EspionageManager.DeepIntelCover, Icon = LGIcon.Diplomacy, Title = "Досье и операция «Раздор»",
+                Desc = "Запасы, доходы, наука и мощь флота цели; можно стравить их с другой империей" },
+        };
+
+        /// <summary>Лестница наград: открытые — яркие с галочкой, закрытые — сколько ещё нужно.</summary>
+        private void Ladder(float cover)
+        {
+            foreach (var m in Milestones)
+            {
+                bool got = cover >= m.Cover;
+                var row = Block(36, got ? new Color(Purple.r * 0.16f, Purple.g * 0.12f, Purple.b * 0.22f, 0.95f)
+                                        : new Color(0.04f, 0.05f, 0.08f, 0.9f), 10f);
+                var ic = LGIcons.Create(row, m.Icon, 18, got ? Purple : new Color(0.55f, 0.62f, 0.68f, 0.7f));
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(18, 18));
+                var pct = LGBuild.Label(row, $"{m.Cover:0}%", 11, got ? Color.white : UIManager.DS.TextMuted, TextAnchor.MiddleLeft, bold: true);
+                pct.rectTransform.Stretch(44, 0, 0, 0);
+                var t = LGBuild.Label(row, $"<b>{m.Title}</b>   <color=#8AA2A8>{m.Desc}</color>", 11,
+                    got ? UIManager.DS.TextPrimary : new Color(0.75f, 0.80f, 0.85f, 0.75f), TextAnchor.MiddleLeft);
+                t.rectTransform.Stretch(84, 0, 110, 0);
+                var state = LGBuild.Label(row, got ? "<color=#66F59E>✓ ОТКРЫТО</color>" : $"ещё {m.Cover - cover:0.#}%", 10,
+                    UIManager.DS.TextMuted, TextAnchor.MiddleRight, bold: got);
+                state.rectTransform.Stretch(0, 0, 14, 0);
+            }
         }
 
         // ---- Система агента: откуда строится сеть (как регион в Hearts of Iron) ----
 
         private void BuildRegion(Leader a, AIEmpireManager ai)
         {
-            var es = EspionageManager.Instance;
             var cur = EmpireStats.GetSystem(a.TargetSystem);
             Heading("СИСТЕМА АГЕНТА", Purple);
 
@@ -595,9 +653,9 @@ namespace StellarisClone.Rendering
             var name = LGBuild.Label(box, cur != null ? cur.Name : "—", 14, Color.white, TextAnchor.UpperLeft, bold: true);
             name.rectTransform.TopBand(9, 20, 56, 210);
             var sub = LGBuild.Label(box, cur != null
-                    ? $"{Role(cur, ai.OwnerId)}сеть здесь <color=#BD8FFF>{EspionageManager.NetworkAt(cur.Id):0}%</color>"
+                    ? $"{Role(cur, ai.OwnerId)}сеть здесь <color=#BD8FFF>{EspionageManager.NetworkAt(cur.Id):0}%</color>   ·   ближе к столице (×3) и колониям (×2) — сеть в империи растёт быстрее"
                     : "Агенту некуда встать — у империи нет систем", 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            sub.rectTransform.TopBand(31, 16, 56, 210);
+            sub.rectTransform.TopBand(31, 16, 56, 206);
             if (cur != null)
             {
                 var show = LGBuild.Button(box, "PickOnMap", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f),
@@ -605,34 +663,6 @@ namespace StellarisClone.Rendering
                 ((RectTransform)show.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(180, 32));
                 show.interactable = a.OpKind < 0;
                 if (a.OpKind >= 0) TooltipHelper.Attach(show.gameObject, "Во время операции агент не может сменить систему");
-            }
-
-            // Куда ещё можно перебраться: самые весомые системы цели (столица, колонии), потом — где сеть сильнее
-            var list = new List<StarSystem>();
-            foreach (var sys in EmpireStats.Systems)
-                if (sys.OwnerId == ai.OwnerId && (cur == null || sys.Id != cur.Id)) list.Add(sys);
-            list.Sort((x, y) =>
-            {
-                int c = EspionageManager.SystemWeight(y, ai.OwnerId).CompareTo(EspionageManager.SystemWeight(x, ai.OwnerId));
-                return c != 0 ? c : EspionageManager.NetworkAt(y.Id).CompareTo(EspionageManager.NetworkAt(x.Id));
-            });
-            int n = Mathf.Min(5, list.Count);
-            if (n == 0) return;
-            Paragraph("Перенести агента — сеть строится оттуда, уже построенная не пропадает. Ставьте его ближе к столице и колониям: они весят больше.", 11, 32, UIManager.DS.TextMuted);
-            for (int i = 0; i < n; i++)
-            {
-                var sys = list[i];
-                var row = Block(40, new Color(0.04f, 0.06f, 0.09f, 0.95f), 10f);
-                var t = LGBuild.Label(row, $"{sys.Name}   <color=#8AA2A8>{Role(sys, ai.OwnerId)}сеть {EspionageManager.NetworkAt(sys.Id):0}%</color>",
-                    12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-                t.rectTransform.Stretch(18, 0, 170, 0);
-                var mv = LGBuild.Button(row, "Move", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f), () =>
-                {
-                    if (es != null && es.Relocate(a, sys.Id)) Rebuild();
-                }, null, "ПЕРЕНЕСТИ", 10);
-                ((RectTransform)mv.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(140, 28));
-                mv.interactable = a.OpKind < 0;
-                if (a.OpKind >= 0) TooltipHelper.Attach(mv.gameObject, "Во время операции агент не может сменить систему");
             }
         }
 
