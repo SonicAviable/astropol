@@ -31,7 +31,9 @@ namespace StellarisClone.Core
         // ---- Агент (шпионаж; см. EspionageManager) ----
         /// <summary>Империя, куда внедрён агент; 0 — контрразведка дома; -1 — не назначен.</summary>
         public int TargetOwner = -1;
-        /// <summary>Внедрённость 0–100: растёт, пока агент на посту; открывает обзор и операции.</summary>
+        /// <summary>Система, из которой агент строит разведсеть (как регион в Hearts of Iron); -1 — нет.</summary>
+        public int TargetSystem = -1;
+        /// <summary>Сила вашей разведсети в империи-цели 0–100 (считает EspionageManager раз в месяц): открывает обзор и операции.</summary>
         public float Cover;
         /// <summary>Идущая операция (SpyOp), -1 — нет; месяцев до результата; цель-третья сторона для «Раздора».</summary>
         public int OpKind = -1;
@@ -283,19 +285,23 @@ namespace StellarisClone.Core
             l.Post = LeaderPost.None;
             l.ShipId = l.SystemId = l.PlanetIndex = -1;
             // Агент выходит из игры: внедрённость и идущая операция пропадают
-            l.TargetOwner = -1; l.Cover = 0f; l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
+            l.TargetOwner = -1; l.TargetSystem = -1; l.Cover = 0f; l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
             Changed();
         }
 
-        /// <summary>Назначить агента: target 0 — контрразведка дома, иначе внедрение в империю ИИ.</summary>
-        public void AssignSpy(Leader l, int target)
+        /// <summary>
+        /// Назначить агента: target 0 — контрразведка дома, иначе внедрение в империю ИИ.
+        /// system — откуда строить разведсеть (-1 — столица или главная система цели); уже построенная сеть сохраняется.
+        /// </summary>
+        public void AssignSpy(Leader l, int target, int system = -1)
         {
             if (l == null || l.Class != LeaderClass.Agent) return;
             var other = SpyOn(l.Owner, target);
             if (other != null && other != l) Unassign(other);
             l.Post = LeaderPost.Spy;
             l.TargetOwner = target;
-            l.Cover = 0f;
+            l.TargetSystem = target > 0 ? (system >= 0 ? system : EspionageManager.SuggestSystem(target)) : -1;
+            l.Cover = target > 0 ? EspionageManager.NetworkStrength(target) : 0f;
             l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
             l.ShipId = l.SystemId = l.PlanetIndex = -1;
             Changed();

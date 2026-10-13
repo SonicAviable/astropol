@@ -47,15 +47,27 @@ namespace StellarisClone.Core
         public List<int> AIOwners = new List<int>();
         public List<int> AITimers = new List<int>();
         public int Succeeded, Failed, AgentsLost, Foiled, Breaches;
+        /// <summary>Ваша разведсеть по системам: id системы и сила 0–100.</summary>
+        public List<int> NetSys = new List<int>();
+        public List<float> NetVal = new List<float>();
+    }
+
+    /// <summary>Разбор месячного прироста разведсети в системе агента (для подсказки на карте).</summary>
+    public struct NetGain
+    {
+        public float Base, Level, TraitMul, TechMul, CounterMul, Total;
     }
 
     /// <summary>
     /// Шпионаж. Агент — четвёртый класс лидеров. Его посылают в контрразведку дома или внедряют в чужую империю.
-    ///   • Внедрённость (прикрытие) растёт каждый месяц. С 20% агент даёт обзор всей территории цели и её флотов,
-    ///     с 50% — полное досье (запасы, доходы, наука, мощь).
+    ///   • Разведсеть, как в Hearts of Iron: агент стоит в конкретной системе цели и каждый месяц строит сеть —
+    ///     сильнее всего в своей системе, слабее у соседей по гиперкоридорам (×0,6) и у их соседей (×0,3).
+    ///     Без агента сеть тает. Сила сети в империи — среднее по её системам (столица весит втрое, колонии вдвое),
+    ///     поэтому важно, откуда строить. С 20% сеть даёт обзор всей территории цели и её флотов,
+    ///     с 50% — полное досье (запасы, доходы, наука, мощь). Системы с сетью от 15% видны и сами по себе.
     ///   • Операции — «Кража технологии», «Диверсия», «Раздор»: стоят влияния, идут несколько месяцев, шанс успеха
     ///     зависит от агента, его уровня, черт, внедрённости, технологий и контрразведки цели. Провал — агент либо
-    ///     схвачен (скандал, отношения падают), либо «сгорел» и теряет прикрытие.
+    ///     схвачен (скандал, отношения падают), либо «сгорел» и половина сети потеряна.
     ///   • Контрразведка: агент дома и технологии (шифрование) снижают шансы чужих агентов и раскрывают их.
     ///   • ИИ тоже шпионит за вами: изредка пытается украсть технологию, устроить диверсию или похитить запасы.
     ///     О раскрытой операции вы узнаёте, чьих она рук дело; нераскрытая остаётся безымянной.
@@ -69,7 +81,14 @@ namespace StellarisClone.Core
 
         public const float AIOpInfluence = 15f;
         public const float IntelCover = 20f, DeepIntelCover = 50f;
+        /// <summary>С какой силы сети система видна на карте сама по себе.</summary>
+        public const float LocalIntel = 15f;
+        public const float NetDecayPerMonth = 2f;
+        /// <summary>Доля прироста: система агента, соседи, соседи соседей.</summary>
+        public static readonly float[] NetRings = { 1f, 0.6f, 0.3f };
         private const int MaxLog = 40;
+
+        private readonly Dictionary<int, float> _net = new Dictionary<int, float>();
 
         private EspionageSave _s = new EspionageSave();
         public IReadOnlyList<EspLogEntry> Log => _s.Log;
@@ -118,7 +137,7 @@ namespace StellarisClone.Core
         /// <summary>Агент игрока, внедрённый в империю target (0 — контрразведка дома).</summary>
         public static Leader AgentOn(int target) => Lm?.SpyOn(0, target);
 
-        /// <summary>Есть ли у вас агент в этой империи с достаточным прикрытием.</summary>
+        /// <summary>Есть ли у вас агент в этой империи с достаточной разведсетью.</summary>
         public static bool HasIntel(int owner, float minCover = IntelCover)
         {
             if (owner <= 0) return false;
@@ -126,7 +145,7 @@ namespace StellarisClone.Core
             return a != null && a.Cover >= minCover;
         }
 
-        /// <summary>Территория империй, где у вас внедрён агент (прикрытие ≥ 20%): обзор для карты.</summary>
+        /// <summary>Обзор для карты: территория империй с сетью ≥ 20% и отдельные системы с сетью ≥ 15%.</summary>
         public static void AddIntelVision(HashSet<int> set)
         {
             var lm = Lm;
@@ -137,6 +156,174 @@ namespace StellarisClone.Core
                 foreach (var s in EmpireStats.Systems)
                     if (s.OwnerId == a.TargetOwner) set.Add(s.Id);
             }
+            var es = Instance;
+            if (es != null)
+                foreach (var kv in es._net)
+                    if (kv.Value >= LocalIntel) set.Add(kv.Key);
+        }
+
+        // ==================== РАЗВЕДСЕТЬ ====================
+
+        /// <summary>Сила вашей разведсети в системе, 0–100.</summary>
+        public static float NetworkAt(int systemId)
+        {
+            var es = Instance;
+            return es != null && es._net.TryGetValue(systemId, out float v) ? v : 0f;
+        }
+
+        /// <summary>Все системы с вашей сетью (id → сила).</summary>
+        public static IReadOnlyDictionary<int, float> Network => Instance != null ? Instance._net : null;
+
+        /// <summary>Вес системы в силе сети империи: столица — 3, колония — 2, остальные — 1.</summary>
+        public static float SystemWeight(StarSystem s, int owner)
+        {
+            var ai = AIEmpireManager.For(owner);
+            if (ai != null && ai.CapitalSystemId == s.Id) return 3f;
+            foreach (var p in s.Planets) if (p.Population > 0) return 2f;
+            return 1f;
+        }
+
+        /// <summary>Сила вашей разведсети в империи owner, 0–100: взвешенное среднее по её системам.</summary>
+        public static float NetworkStrength(int owner)
+        {
+            if (owner <= 0) return 0f;
+            float sum = 0f, w = 0f;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != owner) continue;
+                float k = SystemWeight(s, owner);
+                sum += NetworkAt(s.Id) * k;
+                w += k;
+            }
+            return w > 0f ? sum / w : 0f;
+        }
+
+        /// <summary>Откуда строить сеть по умолчанию: столица цели, иначе её самая весомая система.</summary>
+        public static int SuggestSystem(int owner)
+        {
+            var ai = AIEmpireManager.For(owner);
+            var cap = ai != null ? EmpireStats.GetSystem(ai.CapitalSystemId) : null;
+            if (cap != null && cap.OwnerId == owner) return cap.Id;
+            int best = -1;
+            float bw = -1f;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != owner) continue;
+                float w = SystemWeight(s, owner) + s.ConnectedSystemIds.Count * 0.1f;
+                if (w > bw) { bw = w; best = s.Id; }
+            }
+            return best;
+        }
+
+        /// <summary>Месячный прирост сети в системе агента и из чего он складывается.</summary>
+        public static NetGain BuildRate(Leader a)
+        {
+            var tm = TechnologyManager.Instance;
+            var ai = a != null ? AIEmpireManager.For(a.TargetOwner) : null;
+            var g = new NetGain
+            {
+                Base = 4f,
+                Level = a != null ? a.Level : 0,
+                TraitMul = a != null && a.Has("agt_infiltrator") ? 1.25f : 1f,
+                TechMul = tm != null ? tm.Bonuses.CoverSpeed : 1f,
+                CounterMul = 1f - TargetCounter(ai) * 0.5f
+            };
+            g.Total = (g.Base + g.Level) * g.TraitMul * g.TechMul * g.CounterMul;
+            return g;
+        }
+
+        /// <summary>Системы в пределах двух прыжков от center: (id, кольцо 0/1/2).</summary>
+        public static List<KeyValuePair<int, int>> NetworkReach(int center)
+        {
+            var res = new List<KeyValuePair<int, int>>();
+            var start = EmpireStats.GetSystem(center);
+            if (start == null) return res;
+            var seen = new HashSet<int> { center };
+            var frontier = new List<StarSystem> { start };
+            res.Add(new KeyValuePair<int, int>(center, 0));
+            for (int ring = 1; ring < NetRings.Length; ring++)
+            {
+                var next = new List<StarSystem>();
+                foreach (var s in frontier)
+                    foreach (int id in s.ConnectedSystemIds)
+                    {
+                        if (!seen.Add(id)) continue;
+                        var n = EmpireStats.GetSystem(id);
+                        if (n == null) continue;
+                        next.Add(n);
+                        res.Add(new KeyValuePair<int, int>(id, ring));
+                    }
+                frontier = next;
+            }
+            return res;
+        }
+
+        /// <summary>Перенести агента в другую систему той же империи: строить сеть оттуда (готовая сеть не пропадает).</summary>
+        public bool Relocate(Leader a, int systemId)
+        {
+            var s = EmpireStats.GetSystem(systemId);
+            if (a == null || a.Post != LeaderPost.Spy || a.TargetOwner <= 0 || s == null || s.OwnerId != a.TargetOwner) return false;
+            if (a.OpKind >= 0)
+            {
+                NotificationCenter.Show("Агент занят", "Нельзя сменить систему во время операции", NotificationCenter.Kind.Warning, 3f);
+                return false;
+            }
+            if (a.TargetSystem == systemId) return true;
+            a.TargetSystem = systemId;
+            AddLog($"{a.Name} перебрался в систему {s.Name}: сеть строится оттуда.", 0);
+            SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiConfirm);
+            Changed();
+            return true;
+        }
+
+        private void GrowNetworks()
+        {
+            var touched = new HashSet<int>();
+            foreach (var a in PlayerAgents())
+            {
+                if (a.Post != LeaderPost.Spy || a.TargetOwner <= 0) continue;
+                var center = EmpireStats.GetSystem(a.TargetSystem);
+                if (center == null || center.OwnerId != a.TargetOwner)
+                {
+                    a.TargetSystem = SuggestSystem(a.TargetOwner);
+                    center = EmpireStats.GetSystem(a.TargetSystem);
+                    if (center == null) continue;
+                }
+                // Во время операции сеть не растёт, но и не тает
+                float gain = a.OpKind >= 0 ? 0f : BuildRate(a).Total;
+                foreach (var kv in NetworkReach(center.Id))
+                {
+                    touched.Add(kv.Key);
+                    if (gain <= 0f) continue;
+                    _net.TryGetValue(kv.Key, out float v);
+                    _net[kv.Key] = Mathf.Min(100f, v + gain * NetRings[kv.Value]);
+                }
+            }
+            // Без агента сеть понемногу тает
+            foreach (int id in new List<int>(_net.Keys))
+            {
+                if (touched.Contains(id)) continue;
+                float v = _net[id] - NetDecayPerMonth;
+                if (v <= 0f) _net.Remove(id); else _net[id] = v;
+            }
+        }
+
+        /// <summary>Изменить вашу сеть во всех системах империи owner (операции её «засвечивают»).</summary>
+        private void HurtNetwork(int owner, float minus, float mul)
+        {
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != owner || !_net.TryGetValue(s.Id, out float v)) continue;
+                v = Mathf.Max(0f, (v - minus) * mul);
+                if (v <= 0f) _net.Remove(s.Id); else _net[s.Id] = v;
+            }
+        }
+
+        /// <summary>Сила сети в империи — в поле Cover каждого агента (по нему работают обзор, досье, операции).</summary>
+        private static void SyncCover()
+        {
+            foreach (var a in PlayerAgents())
+                a.Cover = a.Post == LeaderPost.Spy && a.TargetOwner > 0 ? NetworkStrength(a.TargetOwner) : 0f;
         }
 
         /// <summary>Защита вашей империи от чужих агентов, 0–0,85: базовая + технологии + агент-контрразведчик.</summary>
@@ -218,7 +405,7 @@ namespace StellarisClone.Core
             if (a.OpKind >= 0) { reason = "Агент уже выполняет операцию"; return false; }
             var ai = AIEmpireManager.For(a.TargetOwner);
             if (ai == null || ai.IsEliminated) { reason = "Империя пала"; return false; }
-            if (a.Cover < SpyInfo.MinCover(op)) { reason = $"Нужно прикрытие {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)"; return false; }
+            if (a.Cover < SpyInfo.MinCover(op)) { reason = $"Нужна разведсеть {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)"; return false; }
             var eco = EconomyManager.Instance;
             if (eco == null || eco.Influence < SpyInfo.Cost(op)) { reason = $"Нужно {SpyInfo.Cost(op):0} влияния"; return false; }
             if (op == SpyOp.Steal && StealTarget(ai, out _) == null) { reason = "У них нет технологий, которых нет у вас"; return false; }
@@ -266,9 +453,10 @@ namespace StellarisClone.Core
             if (day != 1 || !UIManager.IsGameStarted) return;
             var lm = Lm;
             if (lm == null) return;
-            var tm = TechnologyManager.Instance;
-            float speed = tm != null ? tm.Bonuses.CoverSpeed : 1f;
             bool changed = false;
+            var before = new Dictionary<int, float>();
+            foreach (var a in PlayerAgents())
+                if (a.Post == LeaderPost.Spy && a.TargetOwner > 0) before[a.Id] = a.Cover;
 
             foreach (var a in new List<Leader>(PlayerAgents()))
             {
@@ -283,21 +471,24 @@ namespace StellarisClone.Core
                 }
 
                 changed = true;
-                if (a.OpKind >= 0)
-                {
-                    if (--a.OpMonthsLeft <= 0) ResolveOp(a, ai);
-                    continue;
-                }
+                if (a.OpKind >= 0 && --a.OpMonthsLeft <= 0) ResolveOp(a, ai);
+            }
 
-                float before = a.Cover;
-                float gain = (3f + a.Level) * (a.Has("agt_infiltrator") ? 1.25f : 1f) * speed;
-                a.Cover = Mathf.Min(100f, a.Cover + gain);
-                if (before < IntelCover && a.Cover >= IntelCover)
-                    NotificationCenter.Show("Агент внедрился",
-                        $"{a.Name} закрепился в империи {ai.AIName}: вся их территория и флоты теперь у вас на виду.", NotificationCenter.Kind.Success, 7f);
-                else if (before < DeepIntelCover && a.Cover >= DeepIntelCover)
+            GrowNetworks();
+            SyncCover();
+            if (_net.Count > 0) changed = true;
+
+            foreach (var a in PlayerAgents())
+            {
+                if (a.Post != LeaderPost.Spy || a.TargetOwner <= 0 || !before.TryGetValue(a.Id, out float was)) continue;
+                var ai = AIEmpireManager.For(a.TargetOwner);
+                if (ai == null) continue;
+                if (was < IntelCover && a.Cover >= IntelCover)
+                    NotificationCenter.Show("Разведсеть раскинута",
+                        $"Сеть {a.Name} в империи {ai.AIName} достигла {IntelCover:0}%: вся их территория и флоты теперь у вас на виду.", NotificationCenter.Kind.Success, 7f);
+                else if (was < DeepIntelCover && a.Cover >= DeepIntelCover)
                     NotificationCenter.Show("Глубокое внедрение",
-                        $"{a.Name} получил доступ к сведениям высшего уровня: досье на {ai.AIName} открыто, доступны все операции.", NotificationCenter.Kind.Success, 7f);
+                        $"Сеть {a.Name} достигла {DeepIntelCover:0}%: досье на {ai.AIName} открыто, доступны все операции.", NotificationCenter.Kind.Success, 7f);
             }
 
             RunAIOps(year);
@@ -334,7 +525,7 @@ namespace StellarisClone.Core
                 else
                 {
                     _s.Succeeded++;
-                    a.Cover = Mathf.Max(10f, a.Cover - 15f);
+                    HurtNetwork(ai.OwnerId, 15f, 1f);          // часть сети засвечена
                     lm?.GrantXp(a, 40f);
                     string tail = "";
                     if (noticed)
@@ -355,18 +546,20 @@ namespace StellarisClone.Core
                 {
                     _s.AgentsLost++;
                     ai.AddMemory("espionage", -12f);
+                    HurtNetwork(ai.OwnerId, 0f, 0.7f);         // контрразведка вскрыла часть сети
                     AddLog($"{a.Name} схвачен при операции «{SpyInfo.Name(op)}» в империи {ai.AIName}. Скандал: отношения ухудшились.", 2);
                     lm?.Retire(a, "Агент схвачен", $"{a.Name} попался контрразведке {ai.AIName}. Отношения с ними ухудшились.");
                     SFXManager.Play(StellarisClone.Core.Audio.Sfx.NotifyDanger);
                 }
                 else
                 {
-                    a.Cover = Mathf.Max(0f, a.Cover - 40f);
+                    HurtNetwork(ai.OwnerId, 0f, 0.5f);         // агент «сгорел»: полсети потеряно
                     ai.AddMemory("espionage", -4f);
-                    AddLog($"Операция «{SpyInfo.Name(op)}» против {ai.AIName} провалена. {a.Name} ушёл в тень, но прикрытие подорвано.", 2);
-                    NotificationCenter.Show("Операция провалена", $"{SpyInfo.Name(op)}: {a.Name} ушёл от ареста, прикрытие подорвано", NotificationCenter.Kind.Warning, 7f);
+                    AddLog($"Операция «{SpyInfo.Name(op)}» против {ai.AIName} провалена. {a.Name} ушёл в тень, но половина разведсети потеряна.", 2);
+                    NotificationCenter.Show("Операция провалена", $"{SpyInfo.Name(op)}: {a.Name} ушёл от ареста, половина разведсети потеряна", NotificationCenter.Kind.Warning, 7f);
                 }
             }
+            SyncCover();
             Changed();
         }
 
@@ -550,7 +743,13 @@ namespace StellarisClone.Core
 
         // ==================== СОХРАНЕНИЕ ====================
 
-        public EspionageSave CaptureState() => _s;
+        public EspionageSave CaptureState()
+        {
+            _s.NetSys = new List<int>(_net.Keys);
+            _s.NetVal = new List<float>();
+            foreach (int id in _s.NetSys) _s.NetVal.Add(_net[id]);
+            return _s;
+        }
 
         public void RestoreState(EspionageSave s)
         {
@@ -559,6 +758,21 @@ namespace StellarisClone.Core
             _s.AIOwners ??= new List<int>();
             _s.AITimers ??= new List<int>();
             while (_s.AITimers.Count < _s.AIOwners.Count) _s.AITimers.Add(12);
+            _s.NetSys ??= new List<int>();
+            _s.NetVal ??= new List<float>();
+            _net.Clear();
+            for (int i = 0; i < _s.NetSys.Count && i < _s.NetVal.Count; i++) _net[_s.NetSys[i]] = _s.NetVal[i];
+
+            // Сохранения до разведсети: у агента было «прикрытие» на всю империю — раскладываем его по её системам
+            foreach (var a in PlayerAgents())
+            {
+                if (a.Post != LeaderPost.Spy || a.TargetOwner <= 0) continue;
+                if (a.TargetSystem < 0) a.TargetSystem = SuggestSystem(a.TargetOwner);
+                if (_s.NetSys.Count > 0 || a.Cover <= 0f) continue;
+                foreach (var sys in EmpireStats.Systems)
+                    if (sys.OwnerId == a.TargetOwner) _net[sys.Id] = a.Cover;
+            }
+            SyncCover();
             OnChanged?.Invoke();
         }
     }

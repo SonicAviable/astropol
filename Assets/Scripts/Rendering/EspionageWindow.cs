@@ -10,7 +10,8 @@ namespace StellarisClone.Rendering
     /// <summary>
     /// Центр тайных операций. Слева — ваши агенты и кандидат на найм; справа — выбранный агент:
     ///   • не назначен — выбор поста (контрразведка дома или внедрение в одну из встреченных империй);
-    ///   • внедрён — прикрытие, защита цели, досье (с 50% прикрытия) и операции «Кража технологии»,
+    ///   • внедрён — разведсеть (как в Hearts of Iron: агент строит её из выбранной системы), защита цели,
+    ///     досье (с 50% сети) и операции «Кража технологии»,
     ///     «Диверсия», «Раздор» со шансом успеха и стоимостью;
     ///   • контрразведка — текущая защита вашей империи.
     /// Внизу — журнал операций, в том числе чужих попыток шпионить за вами.
@@ -141,6 +142,14 @@ namespace StellarisClone.Rendering
 
         // ================================================================ Открытие
 
+        /// <summary>Открыть окно сразу на этом агенте (значок агента на карте).</summary>
+        public void OpenAgent(int leaderId)
+        {
+            _selectedId = leaderId;
+            _discordPick = false;
+            Open();
+        }
+
         public void Open()
         {
             if (_root == null) return;
@@ -243,7 +252,7 @@ namespace StellarisClone.Rendering
             if (l.TargetOwner == 0) return "<color=#BD8FFF>Контрразведка</color> · дома";
             string who = Contacts.NameForPlayer(l.TargetOwner);
             if (l.OpKind >= 0) return $"<color=#BD8FFF>{who}</color> · {SpyInfo.Name((SpyOp)l.OpKind).ToLower()}, ещё {l.OpMonthsLeft} мес.";
-            return $"<color=#BD8FFF>{who}</color> · прикрытие {l.Cover:0}%";
+            return $"<color=#BD8FFF>{who}</color> · сеть {l.Cover:0}%";
         }
 
         private void BuildAgents()
@@ -450,7 +459,7 @@ namespace StellarisClone.Rendering
         {
             Heading("КАК ЭТО РАБОТАЕТ", Purple);
             Paragraph("Агент — четвёртый класс лидеров. Его можно внедрить в любую империю, которую вы встретили.");
-            Paragraph("• С прикрытием 20% вы видите всю территорию и все флоты цели.\n• С 50% открывается досье: запасы, доходы, наука, флот.\n• Операции: кража технологии, диверсия, раздор между двумя империями.", 12, 70);
+            Paragraph("• Агент строит разведсеть из выбранной системы цели; сеть расползается к соседям по гиперкоридорам, без агента тает. На карте видно её зону.\n• С сетью 20% вы видите всю территорию и все флоты цели, с 50% открывается досье.\n• Операции: кража технологии, диверсия, раздор между двумя империями.", 12, 86);
             Paragraph("Провал грозит поимкой и скандалом. Агент дома, шифрование и «Криптография» защищают вас от чужих агентов: ИИ тоже шпионит.", 12, 40, UIManager.DS.TextMuted);
         }
 
@@ -528,7 +537,7 @@ namespace StellarisClone.Rendering
 
             // Прикрытие и защита цели
             var cover = Block(86, new Color(0.05f, 0.07f, 0.10f, 0.95f));
-            var ct = LGBuild.Label(cover, $"ПРИКРЫТИЕ  <color=#BD8FFF>{a.Cover:0}%</color>", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+            var ct = LGBuild.Label(cover, $"РАЗВЕДСЕТЬ В ИМПЕРИИ  <color=#BD8FFF>{a.Cover:0}%</color>", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             ct.rectTransform.TopBand(10, 18, 18, 18);
             var bh = LGBuild.Rect(cover, "CoverBar");
             bh.TopBand(34, 8, 18, 18);
@@ -549,15 +558,17 @@ namespace StellarisClone.Rendering
                 $"Защита цели: <color=#FF9F7A>{EspionageManager.TargetCounter(ai) * 100f:0}%</color>    Отношение: {ai.Opinion:+0;-0;0}",
                 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
             cs.rectTransform.TopBand(52, 18, 18, 18);
-            var gain = LGBuild.Label(cover, a.OpKind >= 0 ? "Агент занят операцией — прикрытие не растёт" :
-                $"Рост прикрытия: +{(3f + a.Level) * (a.Has("agt_infiltrator") ? 1.25f : 1f) * (TechnologyManager.Instance != null ? TechnologyManager.Instance.Bonuses.CoverSpeed : 1f):0.#} в месяц",
+            var gain = LGBuild.Label(cover, a.OpKind >= 0 ? "Агент занят операцией — сеть не растёт (но и не тает)" :
+                $"Прирост в системе агента: +{EspionageManager.BuildRate(a).Total:0.#} в месяц, у соседей ×0,6, дальше ×0,3. Сила в империи — среднее по её системам (столица ×3, колонии ×2)",
                 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
             gain.rectTransform.TopBand(68, 14, 18, 18);
+
+            BuildRegion(a, ai);
 
             // Досье
             Heading("ДОСЬЕ", UIManager.DS.TextMuted);
             if (deep) BuildDossier(ai);
-            else Paragraph("Досье закрыто. Оно откроется, когда прикрытие достигнет 50%.", 12, 28, UIManager.DS.TextMuted);
+            else Paragraph("Досье закрыто. Оно откроется, когда разведсеть в империи достигнет 50%.", 12, 28, UIManager.DS.TextMuted);
 
             // Операции
             Heading("ОПЕРАЦИИ", Purple);
@@ -566,6 +577,69 @@ namespace StellarisClone.Rendering
 
             if (_discordPick && a.OpKind < 0) BuildDiscordPick(a, ai);
             RecallButton(a);
+        }
+
+        // ---- Система агента: откуда строится сеть (как регион в Hearts of Iron) ----
+
+        private void BuildRegion(Leader a, AIEmpireManager ai)
+        {
+            var es = EspionageManager.Instance;
+            var cur = EmpireStats.GetSystem(a.TargetSystem);
+            Heading("СИСТЕМА АГЕНТА", Purple);
+
+            var box = Block(58, new Color(0.05f, 0.07f, 0.10f, 0.95f));
+            var ic = LGIcons.Create(box, LGIcon.Target, 22, Purple);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(22, 22));
+            var name = LGBuild.Label(box, cur != null ? cur.Name : "—", 14, Color.white, TextAnchor.UpperLeft, bold: true);
+            name.rectTransform.TopBand(9, 20, 56, 200);
+            var sub = LGBuild.Label(box, cur != null
+                    ? $"{Role(cur, ai.OwnerId)}сеть здесь <color=#BD8FFF>{EspionageManager.NetworkAt(cur.Id):0}%</color>"
+                    : "Агенту некуда встать — у империи нет систем", 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
+            sub.rectTransform.TopBand(31, 16, 56, 200);
+            if (cur != null)
+            {
+                var show = LGBuild.Button(box, "ShowOnMap", UIManager.DS.BtnNeutral, new Color(Purple.r, Purple.g, Purple.b, 0.6f), () =>
+                {
+                    Close();
+                    var cam = FindFirstObjectByType<StellarisClone.Cam.StrategyCameraController>();
+                    if (cam != null) cam.FocusOn(cur.Position);
+                }, LGIcon.Globe, "НА КАРТЕ", 11);
+                ((RectTransform)show.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(130, 32));
+            }
+
+            // Куда ещё можно перебраться: самые весомые системы цели (столица, колонии), потом — где сеть сильнее
+            var list = new List<StarSystem>();
+            foreach (var sys in EmpireStats.Systems)
+                if (sys.OwnerId == ai.OwnerId && (cur == null || sys.Id != cur.Id)) list.Add(sys);
+            list.Sort((x, y) =>
+            {
+                int c = EspionageManager.SystemWeight(y, ai.OwnerId).CompareTo(EspionageManager.SystemWeight(x, ai.OwnerId));
+                return c != 0 ? c : EspionageManager.NetworkAt(y.Id).CompareTo(EspionageManager.NetworkAt(x.Id));
+            });
+            int n = Mathf.Min(5, list.Count);
+            if (n == 0) return;
+            Paragraph("Перенести агента — сеть строится оттуда, уже построенная не пропадает. Ставьте его ближе к столице и колониям: они весят больше.", 11, 32, UIManager.DS.TextMuted);
+            for (int i = 0; i < n; i++)
+            {
+                var sys = list[i];
+                var row = Block(40, new Color(0.04f, 0.06f, 0.09f, 0.95f), 10f);
+                var t = LGBuild.Label(row, $"{sys.Name}   <color=#8AA2A8>{Role(sys, ai.OwnerId)}сеть {EspionageManager.NetworkAt(sys.Id):0}%</color>",
+                    12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
+                t.rectTransform.Stretch(18, 0, 170, 0);
+                var mv = LGBuild.Button(row, "Move", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f), () =>
+                {
+                    if (es != null && es.Relocate(a, sys.Id)) Rebuild();
+                }, null, "ПЕРЕНЕСТИ", 10);
+                ((RectTransform)mv.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(140, 28));
+                mv.interactable = a.OpKind < 0;
+                if (a.OpKind >= 0) TooltipHelper.Attach(mv.gameObject, "Во время операции агент не может сменить систему");
+            }
+        }
+
+        private static string Role(StarSystem s, int owner)
+        {
+            float w = EspionageManager.SystemWeight(s, owner);
+            return w >= 3f ? "<color=#F2C766>столица</color> · " : w >= 2f ? "колония · " : "";
         }
 
         private void BuildDossier(AIEmpireManager ai)
@@ -634,7 +708,7 @@ namespace StellarisClone.Rendering
                 can = a.Cover >= SpyInfo.MinCover(op) && (EconomyManager.Instance?.Influence ?? 0f) >= SpyInfo.Cost(op) && ThirdCandidate(ai) >= 0;
                 if (!can)
                 {
-                    if (a.Cover < SpyInfo.MinCover(op)) reason = $"Нужно прикрытие {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)";
+                    if (a.Cover < SpyInfo.MinCover(op)) reason = $"Нужна разведсеть {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)";
                     else if ((EconomyManager.Instance?.Influence ?? 0f) < SpyInfo.Cost(op)) reason = $"Нужно {SpyInfo.Cost(op):0} влияния";
                     else reason = "Нет второй известной империи, которую можно стравить";
                 }
@@ -652,7 +726,7 @@ namespace StellarisClone.Rendering
             float chance = EspionageManager.SuccessChance(a, op, ai);
             Color cc = chance >= 0.6f ? UIManager.DS.Green : chance >= 0.4f ? UIManager.DS.Gold : UIManager.DS.Red;
             var stats = LGBuild.Label(row,
-                $"шанс <color={LGBuild.Hex(cc)}><b>{chance * 100f:0}%</b></color>\n★{SpyInfo.Cost(op):0}  ·  {SpyInfo.Months(op)} мес.  ·  прикрытие {SpyInfo.MinCover(op):0}%",
+                $"шанс <color={LGBuild.Hex(cc)}><b>{chance * 100f:0}%</b></color>\n★{SpyInfo.Cost(op):0}  ·  {SpyInfo.Months(op)} мес.  ·  сеть {SpyInfo.MinCover(op):0}%",
                 10, UIManager.DS.TextPrimary, TextAnchor.UpperRight);
             stats.rectTransform.anchorMin = new Vector2(1, 1);
             stats.rectTransform.anchorMax = new Vector2(1, 1);
@@ -671,7 +745,7 @@ namespace StellarisClone.Rendering
             btn.interactable = can;
             if (!can && reason != null) TooltipHelper.Attach(btn.gameObject, reason);
             TooltipHelper.Attach(row.gameObject,
-                $"<b>{SpyInfo.Name(op)}</b>\n{SpyInfo.Desc(op)}\n\n<color=#8AA2A8>Шанс складывается из базового ({SpyInfo.BaseChance(op) * 100f:0}%), уровня и черт агента, прикрытия, ваших технологий и защиты цели ({EspionageManager.TargetCounter(ai) * 100f:0}%).</color>");
+                $"<b>{SpyInfo.Name(op)}</b>\n{SpyInfo.Desc(op)}\n\n<color=#8AA2A8>Шанс складывается из базового ({SpyInfo.BaseChance(op) * 100f:0}%), уровня и черт агента, силы разведсети, ваших технологий и защиты цели ({EspionageManager.TargetCounter(ai) * 100f:0}%).</color>");
         }
 
         /// <summary>Первая подходящая третья империя для «Раздора» (-1 — нет).</summary>
@@ -718,7 +792,7 @@ namespace StellarisClone.Rendering
                 Rebuild();
             }, LGIcon.Back, "ОТОЗВАТЬ АГЕНТА", 11);
             ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-6, 0), new Vector2(210, 34));
-            TooltipHelper.Attach(btn.gameObject, "Агент покидает пост: прикрытие и идущая операция пропадут. Его можно назначить заново.");
+            TooltipHelper.Attach(btn.gameObject, "Агент покидает пост: идущая операция пропадёт, а разведсеть без него начнёт таять (−2% в месяц). Его можно назначить заново.");
         }
 
         // ================================================================ Журнал

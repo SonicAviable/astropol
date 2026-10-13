@@ -156,7 +156,7 @@ namespace StellarisClone.Rendering
                     if (l.TargetOwner == 0) return "<color=#BD8FFF>Контрразведка</color> · дома";
                     string who = AIEmpireManager.NameOf(l.TargetOwner, "империя");
                     string op = l.OpKind >= 0 ? $" · {SpyInfo.Name((SpyOp)l.OpKind).ToLower()} ({l.OpMonthsLeft} мес.)" : "";
-                    return $"<color=#BD8FFF>{who}</color> · прикрытие {l.Cover:0}%{op}";
+                    return $"<color=#BD8FFF>{who}</color> · сеть {l.Cover:0}%{op}";
                 }
                 case LeaderPost.Planet:
                 {

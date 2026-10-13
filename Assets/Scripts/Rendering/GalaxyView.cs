@@ -68,6 +68,7 @@ namespace StellarisClone.Rendering
             CreateProceduralSprites();
             CreateOrganicBorderPlane();
             RenderGalaxy();
+            gameObject.AddComponent<SpyNetworkView>();     // разведсеть на карте (зона, пунктир, значки агентов)
             CreateBackdrop();
             CreateHolographicBeacon();
             RefreshTerritoryVisuals();
