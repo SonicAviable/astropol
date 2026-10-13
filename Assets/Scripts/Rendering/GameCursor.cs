@@ -10,7 +10,6 @@ namespace StellarisClone.Rendering
     /// Курсор игры, нарисованный поверх всего интерфейса (системный скрыт) — с эффектами, которых не умеет
     /// аппаратный курсор. Картинки — Resources/UI/Cursors (рисует Tools/cursors/make_cursors.py).
     ///   • голографическая стрелка в бирюзовых тонах интерфейса со свечением и мерцающей звёздочкой на острие;
-    ///   • шлейф звёздной пыли при движении;
     ///   • наведение на то, что можно нажать (кнопки, звёзды, свои флоты, планеты): орбита со спутником вокруг острия;
     ///   • клик — ударная волна и искры;
     ///   • выделен флот и курсор на звезде — вращающийся золотой прицел (ПКМ отправит флот туда).
@@ -46,8 +45,6 @@ namespace StellarisClone.Rendering
         private RectTransform _moteRoot;
 
         private float _hover, _move;
-        private Vector2 _lastSpawn;
-        private bool _hasLast;
         private Camera _cam;
         private PointerEventData _ped;
         private EventSystem _pedSystem;
@@ -148,30 +145,13 @@ namespace StellarisClone.Rendering
 
             if (_dot != null)
             {
-                Trail(tip, k);
                 if (Input.GetMouseButtonDown(0)) Burst(tip, k, Teal);
                 if (Input.GetMouseButtonDown(1)) Burst(tip, k, Gold);
             }
             UpdateMotes(dt);
         }
 
-        // ==================== ШЛЕЙФ И ИСКРЫ ====================
-
-        private void Trail(Vector2 tip, float k)
-        {
-            if (!_hasLast) { _lastSpawn = tip; _hasLast = true; return; }
-            float step = 7f * k;
-            float len = (tip - _lastSpawn).magnitude;
-            if (len < step) return;
-            int n = Mathf.Min(6, Mathf.FloorToInt(len / step));
-            for (int i = 1; i <= n; i++)
-            {
-                var p = Vector2.Lerp(_lastSpawn, tip, i / (float)n) + Random.insideUnitCircle * 2f * k;
-                Spawn(p, Random.insideUnitCircle * 12f * k, Random.Range(0.35f, 0.55f), Random.Range(7f, 12f) * k,
-                      Color.Lerp(Color.white, Teal, 0.6f), DeepTeal, false);
-            }
-            _lastSpawn = tip;
-        }
+        // ==================== ИСКРЫ КЛИКА ====================
 
         private void Burst(Vector2 tip, float k, Color c)
         {
