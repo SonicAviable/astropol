@@ -1,11 +1,11 @@
 # Курсор игры и его эффекты -> Assets/Resources/UI/Cursors/ (собирает и анимирует GameCursor.cs).
-#   cursor_arrow.png       — голографическая стрелка: перелив белый -> бирюзовый -> фиолетовый, грани, светлая кромка (обычное смешивание)
+#   cursor_arrow.png       — голографическая стрелка: перелив белый -> неоновый бирюзовый -> глубокий бирюзовый, грани, светлая кромка
 #   cursor_arrow_glow.png  — размытое свечение стрелки
 #   fx_sparkle.png         — четырёхлучевая звёздочка на острие
 #   fx_dot.png             — мягкая точка: звёздная пыль шлейфа, искры клика, спутник орбиты
 #   fx_ring.png            — орбита с разрывами и засечками (наведение)
 #   fx_ripple.png          — мягкое кольцо ударной волны клика
-#   cursor_target.png      — прицел приказа флоту (обычное смешивание, с тёмной обводкой)
+#   cursor_target.png      — золотой прицел приказа флоту (обычное смешивание, с тёмной обводкой)
 # Свечения (glow, fx_*) — светлое на чёрном: шейдер UIAdditive берёт только цвет, без альфы.
 # Запуск: python3 make_cursors.py
 import os, math
@@ -14,7 +14,8 @@ from PIL import Image, ImageDraw, ImageFilter
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Assets', 'Resources', 'UI', 'Cursors')
 SS = 4
-WHITE = np.array([255, 255, 255.]); CYAN = np.array([110, 228, 255.]); BLUE = np.array([60, 120, 255.]); VIOLET = np.array([170, 110, 255.])
+# Палитра интерфейса игры (UIManager.DS): неоновый бирюзовый NeonCyan, глубокий бирюзовый, золото — акцент приказов
+WHITE = np.array([255, 255, 255.]); TEAL = np.array([102, 219, 209.]); DEEP = np.array([38, 140, 150.]); ABYSS = np.array([18, 84, 100.]); GOLD = np.array([242, 199, 102.])
 
 # Стрелка в единицах 0..1 (остриё — ARROW[0]); TIP — остриё в долях картинки (GameCursor.ArrowTip)
 ARROW = [(0.10, 0.06), (0.10, 0.80), (0.29, 0.645), (0.42, 0.93), (0.55, 0.875), (0.425, 0.60), (0.68, 0.60)]
@@ -46,13 +47,13 @@ def arrow(size=128):
     n = size * SS
     body = np.asarray(mask(n, ARROW)) / 255.
     facet = np.asarray(mask(n, FACET)) / 255.
-    rgb = grad(n, [(0, WHITE), (0.25, CYAN), (0.7, BLUE), (1, VIOLET)])
+    rgb = grad(n, [(0, WHITE), (0.25, TEAL), (0.7, DEEP), (1, ABYSS)])
     rgb = rgb * (0.62 + 0.38 * facet[..., None])              # правая грань темнее — объём кристалла
     # светлая кромка: контур стрелки
     edge = Image.new('L', (n, n), 0)
     ImageDraw.Draw(edge).line(poly(n, ARROW + [ARROW[0]]), fill=255, width=int(n * 0.03), joint='curve')
     e = np.asarray(edge.filter(ImageFilter.GaussianBlur(n * 0.004))) / 255.
-    rgb = rgb * (1 - e[..., None]) + (WHITE * 0.85 + CYAN * 0.15) * e[..., None]
+    rgb = rgb * (1 - e[..., None]) + (WHITE * 0.8 + TEAL * 0.2) * e[..., None]
     # тонкая тёмная обводка снаружи — читается на светлом интерфейсе
     out = np.asarray(mask(n, ARROW).filter(ImageFilter.MaxFilter(int(n * 0.03) | 1))) / 255.
     out = np.asarray(Image.fromarray((out * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(n * 0.006))) / 255.
@@ -62,7 +63,7 @@ def arrow(size=128):
     save(col, alpha * 255, 'cursor_arrow', size)
 
     g = np.asarray(mask(n, ARROW, n * 0.06)) / 255.
-    glow = grad(n, [(0, CYAN), (0.5, BLUE), (1, VIOLET)]) * (g[..., None] * 1.6)
+    glow = grad(n, [(0, TEAL), (0.6, DEEP), (1, ABYSS)]) * (g[..., None] * 1.6)
     save(glow, np.clip(g * 1.6, 0, 1) * 255, 'cursor_arrow_glow', size)
 
 def sparkle(size=128):
@@ -123,7 +124,7 @@ def target(size=128):
     lt = np.asarray(lite) / 255.
     y, x = (np.mgrid[0:n, 0:n] + 0.5) / n - 0.5
     t = np.clip(np.hypot(x, y) / 0.5, 0, 1)[..., None]
-    col = (CYAN * (1 - t) + VIOLET * t) * 0.6 + WHITE * 0.4
+    col = GOLD * 0.75 + WHITE * 0.25
     rgb = col * lt[..., None] + np.array([6, 10, 24.]) * (1 - lt[..., None])
     alpha = np.maximum(lt, dk * 0.7)
     save(rgb, alpha * 255, 'cursor_target', size)

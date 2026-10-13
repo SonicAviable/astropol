@@ -9,11 +9,11 @@ namespace StellarisClone.Rendering
     /// <summary>
     /// Курсор игры, нарисованный поверх всего интерфейса (системный скрыт) — с эффектами, которых не умеет
     /// аппаратный курсор. Картинки — Resources/UI/Cursors (рисует Tools/cursors/make_cursors.py).
-    ///   • голографическая стрелка со свечением и мерцающей звёздочкой на острие;
+    ///   • голографическая стрелка в бирюзовых тонах интерфейса со свечением и мерцающей звёздочкой на острие;
     ///   • шлейф звёздной пыли при движении;
     ///   • наведение на то, что можно нажать (кнопки, звёзды, свои флоты, планеты): орбита со спутником вокруг острия;
     ///   • клик — ударная волна и искры;
-    ///   • выделен флот и курсор на звезде — вращающийся прицел (ПКМ отправит флот туда).
+    ///   • выделен флот и курсор на звезде — вращающийся золотой прицел (ПКМ отправит флот туда).
     /// Размеры заданы для высоты экрана 1080 и масштабируются. Создаётся сам при запуске.
     /// </summary>
     public class GameCursor : MonoBehaviour
@@ -23,8 +23,10 @@ namespace StellarisClone.Rendering
         /// <summary>Остриё стрелки в долях картинки (от левого верхнего угла) — как ARROW[0] в make_cursors.py.</summary>
         private static readonly Vector2 ArrowTip = new Vector2(0.10f, 0.06f);
         private const float ArrowSize = 40f;
-        private static readonly Color Cyan = new Color(0.43f, 0.89f, 1f);
-        private static readonly Color Violet = new Color(0.67f, 0.43f, 1f);
+        // Палитра интерфейса (UIManager.DS): неоновый бирюзовый, глубокий бирюзовый, золото — приказы и ПКМ
+        private static readonly Color Teal = new Color(0.40f, 0.86f, 0.82f);
+        private static readonly Color DeepTeal = new Color(0.15f, 0.55f, 0.59f);
+        private static readonly Color Gold = new Color(0.95f, 0.78f, 0.40f);
 
         private class Mote
         {
@@ -123,32 +125,32 @@ namespace StellarisClone.Rendering
                 _sparkleImg.color = Glow(Color.white, 0.65f + 0.35f * Mathf.Sin(t * 7.1f) * Mathf.Sin(t * 2.3f));
             }
 
-            // Орбита: при наведении — вокруг острия, при приказе — крупнее и фиолетовая вокруг прицела
-            float ringSize = Mathf.Lerp(50f, 88f, _move) * k * Mathf.Lerp(0.7f, 1f, Mathf.Max(_hover, _move));
+            // Орбита: при наведении — небольшая вокруг острия, при приказе — крупнее и золотая вокруг прицела
+            float ringSize = Mathf.Lerp(30f, 72f, _move) * k * Mathf.Lerp(0.75f, 1f, Mathf.Max(_hover, _move));
             if (_ringImg != null)
             {
                 Place(_ring, tip, ringSize, -t * 55f);
-                _ringImg.color = Glow(Color.Lerp(Cyan, Violet, _move), Mathf.Max(_hover * 0.85f, _move * 0.55f));
+                _ringImg.color = Glow(Color.Lerp(Teal, Gold, _move), Mathf.Max(_hover * 0.75f, _move * 0.5f));
             }
             if (_satImg != null)
             {
                 float orbit = ringSize * 0.40f;
-                Place(_sat, tip + new Vector2(Mathf.Cos(t * 3f), Mathf.Sin(t * 3f)) * orbit, 10f * k, 0f);
+                Place(_sat, tip + new Vector2(Mathf.Cos(t * 3f), Mathf.Sin(t * 3f)) * orbit, 7f * k, 0f);
                 _satImg.color = Glow(Color.white, _hover);
             }
 
             // Прицел приказа флоту
             if (_targetImg != null)
             {
-                Place(_target, tip, 56f * k * (1f + 0.05f * Mathf.Sin(t * 4f)), t * 25f);
+                Place(_target, tip, 50f * k * (1f + 0.05f * Mathf.Sin(t * 4f)), t * 25f);
                 _targetImg.color = new Color(1f, 1f, 1f, _move);
             }
 
             if (_dot != null)
             {
                 Trail(tip, k);
-                if (Input.GetMouseButtonDown(0)) Burst(tip, k, Cyan);
-                if (Input.GetMouseButtonDown(1)) Burst(tip, k, Violet);
+                if (Input.GetMouseButtonDown(0)) Burst(tip, k, Teal);
+                if (Input.GetMouseButtonDown(1)) Burst(tip, k, Gold);
             }
             UpdateMotes(dt);
         }
@@ -166,14 +168,14 @@ namespace StellarisClone.Rendering
             {
                 var p = Vector2.Lerp(_lastSpawn, tip, i / (float)n) + Random.insideUnitCircle * 2f * k;
                 Spawn(p, Random.insideUnitCircle * 12f * k, Random.Range(0.35f, 0.55f), Random.Range(7f, 12f) * k,
-                      Color.Lerp(Color.white, Cyan, 0.6f), Violet, false);
+                      Color.Lerp(Color.white, Teal, 0.6f), DeepTeal, false);
             }
             _lastSpawn = tip;
         }
 
         private void Burst(Vector2 tip, float k, Color c)
         {
-            if (_ripple != null) Spawn(tip, Vector2.zero, 0.4f, 100f * k, c, c, true);
+            if (_ripple != null) Spawn(tip, Vector2.zero, 0.4f, 80f * k, c, c, true);
             for (int i = 0; i < 7; i++)
             {
                 float ang = (i / 7f + Random.Range(-0.04f, 0.04f)) * Mathf.PI * 2f;
