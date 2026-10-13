@@ -133,6 +133,17 @@ namespace StellarisClone.Rendering
             Instance.RequestHide();
         }
 
+        /// <summary>
+        /// Спрятать подсказку, только если это та самая, что показывал вызывающий (text). Нужно подсказкам
+        /// объектов карты: курсор ушёл со звезды на значок интерфейса — значок уже попросил свою подсказку,
+        /// и звезда не должна её погасить.
+        /// </summary>
+        public static void HideIf(string text)
+        {
+            if (Instance == null || string.IsNullOrEmpty(text)) return;
+            Instance.RequestHideIf(text);
+        }
+
         private void RequestShow(string text)
         {
             if (_root == null) BuildTooltipUI();
@@ -156,6 +167,14 @@ namespace StellarisClone.Rendering
             _pendingText = "";
             _hoverTimer = 0f;
             StartClosingAnimation();
+        }
+
+        private void RequestHideIf(string text)
+        {
+            if (_isLocked) return;
+            if (_pendingText == text) { RequestHide(); return; }
+            // На экране ещё наша подсказка, а своей очереди ждёт чужая — гасим нашу, чужая откроется следом
+            if (_text != null && _text.text == text && _targetAlpha > 0.1f) StartClosingAnimation();
         }
 
         private void TriggerOpen(string text, bool lockInPlace = false)
@@ -306,6 +325,7 @@ namespace StellarisClone.Rendering
         [TextArea(2, 6)] public string text;
         private SystemNameplate _nameplate;
         private bool _hovered;
+        private string _shown;
 
         public void SetNameplate(SystemNameplate plate) => _nameplate = plate;
         public void SetText(string t) => text = t;
@@ -317,7 +337,8 @@ namespace StellarisClone.Rendering
             var es = EventSystem.current;
             if (es != null && es.IsPointerOverGameObject())
             {
-                if (_hovered) { _hovered = false; TooltipSystem.Hide(); }
+                // Курсор ушёл на интерфейс (например, на значок агента у звезды) — гасим только свою подсказку
+                if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
                 return;
             }
 
@@ -338,19 +359,20 @@ namespace StellarisClone.Rendering
                 if (!_hovered)
                 {
                     _hovered = true;
+                    _shown = currentText;
                     TooltipSystem.Show(currentText);
                 }
             }
             else if (_hovered)
             {
                 _hovered = false;
-                TooltipSystem.Hide();
+                TooltipSystem.HideIf(_shown);
             }
         }
 
         private void OnDisable()
         {
-            if (_hovered) { _hovered = false; TooltipSystem.Hide(); }
+            if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
         }
     }
 

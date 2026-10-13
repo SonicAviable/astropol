@@ -504,8 +504,8 @@ namespace StellarisClone.Rendering
             face.Stretch();
             v.Thumb = LeaderThumb.Create(face, 20f, 2f);
 
-            var chip = LGBuild.Panel(root, "Chip", new Color(0.03f, 0.06f, 0.08f, 0.92f));
-            chip.raycastTarget = false;
+            // Плашка с процентом — тоже часть значка: наведение на неё показывает подсказку, клик открывает агента
+            var chip = LGBuild.Panel(root, "Chip", new Color(0.03f, 0.06f, 0.08f, 0.92f), raycast: true);
             chip.rectTransform.anchorMin = chip.rectTransform.anchorMax = new Vector2(0.5f, 0f);
             chip.rectTransform.pivot = new Vector2(0.5f, 1f);
             chip.rectTransform.sizeDelta = new Vector2(46f, 15f);
