@@ -7,22 +7,21 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// Разведсеть на карте галактики, как в Hearts of Iron 4:
-    ///   • зона сети — бирюзовый «живой» контур вокруг систем, где у вас есть сеть, с лёгкой заливкой (сильнее сеть — ярче);
+    ///   • у каждой системы, где есть сеть, — тонкое бирюзовое кольцо-шкала вокруг звезды (дуга — сила сети);
     ///   • потоки данных от системы агента к соседям (туда сеть расползается): по бирюзовому каналу бегут кометы света;
     ///   • значок агента рядом со звездой — портрет в фиолетовой рамке и сила сети в системе (▲ — растёт);
     ///     при наведении — подсказка с разбором прироста, по клику открывается окно шпионажа на этом агенте.
-    /// Зона и потоки данных видны только в режиме карты «Шпионаж», в остальных — одни значки агентов.
+    /// Кольца и потоки данных видны только в режиме карты «Шпионаж», в остальных — одни значки агентов.
     /// Выбор системы для агента (BeginPick) — тоже здесь: системы цели помечены пульсирующими кольцами,
     /// ЛКМ рядом со звездой выбирает (даже под туманом войны), ПКМ или Esc — отмена.
-    /// В виде системы и в меню всё скрыто. Зона перерисовывается, только когда сеть изменилась (раз в месяц).
+    /// В виде системы и в меню всё скрыто. Кольца перестраиваются, только когда сеть изменилась (раз в месяц).
     /// </summary>
     public class SpyNetworkView : MonoBehaviour
     {
         private const float MinShown = 3f;         // слабее — системы не входят в зону
-        private const float Sigma = 7f;            // радиус влияния системы на контур, ед. карты
-        private const float PixelsPerUnit = 4f;
-        private const int MaxTex = 512;
-        private const float Threshold = 0.45f;
+        private const float RingRadius = 4.4f;     // кольцо сети вокруг звезды, ед. карты
+        private const float RingWidth = 0.32f;
+        private const int RingSegments = 64;
 
         private static readonly Color Teal = new Color(0.40f, 0.86f, 0.82f);
         private static readonly Color AgentRing = new Color(0.74f, 0.56f, 1f);
@@ -43,7 +42,6 @@ namespace StellarisClone.Rendering
         private readonly Dictionary<int, AgentVis> _agents = new Dictionary<int, AgentVis>();
         private GameObject _zone;
         private SpriteRenderer _zoneSr;
-        private Texture2D _zoneTex;
         private Material _zoneMat, _lineMat;
         private Canvas _canvas;
         private Camera _cam;
@@ -92,7 +90,6 @@ namespace StellarisClone.Rendering
             if (Instance == this) Instance = null;
             ClearPickMarks();
             if (_canvas != null) Destroy(_canvas.gameObject);
-            if (_zoneTex != null) Destroy(_zoneTex);
         }
 
         private void LateUpdate()
@@ -112,7 +109,7 @@ namespace StellarisClone.Rendering
                 RefreshAgents();
             }
 
-            // Зона и потоки — только в режиме «Шпионаж»
+            // Кольца и потоки — только в режиме «Шпионаж»
             if (_zone != null && _zone.activeSelf != (intel && _netKey.Length > 0)) _zone.SetActive(intel && _netKey.Length > 0);
             foreach (var v in _agents.Values) SetLines(v, intel && !v.Busy);
             if (hidden) return;
@@ -122,14 +119,13 @@ namespace StellarisClone.Rendering
             if (IsPicking) UpdatePick();
         }
 
-        // ==================== ЗОНА СЕТИ ====================
+        // ==================== КОЛЬЦА СЕТИ ====================
 
         private void RefreshZone()
         {
             var net = EspionageManager.Network;
-            var pts = new List<Vector3>();
+            var sys = new List<StarSystem>();
             var vals = new List<float>();
-            var ids = new List<int>();
             var key = new System.Text.StringBuilder();
             if (net != null)
                 foreach (var kv in net)
@@ -137,130 +133,64 @@ namespace StellarisClone.Rendering
                     if (kv.Value < MinShown) continue;
                     var s = EmpireStats.GetSystem(kv.Key);
                     if (s == null) continue;
-                    pts.Add(s.Position);
+                    sys.Add(s);
                     vals.Add(kv.Value);
-                    ids.Add(s.Id);
                     key.Append(kv.Key).Append(':').Append(Mathf.RoundToInt(kv.Value)).Append(';');
                 }
             string k = key.ToString();
             if (k == _netKey) return;
             _netKey = k;
-
-            if (pts.Count == 0)
-            {
-                if (_zone != null) _zone.SetActive(false);
-                _netKey = "";
-                return;
-            }
-            BuildZone(pts, vals, ids);
+            BuildRings(sys, vals);
         }
 
         /// <summary>
-        /// Контур — линия уровня суммы «пятен» вокруг систем сети (метасферы) и полос вдоль гиперкоридоров между ними
-        /// (иначе далёкие системы распадаются на острова), с лёгкой рябью, чтобы край был живой, как граница региона.
-        /// Внутри — слабая заливка, ярче там, где сеть сильнее.
+        /// Вокруг каждой системы сети — тонкое кольцо-шкала: тусклая дорожка и яркая дуга от верха по часовой,
+        /// длина дуги — сила сети в системе (полный круг — 100 %). Империю целиком ничем не обводим.
         /// </summary>
-        private void BuildZone(List<Vector3> pts, List<float> vals, List<int> ids)
+        private void BuildRings(List<StarSystem> sys, List<float> vals)
         {
-            float margin = Sigma * 2.2f;
-            float minX = float.MaxValue, maxX = float.MinValue, minZ = float.MaxValue, maxZ = float.MinValue;
-            foreach (var p in pts)
-            {
-                minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
-                minZ = Mathf.Min(minZ, p.z); maxZ = Mathf.Max(maxZ, p.z);
-            }
-            minX -= margin; maxX += margin; minZ -= margin; maxZ += margin;
-            float ppu = Mathf.Min(PixelsPerUnit, MaxTex / Mathf.Max(maxX - minX, maxZ - minZ));
-            int w = Mathf.Max(8, Mathf.CeilToInt((maxX - minX) * ppu));
-            int h = Mathf.Max(8, Mathf.CeilToInt((maxZ - minZ) * ppu));
-
-            var field = new float[w * h];
-            var power = new float[w * h];
-            float inv = 1f / (Sigma * Sigma);
-            int reach = Mathf.CeilToInt(Sigma * 3f * ppu);
-            for (int i = 0; i < pts.Count; i++)
-            {
-                float amp = 0.6f + 0.4f * vals[i] / 100f;
-                int cx = Mathf.RoundToInt((pts[i].x - minX) * ppu), cy = Mathf.RoundToInt((pts[i].z - minZ) * ppu);
-                for (int y = Mathf.Max(0, cy - reach); y < Mathf.Min(h, cy + reach); y++)
-                for (int x = Mathf.Max(0, cx - reach); x < Mathf.Min(w, cx + reach); x++)
-                {
-                    float dx = (x - cx) / ppu, dz = (y - cy) / ppu;
-                    float g = Mathf.Exp(-(dx * dx + dz * dz) * inv);
-                    field[y * w + x] += amp * g;
-                    power[y * w + x] = Mathf.Max(power[y * w + x], g * vals[i] / 100f);
-                }
-            }
-
-            // Полосы вдоль коридоров между системами сети
-            float segSigma = Sigma * 0.55f, segInv = 1f / (segSigma * segSigma);
-            int segReach = Mathf.CeilToInt(segSigma * 3f * ppu);
-            var index = new Dictionary<int, int>();
-            for (int i = 0; i < ids.Count; i++) index[ids[i]] = i;
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var sys = EmpireStats.GetSystem(ids[i]);
-                if (sys == null) continue;
-                foreach (int nid in sys.ConnectedSystemIds)
-                {
-                    if (nid <= ids[i] || !index.TryGetValue(nid, out int j)) continue;
-                    Vector3 a = pts[i], b = pts[j];
-                    float abx = b.x - a.x, abz = b.z - a.z, len2 = Mathf.Max(1e-4f, abx * abx + abz * abz);
-                    float amp = 0.55f * (0.6f + 0.4f * Mathf.Min(vals[i], vals[j]) / 100f);
-                    float pw = Mathf.Min(vals[i], vals[j]) / 100f * 0.8f;
-                    int x0 = Mathf.Max(0, Mathf.FloorToInt((Mathf.Min(a.x, b.x) - minX) * ppu) - segReach);
-                    int x1 = Mathf.Min(w, Mathf.CeilToInt((Mathf.Max(a.x, b.x) - minX) * ppu) + segReach);
-                    int y0 = Mathf.Max(0, Mathf.FloorToInt((Mathf.Min(a.z, b.z) - minZ) * ppu) - segReach);
-                    int y1 = Mathf.Min(h, Mathf.CeilToInt((Mathf.Max(a.z, b.z) - minZ) * ppu) + segReach);
-                    for (int y = y0; y < y1; y++)
-                    for (int x = x0; x < x1; x++)
-                    {
-                        float wx = minX + x / ppu, wz = minZ + y / ppu;
-                        float t = Mathf.Clamp01(((wx - a.x) * abx + (wz - a.z) * abz) / len2);
-                        float dx = wx - (a.x + t * abx), dz = wz - (a.z + t * abz);
-                        float g = Mathf.Exp(-(dx * dx + dz * dz) * segInv);
-                        int k = y * w + x;
-                        field[k] += amp * g * (1f - Mathf.Clamp01(field[k]) * 0.5f);
-                        power[k] = Mathf.Max(power[k], g * pw);
-                    }
-                }
-            }
-
-            if (_zoneTex == null || _zoneTex.width != w || _zoneTex.height != h)
-            {
-                if (_zoneTex != null) Destroy(_zoneTex);
-                _zoneTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "SpyZone" };
-            }
-            var px = new Color32[w * h];
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                int i = y * w + x;
-                float wx = minX + x / ppu, wz = minZ + y / ppu;
-                float f = field[i] + 0.035f * (Mathf.Sin(wx * 0.9f + wz * 0.35f) + Mathf.Sin(wz * 1.1f - wx * 0.5f));
-                float d = (f - Threshold) / 0.05f;
-                float edge = Mathf.Exp(-d * d);                               // сам контур
-                float glow = 0.35f * Mathf.Exp(-d * d * 0.12f);               // ореол вокруг контура
-                float fill = f > Threshold ? 0.07f + 0.13f * Mathf.Clamp01(power[i]) : 0f;
-                float a = Mathf.Clamp01(Mathf.Max(edge, glow) + fill);
-                Color c = Color.Lerp(Teal, Color.white, edge * 0.35f);
-                px[i] = new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), (byte)(a * 255));
-            }
-            _zoneTex.SetPixels32(px);
-            _zoneTex.Apply(false);
-
             if (_zone == null)
             {
-                _zone = new GameObject("SpyNetworkZone");
+                _zone = new GameObject("SpyNetworkRings");
                 _zone.transform.SetParent(transform, false);
-                _zone.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-                _zoneSr = _zone.AddComponent<SpriteRenderer>();
-                if (_zoneMat != null) _zoneSr.sharedMaterial = _zoneMat;
-                _zoneSr.sortingOrder = 6;                                     // под звёздами (14) и флотами
             }
-            if (_zoneSr.sprite != null) Destroy(_zoneSr.sprite);
-            _zoneSr.sprite = Sprite.Create(_zoneTex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), ppu);
-            _zone.transform.position = new Vector3((minX + maxX) * 0.5f, pts[0].y - 0.05f, (minZ + maxZ) * 0.5f);
+            for (int i = _zone.transform.childCount - 1; i >= 0; i--) Destroy(_zone.transform.GetChild(i).gameObject);
+            if (_zoneMat == null) return;
+            for (int i = 0; i < sys.Count; i++)
+            {
+                float frac = Mathf.Clamp01(vals[i] / 100f);
+                var c = Teal;
+                c.a = 0.16f;
+                Ring(sys[i].Position, 1f, c, RingWidth * 0.8f);
+                c = Color.Lerp(Teal, Color.white, 0.2f);
+                c.a = 0.55f + 0.35f * frac;
+                Ring(sys[i].Position, frac, c, RingWidth);
+            }
+        }
+
+        private void Ring(Vector3 center, float frac, Color c, float width)
+        {
+            if (frac <= 0.005f) return;
+            int n = Mathf.Max(3, Mathf.CeilToInt(RingSegments * frac));
+            var go = new GameObject("NetRing");
+            go.transform.SetParent(_zone.transform, false);
+            go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.sharedMaterial = _zoneMat;
+            lr.alignment = LineAlignment.TransformZ;                         // лента лежит в плоскости карты
+            lr.useWorldSpace = true;
+            lr.loop = frac >= 0.999f;
+            lr.widthMultiplier = width;
+            lr.numCapVertices = 2;
+            lr.sortingOrder = 6;                                             // под звёздами (14) и флотами
+            lr.startColor = lr.endColor = c;
+            lr.positionCount = lr.loop ? RingSegments : n + 1;
+            for (int j = 0; j < lr.positionCount; j++)
+            {
+                float t = lr.loop ? (float)j / RingSegments : frac * j / n;
+                float ang = Mathf.PI * 0.5f - t * Mathf.PI * 2f;               // от верха по часовой
+                lr.SetPosition(j, center + new Vector3(Mathf.Cos(ang) * RingRadius, 0.04f, Mathf.Sin(ang) * RingRadius));
+            }
         }
 
         // ==================== ВЫБОР СИСТЕМЫ ДЛЯ АГЕНТА ====================

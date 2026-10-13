@@ -23,6 +23,7 @@ namespace StellarisClone.Rendering
         /// <summary>Остриё стрелки в долях картинки (от левого верхнего угла) — как ARROW[0] в make_cursors.py.</summary>
         private static readonly Vector2 ArrowTip = new Vector2(0.10f, 0.06f);
         private const float ArrowSize = 40f;
+        private const float Scale = 0.7f;           // общий масштаб курсора (стрелка ≈ 28 px при 1080p)
         // Палитра интерфейса (UIManager.DS): неоновый бирюзовый, глубокий бирюзовый, золото — приказы и ПКМ
         private static readonly Color Teal = new Color(0.40f, 0.86f, 0.82f);
         private static readonly Color DeepTeal = new Color(0.15f, 0.55f, 0.59f);
@@ -97,7 +98,7 @@ namespace StellarisClone.Rendering
             if (_arrowImg == null) return;
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
             float t = Time.unscaledTime;
-            float k = Screen.height / 1080f;
+            float k = Screen.height / 1080f * Scale;
             Vector2 tip = Input.mousePosition;
 
             bool busy = LoadingScreen.IsActive;
