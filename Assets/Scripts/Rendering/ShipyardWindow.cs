@@ -41,7 +41,7 @@ namespace StellarisClone.Rendering
         private RectTransform _queue;
         private Text _queueTitle;
         private Text _retrofitText;
-        private Button _retrofitBtn;
+        private Button _retrofitBtn, _retrofitAllBtn;
         private readonly List<Option> _options = new List<Option>();
         private readonly Dictionary<int, SlotUi> _slots = new Dictionary<int, SlotUi>();
         private string _queueSig = "";
@@ -169,10 +169,17 @@ namespace StellarisClone.Rendering
             rt2.rectTransform.Stretch(20, 0, 0, 0);
             _retrofitText = LGBuild.Label(refit.transform, "", 10, Primary, TextAnchor.UpperLeft, wrap: true);
             _retrofitText.rectTransform.Stretch(12, 44, 12, 30);
-            _retrofitBtn = LGBuild.Button(refit.transform, "RetrofitBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofit, LGIcon.Wrench, "МОДЕРНИЗИРОВАТЬ", 10);
+            _retrofitBtn = LGBuild.Button(refit.transform, "RetrofitBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofit, LGIcon.Wrench, "ВЫДЕЛЕННЫЙ", 10);
             var rbRt = (RectTransform)_retrofitBtn.transform;
-            rbRt.anchorMin = new Vector2(0, 0); rbRt.anchorMax = new Vector2(1, 0); rbRt.pivot = new Vector2(0.5f, 0);
-            rbRt.offsetMin = new Vector2(10, 8); rbRt.offsetMax = new Vector2(-10, 38);
+            rbRt.anchorMin = new Vector2(0, 0); rbRt.anchorMax = new Vector2(0.5f, 0); rbRt.pivot = new Vector2(0.5f, 0);
+            rbRt.offsetMin = new Vector2(10, 8); rbRt.offsetMax = new Vector2(-4, 38);
+            TooltipHelper.Attach(_retrofitBtn.gameObject, "Модернизировать выделенный на карте военный корабль по актуальному проекту его корпуса");
+            _retrofitAllBtn = LGBuild.Button(refit.transform, "RetrofitAllBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofitAll, LGIcon.Wrench, "ВСЕ УСТАРЕВШИЕ", 10);
+            var raRt = (RectTransform)_retrofitAllBtn.transform;
+            raRt.anchorMin = new Vector2(0.5f, 0); raRt.anchorMax = new Vector2(1, 0); raRt.pivot = new Vector2(0.5f, 0);
+            raRt.offsetMin = new Vector2(4, 8); raRt.offsetMax = new Vector2(-10, 38);
+            TooltipHelper.Attach(_retrofitAllBtn.gameObject, "<b>Модернизировать все устаревшие корабли</b>\nКорабли строятся по основному проекту корпуса (последнему сохранённому в конструкторе). " +
+                                 "Новый проект делает старые корабли устаревшими — модернизация перевооружает их за доплату сплавами. Если сплавов не хватит на всех, модернизируются первые по списку.");
 
             var designer = LGBuild.Button(right, "Designer", UIManager.DS.BtnPrimary, UIManager.DS.BtnPrimaryHi, () =>
             {
@@ -416,30 +423,56 @@ namespace StellarisClone.Rendering
 
         private void RefreshRetrofit()
         {
-            var fleet = FleetManager.Instance?.SelectedFleet;
             var dm = ShipDesignManager.Instance;
-            if (fleet?.Data == null || fleet.Data.OwnerId != 0 || fleet.Data.Type != FleetType.Military || dm == null)
+            if (dm == null) { _retrofitBtn.interactable = _retrofitAllBtn.interactable = false; return; }
+
+            var outdated = dm.OutdatedShips(0);
+            float total = 0f;
+            foreach (var f in outdated) total += dm.RetrofitCost(f);
+            float alloys = EconomyManager.Instance != null ? EconomyManager.Instance.Alloys : 0f;
+            _retrofitAllBtn.interactable = outdated.Count > 0 && alloys >= dm.RetrofitCost(outdated[0]);
+            var allLabel = _retrofitAllBtn.GetComponentInChildren<Text>();
+            if (allLabel != null) allLabel.text = outdated.Count > 0 ? $"ВСЕ УСТАРЕВШИЕ ({outdated.Count})" : "ВСЕ УСТАРЕВШИЕ";
+
+            string all = outdated.Count == 0
+                ? "<color=#5CF59A>Все военные корабли соответствуют актуальным проектам.</color>"
+                : $"Устаревших кораблей: <color=#F2C747>{outdated.Count}</color> · на всех нужно <color=#F2C747>{total:0} сплавов</color>.";
+
+            var fleet = FleetManager.Instance?.SelectedFleet;
+            var d = fleet?.Data;
+            if (d == null || d.OwnerId != 0 || d.Type != FleetType.Military)
             {
                 _retrofitBtn.interactable = false;
-                _retrofitText.text = "<color=#8AA2A8>Выделите военный корабль старого проекта — его можно перевооружить по последнему проекту корпуса.</color>";
+                _retrofitText.text = all + "\n<color=#8AA2A8>Новый проект в конструкторе делает старые корабли устаревшими; выделите корабль на карте, чтобы модернизировать только его.</color>";
                 return;
             }
-            float cost = dm.RetrofitCost(fleet.Data);
-            if (cost <= 0.01f)
+            if (!dm.IsOutdated(d))
             {
                 _retrofitBtn.interactable = false;
-                _retrofitText.text = $"{fleet.Data.Name}: <color=#5CF59A>уже соответствует актуальному проекту.</color>";
+                _retrofitText.text = $"{d.Name}: <color=#5CF59A>актуальный проект.</color>\n" + all;
                 return;
             }
-            bool can = dm.CanRetrofit(fleet.Data);
+            float cost = dm.RetrofitCost(d);
+            float gain = dm.RetrofitGain(d);
+            bool can = dm.CanRetrofit(d);
             _retrofitBtn.interactable = can;
-            _retrofitText.text = $"{fleet.Data.Name} → проект «{dm.GetLatestDesign(fleet.Data.HullClass)?.Name}»  ·  " +
-                                 (can ? $"<color=#F2C747>{cost:0} сплавов</color>" : $"<color=#FF6A6A>нужно {cost:0} сплавов</color>");
+            string g = gain >= 0f ? $"<color=#5CF59A>+{gain * 100f:0}% мощи</color>" : $"<color=#FF9F7A>{gain * 100f:0}% мощи</color>";
+            _retrofitText.text = $"{d.Name} → «{dm.GetLatestDesign(d.HullClass)?.Name}»  ·  {g}  ·  " +
+                                 (can ? $"<color=#F2C747>{cost:0} сплавов</color>" : $"<color=#FF6A6A>нужно {cost:0} сплавов</color>") + "\n" + all;
         }
 
         private void OnRetrofit()
         {
             if (FleetManager.Instance != null && FleetManager.Instance.TryRetrofitSelectedFleet()) Refresh();
+        }
+
+        private void OnRetrofitAll()
+        {
+            var dm = ShipDesignManager.Instance;
+            if (dm == null) return;
+            int n = dm.TryRetrofitAll();
+            if (n > 0) NotificationCenter.Show("Модернизация", $"Перевооружено кораблей: {n}", NotificationCenter.Kind.Success, 5f);
+            Refresh();
         }
     }
 }

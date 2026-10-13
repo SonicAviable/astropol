@@ -167,7 +167,10 @@ namespace StellarisClone.Rendering
                 InspBar(LGIcon.Ship, "Корпус", sb.Hull, sb.MaxHull, new Color(0.75f, 0.85f, 0.9f));
                 InspBar(LGIcon.ArmorPlate, "Броня", sb.Armor, sb.MaxArmor, new Color(0.88f, 0.78f, 0.62f));
                 InspBar(LGIcon.ShieldDome, "Щиты", sb.Shields, sb.MaxShields, new Color(0.45f, 0.76f, 1f));
-                InspText($"<color=#8AA2A8>Огневая мощь</color> {sb.Damage:0} урона  ·  <color=#8AA2A8>мощь</color> {CombatManager.Instance.StarbasePower(system.Id):N0}");
+                float sbPower = CombatManager.Instance.StarbasePower(system.Id);
+                string inShips = CombatManager.PowerInShips(sbPower);
+                InspText($"<color=#8AA2A8>Мощь базы</color> <b>{sbPower:N0}</b>" + (inShips.Length > 0 ? $"  ·  {inShips}" : "") +
+                         $"\n<color=#8AA2A8>Залп</color> {sb.Damage:0} урона  ·  <color=#8AA2A8>мощь считается как у кораблей (значок мечей в панели флота) — сравните с силой своего флота перед атакой</color>");
             }
 
             // Осада

@@ -194,6 +194,7 @@ namespace StellarisClone.Core
             if (d == null || !_saved.Remove(d)) return;
             _saved.Add(d);
             OnDesignsChanged?.Invoke();
+            NotifyOutdated(d.HullClass);
         }
 
         /// <summary>Удалить проект (последний проект корпуса удалить нельзя — верфи нужен чертёж).</summary>
@@ -201,7 +202,7 @@ namespace StellarisClone.Core
         {
             if (d == null || DesignsFor(d.HullClass).Count <= 1) return false;
             bool ok = _saved.Remove(d);
-            if (ok) OnDesignsChanged?.Invoke();
+            if (ok) { OnDesignsChanged?.Invoke(); NotifyOutdated(d.HullClass); }
             return ok;
         }
 
@@ -308,6 +309,7 @@ namespace StellarisClone.Core
             }
             _saved.Add(d);
             OnDesignsChanged?.Invoke();
+            NotifyOutdated(d.HullClass);
             return true;
         }
 
@@ -340,24 +342,80 @@ namespace StellarisClone.Core
             _saved.Add(corvette);
         }
 
+        // ==================== МОДЕРНИЗАЦИЯ ====================
+        // Корабль строится по основному проекту своего корпуса (последнему сохранённому). Сохранили новый проект —
+        // корабли старых проектов устаревают: модернизация на верфи перевооружает их по новому за доплату сплавами.
+
+        /// <summary>Минимальная цена модернизации: даже на более дешёвый проект нужно переоборудование.</summary>
+        public const float MinRetrofitCost = 10f;
+
+        /// <summary>Военный корабль построен не по актуальному (основному) проекту своего корпуса.</summary>
+        public bool IsOutdated(FleetData fleet)
+        {
+            if (fleet == null || fleet.Type != FleetType.Military || fleet.Destroyed) return false;
+            var latest = GetLatestDesign(fleet.HullClass);
+            return latest != null && fleet.DesignId != latest.Id;
+        }
+
+        /// <summary>Мощь проекта — по той же формуле, что мощь корабля (FleetData.ApplyDesign).</summary>
+        public static float DesignPower(ShipDesign d)
+            => d == null ? 0f : d.Dps * 12f + d.Hull * 0.35f + d.Armor * 0.2f + d.Shields * 0.15f;
+
+        /// <summary>Насколько модернизация усилит корабль (0,35 — на 35%); может быть и отрицательной.</summary>
+        public float RetrofitGain(FleetData fleet)
+        {
+            if (!IsOutdated(fleet)) return 0f;
+            float now = Mathf.Max(1f, fleet.MilitaryPower);
+            return DesignPower(GetLatestDesign(fleet.HullClass)) / now - 1f;
+        }
+
         public float RetrofitCost(FleetData fleet)
         {
-            if (fleet == null) return 0f;
+            if (!IsOutdated(fleet)) return 0f;
             var latest = GetLatestDesign(fleet.HullClass);
-            if (latest == null) return 0f;
-            if (fleet.DesignId == latest.Id) return 0f;
-            return Mathf.Max(0f, latest.AlloyCost - fleet.DesignAlloyCost);
+            return Mathf.Max(MinRetrofitCost, latest.AlloyCost - fleet.DesignAlloyCost);
         }
 
         public bool CanRetrofit(FleetData fleet)
         {
-            if (fleet == null || fleet.Type != FleetType.Military) return false;
-            var latest = GetLatestDesign(fleet.HullClass);
-            if (latest == null) return false;
-            if (fleet.DesignId == latest.Id) return false;
+            if (!IsOutdated(fleet)) return false;
             var eco = EconomyManager.Instance;
-            float cost = RetrofitCost(fleet);
-            return eco != null && eco.CanAfford(0f, 0f, cost, 0f);
+            return eco != null && eco.CanAfford(0f, 0f, RetrofitCost(fleet), 0f);
+        }
+
+        /// <summary>Устаревшие военные корабли владельца.</summary>
+        public List<FleetData> OutdatedShips(int owner)
+        {
+            var list = new List<FleetData>();
+            var fm = FleetManager.Instance;
+            if (fm == null) return list;
+            foreach (var f in fm.AllFleets)
+                if (f?.Data != null && f.Data.OwnerId == owner && IsOutdated(f.Data)) list.Add(f.Data);
+            return list;
+        }
+
+        /// <summary>Модернизировать все устаревшие корабли игрока, пока хватает сплавов. Возвращает число кораблей.</summary>
+        public int TryRetrofitAll()
+        {
+            int n = 0;
+            foreach (var f in OutdatedShips(0))
+                if (TryRetrofit(f)) n++;
+            if (n > 0) OnDesignsChanged?.Invoke();
+            return n;
+        }
+
+        /// <summary>Новый основной проект корпуса — сообщить, сколько кораблей устарело и где их модернизировать.</summary>
+        private void NotifyOutdated(ShipClass hull)
+        {
+            var latest = GetLatestDesign(hull);
+            if (latest == null) return;
+            int n = 0;
+            foreach (var f in OutdatedShips(0)) if (f.HullClass == hull) n++;
+            if (n == 0) return;
+            NotificationCenter.Show("Корабли устарели",
+                $"Основной проект корпуса теперь «{latest.Name}». Кораблей старого проекта: {n}. " +
+                "Модернизируйте их на верфи (кнопка «Модернизировать все») — они получат новое вооружение и защиту.",
+                NotificationCenter.Kind.Info, 9f);
         }
 
         public bool TryRetrofit(FleetData fleet)

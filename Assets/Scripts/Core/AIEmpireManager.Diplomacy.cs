@@ -236,6 +236,8 @@ namespace StellarisClone.Core
             int now = Bucket(Opinion), was = Bucket(_lastOpinionBucket);
             if (now == was) return;
             _lastOpinionBucket = Opinion;
+            // До первого контакта игрок об этой империи ничего не знает — сдвиг отношения запоминаем молча
+            if (!Contacts.PlayerMet(OwnerId)) return;
             if (now < was)
                 NotificationCenter.Show("Отношения ухудшились", $"{AIName}: {OpinionLabel(Opinion).ToLower()} ({Opinion:+0;-0;0})",
                     NotificationCenter.Kind.Warning, 5f);

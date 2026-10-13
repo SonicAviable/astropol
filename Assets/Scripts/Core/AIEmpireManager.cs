@@ -296,7 +296,8 @@ namespace StellarisClone.Core
                 IsEliminated = true;
                 if (AtWar) MakePeace(silent: true);
                 AIRelations.EndAllWars(OwnerId);
-                NotificationCenter.Show("Империя повержена", $"{AIName} потерял все системы", NotificationCenter.Kind.Success, 10f);
+                if (Contacts.PlayerMet(OwnerId))
+                    NotificationCenter.Show("Империя повержена", $"{AIName} потерял все системы", NotificationCenter.Kind.Success, 10f);
                 RaiseDiplomacyChanged();
                 return;
             }
@@ -881,7 +882,7 @@ namespace StellarisClone.Core
             int left = vm.ScienceRequired - ResearchedCount;
             if (!HasTech(VictoryManager.CapstoneTech)) left = Mathf.Max(left, 1);
             int level = left <= 2 ? 2 : left <= 5 ? 1 : 0;
-            if (level > _scienceWarnLevel)
+            if (level > _scienceWarnLevel && Contacts.PlayerMet(OwnerId))        // о незнакомцах игрок не знает
                 NotificationCenter.Show("Научная гонка", $"{AIName}: до научной победы осталось {Mathf.Max(0, left)} техн.",
                     NotificationCenter.Kind.Warning, 7f);
             _scienceWarnLevel = level;
@@ -951,7 +952,8 @@ namespace StellarisClone.Core
             if (best < 0) return;
             CapitalSystemId = best;
             if (conqueror == 0) _capitalLost = true;
-            string by = conqueror == 0 ? "" : $" под ударом {For(conqueror)?.AIName ?? "соседей"}";
+            string by = conqueror == 0 ? "" : $" под ударом {Contacts.NameForPlayer(conqueror)}";
+            if (conqueror == 0 || Contacts.PlayerMet(OwnerId))
             NotificationCenter.Show($"Столица {AIName} пала", $"Империя{by} переносит столицу в {EmpireStats.GetSystem(best)?.Name}",
                 conqueror == 0 ? NotificationCenter.Kind.Success : NotificationCenter.Kind.Info, 7f);
         }

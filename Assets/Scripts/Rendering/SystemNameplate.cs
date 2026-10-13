@@ -262,12 +262,25 @@ namespace StellarisClone.Rendering
         public string GetTooltipContent()
         {
             string owner = _data.OwnerId == 0 ? "Ваша империя"
-                         : _data.OwnerId > 0 ? AIEmpireManager.NameOf(_data.OwnerId, "Другая империя")
+                         : _data.OwnerId > 0 ? Contacts.NameForPlayer(_data.OwnerId, "Другая империя")   // до контакта — без имени
                          : "Нейтральная";
 
             string tip = $"<b>{_data.Name}</b>\n" +
                          $"<color=#AAB4C0>Класс:</color> {EmpireOverviewWindow.StarClass(_data.SpectralClass)}{PreviewNote()}\n" +
                          $"<color=#AAB4C0>Владелец:</color> {owner}\n";
+            // Звёздная база: её мощь в привычных единицах — сколько ваших боевых кораблей она стоит
+            var cm = CombatManager.Instance;
+            if (cm != null && _data.HasStarbase && _data.OwnerId >= 0 && (_data.OwnerId == 0 || Vision.PlayerSees(_data.Id)))
+            {
+                var sb = cm.GetStarbase(_data.Id);
+                if (sb != null)
+                {
+                    float pw = cm.StarbasePower(_data.Id);
+                    string cmpText = CombatManager.PowerInShips(pw);
+                    tip += sb.Disabled ? "<color=#FF7A7A>Звёздная база выведена из строя</color>\n"
+                                       : $"<color=#AAB4C0>Звёздная база:</color> мощь {pw:N0}" + (cmpText.Length > 0 ? $" ({cmpText})" : "") + "\n";
+                }
+            }
 
             if (_data.IsSurveyed)
             {

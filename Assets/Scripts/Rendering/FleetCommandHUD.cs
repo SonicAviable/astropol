@@ -524,8 +524,19 @@ namespace StellarisClone.Rendering
                     "<b>Мощь</b>\nОбщая боевая сила корабля: урон, прочность и защита");
                 SetChip(c++, WeaponIcon(d.PrimaryWeapon), WeaponColor(d.PrimaryWeapon), $"{dpd:0}/дн",
                     $"<b>Урон в день</b>\nОсновное оружие: {WeaponName(d.PrimaryWeapon)}. Орудий: {d.Weapons.Count}");
-                SetChip(c++, LGIcon.Thruster, new Color(0.6f, 0.85f, 1f), $"{d.Evasion:0}%",
-                    "<b>Уклонение</b>\nШанс увернуться от выстрела; снижается точностью противника");
+                var dm = ShipDesignManager.Instance;
+                if (d.OwnerId == 0 && dm != null && dm.IsOutdated(d))
+                {
+                    // Вместо уклонения — заметная пометка «устарел» с выгодой модернизации
+                    float gain = dm.RetrofitGain(d);
+                    SetChip(c++, LGIcon.Wrench, UIManager.DS.Gold, gain > 0.005f ? $"устарел +{gain * 100f:0}%" : "устарел",
+                        $"<b>Устаревший проект</b>\nКорабль построен не по актуальному проекту корпуса «{dm.GetLatestDesign(d.HullClass)?.Name}». " +
+                        $"Модернизация на верфи: мощь {(gain >= 0f ? "+" : "")}{gain * 100f:0}%, стоимость {dm.RetrofitCost(d):0} сплавов.\n" +
+                        "<color=#8AA2A8>Верфь → «Модернизация эскадры»: «Выделенный» или «Все устаревшие».</color>");
+                }
+                else
+                    SetChip(c++, LGIcon.Thruster, new Color(0.6f, 0.85f, 1f), $"{d.Evasion:0}%",
+                        "<b>Уклонение</b>\nШанс увернуться от выстрела; снижается точностью противника");
             }
             else if (d.Type == FleetType.Science)
             {

@@ -1097,6 +1097,36 @@ namespace StellarisClone.Core
             return sb != null && !sb.Disabled;
         }
 
+        /// <summary>
+        /// Средняя мощь боевого корабля игрока (по проекту, без учёта повреждений) — чтобы мощь базы
+        /// можно было сравнить с привычной единицей: «≈ N ваших кораблей». 0 — боевых кораблей нет.
+        /// </summary>
+        public static float PlayerAverageShipPower()
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return 0f;
+            float sum = 0f;
+            int n = 0;
+            foreach (var f in fm.AllFleets)
+            {
+                var d = f?.Data;
+                if (d == null || d.Destroyed || d.OwnerId != 0 || d.Type != FleetType.Military) continue;
+                sum += d.MilitaryPower;
+                n++;
+            }
+            return n > 0 ? sum / n : 0f;
+        }
+
+        /// <summary>Подпись «≈ N ваших боевых кораблей» для мощи (пусто, если сравнивать не с чем).</summary>
+        public static string PowerInShips(float power)
+        {
+            float avg = PlayerAverageShipPower();
+            if (avg <= 0f || power <= 0f) return "";
+            float n = power / avg;
+            return n < 0.95f ? $"слабее одного вашего боевого корабля"
+                 : $"≈ {n:0.#} ваш{(n < 1.5f ? "его боевого корабля" : "их боевых кораблей")}";
+        }
+
         public float StarbasePower(int systemId)
         {
             var sb = GetStarbase(systemId);

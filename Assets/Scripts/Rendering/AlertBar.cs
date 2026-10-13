@@ -374,7 +374,8 @@ namespace StellarisClone.Rendering
                     if (s.OwnerId != 0) continue;
                     foreach (var p in s.Planets)
                     {
-                        if (colonyPlanet == null && s.IsSurveyed && p.CanColonize) { colonySys = s; colonyPlanet = p; }
+                        // Колонисты уже в пути — планета больше не «ждёт» заселения
+                        if (colonyPlanet == null && s.IsSurveyed && p.CanColonize && !p.IsColonizing) { colonySys = s; colonyPlanet = p; }
                         if (p.IdlePops > 0) { idleTotal += p.IdlePops; if (idleSys == null) idleSys = s; }
                         if (crowded == null && p.Population > p.HousingCapacity) { crowdSys = s; crowded = p; }
                     }
@@ -418,6 +419,27 @@ namespace StellarisClone.Rendering
                         ActionHint = "показать систему",
                         Action = () => Focus(sys)
                     });
+                }
+
+                // Устаревшие корабли: есть новый основной проект корпуса — старые стоит модернизировать
+                var dmgr = ShipDesignManager.Instance;
+                if (dmgr != null)
+                {
+                    var old = dmgr.OutdatedShips(0);
+                    if (old.Count > 0)
+                    {
+                        float cost = 0f;
+                        foreach (var f in old) cost += dmgr.RetrofitCost(f);
+                        _current.Add(new AlertInfo
+                        {
+                            Id = "outdated", Icon = LGIcon.Wrench, Color = UIManager.DS.Gold, Count = old.Count,
+                            Title = "Корабли устарели",
+                            Body = $"Кораблей старого проекта: {old.Count}. На верфи они перевооружатся по актуальному проекту корпуса " +
+                                   $"(всего {cost:0} сплавов) — станут сильнее.",
+                            ActionHint = "открыть верфь",
+                            Action = () => ShipyardWindow.Instance?.Open()
+                        });
+                    }
                 }
 
                 // 8. Дипломатические предложения (от каждой империи ИИ — своё)
