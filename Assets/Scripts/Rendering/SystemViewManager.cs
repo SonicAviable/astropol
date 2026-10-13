@@ -26,7 +26,7 @@ namespace StellarisClone.Rendering
         private bool _isTransitioningToGalaxy;
         /// <summary>Система, чей спрайт звезды на карте спрятан под 3D-модель (чёрная дыра); −1 — нет.</summary>
         private int _hiddenStarId = -1;
-        /// <summary>Отладка (редактор и dev-сборка): показать модель чёрной дыры в любой системе — Ctrl+B в виде системы.</summary>
+        /// <summary>Отладка (редактор и dev-сборка): показать модель чёрной дыры в любой системе — F8 в виде системы.</summary>
         private bool _previewBlackHole;
 
         // Масштаб процедурной планеты относительно planet.Size (подбирается)
@@ -514,9 +514,9 @@ namespace StellarisClone.Rendering
                     _currentSelectedPlanet.SelectionIndicator.transform.Rotate(Vector3.forward, 25f * Time.deltaTime);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                // Ctrl+B — посмотреть чёрную дыру в текущей системе (данные системы не меняются)
-                if (Input.GetKeyDown(KeyCode.B) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
-                    && CurrentSystem != null)
+                // F8 — посмотреть чёрную дыру в текущей системе (данные системы не меняются).
+                // Не Ctrl+B: в редакторе это Build And Run.
+                if (Input.GetKeyDown(KeyCode.F8) && CurrentSystem != null)
                 {
                     _previewBlackHole = !_previewBlackHole;
                     BuildSystemContent(CurrentSystem);
