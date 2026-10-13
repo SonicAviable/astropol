@@ -5,6 +5,7 @@
 #   fx_dot.png             — мягкая точка: искры клика, спутник орбиты
 #   fx_ring.png            — орбита с разрывами и засечками (наведение)
 #   fx_ripple.png          — мягкое кольцо ударной волны клика
+#   fx_spinner.png         — дуга-«комета» загрузки: яркая голова и гаснущий хвост (крутится рядом со стрелкой)
 #   cursor_target.png      — золотой прицел приказа флоту (обычное смешивание, с тёмной обводкой)
 # Свечения (glow, fx_*) — светлое на чёрном: шейдер UIAdditive берёт только цвет, без альфы.
 # Запуск: python3 make_cursors.py
@@ -129,6 +130,18 @@ def target(size=128):
     alpha = np.maximum(lt, dk * 0.7)
     save(rgb, alpha * 255, 'cursor_target', size)
 
+def spinner(size=128):
+    n = size * SS
+    y, x = (np.mgrid[0:n, 0:n] + 0.5) / n - 0.5
+    r = np.hypot(x, y)
+    ang = (np.arctan2(-y, x) / (2 * np.pi)) % 1.0          # 0..1 по кругу; голова — у 0, хвост тянется назад
+    tail = np.clip(1 - ang / 0.75, 0, 1) ** 1.6 * (ang < 0.75)
+    band = np.exp(-((r - 0.36) / 0.035) ** 2)
+    hx, hy = 0.36, 0.0                                       # голова кометы
+    head = np.exp(-((x - hx) ** 2 + (y - hy) ** 2) / 0.0035)
+    v = np.clip(band * tail + head, 0, 1)
+    save(np.dstack([v, v, v]) * 255, v * 255, 'fx_spinner', size)
+
 os.makedirs(OUT, exist_ok=True)
-arrow(); sparkle(); dot(); ring(); ripple(); target()
+arrow(); sparkle(); dot(); ring(); ripple(); target(); spinner()
 print('ok ->', os.path.normpath(OUT))

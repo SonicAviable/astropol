@@ -12,7 +12,8 @@ namespace StellarisClone.Rendering
     ///   • голографическая стрелка в бирюзовых тонах интерфейса со свечением и мерцающей звёздочкой на острие;
     ///   • наведение на то, что можно нажать (кнопки, звёзды, свои флоты, планеты): орбита со спутником вокруг острия;
     ///   • клик — ударная волна и искры;
-    ///   • выделен флот и курсор на звезде — вращающийся золотой прицел (ПКМ отправит флот туда).
+    ///   • выделен флот и курсор на звезде — вращающийся золотой прицел (ПКМ отправит флот туда);
+    ///   • экран загрузки — рядом со стрелкой крутится дуга-«комета», стрелка притушена.
     /// Размеры заданы для высоты экрана 1080 и масштабируются. Создаётся сам при запуске.
     /// </summary>
     public class GameCursor : MonoBehaviour
@@ -37,14 +38,14 @@ namespace StellarisClone.Rendering
             public bool Ripple;
         }
 
-        private RectTransform _glow, _arrow, _sparkle, _ring, _sat, _target;
-        private Image _glowImg, _arrowImg, _sparkleImg, _ringImg, _satImg, _targetImg;
+        private RectTransform _glow, _arrow, _sparkle, _ring, _sat, _target, _spinner;
+        private Image _glowImg, _arrowImg, _sparkleImg, _ringImg, _satImg, _targetImg, _spinnerImg;
         private Sprite _dot, _ripple;
         private Material _additive;
         private readonly List<Mote> _motes = new List<Mote>();
         private RectTransform _moteRoot;
 
-        private float _hover, _move;
+        private float _hover, _move, _busy;
         private Camera _cam;
         private PointerEventData _ped;
         private EventSystem _pedSystem;
@@ -83,6 +84,7 @@ namespace StellarisClone.Rendering
             _arrow = Layer("Arrow", arrow, false, out _arrowImg);
             _target = Layer("Target", Sprite_("cursor_target"), false, out _targetImg);
             _sparkle = Layer("Sparkle", Sprite_("fx_sparkle"), true, out _sparkleImg);
+            _spinner = Layer("Spinner", Sprite_("fx_spinner"), true, out _spinnerImg);
             _arrow.pivot = _glow.pivot = new Vector2(ArrowTip.x, 1f - ArrowTip.y);
         }
 
@@ -98,16 +100,18 @@ namespace StellarisClone.Rendering
             float k = Screen.height / 1080f;
             Vector2 tip = Input.mousePosition;
 
-            var kind = Detect();
+            bool busy = LoadingScreen.IsActive;
+            var kind = busy ? Kind.Arrow : Detect();
             _hover = Mathf.MoveTowards(_hover, kind == Kind.Hover ? 1f : 0f, dt * 7f);
             _move = Mathf.MoveTowards(_move, kind == Kind.Move ? 1f : 0f, dt * 7f);
+            _busy = Mathf.MoveTowards(_busy, busy ? 1f : 0f, dt * 5f);
             float arrowK = 1f - _move;
 
             // Стрелка и её свечение
             float a = ArrowSize * k * (1f + 0.06f * _hover);
             Place(_arrow, tip, a, 0f);
             Place(_glow, tip, a, 0f);
-            _arrowImg.color = new Color(1f, 1f, 1f, arrowK);
+            _arrowImg.color = new Color(1f - 0.25f * _busy, 1f - 0.25f * _busy, 1f - 0.25f * _busy, arrowK);
             if (_glowImg != null)
             {
                 float pulse = 0.5f + 0.5f * Mathf.Sin(t * 3f);
@@ -141,6 +145,14 @@ namespace StellarisClone.Rendering
             {
                 Place(_target, tip, 50f * k * (1f + 0.05f * Mathf.Sin(t * 4f)), t * 25f);
                 _targetImg.color = new Color(1f, 1f, 1f, _move);
+            }
+
+            // Загрузка: дуга-«комета» справа внизу от острия, крутится по часовой стрелке
+            if (_spinnerImg != null)
+            {
+                Place(_spinner, tip + new Vector2(24f, -30f) * k, 26f * k, -t * 400f);
+                _spinnerImg.color = Glow(Teal, _busy);
+                _spinner.gameObject.SetActive(_busy > 0.001f);
             }
 
             if (_dot != null)
