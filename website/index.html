@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Astropolity — стратегия о галактике</title>
+<meta name="description" content="Astropolity: глобальная стратегия в реальном времени. Колонии, флоты, технологии, шпионы и 60 лет борьбы за галактику. Вики по всем механикам игры.">
+<meta name="theme-color" content="#04070d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Play:wght@400;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="glow" id="glow" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top" aria-label="Astropolity — наверх">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="#4df2db"/><ellipse cx="16" cy="16" rx="14" ry="5.5" fill="none" stroke="#4df2db" stroke-width="1.2" transform="rotate(-24 16 16)"/><circle cx="27" cy="11" r="1.8" fill="#ffcc52"/></svg>
+      ASTROPOLITY
+    </a>
+    <button class="burger" id="burger" aria-label="Меню" aria-expanded="false"><span></span></button>
+    <nav class="nav-links" id="navLinks" aria-label="Разделы">
+      <a href="#timeline">Партия</a>
+      <a href="#factions">Империи</a>
+      <a href="#features">Игра</a>
+      <a href="#scenes">События</a>
+      <a href="#wiki">Вики</a>
+      <button class="search-btn" id="searchBtn" aria-label="Поиск по вики">
+        <span>Поиск</span><kbd>/</kbd>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <!-- ГЕРОЙ -->
+  <section class="hero" aria-labelledby="h1">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <canvas id="galaxy" aria-hidden="true"></canvas>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <img class="hero-planet" id="heroPlanet" src="img/planet.webp" alt="" aria-hidden="true" width="1100" height="1100" fetchpriority="high">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Стратегия в реальном времени · версия <span id="ver">1.3</span></span>
+          <h1 id="h1">ASTRO<span class="glint">POLITY</span></h1>
+          <p class="hero-lead">Шестьдесят лет. Пять империй. Одна галактика, в которой хватит места <b>только одной</b>. Стройте колонии, проектируйте корабли, воруйте чужие технологии и решайте, как закончится эта партия.</p>
+          <p class="hero-type" id="typed" aria-live="off"></p>
+          <div class="hero-cta">
+            <a class="btn" href="#wiki">Открыть вики</a>
+            <a class="btn ghost" href="#factions">Выбрать империю</a>
+          </div>
+        </div>
+        <aside class="clock hud" aria-label="Часы партии">
+          <small>Звёздная дата</small>
+          <div class="clock-date" id="clockDate">01 · 01 · 2200</div>
+          <div class="clock-row">
+            <div class="clock-bar" aria-hidden="true"><i id="clockBar"></i></div>
+            <div class="speeds" role="group" aria-label="Скорость времени">
+              <button type="button" data-s="1" class="on">1×</button>
+              <button type="button" data-s="2">2×</button>
+              <button type="button" data-s="4">4×</button>
+            </div>
+          </div>
+          <div class="clock-res" aria-hidden="true">
+            <span style="color:var(--gold)"><i class="ic" style="--i:url(img/icons/res_energy.png)"></i><b id="rE">400</b></span>
+            <span style="color:var(--cyan)"><i class="ic" style="--i:url(img/icons/res_minerals.png)"></i><b id="rM">500</b></span>
+            <span style="color:var(--amber)"><i class="ic" style="--i:url(img/icons/res_alloys.png)"></i><b id="rA">250</b></span>
+            <span style="color:var(--violet)"><i class="ic" style="--i:url(img/icons/res_influence.png)"></i><b id="rI">100</b></span>
+          </div>
+        </aside>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </section>
+
+  <!-- ВРЕМЯ ПАРТИИ -->
+  <section class="sec" id="timeline">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Ход партии</span>
+        <h2>Шестьдесят лет на один ответ</h2>
+        <p>Партия идёт с 2200 по 2260 год. За это время техника меняет эпохи, просыпаются пираты, образуются коалиции, а Галактический совет голосует о будущем. Прокрутите — и звёздная дата побежит вместе с вами.</p>
+      </div>
+      <div class="tl reveal" id="tl"><div class="tl-in" id="tlIn"></div></div>
+      <div class="legend" id="tlLegend"></div>
+    </div>
+  </section>
+
+  <!-- ИМПЕРИИ -->
+  <section class="sec alt" id="factions">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Пять империй</span>
+        <h2>Выберите, кем править</h2>
+        <p>У каждой империи свой лидер, своя доктрина и своя слабость. Остальные четыре достанутся искусственному интеллекту — со своими характерами и долгой памятью на обиды.</p>
+      </div>
+      <div class="fac-grid" id="facGrid"></div>
+    </div>
+  </section>
+  <dialog id="facDlg" aria-label="Империя"></dialog>
+
+  <!-- ВОЗМОЖНОСТИ -->
+  <section class="sec" id="features">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Что внутри</span>
+        <h2>Галактика, в которой всё связано</h2>
+        <p>Экономика питает флот, флот защищает форпосты, форпосты держат узлы силы, а узлы силы двигают науку. Здесь нет «пустых» механик.</p>
+      </div>
+      <div class="feat-grid" id="featGrid"></div>
+    </div>
+  </section>
+
+  <!-- ЦИКЛ -->
+  <section class="sec alt" id="loop">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Игровой цикл</span>
+        <h2>Пять шагов, которые повторяются всю партию</h2>
+      </div>
+      <div class="loop" id="loopEl"></div>
+    </div>
+  </section>
+
+  <!-- СЦЕНЫ -->
+  <section class="sec" id="scenes">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Случайные события</span>
+        <h2>Галактика непредсказуема</h2>
+        <p>Сломанные зонды, тонущие в разломах корабли, чумные карантины и кристаллические разумы. Каждое событие — выбор с последствиями.</p>
+      </div>
+      <div class="reel" id="reel"></div>
+    </div>
+  </section>
+  <dialog id="shotDlg" class="lightbox" aria-label="Сцена"></dialog>
+
+  <!-- ВИКИ -->
+  <section class="wiki" id="wiki">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Вики</span>
+        <h2>Всё о механиках игры</h2>
+        <p>Числа взяты прямо из кода игры (версия <span id="ver2">1.3</span>) и пересобираются вместе с ней: стоимость зданий, характеристики корпусов, дерево из 89 технологий.</p>
+      </div>
+      <div class="wiki-grid">
+        <aside class="side" id="side" aria-label="Содержание вики"></aside>
+        <div class="wiki-main" id="wikiMain"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <b>ASTROPOLITY</b>
+      <small>Стратегия о галактике · версия <span id="ver3">1.3</span></small>
+    </div>
+    <ul>
+      <li><a href="#timeline">Ход партии</a></li>
+      <li><a href="#factions">Империи</a></li>
+      <li><a href="#wiki">Вики</a></li>
+    </ul>
+    <ul>
+      <li>Данные вики собраны из кода игры.</li>
+      <li>Нажмите <kbd>/</kbd> для поиска по вики.</li>
+    </ul>
+  </div>
+</footer>
+
+<button class="to-top" id="toTop" aria-label="Наверх">↑</button>
+
+<div class="pal" id="pal" role="dialog" aria-modal="true" aria-label="Поиск по вики">
+  <div class="pal-box hud">
+    <div class="pal-in">
+      <i class="ic" style="--i:url(img/icons/sensors.png);color:var(--cyan)"></i>
+      <input id="palIn" type="text" placeholder="Технология, корабль, механика…" autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+    </div>
+    <ul class="pal-list" id="palList" role="listbox"></ul>
+    <div class="pal-foot"><span>↑↓ выбор</span><span>Enter открыть</span></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="wiki.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
