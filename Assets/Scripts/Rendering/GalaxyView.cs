@@ -334,6 +334,7 @@ namespace StellarisClone.Rendering
                 if (kvp.Value != null) kvp.Value.UpdateVisuals();
 
             UpdateHyperlaneColors();
+            ApplyMapModeOverlay();
         }
 
         public void RefreshSystemBorders() => RefreshTerritoryVisuals();
@@ -579,6 +580,7 @@ namespace StellarisClone.Rendering
             UpdateReadability();
             UpdateBeacon();
             UpdateRoutes();
+            UpdateMapModes();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // F8 на карте — модель чёрной дыры на выбранной системе (вид системы ловит F8 сам)
             if (Input.GetKeyDown(KeyCode.F8) && !(SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView))
@@ -671,6 +673,7 @@ namespace StellarisClone.Rendering
             if (_asteroidRoot != null) _asteroidRoot.SetActive(!isolate);
             _isolated = isolate;
             _isolatedId = activeSystemId;
+            if (!isolate) ApplyMapModeOverlay();   // названия империй вернулись — режим карты решает, видны ли они
             if (Vision.Active) ApplyFog();     // туман поверх изоляции: неисследованное остаётся скрытым
             ApplySkyMood(isolate);
         }

@@ -419,10 +419,11 @@ namespace StellarisClone.Rendering
             {
                 // Линейное цветовое пространство: малая альфа на чёрном выглядит намного плотнее,
                 // поэтому заливка вблизи — едва заметная дымка, остаётся тонкая кромка
-                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.008f, 0.07f, far));
-                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(0.02f, 0.07f, far));
-                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 2.2f, far));
-                _borderMat.SetFloat("_LineAlpha", Mathf.Lerp(0.5f, 0.85f, far));
+                // Режим карты усиливает (политика) или приглушает (простой, ресурсы…) границы — GalaxyView.MapModes
+                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.008f, 0.07f, far) * _borderFillK);
+                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(0.02f, 0.07f, far) * _borderFillK);
+                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 2.2f, far) * Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(_borderK - 0.2f)));
+                _borderMat.SetFloat("_LineAlpha", Mathf.Clamp01(Mathf.Lerp(0.5f, 0.85f, far) * _borderK));
             }
         }
 

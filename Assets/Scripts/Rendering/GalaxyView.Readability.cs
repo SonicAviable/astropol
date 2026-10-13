@@ -93,6 +93,7 @@ namespace StellarisClone.Rendering
                     alphaB = kb ? 0.62f : 0.3f;
                     px = 1.6f;
                 }
+                ModeLaneStyle(a, b, ka, kb, ref c, ref alphaA, ref alphaB, ref px);   // режим карты
                 _laneWidthPx[i] = px;
 
                 var g = new Gradient();
