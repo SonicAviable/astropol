@@ -24,6 +24,7 @@ namespace StellarisClone.Rendering
         private bool _applied;
         private Camera _cam;
         private PointerEventData _ped;
+        private EventSystem _pedSystem;
         private readonly List<RaycastResult> _uiHits = new List<RaycastResult>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -94,7 +95,7 @@ namespace StellarisClone.Rendering
         /// <summary>Верхний элемент интерфейса под курсором — часть активной кнопки, переключателя, поля ввода…</summary>
         private bool OverInteractiveUi(EventSystem es)
         {
-            if (_ped == null || _ped.eventSystem != es) _ped = new PointerEventData(es);
+            if (_ped == null || _pedSystem != es) { _ped = new PointerEventData(es); _pedSystem = es; }
             _ped.position = Input.mousePosition;
             _uiHits.Clear();
             es.RaycastAll(_ped, _uiHits);
