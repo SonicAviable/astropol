@@ -6,8 +6,8 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
-    public enum LeaderClass { Scientist, Admiral, Governor }
-    public enum LeaderPost { None, Ship, Council, Planet }
+    public enum LeaderClass { Scientist, Admiral, Governor, Agent }
+    public enum LeaderPost { None, Ship, Council, Planet, Spy }
 
     /// <summary>Лидер империи (учёный, адмирал, губернатор). Сериализуется в сохранение как есть.</summary>
     [Serializable]
@@ -27,6 +27,17 @@ namespace StellarisClone.Core
         public int SystemId = -1;
         public int PlanetIndex = -1;
         public int Seed;
+
+        // ---- Агент (шпионаж; см. EspionageManager) ----
+        /// <summary>Империя, куда внедрён агент; 0 — контрразведка дома; -1 — не назначен.</summary>
+        public int TargetOwner = -1;
+        /// <summary>Внедрённость 0–100: растёт, пока агент на посту; открывает обзор и операции.</summary>
+        public float Cover;
+        /// <summary>Идущая операция (SpyOp), -1 — нет; месяцев до результата; цель-третья сторона для «Раздора».</summary>
+        public int OpKind = -1;
+        public int OpMonthsLeft;
+        public int OpArg = -1;
+
         /// <summary>Ключ портрета из Resources/Leaders/Pool (подбирается при первом показе, см. LeaderFaces).</summary>
         public string Portrait;
 
@@ -60,7 +71,7 @@ namespace StellarisClone.Core
     {
         public static LeaderManager Instance { get; private set; }
 
-        public const int MaxLeaders = 6;
+        public const int MaxLeaders = 8;
         public const float HireInfluence = 60f;
         public const float UpkeepEnergy = 1.5f;
         public const int MaxLevel = 5;
@@ -96,6 +107,12 @@ namespace StellarisClone.Core
             new TraitDef { Id = "adm_cautious", Class = LeaderClass.Admiral, Name = "Осторожный", Desc = "+15% к шансу выйти из боя, +10% к уклонению" },
             new TraitDef { Id = "adm_navigator", Class = LeaderClass.Admiral, Name = "Навигатор", Desc = "+20% к скорости в гиперкоридорах" },
 
+            new TraitDef { Id = "agt_infiltrator", Class = LeaderClass.Agent, Name = "Внедренец", Desc = "+25% к скорости внедрения" },
+            new TraitDef { Id = "agt_saboteur", Class = LeaderClass.Agent, Name = "Диверсант", Desc = "+15% к успеху диверсий" },
+            new TraitDef { Id = "agt_thief", Class = LeaderClass.Agent, Name = "Расхититель", Desc = "+15% к успеху краж технологий" },
+            new TraitDef { Id = "agt_manipulator", Class = LeaderClass.Agent, Name = "Манипулятор", Desc = "+15% к успеху «Раздора»" },
+            new TraitDef { Id = "agt_shadow", Class = LeaderClass.Agent, Name = "Тень", Desc = "−20% к шансу провала и поимки, труднее заметить" },
+
             new TraitDef { Id = "gov_engineer", Class = LeaderClass.Governor, Name = "Инженер", Desc = "+25% к скорости строительства на планете" },
             new TraitDef { Id = "gov_industrialist", Class = LeaderClass.Governor, Name = "Промышленник", Desc = "+15% к сплавам планеты" },
             new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = "Геолог", Desc = "+15% к минералам планеты" },
@@ -121,6 +138,7 @@ namespace StellarisClone.Core
         {
             LeaderClass.Scientist => "Учёный",
             LeaderClass.Admiral => "Адмирал",
+            LeaderClass.Agent => "Агент",
             _ => "Губернатор"
         };
 
@@ -129,6 +147,7 @@ namespace StellarisClone.Core
         {
             LeaderClass.Scientist => $"разведка +{l.Level * 5}%, в совете наука +{l.Level * 2}%",
             LeaderClass.Admiral => $"урон +{l.Level * 3}%, скорострельность +{l.Level * 2}%",
+            LeaderClass.Agent => $"успех операций +{l.Level * 4}%, внедрение быстрее на {l.Level}/мес., контрразведка +{l.Level * 4}%",
             _ => $"производство +{l.Level * 3}%, стройка +{l.Level * 5}%"
         };
 
@@ -263,8 +282,34 @@ namespace StellarisClone.Core
             if (l == null) return;
             l.Post = LeaderPost.None;
             l.ShipId = l.SystemId = l.PlanetIndex = -1;
+            // Агент выходит из игры: внедрённость и идущая операция пропадают
+            l.TargetOwner = -1; l.Cover = 0f; l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
             Changed();
         }
+
+        /// <summary>Назначить агента: target 0 — контрразведка дома, иначе внедрение в империю ИИ.</summary>
+        public void AssignSpy(Leader l, int target)
+        {
+            if (l == null || l.Class != LeaderClass.Agent) return;
+            var other = SpyOn(l.Owner, target);
+            if (other != null && other != l) Unassign(other);
+            l.Post = LeaderPost.Spy;
+            l.TargetOwner = target;
+            l.Cover = 0f;
+            l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
+            l.ShipId = l.SystemId = l.PlanetIndex = -1;
+            Changed();
+        }
+
+        public Leader SpyOn(int owner, int target)
+        {
+            foreach (var l in _s.Leaders)
+                if (l.Owner == owner && l.Post == LeaderPost.Spy && l.TargetOwner == target) return l;
+            return null;
+        }
+
+        /// <summary>Сообщить интерфейсу, что состояние лидеров изменилось (шпионаж меняет внедрённость и операции).</summary>
+        public void Touch() => Changed();
 
         public void AssignShip(Leader l, FleetData ship)
         {
@@ -586,6 +631,9 @@ namespace StellarisClone.Core
                     case LeaderPost.Council:
                         GainXp(l, 0.1f);
                         break;
+                    case LeaderPost.Spy:
+                        GainXp(l, 0.08f);
+                        break;
                     case LeaderPost.Ship:
                         if (FindShip(l.ShipId) == null) { l.Post = LeaderPost.None; l.ShipId = -1; changed = true; }
                         else if (l.Class == LeaderClass.Admiral) GainXp(l, 0.05f);
@@ -705,6 +753,7 @@ namespace StellarisClone.Core
             foreach (var l in _s.Leaders) l.Traits ??= new List<string>();
             foreach (var l in _s.Candidates) l.Traits ??= new List<string>();
             if (_s.Candidates.Count == 0) RefillCandidates(true);
+            else RefillCandidates(false);   // в старом сохранении может не быть кандидата-агента
             Changed();
         }
     }

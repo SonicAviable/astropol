@@ -9,7 +9,7 @@ namespace StellarisClone.Core
         public static TimeManager Instance { get; private set; }
         public event Action<int, int, int> OnDayPassed;
 
-        /// <summary>Реальных секунд на игровой день при скорости ×1 — см. GamePace (партия 2200–2240 ≈ 1,5 ч на ×4).</summary>
+        /// <summary>Реальных секунд на игровой день при скорости ×1 — см. GamePace (партия 2200–2260 ≈ 2,5 ч на ×4).</summary>
         public const float DefaultSecondsPerDay = GamePace.SecondsPerDay;
 
         [SerializeField] private float secondsPerDay = DefaultSecondsPerDay;

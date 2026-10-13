@@ -131,6 +131,7 @@ namespace StellarisClone.Rendering
             new GameObject("[UI] SystemPlanetTags").AddComponent<SystemPlanetTags>().Init(_canvas);
             new GameObject("[UI] Outliner").AddComponent<OutlinerPanel>().Init(_canvas);
             BuildEmpireOverviewModal();
+            BuildEspionageModal();
             BuildEventPopupModal();
             BuildRewardNotification();
             BindAuxiliaryUi();
@@ -521,7 +522,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 6 * 46f + 30f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 7 * 46f + 30f);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
@@ -568,6 +569,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavEmpire", LGIcon.Globe, "Империя", DS.NeonCyan, OpenEmpireOverviewModal, null, "<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика");
             Item("NavTech", LGIcon.Research, "Технологии", DS.NeonCyan, OpenTechModal, UIAnchors.Tech, "<b>Технологии</b>\nИсследования и очереди");
             Item("NavDiplo", LGIcon.Diplomacy, "Дипломатия", DS.Gold, () => DiplomacyModal.Instance?.Open(), UIAnchors.Diplomacy, "<b>Дипломатия</b>\nПереговоры, сделки, договоры");
+            Item("NavSpy", LGIcon.Betrayal, "Шпионаж", new Color(0.74f, 0.56f, 1f), OpenEspionageModal, null,
+                 "<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов");
             Item("NavDesign", LGIcon.Gear, "Конструктор судов", DS.NeonCyan, () => ShipDesignerModal.Instance?.Open(), UIAnchors.Designer, "<b>Конструктор судов</b>\nПроекты кораблей");
             Item("NavFleet", LGIcon.Fleet, "Флот", DS.NeonCyan, SelectAllWarships, null, "<b>Флот</b>\nВыделить все военные флоты");
             Item("NavVictory", LGIcon.Trophy, "Путь к победе", DS.Gold, VictoryPathWindow.Toggle, null, "<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>");
@@ -1491,6 +1494,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             EmpireOverviewWindow.Instance?.Open();
         }
+
+        // ==================== ТАЙНЫЕ ОПЕРАЦИИ ====================
+        // Окно вынесено в EspionageWindow (агенты, внедрение, кража технологий, диверсии, раздор).
+
+        private void BuildEspionageModal()
+        {
+            var go = new GameObject("[UI] EspionageWindow");
+            go.transform.SetParent(transform, false);
+            go.AddComponent<EspionageWindow>().Build(_modalCanvas);
+        }
+
+        public void OpenEspionageModal() => EspionageWindow.Instance?.Open();
 
         // ==================== ВЕРФЬ ====================
         // Окно вынесено в ShipyardWindow (заказ кораблей, стапели, модернизация).

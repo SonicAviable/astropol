@@ -14,10 +14,12 @@ namespace StellarisClone.Rendering
         private int _assignLeaderId = -1;
 
         private static LGIcon ClassIcon(LeaderClass c) => c == LeaderClass.Scientist ? LGIcon.Sensors
-                                                       : c == LeaderClass.Admiral ? LGIcon.Fleet : LGIcon.Planet;
+                                                       : c == LeaderClass.Admiral ? LGIcon.Fleet
+                                                       : c == LeaderClass.Agent ? LGIcon.Betrayal : LGIcon.Planet;
 
         private static Color ClassColor(LeaderClass c) => c == LeaderClass.Scientist ? CResearch
-                                                       : c == LeaderClass.Admiral ? new Color(1f, 0.42f, 0.42f) : CGold;
+                                                       : c == LeaderClass.Admiral ? new Color(1f, 0.42f, 0.42f)
+                                                       : c == LeaderClass.Agent ? new Color(0.74f, 0.56f, 1f) : CGold;
 
         private void BuildLeaders()
         {
@@ -38,6 +40,13 @@ namespace StellarisClone.Rendering
                        (0.60f, 0.78f, "ПОСТ", TextAnchor.MiddleLeft),
                        (0.78f, 1f, "", TextAnchor.MiddleRight));
 
+            // Вход в центр тайных операций
+            var spyRow = Row(() => { Close(); EspionageWindow.Instance?.Open(); }, new Color(0.74f, 0.56f, 1f, 0.35f));
+            IconCell(spyRow, 0f, 0.06f, LGIcon.Betrayal, new Color(0.74f, 0.56f, 1f));
+            TwoLine(spyRow, 0.06f, 0.60f, "Центр тайных операций",
+                    $"Агенты, внедрение, кража технологий, диверсии · защита вашей империи {EspionageManager.PlayerCounter() * 100f:0}%");
+            TextCell(spyRow, 0.60f, 1f, "ОТКРЫТЬ  ›", new Color(0.74f, 0.56f, 1f), TextAnchor.MiddleRight, 12, true);
+
             int mine = 0;
             foreach (var l in lm.All)
             {
@@ -46,7 +55,7 @@ namespace StellarisClone.Rendering
                 LeaderRow(lm, l, true);
             }
             if (mine == 0)
-                SectionRow("Лидеров пока нет. Наймите учёного для разведки, адмирала для флота или губернатора для колонии.", UIManager.DS.TextMuted);
+                SectionRow("Лидеров пока нет. Наймите учёного для разведки, адмирала для флота, губернатора для колонии или агента для тайных операций.", UIManager.DS.TextMuted);
 
             SectionRow($"КАНДИДАТЫ  ·  найм <color=#FF7A94>★{LeaderManager.HireInfluence:0}</color> влияния  ·  содержание " +
                        $"<color=#FFCC52>⚡{LeaderManager.UpkeepEnergy:0.#}</color>/мес  ·  лидеров {mine}/{LeaderManager.MaxLeaders}  ·  кандидаты обновляются каждый год",
@@ -142,6 +151,13 @@ namespace StellarisClone.Rendering
             {
                 case LeaderPost.Council:
                     return $"<color=#66F59E>Научный совет</color> · наука +{(LeaderManager.ResearchMult(0) - 1f) * 100f:0}%";
+                case LeaderPost.Spy:
+                {
+                    if (l.TargetOwner == 0) return "<color=#BD8FFF>Контрразведка</color> · дома";
+                    string who = AIEmpireManager.NameOf(l.TargetOwner, "империя");
+                    string op = l.OpKind >= 0 ? $" · {SpyInfo.Name((SpyOp)l.OpKind).ToLower()} ({l.OpMonthsLeft} мес.)" : "";
+                    return $"<color=#BD8FFF>{who}</color> · прикрытие {l.Cover:0}%{op}";
+                }
                 case LeaderPost.Planet:
                 {
                     var sys = EmpireStats.GetSystem(l.SystemId);
@@ -177,6 +193,7 @@ namespace StellarisClone.Rendering
             {
                 LeaderClass.Scientist => "Пост: научный корабль (разведка быстрее, трофеи больше) или научный совет (+к науке). Опыт — за разведку.",
                 LeaderClass.Admiral => "Пост: военный корабль-флагман. Бонусы получают все ваши боевые корабли в той же системе. Опыт — за урон и победы. Гибнет вместе с флагманом.",
+                LeaderClass.Agent => "Пост: внедрение в чужую империю (обзор территории, досье, кража технологий, диверсии, раздор) или контрразведка дома (защита от чужих агентов). Опыт — за время на посту и успешные операции. Провал грозит поимкой.",
                 _ => "Пост: колония. Производство планеты и скорость строительства на ней выше. Опыт — за время на посту и стройки."
             });
             sb.Append($"\n3-й уровень — вторая черта. Возраст {l.Age}.</color>");
@@ -227,6 +244,19 @@ namespace StellarisClone.Rendering
                             }
                     break;
 
+                case LeaderClass.Agent:
+                    Target(LGIcon.Shipyard, "Контрразведка", "Защищает вашу империю: чужие агенты чаще проваливаются и раскрываются",
+                           lm.SpyOn(0, 0), () => lm.AssignSpy(l, 0));
+                    foreach (var ai in AIEmpireManager.All)
+                    {
+                        if (ai.IsEliminated || !Contacts.PlayerMet(ai.OwnerId)) continue;
+                        int target = ai.OwnerId;
+                        Target(LGIcon.Betrayal, Contacts.NameForPlayer(target),
+                               $"Внедрение · отношение {ai.Opinion:+0;-0;0} · защита цели {EspionageManager.TargetCounter(ai) * 100f:0}%",
+                               lm.SpyOn(0, target), () => lm.AssignSpy(l, target));
+                    }
+                    break;
+
                 case LeaderClass.Admiral:
                     if (fm != null)
                         foreach (var f in fm.AllFleets)
@@ -255,6 +285,7 @@ namespace StellarisClone.Rendering
 
             if (n == 0)
                 SectionRow(l.Class == LeaderClass.Admiral ? "Нет военных кораблей — постройте их на верфи."
+                         : l.Class == LeaderClass.Agent ? "Вы пока никого не встретили — внедряться некуда."
                          : "Нет колоний для губернатора.", UIManager.DS.TextMuted);
         }
     }

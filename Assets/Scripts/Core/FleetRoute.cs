@@ -21,7 +21,7 @@ namespace StellarisClone.Core
 
         /// <summary>Скорость прыжка с учётом технологий владельца и двигателей корабля.</summary>
         public static float JumpSpeed(FleetData d)
-            => Mathf.Max(0.05f, EmpireBonuses.For(d.OwnerId).HyperlaneSpeed * Mathf.Max(0.5f, d.HyperSpeed));
+            => Mathf.Max(0.05f, EmpireBonuses.For(d.OwnerId).HyperlaneSpeed * Landmarks.HyperSpeedMult(d.OwnerId) * Mathf.Max(0.5f, d.HyperSpeed));
 
         public static float DaysPerJump(FleetData d) => d.TotalDaysForTransit / JumpSpeed(d);
 

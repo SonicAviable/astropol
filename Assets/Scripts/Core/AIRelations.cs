@@ -197,6 +197,18 @@ namespace StellarisClone.Core
             else p.WearB = Mathf.Min(100f, p.WearB + amount);
         }
 
+        /// <summary>
+        /// Раздор, посеянный агентами: старая обида между двумя ИИ растёт (отношение падает), а «охлаждение»
+        /// перед войной снимается. Перемирие не отменяется — договор всё ещё держит стороны.
+        /// </summary>
+        public static void AddGrudge(int a, int b, float delta)
+        {
+            var p = Get(a, b, true);
+            if (p == null) return;
+            p.Grudge = Mathf.Clamp(p.Grudge + delta, -80f, 0f);
+            if (delta < 0f) p.CooldownDays = 0;
+        }
+
         /// <summary>Империя пала — все её войны окончены.</summary>
         public static void EndAllWars(int owner)
         {

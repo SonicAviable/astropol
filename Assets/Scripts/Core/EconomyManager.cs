@@ -38,7 +38,17 @@ namespace StellarisClone.Core
         public float DealEnergy   => AIEmpireManager.PlayerDealIncome("energy");
         public float DealMinerals => AIEmpireManager.PlayerDealIncome("minerals");
         public float DealAlloys   => AIEmpireManager.PlayerDealIncome("alloys");
-        public float MonthlyInfluenceIncome => BaseInfluenceIncome;
+        /// <summary>Влияние: базовое + технологии («Дипломатическая служба» и далее) + узлы силы, с множителем фракции.</summary>
+        public float MonthlyInfluenceIncome => BaseInfluenceIncome + InfluenceExtra;
+        public float InfluenceExtra
+        {
+            get
+            {
+                var tm = TechnologyManager.Instance;
+                float flat = (tm != null ? tm.Bonuses.InfluenceFlat : 0f) + Landmarks.Influence(0);
+                return flat * _factionInfluenceMult;
+            }
+        }
 
         public EmpireEconomy.Report Report  => _report;
         public float MonthlyUpkeep          => _report.Upkeep;
@@ -206,7 +216,7 @@ namespace StellarisClone.Core
                     int housing = p.HousingCapacity;
                     if (housing <= p.Population) { p.PopGrowthProgress = 0f; continue; }
 
-                    float growth = 4f + (housing - p.Population) * 0.4f;
+                    float growth = p.PopGrowthBaseSpeedPctPerMonth;
                     p.PopGrowthProgress += growth;
 
                     while (p.PopGrowthProgress >= 100f && p.Population < housing)

@@ -7,7 +7,7 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// «Путь к победе» — все условия победы и кто к ним ближе (кнопка в верхней панели, клавиша V).
-    ///   • сверху — шкала времени партии до подсчёта очков (2200 → 2240);
+    ///   • сверху — шкала времени партии до подсчёта очков (2200 → 2260);
     ///   • шесть колонок: очки, доминирование, военная, технологическая, экономическая, дипломатическая;
     ///     в каждой — описание и цель, лидер направления с портретом, рейтинг империй с прогрессом к цели
     ///     (ваша строка подсвечена, незнакомые империи — «Неизвестно»), строка состояния
@@ -147,11 +147,11 @@ namespace StellarisClone.Rendering
             (Kind k, string t, string d, Color c, LGIcon ic)[] defs =
             {
                 (Kind.Score, "ПО ОЧКАМ", $"Больше очков, чем у каждого соперника, к 1 января {VictoryManager.EndYear} года. Очки — системы, население, наука и флот.", Gold, LGIcon.Trophy),
-                (Kind.Domination, "ДОМИНИРОВАНИЕ", "Поставьте форпосты примерно в трети систем галактики раньше соперников.", UIManager.DS.NeonCyan, LGIcon.Starbase),
+                (Kind.Domination, "ДОМИНИРОВАНИЕ", $"Поставьте форпосты в {GameSession.Settings.DominationTarget} системах (больше половины галактики) и удерживайте порог {VictoryManager.DominationHoldMonths} мес. Соперники могут сбросить счётчик.", UIManager.DS.NeonCyan, LGIcon.Starbase),
                 (Kind.Military, "ВОЕННАЯ", "Сокрушите всех соперников: у них не должно остаться ни одной системы.", new Color(1f, 0.45f, 0.42f), LGIcon.Swords),
-                (Kind.Tech, "ТЕХНОЛОГИЧЕСКАЯ", $"Первым изучите {VictoryManager.ScienceTarget} технологий из 58.", UIManager.DS.Green, LGIcon.Research),
+                (Kind.Tech, "ТЕХНОЛОГИЧЕСКАЯ", $"Изучите {VictoryManager.ScienceTarget} технологий из {TechnologyManager.TotalTechCount} и завершите проект «Вознесение».", UIManager.DS.Green, LGIcon.Research),
                 (Kind.Economy, "ЭКОНОМИЧЕСКАЯ", $"Давайте {VictoryManager.EconomyShare * 100f:0}% продукта галактики {VictoryManager.EconomyMonths / 12} года подряд.", new Color(0.95f, 0.78f, 0.28f), LGIcon.Trade),
-                (Kind.Diplomacy, "ДИПЛОМАТИЧЕСКАЯ", $"Получите 2/3 голосов Галактического совета (заседания: {VictoryManager.CouncilFirstYear}, {VictoryManager.CouncilFirstYear + VictoryManager.CouncilEvery}, {VictoryManager.CouncilFirstYear + VictoryManager.CouncilEvery * 2}).", new Color(0.72f, 0.60f, 1f), LGIcon.Handshake),
+                (Kind.Diplomacy, "ДИПЛОМАТИЧЕСКАЯ", $"Получите 2/3 голосов Галактического совета (заседания: {VictoryManager.CouncilYearsText()}).", new Color(0.72f, 0.60f, 1f), LGIcon.Handshake),
             };
             float w = 1f / defs.Length;
             for (int i = 0; i < defs.Length; i++)
@@ -340,9 +340,9 @@ namespace StellarisClone.Rendering
             c.Goal.text = c.Kind switch
             {
                 Kind.Score => $"ЦЕЛЬ: БОЛЬШЕ ВСЕХ К {VictoryManager.EndYear}",
-                Kind.Domination => $"ЦЕЛЬ: {dom} СИСТЕМ",
+                Kind.Domination => $"ЦЕЛЬ: {dom} СИСТЕМ · {VictoryManager.DominationHoldMonths} МЕС.",
                 Kind.Military => $"ЦЕЛЬ: ПОВЕРГНУТЬ ВСЕХ · ОСТАЛОСЬ {CountAliveRivals()}",
-                Kind.Tech => $"ЦЕЛЬ: {VictoryManager.ScienceTarget} ТЕХНОЛОГИЙ",
+                Kind.Tech => $"ЦЕЛЬ: {VictoryManager.ScienceTarget} ТЕХН. + ВОЗНЕСЕНИЕ",
                 Kind.Economy => $"ЦЕЛЬ: {VictoryManager.EconomyShare * 100f:0}% · {VictoryManager.EconomyMonths} МЕС. ПОДРЯД",
                 _ => $"ЦЕЛЬ: {Mathf.CeilToInt(total * VictoryManager.CouncilShare)} ИЗ {total} ГОЛОСОВ"
             };
@@ -396,6 +396,15 @@ namespace StellarisClone.Rendering
                     int left = Mathf.Max(0, VictoryManager.EndYear - year);
                     return $"Подсчёт через {left} {VictoryManager.YearsWord(left)}";
                 }
+                case Kind.Domination:
+                    if (vm == null) return "";
+                    if (vm.DomMonths > 0) return $"<color=#5CF59A>Вы удерживаете порог: {vm.DomMonths} из {VictoryManager.DominationHoldMonths} мес.</color>";
+                    if (vm.RivalDomMonths > 0) return $"<color=#FF6A6A>{NameOf(vm.RivalDomOwner)}: {vm.RivalDomMonths} из {VictoryManager.DominationHoldMonths} мес.!</color>";
+                    return "Порог удерживается год — его можно сбросить, отбив системы";
+                case Kind.Tech:
+                    return VictoryManager.HasAscension(0)
+                        ? "<color=#5CF59A>Проект «Вознесение» завершён</color>"
+                        : "Проект «Вознесение» (Общество, уровень IV) ещё не изучен";
                 case Kind.Economy:
                     if (vm == null) return "";
                     if (vm.EconMonths > 0) return $"<color=#5CF59A>Вы удерживаете долю: {vm.EconMonths} из {VictoryManager.EconomyMonths} мес.</color>";

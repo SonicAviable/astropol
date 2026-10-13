@@ -71,6 +71,7 @@ namespace StellarisClone.Core
         public EventState Events;
         public List<TimedEffect> Effects;
         public ThreatSave Threats;
+        public EspionageSave Espionage;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -91,6 +92,7 @@ namespace StellarisClone.Core
         public bool HasGeneratedPlanets;
         public int OwnerId;
         public bool HasStarbase;
+        public int Landmark = -1;  // узел силы (-1 — нет)
         public bool IsSurveyed;
         public bool SurveyedByAI;  // до версии 2: один флаг на всех ИИ
         public int AISurvey;       // с версии 2: бит на каждую империю ИИ
@@ -214,6 +216,9 @@ namespace StellarisClone.Core
         public int EconMonths;
         public int RivalEconOwner = -1;
         public int RivalEconMonths;
+        public int DomMonths;
+        public int RivalDomOwner = -1;
+        public int RivalDomMonths;
     }
 
     [Serializable]
@@ -435,6 +440,7 @@ namespace StellarisClone.Core
             if (AnomalyEventSystem.Instance != null) s.Events = AnomalyEventSystem.Instance.CaptureState();
             s.Effects = EmpireEffects.Capture();
             if (ThreatManager.Instance != null) s.Threats = ThreatManager.Instance.CaptureState();
+            if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -498,7 +504,7 @@ namespace StellarisClone.Core
             {
                 Id = sys.Id, Name = sys.Name, Position = sys.Position, Spectral = (int)sys.SpectralClass,
                 HasGeneratedPlanets = sys.HasGeneratedPlanets, OwnerId = sys.OwnerId,
-                HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed,
+                HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed, Landmark = sys.Landmark,
                 AISurvey = sys.AISurveyMask, SurveyVer = 2
             };
             ss.Connected.AddRange(sys.ConnectedSystemIds);
@@ -565,7 +571,7 @@ namespace StellarisClone.Core
             {
                 var sys = new StarSystem(ss.Id, ss.Name, ss.Position, (StarSpectralClass)ss.Spectral)
                 {
-                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, IsSurveyed = ss.IsSurveyed,
+                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, IsSurveyed = ss.IsSurveyed, Landmark = ss.Landmark,
                     AISurveyMask = ss.SurveyVer >= 2 ? ss.AISurvey : (ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed) ? ~1 : 0,
                     HasGeneratedPlanets = ss.HasGeneratedPlanets
                 };
@@ -590,6 +596,11 @@ namespace StellarisClone.Core
                 list.Add(sys);
             }
             list.Sort((a, b) => a.Id.CompareTo(b.Id));
+            // Сохранение до узлов силы: расставляем их при загрузке
+            bool anyLandmark = false;
+            foreach (var sys in list) if (sys.Landmark >= 0) { anyLandmark = true; break; }
+            if (!anyLandmark) Landmarks.Place(list);
+            else Landmarks.Invalidate();
             return list;
         }
 
@@ -777,6 +788,7 @@ namespace StellarisClone.Core
             AnomalyEventSystem.Instance?.RestoreState(s.Events);
             EmpireEffects.Restore(s.Effects);
             ThreatManager.Instance?.RestoreState(s.Threats);
+            EspionageManager.Instance?.RestoreState(s.Espionage);
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)

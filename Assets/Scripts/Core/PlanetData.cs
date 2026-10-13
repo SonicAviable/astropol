@@ -302,7 +302,8 @@ namespace StellarisClone.Core
 
         /// <summary>Скорость роста населения (% к следующему жителю в месяц); 0 — если нет жилья или колонии.</summary>
         public float PopGrowthBaseSpeedPctPerMonth =>
-            Population <= 0 || HousingCapacity <= Population ? 0f : 4f + (HousingCapacity - Population) * 0.4f;
+            Population <= 0 || HousingCapacity <= Population ? 0f
+            : (4f + (HousingCapacity - Population) * 0.4f) * EmpireBonuses.For(OwnerId).PopGrowth;
 
         /// <summary>Сколько месяцев до следующего жителя (-1 — рост остановлен).</summary>
         public int MonthsToNextPop

@@ -866,7 +866,7 @@ namespace StellarisClone.Rendering
         /// <summary>Скорость перелёта в днях пути за игровой день (как в HandleDayPassed).</summary>
         private float JumpRate()
         {
-            float rate = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed;
+            float rate = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed * Landmarks.HyperSpeedMult(Data.OwnerId);
             rate *= Mathf.Max(0.5f, Data.HyperSpeed);
             rate *= LeaderManager.HyperSpeedMult(Data);
             // Пробуждение сада: мицелий Конклава опутывает вражеские корабли, уходящие из его системы

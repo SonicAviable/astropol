@@ -15,6 +15,10 @@ namespace StellarisClone.Rendering
         private TextMesh _titleShadow;
         // Добыча системы — плашки со значками: титан (бирюзовый) и гелий-3 (золотой)
         private WorldChip _chipMin, _chipEn;
+        // Узел силы: плашка над названием («★ Врата Предтеч»)
+        private WorldChip _chipLm;
+        private float _lmAlpha;
+        private int _lmOwner = -2;
         private string _resKey;
         private bool _hasMin, _hasEn;
         private bool _isSelected;
@@ -99,7 +103,44 @@ namespace StellarisClone.Rendering
             _chipMin.SetAlpha(0f);
             _chipEn.SetAlpha(0f);
 
+            CreateLandmarkChip();
             UpdateResourceBadge();
+        }
+
+        public static LGIcon LandmarkIcon(int type) => type switch
+        {
+            (int)LandmarkType.Gateway => LGIcon.Propulsion,
+            (int)LandmarkType.Pulsar => LGIcon.Research,
+            (int)LandmarkType.Monument => LGIcon.Influence,
+            (int)LandmarkType.Bastion => LGIcon.Starbase,
+            (int)LandmarkType.Beacon => LGIcon.Sensors,
+            _ => LGIcon.Minerals
+        };
+
+        private void CreateLandmarkChip()
+        {
+            if (_data.Landmark < 0) return;
+            var row = new GameObject("Landmark");
+            row.transform.SetParent(_plateRoot.transform, false);
+            row.transform.localPosition = new Vector3(0, 1.45f, 0);
+            _chipLm = WorldChip.Create(row.transform, "LandmarkChip", 52, true, true);
+            _chipLm.SetIcon(LandmarkIcon(_data.Landmark));
+            _chipLm.Set(Landmarks.Name(_data.Landmark), 0.40f);
+            _chipLm.CenterOn(0f, 0f);
+            _chipLm.SetAlpha(0f);
+            RefreshLandmarkColors();
+        }
+
+        /// <summary>Цвет плашки: цвет узла, а если им владеет империя — кромка её цвета.</summary>
+        private void RefreshLandmarkColors()
+        {
+            if (_chipLm == null) return;
+            _lmOwner = _data.HasStarbase ? _data.OwnerId : -1;
+            Color lc = Landmarks.Color(_data.Landmark);
+            Color rim = _lmOwner >= 0 ? FleetIndicator.OwnerColor(_lmOwner) : lc;
+            _chipLm.SetColors(new Color(0.02f, 0.05f, 0.07f, 0.88f),
+                              new Color(rim.r, rim.g, rim.b, _lmOwner >= 0 ? 0.9f : 0.55f),
+                              lc, lc, Color.white);
         }
 
         public void UpdateResourceBadge()
@@ -168,6 +209,7 @@ namespace StellarisClone.Rendering
                 _titleBase = new Color(nc.r, nc.g, nc.b, 0.95f);
             }
 
+            RefreshLandmarkColors();
             UpdateResourceBadge();
             ApplyAlpha();
         }
@@ -205,6 +247,7 @@ namespace StellarisClone.Rendering
                 _chipMin.SetAlpha(_hasMin ? _resAlpha : 0f);
                 _chipEn.SetAlpha(_hasEn ? _resAlpha : 0f);
             }
+            _chipLm?.SetAlpha(_lmAlpha);
         }
 
         private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
@@ -228,6 +271,17 @@ namespace StellarisClone.Rendering
             else
             {
                 tip += "\n<color=#FFAA88>Требуется разведка</color>\n";
+            }
+
+            if (_data.Landmark >= 0)
+            {
+                string c = LGBuild.Hex(Landmarks.Color(_data.Landmark));
+                bool mine = Landmarks.Controls(0, _data);
+                tip += $"\n<color={c}>★ УЗЕЛ СИЛЫ · {Landmarks.Name(_data.Landmark)}</color>\n" +
+                       $"{Landmarks.Effect(_data.Landmark)}\n" +
+                       (mine ? "<color=#66FF88>Под вашим контролем</color>\n"
+                             : _data.HasStarbase && _data.OwnerId >= 0 ? "<color=#FF8866>Удерживает " + AIEmpireManager.NameOf(_data.OwnerId, "другая империя") + "</color>\n"
+                             : "<color=#8AA2A8>Постройте здесь форпост, чтобы получить бонус</color>\n");
             }
 
             tip += FleetsLine() + EtaLine();
@@ -309,6 +363,15 @@ namespace StellarisClone.Rendering
             if (_isSelected || _isHovered) target = 1f;
             float resTarget = known ? (1f - Smooth(ResFrom, ResTo, dist)) : 0f;
             if (_isSelected && known) resTarget = Mathf.Max(resTarget, near);
+
+            // Узлы силы видны издалека: это цели на карте
+            if (_chipLm != null)
+            {
+                float lmTarget = known ? 1f - Smooth(MidFrom + 70f, MidTo + 110f, dist) : 0f;
+                if (_isSelected || _isHovered) lmTarget = known ? 1f : 0f;
+                float nl = Mathf.MoveTowards(_lmAlpha, lmTarget, Time.unscaledDeltaTime * 5f);
+                if (Mathf.Abs(nl - _lmAlpha) > 0.0005f) { _lmAlpha = nl; _chipLm.SetAlpha(_lmAlpha); }
+            }
 
             float k = Time.unscaledDeltaTime * 5f;
             float na = Mathf.MoveTowards(_alpha, target, k);

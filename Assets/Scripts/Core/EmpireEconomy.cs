@@ -25,9 +25,13 @@ namespace StellarisClone.Core
             public int Outposts;
             public int NavalUsed, NavalCapacity;
             public float OverCapacityMult;
+            /// <summary>Множитель содержания флота от технологий (1 — без скидки).</summary>
+            public float UpkeepMult;
+            /// <summary>Доход от узлов силы под контролем (уже с множителем технологий).</summary>
+            public float LandmarkEnergy, LandmarkMinerals;
 
-            public float Energy => DistrictEnergy + StationEnergy + TechEnergy;
-            public float Minerals => DistrictMinerals + StationMinerals;
+            public float Energy => DistrictEnergy + StationEnergy + TechEnergy + LandmarkEnergy;
+            public float Minerals => DistrictMinerals + StationMinerals + LandmarkMinerals;
             public float Alloys => DistrictAlloys;
             public float Upkeep => FleetUpkeep + CivilianUpkeep + OutpostUpkeepTotal;
         }
@@ -61,14 +65,16 @@ namespace StellarisClone.Core
                 }
             }
 
-            r.DistrictEnergy = en * energyMult * penalty;
+            r.DistrictEnergy = en * energyMult * bonuses.EnergyMult * penalty;
             r.DistrictMinerals = min * mineralMult * bonuses.MineralsMult * penalty;
             r.DistrictAlloys = al * alloyMult * bonuses.AlloysMult * penalty;
-            r.StationEnergy = stE * energyMult * penalty;
+            r.StationEnergy = stE * energyMult * bonuses.EnergyMult * penalty;
             r.StationMinerals = stM * mineralMult * bonuses.MineralsMult * penalty;
             r.TechEnergy = bonuses.EnergyFlat;
+            r.LandmarkEnergy = Landmarks.Energy(owner, bonuses) * penalty;
+            r.LandmarkMinerals = Landmarks.Minerals(owner, bonuses) * penalty;
 
-            r.NavalCapacity = BaseNavalCapacity + colonies * NavalCapacityPerColony;
+            r.NavalCapacity = BaseNavalCapacity + colonies * NavalCapacityPerColony + Mathf.RoundToInt(bonuses.NavalCapacity);
             float military = 0f;
             var fm = FleetManager.Instance;
             if (fm != null)
@@ -88,7 +94,8 @@ namespace StellarisClone.Core
             // Сверх флотского лимита содержание военных кораблей растёт пропорционально перебору
             int over = Mathf.Max(0, r.NavalUsed - r.NavalCapacity);
             r.OverCapacityMult = 1f + over / (float)Mathf.Max(1, r.NavalCapacity);
-            r.FleetUpkeep = military * r.OverCapacityMult;
+            r.UpkeepMult = Mathf.Max(0.3f, bonuses.UpkeepMult);
+            r.FleetUpkeep = military * r.OverCapacityMult * r.UpkeepMult;
             r.OutpostUpkeepTotal = r.Outposts * OutpostUpkeep;
             return r;
         }
@@ -99,8 +106,9 @@ namespace StellarisClone.Core
             float baseUp = FleetData.UpkeepFor(FleetType.Military, hull);
             int used = r.NavalUsed + NavalSize(hull);
             float mult = 1f + Mathf.Max(0, used - r.NavalCapacity) / (float)Mathf.Max(1, r.NavalCapacity);
-            float rawMilitary = r.FleetUpkeep / Mathf.Max(0.01f, r.OverCapacityMult);
-            return (rawMilitary + baseUp) * mult - r.FleetUpkeep;
+            float um = r.UpkeepMult > 0f ? r.UpkeepMult : 1f;
+            float rawMilitary = r.FleetUpkeep / Mathf.Max(0.01f, r.OverCapacityMult * um);
+            return (rawMilitary + baseUp) * mult * um - r.FleetUpkeep;
         }
     }
 }

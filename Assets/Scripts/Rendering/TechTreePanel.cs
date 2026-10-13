@@ -26,14 +26,17 @@ namespace StellarisClone.Rendering
 
         private const float WinW = 1840f, WinH = 1010f;
         private const float HeaderH = 70f, Pad = 14f, Gap = 12f;
-        private const float LeftW = 320f, RightW = 390f;
+        private const float LeftW = 290f, RightW = 350f;
         private const float TabsH = 62f, TierHeadH = 28f;
-        private const float LaneHeadW = 128f, CardW = 216f;
+        private const float LaneHeadW = 128f;
+        private const int TierCount = 5;
+        /// <summary>Ширина узла — столбец уровня без зазора (пять уровней в ряд).</summary>
+        private static float CardW => ColW - 8f;
         private const float LanePadV = 8f, LaneGap = 10f, RowGap = 10f;
         /// <summary>Высота области дерева: строки растягиваются, чтобы ветка заняла её целиком.</summary>
         private const float TreeH = WinH - HeaderH - 8f - Pad - (TabsH + 8f + TierHeadH + 4f);
         private const float DoubleClick = 0.4f;
-        private static readonly string[] TierNames = { "БАЗОВЫЕ", "УРОВЕНЬ I", "УРОВЕНЬ II", "УРОВЕНЬ III" };
+        private static readonly string[] TierNames = { "БАЗОВЫЕ", "УРОВЕНЬ I", "УРОВЕНЬ II", "УРОВЕНЬ III", "УРОВЕНЬ IV" };
 
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
@@ -52,7 +55,7 @@ namespace StellarisClone.Rendering
         private float _rowH = 84f, _cardH = 74f;
 
         private static float CenterW => WinW - Pad * 2f - LeftW - RightW - Gap * 2f;
-        private static float ColW => (CenterW - LaneHeadW - 8f) / 4f;
+        private static float ColW => (CenterW - LaneHeadW - 8f) / TierCount;
 
         // ==================== СОСТОЯНИЕ ====================
 
@@ -398,7 +401,7 @@ namespace StellarisClone.Rendering
 
             var tiers = LGBuild.Rect(center, "Tiers");
             tiers.TopBand(TabsH + 8f, TierHeadH);
-            for (int t = 0; t < 4; t++)
+            for (int t = 0; t < TierCount; t++)
             {
                 var cell = LGBuild.Rect(tiers, "Tier" + t);
                 cell.anchorMin = new Vector2(0, 0);
@@ -645,7 +648,7 @@ namespace StellarisClone.Rendering
             }
         }
 
-        private static readonly int[] TierYears = { 2200, 2208, 2216, 2229 };
+        private static readonly int[] TierYears = { 2200, 2208, 2216, 2229, 2242 };
 
         private void RefreshTiers()
         {
@@ -697,7 +700,7 @@ namespace StellarisClone.Rendering
                 float inset = (_rowH - RowGap - _cardH) * 0.5f;
                 foreach (var t in techs)
                 {
-                    float cx = LaneHeadW + Mathf.Clamp(t.Tier, 0, 3) * ColW + (ColW - CardW) * 0.5f;
+                    float cx = LaneHeadW + Mathf.Clamp(t.Tier, 0, TierCount - 1) * ColW + (ColW - CardW) * 0.5f;
                     float cy = -(y + LanePadV + t.GridColumn * _rowH + inset);
                     _cards[t.Id] = BuildCard(t, new Vector2(cx, cy), tm);
                 }
@@ -1541,7 +1544,7 @@ namespace StellarisClone.Rendering
             t.resizeTextMaxSize = t.fontSize;
         }
 
-        private static string Roman(int tier) => tier switch { 1 => "I", 2 => "II", 3 => "III", _ => tier.ToString() };
+        private static string Roman(int tier) => tier switch { 1 => "I", 2 => "II", 3 => "III", 4 => "IV", _ => tier.ToString() };
 
         // ==================== ЭФФЕКТЫ ====================
 

@@ -67,7 +67,7 @@ namespace StellarisClone.Core
         {
             if (l == null) return null;
             var face = Find(l.Portrait);
-            if (face != null && face.Class == l.Class && face.Texture != null) return face;
+            if (face != null && (face.Class == l.Class || l.Class == LeaderClass.Agent) && face.Texture != null) return face;
 
             face = Pick(l);
             l.Portrait = face?.Key;
@@ -90,7 +90,8 @@ namespace StellarisClone.Core
             int bestUse = int.MaxValue;
             foreach (var f in All)
             {
-                if (f.Class != l.Class || f.Female != female || f.Texture == null) continue;
+                // Агентам портретов своего класса нет — берутся лица любых лидеров нужного пола
+                if ((f.Class != l.Class && l.Class != LeaderClass.Agent) || f.Female != female || f.Texture == null) continue;
                 int n = used.TryGetValue(f.Key, out int u) ? u : 0;
                 if (n < bestUse) { bestUse = n; best.Clear(); }
                 if (n == bestUse) best.Add(f);

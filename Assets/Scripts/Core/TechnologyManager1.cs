@@ -168,7 +168,7 @@ namespace StellarisClone.Core
         // ==================== БАЛАНС ====================
 
         /// <summary>Очков науки на «день» табличной трудоёмкости.</summary>
-        public const float CostPerRawDay = 6.0f;   // было 3.3 при 25-летней партии; дерево растянуто на 40 лет
+        public const float CostPerRawDay = 6.0f;   // было 3.3 при 25-летней партии; дерево растянуто на 60 лет
         /// <summary>Наука без населения (администрация, архивы).</summary>
         public const float BaseScience = 20f;
         /// <summary>Наука с каждой единицы населения.</summary>
@@ -176,9 +176,13 @@ namespace StellarisClone.Core
         /// <summary>Штраф за параллельные исследования: скорость слота = доход / N^0.7.</summary>
         public const float SlotSplitExponent = 0.7f;
 
+        private static int s_totalTechs;
+        /// <summary>Сколько технологий в дереве всего.</summary>
+        public static int TotalTechCount => s_totalTechs > 0 ? s_totalTechs : (s_totalTechs = BuildTechTree().Count);
+
         /// <summary>
-        /// Множитель стоимости по уровню: базовые ×1, Tier 1 ×4.4, Tier 2 ×9, Tier 3 ×13. Ранние технологии
-        /// изучаются за месяцы, поздние — за годы: научная победа достижима ближе к 2230-м.
+        /// Множитель стоимости по уровню: базовые ×1, Tier 1 ×4.4, Tier 2 ×9, Tier 3 ×13, Tier 4 ×17. Ранние технологии
+        /// изучаются за месяцы, поздние — за годы: научная победа достижима ближе к 2250-м.
         /// </summary>
         public static float TierCostFactor(int tier) => tier <= 0 ? 1f : tier == 1 ? 4.4f : 9f + (tier - 2) * 4f;
 
@@ -209,7 +213,7 @@ namespace StellarisClone.Core
         public float ScienceFromPopulation => _population * SciencePerPop;
 
         public float MonthlyResearchIncome =>
-            (BaseScience + ScienceFromPopulation + FlatScience) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0)
+            (BaseScience + ScienceFromPopulation + FlatScience + Landmarks.Science(0)) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0)
             * AIEmpireManager.PlayerTreatyResearchMult;
 
         private readonly List<Technology> _allTechs = new List<Technology>();
@@ -249,9 +253,9 @@ namespace StellarisClone.Core
                      int tier, int col, float days, string[] reqs, int year, string bonusKey)
                 => list.Add(new Technology(id, name, cat, desc, tier, col, days, reqs, year, bonusKey));
 
-            // Уровни: базовые (2200), I (2208), II (2216), III (2229) — под 40-летнюю партию. Внутри направления
-            // GridColumn — номер дорожки (строки), по которой технология идёт слева направо.
-            const int Y0 = 2200, Y1 = 2208, Y2 = 2216, Y3 = 2229;
+            // Уровни: базовые (2200), I (2208), II (2216), III (2229), IV (2242) — под 60-летнюю партию.
+            // Внутри направления GridColumn — номер дорожки (строки), по которой технология идёт слева направо.
+            const int Y0 = 2200, Y1 = 2208, Y2 = 2216, Y3 = 2229, Y4 = 2242;
 
             // ======================= ФИЗИКА =======================
 
@@ -394,6 +398,92 @@ namespace StellarisClone.Core
                 "-10% стоимости кораблей в сплавах.", 2, 0, 160f, new[]{"cns_dst_1"}, Y2, "cns_dck_1");
             Add("cns_mod_1", "Модульное строительство", TechCategory.Construction,
                 "-8% стоимости кораблей в сплавах.", 1, 1, 110f, new[]{"cns_sta_1"}, Y1, "cns_mod_1");
+
+            // ======================= НОВЫЕ ТЕХНОЛОГИИ (позднее дерево и шпионаж) =======================
+
+            // --- Энергетика ---
+            Add("rct_mag_1", "Магнитные ловушки", TechCategory.Reactor,
+                "+10% добычи Гелия-3.", 2, 1, 150f, new[]{"rct_sc_1"}, Y2, "rct_mag_1");
+            Add("rct_dys_1", "Сфера Дайсона", TechCategory.Reactor,
+                "+10 Гелия-3 в месяц и +10% добычи Гелия-3.", 3, 1, 240f, new[]{"rct_mag_1","rct_ant_1"}, Y3, "rct_dys_1");
+            Add("rct_vac_1", "Энергия вакуума", TechCategory.Reactor,
+                "+25 Гелия-3 в месяц.", 4, 0, 280f, new[]{"rct_zpe_1"}, Y4, "rct_vac_1");
+
+            // --- Сенсоры и ИИ: линия тайных операций ---
+            Add("sen_crp_1", "Криптография", TechCategory.Sensors,
+                "+8% к защите от чужих агентов: шанс сорвать и раскрыть тайную операцию.", 0, 2, 60f, null, Y0, "sen_crp_1");
+            Add("sen_net_1", "Агентурные сети", TechCategory.Sensors,
+                "+8% к шансу успеха ваших тайных операций.", 1, 2, 100f, new[]{"sen_crp_1"}, Y1, "sen_net_1");
+            Add("sen_enc_1", "Квантовое шифрование", TechCategory.Sensors,
+                "+10% к защите от чужих агентов.", 2, 2, 160f, new[]{"sen_net_1"}, Y2, "sen_enc_1");
+            Add("sen_dep_1", "Глубокое внедрение", TechCategory.Sensors,
+                "+10% к шансу успеха тайных операций, агенты внедряются в полтора раза быстрее.", 3, 2, 220f, new[]{"sen_enc_1"}, Y3, "sen_dep_1");
+            Add("sen_sng_1", "Сингулярный разум", TechCategory.Sensors,
+                "+25% скорости исследований.", 4, 1, 300f, new[]{"sen_qc_1"}, Y4, "sen_sng_1");
+
+            // --- Двигатели ---
+            Add("prp_slp_1", "Подпространственные туннели", TechCategory.Propulsion,
+                "+25% скорости гиперпрыжков.", 3, 0, 230f, new[]{"prp_fld_1"}, Y3, "prp_slp_1");
+            Add("prp_wrm_1", "Червоточинные коридоры", TechCategory.Propulsion,
+                "+30% скорости гиперпрыжков.", 4, 0, 300f, new[]{"prp_slp_1"}, Y4, "prp_wrm_1");
+
+            // --- Наука и управление ---
+            Add("soc_inf_1", "Дипломатическая служба", TechCategory.Society,
+                "+1 Влияния в месяц.", 1, 2, 110f, new[]{"soc_sci_1"}, Y1, "soc_inf_1");
+            Add("soc_inf_2", "Культурная гегемония", TechCategory.Society,
+                "+1,5 Влияния в месяц.", 2, 2, 170f, new[]{"soc_inf_1"}, Y2, "soc_inf_2");
+            Add("soc_inf_3", "Галактический авторитет", TechCategory.Society,
+                "+2 Влияния в месяц.", 3, 2, 230f, new[]{"soc_inf_2"}, Y3, "soc_inf_3");
+            Add("soc_asc_1", "Проект «Вознесение»", TechCategory.Society,
+                "+30% скорости исследований. Венец науки: без этого проекта технологическая победа невозможна.", 4, 1, 320f,
+                new[]{"soc_sci_4","sen_sng_1"}, Y4, "soc_asc_1");
+
+            // --- Экспансия ---
+            Add("col_gro_1", "Гидропоника", TechCategory.Colonization,
+                "+25% скорости роста населения.", 2, 1, 160f, new[]{"col_frt_1"}, Y2, "col_gro_1");
+            Add("col_gro_2", "Биоинженерия", TechCategory.Colonization,
+                "+35% скорости роста населения.", 3, 1, 220f, new[]{"col_gro_1"}, Y3, "col_gro_2");
+            Add("col_arc_1", "Археотехнология", TechCategory.Colonization,
+                "+50% к бонусам узлов силы под вашим контролем.", 3, 0, 220f, new[]{"col_hab_1"}, Y3, "col_arc_1");
+
+            // --- Военная доктрина ---
+            Add("doc_cap_1", "Эскадренная организация", TechCategory.Doctrine,
+                "+4 места во флотском лимите.", 2, 1, 150f, new[]{"doc_log_1"}, Y2, "doc_cap_1");
+            Add("doc_cmd_1", "Корабельные уставы", TechCategory.Doctrine,
+                "-10% содержания военных кораблей.", 3, 1, 210f, new[]{"doc_cap_1"}, Y3, "doc_cmd_1");
+            Add("doc_war_1", "Тотальная мобилизация", TechCategory.Doctrine,
+                "+15% урона всего оружия.", 3, 0, 230f, new[]{"doc_net_1"}, Y3, "doc_war_1");
+            Add("doc_cap_2", "Тыловое обеспечение", TechCategory.Doctrine,
+                "+6 мест во флотском лимите, -15% содержания военных кораблей.", 4, 1, 270f, new[]{"doc_cmd_1"}, Y4, "doc_cap_2");
+            Add("doc_ult_1", "Доктрина Господства", TechCategory.Doctrine,
+                "+20% урона всего оружия.", 4, 0, 290f, new[]{"doc_war_1"}, Y4, "doc_ult_1");
+
+            // --- Оружие ---
+            Add("wpn_kin_4", "Гауссовы батареи", TechCategory.Weapons,
+                "+25% урона кинетического оружия.", 3, 0, 230f, new[]{"wpn_kin_3"}, Y3, "wpn_kin_4");
+            Add("wpn_las_4", "Фотонные лэнсы", TechCategory.Weapons,
+                "+25% урона энергооружия, +5 точности.", 3, 1, 230f, new[]{"wpn_las_3"}, Y3, "wpn_las_4");
+            Add("wpn_ult_1", "Аннигиляторы", TechCategory.Weapons,
+                "+25% урона всего оружия.", 4, 2, 300f, new[]{"wpn_lnc_1"}, Y4, "wpn_ult_1");
+
+            // --- Защита ---
+            Add("def_shl_4", "Планетарные щиты", TechCategory.Defense,
+                "+25% щитов.", 3, 1, 220f, new[]{"def_shl_3"}, Y3, "def_shl_4");
+            Add("def_bar_1", "Барьер Предтеч", TechCategory.Defense,
+                "+20% прочности корпуса, брони и щитов.", 4, 0, 290f, new[]{"def_aeg_1"}, Y4, "def_bar_1");
+
+            // --- Промышленность ---
+            Add("ind_rec_1", "Рециклинг", TechCategory.Industry,
+                "+10% добычи титана и производства сплавов.", 3, 0, 230f, new[]{"ind_min_3"}, Y3, "ind_rec_1");
+            Add("ind_sin_1", "Сингулярные кузни", TechCategory.Industry,
+                "+30% производства сплавов, +20% добычи титана.", 4, 1, 300f, new[]{"ind_meg_1"}, Y4, "ind_sin_1");
+
+            // --- Верфи ---
+            Add("cns_fort_1", "Звёздные крепости", TechCategory.Construction,
+                "+30% корпуса, брони и щитов звёздных баз.", 2, 1, 160f, new[]{"cns_mod_1"}, Y2, "cns_fort_1");
+            Add("cns_arc_1", "Автоматические верфи", TechCategory.Construction,
+                "-10% стоимости кораблей в сплавах.", 3, 0, 220f, new[]{"cns_dck_1"}, Y3, "cns_arc_1");
+
             return list;
         }
 
@@ -810,17 +900,27 @@ namespace StellarisClone.Core
             foreach (var t in _allTechs)
                 if (IsTechAvailable(t)) available.Add(t);
             if (available.Count == 0) return;
-            var pick = available[UnityEngine.Random.Range(0, available.Count)];
+            GrantTech(available[UnityEngine.Random.Range(0, available.Count)]);
+        }
 
+        /// <summary>Мгновенно изучить технологию (события, кража агентами); идущие и очередные исследования её освобождаются.</summary>
+        public void GrantTech(Technology pick)
+        {
+            if (pick == null || pick.IsResearched) return;
             foreach (var slot in _slots) slot.Queue.Remove(pick);
             ResearchSlot host = null;
             foreach (var slot in _slots) if (slot.CurrentTech == pick) host = slot;
-            if (host == null)
-            {
-                host = new ResearchSlot { CurrentTech = pick };
-                CompleteTech(host);
-            }
-            else CompleteTech(host);
+            if (host == null) host = new ResearchSlot { CurrentTech = pick };
+            CompleteTech(host);
+            OnTechProgressUpdated?.Invoke();
+        }
+
+        /// <summary>Добавить очки к конкретной технологии (чертежи, добытые агентами); до порога изучения.</summary>
+        public void AddTechProgress(Technology t, float points)
+        {
+            if (t == null || t.IsResearched || points <= 0f) return;
+            t.Progress = Mathf.Min(t.Cost * 0.95f, t.Progress + points);
+            foreach (var slot in _slots) if (slot.CurrentTech == t) slot.Progress = t.Progress;
             OnTechProgressUpdated?.Invoke();
         }
     }

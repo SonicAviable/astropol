@@ -56,6 +56,7 @@ namespace StellarisClone.Rendering
         /// <summary>Цвет рамки по классу лидера (как во вкладке «Лидеры»).</summary>
         public static Color ClassColor(LeaderClass c) => c == LeaderClass.Scientist ? new Color(0.40f, 0.96f, 0.62f)
                                                        : c == LeaderClass.Admiral ? new Color(1f, 0.42f, 0.42f)
+                                                       : c == LeaderClass.Agent ? new Color(0.74f, 0.56f, 1f)
                                                        : new Color(1f, 0.80f, 0.32f);
     }
 }

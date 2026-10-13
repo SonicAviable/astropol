@@ -20,7 +20,7 @@ namespace StellarisClone.Rendering
     {
         public static EmpireOverviewWindow Instance { get; private set; }
 
-        private enum Tab { Colonies, Fleets, Leaders, Borders, Rival, Effects }
+        private enum Tab { Colonies, Fleets, Leaders, Borders, Landmarks, Rival, Effects }
 
         private GameObject _root;
         private Text _title, _subtitle;
@@ -343,8 +343,9 @@ namespace StellarisClone.Rendering
             AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, "ФЛОТЫ", 1);
             AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, "ЛИДЕРЫ", 2);
             AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 3);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИКИ", 4);
-            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, "ЭФФЕКТЫ", 5);
+            AddTab(tabsRow, Tab.Landmarks, LGIcon.Star, "УЗЛЫ", 4);
+            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИКИ", 5);
+            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, "ЭФФЕКТЫ", 6);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -364,7 +365,7 @@ namespace StellarisClone.Rendering
         private void AddTab(RectTransform row, Tab tab, LGIcon icon, string label, int index)
         {
             var bgImg = LGBuild.Panel(row, "Tab_" + tab, UIManager.DS.BtnNeutral, raycast: true);
-            const int TabCount = 6;
+            const int TabCount = 7;
             bgImg.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 0 : 4, index == TabCount - 1 ? 0 : 4);
             var b = bgImg.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() =>
@@ -549,6 +550,7 @@ namespace StellarisClone.Rendering
                 case Tab.Fleets: BuildFleets(); break;
                 case Tab.Leaders: BuildLeaders(); break;
                 case Tab.Borders: BuildBorders(); break;
+                case Tab.Landmarks: BuildLandmarks(); break;
                 case Tab.Rival: BuildRival(); break;
                 case Tab.Effects: BuildEffects(); break;
             }
@@ -794,6 +796,42 @@ namespace StellarisClone.Rendering
                 }
             }
             if (n == 0) Empty("У империи не осталось систем.");
+        }
+
+        // ---------- Узлы силы ----------
+
+        private void BuildLandmarks()
+        {
+            HeaderCols((0.06f, 0.30f, "УЗЕЛ", TextAnchor.MiddleLeft),
+                       (0.30f, 0.46f, "СИСТЕМА", TextAnchor.MiddleLeft),
+                       (0.46f, 0.80f, "БОНУС ПРИ КОНТРОЛЕ", TextAnchor.MiddleLeft),
+                       (0.80f, 1f, "ВЛАДЕЛЕЦ", TextAnchor.MiddleRight));
+            int total = 0, known = 0, mine = 0;
+            foreach (var sys in Landmarks.All) total++;
+            foreach (var sys in Landmarks.All)
+            {
+                if (!(Vision.PlayerKnows(sys.Id) || sys.OwnerId == 0)) continue;
+                known++;
+                if (Landmarks.Controls(0, sys)) mine++;
+                Color lc = Landmarks.Color(sys.Landmark);
+                var captured = sys;
+                var row = Row(() => FocusSystem(captured), new Color(lc.r, lc.g, lc.b, 0.32f));
+                IconCell(row, 0f, 0.06f, SystemNameplate.LandmarkIcon(sys.Landmark), lc);
+                TwoLine(row, 0.06f, 0.30f, Landmarks.Name(sys.Landmark), "Узел силы");
+                TextCell(row, 0.30f, 0.46f, sys.Name, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 12, true);
+                TextCell(row, 0.46f, 0.80f, Landmarks.Effect(sys.Landmark), UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
+                bool held = sys.HasStarbase && sys.OwnerId >= 0;
+                string who = !held ? "свободен" : sys.OwnerId == 0 ? "вы" : AIEmpireManager.NameOf(sys.OwnerId, "империя");
+                Color wc = !held ? UIManager.DS.TextMuted : sys.OwnerId == 0 ? UIManager.DS.Green : FleetIndicator.OwnerColor(sys.OwnerId);
+                TextCell(row, 0.80f, 1f, who, wc, TextAnchor.MiddleRight, 12, true);
+            }
+            if (total == 0) { Empty("На этой карте нет узлов силы."); return; }
+            if (known == 0)
+            {
+                Empty($"Узлы силы пока не найдены — на карте их {total}.\n\nУзел виден, когда его система разведана. Постройте в ней форпост, и бонус станет вашим.");
+                return;
+            }
+            SectionRow($"НАЙДЕНО {known} ИЗ {total}  ·  ПОД ВАШИМ КОНТРОЛЕМ {mine}  ·  КЛИК — ПЕРЕЙТИ К СИСТЕМЕ", UIManager.DS.TextMuted);
         }
 
         private static string StarClass(StarSpectralClass c)

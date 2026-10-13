@@ -81,6 +81,7 @@ namespace StellarisClone.Core
             ["coalitionleft"] = new MemoryInfo { Label = "Выход из коалиции", Detail = "Вы бросили общее дело", Icon = LGIcon.Close, MonthlyDecay = 0.1f, Min = -30f, Max = 0f },
             ["separate"]   = new MemoryInfo { Label = "Сепаратный мир", Detail = "Вы вышли из войны, оставив союзников одних", Icon = LGIcon.Peace, MonthlyDecay = 0.06f, Min = -40f, Max = 0f },
             ["trust"]      = new MemoryInfo { Label = "Годы добрососедства", Detail = "Долгий пакт и спокойные границы сближают, но одно предательство обнуляет доверие", Icon = LGIcon.Handshake, MonthlyDecay = 0.01f, Min = 0f, Max = 20f },
+            ["espionage"]  = new MemoryInfo { Label = "Шпионаж", Detail = "Ваши агенты пойманы или замечены за тайными операциями на их территории", Icon = LGIcon.Betrayal, MonthlyDecay = 0.08f, Min = -40f, Max = 0f },
             ["incident"]   = new MemoryInfo { Label = "Инциденты", Detail = "Как вы повели себя в пограничных и дипломатических происшествиях", Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
         };
 

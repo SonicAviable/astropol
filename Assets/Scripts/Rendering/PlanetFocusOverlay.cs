@@ -405,7 +405,7 @@ namespace StellarisClone.Rendering
 
             var b = Bonuses();
             float st = _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult
-                     + _planet.EnergyDeposit * FactionMult(DistrictType.Generator);
+                     + _planet.EnergyDeposit * FactionMult(DistrictType.Generator) * b.EnergyMult;
             _stationText.text = _planet.HasMiningStation
                 ? $"<color={LGBuild.Hex(UIManager.DS.Green)}>Добывающий комплекс работает</color>"
                 : _planet.StationUnderConstruction ? $"<color={LGBuild.Hex(CGold)}>Добывающий комплекс строится</color>"
@@ -421,7 +421,7 @@ namespace StellarisClone.Rendering
             if (colony)
             {
                 minerals = _planet.ProducedMineralsPerMonth * FactionMult(DistrictType.Mining) * b.MineralsMult;
-                energy = _planet.ProducedEnergyPerMonth * FactionMult(DistrictType.Generator);
+                energy = _planet.ProducedEnergyPerMonth * FactionMult(DistrictType.Generator) * b.EnergyMult;
                 alloys = _planet.ProducedAlloysPerMonth * FactionMult(DistrictType.Industrial) * b.AlloysMult;
                 var tm = TechnologyManager.Instance;
                 science = _planet.Population * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
@@ -429,7 +429,7 @@ namespace StellarisClone.Rendering
             if (Surveyed && _planet.HasMiningStation)
             {
                 minerals += _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult;
-                energy += _planet.EnergyDeposit * FactionMult(DistrictType.Generator);
+                energy += _planet.EnergyDeposit * FactionMult(DistrictType.Generator) * b.EnergyMult;
             }
             SetTile(_tiles[0], minerals);
             SetTile(_tiles[1], energy);

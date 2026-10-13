@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Generation;
 using StellarisClone.Rendering;
@@ -5,15 +6,17 @@ using StellarisClone.Rendering;
 namespace StellarisClone.Core
 {
     /// <summary>
-    /// Условия конца партии (пути к победе — экран VictoryPathWindow). Партия рассчитана на 1–2 часа:
-    /// подсчёт очков через 40 лет (2240), остальные победы — не раньше ~2228–2233 при хорошей игре
-    /// (на скорости ×4 это 1–1,5 часа; темп часов — GamePace.SecondsPerDay).
-    /// Баланс сверен с прогоном исследований ИИ по реальному дереву (стоимость технологий и годы уровней
-    /// растянуты под 40-летнюю партию): 48 технологий сильнейший ИИ набирает около 2233 года.
-    ///   Победа: доминирование (форпосты примерно в 45% систем), технологическая (48 технологий из 58),
-    ///           военная (все соперники повержены), экономическая (45% валового продукта галактики 2 года подряд),
-    ///           дипломатическая (Галактический совет в 2226/2232/2238 — две трети голосов за вас),
-    ///           по очкам — больше, чем у каждого соперника, к 1 января 2240 года.
+    /// Условия конца партии (пути к победе — экран VictoryPathWindow). Партия рассчитана на 2–3 часа:
+    /// подсчёт очков через 60 лет (2260), остальные победы — не раньше ~2245–2255 при хорошей игре
+    /// (на скорости ×4 это 2–2,5 часа; темп часов — GamePace.SecondsPerDay).
+    /// Победы нужно не только достичь, но и удержать: у доминирования и экономики есть срок удержания,
+    /// у науки — завершающий проект «Вознесение», так что у соперников всегда есть время ответить.
+    ///   Победа: доминирование (форпосты примерно в 55% систем, порог удерживается год),
+    ///           технологическая (66 технологий из 89 и проект «Вознесение»),
+    ///           военная (все соперники повержены),
+    ///           экономическая (50% валового продукта галактики 3 года подряд),
+    ///           дипломатическая (Галактический совет в 2230/2236/…/2254 — две трети голосов за вас),
+    ///           по очкам — больше, чем у каждого соперника, к 1 января 2260 года.
     ///   Поражение: потеря всех систем, долгое банкротство, ИИ первым добился доминирования,
     ///              технологической или экономической победы, или у кого-то из ИИ больше очков в 2240 году.
     /// </summary>
@@ -28,15 +31,53 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Год подсчёта очков.</summary>
-        public const int EndYear = 2240;
-        /// <summary>Технологическая победа: столько изученных технологий (из 58).</summary>
-        public const int ScienceTarget = 48;
+        public const int EndYear = 2260;
+        /// <summary>Технологическая победа: столько изученных технологий (из всего дерева) и проект «Вознесение».</summary>
+        public const int ScienceTarget = 66;
+        /// <summary>Завершающая технология дерева: без неё технологическая победа невозможна.</summary>
+        public const string CapstoneTech = "soc_asc_1";
+        /// <summary>Доминирование: порог систем нужно удерживать столько месяцев подряд.</summary>
+        public const int DominationHoldMonths = 12;
         /// <summary>Экономическая победа: доля валового продукта галактики, удерживаемая EconomyMonths месяцев подряд.</summary>
-        public const float EconomyShare = 0.45f;
-        public const int EconomyMonths = 24;
+        public const float EconomyShare = 0.50f;
+        public const int EconomyMonths = 36;
         /// <summary>Галактический совет: первое заседание, интервал, доля голосов для избрания лидером.</summary>
-        public const int CouncilFirstYear = 2226, CouncilEvery = 6;
+        public const int CouncilFirstYear = 2230, CouncilEvery = 6;
         public const float CouncilShare = 2f / 3f;
+
+        /// <summary>Годы заседаний Совета: «2230, 2236, 2242, 2248 и 2254».</summary>
+        public static string CouncilYearsText()
+        {
+            var years = new List<string>();
+            for (int y = CouncilFirstYear; y < EndYear; y += CouncilEvery) years.Add(y.ToString());
+            return years.Count <= 1 ? string.Join("", years) : string.Join(", ", years.GetRange(0, years.Count - 1)) + " и " + years[years.Count - 1];
+        }
+
+        // Технологии, ведущие к «Вознесению»: ИИ перед финалом берётся за них в первую очередь
+        private static HashSet<string> s_capstoneChain;
+        public static bool InCapstoneChain(string techId)
+        {
+            if (s_capstoneChain == null)
+            {
+                var byId = new Dictionary<string, Technology>();
+                foreach (var t in TechnologyManager.BuildTechTree()) byId[t.Id] = t;
+                s_capstoneChain = new HashSet<string>();
+                void Walk(string id)
+                {
+                    if (!byId.TryGetValue(id, out var t) || !s_capstoneChain.Add(id)) return;
+                    foreach (var r in t.RequiredTechIds) Walk(r);
+                }
+                Walk(CapstoneTech);
+            }
+            return s_capstoneChain.Contains(techId);
+        }
+
+        /// <summary>У империи изучено «Вознесение».</summary>
+        public static bool HasAscension(int owner)
+        {
+            if (owner == 0) return TechnologyManager.Instance?.FindTech(CapstoneTech)?.IsResearched == true;
+            return AIEmpireManager.For(owner)?.HasTech(CapstoneTech) == true;
+        }
 
         [Header("Условия победы")]
         [SerializeField] private int dominationSystemsRequired = 40;
@@ -52,10 +93,15 @@ namespace StellarisClone.Core
         private bool _started;
         private int _scoreWarnLevel;
         private int _econMonths, _rivalEconOwner = -1, _rivalEconMonths;
+        private int _domMonths, _rivalDomOwner = -1, _rivalDomMonths;
 
         public int EconMonths => _econMonths;
         public int RivalEconMonths => _rivalEconMonths;
         public int RivalEconOwner => _rivalEconOwner;
+        /// <summary>Месяцы, которые вы удерживаете порог доминирования, и то же у лидера-соперника.</summary>
+        public int DomMonths => _domMonths;
+        public int RivalDomMonths => _rivalDomMonths;
+        public int RivalDomOwner => _rivalDomOwner;
 
         /// <summary>Ближайшее заседание Галактического совета (год), 0 — заседаний больше не будет.</summary>
         public static int NextCouncilYear(int year)
@@ -156,7 +202,8 @@ namespace StellarisClone.Core
         public VictorySave CaptureState() => new VictorySave
         {
             StartYear = _startYear, BankruptMonths = _bankruptMonths, Started = _started, ScoreWarnLevel = _scoreWarnLevel,
-            EconMonths = _econMonths, RivalEconOwner = _rivalEconOwner, RivalEconMonths = _rivalEconMonths
+            EconMonths = _econMonths, RivalEconOwner = _rivalEconOwner, RivalEconMonths = _rivalEconMonths,
+            DomMonths = _domMonths, RivalDomOwner = _rivalDomOwner, RivalDomMonths = _rivalDomMonths
         };
 
         public void RestoreState(VictorySave s)
@@ -169,6 +216,9 @@ namespace StellarisClone.Core
             _econMonths = s.EconMonths;
             _rivalEconOwner = s.RivalEconOwner;
             _rivalEconMonths = s.RivalEconMonths;
+            _domMonths = s.DomMonths;
+            _rivalDomOwner = s.RivalDomOwner;
+            _rivalDomMonths = s.RivalDomMonths;
         }
 
         private void Start()
@@ -218,8 +268,8 @@ namespace StellarisClone.Core
             else _bankruptMonths = 0;
 
             // === ПОБЕДЫ ИГРОКА ===
-            if (DominationProgress >= dominationSystemsRequired) { Finish(Outcome.Domination); return; }
-            if (ScienceProgress >= scienceTechsRequired) { Finish(Outcome.Science); return; }
+            if (TrackDomination()) return;
+            if (ScienceProgress >= scienceTechsRequired && HasAscension(0)) { Finish(Outcome.Science); return; }
             bool anyRivals = AIEmpireManager.All.Count > 0;
             bool anyAlive = false;
             foreach (var _ in AIEmpireManager.Alive) { anyAlive = true; break; }
@@ -243,14 +293,11 @@ namespace StellarisClone.Core
             }
 
             // === ПОБЕДЫ ИИ ===
-            var dom = LeadingRival(EmpireStats.SystemCount);
-            if (dom != null && EmpireStats.SystemCount(dom.OwnerId) >= dominationSystemsRequired)
-            { _rivalName = dom.AIName; Finish(Outcome.DefeatRivalDomination); return; }
-            var sci = LeadingRival(EmpireStats.TechCount);
-            if (sci != null && EmpireStats.TechCount(sci.OwnerId) >= scienceTechsRequired)
-            { _rivalName = sci.AIName; Finish(Outcome.DefeatRivalScience); return; }
+            foreach (var ai in AIEmpireManager.Alive)
+                if (EmpireStats.TechCount(ai.OwnerId) >= scienceTechsRequired && HasAscension(ai.OwnerId))
+                { _rivalName = ai.AIName; Finish(Outcome.DefeatRivalScience); return; }
 
-            // === ПОДСЧЁТ ОЧКОВ В 2235 ГОДУ ===
+            // === ПОДСЧЁТ ОЧКОВ В КОНЦЕ ПАРТИИ ===
             if (year >= EndYear)
             {
                 _rivalName = RivalScoreLeaderName;
@@ -258,6 +305,46 @@ namespace StellarisClone.Core
                 return;
             }
             WarnAboutScore(year, month);
+        }
+
+        /// <summary>
+        /// Доминирование: порог систем нужно удерживать DominationHoldMonths месяцев подряд — у вас и у лидера-соперника.
+        /// Потерянная система сбрасывает счётчик, поэтому у соперников есть время ответить. true — партия окончена.
+        /// </summary>
+        private bool TrackDomination()
+        {
+            int me = DominationProgress;
+            if (me >= dominationSystemsRequired)
+            {
+                _domMonths++;
+                if (_domMonths >= DominationHoldMonths) { Finish(Outcome.Domination); return true; }
+                if (_domMonths == 1 || _domMonths == DominationHoldMonths / 2 || _domMonths == DominationHoldMonths - 2)
+                    NotificationCenter.Show("Доминирование",
+                        $"Вы контролируете {me} систем. Удержите порог ещё {DominationHoldMonths - _domMonths} мес. — и победа ваша; соперники попытаются вас остановить.",
+                        NotificationCenter.Kind.Success, 7f);
+            }
+            else
+            {
+                if (_domMonths > 0)
+                    NotificationCenter.Show("Порог доминирования потерян",
+                        $"Систем: {me} из {dominationSystemsRequired}. Счётчик удержания сброшен.", NotificationCenter.Kind.Warning, 6f);
+                _domMonths = 0;
+            }
+
+            var top = LeadingRival(EmpireStats.SystemCount);
+            int rs = top != null ? EmpireStats.SystemCount(top.OwnerId) : 0;
+            if (top != null && rs >= dominationSystemsRequired)
+            {
+                if (_rivalDomOwner != top.OwnerId) { _rivalDomOwner = top.OwnerId; _rivalDomMonths = 0; }
+                _rivalDomMonths++;
+                if (_rivalDomMonths >= DominationHoldMonths) { _rivalName = top.AIName; Finish(Outcome.DefeatRivalDomination); return true; }
+                if (_rivalDomMonths == 1 || _rivalDomMonths == DominationHoldMonths / 2 || _rivalDomMonths == DominationHoldMonths - 2)
+                    NotificationCenter.Show("Экспансия соперника",
+                        $"{top.AIName} контролирует {rs} систем. Через {DominationHoldMonths - _rivalDomMonths} мес. — их победа: отбейте системы, чтобы сбросить счётчик.",
+                        NotificationCenter.Kind.Warning, 8f);
+            }
+            else { _rivalDomOwner = -1; _rivalDomMonths = 0; }
+            return false;
         }
 
         /// <summary>Месяц экономики: свои и лучшего соперника месяцы над порогом. true — партия окончена.</summary>
@@ -323,11 +410,11 @@ namespace StellarisClone.Core
             {
                 case Outcome.Domination:
                     title = "★ ПОБЕДА — ДОМИНИРОВАНИЕ";
-                    body = $"Империя контролирует {dominationSystemsRequired} систем.";
+                    body = $"Империя удерживала {dominationSystemsRequired} систем {DominationHoldMonths} месяцев подряд.";
                     break;
                 case Outcome.Science:
                     title = "★ ПОБЕДА — НАУЧНАЯ";
-                    body = $"Изучено {scienceTechsRequired} технологий.";
+                    body = $"Изучено {scienceTechsRequired} технологий, проект «Вознесение» завершён.";
                     break;
                 case Outcome.Conquest:
                     title = "★ ПОБЕДА — СОПЕРНИКИ ПОВЕРЖЕНЫ";
@@ -359,11 +446,11 @@ namespace StellarisClone.Core
                     break;
                 case Outcome.DefeatRivalScience:
                     title = "✕ ПОРАЖЕНИЕ — НАУЧНЫЙ ПРОРЫВ СОПЕРНИКА";
-                    body = $"{rival} первым изучил {scienceTechsRequired} технологий.";
+                    body = $"{rival} изучил {scienceTechsRequired} технологий и завершил проект «Вознесение».";
                     break;
                 case Outcome.DefeatRivalDomination:
                     title = "✕ ПОРАЖЕНИЕ — ЭКСПАНСИЯ СОПЕРНИКА";
-                    body = $"{rival} первым занял {dominationSystemsRequired} систем.";
+                    body = $"{rival} {DominationHoldMonths} месяцев подряд удерживал {dominationSystemsRequired} систем.";
                     break;
                 default:
                     title = "✕ ПОРАЖЕНИЕ — КРАХ ЭКОНОМИКИ";

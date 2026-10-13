@@ -113,6 +113,12 @@ namespace StellarisClone.Core
                 Spread(set, s.Id, capital ? 2 : 1);
             }
 
+            // Маяки Дальнего Света: обзор вокруг узла
+            foreach (var o in owners) Landmarks.AddBeaconVision(o, fresh[o]);
+
+            // Внедрённые агенты: вся территория империи, где у вас агент с прикрытием от 20%
+            EspionageManager.AddIntelVision(fresh[0]);
+
             // Флоты: система, где флот стоит (в пути — оба конца коридора), и соседи
             var fm = FleetManager.Instance;
             if (fm != null)

@@ -13,11 +13,11 @@ namespace StellarisClone.Core
     {
         // ==================== ПОМОЩНИКИ ====================
 
-        /// <summary>Рост наград со временем: к 2240 году события щедрее в 2,5 раза.</summary>
+        /// <summary>Рост наград со временем: к 2250 году события щедрее в 2,5 раза.</summary>
         private static float K()
         {
             int year = TimeManager.Instance != null ? TimeManager.Instance.Year : 2200;
-            return Mathf.Clamp(1f + (year - 2200) * 0.04f, 1f, 2.5f);
+            return Mathf.Clamp(1f + (year - 2200) * 0.03f, 1f, 2.5f);
         }
 
         private static int R(float v) => Mathf.RoundToInt(v);
@@ -612,7 +612,7 @@ namespace StellarisClone.Core
             Add(new Template
             {
                 Id = "leader_ambition", When = Trigger.Monthly, Weight = 0.6f,
-                FindContext = () => LeaderCtx(l => l.Level >= 3 && !l.Has(EventTraitFor(l.Class))),
+                FindContext = () => LeaderCtx(l => l.Class != LeaderClass.Agent && l.Level >= 3 && !l.Has(EventTraitFor(l.Class))),
                 Build = c =>
                 {
                     var l = c.Leader;

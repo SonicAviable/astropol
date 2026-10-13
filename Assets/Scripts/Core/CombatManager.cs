@@ -1062,9 +1062,10 @@ namespace StellarisClone.Core
             var b = EmpireBonuses.For(sys.OwnerId);
             float oldMaxHull = sb.MaxHull, oldMaxArmor = sb.MaxArmor, oldMaxShields = sb.MaxShields;
 
-            sb.MaxHull = (400f + colonies * 150f) * k * b.HullMult;
-            sb.MaxArmor = (200f + colonies * 60f) * k * b.ArmorMult * (sb.GardenDays > 0 ? FactionTraits.GardenArmor : 1f);
-            sb.MaxShields = (150f + colonies * 40f) * k * b.ShieldMult;
+            float fort = b.StarbaseMult * Landmarks.StarbaseMult(sys.OwnerId);   // «Звёздные крепости» и Цитадель Древних
+            sb.MaxHull = (400f + colonies * 150f) * k * b.HullMult * fort;
+            sb.MaxArmor = (200f + colonies * 60f) * k * b.ArmorMult * fort * (sb.GardenDays > 0 ? FactionTraits.GardenArmor : 1f);
+            sb.MaxShields = (150f + colonies * 40f) * k * b.ShieldMult * fort;
             sb.Damage = (9f + colonies * 4f) * k;
             sb.FireRate = 1f;
 

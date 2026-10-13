@@ -126,7 +126,7 @@ namespace StellarisClone.Core
         public float MonthlyEnergyIncome => (BaseEnergyIncome + _report.Energy) * IncomeMult - _report.Upkeep + DealIncome("energy");
         public float MonthlyMineralsIncome => (BaseMineralsIncome + _report.Minerals) * IncomeMult + DealIncome("minerals");
         public float MonthlyAlloysIncome => (BaseAlloysIncome + _report.Alloys) * IncomeMult + DealIncome("alloys");
-        public float MonthlyInfluenceIncome => BaseInfluenceIncome * FactionInfluence * IncomeMult;
+        public float MonthlyInfluenceIncome => (BaseInfluenceIncome + Bonuses.InfluenceFlat + Landmarks.Influence(OwnerId)) * FactionInfluence * IncomeMult;
 
         // ==================== НАУКА ====================
 
@@ -140,7 +140,7 @@ namespace StellarisClone.Core
         public bool HasTech(string id) => _researched.Contains(id);
 
         public float MonthlyScience =>
-            (TechnologyManager.BaseScience + EmpireStats.Population(OwnerId) * TechnologyManager.SciencePerPop)
+            (TechnologyManager.BaseScience + EmpireStats.Population(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId))
             * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult;
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
@@ -241,7 +241,7 @@ namespace StellarisClone.Core
             for (int i = 0; i < _generator.Systems.Count; i++)
             {
                 var s = _generator.Systems[i];
-                if (s.OwnerId >= 0 || s.ConnectedSystemIds.Count == 0) continue;
+                if (s.OwnerId >= 0 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0) continue;
                 float d = float.MaxValue;
                 foreach (var c in capitals) d = Mathf.Min(d, Vector3.Distance(c, s.Position));
                 if (d > maxDist) { maxDist = d; bestSysId = i; }
@@ -570,6 +570,7 @@ namespace StellarisClone.Core
                 _ => 0f
             };
             v += Mathf.Max(0, sys.ConnectedSystemIds.Count - 2) * 1.2f;
+            v += Landmarks.AIValue(sys);
 
             bool nearRival = false;
             foreach (int id in sys.ConnectedSystemIds)
@@ -850,11 +851,34 @@ namespace StellarisClone.Core
             WarnAboutScience();
         }
 
+        /// <summary>Технология, добытая чужими агентами (кража): изучена без затрат, бонус применён.</summary>
+        public bool GrantTechFromSpy(Technology tech)
+        {
+            if (tech == null || _researched.Contains(tech.Id)) return false;
+            _researched.Add(tech.Id);
+            if (CurrentTech != null && CurrentTech.Id == tech.Id) { CurrentTech = null; TechProgress = 0f; }
+            var before = Bonuses.Clone();
+            if (TechEffects.Apply(Bonuses, tech.BonusKey)) _researchSlots = Mathf.Min(6, _researchSlots + 1);
+            if (TechEffects.AffectsDurability(tech.BonusKey)) FleetManager.Instance?.RescaleDurability(OwnerId, before, Bonuses);
+            _designs.Clear();
+            WarnAboutScience();
+            return true;
+        }
+
+        /// <summary>Технология, доступная ИИ для изучения (все требования выполнены).</summary>
+        public bool CanResearch(Technology t)
+        {
+            if (t == null || _researched.Contains(t.Id)) return false;
+            foreach (var req in t.RequiredTechIds) if (!_researched.Contains(req)) return false;
+            return true;
+        }
+
         private void WarnAboutScience()
         {
             var vm = VictoryManager.Instance;
             if (vm == null) return;
             int left = vm.ScienceRequired - ResearchedCount;
+            if (!HasTech(VictoryManager.CapstoneTech)) left = Mathf.Max(left, 1);
             int level = left <= 2 ? 2 : left <= 5 ? 1 : 0;
             if (level > _scienceWarnLevel)
                 NotificationCenter.Show("Научная гонка", $"{AIName}: до научной победы осталось {Mathf.Max(0, left)} техн.",
@@ -879,6 +903,9 @@ namespace StellarisClone.Core
                 float w = Profile.TechWeight(t.Category);
                 if (threatened && (t.Category == TechCategory.Weapons || t.Category == TechCategory.Defense)) w *= 1.6f;
                 if (t.BonusKey == "slot+1") w *= Personality == AIPersonality.Scientific ? 1.6f : 1.2f;
+                // В финале гонки ИИ берётся за цепочку «Вознесения» — без неё научной победы не будет
+                var vmx = VictoryManager.Instance;
+                if (vmx != null && ResearchedCount >= vmx.ScienceRequired - 12 && VictoryManager.InCapstoneChain(t.Id)) w *= 3f;
                 float score = w * 1000f / (t.Cost * TechnologyManager.YearPenaltyMultiplier(t, year)) * Random.Range(0.85f, 1.15f);
                 if (score > bestScore) { bestScore = score; best = t; }
             }

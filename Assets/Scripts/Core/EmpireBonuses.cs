@@ -33,10 +33,34 @@ namespace StellarisClone.Core
         public float MineralsMult = 1f;
         public float AlloysMult = 1f;
         public float EnergyFlat;
+        /// <summary>Множитель добычи Гелия-3 (районы и комплексы).</summary>
+        public float EnergyMult = 1f;
         public float ResearchMult = 1f;
         public float ShipCostMult = 1f;
         public float OutpostInfluenceDiscount;
         public bool DestroyerUnlocked;
+
+        // Влияние, колонии, флот
+        /// <summary>Прибавка к ежемесячному влиянию.</summary>
+        public float InfluenceFlat;
+        /// <summary>Множитель скорости роста населения.</summary>
+        public float PopGrowth = 1f;
+        /// <summary>Прибавка к флотскому лимиту (мест).</summary>
+        public float NavalCapacity;
+        /// <summary>Множитель содержания военных кораблей.</summary>
+        public float UpkeepMult = 1f;
+        /// <summary>Множитель прочности звёздных баз (форпосты и крепости).</summary>
+        public float StarbaseMult = 1f;
+
+        // Узлы силы и шпионаж
+        /// <summary>Множитель бонусов узлов силы под вашим контролем.</summary>
+        public float LandmarkMult = 1f;
+        /// <summary>Прибавка к шансу успеха тайных операций.</summary>
+        public float SpyPower;
+        /// <summary>Прибавка к защите от чужих агентов (шанс сорвать и раскрыть операцию).</summary>
+        public float CounterIntel;
+        /// <summary>Множитель скорости внедрения агентов.</summary>
+        public float CoverSpeed = 1f;
 
         public float DamageMult(WeaponDamageType t)
         {
@@ -142,6 +166,47 @@ namespace StellarisClone.Core
                 case "doc_net_1": b.AllDamage += 0.10f; b.Accuracy += 5f; break;
                 case "doc_log_1": b.ShipCostMult -= 0.05f; b.HyperlaneSpeed += 0.10f; break;
 
+                // ---- Новые технологии: энергетика, влияние, колонии ----
+                case "rct_mag_1": b.EnergyMult += 0.10f; break;
+                case "rct_dys_1": b.EnergyFlat += 10f; b.EnergyMult += 0.10f; break;
+                case "rct_vac_1": b.EnergyFlat += 25f; break;
+                case "soc_inf_1": b.InfluenceFlat += 1.0f; break;
+                case "soc_inf_2": b.InfluenceFlat += 1.5f; break;
+                case "soc_inf_3": b.InfluenceFlat += 2.0f; break;
+                case "col_gro_1": b.PopGrowth += 0.25f; break;
+                case "col_gro_2": b.PopGrowth += 0.35f; break;
+                case "col_arc_1": b.LandmarkMult += 0.50f; break;
+
+                // ---- Шпионаж и сенсоры ----
+                case "sen_crp_1": b.CounterIntel += 0.08f; break;
+                case "sen_net_1": b.SpyPower += 0.08f; break;
+                case "sen_enc_1": b.CounterIntel += 0.10f; break;
+                case "sen_dep_1": b.SpyPower += 0.10f; b.CoverSpeed += 0.50f; break;
+                case "sen_sng_1": b.ResearchMult += 0.25f; break;
+                case "soc_asc_1": b.ResearchMult += 0.30f; break;
+
+                // ---- Движение ----
+                case "prp_slp_1": b.HyperlaneSpeed += 0.25f; break;
+                case "prp_wrm_1": b.HyperlaneSpeed += 0.30f; break;
+
+                // ---- Доктрина и флот ----
+                case "doc_cap_1": b.NavalCapacity += 4f; break;
+                case "doc_cmd_1": b.UpkeepMult -= 0.10f; break;
+                case "doc_cap_2": b.UpkeepMult -= 0.15f; b.NavalCapacity += 6f; break;
+                case "doc_war_1": b.AllDamage += 0.15f; break;
+                case "doc_ult_1": b.AllDamage += 0.20f; break;
+
+                // ---- Оружие, защита, промышленность, верфи ----
+                case "wpn_kin_4": b.KineticDamage += 0.25f; break;
+                case "wpn_las_4": b.EnergyDamage += 0.25f; b.Accuracy += 5f; break;
+                case "wpn_ult_1": b.AllDamage += 0.25f; break;
+                case "def_shl_4": b.ShieldMult += 0.25f; break;
+                case "def_bar_1": b.HullMult += 0.20f; b.ArmorMult += 0.20f; b.ShieldMult += 0.20f; break;
+                case "ind_rec_1": b.MineralsMult += 0.10f; b.AlloysMult += 0.10f; break;
+                case "ind_sin_1": b.AlloysMult += 0.30f; b.MineralsMult += 0.20f; break;
+                case "cns_fort_1": b.StarbaseMult += 0.30f; break;
+                case "cns_arc_1": b.ShipCostMult -= 0.10f; break;
+
                 case "slot+1": return true;
             }
             return false;
@@ -150,7 +215,7 @@ namespace StellarisClone.Core
         /// <summary>Технология меняет прочность кораблей — нужно пересчитать существующий флот.</summary>
         public static bool AffectsDurability(string key)
             => key == "def_arm_1" || key == "def_arm_2" || key == "def_arm_3" || key == "def_shl_1" || key == "def_shl_2"
-            || key == "def_shl_3" || key == "def_aeg_1" || key == "rct_sc_1";
+            || key == "def_shl_3" || key == "def_aeg_1" || key == "rct_sc_1" || key == "def_shl_4" || key == "def_bar_1";
     }
 
     /// <summary>Боевая оценка кораблей с учётом технологий и текущих повреждений.</summary>

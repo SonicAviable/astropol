@@ -123,6 +123,7 @@ namespace StellarisClone.Rendering
 
             // Окна, которые сами обрабатывают Esc
             if (EmpireOverviewWindow.Instance != null && EmpireOverviewWindow.Instance.IsOpen) return;
+            if (EspionageWindow.Instance != null && EspionageWindow.Instance.IsOpen) return;
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;
 
             if (_end != null && LG.IsVisible(_end)) return;
@@ -310,10 +311,10 @@ namespace StellarisClone.Rendering
             if (vm != null)
             {
                 GoalRow(ref y, LGIcon.Starbase, "Доминирование",
-                        $"Постройте форпосты в {vm.DominationRequired} системах. У лучшего соперника: {vm.RivalDominationProgress}.",
+                        $"Постройте форпосты в {vm.DominationRequired} системах и удерживайте порог {VictoryManager.DominationHoldMonths} мес. У лучшего соперника: {vm.RivalDominationProgress}.",
                         vm.DominationProgress, vm.DominationRequired, UIManager.DS.NeonCyan);
                 GoalRow(ref y, LGIcon.Research, "Научная победа",
-                        $"Изучите {vm.ScienceRequired} технологий. У лучшего соперника: {vm.RivalScienceProgress}.",
+                        $"Изучите {vm.ScienceRequired} технологий и завершите проект «Вознесение». У лучшего соперника: {vm.RivalScienceProgress}.",
                         vm.ScienceProgress, vm.ScienceRequired, UIManager.DS.Green);
                 int me = vm.PlayerScore, rival = vm.RivalScore;
                 GoalRow(ref y, LGIcon.Trophy, $"Очки к {VictoryManager.EndYear} году",
@@ -329,7 +330,7 @@ namespace StellarisClone.Rendering
             wi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(20, 20));
             var lt = LGBuild.Label(lose.transform,
                 "<b>Поражение</b>\nпотеря всех систем, " + (vm != null ? vm.BankruptcyLimit : 6) + " мес. банкротства, " +
-                "любой из соперников первым добился доминирования, технологической или экономической победы, или у кого-то из них больше очков в " + VictoryManager.EndYear + " году.",
+                "любой из соперников добился доминирования, технологической или экономической победы, или у кого-то из них больше очков в " + VictoryManager.EndYear + " году.",
                 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
             lt.rectTransform.Stretch(48, 6, 14, 6);
 
