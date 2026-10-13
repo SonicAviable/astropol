@@ -5,23 +5,22 @@ using UnityEngine;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Модель чёрной дыры для вида системы (Resources/Models/BlackHole) вместо плоского спрайта карты.
+    /// Модель чёрной дыры (Resources/Models/BlackHole): вблизи на карте галактики (MapBlackHole) и в виде системы
+    /// вместо плоского спрайта.
     ///
     /// Слои вынуты из исходного FBX скриптом Tools/black_hole/export_bh.py в компактный blackhole.bytes
     /// (без импортёра моделей: оси, масштаб и порядок вершин заданы заранее): горизонт, три слоя диска с «куполом»
     /// гравитационной линзы, фотонное кольцо, внешнее кольцо и облако обломков. Радиус внешнего кольца — 1.
     /// Светятся слои шейдером Astropolity/FX/BlackHole, горизонт — непрозрачный чёрный.
     ///
-    /// Камера вида системы смотрит под 55° сверху, а линза читается под низким углом — поэтому диск наклонён
-    /// от камеры на <see cref="Tilt"/>: камера видит его под ~17°, дуги встают над и под горизонтом.
+    /// Камера смотрит на карту сверху, а линза читается под низким углом — поэтому диск всегда повёрнут к камере
+    /// так, что она видит его под <see cref="BlackHoleFacing.ViewElevation"/>: дуги встают над и под горизонтом.
     /// </summary>
     public static class BlackHoleModel
     {
         private const string Folder = "Models/BlackHole/";
         /// <summary>Радиус внешнего кольца в мире — внутри первой орбиты (не ближе 13).</summary>
         public const float DefaultRadius = 9f;
-        /// <summary>Наклон диска от камеры (её наклон в виде системы — 55°).</summary>
-        public const float Tilt = 38f;
 
         private static Mesh[] s_meshes;
         private static string[] s_names;
@@ -56,8 +55,8 @@ namespace StellarisClone.Rendering
 
             var root = new GameObject("BlackHole");
             root.transform.SetParent(parent, false);
-            root.transform.localRotation = Quaternion.Euler(Tilt, 0f, 0f);
             root.transform.localScale = Vector3.one * radius;
+            root.AddComponent<BlackHoleFacing>();
 
             // Диск и кольца медленно вращаются вокруг оси; горизонт — сфера, его крутить незачем
             var spin = new GameObject("Spin").transform;
@@ -203,6 +202,117 @@ namespace StellarisClone.Rendering
             }
             s_meshes = meshes;
             s_names = names;
+        }
+    }
+
+    /// <summary>
+    /// Диск поворачивается к камере: она видит его под <see cref="ViewElevation"/> над плоскостью диска,
+    /// диск лежит горизонтально на экране. Дыра симметрична, так что «правильной» стороны у неё нет.
+    /// </summary>
+    public class BlackHoleFacing : MonoBehaviour
+    {
+        public const float ViewElevation = 17f;
+        private Camera _cam;
+
+        private void LateUpdate()
+        {
+            if (_cam == null) _cam = Camera.main;
+            if (_cam == null) return;
+            var ct = _cam.transform;
+            Vector3 toCam = ct.position - transform.position;
+            if (toCam.sqrMagnitude < 1e-6f) return;
+            toCam.Normalize();
+            Vector3 up = Vector3.ProjectOnPlane(ct.up, toCam);
+            if (up.sqrMagnitude < 1e-6f) return;
+            up.Normalize();
+            float e = ViewElevation * Mathf.Deg2Rad;
+            Vector3 normal = toCam * Mathf.Sin(e) + up * Mathf.Cos(e);
+            Vector3 side = Vector3.Cross(up, toCam);
+            transform.rotation = Quaternion.LookRotation(Vector3.Cross(side, normal), normal);
+        }
+    }
+
+    /// <summary>
+    /// Чёрная дыра на карте галактики: при приближении камеры (там же, где проступают мини-системы)
+    /// спрайт плавно уступает место объёмной модели. Модель строится лениво при первом приближении.
+    /// В виде системы модель карты спрятана — там своя, крупнее.
+    /// </summary>
+    public class MapBlackHole : MonoBehaviour
+    {
+        public const string ModelName = "BlackHoleMap";
+        /// <summary>Радиус внешнего кольца — внутри первой орбиты мини-системы (2,1).</summary>
+        private const float Radius = 2.4f;
+        private const float ShowHeight = 90f, FullHeight = 52f;   // как у мини-систем
+
+        /// <summary>Отладочный предпросмотр (F8) на обычной звезде.</summary>
+        public bool Preview { get; private set; }
+
+        private StarAnimator _anim;
+        private GameObject _model;
+        private Renderer[] _glow;
+        private Renderer _horizon;
+        private MaterialPropertyBlock _mpb;
+        private Camera _cam;
+        private bool _failed;
+
+        public void Init(StarAnimator anim, bool preview = false)
+        {
+            _anim = anim;
+            Preview = preview;
+        }
+
+        private void LateUpdate()
+        {
+            if (_cam == null) _cam = Camera.main;
+            bool inSystem = SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView;
+            float k = 0f;
+            if (_cam != null && !inSystem && !_failed)
+            {
+                float h = _cam.transform.position.y - transform.position.y;
+                k = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(FullHeight, ShowHeight, h));
+            }
+            if (_anim != null && !inSystem) _anim.BodyHidden = k;
+
+            if (k <= 0.01f)
+            {
+                if (_model != null && _model.activeSelf) _model.SetActive(false);
+                return;
+            }
+            if (_model == null && !Create()) return;
+            if (!_model.activeSelf) _model.SetActive(true);
+
+            if (_mpb == null) _mpb = new MaterialPropertyBlock();
+            _mpb.SetFloat("_Fade", k);
+            foreach (var r in _glow) r.SetPropertyBlock(_mpb);
+            // Непрозрачный горизонт не гаснет — включается, когда модель уже заметна (ядро спрайта дыры и так тёмное)
+            if (_horizon != null) _horizon.enabled = k > 0.35f;
+        }
+
+        private bool Create()
+        {
+            _model = BlackHoleModel.Build(transform, Radius);
+            if (_model == null)
+            {
+                _failed = true;
+                if (_anim != null) _anim.BodyHidden = 0f;
+                return false;
+            }
+            _model.name = ModelName;
+            var all = _model.GetComponentsInChildren<Renderer>(true);
+            var glow = new System.Collections.Generic.List<Renderer>();
+            foreach (var r in all)
+            {
+                if (r.gameObject.name == "horizon") _horizon = r;
+                else glow.Add(r);
+            }
+            _glow = glow.ToArray();
+            return true;
+        }
+
+        private void OnDestroy()
+        {
+            if (_model != null) Destroy(_model);
+            if (_anim != null) _anim.BodyHidden = 0f;
         }
     }
 

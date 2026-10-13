@@ -3,7 +3,8 @@
 // v ≥ 0,5 — «купол», изогнутый над горизонтом. Диск светится по радиальной палитре (_Deep → _Warm → _Hot),
 // купол — только у силуэта (френель): под низким углом камеры это дуги гравитационной линзы над и под горизонтом,
 // сверху купол прозрачен и виден чёрный горизонт. Полосы исходной текстуры — яркостью (_Detail).
-// _TexColor = 1 — вместо палитры цвет самой текстуры (внешнее кольцо, обломки). _Tint.a — общая яркость слоя.
+// _TexColor = 1 — вместо палитры цвет самой текстуры (внешнее кольцо, обломки). _Tint.a — общая яркость слоя,
+// _Fade — проявление модели (на карте задаётся каждому экземпляру через MaterialPropertyBlock).
 Shader "Astropolity/FX/BlackHole"
 {
     Properties
@@ -18,6 +19,7 @@ Shader "Astropolity/FX/BlackHole"
         _RimPow ("Lens arc sharpness", Float) = 3
         _Detail ("Band detail", Range(0, 1)) = 0.6
         _TexColor ("Use texture colour", Range(0, 1)) = 0
+        _Fade ("Fade", Range(0, 1)) = 1
     }
     SubShader
     {
@@ -37,7 +39,7 @@ Shader "Astropolity/FX/BlackHole"
 
             sampler2D _MainTex;
             float4 _Hot, _Warm, _Deep, _Tint;
-            float _Intensity, _DomeGain, _RimPow, _Detail, _TexColor;
+            float _Intensity, _DomeGain, _RimPow, _Detail, _TexColor, _Fade;
 
             struct v2f
             {
@@ -76,7 +78,7 @@ Shader "Astropolity/FX/BlackHole"
                 float3 lens = _Hot.rgb * dome * rim * _DomeGain;
                 float3 col = (disk + lens) * detail;
                 col = lerp(col, tx.rgb * tx.a * _Intensity, _TexColor);
-                return float4(col * _Tint.rgb * _Tint.a, 1.0);
+                return float4(col * _Tint.rgb * (_Tint.a * _Fade), 1.0);
             }
             ENDCG
         }

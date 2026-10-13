@@ -487,6 +487,8 @@ namespace StellarisClone.Rendering
                 anim.IsBlackHole = blackHole;
                 if (blackHole) hotSr.enabled = false;
                 _starAnims.Add(anim);
+                // Вблизи вместо спрайта — объёмная модель чёрной дыры
+                if (blackHole) node.AddComponent<MapBlackHole>().Init(anim);
 
                 // Плашка с именем
                 var plate = node.AddComponent<SystemNameplate>();
@@ -576,6 +578,35 @@ namespace StellarisClone.Rendering
             UpdateReadability();
             UpdateBeacon();
             UpdateRoutes();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // F8 на карте — модель чёрной дыры на выбранной системе (вид системы ловит F8 сам)
+            if (Input.GetKeyDown(KeyCode.F8) && !(SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView))
+                TogglePreviewBlackHole();
+#endif
+        }
+
+        /// <summary>Отладка: поставить/убрать модель чёрной дыры на выбранной системе (данные системы не меняются).</summary>
+        private void TogglePreviewBlackHole()
+        {
+            int i = _generator.Systems.FindIndex(s => s.Id == _selectedSystemId);
+            if (i < 0 || i >= _starNodes.Count || _starNodes[i] == null)
+            {
+                Debug.Log("[BlackHole] F8: сначала выберите систему кликом по звезде.");
+                return;
+            }
+            var node = _starNodes[i];
+            var existing = node.GetComponent<MapBlackHole>();
+            if (existing == null)
+            {
+                node.AddComponent<MapBlackHole>().Init(node.GetComponentInChildren<StarAnimator>(true), preview: true);
+                Debug.Log("[BlackHole] Предпросмотр на карте: " + _generator.Systems[i].Name + " (приблизьте камеру)");
+            }
+            else if (existing.Preview)
+            {
+                Destroy(existing);
+                Debug.Log("[BlackHole] Предпросмотр на карте снят.");
+            }
+            else Debug.Log("[BlackHole] Здесь и так чёрная дыра — приблизьте камеру.");
         }
 
         // ==================== РЕЖИМЫ ====================
@@ -586,7 +617,7 @@ namespace StellarisClone.Rendering
             RefreshTerritoryVisuals();
         }
 
-        private static readonly string[] StarBodyParts = { "StarCorona", "StarCore", "StarRing", "StarHot", "StarFlare" };
+        private static readonly string[] StarBodyParts = { "StarCorona", "StarCore", "StarRing", "StarHot", "StarFlare", MapBlackHole.ModelName };
 
         /// <summary>
         /// Спрятать/вернуть спрайты самой звезды (корона, ядро, блики), не трогая плашку и коллайдер системы —
@@ -731,6 +762,8 @@ namespace StellarisClone.Rendering
 
         /// <summary>Туман войны: 1 — изученная звезда, меньше — неизведанная (тусклее, мельче, без бликов).</summary>
         public float Dim = 1f;
+        /// <summary>0..1 — насколько спрайты звезды уступили место объёмной модели (чёрная дыра вблизи, MapBlackHole).</summary>
+        public float BodyHidden;
         private float _dimShown = 1f;
         private float _scale, _near;
 
@@ -774,7 +807,8 @@ namespace StellarisClone.Rendering
 
             // Неизведанная звезда — блёклая, ближе к серому
             Color c = IsBlackHole ? _baseColor : Color.Lerp(new Color(0.62f, 0.66f, 0.74f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
-            c.a = Mathf.Clamp01(alphaBreathe) * Mathf.Lerp(0.45f, 1f, _dimShown);
+            float vis = 1f - BodyHidden;
+            c.a = Mathf.Clamp01(alphaBreathe) * Mathf.Lerp(0.45f, 1f, _dimShown) * vis;
             _core.color = c;
 
             // Белое ядро: постоянный экранный размер, лёгкий оттенок класса звезды
@@ -784,7 +818,7 @@ namespace StellarisClone.Rendering
                 float hs = Mathf.Max(_baseScale * 0.35f, w * HotPx * Mathf.Sqrt(SizeMul) / HotSpriteWorld) * Mathf.Lerp(0.8f, 1f, _dimShown);
                 Hot.transform.localScale = Vector3.one * hs;
                 var hc = Color.Lerp(Color.white, _baseColor, 0.22f);
-                hc.a = Mathf.Lerp(0.7f, 1f, _dimShown);
+                hc.a = Mathf.Lerp(0.7f, 1f, _dimShown) * vis;
                 Hot.color = hc;
             }
 
@@ -794,7 +828,7 @@ namespace StellarisClone.Rendering
                 float cb = 1f + Mathf.Sin(t * 0.6f + 1.3f) * 0.07f;
                 Corona.transform.localScale = Vector3.one * scale * (IsBlackHole ? 1.5f : 1.35f) * cb;
                 var cc = IsBlackHole ? new Color(1f, 0.62f, 0.3f) : _baseColor;
-                cc.a = (IsBlackHole ? 0.85f : 0.20f + 0.22f * _near) * Mathf.Lerp(0.35f, 1f, _dimShown) * (0.9f + 0.1f * cb);
+                cc.a = (IsBlackHole ? 0.85f : 0.20f + 0.22f * _near) * Mathf.Lerp(0.35f, 1f, _dimShown) * (0.9f + 0.1f * cb) * vis;
                 Corona.color = cc;
             }
 
@@ -804,7 +838,7 @@ namespace StellarisClone.Rendering
                 float fb = 1f + Mathf.Sin(t * 0.7f + 2.1f) * 0.06f;
                 Flare.transform.localScale = Vector3.one * scale * 1.25f * fb;
                 var fc = Color.Lerp(Color.white, _baseColor, 0.45f);
-                fc.a = (0.18f + 0.42f * _near) * _dimShown * _dimShown;
+                fc.a = (0.18f + 0.42f * _near) * _dimShown * _dimShown * vis;
                 Flare.color = fc;
             }
         }
