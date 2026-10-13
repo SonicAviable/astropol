@@ -16,6 +16,7 @@ namespace StellarisClone.Generation
         [SerializeField] private int starCount = 100;
         [SerializeField] private float galaxyRadius = 120f;
         [SerializeField] private float minStarDistance = 12f;
+        private const float BlackHoleChance = 0.04f;
 
         [Header("Настройки связей (гиперкоридоры)")]
         [SerializeField] private float maxConnectionDistance = 45f;
@@ -104,7 +105,10 @@ namespace StellarisClone.Generation
 
                 if (!tooClose)
                 {
-                    StarSpectralClass spectral = (StarSpectralClass)Random.Range(0, 5);
+                    // Чёрные дыры редки (~4%); система 0 — столица игрока, у неё всегда звезда
+                    StarSpectralClass spectral = Systems.Count > 0 && Random.value < BlackHoleChance
+                        ? StarSpectralClass.BlackHole
+                        : (StarSpectralClass)Random.Range(0, 5);
                     Systems.Add(new StarSystem(Systems.Count, names.Next(), pos, spectral));
                 }
             }

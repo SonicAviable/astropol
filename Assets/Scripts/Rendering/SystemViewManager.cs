@@ -24,6 +24,8 @@ namespace StellarisClone.Rendering
         private Vector3 _savedCamPos;
         private Quaternion _savedCamRot;
         private bool _isTransitioningToGalaxy;
+        /// <summary>Система, чей спрайт звезды на карте спрятан под 3D-модель (чёрная дыра); −1 — нет.</summary>
+        private int _hiddenStarId = -1;
 
         // Масштаб процедурной планеты относительно planet.Size (подбирается)
         // Ассет обычно создаёт сферу диаметром 1 unit — при Size 1.1-3.0 надо уменьшать
@@ -136,6 +138,16 @@ namespace StellarisClone.Rendering
             starLight.type = LightType.Point;
             starLight.range = 250f;
             starLight.intensity = 2.5f;
+
+            // Чёрная дыра: объёмная модель вместо спрайта карты, планеты подсвечены тёплым светом диска
+            if (system.SpectralClass == StarSpectralClass.BlackHole
+                && BlackHoleModel.Build(_systemContainer.transform) != null)
+            {
+                starLight.color = new Color(1f, 0.72f, 0.48f);
+                starLight.intensity = 2f;
+                GalaxyView.Instance?.SetStarBodyVisible(system.Id, false);
+                _hiddenStarId = system.Id;
+            }
 
             Shader litShader = GetLitShader();
 
@@ -471,6 +483,8 @@ namespace StellarisClone.Rendering
             _currentSelectedPlanet = null;
             if (_systemContainer != null) Destroy(_systemContainer);
             _systemContainer = null;
+            if (_hiddenStarId >= 0) GalaxyView.Instance?.SetStarBodyVisible(_hiddenStarId, true);
+            _hiddenStarId = -1;
         }
 
         private void Update()

@@ -241,7 +241,8 @@ namespace StellarisClone.Core
             for (int i = 0; i < _generator.Systems.Count; i++)
             {
                 var s = _generator.Systems[i];
-                if (s.OwnerId >= 0 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0) continue;
+                if (s.OwnerId >= 0 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0
+                    || s.SpectralClass == StarSpectralClass.BlackHole) continue;
                 float d = float.MaxValue;
                 foreach (var c in capitals) d = Mathf.Min(d, Vector3.Distance(c, s.Position));
                 if (d > maxDist) { maxDist = d; bestSysId = i; }

@@ -834,7 +834,7 @@ namespace StellarisClone.Rendering
             SectionRow($"НАЙДЕНО {known} ИЗ {total}  ·  ПОД ВАШИМ КОНТРОЛЕМ {mine}  ·  КЛИК — ПЕРЕЙТИ К СИСТЕМЕ", UIManager.DS.TextMuted);
         }
 
-        private static string StarClass(StarSpectralClass c)
+        internal static string StarClass(StarSpectralClass c)
         {
             switch (c)
             {

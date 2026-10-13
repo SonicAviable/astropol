@@ -586,6 +586,26 @@ namespace StellarisClone.Rendering
             RefreshTerritoryVisuals();
         }
 
+        private static readonly string[] StarBodyParts = { "StarCorona", "StarCore", "StarRing", "StarHot", "StarFlare" };
+
+        /// <summary>
+        /// Спрятать/вернуть спрайты самой звезды (корона, ядро, блики), не трогая плашку и коллайдер системы —
+        /// когда вид системы ставит на её место объёмную модель (чёрная дыра).
+        /// </summary>
+        public void SetStarBodyVisible(int systemId, bool visible)
+        {
+            for (int i = 0; i < _generator.Systems.Count && i < _starNodes.Count; i++)
+            {
+                if (_generator.Systems[i].Id != systemId || _starNodes[i] == null) continue;
+                foreach (var part in StarBodyParts)
+                {
+                    var t = _starNodes[i].transform.Find(part);
+                    if (t != null) t.gameObject.SetActive(visible);
+                }
+                return;
+            }
+        }
+
         public void SetSystemIsolation(int activeSystemId, bool isolate)
         {
             if (_hyperlanesParent != null) _hyperlanesParent.SetActive(!isolate);

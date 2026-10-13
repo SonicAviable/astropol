@@ -259,7 +259,7 @@ namespace StellarisClone.Rendering
                          : "Нейтральная";
 
             string tip = $"<b>{_data.Name}</b>\n" +
-                         $"<color=#AAB4C0>Класс:</color> {_data.SpectralClass}\n" +
+                         $"<color=#AAB4C0>Класс:</color> {EmpireOverviewWindow.StarClass(_data.SpectralClass)}\n" +
                          $"<color=#AAB4C0>Владелец:</color> {owner}\n";
 
             if (_data.IsSurveyed)
