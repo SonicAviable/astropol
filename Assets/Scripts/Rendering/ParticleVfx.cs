@@ -29,7 +29,7 @@ namespace StellarisClone.Rendering
         };
 
         /// <summary>Масштаб эффекта на единицу size (размер корабля в CombatFx: корвет ≈ 0.85, эсминец 1.5, база 1.9).</summary>
-        private static readonly float[] BaseScale = { 0.12f, 0.24f, 0.16f, 0.36f, 0.32f, 0.34f };
+        private static readonly float[] BaseScale = { 0.18f, 0.34f, 0.24f, 0.45f, 0.45f, 0.45f };
         /// <summary>Минимальный интервал между эффектами одного типа (секунды реального времени).</summary>
         private static readonly float[] Cooldown = { 0.07f, 0f, 0f, 0f, 0.06f, 0.25f };
 
@@ -47,11 +47,14 @@ namespace StellarisClone.Rendering
         /// duration &gt; 0 — остановить испускание через столько секунд (для зацикленных разрядов).
         /// </summary>
         public static bool Play(Effect e, Vector3 pos, float size = 1f, Transform follow = null, float duration = -1f, Vector3? normal = null)
+            => Play(e, pos, size, follow, duration, normal, false);
+
+        private static bool Play(Effect e, Vector3 pos, float size, Transform follow, float duration, Vector3? normal, bool force)
         {
             int i = (int)e;
             Ensure();
             float now = Time.unscaledTime;
-            if (now < s_next[i]) return false;
+            if (!force && now < s_next[i]) return false;
             s_aliveUntil.RemoveAll(t => t <= now);
             if (s_aliveUntil.Count >= MaxAlive) return false;
 
@@ -84,6 +87,35 @@ namespace StellarisClone.Rendering
             Ensure();
             if (delay <= 0.01f) { Play(e, pos, size, null, -1f, normal); return; }
             s_runner.Delay(delay, () => Play(e, pos, size, null, -1f, normal));
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Boot() => Ensure();
+
+        /// <summary>
+        /// Проверка (F7): все эффекты в ряд в центре экрана — видно, загрузились ли они и какого они размера
+        /// рядом с кораблями. В консоль — какие эффекты найдены.
+        /// </summary>
+        public static void Showcase()
+        {
+            Ensure();
+            var cam = Camera.main;
+            if (cam == null) return;
+            var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            float t = Mathf.Abs(ray.direction.y) > 1e-3f ? -ray.origin.y / ray.direction.y : 40f;
+            Vector3 center = ray.GetPoint(t > 0f ? t : 40f);
+            var right = Vector3.ProjectOnPlane(cam.transform.right, Vector3.up).normalized;
+            int n = Paths.Length, ok = 0;
+            var report = new System.Text.StringBuilder("[VFX] Проверка эффектов:");
+            for (int i = 0; i < n; i++)
+            {
+                var pos = center + right * ((i - (n - 1) * 0.5f) * 4f);
+                bool played = Play((Effect)i, pos, 1.2f, null, i == (int)Effect.ElectricalSparks ? 2f : -1f, Vector3.up, true);
+                if (played) ok++;
+                report.Append($"\n  {(Effect)i}: {(played ? "показан" : Prefab(i) == null ? "НЕ НАЙДЕН в Resources/" + Paths[i] : "лимит")}");
+            }
+            report.Append($"\nПоказано {ok} из {n}. Камера на расстоянии {Vector3.Distance(cam.transform.position, center):0} ед.");
+            Debug.Log(report.ToString());
         }
 
         private static void Ensure()
@@ -155,6 +187,11 @@ namespace StellarisClone.Rendering
         /// <summary>Отложенный запуск и остановка зацикленных эффектов.</summary>
         private class Runner : MonoBehaviour
         {
+            private void Update()
+            {
+                if (Input.GetKeyDown(KeyCode.F7)) Showcase();
+            }
+
             public void Delay(float t, System.Action a) => StartCoroutine(After(t, a));
             public void StopLater(GameObject go, float t) => StartCoroutine(After(t, () =>
             {
