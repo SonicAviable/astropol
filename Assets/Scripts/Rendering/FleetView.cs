@@ -454,7 +454,8 @@ namespace StellarisClone.Rendering
 
             if (_visual != null)
             {
-                _visual.SetSelected(selected);
+                // Готовые и процедурные корпуса не перекрашиваются: выбор показывает голографический прицел под кораблём
+                SetSelectionMarker(selected);
             }
             else if (_usesCustomModel)
             {
@@ -787,6 +788,92 @@ namespace StellarisClone.Rendering
             CombatFx.Instance.ShipDamage(transform, _damageAnchors[Random.Range(0, fires)], severity, size);
         }
 
+        // ==================== ПРИЦЕЛ ВЫБОРА ====================
+        // Под выбранным кораблём — плоское голографическое кольцо и четыре скобки захвата (лежат горизонтально,
+        // не кренятся вместе с корпусом). При выборе прицел «схлопывается» к кораблю, потом медленно вращается и дышит.
+
+        private Transform _selMarker, _selBrackets;
+        private LineRenderer _selRing, _selRingGlow;
+        private float _selAge;
+        private static Material s_selMat;
+        private static readonly Color SelColor = new Color(0.45f, 0.95f, 1f);
+        private const float SelRadius = 1.7f;
+
+        private void SetSelectionMarker(bool on)
+        {
+            if (on && _selMarker == null) BuildSelectionMarker();
+            if (_selMarker == null) return;
+            _selMarker.gameObject.SetActive(on);
+            if (on) _selAge = 0f;
+        }
+
+        private void BuildSelectionMarker()
+        {
+            if (s_selMat == null)
+            {
+                var add = Resources.Load<Shader>("Shaders/CombatAdditive") ?? ShaderCache.Sprite;
+                s_selMat = new Material(add) { name = "ShipSelection", hideFlags = HideFlags.DontSave, renderQueue = 3050 };
+            }
+            _selMarker = new GameObject("SelectionMarker").transform;
+            _selMarker.SetParent(transform, false);
+            _selRingGlow = SelArc(_selMarker, "RingGlow", 0f, 360f, SelRadius, 0.22f, new Color(SelColor.r, SelColor.g, SelColor.b, 0.18f));
+            _selRing = SelArc(_selMarker, "Ring", 0f, 360f, SelRadius, 0.05f, new Color(SelColor.r, SelColor.g, SelColor.b, 0.9f));
+            _selBrackets = new GameObject("Brackets").transform;
+            _selBrackets.SetParent(_selMarker, false);
+            for (int i = 0; i < 4; i++)
+                SelArc(_selBrackets, "Bracket", i * 90f - 16f, i * 90f + 16f, SelRadius * 1.22f, 0.09f, SelColor);
+            _selMarker.gameObject.SetActive(false);
+        }
+
+        private static LineRenderer SelArc(Transform parent, string name, float fromDeg, float toDeg, float r, float width, Color col)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = false;
+            bool full = toDeg - fromDeg >= 359f;
+            int n = full ? 72 : 12;
+            lr.loop = full;
+            lr.positionCount = n;
+            // Лента лежит в плоскости XY объекта, а объект повёрнут на 90° — кольцо получается горизонтальным
+            for (int i = 0; i < n; i++)
+            {
+                float a = Mathf.Deg2Rad * Mathf.Lerp(fromDeg, toDeg, full ? i / (float)n : i / (float)(n - 1));
+                lr.SetPosition(i, new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f));
+            }
+            lr.alignment = LineAlignment.TransformZ;
+            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            lr.widthMultiplier = width;
+            lr.startColor = lr.endColor = col;
+            lr.numCapVertices = 2;
+            lr.sharedMaterial = s_selMat;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            return lr;
+        }
+
+        private void LateUpdate()
+        {
+            if (_selMarker == null || !_selMarker.gameObject.activeSelf) return;
+            _selAge += Time.unscaledDeltaTime;
+            // Горизонтально под кораблём, независимо от крена и тангажа
+            _selMarker.position = transform.position + Vector3.down * 0.35f;
+            _selMarker.rotation = Quaternion.Euler(0f, _selAge * 18f, 0f);
+            float snap = 1f + 0.6f * Mathf.Exp(-_selAge * 7f);
+            float breathe = 1f + 0.035f * Mathf.Sin(_selAge * 2.6f);
+            _selMarker.localScale = Vector3.one * snap;
+            if (_selBrackets != null)
+            {
+                _selBrackets.localRotation = Quaternion.Euler(0f, -_selAge * 40f, 0f);
+                _selBrackets.localScale = Vector3.one * breathe;
+            }
+            if (_selRingGlow != null)
+            {
+                float a = 0.14f + 0.08f * (0.5f + 0.5f * Mathf.Sin(_selAge * 2.6f));
+                _selRingGlow.startColor = _selRingGlow.endColor = new Color(SelColor.r, SelColor.g, SelColor.b, a);
+            }
+        }
+
         private void Update()
         {
             ApplyFogVisibility();
@@ -1016,7 +1103,10 @@ namespace StellarisClone.Rendering
             Vector3 axis = Flat(aim - station);
             axis = axis.sqrMagnitude > 0.01f ? axis.normalized : Vector3.forward;
             Vector3 side = new Vector3(-axis.z, 0f, axis.x);
-            float seed = Mathf.Repeat(Data.Id * 0.618034f, 1f) * 6.2832f;
+            // Звено одного класса маневрирует синхронно (общая фаза), каждый корабль — с небольшим сдвигом:
+            // соседи в строю качаются вместе и не налетают друг на друга
+            int group = Data.OwnerId * 8 + (military ? (int)hull : 3);
+            float seed = Mathf.Repeat(group * 0.618034f, 1f) * 6.2832f + Mathf.Repeat(Data.Id * 0.381966f, 1f) * 0.35f;
             float t = _combatClock * freq;
             Vector3 goal = station
                          + side * (Mathf.Sin(t + seed) * amp)
@@ -1075,7 +1165,10 @@ namespace StellarisClone.Rendering
             float dt = WorkDt();
             if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
             _workClock += dt;
-            float seed = Mathf.Repeat(Data.Id * 0.618034f, 1f) * 6.2832f;
+            // Звено одного класса маневрирует синхронно (общая фаза), каждый корабль — с небольшим сдвигом:
+            // соседи в строю качаются вместе и не налетают друг на друга
+            int group = Data.OwnerId * 8 + (military ? (int)hull : 3);
+            float seed = Mathf.Repeat(group * 0.618034f, 1f) * 6.2832f + Mathf.Repeat(Data.Id * 0.381966f, 1f) * 0.35f;
             float a = seed + _workClock * 0.16f;
             const float r = 4.6f;
             Vector3 goal = star + new Vector3(Mathf.Cos(a) * r, 0.8f + 0.2f * Mathf.Sin(_workClock * 0.5f), Mathf.Sin(a) * r);

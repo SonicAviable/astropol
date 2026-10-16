@@ -418,8 +418,9 @@ namespace StellarisClone.Core
 
         private static float StationRadius(FleetData d)
         {
-            if (d.Type != FleetType.Military) return 5.0f;
-            return d.HullClass == ShipClass.Destroyer ? 4.3f : d.HullClass == ShipClass.Frigate ? 3.6f : 3.0f;
+            // Линии классов разнесены на длину корпуса с запасом — корабли одной стороны не наслаиваются
+            if (d.Type != FleetType.Military) return 9.5f;
+            return d.HullClass == ShipClass.Destroyer ? 7.8f : d.HullClass == ShipClass.Frigate ? 5.6f : 3.4f;
         }
 
         /// <summary>
@@ -445,6 +446,8 @@ namespace StellarisClone.Core
             }
 
             const int PerRow = 6;
+            // Шаг в строю: размах крыла корабля (до 2.4) плюс зазор; ряды — на длину корпуса
+            const float LateralStep = 2.8f, RowStep = 2.4f;
             foreach (var g in groups.Values)
             {
                 g.Sort((x, y) => x.Id.CompareTo(y.Id));
@@ -457,8 +460,8 @@ namespace StellarisClone.Core
                     var d = g[i];
                     int row = i / PerRow, col = i % PerRow;
                     int inRow = Mathf.Min(PerRow, g.Count - row * PerRow);
-                    float lateral = (col - (inRow - 1) * 0.5f) * 1.0f;
-                    float radial = StationRadius(d) * StanceRadiusMult(battle, d.OwnerId) + row * 0.8f;
+                    float lateral = (col - (inRow - 1) * 0.5f) * LateralStep;
+                    float radial = StationRadius(d) * StanceRadiusMult(battle, d.OwnerId) + row * RowStep;
                     float lift = d.HullClass == ShipClass.Corvette ? 0.75f : d.HullClass == ShipClass.Frigate ? 0.5f : 0.3f;
                     var pos = sys.Position + dir * radial + perp * lateral + Vector3.up * (lift + (row % 2) * 0.35f);
                     _stations[d.Id] = new Station

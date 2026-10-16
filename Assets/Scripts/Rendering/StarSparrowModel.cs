@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
         private static readonly Color WorkAmber = new Color(0.86f, 0.58f, 0.16f);
 
         /// <summary>Наибольший размах крыла в единицах карты — чтобы широкие корпуса не вылезали за коллайдер.</summary>
-        private const float MaxWidth = 3.8f;
+        private const float MaxWidth = 2.4f;
 
         private static Material s_base;
         private static bool s_checked;
