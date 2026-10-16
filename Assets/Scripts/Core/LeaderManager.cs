@@ -117,8 +117,8 @@ namespace StellarisClone.Core
 
             new TraitDef { Id = "gov_engineer", Class = LeaderClass.Governor, Name = "Инженер", Desc = "+25% к скорости строительства на планете" },
             new TraitDef { Id = "gov_industrialist", Class = LeaderClass.Governor, Name = "Промышленник", Desc = "+15% к сплавам планеты" },
-            new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = "Геолог", Desc = "+15% к минералам планеты" },
-            new TraitDef { Id = "gov_energy", Class = LeaderClass.Governor, Name = "Энергетик", Desc = "+15% к энергии планеты" },
+            new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = "Геолог", Desc = "+15% к титану планеты" },
+            new TraitDef { Id = "gov_energy", Class = LeaderClass.Governor, Name = "Энергетик", Desc = "+15% к гелию-3 планеты" },
             new TraitDef { Id = "gov_admin", Class = LeaderClass.Governor, Name = "Администратор", Desc = "+6% ко всему производству планеты" },
 
             // Черты из событий
@@ -294,7 +294,7 @@ namespace StellarisClone.Core
             reason = null;
             if (CountFor(0) >= MaxLeaders) { reason = $"Не больше {MaxLeaders} лидеров"; return false; }
             var eco = EconomyManager.Instance;
-            if (eco == null || eco.Influence < HireInfluence) { reason = $"Нужно {HireInfluence:0} влияния"; return false; }
+            if (eco == null || eco.Influence < HireInfluence) { reason = $"{CostCheck.Full(influence: HireInfluence)} (найм стоит {HireInfluence:0})"; return false; }
             return true;
         }
 

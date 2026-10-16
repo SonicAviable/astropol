@@ -426,7 +426,7 @@ namespace StellarisClone.Core
             if (ai == null || ai.IsEliminated) { reason = "Империя пала"; return false; }
             if (a.Cover < SpyInfo.MinCover(op)) { reason = $"Нужна разведсеть {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)"; return false; }
             var eco = EconomyManager.Instance;
-            if (eco == null || eco.Influence < SpyInfo.Cost(op)) { reason = $"Нужно {SpyInfo.Cost(op):0} влияния"; return false; }
+            if (eco == null || eco.Influence < SpyInfo.Cost(op)) { reason = $"{CostCheck.Full(influence: SpyInfo.Cost(op))} (операция стоит {SpyInfo.Cost(op):0})"; return false; }
             if (op == SpyOp.Steal && StealTarget(ai, out _) == null) { reason = "У них нет технологий, которых нет у вас"; return false; }
             if (op == SpyOp.Discord)
             {
@@ -528,7 +528,7 @@ namespace StellarisClone.Core
             float chance = SuccessChance(a, op, ai);
             bool ok = UnityEngine.Random.value < chance;
             float counter = TargetCounter(ai);
-            bool noticed = UnityEngine.Random.value < Mathf.Clamp01(0.15f + counter * 1.2f - (a.Has("agt_shadow") ? 0.15f : 0f));
+            bool noticed = UnityEngine.Random.value < NoticeChance(a, ai);
             var lm = Lm;
 
             if (ok)
@@ -563,8 +563,7 @@ namespace StellarisClone.Core
             else
             {
                 _s.Failed++;
-                float catchChance = Mathf.Clamp(0.45f + counter * 0.4f - (a.Has("agt_shadow") ? 0.20f : 0f) - a.Level * 0.03f, 0.10f, 0.85f);
-                if (UnityEngine.Random.value < catchChance)
+                if (UnityEngine.Random.value < CatchChance(a, ai))
                 {
                     _s.AgentsLost++;
                     ai.AddMemory("espionage", -12f);
@@ -580,6 +579,83 @@ namespace StellarisClone.Core
                     AddLog($"Операция «{SpyInfo.Name(op)}» против {ai.AIName} провалена. {a.Name} ушёл в тень, но половина разведсети потеряна.", 2);
                     NotificationCenter.Show("Операция провалена", $"{SpyInfo.Name(op)}: {a.Name} ушёл от ареста, половина разведсети потеряна", NotificationCenter.Kind.Warning, 7f);
                 }
+            }
+            SyncCover();
+            Changed();
+        }
+
+        /// <summary>Шанс, что успешную операцию заметят (−8 к отношению).</summary>
+        public static float NoticeChance(Leader a, AIEmpireManager ai)
+            => Mathf.Clamp01(0.15f + TargetCounter(ai) * 1.2f - (a.Has("agt_shadow") ? 0.15f : 0f));
+
+        /// <summary>Шанс ареста агента при провале.</summary>
+        public static float CatchChance(Leader a, AIEmpireManager ai)
+            => Mathf.Clamp(0.45f + TargetCounter(ai) * 0.4f - (a.Has("agt_shadow") ? 0.20f : 0f) - a.Level * 0.03f, 0.10f, 0.85f);
+
+        /// <summary>
+        /// Подсказка операции до запуска: что именно получите при успехе и чем рискуете при провале — с цифрами.
+        /// Точные запасы цели видны только с досье (сеть от 50%).
+        /// </summary>
+        public static string OpPreview(Leader a, SpyOp op, AIEmpireManager ai)
+        {
+            if (a == null || ai == null) return SpyInfo.Desc(op);
+            const string M = "#8AA2A8", Good = "#5CE68A", Bad = "#FF8888";
+            float p = SuccessChance(a, op, ai);
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"<b>{SpyInfo.Name(op)}</b> против {ai.AIName}\n");
+            sb.Append($"<color={M}>Цена:</color> {SpyInfo.Cost(op):0} влияния · {SpyInfo.Months(op)} мес. · успех <b>{p * 100f:0}%</b>\n\n");
+            sb.Append($"<color={Good}>Если удастся:</color> ");
+            switch (op)
+            {
+                case SpyOp.Steal:
+                {
+                    var tech = StealTarget(ai, out bool available);
+                    sb.Append(tech == null ? "красть нечего — у них нет технологий, которых нет у вас."
+                        : available ? $"технология «{tech.Name}» будет изучена сразу."
+                        : $"половина исследования «{tech.Name}» ({tech.Cost * 0.5f:0} науки).");
+                    break;
+                }
+                case SpyOp.Sabotage:
+                    if (HasIntel(ai.OwnerId, DeepIntelCover))
+                    {
+                        float al = ai.GetStock("alloys"), en = ai.GetStock("energy");
+                        sb.Append($"уничтожит ≈ {Mathf.Min(al, Mathf.Max(30f, al * 0.35f)):0} сплавов и ≈ {Mathf.Min(en, Mathf.Max(20f, en * 0.20f)):0} гелия-3 (по досье).");
+                    }
+                    else sb.Append("уничтожит 35% их сплавов (не меньше 30) и 20% гелия-3 (не меньше 20). Точные запасы видны в досье — от 50% сети.");
+                    break;
+                default:
+                    sb.Append("две чужие империи поссорятся: −35 к отношениям между ними, война между ними вероятнее.");
+                    break;
+            }
+            sb.Append($"\nСеть частично засветится (−15%). С шансом {NoticeChance(a, ai) * 100f:0}% следы заметят: −8 к отношению с вами.\n");
+            sb.Append($"<color={Bad}>Если провалится:</color> с шансом {CatchChance(a, ai) * 100f:0}% агента арестуют (−12 к отношению, сеть −30%), " +
+                      "иначе он уйдёт, но половина разведсети пропадёт.");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Для событий: усилить (delta &gt; 0) или ослабить разведсеть в империи owner — во всех её системах,
+        /// где сеть уже есть; если сети нет и delta &gt; 0 — зацепка в столице.
+        /// </summary>
+        public static void AdjustNetwork(int owner, float delta)
+        {
+            var es = Instance;
+            if (es == null || owner <= 0 || Mathf.Approximately(delta, 0f)) return;
+            var touched = new List<int>();
+            foreach (var kv in es._net)
+            {
+                var sys = EmpireStats.GetSystem(kv.Key);
+                if (sys != null && sys.OwnerId == owner) touched.Add(kv.Key);
+            }
+            if (touched.Count == 0)
+            {
+                var ai = AIEmpireManager.For(owner);
+                if (delta > 0f && ai != null && ai.CapitalSystemId >= 0) es._net[ai.CapitalSystemId] = Mathf.Min(100f, delta);
+            }
+            foreach (int id in touched)
+            {
+                float v = Mathf.Clamp(es._net[id] + delta, 0f, 100f);
+                if (v <= 0f) es._net.Remove(id); else es._net[id] = v;
             }
             SyncCover();
             Changed();

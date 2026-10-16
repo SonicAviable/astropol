@@ -1122,6 +1122,8 @@ namespace StellarisClone.Rendering
             bool on = _deal.HasTreaty(k);
             bool can = !ai.IsEliminated && !_viewingOffer && (block == null || on);
             string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
+            string mine = TreatyForYou(k, ai);
+            if (mine != null) tip += "\n" + mine;
             if (active) tip += "\n<color=#6FE09A>Договор действует</color>";
             else if (block != null) tip += $"\n<color=#FF8080>{block}</color>";
             else if (_viewingOffer) tip += "\n<color=#8AA2A8>Сначала ответьте на их предложение</color>";
@@ -1132,6 +1134,39 @@ namespace StellarisClone.Rendering
                 return;
             }
             SetSlot(s, label, icon, on ? Gold : Cyan, on ? new Color(0.30f, 0.22f, 0.05f, 0.97f) : SlotBg, can, tip, () => AddToTable(k, false));
+        }
+
+        /// <summary>Что договор даст именно вам — в цифрах вашей империи.</summary>
+        private static string TreatyForYou(DealItemKind k, AIEmpireManager ai)
+        {
+            const string G = "#6FE09A";
+            int years = DealCatalog.TreatyMonths / 12;
+            switch (k)
+            {
+                case DealItemKind.TradeTreaty:
+                    return $"<color={G}>Для вас:</color> +{DealCatalog.TradeTreatyEnergy:0} гелия-3 в месяц, за {years} лет ≈ +{DealCatalog.TradeTreatyEnergy * DealCatalog.TreatyMonths:0}";
+                case DealItemKind.ResearchTreaty:
+                {
+                    float inc = TechnologyManager.Instance != null ? TechnologyManager.Instance.MonthlyResearchIncome : 0f;
+                    if (inc <= 0f) return null;
+                    float add = inc * DealCatalog.ResearchTreatyBonus;
+                    return $"<color={G}>Для вас:</color> ≈ +{add:0} науки в месяц (сейчас {inc:0}/мес), за {years} лет ≈ +{add * DealCatalog.TreatyMonths:0}";
+                }
+                case DealItemKind.Charts:
+                {
+                    if (ai == null) return null;
+                    int toYou = 0, toThem = 0;
+                    foreach (var sys in EmpireStats.Systems)
+                    {
+                        bool me = sys.IsSurveyedBy(0), they = sys.IsSurveyedBy(ai.OwnerId);
+                        if (they && !me) toYou++;
+                        if (me && !they) toThem++;
+                    }
+                    return $"<color={G}>Для вас:</color> откроется ≈ {toYou} изученных ими систем; они получат ≈ {toThem} ваших";
+                }
+                default:
+                    return null;
+            }
         }
 
         /// <summary>Решительное действие (война, разрыв пакта, коалиция) — с подтверждением повторным щелчком.</summary>

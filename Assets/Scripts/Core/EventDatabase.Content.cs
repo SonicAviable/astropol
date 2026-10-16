@@ -114,11 +114,11 @@ namespace StellarisClone.Core
                         "Фракции спорят до хрипоты, журналисты дежурят у дверей зала, но последнее слово, как всегда, за Председателем. " +
                         "Какой курс выберет Республика?",
                         AnomalyType.Diplomatic, Opts(
-                            new EventOption("ЗАКОН О НАУЧНЫХ ГРАНТАХ", $"+{R(8 * k)} науки и −{R(3 * k)} энергии в месяц на 24 месяца.",
+                            new EventOption("ЗАКОН О НАУЧНЫХ ГРАНТАХ", $"+{R(8 * k)} науки и −{R(3 * k)} гелия-3 в месяц на 24 месяца.",
                                 () => EmpireEffects.Add("law_astrea", "Закон о научных грантах", "Совет Республики", 24, energy: -3 * k, science: 8 * k)),
-                            new EventOption("ПРОГРАММА ОСВОЕНИЯ", $"+2 влияния и +{R(4 * k)} минералов в месяц на 24 месяца.",
+                            new EventOption("ПРОГРАММА ОСВОЕНИЯ", $"+2 влияния и +{R(4 * k)} титана в месяц на 24 месяца.",
                                 () => EmpireEffects.Add("law_astrea", "Программа освоения", "Совет Республики", 24, minerals: 4 * k, influence: 2f)),
-                            new EventOption("ОБОРОННЫЙ БЮДЖЕТ", $"+{R(4 * k)} сплавов и −{R(3 * k)} энергии в месяц на 24 месяца.",
+                            new EventOption("ОБОРОННЫЙ БЮДЖЕТ", $"+{R(4 * k)} сплавов и −{R(3 * k)} гелия-3 в месяц на 24 месяца.",
                                 () => EmpireEffects.Add("law_astrea", "Оборонный бюджет", "Совет Республики", 24, energy: -3 * k, alloys: 4 * k)),
                             new EventOption("ВСЕНАРОДНЫЙ РЕФЕРЕНДУМ", $"Закон не принимается, зато народ доверяет Совету: сразу +{R(40 * k)} влияния.",
                                 () => Give(influence: 40 * k))));
@@ -138,7 +138,7 @@ namespace StellarisClone.Core
                         "Каждые два года верховный маршал принимает смотр легионов Доминиона. Над плацем гремят марши, " +
                         "дредноуты висят над столицей в парадном строю. Генералы ждут приказа: куда направить силу империи?",
                         AnomalyType.MilitaryIncident, Opts(
-                            new EventOption("ВСЕОБЩАЯ МОБИЛИЗАЦИЯ", $"Сразу 2 корвета у верфи; −{R(4 * k)} энергии в месяц на 24 месяца на содержание призывников.", () =>
+                            new EventOption("ВСЕОБЩАЯ МОБИЛИЗАЦИЯ", $"Сразу 2 корвета у верфи; −{R(4 * k)} гелия-3 в месяц на 24 месяца на содержание призывников.", () =>
                             {
                                 int sys = SpawnSystem(null);
                                 if (sys >= 0)
@@ -146,7 +146,7 @@ namespace StellarisClone.Core
                                         FleetManager.Instance?.CreateFleetObject($"Легион призыва {FleetManager.Instance.AllFleets.Count + 1}", sys, FleetType.Military);
                                 EmpireEffects.Add("doctrine_xarn", "Всеобщая мобилизация", "Смотр легионов", 24, energy: -4 * k);
                             }),
-                            new EventOption("ВОЕННАЯ ЭКОНОМИКА", $"+{R(5 * k)} сплавов и −{R(3 * k)} минералов в месяц на 24 месяца.",
+                            new EventOption("ВОЕННАЯ ЭКОНОМИКА", $"+{R(5 * k)} сплавов и −{R(3 * k)} титана в месяц на 24 месяца.",
                                 () => EmpireEffects.Add("doctrine_xarn", "Военная экономика", "Смотр легионов", 24, minerals: -3 * k, alloys: 5 * k)),
                             new EventOption("ТРИУМФАЛЬНЫЙ ПАРАД", $"Сразу +{R(50 * k)} влияния и +1 влияния в месяц на 24 месяца.", () =>
                             {
@@ -174,22 +174,22 @@ namespace StellarisClone.Core
                         "Совет директоров собирает акционеров Синдиката. Отчёт о прибыли зачитан, бокалы подняты, аналитики " +
                         "разложили графики по столам. Генеральный директор должен назвать стратегию на ближайшие два года.",
                         AnomalyType.Diplomatic, Opts(
-                            new EventOption("ВЕНЧУРНЫЕ ИНВЕСТИЦИИ", $"Вложить {R(invest)} энергии. Через год: 85% — вернуть почти вдвое больше, 15% — проект провалится.", () =>
+                            new EventOption("ВЕНЧУРНЫЕ ИНВЕСТИЦИИ", $"Вложить {R(invest)} гелия-3. Через год: 85% — вернуть почти вдвое больше, 15% — проект провалится.", () =>
                             {
                                 Pay(energy: invest);
                                 Schedule("aquila_dividends", 360, new EventContext());
-                            }, $"Нужно {R(invest)} энергии", () => CanPay(energy: invest)),
-                            new EventOption("РУДНАЯ МОНОПОЛИЯ", $"+{R(6 * k)} минералов и +{R(3 * k)} энергии в месяц на 24 месяца. Соседи недовольны: −8 к отношению всех империй.", () =>
+                            }, Need(energy: invest), () => CanPay(energy: invest)),
+                            new EventOption("РУДНАЯ МОНОПОЛИЯ", $"+{R(6 * k)} титана и +{R(3 * k)} гелия-3 в месяц на 24 месяца. Соседи недовольны: −8 к отношению всех империй.", () =>
                             {
                                 EmpireEffects.Add("contract_aquila", "Рудная монополия", "Собрание акционеров", 24, energy: 3 * k, minerals: 6 * k);
                                 OpinionAll(-8f);
                             }),
-                            new EventOption("ТОРГОВЫЕ ПРЕДСТАВИТЕЛЬСТВА", $"+{R(2 * k)} энергии в месяц за каждую мирную империю (сейчас {peaceful}) на 24 месяца и +4 к их отношению.", () =>
+                            new EventOption("ТОРГОВЫЕ ПРЕДСТАВИТЕЛЬСТВА", $"+{R(2 * k)} гелия-3 в месяц за каждую мирную империю (сейчас {peaceful}) на 24 месяца и +4 к их отношению.", () =>
                             {
                                 EmpireEffects.Add("contract_aquila", "Торговые представительства", "Собрание акционеров", 24, energy: 2 * k * peaceful);
                                 foreach (var ai in AIEmpireManager.Alive) if (!ai.AtWar) ai.AddMemory("trade", 4f);
                             }, "Нужна хотя бы одна мирная империя", () => peaceful > 0),
-                            new EventOption("ВЫКУП ДОЛГОВ", $"Сразу +{R(70 * k)} влияния, −{R(4 * k)} энергии в месяц на 24 месяца.", () =>
+                            new EventOption("ВЫКУП ДОЛГОВ", $"Сразу +{R(70 * k)} влияния, −{R(4 * k)} гелия-3 в месяц на 24 месяца.", () =>
                             {
                                 Give(influence: 70 * k);
                                 EmpireEffects.Add("contract_aquila", "Выплата долгов", "Собрание акционеров", 24, energy: -4 * k);
@@ -208,17 +208,17 @@ namespace StellarisClone.Core
                             "Год назад Синдикат вложился в рискованные стартапы на окраинах. Один из них — фабрика квантовых " +
                             "аккумуляторов — выстрелил. Акционеры довольны, генеральный директор принимает поздравления.",
                             AnomalyType.Diplomatic, Opts(
-                                new EventOption("ПОЛУЧИТЬ ПРИБЫЛЬ", $"+{R(280 * k)} энергии.", () => Give(energy: 280 * k))));
+                                new EventOption("ПОЛУЧИТЬ ПРИБЫЛЬ", $"+{R(280 * k)} гелия-3.", () => Give(energy: 280 * k))));
                     return Ev("aquila_dividends", "ИНВЕСТИЦИИ СГОРЕЛИ",
                         "Фабрика на окраине оказалась пустой коробкой, а её основатель исчез вместе с деньгами. " +
                         "Юристы Синдиката нашли лишь часть активов.",
                         AnomalyType.Diplomatic, Opts(
-                            new EventOption("СПИСАТЬ УБЫТКИ", $"Вернуть хоть что-то: +{R(40 * k)} энергии.", () => Give(energy: 40 * k)),
-                            new EventOption("НАЙТИ И НАКАЗАТЬ", "−20 влияния; учёт в Синдикате станет строже: +2 энергии в месяц на 24 месяца.", () =>
+                            new EventOption("СПИСАТЬ УБЫТКИ", $"Вернуть хоть что-то: +{R(40 * k)} гелия-3.", () => Give(energy: 40 * k)),
+                            new EventOption("НАЙТИ И НАКАЗАТЬ", "−20 влияния; учёт в Синдикате станет строже: +2 гелия-3 в месяц на 24 месяца.", () =>
                             {
                                 Pay(influence: 20f);
                                 EmpireEffects.Add("aquila_audit", "Строгий аудит", "Последствия провала", 24, energy: 2f);
-                            }, "Нужно 20 влияния", () => CanPay(influence: 20f))));
+                            }, Need(influence: 20f), () => CanPay(influence: 20f))));
                 }
             });
 
@@ -241,7 +241,7 @@ namespace StellarisClone.Core
                                 GalaxyView.Instance?.RefreshTerritoryVisuals();
                                 NotificationCenter.Show("Видение звёзд", $"Оракул открыла {near.Count} сист.", NotificationCenter.Kind.Success, 6f);
                             }, "Нет неизученных систем рядом", () => near.Count > 0),
-                            new EventOption("ВИДЕНИЕ ИЗОБИЛИЯ", $"+{R(5 * k)} энергии и +{R(5 * k)} минералов в месяц на 24 месяца.",
+                            new EventOption("ВИДЕНИЕ ИЗОБИЛИЯ", $"+{R(5 * k)} гелия-3 и +{R(5 * k)} титана в месяц на 24 месяца.",
                                 () => EmpireEffects.Add("vision_iridia", "Видение изобилия", "Видения Оракула", 24, energy: 5 * k, minerals: 5 * k)),
                             new EventOption("ВИДЕНИЕ ГРЯДУЩЕГО", $"+{R(220 * k)} науки сразу; 35% — мгновенный прорыв случайной технологии.", () =>
                             {
@@ -300,7 +300,7 @@ namespace StellarisClone.Core
                                     }
                                 EmpireEffects.Add("council_terraan", "Пробуждение рощ", "Совет Корней", 24, alloys: 3 * k);
                             }),
-                            new EventOption("ДОЛГИЙ СЕЗОН", $"Сады плодоносят: +{R(6 * k)} минералов и +{R(2 * k)} влияния в месяц на 24 месяца.",
+                            new EventOption("ДОЛГИЙ СЕЗОН", $"Сады плодоносят: +{R(6 * k)} титана и +{R(2 * k)} влияния в месяц на 24 месяца.",
                                 () => EmpireEffects.Add("council_terraan", "Долгий сезон", "Совет Корней", 24, minerals: 6 * k, influence: 2 * k)),
                             new EventOption("ПАМЯТЬ ДРЕВНИХ", $"Старейшие деревья делятся знанием: +{R(180 * k)} науки и +{R(3 * k)} науки в месяц на 24 месяца.", () =>
                             {
@@ -328,16 +328,16 @@ namespace StellarisClone.Core
                         "Их первая банда уже вышла на промысел, и налёты будут повторяться: пираты грабят слабо защищённые колонии " +
                         "у самых границ. Совет ждёт решения.",
                         AnomalyType.DistressSignal, Opts(
-                            new EventOption("ПЛАТИТЬ ДАНЬ", $"−{R(tribute)} энергии: 3 года пираты не трогают ваши системы.", () =>
+                            new EventOption("ПЛАТИТЬ ДАНЬ", $"−{R(tribute)} гелия-3: 3 года пираты не трогают ваши системы.", () =>
                             {
                                 Pay(energy: tribute);
                                 ThreatManager.Instance?.SetTribute(36);
-                            }, $"Нужно {R(tribute)} энергии", () => CanPay(energy: tribute)),
-                            new EventOption("ОБЪЯВИТЬ НАГРАДУ", "−30 влияния: 3 года за каждый уничтоженный вами пиратский корабль +40 энергии и +4 влияния.", () =>
+                            }, Need(energy: tribute), () => CanPay(energy: tribute)),
+                            new EventOption("ОБЪЯВИТЬ НАГРАДУ", "−30 влияния: 3 года за каждый уничтоженный вами пиратский корабль +40 гелия-3 и +4 влияния.", () =>
                             {
                                 Pay(influence: 30f);
                                 ThreatManager.Instance?.SetBounty(36);
-                            }, "Нужно 30 влияния", () => CanPay(influence: 30f)),
+                            }, Need(influence: 30f), () => CanPay(influence: 30f)),
                             new EventOption("ВЫДАТЬ КАПЕРСКИЕ ГРАМОТЫ", $"−{R(letters)} сплавов: три следующих налёта обрушатся на соперников (чаще на тех, с кем вы воюете). 30% — сделка вскроется: −10 к отношению всех империй.", () =>
                             {
                                 Pay(alloys: letters);
@@ -347,7 +347,7 @@ namespace StellarisClone.Core
                                     OpinionAll(-10f);
                                     NotificationCenter.Show("Сделка с пиратами вскрылась", "Соседи узнали о каперских грамотах", NotificationCenter.Kind.Warning, 7f);
                                 }
-                            }, $"Нужно {R(letters)} сплавов", () => CanPay(alloys: letters)),
+                            }, Need(alloys: letters), () => CanPay(alloys: letters)),
                             new EventOption("ПУСТЬ ПОПРОБУЮТ", "Ничего не делать. Держите военный флот у пограничных колоний — пираты избегают защищённых систем.", () => { })));
                 }
             });
@@ -410,7 +410,7 @@ namespace StellarisClone.Core
                                 Xp(c, 30f);
                                 Schedule("precursor_decoding", 90, c);
                             }),
-                            new EventOption("ПРОДАТЬ МАЯК СОСЕДЯМ", $"+{R(150 * k)} энергии и +8 к отношению случайной мирной империи. Наследие уйдёт к ней.", () =>
+                            new EventOption("ПРОДАТЬ МАЯК СОСЕДЯМ", $"+{R(150 * k)} гелия-3 и +8 к отношению случайной мирной империи. Наследие уйдёт к ней.", () =>
                             {
                                 Give(energy: 150 * k);
                                 RandomPeacefulRival()?.AddMemory("incident", 8f);
@@ -434,11 +434,11 @@ namespace StellarisClone.Core
                         "их слышат и соседние империи. Восстановить карту можно своими силами, но это долго и дорого; " +
                         "можно поручить работу научному совету или договориться с соседями.",
                         AnomalyType.PrecursorRelic, Opts(
-                            new EventOption("СВОИМИ СИЛАМИ", $"−{R(cost)} энергии. Карта будет готова через 5 месяцев.", () =>
+                            new EventOption("СВОИМИ СИЛАМИ", $"−{R(cost)} гелия-3. Карта будет готова через 5 месяцев.", () =>
                             {
                                 Pay(energy: cost);
                                 Schedule("precursor_map", 150, c);
-                            }, $"Нужно {R(cost)} энергии", () => CanPay(energy: cost)),
+                            }, Need(energy: cost), () => CanPay(energy: cost)),
                             new EventOption("ПОРУЧИТЬ НАУЧНОМУ СОВЕТУ", "Карта через 2 месяца, учёный совета получает 60 опыта.", () =>
                             {
                                 if (council != null) Leaders?.GrantXp(council, 60f);
@@ -475,13 +475,13 @@ namespace StellarisClone.Core
                             {
                                 Pay(alloys: alloys);
                                 Schedule("precursor_vault", 120, ctx);
-                            }, $"Нужно {R(alloys)} сплавов", () => CanPay(alloys: alloys)),
-                            new EventOption("ЭКСПЕДИЦИЯ ПОД ОХРАНОЙ ФЛОТА", $"−{R(escortAlloys)} сплавов и −{R(escortEnergy)} энергии. Безопаснее: если хранилище охраняется, эскорт примет удар.", () =>
+                            }, Need(alloys: alloys), () => CanPay(alloys: alloys)),
+                            new EventOption("ЭКСПЕДИЦИЯ ПОД ОХРАНОЙ ФЛОТА", $"−{R(escortAlloys)} сплавов и −{R(escortEnergy)} гелия-3. Безопаснее: если хранилище охраняется, эскорт примет удар.", () =>
                             {
                                 Pay(energy: escortEnergy, alloys: escortAlloys);
                                 SetFlag("precursor_escort");
                                 Schedule("precursor_vault", 120, ctx);
-                            }, "Нужны сплавы и энергия", () => CanPay(energy: escortEnergy, alloys: escortAlloys)),
+                            }, Need(energy: escortEnergy, alloys: escortAlloys), () => CanPay(energy: escortEnergy, alloys: escortAlloys)),
                             new EventOption("ОТЛОЖИТЬ НА ГОД", "Вернуться к карте через год.", () => Schedule("precursor_map", 360, c))));
                 }
             });
@@ -626,7 +626,7 @@ namespace StellarisClone.Core
                             {
                                 Pay(influence: 40f);
                                 Leaders?.GrantXp(l, 150f);
-                            }, "Нужно 40 влияния", () => CanPay(influence: 40f)),
+                            }, Need(influence: 40f), () => CanPay(influence: 40f)),
                             new EventOption("ДАТЬ ОСОБОЕ ПОРУЧЕНИЕ", $"Через 4 месяца: 65% — успех (черта «{TraitName(EventTraitFor(l.Class))}» и 200 опыта), 35% — провал, лидер может уйти в отставку.",
                                 () => Schedule("leader_ambition_result", 120, c)),
                             new EventOption("ОТКАЗАТЬ", "30% — лидер уйдёт в отставку.", () =>
@@ -665,7 +665,7 @@ namespace StellarisClone.Core
                             {
                                 Pay(influence: 30f);
                                 Leaders?.GrantXp(l, 60f);
-                            }, "Нужно 30 влияния", () => CanPay(influence: 30f))));
+                            }, Need(influence: 30f), () => CanPay(influence: 30f))));
                 }
             });
         }

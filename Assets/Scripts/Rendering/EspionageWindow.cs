@@ -659,7 +659,9 @@ namespace StellarisClone.Rendering
             brt.offsetMin = new Vector2(14, 12);
             brt.offsetMax = new Vector2(-14, 44);
             btn.interactable = can;
-            if (!can && reason != null) TooltipHelper.Attach(btn.gameObject, reason);
+            // Что даст операция и чем рискуете; если кнопка серая — сначала причина
+            string preview = EspionageManager.OpPreview(a, op, ai);
+            TooltipHelper.Attach(btn.gameObject, can || reason == null ? preview : $"<color=#FF8888>{reason}</color>\n\n{preview}");
         }
 
         private void ActiveOp(Leader a, AIEmpireManager ai, float top)

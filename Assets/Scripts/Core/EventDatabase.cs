@@ -121,6 +121,19 @@ namespace StellarisClone.Core
         private static bool CanPay(float energy = 0f, float minerals = 0f, float alloys = 0f, float influence = 0f)
             => Eco != null && Eco.CanAfford(energy, minerals, alloys, influence);
 
+        /// <summary>Пометка платного варианта: «Нужно 80 титана», а если не хватает — и сколько именно.</summary>
+        private static string Need(float energy = 0f, float minerals = 0f, float alloys = 0f, float influence = 0f)
+        {
+            var parts = new List<string>();
+            if (energy > 0f) parts.Add($"{Mathf.RoundToInt(energy)} гелия-3");
+            if (minerals > 0f) parts.Add($"{Mathf.RoundToInt(minerals)} титана");
+            if (alloys > 0f) parts.Add($"{Mathf.RoundToInt(alloys)} сплавов");
+            if (influence > 0f) parts.Add($"{Mathf.RoundToInt(influence)} влияния");
+            string need = "Нужно " + string.Join(", ", parts);
+            string miss = CostCheck.Full(energy, minerals, alloys, influence);
+            return miss == null ? need : $"{need} · {miss.ToLower()}";
+        }
+
         private static void Pay(float energy = 0f, float minerals = 0f, float alloys = 0f, float influence = 0f)
             => Eco?.TrySpend(energy, minerals, alloys, influence);
 
@@ -184,6 +197,20 @@ namespace StellarisClone.Core
             ["admiral_drills"]           = "Drills",
             ["governor_corruption"]      = "Corruption",
             ["leader_aging"]             = "Aging",
+            ["spy_intercept"]            = "Defector",
+            ["spy_double_agent"]         = "Defector",
+            ["spy_mole_found"]           = "Defector",
+            ["spy_agent_compromised"]    = "Defector",
+            ["colony_refugees"]          = "Distress",
+            ["colony_strike"]            = "Corruption",
+            ["colony_meteor"]            = "Quake",
+            ["colony_young_scientists"]  = "Breakthrough",
+            ["military_deserters"]       = "Defector",
+            ["military_ghost_contact"]   = "Probe",
+            ["survey_frozen_colony"]     = "Distress",
+            ["survey_ancient_battlefield"] = "Derelict",
+            ["diplo_summit"]             = "Trade",
+            ["diplo_rival_crisis"]       = "Trade",
         };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
@@ -291,6 +318,7 @@ namespace StellarisClone.Core
             AddThreatEvents();
             AddPrecursorChain();
             AddLeaderAmbitions();
+            AddMoreEvents();
         }
 
         // -------------------- Разведка --------------------
@@ -409,7 +437,7 @@ namespace StellarisClone.Core
                     "В дециметровом диапазоне принят сигнал бедствия. Источник — обломок транспорта с радиационным шлейфом. " +
                     "Бортовой самописец, вероятно, содержит навигационные карты ближних систем, а в спасательных капсулах может быть кто-то живой.",
                     AnomalyType.DistressSignal, Opts(
-                        new EventOption("СПАСАТЕЛЬНАЯ ОПЕРАЦИЯ", "+30 влияния, +60 минералов, +60 гелия-3.", () => Give(energy: 60f, minerals: 60f, influence: 30f)),
+                        new EventOption("СПАСАТЕЛЬНАЯ ОПЕРАЦИЯ", "+30 влияния, +60 титана, +60 гелия-3.", () => Give(energy: 60f, minerals: 60f, influence: 30f)),
                         new EventOption("БЕСКОНТАКТНОЕ СКАНИРОВАНИЕ", "+60 науки и исследования +50% на 30 дней.", () =>
                         {
                             Science(60f); TechnologyManager.Instance?.ApplyTempResearchBoost(1.5f, 30);
@@ -448,9 +476,9 @@ namespace StellarisClone.Core
                     "Поверхность луны покрыта кристаллами в рост человека. Под звёздным ветром они резонируют на одной ноте, а их " +
                     "решётка растёт на глазах, поглощая пыль из окружающего пространства.",
                     AnomalyType.AlienFauna, Opts(
-                        new EventOption("СОБРАТЬ УРОЖАЙ", "+150 минералов.", () => Give(minerals: 150f)),
+                        new EventOption("СОБРАТЬ УРОЖАЙ", "+150 титана.", () => Give(minerals: 150f)),
                         new EventOption("ИЗУЧИТЬ РЕЗОНАНС", "+100 науки.", () => { Science(100f); Xp(c, 20f); }),
-                        new EventOption("ВЫРАЩИВАТЬ КРИСТАЛЛЫ", "+4 минерала в месяц навсегда.", () =>
+                        new EventOption("ВЫРАЩИВАТЬ КРИСТАЛЛЫ", "+4 титана в месяц навсегда.", () =>
                         {
                             Monthly(minerals: 4f); Xp(c, 30f);
                         }, $"Учёный-{TraitName("sci_curious").ToLower()}", () => LeaderHas(c, "sci_curious"))))
@@ -530,7 +558,7 @@ namespace StellarisClone.Core
                         new EventOption("ВЫДЕЛИТЬ СРЕДСТВА", "−60 гелия-3. Адмирал получает +90 опыта.", () =>
                         {
                             Pay(energy: 60f); Xp(c, 90f);
-                        }, "Нужно 60 гелия-3", () => CanPay(energy: 60f)),
+                        }, Need(energy: 60f), () => CanPay(energy: 60f)),
                         new EventOption("ОТКАЗАТЬ", "Ничего не происходит.", () => { }),
                         new EventOption("ОТРАБОТАТЬ НОВУЮ ТАКТИКУ", "−60 гелия-3. Адмирал становится «Ветераном».", () =>
                         {
@@ -553,7 +581,7 @@ namespace StellarisClone.Core
                         new EventOption("ПРОВЕСТИ РАССЛЕДОВАНИЕ", "−25 влияния. Губернатор очищен от подозрений и становится «Неподкупным».", () =>
                         {
                             Pay(influence: 25f); Leaders?.GiveTrait(c.Leader, "gov_honest");
-                        }, "Нужно 25 влияния", () => CanPay(influence: 25f)),
+                        }, Need(influence: 25f), () => CanPay(influence: 25f)),
                         new EventOption("ЗАКРЫТЬ ГЛАЗА", "+70 гелия-3 «благодарности», но губернатор становится «Коррупционером».", () =>
                         {
                             Give(energy: 70f); Leaders?.GiveTrait(c.Leader, "gov_corrupt");
@@ -580,7 +608,7 @@ namespace StellarisClone.Core
                         new EventOption("ЭКСПЕРИМЕНТАЛЬНАЯ ТЕРАПИЯ", "−150 гелия-3: +8 лет жизни.", () =>
                         {
                             Pay(energy: 150f); c.Leader.Lifespan += 8;
-                        }, "Нужно 150 гелия-3", () => CanPay(energy: 150f)),
+                        }, Need(energy: 150f), () => CanPay(energy: 150f)),
                         new EventOption("ПУСТЬ СЛУЖИТ ДО КОНЦА", "Ничего не меняется.", () => { })))
             });
 
@@ -619,7 +647,7 @@ namespace StellarisClone.Core
                             Pay(energy: 50f); Give(influence: 15f);
                             if (c.Planet.Population < c.Planet.HousingCapacity) c.Planet.Population++;
                             Recalc();
-                        }, "Нужно 50 гелия-3", () => CanPay(energy: 50f)),
+                        }, Need(energy: 50f), () => CanPay(energy: 50f)),
                         new EventOption("СКРОМНОЕ ТОРЖЕСТВО", "+10 влияния.", () => Give(influence: 10f))))
             });
 
@@ -635,7 +663,7 @@ namespace StellarisClone.Core
                     $"Серия толчков прошла по коре {c.Planet.Name}. Один из районов треснул по фундаменту: если не укрепить его " +
                     "сейчас, его придётся снести.",
                     AnomalyType.ColonyIncident, Opts(
-                        new EventOption("УКРЕПИТЬ", "−80 минералов, район спасён.", () => Pay(minerals: 80f), "Нужно 80 минералов", () => CanPay(minerals: 80f)),
+                        new EventOption("УКРЕПИТЬ", "−80 титана, район спасён.", () => Pay(minerals: 80f), Need(minerals: 80f), () => CanPay(minerals: 80f)),
                         new EventOption("СНЕСТИ", "Колония теряет один район.", () =>
                         {
                             if (c.Planet.Districts.Count > 0) c.Planet.Districts.RemoveAt(c.Planet.Districts.Count - 1);
@@ -660,7 +688,7 @@ namespace StellarisClone.Core
                         new EventOption("ИСКАТЬ ЛЕКАРСТВО", "−100 гелия-3, +80 науки.", () =>
                         {
                             Pay(energy: 100f); Science(80f);
-                        }, "Нужно 100 гелия-3", () => CanPay(energy: 100f)),
+                        }, Need(energy: 100f), () => CanPay(energy: 100f)),
                         new EventOption("ВЫЗВАТЬ КСЕНОЛОГА", "Бесплатно: болезнь побеждена, +120 науки.", () =>
                         {
                             Science(120f);
@@ -686,7 +714,7 @@ namespace StellarisClone.Core
                     $"Экипаж {c.Ship.Name} месяцами не видел увольнений. Офицеры докладывают о драках и саботаже: " +
                     "ещё немного — и корабль придётся ставить в док.",
                     AnomalyType.MilitaryIncident, Opts(
-                        new EventOption("ВЫПЛАТИТЬ ПРЕМИИ", "−40 гелия-3.", () => Pay(energy: 40f), "Нужно 40 гелия-3", () => CanPay(energy: 40f)),
+                        new EventOption("ВЫПЛАТИТЬ ПРЕМИИ", "−40 гелия-3.", () => Pay(energy: 40f), Need(energy: 40f), () => CanPay(energy: 40f)),
                         new EventOption("ЖЁСТКАЯ ДИСЦИПЛИНА", "Бесплатно, но корабль повреждён в беспорядках.", () => DamageShip(c.Ship, 0.3f)),
                         new EventOption("АДМИРАЛ ГОВОРИТ С ЭКИПАЖЕМ", "Бесплатно: порядок восстановлен, адмирал получает опыт.", () => Xp(c, 40f),
                             "Адмирал на борту", () => c.Leader != null && c.Leader.Class == LeaderClass.Admiral)))
@@ -744,7 +772,7 @@ namespace StellarisClone.Core
                     "на пошлины. Местные производители недовольны.",
                     AnomalyType.Diplomatic, Opts(
                         new EventOption("ОТКРЫТЬ РЫНКИ", "+90 гелия-3, отношения +8.", () => { Give(energy: 90f); Opinion(c.Rival, 8f); }),
-                        new EventOption("ВЫСОКИЕ ПОШЛИНЫ", "+40 гелия-3, +40 минералов, отношения −4.", () =>
+                        new EventOption("ВЫСОКИЕ ПОШЛИНЫ", "+40 гелия-3, +40 титана, отношения −4.", () =>
                         {
                             Give(energy: 40f, minerals: 40f); Opinion(c.Rival, -4f);
                         }),

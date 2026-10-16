@@ -115,6 +115,7 @@ namespace StellarisClone.Rendering
             public Color BuildTint;
             public RectTransform Progress, Workers;
             public int WorkerKey = -1;
+            public TooltipTrigger Tip;
         }
 
         /// <summary>Строка «иконка ресурса + текст» (обычный Text не умеет картинки внутри строки).</summary>
@@ -549,8 +550,16 @@ namespace StellarisClone.Rendering
                               : _planet.Population <= 0 ? "СНАЧАЛА КОЛОНИЯ"
                               : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? "НЕТ МЕСТА"
                               : queue.Count >= ConstructionManager.MaxPlanetQueue ? "ОЧЕРЕДЬ ПОЛНА"
-                              : !canPay ? "НЕ ХВАТАЕТ РЕСУРСОВ"
+                              : !canPay ? CostCheck.Short(0f, mc, ac, 0f)
                               : null;
+                string why = !Surveyed ? "Сначала изучите систему научным кораблём."
+                           : !Owned ? "Система не ваша: сначала постройте здесь форпост."
+                           : _planet.Population <= 0 ? "Сначала основайте колонию — проект «Колония» справа."
+                           : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? $"Все {_planet.MaxDistricts} мест под районы заняты (с учётом очереди)."
+                           : queue.Count >= ConstructionManager.MaxPlanetQueue ? $"Очередь планеты заполнена: не больше {ConstructionManager.MaxPlanetQueue} заказов."
+                           : !canPay ? CostCheck.Full(0f, mc, ac, 0f) + "."
+                           : null;
+                c.Tip?.SetText(DistrictTip(c.Type, why));
                 c.Build.interactable = reason == null;
                 c.BuildBg.color = reason == null ? c.BuildTint : new Color(0.06f, 0.09f, 0.12f);
                 c.Reason.text = reason ?? (queue.Count > 0 ? "В ОЧЕРЕДЬ" : $"ПОСТРОИТЬ · {ConstructionManager.DistrictDays(c.Type):0} ДН.");
@@ -762,7 +771,9 @@ namespace StellarisClone.Rendering
                 mineTip = $"<b>Добывающий комплекс</b>\nДаст {mineGain} в месяц — без жителей и колонии.\n" +
                           $"<color={Muted}>Цена:</color> {FleetManager.MiningStationMinerals:0} титана · {ConstructionManager.MiningStationDays:0} дн.\n" +
                           $"<color={Muted}>Окупаемость:</color> ~{payback} мес." +
-                          (mineJob != null ? $"\n\nСтроится, осталось {Mathf.CeilToInt(Builds.DaysUntilDone(mineJob))} дн. Нажмите, чтобы отменить." : lockLine);
+                          (mineJob != null ? $"\n\nСтроится, осталось {Mathf.CeilToInt(Builds.DaysUntilDone(mineJob))} дн. Нажмите, чтобы отменить." : lockLine) +
+                          (mineJob == null && surveyed && owned && !CostCheck.Affordable(0f, FleetManager.MiningStationMinerals)
+                              ? $"\n<color={Bad}>{CostCheck.Full(0f, FleetManager.MiningStationMinerals)}.</color>" : "");
             }
             _mine.Tip.SetText(mineTip);
 
@@ -785,7 +796,7 @@ namespace StellarisClone.Rendering
             {
                 bool can = eco != null && eco.CanAfford(0f, PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost);
                 colTip = "<b>Основать колонию</b>\n" + _planet.ColonyBenefitText() + lockLine +
-                         (can || !owned || !surveyed ? "" : $"\n<color={Bad}>Не хватает ресурсов.</color>");
+                         (can || !owned || !surveyed ? "" : $"\n<color={Bad}>{CostCheck.Full(0f, PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost)}.</color>");
             }
             _colony.Tip.SetText(colTip);
 
@@ -802,7 +813,7 @@ namespace StellarisClone.Rendering
                 bool can = eco != null && eco.EnergyCredits >= PlanetData.TerraformEnergyCost && eco.Minerals >= PlanetData.TerraformMineralsCost
                            && eco.Influence >= PlanetData.TerraformInfluenceCost;
                 terTip = "<b>Терраформинг</b>\n" + _planet.TerraformBenefitText() + lockLine +
-                         (can || !owned || !surveyed ? "" : $"\n<color={Bad}>Не хватает ресурсов.</color>");
+                         (can || !owned || !surveyed ? "" : $"\n<color={Bad}>{CostCheck.Full(PlanetData.TerraformEnergyCost, PlanetData.TerraformMineralsCost, 0f, PlanetData.TerraformInfluenceCost)}.</color>");
             }
             _terra.Tip.SetText(terTip);
         }
@@ -1451,7 +1462,8 @@ namespace StellarisClone.Rendering
                 Type = type, Count = count, Status = status, MinCost = minCost, AlloyCost = alloyCost,
                 Build = btn, Cancel = cancel, Progress = progress, Workers = workers,
                 BuildBg = btn.GetComponent<Image>(), BuildTint = new Color(dc.r * 0.42f, dc.g * 0.42f, dc.b * 0.42f),
-                Reason = btn.GetComponentInChildren<Text>()
+                Reason = btn.GetComponentInChildren<Text>(),
+                Tip = btn.GetComponent<TooltipTrigger>()
             };
         }
 
@@ -1605,6 +1617,56 @@ namespace StellarisClone.Rendering
             DistrictType.Generator => "Энергетический",
             _ => "Промышленный"
         };
+
+        /// <summary>
+        /// Подсказка кнопки района: нужен ли он сейчас, будет ли кому на нём работать, сколько даст и когда окупится,
+        /// а если кнопка серая — почему именно.
+        /// </summary>
+        private string DistrictTip(DistrictType t, string blocked)
+        {
+            const string M = "#8AA2A8", Good = "#5CE68A", Warn = "#FFB070", Bad = "#FF8888";
+            float mc = DistrictInfo.MineralsCost(t), ac = DistrictInfo.AlloysCost(t);
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"<b>{DistrictName(t)} район</b>\n{DistrictEffect(t)}\n");
+
+            int pop = _planet.Population, housing = _planet.HousingCapacity;
+            if (pop > 0)
+            {
+                sb.Append('\n');
+                if (t == DistrictType.Urban)
+                {
+                    if (pop >= housing)
+                        sb.Append($"<color={Good}>Нужен сейчас:</color> жильё заполнено ({pop}/{housing}), население не растёт. Район даст +{DistrictInfo.HousingPopCapacity(t)} места — рост продолжится.\n");
+                    else
+                        sb.Append($"Жильё {pop}/{housing}: свободно {housing - pop} мест, население растёт. Этот район понадобится позже.\n");
+                }
+                else
+                {
+                    int jobs = _planet.WorkerSlots + _planet.PendingDistricts;   // заказанные районы тоже займут жителей
+                    int free = pop - jobs;
+                    float output = t == DistrictType.Industrial ? 3f : 4f;
+                    string res = t == DistrictType.Mining ? "титана" : t == DistrictType.Generator ? "гелия-3" : "сплавов";
+                    if (free > 0)
+                        sb.Append($"<color={Good}>Заработает сразу:</color> свободных жителей — {free}.\n");
+                    else if (pop >= housing)
+                        sb.Append($"<color={Warn}>Пока некому работать:</color> все жители заняты, а жильё заполнено. Сначала постройте городской район.\n");
+                    else
+                    {
+                        int months = _planet.MonthsToNextPop;
+                        sb.Append($"<color={Warn}>Пока некому работать:</color> все жители заняты. Район начнёт давать доход с новым жителем" +
+                                  (months > 0 ? $" (~{months} мес.)" : "") + ".\n");
+                    }
+                    sb.Append($"Даст ≈ +{output:0} {res} в месяц, за 2 года ≈ +{output * 24f:0}.");
+                    if (t == DistrictType.Mining)
+                        sb.Append($" Окупится по титану за ~{CostCheck.PaybackMonths(mc, output)} мес. работы.");
+                    sb.Append('\n');
+                }
+            }
+
+            sb.Append($"\n<color={M}>Цена:</color> {mc:0} титана, {ac:0} сплавов · {ConstructionManager.DistrictDays(t):0} дн. (на планете одна стройка за раз)");
+            if (blocked != null) sb.Append($"\n<color={Bad}>{blocked}</color>");
+            return sb.ToString();
+        }
 
         private static string DistrictEffect(DistrictType t) => t switch
         {

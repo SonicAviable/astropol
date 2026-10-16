@@ -328,7 +328,45 @@ namespace StellarisClone.Rendering
             bool can = locked == null && hasYard && canAlloys && canEnergy;
             o.Build.interactable = can;
             if (o.BuildLabel != null)
-                o.BuildLabel.text = locked != null ? "ЗАКРЫТО" : !hasYard ? "НЕТ ВЕРФИ" : !can ? "НЕ ХВАТАЕТ РЕСУРСОВ" : "ЗАЛОЖИТЬ";
+                o.BuildLabel.text = locked != null ? "ЗАКРЫТО" : !hasYard ? "НЕТ ВЕРФИ" : !can ? CostCheck.Short(energy, 0f, alloys, 0f) : "ЗАЛОЖИТЬ";
+            string why = locked != null ? $"Закрыто: {locked}."
+                       : !hasYard ? "Нет системы, где можно разместить верфь."
+                       : !can ? CostCheck.Full(energy, 0f, alloys, 0f) + "."
+                       : null;
+            TooltipHelper.Attach(o.Build.gameObject, BuildTip(o, design, alloys, energy, upkeep, eco, why));
+        }
+
+        /// <summary>Подсказка кнопки «Заложить»: что даст корабль, во что обойдётся, как скажется на лимите флота.</summary>
+        private static string BuildTip(Option o, ShipDesign design, float alloys, float energy, float upkeep, EconomyManager eco, string why)
+        {
+            const string M = "#8AA2A8", Bad = "#FF8888", Warn = "#FFB070";
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"<b>{o.Name}</b>\n");
+            if (o.Type == FleetType.Science)
+                sb.Append("Изучает системы: без разведки нельзя строить форпосты и колонии. Находит аномалии и события. Учёный на борту ускоряет работу.\n");
+            else if (o.Type == FleetType.Constructor)
+                sb.Append($"Строит форпосты — каждый расширяет территорию " +
+                          $"(форпост: {FactionTraits.StarbaseAlloys(0):0} сплавов и {FleetManager.OutpostInfluenceCost(0):0} влияния) — и добывающие комплексы на планетах.\n");
+            else if (design != null)
+            {
+                float pw = ShipDesignManager.DesignPower(design);
+                string cmp = CombatManager.PowerInShips(pw);
+                sb.Append($"Проект «{design.Name}»: мощь ≈ {pw:0}" + (cmp.Length > 0 ? $" ({cmp})" : "") + ".\n");
+                if (eco != null)
+                {
+                    var r = eco.Report;
+                    int size = EmpireEconomy.NavalSize(o.Hull);
+                    int after = r.NavalUsed + size;
+                    sb.Append($"Лимит флота: {r.NavalUsed} → <b>{after}</b> из {r.NavalCapacity}");
+                    sb.Append(after > r.NavalCapacity
+                        ? $"  <color={Warn}>— сверх лимита: дороже содержание всех военных кораблей</color>\n"
+                        : "\n");
+                }
+            }
+            sb.Append($"\n<color={M}>Цена:</color> {alloys:0} сплавов, {energy:0} гелия-3 · {ConstructionManager.ShipDays(o.Type, o.Hull):0} дн.\n");
+            sb.Append($"<color={M}>Содержание:</color> −{upkeep:0.#} гелия-3 в месяц");
+            if (why != null) sb.Append($"\n<color={Bad}>{why}</color>");
+            return sb.ToString();
         }
 
         private void TryBuild(Option o)
