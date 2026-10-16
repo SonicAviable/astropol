@@ -4658,3 +4658,19 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 {0} из {1}	{0} of {1}
 ПЕРЕГРУЗКА	OVERLOAD
 ЗАПАС {0:0}	SPARE {0:0}
+Выберите модуль — подробности справа. Двойной щелчок — установить.	Pick a module — details on the right. Double-click to install.
+УСТАНОВИТЬ	INSTALL
+ВМЕСТО «{0}»	INSTEAD OF «{0}»
+Запас энергии	Power reserve
+АРСЕНАЛ · {0} · СЛОТ {1}	ARSENAL · {0} · SLOT {1}
+ВСЕ	ALL
+КИНЕТИКА	KINETIC
+РАКЕТЫ	MISSILES
+УСТАНОВЛЕН	INSTALLED
+ЩИТ	SHIELD
+РЕАКТОР	REACTOR
+НАВЕДЕНИЕ	TARGETING
+ДВИГАТЕЛЬ	ENGINE
+Слот пуст. Выберите модуль слева.	Slot is empty. Pick a module on the left.
+УЖЕ УСТАНОВЛЕН	ALREADY INSTALLED
+НЕ ИЗУЧЕН	NOT RESEARCHED
