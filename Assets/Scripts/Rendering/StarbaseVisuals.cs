@@ -308,7 +308,9 @@ namespace StellarisClone.Rendering
                 bool known = e.Owner == 0 || Vision.PlayerKnows(kv.Key);
                 // Модель детальная — рисуем только станции рядом с камерой
                 bool close = near && (cam.transform.position - e.Go.transform.position).sqrMagnitude < 230f * 230f;
-                bool show = close && known;
+                // На карте станция не рисуется — только пока в системе идёт бой (в неё летят выстрелы, вокруг — щит)
+                bool fighting = CombatManager.Instance != null && CombatManager.Instance.GetBattle(kv.Key) != null;
+                bool show = close && known && fighting;
                 if (e.Go.activeSelf != show) e.Go.SetActive(show);
                 if (!show) continue;
 
