@@ -70,6 +70,12 @@ namespace StellarisClone.Rendering
                 var model = HarbingerModel.Build(parent, owner, length);
                 if (model != null) return model;
             }
+            // Строительные корабли — грузовой корпус Star Sparrow в рабочей янтарной окраске
+            if (type == FleetType.Constructor)
+            {
+                var model = StarSparrowModel.BuildConstructor(parent, owner, ownerId, 3.0f);
+                if (model != null) return model;
+            }
             // Научные корабли — готовая модель зонда «Марс-3», если она есть в проекте
             if (type == FleetType.Science)
             {

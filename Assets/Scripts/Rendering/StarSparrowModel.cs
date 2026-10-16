@@ -5,7 +5,7 @@ using StellarisClone.Core;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Боевые корабли из набора Star Sparrow (Resources/Models/Ships/StarSparrow): у каждой фракции свой
+    /// Боевые и строительные корабли из набора Star Sparrow (Resources/Models/Ships/StarSparrow): у каждой фракции свой
     /// стиль — три разных корпуса на корвет, фрегат и эсминец; окраска — шейдер набора «Colorize»,
     /// основной цвет = цвет владельца. Если шейдер не поддерживается (не URP) или моделей нет —
     /// возвращает null, и остаётся «Харбингер».
@@ -28,6 +28,10 @@ namespace StellarisClone.Rendering
         };
         /// <summary>Пираты, угрозы и империи без известной фракции.</summary>
         private static readonly int[] Neutral = { 13, 7, 5 };
+        /// <summary>Строительный корабль: корпус с грузовым модулем и посадочными опорами — один на все фракции.</summary>
+        private const int Constructor = 6;
+        /// <summary>Рабочая окраска строителей — янтарь; цвет владельца идёт полосами.</summary>
+        private static readonly Color WorkAmber = new Color(0.86f, 0.58f, 0.16f);
 
         /// <summary>Наибольший размах крыла в единицах карты — чтобы широкие корпуса не вылезали за коллайдер.</summary>
         private const float MaxWidth = 3.8f;
@@ -72,9 +76,15 @@ namespace StellarisClone.Rendering
 
         /// <summary>Собрать модель под parent; null — набора нет или шейдер не работает.</summary>
         public static ShipMeshFactory.ShipVisual Build(Transform parent, Color owner, ShipClass hull, int ownerId, float length)
+            => Available ? Make(parent, ModelFor(hull, ownerId), owner, ownerId, length, false) : null;
+
+        /// <summary>Строительный корабль: янтарный корпус, полосы и эмблемы — цвет владельца, оранжевые сопла.</summary>
+        public static ShipMeshFactory.ShipVisual BuildConstructor(Transform parent, Color owner, int ownerId, float length)
+            => Available ? Make(parent, Constructor, owner, ownerId, length, true) : null;
+
+        private static ShipMeshFactory.ShipVisual Make(Transform parent, int modelNo, Color owner, int ownerId, float length, bool civilian)
         {
-            if (!Available) return null;
-            var prefab = Prefab(ModelFor(hull, ownerId));
+            var prefab = Prefab(modelNo);
             if (prefab == null) return null;
 
             var root = new GameObject("ShipModel").transform;
@@ -99,12 +109,12 @@ namespace StellarisClone.Rendering
 
             var v = new ShipMeshFactory.ShipVisual
             {
-                AccentColor = Color.Lerp(owner, Color.white, 0.1f),
-                GlowColor = new Color(0.55f, 0.9f, 1f),
+                AccentColor = civilian ? WorkAmber : Color.Lerp(owner, Color.white, 0.1f),
+                GlowColor = civilian ? new Color(1f, 0.72f, 0.35f) : new Color(0.55f, 0.9f, 1f),
             };
-            // Свой материал у каждого корабля: основной цвет — владелец, при выборе он желтеет (ShipVisual.SetSelected)
+            // Свой материал у каждого корабля: основной цвет при выборе желтеет (ShipVisual.SetSelected)
             var mat = new Material(s_base) { name = "StarSparrow_" + ownerId, hideFlags = HideFlags.DontSave };
-            Paint(mat, v.AccentColor, owner);
+            if (civilian) PaintCivilian(mat, owner); else Paint(mat, v.AccentColor, owner);
             var mats = new Material[Mathf.Max(1, mr.sharedMaterials.Length)];
             for (int i = 0; i < mats.Length; i++) mats[i] = mat;
             mr.sharedMaterials = mats;
@@ -125,6 +135,19 @@ namespace StellarisClone.Rendering
             SetColor(m, "_Color2", Color.Lerp(new Color(0.16f, 0.17f, 0.19f), owner, 0.15f));
             SetColor(m, "_Color3", new Color(0.72f, 0.74f, 0.77f));
             SetColor(m, "_LogosColor", Color.Lerp(owner, Color.white, 0.55f));
+        }
+
+        /// <summary>Строитель: янтарный корпус, второй цвет — владелец (полосы), светлые панели, оранжевые огни.</summary>
+        private static void PaintCivilian(Material m, Color owner)
+        {
+            SetColor(m, "_Color1", WorkAmber);
+            SetColor(m, "_Color2", Color.Lerp(owner, Color.black, 0.25f));
+            SetColor(m, "_Color3", new Color(0.7f, 0.7f, 0.68f));
+            SetColor(m, "_LogosColor", Color.Lerp(owner, Color.white, 0.55f));
+            var glow = new Color(1f, 0.62f, 0.22f);
+            SetColor(m, "_Emission1", glow * 0.25f);
+            SetColor(m, "_Emission2", glow * 0.7f);
+            SetColor(m, "_Emission3", glow);
         }
 
         private static void SetColor(Material m, string prop, Color c)
