@@ -66,8 +66,8 @@ namespace StellarisClone.Rendering
 
         public FactionInfo SelectedFaction => _selectedFaction;
 
-        private Text _dateText, _energyVal, _mineralsVal, _alloysVal, _influenceVal, _researchVal;
-        private TooltipTrigger _energyTip, _mineralsTip, _alloysTip, _influenceTip, _researchTip;
+        private Text _dateText, _energyVal, _mineralsVal, _alloysVal, _influenceVal, _researchVal, _stabilityVal;
+        private TooltipTrigger _energyTip, _mineralsTip, _alloysTip, _influenceTip, _researchTip, _stabilityTip;
 
 
         private GameObject _eventPopupModal;
@@ -470,7 +470,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var rt = bar.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
-            rt.sizeDelta = new Vector2(cellW * 5f + 24f, resH);
+            rt.sizeDelta = new Vector2(cellW * 6f + 24f, resH);
             rt.anchoredPosition = new Vector2(0f, -8f);
             var bg = bar.AddComponent<Image>();
             bg.color = DS.BgDeep;
@@ -486,6 +486,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, Loc.T("СПЛАВЫ"), new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);
             _influenceVal = CreateResourceBadge(bar.transform, LGIcon.Influence, Loc.T("ВЛИЯНИЕ"), new Color(1.00f, 0.48f, 0.58f), ref startX, out _influenceTip);
             _researchVal  = CreateResourceBadge(bar.transform, LGIcon.Research, Loc.T("НАУКА"), DS.Green,    ref startX, out _researchTip);
+            _stabilityVal = CreateResourceBadge(bar.transform, LGIcon.Society, Loc.T("СТАБИЛЬНОСТЬ"), new Color(0.98f, 0.55f, 0.85f), ref startX, out _stabilityTip);
+            // Клик по стабильности — управление колониями (там видно, где неспокойно)
+            var stabBtn = _stabilityTip.gameObject.AddComponent<Button>();
+            stabBtn.transition = Selectable.Transition.None;
+            stabBtn.onClick.AddListener(ColonyManagerWindow.Toggle);
 
             // Дата и скорость — рамка под ресурсами
             var time = new GameObject("TimeBar");
@@ -1461,6 +1466,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             );
     }
 
+    UpdateStabilityBadge();
+
     // === НАУКА ===
     if (_researchVal != null && TechnologyManager.Instance != null)
     {
@@ -1489,6 +1496,53 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 }
 
 // ==================== ХЕЛПЕРЫ ДЛЯ ТУЛТИПОВ ====================
+
+    /// <summary>Средняя стабильность колоний (взвешенная по жителям) и подсказка: уровни и самые неспокойные планеты.</summary>
+    private void UpdateStabilityBadge()
+    {
+        if (_stabilityVal == null) return;
+        var colonies = new List<PlanetData>();
+        int pop = 0;
+        float sum = 0f;
+        foreach (var s in EmpireStats.Systems)
+        {
+            if (s.OwnerId != 0) continue;
+            foreach (var p in s.Planets)
+            {
+                if (p.Population <= 0) continue;
+                colonies.Add(p);
+                pop += p.Population;
+                sum += p.Stability * p.Population;
+            }
+        }
+        if (colonies.Count == 0)
+        {
+            _stabilityVal.text = "—";
+            _stabilityTip?.SetText(Loc.T("<b>Стабильность</b>\nПоявится, когда у империи будут колонии."));
+            return;
+        }
+        float avg = sum / Mathf.Max(1, pop);
+        var tier = PlanetStability.TierOf(avg);
+        string hex = PlanetStability.Hex(PlanetStability.TierColor(tier));
+        int unstable = colonies.FindAll(p => p.Tier <= StabilityTier.Strike).Count;
+        _stabilityVal.text = $"<color=#{hex}>{avg:0}</color>  <size=11><color=#{hex}>{PlanetStability.TierName(tier)}</color></size>" +
+                             (unstable > 0 ? $" <size=11><color=#FF6B6B>!{unstable}</color></size>" : "");
+        if (_stabilityTip == null) return;
+        colonies.Sort((a, b) => a.Stability.CompareTo(b.Stability));
+        var sb = new System.Text.StringBuilder();
+        sb.Append(Loc.F("<b>Средняя стабильность: <color=#{0}>{1:0}</color></b> · {2}\n", hex, avg, PlanetStability.TierName(tier)));
+        sb.Append(Loc.F("<color=#8AA2A8>{0}</color>\n", PlanetStability.TierEffect(tier)));
+        sb.Append("<color=#8AA2A8>──────────────</color>\n");
+        for (int i = 0; i < colonies.Count && i < 6; i++)
+        {
+            var p = colonies[i];
+            string ph = PlanetStability.Hex(PlanetStability.TierColor(p.Tier));
+            sb.Append($"{PlanetNames.Title(p.Name)}: <color=#{ph}>{p.Stability:0} · {PlanetStability.TierName(p.Tier)}</color>\n");
+        }
+        if (colonies.Count > 6) sb.Append(Loc.F("<color=#8AA2A8>…и ещё {0}</color>\n", colonies.Count - 6));
+        sb.Append(Loc.T("\n<color=#8AA2A8><i>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</i></color>"));
+        _stabilityTip.SetText(sb.ToString());
+    }
 
 
         // ==================== ОБЗОР ИМПЕРИИ ====================

@@ -4589,3 +4589,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 2 рабочих места: +4 титана в месяц за каждого работника.	2 jobs: +4 titanium per month per worker.
 2 рабочих места: +4 гелия-3 в месяц за каждого — оплачивает флот и форпосты.	2 jobs: +4 Helium-3 per month each — pays for fleets and outposts.
 2 рабочих места: +3 сплава в месяц за каждого — на корабли, форпосты и районы.	2 jobs: +3 alloys per month each — for ships, outposts and districts.
+<b>Стабильность</b>\nПоявится, когда у империи будут колонии.	<b>Stability</b>\nAppears once the empire has colonies.
+<b>Средняя стабильность: <color=#{0}>{1:0}</color></b> · {2}\n	<b>Average stability: <color=#{0}>{1:0}</color></b> · {2}\n
+<color=#8AA2A8>…и ещё {0}</color>\n	<color=#8AA2A8>…and {0} more</color>\n
+\n<color=#8AA2A8><i>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</i></color>	\n<color=#8AA2A8><i>Weighted by population. Click to open colony management.</i></color>
