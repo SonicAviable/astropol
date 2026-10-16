@@ -208,10 +208,11 @@ namespace StellarisClone.Core
             ["colony_young_scientists"]  = "Academy",
             ["military_deserters"]       = "Defector",
             ["military_ghost_contact"]   = "Probe",
-            ["survey_frozen_colony"]     = "Distress",
-            ["survey_ancient_battlefield"] = "Derelict",
-            ["diplo_summit"]             = "Trade",
-            ["diplo_rival_crisis"]       = "Trade",
+            ["survey_gas_harvest"]       = "GasStorm",
+            ["survey_frozen_colony"]     = "FrozenArk",
+            ["survey_ancient_battlefield"] = "Battlefield",
+            ["diplo_summit"]             = "Summit",
+            ["diplo_rival_crisis"]       = "Famine",
         };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
