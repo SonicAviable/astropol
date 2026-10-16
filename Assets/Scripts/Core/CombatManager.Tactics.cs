@@ -36,34 +36,34 @@ namespace StellarisClone.Core
 
         public static string StanceName(Stance s) => s switch
         {
-            Stance.Assault => "Натиск",
-            Stance.Defensive => "Оборона",
-            Stance.Focus => "Фокус огня",
-            _ => "Равновесие"
+            Stance.Assault => Loc.T("Натиск"),
+            Stance.Defensive => Loc.T("Оборона"),
+            Stance.Focus => Loc.T("Фокус огня"),
+            _ => Loc.T("Равновесие")
         };
 
         public static string StanceDesc(Stance s) => s switch
         {
-            Stance.Assault => "Урон +20%, сближение вдвое короче, строй ближе к врагу.\nУклонение −25%, входящий урон +10%, ГПД разгоняется дольше.",
-            Stance.Defensive => "Входящий урон −15%, уклонение +25%, ГПД для отступления разгоняется на 30% быстрее.\nСвой урон −15%, сближение дольше.",
-            Stance.Focus => "Все корабли бьют одну цель — самую повреждённую из приоритетных.\nВражеские корабли выбывают быстрее, но часть огня уходит впустую.",
-            _ => "Без бонусов и штрафов. Каждый корабль сам выбирает цель."
+            Stance.Assault => Loc.T("Урон +20%, сближение вдвое короче, строй ближе к врагу.\nУклонение −25%, входящий урон +10%, ГПД разгоняется дольше."),
+            Stance.Defensive => Loc.T("Входящий урон −15%, уклонение +25%, ГПД для отступления разгоняется на 30% быстрее.\nСвой урон −15%, сближение дольше."),
+            Stance.Focus => Loc.T("Все корабли бьют одну цель — самую повреждённую из приоритетных.\nВражеские корабли выбывают быстрее, но часть огня уходит впустую."),
+            _ => Loc.T("Без бонусов и штрафов. Каждый корабль сам выбирает цель.")
         };
 
         public static string PriorityName(TargetPriority p) => p switch
         {
-            TargetPriority.Small => "Мелкие цели",
-            TargetPriority.Large => "Крупные цели",
-            TargetPriority.Starbase => "Звёздная база",
-            _ => "Любые цели"
+            TargetPriority.Small => Loc.T("Мелкие цели"),
+            TargetPriority.Large => Loc.T("Крупные цели"),
+            TargetPriority.Starbase => Loc.T("Звёздная база"),
+            _ => Loc.T("Любые цели")
         };
 
         public static string PriorityDesc(TargetPriority p) => p switch
         {
-            TargetPriority.Small => "Сначала корветы и фрегаты — быстро снижает число вражеских орудий.",
-            TargetPriority.Large => "Сначала эсминцы и звёздная база — самые опасные цели.",
-            TargetPriority.Starbase => "Всё на станцию: без неё нельзя начать осаду системы.",
-            _ => "Цели по размеру: крупные чаще, но достаётся всем."
+            TargetPriority.Small => Loc.T("Сначала корветы и фрегаты — быстро снижает число вражеских орудий."),
+            TargetPriority.Large => Loc.T("Сначала эсминцы и звёздная база — самые опасные цели."),
+            TargetPriority.Starbase => Loc.T("Всё на станцию: без неё нельзя начать осаду системы."),
+            _ => Loc.T("Цели по размеру: крупные чаще, но достаётся всем.")
         };
 
         public static Stance StanceOf(Battle b, int owner)
@@ -174,7 +174,7 @@ namespace StellarisClone.Core
                 b.Stances[owner] = stance;
                 b.Priorities[owner] = prio;
                 if (old != stance && b.Days > 0.05f && b.PlayerInvolved)
-                    AddLog(b, $"{AIEmpireManager.NameOf(owner, "Противник")}: {StanceName(stance).ToLower()}", LogKind.Tactic, owner);
+                    AddLog(b, $"{AIEmpireManager.NameOf(owner, Loc.T("Противник"))}: {StanceName(stance).ToLower()}", LogKind.Tactic, owner);
             }
         }
 
@@ -188,7 +188,7 @@ namespace StellarisClone.Core
             b.Stances[0] = stance;
             b.FocusTarget.Remove(0);
             ClearTargetsOf(0);
-            AddLog(b, $"Приказ: {StanceName(stance).ToLower()}", LogKind.Tactic, 0);
+            AddLog(b, Loc.F("Приказ: {0}", StanceName(stance).ToLower()), LogKind.Tactic, 0);
         }
 
         public void SetPlayerPriority(int systemId, TargetPriority prio)
@@ -200,7 +200,7 @@ namespace StellarisClone.Core
             b.Priorities[0] = prio;
             b.FocusTarget.Remove(0);
             ClearTargetsOf(0);
-            AddLog(b, $"Цели: {PriorityName(prio).ToLower()}", LogKind.Tactic, 0);
+            AddLog(b, Loc.F("Цели: {0}", PriorityName(prio).ToLower()), LogKind.Tactic, 0);
         }
 
         /// <summary>Корабли владельца забывают прежние цели — новый приказ действует сразу.</summary>

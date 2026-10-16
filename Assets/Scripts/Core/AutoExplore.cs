@@ -87,8 +87,8 @@ namespace StellarisClone.Core
                 if (target < 0)
                 {
                     d.AutoExplore = false;
-                    NotificationCenter.Show("Авторазведка завершена",
-                        $"{d.Name}: поблизости не осталось доступных неизученных систем", NotificationCenter.Kind.Info, 5f);
+                    NotificationCenter.Show(Loc.T("Авторазведка завершена"),
+                        Loc.F("{0}: поблизости не осталось доступных неизученных систем", d.Name), NotificationCenter.Kind.Info, 5f);
                     continue;
                 }
                 if (fm.OrderSurveySystem(target, f)) claimed.Add(target);

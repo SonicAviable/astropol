@@ -24,7 +24,7 @@ namespace StellarisClone.Rendering
         private void BuildLeaders()
         {
             var lm = LeaderManager.Instance;
-            if (lm == null) { Empty("Система лидеров недоступна."); return; }
+            if (lm == null) { Empty(Loc.T("Система лидеров недоступна.")); return; }
 
             if (_assignLeaderId >= 0)
             {
@@ -34,18 +34,18 @@ namespace StellarisClone.Rendering
                 _assignLeaderId = -1;
             }
 
-            HeaderCols((0.06f, 0.29f, "ЛИДЕР", TextAnchor.MiddleLeft),
-                       (0.29f, 0.42f, "УРОВЕНЬ", TextAnchor.MiddleLeft),
-                       (0.42f, 0.60f, "ЧЕРТЫ", TextAnchor.MiddleLeft),
-                       (0.60f, 0.78f, "ПОСТ", TextAnchor.MiddleLeft),
+            HeaderCols((0.06f, 0.29f, Loc.T("ЛИДЕР"), TextAnchor.MiddleLeft),
+                       (0.29f, 0.42f, Loc.T("УРОВЕНЬ"), TextAnchor.MiddleLeft),
+                       (0.42f, 0.60f, Loc.T("ЧЕРТЫ"), TextAnchor.MiddleLeft),
+                       (0.60f, 0.78f, Loc.T("ПОСТ"), TextAnchor.MiddleLeft),
                        (0.78f, 1f, "", TextAnchor.MiddleRight));
 
             // Вход в центр тайных операций
             var spyRow = Row(() => { Close(); EspionageWindow.Instance?.Open(); }, new Color(0.74f, 0.56f, 1f, 0.35f));
             IconCell(spyRow, 0f, 0.06f, LGIcon.Betrayal, new Color(0.74f, 0.56f, 1f));
-            TwoLine(spyRow, 0.06f, 0.60f, "Центр тайных операций",
-                    $"Агенты, внедрение, кража технологий, диверсии · защита вашей империи {EspionageManager.PlayerCounter() * 100f:0}%");
-            TextCell(spyRow, 0.60f, 1f, "ОТКРЫТЬ  ›", new Color(0.74f, 0.56f, 1f), TextAnchor.MiddleRight, 12, true);
+            TwoLine(spyRow, 0.06f, 0.60f, Loc.T("Центр тайных операций"),
+                    Loc.F("Агенты, внедрение, кража технологий, диверсии · защита вашей империи {0:0}%", EspionageManager.PlayerCounter() * 100f));
+            TextCell(spyRow, 0.60f, 1f, Loc.T("ОТКРЫТЬ  ›"), new Color(0.74f, 0.56f, 1f), TextAnchor.MiddleRight, 12, true);
 
             int mine = 0;
             foreach (var l in lm.All)
@@ -55,10 +55,10 @@ namespace StellarisClone.Rendering
                 LeaderRow(lm, l, true);
             }
             if (mine == 0)
-                SectionRow("Лидеров пока нет. Наймите учёного для разведки, адмирала для флота, губернатора для колонии или агента для тайных операций.", UIManager.DS.TextMuted);
+                SectionRow(Loc.T("Лидеров пока нет. Наймите учёного для разведки, адмирала для флота, губернатора для колонии или агента для тайных операций."), UIManager.DS.TextMuted);
 
-            SectionRow($"КАНДИДАТЫ  ·  найм <color=#FF7A94>★{LeaderManager.HireInfluence:0}</color> влияния  ·  содержание " +
-                       $"<color=#FFCC52>⚡{LeaderManager.UpkeepEnergy:0.#}</color>/мес  ·  лидеров {mine}/{LeaderManager.MaxLeaders}  ·  кандидаты обновляются каждый год",
+            SectionRow(Loc.F("КАНДИДАТЫ  ·  найм <color=#FF7A94>★{0:0}</color> влияния  ·  содержание ", LeaderManager.HireInfluence) +
+                       Loc.F("<color=#FFCC52>⚡{0:0.#}</color>/мес  ·  лидеров {1}/{2}  ·  кандидаты обновляются каждый год", LeaderManager.UpkeepEnergy, mine, LeaderManager.MaxLeaders),
                        UIManager.DS.TextMuted);
             foreach (var c in lm.Candidates) LeaderRow(lm, c, false);
         }
@@ -78,7 +78,7 @@ namespace StellarisClone.Rendering
             PortraitCell(row, 0f, 0.06f, l, col);
             TwoLine(row, 0.06f, 0.29f, l.Name, $"{LeaderManager.ClassName(l.Class)} · {l.Age} {AgeWord(l.Age)}");
 
-            string lvl = l.Level >= LeaderManager.MaxLevel ? $"ур. {l.Level} · максимум" : $"ур. {l.Level}";
+            string lvl = l.Level >= LeaderManager.MaxLevel ? Loc.F("ур. {0} · максимум", l.Level) : Loc.F("ур. {0}", l.Level);
             BarCell(row, 0.29f, 0.42f, l.LevelProgress, col, lvl);
 
             var traits = new StringBuilder();
@@ -102,7 +102,7 @@ namespace StellarisClone.Rendering
                         if (l.Post != LeaderPost.None) lm.Unassign(l);
                         else _assignLeaderId = l.Id;
                         RebuildList();
-                    }, null, assigned ? "СНЯТЬ" : "НАЗНАЧИТЬ", 10);
+                    }, null, assigned ? Loc.T("СНЯТЬ") : Loc.T("НАЗНАЧИТЬ"), 10);
                 ((RectTransform)main.transform).Stretch(0, 8, 40, 8);
                 var dismiss = LGBuild.Button(actions, "Dismiss", UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
                 {
@@ -110,7 +110,7 @@ namespace StellarisClone.Rendering
                     RebuildList();
                 }, LGIcon.Close, null, 10);
                 ((RectTransform)dismiss.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(32, 32));
-                TooltipHelper.Attach(dismiss.gameObject, "<b>Уволить</b>\nЛидер покинет службу навсегда; содержание перестанет списываться.");
+                TooltipHelper.Attach(dismiss.gameObject, Loc.T("<b>Уволить</b>\nЛидер покинет службу навсегда; содержание перестанет списываться."));
             }
             else
             {
@@ -120,7 +120,7 @@ namespace StellarisClone.Rendering
                     {
                         lm.Hire(l);
                         RebuildList();
-                    }, null, $"НАНЯТЬ  ★{LeaderManager.HireInfluence:0}", 10);
+                    }, null, Loc.F("НАНЯТЬ  ★{0:0}", LeaderManager.HireInfluence), 10);
                 ((RectTransform)hire.transform).Stretch(0, 8, 0, 8);
                 hire.interactable = can;
                 if (!can) TooltipHelper.Attach(hire.gameObject, why);
@@ -141,8 +141,8 @@ namespace StellarisClone.Rendering
         private static string AgeWord(int n)
         {
             int m = n % 100, d = n % 10;
-            if (m >= 11 && m <= 14) return "лет";
-            return d == 1 ? "год" : d >= 2 && d <= 4 ? "года" : "лет";
+            if (m >= 11 && m <= 14) return Loc.T("лет");
+            return d == 1 ? Loc.T("год") : d >= 2 && d <= 4 ? Loc.T("года") : Loc.T("лет");
         }
 
         private string PostText(Leader l)
@@ -150,19 +150,19 @@ namespace StellarisClone.Rendering
             switch (l.Post)
             {
                 case LeaderPost.Council:
-                    return $"<color=#66F59E>Научный совет</color> · наука +{(LeaderManager.ResearchMult(0) - 1f) * 100f:0}%";
+                    return Loc.F("<color=#66F59E>Научный совет</color> · наука +{0:0}%", (LeaderManager.ResearchMult(0) - 1f) * 100f);
                 case LeaderPost.Spy:
                 {
-                    if (l.TargetOwner == 0) return "<color=#BD8FFF>Контрразведка</color> · дома";
-                    string who = AIEmpireManager.NameOf(l.TargetOwner, "империя");
-                    string op = l.OpKind >= 0 ? $" · {SpyInfo.Name((SpyOp)l.OpKind).ToLower()} ({l.OpMonthsLeft} мес.)" : "";
-                    return $"<color=#BD8FFF>{who}</color> · сеть {l.Cover:0}%{op}";
+                    if (l.TargetOwner == 0) return Loc.T("<color=#BD8FFF>Контрразведка</color> · дома");
+                    string who = AIEmpireManager.NameOf(l.TargetOwner, Loc.T("империя"));
+                    string op = l.OpKind >= 0 ? Loc.F(" · {0} ({1} мес.)", SpyInfo.Name((SpyOp)l.OpKind).ToLower(), l.OpMonthsLeft) : "";
+                    return Loc.F("<color=#BD8FFF>{0}</color> · сеть {1:0}%{2}", who, l.Cover, op);
                 }
                 case LeaderPost.Planet:
                 {
                     var sys = EmpireStats.GetSystem(l.SystemId);
                     var p = sys != null && l.PlanetIndex >= 0 && l.PlanetIndex < sys.Planets.Count ? sys.Planets[l.PlanetIndex] : null;
-                    return p != null ? $"Губернатор · {p.Name}" : "Колония";
+                    return p != null ? Loc.F("Губернатор · {0}", p.Name) : Loc.T("Колония");
                 }
                 case LeaderPost.Ship:
                 {
@@ -171,18 +171,18 @@ namespace StellarisClone.Rendering
                         foreach (var f in fm.AllFleets)
                             if (f?.Data != null && f.Data.Id == l.ShipId)
                                 return $"{f.Data.Name} · {SystemName(f.Data.CurrentSystemId)}";
-                    return "Корабль";
+                    return Loc.T("Корабль");
                 }
             }
-            return "<color=#FFAA55>Без поста</color>";
+            return Loc.T("<color=#FFAA55>Без поста</color>");
         }
 
         private static string LeaderTooltip(Leader l)
         {
             var sb = new StringBuilder();
-            sb.Append($"<b>{l.Name}</b>\n{LeaderManager.ClassName(l.Class)} · уровень {l.Level}");
-            if (l.Level < LeaderManager.MaxLevel) sb.Append($" · до следующего {Mathf.CeilToInt(l.XpToNext)} опыта");
-            sb.Append($"\n<color=#8AA2A8>Уровень:</color> {LeaderManager.LevelBonusText(l)}");
+            sb.Append(Loc.F("<b>{0}</b>\n{1} · уровень {2}", l.Name, LeaderManager.ClassName(l.Class), l.Level));
+            if (l.Level < LeaderManager.MaxLevel) sb.Append(Loc.F(" · до следующего {0} опыта", Mathf.CeilToInt(l.XpToNext)));
+            sb.Append(Loc.F("\n<color=#8AA2A8>Уровень:</color> {0}", LeaderManager.LevelBonusText(l)));
             foreach (var id in l.Traits)
             {
                 var t = LeaderManager.Trait(id);
@@ -191,12 +191,12 @@ namespace StellarisClone.Rendering
             sb.Append("\n\n<color=#8AA2A8>");
             sb.Append(l.Class switch
             {
-                LeaderClass.Scientist => "Пост: научный корабль (разведка быстрее, трофеи больше) или научный совет (+к науке). Опыт — за разведку.",
-                LeaderClass.Admiral => "Пост: военный корабль-флагман. Бонусы получают все ваши боевые корабли в той же системе. Опыт — за урон и победы. Гибнет вместе с флагманом.",
-                LeaderClass.Agent => "Пост: внедрение в чужую империю (обзор территории, досье, кража технологий, диверсии, раздор) или контрразведка дома (защита от чужих агентов). Опыт — за время на посту и успешные операции. Провал грозит поимкой.",
-                _ => "Пост: колония. Производство планеты и скорость строительства на ней выше. Опыт — за время на посту и стройки."
+                LeaderClass.Scientist => Loc.T("Пост: научный корабль (разведка быстрее, трофеи больше) или научный совет (+к науке). Опыт — за разведку."),
+                LeaderClass.Admiral => Loc.T("Пост: военный корабль-флагман. Бонусы получают все ваши боевые корабли в той же системе. Опыт — за урон и победы. Гибнет вместе с флагманом."),
+                LeaderClass.Agent => Loc.T("Пост: внедрение в чужую империю (обзор территории, досье, кража технологий, диверсии, раздор) или контрразведка дома (защита от чужих агентов). Опыт — за время на посту и успешные операции. Провал грозит поимкой."),
+                _ => Loc.T("Пост: колония. Производство планеты и скорость строительства на ней выше. Опыт — за время на посту и стройки.")
             });
-            sb.Append($"\n3-й уровень — вторая черта. Возраст {l.Age}.</color>");
+            sb.Append(Loc.F("\n3-й уровень — вторая черта. Возраст {0}.</color>", l.Age));
             return sb.ToString();
         }
 
@@ -205,12 +205,12 @@ namespace StellarisClone.Rendering
         private void BuildAssignTargets(LeaderManager lm, Leader l)
         {
             Color col = ClassColor(l.Class);
-            HeaderCols((0.06f, 0.60f, $"НАЗНАЧЕНИЕ: {LeaderManager.ClassName(l.Class).ToUpper()} {l.Name.ToUpper()}", TextAnchor.MiddleLeft),
-                       (0.60f, 1f, "ТЕКУЩИЙ ЛИДЕР НА ПОСТУ", TextAnchor.MiddleRight));
+            HeaderCols((0.06f, 0.60f, Loc.F("НАЗНАЧЕНИЕ: {0} {1}", LeaderManager.ClassName(l.Class).ToUpper(), l.Name.ToUpper()), TextAnchor.MiddleLeft),
+                       (0.60f, 1f, Loc.T("ТЕКУЩИЙ ЛИДЕР НА ПОСТУ"), TextAnchor.MiddleRight));
 
             var back = Row(() => { _assignLeaderId = -1; RebuildList(); }, new Color(0.6f, 0.8f, 0.9f, 0.25f));
             IconCell(back, 0f, 0.06f, LGIcon.Back, UIManager.DS.TextMuted);
-            TextCell(back, 0.06f, 1f, "Назад к списку лидеров", UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 12, true);
+            TextCell(back, 0.06f, 1f, Loc.T("Назад к списку лидеров"), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 12, true);
 
             int n = 0;
             void Target(LGIcon icon, string title, string sub, Leader current, System.Action assign)
@@ -225,7 +225,7 @@ namespace StellarisClone.Rendering
                 }, new Color(col.r, col.g, col.b, 0.3f));
                 IconCell(row, 0f, 0.06f, icon, col);
                 TwoLine(row, 0.06f, 0.60f, title, sub);
-                TextCell(row, 0.60f, 1f, current != null && current != l ? $"{current.Name} (будет снят)" : "свободно",
+                TextCell(row, 0.60f, 1f, current != null && current != l ? Loc.F("{0} (будет снят)", current.Name) : Loc.T("свободно"),
                     current != null && current != l ? CGold : UIManager.DS.TextMuted, TextAnchor.MiddleRight, 11);
             }
 
@@ -233,26 +233,26 @@ namespace StellarisClone.Rendering
             switch (l.Class)
             {
                 case LeaderClass.Scientist:
-                    Target(LGIcon.Research, "Научный совет", "Ускоряет все исследования империи", lm.CouncilScientist(0), () => lm.AssignCouncil(l));
+                    Target(LGIcon.Research, Loc.T("Научный совет"), Loc.T("Ускоряет все исследования империи"), lm.CouncilScientist(0), () => lm.AssignCouncil(l));
                     if (fm != null)
                         foreach (var f in fm.AllFleets)
                             if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == 0 && f.Data.Type == FleetType.Science)
                             {
                                 var d = f.Data;
-                                Target(LGIcon.Sensors, d.Name, $"Научный корабль · {SystemName(d.CurrentSystemId)} · {FleetTask(d)}",
+                                Target(LGIcon.Sensors, d.Name, Loc.F("Научный корабль · {0} · {1}", SystemName(d.CurrentSystemId), FleetTask(d)),
                                     lm.LeaderOfShip(d.Id), () => lm.AssignShip(l, d));
                             }
                     break;
 
                 case LeaderClass.Agent:
-                    Target(LGIcon.Shipyard, "Контрразведка", "Защищает вашу империю: чужие агенты чаще проваливаются и раскрываются",
+                    Target(LGIcon.Shipyard, Loc.T("Контрразведка"), Loc.T("Защищает вашу империю: чужие агенты чаще проваливаются и раскрываются"),
                            lm.SpyOn(0, 0), () => lm.AssignSpy(l, 0));
                     foreach (var ai in AIEmpireManager.All)
                     {
                         if (ai.IsEliminated || !Contacts.PlayerMet(ai.OwnerId)) continue;
                         int target = ai.OwnerId;
                         Target(LGIcon.Betrayal, Contacts.NameForPlayer(target),
-                               $"Внедрение · отношение {ai.Opinion:+0;-0;0} · защита цели {EspionageManager.TargetCounter(ai) * 100f:0}%",
+                               Loc.F("Внедрение · отношение {0:+0;-0;0} · защита цели {1:0}%", ai.Opinion, EspionageManager.TargetCounter(ai) * 100f),
                                lm.SpyOn(0, target), () => { Close(); SpyNetworkView.BeginPick(l, target); });   // систему игрок выбирает на карте
                     }
                     break;
@@ -263,7 +263,7 @@ namespace StellarisClone.Rendering
                             if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == 0 && f.Data.Type == FleetType.Military)
                             {
                                 var d = f.Data;
-                                Target(LGIcon.Fleet, d.Name, $"Флагман · {SystemName(d.CurrentSystemId)} · мощь {Mathf.RoundToInt(CombatMath.Power(d)):N0}",
+                                Target(LGIcon.Fleet, d.Name, Loc.F("Флагман · {0} · мощь {1:N0}", SystemName(d.CurrentSystemId), Mathf.RoundToInt(CombatMath.Power(d))),
                                     lm.LeaderOfShip(d.Id), () => lm.AssignShip(l, d));
                             }
                     break;
@@ -276,7 +276,7 @@ namespace StellarisClone.Rendering
                         {
                             if (p.Population <= 0) continue;
                             var planet = p;
-                            Target(LGIcon.Planet, p.Name, $"{s.Name} · население {p.Population} · районов {p.BuiltDistricts}",
+                            Target(LGIcon.Planet, p.Name, Loc.F("{0} · население {1} · районов {2}", s.Name, p.Population, p.BuiltDistricts),
                                 lm.GovernorOf(p), () => lm.AssignPlanet(l, planet));
                         }
                     }
@@ -284,9 +284,9 @@ namespace StellarisClone.Rendering
             }
 
             if (n == 0)
-                SectionRow(l.Class == LeaderClass.Admiral ? "Нет военных кораблей — постройте их на верфи."
-                         : l.Class == LeaderClass.Agent ? "Вы пока никого не встретили — внедряться некуда."
-                         : "Нет колоний для губернатора.", UIManager.DS.TextMuted);
+                SectionRow(l.Class == LeaderClass.Admiral ? Loc.T("Нет военных кораблей — постройте их на верфи.")
+                         : l.Class == LeaderClass.Agent ? Loc.T("Вы пока никого не встретили — внедряться некуда.")
+                         : Loc.T("Нет колоний для губернатора."), UIManager.DS.TextMuted);
         }
     }
 }

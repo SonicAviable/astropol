@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using StellarisClone.Core;
 
 namespace StellarisClone.Rendering
 {
@@ -176,7 +177,7 @@ namespace StellarisClone.Rendering
         private static void Parse(byte[] bytes)
         {
             using var r = new BinaryReader(new MemoryStream(bytes));
-            if (new string(r.ReadChars(4)) != "BHM1") throw new InvalidDataException("не тот формат");
+            if (new string(r.ReadChars(4)) != "BHM1") throw new InvalidDataException(Loc.T("не тот формат"));
             int count = r.ReadInt32();
             var meshes = new Mesh[count];
             var names = new string[count];

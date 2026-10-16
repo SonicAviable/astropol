@@ -14,9 +14,9 @@ namespace StellarisClone.Core
         public bool Tutorial = true;
         public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
 
-        public static readonly string[] SizeNames = { "Малая", "Средняя", "Большая" };
-        public static readonly string[] DifficultyNames = { "Лёгкая", "Нормальная", "Сложная" };
-        public static readonly string[] ShapeNames = { "Эллипс", "Спираль · 2 рукава", "Спираль · 4 рукава", "Кольцо" };
+        public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
+        public static readonly string[] DifficultyNames = { Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная") };
+        public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
         // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя
         public int StarCount => GalaxySize == 0 ? 85 : GalaxySize == 2 ? 230 : 150;

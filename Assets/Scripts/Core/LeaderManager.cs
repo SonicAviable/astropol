@@ -99,35 +99,35 @@ namespace StellarisClone.Core
 
         public static readonly TraitDef[] TraitDefs =
         {
-            new TraitDef { Id = "sci_cartographer", Class = LeaderClass.Scientist, Name = "Картограф", Desc = "+25% к скорости разведки" },
-            new TraitDef { Id = "sci_xeno", Class = LeaderClass.Scientist, Name = "Ксенолог", Desc = "+50% к трофеям разведки" },
-            new TraitDef { Id = "sci_analyst", Class = LeaderClass.Scientist, Name = "Аналитик", Desc = "+6% к науке в научном совете" },
-            new TraitDef { Id = "sci_curious", Class = LeaderClass.Scientist, Name = "Любознательный", Desc = "+30% к получаемому опыту" },
+            new TraitDef { Id = "sci_cartographer", Class = LeaderClass.Scientist, Name = Loc.T("Картограф"), Desc = Loc.T("+25% к скорости разведки") },
+            new TraitDef { Id = "sci_xeno", Class = LeaderClass.Scientist, Name = Loc.T("Ксенолог"), Desc = Loc.T("+50% к трофеям разведки") },
+            new TraitDef { Id = "sci_analyst", Class = LeaderClass.Scientist, Name = Loc.T("Аналитик"), Desc = Loc.T("+6% к науке в научном совете") },
+            new TraitDef { Id = "sci_curious", Class = LeaderClass.Scientist, Name = Loc.T("Любознательный"), Desc = Loc.T("+30% к получаемому опыту") },
 
-            new TraitDef { Id = "adm_aggressive", Class = LeaderClass.Admiral, Name = "Агрессор", Desc = "+10% к урону соединения" },
-            new TraitDef { Id = "adm_tactician", Class = LeaderClass.Admiral, Name = "Тактик", Desc = "+12% к скорострельности соединения" },
-            new TraitDef { Id = "adm_cautious", Class = LeaderClass.Admiral, Name = "Осторожный", Desc = "+15% к шансу выйти из боя, +10% к уклонению" },
-            new TraitDef { Id = "adm_navigator", Class = LeaderClass.Admiral, Name = "Навигатор", Desc = "+20% к скорости в гиперкоридорах" },
+            new TraitDef { Id = "adm_aggressive", Class = LeaderClass.Admiral, Name = Loc.T("Агрессор"), Desc = Loc.T("+10% к урону соединения") },
+            new TraitDef { Id = "adm_tactician", Class = LeaderClass.Admiral, Name = Loc.T("Тактик"), Desc = Loc.T("+12% к скорострельности соединения") },
+            new TraitDef { Id = "adm_cautious", Class = LeaderClass.Admiral, Name = Loc.T("Осторожный"), Desc = Loc.T("+15% к шансу выйти из боя, +10% к уклонению") },
+            new TraitDef { Id = "adm_navigator", Class = LeaderClass.Admiral, Name = Loc.T("Навигатор"), Desc = Loc.T("+20% к скорости в гиперкоридорах") },
 
-            new TraitDef { Id = "agt_infiltrator", Class = LeaderClass.Agent, Name = "Внедренец", Desc = "+25% к скорости внедрения" },
-            new TraitDef { Id = "agt_saboteur", Class = LeaderClass.Agent, Name = "Диверсант", Desc = "+15% к успеху диверсий" },
-            new TraitDef { Id = "agt_thief", Class = LeaderClass.Agent, Name = "Расхититель", Desc = "+15% к успеху краж технологий" },
-            new TraitDef { Id = "agt_manipulator", Class = LeaderClass.Agent, Name = "Манипулятор", Desc = "+15% к успеху «Раздора»" },
-            new TraitDef { Id = "agt_shadow", Class = LeaderClass.Agent, Name = "Тень", Desc = "−20% к шансу провала и поимки, труднее заметить" },
+            new TraitDef { Id = "agt_infiltrator", Class = LeaderClass.Agent, Name = Loc.T("Внедренец"), Desc = Loc.T("+25% к скорости внедрения") },
+            new TraitDef { Id = "agt_saboteur", Class = LeaderClass.Agent, Name = Loc.T("Диверсант"), Desc = Loc.T("+15% к успеху диверсий") },
+            new TraitDef { Id = "agt_thief", Class = LeaderClass.Agent, Name = Loc.T("Расхититель"), Desc = Loc.T("+15% к успеху краж технологий") },
+            new TraitDef { Id = "agt_manipulator", Class = LeaderClass.Agent, Name = Loc.T("Манипулятор"), Desc = Loc.T("+15% к успеху «Раздора»") },
+            new TraitDef { Id = "agt_shadow", Class = LeaderClass.Agent, Name = Loc.T("Тень"), Desc = Loc.T("−20% к шансу провала и поимки, труднее заметить") },
 
-            new TraitDef { Id = "gov_engineer", Class = LeaderClass.Governor, Name = "Инженер", Desc = "+25% к скорости строительства на планете" },
-            new TraitDef { Id = "gov_industrialist", Class = LeaderClass.Governor, Name = "Промышленник", Desc = "+15% к сплавам планеты" },
-            new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = "Геолог", Desc = "+15% к титану планеты" },
-            new TraitDef { Id = "gov_energy", Class = LeaderClass.Governor, Name = "Энергетик", Desc = "+15% к гелию-3 планеты" },
-            new TraitDef { Id = "gov_admin", Class = LeaderClass.Governor, Name = "Администратор", Desc = "+6% ко всему производству планеты" },
+            new TraitDef { Id = "gov_engineer", Class = LeaderClass.Governor, Name = Loc.T("Инженер"), Desc = Loc.T("+25% к скорости строительства на планете") },
+            new TraitDef { Id = "gov_industrialist", Class = LeaderClass.Governor, Name = Loc.T("Промышленник"), Desc = Loc.T("+15% к сплавам планеты") },
+            new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = Loc.T("Геолог"), Desc = Loc.T("+15% к титану планеты") },
+            new TraitDef { Id = "gov_energy", Class = LeaderClass.Governor, Name = Loc.T("Энергетик"), Desc = Loc.T("+15% к гелию-3 планеты") },
+            new TraitDef { Id = "gov_admin", Class = LeaderClass.Governor, Name = Loc.T("Администратор"), Desc = Loc.T("+6% ко всему производству планеты") },
 
             // Черты из событий
-            new TraitDef { Id = "sci_brilliant", Class = LeaderClass.Scientist, Name = "Гений", Desc = "+10% к скорости разведки, +4% к науке в совете", EventOnly = true },
-            new TraitDef { Id = "sci_scarred", Class = LeaderClass.Scientist, Name = "Травмирован", Desc = "−15% к скорости разведки", EventOnly = true, Negative = true },
-            new TraitDef { Id = "adm_veteran", Class = LeaderClass.Admiral, Name = "Ветеран", Desc = "+6% к урону и +6% к уклонению соединения", EventOnly = true },
-            new TraitDef { Id = "adm_reckless", Class = LeaderClass.Admiral, Name = "Безрассудный", Desc = "+8% к урону, −15% к шансу выйти из боя", EventOnly = true },
-            new TraitDef { Id = "gov_honest", Class = LeaderClass.Governor, Name = "Неподкупный", Desc = "+5% ко всему производству планеты", EventOnly = true },
-            new TraitDef { Id = "gov_corrupt", Class = LeaderClass.Governor, Name = "Коррупционер", Desc = "−10% ко всему производству планеты", EventOnly = true, Negative = true },
+            new TraitDef { Id = "sci_brilliant", Class = LeaderClass.Scientist, Name = Loc.T("Гений"), Desc = Loc.T("+10% к скорости разведки, +4% к науке в совете"), EventOnly = true },
+            new TraitDef { Id = "sci_scarred", Class = LeaderClass.Scientist, Name = Loc.T("Травмирован"), Desc = Loc.T("−15% к скорости разведки"), EventOnly = true, Negative = true },
+            new TraitDef { Id = "adm_veteran", Class = LeaderClass.Admiral, Name = Loc.T("Ветеран"), Desc = Loc.T("+6% к урону и +6% к уклонению соединения"), EventOnly = true },
+            new TraitDef { Id = "adm_reckless", Class = LeaderClass.Admiral, Name = Loc.T("Безрассудный"), Desc = Loc.T("+8% к урону, −15% к шансу выйти из боя"), EventOnly = true },
+            new TraitDef { Id = "gov_honest", Class = LeaderClass.Governor, Name = Loc.T("Неподкупный"), Desc = Loc.T("+5% ко всему производству планеты"), EventOnly = true },
+            new TraitDef { Id = "gov_corrupt", Class = LeaderClass.Governor, Name = Loc.T("Коррупционер"), Desc = Loc.T("−10% ко всему производству планеты"), EventOnly = true, Negative = true },
         };
 
         public static TraitDef Trait(string id)
@@ -138,19 +138,19 @@ namespace StellarisClone.Core
 
         public static string ClassName(LeaderClass c) => c switch
         {
-            LeaderClass.Scientist => "Учёный",
-            LeaderClass.Admiral => "Адмирал",
-            LeaderClass.Agent => "Агент",
-            _ => "Губернатор"
+            LeaderClass.Scientist => Loc.T("Учёный"),
+            LeaderClass.Admiral => Loc.T("Адмирал"),
+            LeaderClass.Agent => Loc.T("Агент"),
+            _ => Loc.T("Губернатор")
         };
 
         /// <summary>Что даёт уровень (без черт) — для подсказок.</summary>
         public static string LevelBonusText(Leader l) => l.Class switch
         {
-            LeaderClass.Scientist => $"разведка +{l.Level * 5}%, в совете наука +{l.Level * 2}%",
-            LeaderClass.Admiral => $"урон +{l.Level * 3}%, скорострельность +{l.Level * 2}%",
-            LeaderClass.Agent => $"успех операций +{l.Level * 4}%, внедрение быстрее на {l.Level}/мес., контрразведка +{l.Level * 4}%",
-            _ => $"производство +{l.Level * 3}%, стройка +{l.Level * 5}%"
+            LeaderClass.Scientist => Loc.F("разведка +{0}%, в совете наука +{1}%", l.Level * 5, l.Level * 2),
+            LeaderClass.Admiral => Loc.F("урон +{0}%, скорострельность +{1}%", l.Level * 3, l.Level * 2),
+            LeaderClass.Agent => Loc.F("успех операций +{0}%, внедрение быстрее на {1}/мес., контрразведка +{2}%", l.Level * 4, l.Level, l.Level * 4),
+            _ => Loc.F("производство +{0}%, стройка +{1}%", l.Level * 3, l.Level * 5)
         };
 
         // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
@@ -190,29 +190,29 @@ namespace StellarisClone.Core
         // Первые в каждом списке — имена из ранних версий: по ним старые сохранения узнают пол лидера.
         private static readonly string[] MaleNames =
         {
-            "Вейл", "Кассиан", "Орин", "Зейн", "Дарен", "Сол", "Келан", "Ивар", "Торин", "Алрик", "Марек", "Рон", "Лукас",
-            "Аарон", "Адриан", "Арджун", "Бастиан", "Виктор", "Габриэль", "Дамир", "Илай", "Ион", "Кай", "Камиль",
-            "Кенджи", "Лиам", "Майло", "Мано", "Натан", "Нико", "Оскар", "Рафаэль", "Риан", "Самир", "Северин",
-            "Таир", "Тео", "Феликс", "Хакон", "Эмиль", "Эрик", "Юлиан", "Ярен", "Обинна", "Матео", "Дариус"
+            Loc.T("Вейл"), Loc.T("Кассиан"), Loc.T("Орин"), Loc.T("Зейн"), Loc.T("Дарен"), Loc.T("Сол"), Loc.T("Келан"), Loc.T("Ивар"), Loc.T("Торин"), Loc.T("Алрик"), Loc.T("Марек"), Loc.T("Рон"), Loc.T("Лукас"),
+            Loc.T("Аарон"), Loc.T("Адриан"), Loc.T("Арджун"), Loc.T("Бастиан"), Loc.T("Виктор"), Loc.T("Габриэль"), Loc.T("Дамир"), Loc.T("Илай"), Loc.T("Ион"), Loc.T("Кай"), Loc.T("Камиль"),
+            Loc.T("Кенджи"), Loc.T("Лиам"), Loc.T("Майло"), Loc.T("Мано"), Loc.T("Натан"), Loc.T("Нико"), Loc.T("Оскар"), Loc.T("Рафаэль"), Loc.T("Риан"), Loc.T("Самир"), Loc.T("Северин"),
+            Loc.T("Таир"), Loc.T("Тео"), Loc.T("Феликс"), Loc.T("Хакон"), Loc.T("Эмиль"), Loc.T("Эрик"), Loc.T("Юлиан"), Loc.T("Ярен"), Loc.T("Обинна"), Loc.T("Матео"), Loc.T("Дариус")
         };
         private static readonly string[] FemaleNameList =
         {
-            "Аира", "Лира", "Тесса", "Мира", "Ния", "Рейна", "Эла", "Нова", "Селена", "Иса", "Вега",
-            "Ада", "Аиша", "Алия", "Астра", "Вира", "Дана", "Зара", "Илана", "Инара", "Ингрид", "Ирида", "Кайра",
-            "Кира", "Лаэль", "Лейла", "Лиана", "Майя", "Мейра", "Мэй", "Нелла", "Ника", "Ориана", "Рина",
-            "Сабина", "Сайра", "Сольвейг", "Талия", "Тиара", "Фрея", "Хана", "Элара", "Эйра", "Юна", "Ясмина", "Амара"
+            Loc.T("Аира"), Loc.T("Лира"), Loc.T("Тесса"), Loc.T("Мира"), Loc.T("Ния"), Loc.T("Рейна"), Loc.T("Эла"), Loc.T("Нова"), Loc.T("Селена"), Loc.T("Иса"), Loc.T("Вега"),
+            Loc.T("Ада"), Loc.T("Аиша"), Loc.T("Алия"), Loc.T("Астра"), Loc.T("Вира"), Loc.T("Дана"), Loc.T("Зара"), Loc.T("Илана"), Loc.T("Инара"), Loc.T("Ингрид"), Loc.T("Ирида"), Loc.T("Кайра"),
+            Loc.T("Кира"), Loc.T("Лаэль"), Loc.T("Лейла"), Loc.T("Лиана"), Loc.T("Майя"), Loc.T("Мейра"), Loc.T("Мэй"), Loc.T("Нелла"), Loc.T("Ника"), Loc.T("Ориана"), Loc.T("Рина"),
+            Loc.T("Сабина"), Loc.T("Сайра"), Loc.T("Сольвейг"), Loc.T("Талия"), Loc.T("Тиара"), Loc.T("Фрея"), Loc.T("Хана"), Loc.T("Элара"), Loc.T("Эйра"), Loc.T("Юна"), Loc.T("Ясмина"), Loc.T("Амара")
         };
         private static readonly string[] LastNames =
         {
-            "Вейс", "Арден", "Корр", "Сайлен", "Морроу", "Квинт", "Рейес", "Халден", "Новак", "Стерн",
-            "Валар", "Окона", "Лин", "Таро", "Ремир", "Ашфорд", "Кейн", "Дракс", "Ильмар", "Сато",
-            "Абади", "Айверсон", "Акаши", "Альвес", "Амари", "Баррос", "Белль", "Блэквуд", "Вальдес", "Вандерберг",
-            "Варгас", "Варро", "Вэнь", "Гарро", "Грей", "Дальтон", "Девере", "Дюбуа", "Ёсида", "Ибарра",
-            "Кальдер", "Кастелло", "Кестрел", "Ковальски", "Кросс", "Ларсен", "Леклер", "Лоренц", "Мадсен", "Маркос",
-            "Мейер", "Мендоса", "Мори", "Найт", "Нкеме", "Одари", "Окафор", "Орсо", "Пейдж", "Рамирес",
-            "Рен", "Рорк", "Росси", "Салас", "Сенна", "Сильва", "Соренсен", "Стоун", "Тан", "Тэйт",
-            "Уинтер", "Фаркас", "Фэрроу", "Хайден", "Хаяси", "Хелльстром", "Холт", "Чен", "Шарма", "Эверетт",
-            "Эрнандес", "Юнг", "Ямада", "Ясин", "Торнвуд", "Мальтер", "Лирон", "Равен", "Квеста", "Ортега"
+            Loc.T("Вейс"), Loc.T("Арден"), Loc.T("Корр"), Loc.T("Сайлен"), Loc.T("Морроу"), Loc.T("Квинт"), Loc.T("Рейес"), Loc.T("Халден"), Loc.T("Новак"), Loc.T("Стерн"),
+            Loc.T("Валар"), Loc.T("Окона"), Loc.T("Лин"), Loc.T("Таро"), Loc.T("Ремир"), Loc.T("Ашфорд"), Loc.T("Кейн"), Loc.T("Дракс"), Loc.T("Ильмар"), Loc.T("Сато"),
+            Loc.T("Абади"), Loc.T("Айверсон"), Loc.T("Акаши"), Loc.T("Альвес"), Loc.T("Амари"), Loc.T("Баррос"), Loc.T("Белль"), Loc.T("Блэквуд"), Loc.T("Вальдес"), Loc.T("Вандерберг"),
+            Loc.T("Варгас"), Loc.T("Варро"), Loc.T("Вэнь"), Loc.T("Гарро"), Loc.T("Грей"), Loc.T("Дальтон"), Loc.T("Девере"), Loc.T("Дюбуа"), Loc.T("Ёсида"), Loc.T("Ибарра"),
+            Loc.T("Кальдер"), Loc.T("Кастелло"), Loc.T("Кестрел"), Loc.T("Ковальски"), Loc.T("Кросс"), Loc.T("Ларсен"), Loc.T("Леклер"), Loc.T("Лоренц"), Loc.T("Мадсен"), Loc.T("Маркос"),
+            Loc.T("Мейер"), Loc.T("Мендоса"), Loc.T("Мори"), Loc.T("Найт"), Loc.T("Нкеме"), Loc.T("Одари"), Loc.T("Окафор"), Loc.T("Орсо"), Loc.T("Пейдж"), Loc.T("Рамирес"),
+            Loc.T("Рен"), Loc.T("Рорк"), Loc.T("Росси"), Loc.T("Салас"), Loc.T("Сенна"), Loc.T("Сильва"), Loc.T("Соренсен"), Loc.T("Стоун"), Loc.T("Тан"), Loc.T("Тэйт"),
+            Loc.T("Уинтер"), Loc.T("Фаркас"), Loc.T("Фэрроу"), Loc.T("Хайден"), Loc.T("Хаяси"), Loc.T("Хелльстром"), Loc.T("Холт"), Loc.T("Чен"), Loc.T("Шарма"), Loc.T("Эверетт"),
+            Loc.T("Эрнандес"), Loc.T("Юнг"), Loc.T("Ямада"), Loc.T("Ясин"), Loc.T("Торнвуд"), Loc.T("Мальтер"), Loc.T("Лирон"), Loc.T("Равен"), Loc.T("Квеста"), Loc.T("Ортега")
         };
 
         private static HashSet<string> s_femaleNames;
@@ -292,9 +292,9 @@ namespace StellarisClone.Core
         public bool CanHire(out string reason)
         {
             reason = null;
-            if (CountFor(0) >= MaxLeaders) { reason = $"Не больше {MaxLeaders} лидеров"; return false; }
+            if (CountFor(0) >= MaxLeaders) { reason = Loc.F("Не больше {0} лидеров", MaxLeaders); return false; }
             var eco = EconomyManager.Instance;
-            if (eco == null || eco.Influence < HireInfluence) { reason = $"{CostCheck.Full(influence: HireInfluence)} (найм стоит {HireInfluence:0})"; return false; }
+            if (eco == null || eco.Influence < HireInfluence) { reason = Loc.F("{0} (найм стоит {1:0})", CostCheck.Full(influence: HireInfluence), HireInfluence); return false; }
             return true;
         }
 
@@ -303,7 +303,7 @@ namespace StellarisClone.Core
             if (candidate == null || !_s.Candidates.Contains(candidate)) return false;
             if (!CanHire(out string reason))
             {
-                NotificationCenter.Show("Найм невозможен", reason, NotificationCenter.Kind.Warning, 3f);
+                NotificationCenter.Show(Loc.T("Найм невозможен"), reason, NotificationCenter.Kind.Warning, 3f);
                 return false;
             }
             var eco = EconomyManager.Instance;
@@ -313,7 +313,7 @@ namespace StellarisClone.Core
             _s.Leaders.Add(candidate);
             RefillCandidates(false);
             SFXManager.Play(Sfx.UiConfirm);
-            NotificationCenter.Show("Лидер нанят", $"{ClassName(candidate.Class)} {candidate.Name} поступил на службу. Назначьте его на пост",
+            NotificationCenter.Show(Loc.T("Лидер нанят"), Loc.F("{0} {1} поступил на службу. Назначьте его на пост", ClassName(candidate.Class), candidate.Name),
                 NotificationCenter.Kind.Success, 4f);
             Changed();
             return true;
@@ -551,8 +551,8 @@ namespace StellarisClone.Core
                 }
                 if (l.Owner == 0)
                 {
-                    string extra = l.Level == 3 && l.Traits.Count > 1 ? $" Новая черта: {Trait(l.Traits[l.Traits.Count - 1])?.Name}" : "";
-                    NotificationCenter.Show("Лидер стал опытнее", $"{ClassName(l.Class)} {l.Name} — уровень {l.Level}.{extra}",
+                    string extra = l.Level == 3 && l.Traits.Count > 1 ? Loc.F(" Новая черта: {0}", Trait(l.Traits[l.Traits.Count - 1])?.Name) : "";
+                    NotificationCenter.Show(Loc.T("Лидер стал опытнее"), Loc.F("{0} {1} — уровень {2}.{3}", ClassName(l.Class), l.Name, l.Level, extra),
                         NotificationCenter.Kind.Success, 4f);
                 }
                 Changed();
@@ -577,7 +577,7 @@ namespace StellarisClone.Core
             if (traitId == "gov_honest") l.Traits.Remove("gov_corrupt");
             l.Traits.Add(traitId);
             if (l.Owner == 0)
-                NotificationCenter.Show(def.Negative ? "Лидер получил изъян" : "Лидер получил черту",
+                NotificationCenter.Show(def.Negative ? Loc.T("Лидер получил изъян") : Loc.T("Лидер получил черту"),
                     $"{ClassName(l.Class)} {l.Name}: «{def.Name}» — {def.Desc}",
                     def.Negative ? NotificationCenter.Kind.Warning : NotificationCenter.Kind.Success, 5f);
             Changed();
@@ -644,7 +644,7 @@ namespace StellarisClone.Core
             if (l == null) return;
             _s.Leaders.Remove(l);
             if (l.Owner == 0)
-                NotificationCenter.Show("Лидер погиб", $"{ClassName(l.Class)} {l.Name} погиб вместе с кораблём {ship.Name}",
+                NotificationCenter.Show(Loc.T("Лидер погиб"), Loc.F("{0} {1} погиб вместе с кораблём {2}", ClassName(l.Class), l.Name, ship.Name),
                     NotificationCenter.Kind.Danger, 6f);
             Changed();
         }
@@ -657,7 +657,7 @@ namespace StellarisClone.Core
                 {
                     l.Post = LeaderPost.None; l.SystemId = l.PlanetIndex = -1; any = true;
                     if (l.Owner == 0)
-                        NotificationCenter.Show("Губернатор эвакуирован", $"{l.Name} покинул {sys.Name} и ждёт нового назначения",
+                        NotificationCenter.Show(Loc.T("Губернатор эвакуирован"), Loc.F("{0} покинул {1} и ждёт нового назначения", l.Name, sys.Name),
                             NotificationCenter.Kind.Warning, 5f);
                 }
             if (any) Changed();
@@ -718,7 +718,7 @@ namespace StellarisClone.Core
                         _s.Leaders.RemoveAt(i);
                         changed = true;
                         if (l.Owner == 0)
-                            NotificationCenter.Show("Лидер ушёл из жизни", $"{ClassName(l.Class)} {l.Name} скончался в возрасте {l.Age} лет",
+                            NotificationCenter.Show(Loc.T("Лидер ушёл из жизни"), Loc.F("{0} {1} скончался в возрасте {2} лет", ClassName(l.Class), l.Name, l.Age),
                                 NotificationCenter.Kind.Info, 6f);
                     }
                     RefillCandidates(true);

@@ -12,16 +12,16 @@ namespace StellarisClone.Core
     {
         public static string Name(SpyOp op) => op switch
         {
-            SpyOp.Steal => "Кража технологии",
-            SpyOp.Sabotage => "Диверсия",
-            _ => "Раздор"
+            SpyOp.Steal => Loc.T("Кража технологии"),
+            SpyOp.Sabotage => Loc.T("Диверсия"),
+            _ => Loc.T("Раздор")
         };
 
         public static string Desc(SpyOp op) => op switch
         {
-            SpyOp.Steal => "Агент выкрадывает чертежи: изучает технологию, которая есть у них и нет у вас. Если она вам пока недоступна, вы получаете половину её исследования.",
-            SpyOp.Sabotage => "Диверсия на верфях и складах: цель теряет часть запасов сплавов и гелия-3.",
-            _ => "Агент стравливает две чужие империи: их отношения портятся, а война между ними становится вероятнее."
+            SpyOp.Steal => Loc.T("Агент выкрадывает чертежи: изучает технологию, которая есть у них и нет у вас. Если она вам пока недоступна, вы получаете половину её исследования."),
+            SpyOp.Sabotage => Loc.T("Диверсия на верфях и складах: цель теряет часть запасов сплавов и гелия-3."),
+            _ => Loc.T("Агент стравливает две чужие империи: их отношения портятся, а война между ними становится вероятнее.")
         };
 
         public static float Cost(SpyOp op) => op switch { SpyOp.Steal => 20f, SpyOp.Sabotage => 15f, _ => 25f };
@@ -284,12 +284,12 @@ namespace StellarisClone.Core
             if (a == null || a.Post != LeaderPost.Spy || a.TargetOwner <= 0 || s == null || s.OwnerId != a.TargetOwner) return false;
             if (a.OpKind >= 0)
             {
-                NotificationCenter.Show("Агент занят", "Нельзя сменить систему во время операции", NotificationCenter.Kind.Warning, 3f);
+                NotificationCenter.Show(Loc.T("Агент занят"), Loc.T("Нельзя сменить систему во время операции"), NotificationCenter.Kind.Warning, 3f);
                 return false;
             }
             if (a.TargetSystem == systemId) return true;
             a.TargetSystem = systemId;
-            AddLog($"{a.Name} перебрался в систему {s.Name}: сеть строится оттуда.", 0);
+            AddLog(Loc.F("{0} перебрался в систему {1}: сеть строится оттуда.", a.Name, s.Name), 0);
             SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiConfirm);
             Changed();
             return true;
@@ -420,18 +420,18 @@ namespace StellarisClone.Core
         public bool CanStart(Leader a, SpyOp op, int arg, out string reason)
         {
             reason = null;
-            if (a == null || a.Class != LeaderClass.Agent || a.Post != LeaderPost.Spy || a.TargetOwner <= 0) { reason = "Агент не внедрён в империю"; return false; }
-            if (a.OpKind >= 0) { reason = "Агент уже выполняет операцию"; return false; }
+            if (a == null || a.Class != LeaderClass.Agent || a.Post != LeaderPost.Spy || a.TargetOwner <= 0) { reason = Loc.T("Агент не внедрён в империю"); return false; }
+            if (a.OpKind >= 0) { reason = Loc.T("Агент уже выполняет операцию"); return false; }
             var ai = AIEmpireManager.For(a.TargetOwner);
-            if (ai == null || ai.IsEliminated) { reason = "Империя пала"; return false; }
-            if (a.Cover < SpyInfo.MinCover(op)) { reason = $"Нужна разведсеть {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)"; return false; }
+            if (ai == null || ai.IsEliminated) { reason = Loc.T("Империя пала"); return false; }
+            if (a.Cover < SpyInfo.MinCover(op)) { reason = Loc.F("Нужна разведсеть {0:0}% (сейчас {1:0}%)", SpyInfo.MinCover(op), a.Cover); return false; }
             var eco = EconomyManager.Instance;
-            if (eco == null || eco.Influence < SpyInfo.Cost(op)) { reason = $"{CostCheck.Full(influence: SpyInfo.Cost(op))} (операция стоит {SpyInfo.Cost(op):0})"; return false; }
-            if (op == SpyOp.Steal && StealTarget(ai, out _) == null) { reason = "У них нет технологий, которых нет у вас"; return false; }
+            if (eco == null || eco.Influence < SpyInfo.Cost(op)) { reason = Loc.F("{0} (операция стоит {1:0})", CostCheck.Full(influence: SpyInfo.Cost(op)), SpyInfo.Cost(op)); return false; }
+            if (op == SpyOp.Steal && StealTarget(ai, out _) == null) { reason = Loc.T("У них нет технологий, которых нет у вас"); return false; }
             if (op == SpyOp.Discord)
             {
                 var third = AIEmpireManager.For(arg);
-                if (third == null || third.IsEliminated || arg == a.TargetOwner || !Contacts.PlayerMet(arg)) { reason = "Выберите, кого стравить с ними"; return false; }
+                if (third == null || third.IsEliminated || arg == a.TargetOwner || !Contacts.PlayerMet(arg)) { reason = Loc.T("Выберите, кого стравить с ними"); return false; }
             }
             return true;
         }
@@ -442,7 +442,7 @@ namespace StellarisClone.Core
         {
             if (!CanStart(a, op, arg, out string reason))
             {
-                NotificationCenter.Show("Операция невозможна", reason, NotificationCenter.Kind.Warning, 3f);
+                NotificationCenter.Show(Loc.T("Операция невозможна"), reason, NotificationCenter.Kind.Warning, 3f);
                 return false;
             }
             var eco = EconomyManager.Instance;
@@ -451,7 +451,7 @@ namespace StellarisClone.Core
             a.OpMonthsLeft = SpyInfo.Months(op);
             a.OpArg = arg;
             var ai = AIEmpireManager.For(a.TargetOwner);
-            AddLog($"{a.Name} начал операцию «{SpyInfo.Name(op)}» против {ai?.AIName}.", 0);
+            AddLog(Loc.F("{0} начал операцию «{1}» против {2}.", a.Name, SpyInfo.Name(op), ai?.AIName), 0);
             SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiConfirm);
             Changed();
             return true;
@@ -461,7 +461,7 @@ namespace StellarisClone.Core
         {
             if (a == null || a.OpKind < 0) return;
             a.OpKind = -1; a.OpMonthsLeft = 0; a.OpArg = -1;
-            AddLog($"{a.Name} прервал операцию. Затраты не возвращаются.", 0);
+            AddLog(Loc.F("{0} прервал операцию. Затраты не возвращаются.", a.Name), 0);
             Changed();
         }
 
@@ -483,7 +483,7 @@ namespace StellarisClone.Core
                 var ai = AIEmpireManager.For(a.TargetOwner);
                 if (ai == null || ai.IsEliminated)
                 {
-                    AddLog($"Империя, куда был внедрён {a.Name}, пала. Агент ждёт нового назначения.", 0);
+                    AddLog(Loc.F("Империя, куда был внедрён {0}, пала. Агент ждёт нового назначения.", a.Name), 0);
                     lm.Unassign(a);
                     changed = true;
                     continue;
@@ -503,14 +503,14 @@ namespace StellarisClone.Core
                 var ai = AIEmpireManager.For(a.TargetOwner);
                 if (ai == null) continue;
                 if (was < IntelCover && a.Cover >= IntelCover)
-                    NotificationCenter.Show("Разведсеть раскинута",
-                        $"Сеть {a.Name} в империи {ai.AIName} достигла {IntelCover:0}%: вся их территория и флоты теперь у вас на виду.", NotificationCenter.Kind.Success, 7f);
+                    NotificationCenter.Show(Loc.T("Разведсеть раскинута"),
+                        Loc.F("Сеть {0} в империи {1} достигла {2:0}%: вся их территория и флоты теперь у вас на виду.", a.Name, ai.AIName, IntelCover), NotificationCenter.Kind.Success, 7f);
                 else if (was < BlueprintCover && a.Cover >= BlueprintCover)
-                    NotificationCenter.Show("Перехват чертежей",
-                        $"Сеть {a.Name} достигла {BlueprintCover:0}%: технологии, известные {ai.AIName}, вы изучаете на {BlueprintBoost * 100f:0}% быстрее.", NotificationCenter.Kind.Success, 7f);
+                    NotificationCenter.Show(Loc.T("Перехват чертежей"),
+                        Loc.F("Сеть {0} достигла {1:0}%: технологии, известные {2}, вы изучаете на {3:0}% быстрее.", a.Name, BlueprintCover, ai.AIName, BlueprintBoost * 100f), NotificationCenter.Kind.Success, 7f);
                 else if (was < DeepIntelCover && a.Cover >= DeepIntelCover)
-                    NotificationCenter.Show("Глубокое внедрение",
-                        $"Сеть {a.Name} достигла {DeepIntelCover:0}%: досье на {ai.AIName} открыто, доступны все операции.", NotificationCenter.Kind.Success, 7f);
+                    NotificationCenter.Show(Loc.T("Глубокое внедрение"),
+                        Loc.F("Сеть {0} достигла {1:0}%: досье на {2} открыто, доступны все операции.", a.Name, DeepIntelCover, ai.AIName), NotificationCenter.Kind.Success, 7f);
             }
 
             RunAIOps(year);
@@ -541,8 +541,8 @@ namespace StellarisClone.Core
                 };
                 if (result == null)
                 {
-                    AddLog($"{a.Name}: операция «{SpyInfo.Name(op)}» против {ai.AIName} не нашла цели — влияние потрачено впустую.", 2);
-                    NotificationCenter.Show("Операция впустую", $"{SpyInfo.Name(op)}: цель исчезла к моменту удара", NotificationCenter.Kind.Warning, 5f);
+                    AddLog(Loc.F("{0}: операция «{1}» против {2} не нашла цели — влияние потрачено впустую.", a.Name, SpyInfo.Name(op), ai.AIName), 2);
+                    NotificationCenter.Show(Loc.T("Операция впустую"), Loc.F("{0}: цель исчезла к моменту удара", SpyInfo.Name(op)), NotificationCenter.Kind.Warning, 5f);
                 }
                 else
                 {
@@ -553,10 +553,10 @@ namespace StellarisClone.Core
                     if (noticed)
                     {
                         ai.AddMemory("espionage", -8f);
-                        tail = " Но следы заметили: отношение к вам ухудшилось.";
+                        tail = Loc.T(" Но следы заметили: отношение к вам ухудшилось.");
                     }
-                    AddLog($"{SpyInfo.Name(op)} против {ai.AIName}: {result}.{tail}", 1);
-                    NotificationCenter.Show($"Операция удалась · {SpyInfo.Name(op)}", $"{result}.{tail}", NotificationCenter.Kind.Success, 8f);
+                    AddLog(Loc.F("{0} против {1}: {2}.{3}", SpyInfo.Name(op), ai.AIName, result, tail), 1);
+                    NotificationCenter.Show(Loc.F("Операция удалась · {0}", SpyInfo.Name(op)), $"{result}.{tail}", NotificationCenter.Kind.Success, 8f);
                     SFXManager.Play(StellarisClone.Core.Audio.Sfx.NotifySuccess);
                 }
             }
@@ -568,16 +568,16 @@ namespace StellarisClone.Core
                     _s.AgentsLost++;
                     ai.AddMemory("espionage", -12f);
                     HurtNetwork(ai.OwnerId, 0f, 0.7f);         // контрразведка вскрыла часть сети
-                    AddLog($"{a.Name} схвачен при операции «{SpyInfo.Name(op)}» в империи {ai.AIName}. Скандал: отношения ухудшились.", 2);
-                    lm?.Retire(a, "Агент схвачен", $"{a.Name} попался контрразведке {ai.AIName}. Отношения с ними ухудшились.");
+                    AddLog(Loc.F("{0} схвачен при операции «{1}» в империи {2}. Скандал: отношения ухудшились.", a.Name, SpyInfo.Name(op), ai.AIName), 2);
+                    lm?.Retire(a, Loc.T("Агент схвачен"), Loc.F("{0} попался контрразведке {1}. Отношения с ними ухудшились.", a.Name, ai.AIName));
                     SFXManager.Play(StellarisClone.Core.Audio.Sfx.NotifyDanger);
                 }
                 else
                 {
                     HurtNetwork(ai.OwnerId, 0f, 0.5f);         // агент «сгорел»: полсети потеряно
                     ai.AddMemory("espionage", -4f);
-                    AddLog($"Операция «{SpyInfo.Name(op)}» против {ai.AIName} провалена. {a.Name} ушёл в тень, но половина разведсети потеряна.", 2);
-                    NotificationCenter.Show("Операция провалена", $"{SpyInfo.Name(op)}: {a.Name} ушёл от ареста, половина разведсети потеряна", NotificationCenter.Kind.Warning, 7f);
+                    AddLog(Loc.F("Операция «{0}» против {1} провалена. {2} ушёл в тень, но половина разведсети потеряна.", SpyInfo.Name(op), ai.AIName, a.Name), 2);
+                    NotificationCenter.Show(Loc.T("Операция провалена"), Loc.F("{0}: {1} ушёл от ареста, половина разведсети потеряна", SpyInfo.Name(op), a.Name), NotificationCenter.Kind.Warning, 7f);
                 }
             }
             SyncCover();
@@ -602,34 +602,34 @@ namespace StellarisClone.Core
             const string M = "#8AA2A8", Good = "#5CE68A", Bad = "#FF8888";
             float p = SuccessChance(a, op, ai);
             var sb = new System.Text.StringBuilder();
-            sb.Append($"<b>{SpyInfo.Name(op)}</b> против {ai.AIName}\n");
-            sb.Append($"<color={M}>Цена:</color> {SpyInfo.Cost(op):0} влияния · {SpyInfo.Months(op)} мес. · успех <b>{p * 100f:0}%</b>\n\n");
-            sb.Append($"<color={Good}>Если удастся:</color> ");
+            sb.Append(Loc.F("<b>{0}</b> против {1}\n", SpyInfo.Name(op), ai.AIName));
+            sb.Append(Loc.F("<color={0}>Цена:</color> {1:0} влияния · {2} мес. · успех <b>{3:0}%</b>\n\n", M, SpyInfo.Cost(op), SpyInfo.Months(op), p * 100f));
+            sb.Append(Loc.F("<color={0}>Если удастся:</color> ", Good));
             switch (op)
             {
                 case SpyOp.Steal:
                 {
                     var tech = StealTarget(ai, out bool available);
-                    sb.Append(tech == null ? "красть нечего — у них нет технологий, которых нет у вас."
-                        : available ? $"технология «{tech.Name}» будет изучена сразу."
-                        : $"половина исследования «{tech.Name}» ({tech.Cost * 0.5f:0} науки).");
+                    sb.Append(tech == null ? Loc.T("красть нечего — у них нет технологий, которых нет у вас.")
+                        : available ? Loc.F("технология «{0}» будет изучена сразу.", tech.Name)
+                        : Loc.F("половина исследования «{0}» ({1:0} науки).", tech.Name, tech.Cost * 0.5f));
                     break;
                 }
                 case SpyOp.Sabotage:
                     if (HasIntel(ai.OwnerId, DeepIntelCover))
                     {
                         float al = ai.GetStock("alloys"), en = ai.GetStock("energy");
-                        sb.Append($"уничтожит ≈ {Mathf.Min(al, Mathf.Max(30f, al * 0.35f)):0} сплавов и ≈ {Mathf.Min(en, Mathf.Max(20f, en * 0.20f)):0} гелия-3 (по досье).");
+                        sb.Append(Loc.F("уничтожит ≈ {0:0} сплавов и ≈ {1:0} гелия-3 (по досье).", Mathf.Min(al, Mathf.Max(30f, al * 0.35f)), Mathf.Min(en, Mathf.Max(20f, en * 0.20f))));
                     }
-                    else sb.Append("уничтожит 35% их сплавов (не меньше 30) и 20% гелия-3 (не меньше 20). Точные запасы видны в досье — от 50% сети.");
+                    else sb.Append(Loc.T("уничтожит 35% их сплавов (не меньше 30) и 20% гелия-3 (не меньше 20). Точные запасы видны в досье — от 50% сети."));
                     break;
                 default:
-                    sb.Append("две чужие империи поссорятся: −35 к отношениям между ними, война между ними вероятнее.");
+                    sb.Append(Loc.T("две чужие империи поссорятся: −35 к отношениям между ними, война между ними вероятнее."));
                     break;
             }
-            sb.Append($"\nСеть частично засветится (−15%). С шансом {NoticeChance(a, ai) * 100f:0}% следы заметят: −8 к отношению с вами.\n");
-            sb.Append($"<color={Bad}>Если провалится:</color> с шансом {CatchChance(a, ai) * 100f:0}% агента арестуют (−12 к отношению, сеть −30%), " +
-                      "иначе он уйдёт, но половина разведсети пропадёт.");
+            sb.Append(Loc.F("\nСеть частично засветится (−15%). С шансом {0:0}% следы заметят: −8 к отношению с вами.\n", NoticeChance(a, ai) * 100f));
+            sb.Append(Loc.F("<color={0}>Если провалится:</color> с шансом {1:0}% агента арестуют (−12 к отношению, сеть −30%), ", Bad, CatchChance(a, ai) * 100f) +
+                      Loc.T("иначе он уйдёт, но половина разведсети пропадёт."));
             return sb.ToString();
         }
 
@@ -669,10 +669,10 @@ namespace StellarisClone.Core
             if (available)
             {
                 tm.GrantTech(tech);
-                return $"похищена технология «{tech.Name}» — она уже изучена в вашей империи";
+                return Loc.F("похищена технология «{0}» — она уже изучена в вашей империи", tech.Name);
             }
             tm.AddTechProgress(tech, tech.Cost * 0.5f);
-            return $"украдены чертежи «{tech.Name}»: половина исследования выполнена";
+            return Loc.F("украдены чертежи «{0}»: половина исследования выполнена", tech.Name);
         }
 
         private string ApplySabotage(AIEmpireManager ai)
@@ -682,7 +682,7 @@ namespace StellarisClone.Core
             float lostE = Mathf.Min(energy, Mathf.Max(20f, energy * 0.20f));
             ai.SpendStock("alloys", lostA);
             ai.SpendStock("energy", lostE);
-            return $"уничтожено {lostA:0} сплавов и {lostE:0} гелия-3";
+            return Loc.F("уничтожено {0:0} сплавов и {1:0} гелия-3", lostA, lostE);
         }
 
         private string ApplyDiscord(AIEmpireManager ai, int arg)
@@ -690,7 +690,7 @@ namespace StellarisClone.Core
             var third = AIEmpireManager.For(arg);
             if (third == null || third.IsEliminated) return null;
             AIRelations.AddGrudge(ai.OwnerId, arg, -35f);
-            return $"{ai.AIName} и {third.AIName} поссорились — отношения между ними резко ухудшились";
+            return Loc.F("{0} и {1} поссорились — отношения между ними резко ухудшились", ai.AIName, third.AIName);
         }
 
         // ==================== ШПИОНАЖ ИИ ПРОТИВ ВАС ====================
@@ -744,16 +744,16 @@ namespace StellarisClone.Core
             float r = UnityEngine.Random.value;
             if (theft != null && r < 0.34f) kind = 0;
             else kind = r < 0.67f ? 1 : 2;
-            string what = kind == 0 ? "кража технологий" : kind == 1 ? "диверсия на верфях" : "хищение запасов";
+            string what = kind == 0 ? Loc.T("кража технологий") : kind == 1 ? Loc.T("диверсия на верфях") : Loc.T("хищение запасов");
 
             var counterAgent = AgentOn(0);
             if (foiled)
             {
                 _s.Foiled++;
                 Lm?.GrantXp(counterAgent, 25f);
-                string msg = $"Контрразведка сорвала операцию {ai.AIName}: {what}.";
+                string msg = Loc.F("Контрразведка сорвала операцию {0}: {1}.", ai.AIName, what);
                 AddLog(msg, 3);
-                NotificationCenter.Show("Шпионаж сорван", msg, NotificationCenter.Kind.Success, 7f);
+                NotificationCenter.Show(Loc.T("Шпионаж сорван"), msg, NotificationCenter.Kind.Success, 7f);
                 Changed();
                 return;
             }
@@ -761,9 +761,9 @@ namespace StellarisClone.Core
             {
                 if (detected)
                 {
-                    string msg = $"{ai.AIName} пытались провернуть: {what}, но агенты ничего не добились.";
+                    string msg = Loc.F("{0} пытались провернуть: {1}, но агенты ничего не добились.", ai.AIName, what);
                     AddLog(msg, 3);
-                    NotificationCenter.Show("Попытка шпионажа", msg, NotificationCenter.Kind.Info, 6f);
+                    NotificationCenter.Show(Loc.T("Попытка шпионажа"), msg, NotificationCenter.Kind.Info, 6f);
                     Changed();
                 }
                 return;
@@ -776,13 +776,13 @@ namespace StellarisClone.Core
             {
                 case 0:
                     ai.GrantTechFromSpy(theft);
-                    effect = $"скопирована технология «{theft.Name}»";
+                    effect = Loc.F("скопирована технология «{0}»", theft.Name);
                     break;
                 case 1:
                 {
                     float lost = eco != null ? Mathf.Min(eco.Alloys, Mathf.Max(20f, eco.Alloys * 0.25f)) : 0f;
                     if (eco != null) { eco.Alloys -= lost; eco.RaiseResourcesChanged(); }
-                    effect = $"уничтожено {lost:0} сплавов";
+                    effect = Loc.F("уничтожено {0:0} сплавов", lost);
                     break;
                 }
                 default:
@@ -792,22 +792,22 @@ namespace StellarisClone.Core
                     if (eco != null) { eco.EnergyCredits -= e; eco.Minerals -= m; eco.RaiseResourcesChanged(); }
                     ai.AddStock("energy", e);
                     ai.AddStock("minerals", m);
-                    effect = $"похищено {e:0} гелия-3 и {m:0} титана";
+                    effect = Loc.F("похищено {0:0} гелия-3 и {1:0} титана", e, m);
                     break;
                 }
             }
 
             if (detected)
             {
-                string msg = $"{ai.AIName}: {what} удалась — {effect}.";
+                string msg = Loc.F("{0}: {1} удалась — {2}.", ai.AIName, what, effect);
                 AddLog(msg, 3);
-                NotificationCenter.Show("Операция против вас раскрыта", msg, NotificationCenter.Kind.Danger, 9f);
+                NotificationCenter.Show(Loc.T("Операция против вас раскрыта"), msg, NotificationCenter.Kind.Danger, 9f);
             }
             else if (kind != 0)
             {
-                string msg = $"Неизвестные агенты: {effect}. Контрразведка не смогла определить, кто за этим стоит.";
+                string msg = Loc.F("Неизвестные агенты: {0}. Контрразведка не смогла определить, кто за этим стоит.", effect);
                 AddLog(msg, 3);
-                NotificationCenter.Show("Диверсия", msg, NotificationCenter.Kind.Warning, 8f);
+                NotificationCenter.Show(Loc.T("Диверсия"), msg, NotificationCenter.Kind.Warning, 8f);
             }
             Changed();
         }

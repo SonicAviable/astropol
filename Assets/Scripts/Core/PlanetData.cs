@@ -17,18 +17,18 @@ namespace StellarisClone.Core
 
         public static string Name(ColonyFocus f) => f switch
         {
-            ColonyFocus.Minerals => "Добыча титана",
-            ColonyFocus.Energy   => "Энергетика",
-            ColonyFocus.Industry => "Промышленность",
-            _ => "Равномерно"
+            ColonyFocus.Minerals => Loc.T("Добыча титана"),
+            ColonyFocus.Energy   => Loc.T("Энергетика"),
+            ColonyFocus.Industry => Loc.T("Промышленность"),
+            _ => Loc.T("Равномерно")
         };
 
         public static string Desc(ColonyFocus f) => f switch
         {
-            ColonyFocus.Minerals => "Жители сначала идут в шахты; автостройка ставит горнодобывающие районы",
-            ColonyFocus.Energy   => "Жители сначала идут на генераторы; автостройка ставит энергорайоны",
-            ColonyFocus.Industry => "Жители сначала идут на заводы; автостройка ставит промышленные районы",
-            _ => "Рабочие места заполняются по порядку; автостройка держит районы в равновесии"
+            ColonyFocus.Minerals => Loc.T("Жители сначала идут в шахты; автостройка ставит горнодобывающие районы"),
+            ColonyFocus.Energy   => Loc.T("Жители сначала идут на генераторы; автостройка ставит энергорайоны"),
+            ColonyFocus.Industry => Loc.T("Жители сначала идут на заводы; автостройка ставит промышленные районы"),
+            _ => Loc.T("Рабочие места заполняются по порядку; автостройка держит районы в равновесии")
         };
 
         /// <summary>Район, которому приоритет отдаёт первые рабочие руки (null — равномерно).</summary>
@@ -45,19 +45,19 @@ namespace StellarisClone.Core
     {
         public static string Name(DistrictType t) => t switch
         {
-            DistrictType.Urban      => "ГОРОДСКОЙ РАЙОН",
-            DistrictType.Mining     => "ГОРНОДОБЫВАЮЩИЙ",
-            DistrictType.Generator  => "ЭНЕРГОГЕНЕРАЦИЯ",
-            DistrictType.Industrial => "ПРОМЫШЛЕННЫЙ",
+            DistrictType.Urban      => Loc.T("ГОРОДСКОЙ РАЙОН"),
+            DistrictType.Mining     => Loc.T("ГОРНОДОБЫВАЮЩИЙ"),
+            DistrictType.Generator  => Loc.T("ЭНЕРГОГЕНЕРАЦИЯ"),
+            DistrictType.Industrial => Loc.T("ПРОМЫШЛЕННЫЙ"),
             _ => "?"
         };
 
         public static string ShortDesc(DistrictType t) => t switch
         {
-            DistrictType.Urban      => "+2 жилья, +1 рабочее место",
-            DistrictType.Mining     => "+4 Титана/мес",
-            DistrictType.Generator  => "+4 Гелия-3/мес",
-            DistrictType.Industrial => "+3 Сплава/мес",
+            DistrictType.Urban      => Loc.T("+2 жилья, +1 рабочее место"),
+            DistrictType.Mining     => Loc.T("+4 Титана/мес"),
+            DistrictType.Generator  => Loc.T("+4 Гелия-3/мес"),
+            DistrictType.Industrial => Loc.T("+3 Сплава/мес"),
             _ => ""
         };
 
@@ -327,12 +327,12 @@ namespace StellarisClone.Core
 
         public string ClassDisplayName => Type switch
         {
-            PlanetType.Continental => "Континентальный мир",
-            PlanetType.Desert      => "Пустынный мир",
-            PlanetType.Molten      => "Расплавленный мир",
-            PlanetType.GasGiant    => "Газовый гигант",
-            PlanetType.Barren      => "Бесплодный мир",
-            _ => "Неклассифицированный объект"
+            PlanetType.Continental => Loc.T("Континентальный мир"),
+            PlanetType.Desert      => Loc.T("Пустынный мир"),
+            PlanetType.Molten      => Loc.T("Расплавленный мир"),
+            PlanetType.GasGiant    => Loc.T("Газовый гигант"),
+            PlanetType.Barren      => Loc.T("Бесплодный мир"),
+            _ => Loc.T("Неклассифицированный объект")
         };
 
         public bool CanColonize => HabitabilityPercent >= 40 && Population <= 0
@@ -411,11 +411,11 @@ namespace StellarisClone.Core
 
         public static string ClassName(PlanetType t) => t switch
         {
-            PlanetType.Continental => "континентальный",
-            PlanetType.Desert      => "пустынный",
-            PlanetType.Molten      => "расплавленный",
-            PlanetType.GasGiant    => "газовый гигант",
-            PlanetType.Barren      => "бесплодный",
+            PlanetType.Continental => Loc.T("континентальный"),
+            PlanetType.Desert      => Loc.T("пустынный"),
+            PlanetType.Molten      => Loc.T("расплавленный"),
+            PlanetType.GasGiant    => Loc.T("газовый гигант"),
+            PlanetType.Barren      => Loc.T("бесплодный"),
             _ => "?"
         };
 
@@ -457,41 +457,41 @@ namespace StellarisClone.Core
             int productive = Mathf.Max(1, size - Mathf.CeilToInt(size / 3f));
             int potential = productive * 4;
             return
-                "<color=#8AA2A8>Сразу после основания:</color>\n" +
-                $"  • 2 жителя, городской и горнодобывающий районы\n" +
-                $"  • <color=#4DF2DB>+{ColonyStartMineralsPerMonth} титана/мес</color>\n" +
-                $"  • +{EmpireEconomy.NavalCapacityPerColony} к лимиту флота\n" +
-                "<color=#8AA2A8>Дальше:</color>\n" +
-                $"  • место под {size} районов; каждый рабочий район добычи даёт +4 титана или гелия-3/мес, завод +3 сплава\n" +
-                $"  • при полной застройке ~<color=#4DF2DB>+{potential}/мес</color> ресурсов\n" +
-                (HabitabilityPercent >= ComfortHabitability ? $"  • комфортный мир: рост населения +{(ComfortGrowthBonus - 1f) * 100f:0}%\n" : "") +
-                "<color=#8AA2A8>Цена:</color> " +
-                $"{ColonyMineralsCost:0} титана, {ColonyAlloysCost:0} сплавов, {ColonyInfluenceCost:0} влияния · {ConstructionManager.ColonyDays:0} дн.\n" +
-                $"<color=#8AA2A8>Окупаемость по титану:</color> ~{payback} мес., потом чистая прибыль";
+                Loc.T("<color=#8AA2A8>Сразу после основания:</color>\n") +
+                Loc.T("  • 2 жителя, городской и горнодобывающий районы\n") +
+                Loc.F("  • <color=#4DF2DB>+{0} титана/мес</color>\n", ColonyStartMineralsPerMonth) +
+                Loc.F("  • +{0} к лимиту флота\n", EmpireEconomy.NavalCapacityPerColony) +
+                Loc.T("<color=#8AA2A8>Дальше:</color>\n") +
+                Loc.F("  • место под {0} районов; каждый рабочий район добычи даёт +4 титана или гелия-3/мес, завод +3 сплава\n", size) +
+                Loc.F("  • при полной застройке ~<color=#4DF2DB>+{0}/мес</color> ресурсов\n", potential) +
+                (HabitabilityPercent >= ComfortHabitability ? Loc.F("  • комфортный мир: рост населения +{0:0}%\n", (ComfortGrowthBonus - 1f) * 100f) : "") +
+                Loc.T("<color=#8AA2A8>Цена:</color> ") +
+                Loc.F("{0:0} титана, {1:0} сплавов, {2:0} влияния · {3:0} дн.\n", ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost, ConstructionManager.ColonyDays) +
+                Loc.F("<color=#8AA2A8>Окупаемость по титану:</color> ~{0} мес., потом чистая прибыль", payback);
         }
 
         /// <summary>Что даст следующий шаг терраформинга — для подсказок.</summary>
         public string TerraformBenefitText()
         {
             var next = TerraformNextType;
-            if (!next.HasValue) return "Этот мир терраформировать нельзя.";
+            if (!next.HasValue) return Loc.T("Этот мир терраформировать нельзя.");
             int habNow = HabitabilityPercent, habNext = HabitabilityOf(next.Value);
-            string head = $"{ClassName(Type)} → <b>{ClassName(next.Value)}</b>  ·  пригодность {habNow}% → <b>{habNext}%</b>\n";
-            string price = $"\n<color=#8AA2A8>Цена шага:</color> {TerraformEnergyCost:0} гелия-3, {TerraformMineralsCost:0} титана, {TerraformInfluenceCost:0} влияния · {ConstructionManager.TerraformDays:0} дн.";
+            string head = Loc.F("{0} → <b>{1}</b>  ·  пригодность {2}% → <b>{3}%</b>\n", ClassName(Type), ClassName(next.Value), habNow, habNext);
+            string price = Loc.F("\n<color=#8AA2A8>Цена шага:</color> {0:0} гелия-3, {1:0} титана, {2:0} влияния · {3:0} дн.", TerraformEnergyCost, TerraformMineralsCost, TerraformInfluenceCost, ConstructionManager.TerraformDays);
             string what;
             if (habNow < 40 && habNext >= 40)
-                what = $"<color=#5CE68A>Откроет колонизацию:</color> место под {MaxDistricts} районов, колония сразу даст +{ColonyStartMineralsPerMonth} титана/мес.";
+                what = Loc.F("<color=#5CE68A>Откроет колонизацию:</color> место под {0} районов, колония сразу даст +{1} титана/мес.", MaxDistricts, ColonyStartMineralsPerMonth);
             else if (habNext < 40)
             {
                 int left = TerraformStepsToColonize;
-                what = $"<color=#FFB070>Сам по себе колонию не откроет.</color> До пригодного мира шагов: {left} " +
-                       $"(всего ~{left * ConstructionManager.TerraformDays:0} дн. и {left * TerraformMineralsCost:0} титана). Выгодно, если планета большая ({MaxDistricts} районов).";
+                what = Loc.F("<color=#FFB070>Сам по себе колонию не откроет.</color> До пригодного мира шагов: {0} ", left) +
+                       Loc.F("(всего ~{0:0} дн. и {1:0} титана). Выгодно, если планета большая ({2} районов).", left * ConstructionManager.TerraformDays, left * TerraformMineralsCost, MaxDistricts);
             }
             else if (habNext >= ComfortHabitability)
-                what = $"<color=#5CE68A>Комфортный мир:</color> рост населения <b>+{(ComfortGrowthBonus - 1f) * 100f:0}%</b> — колония быстрее заполнит районы." +
-                       (Population > 0 ? "" : "\nКолонию можно основать и без этого шага.");
+                what = Loc.F("<color=#5CE68A>Комфортный мир:</color> рост населения <b>+{0:0}%</b> — колония быстрее заполнит районы.", (ComfortGrowthBonus - 1f) * 100f) +
+                       (Population > 0 ? "" : Loc.T("\nКолонию можно основать и без этого шага."));
             else
-                what = "Пригодность вырастет.";
+                what = Loc.T("Пригодность вырастет.");
             return head + what + price;
         }
 

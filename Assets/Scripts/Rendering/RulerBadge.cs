@@ -68,7 +68,7 @@ namespace StellarisClone.Rendering
 
             _name = LGBuild.Label(mask, "", 10, Color.white, TextAnchor.LowerLeft, bold: true);
             _name.rectTransform.Stretch(9, 19, 6, 0);
-            var caption = LGBuild.Label(mask, "ОБЗОР ИМПЕРИИ", 8, UIManager.DS.TextMuted, TextAnchor.LowerLeft, bold: true);
+            var caption = LGBuild.Label(mask, Loc.T("ОБЗОР ИМПЕРИИ"), 8, UIManager.DS.TextMuted, TextAnchor.LowerLeft, bold: true);
             caption.rectTransform.Stretch(9, 7, 6, 0);
 
             // Герб фракции в правом верхнем углу
@@ -122,7 +122,7 @@ namespace StellarisClone.Rendering
             string tip = leader != null
                 ? $"<b>{leader.Name}</b>\n{leader.Title}\n<i>«{leader.Quote}»</i>\n\n"
                 : "";
-            TooltipHelper.Attach(gameObject, tip + "<b>Обзор империи</b>\nРесурсы, колонии, флоты, лидеры и путь к победе.");
+            TooltipHelper.Attach(gameObject, tip + Loc.T("<b>Обзор империи</b>\nРесурсы, колонии, флоты, лидеры и путь к победе."));
         }
 
         private void Update()

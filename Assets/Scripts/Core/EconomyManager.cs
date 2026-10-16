@@ -134,14 +134,14 @@ namespace StellarisClone.Core
                 {
                     _bankrupt = true;
                     Debug.LogWarning("<color=#F55>[Экономика]</color> БАНКРОТСТВО: производство снижено на 50%.");
-                    NotificationCenter.Show("Банкротство",
-                        "Производство урезано вдвое. Распустите часть флота или стройте генераторы — иначе экономика рухнет",
+                    NotificationCenter.Show(Loc.T("Банкротство"),
+                        Loc.T("Производство урезано вдвое. Распустите часть флота или стройте генераторы — иначе экономика рухнет"),
                         NotificationCenter.Kind.Danger, 10f);
                 }
                 else if (!_bankrupt)
                 {
-                    NotificationCenter.Show("Казна пуста",
-                        "Ещё месяц дефицита — и наступит банкротство (производство ×0.5)",
+                    NotificationCenter.Show(Loc.T("Казна пуста"),
+                        Loc.T("Ещё месяц дефицита — и наступит банкротство (производство ×0.5)"),
                         NotificationCenter.Kind.Danger, 8f);
                 }
             }
@@ -150,7 +150,7 @@ namespace StellarisClone.Core
                 _bankrupt = false;
                 _lowEnergyAccum = 0f;
                 Debug.Log("<color=#5F5>[Экономика]</color> Кризис преодолён.");
-                NotificationCenter.Show("Кризис преодолён", "Экономика восстанавливается", NotificationCenter.Kind.Success, 5f);
+                NotificationCenter.Show(Loc.T("Кризис преодолён"), Loc.T("Экономика восстанавливается"), NotificationCenter.Kind.Success, 5f);
             }
             else if (EnergyCredits > 5f)
             {
@@ -189,10 +189,10 @@ namespace StellarisClone.Core
 
             if (level > _warnLevel)
             {
-                string when = months < 1f ? "меньше чем через месяц" : $"примерно через {Mathf.CeilToInt(months)} мес.";
-                NotificationCenter.Show(level >= 3 ? "Банкротство неизбежно" : "Угроза банкротства",
-                    $"Расход Гелия-3 превышает доход на {-MonthlyEnergyIncome:0.#}/мес — казна опустеет {when}. " +
-                    "Сократите флот, откажитесь от лишних форпостов или стройте генераторы.",
+                string when = months < 1f ? Loc.T("меньше чем через месяц") : Loc.F("примерно через {0} мес.", Mathf.CeilToInt(months));
+                NotificationCenter.Show(level >= 3 ? Loc.T("Банкротство неизбежно") : Loc.T("Угроза банкротства"),
+                    Loc.F("Расход Гелия-3 превышает доход на {0:0.#}/мес — казна опустеет {1}. ", -MonthlyEnergyIncome, when) +
+                    Loc.T("Сократите флот, откажитесь от лишних форпостов или стройте генераторы."),
                     level >= 2 ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Warning, 8f);
             }
             _warnLevel = level;

@@ -62,8 +62,8 @@ namespace StellarisClone.Rendering
         }
 
         private static string ShipName(ConstructionJob j) =>
-            j.ShipType == FleetType.Science ? "Научный корабль" : j.ShipType == FleetType.Constructor ? "Строитель"
-            : j.Hull == ShipClass.Destroyer ? "Эсминец" : j.Hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
+            j.ShipType == FleetType.Science ? Loc.T("Научный корабль") : j.ShipType == FleetType.Constructor ? Loc.T("Строитель")
+            : j.Hull == ShipClass.Destroyer ? Loc.T("Эсминец") : j.Hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет");
 
         private static LGIcon ShipIcon(ConstructionJob j) =>
             j.ShipType == FleetType.Science ? LGIcon.ScienceShip : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull);

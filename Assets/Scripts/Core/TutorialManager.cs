@@ -130,18 +130,18 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Связь установлена",
-                Text = "Командующий, я ОРАКУЛ-7, бортовой ИИ-советник. Проведу вас через первые шаги: время, " +
-                       "разведку, границы, колонии и науку.\n\nПодсвеченный элемент — то, с чем нужно поработать. " +
-                       "Кнопка <b>«Показать»</b> наведёт камеру на цель."
+                Title = Loc.T("Связь установлена"),
+                Text = Loc.T("Командующий, я ОРАКУЛ-7, бортовой ИИ-советник. Проведу вас через первые шаги: время, ") +
+                       Loc.T("разведку, границы, колонии и науку.\n\nПодсвеченный элемент — то, с чем нужно поработать. ") +
+                       Loc.T("Кнопка <b>«Показать»</b> наведёт камеру на цель.")
             });
 
             _steps.Add(new Step
             {
-                Title = "Правитель и обзор империи",
-                Text = "В левом верхнем углу — правитель вашей империи. Щёлчок по портрету открывает " +
-                       "<b>обзор империи</b>: ресурсы, колонии, флоты, лидеры, соперники и путь к победе.",
-                Task = "Откройте обзор империи, затем закройте его (Esc)",
+                Title = Loc.T("Правитель и обзор империи"),
+                Text = Loc.T("В левом верхнем углу — правитель вашей империи. Щёлчок по портрету открывает ") +
+                       Loc.T("<b>обзор империи</b>: ресурсы, колонии, флоты, лидеры, соперники и путь к победе."),
+                Task = Loc.T("Откройте обзор империи, затем закройте его (Esc)"),
                 Anchor = UIAnchors.Ruler,
                 Enter = () => _overviewSeen = false,
                 Done = () =>
@@ -154,19 +154,19 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Ресурсы",
-                Text = "<color=#F2C747>Гелий-3</color> питает флот и станции, <color=#4DE6CC>титан</color> идёт на стройку, " +
-                       "<color=#F29E5C>сплавы</color> — на корабли, <color=#FF7A94>влияние</color> — на форпосты и лидеров, " +
-                       "<color=#5CF59A>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы.",
+                Title = Loc.T("Ресурсы"),
+                Text = Loc.T("<color=#F2C747>Гелий-3</color> питает флот и станции, <color=#4DE6CC>титан</color> идёт на стройку, ") +
+                       Loc.T("<color=#F29E5C>сплавы</color> — на корабли, <color=#FF7A94>влияние</color> — на форпосты и лидеров, ") +
+                       Loc.T("<color=#5CF59A>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы."),
                 Anchor = UIAnchors.Resources
             });
 
             _steps.Add(new Step
             {
-                Title = "Ход времени",
-                Text = "Галактика живёт в реальном времени. <b>Пробел</b> — пауза и пуск, клавиши <b>1</b>, <b>2</b>, <b>3</b> — скорость. " +
-                       "На паузе можно спокойно отдавать приказы.",
-                Task = "Запустите время или смените скорость",
+                Title = Loc.T("Ход времени"),
+                Text = Loc.T("Галактика живёт в реальном времени. <b>Пробел</b> — пауза и пуск, клавиши <b>1</b>, <b>2</b>, <b>3</b> — скорость. ") +
+                       Loc.T("На паузе можно спокойно отдавать приказы."),
+                Task = Loc.T("Запустите время или смените скорость"),
                 Anchor = UIAnchors.Speed,
                 Enter = () => _speedAtEnter = TimeManager.Instance != null ? TimeManager.Instance.CurrentSpeed : 0,
                 Done = () => TimeManager.Instance != null && TimeManager.Instance.CurrentSpeed != _speedAtEnter
@@ -174,10 +174,10 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Научный корабль",
-                Text = "Ваш первый инструмент — научный корабль. Он изучает соседние системы, находит залежи, " +
-                       "аномалии и места для колоний.",
-                Task = "Выделите научный корабль — щелчок ЛКМ по его значку",
+                Title = Loc.T("Научный корабль"),
+                Text = Loc.T("Ваш первый инструмент — научный корабль. Он изучает соседние системы, находит залежи, ") +
+                       Loc.T("аномалии и места для колоний."),
+                Task = Loc.T("Выделите научный корабль — щелчок ЛКМ по его значку"),
                 World = () => ShipPos(FleetType.Science),
                 Focus = () => FocusShip(FleetType.Science),
                 Done = () => Selected(FleetType.Science)
@@ -185,10 +185,10 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Разведка",
-                Text = "Серые системы ещё не изучены. Щелчок <b>ПКМ</b> по системе отправляет корабль; пунктир покажет маршрут " +
-                       "и дни в пути. <b>Shift+ПКМ</b> добавляет цель в очередь.",
-                Task = "ПКМ по подсвеченной системе — отправьте разведчика",
+                Title = Loc.T("Разведка"),
+                Text = Loc.T("Серые системы ещё не изучены. Щелчок <b>ПКМ</b> по системе отправляет корабль; пунктир покажет маршрут ") +
+                       Loc.T("и дни в пути. <b>Shift+ПКМ</b> добавляет цель в очередь."),
+                Task = Loc.T("ПКМ по подсвеченной системе — отправьте разведчика"),
                 World = () => SystemPos(SurveyTarget()),
                 Focus = () => FocusSystem(SurveyTarget()),
                 Done = HasScienceShipOnMission
@@ -196,18 +196,18 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Панель флота",
-                Text = "Внизу — панель выделенного флота: состояние, прочность, маршрут и лидер на борту. " +
-                       "Кнопки справа: стоп, следующая цель, очистить очередь, камера к флоту, снять выделение.",
+                Title = Loc.T("Панель флота"),
+                Text = Loc.T("Внизу — панель выделенного флота: состояние, прочность, маршрут и лидер на борту. ") +
+                       Loc.T("Кнопки справа: стоп, следующая цель, очистить очередь, камера к флоту, снять выделение."),
                 Anchor = UIAnchors.FleetHud
             });
 
             _steps.Add(new Step
             {
-                Title = "Строительный корабль",
-                Text = "Границы растут форпостами. Их строит строительный корабль — за титан, а каждый форпост " +
-                       "стоит 2 гелия-3 в месяц.",
-                Task = "Выделите строительный корабль",
+                Title = Loc.T("Строительный корабль"),
+                Text = Loc.T("Границы растут форпостами. Их строит строительный корабль — за титан, а каждый форпост ") +
+                       Loc.T("стоит 2 гелия-3 в месяц."),
+                Task = Loc.T("Выделите строительный корабль"),
                 World = () => ShipPos(FleetType.Constructor),
                 Focus = () => FocusShip(FleetType.Constructor),
                 Done = () => Selected(FleetType.Constructor)
@@ -215,10 +215,10 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Первый форпост",
-                Text = "Форпост можно заложить только в изученной системе. Если подходящей пока нет — ускорьте время " +
-                       "(клавиша <b>3</b>) и дождитесь разведчика.",
-                Task = "ПКМ строительным кораблём по изученной соседней системе",
+                Title = Loc.T("Первый форпост"),
+                Text = Loc.T("Форпост можно заложить только в изученной системе. Если подходящей пока нет — ускорьте время ") +
+                       Loc.T("(клавиша <b>3</b>) и дождитесь разведчика."),
+                Task = Loc.T("ПКМ строительным кораблём по изученной соседней системе"),
                 World = () => SystemPos(OutpostTarget()),
                 Focus = () => FocusSystem(OutpostTarget()),
                 Done = () => HasAnyStarbaseBuilt() || ConstructorBusy()
@@ -226,10 +226,10 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Режимы карты",
-                Text = "Карта умеет показывать разное: <b>политику</b> (чьи системы), <b>ресурсы</b>, <b>коридоры</b> и " +
-                       "<b>разведку</b>. Удобно, когда галактика разрастётся.",
-                Task = "Переключите режим карты",
+                Title = Loc.T("Режимы карты"),
+                Text = Loc.T("Карта умеет показывать разное: <b>политику</b> (чьи системы), <b>ресурсы</b>, <b>коридоры</b> и ") +
+                       Loc.T("<b>разведку</b>. Удобно, когда галактика разрастётся."),
+                Task = Loc.T("Переключите режим карты"),
                 Anchor = UIAnchors.MapModes,
                 Enter = () => _modeAtEnter = MapModeController.Instance != null ? MapModeController.Instance.Active : default,
                 Done = () => MapModeController.Instance != null && MapModeController.Instance.Active != _modeAtEnter
@@ -237,9 +237,9 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Столица",
-                Text = "Внутри системы видны планеты, станции и флоты. Столица — сердце империи: здесь строятся районы.",
-                Task = "Двойной щелчок по звезде столицы",
+                Title = Loc.T("Столица"),
+                Text = Loc.T("Внутри системы видны планеты, станции и флоты. Столица — сердце империи: здесь строятся районы."),
+                Task = Loc.T("Двойной щелчок по звезде столицы"),
                 World = () => SystemPos(Capital()),
                 Focus = () => FocusSystem(Capital()),
                 Done = () => SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView
@@ -247,43 +247,43 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
-                Title = "Обзор планеты",
-                Text = "Щёлкните по обитаемой планете — откроется её обзор: население, производство и районы.",
-                Task = "Откройте обзор планеты-столицы",
+                Title = Loc.T("Обзор планеты"),
+                Text = Loc.T("Щёлкните по обитаемой планете — откроется её обзор: население, производство и районы."),
+                Task = Loc.T("Откройте обзор планеты-столицы"),
                 Done = () => PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen
             });
 
             _steps.Add(new Step
             {
-                Title = "Районы",
-                Text = "Каждый район — рабочие места: <b>городской</b> даёт жильё, <b>горнодобывающий</b> — титан, " +
-                       "<b>энергетический</b> — гелий-3, <b>промышленный</b> — сплавы. Население растёт, пока есть жильё.\n\n" +
-                       "Закройте обзор (Esc), когда будете готовы."
+                Title = Loc.T("Районы"),
+                Text = Loc.T("Каждый район — рабочие места: <b>городской</b> даёт жильё, <b>горнодобывающий</b> — титан, ") +
+                       Loc.T("<b>энергетический</b> — гелий-3, <b>промышленный</b> — сплавы. Население растёт, пока есть жильё.\n\n") +
+                       Loc.T("Закройте обзор (Esc), когда будете готовы.")
             });
 
             _steps.Add(new Step
             {
-                Title = "Исследования",
-                Text = "Наука открывает новые районы, корабли и бонусы. Выберите направление в одной из трёх ветвей — " +
-                       "физика, общество, инженерия.",
-                Task = "Откройте исследования",
+                Title = Loc.T("Исследования"),
+                Text = Loc.T("Наука открывает новые районы, корабли и бонусы. Выберите направление в одной из трёх ветвей — ") +
+                       Loc.T("физика, общество, инженерия."),
+                Task = Loc.T("Откройте исследования"),
                 Anchor = UIAnchors.Tech,
                 Done = () => TechTreePanel.Instance != null && TechTreePanel.Instance.IsOpen
             });
 
             _steps.Add(new Step
             {
-                Title = "Соседи",
-                Text = "В галактике вы не одни. <b>Дипломатия</b> — договоры, торговля и войны. Соперники следят за " +
-                       "вашей мощью: слабую империю попробуют съесть.",
+                Title = Loc.T("Соседи"),
+                Text = Loc.T("В галактике вы не одни. <b>Дипломатия</b> — договоры, торговля и войны. Соперники следят за ") +
+                       Loc.T("вашей мощью: слабую империю попробуют съесть."),
                 Anchor = UIAnchors.Diplomacy
             });
 
             _steps.Add(new Step
             {
-                Title = "Путь к победе",
-                Text = "Победить можно доминированием, наукой или по очкам к концу эпохи. Цели и прогресс — в обзоре империи " +
-                       "и в меню (Esc).\n\nУдачи, Командующий. ОРАКУЛ-7 на связи."
+                Title = Loc.T("Путь к победе"),
+                Text = Loc.T("Победить можно доминированием, наукой или по очкам к концу эпохи. Цели и прогресс — в обзоре империи ") +
+                       Loc.T("и в меню (Esc).\n\nУдачи, Командующий. ОРАКУЛ-7 на связи.")
             });
         }
 
@@ -302,13 +302,13 @@ namespace StellarisClone.Core
             _visibleLen = System.Text.RegularExpressions.Regex.Replace(_fullText, "<[^>]+>", "").Length;
             _typed = 0f;
             _body.text = "";
-            _stepLabel.text = $"ШАГ {index + 1} / {_steps.Count}";
+            _stepLabel.text = Loc.F("ШАГ {0} / {1}", index + 1, _steps.Count);
             LGBuild.SetBar(_progress, (index + 1) / (float)_steps.Count, UIManager.DS.NeonCyan);
 
             bool task = s.Task != null;
             _taskText.transform.parent.gameObject.SetActive(task);
             if (task) SetTask(s.Task, false);
-            _nextLabel.text = task ? "ПРОПУСТИТЬ" : index == _steps.Count - 1 ? "ЗАВЕРШИТЬ" : "ДАЛЕЕ";
+            _nextLabel.text = task ? Loc.T("ПРОПУСТИТЬ") : index == _steps.Count - 1 ? Loc.T("ЗАВЕРШИТЬ") : Loc.T("ДАЛЕЕ");
             _show.gameObject.SetActive(s.Focus != null);
 
             _avatar?.Pulse();
@@ -318,7 +318,8 @@ namespace StellarisClone.Core
 
             // Голос: фраза шага; текст набирается в такт речи
             _typeSpeed = TypeSpeed;
-            var clip = Resources.Load<AudioClip>($"Audio/Tutorial/tut_{index + 1:00}");
+            // Озвучка только русская: в английской версии — субтитры без голоса
+            var clip = Loc.English ? null : Resources.Load<AudioClip>($"Audio/Tutorial/tut_{index + 1:00}");
             if (clip != null)
             {
                 _typeSpeed = Mathf.Clamp(_visibleLen / Mathf.Max(1f, clip.length - 0.8f), 30f, 110f);
@@ -410,7 +411,7 @@ namespace StellarisClone.Core
                 _completeTimer = CompleteDelay;
                 SetTask(s.Task, true);
                 SFXManager.Play(Sfx.NotifySuccess, 0.55f);
-                PlayVoice(Resources.Load<AudioClip>($"Audio/Tutorial/tut_ok_{UnityEngine.Random.Range(1, 4)}"));
+                if (!Loc.English) PlayVoice(Resources.Load<AudioClip>($"Audio/Tutorial/tut_ok_{UnityEngine.Random.Range(1, 4)}"));
                 _cardFx?.SetPulse(1f);
             }
             if (_completeTimer >= 0f)
@@ -796,7 +797,7 @@ namespace StellarisClone.Core
             progHost.TopBand(10, 3, x, 78);
             _progress = LGBuild.Bar(progHost, UIManager.DS.NeonCyan, 0f, 3f);
 
-            var who = LGBuild.Label(rt, "ОРАКУЛ-7  ·  ИИ-СОВЕТНИК", 10, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var who = LGBuild.Label(rt, Loc.T("ОРАКУЛ-7  ·  ИИ-СОВЕТНИК"), 10, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
             who.rectTransform.TopBand(18, 16, x, 46);
             _stepLabel = LGBuild.Label(rt, "", 10, UIManager.DS.TextMuted, TextAnchor.UpperRight, bold: true);
             _stepLabel.rectTransform.TopBand(18, 16, x, 78);
@@ -804,13 +805,13 @@ namespace StellarisClone.Core
             var close = LGBuild.Button(rt, "Close", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
                                        SkipTutorial, LGIcon.Close, null, 9, 12f);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -10), new Vector2(28, 26));
-            TooltipHelper.Attach(close.gameObject, "<b>Закрыть обучение</b>\nПодсказки больше не появятся в этой партии.");
+            TooltipHelper.Attach(close.gameObject, Loc.T("<b>Закрыть обучение</b>\nПодсказки больше не появятся в этой партии."));
 
             var mute = LGBuild.Button(rt, "Voice", new Color(0.10f, 0.18f, 0.20f), UIManager.DS.NeonCyan, ToggleVoice, LGIcon.Speaker, null, 9, 12f);
             ((RectTransform)mute.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-42, -10), new Vector2(28, 26));
             foreach (var img in mute.GetComponentsInChildren<Image>())
                 if (img.gameObject != mute.gameObject) { _muteIcon = img; break; }
-            TooltipHelper.Attach(mute.gameObject, "<b>Голос советника</b>\nВключить или выключить озвучку обучения.");
+            TooltipHelper.Attach(mute.gameObject, Loc.T("<b>Голос советника</b>\nВключить или выключить озвучку обучения."));
 
             _title = LGBuild.Label(rt, "", 17, Color.white, TextAnchor.UpperLeft, bold: true);
             _title.rectTransform.TopBand(36, 24, x, 16);
@@ -833,15 +834,15 @@ namespace StellarisClone.Core
             _taskText.rectTransform.Stretch(22, 0, 0, 0);
 
             // Кнопки
-            _next = LGBuild.Button(rt, "Next", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, Next, LGIcon.Play, "ДАЛЕЕ", 11);
+            _next = LGBuild.Button(rt, "Next", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, Next, LGIcon.Play, Loc.T("ДАЛЕЕ"), 11);
             ((RectTransform)_next.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-14, 12), new Vector2(150, 32));
             _nextLabel = _next.GetComponentInChildren<Text>();
             _show = LGBuild.Button(rt, "Show", UIManager.DS.BtnNeutral, new Color(0.6f, 0.85f, 1f), () =>
             {
                 if (_index >= 0) _steps[_index].Focus?.Invoke();
-            }, LGIcon.Target, "ПОКАЗАТЬ", 11);
+            }, LGIcon.Target, Loc.T("ПОКАЗАТЬ"), 11);
             ((RectTransform)_show.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-172, 12), new Vector2(130, 32));
-            TooltipHelper.Attach(_show.gameObject, "Навести камеру на цель");
+            TooltipHelper.Attach(_show.gameObject, Loc.T("Навести камеру на цель"));
 
             LG.Skin(rt);
             RefreshMute();

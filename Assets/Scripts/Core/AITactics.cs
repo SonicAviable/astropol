@@ -27,10 +27,10 @@ namespace StellarisClone.Core
             { WeaponDamageType.Energy, WeaponDamageType.Kinetic, WeaponDamageType.Explosive };
 
         public static string TypeName(WeaponDamageType t) =>
-            t == WeaponDamageType.Energy ? "энергетическое" : t == WeaponDamageType.Kinetic ? "кинетическое" : "взрывное";
+            t == WeaponDamageType.Energy ? Loc.T("энергетическое") : t == WeaponDamageType.Kinetic ? Loc.T("кинетическое") : Loc.T("взрывное");
 
         public static string TypeShort(WeaponDamageType t) =>
-            t == WeaponDamageType.Energy ? "энергия" : t == WeaponDamageType.Kinetic ? "кинетика" : "взрывчатка";
+            t == WeaponDamageType.Energy ? Loc.T("энергия") : t == WeaponDamageType.Kinetic ? Loc.T("кинетика") : Loc.T("взрывчатка");
 
         /// <summary>Максимальная защита (щит, броня, корпус) всех боевых кораблей из списка.</summary>
         public static Defense DefenseOf(IEnumerable<FleetData> fleets, bool current)

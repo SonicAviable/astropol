@@ -32,7 +32,7 @@ namespace StellarisClone.Rendering
         private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
 
         private enum Sec { Research, Build, Military, Science, Constructor }
-        private static readonly string[] SecNames = { "ИССЛЕДОВАНИЯ", "СТРОИТЕЛЬСТВО", "ФЛОТЫ", "НАУЧНЫЕ КОРАБЛИ", "СТРОИТЕЛИ" };
+        private static readonly string[] SecNames = { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ") };
         private static readonly LGIcon[] SecIcons = { LGIcon.Research, LGIcon.Construction, LGIcon.Fleet, LGIcon.Sensors, LGIcon.Wrench };
         private static readonly Color[] SecColors =
         {
@@ -158,7 +158,7 @@ namespace StellarisClone.Rendering
 
             _headIcon = LGIcons.Create(head.transform, LGIcon.Menu, 14, Cyan);
             _headIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
-            var ht = LGBuild.Label(head.transform, "ПЛАНИРОВЩИК", 12, Primary, TextAnchor.MiddleLeft, bold: true);
+            var ht = LGBuild.Label(head.transform, Loc.T("ПЛАНИРОВЩИК"), 12, Primary, TextAnchor.MiddleLeft, bold: true);
             ht.rectTransform.Stretch(34, 0, 90, 0);
             ht.Track(1.6f);
 
@@ -171,7 +171,7 @@ namespace StellarisClone.Rendering
             _alertText = LGBuild.Label(chip.transform, "", 11, Gold, TextAnchor.MiddleRight, bold: true);
             _alertText.rectTransform.Stretch(0, 0, 8, 0);
             _alertChip = chip.gameObject;
-            TooltipHelper.Attach(_alertChip, "Требуют внимания: простаивающие корабли, свободные слоты исследований и бои");
+            TooltipHelper.Attach(_alertChip, Loc.T("Требуют внимания: простаивающие корабли, свободные слоты исследований и бои"));
             _alertChip.SetActive(false);
 
             _toggleLabel = LGBuild.Label(head.transform, "", 14, Muted, TextAnchor.MiddleRight, bold: true);
@@ -185,7 +185,7 @@ namespace StellarisClone.Rendering
                 SFXManager.Play(Sfx.PanelSlide);
                 ApplyCollapsed();
             });
-            TooltipHelper.Attach(head.gameObject, "Свернуть или развернуть планировщик");
+            TooltipHelper.Attach(head.gameObject, Loc.T("Свернуть или развернуть планировщик"));
         }
 
         private void ApplyCollapsed()
@@ -284,7 +284,7 @@ namespace StellarisClone.Rendering
                 {
                     rows.Add(new Row
                     {
-                        Icon = LGIcon.Research, IconCol = Gold, Title = $"Слот {i + 1} свободен", Status = "Выберите технологию",
+                        Icon = LGIcon.Research, IconCol = Gold, Title = Loc.F("Слот {0} свободен", i + 1), Status = Loc.T("Выберите технологию"),
                         Progress = -1f, Warn = true, Click = OpenTech
                     });
                     continue;
@@ -295,7 +295,7 @@ namespace StellarisClone.Rendering
                 {
                     Icon = LGIcons.ForTechCategory(t.Category), IconCol = TechCategoryInfo.Color(t.Category),
                     Title = t.Name,
-                    Status = slot.IsPaused ? "Пауза" : (slot.Queue.Count > 0 ? $"в очереди ещё {slot.Queue.Count}" : ""),
+                    Status = slot.IsPaused ? Loc.T("Пауза") : (slot.Queue.Count > 0 ? Loc.F("в очереди ещё {0}", slot.Queue.Count) : ""),
                     Right = slot.IsPaused ? "—" : TechnologyManager.FormatDays(days),
                     Progress = slot.ProgressNormalized, BarCol = slot.IsPaused ? Gold : Cyan,
                     Click = OpenTech
@@ -339,18 +339,18 @@ namespace StellarisClone.Rendering
             int queued = 0;
             foreach (var kv in waiting) queued += kv.Value;
             if (queued > 0)
-                rows.Add(new Row { Icon = LGIcon.Clock, IconCol = Muted, Title = $"В очереди: {queued}", Status = "ждут свободного места", Progress = -1f });
+                rows.Add(new Row { Icon = LGIcon.Clock, IconCol = Muted, Title = Loc.F("В очереди: {0}", queued), Status = Loc.T("ждут свободного места"), Progress = -1f });
         }
 
         private static string JobName(ConstructionJob j) => j.Kind switch
         {
-            JobKind.District => "Район: " + DistrictInfo.Name(j.District).ToLower(),
-            JobKind.MiningStation => "Добывающая станция",
-            JobKind.Colony => "Колония",
-            JobKind.Terraform => "Терраформирование",
-            _ => j.ShipType == FleetType.Science ? "Научный корабль"
-               : j.ShipType == FleetType.Constructor ? "Строительный корабль"
-               : j.Hull == ShipClass.Destroyer ? "Эсминец" : j.Hull == ShipClass.Frigate ? "Фрегат" : "Корвет"
+            JobKind.District => Loc.T("Район: ") + DistrictInfo.Name(j.District).ToLower(),
+            JobKind.MiningStation => Loc.T("Добывающая станция"),
+            JobKind.Colony => Loc.T("Колония"),
+            JobKind.Terraform => Loc.T("Терраформирование"),
+            _ => j.ShipType == FleetType.Science ? Loc.T("Научный корабль")
+               : j.ShipType == FleetType.Constructor ? Loc.T("Строительный корабль")
+               : j.Hull == ShipClass.Destroyer ? Loc.T("Эсминец") : j.Hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет")
         };
 
         private static LGIcon JobIcon(ConstructionJob j) => j.Kind switch
@@ -371,7 +371,7 @@ namespace StellarisClone.Rendering
             {
                 var d = f?.Data;
                 if (d == null || d.Destroyed || d.OwnerId != 0) continue;
-                var row = new Row { Title = string.IsNullOrEmpty(d.Name) ? "Флот" : d.Name, Progress = -1f };
+                var row = new Row { Title = string.IsNullOrEmpty(d.Name) ? Loc.T("Флот") : d.Name, Progress = -1f };
                 string here = SysName(d.CurrentSystemId);
                 var fv = f;
                 row.Click = () => SelectFleet(fv);
@@ -389,30 +389,30 @@ namespace StellarisClone.Rendering
                         break;
                     }
                     case FleetState.Surveying:
-                        row.Status = $"Разведка: {here}";
+                        row.Status = Loc.F("Разведка: {0}", here);
                         row.Right = TechnologyManager.FormatDays(Mathf.CeilToInt(d.DaysRemainingSurvey));
                         row.Progress = Mathf.Clamp01(1f - d.DaysRemainingSurvey / Mathf.Max(1f, d.TotalSurveyDays));
                         row.BarCol = Cyan;
                         break;
                     case FleetState.Constructing:
-                        row.Status = $"Форпост: {here}";
+                        row.Status = Loc.F("Форпост: {0}", here);
                         row.Right = TechnologyManager.FormatDays(Mathf.CeilToInt(d.DaysRemainingConstruction));
                         row.Progress = Mathf.Clamp01(1f - d.DaysRemainingConstruction / Mathf.Max(1f, d.TotalConstructionDays));
                         row.BarCol = Green;
                         break;
                     default:
-                        if (d.InCombat) row.Status = $"БОЙ: {here}";
-                        else if (d.Type != FleetType.Military && d.OrderQueue.Count == 0) { row.Status = $"Простаивает: {here}"; row.Warn = true; }
-                        else row.Status = $"На орбите: {here}";
+                        if (d.InCombat) row.Status = Loc.F("БОЙ: {0}", here);
+                        else if (d.Type != FleetType.Military && d.OrderQueue.Count == 0) { row.Status = Loc.F("Простаивает: {0}", here); row.Warn = true; }
+                        else row.Status = Loc.F("На орбите: {0}", here);
                         break;
                 }
 
                 if (d.AutoExplore && !d.InCombat)
                 {
-                    if (row.Warn) { row.Status = $"Авторазведка: {here}"; row.Warn = false; }
-                    else row.Status = "Авто · " + row.Status;
+                    if (row.Warn) { row.Status = Loc.F("Авторазведка: {0}", here); row.Warn = false; }
+                    else row.Status = Loc.T("Авто · ") + row.Status;
                 }
-                if (d.InCombat && d.State != FleetState.Orbiting) row.Status = "БОЙ · " + row.Status;
+                if (d.InCombat && d.State != FleetState.Orbiting) row.Status = Loc.T("БОЙ · ") + row.Status;
                 if (d.InCombat) { row.Danger = true; row.Warn = false; }
 
                 switch (d.Type)
@@ -531,11 +531,11 @@ namespace StellarisClone.Rendering
         {
             string text = s switch
             {
-                (int)Sec.Research => "Нет активных исследований",
-                (int)Sec.Build => "Ничего не строится",
-                (int)Sec.Military => "Военных флотов нет",
-                (int)Sec.Science => "Научных кораблей нет",
-                _ => "Строителей нет"
+                (int)Sec.Research => Loc.T("Нет активных исследований"),
+                (int)Sec.Build => Loc.T("Ничего не строится"),
+                (int)Sec.Military => Loc.T("Военных флотов нет"),
+                (int)Sec.Science => Loc.T("Научных кораблей нет"),
+                _ => Loc.T("Строителей нет")
             };
             var host = LGBuild.Rect(_list, "Empty");
             LGBuild.Height(host.gameObject, 22f);

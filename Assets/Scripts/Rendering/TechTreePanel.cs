@@ -36,7 +36,7 @@ namespace StellarisClone.Rendering
         /// <summary>Высота области дерева: строки растягиваются, чтобы ветка заняла её целиком.</summary>
         private const float TreeH = WinH - HeaderH - 8f - Pad - (TabsH + 8f + TierHeadH + 4f);
         private const float DoubleClick = 0.4f;
-        private static readonly string[] TierNames = { "БАЗОВЫЕ", "УРОВЕНЬ I", "УРОВЕНЬ II", "УРОВЕНЬ III", "УРОВЕНЬ IV" };
+        private static readonly string[] TierNames = { Loc.T("БАЗОВЫЕ"), Loc.T("УРОВЕНЬ I"), Loc.T("УРОВЕНЬ II"), Loc.T("УРОВЕНЬ III"), Loc.T("УРОВЕНЬ IV") };
 
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
@@ -288,7 +288,7 @@ namespace StellarisClone.Rendering
             bfx.FillMultiplier = 3f;
             LGIcons.Create(badge.transform, LGIcon.Research, 26, Cyan);
 
-            var title = LGBuild.Label(head, "ИССЛЕДОВАНИЯ", 22, Primary, TextAnchor.UpperLeft, bold: true);
+            var title = LGBuild.Label(head, Loc.T("ИССЛЕДОВАНИЯ"), 22, Primary, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.Stretch(78, 0, 520, 12);
             _headerSub = LGBuild.Label(head, "", 13, Muted, TextAnchor.LowerLeft);
             _headerSub.rectTransform.Stretch(78, 12, 440, 0);
@@ -304,7 +304,7 @@ namespace StellarisClone.Rendering
 
             var close = LGBuild.Button(head, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, "Закрыть  <color=#8AA2A8>(Esc)</color>");
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
         }
 
         private void BuildSearch(RectTransform head)
@@ -316,7 +316,7 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(box.transform, LGIcon.Target, 14, Muted);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
 
-            var placeholder = LGBuild.Label(box.transform, "Поиск технологии или эффекта…", 13, new Color(Muted.r, Muted.g, Muted.b, 0.7f));
+            var placeholder = LGBuild.Label(box.transform, Loc.T("Поиск технологии или эффекта…"), 13, new Color(Muted.r, Muted.g, Muted.b, 0.7f));
             placeholder.fontStyle = FontStyle.Italic;
             placeholder.rectTransform.Stretch(34, 0, 12, 0);
             var input = LGBuild.Label(box.transform, "", 13, Primary);
@@ -362,7 +362,7 @@ namespace StellarisClone.Rendering
         private void BuildSlotsColumn()
         {
             var col = Column("SlotsColumn", Pad, LeftW);
-            _slotsCount = ColumnTitle(col, "НАУЧНЫЕ СЛОТЫ", LGIcon.Research, Cyan);
+            _slotsCount = ColumnTitle(col, Loc.T("НАУЧНЫЕ СЛОТЫ"), LGIcon.Research, Cyan);
 
             var host = LGBuild.Rect(col, "ListHost");
             host.Stretch(6, 84, 6, 44);
@@ -413,8 +413,8 @@ namespace StellarisClone.Rendering
                 lbl.raycastTarget = true;
                 _tierLabels.Add(lbl);
                 TooltipHelper.Attach(lbl.gameObject,
-                    $"<b>{TierNames[t]}</b>\nСтоимость ×{TechnologyManager.TierCostFactor(t):0.#} к базовой.\n" +
-                    "Технологии, опережающие свой год, изучаются дольше.");
+                    Loc.F("<b>{0}</b>\nСтоимость ×{1:0.#} к базовой.\n", TierNames[t], TechnologyManager.TierCostFactor(t)) +
+                    Loc.T("Технологии, опережающие свой год, изучаются дольше."));
             }
 
             var host = LGBuild.Rect(center, "TreeHost");
@@ -610,11 +610,11 @@ namespace StellarisClone.Rendering
         {
             var vm = VictoryManager.Instance;
             string victory = vm != null
-                ? $"  ·  Научная победа: <color={LGBuild.Hex(Green)}><b>{tm.ResearchedCount}</b></color> / {vm.ScienceRequired}"
+                ? Loc.F("  ·  Научная победа: <color={0}><b>{1}</b></color> / {2}", LGBuild.Hex(Green), tm.ResearchedCount, vm.ScienceRequired)
                 : "";
             _headerSub.text =
-                $"Наука <color={LGBuild.Hex(Cyan)}><b>+{tm.MonthlyResearchIncome:0.#}</b></color>/мес" +
-                $"  ·  Изучено <b>{tm.ResearchedCount}</b> из {tm.AllTechs.Count}" + victory;
+                Loc.F("Наука <color={0}><b>+{1:0.#}</b></color>/мес", LGBuild.Hex(Cyan), tm.MonthlyResearchIncome) +
+                Loc.F("  ·  Изучено <b>{0}</b> из {1}", tm.ResearchedCount, tm.AllTechs.Count) + victory;
         }
 
         private void RefreshTabs(TechnologyManager tm)
@@ -640,9 +640,9 @@ namespace StellarisClone.Rendering
                 LGBuild.SetBar(tab.Bar, total > 0 ? done / (float)total : 0f);
 
                 if (!string.IsNullOrEmpty(_search))
-                    tab.Motto.text = found > 0 ? $"<color={LGBuild.Hex(Gold)}>Найдено: {found}</color>" : "Ничего не найдено";
+                    tab.Motto.text = found > 0 ? Loc.F("<color={0}>Найдено: {1}</color>", LGBuild.Hex(Gold), found) : Loc.T("Ничего не найдено");
                 else if (active > 0)
-                    tab.Motto.text = $"<color={LGBuild.Hex(Cyan)}>В работе: {active}</color>  ·  {TechBranchInfo.Motto(tab.Branch)}";
+                    tab.Motto.text = Loc.F("<color={0}>В работе: {1}</color>  ·  {2}", LGBuild.Hex(Cyan), active, TechBranchInfo.Motto(tab.Branch));
                 else
                     tab.Motto.text = TechBranchInfo.Motto(tab.Branch);
             }
@@ -885,10 +885,10 @@ namespace StellarisClone.Rendering
 
         private static string CardTooltip(Technology t, TechnologyManager tm)
         {
-            string tier = t.Tier == 0 ? "базовая" : $"уровень {Roman(t.Tier)}";
+            string tier = t.Tier == 0 ? Loc.T("базовая") : Loc.F("уровень {0}", Roman(t.Tier));
             return $"<b>{t.Name}</b>\n<color=#8AA2A8>{TechCategoryInfo.Name(t.Category)} · {tier}</color>\n" +
                    $"{TechConfirmDialog.ColorizeModifiers(t.Description)}\n\n" +
-                   "<color=#8AA2A8>Щелчок — подробности, двойной щелчок — исследовать</color>";
+                   Loc.T("<color=#8AA2A8>Щелчок — подробности, двойной щелчок — исследовать</color>");
         }
 
         private enum CardState { Researched, Researching, Queued, Available, Locked }
@@ -928,7 +928,7 @@ namespace StellarisClone.Rendering
                     accent = Green;
                     bg = CardBgDone;
                     icon = LGIcon.Check; iconCol = Green;
-                    status = $"<color={LGBuild.Hex(Green)}>Изучено</color>";
+                    status = Loc.F("<color={0}>Изучено</color>", LGBuild.Hex(Green));
                     break;
                 case CardState.Researching:
                     rim = new Color(Cyan.r, Cyan.g, Cyan.b, 0.85f);
@@ -937,7 +937,7 @@ namespace StellarisClone.Rendering
                     showBar = true;
                     progress = slot.ProgressNormalized;
                     status = slot.IsPaused
-                        ? $"<color={LGBuild.Hex(Gold)}>Пауза · {progress * 100f:0}%</color>"
+                        ? Loc.F("<color={0}>Пауза · {1:0}%</color>", LGBuild.Hex(Gold), progress * 100f)
                         : $"<color={LGBuild.Hex(Cyan)}>{progress * 100f:0}% · ~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>";
                     break;
                 case CardState.Queued:
@@ -945,7 +945,7 @@ namespace StellarisClone.Rendering
                     accent = Gold;
                     icon = LGIcon.Clock; iconCol = Gold;
                     showBar = progress > 0.001f;
-                    status = $"<color={LGBuild.Hex(Gold)}>Очередь {qpos + 1} · ~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>";
+                    status = Loc.F("<color={0}>Очередь {1} · ~{2}</color>", LGBuild.Hex(Gold), qpos + 1, TechnologyManager.FormatDays(tm.EstimateDays(t)));
                     break;
                 case CardState.Available:
                     rim = new Color(1f, 1f, 1f, 0.16f);
@@ -954,7 +954,7 @@ namespace StellarisClone.Rendering
                     showBar = progress > 0.001f;
                     float pen = tm.GetYearPenalty(t);
                     status = $"<color=#C9D6DD>~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</color>" +
-                             (pen > 1.01f ? $"  <color={LGBuild.Hex(Orange)}>×{pen:0.0} рано</color>" : "");
+                             (pen > 1.01f ? Loc.F("  <color={0}>×{1:0.0} рано</color>", LGBuild.Hex(Orange), pen) : "");
                     break;
                 default:
                     rim = new Color(1f, 1f, 1f, 0.06f);
@@ -962,7 +962,7 @@ namespace StellarisClone.Rendering
                     bg = CardBgLocked;
                     nameCol = Dim;
                     iconTint = new Color(cc.r * 0.55f, cc.g * 0.55f, cc.b * 0.55f, 1f);
-                    status = $"<color=#7F8E98>Нужно: {MissingReqName(t, tm)}</color>";
+                    status = Loc.F("<color=#7F8E98>Нужно: {0}</color>", MissingReqName(t, tm));
                     break;
             }
 
@@ -1084,9 +1084,9 @@ namespace StellarisClone.Rendering
         private void BuildFreeSlot(int i)
         {
             var rt = SlotCard("Free" + i, 66f, CardBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.22f));
-            var t = LGBuild.Label(rt, $"СЛОТ {i + 1}  ·  <color={LGBuild.Hex(Cyan)}>СВОБОДЕН</color>", 12, Dim, TextAnchor.UpperLeft, bold: true);
+            var t = LGBuild.Label(rt, Loc.F("СЛОТ {0}  ·  <color={1}>СВОБОДЕН</color>", i + 1, LGBuild.Hex(Cyan)), 12, Dim, TextAnchor.UpperLeft, bold: true);
             t.rectTransform.Stretch(14, 0, 10, 11);
-            var hint = LGBuild.Label(rt, "Выберите технологию в дереве — двойной щелчок или «Исследовать».", 12, Muted, TextAnchor.UpperLeft, wrap: true);
+            var hint = LGBuild.Label(rt, Loc.T("Выберите технологию в дереве — двойной щелчок или «Исследовать»."), 12, Muted, TextAnchor.UpperLeft, wrap: true);
             hint.rectTransform.Stretch(14, 4, 12, 31);
         }
 
@@ -1095,9 +1095,9 @@ namespace StellarisClone.Rendering
             var rt = SlotCard("Locked" + i, 52f, CardBgLocked, new Color(1f, 1f, 1f, 0.05f));
             var ic = LGIcons.Create(rt, LGIcon.Lock, 15, Dim);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(15, 15));
-            var t = LGBuild.Label(rt, $"СЛОТ {i + 1}  ·  ЗАКРЫТ", 12, Dim, TextAnchor.UpperLeft, bold: true);
+            var t = LGBuild.Label(rt, Loc.F("СЛОТ {0}  ·  ЗАКРЫТ", i + 1), 12, Dim, TextAnchor.UpperLeft, bold: true);
             t.rectTransform.Stretch(40, 0, 10, 8);
-            var sub = LGBuild.Label(rt, opener != null ? $"Откроет: {opener.Name}" : "Откроется технологией", 11,
+            var sub = LGBuild.Label(rt, opener != null ? Loc.F("Откроет: {0}", opener.Name) : Loc.T("Откроется технологией"), 11,
                 new Color(Dim.r, Dim.g, Dim.b, 0.85f), TextAnchor.LowerLeft);
             sub.rectTransform.Stretch(40, 8, 10, 0);
             if (opener != null)
@@ -1119,7 +1119,7 @@ namespace StellarisClone.Rendering
             sel.transition = Selectable.Transition.None;
             sel.onClick.AddListener(() => Reveal(t));
 
-            var lbl = LGBuild.Label(rt, $"СЛОТ {i + 1}" + (s.IsPaused ? $"  ·  <color={LGBuild.Hex(Gold)}>ПАУЗА</color>" : ""), 11, Dim, TextAnchor.UpperLeft, bold: true);
+            var lbl = LGBuild.Label(rt, Loc.F("СЛОТ {0}", i + 1) + (s.IsPaused ? Loc.F("  ·  <color={0}>ПАУЗА</color>", LGBuild.Hex(Gold)) : ""), 11, Dim, TextAnchor.UpperLeft, bold: true);
             lbl.rectTransform.Stretch(14, 0, 70, 10);
 
             int idx = i;
@@ -1127,12 +1127,12 @@ namespace StellarisClone.Rendering
                 () => { TechnologyManager.Instance?.ToggleSlotPause(idx); SFXManager.Play(Sfx.UiClick); },
                 s.IsPaused ? LGIcon.Play : LGIcon.Pause, null, 8);
             ((RectTransform)pause.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-40, -7), new Vector2(26, 26));
-            TooltipHelper.Attach(pause.gameObject, s.IsPaused ? "Продолжить исследование" : "Приостановить слот: наука перейдёт к остальным");
+            TooltipHelper.Attach(pause.gameObject, s.IsPaused ? Loc.T("Продолжить исследование") : Loc.T("Приостановить слот: наука перейдёт к остальным"));
             var cancel = LGBuild.Button(rt, "Cancel", UIManager.DS.BtnNeutral, new Color(Red.r, Red.g, Red.b, 0.3f),
                 () => { TechnologyManager.Instance?.CancelCurrent(idx); SFXManager.Play(Sfx.UiBack); },
                 LGIcon.Close, null, 8);
             ((RectTransform)cancel.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-9, -7), new Vector2(26, 26));
-            TooltipHelper.Attach(cancel.gameObject, "Отменить. Накопленный прогресс сохранится в технологии.");
+            TooltipHelper.Attach(cancel.gameObject, Loc.T("Отменить. Накопленный прогресс сохранится в технологии."));
 
             var ic = LGIcons.Create(rt, LGIcons.ForTechCategory(t.Category), 26, cc);
             ic.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(29, -53), new Vector2(26, 26));
@@ -1175,19 +1175,19 @@ namespace StellarisClone.Rendering
         {
             if (s.CurrentTech == null) return "";
             string pct = $"<b>{s.ProgressNormalized * 100f:0}%</b>";
-            if (s.IsPaused) return $"{pct}  ·  <color={LGBuild.Hex(Gold)}>остановлено</color>";
+            if (s.IsPaused) return Loc.F("{0}  ·  <color={1}>остановлено</color>", pct, LGBuild.Hex(Gold));
             float perDay = tm.DailyPointsPerSlot(Mathf.Max(1, tm.ActiveSlotCount)) / Mathf.Max(1f, tm.GetYearPenalty(s.CurrentTech));
             return $"{pct}  ·  ~{TechnologyManager.FormatDays(tm.EstimateDays(s.CurrentTech))}" +
-                   $"  <color={LGBuild.Hex(Muted)}>· +{perDay:0.#}/день</color>";
+                   Loc.F("  <color={0}>· +{1:0.#}/день</color>", LGBuild.Hex(Muted), perDay);
         }
 
         private static string SlotsFooter(TechnologyManager tm)
         {
             int active = tm.ActiveSlotCount;
             float split = Mathf.Pow(Mathf.Max(1, active), TechnologyManager.SlotSplitExponent);
-            return $"Наука: <color={LGBuild.Hex(Cyan)}><b>{tm.MonthlyResearchIncome:0.#}</b></color>/мес делится между " +
-                   $"<b>{active}</b> активн. слотами. Каждый получает 1/{split:0.0} — " +
-                   "параллельно быстрее в сумме, но каждая технология медленнее.";
+            return Loc.F("Наука: <color={0}><b>{1:0.#}</b></color>/мес делится между ", LGBuild.Hex(Cyan), tm.MonthlyResearchIncome) +
+                   Loc.F("<b>{0}</b> активн. слотами. Каждый получает 1/{1:0.0} — ", active, split) +
+                   Loc.T("параллельно быстрее в сумме, но каждая технология медленнее.");
         }
 
         // ==================== ДОСЬЕ ====================
@@ -1198,13 +1198,13 @@ namespace StellarisClone.Rendering
             var t = _selected;
             if (t == null)
             {
-                _detailName.text = "Выберите технологию";
+                _detailName.text = Loc.T("Выберите технологию");
                 _detailSub.text = "";
                 _detailIcon.sprite = LGIcons.Get(LGIcon.Research);
                 _detailIcon.color = Muted;
                 _detailBadgeFx.SetRim(new Color(1f, 1f, 1f, 0.15f));
                 _pillBg.gameObject.SetActive(false);
-                Paragraph("Щёлкните по карточке в дереве, чтобы увидеть, что даёт технология, сколько она стоит и что откроет дальше.", 13, Muted);
+                Paragraph(Loc.T("Щёлкните по карточке в дереве, чтобы увидеть, что даёт технология, сколько она стоит и что откроет дальше."), 13, Muted);
                 SetButtons(tm);
                 return;
             }
@@ -1213,31 +1213,31 @@ namespace StellarisClone.Rendering
             TechBranch br = TechBranchInfo.Of(t.Category);
             _detailName.text = t.Name;
             _detailSub.text = $"<color={LGBuild.Hex(TechBranchInfo.Color(br))}>{TechBranchInfo.Name(br)}</color>  ·  " +
-                              $"{TechCategoryInfo.Name(t.Category)}  ·  {(t.Tier == 0 ? "БАЗОВАЯ" : "УРОВЕНЬ " + Roman(t.Tier))}";
+                              $"{TechCategoryInfo.Name(t.Category)}  ·  {(t.Tier == 0 ? Loc.T("БАЗОВАЯ") : Loc.T("УРОВЕНЬ ") + Roman(t.Tier))}";
             _detailIcon.sprite = LGIcons.Get(LGIcons.ForTechCategory(t.Category));
             _detailIcon.color = cc;
             _detailBadgeFx.SetRim(new Color(cc.r, cc.g, cc.b, 0.45f));
             _pillBg.gameObject.SetActive(true);
 
-            Section("ЭФФЕКТ", LGIcon.Info, cc);
+            Section(Loc.T("ЭФФЕКТ"), LGIcon.Info, cc);
             Paragraph(TechConfirmDialog.ColorizeModifiers(t.Description), 14, Primary);
 
-            Section("СТОИМОСТЬ", LGIcon.Clock, Gold);
+            Section(Loc.T("СТОИМОСТЬ"), LGIcon.Clock, Gold);
             int year = TimeManager.Instance != null ? TimeManager.Instance.Year : 2200;
             float pen = tm.GetYearPenalty(t);
-            Row(LGIcon.Research, Cyan, $"<b>{t.Cost:0}</b> очков науки  <color={LGBuild.Hex(Muted)}>(×{TechnologyManager.TierCostFactor(t.Tier):0.#} за уровень)</color>");
+            Row(LGIcon.Research, Cyan, Loc.F("<b>{0:0}</b> очков науки  <color={1}>(×{2:0.#} за уровень)</color>", t.Cost, LGBuild.Hex(Muted), TechnologyManager.TierCostFactor(t.Tier)));
             if (!t.IsResearched)
-                Row(LGIcon.Clock, Gold, $"Срок: <b>~{TechnologyManager.FormatDays(tm.EstimateDays(t))}</b>  <color={LGBuild.Hex(Muted)}>при {tm.MonthlyResearchIncome:0.#} науки/мес</color>");
+                Row(LGIcon.Clock, Gold, Loc.F("Срок: <b>~{0}</b>  <color={1}>при {2:0.#} науки/мес</color>", TechnologyManager.FormatDays(tm.EstimateDays(t)), LGBuild.Hex(Muted), tm.MonthlyResearchIncome));
             if (t.Progress > 0.5f && !t.IsResearched && StateOf(t, tm, out _, out _) != CardState.Researching)
-                Row(LGIcon.Check, Green, $"Накоплено: {t.ProgressNormalized * 100f:0}% — прогресс не теряется");
+                Row(LGIcon.Check, Green, Loc.F("Накоплено: {0:0}% — прогресс не теряется", t.ProgressNormalized * 100f));
             Row(LGIcon.Calendar, pen > 1.01f ? Orange : Muted,
                 pen > 1.01f
-                    ? $"Доступна с <b>{t.YearAvailable}</b> г. — сейчас {year}: <color={LGBuild.Hex(Orange)}>срок ×{pen:0.0}</color>"
-                    : $"Время пришло: с {t.YearAvailable} г.");
+                    ? Loc.F("Доступна с <b>{0}</b> г. — сейчас {1}: <color={2}>срок ×{3:0.0}</color>", t.YearAvailable, year, LGBuild.Hex(Orange), pen)
+                    : Loc.F("Время пришло: с {0} г.", t.YearAvailable));
 
             if (t.RequiredTechIds.Length > 0)
             {
-                Section("ТРЕБУЕТ", LGIcon.Lock, Muted);
+                Section(Loc.T("ТРЕБУЕТ"), LGIcon.Lock, Muted);
                 foreach (var id in t.RequiredTechIds)
                 {
                     var r = tm.FindTech(id);
@@ -1248,18 +1248,18 @@ namespace StellarisClone.Rendering
             }
 
             var unlocks = new List<(LGIcon icon, Color col, string text, Technology link)>();
-            if (t.BonusKey == "slot+1") unlocks.Add((LGIcon.Research, Cyan, "Дополнительный научный слот", null));
-            if (t.BonusKey == "cns_dst_1") unlocks.Add((LGIcon.Destroyer, Gold, "Корпус: эсминец", null));
+            if (t.BonusKey == "slot+1") unlocks.Add((LGIcon.Research, Cyan, Loc.T("Дополнительный научный слот"), null));
+            if (t.BonusKey == "cns_dst_1") unlocks.Add((LGIcon.Destroyer, Gold, Loc.T("Корпус: эсминец"), null));
             var sdm = ShipDesignManager.Instance;
             if (sdm != null)
                 foreach (var m in sdm.Modules.Values)
-                    if (m.RequiredTechId == t.Id) unlocks.Add((ModuleVisuals.Icon(m), ModuleVisuals.Tint(m), "Модуль: " + m.Name, null));
+                    if (m.RequiredTechId == t.Id) unlocks.Add((ModuleVisuals.Icon(m), ModuleVisuals.Tint(m), Loc.T("Модуль: ") + m.Name, null));
             foreach (var other in tm.AllTechs)
                 if (System.Array.IndexOf(other.RequiredTechIds, t.Id) >= 0)
                     unlocks.Add((LGIcons.ForTechCategory(other.Category), TechCategoryInfo.Color(other.Category), other.Name, other));
             if (unlocks.Count > 0)
             {
-                Section("ОТКРЫВАЕТ", LGIcon.Star, Green);
+                Section(Loc.T("ОТКРЫВАЕТ"), LGIcon.Star, Green);
                 foreach (var u in unlocks)
                 {
                     if (u.link != null) LinkRow(u.link, u.icon, u.col, u.text);
@@ -1269,7 +1269,7 @@ namespace StellarisClone.Rendering
 
             if (TechFlavorDatabase.Has(t.Id))
             {
-                Section("ДОСЬЕ", LGIcon.Info, Muted);
+                Section(Loc.T("ДОСЬЕ"), LGIcon.Info, Muted);
                 var f = Paragraph(TechFlavorDatabase.Get(t.Id), 12, Muted);
                 f.fontStyle = FontStyle.Italic;
             }
@@ -1283,11 +1283,11 @@ namespace StellarisClone.Rendering
             var st = StateOf(_selected, tm, out var slot, out int qpos);
             (string text, Color col) = st switch
             {
-                CardState.Researched => ("ИЗУЧЕНО", Green),
-                CardState.Researching => (slot.IsPaused ? $"ПАУЗА  ·  {slot.ProgressNormalized * 100f:0}%" : $"ИССЛЕДУЕТСЯ  ·  {slot.ProgressNormalized * 100f:0}%", slot.IsPaused ? Gold : Cyan),
-                CardState.Queued => ($"В ОЧЕРЕДИ  ·  №{qpos + 1}", Gold),
-                CardState.Available => ("ДОСТУПНО", TechBranchInfo.Color(TechBranchInfo.Of(_selected.Category))),
-                _ => ("ЗАБЛОКИРОВАНО", Red)
+                CardState.Researched => (Loc.T("ИЗУЧЕНО"), Green),
+                CardState.Researching => (slot.IsPaused ? Loc.F("ПАУЗА  ·  {0:0}%", slot.ProgressNormalized * 100f) : Loc.F("ИССЛЕДУЕТСЯ  ·  {0:0}%", slot.ProgressNormalized * 100f), slot.IsPaused ? Gold : Cyan),
+                CardState.Queued => (Loc.F("В ОЧЕРЕДИ  ·  №{0}", qpos + 1), Gold),
+                CardState.Available => (Loc.T("ДОСТУПНО"), TechBranchInfo.Color(TechBranchInfo.Of(_selected.Category))),
+                _ => (Loc.T("ЗАБЛОКИРОВАНО"), Red)
             };
             _pillText.text = text;
             _pillText.color = col;
@@ -1309,30 +1309,30 @@ namespace StellarisClone.Rendering
             switch (st)
             {
                 case CardState.Researched:
-                    SetPrimary("ТЕХНОЛОГИЯ ИЗУЧЕНА", UIManager.DS.BtnSuccess, false, null);
+                    SetPrimary(Loc.T("ТЕХНОЛОГИЯ ИЗУЧЕНА"), UIManager.DS.BtnSuccess, false, null);
                     _secondaryBtn.gameObject.SetActive(false);
                     break;
                 case CardState.Researching:
                     int idx = IndexOf(tm, slot);
-                    SetPrimary(slot.IsPaused ? "ПРОДОЛЖИТЬ" : "ПРИОСТАНОВИТЬ", UIManager.DS.BtnPrimary, true,
+                    SetPrimary(slot.IsPaused ? Loc.T("ПРОДОЛЖИТЬ") : Loc.T("ПРИОСТАНОВИТЬ"), UIManager.DS.BtnPrimary, true,
                         () => { tm.ToggleSlotPause(idx); SFXManager.Play(Sfx.UiClick); });
-                    SetSecondary("ОТМЕНИТЬ ИССЛЕДОВАНИЕ", UIManager.DS.BtnDanger,
+                    SetSecondary(Loc.T("ОТМЕНИТЬ ИССЛЕДОВАНИЕ"), UIManager.DS.BtnDanger,
                         () => { tm.CancelCurrent(idx); SFXManager.Play(Sfx.UiBack); });
                     break;
                 case CardState.Queued:
-                    SetPrimary("В ОЧЕРЕДИ", UIManager.DS.BtnNeutral, false, null);
-                    SetSecondary("УБРАТЬ ИЗ ОЧЕРЕДИ", UIManager.DS.BtnDanger,
+                    SetPrimary(Loc.T("В ОЧЕРЕДИ"), UIManager.DS.BtnNeutral, false, null);
+                    SetSecondary(Loc.T("УБРАТЬ ИЗ ОЧЕРЕДИ"), UIManager.DS.BtnDanger,
                         () => { tm.RemoveFromQueue(t); SFXManager.Play(Sfx.UiBack); });
                     break;
                 case CardState.Available:
                     bool free = tm.HasFreeSlot;
                     bool canQueue = free || QueueHasRoom(tm);
-                    SetPrimary(free ? "ИССЛЕДОВАТЬ" : canQueue ? "ПОСТАВИТЬ В ОЧЕРЕДЬ" : "ОЧЕРЕДИ ЗАПОЛНЕНЫ",
+                    SetPrimary(free ? Loc.T("ИССЛЕДОВАТЬ") : canQueue ? Loc.T("ПОСТАВИТЬ В ОЧЕРЕДЬ") : Loc.T("ОЧЕРЕДИ ЗАПОЛНЕНЫ"),
                         free ? UIManager.DS.BtnSuccess : UIManager.DS.BtnPrimary, canQueue, () => TryResearch(t));
                     _secondaryBtn.gameObject.SetActive(false);
                     break;
                 default:
-                    SetPrimary("СНАЧАЛА: " + MissingReqName(t, tm).ToUpper(), UIManager.DS.BtnDisabled, false, null);
+                    SetPrimary(Loc.T("СНАЧАЛА: ") + MissingReqName(t, tm).ToUpper(), UIManager.DS.BtnDisabled, false, null);
                     _secondaryBtn.gameObject.SetActive(false);
                     break;
             }

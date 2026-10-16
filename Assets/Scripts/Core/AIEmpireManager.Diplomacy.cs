@@ -70,19 +70,19 @@ namespace StellarisClone.Core
 
         private static readonly Dictionary<string, MemoryInfo> MemoryTable = new Dictionary<string, MemoryInfo>
         {
-            ["gifts"]      = new MemoryInfo { Label = "Подарки", Detail = "Щедрость помнят, но со временем забывают", Icon = LGIcon.Gift, MonthlyDecay = 0.08f, Min = 0f, Max = 40f },
-            ["trade"]      = new MemoryInfo { Label = "Торговые сделки", Detail = "Выгодная торговля сближает, невыгодная — раздражает", Icon = LGIcon.Trade, MonthlyDecay = 0.08f, Min = -20f, Max = 30f },
-            ["border"]     = new MemoryInfo { Label = "Нарушение границ", Detail = "Ваши военные корабли в их системах в мирное время", Icon = LGIcon.Border, MonthlyDecay = 0.25f, Min = -40f, Max = 0f },
-            ["grudge"]     = new MemoryInfo { Label = "Обида за войну", Detail = "Недавняя война ещё не забыта", Icon = LGIcon.Swords, MonthlyDecay = 0.04f, Min = -40f, Max = 0f },
-            ["betrayal"]   = new MemoryInfo { Label = "Вероломство", Detail = "Вы объявили войну, нарушив пакт о ненападении", Icon = LGIcon.Betrayal, MonthlyDecay = 0.03f, Min = -60f, Max = 0f },
-            ["aggression"] = new MemoryInfo { Label = "Агрессия", Detail = "Вы первыми объявили им войну", Icon = LGIcon.Warning, MonthlyDecay = 0.05f, Min = -30f, Max = 0f },
-            ["pactcancel"] = new MemoryInfo { Label = "Расторгнутый пакт", Detail = "Вы в одностороннем порядке вышли из пакта", Icon = LGIcon.Handshake, MonthlyDecay = 0.1f, Min = -20f, Max = 0f },
-            ["rejected"]   = new MemoryInfo { Label = "Отвергнутое предложение", Detail = "Вы отклонили их дипломатическое предложение", Icon = LGIcon.Close, MonthlyDecay = 0.2f, Min = -15f, Max = 0f },
-            ["coalitionleft"] = new MemoryInfo { Label = "Выход из коалиции", Detail = "Вы бросили общее дело", Icon = LGIcon.Close, MonthlyDecay = 0.1f, Min = -30f, Max = 0f },
-            ["separate"]   = new MemoryInfo { Label = "Сепаратный мир", Detail = "Вы вышли из войны, оставив союзников одних", Icon = LGIcon.Peace, MonthlyDecay = 0.06f, Min = -40f, Max = 0f },
-            ["trust"]      = new MemoryInfo { Label = "Годы добрососедства", Detail = "Долгий пакт и спокойные границы сближают, но одно предательство обнуляет доверие", Icon = LGIcon.Handshake, MonthlyDecay = 0.01f, Min = 0f, Max = 20f },
-            ["espionage"]  = new MemoryInfo { Label = "Шпионаж", Detail = "Ваши агенты пойманы или замечены за тайными операциями на их территории", Icon = LGIcon.Betrayal, MonthlyDecay = 0.08f, Min = -40f, Max = 0f },
-            ["incident"]   = new MemoryInfo { Label = "Инциденты", Detail = "Как вы повели себя в пограничных и дипломатических происшествиях", Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
+            ["gifts"]      = new MemoryInfo { Label = Loc.T("Подарки"), Detail = Loc.T("Щедрость помнят, но со временем забывают"), Icon = LGIcon.Gift, MonthlyDecay = 0.08f, Min = 0f, Max = 40f },
+            ["trade"]      = new MemoryInfo { Label = Loc.T("Торговые сделки"), Detail = Loc.T("Выгодная торговля сближает, невыгодная — раздражает"), Icon = LGIcon.Trade, MonthlyDecay = 0.08f, Min = -20f, Max = 30f },
+            ["border"]     = new MemoryInfo { Label = Loc.T("Нарушение границ"), Detail = Loc.T("Ваши военные корабли в их системах в мирное время"), Icon = LGIcon.Border, MonthlyDecay = 0.25f, Min = -40f, Max = 0f },
+            ["grudge"]     = new MemoryInfo { Label = Loc.T("Обида за войну"), Detail = Loc.T("Недавняя война ещё не забыта"), Icon = LGIcon.Swords, MonthlyDecay = 0.04f, Min = -40f, Max = 0f },
+            ["betrayal"]   = new MemoryInfo { Label = Loc.T("Вероломство"), Detail = Loc.T("Вы объявили войну, нарушив пакт о ненападении"), Icon = LGIcon.Betrayal, MonthlyDecay = 0.03f, Min = -60f, Max = 0f },
+            ["aggression"] = new MemoryInfo { Label = Loc.T("Агрессия"), Detail = Loc.T("Вы первыми объявили им войну"), Icon = LGIcon.Warning, MonthlyDecay = 0.05f, Min = -30f, Max = 0f },
+            ["pactcancel"] = new MemoryInfo { Label = Loc.T("Расторгнутый пакт"), Detail = Loc.T("Вы в одностороннем порядке вышли из пакта"), Icon = LGIcon.Handshake, MonthlyDecay = 0.1f, Min = -20f, Max = 0f },
+            ["rejected"]   = new MemoryInfo { Label = Loc.T("Отвергнутое предложение"), Detail = Loc.T("Вы отклонили их дипломатическое предложение"), Icon = LGIcon.Close, MonthlyDecay = 0.2f, Min = -15f, Max = 0f },
+            ["coalitionleft"] = new MemoryInfo { Label = Loc.T("Выход из коалиции"), Detail = Loc.T("Вы бросили общее дело"), Icon = LGIcon.Close, MonthlyDecay = 0.1f, Min = -30f, Max = 0f },
+            ["separate"]   = new MemoryInfo { Label = Loc.T("Сепаратный мир"), Detail = Loc.T("Вы вышли из войны, оставив союзников одних"), Icon = LGIcon.Peace, MonthlyDecay = 0.06f, Min = -40f, Max = 0f },
+            ["trust"]      = new MemoryInfo { Label = Loc.T("Годы добрососедства"), Detail = Loc.T("Долгий пакт и спокойные границы сближают, но одно предательство обнуляет доверие"), Icon = LGIcon.Handshake, MonthlyDecay = 0.01f, Min = 0f, Max = 20f },
+            ["espionage"]  = new MemoryInfo { Label = Loc.T("Шпионаж"), Detail = Loc.T("Ваши агенты пойманы или замечены за тайными операциями на их территории"), Icon = LGIcon.Betrayal, MonthlyDecay = 0.08f, Min = -40f, Max = 0f },
+            ["incident"]   = new MemoryInfo { Label = Loc.T("Инциденты"), Detail = Loc.T("Как вы повели себя в пограничных и дипломатических происшествиях"), Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
         };
 
         public void AddMemory(string key, float delta)
@@ -118,11 +118,11 @@ namespace StellarisClone.Core
                 OpinionBreakdown.Add(new OpinionModifier(label, detail, value, icon));
             }
 
-            Add($"Характер: {Profile.Name.ToLower()} империя", Profile.Summary, Profile.BaseOpinion, LGIcon.Leader);
+            Add(Loc.F("Характер: {0} империя", Profile.Name.ToLower()), Profile.Summary, Profile.BaseOpinion, LGIcon.Leader);
 
             int diff = GameSession.Settings.Difficulty;
-            if (diff == 0) Add("Сложность: лёгкая", "Соперник изначально настроен миролюбиво", 10f, LGIcon.Info);
-            else if (diff == 2) Add("Сложность: сложная", "Соперник изначально подозрителен", -10f, LGIcon.Info);
+            if (diff == 0) Add(Loc.T("Сложность: лёгкая"), Loc.T("Соперник изначально настроен миролюбиво"), 10f, LGIcon.Info);
+            else if (diff == 2) Add(Loc.T("Сложность: сложная"), Loc.T("Соперник изначально подозрителен"), -10f, LGIcon.Info);
 
             float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId));
             float playerPow = EmpireStats.MilitaryPower(0);
@@ -130,41 +130,41 @@ namespace StellarisClone.Core
             if (ratio > 1.15f)
             {
                 float v = -Mathf.Clamp((ratio - 1f) * 25f * Profile.ThreatSensitivity * AggressionFactor, 0f, 35f);
-                Add($"Угроза: ваш флот сильнее (×{ratio:0.0})", "Чем сильнее ваш флот по сравнению с их, тем тревожнее соседу", v, LGIcon.Fleet);
+                Add(Loc.F("Угроза: ваш флот сильнее (×{0:0.0})", ratio), Loc.T("Чем сильнее ваш флот по сравнению с их, тем тревожнее соседу"), v, LGIcon.Fleet);
             }
             else if (Personality == AIPersonality.Militarist && ratio < 0.67f && playerPow >= 0f)
             {
-                Add("Вы выглядите слабыми", "Воинственная империя видит в слабом соседе добычу", -12f * AggressionFactor, LGIcon.Target);
+                Add(Loc.T("Вы выглядите слабыми"), Loc.T("Воинственная империя видит в слабом соседе добычу"), -12f * AggressionFactor, LGIcon.Target);
             }
 
             int border = EmpireStats.SharedBorderCount(OwnerId, 0);
             if (border > 0)
-                Add($"Общая граница ({border} сист.)", "Соседство порождает споры за территорию", -Mathf.Min(18f, border * 3f), LGIcon.Border);
+                Add(Loc.F("Общая граница ({0} сист.)", border), Loc.T("Соседство порождает споры за территорию"), -Mathf.Min(18f, border * 3f), LGIcon.Border);
 
             int mySys = EmpireStats.SystemCount(OwnerId), playerSys = EmpireStats.SystemCount(0);
             if (playerSys >= 5 && playerSys > mySys * 1.25f)
-                Add("Вы расширяетесь быстрее", $"У вас {playerSys} систем против их {mySys}", Personality == AIPersonality.Militarist ? -8f : -5f, LGIcon.Starbase);
+                Add(Loc.T("Вы расширяетесь быстрее"), Loc.F("У вас {0} систем против их {1}", playerSys, mySys), Personality == AIPersonality.Militarist ? -8f : -5f, LGIcon.Starbase);
 
             int myTech = ResearchedCount, playerTech = EmpireStats.TechCount(0);
             if (Personality == AIPersonality.Scientific && playerTech > myTech + 3)
-                Add("Научное соперничество", $"Вы опережаете их в науке ({playerTech} против {myTech})", -8f, LGIcon.Research);
+                Add(Loc.T("Научное соперничество"), Loc.F("Вы опережаете их в науке ({0} против {1})", playerTech, myTech), -8f, LGIcon.Research);
             if (Personality == AIPersonality.Trader && !AtWar && border > 0 && _memory.TryGetValue("trade", out float tr) && tr > 5f)
-                Add("Выгодный сосед", "Торговая империя ценит партнёров у самой границы", 6f, LGIcon.Trade);
+                Add(Loc.T("Выгодный сосед"), Loc.T("Торговая империя ценит партнёров у самой границы"), 6f, LGIcon.Trade);
 
-            if (HasPact) Add("Пакт о ненападении", "Действующий договор укрепляет доверие", 15f, LGIcon.Handshake);
+            if (HasPact) Add(Loc.T("Пакт о ненападении"), Loc.T("Действующий договор укрепляет доверие"), 15f, LGIcon.Handshake);
             foreach (var other in Alive)
             {
                 if (other == this || !other.AtWar || !AIRelations.AtWar(OwnerId, other.OwnerId)) continue;
-                Add($"Общий враг: {other.AIName}", "Вы оба воюете с этой империей", 12f, LGIcon.Swords);
+                Add(Loc.F("Общий враг: {0}", other.AIName), Loc.T("Вы оба воюете с этой империей"), 12f, LGIcon.Swords);
             }
             if (AICoalition.IsMember(OwnerId) && AICoalition.TargetOwner == 0)
-                Add("Коалиция против вас", "Соперники объединились против вас", -15f, LGIcon.Swords);
+                Add(Loc.T("Коалиция против вас"), Loc.T("Соперники объединились против вас"), -15f, LGIcon.Swords);
             if (AICoalition.AreAllies(0, OwnerId))
-                Add("Союзник по коалиции", "Вы вместе выступаете против общего врага", 15f, LGIcon.Handshake);
+                Add(Loc.T("Союзник по коалиции"), Loc.T("Вы вместе выступаете против общего врага"), 15f, LGIcon.Handshake);
             if (AICoalition.IsTarget(OwnerId) && AICoalition.PlayerMember)
-                Add("Вы в коалиции против них", "Вы объединились с их врагами", -20f, LGIcon.Swords);
-            if (TruceDays > 0 && !AtWar) Add($"Перемирие ({Mathf.CeilToInt(TruceDays / 30f)} мес.)", "Мирный договор ещё в силе", 5f, LGIcon.Peace);
-            if (AtWar) Add("Идёт война", "Между вашими империями открытый конфликт", -40f, LGIcon.Swords);
+                Add(Loc.T("Вы в коалиции против них"), Loc.T("Вы объединились с их врагами"), -20f, LGIcon.Swords);
+            if (TruceDays > 0 && !AtWar) Add(Loc.F("Перемирие ({0} мес.)", Mathf.CeilToInt(TruceDays / 30f)), Loc.T("Мирный договор ещё в силе"), 5f, LGIcon.Peace);
+            if (AtWar) Add(Loc.T("Идёт война"), Loc.T("Между вашими империями открытый конфликт"), -40f, LGIcon.Swords);
 
             foreach (var kv in _memory)
             {
@@ -179,11 +179,11 @@ namespace StellarisClone.Core
         }
 
         public static string OpinionLabel(float v) =>
-              v <= -60f ? "Враждебность"
-            : v <= -20f ? "Неприязнь"
-            : v < 10f   ? "Настороженность"
-            : v < 35f   ? "Расположение"
-            : "Дружба";
+              v <= -60f ? Loc.T("Враждебность")
+            : v <= -20f ? Loc.T("Неприязнь")
+            : v < 10f   ? Loc.T("Настороженность")
+            : v < 35f   ? Loc.T("Расположение")
+            : Loc.T("Дружба");
 
         private static int Bucket(float v) => v <= -60f ? 0 : v <= -20f ? 1 : v < 10f ? 2 : v < 35f ? 3 : 4;
 
@@ -221,7 +221,7 @@ namespace StellarisClone.Core
                     if (!_borderWarned && _memory["border"] < -5f)
                     {
                         _borderWarned = true;
-                        NotificationCenter.Show("Нарушение границ", $"{AIName} требует увести ваш флот из их систем", NotificationCenter.Kind.Warning, 6f);
+                        NotificationCenter.Show(Loc.T("Нарушение границ"), Loc.F("{0} требует увести ваш флот из их систем", AIName), NotificationCenter.Kind.Warning, 6f);
                     }
                 }
                 else _borderWarned = false;
@@ -239,10 +239,10 @@ namespace StellarisClone.Core
             // До первого контакта игрок об этой империи ничего не знает — сдвиг отношения запоминаем молча
             if (!Contacts.PlayerMet(OwnerId)) return;
             if (now < was)
-                NotificationCenter.Show("Отношения ухудшились", $"{AIName}: {OpinionLabel(Opinion).ToLower()} ({Opinion:+0;-0;0})",
+                NotificationCenter.Show(Loc.T("Отношения ухудшились"), $"{AIName}: {OpinionLabel(Opinion).ToLower()} ({Opinion:+0;-0;0})",
                     NotificationCenter.Kind.Warning, 5f);
             else
-                NotificationCenter.Show("Отношения улучшились", $"{AIName}: {OpinionLabel(Opinion).ToLower()} ({Opinion:+0;-0;0})",
+                NotificationCenter.Show(Loc.T("Отношения улучшились"), $"{AIName}: {OpinionLabel(Opinion).ToLower()} ({Opinion:+0;-0;0})",
                     NotificationCenter.Kind.Success, 4f);
             RaiseDiplomacyChanged();
         }
@@ -315,13 +315,13 @@ namespace StellarisClone.Core
             var reasons = new List<string>();
             foreach (var m in OpinionBreakdown)
                 if (m.Value < 0f && reasons.Count < 2) reasons.Add(m.Label.ToLower());
-            reasons.Add($"перевес сил ×{ratio:0.0}");
+            reasons.Add(Loc.F("перевес сил ×{0:0.0}", ratio));
 
             bool broke = HasPact;
             HasPact = false;
             StartWar();
-            NotificationCenter.Show(broke ? "ВЕРОЛОМНОЕ НАПАДЕНИЕ" : "ВОЙНА ОБЪЯВЛЕНА",
-                $"{AIName} объявляет вам войну. Причины: {string.Join(", ", reasons)}",
+            NotificationCenter.Show(broke ? Loc.T("ВЕРОЛОМНОЕ НАПАДЕНИЕ") : Loc.T("ВОЙНА ОБЪЯВЛЕНА"),
+                Loc.F("{0} объявляет вам войну. Причины: {1}", AIName, string.Join(", ", reasons)),
                 NotificationCenter.Kind.Danger, 10f);
         }
 
@@ -331,8 +331,8 @@ namespace StellarisClone.Core
             if (AtWar || _bankrupt || IsEliminated || TruceDays > 360 || _warCooldownDays > 0) return false;
             TruceDays = 0;
             StartWar();
-            NotificationCenter.Show("КОАЛИЦИЯ ОБЪЯВИЛА ВОЙНУ",
-                $"{AIName} вступает в войну против вас вместе с остальными соперниками",
+            NotificationCenter.Show(Loc.T("КОАЛИЦИЯ ОБЪЯВИЛА ВОЙНУ"),
+                Loc.F("{0} вступает в войну против вас вместе с остальными соперниками", AIName),
                 NotificationCenter.Kind.Danger, 10f);
             return true;
         }
@@ -344,11 +344,11 @@ namespace StellarisClone.Core
             bool losing = _warMonths >= 3 && PowerRatio < 0.6f;
             if (!tired && !losing && !_capitalLost) return;
 
-            string reason = _capitalLost ? "их столица пала"
-                          : losing ? "их флот разбит и уступает вашему"
-                          : $"страна устала от войны ({WarWeariness:0}%)";
+            string reason = _capitalLost ? Loc.T("их столица пала")
+                          : losing ? Loc.T("их флот разбит и уступает вашему")
+                          : Loc.F("страна устала от войны ({0:0}%)", WarWeariness);
             Offer(OfferKind.Peace, reason);
-            NotificationCenter.Show("Предложение мира", $"{AIName} предлагает мир: {reason}. Ответьте в окне дипломатии",
+            NotificationCenter.Show(Loc.T("Предложение мира"), Loc.F("{0} предлагает мир: {1}. Ответьте в окне дипломатии", AIName, reason),
                 NotificationCenter.Kind.Info, 9f);
         }
 
@@ -358,8 +358,8 @@ namespace StellarisClone.Core
             if (Opinion < Profile.PactOpinion + 15f) return;
             if (PowerRatio > 1.2f && Personality == AIPersonality.Militarist) return;
             if (UnityEngine.Random.value > 0.25f) return;
-            Offer(OfferKind.Pact, "они ценят добрососедство и хотят гарантий безопасности");
-            NotificationCenter.Show("Предложение пакта", $"{AIName} предлагает пакт о ненападении. Ответьте в окне дипломатии",
+            Offer(OfferKind.Pact, Loc.T("они ценят добрососедство и хотят гарантий безопасности"));
+            NotificationCenter.Show(Loc.T("Предложение пакта"), Loc.F("{0} предлагает пакт о ненападении. Ответьте в окне дипломатии", AIName),
                 NotificationCenter.Kind.Info, 8f);
         }
 
@@ -402,7 +402,7 @@ namespace StellarisClone.Core
             RecomputeOpinion();
             if (!silent) AICoalition.OnPlayerPeace(OwnerId);
             if (!silent)
-                NotificationCenter.Show("Мир заключён", $"{AIName} прекращает военные действия. Перемирие — 3 года",
+                NotificationCenter.Show(Loc.T("Мир заключён"), Loc.F("{0} прекращает военные действия. Перемирие — 3 года", AIName),
                     NotificationCenter.Kind.Success, 8f);
             RaiseDiplomacyChanged();
         }
@@ -422,20 +422,20 @@ namespace StellarisClone.Core
         {
             var e = new Evaluation { Threshold = PeaceAcceptThreshold, Reasons = new List<OpinionModifier>() };
             void Add(string l, string d, float v, LGIcon i) { e.Reasons.Add(new OpinionModifier(l, d, v, i)); e.Score += v; }
-            if (!AtWar) { e.Blocker = "Вы не воюете"; return e; }
+            if (!AtWar) { e.Blocker = Loc.T("Вы не воюете"); return e; }
 
-            Add("Усталость от войны", $"{WarWeariness:0}% — растёт со временем и потерями", WarWeariness * 0.6f, LGIcon.Clock);
+            Add(Loc.T("Усталость от войны"), Loc.F("{0:0}% — растёт со временем и потерями", WarWeariness), WarWeariness * 0.6f, LGIcon.Clock);
             float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId));
             float balance = Mathf.Clamp((EmpireStats.MilitaryPower(0) / myPow - 1f) * 40f, -40f, 40f);
-            Add("Соотношение сил", balance >= 0 ? "Ваш флот сильнее — продолжать опасно" : "Их флот сильнее — они рассчитывают на победу", balance, LGIcon.Fleet);
-            if (_systemsLostInWar > 0) Add("Потерянные системы", $"Захвачено вами: {_systemsLostInWar}", _systemsLostInWar * 6f, LGIcon.Starbase);
-            if (_systemsTakenInWar > 0) Add("Успехи на фронте", $"Они захватили у вас: {_systemsTakenInWar}", -_systemsTakenInWar * 5f, LGIcon.Siege);
-            if (_capitalLost) Add("Потеря столицы", "Правительство в изгнании", 25f, LGIcon.Warning);
-            Add("Отношение к вам", OpinionLabel(Opinion), Opinion * 0.2f, LGIcon.Diplomacy);
-            if (Mathf.Abs(Profile.PeaceBias) > 0.1f) Add($"Характер: {Profile.Name.ToLower()}", Profile.PeaceBias > 0 ? "Предпочитают договариваться" : "Не любят отступать", Profile.PeaceBias, LGIcon.Leader);
+            Add(Loc.T("Соотношение сил"), balance >= 0 ? Loc.T("Ваш флот сильнее — продолжать опасно") : Loc.T("Их флот сильнее — они рассчитывают на победу"), balance, LGIcon.Fleet);
+            if (_systemsLostInWar > 0) Add(Loc.T("Потерянные системы"), Loc.F("Захвачено вами: {0}", _systemsLostInWar), _systemsLostInWar * 6f, LGIcon.Starbase);
+            if (_systemsTakenInWar > 0) Add(Loc.T("Успехи на фронте"), Loc.F("Они захватили у вас: {0}", _systemsTakenInWar), -_systemsTakenInWar * 5f, LGIcon.Siege);
+            if (_capitalLost) Add(Loc.T("Потеря столицы"), Loc.T("Правительство в изгнании"), 25f, LGIcon.Warning);
+            Add(Loc.T("Отношение к вам"), OpinionLabel(Opinion), Opinion * 0.2f, LGIcon.Diplomacy);
+            if (Mathf.Abs(Profile.PeaceBias) > 0.1f) Add(Loc.F("Характер: {0}", Profile.Name.ToLower()), Profile.PeaceBias > 0 ? Loc.T("Предпочитают договариваться") : Loc.T("Не любят отступать"), Profile.PeaceBias, LGIcon.Leader);
             if (AICoalition.IsMember(OwnerId) && AICoalition.TargetOwner == 0)
-                Add("Союзники по коалиции", "Остальные члены коалиции требуют довести войну до конца", -12f, LGIcon.Swords);
-            if (_warMonths < 3) Add("Война только началась", "Первые месяцы стороны ещё надеются на победу", -20f, LGIcon.Calendar);
+                Add(Loc.T("Союзники по коалиции"), Loc.T("Остальные члены коалиции требуют довести войну до конца"), -12f, LGIcon.Swords);
+            if (_warMonths < 3) Add(Loc.T("Война только началась"), Loc.T("Первые месяцы стороны ещё надеются на победу"), -20f, LGIcon.Calendar);
             return e;
         }
 
@@ -444,18 +444,18 @@ namespace StellarisClone.Core
         {
             var e = new Evaluation { Threshold = 0f, Reasons = new List<OpinionModifier>() };
             void Add(string l, string d, float v, LGIcon i) { e.Reasons.Add(new OpinionModifier(l, d, v, i)); e.Score += v; }
-            if (AtWar) { e.Blocker = "Сначала нужно заключить мир"; return e; }
-            if (HasPact) { e.Blocker = "Пакт уже действует"; return e; }
+            if (AtWar) { e.Blocker = Loc.T("Сначала нужно заключить мир"); return e; }
+            if (HasPact) { e.Blocker = Loc.T("Пакт уже действует"); return e; }
 
-            Add("Отношение к вам", OpinionLabel(Opinion), Opinion, LGIcon.Diplomacy);
-            Add("Требование характера", $"{Profile.Name} империя соглашается при отношении от {Profile.PactOpinion:+0;-0;0}", -Profile.PactOpinion, LGIcon.Leader);
+            Add(Loc.T("Отношение к вам"), OpinionLabel(Opinion), Opinion, LGIcon.Diplomacy);
+            Add(Loc.T("Требование характера"), Loc.F("{0} империя соглашается при отношении от {1:+0;-0;0}", Profile.Name, Profile.PactOpinion), -Profile.PactOpinion, LGIcon.Leader);
             float ratio = PowerRatio;
             if (ratio < 0.85f && Personality != AIPersonality.Militarist)
-                Add("Опасаются вашего флота", "Пакт защищает их от вашего нападения", 10f, LGIcon.Defense);
+                Add(Loc.T("Опасаются вашего флота"), Loc.T("Пакт защищает их от вашего нападения"), 10f, LGIcon.Defense);
             if (ratio > 1.3f && Personality == AIPersonality.Militarist)
-                Add("Не видят в вас угрозы", "Сильный не связывает себе руки договорами", -15f, LGIcon.Fleet);
+                Add(Loc.T("Не видят в вас угрозы"), Loc.T("Сильный не связывает себе руки договорами"), -15f, LGIcon.Fleet);
             if (_memory.TryGetValue("betrayal", out float b) && b < -5f)
-                Add("Вы уже нарушали пакт", "Вероломству не доверяют", b * 0.5f, LGIcon.Betrayal);
+                Add(Loc.T("Вы уже нарушали пакт"), Loc.T("Вероломству не доверяют"), b * 0.5f, LGIcon.Betrayal);
             return e;
         }
 
@@ -480,8 +480,8 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Причина, по которой войну объявить нельзя (или null).</summary>
-        public string WarBlocker => AtWar ? "Война уже идёт"
-            : TruceDays > 0 ? $"Действует перемирие ещё {Mathf.CeilToInt(TruceDays / 30f)} мес."
+        public string WarBlocker => AtWar ? Loc.T("Война уже идёт")
+            : TruceDays > 0 ? Loc.F("Действует перемирие ещё {0} мес.", Mathf.CeilToInt(TruceDays / 30f))
             : null;
 
         public bool PlayerDeclareWar()
@@ -491,8 +491,8 @@ namespace StellarisClone.Core
             if (betrayal) { HasPact = false; AddMemory("betrayal", -40f); AddMemory("trust", -100f); }
             AddMemory("aggression", -15f);
             StartWar();
-            NotificationCenter.Show(betrayal ? "ВЫ НАРУШИЛИ ПАКТ" : "ВОЙНА ОБЪЯВЛЕНА",
-                $"{AIName} переходит в наступление. Держите флот у границ и осаждайте их системы",
+            NotificationCenter.Show(betrayal ? Loc.T("ВЫ НАРУШИЛИ ПАКТ") : Loc.T("ВОЙНА ОБЪЯВЛЕНА"),
+                Loc.F("{0} переходит в наступление. Держите флот у границ и осаждайте их системы", AIName),
                 NotificationCenter.Kind.Danger, 8f);
             return true;
         }
@@ -503,7 +503,7 @@ namespace StellarisClone.Core
             var eco = EconomyManager.Instance;
             if (eval.Blocker != null || eco == null || !eco.TrySpend(0f, 0f, 0f, PeaceInfluenceCost)) return false;
             if (eval.Accept) { MakePeace(); return true; }
-            NotificationCenter.Show("Мир отвергнут", $"{AIName} продолжает войну: готовность {eval.Score:0} из {eval.Threshold:0}",
+            NotificationCenter.Show(Loc.T("Мир отвергнут"), Loc.F("{0} продолжает войну: готовность {1:0} из {2:0}", AIName, eval.Score, eval.Threshold),
                 NotificationCenter.Kind.Danger, 6f);
             return false;
         }
@@ -517,11 +517,11 @@ namespace StellarisClone.Core
             {
                 HasPact = true;
                 RecomputeOpinion();
-                NotificationCenter.Show("Пакт подписан", $"{AIName}: пакт о ненападении вступил в силу", NotificationCenter.Kind.Success, 6f);
+                NotificationCenter.Show(Loc.T("Пакт подписан"), Loc.F("{0}: пакт о ненападении вступил в силу", AIName), NotificationCenter.Kind.Success, 6f);
                 RaiseDiplomacyChanged();
                 return true;
             }
-            NotificationCenter.Show("Пакт отклонён", $"{AIName}: готовность {eval.Score:+0;-0;0} (нужно не меньше 0)",
+            NotificationCenter.Show(Loc.T("Пакт отклонён"), Loc.F("{0}: готовность {1:+0;-0;0} (нужно не меньше 0)", AIName, eval.Score),
                 NotificationCenter.Kind.Warning, 6f);
             return false;
         }
@@ -531,7 +531,7 @@ namespace StellarisClone.Core
             if (!HasPact) return;
             HasPact = false;
             AddMemory("pactcancel", -10f);
-            NotificationCenter.Show("Пакт расторгнут", $"Договор с {AIName} больше не действует", NotificationCenter.Kind.Warning, 5f);
+            NotificationCenter.Show(Loc.T("Пакт расторгнут"), Loc.F("Договор с {0} больше не действует", AIName), NotificationCenter.Kind.Warning, 5f);
             RaiseDiplomacyChanged();
         }
 
@@ -545,7 +545,7 @@ namespace StellarisClone.Core
             {
                 HasPact = true;
                 RecomputeOpinion();
-                NotificationCenter.Show("Пакт подписан", $"{AIName}: пакт о ненападении вступил в силу", NotificationCenter.Kind.Success, 6f);
+                NotificationCenter.Show(Loc.T("Пакт подписан"), Loc.F("{0}: пакт о ненападении вступил в силу", AIName), NotificationCenter.Kind.Success, 6f);
             }
             RaiseDiplomacyChanged();
         }

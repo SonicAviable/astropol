@@ -152,10 +152,10 @@ namespace StellarisClone.Core
         {
             if (sys.OwnerId == 0 || attacker == 0) SFXManager.Play(Sfx.SiegeStart);
             if (sys.OwnerId == 0)
-                NotificationCenter.Show("Осада!", $"Враг блокирует {sys.Name}. Пришлите военный флот, чтобы снять осаду",
+                NotificationCenter.Show(Loc.T("Осада!"), Loc.F("Враг блокирует {0}. Пришлите военный флот, чтобы снять осаду", sys.Name),
                     NotificationCenter.Kind.Danger, 7f);
             else if (attacker == 0)
-                NotificationCenter.Show("Осада началась", $"{sys.Name}: держите флот на орбите до захвата ({RequiredDays(sys):0} дн.)",
+                NotificationCenter.Show(Loc.T("Осада началась"), Loc.F("{0}: держите флот на орбите до захвата ({1:0} дн.)", sys.Name, RequiredDays(sys)),
                     NotificationCenter.Kind.Info, 5f);
         }
 
@@ -185,12 +185,12 @@ namespace StellarisClone.Core
 
             int colonies = 0, pop = 0;
             foreach (var p in sys.Planets) if (p.Population > 0) { colonies++; pop += p.Population; }
-            string extra = colonies > 0 ? $" · колоний: {colonies}, население {pop}" : "";
+            string extra = colonies > 0 ? Loc.F(" · колоний: {0}, население {1}", colonies, pop) : "";
 
             if (oldOwner == 0)
-                NotificationCenter.Show("Система потеряна", $"{sys.Name} захвачена противником{extra}", NotificationCenter.Kind.Danger, 9f);
+                NotificationCenter.Show(Loc.T("Система потеряна"), Loc.F("{0} захвачена противником{1}", sys.Name, extra), NotificationCenter.Kind.Danger, 9f);
             else if (newOwner == 0)
-                NotificationCenter.Show("Система захвачена", $"{sys.Name} теперь ваша{extra}", NotificationCenter.Kind.Success, 7f);
+                NotificationCenter.Show(Loc.T("Система захвачена"), Loc.F("{0} теперь ваша{1}", sys.Name, extra), NotificationCenter.Kind.Success, 7f);
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             EconomyManager.Instance?.RecalculateAll();

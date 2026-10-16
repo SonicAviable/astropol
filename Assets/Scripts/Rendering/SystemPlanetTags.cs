@@ -119,34 +119,34 @@ namespace StellarisClone.Rendering
             {
                 accent = owner >= 0 ? FleetIndicator.OwnerColor(owner) : UIManager.DS.Green;
                 icon = LGIcon.Population;
-                string who = owner == 0 ? "Колония" : $"Колония · {AIEmpireManager.NameOf(owner)}";
-                status = $"{who} · {p.Population} жит.";
+                string who = owner == 0 ? Loc.T("Колония") : Loc.F("Колония · {0}", AIEmpireManager.NameOf(owner));
+                status = Loc.F("{0} · {1} жит.", who, p.Population);
             }
             else if (colJob != null)
             {
                 accent = CGold;
                 icon = LGIcon.Clock;
                 int days = Mathf.CeilToInt(builds.DaysUntilDone(colJob));
-                status = $"Колонизация · {days} дн.";
+                status = Loc.F("Колонизация · {0} дн.", days);
                 bar = colJob.Progress;
             }
             else if (owner == 0 && sys.IsSurveyed && p.CanColonize)
             {
                 accent = UIManager.DS.NeonCyan;
                 icon = LGIcon.Planet;
-                status = $"Можно заселить · {p.HabitabilityPercent}%";
+                status = Loc.F("Можно заселить · {0}%", p.HabitabilityPercent);
             }
             else if (p.HasMiningStation)
             {
                 accent = owner >= 0 ? FleetIndicator.OwnerColor(owner) : CMuted;
                 icon = LGIcon.Industry;
-                status = "Добывающий комплекс";
+                status = Loc.T("Добывающий комплекс");
             }
             else if (p.StationUnderConstruction)
             {
                 accent = CGold;
                 icon = LGIcon.Construction;
-                status = "Строится комплекс";
+                status = Loc.T("Строится комплекс");
             }
             else
             {

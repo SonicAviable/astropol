@@ -421,25 +421,25 @@ namespace StellarisClone.Rendering
             {
                 FleetType.Science =>
                     $"<b>{Data.Name}</b>\n" +
-                    $"<color=#66FF88>Научный корабль</color>\n\n" +
-                    $"ЛКМ — выбрать\n" +
-                    $"ПКМ по системе — исследовать\n\n" +
-                    $"<i>Состояние: {Data.State}</i>",
+                    Loc.T("<color=#66FF88>Научный корабль</color>\n\n") +
+                    Loc.T("ЛКМ — выбрать\n") +
+                    Loc.T("ПКМ по системе — исследовать\n\n") +
+                    Loc.F("<i>Состояние: {0}</i>", Data.State),
 
                 FleetType.Constructor =>
                     $"<b>{Data.Name}</b>\n" +
-                    $"<color=#FFAA44>Строительный корабль</color>\n\n" +
-                    $"ЛКМ — выбрать\n" +
-                    $"ПКМ по изученной системе — построить аванпост\n\n" +
-                    $"<i>Состояние: {Data.State}</i>",
+                    Loc.T("<color=#FFAA44>Строительный корабль</color>\n\n") +
+                    Loc.T("ЛКМ — выбрать\n") +
+                    Loc.T("ПКМ по изученной системе — построить аванпост\n\n") +
+                    Loc.F("<i>Состояние: {0}</i>", Data.State),
 
                 _ =>
                     $"<b>{Data.Name}</b>\n" +
-                    $"<color=#66E0FF>Боевой корабль</color> · ⚔ {Data.MilitaryPower}\n" +
-                    $"Корпус {Data.HullPoints:0}/{Data.MaxHullPoints:0}  Броня {Data.ArmorPoints:0}  Щиты {Data.ShieldPoints:0}\n\n" +
-                    $"ЛКМ — выбрать\n" +
-                    $"ПКМ по системе — двигаться\n\n" +
-                    $"<i>Состояние: {Data.State}</i>"
+                    Loc.F("<color=#66E0FF>Боевой корабль</color> · ⚔ {0}\n", Data.MilitaryPower) +
+                    Loc.F("Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n\n", Data.HullPoints, Data.MaxHullPoints, Data.ArmorPoints, Data.ShieldPoints) +
+                    Loc.T("ЛКМ — выбрать\n") +
+                    Loc.T("ПКМ по системе — двигаться\n\n") +
+                    Loc.F("<i>Состояние: {0}</i>", Data.State)
             };
         }
 
@@ -693,7 +693,7 @@ namespace StellarisClone.Rendering
                 // Систему успели занять — половина сплавов возвращается
                 var eco = EconomyManager.Instance;
                 if (eco != null) { eco.Alloys += FactionTraits.StarbaseAlloys(0) * 0.5f; eco.RaiseResourcesChanged(); }
-                NotificationCenter.Show("Форпост не построен", "Систему уже заняли. Возвращено 50% сплавов", NotificationCenter.Kind.Warning, 5f);
+                NotificationCenter.Show(Loc.T("Форпост не построен"), Loc.T("Систему уже заняли. Возвращено 50% сплавов"), NotificationCenter.Kind.Warning, 5f);
             }
 
             _laserBeam.enabled = false;

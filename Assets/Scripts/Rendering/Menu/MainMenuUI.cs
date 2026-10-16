@@ -163,7 +163,7 @@ namespace StellarisClone.Rendering
 
             var sub = LGBuild.Rect(logo, "Subtitle");
             sub.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -122), new Vector2(800, 24));
-            BuildTrackedWord(sub, "ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ", GameFont.Regular, 16, FontStyle.Normal, 7f, _subtitle, 1.15f, 0.022f);
+            BuildTrackedWord(sub, Loc.T("ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ"), GameFont.Regular, 16, FontStyle.Normal, 7f, _subtitle, 1.15f, 0.022f);
             foreach (var l in _subtitle) l.Text.color = new Color(0.30f, 0.95f, 0.86f, 0f);
 
             var line = LGBuild.Panel(logo, "Underline", new Color(0.30f, 0.95f, 0.86f, 0.75f));
@@ -171,7 +171,7 @@ namespace StellarisClone.Rendering
             _underline.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(6, -156), new Vector2(0, 2));
             LG.Line(line.gameObject, hairline: true);
 
-            _tagline = LGBuild.Label(logo, "Исследуйте  ·  Расширяйтесь  ·  Развивайтесь  ·  Побеждайте", 13,
+            _tagline = LGBuild.Label(logo, Loc.T("Исследуйте  ·  Расширяйтесь  ·  Развивайтесь  ·  Побеждайте"), 13,
                                      new Color(0.62f, 0.74f, 0.80f, 0f), TextAnchor.UpperLeft);
             _tagline.fontStyle = FontStyle.Italic;
             _tagline.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -170), new Vector2(800, 22));
@@ -274,7 +274,7 @@ namespace StellarisClone.Rendering
             var latest = SaveSystem.Latest();
             if (latest != null)
             {
-                _continueBtn = AddButton(col, ref y, ref delay, Panel.None, LGIcon.Play, "ПРОДОЛЖИТЬ", ContinueCaption(latest),
+                _continueBtn = AddButton(col, ref y, ref delay, Panel.None, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), ContinueCaption(latest),
                     UIManager.DS.NeonCyan, () =>
                     {
                         var l = SaveSystem.Latest();
@@ -282,16 +282,16 @@ namespace StellarisClone.Rendering
                     }, primary: true);
                 y += 8f;
             }
-            AddButton(col, ref y, ref delay, Panel.NewGame, LGIcon.Globe, "НОВАЯ ИГРА", "Создать галактику и выбрать цивилизацию",
+            AddButton(col, ref y, ref delay, Panel.NewGame, LGIcon.Globe, Loc.T("НОВАЯ ИГРА"), Loc.T("Создать галактику и выбрать цивилизацию"),
                       UIManager.DS.NeonCyan, () => Open(Panel.NewGame), primary: latest == null);
-            _loadBtn = AddButton(col, ref y, ref delay, Panel.Load, LGIcon.Load, "ЗАГРУЗИТЬ", LoadCaption(SaveSystem.List().Count),
+            _loadBtn = AddButton(col, ref y, ref delay, Panel.Load, LGIcon.Load, Loc.T("ЗАГРУЗИТЬ"), LoadCaption(SaveSystem.List().Count),
                       new Color(0.55f, 0.80f, 1f), () => Open(Panel.Load));
-            AddButton(col, ref y, ref delay, Panel.Settings, LGIcon.Gear, "НАСТРОЙКИ", "Графика, звук, интерфейс",
+            AddButton(col, ref y, ref delay, Panel.Settings, LGIcon.Gear, Loc.T("НАСТРОЙКИ"), Loc.T("Графика, звук, интерфейс"),
                       new Color(0.75f, 0.85f, 0.95f), () => Open(Panel.Settings));
-            AddButton(col, ref y, ref delay, Panel.About, LGIcon.Info, "ОБ ИГРЕ", "Как играть и пути к победе",
+            AddButton(col, ref y, ref delay, Panel.About, LGIcon.Info, Loc.T("ОБ ИГРЕ"), Loc.T("Как играть и пути к победе"),
                       UIManager.DS.Gold, () => Open(Panel.About));
             y += 8f;
-            AddButton(col, ref y, ref delay, Panel.None, LGIcon.Power, "ВЫХОД", "Вернуться на рабочий стол",
+            AddButton(col, ref y, ref delay, Panel.None, LGIcon.Power, Loc.T("ВЫХОД"), Loc.T("Вернуться на рабочий стол"),
                       UIManager.DS.Red, () => SceneFader.FadeOutThen(GameSession.Quit, 0.5f));
         }
 
@@ -314,7 +314,7 @@ namespace StellarisClone.Rendering
         private static string ContinueCaption(SaveEntry e) =>
             $"{e.Meta.Empire}  ·  {e.Meta.GameDate}  ·  {SaveSystem.FormatSavedAt(e.SavedAtLocal)}";
 
-        private static string LoadCaption(int count) => count == 0 ? "Сохранений пока нет" : $"Сохранений: {count}";
+        private static string LoadCaption(int count) => count == 0 ? Loc.T("Сохранений пока нет") : Loc.F("Сохранений: {0}", count);
 
         private void OnEnable() => SaveSystem.OnSavesChanged += RefreshSaveInfo;
         private void OnDisable() => SaveSystem.OnSavesChanged -= RefreshSaveInfo;
@@ -325,7 +325,7 @@ namespace StellarisClone.Rendering
             var list = SaveSystem.List();
             if (_loadBtn != null) _loadBtn.Caption.text = LoadCaption(list.Count);
             if (_continueBtn == null) return;
-            if (list.Count == 0) _continueBtn.Disable("Сохранений больше нет");
+            if (list.Count == 0) _continueBtn.Disable(Loc.T("Сохранений больше нет"));
             else _continueBtn.Caption.text = ContinueCaption(list[0]);
         }
 
@@ -364,7 +364,7 @@ namespace StellarisClone.Rendering
 
             var close = LGControls.IconButton(header, LGIcon.Close, 40, UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.3f), Close);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(0, -4), new Vector2(40, 40));
-            TooltipHelper.Attach(close.gameObject, "Закрыть  <color=#8AA2A8>(Esc)</color>");
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
 
             var sep = LGBuild.Panel(w, "Sep", new Color(0.45f, 0.95f, 0.9f, 0.22f));
             sep.rectTransform.TopBand(100, 1, 36, 36);
@@ -397,16 +397,16 @@ namespace StellarisClone.Rendering
             switch (p)
             {
                 case Panel.NewGame:
-                    SetHeader(LGIcon.Globe, "НОВАЯ ИГРА", "Настройте галактику — цивилизацию вы выберете на следующем шаге");
+                    SetHeader(LGIcon.Globe, Loc.T("НОВАЯ ИГРА"), Loc.T("Настройте галактику — цивилизацию вы выберете на следующем шаге"));
                     break;
                 case Panel.Load:
-                    SetHeader(LGIcon.Load, "ЗАГРУЗКА", "Продолжите одну из своих партий");
+                    SetHeader(LGIcon.Load, Loc.T("ЗАГРУЗКА"), Loc.T("Продолжите одну из своих партий"));
                     break;
                 case Panel.Settings:
-                    SetHeader(LGIcon.Gear, "НАСТРОЙКИ", "Графика, звук, интерфейс и сохранения");
+                    SetHeader(LGIcon.Gear, Loc.T("НАСТРОЙКИ"), Loc.T("Графика, звук, интерфейс и сохранения"));
                     break;
                 case Panel.About:
-                    SetHeader(LGIcon.Info, "ОБ ИГРЕ", "Astropolity — космическая 4X-стратегия в реальном времени с паузой");
+                    SetHeader(LGIcon.Info, Loc.T("ОБ ИГРЕ"), Loc.T("Astropolity — космическая 4X-стратегия в реальном времени с паузой"));
                     break;
             }
 
@@ -475,24 +475,24 @@ namespace StellarisClone.Rendering
             left.offsetMax = new Vector2(-12, 0);
 
             float y = 0f;
-            y = LGControls.Section(left, y, "ГАЛАКТИКА", LGIcon.Star);
+            y = LGControls.Section(left, y, Loc.T("ГАЛАКТИКА"), LGIcon.Star);
 
             var sizes = new List<string>();
             for (int i = 0; i < 3; i++)
             {
                 var tmp = new NewGameSettings { GalaxySize = i };
-                sizes.Add($"{NewGameSettings.SizeNames[i]} · {tmp.StarCount} систем");
+                sizes.Add(Loc.F("{0} · {1} систем", NewGameSettings.SizeNames[i], tmp.StarCount));
             }
-            LGControls.Selector(LGControls.Row(left, ref y, "Размер", "Сколько звёздных систем в галактике", 270f),
+            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Размер"), Loc.T("Сколько звёздных систем в галактике"), 270f),
                 sizes, _ng.GalaxySize, i => { _ng.GalaxySize = i; RefreshNewGame(); });
-            LGControls.Selector(LGControls.Row(left, ref y, "Форма", "Расположение звёзд: рукава спирали дают узкие проходы и фронты", 270f),
+            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Форма"), Loc.T("Расположение звёзд: рукава спирали дают узкие проходы и фронты"), 270f),
                 NewGameSettings.ShapeNames, Mathf.Clamp(_ng.Shape, 0, NewGameSettings.ShapeNames.Length - 1),
                 i => { _ng.Shape = i; RefreshNewGame(); });
 
-            var seedHost = LGControls.Row(left, ref y, "Зерно генерации", "Одинаковое зерно — одинаковая карта", 270f);
+            var seedHost = LGControls.Row(left, ref y, Loc.T("Зерно генерации"), Loc.T("Одинаковое зерно — одинаковая карта"), 270f);
             var inputHost = LGBuild.Rect(seedHost, "SeedInput");
             inputHost.Stretch(0, 0, 50, 0);
-            _seedInput = LGControls.Input(inputHost, _ng.Seed.ToString(), "Случайное", 7);
+            _seedInput = LGControls.Input(inputHost, _ng.Seed.ToString(), Loc.T("Случайное"), 7);
             _seedInput.contentType = InputField.ContentType.IntegerNumber;
             _seedInput.onEndEdit.AddListener(s =>
             {
@@ -507,13 +507,13 @@ namespace StellarisClone.Rendering
                 RefreshNewGame();
             });
             ((RectTransform)dice.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(40, 40));
-            TooltipHelper.Attach(dice.gameObject, "Случайная галактика");
+            TooltipHelper.Attach(dice.gameObject, Loc.T("Случайная галактика"));
 
             y += 6f;
-            y = LGControls.Section(left, y, "ПАРТИЯ", LGIcon.Leader);
-            LGControls.Selector(LGControls.Row(left, ref y, "Сложность", "Доходы и агрессивность соседней империи", 270f),
+            y = LGControls.Section(left, y, Loc.T("ПАРТИЯ"), LGIcon.Leader);
+            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Сложность"), Loc.T("Доходы и агрессивность соседней империи"), 270f),
                 NewGameSettings.DifficultyNames, _ng.Difficulty, i => { _ng.Difficulty = i; RefreshNewGame(); });
-            LGControls.Switch(LGControls.Row(left, ref y, "Обучение", "Пошаговые подсказки советника в начале", 270f),
+            LGControls.Switch(LGControls.Row(left, ref y, Loc.T("Обучение"), Loc.T("Пошаговые подсказки советника в начале"), 270f),
                 _ng.Tutorial, v => _ng.Tutorial = v);
 
             // Справа — предпросмотр
@@ -541,7 +541,7 @@ namespace StellarisClone.Rendering
             {
                 SFXManager.Play("ui_click", 1f, 0.8f);
                 GameSession.StartNewGame(_ng);
-            }, LGIcon.Play, "ДАЛЕЕ — ВЫБОР ЦИВИЛИЗАЦИИ", 14);
+            }, LGIcon.Play, Loc.T("ДАЛЕЕ — ВЫБОР ЦИВИЛИЗАЦИИ"), 14);
             ((RectTransform)start.transform).At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(450, 60));
             var sfx = start.GetComponent<LiquidGlassEffect>();
             if (sfx != null) start.gameObject.AddComponent<PulseGlow>().Init(sfx);
@@ -554,10 +554,10 @@ namespace StellarisClone.Rendering
             if (_preview != null) _preview.Show(_ng);
             if (_ngGoals != null)
                 _ngGoals.text =
-                    $"<b><color=#E8F6FA>Пути к победе</color></b>   " +
-                    $"<color=#4DF2DB>форпосты в {_ng.DominationTarget} системах</color>  ·  " +
-                    $"<color=#5CF599>{VictoryManager.ScienceTarget} технологий и «Вознесение»</color>  ·  <color=#7FD8FF>экономика и совет</color>  ·  " +
-                    $"<color=#FFCC52>больше очков, чем у каждого соперника, в {VictoryManager.EndYear} году</color>";
+                    Loc.T("<b><color=#E8F6FA>Пути к победе</color></b>   ") +
+                    Loc.F("<color=#4DF2DB>форпосты в {0} системах</color>  ·  ", _ng.DominationTarget) +
+                    Loc.F("<color=#5CF599>{0} технологий и «Вознесение»</color>  ·  <color=#7FD8FF>экономика и совет</color>  ·  ", VictoryManager.ScienceTarget) +
+                    Loc.F("<color=#FFCC52>больше очков, чем у каждого соперника, в {0} году</color>", VictoryManager.EndYear);
         }
 
         // ================================================================ Об игре
@@ -566,41 +566,41 @@ namespace StellarisClone.Rendering
         {
             var left = LGBuild.Rect(page, "HowTo");
             left.Column(0f, 0.54f, 0, 14);
-            float y = LGControls.Section(left, 0f, "КАК ИГРАТЬ", LGIcon.Info);
-            Step(left, ref y, LGIcon.Ship, "1 · Исследуйте",
-                 "Отправляйте научный корабль (ПКМ по звезде) изучать соседние системы — за каждую разведку вы получаете ресурсы.");
-            Step(left, ref y, LGIcon.Starbase, "2 · Расширяйтесь",
-                 "Строительный корабль ставит форпосты в разведанных системах. Чем больше систем — тем сильнее империя.");
-            Step(left, ref y, LGIcon.Planet, "3 · Развивайте колонии",
-                 "Заселяйте пригодные планеты и стройте районы: жильё, добычу, энергию и промышленность.");
-            Step(left, ref y, LGIcon.Research, "4 · Изучайте технологии",
-                 "Три слота исследований работают параллельно. Не оставляйте их пустыми — следите за алертами под верхней панелью.");
-            Step(left, ref y, LGIcon.Fleet, "5 · Защищайтесь",
-                 "Соседняя империя наблюдает за вашей мощью. Флот стоит энергии, а войны выигрываются осадой: держите корабли в системе врага без его защитников.");
+            float y = LGControls.Section(left, 0f, Loc.T("КАК ИГРАТЬ"), LGIcon.Info);
+            Step(left, ref y, LGIcon.Ship, Loc.T("1 · Исследуйте"),
+                 Loc.T("Отправляйте научный корабль (ПКМ по звезде) изучать соседние системы — за каждую разведку вы получаете ресурсы."));
+            Step(left, ref y, LGIcon.Starbase, Loc.T("2 · Расширяйтесь"),
+                 Loc.T("Строительный корабль ставит форпосты в разведанных системах. Чем больше систем — тем сильнее империя."));
+            Step(left, ref y, LGIcon.Planet, Loc.T("3 · Развивайте колонии"),
+                 Loc.T("Заселяйте пригодные планеты и стройте районы: жильё, добычу, энергию и промышленность."));
+            Step(left, ref y, LGIcon.Research, Loc.T("4 · Изучайте технологии"),
+                 Loc.T("Три слота исследований работают параллельно. Не оставляйте их пустыми — следите за алертами под верхней панелью."));
+            Step(left, ref y, LGIcon.Fleet, Loc.T("5 · Защищайтесь"),
+                 Loc.T("Соседняя империя наблюдает за вашей мощью. Флот стоит энергии, а войны выигрываются осадой: держите корабли в системе врага без его защитников."));
 
             var right = LGBuild.Rect(page, "Side");
             right.Column(0.54f, 1f, 14, 0);
-            float ry = LGControls.Section(right, 0f, "ПУТИ К ПОБЕДЕ", LGIcon.Trophy);
-            Goal(right, ref ry, LGIcon.Starbase, "Доминирование", "Форпосты в 47 / 83 / 127 системах (по размеру галактики) — удерживайте порог год", UIManager.DS.NeonCyan);
-            Goal(right, ref ry, LGIcon.Research, "Технологическая", $"Изучите {VictoryManager.ScienceTarget} технологий и «Вознесение» · экономическая — {VictoryManager.EconomyShare * 100f:0}% продукта галактики {VictoryManager.EconomyMonths / 12} года · дипломатическая — 2/3 голосов совета", UIManager.DS.Green);
-            Goal(right, ref ry, LGIcon.Trophy, $"Очки в {VictoryManager.EndYear} году", "Обгоните соперников по системам, населению, науке и флоту. Соперники тоже могут победить — наукой, экспансией или экономикой", UIManager.DS.Gold);
+            float ry = LGControls.Section(right, 0f, Loc.T("ПУТИ К ПОБЕДЕ"), LGIcon.Trophy);
+            Goal(right, ref ry, LGIcon.Starbase, Loc.T("Доминирование"), Loc.T("Форпосты в 47 / 83 / 127 системах (по размеру галактики) — удерживайте порог год"), UIManager.DS.NeonCyan);
+            Goal(right, ref ry, LGIcon.Research, Loc.T("Технологическая"), Loc.F("Изучите {0} технологий и «Вознесение» · экономическая — {1:0}% продукта галактики {2} года · дипломатическая — 2/3 голосов совета", VictoryManager.ScienceTarget, VictoryManager.EconomyShare * 100f, VictoryManager.EconomyMonths / 12), UIManager.DS.Green);
+            Goal(right, ref ry, LGIcon.Trophy, Loc.F("Очки в {0} году", VictoryManager.EndYear), Loc.T("Обгоните соперников по системам, населению, науке и флоту. Соперники тоже могут победить — наукой, экспансией или экономикой"), UIManager.DS.Gold);
 
             ry += 6f;
-            ry = LGControls.Section(right, ry, "УПРАВЛЕНИЕ", LGIcon.Menu);
+            ry = LGControls.Section(right, ry, Loc.T("УПРАВЛЕНИЕ"), LGIcon.Menu);
             var keys = LGBuild.Panel(right, "Keys", new Color(0.05f, 0.10f, 0.135f, 0.55f));
             keys.rectTransform.TopBand(ry, 176);
             LG.Platter(keys.gameObject, 16f).GlowMultiplier = 0f;
             var kt = LGBuild.Label(keys.transform,
-                "<color=#4DF2DB><b>ЛКМ</b></color>  выбор      <color=#4DF2DB><b>ПКМ</b></color>  приказ флоту\n" +
-                "<color=#4DF2DB><b>WASD</b></color>  камера      <color=#4DF2DB><b>Колесо</b></color>  масштаб\n" +
-                "<color=#4DF2DB><b>Пробел</b></color>  пауза      <color=#4DF2DB><b>1 2 3</b></color>  скорость\n" +
-                "<color=#4DF2DB><b>F5 / F9</b></color>  быстрое сохранение / загрузка\n" +
-                "<color=#4DF2DB><b>Esc</b></color>  меню паузы",
+                Loc.T("<color=#4DF2DB><b>ЛКМ</b></color>  выбор      <color=#4DF2DB><b>ПКМ</b></color>  приказ флоту\n") +
+                Loc.T("<color=#4DF2DB><b>WASD</b></color>  камера      <color=#4DF2DB><b>Колесо</b></color>  масштаб\n") +
+                Loc.T("<color=#4DF2DB><b>Пробел</b></color>  пауза      <color=#4DF2DB><b>1 2 3</b></color>  скорость\n") +
+                Loc.T("<color=#4DF2DB><b>F5 / F9</b></color>  быстрое сохранение / загрузка\n") +
+                Loc.T("<color=#4DF2DB><b>Esc</b></color>  меню паузы"),
                 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
             kt.rectTransform.Stretch(18, 12, 14, 14);
             kt.lineSpacing = 1.45f;
 
-            var credits = LGBuild.Label(page, $"ASTROPOLITY  {Version}   ·   Unity 6 · URP   ·   шрифт Play (SIL Open Font License)",
+            var credits = LGBuild.Label(page, Loc.F("ASTROPOLITY  {0}   ·   Unity 6 · URP   ·   шрифт Play (SIL Open Font License)", Version),
                                         10, UIManager.DS.TextMuted, TextAnchor.LowerRight);
             credits.rectTransform.Stretch(0, -18, 0, 0);
         }
@@ -957,13 +957,13 @@ namespace StellarisClone.Rendering
                 _items.Add(new Item { Rt = rt, G = img, Delay = 0.1f + p.magnitude / Mathf.Max(1f, half) * 0.55f, Alpha = 1f, Pop = true });
             }
 
-            _capRing = Marker(P(systems[0]), UIManager.DS.NeonCyan, "ВЫ");
-            if (caps.Count > 1) _aiRing = Marker(P(systems[caps[1]]), AIEmpireManager.MapColorFor(1), "СОПЕРНИК");
-            if (caps.Count > 2) _aiRing2 = Marker(P(systems[caps[2]]), AIEmpireManager.MapColorFor(2), "СОПЕРНИК");
-            if (caps.Count > 3) _aiRing3 = Marker(P(systems[caps[3]]), AIEmpireManager.MapColorFor(3), "СОПЕРНИК");
-            if (caps.Count > 4) _aiRing4 = Marker(P(systems[caps[4]]), AIEmpireManager.MapColorFor(4), "СОПЕРНИК");
+            _capRing = Marker(P(systems[0]), UIManager.DS.NeonCyan, Loc.T("ВЫ"));
+            if (caps.Count > 1) _aiRing = Marker(P(systems[caps[1]]), AIEmpireManager.MapColorFor(1), Loc.T("СОПЕРНИК"));
+            if (caps.Count > 2) _aiRing2 = Marker(P(systems[caps[2]]), AIEmpireManager.MapColorFor(2), Loc.T("СОПЕРНИК"));
+            if (caps.Count > 3) _aiRing3 = Marker(P(systems[caps[3]]), AIEmpireManager.MapColorFor(3), Loc.T("СОПЕРНИК"));
+            if (caps.Count > 4) _aiRing4 = Marker(P(systems[caps[4]]), AIEmpireManager.MapColorFor(4), Loc.T("СОПЕРНИК"));
 
-            _caption.text = $"{NewGameSettings.SizeNames[s.GalaxySize]} галактика   ·   {NewGameSettings.ShapeNames[Mathf.Clamp(s.Shape, 0, 3)].ToLower()}   ·   {systems.Count} систем   ·   {lanes.Count} гиперкоридоров   ·   сид {s.Seed}";
+            _caption.text = Loc.F("{0} галактика   ·   {1}   ·   {2} систем   ·   {3} гиперкоридоров   ·   сид {4}", NewGameSettings.SizeNames[s.GalaxySize], NewGameSettings.ShapeNames[Mathf.Clamp(s.Shape, 0, 3)].ToLower(), systems.Count, lanes.Count, s.Seed);
         }
 
         private RectTransform Marker(Vector2 pos, Color col, string label)

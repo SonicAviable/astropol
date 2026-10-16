@@ -59,83 +59,83 @@ namespace StellarisClone.Rendering
         {
             ["xarn"] = new Lore
             {
-                Tagline = "Дисциплинированы, воинственны, непреклонны",
+                Tagline = Loc.T("Дисциплинированы, воинственны, непреклонны"),
                 Emblem = LGIcon.Swords,
                 Traits = new[]
                 {
-                    (LGIcon.Swords, "Милитаристы: флот — основа государства"),
-                    (LGIcon.Alloys, "Тяжёлая промышленность"),
-                    (LGIcon.Target, "Доктрина: ищут слабого соседа"),
-                    (LGIcon.Diplomacy, "Дипломатия: внушают страх, требуют дань")
+                    (LGIcon.Swords, Loc.T("Милитаристы: флот — основа государства")),
+                    (LGIcon.Alloys, Loc.T("Тяжёлая промышленность")),
+                    (LGIcon.Target, Loc.T("Доктрина: ищут слабого соседа")),
+                    (LGIcon.Diplomacy, Loc.T("Дипломатия: внушают страх, требуют дань"))
                 },
-                Story = "Доминион родился на мире-крепости Ксарн-Прайм, где столетиями шла война всех против всех. " +
-                        "Победил тот, кто первым построил армию, а не дворец.\n\n" +
-                        "Сегодня Доминионом правит верховный маршал. Каждый гражданин отслужил во флоте, каждая фабрика " +
-                        "в любой день готова перейти на выпуск брони. Соседи для ксарнийцев — либо союзники, либо будущие провинции."
+                Story = Loc.T("Доминион родился на мире-крепости Ксарн-Прайм, где столетиями шла война всех против всех. ") +
+                        Loc.T("Победил тот, кто первым построил армию, а не дворец.\n\n") +
+                        Loc.T("Сегодня Доминионом правит верховный маршал. Каждый гражданин отслужил во флоте, каждая фабрика ") +
+                        Loc.T("в любой день готова перейти на выпуск брони. Соседи для ксарнийцев — либо союзники, либо будущие провинции.")
             },
             ["astrea"] = new Lore
             {
-                Tagline = "Миролюбивы, любознательны, принципиальны",
+                Tagline = Loc.T("Миролюбивы, любознательны, принципиальны"),
                 Emblem = LGIcon.Star,
                 Traits = new[]
                 {
-                    (LGIcon.Research, "Учёные: наука — главный приоритет"),
-                    (LGIcon.Influence, "Республика: сильное влияние"),
-                    (LGIcon.Planet, "Колонисты: ценят новые миры"),
-                    (LGIcon.Handshake, "Дипломатия: опытные переговорщики")
+                    (LGIcon.Research, Loc.T("Учёные: наука — главный приоритет")),
+                    (LGIcon.Influence, Loc.T("Республика: сильное влияние")),
+                    (LGIcon.Planet, Loc.T("Колонисты: ценят новые миры")),
+                    (LGIcon.Handshake, Loc.T("Дипломатия: опытные переговорщики"))
                 },
-                Story = "Республика выросла из союза первых колоний, которые отказались подчиняться метрополии и решили " +
-                        "править собой сами. Её Совет выбирают все граждане, а решения принимаются открыто.\n\n" +
-                        "Астрейцы верят, что знание сильнее оружия, а договор прочнее страха. Но за мягкими словами " +
-                        "Председателя стоит флот, который умеет защищать то, во что верит Республика."
+                Story = Loc.T("Республика выросла из союза первых колоний, которые отказались подчиняться метрополии и решили ") +
+                        Loc.T("править собой сами. Её Совет выбирают все граждане, а решения принимаются открыто.\n\n") +
+                        Loc.T("Астрейцы верят, что знание сильнее оружия, а договор прочнее страха. Но за мягкими словами ") +
+                        Loc.T("Председателя стоит флот, который умеет защищать то, во что верит Республика.")
             },
             ["aquila"] = new Lore
             {
-                Tagline = "Расчётливы, предприимчивы, неуловимы",
+                Tagline = Loc.T("Расчётливы, предприимчивы, неуловимы"),
                 Emblem = LGIcon.Trade,
                 Traits = new[]
                 {
-                    (LGIcon.Trade, "Торговцы: любят выгодные сделки"),
-                    (LGIcon.Minerals, "Добывающая корпорация"),
-                    (LGIcon.Energy, "Энергетические концессии"),
-                    (LGIcon.Gift, "Дипломатия: всё имеет цену")
+                    (LGIcon.Trade, Loc.T("Торговцы: любят выгодные сделки")),
+                    (LGIcon.Minerals, Loc.T("Добывающая корпорация")),
+                    (LGIcon.Energy, Loc.T("Энергетические концессии")),
+                    (LGIcon.Gift, Loc.T("Дипломатия: всё имеет цену"))
                 },
-                Story = "Синдикат начинался как горнодобывающая компания, скупившая права на целую звёздную систему. " +
-                        "Через век компания стала государством, а совет директоров — правительством.\n\n" +
-                        "Аквилой правит генеральный директор, а законы здесь пишутся как контракты. Синдикат покупает " +
-                        "то, что другие берут силой, и превращает в прибыль даже чужие войны."
+                Story = Loc.T("Синдикат начинался как горнодобывающая компания, скупившая права на целую звёздную систему. ") +
+                        Loc.T("Через век компания стала государством, а совет директоров — правительством.\n\n") +
+                        Loc.T("Аквилой правит генеральный директор, а законы здесь пишутся как контракты. Синдикат покупает ") +
+                        Loc.T("то, что другие берут силой, и превращает в прибыль даже чужие войны.")
             },
             ["iridia"] = new Lore
             {
-                Tagline = "Загадочны, прозорливы, терпеливы",
+                Tagline = Loc.T("Загадочны, прозорливы, терпеливы"),
                 Emblem = LGIcon.Sensors,
                 Traits = new[]
                 {
-                    (LGIcon.Influence, "Теократия: огромное влияние"),
-                    (LGIcon.Sensors, "Провидцы: видят угрозы заранее"),
-                    (LGIcon.Defense, "Крепкая оборона, редко нападают первыми"),
-                    (LGIcon.Diplomacy, "Дипломатия: говорят загадками, помнят всё")
+                    (LGIcon.Influence, Loc.T("Теократия: огромное влияние")),
+                    (LGIcon.Sensors, Loc.T("Провидцы: видят угрозы заранее")),
+                    (LGIcon.Defense, Loc.T("Крепкая оборона, редко нападают первыми")),
+                    (LGIcon.Diplomacy, Loc.T("Дипломатия: говорят загадками, помнят всё"))
                 },
-                Story = "Иридийцы выросли в светящихся лесах мира-сада Иридия, где каждое живое существо излучает свет. " +
-                        "Их кожа вспыхивает в такт мыслям, а самые одарённые видят обрывки грядущего.\n\n" +
-                        "Правит Оракулом Верховная провидица Аурэлия. Говорят, она знает исход любой войны ещё до первого выстрела, " +
-                        "поэтому Оракул так редко сражается — и почти никогда не проигрывает."
+                Story = Loc.T("Иридийцы выросли в светящихся лесах мира-сада Иридия, где каждое живое существо излучает свет. ") +
+                        Loc.T("Их кожа вспыхивает в такт мыслям, а самые одарённые видят обрывки грядущего.\n\n") +
+                        Loc.T("Правит Оракулом Верховная провидица Аурэлия. Говорят, она знает исход любой войны ещё до первого выстрела, ") +
+                        Loc.T("поэтому Оракул так редко сражается — и почти никогда не проигрывает.")
             },
             ["terraan"] = new Lore
             {
-                Tagline = "Древни, терпеливы, неуступчивы",
+                Tagline = Loc.T("Древни, терпеливы, неуступчивы"),
                 Emblem = LGIcon.Planet,
                 Traits = new[]
                 {
-                    (LGIcon.Wrench, "Живая броня: корабли сами заживают"),
-                    (LGIcon.Sensors, "Мицелий: разведка быстрее, сенсоры дальше"),
-                    (LGIcon.Starbase, "Живые форпосты дешевле; «Пробуждение сада»"),
-                    (LGIcon.Warning, "Медленный рост, боятся энергии")
+                    (LGIcon.Wrench, Loc.T("Живая броня: корабли сами заживают")),
+                    (LGIcon.Sensors, Loc.T("Мицелий: разведка быстрее, сенсоры дальше")),
+                    (LGIcon.Starbase, Loc.T("Живые форпосты дешевле; «Пробуждение сада»")),
+                    (LGIcon.Warning, Loc.T("Медленный рост, боятся энергии"))
                 },
-                Story = "Тэрра'ан — древнейшая из живых цивилизаций галактики. Их миры — огромные сады, где корни связывают континенты, " +
-                        "а деревья хранят память веков. Корабли здесь не собирают, а выращивают из биокоры, и раны их заживают сами.\n\n" +
-                        "Решения принимает весь Конклав через сеть мицелия, а голос его — старейшая Исинна Кральтэр, Хранительница Корней. " +
-                        "Конклав не спешит и терпеливо ждёт, пока соседи истощат себя войнами. Но если сад под угрозой — пробуждается всё, что в нём спало."
+                Story = Loc.T("Тэрра'ан — древнейшая из живых цивилизаций галактики. Их миры — огромные сады, где корни связывают континенты, ") +
+                        Loc.T("а деревья хранят память веков. Корабли здесь не собирают, а выращивают из биокоры, и раны их заживают сами.\n\n") +
+                        Loc.T("Решения принимает весь Конклав через сеть мицелия, а голос его — старейшая Исинна Кральтэр, Хранительница Корней. ") +
+                        Loc.T("Конклав не спешит и терпеливо ждёт, пока соседи истощат себя войнами. Но если сад под угрозой — пробуждается всё, что в нём спало.")
             }
         };
 
@@ -205,7 +205,7 @@ namespace StellarisClone.Rendering
 
         private void BuildInfo(RectTransform rt)
         {
-            var title = LGBuild.Label(rt, "НОВАЯ ИГРА  ·  ВЫБОР ИМПЕРИИ", 15, Muted, TextAnchor.UpperLeft, bold: true);
+            var title = LGBuild.Label(rt, Loc.T("НОВАЯ ИГРА  ·  ВЫБОР ИМПЕРИИ"), 15, Muted, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(64, -40), new Vector2(700, 22));
 
             var panel = LGBuild.Panel(rt, "Info", PanelBg, raycast: true);
@@ -242,11 +242,11 @@ namespace StellarisClone.Rendering
             _tagline.fontStyle = FontStyle.Italic;
             _tagline.rectTransform.TopBand(120, 22, 32, 24);
 
-            Heading(pr, "ОСОБЕННОСТИ", 160f);
+            Heading(pr, Loc.T("ОСОБЕННОСТИ"), 160f);
             _traits = LGBuild.Rect(pr, "Traits");
             _traits.TopBand(196, 196, 32, 24);
 
-            Heading(pr, "ИСТОРИЯ", 400f);
+            Heading(pr, Loc.T("ИСТОРИЯ"), 400f);
             _desc = LGBuild.Label(pr, "", 14, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
             _desc.lineSpacing = 1.18f;
             _desc.rectTransform.Stretch(32, 74, 28, 436);
@@ -415,14 +415,14 @@ namespace StellarisClone.Rendering
 
         private void BuildButtons(RectTransform rt)
         {
-            Btn(rt, "Back", LGIcon.Back, "НАЗАД", new Vector2(0, 0), new Vector2(0, 0), new Vector2(64, 40), 180f, () => _onBack?.Invoke());
-            Btn(rt, "Random", LGIcon.Dice, "СЛУЧАЙНАЯ", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-290, 40), 220f, () =>
+            Btn(rt, "Back", LGIcon.Back, Loc.T("НАЗАД"), new Vector2(0, 0), new Vector2(0, 0), new Vector2(64, 40), 180f, () => _onBack?.Invoke());
+            Btn(rt, "Random", LGIcon.Dice, Loc.T("СЛУЧАЙНАЯ"), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-290, 40), 220f, () =>
             {
                 int n = FactionRegistry.AvailableFactions.Length;
                 SFXManager.Play(Sfx.UiTab);
                 Select((_index + UnityEngine.Random.Range(1, Mathf.Max(2, n))) % n);
             });
-            Btn(rt, "Next", LGIcon.Play, "ДАЛЬШЕ", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-64, 40), 214f, () =>
+            Btn(rt, "Next", LGIcon.Play, Loc.T("ДАЛЬШЕ"), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-64, 40), 214f, () =>
             {
                 SFXManager.Play(Sfx.UiConfirm);
                 _onChoose?.Invoke(FactionRegistry.AvailableFactions[_index]);
@@ -490,7 +490,7 @@ namespace StellarisClone.Rendering
             _frameFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.7f));
             foreach (var b in _brackets) b.color = light;
             _liveDot.color = ec;
-            _frameTitle.text = leader != null ? $"ПРЯМАЯ СВЯЗЬ  ·  {leader.Name.ToUpper()}" : "ПРЯМАЯ СВЯЗЬ";
+            _frameTitle.text = leader != null ? Loc.F("ПРЯМАЯ СВЯЗЬ  ·  {0}", leader.Name.ToUpper()) : Loc.T("ПРЯМАЯ СВЯЗЬ");
             _frameSub.text = leader != null ? $"<b>{leader.Name}</b>\n<color=#9FB2BC>{leader.Title}</color>" : f.Title;
 
             // Досье
@@ -514,7 +514,7 @@ namespace StellarisClone.Rendering
             }
             _name.text = f.Name.ToUpper();
             _name.color = light;
-            _leader.text = leader != null ? $"<color=#8AA2A8>{f.Title}  ·  правитель:</color> <b>{leader.Name}</b>" : f.Title;
+            _leader.text = leader != null ? Loc.F("<color=#8AA2A8>{0}  ·  правитель:</color> <b>{1}</b>", f.Title, leader.Name) : f.Title;
             _tagline.text = lore?.Tagline ?? "";
 
             LGBuild.Clear(_traits);
@@ -625,12 +625,12 @@ namespace StellarisClone.Rendering
 
         private static IEnumerable<(LGIcon, string)> BonusTraits(FactionInfo f)
         {
-            if (f.EnergyBonus > 1.001f) yield return (LGIcon.Energy, $"+{(f.EnergyBonus - 1f) * 100f:0}% к добыче гелия-3");
-            if (f.MineralBonus > 1.001f) yield return (LGIcon.Minerals, $"+{(f.MineralBonus - 1f) * 100f:0}% к добыче титана");
-            if (f.AlloyBonus > 1.001f) yield return (LGIcon.Alloys, $"+{(f.AlloyBonus - 1f) * 100f:0}% к производству сплавов");
-            if (f.InfluenceBonus > 1.001f) yield return (LGIcon.Influence, $"+{(f.InfluenceBonus - 1f) * 100f:0}% к влиянию");
-            if (FactionRegistry.IsTerraan(f)) yield return (LGIcon.Defense, "+15% корпус, +10% щиты (биокора)");
-            if (f.MineralBonus < 0.999f) yield return (LGIcon.Minerals, $"−{(1f - f.MineralBonus) * 100f:0}% к добыче титана");
+            if (f.EnergyBonus > 1.001f) yield return (LGIcon.Energy, Loc.F("+{0:0}% к добыче гелия-3", (f.EnergyBonus - 1f) * 100f));
+            if (f.MineralBonus > 1.001f) yield return (LGIcon.Minerals, Loc.F("+{0:0}% к добыче титана", (f.MineralBonus - 1f) * 100f));
+            if (f.AlloyBonus > 1.001f) yield return (LGIcon.Alloys, Loc.F("+{0:0}% к производству сплавов", (f.AlloyBonus - 1f) * 100f));
+            if (f.InfluenceBonus > 1.001f) yield return (LGIcon.Influence, Loc.F("+{0:0}% к влиянию", (f.InfluenceBonus - 1f) * 100f));
+            if (FactionRegistry.IsTerraan(f)) yield return (LGIcon.Defense, Loc.T("+15% корпус, +10% щиты (биокора)"));
+            if (f.MineralBonus < 0.999f) yield return (LGIcon.Minerals, Loc.F("−{0:0}% к добыче титана", (1f - f.MineralBonus) * 100f));
         }
 
         private void Trait(ref float y, LGIcon icon, string text, Color col)

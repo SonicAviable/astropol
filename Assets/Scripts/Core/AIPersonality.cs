@@ -63,12 +63,14 @@ namespace StellarisClone.Core
         public static AIPersonality FromFactionName(string factionName)
         {
             if (string.IsNullOrEmpty(factionName)) return AIPersonality.Militarist;
-            if (factionName.Contains("Ксарн")) return AIPersonality.Militarist;
-            if (factionName.Contains("Астре")) return AIPersonality.Scientific;
-            if (factionName.Contains("Аквил")) return AIPersonality.Trader;
-            if (factionName.Contains("Ирид")) return AIPersonality.Mystic;
-            if (factionName.Contains("Тэрра")) return AIPersonality.Gardener;
-            return AIPersonality.Militarist;
+            switch (FactionRegistry.KeyOfName(factionName))
+            {
+                case "astrea": return AIPersonality.Scientific;
+                case "aquila": return AIPersonality.Trader;
+                case "iridia": return AIPersonality.Mystic;
+                case "terraan": return AIPersonality.Gardener;
+                default: return AIPersonality.Militarist;
+            }
         }
 
         public static AIProfile Get(AIPersonality kind)
@@ -77,8 +79,8 @@ namespace StellarisClone.Core
             switch (kind)
             {
                 case AIPersonality.Scientific:
-                    p.Name = "Научная";
-                    p.Summary = "Ценит знания и стабильность. Вооружается, только когда чувствует угрозу, охотно идёт на мир и пакты.";
+                    p.Name = Loc.T("Научная");
+                    p.Summary = Loc.T("Ценит знания и стабильность. Вооружается, только когда чувствует угрозу, охотно идёт на мир и пакты.");
                     p.FleetShare = 0.35f; p.ScienceMult = 1.35f;
                     p.ColonyWeight = 1.4f; p.ResourceWeight = 0.9f; p.FrontierBias = -4f;
                     p.PreferredDistrict = DistrictType.Urban;
@@ -96,8 +98,8 @@ namespace StellarisClone.Core
                     break;
 
                 case AIPersonality.Trader:
-                    p.Name = "Торговая";
-                    p.Summary = "Считает выгоду. Строит добычу и промышленность, ценит торговлю, воюет лишь при явном перевесе.";
+                    p.Name = Loc.T("Торговая");
+                    p.Summary = Loc.T("Считает выгоду. Строит добычу и промышленность, ценит торговлю, воюет лишь при явном перевесе.");
                     p.FleetShare = 0.45f; p.ScienceMult = 1f;
                     p.ColonyWeight = 1f; p.ResourceWeight = 1.5f; p.FrontierBias = -2f;
                     p.PreferredDistrict = DistrictType.Mining;
@@ -115,8 +117,8 @@ namespace StellarisClone.Core
                     break;
 
                 case AIPersonality.Mystic:
-                    p.Name = "Мистическая";
-                    p.Summary = "Видит угрозы заранее. Держит крепкую оборону, сторонится чужих границ, редко начинает войну первой, но долго помнит обиды.";
+                    p.Name = Loc.T("Мистическая");
+                    p.Summary = Loc.T("Видит угрозы заранее. Держит крепкую оборону, сторонится чужих границ, редко начинает войну первой, но долго помнит обиды.");
                     p.FleetShare = 0.45f; p.ScienceMult = 1.2f;
                     p.ColonyWeight = 1.2f; p.ResourceWeight = 1f; p.FrontierBias = -3f;
                     p.PreferredDistrict = DistrictType.Generator;
@@ -134,9 +136,9 @@ namespace StellarisClone.Core
                     break;
 
                 case AIPersonality.Gardener:
-                    p.Name = "Терпеливая";
-                    p.Summary = "Мыслит веками. Растит колонии и науку, держит границы садов, редко нападает первой, " +
-                                "но в обороне неуступчива и охотно заключает долгие договоры.";
+                    p.Name = Loc.T("Терпеливая");
+                    p.Summary = Loc.T("Мыслит веками. Растит колонии и науку, держит границы садов, редко нападает первой, ") +
+                                Loc.T("но в обороне неуступчива и охотно заключает долгие договоры.");
                     p.FleetShare = 0.4f; p.ScienceMult = 1.25f;
                     p.ColonyWeight = 1.6f; p.ResourceWeight = 0.8f; p.FrontierBias = -3f;
                     p.PreferredDistrict = DistrictType.Urban;
@@ -155,8 +157,8 @@ namespace StellarisClone.Core
                     break;
 
                 default:
-                    p.Name = "Воинственная";
-                    p.Summary = "Уважает только силу. Держит большой флот, тянется к границе и нападает, едва почувствует перевес.";
+                    p.Name = Loc.T("Воинственная");
+                    p.Summary = Loc.T("Уважает только силу. Держит большой флот, тянется к границе и нападает, едва почувствует перевес.");
                     p.FleetShare = 0.65f; p.ScienceMult = 0.9f;
                     p.ColonyWeight = 0.8f; p.ResourceWeight = 1.1f; p.FrontierBias = 2f;
                     p.PreferredDistrict = DistrictType.Industrial;

@@ -20,10 +20,10 @@ namespace StellarisClone.Core
             var list = new List<string>();
             var eco = EconomyManager.Instance;
             if (eco == null) return list;
-            Collect(list, energy, eco.EnergyCredits, "гелия-3");
-            Collect(list, minerals, eco.Minerals, "титана");
-            Collect(list, alloys, eco.Alloys, "сплавов");
-            Collect(list, influence, eco.Influence, "влияния");
+            Collect(list, energy, eco.EnergyCredits, Loc.T("гелия-3"));
+            Collect(list, minerals, eco.Minerals, Loc.T("титана"));
+            Collect(list, alloys, eco.Alloys, Loc.T("сплавов"));
+            Collect(list, influence, eco.Influence, Loc.T("влияния"));
             return list;
         }
 
@@ -36,8 +36,8 @@ namespace StellarisClone.Core
         {
             var l = Missing(energy, minerals, alloys, influence);
             if (l.Count == 0) return null;
-            string body = l.Count == 1 ? l[0] : string.Join(", ", l.GetRange(0, l.Count - 1)) + " и " + l[l.Count - 1];
-            return "Не хватает " + body;
+            string body = l.Count == 1 ? l[0] : string.Join(", ", l.GetRange(0, l.Count - 1)) + Loc.T(" и ") + l[l.Count - 1];
+            return Loc.T("Не хватает ") + body;
         }
 
         /// <summary>Для кнопки: «НЕ ХВАТАЕТ 30 ВЛИЯНИЯ» (если не хватает нескольких — первое и «…»).</summary>
@@ -45,7 +45,7 @@ namespace StellarisClone.Core
         {
             var l = Missing(energy, minerals, alloys, influence);
             if (l.Count == 0) return null;
-            return ("НЕ ХВАТАЕТ " + l[0] + (l.Count > 1 ? " …" : "")).ToUpper();
+            return (Loc.T("НЕ ХВАТАЕТ ") + l[0] + (l.Count > 1 ? " …" : "")).ToUpper();
         }
 
         /// <summary>Сколько месяцев до окупаемости (вложение и доход в одном ресурсе); -1 — не окупится.</summary>

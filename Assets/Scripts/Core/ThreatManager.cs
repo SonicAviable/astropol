@@ -16,7 +16,7 @@ namespace StellarisClone.Core
         public static bool IsThreat(int owner) => owner == PirateOwner || owner == LeviathanOwner;
 
         public static string NameOf(int owner) =>
-            owner == PirateOwner ? "Пираты" : owner == LeviathanOwner ? "Левиафан" : null;
+            owner == PirateOwner ? Loc.T("Пираты") : owner == LeviathanOwner ? Loc.T("Левиафан") : null;
 
         public static Color ColorOf(int owner) =>
             owner == PirateOwner ? new Color(0.62f, 0.95f, 0.30f) : new Color(1f, 0.38f, 0.72f);
@@ -62,9 +62,9 @@ namespace StellarisClone.Core
         private bool _subscribed;
 
         private static readonly string[] PirateNames =
-            { "Ржавый клык", "Чёрная звезда", "Вдова", "Крюк", "Солнечный вор", "Падальщик", "Безымянный", "Кровавая луна" };
+            { Loc.T("Ржавый клык"), Loc.T("Чёрная звезда"), Loc.T("Вдова"), Loc.T("Крюк"), Loc.T("Солнечный вор"), Loc.T("Падальщик"), Loc.T("Безымянный"), Loc.T("Кровавая луна") };
         private static readonly string[] LeviathanNames =
-            { "Пожиратель солнц", "Безмолвный страж", "Кристаллическая гидра", "Дитя пустоты", "Древний кит" };
+            { Loc.T("Пожиратель солнц"), Loc.T("Безмолвный страж"), Loc.T("Кристаллическая гидра"), Loc.T("Дитя пустоты"), Loc.T("Древний кит") };
 
         private static int Difficulty => GameSession.Settings.Difficulty;
         private static int FirstRaidYear => Difficulty == 0 ? 2212 : Difficulty == 2 ? 2206 : 2208;
@@ -137,9 +137,9 @@ namespace StellarisClone.Core
         private void Monthly()
         {
             if (_s.TributeMonths > 0 && --_s.TributeMonths == 0)
-                NotificationCenter.Show("Срок дани истёк", "Пираты снова могут напасть на ваши системы", NotificationCenter.Kind.Warning, 6f);
+                NotificationCenter.Show(Loc.T("Срок дани истёк"), Loc.T("Пираты снова могут напасть на ваши системы"), NotificationCenter.Kind.Warning, 6f);
             if (_s.BountyMonths > 0 && --_s.BountyMonths == 0)
-                NotificationCenter.Show("Награда отменена", "Охота за головами пиратов закончилась", NotificationCenter.Kind.Info, 5f);
+                NotificationCenter.Show(Loc.T("Награда отменена"), Loc.T("Охота за головами пиратов закончилась"), NotificationCenter.Kind.Info, 5f);
         }
 
         // ==================== ЛЕВИАФАНЫ ====================
@@ -201,7 +201,7 @@ namespace StellarisClone.Core
             var fm = FleetManager.Instance;
             if (fm == null) return;
             float k = strength * (Difficulty == 0 ? 0.75f : Difficulty == 2 ? 1.3f : 1f);
-            var fv = fm.CreateOwnedFleet($"Левиафан «{name}»", sysId, FleetType.Military, Threats.LeviathanOwner, ShipClass.Destroyer);
+            var fv = fm.CreateOwnedFleet(Loc.F("Левиафан «{0}»", name), sysId, FleetType.Military, Threats.LeviathanOwner, ShipClass.Destroyer);
             var d = fv.Data;
             d.MaxHullPoints = d.HullPoints = 2200f * k;
             d.MaxArmorPoints = d.ArmorPoints = 800f * k;
@@ -251,8 +251,8 @@ namespace StellarisClone.Core
             if (_s.PlannedVictim == 0 && _s.PlannedTarget >= 0 && _s.PlannedSpawn >= 0 && PlayerIsOracle)
             {
                 var t = EmpireStats.GetSystem(_s.PlannedTarget);
-                NotificationCenter.Show("Видение Оракула",
-                    $"Оракул видит пиратов у системы {t?.Name}: налёт примерно через два месяца. Укрепите её заранее",
+                NotificationCenter.Show(Loc.T("Видение Оракула"),
+                    Loc.F("Оракул видит пиратов у системы {0}: налёт примерно через два месяца. Укрепите её заранее", t?.Name),
                     NotificationCenter.Kind.Warning, 10f);
             }
         }
@@ -275,7 +275,7 @@ namespace StellarisClone.Core
             float scale = Mathf.Clamp(0.8f + years * 0.035f, 0.8f, 2.2f) * (Difficulty == 0 ? 0.8f : Difficulty == 2 ? 1.15f : 1f);
             string bandName = PirateNames[Random.Range(0, PirateNames.Length)];
             for (int i = 0; i < ships; i++)
-                CreatePirate(spawn, target, i == 0 ? hull : ShipClass.Corvette, scale, $"Пираты «{bandName}»");
+                CreatePirate(spawn, target, i == 0 ? hull : ShipClass.Corvette, scale, Loc.F("Пираты «{0}»", bandName));
 
             _s.Raids++;
             if (_s.HavenSystem < 0 || EmpireStats.GetSystem(_s.HavenSystem)?.OwnerId != -1) _s.HavenSystem = spawn;
@@ -283,10 +283,10 @@ namespace StellarisClone.Core
             var tSys = EmpireStats.GetSystem(target);
             var sSys = EmpireStats.GetSystem(spawn);
             if (victim == 0)
-                NotificationCenter.Show("Пиратский налёт", $"Банда «{bandName}» ({ships} кор.) вышла из {sSys?.Name} и идёт к {tSys?.Name}",
+                NotificationCenter.Show(Loc.T("Пиратский налёт"), Loc.F("Банда «{0}» ({1} кор.) вышла из {2} и идёт к {3}", bandName, ships, sSys?.Name, tSys?.Name),
                     NotificationCenter.Kind.Danger, 9f);
             if (GalacticNews.Known(victim))
-                GalacticNews.Post(NewsKind.Threat, $"Пиратская банда «{bandName}» ({ships} кор.) идёт на {GalacticNews.Place(tSys)} — владения {GalacticNews.Who(victim)}",
+                GalacticNews.Post(NewsKind.Threat, Loc.F("Пиратская банда «{0}» ({1} кор.) идёт на {2} — владения {3}", bandName, ships, GalacticNews.Place(tSys), GalacticNews.Who(victim)),
                     target, victim == 0);
 
             if (!_s.HavenEventShown)
@@ -302,7 +302,7 @@ namespace StellarisClone.Core
             if (fm == null) return;
             var fv = fm.CreateOwnedFleet(name, spawn, FleetType.Military, Threats.PirateOwner, hull);
             var dm = ShipDesignManager.Instance;
-            var design = dm != null ? dm.CreateAutoDesign(hull, WeaponDamageType.Kinetic, WeaponDamageType.Explosive, _ => false, "Пиратский рейдер") : null;
+            var design = dm != null ? dm.CreateAutoDesign(hull, WeaponDamageType.Kinetic, WeaponDamageType.Explosive, _ => false, Loc.T("Пиратский рейдер")) : null;
             var d = fv.Data;
             if (design != null) d.ApplyDesign(design);
             d.MaxHullPoints = d.HullPoints = d.MaxHullPoints * scale;
@@ -491,7 +491,7 @@ namespace StellarisClone.Core
                 eco.EnergyCredits -= energy;
                 eco.Minerals -= minerals;
                 eco.RaiseResourcesChanged();
-                NotificationCenter.Show("Пираты разграбили систему", $"{sys.Name}: −{energy:0} гелия-3, −{minerals:0} титана. Банда уходит с добычей",
+                NotificationCenter.Show(Loc.T("Пираты разграбили систему"), Loc.F("{0}: −{1:0} гелия-3, −{2:0} титана. Банда уходит с добычей", sys.Name, energy, minerals),
                     NotificationCenter.Kind.Danger, 8f);
             }
             else
@@ -500,10 +500,10 @@ namespace StellarisClone.Core
                 if (ai == null) return;
                 ai.EnergyCredits = Mathf.Max(0f, ai.EnergyCredits - energy);
                 ai.Minerals = Mathf.Max(0f, ai.Minerals - minerals);
-                NotificationCenter.Show("Пиратский налёт", $"Пираты разграбили {sys.Name} ({ai.AIName})", NotificationCenter.Kind.Info, 5f);
+                NotificationCenter.Show(Loc.T("Пиратский налёт"), Loc.F("Пираты разграбили {0} ({1})", sys.Name, ai.AIName), NotificationCenter.Kind.Info, 5f);
             }
             if (GalacticNews.Known(owner))
-                GalacticNews.Post(NewsKind.Threat, $"Пираты разграбили систему {GalacticNews.Place(sys)} и ушли с добычей", sys.Id, owner == 0);
+                GalacticNews.Post(NewsKind.Threat, Loc.F("Пираты разграбили систему {0} и ушли с добычей", GalacticNews.Place(sys)), sys.Id, owner == 0);
         }
 
         // ==================== ПОБЕДЫ НАД УГРОЗАМИ ====================
@@ -520,13 +520,13 @@ namespace StellarisClone.Core
                     eco.Influence += 4f;
                     eco.RaiseResourcesChanged();
                 }
-                NotificationCenter.Show("Награда за пирата", "+40 энергии, +4 влияния", NotificationCenter.Kind.Success, 4f);
+                NotificationCenter.Show(Loc.T("Награда за пирата"), Loc.T("+40 энергии, +4 влияния"), NotificationCenter.Kind.Success, 4f);
             }
             else if (ship.OwnerId == Threats.LeviathanOwner)
             {
                 var sys = EmpireStats.GetSystem(ship.CurrentSystemId);
                 if (GalacticNews.Known(killer))
-                    GalacticNews.Post(NewsKind.Threat, $"{GalacticNews.Who(killer)} сразили левиафана в системе {GalacticNews.Place(sys)} — путь к богатствам открыт",
+                    GalacticNews.Post(NewsKind.Threat, Loc.F("{0} сразили левиафана в системе {1} — путь к богатствам открыт", GalacticNews.Who(killer), GalacticNews.Place(sys)),
                         sys != null ? sys.Id : -1, killer == 0);
                 if (killer == 0)
                     AnomalyEventSystem.Instance?.Schedule("leviathan_slain", 1, new EventContext { System = sys });
@@ -536,7 +536,7 @@ namespace StellarisClone.Core
                     if (ai != null)
                     {
                         ai.Alloys += 250f;
-                        NotificationCenter.Show("Левиафан повержен", $"{ai.AIName} сразили чудовище в системе {sys?.Name}", NotificationCenter.Kind.Info, 7f);
+                        NotificationCenter.Show(Loc.T("Левиафан повержен"), Loc.F("{0} сразили чудовище в системе {1}", ai.AIName, sys?.Name), NotificationCenter.Kind.Info, 7f);
                     }
                 }
             }

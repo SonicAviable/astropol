@@ -71,8 +71,8 @@ namespace StellarisClone.Core
                 var a = Agreements[i];
                 if (--a.MonthsLeft > 0) continue;
                 Agreements.RemoveAt(i);
-                string what = DealCatalog.IsPayment(a.Kind) ? "Выплаты" : DealCatalog.Name(a.Kind);
-                NotificationCenter.Show("Соглашение истекло", $"{what} с {AIName}: срок вышел", NotificationCenter.Kind.Info, 5f);
+                string what = DealCatalog.IsPayment(a.Kind) ? Loc.T("Выплаты") : DealCatalog.Name(a.Kind);
+                NotificationCenter.Show(Loc.T("Соглашение истекло"), Loc.F("{0} с {1}: срок вышел", what, AIName), NotificationCenter.Kind.Info, 5f);
             }
         }
 
@@ -81,7 +81,7 @@ namespace StellarisClone.Core
         {
             if (Agreements.Count == 0) return;
             Agreements.Clear();
-            NotificationCenter.Show("Соглашения расторгнуты", $"Война с {AIName} отменила договоры и выплаты", NotificationCenter.Kind.Warning, 6f);
+            NotificationCenter.Show(Loc.T("Соглашения расторгнуты"), Loc.F("Война с {0} отменила договоры и выплаты", AIName), NotificationCenter.Kind.Warning, 6f);
         }
 
         // ==================== ЦЕННОСТЬ ПРЕДМЕТОВ ДЛЯ ИИ ====================
@@ -155,17 +155,17 @@ namespace StellarisClone.Core
                 float v = BaseValue(res) * item.Amount * Need(res);
                 if (aiGives)
                 {
-                    if (item.Amount > Stock(res) + 0.01f) blocker = $"У них нет столько: {DealCatalog.Name(item.Kind).ToLower()} {Stock(res):0}";
+                    if (item.Amount > Stock(res) + 0.01f) blocker = Loc.F("У них нет столько: {0} {1:0}", DealCatalog.Name(item.Kind).ToLower(), Stock(res));
                     return -v / trader;
                 }
-                if (item.Amount > PlayerStock(res) + 0.01f) blocker = $"У вас нет столько: {DealCatalog.Name(item.Kind).ToLower()} {PlayerStock(res):0}";
+                if (item.Amount > PlayerStock(res) + 0.01f) blocker = Loc.F("У вас нет столько: {0} {1:0}", DealCatalog.Name(item.Kind).ToLower(), PlayerStock(res));
                 return v * trader;
             }
             if (DealCatalog.IsPayment(item.Kind))
             {
                 float v = BaseValue(res) * item.Amount * DealCatalog.PaymentMonths * 0.5f * Need(res);
                 if (aiGives && item.Amount > Mathf.Max(0f, Income(res)) * 0.6f + 1f)
-                    blocker = "Они не потянут такие выплаты";
+                    blocker = Loc.T("Они не потянут такие выплаты");
                 return aiGives ? -v / trader : v * trader;
             }
             return 0f;
@@ -190,21 +190,21 @@ namespace StellarisClone.Core
                     return e.Score >= 0f ? 15f + e.Score * 0.3f : e.Score * 2.5f;
                 }
             }
-            if (AtWar) { blocker = "Идёт война — сначала мир"; return 0f; }
+            if (AtWar) { blocker = Loc.T("Идёт война — сначала мир"); return 0f; }
             switch (k)
             {
                 case DealItemKind.ResearchTreaty:
                 {
-                    if (HasAgreement(k)) { blocker = "Договор уже действует"; return 0f; }
-                    if (Opinion < -25f) { blocker = "Слишком плохие отношения"; return 0f; }
+                    if (HasAgreement(k)) { blocker = Loc.T("Договор уже действует"); return 0f; }
+                    if (Opinion < -25f) { blocker = Loc.T("Слишком плохие отношения"); return 0f; }
                     float v = 10f + (EmpireStats.TechCount(0) - ResearchedCount) * 2.5f + Opinion * 0.15f;
                     if (Personality == AIPersonality.Scientific) v += 10f;
                     return v;
                 }
                 case DealItemKind.TradeTreaty:
                 {
-                    if (HasAgreement(k)) { blocker = "Соглашение уже действует"; return 0f; }
-                    if (Opinion < -35f) { blocker = "Слишком плохие отношения"; return 0f; }
+                    if (HasAgreement(k)) { blocker = Loc.T("Соглашение уже действует"); return 0f; }
+                    if (Opinion < -35f) { blocker = Loc.T("Слишком плохие отношения"); return 0f; }
                     float v = 8f + Opinion * 0.1f;
                     if (Personality == AIPersonality.Trader) v += 15f;
                     return v;
@@ -218,7 +218,7 @@ namespace StellarisClone.Core
                         if (p && !me) theyGet++;
                         if (me && !p) weGet++;
                     }
-                    if (theyGet == 0 && weGet == 0) { blocker = "Обмениваться нечем — карты совпадают"; return 0f; }
+                    if (theyGet == 0 && weGet == 0) { blocker = Loc.T("Обмениваться нечем — карты совпадают"); return 0f; }
                     float v = theyGet * 2f - weGet * 1.2f;
                     if (Personality == AIPersonality.Militarist) v -= 10f;
                     return v;
@@ -246,18 +246,18 @@ namespace StellarisClone.Core
         public DealVerdict Evaluate(Deal d)
         {
             var v = new DealVerdict { Required = RequiredGain };
-            if (d == null || d.IsEmpty) { v.Blocker = "Стол пуст"; return v; }
-            if (IsEliminated) { v.Blocker = "Империя повержена"; return v; }
+            if (d == null || d.IsEmpty) { v.Blocker = Loc.T("Стол пуст"); return v; }
+            if (IsEliminated) { v.Blocker = Loc.T("Империя повержена"); return v; }
 
             if (AtWar && !d.HasTreaty(DealItemKind.Peace))
-            { v.Blocker = "Во время войны говорят только о мире"; return v; }
+            { v.Blocker = Loc.T("Во время войны говорят только о мире"); return v; }
 
             string block;
             foreach (var i in d.FromAI) { v.Balance += ItemValue(i, true, out block); v.Blocker ??= block; }
             foreach (var i in d.FromPlayer) { v.Balance += ItemValue(i, false, out block); v.Blocker ??= block; }
             foreach (var t in d.Treaties)
             {
-                if (AtWar && t.Kind != DealItemKind.Peace) { v.Blocker ??= "Сначала мир — договоры потом"; continue; }
+                if (AtWar && t.Kind != DealItemKind.Peace) { v.Blocker ??= Loc.T("Сначала мир — договоры потом"); continue; }
                 v.Balance += TreatyValue(t.Kind, out block);
                 v.Blocker ??= block;
             }
@@ -272,7 +272,7 @@ namespace StellarisClone.Core
         public Deal BalanceDeal(Deal src, out string reason)
         {
             reason = null;
-            if (src == null || src.IsEmpty) { reason = "Сначала положите на стол то, что хотите получить"; return null; }
+            if (src == null || src.IsEmpty) { reason = Loc.T("Сначала положите на стол то, что хотите получить"); return null; }
             var d = src.Clone();
             d.ByAI = false;
             var v = Evaluate(d);
@@ -316,7 +316,7 @@ namespace StellarisClone.Core
                 if (it.Amount <= 0f) d.FromAI.RemoveAt(i);
             }
 
-            if (deficit > 0f) { reason = "Вам нечего добавить — они не видят выгоды"; return null; }
+            if (deficit > 0f) { reason = Loc.T("Вам нечего добавить — они не видят выгоды"); return null; }
             return d;
         }
 
@@ -342,7 +342,7 @@ namespace StellarisClone.Core
             var eco = EconomyManager.Instance;
             if (eco == null || verdict.Blocker != null) return false;
             float cost = ProposalCost(d);
-            if (cost > 0f && eco.Influence < cost) { verdict.Blocker = $"Нужно {cost:0} влияния на переговоры"; return false; }
+            if (cost > 0f && eco.Influence < cost) { verdict.Blocker = Loc.F("Нужно {0:0} влияния на переговоры", cost); return false; }
             if (cost > 0f) eco.TrySpend(0f, 0f, 0f, cost);
 
             if (!verdict.Accept)
@@ -405,7 +405,7 @@ namespace StellarisClone.Core
                         if (!AtWar && !HasPact)
                         {
                             HasPact = true;
-                            NotificationCenter.Show("Пакт подписан", $"{AIName}: пакт о ненападении вступил в силу", NotificationCenter.Kind.Success, 6f);
+                            NotificationCenter.Show(Loc.T("Пакт подписан"), Loc.F("{0}: пакт о ненападении вступил в силу", AIName), NotificationCenter.Kind.Success, 6f);
                         }
                         break;
                     case DealItemKind.ResearchTreaty:
@@ -426,7 +426,7 @@ namespace StellarisClone.Core
 
             bool generic = d.FromAI.Count + d.FromPlayer.Count > 0
                            || d.Treaties.Exists(t => t.Kind != DealItemKind.Peace && t.Kind != DealItemKind.Pact);
-            if (generic) NotificationCenter.Show("Сделка заключена", $"{AIName}: {Summary(d)}", NotificationCenter.Kind.Success, 6f);
+            if (generic) NotificationCenter.Show(Loc.T("Сделка заключена"), $"{AIName}: {Summary(d)}", NotificationCenter.Kind.Success, 6f);
             EconomyManager.Instance?.RecalculateAll();
             RecomputeOpinion();
             RaiseDiplomacyChanged();
@@ -445,7 +445,7 @@ namespace StellarisClone.Core
                 if (Vision.IsExplored(0, s.Id)) Vision.MarkExplored(OwnerId, s.Id);
             }
             GalaxyView.Instance?.RefreshTerritoryVisuals();
-            NotificationCenter.Show("Обмен картами", $"Получены данные о {toPlayer} сист., передано {toAI}", NotificationCenter.Kind.Info, 6f);
+            NotificationCenter.Show(Loc.T("Обмен картами"), Loc.F("Получены данные о {0} сист., передано {1}", toPlayer, toAI), NotificationCenter.Kind.Info, 6f);
         }
 
         public static string Summary(Deal d)
@@ -456,13 +456,13 @@ namespace StellarisClone.Core
             {
                 var g = new List<string>();
                 foreach (var i in d.FromAI) g.Add(DealCatalog.Describe(i).ToLower());
-                parts.Add("вы получаете " + string.Join(", ", g));
+                parts.Add(Loc.T("вы получаете ") + string.Join(", ", g));
             }
             if (d.FromPlayer.Count > 0)
             {
                 var g = new List<string>();
                 foreach (var i in d.FromPlayer) g.Add(DealCatalog.Describe(i).ToLower());
-                parts.Add("вы отдаёте " + string.Join(", ", g));
+                parts.Add(Loc.T("вы отдаёте ") + string.Join(", ", g));
             }
             return string.Join("; ", parts);
         }
@@ -491,10 +491,10 @@ namespace StellarisClone.Core
 
             bool demand = d.IsDemand;
             SetPendingDeal(d, demand ? OfferKind.Demand : OfferKind.Trade,
-                demand ? "они считают, что сильный вправе требовать" : "они видят в сделке взаимную выгоду");
+                demand ? Loc.T("они считают, что сильный вправе требовать") : Loc.T("они видят в сделке взаимную выгоду"));
             _tradeOfferCooldown = Personality == AIPersonality.Trader ? 150 : 240;
-            NotificationCenter.Show(demand ? "Требование дани" : "Предложение сделки",
-                $"{AIName}: {Summary(d)}. Ответьте в окне дипломатии",
+            NotificationCenter.Show(demand ? Loc.T("Требование дани") : Loc.T("Предложение сделки"),
+                Loc.F("{0}: {1}. Ответьте в окне дипломатии", AIName, Summary(d)),
                 demand ? NotificationCenter.Kind.Warning : NotificationCenter.Kind.Info, 9f);
             RaiseDiplomacyChanged();
         }
@@ -570,7 +570,7 @@ namespace StellarisClone.Core
             foreach (var i in d.FromPlayer)
                 if (DealCatalog.IsResource(i.Kind) && PlayerStock(DealCatalog.ResourceKey(i.Kind)) < i.Amount)
                 {
-                    NotificationCenter.Show("Не хватает ресурсов", $"Для сделки нужно {DealCatalog.Describe(i).ToLower()}", NotificationCenter.Kind.Warning, 5f);
+                    NotificationCenter.Show(Loc.T("Не хватает ресурсов"), Loc.F("Для сделки нужно {0}", DealCatalog.Describe(i).ToLower()), NotificationCenter.Kind.Warning, 5f);
                     return false;
                 }
             bool demand = d.IsDemand;

@@ -108,34 +108,34 @@ namespace StellarisClone.Core
 
         public static string Name(DealItemKind k) => k switch
         {
-            DealItemKind.Energy => "Гелий-3",
-            DealItemKind.Minerals => "Титан",
-            DealItemKind.Alloys => "Сплавы",
-            DealItemKind.Influence => "Влияние",
-            DealItemKind.MonthlyEnergy => "Гелий-3 ежемесячно",
-            DealItemKind.MonthlyMinerals => "Титан ежемесячно",
-            DealItemKind.MonthlyAlloys => "Сплавы ежемесячно",
-            DealItemKind.Charts => "Обмен звёздными картами",
-            DealItemKind.ResearchTreaty => "Научный договор",
-            DealItemKind.TradeTreaty => "Торговое соглашение",
-            DealItemKind.Pact => "Пакт о ненападении",
-            DealItemKind.Peace => "Мирный договор",
+            DealItemKind.Energy => Loc.T("Гелий-3"),
+            DealItemKind.Minerals => Loc.T("Титан"),
+            DealItemKind.Alloys => Loc.T("Сплавы"),
+            DealItemKind.Influence => Loc.T("Влияние"),
+            DealItemKind.MonthlyEnergy => Loc.T("Гелий-3 ежемесячно"),
+            DealItemKind.MonthlyMinerals => Loc.T("Титан ежемесячно"),
+            DealItemKind.MonthlyAlloys => Loc.T("Сплавы ежемесячно"),
+            DealItemKind.Charts => Loc.T("Обмен звёздными картами"),
+            DealItemKind.ResearchTreaty => Loc.T("Научный договор"),
+            DealItemKind.TradeTreaty => Loc.T("Торговое соглашение"),
+            DealItemKind.Pact => Loc.T("Пакт о ненападении"),
+            DealItemKind.Peace => Loc.T("Мирный договор"),
             _ => "?"
         };
 
         public static string Hint(DealItemKind k) => k switch
         {
-            DealItemKind.Energy => "Разовая передача гелия-3",
-            DealItemKind.Minerals => "Разовая передача титана",
-            DealItemKind.Alloys => "Разовая передача сплавов",
-            DealItemKind.Influence => "Разовая передача влияния",
+            DealItemKind.Energy => Loc.T("Разовая передача гелия-3"),
+            DealItemKind.Minerals => Loc.T("Разовая передача титана"),
+            DealItemKind.Alloys => Loc.T("Разовая передача сплавов"),
+            DealItemKind.Influence => Loc.T("Разовая передача влияния"),
             DealItemKind.MonthlyEnergy or DealItemKind.MonthlyMinerals or DealItemKind.MonthlyAlloys
-                => $"Выплата каждый месяц в течение {PaymentMonths / 12} лет. Война отменяет выплаты",
-            DealItemKind.Charts => "Обе стороны получают разведданные о системах, изученных другой стороной",
-            DealItemKind.ResearchTreaty => $"+{ResearchTreatyBonus * 100f:0}% к науке обеим сторонам на {TreatyMonths / 12} лет",
-            DealItemKind.TradeTreaty => $"+{TradeTreatyEnergy:0} гелия-3 в месяц обеим сторонам на {TreatyMonths / 12} лет",
-            DealItemKind.Pact => "Стороны обязуются не нападать друг на друга. Нарушение — тяжёлое вероломство",
-            DealItemKind.Peace => "Прекращение войны и перемирие на 3 года",
+                => Loc.F("Выплата каждый месяц в течение {0} лет. Война отменяет выплаты", PaymentMonths / 12),
+            DealItemKind.Charts => Loc.T("Обе стороны получают разведданные о системах, изученных другой стороной"),
+            DealItemKind.ResearchTreaty => Loc.F("+{0:0}% к науке обеим сторонам на {1} лет", ResearchTreatyBonus * 100f, TreatyMonths / 12),
+            DealItemKind.TradeTreaty => Loc.F("+{0:0} гелия-3 в месяц обеим сторонам на {1} лет", TradeTreatyEnergy, TreatyMonths / 12),
+            DealItemKind.Pact => Loc.T("Стороны обязуются не нападать друг на друга. Нарушение — тяжёлое вероломство"),
+            DealItemKind.Peace => Loc.T("Прекращение войны и перемирие на 3 года"),
             _ => ""
         };
 
@@ -182,7 +182,7 @@ namespace StellarisClone.Core
         public static string Describe(DealItem i)
         {
             if (IsTreaty(i.Kind)) return Name(i.Kind);
-            if (IsPayment(i.Kind)) return $"{Name(ResourceBase(i.Kind))}: {i.Amount:0} / мес.";
+            if (IsPayment(i.Kind)) return Loc.F("{0}: {1:0} / мес.", Name(ResourceBase(i.Kind)), i.Amount);
             return $"{Name(i.Kind)}: {i.Amount:0}";
         }
 
@@ -197,9 +197,9 @@ namespace StellarisClone.Core
         /// <summary>Остаток срока по-человечески: «4 г. 2 мес.».</summary>
         public static string Months(int m)
         {
-            if (m < 12) return $"{Mathf.Max(0, m)} мес.";
+            if (m < 12) return Loc.F("{0} мес.", Mathf.Max(0, m));
             int y = m / 12, r = m % 12;
-            return r == 0 ? $"{y} г." : $"{y} г. {r} мес.";
+            return r == 0 ? Loc.F("{0} г.", y) : Loc.F("{0} г. {1} мес.", y, r);
         }
     }
 }

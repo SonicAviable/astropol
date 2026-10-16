@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -163,7 +163,7 @@ namespace StellarisClone.Rendering
             LG.Header(header.gameObject);
             _pauseIcon = LGIcons.Create(header.transform, LGIcon.Pause, 26, UIManager.DS.NeonCyan);
             _pauseIcon.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(26, 26));
-            var title = LGBuild.Label(header.transform, "ПАУЗА", 22, UIManager.DS.TextPrimary, TextAnchor.UpperCenter, bold: true);
+            var title = LGBuild.Label(header.transform, Loc.T("ПАУЗА"), 22, UIManager.DS.TextPrimary, TextAnchor.UpperCenter, bold: true);
             title.rectTransform.Stretch(0, 0, 0, 44);
             _pauseTitle = title;
             _pauseSubtitle = LGBuild.Label(header.transform, "", 11, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
@@ -212,17 +212,17 @@ namespace StellarisClone.Rendering
             LGBuild.Clear(_pageHost);
             _restartArmed = _quitArmed = _menuArmed = 0f;
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
-            string empire = UIManager.Instance?.SelectedFaction?.Name ?? "Империя";
+            string empire = UIManager.Instance?.SelectedFaction?.Name ?? Loc.T("Империя");
             _pauseSubtitle.text = $"{empire}   ·   {date}";
 
             (LGIcon icon, string title) head = page switch
             {
-                Page.Save => (LGIcon.Save, "СОХРАНЕНИЕ"),
-                Page.Load => (LGIcon.Load, "ЗАГРУЗКА"),
-                Page.Settings => (LGIcon.Gear, "НАСТРОЙКИ"),
-                Page.Goals => (LGIcon.Trophy, "ЦЕЛИ"),
-                Page.Controls => (LGIcon.Menu, "УПРАВЛЕНИЕ"),
-                _ => (LGIcon.Pause, "ПАУЗА")
+                Page.Save => (LGIcon.Save, Loc.T("СОХРАНЕНИЕ")),
+                Page.Load => (LGIcon.Load, Loc.T("ЗАГРУЗКА")),
+                Page.Settings => (LGIcon.Gear, Loc.T("НАСТРОЙКИ")),
+                Page.Goals => (LGIcon.Trophy, Loc.T("ЦЕЛИ")),
+                Page.Controls => (LGIcon.Menu, Loc.T("УПРАВЛЕНИЕ")),
+                _ => (LGIcon.Pause, Loc.T("ПАУЗА"))
             };
             _pauseIcon.sprite = LGIcons.Get(head.icon);
             _pauseTitle.text = head.title;
@@ -242,34 +242,34 @@ namespace StellarisClone.Rendering
         private void BuildMainPage()
         {
             float y = 0f;
-            MenuButton(ref y, LGIcon.Play, "ПРОДОЛЖИТЬ", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, () => ClosePause());
-            var save = MenuButton(ref y, LGIcon.Save, "СОХРАНИТЬ ИГРУ", UIManager.DS.BtnNeutral, UIManager.DS.Green, () => ShowPage(Page.Save));
+            MenuButton(ref y, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, () => ClosePause());
+            var save = MenuButton(ref y, LGIcon.Save, Loc.T("СОХРАНИТЬ ИГРУ"), UIManager.DS.BtnNeutral, UIManager.DS.Green, () => ShowPage(Page.Save));
             if (!SaveSystem.CanSaveNow) save.GetComponentInParent<Button>().interactable = false;
-            MenuButton(ref y, LGIcon.Load, "ЗАГРУЗИТЬ", UIManager.DS.BtnNeutral, new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Load));
-            MenuButton(ref y, LGIcon.Gear, "НАСТРОЙКИ", UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
-            MenuButton(ref y, LGIcon.Trophy, "ЦЕЛИ И УСЛОВИЯ ПОБЕДЫ", UIManager.DS.BtnNeutral, UIManager.DS.Gold, () => ShowPage(Page.Goals));
-            MenuButton(ref y, LGIcon.Menu, "УПРАВЛЕНИЕ", UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
+            MenuButton(ref y, LGIcon.Load, Loc.T("ЗАГРУЗИТЬ"), UIManager.DS.BtnNeutral, new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Load));
+            MenuButton(ref y, LGIcon.Gear, Loc.T("НАСТРОЙКИ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
+            MenuButton(ref y, LGIcon.Trophy, Loc.T("ЦЕЛИ И УСЛОВИЯ ПОБЕДЫ"), UIManager.DS.BtnNeutral, UIManager.DS.Gold, () => ShowPage(Page.Goals));
+            MenuButton(ref y, LGIcon.Menu, Loc.T("УПРАВЛЕНИЕ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
             y += 12f;
-            _restartLabel = MenuButton(ref y, LGIcon.Globe, "НАЧАТЬ ЗАНОВО", new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, () =>
+            _restartLabel = MenuButton(ref y, LGIcon.Globe, Loc.T("НАЧАТЬ ЗАНОВО"), new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, () =>
             {
                 if (_restartArmed > 0f) { RestartGame(); return; }
                 _restartArmed = 3f;
-                _restartLabel.text = "ЕЩЁ РАЗ — ПРОГРЕСС БУДЕТ ПОТЕРЯН";
+                _restartLabel.text = Loc.T("ЕЩЁ РАЗ — ПРОГРЕСС БУДЕТ ПОТЕРЯН");
             });
-            _menuLabel = MenuButton(ref y, LGIcon.Back, "В ГЛАВНОЕ МЕНЮ", new Color(0.12f, 0.16f, 0.24f), new Color(0.6f, 0.75f, 1f), () =>
+            _menuLabel = MenuButton(ref y, LGIcon.Back, Loc.T("В ГЛАВНОЕ МЕНЮ"), new Color(0.12f, 0.16f, 0.24f), new Color(0.6f, 0.75f, 1f), () =>
             {
                 if (_menuArmed > 0f) { GameSession.ReturnToMainMenu(); return; }
                 _menuArmed = 3f;
-                _menuLabel.text = "ЕЩЁ РАЗ — НЕСОХРАНЁННОЕ ПРОПАДЁТ";
+                _menuLabel.text = Loc.T("ЕЩЁ РАЗ — НЕСОХРАНЁННОЕ ПРОПАДЁТ");
             });
-            _quitLabel = MenuButton(ref y, LGIcon.Power, "ВЫЙТИ ИЗ ИГРЫ", UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
+            _quitLabel = MenuButton(ref y, LGIcon.Power, Loc.T("ВЫЙТИ ИЗ ИГРЫ"), UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
             {
                 if (_quitArmed > 0f) { QuitGame(); return; }
                 _quitArmed = 3f;
-                _quitLabel.text = "НАЖМИТЕ ЕЩЁ РАЗ ДЛЯ ВЫХОДА";
+                _quitLabel.text = Loc.T("НАЖМИТЕ ЕЩЁ РАЗ ДЛЯ ВЫХОДА");
             });
 
-            var hint = LGBuild.Label(_pageHost, "Esc — вернуться в игру   ·   F5 — быстрое сохранение", 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
+            var hint = LGBuild.Label(_pageHost, Loc.T("Esc — вернуться в игру   ·   F5 — быстрое сохранение"), 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             hint.rectTransform.Stretch(0, 0, 0, 0);
         }
 
@@ -291,9 +291,9 @@ namespace StellarisClone.Rendering
 
         private void ResetConfirmLabels()
         {
-            if (_restartLabel != null && _restartArmed <= 0f) _restartLabel.text = "НАЧАТЬ ЗАНОВО";
-            if (_menuLabel != null && _menuArmed <= 0f) _menuLabel.text = "В ГЛАВНОЕ МЕНЮ";
-            if (_quitLabel != null && _quitArmed <= 0f) _quitLabel.text = "ВЫЙТИ ИЗ ИГРЫ";
+            if (_restartLabel != null && _restartArmed <= 0f) _restartLabel.text = Loc.T("НАЧАТЬ ЗАНОВО");
+            if (_menuLabel != null && _menuArmed <= 0f) _menuLabel.text = Loc.T("В ГЛАВНОЕ МЕНЮ");
+            if (_quitLabel != null && _quitArmed <= 0f) _quitLabel.text = Loc.T("ВЫЙТИ ИЗ ИГРЫ");
         }
 
         private Text MenuButton(ref float y, LGIcon icon, string label, Color tint, Color rim, System.Action onClick)
@@ -310,16 +310,16 @@ namespace StellarisClone.Rendering
             float y = 0f;
             if (vm != null)
             {
-                GoalRow(ref y, LGIcon.Starbase, "Доминирование",
-                        $"Постройте форпосты в {vm.DominationRequired} системах и удерживайте порог {VictoryManager.DominationHoldMonths} мес. У лучшего соперника: {vm.RivalDominationProgress}.",
+                GoalRow(ref y, LGIcon.Starbase, Loc.T("Доминирование"),
+                        Loc.F("Постройте форпосты в {0} системах и удерживайте порог {1} мес. У лучшего соперника: {2}.", vm.DominationRequired, VictoryManager.DominationHoldMonths, vm.RivalDominationProgress),
                         vm.DominationProgress, vm.DominationRequired, UIManager.DS.NeonCyan);
-                GoalRow(ref y, LGIcon.Research, "Научная победа",
-                        $"Изучите {vm.ScienceRequired} технологий и завершите проект «Вознесение». У лучшего соперника: {vm.RivalScienceProgress}.",
+                GoalRow(ref y, LGIcon.Research, Loc.T("Научная победа"),
+                        Loc.F("Изучите {0} технологий и завершите проект «Вознесение». У лучшего соперника: {1}.", vm.ScienceRequired, vm.RivalScienceProgress),
                         vm.ScienceProgress, vm.ScienceRequired, UIManager.DS.Green);
                 int me = vm.PlayerScore, rival = vm.RivalScore;
-                GoalRow(ref y, LGIcon.Trophy, $"Очки к {VictoryManager.EndYear} году",
-                        $"Осталось {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}. Ваш счёт {me}, у лучшего соперника {rival}. " +
-                        $"Очки: система {EmpireStats.ScorePerSystem}, житель {EmpireStats.ScorePerPop}, технология {EmpireStats.ScorePerTech}, флот — 1 за {Mathf.RoundToInt(1f / EmpireStats.ScorePerPower)} мощи.",
+                GoalRow(ref y, LGIcon.Trophy, Loc.F("Очки к {0} году", VictoryManager.EndYear),
+                        Loc.F("Осталось {0} {1}. Ваш счёт {2}, у лучшего соперника {3}. ", vm.YearsLeft, VictoryManager.YearsWord(vm.YearsLeft), me, rival) +
+                        Loc.F("Очки: система {0}, житель {1}, технология {2}, флот — 1 за {3} мощи.", EmpireStats.ScorePerSystem, EmpireStats.ScorePerPop, EmpireStats.ScorePerTech, Mathf.RoundToInt(1f / EmpireStats.ScorePerPower)),
                         me, Mathf.Max(1, me + rival), UIManager.DS.Gold, $"{me} : {rival}", 112f);
             }
 
@@ -329,8 +329,8 @@ namespace StellarisClone.Rendering
             var wi = LGIcons.Create(lose.transform, LGIcon.Warning, 20, UIManager.DS.Red);
             wi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(20, 20));
             var lt = LGBuild.Label(lose.transform,
-                "<b>Поражение</b>\nпотеря всех систем, " + (vm != null ? vm.BankruptcyLimit : 6) + " мес. банкротства, " +
-                "любой из соперников добился доминирования, технологической или экономической победы, или у кого-то из них больше очков в " + VictoryManager.EndYear + " году.",
+                Loc.T("<b>Поражение</b>\nпотеря всех систем, ") + (vm != null ? vm.BankruptcyLimit : 6) + Loc.T(" мес. банкротства, ") +
+                Loc.T("любой из соперников добился доминирования, технологической или экономической победы, или у кого-то из них больше очков в ") + VictoryManager.EndYear + Loc.T(" году."),
                 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
             lt.rectTransform.Stretch(48, 6, 14, 6);
 
@@ -363,22 +363,22 @@ namespace StellarisClone.Rendering
         {
             var sb = new StringBuilder();
             void Line(string key, string act) => sb.Append($"<color=#4DF2DB><b>{key}</b></color>   {act}\n");
-            Line("ЛКМ", "выбрать систему, флот или кнопку");
-            Line("ПКМ по системе", "приказ выбранному флоту лететь туда");
-            Line("Двойной клик по звезде", "войти в звёздную систему");
-            Line("WASD / стрелки / край экрана", "перемещение камеры (Shift — быстрее)");
-            Line("Колесо мыши", "приближение к курсору");
-            Line("Средняя кнопка (зажать)", "перетаскивание карты");
-            Line("Q / E", "поворот камеры");
-            Line("Home", "камера к столице");
-            Line("ПРОБЕЛ", "пауза / продолжить");
-            Line("1 / 2 / 3", "скорость времени");
-            Line("ПКМ по подсказке в окне", "закрепить всплывающую подсказку");
-            Line("Shift+ЛКМ / рамка ЛКМ", "выделить несколько флотов");
-            Line("Shift+ПКМ по системе", "добавить пункт в очередь приказов (Backspace — очистить)");
-            Line("F / двойной клик по флоту", "камера к выделенному флоту");
-            Line("F5 / F9", "быстрое сохранение / загрузка");
-            Line("Esc", "закрыть окно / меню паузы");
+            Line(Loc.T("ЛКМ"), Loc.T("выбрать систему, флот или кнопку"));
+            Line(Loc.T("ПКМ по системе"), Loc.T("приказ выбранному флоту лететь туда"));
+            Line(Loc.T("Двойной клик по звезде"), Loc.T("войти в звёздную систему"));
+            Line(Loc.T("WASD / стрелки / край экрана"), Loc.T("перемещение камеры (Shift — быстрее)"));
+            Line(Loc.T("Колесо мыши"), Loc.T("приближение к курсору"));
+            Line(Loc.T("Средняя кнопка (зажать)"), Loc.T("перетаскивание карты"));
+            Line("Q / E", Loc.T("поворот камеры"));
+            Line("Home", Loc.T("камера к столице"));
+            Line(Loc.T("ПРОБЕЛ"), Loc.T("пауза / продолжить"));
+            Line("1 / 2 / 3", Loc.T("скорость времени"));
+            Line(Loc.T("ПКМ по подсказке в окне"), Loc.T("закрепить всплывающую подсказку"));
+            Line(Loc.T("Shift+ЛКМ / рамка ЛКМ"), Loc.T("выделить несколько флотов"));
+            Line(Loc.T("Shift+ПКМ по системе"), Loc.T("добавить пункт в очередь приказов (Backspace — очистить)"));
+            Line(Loc.T("F / двойной клик по флоту"), Loc.T("камера к выделенному флоту"));
+            Line("F5 / F9", Loc.T("быстрое сохранение / загрузка"));
+            Line("Esc", Loc.T("закрыть окно / меню паузы"));
 
             var panel = LGBuild.Panel(_pageHost, "Controls", UIManager.DS.BgSlot);
             panel.rectTransform.Stretch(0, 62, 0, 0);
@@ -393,7 +393,7 @@ namespace StellarisClone.Rendering
         private void BackButton()
         {
             var b = LGBuild.Button(_pageHost, "Back", UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f, 0.5f),
-                () => ShowPage(Page.Main), LGIcon.Back, "НАЗАД", 12);
+                () => ShowPage(Page.Main), LGIcon.Back, Loc.T("НАЗАД"), 12);
             var rt = (RectTransform)b.transform;
             rt.anchorMin = new Vector2(0, 0);
             rt.anchorMax = new Vector2(1, 0);
@@ -447,12 +447,12 @@ namespace StellarisClone.Rendering
                 LG.Hide(_end);
                 UIManager.Instance?.HideModalDimPublic();
                 MapModeController.ShowGlobal();
-            }, LGIcon.Play, "ПРОДОЛЖИТЬ", 12);
+            }, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), 12);
             ((RectTransform)_endContinue.transform).Column(0f, 0.33f, 0, 5);
-            var again = LGBuild.Button(row, "Again", new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, RestartGame, LGIcon.Globe, "НОВАЯ ИГРА", 12);
+            var again = LGBuild.Button(row, "Again", new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, RestartGame, LGIcon.Globe, Loc.T("НОВАЯ ИГРА"), 12);
             ((RectTransform)again.transform).Column(0.33f, 0.67f, 5, 5);
             var menu = LGBuild.Button(row, "Menu", new Color(0.12f, 0.16f, 0.24f), new Color(0.6f, 0.75f, 1f),
-                                      GameSession.ReturnToMainMenu, LGIcon.Back, "ГЛАВНОЕ МЕНЮ", 12);
+                                      GameSession.ReturnToMainMenu, LGIcon.Back, Loc.T("ГЛАВНОЕ МЕНЮ"), 12);
             ((RectTransform)menu.transform).Column(0.67f, 1f, 5, 0);
 
             LG.Skin(_end.transform);
@@ -474,7 +474,7 @@ namespace StellarisClone.Rendering
             if (ib != null) ib.color = new Color(col.r * 0.25f, col.g * 0.25f, col.b * 0.25f, 1f);
             ib?.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(col.r, col.g, col.b, 0.9f));
 
-            _endTitle.text = victory ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+            _endTitle.text = victory ? Loc.T("ПОБЕДА") : Loc.T("ПОРАЖЕНИЕ");
             _endTitle.color = col;
             _endBody.text = $"{title.Replace("★ ", "").Replace("✕ ", "")}\n{body}";
             _endStats.text = BuildSummary();
@@ -500,13 +500,13 @@ namespace StellarisClone.Rendering
             var vm = VictoryManager.Instance;
             int power = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
-            string empire = UIManager.Instance?.SelectedFaction?.Name ?? "Империя";
+            string empire = UIManager.Instance?.SelectedFaction?.Name ?? Loc.T("Империя");
             return
-                $"<color=#8AA2A8>Империя:</color>  <b>{empire}</b>\n" +
-                $"<color=#8AA2A8>Дата:</color>  {date}   ·   <color=#8AA2A8>лет у власти:</color> {(vm != null ? vm.YearsElapsed : 0)}\n" +
-                $"<color=#8AA2A8>Систем:</color>  {systems}   ·   <color=#8AA2A8>колоний:</color> {colonies}   ·   <color=#8AA2A8>население:</color> {pop}\n" +
-                $"<color=#8AA2A8>Технологий изучено:</color>  {(vm != null ? vm.ScienceProgress : 0)}   ·   <color=#8AA2A8>мощь флота:</color> {power:N0}\n" +
-                $"<color=#8AA2A8>Очки:</color>  <b>{(vm != null ? vm.PlayerScore : 0)}</b>   ·   <color=#8AA2A8>у лучшего соперника:</color> {(vm != null ? vm.RivalScore : 0)}";
+                Loc.F("<color=#8AA2A8>Империя:</color>  <b>{0}</b>\n", empire) +
+                Loc.F("<color=#8AA2A8>Дата:</color>  {0}   ·   <color=#8AA2A8>лет у власти:</color> {1}\n", date, (vm != null ? vm.YearsElapsed : 0)) +
+                Loc.F("<color=#8AA2A8>Систем:</color>  {0}   ·   <color=#8AA2A8>колоний:</color> {1}   ·   <color=#8AA2A8>население:</color> {2}\n", systems, colonies, pop) +
+                Loc.F("<color=#8AA2A8>Технологий изучено:</color>  {0}   ·   <color=#8AA2A8>мощь флота:</color> {1:N0}\n", (vm != null ? vm.ScienceProgress : 0), power) +
+                Loc.F("<color=#8AA2A8>Очки:</color>  <b>{0}</b>   ·   <color=#8AA2A8>у лучшего соперника:</color> {1}", (vm != null ? vm.PlayerScore : 0), (vm != null ? vm.RivalScore : 0));
         }
 
         // ================================================================ Трекер целей
@@ -523,7 +523,7 @@ namespace StellarisClone.Rendering
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => { OpenPause(); ShowPage(Page.Goals); });
             LG.Glass(_tracker, 18f).SetRim(new Color(1f, 0.85f, 0.5f, 0.22f));
-            TooltipHelper.Attach(_tracker, "<b>Цели империи</b>\nПрогресс к победе.\n\n<color=#8AA2A8>ЛКМ — подробнее</color>");
+            TooltipHelper.Attach(_tracker, Loc.T("<b>Цели империи</b>\nПрогресс к победе.\n\n<color=#8AA2A8>ЛКМ — подробнее</color>"));
             var mo = LG.Motion(_tracker, LGAppear.Kind.SlideRight);
             mo.distance = 30f;
             mo.delay = 0.2f;
@@ -532,13 +532,13 @@ namespace StellarisClone.Rendering
             head.TopBand(10, 16, 14, 14);
             var hi = LGIcons.Create(head, LGIcon.Trophy, 13, UIManager.DS.Gold);
             hi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(13, 13));
-            var ht = LGBuild.Label(head, "ЦЕЛИ ИМПЕРИИ", 10, UIManager.DS.Gold, TextAnchor.MiddleLeft, bold: true);
+            var ht = LGBuild.Label(head, Loc.T("ЦЕЛИ ИМПЕРИИ"), 10, UIManager.DS.Gold, TextAnchor.MiddleLeft, bold: true);
             ht.rectTransform.offsetMin = new Vector2(19, 0);
-            LGBuild.Label(head, "Esc — меню", 9, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
+            LGBuild.Label(head, Loc.T("Esc — меню"), 9, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
 
-            _domVal = TrackerRow(rt, 34, LGIcon.Starbase, "Доминирование", UIManager.DS.NeonCyan, out _domBar);
-            _sciVal = TrackerRow(rt, 60, LGIcon.Research, "Наука", UIManager.DS.Green, out _sciBar);
-            _survVal = TrackerRow(rt, 86, LGIcon.Trophy, $"Очки · {VictoryManager.EndYear}", UIManager.DS.Gold, out _survBar);
+            _domVal = TrackerRow(rt, 34, LGIcon.Starbase, Loc.T("Доминирование"), UIManager.DS.NeonCyan, out _domBar);
+            _sciVal = TrackerRow(rt, 60, LGIcon.Research, Loc.T("Наука"), UIManager.DS.Green, out _sciBar);
+            _survVal = TrackerRow(rt, 86, LGIcon.Trophy, Loc.F("Очки · {0}", VictoryManager.EndYear), UIManager.DS.Gold, out _survBar);
 
             LG.Skin(_tracker.transform);
             _tracker.SetActive(false);
@@ -591,11 +591,11 @@ namespace StellarisClone.Rendering
             var tip = _tracker.GetComponent<TooltipTrigger>();
             if (tip != null)
                 tip.SetText(
-                    "<b>Цели империи</b>\n" +
-                    $"Доминирование: вы {d}, соперник {vm.RivalDominationProgress} из {vm.DominationRequired} систем\n" +
-                    $"Наука: вы {s}, соперник {vm.RivalScienceProgress} из {vm.ScienceRequired} технологий\n" +
-                    $"Очки: {me} против {rival}; подсчёт через {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)} ({VictoryManager.EndYear})\n\n" +
-                    "<color=#8AA2A8>Если любой из соперников первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>");
+                    Loc.T("<b>Цели империи</b>\n") +
+                    Loc.F("Доминирование: вы {0}, соперник {1} из {2} систем\n", d, vm.RivalDominationProgress, vm.DominationRequired) +
+                    Loc.F("Наука: вы {0}, соперник {1} из {2} технологий\n", s, vm.RivalScienceProgress, vm.ScienceRequired) +
+                    Loc.F("Очки: {0} против {1}; подсчёт через {2} {3} ({4})\n\n", me, rival, vm.YearsLeft, VictoryManager.YearsWord(vm.YearsLeft), VictoryManager.EndYear) +
+                    Loc.T("<color=#8AA2A8>Если любой из соперников первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>"));
         }
 
         // ================================================================ Перезапуск / выход

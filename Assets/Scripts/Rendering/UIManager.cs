@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -481,11 +481,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             barMotion.inDuration = 0.55f;
 
             float startX = 12f;
-            _energyVal    = CreateResourceBadge(bar.transform, LGIcon.Energy, "ГЕЛИЙ-3", DS.Gold,     ref startX, out _energyTip);
-            _mineralsVal  = CreateResourceBadge(bar.transform, LGIcon.Minerals, "ТИТАН", DS.NeonCyan, ref startX, out _mineralsTip);
-            _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, "СПЛАВЫ", new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);
-            _influenceVal = CreateResourceBadge(bar.transform, LGIcon.Influence, "ВЛИЯНИЕ", new Color(1.00f, 0.48f, 0.58f), ref startX, out _influenceTip);
-            _researchVal  = CreateResourceBadge(bar.transform, LGIcon.Research, "НАУКА", DS.Green,    ref startX, out _researchTip);
+            _energyVal    = CreateResourceBadge(bar.transform, LGIcon.Energy, Loc.T("ГЕЛИЙ-3"), DS.Gold,     ref startX, out _energyTip);
+            _mineralsVal  = CreateResourceBadge(bar.transform, LGIcon.Minerals, Loc.T("ТИТАН"), DS.NeonCyan, ref startX, out _mineralsTip);
+            _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, Loc.T("СПЛАВЫ"), new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);
+            _influenceVal = CreateResourceBadge(bar.transform, LGIcon.Influence, Loc.T("ВЛИЯНИЕ"), new Color(1.00f, 0.48f, 0.58f), ref startX, out _influenceTip);
+            _researchVal  = CreateResourceBadge(bar.transform, LGIcon.Research, Loc.T("НАУКА"), DS.Green,    ref startX, out _researchTip);
 
             // Дата и скорость — рамка под ресурсами
             var time = new GameObject("TimeBar");
@@ -575,14 +575,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 TooltipHelper.Attach(b, tip);
             }
 
-            Item("NavEmpire", LGIcon.Globe, "Империя", DS.NeonCyan, OpenEmpireOverviewModal, null, "<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика");
-            Item("NavTech", LGIcon.Research, "Технологии", DS.NeonCyan, OpenTechModal, UIAnchors.Tech, "<b>Технологии</b>\nИсследования и очереди");
-            Item("NavDiplo", LGIcon.Diplomacy, "Дипломатия", DS.Gold, () => DiplomacyModal.Instance?.Open(), UIAnchors.Diplomacy, "<b>Дипломатия</b>\nПереговоры, сделки, договоры");
-            Item("NavSpy", LGIcon.Betrayal, "Шпионаж", new Color(0.74f, 0.56f, 1f), OpenEspionageModal, null,
-                 "<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов");
-            Item("NavDesign", LGIcon.Gear, "Конструктор судов", DS.NeonCyan, () => ShipDesignerModal.Instance?.Open(), UIAnchors.Designer, "<b>Конструктор судов</b>\nПроекты кораблей");
-            Item("NavFleet", LGIcon.Fleet, "Флот", DS.NeonCyan, SelectAllWarships, null, "<b>Флот</b>\nВыделить все военные флоты");
-            Item("NavVictory", LGIcon.Trophy, "Путь к победе", DS.Gold, VictoryPathWindow.Toggle, null, "<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>");
+            Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, OpenEmpireOverviewModal, null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"));
+            Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, OpenTechModal, UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"));
+            Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => DiplomacyModal.Instance?.Open(), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"));
+            Item("NavSpy", LGIcon.Betrayal, Loc.T("Шпионаж"), new Color(0.74f, 0.56f, 1f), OpenEspionageModal, null,
+                 Loc.T("<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов"));
+            Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ShipDesignerModal.Instance?.Open(), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"));
+            Item("NavFleet", LGIcon.Fleet, Loc.T("Флот"), DS.NeonCyan, SelectAllWarships, null, Loc.T("<b>Флот</b>\nВыделить все военные флоты"));
+            Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, null, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>"));
 
             // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
             var tg = CreateButton(menu.transform, "NavToggle", new Vector2(_navW, 24), new Color(0.010f, 0.030f, 0.042f, 0.85f), DS.TextMuted, ToggleNavMenu);
@@ -593,7 +593,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _navToggleIcon = LGIcons.Create(tg.transform, LGIcon.Back, 11f, DS.TextMuted);
             _navToggleIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(NavMenuCollapsedW * 0.5f, 0), new Vector2(11, 11));
             _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
-            var tt = CreateText(tg.transform, "СВЕРНУТЬ", 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleLeft);
+            var tt = CreateText(tg.transform, Loc.T("СВЕРНУТЬ"), 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleLeft);
             tt.rectTransform.anchorMin = Vector2.zero;
             tt.rectTransform.anchorMax = Vector2.one;
             tt.rectTransform.offsetMin = new Vector2(50, 0);
@@ -601,7 +601,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tt.Track(1.4f);
             tt.enabled = !_navCollapsed;
             _navItems.Add((tgRt, tt));
-            TooltipHelper.Attach(tg, "Свернуть или развернуть меню");
+            TooltipHelper.Attach(tg, Loc.T("Свернуть или развернуть меню"));
         }
 
         // ---------- Сворачиваемое левое меню ----------
@@ -800,10 +800,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             LGIcon[] icons = { LGIcon.Pause, LGIcon.Play, LGIcon.Fast, LGIcon.Fastest };
             string[] tips =
             {
-                "<b>Пауза</b>\nКлавиша: ПРОБЕЛ",
-                "<b>Нормальная скорость</b>\nКлавиша: 1",
-                "<b>Быстро</b>\nКлавиша: 2",
-                "<b>Очень быстро</b>\nКлавиша: 3"
+                Loc.T("<b>Пауза</b>\nКлавиша: ПРОБЕЛ"),
+                Loc.T("<b>Нормальная скорость</b>\nКлавиша: 1"),
+                Loc.T("<b>Быстро</b>\nКлавиша: 2"),
+                Loc.T("<b>Очень быстро</b>\nКлавиша: 3")
             };
             int[] speeds = { 0, 1, 2, 4 };   // как клавиши: 3 — самая быстрая скорость ×4
             for (int i = 0; i < 4; i++)
@@ -966,7 +966,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _inspActionBtnBg = actionBtn.GetComponent<Image>();
             _inspActionBtn = actionBtn.GetComponent<Button>();
-            _inspActionBtnText = CreateText(actionBtn.transform, "ДЕЙСТВИЕ", 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            _inspActionBtnText = CreateText(actionBtn.transform, Loc.T("ДЕЙСТВИЕ"), 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             _inspActionBtnText.rectTransform.sizeDelta = abRt.sizeDelta;
 
             var shipyardBtn = CreateButton(insp.transform, "ShipyardBtn", new Vector2(395, 28),
@@ -977,7 +977,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             sbRt.pivot = new Vector2(0.5f, 0);
             sbRt.anchoredPosition = new Vector2(0, 48);
             _inspShipyardBtn = shipyardBtn.GetComponent<Button>();
-            LGIcons.IconLabel(shipyardBtn.transform, LGIcon.Shipyard, "ОРБИТАЛЬНАЯ ВЕРФЬ", 10, DS.NeonCyan, Color.white, 14f);
+            LGIcons.IconLabel(shipyardBtn.transform, LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), 10, DS.NeonCyan, Color.white, 14f);
 
             var exitBtn = CreateButton(insp.transform, "ExitSystemBtn", new Vector2(395, 28),
                 DS.BtnDanger, DS.Red, () => SystemViewManager.Instance?.ExitToGalaxyView());
@@ -987,7 +987,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             ebRt.pivot = new Vector2(0.5f, 0);
             ebRt.anchoredPosition = new Vector2(0, 48);
             _inspExitBtn = exitBtn.GetComponent<Button>();
-            LGIcons.IconLabel(exitBtn.transform, LGIcon.Back, "ВЕРНУТЬСЯ В ГАЛАКТИКУ", 10, Color.white, Color.white, 13f);
+            LGIcons.IconLabel(exitBtn.transform, LGIcon.Back, Loc.T("ВЕРНУТЬСЯ В ГАЛАКТИКУ"), 10, Color.white, Color.white, 13f);
             exitBtn.SetActive(false);
         }
 
@@ -1126,10 +1126,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspTitle.text = system.Name.ToUpper();
 
             string owner = system.OwnerId == 0
-                ? $"<color=#33E6CC>◆  Под контролем {_selectedFaction?.Name ?? "Империи"}</color>"
+                ? Loc.F("<color=#33E6CC>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))
                 : system.OwnerId > 0
-                    ? $"<color={LGBuild.Hex(FleetIndicator.OwnerColor(system.OwnerId))}>◆  Территория: {AIEmpireManager.NameOf(system.OwnerId, "соперник")}</color>"
-                    : "<color=#8AA2A8>◆  Нейтральный фронтир</color>";
+                    ? Loc.F("<color={0}>◆  Территория: {1}</color>", LGBuild.Hex(FleetIndicator.OwnerColor(system.OwnerId)), AIEmpireManager.NameOf(system.OwnerId, Loc.T("соперник")))
+                    : Loc.T("<color=#8AA2A8>◆  Нейтральный фронтир</color>");
             _inspStatus.text = owner;
 
             PulseInspectorContent();
@@ -1147,7 +1147,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 {
                     _inspActionBtn.interactable = true;
                     _inspActionBtnBg.color = DS.BtnSuccess;
-                    _inspActionBtnText.text = "▶  НАПРАВИТЬ НАУЧНЫЙ КОРАБЛЬ";
+                    _inspActionBtnText.text = Loc.T("▶  НАПРАВИТЬ НАУЧНЫЙ КОРАБЛЬ");
                 }
                 else
                 {
@@ -1160,8 +1160,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     _inspActionBtn.interactable = canAfford;
                     _inspActionBtnBg.color = canAfford ? DS.BtnPrimary : new Color(0.15f, 0.20f, 0.25f);
                     _inspActionBtnText.text = canAfford
-                        ? $"▶  ФОРПОСТ ({(int)outpostAlloys} ⬢ · {(int)finalInfluenceCost} ★)"
-                        : "✕  НЕДОСТАТОЧНО РЕСУРСОВ";
+                        ? Loc.F("▶  ФОРПОСТ ({0} ⬢ · {1} ★)", (int)outpostAlloys, (int)finalInfluenceCost)
+                        : Loc.T("✕  НЕДОСТАТОЧНО РЕСУРСОВ");
                 }
             }
             else
@@ -1185,7 +1185,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (parentSystem != null) _activeSystem = parentSystem;
 
             _inspTitle.text = PlanetNames.Title(planet.Name);
-            _inspStatus.text = "<color=#E5B842>◆  Планетарный объект</color>";
+            _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>");
 
             bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;
 
@@ -1194,42 +1194,42 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             if (!isSurveyed)
             {
-                AddBodyHeader("КОЛОНИЯ");
-                AddBodyLine("Информация о населении и производстве появится после разведки системы.");
+                AddBodyHeader(Loc.T("КОЛОНИЯ"));
+                AddBodyLine(Loc.T("Информация о населении и производстве появится после разведки системы."));
             }
             else if (planet.Type == PlanetType.GasGiant || planet.Type == PlanetType.Molten)
             {
-                AddBodyHeader("КОЛОНИЗАЦИЯ НЕВОЗМОЖНА");
-                AddBodyLine($"<color=#E5B842>Планета типа «{planet.Type}» непригодна для проживания.</color>");
-                AddBodyLine("Можно построить только добывающий комплекс.");
+                AddBodyHeader(Loc.T("КОЛОНИЗАЦИЯ НЕВОЗМОЖНА"));
+                AddBodyLine(Loc.F("<color=#E5B842>Планета типа «{0}» непригодна для проживания.</color>", planet.Type));
+                AddBodyLine(Loc.T("Можно построить только добывающий комплекс."));
             }
             else
             {
-                AddBodyHeader("ОБЗОР КОЛОНИИ");
-                AddBodyLine($"<color=#8AA2A8>Класс:</color> {planet.Type}");
-                AddBodyLine($"<color=#8AA2A8>Районы:</color> {planet.BuiltDistricts} / {planet.MaxDistricts}");
-                AddBodyLine($"<color=#8AA2A8>Залежи:</color> ◆ {planet.MineralDeposit}  ⚡ {planet.EnergyDeposit}");
+                AddBodyHeader(Loc.T("ОБЗОР КОЛОНИИ"));
+                AddBodyLine(Loc.F("<color=#8AA2A8>Класс:</color> {0}", planet.Type));
+                AddBodyLine(Loc.F("<color=#8AA2A8>Районы:</color> {0} / {1}", planet.BuiltDistricts, planet.MaxDistricts));
+                AddBodyLine(Loc.F("<color=#8AA2A8>Залежи:</color> ◆ {0}  ⚡ {1}", planet.MineralDeposit, planet.EnergyDeposit));
 
-                AddBodyHeader("НАСЕЛЕНИЕ");
+                AddBodyHeader(Loc.T("НАСЕЛЕНИЕ"));
                 int pop = planet.Population;
                 int housing = planet.HousingCapacity;
                 int employed = planet.EmployedPops;
                 int idle = planet.IdlePops;
 
                 string popColor = housing >= pop ? "#4DF08C" : "#FF6666";
-                AddBodyLine($"<color=#8AA2A8>Население:</color> <color={popColor}>{pop}</color> / {housing} жилья");
-                AddBodyLine($"<color=#8AA2A8>Рабочие:</color> {employed}   " +
-                            $"<color=#8AA2A8>Безработные:</color> {StatFormat.Colored(idle, "", "0;0;0")}");
+                AddBodyLine(Loc.F("<color=#8AA2A8>Население:</color> <color={0}>{1}</color> / {2} жилья", popColor, pop, housing));
+                AddBodyLine(Loc.F("<color=#8AA2A8>Рабочие:</color> {0}   ", employed) +
+                            Loc.F("<color=#8AA2A8>Безработные:</color> {0}", StatFormat.Colored(idle, "", "0;0;0")));
 
                 float growthPct = Mathf.Clamp(planet.PopGrowthProgress, 0f, 100f);
                 float speedPct = planet.PopGrowthBaseSpeedPctPerMonth;
-                AddBodyLine($"<color=#8AA2A8>Рост:</color> {StatFormat.Colored(speedPct, "%/мес")}   " +
-                            $"Прогресс: {growthPct:F1}%");
+                AddBodyLine(Loc.F("<color=#8AA2A8>Рост:</color> {0}   ", StatFormat.Colored(speedPct, Loc.T("%/мес"))) +
+                            Loc.F("Прогресс: {0:F1}%", growthPct));
 
-                AddBodyHeader("ПРОИЗВОДСТВО / МЕСЯЦ");
-                AddBodyLine($"<color=#33E6CC>◆ Титан:</color> {StatFormat.Positive("+" + planet.ProducedMineralsPerMonth)}");
-                AddBodyLine($"<color=#E5B842>⚡ Гелий-3:</color> {StatFormat.Positive("+" + planet.ProducedEnergyPerMonth)}");
-                AddBodyLine($"<color=#20EBB0>⬢ Сплавы:</color> {StatFormat.Positive("+" + planet.ProducedAlloysPerMonth)}");
+                AddBodyHeader(Loc.T("ПРОИЗВОДСТВО / МЕСЯЦ"));
+                AddBodyLine(Loc.F("<color=#33E6CC>◆ Титан:</color> {0}", StatFormat.Positive("+" + planet.ProducedMineralsPerMonth)));
+                AddBodyLine(Loc.F("<color=#E5B842>⚡ Гелий-3:</color> {0}", StatFormat.Positive("+" + planet.ProducedEnergyPerMonth)));
+                AddBodyLine(Loc.F("<color=#20EBB0>⬢ Сплавы:</color> {0}", StatFormat.Positive("+" + planet.ProducedAlloysPerMonth)));
             }
 
             CommitBody();
@@ -1246,13 +1246,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 {
                     _inspActionBtn.interactable = false;
                     _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
-                    _inspActionBtnText.text = "✕  ТРЕБУЕТСЯ РАЗВЕДКА СИСТЕМЫ";
+                    _inspActionBtnText.text = Loc.T("✕  ТРЕБУЕТСЯ РАЗВЕДКА СИСТЕМЫ");
                 }
                 else if (!planet.IsPlayerOwned)
                 {
                     _inspActionBtn.interactable = false;
                     _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
-                    _inspActionBtnText.text = "✕  СИСТЕМА НЕ ПРИНАДЛЕЖИТ ВАМ";
+                    _inspActionBtnText.text = Loc.T("✕  СИСТЕМА НЕ ПРИНАДЛЕЖИТ ВАМ");
                 }
                 else
                 {
@@ -1261,15 +1261,15 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     _inspActionBtn.interactable = canAfford;
                     _inspActionBtnBg.color = canAfford ? DS.BtnSuccess : new Color(0.15f, 0.20f, 0.25f);
                     _inspActionBtnText.text = canAfford
-                        ? "▶  ДОБЫВАЮЩАЯ СТАНЦИЯ (50 ◆)"
-                        : "✕  НЕДОСТАТОЧНО ТИТАНА (50 ◆)";
+                        ? Loc.T("▶  ДОБЫВАЮЩАЯ СТАНЦИЯ (50 ◆)")
+                        : Loc.T("✕  НЕДОСТАТОЧНО ТИТАНА (50 ◆)");
                 }
             }
             else
             {
                 _inspActionBtn.interactable = false;
                 _inspActionBtnBg.color = new Color(0.10f, 0.25f, 0.18f);
-                _inspActionBtnText.text = "✓  КОМПЛЕКС ФУНКЦИОНИРУЕТ";
+                _inspActionBtnText.text = Loc.T("✓  КОМПЛЕКС ФУНКЦИОНИРУЕТ");
             }
 
             LayoutInspector();
@@ -1309,7 +1309,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     if (FleetManager.Instance != null && FleetManager.Instance.OrderSurveySystem(_activeSystem.Id))
                     {
                         _inspActionBtn.interactable = false;
-                        _inspActionBtnText.text = "◎  СУДНО В ПУТИ";
+                        _inspActionBtnText.text = Loc.T("◎  СУДНО В ПУТИ");
                     }
                 }
                 else
@@ -1318,7 +1318,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     {
                         _inspActionBtn.interactable = false;
                         _inspActionBtnBg.color = new Color(0.10f, 0.25f, 0.20f);
-                        _inspActionBtnText.text = "⚙  СТРОИТЕЛЬСТВО НАЧАТО";
+                        _inspActionBtnText.text = Loc.T("⚙  СТРОИТЕЛЬСТВО НАЧАТО");
                         RefreshResourceBar();
                     }
                 }
@@ -1386,29 +1386,29 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             string netColor = net >= 0f ? StatFormat.GreenHex : StatFormat.RedHex;
             string warn = eco.IsBankrupt
-                ? "<color=#FF5555><b>БАНКРОТСТВО</b> — производство урезано вдвое</color>\n\n"
+                ? Loc.T("<color=#FF5555><b>БАНКРОТСТВО</b> — производство урезано вдвое</color>\n\n")
                 : eco.BankruptcyLooming
-                    ? $"<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{Mathf.Max(1, Mathf.CeilToInt(eco.MonthsUntilEmpty))} мес.</color>\n\n"
+                    ? Loc.F("<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{0} мес.</color>\n\n", Mathf.Max(1, Mathf.CeilToInt(eco.MonthsUntilEmpty)))
                     : "";
             var rep = eco.Report;
             string overCap = rep.NavalUsed > rep.NavalCapacity
-                ? $"  <color=#FF8888>(перебор лимита: ×{rep.OverCapacityMult:0.##})</color>" : "";
+                ? Loc.F("  <color=#FF8888>(перебор лимита: ×{0:0.##})</color>", rep.OverCapacityMult) : "";
 
             _energyTip.SetText(
-                $"<b>Гелий-3</b>\n" +
+                Loc.T("<b>Гелий-3</b>\n") +
                 warn +
-                $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.EnergyCredits}</b>\n" +
-                $"<color=#8AA2A8>База империи:</color> {eco.BaseEnergyIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Районы-генераторы:</color> {eco.PlanetEnergyOutput:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Добывающие станции:</color> {eco.StationEnergyOutput:+0;-0;0} / мес\n" +
-                (eco.TechEnergyOutput > 0f ? $"<color=#8AA2A8>Реакторные технологии:</color> {eco.TechEnergyOutput:+0;-0;0} / мес\n" : "") +
-                $"<color=#8AA2A8>Военный флот:</color> <color=#FF8888>-{rep.FleetUpkeep:0.#}</color> / мес{overCap}\n" +
-                $"<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{rep.CivilianUpkeep:0.#}</color> / мес\n" +
-                $"<color=#8AA2A8>Форпосты ({rep.Outposts} × {EmpireEconomy.OutpostUpkeep:0.#}):</color> <color=#FF8888>-{rep.OutpostUpkeepTotal:0.#}</color> / мес\n" +
+                Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.EnergyCredits) +
+                Loc.F("<color=#8AA2A8>База империи:</color> {0:+0;-0;0} / мес\n", eco.BaseEnergyIncome) +
+                Loc.F("<color=#8AA2A8>Районы-генераторы:</color> {0:+0;-0;0} / мес\n", eco.PlanetEnergyOutput) +
+                Loc.F("<color=#8AA2A8>Добывающие станции:</color> {0:+0;-0;0} / мес\n", eco.StationEnergyOutput) +
+                (eco.TechEnergyOutput > 0f ? Loc.F("<color=#8AA2A8>Реакторные технологии:</color> {0:+0;-0;0} / мес\n", eco.TechEnergyOutput) : "") +
+                Loc.F("<color=#8AA2A8>Военный флот:</color> <color=#FF8888>-{0:0.#}</color> / мес{1}\n", rep.FleetUpkeep, overCap) +
+                Loc.F("<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", rep.CivilianUpkeep) +
+                Loc.F("<color=#8AA2A8>Форпосты ({0} × {1:0.#}):</color> <color=#FF8888>-{2:0.#}</color> / мес\n", rep.Outposts, EmpireEconomy.OutpostUpkeep, rep.OutpostUpkeepTotal) +
                 $"<color=#8AA2A8>──────────────</color>\n" +
-                $"<color=#8AA2A8>Чистый доход:</color> <color={netColor}><b>{net:+0.#;-0.#;0} / мес</b></color>\n\n" +
-                $"<color=#8AA2A8>Флотский лимит: {rep.NavalUsed} / {rep.NavalCapacity} (корвет 1, фрегат 2, эсминец 3; +{EmpireEconomy.NavalCapacityPerColony} за колонию). " +
-                "Сверх лимита содержание всего военного флота растёт.</color>"
+                Loc.F("<color=#8AA2A8>Чистый доход:</color> <color={0}><b>{1:+0.#;-0.#;0} / мес</b></color>\n\n", netColor, net) +
+                Loc.F("<color=#8AA2A8>Флотский лимит: {0} / {1} (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). ", rep.NavalUsed, rep.NavalCapacity, EmpireEconomy.NavalCapacityPerColony) +
+                Loc.T("Сверх лимита содержание всего военного флота растёт.</color>")
             );
         }
     }
@@ -1419,13 +1419,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         _mineralsVal.text = $"{(int)eco.Minerals}  <size=12>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>";
         if (_mineralsTip != null)
             _mineralsTip.SetText(
-                $"<b>Титан</b>\n" +
-                $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Minerals}</b>\n" +
-                $"<color=#8AA2A8>База:</color> {eco.BaseMineralsIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Горные районы:</color> {eco.PlanetMineralsOutput:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Добывающие станции:</color> {eco.StationMineralsOutput:+0;-0;0} / мес\n" +
+                Loc.T("<b>Титан</b>\n") +
+                Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Minerals) +
+                Loc.F("<color=#8AA2A8>База:</color> {0:+0;-0;0} / мес\n", eco.BaseMineralsIncome) +
+                Loc.F("<color=#8AA2A8>Горные районы:</color> {0:+0;-0;0} / мес\n", eco.PlanetMineralsOutput) +
+                Loc.F("<color=#8AA2A8>Добывающие станции:</color> {0:+0;-0;0} / мес\n", eco.StationMineralsOutput) +
                 $"<color=#8AA2A8>──────────────</color>\n" +
-                $"<color=#8AA2A8>Итого:</color> {StatFormat.Income(eco.MonthlyMineralsIncome)}"
+                Loc.F("<color=#8AA2A8>Итого:</color> {0}", StatFormat.Income(eco.MonthlyMineralsIncome))
             );
     }
 
@@ -1435,12 +1435,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         _alloysVal.text = $"{(int)eco.Alloys}  <size=12>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>";
         if (_alloysTip != null)
             _alloysTip.SetText(
-                $"<b>Сплавы</b>\n" +
-                $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Alloys}</b>\n" +
-                $"<color=#8AA2A8>База:</color> {eco.BaseAlloysIncome:+0;-0;0} / мес\n" +
-                $"<color=#8AA2A8>Планеты:</color> {eco.PlanetAlloysOutput:+0;-0;0} / мес\n" +
+                Loc.T("<b>Сплавы</b>\n") +
+                Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Alloys) +
+                Loc.F("<color=#8AA2A8>База:</color> {0:+0;-0;0} / мес\n", eco.BaseAlloysIncome) +
+                Loc.F("<color=#8AA2A8>Планеты:</color> {0:+0;-0;0} / мес\n", eco.PlanetAlloysOutput) +
                 $"<color=#8AA2A8>──────────────</color>\n" +
-                $"<color=#8AA2A8>Итого:</color> {StatFormat.Income(eco.MonthlyAlloysIncome)}"
+                Loc.F("<color=#8AA2A8>Итого:</color> {0}", StatFormat.Income(eco.MonthlyAlloysIncome))
             );
     }
 
@@ -1450,11 +1450,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         _influenceVal.text = $"{(int)eco.Influence}  <size=12>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>";
         if (_influenceTip != null)
             _influenceTip.SetText(
-                $"<b>Влияние</b>\n" +
-                $"<color=#8AA2A8>Запас:</color> <b>{(int)eco.Influence}</b>\n" +
-                $"<color=#8AA2A8>Доход:</color> {StatFormat.Income(eco.MonthlyInfluenceIncome)}\n\n" +
-                $"<color=#8AA2A8><i>Расходуется на форпосты ({FleetManager.OutpostInfluenceCost(0):0}), колонии ({PlanetData.ColonyInfluenceCost:0}), " +
-                $"пакты ({AIEmpireManager.PactInfluenceCost:0}), мирные предложения ({AIEmpireManager.PeaceInfluenceCost:0}) и терраформинг.</i></color>"
+                Loc.T("<b>Влияние</b>\n") +
+                Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Influence) +
+                Loc.F("<color=#8AA2A8>Доход:</color> {0}\n\n", StatFormat.Income(eco.MonthlyInfluenceIncome)) +
+                Loc.F("<color=#8AA2A8><i>Расходуется на форпосты ({0:0}), колонии ({1:0}), ", FleetManager.OutpostInfluenceCost(0), PlanetData.ColonyInfluenceCost) +
+                Loc.F("пакты ({0:0}), мирные предложения ({1:0}) и терраформинг.</i></color>", AIEmpireManager.PactInfluenceCost, AIEmpireManager.PeaceInfluenceCost)
             );
     }
 
@@ -1462,7 +1462,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_researchVal != null && TechnologyManager.Instance != null)
     {
         var tm = TechnologyManager.Instance;
-        _researchVal.text = $"{StatFormat.Colored(tm.MonthlyResearchIncome, " / мес")}";
+        _researchVal.text = $"{StatFormat.Colored(tm.MonthlyResearchIncome, Loc.T(" / мес"))}";
         if (_researchTip != null)
         {
             int active = 0;
@@ -1470,16 +1470,16 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             float mult = tm.GlobalResearchSpeedMultiplier;
             _researchTip.SetText(
-                $"<b>Наука</b>\n" +
-                $"<color=#8AA2A8>Администрация:</color> +{TechnologyManager.BaseScience:0.#}\n" +
-                $"<color=#8AA2A8>Население ({tm.Population} × {TechnologyManager.SciencePerPop:0.#}):</color> +{tm.ScienceFromPopulation:0.#}\n" +
-                (tm.FlatScience > 0f ? $"<color=#8AA2A8>Открытия и события:</color> +{tm.FlatScience:0.#}\n" : "") +
-                (Mathf.Abs(mult - 1f) > 0.01f ? $"<color=#8AA2A8>Множитель технологий и событий:</color> ×{mult:0.##}\n" : "") +
+                Loc.T("<b>Наука</b>\n") +
+                Loc.F("<color=#8AA2A8>Администрация:</color> +{0:0.#}\n", TechnologyManager.BaseScience) +
+                Loc.F("<color=#8AA2A8>Население ({0} × {1:0.#}):</color> +{2:0.#}\n", tm.Population, TechnologyManager.SciencePerPop, tm.ScienceFromPopulation) +
+                (tm.FlatScience > 0f ? Loc.F("<color=#8AA2A8>Открытия и события:</color> +{0:0.#}\n", tm.FlatScience) : "") +
+                (Mathf.Abs(mult - 1f) > 0.01f ? Loc.F("<color=#8AA2A8>Множитель технологий и событий:</color> ×{0:0.##}\n", mult) : "") +
                 $"<color=#8AA2A8>──────────────</color>\n" +
-                $"<color=#8AA2A8>Итого:</color> <b>+{tm.MonthlyResearchIncome:0.#} / мес</b>\n" +
-                $"<color=#8AA2A8>Активных слотов:</color> {active} / {tm.Slots.Count}\n\n" +
-                "<color=#8AA2A8><i>Наука растёт вместе с населением — заселяйте планеты и стройте жильё. " +
-                "Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</i></color>"
+                Loc.F("<color=#8AA2A8>Итого:</color> <b>+{0:0.#} / мес</b>\n", tm.MonthlyResearchIncome) +
+                Loc.F("<color=#8AA2A8>Активных слотов:</color> {0} / {1}\n\n", active, tm.Slots.Count) +
+                Loc.T("<color=#8AA2A8><i>Наука растёт вместе с населением — заселяйте планеты и стройте жильё. ") +
+                Loc.T("Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</i></color>")
             );
         }
     }
@@ -1613,7 +1613,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             if (_rewardPopUp == null) return;
             _rewardPopUp.SetActive(true);
-            _rewardText.text = $"★  <b>{sysName}</b>\n<color=#4DF08C>Разведка завершена!</color>";
+            _rewardText.text = Loc.F("★  <b>{0}</b>\n<color=#4DF08C>Разведка завершена!</color>", sysName);
             if (_rewardRoutine != null) StopCoroutine(_rewardRoutine);
             _rewardRoutine = StartCoroutine(RewardAnimRoutine());
         }
@@ -1705,7 +1705,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventAccentBar.color = DS.NeonCyan;
             LG.Line(accentBarObj, hairline: true);
 
-            _eventTitleText = CreateText(header.transform, "◆  АНОМАЛИЯ", 15, FontStyle.Bold, DS.Gold, TextAnchor.MiddleLeft);
+            _eventTitleText = CreateText(header.transform, Loc.T("◆  АНОМАЛИЯ"), 15, FontStyle.Bold, DS.Gold, TextAnchor.MiddleLeft);
             _eventTitleText.rectTransform.anchorMin = Vector2.zero;
             _eventTitleText.rectTransform.anchorMax = Vector2.one;
             _eventTitleText.rectTransform.offsetMin = new Vector2(22, 0);
@@ -1856,7 +1856,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     _eventFx?.AddOption(btnGo, label.rectTransform);
 
                     string tip = opt.ResultTooltip ?? "";
-                    if (special) tip = (available ? "<color=#F2C747>Особый вариант: " : "<color=#FF8A8A>Недоступно — требуется: ") + opt.Requirement + "</color>\n" + tip;
+                    if (special) tip = (available ? Loc.T("<color=#F2C747>Особый вариант: ") : Loc.T("<color=#FF8A8A>Недоступно — требуется: ")) + opt.Requirement + "</color>\n" + tip;
                     if (!string.IsNullOrEmpty(tip))
                     {
                         var tt = btnGo.GetComponent<TooltipTrigger>();

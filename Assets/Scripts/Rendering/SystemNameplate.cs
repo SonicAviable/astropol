@@ -169,7 +169,7 @@ namespace StellarisClone.Rendering
             LGIcon icon;
             if (PlayerOutpostEta(_data.Id, out bool building, out float days))
             {
-                text = building ? $"ФОРПОСТ · {FleetRoute.FormatDays(days)}" : $"ФОРПОСТ · ~{FleetRoute.FormatDays(days)}";
+                text = building ? Loc.F("ФОРПОСТ · {0}", FleetRoute.FormatDays(days)) : Loc.F("ФОРПОСТ · ~{0}", FleetRoute.FormatDays(days));
                 icon = LGIcon.Starbase;
             }
             else if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
@@ -207,12 +207,12 @@ namespace StellarisClone.Rendering
             return true;
         }
 
-        private static string ProjectName(JobKind k) => k == JobKind.Colony ? "КОЛОНИЯ" : "ТЕРРАФОРМИНГ";
+        private static string ProjectName(JobKind k) => k == JobKind.Colony ? Loc.T("КОЛОНИЯ") : Loc.T("ТЕРРАФОРМИНГ");
 
         private static string PlanetName(ConstructionJob j)
         {
             var sys = EmpireStats.GetSystem(j.SystemId);
-            return sys != null && j.PlanetIndex >= 0 && j.PlanetIndex < sys.Planets.Count ? sys.Planets[j.PlanetIndex].Name : "планета";
+            return sys != null && j.PlanetIndex >= 0 && j.PlanetIndex < sys.Planets.Count ? sys.Planets[j.PlanetIndex].Name : Loc.T("планета");
         }
 
         public static LGIcon LandmarkIcon(int type) => type switch
@@ -365,18 +365,18 @@ namespace StellarisClone.Rendering
         private string PreviewNote()
         {
             var m = GetComponent<MapBlackHole>();
-            return m != null && m.Preview ? " <color=#FFB070>(предпросмотр чёрной дыры, F8)</color>" : "";
+            return m != null && m.Preview ? Loc.T(" <color=#FFB070>(предпросмотр чёрной дыры, F8)</color>") : "";
         }
 
         public string GetTooltipContent()
         {
-            string owner = _data.OwnerId == 0 ? "Ваша империя"
-                         : _data.OwnerId > 0 ? Contacts.NameForPlayer(_data.OwnerId, "Другая империя")   // до контакта — без имени
-                         : "Нейтральная";
+            string owner = _data.OwnerId == 0 ? Loc.T("Ваша империя")
+                         : _data.OwnerId > 0 ? Contacts.NameForPlayer(_data.OwnerId, Loc.T("Другая империя"))   // до контакта — без имени
+                         : Loc.T("Нейтральная");
 
             string tip = $"<b>{_data.Name}</b>\n" +
-                         $"<color=#AAB4C0>Класс:</color> {EmpireOverviewWindow.StarClass(_data.SpectralClass)}{PreviewNote()}\n" +
-                         $"<color=#AAB4C0>Владелец:</color> {owner}\n";
+                         Loc.F("<color=#AAB4C0>Класс:</color> {0}{1}\n", EmpireOverviewWindow.StarClass(_data.SpectralClass), PreviewNote()) +
+                         Loc.F("<color=#AAB4C0>Владелец:</color> {0}\n", owner);
             // Звёздная база: её мощь в привычных единицах — сколько ваших боевых кораблей она стоит
             var cm = CombatManager.Instance;
             if (cm != null && _data.HasStarbase && _data.OwnerId >= 0 && (_data.OwnerId == 0 || Vision.PlayerSees(_data.Id)))
@@ -386,43 +386,43 @@ namespace StellarisClone.Rendering
                 {
                     float pw = cm.StarbasePower(_data.Id);
                     string cmpText = CombatManager.PowerInShips(pw);
-                    tip += sb.Disabled ? "<color=#FF7A7A>Звёздная база выведена из строя</color>\n"
-                                       : $"<color=#AAB4C0>Звёздная база:</color> мощь {pw:N0}" + (cmpText.Length > 0 ? $" ({cmpText})" : "") + "\n";
+                    tip += sb.Disabled ? Loc.T("<color=#FF7A7A>Звёздная база выведена из строя</color>\n")
+                                       : Loc.F("<color=#AAB4C0>Звёздная база:</color> мощь {0:N0}", pw) + (cmpText.Length > 0 ? $" ({cmpText})" : "") + "\n";
                 }
             }
 
             if (_data.IsSurveyed)
             {
-                tip += $"\n<color=#66FF88>ДОБЫЧА</color>\n" +
-                       $"◆ Титан: +{_data.HarvestedMinerals}\n" +
-                       $"⚡ Гелий-3: +{_data.HarvestedEnergy}\n";
+                tip += Loc.T("\n<color=#66FF88>ДОБЫЧА</color>\n") +
+                       Loc.F("◆ Титан: +{0}\n", _data.HarvestedMinerals) +
+                       Loc.F("⚡ Гелий-3: +{0}\n", _data.HarvestedEnergy);
             }
             else
             {
-                tip += "\n<color=#FFAA88>Требуется разведка</color>\n";
+                tip += Loc.T("\n<color=#FFAA88>Требуется разведка</color>\n");
             }
 
             if (_data.Landmark >= 0)
             {
                 string c = LGBuild.Hex(Landmarks.Color(_data.Landmark));
                 bool mine = Landmarks.Controls(0, _data);
-                tip += $"\n<color={c}>★ УЗЕЛ СИЛЫ · {Landmarks.Name(_data.Landmark)}</color>\n" +
+                tip += Loc.F("\n<color={0}>★ УЗЕЛ СИЛЫ · {1}</color>\n", c, Landmarks.Name(_data.Landmark)) +
                        $"{Landmarks.Effect(_data.Landmark)}\n" +
-                       (mine ? "<color=#66FF88>Под вашим контролем</color>\n"
-                             : _data.HasStarbase && _data.OwnerId >= 0 ? "<color=#FF8866>Удерживает " + AIEmpireManager.NameOf(_data.OwnerId, "другая империя") + "</color>\n"
-                             : "<color=#8AA2A8>Постройте здесь форпост, чтобы получить бонус</color>\n");
+                       (mine ? Loc.T("<color=#66FF88>Под вашим контролем</color>\n")
+                             : _data.HasStarbase && _data.OwnerId >= 0 ? Loc.T("<color=#FF8866>Удерживает ") + AIEmpireManager.NameOf(_data.OwnerId, Loc.T("другая империя")) + "</color>\n"
+                             : Loc.T("<color=#8AA2A8>Постройте здесь форпост, чтобы получить бонус</color>\n"));
             }
 
             if (PlayerOutpostEta(_data.Id, out bool building, out float bdays))
                 tip += building
-                    ? $"\n<color=#5CE68A>Форпост строится · готов через {FleetRoute.FormatDays(bdays)}</color>\n"
-                    : $"\n<color=#5CE68A>Строитель летит сюда · форпост будет через ~{FleetRoute.FormatDays(bdays)}</color>\n" +
-                      $"<color=#8AA2A8>полёт + {FactionTraits.OutpostDays(0):0} дн. стройки</color>\n";
+                    ? Loc.F("\n<color=#5CE68A>Форпост строится · готов через {0}</color>\n", FleetRoute.FormatDays(bdays))
+                    : Loc.F("\n<color=#5CE68A>Строитель летит сюда · форпост будет через ~{0}</color>\n", FleetRoute.FormatDays(bdays)) +
+                      Loc.F("<color=#8AA2A8>полёт + {0:0} дн. стройки</color>\n", FactionTraits.OutpostDays(0));
 
             if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
                 tip += job.Kind == JobKind.Colony
-                    ? $"\n<color=#5CE68A>Колония «{PlanetName(job)}» основывается · готова через {FleetRoute.FormatDays(jdays)}</color>\n"
-                    : $"\n<color=#5CE68A>Терраформинг «{PlanetName(job)}» · завершится через {FleetRoute.FormatDays(jdays)}</color>\n";
+                    ? Loc.F("\n<color=#5CE68A>Колония «{0}» основывается · готова через {1}</color>\n", PlanetName(job), FleetRoute.FormatDays(jdays))
+                    : Loc.F("\n<color=#5CE68A>Терраформинг «{0}» · завершится через {1}</color>\n", PlanetName(job), FleetRoute.FormatDays(jdays));
 
             tip += FleetsLine() + EtaLine();
             return tip;
@@ -437,10 +437,10 @@ namespace StellarisClone.Rendering
             foreach (var f in fm.GetFleetsInSystem(_data.Id))
                 if (f.Data.OwnerId == 0) own++; else enemy++;
             if (own == 0 && enemy == 0) return "";
-            return $"\n<color=#AAB4C0>Флоты:</color> " +
-                   (own > 0 ? $"<color=#39EBDB>ваши {own}</color>" : "") +
+            return Loc.T("\n<color=#AAB4C0>Флоты:</color> ") +
+                   (own > 0 ? Loc.F("<color=#39EBDB>ваши {0}</color>", own) : "") +
                    (own > 0 && enemy > 0 ? "  ·  " : "") +
-                   (enemy > 0 ? $"<color=#FF6666>чужие {enemy}</color>" : "") + "\n";
+                   (enemy > 0 ? Loc.F("<color=#FF6666>чужие {0}</color>", enemy) : "") + "\n";
         }
 
         /// <summary>Сколько лететь сюда выделенному флоту.</summary>
@@ -456,8 +456,8 @@ namespace StellarisClone.Rendering
             if (path == null) return "";
             float days = path.Count * FleetRoute.DaysPerJump(f.Data);
             if (f.Data.State == FleetState.InHyperlane) days += f.Data.DaysRemainingInTransit / FleetRoute.JumpSpeed(f.Data);
-            return $"\n<color=#4DF2DB>{f.Data.Name}: ~{FleetRoute.FormatDays(days)} ({path.Count} прыжк.)</color>\n" +
-                   "<color=#8AA2A8>ПКМ — лететь, Shift+ПКМ — в очередь</color>";
+            return Loc.F("\n<color=#4DF2DB>{0}: ~{1} ({2} прыжк.)</color>\n", f.Data.Name, FleetRoute.FormatDays(days), path.Count) +
+                   Loc.T("<color=#8AA2A8>ПКМ — лететь, Shift+ПКМ — в очередь</color>");
         }
 
         private void UpdateHoverTooltip()

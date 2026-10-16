@@ -35,9 +35,9 @@ namespace StellarisClone.Rendering
         public static readonly Entry Xarn = new Entry
         {
             Key = "xarn",
-            Name = "Ардан Ворх",
-            Title = "Верховный маршал Доминиона",
-            Quote = "Мир — это пауза между победами. Не заставляйте меня её прерывать.",
+            Name = Loc.T("Ардан Ворх"),
+            Title = Loc.T("Верховный маршал Доминиона"),
+            Quote = Loc.T("Мир — это пауза между победами. Не заставляйте меня её прерывать."),
             Accent = new Color(1f, 0.32f, 0.28f),
             EyeL = Eye(535, 422, 44, 15),
             EyeR = Eye(707, 416, 42, 15),
@@ -47,9 +47,9 @@ namespace StellarisClone.Rendering
         public static readonly Entry Astrea = new Entry
         {
             Key = "astrea",
-            Name = "Элина Сорель",
-            Title = "Председатель Совета Республики",
-            Quote = "Любой спор можно решить словами. Почти любой.",
+            Name = Loc.T("Элина Сорель"),
+            Title = Loc.T("Председатель Совета Республики"),
+            Quote = Loc.T("Любой спор можно решить словами. Почти любой."),
             Accent = new Color(0.30f, 0.90f, 0.86f),
             EyeL = Eye(590, 402, 42, 15),
             EyeR = Eye(740, 399, 42, 15),
@@ -59,9 +59,9 @@ namespace StellarisClone.Rendering
         public static readonly Entry Aquila = new Entry
         {
             Key = "aquila",
-            Name = "Лукан Вейл",
-            Title = "Генеральный директор Синдиката",
-            Quote = "У всего есть цена. Даже у вашей независимости.",
+            Name = Loc.T("Лукан Вейл"),
+            Title = Loc.T("Генеральный директор Синдиката"),
+            Quote = Loc.T("У всего есть цена. Даже у вашей независимости."),
             Accent = new Color(1f, 0.76f, 0.34f),
             EyeL = Eye(552, 556, 44, 16),
             EyeR = Eye(756, 546, 42, 15),
@@ -71,9 +71,9 @@ namespace StellarisClone.Rendering
         public static readonly Entry Iridia = new Entry
         {
             Key = "iridia",
-            Name = "Аурэлия",
-            Title = "Верховная Оракул Иридия",
-            Quote = "Я уже видела, чем закончится наш разговор. Но продолжайте — мне интересно, как вы к этому придёте.",
+            Name = Loc.T("Аурэлия"),
+            Title = Loc.T("Верховная Оракул Иридия"),
+            Quote = Loc.T("Я уже видела, чем закончится наш разговор. Но продолжайте — мне интересно, как вы к этому придёте."),
             Accent = new Color(0.72f, 0.52f, 1f),
             EyeL = Eye(515, 421, 30, 13),
             EyeR = Eye(658, 406, 40, 14),
@@ -83,9 +83,9 @@ namespace StellarisClone.Rendering
         public static readonly Entry Terraan = new Entry
         {
             Key = "terraan",
-            Name = "Исинна Кральтэр",
-            Title = "Хранительница Корней Конклава",
-            Quote = "Корни не спешат. Но они всегда добираются до воды. Говорите — у меня есть века.",
+            Name = Loc.T("Исинна Кральтэр"),
+            Title = Loc.T("Хранительница Корней Конклава"),
+            Quote = Loc.T("Корни не спешат. Но они всегда добираются до воды. Говорите — у меня есть века."),
             Accent = new Color(0.50f, 0.92f, 0.42f),
             EyeL = Eye(405, 458, 34, 30),
             EyeR = Eye(686, 447, 44, 34),
@@ -96,12 +96,15 @@ namespace StellarisClone.Rendering
         public static Entry ForFaction(string factionName)
         {
             if (string.IsNullOrEmpty(factionName)) return null;
-            if (factionName.Contains("Ксарн")) return Xarn;
-            if (factionName.Contains("Астре")) return Astrea;
-            if (factionName.Contains("Аквил")) return Aquila;
-            if (factionName.Contains("Ирид")) return Iridia;
-            if (factionName.Contains("Тэрра")) return Terraan;
-            return null;
+            switch (FactionRegistry.KeyOfName(factionName))
+            {
+                case "xarn": return Xarn;
+                case "astrea": return Astrea;
+                case "aquila": return Aquila;
+                case "iridia": return Iridia;
+                case "terraan": return Terraan;
+                default: return null;
+            }
         }
 
         public static Entry ForFaction(FactionInfo f) => f != null ? ForFaction(f.Name) : null;

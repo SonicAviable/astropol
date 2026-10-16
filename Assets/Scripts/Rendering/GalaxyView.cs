@@ -363,7 +363,7 @@ namespace StellarisClone.Rendering
     centerWorld.y = -0.15f;
 
     // Берём имя выбранной фракции, если она есть
-    string empireName = "М О Я   И М П Е Р И Я";
+    string empireName = Loc.T("М О Я   И М П Е Р И Я");
     var faction = UIManager.Instance?.SelectedFaction;
     if (faction != null && !string.IsNullOrEmpty(faction.Name))
     {

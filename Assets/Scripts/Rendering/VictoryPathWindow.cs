@@ -121,14 +121,14 @@ namespace StellarisClone.Rendering
             // Шапка
             var icon = LGIcons.Create(rt, LGIcon.Trophy, 26, Gold);
             icon.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -24), new Vector2(26, 26));
-            var title = LGBuild.Label(rt, "ПУТЬ К ПОБЕДЕ", 28, Color.white, TextAnchor.UpperLeft, bold: true);
+            var title = LGBuild.Label(rt, Loc.T("ПУТЬ К ПОБЕДЕ"), 28, Color.white, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(64, -18), new Vector2(600, 36));
             _subtitle = LGBuild.Label(rt, "", 12, Muted, TextAnchor.UpperLeft);
             _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(66, -56), new Vector2(900, 18));
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, "Закрыть  <color=#8AA2A8>(Esc / V)</color>");
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / V)</color>"));
 
             // Шкала времени партии
             var tl = LGBuild.Rect(rt, "Timeline");
@@ -146,12 +146,12 @@ namespace StellarisClone.Rendering
             cols.Stretch(20, 20, 20, 92);
             (Kind k, string t, string d, Color c, LGIcon ic)[] defs =
             {
-                (Kind.Score, "ПО ОЧКАМ", $"Больше очков, чем у каждого соперника, к 1 января {VictoryManager.EndYear} года. Очки — системы, население, наука и флот.", Gold, LGIcon.Trophy),
-                (Kind.Domination, "ДОМИНИРОВАНИЕ", $"Поставьте форпосты в {GameSession.Settings.DominationTarget} системах (больше половины галактики) и удерживайте порог {VictoryManager.DominationHoldMonths} мес. Соперники могут сбросить счётчик.", UIManager.DS.NeonCyan, LGIcon.Starbase),
-                (Kind.Military, "ВОЕННАЯ", "Сокрушите всех соперников: у них не должно остаться ни одной системы.", new Color(1f, 0.45f, 0.42f), LGIcon.Swords),
-                (Kind.Tech, "ТЕХНОЛОГИЧЕСКАЯ", $"Изучите {VictoryManager.ScienceTarget} технологий из {TechnologyManager.TotalTechCount} и завершите проект «Вознесение».", UIManager.DS.Green, LGIcon.Research),
-                (Kind.Economy, "ЭКОНОМИЧЕСКАЯ", $"Давайте {VictoryManager.EconomyShare * 100f:0}% продукта галактики {VictoryManager.EconomyMonths / 12} года подряд.", new Color(0.95f, 0.78f, 0.28f), LGIcon.Trade),
-                (Kind.Diplomacy, "ДИПЛОМАТИЧЕСКАЯ", $"Получите 2/3 голосов Галактического совета (заседания: {VictoryManager.CouncilYearsText()}).", new Color(0.72f, 0.60f, 1f), LGIcon.Handshake),
+                (Kind.Score, Loc.T("ПО ОЧКАМ"), Loc.F("Больше очков, чем у каждого соперника, к 1 января {0} года. Очки — системы, население, наука и флот.", VictoryManager.EndYear), Gold, LGIcon.Trophy),
+                (Kind.Domination, Loc.T("ДОМИНИРОВАНИЕ"), Loc.F("Поставьте форпосты в {0} системах (больше половины галактики) и удерживайте порог {1} мес. Соперники могут сбросить счётчик.", GameSession.Settings.DominationTarget, VictoryManager.DominationHoldMonths), UIManager.DS.NeonCyan, LGIcon.Starbase),
+                (Kind.Military, Loc.T("ВОЕННАЯ"), Loc.T("Сокрушите всех соперников: у них не должно остаться ни одной системы."), new Color(1f, 0.45f, 0.42f), LGIcon.Swords),
+                (Kind.Tech, Loc.T("ТЕХНОЛОГИЧЕСКАЯ"), Loc.F("Изучите {0} технологий из {1} и завершите проект «Вознесение».", VictoryManager.ScienceTarget, TechnologyManager.TotalTechCount), UIManager.DS.Green, LGIcon.Research),
+                (Kind.Economy, Loc.T("ЭКОНОМИЧЕСКАЯ"), Loc.F("Давайте {0:0}% продукта галактики {1} года подряд.", VictoryManager.EconomyShare * 100f, VictoryManager.EconomyMonths / 12), new Color(0.95f, 0.78f, 0.28f), LGIcon.Trade),
+                (Kind.Diplomacy, Loc.T("ДИПЛОМАТИЧЕСКАЯ"), Loc.F("Получите 2/3 голосов Галактического совета (заседания: {0}).", VictoryManager.CouncilYearsText()), new Color(0.72f, 0.60f, 1f), LGIcon.Handshake),
             };
             float w = 1f / defs.Length;
             for (int i = 0; i < defs.Length; i++)
@@ -264,8 +264,8 @@ namespace StellarisClone.Rendering
             var tm = TimeManager.Instance;
             int year = tm != null ? tm.Year : 2200;
             int left = Mathf.Max(0, VictoryManager.EndYear - year);
-            _subtitle.text = $"Сравните свои успехи с соперниками. Незнакомые империи скрыты, пока вы их не встретите.";
-            _timelineText.text = $"{(tm != null ? tm.GetFormattedDate() : "")}   ·   до подсчёта очков: <color=#F2C747>{left} {VictoryManager.YearsWord(left)}</color> ({VictoryManager.EndYear})";
+            _subtitle.text = Loc.T("Сравните свои успехи с соперниками. Незнакомые империи скрыты, пока вы их не встретите.");
+            _timelineText.text = Loc.F("{0}   ·   до подсчёта очков: <color=#F2C747>{1} {2}</color> ({3})", (tm != null ? tm.GetFormattedDate() : ""), left, VictoryManager.YearsWord(left), VictoryManager.EndYear);
             float span = VictoryManager.EndYear - 2200f;
             float now = tm != null ? (tm.Year - 2200f) + (tm.Month - 1) / 12f : 0f;
             LGBuild.SetBar(_timelineBar, Mathf.Clamp01(now / span), Color.Lerp(UIManager.DS.Green, UIManager.DS.Red, Mathf.Clamp01(now / span)));
@@ -299,31 +299,31 @@ namespace StellarisClone.Rendering
                 {
                     case Kind.Score:
                         e.Value = EmpireStats.Score(o).Total;
-                        e.Text = $"Очки: {e.Value:N0}";
+                        e.Text = Loc.F("Очки: {0:N0}", e.Value);
                         break;
                     case Kind.Domination:
                         e.Value = EmpireStats.SystemCount(o);
                         e.Progress = e.Value / Mathf.Max(1, dom);
-                        e.Text = $"Систем: {e.Value:0} / {dom}";
+                        e.Text = Loc.F("Систем: {0:0} / {1}", e.Value, dom);
                         break;
                     case Kind.Military:
                         e.Value = EmpireStats.MilitaryPower(o);
-                        e.Text = Alive(o) ? $"Мощь флота: {e.Value:N0}" : "Повержена";
+                        e.Text = Alive(o) ? Loc.F("Мощь флота: {0:N0}", e.Value) : Loc.T("Повержена");
                         break;
                     case Kind.Tech:
                         e.Value = EmpireStats.TechCount(o);
                         e.Progress = e.Value / VictoryManager.ScienceTarget;
-                        e.Text = $"Технологий: {e.Value:0} / {VictoryManager.ScienceTarget}";
+                        e.Text = Loc.F("Технологий: {0:0} / {1}", e.Value, VictoryManager.ScienceTarget);
                         break;
                     case Kind.Economy:
                         e.Value = EmpireStats.GdpShare(o);
                         e.Progress = e.Value / VictoryManager.EconomyShare;
-                        e.Text = $"Доля продукта: {e.Value * 100f:0.0}%";
+                        e.Text = Loc.F("Доля продукта: {0:0.0}%", e.Value * 100f);
                         break;
                     default:
                         e.Value = EmpireStats.Votes(o);
                         e.Progress = total > 0 ? e.Value / total : 0f;
-                        e.Text = $"Голосов: {e.Value:0}" + (o != 0 && votesFor.Contains(o) ? "  · за вас" : "");
+                        e.Text = Loc.F("Голосов: {0:0}", e.Value) + (o != 0 && votesFor.Contains(o) ? Loc.T("  · за вас") : "");
                         break;
                 }
                 if (!Alive(o)) { e.Value = -1f; e.Progress = 0f; }
@@ -339,18 +339,18 @@ namespace StellarisClone.Rendering
             // Цель направления
             c.Goal.text = c.Kind switch
             {
-                Kind.Score => $"ЦЕЛЬ: БОЛЬШЕ ВСЕХ К {VictoryManager.EndYear}",
-                Kind.Domination => $"ЦЕЛЬ: {dom} СИСТЕМ · {VictoryManager.DominationHoldMonths} МЕС.",
-                Kind.Military => $"ЦЕЛЬ: ПОВЕРГНУТЬ ВСЕХ · ОСТАЛОСЬ {CountAliveRivals()}",
-                Kind.Tech => $"ЦЕЛЬ: {VictoryManager.ScienceTarget} ТЕХН. + ВОЗНЕСЕНИЕ",
-                Kind.Economy => $"ЦЕЛЬ: {VictoryManager.EconomyShare * 100f:0}% · {VictoryManager.EconomyMonths} МЕС. ПОДРЯД",
-                _ => $"ЦЕЛЬ: {Mathf.CeilToInt(total * VictoryManager.CouncilShare)} ИЗ {total} ГОЛОСОВ"
+                Kind.Score => Loc.F("ЦЕЛЬ: БОЛЬШЕ ВСЕХ К {0}", VictoryManager.EndYear),
+                Kind.Domination => Loc.F("ЦЕЛЬ: {0} СИСТЕМ · {1} МЕС.", dom, VictoryManager.DominationHoldMonths),
+                Kind.Military => Loc.F("ЦЕЛЬ: ПОВЕРГНУТЬ ВСЕХ · ОСТАЛОСЬ {0}", CountAliveRivals()),
+                Kind.Tech => Loc.F("ЦЕЛЬ: {0} ТЕХН. + ВОЗНЕСЕНИЕ", VictoryManager.ScienceTarget),
+                Kind.Economy => Loc.F("ЦЕЛЬ: {0:0}% · {1} МЕС. ПОДРЯД", VictoryManager.EconomyShare * 100f, VictoryManager.EconomyMonths),
+                _ => Loc.F("ЦЕЛЬ: {0} ИЗ {1} ГОЛОСОВ", Mathf.CeilToInt(total * VictoryManager.CouncilShare), total)
             };
 
             // Лидер
             var lead = entries[0];
             bool leadKnown = Known(lead.Owner);
-            c.LeaderName.text = leadKnown ? NameOf(lead.Owner) : "НЕИЗВЕСТНО";
+            c.LeaderName.text = leadKnown ? NameOf(lead.Owner) : Loc.T("НЕИЗВЕСТНО");
             c.LeaderName.color = leadKnown ? Color.Lerp(OwnerCol(lead.Owner), Color.white, 0.35f) : Muted;
             c.LeaderValue.text = lead.Text;
             var portrait = leadKnown ? PortraitOf(lead.Owner) : null;
@@ -376,9 +376,9 @@ namespace StellarisClone.Rendering
                 r.Crest.enabled = crest != null;
                 r.Crest.color = known ? Color.Lerp(OwnerCol(e.Owner), Color.white, 0.2f) : Color.white;
                 r.Dot.enabled = crest == null;
-                r.Name.text = me ? "ВЫ · " + NameOf(0) : known ? NameOf(e.Owner) : "НЕИЗВЕСТНО";
+                r.Name.text = me ? Loc.T("ВЫ · ") + NameOf(0) : known ? NameOf(e.Owner) : Loc.T("НЕИЗВЕСТНО");
                 r.Name.color = me ? Color.white : known ? Color.Lerp(OwnerCol(e.Owner), Color.white, 0.4f) : Muted;
-                r.Value.text = alive ? e.Text : "Повержена";
+                r.Value.text = alive ? e.Text : Loc.T("Повержена");
                 r.Value.color = me ? Color.Lerp(c.Accent, Color.white, 0.3f) : Muted;
                 r.Bg.color = me ? new Color(c.Accent.r, c.Accent.g, c.Accent.b, 0.14f) : new Color(1f, 1f, 1f, 0.03f);
                 LGBuild.SetBar(r.Bar, Mathf.Clamp01(e.Progress), me ? c.Accent : new Color(c.Accent.r, c.Accent.g, c.Accent.b, 0.55f));
@@ -394,32 +394,32 @@ namespace StellarisClone.Rendering
                 case Kind.Score:
                 {
                     int left = Mathf.Max(0, VictoryManager.EndYear - year);
-                    return $"Подсчёт через {left} {VictoryManager.YearsWord(left)}";
+                    return Loc.F("Подсчёт через {0} {1}", left, VictoryManager.YearsWord(left));
                 }
                 case Kind.Domination:
                     if (vm == null) return "";
-                    if (vm.DomMonths > 0) return $"<color=#5CF59A>Вы удерживаете порог: {vm.DomMonths} из {VictoryManager.DominationHoldMonths} мес.</color>";
-                    if (vm.RivalDomMonths > 0) return $"<color=#FF6A6A>{NameOf(vm.RivalDomOwner)}: {vm.RivalDomMonths} из {VictoryManager.DominationHoldMonths} мес.!</color>";
-                    return "Порог удерживается год — его можно сбросить, отбив системы";
+                    if (vm.DomMonths > 0) return Loc.F("<color=#5CF59A>Вы удерживаете порог: {0} из {1} мес.</color>", vm.DomMonths, VictoryManager.DominationHoldMonths);
+                    if (vm.RivalDomMonths > 0) return Loc.F("<color=#FF6A6A>{0}: {1} из {2} мес.!</color>", NameOf(vm.RivalDomOwner), vm.RivalDomMonths, VictoryManager.DominationHoldMonths);
+                    return Loc.T("Порог удерживается год — его можно сбросить, отбив системы");
                 case Kind.Tech:
                     return VictoryManager.HasAscension(0)
-                        ? "<color=#5CF59A>Проект «Вознесение» завершён</color>"
-                        : "Проект «Вознесение» (Общество, уровень IV) ещё не изучен";
+                        ? Loc.T("<color=#5CF59A>Проект «Вознесение» завершён</color>")
+                        : Loc.T("Проект «Вознесение» (Общество, уровень IV) ещё не изучен");
                 case Kind.Economy:
                     if (vm == null) return "";
-                    if (vm.EconMonths > 0) return $"<color=#5CF59A>Вы удерживаете долю: {vm.EconMonths} из {VictoryManager.EconomyMonths} мес.</color>";
-                    if (vm.RivalEconMonths > 0) return $"<color=#FF6A6A>{NameOf(vm.RivalEconOwner)}: {vm.RivalEconMonths} из {VictoryManager.EconomyMonths} мес.!</color>";
-                    return "Никто не держит нужную долю";
+                    if (vm.EconMonths > 0) return Loc.F("<color=#5CF59A>Вы удерживаете долю: {0} из {1} мес.</color>", vm.EconMonths, VictoryManager.EconomyMonths);
+                    if (vm.RivalEconMonths > 0) return Loc.F("<color=#FF6A6A>{0}: {1} из {2} мес.!</color>", NameOf(vm.RivalEconOwner), vm.RivalEconMonths, VictoryManager.EconomyMonths);
+                    return Loc.T("Никто не держит нужную долю");
                 case Kind.Diplomacy:
                 {
                     VictoryManager.CouncilForecast(out int pro, out int all);
                     int next = VictoryManager.NextCouncilYear(year);
-                    string when = next > 0 ? $"Заседание — {next}" : "Заседаний больше не будет";
+                    string when = next > 0 ? Loc.F("Заседание — {0}", next) : Loc.T("Заседаний больше не будет");
                     int need = Mathf.CeilToInt(all * VictoryManager.CouncilShare);
-                    return $"{when}. Сейчас за вас {pro} из {all} (нужно {need}); поддерживают империй: {supporters}";
+                    return Loc.F("{0}. Сейчас за вас {1} из {2} (нужно {3}); поддерживают империй: {4}", when, pro, all, need, supporters);
                 }
                 case Kind.Military:
-                    return "Своих систем не должно остаться ни у одного соперника";
+                    return Loc.T("Своих систем не должно остаться ни у одного соперника");
                 default:
                     return "";
             }
@@ -447,9 +447,9 @@ namespace StellarisClone.Rendering
 
         private static string NameOf(int owner)
         {
-            if (owner == 0) return UIManager.Instance?.SelectedFaction?.Name ?? "Ваша империя";
+            if (owner == 0) return UIManager.Instance?.SelectedFaction?.Name ?? Loc.T("Ваша империя");
             var ai = AIEmpireManager.For(owner);
-            return ai != null ? ai.AIName : "Соперник";
+            return ai != null ? ai.AIName : Loc.T("Соперник");
         }
 
         private static Color OwnerCol(int owner) => FleetIndicator.OwnerColor(owner);

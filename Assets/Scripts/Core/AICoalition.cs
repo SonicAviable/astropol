@@ -62,8 +62,8 @@ namespace StellarisClone.Core
         public static bool AreAllies(int a, int b) => a != b && IsMember(a) && IsMember(b);
 
         /// <summary>«вас» или «империи Имя» — для фразы «коалиция против …».</summary>
-        public static string TargetPhrase => TargetOwner == 0 ? "вас"
-            : Contacts.PlayerMet(TargetOwner) ? "империи " + AIEmpireManager.NameOf(TargetOwner) : "неизвестной цивилизации";
+        public static string TargetPhrase => TargetOwner == 0 ? Loc.T("вас")
+            : Contacts.PlayerMet(TargetOwner) ? Loc.T("империи ") + AIEmpireManager.NameOf(TargetOwner) : Loc.T("неизвестной цивилизации");
 
         public static void Reset()
         {
@@ -209,19 +209,19 @@ namespace StellarisClone.Core
             _announced = true;
             var names = new List<string>();
             foreach (int m in _members) names.Add(AIEmpireManager.NameOf(m));
-            if (PlayerMember) names.Add("вы");
+            if (PlayerMember) names.Add(Loc.T("вы"));
             // Игра загружена посреди войны коалиции (все уже воюют с целью) — не объявляем её заново
             bool allAtWar = true;
             foreach (int m in _members) if (!Diplomacy.AtWar(m, TargetOwner)) { allAtWar = false; break; }
             if (allAtWar) return;
 
             if (TargetOwner == 0)
-                NotificationCenter.Show("КОАЛИЦИЯ ПРОТИВ ВАС",
-                    $"{string.Join(", ", names)} объединились: вы стали слишком сильны. Подарки и пакты удержат часть соседей от вступления",
+                NotificationCenter.Show(Loc.T("КОАЛИЦИЯ ПРОТИВ ВАС"),
+                    Loc.F("{0} объединились: вы стали слишком сильны. Подарки и пакты удержат часть соседей от вступления", string.Join(", ", names)),
                     NotificationCenter.Kind.Danger, 12f);
             else if (!PlayerOrganized)
-                NotificationCenter.Show("Коалиция в галактике",
-                    $"{string.Join(", ", names)} объединяются против империи {AIEmpireManager.NameOf(TargetOwner)}. Вы можете вступить в неё в окне дипломатии",
+                NotificationCenter.Show(Loc.T("Коалиция в галактике"),
+                    Loc.F("{0} объединяются против империи {1}. Вы можете вступить в неё в окне дипломатии", string.Join(", ", names), AIEmpireManager.NameOf(TargetOwner)),
                     NotificationCenter.Kind.Info, 10f);
             AIEmpireManager.NotifyDiplomacyChanged();
         }
@@ -230,7 +230,7 @@ namespace StellarisClone.Core
         {
             if (!wasActive || IsActive) return;
             _announced = false;
-            NotificationCenter.Show("Коалиция распалась", $"Союз против {phrase} больше не действует",
+            NotificationCenter.Show(Loc.T("Коалиция распалась"), Loc.F("Союз против {0} больше не действует", phrase),
                 targetWasPlayer ? NotificationCenter.Kind.Success : NotificationCenter.Kind.Info, 8f);
             AIEmpireManager.NotifyDiplomacyChanged();
         }
@@ -257,21 +257,21 @@ namespace StellarisClone.Core
         private static string InfluenceBlocker(float cost)
         {
             var eco = EconomyManager.Instance;
-            return eco != null && eco.CanAfford(0f, 0f, 0f, cost) ? null : $"Нужно {cost:0} влияния";
+            return eco != null && eco.CanAfford(0f, 0f, 0f, cost) ? null : Loc.F("Нужно {0:0} влияния", cost);
         }
 
         /// <summary>Что мешает вступить в действующую коалицию (null — можно).</summary>
         public static string JoinBlocker()
         {
-            if (!IsActive || PlayerMember) return "Нет коалиции, к которой можно присоединиться";
-            if (TargetOwner == 0) return "Эта коалиция направлена против вас";
+            if (!IsActive || PlayerMember) return Loc.T("Нет коалиции, к которой можно присоединиться");
+            if (TargetOwner == 0) return Loc.T("Эта коалиция направлена против вас");
             var target = AIEmpireManager.For(TargetOwner);
-            if (target == null || target.IsEliminated) return "Цель коалиции уже повержена";
-            if (target.HasPact) return "У вас пакт с этой империей: сначала расторгните его";
+            if (target == null || target.IsEliminated) return Loc.T("Цель коалиции уже повержена");
+            if (target.HasPact) return Loc.T("У вас пакт с этой империей: сначала расторгните его");
             foreach (int m in _members)
             {
                 var ai = AIEmpireManager.For(m);
-                if (ai != null && ai.AtWar) return $"Вы воюете с {ai.AIName}, участником коалиции";
+                if (ai != null && ai.AtWar) return Loc.F("Вы воюете с {0}, участником коалиции", ai.AIName);
             }
             return InfluenceBlocker(JoinCost);
         }
@@ -282,8 +282,8 @@ namespace StellarisClone.Core
             var eco = EconomyManager.Instance;
             if (eco == null || !eco.TrySpend(0f, 0f, 0f, JoinCost)) return false;
             PlayerMember = true;
-            NotificationCenter.Show("Вы вступили в коалицию",
-                $"Вы вместе с союзниками выступаете против {TargetPhrase}. Союзники начнут войну, когда накопят силы",
+            NotificationCenter.Show(Loc.T("Вы вступили в коалицию"),
+                Loc.F("Вы вместе с союзниками выступаете против {0}. Союзники начнут войну, когда накопят силы", TargetPhrase),
                 NotificationCenter.Kind.Success, 9f);
             Refresh();
             return true;
@@ -292,13 +292,13 @@ namespace StellarisClone.Core
         /// <summary>Что мешает собрать коалицию против этой империи (null — можно).</summary>
         public static string OrganizeBlocker(AIEmpireManager target)
         {
-            if (GameSession.Settings.Difficulty < 1) return "На лёгкой сложности коалиции недоступны";
-            if (target == null || target.IsEliminated) return "Империя уже повержена";
-            if (TargetOwner >= 0) return "В галактике уже действует коалиция";
+            if (GameSession.Settings.Difficulty < 1) return Loc.T("На лёгкой сложности коалиции недоступны");
+            if (target == null || target.IsEliminated) return Loc.T("Империя уже повержена");
+            if (TargetOwner >= 0) return Loc.T("В галактике уже действует коалиция");
             int others = 0;
             foreach (var ai in AIEmpireManager.Alive) if (ai != target) others++;
-            if (others < 1) return "Нужен ещё хотя бы один соперник";
-            if (target.HasPact) return "У вас пакт с этой империей: сначала расторгните его";
+            if (others < 1) return Loc.T("Нужен ещё хотя бы один соперник");
+            if (target.HasPact) return Loc.T("У вас пакт с этой империей: сначала расторгните его");
             return InfluenceBlocker(OrganizeCost);
         }
 
@@ -315,8 +315,8 @@ namespace StellarisClone.Core
             if (willing.Count == 0)
             {
                 Reset();
-                NotificationCenter.Show("Никто не откликнулся",
-                    $"Остальные соперники не считают {target.AIName} угрозой или не доверяют вам. Улучшите отношения подарками",
+                NotificationCenter.Show(Loc.T("Никто не откликнулся"),
+                    Loc.F("Остальные соперники не считают {0} угрозой или не доверяют вам. Улучшите отношения подарками", target.AIName),
                     NotificationCenter.Kind.Warning, 8f);
                 return false;
             }
@@ -329,8 +329,8 @@ namespace StellarisClone.Core
             _announced = true;
             var names = new List<string>();
             foreach (var ai in willing) names.Add(ai.AIName);
-            NotificationCenter.Show("Коалиция собрана",
-                $"Против империи {target.AIName} выступят: {string.Join(", ", names)}. Через {PrepMonths} мес. союзники начнут войну, когда накопят силы",
+            NotificationCenter.Show(Loc.T("Коалиция собрана"),
+                Loc.F("Против империи {0} выступят: {1}. Через {2} мес. союзники начнут войну, когда накопят силы", target.AIName, string.Join(", ", names), PrepMonths),
                 NotificationCenter.Kind.Success, 10f);
             Refresh();
             return true;
@@ -345,8 +345,8 @@ namespace StellarisClone.Core
             string phrase = TargetPhrase;
             if (organizer) Reset();
             else PlayerMember = false;
-            NotificationCenter.Show(organizer ? "Коалиция распущена" : "Вы вышли из коалиции",
-                $"Союз против {phrase} больше не связывает вас", NotificationCenter.Kind.Warning, 7f);
+            NotificationCenter.Show(organizer ? Loc.T("Коалиция распущена") : Loc.T("Вы вышли из коалиции"),
+                Loc.F("Союз против {0} больше не связывает вас", phrase), NotificationCenter.Kind.Warning, 7f);
             Refresh();
             return true;
         }
@@ -366,8 +366,8 @@ namespace StellarisClone.Core
             if (organizer) Reset();
             else PlayerMember = false;
             if (abandoned > 0)
-                NotificationCenter.Show("Сепаратный мир",
-                    "Вы вышли из войны, оставив союзников одних: они этого не забудут", NotificationCenter.Kind.Warning, 8f);
+                NotificationCenter.Show(Loc.T("Сепаратный мир"),
+                    Loc.T("Вы вышли из войны, оставив союзников одних: они этого не забудут"), NotificationCenter.Kind.Warning, 8f);
             Refresh();
         }
 

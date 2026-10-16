@@ -98,7 +98,7 @@ namespace StellarisClone.Core
             if (retreated)
             {
                 if (Mode != ArmyMode.Retreat && AtWar)
-                    NotificationCenter.Show("Враг отступает", $"Флот {AIName} уходит из боя на ремонт", NotificationCenter.Kind.Info, 4f);
+                    NotificationCenter.Show(Loc.T("Враг отступает"), Loc.F("Флот {0} уходит из боя на ремонт", AIName), NotificationCenter.Kind.Info, 4f);
                 Mode = ArmyMode.Retreat;
                 ArmyTargetSystemId = SafeHaven(CapitalSystemId);
             }

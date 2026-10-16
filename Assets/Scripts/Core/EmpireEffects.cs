@@ -49,7 +49,7 @@ namespace StellarisClone.Core
             var e = _list[i];
             _list.RemoveAt(i);
             Apply(e, -1f);
-            if (!silent) NotificationCenter.Show("Срок действия истёк", e.Title, NotificationCenter.Kind.Info, 5f);
+            if (!silent) NotificationCenter.Show(Loc.T("Срок действия истёк"), e.Title, NotificationCenter.Kind.Info, 5f);
         }
 
         public static void MonthlyTick()
@@ -63,9 +63,9 @@ namespace StellarisClone.Core
         {
             var parts = new List<string>();
             void P(float v, string what) { if (Mathf.Abs(v) >= 0.05f) parts.Add($"{v:+0.#;−0.#} {what}"); }
-            P(e.Energy, "энергии"); P(e.Minerals, "минералов"); P(e.Alloys, "сплавов");
-            P(e.Influence, "влияния"); P(e.Science, "науки");
-            return parts.Count > 0 ? string.Join("  ·  ", parts) + " в месяц" : "";
+            P(e.Energy, Loc.T("энергии")); P(e.Minerals, Loc.T("минералов")); P(e.Alloys, Loc.T("сплавов"));
+            P(e.Influence, Loc.T("влияния")); P(e.Science, Loc.T("науки"));
+            return parts.Count > 0 ? string.Join("  ·  ", parts) + Loc.T(" в месяц") : "";
         }
 
         private static void Apply(TimedEffect e, float sign)

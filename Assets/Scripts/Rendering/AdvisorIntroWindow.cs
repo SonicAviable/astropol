@@ -167,7 +167,7 @@ namespace StellarisClone.Rendering
             _recDot = LGBuild.Panel(rec.transform, "Dot", new Color(1f, 0.25f, 0.25f));
             _recDot.sprite = MenuArt.SoftDisc;
             _recDot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(14, 0), new Vector2(10, 10));
-            var recText = LGBuild.Label(rec.transform, "ПРЯМАЯ СВЯЗЬ", 9, Color.white, TextAnchor.MiddleLeft, bold: true);
+            var recText = LGBuild.Label(rec.transform, Loc.T("ПРЯМАЯ СВЯЗЬ"), 9, Color.white, TextAnchor.MiddleLeft, bold: true);
             recText.rectTransform.Stretch(26, 0, 6, 0);
         }
 
@@ -227,19 +227,19 @@ namespace StellarisClone.Rendering
             _objectiveGroup = obj.gameObject.AddComponent<CanvasGroup>();
             var oic = LGIcons.Create(obj, LGIcon.Target, 15, UIManager.DS.Gold);
             oic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(15, 15));
-            var ot = LGBuild.Label(obj, "<color=#FFCC52><b>Первая задача:</b></color>  отправьте научный корабль на разведку приграничных систем",
+            var ot = LGBuild.Label(obj, Loc.T("<color=#FFCC52><b>Первая задача:</b></color>  отправьте научный корабль на разведку приграничных систем"),
                                    12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
             ot.rectTransform.Stretch(24, 0, 0, 0);
 
-            _startBtn = LGBuild.Button(right, "StartGameBtn", UIManager.DS.BtnSuccess, UIManager.DS.Green, Confirm, LGIcon.Play, "ВСТУПИТЬ В ДОЛЖНОСТЬ", 13);
+            _startBtn = LGBuild.Button(right, "StartGameBtn", UIManager.DS.BtnSuccess, UIManager.DS.Green, Confirm, LGIcon.Play, Loc.T("ВСТУПИТЬ В ДОЛЖНОСТЬ"), 13);
             var brt = (RectTransform)_startBtn.transform;
             brt.At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(300, 46));
             _buttonGroup = _startBtn.gameObject.AddComponent<CanvasGroup>();
 
             // Назад — к выбору цивилизации (доступно сразу, не ждёт конца текста)
-            var back = LGBuild.Button(right, "BackBtn", new Color(0.10f, 0.22f, 0.26f), UIManager.DS.NeonCyan, Back, LGIcon.Back, "НАЗАД", 12);
+            var back = LGBuild.Button(right, "BackBtn", new Color(0.10f, 0.22f, 0.26f), UIManager.DS.NeonCyan, Back, LGIcon.Back, Loc.T("НАЗАД"), 12);
             ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(0, 0), Vector2.zero, new Vector2(150, 46));
-            TooltipHelper.Attach(back.gameObject, "<b>Назад</b>\nВернуться к выбору цивилизации  (Esc)");
+            TooltipHelper.Attach(back.gameObject, Loc.T("<b>Назад</b>\nВернуться к выбору цивилизации  (Esc)"));
         }
 
         private static Texture2D s_scan;
@@ -307,9 +307,9 @@ namespace StellarisClone.Rendering
             if (cut >= 0) desc = desc.Substring(0, cut);
             string hex = LGBuild.Hex(Color.Lerp(_accent, Color.white, 0.35f));
             var sb = new StringBuilder();
-            sb.Append("<b>Приветствую, Командующий!</b>\n\n");
-            sb.Append("Бортовой тактический сервер развёрнут, все сенсоры на связи. ");
-            sb.Append($"Вы принимаете командование: <b>{f?.Name}</b>.\n\n");
+            sb.Append(Loc.T("<b>Приветствую, Командующий!</b>\n\n"));
+            sb.Append(Loc.T("Бортовой тактический сервер развёрнут, все сенсоры на связи. "));
+            sb.Append(Loc.F("Вы принимаете командование: <b>{0}</b>.\n\n", f?.Name));
             sb.Append(desc);
             if (leader != null)
                 sb.Append($"\n\n<i><color={hex}>«{leader.Quote}»</color></i>");
@@ -327,10 +327,10 @@ namespace StellarisClone.Rendering
                 int pct = Mathf.RoundToInt((mult - 1f) * 100f);
                 if (pct != 0) list.Add((icon, col, $"{(pct > 0 ? "+" : "")}{pct}%  {name}"));
             }
-            Add(f.InfluenceBonus, LGIcon.Influence, new Color(1.00f, 0.48f, 0.58f), "влияние");
-            Add(f.EnergyBonus, LGIcon.Energy, UIManager.DS.Gold, "гелий-3");
-            Add(f.MineralBonus, LGIcon.Minerals, UIManager.DS.NeonCyan, "титан");
-            Add(f.AlloyBonus, LGIcon.Alloys, new Color(0.95f, 0.62f, 0.36f), "сплавы");
+            Add(f.InfluenceBonus, LGIcon.Influence, new Color(1.00f, 0.48f, 0.58f), Loc.T("влияние"));
+            Add(f.EnergyBonus, LGIcon.Energy, UIManager.DS.Gold, Loc.T("гелий-3"));
+            Add(f.MineralBonus, LGIcon.Minerals, UIManager.DS.NeonCyan, Loc.T("титан"));
+            Add(f.AlloyBonus, LGIcon.Alloys, new Color(0.95f, 0.62f, 0.36f), Loc.T("сплавы"));
 
             float x = 0f;
             foreach (var (icon, col, text) in list)
@@ -504,7 +504,7 @@ namespace StellarisClone.Rendering
                 c.a = lvl > 0.25f + i * 0.08f ? 1f : 0.2f;
                 _bars[i].color = c;
             }
-            _signalText.text = $"ВХОДЯЩАЯ ПЕРЕДАЧА   ·   КАНАЛ ПРАВИТЕЛЬСТВА   ·   <color=#7FF5EA>{(int)(_t * 37.3f) % 1000:000}</color>";
+            _signalText.text = Loc.F("ВХОДЯЩАЯ ПЕРЕДАЧА   ·   КАНАЛ ПРАВИТЕЛЬСТВА   ·   <color=#7FF5EA>{0:000}</color>", (int)(_t * 37.3f) % 1000);
 
             // Блик бежит по разделителю
             float sx = Mathf.Repeat(_t * 0.35f, 1.4f) - 0.2f;

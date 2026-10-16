@@ -87,7 +87,7 @@ namespace StellarisClone.Core
         public int CapitalSystemId { get; private set; } = -1;
         public bool IsEliminated { get; private set; }
 
-        public string AIName { get; private set; } = "Неизвестная империя";
+        public string AIName { get; private set; } = Loc.T("Неизвестная империя");
         public string AITitle { get; private set; } = "";
         public Color AIEmpireColor { get; private set; } = new Color(0.95f, 0.25f, 0.20f);
         public FactionInfo Faction { get; private set; }
@@ -297,7 +297,7 @@ namespace StellarisClone.Core
                 if (AtWar) MakePeace(silent: true);
                 AIRelations.EndAllWars(OwnerId);
                 if (Contacts.PlayerMet(OwnerId))
-                    NotificationCenter.Show("Империя повержена", $"{AIName} потерял все системы", NotificationCenter.Kind.Success, 10f);
+                    NotificationCenter.Show(Loc.T("Империя повержена"), Loc.F("{0} потерял все системы", AIName), NotificationCenter.Kind.Success, 10f);
                 RaiseDiplomacyChanged();
                 return;
             }
@@ -395,14 +395,14 @@ namespace StellarisClone.Core
         private FleetView CreateCivilian(FleetType type)
         {
             if (FleetManager.Instance == null || SpawnSystem < 0) return null;
-            string name = type == FleetType.Science ? $"{AIName} · Разведчик" : $"{AIName} · Строитель";
+            string name = type == FleetType.Science ? Loc.F("{0} · Разведчик", AIName) : Loc.F("{0} · Строитель", AIName);
             return FleetManager.Instance.CreateOwnedFleet(name, SpawnSystem, type, OwnerId);
         }
 
         private FleetView CreateWarship(ShipClass hull)
         {
             if (FleetManager.Instance == null || SpawnSystem < 0) return null;
-            var fv = FleetManager.Instance.CreateOwnedFleet($"{AIName} · Крыло {_warFleetSerial++}", SpawnSystem,
+            var fv = FleetManager.Instance.CreateOwnedFleet(Loc.F("{0} · Крыло {1}", AIName, _warFleetSerial++), SpawnSystem,
                                                              FleetType.Military, OwnerId, hull);
             fv.Data.ApplyDesign(GetDesign(hull));
             return fv;
@@ -414,7 +414,7 @@ namespace StellarisClone.Core
             if (_designs.TryGetValue(hull, out var d) && d != null) return d;
             var dm = ShipDesignManager.Instance;
             if (dm == null) return null;
-            string cls = hull == ShipClass.Destroyer ? "Эсминец" : hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
+            string cls = hull == ShipClass.Destroyer ? Loc.T("Эсминец") : hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет");
             d = dm.CreateAutoDesign(hull, DesignPrimary, DesignSecondary, HasTech, $"{AIName} · {cls}");
             _designs[hull] = d;
             return d;
@@ -884,7 +884,7 @@ namespace StellarisClone.Core
             if (!HasTech(VictoryManager.CapstoneTech)) left = Mathf.Max(left, 1);
             int level = left <= 2 ? 2 : left <= 5 ? 1 : 0;
             if (level > _scienceWarnLevel && Contacts.PlayerMet(OwnerId))        // о незнакомцах игрок не знает
-                NotificationCenter.Show("Научная гонка", $"{AIName}: до научной победы осталось {Mathf.Max(0, left)} техн.",
+                NotificationCenter.Show(Loc.T("Научная гонка"), Loc.F("{0}: до научной победы осталось {1} техн.", AIName, Mathf.Max(0, left)),
                     NotificationCenter.Kind.Warning, 7f);
             _scienceWarnLevel = level;
         }
@@ -953,9 +953,9 @@ namespace StellarisClone.Core
             if (best < 0) return;
             CapitalSystemId = best;
             if (conqueror == 0) _capitalLost = true;
-            string by = conqueror == 0 ? "" : $" под ударом {Contacts.NameForPlayer(conqueror)}";
+            string by = conqueror == 0 ? "" : Loc.F(" под ударом {0}", Contacts.NameForPlayer(conqueror));
             if (conqueror == 0 || Contacts.PlayerMet(OwnerId))
-            NotificationCenter.Show($"Столица {AIName} пала", $"Империя{by} переносит столицу в {EmpireStats.GetSystem(best)?.Name}",
+            NotificationCenter.Show(Loc.F("Столица {0} пала", AIName), Loc.F("Империя{0} переносит столицу в {1}", by, EmpireStats.GetSystem(best)?.Name),
                 conqueror == 0 ? NotificationCenter.Kind.Success : NotificationCenter.Kind.Info, 7f);
         }
 

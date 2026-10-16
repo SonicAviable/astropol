@@ -70,20 +70,20 @@ namespace StellarisClone.Core
                 reasons?.Add($"{label} {x:+0;-0}");
             }
 
-            Add("характеры", (a.Profile.BaseOpinion + b.Profile.BaseOpinion) * 0.5f + (a.Personality == b.Personality ? 5f : 0f));
+            Add(Loc.T("характеры"), (a.Profile.BaseOpinion + b.Profile.BaseOpinion) * 0.5f + (a.Personality == b.Personality ? 5f : 0f));
             int border = EmpireStats.SharedBorderCount(a.OwnerId, b.OwnerId);
-            if (border > 0) Add($"общая граница ({border})", -Mathf.Min(18f, border * 3f));
+            if (border > 0) Add(Loc.F("общая граница ({0})", border), -Mathf.Min(18f, border * 3f));
             float pa = Mathf.Max(1f, EmpireStats.MilitaryPower(a.OwnerId)), pb = Mathf.Max(1f, EmpireStats.MilitaryPower(b.OwnerId));
-            if (pa / pb > 1.5f || pb / pa > 1.5f) Add("перекос сил", -6f);
-            if (AICoalition.AreAllies(a.OwnerId, b.OwnerId)) Add("союзники по коалиции", 20f);
+            if (pa / pb > 1.5f || pb / pa > 1.5f) Add(Loc.T("перекос сил"), -6f);
+            if (AICoalition.AreAllies(a.OwnerId, b.OwnerId)) Add(Loc.T("союзники по коалиции"), 20f);
             else if (AICoalition.IsActive && (AICoalition.IsTarget(a.OwnerId) && AICoalition.IsMember(b.OwnerId)
                                               || AICoalition.IsTarget(b.OwnerId) && AICoalition.IsMember(a.OwnerId)))
-                Add("коалиция против сильнейшего", -15f);
+                Add(Loc.T("коалиция против сильнейшего"), -15f);
             if (p != null)
             {
-                if (p.Grudge < -0.5f) Add("старые обиды", p.Grudge);
-                if (p.AtWar) Add("война", -40f);
-                else if (p.TruceDays > 0) Add("перемирие", 5f);
+                if (p.Grudge < -0.5f) Add(Loc.T("старые обиды"), p.Grudge);
+                if (p.AtWar) Add(Loc.T("война"), -40f);
+                else if (p.TruceDays > 0) Add(Loc.T("перемирие"), 5f);
             }
             return Mathf.Clamp(v, -100f, 100f);
         }
@@ -168,8 +168,8 @@ namespace StellarisClone.Core
             p.WarMonths = 0;
             p.WearA = p.WearB = 0f;
             if (Contacts.PlayerMet(attacker.OwnerId) || Contacts.PlayerMet(defender.OwnerId))
-                NotificationCenter.Show("Война соседей",
-                    $"{Contacts.NameForPlayer(attacker.OwnerId)} объявляет войну: {Contacts.NameForPlayer(defender.OwnerId)}",
+                NotificationCenter.Show(Loc.T("Война соседей"),
+                    Loc.F("{0} объявляет войну: {1}", Contacts.NameForPlayer(attacker.OwnerId), Contacts.NameForPlayer(defender.OwnerId)),
                     NotificationCenter.Kind.Warning, 8f);
             AIEmpireManager.NotifyDiplomacyChanged();
         }
@@ -182,8 +182,8 @@ namespace StellarisClone.Core
             p.Grudge = Mathf.Max(-40f, p.Grudge - 15f);
             SiegeManager.Instance?.ClearSieges(a.OwnerId, b.OwnerId);
             if (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId))
-                NotificationCenter.Show("Мир между соседями",
-                    $"{Contacts.NameForPlayer(a.OwnerId)} и {Contacts.NameForPlayer(b.OwnerId)} заключили мир. Перемирие — 3 года",
+                NotificationCenter.Show(Loc.T("Мир между соседями"),
+                    Loc.F("{0} и {1} заключили мир. Перемирие — 3 года", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)),
                     NotificationCenter.Kind.Info, 7f);
             AIEmpireManager.NotifyDiplomacyChanged();
         }

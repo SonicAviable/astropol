@@ -92,9 +92,9 @@ namespace StellarisClone.Core
         /// <summary>Имя империи для ленты: наша — по фракции, угрозы — по названию, незнакомые — «неизвестная империя».</summary>
         public static string Who(int owner)
         {
-            if (owner == 0) return FactionTraits.FactionOf(0)?.Name ?? "Наша империя";
+            if (owner == 0) return FactionTraits.FactionOf(0)?.Name ?? Loc.T("Наша империя");
             if (Threats.IsThreat(owner)) return Threats.NameOf(owner);
-            return Contacts.PlayerMet(owner) ? AIEmpireManager.NameOf(owner) : "Неизвестная империя";
+            return Contacts.PlayerMet(owner) ? AIEmpireManager.NameOf(owner) : Loc.T("Неизвестная империя");
         }
 
         /// <summary>Известна ли игроку хотя бы одна сторона (или это мы сами).</summary>
@@ -106,7 +106,7 @@ namespace StellarisClone.Core
         }
 
         public static string Place(StarSystem s)
-            => s == null ? "далёкой системе" : (!Vision.Active || Vision.PlayerKnows(s.Id) ? s.Name : "далёкой системе");
+            => s == null ? Loc.T("далёкой системе") : (!Vision.Active || Vision.PlayerKnows(s.Id) ? s.Name : Loc.T("далёкой системе"));
 
         // ==================== СОБЫТИЯ ====================
 
@@ -115,8 +115,8 @@ namespace StellarisClone.Core
             if (sys == null || !Known(oldOwner, newOwner)) return;
             bool player = oldOwner == 0 || newOwner == 0;
             string text = oldOwner >= 0
-                ? $"{Who(newOwner)} захватывает систему {Place(sys)} у {Who(oldOwner)}"
-                : $"{Who(newOwner)} берёт под контроль систему {Place(sys)}";
+                ? Loc.F("{0} захватывает систему {1} у {2}", Who(newOwner), Place(sys), Who(oldOwner))
+                : Loc.F("{0} берёт под контроль систему {1}", Who(newOwner), Place(sys));
             Post(NewsKind.Conquest, text, sys.Id, player);
         }
 
@@ -125,7 +125,7 @@ namespace StellarisClone.Core
             if (a != 0 && b != 0) return;
             int other = a == 0 ? b : a;
             if (Threats.IsThreat(other)) return;
-            Post(NewsKind.Contact, $"Первый контакт: {Who(0)} и {AIEmpireManager.NameOf(other)} обменялись посланиями", -1, true);
+            Post(NewsKind.Contact, Loc.F("Первый контакт: {0} и {1} обменялись посланиями", Who(0), AIEmpireManager.NameOf(other)), -1, true);
         }
 
         private static void OnJob(ConstructionJob job)
@@ -133,14 +133,14 @@ namespace StellarisClone.Core
             if (job == null || job.Kind != JobKind.Colony || !Known(job.Owner)) return;
             var sys = EmpireStats.GetSystem(job.SystemId);
             var planet = sys != null && job.PlanetIndex >= 0 && job.PlanetIndex < sys.Planets.Count ? sys.Planets[job.PlanetIndex] : null;
-            string where = planet != null ? $"«{planet.Name}»" : $"в системе {Place(sys)}";
-            Post(NewsKind.Colony, $"{Who(job.Owner)} основывает новую колонию {where}", job.SystemId, job.Owner == 0);
+            string where = planet != null ? $"«{planet.Name}»" : Loc.F("в системе {0}", Place(sys));
+            Post(NewsKind.Colony, Loc.F("{0} основывает новую колонию {1}", Who(job.Owner), where), job.SystemId, job.Owner == 0);
         }
 
         private static void OnPlayerTech(Technology t)
         {
             if (t == null || t.Tier < 2) return;
-            Post(NewsKind.Science, $"Прорыв: учёные {Who(0)} освоили «{t.Name}»", -1, true);
+            Post(NewsKind.Science, Loc.F("Прорыв: учёные {0} освоили «{1}»", Who(0), t.Name), -1, true);
         }
 
         /// <summary>Изучение технологии империей ИИ (вызывается из AIEmpireManager): в ленту — только крупные.</summary>
@@ -149,7 +149,7 @@ namespace StellarisClone.Core
             if (ai == null || t == null || !Known(ai.OwnerId)) return;
             if (t.Tier < 2 && Random.value > 0.15f) return;
             if (t.Tier >= 2 && Random.value > 0.5f) return;
-            Post(NewsKind.Science, $"{ai.AIName} совершает научный прорыв: «{t.Name}»");
+            Post(NewsKind.Science, Loc.F("{0} совершает научный прорыв: «{1}»", ai.AIName, t.Name));
         }
 
         /// <summary>Итог сражения (вызывается из CombatManager): победитель, проигравший, сколько кораблей потеряно.</summary>
@@ -158,8 +158,8 @@ namespace StellarisClone.Core
             if (sys == null || shipsLost < 2 || !Known(winner, loser)) return;
             bool player = winner == 0 || loser == 0;
             string text = winner >= 0 && loser >= 0 && winner != loser
-                ? $"Битва при {Place(sys)}: {Who(winner)} разбивает флот {Who(loser)}, потеряно кораблей: {shipsLost}"
-                : $"Кровопролитное сражение при {Place(sys)}: потеряно кораблей: {shipsLost}";
+                ? Loc.F("Битва при {0}: {1} разбивает флот {2}, потеряно кораблей: {3}", Place(sys), Who(winner), Who(loser), shipsLost)
+                : Loc.F("Кровопролитное сражение при {0}: потеряно кораблей: {1}", Place(sys), shipsLost);
             Post(NewsKind.Battle, text, sys.Id, player);
         }
 
@@ -181,8 +181,8 @@ namespace StellarisClone.Core
                     _wars[key] = war;
                     if (!_snapshotTaken || !had || was == war || !Known(a, b)) continue;
                     bool player = a == 0 || b == 0;
-                    if (war) Post(NewsKind.War, $"Война! {Who(a)} и {Who(b)} обменялись объявлениями войны", -1, player);
-                    else Post(NewsKind.Peace, $"Мир: {Who(a)} и {Who(b)} подписали перемирие", -1, player);
+                    if (war) Post(NewsKind.War, Loc.F("Война! {0} и {1} обменялись объявлениями войны", Who(a), Who(b)), -1, player);
+                    else Post(NewsKind.Peace, Loc.F("Мир: {0} и {1} подписали перемирие", Who(a), Who(b)), -1, player);
                 }
 
             // Гибель империй
@@ -190,7 +190,7 @@ namespace StellarisClone.Core
             {
                 if (ai == null || !ai.IsEliminated || !_eliminated.Add(ai.OwnerId)) continue;
                 if (_snapshotTaken && Known(ai.OwnerId))
-                    Post(NewsKind.Conquest, $"Конец эпохи: {ai.AIName} пала — у империи не осталось ни одной системы");
+                    Post(NewsKind.Conquest, Loc.F("Конец эпохи: {0} пала — у империи не осталось ни одной системы", ai.AIName));
             }
             _snapshotTaken = true;
 
@@ -217,43 +217,43 @@ namespace StellarisClone.Core
         {
             ["xarn"] = new[]
             {
-                "Легионы {0} прошли парадом по столичной планете — смотр длился трое суток",
-                "В {0} объявлен новый набор в легионы: очереди у призывных пунктов растянулись на кварталы",
-                "Военные академии {0} выпустили рекордное число офицеров",
+                Loc.T("Легионы {0} прошли парадом по столичной планете — смотр длился трое суток"),
+                Loc.T("В {0} объявлен новый набор в легионы: очереди у призывных пунктов растянулись на кварталы"),
+                Loc.T("Военные академии {0} выпустили рекордное число офицеров"),
             },
             ["astrea"] = new[]
             {
-                "Сенат {0} принял закон о свободе научных исследований",
-                "Выборы в {0}: правящая коалиция сохранила большинство",
-                "Университеты {0} открыли двери для студентов со всей галактики",
+                Loc.T("Сенат {0} принял закон о свободе научных исследований"),
+                Loc.T("Выборы в {0}: правящая коалиция сохранила большинство"),
+                Loc.T("Университеты {0} открыли двери для студентов со всей галактики"),
             },
             ["aquila"] = new[]
             {
-                "Акции торговых домов {0} выросли на {1}% за месяц",
-                "{0} открывает новую биржу на окраинах — гелий-3 дешевеет",
-                "Совет акционеров {0} утвердил рекордные дивиденды",
+                Loc.T("Акции торговых домов {0} выросли на {1}% за месяц"),
+                Loc.T("{0} открывает новую биржу на окраинах — гелий-3 дешевеет"),
+                Loc.T("Совет акционеров {0} утвердил рекордные дивиденды"),
             },
             ["iridia"] = new[]
             {
-                "Оракул {0} предрёк «великую перемену» — паломники стекаются к храмам",
-                "Жрецы {0} объявили год тишины: звёздные маяки погашены на сутки",
-                "В {0} расшифрована ещё одна строка древних пророчеств",
+                Loc.T("Оракул {0} предрёк «великую перемену» — паломники стекаются к храмам"),
+                Loc.T("Жрецы {0} объявили год тишины: звёздные маяки погашены на сутки"),
+                Loc.T("В {0} расшифрована ещё одна строка древних пророчеств"),
             },
             ["terraan"] = new[]
             {
-                "Рощи {0} зацвели — праздник длится неделю",
-                "{0} высадила живой лес на безжизненной луне",
-                "Совет Корней {0} собрался впервые за десятилетие",
+                Loc.T("Рощи {0} зацвели — праздник длится неделю"),
+                Loc.T("{0} высадила живой лес на безжизненной луне"),
+                Loc.T("Совет Корней {0} собрался впервые за десятилетие"),
             },
         };
 
         private static readonly string[] GenericLines =
         {
-            "Биологи {0} описали новый вид, живущий в ледяных облаках газового гиганта",
-            "Торговые маршруты {0} побили рекорд грузопотока",
-            "В столице {0} открылся крупнейший в галактике космопорт",
-            "Инженеры {0} испытали новый гиперпривод — без жертв",
-            "Художники {0} расписали орбитальную станцию — её видно невооружённым глазом",
+            Loc.T("Биологи {0} описали новый вид, живущий в ледяных облаках газового гиганта"),
+            Loc.T("Торговые маршруты {0} побили рекорд грузопотока"),
+            Loc.T("В столице {0} открылся крупнейший в галактике космопорт"),
+            Loc.T("Инженеры {0} испытали новый гиперпривод — без жертв"),
+            Loc.T("Художники {0} расписали орбитальную станцию — её видно невооружённым глазом"),
         };
 
         private static void PostChronicle()
@@ -271,9 +271,9 @@ namespace StellarisClone.Core
                     if (smartest == null || ai.ResearchedCount > smartest.ResearchedCount) smartest = ai;
                 }
                 if (Random.value < 0.5f && biggest != null)
-                    Post(NewsKind.Society, $"{biggest.AIName} — крупнейшая из известных держав: {EmpireStats.SystemCount(biggest.OwnerId)} систем");
+                    Post(NewsKind.Society, Loc.F("{0} — крупнейшая из известных держав: {1} систем", biggest.AIName, EmpireStats.SystemCount(biggest.OwnerId)));
                 else if (smartest != null)
-                    Post(NewsKind.Science, $"{smartest.AIName} лидирует в науке: изучено технологий — {smartest.ResearchedCount}");
+                    Post(NewsKind.Science, Loc.F("{0} лидирует в науке: изучено технологий — {1}", smartest.AIName, smartest.ResearchedCount));
                 return;
             }
 

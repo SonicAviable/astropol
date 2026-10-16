@@ -164,7 +164,7 @@ namespace StellarisClone.Rendering
 
             var titleRt = LGBuild.Rect(header.transform, "TitleBox");
             titleRt.Stretch(92, 0, 80, 0);
-            _title = LGBuild.Label(titleRt, "ИМПЕРИЯ", 24, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+            _title = LGBuild.Label(titleRt, Loc.T("ИМПЕРИЯ"), 24, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             _title.rectTransform.offsetMax = new Vector2(0, -12);
             _subtitle = LGBuild.Label(titleRt, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
             _subtitle.rectTransform.offsetMin = new Vector2(0, 14);
@@ -187,11 +187,11 @@ namespace StellarisClone.Rendering
 
             var defs = new (LGIcon icon, string label, Color col)[]
             {
-                (LGIcon.Energy, "ГЕЛИЙ-3", CEnergy),
-                (LGIcon.Minerals, "ТИТАН", CMinerals),
-                (LGIcon.Alloys, "СПЛАВЫ", CAlloys),
-                (LGIcon.Influence, "ВЛИЯНИЕ", CInfluence),
-                (LGIcon.Research, "НАУКА", CResearch),
+                (LGIcon.Energy, Loc.T("ГЕЛИЙ-3"), CEnergy),
+                (LGIcon.Minerals, Loc.T("ТИТАН"), CMinerals),
+                (LGIcon.Alloys, Loc.T("СПЛАВЫ"), CAlloys),
+                (LGIcon.Influence, Loc.T("ВЛИЯНИЕ"), CInfluence),
+                (LGIcon.Research, Loc.T("НАУКА"), CResearch),
             };
 
             for (int i = 0; i < defs.Length; i++)
@@ -222,7 +222,7 @@ namespace StellarisClone.Rendering
             card.rectTransform.TopBand(0, 196);
             LG.Platter(card.gameObject, 18f);
 
-            Caption(card.transform, 12, "ПРАВИТЕЛЬ ИМПЕРИИ", UIManager.DS.TextMuted);
+            Caption(card.transform, 12, Loc.T("ПРАВИТЕЛЬ ИМПЕРИИ"), UIManager.DS.TextMuted);
 
             _portrait = LGBuild.Panel(card.transform, "Portrait", new Color(0.2f, 0.4f, 0.5f));
             _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(18, -38), new Vector2(104, 146));
@@ -255,7 +255,7 @@ namespace StellarisClone.Rendering
             block.rectTransform.TopBand(208, 200);
             LG.Platter(block.gameObject, 18f);
 
-            Caption(block.transform, 10, "СТАТИСТИКА", UIManager.DS.TextMuted);
+            Caption(block.transform, 10, Loc.T("СТАТИСТИКА"), UIManager.DS.TextMuted);
 
             var grid = LGBuild.Rect(block.transform, "Grid");
             grid.Stretch(12, 12, 12, 36);
@@ -266,14 +266,14 @@ namespace StellarisClone.Rendering
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gl.constraintCount = 4;
 
-            AddStatTile(grid, "systems", LGIcon.Star, "Системы", UIManager.DS.NeonCyan);
-            AddStatTile(grid, "colonies", LGIcon.Planet, "Колонии", UIManager.DS.Green);
-            AddStatTile(grid, "pop", LGIcon.Population, "Население", new Color(0.75f, 0.9f, 1f));
-            AddStatTile(grid, "housing", LGIcon.Housing, "Своб. жильё", new Color(0.7f, 0.85f, 0.95f));
-            AddStatTile(grid, "idle", LGIcon.Warning, "Безработные", CGold);
-            AddStatTile(grid, "districts", LGIcon.Industry, "Районы", CAlloys);
-            AddStatTile(grid, "outposts", LGIcon.Starbase, "Форпосты", CMinerals);
-            AddStatTile(grid, "fleets", LGIcon.Fleet, "Флоты", UIManager.DS.Red);
+            AddStatTile(grid, "systems", LGIcon.Star, Loc.T("Системы"), UIManager.DS.NeonCyan);
+            AddStatTile(grid, "colonies", LGIcon.Planet, Loc.T("Колонии"), UIManager.DS.Green);
+            AddStatTile(grid, "pop", LGIcon.Population, Loc.T("Население"), new Color(0.75f, 0.9f, 1f));
+            AddStatTile(grid, "housing", LGIcon.Housing, Loc.T("Своб. жильё"), new Color(0.7f, 0.85f, 0.95f));
+            AddStatTile(grid, "idle", LGIcon.Warning, Loc.T("Безработные"), CGold);
+            AddStatTile(grid, "districts", LGIcon.Industry, Loc.T("Районы"), CAlloys);
+            AddStatTile(grid, "outposts", LGIcon.Starbase, Loc.T("Форпосты"), CMinerals);
+            AddStatTile(grid, "fleets", LGIcon.Fleet, Loc.T("Флоты"), UIManager.DS.Red);
         }
 
         private void AddStatTile(RectTransform grid, string key, LGIcon icon, string label, Color col)
@@ -302,12 +302,12 @@ namespace StellarisClone.Rendering
             var titleRow = TopRow(block.transform, 10, 18, 18, 18);
             var tIcon = LGIcons.Create(titleRow, LGIcon.Trophy, 14, CGold);
             tIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            var tl = LGBuild.Label(titleRow, "ПУТИ К ПОБЕДЕ", 10, CGold, TextAnchor.MiddleLeft, bold: true);
+            var tl = LGBuild.Label(titleRow, Loc.T("ПУТИ К ПОБЕДЕ"), 10, CGold, TextAnchor.MiddleLeft, bold: true);
             tl.rectTransform.offsetMin = new Vector2(20, 0);
 
-            _domText = VictoryRow(block.transform, 38, LGIcon.Starbase, "Доминирование", UIManager.DS.NeonCyan, out _domBar);
-            _sciText = VictoryRow(block.transform, 88, LGIcon.Research, "Наука", CResearch, out _sciBar);
-            _survText = VictoryRow(block.transform, 138, LGIcon.Trophy, $"Очки · {VictoryManager.EndYear}", CEnergy, out _survBar);
+            _domText = VictoryRow(block.transform, 38, LGIcon.Starbase, Loc.T("Доминирование"), UIManager.DS.NeonCyan, out _domBar);
+            _sciText = VictoryRow(block.transform, 88, LGIcon.Research, Loc.T("Наука"), CResearch, out _sciBar);
+            _survText = VictoryRow(block.transform, 138, LGIcon.Trophy, Loc.F("Очки · {0}", VictoryManager.EndYear), CEnergy, out _survBar);
 
             _warnText = LGBuild.Label(block.transform, "", 10, UIManager.DS.TextMuted, TextAnchor.LowerLeft, wrap: true);
             _warnText.rectTransform.Stretch(18, 10, 18, 0);
@@ -339,13 +339,13 @@ namespace StellarisClone.Rendering
         {
             var tabsRow = LGBuild.Rect(right, "Tabs");
             tabsRow.TopBand(0, 40);
-            AddTab(tabsRow, Tab.Colonies, LGIcon.Planet, "КОЛОНИИ", 0);
-            AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, "ФЛОТЫ", 1);
-            AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, "ЛИДЕРЫ", 2);
-            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, "ГРАНИЦЫ", 3);
-            AddTab(tabsRow, Tab.Landmarks, LGIcon.Star, "УЗЛЫ", 4);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, "СОПЕРНИКИ", 5);
-            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, "ЭФФЕКТЫ", 6);
+            AddTab(tabsRow, Tab.Colonies, LGIcon.Planet, Loc.T("КОЛОНИИ"), 0);
+            AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, Loc.T("ФЛОТЫ"), 1);
+            AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, Loc.T("ЛИДЕРЫ"), 2);
+            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, Loc.T("ГРАНИЦЫ"), 3);
+            AddTab(tabsRow, Tab.Landmarks, LGIcon.Star, Loc.T("УЗЛЫ"), 4);
+            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, Loc.T("СОПЕРНИКИ"), 5);
+            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, Loc.T("ЭФФЕКТЫ"), 6);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -399,9 +399,9 @@ namespace StellarisClone.Rendering
         {
             var f = Faction;
             Color fc = f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
-            _title.text = (f?.Name ?? "Империя").ToUpper();
+            _title.text = (f?.Name ?? Loc.T("Империя")).ToUpper();
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
-            _subtitle.text = $"<color={LGBuild.Hex(fc)}>{f?.Title ?? "Правительство"}</color>   ·   Обзор империи   ·   {date}";
+            _subtitle.text = Loc.F("<color={0}>{1}</color>   ·   Обзор империи   ·   {2}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), date);
             _emblem.color = new Color(fc.r * 0.45f, fc.g * 0.45f, fc.b * 0.45f, 1f);
             _emblemIcon.color = Color.Lerp(fc, Color.white, 0.35f);
             // Герб фракции вместо общего значка правителя
@@ -424,22 +424,22 @@ namespace StellarisClone.Rendering
                 SetRes(1, eco.Minerals, eco.MonthlyMineralsIncome);
                 SetRes(2, eco.Alloys, eco.MonthlyAlloysIncome);
                 SetRes(3, eco.Influence, eco.MonthlyInfluenceIncome);
-                _resLabel[0].text = eco.IsBankrupt ? "ГЕЛИЙ-3  <color=#FF5A5A>· БАНКРОТ</color>" : "ГЕЛИЙ-3";
+                _resLabel[0].text = eco.IsBankrupt ? Loc.T("ГЕЛИЙ-3  <color=#FF5A5A>· БАНКРОТ</color>") : Loc.T("ГЕЛИЙ-3");
             }
             if (tm != null)
             {
                 int active = 0;
                 foreach (var s in tm.Slots) if (s.CurrentTech != null && !s.IsPaused) active++;
-                _resLabel[4].text = $"НАУКА  <color=#8AA2A8>· слоты {active}/{tm.Slots.Count}</color>";
+                _resLabel[4].text = Loc.F("НАУКА  <color=#8AA2A8>· слоты {0}/{1}</color>", active, tm.Slots.Count);
                 _resValue[4].text = $"{tm.MonthlyResearchIncome:0.#}";
-                _resIncome[4].text = "<color=#8AA2A8>/ мес</color>";
+                _resIncome[4].text = Loc.T("<color=#8AA2A8>/ мес</color>");
             }
         }
 
         private void SetRes(int i, float stock, float income)
         {
             _resValue[i].text = ((int)stock).ToString("N0");
-            _resIncome[i].text = $"{LGBuild.Signed(income)} <color=#8AA2A8>/ мес</color>";
+            _resIncome[i].text = Loc.F("{0} <color=#8AA2A8>/ мес</color>", LGBuild.Signed(income));
         }
 
         private void RefreshLeftColumn()
@@ -447,7 +447,7 @@ namespace StellarisClone.Rendering
             var f = Faction;
             Color fc = f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
             var leader = LeaderPortraits.ForFaction(f);
-            _leaderName.text = leader != null ? leader.Name : f?.Name ?? "Империя";
+            _leaderName.text = leader != null ? leader.Name : f?.Name ?? Loc.T("Империя");
             _leaderTitle.text = leader != null ? leader.Title : f?.Title ?? "";
             string key = leader?.Key ?? "";
             if (key != _portraitKey)
@@ -462,7 +462,7 @@ namespace StellarisClone.Rendering
             _portrait.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(fc.r, fc.g, fc.b, 0.6f));
             _portraitIcon.color = Color.Lerp(fc, Color.white, 0.3f);
             int power = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
-            _leaderPower.text = $"Мощь флота: {power:N0}";
+            _leaderPower.text = Loc.F("Мощь флота: {0:N0}", power);
 
             // --- Статистика ---
             int systems = 0, colonies = 0, pop = 0, housing = 0, idle = 0, districts = 0, outposts = 0, fleets = 0;
@@ -505,15 +505,15 @@ namespace StellarisClone.Rendering
             {
                 int dom = vm.DominationProgress, sci = vm.ScienceProgress;
                 int me = vm.PlayerScore, rival = vm.RivalScore;
-                _domText.text = $"{dom} / {vm.DominationRequired} систем";
-                _sciText.text = $"{sci} / {vm.ScienceRequired} техн.";
+                _domText.text = Loc.F("{0} / {1} систем", dom, vm.DominationRequired);
+                _sciText.text = Loc.F("{0} / {1} техн.", sci, vm.ScienceRequired);
                 _survText.text = me >= rival ? $"{me} : {rival}" : $"<color=#FF6A6A>{me} : {rival}</color>";
                 LGBuild.SetBar(_domBar, dom / (float)Mathf.Max(1, vm.DominationRequired));
                 LGBuild.SetBar(_sciBar, sci / (float)Mathf.Max(1, vm.ScienceRequired));
                 LGBuild.SetBar(_survBar, me / (float)Mathf.Max(1, me + rival));
                 _warnText.text = vm.BankruptMonths > 0
-                    ? $"<color=#FF6A6A>Банкротство: {vm.BankruptMonths} из {vm.BankruptcyLimit} мес. до краха экономики</color>"
-                    : $"Соперник: {vm.RivalDominationProgress} систем, {vm.RivalScienceProgress} техн. Подсчёт очков через {vm.YearsLeft} {VictoryManager.YearsWord(vm.YearsLeft)}.";
+                    ? Loc.F("<color=#FF6A6A>Банкротство: {0} из {1} мес. до краха экономики</color>", vm.BankruptMonths, vm.BankruptcyLimit)
+                    : Loc.F("Соперник: {0} систем, {1} техн. Подсчёт очков через {2} {3}.", vm.RivalDominationProgress, vm.RivalScienceProgress, vm.YearsLeft, VictoryManager.YearsWord(vm.YearsLeft));
             }
         }
 
@@ -657,11 +657,11 @@ namespace StellarisClone.Rendering
 
         private void BuildColonies()
         {
-            HeaderCols((0.06f, 0.30f, "КОЛОНИЯ", TextAnchor.MiddleLeft),
-                       (0.30f, 0.44f, "КЛАСС", TextAnchor.MiddleLeft),
-                       (0.44f, 0.62f, "НАСЕЛЕНИЕ", TextAnchor.MiddleLeft),
-                       (0.62f, 0.72f, "РАЙОНЫ", TextAnchor.MiddleCenter),
-                       (0.72f, 1f, "ПРОИЗВОДСТВО / МЕС", TextAnchor.MiddleRight));
+            HeaderCols((0.06f, 0.30f, Loc.T("КОЛОНИЯ"), TextAnchor.MiddleLeft),
+                       (0.30f, 0.44f, Loc.T("КЛАСС"), TextAnchor.MiddleLeft),
+                       (0.44f, 0.62f, Loc.T("НАСЕЛЕНИЕ"), TextAnchor.MiddleLeft),
+                       (0.62f, 0.72f, Loc.T("РАЙОНЫ"), TextAnchor.MiddleCenter),
+                       (0.72f, 1f, Loc.T("ПРОИЗВОДСТВО / МЕС"), TextAnchor.MiddleRight));
             int n = 0;
             if (_gen != null)
             {
@@ -675,12 +675,12 @@ namespace StellarisClone.Rendering
                         var capturedSys = sys;
                         var row = Row(() => FocusSystem(capturedSys), new Color(p.PlanetColor.r, p.PlanetColor.g, p.PlanetColor.b, 0.3f));
                         IconCell(row, 0f, 0.06f, LGIcon.Planet, Color.Lerp(p.PlanetColor, Color.white, 0.25f));
-                        TwoLine(row, 0.06f, 0.30f, p.Name, "система " + sys.Name);
+                        TwoLine(row, 0.06f, 0.30f, p.Name, Loc.T("система ") + sys.Name);
                         TextCell(row, 0.30f, 0.44f, p.ClassDisplayName, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
                         float fillPop = p.HousingCapacity > 0 ? p.Population / (float)p.HousingCapacity : 1f;
                         Color popCol = p.Population <= p.HousingCapacity ? UIManager.DS.Green : UIManager.DS.Red;
                         BarCell(row, 0.44f, 0.62f, fillPop, popCol,
-                            $"{p.Population} / {p.HousingCapacity}" + (p.IdlePops > 0 ? $"   <color=#F2C747>безраб. {p.IdlePops}</color>" : ""));
+                            $"{p.Population} / {p.HousingCapacity}" + (p.IdlePops > 0 ? Loc.F("   <color=#F2C747>безраб. {0}</color>", p.IdlePops) : ""));
                         TextCell(row, 0.62f, 0.72f, $"{p.BuiltDistricts} / {p.MaxDistricts}", UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 13, true);
                         MiniStats(row, 0.72f, 1f,
                             (LGIcon.Minerals, CMinerals, "+" + p.ProducedMineralsPerMonth),
@@ -690,19 +690,19 @@ namespace StellarisClone.Rendering
                 }
             }
             if (n == 0)
-                Empty("Колоний пока нет.\n\nВойдите в свою систему (двойной клик по звезде), выберите планету с пригодностью от 40% " +
-                      "и нажмите «Основать колонию» — нужно 80 титана, 20 сплавов и 25 влияния.");
+                Empty(Loc.T("Колоний пока нет.\n\nВойдите в свою систему (двойной клик по звезде), выберите планету с пригодностью от 40% ") +
+                      Loc.T("и нажмите «Основать колонию» — нужно 80 титана, 20 сплавов и 25 влияния."));
         }
 
         // ---------- Флоты ----------
 
         private void BuildFleets()
         {
-            HeaderCols((0.06f, 0.32f, "ФЛОТ", TextAnchor.MiddleLeft),
-                       (0.32f, 0.52f, "ЗАДАЧА", TextAnchor.MiddleLeft),
-                       (0.52f, 0.68f, "РАСПОЛОЖЕНИЕ", TextAnchor.MiddleLeft),
-                       (0.68f, 0.86f, "ПРОЧНОСТЬ", TextAnchor.MiddleLeft),
-                       (0.86f, 1f, "МОЩЬ", TextAnchor.MiddleRight));
+            HeaderCols((0.06f, 0.32f, Loc.T("ФЛОТ"), TextAnchor.MiddleLeft),
+                       (0.32f, 0.52f, Loc.T("ЗАДАЧА"), TextAnchor.MiddleLeft),
+                       (0.52f, 0.68f, Loc.T("РАСПОЛОЖЕНИЕ"), TextAnchor.MiddleLeft),
+                       (0.68f, 0.86f, Loc.T("ПРОЧНОСТЬ"), TextAnchor.MiddleLeft),
+                       (0.86f, 1f, Loc.T("МОЩЬ"), TextAnchor.MiddleRight));
             int n = 0;
             var fm = FleetManager.Instance;
             if (fm != null)
@@ -716,8 +716,8 @@ namespace StellarisClone.Rendering
                               : d.Type == FleetType.Science ? CResearch : CGold;
                     LGIcon icon = d.Type == FleetType.Military ? LGIcon.Fleet
                                 : d.Type == FleetType.Science ? LGIcon.ScienceShip : LGIcon.ConstructorShip;
-                    string type = d.Type == FleetType.Military ? "Боевой флот"
-                                : d.Type == FleetType.Science ? "Научный корабль" : "Строительный корабль";
+                    string type = d.Type == FleetType.Military ? Loc.T("Боевой флот")
+                                : d.Type == FleetType.Science ? Loc.T("Научный корабль") : Loc.T("Строительный корабль");
                     var captured = fv;
                     var row = Row(() => FocusFleet(captured), new Color(col.r, col.g, col.b, 0.28f));
                     IconCell(row, 0f, 0.06f, icon, col);
@@ -731,29 +731,29 @@ namespace StellarisClone.Rendering
                         CGold, TextAnchor.MiddleRight, 14, true);
                 }
             }
-            if (n == 0) Empty("Флотов нет. Постройте корабли на орбитальной верфи столицы.");
+            if (n == 0) Empty(Loc.T("Флотов нет. Постройте корабли на орбитальной верфи столицы."));
         }
 
         private string FleetTask(FleetData d)
         {
             switch (d.State)
             {
-                case FleetState.InHyperlane: return "Перелёт → " + SystemName(d.TargetSystemId);
-                case FleetState.Surveying: return $"Разведка ({Mathf.Max(0, d.DaysRemainingSurvey):0} дн.)";
-                case FleetState.Constructing: return $"Строительство ({Mathf.Max(0, d.DaysRemainingConstruction):0} дн.)";
+                case FleetState.InHyperlane: return Loc.T("Перелёт → ") + SystemName(d.TargetSystemId);
+                case FleetState.Surveying: return Loc.F("Разведка ({0:0} дн.)", Mathf.Max(0, d.DaysRemainingSurvey));
+                case FleetState.Constructing: return Loc.F("Строительство ({0:0} дн.)", Mathf.Max(0, d.DaysRemainingConstruction));
             }
-            if (d.InCombat) return "<color=#FF6060>В бою</color>";
+            if (d.InCombat) return Loc.T("<color=#FF6060>В бою</color>");
             var fm = FleetManager.Instance;
             if (fm != null && fm.NeedsRepair(d))
             {
                 float rate = fm.RepairRateAt(d.CurrentSystemId, d.OwnerId);
-                return rate > 0f ? $"<color=#5CF59A>Ремонт · {rate * 100f:0}% в день</color>"
-                                 : "<color=#FFAA55>Повреждён — ремонт только на своей территории</color>";
+                return rate > 0f ? Loc.F("<color=#5CF59A>Ремонт · {0:0}% в день</color>", rate * 100f)
+                                 : Loc.T("<color=#FFAA55>Повреждён — ремонт только на своей территории</color>");
             }
             var siege = SiegeManager.Instance?.GetSiege(d.CurrentSystemId);
             if (siege != null && siege.Attacker == d.OwnerId && d.Type == FleetType.Military)
-                return $"<color=#5CF59A>Осада · {siege.Progress:0} дн.</color>";
-            return "На орбите — ждёт приказа";
+                return Loc.F("<color=#5CF59A>Осада · {0:0} дн.</color>", siege.Progress);
+            return Loc.T("На орбите — ждёт приказа");
         }
 
         private string SystemName(int id)
@@ -766,11 +766,11 @@ namespace StellarisClone.Rendering
 
         private void BuildBorders()
         {
-            HeaderCols((0.06f, 0.34f, "СИСТЕМА", TextAnchor.MiddleLeft),
-                       (0.34f, 0.50f, "ЗВЕЗДА", TextAnchor.MiddleLeft),
-                       (0.50f, 0.64f, "ПЛАНЕТ", TextAnchor.MiddleCenter),
-                       (0.64f, 0.76f, "КОРИДОРЫ", TextAnchor.MiddleCenter),
-                       (0.76f, 1f, "ДОБЫЧА / МЕС", TextAnchor.MiddleRight));
+            HeaderCols((0.06f, 0.34f, Loc.T("СИСТЕМА"), TextAnchor.MiddleLeft),
+                       (0.34f, 0.50f, Loc.T("ЗВЕЗДА"), TextAnchor.MiddleLeft),
+                       (0.50f, 0.64f, Loc.T("ПЛАНЕТ"), TextAnchor.MiddleCenter),
+                       (0.64f, 0.76f, Loc.T("КОРИДОРЫ"), TextAnchor.MiddleCenter),
+                       (0.76f, 1f, Loc.T("ДОБЫЧА / МЕС"), TextAnchor.MiddleRight));
             int n = 0;
             if (_gen != null)
             {
@@ -783,7 +783,7 @@ namespace StellarisClone.Rendering
                     var row = Row(() => FocusSystem(captured), new Color(0.45f, 0.95f, 0.9f, capital ? 0.4f : 0.2f));
                     IconCell(row, 0f, 0.06f, capital ? LGIcon.Shipyard : LGIcon.Starbase, capital ? CGold : CMinerals);
                     TwoLine(row, 0.06f, 0.34f, sys.Name,
-                        capital ? "Столица · орбитальная верфь" : sys.HasStarbase ? "Пограничный форпост" : "Контролируемая система");
+                        capital ? Loc.T("Столица · орбитальная верфь") : sys.HasStarbase ? Loc.T("Пограничный форпост") : Loc.T("Контролируемая система"));
                     TextCell(row, 0.34f, 0.50f, StarClass(sys.SpectralClass), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
                     TextCell(row, 0.50f, 0.64f, sys.Planets.Count.ToString(), UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 13, true);
                     TextCell(row, 0.64f, 0.76f, sys.ConnectedSystemIds.Count.ToString(), UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 13, true);
@@ -792,20 +792,20 @@ namespace StellarisClone.Rendering
                             (LGIcon.Minerals, CMinerals, "+" + sys.HarvestedMinerals),
                             (LGIcon.Energy, CEnergy, "+" + sys.HarvestedEnergy));
                     else
-                        TextCell(row, 0.76f, 1f, "не изучено", UIManager.DS.TextMuted, TextAnchor.MiddleRight, 11);
+                        TextCell(row, 0.76f, 1f, Loc.T("не изучено"), UIManager.DS.TextMuted, TextAnchor.MiddleRight, 11);
                 }
             }
-            if (n == 0) Empty("У империи не осталось систем.");
+            if (n == 0) Empty(Loc.T("У империи не осталось систем."));
         }
 
         // ---------- Узлы силы ----------
 
         private void BuildLandmarks()
         {
-            HeaderCols((0.06f, 0.30f, "УЗЕЛ", TextAnchor.MiddleLeft),
-                       (0.30f, 0.46f, "СИСТЕМА", TextAnchor.MiddleLeft),
-                       (0.46f, 0.80f, "БОНУС ПРИ КОНТРОЛЕ", TextAnchor.MiddleLeft),
-                       (0.80f, 1f, "ВЛАДЕЛЕЦ", TextAnchor.MiddleRight));
+            HeaderCols((0.06f, 0.30f, Loc.T("УЗЕЛ"), TextAnchor.MiddleLeft),
+                       (0.30f, 0.46f, Loc.T("СИСТЕМА"), TextAnchor.MiddleLeft),
+                       (0.46f, 0.80f, Loc.T("БОНУС ПРИ КОНТРОЛЕ"), TextAnchor.MiddleLeft),
+                       (0.80f, 1f, Loc.T("ВЛАДЕЛЕЦ"), TextAnchor.MiddleRight));
             int total = 0, known = 0, mine = 0;
             foreach (var sys in Landmarks.All) total++;
             foreach (var sys in Landmarks.All)
@@ -817,33 +817,33 @@ namespace StellarisClone.Rendering
                 var captured = sys;
                 var row = Row(() => FocusSystem(captured), new Color(lc.r, lc.g, lc.b, 0.32f));
                 IconCell(row, 0f, 0.06f, SystemNameplate.LandmarkIcon(sys.Landmark), lc);
-                TwoLine(row, 0.06f, 0.30f, Landmarks.Name(sys.Landmark), "Узел силы");
+                TwoLine(row, 0.06f, 0.30f, Landmarks.Name(sys.Landmark), Loc.T("Узел силы"));
                 TextCell(row, 0.30f, 0.46f, sys.Name, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 12, true);
                 TextCell(row, 0.46f, 0.80f, Landmarks.Effect(sys.Landmark), UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
                 bool held = sys.HasStarbase && sys.OwnerId >= 0;
-                string who = !held ? "свободен" : sys.OwnerId == 0 ? "вы" : AIEmpireManager.NameOf(sys.OwnerId, "империя");
+                string who = !held ? Loc.T("свободен") : sys.OwnerId == 0 ? Loc.T("вы") : AIEmpireManager.NameOf(sys.OwnerId, Loc.T("империя"));
                 Color wc = !held ? UIManager.DS.TextMuted : sys.OwnerId == 0 ? UIManager.DS.Green : FleetIndicator.OwnerColor(sys.OwnerId);
                 TextCell(row, 0.80f, 1f, who, wc, TextAnchor.MiddleRight, 12, true);
             }
-            if (total == 0) { Empty("На этой карте нет узлов силы."); return; }
+            if (total == 0) { Empty(Loc.T("На этой карте нет узлов силы.")); return; }
             if (known == 0)
             {
-                Empty($"Узлы силы пока не найдены — на карте их {total}.\n\nУзел виден, когда его система разведана. Постройте в ней форпост, и бонус станет вашим.");
+                Empty(Loc.F("Узлы силы пока не найдены — на карте их {0}.\n\nУзел виден, когда его система разведана. Постройте в ней форпост, и бонус станет вашим.", total));
                 return;
             }
-            SectionRow($"НАЙДЕНО {known} ИЗ {total}  ·  ПОД ВАШИМ КОНТРОЛЕМ {mine}  ·  КЛИК — ПЕРЕЙТИ К СИСТЕМЕ", UIManager.DS.TextMuted);
+            SectionRow(Loc.F("НАЙДЕНО {0} ИЗ {1}  ·  ПОД ВАШИМ КОНТРОЛЕМ {2}  ·  КЛИК — ПЕРЕЙТИ К СИСТЕМЕ", known, total, mine), UIManager.DS.TextMuted);
         }
 
         internal static string StarClass(StarSpectralClass c)
         {
             switch (c)
             {
-                case StarSpectralClass.ClassM: return "Красный карлик (M)";
-                case StarSpectralClass.ClassK: return "Оранжевая (K)";
-                case StarSpectralClass.ClassG: return "Жёлтая (G)";
-                case StarSpectralClass.ClassA: return "Белая (A)";
-                case StarSpectralClass.ClassB: return "Голубой гигант (B)";
-                case StarSpectralClass.BlackHole: return "Чёрная дыра";
+                case StarSpectralClass.ClassM: return Loc.T("Красный карлик (M)");
+                case StarSpectralClass.ClassK: return Loc.T("Оранжевая (K)");
+                case StarSpectralClass.ClassG: return Loc.T("Жёлтая (G)");
+                case StarSpectralClass.ClassA: return Loc.T("Белая (A)");
+                case StarSpectralClass.ClassB: return Loc.T("Голубой гигант (B)");
+                case StarSpectralClass.BlackHole: return Loc.T("Чёрная дыра");
             }
             return c.ToString();
         }
@@ -852,9 +852,9 @@ namespace StellarisClone.Rendering
 
         private void BuildEffects()
         {
-            HeaderCols((0.06f, 0.42f, "ЭФФЕКТ", TextAnchor.MiddleLeft),
-                       (0.42f, 0.84f, "ДЕЙСТВИЕ", TextAnchor.MiddleLeft),
-                       (0.84f, 1f, "ОСТАЛОСЬ", TextAnchor.MiddleRight));
+            HeaderCols((0.06f, 0.42f, Loc.T("ЭФФЕКТ"), TextAnchor.MiddleLeft),
+                       (0.42f, 0.84f, Loc.T("ДЕЙСТВИЕ"), TextAnchor.MiddleLeft),
+                       (0.84f, 1f, Loc.T("ОСТАЛОСЬ"), TextAnchor.MiddleRight));
             int n = 0;
             foreach (var e in EmpireEffects.Active)
             {
@@ -863,7 +863,7 @@ namespace StellarisClone.Rendering
                 IconCell(row, 0f, 0.06f, LGIcon.Clock, CGold);
                 TwoLine(row, 0.06f, 0.42f, e.Title, e.Detail);
                 TextCell(row, 0.42f, 0.84f, EmpireEffects.Summary(e), UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
-                TextCell(row, 0.84f, 1f, $"{e.MonthsLeft} мес.", UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
+                TextCell(row, 0.84f, 1f, Loc.F("{0} мес.", e.MonthsLeft), UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
             }
 
             var tm = ThreatManager.Instance;
@@ -879,14 +879,14 @@ namespace StellarisClone.Rendering
                     TextCell(row, 0.42f, 0.84f, what, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
                     TextCell(row, 0.84f, 1f, left, UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 13, true);
                 }
-                Threat("Пиратская угроза", $"налётов: {tm.RaidsSoFar}", "Банды грабят слабо защищённые пограничные колонии", "");
-                if (tm.TributeActive) Threat("Дань пиратам", "пираты", "Пираты не нападают на ваши системы", $"{tm.TributeMonths} мес.");
-                if (tm.BountyActive) Threat("Награда за пиратов", "охота", "+40 энергии и +4 влияния за каждый уничтоженный корабль", $"{tm.BountyMonths} мес.");
-                if (tm.PrivateerRaids > 0) Threat("Каперские грамоты", "пираты", "Налёты направлены на соперников", $"{tm.PrivateerRaids} нал.");
+                Threat(Loc.T("Пиратская угроза"), Loc.F("налётов: {0}", tm.RaidsSoFar), Loc.T("Банды грабят слабо защищённые пограничные колонии"), "");
+                if (tm.TributeActive) Threat(Loc.T("Дань пиратам"), Loc.T("пираты"), Loc.T("Пираты не нападают на ваши системы"), Loc.F("{0} мес.", tm.TributeMonths));
+                if (tm.BountyActive) Threat(Loc.T("Награда за пиратов"), Loc.T("охота"), Loc.T("+40 энергии и +4 влияния за каждый уничтоженный корабль"), Loc.F("{0} мес.", tm.BountyMonths));
+                if (tm.PrivateerRaids > 0) Threat(Loc.T("Каперские грамоты"), Loc.T("пираты"), Loc.T("Налёты направлены на соперников"), Loc.F("{0} нал.", tm.PrivateerRaids));
             }
 
             if (n == 0)
-                Empty("Действующих эффектов нет.\n\nЗаконы, указы и контракты появляются из решений фракции (раз в два года) и событий.");
+                Empty(Loc.T("Действующих эффектов нет.\n\nЗаконы, указы и контракты появляются из решений фракции (раз в два года) и событий."));
         }
 
         // ---------- Соперник ----------
@@ -898,11 +898,11 @@ namespace StellarisClone.Rendering
                 if (Contacts.PlayerMet(ai.OwnerId)) { BuildRivalCard(ai); met++; }
             int unknown = Contacts.UnmetByPlayer;
             if (met == 0)
-                Empty("Других цивилизаций мы пока не встречали.\n\nОтправляйте научные корабли в неизведанные системы: " +
-                      "контакт случится, как только наши корабли или границы увидят чужую империю." +
-                      (unknown > 0 ? $"\n\nПо данным дальней разведки в галактике есть ещё цивилизаций: {unknown}." : ""));
+                Empty(Loc.T("Других цивилизаций мы пока не встречали.\n\nОтправляйте научные корабли в неизведанные системы: ") +
+                      Loc.T("контакт случится, как только наши корабли или границы увидят чужую империю.") +
+                      (unknown > 0 ? Loc.F("\n\nПо данным дальней разведки в галактике есть ещё цивилизаций: {0}.", unknown) : ""));
             else if (unknown > 0)
-                Empty($"Ещё не встречено цивилизаций: {unknown}. Продолжайте разведку.");
+                Empty(Loc.F("Ещё не встречено цивилизаций: {0}. Продолжайте разведку.", unknown));
         }
 
         private void BuildRivalCard(AIEmpireManager ai)
@@ -948,13 +948,13 @@ namespace StellarisClone.Rendering
             var head = TopRow(card.transform, 20, 64, x0 > 20f ? x0 : 100, 20);
             LGBuild.Label(head, ai.AIName.ToUpper(), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             float rel = ai.Opinion;
-            string status = ai.IsEliminated ? "<color=#F2C747>ПОВЕРЖЕН</color>"
-                          : ai.AtWar ? "<color=#FF5A5A>ВОЙНА</color>"
-                          : ai.HasPact ? "<color=#4DF2DB>Пакт о ненападении</color>"
-                          : ai.TruceDays > 0 ? "<color=#5CF59A>Перемирие</color>"
-                          : "<color=#8AA2A8>Мир</color>";
-            if (AICoalition.IsMember(ai.OwnerId)) status += "   ·   <color=#FF9A5A>в коалиции</color>";
-            var sub = LGBuild.Label(head, $"{ai.AITitle}   ·   {ai.Profile.Name.ToLower()} империя   ·   {status}   ·   {AIEmpireManager.OpinionLabel(rel).ToLower()}",
+            string status = ai.IsEliminated ? Loc.T("<color=#F2C747>ПОВЕРЖЕН</color>")
+                          : ai.AtWar ? Loc.T("<color=#FF5A5A>ВОЙНА</color>")
+                          : ai.HasPact ? Loc.T("<color=#4DF2DB>Пакт о ненападении</color>")
+                          : ai.TruceDays > 0 ? Loc.T("<color=#5CF59A>Перемирие</color>")
+                          : Loc.T("<color=#8AA2A8>Мир</color>");
+            if (AICoalition.IsMember(ai.OwnerId)) status += Loc.T("   ·   <color=#FF9A5A>в коалиции</color>");
+            var sub = LGBuild.Label(head, Loc.F("{0}   ·   {1} империя   ·   {2}   ·   {3}", ai.AITitle, ai.Profile.Name.ToLower(), status, AIEmpireManager.OpinionLabel(rel).ToLower()),
                           12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
             if (!string.IsNullOrEmpty(ai.TacticsNote))
             {
@@ -973,18 +973,18 @@ namespace StellarisClone.Rendering
                 }
 
             float relN = Mathf.InverseLerp(AIEmpireManager.OpinionMin, AIEmpireManager.OpinionMax, rel);
-            CompareRow(card.transform, 104, "Отношения", relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}", x0);
-            CompareRow(card.transform, 150, "Военная мощь: вы / они", myPow + aiPow > 0 ? myPow / (float)(myPow + aiPow) : 0.5f,
+            CompareRow(card.transform, 104, Loc.T("Отношения"), relN, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, relN), $"{rel:+0;-0;0}", x0);
+            CompareRow(card.transform, 150, Loc.T("Военная мощь: вы / они"), myPow + aiPow > 0 ? myPow / (float)(myPow + aiPow) : 0.5f,
                 UIManager.DS.NeonCyan, $"{myPow:N0} / {aiPow:N0}", x0);
-            CompareRow(card.transform, 196, "Системы: вы / они", mySys + aiSys > 0 ? mySys / (float)(mySys + aiSys) : 0.5f,
+            CompareRow(card.transform, 196, Loc.T("Системы: вы / они"), mySys + aiSys > 0 ? mySys / (float)(mySys + aiSys) : 0.5f,
                 CGold, $"{mySys} / {aiSys}", x0);
 
             var btnRow = TopRow(card.transform, 246, 38, 20, 20);
             var dip = LGBuild.Button(btnRow, "Diplomacy", new Color(0.42f, 0.32f, 0.10f), CGold,
-                () => { Close(); DiplomacyModal.Instance?.Open(ai.OwnerId); }, LGIcon.Diplomacy, "ДИПЛОМАТИЯ", 11);
+                () => { Close(); DiplomacyModal.Instance?.Open(ai.OwnerId); }, LGIcon.Diplomacy, Loc.T("ДИПЛОМАТИЯ"), 11);
             ((RectTransform)dip.transform).Column(0f, 0.49f);
             var trade = LGBuild.Button(btnRow, "Trade", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan,
-                () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); }, LGIcon.Trade, "ТОРГОВЛЯ", 11);
+                () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); }, LGIcon.Trade, Loc.T("ТОРГОВЛЯ"), 11);
             ((RectTransform)trade.transform).Column(0.51f, 1f);
         }
 

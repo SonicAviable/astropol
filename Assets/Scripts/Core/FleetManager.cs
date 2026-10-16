@@ -177,9 +177,9 @@ namespace StellarisClone.Core
                 }
             }
 
-            CreateFleetObject("1-й Корветный Флот", 0, FleetType.Military);
-            CreateFleetObject("НИС «Первопроходец»", 0, FleetType.Science);
-            CreateFleetObject("СК «Фундамент»", 0, FleetType.Constructor);
+            CreateFleetObject(Loc.T("1-й Корветный Флот"), 0, FleetType.Military);
+            CreateFleetObject(Loc.T("НИС «Первопроходец»"), 0, FleetType.Science);
+            CreateFleetObject(Loc.T("СК «Фундамент»"), 0, FleetType.Constructor);
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
         }
@@ -328,15 +328,15 @@ namespace StellarisClone.Core
             {
                 case FleetType.Science:
                     costAlloys = ScienceShipAlloys; costEnergy = ScienceShipEnergy;
-                    shipName = $"НИС «Академик {AllFleets.Count + 1}»";
+                    shipName = Loc.F("НИС «Академик {0}»", AllFleets.Count + 1);
                     break;
                 case FleetType.Constructor:
                     costAlloys = ConstructorAlloys; costEnergy = ConstructorEnergy;
-                    shipName = $"Строитель {AllFleets.Count + 1}";
+                    shipName = Loc.F("Строитель {0}", AllFleets.Count + 1);
                     break;
                 case FleetType.Military:
                     costAlloys = 60f; costEnergy = WarshipEnergy;
-                    shipName = $"{AllFleets.Count + 1}-й Корвет";
+                    shipName = Loc.F("{0}-й Корвет", AllFleets.Count + 1);
                     break;
             }
 
@@ -349,14 +349,14 @@ namespace StellarisClone.Core
 
             if (!eco.CanAfford(costEnergy, 0f, costAlloys, 0f))
             {
-                NotificationCenter.Show("Недостаточно ресурсов",
-                    $"Нужно {costAlloys} сплавов и {costEnergy} гелия-3",
+                NotificationCenter.Show(Loc.T("Недостаточно ресурсов"),
+                    Loc.F("Нужно {0} сплавов и {1} гелия-3", costAlloys, costEnergy),
                     NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
 
             int yard = YardFor(systemId);
-            if (yard < 0) { NotificationCenter.Show("Нет верфи", "У вас не осталось своих систем", NotificationCenter.Kind.Danger, 4f); return false; }
+            if (yard < 0) { NotificationCenter.Show(Loc.T("Нет верфи"), Loc.T("У вас не осталось своих систем"), NotificationCenter.Kind.Danger, 4f); return false; }
             eco.TrySpend(costEnergy, 0f, costAlloys, 0f);
             string designId = type == FleetType.Military ? ShipDesignManager.Instance?.GetLatestDesign(ShipClass.Corvette)?.Id : null;
             QueueShip(type, ShipClass.Corvette, designId, costEnergy, costAlloys, shipName, yard);
@@ -370,7 +370,7 @@ namespace StellarisClone.Core
             if (cm == null) { LaunchPlayerShip(new ConstructionJob { ShipType = type, Hull = hull, DesignId = designId, SystemId = yard }); return; }
             var job = cm.EnqueueShip(0, type, hull, designId, energy, alloys, yard);
             var ys = EmpireStats.GetSystem(yard);
-            NotificationCenter.Show("Корабль заложен", $"{what} · {(ys != null ? ys.Name + " · " : "")}готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(job))} дн.",
+            NotificationCenter.Show(Loc.T("Корабль заложен"), Loc.F("{0} · {1}готов через ~{2} дн.", what, (ys != null ? ys.Name + " · " : ""), Mathf.CeilToInt(cm.DaysUntilDone(job))),
                 NotificationCenter.Kind.Info, 4f);
         }
 
@@ -384,16 +384,16 @@ namespace StellarisClone.Core
             {
                 var design = (ShipDesignManager.Instance != null ? ShipDesignManager.Instance.GetDesign(job.DesignId) : null)
                              ?? PlayerDesignFor(job.Hull);
-                string cls = job.Hull switch { ShipClass.Frigate => "Фрегат", ShipClass.Destroyer => "Эсминец", _ => "Корвет" };
-                created = CreateFleetObject($"{AllFleets.Count + 1}-й {cls}", yard, FleetType.Military);
+                string cls = job.Hull switch { ShipClass.Frigate => Loc.T("Фрегат"), ShipClass.Destroyer => Loc.T("Эсминец"), _ => Loc.T("Корвет") };
+                created = CreateFleetObject(Loc.F("{0}-й {1}", AllFleets.Count + 1, cls), yard, FleetType.Military);
                 if (design != null) created.Data.ApplyDesign(design);
             }
             else
             {
-                string name = job.ShipType == FleetType.Science ? $"НИС «Академик {AllFleets.Count + 1}»" : $"Строитель {AllFleets.Count + 1}";
+                string name = job.ShipType == FleetType.Science ? Loc.F("НИС «Академик {0}»", AllFleets.Count + 1) : Loc.F("Строитель {0}", AllFleets.Count + 1);
                 created = CreateFleetObject(name, yard, job.ShipType);
             }
-            NotificationCenter.Show("Корабль спущен на воду", $"{created.Data.Name} · {_generator.Systems[yard].Name}", NotificationCenter.Kind.Success, 4f);
+            NotificationCenter.Show(Loc.T("Корабль спущен на воду"), $"{created.Data.Name} · {_generator.Systems[yard].Name}", NotificationCenter.Kind.Success, 4f);
             EconomyManager.Instance?.RecalculateAll();
             return created;
         }
@@ -406,7 +406,7 @@ namespace StellarisClone.Core
             var d = dm.GetLatestDesign(cls);
             if (d != null) return d;
             var tm = TechnologyManager.Instance;
-            string name = cls == ShipClass.Destroyer ? "Эсминец «Типовой»" : cls == ShipClass.Frigate ? "Фрегат «Типовой»" : "Корвет «Типовой»";
+            string name = cls == ShipClass.Destroyer ? Loc.T("Эсминец «Типовой»") : cls == ShipClass.Frigate ? Loc.T("Фрегат «Типовой»") : Loc.T("Корвет «Типовой»");
             return dm.CreateAutoDesign(cls, WeaponDamageType.Kinetic, WeaponDamageType.Energy,
                 id => tm != null && tm.FindTech(id) != null && tm.FindTech(id).IsResearched, name);
         }
@@ -416,15 +416,15 @@ namespace StellarisClone.Core
         {
             if (cls == ShipClass.Destroyer && !(TechnologyManager.Instance?.DestroyerUnlocked ?? false))
             {
-                NotificationCenter.Show("Эсминцы недоступны", "Изучите «Верфи класса „Эсминец“»", NotificationCenter.Kind.Warning, 4f);
+                NotificationCenter.Show(Loc.T("Эсминцы недоступны"), Loc.T("Изучите «Верфи класса „Эсминец“»"), NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
             var design = PlayerDesignFor(cls);
             if (design == null) return false;
             if (!BuildShipFromDesign(design, systemId))
             {
-                NotificationCenter.Show("Недостаточно ресурсов",
-                    $"Нужно {ShipAlloyCost(design.AlloyCost, 0):0} сплавов и {WarshipEnergy:0} гелия-3", NotificationCenter.Kind.Warning, 4f);
+                NotificationCenter.Show(Loc.T("Недостаточно ресурсов"),
+                    Loc.F("Нужно {0:0} сплавов и {1:0} гелия-3", ShipAlloyCost(design.AlloyCost, 0), WarshipEnergy), NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
             return true;
@@ -441,9 +441,9 @@ namespace StellarisClone.Core
             eco.TrySpend(WarshipEnergy, 0f, cost, 0f);
             string cls = design.HullClass switch
             {
-                ShipClass.Frigate => "Фрегат",
-                ShipClass.Destroyer => "Эсминец",
-                _ => "Корвет"
+                ShipClass.Frigate => Loc.T("Фрегат"),
+                ShipClass.Destroyer => Loc.T("Эсминец"),
+                _ => Loc.T("Корвет")
             };
             QueueShip(FleetType.Military, design.HullClass, design.Id, WarshipEnergy, cost, $"{cls} «{design.Name}»", yard);
             return true;
@@ -721,7 +721,7 @@ namespace StellarisClone.Core
                     eco.RaiseResourcesChanged();
                 }
                 SFXManager.Play(Sfx.SurveyComplete);
-                NotificationCenter.Show("Разведка завершена", sys.Name, NotificationCenter.Kind.Success, 4f);
+                NotificationCenter.Show(Loc.T("Разведка завершена"), sys.Name, NotificationCenter.Kind.Success, 4f);
             }
             else if (AIEmpireManager.For(ownerId) != null)
             {
@@ -761,8 +761,8 @@ namespace StellarisClone.Core
             float alloys = FactionTraits.StarbaseAlloys(0);
             if (eco == null || !eco.CanAfford(0f, 0f, alloys, influence))
             {
-                NotificationCenter.Show("Недостаточно ресурсов",
-                    $"Форпост: {alloys:0} сплавов + {influence} влияния",
+                NotificationCenter.Show(Loc.T("Недостаточно ресурсов"),
+                    Loc.F("Форпост: {0:0} сплавов + {1} влияния", alloys, influence),
                     NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
@@ -817,7 +817,7 @@ namespace StellarisClone.Core
             EconomyManager.Instance?.RecalculateAll();
 
             if (ownerId == 0)
-                NotificationCenter.Show("Форпост построен", $"{system.Name} · содержание −{EmpireEconomy.OutpostUpkeep:0.#} Гелия-3/мес",
+                NotificationCenter.Show(Loc.T("Форпост построен"), Loc.F("{0} · содержание −{1:0.#} Гелия-3/мес", system.Name, EmpireEconomy.OutpostUpkeep),
                     NotificationCenter.Kind.Success, 5f);
 
             return true;
@@ -830,7 +830,7 @@ namespace StellarisClone.Core
             if (planet == null || planet.HasMiningStation) return false;
             if (!planet.IsPlayerOwned)
             {
-                NotificationCenter.Show("Станция недоступна", "Система не принадлежит вам", NotificationCenter.Kind.Warning, 4f);
+                NotificationCenter.Show(Loc.T("Станция недоступна"), Loc.T("Система не принадлежит вам"), NotificationCenter.Kind.Warning, 4f);
                 return false;
             }
 
@@ -844,7 +844,7 @@ namespace StellarisClone.Core
             if (cm != null)
             {
                 cm.EnqueuePlanetJob(JobKind.MiningStation, 0, planet, DistrictType.Mining, 0f, MiningStationMinerals, 0f, 0f);
-                NotificationCenter.Show("Комплекс заложен", $"{planet.Name} · {ConstructionManager.MiningStationDays:0} дн.", NotificationCenter.Kind.Info, 3f);
+                NotificationCenter.Show(Loc.T("Комплекс заложен"), Loc.F("{0} · {1:0} дн.", planet.Name, ConstructionManager.MiningStationDays), NotificationCenter.Kind.Info, 3f);
                 return true;
             }
             planet.HasMiningStation = true;
@@ -864,7 +864,7 @@ namespace StellarisClone.Core
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             eco.RecalculateAll();
-            NotificationCenter.Show("Добывающий комплекс", planet.Name + " активен", NotificationCenter.Kind.Success, 4f);
+            NotificationCenter.Show(Loc.T("Добывающий комплекс"), planet.Name + Loc.T(" активен"), NotificationCenter.Kind.Success, 4f);
             return true;
         }
     }

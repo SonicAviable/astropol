@@ -276,7 +276,7 @@ namespace StellarisClone.Core
                 if (!battle.ContactAnnounced && battle.Days >= ApproachDays)
                 {
                     battle.ContactAnnounced = true;
-                    AddLog(battle, "Огневой контакт — в бой вступили все орудия", LogKind.Phase);
+                    AddLog(battle, Loc.T("Огневой контакт — в бой вступили все орудия"), LogKind.Phase);
                 }
                 if ((battle.AiThinkIn -= dt) <= 0f) { battle.AiThinkIn = 1f; ThinkAiTactics(battle); }
 
@@ -407,8 +407,8 @@ namespace StellarisClone.Core
                 if ((m.a.Data.OwnerId == 0 || m.b.Data.OwnerId == 0) && _generator != null)
                 {
                     var enemy = m.a.Data.OwnerId == 0 ? m.b.Data : m.a.Data;
-                    NotificationCenter.Show("Перехват в коридоре",
-                        $"{AIEmpireManager.NameOf(enemy.OwnerId, "Противник")}: флоты сошлись в гиперкоридоре — бой у {_generator.Systems[m.sys].Name}",
+                    NotificationCenter.Show(Loc.T("Перехват в коридоре"),
+                        Loc.F("{0}: флоты сошлись в гиперкоридоре — бой у {1}", AIEmpireManager.NameOf(enemy.OwnerId, Loc.T("Противник")), _generator.Systems[m.sys].Name),
                         NotificationCenter.Kind.Danger, 5f);
                 }
             }
@@ -680,7 +680,7 @@ namespace StellarisClone.Core
                 CombatFx.Instance.Fire(weapon, from, to, wc, true, impact, size, FxTransform(target), FxTransform(shooter),
                                        shieldBefore > 0f && shieldAfter <= 0f);
                 if (shieldBefore > 0f && shieldAfter <= 0f && (target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer))
-                    AddLog(battle, $"{(target.Fleet != null ? target.Fleet.Data.Name : "Звёздная база")}: щиты пробиты", LogKind.Shield, target.Owner);
+                    AddLog(battle, Loc.F("{0}: щиты пробиты", (target.Fleet != null ? target.Fleet.Data.Name : Loc.T("Звёздная база"))), LogKind.Shield, target.Owner);
                 ShotSound(weapon, from, to, shieldBefore > 0f, target.Fleet == null || target.Fleet.Data.HullClass == ShipClass.Destroyer, GunPitch(shooter));
                 // Числа урона — изредка и только для крупных попаданий: картину боя рисуют эффекты
                 if (dealt >= 12f && Random.value < 0.22f) SpawnFloater(to, $"-{dealt:0}", Color.Lerp(wc, Color.white, 0.35f));
@@ -766,20 +766,20 @@ namespace StellarisClone.Core
                 _pendingFtl.Remove(d.Id);
                 FleetManager.Instance?.IssueMoveOrder(fv, escape);
                 Side(battle, d.OwnerId).Disengaged++;
-                AddLog(battle, $"{d.Name} выходит из боя", LogKind.Disengage, d.OwnerId);
+                AddLog(battle, Loc.F("{0} выходит из боя", d.Name), LogKind.Disengage, d.OwnerId);
                 if (ShowFx(battle.SystemId, fv.transform.position))
                 {
-                    SpawnFloater(fv.transform.position, "ВЫХОД ИЗ БОЯ", UIManager.DS.Gold);
+                    SpawnFloater(fv.transform.position, Loc.T("ВЫХОД ИЗ БОЯ"), UIManager.DS.Gold);
                     SFXManager.PlayAt(Sfx.Disengage, fv.transform.position);
                 }
                 if (d.OwnerId == 0)
-                    NotificationCenter.Show("Корабль вышел из боя", $"{d.Name} тяжело повреждён и отходит на ремонт", NotificationCenter.Kind.Warning, 4f);
+                    NotificationCenter.Show(Loc.T("Корабль вышел из боя"), Loc.F("{0} тяжело повреждён и отходит на ремонт", d.Name), NotificationCenter.Kind.Warning, 4f);
                 return;
             }
 
             Side(battle, d.OwnerId).Lost++;
             Side(battle, killer).Kills++;
-            AddLog(battle, $"{d.Name} уничтожен", LogKind.Kill, d.OwnerId);
+            AddLog(battle, Loc.F("{0} уничтожен", d.Name), LogKind.Kill, d.OwnerId);
             LeaderManager.Instance?.OnKill(killer, battle.SystemId);
             DestroyFleet(fv, killer);
         }
@@ -814,7 +814,7 @@ namespace StellarisClone.Core
                            : fv.Data.HullClass == ShipClass.Destroyer ? 1.5f : fv.Data.HullClass == ShipClass.Frigate ? 1.15f : 0.85f;
                 CombatFx.Instance.ShipDestroyed(fv.transform.position, size, FleetIndicator.OwnerColor(fv.Data.OwnerId));
                 CombatFx.Instance.Wreck(fv.transform, size);
-                SpawnFloater(fv.transform.position, "УНИЧТОЖЕН", UIManager.DS.Red);
+                SpawnFloater(fv.transform.position, Loc.T("УНИЧТОЖЕН"), UIManager.DS.Red);
             }
             bool big = fv.Data.Type == FleetType.Military && fv.Data.HullClass != ShipClass.Corvette;
             SFXManager.PlayAt(big ? Sfx.ExplosionLarge : Sfx.ExplosionSmall, fv.transform.position, fv.Data.OwnerId == 0 ? 1f : 0.9f);
@@ -823,8 +823,8 @@ namespace StellarisClone.Core
             // Игрока касаются только его потери и его победы — бои соседей между собой без уведомлений
             if (fv.Data.OwnerId == 0 || killerOwner == 0)
             {
-                string ownerName = fv.Data.OwnerId == 0 ? "Ваш корабль" : AIEmpireManager.NameOf(fv.Data.OwnerId, "Противник");
-                NotificationCenter.Show("Корабль уничтожен", $"{ownerName}: {fv.Data.Name}",
+                string ownerName = fv.Data.OwnerId == 0 ? Loc.T("Ваш корабль") : AIEmpireManager.NameOf(fv.Data.OwnerId, Loc.T("Противник"));
+                NotificationCenter.Show(Loc.T("Корабль уничтожен"), $"{ownerName}: {fv.Data.Name}",
                     fv.Data.OwnerId == 0 ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Success, 4f);
             }
 
@@ -849,7 +849,7 @@ namespace StellarisClone.Core
             if (FtlReadyIn(d) > 0f)
             {
                 if (fresh && ShowFx(d.CurrentSystemId, fleet.transform.position))
-                    SpawnFloater(fleet.transform.position, "РАЗГОН ГПД", UIManager.DS.NeonCyan);
+                    SpawnFloater(fleet.transform.position, Loc.T("РАЗГОН ГПД"), UIManager.DS.NeonCyan);
                 return false;
             }
             return ExecuteFtl(fleet, preferredTarget);
@@ -876,7 +876,7 @@ namespace StellarisClone.Core
                 _combatDays[d.Id] = Mathf.Max(0f, FtlSpoolDays - 0.5f);
                 if (show)
                 {
-                    SpawnFloater(fleet.transform.position, "СБОЙ ГПД", UIManager.DS.Gold);
+                    SpawnFloater(fleet.transform.position, Loc.T("СБОЙ ГПД"), UIManager.DS.Gold);
                     SFXManager.PlayAt(Sfx.FtlFail, fleet.transform.position);
                 }
                 return false;
@@ -902,7 +902,7 @@ namespace StellarisClone.Core
             if (battle != null) Side(battle, d.OwnerId).Disengaged++;
             if (show)
             {
-                SpawnFloater(fleet.transform.position, "ГПД АКТИВИРОВАН", UIManager.DS.NeonCyan);
+                SpawnFloater(fleet.transform.position, Loc.T("ГПД АКТИВИРОВАН"), UIManager.DS.NeonCyan);
                 SFXManager.PlayAt(Sfx.Disengage, fleet.transform.position);
             }
             return true;
@@ -964,13 +964,13 @@ namespace StellarisClone.Core
             foreach (var s in b.Sides.Values) { s.StartShips = s.Ships; s.StartHp = s.Hp; }
             if (b.PlayerInvolved) { b.Stances[0] = s_playerStance; b.Priorities[0] = s_playerPriority; }
             ThinkAiTactics(b);
-            AddLog(b, "Сближение: работают ракеты, лучи ещё не достают", LogKind.Phase);
+            AddLog(b, Loc.T("Сближение: работают ракеты, лучи ещё не достают"), LogKind.Phase);
 
             if (b.PlayerInvolved)
             {
                 SFXManager.Play(Sfx.BattleStart);
                 var sys = _generator.Systems[sysId];
-                NotificationCenter.Show("Сражение!", $"Бой в системе {sys.Name}. Выделите флот, чтобы следить за боем и при необходимости отступить",
+                NotificationCenter.Show(Loc.T("Сражение!"), Loc.F("Бой в системе {0}. Выделите флот, чтобы следить за боем и при необходимости отступить", sys.Name),
                     NotificationCenter.Kind.Danger, 6f);
             }
             return b;
@@ -1039,11 +1039,11 @@ namespace StellarisClone.Core
             bool lost = me.Ships == 0 && enemyLeft > 0;
             if (won && enemyLost + enemyDisengaged > 0) SFXManager.Play(Sfx.BattleVictory);
             else if (lost) SFXManager.Play(Sfx.BattleDefeat);
-            string title = won ? $"Победа при {sys.Name}" : lost ? $"Поражение при {sys.Name}" : $"Бой при {sys.Name} завершён";
-            string body = $"{Mathf.CeilToInt(b.Days)} дн. · уничтожено врагов: {enemyLost}" +
-                          (enemyDisengaged > 0 ? $" (бежало {enemyDisengaged})" : "") +
-                          $" · наши потери: {me.Lost}" + (me.Disengaged > 0 ? $" (вышло из боя {me.Disengaged})" : "") +
-                          $" · урон {me.DamageDealt:N0} / {me.DamageTaken:N0}";
+            string title = won ? Loc.F("Победа при {0}", sys.Name) : lost ? Loc.F("Поражение при {0}", sys.Name) : Loc.F("Бой при {0} завершён", sys.Name);
+            string body = Loc.F("{0} дн. · уничтожено врагов: {1}", Mathf.CeilToInt(b.Days), enemyLost) +
+                          (enemyDisengaged > 0 ? Loc.F(" (бежало {0})", enemyDisengaged) : "") +
+                          Loc.F(" · наши потери: {0}", me.Lost) + (me.Disengaged > 0 ? Loc.F(" (вышло из боя {0})", me.Disengaged) : "") +
+                          Loc.F(" · урон {0:N0} / {1:N0}", me.DamageDealt, me.DamageTaken);
             NotificationCenter.Show(title, body, won ? NotificationCenter.Kind.Success : lost ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Info, 9f);
         }
 
@@ -1142,8 +1142,8 @@ namespace StellarisClone.Core
             float avg = PlayerAverageShipPower();
             if (avg <= 0f || power <= 0f) return "";
             float n = power / avg;
-            return n < 0.95f ? $"слабее одного вашего боевого корабля"
-                 : $"≈ {n:0.#} ваш{(n < 1.5f ? "его боевого корабля" : "их боевых кораблей")}";
+            return n < 0.95f ? Loc.T("слабее одного вашего боевого корабля")
+                 : Loc.F("≈ {0:0.#} ваш{1}", n, (n < 1.5f ? Loc.T("его боевого корабля") : Loc.T("их боевых кораблей")));
         }
 
         public float StarbasePower(int systemId)
@@ -1163,7 +1163,7 @@ namespace StellarisClone.Core
         private void DisableStarbase(Starbase sb, int attacker)
         {
             if (_battles.TryGetValue(sb.SystemId, out var battle))
-                AddLog(battle, "Звёздная база выведена из строя", LogKind.Kill, _generator.Systems[sb.SystemId].OwnerId);
+                AddLog(battle, Loc.T("Звёздная база выведена из строя"), LogKind.Kill, _generator.Systems[sb.SystemId].OwnerId);
             sb.Disabled = true;
             sb.Hull = 0f;
             sb.Shields = 0f;
@@ -1172,9 +1172,9 @@ namespace StellarisClone.Core
                 CombatFx.Instance.ShipDestroyed(StarbaseVisuals.SiteFor(sys.Position) + Vector3.up * 0.3f, 1.9f, FleetIndicator.OwnerColor(sys.OwnerId));
             SFXManager.PlayAt(Sfx.StarbaseDown, sys.Position, 1f);
             if (sys.OwnerId == 0)
-                NotificationCenter.Show("Звёздная база выведена из строя", $"{sys.Name}: враг может начать осаду", NotificationCenter.Kind.Danger, 7f);
+                NotificationCenter.Show(Loc.T("Звёздная база выведена из строя"), Loc.F("{0}: враг может начать осаду", sys.Name), NotificationCenter.Kind.Danger, 7f);
             else if (attacker == 0)
-                NotificationCenter.Show("Вражеская база подавлена", $"{sys.Name}: держите флот на орбите — идёт осада", NotificationCenter.Kind.Success, 6f);
+                NotificationCenter.Show(Loc.T("Вражеская база подавлена"), Loc.F("{0}: держите флот на орбите — идёт осада", sys.Name), NotificationCenter.Kind.Success, 6f);
         }
 
         /// <summary>Пробуждение сада действует в системе: враги уходят отсюда медленнее.</summary>
@@ -1219,10 +1219,10 @@ namespace StellarisClone.Core
                 sb.Armor = Mathf.Min(sb.MaxArmor, sb.Armor + (sb.MaxArmor - before));
                 GardenFx(sys);
                 if (sys.OwnerId == 0)
-                    NotificationCenter.Show("Пробуждение сада", $"{sys.Name}: враг в наших корнях. База укреплена на 3 дня, мицелий опутывает чужие флоты",
+                    NotificationCenter.Show(Loc.T("Пробуждение сада"), Loc.F("{0}: враг в наших корнях. База укреплена на 3 дня, мицелий опутывает чужие флоты", sys.Name),
                         NotificationCenter.Kind.Success, 6f);
                 else if (enemy == 0)
-                    NotificationCenter.Show("Пробуждение сада", $"{sys.Name}: сад Конклава проснулся — база укреплена, наши корабли вязнут в мицелии",
+                    NotificationCenter.Show(Loc.T("Пробуждение сада"), Loc.F("{0}: сад Конклава проснулся — база укреплена, наши корабли вязнут в мицелии", sys.Name),
                         NotificationCenter.Kind.Warning, 6f);
             }
         }

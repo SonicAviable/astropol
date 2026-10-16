@@ -125,7 +125,7 @@ namespace StellarisClone.Rendering
                     SFXManager.Play(Sfx.AlertPop);
                 }
                 view.Action = a.Action;
-                view.Tip.SetText($"<b>{a.Title}</b>\n{a.Body}\n\n<color=#8AA2A8>ЛКМ — {a.ActionHint}  ·  ПКМ — скрыть</color>");
+                view.Tip.SetText(Loc.F("<b>{0}</b>\n{1}\n\n<color=#8AA2A8>ЛКМ — {2}  ·  ПКМ — скрыть</color>", a.Title, a.Body, a.ActionHint));
                 view.Count.text = a.Count > 1 ? a.Count.ToString() : "";
                 view.Count.transform.parent.gameObject.SetActive(a.Count > 1);
             }
@@ -289,19 +289,19 @@ namespace StellarisClone.Rendering
             {
                 float months = eco.MonthsUntilEmpty;
                 string forecast = float.IsInfinity(months) ? ""
-                    : months < 1f ? " Казна опустеет меньше чем через месяц!"
-                    : $" Казна опустеет примерно через {Mathf.CeilToInt(months)} мес.";
+                    : months < 1f ? Loc.T(" Казна опустеет меньше чем через месяц!")
+                    : Loc.F(" Казна опустеет примерно через {0} мес.", Mathf.CeilToInt(months));
                 var rep = eco.Report;
                 _current.Add(new AlertInfo
                 {
                     Id = "energy", Icon = LGIcon.Energy, Color = eco.IsBankrupt || eco.BankruptcyLooming ? UIManager.DS.Red : UIManager.DS.Gold,
-                    Title = eco.IsBankrupt ? "Банкротство!" : eco.BankruptcyLooming ? "Угроза банкротства" : "Дефицит гелия-3",
+                    Title = eco.IsBankrupt ? Loc.T("Банкротство!") : eco.BankruptcyLooming ? Loc.T("Угроза банкротства") : Loc.T("Дефицит гелия-3"),
                     Body = eco.IsBankrupt
-                        ? "Запасы энергии исчерпаны — производство урезано вдвое. Долгое банкротство приведёт к поражению."
-                        : $"Расход превышает доход ({eco.MonthlyEnergyIncome:0.#} / мес).{forecast} " +
-                          $"Содержание: флот {rep.FleetUpkeep + rep.CivilianUpkeep:0.#}, форпосты {rep.OutpostUpkeepTotal:0.#}. " +
-                          "Стройте генераторы и добывающие станции или сократите флот.",
-                    ActionHint = "открыть обзор империи",
+                        ? Loc.T("Запасы энергии исчерпаны — производство урезано вдвое. Долгое банкротство приведёт к поражению.")
+                        : Loc.F("Расход превышает доход ({0:0.#} / мес).{1} ", eco.MonthlyEnergyIncome, forecast) +
+                          Loc.F("Содержание: флот {0:0.#}, форпосты {1:0.#}. ", rep.FleetUpkeep + rep.CivilianUpkeep, rep.OutpostUpkeepTotal) +
+                          Loc.T("Стройте генераторы и добывающие станции или сократите флот."),
+                    ActionHint = Loc.T("открыть обзор империи"),
                     Action = () => UIManager.Instance?.OpenEmpireOverviewModal()
                 });
             }
@@ -315,9 +315,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "research", Icon = LGIcon.Research, Color = UIManager.DS.Green, Count = free,
-                        Title = "Свободный слот исследований",
-                        Body = free == 1 ? "Один исследовательский слот простаивает." : $"Простаивает слотов: {free}.",
-                        ActionHint = "выбрать технологию",
+                        Title = Loc.T("Свободный слот исследований"),
+                        Body = free == 1 ? Loc.T("Один исследовательский слот простаивает.") : Loc.F("Простаивает слотов: {0}.", free),
+                        ActionHint = Loc.T("выбрать технологию"),
                         Action = () => { UIManager.Instance?.ShowModalDimPublic(); TechTreePanel.Instance?.Open(); }
                     });
             }
@@ -341,9 +341,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "science", Icon = LGIcon.Sensors, Color = UIManager.DS.NeonCyan, Count = sciIdle,
-                        Title = "Научный корабль простаивает",
-                        Body = $"Рядом есть неизученные системы (например, {unsurveyed.Name}). Выделите корабль и щёлкните ПКМ по системе.",
-                        ActionHint = "выбрать корабль",
+                        Title = Loc.T("Научный корабль простаивает"),
+                        Body = Loc.F("Рядом есть неизученные системы (например, {0}). Выделите корабль и щёлкните ПКМ по системе.", unsurveyed.Name),
+                        ActionHint = Loc.T("выбрать корабль"),
                         Action = () => Focus(ship)
                     });
                 }
@@ -358,9 +358,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "outpost", Icon = LGIcon.Starbase, Color = UIManager.DS.Gold, Count = conIdle,
-                        Title = "Можно расширить границы",
-                        Body = $"Система {sys.Name} изучена и свободна. Строительный корабль ждёт приказа — закажите «Форпост» в инспекторе системы.",
-                        ActionHint = "показать систему",
+                        Title = Loc.T("Можно расширить границы"),
+                        Body = Loc.F("Система {0} изучена и свободна. Строительный корабль ждёт приказа — закажите «Форпост» в инспекторе системы.", sys.Name),
+                        ActionHint = Loc.T("показать систему"),
                         Action = () => Focus(sys)
                     });
                 }
@@ -388,9 +388,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "colony", Icon = LGIcon.Planet, Color = UIManager.DS.Green,
-                        Title = "Планета пригодна для колонии",
-                        Body = $"{p.Name} ({p.ClassDisplayName}, пригодность {p.HabitabilityPercent}%). Войдите в систему {sys.Name} двойным кликом и нажмите «Основать колонию».",
-                        ActionHint = "показать систему",
+                        Title = Loc.T("Планета пригодна для колонии"),
+                        Body = Loc.F("{0} ({1}, пригодность {2}%). Войдите в систему {3} двойным кликом и нажмите «Основать колонию».", p.Name, p.ClassDisplayName, p.HabitabilityPercent, sys.Name),
+                        ActionHint = Loc.T("показать систему"),
                         Action = () => Focus(sys)
                     });
                 }
@@ -401,9 +401,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "housing", Icon = LGIcon.Housing, Color = UIManager.DS.Red,
-                        Title = "Нехватка жилья",
-                        Body = $"На {p.Name} живёт {p.Population} при жилье на {p.HousingCapacity}. Постройте городской район — иначе рост остановится.",
-                        ActionHint = "показать систему",
+                        Title = Loc.T("Нехватка жилья"),
+                        Body = Loc.F("На {0} живёт {1} при жилье на {2}. Постройте городской район — иначе рост остановится.", p.Name, p.Population, p.HousingCapacity),
+                        ActionHint = Loc.T("показать систему"),
                         Action = () => Focus(sys)
                     });
                 }
@@ -414,9 +414,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "unemployed", Icon = LGIcon.Population, Color = UIManager.DS.Gold, Count = idleTotal,
-                        Title = "Безработное население",
-                        Body = $"Без работы: {idleTotal}. Стройте районы (горнодобыча, энергетика, промышленность), чтобы занять жителей.",
-                        ActionHint = "показать систему",
+                        Title = Loc.T("Безработное население"),
+                        Body = Loc.F("Без работы: {0}. Стройте районы (горнодобыча, энергетика, промышленность), чтобы занять жителей.", idleTotal),
+                        ActionHint = Loc.T("показать систему"),
                         Action = () => Focus(sys)
                     });
                 }
@@ -433,10 +433,10 @@ namespace StellarisClone.Rendering
                         _current.Add(new AlertInfo
                         {
                             Id = "outdated", Icon = LGIcon.Wrench, Color = UIManager.DS.Gold, Count = old.Count,
-                            Title = "Корабли устарели",
-                            Body = $"Кораблей старого проекта: {old.Count}. На верфи они перевооружатся по актуальному проекту корпуса " +
-                                   $"(всего {cost:0} сплавов) — станут сильнее.",
-                            ActionHint = "открыть верфь",
+                            Title = Loc.T("Корабли устарели"),
+                            Body = Loc.F("Кораблей старого проекта: {0}. На верфи они перевооружатся по актуальному проекту корпуса ", old.Count) +
+                                   Loc.F("(всего {0:0} сплавов) — станут сильнее.", cost),
+                            ActionHint = Loc.T("открыть верфь"),
                             Action = () => ShipyardWindow.Instance?.Open()
                         });
                     }
@@ -450,17 +450,17 @@ namespace StellarisClone.Rendering
                     int owner = ai.OwnerId;
                     var (icon, color, title) = kind switch
                     {
-                        AIEmpireManager.OfferKind.Peace => (LGIcon.Peace, UIManager.DS.Green, $"{ai.AIName} предлагает мир"),
-                        AIEmpireManager.OfferKind.Pact => (LGIcon.Handshake, UIManager.DS.Green, $"{ai.AIName} предлагает пакт"),
-                        AIEmpireManager.OfferKind.Demand => (LGIcon.Warning, UIManager.DS.Red, $"{ai.AIName} требует дань"),
-                        _ => (LGIcon.Trade, UIManager.DS.Gold, $"{ai.AIName} предлагает сделку")
+                        AIEmpireManager.OfferKind.Peace => (LGIcon.Peace, UIManager.DS.Green, Loc.F("{0} предлагает мир", ai.AIName)),
+                        AIEmpireManager.OfferKind.Pact => (LGIcon.Handshake, UIManager.DS.Green, Loc.F("{0} предлагает пакт", ai.AIName)),
+                        AIEmpireManager.OfferKind.Demand => (LGIcon.Warning, UIManager.DS.Red, Loc.F("{0} требует дань", ai.AIName)),
+                        _ => (LGIcon.Trade, UIManager.DS.Gold, Loc.F("{0} предлагает сделку", ai.AIName))
                     };
                     _current.Add(new AlertInfo
                     {
                         Id = "offer_" + owner, Icon = icon, Color = color,
                         Title = title,
-                        Body = $"Причина: {ai.PendingOfferReason}. Предложение в силе ещё {ai.PendingOfferDays} дн.",
-                        ActionHint = "открыть дипломатию",
+                        Body = Loc.F("Причина: {0}. Предложение в силе ещё {1} дн.", ai.PendingOfferReason, ai.PendingOfferDays),
+                        ActionHint = Loc.T("открыть дипломатию"),
                         Action = () => DiplomacyModal.Instance?.Open(owner)
                     });
                 }
@@ -483,9 +483,9 @@ namespace StellarisClone.Rendering
                         _current.Add(new AlertInfo
                         {
                             Id = "siege_def", Icon = LGIcon.Siege, Color = UIManager.DS.Red, Count = defend,
-                            Title = "Ваша система в осаде",
-                            Body = $"{target.Name}: враг блокирует систему. Если не прислать военный флот, через {SiegeManager.RequiredDays(target):0} дн. осады она перейдёт к противнику.",
-                            ActionHint = "показать систему",
+                            Title = Loc.T("Ваша система в осаде"),
+                            Body = Loc.F("{0}: враг блокирует систему. Если не прислать военный флот, через {1:0} дн. осады она перейдёт к противнику.", target.Name, SiegeManager.RequiredDays(target)),
+                            ActionHint = Loc.T("показать систему"),
                             Action = () => Focus(target)
                         });
                     }
@@ -496,11 +496,11 @@ namespace StellarisClone.Rendering
                         _current.Add(new AlertInfo
                         {
                             Id = "siege_att", Icon = LGIcon.Siege, Color = UIManager.DS.Green, Count = attack,
-                            Title = "Идёт осада",
-                            Body = $"{target.Name}: {(sg != null ? sg.Progress : 0f):0} / {SiegeManager.RequiredDays(target):0} дн." +
-                                   (sg != null && sg.BaseHolding ? " Осада стоит — сначала подавите звёздную базу."
-                                    : sg != null && sg.Contested ? " Осада стоит — на орбите флот защитника." : " Не уводите флот до захвата."),
-                            ActionHint = "показать систему",
+                            Title = Loc.T("Идёт осада"),
+                            Body = Loc.F("{0}: {1:0} / {2:0} дн.", target.Name, (sg != null ? sg.Progress : 0f), SiegeManager.RequiredDays(target)) +
+                                   (sg != null && sg.BaseHolding ? Loc.T(" Осада стоит — сначала подавите звёздную базу.")
+                                    : sg != null && sg.Contested ? Loc.T(" Осада стоит — на орбите флот защитника.") : Loc.T(" Не уводите флот до захвата.")),
+                            ActionHint = Loc.T("показать систему"),
                             Action = () => Focus(target)
                         });
                     }
@@ -518,9 +518,9 @@ namespace StellarisClone.Rendering
                     _current.Add(new AlertInfo
                     {
                         Id = "threat", Icon = LGIcon.Fleet, Color = UIManager.DS.Red,
-                        Title = $"Угроза: {t.AIName}",
-                        Body = $"Враждебная империя сильнее ({fm.GetMilitaryPower(t.OwnerId):N0} против {fm.GetMilitaryPower(0):N0}). Стройте флот на верфи столицы или предложите мир.",
-                        ActionHint = "открыть дипломатию",
+                        Title = Loc.F("Угроза: {0}", t.AIName),
+                        Body = Loc.F("Враждебная империя сильнее ({0:N0} против {1:N0}). Стройте флот на верфи столицы или предложите мир.", fm.GetMilitaryPower(t.OwnerId), fm.GetMilitaryPower(0)),
+                        ActionHint = Loc.T("открыть дипломатию"),
                         Action = () => DiplomacyModal.Instance?.Open(t.OwnerId)
                     });
                 }

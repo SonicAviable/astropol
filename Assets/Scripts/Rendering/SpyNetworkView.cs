@@ -230,7 +230,7 @@ namespace StellarisClone.Rendering
             }
             if (_pickMarks.Count == 0)
             {
-                NotificationCenter.Show("Некуда внедриться", "У этой империи нет систем", NotificationCenter.Kind.Warning, 4f);
+                NotificationCenter.Show(Loc.T("Некуда внедриться"), Loc.T("У этой империи нет систем"), NotificationCenter.Kind.Warning, 4f);
                 EndPick();
                 return;
             }
@@ -240,8 +240,8 @@ namespace StellarisClone.Rendering
                 if (cam != null) cam.FocusOn(focus.Position);
             }
             string who = Contacts.NameForPlayer(owner);
-            _bannerText.text = $"<b>{agent.Name}</b>: выберите систему империи <color={LGBuild.Hex(FleetIndicator.OwnerColor(owner))}>{who}</color>, откуда строить разведсеть" +
-                               "   <color=#8AA2A8>ЛКМ — выбрать · ПКМ или Esc — отмена</color>";
+            _bannerText.text = Loc.F("<b>{0}</b>: выберите систему империи <color={1}>{2}</color>, откуда строить разведсеть", agent.Name, LGBuild.Hex(FleetIndicator.OwnerColor(owner)), who) +
+                               Loc.T("   <color=#8AA2A8>ЛКМ — выбрать · ПКМ или Esc — отмена</color>");
             _banner.gameObject.SetActive(true);
         }
 
@@ -286,7 +286,7 @@ namespace StellarisClone.Rendering
                           && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
             if (!Input.GetMouseButtonDown(0) || overUi) return;
             if (_pickHover != null) { Confirm(_pickHover); return; }
-            NotificationCenter.Show("Не та система", $"Нужна система империи {Contacts.NameForPlayer(_pickOwner)} — они помечены кольцами", NotificationCenter.Kind.Info, 3f);
+            NotificationCenter.Show(Loc.T("Не та система"), Loc.F("Нужна система империи {0} — они помечены кольцами", Contacts.NameForPlayer(_pickOwner)), NotificationCenter.Kind.Info, 3f);
         }
 
         private void Confirm(StarSystem s)
@@ -303,7 +303,7 @@ namespace StellarisClone.Rendering
                 LeaderManager.Instance?.AssignSpy(a, owner, s.Id);
                 SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiConfirm);
             }
-            NotificationCenter.Show("Агент на месте", $"{a.Name} строит разведсеть из системы {s.Name}", NotificationCenter.Kind.Success, 5f);
+            NotificationCenter.Show(Loc.T("Агент на месте"), Loc.F("{0} строит разведсеть из системы {1}", a.Name, s.Name), NotificationCenter.Kind.Success, 5f);
             _scan = 0f;
         }
 
@@ -481,19 +481,19 @@ namespace StellarisClone.Rendering
             string owner = Contacts.NameForPlayer(a.TargetOwner);
             string oc = LGBuild.Hex(FleetIndicator.OwnerColor(a.TargetOwner));
             var sb = new System.Text.StringBuilder();
-            sb.Append($"<b><color=#F2C766>{a.Name}</color></b>  ·  агент, уровень {a.Level}\n");
-            sb.Append($"Идёт построение разведсети из системы <color=#F2C766>{s?.Name}</color> в империи <color={oc}>{owner}</color>\n\n");
+            sb.Append(Loc.F("<b><color=#F2C766>{0}</color></b>  ·  агент, уровень {1}\n", a.Name, a.Level));
+            sb.Append(Loc.F("Идёт построение разведсети из системы <color=#F2C766>{0}</color> в империи <color={1}>{2}</color>\n\n", s?.Name, oc, owner));
             if (a.OpKind >= 0)
-                sb.Append($"<color=#F2C766>Идёт операция «{SpyInfo.Name((SpyOp)a.OpKind)}», ещё {a.OpMonthsLeft} мес. — сеть не растёт</color>\n\n");
-            sb.Append($"Рост сети в системе: <color=#66F59E>+{g.Total:0.#}</color> в месяц\n");
-            sb.Append($"   Базовое значение: +{g.Base:0}\n");
-            sb.Append($"   Уровень агента: +{g.Level:0}\n");
-            if (g.TraitMul > 1f) sb.Append($"   Черта «Внедренец»: ×{g.TraitMul:0.##}\n");
-            if (Mathf.Abs(g.TechMul - 1f) > 0.001f) sb.Append($"   Технологии: ×{g.TechMul:0.##}\n");
-            sb.Append($"   Контрразведка цели: <color=#FF9F7A>×{g.CounterMul:0.##}</color>\n");
-            sb.Append($"Соседние системы: ×{EspionageManager.NetRings[1]:0.#}, через одну: ×{EspionageManager.NetRings[2]:0.#}\n\n");
-            sb.Append($"Сеть в системе: <color=#BD8FFF>{local:0}%</color>   ·   в империи: <color=#BD8FFF>{a.Cover:0}%</color>\n");
-            sb.Append($"<color=#8AA2A8>{EspionageManager.IntelCover:0}% — обзор территории и флотов, {EspionageManager.DeepIntelCover:0}% — досье. ЛКМ — открыть агента</color>");
+                sb.Append(Loc.F("<color=#F2C766>Идёт операция «{0}», ещё {1} мес. — сеть не растёт</color>\n\n", SpyInfo.Name((SpyOp)a.OpKind), a.OpMonthsLeft));
+            sb.Append(Loc.F("Рост сети в системе: <color=#66F59E>+{0:0.#}</color> в месяц\n", g.Total));
+            sb.Append(Loc.F("   Базовое значение: +{0:0}\n", g.Base));
+            sb.Append(Loc.F("   Уровень агента: +{0:0}\n", g.Level));
+            if (g.TraitMul > 1f) sb.Append(Loc.F("   Черта «Внедренец»: ×{0:0.##}\n", g.TraitMul));
+            if (Mathf.Abs(g.TechMul - 1f) > 0.001f) sb.Append(Loc.F("   Технологии: ×{0:0.##}\n", g.TechMul));
+            sb.Append(Loc.F("   Контрразведка цели: <color=#FF9F7A>×{0:0.##}</color>\n", g.CounterMul));
+            sb.Append(Loc.F("Соседние системы: ×{0:0.#}, через одну: ×{1:0.#}\n\n", EspionageManager.NetRings[1], EspionageManager.NetRings[2]));
+            sb.Append(Loc.F("Сеть в системе: <color=#BD8FFF>{0:0}%</color>   ·   в империи: <color=#BD8FFF>{1:0}%</color>\n", local, a.Cover));
+            sb.Append(Loc.F("<color=#8AA2A8>{0:0}% — обзор территории и флотов, {1:0}% — досье. ЛКМ — открыть агента</color>", EspionageManager.IntelCover, EspionageManager.DeepIntelCover));
             return sb.ToString();
         }
 

@@ -376,7 +376,7 @@ namespace StellarisClone.Core
             var file = Read(slot);
             if (file == null)
             {
-                NotificationCenter.Show("Загрузка невозможна", "Файл сохранения повреждён", NotificationCenter.Kind.Danger, 5f);
+                NotificationCenter.Show(Loc.T("Загрузка невозможна"), Loc.T("Файл сохранения повреждён"), NotificationCenter.Kind.Danger, 5f);
                 return false;
             }
             SFXManager.Play("ui_click", 0.8f, 0.9f);
@@ -401,14 +401,14 @@ namespace StellarisClone.Core
                 File.Move(tmp, path);
                 OnSavesChanged?.Invoke();
                 if (notify)
-                    NotificationCenter.Show(auto ? "Автосохранение" : "Игра сохранена", file.Meta.Name,
+                    NotificationCenter.Show(auto ? Loc.T("Автосохранение") : Loc.T("Игра сохранена"), file.Meta.Name,
                                             NotificationCenter.Kind.Success, auto ? 2.5f : 3.5f);
                 return true;
             }
             catch (Exception e)
             {
                 Debug.LogError("[Save] Ошибка записи: " + e);
-                NotificationCenter.Show("Ошибка сохранения", e.Message, NotificationCenter.Kind.Danger, 6f);
+                NotificationCenter.Show(Loc.T("Ошибка сохранения"), e.Message, NotificationCenter.Kind.Danger, 6f);
                 return false;
             }
         }
@@ -479,7 +479,7 @@ namespace StellarisClone.Core
                 foreach (var t in TechnologyManager.Instance.AllTechs) if (t.IsResearched) techs++;
 
             var m = file.Meta;
-            m.Empire = faction?.Name ?? "Империя";
+            m.Empire = faction?.Name ?? Loc.T("Империя");
             m.EmpireTitle = faction?.Title ?? "";
             m.EmpireColor = faction != null ? faction.EmpireColor : UIManager.DS.NeonCyan;
             m.GameDate = time != null ? time.GetFormattedDate() : "";
@@ -493,7 +493,7 @@ namespace StellarisClone.Core
             m.SavedAtUtcTicks = DateTime.UtcNow.Ticks;
             m.PlayTime = GameSession.PlayTime;
             m.Auto = auto;
-            m.Name = auto ? $"Автосохранение · {m.GameDate}"
+            m.Name = auto ? Loc.F("Автосохранение · {0}", m.GameDate)
                    : string.IsNullOrWhiteSpace(displayName) ? $"{m.Empire} · {m.GameDate}" : displayName.Trim();
             return file;
         }
@@ -700,14 +700,14 @@ namespace StellarisClone.Core
         {
             int total = Mathf.Max(0, Mathf.RoundToInt(seconds));
             int h = total / 3600, m = (total / 60) % 60;
-            return h > 0 ? $"{h} ч {m:D2} мин" : $"{Mathf.Max(1, m)} мин";
+            return h > 0 ? Loc.F("{0} ч {1:D2} мин", h, m) : Loc.F("{0} мин", Mathf.Max(1, m));
         }
 
         public static string FormatSavedAt(DateTime local)
         {
             var now = DateTime.Now;
-            if (local.Date == now.Date) return "сегодня, " + local.ToString("HH:mm");
-            if (local.Date == now.Date.AddDays(-1)) return "вчера, " + local.ToString("HH:mm");
+            if (local.Date == now.Date) return Loc.T("сегодня, ") + local.ToString("HH:mm");
+            if (local.Date == now.Date.AddDays(-1)) return Loc.T("вчера, ") + local.ToString("HH:mm");
             return local.ToString("dd.MM.yyyy, HH:mm");
         }
     }
@@ -800,7 +800,7 @@ namespace StellarisClone.Core
             UIManager.Instance?.BeginLoadedGame(SaveSystem.FindFaction(s.Faction));
             EconomyManager.Instance?.RecalculateAll();
             GalaxyView.Instance?.RefreshTerritoryVisuals();
-            NotificationCenter.Show("Игра загружена", time != null ? time.GetFormattedDate() : "", NotificationCenter.Kind.Info, 3.5f);
+            NotificationCenter.Show(Loc.T("Игра загружена"), time != null ? time.GetFormattedDate() : "", NotificationCenter.Kind.Info, 3.5f);
         }
     }
 
@@ -845,14 +845,14 @@ namespace StellarisClone.Core
             if (IsTyping()) return;
             if (Input.GetKeyDown(KeyCode.F5))
             {
-                if (SaveSystem.CanSaveNow) SaveSystem.Save("Быстрое сохранение");
+                if (SaveSystem.CanSaveNow) SaveSystem.Save(Loc.T("Быстрое сохранение"));
             }
             else if (Input.GetKeyDown(KeyCode.F9))
             {
-                if (SaveSystem.Exists(SaveSystem.SlotFromName("Быстрое сохранение")))
-                    SaveSystem.LoadSlot(SaveSystem.SlotFromName("Быстрое сохранение"));
+                if (SaveSystem.Exists(SaveSystem.SlotFromName(Loc.T("Быстрое сохранение"))))
+                    SaveSystem.LoadSlot(SaveSystem.SlotFromName(Loc.T("Быстрое сохранение")));
                 else
-                    NotificationCenter.Show("Нет быстрого сохранения", "Нажмите F5, чтобы создать", NotificationCenter.Kind.Warning, 3f);
+                    NotificationCenter.Show(Loc.T("Нет быстрого сохранения"), Loc.T("Нажмите F5, чтобы создать"), NotificationCenter.Kind.Warning, 3f);
             }
         }
 

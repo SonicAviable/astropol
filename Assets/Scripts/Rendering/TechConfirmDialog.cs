@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -84,11 +84,11 @@ namespace StellarisClone.Rendering
             var catCol = TechCategoryInfo.Color(tech.Category);
             _fx?.SetRim(new Color(catCol.r, catCol.g, catCol.b, 0.55f));
 
-            string tierStr = tech.Tier == 0 ? "Базовый" : $"Tier {tech.Tier}";
+            string tierStr = tech.Tier == 0 ? Loc.T("Базовый") : $"Tier {tech.Tier}";
             _categoryText.text = $"{TechCategoryInfo.Icon(tech.Category)}  {TechCategoryInfo.Name(tech.Category)}  ·  {tierStr}";
 
             // Эффект — короткое техническое описание с авто-окраской модификаторов
-            string desc = string.IsNullOrEmpty(tech.Description) ? "Без описания." : tech.Description;
+            string desc = string.IsNullOrEmpty(tech.Description) ? Loc.T("Без описания.") : tech.Description;
             _effectText.text = ColorizeModifiers(desc);
 
             // Флавор — атмосферное описание
@@ -101,7 +101,7 @@ namespace StellarisClone.Rendering
 
             string penaltyNote = "";
             if (penalty > 1.01f)
-                penaltyNote = $"  <color=#FFAA88>· опережает время ×{penalty:0.0}</color>";
+                penaltyNote = Loc.F("  <color=#FFAA88>· опережает время ×{0:0.0}</color>", penalty);
 
             int slotCount = tm != null ? tm.Slots.Count : 0;
             int freeSlots = 0;
@@ -111,13 +111,13 @@ namespace StellarisClone.Rendering
             }
 
             string slotNote = freeSlots > 0
-                ? $"<color=#8EF08C>Свободных слотов: {freeSlots} / {slotCount}</color>"
-                : $"<color=#FFAA88>Все слоты заняты — технология встанет в очередь</color>";
+                ? Loc.F("<color=#8EF08C>Свободных слотов: {0} / {1}</color>", freeSlots, slotCount)
+                : Loc.T("<color=#FFAA88>Все слоты заняты — технология встанет в очередь</color>");
 
             _costText.text =
-                $"<color=#F2C747><b>СТОИМОСТЬ</b></color>\n" +
-                $"Время исследования: <b>~{TechnologyManager.FormatDays(days)}</b>{penaltyNote}\n" +
-                $"<color=#8AA2A8>{tech.Cost:0} очков науки · наука {(tm != null ? tm.MonthlyResearchIncome : 0f):0.#}/мес</color>\n" +
+                Loc.T("<color=#F2C747><b>СТОИМОСТЬ</b></color>\n") +
+                Loc.F("Время исследования: <b>~{0}</b>{1}\n", TechnologyManager.FormatDays(days), penaltyNote) +
+                Loc.F("<color=#8AA2A8>{0:0} очков науки · наука {1:0.#}/мес</color>\n", tech.Cost, (tm != null ? tm.MonthlyResearchIncome : 0f)) +
                 $"{slotNote}";
         }
 
@@ -204,7 +204,7 @@ namespace StellarisClone.Rendering
             MakeSeparator(_root.transform, -76);
 
             // ====== БЛОК «ЭФФЕКТ» ======
-            var effectLabel = MakeText(_root.transform, "▸  ЭФФЕКТ", 11, FontStyle.Bold,
+            var effectLabel = MakeText(_root.transform, Loc.T("▸  ЭФФЕКТ"), 11, FontStyle.Bold,
                 UIManager.DS.Gold, TextAnchor.MiddleLeft);
             var elRt = effectLabel.rectTransform;
             elRt.anchorMin = new Vector2(0, 1);
@@ -245,7 +245,7 @@ namespace StellarisClone.Rendering
             _effectText.supportRichText = true;
 
             // ====== БЛОК «ОПИСАНИЕ» ======
-            var flavorLabel = MakeText(_root.transform, "▸  ОПИСАНИЕ", 11, FontStyle.Bold,
+            var flavorLabel = MakeText(_root.transform, Loc.T("▸  ОПИСАНИЕ"), 11, FontStyle.Bold,
                 UIManager.DS.Gold, TextAnchor.MiddleLeft);
             var flRt = flavorLabel.rectTransform;
             flRt.anchorMin = new Vector2(0, 1);
@@ -311,7 +311,7 @@ namespace StellarisClone.Rendering
             _costText.supportRichText = true;
 
             // ====== КНОПКИ ======
-            var confirmBtn = MakeButton(_root.transform, "▶  НАЧАТЬ ИССЛЕДОВАНИЕ",
+            var confirmBtn = MakeButton(_root.transform, Loc.T("▶  НАЧАТЬ ИССЛЕДОВАНИЕ"),
                 new Vector2(280, 46), UIManager.DS.BtnSuccess, OnConfirm);
             var cfRt = confirmBtn.GetComponent<RectTransform>();
             cfRt.anchorMin = new Vector2(0.5f, 0);
@@ -319,7 +319,7 @@ namespace StellarisClone.Rendering
             cfRt.pivot = new Vector2(0.5f, 0);
             cfRt.anchoredPosition = new Vector2(-150, 24);
 
-            var cancelBtn = MakeButton(_root.transform, "✕  ОТМЕНА",
+            var cancelBtn = MakeButton(_root.transform, Loc.T("✕  ОТМЕНА"),
                 new Vector2(280, 46), UIManager.DS.BtnNeutral, Close);
             var cnRt = cancelBtn.GetComponent<RectTransform>();
             cnRt.anchorMin = new Vector2(0.5f, 0);

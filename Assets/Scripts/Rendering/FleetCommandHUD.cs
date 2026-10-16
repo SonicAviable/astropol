@@ -169,9 +169,9 @@ namespace StellarisClone.Rendering
             gauges.anchorMax = new Vector2(1, 1);
             gauges.offsetMin = new Vector2(0, -77);
             gauges.offsetMax = new Vector2(0, -51);
-            _shield = MakeGauge(gauges, 0, LGIcon.ShieldDome, "ЩИТЫ", CShield);
-            _armor = MakeGauge(gauges, 1, LGIcon.ArmorPlate, "БРОНЯ", CArmor);
-            _hull = MakeGauge(gauges, 2, LGIcon.Ship, "КОРПУС", UIManager.DS.Green);
+            _shield = MakeGauge(gauges, 0, LGIcon.ShieldDome, Loc.T("ЩИТЫ"), CShield);
+            _armor = MakeGauge(gauges, 1, LGIcon.ArmorPlate, Loc.T("БРОНЯ"), CArmor);
+            _hull = MakeGauge(gauges, 2, LGIcon.Ship, Loc.T("КОРПУС"), UIManager.DS.Green);
 
             // Чипы характеристик
             var chips = LGBuild.Rect(body, "Chips");
@@ -244,14 +244,14 @@ namespace StellarisClone.Rendering
             btns.sizeDelta = new Vector2(DockW, 0);
             btns.anchoredPosition = new Vector2(-14, 0);
 
-            _btnStop = DockButton(btns, 0, 0, LGIcon.Pause, "Стоп", "Сбросить маршрут и очередь приказов", () => ForEach(f => FleetManager.Instance.StopFleet(f)));
-            _btnNext = DockButton(btns, 1, 0, LGIcon.Fast, "Следующая цель", "Пропустить текущий пункт и лететь к следующему из очереди", () => ForEach(f => FleetManager.Instance.SkipToNext(f)));
-            _btnClear = DockButton(btns, 2, 0, LGIcon.Trash, "Очистить очередь", "Убрать пункты, добавленные через Shift+ПКМ (клавиша Backspace)", () => ForEach(f => FleetManager.Instance.ClearQueue(f)));
-            DockButton(btns, 0, 1, LGIcon.Target, "Камера к флоту", "Плавно навести камеру на флот (клавиша F, двойной клик по значку)",
+            _btnStop = DockButton(btns, 0, 0, LGIcon.Pause, Loc.T("Стоп"), Loc.T("Сбросить маршрут и очередь приказов"), () => ForEach(f => FleetManager.Instance.StopFleet(f)));
+            _btnNext = DockButton(btns, 1, 0, LGIcon.Fast, Loc.T("Следующая цель"), Loc.T("Пропустить текущий пункт и лететь к следующему из очереди"), () => ForEach(f => FleetManager.Instance.SkipToNext(f)));
+            _btnClear = DockButton(btns, 2, 0, LGIcon.Trash, Loc.T("Очистить очередь"), Loc.T("Убрать пункты, добавленные через Shift+ПКМ (клавиша Backspace)"), () => ForEach(f => FleetManager.Instance.ClearQueue(f)));
+            DockButton(btns, 0, 1, LGIcon.Target, Loc.T("Камера к флоту"), Loc.T("Плавно навести камеру на флот (клавиша F, двойной клик по значку)"),
                 () => FleetSelectionController.FocusCamera(FleetManager.Instance?.SelectedFleet));
-            DockButton(btns, 1, 1, LGIcon.Fleet, "Выделить только главный", "Оставить в выделении один флот",
+            DockButton(btns, 1, 1, LGIcon.Fleet, Loc.T("Выделить только главный"), Loc.T("Оставить в выделении один флот"),
                 () => FleetManager.Instance?.SelectFleet(FleetManager.Instance.SelectedFleet));
-            DockButton(btns, 2, 1, LGIcon.Close, "Снять выделение", "Щелчок ЛКМ по пустому месту делает то же самое",
+            DockButton(btns, 2, 1, LGIcon.Close, Loc.T("Снять выделение"), Loc.T("Щелчок ЛКМ по пустому месту делает то же самое"),
                 () => FleetManager.Instance?.SetSelection(null));
 
             BuildAutoButton(btns);
@@ -299,11 +299,11 @@ namespace StellarisClone.Rendering
 
             _autoIcon = LGIcons.Create(rt, LGIcon.Sensors, 26, Color.white);
             _autoIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 14), new Vector2(26, 26));
-            _autoLabel = LGBuild.Label(rt, "АВТО", 9, Color.white, TextAnchor.LowerCenter, bold: true);
+            _autoLabel = LGBuild.Label(rt, Loc.T("АВТО"), 9, Color.white, TextAnchor.LowerCenter, bold: true);
             _autoLabel.rectTransform.Stretch(2, 16, 2, 0);
             TooltipHelper.Attach(_btnAuto.gameObject,
-                "<b>Авторазведка</b>\nНаучный корабль сам выбирает ближайшую неизученную систему и исследует её, затем следующую. " +
-                "Обходит видимые угрозы и владения врагов. Любой ручной приказ выключает режим.");
+                Loc.T("<b>Авторазведка</b>\nНаучный корабль сам выбирает ближайшую неизученную систему и исследует её, затем следующую. ") +
+                Loc.T("Обходит видимые угрозы и владения врагов. Любой ручной приказ выключает режим."));
             _btnAuto.gameObject.SetActive(false);
         }
 
@@ -391,7 +391,7 @@ namespace StellarisClone.Rendering
             _title.text = d.Name;
             var sub = new StringBuilder(ClassName(d));
             if (leader != null)
-                sub.Append($"   ·   <color={LGBuild.Hex(LeaderThumb.ClassColor(leader.Class))}>{LeaderManager.ClassName(leader.Class)} {leader.Name}</color>  ур. {leader.Level}");
+                sub.Append(Loc.F("   ·   <color={0}>{1} {2}</color>  ур. {3}", LGBuild.Hex(LeaderThumb.ClassColor(leader.Class)), LeaderManager.ClassName(leader.Class), leader.Name, leader.Level));
             if (_gen != null && d.State != FleetState.InHyperlane)
                 sub.Append($"   ·   {SysName(d.CurrentSystemId)}");
             _subtitle.text = sub.ToString();
@@ -433,29 +433,29 @@ namespace StellarisClone.Rendering
             _badge.enabled = false;
             _badgeCount.text = sel.Count.ToString();
 
-            _title.text = $"Выделено: {sel.Count} {FleetWord(sel.Count)}";
-            _subtitle.text = "ПКМ по системе — приказ всем   ·   Shift+ПКМ — в очередь";
+            _title.text = Loc.F("Выделено: {0} {1}", sel.Count, FleetWord(sel.Count));
+            _subtitle.text = Loc.T("ПКМ по системе — приказ всем   ·   Shift+ПКМ — в очередь");
 
-            if (fighting > 0) Status($"В БОЮ · {fighting}", UIManager.DS.Red, true);
-            else if (moving > 0) Status($"В ПУТИ · {moving}", UIManager.DS.NeonCyan, false);
-            else Status("НА ОРБИТАХ", UIManager.DS.TextMuted, false);
+            if (fighting > 0) Status(Loc.F("В БОЮ · {0}", fighting), UIManager.DS.Red, true);
+            else if (moving > 0) Status(Loc.F("В ПУТИ · {0}", moving), UIManager.DS.NeonCyan, false);
+            else Status(Loc.T("НА ОРБИТАХ"), UIManager.DS.TextMuted, false);
 
             SetGauge(_shield, sh, shMax, CShield);
             SetGauge(_armor, ar, arMax, CArmor);
             SetGauge(_hull, hu, huMax, HullColor(huMax > 0f ? hu / huMax : 1f));
 
             int c = 0;
-            if (mil > 0) SetChip(c++, LGIcon.Swords, UIManager.DS.Gold, $"{Mathf.RoundToInt(power):N0}", "<b>Суммарная мощь</b>\nБоевая сила всех выделенных военных кораблей");
-            if (mil > 0) SetChip(c++, LGIcon.Ship, FleetIndicator.OwnColor, $"военных {mil}", "<b>Военные корабли</b> в выделении");
-            if (sci > 0) SetChip(c++, LGIcon.Sensors, CSci, $"научных {sci}", "<b>Научные корабли</b> в выделении");
-            if (con > 0 && c < 3) SetChip(c++, LGIcon.Construction, CCon, $"строит. {con}", "<b>Строительные корабли</b> в выделении");
-            SetChip(c++, LGIcon.Energy, new Color(1f, 0.86f, 0.35f), $"−{upkeep:0.#}/мес", "<b>Содержание</b>\nЭнергия в месяц на все выделенные корабли");
+            if (mil > 0) SetChip(c++, LGIcon.Swords, UIManager.DS.Gold, $"{Mathf.RoundToInt(power):N0}", Loc.T("<b>Суммарная мощь</b>\nБоевая сила всех выделенных военных кораблей"));
+            if (mil > 0) SetChip(c++, LGIcon.Ship, FleetIndicator.OwnColor, Loc.F("военных {0}", mil), Loc.T("<b>Военные корабли</b> в выделении"));
+            if (sci > 0) SetChip(c++, LGIcon.Sensors, CSci, Loc.F("научных {0}", sci), Loc.T("<b>Научные корабли</b> в выделении"));
+            if (con > 0 && c < 3) SetChip(c++, LGIcon.Construction, CCon, Loc.F("строит. {0}", con), Loc.T("<b>Строительные корабли</b> в выделении"));
+            SetChip(c++, LGIcon.Energy, new Color(1f, 0.86f, 0.35f), Loc.F("−{0:0.#}/мес", upkeep), Loc.T("<b>Содержание</b>\nЭнергия в месяц на все выделенные корабли"));
             for (; c < _chips.Length; c++) _chips[c].Go.SetActive(false);
 
             float longest = 0f;
             foreach (var f in sel) if (f?.Data != null) longest = Mathf.Max(longest, FleetRoute.TotalDays(f.Data, _gen));
             SetProgress(-1f, UIManager.DS.NeonCyan);
-            _route.text = longest > 0f ? $"Последний прибудет через ~{FleetRoute.FormatDays(longest)}" : "Все флоты стоят на орбитах";
+            _route.text = longest > 0f ? Loc.F("Последний прибудет через ~{0}", FleetRoute.FormatDays(longest)) : Loc.T("Все флоты стоят на орбитах");
         }
 
         // ==================== ЭЛЕМЕНТЫ ====================
@@ -477,20 +477,20 @@ namespace StellarisClone.Rendering
             var fm = FleetManager.Instance;
             if (d.InCombat)
             {
-                if (cm != null && cm.IsRetreating(d)) Status("ОТСТУПЛЕНИЕ", UIManager.DS.Gold, true);
-                else Status("В БОЮ", UIManager.DS.Red, true);
+                if (cm != null && cm.IsRetreating(d)) Status(Loc.T("ОТСТУПЛЕНИЕ"), UIManager.DS.Gold, true);
+                else Status(Loc.T("В БОЮ"), UIManager.DS.Red, true);
                 return;
             }
             switch (d.State)
             {
-                case FleetState.InHyperlane: Status("ПРЫЖОК", UIManager.DS.NeonCyan, false); return;
-                case FleetState.Surveying: Status("РАЗВЕДКА", CSci, false); return;
-                case FleetState.Constructing: Status("МОНТАЖ ФОРПОСТА", CCon, false); return;
+                case FleetState.InHyperlane: Status(Loc.T("ПРЫЖОК"), UIManager.DS.NeonCyan, false); return;
+                case FleetState.Surveying: Status(Loc.T("РАЗВЕДКА"), CSci, false); return;
+                case FleetState.Constructing: Status(Loc.T("МОНТАЖ ФОРПОСТА"), CCon, false); return;
             }
-            if (d.Path.Count > 0) Status("К ПРЫЖКУ", UIManager.DS.NeonCyan, false);
-            else if (d.AutoExplore) Status("АВТОРАЗВЕДКА", CSci, false);
-            else if (fm != null && fm.NeedsRepair(d)) Status("РЕМОНТ", UIManager.DS.Gold, false);
-            else Status("НА ОРБИТЕ", UIManager.DS.TextMuted, false);
+            if (d.Path.Count > 0) Status(Loc.T("К ПРЫЖКУ"), UIManager.DS.NeonCyan, false);
+            else if (d.AutoExplore) Status(Loc.T("АВТОРАЗВЕДКА"), CSci, false);
+            else if (fm != null && fm.NeedsRepair(d)) Status(Loc.T("РЕМОНТ"), UIManager.DS.Gold, false);
+            else Status(Loc.T("НА ОРБИТЕ"), UIManager.DS.TextMuted, false);
         }
 
         private static void SetGauge(Gauge g, float v, float max, Color c)
@@ -521,41 +521,41 @@ namespace StellarisClone.Rendering
                 float dpd = 0f;
                 foreach (var w in d.Weapons) dpd += w.Damage * w.FireRate * CombatManager.ShotsPerDay;
                 SetChip(c++, LGIcon.Swords, UIManager.DS.Gold, $"{Mathf.RoundToInt(CombatMath.Power(d)):N0}",
-                    "<b>Мощь</b>\nОбщая боевая сила корабля: урон, прочность и защита");
-                SetChip(c++, WeaponIcon(d.PrimaryWeapon), WeaponColor(d.PrimaryWeapon), $"{dpd:0}/дн",
-                    $"<b>Урон в день</b>\nОсновное оружие: {WeaponName(d.PrimaryWeapon)}. Орудий: {d.Weapons.Count}");
+                    Loc.T("<b>Мощь</b>\nОбщая боевая сила корабля: урон, прочность и защита"));
+                SetChip(c++, WeaponIcon(d.PrimaryWeapon), WeaponColor(d.PrimaryWeapon), Loc.F("{0:0}/дн", dpd),
+                    Loc.F("<b>Урон в день</b>\nОсновное оружие: {0}. Орудий: {1}", WeaponName(d.PrimaryWeapon), d.Weapons.Count));
                 var dm = ShipDesignManager.Instance;
                 if (d.OwnerId == 0 && dm != null && dm.IsOutdated(d))
                 {
                     // Вместо уклонения — заметная пометка «устарел» с выгодой модернизации
                     float gain = dm.RetrofitGain(d);
-                    SetChip(c++, LGIcon.Wrench, UIManager.DS.Gold, gain > 0.005f ? $"устарел +{gain * 100f:0}%" : "устарел",
-                        $"<b>Устаревший проект</b>\nКорабль построен не по актуальному проекту корпуса «{dm.GetLatestDesign(d.HullClass)?.Name}». " +
-                        $"Модернизация на верфи: мощь {(gain >= 0f ? "+" : "")}{gain * 100f:0}%, стоимость {dm.RetrofitCost(d):0} сплавов.\n" +
-                        "<color=#8AA2A8>Верфь → «Модернизация эскадры»: «Выделенный» или «Все устаревшие».</color>");
+                    SetChip(c++, LGIcon.Wrench, UIManager.DS.Gold, gain > 0.005f ? Loc.F("устарел +{0:0}%", gain * 100f) : Loc.T("устарел"),
+                        Loc.F("<b>Устаревший проект</b>\nКорабль построен не по актуальному проекту корпуса «{0}». ", dm.GetLatestDesign(d.HullClass)?.Name) +
+                        Loc.F("Модернизация на верфи: мощь {0}{1:0}%, стоимость {2:0} сплавов.\n", (gain >= 0f ? "+" : ""), gain * 100f, dm.RetrofitCost(d)) +
+                        Loc.T("<color=#8AA2A8>Верфь → «Модернизация эскадры»: «Выделенный» или «Все устаревшие».</color>"));
                 }
                 else
                     SetChip(c++, LGIcon.Thruster, new Color(0.6f, 0.85f, 1f), $"{d.Evasion:0}%",
-                        "<b>Уклонение</b>\nШанс увернуться от выстрела; снижается точностью противника");
+                        Loc.T("<b>Уклонение</b>\nШанс увернуться от выстрела; снижается точностью противника"));
             }
             else if (d.Type == FleetType.Science)
             {
                 float mult = EmpireBonuses.For(d.OwnerId).SurveySpeed * LeaderManager.SurveySpeedMult(d);
-                SetChip(c++, LGIcon.Sensors, CSci, $"×{mult:0.##}", "<b>Скорость разведки</b>\nС учётом технологий и учёного на борту");
-                SetChip(c++, LGIcon.Clock, UIManager.DS.TextMuted, $"{d.TotalSurveyDays / Mathf.Max(0.05f, mult):0} дн.",
-                    "<b>Разведка системы</b>\nСколько дней занимает исследование одной системы");
-                SetChip(c++, LGIcon.Star, UIManager.DS.NeonCyan, d.AutoExplore ? "<color=#73FF9E>авто: вкл.</color>" : "авто: выкл.",
-                    "<b>Авторазведка</b>\nВключается кнопкой «АВТО» справа");
+                SetChip(c++, LGIcon.Sensors, CSci, $"×{mult:0.##}", Loc.T("<b>Скорость разведки</b>\nС учётом технологий и учёного на борту"));
+                SetChip(c++, LGIcon.Clock, UIManager.DS.TextMuted, Loc.F("{0:0} дн.", d.TotalSurveyDays / Mathf.Max(0.05f, mult)),
+                    Loc.T("<b>Разведка системы</b>\nСколько дней занимает исследование одной системы"));
+                SetChip(c++, LGIcon.Star, UIManager.DS.NeonCyan, d.AutoExplore ? Loc.T("<color=#73FF9E>авто: вкл.</color>") : Loc.T("авто: выкл."),
+                    Loc.T("<b>Авторазведка</b>\nВключается кнопкой «АВТО» справа"));
             }
             else
             {
-                SetChip(c++, LGIcon.Construction, CCon, $"{d.TotalConstructionDays:0} дн.", "<b>Монтаж форпоста</b>\nСколько дней строится звёздная база");
+                SetChip(c++, LGIcon.Construction, CCon, Loc.F("{0:0} дн.", d.TotalConstructionDays), Loc.T("<b>Монтаж форпоста</b>\nСколько дней строится звёздная база"));
                 SetChip(c++, LGIcon.Influence, new Color(0.75f, 0.6f, 1f), $"{FleetManager.OutpostInfluenceCost(d.OwnerId):0}",
-                    "<b>Цена форпоста</b>\nВлияние за новую систему");
-                SetChip(c++, LGIcon.Alloys, new Color(0.85f, 0.7f, 1f), $"{FactionTraits.StarbaseAlloys(d.OwnerId):0}", "<b>Сплавы на форпост</b>");
+                    Loc.T("<b>Цена форпоста</b>\nВлияние за новую систему"));
+                SetChip(c++, LGIcon.Alloys, new Color(0.85f, 0.7f, 1f), $"{FactionTraits.StarbaseAlloys(d.OwnerId):0}", Loc.T("<b>Сплавы на форпост</b>"));
             }
-            SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), $"{FleetRoute.DaysPerJump(d):0} дн/прыжок",
-                $"<b>Скорость</b>\nДней на один гиперпрыжок · содержание {d.UpkeepEnergy:0.#} энергии в месяц");
+            SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), Loc.F("{0:0} дн/прыжок", FleetRoute.DaysPerJump(d)),
+                Loc.F("<b>Скорость</b>\nДней на один гиперпрыжок · содержание {0:0.#} энергии в месяц", d.UpkeepEnergy));
             for (; c < _chips.Length; c++) _chips[c].Go.SetActive(false);
         }
 
@@ -568,9 +568,9 @@ namespace StellarisClone.Rendering
                 float left = cm.FtlReadyIn(d);
                 SetProgress(1f - left / CombatManager.FtlSpoolDays, left > 0f ? UIManager.DS.NeonCyan : UIManager.DS.Green);
                 _route.text = cm.IsRetreating(d)
-                    ? (left > 0f ? $"<color=#F2C747>Отступление:</color> прыжок через {left:0.0} дн." : "<color=#F2C747>Отступление:</color> гиперпривод готов — прыжок")
-                    : left > 0f ? $"Разгон гиперпривода: {left:0.0} дн. до возможности экстренного прыжка"
-                                : "<color=#5CF59A>Гиперпривод готов</color> — можно отступить экстренным прыжком";
+                    ? (left > 0f ? Loc.F("<color=#F2C747>Отступление:</color> прыжок через {0:0.0} дн.", left) : Loc.T("<color=#F2C747>Отступление:</color> гиперпривод готов — прыжок"))
+                    : left > 0f ? Loc.F("Разгон гиперпривода: {0:0.0} дн. до возможности экстренного прыжка", left)
+                                : Loc.T("<color=#5CF59A>Гиперпривод готов</color> — можно отступить экстренным прыжком");
                 return;
             }
             switch (d.State)
@@ -580,11 +580,11 @@ namespace StellarisClone.Rendering
                     break;
                 case FleetState.Surveying:
                     SetProgress(1f - d.DaysRemainingSurvey / Mathf.Max(0.01f, d.TotalSurveyDays), CSci);
-                    _route.text = $"Разведка системы {SysName(d.CurrentSystemId)} · осталось {Mathf.Max(0, d.DaysRemainingSurvey):0} дн.";
+                    _route.text = Loc.F("Разведка системы {0} · осталось {1:0} дн.", SysName(d.CurrentSystemId), Mathf.Max(0, d.DaysRemainingSurvey));
                     return;
                 case FleetState.Constructing:
                     SetProgress(1f - d.DaysRemainingConstruction / Mathf.Max(0.01f, d.TotalConstructionDays), CCon);
-                    _route.text = $"Монтаж форпоста: {SysName(d.CurrentSystemId)} · осталось {Mathf.Max(0, d.DaysRemainingConstruction):0} дн.";
+                    _route.text = Loc.F("Монтаж форпоста: {0} · осталось {1:0} дн.", SysName(d.CurrentSystemId), Mathf.Max(0, d.DaysRemainingConstruction));
                     return;
                 default:
                     SetProgress(-1f, UIManager.DS.NeonCyan);
@@ -618,7 +618,7 @@ namespace StellarisClone.Rendering
             Color idle = new Color(0.85f, 0.92f, 0.95f);
             _autoIcon.color = on ? CSci : idle;
             _autoLabel.color = on ? CSci : idle;
-            _autoLabel.text = on ? "АВТО\nВКЛ" : "АВТО";
+            _autoLabel.text = on ? Loc.T("АВТО\nВКЛ") : Loc.T("АВТО");
         }
 
         // ==================== ТЕКСТЫ ====================
@@ -635,11 +635,11 @@ namespace StellarisClone.Rendering
                 if (fm != null && fm.NeedsRepair(d))
                 {
                     float r = fm.RepairRateAt(d.CurrentSystemId, d.OwnerId);
-                    return r > 0f ? $"Ремонт: {r * 100f:0}% в день" : "<color=#F2C747>Повреждён</color> — ремонт только на своей территории";
+                    return r > 0f ? Loc.F("Ремонт: {0:0}% в день", r * 100f) : Loc.T("<color=#F2C747>Повреждён</color> — ремонт только на своей территории");
                 }
-                return "ПКМ по системе — лететь   ·   Shift+ПКМ — добавить в очередь";
+                return Loc.T("ПКМ по системе — лететь   ·   Shift+ПКМ — добавить в очередь");
             }
-            var sb = new StringBuilder("<color=#66DBD1>Маршрут</color>   ");
+            var sb = new StringBuilder(Loc.T("<color=#66DBD1>Маршрут</color>   "));
             int shown = 0;
             foreach (var nd in nodes)
             {
@@ -649,23 +649,23 @@ namespace StellarisClone.Rendering
                 sb.Append(_gen.Systems[nd.SystemId].Name);
             }
             sb.Append($"   ·   ~{FleetRoute.FormatDays(nodes[nodes.Count - 1].Days)}");
-            if (d.OrderQueue.Count > 0) sb.Append($"   ·   в очереди: {d.OrderQueue.Count}");
+            if (d.OrderQueue.Count > 0) sb.Append(Loc.F("   ·   в очереди: {0}", d.OrderQueue.Count));
             return sb.ToString();
         }
 
         private static string FleetWord(int n)
         {
             int m10 = n % 10, m100 = n % 100;
-            if (m10 == 1 && m100 != 11) return "флот";
-            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "флота";
-            return "флотов";
+            if (m10 == 1 && m100 != 11) return Loc.T("флот");
+            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return Loc.T("флота");
+            return Loc.T("флотов");
         }
 
         private static string ClassName(FleetData d) => d.Type switch
         {
-            FleetType.Science => "Научный корабль",
-            FleetType.Constructor => "Строительный корабль",
-            _ => d.HullClass == ShipClass.Destroyer ? "Эсминец" : d.HullClass == ShipClass.Frigate ? "Фрегат" : "Корвет"
+            FleetType.Science => Loc.T("Научный корабль"),
+            FleetType.Constructor => Loc.T("Строительный корабль"),
+            _ => d.HullClass == ShipClass.Destroyer ? Loc.T("Эсминец") : d.HullClass == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет")
         };
 
         private static LGIcon TypeIcon(FleetData d) => d.Type switch
@@ -698,9 +698,9 @@ namespace StellarisClone.Rendering
 
         private static string WeaponName(WeaponDamageType t) => t switch
         {
-            WeaponDamageType.Energy => "энергетическое",
-            WeaponDamageType.Kinetic => "кинетическое",
-            _ => "ракеты"
+            WeaponDamageType.Energy => Loc.T("энергетическое"),
+            WeaponDamageType.Kinetic => Loc.T("кинетическое"),
+            _ => Loc.T("ракеты")
         };
     }
 }

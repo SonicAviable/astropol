@@ -112,8 +112,8 @@ namespace StellarisClone.Rendering
             if (sg.Contested || !sg.Active) col = Color.Lerp(col, Color.gray, 0.5f);
             _fills[key].fillAmount = Mathf.Clamp01(sg.Progress / Mathf.Max(1f, need));
             _fills[key].color = col;
-            string state = sg.BaseHolding ? "база" : sg.Contested ? "бой" : !sg.Active ? "снята" : $"{Mathf.Max(0, need - sg.Progress):0}д";
-            _labels[key].text = $"<color=#{ColorUtility.ToHtmlStringRGB(col)}>Осада · {state}</color>";
+            string state = sg.BaseHolding ? Loc.T("база") : sg.Contested ? Loc.T("бой") : !sg.Active ? Loc.T("снята") : Loc.F("{0:0}д", Mathf.Max(0, need - sg.Progress));
+            _labels[key].text = Loc.F("<color=#{0}>Осада · {1}</color>", ColorUtility.ToHtmlStringRGB(col), state);
         }
 
         private void CreateRing(int key, FleetView fleet)
@@ -226,14 +226,14 @@ namespace StellarisClone.Rendering
                 float total = Mathf.Max(1f, fleet.Data.TotalConstructionDays);
                 progress = 1f - (fleet.Data.DaysRemainingConstruction / total);
                 col = new Color(1f, 0.62f, 0.25f);
-                txt = $"⚙ Монтаж · {(int)fleet.Data.DaysRemainingConstruction}д";
+                txt = Loc.F("⚙ Монтаж · {0}д", (int)fleet.Data.DaysRemainingConstruction);
             }
             else
             {
                 float total = Mathf.Max(1f, fleet.Data.TotalSurveyDays);
                 progress = 1f - (fleet.Data.DaysRemainingSurvey / total);
                 col = new Color(0.35f, 0.90f, 1f);
-                txt = $"◎ Разведка · {(int)fleet.Data.DaysRemainingSurvey}д";
+                txt = Loc.F("◎ Разведка · {0}д", (int)fleet.Data.DaysRemainingSurvey);
             }
 
             fill.fillAmount = Mathf.Clamp01(progress);

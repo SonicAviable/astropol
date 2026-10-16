@@ -31,120 +31,120 @@ namespace StellarisClone.Core
             _hulls.Clear();
             _hulls.Add(new HullBlueprint
             {
-                Class = ShipClass.Corvette, DisplayName = "Корвет",
+                Class = ShipClass.Corvette, DisplayName = Loc.T("Корвет"),
                 WeaponSlots = 2, DefenseSlots = 1, UtilitySlots = 2,
                 BaseHull = 80f, BaseArmor = 10f, BaseShields = 8f,
                 BaseEvasion = 18f, BaseSpeed = 1.15f, BaseAlloyCost = 60f
             });
             _hulls.Add(new HullBlueprint
             {
-                Class = ShipClass.Frigate, DisplayName = "Фрегат",
+                Class = ShipClass.Frigate, DisplayName = Loc.T("Фрегат"),
                 WeaponSlots = 3, DefenseSlots = 2, UtilitySlots = 2,
                 BaseHull = 140f, BaseArmor = 22f, BaseShields = 18f,
                 BaseEvasion = 10f, BaseSpeed = 1.0f, BaseAlloyCost = 110f
             });
             _hulls.Add(new HullBlueprint
             {
-                Class = ShipClass.Destroyer, DisplayName = "Эсминец",
+                Class = ShipClass.Destroyer, DisplayName = Loc.T("Эсминец"),
                 WeaponSlots = 4, DefenseSlots = 3, UtilitySlots = 3,
                 BaseHull = 260f, BaseArmor = 40f, BaseShields = 36f,
                 BaseEvasion = 6f, BaseSpeed = 0.85f, BaseAlloyCost = 180f,
                 RequiredTechId = "cns_dst_1"
             });
 
-            AddMod(new ShipModule("wpn_laser_red", "Красный лазер",
-                "Энергетический луч. Эффективен против брони.",
+            AddMod(new ShipModule("wpn_laser_red", Loc.T("Красный лазер"),
+                Loc.T("Энергетический луч. Эффективен против брони."),
                 ModuleSlotType.Weapon, "",
                 0, 0, 0, 9f, 0.85f, 0, 0, 0, 4f, 18f, WeaponDamageType.Energy));
 
-            AddMod(new ShipModule("wpn_autocannon", "Автопушка",
-                "Кинетические снаряды. Ломают щиты.",
+            AddMod(new ShipModule("wpn_autocannon", Loc.T("Автопушка"),
+                Loc.T("Кинетические снаряды. Ломают щиты."),
                 ModuleSlotType.Weapon, "",
                 0, 0, 0, 8f, 1.15f, 0, 0, 0, 3f, 16f, WeaponDamageType.Kinetic));
 
-            AddMod(new ShipModule("wpn_missile", "Ракетная установка",
-                "Взрывчатые боеголовки. Удар по всем слоям защиты.",
+            AddMod(new ShipModule("wpn_missile", Loc.T("Ракетная установка"),
+                Loc.T("Взрывчатые боеголовки. Удар по всем слоям защиты."),
                 ModuleSlotType.Weapon, "",
                 0, 0, 0, 14f, 0.45f, 0, 0, 0, 5f, 24f, WeaponDamageType.Explosive));
 
-            AddMod(new ShipModule("def_shield", "Дефлекторный щит",
-                "+Щиты. Требует энергию реактора.",
+            AddMod(new ShipModule("def_shield", Loc.T("Дефлекторный щит"),
+                Loc.T("+Щиты. Требует энергию реактора."),
                 ModuleSlotType.Defense, "",
                 0, 0, 42f, 0, 0, 2f, 0, 0, 8f, 22f));
 
-            AddMod(new ShipModule("def_armor", "Нанокомпозитная броня",
-                "+Броня. Не потребляет энергию.",
+            AddMod(new ShipModule("def_armor", Loc.T("Нанокомпозитная броня"),
+                Loc.T("+Броня. Не потребляет энергию."),
                 ModuleSlotType.Defense, "",
                 8f, 48f, 0, 0, 0, -2f, 0, 0, 0, 20f));
 
-            AddMod(new ShipModule("utl_reactor", "Реактор",
-                "Выработка энергоёмкости Power.",
+            AddMod(new ShipModule("utl_reactor", Loc.T("Реактор"),
+                Loc.T("Выработка энергоёмкости Power."),
                 ModuleSlotType.Utility, "",
                 0, 0, 0, 0, 0, 0, 0, 16f, 0, 28f));
 
-            AddMod(new ShipModule("utl_reactor_fus", "Термоядерный реактор",
-                "Усиленная энергоёмкость.",
+            AddMod(new ShipModule("utl_reactor_fus", Loc.T("Термоядерный реактор"),
+                Loc.T("Усиленная энергоёмкость."),
                 ModuleSlotType.Utility, "rct_fus_1",
                 0, 0, 0, 0, 0, 0, 0, 28f, 0, 40f));
 
-            AddMod(new ShipModule("utl_engine", "Импульсный двигатель",
-                "Скорость гиперперехода и уклонение.",
+            AddMod(new ShipModule("utl_engine", Loc.T("Импульсный двигатель"),
+                Loc.T("Скорость гиперперехода и уклонение."),
                 ModuleSlotType.Utility, "prp_eng_1",
                 0, 0, 0, 0, 0, 6f, 0.25f, 0, 4f, 18f));
 
-            AddMod(new ShipModule("utl_engine_basic", "Маршевый двигатель",
-                "Базовая тяга.",
+            AddMod(new ShipModule("utl_engine_basic", Loc.T("Маршевый двигатель"),
+                Loc.T("Базовая тяга."),
                 ModuleSlotType.Utility, "",
                 0, 0, 0, 0, 0, 3f, 0.12f, 0, 2f, 10f));
 
             // ---- Улучшенные модули: открываются технологиями ----
 
-            AddMod(new ShipModule("wpn_railgun", "Рельсотрон",
-                "Тяжёлые кинетические болванки. Быстро срывают щиты.",
+            AddMod(new ShipModule("wpn_railgun", Loc.T("Рельсотрон"),
+                Loc.T("Тяжёлые кинетические болванки. Быстро срывают щиты."),
                 ModuleSlotType.Weapon, "wpn_kin_2",
                 0, 0, 0, 13f, 1.05f, 0, 0, 0, 5f, 26f, WeaponDamageType.Kinetic));
 
-            AddMod(new ShipModule("wpn_laser_blue", "Синий лазер",
-                "Сфокусированный луч высокой энергии. Прожигает броню.",
+            AddMod(new ShipModule("wpn_laser_blue", Loc.T("Синий лазер"),
+                Loc.T("Сфокусированный луч высокой энергии. Прожигает броню."),
                 ModuleSlotType.Weapon, "wpn_las_2",
                 0, 0, 0, 14f, 0.85f, 0, 0, 0, 6f, 28f, WeaponDamageType.Energy));
 
-            AddMod(new ShipModule("wpn_plasma", "Плазменная пушка",
-                "Медленный, но сокрушительный разряд плазмы по броне.",
+            AddMod(new ShipModule("wpn_plasma", Loc.T("Плазменная пушка"),
+                Loc.T("Медленный, но сокрушительный разряд плазмы по броне."),
                 ModuleSlotType.Weapon, "wpn_pls_1",
                 0, 0, 0, 26f, 0.6f, 0, 0, 0, 10f, 42f, WeaponDamageType.Energy));
 
-            AddMod(new ShipModule("wpn_torpedo", "Торпедный аппарат",
-                "Тяжёлые боеголовки, бьют по всем слоям защиты.",
+            AddMod(new ShipModule("wpn_torpedo", Loc.T("Торпедный аппарат"),
+                Loc.T("Тяжёлые боеголовки, бьют по всем слоям защиты."),
                 ModuleSlotType.Weapon, "wpn_pls_1",
                 0, 0, 0, 30f, 0.38f, 0, 0, 0, 7f, 38f, WeaponDamageType.Explosive));
 
-            AddMod(new ShipModule("def_armor_2", "Керамостальная броня",
-                "Толстые плиты: много брони, корабль чуть тяжелее.",
+            AddMod(new ShipModule("def_armor_2", Loc.T("Керамостальная броня"),
+                Loc.T("Толстые плиты: много брони, корабль чуть тяжелее."),
                 ModuleSlotType.Defense, "def_arm_2",
                 12f, 80f, 0, 0, 0, -3f, 0, 0, 0, 32f));
 
-            AddMod(new ShipModule("def_shield_2", "Усиленный дефлектор",
-                "Мощное поле, но прожорливое по энергии.",
+            AddMod(new ShipModule("def_shield_2", Loc.T("Усиленный дефлектор"),
+                Loc.T("Мощное поле, но прожорливое по энергии."),
                 ModuleSlotType.Defense, "def_shl_2",
                 0, 0, 72f, 0, 0, 2f, 0, 0, 12f, 34f));
 
-            AddMod(new ShipModule("utl_reactor_ant", "Реактор антиматерии",
-                "Огромная выработка энергии для тяжёлых проектов.",
+            AddMod(new ShipModule("utl_reactor_ant", Loc.T("Реактор антиматерии"),
+                Loc.T("Огромная выработка энергии для тяжёлых проектов."),
                 ModuleSlotType.Utility, "rct_ant_1",
                 0, 0, 0, 0, 0, 0, 0, 44f, 0, 60f));
 
-            AddMod(new ShipModule("utl_targeting", "Компьютер наведения",
-                "Снижает уклонение целей на 10 пунктов.",
+            AddMod(new ShipModule("utl_targeting", Loc.T("Компьютер наведения"),
+                Loc.T("Снижает уклонение целей на 10 пунктов."),
                 ModuleSlotType.Utility, "sen_bas_1",
                 0, 0, 0, 0, 0, 0, 0, 0, 3f, 20f) { Accuracy = 10f });
         }
 
         public static string DamageTypeName(WeaponDamageType t) => t switch
         {
-            WeaponDamageType.Energy => "энергия",
-            WeaponDamageType.Kinetic => "кинетика",
-            _ => "взрыв"
+            WeaponDamageType.Energy => Loc.T("энергия"),
+            WeaponDamageType.Kinetic => Loc.T("кинетика"),
+            _ => Loc.T("взрыв")
         };
 
         private void AddMod(ShipModule m) => _modules[m.Id] = m;
@@ -212,7 +212,7 @@ namespace StellarisClone.Core
             var d = new ShipDesign
             {
                 Id = Guid.NewGuid().ToString("N").Substring(0, 8),
-                Name = $"Проект «{hull.DisplayName}»",
+                Name = Loc.F("Проект «{0}»", hull.DisplayName),
                 HullClass = hullClass
             };
             FillEmptySlots(d, hull);
@@ -332,7 +332,7 @@ namespace StellarisClone.Core
         {
             if (_saved.Count > 0) return;
             var corvette = CreateDraft(ShipClass.Corvette);
-            corvette.Name = "Корвет «Страж»";
+            corvette.Name = Loc.T("Корвет «Страж»");
             corvette.WeaponModuleIds[0] = "wpn_missile";
             corvette.WeaponModuleIds[1] = "wpn_missile";
             corvette.DefenseModuleIds[0] = "def_armor";
@@ -412,9 +412,9 @@ namespace StellarisClone.Core
             int n = 0;
             foreach (var f in OutdatedShips(0)) if (f.HullClass == hull) n++;
             if (n == 0) return;
-            NotificationCenter.Show("Корабли устарели",
-                $"Основной проект корпуса теперь «{latest.Name}». Кораблей старого проекта: {n}. " +
-                "Модернизируйте их на верфи (кнопка «Модернизировать все») — они получат новое вооружение и защиту.",
+            NotificationCenter.Show(Loc.T("Корабли устарели"),
+                Loc.F("Основной проект корпуса теперь «{0}». Кораблей старого проекта: {1}. ", latest.Name, n) +
+                Loc.T("Модернизируйте их на верфи (кнопка «Модернизировать все») — они получат новое вооружение и защиту."),
                 NotificationCenter.Kind.Info, 9f);
         }
 

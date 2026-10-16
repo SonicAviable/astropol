@@ -84,7 +84,7 @@ namespace StellarisClone.Rendering
             left.offsetMin = Vector2.zero;
             left.offsetMax = new Vector2(LeftW, 0);
 
-            var leftTitle = LGBuild.Label(left, "АГЕНТЫ", 12, Purple, TextAnchor.UpperLeft, bold: true).Track();
+            var leftTitle = LGBuild.Label(left, Loc.T("АГЕНТЫ"), 12, Purple, TextAnchor.UpperLeft, bold: true).Track();
             leftTitle.rectTransform.TopBand(2, 18, 4, 0);
             var listHost = LGBuild.Rect(left, "AgentsHost");
             listHost.Stretch(0, 150, 0, 24);
@@ -117,7 +117,7 @@ namespace StellarisClone.Rendering
 
             var titleRt = LGBuild.Rect(header.transform, "TitleBox");
             titleRt.Stretch(92, 0, 80, 0);
-            var title = LGBuild.Label(titleRt, "ТАЙНЫЕ ОПЕРАЦИИ", 24, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true).Track(2f);
+            var title = LGBuild.Label(titleRt, Loc.T("ТАЙНЫЕ ОПЕРАЦИИ"), 24, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true).Track(2f);
             title.rectTransform.offsetMax = new Vector2(0, -12);
             _subtitle = LGBuild.Label(titleRt, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
             _subtitle.rectTransform.offsetMin = new Vector2(0, 14);
@@ -227,10 +227,10 @@ namespace StellarisClone.Rendering
         {
             var es = EspionageManager.Instance;
             if (_subtitle == null) return;
-            _subtitle.text = $"Защита вашей империи <color=#BD8FFF>{EspionageManager.PlayerCounter() * 100f:0}%</color>" +
+            _subtitle.text = Loc.F("Защита вашей империи <color=#BD8FFF>{0:0}%</color>", EspionageManager.PlayerCounter() * 100f) +
                              (es != null
-                                ? $"   ·   операции: <color=#66F59E>{es.Succeeded}</color> удачных, <color=#FF7A7A>{es.Failed}</color> провальных" +
-                                  $"   ·   чужих попыток сорвано: {es.Foiled}   ·   прорывов к вам: {es.Breaches}"
+                                ? Loc.F("   ·   операции: <color=#66F59E>{0}</color> удачных, <color=#FF7A7A>{1}</color> провальных", es.Succeeded, es.Failed) +
+                                  Loc.F("   ·   чужих попыток сорвано: {0}   ·   прорывов к вам: {1}", es.Foiled, es.Breaches)
                                 : "");
         }
 
@@ -238,11 +238,11 @@ namespace StellarisClone.Rendering
 
         private static string PostLine(Leader l)
         {
-            if (l.Post != LeaderPost.Spy) return "<color=#FFAA55>Ждёт назначения</color>";
-            if (l.TargetOwner == 0) return "<color=#66E0D0>Контрразведка</color> · дома";
+            if (l.Post != LeaderPost.Spy) return Loc.T("<color=#FFAA55>Ждёт назначения</color>");
+            if (l.TargetOwner == 0) return Loc.T("<color=#66E0D0>Контрразведка</color> · дома");
             string who = Contacts.NameForPlayer(l.TargetOwner);
-            if (l.OpKind >= 0) return $"<color=#F2C766>{SpyInfo.Name((SpyOp)l.OpKind)}</color> · ещё {l.OpMonthsLeft} мес.";
-            return $"<color=#BD8FFF>{who}</color> · сеть {l.Cover:0}%";
+            if (l.OpKind >= 0) return Loc.F("<color=#F2C766>{0}</color> · ещё {1} мес.", SpyInfo.Name((SpyOp)l.OpKind), l.OpMonthsLeft);
+            return Loc.F("<color=#BD8FFF>{0}</color> · сеть {1:0}%", who, l.Cover);
         }
 
         private void BuildAgents()
@@ -261,7 +261,7 @@ namespace StellarisClone.Rendering
             {
                 var host = LGBuild.Rect(_agentList, "Empty");
                 LGBuild.Height(host.gameObject, 110);
-                var t = LGBuild.Label(host, "Агентов пока нет.\nНаймите первого внизу.", 12, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
+                var t = LGBuild.Label(host, Loc.T("Агентов пока нет.\nНаймите первого внизу."), 12, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
                 t.rectTransform.Stretch(14, 0, 14, 0);
             }
         }
@@ -319,7 +319,7 @@ namespace StellarisClone.Rendering
         private static string AgentTooltip(Leader l)
         {
             var sb = new StringBuilder();
-            sb.Append($"<b>{l.Name}</b>\nАгент · уровень {l.Level}\n<color=#8AA2A8>Уровень:</color> {LeaderManager.LevelBonusText(l)}");
+            sb.Append(Loc.F("<b>{0}</b>\nАгент · уровень {1}\n<color=#8AA2A8>Уровень:</color> {2}", l.Name, l.Level, LeaderManager.LevelBonusText(l)));
             foreach (var id in l.Traits)
             {
                 var t = LeaderManager.Trait(id);
@@ -339,11 +339,11 @@ namespace StellarisClone.Rendering
             card.rectTransform.Stretch(0, 0, 0, 0);
             LG.Platter(card.gameObject, 16f).SetRim(new Color(1f, 1f, 1f, 0.14f));
 
-            var title = LGBuild.Label(card.transform, "КАНДИДАТ НА НАЙМ", 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true).Track();
+            var title = LGBuild.Label(card.transform, Loc.T("КАНДИДАТ НА НАЙМ"), 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true).Track();
             title.rectTransform.TopBand(10, 14, 14, 14);
             if (cand == null || lm == null)
             {
-                var t = LGBuild.Label(card.transform, "Кандидатов нет — список обновляется каждый год.", 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
+                var t = LGBuild.Label(card.transform, Loc.T("Кандидатов нет — список обновляется каждый год."), 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
                 t.rectTransform.Stretch(14, 10, 14, 30);
                 return;
             }
@@ -352,7 +352,7 @@ namespace StellarisClone.Rendering
             frame.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -30), new Vector2(50, 50));
             if (!LeaderThumb.Create(frame, 12f).Set(cand, Purple))
                 LGIcons.Create(frame, LGIcon.Betrayal, 26, Purple);
-            var name = LGBuild.Label(card.transform, $"{cand.Name} · {cand.Age} лет", 13, Color.white, TextAnchor.UpperLeft, bold: true);
+            var name = LGBuild.Label(card.transform, Loc.F("{0} · {1} лет", cand.Name, cand.Age), 13, Color.white, TextAnchor.UpperLeft, bold: true);
             name.rectTransform.TopBand(32, 18, 72, 10);
             var tr = LGBuild.Label(card.transform, TraitsText(cand), 11, UIManager.DS.Gold, TextAnchor.UpperLeft, wrap: true);
             tr.rectTransform.TopBand(52, 30, 72, 10);
@@ -363,7 +363,7 @@ namespace StellarisClone.Rendering
                 {
                     lm.Hire(cand);
                     Rebuild();
-                }, null, $"НАНЯТЬ  ★{LeaderManager.HireInfluence:0}", 11);
+                }, null, Loc.F("НАНЯТЬ  ★{0:0}", LeaderManager.HireInfluence), 11);
             var hrt = (RectTransform)hire.transform;
             hrt.anchorMin = new Vector2(0, 0);
             hrt.anchorMax = new Vector2(1, 0);
@@ -372,7 +372,7 @@ namespace StellarisClone.Rendering
             hrt.offsetMax = new Vector2(-12, 44);
             hire.interactable = can;
             if (!can) TooltipHelper.Attach(hire.gameObject, why);
-            else TooltipHelper.Attach(hire.gameObject, $"Найм {LeaderManager.HireInfluence:0} влияния, содержание {LeaderManager.UpkeepEnergy:0.#} гелия-3 в месяц. Лидеров: {lm.CountFor(0)}/{LeaderManager.MaxLeaders}");
+            else TooltipHelper.Attach(hire.gameObject, Loc.F("Найм {0:0} влияния, содержание {1:0.#} гелия-3 в месяц. Лидеров: {2}/{3}", LeaderManager.HireInfluence, LeaderManager.UpkeepEnergy, lm.CountFor(0), LeaderManager.MaxLeaders));
         }
 
         // ================================================================ Раскладка правой части
@@ -446,13 +446,13 @@ namespace StellarisClone.Rendering
                 LGIcons.Create(face, LGIcon.Betrayal, 40, Purple);
 
             Txt(card, a.Name, 22, Color.white, 12, 28, 116, 500, bold: true);
-            Txt(card, $"Агент · уровень {a.Level}   <color=#8AA2A8>{LeaderManager.LevelBonusText(a)}</color>", 11, UIManager.DS.TextPrimary, 42, 16, 116, 500);
+            Txt(card, Loc.F("Агент · уровень {0}   <color=#8AA2A8>{1}</color>", a.Level, LeaderManager.LevelBonusText(a)), 11, UIManager.DS.TextPrimary, 42, 16, 116, 500);
             string traits = TraitsText(a, "  ·  ");
-            Txt(card, traits.Length > 0 ? traits : "без особых черт", 11, UIManager.DS.Gold, 60, 16, 116, 500);
-            string status = a.Post != LeaderPost.Spy ? "<color=#FFAA55>●  ЖДЁТ НАЗНАЧЕНИЯ</color>"
-                          : a.TargetOwner == 0 ? "<color=#66E0D0>●  КОНТРРАЗВЕДКА</color>"
-                          : a.OpKind >= 0 ? $"<color=#F2C766>●  ОПЕРАЦИЯ «{SpyInfo.Name((SpyOp)a.OpKind).ToUpper()}»</color>"
-                          : "<color=#BD8FFF>●  СТРОИТ РАЗВЕДСЕТЬ</color>";
+            Txt(card, traits.Length > 0 ? traits : Loc.T("без особых черт"), 11, UIManager.DS.Gold, 60, 16, 116, 500);
+            string status = a.Post != LeaderPost.Spy ? Loc.T("<color=#FFAA55>●  ЖДЁТ НАЗНАЧЕНИЯ</color>")
+                          : a.TargetOwner == 0 ? Loc.T("<color=#66E0D0>●  КОНТРРАЗВЕДКА</color>")
+                          : a.OpKind >= 0 ? Loc.F("<color=#F2C766>●  ОПЕРАЦИЯ «{0}»</color>", SpyInfo.Name((SpyOp)a.OpKind).ToUpper())
+                          : Loc.T("<color=#BD8FFF>●  СТРОИТ РАЗВЕДСЕТЬ</color>");
             Txt(card, status, 10, Color.white, 82, 14, 116, 500, bold: true).Track();
 
             // Цель и кнопки — справа
@@ -474,22 +474,22 @@ namespace StellarisClone.Rendering
                 info.pivot = new Vector2(1, 0.5f);
                 info.sizeDelta = new Vector2(290f, 0f);
                 info.anchoredPosition = new Vector2(-180f, 0f);
-                Caption(info, "ЦЕЛЬ", 14, 0);
+                Caption(info, Loc.T("ЦЕЛЬ"), 14, 0);
                 Txt(info, Contacts.NameForPlayer(a.TargetOwner), 15, oc, 30, 20, 0, 0, bold: true);
                 string role = sys != null ? Role(sys, a.TargetOwner) : "";
-                Txt(info, sys != null ? $"Система {sys.Name}  <color=#8AA2A8>{role}сеть здесь {EspionageManager.NetworkAt(sys.Id):0}%</color>" : "Система не выбрана",
+                Txt(info, sys != null ? Loc.F("Система {0}  <color=#8AA2A8>{1}сеть здесь {2:0}%</color>", sys.Name, role, EspionageManager.NetworkAt(sys.Id)) : Loc.T("Система не выбрана"),
                      11, UIManager.DS.TextPrimary, 54, 16, 0, 0);
                 if (ai != null)
-                    Txt(info, $"<color=#8AA2A8>Отношение</color> {ai.Opinion:+0;-0;0}   <color=#8AA2A8>Защита цели</color> <color=#FF9F7A>{EspionageManager.TargetCounter(ai) * 100f:0}%</color>" +
-                               (ai.AtWar ? "   <color=#FF7A7A>война</color>" : ""), 11, UIManager.DS.TextPrimary, 74, 16, 0, 0);
+                    Txt(info, Loc.F("<color=#8AA2A8>Отношение</color> {0:+0;-0;0}   <color=#8AA2A8>Защита цели</color> <color=#FF9F7A>{1:0}%</color>", ai.Opinion, EspionageManager.TargetCounter(ai) * 100f) +
+                               (ai.AtWar ? Loc.T("   <color=#FF7A7A>война</color>") : ""), 11, UIManager.DS.TextPrimary, 74, 16, 0, 0);
 
                 var move = LGBuild.Button(card, "PickOnMap", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f),
-                    () => SpyNetworkView.BeginPick(a, a.TargetOwner), LGIcon.Target, "СМЕНИТЬ СИСТЕМУ", 10);
+                    () => SpyNetworkView.BeginPick(a, a.TargetOwner), LGIcon.Target, Loc.T("СМЕНИТЬ СИСТЕМУ"), 10);
                 ((RectTransform)move.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -16), new Vector2(160, 34));
                 move.interactable = a.OpKind < 0;
                 TooltipHelper.Attach(move.gameObject, a.OpKind < 0
-                    ? "Выбрать на карте другую систему империи, откуда строить сеть. Уже построенная сеть не пропадает."
-                    : "Во время операции агент не может сменить систему");
+                    ? Loc.T("Выбрать на карте другую систему империи, откуда строить сеть. Уже построенная сеть не пропадает.")
+                    : Loc.T("Во время операции агент не может сменить систему"));
             }
             if (a.Post == LeaderPost.Spy)
             {
@@ -498,16 +498,16 @@ namespace StellarisClone.Rendering
                     LeaderManager.Instance?.Unassign(a);
                     SFXManager.Play(Sfx.UiBack);
                     Rebuild();
-                }, LGIcon.Back, "ОТОЗВАТЬ", 10);
+                }, LGIcon.Back, Loc.T("ОТОЗВАТЬ"), 10);
                 ((RectTransform)recall.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-14, 16), new Vector2(160, 34));
-                TooltipHelper.Attach(recall.gameObject, "Агент покидает пост: идущая операция пропадёт, а разведсеть без него начнёт таять (−2% в месяц). Его можно назначить заново.");
+                TooltipHelper.Attach(recall.gameObject, Loc.T("Агент покидает пост: идущая операция пропадёт, а разведсеть без него начнёт таять (−2% в месяц). Его можно назначить заново."));
             }
         }
 
         private static string Role(StarSystem s, int owner)
         {
             float w = EspionageManager.SystemWeight(s, owner);
-            return w >= 3f ? "столица · " : w >= 2f ? "колония · " : "";
+            return w >= 3f ? Loc.T("столица · ") : w >= 2f ? Loc.T("колония · ") : "";
         }
 
         // ---- Шкала разведсети с наградами-узлами ----
@@ -521,18 +521,18 @@ namespace StellarisClone.Rendering
 
         private static readonly Milestone[] Milestones =
         {
-            new Milestone { Cover = EspionageManager.LocalIntel, Icon = LGIcon.Star, Short = "Видимость", Title = "Системы на виду",
-                Desc = "Системы, где сеть от 15%, видны на карте сквозь туман войны" },
-            new Milestone { Cover = EspionageManager.IntelCover, Icon = LGIcon.Globe, Short = "Обзор", Title = "Обзор",
-                Desc = "Вся территория империи и все её флоты — у вас на карте" },
-            new Milestone { Cover = 25f, Icon = LGIcon.Wrench, Short = "Диверсия", Title = "Операция «Диверсия»",
-                Desc = "Удар по верфям и складам: цель теряет сплавы и гелий-3" },
-            new Milestone { Cover = EspionageManager.BlueprintCover, Icon = LGIcon.Research, Short = "Чертежи", Title = "Перехват чертежей",
-                Desc = "Технологии, которые они уже знают, вы изучаете на 25% быстрее" },
-            new Milestone { Cover = 40f, Icon = LGIcon.Target, Short = "Кража", Title = "Операция «Кража технологии»",
-                Desc = "Агент выкрадывает технологию, которой у вас нет" },
-            new Milestone { Cover = EspionageManager.DeepIntelCover, Icon = LGIcon.Diplomacy, Short = "Досье", Title = "Досье и «Раздор»",
-                Desc = "Запасы, доходы, наука и мощь флота цели; можно стравить их с другой империей" },
+            new Milestone { Cover = EspionageManager.LocalIntel, Icon = LGIcon.Star, Short = Loc.T("Видимость"), Title = Loc.T("Системы на виду"),
+                Desc = Loc.T("Системы, где сеть от 15%, видны на карте сквозь туман войны") },
+            new Milestone { Cover = EspionageManager.IntelCover, Icon = LGIcon.Globe, Short = Loc.T("Обзор"), Title = Loc.T("Обзор"),
+                Desc = Loc.T("Вся территория империи и все её флоты — у вас на карте") },
+            new Milestone { Cover = 25f, Icon = LGIcon.Wrench, Short = Loc.T("Диверсия"), Title = Loc.T("Операция «Диверсия»"),
+                Desc = Loc.T("Удар по верфям и складам: цель теряет сплавы и гелий-3") },
+            new Milestone { Cover = EspionageManager.BlueprintCover, Icon = LGIcon.Research, Short = Loc.T("Чертежи"), Title = Loc.T("Перехват чертежей"),
+                Desc = Loc.T("Технологии, которые они уже знают, вы изучаете на 25% быстрее") },
+            new Milestone { Cover = 40f, Icon = LGIcon.Target, Short = Loc.T("Кража"), Title = Loc.T("Операция «Кража технологии»"),
+                Desc = Loc.T("Агент выкрадывает технологию, которой у вас нет") },
+            new Milestone { Cover = EspionageManager.DeepIntelCover, Icon = LGIcon.Diplomacy, Short = Loc.T("Досье"), Title = Loc.T("Досье и «Раздор»"),
+                Desc = Loc.T("Запасы, доходы, наука и мощь флота цели; можно стравить их с другой империей") },
         };
 
         /// <summary>Шкала показывает 0–55%: дальше новых наград нет, а пороги не слипаются у левого края.</summary>
@@ -543,10 +543,10 @@ namespace StellarisClone.Rendering
             var card = Card(top, 132f);
             // Крупная цифра и как растёт
             Txt(card, $"{cover:0}%", 40, Purple, 12, 50, 20, 0, bold: true);
-            Caption(card, a != null ? "РАЗВЕДСЕТЬ В ИМПЕРИИ" : "РАЗВЕДСЕТЬ", 64, 22);
-            string grow = a == null ? "Наймите агента и внедрите его в чужую империю"
-                : a.OpKind >= 0 ? "<color=#F2C766>Сеть заморожена — идёт операция</color>"
-                : $"<color=#66F59E>+{EspionageManager.BuildRate(a).Total:0.#}</color> в месяц в системе агента, у соседей ×0,6";
+            Caption(card, a != null ? Loc.T("РАЗВЕДСЕТЬ В ИМПЕРИИ") : Loc.T("РАЗВЕДСЕТЬ"), 64, 22);
+            string grow = a == null ? Loc.T("Наймите агента и внедрите его в чужую империю")
+                : a.OpKind >= 0 ? Loc.T("<color=#F2C766>Сеть заморожена — идёт операция</color>")
+                : Loc.F("<color=#66F59E>+{0:0.#}</color> в месяц в системе агента, у соседей ×0,6", EspionageManager.BuildRate(a).Total);
             TxtAt(card, grow, 11, UIManager.DS.TextPrimary, 22, 82, 260, 40, wrap: true);
 
             // Шкала с узлами
@@ -588,13 +588,13 @@ namespace StellarisClone.Rendering
                 pct.rectTransform.sizeDelta = new Vector2(40f, 14f);
                 pct.rectTransform.anchoredPosition = new Vector2(0f, -74f);
 
-                TooltipHelper.Attach(node.gameObject, $"<b>{m.Title}</b> — при сети {m.Cover:0}%\n{m.Desc}\n\n" +
-                    (got ? "<color=#66F59E>Открыто</color>" : $"<color=#8AA2A8>Ещё {m.Cover - cover:0.#}%</color>"));
+                TooltipHelper.Attach(node.gameObject, Loc.F("<b>{0}</b> — при сети {1:0}%\n{2}\n\n", m.Title, m.Cover, m.Desc) +
+                    (got ? Loc.T("<color=#66F59E>Открыто</color>") : Loc.F("<color=#8AA2A8>Ещё {0:0.#}%</color>", m.Cover - cover)));
             }
 
             string nextLine = next.HasValue
-                ? $"<color=#8AA2A8>Следующее:</color>  <b>{next.Value.Title}</b> — {next.Value.Desc}  <color=#BD8FFF>(ещё {next.Value.Cover - cover:0.#}%)</color>"
-                : "<color=#66F59E>Все награды разведки открыты</color> — сеть продолжает расти и смягчает урон от провалов";
+                ? Loc.F("<color=#8AA2A8>Следующее:</color>  <b>{0}</b> — {1}  <color=#BD8FFF>(ещё {2:0.#}%)</color>", next.Value.Title, next.Value.Desc, next.Value.Cover - cover)
+                : Loc.T("<color=#66F59E>Все награды разведки открыты</color> — сеть продолжает расти и смягчает урон от провалов");
             Txt(card, nextLine, 11, UIManager.DS.TextPrimary, 104, 18, 300, 20);
         }
 
@@ -616,9 +616,9 @@ namespace StellarisClone.Rendering
             if (op == SpyOp.Discord)
             {
                 can = netOk && money && ThirdCandidate(ai) >= 0;
-                if (!can) reason = !netOk ? $"Нужна разведсеть {SpyInfo.MinCover(op):0}% (сейчас {a.Cover:0}%)"
-                                 : !money ? $"Нужно {SpyInfo.Cost(op):0} влияния"
-                                 : "Нет второй известной империи, которую можно стравить";
+                if (!can) reason = !netOk ? Loc.F("Нужна разведсеть {0:0}% (сейчас {1:0}%)", SpyInfo.MinCover(op), a.Cover)
+                                 : !money ? Loc.F("Нужно {0:0} влияния", SpyInfo.Cost(op))
+                                 : Loc.T("Нет второй известной империи, которую можно стравить");
             }
             else
             {
@@ -638,14 +638,14 @@ namespace StellarisClone.Rendering
             pill.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -12), new Vector2(58, 24));
             LG.Platter(pill.gameObject, 12f).SetRim(new Color(cc.r, cc.g, cc.b, 0.6f));
             LGBuild.Label(pill.transform, $"{chance * 100f:0}%", 12, cc, TextAnchor.MiddleCenter, bold: true);
-            TooltipHelper.Attach(pill.gameObject, $"Шанс успеха. Складывается из базового ({SpyInfo.BaseChance(op) * 100f:0}%), уровня и черт агента, силы разведсети, ваших технологий и защиты цели ({EspionageManager.TargetCounter(ai) * 100f:0}%).");
+            TooltipHelper.Attach(pill.gameObject, Loc.F("Шанс успеха. Складывается из базового ({0:0}%), уровня и черт агента, силы разведсети, ваших технологий и защиты цели ({1:0}%).", SpyInfo.BaseChance(op) * 100f, EspionageManager.TargetCounter(ai) * 100f));
 
             Txt(card, SpyInfo.Desc(op), 11, netOk ? UIManager.DS.TextMuted : new Color(0.55f, 0.6f, 0.66f, 0.7f), 44, 58, 16, 16, wrap: true);
-            Txt(card, $"<color=#F2C766>★{SpyInfo.Cost(op):0}</color>   ·   {SpyInfo.Months(op)} мес.   ·   нужна сеть {SpyInfo.MinCover(op):0}%",
+            Txt(card, Loc.F("<color=#F2C766>★{0:0}</color>   ·   {1} мес.   ·   нужна сеть {2:0}%", SpyInfo.Cost(op), SpyInfo.Months(op), SpyInfo.MinCover(op)),
                  10, netOk ? UIManager.DS.TextPrimary : Muted, 104, 14, 16, 16);
 
-            string label = !netOk ? $"СЕТЬ {SpyInfo.MinCover(op):0}%  ·  ЕЩЁ {SpyInfo.MinCover(op) - a.Cover:0.#}%"
-                         : op == SpyOp.Discord ? "ВЫБРАТЬ, КОГО СТРАВИТЬ" : "НАЧАТЬ ОПЕРАЦИЮ";
+            string label = !netOk ? Loc.F("СЕТЬ {0:0}%  ·  ЕЩЁ {1:0.#}%", SpyInfo.MinCover(op), SpyInfo.MinCover(op) - a.Cover)
+                         : op == SpyOp.Discord ? Loc.T("ВЫБРАТЬ, КОГО СТРАВИТЬ") : Loc.T("НАЧАТЬ ОПЕРАЦИЮ");
             var btn = LGBuild.Button(card, "Start", can ? UIManager.DS.BtnPrimary : UIManager.DS.BtnNeutral,
                 new Color(Purple.r, Purple.g, Purple.b, can ? 0.75f : 0.25f), () =>
                 {
@@ -670,10 +670,10 @@ namespace StellarisClone.Rendering
             var card = Card(top, 170f, tint: new Color(0.09f, 0.07f, 0.035f, 0.97f), rim: new Color(UIManager.DS.Gold.r, UIManager.DS.Gold.g, UIManager.DS.Gold.b, 0.5f));
             var ic = LGIcons.Create(card, SpyInfo.Icon(op), 34, UIManager.DS.Gold);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 10), new Vector2(34, 34));
-            Caption(card, "ИДЁТ ОПЕРАЦИЯ", 22, 82, UIManager.DS.Gold);
+            Caption(card, Loc.T("ИДЁТ ОПЕРАЦИЯ"), 22, 82, UIManager.DS.Gold);
             Txt(card, SpyInfo.Name(op), 20, Color.white, 40, 26, 82, 220, bold: true);
-            string extra = op == SpyOp.Discord && AIEmpireManager.For(a.OpArg) != null ? $" · стравливаем с {AIEmpireManager.For(a.OpArg).AIName}" : "";
-            Txt(card, $"Осталось {a.OpMonthsLeft} мес.{extra}   ·   шанс успеха {EspionageManager.SuccessChance(a, op, ai) * 100f:0}%   ·   сеть пока не растёт",
+            string extra = op == SpyOp.Discord && AIEmpireManager.For(a.OpArg) != null ? Loc.F(" · стравливаем с {0}", AIEmpireManager.For(a.OpArg).AIName) : "";
+            Txt(card, Loc.F("Осталось {0} мес.{1}   ·   шанс успеха {2:0}%   ·   сеть пока не растёт", a.OpMonthsLeft, extra, EspionageManager.SuccessChance(a, op, ai) * 100f),
                  12, UIManager.DS.TextPrimary, 72, 18, 82, 220);
             Txt(card, SpyInfo.Desc(op), 11, UIManager.DS.TextMuted, 96, 32, 82, 220, wrap: true);
             var bh = LGBuild.Rect(card, "Progress");
@@ -686,9 +686,9 @@ namespace StellarisClone.Rendering
             {
                 EspionageManager.Instance?.CancelOp(a);
                 Rebuild();
-            }, null, "ПРЕРВАТЬ", 11);
+            }, null, Loc.T("ПРЕРВАТЬ"), 11);
             ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(170, 38));
-            TooltipHelper.Attach(cancel.gameObject, "Прервать операцию. Потраченное влияние не возвращается.");
+            TooltipHelper.Attach(cancel.gameObject, Loc.T("Прервать операцию. Потраченное влияние не возвращается."));
         }
 
         /// <summary>Первая подходящая третья империя для «Раздора» (-1 — нет).</summary>
@@ -702,7 +702,7 @@ namespace StellarisClone.Rendering
         private void DiscordPick(Leader a, AIEmpireManager ai, float top)
         {
             var card = Card(top, 170f, rim: new Color(Purple.r, Purple.g, Purple.b, 0.5f));
-            Caption(card, $"КОГО СТРАВИТЬ С {ai.AIName.ToUpper()}?", 14, 18, Purple);
+            Caption(card, Loc.F("КОГО СТРАВИТЬ С {0}?", ai.AIName.ToUpper()), 14, 18, Purple);
             var list = LGBuild.Rect(card, "List");
             list.Stretch(14, 56, 14, 34);
             var others = new List<AIEmpireManager>();
@@ -718,16 +718,16 @@ namespace StellarisClone.Rendering
                 {
                     if (EspionageManager.Instance != null && EspionageManager.Instance.StartOp(a, SpyOp.Discord, o.OwnerId)) _discordPick = false;
                     Rebuild();
-                }, null, $"{o.AIName.ToUpper()}\n<size=10>отношение {AIRelations.Opinion(ai, o):+0;-0;0}{(war ? " · уже воюют" : "")}</size>", 11);
+                }, null, Loc.F("{0}\n<size=10>отношение {1:+0;-0;0}{2}</size>", o.AIName.ToUpper(), AIRelations.Opinion(ai, o), (war ? Loc.T(" · уже воюют") : "")), 11);
                 var rt = (RectTransform)b.transform;
                 rt.anchorMin = new Vector2(i / (float)n, 0);
                 rt.anchorMax = new Vector2((i + 1) / (float)n, 1);
                 rt.offsetMin = new Vector2(4, 0);
                 rt.offsetMax = new Vector2(-4, 0);
             }
-            var back = LGBuild.Button(card, "Back", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f), () => { _discordPick = false; Rebuild(); }, LGIcon.Back, "ОТМЕНА", 10);
+            var back = LGBuild.Button(card, "Back", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f), () => { _discordPick = false; Rebuild(); }, LGIcon.Back, Loc.T("ОТМЕНА"), 10);
             ((RectTransform)back.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-14, 12), new Vector2(140, 32));
-            Txt(card, $"<color=#F2C766>★{SpyInfo.Cost(SpyOp.Discord):0}</color> · {SpyInfo.Months(SpyOp.Discord)} мес. · {SpyInfo.Desc(SpyOp.Discord)}",
+            Txt(card, Loc.F("<color=#F2C766>★{0:0}</color> · {1} мес. · {2}", SpyInfo.Cost(SpyOp.Discord), SpyInfo.Months(SpyOp.Discord), SpyInfo.Desc(SpyOp.Discord)),
                  10, UIManager.DS.TextMuted, 130, 28, 18, 170, wrap: true);
         }
 
@@ -736,12 +736,12 @@ namespace StellarisClone.Rendering
         private void Dossier(Leader a, AIEmpireManager ai, float top, float height)
         {
             var card = Card(top, height, 0f, 0.5f);
-            Caption(card, $"ДОСЬЕ  ·  {ai.AIName.ToUpper()}", 14, 18, FleetIndicator.OwnerColor(ai.OwnerId));
+            Caption(card, Loc.F("ДОСЬЕ  ·  {0}", ai.AIName.ToUpper()), 14, 18, FleetIndicator.OwnerColor(ai.OwnerId));
             if (a.Cover < EspionageManager.DeepIntelCover)
             {
                 var lockIc = LGIcons.Create(card, LGIcon.Lock, 34, new Color(0.6f, 0.66f, 0.72f, 0.5f));
                 lockIc.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 22), new Vector2(34, 34));
-                var t = LGBuild.Label(card, $"Досье закрыто\n<size=11><color=#8AA2A8>Откроется при сети {EspionageManager.DeepIntelCover:0}% — сейчас {a.Cover:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>",
+                var t = LGBuild.Label(card, Loc.F("Досье закрыто\n<size=11><color=#8AA2A8>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>", EspionageManager.DeepIntelCover, a.Cover),
                     14, UIManager.DS.TextPrimary, TextAnchor.UpperCenter, bold: true);
                 t.rectTransform.Stretch(16, 20, 16, height * 0.5f + 2f);
                 return;
@@ -749,10 +749,10 @@ namespace StellarisClone.Rendering
             string m = LGBuild.Hex(UIManager.DS.TextMuted);
             string Inc(float v) => v >= 0f ? $"<color=#66F59E>+{v:0.#}</color>" : $"<color=#FF7A7A>{v:0.#}</color>";
             var left = LGBuild.Label(card,
-                $"<color={m}>Гелий-3</color>   {ai.EnergyCredits:0}  ({Inc(ai.MonthlyEnergyIncome)})\n" +
-                $"<color={m}>Титан</color>   {ai.Minerals:0}  ({Inc(ai.MonthlyMineralsIncome)})\n" +
-                $"<color={m}>Сплавы</color>   {ai.Alloys:0}  ({Inc(ai.MonthlyAlloysIncome)})\n" +
-                $"<color={m}>Влияние</color>   {ai.Influence:0}  ({Inc(ai.MonthlyInfluenceIncome)})",
+                Loc.F("<color={0}>Гелий-3</color>   {1:0}  ({2})\n", m, ai.EnergyCredits, Inc(ai.MonthlyEnergyIncome)) +
+                Loc.F("<color={0}>Титан</color>   {1:0}  ({2})\n", m, ai.Minerals, Inc(ai.MonthlyMineralsIncome)) +
+                Loc.F("<color={0}>Сплавы</color>   {1:0}  ({2})\n", m, ai.Alloys, Inc(ai.MonthlyAlloysIncome)) +
+                Loc.F("<color={0}>Влияние</color>   {1:0}  ({2})", m, ai.Influence, Inc(ai.MonthlyInfluenceIncome)),
                 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft);
             left.rectTransform.TopBand(38, 90, 18, 16);
             left.lineSpacing = 1.3f;
@@ -760,9 +760,9 @@ namespace StellarisClone.Rendering
                 ? $"{ai.CurrentTech.Name} ({Mathf.Clamp01(ai.TechProgress / Mathf.Max(1f, ai.CurrentTech.Cost)) * 100f:0}%)"
                 : "—";
             var right = LGBuild.Label(card,
-                $"<color={m}>Систем</color> {EmpireStats.SystemCount(ai.OwnerId)}   <color={m}>Население</color> {EmpireStats.Population(ai.OwnerId)}   <color={m}>Мощь флота</color> {EmpireStats.MilitaryPower(ai.OwnerId):N0}\n" +
-                $"<color={m}>Технологий</color> {ai.ResearchedCount} из {TechnologyManager.TotalTechCount}   <color={m}>Изучает</color> {cur}\n" +
-                $"<color={m}>С вами</color> {(ai.AtWar ? "<color=#FF7A7A>война</color>" : ai.HasPact ? "<color=#66F59E>пакт</color>" : "мир")}",
+                Loc.F("<color={0}>Систем</color> {1}   <color={2}>Население</color> {3}   <color={4}>Мощь флота</color> {5:N0}\n", m, EmpireStats.SystemCount(ai.OwnerId), m, EmpireStats.Population(ai.OwnerId), m, EmpireStats.MilitaryPower(ai.OwnerId)) +
+                Loc.F("<color={0}>Технологий</color> {1} из {2}   <color={3}>Изучает</color> {4}\n", m, ai.ResearchedCount, TechnologyManager.TotalTechCount, m, cur) +
+                Loc.F("<color={0}>С вами</color> {1}", m, (ai.AtWar ? Loc.T("<color=#FF7A7A>война</color>") : ai.HasPact ? Loc.T("<color=#66F59E>пакт</color>") : Loc.T("мир"))),
                 11, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
             right.rectTransform.TopBand(136, 70, 18, 16);
             right.lineSpacing = 1.25f;
@@ -771,7 +771,7 @@ namespace StellarisClone.Rendering
         private void BuildLogCard(float top, float height, float x0, float x1)
         {
             var card = Card(top, height, x0, x1);
-            Caption(card, "ЖУРНАЛ ОПЕРАЦИЙ", 14, 18, Purple);
+            Caption(card, Loc.T("ЖУРНАЛ ОПЕРАЦИЙ"), 14, 18, Purple);
             var host = LGBuild.Rect(card, "LogHost");
             host.Stretch(6, 6, 6, 34);
             var list = LGBuild.ScrollList(host, 4f, 8);
@@ -780,7 +780,7 @@ namespace StellarisClone.Rendering
             {
                 var e = LGBuild.Rect(list, "Empty");
                 LGBuild.Height(e.gameObject, 40);
-                var t = LGBuild.Label(e, "Здесь появятся результаты ваших операций и попытки чужих агентов проникнуть к вам.", 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
+                var t = LGBuild.Label(e, Loc.T("Здесь появятся результаты ваших операций и попытки чужих агентов проникнуть к вам."), 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
                 t.rectTransform.Stretch(6, 0, 6, 0);
                 return;
             }
@@ -801,15 +801,15 @@ namespace StellarisClone.Rendering
         {
             var lm = LeaderManager.Instance;
             var card = Card(124f, 326f, rim: new Color(Purple.r, Purple.g, Purple.b, 0.35f));
-            Caption(card, "КУДА НАПРАВИТЬ АГЕНТА", 14, 18, Purple);
-            Txt(card, "Контрразведка защищает вашу империю. Внедрение — агент строит разведсеть в чужой империи; систему, откуда строить, вы выберете на карте.",
+            Caption(card, Loc.T("КУДА НАПРАВИТЬ АГЕНТА"), 14, 18, Purple);
+            Txt(card, Loc.T("Контрразведка защищает вашу империю. Внедрение — агент строит разведсеть в чужой империи; систему, откуда строить, вы выберете на карте."),
                  11, UIManager.DS.TextMuted, 32, 30, 18, 18, wrap: true);
             var host = LGBuild.Rect(card, "Targets");
             host.Stretch(6, 6, 6, 66);
             var list = LGBuild.ScrollList(host, 6f, 6);
 
-            AssignRow(list, a, 0, LGIcon.Shipyard, "Контрразведка дома",
-                $"Защита вашей империи +{(0.10f + a.Level * 0.04f + (a.Has("agt_shadow") ? 0.08f : 0f)) * 100f:0}%: чужие агенты чаще проваливаются и раскрываются",
+            AssignRow(list, a, 0, LGIcon.Shipyard, Loc.T("Контрразведка дома"),
+                Loc.F("Защита вашей империи +{0:0}%: чужие агенты чаще проваливаются и раскрываются", (0.10f + a.Level * 0.04f + (a.Has("agt_shadow") ? 0.08f : 0f)) * 100f),
                 lm?.SpyOn(0, 0));
             int shown = 0;
             foreach (var ai in AIEmpireManager.All)
@@ -817,14 +817,14 @@ namespace StellarisClone.Rendering
                 if (ai.IsEliminated || !Contacts.PlayerMet(ai.OwnerId)) continue;
                 shown++;
                 AssignRow(list, a, ai.OwnerId, LGIcon.Betrayal, Contacts.NameForPlayer(ai.OwnerId),
-                    $"Отношение {ai.Opinion:+0;-0;0}   ·   защита цели {EspionageManager.TargetCounter(ai) * 100f:0}%   ·   ваша сеть там {EspionageManager.NetworkStrength(ai.OwnerId):0}%" + (ai.AtWar ? "   ·   <color=#FF7A7A>война</color>" : ""),
+                    Loc.F("Отношение {0:+0;-0;0}   ·   защита цели {1:0}%   ·   ваша сеть там {2:0}%", ai.Opinion, EspionageManager.TargetCounter(ai) * 100f, EspionageManager.NetworkStrength(ai.OwnerId)) + (ai.AtWar ? Loc.T("   ·   <color=#FF7A7A>война</color>") : ""),
                     lm?.SpyOn(0, ai.OwnerId));
             }
             if (shown == 0)
             {
                 var e = LGBuild.Rect(list, "None");
                 LGBuild.Height(e.gameObject, 40);
-                var t = LGBuild.Label(e, "Вы пока не встретили ни одной империи — внедряться некуда. Исследуйте галактику.", 12, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
+                var t = LGBuild.Label(e, Loc.T("Вы пока не встретили ни одной империи — внедряться некуда. Исследуйте галактику."), 12, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
                 t.rectTransform.Stretch(10, 0, 10, 0);
             }
             // Под списком — шкала-подсказка: что даёт разведка; ниже журнал
@@ -846,7 +846,7 @@ namespace StellarisClone.Rendering
             s.rectTransform.TopBand(32, 16, 52, 200);
             if (current != null && current != a)
             {
-                var cur = LGBuild.Label(row.transform, $"сейчас: {current.Name}", 10, UIManager.DS.Gold, TextAnchor.UpperRight);
+                var cur = LGBuild.Label(row.transform, Loc.F("сейчас: {0}", current.Name), 10, UIManager.DS.Gold, TextAnchor.UpperRight);
                 cur.rectTransform.TopBand(9, 14, 52, 200);
             }
             var btn = LGBuild.Button(row.transform, "Go", UIManager.DS.BtnPrimary, new Color(Purple.r, Purple.g, Purple.b, 0.7f), () =>
@@ -855,7 +855,7 @@ namespace StellarisClone.Rendering
                 LeaderManager.Instance?.AssignSpy(a, target);
                 SFXManager.Play(Sfx.UiConfirm);
                 Rebuild();
-            }, target > 0 ? LGIcon.Target : (LGIcon?)null, target > 0 ? "ВЫБРАТЬ СИСТЕМУ" : "НАЗНАЧИТЬ", 10);
+            }, target > 0 ? LGIcon.Target : (LGIcon?)null, target > 0 ? Loc.T("ВЫБРАТЬ СИСТЕМУ") : Loc.T("НАЗНАЧИТЬ"), 10);
             ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(170, 34));
         }
 
@@ -867,11 +867,11 @@ namespace StellarisClone.Rendering
             float total = EspionageManager.PlayerCounter();
             float own = 0.10f + a.Level * 0.04f + (a.Has("agt_shadow") ? 0.08f : 0f);
             Txt(card, $"{total * 100f:0}%", 40, UIManager.DS.NeonCyan, 12, 50, 20, 0, bold: true);
-            Caption(card, "ЗАЩИТА ВАШЕЙ ИМПЕРИИ", 64, 22);
-            TxtAt(card, $"Вклад агента <color=#66E0D0>+{own * 100f:0}%</color>, остальное — базовые 10% и технологии шифрования.",
+            Caption(card, Loc.T("ЗАЩИТА ВАШЕЙ ИМПЕРИИ"), 64, 22);
+            TxtAt(card, Loc.F("Вклад агента <color=#66E0D0>+{0:0}%</color>, остальное — базовые 10% и технологии шифрования.", own * 100f),
                   11, UIManager.DS.TextPrimary, 22, 82, 280, 40, wrap: true);
-            Txt(card, "Чем выше защита, тем чаще чужие агенты проваливаются и тем чаще вы узнаёте, чья это работа. " +
-                       "Агент набирает опыт за службу и за каждую сорванную операцию. ИИ шпионит за вами: крадёт технологии, устраивает диверсии, похищает запасы.",
+            Txt(card, Loc.T("Чем выше защита, тем чаще чужие агенты проваливаются и тем чаще вы узнаёте, чья это работа. ") +
+                       Loc.T("Агент набирает опыт за службу и за каждую сорванную операцию. ИИ шпионит за вами: крадёт технологии, устраивает диверсии, похищает запасы."),
                  12, UIManager.DS.TextMuted, 18, 100, 320, 20, wrap: true);
             BuildLogCard(268f, MainH - 268f, 0f, 1f);
         }
@@ -883,9 +883,9 @@ namespace StellarisClone.Rendering
             var card = Card(0f, 112f, tint: new Color(Purple.r * 0.10f, Purple.g * 0.08f, Purple.b * 0.15f, 0.97f), rim: new Color(Purple.r, Purple.g, Purple.b, 0.4f));
             var ic = LGIcons.Create(card, LGIcon.Betrayal, 46, Purple);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(30, 0), new Vector2(46, 46));
-            Txt(card, "Разведка", 22, Color.white, 16, 28, 100, 20, bold: true);
-            Txt(card, "Наймите агента (слева внизу) и внедрите его в чужую империю. Он будет строить разведсеть из выбранной вами системы — " +
-                       "сильнее всего там, слабее у соседей по гиперкоридорам. Без агента сеть тает. Зону сети видно на карте в режиме «Шпионаж».",
+            Txt(card, Loc.T("Разведка"), 22, Color.white, 16, 28, 100, 20, bold: true);
+            Txt(card, Loc.T("Наймите агента (слева внизу) и внедрите его в чужую империю. Он будет строить разведсеть из выбранной вами системы — ") +
+                       Loc.T("сильнее всего там, слабее у соседей по гиперкоридорам. Без агента сеть тает. Зону сети видно на карте в режиме «Шпионаж»."),
                  12, UIManager.DS.TextMuted, 48, 56, 100, 20, wrap: true);
             NetworkTrack(0f, null, null, 124f);
             BuildLogCard(268f, MainH - 268f, 0f, 1f);

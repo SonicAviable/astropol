@@ -118,7 +118,7 @@ namespace StellarisClone.Rendering
             badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(38, 38));
             LG.Platter(badge.gameObject, 19f).FillMultiplier = 2.2f;
             LGIcons.Create(badge.transform, LGIcon.Shipyard, 22, Neon);
-            var title = LGBuild.Label(header.transform, "ОРБИТАЛЬНАЯ ВЕРФЬ", 16, Neon, TextAnchor.UpperLeft, bold: true);
+            var title = LGBuild.Label(header.transform, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), 16, Neon, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.Stretch(66, 0, 60, 11);
             _subtitle = LGBuild.Label(header.transform, "", 11, Muted, TextAnchor.LowerLeft);
             _subtitle.rectTransform.Stretch(66, 10, 60, 0);
@@ -130,14 +130,14 @@ namespace StellarisClone.Rendering
             var left = LGBuild.Rect(rt, "Order");
             left.anchorMin = new Vector2(0, 0); left.anchorMax = new Vector2(0, 1); left.pivot = new Vector2(0, 0.5f);
             left.offsetMin = new Vector2(16, 16); left.offsetMax = new Vector2(16 + LeftW, -(HeaderH + 10));
-            Section(left, "ЗАЛОЖИТЬ КОРАБЛЬ", LGIcon.Construction, 0f);
+            Section(left, Loc.T("ЗАЛОЖИТЬ КОРАБЛЬ"), LGIcon.Construction, 0f);
 
             _options.Clear();
-            AddOption(left, FleetType.Science, ShipClass.Corvette, "Научный корабль", LGIcon.Sensors, new Color(0.45f, 1f, 0.62f), 0);
-            AddOption(left, FleetType.Constructor, ShipClass.Corvette, "Строительный корабль", LGIcon.Construction, new Color(1f, 0.82f, 0.36f), 1);
-            AddOption(left, FleetType.Military, ShipClass.Corvette, "Корвет", LGIcon.Corvette, Neon, 2);
-            AddOption(left, FleetType.Military, ShipClass.Frigate, "Фрегат", LGIcon.Frigate, Neon, 3);
-            AddOption(left, FleetType.Military, ShipClass.Destroyer, "Эсминец", LGIcon.Destroyer, Neon, 4);
+            AddOption(left, FleetType.Science, ShipClass.Corvette, Loc.T("Научный корабль"), LGIcon.Sensors, new Color(0.45f, 1f, 0.62f), 0);
+            AddOption(left, FleetType.Constructor, ShipClass.Corvette, Loc.T("Строительный корабль"), LGIcon.Construction, new Color(1f, 0.82f, 0.36f), 1);
+            AddOption(left, FleetType.Military, ShipClass.Corvette, Loc.T("Корвет"), LGIcon.Corvette, Neon, 2);
+            AddOption(left, FleetType.Military, ShipClass.Frigate, Loc.T("Фрегат"), LGIcon.Frigate, Neon, 3);
+            AddOption(left, FleetType.Military, ShipClass.Destroyer, Loc.T("Эсминец"), LGIcon.Destroyer, Neon, 4);
 
             // Правая колонка — стапели и модернизация
             var right = LGBuild.Rect(rt, "Docks");
@@ -165,31 +165,31 @@ namespace StellarisClone.Rendering
             rh.TopBand(8, 18, 12, 12);
             var ri = LGIcons.Create(rh, LGIcon.Wrench, 13, Gold);
             ri.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(13, 13));
-            var rt2 = LGBuild.Label(rh, "МОДЕРНИЗАЦИЯ ЭСКАДРЫ", 10, Gold, TextAnchor.MiddleLeft, bold: true);
+            var rt2 = LGBuild.Label(rh, Loc.T("МОДЕРНИЗАЦИЯ ЭСКАДРЫ"), 10, Gold, TextAnchor.MiddleLeft, bold: true);
             rt2.rectTransform.Stretch(20, 0, 0, 0);
             _retrofitText = LGBuild.Label(refit.transform, "", 10, Primary, TextAnchor.UpperLeft, wrap: true);
             _retrofitText.rectTransform.Stretch(12, 44, 12, 30);
-            _retrofitBtn = LGBuild.Button(refit.transform, "RetrofitBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofit, LGIcon.Wrench, "ВЫДЕЛЕННЫЙ", 10);
+            _retrofitBtn = LGBuild.Button(refit.transform, "RetrofitBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofit, LGIcon.Wrench, Loc.T("ВЫДЕЛЕННЫЙ"), 10);
             var rbRt = (RectTransform)_retrofitBtn.transform;
             rbRt.anchorMin = new Vector2(0, 0); rbRt.anchorMax = new Vector2(0.5f, 0); rbRt.pivot = new Vector2(0.5f, 0);
             rbRt.offsetMin = new Vector2(10, 8); rbRt.offsetMax = new Vector2(-4, 38);
-            TooltipHelper.Attach(_retrofitBtn.gameObject, "Модернизировать выделенный на карте военный корабль по актуальному проекту его корпуса");
-            _retrofitAllBtn = LGBuild.Button(refit.transform, "RetrofitAllBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofitAll, LGIcon.Wrench, "ВСЕ УСТАРЕВШИЕ", 10);
+            TooltipHelper.Attach(_retrofitBtn.gameObject, Loc.T("Модернизировать выделенный на карте военный корабль по актуальному проекту его корпуса"));
+            _retrofitAllBtn = LGBuild.Button(refit.transform, "RetrofitAllBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofitAll, LGIcon.Wrench, Loc.T("ВСЕ УСТАРЕВШИЕ"), 10);
             var raRt = (RectTransform)_retrofitAllBtn.transform;
             raRt.anchorMin = new Vector2(0.5f, 0); raRt.anchorMax = new Vector2(1, 0); raRt.pivot = new Vector2(0.5f, 0);
             raRt.offsetMin = new Vector2(4, 8); raRt.offsetMax = new Vector2(-10, 38);
-            TooltipHelper.Attach(_retrofitAllBtn.gameObject, "<b>Модернизировать все устаревшие корабли</b>\nКорабли строятся по основному проекту корпуса (последнему сохранённому в конструкторе). " +
-                                 "Новый проект делает старые корабли устаревшими — модернизация перевооружает их за доплату сплавами. Если сплавов не хватит на всех, модернизируются первые по списку.");
+            TooltipHelper.Attach(_retrofitAllBtn.gameObject, Loc.T("<b>Модернизировать все устаревшие корабли</b>\nКорабли строятся по основному проекту корпуса (последнему сохранённому в конструкторе). ") +
+                                 Loc.T("Новый проект делает старые корабли устаревшими — модернизация перевооружает их за доплату сплавами. Если сплавов не хватит на всех, модернизируются первые по списку."));
 
             var designer = LGBuild.Button(right, "Designer", UIManager.DS.BtnPrimary, UIManager.DS.BtnPrimaryHi, () =>
             {
                 Close();
                 ShipDesignerModal.Instance?.Open();
-            }, LGIcon.Shipyard, "КОНСТРУКТОР КОРАБЛЕЙ", 11);
+            }, LGIcon.Shipyard, Loc.T("КОНСТРУКТОР КОРАБЛЕЙ"), 11);
             var dRt = (RectTransform)designer.transform;
             dRt.anchorMin = new Vector2(0, 0); dRt.anchorMax = new Vector2(1, 0); dRt.pivot = new Vector2(0.5f, 0);
             dRt.offsetMin = new Vector2(0, 0); dRt.offsetMax = new Vector2(0, 40);
-            TooltipHelper.Attach(designer.gameObject, "<b>Конструктор кораблей</b>\nСоберите проект из модулей — верфь строит по последнему сохранённому проекту корпуса.");
+            TooltipHelper.Attach(designer.gameObject, Loc.T("<b>Конструктор кораблей</b>\nСоберите проект из модулей — верфь строит по последнему сохранённому проекту корпуса."));
 
             _root.SetActive(false);
         }
@@ -234,7 +234,7 @@ namespace StellarisClone.Rendering
             o.Upkeep = LGBuild.Label(card.transform, "", 10, new Color(1f, 0.55f, 0.55f), TextAnchor.UpperRight);
             o.Upkeep.rectTransform.Stretch(0, 0, 12, 32);
 
-            o.Build = LGBuild.Button(card.transform, "Build", UIManager.DS.BtnPrimary, new Color(tint.r, tint.g, tint.b, 0.6f), () => TryBuild(o), null, "ЗАЛОЖИТЬ", 10);
+            o.Build = LGBuild.Button(card.transform, "Build", UIManager.DS.BtnPrimary, new Color(tint.r, tint.g, tint.b, 0.6f), () => TryBuild(o), null, Loc.T("ЗАЛОЖИТЬ"), 10);
             var bRt = (RectTransform)o.Build.transform;
             bRt.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-12, 10), new Vector2(186, 28));
             o.BuildLabel = o.Build.GetComponentInChildren<Text>();
@@ -256,8 +256,8 @@ namespace StellarisClone.Rendering
         // ==================== ДАННЫЕ ====================
 
         private static string ShipName(FleetType type, ShipClass hull) =>
-            type == FleetType.Science ? "Научный корабль" : type == FleetType.Constructor ? "Строительный корабль"
-            : hull == ShipClass.Destroyer ? "Эсминец" : hull == ShipClass.Frigate ? "Фрегат" : "Корвет";
+            type == FleetType.Science ? Loc.T("Научный корабль") : type == FleetType.Constructor ? Loc.T("Строительный корабль")
+            : hull == ShipClass.Destroyer ? Loc.T("Эсминец") : hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет");
 
         private static LGIcon ShipIcon(FleetType type, ShipClass hull) =>
             type == FleetType.Science ? LGIcon.ScienceShip : type == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(hull);
@@ -269,8 +269,8 @@ namespace StellarisClone.Rendering
             int yard = fm != null ? fm.YardFor(_yardRequest) : -1;
             var yardSys = EmpireStats.GetSystem(yard);
             _subtitle.text = yardSys != null
-                ? $"Верфь в системе {yardSys.Name}  ·  одновременно строится {ConstructionManager.ShipyardSlots} корабля  ·  готовые корабли появляются у верфи"
-                : "<color=#FF6A6A>У вас нет систем для верфи</color>";
+                ? Loc.F("Верфь в системе {0}  ·  одновременно строится {1} корабля  ·  готовые корабли появляются у верфи", yardSys.Name, ConstructionManager.ShipyardSlots)
+                : Loc.T("<color=#FF6A6A>У вас нет систем для верфи</color>");
 
             foreach (var o in _options) RefreshOption(o, fm, eco, yard >= 0);
             RefreshQueue();
@@ -285,31 +285,31 @@ namespace StellarisClone.Rendering
             if (o.Type == FleetType.Science)
             {
                 alloys = FleetManager.ScienceShipAlloys; energy = FleetManager.ScienceShipEnergy;
-                o.Sub.text = "Разведка систем и аномалий";
-                o.Stats.text = "<color=#8AA2A8>Изучает системы, открывает их для форпостов. Учёный на борту ускоряет разведку.</color>";
+                o.Sub.text = Loc.T("Разведка систем и аномалий");
+                o.Stats.text = Loc.T("<color=#8AA2A8>Изучает системы, открывает их для форпостов. Учёный на борту ускоряет разведку.</color>");
             }
             else if (o.Type == FleetType.Constructor)
             {
                 alloys = FleetManager.ConstructorAlloys; energy = FleetManager.ConstructorEnergy;
-                o.Sub.text = "Форпосты и добывающие станции";
-                o.Stats.text = "<color=#8AA2A8>Строит звёздные базы в изученных системах — так растёт территория.</color>";
+                o.Sub.text = Loc.T("Форпосты и добывающие станции");
+                o.Stats.text = Loc.T("<color=#8AA2A8>Строит звёздные базы в изученных системах — так растёт территория.</color>");
             }
             else
             {
                 design = fm != null ? fm.PlayerDesignFor(o.Hull) : null;
                 alloys = design != null ? design.AlloyCost : 60f;
                 energy = FleetManager.WarshipEnergy;
-                o.Sub.text = design != null ? $"Проект «{design.Name}»" : "Проект не задан";
+                o.Sub.text = design != null ? Loc.F("Проект «{0}»", design.Name) : Loc.T("Проект не задан");
                 if (design != null)
                 {
                     var b = EmpireBonuses.For(0);
                     float dmg = 0f;
                     foreach (var w in design.Mounts) dmg += w.Dps * b.DamageMult(w.Type);
-                    o.Stats.text = $"урон <b>{dmg * CombatManager.ShotsPerDay:0}</b>/день  ·  корпус {design.Hull * b.HullMult:0}  ·  " +
-                                   $"броня {design.Armor * b.ArmorMult:0}  ·  щиты {design.Shields * b.ShieldMult:0}";
+                    o.Stats.text = Loc.F("урон <b>{0:0}</b>/день  ·  корпус {1:0}  ·  ", dmg * CombatManager.ShotsPerDay, design.Hull * b.HullMult) +
+                                   Loc.F("броня {0:0}  ·  щиты {1:0}", design.Armor * b.ArmorMult, design.Shields * b.ShieldMult);
                 }
                 if (o.Hull == ShipClass.Destroyer && !(TechnologyManager.Instance?.DestroyerUnlocked ?? false))
-                    locked = "нужна технология верфей эсминцев";
+                    locked = Loc.T("нужна технология верфей эсминцев");
             }
             alloys = FleetManager.ShipAlloyCost(alloys, 0);
             bool canAlloys = eco != null && eco.Alloys >= alloys;
@@ -317,20 +317,20 @@ namespace StellarisClone.Rendering
             string red = LGBuild.Hex(UIManager.DS.Red);
             o.Alloys.text = canAlloys ? $"{alloys:0}" : $"<color={red}>{alloys:0}</color>";
             o.Energy.text = canEnergy ? $"{energy:0}" : $"<color={red}>{energy:0}</color>";
-            o.Days.text = $"{ConstructionManager.ShipDays(o.Type, o.Hull):0} дн.";
+            o.Days.text = Loc.F("{0:0} дн.", ConstructionManager.ShipDays(o.Type, o.Hull));
 
             float upkeep = o.Type == FleetType.Military && eco != null
                 ? EmpireEconomy.ExtraUpkeepForShip(eco.Report, o.Hull)
                 : FleetData.UpkeepFor(o.Type, o.Hull);
-            o.Upkeep.text = locked ?? $"содержание −{upkeep:0.#} гелия-3/мес";
+            o.Upkeep.text = locked ?? Loc.F("содержание −{0:0.#} гелия-3/мес", upkeep);
             o.Upkeep.color = locked != null ? Muted : new Color(1f, 0.55f, 0.55f);
 
             bool can = locked == null && hasYard && canAlloys && canEnergy;
             o.Build.interactable = can;
             if (o.BuildLabel != null)
-                o.BuildLabel.text = locked != null ? "ЗАКРЫТО" : !hasYard ? "НЕТ ВЕРФИ" : !can ? CostCheck.Short(energy, 0f, alloys, 0f) : "ЗАЛОЖИТЬ";
-            string why = locked != null ? $"Закрыто: {locked}."
-                       : !hasYard ? "Нет системы, где можно разместить верфь."
+                o.BuildLabel.text = locked != null ? Loc.T("ЗАКРЫТО") : !hasYard ? Loc.T("НЕТ ВЕРФИ") : !can ? CostCheck.Short(energy, 0f, alloys, 0f) : Loc.T("ЗАЛОЖИТЬ");
+            string why = locked != null ? Loc.F("Закрыто: {0}.", locked)
+                       : !hasYard ? Loc.T("Нет системы, где можно разместить верфь.")
                        : !can ? CostCheck.Full(energy, 0f, alloys, 0f) + "."
                        : null;
             TooltipHelper.Attach(o.Build.gameObject, BuildTip(o, design, alloys, energy, upkeep, eco, why));
@@ -343,28 +343,28 @@ namespace StellarisClone.Rendering
             var sb = new System.Text.StringBuilder();
             sb.Append($"<b>{o.Name}</b>\n");
             if (o.Type == FleetType.Science)
-                sb.Append("Изучает системы: без разведки нельзя строить форпосты и колонии. Находит аномалии и события. Учёный на борту ускоряет работу.\n");
+                sb.Append(Loc.T("Изучает системы: без разведки нельзя строить форпосты и колонии. Находит аномалии и события. Учёный на борту ускоряет работу.\n"));
             else if (o.Type == FleetType.Constructor)
-                sb.Append($"Строит форпосты — каждый расширяет территорию " +
-                          $"(форпост: {FactionTraits.StarbaseAlloys(0):0} сплавов и {FleetManager.OutpostInfluenceCost(0):0} влияния) — и добывающие комплексы на планетах.\n");
+                sb.Append(Loc.T("Строит форпосты — каждый расширяет территорию ") +
+                          Loc.F("(форпост: {0:0} сплавов и {1:0} влияния) — и добывающие комплексы на планетах.\n", FactionTraits.StarbaseAlloys(0), FleetManager.OutpostInfluenceCost(0)));
             else if (design != null)
             {
                 float pw = ShipDesignManager.DesignPower(design);
                 string cmp = CombatManager.PowerInShips(pw);
-                sb.Append($"Проект «{design.Name}»: мощь ≈ {pw:0}" + (cmp.Length > 0 ? $" ({cmp})" : "") + ".\n");
+                sb.Append(Loc.F("Проект «{0}»: мощь ≈ {1:0}", design.Name, pw) + (cmp.Length > 0 ? $" ({cmp})" : "") + ".\n");
                 if (eco != null)
                 {
                     var r = eco.Report;
                     int size = EmpireEconomy.NavalSize(o.Hull);
                     int after = r.NavalUsed + size;
-                    sb.Append($"Лимит флота: {r.NavalUsed} → <b>{after}</b> из {r.NavalCapacity}");
+                    sb.Append(Loc.F("Лимит флота: {0} → <b>{1}</b> из {2}", r.NavalUsed, after, r.NavalCapacity));
                     sb.Append(after > r.NavalCapacity
-                        ? $"  <color={Warn}>— сверх лимита: дороже содержание всех военных кораблей</color>\n"
+                        ? Loc.F("  <color={0}>— сверх лимита: дороже содержание всех военных кораблей</color>\n", Warn)
                         : "\n");
                 }
             }
-            sb.Append($"\n<color={M}>Цена:</color> {alloys:0} сплавов, {energy:0} гелия-3 · {ConstructionManager.ShipDays(o.Type, o.Hull):0} дн.\n");
-            sb.Append($"<color={M}>Содержание:</color> −{upkeep:0.#} гелия-3 в месяц");
+            sb.Append(Loc.F("\n<color={0}>Цена:</color> {1:0} сплавов, {2:0} гелия-3 · {3:0} дн.\n", M, alloys, energy, ConstructionManager.ShipDays(o.Type, o.Hull)));
+            sb.Append(Loc.F("<color={0}>Содержание:</color> −{1:0.#} гелия-3 в месяц", M, upkeep));
             if (why != null) sb.Append($"\n<color={Bad}>{why}</color>");
             return sb.ToString();
         }
@@ -384,8 +384,8 @@ namespace StellarisClone.Rendering
             var cm = ConstructionManager.Instance;
             var q = cm != null ? cm.ShipQueue(0) : new List<ConstructionJob>();
             int slots = ConstructionManager.ShipyardSlots;
-            _queueTitle.text = q.Count == 0 ? $"СТАПЕЛИ  ·  свободно {slots} из {slots}"
-                             : $"СТАПЕЛИ  ·  занято {Mathf.Min(q.Count, slots)} из {slots}" + (q.Count > slots ? $"  ·  в очереди {q.Count - slots}" : "");
+            _queueTitle.text = q.Count == 0 ? Loc.F("СТАПЕЛИ  ·  свободно {0} из {1}", slots, slots)
+                             : Loc.F("СТАПЕЛИ  ·  занято {0} из {1}", Mathf.Min(q.Count, slots), slots) + (q.Count > slots ? Loc.F("  ·  в очереди {0}", q.Count - slots) : "");
 
             string sig = q.Count.ToString();
             foreach (var j in q) sig += "|" + j.Id;
@@ -401,8 +401,8 @@ namespace StellarisClone.Rendering
                 bool active = i < slots;
                 LGBuild.SetBar(ui.Bar, active ? q[i].Progress : 0f);
                 ui.State.text = active
-                    ? $"<b>{Mathf.RoundToInt(q[i].Progress * 100f)}%</b>  ·  готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(q[i]))} дн."
-                    : $"<color=#8AA2A8>в очереди  ·  готов через ~{Mathf.CeilToInt(cm.DaysUntilDone(q[i]))} дн.</color>";
+                    ? Loc.F("<b>{0}%</b>  ·  готов через ~{1} дн.", Mathf.RoundToInt(q[i].Progress * 100f), Mathf.CeilToInt(cm.DaysUntilDone(q[i])))
+                    : Loc.F("<color=#8AA2A8>в очереди  ·  готов через ~{0} дн.</color>", Mathf.CeilToInt(cm.DaysUntilDone(q[i])));
             }
         }
 
@@ -421,7 +421,7 @@ namespace StellarisClone.Rendering
                     var empty = LGBuild.Panel(_queue, "FreeSlot", new Color(0.03f, 0.07f, 0.09f, 0.7f));
                     empty.rectTransform.TopBand(top, rowH);
                     LG.Platter(empty.gameObject, 12f).SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.12f));
-                    var et = LGBuild.Label(empty.transform, "свободный стапель", 10, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleCenter);
+                    var et = LGBuild.Label(empty.transform, Loc.T("свободный стапель"), 10, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleCenter);
                     et.fontStyle = FontStyle.Italic;
                     continue;
                 }
@@ -446,13 +446,13 @@ namespace StellarisClone.Rendering
                 var cancel = LGBuild.Button(row.transform, "Cancel", new Color(0.24f, 0.08f, 0.1f), new Color(1f, 0.4f, 0.42f, 0.5f),
                     () => { cm.Cancel(j); _queueSig = ""; Refresh(); }, LGIcon.Close, null, 8);
                 ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(26, 26));
-                TooltipHelper.Attach(cancel.gameObject, "<b>Отменить</b>\nРесурсы вернутся полностью.");
+                TooltipHelper.Attach(cancel.gameObject, Loc.T("<b>Отменить</b>\nРесурсы вернутся полностью."));
 
                 _slots[job.Id] = new SlotUi { Bar = bar, State = state };
             }
             if (q.Count > shown)
             {
-                var more = LGBuild.Label(_queue, $"… и ещё {q.Count - shown} в очереди", 10, Muted, TextAnchor.UpperLeft);
+                var more = LGBuild.Label(_queue, Loc.F("… и ещё {0} в очереди", q.Count - shown), 10, Muted, TextAnchor.UpperLeft);
                 more.rectTransform.TopBand(rows * (rowH + gap), 18, 4, 4);
             }
         }
@@ -470,33 +470,33 @@ namespace StellarisClone.Rendering
             float alloys = EconomyManager.Instance != null ? EconomyManager.Instance.Alloys : 0f;
             _retrofitAllBtn.interactable = outdated.Count > 0 && alloys >= dm.RetrofitCost(outdated[0]);
             var allLabel = _retrofitAllBtn.GetComponentInChildren<Text>();
-            if (allLabel != null) allLabel.text = outdated.Count > 0 ? $"ВСЕ УСТАРЕВШИЕ ({outdated.Count})" : "ВСЕ УСТАРЕВШИЕ";
+            if (allLabel != null) allLabel.text = outdated.Count > 0 ? Loc.F("ВСЕ УСТАРЕВШИЕ ({0})", outdated.Count) : Loc.T("ВСЕ УСТАРЕВШИЕ");
 
             string all = outdated.Count == 0
-                ? "<color=#5CF59A>Все военные корабли соответствуют актуальным проектам.</color>"
-                : $"Устаревших кораблей: <color=#F2C747>{outdated.Count}</color> · на всех нужно <color=#F2C747>{total:0} сплавов</color>.";
+                ? Loc.T("<color=#5CF59A>Все военные корабли соответствуют актуальным проектам.</color>")
+                : Loc.F("Устаревших кораблей: <color=#F2C747>{0}</color> · на всех нужно <color=#F2C747>{1:0} сплавов</color>.", outdated.Count, total);
 
             var fleet = FleetManager.Instance?.SelectedFleet;
             var d = fleet?.Data;
             if (d == null || d.OwnerId != 0 || d.Type != FleetType.Military)
             {
                 _retrofitBtn.interactable = false;
-                _retrofitText.text = all + "\n<color=#8AA2A8>Новый проект в конструкторе делает старые корабли устаревшими; выделите корабль на карте, чтобы модернизировать только его.</color>";
+                _retrofitText.text = all + Loc.T("\n<color=#8AA2A8>Новый проект в конструкторе делает старые корабли устаревшими; выделите корабль на карте, чтобы модернизировать только его.</color>");
                 return;
             }
             if (!dm.IsOutdated(d))
             {
                 _retrofitBtn.interactable = false;
-                _retrofitText.text = $"{d.Name}: <color=#5CF59A>актуальный проект.</color>\n" + all;
+                _retrofitText.text = Loc.F("{0}: <color=#5CF59A>актуальный проект.</color>\n", d.Name) + all;
                 return;
             }
             float cost = dm.RetrofitCost(d);
             float gain = dm.RetrofitGain(d);
             bool can = dm.CanRetrofit(d);
             _retrofitBtn.interactable = can;
-            string g = gain >= 0f ? $"<color=#5CF59A>+{gain * 100f:0}% мощи</color>" : $"<color=#FF9F7A>{gain * 100f:0}% мощи</color>";
+            string g = gain >= 0f ? Loc.F("<color=#5CF59A>+{0:0}% мощи</color>", gain * 100f) : Loc.F("<color=#FF9F7A>{0:0}% мощи</color>", gain * 100f);
             _retrofitText.text = $"{d.Name} → «{dm.GetLatestDesign(d.HullClass)?.Name}»  ·  {g}  ·  " +
-                                 (can ? $"<color=#F2C747>{cost:0} сплавов</color>" : $"<color=#FF6A6A>нужно {cost:0} сплавов</color>") + "\n" + all;
+                                 (can ? Loc.F("<color=#F2C747>{0:0} сплавов</color>", cost) : Loc.F("<color=#FF6A6A>нужно {0:0} сплавов</color>", cost)) + "\n" + all;
         }
 
         private void OnRetrofit()
@@ -509,7 +509,7 @@ namespace StellarisClone.Rendering
             var dm = ShipDesignManager.Instance;
             if (dm == null) return;
             int n = dm.TryRetrofitAll();
-            if (n > 0) NotificationCenter.Show("Модернизация", $"Перевооружено кораблей: {n}", NotificationCenter.Kind.Success, 5f);
+            if (n > 0) NotificationCenter.Show(Loc.T("Модернизация"), Loc.F("Перевооружено кораблей: {0}", n), NotificationCenter.Kind.Success, 5f);
             Refresh();
         }
     }

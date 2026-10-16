@@ -15,7 +15,7 @@ namespace StellarisClone.Core
         public static event Action Changed;
 
         // ------------------------------------------------------------------ Графика
-        public static readonly string[] ScreenModeNames = { "Полный экран", "Эксклюзивный", "В окне" };
+        public static readonly string[] ScreenModeNames = { Loc.T("Полный экран"), Loc.T("Эксклюзивный"), Loc.T("В окне") };
         public static readonly int[] FpsOptions = { 30, 60, 120, 144, 240, -1 };
         public static readonly int[] AutosaveOptions = { 0, 1, 3, 6, 12 };
         public static readonly float[] UIScaleOptions = { 0.8f, 0.9f, 1f, 1.1f, 1.25f };

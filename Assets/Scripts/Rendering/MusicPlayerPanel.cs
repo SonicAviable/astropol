@@ -41,7 +41,7 @@ namespace StellarisClone.Rendering
             host._toggleIcon = LGIcons.Create(btn.transform, LGIcon.Speaker, 15f, DS.TextMuted);
             host._toggleIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
             host._toggleIcon.raycastTarget = false;
-            TooltipHelper.Attach(btn.gameObject, "<b>Музыка</b>\nТекущий трек, пауза, следующий, громкость  <color=#8AA2A8>(M)</color>");
+            TooltipHelper.Attach(btn.gameObject, Loc.T("<b>Музыка</b>\nТекущий трек, пауза, следующий, громкость  <color=#8AA2A8>(M)</color>"));
         }
 
         private void Awake() => Instance = this;
@@ -124,16 +124,16 @@ namespace StellarisClone.Rendering
 
             // Кнопки управления
             float y = -96f;
-            Btn(LGIcon.Back, new Vector2(14, y), () => MusicManager.Instance?.Previous(), "<b>Предыдущий трек</b>\nВ середине трека — этот трек сначала", out _);
-            var play = Btn(LGIcon.Pause, new Vector2(54, y), () => MusicManager.Instance?.TogglePause(), "<b>Пауза / продолжить</b>", out _playIcon);
+            Btn(LGIcon.Back, new Vector2(14, y), () => MusicManager.Instance?.Previous(), Loc.T("<b>Предыдущий трек</b>\nВ середине трека — этот трек сначала"), out _);
+            var play = Btn(LGIcon.Pause, new Vector2(54, y), () => MusicManager.Instance?.TogglePause(), Loc.T("<b>Пауза / продолжить</b>"), out _playIcon);
             LG.Button(play.gameObject, new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.8f), 16f);
-            Btn(LGIcon.Back, new Vector2(94, y), () => MusicManager.Instance?.Next(), "<b>Следующий трек</b>", out var nextIcon);
+            Btn(LGIcon.Back, new Vector2(94, y), () => MusicManager.Instance?.Next(), Loc.T("<b>Следующий трек</b>"), out var nextIcon);
             nextIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
             var shuffle = Btn(LGIcon.Dice, new Vector2(134, y), () =>
             {
                 var mm = MusicManager.Instance;
                 if (mm != null) mm.SetShuffle(!mm.Shuffle);
-            }, "<b>Перемешивание</b>\nВключено — треки идут в случайном порядке, выключено — по списку", out _shuffleIcon);
+            }, Loc.T("<b>Перемешивание</b>\nВключено — треки идут в случайном порядке, выключено — по списку"), out _shuffleIcon);
             _shuffleBg = shuffle.GetComponent<Image>();
 
             // Громкость: тот же ползунок, что в настройках
@@ -143,7 +143,7 @@ namespace StellarisClone.Rendering
             vol.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(202, y - 16), new Vector2(W - 202 - 16, 22));
             _volFill = LGBuild.Bar(vol.transform, DS.Gold, GameSettings.MusicVolume, 6f);
             vol.gameObject.AddComponent<VolumeDrag>().Init(this, vol.rectTransform);
-            TooltipHelper.Attach(vol.gameObject, "<b>Громкость музыки</b>\nТяните или нажмите. То же значение, что в настройках");
+            TooltipHelper.Attach(vol.gameObject, Loc.T("<b>Громкость музыки</b>\nТяните или нажмите. То же значение, что в настройках"));
 
             _root.gameObject.SetActive(false);
         }
@@ -189,21 +189,21 @@ namespace StellarisClone.Rendering
             var mm = MusicManager.Instance;
             if (mm == null || mm.TrackCount == 0)
             {
-                _title.text = "Нет треков";
-                _artist.text = "Положите MP3/OGG в Resources/Music";
+                _title.text = Loc.T("Нет треков");
+                _artist.text = Loc.T("Положите MP3/OGG в Resources/Music");
                 return;
             }
             int cur = mm.CurrentIndex;
             _title.text = cur >= 0 ? mm.TrackTitle(cur) : "—";
             string artist = cur >= 0 ? mm.TrackArtist(cur) : "";
-            _artist.text = (artist.Length > 0 ? artist + "  ·  " : "") + $"трек {cur + 1} из {mm.TrackCount}" + (mm.IsPaused ? "  ·  пауза" : "") + (mm.WarMood ? "  ·  <color=#E07A6E>военное время</color>" : "");
+            _artist.text = (artist.Length > 0 ? artist + "  ·  " : "") + Loc.F("трек {0} из {1}", cur + 1, mm.TrackCount) + (mm.IsPaused ? Loc.T("  ·  пауза") : "") + (mm.WarMood ? Loc.T("  ·  <color=#E07A6E>военное время</color>") : "");
             _playIcon.sprite = LGIcons.Get(mm.IsPaused ? LGIcon.Play : LGIcon.Pause);
             _shuffleIcon.color = mm.Shuffle ? DS.Gold : DS.TextMuted;
             if (_shuffleBg != null) _shuffleBg.color = mm.Shuffle ? new Color(0.16f, 0.13f, 0.05f, 1f) : DS.BgVisor;
             for (int i = 0; i < _rows.Count; i++)
             {
                 bool on = i == cur;
-                _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? "  <color=#E07A6E>· война</color>" : "");
+                _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? Loc.T("  <color=#E07A6E>· война</color>") : "");
                 _rows[i].label.color = on ? DS.NeonCyan : DS.TextMuted;
                 _rows[i].bg.color = on ? new Color(0.05f, 0.16f, 0.18f, 0.95f) : new Color(0.02f, 0.05f, 0.07f, 0.9f);
             }

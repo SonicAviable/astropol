@@ -84,8 +84,8 @@ namespace StellarisClone.Core
         {
             int n = Mathf.Max(1, Mathf.CeilToInt(days));
             int m10 = n % 10, m100 = n % 100;
-            string word = m10 == 1 && m100 != 11 ? "день"
-                        : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "дня" : "дней";
+            string word = m10 == 1 && m100 != 11 ? Loc.T("день")
+                        : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? Loc.T("дня") : Loc.T("дней");
             return $"{n} {word}";
         }
     }

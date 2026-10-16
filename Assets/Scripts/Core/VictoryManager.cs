@@ -50,7 +50,7 @@ namespace StellarisClone.Core
         {
             var years = new List<string>();
             for (int y = CouncilFirstYear; y < EndYear; y += CouncilEvery) years.Add(y.ToString());
-            return years.Count <= 1 ? string.Join("", years) : string.Join(", ", years.GetRange(0, years.Count - 1)) + " и " + years[years.Count - 1];
+            return years.Count <= 1 ? string.Join("", years) : string.Join(", ", years.GetRange(0, years.Count - 1)) + Loc.T(" и ") + years[years.Count - 1];
         }
 
         // Технологии, ведущие к «Вознесению»: ИИ перед финалом берётся за них в первую очередь
@@ -168,9 +168,9 @@ namespace StellarisClone.Core
 
         public int PlayerScore => EmpireStats.Score(0).Total;
         public int RivalScore => Best(o => EmpireStats.Score(o).Total);
-        public string RivalScoreLeaderName => LeadingRival(o => EmpireStats.Score(o).Total)?.AIName ?? "Соперник";
+        public string RivalScoreLeaderName => LeadingRival(o => EmpireStats.Score(o).Total)?.AIName ?? Loc.T("Соперник");
 
-        private string _rivalName = "Соперник";
+        private string _rivalName = Loc.T("Соперник");
 
         public int YearsElapsed
         {
@@ -262,8 +262,8 @@ namespace StellarisClone.Core
             {
                 _bankruptMonths++;
                 if (_bankruptMonths >= bankruptcyMonthsRequired) { Finish(Outcome.DefeatBankruptcy); return; }
-                NotificationCenter.Show("Банкротство продолжается",
-                    $"{_bankruptMonths} из {bankruptcyMonthsRequired} мес. — затем экономика рухнет", NotificationCenter.Kind.Danger, 6f);
+                NotificationCenter.Show(Loc.T("Банкротство продолжается"),
+                    Loc.F("{0} из {1} мес. — затем экономика рухнет", _bankruptMonths, bankruptcyMonthsRequired), NotificationCenter.Kind.Danger, 6f);
             }
             else _bankruptMonths = 0;
 
@@ -275,7 +275,7 @@ namespace StellarisClone.Core
             foreach (var _ in AIEmpireManager.Alive) { anyAlive = true; break; }
             bool allStarted = true;
             foreach (var a in AIEmpireManager.All) if (a.CapitalSystemId < 0 && !a.IsEliminated) allStarted = false;
-            if (anyRivals && allStarted && !anyAlive) { _rivalName = "Все соперники"; Finish(Outcome.Conquest); return; }
+            if (anyRivals && allStarted && !anyAlive) { _rivalName = Loc.T("Все соперники"); Finish(Outcome.Conquest); return; }
 
             // === ЭКОНОМИКА: доля валового продукта галактики, месяцы подряд ===
             if (TrackEconomy()) return;
@@ -286,9 +286,9 @@ namespace StellarisClone.Core
                 CouncilForecast(out int pro, out int total);
                 int need = Mathf.CeilToInt(total * CouncilShare);
                 if (pro >= need) { Finish(Outcome.Diplomatic); return; }
-                NotificationCenter.Show("Галактический совет",
-                    $"Лидер галактики не избран: за вас {pro} из {total} голосов (нужно {need}). " +
-                    (NextCouncilYear(year) > 0 ? $"Следующее заседание — {NextCouncilYear(year)} год." : "Заседаний больше не будет."),
+                NotificationCenter.Show(Loc.T("Галактический совет"),
+                    Loc.F("Лидер галактики не избран: за вас {0} из {1} голосов (нужно {2}). ", pro, total, need) +
+                    (NextCouncilYear(year) > 0 ? Loc.F("Следующее заседание — {0} год.", NextCouncilYear(year)) : Loc.T("Заседаний больше не будет.")),
                     NotificationCenter.Kind.Info, 8f);
             }
 
@@ -319,15 +319,15 @@ namespace StellarisClone.Core
                 _domMonths++;
                 if (_domMonths >= DominationHoldMonths) { Finish(Outcome.Domination); return true; }
                 if (_domMonths == 1 || _domMonths == DominationHoldMonths / 2 || _domMonths == DominationHoldMonths - 2)
-                    NotificationCenter.Show("Доминирование",
-                        $"Вы контролируете {me} систем. Удержите порог ещё {DominationHoldMonths - _domMonths} мес. — и победа ваша; соперники попытаются вас остановить.",
+                    NotificationCenter.Show(Loc.T("Доминирование"),
+                        Loc.F("Вы контролируете {0} систем. Удержите порог ещё {1} мес. — и победа ваша; соперники попытаются вас остановить.", me, DominationHoldMonths - _domMonths),
                         NotificationCenter.Kind.Success, 7f);
             }
             else
             {
                 if (_domMonths > 0)
-                    NotificationCenter.Show("Порог доминирования потерян",
-                        $"Систем: {me} из {dominationSystemsRequired}. Счётчик удержания сброшен.", NotificationCenter.Kind.Warning, 6f);
+                    NotificationCenter.Show(Loc.T("Порог доминирования потерян"),
+                        Loc.F("Систем: {0} из {1}. Счётчик удержания сброшен.", me, dominationSystemsRequired), NotificationCenter.Kind.Warning, 6f);
                 _domMonths = 0;
             }
 
@@ -339,8 +339,8 @@ namespace StellarisClone.Core
                 _rivalDomMonths++;
                 if (_rivalDomMonths >= DominationHoldMonths) { _rivalName = top.AIName; Finish(Outcome.DefeatRivalDomination); return true; }
                 if (_rivalDomMonths == 1 || _rivalDomMonths == DominationHoldMonths / 2 || _rivalDomMonths == DominationHoldMonths - 2)
-                    NotificationCenter.Show("Экспансия соперника",
-                        $"{top.AIName} контролирует {rs} систем. Через {DominationHoldMonths - _rivalDomMonths} мес. — их победа: отбейте системы, чтобы сбросить счётчик.",
+                    NotificationCenter.Show(Loc.T("Экспансия соперника"),
+                        Loc.F("{0} контролирует {1} систем. Через {2} мес. — их победа: отбейте системы, чтобы сбросить счётчик.", top.AIName, rs, DominationHoldMonths - _rivalDomMonths),
                         NotificationCenter.Kind.Warning, 8f);
             }
             else { _rivalDomOwner = -1; _rivalDomMonths = 0; }
@@ -356,8 +356,8 @@ namespace StellarisClone.Core
                 _econMonths++;
                 if (_econMonths >= EconomyMonths) { Finish(Outcome.Economic); return true; }
                 if (_econMonths == 1 || _econMonths == EconomyMonths / 2 || _econMonths == EconomyMonths - 3)
-                    NotificationCenter.Show("Экономическое превосходство",
-                        $"Ваша доля в продукте галактики {me * 100f:0}%. До экономической победы: {EconomyMonths - _econMonths} мес.",
+                    NotificationCenter.Show(Loc.T("Экономическое превосходство"),
+                        Loc.F("Ваша доля в продукте галактики {0:0}%. До экономической победы: {1} мес.", me * 100f, EconomyMonths - _econMonths),
                         NotificationCenter.Kind.Success, 6f);
             }
             else _econMonths = 0;
@@ -370,8 +370,8 @@ namespace StellarisClone.Core
                 _rivalEconMonths++;
                 if (_rivalEconMonths >= EconomyMonths) { _rivalName = top.AIName; Finish(Outcome.DefeatRivalEconomic); return true; }
                 if (_rivalEconMonths == 1 || _rivalEconMonths == EconomyMonths / 2 || _rivalEconMonths == EconomyMonths - 3)
-                    NotificationCenter.Show("Экономика соперника",
-                        $"{top.AIName}: {rs * 100f:0}% продукта галактики. Через {EconomyMonths - _rivalEconMonths} мес. — их экономическая победа",
+                    NotificationCenter.Show(Loc.T("Экономика соперника"),
+                        Loc.F("{0}: {1:0}% продукта галактики. Через {2} мес. — их экономическая победа", top.AIName, rs * 100f, EconomyMonths - _rivalEconMonths),
                         NotificationCenter.Kind.Warning, 7f);
             }
             else { _rivalEconOwner = -1; _rivalEconMonths = 0; }
@@ -387,17 +387,17 @@ namespace StellarisClone.Core
             _scoreWarnLevel = level;
             int me = PlayerScore, rival = RivalScore;
             bool ahead = me >= rival;
-            NotificationCenter.Show($"До подсчёта очков: {left} {YearsWord(left)}",
-                $"Ваш счёт {me}, у лучшего соперника ({RivalScoreLeaderName}) {rival}. {(ahead ? "Вы впереди — удержите отрыв" : "Соперник впереди — наращивайте системы, население и науку")}",
+            NotificationCenter.Show(Loc.F("До подсчёта очков: {0} {1}", left, YearsWord(left)),
+                Loc.F("Ваш счёт {0}, у лучшего соперника ({1}) {2}. {3}", me, RivalScoreLeaderName, rival, (ahead ? Loc.T("Вы впереди — удержите отрыв") : Loc.T("Соперник впереди — наращивайте системы, население и науку"))),
                 ahead ? NotificationCenter.Kind.Info : NotificationCenter.Kind.Warning, 8f);
         }
 
         public static string YearsWord(int n)
         {
             int m10 = n % 10, m100 = n % 100;
-            if (m10 == 1 && m100 != 11) return "год";
-            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "года";
-            return "лет";
+            if (m10 == 1 && m100 != 11) return Loc.T("год");
+            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return Loc.T("года");
+            return Loc.T("лет");
         }
 
         private void Finish(Outcome outcome)
@@ -409,52 +409,52 @@ namespace StellarisClone.Core
             switch (outcome)
             {
                 case Outcome.Domination:
-                    title = "★ ПОБЕДА — ДОМИНИРОВАНИЕ";
-                    body = $"Империя удерживала {dominationSystemsRequired} систем {DominationHoldMonths} месяцев подряд.";
+                    title = Loc.T("★ ПОБЕДА — ДОМИНИРОВАНИЕ");
+                    body = Loc.F("Империя удерживала {0} систем {1} месяцев подряд.", dominationSystemsRequired, DominationHoldMonths);
                     break;
                 case Outcome.Science:
-                    title = "★ ПОБЕДА — НАУЧНАЯ";
-                    body = $"Изучено {scienceTechsRequired} технологий, проект «Вознесение» завершён.";
+                    title = Loc.T("★ ПОБЕДА — НАУЧНАЯ");
+                    body = Loc.F("Изучено {0} технологий, проект «Вознесение» завершён.", scienceTechsRequired);
                     break;
                 case Outcome.Conquest:
-                    title = "★ ПОБЕДА — СОПЕРНИКИ ПОВЕРЖЕНЫ";
-                    body = "Все империи-соперники потеряли свои системы.";
+                    title = Loc.T("★ ПОБЕДА — СОПЕРНИКИ ПОВЕРЖЕНЫ");
+                    body = Loc.T("Все империи-соперники потеряли свои системы.");
                     break;
                 case Outcome.Economic:
-                    title = "★ ПОБЕДА — ЭКОНОМИЧЕСКАЯ";
-                    body = $"{EconomyMonths / 12} года подряд ваша империя давала {EconomyShare * 100f:0}% продукта галактики.";
+                    title = Loc.T("★ ПОБЕДА — ЭКОНОМИЧЕСКАЯ");
+                    body = Loc.F("{0} года подряд ваша империя давала {1:0}% продукта галактики.", EconomyMonths / 12, EconomyShare * 100f);
                     break;
                 case Outcome.Diplomatic:
-                    title = "★ ПОБЕДА — ДИПЛОМАТИЧЕСКАЯ";
-                    body = "Галактический совет избрал вас лидером галактики.";
+                    title = Loc.T("★ ПОБЕДА — ДИПЛОМАТИЧЕСКАЯ");
+                    body = Loc.T("Галактический совет избрал вас лидером галактики.");
                     break;
                 case Outcome.DefeatRivalEconomic:
-                    title = "✕ ПОРАЖЕНИЕ — ЭКОНОМИКА СОПЕРНИКА";
-                    body = $"{rival} {EconomyMonths / 12} года подряд давал {EconomyShare * 100f:0}% продукта галактики.";
+                    title = Loc.T("✕ ПОРАЖЕНИЕ — ЭКОНОМИКА СОПЕРНИКА");
+                    body = Loc.F("{0} {1} года подряд давал {2:0}% продукта галактики.", rival, EconomyMonths / 12, EconomyShare * 100f);
                     break;
                 case Outcome.Score:
-                    title = "★ ПОБЕДА ПО ОЧКАМ";
-                    body = $"{EndYear} год: ваш счёт {PlayerScore} — больше, чем у любого соперника (лучший — {RivalScore}).";
+                    title = Loc.T("★ ПОБЕДА ПО ОЧКАМ");
+                    body = Loc.F("{0} год: ваш счёт {1} — больше, чем у любого соперника (лучший — {2}).", EndYear, PlayerScore, RivalScore);
                     break;
                 case Outcome.DefeatEliminated:
-                    title = "✕ ПОРАЖЕНИЕ — УНИЧТОЖЕНЫ";
-                    body = "Империя потеряла все свои системы.";
+                    title = Loc.T("✕ ПОРАЖЕНИЕ — УНИЧТОЖЕНЫ");
+                    body = Loc.T("Империя потеряла все свои системы.");
                     break;
                 case Outcome.DefeatScore:
-                    title = "✕ ПОРАЖЕНИЕ ПО ОЧКАМ";
-                    body = $"{EndYear} год: у {rival} {RivalScore} очков против ваших {PlayerScore}.";
+                    title = Loc.T("✕ ПОРАЖЕНИЕ ПО ОЧКАМ");
+                    body = Loc.F("{0} год: у {1} {2} очков против ваших {3}.", EndYear, rival, RivalScore, PlayerScore);
                     break;
                 case Outcome.DefeatRivalScience:
-                    title = "✕ ПОРАЖЕНИЕ — НАУЧНЫЙ ПРОРЫВ СОПЕРНИКА";
-                    body = $"{rival} изучил {scienceTechsRequired} технологий и завершил проект «Вознесение».";
+                    title = Loc.T("✕ ПОРАЖЕНИЕ — НАУЧНЫЙ ПРОРЫВ СОПЕРНИКА");
+                    body = Loc.F("{0} изучил {1} технологий и завершил проект «Вознесение».", rival, scienceTechsRequired);
                     break;
                 case Outcome.DefeatRivalDomination:
-                    title = "✕ ПОРАЖЕНИЕ — ЭКСПАНСИЯ СОПЕРНИКА";
-                    body = $"{rival} {DominationHoldMonths} месяцев подряд удерживал {dominationSystemsRequired} систем.";
+                    title = Loc.T("✕ ПОРАЖЕНИЕ — ЭКСПАНСИЯ СОПЕРНИКА");
+                    body = Loc.F("{0} {1} месяцев подряд удерживал {2} систем.", rival, DominationHoldMonths, dominationSystemsRequired);
                     break;
                 default:
-                    title = "✕ ПОРАЖЕНИЕ — КРАХ ЭКОНОМИКИ";
-                    body = $"{bankruptcyMonthsRequired} месяцев подряд в банкротстве.";
+                    title = Loc.T("✕ ПОРАЖЕНИЕ — КРАХ ЭКОНОМИКИ");
+                    body = Loc.F("{0} месяцев подряд в банкротстве.", bankruptcyMonthsRequired);
                     break;
             }
 

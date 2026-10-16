@@ -53,7 +53,7 @@ namespace StellarisClone.Rendering
             var head = LGBuild.Rect(_root, "Head").TopBand(0f, HeadH);
             var ic = LGIcons.Create(head, LGIcon.Globe, 14f, DS.NeonCyan);
             ic.rectTransform.At(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(14f, 14f));
-            var title = LGBuild.Label(head, "НОВОСТИ ГАЛАКТИКИ", 11, DS.TextMuted, TextAnchor.MiddleLeft, bold: true);
+            var title = LGBuild.Label(head, Loc.T("НОВОСТИ ГАЛАКТИКИ"), 11, DS.TextMuted, TextAnchor.MiddleLeft, bold: true);
             title.rectTransform.Stretch(30f, 0f, 60f, 0f);
             _counter = LGBuild.Label(head, "", 10, DS.Gold, TextAnchor.MiddleRight, bold: true);
             _counter.rectTransform.Stretch(0f, 0f, 40f, 0f);
@@ -62,7 +62,7 @@ namespace StellarisClone.Rendering
             ((RectTransform)btn.transform).At(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-6f, 0f), new Vector2(26f, 20f));
             _chevron = LGIcons.Create(btn.transform, LGIcon.Menu, 12f, DS.TextMuted);
             _chevron.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(12f, 12f));
-            TooltipHelper.Attach(btn.gameObject, "Показать больше или меньше новостей");
+            TooltipHelper.Attach(btn.gameObject, Loc.T("Показать больше или меньше новостей"));
 
             _body = LGBuild.Rect(_root, "Body");
             _body.anchorMin = new Vector2(0f, 0f);
@@ -140,7 +140,7 @@ namespace StellarisClone.Rendering
                 if (items.Count == 0)
                 {
                     r.Item = null;
-                    r.Text.text = "<color=#7F98A3>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>";
+                    r.Text.text = Loc.T("<color=#7F98A3>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>");
                     r.Icon.sprite = LGIcons.Get(LGIcon.Globe);
                     r.Icon.color = DS.TextMuted;
                     r.Edge.enabled = false;

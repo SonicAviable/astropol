@@ -43,7 +43,7 @@ namespace StellarisClone.Core
 
                 string name = Landmarks.Name(s.Landmark);
                 if (known && _announced.Add(s.Id))
-                    NotificationCenter.Show("Найден узел силы", $"{name} · система {s.Name}. {Capital(Landmarks.Effect(s.Landmark))}.",
+                    NotificationCenter.Show(Loc.T("Найден узел силы"), Loc.F("{0} · система {1}. {2}.", name, s.Name, Capital(Landmarks.Effect(s.Landmark))),
                         NotificationCenter.Kind.Success, 8f);
 
                 _holder.TryGetValue(s.Id, out int prev);
@@ -52,13 +52,13 @@ namespace StellarisClone.Core
                 _holder[s.Id] = holder;
 
                 if (holder == 0)
-                    NotificationCenter.Show("Узел силы под вашим контролем", $"{name}: {Landmarks.Effect(s.Landmark)}.",
+                    NotificationCenter.Show(Loc.T("Узел силы под вашим контролем"), $"{name}: {Landmarks.Effect(s.Landmark)}.",
                         NotificationCenter.Kind.Success, 8f);
                 else if (prev == 0)
-                    NotificationCenter.Show("Узел силы потерян", $"{name} перешёл к {AIEmpireManager.NameOf(holder, "другой империи")}. Бонус больше не действует.",
+                    NotificationCenter.Show(Loc.T("Узел силы потерян"), Loc.F("{0} перешёл к {1}. Бонус больше не действует.", name, AIEmpireManager.NameOf(holder, Loc.T("другой империи"))),
                         NotificationCenter.Kind.Danger, 9f);
                 else if (holder > 0 && known)
-                    NotificationCenter.Show("Узел силы занят", $"{AIEmpireManager.NameOf(holder, "Империя")} установила контроль над узлом «{name}».",
+                    NotificationCenter.Show(Loc.T("Узел силы занят"), Loc.F("{0} установила контроль над узлом «{1}».", AIEmpireManager.NameOf(holder, Loc.T("Империя")), name),
                         NotificationCenter.Kind.Warning, 7f);
             }
             _init = true;

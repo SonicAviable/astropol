@@ -293,21 +293,21 @@ namespace StellarisClone.Core
             {
                 case JobKind.District:
                     if (p.BuiltDistricts < p.MaxDistricts) p.Districts.Add(new DistrictData(j.District));
-                    Notify(j, "Район построен", $"{DistrictInfo.Name(j.District).ToLower()} · {p.Name}");
+                    Notify(j, Loc.T("Район построен"), $"{DistrictInfo.Name(j.District).ToLower()} · {p.Name}");
                     break;
                 case JobKind.MiningStation:
                     p.HasMiningStation = true;
                     p.ParentSystem?.RecalculateHarvest();
                     if (j.Owner == 0) SystemViewManager.Instance?.SpawnStationOnActivePlanet(p);
-                    Notify(j, "Добывающий комплекс", $"{p.Name}: добыча началась");
+                    Notify(j, Loc.T("Добывающий комплекс"), Loc.F("{0}: добыча началась", p.Name));
                     break;
                 case JobKind.Colony:
                     if (p.Population <= 0) p.SettleColony();
-                    Notify(j, "Колония основана", p.Name);
+                    Notify(j, Loc.T("Колония основана"), p.Name);
                     break;
                 case JobKind.Terraform:
                     p.ApplyTerraformStep();
-                    Notify(j, "Терраформинг завершён", $"{p.Name}: {p.ClassDisplayName.ToLower()}");
+                    Notify(j, Loc.T("Терраформинг завершён"), $"{p.Name}: {p.ClassDisplayName.ToLower()}");
                     break;
             }
             if (j.Owner == 0)
@@ -339,7 +339,7 @@ namespace StellarisClone.Core
             {
                 foreach (var p in sys.Planets) p.TerraformingInProgress = false;
                 if (oldOwner == 0)
-                    NotificationCenter.Show("Стройки потеряны", $"{sys.Name}: незавершённых заказов {removed}", NotificationCenter.Kind.Danger, 5f);
+                    NotificationCenter.Show(Loc.T("Стройки потеряны"), Loc.F("{0}: незавершённых заказов {1}", sys.Name, removed), NotificationCenter.Kind.Danger, 5f);
                 OnQueuesChanged?.Invoke();
             }
         }

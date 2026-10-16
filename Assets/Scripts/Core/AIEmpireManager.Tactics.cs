@@ -100,13 +100,13 @@ namespace StellarisClone.Core
             _designs.Clear();
             _designCooldownMonths = 6;
 
-            string why = best == WeaponDamageType.Explosive ? "у вас смешанная защита"
-                       : _intel.Shield >= _intel.Armor ? "у вас много щитов" : "у вас много брони";
-            string against = best == WeaponDamageType.Explosive ? "смешанной защиты"
-                           : _intel.Shield >= _intel.Armor ? "щитов" : "брони";
-            TacticsNote = $"Тактика: {AITactics.TypeShort(best)} против {against}";
+            string why = best == WeaponDamageType.Explosive ? Loc.T("у вас смешанная защита")
+                       : _intel.Shield >= _intel.Armor ? Loc.T("у вас много щитов") : Loc.T("у вас много брони");
+            string against = best == WeaponDamageType.Explosive ? Loc.T("смешанной защиты")
+                           : _intel.Shield >= _intel.Armor ? Loc.T("щитов") : Loc.T("брони");
+            TacticsNote = Loc.F("Тактика: {0} против {1}", AITactics.TypeShort(best), against);
             if (AtWar)
-                NotificationCenter.Show("Враг меняет тактику", $"{AIName} переоснащает флот: {AITactics.TypeName(best)} оружие, потому что {why}",
+                NotificationCenter.Show(Loc.T("Враг меняет тактику"), Loc.F("{0} переоснащает флот: {1} оружие, потому что {2}", AIName, AITactics.TypeName(best), why),
                     NotificationCenter.Kind.Warning, 7f);
         }
 

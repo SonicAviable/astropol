@@ -216,7 +216,7 @@ namespace StellarisClone.Rendering
                 else
                 {
                     Marker(p, wpp, col, destinations > 1 ? nd.OrderIndex.ToString() : "");
-                    string text = last ? $"~{FleetRoute.FormatDays(nd.Days)}" : $"{Mathf.CeilToInt(nd.Days)} дн.";
+                    string text = last ? $"~{FleetRoute.FormatDays(nd.Days)}" : Loc.F("{0} дн.", Mathf.CeilToInt(nd.Days));
                     Label(p + _cam.transform.up * (18f * wpp), text, Color.white, last ? LabelPx * 1.1f : LabelPx);
                 }
             }
@@ -385,11 +385,11 @@ namespace StellarisClone.Rendering
             float dist = 0f;
             for (int i = 0; i < pts.Count - 1; i++) dist += Vector3.Distance(pts[i], pts[i + 1]);
             var sb = new StringBuilder();
-            sb.Append($"<b>Маршрут: {fleet.Data.Name}</b>\n");
-            sb.Append($"<color=#8AA2A8>В пути:</color> ~{FleetRoute.FormatDays(nodes[nodes.Count - 1].Days)}\n");
-            sb.Append($"<color=#8AA2A8>Расстояние:</color> {dist:0} св. лет · прыжков: {nodes.Count}\n");
+            sb.Append(Loc.F("<b>Маршрут: {0}</b>\n", fleet.Data.Name));
+            sb.Append(Loc.F("<color=#8AA2A8>В пути:</color> ~{0}\n", FleetRoute.FormatDays(nodes[nodes.Count - 1].Days)));
+            sb.Append(Loc.F("<color=#8AA2A8>Расстояние:</color> {0:0} св. лет · прыжков: {1}\n", dist, nodes.Count));
             if (fleet.Data.OrderQueue.Count > 0)
-                sb.Append($"<color=#8AA2A8>Пунктов в очереди:</color> {fleet.Data.OrderQueue.Count + 1}\n");
+                sb.Append(Loc.F("<color=#8AA2A8>Пунктов в очереди:</color> {0}\n", fleet.Data.OrderQueue.Count + 1));
             sb.Append('\n');
             int shown = 0;
             foreach (var nd in nodes)
@@ -397,9 +397,9 @@ namespace StellarisClone.Rendering
                 if (shown++ >= 10) { sb.Append("…\n"); break; }
                 string name = _gen.Systems[nd.SystemId].Name;
                 string mark = nd.OrderIndex > 0 ? $"<color=#4DF2DB>{nd.OrderIndex}.</color> <b>{name}</b>" : $"<color=#8AA2A8>·</color> {name}";
-                sb.Append($"{mark} — {Mathf.CeilToInt(nd.Days)} дн.\n");
+                sb.Append(Loc.F("{0} — {1} дн.\n", mark, Mathf.CeilToInt(nd.Days)));
             }
-            sb.Append("\n<color=#8AA2A8>Shift+ПКМ — добавить пункт · Backspace — очистить очередь</color>");
+            sb.Append(Loc.T("\n<color=#8AA2A8>Shift+ПКМ — добавить пункт · Backspace — очистить очередь</color>"));
             return sb.ToString();
         }
     }

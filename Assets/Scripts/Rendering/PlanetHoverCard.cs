@@ -102,10 +102,10 @@ namespace StellarisClone.Rendering
             _pop.rectTransform.Stretch(26, 0, 6, 0);
 
             // Характеристики
-            var head = LGBuild.Label(_card, "ХАРАКТЕРИСТИКИ", 10, UIManager.DS.Gold, TextAnchor.UpperLeft, bold: true);
+            var head = LGBuild.Label(_card, Loc.T("ХАРАКТЕРИСТИКИ"), 10, UIManager.DS.Gold, TextAnchor.UpperLeft, bold: true);
             head.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -70), new Vector2(200, 14));
             _rows = new Row[4];
-            string[] labels = { "Размер", "Пригодность", "Титан", "Гелий-3" };
+            string[] labels = { Loc.T("Размер"), Loc.T("Пригодность"), Loc.T("Титан"), Loc.T("Гелий-3") };
             for (int i = 0; i < _rows.Length; i++) _rows[i] = MakeRow(labels[i], -88 - i * 22);
 
             var sep = LGBuild.Panel(_card, "Sep", new Color(0.45f, 0.95f, 0.90f, 0.22f));
@@ -158,7 +158,7 @@ namespace StellarisClone.Rendering
             int owner = p.OwnerId;
             string m = LGBuild.Hex(UIManager.DS.TextMuted);
             _name.text = PlanetNames.Title(p.Name);
-            string ownerName = owner == 0 ? "ваша система" : owner > 0 ? AIEmpireManager.NameOf(owner) : "ничья";
+            string ownerName = owner == 0 ? Loc.T("ваша система") : owner > 0 ? AIEmpireManager.NameOf(owner) : Loc.T("ничья");
             Color oc = owner >= 0 ? FleetIndicator.OwnerColor(owner) : UIManager.DS.TextMuted;
             _sub.text = $"{p.ClassDisplayName}  ·  <color={LGBuild.Hex(oc)}>{ownerName}</color>";
 
@@ -170,13 +170,13 @@ namespace StellarisClone.Rendering
             if (!known)
             {
                 foreach (var r in _rows) SetRow(r, 0, "?", UIManager.DS.TextMuted);
-                _state.text = $"<color={m}>Система не изучена — пошлите научный корабль</color>";
+                _state.text = Loc.F("<color={0}>Система не изучена — пошлите научный корабль</color>", m);
             }
             else
             {
                 int size = p.MaxDistricts;
                 int sizeSeg = size <= 5 ? 1 : size <= 6 ? 2 : size <= 7 ? 3 : size <= 9 ? 4 : 5;
-                string sizeName = sizeSeg switch { 1 => "крошечная", 2 => "малая", 3 => "средняя", 4 => "большая", _ => "гигантская" };
+                string sizeName = sizeSeg switch { 1 => Loc.T("крошечная"), 2 => Loc.T("малая"), 3 => Loc.T("средняя"), 4 => Loc.T("большая"), _ => Loc.T("гигантская") };
                 SetRow(_rows[0], sizeSeg, $"{sizeName} · {size}", UIManager.DS.NeonCyan);
 
                 int hab = p.HabitabilityPercent;
@@ -190,16 +190,16 @@ namespace StellarisClone.Rendering
                 _state.text = StateText(p, m);
             }
 
-            _hint.text = owner == 0 && colony ? "ЛКМ — управление колонией"
-                       : owner == 0 ? "ЛКМ — обзор и освоение планеты"
-                       : "ЛКМ — обзор планеты";
+            _hint.text = owner == 0 && colony ? Loc.T("ЛКМ — управление колонией")
+                       : owner == 0 ? Loc.T("ЛКМ — обзор и освоение планеты")
+                       : Loc.T("ЛКМ — обзор планеты");
         }
 
         private static string DepositName(int v, int max)
         {
-            if (v <= 0) return "нет";
+            if (v <= 0) return Loc.T("нет");
             float k = v / (float)max;
-            return (k < 0.4f ? "бедные" : k < 0.7f ? "умеренные" : "богатые") + $" · {v}";
+            return (k < 0.4f ? Loc.T("бедные") : k < 0.7f ? Loc.T("умеренные") : Loc.T("богатые")) + $" · {v}";
         }
 
         private static string StateText(PlanetData p, string m)
@@ -209,24 +209,24 @@ namespace StellarisClone.Rendering
             string line1, line2 = "";
             if (p.Population > 0)
             {
-                line1 = $"Районы  <b>{p.BuiltDistricts}</b><color={m}>/{p.MaxDistricts}</color>   ·   приоритет: {ColonyFocusInfo.Name(p.Focus).ToLower()}";
+                line1 = Loc.F("Районы  <b>{0}</b><color={1}>/{2}</color>   ·   приоритет: {3}", p.BuiltDistricts, m, p.MaxDistricts, ColonyFocusInfo.Name(p.Focus).ToLower());
                 var q = b != null ? b.QueueFor(p) : null;
                 if (q != null && q.Count > 0)
-                    line2 = $"<color={gold}>Стройка: {JobName(q[0])} · {Mathf.CeilToInt(q[0].DaysLeft)} дн." + (q.Count > 1 ? $" · ещё {q.Count - 1}" : "") + "</color>";
+                    line2 = Loc.F("<color={0}>Стройка: {1} · {2} дн.", gold, JobName(q[0]), Mathf.CeilToInt(q[0].DaysLeft)) + (q.Count > 1 ? Loc.F(" · ещё {0}", q.Count - 1) : "") + "</color>";
                 else if (p.IdlePops > 0)
-                    line2 = $"<color={gold}>Безработные: {p.IdlePops} — нужны районы</color>";
+                    line2 = Loc.F("<color={0}>Безработные: {1} — нужны районы</color>", gold, p.IdlePops);
                 else
-                    line2 = $"<color={m}>Очередь стройки пуста</color>";
+                    line2 = Loc.F("<color={0}>Очередь стройки пуста</color>", m);
             }
-            else if (p.IsColonizing) line1 = $"<color={gold}>Колонисты в пути</color>";
-            else if (p.CanColonize) line1 = p.IsPlayerOwned ? $"<color={green}>Пригодна для колонии</color>" : $"<color={green}>Пригодна для жизни</color>";
-            else line1 = $"<color={m}>Непригодна для жизни</color>";
+            else if (p.IsColonizing) line1 = Loc.F("<color={0}>Колонисты в пути</color>", gold);
+            else if (p.CanColonize) line1 = p.IsPlayerOwned ? Loc.F("<color={0}>Пригодна для колонии</color>", green) : Loc.F("<color={0}>Пригодна для жизни</color>", green);
+            else line1 = Loc.F("<color={0}>Непригодна для жизни</color>", m);
 
             if (p.Population <= 0)
             {
-                if (p.HasMiningStation) line2 = $"<color={green}>Добывающий комплекс работает</color>";
-                else if (p.StationUnderConstruction) line2 = $"<color={gold}>Строится добывающий комплекс</color>";
-                else if (p.MineralDeposit + p.EnergyDeposit > 0) line2 = $"<color={m}>Залежи не разрабатываются</color>";
+                if (p.HasMiningStation) line2 = Loc.F("<color={0}>Добывающий комплекс работает</color>", green);
+                else if (p.StationUnderConstruction) line2 = Loc.F("<color={0}>Строится добывающий комплекс</color>", gold);
+                else if (p.MineralDeposit + p.EnergyDeposit > 0) line2 = Loc.F("<color={0}>Залежи не разрабатываются</color>", m);
             }
             return string.IsNullOrEmpty(line2) ? line1 : line1 + "\n" + line2;
         }
@@ -234,10 +234,10 @@ namespace StellarisClone.Rendering
         private static string JobName(ConstructionJob j) => j.Kind switch
         {
             JobKind.District => DistrictInfo.Name(j.District).ToLower(),
-            JobKind.MiningStation => "комплекс",
-            JobKind.Colony => "колония",
-            JobKind.Terraform => "терраформинг",
-            _ => "заказ"
+            JobKind.MiningStation => Loc.T("комплекс"),
+            JobKind.Colony => Loc.T("колония"),
+            JobKind.Terraform => Loc.T("терраформинг"),
+            _ => Loc.T("заказ")
         };
 
         private static void SetRow(Row r, int lit, string value, Color c)

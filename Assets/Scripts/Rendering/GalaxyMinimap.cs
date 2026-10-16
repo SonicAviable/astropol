@@ -161,7 +161,7 @@ public static void ShowGlobal()
 
             var t = titleGO.AddComponent<Text>();
             t.font = GameFont.Bold;
-            t.text = "◆  КАРТА ГАЛАКТИКИ";
+            t.text = Loc.T("◆  КАРТА ГАЛАКТИКИ");
             t.fontSize = 11;
             t.fontStyle = FontStyle.Bold;
             t.alignment = TextAnchor.MiddleCenter;

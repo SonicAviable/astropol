@@ -35,16 +35,16 @@ namespace StellarisClone.Core
 
         public static string Name(TechBranch b) => b switch
         {
-            TechBranch.Physics => "ФИЗИКА",
-            TechBranch.Society => "ОБЩЕСТВО",
-            _ => "ИНЖЕНЕРИЯ"
+            TechBranch.Physics => Loc.T("ФИЗИКА"),
+            TechBranch.Society => Loc.T("ОБЩЕСТВО"),
+            _ => Loc.T("ИНЖЕНЕРИЯ")
         };
 
         public static string Motto(TechBranch b) => b switch
         {
-            TechBranch.Physics => "Энергия, вычисления и движение",
-            TechBranch.Society => "Наука, экспансия и доктрина флота",
-            _ => "Оружие, броня, промышленность и верфи"
+            TechBranch.Physics => Loc.T("Энергия, вычисления и движение"),
+            TechBranch.Society => Loc.T("Наука, экспансия и доктрина флота"),
+            _ => Loc.T("Оружие, броня, промышленность и верфи")
         };
 
         public static Color Color(TechBranch b) => b switch
@@ -66,16 +66,16 @@ namespace StellarisClone.Core
     {
         public static string Name(TechCategory c) => c switch
         {
-            TechCategory.Weapons      => "ОРУЖИЕ",
-            TechCategory.Defense      => "ЗАЩИТА",
-            TechCategory.Propulsion   => "ДВИГАТЕЛИ",
-            TechCategory.Sensors      => "СЕНСОРЫ И ИИ",
-            TechCategory.Industry     => "ПРОМЫШЛЕННОСТЬ",
-            TechCategory.Reactor      => "ЭНЕРГЕТИКА",
-            TechCategory.Construction => "ВЕРФИ",
-            TechCategory.Society      => "НАУКА И УПРАВЛЕНИЕ",
-            TechCategory.Colonization => "ЭКСПАНСИЯ",
-            TechCategory.Doctrine     => "ВОЕННАЯ ДОКТРИНА",
+            TechCategory.Weapons      => Loc.T("ОРУЖИЕ"),
+            TechCategory.Defense      => Loc.T("ЗАЩИТА"),
+            TechCategory.Propulsion   => Loc.T("ДВИГАТЕЛИ"),
+            TechCategory.Sensors      => Loc.T("СЕНСОРЫ И ИИ"),
+            TechCategory.Industry     => Loc.T("ПРОМЫШЛЕННОСТЬ"),
+            TechCategory.Reactor      => Loc.T("ЭНЕРГЕТИКА"),
+            TechCategory.Construction => Loc.T("ВЕРФИ"),
+            TechCategory.Society      => Loc.T("НАУКА И УПРАВЛЕНИЕ"),
+            TechCategory.Colonization => Loc.T("ЭКСПАНСИЯ"),
+            TechCategory.Doctrine     => Loc.T("ВОЕННАЯ ДОКТРИНА"),
             _ => "?"
         };
         public static string Icon(TechCategory c) => c switch
@@ -260,229 +260,229 @@ namespace StellarisClone.Core
             // ======================= ФИЗИКА =======================
 
             // --- ЭНЕРГЕТИКА ---
-            Add("rct_fus_1", "Термоядерные реакторы I", TechCategory.Reactor,
-                "+4 Гелия-3 в месяц. Открывает термоядерный реактор кораблей.", 0, 0, 70f, null, Y0, "rct_fus_1");
-            Add("rct_fus_2", "Термоядерные реакторы II", TechCategory.Reactor,
-                "+8 Гелия-3 в месяц.", 1, 0, 120f, new[]{"rct_fus_1"}, Y1, "rct_fus_2");
-            Add("rct_ant_1", "Антиматерия", TechCategory.Reactor,
-                "+12 Гелия-3 в месяц. Открывает реактор на антиматерии.", 2, 0, 200f, new[]{"rct_fus_2"}, Y2, "rct_ant_1");
-            Add("rct_zpe_1", "Энергия нулевой точки", TechCategory.Reactor,
-                "+18 Гелия-3 в месяц.", 3, 0, 220f, new[]{"rct_ant_1"}, Y3, "rct_zpe_1");
-            Add("rct_sc_1", "Сверхпроводники", TechCategory.Reactor,
-                "+10% щитов, +3 Гелия-3 в месяц.", 1, 1, 110f, new[]{"rct_fus_1"}, Y1, "rct_sc_1");
+            Add("rct_fus_1", Loc.T("Термоядерные реакторы I"), TechCategory.Reactor,
+                Loc.T("+4 Гелия-3 в месяц. Открывает термоядерный реактор кораблей."), 0, 0, 70f, null, Y0, "rct_fus_1");
+            Add("rct_fus_2", Loc.T("Термоядерные реакторы II"), TechCategory.Reactor,
+                Loc.T("+8 Гелия-3 в месяц."), 1, 0, 120f, new[]{"rct_fus_1"}, Y1, "rct_fus_2");
+            Add("rct_ant_1", Loc.T("Антиматерия"), TechCategory.Reactor,
+                Loc.T("+12 Гелия-3 в месяц. Открывает реактор на антиматерии."), 2, 0, 200f, new[]{"rct_fus_2"}, Y2, "rct_ant_1");
+            Add("rct_zpe_1", Loc.T("Энергия нулевой точки"), TechCategory.Reactor,
+                Loc.T("+18 Гелия-3 в месяц."), 3, 0, 220f, new[]{"rct_ant_1"}, Y3, "rct_zpe_1");
+            Add("rct_sc_1", Loc.T("Сверхпроводники"), TechCategory.Reactor,
+                Loc.T("+10% щитов, +3 Гелия-3 в месяц."), 1, 1, 110f, new[]{"rct_fus_1"}, Y1, "rct_sc_1");
 
             // --- СЕНСОРЫ И ИИ ---
-            Add("sen_bas_1", "Сенсорные массивы", TechCategory.Sensors,
-                "+5 точности орудий, +20% скорости разведки систем.", 0, 0, 50f, null, Y0, "sen_bas_1");
-            Add("sen_grv_1", "Гравиметрия", TechCategory.Sensors,
-                "+5 точности орудий, +20% скорости разведки систем.", 1, 0, 100f, new[]{"sen_bas_1"}, Y1, "sen_grv_1");
-            Add("sen_tac_1", "Тактические вычислители", TechCategory.Sensors,
-                "+10 точности орудий.", 2, 0, 160f, new[]{"sen_grv_1"}, Y2, "sen_tac_1");
-            Add("sen_ai_1", "Простейший ИИ", TechCategory.Sensors,
-                "+1 слот исследования.", 1, 1, 100f, new[]{"sen_bas_1"}, Y1, "slot+1");
-            Add("sen_ai_2", "Продвинутый ИИ", TechCategory.Sensors,
-                "+1 слот исследования.", 2, 1, 180f, new[]{"sen_ai_1"}, Y2, "slot+1");
-            Add("sen_qc_1", "Квантовые вычисления", TechCategory.Sensors,
-                "+20% скорости исследований.", 3, 1, 200f, new[]{"sen_ai_2"}, Y3, "sen_qc_1");
+            Add("sen_bas_1", Loc.T("Сенсорные массивы"), TechCategory.Sensors,
+                Loc.T("+5 точности орудий, +20% скорости разведки систем."), 0, 0, 50f, null, Y0, "sen_bas_1");
+            Add("sen_grv_1", Loc.T("Гравиметрия"), TechCategory.Sensors,
+                Loc.T("+5 точности орудий, +20% скорости разведки систем."), 1, 0, 100f, new[]{"sen_bas_1"}, Y1, "sen_grv_1");
+            Add("sen_tac_1", Loc.T("Тактические вычислители"), TechCategory.Sensors,
+                Loc.T("+10 точности орудий."), 2, 0, 160f, new[]{"sen_grv_1"}, Y2, "sen_tac_1");
+            Add("sen_ai_1", Loc.T("Простейший ИИ"), TechCategory.Sensors,
+                Loc.T("+1 слот исследования."), 1, 1, 100f, new[]{"sen_bas_1"}, Y1, "slot+1");
+            Add("sen_ai_2", Loc.T("Продвинутый ИИ"), TechCategory.Sensors,
+                Loc.T("+1 слот исследования."), 2, 1, 180f, new[]{"sen_ai_1"}, Y2, "slot+1");
+            Add("sen_qc_1", Loc.T("Квантовые вычисления"), TechCategory.Sensors,
+                Loc.T("+20% скорости исследований."), 3, 1, 200f, new[]{"sen_ai_2"}, Y3, "sen_qc_1");
 
             // --- ДВИГАТЕЛИ ---
-            Add("prp_hyp_1", "Гипердвигатели I", TechCategory.Propulsion,
-                "+15% скорости гиперпрыжков.", 0, 0, 70f, null, Y0, "prp_hyp_1");
-            Add("prp_hyp_2", "Гипердвигатели II", TechCategory.Propulsion,
-                "+20% скорости гиперпрыжков (итого +35%).", 1, 0, 120f, new[]{"prp_hyp_1"}, Y1, "prp_hyp_2");
-            Add("prp_fld_1", "Складки пространства", TechCategory.Propulsion,
-                "+25% скорости гиперпрыжков (итого +60%).", 2, 0, 170f, new[]{"prp_hyp_2"}, Y2, "prp_fld_1");
-            Add("prp_eng_1", "Импульсные двигатели", TechCategory.Propulsion,
-                "+10% уклонения кораблей. Открывает модуль «Импульсный двигатель».", 0, 1, 60f, null, Y0, "prp_eng_1");
-            Add("prp_ion_1", "Ионные маневровые", TechCategory.Propulsion,
-                "+10% уклонения кораблей.", 1, 1, 100f, new[]{"prp_eng_1"}, Y1, "prp_ion_1");
-            Add("prp_inr_1", "Инерционные компенсаторы", TechCategory.Propulsion,
-                "+15% уклонения кораблей.", 2, 1, 160f, new[]{"prp_ion_1"}, Y2, "prp_inr_1");
+            Add("prp_hyp_1", Loc.T("Гипердвигатели I"), TechCategory.Propulsion,
+                Loc.T("+15% скорости гиперпрыжков."), 0, 0, 70f, null, Y0, "prp_hyp_1");
+            Add("prp_hyp_2", Loc.T("Гипердвигатели II"), TechCategory.Propulsion,
+                Loc.T("+20% скорости гиперпрыжков (итого +35%)."), 1, 0, 120f, new[]{"prp_hyp_1"}, Y1, "prp_hyp_2");
+            Add("prp_fld_1", Loc.T("Складки пространства"), TechCategory.Propulsion,
+                Loc.T("+25% скорости гиперпрыжков (итого +60%)."), 2, 0, 170f, new[]{"prp_hyp_2"}, Y2, "prp_fld_1");
+            Add("prp_eng_1", Loc.T("Импульсные двигатели"), TechCategory.Propulsion,
+                Loc.T("+10% уклонения кораблей. Открывает модуль «Импульсный двигатель»."), 0, 1, 60f, null, Y0, "prp_eng_1");
+            Add("prp_ion_1", Loc.T("Ионные маневровые"), TechCategory.Propulsion,
+                Loc.T("+10% уклонения кораблей."), 1, 1, 100f, new[]{"prp_eng_1"}, Y1, "prp_ion_1");
+            Add("prp_inr_1", Loc.T("Инерционные компенсаторы"), TechCategory.Propulsion,
+                Loc.T("+15% уклонения кораблей."), 2, 1, 160f, new[]{"prp_ion_1"}, Y2, "prp_inr_1");
 
             // ======================= ОБЩЕСТВО =======================
 
             // --- НАУКА И УПРАВЛЕНИЕ ---
-            Add("soc_admin_1", "Административные системы", TechCategory.Society,
-                "+1 слот исследования.", 0, 0, 100f, null, Y0, "slot+1");
-            Add("soc_admin_2", "Бюрократическая реформа", TechCategory.Society,
-                "+1 слот исследования.", 1, 0, 180f, new[]{"soc_admin_1"}, Y1, "slot+1");
-            Add("soc_sci_1", "Научные институты", TechCategory.Society,
-                "+15% скорости исследований.", 0, 1, 90f, null, Y0, "soc_sci_1");
-            Add("soc_sci_2", "Нейросетевое планирование", TechCategory.Society,
-                "+25% скорости исследований.", 1, 1, 150f, new[]{"soc_sci_1"}, Y1, "soc_sci_2");
-            Add("soc_sci_3", "Академия Звёздного Совета", TechCategory.Society,
-                "+20% скорости исследований.", 2, 1, 170f, new[]{"soc_sci_2"}, Y2, "soc_sci_3");
-            Add("soc_sci_4", "Коллективный разум", TechCategory.Society,
-                "+30% скорости исследований.", 3, 1, 240f, new[]{"soc_sci_3", "sen_ai_2"}, Y3, "soc_sci_4");
+            Add("soc_admin_1", Loc.T("Административные системы"), TechCategory.Society,
+                Loc.T("+1 слот исследования."), 0, 0, 100f, null, Y0, "slot+1");
+            Add("soc_admin_2", Loc.T("Бюрократическая реформа"), TechCategory.Society,
+                Loc.T("+1 слот исследования."), 1, 0, 180f, new[]{"soc_admin_1"}, Y1, "slot+1");
+            Add("soc_sci_1", Loc.T("Научные институты"), TechCategory.Society,
+                Loc.T("+15% скорости исследований."), 0, 1, 90f, null, Y0, "soc_sci_1");
+            Add("soc_sci_2", Loc.T("Нейросетевое планирование"), TechCategory.Society,
+                Loc.T("+25% скорости исследований."), 1, 1, 150f, new[]{"soc_sci_1"}, Y1, "soc_sci_2");
+            Add("soc_sci_3", Loc.T("Академия Звёздного Совета"), TechCategory.Society,
+                Loc.T("+20% скорости исследований."), 2, 1, 170f, new[]{"soc_sci_2"}, Y2, "soc_sci_3");
+            Add("soc_sci_4", Loc.T("Коллективный разум"), TechCategory.Society,
+                Loc.T("+30% скорости исследований."), 3, 1, 240f, new[]{"soc_sci_3", "sen_ai_2"}, Y3, "soc_sci_4");
 
             // --- ЭКСПАНСИЯ ---
-            Add("soc_geo_1", "Звёздная геодезия", TechCategory.Colonization,
-                "+35% скорости разведки систем.", 0, 0, 100f, null, Y0, "soc_geo_1");
-            Add("col_xgeo_1", "Ксеногеология", TechCategory.Colonization,
-                "+15% добычи титана, +15% скорости разведки систем.", 1, 0, 110f, new[]{"soc_geo_1"}, Y1, "col_xgeo_1");
-            Add("col_hab_1", "Орбитальные поселения", TechCategory.Colonization,
-                "+10% добычи титана, +10% производства сплавов.", 2, 0, 180f, new[]{"col_xgeo_1"}, Y2, "col_hab_1");
-            Add("cns_col_1", "Колониальный устав", TechCategory.Colonization,
-                "-10 Влияния на форпосты.", 0, 1, 70f, null, Y0, "cns_col_1");
-            Add("col_frt_1", "Пограничные протоколы", TechCategory.Colonization,
-                "-5 Влияния на форпосты, +10% скорости гиперпрыжков.", 1, 1, 100f, new[]{"cns_col_1"}, Y1, "col_frt_1");
+            Add("soc_geo_1", Loc.T("Звёздная геодезия"), TechCategory.Colonization,
+                Loc.T("+35% скорости разведки систем."), 0, 0, 100f, null, Y0, "soc_geo_1");
+            Add("col_xgeo_1", Loc.T("Ксеногеология"), TechCategory.Colonization,
+                Loc.T("+15% добычи титана, +15% скорости разведки систем."), 1, 0, 110f, new[]{"soc_geo_1"}, Y1, "col_xgeo_1");
+            Add("col_hab_1", Loc.T("Орбитальные поселения"), TechCategory.Colonization,
+                Loc.T("+10% добычи титана, +10% производства сплавов."), 2, 0, 180f, new[]{"col_xgeo_1"}, Y2, "col_hab_1");
+            Add("cns_col_1", Loc.T("Колониальный устав"), TechCategory.Colonization,
+                Loc.T("-10 Влияния на форпосты."), 0, 1, 70f, null, Y0, "cns_col_1");
+            Add("col_frt_1", Loc.T("Пограничные протоколы"), TechCategory.Colonization,
+                Loc.T("-5 Влияния на форпосты, +10% скорости гиперпрыжков."), 1, 1, 100f, new[]{"cns_col_1"}, Y1, "col_frt_1");
 
             // --- ВОЕННАЯ ДОКТРИНА ---
-            Add("doc_flt_1", "Флотская доктрина", TechCategory.Doctrine,
-                "+5 точности орудий, +5% уклонения кораблей.", 0, 0, 60f, null, Y0, "doc_flt_1");
-            Add("doc_drl_1", "Учения флота", TechCategory.Doctrine,
-                "+10% урона всего оружия.", 1, 0, 110f, new[]{"doc_flt_1"}, Y1, "doc_drl_1");
-            Add("doc_net_1", "Командная сеть", TechCategory.Doctrine,
-                "+10% урона всего оружия, +5 точности орудий.", 2, 0, 170f, new[]{"doc_drl_1"}, Y2, "doc_net_1");
-            Add("doc_log_1", "Военная логистика", TechCategory.Doctrine,
-                "-5% стоимости кораблей в сплавах, +10% скорости гиперпрыжков.", 1, 1, 100f, new[]{"doc_flt_1"}, Y1, "doc_log_1");
+            Add("doc_flt_1", Loc.T("Флотская доктрина"), TechCategory.Doctrine,
+                Loc.T("+5 точности орудий, +5% уклонения кораблей."), 0, 0, 60f, null, Y0, "doc_flt_1");
+            Add("doc_drl_1", Loc.T("Учения флота"), TechCategory.Doctrine,
+                Loc.T("+10% урона всего оружия."), 1, 0, 110f, new[]{"doc_flt_1"}, Y1, "doc_drl_1");
+            Add("doc_net_1", Loc.T("Командная сеть"), TechCategory.Doctrine,
+                Loc.T("+10% урона всего оружия, +5 точности орудий."), 2, 0, 170f, new[]{"doc_drl_1"}, Y2, "doc_net_1");
+            Add("doc_log_1", Loc.T("Военная логистика"), TechCategory.Doctrine,
+                Loc.T("-5% стоимости кораблей в сплавах, +10% скорости гиперпрыжков."), 1, 1, 100f, new[]{"doc_flt_1"}, Y1, "doc_log_1");
 
             // ======================= ИНЖЕНЕРИЯ =======================
 
             // --- ОРУЖИЕ ---
-            Add("wpn_kin_1", "Кинетические орудия I", TechCategory.Weapons,
-                "Базовые рельсовые пушки. +10% урона кинетического оружия.", 0, 0, 60f, null, Y0, "weap_kin_1");
-            Add("wpn_kin_2", "Кинетические орудия II", TechCategory.Weapons,
-                "Улучшенные рельсы. +15% урона кинетического оружия. Открывает рельсотрон.", 1, 0, 90f, new[]{"wpn_kin_1"}, Y1, "weap_kin_2");
-            Add("wpn_kin_3", "Масс-драйверы", TechCategory.Weapons,
-                "+20% урона кинетического оружия.", 2, 0, 160f, new[]{"wpn_kin_2"}, Y2, "weap_kin_3");
-            Add("wpn_las_1", "Лазерные батареи I", TechCategory.Weapons,
-                "Первые лазеры. +10% урона энергооружия, +5 точности.", 0, 1, 70f, null, Y0, "weap_las_1");
-            Add("wpn_las_2", "Лазерные батареи II", TechCategory.Weapons,
-                "Улучшенные лазеры. +15% урона энергооружия, +5 точности. Открывает синий лазер.", 1, 1, 100f, new[]{"wpn_las_1"}, Y1, "weap_las_2");
-            Add("wpn_las_3", "Рентгеновские лазеры", TechCategory.Weapons,
-                "+20% урона энергооружия, +5 точности.", 2, 1, 170f, new[]{"wpn_las_2"}, Y2, "weap_las_3");
-            Add("wpn_pls_1", "Плазменные орудия", TechCategory.Weapons,
-                "Разряд плазмы. +20% урона всего оружия. Открывает плазменную пушку и торпеды.", 2, 2, 140f, new[]{"wpn_kin_2","wpn_las_2"}, Y2, "weap_pls_1");
-            Add("wpn_lnc_1", "Лэнс-орудия", TechCategory.Weapons,
-                "+25% урона всего оружия.", 3, 2, 240f, new[]{"wpn_pls_1"}, Y3, "weap_lnc_1");
+            Add("wpn_kin_1", Loc.T("Кинетические орудия I"), TechCategory.Weapons,
+                Loc.T("Базовые рельсовые пушки. +10% урона кинетического оружия."), 0, 0, 60f, null, Y0, "weap_kin_1");
+            Add("wpn_kin_2", Loc.T("Кинетические орудия II"), TechCategory.Weapons,
+                Loc.T("Улучшенные рельсы. +15% урона кинетического оружия. Открывает рельсотрон."), 1, 0, 90f, new[]{"wpn_kin_1"}, Y1, "weap_kin_2");
+            Add("wpn_kin_3", Loc.T("Масс-драйверы"), TechCategory.Weapons,
+                Loc.T("+20% урона кинетического оружия."), 2, 0, 160f, new[]{"wpn_kin_2"}, Y2, "weap_kin_3");
+            Add("wpn_las_1", Loc.T("Лазерные батареи I"), TechCategory.Weapons,
+                Loc.T("Первые лазеры. +10% урона энергооружия, +5 точности."), 0, 1, 70f, null, Y0, "weap_las_1");
+            Add("wpn_las_2", Loc.T("Лазерные батареи II"), TechCategory.Weapons,
+                Loc.T("Улучшенные лазеры. +15% урона энергооружия, +5 точности. Открывает синий лазер."), 1, 1, 100f, new[]{"wpn_las_1"}, Y1, "weap_las_2");
+            Add("wpn_las_3", Loc.T("Рентгеновские лазеры"), TechCategory.Weapons,
+                Loc.T("+20% урона энергооружия, +5 точности."), 2, 1, 170f, new[]{"wpn_las_2"}, Y2, "weap_las_3");
+            Add("wpn_pls_1", Loc.T("Плазменные орудия"), TechCategory.Weapons,
+                Loc.T("Разряд плазмы. +20% урона всего оружия. Открывает плазменную пушку и торпеды."), 2, 2, 140f, new[]{"wpn_kin_2","wpn_las_2"}, Y2, "weap_pls_1");
+            Add("wpn_lnc_1", Loc.T("Лэнс-орудия"), TechCategory.Weapons,
+                Loc.T("+25% урона всего оружия."), 3, 2, 240f, new[]{"wpn_pls_1"}, Y3, "weap_lnc_1");
 
             // --- ЗАЩИТА ---
-            Add("def_arm_1", "Титановая броня I", TechCategory.Defense,
-                "Базовая броня. +10% прочности корпуса и брони.", 0, 0, 60f, null, Y0, "def_arm_1");
-            Add("def_arm_2", "Титановая броня II", TechCategory.Defense,
-                "Усиленная броня. +15% прочности корпуса и брони. Открывает керамостальную броню.", 1, 0, 90f, new[]{"def_arm_1"}, Y1, "def_arm_2");
-            Add("def_arm_3", "Нейтрониевая броня", TechCategory.Defense,
-                "+20% прочности корпуса и брони.", 2, 0, 160f, new[]{"def_arm_2"}, Y2, "def_arm_3");
-            Add("def_aeg_1", "Протокол «Эгида»", TechCategory.Defense,
-                "+15% прочности корпуса, брони и щитов.", 3, 0, 230f, new[]{"def_arm_3","def_shl_3"}, Y3, "def_aeg_1");
-            Add("def_shl_1", "Энергощиты I", TechCategory.Defense,
-                "Первые щиты. +10% щитов.", 0, 1, 80f, null, Y0, "def_shl_1");
-            Add("def_shl_2", "Энергощиты II", TechCategory.Defense,
-                "Улучшенные щиты. +15% щитов. Открывает усиленный дефлектор.", 1, 1, 110f, new[]{"def_shl_1"}, Y1, "def_shl_2");
-            Add("def_shl_3", "Гиперщиты", TechCategory.Defense,
-                "+20% щитов.", 2, 1, 170f, new[]{"def_shl_2"}, Y2, "def_shl_3");
+            Add("def_arm_1", Loc.T("Титановая броня I"), TechCategory.Defense,
+                Loc.T("Базовая броня. +10% прочности корпуса и брони."), 0, 0, 60f, null, Y0, "def_arm_1");
+            Add("def_arm_2", Loc.T("Титановая броня II"), TechCategory.Defense,
+                Loc.T("Усиленная броня. +15% прочности корпуса и брони. Открывает керамостальную броню."), 1, 0, 90f, new[]{"def_arm_1"}, Y1, "def_arm_2");
+            Add("def_arm_3", Loc.T("Нейтрониевая броня"), TechCategory.Defense,
+                Loc.T("+20% прочности корпуса и брони."), 2, 0, 160f, new[]{"def_arm_2"}, Y2, "def_arm_3");
+            Add("def_aeg_1", Loc.T("Протокол «Эгида»"), TechCategory.Defense,
+                Loc.T("+15% прочности корпуса, брони и щитов."), 3, 0, 230f, new[]{"def_arm_3","def_shl_3"}, Y3, "def_aeg_1");
+            Add("def_shl_1", Loc.T("Энергощиты I"), TechCategory.Defense,
+                Loc.T("Первые щиты. +10% щитов."), 0, 1, 80f, null, Y0, "def_shl_1");
+            Add("def_shl_2", Loc.T("Энергощиты II"), TechCategory.Defense,
+                Loc.T("Улучшенные щиты. +15% щитов. Открывает усиленный дефлектор."), 1, 1, 110f, new[]{"def_shl_1"}, Y1, "def_shl_2");
+            Add("def_shl_3", Loc.T("Гиперщиты"), TechCategory.Defense,
+                Loc.T("+20% щитов."), 2, 1, 170f, new[]{"def_shl_2"}, Y2, "def_shl_3");
 
             // --- ПРОМЫШЛЕННОСТЬ ---
-            Add("ind_min_1", "Плазменные буры", TechCategory.Industry,
-                "+20% добычи титана.", 0, 0, 80f, null, Y0, "ind_min_1");
-            Add("ind_min_2", "Глубокое обогащение", TechCategory.Industry,
-                "+15% добычи титана (итого +35%).", 1, 0, 130f, new[]{"ind_min_1"}, Y1, "ind_min_2");
-            Add("ind_min_3", "Астероидные комбинаты", TechCategory.Industry,
-                "+20% добычи титана.", 2, 0, 170f, new[]{"ind_min_2"}, Y2, "ind_min_3");
-            Add("ind_all_1", "Сплавы нового поколения", TechCategory.Industry,
-                "+20% производства сплавов.", 0, 1, 80f, null, Y0, "ind_all_1");
-            Add("ind_all_2", "Нанофабрикация", TechCategory.Industry,
-                "+15% производства сплавов.", 1, 1, 120f, new[]{"ind_all_1"}, Y1, "ind_all_2");
-            Add("ind_all_3", "Автоматические кузни", TechCategory.Industry,
-                "+20% производства сплавов.", 2, 1, 180f, new[]{"ind_all_2"}, Y2, "ind_all_3");
-            Add("ind_meg_1", "Мегаинженерия", TechCategory.Industry,
-                "+25% производства сплавов, +15% добычи титана.", 3, 1, 250f, new[]{"ind_all_3","ind_min_3"}, Y3, "ind_meg_1");
+            Add("ind_min_1", Loc.T("Плазменные буры"), TechCategory.Industry,
+                Loc.T("+20% добычи титана."), 0, 0, 80f, null, Y0, "ind_min_1");
+            Add("ind_min_2", Loc.T("Глубокое обогащение"), TechCategory.Industry,
+                Loc.T("+15% добычи титана (итого +35%)."), 1, 0, 130f, new[]{"ind_min_1"}, Y1, "ind_min_2");
+            Add("ind_min_3", Loc.T("Астероидные комбинаты"), TechCategory.Industry,
+                Loc.T("+20% добычи титана."), 2, 0, 170f, new[]{"ind_min_2"}, Y2, "ind_min_3");
+            Add("ind_all_1", Loc.T("Сплавы нового поколения"), TechCategory.Industry,
+                Loc.T("+20% производства сплавов."), 0, 1, 80f, null, Y0, "ind_all_1");
+            Add("ind_all_2", Loc.T("Нанофабрикация"), TechCategory.Industry,
+                Loc.T("+15% производства сплавов."), 1, 1, 120f, new[]{"ind_all_1"}, Y1, "ind_all_2");
+            Add("ind_all_3", Loc.T("Автоматические кузни"), TechCategory.Industry,
+                Loc.T("+20% производства сплавов."), 2, 1, 180f, new[]{"ind_all_2"}, Y2, "ind_all_3");
+            Add("ind_meg_1", Loc.T("Мегаинженерия"), TechCategory.Industry,
+                Loc.T("+25% производства сплавов, +15% добычи титана."), 3, 1, 250f, new[]{"ind_all_3","ind_min_3"}, Y3, "ind_meg_1");
 
             // --- ВЕРФИ ---
-            Add("cns_sta_1", "Орбитальные верфи", TechCategory.Construction,
-                "-20% стоимости кораблей в сплавах.", 0, 0, 90f, null, Y0, "cns_sta_1");
-            Add("cns_dst_1", "Верфи класса «Эсминец»", TechCategory.Construction,
-                "Открывает постройку эсминцев.", 1, 0, 150f, new[]{"cns_sta_1"}, Y1, "cns_dst_1");
-            Add("cns_dck_1", "Орбитальные доки", TechCategory.Construction,
-                "-10% стоимости кораблей в сплавах.", 2, 0, 160f, new[]{"cns_dst_1"}, Y2, "cns_dck_1");
-            Add("cns_mod_1", "Модульное строительство", TechCategory.Construction,
-                "-8% стоимости кораблей в сплавах.", 1, 1, 110f, new[]{"cns_sta_1"}, Y1, "cns_mod_1");
+            Add("cns_sta_1", Loc.T("Орбитальные верфи"), TechCategory.Construction,
+                Loc.T("-20% стоимости кораблей в сплавах."), 0, 0, 90f, null, Y0, "cns_sta_1");
+            Add("cns_dst_1", Loc.T("Верфи класса «Эсминец»"), TechCategory.Construction,
+                Loc.T("Открывает постройку эсминцев."), 1, 0, 150f, new[]{"cns_sta_1"}, Y1, "cns_dst_1");
+            Add("cns_dck_1", Loc.T("Орбитальные доки"), TechCategory.Construction,
+                Loc.T("-10% стоимости кораблей в сплавах."), 2, 0, 160f, new[]{"cns_dst_1"}, Y2, "cns_dck_1");
+            Add("cns_mod_1", Loc.T("Модульное строительство"), TechCategory.Construction,
+                Loc.T("-8% стоимости кораблей в сплавах."), 1, 1, 110f, new[]{"cns_sta_1"}, Y1, "cns_mod_1");
 
             // ======================= НОВЫЕ ТЕХНОЛОГИИ (позднее дерево и шпионаж) =======================
 
             // --- Энергетика ---
-            Add("rct_mag_1", "Магнитные ловушки", TechCategory.Reactor,
-                "+10% добычи Гелия-3.", 2, 1, 150f, new[]{"rct_sc_1"}, Y2, "rct_mag_1");
-            Add("rct_dys_1", "Сфера Дайсона", TechCategory.Reactor,
-                "+10 Гелия-3 в месяц и +10% добычи Гелия-3.", 3, 1, 240f, new[]{"rct_mag_1","rct_ant_1"}, Y3, "rct_dys_1");
-            Add("rct_vac_1", "Энергия вакуума", TechCategory.Reactor,
-                "+25 Гелия-3 в месяц.", 4, 0, 280f, new[]{"rct_zpe_1"}, Y4, "rct_vac_1");
+            Add("rct_mag_1", Loc.T("Магнитные ловушки"), TechCategory.Reactor,
+                Loc.T("+10% добычи Гелия-3."), 2, 1, 150f, new[]{"rct_sc_1"}, Y2, "rct_mag_1");
+            Add("rct_dys_1", Loc.T("Сфера Дайсона"), TechCategory.Reactor,
+                Loc.T("+10 Гелия-3 в месяц и +10% добычи Гелия-3."), 3, 1, 240f, new[]{"rct_mag_1","rct_ant_1"}, Y3, "rct_dys_1");
+            Add("rct_vac_1", Loc.T("Энергия вакуума"), TechCategory.Reactor,
+                Loc.T("+25 Гелия-3 в месяц."), 4, 0, 280f, new[]{"rct_zpe_1"}, Y4, "rct_vac_1");
 
             // --- Сенсоры и ИИ: линия тайных операций ---
-            Add("sen_crp_1", "Криптография", TechCategory.Sensors,
-                "+8% к защите от чужих агентов: шанс сорвать и раскрыть тайную операцию.", 0, 2, 60f, null, Y0, "sen_crp_1");
-            Add("sen_net_1", "Агентурные сети", TechCategory.Sensors,
-                "+8% к шансу успеха ваших тайных операций.", 1, 2, 100f, new[]{"sen_crp_1"}, Y1, "sen_net_1");
-            Add("sen_enc_1", "Квантовое шифрование", TechCategory.Sensors,
-                "+10% к защите от чужих агентов.", 2, 2, 160f, new[]{"sen_net_1"}, Y2, "sen_enc_1");
-            Add("sen_dep_1", "Глубокое внедрение", TechCategory.Sensors,
-                "+10% к шансу успеха тайных операций, агенты внедряются в полтора раза быстрее.", 3, 2, 220f, new[]{"sen_enc_1"}, Y3, "sen_dep_1");
-            Add("sen_sng_1", "Сингулярный разум", TechCategory.Sensors,
-                "+25% скорости исследований.", 4, 1, 300f, new[]{"sen_qc_1"}, Y4, "sen_sng_1");
+            Add("sen_crp_1", Loc.T("Криптография"), TechCategory.Sensors,
+                Loc.T("+8% к защите от чужих агентов: шанс сорвать и раскрыть тайную операцию."), 0, 2, 60f, null, Y0, "sen_crp_1");
+            Add("sen_net_1", Loc.T("Агентурные сети"), TechCategory.Sensors,
+                Loc.T("+8% к шансу успеха ваших тайных операций."), 1, 2, 100f, new[]{"sen_crp_1"}, Y1, "sen_net_1");
+            Add("sen_enc_1", Loc.T("Квантовое шифрование"), TechCategory.Sensors,
+                Loc.T("+10% к защите от чужих агентов."), 2, 2, 160f, new[]{"sen_net_1"}, Y2, "sen_enc_1");
+            Add("sen_dep_1", Loc.T("Глубокое внедрение"), TechCategory.Sensors,
+                Loc.T("+10% к шансу успеха тайных операций, агенты внедряются в полтора раза быстрее."), 3, 2, 220f, new[]{"sen_enc_1"}, Y3, "sen_dep_1");
+            Add("sen_sng_1", Loc.T("Сингулярный разум"), TechCategory.Sensors,
+                Loc.T("+25% скорости исследований."), 4, 1, 300f, new[]{"sen_qc_1"}, Y4, "sen_sng_1");
 
             // --- Двигатели ---
-            Add("prp_slp_1", "Подпространственные туннели", TechCategory.Propulsion,
-                "+25% скорости гиперпрыжков.", 3, 0, 230f, new[]{"prp_fld_1"}, Y3, "prp_slp_1");
-            Add("prp_wrm_1", "Червоточинные коридоры", TechCategory.Propulsion,
-                "+30% скорости гиперпрыжков.", 4, 0, 300f, new[]{"prp_slp_1"}, Y4, "prp_wrm_1");
+            Add("prp_slp_1", Loc.T("Подпространственные туннели"), TechCategory.Propulsion,
+                Loc.T("+25% скорости гиперпрыжков."), 3, 0, 230f, new[]{"prp_fld_1"}, Y3, "prp_slp_1");
+            Add("prp_wrm_1", Loc.T("Червоточинные коридоры"), TechCategory.Propulsion,
+                Loc.T("+30% скорости гиперпрыжков."), 4, 0, 300f, new[]{"prp_slp_1"}, Y4, "prp_wrm_1");
 
             // --- Наука и управление ---
-            Add("soc_inf_1", "Дипломатическая служба", TechCategory.Society,
-                "+1 Влияния в месяц.", 1, 2, 110f, new[]{"soc_sci_1"}, Y1, "soc_inf_1");
-            Add("soc_inf_2", "Культурная гегемония", TechCategory.Society,
-                "+1,5 Влияния в месяц.", 2, 2, 170f, new[]{"soc_inf_1"}, Y2, "soc_inf_2");
-            Add("soc_inf_3", "Галактический авторитет", TechCategory.Society,
-                "+2 Влияния в месяц.", 3, 2, 230f, new[]{"soc_inf_2"}, Y3, "soc_inf_3");
-            Add("soc_asc_1", "Проект «Вознесение»", TechCategory.Society,
-                "+30% скорости исследований. Венец науки: без этого проекта технологическая победа невозможна.", 4, 1, 320f,
+            Add("soc_inf_1", Loc.T("Дипломатическая служба"), TechCategory.Society,
+                Loc.T("+1 Влияния в месяц."), 1, 2, 110f, new[]{"soc_sci_1"}, Y1, "soc_inf_1");
+            Add("soc_inf_2", Loc.T("Культурная гегемония"), TechCategory.Society,
+                Loc.T("+1,5 Влияния в месяц."), 2, 2, 170f, new[]{"soc_inf_1"}, Y2, "soc_inf_2");
+            Add("soc_inf_3", Loc.T("Галактический авторитет"), TechCategory.Society,
+                Loc.T("+2 Влияния в месяц."), 3, 2, 230f, new[]{"soc_inf_2"}, Y3, "soc_inf_3");
+            Add("soc_asc_1", Loc.T("Проект «Вознесение»"), TechCategory.Society,
+                Loc.T("+30% скорости исследований. Венец науки: без этого проекта технологическая победа невозможна."), 4, 1, 320f,
                 new[]{"soc_sci_4","sen_sng_1"}, Y4, "soc_asc_1");
 
             // --- Экспансия ---
-            Add("col_gro_1", "Гидропоника", TechCategory.Colonization,
-                "+25% скорости роста населения.", 2, 1, 160f, new[]{"col_frt_1"}, Y2, "col_gro_1");
-            Add("col_gro_2", "Биоинженерия", TechCategory.Colonization,
-                "+35% скорости роста населения.", 3, 1, 220f, new[]{"col_gro_1"}, Y3, "col_gro_2");
-            Add("col_arc_1", "Археотехнология", TechCategory.Colonization,
-                "+50% к бонусам узлов силы под вашим контролем.", 3, 0, 220f, new[]{"col_hab_1"}, Y3, "col_arc_1");
+            Add("col_gro_1", Loc.T("Гидропоника"), TechCategory.Colonization,
+                Loc.T("+25% скорости роста населения."), 2, 1, 160f, new[]{"col_frt_1"}, Y2, "col_gro_1");
+            Add("col_gro_2", Loc.T("Биоинженерия"), TechCategory.Colonization,
+                Loc.T("+35% скорости роста населения."), 3, 1, 220f, new[]{"col_gro_1"}, Y3, "col_gro_2");
+            Add("col_arc_1", Loc.T("Археотехнология"), TechCategory.Colonization,
+                Loc.T("+50% к бонусам узлов силы под вашим контролем."), 3, 0, 220f, new[]{"col_hab_1"}, Y3, "col_arc_1");
 
             // --- Военная доктрина ---
-            Add("doc_cap_1", "Эскадренная организация", TechCategory.Doctrine,
-                "+4 места во флотском лимите.", 2, 1, 150f, new[]{"doc_log_1"}, Y2, "doc_cap_1");
-            Add("doc_cmd_1", "Корабельные уставы", TechCategory.Doctrine,
-                "-10% содержания военных кораблей.", 3, 1, 210f, new[]{"doc_cap_1"}, Y3, "doc_cmd_1");
-            Add("doc_war_1", "Тотальная мобилизация", TechCategory.Doctrine,
-                "+15% урона всего оружия.", 3, 0, 230f, new[]{"doc_net_1"}, Y3, "doc_war_1");
-            Add("doc_cap_2", "Тыловое обеспечение", TechCategory.Doctrine,
-                "+6 мест во флотском лимите, -15% содержания военных кораблей.", 4, 1, 270f, new[]{"doc_cmd_1"}, Y4, "doc_cap_2");
-            Add("doc_ult_1", "Доктрина Господства", TechCategory.Doctrine,
-                "+20% урона всего оружия.", 4, 0, 290f, new[]{"doc_war_1"}, Y4, "doc_ult_1");
+            Add("doc_cap_1", Loc.T("Эскадренная организация"), TechCategory.Doctrine,
+                Loc.T("+4 места во флотском лимите."), 2, 1, 150f, new[]{"doc_log_1"}, Y2, "doc_cap_1");
+            Add("doc_cmd_1", Loc.T("Корабельные уставы"), TechCategory.Doctrine,
+                Loc.T("-10% содержания военных кораблей."), 3, 1, 210f, new[]{"doc_cap_1"}, Y3, "doc_cmd_1");
+            Add("doc_war_1", Loc.T("Тотальная мобилизация"), TechCategory.Doctrine,
+                Loc.T("+15% урона всего оружия."), 3, 0, 230f, new[]{"doc_net_1"}, Y3, "doc_war_1");
+            Add("doc_cap_2", Loc.T("Тыловое обеспечение"), TechCategory.Doctrine,
+                Loc.T("+6 мест во флотском лимите, -15% содержания военных кораблей."), 4, 1, 270f, new[]{"doc_cmd_1"}, Y4, "doc_cap_2");
+            Add("doc_ult_1", Loc.T("Доктрина Господства"), TechCategory.Doctrine,
+                Loc.T("+20% урона всего оружия."), 4, 0, 290f, new[]{"doc_war_1"}, Y4, "doc_ult_1");
 
             // --- Оружие ---
-            Add("wpn_kin_4", "Гауссовы батареи", TechCategory.Weapons,
-                "+25% урона кинетического оружия.", 3, 0, 230f, new[]{"wpn_kin_3"}, Y3, "wpn_kin_4");
-            Add("wpn_las_4", "Фотонные лэнсы", TechCategory.Weapons,
-                "+25% урона энергооружия, +5 точности.", 3, 1, 230f, new[]{"wpn_las_3"}, Y3, "wpn_las_4");
-            Add("wpn_ult_1", "Аннигиляторы", TechCategory.Weapons,
-                "+25% урона всего оружия.", 4, 2, 300f, new[]{"wpn_lnc_1"}, Y4, "wpn_ult_1");
+            Add("wpn_kin_4", Loc.T("Гауссовы батареи"), TechCategory.Weapons,
+                Loc.T("+25% урона кинетического оружия."), 3, 0, 230f, new[]{"wpn_kin_3"}, Y3, "wpn_kin_4");
+            Add("wpn_las_4", Loc.T("Фотонные лэнсы"), TechCategory.Weapons,
+                Loc.T("+25% урона энергооружия, +5 точности."), 3, 1, 230f, new[]{"wpn_las_3"}, Y3, "wpn_las_4");
+            Add("wpn_ult_1", Loc.T("Аннигиляторы"), TechCategory.Weapons,
+                Loc.T("+25% урона всего оружия."), 4, 2, 300f, new[]{"wpn_lnc_1"}, Y4, "wpn_ult_1");
 
             // --- Защита ---
-            Add("def_shl_4", "Планетарные щиты", TechCategory.Defense,
-                "+25% щитов.", 3, 1, 220f, new[]{"def_shl_3"}, Y3, "def_shl_4");
-            Add("def_bar_1", "Барьер Предтеч", TechCategory.Defense,
-                "+20% прочности корпуса, брони и щитов.", 4, 0, 290f, new[]{"def_aeg_1"}, Y4, "def_bar_1");
+            Add("def_shl_4", Loc.T("Планетарные щиты"), TechCategory.Defense,
+                Loc.T("+25% щитов."), 3, 1, 220f, new[]{"def_shl_3"}, Y3, "def_shl_4");
+            Add("def_bar_1", Loc.T("Барьер Предтеч"), TechCategory.Defense,
+                Loc.T("+20% прочности корпуса, брони и щитов."), 4, 0, 290f, new[]{"def_aeg_1"}, Y4, "def_bar_1");
 
             // --- Промышленность ---
-            Add("ind_rec_1", "Рециклинг", TechCategory.Industry,
-                "+10% добычи титана и производства сплавов.", 3, 0, 230f, new[]{"ind_min_3"}, Y3, "ind_rec_1");
-            Add("ind_sin_1", "Сингулярные кузни", TechCategory.Industry,
-                "+30% производства сплавов, +20% добычи титана.", 4, 1, 300f, new[]{"ind_meg_1"}, Y4, "ind_sin_1");
+            Add("ind_rec_1", Loc.T("Рециклинг"), TechCategory.Industry,
+                Loc.T("+10% добычи титана и производства сплавов."), 3, 0, 230f, new[]{"ind_min_3"}, Y3, "ind_rec_1");
+            Add("ind_sin_1", Loc.T("Сингулярные кузни"), TechCategory.Industry,
+                Loc.T("+30% производства сплавов, +20% добычи титана."), 4, 1, 300f, new[]{"ind_meg_1"}, Y4, "ind_sin_1");
 
             // --- Верфи ---
-            Add("cns_fort_1", "Звёздные крепости", TechCategory.Construction,
-                "+30% корпуса, брони и щитов звёздных баз.", 2, 1, 160f, new[]{"cns_mod_1"}, Y2, "cns_fort_1");
-            Add("cns_arc_1", "Автоматические верфи", TechCategory.Construction,
-                "-10% стоимости кораблей в сплавах.", 3, 0, 220f, new[]{"cns_dck_1"}, Y3, "cns_arc_1");
+            Add("cns_fort_1", Loc.T("Звёздные крепости"), TechCategory.Construction,
+                Loc.T("+30% корпуса, брони и щитов звёздных баз."), 2, 1, 160f, new[]{"cns_mod_1"}, Y2, "cns_fort_1");
+            Add("cns_arc_1", Loc.T("Автоматические верфи"), TechCategory.Construction,
+                Loc.T("-10% стоимости кораблей в сплавах."), 3, 0, 220f, new[]{"cns_dck_1"}, Y3, "cns_arc_1");
 
             return list;
         }
@@ -661,11 +661,11 @@ namespace StellarisClone.Core
         public static string FormatDays(int days)
         {
             if (days < 0) return "—";
-            if (days < 60) return $"{days} дн.";
+            if (days < 60) return Loc.F("{0} дн.", days);
             int months = Mathf.RoundToInt(days / 30f);
-            if (months < 12) return $"{months} мес.";
+            if (months < 12) return Loc.F("{0} мес.", months);
             int y = months / 12, m = months % 12;
-            return m == 0 ? $"{y} г." : $"{y} г. {m} мес.";
+            return m == 0 ? Loc.F("{0} г.", y) : Loc.F("{0} г. {1} мес.", y, m);
         }
 
         // ==================== ПРОГРЕСС ====================
@@ -677,7 +677,7 @@ namespace StellarisClone.Core
             if (_tempBoostDays > 0 && --_tempBoostDays == 0)
             {
                 TempBoost = 1f;
-                NotificationCenter.Show("Научный подъём завершён", "Скорость исследований вернулась к норме", NotificationCenter.Kind.Info, 4f);
+                NotificationCenter.Show(Loc.T("Научный подъём завершён"), Loc.T("Скорость исследований вернулась к норме"), NotificationCenter.Kind.Info, 4f);
             }
 
             bool bootstrapped = false;
@@ -741,7 +741,7 @@ namespace StellarisClone.Core
             slot.CurrentTech = null;
             slot.Progress = 0f;
 
-            NotificationCenter.Show("Технология изучена", tech.Name, NotificationCenter.Kind.Success, 5f);
+            NotificationCenter.Show(Loc.T("Технология изучена"), tech.Name, NotificationCenter.Kind.Success, 5f);
             Debug.Log($"<color=#3FE>[Наука] Изучено: {tech.Name}</color>");
         }
 

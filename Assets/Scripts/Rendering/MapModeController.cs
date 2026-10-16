@@ -99,12 +99,12 @@ namespace StellarisClone.Rendering
             var motion = LG.Motion(root, LGAppear.Kind.SlideUp);
             motion.distance = 16f;
 
-            CreateModeButton(root.transform, MapMode.Simple,     "★", "ПРОСТОЙ",  new Color(0.80f, 0.88f, 0.92f), 100f);
-            CreateModeButton(root.transform, MapMode.Political,  "◆", "ПОЛИТИКА", UIManager.DS.NeonCyan,  75f);
-            CreateModeButton(root.transform, MapMode.Resources,  "⬢", "РЕСУРСЫ",  UIManager.DS.Gold,      50f);
-            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", "КОРИДОРЫ", AccentOrange,           25f);
-            CreateModeButton(root.transform, MapMode.Explored,   "◉", "РАЗВЕДКА", UIManager.DS.Green,     0f);
-            CreateModeButton(root.transform, MapMode.Intel,      "✦", "ШПИОНАЖ",  SpyPurple,             -25f);
+            CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 100f);
+            CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  75f);
+            CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      50f);
+            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", Loc.T("КОРИДОРЫ"), AccentOrange,           25f);
+            CreateModeButton(root.transform, MapMode.Explored,   "◉", Loc.T("РАЗВЕДКА"), UIManager.DS.Green,     0f);
+            CreateModeButton(root.transform, MapMode.Intel,      "✦", Loc.T("ШПИОНАЖ"),  SpyPurple,             -25f);
         }
 
         /// <summary>Круглая кнопка режима на дуге вокруг мини-карты; angleDeg — угол от центра карты (0 — вправо, 90 — вверх).</summary>
@@ -162,12 +162,12 @@ namespace StellarisClone.Rendering
 
             string tip = mode switch
             {
-                MapMode.Simple     => "Простой режим — чистая карта: мягкий контур территорий, без названий империй, коридоры одного цвета",
-                MapMode.Political  => "Политический режим — яркие границы и заливка территорий, названия империй, коридоры цветом владельца",
-                MapMode.Resources  => "Режим ресурсов — сияние под изученными системами: чем больше, тем богаче; золото — гелий-3, бирюза — титан",
-                MapMode.Hyperlanes => "Режим коридоров — яркие толстые гиперкоридоры, оранжевые кольца — узлы с 4 и более коридорами",
-                MapMode.Explored   => "Режим разведки — зелёные кольца: системы изучены; янтарные: встречены, но не изучены — туда стоит отправить научный корабль",
-                MapMode.Intel      => "Режим шпионажа — кольцо вокруг звезды показывает силу вашей разведсети в системе (полный круг — 100 %), потоки — куда сеть расползается. В остальных режимах на карте видны только портреты агентов",
+                MapMode.Simple     => Loc.T("Простой режим — чистая карта: мягкий контур территорий, без названий империй, коридоры одного цвета"),
+                MapMode.Political  => Loc.T("Политический режим — яркие границы и заливка территорий, названия империй, коридоры цветом владельца"),
+                MapMode.Resources  => Loc.T("Режим ресурсов — сияние под изученными системами: чем больше, тем богаче; золото — гелий-3, бирюза — титан"),
+                MapMode.Hyperlanes => Loc.T("Режим коридоров — яркие толстые гиперкоридоры, оранжевые кольца — узлы с 4 и более коридорами"),
+                MapMode.Explored   => Loc.T("Режим разведки — зелёные кольца: системы изучены; янтарные: встречены, но не изучены — туда стоит отправить научный корабль"),
+                MapMode.Intel      => Loc.T("Режим шпионажа — кольцо вокруг звезды показывает силу вашей разведсети в системе (полный круг — 100 %), потоки — куда сеть расползается. В остальных режимах на карте видны только портреты агентов"),
                 _ => ""
             };
             TooltipHelper.Attach(btnObj, $"<b>{label}</b>\n{tip}");

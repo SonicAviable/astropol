@@ -124,18 +124,18 @@ namespace StellarisClone.Rendering
 
         private static string StarClassLabel(StarSpectralClass c) => c switch
         {
-            StarSpectralClass.BlackHole => "Дыра",
+            StarSpectralClass.BlackHole => Loc.T("Дыра"),
             _ => c.ToString().Replace("Class", "")
         };
 
         private static string StarClassHint(StarSpectralClass c) => c switch
         {
-            StarSpectralClass.ClassM => "красный карлик",
-            StarSpectralClass.ClassK => "оранжевая звезда",
-            StarSpectralClass.ClassG => "жёлтая звезда",
-            StarSpectralClass.ClassA => "белая звезда",
-            StarSpectralClass.ClassB => "голубой гигант",
-            _ => "чёрная дыра"
+            StarSpectralClass.ClassM => Loc.T("красный карлик"),
+            StarSpectralClass.ClassK => Loc.T("оранжевая звезда"),
+            StarSpectralClass.ClassG => Loc.T("жёлтая звезда"),
+            StarSpectralClass.ClassA => Loc.T("белая звезда"),
+            StarSpectralClass.ClassB => Loc.T("голубой гигант"),
+            _ => Loc.T("чёрная дыра")
         };
 
         private void BuildSystemCards(StarSystem system)
@@ -143,34 +143,34 @@ namespace StellarisClone.Rendering
             var cyan = DS.NeonCyan;
             InspChips(
                 (LGIcon.Star, StarClassLabel(system.SpectralClass), StarClassHint(system.SpectralClass), DS.Gold),
-                (LGIcon.Planet, system.Planets.Count.ToString(), "орбитальных тел", cyan),
-                (LGIcon.MapLanes, system.ConnectedSystemIds.Count.ToString(), "гиперкоридоров", new Color(0.62f, 0.78f, 1f)));
+                (LGIcon.Planet, system.Planets.Count.ToString(), Loc.T("орбитальных тел"), cyan),
+                (LGIcon.MapLanes, system.ConnectedSystemIds.Count.ToString(), Loc.T("гиперкоридоров"), new Color(0.62f, 0.78f, 1f)));
 
             // Ресурсы
-            InspSection("РЕСУРСЫ", LGIcon.Minerals);
+            InspSection(Loc.T("РЕСУРСЫ"), LGIcon.Minerals);
             if (system.IsSurveyed)
             {
                 system.RecalculateHarvest();
                 InspChips(
-                    (LGIcon.Minerals, $"{system.HarvestedMinerals} / {system.TotalMinerals}", "титан: добыча / всего", new Color(0.30f, 0.94f, 0.55f)),
-                    (LGIcon.Energy, $"{system.HarvestedEnergy} / {system.TotalEnergy}", "гелий-3: добыча / всего", new Color(1f, 0.80f, 0.32f)));
+                    (LGIcon.Minerals, $"{system.HarvestedMinerals} / {system.TotalMinerals}", Loc.T("титан: добыча / всего"), new Color(0.30f, 0.94f, 0.55f)),
+                    (LGIcon.Energy, $"{system.HarvestedEnergy} / {system.TotalEnergy}", Loc.T("гелий-3: добыча / всего"), new Color(1f, 0.80f, 0.32f)));
             }
-            else InspNote(LGIcon.Sensors, "Состав системы неизвестен — отправьте научный корабль", new Color(1f, 0.67f, 0.53f));
+            else InspNote(LGIcon.Sensors, Loc.T("Состав системы неизвестен — отправьте научный корабль"), new Color(1f, 0.67f, 0.53f));
 
             // Звёздная база
             var sb = CombatManager.Instance?.GetStarbase(system.Id);
             if (sb != null)
             {
-                InspSection("ЗВЁЗДНАЯ БАЗА", LGIcon.Starbase);
+                InspSection(Loc.T("ЗВЁЗДНАЯ БАЗА"), LGIcon.Starbase);
                 if (sb.Disabled)
-                    InspNote(LGIcon.Warning, $"Выведена из строя · ремонт {sb.Hull / Mathf.Max(1f, sb.MaxHull) * 100f:0}% из 50%", DS.Red);
-                InspBar(LGIcon.Ship, "Корпус", sb.Hull, sb.MaxHull, new Color(0.75f, 0.85f, 0.9f));
-                InspBar(LGIcon.ArmorPlate, "Броня", sb.Armor, sb.MaxArmor, new Color(0.88f, 0.78f, 0.62f));
-                InspBar(LGIcon.ShieldDome, "Щиты", sb.Shields, sb.MaxShields, new Color(0.45f, 0.76f, 1f));
+                    InspNote(LGIcon.Warning, Loc.F("Выведена из строя · ремонт {0:0}% из 50%", sb.Hull / Mathf.Max(1f, sb.MaxHull) * 100f), DS.Red);
+                InspBar(LGIcon.Ship, Loc.T("Корпус"), sb.Hull, sb.MaxHull, new Color(0.75f, 0.85f, 0.9f));
+                InspBar(LGIcon.ArmorPlate, Loc.T("Броня"), sb.Armor, sb.MaxArmor, new Color(0.88f, 0.78f, 0.62f));
+                InspBar(LGIcon.ShieldDome, Loc.T("Щиты"), sb.Shields, sb.MaxShields, new Color(0.45f, 0.76f, 1f));
                 float sbPower = CombatManager.Instance.StarbasePower(system.Id);
                 string inShips = CombatManager.PowerInShips(sbPower);
-                InspText($"<color=#8AA2A8>Мощь базы</color> <b>{sbPower:N0}</b>" + (inShips.Length > 0 ? $"  ·  {inShips}" : "") +
-                         $"\n<color=#8AA2A8>Залп</color> {sb.Damage:0} урона  ·  <color=#8AA2A8>мощь считается как у кораблей (значок мечей в панели флота) — сравните с силой своего флота перед атакой</color>");
+                InspText(Loc.F("<color=#8AA2A8>Мощь базы</color> <b>{0:N0}</b>", sbPower) + (inShips.Length > 0 ? $"  ·  {inShips}" : "") +
+                         Loc.F("\n<color=#8AA2A8>Залп</color> {0:0} урона  ·  <color=#8AA2A8>мощь считается как у кораблей (значок мечей в панели флота) — сравните с силой своего флота перед атакой</color>", sb.Damage));
             }
 
             // Осада
@@ -180,12 +180,12 @@ namespace StellarisClone.Rendering
                 float need = SiegeManager.RequiredDays(system);
                 bool mine = siege.Attacker == 0;
                 Color sc = mine ? DS.Green : DS.Red;
-                InspSection("ОСАДА", LGIcon.Siege);
-                InspBar(LGIcon.Siege, mine ? "Ваша осада" : "Враг осаждает", siege.Progress, need, sc);
-                string state = siege.BaseHolding ? "Приостановлена: звёздная база в строю"
-                             : siege.Contested ? "Приостановлена: на орбите флот защитника"
-                             : siege.Active ? $"Идёт: {siege.Progress:0} из {need:0} дн."
-                             : "Осаждающие ушли — прогресс спадает";
+                InspSection(Loc.T("ОСАДА"), LGIcon.Siege);
+                InspBar(LGIcon.Siege, mine ? Loc.T("Ваша осада") : Loc.T("Враг осаждает"), siege.Progress, need, sc);
+                string state = siege.BaseHolding ? Loc.T("Приостановлена: звёздная база в строю")
+                             : siege.Contested ? Loc.T("Приостановлена: на орбите флот защитника")
+                             : siege.Active ? Loc.F("Идёт: {0:0} из {1:0} дн.", siege.Progress, need)
+                             : Loc.T("Осаждающие ушли — прогресс спадает");
                 InspText($"<color=#8AA2A8>{state}</color>");
             }
 
@@ -193,34 +193,34 @@ namespace StellarisClone.Rendering
             var fleets = FleetsInOrbit(system.Id);
             if (fleets.Count > 0)
             {
-                InspSection("НА ОРБИТЕ", LGIcon.Fleet);
+                InspSection(Loc.T("НА ОРБИТЕ"), LGIcon.Fleet);
                 foreach (var kv in fleets)
                 {
                     int owner = kv.Key;
-                    string who = owner == 0 ? "Ваши корабли" : AIEmpireManager.NameOf(owner, "Чужие корабли");
-                    string power = kv.Value.power > 0f ? $"  ·  мощь {kv.Value.power:N0}" : "";
-                    string war = owner > 0 && Diplomacy.AtWar(0, owner) ? "  ·  <color=#FF6A6A>враг</color>" : "";
+                    string who = owner == 0 ? Loc.T("Ваши корабли") : AIEmpireManager.NameOf(owner, Loc.T("Чужие корабли"));
+                    string power = kv.Value.power > 0f ? Loc.F("  ·  мощь {0:N0}", kv.Value.power) : "";
+                    string war = owner > 0 && Diplomacy.AtWar(0, owner) ? Loc.T("  ·  <color=#FF6A6A>враг</color>") : "";
                     InspNote(LGIcon.Fleet, $"{who}: {kv.Value.count}{power}{war}", FleetIndicator.OwnerColor(owner));
                 }
             }
 
             // Что делать
-            InspSection("УПРАВЛЕНИЕ", LGIcon.Gear);
+            InspSection(Loc.T("УПРАВЛЕНИЕ"), LGIcon.Gear);
             if (!_isInSystemMode && system.OwnerId < 0)
-                InspText(!system.IsSurveyed ? "Отправьте научный корабль, чтобы изучить систему."
-                                            : "Заложите форпост строительным кораблём — система станет вашей.");
+                InspText(!system.IsSurveyed ? Loc.T("Отправьте научный корабль, чтобы изучить систему.")
+                                            : Loc.T("Заложите форпост строительным кораблём — система станет вашей."));
             else if (system.OwnerId == 0)
             {
-                InspText("Система под вашим контролем.");
+                InspText(Loc.T("Система под вашим контролем."));
                 var fm = FleetManager.Instance;
-                if (fm != null) InspText($"<color=#8AA2A8>Ремонт кораблей здесь:</color> {fm.RepairRateAt(system.Id, 0) * 100f:0}% в день");
+                if (fm != null) InspText(Loc.F("<color=#8AA2A8>Ремонт кораблей здесь:</color> {0:0}% в день", fm.RepairRateAt(system.Id, 0) * 100f));
             }
             else
             {
                 var ai = AIEmpireManager.For(system.OwnerId);
                 InspText(ai != null && ai.AtWar
-                    ? $"Чтобы захватить систему, держите здесь военный флот без защитников ({SiegeManager.RequiredDays(system):0} дн. осады)."
-                    : "Чужая система. Захват возможен только во время войны — осадой.");
+                    ? Loc.F("Чтобы захватить систему, держите здесь военный флот без защитников ({0:0} дн. осады).", SiegeManager.RequiredDays(system))
+                    : Loc.T("Чужая система. Захват возможен только во время войны — осадой."));
             }
         }
 

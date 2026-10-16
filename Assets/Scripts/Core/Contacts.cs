@@ -72,8 +72,8 @@ namespace StellarisClone.Core
             var ai = AIEmpireManager.For(owner);
             if (ai == null) return;
             SFXManager.Play(Audio.Sfx.Anomaly);
-            NotificationCenter.Show("Первый контакт",
-                $"Мы встретили цивилизацию «{ai.AIName}». Её правитель выходит на связь — откройте дипломатию, чтобы ответить",
+            NotificationCenter.Show(Loc.T("Первый контакт"),
+                Loc.F("Мы встретили цивилизацию «{0}». Её правитель выходит на связь — откройте дипломатию, чтобы ответить", ai.AIName),
                 NotificationCenter.Kind.Success, 9f);
             _pendingGreetings.Add(owner);
         }

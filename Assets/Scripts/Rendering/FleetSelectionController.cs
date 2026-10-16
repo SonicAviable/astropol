@@ -186,7 +186,7 @@ namespace StellarisClone.Rendering
             if (picked.Count == 0 && !additive) { fm.SetSelection(null); return; }
             fm.SetSelection(picked, additive);
             if (picked.Count > 1)
-                NotificationCenter.Show("Выделение", $"Выделено флотов: {fm.SelectedFleets.Count}", NotificationCenter.Kind.Info, 1.6f);
+                NotificationCenter.Show(Loc.T("Выделение"), Loc.F("Выделено флотов: {0}", fm.SelectedFleets.Count), NotificationCenter.Kind.Info, 1.6f);
         }
 
         // ==================== ПКМ: приказы ====================
@@ -215,7 +215,7 @@ namespace StellarisClone.Rendering
             if (Input.GetKeyDown(KeyCode.Backspace))
             {
                 foreach (var f in fm.SelectedFleets) fm.ClearQueue(f);
-                NotificationCenter.Show("Очередь приказов очищена", fm.SelectedFleets.Count > 1 ? $"Флотов: {fm.SelectedFleets.Count}" : fm.SelectedFleet.Data.Name,
+                NotificationCenter.Show(Loc.T("Очередь приказов очищена"), fm.SelectedFleets.Count > 1 ? Loc.F("Флотов: {0}", fm.SelectedFleets.Count) : fm.SelectedFleet.Data.Name,
                     NotificationCenter.Kind.Info, 2f);
             }
             if (Input.GetKeyDown(KeyCode.F)) FocusCamera(fm.SelectedFleet);
