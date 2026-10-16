@@ -15,7 +15,7 @@ namespace StellarisClone.Core
         public static event Action Changed;
 
         // ------------------------------------------------------------------ Графика
-        public static readonly string[] ScreenModeNames = { "Полный экран", "Эксклюзивный", "В окне" };
+        public static readonly string[] ScreenModeNames = { Loc.T("Полный экран"), Loc.T("Эксклюзивный"), Loc.T("В окне") };
         public static readonly int[] FpsOptions = { 30, 60, 120, 144, 240, -1 };
         public static readonly int[] AutosaveOptions = { 0, 1, 3, 6, 12 };
         public static readonly float[] UIScaleOptions = { 0.8f, 0.9f, 1f, 1.1f, 1.25f };
@@ -27,6 +27,7 @@ namespace StellarisClone.Core
         public static int Quality { get; private set; }
         public static bool GlassBlur { get; private set; }
         public static float Glow { get; private set; }
+        public static float UIBrightness { get; private set; }
 
         // ------------------------------------------------------------------ Звук
         public static float MasterVolume { get; private set; }
@@ -107,7 +108,8 @@ namespace StellarisClone.Core
             FpsIndex = PlayerPrefs.GetInt("set.fps", 1);
             Quality = PlayerPrefs.GetInt("set.quality", QualitySettings.GetQualityLevel());
             GlassBlur = PlayerPrefs.GetInt("set.blur", 1) == 1;
-            Glow = PlayerPrefs.GetFloat("set.glow", 0.35f);
+            Glow = PlayerPrefs.GetFloat("set.glow", 0.2f);
+            UIBrightness = PlayerPrefs.GetFloat("set.uibright", 0.5f);
 
             MasterVolume = PlayerPrefs.GetFloat("set.master", 1f);
             MusicVolume = PlayerPrefs.GetFloat("set.music", 0.45f);
@@ -162,6 +164,7 @@ namespace StellarisClone.Core
             if (lg == null) return;
             lg.backdropEnabled = GlassBlur;
             lg.glowStrength = Glow;
+            lg.brightness = UIBrightness;
         }
 
         private static void ApplyAudio()
@@ -219,6 +222,7 @@ namespace StellarisClone.Core
 
         public static void SetGlassBlur(bool v) { GlassBlur = v; PlayerPrefs.SetInt("set.blur", v ? 1 : 0); ApplyGlass(); Commit(); }
         public static void SetGlow(float v) { Glow = Mathf.Clamp(v, 0f, 0.8f); PlayerPrefs.SetFloat("set.glow", Glow); ApplyGlass(); Commit(); }
+        public static void SetUIBrightness(float v) { UIBrightness = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.uibright", UIBrightness); ApplyGlass(); Commit(); }
 
         public static void SetMaster(float v) { MasterVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.master", MasterVolume); ApplyAudio(); Commit(); }
         public static void SetMusic(float v) { MusicVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.music", MusicVolume); ApplyAudio(); Commit(); }
@@ -235,7 +239,7 @@ namespace StellarisClone.Core
         public static void ResetDefaults()
         {
             foreach (var k in new[] { "set.vsync", "set.fps", "set.blur", "set.glow", "set.master", "set.music", "set.sfx",
-                                      "set.bgmute", "set.uiscale", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
+                                      "set.bgmute", "set.uiscale", "set.uibright", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
                 PlayerPrefs.DeleteKey(k);
             s_loaded = false;
             EnsureLoaded();

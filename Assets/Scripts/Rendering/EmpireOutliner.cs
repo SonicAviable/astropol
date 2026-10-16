@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Core;
@@ -87,7 +87,7 @@ namespace StellarisClone.Rendering
             var hBg = header.AddComponent<Image>();
             hBg.color = UIManager.DS.BgHeader;
 
-            var title = CreateText(header.transform, "◆  О Б З О Р   И М П Е Р И И", 11, FontStyle.Bold, UIManager.DS.NeonCyan, TextAnchor.MiddleLeft);
+            var title = CreateText(header.transform, Loc.T("◆  О Б З О Р   И М П Е Р И И"), 11, FontStyle.Bold, UIManager.DS.NeonCyan, TextAnchor.MiddleLeft);
             title.rectTransform.anchorMin = Vector2.zero;
             title.rectTransform.anchorMax = Vector2.one;
             title.rectTransform.offsetMin = new Vector2(12, 0);
@@ -185,10 +185,10 @@ namespace StellarisClone.Rendering
             // 1. Колонии / Системы
             if (colonies.Count > 0)
             {
-                CreateCategoryHeader("Системы и планеты", colonies.Count);
+                CreateCategoryHeader(Loc.T("Системы и планеты"), colonies.Count);
                 foreach (var col in colonies)
                 {
-                    string sub = $"{col.Planets.Count} небесных тел";
+                    string sub = Loc.F("{0} небесных тел", col.Planets.Count);
                     string right = (col.HarvestedMinerals > 0 || col.HarvestedEnergy > 0)
                         ? $"◆{col.HarvestedMinerals} ⚡{col.HarvestedEnergy}"
                         : "";
@@ -199,20 +199,20 @@ namespace StellarisClone.Rendering
             // 2. Верфи флота
             if (shipyards.Count > 0)
             {
-                CreateCategoryHeader("Верфи флота", shipyards.Count);
+                CreateCategoryHeader(Loc.T("Верфи флота"), shipyards.Count);
                 foreach (var sy in shipyards)
                 {
-                    CreateCompactRow("⚙", sy.Name, "Стапели готовы", "⇧ Ур.1", rowIndex++, () => SelectSystem(sy));
+                    CreateCompactRow("⚙", sy.Name, Loc.T("Стапели готовы"), Loc.T("⇧ Ур.1"), rowIndex++, () => SelectSystem(sy));
                 }
             }
 
             // 3. Форпосты
             if (starbases.Count > 0)
             {
-                CreateCategoryHeader("Форпосты границы", starbases.Count);
+                CreateCategoryHeader(Loc.T("Форпосты границы"), starbases.Count);
                 foreach (var sb in starbases)
                 {
-                    CreateCompactRow("⬡", sb.Name, "Орбитальный форпост", $"◆{sb.HarvestedMinerals}", rowIndex++, () => SelectSystem(sb));
+                    CreateCompactRow("⬡", sb.Name, Loc.T("Орбитальный форпост"), $"◆{sb.HarvestedMinerals}", rowIndex++, () => SelectSystem(sb));
                 }
             }
 
@@ -220,10 +220,10 @@ namespace StellarisClone.Rendering
             var fleetViews = FindObjectsByType<FleetView>(FindObjectsSortMode.None);
             if (fleetViews != null && fleetViews.Length > 0)
             {
-                CreateCategoryHeader("Флоты империи", fleetViews.Length);
+                CreateCategoryHeader(Loc.T("Флоты империи"), fleetViews.Length);
                 foreach (var fv in fleetViews)
                 {
-                    CreateCompactRow("▲", fv.gameObject.name, "Боевая эскадра", "⚔ 1.2K", rowIndex++, () =>
+                    CreateCompactRow("▲", fv.gameObject.name, Loc.T("Боевая эскадра"), "⚔ 1.2K", rowIndex++, () =>
                     {
                         var camCtrl = FindAnyObjectByType<StrategyCameraController>();
                         if (camCtrl != null) camCtrl.FocusOn(fv.transform.position);
@@ -255,7 +255,7 @@ namespace StellarisClone.Rendering
             tRight.rectTransform.anchorMax = Vector2.one;
             tRight.rectTransform.offsetMax = new Vector2(-8, 0);
 
-            TooltipHelper.Attach(catObj, $"<b>{title}</b>\nЭлементов: {count}");
+            TooltipHelper.Attach(catObj, Loc.F("<b>{0}</b>\nЭлементов: {1}", title, count));
         }
 
         private void CreateCompactRow(string icon, string title, string subtitle, string rightStat, int rowIdx, System.Action onClick)

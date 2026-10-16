@@ -133,15 +133,33 @@ namespace StellarisClone.Rendering
             Instance.RequestHide();
         }
 
+        /// <summary>
+        /// Спрятать подсказку, только если это та самая, что показывал вызывающий (text). Нужно подсказкам
+        /// объектов карты: курсор ушёл со звезды на значок интерфейса — значок уже попросил свою подсказку,
+        /// и звезда не должна её погасить.
+        /// </summary>
+        public static void HideIf(string text)
+        {
+            if (Instance == null || string.IsNullOrEmpty(text)) return;
+            Instance.RequestHideIf(text);
+        }
+
         private void RequestShow(string text)
         {
             if (_root == null) BuildTooltipUI();
             if (_root == null) return;
             if (_isLocked) return;
+            if (_suppressed) return;
 
             _pendingText = text;
             _hoverTimer = 0f;
         }
+
+        // После клика по карте подсказка не всплывает, пока мышь не сдвинется:
+        // ПКМ по системе — это приказ флоту, а не просьба показать справку.
+        private bool _suppressed;
+        private Vector2 _suppressPos;
+        private const float SuppressMovePx = 14f;
 
         private void RequestHide()
         {
@@ -149,6 +167,14 @@ namespace StellarisClone.Rendering
             _pendingText = "";
             _hoverTimer = 0f;
             StartClosingAnimation();
+        }
+
+        private void RequestHideIf(string text)
+        {
+            if (_isLocked) return;
+            if (_pendingText == text) { RequestHide(); return; }
+            // На экране ещё наша подсказка, а своей очереди ждёт чужая — гасим нашу, чужая откроется следом
+            if (_text != null && _text.text == text && _targetAlpha > 0.1f) StartClosingAnimation();
         }
 
         private void TriggerOpen(string text, bool lockInPlace = false)
@@ -203,10 +229,25 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            if (Input.GetMouseButtonDown(1) && !string.IsNullOrEmpty(_pendingText))
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool click = Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
+
+            // Закрепление ПКМ — только для подсказок интерфейса (на карте ПКМ отдаёт приказ)
+            if (Input.GetMouseButtonDown(1) && overUi && !string.IsNullOrEmpty(_pendingText))
             {
                 TriggerOpen(_pendingText, true);
             }
+            else if (click && !overUi && !_isLocked)
+            {
+                _suppressed = true;
+                _suppressPos = Input.mousePosition;
+                _pendingText = "";
+                _hoverTimer = 0f;
+                StartClosingAnimation();
+            }
+
+            if (_suppressed && Vector2.Distance(_suppressPos, Input.mousePosition) > SuppressMovePx)
+                _suppressed = false;
 
             if (_isLocked && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Escape)))
             {
@@ -284,6 +325,7 @@ namespace StellarisClone.Rendering
         [TextArea(2, 6)] public string text;
         private SystemNameplate _nameplate;
         private bool _hovered;
+        private string _shown;
 
         public void SetNameplate(SystemNameplate plate) => _nameplate = plate;
         public void SetText(string t) => text = t;
@@ -295,7 +337,8 @@ namespace StellarisClone.Rendering
             var es = EventSystem.current;
             if (es != null && es.IsPointerOverGameObject())
             {
-                if (_hovered) { _hovered = false; TooltipSystem.Hide(); }
+                // Курсор ушёл на интерфейс (например, на значок агента у звезды) — гасим только свою подсказку
+                if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
                 return;
             }
 
@@ -306,6 +349,8 @@ namespace StellarisClone.Rendering
                 var trigger = hit.collider.GetComponentInParent<WorldTooltipTrigger>();
                 if (trigger == this) hitThis = true;
             }
+            // Над планетой мини-системы своя карточка — подсказка звезды не нужна
+            if (hitThis && GalaxyView.HoveredMiniPlanet != null) hitThis = false;
 
             if (hitThis)
             {
@@ -314,19 +359,20 @@ namespace StellarisClone.Rendering
                 if (!_hovered)
                 {
                     _hovered = true;
+                    _shown = currentText;
                     TooltipSystem.Show(currentText);
                 }
             }
             else if (_hovered)
             {
                 _hovered = false;
-                TooltipSystem.Hide();
+                TooltipSystem.HideIf(_shown);
             }
         }
 
         private void OnDisable()
         {
-            if (_hovered) { _hovered = false; TooltipSystem.Hide(); }
+            if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
         }
     }
 

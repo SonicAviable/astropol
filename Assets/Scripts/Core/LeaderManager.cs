@@ -1,0 +1,813 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using StellarisClone.Rendering;
+using Sfx = StellarisClone.Core.Audio.Sfx;
+
+namespace StellarisClone.Core
+{
+    public enum LeaderClass { Scientist, Admiral, Governor, Agent }
+    public enum LeaderPost { None, Ship, Council, Planet, Spy }
+
+    /// <summary>Лидер империи (учёный, адмирал, губернатор). Сериализуется в сохранение как есть.</summary>
+    [Serializable]
+    public class Leader
+    {
+        public int Id;
+        public int Owner;
+        public LeaderClass Class;
+        public string Name;
+        public int Level = 1;
+        public float Xp;
+        public int Age;
+        public int Lifespan;
+        public List<string> Traits = new List<string>();
+        public LeaderPost Post;
+        public int ShipId = -1;
+        public int SystemId = -1;
+        public int PlanetIndex = -1;
+        public int Seed;
+
+        // ---- Агент (шпионаж; см. EspionageManager) ----
+        /// <summary>Империя, куда внедрён агент; 0 — контрразведка дома; -1 — не назначен.</summary>
+        public int TargetOwner = -1;
+        /// <summary>Система, из которой агент строит разведсеть (как регион в Hearts of Iron); -1 — нет.</summary>
+        public int TargetSystem = -1;
+        /// <summary>Сила вашей разведсети в империи-цели 0–100 (считает EspionageManager раз в месяц): открывает обзор и операции.</summary>
+        public float Cover;
+        /// <summary>Идущая операция (SpyOp), -1 — нет; месяцев до результата; цель-третья сторона для «Раздора».</summary>
+        public int OpKind = -1;
+        public int OpMonthsLeft;
+        public int OpArg = -1;
+
+        /// <summary>Ключ портрета из Resources/Leaders/Pool (подбирается при первом показе, см. LeaderFaces).</summary>
+        public string Portrait;
+
+        public bool Has(string trait) => Traits.Contains(trait);
+        public float XpToNext => Level >= LeaderManager.MaxLevel ? 0f : LeaderManager.LevelXp[Level] - Xp;
+        public float LevelProgress => Level >= LeaderManager.MaxLevel ? 1f
+            : Mathf.InverseLerp(LeaderManager.LevelXp[Level - 1], LeaderManager.LevelXp[Level], Xp);
+    }
+
+    [Serializable]
+    public class LeaderState
+    {
+        public int NextId = 1;
+        public List<Leader> Leaders = new List<Leader>();
+        public List<Leader> Candidates = new List<Leader>();
+    }
+
+    /// <summary>
+    /// Лидеры в духе Stellaris.
+    ///   • Найм за влияние из пула кандидатов (по одному на класс, пул обновляется раз в год и после найма),
+    ///     содержание — энергия каждый месяц; не больше <see cref="MaxLeaders"/> на империю.
+    ///   • Учёный: на научном корабле ускоряет разведку и увеличивает трофеи; в научном совете — +к науке.
+    ///   • Адмирал: на военном корабле — флагман; все свои боевые корабли в той же системе получают
+    ///     бонусы к урону, скорострельности (и чертам). Гибнет вместе с флагманом.
+    ///   • Губернатор: на колонии — производство планеты и скорость строительства на ней.
+    ///   • Опыт: учёный — за разведку, адмирал — за урон и победы, губернатор — за время и стройки.
+    ///     Уровни 1–5, на 3-м уровне — вторая черта. Лидеры стареют и однажды уходят из жизни.
+    ///   • ИИ нанимает и расставляет своих лидеров сам.
+    /// </summary>
+    public class LeaderManager : MonoBehaviour
+    {
+        public static LeaderManager Instance { get; private set; }
+
+        public const int MaxLeaders = 8;
+        public const float HireInfluence = 60f;
+        public const float UpkeepEnergy = 1.5f;
+        public const int MaxLevel = 5;
+        public static readonly float[] LevelXp = { 0f, 100f, 250f, 450f, 700f };
+
+        public static event Action OnLeadersChanged;
+
+        private LeaderState _s = new LeaderState();
+        public IReadOnlyList<Leader> All => _s.Leaders;
+        public IReadOnlyList<Leader> Candidates => _s.Candidates;
+        private System.Random _rng = new System.Random(Environment.TickCount);
+
+        // ==================== ЧЕРТЫ ====================
+
+        public class TraitDef
+        {
+            public string Id, Name, Desc;
+            public LeaderClass Class;
+            /// <summary>Черта появляется только из событий, не выпадает случайно при найме и повышении.</summary>
+            public bool EventOnly;
+            public bool Negative;
+        }
+
+        public static readonly TraitDef[] TraitDefs =
+        {
+            new TraitDef { Id = "sci_cartographer", Class = LeaderClass.Scientist, Name = Loc.T("Картограф"), Desc = Loc.T("+25% к скорости разведки") },
+            new TraitDef { Id = "sci_xeno", Class = LeaderClass.Scientist, Name = Loc.T("Ксенолог"), Desc = Loc.T("+50% к трофеям разведки") },
+            new TraitDef { Id = "sci_analyst", Class = LeaderClass.Scientist, Name = Loc.T("Аналитик"), Desc = Loc.T("+6% к науке в научном совете") },
+            new TraitDef { Id = "sci_curious", Class = LeaderClass.Scientist, Name = Loc.T("Любознательный"), Desc = Loc.T("+30% к получаемому опыту") },
+
+            new TraitDef { Id = "adm_aggressive", Class = LeaderClass.Admiral, Name = Loc.T("Агрессор"), Desc = Loc.T("+10% к урону соединения") },
+            new TraitDef { Id = "adm_tactician", Class = LeaderClass.Admiral, Name = Loc.T("Тактик"), Desc = Loc.T("+12% к скорострельности соединения") },
+            new TraitDef { Id = "adm_cautious", Class = LeaderClass.Admiral, Name = Loc.T("Осторожный"), Desc = Loc.T("+15% к шансу выйти из боя, +10% к уклонению") },
+            new TraitDef { Id = "adm_navigator", Class = LeaderClass.Admiral, Name = Loc.T("Навигатор"), Desc = Loc.T("+20% к скорости в гиперкоридорах") },
+
+            new TraitDef { Id = "agt_infiltrator", Class = LeaderClass.Agent, Name = Loc.T("Внедренец"), Desc = Loc.T("+25% к скорости внедрения") },
+            new TraitDef { Id = "agt_saboteur", Class = LeaderClass.Agent, Name = Loc.T("Диверсант"), Desc = Loc.T("+15% к успеху диверсий") },
+            new TraitDef { Id = "agt_thief", Class = LeaderClass.Agent, Name = Loc.T("Расхититель"), Desc = Loc.T("+15% к успеху краж технологий") },
+            new TraitDef { Id = "agt_manipulator", Class = LeaderClass.Agent, Name = Loc.T("Манипулятор"), Desc = Loc.T("+15% к успеху «Раздора»") },
+            new TraitDef { Id = "agt_shadow", Class = LeaderClass.Agent, Name = Loc.T("Тень"), Desc = Loc.T("−20% к шансу провала и поимки, труднее заметить") },
+
+            new TraitDef { Id = "gov_engineer", Class = LeaderClass.Governor, Name = Loc.T("Инженер"), Desc = Loc.T("+25% к скорости строительства на планете") },
+            new TraitDef { Id = "gov_industrialist", Class = LeaderClass.Governor, Name = Loc.T("Промышленник"), Desc = Loc.T("+15% к сплавам планеты") },
+            new TraitDef { Id = "gov_geologist", Class = LeaderClass.Governor, Name = Loc.T("Геолог"), Desc = Loc.T("+15% к титану планеты") },
+            new TraitDef { Id = "gov_energy", Class = LeaderClass.Governor, Name = Loc.T("Энергетик"), Desc = Loc.T("+15% к гелию-3 планеты") },
+            new TraitDef { Id = "gov_admin", Class = LeaderClass.Governor, Name = Loc.T("Администратор"), Desc = Loc.T("+6% ко всему производству планеты") },
+
+            // Черты из событий
+            new TraitDef { Id = "sci_brilliant", Class = LeaderClass.Scientist, Name = Loc.T("Гений"), Desc = Loc.T("+10% к скорости разведки, +4% к науке в совете"), EventOnly = true },
+            new TraitDef { Id = "sci_scarred", Class = LeaderClass.Scientist, Name = Loc.T("Травмирован"), Desc = Loc.T("−15% к скорости разведки"), EventOnly = true, Negative = true },
+            new TraitDef { Id = "adm_veteran", Class = LeaderClass.Admiral, Name = Loc.T("Ветеран"), Desc = Loc.T("+6% к урону и +6% к уклонению соединения"), EventOnly = true },
+            new TraitDef { Id = "adm_reckless", Class = LeaderClass.Admiral, Name = Loc.T("Безрассудный"), Desc = Loc.T("+8% к урону, −15% к шансу выйти из боя"), EventOnly = true },
+            new TraitDef { Id = "gov_honest", Class = LeaderClass.Governor, Name = Loc.T("Неподкупный"), Desc = Loc.T("+5% ко всему производству планеты"), EventOnly = true },
+            new TraitDef { Id = "gov_corrupt", Class = LeaderClass.Governor, Name = Loc.T("Коррупционер"), Desc = Loc.T("−10% ко всему производству планеты"), EventOnly = true, Negative = true },
+        };
+
+        public static TraitDef Trait(string id)
+        {
+            foreach (var t in TraitDefs) if (t.Id == id) return t;
+            return null;
+        }
+
+        public static string ClassName(LeaderClass c) => c switch
+        {
+            LeaderClass.Scientist => Loc.T("Учёный"),
+            LeaderClass.Admiral => Loc.T("Адмирал"),
+            LeaderClass.Agent => Loc.T("Агент"),
+            _ => Loc.T("Губернатор")
+        };
+
+        /// <summary>Что даёт уровень (без черт) — для подсказок.</summary>
+        public static string LevelBonusText(Leader l) => l.Class switch
+        {
+            LeaderClass.Scientist => Loc.F("разведка +{0}%, в совете наука +{1}%", l.Level * 5, l.Level * 2),
+            LeaderClass.Admiral => Loc.F("урон +{0}%, скорострельность +{1}%", l.Level * 3, l.Level * 2),
+            LeaderClass.Agent => Loc.F("успех операций +{0}%, внедрение быстрее на {1}/мес., контрразведка +{2}%", l.Level * 4, l.Level, l.Level * 4),
+            _ => Loc.F("производство +{0}%, стройка +{1}%", l.Level * 3, l.Level * 5)
+        };
+
+        // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            Instance = this;
+        }
+
+        private void Start()
+        {
+            if (TimeManager.Instance != null) TimeManager.Instance.OnDayPassed += HandleDay;
+            CombatManager.OnShipDestroyed += HandleShipDestroyed;
+            SiegeManager.OnSystemCaptured += HandleCaptured;
+            ConstructionManager.OnJobCompleted += HandleJob;
+            if (_s.Candidates.Count == 0) RefillCandidates(true);
+        }
+
+        private void OnDestroy()
+        {
+            if (TimeManager.Instance != null) TimeManager.Instance.OnDayPassed -= HandleDay;
+            CombatManager.OnShipDestroyed -= HandleShipDestroyed;
+            SiegeManager.OnSystemCaptured -= HandleCaptured;
+            ConstructionManager.OnJobCompleted -= HandleJob;
+        }
+
+        private void Changed()
+        {
+            _admCacheFrame = -1;
+            OnLeadersChanged?.Invoke();
+        }
+
+        // ==================== ГЕНЕРАЦИЯ ====================
+
+        // Имена — без родовых окончаний, чтобы фамилия подходила и мужчине, и женщине.
+        // Первые в каждом списке — имена из ранних версий: по ним старые сохранения узнают пол лидера.
+        private static readonly string[] MaleNames =
+        {
+            Loc.T("Вейл"), Loc.T("Кассиан"), Loc.T("Орин"), Loc.T("Зейн"), Loc.T("Дарен"), Loc.T("Сол"), Loc.T("Келан"), Loc.T("Ивар"), Loc.T("Торин"), Loc.T("Алрик"), Loc.T("Марек"), Loc.T("Рон"), Loc.T("Лукас"),
+            Loc.T("Аарон"), Loc.T("Адриан"), Loc.T("Арджун"), Loc.T("Бастиан"), Loc.T("Виктор"), Loc.T("Габриэль"), Loc.T("Дамир"), Loc.T("Илай"), Loc.T("Ион"), Loc.T("Кай"), Loc.T("Камиль"),
+            Loc.T("Кенджи"), Loc.T("Лиам"), Loc.T("Майло"), Loc.T("Мано"), Loc.T("Натан"), Loc.T("Нико"), Loc.T("Оскар"), Loc.T("Рафаэль"), Loc.T("Риан"), Loc.T("Самир"), Loc.T("Северин"),
+            Loc.T("Таир"), Loc.T("Тео"), Loc.T("Феликс"), Loc.T("Хакон"), Loc.T("Эмиль"), Loc.T("Эрик"), Loc.T("Юлиан"), Loc.T("Ярен"), Loc.T("Обинна"), Loc.T("Матео"), Loc.T("Дариус")
+        };
+        private static readonly string[] FemaleNameList =
+        {
+            Loc.T("Аира"), Loc.T("Лира"), Loc.T("Тесса"), Loc.T("Мира"), Loc.T("Ния"), Loc.T("Рейна"), Loc.T("Эла"), Loc.T("Нова"), Loc.T("Селена"), Loc.T("Иса"), Loc.T("Вега"),
+            Loc.T("Ада"), Loc.T("Аиша"), Loc.T("Алия"), Loc.T("Астра"), Loc.T("Вира"), Loc.T("Дана"), Loc.T("Зара"), Loc.T("Илана"), Loc.T("Инара"), Loc.T("Ингрид"), Loc.T("Ирида"), Loc.T("Кайра"),
+            Loc.T("Кира"), Loc.T("Лаэль"), Loc.T("Лейла"), Loc.T("Лиана"), Loc.T("Майя"), Loc.T("Мейра"), Loc.T("Мэй"), Loc.T("Нелла"), Loc.T("Ника"), Loc.T("Ориана"), Loc.T("Рина"),
+            Loc.T("Сабина"), Loc.T("Сайра"), Loc.T("Сольвейг"), Loc.T("Талия"), Loc.T("Тиара"), Loc.T("Фрея"), Loc.T("Хана"), Loc.T("Элара"), Loc.T("Эйра"), Loc.T("Юна"), Loc.T("Ясмина"), Loc.T("Амара")
+        };
+        private static readonly string[] LastNames =
+        {
+            Loc.T("Вейс"), Loc.T("Арден"), Loc.T("Корр"), Loc.T("Сайлен"), Loc.T("Морроу"), Loc.T("Квинт"), Loc.T("Рейес"), Loc.T("Халден"), Loc.T("Новак"), Loc.T("Стерн"),
+            Loc.T("Валар"), Loc.T("Окона"), Loc.T("Лин"), Loc.T("Таро"), Loc.T("Ремир"), Loc.T("Ашфорд"), Loc.T("Кейн"), Loc.T("Дракс"), Loc.T("Ильмар"), Loc.T("Сато"),
+            Loc.T("Абади"), Loc.T("Айверсон"), Loc.T("Акаши"), Loc.T("Альвес"), Loc.T("Амари"), Loc.T("Баррос"), Loc.T("Белль"), Loc.T("Блэквуд"), Loc.T("Вальдес"), Loc.T("Вандерберг"),
+            Loc.T("Варгас"), Loc.T("Варро"), Loc.T("Вэнь"), Loc.T("Гарро"), Loc.T("Грей"), Loc.T("Дальтон"), Loc.T("Девере"), Loc.T("Дюбуа"), Loc.T("Ёсида"), Loc.T("Ибарра"),
+            Loc.T("Кальдер"), Loc.T("Кастелло"), Loc.T("Кестрел"), Loc.T("Ковальски"), Loc.T("Кросс"), Loc.T("Ларсен"), Loc.T("Леклер"), Loc.T("Лоренц"), Loc.T("Мадсен"), Loc.T("Маркос"),
+            Loc.T("Мейер"), Loc.T("Мендоса"), Loc.T("Мори"), Loc.T("Найт"), Loc.T("Нкеме"), Loc.T("Одари"), Loc.T("Окафор"), Loc.T("Орсо"), Loc.T("Пейдж"), Loc.T("Рамирес"),
+            Loc.T("Рен"), Loc.T("Рорк"), Loc.T("Росси"), Loc.T("Салас"), Loc.T("Сенна"), Loc.T("Сильва"), Loc.T("Соренсен"), Loc.T("Стоун"), Loc.T("Тан"), Loc.T("Тэйт"),
+            Loc.T("Уинтер"), Loc.T("Фаркас"), Loc.T("Фэрроу"), Loc.T("Хайден"), Loc.T("Хаяси"), Loc.T("Хелльстром"), Loc.T("Холт"), Loc.T("Чен"), Loc.T("Шарма"), Loc.T("Эверетт"),
+            Loc.T("Эрнандес"), Loc.T("Юнг"), Loc.T("Ямада"), Loc.T("Ясин"), Loc.T("Торнвуд"), Loc.T("Мальтер"), Loc.T("Лирон"), Loc.T("Равен"), Loc.T("Квеста"), Loc.T("Ортега")
+        };
+
+        private static HashSet<string> s_femaleNames;
+
+        /// <summary>Женское ли имя (первое слово имени лидера) — по нему подбираются портреты.</summary>
+        public static bool IsFemaleName(string first)
+        {
+            s_femaleNames ??= new HashSet<string>(FemaleNameList);
+            return !string.IsNullOrEmpty(first) && s_femaleNames.Contains(first);
+        }
+
+        /// <summary>Случайное имя лидера: пол примерно поровну, без повторов полного имени внутри одной империи.</summary>
+        private string RandomName(int owner)
+        {
+            string name = null;
+            for (int attempt = 0; attempt < 8; attempt++)
+            {
+                var first = _rng.Next(2) == 0 ? FemaleNameList : MaleNames;
+                name = first[_rng.Next(first.Length)] + " " + LastNames[_rng.Next(LastNames.Length)];
+                if (!NameTaken(owner, name)) break;
+            }
+            return name;
+        }
+
+        private bool NameTaken(int owner, string name)
+        {
+            foreach (var o in _s.Leaders) if (o.Owner == owner && o.Name == name) return true;
+            foreach (var o in _s.Candidates) if (o.Owner == owner && o.Name == name) return true;
+            return false;
+        }
+
+        private Leader Generate(int owner, LeaderClass cls)
+        {
+            var l = new Leader
+            {
+                Id = _s.NextId++,
+                Owner = owner,
+                Class = cls,
+                Name = RandomName(owner),
+                Age = 28 + _rng.Next(20),
+                Lifespan = 72 + _rng.Next(24),
+                Seed = _rng.Next(1, 100000),
+            };
+            l.Traits.Add(RandomTrait(cls, l));
+            return l;
+        }
+
+        private string RandomTrait(LeaderClass cls, Leader except)
+        {
+            var pool = new List<string>();
+            foreach (var t in TraitDefs) if (t.Class == cls && !t.EventOnly && (except == null || !except.Has(t.Id))) pool.Add(t.Id);
+            return pool.Count == 0 ? null : pool[_rng.Next(pool.Count)];
+        }
+
+        /// <summary>Кандидаты игрока: по одному на класс.</summary>
+        private void RefillCandidates(bool all)
+        {
+            if (all) _s.Candidates.Clear();
+            foreach (LeaderClass c in Enum.GetValues(typeof(LeaderClass)))
+            {
+                bool has = false;
+                foreach (var k in _s.Candidates) if (k.Class == c) { has = true; break; }
+                if (!has) _s.Candidates.Add(Generate(0, c));
+            }
+            _s.Candidates.Sort((a, b) => a.Class.CompareTo(b.Class));
+        }
+
+        // ==================== НАЙМ / УВОЛЬНЕНИЕ / НАЗНАЧЕНИЕ ====================
+
+        public int CountFor(int owner)
+        {
+            int n = 0;
+            foreach (var l in _s.Leaders) if (l.Owner == owner) n++;
+            return n;
+        }
+
+        public bool CanHire(out string reason)
+        {
+            reason = null;
+            if (CountFor(0) >= MaxLeaders) { reason = Loc.F("Не больше {0} лидеров", MaxLeaders); return false; }
+            var eco = EconomyManager.Instance;
+            if (eco == null || eco.Influence < HireInfluence) { reason = Loc.F("{0} (найм стоит {1:0})", CostCheck.Full(influence: HireInfluence), HireInfluence); return false; }
+            return true;
+        }
+
+        public bool Hire(Leader candidate)
+        {
+            if (candidate == null || !_s.Candidates.Contains(candidate)) return false;
+            if (!CanHire(out string reason))
+            {
+                NotificationCenter.Show(Loc.T("Найм невозможен"), reason, NotificationCenter.Kind.Warning, 3f);
+                return false;
+            }
+            var eco = EconomyManager.Instance;
+            eco.Influence -= HireInfluence;
+            eco.RaiseResourcesChanged();
+            _s.Candidates.Remove(candidate);
+            _s.Leaders.Add(candidate);
+            RefillCandidates(false);
+            SFXManager.Play(Sfx.UiConfirm);
+            NotificationCenter.Show(Loc.T("Лидер нанят"), Loc.F("{0} {1} поступил на службу. Назначьте его на пост", ClassName(candidate.Class), candidate.Name),
+                NotificationCenter.Kind.Success, 4f);
+            Changed();
+            return true;
+        }
+
+        public void Dismiss(Leader l)
+        {
+            if (l == null || !_s.Leaders.Remove(l)) return;
+            if (l.Owner == 0) SFXManager.Play(Sfx.UiBack);
+            Changed();
+        }
+
+        public void Unassign(Leader l)
+        {
+            if (l == null) return;
+            l.Post = LeaderPost.None;
+            l.ShipId = l.SystemId = l.PlanetIndex = -1;
+            // Агент выходит из игры: внедрённость и идущая операция пропадают
+            l.TargetOwner = -1; l.TargetSystem = -1; l.Cover = 0f; l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
+            Changed();
+        }
+
+        /// <summary>
+        /// Назначить агента: target 0 — контрразведка дома, иначе внедрение в империю ИИ.
+        /// system — откуда строить разведсеть (-1 — столица или главная система цели); уже построенная сеть сохраняется.
+        /// </summary>
+        public void AssignSpy(Leader l, int target, int system = -1)
+        {
+            if (l == null || l.Class != LeaderClass.Agent) return;
+            var other = SpyOn(l.Owner, target);
+            if (other != null && other != l) Unassign(other);
+            l.Post = LeaderPost.Spy;
+            l.TargetOwner = target;
+            l.TargetSystem = target > 0 ? (system >= 0 ? system : EspionageManager.SuggestSystem(target)) : -1;
+            l.Cover = target > 0 ? EspionageManager.NetworkStrength(target) : 0f;
+            l.OpKind = -1; l.OpMonthsLeft = 0; l.OpArg = -1;
+            l.ShipId = l.SystemId = l.PlanetIndex = -1;
+            Changed();
+        }
+
+        public Leader SpyOn(int owner, int target)
+        {
+            foreach (var l in _s.Leaders)
+                if (l.Owner == owner && l.Post == LeaderPost.Spy && l.TargetOwner == target) return l;
+            return null;
+        }
+
+        /// <summary>Сообщить интерфейсу, что состояние лидеров изменилось (шпионаж меняет внедрённость и операции).</summary>
+        public void Touch() => Changed();
+
+        public void AssignShip(Leader l, FleetData ship)
+        {
+            if (l == null || ship == null) return;
+            var other = LeaderOfShip(ship.Id);
+            if (other != null && other != l) Unassign(other);
+            l.Post = LeaderPost.Ship;
+            l.ShipId = ship.Id;
+            l.SystemId = l.PlanetIndex = -1;
+            Changed();
+        }
+
+        public void AssignCouncil(Leader l)
+        {
+            if (l == null || l.Class != LeaderClass.Scientist) return;
+            var cur = CouncilScientist(l.Owner);
+            if (cur != null && cur != l) Unassign(cur);
+            l.Post = LeaderPost.Council;
+            l.ShipId = l.SystemId = l.PlanetIndex = -1;
+            Changed();
+        }
+
+        public void AssignPlanet(Leader l, PlanetData p)
+        {
+            if (l == null || p?.ParentSystem == null) return;
+            int idx = p.ParentSystem.Planets.IndexOf(p);
+            var other = GovernorOf(p.ParentSystem.Id, idx);
+            if (other != null && other != l) Unassign(other);
+            l.Post = LeaderPost.Planet;
+            l.SystemId = p.ParentSystem.Id;
+            l.PlanetIndex = idx;
+            l.ShipId = -1;
+            Changed();
+        }
+
+        // ==================== ПОИСК ====================
+
+        public Leader LeaderOfShip(int shipId)
+        {
+            foreach (var l in _s.Leaders) if (l.Post == LeaderPost.Ship && l.ShipId == shipId) return l;
+            return null;
+        }
+
+        public Leader CouncilScientist(int owner)
+        {
+            foreach (var l in _s.Leaders) if (l.Owner == owner && l.Post == LeaderPost.Council) return l;
+            return null;
+        }
+
+        public Leader GovernorOf(int systemId, int planetIndex)
+        {
+            foreach (var l in _s.Leaders)
+                if (l.Post == LeaderPost.Planet && l.SystemId == systemId && l.PlanetIndex == planetIndex) return l;
+            return null;
+        }
+
+        public Leader GovernorOf(PlanetData p)
+            => p?.ParentSystem == null ? null : GovernorOf(p.ParentSystem.Id, p.ParentSystem.Planets.IndexOf(p));
+
+        private static FleetData FindShip(int id)
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return null;
+            foreach (var f in fm.AllFleets)
+                if (f?.Data != null && f.Data.Id == id && !f.Data.Destroyed) return f.Data;
+            return null;
+        }
+
+        // Кэш «владелец+система → адмирал» на кадр: в бою запрос идёт на каждый выстрел
+        private readonly Dictionary<long, Leader> _admCache = new Dictionary<long, Leader>();
+        private int _admCacheFrame = -1;
+
+        /// <summary>Лучший адмирал владельца, чей флагман стоит в этой системе (командует всем соединением).</summary>
+        public Leader AdmiralAt(int owner, int systemId)
+        {
+            if (_admCacheFrame != Time.frameCount)
+            {
+                _admCacheFrame = Time.frameCount;
+                _admCache.Clear();
+                foreach (var l in _s.Leaders)
+                {
+                    if (l.Class != LeaderClass.Admiral || l.Post != LeaderPost.Ship) continue;
+                    var ship = FindShip(l.ShipId);
+                    if (ship == null) continue;
+                    long key = ((long)l.Owner << 32) | (uint)ship.CurrentSystemId;
+                    if (!_admCache.TryGetValue(key, out var cur) || l.Level > cur.Level) _admCache[key] = l;
+                }
+            }
+            return _admCache.TryGetValue(((long)owner << 32) | (uint)systemId, out var res) ? res : null;
+        }
+
+        // ==================== ЭФФЕКТЫ ====================
+
+        public static float SurveySpeedMult(FleetData d)
+        {
+            var l = Instance?.LeaderOfShip(d.Id);
+            if (l == null || l.Class != LeaderClass.Scientist) return 1f;
+            return 1f + l.Level * 0.05f + (l.Has("sci_cartographer") ? 0.25f : 0f)
+                      + (l.Has("sci_brilliant") ? 0.10f : 0f) - (l.Has("sci_scarred") ? 0.15f : 0f);
+        }
+
+        public static float SurveyRewardMult(int shipId)
+        {
+            var l = Instance?.LeaderOfShip(shipId);
+            if (l == null || l.Class != LeaderClass.Scientist) return 1f;
+            return 1f + l.Level * 0.05f + (l.Has("sci_xeno") ? 0.5f : 0f);
+        }
+
+        public static float ResearchMult(int owner)
+        {
+            var l = Instance?.CouncilScientist(owner);
+            if (l == null) return 1f;
+            return 1f + l.Level * 0.02f + (l.Has("sci_analyst") ? 0.06f : 0f) + (l.Has("sci_brilliant") ? 0.04f : 0f);
+        }
+
+        public static float AdmiralDamageMult(int owner, int systemId)
+        {
+            var l = Instance?.AdmiralAt(owner, systemId);
+            if (l == null) return 1f;
+            return 1f + l.Level * 0.03f + (l.Has("adm_aggressive") ? 0.10f : 0f)
+                      + (l.Has("adm_veteran") ? 0.06f : 0f) + (l.Has("adm_reckless") ? 0.08f : 0f);
+        }
+
+        public static float AdmiralFireRateMult(int owner, int systemId)
+        {
+            var l = Instance?.AdmiralAt(owner, systemId);
+            if (l == null) return 1f;
+            return 1f + l.Level * 0.02f + (l.Has("adm_tactician") ? 0.12f : 0f);
+        }
+
+        public static float AdmiralEvasionMult(int owner, int systemId)
+        {
+            var l = Instance?.AdmiralAt(owner, systemId);
+            if (l == null) return 1f;
+            return (l.Has("adm_cautious") ? 1.10f : 1f) * (l.Has("adm_veteran") ? 1.06f : 1f);
+        }
+
+        public static float AdmiralDisengageMult(int owner, int systemId)
+        {
+            var l = Instance?.AdmiralAt(owner, systemId);
+            if (l == null) return 1f;
+            return (l.Has("adm_cautious") ? 1.15f : 1f) * (l.Has("adm_reckless") ? 0.85f : 1f);
+        }
+
+        public static float HyperSpeedMult(FleetData d)
+        {
+            if (d.Type != FleetType.Military || Instance == null) return 1f;
+            var l = Instance.AdmiralAt(d.OwnerId, d.CurrentSystemId);
+            return l != null && l.Has("adm_navigator") ? 1.2f : 1f;
+        }
+
+        /// <summary>Множитель производства планеты по ресурсу ("energy" / "minerals" / "alloys").</summary>
+        public static float PlanetOutputMult(PlanetData p, string resource)
+        {
+            var l = Instance?.GovernorOf(p);
+            if (l == null) return 1f;
+            float m = 1f + l.Level * 0.03f + (l.Has("gov_admin") ? 0.06f : 0f)
+                         + (l.Has("gov_honest") ? 0.05f : 0f) - (l.Has("gov_corrupt") ? 0.10f : 0f);
+            if (resource == "energy" && l.Has("gov_energy")) m += 0.15f;
+            if (resource == "minerals" && l.Has("gov_geologist")) m += 0.15f;
+            if (resource == "alloys" && l.Has("gov_industrialist")) m += 0.15f;
+            return m;
+        }
+
+        public static float BuildSpeedMult(int systemId, int planetIndex)
+        {
+            var l = Instance?.GovernorOf(systemId, planetIndex);
+            if (l == null) return 1f;
+            return 1f + l.Level * 0.05f + (l.Has("gov_engineer") ? 0.25f : 0f);
+        }
+
+        // ==================== ОПЫТ ====================
+
+        private void GainXp(Leader l, float xp)
+        {
+            if (l == null || l.Level >= MaxLevel) return;
+            if (l.Has("sci_curious")) xp *= 1.3f;
+            l.Xp += xp;
+            while (l.Level < MaxLevel && l.Xp >= LevelXp[l.Level])
+            {
+                l.Level++;
+                if (l.Level == 3)
+                {
+                    string t = RandomTrait(l.Class, l);
+                    if (t != null) l.Traits.Add(t);
+                }
+                if (l.Owner == 0)
+                {
+                    string extra = l.Level == 3 && l.Traits.Count > 1 ? Loc.F(" Новая черта: {0}", Trait(l.Traits[l.Traits.Count - 1])?.Name) : "";
+                    NotificationCenter.Show(Loc.T("Лидер стал опытнее"), Loc.F("{0} {1} — уровень {2}.{3}", ClassName(l.Class), l.Name, l.Level, extra),
+                        NotificationCenter.Kind.Success, 4f);
+                }
+                Changed();
+            }
+        }
+
+        // ==================== ДЛЯ СОБЫТИЙ ====================
+
+        public IEnumerable<Leader> Of(int owner)
+        {
+            foreach (var l in _s.Leaders) if (l.Owner == owner) yield return l;
+        }
+
+        public void GrantXp(Leader l, float xp) => GainXp(l, xp);
+
+        /// <summary>Дать черту (если её ещё нет). Отрицательная черта вытесняет свою «противоположность».</summary>
+        public bool GiveTrait(Leader l, string traitId)
+        {
+            var def = Trait(traitId);
+            if (l == null || def == null || l.Has(traitId)) return false;
+            if (traitId == "gov_corrupt") l.Traits.Remove("gov_honest");
+            if (traitId == "gov_honest") l.Traits.Remove("gov_corrupt");
+            l.Traits.Add(traitId);
+            if (l.Owner == 0)
+                NotificationCenter.Show(def.Negative ? Loc.T("Лидер получил изъян") : Loc.T("Лидер получил черту"),
+                    $"{ClassName(l.Class)} {l.Name}: «{def.Name}» — {def.Desc}",
+                    def.Negative ? NotificationCenter.Kind.Warning : NotificationCenter.Kind.Success, 5f);
+            Changed();
+            return true;
+        }
+
+        public void RemoveTrait(Leader l, string traitId)
+        {
+            if (l != null && l.Traits.Remove(traitId)) Changed();
+        }
+
+        /// <summary>Лидер покидает службу (уход в отставку, гибель в событии).</summary>
+        public void Retire(Leader l, string title, string message)
+        {
+            if (l == null || !_s.Leaders.Remove(l)) return;
+            if (l.Owner == 0) NotificationCenter.Show(title, message, NotificationCenter.Kind.Info, 6f);
+            Changed();
+        }
+
+        /// <summary>Лидер поступает на службу без оплаты (перебежчик, спасённый). null — нет мест.</summary>
+        public Leader RecruitFree(int owner, LeaderClass cls, int level, string traitId)
+        {
+            if (owner == 0 && CountFor(0) >= MaxLeaders) return null;
+            var l = Generate(owner, cls);
+            level = Mathf.Clamp(level, 1, MaxLevel);
+            l.Level = level;
+            l.Xp = LevelXp[level - 1];
+            if (!string.IsNullOrEmpty(traitId) && Trait(traitId) != null && !l.Has(traitId))
+            {
+                if (Trait(traitId).Class == cls && l.Traits.Count > 0) l.Traits[0] = traitId; else l.Traits.Add(traitId);
+            }
+            if (level >= 3 && l.Traits.Count < 2)
+            {
+                string t = RandomTrait(cls, l);
+                if (t != null) l.Traits.Add(t);
+            }
+            _s.Leaders.Add(l);
+            Changed();
+            return l;
+        }
+
+        public void OnSurveyDay(FleetData ship) => GainXp(LeaderOfShip(ship.Id), 1.5f);
+        public void OnSurveyComplete(FleetData ship) => GainXp(LeaderOfShip(ship.Id), 25f);
+
+        public void OnDamageDealt(int owner, int systemId, float dealt)
+        {
+            var l = AdmiralAt(owner, systemId);
+            if (l != null) GainXp(l, dealt / 15f);
+        }
+
+        public void OnKill(int owner, int systemId) => GainXp(AdmiralAt(owner, systemId), 20f);
+
+        private void HandleJob(ConstructionJob job)
+        {
+            if (job == null || !job.IsPlanetJob) return;
+            GainXp(GovernorOf(job.SystemId, job.PlanetIndex), 12f);
+        }
+
+        // ==================== СОБЫТИЯ ====================
+
+        private void HandleShipDestroyed(FleetData ship, int killer)
+        {
+            var l = LeaderOfShip(ship.Id);
+            if (l == null) return;
+            _s.Leaders.Remove(l);
+            if (l.Owner == 0)
+                NotificationCenter.Show(Loc.T("Лидер погиб"), Loc.F("{0} {1} погиб вместе с кораблём {2}", ClassName(l.Class), l.Name, ship.Name),
+                    NotificationCenter.Kind.Danger, 6f);
+            Changed();
+        }
+
+        private void HandleCaptured(StarSystem sys, int oldOwner, int newOwner)
+        {
+            bool any = false;
+            foreach (var l in _s.Leaders)
+                if (l.Post == LeaderPost.Planet && l.SystemId == sys.Id && l.Owner != newOwner)
+                {
+                    l.Post = LeaderPost.None; l.SystemId = l.PlanetIndex = -1; any = true;
+                    if (l.Owner == 0)
+                        NotificationCenter.Show(Loc.T("Губернатор эвакуирован"), Loc.F("{0} покинул {1} и ждёт нового назначения", l.Name, sys.Name),
+                            NotificationCenter.Kind.Warning, 5f);
+                }
+            if (any) Changed();
+        }
+
+        private void HandleDay(int day, int month, int year)
+        {
+            if (!UIManager.IsGameStarted) return;
+            bool changed = false;
+
+            // Ежедневный опыт за службу и проверка постов
+            for (int i = _s.Leaders.Count - 1; i >= 0; i--)
+            {
+                var l = _s.Leaders[i];
+                switch (l.Post)
+                {
+                    case LeaderPost.Planet:
+                        var sys = EmpireStats.GetSystem(l.SystemId);
+                        if (sys == null || sys.OwnerId != l.Owner || l.PlanetIndex < 0 || l.PlanetIndex >= sys.Planets.Count
+                            || sys.Planets[l.PlanetIndex].Population <= 0)
+                        { l.Post = LeaderPost.None; l.SystemId = l.PlanetIndex = -1; changed = true; }
+                        else GainXp(l, 0.15f);
+                        break;
+                    case LeaderPost.Council:
+                        GainXp(l, 0.1f);
+                        break;
+                    case LeaderPost.Spy:
+                        GainXp(l, 0.08f);
+                        break;
+                    case LeaderPost.Ship:
+                        if (FindShip(l.ShipId) == null) { l.Post = LeaderPost.None; l.ShipId = -1; changed = true; }
+                        else if (l.Class == LeaderClass.Admiral) GainXp(l, 0.05f);
+                        break;
+                }
+            }
+
+            if (day == 1)
+            {
+                // Содержание
+                int player = CountFor(0);
+                var eco = EconomyManager.Instance;
+                if (eco != null && player > 0) { eco.EnergyCredits -= player * UpkeepEnergy; eco.RaiseResourcesChanged(); }
+                foreach (var rival in AIEmpireManager.Alive)
+                {
+                    int n = CountFor(rival.OwnerId);
+                    if (n > 0) rival.SpendStock("energy", n * UpkeepEnergy);
+                    AIThink(rival);
+                }
+
+                if (month == 1)
+                {
+                    // Старение; пул кандидатов обновляется
+                    for (int i = _s.Leaders.Count - 1; i >= 0; i--)
+                    {
+                        var l = _s.Leaders[i];
+                        l.Age++;
+                        if (l.Age < l.Lifespan) continue;
+                        _s.Leaders.RemoveAt(i);
+                        changed = true;
+                        if (l.Owner == 0)
+                            NotificationCenter.Show(Loc.T("Лидер ушёл из жизни"), Loc.F("{0} {1} скончался в возрасте {2} лет", ClassName(l.Class), l.Name, l.Age),
+                                NotificationCenter.Kind.Info, 6f);
+                    }
+                    RefillCandidates(true);
+                    changed = true;
+                }
+            }
+            if (changed) Changed();
+        }
+
+        // ==================== ИИ ====================
+
+        /// <summary>ИИ раз в месяц нанимает (когда хватает влияния) и расставляет лидеров по лучшим постам.</summary>
+        private void AIThink(AIEmpireManager ai)
+        {
+            if (ai == null) return;
+            int owner = ai.OwnerId;
+
+            if (CountFor(owner) < 4 && ai.GetStock("influence") >= HireInfluence + 40f)
+            {
+                int sci = 0, adm = 0, gov = 0;
+                foreach (var l in _s.Leaders)
+                    if (l.Owner == owner) { if (l.Class == LeaderClass.Scientist) sci++; else if (l.Class == LeaderClass.Admiral) adm++; else gov++; }
+                LeaderClass want = adm == 0 && ai.AtWarWithAnyone ? LeaderClass.Admiral
+                                 : sci == 0 ? LeaderClass.Scientist
+                                 : adm == 0 ? LeaderClass.Admiral
+                                 : gov == 0 ? LeaderClass.Governor
+                                 : (LeaderClass)_rng.Next(3);
+                ai.SpendStock("influence", HireInfluence);
+                _s.Leaders.Add(Generate(owner, want));
+            }
+
+            var fm = FleetManager.Instance;
+            foreach (var l in _s.Leaders)
+            {
+                if (l.Owner != owner || l.Post != LeaderPost.None) continue;
+                switch (l.Class)
+                {
+                    case LeaderClass.Scientist:
+                    {
+                        FleetData free = null;
+                        if (fm != null)
+                            foreach (var f in fm.AllFleets)
+                                if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == owner && f.Data.Type == FleetType.Science
+                                    && LeaderOfShip(f.Data.Id) == null) { free = f.Data; break; }
+                        if (free != null) { l.Post = LeaderPost.Ship; l.ShipId = free.Id; }
+                        else if (CouncilScientist(owner) == null) l.Post = LeaderPost.Council;
+                        break;
+                    }
+                    case LeaderClass.Admiral:
+                    {
+                        FleetData best = null;
+                        if (fm != null)
+                            foreach (var f in fm.AllFleets)
+                                if (f?.Data != null && !f.Data.Destroyed && f.Data.OwnerId == owner && f.Data.Type == FleetType.Military
+                                    && LeaderOfShip(f.Data.Id) == null && (best == null || CombatMath.Power(f.Data) > CombatMath.Power(best)))
+                                    best = f.Data;
+                        if (best != null) { l.Post = LeaderPost.Ship; l.ShipId = best.Id; }
+                        break;
+                    }
+                    default:
+                    {
+                        PlanetData best = null;
+                        foreach (var s in EmpireStats.Systems)
+                        {
+                            if (s.OwnerId != owner) continue;
+                            foreach (var p in s.Planets)
+                                if (p.Population > 0 && GovernorOf(p) == null && (best == null || p.Population > best.Population)) best = p;
+                        }
+                        if (best != null) { l.Post = LeaderPost.Planet; l.SystemId = best.ParentSystem.Id; l.PlanetIndex = best.ParentSystem.Planets.IndexOf(best); }
+                        break;
+                    }
+                }
+            }
+        }
+
+        // ==================== СОХРАНЕНИЕ ====================
+
+        public LeaderState CaptureState() => _s;
+
+        public void RestoreState(LeaderState s)
+        {
+            _s = s ?? new LeaderState();
+            _s.Leaders ??= new List<Leader>();
+            _s.Candidates ??= new List<Leader>();
+            foreach (var l in _s.Leaders) l.Traits ??= new List<string>();
+            foreach (var l in _s.Candidates) l.Traits ??= new List<string>();
+            if (_s.Candidates.Count == 0) RefillCandidates(true);
+            else RefillCandidates(false);   // в старом сохранении может не быть кандидата-агента
+            Changed();
+        }
+    }
+}

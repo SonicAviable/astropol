@@ -19,6 +19,7 @@ namespace StellarisClone.Rendering
         private RectTransform _root;
         private RectTransform _dotsArea;
         private RectTransform _viewRect;
+        private static Sprite s_bezel;
         private CanvasGroup _group;
         private readonly Dictionary<int, Image> _dots = new Dictionary<int, Image>();
         private GalaxyGenerator _gen;
@@ -96,10 +97,11 @@ public static void ShowGlobal()
             var root = new GameObject("GalaxyMinimap");
             root.transform.SetParent(_canvas.transform, false);
             _root = root.AddComponent<RectTransform>();
-            _root.anchorMin = _root.anchorMax = new Vector2(1, 0);
-            _root.pivot = new Vector2(1, 0);
+            // Круглая мини-карта слева внизу (как в референсе); вокруг неё дугой — режимы карты (MapModeController)
+            _root.anchorMin = _root.anchorMax = new Vector2(0, 0);
+            _root.pivot = new Vector2(0, 0);
             _root.sizeDelta = new Vector2(mapSize, mapSize);
-            _root.anchoredPosition = new Vector2(-padding, padding);
+            _root.anchoredPosition = new Vector2(padding, padding);
 
             _group = root.AddComponent<CanvasGroup>();
             _group.blocksRaycasts = true;
@@ -107,20 +109,33 @@ public static void ShowGlobal()
             var bg = root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(root, 24f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.40f));
+            LG.Glass(root, mapSize * 0.5f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.55f));
             var motion = LG.Motion(root, LGAppear.Kind.SlideDown);
             motion.distance = 30f;
+
+            // Безель: тонкое кольцо с делениями вокруг карты, крупные метки — по сторонам света
+            var bz = new GameObject("Bezel");
+            bz.transform.SetParent(root.transform, false);
+            var bzRt = bz.AddComponent<RectTransform>();
+            bzRt.anchorMin = bzRt.anchorMax = new Vector2(0.5f, 0.5f);
+            bzRt.pivot = new Vector2(0.5f, 0.5f);
+            bzRt.sizeDelta = new Vector2(mapSize + 14f, mapSize + 14f);
+            var bzImg = bz.AddComponent<Image>();
+            bzImg.sprite = BezelSprite();
+            bzImg.color = new Color(0.45f, 0.95f, 0.90f, 0.55f);
+            bzImg.raycastTarget = false;
+            LG.Ignore(bz);
 
             // Внутренний "колодец" карты — чуть темнее, с мягкой кромкой
             var well = new GameObject("MapWell");
             well.transform.SetParent(root.transform, false);
             var wRt = well.AddComponent<RectTransform>();
             wRt.anchorMin = Vector2.zero; wRt.anchorMax = Vector2.one;
-            wRt.offsetMin = new Vector2(8, 8); wRt.offsetMax = new Vector2(-8, -30);
+            wRt.offsetMin = new Vector2(10, 10); wRt.offsetMax = new Vector2(-10, -10);
             var wImg = well.AddComponent<Image>();
             wImg.color = UIManager.DS.BgVisor;
             wImg.raycastTarget = false;
-            LG.Platter(well, 16f);
+            LG.Platter(well, mapSize * 0.5f - 10f);
 
             var titleBgGO = new GameObject("TitleBg");
             titleBgGO.transform.SetParent(root.transform, false);
@@ -134,6 +149,7 @@ public static void ShowGlobal()
             tbImg.color = new Color(0, 0, 0, 0);
             tbImg.raycastTarget = false;
             LG.Ignore(titleBgGO, includeChildren: false);
+            titleBgGO.SetActive(false);   // у круглой карты нет шапки
 
             var titleGO = new GameObject("Title");
             titleGO.transform.SetParent(titleBgGO.transform, false);
@@ -145,7 +161,7 @@ public static void ShowGlobal()
 
             var t = titleGO.AddComponent<Text>();
             t.font = GameFont.Bold;
-            t.text = "◆  КАРТА ГАЛАКТИКИ";
+            t.text = Loc.T("◆  КАРТА ГАЛАКТИКИ");
             t.fontSize = 11;
             t.fontStyle = FontStyle.Bold;
             t.alignment = TextAnchor.MiddleCenter;
@@ -160,8 +176,8 @@ public static void ShowGlobal()
             _dotsArea = dotsRoot.AddComponent<RectTransform>();
             _dotsArea.anchorMin = Vector2.zero;
             _dotsArea.anchorMax = Vector2.one;
-            _dotsArea.offsetMin = new Vector2(10, 10);
-            _dotsArea.offsetMax = new Vector2(-10, -28);
+            _dotsArea.offsetMin = new Vector2(12, 12);
+            _dotsArea.offsetMax = new Vector2(-12, -12);
 
             var v = new GameObject("ViewRect");
             v.transform.SetParent(_dotsArea.transform, false);
@@ -182,6 +198,32 @@ public static void ShowGlobal()
 
             var clicker = root.AddComponent<MinimapClickHandler>();
             clicker.Init(this);
+        }
+
+        private static Sprite BezelSprite()
+        {
+            if (s_bezel != null) return s_bezel;
+            const int n = 512;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, true)
+            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "MinimapBezel", hideFlags = HideFlags.DontSave };
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f;
+                float d = Mathf.Sqrt(u * u + v * v);
+                float ang = (Mathf.Atan2(v, u) * Mathf.Rad2Deg + 360f) % 360f;
+                float ring = Mathf.Exp(-Mathf.Pow((d - 0.985f) / 0.006f, 2f));
+                float tick = Mathf.Repeat(ang + 0.6f, 6f) < 1.2f && d > 0.955f && d < 0.978f ? 0.55f : 0f;
+                float major = Mathf.Repeat(ang + 1.5f, 90f) < 3f && d > 0.93f && d < 0.98f ? 1f : 0f;
+                float a = Mathf.Max(ring, Mathf.Max(tick, major));
+                px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(Mathf.Clamp01(a) * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            s_bezel = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100);
+            s_bezel.hideFlags = HideFlags.DontSave;
+            return s_bezel;
         }
 
         private void TryBuildDots()
@@ -224,7 +266,7 @@ public static void ShowGlobal()
         private Color GetColorForSystem(StarSystem sys)
         {
             if (sys.OwnerId == 0) return UIManager.DS.NeonCyan;
-            if (sys.OwnerId > 0) return UIManager.DS.Red;
+            if (sys.OwnerId > 0) return FleetIndicator.OwnerColor(sys.OwnerId);
             if (sys.IsSurveyed) return UIManager.DS.TextMuted;
             return new Color(0.45f, 0.60f, 0.75f, 1f);
         }
@@ -250,7 +292,12 @@ public static void ShowGlobal()
 
             foreach (var sys in _gen.Systems)
                 if (_dots.TryGetValue(sys.Id, out var img))
-                    img.color = GetColorForSystem(sys);
+                {
+                    // Туман войны: неисследованных систем на миникарте нет
+                    bool known = Vision.PlayerKnows(sys.Id);
+                    if (img.enabled != known) img.enabled = known;
+                    if (known) img.color = GetColorForSystem(sys);
+                }
 
             Vector3 camPos = _cam.transform.position;
             float half = (mapSize * 0.5f) - 28f;
@@ -272,16 +319,22 @@ public static void ShowGlobal()
 
             float x = norm.x * galaxyRadius;
             float z = norm.y * galaxyRadius;
-            _cam.transform.position = new Vector3(x, _cam.transform.position.y, z - 25f);
+            var ctl = _cam.GetComponent<StellarisClone.Cam.StrategyCameraController>();
+            if (ctl != null) ctl.CenterOnImmediate(new Vector3(x, 0f, z));
+            else _cam.transform.position = new Vector3(x, _cam.transform.position.y, z - 25f);
         }
     }
 
-    public class MinimapClickHandler : MonoBehaviour, IPointerClickHandler
+    /// <summary>Миникарта: щелчок переносит камеру, перетаскивание — ведёт её за курсором.</summary>
+    public class MinimapClickHandler : MonoBehaviour, IPointerDownHandler, IDragHandler
     {
         private GalaxyMinimap _map;
         public void Init(GalaxyMinimap map) => _map = map;
 
-        public void OnPointerClick(PointerEventData e)
+        public void OnPointerDown(PointerEventData e) => Move(e);
+        public void OnDrag(PointerEventData e) => Move(e);
+
+        private void Move(PointerEventData e)
         {
             if (e.button != PointerEventData.InputButton.Left) return;
             var rt = transform as RectTransform;

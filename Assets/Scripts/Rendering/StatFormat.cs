@@ -1,4 +1,5 @@
 using UnityEngine;
+using StellarisClone.Core;
 
 namespace StellarisClone.Rendering
 {
@@ -28,6 +29,10 @@ namespace StellarisClone.Rendering
         /// <summary>Авто-окраска по знаку числа. Ноль — приглушённый.</summary>
         public static string Colored(float value, string format = "+0;-0;0")
         {
+            // Вызовы вида Colored(x, "%/мес") попадают сюда (точное совпадение перегрузки):
+            // строка без цифровых плейсхолдеров — это суффикс, а не формат числа
+            if (string.IsNullOrEmpty(format) || (format.IndexOf('0') < 0 && format.IndexOf('#') < 0))
+                return Colored(value, format ?? "", "+0;-0;0");
             string text = value.ToString(format);
             if (value > 0.001f) return Positive(text);
             if (value < -0.001f) return Negative(text);
@@ -87,8 +92,9 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Знаковый процент для UI-текста (например, «+8%/мес»).</summary>
-        public static string Income(float value, string suffix = "/мес")
+        public static string Income(float value, string suffix = null)
         {
+            suffix ??= Loc.T("/мес");
             string text = value.ToString("+0.0;-0.0;0.0") + suffix;
             if (value > 0.01f) return Positive(text);
             if (value < -0.01f) return Negative(text);

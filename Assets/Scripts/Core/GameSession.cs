@@ -12,14 +12,18 @@ namespace StellarisClone.Core
         public int Difficulty = 1;     // 0 лёгкая · 1 нормальная · 2 сложная
         public int Seed;
         public bool Tutorial = true;
+        public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
 
-        public static readonly string[] SizeNames = { "Малая", "Средняя", "Большая" };
-        public static readonly string[] DifficultyNames = { "Лёгкая", "Нормальная", "Сложная" };
+        public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
+        public static readonly string[] DifficultyNames = { Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная") };
+        public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
-        public int StarCount => GalaxySize == 0 ? 50 : GalaxySize == 2 ? 120 : 80;
-        public float Radius => GalaxySize == 0 ? 120f : GalaxySize == 2 ? 178f : 160f;
+        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя
+        public int StarCount => GalaxySize == 0 ? 85 : GalaxySize == 2 ? 230 : 150;
+        public float Radius => GalaxySize == 0 ? 158f : GalaxySize == 2 ? 248f : 218f;
         public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
-        public int DominationTarget => GalaxySize == 0 ? 25 : GalaxySize == 2 ? 60 : 40;
+        /// <summary>Доминирование — около 55% систем галактики (85 / 150 / 230 звёзд); порог ещё нужно удерживать год.</summary>
+        public int DominationTarget => GalaxySize == 0 ? 47 : GalaxySize == 2 ? 127 : 83;
 
         /// <summary>Множитель доходов ИИ.</summary>
         public float AIIncome => Difficulty == 0 ? 0.7f : Difficulty == 2 ? 1.5f : 1f;
@@ -127,7 +131,10 @@ namespace StellarisClone.Core
         {
             if (s_reloading) return;
             s_reloading = true;
-            StellarisClone.Rendering.SceneFader.FadeOutThen(DoReload);
+            var kind = Mode == StartMode.LoadGame ? StellarisClone.Rendering.LoadingScreen.Kind.LoadGame
+                     : Mode == StartMode.NewGame ? StellarisClone.Rendering.LoadingScreen.Kind.NewGame
+                     : StellarisClone.Rendering.LoadingScreen.Kind.Menu;
+            StellarisClone.Rendering.LoadingScreen.Begin(kind, DoReload);
         }
 
         private static void DoReload()
@@ -135,17 +142,19 @@ namespace StellarisClone.Core
             Time.timeScale = 1f;
             SceneManager.sceneLoaded += OnSceneReloaded;
 
+            // Асинхронно — экран загрузки показывает реальный прогресс
             var scene = SceneManager.GetActiveScene();
-            if (scene.buildIndex >= 0)
+            AsyncOperation op;
+            if (scene.buildIndex >= 0) op = SceneManager.LoadSceneAsync(scene.buildIndex);
+            else
             {
-                SceneManager.LoadScene(scene.buildIndex);
-                return;
-            }
 #if UNITY_EDITOR
-            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
+                op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
 #else
-            SceneManager.LoadScene(0);
+                op = SceneManager.LoadSceneAsync(0);
 #endif
+            }
+            StellarisClone.Rendering.LoadingScreen.TrackSceneLoad(op);
         }
 
         private static void OnSceneReloaded(Scene scene, LoadSceneMode mode)

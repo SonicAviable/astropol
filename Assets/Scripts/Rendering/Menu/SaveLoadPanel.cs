@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Core;
+using StellarisClone.Core.Audio;
 
 namespace StellarisClone.Rendering
 {
@@ -48,10 +49,10 @@ namespace StellarisClone.Rendering
                 bar.TopBand(0, 48);
                 var inputHost = LGBuild.Rect(bar, "InputHost");
                 inputHost.Stretch(0, 0, 250, 0);
-                _name = LGControls.Input(inputHost, DefaultName(), "Название сохранения", 40);
+                _name = LGControls.Input(inputHost, DefaultName(), Loc.T("Название сохранения"), 40);
                 _name.onValueChanged.AddListener(_ => { _armedOverwrite = false; UpdateSaveLabel(); });
 
-                var btn = LGBuild.Button(bar, "SaveBtn", UIManager.DS.BtnSuccess, UIManager.DS.Green, DoSave, LGIcon.Save, "СОХРАНИТЬ", 13);
+                var btn = LGBuild.Button(bar, "SaveBtn", UIManager.DS.BtnSuccess, UIManager.DS.Green, DoSave, LGIcon.Save, Loc.T("СОХРАНИТЬ"), 13);
                 var brt = (RectTransform)btn.transform;
                 brt.anchorMin = new Vector2(1, 0);
                 brt.anchorMax = new Vector2(1, 1);
@@ -73,7 +74,7 @@ namespace StellarisClone.Rendering
         {
             var f = UIManager.Instance != null ? UIManager.Instance.SelectedFaction : null;
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
-            return $"{(f != null ? f.Name : "Империя")} · {date}";
+            return $"{(f != null ? f.Name : Loc.T("Империя"))} · {date}";
         }
 
         private void Update()
@@ -93,14 +94,14 @@ namespace StellarisClone.Rendering
         {
             if (_saveLabel == null || _name == null) return;
             bool exists = SaveSystem.Exists(SaveSystem.SlotFromName(_name.text));
-            _saveLabel.text = _armedOverwrite ? "ТОЧНО ПЕРЕЗАПИСАТЬ?" : exists ? "ПЕРЕЗАПИСАТЬ" : "СОХРАНИТЬ";
+            _saveLabel.text = _armedOverwrite ? Loc.T("ТОЧНО ПЕРЕЗАПИСАТЬ?") : exists ? Loc.T("ПЕРЕЗАПИСАТЬ") : Loc.T("СОХРАНИТЬ");
         }
 
         private void DoSave()
         {
             if (!SaveSystem.CanSaveNow)
             {
-                NotificationCenter.Show("Сейчас сохранить нельзя", "Партия завершена или ещё не началась", NotificationCenter.Kind.Warning, 3f);
+                NotificationCenter.Show(Loc.T("Сейчас сохранить нельзя"), Loc.T("Партия завершена или ещё не началась"), NotificationCenter.Kind.Warning, 3f);
                 return;
             }
             string name = string.IsNullOrWhiteSpace(_name.text) ? DefaultName() : _name.text.Trim();
@@ -114,7 +115,7 @@ namespace StellarisClone.Rendering
             }
             _armedOverwrite = false;
             _highlight = slot;   // список перестроится событием сохранения — строка вспыхнет
-            if (SaveSystem.Save(name)) SFXManager.Play("ui_click", 0.8f, 0.85f);
+            if (SaveSystem.Save(name)) SFXManager.Play(Sfx.UiConfirm);
             _highlight = null;
             UpdateSaveLabel();
         }
@@ -135,8 +136,8 @@ namespace StellarisClone.Rendering
                 var ic = LGIcons.Create(empty.transform, LGIcon.Load, 40, new Color(1, 1, 1, 0.25f));
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 26), new Vector2(40, 40));
                 var t = LGBuild.Label(empty.transform, _mode == Mode.Save
-                        ? "Сохранений пока нет — введите название и нажмите «Сохранить»"
-                        : "Сохранений пока нет\n<size=11><color=#8AA2A8>Сохранить партию можно в меню паузы (Esc) или клавишей F5</color></size>",
+                        ? Loc.T("Сохранений пока нет — введите название и нажмите «Сохранить»")
+                        : Loc.T("Сохранений пока нет\n<size=11><color=#8AA2A8>Сохранить партию можно в меню паузы (Esc) или клавишей F5</color></size>"),
                     14, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
                 t.rectTransform.Stretch(30, 10, 30, 70);
                 return;
@@ -190,16 +191,16 @@ namespace StellarisClone.Rendering
                 var chip = LGBuild.Panel(body, "AutoChip", new Color(0.3f, 0.24f, 0.06f, 1f));
                 chip.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(62, 18));
                 LG.Chip(chip.gameObject, new Color(1f, 0.82f, 0.36f, 0.6f), 9f);
-                LGBuild.Label(chip.transform, "АВТО", 9, UIManager.DS.Gold, TextAnchor.MiddleCenter, bold: true);
+                LGBuild.Label(chip.transform, Loc.T("АВТО"), 9, UIManager.DS.Gold, TextAnchor.MiddleCenter, bold: true);
             }
 
             string diff = NewGameSettings.DifficultyNames[Mathf.Clamp(m.Difficulty, 0, 2)];
             string size = NewGameSettings.SizeNames[Mathf.Clamp(m.GalaxySize, 0, 2)];
-            var sub = LGBuild.Label(body, $"<color={LGBuild.Hex(ec)}>{m.Empire}</color>   ·   {m.GameDate}   ·   {size} галактика, {diff.ToLower()}",
+            var sub = LGBuild.Label(body, Loc.F("<color={0}>{1}</color>   ·   {2}   ·   {3} галактика, {4}", LGBuild.Hex(ec), m.Empire, m.GameDate, size, diff.ToLower()),
                                     11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft);
             sub.rectTransform.offsetMax = new Vector2(0, -2);
             var stats = LGBuild.Label(body,
-                $"Систем <b>{m.Systems}</b>   ·   колоний <b>{m.Colonies}</b>   ·   технологий <b>{m.Techs}</b>   ·   в игре {SaveSystem.FormatPlayTime(m.PlayTime)}",
+                Loc.F("Систем <b>{0}</b>   ·   колоний <b>{1}</b>   ·   технологий <b>{2}</b>   ·   в игре {3}", m.Systems, m.Colonies, m.Techs, SaveSystem.FormatPlayTime(m.PlayTime)),
                 11, new Color(0.78f, 0.88f, 0.92f), TextAnchor.LowerLeft);
 
             // Справа: время и кнопки
@@ -224,19 +225,19 @@ namespace StellarisClone.Rendering
             var del = LGBuild.Button(actions, "Delete",
                 armedDel ? UIManager.DS.BtnDanger : UIManager.DS.BtnNeutral,
                 armedDel ? UIManager.DS.Red : new Color(1f, 0.5f, 0.5f, 0.35f),
-                () => OnDelete(slot), LGIcon.Trash, armedDel ? "УДАЛИТЬ?" : null, 11);
+                () => OnDelete(slot), LGIcon.Trash, armedDel ? Loc.T("УДАЛИТЬ?") : null, 11);
             ((RectTransform)del.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(armedDel ? 118 : 42, 38));
-            TooltipHelper.Attach(del.gameObject, "Удалить сохранение");
+            TooltipHelper.Attach(del.gameObject, Loc.T("Удалить сохранение"));
 
             if (_mode == Mode.Load)
             {
                 var load = LGBuild.Button(actions, "Load",
                     armedLoad ? new Color(0.30f, 0.24f, 0.08f) : UIManager.DS.BtnPrimary,
                     armedLoad ? UIManager.DS.Gold : UIManager.DS.NeonCyan,
-                    () => OnLoad(slot), LGIcon.Play, armedLoad ? "ТОЧНО?" : "ЗАГРУЗИТЬ", 12);
+                    () => OnLoad(slot), LGIcon.Play, armedLoad ? Loc.T("ТОЧНО?") : Loc.T("ЗАГРУЗИТЬ"), 12);
                 ((RectTransform)load.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(armedDel ? -126 : -50, 0), new Vector2(150, 38));
                 if (armedLoad)
-                    TooltipHelper.Attach(load.gameObject, "Несохранённый прогресс текущей партии будет потерян");
+                    TooltipHelper.Attach(load.gameObject, Loc.T("Несохранённый прогресс текущей партии будет потерян"));
             }
         }
 
