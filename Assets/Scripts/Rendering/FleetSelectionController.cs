@@ -88,10 +88,11 @@ namespace StellarisClone.Rendering
                     return;
                 }
 
-                var picked = PickFleet(Input.mousePosition);
+                var picked = PickFleet(Input.mousePosition, out bool viaIcon);
                 if (picked != null)
                 {
-                    var group = GroupOf(picked);
+                    // Клик по значку — весь слитый с ним строй; клик по самому кораблю — только этот флот
+                    var group = viaIcon ? GroupOf(picked) : new List<FleetView> { picked };
                     if (shift)
                     {
                         foreach (var g in group) fm.ToggleInSelection(g);
@@ -114,9 +115,12 @@ namespace StellarisClone.Rendering
             }
         }
 
-        /// <summary>Свой флот под курсором: сначала значки (по экрану), затем модель корабля.</summary>
-        private FleetView PickFleet(Vector2 screen)
+        private FleetView PickFleet(Vector2 screen) => PickFleet(screen, out _);
+
+        /// <summary>Свой флот под курсором: сначала значки (по экрану), затем модель корабля; viaIcon — попали по значку.</summary>
+        private FleetView PickFleet(Vector2 screen, out bool viaIcon)
         {
+            viaIcon = false;
             FleetIndicator best = null;
             float bestD = float.MaxValue;
             foreach (var ind in FleetIndicator.All)
@@ -126,7 +130,7 @@ namespace StellarisClone.Rendering
                 float d = Vector2.Distance(screen, ind.ScreenPos);
                 if (d <= ind.ScreenRadius + 3f && d < bestD) { bestD = d; best = ind; }
             }
-            if (best != null) return best.Fleet;
+            if (best != null) { viaIcon = true; return best.Fleet; }
 
             Ray ray = _cam.ScreenPointToRay(screen);
             FleetView found = null;
