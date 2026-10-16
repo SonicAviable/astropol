@@ -1272,7 +1272,7 @@
 другой империи	another empire
 {0} перешёл к {1}. Бонус больше не действует.	{0} has passed to {1}. Its bonus no longer applies.
 Узел силы занят	Power node claimed
-Империя	An empire
+Империя	Empire
 {0} установила контроль над узлом «{1}».	{0} has taken control of the “{1}” node.
 Врата Предтеч	Precursor Gate
 Пульсар Ирис	Iris Pulsar
@@ -2499,6 +2499,427 @@
 Дар принят. Ваша нить стала ярче.	The gift is accepted. Your thread has grown brighter.
 Оракул благодарит. Будущее — тоже.	The Oracle thanks you. And so does the future.
 Вот как сплетаются нити, чтобы не порваться.	This is how the threads are woven so they do not break.
+Чуть иначе — и будущее станет благосклонным.	A slight shift, and the future will turn kind.
+Я вижу лучший путь. Взгляните.	I see a better path. Look.
+Сейчас наши нити не пересекаются.	Our threads do not cross at present.
+Время для этого ещё не пришло.	The time for this has not yet come.
+Мне явилось, что вы нуждаетесь в этом. А мне нужно иное.	It was revealed to me that you need this. But I need something else.
+Обмен, предсказанный звёздами. Не откажитесь от судьбы.	An exchange foretold by the stars. Do not refuse your fate.
+Свяжем наши дороги договором. Я вижу в этом пользу для обоих.	Let us bind our roads with a treaty. I foresee benefit for us both.
+Знание о звёздах стоит делить с теми, кто достоин.	Knowledge of the stars should be shared with the worthy.
+Видения требуют платы. Вашей платы.	Visions demand a price. Your price.
+Отдайте то, что должны, — и тени отступят от ваших миров.	Give what you owe, and the shadows will retreat from your worlds.
+Довольно. Я видела, что ждёт нас обоих, если война продолжится.	Enough. I have seen what awaits us both if this war goes on.
+Оракул предлагает мир. Этот шанс не повторится.	The Oracle offers peace. This chance will not come again.
+Пусть наши границы будут священны. Для обоих.	Let our borders be sacred. For both of us.
+Пакт о ненападении — и мои видения о вас станут спокойнее.	A non-aggression pact — and my visions of you will grow calmer.
+Я видела ваш приход во сне задолго до этой минуты. Иридийский Оракул приветствует вас.	I dreamed of your coming long before this moment. The Iridian Oracle greets you.
+Звёзды предсказали нашу встречу. Посмотрим, к добру ли.	The stars foretold our meeting. Let us see whether it bodes well.
+Ваши корни крепнут рядом с нашими. Это хорошо. Говорите, друг.	Your roots grow strong beside ours. That is good. Speak, friend.
+Конклав помнит добро. Мы помним его очень долго.	The Conclave remembers kindness. We remember it for a very long time.
+Сад рад вам. Присядьте — разговор не терпит спешки.	The Garden welcomes you. Sit — this conversation will not be rushed.
+Конклав слушает. Медленно, но внимательно.	The Conclave listens. Slowly, but attentively.
+Мы видели, как рождались и гасли звёзды. Ваше дело подождёт мгновение?	We have watched stars be born and fade. Can your business wait a moment?
+Говорите. Корни передадут ваши слова всем.	Speak. The roots will carry your words to all.
+Вы ранили наши сады. Земля это помнит.	You have wounded our gardens. The soil remembers.
+Корни под вашими ногами шепчут недоброе. Будьте осторожны в словах.	The roots beneath your feet whisper ill. Choose your words carefully.
+Конклав слушает. Но мицелий уже настороже.	The Conclave listens. But the mycelium is already on guard.
+Вы срубили дерево. Из его пня вырастут сто новых.	You felled a tree. A hundred new ones will sprout from its stump.
+Мы не торопимся побеждать. Мы просто переживём вас.	We are in no hurry to win. We will simply outlive you.
+Каждый ваш выстрел удобряет нашу землю.	Every shot you fire fertilizes our soil.
+Договорились. Это семя прорастёт.	Agreed. This seed will sprout.
+Конклав согласен. Пусть корни переплетутся.	The Conclave agrees. Let our roots intertwine.
+Хорошо. Мы запомним вашу честность.	Very well. We will remember your honesty.
+Нет. Это семя не взойдёт на нашей почве.	No. This seed will not take root in our soil.
+Конклав не согласен. Подумайте ещё — время у нас есть.	The Conclave disagrees. Think again — we have time.
+Слишком мало. Или слишком быстро. Нет.	Too little. Or too fast. No.
+Щедрый дождь в засуху. Конклав запомнит.	Generous rain in a drought. The Conclave will remember.
+Дар принят. Сад станет к вам добрее.	Gift accepted. The Garden will grow kinder to you.
+Благодарим. Корни передадут это всем.	We thank you. The roots will carry word of this to all.
+Вот как это вырастет правильно.	This is how it will grow properly.
+Добавьте это — и плоды созреют для обоих.	Add this, and the fruit will ripen for us both.
+Конклав предлагает иначе. Взгляните.	The Conclave proposes otherwise. Look.
+Нам нечего делить сейчас. Возвращайтесь в другой сезон.	We have nothing to share right now. Return in another season.
+Почва пока не готова к этой сделке.	The soil is not yet ready for this deal.
+Наши сады плодоносят обильно. Обменяемся урожаем?	Our gardens bear fruit in abundance. Shall we exchange harvests?
+У нас есть то, чего не хватает вам. И наоборот. Это естественно.	We have what you lack. And the reverse. That is only natural.
+Долгий договор — как старое дерево: тень от него достаётся всем.	A long treaty is like an old tree: everyone shares its shade.
+Конклав предлагает союз корней. Читайте не спеша.	The Conclave proposes a union of roots. Read without haste.
+Вы пьёте из нашего источника. Пора вернуть долг.	You drink from our spring. It is time to repay the debt.
+Сад требует платы за тень, в которой вы стоите.	The Garden demands payment for the shade you stand in.
+Довольно огня. Пусть земля отдохнёт.	Enough fire. Let the land rest.
+Конклав готов к миру. Деревья помнят, но умеют прощать.	The Conclave is ready for peace. Trees remember, but they know how to forgive.
+Пусть наши корни не тянутся к чужой воде. Пакт?	Let our roots not reach for another's water. A pact?
+Мы предлагаем тень и покой. Взамен — ваш покой для нас.	We offer shade and peace. In return, we ask for peace from you.
+Новый росток среди звёзд... Конклав Тэрра'ан приветствует вас. Мы ждали вашего появления очень давно.	A new sprout among the stars... The Conclave of Terra'an greets you. We have awaited your arrival for a very long time.
+Мицелий принёс весть о вас задолго до этой встречи. Я — Исинна, Хранительница Корней. Говорите не спеша.	The mycelium brought word of you long before this meeting. I am Isinna, Keeper of Roots. Speak without haste.
+Контактов нет	No contacts
+Мы ещё не встретили другие цивилизации. Исследуйте галактику — контакт случится, когда наши корабли или границы увидят чужую империю	We have not yet met other civilizations. Explore the galaxy — contact will happen once our ships or borders encounter an alien empire
+Закрыть  <color=#8AA2A8>(Esc)</color>	Close  <color=#8AA2A8>(Esc)</color>
+НА СТОЛЕ ПЕРЕГОВОРОВ	ON THE NEGOTIATING TABLE
+ОНИ ДАЮТ	THEY GIVE
+ВЫ ДАЁТЕ	YOU GIVE
+СТАТУС ОТНОШЕНИЙ	RELATIONS STATUS
+ДОВЕРИЕ	TRUST
+ВЛИЯНИЕ	INFLUENCE
+<b>Влияние</b>\nВаш запас влияния. Каждое предложение сделки стоит влияния — чем крупнее сделка, тем дороже переговоры	<b>Influence</b>\nYour Influence stockpile. Every deal proposal costs Influence — the bigger the deal, the costlier the negotiations
+ДЕЙСТВУЮЩИЕ СОГЛАШЕНИЯ	ACTIVE AGREEMENTS
+ШАНС СОГЛАСИЯ	CHANCE OF ACCEPTANCE
+ДИАЛОГ	DIALOGUE
+ФЛОТ	FLEET
+ТЕХНОЛОГИИ	TECHNOLOGIES
+СИСТЕМЫ	SYSTEMS
+участник	member
+цель	target
+вне коалиции	not in coalition
+  ·  вы в союзе	  ·  you are allied
+Коалиция против {0}: {1}{2}	Coalition against {0}: {1}{2}
+С <color={0}>{1}</color>: не знакомы	With <color={0}>{1}</color>: no contact
+воюют	at war
+мир	peace
+С <color={0}>{1}</color>: {2}	With <color={0}>{1}</color>: {2}
+<color={0}>их {1:0}</color>  ·  <color={2}>наши {3:0}</color>	<color={0}>theirs {1:0}</color>  ·  <color={2}>ours {3:0}</color>
+Нет действующих договоров	No active treaties
+Пакт о ненападении  ·  бессрочно	Non-aggression pact  ·  indefinite
+Вы платите	You pay
+Вам платят	You receive
+{0} {1:0} {2}/мес  ·  {3}	{0} {1:0} {2}/mo  ·  {3}
+СДЕЛКА −{0:0}	DEAL −{0:0}
+ЗАПАС	STOCKPILE
+повержена	defeated
+пакт	pact
+<b>{0}</b>\n{1} · отношение {2:+0;-0;0}	<b>{0}</b>\n{1} · opinion {2:+0;-0;0}
+\n<color=#F2C747>Ждёт ответа на предложение</color>	\n<color=#F2C747>Awaiting a reply to a proposal</color>
+{0} говорит:	{0} says:
+ПОВЕРЖЕНА	DEFEATED
+ВОЙНА · {0} мес. · усталость {1:0}%	WAR · {0} mo · war exhaustion {1:0}%
+ПАКТ О НЕНАПАДЕНИИ	NON-AGGRESSION PACT
+ПЕРЕМИРИЕ · {0} мес.	TRUCE · {0} mo
+МИР	PEACE
+<b>Отношение {0:+0;-0;0}</b>  ·  {1}\n	<b>Opinion {0:+0;-0;0}</b>  ·  {1}\n
+<color=#8AA2A8>Чем лучше отношение, тем охотнее они идут на сделки</color>	<color=#8AA2A8>The better their opinion, the more willing they are to make deals</color>
+ОБЪЯВИТЬ ВОЙНУ	DECLARE WAR
+Нарушение пакта — тяжёлое вероломство: −40 к отношению надолго	Breaking a pact is grave treachery: −40 Opinion for a long time
+Объявление войны рвёт все соглашения и ухудшает отношение	Declaring war breaks all agreements and worsens Opinion
+РАСТОРГНУТЬ ПАКТ	CANCEL PACT
+Отношение ухудшится; после этого войну можно объявить без вероломства	Opinion will worsen; afterwards, war can be declared without treachery
+ПАКТ	PACT
+ТОРГОВЫЙ ДОГОВОР	TRADE AGREEMENT
+НАУЧНЫЙ ДОГОВОР	RESEARCH AGREEMENT
+ЗВЁЗДНЫЕ КАРТЫ	STAR CHARTS
+\n<color=#6FE09A>Договор действует</color>	\n<color=#6FE09A>Agreement in effect</color>
+\n<color=#8AA2A8>Сначала ответьте на их предложение</color>	\n<color=#8AA2A8>Respond to their proposal first</color>
+\n<color=#F2C747>Лежит на столе — щёлкните, чтобы убрать</color>	\n<color=#F2C747>On the table — click to remove</color>
+\nЩелчок — положить на стол переговоров	\nClick to place on the negotiating table
+<color={0}>Для вас:</color> +{1:0} гелия-3 в месяц, за {2} лет ≈ +{3:0}	<color={0}>For you:</color> +{1:0} Helium-3 per month, over {2} years ≈ +{3:0}
+<color={0}>Для вас:</color> ≈ +{1:0} науки в месяц (сейчас {2:0}/мес), за {3} лет ≈ +{4:0}	<color={0}>For you:</color> ≈ +{1:0} Research per month (currently {2:0}/mo), over {3} years ≈ +{4:0}
+<color={0}>Для вас:</color> откроется ≈ {1} изученных ими систем; они получат ≈ {2} ваших	<color={0}>For you:</color> reveals ≈ {1} systems they have explored; they get ≈ {2} of yours
+ТОЧНО? ЕЩЁ РАЗ	SURE? CLICK AGAIN
+\n<color=#8AA2A8>Нужно подтвердить повторным щелчком</color>	\n<color=#8AA2A8>Click again to confirm</color>
+РАСПУСТИТЬ КОАЛИЦИЮ	DISBAND COALITION
+ПОКИНУТЬ КОАЛИЦИЮ	LEAVE COALITION
+Союзники запомнят, что вы бросили общее дело: отношение ухудшится	Allies will remember that you abandoned the common cause: Opinion will worsen
+ВСТУПИТЬ В КОАЛИЦИЮ	JOIN COALITION
+Присоединитесь к союзу против {0}: союзники лучше к вам относятся, но отношения с целью ухудшатся. Стоит {1:0} влияния	Join the alliance against {0}: allies will view you more favorably, but relations with the target will worsen. Costs {1:0} Influence
+КОАЛИЦИЯ ПРОТИВ НИХ	COALITION AGAINST THEM
+Соберёт соперников, которым эта империя неприятна. Стоит {0:0} влияния; союзники нападут сами, когда накопят силы	Rallies rivals who dislike this empire. Costs {0:0} Influence; allies will attack on their own once they have gathered strength
+{0} ДАЁТ	{0} GIVES
+У них почти ничего нет	They have almost nothing
+У вас почти ничего нет	You have almost nothing
+в месяц	per month
+Во время войны — только мир	During war — peace only
+У них	They have
+У вас	You have
+\n<color=#F2C747>На столе: {0}</color>	\n<color=#F2C747>On the table: {0}</color>
+\n<color=#8AA2A8>Сначала ответьте на их предложение или измените его</color>	\n<color=#8AA2A8>First respond to their proposal or modify it</color>
+\n<color=#8AA2A8>Щелчок — положить на стол (+{0:0})</color>	\n<color=#8AA2A8>Click to place on the table (+{0:0})</color>
+ничего	nothing
+их ресурсы — справа вверху	their resources — top right
+ваши — справа внизу	yours — bottom right
+ТРЕБОВАНИЕ	DEMAND
+ИХ ПРЕДЛОЖЕНИЕ	THEIR PROPOSAL
+<color={0}>Ответ ждут ещё {1} дн.</color>  ·  {2}	<color={0}>Awaiting reply for {1} more d</color>  ·  {2}
+<color=#FF8080>Отказ ухудшит отношение</color>	<color=#FF8080>Refusing will worsen Opinion</color>
+Принять	Accept
+Изменить условия	Change terms
+Отклонить	Decline
+Переговоры: −{0:0} влияния	Negotiations: −{0:0} Influence
+<color=#8AA2A8>Положите на стол то, что хотите получить или отдать, или выберите договор на краю стола</color>	<color=#8AA2A8>Place on the table what you want to receive or give, or choose a treaty at the edge of the table</color>
+Примут с благодарностью	Will accept gratefully
+Согласятся с радостью	Will gladly agree
+Согласятся	Will agree
+Колеблются — добавьте что-нибудь	Hesitant — add something
+Откажут	Will refuse
+Реакция: <color={0}>{1}</color>	Reaction: <color={0}>{1}</color>
+Подарить	Gift
+Предложить сделку	Propose deal
+Что вас устроит?	What would satisfy you?
+Завершить переговоры	End negotiations
+Очистить стол	Clear table
+\n<color=#8AA2A8>Договор взаимный — действует для обеих сторон</color>	\n<color=#8AA2A8>The treaty is mutual — it applies to both sides</color>
+◆  О Б З О Р   И М П Е Р И И	◆  E M P I R E   O V E R V I E W
+Системы и планеты	Systems and planets
+{0} небесных тел	{0} celestial bodies
+Верфи флота	Fleet shipyards
+Стапели готовы	Slipways ready
+⇧ Ур.1	⇧ Lvl 1
+Форпосты границы	Border outposts
+Орбитальный форпост	Orbital outpost
+Флоты империи	Imperial fleets
+Боевая эскадра	Battle squadron
+<b>{0}</b>\nЭлементов: {1}	<b>{0}</b>\nElements: {1}
+Система лидеров недоступна.	Leader system unavailable.
+ЛИДЕР	LEADER
+УРОВЕНЬ	LEVEL
+ЧЕРТЫ	TRAITS
+ПОСТ	POST
+Центр тайных операций	Covert Operations Center
+Агенты, внедрение, кража технологий, диверсии · защита вашей империи {0:0}%	Agents, infiltration, tech theft, sabotage · your empire's protection {0:0}%
+ОТКРЫТЬ  ›	OPEN  ›
+Лидеров пока нет. Наймите учёного для разведки, адмирала для флота, губернатора для колонии или агента для тайных операций.	No leaders yet. Hire a scientist for exploration, an admiral for your fleet, a governor for a colony, or an agent for covert operations.
+КАНДИДАТЫ  ·  найм <color=#FF7A94>★{0:0}</color> влияния  ·  содержание 	CANDIDATES  ·  hire <color=#FF7A94>★{0:0}</color> Influence  ·  upkeep 
+<color=#FFCC52>⚡{0:0.#}</color>/мес  ·  лидеров {1}/{2}  ·  кандидаты обновляются каждый год	<color=#FFCC52>⚡{0:0.#}</color>/mo  ·  leaders {1}/{2}  ·  candidates refresh every year
+ур. {0} · максимум	lvl {0} · max
+ур. {0}	lvl {0}
+СНЯТЬ	REMOVE
+НАЗНАЧИТЬ	ASSIGN
+<b>Уволить</b>\nЛидер покинет службу навсегда; содержание перестанет списываться.	<b>Dismiss</b>\nThe leader will leave service permanently; upkeep will no longer be charged.
+НАНЯТЬ  ★{0:0}	HIRE  ★{0:0}
+<color=#66F59E>Научный совет</color> · наука +{0:0}%	<color=#66F59E>Science Council</color> · Research +{0:0}%
+<color=#BD8FFF>Контрразведка</color> · дома	<color=#BD8FFF>Counterintelligence</color> · home
+империя	empire
+ · {0} ({1} мес.)	 · {0} ({1} mo)
+<color=#BD8FFF>{0}</color> · сеть {1:0}%{2}	<color=#BD8FFF>{0}</color> · network {1:0}%{2}
+Губернатор · {0}	Governor · {0}
+Колония	Colony
+Корабль	Ship
+<color=#FFAA55>Без поста</color>	<color=#FFAA55>Unassigned</color>
+<b>{0}</b>\n{1} · уровень {2}	<b>{0}</b>\n{1} · level {2}
+ · до следующего {0} опыта	 · {0} XP to next level
+\n<color=#8AA2A8>Уровень:</color> {0}	\n<color=#8AA2A8>Level:</color> {0}
+Пост: научный корабль (разведка быстрее, трофеи больше) или научный совет (+к науке). Опыт — за разведку.	Post: science ship (faster surveys, bigger rewards) or Science Council (+Research). Gains XP from exploration.
+Пост: военный корабль-флагман. Бонусы получают все ваши боевые корабли в той же системе. Опыт — за урон и победы. Гибнет вместе с флагманом.	Post: warship flagship. All your warships in the same system receive bonuses. Gains XP from damage dealt and victories. Dies with the flagship.
+Пост: внедрение в чужую империю (обзор территории, досье, кража технологий, диверсии, раздор) или контрразведка дома (защита от чужих агентов). Опыт — за время на посту и успешные операции. Провал грозит поимкой.	Post: infiltration of a foreign empire (territory visibility, dossier, tech theft, sabotage, discord) or counterintelligence at home (protection from foreign agents). Gains XP from time in post and successful operations. Failure risks capture.
+Пост: колония. Производство планеты и скорость строительства на ней выше. Опыт — за время на посту и стройки.	Post: colony. Increases the planet's output and construction speed. Gains XP from time in post and construction.
+\n3-й уровень — вторая черта. Возраст {0}.</color>	\nLevel 3 — second trait. Age {0}.</color>
+НАЗНАЧЕНИЕ: {0} {1}	ASSIGNMENT: {0} {1}
+ТЕКУЩИЙ ЛИДЕР НА ПОСТУ	CURRENT LEADER IN POST
+Назад к списку лидеров	Back to leader list
+{0} (будет снят)	{0} (will be removed)
+свободно	vacant
+Научный совет	Science Council
+Ускоряет все исследования империи	Speeds up all of the empire's research
+Научный корабль · {0} · {1}	Science ship · {0} · {1}
+Контрразведка	Counterintelligence
+Защищает вашу империю: чужие агенты чаще проваливаются и раскрываются	Protects your empire: foreign agents fail and are exposed more often
+Внедрение · отношение {0:+0;-0;0} · защита цели {1:0}%	Infiltration · opinion {0:+0;-0;0} · target protection {1:0}%
+Флагман · {0} · мощь {1:N0}	Flagship · {0} · power {1:N0}
+{0} · население {1} · районов {2}	{0} · population {1} · districts {2}
+Нет военных кораблей — постройте их на верфи.	No warships — build some at a shipyard.
+Вы пока никого не встретили — внедряться некуда.	You haven't met anyone yet — there's nowhere to infiltrate.
+Нет колоний для губернатора.	No colonies for a governor.
+ИМПЕРИЯ	EMPIRE
+ГЕЛИЙ-3	HELIUM-3
+ТИТАН	TITANIUM
+СПЛАВЫ	ALLOYS
+НАУКА	RESEARCH
+ПРАВИТЕЛЬ ИМПЕРИИ	EMPIRE RULER
+СТАТИСТИКА	STATISTICS
+Системы	Systems
+Колонии	Colonies
+Население	Population
+Своб. жильё	Free housing
+Безработные	Unemployed
+Форпосты	Outposts
+Флоты	Fleets
+ПУТИ К ПОБЕДЕ	PATHS TO VICTORY
+Наука	Research
+Очки · {0}	Points · {0}
+КОЛОНИИ	COLONIES
+ФЛОТЫ	FLEETS
+ЛИДЕРЫ	LEADERS
+ГРАНИЦЫ	BORDERS
+УЗЛЫ	NODES
+СОПЕРНИКИ	RIVALS
+ЭФФЕКТЫ	EFFECTS
+Правительство	Government
+<color={0}>{1}</color>   ·   Обзор империи   ·   {2}	<color={0}>{1}</color>   ·   Empire Overview   ·   {2}
+ГЕЛИЙ-3  <color=#FF5A5A>· БАНКРОТ</color>	HELIUM-3  <color=#FF5A5A>· BANKRUPT</color>
+НАУКА  <color=#8AA2A8>· слоты {0}/{1}</color>	RESEARCH  <color=#8AA2A8>· slots {0}/{1}</color>
+<color=#8AA2A8>/ мес</color>	<color=#8AA2A8>/ mo</color>
+{0} <color=#8AA2A8>/ мес</color>	{0} <color=#8AA2A8>/ mo</color>
+Мощь флота: {0:N0}	Fleet power: {0:N0}
+{0} / {1} систем	{0} / {1} systems
+{0} / {1} техн.	{0} / {1} tech
+<color=#FF6A6A>Банкротство: {0} из {1} мес. до краха экономики</color>	<color=#FF6A6A>Bankruptcy: {0} of {1} months until economic collapse</color>
+Соперник: {0} систем, {1} техн. Подсчёт очков через {2} {3}.	Rival: {0} systems, {1} tech. Scoring in {2} {3}.
+КОЛОНИЯ	COLONY
+КЛАСС	CLASS
+НАСЕЛЕНИЕ	POPULATION
+РАЙОНЫ	DISTRICTS
+ПРОИЗВОДСТВО / МЕС	OUTPUT / MO
+система 	system 
+   <color=#F2C747>безраб. {0}</color>	   <color=#F2C747>unempl. {0}</color>
+Колоний пока нет.\n\nВойдите в свою систему (двойной клик по звезде), выберите планету с пригодностью от 40% 	No colonies yet.\n\nEnter your system (double-click a star), select a planet with at least 40% habitability 
+и нажмите «Основать колонию» — нужно 80 титана, 20 сплавов и 25 влияния.	and press “Found a colony” — it requires 80 Titanium, 20 Alloys, and 25 Influence.
+ЗАДАЧА	TASK
+РАСПОЛОЖЕНИЕ	LOCATION
+ПРОЧНОСТЬ	INTEGRITY
+МОЩЬ	POWER
+Боевой флот	Battle fleet
+Флотов нет. Постройте корабли на орбитальной верфи столицы.	No fleets. Build ships at the capital's orbital shipyard.
+Перелёт → 	Moving → 
+Разведка ({0:0} дн.)	Surveying ({0:0} d)
+Строительство ({0:0} дн.)	Constructing ({0:0} d)
+<color=#FF6060>В бою</color>	<color=#FF6060>In combat</color>
+<color=#5CF59A>Ремонт · {0:0}% в день</color>	<color=#5CF59A>Repairing · {0:0}% per day</color>
+<color=#FFAA55>Повреждён — ремонт только на своей территории</color>	<color=#FFAA55>Damaged — repairs only in own territory</color>
+<color=#5CF59A>Осада · {0:0} дн.</color>	<color=#5CF59A>Siege · {0:0} d</color>
+На орбите — ждёт приказа	In orbit — awaiting orders
+СИСТЕМА	SYSTEM
+ЗВЕЗДА	STAR
+ПЛАНЕТ	PLANETS
+КОРИДОРЫ	HYPERLANES
+ДОБЫЧА / МЕС	YIELD / MO
+Столица · орбитальная верфь	Capital · orbital shipyard
+Пограничный форпост	Border outpost
+Контролируемая система	Controlled system
+не изучено	unexplored
+У империи не осталось систем.	The empire has no systems left.
+УЗЕЛ	NODE
+БОНУС ПРИ КОНТРОЛЕ	BONUS WHEN CONTROLLED
+ВЛАДЕЛЕЦ	OWNER
+свободен	unclaimed
+На этой карте нет узлов силы.	There are no power nodes on this map.
+Узлы силы пока не найдены — на карте их {0}.\n\nУзел виден, когда его система разведана. Постройте в ней форпост, и бонус станет вашим.	No power nodes found yet — there are {0} on the map.\n\nA node becomes visible once its system is surveyed. Build an outpost there and the bonus is yours.
+НАЙДЕНО {0} ИЗ {1}  ·  ПОД ВАШИМ КОНТРОЛЕМ {2}  ·  КЛИК — ПЕРЕЙТИ К СИСТЕМЕ	FOUND {0} OF {1}  ·  UNDER YOUR CONTROL {2}  ·  CLICK TO GO TO SYSTEM
+Красный карлик (M)	Red dwarf (M)
+Оранжевая (K)	Orange (K)
+Жёлтая (G)	Yellow (G)
+Белая (A)	White (A)
+Голубой гигант (B)	Blue giant (B)
+Чёрная дыра	Black hole
+ЭФФЕКТ	EFFECT
+ДЕЙСТВИЕ	IMPACT
+ОСТАЛОСЬ	REMAINING
+Пиратская угроза	Pirate threat
+налётов: {0}	raids: {0}
+Банды грабят слабо защищённые пограничные колонии	Gangs plunder poorly defended border colonies
+Дань пиратам	Tribute to pirates
+пираты	pirates
+Пираты не нападают на ваши системы	Pirates do not attack your systems
+Награда за пиратов	Pirate bounty
+охота	hunt
++40 энергии и +4 влияния за каждый уничтоженный корабль	+40 Energy and +4 Influence for each ship destroyed
+Каперские грамоты	Letters of marque
+Налёты направлены на соперников	Raids are directed at rivals
+{0} нал.	{0} raids
+Действующих эффектов нет.\n\nЗаконы, указы и контракты появляются из решений фракции (раз в два года) и событий.	No active effects.\n\nLaws, edicts, and contracts come from faction decisions (every two years) and events.
+Других цивилизаций мы пока не встречали.\n\nОтправляйте научные корабли в неизведанные системы: 	We have not met any other civilizations yet.\n\nSend science ships to unexplored systems: 
+контакт случится, как только наши корабли или границы увидят чужую империю.	contact will happen as soon as our ships or borders encounter an alien empire.
+\n\nПо данным дальней разведки в галактике есть ещё цивилизаций: {0}.	\n\nAccording to long-range reconnaissance, more civilizations remain in the galaxy: {0}.
+Ещё не встречено цивилизаций: {0}. Продолжайте разведку.	Civilizations not yet met: {0}. Keep exploring.
+<color=#F2C747>ПОВЕРЖЕН</color>	<color=#F2C747>DEFEATED</color>
+<color=#FF5A5A>ВОЙНА</color>	<color=#FF5A5A>WAR</color>
+<color=#4DF2DB>Пакт о ненападении</color>	<color=#4DF2DB>Non-aggression pact</color>
+<color=#5CF59A>Перемирие</color>	<color=#5CF59A>Truce</color>
+<color=#8AA2A8>Мир</color>	<color=#8AA2A8>Peace</color>
+   ·   <color=#FF9A5A>в коалиции</color>	   ·   <color=#FF9A5A>in a coalition</color>
+{0}   ·   {1} империя   ·   {2}   ·   {3}	{0}   ·   {1} empire   ·   {2}   ·   {3}
+Отношения	Relations
+Военная мощь: вы / они	Military power: you / them
+Системы: вы / они	Systems: you / them
+ДИПЛОМАТИЯ	DIPLOMACY
+ТОРГОВЛЯ	TRADE
+АГЕНТЫ	AGENTS
+ТАЙНЫЕ ОПЕРАЦИИ	COVERT OPERATIONS
+Защита вашей империи <color=#BD8FFF>{0:0}%</color>	Your empire's protection <color=#BD8FFF>{0:0}%</color>
+   ·   операции: <color=#66F59E>{0}</color> удачных, <color=#FF7A7A>{1}</color> провальных	   ·   operations: <color=#66F59E>{0}</color> successful, <color=#FF7A7A>{1}</color> failed
+   ·   чужих попыток сорвано: {0}   ·   прорывов к вам: {1}	   ·   foreign attempts foiled: {0}   ·   breaches against you: {1}
+<color=#FFAA55>Ждёт назначения</color>	<color=#FFAA55>Awaiting assignment</color>
+<color=#66E0D0>Контрразведка</color> · дома	<color=#66E0D0>Counterintelligence</color> · home
+<color=#F2C766>{0}</color> · ещё {1} мес.	<color=#F2C766>{0}</color> · {1} mo left
+<color=#BD8FFF>{0}</color> · сеть {1:0}%	<color=#BD8FFF>{0}</color> · network {1:0}%
+Агентов пока нет.\nНаймите первого внизу.	No agents yet.\nHire your first one below.
+<b>{0}</b>\nАгент · уровень {1}\n<color=#8AA2A8>Уровень:</color> {2}	<b>{0}</b>\nAgent · level {1}\n<color=#8AA2A8>Level:</color> {2}
+КАНДИДАТ НА НАЙМ	CANDIDATE FOR HIRE
+Кандидатов нет — список обновляется каждый год.	No candidates — the list refreshes every year.
+{0} · {1} лет	{0} · {1} years old
+Найм {0:0} влияния, содержание {1:0.#} гелия-3 в месяц. Лидеров: {2}/{3}	Hire: {0:0} Influence, upkeep {1:0.#} Helium-3 per month. Leaders: {2}/{3}
+Агент · уровень {0}   <color=#8AA2A8>{1}</color>	Agent · level {0}   <color=#8AA2A8>{1}</color>
+без особых черт	no notable traits
+<color=#FFAA55>●  ЖДЁТ НАЗНАЧЕНИЯ</color>	<color=#FFAA55>●  AWAITING ASSIGNMENT</color>
+<color=#66E0D0>●  КОНТРРАЗВЕДКА</color>	<color=#66E0D0>●  COUNTERINTELLIGENCE</color>
+<color=#F2C766>●  ОПЕРАЦИЯ «{0}»</color>	<color=#F2C766>●  OPERATION “{0}”</color>
+<color=#BD8FFF>●  СТРОИТ РАЗВЕДСЕТЬ</color>	<color=#BD8FFF>●  BUILDING SPY NETWORK</color>
+ЦЕЛЬ	TARGET
+Система {0}  <color=#8AA2A8>{1}сеть здесь {2:0}%</color>	System {0}  <color=#8AA2A8>{1}network here {2:0}%</color>
+Система не выбрана	No system selected
+<color=#8AA2A8>Отношение</color> {0:+0;-0;0}   <color=#8AA2A8>Защита цели</color> <color=#FF9F7A>{1:0}%</color>	<color=#8AA2A8>Opinion</color> {0:+0;-0;0}   <color=#8AA2A8>Target protection</color> <color=#FF9F7A>{1:0}%</color>
+   <color=#FF7A7A>война</color>	   <color=#FF7A7A>war</color>
+СМЕНИТЬ СИСТЕМУ	CHANGE SYSTEM
+Выбрать на карте другую систему империи, откуда строить сеть. Уже построенная сеть не пропадает.	Pick another system of the empire on the map to build the network from. The network already built is not lost.
+Во время операции агент не может сменить систему	The agent cannot change systems during an operation
+ОТОЗВАТЬ	RECALL
+Агент покидает пост: идущая операция пропадёт, а разведсеть без него начнёт таять (−2% в месяц). Его можно назначить заново.	The agent leaves the post: the ongoing operation will be lost, and without them the spy network will start to decay (−2% per month). They can be reassigned.
+столица · 	capital · 
+колония · 	colony · 
+Видимость	Visibility
+Системы на виду	Systems in view
+Системы, где сеть от 15%, видны на карте сквозь туман войны	Systems with a network of 15% or more are visible on the map through the fog of war
+Обзор	Overview
+Вся территория империи и все её флоты — у вас на карте	The empire's entire territory and all its fleets — on your map
+Операция «Диверсия»	Operation “Sabotage”
+Удар по верфям и складам: цель теряет сплавы и гелий-3	Strike at shipyards and depots: the target loses Alloys and Helium-3
+Чертежи	Blueprints
+Технологии, которые они уже знают, вы изучаете на 25% быстрее	You research technologies they already know 25% faster
+Кража	Theft
+Операция «Кража технологии»	Operation “Tech Theft”
+Агент выкрадывает технологию, которой у вас нет	The agent steals a technology you don't have
+Досье	Dossier
+Досье и «Раздор»	Dossier and “Discord”
+Запасы, доходы, наука и мощь флота цели; можно стравить их с другой империей	Target's stockpiles, income, research, and fleet power; you can turn them against another empire
+РАЗВЕДСЕТЬ В ИМПЕРИИ	SPY NETWORK IN EMPIRE
+РАЗВЕДСЕТЬ	SPY NETWORK
+Наймите агента и внедрите его в чужую империю	Hire an agent and infiltrate them into a foreign empire
+<color=#F2C766>Сеть заморожена — идёт операция</color>	<color=#F2C766>Network frozen — operation in progress</color>
+<color=#66F59E>+{0:0.#}</color> в месяц в системе агента, у соседей ×0,6	<color=#66F59E>+{0:0.#}</color> per month in the agent's system, ×0.6 in neighboring ones
+<b>{0}</b> — при сети {1:0}%\n{2}\n\n	<b>{0}</b> — at network {1:0}%\n{2}\n\n
+<color=#66F59E>Открыто</color>	<color=#66F59E>Unlocked</color>
+<color=#8AA2A8>Ещё {0:0.#}%</color>	<color=#8AA2A8>{0:0.#}% to go</color>
+<color=#8AA2A8>Следующее:</color>  <b>{0}</b> — {1}  <color=#BD8FFF>(ещё {2:0.#}%)</color>	<color=#8AA2A8>Next:</color>  <b>{0}</b> — {1}  <color=#BD8FFF>({2:0.#}% to go)</color>
+<color=#66F59E>Все награды разведки открыты</color> — сеть продолжает расти и смягчает урон от провалов	<color=#66F59E>All intelligence rewards unlocked</color> — the network keeps growing and softens the damage from failures
+Нет второй известной империи, которую можно стравить	No second known empire to turn against them
+Шанс успеха. Складывается из базового ({0:0}%), уровня и черт агента, силы разведсети, ваших технологий и защиты цели ({1:0}%).	Chance of success. Made up of the base ({0:0}%), the agent's level and traits, spy network strength, your technologies, and the target's protection ({1:0}%).
+<color=#F2C766>★{0:0}</color>   ·   {1} мес.   ·   нужна сеть {2:0}%	<color=#F2C766>★{0:0}</color>   ·   {1} mo   ·   requires network {2:0}%
+СЕТЬ {0:0}%  ·  ЕЩЁ {1:0.#}%	NETWORK {0:0}%  ·  {1:0.#}% TO GO
+ВЫБРАТЬ, КОГО СТРАВИТЬ	CHOOSE WHO TO TURN THEM AGAINST
+НАЧАТЬ ОПЕРАЦИЮ	START OPERATION
+ИДЁТ ОПЕРАЦИЯ	OPERATION IN PROGRESS
+ · стравливаем с {0}	 · turning them against {0}
+Осталось {0} мес.{1}   ·   шанс успеха {2:0}%   ·   сеть пока не растёт	{0} mo left{1}   ·   success chance {2:0}%   ·   network not growing for now
+ПРЕРВАТЬ	ABORT
+Прервать операцию. Потраченное влияние не возвращается.	Abort the operation. Spent Influence is not refunded.
+КОГО СТРАВИТЬ С {0}?	WHO TO TURN AGAINST {0}?
+ · уже воюют	 · already at war
+{0}\n<size=10>отношение {1:+0;-0;0}{2}</size>	{0}\n<size=10>opinion {1:+0;-0;0}{2}</size>
+ОТМЕНА	CANCEL
+<color=#F2C766>★{0:0}</color> · {1} мес. · {2}	<color=#F2C766>★{0:0}</color> · {1} mo · {2}
+ДОСЬЕ  ·  {0}	DOSSIER  ·  {0}
+Досье закрыто\n<size=11><color=#8AA2A8>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>	Dossier locked\n<size=11><color=#8AA2A8>Unlocks at network {0:0}% — currently {1:0}%.\nTarget's stockpiles, income, research, and fleet power.</color></size>
+<color={0}>Гелий-3</color>   {1:0}  ({2})\n	<color={0}>Helium-3</color>   {1:0}  ({2})\n
+<color={0}>Титан</color>   {1:0}  ({2})\n	<color={0}>Titanium</color>   {1:0}  ({2})\n
+<color={0}>Сплавы</color>   {1:0}  ({2})\n	<color={0}>Alloys</color>   {1:0}  ({2})\n
+<color={0}>Влияние</color>   {1:0}  ({2})	<color={0}>Influence</color>   {1:0}  ({2})
+<color={0}>Систем</color> {1}   <color={2}>Население</color> {3}   <color={4}>Мощь флота</color> {5:N0}\n	<color={0}>Systems</color> {1}   <color={2}>Population</color> {3}   <color={4}>Fleet power</color> {5:N0}\n
+<color={0}>Технологий</color> {1} из {2}   <color={3}>Изучает</color> {4}\n	<color={0}>Technologies</color> {1} of {2}   <color={3}>Researching</color> {4}\n
+<color=#FF7A7A>война</color>	<color=#FF7A7A>war</color>
+<color=#66F59E>пакт</color>	<color=#66F59E>pact</color>
+<color={0}>С вами</color> {1}	<color={0}>With you</color> {1}
+ЖУРНАЛ ОПЕРАЦИЙ	OPERATIONS LOG
+Здесь появятся результаты ваших операций и попытки чужих агентов проникнуть к вам.	Results of your operations and attempts by foreign agents to infiltrate you will appear here.
+КУДА НАПРАВИТЬ АГЕНТА	WHERE TO SEND THE AGENT
+Контрразведка защищает вашу империю. Внедрение — агент строит разведсеть в чужой империи; систему, откуда строить, вы выберете на карте.	Counterintelligence protects your empire. Infiltration — the agent builds a spy network in a foreign empire; you'll pick the system to build from on the map.
 Контрразведка дома	Home Counterintelligence
 Защита вашей империи +{0:0}%: чужие агенты чаще проваливаются и раскрываются	Your empire's defense +{0:0}%: foreign agents fail and get exposed more often
 Отношение {0:+0;-0;0}   ·   защита цели {1:0}%   ·   ваша сеть там {2:0}%	Opinion {0:+0;-0;0}   ·   target defense {1:0}%   ·   your network there {2:0}%
@@ -3779,3 +4200,6 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Заседаний больше не будет	There will be no more council sessions
 {0}. Сейчас за вас {1} из {2} (нужно {3}); поддерживают империй: {4}	{0}. Currently {1} of {2} vote for you ({3} needed); supporting empires: {4}
 Своих систем не должно остаться ни у одного соперника	No rival may keep a single system of their own
+Неизвестная цивилизация	Unknown civilization
+/мес	/mo
+ранний доступ	early access

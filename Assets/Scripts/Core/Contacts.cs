@@ -17,7 +17,7 @@ namespace StellarisClone.Core
     /// </summary>
     public static class Contacts
     {
-        public const string UnknownName = "Неизвестная цивилизация";
+        public static string UnknownName => Loc.T("Неизвестная цивилизация");
 
         private static readonly HashSet<long> _met = new HashSet<long>();
         private static readonly List<int> _pendingGreetings = new List<int>();
@@ -45,7 +45,7 @@ namespace StellarisClone.Core
         public static bool PlayerMet(int owner) => Met(0, owner);
 
         /// <summary>Имя для игрока: настоящее — только после контакта.</summary>
-        public static string NameForPlayer(int owner, string fallback = "Соперник")
+        public static string NameForPlayer(int owner, string fallback = null)
             => PlayerMet(owner) ? AIEmpireManager.NameOf(owner, fallback) : UnknownName;
 
         public static int UnmetByPlayer

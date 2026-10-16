@@ -34,7 +34,7 @@ namespace StellarisClone.Core
 
         public static bool IsAI(int owner) => For(owner) != null;
 
-        public static string NameOf(int owner, string fallback = "Соперник") => For(owner)?.AIName ?? Threats.NameOf(owner) ?? fallback;
+        public static string NameOf(int owner, string fallback = null) => For(owner)?.AIName ?? Threats.NameOf(owner) ?? fallback ?? Loc.T("Соперник");
 
         /// <summary>Живые империи ИИ (не потерявшие все системы).</summary>
         public static IEnumerable<AIEmpireManager> Alive
