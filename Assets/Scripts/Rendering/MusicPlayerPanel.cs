@@ -18,7 +18,7 @@ namespace StellarisClone.Rendering
 
         private const float W = 340f;
         private const float RowH = 24f;
-        private const int MaxRows = 8;
+        private const int MaxRows = 12;
 
         private RectTransform _root;
         private Text _title, _artist, _time;
@@ -196,14 +196,14 @@ namespace StellarisClone.Rendering
             int cur = mm.CurrentIndex;
             _title.text = cur >= 0 ? mm.TrackTitle(cur) : "—";
             string artist = cur >= 0 ? mm.TrackArtist(cur) : "";
-            _artist.text = (artist.Length > 0 ? artist + "  ·  " : "") + $"трек {cur + 1} из {mm.TrackCount}" + (mm.IsPaused ? "  ·  пауза" : "");
+            _artist.text = (artist.Length > 0 ? artist + "  ·  " : "") + $"трек {cur + 1} из {mm.TrackCount}" + (mm.IsPaused ? "  ·  пауза" : "") + (mm.WarMood ? "  ·  <color=#E07A6E>военное время</color>" : "");
             _playIcon.sprite = LGIcons.Get(mm.IsPaused ? LGIcon.Play : LGIcon.Pause);
             _shuffleIcon.color = mm.Shuffle ? DS.Gold : DS.TextMuted;
             if (_shuffleBg != null) _shuffleBg.color = mm.Shuffle ? new Color(0.16f, 0.13f, 0.05f, 1f) : DS.BgVisor;
             for (int i = 0; i < _rows.Count; i++)
             {
                 bool on = i == cur;
-                _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i);
+                _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? "  <color=#E07A6E>· война</color>" : "");
                 _rows[i].label.color = on ? DS.NeonCyan : DS.TextMuted;
                 _rows[i].bg.color = on ? new Color(0.05f, 0.16f, 0.18f, 0.95f) : new Color(0.02f, 0.05f, 0.07f, 0.9f);
             }

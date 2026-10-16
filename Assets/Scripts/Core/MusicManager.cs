@@ -140,6 +140,47 @@ private void LoadTracksFromResources()
         {
             if (index < 0 || index >= TrackCount) return;
             PlayIndex(index, true);
+            _manualPick = true;   // выбранный вручную трек не перебиваем сменой настроения
+        }
+
+        // ==================== НАСТРОЕНИЕ: МИР / ВОЙНА ====================
+        // Треки с префиксом «war__» в имени файла — боевые, остальные — мирные. Пока империя игрока воюет,
+        // играют боевые; началась или закончилась война — музыка сразу плавно переходит в нужное настроение.
+
+        public bool WarMood { get; private set; }
+        private float _moodCheck;
+        private bool _manualPick;
+
+        public bool IsWarTrack(int i) => i >= 0 && i < TrackCount && tracks[i] != null && tracks[i].name.StartsWith("war__");
+
+        private static bool PlayerAtWar()
+        {
+            if (!StellarisClone.Rendering.UIManager.IsGameStarted) return false;
+            foreach (var ai in AIEmpireManager.All)
+                if (ai != null && !ai.IsEliminated && ai.AtWar) return true;
+            return false;
+        }
+
+        private void CheckMood()
+        {
+            _moodCheck -= Time.unscaledDeltaTime;
+            if (_moodCheck > 0f) return;
+            _moodCheck = 2f;
+            bool war = PlayerAtWar();
+            if (war == WarMood) return;
+            WarMood = war;
+            if (_isRunning && !_paused && !_manualPick && IsWarTrack(_currentIndex) != war) PlayNextTrack();
+            _manualPick = false;
+            OnStateChanged?.Invoke();
+        }
+
+        /// <summary>Треки под текущее настроение (если таких нет — все).</summary>
+        private System.Collections.Generic.List<int> MoodPool()
+        {
+            var pool = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < TrackCount; i++) if (IsWarTrack(i) == WarMood) pool.Add(i);
+            if (pool.Count == 0) for (int i = 0; i < TrackCount; i++) pool.Add(i);
+            return pool;
         }
 
         public void TogglePause()
@@ -198,7 +239,9 @@ private void LoadTracksFromResources()
                     t = raw.Substring(dash + 1);
                 }
             }
-            var words = t.Replace('-', ' ').Replace('_', ' ').Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            // «Sci-Fi 1» оставляем как есть; дефисы вместо пробелов («pulsar-dreams») — разбиваем
+            if (t.IndexOf(' ') < 0) t = t.Replace('-', ' ');
+            var words = t.Replace('_', ' ').Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
             for (int w = 0; w < words.Length; w++)
                 words[w] = char.ToUpperInvariant(words[w][0]) + words[w].Substring(1);
             title = words.Length > 0 ? string.Join(" ", words) : raw;
@@ -214,6 +257,7 @@ private void LoadTracksFromResources()
 
         private void Update()
         {
+            CheckMood();
             if (!_isRunning || _paused) return;
 
             var active = _usingA ? _sourceA : _sourceB;
@@ -240,16 +284,20 @@ private void LoadTracksFromResources()
         private void PlayNextTrack()
         {
             if (tracks.Length == 0) return;
+            _manualPick = false;
 
+            var pool = MoodPool();
             int next;
-            if (shuffle && tracks.Length > 1)
+            if (shuffle && pool.Count > 1)
             {
-                do { next = Random.Range(0, tracks.Length); }
+                do { next = pool[Random.Range(0, pool.Count)]; }
                 while (next == _currentIndex);
             }
             else
             {
-                next = (_currentIndex + 1) % tracks.Length;
+                // По порядку внутри своего настроения: следующий после текущего
+                next = pool[0];
+                foreach (int i in pool) if (i > _currentIndex) { next = i; break; }
             }
             PlayIndex(next, true);
         }
