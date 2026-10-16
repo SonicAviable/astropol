@@ -1,0 +1,65 @@
+# ---------------------------------------------------------------
+# Unity-проект WargameRTS. Пути с "/" в начале считаются
+# относительно этой папки (WargameRTS/), а не корня репозитория.
+# ---------------------------------------------------------------
+
+# Генерируемые Unity папки — их НЕЛЬЗЯ коммитить
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Addressables / StreamingAssets артефакты сборки
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Плагины IDE, которые Rider/VS кладут в Assets
+/[Aa]ssets/Plugins/Editor/JetBrains*
+/[Aa]ssets/Plugins/Editor/JetBrains*.meta
+
+# Файлы IDE (генерируются Unity заново: Preferences → External Tools → Regenerate project files)
+.vs/
+.vscode/
+.idea/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Служебное
+sysinfo.txt
+crashlytics-build.properties
+crashlytics-buildid.txt
+.utmp/
+ExportedObj/
+
+# Готовые сборки
+*.apk
+*.aab
+*.app
+*.unitypackage
+
+# ОС
+.DS_Store
+Thumbs.db
+Desktop.ini
