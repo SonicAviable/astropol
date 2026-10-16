@@ -4594,3 +4594,39 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 <color=#8AA2A8>…и ещё {0}</color>\n	<color=#8AA2A8>…and {0} more</color>\n
 \n<color=#8AA2A8><i>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</i></color>	\n<color=#8AA2A8><i>Weighted by population. Click to open colony management.</i></color>
 <b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы выбрать.	<b>Colony priority</b>\nWhere pops work first and what auto-build orders. Click to choose.
+ПРОЕКТЫ КОРАБЛЕЙ	SHIP DESIGNS
+Зажмите ЛКМ и ведите мышью — вращение корабля	Hold the left mouse button and drag to rotate the ship
+АТАКА	ATTACK
+<b>Атака</b>\nСуммарный урон всех орудий за игровой день (с технологиями).	<b>Attack</b>\nTotal damage of all weapons per game day (with technologies).
+<b>Защита</b>\nКорпус + броня + щиты (с технологиями), делённые на 10.	<b>Defense</b>\nHull + armor + shields (with technologies), divided by 10.
+<b>Удалить проект</b>\nПоследний проект корпуса удалить нельзя — верфи нужен чертёж.	<b>Delete design</b>\nThe last design of a hull can't be deleted — the shipyard needs a blueprint.
+ЭНЕРГИЯ	POWER
+<b>Энергосеть</b>\nПотребление модулей / выработка реакторов. Перегруженный проект нельзя сохранить.	<b>Power grid</b>\nModule draw / reactor output. An overloaded design can't be saved.
+<b>{0}</b>\nСлотов: оружие {1} · защита {2} · спецмодули {3}\n	<b>{0}</b>\nSlots: weapons {1} · defense {2} · special {3}\n
+Корпус {0:0} · броня {1:0} · щиты {2:0} · уклонение {3:0}\n	Hull {0:0} · armor {1:0} · shields {2:0} · evasion {3:0}\n
+<b>{0}</b>\nОткроется после технологии «{1}».	<b>{0}</b>\nUnlocks with the “{1}” technology.
+Проектов корпуса: {0}	Designs for this hull: {0}
+  ·  верфь строит «{0}»	  ·  shipyard builds “{0}”
+НОВЫЙ	NEW
+Нажмите, чтобы создать проект	Click to create a design
+{0:0} спл.	{0:0} alloys
+ВООРУЖЕНИЕ	WEAPONS
+СПЕЦМОДУЛИ	SPECIAL MODULES
+слотов {0}	{0} slots
+<b>Пустой слот</b>\nЩёлкните, чтобы поставить модуль.	<b>Empty slot</b>\nClick to install a module.
+пусто	empty
+ТЕХНИЧЕСКИЕ ХАРАКТЕРИСТИКИ	TECHNICAL SPECS
+Уклонение	Evasion
+Скорость	Speed
+БОЕВЫЕ ХАРАКТЕРИСТИКИ	COMBAT STATS
+Урон в день	Damage per day
+По щитам	Vs shields
+По броне	Vs armor
+Точность	Accuracy
+Орудий	Weapons
+Гелий-3 на закладку	Helium-3 to lay down
+Срок постройки	Build time
+Содержание	Upkeep
+{0:0.#} гелия-3/мес	{0:0.#} Helium-3/mo
+Флотский лимит	Fleet capacity
+  <color=#8AA2A8>· ▲▼ — к «{0}»</color>	  <color=#8AA2A8>· ▲▼ vs “{0}”</color>
