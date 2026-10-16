@@ -214,6 +214,10 @@ namespace StellarisClone.Core
             ["survey_ancient_battlefield"] = "Battlefield",
             ["diplo_summit"]             = "Summit",
             ["diplo_rival_crisis"]       = "Famine",
+            ["pirate_haven"]             = "PirateHaven",
+            ["leviathan_slain"]          = "Leviathan",
+            ["precursor_signal"]         = "PrecursorSignal",
+            ["precursor_decoding"]       = "PrecursorDecoding",
         };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
