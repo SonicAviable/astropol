@@ -394,6 +394,7 @@ namespace StellarisClone.Rendering
                 float r = R * Random.Range(0.3f, 1f) * Mathf.Max(0.3f, prog);
                 Vector3 at = site + new Vector3(Mathf.Sin(a) * r, Random.Range(0.05f, 0.5f), Mathf.Cos(a) * r);
                 CombatFx.Instance.Sparks(at, new Color(1f, 0.78f, 0.4f), Random.Range(3, 7), 0.6f);
+                if (Random.value < 0.35f) ParticleVfx.Play(ParticleVfx.Effect.Sparks, at, 0.5f);   // сварка — сноп искр
                 _lightPhase = 1f;
             }
             _lightPhase = Mathf.MoveTowards(_lightPhase, 0f, dt * 4f);

@@ -385,13 +385,18 @@ namespace StellarisClone.Rendering
         /// <summary>Гибель корабля или станции: вспышка, огненный шар, ударная волна, дым, обломки.</summary>
         public void ShipDestroyed(Vector3 pos, float size, Color ownerCol)
         {
+            // Объёмный взрыв из Particle Pack (у звёздной базы — ещё и энергетическая волна); если пака нет —
+            // огненный шар собирается из процедурных клубов ниже
+            bool pack = ParticleVfx.Play(size >= 1.3f ? ParticleVfx.Effect.BigExplosion : ParticleVfx.Effect.SmallExplosion, pos, size);
+            if (size >= 1.75f) ParticleVfx.Play(ParticleVfx.Effect.EnergyExplosion, pos, size);
+
             FlashLight(pos, new Color(1f, 0.75f, 0.45f), size * 11f, 9f, 1.2f);
             Spawn(Kind.Flash, pos, Color.white, size * 3.2f, 0.22f, _glow);
             Spawn(Kind.Flash, pos, HotWhite, size * 5f, 0.6f, _glow);
 
             // Огненный шар из клубов пламени
             int puffs = Mathf.RoundToInt(7 + size * 4f);
-            for (int i = 0; i < puffs; i++)
+            for (int i = 0; i < (pack ? 0 : puffs); i++)
             {
                 var f = Spawn(Kind.Fire, pos + Random.insideUnitSphere * size * 0.55f, HotWhite, size * Random.Range(1.0f, 1.7f),
                               Random.Range(0.9f, 1.6f), _fire[Random.Range(0, _fire.Length)]);
@@ -401,7 +406,7 @@ namespace StellarisClone.Rendering
                 f.Age = -Random.Range(0f, 0.25f);
             }
             // Тяжёлый дым после огня
-            for (int i = 0; i < puffs; i++)
+            for (int i = 0; i < (pack ? puffs / 2 : puffs); i++)
             {
                 var s = Spawn(Kind.Smoke, pos + Random.insideUnitSphere * size * 0.6f, new Color(0.13f, 0.12f, 0.12f, 0.75f),
                               size * Random.Range(1.2f, 1.9f), Random.Range(3.2f, 5f), _smoke[Random.Range(0, _smoke.Length)], true);
@@ -420,7 +425,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < chunks; i++)
                 DebrisChunk(pos + Random.insideUnitSphere * size * 0.3f, Random.onUnitSphere * Random.Range(1.5f, 4.5f) * Mathf.Sqrt(size),
                             Random.Range(0.08f, 0.22f) * Mathf.Sqrt(size), Random.Range(2.5f, 4.5f));
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < (pack ? 0 : 3); i++)
             {
                 var sec = Spawn(Kind.Fire, pos + Random.insideUnitSphere * size * 1.2f, HotWhite, size * 1.1f, 0.7f, _fire[Random.Range(0, _fire.Length)]);
                 sec.Col2 = DeepRed; sec.Grow = 2f; sec.Age = -Random.Range(0.3f, 1.1f); sec.Rot = Random.Range(0f, 360f);
@@ -508,6 +513,9 @@ namespace StellarisClone.Rendering
             }
             if (severity > 0.75f && Random.value < 0.25f)
                 SparkStreak(p, Random.onUnitSphere * Random.Range(1.5f, 3.5f), new Color(0.7f, 0.85f, 1f), 0.35f, 0.025f);
+            // Тяжело повреждённый корабль искрит: короткие электрические разряды на корпусе
+            if (severity > 0.7f && Random.value < 0.2f)
+                ParticleVfx.Play(ParticleVfx.Effect.ElectricalSparks, p, size, ship, Random.Range(0.8f, 1.6f));
         }
 
         /// <summary>Сварочные искры: короткая вспышка и разлетающиеся росчерки.</summary>
@@ -562,6 +570,7 @@ namespace StellarisClone.Rendering
                 case Impact.Armor:
                 {
                     // Броня держит: яркий удар, веер искр-рикошетов, раскалённое пятно
+                    ParticleVfx.PlayLater(delay, ParticleVfx.Effect.Sparks, at, size, normal);
                     var f = Spawn(Kind.Flash, at, HotWhite, size * 0.55f, 0.18f, _glow);
                     f.Age = -delay;
                     int n = beam ? 6 : 10;
@@ -581,6 +590,7 @@ namespace StellarisClone.Rendering
                 default:
                 {
                     // Корпус пробит: огненный выброс, дым, искры, обломки, пожар на месте пробоины
+                    ParticleVfx.PlayLater(delay, ParticleVfx.Effect.TinyExplosion, at, size, normal);
                     FlashLight(at, FireOrange, size * 4f, 2.2f, 0.35f);
                     var f = Spawn(Kind.Flash, at, HotWhite, size * 0.8f, 0.22f, _glow);
                     f.Age = -delay;
@@ -657,6 +667,7 @@ namespace StellarisClone.Rendering
         private void Explode(Vector3 at, Vector3 dir, Color col, Impact impact, float size, Transform target, bool shieldBreak)
         {
             if (impact == Impact.Shield) { ImpactAt(at, dir, col, impact, size * 1.2f, target, null, shieldBreak, 0f, false); return; }
+            ParticleVfx.Play(ParticleVfx.Effect.TinyExplosion, at, size * 1.4f);   // разрыв ракеты
             FlashLight(at, FireOrange, size * 5f, 3f, 0.45f);
             var ring = Spawn(Kind.Ring, at, new Color(1f, 0.7f, 0.4f, 0.8f), size * 1.8f, 0.45f, _ring);
             ring.Flat = true;

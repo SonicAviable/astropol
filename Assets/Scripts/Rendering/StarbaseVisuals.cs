@@ -326,6 +326,7 @@ namespace StellarisClone.Rendering
                         e.Flashed = true;
                         CombatFx.Instance.Blip(e.Go.transform.position, new Color(1f, 0.85f, 0.5f), 7f, 0.9f);
                         CombatFx.Instance.Sparks(e.Go.transform.position, new Color(1f, 0.78f, 0.4f), 14, 1.4f);
+                        ParticleVfx.Play(ParticleVfx.Effect.Sparks, e.Go.transform.position, 1.4f);   // база собрана — сноп искр
                     }
                 }
                 else if (e.Go.transform.localScale.x != Diameter) e.Go.transform.localScale = Vector3.one * Diameter;
