@@ -4203,3 +4203,154 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Неизвестная цивилизация	Unknown civilization
 /мес	/mo
 ранний доступ	early access
+Роботы собраны	Robots assembled
+{0}: +1 житель-робот	{0}: +1 robot pop
+Генная адаптация завершена	Gene adaptation complete
+−{0} гелия-3 на обустройство: +2 населения на {1} — чужой вид, {2}. Отношение {3} −5.	−{0} Helium-3 to settle them: +2 pops on {1} — an alien species, {2}. {3} opinion −5.
+колонисты	the colonists
+БУНТ НА {0}	RIOT ON {0}
+Толпы на улицах {0}: {1} перекрыли космопорт и захватили узел связи. 	Crowds fill the streets of {0}: {1} have blockaded the spaceport and seized the comms hub. 
+Стабильность — {0:0} из 100. Если беспорядки продлятся {1} мес., колония объявит независимость.	Stability is {0:0} of 100. If the unrest lasts {1} months, the colony will declare independence.
+ПОЙТИ НА УСТУПКИ	MAKE CONCESSIONS
+−{0} гелия-3 и −20 влияния: недовольство после завоевания уходит, стабильность +15 сразу и +{1} на {2} мес.	−{0} Helium-3 and −20 influence: conquest unrest is gone, stability +15 now and +{1} for {2} months.
+ПОДАВИТЬ	SUPPRESS
+Бесплатно: колония теряет 1 жителя, военное положение +{0} стабильности на {1} мес.	Free: the colony loses 1 pop; martial law gives +{0} stability for {1} months.
+ВЫСЛАТЬ ЧУЖАКОВ	EXPEL THE ALIENS
+Чужих видов на планете: {0}. Их вывезут — штраф за чужие виды исчезнет, но их родные империи обидятся (−12 отношения).	Alien pops on the planet: {0}. They will be shipped out — the alien species penalty disappears, but their home empires will be offended (−12 opinion).
+Нужны жители чужих видов	Requires alien pops
+ПЕРЕГОВОРЫ ГУБЕРНАТОРА	GOVERNOR NEGOTIATES
+Бесплатно: губернатор выходит к толпе. Стабильность +20, губернатор получает опыт.	Free: the governor faces the crowd. Stability +20, the governor gains experience.
+Процветание	Prosperity
+Недовольство	Discontent
+Забастовки	Strikes
+Бунт	Riot
+Спокойствие	Calm
+производство и наука +10%, рост +10%	output and research +10%, growth +10%
+производство и наука −10%, рост −25%	output and research −10%, growth −25%
+забастовки: производство и наука −40%, рост вдвое ниже	strikes: output and research −40%, growth halved
+бунт: производство −75%, рост остановлен; через {0} мес. бунта система отделится	riot: output −75%, growth halted; after {0} months of rioting the system will secede
+без бонусов и штрафов	no bonuses or penalties
+Основа	Base
+Столица империи	Imperial capital
+Губернатор {0}	Governor {0}
+Уважаемый губернатор	Respected governor
+Продажный губернатор	Corrupt governor
+Звёздная база охраняет порядок	Starbase keeps order
+Безработица ({0} без работы)	Unemployment ({0} jobless)
+Не хватает жилья	Housing shortage
+Чужие виды ({0}%)	Alien species ({0}%)
+Чужой климат	Alien climate
+Живучие на суровом мире	Resilient on a harsh world
+Только роботы: некому бунтовать	Robots only: no one to rebel
+Война	War
+Осада системы	System under siege
+Недавнее завоевание	Recent conquest
+Пропаганда ({0} мес.)	Propaganda ({0} mo.)
+Военное положение ({0} мес.)	Martial law ({0} mo.)
+Опыт управления	Administrative experience
+<b>Стабильность: {0:0}</b> · <color=#{1}>{2}</color>\n	<b>Stability: {0:0}</b> · <color=#{1}>{2}</color>\n
+<color=#8AA2A8>Движется к {0:0} (до {1} в месяц)</color>\n	<color=#8AA2A8>Moving toward {0:0} (up to {1} per month)</color>\n
+\n<color=#FF6B6B>Бунт идёт {0} мес. из {1}: затем система отделится.</color>	\n<color=#FF6B6B>Riot for {0} of {1} months: then the system will secede.</color>
+Бунт на {0}	Riot on {0}
+Забастовки на {0}	Strikes on {0}
+Недовольство на {0}	Discontent on {0}
+{0} процветает	{0} is prospering
+На {0} спокойнее	{0} calms down
+Новый вид	New species
+Гибриды рождаются	Hybrids are born
+На {0} появились {1}: {2}	{1} have appeared on {0}: {2}
+{0}: на {1} родился новый вид — {2}	{0}: a new species was born on {1} — {2}
+{0} отделилась	{0} has seceded
+Полгода бунта — и колония провозгласила независимость. Постройте в системе форпост, чтобы вернуть её.	Six months of rioting, and the colony has declared independence. Build an outpost in the system to bring it back.
+Восстание: система {0} вышла из-под власти {1} и объявила независимость	Uprising: the {0} system broke away from {1} and declared independence
+Трудолюбивые	Industrious
+Умные	Intelligent
+Живучие	Resilient
+Плодовитые	Rapid Breeders
+Инженеры	Engineers
+Уживчивые	Agreeable
+Приспособленные	Adaptive
+Медлительные	Sluggish
+Медленно размножаются	Slow Breeders
+Сварливые	Quarrelsome
+Механические	Mechanical
++15% титана и гелия-3	+15% titanium and Helium-3
++20% науки	+20% research
+война, осада и завоевание снижают стабильность вдвое слабее; +5 стабильности на суровых мирах	war, siege and conquest hurt stability half as much; +5 stability on harsh worlds
+рост населения +25%	pop growth +25%
++15% сплавов	+15% alloys
++6 стабильности	+6 stability
+чужой климат не снижает стабильность	an alien climate does not lower stability
+−10% ко всему производству	−10% to all output
+рост населения −25%	pop growth −25%
+−8 стабильности	−8 stability
+не размножаются и не ведут науку; +10% титана и гелия-3; не бунтуют	do not reproduce or do research; +10% titanium and Helium-3; never riot
+Ксарно	Xarno
+Астрео	Astreo
+Аквило	Aquilo
+Иридо	Irido
+Тэрра	Terra
+Ново	Neo
+ксарнийцы	Xarnians
+астрейцы	Astreans
+аквилианцы	Aquilians
+иридийцы	Iridians
+тэрра'ан	Terra'an
+поселенцы	Settlers
+континентальная линия	continental strain
+пустынная линия	desert strain
+линия пустошей	barren strain
+огненная линия	molten strain
+газовая линия	gas strain
+Сборка роботов	Robot assembly
+Генная адаптация	Gene adaptation
+<color={0}>Роботы не размножаются.\nНовых жителей даст только сборка.</color>	<color={0}>Robots do not reproduce.\nOnly assembly adds new pops.</color>
+<color={0}>Рост остановлен — на планете бунт.</color>	<color={0}>Growth halted — the planet is rioting.</color>
+Сборка роботов начата	Robot assembly started
+Генная адаптация начата	Gene adaptation started
+Кампания пропаганды	Propaganda campaign
+{0}: +{1:0} стабильности на {2} мес.	{0}: +{1:0} stability for {2} months
+Стабильность	Stability
+Виды	Species
+Пропаганда	Propaganda
+<color=#FF6B6B>Бунт {0} из {1} мес. — затем отделение</color>	<color=#FF6B6B>Riot {0} of {1} months — then secession</color>
+Виды · {0}	Species · {0}
+  ·  роботов {0}	  ·  robots {0}
+<b>Виды планеты</b>	<b>Planet species</b>
+<color={0}>· ещё видов: {1}</color>	<color={0}>· more species: {1}</color>
+ <color=#FF9A8A>(чужой вид)</color>	 <color=#FF9A8A>(alien species)</color>
+ <color=#F2C46B>(чужой климат)</color>	 <color=#F2C46B>(alien climate)</color>
+ПРОПАГАНДА ИДЁТ · {0} мес.	PROPAGANDA ACTIVE · {0} mo.
+ПРОПАГАНДА · {0:0} влияния	PROPAGANDA · {0:0} influence
+<b>Кампания пропаганды</b>\nПлакаты, трансляции и праздники: +{0:0} стабильности на {1} мес. (и +5 сразу).\n	<b>Propaganda campaign</b>\nPosters, broadcasts and festivals: +{0:0} stability for {1} months (and +5 right away).\n
+<color=#8AA2A8>Цена:</color> {0:0} влияния	<color=#8AA2A8>Cost:</color> {0:0} influence
+\n\nУже идёт: осталось {0} мес.	\n\nAlready running: {0} months left.
+{0:0} спл., {1:0} гел. · {2:0} дн.	{0:0} alloys, {1:0} Helium-3 · {2:0} d
+Собираются · {0} дн. — нажмите, чтобы отменить	Assembling · {0} d — click to cancel
+Нужна колония	Requires a colony
+Нет свободного жилья	No free housing
+Очередь планеты заполнена	Planet queue is full
+<b>Сборка роботов</b>\n+1 житель-робот: занимает рабочее место, как обычный житель.\n	<b>Robot assembly</b>\n+1 robot pop: fills a job like a regular pop.\n
+Роботы не бунтуют и не считаются чужим видом, но и не размножаются: на мире из одних роботов роста нет.\n	Robots never riot and do not count as aliens, but they do not reproduce either: a robots-only world does not grow.\n
+<color={0}>Цена:</color> {1}	<color={0}>Cost:</color> {1}
+\n\nРоботов на планете: {0}	\n\nRobots on the planet: {0}
+{0:0} гел., {1:0} вл. · {2:0} дн.	{0:0} Helium-3, {1:0} influence · {2:0} d
+Нет органических жителей	No organic pops
+Вид уже идеально подходит этому миру	The species already suits this world perfectly
+<b>Генная адаптация</b>\nВыводит линию самого многочисленного вида колонии под климат этой планеты.\n	<b>Gene adaptation</b>\nBreeds a strain of the colony's most numerous species for this planet's climate.\n
+Вид: <b>{0}</b>\n• родной мир — {1}: штраф «чужой климат» исчезнет\n	Species: <b>{0}</b>\n• home world becomes {1}: the “alien climate” penalty disappears\n
+• уйдёт слабость «{0}»\n	• removes the “{0}” weakness\n
+• вид станет «{0}» (рост +25%)\n	• the species becomes “{0}” (growth +25%)\n
+СБОРКА РОБОТОВ	ROBOT ASSEMBLY
+ГЕННАЯ АДАПТАЦИЯ	GENE ADAPTATION
+Районы  <b>{0}</b><color={1}>/{2}</color>   ·   стабильность <color={3}><b>{4:0}</b></color>	Districts  <b>{0}</b><color={1}>/{2}</color>   ·   stability <color={3}><b>{4:0}</b></color>
+роботы	robots
+генная адаптация	gene adaptation
+<color=#8AA2A8>Население ({0} жит.; виды и стабильность):</color> +{1:0.#}\n	<color=#8AA2A8>Population ({0} pops; species and stability):</color> +{1:0.#}\n
+Ксарнийцы	Xarnians
+Астрейцы	Astreans
+Аквилианцы	Aquilians
+Иридийцы	Iridians
+Тэрра'ан	Terra'an
+Поселенцы	Settlers
+Роботы	Robots

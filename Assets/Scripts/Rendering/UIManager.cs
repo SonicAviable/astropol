@@ -1472,7 +1472,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _researchTip.SetText(
                 Loc.T("<b>Наука</b>\n") +
                 Loc.F("<color=#8AA2A8>Администрация:</color> +{0:0.#}\n", TechnologyManager.BaseScience) +
-                Loc.F("<color=#8AA2A8>Население ({0} × {1:0.#}):</color> +{2:0.#}\n", tm.Population, TechnologyManager.SciencePerPop, tm.ScienceFromPopulation) +
+                Loc.F("<color=#8AA2A8>Население ({0} жит.; виды и стабильность):</color> +{1:0.#}\n", tm.Population, tm.ScienceFromPopulation) +
                 (tm.FlatScience > 0f ? Loc.F("<color=#8AA2A8>Открытия и события:</color> +{0:0.#}\n", tm.FlatScience) : "") +
                 (Mathf.Abs(mult - 1f) > 0.01f ? Loc.F("<color=#8AA2A8>Множитель технологий и событий:</color> ×{0:0.##}\n", mult) : "") +
                 $"<color=#8AA2A8>──────────────</color>\n" +

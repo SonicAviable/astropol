@@ -47,6 +47,18 @@ namespace StellarisClone.Core
             return pop;
         }
 
+        /// <summary>Научная сила населения: жители с учётом черт видов (умные, роботы) и стабильности планет.</summary>
+        public static float ResearchPops(int owner)
+        {
+            float sum = 0f;
+            foreach (var s in Systems)
+            {
+                if (s.OwnerId != owner) continue;
+                foreach (var p in s.Planets) if (p.Population > 0) sum += p.ResearchPops;
+            }
+            return sum;
+        }
+
         public static int Colonies(int owner)
         {
             int n = 0;

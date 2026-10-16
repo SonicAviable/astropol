@@ -52,6 +52,7 @@ namespace StellarisClone.Generation
         public void GenerateGalaxy()
         {
             Systems.Clear();
+            SpeciesRegistry.Reset();   // новая партия — виды заново (основатели появятся по фракциям)
             Hyperlanes.Clear();
 
             GenerateStarPositions();

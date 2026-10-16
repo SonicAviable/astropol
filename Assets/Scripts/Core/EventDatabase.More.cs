@@ -25,6 +25,9 @@ namespace StellarisClone.Core
             return new EventContext { Leader = pick, Rival = pick.TargetOwner, System = EmpireStats.GetSystem(pick.TargetSystem) };
         }
 
+        /// <summary>Вид беженцев — основатели империи соперника.</summary>
+        private static Species RefugeeSpecies(EventContext c) => SpeciesRegistry.Founder(SpeciesRegistry.FactionKeyOf(c.Rival));
+
         /// <summary>Колония игрока со свободным жильём минимум на free мест.</summary>
         private static EventContext HousingCtx(int free)
         {
@@ -288,15 +291,15 @@ namespace StellarisClone.Core
                         Loc.F("На орбиту {0} вышел перегруженный транспорт из пограничья {1}. На борту — семьи шахтёров ", c.Planet.Name, rival) +
                         Loc.T("и инженеры, бегущие от голода. Свободное жильё на планете есть."),
                         AnomalyType.ColonyIncident, Opts(
-                            new EventOption(Loc.T("ПРИНЯТЬ ВСЕХ"), Loc.F("−{0} гелия-3 на обустройство: +2 населения на {1}. Отношение {2} −5.", cost, c.Planet.Name, rival), () =>
+                            new EventOption(Loc.T("ПРИНЯТЬ ВСЕХ"), Loc.F("−{0} гелия-3 на обустройство: +2 населения на {1} — чужой вид, {2}. Отношение {3} −5.", cost, c.Planet.Name, RefugeeSpecies(c).InText, rival), () =>
                             {
                                 Pay(energy: cost);
-                                c.Planet.Population = Mathf.Min(c.Planet.HousingCapacity, c.Planet.Population + 2);
+                                c.Planet.AddPops(RefugeeSpecies(c).Id, Mathf.Clamp(c.Planet.HousingCapacity - c.Planet.Population, 0, 2));
                                 Opinion(c.Rival, -5f); Recalc();
                             }, Need(energy: cost), () => CanPay(energy: cost)),
                             new EventOption(Loc.T("ТОЛЬКО ИНЖЕНЕРОВ"), Loc.F("+1 население и +{0} науки.", R(50 * k)), () =>
                             {
-                                c.Planet.Population = Mathf.Min(c.Planet.HousingCapacity, c.Planet.Population + 1);
+                                if (c.Planet.Population < c.Planet.HousingCapacity) c.Planet.AddPops(RefugeeSpecies(c).Id, 1);
                                 Science(50 * k); Recalc();
                             }),
                             new EventOption(Loc.T("ВЕРНУТЬ ДОМОЙ"), Loc.F("Отношение {0} +8: они ценят порядок на границе.", rival), () => Opinion(c.Rival, 8f))));

@@ -112,7 +112,7 @@ namespace StellarisClone.Core
 
         private static void OnCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
-            if (sys == null || !Known(oldOwner, newOwner)) return;
+            if (sys == null || newOwner < 0 || !Known(oldOwner, newOwner)) return;   // отделение пишет PlanetStability
             bool player = oldOwner == 0 || newOwner == 0;
             string text = oldOwner >= 0
                 ? Loc.F("{0} захватывает систему {1} у {2}", Who(newOwner), Place(sys), Who(oldOwner))

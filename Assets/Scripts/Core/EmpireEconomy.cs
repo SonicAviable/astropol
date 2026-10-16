@@ -58,10 +58,10 @@ namespace StellarisClone.Core
                     if (p.Type == PlanetType.GasGiant || p.Type == PlanetType.Molten) continue;
                     if (p.Population <= 0) continue;
                     colonies++;
-                    // Губернатор планеты увеличивает её производство
-                    min += p.ProducedMineralsPerMonth * LeaderManager.PlanetOutputMult(p, "minerals");
-                    en += p.ProducedEnergyPerMonth * LeaderManager.PlanetOutputMult(p, "energy");
-                    al += p.ProducedAlloysPerMonth * LeaderManager.PlanetOutputMult(p, "alloys");
+                    // Губернатор, черты видов и стабильность меняют производство планеты
+                    min += p.ProducedMineralsPerMonth * LeaderManager.PlanetOutputMult(p, "minerals") * p.OutputMult("minerals");
+                    en += p.ProducedEnergyPerMonth * LeaderManager.PlanetOutputMult(p, "energy") * p.OutputMult("energy");
+                    al += p.ProducedAlloysPerMonth * LeaderManager.PlanetOutputMult(p, "alloys") * p.OutputMult("alloys");
                 }
             }
 

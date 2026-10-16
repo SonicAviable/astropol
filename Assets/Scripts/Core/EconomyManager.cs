@@ -158,6 +158,7 @@ namespace StellarisClone.Core
             }
 
             ProcessColonyGrowth();
+            PlanetStability.MonthlyTick(_generator != null ? _generator.Systems : null);
             ProcessAutoBuild();
 
             if (logMonthlyReport)

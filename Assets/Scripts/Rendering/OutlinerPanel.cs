@@ -348,6 +348,8 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => Loc.T("Добывающая станция"),
             JobKind.Colony => Loc.T("Колония"),
             JobKind.Terraform => Loc.T("Терраформирование"),
+            JobKind.Robot => Loc.T("Сборка роботов"),
+            JobKind.GeneAdapt => Loc.T("Генная адаптация"),
             _ => j.ShipType == FleetType.Science ? Loc.T("Научный корабль")
                : j.ShipType == FleetType.Constructor ? Loc.T("Строительный корабль")
                : j.Hull == ShipClass.Destroyer ? Loc.T("Эсминец") : j.Hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет")
@@ -359,6 +361,8 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => LGIcon.Minerals,
             JobKind.Colony => LGIcon.Planet,
             JobKind.Terraform => LGIcon.Globe,
+            JobKind.Robot => LGIcon.Industry,
+            JobKind.GeneAdapt => LGIcon.Research,
             _ => j.ShipType == FleetType.Science ? LGIcon.ScienceShip
                : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull)
         };

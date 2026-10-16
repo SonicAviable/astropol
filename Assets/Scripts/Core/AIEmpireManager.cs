@@ -140,7 +140,7 @@ namespace StellarisClone.Core
         public bool HasTech(string id) => _researched.Contains(id);
 
         public float MonthlyScience =>
-            (TechnologyManager.BaseScience + EmpireStats.Population(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId))
+            (TechnologyManager.BaseScience + EmpireStats.ResearchPops(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId))
             * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult;
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>

@@ -6,7 +6,7 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
-    public enum JobKind { District, MiningStation, Colony, Terraform, Ship }
+    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt }
 
     /// <summary>Строительный заказ: оплачен сразу, готов через несколько дней.</summary>
     [Serializable]
@@ -58,6 +58,8 @@ namespace StellarisClone.Core
         public const float MiningStationDays = 60f;
         public const float ColonyDays = 180f;
         public const float TerraformDays = 360f;
+        public const float RobotDays = 90f;
+        public const float GeneAdaptDays = 240f;
 
         public static float ShipDays(FleetType type, ShipClass hull)
         {
@@ -177,6 +179,8 @@ namespace StellarisClone.Core
                 JobKind.District => DistrictDays(district),
                 JobKind.MiningStation => MiningStationDays,
                 JobKind.Colony => ColonyDays,
+                JobKind.Robot => RobotDays,
+                JobKind.GeneAdapt => GeneAdaptDays,
                 _ => TerraformDays
             };
             var job = new ConstructionJob
@@ -309,6 +313,21 @@ namespace StellarisClone.Core
                     p.ApplyTerraformStep();
                     Notify(j, Loc.T("Терраформинг завершён"), $"{p.Name}: {p.ClassDisplayName.ToLower()}");
                     break;
+                case JobKind.Robot:
+                    p.AddPops(SpeciesRegistry.RobotId, 1);
+                    Notify(j, Loc.T("Роботы собраны"), Loc.F("{0}: +1 житель-робот", p.Name));
+                    break;
+                case JobKind.GeneAdapt:
+                {
+                    var src = SpeciesRegistry.Get(p.DominantOrganic);
+                    var to = src != null ? SpeciesRegistry.Adapted(src.Id, p.Type) : null;
+                    if (to != null)
+                    {
+                        p.ConvertPops(src.Id, to.Id, p.CountOf(s => s.Id == src.Id));
+                        Notify(j, Loc.T("Генная адаптация завершена"), Loc.F("{0}: {1} — {2}", p.Name, to.DisplayName, to.TraitsLine));
+                    }
+                    break;
+                }
             }
             if (j.Owner == 0)
             {

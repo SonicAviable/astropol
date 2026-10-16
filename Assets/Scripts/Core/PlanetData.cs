@@ -99,7 +99,7 @@ namespace StellarisClone.Core
     }
 
     [Serializable]
-    public class PlanetData
+    public partial class PlanetData
     {
         public string Name;
         public PlanetType Type;
@@ -161,6 +161,8 @@ namespace StellarisClone.Core
         /// <summary>Стартовая колония в столице.</summary>
         public void SetupAsStartingColony(int pop, int urban, int mining, int generator, int industrial = 0)
         {
+            Pops?.Clear();
+            Stability = 65f;
             Population = Mathf.Clamp(pop, 0, MaxDistricts * 2);
             PopGrowthProgress = 0f;
 
@@ -303,7 +305,8 @@ namespace StellarisClone.Core
         /// <summary>Скорость роста населения (% к следующему жителю в месяц); 0 — если нет жилья или колонии.</summary>
         public float PopGrowthBaseSpeedPctPerMonth =>
             Population <= 0 || HousingCapacity <= Population ? 0f
-            : (4f + (HousingCapacity - Population) * 0.4f) * EmpireBonuses.For(OwnerId).PopGrowth * HabitabilityGrowthMult;
+            : (4f + (HousingCapacity - Population) * 0.4f) * EmpireBonuses.For(OwnerId).PopGrowth * HabitabilityGrowthMult
+              * SpeciesGrowthMult * PlanetStability.GrowthMult(Tier);
 
         /// <summary>Комфортный мир (пригодность от 70% — континентальный) растёт быстрее: это и даёт последний шаг терраформинга.</summary>
         public const float ComfortGrowthBonus = 1.25f;
@@ -369,6 +372,8 @@ namespace StellarisClone.Core
         /// <summary>Заселить планету (без оплаты — её проверяет вызывающий).</summary>
         public void SettleColony()
         {
+            Pops?.Clear();
+            Stability = 55f; Unrest = 0f; RiotMonths = 0;
             Population = 2;
             PopGrowthProgress = 0f;
             if (Districts.Count == 0)

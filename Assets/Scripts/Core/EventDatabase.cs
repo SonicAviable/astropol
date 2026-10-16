@@ -205,6 +205,7 @@ namespace StellarisClone.Core
             ["spy_info_broker"]          = "Broker",
             ["colony_refugees"]          = "Refugees",
             ["colony_strike"]            = "Strike",
+            ["colony_riot"]              = "Strike",
             ["colony_meteor"]            = "Meteor",
             ["colony_young_scientists"]  = "Academy",
             ["military_deserters"]       = "Deserters",
@@ -332,6 +333,7 @@ namespace StellarisClone.Core
             AddPrecursorChain();
             AddLeaderAmbitions();
             AddMoreEvents();
+            AddSocietyEvents();
         }
 
         // -------------------- Разведка --------------------

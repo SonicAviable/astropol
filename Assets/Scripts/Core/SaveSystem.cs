@@ -70,6 +70,8 @@ namespace StellarisClone.Core
         public LeaderState Leaders;
         public EventState Events;
         public List<TimedEffect> Effects;
+        /// <summary>Виды галактики (null — старое сохранение).</summary>
+        public List<Species> Species;
         public ThreatSave Threats;
         public EspionageSave Espionage;
         public List<SystemSave> Systems = new List<SystemSave>();
@@ -116,6 +118,12 @@ namespace StellarisClone.Core
         public List<int> Districts = new List<int>();
         public int Focus;
         public bool AutoBuild;
+        // Общество (нет в старых сохранениях: состав восстановится по фракции владельца)
+        public List<int> PopSpecies = new List<int>();
+        public List<int> PopCounts = new List<int>();
+        public float Stability = -1f;
+        public float Unrest;
+        public int Propaganda, MartialLaw, Riot;
     }
 
     [Serializable]
@@ -439,6 +447,7 @@ namespace StellarisClone.Core
             if (LeaderManager.Instance != null) s.Leaders = LeaderManager.Instance.CaptureState();
             if (AnomalyEventSystem.Instance != null) s.Events = AnomalyEventSystem.Instance.CaptureState();
             s.Effects = EmpireEffects.Capture();
+            s.Species = SpeciesRegistry.Capture();
             if (ThreatManager.Instance != null) s.Threats = ThreatManager.Instance.CaptureState();
             if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
 
@@ -516,9 +525,13 @@ namespace StellarisClone.Core
                     Size = p.Size, Color = p.PlanetColor, Energy = p.EnergyDeposit, Minerals = p.MineralDeposit,
                     HasMiningStation = p.HasMiningStation, Terraforming = p.TerraformingInProgress,
                     Population = p.Population, PopGrowth = p.PopGrowthProgress, MaxDistricts = p.MaxDistricts,
-                    Focus = (int)p.Focus, AutoBuild = p.AutoBuild
+                    Focus = (int)p.Focus, AutoBuild = p.AutoBuild,
+                    Stability = p.Stability, Unrest = p.Unrest, Propaganda = p.PropagandaMonths,
+                    MartialLaw = p.MartialLawMonths, Riot = p.RiotMonths
                 };
                 foreach (var d in p.Districts) ps.Districts.Add((int)d.Type);
+                if (p.Pops != null)
+                    foreach (var g in p.Pops) { ps.PopSpecies.Add(g.Species); ps.PopCounts.Add(g.Count); }
                 ss.Planets.Add(ps);
             }
             return ss;
@@ -566,6 +579,7 @@ namespace StellarisClone.Core
         /// <summary>Галактика из сохранения (вызывается бутстрапом вместо генерации).</summary>
         public static List<StarSystem> BuildSystems(GameState s)
         {
+            SpeciesRegistry.Restore(s.Species);
             var list = new List<StarSystem>(s.Systems.Count);
             foreach (var ss in s.Systems)
             {
@@ -587,9 +601,14 @@ namespace StellarisClone.Core
                         PopGrowthProgress = ps.PopGrowth,
                         MaxDistricts = ps.MaxDistricts,
                         Focus = (ColonyFocus)ps.Focus,
-                        AutoBuild = ps.AutoBuild
+                        AutoBuild = ps.AutoBuild,
+                        Stability = ps.Stability >= 0f ? ps.Stability : 55f,
+                        Unrest = ps.Unrest, PropagandaMonths = ps.Propaganda, MartialLawMonths = ps.MartialLaw, RiotMonths = ps.Riot
                     };
                     foreach (int d in ps.Districts) p.Districts.Add(new DistrictData((DistrictType)d));
+                    if (ps.PopSpecies != null && ps.PopCounts != null)
+                        for (int i = 0; i < ps.PopSpecies.Count && i < ps.PopCounts.Count; i++)
+                            p.Pops.Add(new PopGroup(ps.PopSpecies[i], ps.PopCounts[i]));
                     sys.Planets.Add(p);
                 }
                 sys.RestoreDerivedTotals();

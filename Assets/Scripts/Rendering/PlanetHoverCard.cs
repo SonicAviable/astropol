@@ -209,9 +209,13 @@ namespace StellarisClone.Rendering
             string line1, line2 = "";
             if (p.Population > 0)
             {
-                line1 = Loc.F("Районы  <b>{0}</b><color={1}>/{2}</color>   ·   приоритет: {3}", p.BuiltDistricts, m, p.MaxDistricts, ColonyFocusInfo.Name(p.Focus).ToLower());
+                var tier = p.Tier;
+                line1 = Loc.F("Районы  <b>{0}</b><color={1}>/{2}</color>   ·   стабильность <color={3}><b>{4:0}</b></color>", p.BuiltDistricts, m, p.MaxDistricts,
+                              LGBuild.Hex(PlanetStability.TierColor(tier)), p.Stability);
                 var q = b != null ? b.QueueFor(p) : null;
-                if (q != null && q.Count > 0)
+                if (tier <= StabilityTier.Strike)
+                    line2 = Loc.F("<color={0}>{1}: {2}</color>", LGBuild.Hex(PlanetStability.TierColor(tier)), PlanetStability.TierName(tier), PlanetStability.TierEffect(tier));
+                else if (q != null && q.Count > 0)
                     line2 = Loc.F("<color={0}>Стройка: {1} · {2} дн.", gold, JobName(q[0]), Mathf.CeilToInt(q[0].DaysLeft)) + (q.Count > 1 ? Loc.F(" · ещё {0}", q.Count - 1) : "") + "</color>";
                 else if (p.IdlePops > 0)
                     line2 = Loc.F("<color={0}>Безработные: {1} — нужны районы</color>", gold, p.IdlePops);
@@ -237,6 +241,8 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => Loc.T("комплекс"),
             JobKind.Colony => Loc.T("колония"),
             JobKind.Terraform => Loc.T("терраформинг"),
+            JobKind.Robot => Loc.T("роботы"),
+            JobKind.GeneAdapt => Loc.T("генная адаптация"),
             _ => Loc.T("заказ")
         };
 

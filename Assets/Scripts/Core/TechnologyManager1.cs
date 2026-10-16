@@ -210,7 +210,8 @@ namespace StellarisClone.Core
         private int _population;
         public int Population => _population;
 
-        public float ScienceFromPopulation => _population * SciencePerPop;
+        /// <summary>Наука от жителей: черты видов (умные +20%, роботы — 0) и стабильность планет.</summary>
+        public float ScienceFromPopulation => EmpireStats.ResearchPops(0) * SciencePerPop;
 
         public float MonthlyResearchIncome =>
             (BaseScience + ScienceFromPopulation + FlatScience + Landmarks.Science(0)) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0)

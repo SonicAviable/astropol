@@ -198,6 +198,24 @@ namespace StellarisClone.Core
             OnSystemCaptured?.Invoke(sys, oldOwner, newOwner);
         }
 
+        /// <summary>
+        /// Система отделилась после долгого бунта: становится ничьей, звёздная база переходит повстанцам и разоружается.
+        /// Остальные системы узнают об этом через OnSystemCaptured (новый владелец −1).
+        /// </summary>
+        public void Secede(StarSystem sys)
+        {
+            if (sys == null || sys.OwnerId < 0) return;
+            int oldOwner = sys.OwnerId;
+            sys.OwnerId = -1;
+            sys.HasStarbase = false;
+            _sieges.Remove(sys.Id);
+
+            GalaxyView.Instance?.RefreshTerritoryVisuals();
+            EconomyManager.Instance?.RecalculateAll();
+            TechnologyManager.Instance?.RecountPopulation();
+            OnSystemCaptured?.Invoke(sys, oldOwner, -1);
+        }
+
         /// <summary>Мир — все осады между сторонами снимаются.</summary>
         public void ClearSieges(int a, int b)
         {

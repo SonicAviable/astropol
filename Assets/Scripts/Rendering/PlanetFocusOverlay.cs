@@ -79,7 +79,18 @@ namespace StellarisClone.Rendering
         private Button _suggestBtn;
         private Text _suggestText;
         private DistrictType? _suggest;
-        private ActionButton _mine, _colony, _terra;
+        private ActionButton _mine, _colony, _terra, _robots, _gene;
+        private const int ProjectCount = 5;
+
+        // Общество: стабильность и виды
+        private GameObject _society;
+        private Text _stabValue, _stabEffect, _compCaption, _propText;
+        private RectTransform _stabBar;
+        private Image[] _compSegs;
+        private Text[] _legend;
+        private TooltipTrigger _stabTip, _compTip, _propTip;
+        private Button _propBtn;
+        private Image _propBg;
 
         private PlanetData _planet;
         private StarSystem _system;
@@ -297,6 +308,7 @@ namespace StellarisClone.Rendering
             if (_planet == null || _root == null) return;
             RefreshHeader();
             RefreshPopulation();
+            RefreshSociety();
             RefreshDossier();
             RefreshTiles();
             RefreshDistricts();
@@ -368,6 +380,10 @@ namespace StellarisClone.Rendering
             int months = _planet.MonthsToNextPop;
             _growthText.text = crowded
                 ? Loc.F("<color={0}>Рост остановлен — нет жилья.\nПостройте городской район.</color>", LGBuild.Hex(CGold))
+                : speed <= 0f && _planet.OrganicPops == 0
+                ? Loc.F("<color={0}>Роботы не размножаются.\nНовых жителей даст только сборка.</color>", LGBuild.Hex(CGold))
+                : speed <= 0f
+                ? Loc.F("<color={0}>Рост остановлен — на планете бунт.</color>", LGBuild.Hex(UIManager.DS.Red))
                 : Loc.F("Рост <b>+{0:0.#}%</b> в месяц\nновый житель через ~{1} мес.", speed, months);
         }
 
@@ -422,11 +438,11 @@ namespace StellarisClone.Rendering
             float minerals = 0f, energy = 0f, alloys = 0f, science = 0f;
             if (colony)
             {
-                minerals = _planet.ProducedMineralsPerMonth * FactionMult(DistrictType.Mining) * b.MineralsMult;
-                energy = _planet.ProducedEnergyPerMonth * FactionMult(DistrictType.Generator) * b.EnergyMult;
-                alloys = _planet.ProducedAlloysPerMonth * FactionMult(DistrictType.Industrial) * b.AlloysMult;
+                minerals = _planet.ProducedMineralsPerMonth * FactionMult(DistrictType.Mining) * b.MineralsMult * _planet.OutputMult("minerals");
+                energy = _planet.ProducedEnergyPerMonth * FactionMult(DistrictType.Generator) * b.EnergyMult * _planet.OutputMult("energy");
+                alloys = _planet.ProducedAlloysPerMonth * FactionMult(DistrictType.Industrial) * b.AlloysMult * _planet.OutputMult("alloys");
                 var tm = TechnologyManager.Instance;
-                science = _planet.Population * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
+                science = _planet.ResearchPops * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
             }
             if (Surveyed && _planet.HasMiningStation)
             {
@@ -684,6 +700,8 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => LGIcon.Industry,
             JobKind.Colony => LGIcon.Population,
             JobKind.Terraform => LGIcon.Planet,
+            JobKind.Robot => LGIcon.Industry,
+            JobKind.GeneAdapt => LGIcon.Research,
             _ => LGIcon.Construction
         };
 
@@ -695,6 +713,8 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => Loc.T("Добывающий комплекс"),
             JobKind.Colony => Loc.T("Колония"),
             JobKind.Terraform => Loc.T("Терраформинг"),
+            JobKind.Robot => Loc.T("Сборка роботов"),
+            JobKind.GeneAdapt => Loc.T("Генная адаптация"),
             _ => Loc.T("Заказ")
         };
 
@@ -748,6 +768,7 @@ namespace StellarisClone.Rendering
             }
 
             RefreshActionTips(mineJob, colJob, terJob, surveyed, owned);
+            RefreshSocietyActions(surveyed, owned);
         }
 
         /// <summary>Подсказки проектов: что именно даст проект и выгоден ли он — с цифрами этой планеты.</summary>
@@ -975,6 +996,37 @@ namespace StellarisClone.Rendering
             }
         }
 
+        private void OnRobots()
+        {
+            if (_planet == null || TryCancel(JobKind.Robot)) return;
+            if (_planet.TryBuildRobot())
+            {
+                NotificationCenter.Show(Loc.T("Сборка роботов начата"), Loc.F("{0} · {1:0} дн.", _planet.Name, ConstructionManager.RobotDays), NotificationCenter.Kind.Info, 4f);
+                Refresh();
+            }
+        }
+
+        private void OnGene()
+        {
+            if (_planet == null || TryCancel(JobKind.GeneAdapt)) return;
+            if (_planet.TryGeneAdapt())
+            {
+                NotificationCenter.Show(Loc.T("Генная адаптация начата"), Loc.F("{0} · {1:0} дн.", _planet.Name, ConstructionManager.GeneAdaptDays), NotificationCenter.Kind.Info, 4f);
+                Refresh();
+            }
+        }
+
+        private void OnPropaganda()
+        {
+            if (_planet == null) return;
+            if (PlanetStability.TryPropaganda(_planet))
+            {
+                NotificationCenter.Show(Loc.T("Кампания пропаганды"), Loc.F("{0}: +{1:0} стабильности на {2} мес.", _planet.Name, PlanetStability.PropagandaBonus, PlanetStability.PropagandaDuration),
+                    NotificationCenter.Kind.Success, 4f);
+                Refresh();
+            }
+        }
+
         private void OnTerra()
         {
             if (_planet == null || TryCancel(JobKind.Terraform)) return;
@@ -1005,6 +1057,7 @@ namespace StellarisClone.Rendering
             BuildStage(_rootRt);
             BuildHeader(_rootRt);
             BuildPopulation(_rootRt);
+            BuildSociety(_rootRt);
             BuildDossier(_rootRt);
             BuildTiles(_rootRt);
             BuildDistricts(_rootRt);
@@ -1190,6 +1243,208 @@ namespace StellarisClone.Rendering
             _growthText = LGBuild.Label(host, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
             _growthText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -88), new Vector2(320, 44));
             _growthText.lineSpacing = 1.15f;
+        }
+
+        /// <summary>Общество колонии: шкала стабильности, состав по видам и кампания пропаганды.</summary>
+        private void BuildSociety(RectTransform rt)
+        {
+            var card = Glass(rt, "Society", LGIcon.Population, Loc.T("ОБЩЕСТВО"), new Color(0.98f, 0.55f, 0.85f), LGAppear.Kind.SlideLeft, 0.12f, out var body);
+            var r = card.rectTransform;
+            r.anchorMin = r.anchorMax = new Vector2(0, 1);
+            r.pivot = new Vector2(0, 1);
+            r.anchoredPosition = new Vector2(Pad, -HeaderH - 22 - 150 - 6);
+            r.sizeDelta = new Vector2(290, 272);
+            _society = card.gameObject;
+
+            // Стабильность: подпись, число и уровень, шкала, действие уровня (всё под одной подсказкой)
+            var stab = LGBuild.Panel(body, "Stability", new Color(1f, 1f, 1f, 0f), raycast: true);
+            stab.rectTransform.TopBand(0, 62);
+            var sl = LGBuild.Label(stab.rectTransform, Loc.T("Стабильность"), 11, CMuted, TextAnchor.UpperLeft);
+            sl.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(120, 16));
+            _stabValue = LGBuild.Label(stab.rectTransform, "", 12, Color.white, TextAnchor.UpperRight, bold: true);
+            _stabValue.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), Vector2.zero, new Vector2(170, 16));
+            var barHost = LGBuild.Rect(stab.rectTransform, "BarHost");
+            barHost.TopBand(20, 8);
+            _stabBar = LGBuild.Bar(barHost, CCyan, 0.5f, 7f);
+            _stabEffect = LGBuild.Label(stab.rectTransform, "", 10, CMuted, TextAnchor.UpperLeft, wrap: true);
+            _stabEffect.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -32), new Vector2(250, 30));
+            TooltipHelper.Attach(stab.gameObject, Loc.T("Стабильность"));
+            _stabTip = stab.GetComponent<TooltipTrigger>();
+
+            // Состав по видам: полоса долей и легенда
+            var comp = LGBuild.Panel(body, "Composition", new Color(1f, 1f, 1f, 0f), raycast: true);
+            comp.rectTransform.TopBand(68, 92);
+            _compCaption = LGBuild.Label(comp.rectTransform, "", 11, CMuted, TextAnchor.UpperLeft);
+            _compCaption.rectTransform.TopBand(0, 16);
+            var segHost = LGBuild.Rect(comp.rectTransform, "Segments");
+            segHost.TopBand(19, 8);
+            _compSegs = new Image[6];
+            for (int i = 0; i < _compSegs.Length; i++)
+            {
+                _compSegs[i] = LGBuild.Panel(segHost, "Seg" + i, Color.white);
+                LG.Ignore(_compSegs[i].gameObject);
+            }
+            _legend = new Text[3];
+            for (int i = 0; i < _legend.Length; i++)
+            {
+                _legend[i] = LGBuild.Label(comp.rectTransform, "", 11, UIManager.DS.TextPrimary, TextAnchor.UpperLeft);
+                _legend[i].rectTransform.TopBand(33 + i * 19, 18);
+                _legend[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+            }
+            TooltipHelper.Attach(comp.gameObject, Loc.T("Виды"));
+            _compTip = comp.GetComponent<TooltipTrigger>();
+
+            // Пропаганда
+            _propBtn = LGBuild.Button(body, "Propaganda", new Color(0.30f, 0.14f, 0.30f), new Color(0.98f, 0.55f, 0.85f, 0.55f), OnPropaganda, null, null, 11, 10f);
+            var prt = (RectTransform)_propBtn.transform;
+            prt.anchorMin = new Vector2(0, 0); prt.anchorMax = new Vector2(1, 0);
+            prt.pivot = new Vector2(0.5f, 0f);
+            prt.offsetMin = Vector2.zero; prt.offsetMax = new Vector2(0, 30);
+            _propBg = _propBtn.GetComponent<Image>();
+            var pi = LGIcons.Create(_propBtn.transform, LGIcon.Influence, 14, Color.white);
+            pi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
+            _propText = LGBuild.Label(_propBtn.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _propText.rectTransform.Stretch(34, 0, 8, 0);
+            TooltipHelper.Attach(_propBtn.gameObject, Loc.T("Пропаганда"));
+            _propTip = _propBtn.GetComponent<TooltipTrigger>();
+        }
+
+        private void RefreshSociety()
+        {
+            bool show = Surveyed && _planet.Population > 0;
+            _society.SetActive(show);
+            if (!show) return;
+            _planet.SyncPops();
+
+            var tier = _planet.Tier;
+            Color tc = PlanetStability.TierColor(tier);
+            float target = PlanetStability.Target(_planet);
+            string arrow = target > _planet.Stability + 0.5f ? " ▲" : target < _planet.Stability - 0.5f ? " ▼" : "";
+            _stabValue.text = $"<color=#{PlanetStability.Hex(tc)}>{_planet.Stability:0} · {PlanetStability.TierName(tier)}{arrow}</color>";
+            LGBuild.SetBar(_stabBar, _planet.Stability / 100f, tc);
+            _stabEffect.text = _planet.RiotMonths > 0
+                ? Loc.F("<color=#FF6B6B>Бунт {0} из {1} мес. — затем отделение</color>", _planet.RiotMonths, PlanetStability.SecessionMonths)
+                : PlanetStability.TierEffect(tier);
+            _stabTip.SetText(PlanetStability.Tooltip(_planet));
+
+            // Состав: группы по убыванию
+            var groups = new List<PopGroup>(_planet.Pops);
+            groups.Sort((a, b) => b.Count.CompareTo(a.Count));
+            int total = Mathf.Max(1, _planet.Population);
+            _compCaption.text = Loc.F("Виды · {0}", groups.Count) + (_planet.RobotPops > 0 ? Loc.F("  ·  роботов {0}", _planet.RobotPops) : "");
+            float x = 0f;
+            for (int i = 0; i < _compSegs.Length; i++)
+            {
+                var seg = _compSegs[i];
+                bool on = i < groups.Count;
+                seg.gameObject.SetActive(on);
+                if (!on) continue;
+                var sp = SpeciesRegistry.Get(groups[i].Species);
+                float w = i == groups.Count - 1 || i == _compSegs.Length - 1 ? 1f - x : groups[i].Count / (float)total;
+                var rt = seg.rectTransform;
+                rt.anchorMin = new Vector2(x, 0f);
+                rt.anchorMax = new Vector2(Mathf.Min(1f, x + w), 1f);
+                rt.offsetMin = new Vector2(i > 0 ? 1f : 0f, 0f);
+                rt.offsetMax = Vector2.zero;
+                seg.color = sp != null ? sp.Color : CMuted;
+                x += w;
+            }
+
+            var tip = new System.Text.StringBuilder(Loc.T("<b>Виды планеты</b>"));
+            int founder = SpeciesRegistry.FounderOf(_planet.OwnerId);
+            for (int i = 0; i < groups.Count; i++)
+            {
+                var sp = SpeciesRegistry.Get(groups[i].Species);
+                if (sp == null) continue;
+                string hex = PlanetStability.Hex(sp.Color);
+                if (i < _legend.Length)
+                    _legend[i].text = i == _legend.Length - 1 && groups.Count > _legend.Length
+                        ? Loc.F("<color={0}>· ещё видов: {1}</color>", LGBuild.Hex(CMuted), groups.Count - i)
+                        : $"<color=#{hex}>■</color> {sp.DisplayName} <color={LGBuild.Hex(CMuted)}>· {groups[i].Count}</color>";
+                bool alien = !sp.Robot && !SpeciesRegistry.Related(sp.Id, founder);
+                tip.Append($"\n\n<color=#{hex}>■</color> <b>{sp.DisplayName}</b> · {groups[i].Count}");
+                if (alien) tip.Append(Loc.T(" <color=#FF9A8A>(чужой вид)</color>"));
+                if (!sp.AtHome(_planet.Type)) tip.Append(Loc.T(" <color=#F2C46B>(чужой климат)</color>"));
+                foreach (var t in sp.Traits)
+                    tip.Append($"\n  {(TraitInfo.IsNegative(t) ? "<color=#FF9A8A>" : "<color=#9EF0C8>")}{TraitInfo.Name(t)}</color> — {TraitInfo.Desc(t)}");
+            }
+            for (int i = groups.Count; i < _legend.Length; i++) _legend[i].text = "";
+            _compTip.SetText(tip.ToString());
+
+            // Пропаганда
+            var eco = EconomyManager.Instance;
+            bool owned = Owned;
+            bool running = _planet.PropagandaMonths > 0;
+            bool can = owned && !running && eco != null && eco.Influence >= PlanetStability.PropagandaInfluence;
+            _propBtn.gameObject.SetActive(owned);
+            _propBtn.interactable = can;
+            _propBg.color = can ? new Color(0.30f, 0.14f, 0.30f) : new Color(0.05f, 0.08f, 0.11f);
+            _propText.text = running ? Loc.F("ПРОПАГАНДА ИДЁТ · {0} мес.", _planet.PropagandaMonths)
+                                     : Loc.F("ПРОПАГАНДА · {0:0} влияния", PlanetStability.PropagandaInfluence);
+            _propText.color = can || running ? Color.white : CMuted;
+            _propTip.SetText(Loc.F("<b>Кампания пропаганды</b>\nПлакаты, трансляции и праздники: +{0:0} стабильности на {1} мес. (и +5 сразу).\n", PlanetStability.PropagandaBonus, PlanetStability.PropagandaDuration) +
+                             Loc.F("<color=#8AA2A8>Цена:</color> {0:0} влияния", PlanetStability.PropagandaInfluence) +
+                             (running ? Loc.F("\n\nУже идёт: осталось {0} мес.", _planet.PropagandaMonths)
+                              : !can && owned ? $"\n<color=#FF8888>{CostCheck.Full(0f, 0f, 0f, PlanetStability.PropagandaInfluence)}.</color>" : ""));
+        }
+
+        /// <summary>Проекты общества: сборка роботов и генная адаптация.</summary>
+        private void RefreshSocietyActions(bool surveyed, bool owned)
+        {
+            var eco = EconomyManager.Instance;
+            const string Muted = "#8AA2A8", Bad = "#FF8888";
+            bool colony = surveyed && _planet.Population > 0;
+            ConstructionJob robJob = FirstJob(JobKind.Robot), geneJob = FirstJob(JobKind.GeneAdapt);
+            bool queueFull = Builds != null && Builds.QueueFor(_planet).Count >= ConstructionManager.MaxPlanetQueue;
+
+            // Роботы
+            string robCost = Loc.F("{0:0} спл., {1:0} гел. · {2:0} дн.", PlanetData.RobotAlloysCost, PlanetData.RobotEnergyCost, ConstructionManager.RobotDays);
+            if (robJob != null) SetAction(_robots, true, LGIcon.Clock, Loc.F("Собираются · {0} дн. — нажмите, чтобы отменить", Mathf.CeilToInt(Builds.DaysUntilDone(robJob))));
+            else if (!owned) SetAction(_robots, false, LGIcon.Lock, Loc.T("Не ваша система"));
+            else if (!colony) SetAction(_robots, false, LGIcon.Lock, Loc.T("Нужна колония"));
+            else if (!_planet.HasRoomForRobot) SetAction(_robots, false, LGIcon.Close, Loc.T("Нет свободного жилья"));
+            else if (queueFull) SetAction(_robots, false, LGIcon.Clock, Loc.T("Очередь планеты заполнена"));
+            else
+            {
+                bool can = eco != null && eco.CanAfford(PlanetData.RobotEnergyCost, 0f, PlanetData.RobotAlloysCost, 0f);
+                SetAction(_robots, can, LGIcon.Industry, robCost);
+            }
+            var robot = SpeciesRegistry.Get(SpeciesRegistry.RobotId);
+            _robots.Tip.SetText(Loc.T("<b>Сборка роботов</b>\n+1 житель-робот: занимает рабочее место, как обычный житель.\n") +
+                Loc.F("<color=#9EF0C8>{0}</color> — {1}\n", TraitInfo.Name(SpeciesTrait.Mechanical), TraitInfo.Desc(SpeciesTrait.Mechanical)) +
+                Loc.T("Роботы не бунтуют и не считаются чужим видом, но и не размножаются: на мире из одних роботов роста нет.\n") +
+                Loc.F("<color={0}>Цена:</color> {1}", Muted, robCost) +
+                (robJob == null && owned && colony && eco != null && !eco.CanAfford(PlanetData.RobotEnergyCost, 0f, PlanetData.RobotAlloysCost, 0f)
+                    ? $"\n<color={Bad}>{CostCheck.Full(PlanetData.RobotEnergyCost, 0f, PlanetData.RobotAlloysCost)}.</color>" : "") +
+                (robot != null && _planet.RobotPops > 0 ? Loc.F("\n\nРоботов на планете: {0}", _planet.RobotPops) : ""));
+
+            // Генная адаптация
+            var target = colony ? _planet.GeneTarget : null;
+            var dom = colony ? SpeciesRegistry.Get(_planet.DominantOrganic) : null;
+            string geneCost = Loc.F("{0:0} гел., {1:0} вл. · {2:0} дн.", PlanetData.GeneEnergyCost, PlanetData.GeneInfluenceCost, ConstructionManager.GeneAdaptDays);
+            if (geneJob != null) SetAction(_gene, true, LGIcon.Clock, Loc.F("Идёт · {0} дн. — нажмите, чтобы отменить", Mathf.CeilToInt(Builds.DaysUntilDone(geneJob))));
+            else if (!owned) SetAction(_gene, false, LGIcon.Lock, Loc.T("Не ваша система"));
+            else if (!colony) SetAction(_gene, false, LGIcon.Lock, Loc.T("Нужна колония"));
+            else if (dom == null) SetAction(_gene, false, LGIcon.Close, Loc.T("Нет органических жителей"));
+            else if (target == null) SetAction(_gene, false, LGIcon.Check, Loc.T("Вид уже идеально подходит этому миру"), true);
+            else if (queueFull) SetAction(_gene, false, LGIcon.Clock, Loc.T("Очередь планеты заполнена"));
+            else
+            {
+                bool can = eco != null && eco.CanAfford(PlanetData.GeneEnergyCost, 0f, 0f, PlanetData.GeneInfluenceCost);
+                SetAction(_gene, can, LGIcon.Research, geneCost);
+            }
+            string geneTip = Loc.T("<b>Генная адаптация</b>\nВыводит линию самого многочисленного вида колонии под климат этой планеты.\n");
+            if (target != null)
+            {
+                var fix = SpeciesRegistry.FixableTrait(target);
+                geneTip += Loc.F("Вид: <b>{0}</b>\n• родной мир — {1}: штраф «чужой климат» исчезнет\n", target.DisplayName, PlanetData.ClassName(_planet.Type));
+                geneTip += fix.HasValue ? Loc.F("• уйдёт слабость «{0}»\n", TraitInfo.Name(fix.Value))
+                                        : Loc.F("• вид станет «{0}» (рост +25%)\n", TraitInfo.Name(SpeciesTrait.RapidBreeders));
+            }
+            geneTip += Loc.F("<color={0}>Цена:</color> {1}", Muted, geneCost);
+            if (geneJob == null && target != null && owned && eco != null && !eco.CanAfford(PlanetData.GeneEnergyCost, 0f, 0f, PlanetData.GeneInfluenceCost))
+                geneTip += $"\n<color={Bad}>{CostCheck.Full(PlanetData.GeneEnergyCost, 0f, 0f, PlanetData.GeneInfluenceCost)}.</color>";
+            _gene.Tip.SetText(geneTip);
         }
 
         /// <summary>Досье планеты — стеклянная пластина поверх низа планеты: шкалы слева, климат справа.</summary>
@@ -1545,6 +1800,8 @@ namespace StellarisClone.Rendering
             _mine = BuildAction(body, 0, Loc.T("ДОБЫВАЮЩИЙ КОМПЛЕКС"), new Color(0.10f, 0.36f, 0.26f), UIManager.DS.Green, OnMine);
             _colony = BuildAction(body, 1, Loc.T("КОЛОНИЯ"), new Color(0.10f, 0.32f, 0.40f), CCyan, OnColony);
             _terra = BuildAction(body, 2, Loc.T("ТЕРРАФОРМИНГ"), new Color(0.24f, 0.20f, 0.42f), new Color(0.72f, 0.60f, 1f), OnTerra);
+            _robots = BuildAction(body, 3, Loc.T("СБОРКА РОБОТОВ"), new Color(0.16f, 0.24f, 0.32f), new Color(0.62f, 0.78f, 0.92f), OnRobots);
+            _gene = BuildAction(body, 4, Loc.T("ГЕННАЯ АДАПТАЦИЯ"), new Color(0.30f, 0.14f, 0.30f), new Color(0.98f, 0.55f, 0.85f), OnGene);
         }
 
         /// <summary>Проект планеты: круглый значок, название и строка состояния (цена, срок или итог).</summary>
@@ -1552,10 +1809,10 @@ namespace StellarisClone.Rendering
         {
             var b = LGBuild.Button(parent, "Project", tint, new Color(accent.r, accent.g, accent.b, 0.55f), onClick, null, null, 11, 14f);
             var r = (RectTransform)b.transform;
-            r.anchorMin = new Vector2(0, 1f - (index + 1) / 3f);
-            r.anchorMax = new Vector2(1, 1f - index / 3f);
-            r.offsetMin = new Vector2(0, 4);
-            r.offsetMax = new Vector2(0, -4);
+            r.anchorMin = new Vector2(0, 1f - (index + 1) / (float)ProjectCount);
+            r.anchorMax = new Vector2(1, 1f - index / (float)ProjectCount);
+            r.offsetMin = new Vector2(0, 3);
+            r.offsetMax = new Vector2(0, -3);
 
             var badge = LGBuild.Panel(b.transform, "Badge", new Color(0.05f, 0.1f, 0.12f));
             badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(38, 38));
