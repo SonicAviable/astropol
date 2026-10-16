@@ -124,6 +124,8 @@ namespace StellarisClone.Core
         public float Stability = -1f;
         public float Unrest;
         public int Propaganda, MartialLaw, Riot;
+        /// <summary>Ручное распределение жителей по видам работ (пусто — по приоритету).</summary>
+        public List<int> JobPlan = new List<int>();
     }
 
     [Serializable]
@@ -532,6 +534,7 @@ namespace StellarisClone.Core
                 foreach (var d in p.Districts) ps.Districts.Add((int)d.Type);
                 if (p.Pops != null)
                     foreach (var g in p.Pops) { ps.PopSpecies.Add(g.Species); ps.PopCounts.Add(g.Count); }
+                if (p.HasJobPlan) ps.JobPlan.AddRange(p.JobPlan);
                 ss.Planets.Add(ps);
             }
             return ss;
@@ -609,6 +612,7 @@ namespace StellarisClone.Core
                     if (ps.PopSpecies != null && ps.PopCounts != null)
                         for (int i = 0; i < ps.PopSpecies.Count && i < ps.PopCounts.Count; i++)
                             p.Pops.Add(new PopGroup(ps.PopSpecies[i], ps.PopCounts[i]));
+                    if (ps.JobPlan != null && ps.JobPlan.Count == 4) p.JobPlan = new List<int>(ps.JobPlan);
                     sys.Planets.Add(p);
                 }
                 sys.RestoreDerivedTotals();

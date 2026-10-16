@@ -562,6 +562,7 @@ namespace StellarisClone.Rendering
         {
             int i = System.Array.IndexOf(ColonyFocusInfo.All, p.Focus);
             p.Focus = ColonyFocusInfo.All[(i + 1) % ColonyFocusInfo.All.Length];
+            p.ClearJobPlan();   // новый приоритет распределяет жителей заново
             SFXManager.Play(Sfx.UiClick, 0.6f);
             EconomyManager.Instance?.RecalculateAll();
             Refresh();

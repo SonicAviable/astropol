@@ -54,10 +54,10 @@ namespace StellarisClone.Core
 
         public static string ShortDesc(DistrictType t) => t switch
         {
-            DistrictType.Urban      => Loc.T("+2 жилья, +1 рабочее место"),
-            DistrictType.Mining     => Loc.T("+4 Титана/мес"),
-            DistrictType.Generator  => Loc.T("+4 Гелия-3/мес"),
-            DistrictType.Industrial => Loc.T("+3 Сплава/мес"),
+            DistrictType.Urban      => Loc.T("+2 жилья, +1 место служащего (+1 наука)"),
+            DistrictType.Mining     => Loc.T("2 рабочих места · +4 титана за каждое"),
+            DistrictType.Generator  => Loc.T("2 рабочих места · +4 гелия-3 за каждое"),
+            DistrictType.Industrial => Loc.T("2 рабочих места · +3 сплава за каждое"),
             _ => ""
         };
 
@@ -141,10 +141,30 @@ namespace StellarisClone.Core
             }
         }
 
-        // Каждый район даёт 1 рабочее место (включая городской)
-        public int WorkerSlots => Districts.Count;
-        public int EmployedPops => Mathf.Min(Population, WorkerSlots);
+        /// <summary>Рабочих мест в производственном районе (добыча, энергия, заводы); городской даёт одно — служащие.</summary>
+        public const int JobsPerDistrict = 2;
+
+        public static int JobsPer(DistrictType t) => t == DistrictType.Urban ? 1 : JobsPerDistrict;
+
+        /// <summary>Рабочих мест районов этого вида.</summary>
+        public int JobsOf(DistrictType t) => GetDistrictCount(t) * JobsPer(t);
+
+        public int WorkerSlots
+        {
+            get { int n = 0; foreach (var d in Districts) n += JobsPer(d.Type); return n; }
+        }
+        public int EmployedPops
+        {
+            get { var w = Distribute(); return w[0] + w[1] + w[2] + w[3]; }
+        }
         public int IdlePops => Mathf.Max(0, Population - EmployedPops);
+
+        /// <summary>
+        /// Ручное распределение жителей (перетаскивание на экране колонии): сколько работает в районах
+        /// каждого вида, по индексу DistrictType; null — распределяет приоритет колонии.
+        /// </summary>
+        public List<int> JobPlan;
+        public bool HasJobPlan => JobPlan != null && JobPlan.Count == 4;
 
         public PlanetData(string name, PlanetType type, float orbitRadius, float orbitSpeed,
                           float size, Color color, int energy, int minerals)
@@ -162,6 +182,7 @@ namespace StellarisClone.Core
         public void SetupAsStartingColony(int pop, int urban, int mining, int generator, int industrial = 0)
         {
             Pops?.Clear();
+            JobPlan = null;
             Stability = 65f;
             Population = Mathf.Clamp(pop, 0, MaxDistricts * 2);
             PopGrowthProgress = 0f;
@@ -182,49 +203,79 @@ namespace StellarisClone.Core
 
         // ==================== РАСПРЕДЕЛЕНИЕ РАБОЧИХ ====================
 
-        private void DistributeWorkers(out int urban, out int mining, out int gen, out int ind)
+        private static readonly DistrictType[] ProductionTypes = { DistrictType.Mining, DistrictType.Generator, DistrictType.Industrial };
+
+        /// <summary>
+        /// Сколько жителей работает в районах каждого вида (индекс — DistrictType).
+        /// Сначала — ручной план (если игрок расставил жителей сам), остальные — по приоритету:
+        /// район приоритета заполняется первым, прочие производственные — по очереди поровну,
+        /// городские места служащих — последними.
+        /// </summary>
+        public int[] Distribute()
         {
-            // Жители сначала идут на добычу и производство (первым — район приоритета колонии),
-            // городские рабочие места — последними
-            int pool = Population;
-            gen = mining = ind = 0;
+            var cap = new int[4];
+            foreach (var d in Districts) cap[(int)d.Type] += JobsPer(d.Type);
+            var w = new int[4];
+            int pool = Mathf.Max(0, Population);
+
+            if (HasJobPlan)
+                for (int t = 0; t < 4; t++)
+                {
+                    int want = JobPlan[t];
+                    if (want <= 0) continue;
+                    int n = Mathf.Min(want, Mathf.Min(cap[t], pool));
+                    w[t] = n; pool -= n;
+                }
+            if (pool <= 0) return w;
+
             var first = ColonyFocusInfo.District(Focus);
-            if (first.HasValue) Take(first.Value, ref pool, ref mining, ref gen, ref ind);
-            if (first != DistrictType.Generator) Take(DistrictType.Generator, ref pool, ref mining, ref gen, ref ind);
-            if (first != DistrictType.Mining) Take(DistrictType.Mining, ref pool, ref mining, ref gen, ref ind);
-            if (first != DistrictType.Industrial) Take(DistrictType.Industrial, ref pool, ref mining, ref gen, ref ind);
-
-            urban = Mathf.Min(GetDistrictCount(DistrictType.Urban), pool);
-        }
-
-        private void Take(DistrictType t, ref int pool, ref int mining, ref int gen, ref int ind)
-        {
-            int n = Mathf.Min(GetDistrictCount(t), pool);
-            pool -= n;
-            if (t == DistrictType.Mining) mining = n;
-            else if (t == DistrictType.Generator) gen = n;
-            else ind = n;
-        }
-
-        /// <summary>Сколько районов данного типа обеспечены рабочими.</summary>
-        public int WorkedCount(DistrictType t)
-        {
-            DistributeWorkers(out int u, out int m, out int g, out int i);
-            return t switch
+            if (first.HasValue)
             {
-                DistrictType.Urban => u,
-                DistrictType.Mining => m,
-                DistrictType.Generator => g,
-                _ => i
-            };
+                int ft = (int)first.Value;
+                int n = Mathf.Min(cap[ft] - w[ft], pool);
+                w[ft] += n; pool -= n;
+            }
+            // Остальные производственные — по одному по кругу (поровну)
+            bool any = true;
+            while (pool > 0 && any)
+            {
+                any = false;
+                foreach (var t in ProductionTypes)
+                {
+                    int i = (int)t;
+                    if (pool <= 0 || w[i] >= cap[i]) continue;
+                    w[i]++; pool--; any = true;
+                }
+            }
+            int u = (int)DistrictType.Urban;
+            int nu = Mathf.Min(cap[u] - w[u], pool);
+            w[u] += nu;
+            return w;
         }
+
+        /// <summary>Сколько жителей работает в районах данного вида.</summary>
+        public int WorkedCount(DistrictType t) => Distribute()[(int)t];
+
+        /// <summary>Перевести одного жителя с работы одного вида на другую (если там есть свободное место).</summary>
+        public bool MoveWorker(DistrictType from, DistrictType to)
+        {
+            if (from == to) return false;
+            var w = Distribute();
+            int f = (int)from, t = (int)to;
+            if (w[f] <= 0 || w[t] >= JobsOf(to)) return false;
+            w[f]--; w[t]++;
+            JobPlan = new List<int>(w);
+            return true;
+        }
+
+        /// <summary>Вернуть распределение приоритету колонии.</summary>
+        public void ClearJobPlan() => JobPlan = null;
 
         public int ProducedMineralsPerMonth
         {
             get
             {
-                DistributeWorkers(out _, out int m, out _, out _);
-                return m * 4;
+                return Distribute()[(int)DistrictType.Mining] * 4;
             }
         }
 
@@ -232,8 +283,7 @@ namespace StellarisClone.Core
         {
             get
             {
-                DistributeWorkers(out _, out _, out int g, out _);
-                return g * 4;
+                return Distribute()[(int)DistrictType.Generator] * 4;
             }
         }
 
@@ -241,8 +291,7 @@ namespace StellarisClone.Core
         {
             get
             {
-                DistributeWorkers(out _, out _, out _, out int i);
-                return i * 3;
+                return Distribute()[(int)DistrictType.Industrial] * 3;
             }
         }
 
@@ -282,7 +331,7 @@ namespace StellarisClone.Core
                 {
                     if (j.Kind != JobKind.District) continue;
                     housing += DistrictInfo.HousingPopCapacity(j.District);
-                    jobs++;
+                    jobs += JobsPer(j.District);
                 }
             if (Population >= jobs)
             {
@@ -373,6 +422,7 @@ namespace StellarisClone.Core
         public void SettleColony()
         {
             Pops?.Clear();
+            JobPlan = null;
             Stability = 55f; Unrest = 0f; RiotMonths = 0;
             Population = 2;
             PopGrowthProgress = 0f;

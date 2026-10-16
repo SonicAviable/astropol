@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using StellarisClone.Core;
 using StellarisClone.Generation;
 using Sfx = StellarisClone.Core.Audio.Sfx;
@@ -54,7 +55,7 @@ namespace StellarisClone.Rendering
         // Приоритет и автостройка
         private Text _focusText, _autoText;
         private Image _autoBg, _autoIcon;
-        private GameObject _focusList, _priorityRow;
+        private GameObject _focusList, _priorityRow, _resetPlanBtn;
         private Image[] _focusOptBg;
 
         // Ряды работ
@@ -109,7 +110,6 @@ namespace StellarisClone.Rendering
         private static readonly Color CScience = new Color(0.50f, 0.92f, 0.62f);
         private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.88f);
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.09f);
-        private static readonly Color CRedAccent = new Color(0.95f, 0.36f, 0.36f);
 
         // Раскладка (в единицах канваса 1920×1080)
         private const float Pad = 40f, Gap = 14f, HeaderH = 104f;
@@ -119,7 +119,7 @@ namespace StellarisClone.Rendering
         private const float JobsTop = PriorityTop + 58f, JobRowH = 84f;
         private const float ProdTop = JobsTop + 4 * JobRowH + 34f, ProdTileS = 92f;
         private const float InfoW = 470f, InfoH = 300f;
-        private const int MaxSlots = 7;
+        private const int MaxSlots = 11;
 
         // ================================================================ Типы
 
@@ -138,9 +138,7 @@ namespace StellarisClone.Rendering
             public Image Bg, Rim, IconBg;
             public Text Value, Sub;
             public RectTransform Bar, Slots;
-            public Button Add;
-            public Image AddBg;
-            public TooltipTrigger AddTip, InfoTip;
+            public TooltipTrigger InfoTip;
             public string SlotKey = "";
         }
 
@@ -205,6 +203,8 @@ namespace StellarisClone.Rendering
         {
             if (_root == null) return;
             _isOpen = false;
+            _dragging = false;
+            if (_ghost != null) _ghost.gameObject.SetActive(false);
             LG.Hide(_root);
             TooltipSystem.Hide();
 
@@ -308,7 +308,17 @@ namespace StellarisClone.Rendering
         /// <summary>Производство района одного вида на одного работника за месяц (с фракцией, технологиями, губернатором, видами и стабильностью).</summary>
         private float PerWorker(DistrictType t)
         {
-            if (t == DistrictType.Urban) return 0f;
+            if (t == DistrictType.Urban)
+            {
+                // Служащий: +1 наука с чертами видов колонии и стабильностью
+                if (_planet.Population <= 0) return 0f;
+                int pop = _planet.Population;
+                float avg = 0f;
+                foreach (var g in _planet.Pops) { var sp = SpeciesRegistry.Get(g.Species); if (sp != null) avg += sp.ResearchMult * g.Count; }
+                avg /= pop;
+                var tm = TechnologyManager.Instance;
+                return avg * PlanetStability.OutputMult(_planet.Tier) * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
+            }
             var b = Bonuses();
             string res = t == DistrictType.Mining ? "minerals" : t == DistrictType.Generator ? "energy" : "alloys";
             float baseOut = t == DistrictType.Industrial ? 3f : 4f;
@@ -430,6 +440,16 @@ namespace StellarisClone.Rendering
             _autoIcon.color = auto ? UIManager.DS.Green : CMuted;
             _autoText.text = auto ? Loc.T("АВТОСТРОЙКА ВКЛ.") : Loc.T("АВТОСТРОЙКА ВЫКЛ.");
             _autoText.color = auto ? Color.white : CMuted;
+            _resetPlanBtn.SetActive(_planet.HasJobPlan);
+        }
+
+        private void ResetPlan()
+        {
+            if (_planet == null || !Owned) return;
+            _planet.ClearJobPlan();
+            SFXManager.Play(Sfx.UiClick, 0.6f);
+            EconomyManager.Instance?.RecalculateAll();
+            Refresh();
         }
 
         private void ToggleFocusList()
@@ -464,7 +484,7 @@ namespace StellarisClone.Rendering
             _ => Loc.T("ЖИЛЬЁ")
         };
 
-        /// <summary>Цвета жителей по порядку работы: так же, как их распределяет колония (сначала район приоритета).</summary>
+        /// <summary>Цвета жителей по рядам: сколько где работает — по распределению колонии, цвет — вид жителя.</summary>
         private Dictionary<DistrictType, List<Color>> WorkerColors()
         {
             var colors = new List<Color>();
@@ -473,21 +493,94 @@ namespace StellarisClone.Rendering
                 var sp = SpeciesRegistry.Get(g.Species);
                 for (int i = 0; i < g.Count; i++) colors.Add(sp != null ? sp.Color : CCyan);
             }
-            var order = new List<DistrictType>();
-            var first = ColonyFocusInfo.District(_planet.Focus);
-            if (first.HasValue) order.Add(first.Value);
-            foreach (var t in new[] { DistrictType.Generator, DistrictType.Mining, DistrictType.Industrial, DistrictType.Urban })
-                if (!order.Contains(t)) order.Add(t);
+            var w = _planet.Distribute();
             var result = new Dictionary<DistrictType, List<Color>>();
             int k = 0;
-            foreach (var t in order)
+            foreach (var t in RowOrder)
             {
                 var list = new List<Color>();
-                int worked = _planet.WorkedCount(t);
-                for (int i = 0; i < worked && k < colors.Count; i++) list.Add(colors[k++]);
+                for (int i = 0; i < w[(int)t] && k < colors.Count; i++) list.Add(colors[k++]);
                 result[t] = list;
             }
             return result;
+        }
+
+        // ---------------- Перетаскивание жителей ----------------
+
+        private bool _dragging;
+        private Image _ghost;
+        private JobRow _dropRow;
+
+        public void BeginPopDrag(PopDrag d, PointerEventData e)
+        {
+            if (_planet == null || !Owned) return;
+            _dragging = true;
+            TooltipSystem.Hide();
+            if (_ghost == null)
+            {
+                _ghost = LGIcons.Create(_rootRt, LGIcon.Population, 36, Color.white, "PopGhost");
+                _ghost.raycastTarget = false;
+                _ghost.rectTransform.anchorMin = _ghost.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                _ghost.rectTransform.pivot = new Vector2(0.5f, 0.3f);
+                _ghost.rectTransform.sizeDelta = new Vector2(36, 36);
+            }
+            _ghost.color = new Color(d.Tint.r, d.Tint.g, d.Tint.b, 0.9f);
+            _ghost.gameObject.SetActive(true);
+            _ghost.transform.SetAsLastSibling();
+            var img = d.GetComponent<Image>();
+            if (img != null) img.color = new Color(d.Tint.r, d.Tint.g, d.Tint.b, 0.25f);
+            SFXManager.Play(Sfx.UiClick, 0.5f);
+            DragPop(e);
+        }
+
+        public void DragPop(PointerEventData e)
+        {
+            if (!_dragging || _ghost == null) return;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(_rootRt, e.position, e.pressEventCamera, out var lp))
+                _ghost.rectTransform.anchoredPosition = lp;
+            var over = RowAt(e);
+            if (over == _dropRow) return;
+            _dropRow = over;
+            foreach (var r in _jobs)
+            {
+                Color dc = DistrictInfo.Color(r.Type);
+                if (r == over) r.Rim.color = Color.white;
+                else r.Rim.color = new Color(dc.r, dc.g, dc.b, 0.25f);
+            }
+        }
+
+        public void EndPopDrag(PopDrag d, PointerEventData e)
+        {
+            if (!_dragging) return;
+            _dragging = false;
+            _dropRow = null;
+            if (_ghost != null) _ghost.gameObject.SetActive(false);
+            var to = RowAt(e);
+            if (to != null && to.Type != d.From && _planet != null)
+            {
+                if (_planet.MoveWorker(d.From, to.Type))
+                {
+                    SFXManager.Play(Sfx.UiConfirm, 0.6f);
+                    EconomyManager.Instance?.RecalculateAll();
+                }
+                else
+                {
+                    SFXManager.Play(Sfx.UiDenied);
+                    NotificationCenter.Show(Loc.T("Нет свободного места"),
+                        Loc.F("В ряду «{0}» все места заняты — постройте ещё район.", DistrictName(to.Type)), NotificationCenter.Kind.Info, 3f);
+                }
+            }
+            foreach (var r in _jobs) r.SlotKey = "";   // перерисовать фигурки
+            Refresh();
+        }
+
+        private JobRow RowAt(PointerEventData e)
+        {
+            if (_jobs == null) return null;
+            foreach (var r in _jobs)
+                if (r.Bg.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(r.Bg.rectTransform, e.position, e.pressEventCamera))
+                    return r;
+            return null;
         }
 
         private void RefreshJobs()
@@ -504,7 +597,6 @@ namespace StellarisClone.Rendering
             var colors = WorkerColors();
             var queue = Builds != null ? Builds.QueueFor(_planet) : new List<ConstructionJob>();
             int pendingAll = _planet.PendingDistricts;
-            var eco = EconomyManager.Instance;
             foreach (var r in _jobs)
             {
                 var t = r.Type;
@@ -517,13 +609,14 @@ namespace StellarisClone.Rendering
                 // Значение и подпись
                 if (t == DistrictType.Urban)
                 {
-                    r.Value.text = Loc.F("{0} <size=14>{1}</size>", _planet.HousingCapacity, ResName(t));
-                    r.Sub.text = Loc.F("Городских районов {0} · жителей {1} из {2}", count, _planet.Population, _planet.HousingCapacity);
+                    r.Value.text = Loc.F("{0} <size=14>{1}</size>", _planet.HousingCapacity, ResName(t)) +
+                                   (worked > 0 ? Loc.F("  <size=14><color=#80EBA0>+{0:0.#} наука</color></size>", PerWorker(t) * worked) : "");
+                    r.Sub.text = Loc.F("Служащих {0} из {1} · жителей {2} из {3}", worked, _planet.JobsOf(t), _planet.Population, _planet.HousingCapacity);
                 }
                 else
                 {
                     r.Value.text = $"{Plus(Produced(t))} <size=14>{ResName(t)}</size>";
-                    r.Sub.text = Loc.F("{0} · работают {1} из {2}", DistrictName(t), worked, count) + (focused ? Loc.T("  · приоритет") : "");
+                    r.Sub.text = Loc.F("{0} ×{1} · работают {2} из {3}", DistrictName(t), count, worked, _planet.JobsOf(t)) + (focused ? Loc.T("  · приоритет") : "");
                 }
                 r.Value.color = Color.Lerp(dc, Color.white, 0.25f);
 
@@ -549,38 +642,26 @@ namespace StellarisClone.Rendering
                 r.Rim.color = focused ? new Color(dc.r, dc.g, dc.b, 0.9f) : new Color(dc.r, dc.g, dc.b, 0.25f);
                 r.Bg.color = focused ? new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.92f) : new Color(0.02f, 0.045f, 0.065f, 0.82f);
                 r.InfoTip.SetText(t == DistrictType.Urban
-                    ? Loc.T("<b>Город</b>\nЖильё для жителей и по рабочему месту в каждом районе. Нажмите, чтобы работа распределялась равномерно.")
+                    ? Loc.T("<b>Город</b>\nЖильё для двух жителей и место служащего в каждом районе: служащий даёт +1 науки. Сюда идут те, кому не хватило мест на производстве. Нажмите, чтобы производство делилось поровну.")
                     : Loc.F("<b>{0}</b>\n{1}\nКаждое занятое место даёт ≈ {2:0.#} в месяц.\n", DistrictName(t), DistrictEffect(t), PerWorker(t)) +
                       (focused ? Loc.T("<color=#9EF0C8>Это приоритет колонии: жители идут сюда первыми.</color>")
                                : Loc.T("Нажмите, чтобы сделать этот ресурс приоритетом: жители пойдут сюда первыми.")));
 
-                RebuildSlots(r, count, worked, pending, colors.TryGetValue(t, out var cl) ? cl : new List<Color>());
-
-                // «+»: ещё один район этого вида
-                float mc = DistrictInfo.MineralsCost(t), ac = DistrictInfo.AlloysCost(t);
-                string why = !Owned ? Loc.T("Система не ваша: сначала постройте здесь форпост.")
-                           : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? Loc.F("Все {0} мест под районы заняты (с учётом очереди).", _planet.MaxDistricts)
-                           : queue.Count >= ConstructionManager.MaxPlanetQueue ? Loc.F("Очередь планеты заполнена: не больше {0} заказов.", ConstructionManager.MaxPlanetQueue)
-                           : eco == null || eco.Minerals < mc || eco.Alloys < ac ? CostCheck.Full(0f, mc, ac, 0f) + "."
-                           : null;
-                r.Add.gameObject.SetActive(Owned);
-                r.Add.interactable = why == null;
-                r.AddBg.color = why == null ? new Color(dc.r * 0.35f, dc.g * 0.35f, dc.b * 0.35f, 1f) : new Color(0.06f, 0.09f, 0.12f);
-                r.AddTip.SetText(DistrictTip(t, why));
+                if (!_dragging) RebuildSlots(r, _planet.JobsOf(t), worked, pending * PlanetData.JobsPer(t), colors.TryGetValue(t, out var cl) ? cl : new List<Color>());
             }
 
             int idle = _planet.IdlePops;
             _idleText.text = idle > 0
-                ? Loc.F("<color=#F2C46B>Безработных {0}</color> — нажмите «+» в ряду, чтобы дать им работу.", idle)
+                ? Loc.F("<color=#F2C46B>Безработных {0}</color> — нет свободных мест: постройте районы («СТРОИТЬ»).", idle)
                 : _planet.BuiltDistricts >= _planet.MaxDistricts ? Loc.F("<color=#8AA2A8>Все {0} мест под районы застроены.</color>", _planet.MaxDistricts)
-                : Loc.F("<color=#8AA2A8>Свободных мест под районы: {0} из {1}.</color>", _planet.MaxDistricts - _planet.BuiltDistricts - pendingAll, _planet.MaxDistricts);
+                : Loc.F("<color=#8AA2A8>Перетаскивайте жителей мышью между рядами · свободных мест под районы: {0} из {1}</color>", _planet.MaxDistricts - _planet.BuiltDistricts - pendingAll, _planet.MaxDistricts);
         }
 
         /// <summary>
         /// Рабочие места ряда: подставка, фигурка жителя цвета его вида (тусклая — место свободно,
         /// золотая подставка — район строится, клик по ней — отменить), над местом — его выработка.
         /// </summary>
-        private void RebuildSlots(JobRow r, int count, int worked, int pending, List<Color> colors)
+        private void RebuildSlots(JobRow r, int count, int worked, int pending, List<Color> colors)   // count — рабочих мест, pending — мест в строящихся районах
         {
             var key = new System.Text.StringBuilder();
             key.Append(count).Append('|').Append(worked).Append('|').Append(pending).Append('|').Append(PerWorker(r.Type).ToString("0.0"));
@@ -591,7 +672,7 @@ namespace StellarisClone.Rendering
             LGBuild.Clear(r.Slots);
 
             Color dc = DistrictInfo.Color(r.Type);
-            const float W = 44f, G = 6f;
+            const float W = 36f, G = 4f;
             int total = count + pending;
             int shown = Mathf.Min(MaxSlots, total);
             float per = PerWorker(r.Type);
@@ -621,10 +702,20 @@ namespace StellarisClone.Rendering
                 }
 
                 Color figure = busy && i < colors.Count ? colors[i] : busy ? dc : new Color(1f, 1f, 1f, 0.13f);
-                var ic = LGIcons.Create(r.Slots, r.Type == DistrictType.Urban && !busy ? LGIcon.Housing : LGIcon.Population, 30, figure);
-                ic.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(x + W * 0.5f, 10), new Vector2(30, 30));
-                ic.raycastTarget = false;
+                var ic = LGIcons.Create(r.Slots, LGIcon.Population, 28, figure);
+                ic.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(x + W * 0.5f, 10), new Vector2(28, 28));
                 LG.Ignore(ic.gameObject);
+                if (busy && Owned)
+                {
+                    // Житель — перетащите на другой ряд, чтобы сменить работу
+                    ic.raycastTarget = true;
+                    var drag = ic.gameObject.AddComponent<PopDrag>();
+                    drag.Owner = this;
+                    drag.From = r.Type;
+                    drag.Tint = figure;
+                    TooltipHelper.Attach(ic.gameObject, Loc.T("<b>Житель</b>\nПеретащите на другой ряд, чтобы сменить работу."));
+                }
+                else ic.raycastTarget = false;
 
                 // Выработка места — над ним
                 if (per > 0.05f)
@@ -641,7 +732,7 @@ namespace StellarisClone.Rendering
             }
             if (total == 0)
             {
-                var none = LGBuild.Label(r.Slots, Loc.T("районов нет — «+», чтобы построить"), 11, CMuted, TextAnchor.MiddleLeft);
+                var none = LGBuild.Label(r.Slots, Loc.T("районов нет — постройте в меню «СТРОИТЬ»"), 11, CMuted, TextAnchor.MiddleLeft);
                 none.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 12), new Vector2(300, 24));
             }
             LG.Skin(r.Slots);
@@ -667,7 +758,7 @@ namespace StellarisClone.Rendering
                 _curName.text = BuildMenuModal.JobTitle(job);
                 _curSub.text = Loc.F("готово через {0} дн. · {1:0}%", Mathf.CeilToInt(job.DaysLeft), job.Progress * 100f);
                 LGBuild.SetBar(_curBar, job.Progress, jc);
-                _curTip.SetText(Loc.F("<b>{0}</b>\nОсталось {1} дн. Нажмите, чтобы открыть меню строительства.", BuildMenuModal.JobTitle(job), Mathf.CeilToInt(job.DaysLeft)));
+                _curTip.SetText(Loc.F("<b>{0}</b>\nОсталось {1} дн.", BuildMenuModal.JobTitle(job), Mathf.CeilToInt(job.DaysLeft)));
 
                 string block = Builds.BuyBlocker(job);
                 _buyBtn.gameObject.SetActive(true);
@@ -685,9 +776,9 @@ namespace StellarisClone.Rendering
                 _curDays.text = "";
                 _curName.text = _planet.Population > 0 && _planet.AutoBuild ? Loc.T("Автостройка выберет сама") : Loc.T("Выберите производство");
                 _curSub.text = _planet.Population > 0 && _planet.AutoBuild ? Loc.T("закажет нужный район в начале месяца")
-                             : Loc.T("планета простаивает — нажмите «+»");
+                             : Loc.T("планета простаивает — нажмите «СТРОИТЬ»");
                 LGBuild.SetBar(_curBar, 0f);
-                _curTip.SetText(Loc.T("Очередь пуста. Нажмите, чтобы открыть меню строительства  (B)"));
+                _curTip.SetText(Loc.T("Очередь пуста. Выберите, что строить, — кнопка «СТРОИТЬ» справа  (B)"));
                 _buyBtn.gameObject.SetActive(false);
             }
 
@@ -904,11 +995,8 @@ namespace StellarisClone.Rendering
             row.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop), new Vector2(LeftW, 44));
             _priorityRow = row.gameObject;
 
-            var mark = LGBuild.Panel(row, "Mark", CRedAccent);
-            mark.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -3), new Vector2(6, 6));
-            LG.Ignore(mark.gameObject);
             var label = LGBuild.Label(row, Loc.T("ПРИОРИТЕТ КОЛОНИИ"), 12, Color.white, TextAnchor.UpperLeft, bold: true);
-            label.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, 0), new Vector2(300, 16));
+            label.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(300, 16));
             label.Track(1.4f);
 
             var drop = LGBuild.Button(row, "FocusDrop", new Color(0.10f, 0.36f, 0.40f), CCyan, ToggleFocusList, null, null, 12, 8f);
@@ -928,6 +1016,12 @@ namespace StellarisClone.Rendering
             _autoText = LGBuild.Label(auto.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
             _autoText.rectTransform.Stretch(32, 0, 6, 0);
             TooltipHelper.Attach(auto.gameObject, Loc.T("<b>Автостройка</b>\nКогда очередь пуста, колония сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету."));
+
+            var reset = LGBuild.Button(row, "ResetPlan", new Color(0.30f, 0.22f, 0.06f), CGold, ResetPlan, null, null, 10, 8f);
+            ((RectTransform)reset.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(578, -20), new Vector2(222, 32));
+            LGBuild.Label(reset.transform, Loc.T("СБРОСИТЬ РУЧНУЮ РАССТАНОВКУ"), 10, Color.white, TextAnchor.MiddleCenter, bold: true);
+            TooltipHelper.Attach(reset.gameObject, Loc.T("<b>Ручная расстановка</b>\nВы расставили жителей сами. Нажмите, чтобы снова распределял приоритет колонии."));
+            _resetPlanBtn = reset.gameObject;
 
             // Выпадающий список приоритетов
             var list = LGBuild.Panel(rt, "FocusList", new Color(0.02f, 0.05f, 0.07f, 0.98f), raycast: true);
@@ -1002,15 +1096,7 @@ namespace StellarisClone.Rendering
                 // Рабочие места
                 r.Slots = LGBuild.Rect(r.Bg.transform, "Slots");
                 r.Slots.anchorMin = new Vector2(0, 0); r.Slots.anchorMax = new Vector2(1, 1);
-                r.Slots.offsetMin = new Vector2(312, 6); r.Slots.offsetMax = new Vector2(-58, -8);
-
-                // «+» — ещё район
-                r.Add = LGBuild.Button(r.Bg.transform, "Add", new Color(dc.r * 0.35f, dc.g * 0.35f, dc.b * 0.35f, 1f), dc, () => OnBuildDistrict(t), null, null, 16, 10f);
-                ((RectTransform)r.Add.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-10, 0), new Vector2(40, 40));
-                var plus = LGBuild.Label(r.Add.transform, "+", 24, Color.white, TextAnchor.MiddleCenter, bold: true);
-                r.AddBg = r.Add.GetComponent<Image>();
-                TooltipHelper.Attach(r.Add.gameObject, "");
-                r.AddTip = r.Add.GetComponent<TooltipTrigger>();
+                r.Slots.offsetMin = new Vector2(312, 6); r.Slots.offsetMax = new Vector2(-10, -8);
                 _jobs[i] = r;
             }
             _idleText = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperLeft);
@@ -1025,20 +1111,14 @@ namespace StellarisClone.Rendering
             _prodRoot = host.gameObject;
             LG.Motion(_prodRoot, LGAppear.Kind.SlideLeft).delay = 0.12f;
 
-            var mark = LGBuild.Panel(host, "Mark", CRedAccent);
-            mark.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -3), new Vector2(6, 6));
-            LG.Ignore(mark.gameObject);
             var title = LGBuild.Label(host, Loc.T("ПРОИЗВОДСТВО"), 12, Color.white, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, 0), new Vector2(300, 16));
+            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(300, 16));
             title.Track(1.4f);
 
             // Текущая стройка — квадратная плитка
             _curTileBg = LGBuild.Panel(host, "Current", new Color(0.03f, 0.06f, 0.08f, 0.95f), raycast: true);
             _curTileBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -24), new Vector2(ProdTileS, ProdTileS));
             LG.Platter(_curTileBg.gameObject, 12f).SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.45f));
-            var cb = _curTileBg.gameObject.AddComponent<Button>();
-            cb.transition = Selectable.Transition.None;
-            cb.onClick.AddListener(OpenBuildMenu);
             TooltipHelper.Attach(_curTileBg.gameObject, "");
             _curTip = _curTileBg.GetComponent<TooltipTrigger>();
             _curIcon = LGIcons.Create(_curTileBg.transform, LGIcon.Construction, 40, CGold);
@@ -1402,6 +1482,9 @@ namespace StellarisClone.Rendering
         {
             if (_planet == null || !Owned) return;
             _planet.Focus = f;
+            _planet.ClearJobPlan();   // приоритет распределяет жителей заново
+            SFXManager.Play(Sfx.UiClick, 0.6f);
+            EconomyManager.Instance?.RecalculateAll();
             EconomyManager.Instance?.RaiseResourcesChanged();
             Refresh();
         }
@@ -1951,9 +2034,11 @@ namespace StellarisClone.Rendering
                 }
                 else
                 {
-                    int jobs = _planet.WorkerSlots + _planet.PendingDistricts;   // заказанные районы тоже займут жителей
+                    int jobs = _planet.WorkerSlots;   // заказанные районы тоже займут жителей
+                    if (Builds != null)
+                        foreach (var qj in Builds.QueueFor(_planet)) if (qj.Kind == JobKind.District) jobs += PlanetData.JobsPer(qj.District);
                     int free = pop - jobs;
-                    float output = t == DistrictType.Industrial ? 3f : 4f;
+                    float output = (t == DistrictType.Industrial ? 3f : 4f) * PlanetData.JobsPerDistrict;   // два рабочих места
                     string res = t == DistrictType.Mining ? Loc.T("титана") : t == DistrictType.Generator ? Loc.T("гелия-3") : Loc.T("сплавов");
                     if (free > 0)
                         sb.Append(Loc.F("<color={0}>Заработает сразу:</color> свободных жителей — {1}.\n", Good, free));
@@ -1979,10 +2064,10 @@ namespace StellarisClone.Rendering
 
         private static string DistrictEffect(DistrictType t) => t switch
         {
-            DistrictType.Urban => Loc.T("+2 жилья и рабочее место. Без жилья рост встаёт."),
-            DistrictType.Mining => Loc.T("+4 титана в месяц за каждый занятый район."),
-            DistrictType.Generator => Loc.T("+4 гелия-3 в месяц — оплачивает флот и форпосты."),
-            _ => Loc.T("+3 сплава в месяц — на корабли, форпосты и районы.")
+            DistrictType.Urban => Loc.T("+2 жилья и место служащего (+1 наука). Без жилья рост встаёт."),
+            DistrictType.Mining => Loc.T("2 рабочих места: +4 титана в месяц за каждого работника."),
+            DistrictType.Generator => Loc.T("2 рабочих места: +4 гелия-3 в месяц за каждого — оплачивает флот и форпосты."),
+            _ => Loc.T("2 рабочих места: +3 сплава в месяц за каждого — на корабли, форпосты и районы.")
         };
 
         // ================================================================ Процедурные спрайты
@@ -2090,5 +2175,17 @@ namespace StellarisClone.Rendering
             }, "PlanetTickRing");
             return s_ticks;
         }
+    }
+
+    /// <summary>Фигурка жителя на экране колонии: её можно перетащить на другой ряд работ.</summary>
+    public class PopDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    {
+        public PlanetFocusOverlay Owner;
+        public DistrictType From;
+        public Color Tint = Color.white;
+
+        public void OnBeginDrag(PointerEventData e) => Owner?.BeginPopDrag(this, e);
+        public void OnDrag(PointerEventData e) => Owner?.DragPop(e);
+        public void OnEndDrag(PointerEventData e) => Owner?.EndPopDrag(this, e);
     }
 }

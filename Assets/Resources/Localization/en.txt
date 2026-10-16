@@ -4563,3 +4563,29 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 {0} жит.	{0} pops
 планет: {0}	planets: {0}
  · стабильность <color=#{0}>{1:0}</color>	 · stability <color=#{0}>{1:0}</color>
++2 жилья, +1 место служащего (+1 наука)	+2 housing, +1 clerk job (+1 research)
+2 рабочих места · +4 титана за каждое	2 jobs · +4 titanium each
+2 рабочих места · +4 гелия-3 за каждое	2 jobs · +4 Helium-3 each
+2 рабочих места · +3 сплава за каждое	2 jobs · +3 alloys each
+Жильё для двух жителей и место служащего (+1 наука). Без жилья колония перестаёт расти.\n	Housing for two pops and a clerk job (+1 research). Without housing the colony stops growing.\n
+Два рабочих места: каждое даёт доход, только когда на нём работает житель.\n	Two jobs: each produces only while a pop works it.\n
+С жителями этой планеты: ≈ {0:0.#} в месяц за каждого работника (виды ×{1:0.##}, стабильность).\n	With this planet's pops: ≈ {0:0.#} per month per worker (species ×{1:0.##}, stability).\n
+Нет свободного места	No free job
+В ряду «{0}» все места заняты — постройте ещё район.	All “{0}” jobs are taken — build another district.
+  <size=14><color=#80EBA0>+{0:0.#} наука</color></size>	  <size=14><color=#80EBA0>+{0:0.#} research</color></size>
+Служащих {0} из {1} · жителей {2} из {3}	Clerks {0} of {1} · pops {2} of {3}
+{0} ×{1} · работают {2} из {3}	{0} ×{1} · {2} of {3} working
+<b>Город</b>\nЖильё для двух жителей и место служащего в каждом районе: служащий даёт +1 науки. Сюда идут те, кому не хватило мест на производстве. Нажмите, чтобы производство делилось поровну.	<b>City</b>\nHousing for two pops and a clerk job in each district: a clerk gives +1 research. Pops who find no production job end up here. Click to split production evenly.
+<color=#F2C46B>Безработных {0}</color> — нет свободных мест: постройте районы («СТРОИТЬ»).	<color=#F2C46B>{0} unemployed</color> — no free jobs: build districts (“BUILD”).
+<color=#8AA2A8>Перетаскивайте жителей мышью между рядами · свободных мест под районы: {0} из {1}</color>	<color=#8AA2A8>Drag pops between rows with the mouse · free district slots: {0} of {1}</color>
+<b>Житель</b>\nПеретащите на другой ряд, чтобы сменить работу.	<b>Pop</b>\nDrag to another row to change jobs.
+районов нет — постройте в меню «СТРОИТЬ»	no districts — build one in the “BUILD” menu
+<b>{0}</b>\nОсталось {1} дн.	<b>{0}</b>\n{1} days left.
+планета простаивает — нажмите «СТРОИТЬ»	the planet is idle — click “BUILD”
+Очередь пуста. Выберите, что строить, — кнопка «СТРОИТЬ» справа  (B)	The queue is empty. Choose what to build with the “BUILD” button on the right  (B)
+СБРОСИТЬ РУЧНУЮ РАССТАНОВКУ	RESET MANUAL ASSIGNMENT
+<b>Ручная расстановка</b>\nВы расставили жителей сами. Нажмите, чтобы снова распределял приоритет колонии.	<b>Manual assignment</b>\nYou placed pops yourself. Click to let the colony priority distribute them again.
++2 жилья и место служащего (+1 наука). Без жилья рост встаёт.	+2 housing and a clerk job (+1 research). Without housing growth stops.
+2 рабочих места: +4 титана в месяц за каждого работника.	2 jobs: +4 titanium per month per worker.
+2 рабочих места: +4 гелия-3 в месяц за каждого — оплачивает флот и форпосты.	2 jobs: +4 Helium-3 per month each — pays for fleets and outposts.
+2 рабочих места: +3 сплава в месяц за каждого — на корабли, форпосты и районы.	2 jobs: +3 alloys per month each — for ships, outposts and districts.

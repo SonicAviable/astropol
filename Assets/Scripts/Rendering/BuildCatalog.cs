@@ -305,12 +305,12 @@ namespace StellarisClone.Rendering
                 _ => null
             };
             string s = t == DistrictType.Urban
-                ? Loc.T("Жильё для двух жителей и одно рабочее место. Без жилья колония перестаёт расти.\n")
-                : Loc.T("Одно рабочее место: район производит, только когда в нём работает житель.\n");
+                ? Loc.T("Жильё для двух жителей и место служащего (+1 наука). Без жилья колония перестаёт расти.\n")
+                : Loc.T("Два рабочих места: каждое даёт доход, только когда на нём работает житель.\n");
             if (res != null && p.Population > 0)
             {
                 float baseOut = t == DistrictType.Industrial ? 3f : 4f;
-                s += Loc.F("С жителями этой планеты: ≈ {0:0.#} в месяц (виды ×{1:0.##}, стабильность).\n", baseOut * p.OutputMult(res), p.SpeciesOutputMult(res));
+                s += Loc.F("С жителями этой планеты: ≈ {0:0.#} в месяц за каждого работника (виды ×{1:0.##}, стабильность).\n", baseOut * p.OutputMult(res), p.SpeciesOutputMult(res));
             }
             s += Loc.F("Районов {0} из {1} · жителей {2} · рабочих мест {3}", p.BuiltDistricts, p.MaxDistricts, p.Population, p.WorkerSlots);
             if (t != DistrictType.Urban && p.Population > 0 && p.IdlePops == 0)

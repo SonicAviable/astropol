@@ -233,6 +233,9 @@ namespace StellarisClone.Core
                     var s = SpeciesRegistry.Get(g.Species);
                     if (s != null) sum += s.ResearchMult * g.Count;
                 }
+                // Служащие городских районов дают ещё по единице науки (с чертами видов колонии)
+                float avg = Population > 0 ? sum / Population : 0f;
+                sum += WorkedCount(DistrictType.Urban) * avg;
                 return sum * PlanetStability.OutputMult(Tier);
             }
         }
