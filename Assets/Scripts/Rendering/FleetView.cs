@@ -797,7 +797,7 @@ namespace StellarisClone.Rendering
         private float _selAge;
         private static Material s_selMat;
         private static readonly Color SelColor = new Color(0.45f, 0.95f, 1f);
-        private const float SelRadius = 1.7f;
+        private const float SelRadius = 1.3f;
 
         private void SetSelectionMarker(bool on)
         {

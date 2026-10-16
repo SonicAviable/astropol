@@ -14,8 +14,10 @@ namespace StellarisClone.Rendering
     /// </summary>
     public class CivilianTraffic : MonoBehaviour
     {
-        private const int MaxTraders = 36, MaxPatrols = 12;
-        private const float TraderLength = 1.25f, PatrolLength = 1.4f;
+        private const int MaxTraders = 10, MaxPatrols = 4;
+        private const float TraderLength = 0.7f, PatrolLength = 0.9f;
+        /// <summary>Длина корвета из ShipMeshFactory (3.0 × 0.62) — от неё масштаб патруля.</summary>
+        private const float CorvetteModelLength = 1.86f;
         private const float StarClearance = 3.2f;     // торговцы выходят и входят на краю мини-системы, а не из звезды
         private const float LaneLift = 0.05f;          // ниже флотов (те идут на +0.5)
         private const float RebuildEvery = 3f;
@@ -134,7 +136,7 @@ namespace StellarisClone.Rendering
 
         private void Populate()
         {
-            int wantTraders = Mathf.Min(MaxTraders, Mathf.CeilToInt(_lanes.Count * 0.6f));
+            int wantTraders = Mathf.Min(MaxTraders, Mathf.CeilToInt(_lanes.Count * 0.2f));
             int alive = 0;
             foreach (var t in _traders) if (!t.Leaving) alive++;
             for (int i = alive; i < wantTraders && _lanes.Count > 0; i++)
@@ -145,7 +147,7 @@ namespace StellarisClone.Rendering
                 SpawnTrader(lane, Random.value < 0.5f, Random.value * 0.8f);
             }
 
-            int wantPatrols = Mathf.Min(MaxPatrols, _borderSystems.Count);
+            int wantPatrols = Mathf.Min(MaxPatrols, Mathf.CeilToInt(_borderSystems.Count * 0.35f));
             alive = 0;
             foreach (var p in _patrols) if (!p.Leaving) alive++;
             for (int i = alive; i < wantPatrols; i++)
@@ -172,7 +174,7 @@ namespace StellarisClone.Rendering
             {
                 var v = ShipMeshFactory.Build(holder, FleetType.Constructor, ShipClass.Corvette, owner, lane.Owner);
                 if (v == null) { Destroy(holder.gameObject); return; }
-                baseScale = 0.42f;
+                baseScale = 0.24f;
             }
             AddTrail(holder, Color.Lerp(owner, Color.white, 0.35f));
 
@@ -264,7 +266,7 @@ namespace StellarisClone.Rendering
             holder.SetParent(_root, false);
             var v = ShipMeshFactory.Build(holder, FleetType.Military, ShipClass.Corvette, color, sys.OwnerId);
             if (v == null) { Destroy(holder.gameObject); return; }
-            holder.localScale = Vector3.one * (PatrolLength / 2.4f);
+            holder.localScale = Vector3.one * (PatrolLength / CorvetteModelLength);
             AddTrail(holder, Color.Lerp(color, Color.white, 0.25f));
             _patrols.Add(new Patrol
             {
@@ -289,7 +291,7 @@ namespace StellarisClone.Rendering
                 var tangent = new Vector3(-Mathf.Sin(p.Angle), 0f, Mathf.Cos(p.Angle)) * Mathf.Sign(p.Speed);
                 p.T.position = pos;
                 p.T.rotation = Quaternion.LookRotation(tangent, Vector3.up) * Quaternion.Euler(0f, 0f, -14f * Mathf.Sign(p.Speed));
-                float s = Mathf.Clamp01(p.Life / 0.8f) * (PatrolLength / 2.4f);
+                float s = Mathf.Clamp01(p.Life / 0.8f) * (PatrolLength / CorvetteModelLength);
                 p.T.localScale = Vector3.one * Mathf.Max(0.001f, s);
 
                 bool vis = Visible(p.System);
@@ -310,11 +312,11 @@ namespace StellarisClone.Rendering
             go.transform.SetParent(holder, false);
             go.transform.localPosition = new Vector3(0f, 0f, -0.6f);
             var tr = go.AddComponent<TrailRenderer>();
-            tr.time = 0.9f;
+            tr.time = 0.6f;
             tr.minVertexDistance = 0.12f;
-            tr.widthMultiplier = 0.16f;
+            tr.widthMultiplier = 0.07f;
             tr.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
-            tr.startColor = new Color(c.r, c.g, c.b, 0.55f);
+            tr.startColor = new Color(c.r, c.g, c.b, 0.35f);
             tr.endColor = new Color(c.r, c.g, c.b, 0f);
             tr.sharedMaterial = s_trailMat;
             tr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

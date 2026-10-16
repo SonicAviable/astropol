@@ -206,6 +206,13 @@ namespace StellarisClone.Core
 
         // ==================== ХРОНИКА ====================
 
+        private static bool RecentlyPosted(string text)
+        {
+            for (int i = 0; i < _items.Count && i < 12; i++)
+                if (_items[i].Text == text) return true;
+            return false;
+        }
+
         private static readonly Dictionary<string, string[]> FactionLines = new Dictionary<string, string[]>
         {
             ["xarn"] = new[]
@@ -274,8 +281,14 @@ namespace StellarisClone.Core
             int owner = known.Count > 0 && Random.value < 0.8f ? known[Random.Range(0, known.Count)].OwnerId : 0;
             string key = FactionRegistry.KeyOf(FactionTraits.FactionOf(owner));
             string[] pool = key != null && FactionLines.TryGetValue(key, out var lines) && Random.value < 0.65f ? lines : GenericLines;
-            string line = pool[Random.Range(0, pool.Length)];
-            Post(NewsKind.Society, string.Format(line, Who(owner), Random.Range(4, 19)), -1, owner == 0);
+            // Не повторяем то, что недавно уже было в ленте
+            string text = null;
+            for (int attempt = 0; attempt < 6 && text == null; attempt++)
+            {
+                string t = string.Format(pool[Random.Range(0, pool.Length)], Who(owner), Random.Range(4, 19));
+                if (!RecentlyPosted(t)) text = t;
+            }
+            if (text != null) Post(NewsKind.Society, text, -1, owner == 0);
         }
     }
 }

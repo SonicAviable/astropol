@@ -165,13 +165,54 @@ namespace StellarisClone.Rendering
             _buildScan -= Time.unscaledDeltaTime;
             if (_buildScan > 0f) return;
             _buildScan = 0.25f;
-            _buildOn = PlayerOutpostEta(_data.Id, out bool building, out float days);
-            if (!_buildOn) return;
-            string text = building ? $"ФОРПОСТ · {FleetRoute.FormatDays(days)}" : $"ФОРПОСТ · ~{FleetRoute.FormatDays(days)}";
+            string text;
+            LGIcon icon;
+            if (PlayerOutpostEta(_data.Id, out bool building, out float days))
+            {
+                text = building ? $"ФОРПОСТ · {FleetRoute.FormatDays(days)}" : $"ФОРПОСТ · ~{FleetRoute.FormatDays(days)}";
+                icon = LGIcon.Starbase;
+            }
+            else if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
+            {
+                text = $"{ProjectName(job.Kind)} · {FleetRoute.FormatDays(jdays)}";
+                icon = job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe;
+            }
+            else { _buildOn = false; return; }
+            _buildOn = true;
             if (text == _buildKey) return;
             _buildKey = text;
+            _chipBuild.SetIcon(icon);
             _chipBuild.Set(text, 0.40f);
             _chipBuild.CenterOn(0f, 0f);
+        }
+
+        /// <summary>
+        /// Ваш планетарный проект в системе — колония или терраформинг (ближайший к завершению).
+        /// Районы и станции на карту не выносятся: их много, они видны в окне планеты.
+        /// </summary>
+        public static bool PlayerPlanetProject(int systemId, out ConstructionJob job, out float days)
+        {
+            job = null;
+            days = float.MaxValue;
+            var cm = ConstructionManager.Instance;
+            if (cm == null) return false;
+            foreach (var j in cm.Jobs)
+            {
+                if (j == null || j.Owner != 0 || j.SystemId != systemId) continue;
+                if (j.Kind != JobKind.Colony && j.Kind != JobKind.Terraform) continue;
+                float d = cm.DaysUntilDone(j);
+                if (d < days) { days = d; job = j; }
+            }
+            if (job == null) { days = 0f; return false; }
+            return true;
+        }
+
+        private static string ProjectName(JobKind k) => k == JobKind.Colony ? "КОЛОНИЯ" : "ТЕРРАФОРМИНГ";
+
+        private static string PlanetName(ConstructionJob j)
+        {
+            var sys = EmpireStats.GetSystem(j.SystemId);
+            return sys != null && j.PlanetIndex >= 0 && j.PlanetIndex < sys.Planets.Count ? sys.Planets[j.PlanetIndex].Name : "планета";
         }
 
         public static LGIcon LandmarkIcon(int type) => type switch
@@ -377,6 +418,11 @@ namespace StellarisClone.Rendering
                     ? $"\n<color=#5CE68A>Форпост строится · готов через {FleetRoute.FormatDays(bdays)}</color>\n"
                     : $"\n<color=#5CE68A>Строитель летит сюда · форпост будет через ~{FleetRoute.FormatDays(bdays)}</color>\n" +
                       $"<color=#8AA2A8>полёт + {FactionTraits.OutpostDays(0):0} дн. стройки</color>\n";
+
+            if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
+                tip += job.Kind == JobKind.Colony
+                    ? $"\n<color=#5CE68A>Колония «{PlanetName(job)}» основывается · готова через {FleetRoute.FormatDays(jdays)}</color>\n"
+                    : $"\n<color=#5CE68A>Терраформинг «{PlanetName(job)}» · завершится через {FleetRoute.FormatDays(jdays)}</color>\n";
 
             tip += FleetsLine() + EtaLine();
             return tip;

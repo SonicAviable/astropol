@@ -65,7 +65,7 @@ namespace StellarisClone.Rendering
             if (type == FleetType.Military)
             {
                 float length = hull == ShipClass.Destroyer ? 3.6f : hull == ShipClass.Frigate ? 3.3f : 3.0f;
-                var sparrow = StarSparrowModel.Build(parent, owner, hull, ownerId, length * 0.8f);   // крылатые корпуса шире — чуть короче
+                var sparrow = StarSparrowModel.Build(parent, owner, hull, ownerId, length * 0.62f);   // крылатые корпуса шире — заметно короче
                 if (sparrow != null) return sparrow;
                 var model = HarbingerModel.Build(parent, owner, length);
                 if (model != null) return model;
@@ -73,7 +73,7 @@ namespace StellarisClone.Rendering
             // Строительные корабли — грузовой корпус Star Sparrow в рабочей янтарной окраске
             if (type == FleetType.Constructor)
             {
-                var model = StarSparrowModel.BuildConstructor(parent, owner, ownerId, 2.6f);
+                var model = StarSparrowModel.BuildConstructor(parent, owner, ownerId, 1.9f);
                 if (model != null) return model;
             }
             // Научные корабли — готовая модель зонда «Марс-3», если она есть в проекте
