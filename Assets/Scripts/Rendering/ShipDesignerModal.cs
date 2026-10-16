@@ -95,7 +95,9 @@ namespace StellarisClone.Rendering
         private RawImage _blueprint;
         private RectTransform _callouts;
         private const float ViewTop = 56f, ViewH = 220f, SlotsTop = ViewTop + ViewH + 10f, SidePad = 16f;
-        private Button _deleteBtn;
+        private Button _deleteBtn, _buildBtn, _retrofitBtn;
+        private Text _buildText, _retrofitText;
+        private int _doctrine;
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Primary => UIManager.DS.TextPrimary;
@@ -223,7 +225,7 @@ namespace StellarisClone.Rendering
 
             // Центр: имя, силуэт, слоты, выбор модуля
             var nameHost = LGBuild.Rect(center, "NameHost");
-            nameHost.TopBand(12f, 38f, 16f, 16f);
+            nameHost.TopBand(12f, 38f, 16f, 172f);
             _nameInput = LGControls.Input(nameHost, "", Loc.T("Название проекта"), 40);
             _nameInput.onValueChanged.AddListener(v =>
             {
@@ -231,6 +233,12 @@ namespace StellarisClone.Rendering
                 _draft.Name = string.IsNullOrWhiteSpace(v) ? _draft.Name : v.Trim();
                 _statusText.text = Loc.T("<color=#F2C747>Есть несохранённые изменения.</color>");
             });
+
+            // Автопроект: лучшие изученные модули под выбранную доктрину (каждое нажатие — следующая доктрина)
+            var auto = LGBuild.Button(center, "AutoDesign", new Color(0.24f, 0.18f, 0.40f), new Color(0.72f, 0.60f, 1f), AutoDesign, LGIcon.Dice, Loc.T("АВТОПРОЕКТ"), 11);
+            ((RectTransform)auto.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-16f, -12f), new Vector2(148f, 38f));
+            TooltipHelper.Attach(auto.gameObject, Loc.T("<b>Автопроект</b>\nСобрать корабль из лучших изученных модулей. Каждое нажатие — другая доктрина: ") +
+                                                  Loc.T("сбалансированная, против щитов (кинетика и ракеты), против брони (энергия и ракеты)."));
 
             // Чертёжная сетка: мелкие клетки по 16, крупные по 64
             var grid = LGBuild.Panel(center, "BlueprintGrid", new Color(0.35f, 0.85f, 0.95f, 1f));
@@ -272,7 +280,26 @@ namespace StellarisClone.Rendering
             _statusText.rectTransform.anchorMax = new Vector2(0, 0);
             _statusText.rectTransform.pivot = new Vector2(0, 0);
             _statusText.rectTransform.anchoredPosition = new Vector2(288f, 12f);
-            _statusText.rectTransform.sizeDelta = new Vector2(504f, 36f);
+            _statusText.rectTransform.sizeDelta = new Vector2(298f, 36f);
+
+            // Заложить корабль по этому проекту на главной верфи
+            _buildBtn = LGBuild.Button(rt, "BuildShip", UIManager.DS.BtnPrimary, Neon, BuildNow, null, null, 11);
+            ((RectTransform)_buildBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(594f, 12f), new Vector2(198f, 36f));
+            var bIc = LGIcons.Create(_buildBtn.transform, LGIcon.Shipyard, 15, Color.white);
+            bIc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(15, 15));
+            _buildText = LGBuild.Label(_buildBtn.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _buildText.rectTransform.Stretch(34, 0, 6, 0);
+            TooltipHelper.Attach(_buildBtn.gameObject, Loc.T("<b>Заложить на верфи</b>\nКорабль по этому проекту встанет на стапель главной верфи. Проект должен быть сохранён."));
+
+            // Модернизация устаревших кораблей под основные проекты
+            _retrofitBtn = LGBuild.Button(rt, "Retrofit", new Color(0.36f, 0.28f, 0.06f), Gold, RetrofitAll, null, null, 11);
+            ((RectTransform)_retrofitBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(14f, 12f), new Vector2(262f, 36f));
+            var rIc = LGIcons.Create(_retrofitBtn.transform, LGIcon.Wrench, 15, Color.white);
+            rIc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(15, 15));
+            _retrofitText = LGBuild.Label(_retrofitBtn.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _retrofitText.rectTransform.Stretch(34, 0, 6, 0);
+            TooltipHelper.Attach(_retrofitBtn.gameObject, Loc.T("<b>Модернизировать флот</b>\nКорабли старых проектов получают вооружение и защиту основного проекта своего корпуса. ") +
+                                                          Loc.T("Платится разница в сплавах (не меньше 10 за корабль), пока хватает запаса."));
 
             _deleteBtn = LGBuild.Button(rt, "Delete", UIManager.DS.BtnDanger, UIManager.DS.Red, DeleteDraft, LGIcon.Trash, Loc.T("УДАЛИТЬ"), 11);
             ((RectTransform)_deleteBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(804f, 12f), new Vector2(118f, 36f));
@@ -347,6 +374,95 @@ namespace StellarisClone.Rendering
                 var dm = ShipDesignManager.Instance;
                 _deleteBtn.interactable = dm != null && IsSaved(_draft) && dm.DesignsFor(_draft.HullClass).Count > 1;
             }
+            RefreshFooter();
+        }
+
+        private void RefreshFooter()
+        {
+            var dm = ShipDesignManager.Instance;
+            var eco = EconomyManager.Instance;
+            if (_buildBtn != null && _draft != null)
+            {
+                float cost = FleetManager.ShipAlloyCost(_draft.AlloyCost, 0);
+                bool saved = IsSaved(_draft);
+                bool can = saved && _draft.IsPowerValid && eco != null && eco.CanAfford(FleetManager.WarshipEnergy, 0f, cost, 0f);
+                _buildBtn.interactable = can;
+                _buildBtn.GetComponent<Image>().color = can ? UIManager.DS.BtnPrimary : UIManager.DS.BtnDisabled;
+                _buildText.text = saved ? Loc.F("ПОСТРОИТЬ · {0:0} спл.", cost) : Loc.T("СНАЧАЛА СОХРАНИТЕ");
+                _buildText.color = can ? Color.white : Muted;
+            }
+            if (_retrofitBtn != null && dm != null)
+            {
+                var old = dm.OutdatedShips(0);
+                float total = 0f;
+                foreach (var f in old) total += dm.RetrofitCost(f);
+                bool any = old.Count > 0;
+                _retrofitBtn.interactable = any;
+                _retrofitBtn.GetComponent<Image>().color = any ? new Color(0.36f, 0.28f, 0.06f) : UIManager.DS.BtnDisabled;
+                _retrofitText.text = any ? Loc.F("МОДЕРНИЗИРОВАТЬ {0} · {1:0} спл.", old.Count, total) : Loc.T("ФЛОТ СОВРЕМЕННЫЙ");
+                _retrofitText.color = any ? Color.white : Muted;
+            }
+        }
+
+        private static readonly (WeaponDamageType a, WeaponDamageType b)[] Doctrines =
+        {
+            (WeaponDamageType.Kinetic, WeaponDamageType.Energy),
+            (WeaponDamageType.Kinetic, WeaponDamageType.Explosive),
+            (WeaponDamageType.Energy, WeaponDamageType.Explosive),
+        };
+
+        private static string DoctrineName(int i) => i switch
+        {
+            1 => Loc.T("Щитолом"),
+            2 => Loc.T("Бронебой"),
+            _ => Loc.T("Универсал")
+        };
+
+        private void AutoDesign()
+        {
+            var dm = ShipDesignManager.Instance;
+            var tm = TechnologyManager.Instance;
+            if (dm == null) return;
+            var hull = dm.GetHull(_selectedClass);
+            if (hull == null) return;
+            var doc = Doctrines[_doctrine % Doctrines.Length];
+            string name = Loc.F("{0} «{1}»", hull.DisplayName, DoctrineName(_doctrine % Doctrines.Length));
+            var d = dm.CreateAutoDesign(_selectedClass, doc.a, doc.b, id => tm == null || (tm.FindTech(id) != null && tm.FindTech(id).IsResearched), name);
+            _doctrine++;
+            if (d == null) return;
+            SetDraft(d);
+            if (_picker != null) _picker.SetActive(false);
+            SFXManager.Play(Sfx.UiConfirm, 0.6f);
+            _statusText.text = Loc.F("<color=#C9B8FF>Автопроект «{0}» собран. Проверьте и сохраните.</color>", DoctrineName((_doctrine - 1) % Doctrines.Length));
+            RebuildAll();
+            LG.Skin(_root.transform);
+        }
+
+        private void BuildNow()
+        {
+            var dm = ShipDesignManager.Instance;
+            var fm = FleetManager.Instance;
+            if (dm == null || fm == null || _draft == null) return;
+            var saved = dm.GetDesign(_draft.Id);
+            if (saved == null) { _statusText.text = Loc.T("<color=#FFCC52>Сначала сохраните проект.</color>"); return; }
+            if (fm.BuildShipFromDesign(saved))
+            {
+                SFXManager.Play(Sfx.BuildQueued);
+                _statusText.text = Loc.F("<color=#5CF59A>«{0}» заложен на верфи.</color>", saved.Name);
+            }
+            else _statusText.text = Loc.T("<color=#FF5A5A>Не хватает ресурсов на постройку.</color>");
+            RefreshFooter();
+        }
+
+        private void RetrofitAll()
+        {
+            var dm = ShipDesignManager.Instance;
+            if (dm == null) return;
+            int n = dm.TryRetrofitAll();
+            _statusText.text = n > 0 ? Loc.F("<color=#5CF59A>Модернизировано кораблей: {0}.</color>", n)
+                                     : Loc.T("<color=#FFCC52>Не хватает сплавов на модернизацию.</color>");
+            if (n > 0) SFXManager.Play(Sfx.UiConfirm);
+            RefreshFooter();
         }
 
         private void RebuildHulls()
@@ -737,18 +853,21 @@ namespace StellarisClone.Rendering
             ShipDesignManager.Instance.Recalc(d);
             var b = EmpireBonuses.For(0);
             float y = 0f;
+            // Сравнение с основным проектом корпуса (тем, по которому сейчас строит верфь)
+            var cur = ShipDesignManager.Instance.GetLatestDesign(d.HullClass);
+            if (cur != null) ShipDesignManager.Instance.Recalc(cur);
 
             var head = LGBuild.Label(_profile, Loc.T("ТАКТИЧЕСКИЙ ПРОФИЛЬ"), 13, Neon, TextAnchor.UpperLeft, bold: true);
             head.rectTransform.TopBand(y, 20f);
-            var note = LGBuild.Label(_profile, Loc.T("с учётом изученных технологий"), 9, Muted, TextAnchor.UpperRight);
+            var note = LGBuild.Label(_profile, cur != null && cur.Id != d.Id ? Loc.F("▲▼ к «{0}»", cur.Name) : Loc.T("с учётом изученных технологий"), 9, Muted, TextAnchor.UpperRight);
             note.rectTransform.TopBand(y + 3f, 16f);
             y += 28f;
 
             // Защита
             y = Group(Loc.T("ЗАЩИТА"), y);
-            y = StatBar(LGIcon.Ship, Loc.T("Корпус"), d.Hull * b.HullMult, 500f, new Color(0.75f, 0.85f, 0.9f), y);
-            y = StatBar(LGIcon.ArmorPlate, Loc.T("Броня"), d.Armor * b.ArmorMult, 320f, new Color(0.88f, 0.78f, 0.62f), y);
-            y = StatBar(LGIcon.ShieldDome, Loc.T("Щиты"), d.Shields * b.ShieldMult, 300f, new Color(0.45f, 0.76f, 1f), y);
+            y = StatBar(LGIcon.Ship, Loc.T("Корпус"), d.Hull * b.HullMult, 500f, new Color(0.75f, 0.85f, 0.9f), y, cur != null ? cur.Hull * b.HullMult : float.NaN);
+            y = StatBar(LGIcon.ArmorPlate, Loc.T("Броня"), d.Armor * b.ArmorMult, 320f, new Color(0.88f, 0.78f, 0.62f), y, cur != null ? cur.Armor * b.ArmorMult : float.NaN);
+            y = StatBar(LGIcon.ShieldDome, Loc.T("Щиты"), d.Shields * b.ShieldMult, 300f, new Color(0.45f, 0.76f, 1f), y, cur != null ? cur.Shields * b.ShieldMult : float.NaN);
             y += 6f;
 
             // Огневая мощь
@@ -756,7 +875,11 @@ namespace StellarisClone.Rendering
             float k = d.DpsOf(WeaponDamageType.Kinetic) * b.DamageMult(WeaponDamageType.Kinetic) * CombatManager.ShotsPerDay;
             float x = d.DpsOf(WeaponDamageType.Explosive) * b.DamageMult(WeaponDamageType.Explosive) * CombatManager.ShotsPerDay;
             float total = e + k + x;
-            y = Group(Loc.F("ОГНЕВАЯ МОЩЬ  <color=#E8F4F8>{0:0} урона в день</color>", total), y);
+            float curTotal = 0f;
+            if (cur != null)
+                foreach (WeaponDamageType t in new[] { WeaponDamageType.Energy, WeaponDamageType.Kinetic, WeaponDamageType.Explosive })
+                    curTotal += cur.DpsOf(t) * b.DamageMult(t) * CombatManager.ShotsPerDay;
+            y = Group(Loc.F("ОГНЕВАЯ МОЩЬ  <color=#E8F4F8>{0:0} урона в день</color>", total) + (cur != null ? Delta(total, curTotal) : ""), y);
             y = StatBar(LGIcon.Laser, Loc.T("Энергия"), e, 160f, ModuleVisuals.TypeColor(WeaponDamageType.Energy), y);
             y = StatBar(LGIcon.Cannon, Loc.T("Кинетика"), k, 160f, ModuleVisuals.TypeColor(WeaponDamageType.Kinetic), y);
             y = StatBar(LGIcon.Missile, Loc.T("Взрыв"), x, 160f, ModuleVisuals.TypeColor(WeaponDamageType.Explosive), y);
@@ -780,7 +903,13 @@ namespace StellarisClone.Rendering
 
             // Стоимость
             y = Group(Loc.T("СТОИМОСТЬ"), y);
-            y = Line(Loc.F("Постройка <color=#F2C747><b>{0:0}</b> сплавов</color>", FleetManager.ShipAlloyCost(d.AlloyCost, 0)), y);
+            float build = FleetManager.ShipAlloyCost(d.AlloyCost, 0);
+            float days = ConstructionManager.ShipDays(FleetType.Military, d.HullClass) * FactionTraits.BuildTimeMult(0);
+            y = Line(Loc.F("Постройка <color=#F2C747><b>{0:0}</b> сплавов</color>", build) +
+                     (cur != null ? Delta(build, FleetManager.ShipAlloyCost(cur.AlloyCost, 0), true) : "") +
+                     Loc.F("  ·  <b>{0:0}</b> дн. на стапеле", days), y);
+            y = Line(Loc.F("<color=#8AA2A8>Купить сразу после закладки ≈ {0:0} гелия-3</color>",
+                     Mathf.Max(5f, Mathf.Ceil(days * ConstructionManager.BuyPerDayShip * ConstructionManager.BuyUnstartedMult))), y);
             y = Line(Loc.F("Содержание <color=#FF9A9A><b>{0:0.#}</b> гелия-3/мес</color>  ·  ", FleetData.UpkeepFor(FleetType.Military, d.HullClass)) +
                      Loc.F("флотский лимит {0}", EmpireEconomy.NavalSize(d.HullClass)), y);
             y += 4f;
@@ -811,8 +940,17 @@ namespace StellarisClone.Rendering
             return y + 21f;
         }
 
-        private float StatBar(LGIcon icon, string label, float value, float reference, Color col, float y)
-            => StatBarRaw(icon, label, value > 0f ? value.ToString("0") : "—", value / reference, col, y, value <= 0f);
+        private float StatBar(LGIcon icon, string label, float value, float reference, Color col, float y, float prev = float.NaN)
+            => StatBarRaw(icon, label, (value > 0f ? value.ToString("0") : "—") + (float.IsNaN(prev) ? "" : Delta(value, prev)), value / reference, col, y, value <= 0f);
+
+        /// <summary>Разница с основным проектом: «▲12» зелёным, «▼5» красным (для цены — наоборот).</summary>
+        private static string Delta(float now, float before, bool lowerIsBetter = false)
+        {
+            float dv = now - before;
+            if (Mathf.Abs(dv) < 0.5f) return "";
+            bool good = lowerIsBetter ? dv < 0f : dv > 0f;
+            return $" <size=9><color={(good ? "#5CF59A" : "#FF7A7A")}>{(dv > 0f ? "▲" : "▼")}{Mathf.Abs(dv):0}</color></size>";
+        }
 
         private float StatBarRaw(LGIcon icon, string label, string valueText, float fill, Color col, float y, bool dim = false)
         {
@@ -825,9 +963,9 @@ namespace StellarisClone.Rendering
             l.rectTransform.Stretch(20, 0, 0, 0);
             var v = LGBuild.Label(row, valueText, 11, c, TextAnchor.MiddleRight, bold: true);
             v.rectTransform.anchorMin = new Vector2(0, 0); v.rectTransform.anchorMax = new Vector2(0, 1);
-            v.rectTransform.offsetMin = new Vector2(96, 0); v.rectTransform.offsetMax = new Vector2(160, 0);
+            v.rectTransform.offsetMin = new Vector2(72, 0); v.rectTransform.offsetMax = new Vector2(170, 0);
             var barHost = LGBuild.Rect(row, "BarHost");
-            barHost.Stretch(170, 0, 0, 0);
+            barHost.Stretch(178, 0, 0, 0);
             LGBuild.Bar(barHost, c, Mathf.Clamp01(fill), 7f);
             return y + 25f;
         }

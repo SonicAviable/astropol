@@ -80,6 +80,7 @@ namespace StellarisClone.Rendering
         private Text _suggestText;
         private DistrictType? _suggest;
         private ActionButton _mine, _colony, _terra, _robots, _gene;
+        private Button _buildMenuBtn;
         private const int ProjectCount = 5;
 
         // Общество: стабильность и виды
@@ -161,7 +162,10 @@ namespace StellarisClone.Rendering
             public Image Icon;
             public Text Name, Days;
             public RectTransform Progress;
-            public Button Cancel;
+            public Button Cancel, Buy;
+            public Image BuyBg;
+            public Text BuyText;
+            public TooltipTrigger BuyTip;
             public ConstructionJob Job;
         }
 
@@ -231,7 +235,9 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (!_isOpen) return;
+            if (BuildMenuModal.IsOpenNow) return;   // меню строительства поверх — клавиши его
             if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.B) && Owned) { BuildMenuModal.Open(_planet); return; }
             if (Input.GetKeyDown(KeyCode.Tab))
             {
                 bool back = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
@@ -666,6 +672,7 @@ namespace StellarisClone.Rendering
                 }
             }
             _queueHint.text = queue.Count > 0 ? $"{queue.Count} / {ConstructionManager.MaxPlanetQueue}" : "";
+            _buildMenuBtn.gameObject.SetActive(Owned);
 
             for (int i = 0; i < _queueRows.Length; i++)
             {
@@ -685,6 +692,17 @@ namespace StellarisClone.Rendering
                 row.Days.color = active ? CGold : CMuted;
                 LGBuild.SetBar(row.Progress, active ? j.Progress : 0f, jc);
                 row.Cancel.gameObject.SetActive(Owned);
+                bool showBuy = active && Owned;
+                row.Buy.gameObject.SetActive(showBuy);
+                if (showBuy)
+                {
+                    string block = Builds.BuyBlocker(j);
+                    row.Buy.interactable = block == null;
+                    row.BuyBg.color = block == null ? new Color(0.36f, 0.28f, 0.06f) : new Color(0.08f, 0.10f, 0.12f);
+                    row.BuyText.text = Loc.F("КУПИТЬ {0}", ConstructionManager.BuyCost(j));
+                    row.BuyText.color = block == null ? Color.white : CMuted;
+                    row.BuyTip.SetText(BuildMenuModal.BuyTip(j, block));
+                }
             }
         }
 
@@ -992,6 +1010,18 @@ namespace StellarisClone.Rendering
             if (_planet.TryFoundColony())
             {
                 NotificationCenter.Show(Loc.T("Колонисты отправлены"), Loc.F("{0} · колония через {1:0} дн.", _planet.Name, ConstructionManager.ColonyDays), NotificationCenter.Kind.Info, 4f);
+                Refresh();
+            }
+        }
+
+        private void OnBuyQueued(int idx)
+        {
+            if (_planet == null || Builds == null || idx < 0 || idx >= _queueRows.Length) return;
+            var job = _queueRows[idx].Job;
+            if (job != null && Builds.TryBuy(job))
+            {
+                SFXManager.Play(Sfx.UiConfirm);
+                EconomyManager.Instance?.RecalculateAll();
                 Refresh();
             }
         }
@@ -1733,7 +1763,11 @@ namespace StellarisClone.Rendering
             r.offsetMax = new Vector2(-Gap * 0.5f, -Gap * 0.5f);
 
             _queueHint = LGBuild.Label(card.rectTransform, "", 11, CMuted, TextAnchor.UpperRight, bold: true);
-            _queueHint.rectTransform.TopBand(16, 18, 20, 20);
+            _queueHint.rectTransform.TopBand(16, 18, 20, 178);
+            _buildMenuBtn = LGBuild.Button(card.rectTransform, "BuildMenu", new Color(0.12f, 0.36f, 0.40f), CCyan,
+                () => { if (_planet != null && Owned) BuildMenuModal.Open(_planet); }, LGIcon.Construction, Loc.T("СТРОИТЬ…"), 11, 10f);
+            ((RectTransform)_buildMenuBtn.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-16, -10), new Vector2(150, 30));
+            TooltipHelper.Attach(_buildMenuBtn.gameObject, Loc.T("<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#8AA2A8>(B)</color>"));
 
             // Пустая очередь: значок, подпись и кнопка «заказать то, что нужно колонии»
             var empty = LGBuild.Rect(body, "Empty");
@@ -1770,20 +1804,30 @@ namespace StellarisClone.Rendering
                 var ic = LGIcons.Create(row, LGIcon.Construction, 18, CGold);
                 ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 2), new Vector2(18, 18));
                 var nm = LGBuild.Label(row, "", 12, Color.white, TextAnchor.MiddleLeft, bold: true);
-                nm.rectTransform.Stretch(40, 6, 150, 0);
+                nm.rectTransform.Stretch(40, 6, 230, 0);
                 var days = LGBuild.Label(row, "", 11, CMuted, TextAnchor.MiddleRight, bold: true);
-                days.rectTransform.Stretch(0, 6, 48, 0);
+                days.rectTransform.Stretch(0, 6, 128, 0);
                 var progHost = LGBuild.Rect(row, "ProgressHost");
                 progHost.anchorMin = new Vector2(0, 0);
                 progHost.anchorMax = new Vector2(1, 0);
                 progHost.offsetMin = new Vector2(40, 4);
-                progHost.offsetMax = new Vector2(-48, 8);
+                progHost.offsetMax = new Vector2(-128, 8);
                 var prog = LGBuild.Bar(progHost, CGold, 0f, 3f);
                 var cancel = LGBuild.Button(row, "Cancel", UIManager.DS.BtnDanger, UIManager.DS.Red, () => OnCancelQueued(idx), LGIcon.Close, null, 9, 10f);
                 ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(28, 28));
                 TooltipHelper.Attach(cancel.gameObject, Loc.T("<b>Отменить заказ</b>\nРесурсы вернутся полностью."));
 
-                _queueRows[i] = new QueueRow { Go = row.gameObject, Icon = ic, Name = nm, Days = days, Progress = prog, Cancel = cancel };
+                // Купить текущую стройку за гелий-3 (как в Master of Orion)
+                var buy = LGBuild.Button(row, "Buy", new Color(0.36f, 0.28f, 0.06f), CGold, () => OnBuyQueued(idx), null, null, 9, 10f);
+                ((RectTransform)buy.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-42, 0), new Vector2(80, 28));
+                var bIc = LGIcons.Create(buy.transform, LGIcon.Energy, 12, CEnergy);
+                bIc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(9, 0), new Vector2(12, 12));
+                var bText = LGBuild.Label(buy.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
+                bText.rectTransform.Stretch(25, 0, 4, 0);
+                TooltipHelper.Attach(buy.gameObject, Loc.T("Купить"));
+
+                _queueRows[i] = new QueueRow { Go = row.gameObject, Icon = ic, Name = nm, Days = days, Progress = prog, Cancel = cancel,
+                                               Buy = buy, BuyBg = buy.GetComponent<Image>(), BuyText = bText, BuyTip = buy.GetComponent<TooltipTrigger>() };
             }
         }
 

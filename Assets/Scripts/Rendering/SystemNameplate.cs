@@ -23,6 +23,11 @@ namespace StellarisClone.Rendering
         private float _buildAlpha, _buildScan;
         private bool _buildOn;
         private string _buildKey = "";
+        // Колония игрока (как в Master of Orion): слева от названия — жители и рост, справа — текущая стройка
+        private WorldChip _chipPop, _chipJob;
+        private bool _popOn, _jobOn;
+        private float _colScan;
+        private string _popKey = "", _jobKey = "";
         private static StellarisClone.Generation.GalaxyGenerator s_gen;
         private int _lmOwner = -2;
         private string _resKey;
@@ -111,6 +116,7 @@ namespace StellarisClone.Rendering
 
             CreateLandmarkChip();
             CreateBuildChip();
+            CreateColonyChips();
             UpdateResourceBadge();
         }
 
@@ -125,6 +131,78 @@ namespace StellarisClone.Rendering
             _chipBuild.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.90f), new Color(g.r, g.g, g.b, 0.85f), g, g, Color.white);
             _chipBuild.SetAlpha(0f);
             _buildScan = Random.value * 0.25f;   // подписи обновляются вразнобой, не все в один кадр
+        }
+
+        private void CreateColonyChips()
+        {
+            Color g = UIManager.DS.Green, o = new Color(1f, 0.66f, 0.30f);
+            _chipPop = WorldChip.Create(_plateRoot.transform, "ColonyPop", 51, false, true);
+            _chipPop.SetIcon(LGIcon.Population);
+            _chipPop.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.88f), new Color(g.r, g.g, g.b, 0.75f), g, g, Color.white);
+            _chipPop.SetAlpha(0f);
+            _chipJob = WorldChip.Create(_plateRoot.transform, "ColonyJob", 51, false, true);
+            _chipJob.SetIcon(LGIcon.Construction);
+            _chipJob.SetColors(new Color(0.08f, 0.05f, 0.02f, 0.88f), new Color(o.r, o.g, o.b, 0.75f), o, o, Color.white);
+            _chipJob.SetAlpha(0f);
+            _colScan = Random.value * 0.5f;
+        }
+
+        /// <summary>Жители всех ваших колоний системы, рост главной и ближайшая к завершению текущая стройка (районы, проекты, корабли).</summary>
+        private void UpdateColonyChips()
+        {
+            _colScan -= Time.unscaledDeltaTime;
+            if (_colScan > 0f) return;
+            _colScan = 0.5f;
+            _popOn = _jobOn = false;
+            if (_data.OwnerId != 0) return;
+
+            int pop = 0;
+            PlanetData main = null;
+            foreach (var p in _data.Planets)
+            {
+                if (p.Population <= 0) continue;
+                pop += p.Population;
+                if (main == null || p.Population > main.Population) main = p;
+            }
+
+            ConstructionJob best = null;
+            float bestDays = float.MaxValue;
+            var cm = ConstructionManager.Instance;
+            if (cm != null)
+                foreach (var j in cm.Jobs)
+                {
+                    if (j == null || j.Owner != 0 || j.SystemId != _data.Id || !cm.IsActive(j)) continue;
+                    if (j.Kind == JobKind.Colony || j.Kind == JobKind.Terraform) continue;   // эти — на плашке сверху
+                    if (j.DaysLeft < bestDays) { bestDays = j.DaysLeft; best = j; }
+                }
+
+            float halfTitle = WorldChip.MeasureLine(_data.Name, 52, 0.16f, FontStyle.Bold) * 0.5f;
+            const float gap = 0.32f;
+            if (main != null)
+            {
+                _popOn = true;
+                int months = main.MonthsToNextPop;
+                string t = months > 0 ? Loc.F("{0} · {1} мес.", pop, months) : pop.ToString();
+                if (t != _popKey)
+                {
+                    _popKey = t;
+                    _chipPop.Set(t, 0.36f);
+                    _chipPop.CenterOn(-(halfTitle + gap + _chipPop.Width * 0.5f), 0f);
+                }
+            }
+            if (best != null)
+            {
+                _jobOn = true;
+                string t = Loc.F("{0} дн.", Mathf.CeilToInt(bestDays));
+                string key = t + (int)best.Kind + best.District + best.Hull;
+                if (key != _jobKey)
+                {
+                    _jobKey = key;
+                    _chipJob.SetIcon(BuildMenuModal.JobIcon(best));
+                    _chipJob.Set(t, 0.36f);
+                    _chipJob.CenterOn(halfTitle + gap + _chipJob.Width * 0.5f, 0f);
+                }
+            }
         }
 
         /// <summary>
@@ -357,6 +435,8 @@ namespace StellarisClone.Rendering
             }
             _chipLm?.SetAlpha(_lmAlpha);
             _chipBuild?.SetAlpha(_buildAlpha);
+            _chipPop?.SetAlpha(_popOn ? _alpha : 0f);
+            _chipJob?.SetAlpha(_jobOn ? _alpha : 0f);
         }
 
         private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
@@ -511,6 +591,13 @@ namespace StellarisClone.Rendering
                 float bTarget = _buildOn ? Mathf.Max(1f - Smooth(MidFrom + 90f, MidTo + 160f, dist), _isSelected || _isHovered ? 1f : 0f) : 0f;
                 float nb = Mathf.MoveTowards(_buildAlpha, bTarget, Time.unscaledDeltaTime * 5f);
                 if (Mathf.Abs(nb - _buildAlpha) > 0.0005f) { _buildAlpha = nb; _chipBuild.SetAlpha(_buildAlpha); }
+            }
+
+            if (_chipPop != null)
+            {
+                bool wasPop = _popOn, wasJob = _jobOn;
+                UpdateColonyChips();
+                if (wasPop != _popOn || wasJob != _jobOn) ApplyAlpha();
             }
 
             // Узлы силы видны издалека: это цели на карте

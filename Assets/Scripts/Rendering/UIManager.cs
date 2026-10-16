@@ -525,13 +525,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private void BuildNavMenu()
         {
             if (VictoryPathWindow.Instance == null) new GameObject("[UI] VictoryPathWindow").AddComponent<VictoryPathWindow>();
+            if (ColonyManagerWindow.Instance == null) new GameObject("[UI] ColonyManagerWindow").AddComponent<ColonyManagerWindow>();
 
             var menu = new GameObject("NavMenu");
             menu.transform.SetParent(_canvas.transform, false);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 7 * 46f + 30f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 8 * 46f + 30f);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
@@ -576,6 +577,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, OpenEmpireOverviewModal, null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"));
+            Item("NavColonies", LGIcon.Population, Loc.T("Колонии"), DS.Green, ColonyManagerWindow.Toggle, null,
+                 Loc.T("<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»  <color=#8AA2A8>(C)</color>"));
             Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, OpenTechModal, UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"));
             Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => DiplomacyModal.Instance?.Open(), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"));
             Item("NavSpy", LGIcon.Betrayal, Loc.T("Шпионаж"), new Color(0.74f, 0.56f, 1f), OpenEspionageModal, null,

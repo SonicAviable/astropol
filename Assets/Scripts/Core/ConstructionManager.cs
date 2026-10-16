@@ -211,6 +211,74 @@ namespace StellarisClone.Core
             return job;
         }
 
+        // ==================== УСКОРЕНИЕ И ПРИОРИТЕТ ====================
+
+        /// <summary>Гелия-3 за день оставшейся работы при покупке: планетарные стройки и корабли.</summary>
+        public const float BuyPerDayPlanet = 1.0f, BuyPerDayShip = 1.4f;
+        /// <summary>Работа ещё не начата — покупка дороже (бригады и материалы срочно, с нуля).</summary>
+        public const float BuyUnstartedMult = 1.5f;
+
+        /// <summary>Идёт ли работа над заказом прямо сейчас (первый в очереди планеты или занятый стапель верфи).</summary>
+        public bool IsActive(ConstructionJob job)
+        {
+            if (job == null || !_jobs.Contains(job)) return false;
+            if (job.Kind == JobKind.Ship)
+            {
+                int idx = ShipQueue(job.Owner).IndexOf(job);
+                return idx >= 0 && idx < ShipyardSlots;
+            }
+            foreach (var j in _jobs)
+                if (j.IsPlanetJob && j.SystemId == job.SystemId && j.PlanetIndex == job.PlanetIndex) return j == job;
+            return false;
+        }
+
+        /// <summary>Сколько гелия-3 стоит завершить заказ немедленно.</summary>
+        public static int BuyCost(ConstructionJob job)
+        {
+            if (job == null) return 0;
+            float perDay = job.Kind == JobKind.Ship ? BuyPerDayShip : BuyPerDayPlanet;
+            float price = Mathf.Max(1f, job.DaysLeft) * perDay;
+            if (job.Progress < 0.01f) price *= BuyUnstartedMult;
+            return Mathf.Max(5, Mathf.CeilToInt(price));
+        }
+
+        /// <summary>Можно ли купить заказ игрока сейчас (null — можно, иначе причина).</summary>
+        public string BuyBlocker(ConstructionJob job)
+        {
+            if (job == null || job.Owner != 0) return Loc.T("Нет заказа");
+            if (!IsActive(job)) return Loc.T("Купить можно только то, что строится сейчас — первый заказ планеты");
+            var eco = EconomyManager.Instance;
+            if (eco == null || eco.EnergyCredits < BuyCost(job)) return CostCheck.Full(BuyCost(job));
+            return null;
+        }
+
+        /// <summary>Купить заказ игрока: оплатить гелием-3 и завершить сегодня же.</summary>
+        public bool TryBuy(ConstructionJob job)
+        {
+            if (BuyBlocker(job) != null) return false;
+            var eco = EconomyManager.Instance;
+            int cost = BuyCost(job);
+            if (!eco.TrySpend(cost, 0f, 0f, 0f)) return false;
+            _jobs.Remove(job);
+            job.DaysLeft = 0f;
+            Complete(job);
+            OnQueuesChanged?.Invoke();
+            eco.RaiseResourcesChanged();
+            return true;
+        }
+
+        /// <summary>Поставить планетарный заказ первым в очереди его планеты (прогресс прежнего первого сохраняется).</summary>
+        public bool Prioritize(ConstructionJob job)
+        {
+            if (job == null || !job.IsPlanetJob || !_jobs.Contains(job)) return false;
+            int first = _jobs.FindIndex(j => j.IsPlanetJob && j.SystemId == job.SystemId && j.PlanetIndex == job.PlanetIndex);
+            if (first < 0 || _jobs[first] == job) return false;
+            _jobs.Remove(job);
+            _jobs.Insert(first, job);
+            OnQueuesChanged?.Invoke();
+            return true;
+        }
+
         /// <summary>Отменить заказ и вернуть ресурсы владельцу.</summary>
         public void Cancel(ConstructionJob job)
         {

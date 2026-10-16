@@ -136,6 +136,18 @@ namespace StellarisClone.Rendering
             if (Root.gameObject.activeSelf != on) Root.gameObject.SetActive(on);
         }
 
+        /// <summary>Ширина строки TextMesh в его локальных единицах (для подписей с другим кеглем и начертанием).</summary>
+        public static float MeasureLine(string s, int fontSize, float charSize, FontStyle style)
+        {
+            var font = GameFont.Bold;
+            if (font == null || string.IsNullOrEmpty(s)) return 0f;
+            font.RequestCharactersInTexture(s, fontSize, style);
+            float adv = 0f;
+            foreach (char ch in s)
+                if (font.GetCharacterInfo(ch, out var ci, fontSize, style)) adv += ci.advance;
+            return adv * charSize * 0.1f;
+        }
+
         private static float MeasureText(string s, float charSize)
         {
             var font = GameFont.Bold;

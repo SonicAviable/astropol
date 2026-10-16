@@ -4354,3 +4354,147 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Тэрра'ан	Terra'an
 Поселенцы	Settlers
 Роботы	Robots
+Нет заказа	No order
+Купить можно только то, что строится сейчас — первый заказ планеты	You can only buy what is being built right now — the planet's first order
+Проекты	Projects
+Верфь	Shipyard
+Общество	Society
+Не ваша система — постройте форпост	Not your system — build an outpost
+Очередь планеты заполнена ({0})	Planet queue is full ({0})
+Сначала основайте колонию	Found a colony first
+Нет места: районов {0} из {1}	No room: {0} of {1} districts
++{0} титана, +{1} гелия-3 в месяц	+{0} titanium, +{1} Helium-3 per month
+залежей нет	no deposits
+Автоматическая добыча без жителей: работает на любой планете системы, даже непригодной для жизни.\n	Automated extraction with no pops: works on any planet in the system, even an uninhabitable one.\n
+Окупится примерно за {0} мес.	Pays for itself in about {0} months.
+На планете нет залежей	The planet has no deposits
+Уже строится	Already under construction
+2 жителя, городской и горный районы	2 pops, an urban and a mining district
+Колонисты уже в пути	Colonists are already on their way
+→ {0} мир	→ {0} world
+мир уже лучшего класса	already a top-class world
+Меняет климат планеты на шаг ближе к континентальному: выше пригодность, быстрее рост, больше жителей уживётся.\n	Shifts the planet's climate one step closer to continental: higher habitability, faster growth, more pops at home.\n
+Сейчас пригодность {0}%.	Current habitability: {0}%.
+Уже идёт	Already in progress
++1 житель-робот	+1 robot pop
+Робот занимает рабочее место как обычный житель и не снижает стабильность.	A robot fills a job like a regular pop and does not lower stability.
+Нет свободного жилья — постройте городской район	No free housing — build an urban district
+вид уже подходит миру	the species already suits this world
+убрать «{0}»	remove “{0}”
+Выводит линию самого многочисленного вида колонии под климат этой планеты: штраф «чужой климат» исчезает, одна слабость вида уходит.	Breeds a strain of the colony's most numerous species for this planet's climate: the “alien climate” penalty disappears and one weakness is removed.
+\nВид: {0}	\nSpecies: {0}
++{0:0} стабильности на {1} мес.	+{0:0} stability for {1} months
+Плакаты, трансляции и праздники. Сейчас стабильность {0:0} — {1}.	Posters, broadcasts and festivals. Stability is now {0:0} — {1}.
+Уже идёт: ещё {0} мес.	Already running: {0} more months
+\n<color=#F2C46B>Стапели заняты ({0} в очереди): корабль встанет в очередь верфи.</color>	\n<color=#F2C46B>Slipways are busy ({0} queued): the ship will join the shipyard queue.</color>
+разведка и аномалии	surveys and anomalies
+Изучает системы, открывает залежи и аномалии, находит путь к соседям.	Surveys systems, finds deposits and anomalies, charts the way to your neighbors.
+форпосты в новых системах	outposts in new systems
+Строит форпосты: каждая новая система расширяет границы и даёт добычу.	Builds outposts: every new system expands your borders and adds income.
+урон {0:0}/день · корпус {1:0}	damage {0:0}/day · durability {1:0}
+корпус не изучен	hull not researched
+Проект «{0}» — основной для корпуса (меняется в конструкторе).\n	Design “{0}” is the primary one for this hull (change it in the designer).\n
+Корпус {0:0} · броня {1:0} · щиты {2:0} · орудий {3}\n	Hull {0:0} · armor {1:0} · shields {2:0} · weapons {3}\n
+Содержание {0:0.#} гелия-3/мес · флотский лимит {1}	Upkeep {0:0.#} Helium-3/mo · fleet capacity {1}
+Сначала изучите технологию корпуса.	Research the hull technology first.
+Корпус ещё не изучен	Hull not yet researched
+Нет годного проекта — откройте конструктор	No valid design — open the designer
+Городской район	Urban district
+Горнодобывающий район	Mining district
+Энергетический район	Generator district
+Промышленный район	Industrial district
+Жильё для двух жителей и одно рабочее место. Без жилья колония перестаёт расти.\n	Housing for two pops and one job. Without housing the colony stops growing.\n
+Одно рабочее место: район производит, только когда в нём работает житель.\n	One job: the district only produces while a pop works in it.\n
+С жителями этой планеты: ≈ {0:0.#} в месяц (виды ×{1:0.##}, стабильность).\n	With this planet's pops: ≈ {0:0.#} per month (species ×{1:0.##}, stability).\n
+Районов {0} из {1} · жителей {2} · рабочих мест {3}	Districts {0} of {1} · pops {2} · jobs {3}
+\n<color=#F2C46B>Свободных жителей нет: район заработает, когда колония вырастет.</color>	\n<color=#F2C46B>No free pops: the district will start working once the colony grows.</color>
+\n<color=#9EF0C8>Безработных {0} — они сразу выйдут на смену.</color>	\n<color=#9EF0C8>{0} unemployed — they will start working right away.</color>
+Гелий-3: им же оплачивается «Купить»	Helium-3: also pays for “Buy”
+Все	All
+<b>Построить и купить</b>\nЗаказ встаёт первым в очередь планеты и сразу оплачивается гелием-3 — готов сегодня же.	<b>Build and buy</b>\nThe order goes to the front of the planet queue and is paid off with Helium-3 at once — done today.
+Выберите постройку, чтобы увидеть, что она даст	Select a build to see what it gives
+ОЧЕРЕДЬ ПЛАНЕТЫ	PLANET QUEUE
+СТРОИТЕЛЬСТВО · {0}	CONSTRUCTION · {0}
+{0} · система {1} · жителей {2}/{3} · районов {4}/{5} · стабильность {6:0}	{0} · {1} system · pops {2}/{3} · districts {4}/{5} · stability {6:0}
+{0} · система {1} · колонии нет	{0} · {1} system · no colony
+сразу	instant
+в очереди: {0}	queued: {0}
+Действует сразу	Takes effect immediately
+Срок: {0} дн. на стапеле верфи	Time: {0} d on a shipyard slipway
+Срок: {0} дн. (с учётом губернатора)	Time: {0} d (governor included)
+И КУПИТЬ · {0} гел.	AND BUY · {0} He-3
+Не удалось купить	Could not buy
+Пусто. Планета простаивает — выберите постройку слева.	Empty. The planet is idle — pick something to build on the left.
+<b>Строить первым</b>\nНачатое раньше встанет на паузу и сохранит прогресс.	<b>Build first</b>\nThe current build pauses and keeps its progress.
+<b>Купить за {0} гелия-3</b>\nСтройка завершится сегодня же.\n	<b>Buy for {0} Helium-3</b>\nConstruction finishes today.\n
+<color=#8AA2A8>Цена: оставшиеся {0} дн. × {1:0.#} гелия-3	<color=#8AA2A8>Price: {0} days left × {1:0.#} Helium-3
+, ×{0:0.#} — работа ещё не начата	, ×{0:0.#} — work has not started yet
+УПРАВЛЕНИЕ КОЛОНИЯМИ	COLONY MANAGEMENT
+Закрыть  <color=#8AA2A8>(Esc / C)</color>	Close  <color=#8AA2A8>(Esc / C)</color>
+ЖИТЕЛИ	POPS
+СТАБИЛЬНОСТЬ	STABILITY
+СТРОИТСЯ	BUILDING
+титан в месяц	titanium per month
+гелий-3 в месяц	Helium-3 per month
+сплавы в месяц	alloys per month
+наука в месяц	research per month
+<b>{0}</b>\nНажмите, чтобы отсортировать	<b>{0}</b>\nClick to sort
+СВОДКА ИМПЕРИИ	EMPIRE SUMMARY
+Средняя стабильность	Average stability
+<b>Автостройка</b>\nКолония с пустой очередью сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету.	<b>Auto-build</b>\nA colony with an empty queue orders the district it needs at the start of the month: housing when crowded, jobs by priority.
+Колоний пока нет. Основайте первую: выберите пригодную планету в своей системе и проект «Колония».	No colonies yet. Found your first: pick a habitable planet in your system and the “Colony” project.
+{0} · колоний {1} · клик по названию — окно планеты, по заголовку столбца — сортировка	{0} · {1} colonies · click a name to open the planet, a column header to sort
+{0} <color=#8AA2A8>(роботов {1})</color>	{0} <color=#8AA2A8>({1} robots)</color>
++{0:0} / мес	+{0:0} / mo
+<color=#F2C46B>Простаивают: {0}</color> — очередь пуста и автостройка выключена.\n	<color=#F2C46B>Idle: {0}</color> — empty queue and auto-build off.\n
+<color=#9EF0C8>Все колонии заняты делом.</color>\n	<color=#9EF0C8>Every colony is busy.</color>\n
+<color=#F2C46B>Безработных: {0}</color> — нужны районы.\n	<color=#F2C46B>Unemployed: {0}</color> — districts needed.\n
+<color=#FF8A8A>Неспокойно на {0} планетах</color> — пропаганда или губернатор помогут.	<color=#FF8A8A>Unrest on {0} planets</color> — propaganda or a governor will help.
+ВКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ	AUTO-BUILD EVERYWHERE
+ВЫКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ	TURN OFF AUTO-BUILD EVERYWHERE
+Открыть окно планеты	Open the planet screen
+<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы сменить.	<b>Colony priority</b>\nWhere pops go to work first and what auto-build orders. Click to change.
+<b>Строить…</b>\nМеню строительства этой планеты	<b>Build…</b>\nThis planet's construction menu
+<b>Автостройка</b>\nКогда очередь пуста, колония сама заказывает нужный район в начале месяца.	<b>Auto-build</b>\nWhen the queue is empty, the colony orders the district it needs at the start of the month.
+ · столица	 · capital
+ · губ. {0}	 · gov. {0}
+<color=#F2C46B>нет жилья</color>	<color=#F2C46B>no housing</color>
+рост остановлен	growth halted
++1 через {0} мес.	+1 in {0} mo.
+<b>Жители: {0} из {1}</b>\n	<b>Pops: {0} of {1}</b>\n
+Основной вид: {0}\n	Main species: {0}\n
+Рабочих мест {0} · безработных {1}	Jobs {0} · unemployed {1}
+<b>Очередь планеты</b>	<b>Planet queue</b>
+дн.	d
+<color=#8AA2A8>Автостройка выберет сама</color>	<color=#8AA2A8>Auto-build will choose</color>
+<color=#F2C46B>Ничего не строится</color>	<color=#F2C46B>Nothing is being built</color>
+Очередь пуста. Нажмите «Строить…», чтобы выбрать постройку.	The queue is empty. Click “Build…” to choose something.
+КУПИТЬ {0}	BUY {0}
+АВТО ✓	AUTO ✓
+СТРОИТЬ…	BUILD…
+<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#8AA2A8>(B)</color>	<b>Construction menu</b>\nEvery build, project and ship for this planet with cost and time  <color=#8AA2A8>(B)</color>
+Купить	Buy
+АВТОПРОЕКТ	AUTO-DESIGN
+<b>Автопроект</b>\nСобрать корабль из лучших изученных модулей. Каждое нажатие — другая доктрина: 	<b>Auto-design</b>\nAssemble a ship from the best researched modules. Each click switches doctrine: 
+сбалансированная, против щитов (кинетика и ракеты), против брони (энергия и ракеты).	balanced, anti-shield (kinetic and missiles), anti-armor (energy and missiles).
+<b>Заложить на верфи</b>\nКорабль по этому проекту встанет на стапель главной верфи. Проект должен быть сохранён.	<b>Lay down at the shipyard</b>\nA ship of this design goes onto a slipway at the main shipyard. The design must be saved.
+<b>Модернизировать флот</b>\nКорабли старых проектов получают вооружение и защиту основного проекта своего корпуса. 	<b>Refit the fleet</b>\nShips of old designs get the weapons and defenses of their hull's primary design. 
+Платится разница в сплавах (не меньше 10 за корабль), пока хватает запаса.	You pay the difference in alloys (at least 10 per ship) while stock lasts.
+ПОСТРОИТЬ · {0:0} спл.	BUILD · {0:0} alloys
+СНАЧАЛА СОХРАНИТЕ	SAVE FIRST
+МОДЕРНИЗИРОВАТЬ {0} · {1:0} спл.	REFIT {0} · {1:0} alloys
+ФЛОТ СОВРЕМЕННЫЙ	FLEET UP TO DATE
+Щитолом	Shieldbreaker
+Бронебой	Armorpiercer
+Универсал	All-rounder
+<color=#C9B8FF>Автопроект «{0}» собран. Проверьте и сохраните.</color>	<color=#C9B8FF>Auto-design “{0}” assembled. Review it and save.</color>
+<color=#FFCC52>Сначала сохраните проект.</color>	<color=#FFCC52>Save the design first.</color>
+<color=#5CF59A>«{0}» заложен на верфи.</color>	<color=#5CF59A>“{0}” laid down at the shipyard.</color>
+<color=#FF5A5A>Не хватает ресурсов на постройку.</color>	<color=#FF5A5A>Not enough resources to build.</color>
+<color=#5CF59A>Модернизировано кораблей: {0}.</color>	<color=#5CF59A>Ships refitted: {0}.</color>
+<color=#FFCC52>Не хватает сплавов на модернизацию.</color>	<color=#FFCC52>Not enough alloys to refit.</color>
+▲▼ к «{0}»	▲▼ vs “{0}”
+  ·  <b>{0:0}</b> дн. на стапеле	  ·  <b>{0:0}</b> d on the slipway
+<color=#8AA2A8>Купить сразу после закладки ≈ {0:0} гелия-3</color>	<color=#8AA2A8>Buy right after laying down ≈ {0:0} Helium-3</color>
+{0} · {1} мес.	{0} · {1} mo.
+<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»  <color=#8AA2A8>(C)</color>	<b>Colony management</b>\nAll colonies in one table: pops, stability, output, construction and “Buy”  <color=#8AA2A8>(C)</color>
