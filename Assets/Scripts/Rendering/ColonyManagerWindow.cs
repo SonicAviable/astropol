@@ -21,6 +21,7 @@ namespace StellarisClone.Rendering
         private const float SideW = 300f, RowH = 66f, HeadH = 30f;
 
         private GameObject _root;
+        private GameObject _focusPopup;
         private Text _subtitle;
         private RectTransform _list;
         private readonly List<Row> _rows = new List<Row>();
@@ -74,7 +75,7 @@ namespace StellarisClone.Rendering
                 && !(PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen)) Toggle();
             if (!IsOpen) return;
             if (BuildMenuModal.IsOpenNow) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { if (_focusPopup != null) CloseFocusMenu(); else Close(); return; }
             if ((_refresh -= Time.unscaledDeltaTime) <= 0f) { _refresh = 0.5f; Refresh(); }
         }
 
@@ -100,6 +101,7 @@ namespace StellarisClone.Rendering
         public void Close()
         {
             if (_root == null) return;
+            CloseFocusMenu();
             LG.Hide(_root);
             UIManager.Instance?.HideModalDimPublic();
             TooltipSystem.Hide();
@@ -433,13 +435,18 @@ namespace StellarisClone.Rendering
             r.Al = Cell(row, 5, 13, BuildMenuModal.CAlloys);
             r.Sci = Cell(row, 6, 13, new Color(0.5f, 0.92f, 0.62f));
 
-            // Приоритет: кнопка перебирает варианты
-            var focus = LGBuild.Button(row, "Focus", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f), () => CycleFocus(p), null, null, 10, 10f);
-            var frt = (RectTransform)focus.transform;
+            // Приоритет: выпадающий список
+            RectTransform frt = null;
+            var focus = LGBuild.Button(row, "Focus", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f), () => OpenFocusMenu(p, frt), null, null, 10, 10f);
+            frt = (RectTransform)focus.transform;
             frt.anchorMin = new Vector2(0, 0.5f); frt.anchorMax = new Vector2(0, 0.5f); frt.pivot = new Vector2(0, 0.5f);
             frt.anchoredPosition = new Vector2(ColX[7], 0); frt.sizeDelta = new Vector2(ColW[7] - 12, 32);
             r.Focus = LGBuild.Label(focus.transform, "", 10, Color.white, TextAnchor.MiddleCenter, bold: true);
-            TooltipHelper.Attach(focus.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы сменить."));
+            r.Focus.rectTransform.Stretch(6, 0, 20, 0);
+            var chev = LGIcons.Create(focus.transform, LGIcon.Back, 10, Color.white);
+            chev.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(10, 10));
+            chev.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f);
+            TooltipHelper.Attach(focus.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы выбрать."));
 
             // Стройка: значок, название, дни и полоса
             var jobHost = LGBuild.Panel(row, "Job", new Color(1f, 1f, 1f, 0f), raycast: true);
@@ -558,10 +565,64 @@ namespace StellarisClone.Rendering
 
         private static string Num(float v) => v <= 0.05f ? "<color=#5C7480>—</color>" : $"+{v:0.#}";
 
-        private void CycleFocus(PlanetData p)
+        /// <summary>Выпадающий список приоритетов под кнопкой (или над ней, если внизу нет места). Клик мимо — закрыть.</summary>
+        private void OpenFocusMenu(PlanetData p, RectTransform anchor)
         {
-            int i = System.Array.IndexOf(ColonyFocusInfo.All, p.Focus);
-            p.Focus = ColonyFocusInfo.All[(i + 1) % ColonyFocusInfo.All.Length];
+            CloseFocusMenu();
+            if (p == null || anchor == null || _root == null) return;
+            var root = (RectTransform)_root.transform;
+
+            var blocker = LGBuild.Panel(root, "FocusBlocker", new Color(0f, 0f, 0f, 0.001f), raycast: true);
+            blocker.rectTransform.Stretch();
+            var bb = blocker.gameObject.AddComponent<Button>();
+            bb.transition = Selectable.Transition.None;
+            bb.onClick.AddListener(CloseFocusMenu);
+            _focusPopup = blocker.gameObject;
+
+            var opts = ColonyFocusInfo.All;
+            const float OptH = 34f;
+            float w = Mathf.Max(anchor.rect.width, 190f), h = opts.Length * OptH + 8f;
+            var corners = new Vector3[4];
+            anchor.GetWorldCorners(corners);   // 0 — низ-лево, 1 — верх-лево
+            Vector3 bottom = root.InverseTransformPoint(corners[0]);
+            Vector3 top = root.InverseTransformPoint(corners[1]);
+            bool up = bottom.y - h < root.rect.yMin + 12f;
+
+            var list = LGBuild.Panel(blocker.transform, "FocusMenu", new Color(0.02f, 0.05f, 0.07f, 0.98f), raycast: true);
+            var lr = list.rectTransform;
+            lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.5f);   // координаты корня — от центра
+            lr.pivot = up ? new Vector2(0, 0) : new Vector2(0, 1);
+            lr.anchoredPosition = up ? new Vector2(top.x, top.y + 4f) : new Vector2(bottom.x, bottom.y - 4f);
+            lr.sizeDelta = new Vector2(w, h);
+            LG.Platter(list.gameObject, 10f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.5f));
+
+            for (int i = 0; i < opts.Length; i++)
+            {
+                var f = opts[i];
+                bool cur = f == p.Focus;
+                var b = LGBuild.Button(list.transform, "Opt", cur ? new Color(0.16f, 0.52f, 0.56f) : new Color(0.03f, 0.07f, 0.09f, 0.98f),
+                    new Color(Cyan.r, Cyan.g, Cyan.b, 0.3f), () => PickFocus(p, f), null, null, 12, 6f);
+                ((RectTransform)b.transform).TopBand(4 + i * OptH, OptH - 2, 4, 4);
+                LGBuild.Label(b.transform, ColonyFocusInfo.Name(f), 12, Color.white, TextAnchor.MiddleCenter, bold: true);
+                TooltipHelper.Attach(b.gameObject, ColonyFocusInfo.Desc(f));
+            }
+            LG.Skin(blocker.transform);
+            SFXManager.Play(Sfx.UiClick, 0.5f);
+        }
+
+        private void CloseFocusMenu()
+        {
+            if (_focusPopup == null) return;
+            Destroy(_focusPopup);
+            _focusPopup = null;
+            TooltipSystem.Hide();
+        }
+
+        private void PickFocus(PlanetData p, ColonyFocus f)
+        {
+            CloseFocusMenu();
+            if (p == null) return;
+            p.Focus = f;
             p.ClearJobPlan();   // новый приоритет распределяет жителей заново
             SFXManager.Play(Sfx.UiClick, 0.6f);
             EconomyManager.Instance?.RecalculateAll();

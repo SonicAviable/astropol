@@ -4593,3 +4593,4 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 <b>Средняя стабильность: <color=#{0}>{1:0}</color></b> · {2}\n	<b>Average stability: <color=#{0}>{1:0}</color></b> · {2}\n
 <color=#8AA2A8>…и ещё {0}</color>\n	<color=#8AA2A8>…and {0} more</color>\n
 \n<color=#8AA2A8><i>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</i></color>	\n<color=#8AA2A8><i>Weighted by population. Click to open colony management.</i></color>
+<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы выбрать.	<b>Colony priority</b>\nWhere pops work first and what auto-build orders. Click to choose.
