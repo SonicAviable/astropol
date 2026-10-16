@@ -145,7 +145,22 @@ namespace StellarisClone.Rendering
             foreach (var r in _model.GetComponentsInChildren<Renderer>(true))
             {
                 if (r is ParticleSystemRenderer || r is TrailRenderer || r is LineRenderer) { r.enabled = false; continue; }
-                if (_real) { r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false; continue; }
+                if (_real)
+                {
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    r.receiveShadows = false;
+                    // Парадная окраска для экрана проектов: светлый корпус, полосы и эмблемы — цвет фракции
+                    foreach (var m in r.sharedMaterials)
+                    {
+                        if (m == null) continue;
+                        Color own = FleetIndicator.OwnColor;
+                        if (m.HasProperty("_Color1")) m.SetColor("_Color1", new Color(0.86f, 0.88f, 0.90f));
+                        if (m.HasProperty("_Color2")) m.SetColor("_Color2", Color.Lerp(own, new Color(0.10f, 0.25f, 0.70f), 0.55f));
+                        if (m.HasProperty("_Color3")) m.SetColor("_Color3", new Color(0.30f, 0.32f, 0.36f));
+                        if (m.HasProperty("_LogosColor")) m.SetColor("_LogosColor", Color.Lerp(own, Color.white, 0.4f));
+                    }
+                    continue;
+                }
                 if (_holo == null) continue;
                 var mats = new Material[r.sharedMaterials.Length];
                 for (int i = 0; i < mats.Length; i++) mats[i] = _holo;

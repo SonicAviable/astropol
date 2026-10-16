@@ -4630,3 +4630,20 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 {0:0.#} гелия-3/мес	{0:0.#} Helium-3/mo
 Флотский лимит	Fleet capacity
   <color=#8AA2A8>· ▲▼ — к «{0}»</color>	  <color=#8AA2A8>· ▲▼ vs “{0}”</color>
+Энергетическое вооружение	Energy weapon
+Кинетическое вооружение	Kinetic weapon
+Ракетное вооружение	Missile weapon
+Защитное поле	Shield generator
+Бронирование	Armor plating
+Энергетическая установка	Power plant
+Система наведения	Targeting system
+Двигательная установка	Propulsion system
+Урон за выстрел	Damage per shot
+Выстрелов в день	Shots per day
+ЭФФЕКТИВНОСТЬ	EFFECTIVENESS
+по щитам	vs shields
+по броне	vs armor
+Выработка энергии	Power output
+Потребление энергии	Power draw
+Цена	Cost
+Требуется технология «{0}»	Requires the “{0}” technology
