@@ -218,6 +218,12 @@ namespace StellarisClone.Core
             ["leviathan_slain"]          = "Leviathan",
             ["precursor_signal"]         = "PrecursorSignal",
             ["precursor_decoding"]       = "PrecursorDecoding",
+            ["precursor_map"]            = "PrecursorMap",
+            ["precursor_vault"]          = "PrecursorVault",
+            ["precursor_core"]           = "PrecursorCore",
+            ["precursor_echo"]           = "PrecursorEcho",
+            ["leader_ambition"]          = "Ambition",
+            ["leader_ambition_result"]   = "Ambition",
         };
 
         private static void Schedule(string id, int days, EventContext ctx) => AnomalyEventSystem.Instance?.Schedule(id, days, ctx);
