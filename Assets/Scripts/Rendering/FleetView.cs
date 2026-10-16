@@ -1165,10 +1165,7 @@ namespace StellarisClone.Rendering
             float dt = WorkDt();
             if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
             _workClock += dt;
-            // Звено одного класса маневрирует синхронно (общая фаза), каждый корабль — с небольшим сдвигом:
-            // соседи в строю качаются вместе и не налетают друг на друга
-            int group = Data.OwnerId * 8 + (military ? (int)hull : 3);
-            float seed = Mathf.Repeat(group * 0.618034f, 1f) * 6.2832f + Mathf.Repeat(Data.Id * 0.381966f, 1f) * 0.35f;
+            float seed = Mathf.Repeat(Data.Id * 0.618034f, 1f) * 6.2832f;
             float a = seed + _workClock * 0.16f;
             const float r = 4.6f;
             Vector3 goal = star + new Vector3(Mathf.Cos(a) * r, 0.8f + 0.2f * Mathf.Sin(_workClock * 0.5f), Mathf.Sin(a) * r);
