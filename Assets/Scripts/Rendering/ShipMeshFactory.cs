@@ -58,13 +58,15 @@ namespace StellarisClone.Rendering
         private static readonly Dictionary<string, Mesh> s_Meshes = new Dictionary<string, Mesh>();
         private static Mesh s_NavMesh;
 
-        public static ShipVisual Build(Transform parent, FleetType type, ShipClass hull, Color owner)
+        public static ShipVisual Build(Transform parent, FleetType type, ShipClass hull, Color owner, int ownerId = 0)
         {
-            // Военные корабли — готовая модель крейсера «Харбингер», если она есть в проекте;
-            // классы различаются размером (корвет меньше, эсминец крупнее)
+            // Военные корабли — набор Star Sparrow (у каждой фракции свои корпуса на корвет, фрегат и эсминец),
+            // запасной вариант — крейсер «Харбингер»; классы различаются размером (корвет меньше, эсминец крупнее)
             if (type == FleetType.Military)
             {
                 float length = hull == ShipClass.Destroyer ? 3.6f : hull == ShipClass.Frigate ? 3.3f : 3.0f;
+                var sparrow = StarSparrowModel.Build(parent, owner, hull, ownerId, length);
+                if (sparrow != null) return sparrow;
                 var model = HarbingerModel.Build(parent, owner, length);
                 if (model != null) return model;
             }
@@ -293,6 +295,7 @@ namespace StellarisClone.Rendering
             if (m == null) return;
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", baseCol);
             if (m.HasProperty("_Color")) m.SetColor("_Color", baseCol);
+            if (m.HasProperty("_Color1")) m.SetColor("_Color1", baseCol);   // основной цвет шейдера Star Sparrow
             if (m.HasProperty("_EmissionColor"))
             {
                 m.EnableKeyword("_EMISSION");

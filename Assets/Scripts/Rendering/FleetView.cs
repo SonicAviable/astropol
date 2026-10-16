@@ -134,7 +134,7 @@ namespace StellarisClone.Rendering
             else
             {
                 _usesCustomModel = false;
-                _visual = ShipMeshFactory.Build(transform, Data.Type, Data.HullClass, FleetIndicator.OwnerColor(Data.OwnerId));
+                _visual = ShipMeshFactory.Build(transform, Data.Type, Data.HullClass, FleetIndicator.OwnerColor(Data.OwnerId), Data.OwnerId);
             }
 
             // Собираем рендереры ПОСЛЕ создания/инстанса модели
