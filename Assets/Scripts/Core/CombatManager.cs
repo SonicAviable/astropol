@@ -1022,6 +1022,7 @@ namespace StellarisClone.Core
         {
             _battles.Remove(b.SystemId);
             if (b.Marker != null) Destroy(b.Marker);
+            NewsAboutBattle(b);
             if (!b.PlayerInvolved || _generator == null) return;
 
             var sys = _generator.Systems[b.SystemId];
@@ -1044,6 +1045,21 @@ namespace StellarisClone.Core
                           $" · наши потери: {me.Lost}" + (me.Disengaged > 0 ? $" (вышло из боя {me.Disengaged})" : "") +
                           $" · урон {me.DamageDealt:N0} / {me.DamageTaken:N0}";
             NotificationCenter.Show(title, body, won ? NotificationCenter.Kind.Success : lost ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Info, 9f);
+        }
+
+        /// <summary>В ленту новостей — сражения, где погибло хотя бы два корабля: кто устоял и кто потерял больше.</summary>
+        private void NewsAboutBattle(Battle b)
+        {
+            if (_generator == null || b.SystemId < 0 || b.SystemId >= _generator.Systems.Count) return;
+            int lost = 0, winner = -1, loser = -1, winnerShips = 0, loserLost = -1;
+            foreach (var kv in b.Sides)
+            {
+                lost += kv.Value.Lost;
+                if (kv.Value.Ships > winnerShips) { winnerShips = kv.Value.Ships; winner = kv.Key; }
+            }
+            foreach (var kv in b.Sides)
+                if (kv.Key != winner && kv.Value.Lost > loserLost) { loserLost = kv.Value.Lost; loser = kv.Key; }
+            GalacticNews.Battle(_generator.Systems[b.SystemId], winner, loser, lost);
         }
 
         // ==================== ЗВЁЗДНЫЕ БАЗЫ: ДАННЫЕ ====================

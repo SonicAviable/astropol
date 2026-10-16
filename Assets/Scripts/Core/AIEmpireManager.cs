@@ -850,6 +850,7 @@ namespace StellarisClone.Core
             if (TechEffects.AffectsDurability(done.BonusKey)) FleetManager.Instance?.RescaleDurability(OwnerId, before, Bonuses);
             _designs.Clear();   // новые модули и корпуса
 
+            GalacticNews.AITech(this, done);
             WarnAboutScience();
         }
 

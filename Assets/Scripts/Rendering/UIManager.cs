@@ -388,6 +388,13 @@ namespace StellarisClone.Rendering
                 panel.Initialize(_modalCanvas);
             }
 
+            // Новости галактики (лента справа внизу) и гражданский трафик по коридорам
+            GalacticNews.Reset();
+            if (FindFirstObjectByType<NewsFeedPanel>() == null)
+                new GameObject("[UI] NewsFeed").AddComponent<NewsFeedPanel>().Init(_canvas);
+            if (FindFirstObjectByType<CivilianTraffic>() == null)
+                new GameObject("[World] CivilianTraffic").AddComponent<CivilianTraffic>();
+
             OnGameStarted?.Invoke();
             BindAuxiliaryUi();
         }

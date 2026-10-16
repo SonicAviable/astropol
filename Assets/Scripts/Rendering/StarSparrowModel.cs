@@ -30,6 +30,8 @@ namespace StellarisClone.Rendering
         private static readonly int[] Neutral = { 13, 7, 5 };
         /// <summary>Строительный корабль: корпус с грузовым модулем и посадочными опорами — один на все фракции.</summary>
         private const int Constructor = 6;
+        /// <summary>Торговец гражданского трафика: корпус с двумя большими грузовыми гондолами.</summary>
+        private const int Trader = 22;
         /// <summary>Рабочая окраска строителей — янтарь; цвет владельца идёт полосами.</summary>
         private static readonly Color WorkAmber = new Color(0.86f, 0.58f, 0.16f);
 
@@ -81,6 +83,18 @@ namespace StellarisClone.Rendering
         /// <summary>Строительный корабль: янтарный корпус, полосы и эмблемы — цвет владельца, оранжевые сопла.</summary>
         public static ShipMeshFactory.ShipVisual BuildConstructor(Transform parent, Color owner, int ownerId, float length)
             => Available ? Make(parent, Constructor, owner, ownerId, length, true) : null;
+
+        /// <summary>Торговый корабль (гражданский трафик): светлый корпус, гондолы и полосы — цвет владельца.</summary>
+        public static GameObject BuildTrader(Transform parent, Color owner, float length)
+        {
+            if (!Available) return null;
+            var v = Make(parent, Trader, owner, -1, length, false);
+            if (v == null || v.Hull == null) return null;
+            SetColor(v.Hull, "_Color1", new Color(0.80f, 0.82f, 0.84f));
+            SetColor(v.Hull, "_Color2", Color.Lerp(owner, Color.black, 0.15f));
+            SetColor(v.Hull, "_Color3", new Color(0.30f, 0.32f, 0.35f));
+            return parent.Find("ShipModel")?.gameObject;
+        }
 
         private static ShipMeshFactory.ShipVisual Make(Transform parent, int modelNo, Color owner, int ownerId, float length, bool civilian)
         {

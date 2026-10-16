@@ -285,6 +285,9 @@ namespace StellarisClone.Core
             if (victim == 0)
                 NotificationCenter.Show("Пиратский налёт", $"Банда «{bandName}» ({ships} кор.) вышла из {sSys?.Name} и идёт к {tSys?.Name}",
                     NotificationCenter.Kind.Danger, 9f);
+            if (GalacticNews.Known(victim))
+                GalacticNews.Post(NewsKind.Threat, $"Пиратская банда «{bandName}» ({ships} кор.) идёт на {GalacticNews.Place(tSys)} — владения {GalacticNews.Who(victim)}",
+                    target, victim == 0);
 
             if (!_s.HavenEventShown)
             {
@@ -488,7 +491,7 @@ namespace StellarisClone.Core
                 eco.EnergyCredits -= energy;
                 eco.Minerals -= minerals;
                 eco.RaiseResourcesChanged();
-                NotificationCenter.Show("Пираты разграбили систему", $"{sys.Name}: −{energy:0} энергии, −{minerals:0} минералов. Банда уходит с добычей",
+                NotificationCenter.Show("Пираты разграбили систему", $"{sys.Name}: −{energy:0} гелия-3, −{minerals:0} титана. Банда уходит с добычей",
                     NotificationCenter.Kind.Danger, 8f);
             }
             else
@@ -499,6 +502,8 @@ namespace StellarisClone.Core
                 ai.Minerals = Mathf.Max(0f, ai.Minerals - minerals);
                 NotificationCenter.Show("Пиратский налёт", $"Пираты разграбили {sys.Name} ({ai.AIName})", NotificationCenter.Kind.Info, 5f);
             }
+            if (GalacticNews.Known(owner))
+                GalacticNews.Post(NewsKind.Threat, $"Пираты разграбили систему {GalacticNews.Place(sys)} и ушли с добычей", sys.Id, owner == 0);
         }
 
         // ==================== ПОБЕДЫ НАД УГРОЗАМИ ====================
@@ -520,6 +525,9 @@ namespace StellarisClone.Core
             else if (ship.OwnerId == Threats.LeviathanOwner)
             {
                 var sys = EmpireStats.GetSystem(ship.CurrentSystemId);
+                if (GalacticNews.Known(killer))
+                    GalacticNews.Post(NewsKind.Threat, $"{GalacticNews.Who(killer)} сразили левиафана в системе {GalacticNews.Place(sys)} — путь к богатствам открыт",
+                        sys != null ? sys.Id : -1, killer == 0);
                 if (killer == 0)
                     AnomalyEventSystem.Instance?.Schedule("leviathan_slain", 1, new EventContext { System = sys });
                 else
