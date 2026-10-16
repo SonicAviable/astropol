@@ -159,6 +159,7 @@ namespace StellarisClone.Rendering
             public Image Bg, Icon, Badge;
             public Text Status;
             public Color Tint, Accent;
+            public TooltipTrigger Tip;
         }
 
         // ================================================================ Жизненный цикл
@@ -722,17 +723,88 @@ namespace StellarisClone.Rendering
 
             // Терраформинг
             if (terJob != null) SetAction(_terra, true, LGIcon.Clock, $"Идёт · {Mathf.CeilToInt(Builds.DaysUntilDone(terJob))} дн. — нажмите, чтобы отменить");
+            else if (_planet.HabitabilityPercent >= PlanetData.ComfortHabitability)
+                SetAction(_terra, false, LGIcon.Check, $"Лучший класс мира · рост +{(PlanetData.ComfortGrowthBonus - 1f) * 100f:0}%", true);
             else if (!_planet.CanTerraform) SetAction(_terra, false, LGIcon.Close, "Невозможен для этого мира");
             else if (!surveyed) SetAction(_terra, false, LGIcon.Lock, "Нужна разведка системы");
             else if (!owned) SetAction(_terra, false, LGIcon.Lock, "Не ваша система");
-            else if (_planet.HabitabilityPercent >= 70) SetAction(_terra, false, LGIcon.Check, "Планета уже пригодна для жизни", true);
             else
             {
                 bool can = eco != null && eco.EnergyCredits >= PlanetData.TerraformEnergyCost && eco.Minerals >= PlanetData.TerraformMineralsCost
                            && eco.Influence >= PlanetData.TerraformInfluenceCost;
+                var next = _planet.TerraformNextType;
+                string to = next.HasValue ? $"→ {PlanetData.ClassName(next.Value)} · " : "";
                 SetAction(_terra, can, LGIcon.Planet,
-                    $"{PlanetData.TerraformEnergyCost:0} гел., {PlanetData.TerraformMineralsCost:0} тит., {PlanetData.TerraformInfluenceCost:0} вл. · {ConstructionManager.TerraformDays:0} дн.");
+                    $"{to}{PlanetData.TerraformEnergyCost:0} гел., {PlanetData.TerraformMineralsCost:0} тит., {PlanetData.TerraformInfluenceCost:0} вл. · {ConstructionManager.TerraformDays:0} дн.");
             }
+
+            RefreshActionTips(mineJob, colJob, terJob, surveyed, owned);
+        }
+
+        /// <summary>Подсказки проектов: что именно даст проект и выгоден ли он — с цифрами этой планеты.</summary>
+        private void RefreshActionTips(ConstructionJob mineJob, ConstructionJob colJob, ConstructionJob terJob, bool surveyed, bool owned)
+        {
+            var eco = EconomyManager.Instance;
+            const string Muted = "#8AA2A8", Bad = "#FF8888";
+            string lockLine = !surveyed ? $"\n<color={Muted}>Сначала изучите систему научным кораблём.</color>"
+                            : !owned ? $"\n<color={Muted}>Сначала постройте в системе форпост.</color>" : "";
+
+            // Добывающий комплекс
+            int mi = _planet.MineralDeposit, en = _planet.EnergyDeposit;
+            string mineGain = (mi > 0 ? $"<color=#4DF2DB>+{mi} титана</color>" : "") + (mi > 0 && en > 0 ? " и " : "") + (en > 0 ? $"<color=#F2C46B>+{en} гелия-3</color>" : "");
+            string mineTip;
+            if (_planet.HasMiningStation) mineTip = $"<b>Добывающий комплекс</b>\nРаботает: {mineGain} в месяц.";
+            else if (mi + en <= 0) mineTip = "<b>Добывающий комплекс</b>\nНа этой планете нет залежей — строить нечего.";
+            else
+            {
+                int perMonth = Mathf.Max(1, mi + en);
+                int payback = Mathf.CeilToInt(FleetManager.MiningStationMinerals / perMonth);
+                mineTip = $"<b>Добывающий комплекс</b>\nДаст {mineGain} в месяц — без жителей и колонии.\n" +
+                          $"<color={Muted}>Цена:</color> {FleetManager.MiningStationMinerals:0} титана · {ConstructionManager.MiningStationDays:0} дн.\n" +
+                          $"<color={Muted}>Окупаемость:</color> ~{payback} мес." +
+                          (mineJob != null ? $"\n\nСтроится, осталось {Mathf.CeilToInt(Builds.DaysUntilDone(mineJob))} дн. Нажмите, чтобы отменить." : lockLine);
+            }
+            _mine.Tip.SetText(mineTip);
+
+            // Колония
+            string colTip;
+            if (_planet.Population > 0)
+                colTip = $"<b>Колония</b>\nЖителей {_planet.Population} / жильё {_planet.HousingCapacity} · районов {_planet.BuiltDistricts} / {_planet.MaxDistricts}\n" +
+                         $"Даёт в месяц: <color=#4DF2DB>+{_planet.ProducedMineralsPerMonth} титана</color>, <color=#F2C46B>+{_planet.ProducedEnergyPerMonth} гелия-3</color>, " +
+                         $"<color=#F29E5C>+{_planet.ProducedAlloysPerMonth} сплавов</color>" +
+                         (_planet.HabitabilityGrowthMult > 1f ? $"\nКомфортный мир: рост населения +{(PlanetData.ComfortGrowthBonus - 1f) * 100f:0}%" : "");
+            else if (colJob != null)
+                colTip = $"<b>Колония</b>\nКолонисты в пути, прибудут через {Mathf.CeilToInt(Builds.DaysUntilDone(colJob))} дн. Нажмите, чтобы отменить (ресурсы вернутся).\n\n" + _planet.ColonyBenefitText();
+            else if (!_planet.CanColonize)
+            {
+                int steps = _planet.TerraformStepsToColonize;
+                colTip = $"<b>Колония</b>\nПланета непригодна: пригодность {_planet.HabitabilityPercent}%, нужно от 40%." +
+                         (steps > 0 ? $"\nТерраформинг сделает её пригодной за {steps} шаг{(steps == 1 ? "" : steps < 5 ? "а" : "ов")}." : "");
+            }
+            else
+            {
+                bool can = eco != null && eco.CanAfford(0f, PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost);
+                colTip = "<b>Основать колонию</b>\n" + _planet.ColonyBenefitText() + lockLine +
+                         (can || !owned || !surveyed ? "" : $"\n<color={Bad}>Не хватает ресурсов.</color>");
+            }
+            _colony.Tip.SetText(colTip);
+
+            // Терраформинг
+            string terTip;
+            if (terJob != null)
+                terTip = $"<b>Терраформинг идёт</b>\nОсталось {Mathf.CeilToInt(Builds.DaysUntilDone(terJob))} дн. Нажмите, чтобы отменить (ресурсы вернутся).\n\n" + _planet.TerraformBenefitText();
+            else if (_planet.HabitabilityPercent >= PlanetData.ComfortHabitability)
+                terTip = $"<b>Терраформинг</b>\nМир уже {PlanetData.ClassName(_planet.Type)} — лучший класс. Население здесь растёт на {(PlanetData.ComfortGrowthBonus - 1f) * 100f:0}% быстрее.";
+            else if (!_planet.CanTerraform)
+                terTip = $"<b>Терраформинг</b>\n{_planet.ClassDisplayName}: этот класс мира изменить нельзя.";
+            else
+            {
+                bool can = eco != null && eco.EnergyCredits >= PlanetData.TerraformEnergyCost && eco.Minerals >= PlanetData.TerraformMineralsCost
+                           && eco.Influence >= PlanetData.TerraformInfluenceCost;
+                terTip = "<b>Терраформинг</b>\n" + _planet.TerraformBenefitText() + lockLine +
+                         (can || !owned || !surveyed ? "" : $"\n<color={Bad}>Не хватает ресурсов.</color>");
+            }
+            _terra.Tip.SetText(terTip);
         }
 
         /// <summary>
@@ -1488,7 +1560,9 @@ namespace StellarisClone.Rendering
             st.rectTransform.anchorMax = new Vector2(1, 0.5f);
             st.rectTransform.offsetMin = new Vector2(62, 0);
             st.rectTransform.offsetMax = new Vector2(-10, -2);
-            return new ActionButton { Btn = b, Bg = b.GetComponent<Image>(), Icon = ic, Badge = badge, Status = st, Tint = tint, Accent = accent };
+            TooltipHelper.Attach(b.gameObject, title);
+            return new ActionButton { Btn = b, Bg = b.GetComponent<Image>(), Icon = ic, Badge = badge, Status = st, Tint = tint, Accent = accent,
+                                      Tip = b.GetComponent<TooltipTrigger>() };
         }
 
         /// <summary>Стеклянная карточка с заголовком; тело — область под заголовком.</summary>

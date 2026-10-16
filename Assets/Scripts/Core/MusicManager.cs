@@ -24,6 +24,11 @@ namespace StellarisClone.Core
         private bool _usingA = true;
         private int _currentIndex = -1;
         private bool _isRunning;
+        private bool _paused;
+        private readonly System.Collections.Generic.List<int> _history = new System.Collections.Generic.List<int>();
+
+        /// <summary>Сменился трек, пауза или перемешивание — для плеера в интерфейсе.</summary>
+        public event System.Action OnStateChanged;
 
         private void Awake()
         {
@@ -41,6 +46,7 @@ namespace StellarisClone.Core
 
        private void Start()
 {
+    shuffle = PlayerPrefs.GetInt("music.shuffle", shuffle ? 1 : 0) == 1;
     LoadTracksFromResources();
     if (playOnStart) StartMusic();
 }
@@ -86,12 +92,117 @@ private void LoadTracksFromResources()
         public void StopMusic()
         {
             _isRunning = false;
+            _paused = false;
             StartCoroutine(FadeOutAll());
         }
 
         public void SetVolume(float v)
         {
             musicVolume = Mathf.Clamp01(v);
+        }
+
+        // ==================== ПЛЕЕР ====================
+
+        public int TrackCount => tracks != null ? tracks.Length : 0;
+        public int CurrentIndex => _currentIndex;
+        public bool IsPaused => _paused || !_isRunning;
+        public bool Shuffle => shuffle;
+        public float Volume => musicVolume;
+
+        private AudioSource Active => _usingA ? _sourceA : _sourceB;   // тот же источник, что ведёт Update
+
+        public float CurrentTime => Active != null && Active.clip != null ? Active.time : 0f;
+        public float CurrentLength => Active != null && Active.clip != null ? Active.clip.length : 0f;
+
+        public string TrackTitle(int i) { SplitName(i, out var t, out _); return t; }
+        public string TrackArtist(int i) { SplitName(i, out _, out var a); return a; }
+
+        public void Next()
+        {
+            if (TrackCount == 0) return;
+            _isRunning = true;
+            Resume();
+            PlayNextTrack();
+        }
+
+        public void Previous()
+        {
+            if (TrackCount == 0) return;
+            // В начале трека — предыдущий из истории, иначе — этот трек сначала
+            if (CurrentTime > 4f || _history.Count < 2) { PlayIndex(_currentIndex < 0 ? 0 : _currentIndex, false); return; }
+            _history.RemoveAt(_history.Count - 1);
+            int prev = _history[_history.Count - 1];
+            _history.RemoveAt(_history.Count - 1);
+            PlayIndex(prev, true);
+        }
+
+        public void PlayTrack(int index)
+        {
+            if (index < 0 || index >= TrackCount) return;
+            PlayIndex(index, true);
+        }
+
+        public void TogglePause()
+        {
+            if (!_isRunning) { StartMusic(); return; }
+            if (_paused) Resume(); else Pause();
+        }
+
+        private void Pause()
+        {
+            if (_paused) return;
+            _paused = true;
+            _sourceA.Pause();
+            _sourceB.Pause();
+            OnStateChanged?.Invoke();
+        }
+
+        private void Resume()
+        {
+            if (!_paused) return;
+            _paused = false;
+            _sourceA.UnPause();
+            _sourceB.UnPause();
+            OnStateChanged?.Invoke();
+        }
+
+        public void SetShuffle(bool on)
+        {
+            shuffle = on;
+            PlayerPrefs.SetInt("music.shuffle", on ? 1 : 0);
+            OnStateChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Имя файла → название и автор: «474864__andrewkn__ambient-space-texture» → «Ambient Space Texture» / «andrewkn»,
+        /// «blackbird1977-pulsar-dreams» → «Pulsar Dreams» / «blackbird1977».
+        /// </summary>
+        private void SplitName(int i, out string title, out string artist)
+        {
+            title = artist = "";
+            if (i < 0 || i >= TrackCount || tracks[i] == null) return;
+            string raw = tracks[i].name;
+            string t = raw, a = "";
+            var parts = raw.Split(new[] { "__" }, System.StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+            {
+                t = parts[parts.Length - 1];
+                a = parts[parts.Length - 2];
+            }
+            else
+            {
+                int dash = raw.IndexOf('-');
+                if (dash > 0 && raw.Substring(0, dash).IndexOfAny("0123456789".ToCharArray()) >= 0)
+                {
+                    a = raw.Substring(0, dash);
+                    t = raw.Substring(dash + 1);
+                }
+            }
+            var words = t.Replace('-', ' ').Replace('_', ' ').Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            for (int w = 0; w < words.Length; w++)
+                words[w] = char.ToUpperInvariant(words[w][0]) + words[w].Substring(1);
+            title = words.Length > 0 ? string.Join(" ", words) : raw;
+            artist = a;
         }
 
         private float _duck;
@@ -103,7 +214,7 @@ private void LoadTracksFromResources()
 
         private void Update()
         {
-            if (!_isRunning) return;
+            if (!_isRunning || _paused) return;
 
             var active = _usingA ? _sourceA : _sourceB;
 
@@ -140,7 +251,21 @@ private void LoadTracksFromResources()
             {
                 next = (_currentIndex + 1) % tracks.Length;
             }
+            PlayIndex(next, true);
+        }
+
+        /// <summary>Включить трек с кроссфейдом; remember — записать в историю (для «предыдущего»).</summary>
+        private void PlayIndex(int next, bool remember)
+        {
+            if (tracks == null || next < 0 || next >= tracks.Length) return;
+            _isRunning = true;
+            if (_paused) { _paused = false; _sourceA.UnPause(); _sourceB.UnPause(); }
             _currentIndex = next;
+            if (remember)
+            {
+                _history.Add(next);
+                if (_history.Count > 32) _history.RemoveAt(0);
+            }
 
             var incoming = _usingA ? _sourceB : _sourceA;
             var outgoing = _usingA ? _sourceA : _sourceB;
@@ -159,6 +284,7 @@ private void LoadTracksFromResources()
             _usingA = !_usingA;
 
             Debug.Log($"[MusicManager] Играет трек: {tracks[next].name}");
+            OnStateChanged?.Invoke();
         }
 
         private System.Collections.IEnumerator FadeOutAll()

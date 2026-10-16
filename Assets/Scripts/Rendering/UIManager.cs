@@ -486,7 +486,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var tRt = time.AddComponent<RectTransform>();
             tRt.anchorMin = tRt.anchorMax = new Vector2(0.5f, 1f);
             tRt.pivot = new Vector2(0.5f, 1f);
-            tRt.sizeDelta = new Vector2(262f, 38f);
+            tRt.sizeDelta = new Vector2(300f, 38f);   // дата, скорость и кнопка музыки
             tRt.anchoredPosition = new Vector2(0f, -8f - resH - 4f);
             var tBg = time.AddComponent<Image>();
             tBg.color = DS.BgDeep;
@@ -508,6 +508,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _dateText = LGIcons.IconLabel(dateChip.transform, LGIcon.Calendar, "01.01.2200", 13, DS.TextMuted, DS.TextPrimary, 13f);
 
             BuildSpeedControl(time.transform, 128f);
+            // Плеер музыки: кнопка справа от скорости, панель — под датой
+            MusicPlayerPanel.CreateToggle(time.transform, 262f, _canvas, -8f - resH - 4f - 38f - 6f);
 
             BuildNavMenu();
         }

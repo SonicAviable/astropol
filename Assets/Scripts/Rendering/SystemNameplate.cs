@@ -18,6 +18,12 @@ namespace StellarisClone.Rendering
         // Узел силы: плашка над названием («★ Врата Предтеч»)
         private WorldChip _chipLm;
         private float _lmAlpha;
+        // Форпост, который строит (или летит строить) ваш строительный корабль: сколько дней до готовности
+        private WorldChip _chipBuild;
+        private float _buildAlpha, _buildScan;
+        private bool _buildOn;
+        private string _buildKey = "";
+        private static StellarisClone.Generation.GalaxyGenerator s_gen;
         private int _lmOwner = -2;
         private string _resKey;
         private bool _hasMin, _hasEn;
@@ -104,7 +110,68 @@ namespace StellarisClone.Rendering
             _chipEn.SetAlpha(0f);
 
             CreateLandmarkChip();
+            CreateBuildChip();
             UpdateResourceBadge();
+        }
+
+        private void CreateBuildChip()
+        {
+            var row = new GameObject("OutpostBuild");
+            row.transform.SetParent(_plateRoot.transform, false);
+            row.transform.localPosition = new Vector3(0, _chipLm != null ? 2.6f : 1.45f, 0);
+            _chipBuild = WorldChip.Create(row.transform, "OutpostChip", 53, true, true);
+            _chipBuild.SetIcon(LGIcon.Starbase);
+            Color g = UIManager.DS.Green;
+            _chipBuild.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.90f), new Color(g.r, g.g, g.b, 0.85f), g, g, Color.white);
+            _chipBuild.SetAlpha(0f);
+            _buildScan = Random.value * 0.25f;   // подписи обновляются вразнобой, не все в один кадр
+        }
+
+        /// <summary>
+        /// Ваш форпост в системе: строится сейчас (building) или строительный корабль ещё в пути — тогда days включает полёт.
+        /// false — никто из ваших строителей сюда не назначен.
+        /// </summary>
+        public static bool PlayerOutpostEta(int systemId, out bool building, out float days)
+        {
+            building = false;
+            days = 0f;
+            var fm = FleetManager.Instance;
+            if (fm == null) return false;
+            float best = float.MaxValue;
+            foreach (var f in fm.AllFleets)
+            {
+                var d = f != null ? f.Data : null;
+                if (d == null || d.Destroyed || d.OwnerId != 0 || d.Type != FleetType.Constructor || d.BuildTargetSystemId != systemId) continue;
+                bool b = d.State == FleetState.Constructing && d.CurrentSystemId == systemId;
+                float t = b ? d.DaysRemainingConstruction : ArrivalDays(d, systemId) + FactionTraits.OutpostDays(0);
+                if (t < best) { best = t; building = b; }
+            }
+            if (best == float.MaxValue) return false;
+            days = Mathf.Max(0f, best);
+            return true;
+        }
+
+        private static float ArrivalDays(FleetData d, int systemId)
+        {
+            if (d.CurrentSystemId == systemId && d.State != FleetState.InHyperlane) return 0f;
+            if (s_gen == null) s_gen = FindAnyObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            var nodes = FleetRoute.Build(d, s_gen);
+            foreach (var n in nodes) if (n.SystemId == systemId) return n.Days;
+            return nodes.Count > 0 ? nodes[nodes.Count - 1].Days : 0f;
+        }
+
+        private void UpdateBuildChip()
+        {
+            _buildScan -= Time.unscaledDeltaTime;
+            if (_buildScan > 0f) return;
+            _buildScan = 0.25f;
+            _buildOn = PlayerOutpostEta(_data.Id, out bool building, out float days);
+            if (!_buildOn) return;
+            string text = building ? $"ФОРПОСТ · {FleetRoute.FormatDays(days)}" : $"ФОРПОСТ · ~{FleetRoute.FormatDays(days)}";
+            if (text == _buildKey) return;
+            _buildKey = text;
+            _chipBuild.Set(text, 0.40f);
+            _chipBuild.CenterOn(0f, 0f);
         }
 
         public static LGIcon LandmarkIcon(int type) => type switch
@@ -248,6 +315,7 @@ namespace StellarisClone.Rendering
                 _chipEn.SetAlpha(_hasEn ? _resAlpha : 0f);
             }
             _chipLm?.SetAlpha(_lmAlpha);
+            _chipBuild?.SetAlpha(_buildAlpha);
         }
 
         private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
@@ -303,6 +371,12 @@ namespace StellarisClone.Rendering
                              : _data.HasStarbase && _data.OwnerId >= 0 ? "<color=#FF8866>Удерживает " + AIEmpireManager.NameOf(_data.OwnerId, "другая империя") + "</color>\n"
                              : "<color=#8AA2A8>Постройте здесь форпост, чтобы получить бонус</color>\n");
             }
+
+            if (PlayerOutpostEta(_data.Id, out bool building, out float bdays))
+                tip += building
+                    ? $"\n<color=#5CE68A>Форпост строится · готов через {FleetRoute.FormatDays(bdays)}</color>\n"
+                    : $"\n<color=#5CE68A>Строитель летит сюда · форпост будет через ~{FleetRoute.FormatDays(bdays)}</color>\n" +
+                      $"<color=#8AA2A8>полёт + {FactionTraits.OutpostDays(0):0} дн. стройки</color>\n";
 
             tip += FleetsLine() + EtaLine();
             return tip;
@@ -383,6 +457,15 @@ namespace StellarisClone.Rendering
             if (_isSelected || _isHovered) target = 1f;
             float resTarget = known ? (1f - Smooth(ResFrom, ResTo, dist)) : 0f;
             if (_isSelected && known) resTarget = Mathf.Max(resTarget, near);
+
+            // Плашка форпоста: видна издалека, пока ваш строитель работает или летит сюда
+            if (_chipBuild != null)
+            {
+                UpdateBuildChip();
+                float bTarget = _buildOn ? Mathf.Max(1f - Smooth(MidFrom + 90f, MidTo + 160f, dist), _isSelected || _isHovered ? 1f : 0f) : 0f;
+                float nb = Mathf.MoveTowards(_buildAlpha, bTarget, Time.unscaledDeltaTime * 5f);
+                if (Mathf.Abs(nb - _buildAlpha) > 0.0005f) { _buildAlpha = nb; _chipBuild.SetAlpha(_buildAlpha); }
+            }
 
             // Узлы силы видны издалека: это цели на карте
             if (_chipLm != null)

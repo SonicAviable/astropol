@@ -303,7 +303,12 @@ namespace StellarisClone.Core
         /// <summary>Скорость роста населения (% к следующему жителю в месяц); 0 — если нет жилья или колонии.</summary>
         public float PopGrowthBaseSpeedPctPerMonth =>
             Population <= 0 || HousingCapacity <= Population ? 0f
-            : (4f + (HousingCapacity - Population) * 0.4f) * EmpireBonuses.For(OwnerId).PopGrowth;
+            : (4f + (HousingCapacity - Population) * 0.4f) * EmpireBonuses.For(OwnerId).PopGrowth * HabitabilityGrowthMult;
+
+        /// <summary>Комфортный мир (пригодность от 70% — континентальный) растёт быстрее: это и даёт последний шаг терраформинга.</summary>
+        public const float ComfortGrowthBonus = 1.25f;
+        public const int ComfortHabitability = 70;
+        public float HabitabilityGrowthMult => HabitabilityPercent >= ComfortHabitability ? ComfortGrowthBonus : 1f;
 
         /// <summary>Сколько месяцев до следующего жителя (-1 — рост остановлен).</summary>
         public int MonthsToNextPop
@@ -318,15 +323,7 @@ namespace StellarisClone.Core
 
         public int PlanetSize => MaxDistricts;
 
-        public int HabitabilityPercent => Type switch
-        {
-            PlanetType.Continental => 82,
-            PlanetType.Desert      => 54,
-            PlanetType.Barren      => 18,
-            PlanetType.Molten      => 0,
-            PlanetType.GasGiant    => 0,
-            _ => 30
-        };
+        public int HabitabilityPercent => HabitabilityOf(Type);
 
         public string ClassDisplayName => Type switch
         {
@@ -390,6 +387,112 @@ namespace StellarisClone.Core
             Builds.EnqueuePlanetJob(JobKind.Terraform, 0, this, DistrictType.Urban,
                                     TerraformEnergyCost, TerraformMineralsCost, 0f, TerraformInfluenceCost);
             return true;
+        }
+
+        /// <summary>Класс мира после следующего шага терраформинга (null — шаг невозможен).</summary>
+        public PlanetType? TerraformNextType => Type switch
+        {
+            PlanetType.Molten => PlanetType.Barren,
+            PlanetType.Barren => PlanetType.Desert,
+            PlanetType.Desert => PlanetType.Continental,
+            _ => (PlanetType?)null
+        };
+
+        /// <summary>Пригодность мира данного класса — та же таблица, что в HabitabilityPercent.</summary>
+        public static int HabitabilityOf(PlanetType t) => t switch
+        {
+            PlanetType.Continental => 82,
+            PlanetType.Desert      => 54,
+            PlanetType.Barren      => 18,
+            PlanetType.Molten      => 0,
+            PlanetType.GasGiant    => 0,
+            _ => 30
+        };
+
+        public static string ClassName(PlanetType t) => t switch
+        {
+            PlanetType.Continental => "континентальный",
+            PlanetType.Desert      => "пустынный",
+            PlanetType.Molten      => "расплавленный",
+            PlanetType.GasGiant    => "газовый гигант",
+            PlanetType.Barren      => "бесплодный",
+            _ => "?"
+        };
+
+        /// <summary>Сколько шагов терраформинга осталось до мира, пригодного для колонии (0 — уже пригоден, -1 — никогда).</summary>
+        public int TerraformStepsToColonize
+        {
+            get
+            {
+                if (HabitabilityPercent >= 40) return 0;
+                int steps = 0;
+                var t = Type;
+                while (HabitabilityOf(t) < 40)
+                {
+                    PlanetType? n = t switch
+                    {
+                        PlanetType.Molten => PlanetType.Barren,
+                        PlanetType.Barren => PlanetType.Desert,
+                        _ => (PlanetType?)null
+                    };
+                    if (!n.HasValue) return -1;
+                    t = n.Value;
+                    steps++;
+                }
+                return steps;
+            }
+        }
+
+        /// <summary>Доход колонии при основании: 2 жителя, городской и горнодобывающий районы — работает добыча титана.</summary>
+        public const int ColonyStartMineralsPerMonth = 4;
+
+        /// <summary>
+        /// Что даст колония и выгодна ли она: сразу, потенциал планеты, цена и окупаемость. Для подсказок.
+        /// </summary>
+        public string ColonyBenefitText()
+        {
+            int size = MaxDistricts;
+            int payback = Mathf.CeilToInt(ColonyMineralsCost / ColonyStartMineralsPerMonth);
+            // Потенциал: примерно треть районов — жильё, остальные — добыча (+4 в среднем)
+            int productive = Mathf.Max(1, size - Mathf.CeilToInt(size / 3f));
+            int potential = productive * 4;
+            return
+                "<color=#8AA2A8>Сразу после основания:</color>\n" +
+                $"  • 2 жителя, городской и горнодобывающий районы\n" +
+                $"  • <color=#4DF2DB>+{ColonyStartMineralsPerMonth} титана/мес</color>\n" +
+                $"  • +{EmpireEconomy.NavalCapacityPerColony} к лимиту флота\n" +
+                "<color=#8AA2A8>Дальше:</color>\n" +
+                $"  • место под {size} районов; каждый рабочий район добычи даёт +4 титана или гелия-3/мес, завод +3 сплава\n" +
+                $"  • при полной застройке ~<color=#4DF2DB>+{potential}/мес</color> ресурсов\n" +
+                (HabitabilityPercent >= ComfortHabitability ? $"  • комфортный мир: рост населения +{(ComfortGrowthBonus - 1f) * 100f:0}%\n" : "") +
+                "<color=#8AA2A8>Цена:</color> " +
+                $"{ColonyMineralsCost:0} титана, {ColonyAlloysCost:0} сплавов, {ColonyInfluenceCost:0} влияния · {ConstructionManager.ColonyDays:0} дн.\n" +
+                $"<color=#8AA2A8>Окупаемость по титану:</color> ~{payback} мес., потом чистая прибыль";
+        }
+
+        /// <summary>Что даст следующий шаг терраформинга — для подсказок.</summary>
+        public string TerraformBenefitText()
+        {
+            var next = TerraformNextType;
+            if (!next.HasValue) return "Этот мир терраформировать нельзя.";
+            int habNow = HabitabilityPercent, habNext = HabitabilityOf(next.Value);
+            string head = $"{ClassName(Type)} → <b>{ClassName(next.Value)}</b>  ·  пригодность {habNow}% → <b>{habNext}%</b>\n";
+            string price = $"\n<color=#8AA2A8>Цена шага:</color> {TerraformEnergyCost:0} гелия-3, {TerraformMineralsCost:0} титана, {TerraformInfluenceCost:0} влияния · {ConstructionManager.TerraformDays:0} дн.";
+            string what;
+            if (habNow < 40 && habNext >= 40)
+                what = $"<color=#5CE68A>Откроет колонизацию:</color> место под {MaxDistricts} районов, колония сразу даст +{ColonyStartMineralsPerMonth} титана/мес.";
+            else if (habNext < 40)
+            {
+                int left = TerraformStepsToColonize;
+                what = $"<color=#FFB070>Сам по себе колонию не откроет.</color> До пригодного мира шагов: {left} " +
+                       $"(всего ~{left * ConstructionManager.TerraformDays:0} дн. и {left * TerraformMineralsCost:0} титана). Выгодно, если планета большая ({MaxDistricts} районов).";
+            }
+            else if (habNext >= ComfortHabitability)
+                what = $"<color=#5CE68A>Комфортный мир:</color> рост населения <b>+{(ComfortGrowthBonus - 1f) * 100f:0}%</b> — колония быстрее заполнит районы." +
+                       (Population > 0 ? "" : "\nКолонию можно основать и без этого шага.");
+            else
+                what = "Пригодность вырастет.";
+            return head + what + price;
         }
 
         /// <summary>Шаг терраформинга (по завершении заказа): расплавленный → бесплодный → пустынный → континентальный.</summary>
