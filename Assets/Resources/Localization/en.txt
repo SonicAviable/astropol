@@ -4559,3 +4559,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 СЛЕДУЮЩАЯ КОЛОНИЯ	NEXT COLONY
 ГОТОВО	DONE
 Вернуться на карту  <color=#8AA2A8>(Esc)</color>	Back to the map  <color=#8AA2A8>(Esc)</color>
+Колоний: {0}	Colonies: {0}
+{0} жит.	{0} pops
+планет: {0}	planets: {0}
+ · стабильность <color=#{0}>{1:0}</color>	 · stability <color=#{0}>{1:0}</color>

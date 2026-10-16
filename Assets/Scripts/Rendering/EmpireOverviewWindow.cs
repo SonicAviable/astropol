@@ -13,14 +13,14 @@ namespace StellarisClone.Rendering
     ///   • шапка с гербом, названием и датой;
     ///   • 5 карточек ресурсов с запасом и доходом;
     ///   • слева — правитель, статистика и прогресс к победе;
-    ///   • справа — вкладки «Колонии / Флоты / Границы / Соперник» с кликабельными строками
-    ///     (клик — камера к объекту, окно закрывается).
+    ///   • справа — вкладки «Системы / Флоты / Лидеры / Узлы / Соперники / Эффекты» с кликабельными строками
+    ///     (клик — камера к объекту, окно закрывается; клик по колонии в системе — экран колонии).
     /// </summary>
     public partial class EmpireOverviewWindow : MonoBehaviour
     {
         public static EmpireOverviewWindow Instance { get; private set; }
 
-        private enum Tab { Colonies, Fleets, Leaders, Borders, Landmarks, Rival, Effects }
+        private enum Tab { Systems, Fleets, Leaders, Landmarks, Rival, Effects }
 
         private GameObject _root;
         private Text _title, _subtitle;
@@ -40,7 +40,7 @@ namespace StellarisClone.Rendering
         private RectTransform _tableHeader;
         private RectTransform _list;
         private Text _emptyText;
-        private Tab _tab = Tab.Colonies;
+        private Tab _tab = Tab.Systems;
         private float _refreshTimer;
         private GalaxyGenerator _gen;
 
@@ -339,13 +339,12 @@ namespace StellarisClone.Rendering
         {
             var tabsRow = LGBuild.Rect(right, "Tabs");
             tabsRow.TopBand(0, 40);
-            AddTab(tabsRow, Tab.Colonies, LGIcon.Planet, Loc.T("КОЛОНИИ"), 0);
+            AddTab(tabsRow, Tab.Systems, LGIcon.Star, Loc.T("СИСТЕМЫ"), 0);
             AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, Loc.T("ФЛОТЫ"), 1);
             AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, Loc.T("ЛИДЕРЫ"), 2);
-            AddTab(tabsRow, Tab.Borders, LGIcon.Starbase, Loc.T("ГРАНИЦЫ"), 3);
-            AddTab(tabsRow, Tab.Landmarks, LGIcon.Star, Loc.T("УЗЛЫ"), 4);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, Loc.T("СОПЕРНИКИ"), 5);
-            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, Loc.T("ЭФФЕКТЫ"), 6);
+            AddTab(tabsRow, Tab.Landmarks, LGIcon.Star, Loc.T("УЗЛЫ"), 3);
+            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, Loc.T("СОПЕРНИКИ"), 4);
+            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, Loc.T("ЭФФЕКТЫ"), 5);
 
             var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
             table.rectTransform.Stretch(0, 0, 0, 50);
@@ -365,7 +364,7 @@ namespace StellarisClone.Rendering
         private void AddTab(RectTransform row, Tab tab, LGIcon icon, string label, int index)
         {
             var bgImg = LGBuild.Panel(row, "Tab_" + tab, UIManager.DS.BtnNeutral, raycast: true);
-            const int TabCount = 7;
+            const int TabCount = 6;
             bgImg.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 0 : 4, index == TabCount - 1 ? 0 : 4);
             var b = bgImg.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() =>
@@ -546,10 +545,9 @@ namespace StellarisClone.Rendering
 
             switch (_tab)
             {
-                case Tab.Colonies: BuildColonies(); break;
+                case Tab.Systems: BuildSystems(); break;
                 case Tab.Fleets: BuildFleets(); break;
                 case Tab.Leaders: BuildLeaders(); break;
-                case Tab.Borders: BuildBorders(); break;
                 case Tab.Landmarks: BuildLandmarks(); break;
                 case Tab.Rival: BuildRival(); break;
                 case Tab.Effects: BuildEffects(); break;
@@ -653,45 +651,101 @@ namespace StellarisClone.Rendering
 
         private void Empty(string msg) => _emptyText.text = msg;
 
-        // ---------- Колонии ----------
+        // ---------- Системы и их колонии ----------
 
-        private void BuildColonies()
+        /// <summary>
+        /// Все системы империи: столица первой, затем по числу жителей. Под каждой системой — её колонии
+        /// (клик по колонии — экран колонии, по системе — камера к ней).
+        /// </summary>
+        private void BuildSystems()
         {
-            HeaderCols((0.06f, 0.30f, Loc.T("КОЛОНИЯ"), TextAnchor.MiddleLeft),
-                       (0.30f, 0.44f, Loc.T("КЛАСС"), TextAnchor.MiddleLeft),
-                       (0.44f, 0.62f, Loc.T("НАСЕЛЕНИЕ"), TextAnchor.MiddleLeft),
-                       (0.62f, 0.72f, Loc.T("РАЙОНЫ"), TextAnchor.MiddleCenter),
-                       (0.72f, 1f, Loc.T("ПРОИЗВОДСТВО / МЕС"), TextAnchor.MiddleRight));
-            int n = 0;
-            if (_gen != null)
+            HeaderCols((0.06f, 0.34f, Loc.T("СИСТЕМА"), TextAnchor.MiddleLeft),
+                       (0.34f, 0.46f, Loc.T("ЗВЕЗДА"), TextAnchor.MiddleLeft),
+                       (0.46f, 0.64f, Loc.T("ЖИТЕЛИ"), TextAnchor.MiddleLeft),
+                       (0.64f, 0.74f, Loc.T("РАЙОНЫ"), TextAnchor.MiddleCenter),
+                       (0.74f, 1f, Loc.T("ПРОИЗВОДСТВО / МЕС"), TextAnchor.MiddleRight));
+            if (_gen == null) { Empty(Loc.T("У империи не осталось систем.")); return; }
+
+            var systems = new List<StarSystem>();
+            foreach (var sys in _gen.Systems) if (sys.OwnerId == 0) systems.Add(sys);
+            int Pop(StarSystem sy) { int n = 0; foreach (var p in sy.Planets) n += Mathf.Max(0, p.Population); return n; }
+            systems.Sort((a, b) =>
             {
-                foreach (var sys in _gen.Systems)
+                bool ca = a.Id == EconomyManager.PlayerCapitalId, cb = b.Id == EconomyManager.PlayerCapitalId;
+                if (ca != cb) return ca ? -1 : 1;
+                int c = Pop(b).CompareTo(Pop(a));
+                return c != 0 ? c : string.Compare(a.Name, b.Name, System.StringComparison.CurrentCulture);
+            });
+
+            foreach (var sys in systems)
+            {
+                bool capital = sys.Id == EconomyManager.PlayerCapitalId;
+                var colonies = new List<PlanetData>();
+                foreach (var p in sys.Planets) if (p.Population > 0) colonies.Add(p);
+
+                float mi = 0f, en = 0f, al = 0f;
+                foreach (var p in sys.Planets)
                 {
-                    if (sys.OwnerId != 0) continue;
-                    foreach (var p in sys.Planets)
+                    if (p.Population > 0)
                     {
-                        if (p.Population <= 0) continue;
-                        n++;
-                        var capturedSys = sys;
-                        var row = Row(() => FocusSystem(capturedSys), new Color(p.PlanetColor.r, p.PlanetColor.g, p.PlanetColor.b, 0.3f));
-                        IconCell(row, 0f, 0.06f, LGIcon.Planet, Color.Lerp(p.PlanetColor, Color.white, 0.25f));
-                        TwoLine(row, 0.06f, 0.30f, p.Name, Loc.T("система ") + sys.Name);
-                        TextCell(row, 0.30f, 0.44f, p.ClassDisplayName, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
-                        float fillPop = p.HousingCapacity > 0 ? p.Population / (float)p.HousingCapacity : 1f;
-                        Color popCol = p.Population <= p.HousingCapacity ? UIManager.DS.Green : UIManager.DS.Red;
-                        BarCell(row, 0.44f, 0.62f, fillPop, popCol,
-                            $"{p.Population} / {p.HousingCapacity}" + (p.IdlePops > 0 ? Loc.F("   <color=#F2C747>безраб. {0}</color>", p.IdlePops) : ""));
-                        TextCell(row, 0.62f, 0.72f, $"{p.BuiltDistricts} / {p.MaxDistricts}", UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 13, true);
-                        MiniStats(row, 0.72f, 1f,
-                            (LGIcon.Minerals, CMinerals, "+" + p.ProducedMineralsPerMonth),
-                            (LGIcon.Energy, CEnergy, "+" + p.ProducedEnergyPerMonth),
-                            (LGIcon.Alloys, CAlloys, "+" + p.ProducedAlloysPerMonth));
+                        mi += ColonyManagerWindow.Output(p, "minerals");
+                        en += ColonyManagerWindow.Output(p, "energy");
+                        al += ColonyManagerWindow.Output(p, "alloys");
                     }
+                    else if (p.HasMiningStation) { mi += p.MineralDeposit; en += p.EnergyDeposit; }
+                }
+
+                var captured = sys;
+                var row = Row(() => FocusSystem(captured), new Color(0.45f, 0.95f, 0.9f, capital ? 0.4f : 0.2f));
+                IconCell(row, 0f, 0.06f, capital ? LGIcon.Shipyard : LGIcon.Starbase, capital ? CGold : CMinerals);
+                string kind = capital ? Loc.T("Столица · орбитальная верфь")
+                            : colonies.Count > 0 ? Loc.F("Колоний: {0}", colonies.Count)
+                            : sys.HasStarbase ? Loc.T("Пограничный форпост") : Loc.T("Контролируемая система");
+                if (sys.Landmark >= 0) kind += " · ★ " + Landmarks.Name(sys.Landmark);
+                TwoLine(row, 0.06f, 0.34f, sys.Name, kind);
+                TextCell(row, 0.34f, 0.46f, StarClass(sys.SpectralClass), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
+                int pop = Pop(sys);
+                TextCell(row, 0.46f, 0.64f, pop > 0 ? Loc.F("{0} жит.", pop) : Loc.F("планет: {0}", sys.Planets.Count),
+                    pop > 0 ? UIManager.DS.TextPrimary : UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 12, pop > 0);
+                if (sys.IsSurveyed)
+                    MiniStats(row, 0.74f, 1f,
+                        (LGIcon.Minerals, CMinerals, "+" + mi.ToString("0.#")),
+                        (LGIcon.Energy, CEnergy, "+" + en.ToString("0.#")),
+                        (LGIcon.Alloys, CAlloys, "+" + al.ToString("0.#")));
+                else
+                    TextCell(row, 0.74f, 1f, Loc.T("не изучено"), UIManager.DS.TextMuted, TextAnchor.MiddleRight, 11);
+
+                // Колонии системы — строками с отступом
+                foreach (var p in colonies)
+                {
+                    var planet = p;
+                    var sub = Row(() => OpenColony(planet), new Color(p.PlanetColor.r, p.PlanetColor.g, p.PlanetColor.b, 0.25f));
+                    LGBuild.Height(sub.gameObject, 40);
+                    sub.GetComponent<Image>().color = UIManager.DS.BgRowOdd;
+                    IconCell(sub, 0.04f, 0.09f, LGIcon.Planet, Color.Lerp(p.PlanetColor, Color.white, 0.25f));
+                    var tier = p.Tier;
+                    TwoLine(sub, 0.09f, 0.34f, PlanetNames.Title(p.Name),
+                        p.ClassDisplayName + Loc.F(" · стабильность <color=#{0}>{1:0}</color>", PlanetStability.Hex(PlanetStability.TierColor(tier)), p.Stability));
+                    TextCell(sub, 0.34f, 0.46f, Loc.T("колония"), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
+                    float fillPop = p.HousingCapacity > 0 ? p.Population / (float)p.HousingCapacity : 1f;
+                    Color popCol = p.Population < p.HousingCapacity ? UIManager.DS.Green : CGold;
+                    BarCell(sub, 0.46f, 0.64f, fillPop, popCol,
+                        $"{p.Population} / {p.HousingCapacity}" + (p.IdlePops > 0 ? Loc.F("   <color=#F2C747>безраб. {0}</color>", p.IdlePops) : ""));
+                    TextCell(sub, 0.64f, 0.74f, $"{p.BuiltDistricts} / {p.MaxDistricts}", UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 12, true);
+                    MiniStats(sub, 0.74f, 1f,
+                        (LGIcon.Minerals, CMinerals, "+" + ColonyManagerWindow.Output(p, "minerals").ToString("0.#")),
+                        (LGIcon.Energy, CEnergy, "+" + ColonyManagerWindow.Output(p, "energy").ToString("0.#")),
+                        (LGIcon.Alloys, CAlloys, "+" + ColonyManagerWindow.Output(p, "alloys").ToString("0.#")));
                 }
             }
-            if (n == 0)
-                Empty(Loc.T("Колоний пока нет.\n\nВойдите в свою систему (двойной клик по звезде), выберите планету с пригодностью от 40% ") +
-                      Loc.T("и нажмите «Основать колонию» — нужно 80 титана, 20 сплавов и 25 влияния."));
+            if (systems.Count == 0) Empty(Loc.T("У империи не осталось систем."));
+        }
+
+        private void OpenColony(PlanetData p)
+        {
+            if (p == null) return;
+            Close();
+            PlanetFocusOverlay.Instance?.Open(p, p.ParentSystem);
         }
 
         // ---------- Флоты ----------
@@ -763,40 +817,6 @@ namespace StellarisClone.Rendering
         }
 
         // ---------- Границы ----------
-
-        private void BuildBorders()
-        {
-            HeaderCols((0.06f, 0.34f, Loc.T("СИСТЕМА"), TextAnchor.MiddleLeft),
-                       (0.34f, 0.50f, Loc.T("ЗВЕЗДА"), TextAnchor.MiddleLeft),
-                       (0.50f, 0.64f, Loc.T("ПЛАНЕТ"), TextAnchor.MiddleCenter),
-                       (0.64f, 0.76f, Loc.T("КОРИДОРЫ"), TextAnchor.MiddleCenter),
-                       (0.76f, 1f, Loc.T("ДОБЫЧА / МЕС"), TextAnchor.MiddleRight));
-            int n = 0;
-            if (_gen != null)
-            {
-                foreach (var sys in _gen.Systems)
-                {
-                    if (sys.OwnerId != 0) continue;
-                    n++;
-                    bool capital = sys.Id == 0;
-                    var captured = sys;
-                    var row = Row(() => FocusSystem(captured), new Color(0.45f, 0.95f, 0.9f, capital ? 0.4f : 0.2f));
-                    IconCell(row, 0f, 0.06f, capital ? LGIcon.Shipyard : LGIcon.Starbase, capital ? CGold : CMinerals);
-                    TwoLine(row, 0.06f, 0.34f, sys.Name,
-                        capital ? Loc.T("Столица · орбитальная верфь") : sys.HasStarbase ? Loc.T("Пограничный форпост") : Loc.T("Контролируемая система"));
-                    TextCell(row, 0.34f, 0.50f, StarClass(sys.SpectralClass), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
-                    TextCell(row, 0.50f, 0.64f, sys.Planets.Count.ToString(), UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 13, true);
-                    TextCell(row, 0.64f, 0.76f, sys.ConnectedSystemIds.Count.ToString(), UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 13, true);
-                    if (sys.IsSurveyed)
-                        MiniStats(row, 0.76f, 1f,
-                            (LGIcon.Minerals, CMinerals, "+" + sys.HarvestedMinerals),
-                            (LGIcon.Energy, CEnergy, "+" + sys.HarvestedEnergy));
-                    else
-                        TextCell(row, 0.76f, 1f, Loc.T("не изучено"), UIManager.DS.TextMuted, TextAnchor.MiddleRight, 11);
-                }
-            }
-            if (n == 0) Empty(Loc.T("У империи не осталось систем."));
-        }
 
         // ---------- Узлы силы ----------
 
