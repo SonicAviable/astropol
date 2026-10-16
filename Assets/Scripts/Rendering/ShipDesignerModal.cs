@@ -99,7 +99,9 @@ namespace StellarisClone.Rendering
         private RawImage _view;
         private Image _silhouette;
         private Button _deleteBtn, _buildBtn, _retrofitBtn, _saveBtn;
-        private Text _buildText, _retrofitText;
+        private Text _buildText, _retrofitText, _autoText, _deleteText;
+        private Image _energyFill;
+        private Text _energyCap;
         private int _doctrine;
 
         private const float Pad = 40f, LeftW = 340f, RightW = 360f, SlotsH = 268f;
@@ -281,25 +283,86 @@ namespace StellarisClone.Rendering
             _stats.anchorMin = new Vector2(0, 0); _stats.anchorMax = new Vector2(1, 1);
             _stats.offsetMin = new Vector2(0, 300); _stats.offsetMax = new Vector2(0, -88);
 
-            // Кнопки
-            float y = 250f;
-            _saveBtn = ActionBtn(col, ref y, UIManager.DS.BtnSuccess, UIManager.DS.Green, SaveDraft, LGIcon.Save, Loc.T("СОХРАНИТЬ ПРОЕКТ"),
-                Loc.T("<b>Сохранить проект</b>\nСохранённый проект становится основным для своего корпуса: ") +
-                Loc.T("по нему строит верфь, к нему модернизируются корабли."), out _);
-            _buildBtn = ActionBtn(col, ref y, UIManager.DS.BtnPrimary, Neon, BuildNow, LGIcon.Shipyard, "",
-                Loc.T("<b>Заложить на верфи</b>\nКорабль по этому проекту встанет на стапель главной верфи. Проект должен быть сохранён."), out _buildText);
-            ActionBtn(col, ref y, new Color(0.24f, 0.18f, 0.40f), new Color(0.72f, 0.60f, 1f), AutoDesign, LGIcon.Dice, Loc.T("АВТОПРОЕКТ"),
+            // Действия: главная кнопка и плитки под ней
+            _saveBtn = PrimaryButton(col, 214f, SaveDraft);
+            TooltipHelper.Attach(_saveBtn.gameObject, Loc.T("<b>Сохранить проект</b>\nСохранённый проект становится основным для своего корпуса: ") +
+                                                      Loc.T("по нему строит верфь, к нему модернизируются корабли."));
+            _buildBtn = ActionTile(col, 0, 1, Neon, LGIcon.Shipyard, Loc.T("ПОСТРОИТЬ"), BuildNow, out _buildText,
+                Loc.T("<b>Заложить на верфи</b>\nКорабль по этому проекту встанет на стапель главной верфи. Проект должен быть сохранён."));
+            ActionTile(col, 1, 1, new Color(0.72f, 0.60f, 1f), LGIcon.Dice, Loc.T("АВТОПРОЕКТ"), AutoDesign, out _autoText,
                 Loc.T("<b>Автопроект</b>\nСобрать корабль из лучших изученных модулей. Каждое нажатие — другая доктрина: ") +
-                Loc.T("сбалансированная, против щитов (кинетика и ракеты), против брони (энергия и ракеты)."), out _);
-            _retrofitBtn = ActionBtn(col, ref y, new Color(0.36f, 0.28f, 0.06f), Gold, RetrofitAll, LGIcon.Wrench, "",
+                Loc.T("сбалансированная, против щитов (кинетика и ракеты), против брони (энергия и ракеты)."));
+            _retrofitBtn = ActionTile(col, 0, 0, Gold, LGIcon.Wrench, Loc.T("МОДЕРНИЗАЦИЯ"), RetrofitAll, out _retrofitText,
                 Loc.T("<b>Модернизировать флот</b>\nКорабли старых проектов получают вооружение и защиту основного проекта своего корпуса. ") +
-                Loc.T("Платится разница в сплавах (не меньше 10 за корабль), пока хватает запаса."), out _retrofitText);
-            _deleteBtn = ActionBtn(col, ref y, UIManager.DS.BtnDanger, UIManager.DS.Red, DeleteDraft, LGIcon.Trash, Loc.T("УДАЛИТЬ"),
-                Loc.T("<b>Удалить проект</b>\nПоследний проект корпуса удалить нельзя — верфи нужен чертёж."), out _);
+                Loc.T("Платится разница в сплавах (не меньше 10 за корабль), пока хватает запаса."));
+            _deleteBtn = ActionTile(col, 1, 0, UIManager.DS.Red, LGIcon.Trash, Loc.T("УДАЛИТЬ"), DeleteDraft, out _deleteText,
+                Loc.T("<b>Удалить проект</b>\nПоследний проект корпуса удалить нельзя — верфи нужен чертёж."));
 
-            var done = LGBuild.Button(col, "Done", new Color(0.12f, 0.42f, 0.30f), UIManager.DS.Green, Close, LGIcon.Check, Loc.T("ГОТОВО"), 13, 8f);
-            ((RectTransform)done.transform).At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(170, 44));
+            // Вернуться — тонкая текстовая кнопка
+            var done = LGBuild.Button(col, "Done", new Color(1f, 1f, 1f, 0.03f), new Color(1f, 1f, 1f, 0.22f), Close, null, null, 12, 22f);
+            var drt = (RectTransform)done.transform;
+            drt.anchorMin = new Vector2(0, 0); drt.anchorMax = new Vector2(1, 0); drt.pivot = new Vector2(0.5f, 0);
+            drt.offsetMin = new Vector2(0, 0); drt.offsetMax = new Vector2(0, 40);
+            var dic = LGIcons.Create(done.transform, LGIcon.Back, 13, Muted);
+            dic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(1, 0.5f), new Vector2(-62, 0), new Vector2(13, 13));
+            var dt = LGBuild.Label(done.transform, Loc.T("ГОТОВО"), 12, Primary, TextAnchor.MiddleLeft, bold: true);
+            dt.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(-54, 0), new Vector2(80, 20));
+            dt.Track(2f);
+            var esc = LGBuild.Label(done.transform, "ESC", 9, Muted, TextAnchor.MiddleCenter, bold: true);
+            esc.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 0), new Vector2(32, 18));
+            var escBg = LGBuild.Panel(done.transform, "Key", new Color(1f, 1f, 1f, 0.06f));
+            escBg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 0), new Vector2(32, 18));
+            escBg.transform.SetAsFirstSibling();
+            LG.Chip(escBg.gameObject, new Color(1f, 1f, 1f, 0.25f), 4f);
             TooltipHelper.Attach(done.gameObject, Loc.T("Вернуться на карту  <color=#8AA2A8>(Esc)</color>"));
+        }
+
+        /// <summary>Главная кнопка: тёмное стекло, неоновая кромка, светящаяся полоса слева, подпись с разрядкой.</summary>
+        private Button PrimaryButton(RectTransform col, float y, System.Action act)
+        {
+            Color c = new Color(0.36f, 0.96f, 0.68f);
+            var b = LGBuild.Button(col, "Primary", new Color(0.04f, 0.16f, 0.12f, 0.92f), new Color(c.r, c.g, c.b, 0.85f), act, null, null, 13, 6f);
+            var r = (RectTransform)b.transform;
+            r.anchorMin = new Vector2(0, 0); r.anchorMax = new Vector2(1, 0); r.pivot = new Vector2(0.5f, 0);
+            r.offsetMin = new Vector2(0, y); r.offsetMax = new Vector2(0, y + 50);
+            var bar = LGBuild.Panel(b.transform, "Bar", c);
+            bar.rectTransform.anchorMin = new Vector2(0, 0.18f); bar.rectTransform.anchorMax = new Vector2(0, 0.82f);
+            bar.rectTransform.offsetMin = new Vector2(8, 0); bar.rectTransform.offsetMax = new Vector2(11, 0);
+            LG.Line(bar.gameObject);
+            var ic = LGIcons.Create(b.transform, LGIcon.Save, 18, c);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 0), new Vector2(18, 18));
+            var t = LGBuild.Label(b.transform, Loc.T("СОХРАНИТЬ ПРОЕКТ"), 14, Color.white, TextAnchor.MiddleLeft, bold: true);
+            t.rectTransform.Stretch(58, 0, 12, 0);
+            t.Track(2.2f);
+            return b;
+        }
+
+        /// <summary>Плитка действия 2×2: значок в шестиграннике, заголовок и строка состояния; прозрачная, с тонкой кромкой цвета действия.</summary>
+        private static Button ActionTile(RectTransform col, int cx, int cy, Color c, LGIcon icon, string title, System.Action act, out Text sub, string tip)
+        {
+            var b = LGBuild.Button(col, "Tile", new Color(c.r * 0.08f, c.g * 0.08f, c.b * 0.08f, 0.85f), new Color(c.r, c.g, c.b, 0.45f), act, null, null, 11, 6f);
+            var r = (RectTransform)b.transform;
+            r.anchorMin = new Vector2(cx * 0.5f, 0); r.anchorMax = new Vector2(cx * 0.5f + 0.5f, 0);
+            r.pivot = new Vector2(0.5f, 0);
+            float y0 = 52f + cy * 78f;
+            r.offsetMin = new Vector2(cx == 0 ? 0 : 4, y0); r.offsetMax = new Vector2(cx == 0 ? -4 : 0, y0 + 72);
+            var hex = LGBuild.Panel(b.transform, "Hex", new Color(c.r * 0.25f, c.g * 0.25f, c.b * 0.25f, 1f));
+            hex.sprite = HexSprite(true);
+            hex.raycastTarget = false;
+            hex.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 0), new Vector2(38, 34));
+            var hexRim = LGBuild.Panel(b.transform, "HexRim", new Color(c.r, c.g, c.b, 0.8f));
+            hexRim.sprite = HexSprite(false);
+            hexRim.raycastTarget = false;
+            hexRim.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 0), new Vector2(38, 34));
+            var ic = LGIcons.Create(b.transform, icon, 16, Color.Lerp(c, Color.white, 0.35f));
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 0), new Vector2(16, 16));
+            var t = LGBuild.Label(b.transform, title, 12, Color.white, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.Stretch(56, 36, 6, 10);
+            t.Track(1.2f);
+            sub = LGBuild.Label(b.transform, "", 10, Color.Lerp(c, Color.white, 0.25f), TextAnchor.UpperLeft, wrap: true);
+            sub.rectTransform.Stretch(56, 6, 6, 38);
+            TooltipHelper.Attach(b.gameObject, tip);
+            return b;
         }
 
         private static void BigStat(RectTransform parent, float x, string caption, LGIcon icon, Color c, out Text value, string tip)
@@ -319,21 +382,6 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(cell.gameObject, tip);
         }
 
-        private static Button ActionBtn(RectTransform col, ref float y, Color tint, Color rim, System.Action act, LGIcon icon, string label, string tip, out Text text)
-        {
-            var b = LGBuild.Button(col, "Action", tint, rim, act, null, null, 12, 8f);
-            var r = (RectTransform)b.transform;
-            r.anchorMin = new Vector2(0, 0); r.anchorMax = new Vector2(1, 0); r.pivot = new Vector2(0.5f, 0);
-            r.offsetMin = new Vector2(0, y); r.offsetMax = new Vector2(0, y + 38);
-            y -= 44f;
-            var ic = LGIcons.Create(b.transform, icon, 15, Color.white);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(15, 15));
-            text = LGBuild.Label(b.transform, label, 12, Color.white, TextAnchor.MiddleCenter, bold: true);
-            text.rectTransform.Stretch(34, 0, 10, 0);
-            TooltipHelper.Attach(b.gameObject, tip);
-            return b;
-        }
-
         /// <summary>Низ экрана: энергосеть (круг) и ряды слотов модулей — без панели, прямо на фоне, как в Master of Orion.</summary>
         private void BuildSlots(RectTransform rt)
         {
@@ -343,28 +391,42 @@ namespace StellarisClone.Rendering
             area.offsetMin = new Vector2(Pad + LeftW + 20, 24); area.offsetMax = new Vector2(-(Pad + RightW + 20), 24 + SlotsH - 24);
             LG.Motion(area.gameObject, LGAppear.Kind.SlideUp).delay = 0.12f;
 
-            // Энергосеть — круг слева
+            // Энергосеть — кольцевой сегментный индикатор: заполнено = потребление, вся окружность = выработка
             var energy = LGBuild.Panel(area, "Energy", new Color(1f, 1f, 1f, 0f), raycast: true);
             energy.rectTransform.anchorMin = new Vector2(0, 0); energy.rectTransform.anchorMax = new Vector2(0, 1);
             energy.rectTransform.offsetMin = new Vector2(0, 0); energy.rectTransform.offsetMax = new Vector2(170, 0);
-            var cap = LGBuild.Label(energy.transform, Loc.T("ЭНЕРГИЯ"), 16, Color.white, TextAnchor.UpperCenter, bold: true);
-            cap.rectTransform.TopBand(28, 22);
-            cap.Track(1.2f);
-            _energyRing = LGBuild.Panel(energy.transform, "Disc", new Color(0.42f, 0.48f, 0.52f, 0.95f));
-            _energyRing.sprite = DiscSprite();
-            _energyRing.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 4), new Vector2(104, 104));
-            var inner = LGBuild.Panel(_energyRing.transform, "Inner", new Color(0.20f, 0.25f, 0.29f, 1f));
-            inner.sprite = DiscSprite();
-            inner.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(94, 94));
-            _energyIcon = LGIcons.Create(_energyRing.transform, LGIcon.Reactor, 48, Color.white);
-            var pwIc = LGIcons.Create(energy.transform, LGIcon.Power, 18, Color.white);
-            pwIc.rectTransform.At(new Vector2(0.5f, 0), new Vector2(1, 0.5f), new Vector2(-46, 40), new Vector2(18, 18));
-            _energyText = LGBuild.Label(energy.transform, "", 22, Color.white, TextAnchor.MiddleLeft, bold: true);
-            _energyText.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 0.5f), new Vector2(-40, 40), new Vector2(130, 26));
-            var barHost = LGBuild.Rect(energy.transform, "Bar");
-            barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
-            barHost.offsetMin = new Vector2(30, 14); barHost.offsetMax = new Vector2(-30, 18);
-            _energyBar = LGBuild.Bar(barHost, Gold, 0.5f, 4f);
+            const float G = 150f;
+            var halo = LGBuild.Panel(energy.transform, "Halo", new Color(Gold.r, Gold.g, Gold.b, 0.07f));
+            halo.sprite = FactionSelectScreen.RadialSprite();
+            halo.raycastTarget = false;
+            halo.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G + 50, G + 50));
+            _energyRing = LGBuild.Panel(energy.transform, "Track", new Color(1f, 1f, 1f, 0.07f));
+            _energyRing.sprite = RingSprite();
+            _energyRing.raycastTarget = false;
+            _energyRing.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G, G));
+            _energyFill = LGBuild.Panel(energy.transform, "Fill", UIManager.DS.Green);
+            _energyFill.sprite = RingSprite();
+            _energyFill.raycastTarget = false;
+            _energyFill.type = Image.Type.Filled;
+            _energyFill.fillMethod = Image.FillMethod.Radial360;
+            _energyFill.fillOrigin = (int)Image.Origin360.Bottom;
+            _energyFill.fillClockwise = true;
+            _energyFill.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G, G));
+            var ticks = LGBuild.Panel(energy.transform, "Ticks", new Color(0.006f, 0.016f, 0.026f, 1f));
+            ticks.sprite = TickSprite();
+            ticks.raycastTarget = false;
+            ticks.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G, G));
+            _energyIcon = LGIcons.Create(energy.transform, LGIcon.Power, 16, Gold);
+            _energyIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 38), new Vector2(16, 16));
+            _energyText = LGBuild.Label(energy.transform, "", 30, Color.white, TextAnchor.MiddleCenter, bold: true);
+            _energyText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 8), new Vector2(120, 36));
+            _energyCap = LGBuild.Label(energy.transform, "", 10, Muted, TextAnchor.MiddleCenter, bold: true);
+            _energyCap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(130, 14));
+            _energyCap.Track(1.4f);
+            var barHost = LGBuild.Rect(energy.transform, "Bar");   // запасная полоса (скрыта): кольцо её заменяет
+            barHost.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(1, 1));
+            _energyBar = LGBuild.Bar(barHost, Gold, 0f, 1f);
+            barHost.gameObject.SetActive(false);
             TooltipHelper.Attach(energy.gameObject, Loc.T("<b>Энергосеть</b>\nПотребление модулей / выработка реакторов. Перегруженный проект нельзя сохранить."));
 
             var vline = LGBuild.Panel(area, "Split", new Color(1f, 1f, 1f, 0.16f));
@@ -428,24 +490,24 @@ namespace StellarisClone.Rendering
             if (_deleteBtn != null)
             {
                 bool canDel = dm != null && IsSaved(_draft) && dm.DesignsFor(_draft.HullClass).Count > 1;
-                _deleteBtn.interactable = canDel;
-                _deleteBtn.GetComponent<Image>().color = canDel ? UIManager.DS.BtnDanger : UIManager.DS.BtnDisabled;
+                SetTile(_deleteBtn, canDel, UIManager.DS.Red);
+                _deleteText.text = canDel ? Loc.T("убрать этот проект") : Loc.T("нельзя: последний проект");
             }
             if (_saveBtn != null && _draft != null)
             {
                 bool ok = _draft.IsPowerValid;
                 _saveBtn.interactable = ok;
-                _saveBtn.GetComponent<Image>().color = ok ? UIManager.DS.BtnSuccess : UIManager.DS.BtnDisabled;
+                var img = _saveBtn.GetComponent<Image>();
+                img.color = ok ? new Color(0.04f, 0.16f, 0.12f, 0.92f) : new Color(0.06f, 0.07f, 0.08f, 0.9f);
             }
             if (_buildBtn != null && _draft != null)
             {
                 float cost = FleetManager.ShipAlloyCost(_draft.AlloyCost, 0);
                 bool saved = IsSaved(_draft);
                 bool can = saved && _draft.IsPowerValid && eco != null && eco.CanAfford(FleetManager.WarshipEnergy, 0f, cost, 0f);
-                _buildBtn.interactable = can;
-                _buildBtn.GetComponent<Image>().color = can ? UIManager.DS.BtnPrimary : UIManager.DS.BtnDisabled;
-                _buildText.text = saved ? Loc.F("ПОСТРОИТЬ · {0:0} спл.", cost) : Loc.T("СНАЧАЛА СОХРАНИТЕ");
-                _buildText.color = can ? Color.white : Muted;
+                SetTile(_buildBtn, can, Neon);
+                _buildText.text = !saved ? Loc.T("сначала сохраните") : Loc.F("{0:0} сплавов · {1:0} дн.", cost,
+                    ConstructionManager.ShipDays(FleetType.Military, _draft.HullClass) * FactionTraits.BuildTimeMult(0));
             }
             if (_retrofitBtn != null && dm != null)
             {
@@ -453,11 +515,18 @@ namespace StellarisClone.Rendering
                 float total = 0f;
                 foreach (var f in old) total += dm.RetrofitCost(f);
                 bool any = old.Count > 0;
-                _retrofitBtn.interactable = any;
-                _retrofitBtn.GetComponent<Image>().color = any ? new Color(0.36f, 0.28f, 0.06f) : UIManager.DS.BtnDisabled;
-                _retrofitText.text = any ? Loc.F("МОДЕРНИЗИРОВАТЬ {0} · {1:0} спл.", old.Count, total) : Loc.T("ФЛОТ СОВРЕМЕННЫЙ");
-                _retrofitText.color = any ? Color.white : Muted;
+                SetTile(_retrofitBtn, any, Gold);
+                _retrofitText.text = any ? Loc.F("{0} кораблей · {1:0} сплавов", old.Count, total) : Loc.T("флот современный");
             }
+            if (_autoText != null) _autoText.text = Loc.F("следующая: {0}", DoctrineName(_doctrine % Doctrines.Length).ToLower());
+        }
+
+        private static void SetTile(Button b, bool on, Color c)
+        {
+            b.interactable = on;
+            b.GetComponent<Image>().color = on ? new Color(c.r * 0.08f, c.g * 0.08f, c.b * 0.08f, 0.85f) : new Color(0.03f, 0.04f, 0.05f, 0.6f);
+            foreach (var t in b.GetComponentsInChildren<Text>(true))
+                t.color = new Color(t.color.r, t.color.g, t.color.b, on ? 1f : 0.45f);
         }
 
         private void RebuildHullTabs()
@@ -639,69 +708,91 @@ namespace StellarisClone.Rendering
             var r = LGBuild.Rect(_slotArea, "Row" + row);
             r.anchorMin = new Vector2(0, 1f - (row + 1) / 3f); r.anchorMax = new Vector2(1, 1f - row / 3f);
             r.offsetMin = r.offsetMax = Vector2.zero;
+            Color rowCol = type == ModuleSlotType.Weapon ? new Color(1f, 0.52f, 0.42f) : type == ModuleSlotType.Defense ? new Color(0.45f, 0.76f, 1f) : Gold;
+            LGIcon rowIcon = type == ModuleSlotType.Weapon ? LGIcon.Weapons : type == ModuleSlotType.Defense ? LGIcon.Defense : LGIcon.Gear;
 
-            var t = LGBuild.Label(r, title, 15, Color.white, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.anchorMin = new Vector2(0, 0); t.rectTransform.anchorMax = new Vector2(0, 1);
-            t.rectTransform.offsetMin = new Vector2(0, 0); t.rectTransform.offsetMax = new Vector2(170, 0);
-            t.Track(0.6f);
+            // Подпись ряда: значок в шестиграннике, название, число слотов
+            var hx = LGBuild.Panel(r, "RowHex", new Color(rowCol.r, rowCol.g, rowCol.b, 0.85f));
+            hx.sprite = HexSprite(false);
+            hx.raycastTarget = false;
+            hx.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(16, 0), new Vector2(30, 26));
+            var hi = LGIcons.Create(r, rowIcon, 13, rowCol);
+            hi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(16, 0), new Vector2(13, 13));
+            int filled = 0;
+            foreach (var id in slots) if (!string.IsNullOrEmpty(id)) filled++;
+            var t = LGBuild.Label(r, title, 13, Color.white, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.anchorMin = new Vector2(0, 0.5f); t.rectTransform.anchorMax = new Vector2(0, 0.5f);
+            t.rectTransform.pivot = new Vector2(0, 0); t.rectTransform.anchoredPosition = new Vector2(38, -1); t.rectTransform.sizeDelta = new Vector2(140, 18);
+            t.Track(1.4f);
+            var cnt = LGBuild.Label(r, Loc.F("{0} из {1}", filled, slots.Count), 10, rowCol, TextAnchor.UpperLeft, bold: true);
+            cnt.rectTransform.anchorMin = new Vector2(0, 0.5f); cnt.rectTransform.anchorMax = new Vector2(0, 0.5f);
+            cnt.rectTransform.pivot = new Vector2(0, 1); cnt.rectTransform.anchoredPosition = new Vector2(38, -3); cnt.rectTransform.sizeDelta = new Vector2(140, 14);
 
-            const float W = 84f, G = 22f, X0 = 180f;
+            const float W = 70f, H = 62f, G = 26f, X0 = 196f;
+            // Дорожка схемы, соединяющая гнёзда ряда
+            if (slots.Count > 0)
+            {
+                var trace = LGBuild.Panel(r, "Trace", new Color(rowCol.r, rowCol.g, rowCol.b, 0.22f));
+                trace.raycastTarget = false;
+                float x1 = X0 + (slots.Count - 1) * (W + G) + W * 0.5f;
+                trace.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(150, 0), new Vector2(x1 - 150, 1.5f));
+                LG.Ignore(trace.gameObject);
+            }
+
             for (int i = 0; i < slots.Count; i++)
             {
                 int idx = i;
                 var mod = ShipDesignManager.Instance.GetModule(slots[i]);
-                Color tint = mod != null ? ModuleVisuals.Tint(mod) : Muted;
+                Color tint = mod != null ? ModuleVisuals.Tint(mod) : rowCol;
                 float cx = X0 + i * (W + G) + W * 0.5f;
 
-                // Платформа-эллипс и тень под модулем
-                var ring = LGBuild.Panel(r, "Ring", new Color(0.45f, 0.95f, 0.95f, mod != null ? 0.45f : 0.30f));
-                ring.sprite = EllipseSprite(false);
-                ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, -14), new Vector2(W, 30));
-                ring.raycastTarget = false;
-                LG.Ignore(ring.gameObject);
-                var shade = LGBuild.Panel(r, "Shade", new Color(0.45f, 0.95f, 0.95f, mod != null ? 0.10f : 0.04f));
-                shade.sprite = EllipseSprite(true);
-                shade.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, -14), new Vector2(W - 6, 26));
-                shade.raycastTarget = false;
-                LG.Ignore(shade.gameObject);
+                var glow = LGBuild.Panel(r, "Glow", new Color(tint.r, tint.g, tint.b, mod != null ? 0.16f : 0f));
+                glow.sprite = FactionSelectScreen.RadialSprite();
+                glow.raycastTarget = false;
+                glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(W + 40, W + 40));
+                LG.Ignore(glow.gameObject);
 
-                // Кликабельная зона слота
-                var hit = LGBuild.Panel(r, "Slot", new Color(1f, 1f, 1f, 0f), raycast: true);
-                hit.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 2), new Vector2(W, 76));
-                var btn = hit.gameObject.AddComponent<Button>();
+                var fill = LGBuild.Panel(r, "Socket", mod != null ? new Color(tint.r * 0.16f, tint.g * 0.16f, tint.b * 0.16f, 0.96f) : new Color(0.02f, 0.04f, 0.05f, 0.9f), raycast: true);
+                fill.sprite = HexSprite(true);
+                fill.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(W, H));
+                var rim = LGBuild.Panel(r, "SocketRim", new Color(tint.r, tint.g, tint.b, mod != null ? 0.85f : 0.30f));
+                rim.sprite = HexSprite(false);
+                rim.raycastTarget = false;
+                rim.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(W, H));
+
+                var btn = fill.gameObject.AddComponent<Button>();
                 btn.transition = Selectable.Transition.None;
                 btn.onClick.AddListener(() => OpenPicker(type, idx, slots));
-                var hover = hit.gameObject.AddComponent<UIHover>();
+                var hover = fill.gameObject.AddComponent<UIHover>();
 
                 if (mod != null)
                 {
-                    var glow = LGBuild.Panel(r, "Glow", new Color(tint.r, tint.g, tint.b, 0.18f));
-                    glow.sprite = FactionSelectScreen.RadialSprite();
-                    glow.raycastTarget = false;
-                    glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 6), new Vector2(76, 76));
-                    LG.Ignore(glow.gameObject);
-                    var ic = LGIcons.Create(r, ModuleVisuals.Icon(mod), 40, Color.Lerp(tint, Color.white, 0.25f));
-                    ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 8), new Vector2(40, 40));
+                    var ic = LGIcons.Create(r, ModuleVisuals.Icon(mod), 30, Color.Lerp(tint, Color.white, 0.3f));
+                    ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(30, 30));
                     ic.raycastTarget = false;
-                    var sh = ic.gameObject.AddComponent<Shadow>();
-                    sh.effectColor = new Color(0f, 0f, 0f, 0.6f);
-                    sh.effectDistance = new Vector2(2f, -3f);
                     var m = mod;
-                    hover.Enter = () => { glow.color = new Color(tint.r, tint.g, tint.b, 0.36f); ShowModuleCard(m, (RectTransform)hit.transform, true); };
-                    hover.Exit = () => { glow.color = new Color(tint.r, tint.g, tint.b, 0.18f); HideModuleCard(); };
+                    hover.Enter = () => { glow.color = new Color(tint.r, tint.g, tint.b, 0.34f); rim.color = Color.Lerp(tint, Color.white, 0.4f); ShowModuleCard(m, (RectTransform)fill.transform, true); };
+                    hover.Exit = () => { glow.color = new Color(tint.r, tint.g, tint.b, 0.16f); rim.color = new Color(tint.r, tint.g, tint.b, 0.85f); HideModuleCard(); };
+
+                    // Энергия модуля — маленький ярлык у нижней грани
                     if (mod.PowerDraw > 0f || mod.PowerProduce > 0f)
                     {
-                        var pw = LGBuild.Label(r, mod.PowerProduce > 0f ? $"+{mod.PowerProduce:0}" : $"−{mod.PowerDraw:0}", 11,
-                            mod.PowerProduce > 0f ? UIManager.DS.Green : Gold, TextAnchor.MiddleLeft, bold: true);
-                        pw.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(cx + 22, 30), new Vector2(34, 14));
+                        bool prod = mod.PowerProduce > 0f;
+                        Color pc = prod ? UIManager.DS.Green : Gold;
+                        var chip = LGBuild.Panel(r, "Pw", new Color(0.01f, 0.02f, 0.03f, 0.95f));
+                        chip.raycastTarget = false;
+                        chip.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, -H * 0.5f - 2), new Vector2(38, 15));
+                        LG.Chip(chip.gameObject, new Color(pc.r, pc.g, pc.b, 0.6f), 7f);
+                        var pw = LGBuild.Label(chip.transform, prod ? $"+{mod.PowerProduce:0}" : $"−{mod.PowerDraw:0}", 10, pc, TextAnchor.MiddleCenter, bold: true);
                     }
                 }
                 else
                 {
-                    var plus = LGBuild.Label(r, "+", 22, new Color(Neon.r, Neon.g, Neon.b, 0.35f), TextAnchor.MiddleCenter, bold: true);
-                    plus.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 2), new Vector2(30, 30));
-                    hover.Enter = () => { ring.color = new Color(0.45f, 0.95f, 0.95f, 0.75f); plus.color = new Color(Neon.r, Neon.g, Neon.b, 0.9f); };
-                    hover.Exit = () => { ring.color = new Color(0.45f, 0.95f, 0.95f, 0.30f); plus.color = new Color(Neon.r, Neon.g, Neon.b, 0.35f); };
+                    var plus = LGBuild.Label(r, "+", 22, new Color(rowCol.r, rowCol.g, rowCol.b, 0.45f), TextAnchor.MiddleCenter, bold: true);
+                    plus.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 1), new Vector2(30, 30));
+                    hover.Enter = () => { rim.color = new Color(rowCol.r, rowCol.g, rowCol.b, 0.9f); plus.color = rowCol; };
+                    hover.Exit = () => { rim.color = new Color(rowCol.r, rowCol.g, rowCol.b, 0.30f); plus.color = new Color(rowCol.r, rowCol.g, rowCol.b, 0.45f); };
+                    TooltipHelper.Attach(fill.gameObject, Loc.T("<b>Пустой слот</b>\nЩёлкните, чтобы поставить модуль."));
                 }
             }
         }
@@ -713,8 +804,11 @@ namespace StellarisClone.Rendering
             float load = d.PowerProduce > 0f ? d.PowerDraw / d.PowerProduce : (d.PowerDraw > 0f ? 2f : 0f);
             Color pc = d.IsPowerValid ? (load > 0.85f ? Gold : UIManager.DS.Green) : UIManager.DS.Red;
             _energyText.text = $"{d.PowerDraw:0}<size=16><color=#8AA2A8>/{d.PowerProduce:0}</color></size>";
-            _energyIcon.color = d.IsPowerValid ? Color.white : UIManager.DS.Red;
-            LGBuild.SetBar(_energyBar, Mathf.Clamp01(load), pc);
+            _energyFill.fillAmount = Mathf.Clamp01(load);
+            _energyFill.color = pc;
+            _energyIcon.color = pc;
+            _energyCap.text = !d.IsPowerValid ? Loc.T("ПЕРЕГРУЗКА") : Loc.F("ЗАПАС {0:0}", d.PowerProduce - d.PowerDraw);
+            _energyCap.color = d.IsPowerValid ? Muted : UIManager.DS.Red;
         }
 
         private void AfterSlotChange()
@@ -964,7 +1058,54 @@ namespace StellarisClone.Rendering
 
         // ==================== ПРОЦЕДУРНЫЕ СПРАЙТЫ ====================
 
-        private static Sprite s_disc, s_ring, s_ellFill;
+        private static Sprite s_disc, s_hexFill, s_hexRim, s_gaugeRing, s_ticks;
+
+        /// <summary>Шестигранник с плоским верхом: заливка или тонкая кромка.</summary>
+        private static Sprite HexSprite(bool fill)
+        {
+            if (fill && s_hexFill != null) return s_hexFill;
+            if (!fill && s_hexRim != null) return s_hexRim;
+            const int W = 128, H = 112;
+            var sp = MakeSprite(W, H, (u, v) =>
+            {
+                // Нормированное расстояние до шестигранника с плоским верхом (1 — грань): спрайт по высоте = 0,866 ширины
+                float x = Mathf.Abs(u), y = Mathf.Abs(v) * 0.866f;
+                float d = Mathf.Max(Mathf.Abs(v), x + y * 0.577f);
+                if (fill) return Mathf.Clamp01((0.96f - d) * 60f);
+                return Mathf.Clamp01(1f - Mathf.Abs(d - 0.93f) * 60f);
+            }, fill ? "HexFill" : "HexRim");
+            if (fill) s_hexFill = sp; else s_hexRim = sp;
+            return sp;
+        }
+
+        /// <summary>Толстое кольцо для индикатора энергии.</summary>
+        private static Sprite RingSprite()
+        {
+            if (s_gaugeRing != null) return s_gaugeRing;
+            const int R = 256;
+            s_gaugeRing = MakeSprite(R, R, (u, v) =>
+            {
+                float d = Mathf.Sqrt(u * u + v * v);
+                return Mathf.Clamp01((0.98f - d) * 80f) * Mathf.Clamp01((d - 0.82f) * 80f);
+            }, "GaugeRing");
+            return s_gaugeRing;
+        }
+
+        /// <summary>Прорези между сегментами кольца (24 сегмента) — рисуются цветом фона поверх кольца.</summary>
+        private static Sprite TickSprite()
+        {
+            if (s_ticks != null) return s_ticks;
+            const int R = 256;
+            s_ticks = MakeSprite(R, R, (u, v) =>
+            {
+                float d = Mathf.Sqrt(u * u + v * v);
+                if (d < 0.78f || d > 1f) return 0f;
+                float ang = Mathf.Atan2(v, u) * Mathf.Rad2Deg + 360f;
+                float seg = Mathf.Repeat(ang, 15f);
+                return Mathf.Clamp01(1f - Mathf.Min(seg, 15f - seg) * 0.9f);
+            }, "GaugeTicks");
+            return s_ticks;
+        }
 
         private static Sprite MakeSprite(int w, int h, System.Func<float, float, float> alpha, string name)
         {
@@ -990,23 +1131,6 @@ namespace StellarisClone.Rendering
             const int R = 128;
             s_disc = MakeSprite(R, R, (u, v) => Mathf.Clamp01((1f - Mathf.Sqrt(u * u + v * v)) * R * 0.5f), "UiDisc");
             return s_disc;
-        }
-
-        /// <summary>Платформа слота: тонкий эллипс-кольцо (fill = false) или мягкая заливка к центру (fill = true).</summary>
-        private static Sprite EllipseSprite(bool fill)
-        {
-            if (!fill && s_ring != null) return s_ring;
-            if (fill && s_ellFill != null) return s_ellFill;
-            const int W = 192, H = 64;
-            var sp = MakeSprite(W, H, (u, v) =>
-            {
-                float d = Mathf.Sqrt(u * u + v * v);
-                if (fill) return Mathf.Clamp01(1f - d) * 0.9f;
-                float edge = Mathf.Abs(d - 0.92f);
-                return Mathf.Clamp01(1f - edge * 26f) + (d < 0.92f ? (1f - d) * 0.10f : 0f);
-            }, fill ? "SlotShade" : "SlotRing");
-            if (fill) s_ellFill = sp; else s_ring = sp;
-            return sp;
         }
 
         /// <summary>Разница с основным проектом: «▲12» зелёным, «▼5» красным (для цены — наоборот).</summary>

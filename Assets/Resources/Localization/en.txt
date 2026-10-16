@@ -4647,3 +4647,14 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Потребление энергии	Power draw
 Цена	Cost
 Требуется технология «{0}»	Requires the “{0}” technology
+МОДЕРНИЗАЦИЯ	REFIT
+убрать этот проект	remove this design
+нельзя: последний проект	not allowed: last design
+сначала сохраните	save first
+{0:0} сплавов · {1:0} дн.	{0:0} alloys · {1:0} d
+{0} кораблей · {1:0} сплавов	{0} ships · {1:0} alloys
+флот современный	fleet up to date
+следующая: {0}	next: {0}
+{0} из {1}	{0} of {1}
+ПЕРЕГРУЗКА	OVERLOAD
+ЗАПАС {0:0}	SPARE {0:0}
