@@ -8,20 +8,17 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Полноэкранный экран планеты — главный экран управления колонией, в «кинематографичной» подаче.
-    ///   • слева — крупная вращающаяся планета с мягким краем и подсветкой атмосферы цвета её мира
-    ///     (шейдер UIPlanetDisc), тонкие медленно вращающиеся орбитальные кольца; дуги-шкалы у планеты:
-    ///     слева — население (жители / жильё), справа — рост до следующего жителя;
-    ///   • поверх планеты слева сверху — население и рост, слева снизу — досье планеты
-    ///     (пригодность, размер, залежи сегментными шкалами и климат);
-    ///   • справа сверху — плитки производства за месяц и занятость;
-    ///   • справа в центре — районы сеткой 2×2: эмблема, эффект, фигурки рабочих
-    ///     (светятся занятые, тусклые — свободные места, золотые — строятся), стоимость и постройка;
-    ///     в шапке районов — приоритет колонии и автостройка;
-    ///   • справа снизу — очередь строительства (с отменой любого заказа) и проекты планеты:
-    ///     добывающий комплекс, колония, терраформинг.
-    /// Переключение между колониями — стрелки в шапке или Tab / Shift+Tab.
-    /// Открывается и из системы, и прямо с карты галактики кликом по планете.
+    /// Экран колонии — по мотивам экрана колонии Master of Orion, в стиле игры:
+    ///   • слева сверху — строка показателей: жители, производство за месяц, стабильность, занятость;
+    ///   • под ней — приоритет колонии (выпадающий список) и автостройка;
+    ///   • ряды работ: добыча титана, энергетика, промышленность, город — фигурки жителей на рабочих местах
+    ///     (цвет — их вид), над каждым местом — сколько оно даёт; клик по ряду — приоритет на этот ресурс,
+    ///     «+» в конце ряда — построить ещё район этого вида;
+    ///   • под рядами — производство: текущая стройка, «Купить» за гелий-3, очередь и «+» (меню строительства);
+    ///   • внизу слева — проекты планеты: добывающий комплекс, колония, терраформинг, роботы, генная адаптация;
+    ///   • справа — крупная вращающаяся планета, сверху справа — информация о планете, под ней — общество;
+    ///   • справа внизу — предыдущая / следующая колония и «Готово».
+    /// Переключение колоний — также Tab / Shift+Tab, меню строительства — B, закрыть — Esc.
     /// </summary>
     public class PlanetFocusOverlay : MonoBehaviour
     {
@@ -39,7 +36,7 @@ namespace StellarisClone.Rendering
         private Image _worldTint;
         private Material _discMat;
 
-        // Дуги-шкалы вокруг планеты: население — слева (9 часов), рост — справа (3 часа)
+        // Дуги-шкалы вокруг планеты: население и рост
         private const float PopArc = 0.30f, GrowArc = 0.20f;
 
         // Шапка
@@ -49,39 +46,34 @@ namespace StellarisClone.Rendering
         private LeaderThumb _govFace;
         private Image _govIcon;
         private Text _govText;
-        private GameObject _switcher;
-        private Text _switchText;
 
-        // Население (поверх планеты)
-        private Text _popBig, _popCaption, _growthText;
-
-        // Досье
-        private Seg[] _dossier;            // пригодность, размер, титан, гелий-3
-        private Text _climate, _stationText;
-
-        // Плитки производства
-        private Tile[] _tiles;             // титан, гелий-3, сплавы, наука, занятость
+        // Строка показателей
+        private StatCell[] _stats;
         private Text _bankruptText;
 
-        // Районы
-        private Text _districtHeader, _queueHint;
-        private RectTransform _districtSlots;
-        private readonly List<DistrictCard> _cards = new List<DistrictCard>();
-        private GameObject _colonyControls;
-        private Image[] _focusBg;
+        // Приоритет и автостройка
+        private Text _focusText, _autoText;
         private Image _autoBg, _autoIcon;
-        private Text _autoText;
+        private GameObject _focusList, _priorityRow;
+        private Image[] _focusOptBg;
 
-        // Очередь и проекты
-        private QueueRow[] _queueRows;
-        private GameObject _queueEmptyGo;
-        private Text _queueEmpty;
-        private Button _suggestBtn;
-        private Text _suggestText;
-        private DistrictType? _suggest;
-        private ActionButton _mine, _colony, _terra, _robots, _gene;
-        private Button _buildMenuBtn;
-        private const int ProjectCount = 5;
+        // Ряды работ
+        private JobRow[] _jobs;
+        private Text _idleText, _noColonyText;
+
+        // Производство
+        private GameObject _prodRoot;
+        private Image _curIcon, _curTileBg;
+        private Text _curDays, _curName, _curSub, _buyText;
+        private RectTransform _curBar, _queueTiles;
+        private Button _buyBtn, _addBtn;
+        private Image _buyBg;
+        private TooltipTrigger _buyTip, _curTip;
+        private string _queueKey = "";
+
+        // Информация о планете
+        private Seg[] _dossier;            // пригодность, размер, титан, гелий-3
+        private Text _climate, _stationText;
 
         // Общество: стабильность и виды
         private GameObject _society;
@@ -92,6 +84,14 @@ namespace StellarisClone.Rendering
         private TooltipTrigger _stabTip, _compTip, _propTip;
         private Button _propBtn;
         private Image _propBg;
+
+        // Проекты
+        private ActionButton _mine, _colony, _terra, _robots, _gene;
+        private const int ProjectCount = 5;
+
+        // Навигация по колониям
+        private Text _navText;
+        private Button _prevBtn, _nextBtn;
 
         private PlanetData _planet;
         private StarSystem _system;
@@ -109,64 +109,45 @@ namespace StellarisClone.Rendering
         private static readonly Color CScience = new Color(0.50f, 0.92f, 0.62f);
         private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.88f);
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.09f);
+        private static readonly Color CRedAccent = new Color(0.95f, 0.36f, 0.36f);
 
         // Раскладка (в единицах канваса 1920×1080)
-        private const float Pad = 40f, Gap = 14f, HeaderH = 104f, RightX = 0.52f;
-        private const float TilesTop = 116f, TilesH = 92f, DistrictsTop = TilesTop + TilesH + Gap;
-        private const float LowerShare = 0.36f;   // доля высоты под очередь и проекты
+        private const float Pad = 40f, Gap = 14f, HeaderH = 104f;
+        private const float LeftW = 800f;                       // левая колонна: показатели, ряды работ, производство
+        private const float StatsTop = HeaderH + 14f, StatsH = 74f;
+        private const float PriorityTop = StatsTop + StatsH + 18f;
+        private const float JobsTop = PriorityTop + 58f, JobRowH = 84f;
+        private const float ProdTop = JobsTop + 4 * JobRowH + 34f, ProdTileS = 92f;
+        private const float InfoW = 470f, InfoH = 300f;
+        private const int MaxSlots = 7;
 
         // ================================================================ Типы
 
-        private class DistrictCard
+        private class StatCell
         {
-            public DistrictType Type;
-            public Text Count, Status, Reason;
-            public ResLine MinCost, AlloyCost;
-            public Button Build, Cancel;
-            public Image BuildBg;
-            public Color BuildTint;
-            public RectTransform Progress, Workers;
-            public int WorkerKey = -1;
+            public Text Caption, Value;
+            public Image Icon;
             public TooltipTrigger Tip;
         }
 
-        /// <summary>Строка «иконка ресурса + текст» (обычный Text не умеет картинки внутри строки).</summary>
-        private class ResLine
+        /// <summary>Ряд работ: район одного вида, его рабочие места и жители на них.</summary>
+        private class JobRow
         {
-            public GameObject Go;
-            public Image Icon;
-            public Text Text;
-
-            public void Set(string text, Color? textColor = null)
-            {
-                Go.SetActive(true);
-                Text.text = text;
-                Text.color = textColor ?? UIManager.DS.TextPrimary;
-            }
-        }
-
-        private class Tile
-        {
-            public Text Value, Caption;
+            public DistrictType Type;
+            public ColonyFocus Focus;
+            public Image Bg, Rim, IconBg;
+            public Text Value, Sub;
+            public RectTransform Bar, Slots;
+            public Button Add;
+            public Image AddBg;
+            public TooltipTrigger AddTip, InfoTip;
+            public string SlotKey = "";
         }
 
         private class Seg
         {
             public Text Value;
             public Image[] Cells;
-        }
-
-        private class QueueRow
-        {
-            public GameObject Go;
-            public Image Icon;
-            public Text Name, Days;
-            public RectTransform Progress;
-            public Button Cancel, Buy;
-            public Image BuyBg;
-            public Text BuyText;
-            public TooltipTrigger BuyTip;
-            public ConstructionJob Job;
         }
 
         private class ActionButton
@@ -179,6 +160,8 @@ namespace StellarisClone.Rendering
         }
 
         // ================================================================ Жизненный цикл
+
+
 
         private void Awake()
         {
@@ -271,14 +254,12 @@ namespace StellarisClone.Rendering
             if (_planetImage != null) _planetImage.texture = studio.Target;
         }
 
-        // ================================================================ Сцена планеты
-
         /// <summary>Сцена планеты — квадрат: 62% высоты экрана, но не шире 40% ширины.</summary>
         private void LayoutStage()
         {
             if (_stage == null || _rootRt == null) return;
             var r = _rootRt.rect;
-            float s = Mathf.Min(r.height * 0.62f, r.width * 0.40f);
+            float s = Mathf.Min(r.height * 0.86f, r.width * 0.50f);
             if (Mathf.Abs(_stage.sizeDelta.x - s) > 0.5f) _stage.sizeDelta = new Vector2(s, s);
         }
 
@@ -304,24 +285,884 @@ namespace StellarisClone.Rendering
             _ => new Color(0.70f, 0.76f, 0.84f)
         };
 
-        // ================================================================ Обновление
+        // ================================================================ Обновление (экран колонии)
 
         private bool Surveyed => _system != null && _system.IsSurveyed;
         private bool Owned => _planet != null && _planet.IsPlayerOwned;
+        private bool IsColony => Surveyed && _planet != null && _planet.Population > 0;
 
         private void Refresh()
         {
             if (_planet == null || _root == null) return;
             RefreshHeader();
-            RefreshPopulation();
+            RefreshStats();
+            RefreshPriority();
+            RefreshJobs();
+            RefreshProduction();
+            RefreshInfo();
             RefreshSociety();
-            RefreshDossier();
-            RefreshTiles();
-            RefreshDistricts();
-            RefreshQueue();
             RefreshActions();
-            RefreshColonyControls();
+            RefreshNav();
         }
+
+        /// <summary>Производство района одного вида на одного работника за месяц (с фракцией, технологиями, губернатором, видами и стабильностью).</summary>
+        private float PerWorker(DistrictType t)
+        {
+            if (t == DistrictType.Urban) return 0f;
+            var b = Bonuses();
+            string res = t == DistrictType.Mining ? "minerals" : t == DistrictType.Generator ? "energy" : "alloys";
+            float baseOut = t == DistrictType.Industrial ? 3f : 4f;
+            float tech = t == DistrictType.Mining ? b.MineralsMult : t == DistrictType.Generator ? b.EnergyMult : b.AlloysMult;
+            return baseOut * FactionMult(t) * tech * LeaderManager.PlanetOutputMult(_planet, res) * _planet.OutputMult(res);
+        }
+
+        private float Produced(DistrictType t)
+        {
+            if (!IsColony) return 0f;
+            return PerWorker(t) * _planet.WorkedCount(t);
+        }
+
+        private float StationOutput(DistrictType t)
+        {
+            if (!Surveyed || !_planet.HasMiningStation) return 0f;
+            var b = Bonuses();
+            return t == DistrictType.Mining ? _planet.MineralDeposit * FactionMult(t) * b.MineralsMult
+                 : t == DistrictType.Generator ? _planet.EnergyDeposit * FactionMult(t) * b.EnergyMult : 0f;
+        }
+
+        private float ScienceOut()
+        {
+            if (!IsColony) return 0f;
+            var tm = TechnologyManager.Instance;
+            return _planet.ResearchPops * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
+        }
+
+        private static string Plus(float v) => v > 0.05f ? $"+{v:0.#}" : "0";
+
+        // ---------------- Строка показателей ----------------
+
+        private void RefreshStats()
+        {
+            string m = LGBuild.Hex(CMuted);
+            bool colony = IsColony;
+            int pop = _planet.Population, housing = _planet.HousingCapacity;
+
+            // Жители
+            var s0 = _stats[0];
+            if (colony)
+            {
+                s0.Value.text = $"{pop}<size=14><color={m}> / {housing}</color></size>";
+                int months = _planet.MonthsToNextPop;
+                s0.Tip.SetText(Loc.F("<b>Жители: {0} из {1}</b>\n", pop, housing) +
+                    (pop >= housing ? Loc.T("<color=#F2C46B>Рост остановлен — нет жилья. Постройте городской район.</color>")
+                     : months < 0 ? Loc.T("Рост остановлен.")
+                     : Loc.F("Рост +{0:0.#}% в месяц · новый житель через ~{1} мес.", _planet.PopGrowthBaseSpeedPctPerMonth, months)));
+            }
+            else
+            {
+                s0.Value.text = "—";
+                s0.Tip.SetText(!Surveyed ? Loc.T("Нет данных — нужна разведка") : _planet.IsColonizing ? Loc.T("Колонисты в пути")
+                    : _planet.CanColonize ? Loc.T("Планета пригодна для колонии") : Loc.T("Непригодна для жизни — только добыча"));
+            }
+
+            float mi = Produced(DistrictType.Mining) + StationOutput(DistrictType.Mining);
+            float en = Produced(DistrictType.Generator) + StationOutput(DistrictType.Generator);
+            float al = Produced(DistrictType.Industrial);
+            float sci = ScienceOut();
+            SetStat(_stats[1], mi, Loc.T("<b>Титан</b> в месяц: районы и добывающий комплекс"));
+            SetStat(_stats[2], en, Loc.T("<b>Гелий-3</b> в месяц: энергорайоны и добывающий комплекс"));
+            SetStat(_stats[3], al, Loc.T("<b>Сплавы</b> в месяц: промышленные районы"));
+            SetStat(_stats[4], sci, Loc.T("<b>Наука</b> в месяц от жителей (умные виды дают больше, роботы — ничего)"));
+
+            // Стабильность
+            var s5 = _stats[5];
+            if (colony)
+            {
+                var tier = _planet.Tier;
+                s5.Value.text = $"<color=#{PlanetStability.Hex(PlanetStability.TierColor(tier))}>{_planet.Stability:0}</color><size=12><color={m}> {PlanetStability.TierName(tier).ToLower()}</color></size>";
+                s5.Tip.SetText(PlanetStability.Tooltip(_planet));
+            }
+            else { s5.Value.text = "—"; s5.Tip.SetText(Loc.T("Стабильность появится с колонией")); }
+
+            // Занятость
+            var s6 = _stats[6];
+            if (colony)
+            {
+                int idle = _planet.IdlePops;
+                s6.Value.text = idle > 0
+                    ? $"{_planet.EmployedPops}<size=14><color={m}> / {_planet.WorkerSlots}</color></size> <size=12><color={LGBuild.Hex(CGold)}>+{idle}</color></size>"
+                    : $"{_planet.EmployedPops}<size=14><color={m}> / {_planet.WorkerSlots}</color></size>";
+                s6.Tip.SetText(Loc.F("<b>Работают {0} из {1} мест</b>\n", _planet.EmployedPops, _planet.WorkerSlots) +
+                    (idle > 0 ? Loc.F("<color=#F2C46B>Безработных {0}: постройте районы — они сразу выйдут на смену.</color>", idle) : Loc.T("Безработных нет.")));
+            }
+            else { s6.Value.text = "—"; s6.Tip.SetText(Loc.T("Занятость")); }
+
+            // Дуги у планеты: население и рост
+            _popFill.fillAmount = colony ? PopArc * Mathf.Clamp01(pop / (float)Mathf.Max(1, housing)) : 0f;
+            _popFill.color = colony && pop >= housing ? CGold : CCyan;
+            _growFill.fillAmount = colony && pop < housing ? GrowArc * Mathf.Clamp01(_planet.PopGrowthProgress / 100f) : 0f;
+
+            bool bankrupt = EconomyManager.Instance != null && EconomyManager.Instance.IsBankrupt && Owned;
+            _bankruptText.gameObject.SetActive(bankrupt);
+        }
+
+        private void SetStat(StatCell c, float v, string tip)
+        {
+            bool any = v > 0.05f;
+            c.Value.text = Plus(v);
+            c.Value.color = any ? Color.white : CMuted;
+            c.Tip.SetText(tip + "\n" + (any ? Loc.F("Сейчас: <b>+{0:0.#}</b>", v) : Loc.T("Сейчас ничего не производится")));
+        }
+
+        // ---------------- Приоритет и автостройка ----------------
+
+        private void RefreshPriority()
+        {
+            bool show = Owned && _planet.Population > 0;
+            _priorityRow.SetActive(show);
+            if (!show) { _focusList.SetActive(false); return; }
+            _focusText.text = ColonyFocusInfo.Name(_planet.Focus).ToUpper();
+            for (int i = 0; i < _focusOptBg.Length; i++)
+                _focusOptBg[i].color = ColonyFocusInfo.All[i] == _planet.Focus ? new Color(0.16f, 0.52f, 0.56f) : new Color(0.03f, 0.07f, 0.09f, 0.98f);
+            bool auto = _planet.AutoBuild;
+            _autoBg.color = auto ? new Color(0.14f, 0.46f, 0.30f) : new Color(0.07f, 0.13f, 0.17f);
+            _autoIcon.sprite = LGIcons.Get(auto ? LGIcon.Check : LGIcon.Construction);
+            _autoIcon.color = auto ? UIManager.DS.Green : CMuted;
+            _autoText.text = auto ? Loc.T("АВТОСТРОЙКА ВКЛ.") : Loc.T("АВТОСТРОЙКА ВЫКЛ.");
+            _autoText.color = auto ? Color.white : CMuted;
+        }
+
+        private void ToggleFocusList()
+        {
+            if (!Owned) return;
+            _focusList.SetActive(!_focusList.activeSelf);
+            _focusList.transform.SetAsLastSibling();
+            SFXManager.Play(Sfx.UiClick, 0.5f);
+        }
+
+        private void PickFocus(ColonyFocus f)
+        {
+            _focusList.SetActive(false);
+            SetFocus(f);
+        }
+
+        // ---------------- Ряды работ ----------------
+
+        private static ColonyFocus FocusOf(DistrictType t) => t switch
+        {
+            DistrictType.Mining => ColonyFocus.Minerals,
+            DistrictType.Generator => ColonyFocus.Energy,
+            DistrictType.Industrial => ColonyFocus.Industry,
+            _ => ColonyFocus.Balanced
+        };
+
+        private static string ResName(DistrictType t) => t switch
+        {
+            DistrictType.Mining => Loc.T("ТИТАН"),
+            DistrictType.Generator => Loc.T("ГЕЛИЙ-3"),
+            DistrictType.Industrial => Loc.T("СПЛАВЫ"),
+            _ => Loc.T("ЖИЛЬЁ")
+        };
+
+        /// <summary>Цвета жителей по порядку работы: так же, как их распределяет колония (сначала район приоритета).</summary>
+        private Dictionary<DistrictType, List<Color>> WorkerColors()
+        {
+            var colors = new List<Color>();
+            foreach (var g in _planet.Pops)
+            {
+                var sp = SpeciesRegistry.Get(g.Species);
+                for (int i = 0; i < g.Count; i++) colors.Add(sp != null ? sp.Color : CCyan);
+            }
+            var order = new List<DistrictType>();
+            var first = ColonyFocusInfo.District(_planet.Focus);
+            if (first.HasValue) order.Add(first.Value);
+            foreach (var t in new[] { DistrictType.Generator, DistrictType.Mining, DistrictType.Industrial, DistrictType.Urban })
+                if (!order.Contains(t)) order.Add(t);
+            var result = new Dictionary<DistrictType, List<Color>>();
+            int k = 0;
+            foreach (var t in order)
+            {
+                var list = new List<Color>();
+                int worked = _planet.WorkedCount(t);
+                for (int i = 0; i < worked && k < colors.Count; i++) list.Add(colors[k++]);
+                result[t] = list;
+            }
+            return result;
+        }
+
+        private void RefreshJobs()
+        {
+            bool colony = IsColony;
+            _noColonyText.gameObject.SetActive(!colony);
+            _noColonyText.text = !Surveyed ? Loc.T("Нет данных о планете — отправьте научный корабль.")
+                               : _planet.IsColonizing ? Loc.T("Колонисты в пути. Когда колония будет основана, здесь появятся рабочие места.")
+                               : _planet.CanColonize ? Loc.T("Колонии нет. Основайте её проектом «Колония» внизу.")
+                               : Loc.T("Планета непригодна для жизни. Доход даст только добывающий комплекс.");
+            foreach (var r in _jobs) r.Bg.gameObject.SetActive(colony);
+            if (!colony) { _idleText.text = ""; return; }
+
+            var colors = WorkerColors();
+            var queue = Builds != null ? Builds.QueueFor(_planet) : new List<ConstructionJob>();
+            int pendingAll = _planet.PendingDistricts;
+            var eco = EconomyManager.Instance;
+            foreach (var r in _jobs)
+            {
+                var t = r.Type;
+                int count = _planet.GetDistrictCount(t);
+                int worked = _planet.WorkedCount(t);
+                int pending = Builds != null ? Builds.PendingDistricts(_planet, t) : 0;
+                bool focused = Owned && _planet.Focus == r.Focus && t != DistrictType.Urban;
+                Color dc = DistrictInfo.Color(t);
+
+                // Значение и подпись
+                if (t == DistrictType.Urban)
+                {
+                    r.Value.text = Loc.F("{0} <size=14>{1}</size>", _planet.HousingCapacity, ResName(t));
+                    r.Sub.text = Loc.F("Городских районов {0} · жителей {1} из {2}", count, _planet.Population, _planet.HousingCapacity);
+                }
+                else
+                {
+                    r.Value.text = $"{Plus(Produced(t))} <size=14>{ResName(t)}</size>";
+                    r.Sub.text = Loc.F("{0} · работают {1} из {2}", DistrictName(t), worked, count) + (focused ? Loc.T("  · приоритет") : "");
+                }
+                r.Value.color = Color.Lerp(dc, Color.white, 0.25f);
+
+                // Полоса: стройка района этого вида, а у города — рост населения
+                var job = FirstJob(JobKind.District, t);
+                if (job != null)
+                {
+                    bool active = queue.Count > 0 && queue[0] == job;
+                    LGBuild.SetBar(r.Bar, active ? job.Progress : 0f, CGold);
+                    r.Sub.text += active ? Loc.F("  ·  <color=#F2C46B>строится, {0} дн.</color>", Mathf.CeilToInt(job.DaysLeft))
+                                         : Loc.F("  ·  <color=#F2C46B>в очереди +{0}</color>", pending);
+                }
+                else if (t == DistrictType.Urban)
+                {
+                    bool full = _planet.Population >= _planet.HousingCapacity;
+                    LGBuild.SetBar(r.Bar, full ? 1f : _planet.PopGrowthProgress / 100f, full ? CGold : UIManager.DS.Green);
+                    int months = _planet.MonthsToNextPop;
+                    r.Sub.text += full ? Loc.T("  ·  <color=#F2C46B>нет жилья — рост стоит</color>")
+                                : months > 0 ? Loc.F("  ·  рост: +1 через {0} мес.", months) : "";
+                }
+                else LGBuild.SetBar(r.Bar, 0f);
+
+                r.Rim.color = focused ? new Color(dc.r, dc.g, dc.b, 0.9f) : new Color(dc.r, dc.g, dc.b, 0.25f);
+                r.Bg.color = focused ? new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.92f) : new Color(0.02f, 0.045f, 0.065f, 0.82f);
+                r.InfoTip.SetText(t == DistrictType.Urban
+                    ? Loc.T("<b>Город</b>\nЖильё для жителей и по рабочему месту в каждом районе. Нажмите, чтобы работа распределялась равномерно.")
+                    : Loc.F("<b>{0}</b>\n{1}\nКаждое занятое место даёт ≈ {2:0.#} в месяц.\n", DistrictName(t), DistrictEffect(t), PerWorker(t)) +
+                      (focused ? Loc.T("<color=#9EF0C8>Это приоритет колонии: жители идут сюда первыми.</color>")
+                               : Loc.T("Нажмите, чтобы сделать этот ресурс приоритетом: жители пойдут сюда первыми.")));
+
+                RebuildSlots(r, count, worked, pending, colors.TryGetValue(t, out var cl) ? cl : new List<Color>());
+
+                // «+»: ещё один район этого вида
+                float mc = DistrictInfo.MineralsCost(t), ac = DistrictInfo.AlloysCost(t);
+                string why = !Owned ? Loc.T("Система не ваша: сначала постройте здесь форпост.")
+                           : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? Loc.F("Все {0} мест под районы заняты (с учётом очереди).", _planet.MaxDistricts)
+                           : queue.Count >= ConstructionManager.MaxPlanetQueue ? Loc.F("Очередь планеты заполнена: не больше {0} заказов.", ConstructionManager.MaxPlanetQueue)
+                           : eco == null || eco.Minerals < mc || eco.Alloys < ac ? CostCheck.Full(0f, mc, ac, 0f) + "."
+                           : null;
+                r.Add.gameObject.SetActive(Owned);
+                r.Add.interactable = why == null;
+                r.AddBg.color = why == null ? new Color(dc.r * 0.35f, dc.g * 0.35f, dc.b * 0.35f, 1f) : new Color(0.06f, 0.09f, 0.12f);
+                r.AddTip.SetText(DistrictTip(t, why));
+            }
+
+            int idle = _planet.IdlePops;
+            _idleText.text = idle > 0
+                ? Loc.F("<color=#F2C46B>Безработных {0}</color> — нажмите «+» в ряду, чтобы дать им работу.", idle)
+                : _planet.BuiltDistricts >= _planet.MaxDistricts ? Loc.F("<color=#8AA2A8>Все {0} мест под районы застроены.</color>", _planet.MaxDistricts)
+                : Loc.F("<color=#8AA2A8>Свободных мест под районы: {0} из {1}.</color>", _planet.MaxDistricts - _planet.BuiltDistricts - pendingAll, _planet.MaxDistricts);
+        }
+
+        /// <summary>
+        /// Рабочие места ряда: подставка, фигурка жителя цвета его вида (тусклая — место свободно,
+        /// золотая подставка — район строится, клик по ней — отменить), над местом — его выработка.
+        /// </summary>
+        private void RebuildSlots(JobRow r, int count, int worked, int pending, List<Color> colors)
+        {
+            var key = new System.Text.StringBuilder();
+            key.Append(count).Append('|').Append(worked).Append('|').Append(pending).Append('|').Append(PerWorker(r.Type).ToString("0.0"));
+            foreach (var c in colors) key.Append(ColorUtility.ToHtmlStringRGB(c));
+            string k = key.ToString();
+            if (k == r.SlotKey) return;
+            r.SlotKey = k;
+            LGBuild.Clear(r.Slots);
+
+            Color dc = DistrictInfo.Color(r.Type);
+            const float W = 44f, G = 6f;
+            int total = count + pending;
+            int shown = Mathf.Min(MaxSlots, total);
+            float per = PerWorker(r.Type);
+            for (int i = 0; i < shown; i++)
+            {
+                bool building = i >= count;
+                bool busy = !building && i < worked;
+                float x = i * (W + G);
+
+                // Подставка-параллелограмм
+                var ped = LGBuild.Panel(r.Slots, "Pedestal", building ? new Color(CGold.r, CGold.g, CGold.b, 0.55f)
+                                                              : busy ? new Color(dc.r, dc.g, dc.b, 0.55f) : new Color(dc.r, dc.g, dc.b, 0.16f), raycast: building);
+                ped.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(x, 2), new Vector2(W, 9));
+                ped.rectTransform.localRotation = Quaternion.Euler(0, 0, 0);
+                LG.Chip(ped.gameObject, new Color(dc.r, dc.g, dc.b, busy ? 0.7f : 0.25f), 3f);
+
+                if (building)
+                {
+                    var clock = LGIcons.Create(r.Slots, LGIcon.Clock, 18, CGold);
+                    clock.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(x + W * 0.5f, 16), new Vector2(18, 18));
+                    var b = ped.gameObject.AddComponent<Button>();
+                    b.transition = Selectable.Transition.None;
+                    var t = r.Type;
+                    b.onClick.AddListener(() => OnCancelDistrict(t));
+                    TooltipHelper.Attach(ped.gameObject, Loc.T("<b>Район строится</b>\nНажмите, чтобы отменить (ресурсы вернутся)."));
+                    continue;
+                }
+
+                Color figure = busy && i < colors.Count ? colors[i] : busy ? dc : new Color(1f, 1f, 1f, 0.13f);
+                var ic = LGIcons.Create(r.Slots, r.Type == DistrictType.Urban && !busy ? LGIcon.Housing : LGIcon.Population, 30, figure);
+                ic.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(x + W * 0.5f, 10), new Vector2(30, 30));
+                ic.raycastTarget = false;
+                LG.Ignore(ic.gameObject);
+
+                // Выработка места — над ним
+                if (per > 0.05f)
+                {
+                    var num = LGBuild.Label(r.Slots, per.ToString("0.#"), 11, busy ? Color.Lerp(dc, Color.white, 0.4f) : new Color(1f, 1f, 1f, 0.25f), TextAnchor.LowerCenter, bold: true);
+                    num.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(x + W * 0.5f, 42), new Vector2(W, 16));
+                    LG.Ignore(num.gameObject);
+                }
+            }
+            if (total > shown)
+            {
+                var more = LGBuild.Label(r.Slots, $"+{total - shown}", 13, CMuted, TextAnchor.MiddleLeft, bold: true);
+                more.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(shown * (W + G), 12), new Vector2(40, 24));
+            }
+            if (total == 0)
+            {
+                var none = LGBuild.Label(r.Slots, Loc.T("районов нет — «+», чтобы построить"), 11, CMuted, TextAnchor.MiddleLeft);
+                none.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 12), new Vector2(300, 24));
+            }
+            LG.Skin(r.Slots);
+        }
+
+        // ---------------- Производство ----------------
+
+        private void RefreshProduction()
+        {
+            var queue = Builds != null ? Builds.QueueFor(_planet) : new List<ConstructionJob>();
+            bool owned = Owned;
+            _prodRoot.SetActive(owned && Surveyed);
+            if (!owned || !Surveyed) return;
+
+            var job = queue.Count > 0 ? queue[0] : null;
+            if (job != null)
+            {
+                Color jc = JobColor(job);
+                _curIcon.sprite = LGIcons.Get(BuildMenuModal.JobIcon(job));
+                _curIcon.color = jc;
+                _curTileBg.color = new Color(jc.r * 0.16f, jc.g * 0.16f, jc.b * 0.16f, 0.95f);
+                _curDays.text = Loc.F("{0} дн.", Mathf.CeilToInt(job.DaysLeft));
+                _curName.text = BuildMenuModal.JobTitle(job);
+                _curSub.text = Loc.F("готово через {0} дн. · {1:0}%", Mathf.CeilToInt(job.DaysLeft), job.Progress * 100f);
+                LGBuild.SetBar(_curBar, job.Progress, jc);
+                _curTip.SetText(Loc.F("<b>{0}</b>\nОсталось {1} дн. Нажмите, чтобы открыть меню строительства.", BuildMenuModal.JobTitle(job), Mathf.CeilToInt(job.DaysLeft)));
+
+                string block = Builds.BuyBlocker(job);
+                _buyBtn.gameObject.SetActive(true);
+                _buyBtn.interactable = block == null;
+                _buyBg.color = block == null ? new Color(0.36f, 0.28f, 0.06f) : new Color(0.08f, 0.10f, 0.12f);
+                _buyText.text = Loc.F("КУПИТЬ  {0}", ConstructionManager.BuyCost(job));
+                _buyText.color = block == null ? Color.white : CMuted;
+                _buyTip.SetText(BuildMenuModal.BuyTip(job, block));
+            }
+            else
+            {
+                _curIcon.sprite = LGIcons.Get(LGIcon.Construction);
+                _curIcon.color = new Color(CGold.r, CGold.g, CGold.b, 0.35f);
+                _curTileBg.color = new Color(0.03f, 0.06f, 0.08f, 0.95f);
+                _curDays.text = "";
+                _curName.text = _planet.Population > 0 && _planet.AutoBuild ? Loc.T("Автостройка выберет сама") : Loc.T("Выберите производство");
+                _curSub.text = _planet.Population > 0 && _planet.AutoBuild ? Loc.T("закажет нужный район в начале месяца")
+                             : Loc.T("планета простаивает — нажмите «+»");
+                LGBuild.SetBar(_curBar, 0f);
+                _curTip.SetText(Loc.T("Очередь пуста. Нажмите, чтобы открыть меню строительства  (B)"));
+                _buyBtn.gameObject.SetActive(false);
+            }
+
+            // Очередь: следующие заказы плитками (клик — отменить)
+            var key = new System.Text.StringBuilder();
+            for (int i = 1; i < queue.Count; i++) key.Append(queue[i].Id).Append(':').Append(Mathf.CeilToInt(Builds.DaysUntilDone(queue[i]))).Append(';');
+            string k = key.ToString();
+            if (k == _queueKey && (_queueTiles.childCount > 0 || queue.Count <= 1)) return;
+            _queueKey = k;
+            LGBuild.Clear(_queueTiles);
+            const float S = 58f;
+            for (int i = 1; i < queue.Count && i <= 4; i++)
+            {
+                var j = queue[i];
+                Color jc = JobColor(j);
+                var tile = LGBuild.Panel(_queueTiles, "Queued", new Color(jc.r * 0.12f, jc.g * 0.12f, jc.b * 0.12f, 0.95f), raycast: true);
+                tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2((i - 1) * (S + 8f), 0), new Vector2(S, S));
+                LG.Platter(tile.gameObject, 10f).SetRim(new Color(jc.r, jc.g, jc.b, 0.35f));
+                var ic = LGIcons.Create(tile.transform, BuildMenuModal.JobIcon(j), 22, jc);
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(22, 22));
+                var d = LGBuild.Label(tile.transform, Loc.F("{0} дн.", Mathf.CeilToInt(Builds.DaysUntilDone(j))), 9, CMuted, TextAnchor.LowerCenter, bold: true);
+                d.rectTransform.Stretch(0, 4, 0, 0);
+                var b = tile.gameObject.AddComponent<Button>();
+                b.transition = Selectable.Transition.None;
+                var captured = j;
+                b.onClick.AddListener(() => { if (Builds != null) { Builds.Cancel(captured); Refresh(); } });
+                TooltipHelper.Attach(tile.gameObject, Loc.F("<b>{0}</b>\nВ очереди · готов через ~{1} дн.\n<color=#8AA2A8>Нажмите, чтобы отменить (ресурсы вернутся)</color>",
+                    BuildMenuModal.JobTitle(j), Mathf.CeilToInt(Builds.DaysUntilDone(j))));
+            }
+            if (queue.Count > 5)
+            {
+                var more = LGBuild.Label(_queueTiles, $"+{queue.Count - 5}", 13, CMuted, TextAnchor.MiddleLeft, bold: true);
+                more.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4 * (S + 8f), 0), new Vector2(40, 24));
+            }
+            LG.Skin(_queueTiles);
+        }
+
+        private static Color JobColor(ConstructionJob j) => j.Kind == JobKind.District ? DistrictInfo.Color(j.District) : CGold;
+
+        private void OnBuyCurrent()
+        {
+            if (_planet == null || Builds == null) return;
+            var q = Builds.QueueFor(_planet);
+            if (q.Count > 0 && Builds.TryBuy(q[0]))
+            {
+                SFXManager.Play(Sfx.UiConfirm);
+                EconomyManager.Instance?.RecalculateAll();
+                Refresh();
+            }
+        }
+
+        private void OpenBuildMenu()
+        {
+            if (_planet != null && Owned) BuildMenuModal.Open(_planet);
+        }
+
+        // ---------------- Информация о планете ----------------
+
+        private void RefreshInfo()
+        {
+            string m = LGBuild.Hex(CMuted);
+            if (!Surveyed)
+            {
+                foreach (var s in _dossier) SetSeg(s, 0, "?", CMuted);
+                _climate.text = Loc.F("<color={0}>Данные засекречены.\nОтправьте научный корабль.</color>", m);
+                _stationText.text = "";
+                return;
+            }
+
+            int hab = _planet.HabitabilityPercent;
+            Color hc = hab >= 70 ? UIManager.DS.Green : hab >= 40 ? CGold : UIManager.DS.Red;
+            SetSeg(_dossier[0], hab <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(hab / 20f), 1, 5), $"{hab}%", hc);
+            int size = _planet.MaxDistricts;
+            int sizeSeg = size <= 5 ? 1 : size <= 6 ? 2 : size <= 7 ? 3 : size <= 9 ? 4 : 5;
+            SetSeg(_dossier[1], sizeSeg, $"{_planet.BuiltDistricts} / {size}", CCyan);
+            int mi = _planet.MineralDeposit, en = _planet.EnergyDeposit;
+            SetSeg(_dossier[2], mi <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(mi * 5f / 7f), 1, 5), mi > 0 ? mi.ToString() : Loc.T("нет"), CMinerals);
+            SetSeg(_dossier[3], Mathf.Clamp(en, 0, 5), en > 0 ? en.ToString() : Loc.T("нет"), CEnergy);
+
+            // Климат — детерминированно по имени планеты
+            var rng = new System.Random(_planet.Name.GetHashCode());
+            float gravity = 0.6f + (float)rng.NextDouble() * 0.9f;
+            string atmo = gravity < 0.85f ? Loc.T("разрежённая") : gravity > 1.25f ? Loc.T("плотная") : Loc.T("стандартная");
+            int temperature = -40 + rng.Next(0, 90);
+            int tilt = rng.Next(0, 45);
+            _climate.text =
+                Loc.F("<color={0}>Класс</color>   {1}\n", m, _planet.ClassDisplayName) +
+                Loc.F("<color={0}>Гравитация</color>   {1:0.00} g\n", m, gravity) +
+                Loc.F("<color={0}>Атмосфера</color>   {1}\n", m, atmo) +
+                Loc.F("<color={0}>Температура</color>   {1:+#;-#;0} °C\n", m, temperature) +
+                Loc.F("<color={0}>Наклон оси</color>   {1}°\n", m, tilt) +
+                Loc.F("<color={0}>Орбита</color>   {1:0.0} а.е.", m, _planet.OrbitRadius);
+
+            float st = StationOutput(DistrictType.Mining) + StationOutput(DistrictType.Generator);
+            var b = Bonuses();
+            float potential = _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult
+                            + _planet.EnergyDeposit * FactionMult(DistrictType.Generator) * b.EnergyMult;
+            string station = _planet.HasMiningStation ? Loc.F("<color={0}>Добывающий комплекс: +{1:0.#} в месяц</color>", LGBuild.Hex(UIManager.DS.Green), st)
+                           : _planet.StationUnderConstruction ? Loc.F("<color={0}>Добывающий комплекс строится</color>", LGBuild.Hex(CGold))
+                           : potential > 0f ? Loc.F("<color={0}>Комплекс дал бы +{1:0.#} в месяц</color>", m, potential)
+                           : Loc.F("<color={0}>Промышленных залежей нет</color>", m);
+            string starbase = _system != null && _system.HasStarbase && _system.OwnerId >= 0
+                ? Loc.F("\n<color={0}>Звёздная база охраняет систему</color>", m) : "";
+            _stationText.text = station + starbase;
+        }
+
+        private static void SetSeg(Seg s, int lit, string value, Color c)
+        {
+            s.Value.text = value;
+            s.Value.color = lit > 0 ? Color.Lerp(c, Color.white, 0.35f) : CMuted;
+            for (int i = 0; i < s.Cells.Length; i++) s.Cells[i].color = i < lit ? c : CSegOff;
+        }
+
+        // ---------------- Навигация ----------------
+
+        private void RefreshNav()
+        {
+            CollectColonies();
+            int idx = _colonies.IndexOf(_planet);
+            bool many = _colonies.Count > 1 || (_colonies.Count == 1 && idx < 0);
+            _prevBtn.interactable = many;
+            _nextBtn.interactable = many;
+            _navText.text = idx >= 0 ? Loc.F("КОЛОНИЯ  {0} / {1}", idx + 1, _colonies.Count) : Loc.F("КОЛОНИЙ  {0}", _colonies.Count);
+        }
+
+        // ================================================================ Построение (экран колонии)
+
+        private void Build()
+        {
+            _rootRt = LGBuild.Rect(_host.transform, "PlanetFocusOverlay");
+            _rootRt.Stretch();
+            _root = _rootRt.gameObject;
+            _root.AddComponent<CanvasGroup>();
+            var bg = _root.AddComponent<Image>();
+            bg.color = new Color(0.004f, 0.012f, 0.020f, 1f);
+            bg.raycastTarget = true;
+            LG.Scrim(_root).FillMultiplier = 2.2f;
+            var motion = LG.Motion(_root, LGAppear.Kind.Fade);
+            motion.inDuration = 0.4f;
+            motion.outDuration = 0.25f;
+
+            BuildBackdrop(_rootRt);
+            BuildStage(_rootRt);
+            BuildHeader(_rootRt);
+            BuildStats(_rootRt);
+            BuildJobs(_rootRt);
+            BuildProduction(_rootRt);
+            BuildProjects(_rootRt);
+            BuildInfo(_rootRt);
+            BuildSociety(_rootRt);
+            BuildNav(_rootRt);
+            BuildPriority(_rootRt);   // последним — выпадающий список поверх рядов
+
+            LG.Skin(_root.transform);
+            _root.SetActive(false);
+        }
+
+        /// <summary>Строка показателей колонии под названием (как шапка колонии в Master of Orion).</summary>
+        private void BuildStats(RectTransform rt)
+        {
+            var strip = LGBuild.Panel(rt, "Stats", CPanel);
+            strip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -StatsTop), new Vector2(LeftW, StatsH));
+            LG.Glass(strip.gameObject, 14f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.28f));
+            LG.Motion(strip.gameObject, LGAppear.Kind.SlideDown).distance = 20f;
+
+            (LGIcon icon, Color col, string cap)[] defs =
+            {
+                (LGIcon.Population, UIManager.DS.Green, Loc.T("ЖИТЕЛИ")),
+                (LGIcon.Minerals, CMinerals, Loc.T("ТИТАН")),
+                (LGIcon.Energy, CEnergy, Loc.T("ГЕЛИЙ-3")),
+                (LGIcon.Alloys, CAlloys, Loc.T("СПЛАВЫ")),
+                (LGIcon.Research, CScience, Loc.T("НАУКА")),
+                (LGIcon.Society, new Color(0.98f, 0.55f, 0.85f), Loc.T("СТАБИЛЬНОСТЬ")),
+                (LGIcon.Industry, CCyan, Loc.T("ЗАНЯТОСТЬ")),
+            };
+            float[] widths = { 0.15f, 0.12f, 0.12f, 0.12f, 0.12f, 0.21f, 0.16f };
+            _stats = new StatCell[defs.Length];
+            float x = 0f;
+            for (int i = 0; i < defs.Length; i++)
+            {
+                var d = defs[i];
+                var cell = LGBuild.Panel(strip.transform, "Cell", new Color(1f, 1f, 1f, 0f), raycast: true);
+                var cr = cell.rectTransform;
+                cr.anchorMin = new Vector2(x, 0); cr.anchorMax = new Vector2(x + widths[i], 1);
+                cr.offsetMin = new Vector2(i == 0 ? 14 : 8, 6); cr.offsetMax = new Vector2(-4, -6);
+                x += widths[i];
+                var cap = LGBuild.Label(cell.transform, d.cap, 10, Color.Lerp(d.col, CMuted, 0.35f), TextAnchor.UpperLeft, bold: true);
+                cap.rectTransform.TopBand(2, 14);
+                cap.Track(1.0f);
+                var ic = LGIcons.Create(cell.transform, d.icon, 20, d.col);
+                ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 8), new Vector2(20, 20));
+                var val = LGBuild.Label(cell.transform, "", 21, Color.white, TextAnchor.LowerLeft, bold: true);
+                val.rectTransform.Stretch(26, 4, 0, 20);
+                TooltipHelper.Attach(cell.gameObject, d.cap);
+                _stats[i] = new StatCell { Caption = cap, Value = val, Icon = ic, Tip = cell.GetComponent<TooltipTrigger>() };
+                if (i > 0)
+                {
+                    var sep = LGBuild.Panel(strip.transform, "Sep", new Color(1f, 1f, 1f, 0.08f));
+                    sep.rectTransform.anchorMin = new Vector2(x - widths[i], 0.2f); sep.rectTransform.anchorMax = new Vector2(x - widths[i], 0.8f);
+                    sep.rectTransform.offsetMin = new Vector2(0, 0); sep.rectTransform.offsetMax = new Vector2(1, 0);
+                    LG.Ignore(sep.gameObject);
+                }
+            }
+
+            _bankruptText = LGBuild.Label(rt, Loc.T("БАНКРОТСТВО: ПРОИЗВОДСТВО УРЕЗАНО ВДВОЕ"), 11, UIManager.DS.Red, TextAnchor.UpperRight, bold: true);
+            _bankruptText.rectTransform.At(new Vector2(0, 1), new Vector2(1, 1), new Vector2(Pad + LeftW, -StatsTop - StatsH - 4), new Vector2(400, 16));
+            _bankruptText.gameObject.SetActive(false);
+        }
+
+        /// <summary>«Приоритет колонии» — выпадающий список и кнопка автостройки.</summary>
+        private void BuildPriority(RectTransform rt)
+        {
+            var row = LGBuild.Rect(rt, "Priority");
+            row.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop), new Vector2(LeftW, 44));
+            _priorityRow = row.gameObject;
+
+            var mark = LGBuild.Panel(row, "Mark", CRedAccent);
+            mark.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -3), new Vector2(6, 6));
+            LG.Ignore(mark.gameObject);
+            var label = LGBuild.Label(row, Loc.T("ПРИОРИТЕТ КОЛОНИИ"), 12, Color.white, TextAnchor.UpperLeft, bold: true);
+            label.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, 0), new Vector2(300, 16));
+            label.Track(1.4f);
+
+            var drop = LGBuild.Button(row, "FocusDrop", new Color(0.10f, 0.36f, 0.40f), CCyan, ToggleFocusList, null, null, 12, 8f);
+            ((RectTransform)drop.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -20), new Vector2(330, 32));
+            _focusText = LGBuild.Label(drop.transform, "", 12, Color.white, TextAnchor.MiddleCenter, bold: true);
+            _focusText.rectTransform.Stretch(10, 0, 30, 0);
+            var chev = LGIcons.Create(drop.transform, LGIcon.Back, 12, Color.white);
+            chev.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(12, 12));
+            chev.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f);
+            TooltipHelper.Attach(drop.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что заказывает автостройка. Также — клик по ряду работ."));
+
+            var auto = LGBuild.Button(row, "Auto", new Color(0.07f, 0.13f, 0.17f), new Color(0.36f, 0.88f, 0.60f, 0.5f), ToggleAutoBuild, null, null, 11, 8f);
+            ((RectTransform)auto.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(344, -20), new Vector2(220, 32));
+            _autoBg = auto.GetComponent<Image>();
+            _autoIcon = LGIcons.Create(auto.transform, LGIcon.Construction, 13, CMuted);
+            _autoIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(13, 13));
+            _autoText = LGBuild.Label(auto.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _autoText.rectTransform.Stretch(32, 0, 6, 0);
+            TooltipHelper.Attach(auto.gameObject, Loc.T("<b>Автостройка</b>\nКогда очередь пуста, колония сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету."));
+
+            // Выпадающий список приоритетов
+            var list = LGBuild.Panel(rt, "FocusList", new Color(0.02f, 0.05f, 0.07f, 0.98f), raycast: true);
+            list.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 54), new Vector2(330, ColonyFocusInfo.All.Length * 36 + 8));
+            LG.Platter(list.gameObject, 10f).SetRim(new Color(CCyan.r, CCyan.g, CCyan.b, 0.45f));
+            _focusList = list.gameObject;
+            _focusOptBg = new Image[ColonyFocusInfo.All.Length];
+            for (int i = 0; i < ColonyFocusInfo.All.Length; i++)
+            {
+                var f = ColonyFocusInfo.All[i];
+                var opt = LGBuild.Button(list.transform, "Opt", new Color(0.03f, 0.07f, 0.09f, 0.98f), new Color(CCyan.r, CCyan.g, CCyan.b, 0.3f), () => PickFocus(f), null, null, 12, 6f);
+                ((RectTransform)opt.transform).TopBand(4 + i * 36, 34, 4, 4);
+                var t = LGBuild.Label(opt.transform, ColonyFocusInfo.Name(f), 13, Color.white, TextAnchor.MiddleCenter, bold: true);
+                _focusOptBg[i] = opt.GetComponent<Image>();
+                TooltipHelper.Attach(opt.gameObject, ColonyFocusInfo.Desc(f));
+            }
+            _focusList.SetActive(false);
+        }
+
+        private static readonly DistrictType[] RowOrder = { DistrictType.Mining, DistrictType.Generator, DistrictType.Industrial, DistrictType.Urban };
+
+        /// <summary>Ряды работ — по ряду на вид района.</summary>
+        private void BuildJobs(RectTransform rt)
+        {
+            var host = LGBuild.Rect(rt, "Jobs");
+            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -JobsTop), new Vector2(LeftW, 4 * JobRowH + 30));
+            LG.Motion(host.gameObject, LGAppear.Kind.SlideLeft).delay = 0.08f;
+
+            _noColonyText = LGBuild.Label(host, "", 14, CMuted, TextAnchor.MiddleCenter, wrap: true);
+            _noColonyText.rectTransform.TopBand(40, 120, 40, 40);
+
+            _jobs = new JobRow[RowOrder.Length];
+            for (int i = 0; i < RowOrder.Length; i++)
+            {
+                var t = RowOrder[i];
+                Color dc = DistrictInfo.Color(t);
+                var r = new JobRow { Type = t, Focus = FocusOf(t) };
+                r.Bg = LGBuild.Panel(host, "Row_" + t, new Color(0.02f, 0.045f, 0.065f, 0.82f), raycast: false);
+                r.Bg.rectTransform.TopBand(i * JobRowH, JobRowH - 8);
+                LG.Platter(r.Bg.gameObject, 12f).SetRim(new Color(dc.r, dc.g, dc.b, 0.18f));
+
+                r.Rim = LGBuild.Panel(r.Bg.transform, "Edge", dc);
+                r.Rim.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(3, JobRowH - 26));
+                LG.Ignore(r.Rim.gameObject);
+
+                // Левая часть — значение, подпись, полоса; клик — приоритет
+                var info = LGBuild.Panel(r.Bg.transform, "Info", new Color(1f, 1f, 1f, 0f), raycast: true);
+                info.rectTransform.anchorMin = new Vector2(0, 0); info.rectTransform.anchorMax = new Vector2(0, 1);
+                info.rectTransform.offsetMin = new Vector2(10, 6); info.rectTransform.offsetMax = new Vector2(300, -6);
+                var ib = info.gameObject.AddComponent<Button>();
+                ib.transition = Selectable.Transition.None;
+                var focus = r.Focus;
+                ib.onClick.AddListener(() => { if (Owned) SetFocus(focus); });
+                TooltipHelper.Attach(info.gameObject, "");
+                r.InfoTip = info.GetComponent<TooltipTrigger>();
+
+                r.IconBg = LGBuild.Panel(info.transform, "IconBg", new Color(dc.r * 0.18f, dc.g * 0.18f, dc.b * 0.18f, 1f));
+                r.IconBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(4, -4), new Vector2(34, 34));
+                LG.Chip(r.IconBg.gameObject, new Color(dc.r, dc.g, dc.b, 0.6f), 17f);
+                var ic = LGIcons.Create(r.IconBg.transform, BuildCatalog.DistrictIcon(t), 18, dc);
+                ic.raycastTarget = false;
+
+                r.Value = LGBuild.Label(info.transform, "", 22, Color.white, TextAnchor.UpperLeft, bold: true);
+                r.Value.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -2), new Vector2(240, 28));
+                r.Sub = LGBuild.Label(info.transform, "", 10, CMuted, TextAnchor.UpperLeft);
+                r.Sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -32), new Vector2(250, 14));
+                var barHost = LGBuild.Rect(info.transform, "Bar");
+                barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
+                barHost.offsetMin = new Vector2(48, 4); barHost.offsetMax = new Vector2(-6, 9);
+                r.Bar = LGBuild.Bar(barHost, CGold, 0f, 4f);
+
+                // Рабочие места
+                r.Slots = LGBuild.Rect(r.Bg.transform, "Slots");
+                r.Slots.anchorMin = new Vector2(0, 0); r.Slots.anchorMax = new Vector2(1, 1);
+                r.Slots.offsetMin = new Vector2(312, 6); r.Slots.offsetMax = new Vector2(-58, -8);
+
+                // «+» — ещё район
+                r.Add = LGBuild.Button(r.Bg.transform, "Add", new Color(dc.r * 0.35f, dc.g * 0.35f, dc.b * 0.35f, 1f), dc, () => OnBuildDistrict(t), null, null, 16, 10f);
+                ((RectTransform)r.Add.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-10, 0), new Vector2(40, 40));
+                var plus = LGBuild.Label(r.Add.transform, "+", 24, Color.white, TextAnchor.MiddleCenter, bold: true);
+                r.AddBg = r.Add.GetComponent<Image>();
+                TooltipHelper.Attach(r.Add.gameObject, "");
+                r.AddTip = r.Add.GetComponent<TooltipTrigger>();
+                _jobs[i] = r;
+            }
+            _idleText = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperLeft);
+            _idleText.rectTransform.TopBand(4 * JobRowH - 2, 18, 4, 4);
+        }
+
+        /// <summary>Производство: текущая стройка, «Купить», очередь и «+» (меню строительства).</summary>
+        private void BuildProduction(RectTransform rt)
+        {
+            var host = LGBuild.Rect(rt, "Production");
+            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -ProdTop), new Vector2(LeftW, ProdTileS + 30));
+            _prodRoot = host.gameObject;
+            LG.Motion(_prodRoot, LGAppear.Kind.SlideLeft).delay = 0.12f;
+
+            var mark = LGBuild.Panel(host, "Mark", CRedAccent);
+            mark.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -3), new Vector2(6, 6));
+            LG.Ignore(mark.gameObject);
+            var title = LGBuild.Label(host, Loc.T("ПРОИЗВОДСТВО"), 12, Color.white, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, 0), new Vector2(300, 16));
+            title.Track(1.4f);
+
+            // Текущая стройка — квадратная плитка
+            _curTileBg = LGBuild.Panel(host, "Current", new Color(0.03f, 0.06f, 0.08f, 0.95f), raycast: true);
+            _curTileBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -24), new Vector2(ProdTileS, ProdTileS));
+            LG.Platter(_curTileBg.gameObject, 12f).SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.45f));
+            var cb = _curTileBg.gameObject.AddComponent<Button>();
+            cb.transition = Selectable.Transition.None;
+            cb.onClick.AddListener(OpenBuildMenu);
+            TooltipHelper.Attach(_curTileBg.gameObject, "");
+            _curTip = _curTileBg.GetComponent<TooltipTrigger>();
+            _curIcon = LGIcons.Create(_curTileBg.transform, LGIcon.Construction, 40, CGold);
+            _curIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 8), new Vector2(40, 40));
+            var clock = LGIcons.Create(_curTileBg.transform, LGIcon.Clock, 12, CMuted);
+            clock.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(10, 9), new Vector2(12, 12));
+            _curDays = LGBuild.Label(_curTileBg.transform, "", 12, Color.white, TextAnchor.LowerLeft, bold: true);
+            _curDays.rectTransform.Stretch(26, 6, 4, 0);
+
+            // Название, срок, полоса и «Купить»
+            _curName = LGBuild.Label(host, "", 15, Color.white, TextAnchor.UpperLeft, bold: true);
+            _curName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -26), new Vector2(270, 22));
+            _curSub = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperLeft);
+            _curSub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -50), new Vector2(270, 16));
+            var barHost = LGBuild.Rect(host, "Bar");
+            barHost.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -70), new Vector2(256, 6));
+            _curBar = LGBuild.Bar(barHost, CGold, 0f, 4f);
+            _buyBtn = LGBuild.Button(host, "Buy", new Color(0.36f, 0.28f, 0.06f), CGold, OnBuyCurrent, null, null, 11, 8f);
+            ((RectTransform)_buyBtn.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -82), new Vector2(170, 34));
+            _buyBg = _buyBtn.GetComponent<Image>();
+            var bi = LGIcons.Create(_buyBtn.transform, LGIcon.Energy, 14, CEnergy);
+            bi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
+            _buyText = LGBuild.Label(_buyBtn.transform, "", 12, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _buyText.rectTransform.Stretch(32, 0, 6, 0);
+            TooltipHelper.Attach(_buyBtn.gameObject, "");
+            _buyTip = _buyBtn.GetComponent<TooltipTrigger>();
+
+            // Очередь — плитки следующих заказов
+            _queueTiles = LGBuild.Rect(host, "QueueTiles");
+            _queueTiles.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 300, -24 - (ProdTileS - 58f) * 0.5f), new Vector2(4 * 66f + 44f, 58f));
+
+            // «+» — меню строительства
+            _addBtn = LGBuild.Button(host, "BuildMenu", new Color(0.40f, 0.26f, 0.06f), CGold, OpenBuildMenu, null, null, 14, 12f);
+            ((RectTransform)_addBtn.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(0, -24), new Vector2(ProdTileS, ProdTileS));
+            var add = LGIcons.Create(_addBtn.transform, LGIcon.Construction, 30, Color.white);
+            add.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(30, 30));
+            var addT = LGBuild.Label(_addBtn.transform, Loc.T("СТРОИТЬ"), 11, Color.white, TextAnchor.LowerCenter, bold: true);
+            addT.rectTransform.Stretch(0, 10, 0, 0);
+            TooltipHelper.Attach(_addBtn.gameObject, Loc.T("<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#8AA2A8>(B)</color>"));
+        }
+
+        /// <summary>Информация о планете — справа сверху: шкалы, климат, сооружения.</summary>
+        private void BuildInfo(RectTransform rt)
+        {
+            var card = Glass(rt, "Info", LGIcon.Planet, Loc.T("ИНФОРМАЦИЯ О ПЛАНЕТЕ"), CGold, LGAppear.Kind.SlideRight, 0.10f, out var body);
+            var r = card.rectTransform;
+            r.anchorMin = r.anchorMax = new Vector2(1, 1);
+            r.pivot = new Vector2(1, 1);
+            r.anchoredPosition = new Vector2(-Pad, -StatsTop);
+            r.sizeDelta = new Vector2(InfoW, InfoH);
+
+            _dossier = new Seg[4];
+            string[] labels = { Loc.T("Пригодность"), Loc.T("Районы · размер"), Loc.T("Титан"), Loc.T("Гелий-3") };
+            for (int i = 0; i < _dossier.Length; i++) _dossier[i] = MakeSeg(body, labels[i], 4 + i * 34, 220f);
+
+            var vline = LGBuild.Panel(body, "Split", new Color(0.45f, 0.95f, 0.90f, 0.16f));
+            vline.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(238, -4), new Vector2(1, 136));
+            LG.Ignore(vline.gameObject);
+
+            _climate = LGBuild.Label(body, "", 11, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
+            _climate.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(252, -2), new Vector2(178, 150));
+            _climate.lineSpacing = 1.2f;
+
+            var structs = LGBuild.Label(body, Loc.T("СООРУЖЕНИЯ"), 10, CGold, TextAnchor.LowerLeft, bold: true);
+            structs.rectTransform.anchorMin = new Vector2(0, 0); structs.rectTransform.anchorMax = new Vector2(1, 0);
+            structs.rectTransform.offsetMin = new Vector2(0, 44); structs.rectTransform.offsetMax = new Vector2(0, 60);
+            structs.Track(1.2f);
+            _stationText = LGBuild.Label(body, "", 11, CMuted, TextAnchor.UpperLeft, wrap: true);
+            _stationText.rectTransform.anchorMin = new Vector2(0, 0); _stationText.rectTransform.anchorMax = new Vector2(1, 0);
+            _stationText.rectTransform.offsetMin = new Vector2(0, 2); _stationText.rectTransform.offsetMax = new Vector2(0, 42);
+        }
+
+        private static Seg MakeSeg(RectTransform parent, string label, float top, float width)
+        {
+            var s = new Seg { Cells = new Image[5] };
+            var l = LGBuild.Label(parent, label, 11, CMuted, TextAnchor.UpperLeft);
+            l.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -top), new Vector2(width, 16));
+            s.Value = LGBuild.Label(parent, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperRight, bold: true);
+            s.Value.rectTransform.At(new Vector2(0, 1), new Vector2(1, 1), new Vector2(width, -top), new Vector2(120, 16));
+            float cw = (width - 4f * 4f) / 5f;
+            for (int i = 0; i < 5; i++)
+            {
+                var c = LGBuild.Panel(parent, "Cell", CSegOff);
+                c.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * (cw + 4f), -top - 19), new Vector2(cw, 6));
+                LG.Ignore(c.gameObject);
+                s.Cells[i] = c;
+            }
+            return s;
+        }
+
+        /// <summary>Справа внизу: предыдущая / следующая колония и «Готово».</summary>
+        private void BuildNav(RectTransform rt)
+        {
+            var host = LGBuild.Rect(rt, "Nav");
+            host.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-Pad, 24), new Vector2(720, 74));
+            LG.Motion(host.gameObject, LGAppear.Kind.SlideUp).delay = 0.16f;
+
+            _navText = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperRight, bold: true);
+            _navText.rectTransform.TopBand(0, 16);
+            _navText.Track(1.2f);
+
+            _prevBtn = LGBuild.Button(host, "Prev", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(-1), null, null, 12, 8f);
+            ((RectTransform)_prevBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(262, 46));
+            var pi = LGIcons.Create(_prevBtn.transform, LGIcon.Back, 14, Color.white);
+            pi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(14, 14));
+            var pt = LGBuild.Label(_prevBtn.transform, Loc.T("ПРЕДЫДУЩАЯ КОЛОНИЯ"), 12, Color.white, TextAnchor.MiddleCenter, bold: true);
+            pt.rectTransform.Stretch(26, 0, 6, 0);
+            TooltipHelper.Attach(_prevBtn.gameObject, Loc.T("<b>Предыдущая колония</b>\nShift+Tab"));
+
+            _nextBtn = LGBuild.Button(host, "Next", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(1), null, null, 12, 8f);
+            ((RectTransform)_nextBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(272, 0), new Vector2(262, 46));
+            var nt = LGBuild.Label(_nextBtn.transform, Loc.T("СЛЕДУЮЩАЯ КОЛОНИЯ"), 12, Color.white, TextAnchor.MiddleCenter, bold: true);
+            nt.rectTransform.Stretch(6, 0, 26, 0);
+            var ni = LGIcons.Create(_nextBtn.transform, LGIcon.Back, 14, Color.white);
+            ni.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(14, 14));
+            ni.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+            TooltipHelper.Attach(_nextBtn.gameObject, Loc.T("<b>Следующая колония</b>\nTab"));
+
+            var done = LGBuild.Button(host, "Done", new Color(0.12f, 0.42f, 0.30f), UIManager.DS.Green, Close, LGIcon.Check, Loc.T("ГОТОВО"), 12, 8f);
+            ((RectTransform)done.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(170, 46));
+            TooltipHelper.Attach(done.gameObject, Loc.T("Вернуться на карту  <color=#8AA2A8>(Esc)</color>"));
+        }
+
+
 
         private void RefreshHeader()
         {
@@ -358,141 +1199,6 @@ namespace StellarisClone.Rendering
             if (_discMat != null) _discMat.SetColor("_RimColor", Color.Lerp(wc, Color.white, 0.25f));
         }
 
-        private void RefreshPopulation()
-        {
-            string m = LGBuild.Hex(CMuted);
-            if (!Surveyed || _planet.Population <= 0)
-            {
-                _popBig.text = "—";
-                _popCaption.text = Loc.T("ЖИТЕЛЕЙ НЕТ");
-                _growthText.text = !Surveyed ? Loc.T("Нет данных — нужна разведка")
-                                 : _planet.IsColonizing ? Loc.F("<color={0}>Колонисты в пути</color>", LGBuild.Hex(CGold))
-                                 : _planet.CanColonize ? Loc.T("Планета пригодна для колонии")
-                                 : Loc.T("Непригодна для жизни — только добыча");
-                _popFill.fillAmount = 0f;
-                _growFill.fillAmount = 0f;
-                return;
-            }
-
-            int pop = _planet.Population, housing = _planet.HousingCapacity;
-            bool crowded = pop >= housing;
-            _popBig.text = $"{pop}<size=26><color={m}> / {housing}</color></size>";
-            _popCaption.text = Loc.T("ЖИТЕЛИ  ·  ЖИЛЬЁ");
-            _popFill.fillAmount = PopArc * Mathf.Clamp01(pop / (float)Mathf.Max(1, housing));
-            _popFill.color = crowded ? CGold : CCyan;
-            _growFill.fillAmount = crowded ? 0f : GrowArc * Mathf.Clamp01(_planet.PopGrowthProgress / 100f);
-
-            float speed = _planet.PopGrowthBaseSpeedPctPerMonth;
-            int months = _planet.MonthsToNextPop;
-            _growthText.text = crowded
-                ? Loc.F("<color={0}>Рост остановлен — нет жилья.\nПостройте городской район.</color>", LGBuild.Hex(CGold))
-                : speed <= 0f && _planet.OrganicPops == 0
-                ? Loc.F("<color={0}>Роботы не размножаются.\nНовых жителей даст только сборка.</color>", LGBuild.Hex(CGold))
-                : speed <= 0f
-                ? Loc.F("<color={0}>Рост остановлен — на планете бунт.</color>", LGBuild.Hex(UIManager.DS.Red))
-                : Loc.F("Рост <b>+{0:0.#}%</b> в месяц\nновый житель через ~{1} мес.", speed, months);
-        }
-
-        private void RefreshDossier()
-        {
-            string m = LGBuild.Hex(CMuted);
-            if (!Surveyed)
-            {
-                foreach (var s in _dossier) SetSeg(s, 0, "?", CMuted);
-                _climate.text = Loc.F("<color={0}>Данные засекречены.\nОтправьте научный корабль.</color>", m);
-                _stationText.text = "";
-                return;
-            }
-
-            int hab = _planet.HabitabilityPercent;
-            Color hc = hab >= 70 ? UIManager.DS.Green : hab >= 40 ? CGold : UIManager.DS.Red;
-            SetSeg(_dossier[0], hab <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(hab / 20f), 1, 5), $"{hab}%", hc);
-            int size = _planet.MaxDistricts;
-            int sizeSeg = size <= 5 ? 1 : size <= 6 ? 2 : size <= 7 ? 3 : size <= 9 ? 4 : 5;
-            SetSeg(_dossier[1], sizeSeg, $"{_planet.BuiltDistricts} / {size}", CCyan);
-            int mi = _planet.MineralDeposit, en = _planet.EnergyDeposit;
-            SetSeg(_dossier[2], mi <= 0 ? 0 : Mathf.Clamp(Mathf.RoundToInt(mi * 5f / 7f), 1, 5), mi > 0 ? mi.ToString() : Loc.T("нет"), CMinerals);
-            SetSeg(_dossier[3], Mathf.Clamp(en, 0, 5), en > 0 ? en.ToString() : Loc.T("нет"), CEnergy);
-
-            // Климат — детерминированно по имени планеты
-            var rng = new System.Random(_planet.Name.GetHashCode());
-            float gravity = 0.6f + (float)rng.NextDouble() * 0.9f;
-            string atmo = gravity < 0.85f ? Loc.T("разрежённая") : gravity > 1.25f ? Loc.T("плотная") : Loc.T("стандартная");
-            int temperature = -40 + rng.Next(0, 90);
-            int tilt = rng.Next(0, 45);
-            _climate.text =
-                Loc.F("<color={0}>Гравитация</color>   {1:0.00} g\n", m, gravity) +
-                Loc.F("<color={0}>Атмосфера</color>   {1}\n", m, atmo) +
-                Loc.F("<color={0}>Температура</color>   {1:+#;-#;0} °C\n", m, temperature) +
-                Loc.F("<color={0}>Наклон оси</color>   {1}°\n", m, tilt) +
-                Loc.F("<color={0}>Орбита</color>   {1:0.0} а.е.", m, _planet.OrbitRadius);
-
-            var b = Bonuses();
-            float st = _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult
-                     + _planet.EnergyDeposit * FactionMult(DistrictType.Generator) * b.EnergyMult;
-            _stationText.text = _planet.HasMiningStation
-                ? Loc.F("<color={0}>Добывающий комплекс работает</color>", LGBuild.Hex(UIManager.DS.Green))
-                : _planet.StationUnderConstruction ? Loc.F("<color={0}>Добывающий комплекс строится</color>", LGBuild.Hex(CGold))
-                : st > 0f ? Loc.F("<color={0}>Комплекс дал бы +{1:0.#} ресурсов в месяц</color>", m, st)
-                : Loc.F("<color={0}>Промышленных залежей нет</color>", m);
-        }
-
-        private void RefreshTiles()
-        {
-            var b = Bonuses();
-            bool colony = Surveyed && _planet.Population > 0;
-            float minerals = 0f, energy = 0f, alloys = 0f, science = 0f;
-            if (colony)
-            {
-                minerals = _planet.ProducedMineralsPerMonth * FactionMult(DistrictType.Mining) * b.MineralsMult * _planet.OutputMult("minerals");
-                energy = _planet.ProducedEnergyPerMonth * FactionMult(DistrictType.Generator) * b.EnergyMult * _planet.OutputMult("energy");
-                alloys = _planet.ProducedAlloysPerMonth * FactionMult(DistrictType.Industrial) * b.AlloysMult * _planet.OutputMult("alloys");
-                var tm = TechnologyManager.Instance;
-                science = _planet.ResearchPops * TechnologyManager.SciencePerPop * (tm != null ? tm.GlobalResearchSpeedMultiplier : 1f);
-            }
-            if (Surveyed && _planet.HasMiningStation)
-            {
-                minerals += _planet.MineralDeposit * FactionMult(DistrictType.Mining) * b.MineralsMult;
-                energy += _planet.EnergyDeposit * FactionMult(DistrictType.Generator) * b.EnergyMult;
-            }
-            SetTile(_tiles[0], minerals);
-            SetTile(_tiles[1], energy);
-            SetTile(_tiles[2], alloys);
-            SetTile(_tiles[3], science);
-
-            var work = _tiles[4];
-            if (colony)
-            {
-                int idle = _planet.IdlePops;
-                work.Value.text = $"{_planet.EmployedPops}<size=16><color={LGBuild.Hex(CMuted)}> / {_planet.WorkerSlots}</color></size>";
-                work.Value.color = UIManager.DS.TextPrimary;
-                work.Caption.text = idle > 0 ? Loc.F("<color={0}>БЕЗРАБОТНЫХ {1}</color>", LGBuild.Hex(CGold), idle) : Loc.T("РАБОТАЮТ / МЕСТ");
-            }
-            else
-            {
-                work.Value.text = "—";
-                work.Value.color = CMuted;
-                work.Caption.text = Loc.T("ЗАНЯТОСТЬ");
-            }
-
-            bool bankrupt = EconomyManager.Instance != null && EconomyManager.Instance.IsBankrupt && Owned;
-            _bankruptText.gameObject.SetActive(bankrupt);
-        }
-
-        private static void SetTile(Tile t, float v)
-        {
-            bool any = v > 0.01f;
-            t.Value.text = any ? $"+{v:0.#}" : "0";
-            t.Value.color = any ? UIManager.DS.TextPrimary : CMuted;
-        }
-
-        private static void SetSeg(Seg s, int lit, string value, Color c)
-        {
-            s.Value.text = value;
-            s.Value.color = lit > 0 ? Color.Lerp(c, Color.white, 0.35f) : CMuted;
-            for (int i = 0; i < s.Cells.Length; i++) s.Cells[i].color = i < lit ? c : CSegOff;
-        }
-
         private EmpireBonuses Bonuses() => EmpireBonuses.For(_system != null ? _system.OwnerId : 0);
 
         private float FactionMult(DistrictType t)
@@ -524,217 +1230,6 @@ namespace StellarisClone.Rendering
                 if (j.Kind == kind && j.District == district) last = j;
             return last;
         }
-
-        private void RefreshDistricts()
-        {
-            int pendingAll = _planet.PendingDistricts;
-            var queue = Builds != null ? Builds.QueueFor(_planet) : new List<ConstructionJob>();
-            _districtHeader.text = Loc.F("РАЙОНЫ   <color={0}>{1}", LGBuild.Hex(CMuted), _planet.BuiltDistricts) +
-                                   (pendingAll > 0 ? $"<color={LGBuild.Hex(CGold)}>+{pendingAll}</color>" : "") + $" / {_planet.MaxDistricts}</color>";
-            RebuildSlots();
-
-            var eco = EconomyManager.Instance;
-            foreach (var c in _cards)
-            {
-                int count = _planet.GetDistrictCount(c.Type);
-                int worked = _planet.WorkedCount(c.Type);
-                int pending = Builds != null ? Builds.PendingDistricts(_planet, c.Type) : 0;
-                c.Count.text = pending > 0 ? $"×{count}<size=14><color={LGBuild.Hex(CGold)}> +{pending}</color></size>" : $"×{count}";
-                RebuildWorkers(c, count, c.Type == DistrictType.Urban ? count : worked, pending);
-
-                var job = FirstJob(JobKind.District, c.Type);
-                if (job != null)
-                {
-                    float days = Builds.DaysUntilDone(job);
-                    bool active = queue.Count > 0 && queue[0] == job;
-                    c.Status.text = active ? Loc.F("строится · готов через {0} дн.", Mathf.CeilToInt(days)) : Loc.F("в очереди · ~{0} дн.", Mathf.CeilToInt(days));
-                    c.Status.color = CGold;
-                    LGBuild.SetBar(c.Progress, active ? job.Progress : 0f, CGold);
-                }
-                else
-                {
-                    c.Status.text = c.Type == DistrictType.Urban
-                        ? (count > 0 ? Loc.F("жильё +{0}  ·  рабочих мест {1}", count * DistrictInfo.HousingPopCapacity(c.Type), count) : Loc.T("не построены"))
-                        : count > 0 ? Loc.F("работают {0} из {1}", worked, count) : Loc.T("не построены");
-                    c.Status.color = worked < count && c.Type != DistrictType.Urban ? CGold : CMuted;
-                    LGBuild.SetBar(c.Progress, 0f);
-                }
-
-                c.Cancel.gameObject.SetActive(pending > 0 && Owned);
-
-                float mc = DistrictInfo.MineralsCost(c.Type), ac = DistrictInfo.AlloysCost(c.Type);
-                bool canPay = eco != null && eco.Minerals >= mc && eco.Alloys >= ac;
-                c.MinCost.Set($"{mc:0}", eco != null && eco.Minerals >= mc ? CMinerals : UIManager.DS.Red);
-                c.AlloyCost.Set($"{ac:0}", eco != null && eco.Alloys >= ac ? CAlloys : UIManager.DS.Red);
-
-                string reason = !Surveyed ? Loc.T("НУЖНА РАЗВЕДКА")
-                              : !Owned ? Loc.T("НЕ ВАША СИСТЕМА")
-                              : _planet.Population <= 0 ? Loc.T("СНАЧАЛА КОЛОНИЯ")
-                              : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? Loc.T("НЕТ МЕСТА")
-                              : queue.Count >= ConstructionManager.MaxPlanetQueue ? Loc.T("ОЧЕРЕДЬ ПОЛНА")
-                              : !canPay ? CostCheck.Short(0f, mc, ac, 0f)
-                              : null;
-                string why = !Surveyed ? Loc.T("Сначала изучите систему научным кораблём.")
-                           : !Owned ? Loc.T("Система не ваша: сначала постройте здесь форпост.")
-                           : _planet.Population <= 0 ? Loc.T("Сначала основайте колонию — проект «Колония» справа.")
-                           : _planet.BuiltDistricts + pendingAll >= _planet.MaxDistricts ? Loc.F("Все {0} мест под районы заняты (с учётом очереди).", _planet.MaxDistricts)
-                           : queue.Count >= ConstructionManager.MaxPlanetQueue ? Loc.F("Очередь планеты заполнена: не больше {0} заказов.", ConstructionManager.MaxPlanetQueue)
-                           : !canPay ? CostCheck.Full(0f, mc, ac, 0f) + "."
-                           : null;
-                c.Tip?.SetText(DistrictTip(c.Type, why));
-                c.Build.interactable = reason == null;
-                c.BuildBg.color = reason == null ? c.BuildTint : new Color(0.06f, 0.09f, 0.12f);
-                c.Reason.text = reason ?? (queue.Count > 0 ? Loc.T("В ОЧЕРЕДЬ") : Loc.F("ПОСТРОИТЬ · {0:0} ДН.", ConstructionManager.DistrictDays(c.Type)));
-                c.Reason.color = reason == null ? Color.white : CMuted;
-            }
-        }
-
-        /// <summary>Фигурки рабочих: яркие — работают, тусклые — свободные места, золотые — район строится.</summary>
-        private void RebuildWorkers(DistrictCard c, int count, int worked, int pending)
-        {
-            int key = count * 10000 + worked * 100 + pending;
-            if (c.WorkerKey == key) return;
-            c.WorkerKey = key;
-            LGBuild.Clear(c.Workers);
-            Color dc = DistrictInfo.Color(c.Type);
-            int total = Mathf.Min(14, count + pending);
-            const float S = 18f, G = 3f;
-            for (int i = 0; i < total; i++)
-            {
-                bool building = i >= count;
-                bool busy = !building && i < worked;
-                Color col = building ? new Color(CGold.r, CGold.g, CGold.b, 0.75f)
-                          : busy ? dc : new Color(dc.r, dc.g, dc.b, 0.22f);
-                var ic = LGIcons.Create(c.Workers, c.Type == DistrictType.Urban ? LGIcon.Housing : LGIcon.Population, S, col);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(i * (S + G), 0), new Vector2(S, S));
-                ic.raycastTarget = false;
-                LG.Ignore(ic.gameObject);
-            }
-            if (total == 0)
-            {
-                var none = LGBuild.Label(c.Workers, "—", 12, CMuted, TextAnchor.MiddleLeft);
-                LG.Ignore(none.gameObject);
-            }
-        }
-
-        private int _slotsBuilt = -1, _slotsMax = -1;
-
-        /// <summary>Сегментная полоска слотов районов: занятые — цветом района, строящиеся — золотом, свободные — пустые.</summary>
-        private void RebuildSlots()
-        {
-            int pendingN = _planet.PendingDistricts;
-            int key = _planet.BuiltDistricts * 100 + pendingN;
-            if (_slotsBuilt == key && _slotsMax == _planet.MaxDistricts && _districtSlots.childCount > 0) return;
-            _slotsBuilt = key;
-            _slotsMax = _planet.MaxDistricts;
-            LGBuild.Clear(_districtSlots);
-            int max = Mathf.Max(1, _planet.MaxDistricts);
-            float w = 1f / max;
-            for (int i = 0; i < max; i++)
-            {
-                Color col = i < _planet.Districts.Count ? DistrictInfo.Color(_planet.Districts[i].Type)
-                          : i < _planet.Districts.Count + pendingN ? new Color(CGold.r, CGold.g, CGold.b, 0.45f)
-                          : new Color(1f, 1f, 1f, 0.07f);
-                var seg = LGBuild.Panel(_districtSlots, "Slot", col);
-                var rt = seg.rectTransform;
-                rt.anchorMin = new Vector2(i * w, 0);
-                rt.anchorMax = new Vector2((i + 1) * w, 1);
-                rt.offsetMin = new Vector2(1.5f, 0);
-                rt.offsetMax = new Vector2(-1.5f, 0);
-                LG.Ignore(seg.gameObject);
-            }
-        }
-
-        private void RefreshQueue()
-        {
-            var queue = Builds != null ? Builds.QueueFor(_planet) : new List<ConstructionJob>();
-            _queueEmptyGo.SetActive(queue.Count == 0);
-            if (queue.Count == 0)
-            {
-                bool colony = Owned && _planet.Population > 0;
-                _suggest = colony ? _planet.AutoBuildChoice() : null;
-                _queueEmpty.text = !Owned ? Loc.T("Стройка доступна только в ваших системах")
-                                 : !colony ? Loc.T("Районы строятся после основания колонии")
-                                 : _planet.BuiltDistricts >= _planet.MaxDistricts ? Loc.T("Все районы планеты построены")
-                                 : _planet.AutoBuild ? Loc.T("Автостройка закажет район в начале месяца")
-                                 : _suggest == null ? Loc.T("Жилья и рабочих мест хватает — можно строить про запас")
-                                 : Loc.T("Колонии нужен новый район:");
-                bool show = _suggest.HasValue && !_planet.AutoBuild;
-                _suggestBtn.gameObject.SetActive(show);
-                if (show)
-                {
-                    var t = _suggest.Value;
-                    bool can = _planet.CanBuildDistrict(t);
-                    _suggestBtn.interactable = can;
-                    _suggestText.text = Loc.F("{0} РАЙОН  ·  {1} тит., {2} спл.", DistrictName(t).ToUpper(), DistrictInfo.MineralsCost(t), DistrictInfo.AlloysCost(t)) +
-                                        (can ? "" : Loc.T("  ·  НЕ ХВАТАЕТ"));
-                    _suggestText.color = can ? Color.white : CMuted;
-                }
-            }
-            _queueHint.text = queue.Count > 0 ? $"{queue.Count} / {ConstructionManager.MaxPlanetQueue}" : "";
-            _buildMenuBtn.gameObject.SetActive(Owned);
-
-            for (int i = 0; i < _queueRows.Length; i++)
-            {
-                var row = _queueRows[i];
-                if (i >= queue.Count) { row.Go.SetActive(false); row.Job = null; continue; }
-                var j = queue[i];
-                row.Job = j;
-                row.Go.SetActive(true);
-                bool active = i == 0;
-                Color jc = JobColor(j);
-                row.Icon.sprite = LGIcons.Get(JobIcon(j));
-                row.Icon.color = active ? jc : new Color(jc.r, jc.g, jc.b, 0.55f);
-                row.Name.text = JobTitle(j);
-                row.Name.color = active ? Color.white : UIManager.DS.TextPrimary;
-                float days = Builds.DaysUntilDone(j);
-                row.Days.text = active ? Loc.F("{0} дн.", Mathf.CeilToInt(j.DaysLeft)) : Loc.F("ждёт · ~{0} дн.", Mathf.CeilToInt(days));
-                row.Days.color = active ? CGold : CMuted;
-                LGBuild.SetBar(row.Progress, active ? j.Progress : 0f, jc);
-                row.Cancel.gameObject.SetActive(Owned);
-                bool showBuy = active && Owned;
-                row.Buy.gameObject.SetActive(showBuy);
-                if (showBuy)
-                {
-                    string block = Builds.BuyBlocker(j);
-                    row.Buy.interactable = block == null;
-                    row.BuyBg.color = block == null ? new Color(0.36f, 0.28f, 0.06f) : new Color(0.08f, 0.10f, 0.12f);
-                    row.BuyText.text = Loc.F("КУПИТЬ {0}", ConstructionManager.BuyCost(j));
-                    row.BuyText.color = block == null ? Color.white : CMuted;
-                    row.BuyTip.SetText(BuildMenuModal.BuyTip(j, block));
-                }
-            }
-        }
-
-        private static LGIcon JobIcon(ConstructionJob j) => j.Kind switch
-        {
-            JobKind.District => j.District switch
-            {
-                DistrictType.Urban => LGIcon.Housing,
-                DistrictType.Mining => LGIcon.Minerals,
-                DistrictType.Generator => LGIcon.Energy,
-                _ => LGIcon.Alloys
-            },
-            JobKind.MiningStation => LGIcon.Industry,
-            JobKind.Colony => LGIcon.Population,
-            JobKind.Terraform => LGIcon.Planet,
-            JobKind.Robot => LGIcon.Industry,
-            JobKind.GeneAdapt => LGIcon.Research,
-            _ => LGIcon.Construction
-        };
-
-        private static Color JobColor(ConstructionJob j) => j.Kind == JobKind.District ? DistrictInfo.Color(j.District) : CGold;
-
-        private static string JobTitle(ConstructionJob j) => j.Kind switch
-        {
-            JobKind.District => Loc.F("{0} район", DistrictName(j.District)),
-            JobKind.MiningStation => Loc.T("Добывающий комплекс"),
-            JobKind.Colony => Loc.T("Колония"),
-            JobKind.Terraform => Loc.T("Терраформинг"),
-            JobKind.Robot => Loc.T("Сборка роботов"),
-            JobKind.GeneAdapt => Loc.T("Генная адаптация"),
-            _ => Loc.T("Заказ")
-        };
 
         private void RefreshActions()
         {
@@ -873,8 +1368,6 @@ namespace StellarisClone.Rendering
             a.Badge.color = new Color(ac.r * 0.22f, ac.g * 0.22f, ac.b * 0.22f, 1f);
         }
 
-        // ================================================================ Колонии: переключение, приоритет, автостройка
-
         /// <summary>Колонии игрока по порядку систем — для стрелок «предыдущая / следующая».</summary>
         private void CollectColonies()
         {
@@ -926,33 +1419,6 @@ namespace StellarisClone.Rendering
             Refresh();
         }
 
-        private void RefreshColonyControls()
-        {
-            CollectColonies();
-            int idx = _colonies.IndexOf(_planet);
-            _switcher.SetActive(_colonies.Count > 1 || (_colonies.Count == 1 && idx < 0));
-            _switchText.text = idx >= 0
-                ? Loc.F("КОЛОНИЯ  {0} / {1}", idx + 1, _colonies.Count)
-                : Loc.F("КОЛОНИЙ  {0}", _colonies.Count);
-
-            bool show = Owned && _planet.Population > 0;
-            _colonyControls.SetActive(show);
-            if (!show) return;
-            for (int i = 0; i < _focusBg.Length; i++)
-            {
-                bool on = ColonyFocusInfo.All[i] == _planet.Focus;
-                _focusBg[i].color = on ? new Color(0.16f, 0.52f, 0.56f) : new Color(0.07f, 0.13f, 0.17f);
-            }
-            bool auto = _planet.AutoBuild;
-            _autoBg.color = auto ? new Color(0.14f, 0.46f, 0.30f) : new Color(0.07f, 0.13f, 0.17f);
-            _autoIcon.sprite = LGIcons.Get(auto ? LGIcon.Check : LGIcon.Construction);
-            _autoIcon.color = auto ? UIManager.DS.Green : CMuted;
-            _autoText.text = auto ? Loc.T("АВТОСТРОЙКА") : Loc.T("АВТОСТРОЙКА ВЫКЛ.");
-            _autoText.color = auto ? Color.white : CMuted;
-        }
-
-        // ================================================================ Действия
-
         private void OnBuildDistrict(DistrictType t)
         {
             if (_planet == null || _planet.Population <= 0) return;
@@ -964,21 +1430,6 @@ namespace StellarisClone.Rendering
             var job = LastJob(JobKind.District, t);
             if (job == null) return;
             Builds.Cancel(job);   // звук отмены — в ConstructionManager
-            Refresh();
-        }
-
-        private void OnSuggest()
-        {
-            if (_planet == null || !_suggest.HasValue) return;
-            if (_planet.TryBuildDistrict(_suggest.Value)) Refresh();
-        }
-
-        private void OnCancelQueued(int row)
-        {
-            var job = _queueRows[row].Job;
-            if (job == null || Builds == null || !Owned) return;
-            Builds.Cancel(job);
-            NotificationCenter.Show(Loc.T("Заказ отменён"), Loc.T("Ресурсы возвращены"), NotificationCenter.Kind.Info, 3f);
             Refresh();
         }
 
@@ -1010,18 +1461,6 @@ namespace StellarisClone.Rendering
             if (_planet.TryFoundColony())
             {
                 NotificationCenter.Show(Loc.T("Колонисты отправлены"), Loc.F("{0} · колония через {1:0} дн.", _planet.Name, ConstructionManager.ColonyDays), NotificationCenter.Kind.Info, 4f);
-                Refresh();
-            }
-        }
-
-        private void OnBuyQueued(int idx)
-        {
-            if (_planet == null || Builds == null || idx < 0 || idx >= _queueRows.Length) return;
-            var job = _queueRows[idx].Job;
-            if (job != null && Builds.TryBuy(job))
-            {
-                SFXManager.Play(Sfx.UiConfirm);
-                EconomyManager.Instance?.RecalculateAll();
                 Refresh();
             }
         }
@@ -1067,44 +1506,13 @@ namespace StellarisClone.Rendering
             }
         }
 
-        // ================================================================ Построение
-
-        private void Build()
-        {
-            _rootRt = LGBuild.Rect(_host.transform, "PlanetFocusOverlay");
-            _rootRt.Stretch();
-            _root = _rootRt.gameObject;
-            _root.AddComponent<CanvasGroup>();
-            var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.004f, 0.012f, 0.020f, 1f);
-            bg.raycastTarget = true;
-            LG.Scrim(_root).FillMultiplier = 2.2f;
-            var motion = LG.Motion(_root, LGAppear.Kind.Fade);
-            motion.inDuration = 0.4f;
-            motion.outDuration = 0.25f;
-
-            BuildBackdrop(_rootRt);
-            BuildStage(_rootRt);
-            BuildHeader(_rootRt);
-            BuildPopulation(_rootRt);
-            BuildSociety(_rootRt);
-            BuildDossier(_rootRt);
-            BuildTiles(_rootRt);
-            BuildDistricts(_rootRt);
-            BuildQueue(_rootRt);
-            BuildProjects(_rootRt);
-
-            LG.Skin(_root.transform);
-            _root.SetActive(false);
-        }
-
         /// <summary>Фон: подсветка цвета мира за планетой, виньетка по краям, линия под шапкой.</summary>
         private void BuildBackdrop(RectTransform rt)
         {
             _worldTint = Deco(rt, "WorldTint", HaloSprite(), Color.clear);
             var t = _worldTint.rectTransform;
-            t.anchorMin = new Vector2(-0.20f, -0.30f);
-            t.anchorMax = new Vector2(0.76f, 1.30f);
+            t.anchorMin = new Vector2(0.30f, -0.30f);
+            t.anchorMax = new Vector2(1.20f, 1.30f);
             t.offsetMin = t.offsetMax = Vector2.zero;
 
             var vig = Deco(rt, "Vignette", VignetteSprite(), new Color(0f, 0f, 0f, 0.85f));
@@ -1122,7 +1530,7 @@ namespace StellarisClone.Rendering
         private void BuildStage(RectTransform rt)
         {
             _stage = LGBuild.Rect(rt, "PlanetStage");
-            _stage.anchorMin = _stage.anchorMax = new Vector2(0.28f, 0.49f);
+            _stage.anchorMin = _stage.anchorMax = new Vector2(0.735f, 0.42f);   // справа, как в Master of Orion
             _stage.pivot = new Vector2(0.5f, 0.5f);
             _stage.sizeDelta = new Vector2(670, 670);
 
@@ -1239,50 +1647,16 @@ namespace StellarisClone.Rendering
             _govText.rectTransform.Stretch(40, 0, 10, 0);
             _govText.supportRichText = true;
             _govChip.SetActive(false);
-
-            // Переключение между колониями — справа в шапке
-            var sw = LGBuild.Rect(rt, "ColonySwitch");
-            sw.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Pad, -30), new Vector2(270, 40));
-            _switcher = sw.gameObject;
-            var prev = LGBuild.Button(sw, "Prev", new Color(0.10f, 0.28f, 0.32f), CCyan, () => StepColony(-1), LGIcon.Back, null, 12);
-            ((RectTransform)prev.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(40, 40));
-            var nextBtn = LGBuild.Button(sw, "Next", new Color(0.10f, 0.28f, 0.32f), CCyan, () => StepColony(1), LGIcon.Back, null, 12);
-            ((RectTransform)nextBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(40, 40));
-            foreach (var img in nextBtn.GetComponentsInChildren<Image>(true))      // стрелка «назад», зеркально — «вперёд»
-                if (img.gameObject != nextBtn.gameObject) img.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
-            _switchText = LGBuild.Label(sw, "", 12, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
-            _switchText.rectTransform.Stretch(48, 0, 48, 0);
-            TooltipHelper.Attach(prev.gameObject, Loc.T("<b>Предыдущая колония</b>\nShift+Tab"));
-            TooltipHelper.Attach(nextBtn.gameObject, Loc.T("<b>Следующая колония</b>\nTab"));
-            LG.Motion(sw.gameObject, LGAppear.Kind.Fade).delay = 0.12f;
-        }
-
-        /// <summary>Население — крупно поверх планеты слева сверху, как приборная надпись.</summary>
-        private void BuildPopulation(RectTransform rt)
-        {
-            var host = LGBuild.Rect(rt, "Population");
-            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -HeaderH - 22), new Vector2(330, 150));
-            LG.Motion(host.gameObject, LGAppear.Kind.SlideLeft).delay = 0.08f;
-
-            var ic = LGIcons.Create(host, LGIcon.Population, 18, CCyan);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -4), new Vector2(18, 18));
-            _popCaption = LGBuild.Label(host, "", 11, CCyan, TextAnchor.UpperLeft, bold: true);
-            _popCaption.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(26, -5), new Vector2(300, 16));
-            _popBig = LGBuild.Label(host, "", 52, Color.white, TextAnchor.UpperLeft, bold: true);
-            _popBig.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(-2, -22), new Vector2(330, 62));
-            _growthText = LGBuild.Label(host, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            _growthText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -88), new Vector2(320, 44));
-            _growthText.lineSpacing = 1.15f;
         }
 
         /// <summary>Общество колонии: шкала стабильности, состав по видам и кампания пропаганды.</summary>
         private void BuildSociety(RectTransform rt)
         {
-            var card = Glass(rt, "Society", LGIcon.Population, Loc.T("ОБЩЕСТВО"), new Color(0.98f, 0.55f, 0.85f), LGAppear.Kind.SlideLeft, 0.12f, out var body);
+            var card = Glass(rt, "Society", LGIcon.Population, Loc.T("ОБЩЕСТВО"), new Color(0.98f, 0.55f, 0.85f), LGAppear.Kind.SlideRight, 0.14f, out var body);
             var r = card.rectTransform;
-            r.anchorMin = r.anchorMax = new Vector2(0, 1);
-            r.pivot = new Vector2(0, 1);
-            r.anchoredPosition = new Vector2(Pad, -HeaderH - 22 - 150 - 6);
+            r.anchorMin = r.anchorMax = new Vector2(1, 1);
+            r.pivot = new Vector2(1, 1);
+            r.anchoredPosition = new Vector2(-Pad, -StatsTop - InfoH - 12f);
             r.sizeDelta = new Vector2(290, 272);
             _society = card.gameObject;
 
@@ -1477,369 +1851,15 @@ namespace StellarisClone.Rendering
             _gene.Tip.SetText(geneTip);
         }
 
-        /// <summary>Досье планеты — стеклянная пластина поверх низа планеты: шкалы слева, климат справа.</summary>
-        private void BuildDossier(RectTransform rt)
-        {
-            var card = Glass(rt, "Dossier", LGIcon.Planet, Loc.T("ДОСЬЕ ПЛАНЕТЫ"), CGold, LGAppear.Kind.SlideUp, 0.10f, out var body);
-            var r = card.rectTransform;
-            r.anchorMin = r.anchorMax = new Vector2(0, 0);
-            r.pivot = new Vector2(0, 0);
-            r.anchoredPosition = new Vector2(Pad, 24);
-            r.sizeDelta = new Vector2(560, 236);
-
-            _dossier = new Seg[4];
-            string[] labels = { Loc.T("Пригодность"), Loc.T("Районы · размер"), Loc.T("Титан"), Loc.T("Гелий-3") };
-            for (int i = 0; i < _dossier.Length; i++) _dossier[i] = MakeSeg(body, labels[i], 4 + i * 34, 290f);
-
-            var vline = LGBuild.Panel(body, "Split", new Color(0.45f, 0.95f, 0.90f, 0.16f));
-            vline.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(312, -4), new Vector2(1, 136));
-            LG.Ignore(vline.gameObject);
-
-            _climate = LGBuild.Label(body, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            _climate.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(328, -2), new Vector2(200, 140));
-            _climate.lineSpacing = 1.25f;
-
-            _stationText = LGBuild.Label(body, "", 11, CMuted, TextAnchor.LowerLeft, wrap: true);
-            _stationText.rectTransform.Stretch(0, 2, 0, 0);
-        }
-
-        private static Seg MakeSeg(RectTransform parent, string label, float top, float width)
-        {
-            var s = new Seg { Cells = new Image[5] };
-            var l = LGBuild.Label(parent, label, 11, CMuted, TextAnchor.UpperLeft);
-            l.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -top), new Vector2(width, 16));
-            s.Value = LGBuild.Label(parent, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperRight, bold: true);
-            s.Value.rectTransform.At(new Vector2(0, 1), new Vector2(1, 1), new Vector2(width, -top), new Vector2(120, 16));
-            float cw = (width - 4f * 4f) / 5f;
-            for (int i = 0; i < 5; i++)
-            {
-                var c = LGBuild.Panel(parent, "Cell", CSegOff);
-                c.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * (cw + 4f), -top - 19), new Vector2(cw, 6));
-                LG.Ignore(c.gameObject);
-                s.Cells[i] = c;
-            }
-            return s;
-        }
-
-        /// <summary>Пять плиток над районами: производство за месяц и занятость.</summary>
-        private void BuildTiles(RectTransform rt)
-        {
-            var row = LGBuild.Rect(rt, "Tiles");
-            row.anchorMin = new Vector2(RightX, 1);
-            row.anchorMax = new Vector2(1, 1);
-            row.pivot = new Vector2(0.5f, 1);
-            row.offsetMin = new Vector2(0, -TilesTop - TilesH);
-            row.offsetMax = new Vector2(-Pad, -TilesTop);
-
-            (LGIcon icon, Color col, string cap)[] defs =
-            {
-                (LGIcon.Minerals, CMinerals, Loc.T("ТИТАН / МЕС")),
-                (LGIcon.Energy, CEnergy, Loc.T("ГЕЛИЙ-3 / МЕС")),
-                (LGIcon.Alloys, CAlloys, Loc.T("СПЛАВЫ / МЕС")),
-                (LGIcon.Research, CScience, Loc.T("НАУКА / МЕС")),
-                (LGIcon.Population, CCyan, Loc.T("ЗАНЯТОСТЬ")),
-            };
-            _tiles = new Tile[defs.Length];
-            float w = 1f / defs.Length;
-            for (int i = 0; i < defs.Length; i++)
-            {
-                var d = defs[i];
-                var tile = LGBuild.Panel(row, "Tile", CPanel);
-                var tr = tile.rectTransform;
-                tr.anchorMin = new Vector2(i * w, 0);
-                tr.anchorMax = new Vector2((i + 1) * w, 1);
-                tr.offsetMin = new Vector2(i == 0 ? 0 : Gap * 0.5f, 0);
-                tr.offsetMax = new Vector2(i == defs.Length - 1 ? 0 : -Gap * 0.5f, 0);
-                LG.Glass(tile.gameObject, 16f).SetRim(new Color(d.col.r, d.col.g, d.col.b, 0.35f));
-                var mo = LG.Motion(tile.gameObject, LGAppear.Kind.SlideDown);
-                mo.delay = 0.05f + i * 0.04f;
-                mo.distance = 20f;
-
-                var accent = LGBuild.Panel(tile.transform, "Accent", d.col);
-                accent.rectTransform.anchorMin = new Vector2(0, 1);
-                accent.rectTransform.anchorMax = new Vector2(1, 1);
-                accent.rectTransform.offsetMin = new Vector2(18, -3);
-                accent.rectTransform.offsetMax = new Vector2(-18, -1);
-                LG.Ignore(accent.gameObject);
-
-                var ic = LGIcons.Create(tile.transform, d.icon, 26, d.col);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 6), new Vector2(26, 26));
-                var val = LGBuild.Label(tile.transform, "", 26, Color.white, TextAnchor.MiddleLeft, bold: true);
-                val.rectTransform.Stretch(52, 30, 8, 12);
-                var cap = LGBuild.Label(tile.transform, d.cap, 10, CMuted, TextAnchor.LowerLeft, bold: true);
-                cap.rectTransform.Stretch(52, 12, 8, 0);
-                _tiles[i] = new Tile { Value = val, Caption = cap };
-            }
-
-            _bankruptText = LGBuild.Label(rt, Loc.T("БАНКРОТСТВО: ПРОИЗВОДСТВО УРЕЗАНО ВДВОЕ"), 11, UIManager.DS.Red, TextAnchor.LowerRight, bold: true);
-            _bankruptText.rectTransform.anchorMin = new Vector2(RightX, 1);
-            _bankruptText.rectTransform.anchorMax = new Vector2(1, 1);
-            _bankruptText.rectTransform.offsetMin = new Vector2(0, -TilesTop - 2);
-            _bankruptText.rectTransform.offsetMax = new Vector2(-Pad, -TilesTop + 16);
-            _bankruptText.gameObject.SetActive(false);
-        }
-
-        /// <summary>Районы: шапка с приоритетом и автостройкой, полоса слотов, четыре карточки сеткой 2×2.</summary>
-        private void BuildDistricts(RectTransform rt)
-        {
-            var panel = LGBuild.Panel(rt, "Districts", CPanel);
-            var p = panel.rectTransform;
-            p.anchorMin = new Vector2(RightX, LowerShare);
-            p.anchorMax = new Vector2(1, 1);
-            p.offsetMin = new Vector2(0, Gap * 0.5f);
-            p.offsetMax = new Vector2(-Pad, -DistrictsTop);
-            LG.Glass(panel.gameObject, 22f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.36f));
-            var mo = LG.Motion(panel.gameObject, LGAppear.Kind.SlideRight);
-            mo.delay = 0.12f;
-            mo.distance = 30f;
-
-            var head = LGBuild.Rect(p, "Head");
-            head.TopBand(14, 28, 20, 20);
-            var hic = LGIcons.Create(head, LGIcon.Construction, 18, CGold);
-            hic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(18, 18));
-            _districtHeader = LGBuild.Label(head, "", 15, CGold, TextAnchor.MiddleLeft, bold: true);
-            _districtHeader.rectTransform.offsetMin = new Vector2(26, 0);
-            _districtHeader.rectTransform.offsetMax = new Vector2(-380, 0);
-            BuildColonyControls(head);
-
-            _districtSlots = LGBuild.Rect(p, "Slots");
-            _districtSlots.TopBand(52, 6, 20, 20);
-
-            var grid = LGBuild.Rect(p, "Grid");
-            grid.Stretch(16, 16, 16, 70);
-            DistrictType[] order = { DistrictType.Urban, DistrictType.Mining, DistrictType.Generator, DistrictType.Industrial };
-            for (int i = 0; i < order.Length; i++)
-            {
-                int col = i % 2, row = i / 2;
-                var cell = LGBuild.Rect(grid, "Cell");
-                cell.anchorMin = new Vector2(col * 0.5f, 1f - (row + 1) * 0.5f);
-                cell.anchorMax = new Vector2((col + 1) * 0.5f, 1f - row * 0.5f);
-                cell.offsetMin = new Vector2(col == 0 ? 0 : 6, row == 1 ? 0 : 6);
-                cell.offsetMax = new Vector2(col == 0 ? -6 : 0, row == 0 ? 0 : -6);
-                _cards.Add(BuildDistrictCard(cell, order[i]));
-            }
-        }
-
-        /// <summary>Справа в шапке районов: приоритет колонии (четыре кнопки-значка) и переключатель автостройки.</summary>
-        private void BuildColonyControls(RectTransform head)
-        {
-            var host = LGBuild.Rect(head, "ColonyControls");
-            host.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(370, 28));
-            _colonyControls = host.gameObject;
-
-            var lbl = LGBuild.Label(host, Loc.T("ПРИОРИТЕТ"), 10, CMuted, TextAnchor.MiddleLeft, bold: true);
-            lbl.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(70, 28));
-
-            LGIcon[] icons = { LGIcon.Globe, LGIcon.Minerals, LGIcon.Energy, LGIcon.Alloys };
-            Color[] cols = { CCyan, CMinerals, CEnergy, CAlloys };
-            _focusBg = new Image[ColonyFocusInfo.All.Length];
-            for (int i = 0; i < _focusBg.Length; i++)
-            {
-                var f = ColonyFocusInfo.All[i];
-                var b = LGBuild.Button(host, "Focus", new Color(0.07f, 0.13f, 0.17f), new Color(cols[i].r, cols[i].g, cols[i].b, 0.6f),
-                                       () => SetFocus(f), icons[i], null, 10, 8f);
-                ((RectTransform)b.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(72 + i * 34, 0), new Vector2(30, 28));
-                foreach (var img in b.GetComponentsInChildren<Image>(true)) if (img.gameObject != b.gameObject) img.color = cols[i];
-                _focusBg[i] = b.GetComponent<Image>();
-                TooltipHelper.Attach(b.gameObject, Loc.F("<b>Приоритет: {0}</b>\n{1}", ColonyFocusInfo.Name(f), ColonyFocusInfo.Desc(f)));
-            }
-
-            var auto = LGBuild.Button(host, "Auto", new Color(0.07f, 0.13f, 0.17f), new Color(0.40f, 1f, 0.62f, 0.55f), ToggleAutoBuild, null, null, 10, 8f);
-            ((RectTransform)auto.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(150, 28));
-            _autoBg = auto.GetComponent<Image>();
-            _autoIcon = LGIcons.Create(auto.transform, LGIcon.Construction, 13, CMuted);
-            _autoIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(13, 13));
-            _autoText = LGBuild.Label(auto.transform, "", 10, Color.white, TextAnchor.MiddleLeft, bold: true);
-            _autoText.rectTransform.Stretch(29, 0, 6, 0);
-            TooltipHelper.Attach(auto.gameObject,
-                Loc.T("<b>Автостройка</b>\nКогда очередь пуста, колония раз в месяц сама заказывает район:\n") +
-                Loc.T("• тесно — городской район (жильё);\n• есть безработные — район по приоритету колонии.\n") +
-                Loc.T("<color=#8AA2A8>Ресурсы списываются как при обычном заказе. Ручные заказы не мешают.</color>"));
-        }
-
-        /// <summary>
-        /// Карточка района: эмблема, название и эффект, крупное количество; посередине — фигурки рабочих
-        /// и состояние с полосой стройки; внизу — стоимость и кнопка постройки.
-        /// </summary>
-        private DistrictCard BuildDistrictCard(RectTransform rt, DistrictType type)
-        {
-            Color dc = DistrictInfo.Color(type);
-            var bg = rt.gameObject.AddComponent<Image>();
-            bg.color = new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.95f);
-            bg.raycastTarget = false;
-            LG.Platter(rt.gameObject, 16f).SetRim(new Color(dc.r, dc.g, dc.b, 0.45f));
-
-            // Свечение цвета района из левого верхнего угла (за край карточки не выходит)
-            var glowHost = LGBuild.Rect(rt, "GlowClip");
-            glowHost.Stretch(2, 2, 2, 2);
-            glowHost.gameObject.AddComponent<RectMask2D>();
-            var glow = Deco(glowHost, "Glow", HaloSprite(), new Color(dc.r, dc.g, dc.b, 0.12f));
-            glow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(40, -40), new Vector2(280, 280));
-
-            LGIcon icon = type switch
-            {
-                DistrictType.Urban => LGIcon.Housing,
-                DistrictType.Mining => LGIcon.Minerals,
-                DistrictType.Generator => LGIcon.Energy,
-                _ => LGIcon.Alloys
-            };
-            var badge = LGBuild.Panel(rt, "Badge", new Color(dc.r * 0.28f, dc.g * 0.28f, dc.b * 0.28f));
-            badge.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -14), new Vector2(52, 52));
-            LG.Platter(badge.gameObject, 26f).SetRim(new Color(dc.r, dc.g, dc.b, 0.8f));
-            LGIcons.Create(badge.transform, icon, 28, dc);
-
-            var name = LGBuild.Label(rt, DistrictName(type).ToUpper(), 14, Color.white, TextAnchor.UpperLeft, bold: true);
-            name.rectTransform.anchorMin = new Vector2(0, 1);
-            name.rectTransform.anchorMax = new Vector2(1, 1);
-            name.rectTransform.offsetMin = new Vector2(78, -34);
-            name.rectTransform.offsetMax = new Vector2(-80, -14);
-            var effect = LGBuild.Label(rt, DistrictEffect(type), 11, CMuted, TextAnchor.UpperLeft, wrap: true);
-            effect.rectTransform.anchorMin = new Vector2(0, 1);
-            effect.rectTransform.anchorMax = new Vector2(1, 1);
-            effect.rectTransform.offsetMin = new Vector2(78, -68);
-            effect.rectTransform.offsetMax = new Vector2(-16, -34);
-
-            var count = LGBuild.Label(rt, "", 28, dc, TextAnchor.UpperRight, bold: true);
-            count.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-16, -10), new Vector2(110, 34));
-
-            // Рабочие и состояние — середина карточки
-            var workers = LGBuild.Rect(rt, "Workers");
-            workers.anchorMin = new Vector2(0, 0.5f);
-            workers.anchorMax = new Vector2(1, 0.5f);
-            workers.pivot = new Vector2(0, 0.5f);
-            workers.offsetMin = new Vector2(16, -12);
-            workers.offsetMax = new Vector2(-16, 8);
-            var status = LGBuild.Label(rt, "", 11, CMuted, TextAnchor.UpperLeft);
-            status.rectTransform.anchorMin = new Vector2(0, 0.5f);
-            status.rectTransform.anchorMax = new Vector2(1, 0.5f);
-            status.rectTransform.offsetMin = new Vector2(16, -32);
-            status.rectTransform.offsetMax = new Vector2(-16, -14);
-            var progHost = LGBuild.Rect(rt, "ProgressHost");
-            progHost.anchorMin = new Vector2(0, 0.5f);
-            progHost.anchorMax = new Vector2(1, 0.5f);
-            progHost.offsetMin = new Vector2(16, -40);
-            progHost.offsetMax = new Vector2(-16, -34);
-            var progress = LGBuild.Bar(progHost, CGold, 0f, 4f);
-
-            // Низ: стоимость, отмена, постройка
-            var minCost = MakeResLine(rt, LGIcon.Minerals, CMinerals, 14, 12, bold: true);
-            ((RectTransform)minCost.Go.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(16, 16), new Vector2(64, 30));
-            var alloyCost = MakeResLine(rt, LGIcon.Alloys, CAlloys, 14, 12, bold: true);
-            ((RectTransform)alloyCost.Go.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(80, 16), new Vector2(64, 30));
-
-            var right = new Vector2(1, 0);
-            var btn = LGBuild.Button(rt, "Build", new Color(dc.r * 0.42f, dc.g * 0.42f, dc.b * 0.42f), new Color(dc.r, dc.g, dc.b, 0.8f),
-                                     () => OnBuildDistrict(type), LGIcon.Construction, Loc.T("ПОСТРОИТЬ"), 11);
-            ((RectTransform)btn.transform).At(right, new Vector2(1, 0), new Vector2(-14, 14), new Vector2(200, 34));
-            var cancel = LGBuild.Button(rt, "Cancel", UIManager.DS.BtnDanger, UIManager.DS.Red, () => OnCancelDistrict(type), LGIcon.Close, null, 10, 12f);
-            ((RectTransform)cancel.transform).At(right, new Vector2(1, 0), new Vector2(-222, 15), new Vector2(32, 32));
-            TooltipHelper.Attach(cancel.gameObject, Loc.T("<b>Отменить</b>\nПоследний заказанный район этого типа. Ресурсы вернутся полностью."));
-            cancel.gameObject.SetActive(false);
-
-            TooltipHelper.Attach(btn.gameObject,
-                Loc.F("<b>{0} район</b>\n{1}\n\n", DistrictName(type), DistrictEffect(type)) +
-                Loc.F("Строительство: {0:0} дн. (на планете — одна стройка за раз)\n", ConstructionManager.DistrictDays(type)) +
-                Loc.F("Стоимость: {0} титана, {1} сплавов\n", DistrictInfo.MineralsCost(type), DistrictInfo.AlloysCost(type)) +
-                Loc.T("<color=#8AA2A8>Каждый район — одно рабочее место. Производство идёт, только если на нём работают жители.</color>"));
-
-            return new DistrictCard
-            {
-                Type = type, Count = count, Status = status, MinCost = minCost, AlloyCost = alloyCost,
-                Build = btn, Cancel = cancel, Progress = progress, Workers = workers,
-                BuildBg = btn.GetComponent<Image>(), BuildTint = new Color(dc.r * 0.42f, dc.g * 0.42f, dc.b * 0.42f),
-                Reason = btn.GetComponentInChildren<Text>(),
-                Tip = btn.GetComponent<TooltipTrigger>()
-            };
-        }
-
-        /// <summary>Очередь строительства планеты: до пяти строк, у первой — полоса прогресса.</summary>
-        private void BuildQueue(RectTransform rt)
-        {
-            var card = Glass(rt, "Queue", LGIcon.Clock, Loc.T("ОЧЕРЕДЬ СТРОИТЕЛЬСТВА"), CGold, LGAppear.Kind.SlideUp, 0.16f, out var body);
-            var r = card.rectTransform;
-            r.anchorMin = new Vector2(RightX, 0);
-            r.anchorMax = new Vector2(RightX + (1f - RightX) * 0.58f, LowerShare);
-            r.offsetMin = new Vector2(0, 24);
-            r.offsetMax = new Vector2(-Gap * 0.5f, -Gap * 0.5f);
-
-            _queueHint = LGBuild.Label(card.rectTransform, "", 11, CMuted, TextAnchor.UpperRight, bold: true);
-            _queueHint.rectTransform.TopBand(16, 18, 20, 178);
-            _buildMenuBtn = LGBuild.Button(card.rectTransform, "BuildMenu", new Color(0.12f, 0.36f, 0.40f), CCyan,
-                () => { if (_planet != null && Owned) BuildMenuModal.Open(_planet); }, LGIcon.Construction, Loc.T("СТРОИТЬ…"), 11, 10f);
-            ((RectTransform)_buildMenuBtn.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-16, -10), new Vector2(150, 30));
-            TooltipHelper.Attach(_buildMenuBtn.gameObject, Loc.T("<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#8AA2A8>(B)</color>"));
-
-            // Пустая очередь: значок, подпись и кнопка «заказать то, что нужно колонии»
-            var empty = LGBuild.Rect(body, "Empty");
-            empty.Stretch();
-            _queueEmptyGo = empty.gameObject;
-            var eIcon = LGIcons.Create(empty, LGIcon.Construction, 40, new Color(CGold.r, CGold.g, CGold.b, 0.30f));
-            eIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 58), new Vector2(40, 40));
-            var eTitle = LGBuild.Label(empty, Loc.T("ОЧЕРЕДЬ ПУСТА"), 13, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
-            eTitle.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 22), new Vector2(500, 20));
-            _queueEmpty = LGBuild.Label(empty, "", 12, CMuted, TextAnchor.MiddleCenter, wrap: true);
-            _queueEmpty.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -2), new Vector2(500, 20));
-            _suggestBtn = LGBuild.Button(empty, "Suggest", new Color(0.12f, 0.36f, 0.40f), CCyan, OnSuggest, null, null, 11);
-            ((RectTransform)_suggestBtn.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -44), new Vector2(380, 36));
-            var sIcon = LGIcons.Create(_suggestBtn.transform, LGIcon.Construction, 14, Color.white);
-            sIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(14, 14));
-            _suggestText = LGBuild.Label(_suggestBtn.transform, "", 11, Color.white, TextAnchor.MiddleCenter, bold: true);
-            _suggestText.rectTransform.Stretch(30, 0, 10, 0);
-            TooltipHelper.Attach(_suggestBtn.gameObject, Loc.T("<b>Рекомендуемый район</b>\nТот же выбор, что делает автостройка: тесно — жильё, есть безработные — район по приоритету колонии."));
-
-            _queueRows = new QueueRow[ConstructionManager.MaxPlanetQueue];
-            for (int i = 0; i < _queueRows.Length; i++)
-            {
-                int idx = i;
-                var row = LGBuild.Rect(body, "Row");
-                row.anchorMin = new Vector2(0, 1f - (i + 1) / (float)_queueRows.Length);
-                row.anchorMax = new Vector2(1, 1f - i / (float)_queueRows.Length);
-                row.offsetMin = new Vector2(0, 2);
-                row.offsetMax = new Vector2(0, -2);
-                var rowBg = row.gameObject.AddComponent<Image>();
-                rowBg.color = new Color(1f, 1f, 1f, i == 0 ? 0.05f : 0.025f);
-                rowBg.raycastTarget = false;
-                LG.Platter(row.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, i == 0 ? 0.14f : 0.06f));
-
-                var ic = LGIcons.Create(row, LGIcon.Construction, 18, CGold);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 2), new Vector2(18, 18));
-                var nm = LGBuild.Label(row, "", 12, Color.white, TextAnchor.MiddleLeft, bold: true);
-                nm.rectTransform.Stretch(40, 6, 230, 0);
-                var days = LGBuild.Label(row, "", 11, CMuted, TextAnchor.MiddleRight, bold: true);
-                days.rectTransform.Stretch(0, 6, 128, 0);
-                var progHost = LGBuild.Rect(row, "ProgressHost");
-                progHost.anchorMin = new Vector2(0, 0);
-                progHost.anchorMax = new Vector2(1, 0);
-                progHost.offsetMin = new Vector2(40, 4);
-                progHost.offsetMax = new Vector2(-128, 8);
-                var prog = LGBuild.Bar(progHost, CGold, 0f, 3f);
-                var cancel = LGBuild.Button(row, "Cancel", UIManager.DS.BtnDanger, UIManager.DS.Red, () => OnCancelQueued(idx), LGIcon.Close, null, 9, 10f);
-                ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(28, 28));
-                TooltipHelper.Attach(cancel.gameObject, Loc.T("<b>Отменить заказ</b>\nРесурсы вернутся полностью."));
-
-                // Купить текущую стройку за гелий-3 (как в Master of Orion)
-                var buy = LGBuild.Button(row, "Buy", new Color(0.36f, 0.28f, 0.06f), CGold, () => OnBuyQueued(idx), null, null, 9, 10f);
-                ((RectTransform)buy.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-42, 0), new Vector2(80, 28));
-                var bIc = LGIcons.Create(buy.transform, LGIcon.Energy, 12, CEnergy);
-                bIc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(9, 0), new Vector2(12, 12));
-                var bText = LGBuild.Label(buy.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
-                bText.rectTransform.Stretch(25, 0, 4, 0);
-                TooltipHelper.Attach(buy.gameObject, Loc.T("Купить"));
-
-                _queueRows[i] = new QueueRow { Go = row.gameObject, Icon = ic, Name = nm, Days = days, Progress = prog, Cancel = cancel,
-                                               Buy = buy, BuyBg = buy.GetComponent<Image>(), BuyText = bText, BuyTip = buy.GetComponent<TooltipTrigger>() };
-            }
-        }
-
-        /// <summary>Проекты планеты: три крупные кнопки столбиком.</summary>
+        /// <summary>Проекты планеты — внизу слева, пять плиток в ряд.</summary>
         private void BuildProjects(RectTransform rt)
         {
             var card = Glass(rt, "Projects", LGIcon.Planet, Loc.T("ПРОЕКТЫ ПЛАНЕТЫ"), CCyan, LGAppear.Kind.SlideUp, 0.20f, out var body);
             var r = card.rectTransform;
-            r.anchorMin = new Vector2(RightX + (1f - RightX) * 0.58f, 0);
-            r.anchorMax = new Vector2(1, LowerShare);
-            r.offsetMin = new Vector2(Gap * 0.5f, 24);
-            r.offsetMax = new Vector2(-Pad, -Gap * 0.5f);
+            r.anchorMin = r.anchorMax = new Vector2(0, 0);
+            r.pivot = new Vector2(0, 0);
+            r.anchoredPosition = new Vector2(Pad, 24);
+            r.sizeDelta = new Vector2(LeftW, 156);
 
             _mine = BuildAction(body, 0, Loc.T("ДОБЫВАЮЩИЙ КОМПЛЕКС"), new Color(0.10f, 0.36f, 0.26f), UIManager.DS.Green, OnMine);
             _colony = BuildAction(body, 1, Loc.T("КОЛОНИЯ"), new Color(0.10f, 0.32f, 0.40f), CCyan, OnColony);
@@ -1848,31 +1868,31 @@ namespace StellarisClone.Rendering
             _gene = BuildAction(body, 4, Loc.T("ГЕННАЯ АДАПТАЦИЯ"), new Color(0.30f, 0.14f, 0.30f), new Color(0.98f, 0.55f, 0.85f), OnGene);
         }
 
-        /// <summary>Проект планеты: круглый значок, название и строка состояния (цена, срок или итог).</summary>
+        /// <summary>Проект планеты: значок, название и строка состояния (цена, срок или итог).</summary>
         private static ActionButton BuildAction(RectTransform parent, int index, string title, Color tint, Color accent, System.Action onClick)
         {
-            var b = LGBuild.Button(parent, "Project", tint, new Color(accent.r, accent.g, accent.b, 0.55f), onClick, null, null, 11, 14f);
+            var b = LGBuild.Button(parent, "Project", tint, new Color(accent.r, accent.g, accent.b, 0.55f), onClick, null, null, 11, 12f);
             var r = (RectTransform)b.transform;
-            r.anchorMin = new Vector2(0, 1f - (index + 1) / (float)ProjectCount);
-            r.anchorMax = new Vector2(1, 1f - index / (float)ProjectCount);
-            r.offsetMin = new Vector2(0, 3);
-            r.offsetMax = new Vector2(0, -3);
+            r.anchorMin = new Vector2(index / (float)ProjectCount, 0);
+            r.anchorMax = new Vector2((index + 1) / (float)ProjectCount, 1);
+            r.offsetMin = new Vector2(index == 0 ? 0 : 4, 0);
+            r.offsetMax = new Vector2(index == ProjectCount - 1 ? 0 : -4, 0);
 
             var badge = LGBuild.Panel(b.transform, "Badge", new Color(0.05f, 0.1f, 0.12f));
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(38, 38));
-            LG.Platter(badge.gameObject, 19f).SetRim(new Color(accent.r, accent.g, accent.b, 0.6f));
-            var ic = LGIcons.Create(badge.transform, LGIcon.Check, 18, Color.white);
+            badge.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(8, -8), new Vector2(30, 30));
+            LG.Platter(badge.gameObject, 15f).SetRim(new Color(accent.r, accent.g, accent.b, 0.6f));
+            var ic = LGIcons.Create(badge.transform, LGIcon.Check, 15, Color.white);
 
-            var t = LGBuild.Label(b.transform, title, 12, accent, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.anchorMin = new Vector2(0, 0.5f);
+            var t = LGBuild.Label(b.transform, title, 11, accent, TextAnchor.MiddleLeft, bold: true, wrap: true);
+            t.rectTransform.anchorMin = new Vector2(0, 1);
             t.rectTransform.anchorMax = new Vector2(1, 1);
-            t.rectTransform.offsetMin = new Vector2(62, 1);
-            t.rectTransform.offsetMax = new Vector2(-10, 0);
-            var st = LGBuild.Label(b.transform, "", 11, Color.white, TextAnchor.UpperLeft, wrap: true);
+            t.rectTransform.offsetMin = new Vector2(44, -40);
+            t.rectTransform.offsetMax = new Vector2(-6, -6);
+            var st = LGBuild.Label(b.transform, "", 10, Color.white, TextAnchor.UpperLeft, wrap: true);
             st.rectTransform.anchorMin = new Vector2(0, 0);
-            st.rectTransform.anchorMax = new Vector2(1, 0.5f);
-            st.rectTransform.offsetMin = new Vector2(62, 0);
-            st.rectTransform.offsetMax = new Vector2(-10, -2);
+            st.rectTransform.anchorMax = new Vector2(1, 1);
+            st.rectTransform.offsetMin = new Vector2(8, 4);
+            st.rectTransform.offsetMax = new Vector2(-6, -44);
             TooltipHelper.Attach(b.gameObject, title);
             return new ActionButton { Btn = b, Bg = b.GetComponent<Image>(), Icon = ic, Badge = badge, Status = st, Tint = tint, Accent = accent,
                                       Tip = b.GetComponent<TooltipTrigger>() };
@@ -1897,18 +1917,6 @@ namespace StellarisClone.Rendering
             body = LGBuild.Rect(card.rectTransform, "Body");
             body.Stretch(20, 14, 20, 46);
             return card;
-        }
-
-        private static ResLine MakeResLine(RectTransform parent, LGIcon icon, Color col, float iconSize, int fontSize, bool bold = false)
-        {
-            var rt = LGBuild.Rect(parent, "Res_" + icon);
-            var ic = LGIcons.Create(rt, icon, iconSize, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(iconSize, iconSize));
-            ic.raycastTarget = false;
-            var t = LGBuild.Label(rt, "", fontSize, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold);
-            t.rectTransform.Stretch(iconSize + 6, 0, 0, 0);
-            t.supportRichText = true;
-            return new ResLine { Go = rt.gameObject, Icon = ic, Text = t };
         }
 
         private static string DistrictName(DistrictType t) => t switch

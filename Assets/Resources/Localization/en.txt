@@ -4498,3 +4498,64 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 <color=#8AA2A8>Купить сразу после закладки ≈ {0:0} гелия-3</color>	<color=#8AA2A8>Buy right after laying down ≈ {0:0} Helium-3</color>
 {0} · {1} мес.	{0} · {1} mo.
 <b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»  <color=#8AA2A8>(C)</color>	<b>Colony management</b>\nAll colonies in one table: pops, stability, output, construction and “Buy”  <color=#8AA2A8>(C)</color>
+<color=#F2C46B>Рост остановлен — нет жилья. Постройте городской район.</color>	<color=#F2C46B>Growth halted — no housing. Build an urban district.</color>
+Рост остановлен.	Growth halted.
+Рост +{0:0.#}% в месяц · новый житель через ~{1} мес.	Growth +{0:0.#}% per month · next pop in ~{1} mo.
+Колонисты в пути	Colonists on their way
+<b>Титан</b> в месяц: районы и добывающий комплекс	<b>Titanium</b> per month: districts and the mining complex
+<b>Гелий-3</b> в месяц: энергорайоны и добывающий комплекс	<b>Helium-3</b> per month: generator districts and the mining complex
+<b>Сплавы</b> в месяц: промышленные районы	<b>Alloys</b> per month: industrial districts
+<b>Наука</b> в месяц от жителей (умные виды дают больше, роботы — ничего)	<b>Research</b> per month from pops (intelligent species give more, robots none)
+Стабильность появится с колонией	Stability appears once there is a colony
+<b>Работают {0} из {1} мест</b>\n	<b>{0} of {1} jobs filled</b>\n
+<color=#F2C46B>Безработных {0}: постройте районы — они сразу выйдут на смену.</color>	<color=#F2C46B>{0} unemployed: build districts — they will start working right away.</color>
+Безработных нет.	No unemployment.
+Занятость	Employment
+Сейчас: <b>+{0:0.#}</b>	Now: <b>+{0:0.#}</b>
+Сейчас ничего не производится	Nothing is produced right now
+АВТОСТРОЙКА ВКЛ.	AUTO-BUILD ON
+ЖИЛЬЁ	HOUSING
+Нет данных о планете — отправьте научный корабль.	No data on this planet — send a science ship.
+Колонисты в пути. Когда колония будет основана, здесь появятся рабочие места.	Colonists are on their way. Jobs will appear here once the colony is founded.
+Колонии нет. Основайте её проектом «Колония» внизу.	No colony yet. Found one with the “Colony” project below.
+Планета непригодна для жизни. Доход даст только добывающий комплекс.	The planet is uninhabitable. Only a mining complex can make it pay.
+Городских районов {0} · жителей {1} из {2}	Urban districts {0} · pops {1} of {2}
+{0} · работают {1} из {2}	{0} · {1} of {2} working
+  · приоритет	  · priority
+  ·  <color=#F2C46B>строится, {0} дн.</color>	  ·  <color=#F2C46B>building, {0} d</color>
+  ·  <color=#F2C46B>в очереди +{0}</color>	  ·  <color=#F2C46B>queued +{0}</color>
+  ·  <color=#F2C46B>нет жилья — рост стоит</color>	  ·  <color=#F2C46B>no housing — growth halted</color>
+  ·  рост: +1 через {0} мес.	  ·  growth: +1 in {0} mo.
+<b>Город</b>\nЖильё для жителей и по рабочему месту в каждом районе. Нажмите, чтобы работа распределялась равномерно.	<b>City</b>\nHousing for pops and one job in each district. Click to spread work evenly.
+<b>{0}</b>\n{1}\nКаждое занятое место даёт ≈ {2:0.#} в месяц.\n	<b>{0}</b>\n{1}\nEach filled job gives ≈ {2:0.#} per month.\n
+<color=#9EF0C8>Это приоритет колонии: жители идут сюда первыми.</color>	<color=#9EF0C8>This is the colony priority: pops work here first.</color>
+Нажмите, чтобы сделать этот ресурс приоритетом: жители пойдут сюда первыми.	Click to make this resource the priority: pops will work here first.
+<color=#F2C46B>Безработных {0}</color> — нажмите «+» в ряду, чтобы дать им работу.	<color=#F2C46B>{0} unemployed</color> — click “+” in a row to give them jobs.
+<color=#8AA2A8>Все {0} мест под районы застроены.</color>	<color=#8AA2A8>All {0} district slots are built.</color>
+<color=#8AA2A8>Свободных мест под районы: {0} из {1}.</color>	<color=#8AA2A8>Free district slots: {0} of {1}.</color>
+<b>Район строится</b>\nНажмите, чтобы отменить (ресурсы вернутся).	<b>District under construction</b>\nClick to cancel (resources are refunded).
+районов нет — «+», чтобы построить	no districts — “+” to build
+готово через {0} дн. · {1:0}%	done in {0} d · {1:0}%
+<b>{0}</b>\nОсталось {1} дн. Нажмите, чтобы открыть меню строительства.	<b>{0}</b>\n{1} days left. Click to open the construction menu.
+КУПИТЬ  {0}	BUY  {0}
+Автостройка выберет сама	Auto-build will choose
+Выберите производство	Choose production
+закажет нужный район в начале месяца	orders the needed district at the start of the month
+планета простаивает — нажмите «+»	the planet is idle — click “+”
+Очередь пуста. Нажмите, чтобы открыть меню строительства  (B)	The queue is empty. Click to open the construction menu  (B)
+<b>{0}</b>\nВ очереди · готов через ~{1} дн.\n<color=#8AA2A8>Нажмите, чтобы отменить (ресурсы вернутся)</color>	<b>{0}</b>\nQueued · done in ~{1} d\n<color=#8AA2A8>Click to cancel (resources are refunded)</color>
+<color={0}>Класс</color>   {1}\n	<color={0}>Class</color>   {1}\n
+<color={0}>Добывающий комплекс: +{1:0.#} в месяц</color>	<color={0}>Mining complex: +{1:0.#} per month</color>
+<color={0}>Комплекс дал бы +{1:0.#} в месяц</color>	<color={0}>A complex would give +{1:0.#} per month</color>
+\n<color={0}>Звёздная база охраняет систему</color>	\n<color={0}>A starbase guards the system</color>
+ПРИОРИТЕТ КОЛОНИИ	COLONY PRIORITY
+<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что заказывает автостройка. Также — клик по ряду работ.	<b>Colony priority</b>\nWhere pops work first and what auto-build orders. You can also click a job row.
+<b>Автостройка</b>\nКогда очередь пуста, колония сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету.	<b>Auto-build</b>\nWhen the queue is empty, the colony orders the district it needs at the start of the month: housing when crowded, jobs by priority.
+ПРОИЗВОДСТВО	PRODUCTION
+СТРОИТЬ	BUILD
+ИНФОРМАЦИЯ О ПЛАНЕТЕ	PLANET INFO
+СООРУЖЕНИЯ	STRUCTURES
+ПРЕДЫДУЩАЯ КОЛОНИЯ	PREVIOUS COLONY
+СЛЕДУЮЩАЯ КОЛОНИЯ	NEXT COLONY
+ГОТОВО	DONE
+Вернуться на карту  <color=#8AA2A8>(Esc)</color>	Back to the map  <color=#8AA2A8>(Esc)</color>
