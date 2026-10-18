@@ -63,3 +63,8 @@ ExportedObj/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Compile-check tool outputs
+/Tools/**/[Bb]in/
+/Tools/**/[Oo]bj/
+!/Tools/CompileCheck/*.csproj

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compile-only check of WargameRTS.Runtime against UnityEngine reference assemblies. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0649;CS0414</NoWarn>
+    <RefsDir>$(UNITY_REFS_DIR)</RefsDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="PackageStubs.cs" />
+    <Compile Include="../../Assets/_Project/Scripts/**/*.cs" Exclude="../../Assets/_Project/Scripts/Editor/**" />
+    <Reference Include="$(RefsDir)/engine/lib/net45/*.dll" />
+  </ItemGroup>
+</Project>

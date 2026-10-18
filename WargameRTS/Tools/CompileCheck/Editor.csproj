@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compile-only check of WargameRTS.Editor scripts. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RefsDir>$(UNITY_REFS_DIR)</RefsDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/_Project/Scripts/Editor/**/*.cs" />
+    <Reference Include="$(RefsDir)/engine/lib/net45/*.dll" />
+    <Reference Include="$(RefsDir)/editor/lib/UnityEditor.dll" />
+    <ProjectReference Include="Runtime.csproj" />
+  </ItemGroup>
+</Project>

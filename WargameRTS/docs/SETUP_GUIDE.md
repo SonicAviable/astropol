@@ -1,21 +1,22 @@
-# Гайд: создаём Unity-проект WargameRTS, подключаем Git и кодим вместе с Claude
+# Гайд: открываем WargameRTS в Unity, работаем с Git и кодим вместе с Claude
 
-Этот гайд — пошаговая инструкция «с нуля до первого коммита». Цель: Unity-проект
-лежит в репозитории `SonicAviable/astropol` в папке `WargameRTS/`, ты работаешь
-в Unity у себя на компьютере, а Claude пишет код в облачной сессии
-(claude.ai/code) и пушит его в GitHub. Ты делаешь `pull` — Unity подхватывает код.
+Unity-проект **уже лежит в репозитории** `SonicAviable/astropol` в папке
+`WargameRTS/` — со всеми настройками (URP, Input System, слои, навигация).
+Тебе нужно только скачать его и открыть в Unity. Claude пишет код в облачной
+сессии (claude.ai/code) и пушит в GitHub, ты делаешь `pull` — Unity
+подхватывает изменения.
 
 ```
 astropol/                    ← корень репозитория (Git)
 ├── Assets/ Packages/ ...    ← старый проект Astropolity (не трогаем)
-└── WargameRTS/              ← НОВЫЙ Unity-проект (RTS в духе Wargame / Broken Arrow)
-    ├── .gitignore           ← уже готов
-    ├── .gitattributes       ← уже готов (Git LFS для текстур, моделей, звука)
-    ├── CLAUDE.md            ← правила проекта для Claude
+└── WargameRTS/              ← Unity-проект RTS (открывать в Unity Hub именно его)
+    ├── Assets/_Project/     ← наш код и сцены
+    ├── Assets/Settings/     ← настройки URP
+    ├── Packages/            ← список пакетов Unity
+    ├── ProjectSettings/     ← настройки проекта
+    ├── Tools/CompileCheck/  ← проверка компиляции без Unity (для Claude)
     ├── docs/                ← этот гайд и дизайн-документ
-    ├── Assets/              ← появится на шаге 5
-    ├── Packages/            ← появится на шаге 5
-    └── ProjectSettings/     ← появится на шаге 5
+    └── CLAUDE.md            ← правила проекта для Claude
 ```
 
 > **Почему подпапка, а не отдельная ветка с другим проектом?** Ветка — это версия
@@ -26,18 +27,33 @@ astropol/                    ← корень репозитория (Git)
 
 ---
 
-## Шаг 0. Влить эту ветку в `main`
+## Быстрый старт (если хочется просто посмотреть)
 
-Гайд и заготовки лежат в ветке `claude/eloquent-curie-wgtboe`. Чтобы следующие
-сессии Claude и твой компьютер видели папку `WargameRTS/`, влей её в `main`:
+1. GitHub → репозиторий `astropol` → переключи ветку (кнопка с названием ветки
+   слева вверху) на `claude/eloquent-curie-wgtboe` (или `main`, если её уже влили)
+   → **Code → Download ZIP** → распакуй, например, в `C:\Dev\astropol`.
+2. Unity Hub → **Projects → Add → Add project from disk** → выбери папку
+   `C:\Dev\astropol\WargameRTS` (именно `WargameRTS`, не корень!).
+3. Открой проект в Unity **6000.6.3f1**. Первый запуск — несколько минут
+   (Unity импортирует пакеты и строит кэш `Library/`).
+4. Откроется сцена **Sandbox** (если нет — меню **WargameRTS → Open Sandbox
+   Scene**). Нажми **Play** ▶ — или сразу меню **WargameRTS → Play Sandbox**.
+
+ZIP подходит, чтобы посмотреть. Чтобы получать обновления от Claude одной
+кнопкой, лучше клонировать репозиторий через Git — шаги ниже.
+
+---
+
+## Шаг 0. Влить ветку в `main` (когда всё проверишь)
+
+Работа лежит в ветке `claude/eloquent-curie-wgtboe`. Когда убедишься, что
+проект открывается, влей её в `main`, чтобы следующие сессии Claude видели код:
 
 1. Открой https://github.com/SonicAviable/astropol
-2. GitHub покажет жёлтую плашку «claude/eloquent-curie-wgtboe had recent pushes» →
+2. GitHub покажет плашку «claude/eloquent-curie-wgtboe had recent pushes» →
    **Compare & pull request** (или вкладка *Pull requests* → *New pull request*,
    base: `main`, compare: `claude/eloquent-curie-wgtboe`).
 3. **Create pull request** → **Merge pull request** → **Confirm merge**.
-
-Дальше в гайде считаем, что основная ветка — `main`.
 
 ---
 
@@ -46,20 +62,15 @@ astropol/                    ← корень репозитория (Git)
 | Что | Зачем | Где взять |
 |---|---|---|
 | **Unity Hub** | установка и запуск версий Unity | unity.com/download |
-| **Unity Editor 6000.6.3f1** | та же версия, что у Astropolity (не придётся качать вторую) | Unity Hub → *Installs* → *Install Editor* (или *Archive*, если версии нет в списке) |
+| **Unity Editor 6000.6.3f1** | версия проекта (та же, что у Astropolity) | Unity Hub → *Installs* → *Install Editor* (или *Archive*, если версии нет в списке) |
 | **Git** | система контроля версий | git-scm.com (на Windows — «Git for Windows», все галочки по умолчанию) |
 | **Git LFS** | хранение больших бинарных файлов (текстуры, модели, звук) | идёт в составе Git for Windows; на macOS — `brew install git-lfs` |
 | **GitHub Desktop** *(необязательно, но удобно)* | кнопки Pull / Commit / Push без командной строки | desktop.github.com |
 | **IDE для C#** | редактирование и подсказки кода | **JetBrains Rider** (бесплатен для некоммерческих проектов), **Visual Studio 2022 Community** (галочка «Game development with Unity») или **VS Code** + расширение «Unity» |
 
-При установке Unity Editor в Hub отметь модули:
-- **Microsoft Visual Studio Community** — если у тебя ещё нет IDE;
-- **Windows Build Support (IL2CPP)** — пригодится позже для релизных сборок;
-- **Documentation** — по желанию.
-
-> Важно: все, кто работает с проектом, используют **одну и ту же** версию Unity.
-> Версия записана в `WargameRTS/ProjectSettings/ProjectVersion.txt`. Если решишь
-> перейти на другую — скажи Claude, чтобы обновил `CLAUDE.md`.
+> Все, кто работает с проектом, используют **одну и ту же** версию Unity.
+> Она записана в `WargameRTS/ProjectSettings/ProjectVersion.txt`. Если Unity
+> предложит обновить проект на другую версию — лучше откажись и поставь нужную.
 
 ---
 
@@ -71,157 +82,102 @@ astropol/                    ← корень репозитория (Git)
 git config --global user.name  "Твоё имя"
 git config --global user.email "почта, привязанная к GitHub"
 git config --global core.autocrlf true      # только на Windows; на macOS/Linux: input
-git config --global init.defaultBranch main
 git lfs install                             # включает Git LFS для твоего пользователя
 ```
-
-Проверка: `git --version` и `git lfs version` должны напечатать версии.
 
 ---
 
 ## Шаг 3. Склонировать репозиторий
 
-Клонируй репозиторий **в отдельную папку** с коротким путём без кириллицы и
-пробелов (Unity и некоторые инструменты не любят длинные/русские пути).
-Например `C:\Dev\astropol` или `~/Dev/astropol`.
+Клонируй в папку с коротким путём **без кириллицы и пробелов**, например
+`C:\Dev\astropol`.
 
 **Через GitHub Desktop:** *File → Clone repository → URL* →
 `https://github.com/SonicAviable/astropol` → Local path `C:\Dev` → **Clone**.
-Потом вверху *Current branch* → выбери `main`.
+Потом вверху *Current branch* → выбери `claude/eloquent-curie-wgtboe`
+(после шага 0 — `main`).
 
 **Через терминал:**
 
 ```bash
-cd C:/Dev                         # или ~/Dev
+cd C:/Dev
 git clone https://github.com/SonicAviable/astropol.git
 cd astropol
-git checkout main
-git pull
+git checkout claude/eloquent-curie-wgtboe     # после шага 0: git checkout main
 ```
-
-Убедись, что в `C:\Dev\astropol\WargameRTS\` есть `.gitignore`,
-`.gitattributes`, `CLAUDE.md` и папка `docs`. Если папки нет — ты не влил
-ветку (шаг 0) или не сделал `git pull`.
-
-> Если у тебя уже есть клон astropol для Astropolity — можно использовать его,
-> просто сделай `git pull` на `main`.
 
 ---
 
-## Шаг 4. Создать Unity-проект через Unity Hub
+## Шаг 4. Открыть проект в Unity
 
-Unity Hub не умеет создавать проект в уже существующей непустой папке, поэтому
-создаём его во **временном** месте, а потом переносим (шаг 5).
+1. Unity Hub → **Projects → Add → Add project from disk** →
+   `C:\Dev\astropol\WargameRTS`.
+2. Если Hub пишет, что версия не установлена, — нажми на предупреждение и
+   установи **6000.6.3f1**.
+3. Открой проект. Первый импорт идёт несколько минут.
+4. Откроется сцена `Assets/_Project/Scenes/Sandbox.unity`. Нажми **Play**.
+   При старте карта, леса, города и навигация генерируются кодом — первые
+   1–3 секунды игра может «подвиснуть», это нормально.
+5. Edit → Preferences → **External Tools** → выбери свою IDE и нажми
+   **Regenerate project files**.
 
-1. Unity Hub → **Projects** → **New project**.
-2. Сверху выбери версию **6000.6.3f1**.
-3. Шаблон: **Universal 3D** (URP). Если шаблон не скачан — нажми *Download template*.
-   - URP — оптимальный выбор для RTS: хорошая производительность при сотнях
-     юнитов, поддержка Shader Graph, VFX, декалей.
-4. **Project name:** `WargameRTS`
-5. **Location:** временная папка, например `C:\Temp`
-   (получится `C:\Temp\WargameRTS`).
-6. **Сними** галочки:
-   - **Use Unity Version Control** — мы используем Git, а не Plastic/UVCS;
-   - **Connect to Unity Cloud** — можно оставить, если нужен Unity-аккаунт для
-     сервисов, но для Git не требуется.
-7. **Create project**. Дождись, пока откроется редактор.
-8. Сразу закрой Unity (*File → Exit*).
+Настройки для Git уже выставлены в проекте: *Version Control = Visible Meta
+Files*, *Asset Serialization = Force Text*, *Active Input Handling = Both*.
 
----
+### Что есть в песочнице
 
-## Шаг 5. Перенести проект в репозиторий
+- Карта 2×2 км: холмы, леса (скрывают и защищают пехоту, глушат видимость),
+  города (здания — препятствия).
+- Две армии по 17 юнитов: танки, БМП, пехота, разведка, ПТРК.
+- Туман войны с линией видимости, броня по сторонам (лоб/борт/корма),
+  точность падает в движении и на дальней дистанции.
+- Противник (красные) через ~25 секунд начинает наступать волнами.
 
-Из `C:\Temp\WargameRTS\` скопируй **только три папки**:
+### Управление
 
-```
-Assets/
-Packages/
-ProjectSettings/
-```
-
-в `C:\Dev\astropol\WargameRTS\` (рядом с `.gitignore` и `CLAUDE.md`).
-
-**Не копируй** `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `obj/`, `*.sln`,
-`*.csproj` — это кэш, который Unity пересоздаёт сам, и он огромный.
-
-После копирования временную папку `C:\Temp\WargameRTS` можно удалить.
-
-Теперь в Unity Hub: **Projects → Add → Add project from disk** → выбери
-`C:\Dev\astropol\WargameRTS`. Открой проект — первый запуск займёт несколько
-минут (Unity заново строит `Library/`).
+| Действие | Клавиши |
+|---|---|
+| Камера | WASD / стрелки / край экрана; колесо — зум; Q/E или средняя кнопка — поворот; Shift — быстрее |
+| Выделение | ЛКМ, рамка ЛКМ, Shift — добавить, двойной клик — все такого типа на экране, Esc — снять |
+| Группы | Ctrl+1..9 — назначить, 1..9 — выбрать, дважды — камера к группе |
+| Движение | ПКМ по земле — строем; ПКМ с протяжкой — развернуть линию (фронтом от протяжки) |
+| Атака | ПКМ по видимому врагу; Ctrl+ПКМ — движение с атакой; X — стоп |
+| Прочее | F — туман войны вкл/выкл, F1 — подсказка, R — рестарт после конца боя |
 
 ---
 
-## Шаг 6. Проверить настройки проекта для Git
+## Шаг 5. Твои изменения → коммит и пуш
 
-В открытом Unity:
+Когда ты что-то поменял в Unity (сцену, настройки, добавил ассеты):
 
-1. **Edit → Project Settings → Version Control**
-   - *Mode*: **Visible Meta Files**
-2. **Edit → Project Settings → Editor**
-   - *Asset Serialization → Mode*: **Force Text**
-     (сцены и префабы сохраняются как текст — Git видит изменения и может их сливать)
-3. **Edit → Project Settings → Player → Other Settings**
-   - *Active Input Handling*: **Input System Package (New)**
-     (если Unity спросит про перезапуск — соглашайся)
-   - *Company Name / Product Name* — по вкусу.
-4. **Edit → Preferences → External Tools**
-   - *External Script Editor*: выбери свою IDE (Rider / Visual Studio / VS Code)
-   - нажми **Regenerate project files**
-5. *Необязательно:* **Window → Package Manager → In Project** → удали пакет
-   **Version Control** (`com.unity.collab-proxy`) — он не нужен при работе через Git
-   и иногда мешает.
-6. *Необязательно:* удали стартовый мусор шаблона — папку `Assets/TutorialInfo`
-   и файл `Assets/Readme.asset`.
-7. **File → Save Project**, потом закрой Unity (чтобы все файлы точно записались).
+1. **File → Save Project**.
+2. GitHub Desktop: слева список изменений → проверь, что **нет** файлов из
+   `WargameRTS/Library/`, `Temp/`, `Logs/`, `*.csproj` → Summary → **Commit** → **Push origin**.
+3. Терминал: `git add WargameRTS && git commit -m "что сделал" && git push`.
 
 > О `.meta`-файлах: Unity создаёт `.meta` рядом с каждым файлом и папкой в
 > `Assets/`. В нём хранится GUID, по которому сцены и префабы ссылаются на
 > ассет. **Всегда коммить `.meta` вместе с файлом** и никогда не удаляй их
 > вручную — иначе ссылки в сценах сломаются («Missing script»).
 
----
-
-## Шаг 7. Первый коммит и пуш
-
-### Через GitHub Desktop
-1. Слева появится список изменений — должны быть файлы из
-   `WargameRTS/Assets`, `WargameRTS/Packages`, `WargameRTS/ProjectSettings`.
-2. **Проверь, что в списке НЕТ** `WargameRTS/Library/...`, `Temp/`, `Logs/`,
-   `*.csproj`. Если есть — `.gitignore` не на месте (должен лежать в
-   `WargameRTS/`, а не в `Assets/`).
-3. Внизу: Summary → `WargameRTS: пустой Unity-проект (URP)` → **Commit to main**.
-4. **Push origin**.
-
-### Через терминал
-```bash
-cd C:/Dev/astropol
-git status                       # проверь, что Library/ и Temp/ НЕ в списке
-git add WargameRTS
-git commit -m "WargameRTS: пустой Unity-проект (URP)"
-git push origin main
-```
-
-Проверка LFS: `git lfs ls-files` должен показать картинки/модели из шаблона
-(например `.png`). Если список пустой, а картинки в проекте есть — ты не
-выполнил `git lfs install` до коммита. Исправление (историю не переписывает):
+Проверка LFS: когда добавишь картинки/модели, `git lfs ls-files` должен их
+показать. Если пусто — ты не выполнил `git lfs install` до коммита. Исправление
+(историю не переписывает):
 
 ```bash
 git lfs install
 git add --renormalize WargameRTS
 git commit -m "WargameRTS: перенос бинарных файлов в LFS"
-git push origin main
+git push
 ```
 
 > GitHub даёт ограниченную бесплатную квоту на LFS (хранилище и трафик) —
-> текущие лимиты видны в *GitHub → Settings → Billing*. Для старта хватает с
-> запасом; тяжёлые исходники (`.blend`, `.psd` на сотни МБ) лучше держать вне
-> репозитория.
+> текущие лимиты видны в *GitHub → Settings → Billing*. Тяжёлые исходники
+> (`.blend`, `.psd` на сотни МБ) лучше держать вне репозитория.
 
 ---
 
-## Шаг 8. Подключить Claude (облачная сессия на claude.ai/code)
+## Шаг 6. Подключить Claude (облачная сессия на claude.ai/code)
 
 1. Открой **claude.ai/code** и начни новую сессию.
 2. Выбери репозиторий **SonicAviable/astropol** (если его нет в списке — дай
@@ -229,8 +185,8 @@ git push origin main
    отметь репозиторий).
 3. В первом сообщении пиши, с чем работаем, например:
    > Работаем над проектом WargameRTS (папка `WargameRTS/`). Прочитай
-   > `WargameRTS/CLAUDE.md` и `WargameRTS/docs/GAME_DESIGN.md`. Задача: сделай
-   > RTS-камеру (WASD, зум колесом, поворот на средней кнопке).
+   > `WargameRTS/CLAUDE.md` и `WargameRTS/docs/GAME_DESIGN.md`. Задача: добавь
+   > сектора на карте и очки командования (веха M6).
 4. Claude создаст/изменит файлы, закоммитит и запушит в ветку вида
    `claude/<название>`. В конце он напишет, что сделано и что тебе проверить в
    Unity.
@@ -240,7 +196,7 @@ git push origin main
 
 ---
 
-## Шаг 9. Ежедневный цикл работы
+## Шаг 7. Ежедневный цикл работы
 
 ```
  ┌─────────────┐  1. задача   ┌──────────┐  2. push в claude/...  ┌────────┐
@@ -287,7 +243,7 @@ git push origin main
 
 ---
 
-## Шаг 10. Как давать задачи Claude, чтобы было эффективно
+## Шаг 8. Как давать задачи Claude, чтобы было эффективно
 
 - Одна сессия — одна фича (камера, выделение юнитов, туман войны…).
 - Описывай **ожидаемое поведение**, а не реализацию: «танк стреляет только если
@@ -296,8 +252,10 @@ git push origin main
 - Если Claude создал компонент, который надо повесить на объект, он напишет
   шаги вида: *«Создай пустой GameObject `RTSCamera`, добавь компонент
   `RtsCameraController`, перетащи Main Camera в поле `Camera`»*.
-- Claude в облаке **не может запустить Unity** — компилятором и тестировщиком
-  выступаешь ты. Поэтому идём короткими итерациями: сделал → проверил → дальше.
+- Claude в облаке **не может запустить Unity**. Он проверяет, что код
+  компилируется (`WargameRTS/Tools/CompileCheck/check.sh`), но как игра
+  *ведёт себя* — проверяешь ты. Поэтому идём короткими итерациями:
+  сделал → проверил → дальше.
 
 ### Альтернатива: Claude Code локально (продвинутый вариант)
 
@@ -311,7 +269,7 @@ Claude может управлять редактором. Начать прощ
 
 ---
 
-## Шаг 11 (необязательный). Smart Merge для сцен и префабов
+## Шаг 9 (необязательный). Smart Merge для сцен и префабов
 
 Unity поставляется с утилитой **UnityYAMLMerge**, которая умно сливает
 конфликтующие сцены/префабы. `.gitattributes` уже размечает эти файлы как
@@ -346,7 +304,7 @@ git config --global merge.unityyamlmerge.recursive binary
 | Картинки после клона «битые», весят 130 байт | Не установлен/не включён Git LFS. Выполни `git lfs install`, затем `git lfs pull`. |
 | Unity пишет «Project was created with a different version» | Открываешь не той версией Unity. Поставь версию из `ProjectSettings/ProjectVersion.txt`. |
 | IDE не подсказывает Unity API, всё красное | *Preferences → External Tools → Regenerate project files*, перезапусти IDE. |
-| Конфликт в `.unity`/`.prefab` при merge | Выбери одну версию целиком (*Use mine/theirs*) и повтори свои изменения руками, либо настрой Smart Merge (шаг 11). На будущее — не правьте одну сцену одновременно. |
+| Конфликт в `.unity`/`.prefab` при merge | Выбери одну версию целиком (*Use mine/theirs*) и повтори свои изменения руками, либо настрой Smart Merge (шаг 9). На будущее — не правьте одну сцену одновременно. |
 | `error: failed to push some refs` | На GitHub есть новые коммиты. Сначала *Pull*, потом *Push*. |
 
 ---

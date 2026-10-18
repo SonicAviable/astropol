@@ -21,7 +21,7 @@
 *.inputactions text eol=lf
 
 # Unity YAML (сцены, префабы, ассеты). merge=unityyamlmerge работает,
-# если настроен Smart Merge (см. docs/SETUP_GUIDE.md, шаг 11);
+# если настроен Smart Merge (см. docs/SETUP_GUIDE.md, шаг 9);
 # если не настроен — Git просто использует обычное слияние.
 *.unity       text merge=unityyamlmerge eol=lf
 *.prefab      text merge=unityyamlmerge eol=lf
