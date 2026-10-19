@@ -388,15 +388,17 @@ namespace StellarisClone.Rendering
         {
             var vt = VisualFor(type, seed);
             int variant = Mathf.Abs(seed) % 3;
-            int key = (int)vt * 8 + variant;
+            // Земля, Марс, Луна — по настоящим картам (те же, что у планет в системе), остальные — процедурные
+            var real = RealPlanetModel.IconSource(type);
+            int key = real != null ? 1000 + (int)type * 8 + variant : (int)vt * 8 + variant;
             if (s_miniPlanetSprites.TryGetValue(key, out var cached) && cached != null) return cached;
 
-            var src = PlanetTextureFactory.GeneratePlanetTexture(vt, 4242 + key * 97);
+            var src = real != null ? real : PlanetTextureFactory.GeneratePlanetTexture(vt, 4242 + key * 97);
             const int R = 128;
             var tex = new Texture2D(R, R, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "MiniPlanet_" + key };
             var px = new Color32[R * R];
             var L = new Vector3(1f, 0.25f, 0.45f).normalized;
-            Color atmo = vt switch
+            Color atmo = real != null ? RealPlanetModel.IconAtmosphere(type) : vt switch
             {
                 PlanetVisualType.Continental => new Color(0.45f, 0.75f, 1f),
                 PlanetVisualType.Ocean => new Color(0.4f, 0.7f, 1f),
@@ -430,7 +432,7 @@ namespace StellarisClone.Rendering
             }
             tex.SetPixels32(px);
             tex.Apply(true);
-            Object.Destroy(src);
+            if (real == null) Object.Destroy(src);   // настоящая карта — общий ресурс, её не трогаем
             var sp = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), R / 0.64f);
             s_miniPlanetSprites[key] = sp;
             return sp;
