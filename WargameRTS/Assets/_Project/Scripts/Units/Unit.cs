@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using WargameRTS.Combat;
 using WargameRTS.Core;
+using WargameRTS.Map;
 using Random = UnityEngine.Random;
 
 namespace WargameRTS.Units
@@ -13,7 +14,18 @@ namespace WargameRTS.Units
         None,
         Move,
         AttackMove,
+        FastMove,
         Attack
+    }
+
+    public enum FireMode
+    {
+        /// <summary>Engage any enemy in range.</summary>
+        FireAtWill,
+        /// <summary>Engage only units that shot at us recently (or an ordered target).</summary>
+        ReturnFire,
+        /// <summary>Engage only an explicitly ordered target.</summary>
+        HoldFire
     }
 
     /// <summary>
@@ -25,6 +37,8 @@ namespace WargameRTS.Units
         const float TargetSearchInterval = 0.4f;
         const float RepathInterval = 1f;
         const float RevealAfterFiringSeconds = 3f;
+        const float ReturnFireMemorySeconds = 15f;
+        const float FastMoveSpeedMultiplier = 1.35f;
 
         static readonly List<Unit> all = new List<Unit>();
 
@@ -52,6 +66,8 @@ namespace WargameRTS.Units
         float targetSearchTimer;
         float repathTimer;
         float lastFiredTime = float.NegativeInfinity;
+        Unit lastShotAtBy;
+        float lastShotAtTime = float.NegativeInfinity;
 
         public UnitDefinition Definition { get; private set; }
         public Team Team { get; private set; }
@@ -60,6 +76,7 @@ namespace WargameRTS.Units
         public bool IsSelected { get; private set; }
         public UnitView View => view;
         public OrderType Order => order;
+        public FireMode FireMode { get; private set; }
         public Unit CurrentTarget => currentTarget;
         public Vector3 Destination => destination;
         public Vector3 Position => transform.position;
@@ -118,17 +135,47 @@ namespace WargameRTS.Units
         // Orders
         // ------------------------------------------------------------------
 
-        public void MoveTo(Vector3 point, Vector3? faceDirection, bool attackMove)
+        /// <param name="moveType">Move, AttackMove (halts to fight) or FastMove (faster, no firing).</param>
+        public void MoveTo(Vector3 point, Vector3? faceDirection, OrderType moveType)
         {
             if (!IsAlive || !agent.isOnNavMesh)
                 return;
+            if (moveType != OrderType.AttackMove && moveType != OrderType.FastMove)
+                moveType = OrderType.Move;
 
-            order = attackMove ? OrderType.AttackMove : OrderType.Move;
+            order = moveType;
             attackTarget = null;
             destination = point;
             facing = faceDirection;
+            agent.speed = Definition.SpeedMetersPerSecond * (moveType == OrderType.FastMove ? FastMoveSpeedMultiplier : 1f);
             agent.isStopped = false;
             agent.SetDestination(point);
+        }
+
+        /// <summary>Fast move back to the own deployment edge, facing the enemy.</summary>
+        public void Retreat()
+        {
+            var map = GameMap.Instance;
+            if (map == null)
+                return;
+
+            float side = Team == Team.Blue ? -1f : 1f;
+            var point = map.OnGround(map.Clamp(new Vector3(Position.x, 0f, side * (map.HalfSize - 120f)), 60f));
+            MoveTo(point, new Vector3(0f, 0f, -side), OrderType.FastMove);
+        }
+
+        public void SetFireMode(FireMode mode)
+        {
+            FireMode = mode;
+            if (mode != FireMode.FireAtWill)
+                targetSearchTimer = 0f;
+        }
+
+        /// <summary>Called by an enemy that fires at this unit (hit or miss).</summary>
+        public void NotifyShotAt(Unit shooter)
+        {
+            lastShotAtBy = shooter;
+            lastShotAtTime = Time.time;
         }
 
         public void Attack(Unit target)
@@ -139,6 +186,7 @@ namespace WargameRTS.Units
             order = OrderType.Attack;
             attackTarget = target;
             facing = null;
+            agent.speed = Definition.SpeedMetersPerSecond;
             repathTimer = 0f;
             targetSearchTimer = 0f;
         }
@@ -148,6 +196,7 @@ namespace WargameRTS.Units
             order = OrderType.None;
             attackTarget = null;
             facing = null;
+            agent.speed = Definition.SpeedMetersPerSecond;
             if (agent.isOnNavMesh)
             {
                 agent.isStopped = false;
@@ -196,6 +245,7 @@ namespace WargameRTS.Units
             {
                 case OrderType.Move:
                 case OrderType.AttackMove:
+                case OrderType.FastMove:
                     if (order == OrderType.AttackMove)
                         agent.isStopped = currentTarget != null;
 
@@ -203,6 +253,7 @@ namespace WargameRTS.Units
                     {
                         // Arrived: release the path so the unit can turn to its formation facing.
                         order = OrderType.None;
+                        agent.speed = Definition.SpeedMetersPerSecond;
                         agent.isStopped = false;
                         agent.ResetPath();
                     }
@@ -262,6 +313,9 @@ namespace WargameRTS.Units
             view.AimAt(currentTarget.Position);
 
             bool moving = IsMoving;
+            if (moving && order == OrderType.FastMove)
+                return;
+
             float distance = Vector3.Distance(Position, currentTarget.Position);
             var armorFacing = CombatMath.GetFacing(currentTarget.transform, Position);
             int armor = CombatMath.GetArmor(currentTarget.Definition, armorFacing);
@@ -303,6 +357,7 @@ namespace WargameRTS.Units
             }
 
             EffectsManager.Shot(view.MuzzlePosition, impact, definition.TracerColor, definition.TracerWidth);
+            target.NotifyShotAt(this);
 
             if (hit)
             {
@@ -377,11 +432,20 @@ namespace WargameRTS.Units
 
         Unit FindBestTarget()
         {
+            if (FireMode == FireMode.HoldFire)
+                return null;
+
+            bool returnFireOnly = FireMode == FireMode.ReturnFire;
+            if (returnFireOnly && Time.time - lastShotAtTime > ReturnFireMemorySeconds)
+                return null;
+
             Unit best = null;
             float bestScore = 0f;
             foreach (var candidate in all)
             {
                 if (!IsValidTarget(candidate))
+                    continue;
+                if (returnFireOnly && candidate != lastShotAtBy)
                     continue;
 
                 float distance = Vector3.Distance(Position, candidate.Position);

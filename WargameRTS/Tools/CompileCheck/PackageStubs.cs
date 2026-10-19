@@ -17,7 +17,7 @@ namespace UnityEngine.InputSystem {
     public static Keyboard current => null;
     public KeyControl this[Key key] => null;
     public ButtonControl shiftKey => null; public ButtonControl ctrlKey => null; public ButtonControl altKey => null;
-    public KeyControl aKey, dKey, eKey, fKey, qKey, rKey, sKey, wKey, xKey, escapeKey, upArrowKey, downArrowKey, leftArrowKey, rightArrowKey, f1Key;
+    public KeyControl aKey, bKey, dKey, eKey, fKey, hKey, qKey, rKey, sKey, wKey, xKey, escapeKey, upArrowKey, downArrowKey, leftArrowKey, rightArrowKey, f1Key;
   }
 }
 namespace Unity.AI.Navigation {

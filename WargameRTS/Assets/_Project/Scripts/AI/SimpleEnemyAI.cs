@@ -60,7 +60,7 @@ namespace WargameRTS.AI
             facing.Normalize();
 
             foreach (var slot in FormationPlanner.AroundPoint(group, objective, facing))
-                slot.Unit.MoveTo(slot.Position, facing, attackMove: true);
+                slot.Unit.MoveTo(slot.Position, facing, OrderType.AttackMove);
         }
 
         Vector3 PickObjective()

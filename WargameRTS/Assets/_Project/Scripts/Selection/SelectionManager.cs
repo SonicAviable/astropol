@@ -69,7 +69,8 @@ namespace WargameRTS.Selection
             Vector2 pointer = mouse.position.ReadValue();
             bool additive = keyboard.shiftKey.isPressed;
 
-            if (mouse.leftButton.wasPressedThisFrame && !SandboxHud.IsPointerOverHud(pointer))
+            if (mouse.leftButton.wasPressedThisFrame && !SandboxHud.IsPointerOverHud(pointer) &&
+                !CommandInput.BlocksSelection)
             {
                 pressing = true;
                 dragging = false;
@@ -89,7 +90,7 @@ namespace WargameRTS.Selection
                 dragging = false;
             }
 
-            if (keyboard.escapeKey.wasPressedThisFrame)
+            if (keyboard.escapeKey.wasPressedThisFrame && !CommandInput.BlocksSelection)
                 Clear();
 
             HandleGroupKeys(keyboard);

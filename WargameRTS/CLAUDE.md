@@ -38,6 +38,18 @@
 `UnitCatalog` (создаёт `UnitDefinition`/`WeaponDefinition` в коде; позже станут
 ассетами в `Assets/_Project/Data/`).
 
+## Интерфейс
+
+- Временный HUD — IMGUI (`UI/SandboxHud.cs`), раскладка по макету
+  `docs/ui-reference/hud-mockup.jpg`; палитра — константы в начале `SandboxHud`.
+- Иконки — PNG с прозрачностью в `Assets/_Project/Resources/UI/{Orders,Units}`,
+  загружаются через `HudIcons` (`Resources.Load`). Настройки импорта задаёт
+  `Editor/UiTextureImporter.cs`. Иконки приказов — белые (тонируются в коде).
+- Исходные листы от Gemini — `docs/ui-reference/`. Нарезка: фон #FF00FF
+  ключуется в альфу (Python + Pillow), иконка вписывается в 256×256.
+- Картинки UI хранятся в Git без LFS (см. `.gitattributes`), чтобы ZIP с GitHub
+  был рабочим.
+
 ## Структура
 
 ```
