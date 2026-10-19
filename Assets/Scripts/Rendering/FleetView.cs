@@ -12,7 +12,7 @@ namespace StellarisClone.Rendering
         private GalaxyGenerator _generator;
         private LineRenderer _pathLine;
         private TrailRenderer _engineTrail;
-        private MeshRenderer[] _renderers;
+        private Renderer[] _renderers;
         private bool _isSelected;
 
         private LineRenderer _laserBeam;
@@ -138,7 +138,7 @@ namespace StellarisClone.Rendering
             }
 
             // Собираем рендереры ПОСЛЕ создания/инстанса модели
-            _renderers = GetComponentsInChildren<MeshRenderer>();
+            _renderers = GetComponentsInChildren<Renderer>();   // и скелетные модели (левиафан)
 
             // Коллайдер на корне — по нему FleetManager ловит клики
             var col = gameObject.AddComponent<BoxCollider>();
@@ -239,6 +239,13 @@ namespace StellarisClone.Rendering
             );
             _engineTrail.colorGradient = g;
             _engineTrail.emitting = false;
+
+            // У живых существ (левиафан) двигателей нет: без следа, факелов и отсвета сопел
+            if (_visual != null && _visual.Organic)
+            {
+                _engineTrail.enabled = false;
+                return;
+            }
 
             CreatePlumes(nozzles, glowColor);
         }

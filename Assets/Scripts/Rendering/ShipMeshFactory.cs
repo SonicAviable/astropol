@@ -29,6 +29,10 @@ namespace StellarisClone.Rendering
             /// <summary>У модели нет полос цвета владельца — выбор подсвечивает обшивку (материал Hull свой у корабля).</summary>
             public bool SelectTintsHull;
             public Color HullEmission;
+            /// <summary>Живое существо (левиафан): без двигателей — ни факелов, ни ионного следа.</summary>
+            public bool Organic;
+            /// <summary>Покадровая анимация модели (время в секундах), например плавание левиафана.</summary>
+            public System.Action<float> Animate;
             private bool _blinkOn = true;
 
             public void SetSelected(bool on)
@@ -42,6 +46,7 @@ namespace StellarisClone.Rendering
             /// <summary>Мигание навигационных огней (вызывать каждый кадр).</summary>
             public void Tick(float t)
             {
+                Animate?.Invoke(t);
                 bool on = Mathf.Repeat(t, 1.6f) < 0.12f || Mathf.Repeat(t - 0.25f, 1.6f) < 0.08f;
                 if (Nav != null) Nav.enabled = on;
                 if (BlinkMat != null && on != _blinkOn)
@@ -60,6 +65,12 @@ namespace StellarisClone.Rendering
 
         public static ShipVisual Build(Transform parent, FleetType type, ShipClass hull, Color owner, int ownerId = 0)
         {
+            // Левиафаны — живые чудовища: своя модель со скелетом и анимацией плавания
+            if (ownerId == Threats.LeviathanOwner)
+            {
+                var lev = LeviathanModel.Build(parent);
+                if (lev != null) return lev;
+            }
             // Военные корабли — набор Star Sparrow (у каждой фракции свои корпуса на корвет, фрегат и эсминец),
             // запасной вариант — крейсер «Харбингер»; классы различаются размером (корвет меньше, эсминец крупнее)
             if (type == FleetType.Military)
