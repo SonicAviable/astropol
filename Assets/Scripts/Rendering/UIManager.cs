@@ -833,11 +833,30 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             under.rectTransform.sizeDelta = new Vector2(0f, 2f);
             under.rectTransform.anchoredPosition = new Vector2(0f, 2f);
 
+            // Живая ячейка: докрутка чисел, всплывающая разница, вспышка, «дыхание», наведение
+            var fx = badge.AddComponent<ResourceBadgeFx>();
+            fx.Halo = halo; fx.Ring = ring; fx.Icon = ic; fx.Underline = under; fx.Value = val; fx.Accent = accentCol;
+
             xPos += w + 4f;
             return val;
         }
 
-        private static Image HudSprite(Transform parent, string name, Sprite sp, Color c)
+        /// <summary>Запас ресурса в ячейке: через анимацию ячейки (докрутка, всплывающая разница), без неё — сразу текстом.</summary>
+    private static void ShowRes(Text t, float value, string suffix)
+    {
+        var fx = t.GetComponentInParent<ResourceBadgeFx>();
+        if (fx != null) fx.SetNumeric(value, suffix);
+        else t.text = (int)value + suffix;
+    }
+
+    private static void ShowText(Text t, string text, float signal)
+    {
+        var fx = t.GetComponentInParent<ResourceBadgeFx>();
+        if (fx != null) fx.SetText(text, signal);
+        else t.text = text;
+    }
+
+    private static Image HudSprite(Transform parent, string name, Sprite sp, Color c)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -1502,7 +1521,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_energyVal != null)
     {
         float net = eco.MonthlyEnergyIncome;
-        _energyVal.text = $"{(int)eco.EnergyCredits}  <size=12>{StatFormat.Colored(net, "")}</size>";
+        ShowRes(_energyVal, eco.EnergyCredits, $"  <size=12>{StatFormat.Colored(net, "")}</size>");
 
         if (_energyTip != null)
         {
@@ -1538,7 +1557,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === МИНЕРАЛЫ ===
     if (_mineralsVal != null)
     {
-        _mineralsVal.text = $"{(int)eco.Minerals}  <size=12>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>";
+        ShowRes(_mineralsVal, eco.Minerals, $"  <size=12>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>");
         if (_mineralsTip != null)
             _mineralsTip.SetText(
                 Loc.T("<b>Титан</b>\n") +
@@ -1554,7 +1573,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === СПЛАВЫ ===
     if (_alloysVal != null)
     {
-        _alloysVal.text = $"{(int)eco.Alloys}  <size=12>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>";
+        ShowRes(_alloysVal, eco.Alloys, $"  <size=12>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>");
         if (_alloysTip != null)
             _alloysTip.SetText(
                 Loc.T("<b>Сплавы</b>\n") +
@@ -1569,7 +1588,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     // === ВЛИЯНИЕ ===
     if (_influenceVal != null)
     {
-        _influenceVal.text = $"{(int)eco.Influence}  <size=12>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>";
+        ShowRes(_influenceVal, eco.Influence, $"  <size=12>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>");
         if (_influenceTip != null)
             _influenceTip.SetText(
                 Loc.T("<b>Влияние</b>\n") +
@@ -1587,7 +1606,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_researchVal != null && TechnologyManager.Instance != null)
     {
         var tm = TechnologyManager.Instance;
-        _researchVal.text = $"{StatFormat.Colored(tm.MonthlyResearchIncome, Loc.T(" / мес"))}";
+        ShowText(_researchVal, $"{StatFormat.Colored(tm.MonthlyResearchIncome, Loc.T(" / мес"))}", tm.MonthlyResearchIncome);
         if (_researchTip != null)
         {
             int active = 0;
@@ -1640,8 +1659,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         var tier = PlanetStability.TierOf(avg);
         string hex = PlanetStability.Hex(PlanetStability.TierColor(tier));
         int unstable = colonies.FindAll(p => p.Tier <= StabilityTier.Strike).Count;
-        _stabilityVal.text = $"<color=#{hex}>{avg:0}</color>  <size=11><color=#{hex}>{PlanetStability.TierName(tier)}</color></size>" +
-                             (unstable > 0 ? $" <size=11><color=#FF6B6B>!{unstable}</color></size>" : "");
+        ShowText(_stabilityVal, $"<color=#{hex}>{avg:0}</color>  <size=11><color=#{hex}>{PlanetStability.TierName(tier)}</color></size>" +
+                             (unstable > 0 ? $" <size=11><color=#FF6B6B>!{unstable}</color></size>" : ""), avg);
         if (_stabilityTip == null) return;
         colonies.Sort((a, b) => a.Stability.CompareTo(b.Stability));
         var sb = new System.Text.StringBuilder();

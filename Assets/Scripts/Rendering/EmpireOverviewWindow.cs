@@ -34,9 +34,12 @@ namespace StellarisClone.Rendering
         private string _attentionKey = "";
         private int _rowIndex;
         private const float LeftW = 380f;
-        private static readonly Color RowA = new Color(0.034f, 0.064f, 0.084f, 0.95f);
-        private static readonly Color RowB = new Color(0.026f, 0.050f, 0.068f, 0.95f);
-        private static readonly Color RowHover = new Color(0.07f, 0.13f, 0.16f, 0.98f);
+        // Строки — полупрозрачные светлые слои поверх панели (а не плотный тёмный цвет: панели шейдер подсвечивает,
+        // и непрозрачные строки на их фоне выглядели чёрными провалами)
+        private static readonly Color RowA = new Color(0.60f, 0.85f, 0.95f, 0.055f);
+        private static readonly Color RowB = new Color(0.60f, 0.85f, 0.95f, 0.025f);
+        private static readonly Color RowSub = new Color(0.60f, 0.85f, 0.95f, 0.015f);
+        private static readonly Color RowHover = new Color(0.55f, 0.92f, 1f, 0.13f);
         private readonly Dictionary<Tab, string> _tabNames = new Dictionary<Tab, string>();
         private Image _portrait, _portraitIcon;
         private RectTransform _portraitHost;
@@ -377,12 +380,12 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < list.Count && i < AttentionMax; i++)
             {
                 var a = list[i];
-                var row = LGBuild.Panel(_attention, "Alert", new Color(a.Color.r * 0.10f, a.Color.g * 0.10f, a.Color.b * 0.10f, 0.9f), raycast: true);
+                var row = LGBuild.Panel(_attention, "Alert", new Color(a.Color.r, a.Color.g, a.Color.b, 0.08f), raycast: true);
                 row.rectTransform.TopBand(y, 30);
                 y += 33f;
                 var act = a.Action;
                 HoverArea(row, act == null ? null : (System.Action)(() => { Close(); act(); }),
-                    new Color(a.Color.r * 0.22f, a.Color.g * 0.22f, a.Color.b * 0.22f, 0.95f));
+                    new Color(a.Color.r, a.Color.g, a.Color.b, 0.18f));
                 var bar = LGBuild.Panel(row.transform, "Accent", a.Color);
                 bar.raycastTarget = false;
                 bar.rectTransform.anchorMin = new Vector2(0, 0); bar.rectTransform.anchorMax = new Vector2(0, 1);
@@ -917,7 +920,7 @@ namespace StellarisClone.Rendering
                     var planet = p;
                     var sub = Row(() => OpenColony(planet), new Color(p.PlanetColor.r, p.PlanetColor.g, p.PlanetColor.b, 0.25f));
                     LGBuild.Height(sub.gameObject, 40);
-                    sub.GetComponent<Image>().color = UIManager.DS.BgRowOdd;
+                    sub.GetComponent<Image>().color = RowSub;
                     IconCell(sub, 0.04f, 0.09f, LGIcon.Planet, Color.Lerp(p.PlanetColor, Color.white, 0.25f));
                     var tier = p.Tier;
                     TwoLine(sub, 0.09f, 0.34f, PlanetNames.Title(p.Name),
