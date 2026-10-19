@@ -239,6 +239,27 @@ namespace StellarisClone.Core
             PlayInternal(id, volumeScale, pitch, 0f);
         }
 
+        // ---------- нажатия кнопок ----------
+
+        private int _pendingPress = -1;
+        private float _pendingPressVolume = 1f;
+        private int _explicitFrame = -1;
+
+        /// <summary>
+        /// Звук нажатия кнопки по её смыслу (UiSound.Press). Играет в конце кадра и только если обработчик
+        /// нажатия не сыграл свой, более точный звук (подтверждение, объявление войны, открытие окна…) —
+        /// тогда общий щелчок не нужен и не размывает сигнал.
+        /// </summary>
+        public static void Press(Sfx id, float volumeScale = 1f)
+        {
+            if (Instance == null) return;
+            Instance._pendingPress = (int)id;
+            Instance._pendingPressVolume = volumeScale;
+        }
+
+        /// <summary>Фоновые «фактурные» звуки — не считаются ответом на нажатие.</summary>
+        private static bool IsTexture(Sfx id) => id == Sfx.UiHover || id == Sfx.MapHover || id == Sfx.TextTick || id == Sfx.HoloScan;
+
         // ---------- уведомления ----------
 
         private int _pendingNotify = -1;
@@ -266,6 +287,12 @@ namespace StellarisClone.Core
 
         private void LateUpdate()
         {
+            if (_pendingPress >= 0)
+            {
+                var press = (Sfx)_pendingPress;
+                _pendingPress = -1;
+                if (_explicitFrame != Time.frameCount) PlayInternal(press, _pendingPressVolume, 1f, 0f);
+            }
             if (_pendingNotify < 0) return;
             var id = (Sfx)_pendingNotify;
             _pendingNotify = -1;
@@ -328,8 +355,10 @@ namespace StellarisClone.Core
 
         private void PlayInternal(Sfx id, float volumeScale, float pitch, float pan)
         {
-            if (masterVolume <= 0.001f || volumeScale <= 0.001f) return;
             var def = SfxLibrary.Def(id);
+            // У нажатия уже есть свой звук (звуки мира — выстрелы, прыжки — не в счёт)
+            if (def.Bus != SfxBus.World && !IsTexture(id)) _explicitFrame = Time.frameCount;
+            if (masterVolume <= 0.001f || volumeScale <= 0.001f) return;
             float now = Time.unscaledTime;
             int idx = (int)id;
             if (now - _lastPlayed[idx] < def.Cooldown) return;

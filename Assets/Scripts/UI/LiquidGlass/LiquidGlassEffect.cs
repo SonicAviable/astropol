@@ -88,6 +88,13 @@ namespace StellarisClone.Rendering
             Dirty();
         }
 
+        /// <summary>Заданный цвет кромки, если он переопределён (по нему, например, угадывается смысл кнопки).</summary>
+        public bool TryGetRim(out Color c)
+        {
+            c = rimOverride;
+            return useRimOverride;
+        }
+
         public void ClearRim()
         {
             if (!useRimOverride) return;

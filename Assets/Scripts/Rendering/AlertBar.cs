@@ -129,7 +129,7 @@ namespace StellarisClone.Rendering
                 {
                     view = CreateView(a);
                     _views.Add(view);
-                    SFXManager.Play(Sfx.AlertPop);
+                    PlayAlertSound(a);
                 }
                 view.Action = a.Action;
                 view.Tip.SetText(Loc.F("<b>{0}</b>\n{1}\n\n<color=#8AA2A8>ЛКМ — {2}  ·  ПКМ — скрыть</color>", a.Title, a.Body, a.ActionHint));
@@ -139,6 +139,30 @@ namespace StellarisClone.Rendering
 
             // порядок = приоритет
             _views.Sort((x, y) => IndexOf(x.Id).CompareTo(IndexOf(y.Id)));
+        }
+
+        /// <summary>
+        /// Новое оповещение звучит по смыслу: беда — тревожно, совет — тихим блипом.
+        /// Иначе «свободный слот науки» и «система в осаде» звучали бы одинаково.
+        /// </summary>
+        private static void PlayAlertSound(AlertInfo a)
+        {
+            if (GameAudio.Suppressed) return;
+            var eco = EconomyManager.Instance;
+            switch (a.Id)
+            {
+                case "siege_def":
+                    SFXManager.Play(Sfx.RedAlert);
+                    AlarmFeedback.Attack();
+                    return;
+                case "energy":
+                    // Банкротство и его угрозу озвучивает GameAudio — в момент смены состояния
+                    if (eco != null && (eco.IsBankrupt || eco.BankruptcyLooming)) return;
+                    SFXManager.Play(Sfx.AlertUrgent, 0.8f);
+                    return;
+            }
+            if (a.Id.StartsWith("offer_")) { SFXManager.Play(Sfx.DealPlace); return; }
+            SFXManager.Play(a.Color == UIManager.DS.Red ? Sfx.AlertUrgent : Sfx.AlertPop);
         }
 
         private int IndexOf(string id)

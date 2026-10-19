@@ -33,6 +33,8 @@ namespace StellarisClone.Core
         public static float MusicVolume { get; private set; }
         public static float SfxVolume { get; private set; }
         public static bool MuteInBackground { get; private set; }
+        /// <summary>Вспышка краёв экрана и вибрация геймпада при атаке и банкротстве.</summary>
+        public static bool AlarmFx { get; private set; }
 
         // ------------------------------------------------------------------ Интерфейс / игра
         public static int UIScaleIndex { get; private set; }
@@ -113,6 +115,7 @@ namespace StellarisClone.Core
             MusicVolume = PlayerPrefs.GetFloat("set.music", 0.45f);
             SfxVolume = PlayerPrefs.GetFloat("set.sfx", 0.7f);
             MuteInBackground = PlayerPrefs.GetInt("set.bgmute", 1) == 1;
+            AlarmFx = PlayerPrefs.GetInt("set.alarmfx", 1) == 1;
 
             UIScaleIndex = PlayerPrefs.GetInt("set.uiscale", 2);
             Tooltips = PlayerPrefs.GetInt("set.tooltips", 1) == 1;
@@ -224,6 +227,7 @@ namespace StellarisClone.Core
         public static void SetMusic(float v) { MusicVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.music", MusicVolume); ApplyAudio(); Commit(); }
         public static void SetSfx(float v) { SfxVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.sfx", SfxVolume); ApplyAudio(); Commit(); }
         public static void SetMuteInBackground(bool v) { MuteInBackground = v; PlayerPrefs.SetInt("set.bgmute", v ? 1 : 0); Commit(); }
+        public static void SetAlarmFx(bool v) { AlarmFx = v; PlayerPrefs.SetInt("set.alarmfx", v ? 1 : 0); Commit(); }
 
         public static void SetUIScale(int i) { UIScaleIndex = Mathf.Clamp(i, 0, UIScaleOptions.Length - 1); PlayerPrefs.SetInt("set.uiscale", UIScaleIndex); ApplyUIScale(); Commit(); }
         public static void SetTooltips(bool v) { Tooltips = v; PlayerPrefs.SetInt("set.tooltips", v ? 1 : 0); if (!v) TooltipSystem.Hide(); Commit(); }
@@ -235,7 +239,7 @@ namespace StellarisClone.Core
         public static void ResetDefaults()
         {
             foreach (var k in new[] { "set.vsync", "set.fps", "set.blur", "set.glow", "set.master", "set.music", "set.sfx",
-                                      "set.bgmute", "set.uiscale", "set.uibright", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
+                                      "set.bgmute", "set.alarmfx", "set.uiscale", "set.uibright", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
                 PlayerPrefs.DeleteKey(k);
             s_loaded = false;
             EnsureLoaded();

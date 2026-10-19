@@ -968,8 +968,10 @@ namespace StellarisClone.Core
 
             if (b.PlayerInvolved)
             {
-                SFXManager.Play(Sfx.BattleStart);
                 var sys = _generator.Systems[sysId];
+                // Бой на нашей территории — это атака на нас: сирена и вспышка, а не обычный «сигнал к бою»
+                if (sys.OwnerId == 0) { SFXManager.Play(Sfx.RedAlert); AlarmFeedback.Attack(); }
+                else SFXManager.Play(Sfx.BattleStart);
                 NotificationCenter.Show(Loc.T("Сражение!"), Loc.F("Бой в системе {0}. Выделите флот, чтобы следить за боем и при необходимости отступить", sys.Name),
                     NotificationCenter.Kind.Danger, 6f);
             }

@@ -174,6 +174,8 @@ namespace StellarisClone.Rendering
             y = LGControls.Section(_content, y, Loc.T("ПОВЕДЕНИЕ"), LGIcon.Gear);
             LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Тишина в фоне"), Loc.T("Приглушать звук, когда окно игры неактивно")),
                 GameSettings.MuteInBackground, GameSettings.SetMuteInBackground);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Вспышка и вибрация при тревоге"), Loc.T("При атаке и банкротстве края экрана вспыхивают, геймпад вибрирует")),
+                GameSettings.AlarmFx, GameSettings.SetAlarmFx);
         }
 
         private float _lastSfxPreview;

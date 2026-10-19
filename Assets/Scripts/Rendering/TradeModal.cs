@@ -671,6 +671,7 @@ namespace StellarisClone.Core
         {
             var go = new GameObject("SmallBtn");
             go.transform.SetParent(parent, false);
+            go.AddComponent<UiPressTag>().Kind = UiPress.Click;   // «+ / −» — частые шаги, не подтверждение и не опасность
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = size;
             go.AddComponent<Image>().color = bg;

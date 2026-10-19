@@ -392,7 +392,7 @@ namespace StellarisClone.Rendering
     public sealed class LGInteractive : MonoBehaviour,
         IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
-        /// <summary>Озвучка: тихий «тик» при наведении, клик при нажатии, отказ — по неактивной кнопке.</summary>
+        /// <summary>Озвучка: тихий «тик» при наведении, звук нажатия по смыслу кнопки (UiSound), отказ — по неактивной.</summary>
         public bool sounds = true;
         public bool animateScale = true;
         public float hoverScale = 1f;      // без «пружинного» увеличения — кнопка отвечает светом кромки
@@ -441,7 +441,7 @@ namespace StellarisClone.Rendering
         public void OnPointerClick(PointerEventData e)
         {
             if (!sounds || _selectable == null || e.button != PointerEventData.InputButton.Left) return;
-            if (_selectable.IsInteractable()) StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiClick);
+            if (_selectable.IsInteractable()) UiSound.Press(gameObject);
             else StellarisClone.Core.SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiDenied, 0.7f);
         }
         public void OnPointerExit(PointerEventData e) { _over = false; _down = false; Wake(); }

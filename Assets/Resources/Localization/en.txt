@@ -4855,3 +4855,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 пока действует	in force
 Действующих эффектов нет.\n\nСвой курс задают законы империи (клавиша L); указы и контракты появляются из решений фракции и событий.	No active effects.\n\nEmpire laws set your course (L key); decrees and contracts come from faction decisions and events.
 Планеты, станции, стройка. Назад к галактике — Esc или кнопка в панели системы справа.	Planets, stations, construction. Back to the galaxy — Esc or the button in the system panel on the right.
+Враг на нашей территории	Enemy in our territory
+Флот «{0}» вошёл в систему {1}. Перехватите его военным флотом, иначе начнётся осада	Fleet "{0}" has entered the {1} system. Intercept it with a military fleet, or a siege will begin
+Вспышка и вибрация при тревоге	Alarm flash and vibration
+При атаке и банкротстве края экрана вспыхивают, геймпад вибрирует	During attacks and bankruptcy the screen edges flash and the gamepad vibrates

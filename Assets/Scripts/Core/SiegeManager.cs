@@ -150,7 +150,9 @@ namespace StellarisClone.Core
 
         private static void AnnounceSiege(StarSystem sys, int attacker)
         {
-            if (sys.OwnerId == 0 || attacker == 0) SFXManager.Play(Sfx.SiegeStart);
+            // Нашу систему осаждают — тревога (сирена и вспышка); осаждаем мы — боевой гул
+            if (sys.OwnerId == 0) { SFXManager.Play(Sfx.RedAlert); AlarmFeedback.Attack(); }
+            else if (attacker == 0) SFXManager.Play(Sfx.SiegeStart);
             if (sys.OwnerId == 0)
                 NotificationCenter.Show(Loc.T("Осада!"), Loc.F("Враг блокирует {0}. Пришлите военный флот, чтобы снять осаду", sys.Name),
                     NotificationCenter.Kind.Danger, 7f);
