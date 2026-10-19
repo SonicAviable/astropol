@@ -537,8 +537,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             BuildSpeedControl(time.transform, 128f);
             // Плеер музыки: кнопка справа от скорости, панель — под датой
             MusicPlayerPanel.CreateToggle(time.transform, 262f, _canvas, -8f - resH - 4f - 38f - 6f);
-            // Слева от даты — где вы сейчас (галактика / система) с возвратом на карту
-            BuildLocationChip(-8f - resH - 4f);
 
             BuildNavMenu();
         }
@@ -757,52 +755,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else if (Input.GetKeyDown(KeyCode.G)) { CloseMainWindows(null); SelectAllWarships(); }
             else if (Input.GetKeyDown(KeyCode.C)) CloseMainWindows(NavWindow.Colonies);
             else if (Input.GetKeyDown(KeyCode.V)) CloseMainWindows(NavWindow.Victory);
-        }
-
-        // ---------- «Где я»: карта галактики или система ----------
-
-        private Text _locText;
-        private Image _locIcon;
-        private TooltipTrigger _locTip;
-
-        private void BuildLocationChip(float y)
-        {
-            var b = CreateButton(_canvas.transform, "LocationChip", new Vector2(250f, 38f), DS.BgDeep, DS.NeonCyan, OnLocationClick);
-            var rt = b.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-150f - 8f, y);
-            LG.Motion(b, LGAppear.Kind.SlideDown).distance = 18f;
-            _locIcon = LGIcons.Create(b.transform, LGIcon.Globe, 14f, DS.NeonCyan);
-            _locIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(14, 14));
-            _locIcon.raycastTarget = false;
-            _locText = CreateText(b.transform, "", 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
-            _locText.rectTransform.anchorMin = Vector2.zero;
-            _locText.rectTransform.anchorMax = Vector2.one;
-            _locText.rectTransform.offsetMin = new Vector2(34, 0);
-            _locText.rectTransform.offsetMax = new Vector2(-14, 0);
-            TooltipHelper.Attach(b, "");
-            _locTip = b.GetComponent<TooltipTrigger>();
-            RefreshLocation();
-        }
-
-        private void RefreshLocation()
-        {
-            if (_locText == null) return;
-            var svm = SystemViewManager.Instance;
-            bool inSys = svm != null && svm.IsInSystemView && svm.CurrentSystem != null;
-            _locText.text = inSys ? Loc.F("Галактика  /  {0}", svm.CurrentSystem.Name) : Loc.T("Карта галактики");
-            _locIcon.sprite = LGIcons.Get(inSys ? LGIcon.Back : LGIcon.Globe);
-            if (_locTip != null)
-                _locTip.SetText(inSys
-                    ? Loc.F("<b>Вы в системе {0}</b>\nКлик или Esc — назад к карте галактики", svm.CurrentSystem.Name)
-                    : Loc.T("<b>Вы на карте галактики</b>\nДвойной клик по звезде — войти в систему. F1 — справка"));
-        }
-
-        private void OnLocationClick()
-        {
-            var svm = SystemViewManager.Instance;
-            if (svm != null && svm.IsInSystemView) svm.ExitToGalaxyView();
         }
 
         private void SelectAllWarships()
@@ -1453,7 +1405,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             _isInSystemMode = inSystem;
             _inspExitBtn.gameObject.SetActive(inSystem);
-            RefreshLocation();
             LayoutInspector();
 
             if (!inSystem && _activeSystem != null)

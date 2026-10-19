@@ -28,15 +28,24 @@ namespace StellarisClone.Rendering
         private readonly Text[] _resLabel = new Text[5];
         private readonly Text[] _resValue = new Text[5];
         private readonly Text[] _resIncome = new Text[5];
-        private Text _leaderName, _leaderTitle, _leaderPower, _leaderDoctrine;
+        private Text _leaderName, _leaderTitle, _leaderPower;
+        private TooltipTrigger _portraitTip, _lawsTip;
+        private RectTransform _attention;
+        private string _attentionKey = "";
+        private int _rowIndex;
+        private const float LeftW = 380f;
+        private static readonly Color RowA = new Color(0.034f, 0.064f, 0.084f, 0.95f);
+        private static readonly Color RowB = new Color(0.026f, 0.050f, 0.068f, 0.95f);
+        private static readonly Color RowHover = new Color(0.07f, 0.13f, 0.16f, 0.98f);
+        private readonly Dictionary<Tab, string> _tabNames = new Dictionary<Tab, string>();
         private Image _portrait, _portraitIcon;
         private RectTransform _portraitHost;
         private string _portraitKey;
         private readonly Dictionary<string, Text> _stats = new Dictionary<string, Text>();
         private RectTransform _domBar, _sciBar, _survBar;
         private Text _domText, _sciText, _survText, _warnText;
-        private readonly Dictionary<Tab, (Image bg, LiquidGlassEffect fx, Text label)> _tabs =
-            new Dictionary<Tab, (Image, LiquidGlassEffect, Text)>();
+        private readonly Dictionary<Tab, (Image bg, Image line, Text label, Image icon)> _tabs =
+            new Dictionary<Tab, (Image, Image, Text, Image)>();
         private RectTransform _tableHeader;
         private RectTransform _list;
         private Text _emptyText;
@@ -99,6 +108,7 @@ namespace StellarisClone.Rendering
                 RefreshHeader();
                 RefreshResources();
                 RefreshLeftColumn();
+                RefreshTabs();
             }
         }
 
@@ -112,27 +122,28 @@ namespace StellarisClone.Rendering
             var bg = _root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(_root, 26f).SetRim(WindowRim);
+            LG.Glass(_root).SetRim(WindowRim);
             LG.Motion(_root, LGAppear.Kind.Pop).inDuration = 0.45f;
 
             BuildHeader(rootRt);
             BuildResourceRow(rootRt);
 
             var body = LGBuild.Rect(rootRt, "Body");
-            body.Stretch(20, 20, 20, 186);
+            body.Stretch(20, 20, 20, 150);
 
             var left = LGBuild.Rect(body, "Left");
             left.anchorMin = new Vector2(0, 0);
             left.anchorMax = new Vector2(0, 1);
             left.pivot = new Vector2(0, 1);
-            left.offsetMin = new Vector2(0, 0);
-            left.offsetMax = new Vector2(420, 0);
+            left.offsetMin = Vector2.zero;
+            left.offsetMax = new Vector2(LeftW, 0);
             BuildLeaderCard(left);
             BuildStats(left);
+            BuildAttention(left);
             BuildVictory(left);
 
             var right = LGBuild.Rect(body, "Right");
-            right.Stretch(436, 0, 0, 0);
+            right.Stretch(LeftW + 16, 0, 0, 0);
             BuildTabs(right);
 
             LG.Skin(_root.transform);
@@ -148,30 +159,58 @@ namespace StellarisClone.Rendering
         }
 
         private static Text Caption(Transform parent, float top, string text, Color col)
-            => LGBuild.Label(TopRow(parent, top, 18, 18, 18), text, 10, col, TextAnchor.MiddleLeft, bold: true);
+        {
+            var t = LGBuild.Label(TopRow(parent, top, 18, 16, 16), text, 10, col, TextAnchor.MiddleLeft, bold: true);
+            t.Track(1.4f);
+            return t;
+        }
+
+        /// <summary>Блок левой колонки / вкладок: ровная пластина.</summary>
+        private static Image Block(Transform parent, string name)
+        {
+            var b = LGBuild.Panel(parent, name, UIManager.DS.BgSlot);
+            LG.Platter(b.gameObject, 10f);
+            return b;
+        }
+
+        /// <summary>Прозрачная кликабельная область с подсветкой при наведении (без «кнопочного» вида).</summary>
+        private static Button HoverArea(Image img, System.Action act, Color hover)
+        {
+            LG.Ignore(img.gameObject, includeChildren: false);
+            Color stored = default;
+            var hv = img.gameObject.AddComponent<UIHover>();
+            hv.Enter = () => { stored = img.color; img.color = hover; };
+            hv.Exit = () => { if (stored != default) img.color = stored; };
+            if (act == null) return null;
+            var b = img.gameObject.AddComponent<Button>();
+            b.transition = Selectable.Transition.None;
+            b.onClick.AddListener(() => act());
+            return b;
+        }
 
         private void BuildHeader(RectTransform root)
         {
             var header = LGBuild.Panel(root, "Header", UIManager.DS.BgHeader);
-            header.rectTransform.TopBand(0, 78);
+            header.rectTransform.TopBand(0, 72);
             LG.Header(header.gameObject);
 
             _emblem = LGBuild.Panel(header.transform, "Emblem", new Color(0.2f, 0.5f, 0.6f));
-            _emblem.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(54, 54));
-            var eFx = LG.Platter(_emblem.gameObject, 27f);
-            eFx.FillMultiplier = 2.4f;
-            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 30, Color.white);
+            _emblem.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(48, 48));
+            LG.Platter(_emblem.gameObject, 24f).FillMultiplier = 2.4f;
+            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 28, Color.white);
 
             var titleRt = LGBuild.Rect(header.transform, "TitleBox");
-            titleRt.Stretch(92, 0, 80, 0);
-            _title = LGBuild.Label(titleRt, Loc.T("ИМПЕРИЯ"), 24, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+            titleRt.Stretch(86, 0, 80, 0);
+            _title = LGBuild.Label(titleRt, Loc.T("ИМПЕРИЯ"), 22, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
             _title.rectTransform.offsetMax = new Vector2(0, -12);
+            _title.Track(1.4f);
             _subtitle = LGBuild.Label(titleRt, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
-            _subtitle.rectTransform.offsetMin = new Vector2(0, 14);
+            _subtitle.rectTransform.offsetMin = new Vector2(0, 12);
 
             var close = LGBuild.Button(header.transform, "Close", new Color(0.16f, 0.20f, 0.24f),
                 new Color(1f, 0.45f, 0.48f, 0.5f), Close, LGIcon.Close, null, 12, 17f);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-22, 0), new Vector2(34, 34));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / I)</color>"));
 
             var line = LGBuild.Panel(header.transform, "Line", new Color(1f, 1f, 1f, 0.18f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
@@ -180,10 +219,11 @@ namespace StellarisClone.Rendering
             LG.Line(line.gameObject, hairline: true);
         }
 
+        /// <summary>Ресурсы — одна тонкая полоса: запас и доход за месяц (подробности — в подсказках верхней панели).</summary>
         private void BuildResourceRow(RectTransform root)
         {
-            var row = LGBuild.Rect(root, "Resources");
-            row.TopBand(92, 80, 20, 20);
+            var strip = Block(root, "Resources");
+            strip.rectTransform.TopBand(84, 54, 20, 20);
 
             var defs = new (LGIcon icon, string label, Color col)[]
             {
@@ -197,187 +237,287 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < defs.Length; i++)
             {
                 var d = defs[i];
-                var card = LGBuild.Panel(row, "Res_" + i, UIManager.DS.BgSlot);
-                card.rectTransform.Column(i / 5f, (i + 1) / 5f, i == 0 ? 0 : 6, i == 4 ? 0 : 6);
-                LG.Platter(card.gameObject, 18f).SetRim(new Color(d.col.r, d.col.g, d.col.b, 0.28f));
-
-                var iconBg = LGBuild.Panel(card.transform, "IconBg", new Color(d.col.r * 0.22f, d.col.g * 0.22f, d.col.b * 0.22f, 1f));
-                iconBg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(48, 48));
-                var ibFx = LG.Platter(iconBg.gameObject, 24f);
-                ibFx.SetRim(new Color(d.col.r, d.col.g, d.col.b, 0.5f));
-                ibFx.FillMultiplier = 2.2f;
-                LGIcons.Create(iconBg.transform, d.icon, 26, d.col);
-
-                var text = LGBuild.Rect(card.transform, "Text");
-                text.Stretch(74, 10, 14, 10);
-                _resLabel[i] = LGBuild.Label(text, d.label, 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
-                _resValue[i] = LGBuild.Label(text, "0", 22, UIManager.DS.TextPrimary, TextAnchor.LowerLeft, bold: true);
-                _resIncome[i] = LGBuild.Label(text, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerRight, bold: true);
+                var cell = LGBuild.Rect(strip.transform, "Res_" + i);
+                cell.Column(i / 5f, (i + 1) / 5f, 14, 10);
+                var ic = LGIcons.Create(cell, d.icon, 22, d.col);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(22, 22));
+                _resLabel[i] = LGBuild.Label(cell, d.label, 9, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
+                _resLabel[i].rectTransform.Stretch(34, 0, 0, 8);
+                _resValue[i] = LGBuild.Label(cell, "0", 17, UIManager.DS.TextPrimary, TextAnchor.LowerLeft, bold: true);
+                _resValue[i].rectTransform.Stretch(34, 7, 0, 0);
+                _resIncome[i] = LGBuild.Label(cell, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerRight, bold: true);
+                _resIncome[i].rectTransform.Stretch(34, 8, 0, 0);
+                if (i < defs.Length - 1)
+                {
+                    var sep = LGBuild.Panel(strip.transform, "Sep", new Color(1f, 1f, 1f, 0.07f));
+                    sep.rectTransform.anchorMin = new Vector2((i + 1) / 5f, 0.2f);
+                    sep.rectTransform.anchorMax = new Vector2((i + 1) / 5f, 0.8f);
+                    sep.rectTransform.offsetMin = Vector2.zero;
+                    sep.rectTransform.offsetMax = new Vector2(1, 0);
+                    LG.Ignore(sep.gameObject);
+                }
             }
         }
 
+        /// <summary>Правитель: портрет (наведение — история фракции), имя, титул, мощь флота и кнопка «Законы».</summary>
         private void BuildLeaderCard(RectTransform left)
         {
-            var card = LGBuild.Panel(left, "LeaderCard", UIManager.DS.BgSlot);
-            card.rectTransform.TopBand(0, 196);
-            LG.Platter(card.gameObject, 18f);
-
-            Caption(card.transform, 12, Loc.T("ПРАВИТЕЛЬ ИМПЕРИИ"), UIManager.DS.TextMuted);
+            var card = Block(left, "LeaderCard");
+            card.rectTransform.TopBand(0, 148);
 
             _portrait = LGBuild.Panel(card.transform, "Portrait", new Color(0.2f, 0.4f, 0.5f));
-            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(18, -38), new Vector2(104, 146));
+            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -14), new Vector2(92, 120));
             LG.Platter(_portrait.gameObject, 8f).FillMultiplier = 2.2f;
-            _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 56, Color.white);
+            _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 48, Color.white);
             _portraitHost = LG.RoundedMask(_portrait.transform, 8f, 1f);
+            TooltipHelper.Attach(_portrait.gameObject, "");
+            _portraitTip = _portrait.GetComponent<TooltipTrigger>();
 
             var info = LGBuild.Rect(card.transform, "Info");
-            info.Stretch(136, 14, 16, 40);
+            info.Stretch(122, 14, 14, 14);
+            var cap = LGBuild.Label(info, Loc.T("ПРАВИТЕЛЬ"), 9, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
+            cap.rectTransform.TopBand(0, 14);
+            cap.Track(1.4f);
             _leaderName = LGBuild.Label(info, "", 16, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            _leaderTitle = LGBuild.Label(info, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            _leaderTitle.rectTransform.offsetMax = new Vector2(0, -24);
+            _leaderName.rectTransform.TopBand(16, 22);
+            _leaderTitle = LGBuild.Label(info, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, wrap: true);
+            _leaderTitle.rectTransform.TopBand(39, 28);
 
             var powerRow = LGBuild.Rect(info, "Power");
-            powerRow.TopBand(46, 22);
-            var pic = LGIcons.Create(powerRow, LGIcon.Fleet, 16, CGold);
-            pic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
-            _leaderPower = LGBuild.Label(powerRow, "", 13, CGold, TextAnchor.MiddleLeft, bold: true);
-            _leaderPower.rectTransform.offsetMin = new Vector2(22, 0);
+            powerRow.TopBand(68, 18);
+            var pic = LGIcons.Create(powerRow, LGIcon.Fleet, 14, CGold);
+            pic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
+            _leaderPower = LGBuild.Label(powerRow, "", 12, CGold, TextAnchor.MiddleLeft, bold: true);
+            _leaderPower.rectTransform.offsetMin = new Vector2(20, 0);
 
-            _leaderDoctrine = LGBuild.Label(info, "", 10, new Color(0.80f, 0.88f, 0.92f), TextAnchor.UpperLeft, wrap: true);
-            _leaderDoctrine.rectTransform.offsetMax = new Vector2(0, -74);
-            _leaderDoctrine.lineSpacing = 1.1f;
-            _leaderDoctrine.verticalOverflow = VerticalWrapMode.Truncate;
+            var laws = LGBuild.Button(info, "Laws", new Color(0.10f, 0.07f, 0.03f), new Color(CGold.r, CGold.g, CGold.b, 0.55f),
+                () => { Close(); LawsWindow.Toggle(); }, LGIcon.Menu, Loc.T("ЗАКОНЫ ИМПЕРИИ"), 10);
+            var lr = (RectTransform)laws.transform;
+            lr.anchorMin = new Vector2(0, 0); lr.anchorMax = new Vector2(1, 0); lr.pivot = new Vector2(0.5f, 0);
+            lr.offsetMin = new Vector2(0, 0); lr.offsetMax = new Vector2(0, 30);
+            TooltipHelper.Attach(laws.gameObject, "");
+            _lawsTip = laws.GetComponent<TooltipTrigger>();
         }
 
+        /// <summary>«Империя в цифрах»: строки-ссылки — клик ведёт туда, где с этим работают.</summary>
         private void BuildStats(RectTransform left)
         {
-            var block = LGBuild.Panel(left, "Stats", UIManager.DS.BgSlot);
-            block.rectTransform.TopBand(208, 200);
-            LG.Platter(block.gameObject, 18f);
+            var block = Block(left, "Stats");
+            block.rectTransform.TopBand(160, 150);
+            Caption(block.transform, 10, Loc.T("ИМПЕРИЯ В ЦИФРАХ"), UIManager.DS.TextMuted);
 
-            Caption(block.transform, 10, Loc.T("СТАТИСТИКА"), UIManager.DS.TextMuted);
-
-            var grid = LGBuild.Rect(block.transform, "Grid");
-            grid.Stretch(12, 12, 12, 36);
-            var gl = grid.gameObject.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(92, 72);
-            gl.spacing = new Vector2(6, 8);
-            gl.childAlignment = TextAnchor.UpperCenter;
-            gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gl.constraintCount = 4;
-
-            AddStatTile(grid, "systems", LGIcon.Star, Loc.T("Системы"), UIManager.DS.NeonCyan);
-            AddStatTile(grid, "colonies", LGIcon.Planet, Loc.T("Колонии"), UIManager.DS.Green);
-            AddStatTile(grid, "pop", LGIcon.Population, Loc.T("Население"), new Color(0.75f, 0.9f, 1f));
-            AddStatTile(grid, "housing", LGIcon.Housing, Loc.T("Своб. жильё"), new Color(0.7f, 0.85f, 0.95f));
-            AddStatTile(grid, "idle", LGIcon.Warning, Loc.T("Безработные"), CGold);
-            AddStatTile(grid, "districts", LGIcon.Industry, Loc.T("Районы"), CAlloys);
-            AddStatTile(grid, "outposts", LGIcon.Starbase, Loc.T("Форпосты"), CMinerals);
-            AddStatTile(grid, "fleets", LGIcon.Fleet, Loc.T("Флоты"), UIManager.DS.Red);
+            AddStatRow(block.transform, 0, 0, "systems", LGIcon.Star, Loc.T("Системы"), UIManager.DS.NeonCyan, () => SwitchTab(Tab.Systems));
+            AddStatRow(block.transform, 1, 0, "colonies", LGIcon.Planet, Loc.T("Колонии"), UIManager.DS.Green, OpenColonies);
+            AddStatRow(block.transform, 0, 1, "pop", LGIcon.Population, Loc.T("Население"), new Color(0.75f, 0.9f, 1f), OpenColonies);
+            AddStatRow(block.transform, 1, 1, "housing", LGIcon.Housing, Loc.T("Свободное жильё"), new Color(0.7f, 0.85f, 0.95f), OpenColonies);
+            AddStatRow(block.transform, 0, 2, "idle", LGIcon.Warning, Loc.T("Безработные"), CGold, OpenColonies);
+            AddStatRow(block.transform, 1, 2, "districts", LGIcon.Industry, Loc.T("Районы"), CAlloys, OpenColonies);
+            AddStatRow(block.transform, 0, 3, "outposts", LGIcon.Starbase, Loc.T("Форпосты"), CMinerals, () => SwitchTab(Tab.Systems));
+            AddStatRow(block.transform, 1, 3, "fleets", LGIcon.Fleet, Loc.T("Флоты"), UIManager.DS.Red, () => SwitchTab(Tab.Fleets));
         }
 
-        private void AddStatTile(RectTransform grid, string key, LGIcon icon, string label, Color col)
+        private void AddStatRow(Transform block, int col, int row, string key, LGIcon icon, string label, Color c, System.Action act)
         {
-            var tile = LGBuild.Panel(grid, "Tile_" + key, UIManager.DS.BgVisor);
-            LG.Platter(tile.gameObject, 14f).SetRim(new Color(col.r, col.g, col.b, 0.16f));
-            var ic = LGIcons.Create(tile.transform, icon, 16, col);
-            ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -8), new Vector2(16, 16));
-            var val = LGBuild.Label(tile.transform, "0", 17, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
-            val.rectTransform.Stretch(2, 14, 2, 22);
-            var lbl = LGBuild.Label(tile.transform, label, 9, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
-            lbl.rectTransform.Stretch(2, 6, 2, 0);
-            _stats[key] = val;
+            var r = LGBuild.Panel(block, "Stat_" + key, new Color(1f, 1f, 1f, 0f), raycast: true);
+            var rt = r.rectTransform;
+            rt.anchorMin = new Vector2(col * 0.5f, 1); rt.anchorMax = new Vector2(col * 0.5f + 0.5f, 1);
+            rt.pivot = new Vector2(0.5f, 1);
+            float top = 32f + row * 28f;
+            rt.offsetMin = new Vector2(col == 0 ? 10 : 4, -top - 26f);
+            rt.offsetMax = new Vector2(col == 0 ? -4 : -10, -top);
+            HoverArea(r, act, new Color(1f, 1f, 1f, 0.06f));
+            var ic = LGIcons.Create(rt, icon, 14, c);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(14, 14));
+            var l = LGBuild.Label(rt, label, 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft);
+            l.rectTransform.Stretch(28, 0, 44, 0);
+            var v = LGBuild.Label(rt, "0", 13, UIManager.DS.TextPrimary, TextAnchor.MiddleRight, bold: true);
+            v.rectTransform.Stretch(0, 0, 8, 0);
+            _stats[key] = v;
         }
 
+        /// <summary>«Требует внимания»: те же оповещения, что над картой (и скрытые там), — клик сразу к делу.</summary>
+        private void BuildAttention(RectTransform left)
+        {
+            var block = Block(left, "Attention");
+            block.rectTransform.TopBand(322, 224);
+            block.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.20f));
+            var row = TopRow(block.transform, 10, 18, 16, 16);
+            var ic = LGIcons.Create(row, LGIcon.Warning, 13, CGold);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(13, 13));
+            var t = LGBuild.Label(row, Loc.T("ТРЕБУЕТ ВНИМАНИЯ"), 10, CGold, TextAnchor.MiddleLeft, bold: true);
+            t.rectTransform.offsetMin = new Vector2(20, 0);
+            t.Track(1.4f);
+            _attention = LGBuild.Rect(block.transform, "List");
+            _attention.Stretch(10, 10, 10, 36);
+        }
+
+        private const int AttentionMax = 5;
+
+        private void RefreshAttention()
+        {
+            if (_attention == null) return;
+            var list = AlertBar.Instance != null ? AlertBar.Instance.All : null;
+            var sb = new System.Text.StringBuilder();
+            if (list != null) foreach (var a in list) sb.Append(a.Id).Append(a.Count).Append(a.Title).Append('|');
+            string key = sb.ToString();
+            if (key == _attentionKey) return;
+            _attentionKey = key;
+            LGBuild.Clear(_attention);
+
+            if (list == null || list.Count == 0)
+            {
+                var ok = LGIcons.Create(_attention, LGIcon.Check, 16, UIManager.DS.Green);
+                ok.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(8, -8), new Vector2(16, 16));
+                var t = LGBuild.Label(_attention, Loc.T("Всё спокойно: срочных дел нет."), 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
+                t.rectTransform.Stretch(32, 0, 6, 8);
+                return;
+            }
+
+            float y = 0f;
+            for (int i = 0; i < list.Count && i < AttentionMax; i++)
+            {
+                var a = list[i];
+                var row = LGBuild.Panel(_attention, "Alert", new Color(a.Color.r * 0.10f, a.Color.g * 0.10f, a.Color.b * 0.10f, 0.9f), raycast: true);
+                row.rectTransform.TopBand(y, 30);
+                y += 33f;
+                var act = a.Action;
+                HoverArea(row, act == null ? null : (System.Action)(() => { Close(); act(); }),
+                    new Color(a.Color.r * 0.22f, a.Color.g * 0.22f, a.Color.b * 0.22f, 0.95f));
+                var bar = LGBuild.Panel(row.transform, "Accent", a.Color);
+                bar.raycastTarget = false;
+                bar.rectTransform.anchorMin = new Vector2(0, 0); bar.rectTransform.anchorMax = new Vector2(0, 1);
+                bar.rectTransform.offsetMin = new Vector2(0, 4); bar.rectTransform.offsetMax = new Vector2(3, -4);
+                LG.Ignore(bar.gameObject);
+                var ic = LGIcons.Create(row.transform, a.Icon, 14, a.Color);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
+                string title = a.Count > 1 ? $"{a.Title}  <color=#8AA2A8>×{a.Count}</color>" : a.Title;
+                var tl = LGBuild.Label(row.transform, title, 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold: true);
+                tl.rectTransform.Stretch(34, 0, 24, 0);
+                if (act != null)
+                {
+                    var chev = LGIcons.Create(row.transform, LGIcon.Back, 10, UIManager.DS.TextMuted);
+                    chev.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-12, 0), new Vector2(10, 10));
+                    chev.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
+                }
+                string tip = $"<b>{a.Title}</b>\n{a.Body}";
+                if (!string.IsNullOrEmpty(a.ActionHint)) tip += $"\n<color=#8AA2A8>{a.ActionHint}</color>";
+                TooltipHelper.Attach(row.gameObject, tip);
+            }
+            if (list.Count > AttentionMax)
+            {
+                var more = LGBuild.Label(_attention, Loc.F("и ещё {0} — значки над картой", list.Count - AttentionMax), 10, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
+                more.rectTransform.TopBand(y + 2f, 14, 6, 6);
+            }
+        }
+
+        /// <summary>Путь к победе — коротко; подробно — окно «Путь к победе» (V).</summary>
         private void BuildVictory(RectTransform left)
         {
-            var block = LGBuild.Panel(left, "Victory", UIManager.DS.BgSlot);
+            var block = Block(left, "Victory");
             var rt = block.rectTransform;
-            rt.anchorMin = new Vector2(0, 0);
-            rt.anchorMax = new Vector2(1, 1);
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = new Vector2(0, -420);
-            LG.Platter(block.gameObject, 18f).SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.22f));
+            rt.anchorMin = new Vector2(0, 0); rt.anchorMax = new Vector2(1, 0);
+            rt.pivot = new Vector2(0.5f, 0);
+            rt.offsetMin = Vector2.zero; rt.offsetMax = new Vector2(0, 132);
+            block.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.22f));
 
-            var titleRow = TopRow(block.transform, 10, 18, 18, 18);
-            var tIcon = LGIcons.Create(titleRow, LGIcon.Trophy, 14, CGold);
-            tIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            var tl = LGBuild.Label(titleRow, Loc.T("ПУТИ К ПОБЕДЕ"), 10, CGold, TextAnchor.MiddleLeft, bold: true);
+            var titleRow = TopRow(block.transform, 8, 22, 16, 12);
+            var tIcon = LGIcons.Create(titleRow, LGIcon.Trophy, 13, CGold);
+            tIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(13, 13));
+            var tl = LGBuild.Label(titleRow, Loc.T("ПУТЬ К ПОБЕДЕ"), 10, CGold, TextAnchor.MiddleLeft, bold: true);
             tl.rectTransform.offsetMin = new Vector2(20, 0);
+            tl.Track(1.4f);
+            var more = LGBuild.Button(titleRow, "More", new Color(0.10f, 0.08f, 0.03f), new Color(CGold.r, CGold.g, CGold.b, 0.45f),
+                () => { Close(); VictoryPathWindow.Toggle(); }, null, Loc.T("ПОДРОБНЕЕ · V"), 9);
+            ((RectTransform)more.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(118, 22));
 
-            _domText = VictoryRow(block.transform, 38, LGIcon.Starbase, Loc.T("Доминирование"), UIManager.DS.NeonCyan, out _domBar);
-            _sciText = VictoryRow(block.transform, 88, LGIcon.Research, Loc.T("Наука"), CResearch, out _sciBar);
-            _survText = VictoryRow(block.transform, 138, LGIcon.Trophy, Loc.F("Очки · {0}", VictoryManager.EndYear), CEnergy, out _survBar);
+            _domText = VictoryRow(block.transform, 36, LGIcon.Starbase, Loc.T("Доминирование"), UIManager.DS.NeonCyan, out _domBar);
+            _sciText = VictoryRow(block.transform, 62, LGIcon.Research, Loc.T("Наука"), CResearch, out _sciBar);
+            _survText = VictoryRow(block.transform, 88, LGIcon.Trophy, Loc.F("Очки · {0}", VictoryManager.EndYear), CEnergy, out _survBar);
 
-            _warnText = LGBuild.Label(block.transform, "", 10, UIManager.DS.TextMuted, TextAnchor.LowerLeft, wrap: true);
-            _warnText.rectTransform.Stretch(18, 10, 18, 0);
+            _warnText = LGBuild.Label(block.transform, "", 9, UIManager.DS.TextMuted, TextAnchor.LowerLeft, wrap: true);
+            _warnText.rectTransform.Stretch(16, 6, 16, 0);
         }
 
         private static Text VictoryRow(Transform parent, float top, LGIcon icon, string name, Color col, out RectTransform bar)
         {
-            var row = TopRow(parent, top, 42, 18, 18);
-            var ic = LGIcons.Create(row, icon, 18, col);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -1), new Vector2(18, 18));
-
-            var n = LGBuild.Label(row, name, 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            n.rectTransform.offsetMin = new Vector2(28, 0);
-            n.rectTransform.offsetMax = new Vector2(-110, 0);
-            var val = LGBuild.Label(row, "0 / 0", 12, col, TextAnchor.UpperRight, bold: true);
-            val.rectTransform.offsetMin = new Vector2(200, 0);
+            var row = TopRow(parent, top, 24, 16, 16);
+            var ic = LGIcons.Create(row, icon, 12, col);
+            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -1), new Vector2(12, 12));
+            var n = LGBuild.Label(row, name, 11, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+            n.rectTransform.offsetMin = new Vector2(20, 0);
+            n.rectTransform.offsetMax = new Vector2(-120, 0);
+            var val = LGBuild.Label(row, "0 / 0", 11, col, TextAnchor.UpperRight, bold: true);
+            val.rectTransform.offsetMin = new Vector2(160, 0);
 
             var barHost = LGBuild.Rect(row, "BarHost");
             barHost.anchorMin = new Vector2(0, 0);
             barHost.anchorMax = new Vector2(1, 0);
             barHost.pivot = new Vector2(0.5f, 0);
-            barHost.offsetMin = new Vector2(28, 4);
-            barHost.offsetMax = new Vector2(0, 14);
-            bar = LGBuild.Bar(barHost, col, 0f, 6f);
+            barHost.offsetMin = new Vector2(20, 0);
+            barHost.offsetMax = new Vector2(0, 6);
+            bar = LGBuild.Bar(barHost, col, 0f, 4f);
             return val;
         }
 
+        /// <summary>Вкладки — одна полоса: значок, название и число записей; активная подчёркнута.</summary>
         private void BuildTabs(RectTransform right)
         {
-            var tabsRow = LGBuild.Rect(right, "Tabs");
-            tabsRow.TopBand(0, 40);
-            AddTab(tabsRow, Tab.Systems, LGIcon.Star, Loc.T("СИСТЕМЫ"), 0);
-            AddTab(tabsRow, Tab.Fleets, LGIcon.Fleet, Loc.T("ФЛОТЫ"), 1);
-            AddTab(tabsRow, Tab.Leaders, LGIcon.Leader, Loc.T("ЛИДЕРЫ"), 2);
-            AddTab(tabsRow, Tab.Landmarks, LGIcon.Star, Loc.T("УЗЛЫ"), 3);
-            AddTab(tabsRow, Tab.Rival, LGIcon.Diplomacy, Loc.T("СОПЕРНИКИ"), 4);
-            AddTab(tabsRow, Tab.Effects, LGIcon.Clock, Loc.T("ЭФФЕКТЫ"), 5);
+            var strip = Block(right, "Tabs");
+            strip.rectTransform.TopBand(0, 46);
+            AddTab(strip.rectTransform, Tab.Systems, LGIcon.Star, Loc.T("СИСТЕМЫ"), 0);
+            AddTab(strip.rectTransform, Tab.Fleets, LGIcon.Fleet, Loc.T("ФЛОТЫ"), 1);
+            AddTab(strip.rectTransform, Tab.Leaders, LGIcon.Leader, Loc.T("ЛИДЕРЫ"), 2);
+            AddTab(strip.rectTransform, Tab.Landmarks, LGIcon.Target, Loc.T("УЗЛЫ"), 3);
+            AddTab(strip.rectTransform, Tab.Rival, LGIcon.Diplomacy, Loc.T("СОПЕРНИКИ"), 4);
+            AddTab(strip.rectTransform, Tab.Effects, LGIcon.Clock, Loc.T("ЭФФЕКТЫ"), 5);
 
-            var table = LGBuild.Panel(right, "Table", UIManager.DS.BgVisor);
-            table.rectTransform.Stretch(0, 0, 0, 50);
-            LG.Platter(table.gameObject, 18f);
+            var table = Block(right, "Table");
+            table.color = UIManager.DS.BgVisor;
+            table.rectTransform.Stretch(0, 0, 0, 56);
 
             _tableHeader = LGBuild.Rect(table.transform, "TableHeader");
             _tableHeader.TopBand(8, 26, 16, 16);
+            var hl = LGBuild.Panel(table.transform, "HeadLine", new Color(1f, 1f, 1f, 0.08f));
+            hl.rectTransform.TopBand(36, 1, 12, 12);
+            LG.Ignore(hl.gameObject);
 
             var listHost = LGBuild.Rect(table.transform, "ListHost");
-            listHost.Stretch(6, 6, 6, 40);
-            _list = LGBuild.ScrollList(listHost, 6f, 6);
+            listHost.Stretch(8, 8, 8, 42);
+            _list = LGBuild.ScrollList(listHost, 2f, 4);
 
             _emptyText = LGBuild.Label(table.transform, "", 13, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
             _emptyText.rectTransform.Stretch(80, 40, 80, 40);
         }
 
-        private void AddTab(RectTransform row, Tab tab, LGIcon icon, string label, int index)
+        private void AddTab(RectTransform strip, Tab tab, LGIcon icon, string label, int index)
         {
-            var bgImg = LGBuild.Panel(row, "Tab_" + tab, UIManager.DS.BtnNeutral, raycast: true);
             const int TabCount = 6;
-            bgImg.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 0 : 4, index == TabCount - 1 ? 0 : 4);
-            var b = bgImg.gameObject.AddComponent<Button>();
-            b.onClick.AddListener(() =>
-            {
-                _tab = tab;
-                _assignLeaderId = -1;
-                RefreshTabs();
-                RebuildList();
-                SFXManager.Play(Sfx.UiTab);
-            });
-            var fx = LG.Button(bgImg.gameObject, new Color(0.45f, 0.95f, 0.9f, 0.25f), 20f);
-            var t = LGIcons.IconLabel(bgImg.transform, icon, label, 12, Color.white, UIManager.DS.TextMuted, 15f);
-            _tabs[tab] = (bgImg, fx, t);
+            var hit = LGBuild.Panel(strip, "Tab_" + tab, new Color(1f, 1f, 1f, 0f), raycast: true);
+            hit.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 6 : 2, index == TabCount - 1 ? 6 : 2);
+            HoverArea(hit, () => SwitchTab(tab), new Color(1f, 1f, 1f, 0.05f));
+            var t = LGIcons.IconLabel(hit.transform, icon, label, 12, UIManager.DS.TextMuted, UIManager.DS.TextMuted, 14f);
+            var iconImg = t.transform.parent.GetChild(0).GetComponent<Image>();
+            var line = LGBuild.Panel(hit.transform, "Underline", UIManager.DS.NeonCyan);
+            line.raycastTarget = false;
+            line.rectTransform.anchorMin = new Vector2(0.12f, 0); line.rectTransform.anchorMax = new Vector2(0.88f, 0);
+            line.rectTransform.offsetMin = new Vector2(0, 3); line.rectTransform.offsetMax = new Vector2(0, 6);
+            _tabs[tab] = (hit, line, t, iconImg);
+            _tabNames[tab] = label;
+        }
+
+        private void SwitchTab(Tab tab)
+        {
+            _tab = tab;
+            _assignLeaderId = -1;
+            RefreshTabs();
+            RebuildList();
+            SFXManager.Play(Sfx.UiTab);
+        }
+
+        private void OpenColonies()
+        {
+            Close();
+            ColonyManagerWindow.Toggle();
         }
 
         // ================================================================ Данные
@@ -400,7 +540,10 @@ namespace StellarisClone.Rendering
             Color fc = f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
             _title.text = (f?.Name ?? Loc.T("Империя")).ToUpper();
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
-            _subtitle.text = Loc.F("<color={0}>{1}</color>   ·   Обзор империи   ·   {2}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), date);
+            var ruler = LeaderPortraits.ForFaction(f);
+            _subtitle.text = ruler != null
+                ? Loc.F("<color={0}>{1}</color>   ·   правитель {2}   ·   {3}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), ruler.Name, date)
+                : Loc.F("<color={0}>{1}</color>   ·   {2}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), date);
             _emblem.color = new Color(fc.r * 0.45f, fc.g * 0.45f, fc.b * 0.45f, 1f);
             _emblemIcon.color = Color.Lerp(fc, Color.white, 0.35f);
             // Герб фракции вместо общего значка правителя
@@ -409,7 +552,7 @@ namespace StellarisClone.Rendering
             {
                 _emblemIcon.sprite = crest;
                 _emblemIcon.preserveAspect = true;
-                _emblemIcon.rectTransform.sizeDelta = new Vector2(42, 42);
+                _emblemIcon.rectTransform.sizeDelta = new Vector2(38, 38);
             }
         }
 
@@ -456,12 +599,14 @@ namespace StellarisClone.Rendering
                 bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.5f) != null;
                 _portraitIcon.gameObject.SetActive(!ok);
             }
-            _leaderDoctrine.text = f?.Description ?? "";
+            _portraitTip?.SetText(f != null ? $"<b>{f.Name}</b>\n{f.Description}" : "");
+            _lawsTip?.SetText(LawsSummary());
             _portrait.color = new Color(fc.r * 0.4f, fc.g * 0.4f, fc.b * 0.4f, 1f);
             _portrait.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(fc.r, fc.g, fc.b, 0.6f));
             _portraitIcon.color = Color.Lerp(fc, Color.white, 0.3f);
             int power = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
             _leaderPower.text = Loc.F("Мощь флота: {0:N0}", power);
+            RefreshAttention();
 
             // --- Статистика ---
             int systems = 0, colonies = 0, pop = 0, housing = 0, idle = 0, districts = 0, outposts = 0, fleets = 0;
@@ -526,11 +671,60 @@ namespace StellarisClone.Rendering
             foreach (var kv in _tabs)
             {
                 bool active = kv.Key == _tab;
-                kv.Value.bg.color = active ? UIManager.DS.BtnPrimary : UIManager.DS.BtnNeutral;
-                kv.Value.fx.SetRim(new Color(0.45f, 0.95f, 0.9f, active ? 0.75f : 0.18f));
-                kv.Value.fx.GlowMultiplier = active ? 1.2f : 0.3f;
-                kv.Value.label.color = active ? Color.white : UIManager.DS.TextMuted;
+                var v = kv.Value;
+                v.line.enabled = active;
+                v.label.color = active ? Color.white : UIManager.DS.TextMuted;
+                if (v.icon != null) v.icon.color = active ? UIManager.DS.NeonCyan : UIManager.DS.TextMuted;
+                int n = TabCount(kv.Key);
+                string name = _tabNames.TryGetValue(kv.Key, out var nm) ? nm : "";
+                v.label.text = n > 0 ? $"{name}  <color=#{(active ? "4DF2DB" : "6F8A92")}>{n}</color>" : name;
             }
+        }
+
+        /// <summary>Сколько записей во вкладке (число рядом с названием).</summary>
+        private int TabCount(Tab tab)
+        {
+            int n = 0;
+            switch (tab)
+            {
+                case Tab.Systems:
+                    if (_gen != null) foreach (var s in _gen.Systems) if (s.OwnerId == 0) n++;
+                    break;
+                case Tab.Fleets:
+                    if (FleetManager.Instance != null)
+                        foreach (var fv in FleetManager.Instance.AllFleets)
+                            if (fv != null && fv.Data != null && !fv.Data.Destroyed && fv.Data.OwnerId == 0) n++;
+                    break;
+                case Tab.Leaders:
+                    if (LeaderManager.Instance != null) n = LeaderManager.Instance.All.Count;
+                    break;
+                case Tab.Landmarks:
+                    foreach (var s in Landmarks.All) if (Vision.PlayerKnows(s.Id) || s.OwnerId == 0) n++;
+                    break;
+                case Tab.Rival:
+                    foreach (var ai in AIEmpireManager.All) if (Contacts.PlayerMet(ai.OwnerId)) n++;
+                    break;
+                case Tab.Effects:
+                    n = EmpireEffects.Active.Count;
+                    foreach (var c in EmpireLaws.Categories) { var l = EmpireLaws.Active(c); if (l != null && !l.Default) n++; }
+                    break;
+            }
+            return n;
+        }
+
+        /// <summary>Подсказка кнопки «Законы»: действующие законы по направлениям.</summary>
+        private static string LawsSummary()
+        {
+            var sb = new System.Text.StringBuilder(Loc.T("<b>Законы империи</b>  <color=#8AA2A8>(L)</color>\n"));
+            foreach (var c in EmpireLaws.Categories)
+            {
+                var l = EmpireLaws.Active(c);
+                if (l == null) continue;
+                sb.Append("<color=#8AA2A8>").Append(EmpireLaws.CategoryName(c)).Append(":</color> ").Append(l.Name);
+                if (l.Upkeep > 0.01f) sb.Append(Loc.F("  <color=#C9A6FF>−{0:0.#} влияния/мес</color>", l.Upkeep));
+                sb.Append('\n');
+            }
+            return sb.ToString().TrimEnd('\n');
         }
 
         // ================================================================ Списки
@@ -540,6 +734,7 @@ namespace StellarisClone.Rendering
             LGBuild.Clear(_list);
             LGBuild.Clear(_tableHeader);
             _emptyText.text = "";
+            _rowIndex = 0;
             _list.anchoredPosition = Vector2.zero;
             if (_gen == null) _gen = FindAnyObjectByType<GalaxyGenerator>();
 
@@ -565,16 +760,17 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>Строка таблицы: ровная, через одну чуть темнее, слева — полоска цвета записи, подсветка при наведении.</summary>
         private RectTransform Row(System.Action onClick, Color rim)
         {
-            var img = LGBuild.Panel(_list, "Row", UIManager.DS.BgRowEven, raycast: true);
-            LGBuild.Height(img.gameObject, 48);
-            var b = img.gameObject.AddComponent<Button>();
-            b.onClick.AddListener(() => onClick?.Invoke());
-            var fx = LG.Button(img.gameObject, rim, 14f);
-            fx.FillMultiplier = 0.7f;
-            fx.GlowMultiplier = 0.3f;
-            fx.GetComponent<LGInteractive>().hoverScale = 1.01f;
+            var img = LGBuild.Panel(_list, "Row", (_rowIndex++ & 1) == 0 ? RowA : RowB, raycast: true);
+            LGBuild.Height(img.gameObject, 46);
+            HoverArea(img, onClick, RowHover);
+            var accent = LGBuild.Panel(img.transform, "Accent", new Color(rim.r, rim.g, rim.b, Mathf.Clamp01(rim.a * 2.4f)));
+            accent.raycastTarget = false;
+            accent.rectTransform.anchorMin = new Vector2(0, 0); accent.rectTransform.anchorMax = new Vector2(0, 1);
+            accent.rectTransform.offsetMin = new Vector2(0, 6); accent.rectTransform.offsetMax = new Vector2(3, -6);
+            LG.Ignore(accent.gameObject);
             return img.rectTransform;
         }
 
@@ -876,6 +1072,25 @@ namespace StellarisClone.Rendering
                        (0.42f, 0.84f, Loc.T("ДЕЙСТВИЕ"), TextAnchor.MiddleLeft),
                        (0.84f, 1f, Loc.T("ОСТАЛОСЬ"), TextAnchor.MiddleRight));
             int n = 0;
+            // Действующие законы (не исходные) — клик открывает окно законов
+            foreach (var c in EmpireLaws.Categories)
+            {
+                var law = EmpireLaws.Active(c);
+                if (law == null || law.Default) continue;
+                n++;
+                var lrow = Row(() => { Close(); LawsWindow.Toggle(); }, new Color(CAlloys.r, CAlloys.g, CAlloys.b, 0.35f));
+                IconCell(lrow, 0f, 0.06f, LGIcon.Menu, CAlloys);
+                TwoLine(lrow, 0.06f, 0.42f, law.Name, Loc.F("Закон · {0}", EmpireLaws.CategoryName(c).ToLower()));
+                var fx = new System.Text.StringBuilder();
+                foreach (var (text, good) in law.Effects)
+                {
+                    if (fx.Length > 0) fx.Append("   ");
+                    fx.Append(good ? "<color=#66F29E>" : "<color=#FF7A73>").Append(text).Append("</color>");
+                }
+                TextCell(lrow, 0.42f, 0.84f, fx.ToString(), UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
+                TextCell(lrow, 0.84f, 1f, law.Upkeep > 0.01f ? Loc.F("−{0:0.#} влияния/мес", law.Upkeep) : Loc.T("пока действует"),
+                    UIManager.DS.TextPrimary, TextAnchor.MiddleRight, 12, true);
+            }
             foreach (var e in EmpireEffects.Active)
             {
                 n++;
@@ -906,7 +1121,7 @@ namespace StellarisClone.Rendering
             }
 
             if (n == 0)
-                Empty(Loc.T("Действующих эффектов нет.\n\nЗаконы, указы и контракты появляются из решений фракции (раз в два года) и событий."));
+                Empty(Loc.T("Действующих эффектов нет.\n\nСвой курс задают законы империи (клавиша L); указы и контракты появляются из решений фракции и событий."));
         }
 
         // ---------- Соперник ----------

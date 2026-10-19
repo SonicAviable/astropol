@@ -4840,3 +4840,18 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 <b>Вы на карте галактики</b>\nДвойной клик по звезде — войти в систему. F1 — справка	<b>You are on the galaxy map</b>\nDouble-click a star to enter a system. F1 — help
 <color=#8AA2A8>Доход:</color> {0}\n	<color=#8AA2A8>Income:</color> {0}\n
 <color=#8AA2A8>Из них законы:</color> −{0:0.#} в месяц  <color=#8AA2A8>(L)</color>\n	<color=#8AA2A8>Of which laws:</color> −{0:0.#} per month  <color=#8AA2A8>(L)</color>\n
+Закрыть  <color=#8AA2A8>(Esc / I)</color>	Close  <color=#8AA2A8>(Esc / I)</color>
+ИМПЕРИЯ В ЦИФРАХ	EMPIRE AT A GLANCE
+Свободное жильё	Free housing
+ТРЕБУЕТ ВНИМАНИЯ	NEEDS ATTENTION
+Всё спокойно: срочных дел нет.	All calm: nothing urgent.
+и ещё {0} — значки над картой	and {0} more — icons above the map
+ПОДРОБНЕЕ · V	DETAILS · V
+<color={0}>{1}</color>   ·   правитель {2}   ·   {3}	<color={0}>{1}</color>   ·   ruler {2}   ·   {3}
+<b>Законы империи</b>  <color=#8AA2A8>(L)</color>\n	<b>Empire laws</b>  <color=#8AA2A8>(L)</color>\n
+  <color=#C9A6FF>−{0:0.#} влияния/мес</color>	  <color=#C9A6FF>−{0:0.#} influence/mo</color>
+Закон · {0}	Law · {0}
+−{0:0.#} влияния/мес	−{0:0.#} influence/mo
+пока действует	in force
+Действующих эффектов нет.\n\nСвой курс задают законы империи (клавиша L); указы и контракты появляются из решений фракции и событий.	No active effects.\n\nEmpire laws set your course (L key); decrees and contracts come from faction decisions and events.
+Планеты, станции, стройка. Назад к галактике — Esc или кнопка в панели системы справа.	Planets, stations, construction. Back to the galaxy — Esc or the button in the system panel on the right.

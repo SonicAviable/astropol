@@ -25,7 +25,8 @@ namespace StellarisClone.Rendering
         private const float Gap = 8f;
         private const float EvalInterval = 0.5f;
 
-        private struct AlertInfo
+        /// <summary>Оповещение: что случилось и что сделать (Action — переход к делу).</summary>
+        public struct AlertInfo
         {
             public string Id;
             public LGIcon Icon;
@@ -60,6 +61,10 @@ namespace StellarisClone.Rendering
         private readonly List<AlertView> _views = new List<AlertView>();
         private readonly List<AlertInfo> _current = new List<AlertInfo>();
         private readonly HashSet<string> _dismissed = new HashSet<string>();
+        private readonly List<AlertInfo> _all = new List<AlertInfo>();
+
+        /// <summary>Все текущие оповещения, включая скрытые правым кликом (для «Требует внимания» в обзоре империи).</summary>
+        public IReadOnlyList<AlertInfo> All => _all;
         private float _evalTimer;
         private GalaxyGenerator _gen;
 
@@ -92,6 +97,8 @@ namespace StellarisClone.Rendering
             {
                 _evalTimer = EvalInterval;
                 Evaluate();
+                _all.Clear();
+                _all.AddRange(_current);
                 // Скрытые правым кликом: забываем, когда проблема ушла; пока она есть — не показываем
                 _dismissed.RemoveWhere(id => !_current.Exists(a => a.Id == id));
                 _current.RemoveAll(a => _dismissed.Contains(a.Id));
