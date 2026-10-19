@@ -121,7 +121,11 @@ namespace StellarisClone.Rendering
             var sel = UnityEngine.EventSystems.EventSystem.current != null ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
             if (sel != null && sel.GetComponent<InputField>() != null && sel.GetComponent<InputField>().isFocused) return;
 
-            // Окна, которые сами обрабатывают Esc
+            // Окна, которые сами обрабатывают Esc (закрылось в этом кадре раньше нас — тоже не открываем паузу)
+            if (UIEsc.ConsumedThisFrame) return;
+            if (ColonyManagerWindow.IsOpenNow || BuildMenuModal.IsOpenNow) return;
+            if (VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen) return;
+            if (LawsWindow.IsOpenNow || HelpOverlay.IsOpenNow) return;
             if (EmpireOverviewWindow.Instance != null && EmpireOverviewWindow.Instance.IsOpen) return;
             if (EspionageWindow.Instance != null && EspionageWindow.Instance.IsOpen) return;
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;
@@ -373,6 +377,9 @@ namespace StellarisClone.Rendering
             Line("Home", Loc.T("камера к столице"));
             Line(Loc.T("ПРОБЕЛ"), Loc.T("пауза / продолжить"));
             Line("1 / 2 / 3", Loc.T("скорость времени"));
+            Line("I · C · L · T · P · K · N · V", Loc.T("главные окна (клавиша подписана в левом меню); G — все военные флоты"));
+            Line("F1 / H", Loc.T("справка: все клавиши и где что находится; M — музыка"));
+            Line("B / Tab", Loc.T("на экране планеты: стройка / следующая колония"));
             Line(Loc.T("ПКМ по подсказке в окне"), Loc.T("закрепить всплывающую подсказку"));
             Line(Loc.T("Shift+ЛКМ / рамка ЛКМ"), Loc.T("выделить несколько флотов"));
             Line(Loc.T("Shift+ПКМ по системе"), Loc.T("добавить пункт в очередь приказов (Backspace — очистить)"));

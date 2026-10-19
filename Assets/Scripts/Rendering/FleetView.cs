@@ -140,9 +140,37 @@ namespace StellarisClone.Rendering
             // Собираем рендереры ПОСЛЕ создания/инстанса модели
             _renderers = GetComponentsInChildren<Renderer>();   // и скелетные модели (левиафан)
 
-            // Коллайдер на корне — по нему FleetManager ловит клики
-            var col = gameObject.AddComponent<BoxCollider>();
+            // Коллайдер на корне — по нему FleetManager ловит клики (при пересборке модели — тот же)
+            var col = GetComponent<BoxCollider>();
+            if (col == null) col = gameObject.AddComponent<BoxCollider>();
             col.size = new Vector3(3.5f, 2f, 3.5f);
+        }
+
+        /// <summary>
+        /// Пересобрать модель корабля и двигатели. Стартовые флоты появляются раньше, чем игрок выбирает фракцию
+        /// и цвет империи, — после выбора их корпуса и окраска приводятся к ней (UIManager.ApplyPlayerIdentity).
+        /// </summary>
+        public void RebuildModel()
+        {
+            if (Data == null) return;
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var c = transform.GetChild(i);
+                string n = c.name;
+                if (n != "ShipModel" && n != "Plume" && n != "RetroPlume" && n != "EngineLight" && n != "EngineTrail") continue;
+                c.SetParent(null, false);   // сразу из иерархии: новые рендереры собираются без старых
+                Destroy(c.gameObject);
+            }
+            _plumes.Clear();
+            _retroPlumes.Clear();
+            if (_plumeMat != null) Destroy(_plumeMat);
+            if (_retroMat != null) Destroy(_retroMat);
+            _plumeMat = _retroMat = null;
+            _engineLight = null;
+            _visual = null;
+            _damageAnchors = null;
+            CreateShipMesh();
+            CreateEngineTrail();
         }
 
         private static GameObject LoadShipPrefab(FleetType type)

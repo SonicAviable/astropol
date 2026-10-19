@@ -38,8 +38,8 @@ namespace StellarisClone.Core
         public float DealEnergy   => AIEmpireManager.PlayerDealIncome("energy");
         public float DealMinerals => AIEmpireManager.PlayerDealIncome("minerals");
         public float DealAlloys   => AIEmpireManager.PlayerDealIncome("alloys");
-        /// <summary>Влияние: базовое + технологии («Дипломатическая служба» и далее) + узлы силы, с множителем фракции.</summary>
-        public float MonthlyInfluenceIncome => BaseInfluenceIncome + InfluenceExtra;
+        /// <summary>Влияние: базовое + технологии («Дипломатическая служба» и далее) + узлы силы, с множителем фракции, минус плата за законы.</summary>
+        public float MonthlyInfluenceIncome => BaseInfluenceIncome + InfluenceExtra - EmpireLaws.InfluenceUpkeep;
         public float InfluenceExtra
         {
             get

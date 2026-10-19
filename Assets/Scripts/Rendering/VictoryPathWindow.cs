@@ -73,7 +73,7 @@ namespace StellarisClone.Rendering
         {
             if (Input.GetKeyDown(KeyCode.V) && UIManager.IsGameStarted && !IsTyping()) Toggle();
             if (!IsOpen) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); return; }
             if ((_refresh -= Time.unscaledDeltaTime) <= 0f) { _refresh = 1f; Refresh(); }
         }
 

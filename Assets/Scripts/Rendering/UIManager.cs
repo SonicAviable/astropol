@@ -204,6 +204,7 @@ namespace StellarisClone.Rendering
         public void BeginLoadedGame(FactionInfo faction)
         {
             _selectedFaction = faction;
+            ApplyPlayerIdentity();
             if (_factionSelectionModal != null) _factionSelectionModal.SetActive(false);
             if (_advisorIntroModal != null) _advisorIntroModal.SetActive(false);
             HideModalDim();
@@ -211,6 +212,20 @@ namespace StellarisClone.Rendering
             SpawnInGameHUD();
             TimeManager.Instance?.SetSpeed(0);
             RefreshResourceBar();
+        }
+
+        /// <summary>
+        /// Цвет империи на карте и корпуса кораблей по выбранной фракции. Стартовые флоты (и флоты из сохранения)
+        /// создаются раньше, чем известна фракция игрока, — здесь их модели пересобираются, границы перекрашиваются.
+        /// </summary>
+        private void ApplyPlayerIdentity()
+        {
+            FleetIndicator.SetOwnColor(_selectedFaction != null ? _selectedFaction.MapColor : Color.clear);
+            var fm = FleetManager.Instance;
+            if (fm != null)
+                foreach (var f in fm.AllFleets)
+                    if (f != null && f.Data != null && !f.Data.Destroyed && f.Data.OwnerId == 0) f.RebuildModel();
+            GalaxyView.Instance?.RefreshTerritoryVisuals();
         }
 
         private void ReturnToMainMenuFromSetup()
@@ -522,6 +537,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             BuildSpeedControl(time.transform, 128f);
             // Плеер музыки: кнопка справа от скорости, панель — под датой
             MusicPlayerPanel.CreateToggle(time.transform, 262f, _canvas, -8f - resH - 4f - 38f - 6f);
+            // Слева от даты — где вы сейчас (галактика / система) с возвратом на карту
+            BuildLocationChip(-8f - resH - 4f);
 
             BuildNavMenu();
         }
@@ -537,7 +554,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 8 * 46f + 30f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 10 * 46f + 30f);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
@@ -546,7 +563,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Пункт меню: тёмное стекло, светящаяся планка слева, значок в своей «ячейке», подпись капслоком с разрядкой
             float y = 0f;
-            void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip)
+            void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip, string key)
             {
                 var b = CreateButton(menu.transform, name, new Vector2(_navW, 40), new Color(0.012f, 0.040f, 0.055f, 0.92f), accent, act);
                 var bRt = b.GetComponent<RectTransform>();
@@ -577,20 +594,36 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 t.Track(1.0f);
                 t.enabled = !_navCollapsed;
                 _navItems.Add((bRt, t));
+                // Клавиша пункта — справа, приглушённо (в свёрнутом меню прячется вместе с подписью)
+                if (!string.IsNullOrEmpty(key))
+                {
+                    var kc = CreateText(b.transform, key, 10, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleRight);
+                    kc.rectTransform.anchorMin = Vector2.zero;
+                    kc.rectTransform.anchorMax = Vector2.one;
+                    kc.rectTransform.offsetMin = new Vector2(50, 0);
+                    kc.rectTransform.offsetMax = new Vector2(-12, 0);
+                    kc.enabled = !_navCollapsed;
+                    _navItems.Add((bRt, kc));
+                    tip += "  <color=#8AA2A8>(" + key + ")</color>";
+                }
                 if (anchorId != null) UIAnchors.Register(anchorId, bRt);
                 TooltipHelper.Attach(b, tip);
             }
 
-            Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, OpenEmpireOverviewModal, null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"));
+            Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, () => ToggleWindow(NavWindow.Empire), null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"), "I");
             Item("NavColonies", LGIcon.Population, Loc.T("Колонии"), DS.Green, ColonyManagerWindow.Toggle, null,
-                 Loc.T("<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»  <color=#8AA2A8>(C)</color>"));
-            Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, OpenTechModal, UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"));
-            Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => DiplomacyModal.Instance?.Open(), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"));
-            Item("NavSpy", LGIcon.Betrayal, Loc.T("Шпионаж"), new Color(0.74f, 0.56f, 1f), OpenEspionageModal, null,
-                 Loc.T("<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов"));
-            Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ShipDesignerModal.Instance?.Open(), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"));
-            Item("NavFleet", LGIcon.Fleet, Loc.T("Флот"), DS.NeonCyan, SelectAllWarships, null, Loc.T("<b>Флот</b>\nВыделить все военные флоты"));
-            Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, null, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе  <color=#8AA2A8>(V)</color>"));
+                 Loc.T("<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»"), "C");
+            Item("NavLaws", LGIcon.Menu, Loc.T("Законы"), new Color(0.95f, 0.62f, 0.36f), () => ToggleWindow(NavWindow.Laws), null,
+                 Loc.T("<b>Законы империи</b>\nЭкономика, армия, наука, общество, разведка: долгие решения с плюсами и минусами"), "L");
+            Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, () => ToggleWindow(NavWindow.Tech), UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"), "T");
+            Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => ToggleWindow(NavWindow.Diplomacy), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"), "P");
+            Item("NavSpy", LGIcon.Betrayal, Loc.T("Шпионаж"), new Color(0.74f, 0.56f, 1f), () => ToggleWindow(NavWindow.Espionage), null,
+                 Loc.T("<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов"), "K");
+            Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ToggleWindow(NavWindow.Designer), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"), "N");
+            Item("NavFleet", LGIcon.Fleet, Loc.T("Флот"), DS.NeonCyan, SelectAllWarships, null, Loc.T("<b>Флот</b>\nВыделить все военные флоты"), "G");
+            Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, null, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V");
+            Item("NavHelp", LGIcon.Info, Loc.T("Справка"), DS.TextMuted, () => ToggleWindow(NavWindow.Help), null,
+                 Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново"), "F1");
 
             // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
             var tg = CreateButton(menu.transform, "NavToggle", new Vector2(_navW, 24), new Color(0.010f, 0.030f, 0.042f, 0.85f), DS.TextMuted, ToggleNavMenu);
@@ -642,6 +675,134 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 it.rt.sizeDelta = new Vector2(_navW, it.rt.sizeDelta.y);
                 if (!_navCollapsed && Mathf.Approximately(_navW, target) && it.label != null) it.label.enabled = true;
             }
+        }
+
+        // ---------- Главные окна: клавиши и «одно окно за раз» ----------
+
+        private enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Help }
+
+        private static bool IsWindowOpen(NavWindow w) => w switch
+        {
+            NavWindow.Empire => EmpireOverviewWindow.Instance != null && EmpireOverviewWindow.Instance.IsOpen,
+            NavWindow.Colonies => ColonyManagerWindow.IsOpenNow,
+            NavWindow.Laws => LawsWindow.IsOpenNow,
+            NavWindow.Tech => TechTreePanel.Instance != null && TechTreePanel.Instance.IsOpen,
+            NavWindow.Diplomacy => DiplomacyModal.Instance != null && DiplomacyModal.Instance.IsOpen,
+            NavWindow.Espionage => EspionageWindow.Instance != null && EspionageWindow.Instance.IsOpen,
+            NavWindow.Designer => ShipDesignerModal.Instance != null && ShipDesignerModal.Instance.IsOpen,
+            NavWindow.Victory => VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen,
+            _ => HelpOverlay.IsOpenNow
+        };
+
+        private void CloseWindow(NavWindow w)
+        {
+            if (!IsWindowOpen(w)) return;
+            switch (w)
+            {
+                case NavWindow.Empire: EmpireOverviewWindow.Instance.Close(); break;
+                case NavWindow.Colonies: ColonyManagerWindow.Instance.Close(); break;
+                case NavWindow.Laws: LawsWindow.Instance.Close(); break;
+                case NavWindow.Tech: TechTreePanel.Instance.Close(); break;
+                case NavWindow.Diplomacy: DiplomacyModal.Instance.Close(); break;
+                case NavWindow.Espionage: EspionageWindow.Instance.Close(); break;
+                case NavWindow.Designer: ShipDesignerModal.Instance.Close(); break;
+                case NavWindow.Victory: VictoryPathWindow.Instance.Close(); break;
+                case NavWindow.Help: HelpOverlay.Instance.Close(); break;
+            }
+        }
+
+        private void CloseMainWindows(NavWindow? except)
+        {
+            foreach (NavWindow w in System.Enum.GetValues(typeof(NavWindow)))
+                if (w != except) CloseWindow(w);
+        }
+
+        /// <summary>Открыть главное окно (остальные закрываются) или закрыть, если оно уже открыто.</summary>
+        private void ToggleWindow(NavWindow w)
+        {
+            if (IsWindowOpen(w)) { CloseWindow(w); return; }
+            CloseMainWindows(w);
+            switch (w)
+            {
+                case NavWindow.Empire: OpenEmpireOverviewModal(); break;
+                case NavWindow.Colonies: ColonyManagerWindow.Toggle(); break;
+                case NavWindow.Laws: LawsWindow.Toggle(); break;
+                case NavWindow.Tech: OpenTechModal(); break;
+                case NavWindow.Diplomacy: DiplomacyModal.Instance?.Open(); break;
+                case NavWindow.Espionage: OpenEspionageModal(); break;
+                case NavWindow.Designer: ShipDesignerModal.Instance?.Open(); break;
+                case NavWindow.Victory: VictoryPathWindow.Toggle(); break;
+                case NavWindow.Help: HelpOverlay.Toggle(); break;
+            }
+        }
+
+        /// <summary>Клавиши главных окон (как подписаны в левом меню). C и V окна ловят сами — здесь лишь закрываем остальные.</summary>
+        private void HandleNavHotkeys()
+        {
+            if (!IsGameStarted || IsBlockingFlowOpen) return;
+            if (GameFlowUI.Instance != null && GameFlowUI.Instance.BlocksTimeHotkeys) return;
+            if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;
+            if (BuildMenuModal.IsOpenNow || (TechConfirmDialog.Instance != null && TechConfirmDialog.Instance.IsOpen)) return;
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            var sel = es != null ? es.currentSelectedGameObject : null;
+            if (sel != null && sel.GetComponent<InputField>() != null) return;
+
+            if (Input.GetKeyDown(KeyCode.F1) || Input.GetKeyDown(KeyCode.H)) ToggleWindow(NavWindow.Help);
+            else if (Input.GetKeyDown(KeyCode.I)) ToggleWindow(NavWindow.Empire);
+            else if (Input.GetKeyDown(KeyCode.L)) ToggleWindow(NavWindow.Laws);
+            else if (Input.GetKeyDown(KeyCode.T)) ToggleWindow(NavWindow.Tech);
+            else if (Input.GetKeyDown(KeyCode.P)) ToggleWindow(NavWindow.Diplomacy);
+            else if (Input.GetKeyDown(KeyCode.K)) ToggleWindow(NavWindow.Espionage);
+            else if (Input.GetKeyDown(KeyCode.N)) ToggleWindow(NavWindow.Designer);
+            else if (Input.GetKeyDown(KeyCode.G)) { CloseMainWindows(null); SelectAllWarships(); }
+            else if (Input.GetKeyDown(KeyCode.C)) CloseMainWindows(NavWindow.Colonies);
+            else if (Input.GetKeyDown(KeyCode.V)) CloseMainWindows(NavWindow.Victory);
+        }
+
+        // ---------- «Где я»: карта галактики или система ----------
+
+        private Text _locText;
+        private Image _locIcon;
+        private TooltipTrigger _locTip;
+
+        private void BuildLocationChip(float y)
+        {
+            var b = CreateButton(_canvas.transform, "LocationChip", new Vector2(250f, 38f), DS.BgDeep, DS.NeonCyan, OnLocationClick);
+            var rt = b.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-150f - 8f, y);
+            LG.Motion(b, LGAppear.Kind.SlideDown).distance = 18f;
+            _locIcon = LGIcons.Create(b.transform, LGIcon.Globe, 14f, DS.NeonCyan);
+            _locIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(14, 14));
+            _locIcon.raycastTarget = false;
+            _locText = CreateText(b.transform, "", 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
+            _locText.rectTransform.anchorMin = Vector2.zero;
+            _locText.rectTransform.anchorMax = Vector2.one;
+            _locText.rectTransform.offsetMin = new Vector2(34, 0);
+            _locText.rectTransform.offsetMax = new Vector2(-14, 0);
+            TooltipHelper.Attach(b, "");
+            _locTip = b.GetComponent<TooltipTrigger>();
+            RefreshLocation();
+        }
+
+        private void RefreshLocation()
+        {
+            if (_locText == null) return;
+            var svm = SystemViewManager.Instance;
+            bool inSys = svm != null && svm.IsInSystemView && svm.CurrentSystem != null;
+            _locText.text = inSys ? Loc.F("Галактика  /  {0}", svm.CurrentSystem.Name) : Loc.T("Карта галактики");
+            _locIcon.sprite = LGIcons.Get(inSys ? LGIcon.Back : LGIcon.Globe);
+            if (_locTip != null)
+                _locTip.SetText(inSys
+                    ? Loc.F("<b>Вы в системе {0}</b>\nКлик или Esc — назад к карте галактики", svm.CurrentSystem.Name)
+                    : Loc.T("<b>Вы на карте галактики</b>\nДвойной клик по звезде — войти в систему. F1 — справка"));
+        }
+
+        private void OnLocationClick()
+        {
+            var svm = SystemViewManager.Instance;
+            if (svm != null && svm.IsInSystemView) svm.ExitToGalaxyView();
         }
 
         private void SelectAllWarships()
@@ -1292,6 +1453,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             _isInSystemMode = inSystem;
             _inspExitBtn.gameObject.SetActive(inSystem);
+            RefreshLocation();
             LayoutInspector();
 
             if (!inSystem && _activeSystem != null)
@@ -1346,6 +1508,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private void Update()
         {
             float dt = Time.unscaledDeltaTime;
+            HandleNavHotkeys();
 
             bool inspSettled = Mathf.Abs(_inspShow - _inspTargetAlpha) < 0.001f && Mathf.Abs(_inspShowV) < 0.001f;
             if (_inspectorGroup != null && !inspSettled)
@@ -1460,7 +1623,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _influenceTip.SetText(
                 Loc.T("<b>Влияние</b>\n") +
                 Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Influence) +
-                Loc.F("<color=#8AA2A8>Доход:</color> {0}\n\n", StatFormat.Income(eco.MonthlyInfluenceIncome)) +
+                Loc.F("<color=#8AA2A8>Доход:</color> {0}\n", StatFormat.Income(eco.MonthlyInfluenceIncome)) +
+                (EmpireLaws.InfluenceUpkeep > 0.01f ? Loc.F("<color=#8AA2A8>Из них законы:</color> −{0:0.#} в месяц  <color=#8AA2A8>(L)</color>\n", EmpireLaws.InfluenceUpkeep) : "") + "\n" +
                 Loc.F("<color=#8AA2A8><i>Расходуется на форпосты ({0:0}), колонии ({1:0}), ", FleetManager.OutpostInfluenceCost(0), PlanetData.ColonyInfluenceCost) +
                 Loc.F("пакты ({0:0}), мирные предложения ({1:0}) и терраформинг.</i></color>", AIEmpireManager.PactInfluenceCost, AIEmpireManager.PeaceInfluenceCost)
             );
@@ -1619,6 +1783,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             {
                 if (EconomyManager.Instance != null && _selectedFaction != null)
                     EconomyManager.Instance.ApplyFactionBonuses(_selectedFaction);
+                ApplyPlayerIdentity();
                 HideModalDim();
                 Time.timeScale = 1f;
                 SpawnInGameHUD();

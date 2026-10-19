@@ -41,7 +41,9 @@ namespace StellarisClone.Rendering
             return sp;
         }
 
-        public static Sprite ForFaction(FactionInfo f) => ForKey(LeaderPortraits.ForFaction(f)?.Key);
+        /// <summary>Герб фракции; у империи игрока может быть выбран герб другой фракции (EmblemKey).</summary>
+        public static Sprite ForFaction(FactionInfo f)
+            => ForKey(!string.IsNullOrEmpty(f?.EmblemKey) ? f.EmblemKey : LeaderPortraits.ForFaction(f)?.Key);
 
         /// <summary>Герб империи по владельцу: 0 — фракция игрока, иначе — ИИ.</summary>
         public static Sprite ForOwner(int owner)

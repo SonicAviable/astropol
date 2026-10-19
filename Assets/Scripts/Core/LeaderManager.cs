@@ -217,6 +217,13 @@ namespace StellarisClone.Core
 
         private static HashSet<string> s_femaleNames;
 
+        /// <summary>Случайное имя правителя для экрана «Оформление империи» (пол — под портрет фракции).</summary>
+        public static string RandomRulerName(bool female)
+        {
+            var first = female ? FemaleNameList : MaleNames;
+            return first[UnityEngine.Random.Range(0, first.Length)] + " " + LastNames[UnityEngine.Random.Range(0, LastNames.Length)];
+        }
+
         /// <summary>Женское ли имя (первое слово имени лидера) — по нему подбираются портреты.</summary>
         public static bool IsFemaleName(string first)
         {

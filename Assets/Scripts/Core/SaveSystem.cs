@@ -52,6 +52,11 @@ namespace StellarisClone.Core
     {
         public NewGameSettings Settings;
         public string Faction;
+        /// <summary>Ключ фракции и оформление империи игрока (null — старое сохранение: фракция по названию).</summary>
+        public string FactionKey;
+        public string EmpireName, EmpireTitle, RulerName, EmblemKey;
+        public Color EmpireColor;
+        public Color MapColor;
         public int Day, Month, Year;
         public EconomySave Economy;
         public TechSave Tech;
@@ -74,6 +79,8 @@ namespace StellarisClone.Core
         public List<Species> Species;
         public ThreatSave Threats;
         public EspionageSave Espionage;
+        /// <summary>Законы империи (null — старое сохранение: исходные законы).</summary>
+        public LawsSave Laws;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -433,6 +440,16 @@ namespace StellarisClone.Core
 
             s.Settings = GameSession.Settings.Clone();
             s.Faction = faction?.Name;
+            if (faction != null)
+            {
+                s.FactionKey = FactionRegistry.KeyOf(faction);
+                s.EmpireName = faction.Name;
+                s.EmpireTitle = faction.Title;
+                s.RulerName = faction.RulerName;
+                s.EmblemKey = faction.EmblemKey;
+                s.EmpireColor = faction.EmpireColor;
+                s.MapColor = faction.MapColor;
+            }
             if (time != null) { s.Day = time.Day; s.Month = time.Month; s.Year = time.Year; }
 
             s.Economy = EconomyManager.Instance != null ? EconomyManager.Instance.CaptureState() : null;
@@ -452,6 +469,7 @@ namespace StellarisClone.Core
             s.Species = SpeciesRegistry.Capture();
             if (ThreatManager.Instance != null) s.Threats = ThreatManager.Instance.CaptureState();
             if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
+            s.Laws = EmpireLaws.Capture();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -710,6 +728,21 @@ namespace StellarisClone.Core
             return d;
         }
 
+        /// <summary>Фракция игрока из сохранения: базовая по ключу и поверх — оформление империи.</summary>
+        public static FactionInfo RestorePlayerFaction(GameState s)
+        {
+            var baseF = FactionRegistry.ByKey(s.FactionKey);
+            if (baseF == null) return FindFaction(s.Faction);
+            var f = baseF.Clone();
+            if (!string.IsNullOrEmpty(s.EmpireName)) f.Name = s.EmpireName;
+            if (!string.IsNullOrEmpty(s.EmpireTitle)) f.Title = s.EmpireTitle;
+            f.RulerName = s.RulerName;
+            f.EmblemKey = s.EmblemKey;
+            if (s.EmpireColor.a > 0.01f) f.EmpireColor = s.EmpireColor;
+            f.MapColor = s.MapColor;
+            return f;
+        }
+
         public static FactionInfo FindFaction(string name)
         {
             foreach (var f in FactionRegistry.AvailableFactions)
@@ -812,6 +845,7 @@ namespace StellarisClone.Core
             EmpireEffects.Restore(s.Effects);
             ThreatManager.Instance?.RestoreState(s.Threats);
             EspionageManager.Instance?.RestoreState(s.Espionage);
+            EmpireLaws.Restore(s.Laws);
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)
@@ -820,7 +854,7 @@ namespace StellarisClone.Core
                 if (cam != null) cam.Teleport(s.CameraPos, s.CameraRot);
             }
 
-            UIManager.Instance?.BeginLoadedGame(SaveSystem.FindFaction(s.Faction));
+            UIManager.Instance?.BeginLoadedGame(SaveSystem.RestorePlayerFaction(s));
             EconomyManager.Instance?.RecalculateAll();
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             NotificationCenter.Show(Loc.T("Игра загружена"), time != null ? time.GetFormattedDate() : "", NotificationCenter.Kind.Info, 3.5f);

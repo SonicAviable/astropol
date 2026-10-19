@@ -52,15 +52,27 @@ namespace StellarisClone.Core
         /// Цвет фракции империи; бирюзовый занят игроком, поэтому Республика на карте синяя.
         /// Пока фракции нет (превью в меню) — цвет по номеру владельца.
         /// </summary>
+        private static readonly Color[] AltColors =
+        {
+            new Color(0.40f, 0.58f, 1f), new Color(1f, 0.74f, 0.25f), new Color(0.95f, 0.40f, 0.85f), new Color(0.85f, 0.88f, 0.92f)
+        };
+
+        private static bool NearPlayer(Color c)
+        {
+            Color p = StellarisClone.Rendering.FleetIndicator.OwnColor;
+            return Mathf.Abs(c.r - p.r) + Mathf.Abs(c.g - p.g) + Mathf.Abs(c.b - p.b) < 0.5f;
+        }
+
         public static Color MapColorFor(int owner)
         {
             if (Threats.IsThreat(owner)) return Threats.ColorOf(owner);
             var f = For(owner)?.Faction;
             if (f != null)
             {
+                // Цвет, похожий на цвет игрока, на карте заменяется — империи должны различаться с первого взгляда
                 Color c = f.EmpireColor;
-                if (Mathf.Abs(c.r - 0.22f) + Mathf.Abs(c.g - 0.92f) + Mathf.Abs(c.b - 0.86f) < 0.5f)
-                    return new Color(0.40f, 0.58f, 1f);
+                if (!NearPlayer(c)) return c;
+                foreach (var alt in AltColors) if (!NearPlayer(alt)) return alt;
                 return c;
             }
             return owner == 2 ? new Color(0.74f, 0.48f, 1f)
@@ -202,10 +214,11 @@ namespace StellarisClone.Core
             var candidates = new List<FactionInfo>();
             foreach (var f in FactionRegistry.AvailableFactions)
             {
-                if (playerFaction != null && f.Name == playerFaction.Name) continue;
+                // Сравнение по ключу: название империи игрока может быть своим
+                if (playerFaction != null && FactionRegistry.KeyOf(f) == FactionRegistry.KeyOf(playerFaction)) continue;
                 bool taken = false;
                 foreach (var other in All)
-                    if (other != this && other.Faction != null && other.Faction.Name == f.Name) { taken = true; break; }
+                    if (other != this && other.Faction != null && FactionRegistry.KeyOf(other.Faction) == FactionRegistry.KeyOf(f)) { taken = true; break; }
                 if (!taken) candidates.Add(f);
             }
             if (candidates.Count == 0) candidates.AddRange(FactionRegistry.AvailableFactions);

@@ -93,7 +93,13 @@ namespace StellarisClone.Rendering
         private static Material _lineMat;
         private static Font _font;
 
-        public static readonly Color OwnColor = new Color(0.22f, 0.92f, 0.86f);
+        /// <summary>Цвет игрока по умолчанию (бирюза).</summary>
+        public static readonly Color DefaultOwnColor = new Color(0.22f, 0.92f, 0.86f);
+        /// <summary>Цвет игрока на карте — выбирается на экране «Оформление империи».</summary>
+        public static Color OwnColor { get; private set; } = DefaultOwnColor;
+
+        /// <summary>Задать цвет игрока (альфа 0 — по умолчанию). Границы и корабли перекрашивает UIManager.ApplyPlayerIdentity.</summary>
+        public static void SetOwnColor(Color c) => OwnColor = c.a > 0.01f ? new Color(c.r, c.g, c.b, 1f) : DefaultOwnColor;
         public static readonly Color EnemyColor = new Color(1.00f, 0.30f, 0.30f);
 
         /// <summary>Цвет владельца на карте: игрок — бирюза, у каждой империи ИИ — свой, ничейное — серое.</summary>

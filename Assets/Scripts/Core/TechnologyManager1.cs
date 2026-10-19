@@ -194,7 +194,13 @@ namespace StellarisClone.Core
         public int MaxSlots => maxSlots;
 
         /// <summary>Бонусы изученных технологий игрока.</summary>
-        public EmpireBonuses Bonuses { get; private set; } = new EmpireBonuses();
+        /// <summary>Законы империи (EmpireLaws) накладываются сюда же — при каждом обращении сверяются по версии.</summary>
+        public EmpireBonuses Bonuses
+        {
+            get { EmpireLaws.SyncBonuses(_bonuses); return _bonuses; }
+            private set => _bonuses = value;
+        }
+        private EmpireBonuses _bonuses = new EmpireBonuses();
 
         public float HyperlaneSpeedMultiplier => Bonuses.HyperlaneSpeed;
         public float MiningBonusMultiplier => Bonuses.MineralsMult;

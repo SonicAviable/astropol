@@ -74,6 +74,9 @@ namespace StellarisClone.Core
 
         /// <summary>Фракция, чьи черты уже наложены на эти бонусы (FactionTraits).</summary>
         [NonSerialized] public FactionInfo TraitsOf;
+        /// <summary>Версия набора законов, уже наложенного на эти бонусы (EmpireLaws), и сами законы.</summary>
+        [NonSerialized] public int LawsVersion;
+        [NonSerialized] public System.Collections.Generic.List<string> LawsApplied;
 
         /// <summary>Бонусы владельца флота/системы (0 — игрок, иначе ИИ). Черты фракции накладываются автоматически.</summary>
         public static EmpireBonuses For(int ownerId)

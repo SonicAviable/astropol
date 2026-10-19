@@ -4675,3 +4675,168 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 УЖЕ УСТАНОВЛЕН	ALREADY INSTALLED
 НЕ ИЗУЧЕН	NOT RESEARCHED
 Яркость ореола вокруг линий и выделенных элементов	Glow around lines and highlighted elements
+Экономика	Economy
+Армия	Military
+Нет закона	No law
+Уже действует	Already in force
+Направление недавно менялось: ещё {0} дн.	Changed recently: {0} more d.
+Не хватает {0:0} влияния	Need {0:0} more influence
+Принят закон «{0}»	Law enacted: «{0}»
+Закон «{0}»	Law «{0}»
+Свободный рынок	Free Market
+Казна не вмешивается: ровная экономика без перекосов и без недовольства.	The treasury stays out of it: a steady economy with no distortions and no discontent.
+Плановая промышленность	Planned Industry
+Заводы работают по плану, сырьё распределяет государство. Больше сплавов, меньше свободы.	Factories follow the plan and the state allocates raw materials. More alloys, less freedom.
+−5% титана	−5% titanium
+Добыча любой ценой	Extraction at Any Cost
+Шахты и станции на пределе. Сырьё рекой, но колонисты устают и растут медленнее.	Mines and stations run at the limit. Raw materials flow, but colonists tire and grow slower.
++20% титана	+20% titanium
++10% гелия-3	+10% helium-3
+−15% роста населения	−15% population growth
+Оборонительная доктрина	Defensive Doctrine
+Флот бережёт свои системы: крепости и форпосты прочнее.	The fleet guards its own systems: fortresses and outposts are sturdier.
++20% прочности звёздных баз	+20% starbase durability
+Наступательная доктрина	Offensive Doctrine
+Удар первым и всей мощью. Орудия злее, но флот обходится дороже.	Strike first and with full force. Guns hit harder, but the fleet costs more.
++10% урона кораблей	+10% ship damage
++10% содержания флота	+10% fleet upkeep
+Вся империя работает на войну: больше кораблей и дешевле, но колонии недовольны.	The whole empire works for the war: more ships and cheaper, but colonies are unhappy.
++6 к флотскому лимиту	+6 naval capacity
+−10% цены кораблей	−10% ship cost
+Прикладная наука	Applied Science
+Учёные работают на нужды дня: разведка систем идёт быстрее.	Scientists serve the needs of the day: system surveys go faster.
++10% скорости исследования систем	+10% survey speed
+Фундаментальные исследования	Fundamental Research
+Большие лаборатории и долгие проекты. Наука быстрее, промышленность делится ресурсами.	Big laboratories and long projects. Research is faster, industry shares its resources.
++15% науки	+15% research
+−5% сплавов	−5% alloys
+Военные НИОКР	Military R&D
+Лучшие умы — на оружие: точнее и злее орудия, остальная наука медленнее.	The best minds work on weapons: sharper, deadlier guns, other research slows down.
++5% урона, +5 точности	+5% damage, +5 accuracy
+−5% науки	−5% research
+Равноправие видов	Species Equality
+Все граждане равны перед законом — спокойствие в колониях.	All citizens are equal before the law — calm colonies.
+Культ порядка	Cult of Order
+Строгие законы и вездесущие патрули. Бунты редки, но жизнь скучнее.	Strict laws and patrols everywhere. Riots are rare, but life is duller.
+−10% роста населения	−10% population growth
+Демографическая программа	Demographic Program
+Пособия семьям и новые жилые кварталы: население растёт заметно быстрее.	Family benefits and new housing blocks: the population grows noticeably faster.
++30% роста населения	+30% population growth
+Открытые границы	Open Borders
+Торговцы и путешественники ходят свободно — корабли быстрее идут по коридорам.	Traders and travellers move freely — ships travel the lanes faster.
++5% скорости в коридорах	+5% hyperlane speed
+Закрытые границы	Closed Borders
+Досмотр на каждом посту: чужим агентам трудно работать, но и свои разведчики медленнее.	Inspections at every post: foreign agents struggle, but your own surveyors are slower.
++12% к контрразведке	+12% counter-intelligence
+−10% скорости исследования систем	−10% survey speed
+Агентурная сеть	Agent Network
+Резидентуры в каждой столице: операции удаются чаще, агенты внедряются быстрее.	Stations in every capital: operations succeed more often, agents infiltrate faster.
++10% к успеху операций	+10% operation success
++30% скорости внедрения	+30% infiltration speed
+{0}{1:0} стабильности колоний	{0}{1:0} colony stability
+Республика	Republic
+Доминион	Dominion
+Федерация	Federation
+Синдикат	Syndicate
+Конклав	Conclave
+Союз	Union
+Гегемония	Hegemony
+Содружество	Commonwealth
+Протекторат	Protectorate
+Директорат	Directorate
+Лига	League
+Звёздная Монархия	Stellar Monarchy
+Технократия	Technocracy
+Совет Старейшин	Council of Elders
+Народная Коммуна	People's Commune
+Торговая Лига	Trade League
+Орден Хранителей	Order of Keepers
+Пограничный Протекторат	Frontier Protectorate
+Основа — <b>{0}</b>: бонусы, корабли, вид и история фракции сохраняются. Остальное — на ваш вкус.	Based on <b>{0}</b>: the faction's bonuses, ships, species and history stay. Everything else is up to you.
+ОФОРМЛЕНИЕ ИМПЕРИИ	EMPIRE IDENTITY
+ПРАВИТЕЛЬ	RULER
+цвет на карте: границы и корабли	map color: borders and ships
+НАЗВАНИЕ ИМПЕРИИ	EMPIRE NAME
+Например: Республика Астрея	For example: Astrean Republic
+СТРОЙ И ТИТУЛ	GOVERNMENT AND TITLE
+Например: Свободная Федерация	For example: Free Federation
+ИМЯ ПРАВИТЕЛЯ	RULER NAME
+Как зовут главу государства	What the head of state is called
+ЦВЕТ ИМПЕРИИ НА КАРТЕ	EMPIRE MAP COLOR
+ГЕРБ	EMBLEM
+Случайный вариант	Random option
+К выбору фракции  <color=#8AA2A8>(Esc)</color>	Back to faction choice  <color=#8AA2A8>(Esc)</color>
+СЛУЧАЙНО ВСЁ	RANDOMIZE ALL
+НАЧАТЬ ПРАВЛЕНИЕ	BEGIN YOUR REIGN
+Принять оформление и начать  <color=#8AA2A8>(Enter)</color>	Accept and start  <color=#8AA2A8>(Enter)</color>
+главные окна (клавиша подписана в левом меню); G — все военные флоты	main windows (the key is shown in the left menu); G — all warships
+справка: все клавиши и где что находится; M — музыка	help: all keys and where things are; M — music
+на экране планеты: стройка / следующая колония	on the planet screen: construction / next colony
+СПРАВКА	HELP
+Горячие клавиши и где что находится. Открыть снова — F1 или H.	Hotkeys and where things are. Open again with F1 or H.
+Закрыть  <color=#8AA2A8>(Esc / F1)</color>	Close  <color=#8AA2A8>(Esc / F1)</color>
+ОКНА	WINDOWS
+Империя: системы, флоты, лидеры	Empire: systems, fleets, leaders
+Колонии: все планеты одной таблицей	Colonies: all planets in one table
+Законы империи	Empire laws
+Выделить все военные флоты	Select all warships
+Закрыть окно, выйти из системы, меню	Close a window, leave a system, menu
+ВРЕМЯ И ИГРА	TIME AND GAME
+Пробел	Space
+Пауза / продолжить	Pause / resume
+Скорость времени	Game speed
+Быстрое сохранение / загрузка	Quick save / load
+КАРТА И ФЛОТ	MAP AND FLEET
+Сдвиг карты (Shift — быстрее), колесо — приближение	Pan the map (Shift — faster), wheel — zoom
+Поворот камеры	Rotate the camera
+К столице	To the capital
+ЛКМ · ПКМ	LMB · RMB
+Выбрать флот (Shift, рамка — несколько) · лететь (Shift — в очередь)	Select a fleet (Shift, box — several) · move (Shift — queue)
+Средняя кн.	Middle btn
+Зажать и тянуть — перетащить карту	Hold and drag to move the map
+Камера к выбранному флоту	Camera to the selected fleet
+Отменить приказы флота	Cancel fleet orders
+На экране планеты: стройка · следующая колония	On the planet screen: construction · next colony
+ГДЕ ЧТО НАХОДИТСЯ	WHERE THINGS ARE
+Сверху — ресурсы	Top — resources
+Запасы и прирост за месяц. Наведите на значок — откуда берётся и куда уходит. Стабильность — клик открывает колонии.	Stockpiles and monthly income. Hover an icon to see where it comes from and where it goes. Stability — click to open colonies.
+Под ресурсами — что требует внимания	Below the resources — what needs attention
+Значки-оповещения: свободный слот науки, безработица, угроза. Клик — сразу к делу, правый клик — скрыть.	Alert icons: free research slot, unemployment, threats. Click to act on it, right-click to hide.
+Слева — главные экраны	Left — the main screens
+Империя, колонии, законы, наука, дипломатия… У каждого пункта справа — его клавиша.	Empire, colonies, laws, research, diplomacy… Each item shows its key on the right.
+Справа — текущие дела	Right — current tasks
+Исследования, стройка, флоты, научные корабли и строители. Клик по строке — к этому объекту.	Research, construction, fleets, science ships and constructors. Click a row to go to it.
+Внизу слева — мини-карта	Bottom left — minimap
+Клик — перейти. Кнопки вокруг — режимы карты: границы, ресурсы, коридоры, разведка.	Click to jump there. The buttons around it are map modes: borders, resources, lanes, exploration.
+Внизу справа — новости галактики	Bottom right — galactic news
+Войны, захваты, открытия соседей. Клик по новости — камера к месту событий.	Wars, conquests, neighbours' discoveries. Click a news item to move the camera there.
+Двойной клик по звезде — система	Double-click a star — system view
+Планеты, станции, стройка. Надпись сверху показывает, где вы; Esc — назад к галактике.	Planets, stations, construction. The label at the top shows where you are; Esc — back to the galaxy.
+ПРОЙТИ ОБУЧЕНИЕ ЗАНОВО	REPLAY THE TUTORIAL
+Советник заново покажет главное: разведку, колонии, науку, флот	The advisor will show the essentials again: exploration, colonies, research, fleet
+ЗАКОНЫ ИМПЕРИИ	EMPIRE LAWS
+Смена закона — {0:0} влияния, после неё направление закрыто на {1} дней. Законы действуют, пока вы их не смените.	Changing a law costs {0:0} influence, then that area is locked for {1} days. Laws stay in force until you change them.
+Закрыть  <color=#8AA2A8>(Esc / L)</color>	Close  <color=#8AA2A8>(Esc / L)</color>
+Влияние: <b><color=#C9A6FF>{0:0}</color></b>  ({1:+0.#;−0.#} в месяц)   ·   законы забирают <b>{2:0.#}</b> влияния в месяц	Influence: <b><color=#C9A6FF>{0:0}</color></b>  ({1:+0.#;−0.#} per month)   ·   laws take <b>{2:0.#}</b> influence per month
+закрыто {0} дн.	locked {0} d.
+ИСХОДНЫЙ	DEFAULT
+Без особых эффектов	No special effects
+−{0:0.#} влияния в месяц	−{0:0.#} influence per month
+бесплатно	free
+ДЕЙСТВУЕТ	IN FORCE
+ПРИНЯТЬ · {0:0} влияния	ENACT · {0:0} influence
+Плата: {0:0.#} влияния в месяц	Upkeep: {0:0.#} influence per month
+<color=#8AA2A8>Действует сейчас.</color>	<color=#8AA2A8>In force now.</color>
+<color=#8AA2A8>Принять за {0:0} влияния; направление закроется на {1} дней.</color>	<color=#8AA2A8>Enact for {0:0} influence; the area will be locked for {1} days.</color>
+<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»	<b>Colony management</b>\nAll colonies in one table: population, stability, output, construction and «Buy»
+Законы	Laws
+<b>Законы империи</b>\nЭкономика, армия, наука, общество, разведка: долгие решения с плюсами и минусами	<b>Empire laws</b>\nEconomy, military, science, society, intelligence: long-term decisions with pros and cons
+<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе	<b>Path to victory</b>\nAll victory conditions and who is closest
+Справка	Help
+<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново	<b>Help</b>\nAll hotkeys, where things are, replay the tutorial
+Галактика  /  {0}	Galaxy  /  {0}
+Карта галактики	Galaxy map
+<b>Вы в системе {0}</b>\nКлик или Esc — назад к карте галактики	<b>You are in the {0} system</b>\nClick or Esc — back to the galaxy map
+<b>Вы на карте галактики</b>\nДвойной клик по звезде — войти в систему. F1 — справка	<b>You are on the galaxy map</b>\nDouble-click a star to enter a system. F1 — help
+<color=#8AA2A8>Доход:</color> {0}\n	<color=#8AA2A8>Income:</color> {0}\n
+<color=#8AA2A8>Из них законы:</color> −{0:0.#} в месяц  <color=#8AA2A8>(L)</color>\n	<color=#8AA2A8>Of which laws:</color> −{0:0.#} per month  <color=#8AA2A8>(L)</color>\n

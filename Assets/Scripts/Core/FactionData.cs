@@ -15,12 +15,28 @@ namespace StellarisClone.Core
         public float AlloyBonus;
         public float InfluenceBonus;
 
+        /// <summary>Постоянный ключ фракции (xarn, astrea, aquila, iridia, terraan) — не зависит от названия,
+        /// поэтому своё название империи не ломает портреты, гербы, корабли, черты и сохранения.</summary>
+        public string Key;
+
+        // ---- Оформление империи игрока (экран «Оформление империи»); у базовых фракций пусто ----
+        /// <summary>Своё имя правителя (null — имя с портрета фракции).</summary>
+        public string RulerName;
+        /// <summary>Герб другой фракции (ключ) — null: свой.</summary>
+        public string EmblemKey;
+        /// <summary>Цвет империи на карте (границы, корабли); альфа 0 — цвет по умолчанию.</summary>
+        public Color MapColor;
+
         public FactionInfo(string name, string title, string desc, Color color,
                            float energy, float min, float alloy, float inf)
         {
             Name = name; Title = title; Description = desc; EmpireColor = color;
             EnergyBonus = energy; MineralBonus = min; AlloyBonus = alloy; InfluenceBonus = inf;
+            Key = FactionRegistry.KeyOfName(name);
         }
+
+        /// <summary>Копия для оформления: общие экземпляры AvailableFactions выбирает и ИИ — их не меняем.</summary>
+        public FactionInfo Clone() => (FactionInfo)MemberwiseClone();
     }
 
     public static class FactionRegistry
@@ -28,7 +44,16 @@ namespace StellarisClone.Core
         /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia, terraan (null — неизвестна).</summary>
         public static string KeyOf(FactionInfo f)
         {
-            return KeyOfName(f?.Name);
+            if (f == null) return null;
+            return !string.IsNullOrEmpty(f.Key) ? f.Key : KeyOfName(f.Name);
+        }
+
+        /// <summary>Базовая фракция по ключу (null — нет такой).</summary>
+        public static FactionInfo ByKey(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            foreach (var f in AvailableFactions) if (KeyOf(f) == key) return f;
+            return null;
         }
 
         /// <summary>Ключ фракции по названию — на любом языке игры (русское или английское название).</summary>

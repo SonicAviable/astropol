@@ -21,6 +21,14 @@ namespace StellarisClone.Rendering
             public Vector2 Face;            // центр лица в uv — точка фокуса при кадрировании
 
             private Texture2D _tex, _fx;
+
+            /// <summary>Тот же правитель (портрет, глаза, цитата) под другим именем.</summary>
+            public Entry Renamed(string name)
+            {
+                var c = (Entry)MemberwiseClone();
+                c.Name = name;
+                return c;
+            }
             public Texture2D Texture => _tex != null ? _tex : (_tex = Resources.Load<Texture2D>("Leaders/leader_" + Key));
             public Texture2D Fx => _fx != null ? _fx : (_fx = Resources.Load<Texture2D>("Leaders/leader_" + Key + "_fx"));
         }
@@ -94,9 +102,12 @@ namespace StellarisClone.Rendering
 
         /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила / Иридия / Тэрра'ан).</summary>
         public static Entry ForFaction(string factionName)
+            => string.IsNullOrEmpty(factionName) ? null : ForKey(FactionRegistry.KeyOfName(factionName));
+
+        /// <summary>Правитель по ключу фракции.</summary>
+        public static Entry ForKey(string key)
         {
-            if (string.IsNullOrEmpty(factionName)) return null;
-            switch (FactionRegistry.KeyOfName(factionName))
+            switch (key)
             {
                 case "xarn": return Xarn;
                 case "astrea": return Astrea;
@@ -107,7 +118,22 @@ namespace StellarisClone.Rendering
             }
         }
 
-        public static Entry ForFaction(FactionInfo f) => f != null ? ForFaction(f.Name) : null;
+        private static readonly System.Collections.Generic.Dictionary<string, Entry> s_renamed = new System.Collections.Generic.Dictionary<string, Entry>();
+
+        /// <summary>Правитель фракции (по ключу, а не названию); своё имя правителя из «Оформления империи» — подставлено.</summary>
+        public static Entry ForFaction(FactionInfo f)
+        {
+            if (f == null) return null;
+            var e = ForKey(FactionRegistry.KeyOf(f));
+            if (e == null || string.IsNullOrEmpty(f.RulerName) || f.RulerName == e.Name) return e;
+            string k = e.Key + "|" + f.RulerName;
+            if (!s_renamed.TryGetValue(k, out var r))
+            {
+                r = e.Renamed(f.RulerName);
+                s_renamed[k] = r;
+            }
+            return r;
+        }
 
         /// <summary>
         /// Кадр «лицо крупно» для RawImage: центр — точка лица правителя, ширина — доля кадра,

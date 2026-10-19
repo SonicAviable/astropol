@@ -413,6 +413,8 @@ namespace StellarisClone.Rendering
             }
         }
 
+        private EmpireCustomizePanel _customize;
+
         private void BuildButtons(RectTransform rt)
         {
             Btn(rt, "Back", LGIcon.Back, Loc.T("НАЗАД"), new Vector2(0, 0), new Vector2(0, 0), new Vector2(64, 40), 180f, () => _onBack?.Invoke());
@@ -425,7 +427,9 @@ namespace StellarisClone.Rendering
             Btn(rt, "Next", LGIcon.Play, Loc.T("ДАЛЬШЕ"), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-64, 40), 214f, () =>
             {
                 SFXManager.Play(Sfx.UiConfirm);
-                _onChoose?.Invoke(FactionRegistry.AvailableFactions[_index]);
+                // Второй шаг — оформление империи: название, правитель, цвет, герб (бонусы остаются от фракции)
+                if (_customize == null) _customize = EmpireCustomizePanel.Create(rt);
+                _customize.Open(FactionRegistry.AvailableFactions[_index], f => _onChoose?.Invoke(f), null);
             });
         }
 

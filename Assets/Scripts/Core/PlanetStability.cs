@@ -188,6 +188,7 @@ namespace StellarisClone.Core
             if (p.MartialLawMonths > 0) Add(Loc.F("Военное положение ({0} мес.)", p.MartialLawMonths), MartialLawBonus);
 
             if (owner > 0) Add(Loc.T("Опыт управления"), 10f);
+            EmpireLaws.StabilityFactors(owner, Add);
 
             s = Mathf.Clamp(s, 0f, 100f);
             // Империи ИИ не доводят свои миры до бунта — кроме свежезавоёванных

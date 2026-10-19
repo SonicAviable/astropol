@@ -90,7 +90,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (_root == null || !_root.activeInHierarchy) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); return; }
 
             _refreshTimer -= Time.unscaledDeltaTime;
             if (_refreshTimer <= 0f)

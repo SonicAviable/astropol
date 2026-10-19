@@ -75,7 +75,7 @@ namespace StellarisClone.Rendering
                 && !(PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen)) Toggle();
             if (!IsOpen) return;
             if (BuildMenuModal.IsOpenNow) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { if (_focusPopup != null) CloseFocusMenu(); else Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); if (_focusPopup != null) CloseFocusMenu(); else Close(); return; }
             if ((_refresh -= Time.unscaledDeltaTime) <= 0f) { _refresh = 0.5f; Refresh(); }
         }
 

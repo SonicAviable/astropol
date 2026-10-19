@@ -127,7 +127,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (!_open) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); return; }
             if (_planet == null || !_planet.IsPlayerOwned) { Close(); return; }   // систему потеряли — показывать нечего
             _refresh -= Time.unscaledDeltaTime;
             if (_dirty || _refresh <= 0f)
