@@ -6,7 +6,8 @@ namespace WargameRTS.UI
 {
     /// <summary>
     /// Loads HUD icons from Assets/_Project/Resources/UI. Order icons are white glyphs
-    /// (tinted at draw time); unit icons are NATO-style glyphs with amber accents.
+    /// (tinted at draw time); unit icons are NATO-style glyphs with amber accents;
+    /// status icons are full-colour.
     /// </summary>
     public static class HudIcons
     {
@@ -16,6 +17,9 @@ namespace WargameRTS.UI
         static void ResetStatics() => cache.Clear();
 
         public static Texture2D Order(string name) => Load("UI/Orders/" + name);
+
+        /// <summary>Full-colour status/resource icons (Timer, Armor, Ammo, CommandPoints, Income, ...).</summary>
+        public static Texture2D Status(string name) => Load("UI/Status/" + name);
 
         public static Texture2D Unit(UnitCategory category)
         {

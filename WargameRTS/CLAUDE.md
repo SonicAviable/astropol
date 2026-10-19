@@ -42,7 +42,7 @@
 
 - Временный HUD — IMGUI (`UI/SandboxHud.cs`), раскладка по макету
   `docs/ui-reference/hud-mockup.jpg`; палитра — константы в начале `SandboxHud`.
-- Иконки — PNG с прозрачностью в `Assets/_Project/Resources/UI/{Orders,Units}`,
+- Иконки — PNG с прозрачностью в `Assets/_Project/Resources/UI/{Orders,Units,Status}`,
   загружаются через `HudIcons` (`Resources.Load`). Настройки импорта задаёт
   `Editor/UiTextureImporter.cs`. Иконки приказов — белые (тонируются в коде).
 - Исходные листы от Gemini — `docs/ui-reference/`. Нарезка: фон #FF00FF

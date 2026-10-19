@@ -247,7 +247,10 @@ namespace WargameRTS.UI
 
             int minutes = Mathf.FloorToInt(battleTime / 60f);
             int seconds = Mathf.FloorToInt(battleTime % 60f);
-            GUI.Label(new Rect(rect.center.x - 40f, rect.y + 4f, 80f, 22f), $"{minutes:00}:{seconds:00}", centerStyle);
+            if (Event.current.type == EventType.Repaint)
+                DrawIcon(new Rect(rect.center.x - 42f, rect.y + 7f, 16f, 16f), HudIcons.Status("Timer"), Color.white);
+            GUI.Label(new Rect(rect.center.x - 28f, rect.y + 4f, 68f, 22f), $"{minutes:00}:{seconds:00}",
+                new GUIStyle(titleStyle) { alignment = TextAnchor.UpperLeft });
             if (VisibilitySystem.Instance != null && !VisibilitySystem.Instance.FogOfWar)
                 GUI.Label(new Rect(rect.center.x - 50f, rect.y + 22f, 100f, 16f), "<color=#F2B33D>туман выкл.</color>",
                     new GUIStyle(smallStyle) { alignment = TextAnchor.UpperCenter, richText = true });
@@ -381,14 +384,18 @@ namespace WargameRTS.UI
                 GUI.Label(new Rect(x, y + 8f, width, 16f), $"{health:0.#} / {maxHealth:0}", smallStyle);
                 y += 26f;
 
-                GUI.Label(new Rect(x, y, width, 18f),
-                    $"Броня  Л <b>{first.ArmorFront}</b>   Б <b>{first.ArmorSide}</b>   К <b>{first.ArmorRear}</b>     " +
+                if (Event.current.type == EventType.Repaint)
+                    DrawIcon(new Rect(x, y + 1f, 16f, 16f), HudIcons.Status("Armor"), Color.white);
+                GUI.Label(new Rect(x + 20f, y, width - 20f, 18f),
+                    $"Л <b>{first.ArmorFront}</b>   Б <b>{first.ArmorSide}</b>   К <b>{first.ArmorRear}</b>        " +
                     $"{first.SpeedKmh:0} км/ч", textStyle);
                 y += 20f;
 
                 foreach (var weapon in first.Weapons)
                 {
-                    GUI.Label(new Rect(x, y, width * 0.7f, 18f), weapon.DisplayName, textStyle);
+                    if (Event.current.type == EventType.Repaint)
+                        DrawIcon(new Rect(x + 1f, y + 2f, 14f, 14f), HudIcons.Status("Ammo"), Color.white);
+                    GUI.Label(new Rect(x + 20f, y, width * 0.7f - 20f, 18f), weapon.DisplayName, textStyle);
                     GUI.Label(new Rect(x + width * 0.7f, y, width * 0.3f, 18f), $"{weapon.Range:0} м",
                         new GUIStyle(smallStyle) { alignment = TextAnchor.UpperRight });
                     y += 18f;
