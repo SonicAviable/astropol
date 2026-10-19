@@ -455,21 +455,17 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Арсенал — выбор модуля для слота: сетка плиток с фильтрами, справа — подробности и сравнение
-        /// с установленным модулем, «Установить» и «Снять». Панель непрозрачная и не «стеклянная».</summary>
+        /// с установленным модулем, «Установить» и «Снять». Оформлена общим стилем окон и кнопок игры.</summary>
         private void BuildPicker(RectTransform rt)
         {
-            var img = LGBuild.Panel(rt, "Arsenal", new Color(0.008f, 0.016f, 0.024f, 0.985f), raycast: true);
+            var img = LGBuild.Panel(rt, "Arsenal", new Color(0.016f, 0.034f, 0.050f, 0.97f), raycast: true);
             var r = img.rectTransform;
             r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
             r.offsetMin = new Vector2(Pad + LeftW + 20, SlotsH + 8); r.offsetMax = new Vector2(-(Pad + RightW + 20), -84);
             _picker = img.gameObject;
-            LG.Ignore(_picker);
-            var ol = _picker.AddComponent<Outline>();
-            ol.effectColor = new Color(Neon.r, Neon.g, Neon.b, 0.28f);
-            ol.effectDistance = new Vector2(1f, -1f);
-            var accent = LGBuild.Panel(img.transform, "Accent", new Color(Neon.r, Neon.g, Neon.b, 0.85f));
-            accent.raycastTarget = false;
-            accent.rectTransform.TopBand(0, 2);
+            var win = LG.Glass(_picker);
+            win.SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.34f));
+            win.Elevation = 0.8f;
             LG.Motion(_picker, LGAppear.Kind.Pop).fromScale = 0.97f;
 
             // Шапка
@@ -495,6 +491,7 @@ namespace StellarisClone.Rendering
             // Сетка модулей с прокруткой
             var gridHost = LGBuild.Panel(img.transform, "GridHost", new Color(0f, 0f, 0f, 0f), raycast: true).rectTransform;
             gridHost.Stretch(16, 14, 392, 108);
+            LG.Ignore(gridHost.gameObject, false);   // прозрачная подложка прокрутки; плитки оформляются как кнопки
             gridHost.gameObject.AddComponent<RectMask2D>();
             var sr = gridHost.gameObject.AddComponent<ScrollRect>();
             sr.horizontal = false;
@@ -522,9 +519,7 @@ namespace StellarisClone.Rendering
             pr.anchorMin = new Vector2(1, 0); pr.anchorMax = new Vector2(1, 1);
             pr.pivot = new Vector2(1, 0.5f);
             pr.offsetMin = new Vector2(-376, 14); pr.offsetMax = new Vector2(-14, -64);
-            var pol = pane.gameObject.AddComponent<Outline>();
-            pol.effectColor = new Color(1f, 1f, 1f, 0.07f);
-            pol.effectDistance = new Vector2(1f, -1f);
+            LG.Platter(pane.gameObject).SetRim(new Color(1f, 1f, 1f, 0.08f));
             _pickDetail = LGBuild.Rect(pane.transform, "Info");
             _pickDetail.Stretch(18, 116, 18, 16);
 
@@ -551,18 +546,9 @@ namespace StellarisClone.Rendering
             _picker.SetActive(false);
         }
 
-        /// <summary>Плоская кнопка без «стекла»: сплошной фон и тонкая кромка.</summary>
+        /// <summary>Кнопка арсенала — общий стиль кнопок игры (капсула / плитка с тонкой кромкой); bg задаёт оттенок, rim — кромку.</summary>
         private static Button FlatButton(Transform parent, string name, Color bg, Color rim, System.Action act)
-        {
-            var img = LGBuild.Panel(parent, name, bg, raycast: true);
-            var b = img.gameObject.AddComponent<Button>();
-            b.transition = Selectable.Transition.None;
-            b.onClick.AddListener(() => act?.Invoke());
-            var ol = img.gameObject.AddComponent<Outline>();
-            ol.effectColor = rim;
-            ol.effectDistance = new Vector2(1f, -1f);
-            return b;
-        }
+            => LGBuild.Button(parent, name, bg, rim, act);
 
         // ==================== ПЕРЕСТРОЙКА ====================
 
@@ -1003,20 +989,17 @@ namespace StellarisClone.Rendering
 
         private void BuildModuleCard(RectTransform rt)
         {
-            var card = LGBuild.Panel(rt, "ModuleCard", new Color(0.012f, 0.020f, 0.030f, 1f));
+            var card = LGBuild.Panel(rt, "ModuleCard", new Color(0.016f, 0.034f, 0.050f, 0.97f));
             card.raycastTarget = false;
             card.rectTransform.anchorMin = card.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             card.rectTransform.pivot = new Vector2(0, 0);
             card.rectTransform.sizeDelta = new Vector2(380, 300);
-            var ol = card.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(Neon.r, Neon.g, Neon.b, 0.30f);
-            ol.effectDistance = new Vector2(1f, -1f);
-            var top = LGBuild.Panel(card.transform, "Accent", new Color(Neon.r, Neon.g, Neon.b, 0.75f));
-            top.rectTransform.TopBand(0, 2);
+            var cfx = LG.Glass(card.gameObject);
+            cfx.SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.34f));
+            cfx.Elevation = 0.9f;
             _card = card.gameObject;
             _cardBody = LGBuild.Rect(card.transform, "Body");
             _cardBody.Stretch(16, 14, 16, 14);
-            LG.Ignore(_card);
             _card.SetActive(false);
         }
 
@@ -1460,13 +1443,11 @@ namespace StellarisClone.Rendering
             Color bg = sel ? new Color(tint.r * 0.15f, tint.g * 0.15f, tint.b * 0.15f, 1f) : new Color(0.022f, 0.034f, 0.046f, 1f);
             Color rim = sel ? new Color(tint.r, tint.g, tint.b, 0.95f) : new Color(1f, 1f, 1f, 0.08f);
             var b = FlatButton(_pickGrid, "Tile", bg, rim, () => OnTileClick(m));
-            var ol = b.GetComponent<Outline>();
-            if (sel) ol.effectDistance = new Vector2(2f, -2f);
             var t = b.transform;
 
             var strip = LGBuild.Panel(t, "Strip", new Color(tint.r, tint.g, tint.b, unlocked ? (sel ? 1f : 0.5f) : 0.12f));
             strip.raycastTarget = false;
-            strip.rectTransform.TopBand(0, 2);
+            strip.rectTransform.TopBand(1, 2, 12, 12);
 
             var glow = LGBuild.Panel(t, "Glow", new Color(tint.r, tint.g, tint.b, unlocked ? (sel ? 0.42f : 0.18f) : 0.04f));
             glow.sprite = FactionSelectScreen.RadialSprite();
@@ -1516,18 +1497,6 @@ namespace StellarisClone.Rendering
             var cost = LGBuild.Label(t, $"{FleetManager.ShipAlloyCost(m.AlloyCost, 0):0}", 12, Primary, TextAnchor.MiddleRight, bold: true);
             cost.rectTransform.anchorMin = new Vector2(0.5f, 0); cost.rectTransform.anchorMax = new Vector2(1, 0);
             cost.rectTransform.offsetMin = new Vector2(0, 6); cost.rectTransform.offsetMax = new Vector2(-26, 28);
-
-            if (!unlocked)
-            {
-                var shade = LGBuild.Panel(t, "Shade", new Color(0f, 0f, 0f, 0.35f));
-                shade.raycastTarget = false;
-                shade.rectTransform.Stretch();
-            }
-
-            var hv = b.gameObject.AddComponent<UIHover>();
-            Color rimHover = new Color(tint.r, tint.g, tint.b, unlocked ? 0.65f : 0.25f);
-            hv.Enter = () => { if (!sel && ol != null) ol.effectColor = rimHover; };
-            hv.Exit = () => { if (!sel && ol != null) ol.effectColor = rim; };
         }
 
         private static string TypeTag(ShipModule m)
@@ -1570,7 +1539,7 @@ namespace StellarisClone.Rendering
             bool can = unlocked && !isInst;
             _pickInstall.interactable = can;
             _pickInstall.GetComponent<Image>().color = can ? new Color(0.04f, 0.20f, 0.15f, 1f) : new Color(0.03f, 0.04f, 0.05f, 1f);
-            _pickInstall.GetComponent<Outline>().effectColor = can ? new Color(0.36f, 0.96f, 0.68f, 0.9f) : new Color(1f, 1f, 1f, 0.10f);
+            _pickInstall.GetComponent<LiquidGlassEffect>()?.SetRim(can ? new Color(0.36f, 0.96f, 0.68f, 0.9f) : new Color(1f, 1f, 1f, 0.10f));
             _pickInstallText.text = _pickSel == null || can ? Loc.T("УСТАНОВИТЬ") : isInst ? Loc.T("УЖЕ УСТАНОВЛЕН") : Loc.T("НЕ ИЗУЧЕН");
             _pickInstallText.color = can ? Color.white : Muted;
             _pickRemove.gameObject.SetActive(installed != null);
