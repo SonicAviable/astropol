@@ -58,7 +58,7 @@ namespace StellarisClone.Rendering
             if (_root == null) return;
             bool open = !_root.gameObject.activeSelf;
             _root.gameObject.SetActive(open);
-            if (open) { RebuildRows(); Refresh(); }
+            if (open) { _root.SetAsLastSibling(); RebuildRows(); Refresh(); }
             SFXManager.Play(Sfx.UiClick);
         }
 
@@ -66,6 +66,11 @@ namespace StellarisClone.Rendering
         {
             // Горячая клавиша M — открыть/закрыть плеер (не в полях ввода)
             if (Input.GetKeyDown(KeyCode.M) && !InputFocused()) Toggle();
+
+            // Открытая панель — поверх остального HUD (значки оповещений и пр. создаются позже и иначе ложатся сверху)
+            if (_root != null && _root.gameObject.activeSelf && _root.parent != null
+                && _root.GetSiblingIndex() != _root.parent.childCount - 1)
+                _root.SetAsLastSibling();
 
             var mm = MusicManager.Instance;
             if (mm != null && !_subscribed) { mm.OnStateChanged += Refresh; _subscribed = true; }
