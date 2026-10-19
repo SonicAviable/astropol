@@ -43,6 +43,9 @@ namespace WargameRTS.Map
         public IReadOnlyList<ForestZone> Forests => forests;
         public IReadOnlyList<TownZone> Towns => towns;
 
+        /// <summary>Colour map of the ground (also used by the minimap).</summary>
+        public Texture2D GroundTexture { get; private set; }
+
         readonly List<ForestZone> forests = new List<ForestZone>();
         readonly List<TownZone> towns = new List<TownZone>();
         Vector2 noiseOffset;
@@ -174,8 +177,8 @@ namespace WargameRTS.Map
 
         void PlaceTowns(Random rng)
         {
-            const int townCount = 4;
-            for (int attempt = 0; attempt < 200 && towns.Count < townCount; attempt++)
+            int townCount = Mathf.Max(2, Mathf.RoundToInt(4f * (Size * Size) / (2000f * 2000f)));
+            for (int attempt = 0; attempt < townCount * 60 && towns.Count < townCount; attempt++)
             {
                 var center = RandomPoint(rng, 250f);
                 if (IsInDeploymentZone(center.y))
@@ -193,22 +196,43 @@ namespace WargameRTS.Map
 
         void PlaceForests(Random rng)
         {
-            const int forestCount = 22;
-            for (int attempt = 0; attempt < 600 && forests.Count < forestCount; attempt++)
+            // Forest count scales with map area (22 on a 2 km map).
+            int forestCount = Mathf.RoundToInt(22f * (Size * Size) / (2000f * 2000f));
+            int placed = 0;
+            for (int attempt = 0; attempt < forestCount * 30 && placed < forestCount; attempt++)
             {
                 var center = RandomPoint(rng, 80f);
-                float radius = 60f + (float)rng.NextDouble() * 110f;
-                if (IsInDeploymentZone(center.y + Mathf.Sign(center.y) * radius * 0.5f))
+                float radius = 55f + (float)rng.NextDouble() * 90f;
+                if (!IsForestSpotFree(center, radius))
                     continue;
 
-                bool overlapsTown = false;
-                foreach (var town in towns)
-                    overlapsTown |= (town.Center - center).magnitude < town.Radius + radius + 30f;
-                if (overlapsTown)
-                    continue;
-
+                // A forest is a cluster of overlapping circles for an organic outline.
                 forests.Add(new ForestZone { Center = center, Radius = radius });
+                int lobes = rng.Next(1, 4);
+                for (int l = 0; l < lobes; l++)
+                {
+                    float angle = (float)rng.NextDouble() * Mathf.PI * 2f;
+                    float lobeRadius = radius * (0.45f + (float)rng.NextDouble() * 0.35f);
+                    var lobeCenter = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius * (0.6f + (float)rng.NextDouble() * 0.4f);
+                    if (IsForestSpotFree(lobeCenter, lobeRadius))
+                        forests.Add(new ForestZone { Center = lobeCenter, Radius = lobeRadius });
+                }
+                placed++;
             }
+        }
+
+        bool IsForestSpotFree(Vector2 center, float radius)
+        {
+            if (Mathf.Abs(center.x) > HalfSize - radius * 0.5f || Mathf.Abs(center.y) > HalfSize - radius * 0.5f)
+                return false;
+            if (IsInDeploymentZone(center.y + Mathf.Sign(center.y) * radius * 0.5f))
+                return false;
+            foreach (var town in towns)
+            {
+                if ((town.Center - center).magnitude < town.Radius + radius + 30f)
+                    return false;
+            }
+            return true;
         }
 
         Vector2 RandomPoint(Random rng, float margin)
@@ -267,7 +291,8 @@ namespace WargameRTS.Map
             ground.transform.SetParent(transform, false);
             ground.AddComponent<MeshFilter>().sharedMesh = mesh;
             var material = GameMaterials.CreateLit(Color.white, 0.05f);
-            material.mainTexture = BuildGroundTexture();
+            GroundTexture = BuildGroundTexture();
+            material.mainTexture = GroundTexture;
             ground.AddComponent<MeshRenderer>().sharedMaterial = material;
             ground.AddComponent<MeshCollider>().sharedMesh = mesh;
         }
@@ -338,6 +363,8 @@ namespace WargameRTS.Map
                     float distance = Mathf.Sqrt((float)rng.NextDouble()) * (forest.Radius - 3f);
                     float x = forest.Center.x + Mathf.Cos(angle) * distance;
                     float z = forest.Center.y + Mathf.Sin(angle) * distance;
+                    if (IsInEarlierForest(new Vector2(x, z), f))
+                        continue;
                     float height = 11f + (float)rng.NextDouble() * 9f;
                     float radius = height * (0.22f + (float)rng.NextDouble() * 0.06f);
                     var basePoint = new Vector3(x, HeightAt(x, z) - 0.5f, z);
@@ -359,6 +386,16 @@ namespace WargameRTS.Map
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 go.AddComponent<MeshRenderer>().sharedMaterial = material;
             }
+        }
+
+        bool IsInEarlierForest(Vector2 point, int index)
+        {
+            for (int i = 0; i < index; i++)
+            {
+                if ((point - forests[i].Center).sqrMagnitude < forests[i].Radius * forests[i].Radius)
+                    return true;
+            }
+            return false;
         }
 
         static void AddCone(List<Vector3> vertices, List<int> triangles, Vector3 basePoint, float radius, float height)

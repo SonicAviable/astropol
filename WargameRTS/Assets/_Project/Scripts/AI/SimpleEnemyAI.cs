@@ -28,6 +28,9 @@ namespace WargameRTS.AI
 
         void Update()
         {
+            if (!BattleRules.EnemyAIEnabled)
+                return;
+
             timer -= Time.deltaTime;
             if (timer > 0f)
                 return;

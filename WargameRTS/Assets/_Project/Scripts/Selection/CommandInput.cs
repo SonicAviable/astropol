@@ -34,17 +34,22 @@ namespace WargameRTS.Selection
         bool rightPressed;
         Vector3 rightPressWorld;
         bool rightPressHitGround;
-        int consumedInputFrame = -1;
 
         public static CommandInput Instance { get; private set; }
 
-        public PendingOrder Pending { get; private set; }
+        PendingOrder pending;
+
+        public PendingOrder Pending
+        {
+            get => pending;
+            private set
+            {
+                pending = value;
+                InputGate.SetCapture(this, value != PendingOrder.None);
+            }
+        }
 
         public bool IsTargeting => Pending != PendingOrder.None;
-
-        /// <summary>True if the selection manager must ignore mouse/Escape input this frame.</summary>
-        public static bool BlocksSelection =>
-            Instance != null && (Instance.IsTargeting || Instance.consumedInputFrame == Time.frameCount);
 
         void Awake()
         {
@@ -62,6 +67,7 @@ namespace WargameRTS.Selection
 
         void OnDestroy()
         {
+            InputGate.SetCapture(this, false);
             if (Instance == this)
                 Instance = null;
         }
@@ -84,6 +90,14 @@ namespace WargameRTS.Selection
         {
             foreach (var unit in Selected)
                 unit.Stop();
+        }
+
+        /// <summary>Moves the selection to a world point in formation (used by the minimap).</summary>
+        public void MoveSelectedTo(Vector3 point, bool attackMove)
+        {
+            var selected = Selected;
+            if (selected.Count > 0)
+                IssuePointMove(selected, point, attackMove ? OrderType.AttackMove : OrderType.Move);
         }
 
         public void RetreatSelected()
@@ -135,9 +149,16 @@ namespace WargameRTS.Selection
             if (mainCamera == null || SelectionManager.Instance == null)
                 return;
 
+            if (InputGate.MenuOpen)
+            {
+                rightPressed = false;
+                preview.enabled = false;
+                return;
+            }
+
             var selected = Selected;
             Vector2 pointer = mouse.position.ReadValue();
-            bool overHud = SandboxHud.IsPointerOverHud(pointer);
+            bool overHud = HudStyle.IsPointerOverHud(pointer);
 
             if (selected.Count == 0)
                 Pending = PendingOrder.None;
@@ -167,7 +188,7 @@ namespace WargameRTS.Selection
             if (keyboard.escapeKey.wasPressedThisFrame && IsTargeting)
             {
                 Pending = PendingOrder.None;
-                consumedInputFrame = Time.frameCount;
+                InputGate.Consume();
             }
         }
 
@@ -177,28 +198,20 @@ namespace WargameRTS.Selection
             {
                 // RMB cancels the armed order instead of issuing a normal one.
                 Pending = PendingOrder.None;
-                consumedInputFrame = Time.frameCount;
+                InputGate.Consume();
                 return;
             }
 
-            if (!mouse.leftButton.wasPressedThisFrame || overHud)
+            if (!mouse.leftButton.wasPressedThisFrame || overHud || InputGate.ConsumedThisFrame)
                 return;
 
-            consumedInputFrame = Time.frameCount;
+            InputGate.Consume();
             var order = Pending;
             if (!keyboard.shiftKey.isPressed)
                 Pending = PendingOrder.None;
 
-            if (order == PendingOrder.Attack)
-            {
-                var enemy = SelectionManager.PickUnit(mainCamera, pointer);
-                if (enemy != null && enemy.Team != TeamExtensions.Player && enemy.IsVisibleTo(TeamExtensions.Player))
-                {
-                    foreach (var unit in selected)
-                        unit.Attack(enemy);
-                    return;
-                }
-            }
+            if (order == PendingOrder.Attack && TryAttackUnder(pointer, selected))
+                return;
 
             if (!RaycastGround(pointer, out var point))
                 return;
@@ -211,7 +224,8 @@ namespace WargameRTS.Selection
 
         void HandleRightButton(Mouse mouse, Keyboard keyboard, Vector2 pointer, bool overHud, IReadOnlyList<Unit> selected)
         {
-            if (mouse.rightButton.wasPressedThisFrame && !overHud)
+            // Another mode (e.g. sandbox placement) owns the mouse: RMB cancels it, not an order.
+            if (mouse.rightButton.wasPressedThisFrame && !overHud && !InputGate.BlocksSelection)
             {
                 rightPressed = true;
                 rightPressHitGround = RaycastGround(pointer, out rightPressWorld);
@@ -248,16 +262,39 @@ namespace WargameRTS.Selection
                 return;
             }
 
-            var enemy = SelectionManager.PickUnit(mainCamera, pointer);
-            if (enemy != null && enemy.Team != TeamExtensions.Player && enemy.IsVisibleTo(TeamExtensions.Player))
-            {
-                foreach (var unit in selected)
-                    unit.Attack(enemy);
+            if (TryAttackUnder(pointer, selected))
                 return;
-            }
 
             if (hasCurrent)
                 IssuePointMove(selected, currentWorld, moveType);
+        }
+
+        /// <summary>
+        /// If a visible unit hostile to some of the selected units is under the cursor,
+        /// those units attack it (the rest move next to it). Returns false otherwise.
+        /// </summary>
+        bool TryAttackUnder(Vector2 pointer, IReadOnlyList<Unit> selected)
+        {
+            var target = SelectionManager.PickUnit(mainCamera, pointer);
+            if (target == null)
+                return false;
+
+            bool fogOff = VisibilitySystem.Instance != null && !VisibilitySystem.Instance.FogOfWar;
+            if (!fogOff && !target.IsVisibleTo(TeamExtensions.Player))
+                return false;
+
+            bool anyHostile = false;
+            foreach (var unit in selected)
+                anyHostile |= unit.Team != target.Team;
+            if (!anyHostile)
+                return false;
+
+            foreach (var unit in selected)
+            {
+                if (unit.Team != target.Team)
+                    unit.Attack(target);
+            }
+            return true;
         }
 
         static void IssuePointMove(IReadOnlyList<Unit> units, Vector3 point, OrderType moveType)

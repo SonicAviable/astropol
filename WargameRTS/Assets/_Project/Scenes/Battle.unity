@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 1046512302}
   - component: {fileID: 1046512303}
   m_Layer: 0
-  m_Name: Sandbox
+  m_Name: Battle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -163,10 +163,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbda5fc7b3d14ba6ba0b6a6a52d47563, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: 1944
-  randomSeed: 0
-  mapSize: 2000
-  enemyAI: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -40,6 +40,19 @@ namespace WargameRTS.Selection
 
         public bool IsDragging => dragging;
 
+        /// <summary>Drops units the player can no longer command (e.g. "control both sides" switched off).</summary>
+        public void DropUncommandable()
+        {
+            for (int i = selected.Count - 1; i >= 0; i--)
+            {
+                if (!BattleRules.CanCommand(selected[i].Team))
+                {
+                    selected[i].SetSelected(false);
+                    selected.RemoveAt(i);
+                }
+            }
+        }
+
         void Awake()
         {
             Instance = this;
@@ -66,11 +79,17 @@ namespace WargameRTS.Selection
             if (mainCamera == null)
                 return;
 
+            if (InputGate.MenuOpen)
+            {
+                pressing = dragging = false;
+                return;
+            }
+
             Vector2 pointer = mouse.position.ReadValue();
             bool additive = keyboard.shiftKey.isPressed;
 
-            if (mouse.leftButton.wasPressedThisFrame && !SandboxHud.IsPointerOverHud(pointer) &&
-                !CommandInput.BlocksSelection)
+            if (mouse.leftButton.wasPressedThisFrame && !HudStyle.IsPointerOverHud(pointer) &&
+                !InputGate.BlocksSelection)
             {
                 pressing = true;
                 dragging = false;
@@ -90,8 +109,12 @@ namespace WargameRTS.Selection
                 dragging = false;
             }
 
-            if (keyboard.escapeKey.wasPressedThisFrame && !CommandInput.BlocksSelection)
+            if (keyboard.escapeKey.wasPressedThisFrame && !InputGate.BlocksSelection && selected.Count > 0)
+            {
+                // Escape first drops the selection; with nothing selected it opens the pause menu.
                 Clear();
+                InputGate.Consume();
+            }
 
             HandleGroupKeys(keyboard);
         }
@@ -126,7 +149,7 @@ namespace WargameRTS.Selection
         void ClickSelect(Vector2 pointer, bool additive)
         {
             Unit clicked = PickUnit(mainCamera, pointer);
-            if (clicked == null || clicked.Team != TeamExtensions.Player)
+            if (clicked == null || !BattleRules.CanCommand(clicked.Team))
             {
                 if (!additive)
                     Clear();
@@ -164,7 +187,7 @@ namespace WargameRTS.Selection
 
             foreach (var unit in Unit.All)
             {
-                if (unit.Team != TeamExtensions.Player)
+                if (!BattleRules.CanCommand(unit.Team))
                     continue;
                 Vector3 screen = mainCamera.WorldToScreenPoint(unit.Position + Vector3.up * 1.5f);
                 if (screen.z > 0f && rect.Contains(new Vector2(screen.x, screen.y)))
@@ -179,7 +202,7 @@ namespace WargameRTS.Selection
             var screenRect = new Rect(0f, 0f, Screen.width, Screen.height);
             foreach (var unit in Unit.All)
             {
-                if (unit.Team != TeamExtensions.Player || unit.Definition != definition)
+                if (!BattleRules.CanCommand(unit.Team) || unit.Definition != definition)
                     continue;
                 Vector3 screen = mainCamera.WorldToScreenPoint(unit.Position);
                 if (screen.z > 0f && screenRect.Contains(new Vector2(screen.x, screen.y)))
@@ -239,6 +262,7 @@ namespace WargameRTS.Selection
         {
             if (!dragging || Event.current.type != EventType.Repaint || Mouse.current == null)
                 return;
+            GUI.matrix = Matrix4x4.identity;
 
             if (whiteTexture == null)
                 whiteTexture = Texture2D.whiteTexture;

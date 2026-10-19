@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using WargameRTS.Core;
 using WargameRTS.Map;
 
 namespace WargameRTS.CameraRig
@@ -44,7 +45,19 @@ namespace WargameRTS.CameraRig
                 Instance = null;
         }
 
+        bool lockInput;
+
+        /// <summary>Disables player control (used by the main menu's orbiting camera).</summary>
+        public bool LockInput
+        {
+            get => lockInput;
+            set => lockInput = value;
+        }
+
         public void FocusOn(Vector3 point) => focus = point;
+
+        /// <summary>Rotates the view around the focus point (degrees).</summary>
+        public void Orbit(float degrees) => yaw += degrees;
 
         public void SetView(Vector3 point, float yawDegrees, float zoomDistance)
         {
@@ -60,7 +73,7 @@ namespace WargameRTS.CameraRig
             var mouse = Mouse.current;
             float deltaTime = Time.unscaledDeltaTime;
 
-            if (keyboard != null && mouse != null)
+            if (keyboard != null && mouse != null && !InputGate.MenuOpen && !lockInput)
             {
                 HandlePan(keyboard, mouse, deltaTime);
                 HandleRotation(keyboard, mouse, deltaTime);
@@ -79,7 +92,7 @@ namespace WargameRTS.CameraRig
             if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) input.x += 1f;
             if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) input.x -= 1f;
 
-            if (edgePan && Application.isFocused && !mouse.middleButton.isPressed)
+            if (edgePan && GameSettings.EdgePan && Application.isFocused && !mouse.middleButton.isPressed)
             {
                 Vector2 pointer = mouse.position.ReadValue();
                 bool inside = pointer.x >= 0f && pointer.y >= 0f && pointer.x <= Screen.width && pointer.y <= Screen.height;
@@ -96,7 +109,7 @@ namespace WargameRTS.CameraRig
                 return;
 
             input = Vector2.ClampMagnitude(input, 1f);
-            float speed = distance * panSpeedPerDistance * (keyboard.shiftKey.isPressed ? 2f : 1f);
+            float speed = distance * panSpeedPerDistance * GameSettings.CameraSpeed * (keyboard.shiftKey.isPressed ? 2f : 1f);
             var rotation = Quaternion.Euler(0f, yaw, 0f);
             focus += rotation * new Vector3(input.x, 0f, input.y) * speed * deltaTime;
         }

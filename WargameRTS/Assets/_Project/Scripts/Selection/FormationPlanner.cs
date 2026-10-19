@@ -23,21 +23,30 @@ namespace WargameRTS.Selection
         {
             facing = Flat(facing, Vector3.forward);
             Vector3 right = Vector3.Cross(Vector3.up, facing);
-            int count = units.Count;
+            return Assign(units, Grid(units.Count, center, facing, Spacing), right);
+        }
+
+        /// <summary>Rows of up to 8 slots centered on a point, front row first.</summary>
+        public static List<Vector3> Grid(int count, Vector3 center, Vector3 facing, float spacing)
+        {
+            facing = Flat(facing, Vector3.forward);
+            Vector3 right = Vector3.Cross(Vector3.up, facing);
+            var positions = new List<Vector3>(count);
+            if (count <= 0)
+                return positions;
+
             int rows = Mathf.CeilToInt(count / (float)MaxPerRow);
             int perRow = Mathf.CeilToInt(count / (float)rows);
-
-            var positions = new List<Vector3>(count);
             for (int i = 0; i < count; i++)
             {
                 int row = i / perRow;
                 int column = i % perRow;
                 int inRow = Mathf.Min(perRow, count - row * perRow);
-                float x = (column - (inRow - 1) * 0.5f) * Spacing;
-                float z = -row * Spacing;
+                float x = (column - (inRow - 1) * 0.5f) * spacing;
+                float z = -row * spacing;
                 positions.Add(center + right * x + facing * z);
             }
-            return Assign(units, positions, right);
+            return positions;
         }
 
         /// <summary>Units spread evenly along the segment a→b, facing away from the group.</summary>

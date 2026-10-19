@@ -10,7 +10,26 @@ namespace WargameRTS.Units
         Recon,
         Tank,
         InfantryFightingVehicle,
-        AntiTank
+        AntiTank,
+        AntiAir,
+        Artillery
+    }
+
+    /// <summary>Which placeholder model <see cref="UnitView"/> builds.</summary>
+    public enum UnitModel
+    {
+        MediumTank,
+        HeavyTank,
+        LightTank,
+        TrackedIfv,
+        WheeledApc,
+        InfantrySquad,
+        InfantryTeam,
+        ReconCar,
+        AtgmCarrier,
+        Spaag,
+        Howitzer,
+        RocketLauncher
     }
 
     /// <summary>Static data of a unit type ("unit card" in the deck).</summary>
@@ -23,6 +42,11 @@ namespace WargameRTS.Units
         public string ShortName = "UNT";
 
         public UnitCategory Category;
+        public UnitModel Model;
+
+        [Tooltip("Price in command points (deck / reinforcements).")]
+        public int Cost = 50;
+
         public float MaxHealth = 10f;
 
         [Header("Armour")]
@@ -47,7 +71,24 @@ namespace WargameRTS.Units
         [Header("Weapons")]
         public List<WeaponDefinition> Weapons = new List<WeaponDefinition>();
 
-        public bool IsInfantry => Category == UnitCategory.Infantry;
+        public bool IsInfantry => Model == UnitModel.InfantrySquad || Model == UnitModel.InfantryTeam;
+
+        /// <summary>True if every weapon is indirect: the unit engages without its own line of sight.</summary>
+        public bool IsIndirectFire
+        {
+            get
+            {
+                if (Weapons.Count == 0)
+                    return false;
+                foreach (var weapon in Weapons)
+                {
+                    if (!weapon.Indirect)
+                        return false;
+                }
+                return true;
+            }
+        }
+
         public float SpeedMetersPerSecond => SpeedKmh / 3.6f;
 
         public float MaxWeaponRange

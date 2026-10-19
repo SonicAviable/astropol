@@ -29,11 +29,37 @@ namespace WargameRTS.Combat
         [Tooltip("Seconds between shots.")]
         public float FireInterval = 5f;
 
+        [Header("Indirect fire (artillery)")]
+        [Tooltip("Fires without line of sight at targets spotted by the team; shells fly with a delay.")]
+        public bool Indirect;
+
+        [Tooltip("Minimum range, meters (artillery cannot hit close targets).")]
+        public float MinRange;
+
+        [Tooltip("Splash radius, meters. HE damage falls off linearly to the edge.")]
+        public float SplashRadius;
+
+        [Tooltip("Shots per volley (rocket artillery) and seconds between them.")]
+        public int Salvo = 1;
+        public float SalvoInterval = 0.25f;
+
         [Tooltip("Tracer color and width (visual only).")]
         public Color TracerColor = new Color(1f, 0.85f, 0.4f);
         public float TracerWidth = 0.35f;
 
         public bool CanFireOnMove => MovingAccuracyMultiplier > 0f;
+
+        /// <summary>Configures this weapon as artillery. Returns itself for chaining.</summary>
+        public WeaponDefinition AsArtillery(float minRange, float splashRadius, int salvo = 1, float salvoInterval = 0.25f)
+        {
+            Indirect = true;
+            MinRange = minRange;
+            SplashRadius = splashRadius;
+            Salvo = Mathf.Max(1, salvo);
+            SalvoInterval = salvoInterval;
+            MovingAccuracyMultiplier = 0f;
+            return this;
+        }
 
         public static WeaponDefinition Create(string displayName, float range, int armorPiercing, float highExplosive,
             float accuracy, float movingMultiplier, float fireInterval, Color tracerColor, float tracerWidth)

@@ -51,6 +51,11 @@ namespace WargameRTS.Units
         {
             public WeaponDefinition Definition;
             public float Cooldown;
+
+            // Remaining shots of an artillery volley and where they go.
+            public int SalvoRemaining;
+            public float SalvoTimer;
+            public Vector3 SalvoAim;
         }
 
         readonly bool[] visibleTo = new bool[TeamExtensions.Count];
@@ -302,7 +307,10 @@ namespace WargameRTS.Units
         void UpdateWeapons(float deltaTime)
         {
             foreach (var weapon in weapons)
+            {
                 weapon.Cooldown -= deltaTime;
+                UpdateSalvo(weapon, deltaTime);
+            }
 
             if (currentTarget == null)
             {
@@ -323,14 +331,22 @@ namespace WargameRTS.Units
             foreach (var weapon in weapons)
             {
                 var definition = weapon.Definition;
-                if (weapon.Cooldown > 0f || distance > definition.Range)
+                if (weapon.Cooldown > 0f || weapon.SalvoRemaining > 0)
+                    continue;
+                if (distance > definition.Range || distance < definition.MinRange)
                     continue;
                 if (moving && !definition.CanFireOnMove)
                     continue;
 
-                float damage = CombatMath.Damage(definition, armor);
+                float damage = CombatMath.Damage(definition, definition.Indirect ? currentTarget.Definition.ArmorRear : armor);
                 if (damage < 0.05f)
                     continue;
+
+                if (definition.Indirect)
+                {
+                    FireArtillery(weapon, currentTarget.Position);
+                    continue;
+                }
 
                 Fire(weapon, currentTarget, distance, damage);
                 if (!currentTarget.IsAlive)
@@ -339,6 +355,32 @@ namespace WargameRTS.Units
                     return;
                 }
             }
+        }
+
+        void FireArtillery(WeaponState weapon, Vector3 aim)
+        {
+            var definition = weapon.Definition;
+            weapon.Cooldown = definition.FireInterval * Random.Range(0.9f, 1.1f);
+            weapon.SalvoAim = aim;
+            weapon.SalvoRemaining = definition.Salvo - 1;
+            weapon.SalvoTimer = definition.SalvoInterval;
+            lastFiredTime = Time.time;
+            ShellManager.Launch(this, definition, aim);
+        }
+
+        void UpdateSalvo(WeaponState weapon, float deltaTime)
+        {
+            if (weapon.SalvoRemaining <= 0)
+                return;
+
+            weapon.SalvoTimer -= deltaTime;
+            if (weapon.SalvoTimer > 0f)
+                return;
+
+            weapon.SalvoTimer = weapon.Definition.SalvoInterval;
+            weapon.SalvoRemaining--;
+            lastFiredTime = Time.time;
+            ShellManager.Launch(this, weapon.Definition, weapon.SalvoAim);
         }
 
         void Fire(WeaponState weapon, Unit target, float distance, float damage)
@@ -369,12 +411,31 @@ namespace WargameRTS.Units
 
         public void ApplyDamage(float damage)
         {
-            if (!IsAlive)
+            if (!IsAlive || BattleRules.Invulnerable)
                 return;
 
             Health = Mathf.Max(0f, Health - damage);
             if (Health <= 0f)
                 Die();
+        }
+
+        /// <summary>Restores full health (sandbox tool).</summary>
+        public void Heal()
+        {
+            if (IsAlive)
+                Health = Definition.MaxHealth;
+        }
+
+        /// <summary>Removes the unit instantly without a wreck (sandbox tool).</summary>
+        public void Despawn()
+        {
+            if (!IsAlive)
+                return;
+            Health = 0f;
+            if (IsSelected)
+                SetSelected(false);
+            Died?.Invoke(this);
+            Destroy(gameObject);
         }
 
         void Die()
@@ -411,7 +472,7 @@ namespace WargameRTS.Units
             float distance = Vector3.Distance(Position, target.Position);
             if (BestDamageAgainst(target, distance) <= 0f)
                 return false;
-            return LineOfSight.Check(EyePosition, target.EyePosition);
+            return Definition.IsIndirectFire || LineOfSight.Check(EyePosition, target.EyePosition);
         }
 
         float BestDamageAgainst(Unit target, float distance)
@@ -421,7 +482,7 @@ namespace WargameRTS.Units
             float best = 0f;
             foreach (var weapon in weapons)
             {
-                if (distance > weapon.Definition.Range)
+                if (distance > weapon.Definition.Range || distance < weapon.Definition.MinRange)
                     continue;
                 float perSecond = CombatMath.Damage(weapon.Definition, armor) * weapon.Definition.Accuracy /
                                   Mathf.Max(0.1f, weapon.Definition.FireInterval);
@@ -460,7 +521,7 @@ namespace WargameRTS.Units
                 if (score <= bestScore)
                     continue;
 
-                if (!LineOfSight.Check(EyePosition, candidate.EyePosition))
+                if (!Definition.IsIndirectFire && !LineOfSight.Check(EyePosition, candidate.EyePosition))
                     continue;
 
                 best = candidate;

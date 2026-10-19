@@ -25,23 +25,34 @@
 
 ## Как устроена песочница
 
-Сцена `Assets/_Project/Scenes/Sandbox.unity` содержит один объект с
-`SandboxBootstrap`. Всё остальное создаётся кодом на старте: свет, карта
+Две сцены, обе содержат по одному объекту-загрузчику, остальное создаётся кодом:
+`Scenes/MainMenu.unity` (`UI/MainMenu`: меню + вращающаяся карта на фоне) и
+`Scenes/Battle.unity` (`Core/BattleBootstrap`). Параметры боя передаются через
+статический `MatchSettings` (режим Skirmish/Sandbox, зерно, размер карты, туман);
+при запуске Battle напрямую — песочница со стартовыми армиями. Переключатели
+текущего боя — `BattleRules` (ИИ, бессмертие, управление обеими сторонами).
+На старте боя создаются: свет, карта
 (`GameMap`: рельеф из Perlin noise, леса-круги, города), NavMesh, камера,
 системы и армии. Материалы — `GameMaterials` (Shader.Find; для релизной сборки
 понадобится положить материалы в ассеты или в Always Included Shaders).
 
 Подключённые системы (`Systems`): `EffectsManager`, `VisibilitySystem`
-(туман войны), `SelectionManager`, `CommandInput`, `SandboxHud` (IMGUI,
-временный), `SimpleEnemyAI`. Юнит = `Unit` (логика) + `UnitView` (модель из
+(туман войны), `ShellManager` (артиллерийские снаряды), `SelectionManager`,
+`CommandInput`, `SimpleEnemyAI`, `PauseMenu`, `SandboxController` (только в
+песочнице) и `BattleHud` — единственный OnGUI боя, рисует всё остальное
+(миникарта, панели песочницы, пауза) в нужном порядке. Ввод между режимами
+разруливает `Core/InputGate` (захват мыши режимом приказа/расстановки, меню). Юнит = `Unit` (логика) + `UnitView` (модель из
 примитивов) + `NavMeshAgent`, создаётся через `UnitFactory`. Данные юнитов —
 `UnitCatalog` (создаёт `UnitDefinition`/`WeaponDefinition` в коде; позже станут
 ассетами в `Assets/_Project/Data/`).
 
 ## Интерфейс
 
-- Временный HUD — IMGUI (`UI/SandboxHud.cs`), раскладка по макету
-  `docs/ui-reference/hud-mockup.jpg`; палитра — константы в начале `SandboxHud`.
+- Временный HUD — IMGUI, раскладка по макету `docs/ui-reference/hud-mockup.jpg`.
+  Общий набор — `UI/HudStyle` (палитра, масштаб под разрешение: вёрстка в
+  виртуальных координатах высотой 1080, кнопки, переключатели, панели,
+  регистрация областей, которые не пропускают клики в мир). Каждый OnGUI
+  начинается с `HudStyle.Begin()`. Настройки игрока — `Core/GameSettings` (PlayerPrefs).
 - Иконки — PNG с прозрачностью в `Assets/_Project/Resources/UI/{Orders,Units,Status}`,
   загружаются через `HudIcons` (`Resources.Load`). Настройки импорта задаёт
   `Editor/UiTextureImporter.cs`. Иконки приказов — белые (тонируются в коде).
@@ -63,6 +74,7 @@ Assets/_Project/
     CameraRig/   // RTS-камера
     UI/          // HUD
     AI/          // противник
+    Sandbox/     // режим песочницы (спавн, время, читы)
     Editor/      // сборка WargameRTS.Editor (только редактор)
   Scenes/
   Data/ Prefabs/ Art/ Audio/   // по мере появления

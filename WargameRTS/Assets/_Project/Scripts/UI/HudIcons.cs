@@ -12,9 +12,14 @@ namespace WargameRTS.UI
     public static class HudIcons
     {
         static readonly Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();
+        static readonly HashSet<string> warned = new HashSet<string>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => cache.Clear();
+        static void ResetStatics()
+        {
+            cache.Clear();
+            warned.Clear();
+        }
 
         public static Texture2D Order(string name) => Load("UI/Orders/" + name);
 
@@ -30,19 +35,23 @@ namespace WargameRTS.UI
                 case UnitCategory.Infantry: return Load("UI/Units/Infantry");
                 case UnitCategory.Recon: return Load("UI/Units/Recon");
                 case UnitCategory.AntiTank: return Load("UI/Units/AntiTank");
+                case UnitCategory.AntiAir: return Load("UI/Units/AntiAir");
+                case UnitCategory.Artillery: return Load("UI/Units/Artillery");
                 default: return null;
             }
         }
 
         static Texture2D Load(string path)
         {
-            if (cache.TryGetValue(path, out var texture))
+            if (cache.TryGetValue(path, out var texture) && texture != null)
                 return texture;
 
+            // Missing icons are not cached: they may still be importing right after a pull.
             texture = Resources.Load<Texture2D>(path);
-            if (texture == null)
-                Debug.LogWarning($"[WargameRTS] HUD icon not found: Resources/{path}.png");
-            cache[path] = texture;
+            if (texture != null)
+                cache[path] = texture;
+            else if (warned.Add(path))
+                Debug.LogWarning($"[WargameRTS] HUD icon not found (yet): Resources/{path}.png");
             return texture;
         }
     }
