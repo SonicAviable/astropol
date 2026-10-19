@@ -25,7 +25,6 @@ namespace StellarisClone.Core
         public static bool VSync { get; private set; }
         public static int FpsIndex { get; private set; }
         public static int Quality { get; private set; }
-        public static bool GlassBlur { get; private set; }
         public static float Glow { get; private set; }
         public static float UIBrightness { get; private set; }
 
@@ -107,7 +106,6 @@ namespace StellarisClone.Core
             VSync = PlayerPrefs.GetInt("set.vsync", 1) == 1;
             FpsIndex = PlayerPrefs.GetInt("set.fps", 1);
             Quality = PlayerPrefs.GetInt("set.quality", QualitySettings.GetQualityLevel());
-            GlassBlur = PlayerPrefs.GetInt("set.blur", 1) == 1;
             Glow = PlayerPrefs.GetFloat("set.glow", 0.2f);
             UIBrightness = PlayerPrefs.GetFloat("set.uibright", 0.5f);
 
@@ -162,7 +160,6 @@ namespace StellarisClone.Core
         {
             var lg = LiquidGlassSystem.Ensure();
             if (lg == null) return;
-            lg.backdropEnabled = GlassBlur;
             lg.glowStrength = Glow;
             lg.brightness = UIBrightness;
         }
@@ -220,7 +217,6 @@ namespace StellarisClone.Core
             Commit();
         }
 
-        public static void SetGlassBlur(bool v) { GlassBlur = v; PlayerPrefs.SetInt("set.blur", v ? 1 : 0); ApplyGlass(); Commit(); }
         public static void SetGlow(float v) { Glow = Mathf.Clamp(v, 0f, 0.8f); PlayerPrefs.SetFloat("set.glow", Glow); ApplyGlass(); Commit(); }
         public static void SetUIBrightness(float v) { UIBrightness = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.uibright", UIBrightness); ApplyGlass(); Commit(); }
 

@@ -148,10 +148,7 @@ namespace StellarisClone.Rendering
                 LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Качество графики"), Loc.T("Тени, сглаживание и постобработка")),
                     q, Mathf.Clamp(GameSettings.Quality, 0, q.Count - 1), GameSettings.SetQuality);
 
-            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Размытие под стеклом"), Loc.T("Эффект «жидкого стекла» у панелей. Выключите на слабых ПК")),
-                GameSettings.GlassBlur, GameSettings.SetGlassBlur);
-
-            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Неоновое свечение"), Loc.T("Яркость ореола вокруг окон и кнопок")),
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Неоновое свечение"), Loc.T("Яркость ореола вокруг линий и выделенных элементов")),
                 GameSettings.Glow, 0f, 0.8f, v => Mathf.RoundToInt(v / 0.8f * 100f) + "%", GameSettings.SetGlow);
         }
 

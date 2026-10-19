@@ -4674,3 +4674,4 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Слот пуст. Выберите модуль слева.	Slot is empty. Pick a module on the left.
 УЖЕ УСТАНОВЛЕН	ALREADY INSTALLED
 НЕ ИЗУЧЕН	NOT RESEARCHED
+Яркость ореола вокруг линий и выделенных элементов	Glow around lines and highlighted elements

@@ -1,18 +1,17 @@
-// Astropolity — Liquid Glass UI shader.
+// Astropolity — UI shader («тактический» стиль интерфейса).
 //
-// Один проход рисует весь "стеклянный" элемент целиком:
-//   • мягкая тень под панелью
-//   • внешнее неоновое свечение
-//   • тело (стекло / пластина / эмиссия / скрим)
-//   • преломление по краям + хроматическая аберрация (режим GLASS)
-//   • зеркальные блики, зависящие от направления света (_LGLightDir)
-//   • тонкая обводка
+// Один проход рисует элемент интерфейса целиком — плоско, без стекла, размытия и бликов:
+//   • окна — непрозрачное тёмное тело, тонкая кромка и неоновая линия по верхнему краю, мягкая тень;
+//   • вложенные пластины — ровная заливка чуть светлее фона, тонкая кромка;
+//   • кнопки — капсулы: тёмное полупрозрачное тело и тонкая кромка, при наведении кромка светлеет;
+//   • линии, точки, полосы прогресса — ровный цвет с лёгким ореолом;
+//   • скрим под модальными окнами — ровное затемнение.
 //
-// Все параметры приходят через UV-каналы вершин (см. LiquidGlassEffect.cs),
-// поэтому все стеклянные элементы делят один материал и батчатся.
+// Параметры приходят через UV-каналы вершин (см. LiquidGlassEffect.cs),
+// поэтому все элементы делят один материал и батчатся.
 //   uv0 = (local.x, local.y, halfW, halfH)
 //   uv1 = радиусы углов (TL, TR, BR, BL)
-//   uv2 = цвет обводки (linear)
+//   uv2 = цвет кромки (linear)
 //   uv3 = 4 × (3 байта) упакованных параметра
 Shader "Astropolity/UI/LiquidGlass"
 {
@@ -61,7 +60,7 @@ Shader "Astropolity/UI/LiquidGlass"
 
         Pass
         {
-            Name "LiquidGlass"
+            Name "TacticalUI"
 
             CGPROGRAM
             #pragma vertex vert
@@ -106,15 +105,8 @@ Shader "Astropolity/UI/LiquidGlass"
             float _UIMaskSoftnessY;
 
             // Глобальные параметры — выставляет LiquidGlassSystem
-            sampler2D _LGBackdropTex;
-            float _LGBackdropReady;
-            float _LGBackdropFlip;
-            float4 _LGLightDir;   // xy — направление НА источник света (y вверх)
-            float4 _LGPointer;    // xy — курсор в screen UV
-            float _LGVibrancy;
-            float _LGGlowStrength;   // общий регулятор неонового свечения
+            float _LGGlowStrength;   // общий регулятор ореола
             float _LGBrightness;     // подъём яркости тёмных панелей (0 — исходный тёмный вид, 1 — максимум)
-            float _LGHolo;           // голографический стиль окон: уголки-скобки и сетка (0 — выкл.)
 
             // 3 байта в одном float (точно представимо до 2^24)
             float3 Unpack3(float v)
@@ -159,34 +151,13 @@ Shader "Astropolity/UI/LiquidGlass"
                 return o;
             }
 
-            // Скруглённый прямоугольник с разными радиусами (Inigo Quilez).
-            // r = (TR, BR, TL, BL)
-            float SdRoundBox(float2 p, float2 b, float4 r, bool noCut)
+            // Скруглённый прямоугольник (Inigo Quilez). r = (TR, BR, TL, BL)
+            float SdRoundBox(float2 p, float2 b, float4 r)
             {
-                // Голо-стиль: срезаны два угла (фаска 45°) — слева сверху и справа снизу; два других — острые.
-                // Круги и капсулы (радиус ≈ половине стороны) остаются круглыми.
-                float rMax = max(max(r.x, r.y), max(r.z, r.w));
-                bool chamfer = !noCut && _LGHolo > 0.5 && rMax < 0.9 * min(b.x, b.y);
-                if (chamfer) r = min(r * float4(0.0, 1.6, 1.6, 0.0), min(b.x, b.y) * 0.8);
                 r.xy = (p.x > 0.0) ? r.xy : r.zw;
                 r.x  = (p.y > 0.0) ? r.x  : r.y;
-                if (chamfer)
-                {
-                    float2 a = abs(p);
-                    float2 qs = a - b;
-                    float box = min(max(qs.x, qs.y), 0.0) + length(max(qs, 0.0));
-                    float cut = (a.x + a.y - (b.x + b.y - r.x)) * 0.70710678;
-                    return max(box, cut);
-                }
                 float2 q = abs(p) - b + r.x;
                 return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
-            }
-
-            float3 SampleBackdrop(float2 uv)
-            {
-                uv = saturate(uv);
-                if (_LGBackdropFlip > 0.5) uv.y = 1.0 - uv.y;
-                return tex2Dlod(_LGBackdropTex, float4(uv, 0, 0)).rgb;
             }
 
             float BitSet(float flags, float bit)
@@ -202,14 +173,10 @@ Shader "Astropolity/UI/LiquidGlass"
                 float4 rr = min(IN.radii, minB);                     // TL TR BR BL
                 float4 r4 = float4(rr.y, rr.z, rr.x, rr.w);          // → TR BR TL BL
 
-                float modeRaw  = floor(IN.p2.x + 0.5);
-                float mode     = fmod(modeRaw, 4.0);                 // режим — младшие 2 бита
-                float sweep    = floor(modeRaw / 4.0);               // блик: 0 — нет, 1..63 — положение
+                float mode     = fmod(floor(IN.p2.x + 0.5), 4.0);    // режим — младшие 2 бита (старшие — устаревший блик)
                 float fill     = IN.p0.x;
                 float glow     = IN.p0.y;
                 float shadow   = IN.p0.z;
-                float specular = IN.p0.w;
-                float refr     = IN.p1.x;
                 float hover    = IN.p1.y;
                 float glowR    = max(IN.p1.z, 1.0);
                 float shadowR  = max(IN.p1.w, 1.0);
@@ -222,90 +189,44 @@ Shader "Astropolity/UI/LiquidGlass"
 
                 bool fHairline   = BitSet(flags, 1.0) > 0.5;
                 bool fBorderOnly = BitSet(flags, 2.0) > 0.5;
-                bool fNoSpecular = BitSet(flags, 4.0) > 0.5;
-                bool fTactical   = BitSet(flags, 8.0) > 0.5;   // «приборная» кнопка: тёмное тело, цвет — акцентом
+                bool fButton     = BitSet(flags, 8.0) > 0.5;
 
-                // --- Метрики пикселя ---
-                float unitPx = max(length(float2(ddx(p.x), ddy(p.x))), 1e-4);  // юнитов на пиксель
+                float unitPx = max(length(float2(ddx(p.x), ddy(p.x))), 1e-4);
                 float pxPerUnit = 1.0 / unitPx;
-                float2 suv = IN.screenPos.xy / max(IN.screenPos.w, 1e-5);
-                float2 uvPerPx = float2(abs(ddx(suv.x)) + abs(ddy(suv.x)),
-                                        abs(ddx(suv.y)) + abs(ddy(suv.y)));
-                uvPerPx = max(uvPerPx, 1e-6);
 
-                float d = SdRoundBox(p, b, r4, fTactical);
+                float d = SdRoundBox(p, b, r4);
                 float cov = saturate(0.5 - d * pxPerUnit);
-
-                // --- Нормаль края (по сглаженному SDF) ---
-                float e = unitPx;
-                float4 rs = max(r4, minB * 0.45);
-                float2 n = float2(SdRoundBox(p + float2(e, 0), b, rs, fTactical) - SdRoundBox(p - float2(e, 0), b, rs, fTactical),
-                                  SdRoundBox(p + float2(0, e), b, rs, fTactical) - SdRoundBox(p - float2(0, e), b, rs, fTactical));
-                n /= max(length(n), 1e-5);
-
-                float band   = clamp(minB * 0.6, 3.0, 26.0);
-                float depth  = saturate(-d / band);
-                float edge   = 1.0 - depth;
-                float2 L     = normalize(_LGLightDir.xy + 1e-5);
-                float facing = dot(n, L);
-                float yN     = p.y / b.y;
                 float insidePx = max(-d, 0.0) * pxPerUnit;
-
-                float specMul = fNoSpecular ? 0.0 : specular;
-
-                // Свечение курсора (на hover)
-                float2 dPtr = (suv - _LGPointer.xy) / uvPerPx;
-                float ptrGlow = exp(-dot(dPtr, dPtr) / (2.0 * 120.0 * 120.0)) * hover;
+                float tv = (p.y / b.y) * 0.5 + 0.5;                  // 0 — низ, 1 — верх
+                float topPx = (b.y - p.y) * pxPerUnit;               // расстояние от верхнего края, px
 
                 float3 bodyCol = tint;
                 float  bodyA   = 1.0;
 
                 if (mode < 0.5)
                 {
-                    // ================= GLASS =================
-                    float bend = edge * edge * edge;
-                    float2 dispUV = -n * bend * band * pxPerUnit * 0.55 * refr * uvPerPx;
-                    float2 caUV   = n * bend * refr * 2.2 * uvPerPx;
-
-                    float3 bg;
-                    bg.r = SampleBackdrop(suv + dispUV + caUV).r;
-                    bg.g = SampleBackdrop(suv + dispUV).g;
-                    bg.b = SampleBackdrop(suv + dispUV - caUV).b;
-
-                    float lum = dot(bg, float3(0.2126, 0.7152, 0.0722));
-                    bg = lerp(lum.xxx, bg, 1.0 + 0.45 * _LGVibrancy) * 1.06 + 0.006;
-
-                    if (_LGBackdropReady < 0.5)
-                        bg = tint * 0.55 + 0.012;
-
-                    bodyCol = lerp(bg, tint, fill);
-                    bodyCol *= 1.0 + 0.08 * yN * specMul;                                       // свет сверху
-                    bodyCol += lerp(float3(1,1,1), rim.rgb, 0.5) * pow(edge, 6.0) * 0.14 * specMul; // френель
-                    bodyA = (_LGBackdropReady < 0.5) ? max(0.9, fill) : 1.0;
-
-                    // Голо-стиль: вертикальная растяжка — к верху окна светлее, к низу глубже (как панели приборов)
-                    if (_LGHolo > 0.5) bodyCol *= 0.84 + 0.22 * saturate(yN * 0.5 + 0.5);
+                    // ================= ОКНО =================
+                    // Непрозрачное: вершинная альфа окон (обычно 0.85–0.95) больше не даёт «стекла»
+                    opacity = saturate(opacity * 1.2);
+                    bodyCol = tint * (0.90 + 0.14 * tv);
+                    bodyA = 1.0;
                 }
                 else if (mode < 1.5)
                 {
-                    // ================= PLATTER (вложенная пластина) =================
-                    bodyCol = tint + 0.025 + 0.045 * saturate(yN * 0.5 + 0.5) * specMul;
-                    bodyCol += lerp(float3(1,1,1), rim.rgb, 0.5) * pow(edge, 5.0) * 0.08 * specMul;
-                    bodyA = fill;
-
-                    if (fTactical)
+                    // ================= ПЛАСТИНА / КНОПКА =================
+                    if (fButton)
                     {
-                        // Кнопка: ровное тёмное тело, едва заметный свет сверху — без полос и подсветки сбоку
-                        float tv = yN * 0.5 + 0.5;                   // 0 — низ, 1 — верх
                         bodyCol = tint * (0.86 + 0.24 * tv);
                         bodyCol += rim.rgb * pow(saturate(tv), 10.0) * 0.035;
                     }
+                    else
+                        bodyCol = tint + 0.018;
+                    bodyA = fill;
                 }
                 else if (mode < 2.5)
                 {
-                    // ================= EMISSIVE (линии, точки, полосы) =================
-                    bodyCol = tint * (1.0 + hover * 0.35) * (0.85 + 0.3 * intensity);
-                    bodyCol += 0.22 * specMul * smoothstep(0.1, 1.0, yN);
+                    // ================= ЛИНИИ, ТОЧКИ, ПОЛОСЫ =================
+                    bodyCol = tint * (1.0 + hover * 0.25) * (0.9 + 0.2 * intensity);
                     bodyA = 1.0;
                     if (fHairline)
                     {
@@ -317,124 +238,55 @@ Shader "Astropolity/UI/LiquidGlass"
                 }
                 else
                 {
-                    // ================= SCRIM (размытый фон под модалками) =================
-                    float3 bg = SampleBackdrop(suv);
-                    float lum = dot(bg, float3(0.2126, 0.7152, 0.0722));
-                    bg = lerp(lum.xxx, bg, 0.8);
-                    bodyCol = lerp(bg * 0.65, tint, fill);
-                    bodyA = (_LGBackdropReady < 0.5) ? 0.82 : 1.0;
+                    // ================= СКРИМ =================
+                    bodyCol = tint * 0.55 + float3(0.004, 0.007, 0.010);
+                    bodyA = 0.80;
                 }
 
                 if (fBorderOnly) bodyA = 0.0;
 
                 if (mode < 1.5)
                 {
-                    // Яркость интерфейса: светлеют только тёмные стекло и пластины,
-                    // цветные кнопки и плашки остаются как есть
+                    // Яркость интерфейса (настройка): светлеют только тёмные окна и пластины — в глубокий сине-бирюзовый
                     float bodyLum = dot(bodyCol, float3(0.2126, 0.7152, 0.0722));
                     float darkW = 1.0 - smoothstep(0.10, 0.35, bodyLum);
-                    // Подъём — в глубокий сине-бирюзовый, а не в серый: панели остаются «стеклом», а не картоном
-                    bodyCol = lerp(bodyCol, bodyCol * 1.45 + float3(0.014, 0.032, 0.046), saturate(_LGBrightness) * darkW);
-
-                    // Мягкая подсветка края, обращённого к свету
-                    float soft = saturate(1.0 - insidePx / 16.0) * pow(saturate(facing), 2.0) * 0.16 * specMul;
-                    bodyCol += soft;
-                    // Hover: внутренний неон + блик под курсором
-                    bodyCol += rim.rgb * exp(-insidePx / max(glowR * 1.2, 1.0)) * hover * max(glow, 0.12) * 0.45;
-                    bodyCol += lerp(float3(1,1,1), rim.rgb, 0.3) * ptrGlow * 0.10;
-                    bodyCol += hover * 0.05;
-
-                    // Блик при наведении: наклонная полоса света один раз пробегает слева направо
-                    if (sweep > 0.5)
-                    {
-                        float swT = (sweep - 1.0) / 62.0;
-                        float swPos = lerp(-0.35, 1.35, swT);
-                        float swU = (p.x / b.x) * 0.5 + 0.5;                       // 0..1 по ширине
-                        float swSkew = (yN * 0.5) * 0.45 * b.y / max(b.x, 1.0);   // наклон ~25°
-                        float swK = (swU + swSkew - swPos) / 0.09;
-                        float swBand = exp(-swK * swK);
-                        float swFade = smoothstep(0.0, 0.12, swT) * (1.0 - smoothstep(0.85, 1.0, swT));
-                        bodyCol += lerp(float3(1,1,1), rim.rgb, 0.35) * swBand * swFade * (fTactical ? 0.10 : 0.32) * cov;
-                    }
+                    bodyCol = lerp(bodyCol, bodyCol * 1.35 + float3(0.010, 0.022, 0.032), saturate(_LGBrightness) * darkW);
+                    bodyCol += hover * 0.035;
                 }
 
                 // --- Тень ---
                 float2 so = float2(0.0, -shadowR * 0.32);
-                float sdS = SdRoundBox(p - so, b, r4, fTactical);
-                float shA = shadow * 0.55 * (1.0 - smoothstep(-shadowR * 0.35, shadowR, sdS));
+                float sdS = SdRoundBox(p - so, b, r4);
+                float shA = shadow * 0.6 * (1.0 - smoothstep(-shadowR * 0.35, shadowR, sdS));
 
-                // --- Внешнее свечение ---
+                // --- Ореол (только у линий и выделенных элементов, сдержанный) ---
                 float outside = max(d, 0.0);
-                float glowA = glow * _LGGlowStrength * (1.0 + hover * 1.5) * exp(-outside / glowR) * (1.0 - cov) * rim.a;
-                float3 glowC = rim.rgb;
+                float glowA = glow * _LGGlowStrength * (1.0 + hover) * exp(-outside / glowR) * (1.0 - cov) * rim.a;
 
-                // --- Обводка ---
+                // --- Кромка ---
                 float strokeD = abs(d + bw * 0.5) - bw * 0.5;
                 float stroke = (bw > 0.001) ? saturate(0.5 - strokeD * pxPerUnit) : 0.0;
-                float f01 = saturate(facing * 0.5 + 0.5);
-                float3 strokeCol = lerp(rim.rgb, float3(1,1,1), pow(saturate(facing), 3.0) * 0.55 * specMul)
-                                   * (0.8 + 0.55 * hover);
-                float strokeA = saturate(stroke * rim.a * (0.65 + 0.45 * f01 + 0.55 * hover));
-                if (fTactical) strokeA *= 0.62 + 0.38 * hover;   // тонкая сдержанная кромка, при наведении светлеет
-
-                // --- Блик по кромке (двигается со светом) ---
-                float glintMask = saturate(1.0 - insidePx / 2.6) * cov;
-                float sp = pow(saturate(facing), 5.0) + 0.45 * pow(saturate(-facing), 7.0);
-                float glintA = (mode < 1.5) ? glintMask * sp * specMul * (0.55 + 0.5 * hover) : 0.0;
+                float3 strokeCol = rim.rgb * (0.9 + 0.4 * hover);
+                float strokeA = saturate(stroke * rim.a * (0.85 + 0.4 * hover));
+                if (fButton) strokeA *= 0.62 + 0.38 * hover;
+                if (mode < 0.5) strokeA *= 0.6;                      // у окон кромка тише — акцент даёт верхняя линия
 
                 // --- Композиция (premultiplied alpha) ---
                 float4 acc = float4(0, 0, 0, shA);
-                float4 g4 = float4(glowC * glowA, glowA * 0.6);
+                float4 g4 = float4(rim.rgb * glowA, glowA * 0.6);
                 acc = g4 + acc * (1.0 - g4.a);
                 float bA = bodyA * cov;
                 acc = float4(bodyCol * bA, bA) + acc * (1.0 - bA);
                 acc = float4(strokeCol * strokeA, strokeA) + acc * (1.0 - strokeA);
 
-                // Голо-стиль окон: световая полоса по верхней кромке с мягким отсветом вниз
-                // и редкий блик, раз в несколько секунд пробегающий по ней (у каждого окна — своя фаза)
-                if (mode < 0.5 && _LGHolo > 0.5)
+                // Окна: неоновая линия по верхнему краю (2 px) и лёгкий отсвет под ней
+                if (mode < 0.5 && b.x * pxPerUnit > 40.0)
                 {
-                    float3 lc = lerp(rim.rgb, float3(1, 1, 1), 0.35);
-                    float u = p.x / b.x;
-                    float topPx = (b.y - p.y) * pxPerUnit;
-                    float spread = 1.0 - smoothstep(0.30, 1.0, abs(u + 0.2));
-                    float strip = (1.0 - smoothstep(0.6, 1.8, abs(topPx - 1.0))) * spread;
-                    float seed = frac(b.x * 0.0137 + b.y * 0.0071);
-                    float gT = frac(_Time.y * 0.09 + seed);
-                    float gK = (u - lerp(-1.4, 1.4, gT)) / 0.12;
-                    float glint = exp(-gK * gK) * (1.0 - smoothstep(0.0, 2.5, topPx));
-                    float la = saturate((strip * 0.75 + glint) * cov * rim.a * 1.7);
+                    float3 lc = lerp(rim.rgb, float3(1, 1, 1), 0.15);
+                    float la = (1.0 - smoothstep(1.6, 2.6, topPx)) * cov * saturate(rim.a * 2.4);
                     acc = float4(lc * la, la) + acc * (1.0 - la);
-                    acc.rgb += lc * exp(-topPx / 26.0) * 0.07 * spread * cov * rim.a;
+                    acc.rgb += rim.rgb * exp(-topPx / 18.0) * 0.045 * cov * saturate(rim.a * 2.0);
                 }
-
-                // Голо-стиль: срезанные углы окон и кнопок светятся — яркая кромка среза и отсвет внутрь
-                if (mode < 1.5 && _LGHolo > 0.5 && !fTactical)
-                {
-                    float rMx = max(max(r4.x, r4.y), max(r4.z, r4.w));
-                    if (rMx < 0.9 * minB)
-                    {
-                        float4 rc4 = min(r4 * float4(0.0, 1.6, 1.6, 0.0), minB * 0.8);
-                        float rc = (p.x > 0.0) ? ((p.y > 0.0) ? rc4.x : rc4.y) : ((p.y > 0.0) ? rc4.z : rc4.w);
-                        if (rc * pxPerUnit > 3.0)
-                        {
-                            float2 a2 = abs(p);
-                            float cutPx = (a2.x + a2.y - (b.x + b.y - rc)) * 0.70710678 * pxPerUnit;   // 0 — на срезе, < 0 — внутри
-                            float k = (mode < 0.5 ? 1.0 : 0.6) * rim.a * 1.8;
-                            float ca = saturate((1.0 - smoothstep(0.0, 2.2, -cutPx)) * cov * k);
-                            float3 cc = lerp(rim.rgb, float3(1, 1, 1), 0.45);
-                            acc = float4(cc * ca, ca) + acc * (1.0 - ca);
-                            acc.rgb += rim.rgb * exp(-max(-cutPx, 0.0) / 7.0) * 0.14 * k * cov;
-                        }
-                    }
-                }
-
-                // Едва заметная развёртка по окнам — фактура голографического стекла
-                if (mode < 0.5 && _LGHolo > 0.5)
-                    acc.rgb *= 1.0 - 0.035 * cov * step(frac(IN.pos.y / 3.0), 0.34);
-
-                acc.rgb += glintA;
-                acc.a = saturate(acc.a + glintA * 0.4);
 
                 // Дизеринг — без ступенек на плавных градиентах тёмных панелей
                 float dz = frac(sin(dot(IN.pos.xy, float2(12.9898, 78.233))) * 43758.5453);
