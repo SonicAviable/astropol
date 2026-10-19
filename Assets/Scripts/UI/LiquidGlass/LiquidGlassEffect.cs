@@ -337,7 +337,8 @@ namespace StellarisClone.Rendering
         internal Vector4 ResolveRadii()
         {
             Rect r = rectTransform.rect;
-            float br = BaseRadius(ResolveRole(), r.width, r.height);
+            var role = ResolveRole();
+            float br = role == Role.Button ? ButtonRadius(r) : BaseRadius(role, r.width, r.height);
             return new Vector4(br, br, br, br);
         }
 
@@ -545,31 +546,43 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// «Приборная» кнопка вместо цветной заливки: тёмное тело, цвет кнопки — только акцент
-        /// (кромка, полоска слева, мягкая подсветка от левого края, светящиеся срезанные углы).
-        /// Цвет берётся из заливки, а если она нейтральная (серая/тёмная) — из цвета кромки.
+        /// Кнопка в стиле «Готово»: строгая капсула (у высоких плиток — скруглённый прямоугольник) без срезанных углов,
+        /// тёмное полупрозрачное тело и тонкая кромка. Цвет кнопки — только лёгкий оттенок тела и кромка,
+        /// никаких цветных заливок, полос и свечения. Цвет берётся из заливки, а если она нейтральная — из цвета кромки.
         /// </summary>
         private void TacticalButton(ref Style s, ref Color32 c32)
         {
             Color tint = c32;
             Color.RGBToHSV(tint, out float h, out float sat, out float val);
             bool neutral = sat < 0.25f || val < 0.16f;
-            float wash = 0.14f;
+            float wash = Mathf.Lerp(0.03f, 0.12f, Mathf.Clamp01(val * 1.4f));   // выбранные (более яркие) — чуть заметнее
             if (neutral && useRimOverride)
             {
                 Color.RGBToHSV(rimOverride, out float rh, out float rs, out float rv);
-                if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.06f : 0.03f; }
+                if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.05f : 0.025f; }
             }
-            // Сила кромки — как просили (выбранная кнопка ярче невыбранной), но в «приборных» пределах
-            float rimA = neutral ? 0.32f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.35f, 0.3f, 0.85f) : 0.8f;
-            Color accent = neutral ? new Color(0.60f, 0.84f, 0.90f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.9f), 1f);
-            Color body = Color.Lerp(new Color(0.014f, 0.032f, 0.045f), accent, neutral ? 0.03f : wash);
-            body.a = tint.a;
+            // Кромка — тонкая и сдержанная; выбранная кнопка (яркая кромка) заметнее невыбранной
+            float rimA = neutral ? 0.30f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
+            Color accent = neutral ? new Color(0.62f, 0.80f, 0.86f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
+            Color body = Color.Lerp(new Color(0.012f, 0.022f, 0.030f), accent, neutral ? 0f : wash);
+            body.a = Mathf.Min(tint.a, 0.72f);
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
             s.Fill = Mathf.Max(s.Fill, 0.92f);
-            s.Glow *= 0.35f;
+            s.Glow *= 0.15f;
+            s.Shadow *= 0.5f;
+            s.Border = 1f;
             s.Flags |= 8;
+
+            float rad = ButtonRadius(rectTransform.rect);
+            s.Radii = new Vector4(rad, rad, rad, rad);
+        }
+
+        /// <summary>Форма кнопки: невысокие — капсулы (квадратные — круги), высокие плитки — мягкий прямоугольник.</summary>
+        private static float ButtonRadius(Rect r)
+        {
+            float minS = Mathf.Min(r.width, r.height);
+            return r.height <= 52f ? minS * 0.5f : Mathf.Min(8f, minS * 0.5f);
         }
 
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }

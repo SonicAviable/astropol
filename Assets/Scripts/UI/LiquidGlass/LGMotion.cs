@@ -395,10 +395,10 @@ namespace StellarisClone.Rendering
         /// <summary>Озвучка: тихий «тик» при наведении, клик при нажатии, отказ — по неактивной кнопке.</summary>
         public bool sounds = true;
         public bool animateScale = true;
-        public float hoverScale = 1.022f;
+        public float hoverScale = 1f;      // без «пружинного» увеличения — кнопка отвечает светом кромки
         /// <summary>Длительность пробега блика по кнопке при наведении, с.</summary>
         public float sweepDuration = 0.55f;
-        public float pressScale = 0.98f;
+        public float pressScale = 0.985f;
 
         private LiquidGlassEffect _fx;
         private Selectable _selectable;

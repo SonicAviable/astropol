@@ -161,12 +161,12 @@ Shader "Astropolity/UI/LiquidGlass"
 
             // Скруглённый прямоугольник с разными радиусами (Inigo Quilez).
             // r = (TR, BR, TL, BL)
-            float SdRoundBox(float2 p, float2 b, float4 r)
+            float SdRoundBox(float2 p, float2 b, float4 r, bool noCut)
             {
                 // Голо-стиль: срезаны два угла (фаска 45°) — слева сверху и справа снизу; два других — острые.
                 // Круги и капсулы (радиус ≈ половине стороны) остаются круглыми.
                 float rMax = max(max(r.x, r.y), max(r.z, r.w));
-                bool chamfer = _LGHolo > 0.5 && rMax < 0.9 * min(b.x, b.y);
+                bool chamfer = !noCut && _LGHolo > 0.5 && rMax < 0.9 * min(b.x, b.y);
                 if (chamfer) r = min(r * float4(0.0, 1.6, 1.6, 0.0), min(b.x, b.y) * 0.8);
                 r.xy = (p.x > 0.0) ? r.xy : r.zw;
                 r.x  = (p.y > 0.0) ? r.x  : r.y;
@@ -233,14 +233,14 @@ Shader "Astropolity/UI/LiquidGlass"
                                         abs(ddx(suv.y)) + abs(ddy(suv.y)));
                 uvPerPx = max(uvPerPx, 1e-6);
 
-                float d = SdRoundBox(p, b, r4);
+                float d = SdRoundBox(p, b, r4, fTactical);
                 float cov = saturate(0.5 - d * pxPerUnit);
 
                 // --- Нормаль края (по сглаженному SDF) ---
                 float e = unitPx;
                 float4 rs = max(r4, minB * 0.45);
-                float2 n = float2(SdRoundBox(p + float2(e, 0), b, rs) - SdRoundBox(p - float2(e, 0), b, rs),
-                                  SdRoundBox(p + float2(0, e), b, rs) - SdRoundBox(p - float2(0, e), b, rs));
+                float2 n = float2(SdRoundBox(p + float2(e, 0), b, rs, fTactical) - SdRoundBox(p - float2(e, 0), b, rs, fTactical),
+                                  SdRoundBox(p + float2(0, e), b, rs, fTactical) - SdRoundBox(p - float2(0, e), b, rs, fTactical));
                 n /= max(length(n), 1e-5);
 
                 float band   = clamp(minB * 0.6, 3.0, 26.0);
@@ -295,18 +295,10 @@ Shader "Astropolity/UI/LiquidGlass"
 
                     if (fTactical)
                     {
-                        float tu = (p.x / b.x) * 0.5 + 0.5;          // 0 — левый край, 1 — правый
+                        // Кнопка: ровное тёмное тело, едва заметный свет сверху — без полос и подсветки сбоку
                         float tv = yN * 0.5 + 0.5;                   // 0 — низ, 1 — верх
-                        bodyCol = tint * (0.78 + 0.40 * tv);                                         // свет сверху
-                        bodyCol += rim.rgb * pow(saturate(1.0 - tu), 1.6) * (0.07 + 0.12 * hover);  // подсветка от левого края
-                        bodyCol += rim.rgb * pow(saturate(tv), 8.0) * 0.06;                          // блик верхней грани
-                        // Полоска-акцент слева — только у широких кнопок
-                        if (b.x > 24.0 && b.x > b.y * 1.6)
-                        {
-                            float lx = (p.x + b.x) * pxPerUnit;
-                            float barA = (smoothstep(2.0, 3.0, lx) - smoothstep(4.5, 5.5, lx)) * (1.0 - smoothstep(0.50, 0.62, abs(yN)));
-                            bodyCol = lerp(bodyCol, rim.rgb * 1.25, barA * saturate(rim.a * 1.4));
-                        }
+                        bodyCol = tint * (0.86 + 0.24 * tv);
+                        bodyCol += rim.rgb * pow(saturate(tv), 10.0) * 0.035;
                     }
                 }
                 else if (mode < 2.5)
@@ -362,13 +354,13 @@ Shader "Astropolity/UI/LiquidGlass"
                         float swK = (swU + swSkew - swPos) / 0.09;
                         float swBand = exp(-swK * swK);
                         float swFade = smoothstep(0.0, 0.12, swT) * (1.0 - smoothstep(0.85, 1.0, swT));
-                        bodyCol += lerp(float3(1,1,1), rim.rgb, 0.35) * swBand * swFade * 0.32 * cov;
+                        bodyCol += lerp(float3(1,1,1), rim.rgb, 0.35) * swBand * swFade * (fTactical ? 0.10 : 0.32) * cov;
                     }
                 }
 
                 // --- Тень ---
                 float2 so = float2(0.0, -shadowR * 0.32);
-                float sdS = SdRoundBox(p - so, b, r4);
+                float sdS = SdRoundBox(p - so, b, r4, fTactical);
                 float shA = shadow * 0.55 * (1.0 - smoothstep(-shadowR * 0.35, shadowR, sdS));
 
                 // --- Внешнее свечение ---
@@ -383,7 +375,7 @@ Shader "Astropolity/UI/LiquidGlass"
                 float3 strokeCol = lerp(rim.rgb, float3(1,1,1), pow(saturate(facing), 3.0) * 0.55 * specMul)
                                    * (0.8 + 0.55 * hover);
                 float strokeA = saturate(stroke * rim.a * (0.65 + 0.45 * f01 + 0.55 * hover));
-                if (fTactical) strokeA *= 0.55 + 0.45 * hover;   // кромка сдержанная, ярко горят срезанные углы
+                if (fTactical) strokeA *= 0.62 + 0.38 * hover;   // тонкая сдержанная кромка, при наведении светлеет
 
                 // --- Блик по кромке (двигается со светом) ---
                 float glintMask = saturate(1.0 - insidePx / 2.6) * cov;
@@ -417,7 +409,7 @@ Shader "Astropolity/UI/LiquidGlass"
                 }
 
                 // Голо-стиль: срезанные углы окон и кнопок светятся — яркая кромка среза и отсвет внутрь
-                if (mode < 1.5 && _LGHolo > 0.5)
+                if (mode < 1.5 && _LGHolo > 0.5 && !fTactical)
                 {
                     float rMx = max(max(r4.x, r4.y), max(r4.z, r4.w));
                     if (rMx < 0.9 * minB)
