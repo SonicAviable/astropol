@@ -169,10 +169,14 @@ $@"ASTROPOLITY ДЛЯ MAC
   3. Внизу будет строка про Astropolity — нажмите «Всё равно открыть» и подтвердите паролем.
   (На macOS 14 и старше можно проще: правый щелчок по игре → «Открыть» → «Открыть».)
 
-ЕСЛИ НЕ ЗАПУСКАЕТСЯ («программа повреждена» или ничего не происходит)
-  В Терминале:
+ЕСЛИ НЕ ЗАПУСКАЕТСЯ («Не удаётся открыть программу», «программа повреждена» или ничего не происходит)
+  В Терминале, по одной строке:
     xattr -cr /Applications/Astropolity.app
     chmod +x /Applications/Astropolity.app/Contents/MacOS/*
+    codesign --force --deep --sign - /Applications/Astropolity.app
+  Последняя строка заново подписывает игру «локально» — подпись, собранная на Windows, macOS не устраивает.
+  Если всё равно не открывается, запустите напрямую — Терминал покажет причину:
+    /Applications/Astropolity.app/Contents/MacOS/Astropolity
 
 ГДЕ СОХРАНЕНИЯ
   ~/Library/Application Support/{PlayerSettings.companyName}/{AppName}/Saves
