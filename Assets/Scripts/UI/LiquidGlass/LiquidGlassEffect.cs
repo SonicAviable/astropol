@@ -37,6 +37,8 @@ namespace StellarisClone.Rendering
         [SerializeField] private bool forceHairline;
 
         private float _hover;
+        private static int s_LabelStagger;
+        private int _labelCheck = (s_LabelStagger++ & 31);   // раз в ~30 кадров кнопка проверяет свои подписи (проверки разнесены по кадрам)
         private int _sweepQ;   // 0 — блика нет, 1..63 — положение полосы блика (пробегает по кнопке при наведении)
         private float _pulse;
         private Image _image;
@@ -209,6 +211,13 @@ namespace StellarisClone.Rendering
             {
                 enabled = false;
                 return;
+            }
+
+            // Подписи простых кнопок — в общем стиле (заглавные, жирные, с разрядкой)
+            if (--_labelCheck <= 0)
+            {
+                _labelCheck = 30;
+                if (ResolveRole() == Role.Button) LGButtonLabel.Apply(this);
             }
 
             if (_outline != null)
