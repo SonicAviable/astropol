@@ -237,7 +237,17 @@ namespace StellarisClone.Rendering
 
         private Role ResolveRole()
         {
-            if (role != Role.Auto) return role;
+            if (role != Role.Auto)
+            {
+                // Нажимаемые плашки, чипы и вкладки выглядят как кнопки — один вид для всего, что нажимается
+                if (role == Role.Platter || role == Role.Chip || role == Role.Header)
+                {
+                    CacheComponents();
+                    if ((_selectable is Button || _selectable is Toggle) && graphic != null && graphic.color.a >= 0.05f)
+                        return Role.Button;
+                }
+                return role;
+            }
 
             var rt = rectTransform;
             Rect r = rt.rect;
@@ -578,11 +588,11 @@ namespace StellarisClone.Rendering
             s.Radii = new Vector4(rad, rad, rad, rad);
         }
 
-        /// <summary>Форма кнопки: невысокие — капсулы (квадратные — круги), высокие плитки — мягкий прямоугольник.</summary>
+        /// <summary>Форма кнопки: невысокие (до 60 px, включая строки списков) — капсулы, квадратные — круги, высокие плитки — мягкий прямоугольник.</summary>
         private static float ButtonRadius(Rect r)
         {
             float minS = Mathf.Min(r.width, r.height);
-            return r.height <= 52f ? minS * 0.5f : Mathf.Min(8f, minS * 0.5f);
+            return r.height <= 60f ? minS * 0.5f : Mathf.Min(8f, minS * 0.5f);
         }
 
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }
