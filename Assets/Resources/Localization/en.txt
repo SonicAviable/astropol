@@ -4967,3 +4967,28 @@ VK Play: всё синхронизировано	VK Play: fully synced
 не получено	locked
 СТАРТОВЫЕ ЦЕЛИ	STARTING GOALS
 Щелчок — показать, с чего начать	Click to see where to start
+1 империя	1 empire
+2 империи	2 empires
+3 империи	3 empires
+4 империи	4 empires
+Слева под меню — директивы: первые задачи империи. Они подскажут, чем заняться в первые годы; за каждую — награда. Щелчок по карточке покажет, с чего начать.	Directives sit under the menu on the left: your empire's first tasks. They suggest what to do in the early years, and each one gives a reward. Click the card to see where to start.
+Соперники	Rivals
+Сколько империй ИИ делят с вами галактику	How many AI empires share the galaxy with you
+Доходы и агрессивность соседних империй	Income and aggression of neighbouring empires
+<b><color=#E8F6FA>Пути к победе</color></b>	<b><color=#E8F6FA>Paths to victory</color></b>
+<color=#4DF2DB>форпосты в {0} системах</color>   ·   <color=#5CF599>{1} технологий и «Вознесение»</color>	<color=#4DF2DB>outposts in {0} systems</color>   ·   <color=#5CF599>{1} technologies and "Ascension"</color>
+<color=#7FD8FF>экономика или совет галактики</color>   ·   <color=#FFCC52>больше всех очков в {0} году</color>	<color=#7FD8FF>economy or the galactic council</color>   ·   <color=#FFCC52>the highest score in {0}</color>
+Форпосты в {0} / {1} / {2} системах (малая / средняя / большая галактика). Удержите порог {3} мес.	Outposts in {0} / {1} / {2} systems (small / medium / large galaxy). Hold the threshold for {3} months.
+Изучите {0} технологий и завершите проект «Вознесение».	Research {0} technologies and complete the Ascension project.
+Экономическая	Economic
+Держите {0:0}% продукта всей галактики {1} {2} подряд.	Hold {0:0}% of the whole galaxy's output for {1} {2} in a row.
+Дипломатическая	Diplomatic
+Соберите две трети голосов галактического совета. Заседания — с {0} года.	Win two thirds of the galactic council's votes. Sessions start in {0}.
+Обгоните соперников по системам, населению, науке и флоту. Соперники тоже могут победить.	Outscore your rivals in systems, population, science and fleet. Rivals can win too.
+ДИРЕКТИВЫ	DIRECTIVES
+Свернуть или развернуть директивы	Collapse or expand directives
+ДИРЕКТИВЫ · {0}/{1}	DIRECTIVES · {0}/{1}
+Директива выполнена	Directive complete
+Глава I завершена	Chapter I complete
+Все директивы выполнены	All directives complete
+ДИРЕКТИВЫ · {0}/{0}	DIRECTIVES · {0}/{0}

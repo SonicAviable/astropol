@@ -13,7 +13,7 @@ namespace StellarisClone.Core
     ///   • Прогресс считается по состоянию империи, поэтому переживает сохранение и загрузку без отдельных данных.
     ///   • Награда — только за цель, выполненную на глазах у игрока: после загрузки уже выполненные цели
     ///     засчитываются молча, повторно ничего не выдаётся.
-    ///   • Показываются первыми тремя невыполненными в «Планировщике» справа; пока идёт обучение — скрыты.
+    ///   • Показываются карточкой «Директивы» слева под меню (StarterGoalsPanel); пока идёт обучение — скрыты.
     /// </summary>
     public static class StarterGoals
     {
@@ -22,6 +22,8 @@ namespace StellarisClone.Core
             public string Id;
             public LGIcon Icon;
             public string Title, Hint, RewardText;
+            public LGIcon RewardIcon;
+            public int RewardAmount;
             public int Target;
             public Func<int> Current;
             public Action Reward;
@@ -60,12 +62,26 @@ namespace StellarisClone.Core
 
         public static bool AllDone => DoneCount >= Goals.Count;
 
-        /// <summary>Показывать ли цели сейчас (партия идёт, обучение не на экране, не всё выполнено).</summary>
+        /// <summary>Показывать ли директивы сейчас (партия идёт, обучение не на экране, не всё выполнено).</summary>
         public static bool Visible =>
             UIManager.IsGameStarted && s_primed && !AllDone
             && (TutorialManager.Instance == null || !TutorialManager.Instance.IsActive);
 
-        /// <summary>Первые невыполненные цели — их и видит игрок.</summary>
+        /// <summary>Номер цели в списке (с нуля).</summary>
+        public static int IndexOf(Goal g)
+        {
+            var l = Goals;
+            for (int i = 0; i < l.Count; i++) if (l[i] == g) return i;
+            return -1;
+        }
+
+        /// <summary>Текущая (первая невыполненная) цель или null.</summary>
+        public static Goal Current
+        {
+            get { foreach (var g in Goals) if (!g.Done) return g; return null; }
+        }
+
+        /// <summary>Первые невыполненные цели.</summary>
         public static List<Goal> Active()
         {
             var l = new List<Goal>(VisibleCount);
@@ -111,7 +127,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Разведайте 5 систем"),
                 Hint = Loc.T("Научный корабль: ПКМ по серой системе. Кнопка авторазведки на панели флота ищет цели сама."),
                 Current = SurveyedCount,
-                RewardText = Loc.T("+50 гелия-3"), Reward = () => Give(energy: 50f),
+                RewardText = Loc.T("+50 гелия-3"), RewardIcon = LGIcon.Energy, RewardAmount = 50, Reward = () => Give(energy: 50f),
                 Show = () => SelectFirst(FleetType.Science)
             });
             l.Add(new Goal
@@ -120,7 +136,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Постройте 2 форпоста"),
                 Hint = Loc.T("Строительный корабль: ПКМ по изученной системе рядом с границей. Форпост стоит титан и 2 гелия-3 в месяц."),
                 Current = () => EmpireStats.SystemCount(0) - 1,
-                RewardText = Loc.T("+75 титана"), Reward = () => Give(minerals: 75f),
+                RewardText = Loc.T("+75 титана"), RewardIcon = LGIcon.Minerals, RewardAmount = 75, Reward = () => Give(minerals: 75f),
                 Show = () => SelectFirst(FleetType.Constructor)
             });
             l.Add(new Goal
@@ -129,7 +145,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Завершите 2 исследования"),
                 Hint = Loc.T("Технологии — клавиша T. В каждом слоте выберите направление: физика, общество или инженерия."),
                 Current = () => TechnologyManager.Instance != null ? TechnologyManager.Instance.ResearchedCount : 0,
-                RewardText = Loc.T("+50 гелия-3"), Reward = () => Give(energy: 50f),
+                RewardText = Loc.T("+50 гелия-3"), RewardIcon = LGIcon.Energy, RewardAmount = 50, Reward = () => Give(energy: 50f),
                 Show = () => UIManager.Instance?.OpenNavWindow(UIManager.NavWindow.Tech)
             });
             l.Add(new Goal
@@ -138,7 +154,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Основайте вторую колонию"),
                 Hint = Loc.T("Войдите в свою систему с пригодной планетой (двойной клик по звезде) и нажмите «Основать колонию»."),
                 Current = () => EmpireStats.Colonies(0) - 1,
-                RewardText = Loc.T("+100 титана"), Reward = () => Give(minerals: 100f),
+                RewardText = Loc.T("+100 титана"), RewardIcon = LGIcon.Minerals, RewardAmount = 100, Reward = () => Give(minerals: 100f),
                 Show = ShowColonyTarget
             });
             l.Add(new Goal
@@ -147,7 +163,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Соберите 3 военных корабля"),
                 Hint = Loc.T("Корабли строятся на верфи столицы. Без флота соседи сочтут вас лёгкой добычей."),
                 Current = () => MilitaryShips(),
-                RewardText = Loc.T("+50 сплавов"), Reward = () => Give(alloys: 50f),
+                RewardText = Loc.T("+50 сплавов"), RewardIcon = LGIcon.Alloys, RewardAmount = 50, Reward = () => Give(alloys: 50f),
                 Show = () => ShipyardWindow.Instance?.Open()
             });
             l.Add(new Goal
@@ -156,7 +172,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Встретьте соседнюю цивилизацию"),
                 Hint = Loc.T("Продолжайте разведку: соседи откроются, когда ваши корабли или границы их найдут."),
                 Current = MetCount,
-                RewardText = Loc.T("+25 влияния"), Reward = () => Give(influence: 25f),
+                RewardText = Loc.T("+25 влияния"), RewardIcon = LGIcon.Influence, RewardAmount = 25, Reward = () => Give(influence: 25f),
                 Show = () => SelectFirst(FleetType.Science)
             });
             l.Add(new Goal
@@ -165,7 +181,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Примите закон империи"),
                 Hint = Loc.F("Законы — клавиша L. Смена закона стоит {0:0} влияния и даёт постоянный бонус.", EmpireLaws.SwitchCost),
                 Current = () => HasLaw() ? 1 : 0,
-                RewardText = Loc.T("+25 влияния"), Reward = () => Give(influence: 25f),
+                RewardText = Loc.T("+25 влияния"), RewardIcon = LGIcon.Influence, RewardAmount = 25, Reward = () => Give(influence: 25f),
                 Show = () => UIManager.Instance?.OpenNavWindow(UIManager.NavWindow.Laws)
             });
             l.Add(new Goal
@@ -174,7 +190,7 @@ namespace StellarisClone.Core
                 Title = Loc.T("Создайте свой проект корабля"),
                 Hint = Loc.T("Конструктор — клавиша N. Подберите оружие и защиту под соседей и сохраните проект."),
                 Current = () => s_designed || (ShipDesignManager.Instance != null && ShipDesignManager.Instance.SavedDesigns.Count >= 2) ? 1 : 0,
-                RewardText = Loc.T("+50 сплавов"), Reward = () => Give(alloys: 50f),
+                RewardText = Loc.T("+50 сплавов"), RewardIcon = LGIcon.Alloys, RewardAmount = 50, Reward = () => Give(alloys: 50f),
                 Show = () => UIManager.Instance?.OpenNavWindow(UIManager.NavWindow.Designer)
             });
             return l;
@@ -333,12 +349,13 @@ namespace StellarisClone.Core
             foreach (var g in StarterGoals.Evaluate())
             {
                 g.Reward?.Invoke();
-                NotificationCenter.Show(Loc.F("Цель выполнена: {0}", g.Title), Loc.F("Награда: {0}", g.RewardText), NotificationCenter.Kind.Success, 6f);
+                if (!StarterGoalsPanel.Celebrate(g))
+                    NotificationCenter.Show(Loc.F("Цель выполнена: {0}", g.Title), Loc.F("Награда: {0}", g.RewardText), NotificationCenter.Kind.Success, 6f);
             }
             if (StarterGoals.AllDone && !_announcedDone)
             {
                 _announcedDone = true;
-                if (StarterGoals.DoneCount > 0 && running)
+                if (StarterGoals.DoneCount > 0 && running && !StarterGoalsPanel.Showing)
                     NotificationCenter.Show(Loc.T("Стартовые цели выполнены"),
                         Loc.T("Империя встала на ноги. Дальше — путь к победе: клавиша V покажет, как близко каждая из них."), NotificationCenter.Kind.Success, 9f);
             }
@@ -350,7 +367,7 @@ namespace StellarisClone.Core
         {
             var eco = EconomyManager.Instance;
 
-            if (StarterGoals.Visible && Hint("goals", Loc.T("Справа в «Планировщике» — стартовые цели. Они подскажут, чем заняться в первые годы; за каждую — небольшая награда. Кнопка у цели покажет, с чего начать.")))
+            if (StarterGoals.Visible && Hint("goals", Loc.T("Слева под меню — директивы: первые задачи империи. Они подскажут, чем заняться в первые годы; за каждую — награда. Щелчок по карточке покажет, с чего начать.")))
                 return;
             if (_slowSpeedTime > 150f && Hint("speed", Loc.T("Если ждать скучно — ускорьте время клавишами 2 и 3. Пробел ставит паузу: на ней удобно отдавать приказы.")))
                 return;

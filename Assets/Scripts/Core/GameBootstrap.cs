@@ -124,7 +124,9 @@ namespace StellarisClone.Core
         {
             AIEmpireManager.All.RemoveAll(a => a == null);   // объекты прошлой сцены уже уничтожены
             if (AIEmpireManager.All.Count > 0) return;
-            for (int owner = 1; owner <= AIEmpireManager.RivalCount; owner++)
+            // Новая партия — столько соперников, сколько выбрано; при загрузке — все, лишних уберёт сохранение
+            int rivals = GameSession.IsLoading ? AIEmpireManager.RivalCount : GameSession.Settings.RivalCount;
+            for (int owner = 1; owner <= rivals; owner++)
             {
                 var go = new GameObject($"[Managers] AIEmpire {owner}");
                 go.AddComponent<AIEmpireManager>().Configure(owner);

@@ -17,7 +17,7 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager : MonoBehaviour
     {
-        /// <summary>Сколько империй-соперников в партии (вместе с игроком — пять, все фракции).</summary>
+        /// <summary>Наибольшее число империй-соперников (вместе с игроком — пять, все фракции). Сколько в партии — NewGameSettings.Rivals.</summary>
         public const int RivalCount = 4;
 
         /// <summary>Все империи ИИ, по возрастанию номера владельца (1, 2, …).</summary>

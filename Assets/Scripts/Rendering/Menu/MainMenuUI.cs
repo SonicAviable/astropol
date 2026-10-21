@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
 
         private enum Panel { None, NewGame, Load, Settings, About }
 
-        public static string Version => "v1.5 · " + Loc.T("ранний доступ");
+        public static string Version => "v1.6 · " + Loc.T("ранний доступ");
 
         private RectTransform _root;
         private RectTransform _window, _body;
@@ -511,7 +511,9 @@ namespace StellarisClone.Rendering
 
             y += 6f;
             y = LGControls.Section(left, y, Loc.T("ПАРТИЯ"), LGIcon.Leader);
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Сложность"), Loc.T("Доходы и агрессивность соседней империи"), 270f),
+            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Соперники"), Loc.T("Сколько империй ИИ делят с вами галактику"), 270f),
+                NewGameSettings.RivalNames, _ng.RivalCount - 1, i => { _ng.Rivals = i + 1; RefreshNewGame(); });
+            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Сложность"), Loc.T("Доходы и агрессивность соседних империй"), 270f),
                 NewGameSettings.DifficultyNames, _ng.Difficulty, i => { _ng.Difficulty = i; RefreshNewGame(); });
             LGControls.Switch(LGControls.Row(left, ref y, Loc.T("Обучение"), Loc.T("Пошаговые подсказки советника в начале"), 270f),
                 _ng.Tutorial, v => _ng.Tutorial = v);
@@ -554,10 +556,9 @@ namespace StellarisClone.Rendering
             if (_preview != null) _preview.Show(_ng);
             if (_ngGoals != null)
                 _ngGoals.text =
-                    Loc.T("<b><color=#E8F6FA>Пути к победе</color></b>   ") +
-                    Loc.F("<color=#4DF2DB>форпосты в {0} системах</color>  ·  ", _ng.DominationTarget) +
-                    Loc.F("<color=#5CF599>{0} технологий и «Вознесение»</color>  ·  <color=#7FD8FF>экономика и совет</color>  ·  ", VictoryManager.ScienceTarget) +
-                    Loc.F("<color=#FFCC52>больше очков, чем у каждого соперника, в {0} году</color>", VictoryManager.EndYear);
+                    Loc.T("<b><color=#E8F6FA>Пути к победе</color></b>") + "\n" +
+                    Loc.F("<color=#4DF2DB>форпосты в {0} системах</color>   ·   <color=#5CF599>{1} технологий и «Вознесение»</color>", _ng.DominationTarget, VictoryManager.ScienceTarget) + "\n" +
+                    Loc.F("<color=#7FD8FF>экономика или совет галактики</color>   ·   <color=#FFCC52>больше всех очков в {0} году</color>", VictoryManager.EndYear);
         }
 
         // ================================================================ Об игре
@@ -581,14 +582,24 @@ namespace StellarisClone.Rendering
             var right = LGBuild.Rect(page, "Side");
             right.Column(0.54f, 1f, 14, 0);
             float ry = LGControls.Section(right, 0f, Loc.T("ПУТИ К ПОБЕДЕ"), LGIcon.Trophy);
-            Goal(right, ref ry, LGIcon.Starbase, Loc.T("Доминирование"), Loc.T("Форпосты в 47 / 83 / 127 системах (по размеру галактики) — удерживайте порог год"), UIManager.DS.NeonCyan);
-            Goal(right, ref ry, LGIcon.Research, Loc.T("Технологическая"), Loc.F("Изучите {0} технологий и «Вознесение» · экономическая — {1:0}% продукта галактики {2} года · дипломатическая — 2/3 голосов совета", VictoryManager.ScienceTarget, VictoryManager.EconomyShare * 100f, VictoryManager.EconomyMonths / 12), UIManager.DS.Green);
-            Goal(right, ref ry, LGIcon.Trophy, Loc.F("Очки в {0} году", VictoryManager.EndYear), Loc.T("Обгоните соперников по системам, населению, науке и флоту. Соперники тоже могут победить — наукой, экспансией или экономикой"), UIManager.DS.Gold);
+            int[] dom = new int[3];
+            for (int i = 0; i < 3; i++) dom[i] = new NewGameSettings { GalaxySize = i }.DominationTarget;
+            int econYears = VictoryManager.EconomyMonths / 12;
+            Goal(right, ref ry, LGIcon.Starbase, Loc.T("Доминирование"),
+                 Loc.F("Форпосты в {0} / {1} / {2} системах (малая / средняя / большая галактика). Удержите порог {3} мес.", dom[0], dom[1], dom[2], VictoryManager.DominationHoldMonths), UIManager.DS.NeonCyan);
+            Goal(right, ref ry, LGIcon.Research, Loc.T("Научная"),
+                 Loc.F("Изучите {0} технологий и завершите проект «Вознесение».", VictoryManager.ScienceTarget), UIManager.DS.Green);
+            Goal(right, ref ry, LGIcon.Energy, Loc.T("Экономическая"),
+                 Loc.F("Держите {0:0}% продукта всей галактики {1} {2} подряд.", VictoryManager.EconomyShare * 100f, econYears, VictoryManager.YearsWord(econYears)), new Color(1f, 0.78f, 0.36f));
+            Goal(right, ref ry, LGIcon.Diplomacy, Loc.T("Дипломатическая"),
+                 Loc.F("Соберите две трети голосов галактического совета. Заседания — с {0} года.", VictoryManager.CouncilFirstYear), new Color(0.50f, 0.85f, 1f));
+            Goal(right, ref ry, LGIcon.Trophy, Loc.F("Очки в {0} году", VictoryManager.EndYear),
+                 Loc.T("Обгоните соперников по системам, населению, науке и флоту. Соперники тоже могут победить."), UIManager.DS.Gold);
 
             ry += 6f;
             ry = LGControls.Section(right, ry, Loc.T("УПРАВЛЕНИЕ"), LGIcon.Menu);
             var keys = LGBuild.Panel(right, "Keys", new Color(0.05f, 0.10f, 0.135f, 0.55f));
-            keys.rectTransform.TopBand(ry, 176);
+            keys.rectTransform.TopBand(ry, 128);
             LG.Platter(keys.gameObject, 16f).GlowMultiplier = 0f;
             var kt = LGBuild.Label(keys.transform,
                 Loc.T("<color=#4DF2DB><b>ЛКМ</b></color>  выбор      <color=#4DF2DB><b>ПКМ</b></color>  приказ флоту\n") +
@@ -597,10 +608,10 @@ namespace StellarisClone.Rendering
                 Loc.T("<color=#4DF2DB><b>F5 / F9</b></color>  быстрое сохранение / загрузка\n") +
                 Loc.T("<color=#4DF2DB><b>Esc</b></color>  меню паузы"),
                 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            kt.rectTransform.Stretch(18, 12, 14, 14);
-            kt.lineSpacing = 1.45f;
+            kt.rectTransform.Stretch(18, 8, 14, 10);
+            kt.lineSpacing = 1.25f;
 
-            var credits = LGBuild.Label(page, Loc.F("ASTROPOLITY  {0}   ·   Unity 6 · URP   ·   шрифт Play (SIL Open Font License)", Version),
+            var credits = LGBuild.Label(page, "ASTROPOLITY  " + Version,
                                         10, UIManager.DS.TextMuted, TextAnchor.LowerRight);
             credits.rectTransform.Stretch(0, -18, 0, 0);
         }
@@ -630,17 +641,20 @@ namespace StellarisClone.Rendering
         private static void Goal(RectTransform parent, ref float y, LGIcon icon, string title, string body, Color col)
         {
             var row = LGBuild.Panel(parent, "Goal", new Color(0.05f, 0.10f, 0.135f, 0.55f));
-            row.rectTransform.TopBand(y, 64);
+            row.rectTransform.TopBand(y, 60);
             var fx = LG.Platter(row.gameObject, 16f);
             fx.GlowMultiplier = 0f;
             fx.SetRim(new Color(col.r, col.g, col.b, 0.3f));
             var ic = LGIcons.Create(row.transform, icon, 24, col);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(24, 24));
             var text = LGBuild.Rect(row.transform, "Text");
-            text.Stretch(58, 10, 14, 10);
-            LGBuild.Label(text, title, 14, col, TextAnchor.UpperLeft, bold: true);
-            LGBuild.Label(text, body, 11, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
-            y += 72f;
+            text.Stretch(58, 6, 14, 7);
+            LGBuild.Label(text, title, 13, col, TextAnchor.UpperLeft, bold: true);
+            var b = LGBuild.Label(text, body, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, wrap: true);
+            b.rectTransform.offsetMax = new Vector2(0, -18);
+            b.verticalOverflow = VerticalWrapMode.Truncate;
+            b.lineSpacing = 1.05f;
+            y += 66f;
         }
 
         // ================================================================ Подвал
@@ -927,7 +941,7 @@ namespace StellarisClone.Rendering
             // Столица игрока — система 0; столицы соперников — как в игре: каждая следующая
             // максимально далека от ближайшей уже занятой столицы
             var caps = new List<int> { 0 };
-            for (int r = 0; r < AIEmpireManager.RivalCount; r++)
+            for (int r = 0; r < s.RivalCount; r++)
             {
                 int best = -1;
                 float far = -1f;

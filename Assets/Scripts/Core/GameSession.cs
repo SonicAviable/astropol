@@ -13,9 +13,11 @@ namespace StellarisClone.Core
         public int Seed;
         public bool Tutorial = true;
         public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
+        public int Rivals = AIEmpireManager.RivalCount;   // империй ИИ (1…4); в старых сохранениях поля нет — будет 4
 
         public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
         public static readonly string[] DifficultyNames = { Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная") };
+        public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи") };
         public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
         // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя
@@ -31,6 +33,9 @@ namespace StellarisClone.Core
         public float AIAggression => Difficulty == 0 ? 0.6f : Difficulty == 2 ? 1.5f : 1f;
         /// <summary>Множитель стартовых ресурсов игрока.</summary>
         public float PlayerStart => Difficulty == 0 ? 1.3f : Difficulty == 2 ? 0.85f : 1f;
+
+        /// <summary>Сколько соперников реально в партии (1…максимум).</summary>
+        public int RivalCount => Mathf.Clamp(Rivals, 1, AIEmpireManager.RivalCount);
 
         public NewGameSettings Clone() => (NewGameSettings)MemberwiseClone();
 
