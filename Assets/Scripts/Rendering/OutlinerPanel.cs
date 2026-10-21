@@ -18,7 +18,8 @@ namespace StellarisClone.Rendering
     /// </summary>
     public class OutlinerPanel : MonoBehaviour
     {
-        private const float Width = 300f, Top = 66f, Bottom = 284f, RowH = 42f, HeadH = 32f;
+        // Сверху — на одном уровне с портретом правителя (панель ресурсов по центру до правого края не доходит)
+        private const float Width = 300f, Top = 10f, Bottom = 284f, RowH = 42f, HeadH = 32f;
 
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
