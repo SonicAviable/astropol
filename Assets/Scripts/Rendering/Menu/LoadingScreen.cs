@@ -23,6 +23,10 @@ namespace StellarisClone.Rendering
 
         private CanvasGroup _group;
         private RectTransform _artRt;
+        private RawImage _art;
+        private AspectRatioFitter _artFit;
+        private static readonly System.Collections.Generic.List<Texture2D> s_arts = new System.Collections.Generic.List<Texture2D>();
+        private static int s_lastArt = -1;
         private Text _subtitle, _stage, _percent, _tip, _detail;
         private RectTransform _barFill, _barHead, _spinner;
         private CanvasGroup _tipGroup;
@@ -129,14 +133,16 @@ namespace StellarisClone.Rendering
             var black = NewImage(root, "Black", new Color(0.01f, 0.015f, 0.03f, 1f));
             Stretch(black.rectTransform);
 
-            var tex = Resources.Load<Texture2D>("UI/LoadingArt");
+            var tex = PickArt();
             var art = new GameObject("Art").AddComponent<RawImage>();
+            _art = art;
             art.transform.SetParent(root, false);
             art.texture = tex;
             art.raycastTarget = false;
             _artRt = art.rectTransform;
             _artRt.anchorMin = _artRt.anchorMax = new Vector2(0.5f, 0.5f);
             var fitter = art.gameObject.AddComponent<AspectRatioFitter>();
+            _artFit = fitter;
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             fitter.aspectRatio = tex != null ? tex.width / (float)tex.height : 16f / 9f;
             if (tex == null) art.color = new Color(0.02f, 0.05f, 0.09f);
@@ -242,6 +248,13 @@ namespace StellarisClone.Rendering
             _tipTimer = 0f;
             _group.blocksRaycasts = true;
             _artRt.localScale = Vector3.one;
+            var tex = PickArt();
+            if (tex != null && _art != null)
+            {
+                _art.texture = tex;
+                _art.color = Color.white;
+                _artFit.aspectRatio = tex.width / (float)tex.height;
+            }
             _subtitle.text = Subtitle(kind);
             _detail.text = "";
             _gen = null;
@@ -253,6 +266,28 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Подписи этапов: сменяются по ходу полосы.</summary>
+        /// <summary>
+        /// Арт экрана загрузки: случайный из UI/LoadingArt и UI/LoadingArt_2…_9, не повторяя прошлый.
+        /// </summary>
+        private static Texture2D PickArt()
+        {
+            if (s_arts.Count == 0)
+            {
+                var first = Resources.Load<Texture2D>("UI/LoadingArt");
+                if (first != null) s_arts.Add(first);
+                for (int i = 2; i <= 9; i++)
+                {
+                    var t = Resources.Load<Texture2D>("UI/LoadingArt_" + i);
+                    if (t != null) s_arts.Add(t);
+                }
+            }
+            if (s_arts.Count == 0) return null;
+            int idx = UnityEngine.Random.Range(0, s_arts.Count);
+            if (s_arts.Count > 1 && idx == s_lastArt) idx = (idx + 1) % s_arts.Count;
+            s_lastArt = idx;
+            return s_arts[idx];
+        }
+
         private static string[] StagesFor(Kind kind) => kind switch
         {
             Kind.NewGame => new[]
