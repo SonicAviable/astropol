@@ -21,7 +21,7 @@ namespace StellarisClone.Rendering
     {
         public static StarterGoalsPanel Instance { get; private set; }
 
-        private const float W = 268f, HeadH = 28f, BodyH = 130f, Gap = 8f, MinimapReserve = 322f;
+        private const float W = 268f, CollapsedW = 96f, HeadH = 28f, BodyH = 130f, Gap = 8f, MinimapReserve = 322f;
 
         private static readonly Color Gold = new Color(1f, 0.82f, 0.38f);
         private static readonly Color Cyan = new Color(0.36f, 0.95f, 0.88f);
@@ -112,6 +112,7 @@ namespace StellarisClone.Rendering
 
             // сегменты главы
             var segHost = LGBuild.Rect(head.transform, "Segments");
+            _segHost = segHost.gameObject;
             segHost.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-26, 0), new Vector2(104, 6));
             int n = StarterGoals.Goals.Count;
             float sw = (104f - (n - 1) * 3f) / Mathf.Max(1, n);
@@ -148,6 +149,7 @@ namespace StellarisClone.Rendering
                 ApplyCollapsed();
             };
             TooltipHelper.Attach(head.gameObject, Loc.T("Свернуть или развернуть директивы"));
+            _headTip = head.GetComponent<TooltipTrigger>();
         }
 
         private void BuildBody()
@@ -254,13 +256,18 @@ namespace StellarisClone.Rendering
             _bodyTip = body.gameObject;
         }
 
-        private GameObject _bodyTip;
+        private GameObject _bodyTip, _segHost;
+        private TooltipTrigger _headTip;
 
         private void ApplyCollapsed()
         {
             _body.gameObject.SetActive(!_collapsed);
             _chev.text = _collapsed ? "▾" : "▴";
-            _root.sizeDelta = new Vector2(W, _collapsed ? HeadH : HeadH + 4f + BodyH);
+            // Свёрнуто — маленькая плашка «⌖ 1/8 ▾»: без названия и сегментов
+            _segHost.SetActive(!_collapsed);
+            _chapter.rectTransform.offsetMax = new Vector2(_collapsed ? -20f : -120f, 0f);
+            _root.sizeDelta = new Vector2(_collapsed ? CollapsedW : W, _collapsed ? HeadH : HeadH + 4f + BodyH);
+            SetChapter(StarterGoals.DoneCount);
             _layoutTimer = 0f;
         }
 
@@ -311,10 +318,13 @@ namespace StellarisClone.Rendering
         private void Refresh()
         {
             var g = StarterGoals.Current;
-            int done = StarterGoals.DoneCount;
-            int total = StarterGoals.Goals.Count;
-            _chapter.text = Loc.F("ДИРЕКТИВЫ · {0}/{1}", done, total);
+            SetChapter(StarterGoals.DoneCount);
             if (g == null) return;
+            if (_headTip != null)
+            {
+                string tip = _collapsed ? Loc.F("<b>{0}</b>\nЩелчок — развернуть директивы", g.Title) : Loc.T("Свернуть или развернуть директивы");
+                if (_headTip.text != tip) _headTip.SetText(tip);
+            }
 
             int cur = Mathf.Min(StarterGoals.SafeCurrent(g), g.Target);
             if (g != _shown)
@@ -345,6 +355,13 @@ namespace StellarisClone.Rendering
             _fill.parent.gameObject.SetActive(true);
             _count.enabled = true;
             TooltipHelper.Attach(_bodyTip, $"<b>{g.Title}</b>\n{g.Hint}\n\n<color=#8AA2A8>" + Loc.T("Щелчок — показать, с чего начать") + "</color>");
+        }
+
+        private void SetChapter(int done)
+        {
+            int total = StarterGoals.Goals.Count;
+            string t = _collapsed ? $"{done}/{total}" : Loc.F("ДИРЕКТИВЫ · {0}/{1}", done, total);
+            if (_chapter.text != t) _chapter.text = t;
         }
 
         // ================================================================ Выполнение
@@ -474,7 +491,7 @@ namespace StellarisClone.Rendering
             _rewardIcon.enabled = false;
             _fill.parent.gameObject.SetActive(false);
             _count.enabled = false;
-            _chapter.text = Loc.F("ДИРЕКТИВЫ · {0}/{0}", StarterGoals.Goals.Count);
+            SetChapter(StarterGoals.Goals.Count);
             SFXManager.Play(Sfx.NotifySuccess);
         }
     }

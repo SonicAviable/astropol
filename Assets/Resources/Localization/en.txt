@@ -4992,3 +4992,4 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Глава I завершена	Chapter I complete
 Все директивы выполнены	All directives complete
 ДИРЕКТИВЫ · {0}/{0}	DIRECTIVES · {0}/{0}
+<b>{0}</b>\nЩелчок — развернуть директивы	<b>{0}</b>\nClick to expand directives
