@@ -79,11 +79,14 @@ namespace StellarisClone.Core
         private static void RegisterContentArt()
         {
             _art["decision_astrea"] = "Festival";
-            _art["decision_xarn"] = "Drills";
-            _art["decision_aquila"] = "Trade";
-            _art["aquila_dividends"] = "Trade";
-            _art["decision_iridia"] = "Rift";
+            _art["decision_xarn"] = "LegionReview";
+            _art["decision_aquila"] = "Shareholders";
+            _art["aquila_dividends"] = "Investment";
+            _art["decision_iridia"] = "OracleVisions";
             _art["decision_terraan"] = "RootCouncil";
+            _art["border_incident"] = "BorderIncident";
+            _art["crew_unrest"] = "CrewUnrest";
+            _art["salvage_wreck"] = "SalvageWreck";
             _art["pirate_haven"] = "Distress";
             _art["leviathan_slain"] = "Amoeba";
             _art["precursor_signal"] = "Relic";
