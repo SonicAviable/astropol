@@ -20,6 +20,8 @@ using UnityEngine;
 /// а Mac распаковывает его двойным щелчком. Рядом кладётся «Как запустить.txt».
 ///
 /// Имя программы и идентификатор меняются только на время сборки — сохранения на Windows не затрагиваются.
+/// Unity при сборке под другую систему переключает активную платформу редактора — после сборки она
+/// возвращается обратно, иначе обычная кнопка Build продолжала бы собирать под Mac.
 /// Для GitHub Actions (game-ci): buildMethod MacBuild.BuildFromCommandLine.
 /// </summary>
 public static class MacBuild
@@ -66,6 +68,8 @@ public static class MacBuild
         Directory.CreateDirectory(root);
 
         var standalone = NamedBuildTarget.Standalone;
+        var oldTarget = EditorUserBuildSettings.activeBuildTarget;
+        var oldGroup = BuildPipeline.GetBuildTargetGroup(oldTarget);
         string oldName = PlayerSettings.productName;
         string oldId = PlayerSettings.GetApplicationIdentifier(standalone);
         var oldBackend = PlayerSettings.GetScriptingBackend(standalone);
@@ -120,6 +124,8 @@ public static class MacBuild
             PlayerSettings.SetApplicationIdentifier(standalone, oldId);
             PlayerSettings.SetScriptingBackend(standalone, oldBackend);
             AssetDatabase.SaveAssets();
+            if (interactive && EditorUserBuildSettings.activeBuildTarget != oldTarget)
+                EditorUserBuildSettings.SwitchActiveBuildTarget(oldGroup, oldTarget);
         }
     }
 
