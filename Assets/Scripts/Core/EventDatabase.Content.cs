@@ -78,7 +78,7 @@ namespace StellarisClone.Core
 
         private static void RegisterContentArt()
         {
-            _art["decision_astrea"] = "Festival";
+            _art["decision_astrea"] = "RepublicCouncil";
             _art["decision_xarn"] = "LegionReview";
             _art["decision_aquila"] = "Shareholders";
             _art["aquila_dividends"] = "Investment";
