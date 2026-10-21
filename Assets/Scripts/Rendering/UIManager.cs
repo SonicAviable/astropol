@@ -551,7 +551,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var menu = new GameObject("NavMenu");
             menu.transform.SetParent(_canvas.transform, false);
             var mRt = menu.AddComponent<RectTransform>();
-            _navRt = mRt;
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
             mRt.sizeDelta = new Vector2(NavMenuW, 10 * 46f + 30f);
@@ -651,13 +650,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private readonly List<(RectTransform rt, Text label)> _navItems = new List<(RectTransform, Text)>();
         private bool _navCollapsed;
         private float _navW = NavMenuW;
-        private RectTransform _navRt;
-
-        /// <summary>Нижний край левого меню (расстояние от верха канваса) — под ним карточка директив.</summary>
-        public float NavBottom => _navRt != null ? -_navRt.anchoredPosition.y + _navRt.sizeDelta.y : 0f;
-        /// <summary>Текущая ширина левого меню (оно сворачивается).</summary>
-        public float NavWidth => _navW;
-        public float NavTop => _navRt != null ? -_navRt.anchoredPosition.y : 0f;
         private Image _navToggleIcon;
 
         private void ToggleNavMenu()

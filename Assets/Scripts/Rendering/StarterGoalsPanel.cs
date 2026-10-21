@@ -8,20 +8,19 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// «Директивы» — карточка стартовых целей слева под главным меню.
+    /// «Директивы» — карточка стартовых целей справа внизу, над лентой новостей.
     ///   • Одна текущая директива крупно: медальон с иконкой, прогресс, награда, подсказка.
     ///   • Сверху — восемь сегментов главы: выполненные золотые, текущий мерцает.
     ///   • Выполнение — маленькое событие: вспышка, галочка в медальоне, всплывающая награда, звук сделки,
     ///     затем карточка «перелистывается» на следующую директиву. В конце — «Глава I завершена», и карточка уходит.
     ///   • Щелчок по карточке показывает, с чего начать; по шапке — сворачивает (запоминается).
-    /// Если под меню не хватает места до мини-карты — встаёт справа от меню. Место выбирается
-    /// по развёрнутой карточке, поэтому при сворачивании она не переезжает.
+    /// Низ карточки стоит на месте, развёрнутая растёт вверх; «Планировщик» не опускается ниже неё.
     /// </summary>
     public class StarterGoalsPanel : MonoBehaviour
     {
         public static StarterGoalsPanel Instance { get; private set; }
 
-        private const float W = 268f, CollapsedW = 96f, HeadH = 28f, BodyH = 130f, Gap = 8f, MinimapReserve = 322f;
+        private const float W = 300f, CollapsedW = 96f, HeadH = 28f, BodyH = 130f, Gap = 8f;
 
         private static readonly Color Gold = new Color(1f, 0.82f, 0.38f);
         private static readonly Color Cyan = new Color(0.36f, 0.95f, 0.88f);
@@ -83,8 +82,9 @@ namespace StellarisClone.Rendering
             _collapsed = PlayerPrefs.GetInt("directives.collapsed", 0) == 1;
 
             _root = LGBuild.Rect(hud.transform, "[UI] Directives");
-            _root.anchorMin = _root.anchorMax = new Vector2(0, 1);
-            _root.pivot = new Vector2(0, 1);
+            // Справа внизу, над лентой новостей; растёт вверх (низ карточки стоит на месте)
+            _root.anchorMin = _root.anchorMax = new Vector2(1, 0);
+            _root.pivot = new Vector2(1, 0);
             _root.sizeDelta = new Vector2(W, HeadH);
             _group = _root.gameObject.AddComponent<CanvasGroup>();
             _group.alpha = 0f;
@@ -285,10 +285,10 @@ namespace StellarisClone.Rendering
             float a = Mathf.MoveTowards(_group.alpha, want ? 1f : 0f, dt * 4f);
             if (!Mathf.Approximately(a, _group.alpha)) _group.alpha = a;
             _group.blocksRaycasts = _group.interactable = a > 0.5f;
-            if (a <= 0f && !want) return;
+            if (a <= 0f && !want) { OutlinerPanel.BottomReserve = 0f; return; }
 
             _layoutTimer -= dt;
-            if (_layoutTimer <= 0f) { _layoutTimer = 0.5f; Layout(); }
+            if (_layoutTimer <= 0f) { _layoutTimer = 0.2f; Layout(); }
 
             _refreshTimer -= dt;
             if (_celebrating == null && _finaleT < 0f)
@@ -300,19 +300,13 @@ namespace StellarisClone.Rendering
             Animate(dt);
         }
 
-        /// <summary>Под меню, если хватает места до мини-карты; иначе справа от меню.</summary>
+        /// <summary>Над лентой новостей у правого края; планировщику — не опускаться ниже верха карточки.</summary>
         private void Layout()
         {
-            var ui = UIManager.Instance;
-            if (ui == null || _canvas == null) return;
-            float canvasH = ((RectTransform)_canvas.transform).rect.height;
-            // Место выбираем по развёрнутой карточке: иначе свёрнутая и развёрнутая стояли бы в разных местах
-            float h = HeadH + 4f + BodyH;
-            float under = ui.NavBottom + Gap;
-            Vector2 pos = under + h <= canvasH - MinimapReserve
-                ? new Vector2(10f, -under)
-                : new Vector2(10f + ui.NavWidth + 12f, -ui.NavTop);
+            float news = NewsFeedPanel.TopEdge;
+            var pos = new Vector2(-10f, (news > 0f ? news : 12f) + Gap);
             if ((_root.anchoredPosition - pos).sqrMagnitude > 1f) _root.anchoredPosition = pos;
+            OutlinerPanel.BottomReserve = _group.alpha > 0.01f ? pos.y + _root.sizeDelta.y + Gap : 0f;
         }
 
         private void Refresh()

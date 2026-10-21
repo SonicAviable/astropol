@@ -46,6 +46,9 @@ namespace StellarisClone.Rendering
 
         /// <summary>Правую колонку заняла панель выбранной системы — планировщик плавно уходит и возвращается после.</summary>
         public static bool Yield;
+        /// <summary>Сколько места снизу заняли «Директивы» (от низа экрана) — планировщик туда не опускается.</summary>
+        public static float BottomReserve;
+        private float _appliedBottom = -1f;
         private CanvasGroup _group;
 
         private RectTransform _root, _list, _body, _sweep, _headRt;
@@ -203,6 +206,12 @@ namespace StellarisClone.Rendering
             bool show = UIManager.IsGameStarted && (SystemViewManager.Instance == null || !SystemViewManager.Instance.IsInSystemView);
             if (_root.gameObject.activeSelf != show) _root.gameObject.SetActive(show);
             if (!show) return;
+            float bottom = Mathf.Max(Bottom, BottomReserve);
+            if (!Mathf.Approximately(bottom, _appliedBottom))
+            {
+                _appliedBottom = bottom;
+                _root.offsetMin = new Vector2(-Width - 10f, bottom);
+            }
             float targetA = Yield ? 0f : 1f;
             if (_group != null && !Mathf.Approximately(_group.alpha, targetA))
             {

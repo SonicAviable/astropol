@@ -18,6 +18,11 @@ namespace StellarisClone.Rendering
         private const int Collapsed = 3, Expanded = 9;
 
         private RectTransform _root, _body;
+        private static NewsFeedPanel s_instance;
+
+        /// <summary>Верхний край ленты от низа экрана (над ней встают «Директивы»).</summary>
+        public static float TopEdge => s_instance != null && s_instance._root != null && s_instance._root.gameObject.activeInHierarchy
+            ? s_instance._root.anchoredPosition.y + s_instance._root.sizeDelta.y : 0f;
         private Text _counter;
         private Image _chevron;
         private bool _expanded;
@@ -35,6 +40,7 @@ namespace StellarisClone.Rendering
 
         public void Init(Canvas hud)
         {
+            s_instance = this;
             _expanded = PlayerPrefs.GetInt("news.expanded", 0) == 1;
             GalacticNews.Attach();
             GalacticNews.OnPosted += OnPosted;

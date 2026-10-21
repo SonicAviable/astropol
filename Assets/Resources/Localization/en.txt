@@ -4993,3 +4993,4 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Все директивы выполнены	All directives complete
 ДИРЕКТИВЫ · {0}/{0}	DIRECTIVES · {0}/{0}
 <b>{0}</b>\nЩелчок — развернуть директивы	<b>{0}</b>\nClick to expand directives
+Справа внизу — директивы: первые задачи империи. Они подскажут, чем заняться в первые годы; за каждую — награда. Щелчок по карточке покажет, с чего начать.	Directives are in the bottom-right corner: your empire's first tasks. They suggest what to do in the early years, and each one gives a reward. Click the card to see where to start.
