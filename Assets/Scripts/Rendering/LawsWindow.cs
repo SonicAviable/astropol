@@ -167,10 +167,13 @@ namespace StellarisClone.Rendering
             Color cc = CategoryColor(cat);
             var head = LGBuild.Rect(col, "Head");
             head.TopBand(0, 40);
-            var ic = LGIcons.Create(head, CategoryIcon(cat), 20, cc);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(20, 20));
+            var catArt = LGIcons.LawCategoryArt(cat);
+            float csz = catArt != null ? 28f : 20f;
+            var ic = LGIcons.Create(head, CategoryIcon(cat), csz, cc);
+            if (catArt != null) ic.sprite = catArt;
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(csz, csz));
             var name = LGBuild.Label(head, EmpireLaws.CategoryName(cat).ToUpper(), 15, Color.white, TextAnchor.MiddleLeft, bold: true);
-            name.rectTransform.Stretch(32, 0, 0, 0);
+            name.rectTransform.Stretch(csz + 12f, 0, 0, 0);
             name.Track(1.6f);
             int cd = EmpireLaws.CooldownLeft(cat);
             var cdText = LGBuild.Label(head, cd > 0 ? Loc.F("закрыто {0} дн.", cd) : "", 11, Muted, TextAnchor.MiddleRight, bold: true);
@@ -199,9 +202,19 @@ namespace StellarisClone.Rendering
             LG.Platter(bg.gameObject, 8f).SetRim(active ? new Color(cc.r, cc.g, cc.b, 0.85f) : new Color(1f, 1f, 1f, 0.10f));
 
             float y = 12f;
+            // Рисованный значок закона — слева от названия
+            var art = LGIcons.LawArt(law.Id);
+            float nameLeft = 14f;
+            if (art != null)
+            {
+                var li = LGIcons.Create(card, CategoryIcon(law.Category), 40, active ? cc : new Color(cc.r, cc.g, cc.b, 0.85f));
+                li.sprite = art;
+                li.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -10), new Vector2(40, 40));
+                nameLeft = 60f;
+            }
             var name = LGBuild.Label(card, law.Name, 15, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
-            name.rectTransform.TopBand(y, 40, 14, 14);
-            y += Mathf.Clamp(name.preferredHeight, 20f, 40f) + 4f;
+            name.rectTransform.TopBand(y, 40, nameLeft, law.Default ? 70f : 14f);
+            y += Mathf.Max(art != null ? 42f : 0f, Mathf.Clamp(name.preferredHeight, 20f, 40f)) + 4f;
             if (law.Default)
             {
                 var tag = LGBuild.Label(card, Loc.T("ИСХОДНЫЙ"), 9, Muted, TextAnchor.UpperRight, bold: true);

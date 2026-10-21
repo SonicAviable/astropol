@@ -464,8 +464,11 @@ namespace StellarisClone.Rendering
             fx.SpecularMultiplier = 0.3f;
             btn.onClick.AddListener(() => SwitchBranch(b));
 
-            var ic = LGIcons.Create(rt, BranchIcon(b), 28, bc);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(28, 28));
+            var branchArt = LGIcons.BranchArt(b);
+            float bsz = branchArt != null ? 38f : 28f;
+            var ic = LGIcons.Create(rt, BranchIcon(b), bsz, bc);
+            if (branchArt != null) ic.sprite = branchArt;
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(branchArt != null ? 11f : 16f, 0), new Vector2(bsz, bsz));
 
             var tab = new TabUi { Branch = b, Bg = bg, Fx = fx };
             tab.Name = LGBuild.Label(rt, TechBranchInfo.Name(b), 16, Primary, TextAnchor.UpperLeft, bold: true);

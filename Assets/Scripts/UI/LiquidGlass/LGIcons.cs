@@ -113,6 +113,18 @@ namespace StellarisClone.Rendering
         public static Sprite TechArt(StellarisClone.Core.TechCategory c)
             => LoadArt("Tech/tech_" + c.ToString().ToLowerInvariant());
 
+        /// <summary>Значок ветки науки (Resources/UI/Icons/Tech/branch_&lt;ветка&gt;.png) или null.</summary>
+        public static Sprite BranchArt(StellarisClone.Core.TechBranch b)
+            => LoadArt("Tech/branch_" + b.ToString().ToLowerInvariant());
+
+        /// <summary>Значок закона империи (Resources/UI/Icons/Laws/law_&lt;id закона&gt;.png) или null.</summary>
+        public static Sprite LawArt(string lawId)
+            => string.IsNullOrEmpty(lawId) ? null : LoadArt("Laws/law_" + lawId);
+
+        /// <summary>Значок категории законов (Resources/UI/Icons/Laws/lawcat_&lt;категория&gt;.png) или null.</summary>
+        public static Sprite LawCategoryArt(StellarisClone.Core.LawCategory c)
+            => LoadArt("Laws/lawcat_" + c.ToString().ToLowerInvariant());
+
         /// <summary>Создаёт Image-иконку заданного размера (по центру родителя, если не перемещать).</summary>
         public static Image Create(Transform parent, LGIcon icon, float size, Color color, string name = null)
         {
