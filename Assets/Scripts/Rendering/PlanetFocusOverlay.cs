@@ -1081,7 +1081,9 @@ namespace StellarisClone.Rendering
                 r.IconBg = LGBuild.Panel(info.transform, "IconBg", new Color(dc.r * 0.18f, dc.g * 0.18f, dc.b * 0.18f, 1f));
                 r.IconBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(4, -4), new Vector2(34, 34));
                 LG.Chip(r.IconBg.gameObject, new Color(dc.r, dc.g, dc.b, 0.6f), 17f);
-                var ic = LGIcons.Create(r.IconBg.transform, BuildCatalog.DistrictIcon(t), 18, dc);
+                var dArt = BuildCatalog.DistrictArt(t);
+                var ic = LGIcons.Create(r.IconBg.transform, BuildCatalog.DistrictIcon(t), dArt != null ? 28 : 18, dc);
+                if (dArt != null) ic.sprite = dArt;
                 ic.raycastTarget = false;
 
                 r.Value = LGBuild.Label(info.transform, "", 22, Color.white, TextAnchor.UpperLeft, bold: true);

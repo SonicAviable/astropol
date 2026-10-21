@@ -117,6 +117,13 @@ namespace StellarisClone.Rendering
         public static Sprite BranchArt(StellarisClone.Core.TechBranch b)
             => LoadArt("Tech/branch_" + b.ToString().ToLowerInvariant());
 
+        /// <summary>
+        /// Значок пункта меню строительства (Resources/UI/Icons/Build/build_&lt;id пункта в нижнем регистре&gt;.png) или null:
+        /// build_district_urban, build_mining, build_colony…
+        /// </summary>
+        public static Sprite BuildArt(string optionId)
+            => string.IsNullOrEmpty(optionId) ? null : LoadArt("Build/build_" + optionId.ToLowerInvariant());
+
         /// <summary>Значок закона империи (Resources/UI/Icons/Laws/law_&lt;id закона&gt;.png) или null.</summary>
         public static Sprite LawArt(string lawId)
             => string.IsNullOrEmpty(lawId) ? null : LoadArt("Laws/law_" + lawId);

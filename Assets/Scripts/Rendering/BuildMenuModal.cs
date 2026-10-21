@@ -395,7 +395,9 @@ namespace StellarisClone.Rendering
             c.IconBg = LGBuild.Panel(bg.transform, "IconBg", new Color(o.Color.r * 0.18f, o.Color.g * 0.18f, o.Color.b * 0.18f, 1f));
             c.IconBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -14), new Vector2(42, 42));
             LG.Chip(c.IconBg.gameObject, new Color(o.Color.r, o.Color.g, o.Color.b, 0.55f));
-            c.Icon = LGIcons.Create(c.IconBg.transform, o.Icon, 22, o.Color);
+            var art = LGIcons.BuildArt(o.Id);
+            c.Icon = LGIcons.Create(c.IconBg.transform, o.Icon, art != null ? 34 : 22, o.Color);
+            if (art != null) c.Icon.sprite = art;
             c.Lock = LGIcons.Create(bg.transform, LGIcon.Lock, 13, new Color(1f, 0.6f, 0.6f));
             c.Lock.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -12), new Vector2(13, 13));
             c.Queued = LGBuild.Label(bg.transform, "", 10, Gold, TextAnchor.UpperRight, bold: true);
@@ -503,7 +505,9 @@ namespace StellarisClone.Rendering
             if (o == null) return;
 
             _dIconBg.color = new Color(o.Color.r * 0.2f, o.Color.g * 0.2f, o.Color.b * 0.2f, 1f);
-            _dIcon.sprite = LGIcons.Get(o.Icon);
+            var dArt = LGIcons.BuildArt(o.Id);
+            _dIcon.sprite = dArt ?? LGIcons.Get(o.Icon);
+            _dIcon.rectTransform.sizeDelta = dArt != null ? new Vector2(52, 52) : new Vector2(34, 34);
             _dIcon.color = o.Color;
             _dTitle.text = o.Title;
             _dEffect.text = o.Done ? Loc.F("✓ {0}", o.Effect) : o.Effect;

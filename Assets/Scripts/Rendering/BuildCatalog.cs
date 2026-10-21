@@ -279,6 +279,9 @@ namespace StellarisClone.Rendering
             return a >= 0 && b > a ? n.Substring(a + 1, b - a - 1) : n;
         }
 
+        /// <summary>Рисованный значок района или null — тогда DistrictIcon.</summary>
+        public static Sprite DistrictArt(DistrictType t) => LGIcons.BuildArt("district_" + t);
+
         public static LGIcon DistrictIcon(DistrictType t) => t switch
         {
             DistrictType.Urban => LGIcon.Housing,
