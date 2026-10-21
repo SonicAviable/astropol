@@ -82,6 +82,7 @@ namespace StellarisClone.Rendering
         private RectTransform _stabBar;
         private Image[] _compSegs;
         private Text[] _legend;
+        private Image[,] _legendTraits;
         private TooltipTrigger _stabTip, _compTip, _propTip;
         private Button _propBtn;
         private Image _propBg;
@@ -1780,6 +1781,16 @@ namespace StellarisClone.Rendering
                 _legend[i].rectTransform.TopBand(33 + i * 19, 18);
                 _legend[i].horizontalOverflow = HorizontalWrapMode.Overflow;
             }
+            // Значки черт вида — справа в строке легенды
+            _legendTraits = new Image[_legend.Length, 3];
+            for (int i = 0; i < _legend.Length; i++)
+            for (int k = 0; k < 3; k++)
+            {
+                var ti = LGIcons.Create(comp.rectTransform, LGIcon.Population, 18, Color.white, "Trait");
+                ti.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-k * 21f, -(32 + i * 19)), new Vector2(18, 18));
+                ti.enabled = false;
+                _legendTraits[i, k] = ti;
+            }
             TooltipHelper.Attach(comp.gameObject, Loc.T("Виды"));
             _compTip = comp.GetComponent<TooltipTrigger>();
 
@@ -1856,8 +1867,9 @@ namespace StellarisClone.Rendering
                 if (!sp.AtHome(_planet.Type)) tip.Append(Loc.T(" <color=#F2C46B>(чужой климат)</color>"));
                 foreach (var t in sp.Traits)
                     tip.Append($"\n  {(TraitInfo.IsNegative(t) ? "<color=#FF9A8A>" : "<color=#9EF0C8>")}{TraitInfo.Name(t)}</color> — {TraitInfo.Desc(t)}");
+                if (i < _legend.Length) ShowTraitIcons(i, i == _legend.Length - 1 && groups.Count > _legend.Length ? null : sp);
             }
-            for (int i = groups.Count; i < _legend.Length; i++) _legend[i].text = "";
+            for (int i = groups.Count; i < _legend.Length; i++) { _legend[i].text = ""; ShowTraitIcons(i, null); }
             _compTip.SetText(tip.ToString());
 
             // Пропаганда
@@ -1875,6 +1887,23 @@ namespace StellarisClone.Rendering
                              Loc.F("<color=#8AA2A8>Цена:</color> {0:0} влияния", PlanetStability.PropagandaInfluence) +
                              (running ? Loc.F("\n\nУже идёт: осталось {0} мес.", _planet.PropagandaMonths)
                               : !can && owned ? $"\n<color=#FF8888>{CostCheck.Full(0f, 0f, 0f, PlanetStability.PropagandaInfluence)}.</color>" : ""));
+        }
+
+        /// <summary>Значки черт вида в строке легенды (справа налево); без рисованных значков — ничего.</summary>
+        private void ShowTraitIcons(int row, Species sp)
+        {
+            int k = 0;
+            if (sp != null)
+                for (int j = sp.Traits.Count - 1; j >= 0 && k < 3; j--)
+                {
+                    var art = LGIcons.TraitArt(sp.Traits[j]);
+                    if (art == null) continue;
+                    var img = _legendTraits[row, k++];
+                    img.sprite = art;
+                    img.color = TraitInfo.IsNegative(sp.Traits[j]) ? new Color(1f, 0.6f, 0.54f) : new Color(0.62f, 0.94f, 0.78f);
+                    img.enabled = true;
+                }
+            for (; k < 3; k++) _legendTraits[row, k].enabled = false;
         }
 
         /// <summary>Проекты общества: сборка роботов и генная адаптация.</summary>

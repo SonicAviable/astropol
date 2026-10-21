@@ -124,6 +124,10 @@ namespace StellarisClone.Rendering
         public static Sprite BuildArt(string optionId)
             => string.IsNullOrEmpty(optionId) ? null : LoadArt("Build/build_" + optionId.ToLowerInvariant());
 
+        /// <summary>Значок черты вида (Resources/UI/Icons/Traits/trait_&lt;черта&gt;.png) или null.</summary>
+        public static Sprite TraitArt(StellarisClone.Core.SpeciesTrait t)
+            => LoadArt("Traits/trait_" + t.ToString().ToLowerInvariant());
+
         /// <summary>Значок закона империи (Resources/UI/Icons/Laws/law_&lt;id закона&gt;.png) или null.</summary>
         public static Sprite LawArt(string lawId)
             => string.IsNullOrEmpty(lawId) ? null : LoadArt("Laws/law_" + lawId);
