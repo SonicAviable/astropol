@@ -39,6 +39,15 @@ namespace StellarisClone.Rendering
             return LGIcon.Thruster;
         }
 
+        /// <summary>Значок модуля: свой рисованный, если есть, иначе общий по типу.</summary>
+        public static Image CreateIcon(Transform parent, ShipModule m, float size, Color color)
+        {
+            var ic = LGIcons.Create(parent, Icon(m), size, color);
+            var art = m != null ? LGIcons.ModuleArt(m.Id) : null;
+            if (art != null) ic.sprite = art;
+            return ic;
+        }
+
         public static Color Tint(ShipModule m)
         {
             if (m.SlotType == ModuleSlotType.Weapon) return TypeColor(m.DamageType);
@@ -845,7 +854,7 @@ namespace StellarisClone.Rendering
 
                 if (mod != null)
                 {
-                    var ic = LGIcons.Create(r, ModuleVisuals.Icon(mod), 30, Color.Lerp(tint, Color.white, 0.3f));
+                    var ic = ModuleVisuals.CreateIcon(r, mod, 30, Color.Lerp(tint, Color.white, 0.3f));
                     ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(30, 30));
                     ic.raycastTarget = false;
                     var m = mod;
@@ -1055,7 +1064,7 @@ namespace StellarisClone.Rendering
             var disc = LGBuild.Panel(body, "Disc", tint);
             disc.sprite = DiscSprite();
             disc.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(34, 34));
-            LGIcons.Create(disc.transform, ModuleVisuals.Icon(m), 20, Color.white);
+            ModuleVisuals.CreateIcon(disc.transform, m, 20, Color.white);
             var name = LGBuild.Label(body, m.Name.ToUpper(), 17, Color.white, TextAnchor.MiddleLeft, bold: true);
             name.rectTransform.TopBand(0, 34, 44, 0);
             y += 40f;
@@ -1453,7 +1462,7 @@ namespace StellarisClone.Rendering
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.raycastTarget = false;
             glow.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -64), new Vector2(124, 124));
-            var ic = LGIcons.Create(t, ModuleVisuals.Icon(m), 46, unlocked ? Color.Lerp(tint, Color.white, 0.25f) : new Color(Muted.r, Muted.g, Muted.b, 0.35f));
+            var ic = ModuleVisuals.CreateIcon(t, m, 46, unlocked ? Color.Lerp(tint, Color.white, 0.25f) : new Color(Muted.r, Muted.g, Muted.b, 0.35f));
             ic.raycastTarget = false;
             ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -64), new Vector2(46, 46));
 

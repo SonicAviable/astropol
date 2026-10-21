@@ -81,6 +81,28 @@ namespace StellarisClone.Rendering
             return sp;
         }
 
+        private static readonly Dictionary<string, Sprite> s_ModuleArt = new Dictionary<string, Sprite>();
+
+        /// <summary>
+        /// Рисованный значок модуля корабля (Resources/UI/Icons/Modules/&lt;id модуля&gt;.png, белый силуэт) или null,
+        /// если для модуля картинки нет — тогда остаётся общий значок по типу.
+        /// </summary>
+        public static Sprite ModuleArt(string moduleId)
+        {
+            if (string.IsNullOrEmpty(moduleId)) return null;
+            if (s_ModuleArt.TryGetValue(moduleId, out var cached)) return cached;
+            Sprite sp = null;
+            var tex = Resources.Load<Texture2D>("UI/Icons/Modules/" + moduleId);
+            if (tex != null)
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
+                sp.hideFlags = HideFlags.DontSave;
+            }
+            s_ModuleArt[moduleId] = sp;
+            return sp;
+        }
+
         /// <summary>Создаёт Image-иконку заданного размера (по центру родителя, если не перемещать).</summary>
         public static Image Create(Transform parent, LGIcon icon, float size, Color color, string name = null)
         {
