@@ -31,16 +31,20 @@ namespace StellarisClone.Rendering
         private static readonly Color RowWarnBg = new Color(0.120f, 0.085f, 0.030f, 0.92f);
         private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
 
-        private enum Sec { Research, Build, Military, Science, Constructor }
-        private static readonly string[] SecNames = { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ") };
-        private static readonly LGIcon[] SecIcons = { LGIcon.Research, LGIcon.Construction, LGIcon.Fleet, LGIcon.Sensors, LGIcon.Wrench };
+        // Цели — последним номером (номера секций хранятся в настройках), но показываются первыми
+        private enum Sec { Research, Build, Military, Science, Constructor, Goals }
+        private const int SecCount = 6;
+        private static readonly int[] Order = { (int)Sec.Goals, 0, 1, 2, 3, 4 };
+        private static readonly string[] SecNames = { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ"), Loc.T("СТАРТОВЫЕ ЦЕЛИ") };
+        private static readonly LGIcon[] SecIcons = { LGIcon.Research, LGIcon.Construction, LGIcon.Fleet, LGIcon.Sensors, LGIcon.Wrench, LGIcon.Target };
         private static readonly Color[] SecColors =
         {
             new Color(0.62f, 0.58f, 1.00f),
             new Color(0.44f, 0.88f, 0.60f),
             new Color(0.40f, 0.86f, 0.82f),
             new Color(0.42f, 0.66f, 1.00f),
-            new Color(1.00f, 0.70f, 0.36f)
+            new Color(1.00f, 0.70f, 0.36f),
+            new Color(1.00f, 0.84f, 0.40f)
         };
 
         /// <summary>Правую колонку заняла панель выбранной системы — планировщик плавно уходит и возвращается после.</summary>
@@ -52,7 +56,8 @@ namespace StellarisClone.Rendering
         private Text _toggleLabel, _alertText;
         private GameObject _alertChip;
         private bool _collapsed;
-        private readonly bool[] _secClosed = new bool[5];
+        private readonly bool[] _secClosed = new bool[SecCount];
+        private bool _goalsOn;
         private float _timer, _bodyH, _bodyTarget;
         private string _shape = "";
         private StrategyCameraController _cam;
@@ -227,15 +232,18 @@ namespace StellarisClone.Rendering
             public Color BarCol;
             public bool Warn, Danger;
             public System.Action Click;
+            public string Tip;
         }
 
         private void Refresh()
         {
-            var sections = new List<Row>[5];
-            for (int i = 0; i < 5; i++) sections[i] = new List<Row>();
+            var sections = new List<Row>[SecCount];
+            for (int i = 0; i < SecCount; i++) sections[i] = new List<Row>();
             CollectResearch(sections[(int)Sec.Research]);
             CollectBuild(sections[(int)Sec.Build]);
             CollectFleets(sections);
+            _goalsOn = StarterGoals.Visible;
+            if (_goalsOn) CollectGoals(sections[(int)Sec.Goals]);
 
             int alerts = 0;
             foreach (var s in sections) foreach (var r in s) if (r.Warn || r.Danger) alerts++;
@@ -245,8 +253,9 @@ namespace StellarisClone.Rendering
 
             // Форма списка: секции, их состояние и число строк (и есть ли у строки полоса)
             var sb = new StringBuilder(64);
-            for (int s = 0; s < 5; s++)
+            foreach (int s in Order)
             {
+                if (s == (int)Sec.Goals && !_goalsOn) { sb.Append('-'); continue; }
                 sb.Append(_secClosed[s] ? 'c' : 'o');
                 if (_secClosed[s]) continue;
                 if (sections[s].Count == 0) sb.Append('e');
@@ -261,15 +270,35 @@ namespace StellarisClone.Rendering
             }
 
             // Обновляем на месте
-            int rv = 0;
-            for (int s = 0; s < 5; s++)
+            int rv = 0, si = 0;
+            foreach (int s in Order)
             {
-                var sv = _secViews[s];
+                if (s == (int)Sec.Goals && !_goalsOn) continue;
+                var sv = _secViews[si++];
                 bool warn = sections[s].Exists(r => r.Warn || r.Danger);
-                sv.Count.text = sections[s].Count.ToString();
+                sv.Count.text = s == (int)Sec.Goals ? $"{StarterGoals.DoneCount}/{StarterGoals.Goals.Count}" : sections[s].Count.ToString();
                 sv.Icon.color = warn ? Gold : SecColors[s];
                 if (_secClosed[s]) continue;
                 foreach (var r in sections[s]) Fill(_rowViews[rv++], r);
+            }
+        }
+
+        private static void CollectGoals(List<Row> rows)
+        {
+            foreach (var g in StarterGoals.Active())
+            {
+                int cur = Mathf.Min(StarterGoals.SafeCurrent(g), g.Target);
+                var goal = g;
+                rows.Add(new Row
+                {
+                    Icon = g.Icon, IconCol = Gold,
+                    Title = g.Title,
+                    Status = Loc.F("Награда: {0}", g.RewardText),
+                    Right = $"{cur}/{g.Target}",
+                    Progress = g.Target > 1 ? cur / (float)g.Target : -1f, BarCol = Gold,
+                    Click = goal.Show,
+                    Tip = $"<b>{g.Title}</b>\n{g.Hint}\n\n<color=#8AA2A8>" + Loc.T("Щелчок — показать, с чего начать") + "</color>"
+                });
             }
         }
 
@@ -470,8 +499,9 @@ namespace StellarisClone.Rendering
             LGBuild.Clear(_list);
             _secViews.Clear();
             _rowViews.Clear();
-            for (int s = 0; s < 5; s++)
+            foreach (int s in Order)
             {
+                if (s == (int)Sec.Goals && !_goalsOn) continue;
                 _secViews.Add(SectionHeader(s));
                 if (_secClosed[s]) continue;
                 if (sections[s].Count == 0) Empty(s);
@@ -509,7 +539,7 @@ namespace StellarisClone.Rendering
             t.rectTransform.Stretch(32, 0, 70, 0);
 
             var pill = LGBuild.Panel(row.transform, "Count", new Color(col.r, col.g, col.b, 0.16f));
-            pill.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-28, 0), new Vector2(28, 16));
+            pill.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-28, 0), new Vector2(s == (int)Sec.Goals ? 38 : 28, 16));
             LG.Chip(pill.gameObject, new Color(col.r, col.g, col.b, 0.45f), 8f);
             v.Count = LGBuild.Label(pill.transform, "0", 10, col, TextAnchor.MiddleCenter, bold: true);
             v.Count.rectTransform.Stretch();
@@ -628,6 +658,10 @@ namespace StellarisClone.Rendering
             if (v.Right.text != right) v.Right.text = right;
             v.Right.color = r.Danger ? Red : r.Warn ? Gold : Primary;
             if (v.Fill != null) LGBuild.SetBar(v.Fill, r.Progress, r.BarCol);
+            var tip = v.Bg.GetComponent<TooltipTrigger>();
+            if (!string.IsNullOrEmpty(r.Tip)) TooltipHelper.Attach(v.Bg.gameObject, r.Tip);
+            else if (tip != null) tip.enabled = false;
+            if (tip != null && !string.IsNullOrEmpty(r.Tip)) tip.enabled = true;
         }
 
         // ==================== АНИМАЦИЯ ====================

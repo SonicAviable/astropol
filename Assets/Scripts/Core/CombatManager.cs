@@ -1040,6 +1040,7 @@ namespace StellarisClone.Core
             bool won = me.Ships > 0 && enemyLeft == 0;
             bool lost = me.Ships == 0 && enemyLeft > 0;
             if (won && enemyLost + enemyDisengaged > 0) SFXManager.Play(Sfx.BattleVictory);
+            if (won && enemyLost > 0) Achievements.Unlock(Ach.FirstBattle);
             else if (lost) SFXManager.Play(Sfx.BattleDefeat);
             string title = won ? Loc.F("Победа при {0}", sys.Name) : lost ? Loc.F("Поражение при {0}", sys.Name) : Loc.F("Бой при {0} завершён", sys.Name);
             string body = Loc.F("{0} дн. · уничтожено врагов: {1}", Mathf.CeilToInt(b.Days), enemyLost) +
@@ -1173,6 +1174,7 @@ namespace StellarisClone.Core
             if (ShowFx(sb.SystemId, sys.Position))
                 CombatFx.Instance.ShipDestroyed(StarbaseVisuals.SiteFor(sys.Position) + Vector3.up * 0.3f, 1.9f, FleetIndicator.OwnerColor(sys.OwnerId));
             SFXManager.PlayAt(Sfx.StarbaseDown, sys.Position, 1f);
+            if (attacker == 0 && sys.OwnerId != 0 && UIManager.IsGameStarted) Achievements.Unlock(Ach.Starbase);
             if (sys.OwnerId == 0)
                 NotificationCenter.Show(Loc.T("Звёздная база выведена из строя"), Loc.F("{0}: враг может начать осаду", sys.Name), NotificationCenter.Kind.Danger, 7f);
             else if (attacker == 0)

@@ -1594,6 +1594,8 @@ namespace StellarisClone.Rendering
             // В архив кладём копию: черновик остаётся редактируемым, сохранённый проект не меняется без «Сохранить»
             var copy = Clone(_draft);
             if (!dm.SaveDesign(copy)) return;
+            Achievements.Unlock(Ach.FirstDesign);
+            StarterGoals.MarkDesigned();
             SFXManager.Play(Sfx.UiConfirm, 0.7f);
             _statusText.text = Loc.F("<color=#5CF59A>«{0}» сохранён — верфь строит по этому проекту.</color>", copy.Name);
             RebuildAll();

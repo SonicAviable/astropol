@@ -4859,3 +4859,111 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Флот «{0}» вошёл в систему {1}. Перехватите его военным флотом, иначе начнётся осада	Fleet "{0}" has entered the {1} system. Intercept it with a military fleet, or a siege will begin
 Вспышка и вибрация при тревоге	Alarm flash and vibration
 При атаке и банкротстве края экрана вспыхивают, геймпад вибрирует	During attacks and bankruptcy the screen edges flash and the gamepad vibrates
+Изучите 10 звёздных систем	Survey 10 star systems
+Флаг на карте	A Flag on the Map
+Постройте первый форпост	Build your first outpost
+Новый дом	A New Home
+Основайте первую колонию	Found your first colony
+Эврика	Eureka
+Завершите первое исследование	Complete your first research
+Мы не одни	We Are Not Alone
+Встретьте другую цивилизацию	Meet another civilization
+Слово правителя	The Ruler's Word
+Примите первый закон империи	Enact your first empire law
+Главный конструктор	Chief Designer
+Сохраните свой проект корабля	Save your own ship design
+Боевое крещение	Baptism of Fire
+Выиграйте первое сражение	Win your first battle
+Звёздная держава	Star Power
+Владейте пятью колониями одновременно	Own five colonies at once
+Границы империи	Borders of an Empire
+Владейте двадцатью системами одновременно	Own twenty systems at once
+Учёный совет	Science Council
+Изучите 30 технологий за одну партию	Research 30 technologies in one game
+Конец науки	The End of Science
+Изучите все технологии за одну партию	Research every technology in one game
+Крушитель бастионов	Bastion Breaker
+Выведите из строя вражескую звёздную базу	Disable an enemy starbase
+Новые владения	New Holdings
+Захватите систему другой империи	Capture a system from another empire
+Голубь мира	Dove of Peace
+Заключите мир после войны	Make peace after a war
+Плечом к плечу	Shoulder to Shoulder
+Заключите пакт с другой империей	Sign a pact with another empire
+Взаимная выгода	Mutual Benefit
+Заключите торговую сделку	Make a trade deal
+Тень в коридорах	Shadow in the Halls
+Проведите успешную тайную операцию	Carry out a successful covert operation
+Охотник на левиафанов	Leviathan Hunter
+Уничтожьте левиафана	Destroy a leviathan
+Из долговой ямы	Out of the Debt Pit
+Выведите империю из банкротства	Bring your empire out of bankruptcy
+Летописец	Chronicler
+Переживите {0} событий во всех партиях	Live through {0} events across all games
+Век империи	An Imperial Century
+Доживите до 2300 года в одной партии	Reach the year 2300 in one game
+Владыка галактики	Master of the Galaxy
+Одержите первую победу	Win your first game
+Железной рукой	Iron Fist
+Победите завоеванием	Win by conquest
+Гегемон	Hegemon
+Победите доминированием	Win by domination
+Вознесение разума	Ascension of Mind
+Одержите научную победу	Win a science victory
+Золотой век	Golden Age
+Одержите экономическую победу	Win an economic victory
+Голос галактики	Voice of the Galaxy
+Одержите дипломатическую победу	Win a diplomatic victory
+Летопись величия	Chronicle of Greatness
+Победите по очкам к концу эпохи	Win on score by the end of the era
+Против всех шансов	Against All Odds
+Победите на сложном уровне	Win on Hard difficulty
+Пять корон	Five Crowns
+Победите за каждую из пяти империй	Win with each of the five empires
+Достижение получено	Achievement unlocked
+Разведайте 5 систем	Survey 5 systems
+Научный корабль: ПКМ по серой системе. Кнопка авторазведки на панели флота ищет цели сама.	Science ship: right-click a grey system. The auto-explore button on the fleet panel finds targets on its own.
++50 гелия-3	+50 helium-3
+Постройте 2 форпоста	Build 2 outposts
+Строительный корабль: ПКМ по изученной системе рядом с границей. Форпост стоит титан и 2 гелия-3 в месяц.	Construction ship: right-click a surveyed system next to your border. An outpost costs titanium and 2 helium-3 a month.
++75 титана	+75 titanium
+Завершите 2 исследования	Complete 2 research projects
+Технологии — клавиша T. В каждом слоте выберите направление: физика, общество или инженерия.	Technologies — T key. Pick a direction in every slot: physics, society or engineering.
+Основайте вторую колонию	Found a second colony
+Войдите в свою систему с пригодной планетой (двойной клик по звезде) и нажмите «Основать колонию».	Enter your system with a habitable planet (double-click the star) and press "Found colony".
++100 титана	+100 titanium
+Соберите 3 военных корабля	Assemble 3 warships
+Корабли строятся на верфи столицы. Без флота соседи сочтут вас лёгкой добычей.	Ships are built at the capital shipyard. Without a fleet, your neighbours will see you as easy prey.
++50 сплавов	+50 alloys
+Встретьте соседнюю цивилизацию	Meet a neighbouring civilization
+Продолжайте разведку: соседи откроются, когда ваши корабли или границы их найдут.	Keep exploring: neighbours appear once your ships or borders find them.
++25 влияния	+25 influence
+Примите закон империи	Enact an empire law
+Законы — клавиша L. Смена закона стоит {0:0} влияния и даёт постоянный бонус.	Laws — L key. Changing a law costs {0:0} influence and gives a lasting bonus.
+Создайте свой проект корабля	Create your own ship design
+Конструктор — клавиша N. Подберите оружие и защиту под соседей и сохраните проект.	Ship designer — N key. Pick weapons and defences against your neighbours and save the design.
+Пока негде основать колонию	Nowhere to found a colony yet
+Расширьте границы форпостами и изучите соседние системы — пригодная планета найдётся.	Expand your borders with outposts and survey nearby systems — a habitable planet will turn up.
+Цель выполнена: {0}	Goal complete: {0}
+Награда: {0}	Reward: {0}
+Стартовые цели выполнены	Starting goals complete
+Империя встала на ноги. Дальше — путь к победе: клавиша V покажет, как близко каждая из них.	Your empire is on its feet. Next comes the path to victory: the V key shows how close you are to each one.
+Справа в «Планировщике» — стартовые цели. Они подскажут, чем заняться в первые годы; за каждую — небольшая награда. Кнопка у цели покажет, с чего начать.	Starting goals are in the Planner on the right. They suggest what to do in the first years, and each gives a small reward. Click a goal to see where to start.
+Если ждать скучно — ускорьте время клавишами 2 и 3. Пробел ставит паузу: на ней удобно отдавать приказы.	If waiting gets dull, speed time up with keys 2 and 3. Space pauses the game — handy for giving orders.
+Влияние копится без дела. Примите закон империи (клавиша L): законы дают постоянные бонусы к экономике, науке или флоту.	Influence is piling up unused. Enact an empire law (L key): laws give lasting bonuses to the economy, science or fleet.
+Вы встретили соседей. В дипломатии (клавиша P) видно их отношение к вам; там же — торговля, пакты и мир.	You have met your neighbours. Diplomacy (P key) shows how they feel about you, and offers trade, pacts and peace.
+Соседи сильнее вас. Постройте корабли на верфи столицы: слабые империи ИИ охотно завоёвывает.	Your neighbours are stronger. Build ships at the capital shipyard: the AI is happy to conquer weak empires.
+Война. Чтобы захватить вражескую систему, приведите в неё военный флот и выведите из строя звёздную базу. Свои системы защищайте так же — флотом на орбите.	War. To capture an enemy system, bring a military fleet into it and disable its starbase. Defend your own systems the same way — with a fleet in orbit.
+Империя растёт за счёт колоний. Ищите в своих системах планеты с высокой пригодностью — оповещение «Планета пригодна для колонии» под ресурсами приведёт к ближайшей.	Empires grow through colonies. Look for highly habitable planets in your systems — the "Planet suitable for a colony" alert under the resources leads to the nearest one.
+Не забывайте сохраняться: F5 — быстрое сохранение, F9 — загрузка. Автосохранение настраивается в меню.	Remember to save: F5 quick-saves, F9 loads. Autosave is set up in the menu.
+Совет ОРАКУЛА-7	ORACLE-7's advice
+ДОСТИЖЕНИЯ	ACHIEVEMENTS
+ДОСТИЖЕНИЯ  ·  {0}/{1}	ACHIEVEMENTS  ·  {0}/{1}
+Получено {0} из {1}	Unlocked {0} of {1}
+VK Play: отправляем на сервер…	VK Play: sending to the server…
+VK Play: всё синхронизировано	VK Play: fully synced
+Хранятся на этом компьютере — VK Play не подключён	Stored on this computer — VK Play not connected
+Условие откроется после получения	The condition is revealed once unlocked
+не получено	locked
+СТАРТОВЫЕ ЦЕЛИ	STARTING GOALS
+Щелчок — показать, с чего начать	Click to see where to start

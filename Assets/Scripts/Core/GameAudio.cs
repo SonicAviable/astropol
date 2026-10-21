@@ -85,9 +85,7 @@ namespace StellarisClone.Core
 
         private void HandleFinished(VictoryManager.Outcome outcome, string title, string body)
         {
-            bool win = outcome == VictoryManager.Outcome.Domination || outcome == VictoryManager.Outcome.Science
-                    || outcome == VictoryManager.Outcome.Score || outcome == VictoryManager.Outcome.Conquest;
-            SFXManager.Play(win ? Sfx.GameVictory : Sfx.GameDefeat);
+            SFXManager.Play(VictoryManager.IsVictory(outcome) ? Sfx.GameVictory : Sfx.GameDefeat);
         }
 
         private void HandleCaptured(StarSystem sys, int oldOwner, int newOwner)

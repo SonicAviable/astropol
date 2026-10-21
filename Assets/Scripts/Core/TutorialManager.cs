@@ -44,6 +44,8 @@ namespace StellarisClone.Core
         private readonly List<Step> _steps = new List<Step>();
         private int _index = -1;
         private bool _active;
+        /// <summary>Обучение сейчас на экране.</summary>
+        public bool IsActive => _active;
         private float _completeTimer = -1f;
 
         // --- UI ---

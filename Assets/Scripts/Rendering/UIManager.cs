@@ -677,7 +677,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         // ---------- Главные окна: клавиши и «одно окно за раз» ----------
 
-        private enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Help }
+        public enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Help }
+
+        /// <summary>Открыть главное окно (если уже открыто — оставить), остальные закрыть. Для целей и подсказок.</summary>
+        public void OpenNavWindow(NavWindow w)
+        {
+            if (!IsWindowOpen(w)) ToggleWindow(w);
+        }
 
         private static bool IsWindowOpen(NavWindow w) => w switch
         {

@@ -74,6 +74,8 @@ namespace StellarisClone.Core
             EnsureComp<MusicManager>("[Managers] MusicManager");
             EnsureComp<SFXManager>("[Managers] SFXManager");
             EnsureComp<GameAudio>("[Managers] GameAudio");
+            EnsureComp<AchievementTracker>("[Managers] Achievements");
+            EnsureComp<StarterGuide>("[Managers] StarterGuide");
         }
 
         private static void EnsureGalaxy()

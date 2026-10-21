@@ -184,6 +184,7 @@ namespace StellarisClone.Rendering
         private void RestartTutorial()
         {
             Close();
+            StarterGuide.ResetHints();
             TutorialManager.Instance?.BeginTutorial();
         }
     }

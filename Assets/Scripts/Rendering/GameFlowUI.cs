@@ -24,7 +24,7 @@ namespace StellarisClone.Rendering
         /// <summary>Открыто меню паузы или экран итогов — горячие клавиши времени не работают.</summary>
         public bool BlocksTimeHotkeys => _pauseOpen || (_end != null && LG.IsVisible(_end));
 
-        private enum Page { Main, Goals, Controls, Save, Load, Settings }
+        private enum Page { Main, Goals, Controls, Save, Load, Settings, Achievements }
 
         private GameObject _pause, _end, _tracker;
         private RectTransform _pauseRt, _pageHost;
@@ -33,9 +33,9 @@ namespace StellarisClone.Rendering
         private Page _page = Page.Main;
         private int _speedBeforePause = 1;
         private bool _pauseOpen;
-        private Vector2 _pauseSize = new Vector2(520, 700), _pauseSizeV;
+        private Vector2 _pauseSize = new Vector2(520, 756), _pauseSizeV;
 
-        private static readonly Vector2 PauseNarrow = new Vector2(520, 700);
+        private static readonly Vector2 PauseNarrow = new Vector2(520, 756);
         private static readonly Vector2 PauseWide = new Vector2(1000, 790);
 
         private Text _restartLabel, _quitLabel, _menuLabel;
@@ -102,7 +102,7 @@ namespace StellarisClone.Rendering
             // Окно паузы плавно меняет размер под страницу (узкое меню ↔ широкие настройки/сохранения)
             if (_pauseRt != null && _pause.activeInHierarchy)
             {
-                var target = _page == Page.Save || _page == Page.Load || _page == Page.Settings ? PauseWide : PauseNarrow;
+                var target = _page == Page.Save || _page == Page.Load || _page == Page.Settings || _page == Page.Achievements ? PauseWide : PauseNarrow;
                 float dt = Time.unscaledDeltaTime;
                 float vx = _pauseSizeV.x, vy = _pauseSizeV.y;
                 _pauseSize.x = LGEase.Spring(_pauseSize.x, target.x, ref vx, 3.2f, 0.85f, dt);
@@ -225,6 +225,7 @@ namespace StellarisClone.Rendering
                 Page.Load => (LGIcon.Load, Loc.T("ЗАГРУЗКА")),
                 Page.Settings => (LGIcon.Gear, Loc.T("НАСТРОЙКИ")),
                 Page.Goals => (LGIcon.Trophy, Loc.T("ЦЕЛИ")),
+                Page.Achievements => (LGIcon.Star, Loc.T("ДОСТИЖЕНИЯ")),
                 Page.Controls => (LGIcon.Menu, Loc.T("УПРАВЛЕНИЕ")),
                 _ => (LGIcon.Pause, Loc.T("ПАУЗА"))
             };
@@ -235,6 +236,7 @@ namespace StellarisClone.Rendering
             {
                 case Page.Main: BuildMainPage(); break;
                 case Page.Goals: BuildGoalsPage(); break;
+                case Page.Achievements: BuildAchievementsPage(); break;
                 case Page.Controls: BuildControlsPage(); break;
                 case Page.Save: BuildSaveLoadPage(SaveLoadPanel.Mode.Save); break;
                 case Page.Load: BuildSaveLoadPage(SaveLoadPanel.Mode.Load); break;
@@ -252,6 +254,7 @@ namespace StellarisClone.Rendering
             MenuButton(ref y, LGIcon.Load, Loc.T("ЗАГРУЗИТЬ"), UIManager.DS.BtnNeutral, new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Load));
             MenuButton(ref y, LGIcon.Gear, Loc.T("НАСТРОЙКИ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
             MenuButton(ref y, LGIcon.Trophy, Loc.T("ЦЕЛИ И УСЛОВИЯ ПОБЕДЫ"), UIManager.DS.BtnNeutral, UIManager.DS.Gold, () => ShowPage(Page.Goals));
+            MenuButton(ref y, LGIcon.Star, Loc.F("ДОСТИЖЕНИЯ  ·  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), UIManager.DS.BtnNeutral, new Color(1f, 0.84f, 0.40f), () => ShowPage(Page.Achievements));
             MenuButton(ref y, LGIcon.Menu, Loc.T("УПРАВЛЕНИЕ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
             y += 12f;
             _restartLabel = MenuButton(ref y, LGIcon.Globe, Loc.T("НАЧАТЬ ЗАНОВО"), new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, () =>
@@ -275,6 +278,48 @@ namespace StellarisClone.Rendering
 
             var hint = LGBuild.Label(_pageHost, Loc.T("Esc — вернуться в игру   ·   F5 — быстрое сохранение"), 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             hint.rectTransform.Stretch(0, 0, 0, 0);
+        }
+
+        private void BuildAchievementsPage()
+        {
+            var defs = Achievements.All();
+            int got = 0;
+            foreach (var d in defs) if (Achievements.IsUnlocked(d.Id)) got++;
+            var gold = new Color(1f, 0.84f, 0.40f);
+
+            var head = LGBuild.Label(_pageHost, Loc.F("Получено {0} из {1}", got, defs.Count), 15, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold: true);
+            head.rectTransform.TopBand(0, 24);
+            string sync = VkPlayStats.Ready
+                ? (Achievements.HasPending() ? Loc.T("VK Play: отправляем на сервер…") : Loc.T("VK Play: всё синхронизировано"))
+                : Loc.T("Хранятся на этом компьютере — VK Play не подключён");
+            var st = LGBuild.Label(_pageHost, sync, 11, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
+            st.rectTransform.TopBand(0, 24);
+            var bar = LGBuild.Rect(_pageHost, "Bar");
+            bar.TopBand(30, 8);
+            LGBuild.Bar(bar, gold, got / (float)Mathf.Max(1, defs.Count), 6f);
+
+            var area = LGBuild.Rect(_pageHost, "Area");
+            area.Stretch(0, 62, 0, 48);
+            var list = LGBuild.ScrollList(area, 6f, 2);
+            foreach (var d in defs)
+            {
+                bool on = Achievements.IsUnlocked(d.Id);
+                var card = LGBuild.Panel(list, "Ach", on ? new Color(0.10f, 0.085f, 0.035f, 0.92f) : new Color(0.025f, 0.045f, 0.060f, 0.85f));
+                LGBuild.Height(card.gameObject, 58f);
+                LG.Platter(card.gameObject, 10f).SetRim(on ? new Color(gold.r, gold.g, gold.b, 0.45f) : new Color(1f, 1f, 1f, 0.08f));
+                var ic = LGIcons.Create(card.transform, on ? d.Icon : LGIcon.Lock, 24, on ? gold : new Color(0.55f, 0.62f, 0.66f, 0.7f));
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 0), new Vector2(24, 24));
+                var name = LGBuild.Label(card.transform, d.Name, 14, on ? UIManager.DS.TextPrimary : new Color(0.75f, 0.80f, 0.84f), TextAnchor.UpperLeft, bold: true);
+                name.rectTransform.Stretch(60, 0, 170, 9);
+                string desc = !on && d.Hidden ? Loc.T("Условие откроется после получения") : d.Desc;
+                var ds = LGBuild.Label(card.transform, desc, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
+                ds.rectTransform.Stretch(60, 0, 170, 30);
+                var when = Achievements.UnlockedAt(d.Id);
+                string right = on && when.HasValue ? when.Value.ToLocalTime().ToString("dd.MM.yyyy") : Loc.T("не получено");
+                var rt = LGBuild.Label(card.transform, right, 11, on ? gold : new Color(0.55f, 0.62f, 0.66f, 0.8f), TextAnchor.MiddleRight, bold: on);
+                rt.rectTransform.Stretch(0, 0, 18, 0);
+            }
+            BackButton();
         }
 
         private void BuildSaveLoadPage(SaveLoadPanel.Mode mode)

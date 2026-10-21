@@ -1574,6 +1574,7 @@ namespace StellarisClone.Rendering
                     _viewingOffer = false;
                     SFXManager.Play(kind == AIEmpireManager.OfferKind.Peace ? Sfx.PeaceSigned
                         : kind == AIEmpireManager.OfferKind.Pact ? Sfx.PactSigned : Sfx.DealAccepted);
+                    if (kind == AIEmpireManager.OfferKind.Trade) Achievements.Unlock(Ach.Deal);
                     Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.Accept));
                 }
                 else SFXManager.Play(Sfx.UiDenied);
@@ -1587,6 +1588,7 @@ namespace StellarisClone.Rendering
             if (ai.PlayerPropose(_deal, out var verdict))
             {
                 SFXManager.Play(peace ? Sfx.PeaceSigned : pact ? Sfx.PactSigned : Sfx.DealAccepted);
+                if (!gift && !peace && !pact) Achievements.Unlock(Ach.Deal);
                 Say(DiplomacyLines.Get(leader, gift ? DiplomacyLines.Kind.Gift : DiplomacyLines.Kind.Accept));
                 _deal = new Deal();
             }
