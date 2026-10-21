@@ -202,34 +202,47 @@ namespace StellarisClone.Rendering
             LG.Platter(bg.gameObject, 8f).SetRim(active ? new Color(cc.r, cc.g, cc.b, 0.85f) : new Color(1f, 1f, 1f, 0.10f));
 
             float y = 12f;
-            // Рисованный значок закона — слева от названия
+            // Рисованный значок закона — крупный бледный водяной знак справа, под текстом
             var art = LGIcons.LawArt(law.Id);
-            float nameLeft = 14f;
             if (art != null)
             {
-                var li = LGIcons.Create(card, CategoryIcon(law.Category), 40, active ? cc : new Color(cc.r, cc.g, cc.b, 0.85f));
+                float side = Mathf.Min(card.rect.height > 10f ? card.rect.height - 24f : 130f, 130f);
+                var li = LGIcons.Create(card, CategoryIcon(law.Category), side, new Color(cc.r, cc.g, cc.b, active ? 0.24f : 0.16f), "Watermark");
                 li.sprite = art;
-                li.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -10), new Vector2(40, 40));
-                nameLeft = 60f;
+                Destroy(li.GetComponent<Shadow>());
+                li.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8f, 6f), new Vector2(side, side));
             }
             var name = LGBuild.Label(card, law.Name, 15, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
-            name.rectTransform.TopBand(y, 40, nameLeft, law.Default ? 70f : 14f);
-            y += Mathf.Max(art != null ? 42f : 0f, Mathf.Clamp(name.preferredHeight, 20f, 40f)) + 4f;
+            name.rectTransform.TopBand(y, 40, 14, law.Default ? 70f : 14f);
+            y += Mathf.Clamp(name.preferredHeight, 20f, 40f) + 4f;
             if (law.Default)
             {
                 var tag = LGBuild.Label(card, Loc.T("ИСХОДНЫЙ"), 9, Muted, TextAnchor.UpperRight, bold: true);
                 tag.rectTransform.TopBand(14, 14, 14, 14);
             }
             var desc = LGBuild.Label(card, law.Desc, 11, Primary, TextAnchor.UpperLeft, wrap: true);
-            desc.rectTransform.TopBand(y, 48, 14, 14);
             desc.lineSpacing = 1.05f;
-            y += Mathf.Clamp(desc.preferredHeight, 14f, 48f) + 6f;
+            float descH = Mathf.Clamp(desc.preferredHeight, 14f, 48f);
+
+            // Текст не должен заезжать на строку платы: при тесноте эффекты мельче, затем описание короче
+            // (полный текст закона — во всплывающей подсказке)
+            float limit = card.rect.height > 10f ? card.rect.height - 70f : float.MaxValue;
+            int rows = Mathf.Max(1, law.Effects.Count);
+            bool compact = y + descH + 6f + rows * 16f > limit;
+            float step = compact ? 13f : 16f;
+            if (y + descH + 6f + rows * step > limit)
+            {
+                descH = Mathf.Max(14f, limit - y - 6f - rows * step);
+                desc.verticalOverflow = VerticalWrapMode.Truncate;
+            }
+            desc.rectTransform.TopBand(y, descH, 14, 14);
+            y += descH + 6f;
 
             foreach (var (text, good) in law.Effects)
             {
-                var e = LGBuild.Label(card, (good ? "▲ " : "▼ ") + text, 11, good ? Good : Bad, TextAnchor.UpperLeft, bold: true, wrap: true);
-                e.rectTransform.TopBand(y, 30, 14, 14);
-                y += Mathf.Clamp(e.preferredHeight, 14f, 30f) + 2f;
+                var e = LGBuild.Label(card, (good ? "▲ " : "▼ ") + text, compact ? 10 : 11, good ? Good : Bad, TextAnchor.UpperLeft, bold: true, wrap: true);
+                e.rectTransform.TopBand(y, compact ? 13f : 30f, 14, 14);
+                y += compact ? step : Mathf.Clamp(e.preferredHeight, 14f, 30f) + 2f;
             }
             if (law.Effects.Count == 0)
             {
