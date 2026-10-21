@@ -42,7 +42,7 @@ namespace StellarisClone.Rendering
         /// и держал векторные иконки, даже когда появлялись рисованные. Чистим его в начале каждого запуска.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetCache() => s_Cache.Clear();
+        private static void ResetCache() { s_Cache.Clear(); s_Art.Clear(); }
 
         // ------------------------------------------------------------------ API
 
@@ -81,27 +81,37 @@ namespace StellarisClone.Rendering
             return sp;
         }
 
-        private static readonly Dictionary<string, Sprite> s_ModuleArt = new Dictionary<string, Sprite>();
+        private static readonly Dictionary<string, Sprite> s_Art = new Dictionary<string, Sprite>();
 
-        /// <summary>
-        /// Рисованный значок модуля корабля (Resources/UI/Icons/Modules/&lt;id модуля&gt;.png, белый силуэт) или null,
-        /// если для модуля картинки нет — тогда остаётся общий значок по типу.
-        /// </summary>
-        public static Sprite ModuleArt(string moduleId)
+        /// <summary>Рисованный значок из Resources/UI/Icons/&lt;path&gt;.png (белый силуэт) или null, если картинки нет.</summary>
+        private static Sprite LoadArt(string path)
         {
-            if (string.IsNullOrEmpty(moduleId)) return null;
-            if (s_ModuleArt.TryGetValue(moduleId, out var cached)) return cached;
+            if (s_Art.TryGetValue(path, out var cached)) return cached;
             Sprite sp = null;
-            var tex = Resources.Load<Texture2D>("UI/Icons/Modules/" + moduleId);
+            var tex = Resources.Load<Texture2D>("UI/Icons/" + path);
             if (tex != null)
             {
                 tex.wrapMode = TextureWrapMode.Clamp;
                 sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
                 sp.hideFlags = HideFlags.DontSave;
             }
-            s_ModuleArt[moduleId] = sp;
+            s_Art[path] = sp;
             return sp;
         }
+
+        /// <summary>
+        /// Рисованный значок модуля корабля (Resources/UI/Icons/Modules/&lt;id модуля&gt;.png) или null,
+        /// если для модуля картинки нет — тогда остаётся общий значок по типу.
+        /// </summary>
+        public static Sprite ModuleArt(string moduleId)
+            => string.IsNullOrEmpty(moduleId) ? null : LoadArt("Modules/" + moduleId);
+
+        /// <summary>
+        /// Крупный рисованный значок направления науки (Resources/UI/Icons/Tech/tech_&lt;направление&gt;.png) или null.
+        /// Детальный — для заголовков и карточки технологии; на мелких узлах дерева остаётся простой значок.
+        /// </summary>
+        public static Sprite TechArt(StellarisClone.Core.TechCategory c)
+            => LoadArt("Tech/tech_" + c.ToString().ToLowerInvariant());
 
         /// <summary>Создаёт Image-иконку заданного размера (по центру родителя, если не перемещать).</summary>
         public static Image Create(Transform parent, LGIcon icon, float size, Color color, string name = null)

@@ -749,11 +749,14 @@ namespace StellarisClone.Rendering
             group.pivot = new Vector2(0, 0.5f);
             group.sizeDelta = new Vector2(LaneHeadW - 16f, 96f);
             group.anchoredPosition = new Vector2(12f, 0f);
-            var ic = LGIcons.Create(group, LGIcons.ForTechCategory(cat), 24, cc);
-            ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(24, 24));
+            var art = LGIcons.TechArt(cat);
+            float isz = art != null ? 38f : 24f;
+            var ic = LGIcons.Create(group, LGIcons.ForTechCategory(cat), isz, cc);
+            if (art != null) ic.sprite = art;
+            ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(isz, isz));
             var nm = LGBuild.Label(group, TechCategoryInfo.Name(cat), 12, Primary, TextAnchor.MiddleCenter, bold: true, wrap: true);
             FitText(nm, 9);
-            nm.rectTransform.TopBand(28, 34);
+            nm.rectTransform.TopBand(isz + 4, 34);
             var cnt = LGBuild.Label(group, $"{done} / {techs.Count}", 12, Dim, TextAnchor.MiddleCenter, bold: true);
             cnt.rectTransform.TopBand(64, 16);
             var barHost = LGBuild.Rect(group, "Bar");
@@ -1201,6 +1204,7 @@ namespace StellarisClone.Rendering
                 _detailName.text = Loc.T("Выберите технологию");
                 _detailSub.text = "";
                 _detailIcon.sprite = LGIcons.Get(LGIcon.Research);
+                _detailIcon.rectTransform.sizeDelta = new Vector2(38, 38);
                 _detailIcon.color = Muted;
                 _detailBadgeFx.SetRim(new Color(1f, 1f, 1f, 0.15f));
                 _pillBg.gameObject.SetActive(false);
@@ -1214,7 +1218,9 @@ namespace StellarisClone.Rendering
             _detailName.text = t.Name;
             _detailSub.text = $"<color={LGBuild.Hex(TechBranchInfo.Color(br))}>{TechBranchInfo.Name(br)}</color>  ·  " +
                               $"{TechCategoryInfo.Name(t.Category)}  ·  {(t.Tier == 0 ? Loc.T("БАЗОВАЯ") : Loc.T("УРОВЕНЬ ") + Roman(t.Tier))}";
-            _detailIcon.sprite = LGIcons.Get(LGIcons.ForTechCategory(t.Category));
+            var detailArt = LGIcons.TechArt(t.Category);
+            _detailIcon.sprite = detailArt ?? LGIcons.Get(LGIcons.ForTechCategory(t.Category));
+            _detailIcon.rectTransform.sizeDelta = detailArt != null ? new Vector2(54, 54) : new Vector2(38, 38);
             _detailIcon.color = cc;
             _detailBadgeFx.SetRim(new Color(cc.r, cc.g, cc.b, 0.45f));
             _pillBg.gameObject.SetActive(true);
