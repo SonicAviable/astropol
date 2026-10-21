@@ -14,13 +14,14 @@ namespace StellarisClone.Rendering
     ///   • Выполнение — маленькое событие: вспышка, галочка в медальоне, всплывающая награда, звук сделки,
     ///     затем карточка «перелистывается» на следующую директиву. В конце — «Глава I завершена», и карточка уходит.
     ///   • Щелчок по карточке показывает, с чего начать; по шапке — сворачивает (запоминается).
-    /// Если под меню не хватает места (крупный масштаб интерфейса) — встаёт справа от меню.
+    /// Если под меню не хватает места до мини-карты — встаёт справа от меню. Место выбирается
+    /// по развёрнутой карточке, поэтому при сворачивании она не переезжает.
     /// </summary>
     public class StarterGoalsPanel : MonoBehaviour
     {
         public static StarterGoalsPanel Instance { get; private set; }
 
-        private const float W = 268f, HeadH = 28f, BodyH = 118f, Gap = 8f, MinimapReserve = 322f;
+        private const float W = 268f, HeadH = 28f, BodyH = 130f, Gap = 8f, MinimapReserve = 322f;
 
         private static readonly Color Gold = new Color(1f, 0.82f, 0.38f);
         private static readonly Color Cyan = new Color(0.36f, 0.95f, 0.88f);
@@ -221,7 +222,7 @@ namespace StellarisClone.Rendering
             _hint.rectTransform.anchorMax = new Vector2(1, 0);
             _hint.rectTransform.pivot = new Vector2(0.5f, 0);
             _hint.rectTransform.offsetMin = new Vector2(12, 6);
-            _hint.rectTransform.offsetMax = new Vector2(-10, 34);
+            _hint.rectTransform.offsetMax = new Vector2(-10, 46);
             _hint.verticalOverflow = VerticalWrapMode.Truncate;
             _hint.lineSpacing = 1.05f;
 
@@ -298,7 +299,8 @@ namespace StellarisClone.Rendering
             var ui = UIManager.Instance;
             if (ui == null || _canvas == null) return;
             float canvasH = ((RectTransform)_canvas.transform).rect.height;
-            float h = _root.sizeDelta.y;
+            // Место выбираем по развёрнутой карточке: иначе свёрнутая и развёрнутая стояли бы в разных местах
+            float h = HeadH + 4f + BodyH;
             float under = ui.NavBottom + Gap;
             Vector2 pos = under + h <= canvasH - MinimapReserve
                 ? new Vector2(10f, -under)
