@@ -154,6 +154,60 @@ namespace StellarisClone.Rendering
             _colScan = Random.value * 0.5f;
         }
 
+        private ConstructionJob _chipJobRef;
+
+        /// <summary>Подсказка ярлыка под курсором (жители или стройка); null — курсор не над ярлыком.</summary>
+        public string ChipTooltipAt(Camera cam, Vector2 screen)
+        {
+            if (_data == null || _data.OwnerId != 0) return null;
+            if (_popOn && _chipPop != null && _chipPop.ContainsScreenPoint(cam, screen)) return PopTooltip();
+            if (_jobOn && _chipJob != null && _chipJob.ContainsScreenPoint(cam, screen)) return JobTooltip();
+            return null;
+        }
+
+        private string PopTooltip()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(Loc.F("<b>Население системы {0}</b>", _data.Name));
+            sb.Append(Loc.T("\n<color=#8AA2A8>Число — жители всех колоний; срок — когда появится новый житель в самой большой колонии</color>"));
+            foreach (var p in _data.Planets)
+            {
+                if (p.Population <= 0) continue;
+                sb.Append(Loc.F("\n\n<b>{0}</b> — жителей {1} из {2}", p.Name, p.Population, p.HousingCapacity));
+                int months = p.MonthsToNextPop;
+                if (months > 0)
+                    sb.Append(Loc.F("\nРост +{0:0.#}% в месяц · новый житель через ~{1} мес.", p.PopGrowthBaseSpeedPctPerMonth, months));
+                else if (p.Population >= p.HousingCapacity)
+                    sb.Append(Loc.T("\n<color=#F2C747>Рост остановлен: нет жилья — постройте городской район</color>"));
+                else
+                    sb.Append(Loc.T("\n<color=#F2C747>Рост остановлен</color>"));
+                var tier = p.Tier;
+                sb.Append(Loc.F("\nСтабильность {0:0} · <color=#{1}>{2}</color>", p.Stability,
+                    PlanetStability.Hex(PlanetStability.TierColor(tier)), PlanetStability.TierName(tier)));
+                if (p.IdlePops > 0) sb.Append(Loc.F("\n<color=#FF9A8A>Без работы: {0}</color>", p.IdlePops));
+            }
+            sb.Append(Loc.T("\n\n<color=#8AA2A8>Нажмите на систему, чтобы открыть колонию</color>"));
+            return sb.ToString();
+        }
+
+        private string JobTooltip()
+        {
+            var j = _chipJobRef;
+            if (j == null) return null;
+            var sb = new System.Text.StringBuilder();
+            sb.Append(Loc.F("<b>Стройка: {0}</b>", BuildMenuModal.JobTitle(j)));
+            if (j.PlanetIndex >= 0 && j.PlanetIndex < _data.Planets.Count) sb.Append(Loc.F("\nПланета {0}", _data.Planets[j.PlanetIndex].Name));
+            sb.Append(Loc.F("\nГотово через {0} дн. ({1:0}%)", Mathf.CeilToInt(j.DaysLeft), j.Progress * 100f));
+            int more = 0;
+            var cm = ConstructionManager.Instance;
+            if (cm != null)
+                foreach (var o in cm.Jobs)
+                    if (o != null && o != j && o.Owner == 0 && o.SystemId == _data.Id && o.Kind != JobKind.Colony && o.Kind != JobKind.Terraform) more++;
+            if (more > 0) sb.Append(Loc.F("\nЕщё в очереди системы: {0}", more));
+            sb.Append(Loc.T("\n<color=#8AA2A8>На ярлыке — стройка, которая закончится раньше всех</color>"));
+            return sb.ToString();
+        }
+
         /// <summary>Жители всех ваших колоний системы, рост главной и ближайшая к завершению текущая стройка (районы, проекты, корабли).</summary>
         private void UpdateColonyChips()
         {
@@ -201,6 +255,7 @@ namespace StellarisClone.Rendering
                 }
                 _chipPop.Root.localPosition = new Vector3(-(starR + gap + _chipPop.Width * 0.5f), 0f, -0.02f);
             }
+            _chipJobRef = best;
             if (best != null)
             {
                 _jobOn = true;

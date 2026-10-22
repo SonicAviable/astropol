@@ -118,6 +118,23 @@ namespace StellarisClone.Rendering
             foreach (Transform t in Root) t.localPosition = new Vector3(t.localPosition.x - Width * 0.5f + x, y, t.localPosition.z);
         }
 
+        /// <summary>Курсор над ярлыком: экранный прямоугольник пластины (по углам её габаритов).</summary>
+        public bool ContainsScreenPoint(Camera cam, Vector2 screen)
+        {
+            if (cam == null || Plate == null || !Plate.gameObject.activeInHierarchy || _alpha < 0.1f) return false;
+            var b = Plate.bounds;
+            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+            for (int i = 0; i < 8; i++)
+            {
+                var c = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+                var sp = cam.WorldToScreenPoint(c);
+                if (sp.z <= 0f) return false;
+                minX = Mathf.Min(minX, sp.x); maxX = Mathf.Max(maxX, sp.x);
+                minY = Mathf.Min(minY, sp.y); maxY = Mathf.Max(maxY, sp.y);
+            }
+            return screen.x >= minX && screen.x <= maxX && screen.y >= minY && screen.y <= maxY;
+        }
+
         public void SetAlpha(float a)
         {
             if (Mathf.Approximately(_alpha, a)) return;

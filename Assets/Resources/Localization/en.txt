@@ -5282,3 +5282,17 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Свечение звёзд, тонирование и виньетка	Star bloom, tone mapping and vignette
 Текстуры	Textures
 Половинные экономят видеопамять на слабых видеокартах	Half resolution saves video memory on weak graphics cards
+<b>Население системы {0}</b>	<b>Population of {0}</b>
+\n<color=#8AA2A8>Число — жители всех колоний; срок — когда появится новый житель в самой большой колонии</color>	\n<color=#8AA2A8>The number is the population of all colonies; the time is when the largest colony gets its next inhabitant</color>
+\n\n<b>{0}</b> — жителей {1} из {2}	\n\n<b>{0}</b> — population {1} of {2}
+\nРост +{0:0.#}% в месяц · новый житель через ~{1} мес.	\nGrowth +{0:0.#}% per month · next inhabitant in ~{1} mo.
+\n<color=#F2C747>Рост остановлен: нет жилья — постройте городской район</color>	\n<color=#F2C747>Growth stopped: no housing — build an urban district</color>
+\n<color=#F2C747>Рост остановлен</color>	\n<color=#F2C747>Growth stopped</color>
+\nСтабильность {0:0} · <color=#{1}>{2}</color>	\nStability {0:0} · <color=#{1}>{2}</color>
+\n<color=#FF9A8A>Без работы: {0}</color>	\n<color=#FF9A8A>Unemployed: {0}</color>
+\n\n<color=#8AA2A8>Нажмите на систему, чтобы открыть колонию</color>	\n\n<color=#8AA2A8>Click the system to open the colony</color>
+<b>Стройка: {0}</b>	<b>Construction: {0}</b>
+\nПланета {0}	\nPlanet {0}
+\nГотово через {0} дн. ({1:0}%)	\nDone in {0} days ({1:0}%)
+\nЕщё в очереди системы: {0}	\nMore queued in this system: {0}
+\n<color=#8AA2A8>На ярлыке — стройка, которая закончится раньше всех</color>	\n<color=#8AA2A8>The label shows the construction that finishes first</color>
