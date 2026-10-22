@@ -55,10 +55,10 @@ namespace StellarisClone.Core
                     NotificationCenter.Show(Loc.T("Узел силы под вашим контролем"), $"{name}: {Landmarks.Effect(s.Landmark)}.",
                         NotificationCenter.Kind.Success, 8f);
                 else if (prev == 0)
-                    NotificationCenter.Show(Loc.T("Узел силы потерян"), Loc.F("{0} перешёл к {1}. Бонус больше не действует.", name, AIEmpireManager.NameOf(holder, Loc.T("другой империи"))),
+                    NotificationCenter.Show(Loc.T("Узел силы потерян"), Loc.F("{0} перешёл к {1}. Бонус больше не действует.", name, Contacts.NameForPlayer(holder, Loc.T("другой империи"))),
                         NotificationCenter.Kind.Danger, 9f);
                 else if (holder > 0 && known)
-                    NotificationCenter.Show(Loc.T("Узел силы занят"), Loc.F("{0} установила контроль над узлом «{1}».", AIEmpireManager.NameOf(holder, Loc.T("Империя")), name),
+                    NotificationCenter.Show(Loc.T("Узел силы занят"), Loc.F("{0} установила контроль над узлом «{1}».", Contacts.NameForPlayer(holder, Loc.T("Империя")), name),
                         NotificationCenter.Kind.Warning, 7f);
             }
             _init = true;

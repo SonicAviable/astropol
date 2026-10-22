@@ -282,12 +282,16 @@ namespace StellarisClone.Core
             return new EventContext { Ship = pick, System = EmpireStats.GetSystem(pick.CurrentSystemId), Leader = Leaders?.LeaderOfShip(pick.Id) };
         }
 
-        /// <summary>Случайная империя ИИ, подходящая событию (needPeace — только те, с кем мир; border — только соседи).</summary>
+        /// <summary>
+        /// Случайная империя ИИ, подходящая событию (needPeace — только те, с кем мир; border — только соседи).
+        /// Только знакомые игроку: о незнакомцах события не рассказывают.
+        /// </summary>
         private static EventContext RivalCtx(bool needPeace, bool needBorder = false)
         {
             var list = new List<AIEmpireManager>();
             foreach (var ai in AIEmpireManager.Alive)
             {
+                if (!Contacts.PlayerMet(ai.OwnerId)) continue;
                 if (needPeace && ai.AtWar) continue;
                 if (EmpireStats.SystemCount(ai.OwnerId) == 0) continue;
                 if (needBorder && EmpireStats.SharedBorderCount(ai.OwnerId, 0) == 0) continue;

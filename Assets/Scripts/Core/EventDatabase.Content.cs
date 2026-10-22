@@ -27,15 +27,19 @@ namespace StellarisClone.Core
         private static void SetFlag(string f) { var l = Flags; if (l != null && !l.Contains("flag:" + f)) l.Add("flag:" + f); }
         private static void ClearFlag(string f) => Flags?.Remove("flag:" + f);
 
+        /// <summary>Отношение всех знакомых империй: незнакомцы о наших делах не знают.</summary>
         private static void OpinionAll(float delta)
         {
-            foreach (var ai in AIEmpireManager.Alive) ai.AddMemory("incident", delta);
+            foreach (var ai in AIEmpireManager.Alive) if (Contacts.PlayerMet(ai.OwnerId)) ai.AddMemory("incident", delta);
         }
+
+        /// <summary>Знакомая империя, с которой мир.</summary>
+        private static bool PeacefulKnown(AIEmpireManager ai) => !ai.AtWar && Contacts.PlayerMet(ai.OwnerId);
 
         private static AIEmpireManager RandomPeacefulRival()
         {
             var list = new List<AIEmpireManager>();
-            foreach (var ai in AIEmpireManager.Alive) if (!ai.AtWar) list.Add(ai);
+            foreach (var ai in AIEmpireManager.Alive) if (PeacefulKnown(ai)) list.Add(ai);
             return RandomOf(list);
         }
 
@@ -171,7 +175,7 @@ namespace StellarisClone.Core
                 {
                     float k = K();
                     int peaceful = 0;
-                    foreach (var ai in AIEmpireManager.Alive) if (!ai.AtWar) peaceful++;
+                    foreach (var ai in AIEmpireManager.Alive) if (PeacefulKnown(ai)) peaceful++;
                     float invest = 150f * k;
                     return Ev("decision_aquila", Loc.T("СОБРАНИЕ АКЦИОНЕРОВ"),
                         Loc.T("Совет директоров собирает акционеров Синдиката. Отчёт о прибыли зачитан, бокалы подняты, аналитики ") +
@@ -190,7 +194,7 @@ namespace StellarisClone.Core
                             new EventOption(Loc.T("ТОРГОВЫЕ ПРЕДСТАВИТЕЛЬСТВА"), Loc.F("+{0} гелия-3 в месяц за каждую мирную империю (сейчас {1}) на 24 месяца и +4 к их отношению.", R(2 * k), peaceful), () =>
                             {
                                 EmpireEffects.Add("contract_aquila", Loc.T("Торговые представительства"), Loc.T("Собрание акционеров"), 24, energy: 2 * k * peaceful);
-                                foreach (var ai in AIEmpireManager.Alive) if (!ai.AtWar) ai.AddMemory("trade", 4f);
+                                foreach (var ai in AIEmpireManager.Alive) if (PeacefulKnown(ai)) ai.AddMemory("trade", 4f);
                             }, Loc.T("Нужна хотя бы одна мирная империя"), () => peaceful > 0),
                             new EventOption(Loc.T("ВЫКУП ДОЛГОВ"), Loc.F("Сразу +{0} влияния, −{1} гелия-3 в месяц на 24 месяца.", R(70 * k), R(4 * k)), () =>
                             {
@@ -255,6 +259,7 @@ namespace StellarisClone.Core
                             {
                                 foreach (var ai in AIEmpireManager.Alive)
                                 {
+                                    if (!Contacts.PlayerMet(ai.OwnerId)) continue;
                                     bool hostile = ai.AtWar || ai.Opinion <= ai.Profile.WarOpinionThreshold + 15f;
                                     NotificationCenter.Show(Loc.F("Видение: {0}", ai.AIName),
                                         ai.AtWar ? Loc.T("уже воюет с вами и не отступит легко")
