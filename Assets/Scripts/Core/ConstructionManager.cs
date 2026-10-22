@@ -191,7 +191,7 @@ namespace StellarisClone.Core
             };
             if (kind == JobKind.Terraform) p.TerraformingInProgress = true;
             _jobs.Add(job);
-            if (owner == 0) SFXManager.Play(Sfx.BuildQueued);
+            if (owner == 0) SFXManager.Play(Sfx.Construction);
             OnQueuesChanged?.Invoke();
             return job;
         }
@@ -207,7 +207,7 @@ namespace StellarisClone.Core
                 Energy = energy, Minerals = minerals, Alloys = alloys, Influence = influence
             };
             _jobs.Add(job);
-            if (owner == 0) SFXManager.Play(Sfx.BuildQueued);
+            if (owner == 0) SFXManager.Play(Sfx.Construction);
             OnQueuesChanged?.Invoke();
             return job;
         }
@@ -222,7 +222,7 @@ namespace StellarisClone.Core
                 DaysTotal = days, DaysLeft = days, Energy = energy, Alloys = alloys
             };
             _jobs.Add(job);
-            if (owner == 0) SFXManager.Play(Sfx.BuildQueued);
+            if (owner == 0) SFXManager.Play(Sfx.Construction);
             OnQueuesChanged?.Invoke();
             return job;
         }

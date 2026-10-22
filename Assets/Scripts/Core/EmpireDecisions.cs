@@ -84,6 +84,7 @@ namespace StellarisClone.Core
     /// Решения империи — как в Hearts of Iron: у каждой фракции свои особые решения и великий проект,
     /// плюс общие решения для всех. Решение стоит ресурсов (в первую очередь титана — так излишки сырья
     /// превращаются в сплавы, гелий-3, науку и влияние), идёт несколько дней и потом закрывается на перезарядку.
+    /// На старте видно лишь несколько решений: остальные открываются с годами, ростом империи и обстоятельствами.
     /// Одновременно — не больше <see cref="MaxActive"/>. Бонусы ложатся на бонусы игрока по версии, как законы.
     /// </summary>
     public static class EmpireDecisions
@@ -143,18 +144,6 @@ namespace StellarisClone.Core
             EnsureDefs();
             foreach (var d in s_all) if (d.Category == c && d.IsOffer && IsVisible(d)) yield return d;
             foreach (var d in s_all) if (d.Category == c && !d.IsOffer && IsVisible(d)) yield return d;
-        }
-
-        /// <summary>Сколько решений фракции пока скрыто (откроются при особых условиях).</summary>
-        public static int HiddenCount
-        {
-            get
-            {
-                EnsureDefs();
-                int n = 0;
-                foreach (var d in s_all) if (OwnFaction(d) && !IsVisible(d)) n++;
-                return n;
-            }
         }
 
         /// <summary>Сколько решений можно принять прямо сейчас (счётчик на кнопке меню).</summary>
@@ -557,6 +546,7 @@ namespace StellarisClone.Core
             return Loc.F("Синтетами стали {0} жителей.", n);
         }
 
+        private static int Colonies => EmpireStats.Colonies(0);
         private static int YearsIn => TimeManager.Instance != null ? TimeManager.Instance.Year - 2200 : 0;
         private static int MonthNow => TimeManager.Instance != null ? TimeManager.Instance.Month : 1;
 
@@ -654,18 +644,21 @@ namespace StellarisClone.Core
             D("dec_smelt", null, Eco, LGIcon.Alloys, Loc.T("Переплавка запасов"),
                 Loc.T("Плавильни работают в три смены: титан со складов уходит в печи и выходит сплавами для верфей."))
                 .Cost(minerals: 600f).Time(30, 90)
+                .When(() => YearsIn >= 3)
                 .Line(() => Loc.F("Через 30 дн.: +{0:0} сплавов", 160f * Scale))
                 .Done(s => { Gain(alloys: 160f * s); return Loc.F("Склады получили {0:0} сплавов.", 160f * s); });
 
             D("dec_exchange", null, Eco, LGIcon.Trade, Loc.T("Сырьевая биржа"),
                 Loc.T("Титан продают перекупщикам из нейтральных систем. Платят гелием-3 — топливом, которого вечно не хватает флоту."))
                 .Cost(minerals: 700f).Time(20, 120)
+                .When(() => YearsIn >= 5)
                 .Line(() => Loc.F("Через 20 дн.: +{0:0} гелия-3", 300f * Scale))
                 .Done(s => { Gain(energy: 300f * s); return Loc.F("Выручка: {0:0} гелия-3.", 300f * s); });
 
             D("dec_bonds", null, Eco, LGIcon.Influence, Loc.T("Титановые облигации"),
                 Loc.T("Казна выпускает облигации, обеспеченные титаном. Держатели — влиятельные кланы и корпорации — теперь на вашей стороне."))
                 .Cost(minerals: 900f).Time(0, 360)
+                .When(() => YearsIn >= 10 && Colonies >= 3)
                 .Line(Loc.T("+2 влияния в месяц на 12 месяцев"))
                 .Done(s =>
                 {
@@ -677,6 +670,7 @@ namespace StellarisClone.Core
             D("dec_grant", null, Sci, LGIcon.Research, Loc.T("Научный грант"),
                 Loc.T("Щедрый грант лучшим лабораториям: оборудование из титана, лучшие умы — на текущие исследования."))
                 .Cost(minerals: 800f, influence: 15f).Time(0, 360)
+                .When(() => YearsIn >= 5)
                 .Line(() => Loc.F("Сразу +{0:0} науки (4 месяца исследований)", MonthlyScience * 4f))
                 .Done(s => GiveScience(4f));
 
@@ -684,12 +678,13 @@ namespace StellarisClone.Core
                 Loc.T("Караван исследовательских зондов уходит за границу на два месяца и картографирует всё, до чего дотянется."))
                 .Cost(minerals: 400f, energy: 150f).Time(60, 360)
                 .Line(Loc.T("Через 60 дн.: изучены все системы в 4 прыжках от границ"))
-                .When(() => EventDatabase.UnsurveyedNearPlayer(4).Count > 0)
+                .When(() => YearsIn >= 2 && (EventDatabase.UnsurveyedNearPlayer(4).Count > 0))
                 .Done(s => Survey(4));
 
             D("dec_labs", null, Sci, LGIcon.Sensors, Loc.T("Ночные смены в лабораториях"),
                 Loc.T("Учёные получают новые корпуса и трёхсменный график. Науки больше, но заводы делятся мощностями."))
                 .Cost(minerals: 1000f).Time(240, 480)
+                .When(() => YearsIn >= 15 || Colonies >= 5)
                 .Mod((b, k) => { b.ResearchMult += 0.15f * k; })
                 .Line(Loc.T("+15% науки на 240 дн."));
 
@@ -698,18 +693,20 @@ namespace StellarisClone.Core
                 Loc.T("Полевые доки из титановых ферм собирают прямо на орбитах: весь флот встаёт в строй за неделю."))
                 .Cost(minerals: 500f, energy: 100f).Time(0, 180)
                 .Line(Loc.T("Сразу: все корабли полностью отремонтированы"))
-                .When(() => DamagedShips() > 0)
+                .When(() => YearsIn >= 3 && (DamagedShips() > 0))
                 .Done(s => RepairAll());
 
             D("dec_drills", null, Mil, LGIcon.Target, Loc.T("Военные учения"),
                 Loc.T("Флот полгода отрабатывает манёвры на титановых мишенях. Экипажи стреляют быстрее и точнее."))
                 .Cost(minerals: 600f, influence: 10f).Time(180, 360)
+                .When(() => YearsIn >= 8)
                 .Mod((b, k) => { b.AllDamage += 0.10f * k; b.Accuracy += 5f * k; })
                 .Line(Loc.T("+10% урона и +5 точности на 180 дн."));
 
             D("dec_shipyards", null, Mil, LGIcon.Shipyard, Loc.T("Ускоренное судостроение"),
                 Loc.T("Верфи получают запас титана на годы вперёд: корпуса штампуют потоком, и каждый корабль обходится дешевле."))
                 .Cost(minerals: 1000f).Time(180, 540)
+                .When(() => YearsIn >= 12)
                 .Mod((b, k) => { b.ShipCostMult -= 0.15f * k; })
                 .Line(Loc.T("−15% цены кораблей на 180 дн."));
 
@@ -717,12 +714,14 @@ namespace StellarisClone.Core
             D("dec_monument", null, Soc, LGIcon.Construction, Loc.T("Монументальное строительство"),
                 Loc.T("Титановые монументы героям и основателям встают в каждой столице. Граждане гордятся империей."))
                 .Cost(minerals: 1500f).Time(360, 720)
+                .When(() => Colonies >= 5)
                 .Stab(8f)
                 .Line(Loc.T("Действует 360 дн."));
 
             D("dec_colonial", null, Soc, LGIcon.Population, Loc.T("Колониальные субсидии"),
                 Loc.T("Переселенцам — жильё, кредиты и титановые купола. Колонии растут быстрее."))
                 .Cost(minerals: 700f, energy: 200f).Time(360, 540)
+                .When(() => Colonies >= 3)
                 .Mod((b, k) => { b.PopGrowth += 0.35f * k; })
                 .Line(Loc.T("+35% роста населения на 360 дн."));
 
@@ -861,11 +860,13 @@ namespace StellarisClone.Core
             D("ast_academy", "astrea", F, LGIcon.Research, Loc.T("Академия Республики"),
                 Loc.T("Свободный университет для учёных всей галактики. Беженцы-гении едут к нам, а не к соседям."))
                 .Cost(minerals: 1500f).Time(360, 900)
+                .When(() => YearsIn >= 10)
                 .Mod((b, k) => { b.ResearchMult += 0.20f * k; })
                 .Line(Loc.T("+20% науки на 360 дн."));
             D("ast_charter", "astrea", F, LGIcon.Globe, Loc.T("Хартия колоний"),
                 Loc.T("Великий проект: колонии получают самоуправление и голос в Сенате. Республика становится союзом равных."))
                 .Cost(minerals: 2500f, influence: 50f).Time(360, 0).Great()
+                .When(() => YearsIn >= 20 && Colonies >= 5)
                 .Mod((b, k) => { b.PopGrowth += 0.10f * k; })
                 .Line(Loc.T("Навсегда: +10% роста населения"))
                 .Stab(4f);
@@ -883,17 +884,20 @@ namespace StellarisClone.Core
             D("xarn_parade", "xarn", F, LGIcon.Swords, Loc.T("Военный парад"),
                 Loc.T("Над столицей проходит весь флот Доминиона. Народ ликует, враги считают стволы."))
                 .Cost(minerals: 800f, alloys: 100f).Time(180, 540)
+                .When(() => YearsIn >= 5)
                 .Mod((b, k) => { b.AllDamage += 0.10f * k; })
                 .Stab(6f)
                 .Line(Loc.T("+10% урона на 180 дн."));
             D("xarn_mobilize", "xarn", F, LGIcon.Shipyard, Loc.T("Мобилизация верфей"),
                 Loc.T("Каждая верфь Доминиона переходит на военный график. Корпуса сходят со стапелей каждый день."))
                 .Cost(minerals: 1200f, influence: 20f).Time(240, 720)
+                .When(() => YearsIn >= 10 || AtWar())
                 .Mod((b, k) => { b.ShipCostMult -= 0.25f * k; b.NavalCapacity += 8f * k; })
                 .Line(Loc.T("−25% цены кораблей и +8 к флотскому лимиту на 240 дн."));
             D("xarn_forge", "xarn", F, LGIcon.Industry, Loc.T("Кузницы Ксарна"),
                 Loc.T("Великий проект: в недрах столицы зажигают горны, способные плавить броню целых флотов."))
                 .Cost(minerals: 2500f).Time(360, 0).Great()
+                .When(() => YearsIn >= 20)
                 .Mod((b, k) => { b.AlloysMult += 0.10f * k; b.StarbaseMult += 0.15f * k; })
                 .Line(Loc.T("Навсегда: +10% сплавов и +15% прочности звёздных баз"));
 
@@ -909,11 +913,13 @@ namespace StellarisClone.Core
             D("aq_boom", "aquila", F, LGIcon.Energy, Loc.T("Биржевой бум"),
                 Loc.T("Синдикат вкладывает титан в гелиевые фьючерсы. Пока пузырь растёт — растёт и казна."))
                 .Cost(minerals: 1000f).Time(240, 720)
+                .When(() => YearsIn >= 8)
                 .Mod((b, k) => { b.EnergyMult += 0.25f * k; })
                 .Line(Loc.T("+25% гелия-3 на 240 дн."));
             D("aq_lobby", "aquila", F, LGIcon.Influence, Loc.T("Лоббирование"),
                 Loc.T("Гелий-3 уходит нужным людям в нужных кабинетах. Через месяц нужные решения принимаются сами."))
                 .Cost(energy: 400f).Time(30, 360)
+                .When(() => YearsIn >= 3)
                 .Line(Loc.T("Через 30 дн.: +50 влияния"))
                 .Done(s => { Gain(influence: 50f); return Loc.T("Получено 50 влияния."); });
             D("aq_trade", "aquila", F, LGIcon.Trade, Loc.T("Торговая экспансия"),
@@ -931,6 +937,7 @@ namespace StellarisClone.Core
             D("aq_exchange", "aquila", F, LGIcon.Trade, Loc.T("Галактическая биржа"),
                 Loc.T("Великий проект: главная биржа галактики. Через неё проходит каждый контракт — и с каждого Синдикат берёт свою долю."))
                 .Cost(minerals: 2500f).Time(360, 0).Great()
+                .When(() => YearsIn >= 20)
                 .Mod((b, k) => { b.EnergyMult += 0.10f * k; b.InfluenceFlat += 1f * k; })
                 .Line(Loc.T("Навсегда: +10% гелия-3 и +1 влияния в месяц"));
 
@@ -944,17 +951,20 @@ namespace StellarisClone.Core
             D("ir_vision", "iridia", F, LGIcon.Star, Loc.T("Видение будущего"),
                 Loc.T("Верховная Оракул уходит в транс на месяц. Вернувшись, она диктует учёным то, до чего они дошли бы лишь через полгода."))
                 .Cost(influence: 30f).Time(30, 540)
+                .When(() => YearsIn >= 3)
                 .Line(() => Loc.F("Через 30 дн.: +{0:0} науки (6 месяцев исследований)", MonthlyScience * 6f))
                 .Done(s => GiveScience(6f));
             D("ir_pilgrimage", "iridia", F, LGIcon.Society, Loc.T("Паломничество к Саду"),
                 Loc.T("Миллионы верующих идут к миру-саду Иридии. Колонии светятся единой мыслью, рождается больше детей."))
                 .Cost(minerals: 900f).Time(180, 540)
+                .When(() => Colonies >= 3)
                 .Mod((b, k) => { b.PopGrowth += 0.10f * k; })
                 .Stab(10f)
                 .Line(Loc.T("+10% роста населения на 180 дн."));
             D("ir_temple", "iridia", F, LGIcon.Globe, Loc.T("Храм Предвидения"),
                 Loc.T("Великий проект: хрустальный храм, где сотни провидцев читают нити будущего день и ночь."))
                 .Cost(minerals: 2500f).Time(360, 0).Great()
+                .When(() => YearsIn >= 20)
                 .Mod((b, k) => { b.InfluenceFlat += 1.5f * k; b.ResearchMult += 0.05f * k; })
                 .Line(Loc.T("Навсегда: +1.5 влияния в месяц и +5% науки"));
 
@@ -968,6 +978,7 @@ namespace StellarisClone.Core
             D("ter_bloom", "terraan", F, LGIcon.Population, Loc.T("Великое цветение"),
                 Loc.T("Конклав пробуждает спящие семена на всех мирах сразу. Через два месяца сад приносит новых жителей."))
                 .Cost(minerals: 1000f, energy: 200f).Time(60, 720)
+                .When(() => Colonies >= 3)
                 .Line(Loc.T("Через 60 дн.: +1 житель на каждой колонии со свободным жильём"))
                 .Need(() => ColoniesWithRoom() == 0 ? Loc.T("Нет свободного жилья") : null)
                 .Done(s => Loc.F("Новые жители на {0} колониях.", GrowColonies(false)));
@@ -980,11 +991,13 @@ namespace StellarisClone.Core
             D("ter_roots", "terraan", F, LGIcon.Defense, Loc.T("Корневая оборона"),
                 Loc.T("Корни оплетают звёздные базы, а сок сада питает экипажи. Защищаться дешевле и легче."))
                 .Cost(minerals: 1200f).Time(360, 900)
+                .When(() => YearsIn >= 10)
                 .Mod((b, k) => { b.StarbaseMult += 0.30f * k; b.UpkeepMult -= 0.15f * k; })
                 .Line(Loc.T("+30% прочности звёздных баз и −15% содержания флота на 360 дн."));
             D("ter_worldtree", "terraan", F, LGIcon.Planet, Loc.T("Древо Миров"),
                 Loc.T("Великий проект: из семени Первого Сада вырастает древо, чьи корни соединяют все миры Конклава."))
                 .Cost(minerals: 2500f).Time(360, 0).Great()
+                .When(() => YearsIn >= 20)
                 .Mod((b, k) => { b.PopGrowth += 0.15f * k; })
                 .Line(Loc.T("Навсегда: +15% роста населения"))
                 .Stab(3f);
@@ -1007,12 +1020,14 @@ namespace StellarisClone.Core
             D("nol_hive", "nol", F, LGIcon.Population, Loc.T("Фабрики-ульи"),
                 Loc.T("Сборочные линии работают без остановки: каждый мир Консенсуса получает новый синтет."))
                 .Cost(minerals: 1500f, alloys: 150f).Time(90, 720)
+                .When(() => Colonies >= 3)
                 .Line(Loc.T("Через 90 дн.: +1 синтет на каждой колонии со свободным жильём"))
                 .Need(() => ColoniesWithRoom() == 0 ? Loc.T("Нет свободного жилья") : null)
                 .Done(s => Loc.F("Новые синтеты на {0} колониях.", GrowColonies(true)));
             D("nol_optimize", "nol", F, LGIcon.Reactor, Loc.T("Протокол оптимизации"),
                 Loc.T("Консенсус пересчитывает каждую цепочку производства. Лишних операций больше нет."))
                 .Cost(minerals: 1000f).Time(360, 900)
+                .When(() => YearsIn >= 10)
                 .Mod((b, k) => { b.EnergyMult += 0.10f * k; b.AlloysMult += 0.10f * k; b.ResearchMult += 0.10f * k; })
                 .Line(Loc.T("+10% гелия-3, сплавов и науки на 360 дн."));
             D("nol_hack", "nol", F, LGIcon.Betrayal, Loc.T("Взлом вражеских сетей"),
@@ -1024,6 +1039,7 @@ namespace StellarisClone.Core
             D("nol_core", "nol", F, LGIcon.Monitor, Loc.T("Ядро Консенсуса"),
                 Loc.T("Великий проект: планетарный вычислитель, в котором сходятся все мысли «Ноля»."))
                 .Cost(minerals: 2500f).Time(360, 0).Great()
+                .When(() => YearsIn >= 20)
                 .Mod((b, k) => { b.ResearchMult += 0.10f * k; b.InfluenceFlat += 1.5f * k; })
                 .Line(Loc.T("Навсегда: +10% науки и +1.5 влияния в месяц"));
         }

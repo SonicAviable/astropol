@@ -29,6 +29,8 @@ namespace StellarisClone.Core.Audio
         HoloScan, TextTick, PanelSlide, AlertPop, AlertDismiss, DealPlace, DealRemove, DealAccepted, MapHover,
         // Звук по смыслу: «опасная» кнопка и тревоги, которые нельзя спутать с обычным щелчком
         UiDanger, RedAlert, Bankrupt, BudgetWarning, AlertUrgent,
+        // Стройка: гидравлика, удары молота по металлу и короткая сварка — слышно, что работа началась
+        Construction,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -193,6 +195,7 @@ namespace StellarisClone.Core.Audio
             S(Sfx.Bankrupt, 0.46f, 1, 8.00f, 0f, 1, 3, SfxBus.Stinger, 0.65f);
             S(Sfx.BudgetWarning, 0.32f, 1, 4.00f, 0f, 1, 2, SfxBus.Ui, 0.3f);
             S(Sfx.AlertUrgent, 0.28f, 1, 1.50f, 0f, 1, 2, SfxBus.Ui, 0.2f);
+            S(Sfx.Construction, 0.34f, 2, 0.35f, 0.04f, 3, 2);
             return d;
         }
 
@@ -1420,6 +1423,36 @@ namespace StellarisClone.Core.Audio
                     b.ApplyPingPong(0.12f, 0.22f, 0.12f, 3500f);
                     b.ApplyReverb(0.18f, 0.72f, 0.5f, 1f, 0.02f, 300f);
                     lp = 9500f;
+                    break;
+                }
+
+                case Sfx.Construction:
+                {
+                    b = new Stereo(1.9f, sr);
+                    float k = 1f + (variant - 1) * 0.04f;
+                    // Гидравлика: шипящий выпуск воздуха вниз по частоте
+                    NoiseL(b, new NoiseLayer { Env = new Adsr(0.01f, 0.08f, 0.55f, 0.08f, 0.18f, 3f), Color = NoiseColor.White, Gain = 0.16f,
+                        Filter = SvfMode.BandPass, Cutoff = Glide(5200f, 1800f, 0.3f), Q = 1.4f, Width = 0.8f }, seed);
+                    // Три удара молота по металлу: низкий толчок, металлический звон и щелчок
+                    float[] hits = { 0.16f, 0.40f, 0.62f };
+                    for (int i = 0; i < hits.Length; i++)
+                    {
+                        float pan = i == 1 ? 0.25f : -0.2f;
+                        Thump(b, rng, hits[i], 150f * k, 70f, 0.05f, 0.16f, 0.42f);
+                        Modal(b, rng, hits[i], (310f + i * 22f) * k, new[] { 1f, 2.41f, 3.86f, 5.3f }, 0.38f, 0.12f, pan);
+                        NoiseL(b, new NoiseLayer { Start = hits[i], Env = Adsr.Pluck(0.0008f, 0.025f, 6f), Color = NoiseColor.White, Gain = 0.32f,
+                            Filter = SvfMode.BandPass, Cutoff = Const(3200f + i * 400f), Q = 1.8f, Pan = pan, Width = 0.3f }, seed + 10 + i);
+                    }
+                    // Сварка: жужжание с прерывистыми искрами
+                    Tone(b, new ToneLayer { Start = 0.86f, Env = new Adsr(0.03f, 0.1f, 0.8f, 0.4f, 0.2f), Wave = Wave.Saw, Freq = Const(118f * k),
+                        Gain = 0.06f, Filter = SvfMode.BandPass, Cutoff = Const(1500f), Q = 1.2f, Amp = Stutter(24f, 0.65f) }, rng);
+                    NoiseL(b, new NoiseLayer { Start = 0.86f, Env = new Adsr(0.02f, 0.1f, 0.7f, 0.4f, 0.22f), Color = NoiseColor.White, Gain = 0.10f,
+                        Filter = SvfMode.HighPass, Cutoff = Const(4500f), Width = 0.9f, Amp = Stutter(31f, 0.45f) }, seed + 20);
+                    Crackle(b, rng, 0.86f, 0.6f, 120f, 0.05f, 5200f);
+                    // Финальный щелчок фиксатора
+                    Modal(b, rng, 1.52f, 520f * k, new[] { 1f, 2.7f }, 0.18f, 0.08f, 0.1f);
+                    b.ApplyReverb(0.22f, 0.7f, 0.5f, 1f, 0.02f, 250f);
+                    lp = 11000f;
                     break;
                 }
 

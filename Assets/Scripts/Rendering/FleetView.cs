@@ -626,6 +626,7 @@ namespace StellarisClone.Rendering
                 {
                     Data.State = FleetState.Constructing;
                     Data.DaysRemainingConstruction = Data.TotalConstructionDays;
+                    if (Data.OwnerId == 0) SFXManager.Play(Sfx.Construction);
                 }
 
                 if (Data.Type == FleetType.Science && Data.SurveyTargetSystemId == Data.CurrentSystemId)

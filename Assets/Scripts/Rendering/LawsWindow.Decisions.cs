@@ -34,8 +34,8 @@ namespace StellarisClone.Rendering
             _key = key;
 
             _title.text = Loc.T("РЕШЕНИЯ ИМПЕРИИ");
-            _hint.text = Loc.F("Цена — в основном титан; одновременно до {0} решений. Новые появляются по ходу игры (война, кризис, эпоха, редкие возможности), старые исчезают. Пока скрыто: {1}.",
-                EmpireDecisions.MaxActive, EmpireDecisions.HiddenCount);
+            _hint.text = Loc.F("Цена — в основном титан; одновременно до {0} решений. По ходу игры появляются новые решения, а старые уходят.",
+                EmpireDecisions.MaxActive);
             BuildTabs();
             LGBuild.Clear(_cols);
 
