@@ -19,7 +19,8 @@ namespace StellarisClone.Rendering
 
         private enum Panel { None, NewGame, Load, Settings, About }
 
-        public static string Version => "v1.6 · " + Loc.T("ранний доступ");
+        /// <summary>Версия берётся из настроек проекта (Player → Version), чтобы меню и сборка не расходились.</summary>
+        public static string Version => "v" + Application.version + " · " + Loc.T("ранний доступ");
 
         private RectTransform _root;
         private RectTransform _window, _body;
