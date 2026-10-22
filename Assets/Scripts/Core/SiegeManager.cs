@@ -20,6 +20,12 @@ namespace StellarisClone.Core
         /// <summary>Система захвачена: система, прежний владелец, новый владелец.</summary>
         public static event Action<StarSystem, int, int> OnSystemCaptured;
 
+        /// <summary>
+        /// Идёт мирная передача системы по договору (а не захват): слушатели OnSystemCaptured
+        /// не выдают достижений, не ломают звёздную базу и пишут в новостях «передаёт», а не «захватывает».
+        /// </summary>
+        public static bool IsPeacefulTransfer { get; private set; }
+
         public const float BaseSiegeDays = 12f * GamePace.SiegeMult;
         public const float SiegeDaysPerColony = 8f;
         public const float CapitalSiegeDays = 20f * GamePace.SiegeMult;
@@ -197,7 +203,47 @@ namespace StellarisClone.Core
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             EconomyManager.Instance?.RecalculateAll();
             TechnologyManager.Instance?.RecountPopulation();
+            CasusBelli.OnSystemCaptured(sys, oldOwner, newOwner);
             OnSystemCaptured?.Invoke(sys, oldOwner, newOwner);
+        }
+
+        /// <summary>
+        /// Мирная передача системы по договору: колонии, районы и звёздная база целиком переходят к новому владельцу,
+        /// незавершённые стройки прежнего владельца отменяются.
+        /// </summary>
+        public static void Transfer(StarSystem sys, int newOwner)
+        {
+            if (sys == null || sys.OwnerId == newOwner) return;
+            int oldOwner = sys.OwnerId;
+            sys.OwnerId = newOwner;
+            sys.HasStarbase = true;
+            sys.MarkSurveyedByAll();
+            Instance?._sieges.Remove(sys.Id);
+
+            var fm = FleetManager.Instance;
+            if (fm != null)
+                foreach (var f in fm.AllFleets)
+                {
+                    var d = f?.Data;
+                    if (d == null || d.OwnerId == newOwner) continue;
+                    if (d.State == FleetState.Constructing && d.BuildTargetSystemId == sys.Id)
+                    {
+                        d.State = FleetState.Orbiting;
+                        d.BuildTargetSystemId = -1;
+                    }
+                }
+
+            if (oldOwner == 0)
+                NotificationCenter.Show(Loc.T("Система передана"), Loc.F("{0} по договору переходит к {1}", sys.Name, Contacts.NameForPlayer(newOwner)), NotificationCenter.Kind.Info, 7f);
+            else if (newOwner == 0)
+                NotificationCenter.Show(Loc.T("Система получена"), Loc.F("{0} по договору теперь ваша", sys.Name), NotificationCenter.Kind.Success, 7f);
+
+            GalaxyView.Instance?.RefreshTerritoryVisuals();
+            EconomyManager.Instance?.RecalculateAll();
+            TechnologyManager.Instance?.RecountPopulation();
+            IsPeacefulTransfer = true;
+            try { OnSystemCaptured?.Invoke(sys, oldOwner, newOwner); }
+            finally { IsPeacefulTransfer = false; }
         }
 
         /// <summary>

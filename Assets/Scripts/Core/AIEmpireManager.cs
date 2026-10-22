@@ -933,13 +933,14 @@ namespace StellarisClone.Core
 
         private void HandleSystemCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
+            bool deal = SiegeManager.IsPeacefulTransfer;
             if (oldOwner == OwnerId)
             {
-                if (AtWar && newOwner == 0) { _systemsLostInWar++; WarWeariness += 8f * Profile.WearinessRate; }
-                if (IsAI(newOwner)) AIRelations.AddWeariness(OwnerId, newOwner, 8f * Profile.WearinessRate);
+                if (AtWar && newOwner == 0 && !deal) { _systemsLostInWar++; WarWeariness += 8f * Profile.WearinessRate; }
+                if (IsAI(newOwner) && !deal) AIRelations.AddWeariness(OwnerId, newOwner, 8f * Profile.WearinessRate);
                 if (sys.Id == CapitalSystemId) RelocateCapital(newOwner);
             }
-            else if (newOwner == OwnerId && AtWar && oldOwner == 0) _systemsTakenInWar++;
+            else if (newOwner == OwnerId && AtWar && oldOwner == 0 && !deal) _systemsTakenInWar++;
             RaiseDiplomacyChanged();
         }
 

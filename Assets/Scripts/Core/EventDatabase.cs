@@ -338,6 +338,7 @@ namespace StellarisClone.Core
             AddLeaderAmbitions();
             AddMoreEvents();
             AddSocietyEvents();
+            AddAllianceEvents();
         }
 
         // -------------------- Разведка --------------------

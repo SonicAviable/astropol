@@ -36,6 +36,8 @@ namespace StellarisClone.Core
         {
             _pairs.Clear();
             AICoalition.Reset();
+            Reputation.Reset();
+            CasusBelli.Reset();
         }
 
         private static PairState Get(int a, int b, bool create)
@@ -103,6 +105,8 @@ namespace StellarisClone.Core
         private static void Monthly()
         {
             AICoalition.MonthlyUpdate();
+            Reputation.Monthly();
+            CasusBelli.Monthly();
             var alive = new List<AIEmpireManager>(AIEmpireManager.Alive);
             for (int i = 0; i < alive.Count; i++)
             for (int j = i + 1; j < alive.Count; j++)
@@ -162,7 +166,20 @@ namespace StellarisClone.Core
             return true;
         }
 
-        private static void StartWar(PairState p, AIEmpireManager attacker, AIEmpireManager defender)
+        /// <summary>Союзник игрока вступает в войну по союзному долгу (короткое перемирие не мешает).</summary>
+        public static bool JoinWar(AIEmpireManager joiner, AIEmpireManager enemy)
+        {
+            if (joiner == null || enemy == null || joiner == enemy || joiner.IsBankrupt) return false;
+            var p = Get(joiner.OwnerId, enemy.OwnerId, true);
+            if (p == null || p.AtWar) return false;
+            if (p.TruceDays > 360) return false;
+            p.TruceDays = 0;
+            p.CooldownDays = 0;
+            StartWar(p, joiner, enemy, callAllies: false);
+            return true;
+        }
+
+        private static void StartWar(PairState p, AIEmpireManager attacker, AIEmpireManager defender, bool callAllies = true)
         {
             p.AtWar = true;
             p.WarMonths = 0;
@@ -171,7 +188,25 @@ namespace StellarisClone.Core
                 NotificationCenter.Show(Loc.T("Война соседей"),
                     Loc.F("{0} объявляет войну: {1}", Contacts.NameForPlayer(attacker.OwnerId), Contacts.NameForPlayer(defender.OwnerId)),
                     NotificationCenter.Kind.Warning, 8f);
+            if (callAllies) CallPlayerToDefend(attacker, defender);
             AIEmpireManager.NotifyDiplomacyChanged();
+        }
+
+        /// <summary>
+        /// На союзника игрока напали — игрока зовут на помощь (событие с выбором «вступить» или «отказать»).
+        /// Если оба воюющих — союзники игрока, игрок остаётся в стороне без последствий.
+        /// </summary>
+        private static void CallPlayerToDefend(AIEmpireManager attacker, AIEmpireManager defender)
+        {
+            if (!defender.HasAlliance || Diplomacy.AtWar(0, attacker.OwnerId)) return;
+            if (attacker.HasAlliance)
+            {
+                NotificationCenter.Show(Loc.T("Союзники воюют между собой"),
+                    Loc.F("{0} напал на {1}. Оба — ваши союзники: вы можете остаться в стороне", attacker.AIName, defender.AIName),
+                    NotificationCenter.Kind.Warning, 9f);
+                return;
+            }
+            AnomalyEventSystem.Instance?.Schedule("ally_call", 1, new EventContext { Rival = attacker.OwnerId, Ally = defender.OwnerId });
         }
 
         private static void MakePeace(PairState p, AIEmpireManager a, AIEmpireManager b)

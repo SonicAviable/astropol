@@ -483,6 +483,7 @@ namespace StellarisClone.Rendering
                     {
                         AIEmpireManager.OfferKind.Peace => (LGIcon.Peace, UIManager.DS.Green, Loc.F("{0} предлагает мир", ai.AIName)),
                         AIEmpireManager.OfferKind.Pact => (LGIcon.Handshake, UIManager.DS.Green, Loc.F("{0} предлагает пакт", ai.AIName)),
+                        AIEmpireManager.OfferKind.Alliance => (LGIcon.Defense, UIManager.DS.Green, Loc.F("{0} предлагает союз", ai.AIName)),
                         AIEmpireManager.OfferKind.Demand => (LGIcon.Warning, UIManager.DS.Red, Loc.F("{0} требует дань", ai.AIName)),
                         _ => (LGIcon.Trade, UIManager.DS.Gold, Loc.F("{0} предлагает сделку", ai.AIName))
                     };

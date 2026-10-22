@@ -1268,8 +1268,9 @@ namespace StellarisClone.Core
 
         private void HandleCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
-            // Захваченная база переходит к новому владельцу повреждённой, но в строю
+            // Захваченная база переходит к новому владельцу повреждённой, но в строю; переданная по договору — целой
             _starbases.Remove(sys.Id);
+            if (SiegeManager.IsPeacefulTransfer) return;
             var sb = GetStarbase(sys.Id);
             if (sb != null)
             {

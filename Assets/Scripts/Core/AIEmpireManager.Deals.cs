@@ -147,6 +147,7 @@ namespace StellarisClone.Core
         public float ItemValue(DealItem item, bool aiGives, out string blocker)
         {
             blocker = null;
+            if (DealCatalog.IsSystem(item.Kind)) return SystemValue((int)item.Amount, aiGives, out blocker);
             string res = DealCatalog.ResourceKey(item.Kind);
             float trader = Personality == AIPersonality.Trader ? 1.1f : 1f;
 
@@ -171,6 +172,68 @@ namespace StellarisClone.Core
             return 0f;
         }
 
+        // ==================== СИСТЕМЫ НА СТОЛЕ ====================
+
+        /// <summary>
+        /// Ценность системы в единицах гелия-3: колонии, население, залежи и узел силы.
+        /// Небольшой форпост стоит как пара сотен гелия-3, населённый мир — заметно дороже.
+        /// </summary>
+        public static float SystemWorth(StarSystem s)
+        {
+            if (s == null) return 0f;
+            int pop = 0, colonies = 0, deposits = 0;
+            foreach (var p in s.Planets)
+            {
+                if (p.Population > 0) { pop += p.Population; colonies++; }
+                deposits += Mathf.Max(0, p.EnergyDeposit) + Mathf.Max(0, p.MineralDeposit);
+            }
+            float w = 30f + pop * 6f + colonies * 20f + deposits * 3f;
+            if (s.Landmark >= 0) w += 60f;
+            return w;
+        }
+
+        /// <summary>Граничит ли система с территорией владельца.</summary>
+        public static bool Borders(StarSystem s, int owner)
+        {
+            if (s == null) return false;
+            foreach (int id in s.ConnectedSystemIds)
+            {
+                var n = EmpireStats.GetSystem(id);
+                if (n != null && n.OwnerId == owner) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Что мешает отдать эту систему (null — можно). giver — тот, кто отдаёт.</summary>
+        public string SystemBlocker(int systemId, int giver)
+        {
+            var s = EmpireStats.GetSystem(systemId);
+            bool ai = giver != 0;
+            if (s == null || s.OwnerId != giver) return ai ? Loc.T("Эта система им больше не принадлежит") : Loc.T("Эта система вам больше не принадлежит");
+            if (ai ? systemId == CapitalSystemId : systemId == EconomyManager.PlayerCapitalId) return Loc.T("Столицу не отдают");
+            if (EmpireStats.SystemCount(giver) <= 2) return ai ? Loc.T("Они не отдадут свои последние системы") : Loc.T("Нельзя отдать последние системы");
+            return null;
+        }
+
+        /// <summary>
+        /// Ценность системы для ИИ: свою отдают неохотно (×1,6, воинственные — ещё дороже, но систему,
+        /// на которую у игрока есть повод «Вернуть утраченное», — дешевле); чужую берут дороже, если она у их границы.
+        /// </summary>
+        public float SystemValue(int systemId, bool aiGives, out string blocker)
+        {
+            blocker = SystemBlocker(systemId, aiGives ? OwnerId : 0);
+            var s = EmpireStats.GetSystem(systemId);
+            float worth = SystemWorth(s);
+            if (aiGives)
+            {
+                float v = worth * 1.6f;
+                if (Personality == AIPersonality.Militarist) v *= 1.2f;
+                if (CasusBelli.IsClaimed(systemId, OwnerId)) v *= 0.6f;
+                return -v;
+            }
+            return worth * (Borders(s, OwnerId) ? 1f : 0.5f);
+        }
+
         /// <summary>Сколько договор стоит для ИИ (взаимный; + выгоден им).</summary>
         public float TreatyValue(DealItemKind k, out string blocker)
         {
@@ -188,6 +251,12 @@ namespace StellarisClone.Core
                     var e = EvaluatePact();
                     blocker = e.Blocker;
                     return e.Score >= 0f ? 15f + e.Score * 0.3f : e.Score * 2.5f;
+                }
+                case DealItemKind.Alliance:
+                {
+                    var e = EvaluateAlliance();
+                    blocker = e.Blocker;
+                    return e.Score >= 0f ? 20f + e.Score * 0.3f : e.Score * 2.5f;
                 }
             }
             if (AtWar) { blocker = Loc.T("Идёт война — сначала мир"); return 0f; }
@@ -241,7 +310,7 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Порог: друзья соглашаются и на чуть невыгодное, недруги хотят премию.</summary>
-        private float RequiredGain => Mathf.Clamp(6f - Opinion * 0.2f, -12f, 30f);
+        private float RequiredGain => Mathf.Clamp(6f - Opinion * 0.2f, -12f, 30f) + Reputation.DealPremium;
 
         public DealVerdict Evaluate(Deal d)
         {
@@ -305,7 +374,7 @@ namespace StellarisClone.Core
             for (int i = d.FromAI.Count - 1; i >= 0 && deficit > 0f; i--)
             {
                 var it = d.FromAI[i];
-                if (DealCatalog.IsTreaty(it.Kind)) continue;
+                if (DealCatalog.IsTreaty(it.Kind) || DealCatalog.IsSystem(it.Kind)) continue;
                 float per = -ItemValue(new DealItem(it.Kind, 1f), true, out _);
                 float step = DealCatalog.Step(it.Kind);
                 while (it.Amount > 0f && deficit > 0f)
@@ -332,6 +401,7 @@ namespace StellarisClone.Core
             float c = 0f;
             if (d.HasTreaty(DealItemKind.Peace)) c += PeaceProposalCost;
             if (d.HasTreaty(DealItemKind.Pact)) c += PactProposalCost;
+            if (d.HasTreaty(DealItemKind.Alliance)) c += AllianceInfluenceCost;
             return c;
         }
 
@@ -373,6 +443,8 @@ namespace StellarisClone.Core
                 }
                 else if (DealCatalog.IsPayment(i.Kind))
                     Agreements.Add(new Agreement { Kind = i.Kind, Amount = i.Amount, MonthsLeft = DealCatalog.PaymentMonths, PlayerPays = true });
+                else if (DealCatalog.IsSystem(i.Kind) && SystemBlocker((int)i.Amount, 0) == null)
+                    SiegeManager.Transfer(EmpireStats.GetSystem((int)i.Amount), OwnerId);
             }
             foreach (var i in d.FromAI)
             {
@@ -391,6 +463,8 @@ namespace StellarisClone.Core
                 }
                 else if (DealCatalog.IsPayment(i.Kind))
                     Agreements.Add(new Agreement { Kind = i.Kind, Amount = i.Amount, MonthsLeft = DealCatalog.PaymentMonths, PlayerPays = false });
+                else if (DealCatalog.IsSystem(i.Kind) && SystemBlocker((int)i.Amount, OwnerId) == null)
+                    SiegeManager.Transfer(EmpireStats.GetSystem((int)i.Amount), 0);
             }
             eco.RaiseResourcesChanged();
 
@@ -421,11 +495,14 @@ namespace StellarisClone.Core
                     case DealItemKind.Charts:
                         ShareCharts();
                         break;
+                    case DealItemKind.Alliance:
+                        SignAlliance();
+                        break;
                 }
             }
 
             bool generic = d.FromAI.Count + d.FromPlayer.Count > 0
-                           || d.Treaties.Exists(t => t.Kind != DealItemKind.Peace && t.Kind != DealItemKind.Pact);
+                           || d.Treaties.Exists(t => t.Kind != DealItemKind.Peace && t.Kind != DealItemKind.Pact && t.Kind != DealItemKind.Alliance);
             if (generic) NotificationCenter.Show(Loc.T("Сделка заключена"), $"{AIName}: {Summary(d)}", NotificationCenter.Kind.Success, 6f);
             EconomyManager.Instance?.RecalculateAll();
             RecomputeOpinion();
@@ -490,6 +567,8 @@ namespace StellarisClone.Core
             if (d == null) return;
 
             bool demand = d.IsDemand;
+            // Требование дани — оскорбление: у игрока появляется повод для войны
+            if (demand) CasusBelli.Grant(OwnerId, CasusBelliKind.Ultimatum, CasusBelli.UltimatumMonths);
             SetPendingDeal(d, demand ? OfferKind.Demand : OfferKind.Trade,
                 demand ? Loc.T("они считают, что сильный вправе требовать") : Loc.T("они видят в сделке взаимную выгоду"));
             _tradeOfferCooldown = Personality == AIPersonality.Trader ? 150 : 240;

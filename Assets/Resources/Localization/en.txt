@@ -4994,3 +4994,147 @@ VK Play: всё синхронизировано	VK Play: fully synced
 ДИРЕКТИВЫ · {0}/{0}	DIRECTIVES · {0}/{0}
 <b>{0}</b>\nЩелчок — развернуть директивы	<b>{0}</b>\nClick to expand directives
 Справа внизу — директивы: первые задачи империи. Они подскажут, чем заняться в первые годы; за каждую — награда. Щелчок по карточке покажет, с чего начать.	Directives are in the bottom-right corner: your empire's first tasks. They suggest what to do in the early years, and each one gives a reward. Click the card to see where to start.
+Распущена своя коалиция	Disbanded your own coalition
+Вы покинули коалицию	You left the coalition
+Сепаратный мир: союзники брошены	Separate peace: allies abandoned
+Эта система им больше не принадлежит	This system no longer belongs to them
+Эта система вам больше не принадлежит	This system no longer belongs to you
+Столицу не отдают	Capitals are not given away
+Они не отдадут свои последние системы	They will not give up their last systems
+Нельзя отдать последние системы	You cannot give away your last systems
+Помощь в войне	Help in war
+Вы пришли им на помощь, когда на них напали	You came to their aid when they were attacked
+Брошенный союзник	Abandoned ally
+Вы отказались помочь, когда на них напали	You refused to help when they were attacked
+Расторгнутый союз	Broken alliance
+Вы в одностороннем порядке вышли из союза	You unilaterally left the alliance
+Оборонительный союз	Defensive alliance
+Вы обязались защищать друг друга	You pledged to defend each other
+Ваша репутация: {0}	Your reputation: {0}
+Как вы держите слово: войны без повода, нарушенные пакты и брошенные союзники видны всей галактике	How you keep your word: unprovoked wars, broken pacts and abandoned allies are seen by the whole galaxy
+Вы в союзе с их врагом: {0}	You are allied with their enemy: {0}
+Союзник их противника — их противник	An ally of their enemy is their enemy
+Союз распался	Alliance dissolved
+{0} больше не считает вас союзником: отношения испортились	{0} no longer considers you an ally: relations have soured
+Союзник не смог помочь	Ally could not help
+{0} не может вступить в войну: перемирие или пустая казна	{0} cannot join the war: a truce or an empty treasury
+Союзник вступил в войну	Ally joined the war
+{0} выполняет союзный долг и объявляет войну: {1}	{0} honours the alliance and declares war: {1}
+у вас общий враг — вместе легче выстоять	you share an enemy — together it is easier to hold out
+они доверяют вам и хотят гарантий защиты	they trust you and want guarantees of protection
+Предложение союза	Alliance proposal
+{0} предлагает оборонительный союз. Ответьте в окне дипломатии	{0} proposes a defensive alliance. Respond in the diplomacy window
+Слову надёжной империи верят охотнее	The word of a reliable empire is trusted more readily
+Союз уже действует	The alliance is already in force
+Они состоят в коалиции против вас	They are in a coalition against you
+{0} империя вступает в союз при отношении от {1:+0;-0;0}	{0} empire joins an alliance at an opinion of {1:+0;-0;0} or higher
+Годы ненападения — основа союза	Years of non-aggression are the basis of an alliance
+Нет пакта о ненападении	No non-aggression pact
+Сразу в союз, минуя пакт, — большой шаг	Going straight to an alliance without a pact is a big step
+Вместе против одного противника	Together against one adversary
+Опасный сосед: {0}	Dangerous neighbour: {0}
+Им нужна защита от сильной и недружелюбной империи	They need protection from a strong and unfriendly empire
+Сильный союзник	Strong ally
+Ваш флот сильнее их (×{0:0.0})	Your fleet is stronger than theirs (×{0:0.0})
+Слабый союзник	Weak ally
+Ваш флот вдвое слабее — от вас мало пользы в войне	Your fleet is half as strong — you would be of little use in a war
+Ценят надёжных друзей	They value reliable friends
+Не любят связывать себе руки	They dislike tying their own hands
+Вы бросили их в беде	You left them in trouble
+Прошлый союз вы не сдержали	You did not keep your last alliance
+Союз — это обещание; репутация показывает, держите ли вы обещания	An alliance is a promise; reputation shows whether you keep promises
+Нападение на союзника: {0}	Attack on an ally: {0}
+Нарушен пакт с {0}	Pact broken with {0}
+Война без повода против {0}	Unprovoked war against {0}
+Расторгнут пакт с {0}	Pact cancelled with {0}
+Расторгнут союз с {0}	Alliance cancelled with {0}
+Союз расторгнут	Alliance cancelled
+Вы больше не обязаны защищать {0}, а они — вас. Пакт о ненападении остаётся	You are no longer bound to defend {0}, nor they you. The non-aggression pact remains
+Союз заключён	Alliance signed
+{0}: оборонительный союз вступил в силу. Если на одного нападут, другой придёт на помощь	{0}: the defensive alliance is in force. If one is attacked, the other comes to help
+Пришли на помощь союзнику: {0}	Came to an ally's aid: {0}
+Брошен союзник: {0}	Ally abandoned: {0}
+{0} не простит, что вы не пришли на помощь	{0} will not forgive you for not coming to help
+ВЫ ВСТУПИЛИ В ВОЙНУ	YOU HAVE JOINED THE WAR
+Вы защищаете союзника {0} от империи {1}	You are defending your ally {0} against the {1} empire
+Союзники воюют между собой	Allies at war with each other
+{0} напал на {1}. Оба — ваши союзники: вы можете остаться в стороне	{0} attacked {1}. Both are your allies: you may stay out of it
+Вернуть утраченное	Reclaim lost systems
+Ответ на ультиматум	Answer to an ultimatum
+Возмездие	Retribution
+Защита сородичей	Protection of kin
+Защита союзника	Defence of an ally
+Они требовали от вас дань	They demanded tribute from you
+Они напали на вас — ответный удар оправдан	They attacked you — a counterstrike is justified
+Они удерживают ваши бывшие системы: {0}	They hold your former systems: {0}
+Под их властью живут ваши сородичи: {0}	Your kin live under their rule: {0}
+Они воюют с вашим союзником: {0}	They are at war with your ally: {0}
+<b>Повода для войны нет</b>\n	<b>No cause for war</b>\n
+Объявить войну можно, но все знакомые империи сочтут вас агрессором: репутация {0:+0;-0}.	You can still declare war, but every empire you know will see you as the aggressor: reputation {0:+0;-0}.
+<b>Поводы для войны</b>	<b>Causes for war</b>
+ <color=#8AA2A8>· ещё {0}</color>	 <color=#8AA2A8>· {0} left</color>
+\n<color=#8AA2A8>С поводом война не портит репутацию, а утраченные системы проще вернуть в мирном договоре</color>	\n<color=#8AA2A8>With a cause, war does not hurt your reputation, and lost systems are easier to win back in the peace treaty</color>
+Звёздная система	Star system
+Если на одного нападут, другой вступает в войну. Включает пакт о ненападении. Отказ помочь союзнику — удар по репутации	If one is attacked, the other joins the war. Includes a non-aggression pact. Refusing to help an ally damages your reputation
+Система переходит к другой стороне вместе с колониями, районами и звёздной базой	The system passes to the other side together with its colonies, districts and starbase
+Система {0}	System {0}
+ Пакт о ненападении с {0} будет расторгнут, но защиту союзника вероломством никто не сочтёт.	 The non-aggression pact with {0} will be broken, but no one will call defending an ally treachery.
+СОЮЗНИК ПРОСИТ О ПОМОЩИ	AN ALLY ASKS FOR HELP
+Империя {0} напала на {1}. Посол союзника ждёт ответа: по договору мы обязаны вступить в войну. 	The {0} empire has attacked {1}. The allied envoy awaits our answer: by treaty we are bound to join the war. 
+Вся галактика смотрит, держим ли мы слово.	The whole galaxy is watching whether we keep our word.
+ВСТУПИТЬ В ВОЙНУ	JOIN THE WAR
+Война с {0}. Отношение {1} +15, репутация +5.	War with {0}. Opinion of {1} +15, reputation +5.
+Союз с {0} распадается: отношение −30, репутация −15 у всех знакомых империй.	The alliance with {0} falls apart: opinion −30, reputation −15 with every empire you know.
+{0} по договору передаёт систему {1} империи {2}	{0} cedes the system {1} to {2} by treaty
+Репутация пострадала	Reputation damaged
+{0}: {1:+0;-0}. Все знакомые империи это запомнят	{0}: {1:+0;-0}. Every empire you know will remember this
+Безупречная	Impeccable
+Надёжная	Reliable
+Обычная	Ordinary
+Сомнительная	Dubious
+Вероломная	Treacherous
+<b>Репутация: {0} ({1:+0;-0;0})</b>\n	<b>Reputation: {0} ({1:+0;-0;0})</b>\n
+Её видят все знакомые империи: она меняет их отношение к вам, цену сделок и согласие на пакты и союзы.\n	Every empire you know sees it: it changes their opinion of you, the price of deals and their willingness to sign pacts and alliances.\n
+<color=#8AA2A8>Падает за войну без повода, нарушенный пакт, брошенного союзника. Растёт за соблюдённые договоры. Дурная слава со временем забывается.</color>	<color=#8AA2A8>Falls for unprovoked wars, broken pacts and abandoned allies. Grows for treaties kept. A bad name fades over time.</color>
+\n\n<b>Последние события</b>	\n\n<b>Recent events</b>
+Система передана	System ceded
+{0} по договору переходит к {1}	{0} passes to {1} by treaty
+Система получена	System received
+{0} по договору теперь ваша	{0} is yours by treaty
+{0} предлагает союз	{0} proposes an alliance
+Ваша репутация: <b>{0}</b> ({1:+0;-0;0})	Your reputation: <b>{0}</b> ({1:+0;-0;0})
+Поводы для войны: {0}	Causes for war: {0}
+{0} и ещё {1}	{0} and {1} more
+Повода для войны нет	No cause for war
+Оборонительный союз  ·  бессрочно	Defensive alliance  ·  indefinite
+союз	alliance
+ОБОРОНИТЕЛЬНЫЙ СОЮЗ	DEFENSIVE ALLIANCE
+Нападение на союзника — худшее вероломство: −60 к их отношению и −40 к репутации у всех	Attacking an ally is the worst treachery: −60 to their opinion and −40 to your reputation with everyone
+Нарушение пакта — тяжёлое вероломство: −40 к отношению надолго и удар по репутации	Breaking a pact is grave treachery: −40 to opinion for a long time and a blow to your reputation
+РАСТОРГНУТЬ СОЮЗ	CANCEL ALLIANCE
+Обязательства защищать друг друга снимаются, пакт о ненападении остаётся. Отношение и репутация немного ухудшатся	The obligation to defend each other ends; the non-aggression pact remains. Opinion and reputation will drop slightly
+СОЮЗ	ALLIANCE
+<color={0}>Их готовность:</color> {1:+0;-0;0}	<color={0}>Their willingness:</color> {1:+0;-0;0}
+на столе {0}	on table {0}
+системы	systems
+<b>Звёздные системы</b>\n	<b>Star systems</b>\n
+\nСвои системы отдают неохотно: территория дороже ресурсов. Системы, отнятые у вас (повод «Вернуть утраченное»), уступают легче	\nThey give up their own systems reluctantly: territory is worth more than resources. Systems taken from you (cause "Reclaim lost systems") are ceded more easily
+\nСоседу интереснее системы у его границы	\nA neighbour values systems near its border more
+\n<color=#8AA2A8>Щелчок — открыть список систем</color>	\n<color=#8AA2A8>Click to open the list of systems</color>
+Щелчок — положить систему на стол или убрать её	Click to put a system on the table or remove it
+СИСТЕМЫ: {0}	SYSTEMS: {0}
+ВАШИ СИСТЕМЫ	YOUR SYSTEMS
+систем нет	no systems
+  <color=#F2C747>· ваша бывшая</color>	  <color=#F2C747>· formerly yours</color>
+колоний {0} · население {1}	colonies {0} · population {1}
+форпост	outpost
+ · у границы	 · on the border
+Колоний: {0}, население {1}	Colonies: {0}, population {1}
+Форпост без колоний	Outpost without colonies
+\nЦенность ≈ {0:0} гелия-3	\nValue ≈ {0:0} helium-3
+\n<color=#8AA2A8>Свою систему отдадут примерно за полторы её цены</color>	\n<color=#8AA2A8>They will give up their own system for about one and a half times its value</color>
+\n<color=#8AA2A8>Граничит с ними — для них это ценно</color>	\n<color=#8AA2A8>Borders them — valuable to them</color>
+\n<color=#8AA2A8>Далеко от их границ — для них стоит вдвое меньше</color>	\n<color=#8AA2A8>Far from their borders — worth half as much to them</color>
+\n<color=#F2C747>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>	\n<color=#F2C747>Taken from you — under "Reclaim lost systems" they will cede it for less</color>
+\n<color=#F2C747>На столе — щёлкните, чтобы убрать</color>	\n<color=#F2C747>On the table — click to remove</color>
+\nЩелчок — положить на стол	\nClick to put it on the table

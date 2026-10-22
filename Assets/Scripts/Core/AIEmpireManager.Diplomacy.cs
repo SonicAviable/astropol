@@ -8,13 +8,14 @@ namespace StellarisClone.Core
     /// <summary>
     /// Дипломатия ИИ. Отношение к игроку — сумма понятных слагаемых (характер, угроза, граница,
     /// подарки, торговля, пакты, обиды), каждое видно в окне дипломатии с пояснением.
-    /// Состояния: мир, пакт о ненападении, война, перемирие после войны.
+    /// Состояния: мир, пакт о ненападении, оборонительный союз (включает пакт), война, перемирие после войны.
+    /// Союзник вступает в войну, если на игрока нападают; если нападают на союзника — игрока зовут на помощь.
     /// ИИ сам объявляет войну (плохое отношение + перевес сил), предлагает мир (усталость или поражение)
     /// и пакт (хорошее отношение и уважение к вашему флоту).
     /// </summary>
     public partial class AIEmpireManager
     {
-        public enum OfferKind { None, Peace, Pact, Trade, Demand }
+        public enum OfferKind { None, Peace, Pact, Trade, Demand, Alliance }
 
         public static event Action OnDiplomacyChanged;
         private static void RaiseDiplomacyChanged() => OnDiplomacyChanged?.Invoke();
@@ -24,6 +25,8 @@ namespace StellarisClone.Core
 
         public bool AtWar { get; private set; }
         public bool HasPact { get; private set; }
+        /// <summary>Оборонительный союз с игроком. Всегда вместе с пактом о ненападении.</summary>
+        public bool HasAlliance { get; private set; }
         public int TruceDays { get; private set; }
         public float WarWeariness { get; private set; }
         public int WarMonths => _warMonths;
@@ -55,6 +58,7 @@ namespace StellarisClone.Core
         public const float PeaceAcceptThreshold = 20f;
         public const float PeaceInfluenceCost = 30f;
         public const float PactInfluenceCost = 25f;
+        public const float AllianceInfluenceCost = 35f;
         public const int TruceLengthDays = 3 * 360;
         public const float GiftEnergyAmount = 100f, GiftAlloysAmount = 50f;
 
@@ -83,6 +87,9 @@ namespace StellarisClone.Core
             ["trust"]      = new MemoryInfo { Label = Loc.T("Годы добрососедства"), Detail = Loc.T("Долгий пакт и спокойные границы сближают, но одно предательство обнуляет доверие"), Icon = LGIcon.Handshake, MonthlyDecay = 0.01f, Min = 0f, Max = 20f },
             ["espionage"]  = new MemoryInfo { Label = Loc.T("Шпионаж"), Detail = Loc.T("Ваши агенты пойманы или замечены за тайными операциями на их территории"), Icon = LGIcon.Betrayal, MonthlyDecay = 0.08f, Min = -40f, Max = 0f },
             ["incident"]   = new MemoryInfo { Label = Loc.T("Инциденты"), Detail = Loc.T("Как вы повели себя в пограничных и дипломатических происшествиях"), Icon = LGIcon.Info, MonthlyDecay = 0.06f, Min = -35f, Max = 30f },
+            ["allyhelp"]   = new MemoryInfo { Label = Loc.T("Помощь в войне"), Detail = Loc.T("Вы пришли им на помощь, когда на них напали"), Icon = LGIcon.Handshake, MonthlyDecay = 0.03f, Min = 0f, Max = 30f },
+            ["allyabandon"] = new MemoryInfo { Label = Loc.T("Брошенный союзник"), Detail = Loc.T("Вы отказались помочь, когда на них напали"), Icon = LGIcon.Betrayal, MonthlyDecay = 0.03f, Min = -50f, Max = 0f },
+            ["alliancecancel"] = new MemoryInfo { Label = Loc.T("Расторгнутый союз"), Detail = Loc.T("Вы в одностороннем порядке вышли из союза"), Icon = LGIcon.Handshake, MonthlyDecay = 0.08f, Min = -25f, Max = 0f },
         };
 
         public void AddMemory(string key, float delta)
@@ -98,7 +105,7 @@ namespace StellarisClone.Core
 
         private void InitDiplomacy()
         {
-            AtWar = false; HasPact = false; TruceDays = 0; WarWeariness = 0f;
+            AtWar = false; HasPact = false; HasAlliance = false; TruceDays = 0; WarWeariness = 0f;
             _memory.Clear();
             PendingOffer = OfferKind.None;
             // Первые годы — время на обустройство: ИИ не объявляет войну
@@ -152,6 +159,17 @@ namespace StellarisClone.Core
                 Add(Loc.T("Выгодный сосед"), Loc.T("Торговая империя ценит партнёров у самой границы"), 6f, LGIcon.Trade);
 
             if (HasPact) Add(Loc.T("Пакт о ненападении"), Loc.T("Действующий договор укрепляет доверие"), 15f, LGIcon.Handshake);
+            if (HasAlliance) Add(Loc.T("Оборонительный союз"), Loc.T("Вы обязались защищать друг друга"), 15f, LGIcon.Defense);
+            // Репутация игрока видна всем, кто с ним знаком
+            if (Contacts.PlayerMet(OwnerId))
+                Add(Loc.F("Ваша репутация: {0}", Reputation.Current.ToLower()), Loc.T("Как вы держите слово: войны без повода, нарушенные пакты и брошенные союзники видны всей галактике"),
+                    Reputation.OpinionEffect, Reputation.Value >= 0f ? LGIcon.Handshake : LGIcon.Betrayal);
+            foreach (var ally in Alive)
+            {
+                if (ally == this || !ally.HasAlliance) continue;
+                if (AIRelations.AtWar(OwnerId, ally.OwnerId))
+                    Add(Loc.F("Вы в союзе с их врагом: {0}", ally.AIName), Loc.T("Союзник их противника — их противник"), -15f, LGIcon.Swords);
+            }
             foreach (var other in Alive)
             {
                 if (other == this || !other.AtWar || !AIRelations.AtWar(OwnerId, other.OwnerId)) continue;
@@ -282,11 +300,19 @@ namespace StellarisClone.Core
             RecomputeOpinion();
             MonthlyAgreements();
 
+            // Союз держится, пока союзник к вам расположен
+            if (HasAlliance && !AtWar && Opinion < 0f)
+            {
+                HasAlliance = false;
+                NotificationCenter.Show(Loc.T("Союз распался"), Loc.F("{0} больше не считает вас союзником: отношения испортились", AIName), NotificationCenter.Kind.Warning, 8f);
+            }
+
             if (AtWar) ConsiderPeaceOffer();
             else
             {
                 ConsiderWar();
                 if (!AtWar) ConsiderPactOffer();
+                if (!AtWar) ConsiderAllianceOffer();
                 if (!AtWar) ConsiderTradeOffer();
             }
             RaiseDiplomacyChanged();
@@ -302,8 +328,8 @@ namespace StellarisClone.Core
         private void ConsiderWar()
         {
             if (TruceDays > 0 || _warCooldownDays > 0 || _bankrupt) return;
-            // Союзник по коалиции на игрока не нападает
-            if (AICoalition.AreAllies(0, OwnerId)) return;
+            // Союзник по коалиции и по оборонительному союзу на игрока не нападает
+            if (AICoalition.AreAllies(0, OwnerId) || HasAlliance) return;
             // Уже воюет с другим ИИ — второй фронт откроет только при большом перевесе
             if (WarsWithAIs > 0 && PowerRatio < Profile.WarPowerRatio * 1.5f) return;
             if (EmpireStats.SharedBorderCount(OwnerId, 0) == 0 && Personality != AIPersonality.Militarist) return;
@@ -323,6 +349,34 @@ namespace StellarisClone.Core
             NotificationCenter.Show(broke ? Loc.T("ВЕРОЛОМНОЕ НАПАДЕНИЕ") : Loc.T("ВОЙНА ОБЪЯВЛЕНА"),
                 Loc.F("{0} объявляет вам войну. Причины: {1}", AIName, string.Join(", ", reasons)),
                 NotificationCenter.Kind.Danger, 10f);
+            OnAttackedPlayer(broke);
+        }
+
+        /// <summary>ИИ напал на игрока: у игрока появляется повод для ответа, союзники вступают в войну.</summary>
+        private void OnAttackedPlayer(bool brokePact)
+        {
+            CasusBelli.Grant(OwnerId, CasusBelliKind.Retribution, brokePact ? CasusBelli.BetrayalMonths : CasusBelli.RetributionMonths);
+            CallPlayerAllies(this);
+        }
+
+        /// <summary>На игрока напали — союзники выполняют обязательство и объявляют войну агрессору.</summary>
+        public static void CallPlayerAllies(AIEmpireManager attacker)
+        {
+            if (attacker == null) return;
+            foreach (var ally in new List<AIEmpireManager>(Alive))
+            {
+                if (ally == attacker || !ally.HasAlliance) continue;
+                if (AIRelations.AtWar(ally.OwnerId, attacker.OwnerId)) continue;
+                if (!AIRelations.JoinWar(ally, attacker))
+                    NotificationCenter.Show(Loc.T("Союзник не смог помочь"), Loc.F("{0} не может вступить в войну: перемирие или пустая казна", ally.AIName),
+                        NotificationCenter.Kind.Warning, 7f);
+                else
+                {
+                    if (!Contacts.Met(ally.OwnerId, attacker.OwnerId)) Contacts.Meet(ally.OwnerId, attacker.OwnerId);
+                    NotificationCenter.Show(Loc.T("Союзник вступил в войну"), Loc.F("{0} выполняет союзный долг и объявляет войну: {1}", ally.AIName, Contacts.NameForPlayer(attacker.OwnerId)),
+                        NotificationCenter.Kind.Success, 8f);
+                }
+            }
         }
 
         /// <summary>Вступление в войну по обязательству коалиции против игрока (после предупреждения в несколько месяцев).</summary>
@@ -334,6 +388,7 @@ namespace StellarisClone.Core
             NotificationCenter.Show(Loc.T("КОАЛИЦИЯ ОБЪЯВИЛА ВОЙНУ"),
                 Loc.F("{0} вступает в войну против вас вместе с остальными соперниками", AIName),
                 NotificationCenter.Kind.Danger, 10f);
+            OnAttackedPlayer(false);
             return true;
         }
 
@@ -363,17 +418,33 @@ namespace StellarisClone.Core
                 NotificationCenter.Kind.Info, 8f);
         }
 
+        /// <summary>Сосед с пактом, хорошим отношением и общим врагом (или сильным соседом) зовёт в союз.</summary>
+        private void ConsiderAllianceOffer()
+        {
+            if (!HasPact || HasAlliance || PendingOffer != OfferKind.None || _offerCooldownDays > 0) return;
+            if (Smart < 1 || UnityEngine.Random.value > 0.2f) return;
+            var e = EvaluateAlliance();
+            if (e.Blocker != null || e.Score < 10f) return;
+            bool commonEnemy = false;
+            foreach (var other in Alive)
+                if (other != this && AIRelations.AtWar(OwnerId, other.OwnerId) && Diplomacy.AtWar(0, other.OwnerId)) { commonEnemy = true; break; }
+            Offer(OfferKind.Alliance, commonEnemy ? Loc.T("у вас общий враг — вместе легче выстоять") : Loc.T("они доверяют вам и хотят гарантий защиты"));
+            NotificationCenter.Show(Loc.T("Предложение союза"), Loc.F("{0} предлагает оборонительный союз. Ответьте в окне дипломатии", AIName),
+                NotificationCenter.Kind.Info, 9f);
+        }
+
         private void Offer(OfferKind kind, string reason)
         {
-            // Мир и пакт тоже ложатся на стол переговоров как договор
+            // Мир, пакт и союз тоже ложатся на стол переговоров как договор
             var d = new Deal();
-            d.Treaties.Add(new DealItem(kind == OfferKind.Peace ? DealItemKind.Peace : DealItemKind.Pact, 0f));
+            d.Treaties.Add(new DealItem(kind == OfferKind.Peace ? DealItemKind.Peace : kind == OfferKind.Alliance ? DealItemKind.Alliance : DealItemKind.Pact, 0f));
             SetPendingDeal(d, kind, reason);
         }
 
         private void StartWar()
         {
             AtWar = true;
+            HasAlliance = false;
             PendingOffer = OfferKind.None;
             PendingDeal = null;
             BreakAgreements();
@@ -401,6 +472,11 @@ namespace StellarisClone.Core
             ArmyTargetSystemId = -1;
             RecomputeOpinion();
             if (!silent) AICoalition.OnPlayerPeace(OwnerId);
+            // Сепаратный мир: союзник ещё воюет с этой империей
+            if (!silent)
+                foreach (var ally in Alive)
+                    if (ally != this && ally.HasAlliance && AIRelations.AtWar(ally.OwnerId, OwnerId))
+                        ally.AddMemory("separate", -10f);
             if (!silent)
                 NotificationCenter.Show(Loc.T("Мир заключён"), Loc.F("{0} прекращает военные действия. Перемирие — 3 года", AIName),
                     NotificationCenter.Kind.Success, 8f);
@@ -456,6 +532,60 @@ namespace StellarisClone.Core
                 Add(Loc.T("Не видят в вас угрозы"), Loc.T("Сильный не связывает себе руки договорами"), -15f, LGIcon.Fleet);
             if (_memory.TryGetValue("betrayal", out float b) && b < -5f)
                 Add(Loc.T("Вы уже нарушали пакт"), Loc.T("Вероломству не доверяют"), b * 0.5f, LGIcon.Betrayal);
+            if (Mathf.Abs(Reputation.Value) >= 5f)
+                Add(Loc.F("Ваша репутация: {0}", Reputation.Current.ToLower()), Loc.T("Слову надёжной империи верят охотнее"), Reputation.Value * 0.3f, LGIcon.Diplomacy);
+            return e;
+        }
+
+        /// <summary>Примут ли оборонительный союз — с разбором причин.</summary>
+        public Evaluation EvaluateAlliance()
+        {
+            var e = new Evaluation { Threshold = 0f, Reasons = new List<OpinionModifier>() };
+            void Add(string l, string d, float v, LGIcon i) { e.Reasons.Add(new OpinionModifier(l, d, v, i)); e.Score += v; }
+            if (AtWar) { e.Blocker = Loc.T("Сначала нужно заключить мир"); return e; }
+            if (HasAlliance) { e.Blocker = Loc.T("Союз уже действует"); return e; }
+            if (AICoalition.IsMember(OwnerId) && AICoalition.TargetOwner == 0) { e.Blocker = Loc.T("Они состоят в коалиции против вас"); return e; }
+            foreach (var other in Alive)
+                if (other != this && other.HasAlliance && AIRelations.AtWar(OwnerId, other.OwnerId))
+                { e.Blocker = Loc.F("Вы в союзе с их врагом: {0}", other.AIName); return e; }
+
+            Add(Loc.T("Отношение к вам"), OpinionLabel(Opinion), Opinion, LGIcon.Diplomacy);
+            float need = Profile.PactOpinion + 20f;
+            Add(Loc.T("Требование характера"), Loc.F("{0} империя вступает в союз при отношении от {1:+0;-0;0}", Profile.Name, need), -need, LGIcon.Leader);
+            if (HasPact) Add(Loc.T("Пакт уже действует"), Loc.T("Годы ненападения — основа союза"), 8f, LGIcon.Handshake);
+            else Add(Loc.T("Нет пакта о ненападении"), Loc.T("Сразу в союз, минуя пакт, — большой шаг"), -10f, LGIcon.Handshake);
+
+            foreach (var other in Alive)
+            {
+                if (other == this) continue;
+                if (AIRelations.AtWar(OwnerId, other.OwnerId) && Diplomacy.AtWar(0, other.OwnerId))
+                    Add(Loc.F("Общий враг: {0}", other.AIName), Loc.T("Вместе против одного противника"), 20f, LGIcon.Swords);
+                else if (EmpireStats.SharedBorderCount(OwnerId, other.OwnerId) > 0
+                         && EmpireStats.MilitaryPower(other.OwnerId) > Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId)) * 1.3f
+                         && AIRelations.Opinion(this, other) < 0f)
+                    Add(Loc.F("Опасный сосед: {0}", Contacts.NameForPlayer(other.OwnerId)), Loc.T("Им нужна защита от сильной и недружелюбной империи"), 10f, LGIcon.Defense);
+            }
+
+            float ratio = EmpireStats.MilitaryPower(0) / Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId));
+            if (ratio >= 1f) Add(Loc.T("Сильный союзник"), Loc.F("Ваш флот сильнее их (×{0:0.0})", ratio), 8f, LGIcon.Fleet);
+            else if (ratio < 0.5f) Add(Loc.T("Слабый союзник"), Loc.T("Ваш флот вдвое слабее — от вас мало пользы в войне"), -10f, LGIcon.Fleet);
+
+            float character = Personality switch
+            {
+                AIPersonality.Militarist => -5f,
+                AIPersonality.Mystic => -5f,
+                AIPersonality.Gardener => 5f,
+                AIPersonality.Scientific => 3f,
+                _ => 0f
+            };
+            if (Mathf.Abs(character) > 0.1f)
+                Add(Loc.F("Характер: {0}", Profile.Name.ToLower()), character > 0f ? Loc.T("Ценят надёжных друзей") : Loc.T("Не любят связывать себе руки"), character, LGIcon.Leader);
+            if (_memory.TryGetValue("betrayal", out float b) && b < -5f)
+                Add(Loc.T("Вы уже нарушали пакт"), Loc.T("Вероломству не доверяют"), b * 0.6f, LGIcon.Betrayal);
+            if (_memory.TryGetValue("allyabandon", out float ab) && ab < -5f)
+                Add(Loc.T("Вы бросили их в беде"), Loc.T("Прошлый союз вы не сдержали"), ab * 0.6f, LGIcon.Betrayal);
+            if (Mathf.Abs(Reputation.Value) >= 5f)
+                Add(Loc.F("Ваша репутация: {0}", Reputation.Current.ToLower()), Loc.T("Союз — это обещание; репутация показывает, держите ли вы обещания"), Reputation.Value * 0.5f, LGIcon.Diplomacy);
             return e;
         }
 
@@ -487,9 +617,18 @@ namespace StellarisClone.Core
         public bool PlayerDeclareWar()
         {
             if (WarBlocker != null) return false;
-            bool betrayal = HasPact;
-            if (betrayal) { HasPact = false; AddMemory("betrayal", -40f); AddMemory("trust", -100f); }
-            AddMemory("aggression", -15f);
+            bool cause = CasusBelli.Has(OwnerId);
+            bool betrayal = HasPact, allied = HasAlliance;
+            if (betrayal)
+            {
+                HasPact = false;
+                AddMemory("betrayal", allied ? -60f : -40f);
+                AddMemory("trust", -100f);
+                Reputation.Add(allied ? -40f : cause ? -20f : -30f,
+                    allied ? Loc.F("Нападение на союзника: {0}", AIName) : Loc.F("Нарушен пакт с {0}", AIName));
+            }
+            if (!cause) Reputation.Add(CasusBelli.NoCauseReputation, Loc.F("Война без повода против {0}", AIName));
+            AddMemory("aggression", cause ? -5f : -15f);
             StartWar();
             NotificationCenter.Show(betrayal ? Loc.T("ВЫ НАРУШИЛИ ПАКТ") : Loc.T("ВОЙНА ОБЪЯВЛЕНА"),
                 Loc.F("{0} переходит в наступление. Держите флот у границ и осаждайте их системы", AIName),
@@ -529,10 +668,74 @@ namespace StellarisClone.Core
         public void PlayerCancelPact()
         {
             if (!HasPact) return;
+            if (HasAlliance) PlayerCancelAlliance();
             HasPact = false;
             AddMemory("pactcancel", -10f);
+            Reputation.Add(-3f, Loc.F("Расторгнут пакт с {0}", AIName));
             NotificationCenter.Show(Loc.T("Пакт расторгнут"), Loc.F("Договор с {0} больше не действует", AIName), NotificationCenter.Kind.Warning, 5f);
             RaiseDiplomacyChanged();
+        }
+
+        /// <summary>Игрок выходит из союза (пакт о ненападении остаётся).</summary>
+        public void PlayerCancelAlliance()
+        {
+            if (!HasAlliance) return;
+            HasAlliance = false;
+            AddMemory("alliancecancel", -15f);
+            Reputation.Add(-5f, Loc.F("Расторгнут союз с {0}", AIName));
+            NotificationCenter.Show(Loc.T("Союз расторгнут"), Loc.F("Вы больше не обязаны защищать {0}, а они — вас. Пакт о ненападении остаётся", AIName), NotificationCenter.Kind.Warning, 6f);
+            RecomputeOpinion();
+            RaiseDiplomacyChanged();
+        }
+
+        private void SignAlliance()
+        {
+            if (AtWar || HasAlliance) return;
+            HasPact = true;
+            HasAlliance = true;
+            RecomputeOpinion();
+            NotificationCenter.Show(Loc.T("Союз заключён"), Loc.F("{0}: оборонительный союз вступил в силу. Если на одного нападут, другой придёт на помощь", AIName),
+                NotificationCenter.Kind.Success, 8f);
+            RaiseDiplomacyChanged();
+        }
+
+        /// <summary>Союзника этой империи атаковали — игрок пришёл на помощь (из события-призыва).</summary>
+        public void PlayerHonorAlliance(AIEmpireManager attacker)
+        {
+            if (attacker == null || attacker == this) return;
+            AddMemory("allyhelp", 15f);
+            Reputation.Add(5f, Loc.F("Пришли на помощь союзнику: {0}", AIName));
+            attacker.PlayerJoinWarAsAlly(this);
+        }
+
+        /// <summary>Игрок отказался защищать союзника: союз распадается, репутация падает.</summary>
+        public void PlayerAbandonAlliance(AIEmpireManager attacker)
+        {
+            if (!HasAlliance) return;
+            HasAlliance = false;
+            AddMemory("allyabandon", -30f);
+            Reputation.Add(-15f, Loc.F("Брошен союзник: {0}", AIName));
+            NotificationCenter.Show(Loc.T("Союз распался"), Loc.F("{0} не простит, что вы не пришли на помощь", AIName), NotificationCenter.Kind.Danger, 8f);
+            RecomputeOpinion();
+            RaiseDiplomacyChanged();
+        }
+
+        /// <summary>
+        /// Игрок вступает в войну против этой империи, защищая союзника. Это не агрессия и не вероломство:
+        /// пакт и перемирие с этой империей снимаются без удара по репутации.
+        /// </summary>
+        public bool PlayerJoinWarAsAlly(AIEmpireManager ally)
+        {
+            if (AtWar || IsEliminated) return false;
+            if (!Contacts.PlayerMet(OwnerId)) Contacts.Meet(0, OwnerId);
+            if (HasPact) { HasPact = false; AddMemory("pactcancel", -10f); }
+            TruceDays = 0;
+            AddMemory("aggression", -5f);
+            StartWar();
+            NotificationCenter.Show(Loc.T("ВЫ ВСТУПИЛИ В ВОЙНУ"),
+                Loc.F("Вы защищаете союзника {0} от империи {1}", ally != null ? ally.AIName : "", AIName),
+                NotificationCenter.Kind.Danger, 8f);
+            return true;
         }
 
         public void AcceptOffer()
@@ -547,6 +750,7 @@ namespace StellarisClone.Core
                 RecomputeOpinion();
                 NotificationCenter.Show(Loc.T("Пакт подписан"), Loc.F("{0}: пакт о ненападении вступил в силу", AIName), NotificationCenter.Kind.Success, 6f);
             }
+            else if (kind == OfferKind.Alliance) SignAlliance();
             RaiseDiplomacyChanged();
         }
 
@@ -569,7 +773,7 @@ namespace StellarisClone.Core
 
         private void CaptureDiplomacy(AISave s)
         {
-            s.AtWar = AtWar; s.Pact = HasPact; s.TruceDays = TruceDays; s.Weariness = WarWeariness;
+            s.AtWar = AtWar; s.Pact = HasPact; s.Alliance = HasAlliance; s.TruceDays = TruceDays; s.Weariness = WarWeariness;
             s.WarMonths = _warMonths; s.SystemsLost = _systemsLostInWar; s.SystemsTaken = _systemsTakenInWar;
             s.ShipsLost = _shipsLostInWar; s.PlayerShipsLost = _playerShipsLostInWar; s.CapitalLost = _capitalLost;
             s.Offer = (int)PendingOffer; s.OfferReason = PendingOfferReason; s.OfferDays = _offerDays;
@@ -585,22 +789,22 @@ namespace StellarisClone.Core
             {
                 // Раньше война = отрицательные отношения
                 AtWar = s.Relations < 0f;
-                HasPact = false; TruceDays = 0; WarWeariness = 0f;
+                HasPact = false; HasAlliance = false; TruceDays = 0; WarWeariness = 0f;
                 _warCooldownDays = 360;
             }
             else
             {
-                AtWar = s.AtWar; HasPact = s.Pact; TruceDays = s.TruceDays; WarWeariness = s.Weariness;
+                AtWar = s.AtWar; HasPact = s.Pact; HasAlliance = s.Alliance && s.Pact && !s.AtWar; TruceDays = s.TruceDays; WarWeariness = s.Weariness;
                 _warMonths = s.WarMonths; _systemsLostInWar = s.SystemsLost; _systemsTakenInWar = s.SystemsTaken;
                 _shipsLostInWar = s.ShipsLost; _playerShipsLostInWar = s.PlayerShipsLost; _capitalLost = s.CapitalLost;
-                PendingOffer = (OfferKind)Mathf.Clamp(s.Offer, 0, 4); PendingOfferReason = s.OfferReason ?? "";
+                PendingOffer = (OfferKind)Mathf.Clamp(s.Offer, 0, (int)OfferKind.Alliance); PendingOfferReason = s.OfferReason ?? "";
                 _offerDays = s.OfferDays; _offerCooldownDays = s.OfferCooldown; _warCooldownDays = s.WarCooldown;
                 for (int i = 0; i < s.MemoryKeys.Count && i < s.MemoryValues.Count; i++)
                     if (MemoryTable.ContainsKey(s.MemoryKeys[i])) _memory[s.MemoryKeys[i]] = s.MemoryValues[i];
             }
             RestoreDeals(s);
             // Старое сохранение: предложение мира/пакта без стола переговоров
-            if (PendingOffer == OfferKind.Peace || PendingOffer == OfferKind.Pact)
+            if (PendingOffer == OfferKind.Peace || PendingOffer == OfferKind.Pact || PendingOffer == OfferKind.Alliance)
             {
                 if (PendingDeal == null) { string r = PendingOfferReason; int days = _offerDays; Offer(PendingOffer, r); _offerDays = days; }
             }

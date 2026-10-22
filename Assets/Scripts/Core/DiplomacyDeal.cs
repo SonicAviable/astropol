@@ -13,7 +13,11 @@ namespace StellarisClone.Core
         // Ежемесячные выплаты (DealCatalog.PaymentMonths месяцев)
         MonthlyEnergy, MonthlyMinerals, MonthlyAlloys,
         // Договоры — взаимные, лежат сразу на обеих сторонах стола
-        Charts, ResearchTreaty, TradeTreaty, Pact, Peace
+        Charts, ResearchTreaty, TradeTreaty, Pact, Peace,
+        // Добавлены позже — в конце, чтобы не сдвинуть номера в старых сохранениях
+        Alliance,
+        /// <summary>Передача звёздной системы; Amount — номер системы.</summary>
+        System
     }
 
     [Serializable]
@@ -45,6 +49,11 @@ namespace StellarisClone.Core
         public bool IsGift => FromAI.Count == 0 && Treaties.Count == 0 && FromPlayer.Count > 0;
 
         public bool HasTreaty(DealItemKind k) => Treaties.Exists(t => t.Kind == k);
+
+        /// <summary>Лежит ли на столе эта система (с любой стороны).</summary>
+        public bool HasSystem(int systemId) =>
+            FromAI.Exists(i => i.Kind == DealItemKind.System && (int)i.Amount == systemId)
+            || FromPlayer.Exists(i => i.Kind == DealItemKind.System && (int)i.Amount == systemId);
 
         public List<DealItem> Side(bool fromAI) => fromAI ? FromAI : FromPlayer;
 
@@ -90,9 +99,10 @@ namespace StellarisClone.Core
         public static readonly DealItemKind[] Payments =
             { DealItemKind.MonthlyEnergy, DealItemKind.MonthlyMinerals, DealItemKind.MonthlyAlloys };
         public static readonly DealItemKind[] TreatyKinds =
-            { DealItemKind.Peace, DealItemKind.Pact, DealItemKind.ResearchTreaty, DealItemKind.TradeTreaty, DealItemKind.Charts };
+            { DealItemKind.Peace, DealItemKind.Pact, DealItemKind.Alliance, DealItemKind.ResearchTreaty, DealItemKind.TradeTreaty, DealItemKind.Charts };
 
-        public static bool IsTreaty(DealItemKind k) => k >= DealItemKind.Charts;
+        public static bool IsTreaty(DealItemKind k) => k >= DealItemKind.Charts && k != DealItemKind.System;
+        public static bool IsSystem(DealItemKind k) => k == DealItemKind.System;
         public static bool IsPayment(DealItemKind k) => k >= DealItemKind.MonthlyEnergy && k <= DealItemKind.MonthlyAlloys;
         public static bool IsResource(DealItemKind k) => k <= DealItemKind.Influence;
 
@@ -120,6 +130,8 @@ namespace StellarisClone.Core
             DealItemKind.TradeTreaty => Loc.T("Торговое соглашение"),
             DealItemKind.Pact => Loc.T("Пакт о ненападении"),
             DealItemKind.Peace => Loc.T("Мирный договор"),
+            DealItemKind.Alliance => Loc.T("Оборонительный союз"),
+            DealItemKind.System => Loc.T("Звёздная система"),
             _ => "?"
         };
 
@@ -136,6 +148,8 @@ namespace StellarisClone.Core
             DealItemKind.TradeTreaty => Loc.F("+{0:0} гелия-3 в месяц обеим сторонам на {1} лет", TradeTreatyEnergy, TreatyMonths / 12),
             DealItemKind.Pact => Loc.T("Стороны обязуются не нападать друг на друга. Нарушение — тяжёлое вероломство"),
             DealItemKind.Peace => Loc.T("Прекращение войны и перемирие на 3 года"),
+            DealItemKind.Alliance => Loc.T("Если на одного нападут, другой вступает в войну. Включает пакт о ненападении. Отказ помочь союзнику — удар по репутации"),
+            DealItemKind.System => Loc.T("Система переходит к другой стороне вместе с колониями, районами и звёздной базой"),
             _ => ""
         };
 
@@ -150,6 +164,8 @@ namespace StellarisClone.Core
             DealItemKind.TradeTreaty => LGIcon.Trade,
             DealItemKind.Pact => LGIcon.Handshake,
             DealItemKind.Peace => LGIcon.Peace,
+            DealItemKind.Alliance => LGIcon.Defense,
+            DealItemKind.System => LGIcon.Starbase,
             _ => LGIcon.Info
         };
 
@@ -163,6 +179,8 @@ namespace StellarisClone.Core
             DealItemKind.Pact => new Color(0.40f, 0.86f, 0.82f),
             DealItemKind.ResearchTreaty => new Color(0.42f, 0.66f, 1f),
             DealItemKind.TradeTreaty => new Color(0.95f, 0.78f, 0.40f),
+            DealItemKind.Alliance => new Color(0.55f, 0.80f, 1f),
+            DealItemKind.System => new Color(0.95f, 0.85f, 0.55f),
             _ => new Color(0.75f, 0.85f, 0.92f)
         };
 
@@ -182,6 +200,11 @@ namespace StellarisClone.Core
         public static string Describe(DealItem i)
         {
             if (IsTreaty(i.Kind)) return Name(i.Kind);
+            if (IsSystem(i.Kind))
+            {
+                var s = EmpireStats.GetSystem((int)i.Amount);
+                return Loc.F("Система {0}", s != null ? s.Name : "?");
+            }
             if (IsPayment(i.Kind)) return Loc.F("{0}: {1:0} / мес.", Name(ResourceBase(i.Kind)), i.Amount);
             return $"{Name(i.Kind)}: {i.Amount:0}";
         }

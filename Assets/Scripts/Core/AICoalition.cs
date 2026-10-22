@@ -173,8 +173,10 @@ namespace StellarisClone.Core
             return t != null ? AIRelations.Opinion(ai, t) : 0f;
         }
 
+        /// <summary>Против империи дурной славы объединяются охотнее.</summary>
         private static float JoinThreshold(AIEmpireManager ai)
-            => ai.Profile.WarOpinionThreshold + JoinMargin + (PlayerOrganized ? OrganizerBonus : 0f);
+            => ai.Profile.WarOpinionThreshold + JoinMargin + (PlayerOrganized ? OrganizerBonus : 0f)
+               + (TargetOwner == 0 ? Mathf.Max(0f, -Reputation.Value) * 0.3f : 0f);
 
         /// <summary>Хочет ли империя ИИ вступить: цель ей неприятна, договор с целью не связывает, с игроком-участником не воюет.</summary>
         private static bool WantsIn(AIEmpireManager ai)
@@ -342,6 +344,7 @@ namespace StellarisClone.Core
             if (!PlayerMember) return false;
             bool organizer = PlayerOrganized;
             foreach (int m in _members) AIEmpireManager.For(m)?.AddMemory("coalitionleft", organizer ? -8f : -12f);
+            if (_members.Count > 0) Reputation.Add(-5f, organizer ? Loc.T("Распущена своя коалиция") : Loc.T("Вы покинули коалицию"));
             string phrase = TargetPhrase;
             if (organizer) Reset();
             else PlayerMember = false;
@@ -365,6 +368,7 @@ namespace StellarisClone.Core
             bool organizer = PlayerOrganized;
             if (organizer) Reset();
             else PlayerMember = false;
+            if (abandoned > 0) Reputation.Add(-10f, Loc.T("Сепаратный мир: союзники брошены"));
             if (abandoned > 0)
                 NotificationCenter.Show(Loc.T("Сепаратный мир"),
                     Loc.T("Вы вышли из войны, оставив союзников одних: они этого не забудут"), NotificationCenter.Kind.Warning, 8f);

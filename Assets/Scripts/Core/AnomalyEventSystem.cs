@@ -101,6 +101,7 @@ namespace StellarisClone.Core
                 p.LeaderId = ctx.Leader != null ? ctx.Leader.Id : -1;
                 p.PlanetIndex = ctx.Planet?.ParentSystem != null ? ctx.Planet.ParentSystem.Planets.IndexOf(ctx.Planet) : -1;
                 p.Rival = ctx.Rival;
+                p.Ally = ctx.Ally;
             }
             _s.Pending.Add(p);
         }
@@ -164,7 +165,7 @@ namespace StellarisClone.Core
 
         private static EventContext Restore(PendingEventSave p)
         {
-            var ctx = new EventContext { Rival = p.Rival, System = EmpireStats.GetSystem(p.SystemId) };
+            var ctx = new EventContext { Rival = p.Rival, Ally = p.Ally, System = EmpireStats.GetSystem(p.SystemId) };
             if (ctx.System != null && p.PlanetIndex >= 0 && p.PlanetIndex < ctx.System.Planets.Count)
                 ctx.Planet = ctx.System.Planets[p.PlanetIndex];
             var fm = FleetManager.Instance;

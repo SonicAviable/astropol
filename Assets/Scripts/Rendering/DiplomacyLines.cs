@@ -132,7 +132,7 @@ namespace StellarisClone.Rendering
         public static Kind OfferLine(AIEmpireManager.OfferKind k, Deal d) => k switch
         {
             AIEmpireManager.OfferKind.Peace => Kind.OfferPeace,
-            AIEmpireManager.OfferKind.Pact => Kind.OfferPact,
+            AIEmpireManager.OfferKind.Pact or AIEmpireManager.OfferKind.Alliance => Kind.OfferPact,
             AIEmpireManager.OfferKind.Demand => Kind.Demand,
             _ => d != null && d.FromAI.Count == 0 && d.FromPlayer.Count == 0 ? Kind.OfferTreaty : Kind.OfferTrade
         };

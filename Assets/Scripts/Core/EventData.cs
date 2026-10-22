@@ -25,6 +25,8 @@ namespace StellarisClone.Core
         public Leader Leader;
         public PlanetData Planet;
         public int Rival = -1;
+        /// <summary>Союзник игрока, о котором идёт речь (призыв на помощь).</summary>
+        public int Ally = -1;
     }
 
     [Serializable]
@@ -80,7 +82,7 @@ namespace StellarisClone.Core
     {
         public string Id;
         public int Days;
-        public int SystemId = -1, ShipId = -1, LeaderId = -1, PlanetIndex = -1, Rival = -1;
+        public int SystemId = -1, ShipId = -1, LeaderId = -1, PlanetIndex = -1, Rival = -1, Ally = -1;
     }
 
     [Serializable]

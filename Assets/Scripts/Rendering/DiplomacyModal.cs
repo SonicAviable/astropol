@@ -44,7 +44,7 @@ namespace StellarisClone.Rendering
         private const float LeaderX = 410f, LeaderW = 400f, LeaderH = 600f;
         private const float DialogW = 780f, DialogH = 184f, DealW = 420f, DealH = 250f;
         private const float CellSize = 76f, CellGap = 8f;
-        private const int ChanceSegs = 16, SlotCount = 6;
+        private const int ChanceSegs = 16, SlotCount = 7;
 
         private Canvas _host;
         private GameObject _root;
@@ -84,6 +84,12 @@ namespace StellarisClone.Rendering
             public System.Action Act;
         }
         private readonly List<Slot> _slots = new List<Slot>();
+
+        // Выбор систем для стола переговоров
+        private GameObject _picker;
+        private RectTransform _pickerList;
+        private Text _pickerTitle;
+        private bool _pickerFromAI;
 
         private int _owner = -1;
         private Deal _deal = new Deal();
@@ -173,6 +179,7 @@ namespace StellarisClone.Rendering
         public void Close()
         {
             if (_root == null || !IsOpen) return;
+            if (_picker != null) _picker.SetActive(false);
             LG.Hide(_root);
             _backdrop.SetActive(false);
             UIManager.Instance?.SetOverlayMode(false);
@@ -188,6 +195,7 @@ namespace StellarisClone.Rendering
             _deal = new Deal();
             _viewingOffer = ai.PendingDeal != null;
             _confirmAction = null;
+            if (_picker != null) _picker.SetActive(false);
             Color ec = ai.AIEmpireColor;
             _backdrop.SetColors(ec, Color.Lerp(ec, new Color(0.3f, 0.4f, 1f), 0.5f));
             ApplyScene(ai);
@@ -265,7 +273,7 @@ namespace StellarisClone.Rendering
         private string Signature(AIEmpireManager ai)
         {
             var eco = EconomyManager.Instance;
-            return $"{ai.OwnerId}|{Mathf.RoundToInt(ai.Opinion)}|{ai.AtWar}|{ai.HasPact}|{ai.TruceDays / 30}|{ai.PendingOffer}|{ai.PendingOfferDays / 10}|" +
+            return $"{ai.OwnerId}|{Mathf.RoundToInt(ai.Opinion)}|{ai.AtWar}|{ai.HasPact}|{ai.HasAlliance}|{Mathf.RoundToInt(Reputation.Value)}|{ai.TruceDays / 30}|{ai.PendingOffer}|{ai.PendingOfferDays / 10}|" +
                    $"{ai.Agreements.Count}|{ai.IsEliminated}|{(int)ai.EnergyCredits / 25}|{(int)ai.Minerals / 25}|{(int)ai.Alloys / 25}|{(int)ai.Influence / 10}|" +
                    (eco != null ? $"{(int)eco.EnergyCredits / 25}|{(int)eco.Minerals / 25}|{(int)eco.Alloys / 25}|{(int)eco.Influence / 10}" : "");
         }
@@ -328,6 +336,7 @@ namespace StellarisClone.Rendering
             BuildEmpirePanel(rt);
             BuildStatus(rt);
             BuildGrids(rt);
+            BuildSystemPicker(rt);
             BuildDialog(rt);
             BuildActions(rt);
 
@@ -424,7 +433,7 @@ namespace StellarisClone.Rendering
         private void BuildEmpirePanel(RectTransform rt)
         {
             RectTransform p;
-            (p, _empireTitle) = FramedPanel(rt, "Empire", new Vector2(0, 1), new Vector2(Edge, -Edge), new Vector2(SideW, 450f), "");
+            (p, _empireTitle) = FramedPanel(rt, "Empire", new Vector2(0, 1), new Vector2(Edge, -Edge), new Vector2(SideW, 540f), "");
             _empireTitle.fontSize = 16;
             _empireTitle.rectTransform.TopBand(4, 32, 46, 40);
             var crt = LGBuild.Rect(p, "Crest");
@@ -552,7 +561,7 @@ namespace StellarisClone.Rendering
         /// <summary>Вкладки действий вдоль переднего края стола: ровный шаг по горизонтали, высота и наклон — по кромке.</summary>
         private void BuildActions(RectTransform rt)
         {
-            const float span = 420f, a = TableA * 0.97f;
+            const float span = 450f, a = TableA * 0.97f;
             for (int i = 0; i < SlotCount; i++)
             {
                 float t = (i - (SlotCount - 1) * 0.5f) / ((SlotCount - 1) * 0.5f);   // −1..1 слева направо
@@ -565,12 +574,12 @@ namespace StellarisClone.Rendering
                 int idx = i;
                 slot.Btn = LGBuild.Button(rt, "Action", SlotBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f), () => _slots[idx].Act?.Invoke(), null, null, 12, 6f);
                 var r = (RectTransform)slot.Btn.transform;
-                r.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(158f, 36f));
+                r.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(142f, 36f));
                 r.localRotation = Quaternion.Euler(0f, 0f, slope * 0.55f);
                 slot.Bg = slot.Btn.GetComponent<Image>();
                 slot.Icon = LGIcons.Create(slot.Btn.transform, LGIcon.Handshake, 14, Color.white);
                 slot.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
-                slot.Label = LGBuild.Label(slot.Btn.transform, "", 12, Color.white, TextAnchor.MiddleCenter, bold: true, wrap: true);
+                slot.Label = LGBuild.Label(slot.Btn.transform, "", 11, Color.white, TextAnchor.MiddleCenter, bold: true, wrap: true);
                 slot.Label.rectTransform.Stretch(28, 0, 8, 0);
                 _slots.Add(slot);
             }
@@ -840,6 +849,7 @@ namespace StellarisClone.Rendering
             RefreshTable();
             RefreshActions();
             RefreshStatus(Current);
+            RefreshPicker();
         }
 
         // ---------- Левый верх: империя, сравнение сил, состояние, соседи ----------
@@ -888,6 +898,15 @@ namespace StellarisClone.Rendering
             var st = LGBuild.Label(chip.transform, state, 12, sc, TextAnchor.MiddleLeft, bold: true);
             st.rectTransform.Stretch(32, 0, 8, 0);
             y += 40f;
+
+            // Ваша репутация и поводы для войны против этой империи
+            InfoLineTip(_infoLeft, ref y, Reputation.Value >= 0f ? LGIcon.Handshake : LGIcon.Betrayal, Reputation.ColorOf(Reputation.Value),
+                Loc.F("Ваша репутация: <b>{0}</b> ({1:+0;-0;0})", Reputation.Current, Reputation.Value), Reputation.Tooltip());
+            var causes = CasusBelli.For(ai.OwnerId);
+            InfoLineTip(_infoLeft, ref y, LGIcon.Swords, causes.Count > 0 ? Gold : Muted,
+                causes.Count > 0 ? Loc.F("Поводы для войны: {0}", causes.Count == 1 ? causes[0].Name : Loc.F("{0} и ещё {1}", causes[0].Name, causes.Count - 1))
+                                 : Loc.T("Повода для войны нет"),
+                CasusBelli.Tooltip(ai.OwnerId));
 
             if (AICoalition.IsActive)
             {
@@ -947,6 +966,20 @@ namespace StellarisClone.Rendering
             y += 38f;
         }
 
+        /// <summary>Строка с подсказкой при наведении.</summary>
+        private static void InfoLineTip(RectTransform parent, ref float y, LGIcon icon, Color col, string text, string tip)
+        {
+            var row = LGBuild.Panel(parent, "Line", new Color(1f, 1f, 1f, 0f), raycast: true);
+            row.rectTransform.TopBand(y, 20, 0, 0);
+            LG.Ignore(row.gameObject);
+            var ic = LGIcons.Create(row.rectTransform, icon, 14, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
+            var t = LGBuild.Label(row.rectTransform, text, 12, Primary, TextAnchor.MiddleLeft);
+            t.rectTransform.Stretch(22, 0, 0, 0);
+            TooltipHelper.Attach(row.gameObject, tip);
+            y += 22f;
+        }
+
         private static void InfoLine(RectTransform parent, ref float y, LGIcon icon, Color col, string text)
         {
             var row = LGBuild.Rect(parent, "Line");
@@ -964,12 +997,13 @@ namespace StellarisClone.Rendering
         {
             LGBuild.Clear(_agreements);
             float y = 0f;
-            if (ai.Agreements.Count == 0 && !ai.HasPact)
+            if (ai.Agreements.Count == 0 && !ai.HasPact && !ai.HasAlliance)
             {
                 var none = LGBuild.Label(_agreements, Loc.T("Нет действующих договоров"), 12, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.UpperLeft);
                 none.rectTransform.TopBand(y, 18, 0, 0);
                 return;
             }
+            if (ai.HasAlliance) InfoLine(_agreements, ref y, LGIcon.Defense, DealCatalog.Tint(DealItemKind.Alliance), Loc.T("Оборонительный союз  ·  бессрочно"));
             if (ai.HasPact) InfoLine(_agreements, ref y, LGIcon.Handshake, Cyan, Loc.T("Пакт о ненападении  ·  бессрочно"));
             foreach (var a in ai.Agreements)
             {
@@ -1029,7 +1063,7 @@ namespace StellarisClone.Rendering
                 btn.transition = Selectable.Transition.None;
                 int owner = ai.OwnerId;
                 btn.onClick.AddListener(() => { if (owner != _owner) { SFXManager.Play(Sfx.UiTab); SwitchTo(owner); } });
-                string st = ai.IsEliminated ? Loc.T("повержена") : ai.AtWar ? Loc.T("война") : ai.HasPact ? Loc.T("пакт") : Loc.T("мир");
+                string st = ai.IsEliminated ? Loc.T("повержена") : ai.AtWar ? Loc.T("война") : ai.HasAlliance ? Loc.T("союз") : ai.HasPact ? Loc.T("пакт") : Loc.T("мир");
                 TooltipHelper.Attach(b.gameObject, Loc.F("<b>{0}</b>\n{1} · отношение {2:+0;-0;0}", ai.AIName, st, ai.Opinion) +
                     (ai.PendingOffer != AIEmpireManager.OfferKind.None ? Loc.T("\n<color=#F2C747>Ждёт ответа на предложение</color>") : ""));
                 if (ai.PendingOffer != AIEmpireManager.OfferKind.None)
@@ -1055,6 +1089,7 @@ namespace StellarisClone.Rendering
         {
             if (ai.IsEliminated) return (Loc.T("ПОВЕРЖЕНА"), Muted, LGIcon.Trophy);
             if (ai.AtWar) return (Loc.F("ВОЙНА · {0} мес. · усталость {1:0}%", ai.WarMonths, ai.WarWeariness), Red, LGIcon.Swords);
+            if (ai.HasAlliance) return (Loc.T("ОБОРОНИТЕЛЬНЫЙ СОЮЗ"), DealCatalog.Tint(DealItemKind.Alliance), LGIcon.Defense);
             if (ai.HasPact) return (Loc.T("ПАКТ О НЕНАПАДЕНИИ"), Cyan, LGIcon.Handshake);
             if (ai.TruceDays > 0) return (Loc.F("ПЕРЕМИРИЕ · {0} мес.", Mathf.CeilToInt(ai.TruceDays / 30f)), Green, LGIcon.Peace);
             return (Loc.T("МИР"), Green, LGIcon.Peace);
@@ -1090,8 +1125,11 @@ namespace StellarisClone.Rendering
             else
             {
                 string blocker = ai.WarBlocker;
+                string warTip = ai.HasAlliance ? Loc.T("Нападение на союзника — худшее вероломство: −60 к их отношению и −40 к репутации у всех")
+                              : ai.HasPact ? Loc.T("Нарушение пакта — тяжёлое вероломство: −40 к отношению надолго и удар по репутации")
+                              : Loc.T("Объявление войны рвёт все соглашения и ухудшает отношение");
                 DangerSlot(_slots[0], "war", Loc.T("ОБЪЯВИТЬ ВОЙНУ"), LGIcon.Swords, Red,
-                    blocker ?? (ai.HasPact ? Loc.T("Нарушение пакта — тяжёлое вероломство: −40 к отношению надолго") : Loc.T("Объявление войны рвёт все соглашения и ухудшает отношение")),
+                    blocker ?? warTip + "\n\n" + CasusBelli.Tooltip(ai.OwnerId),
                     !alive || blocker != null ? null : () =>
                     {
                         if (ai.PlayerDeclareWar())
@@ -1108,17 +1146,23 @@ namespace StellarisClone.Rendering
                     Loc.T("Отношение ухудшится; после этого войну можно объявить без вероломства"),
                     alive ? () => ai.PlayerCancelPact() : (System.Action)null);
             else TreatySlot(_slots[1], ai, DealItemKind.Pact, Loc.T("ПАКТ"), LGIcon.Handshake);
-            TreatySlot(_slots[2], ai, DealItemKind.TradeTreaty, Loc.T("ТОРГОВЫЙ ДОГОВОР"), LGIcon.Trade);
-            TreatySlot(_slots[3], ai, DealItemKind.ResearchTreaty, Loc.T("НАУЧНЫЙ ДОГОВОР"), LGIcon.Research);
-            TreatySlot(_slots[4], ai, DealItemKind.Charts, Loc.T("ЗВЁЗДНЫЕ КАРТЫ"), LGIcon.MapExplored);
-            CoalitionSlot(_slots[5], ai);
+            // Союз
+            if (ai.HasAlliance)
+                DangerSlot(_slots[2], "cancelalliance", Loc.T("РАСТОРГНУТЬ СОЮЗ"), LGIcon.Betrayal, DealCatalog.Tint(DealItemKind.Alliance),
+                    Loc.T("Обязательства защищать друг друга снимаются, пакт о ненападении остаётся. Отношение и репутация немного ухудшатся"),
+                    alive ? () => ai.PlayerCancelAlliance() : (System.Action)null);
+            else TreatySlot(_slots[2], ai, DealItemKind.Alliance, Loc.T("СОЮЗ"), LGIcon.Defense);
+            TreatySlot(_slots[3], ai, DealItemKind.TradeTreaty, Loc.T("ТОРГОВЫЙ ДОГОВОР"), LGIcon.Trade);
+            TreatySlot(_slots[4], ai, DealItemKind.ResearchTreaty, Loc.T("НАУЧНЫЙ ДОГОВОР"), LGIcon.Research);
+            TreatySlot(_slots[5], ai, DealItemKind.Charts, Loc.T("ЗВЁЗДНЫЕ КАРТЫ"), LGIcon.MapExplored);
+            CoalitionSlot(_slots[6], ai);
         }
 
         /// <summary>Договор: щелчок кладёт его на стол (или убирает). Действующий — подсвечен зелёным.</summary>
         private void TreatySlot(Slot s, AIEmpireManager ai, DealItemKind k, string label, LGIcon icon)
         {
             ai.TreatyValue(k, out string block);
-            bool active = ai.HasAgreement(k);
+            bool active = ai.HasAgreement(k) || (k == DealItemKind.Alliance && ai.HasAlliance);
             bool on = _deal.HasTreaty(k);
             bool can = !ai.IsEliminated && !_viewingOffer && (block == null || on);
             string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
@@ -1151,6 +1195,16 @@ namespace StellarisClone.Rendering
                     if (inc <= 0f) return null;
                     float add = inc * DealCatalog.ResearchTreatyBonus;
                     return Loc.F("<color={0}>Для вас:</color> ≈ +{1:0} науки в месяц (сейчас {2:0}/мес), за {3} лет ≈ +{4:0}", G, add, inc, years, add * DealCatalog.TreatyMonths);
+                }
+                case DealItemKind.Alliance:
+                {
+                    if (ai == null) return null;
+                    var e = ai.EvaluateAlliance();
+                    if (e.Blocker != null || e.Reasons == null) return null;
+                    var sb = new StringBuilder(Loc.F("<color={0}>Их готовность:</color> {1:+0;-0;0}", G, e.Score));
+                    foreach (var r in e.Reasons)
+                        sb.Append($"\n<color={(r.Value >= 0 ? "#6FE09A" : "#FF8080")}>{r.Value:+0;-0;0}</color>  {r.Label}");
+                    return sb.ToString();
                 }
                 case DealItemKind.Charts:
                 {
@@ -1270,6 +1324,41 @@ namespace StellarisClone.Rendering
                 Cell(_playerGrid, i, k, false, Loc.T("в месяц"), !frozen && !ai.AtWar, ai.AtWar ? Loc.T("Во время войны — только мир") : null);
                 i++;
             }
+            SystemCell(_aiGrid, i, true, !frozen);
+            SystemCell(_playerGrid, i, false, !frozen);
+        }
+
+        /// <summary>Ячейка «Системы»: открывает список систем стороны; число — сколько систем уже на столе.</summary>
+        private void SystemCell(RectTransform grid, int index, bool fromAI, bool enabled)
+        {
+            int col = index % 4, row = index / 4;
+            int onTable = _deal.Side(fromAI).FindAll(x => DealCatalog.IsSystem(x.Kind)).Count;
+            bool open = _picker != null && _picker.activeSelf && _pickerFromAI == fromAI;
+            Color tint = DealCatalog.Tint(DealItemKind.System);
+            float a = enabled ? 1f : 0.35f;
+            var c = LGBuild.Panel(grid, "Cell_System", open || onTable > 0 ? new Color(0.22f, 0.16f, 0.04f, 0.96f) : CellBg, raycast: true);
+            c.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(col * (CellSize + CellGap), -row * (CellSize + CellGap)), new Vector2(CellSize, CellSize));
+            var fx = LG.Platter(c.gameObject, 6f);
+            fx.SetRim(open || onTable > 0 ? new Color(Gold.r, Gold.g, Gold.b, 0.9f) : new Color(tint.r, tint.g, tint.b, enabled ? 0.40f : 0.12f));
+            fx.FillMultiplier = 2.4f;
+            var ic = LGIcons.Create(c.transform, LGIcon.Starbase, 30, new Color(tint.r, tint.g, tint.b, a));
+            ic.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(30, 30));
+            var cap = LGBuild.Label(c.transform, onTable > 0 ? Loc.F("на столе {0}", onTable) : Loc.T("системы"), 12, new Color(Primary.r, Primary.g, Primary.b, a), TextAnchor.MiddleCenter, bold: true);
+            cap.rectTransform.anchorMin = new Vector2(0f, 0f);
+            cap.rectTransform.anchorMax = new Vector2(1f, 0f);
+            cap.rectTransform.pivot = new Vector2(0.5f, 0f);
+            cap.rectTransform.sizeDelta = new Vector2(0f, 18f);
+            cap.rectTransform.anchoredPosition = new Vector2(0f, 7f);
+            var btn = c.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.interactable = enabled;
+            btn.onClick.AddListener(() => TogglePicker(fromAI));
+            string tip = Loc.T("<b>Звёздные системы</b>\n") + DealCatalog.Hint(DealItemKind.System) +
+                         (fromAI ? Loc.T("\nСвои системы отдают неохотно: территория дороже ресурсов. Системы, отнятые у вас (повод «Вернуть утраченное»), уступают легче")
+                                 : Loc.T("\nСоседу интереснее системы у его границы"));
+            tip += !enabled && _viewingOffer ? Loc.T("\n<color=#8AA2A8>Сначала ответьте на их предложение или измените его</color>")
+                 : Loc.T("\n<color=#8AA2A8>Щелчок — открыть список систем</color>");
+            TooltipHelper.Attach(c.gameObject, tip);
         }
 
         private static string Short(float v) => v >= 10000f ? $"{v / 1000f:0.#}k" : $"{v:0}";
@@ -1365,6 +1454,117 @@ namespace StellarisClone.Rendering
             }
             item.Amount = Mathf.Clamp(item.Amount + dir * step, 0f, Mathf.Max(step, max));
             if (item.Amount <= 0f) _deal.Side(fromAI).Remove(item);
+        }
+
+        // ---------- Выбор систем ----------
+
+        private void BuildSystemPicker(RectTransform rt)
+        {
+            var (p, t) = FramedPanel(rt, "SystemPicker", new Vector2(1, 0.5f), new Vector2(-Edge - SideW - 14f, 40f), new Vector2(360f, 520f), "");
+            _picker = p.gameObject;
+            _pickerTitle = t;
+            var close = LGBuild.Button(p, "Close", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f), () => { _picker.SetActive(false); RefreshItemLists(); }, LGIcon.Close, null, 10);
+            ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-34, -8), new Vector2(24, 24));
+            var hint = LGBuild.Label(p, Loc.T("Щелчок — положить систему на стол или убрать её"), 11, Muted, TextAnchor.MiddleLeft);
+            hint.rectTransform.TopBand(42, 18, 16, 16);
+            var host = LGBuild.Rect(p, "List");
+            host.Stretch(12, 12, 12, 66);
+            _pickerList = LGBuild.ScrollList(host, 4f, 2);
+            _picker.SetActive(false);
+        }
+
+        private void TogglePicker(bool fromAI)
+        {
+            if (_picker == null) return;
+            bool show = !(_picker.activeSelf && _pickerFromAI == fromAI);
+            _pickerFromAI = fromAI;
+            _picker.SetActive(show);
+            _picker.transform.SetAsLastSibling();
+            SFXManager.Play(show ? Sfx.UiClick : Sfx.UiBack);
+            RefreshItemLists();
+            RefreshPicker();
+        }
+
+        /// <summary>Список систем стороны: сначала пограничные с другой стороной, затем самые ценные.</summary>
+        private void RefreshPicker()
+        {
+            if (_picker == null || !_picker.activeSelf) return;
+            var ai = Current;
+            LGBuild.Clear(_pickerList);
+            if (ai == null) return;
+            int giver = _pickerFromAI ? ai.OwnerId : 0, taker = _pickerFromAI ? 0 : ai.OwnerId;
+            _pickerTitle.text = _pickerFromAI ? Loc.F("СИСТЕМЫ: {0}", ai.AIName.ToUpper()) : Loc.T("ВАШИ СИСТЕМЫ");
+            _pickerTitle.color = _pickerFromAI ? Color.Lerp(ai.AIEmpireColor, Color.white, 0.25f) : Gold;
+
+            var list = new List<StarSystem>();
+            foreach (var sys in EmpireStats.Systems) if (sys.OwnerId == giver) list.Add(sys);
+            list.Sort((a, b) =>
+            {
+                bool ba = AIEmpireManager.Borders(a, taker), bb = AIEmpireManager.Borders(b, taker);
+                if (ba != bb) return ba ? -1 : 1;
+                return AIEmpireManager.SystemWorth(b).CompareTo(AIEmpireManager.SystemWorth(a));
+            });
+            if (list.Count == 0) { EmptyNote(_pickerList, Loc.T("систем нет")); return; }
+
+            bool frozen = _viewingOffer || ai.IsEliminated;
+            int shown = 0;
+            foreach (var sys in list)
+            {
+                if (++shown > 40) break;
+                PickerRow(ai, sys, giver, taker, frozen);
+            }
+        }
+
+        private void PickerRow(AIEmpireManager ai, StarSystem sys, int giver, int taker, bool frozen)
+        {
+            bool fromAI = _pickerFromAI;
+            bool on = _deal.HasSystem(sys.Id);
+            string block = ai.SystemBlocker(sys.Id, giver);
+            int pop = 0, colonies = 0;
+            foreach (var pl in sys.Planets) if (pl.Population > 0) { pop += pl.Population; colonies++; }
+            bool border = AIEmpireManager.Borders(sys, taker);
+            bool claimed = fromAI && CasusBelli.IsClaimed(sys.Id, ai.OwnerId);
+            float worth = AIEmpireManager.SystemWorth(sys);
+
+            var row = LGBuild.Panel(_pickerList, "Sys", on ? new Color(0.22f, 0.16f, 0.04f, 0.96f) : new Color(0.03f, 0.10f, 0.12f, 0.85f), raycast: true);
+            LGBuild.Height(row.gameObject, 40f);
+            var fx = LG.Platter(row.gameObject, 4f);
+            fx.SetRim(on ? new Color(Gold.r, Gold.g, Gold.b, 0.85f) : new Color(1f, 1f, 1f, 0.10f));
+            fx.FillMultiplier = 2.6f;
+            float a = block == null && !frozen ? 1f : 0.45f;
+            var ic = LGIcons.Create(row.transform, colonies > 0 ? LGIcon.Planet : LGIcon.Starbase, 16, new Color(1f, 0.85f, 0.55f, a));
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(16, 16));
+            var name = LGBuild.Label(row.transform, sys.Name + (claimed ? Loc.T("  <color=#F2C747>· ваша бывшая</color>") : ""), 13, new Color(1f, 1f, 1f, a), TextAnchor.UpperLeft, bold: true);
+            name.rectTransform.Stretch(34, 18, 64, 3);
+            string info = colonies > 0 ? Loc.F("колоний {0} · население {1}", colonies, pop) : Loc.T("форпост");
+            if (border) info += Loc.T(" · у границы");
+            var sub = LGBuild.Label(row.transform, info, 11, new Color(Muted.r, Muted.g, Muted.b, a), TextAnchor.LowerLeft);
+            sub.rectTransform.Stretch(34, 3, 64, 20);
+            var w = LGBuild.Label(row.transform, Loc.F("≈{0:0}", worth), 12, new Color(Gold.r, Gold.g, Gold.b, a), TextAnchor.MiddleRight, bold: true);
+            w.rectTransform.Stretch(0, 0, 10, 0);
+
+            string tip = $"<b>{sys.Name}</b>\n" + (colonies > 0 ? Loc.F("Колоний: {0}, население {1}", colonies, pop) : Loc.T("Форпост без колоний")) +
+                         Loc.F("\nЦенность ≈ {0:0} гелия-3", worth) +
+                         (fromAI ? Loc.T("\n<color=#8AA2A8>Свою систему отдадут примерно за полторы её цены</color>") : (border ? Loc.T("\n<color=#8AA2A8>Граничит с ними — для них это ценно</color>") : Loc.T("\n<color=#8AA2A8>Далеко от их границ — для них стоит вдвое меньше</color>"))) +
+                         (claimed ? Loc.T("\n<color=#F2C747>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>") : "") +
+                         (block != null ? $"\n<color=#FF8080>{block}</color>" : on ? Loc.T("\n<color=#F2C747>На столе — щёлкните, чтобы убрать</color>") : Loc.T("\nЩелчок — положить на стол"));
+            TooltipHelper.Attach(row.gameObject, tip);
+            if (frozen || (block != null && !on)) return;
+            var btn = row.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            int id = sys.Id;
+            btn.onClick.AddListener(() => ToggleSystem(id, fromAI));
+        }
+
+        private void ToggleSystem(int systemId, bool fromAI)
+        {
+            if (_viewingOffer) return;
+            var side = _deal.Side(fromAI);
+            int idx = side.FindIndex(x => DealCatalog.IsSystem(x.Kind) && (int)x.Amount == systemId);
+            if (idx >= 0) side.RemoveAt(idx);
+            else side.Add(new DealItem(DealItemKind.System, systemId));
+            SFXManager.Play(idx >= 0 ? Sfx.DealRemove : Sfx.DealPlace);
+            RefreshDeal();
         }
 
         // ---------- Проекция сделки и шанс согласия ----------
@@ -1470,11 +1670,12 @@ namespace StellarisClone.Rendering
             fx.FillMultiplier = 2.6f;
             fx.SpecularMultiplier = 0.2f;
 
+            bool system = DealCatalog.IsSystem(item.Kind);
             var ic = LGIcons.Create(row.transform, treaty ? LGIcon.Handshake : DealCatalog.Icon(item.Kind), 14, tint);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(14, 14));
             string text = treaty ? DealCatalog.Name(item.Kind) : DealCatalog.Describe(item);
             var t = LGBuild.Label(row.transform, text, 12, Primary, TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(28, 0, readOnly ? 8 : (treaty ? 32 : 82), 0);
+            t.rectTransform.Stretch(28, 0, readOnly ? 8 : (treaty || system ? 32 : 82), 0);
             TooltipHelper.Attach(row.gameObject, $"<b>{DealCatalog.Name(item.Kind)}</b>\n{DealCatalog.Hint(item.Kind)}" + (treaty ? Loc.T("\n<color=#8AA2A8>Договор взаимный — действует для обеих сторон</color>") : ""));
             row.raycastTarget = true;
             if (readOnly) return;
@@ -1486,7 +1687,7 @@ namespace StellarisClone.Rendering
                 SFXManager.Play(Sfx.DealRemove);
                 RefreshDeal();
             });
-            if (treaty) return;
+            if (treaty || system) return;
             SmallText(row.rectTransform, "+", ref x, () => { Adjust(item, fromAI, +1); RefreshDeal(); });
             SmallText(row.rectTransform, "−", ref x, () => { Adjust(item, fromAI, -1); RefreshDeal(); });
         }
@@ -1573,7 +1774,7 @@ namespace StellarisClone.Rendering
                 {
                     _viewingOffer = false;
                     SFXManager.Play(kind == AIEmpireManager.OfferKind.Peace ? Sfx.PeaceSigned
-                        : kind == AIEmpireManager.OfferKind.Pact ? Sfx.PactSigned : Sfx.DealAccepted);
+                        : kind == AIEmpireManager.OfferKind.Pact || kind == AIEmpireManager.OfferKind.Alliance ? Sfx.PactSigned : Sfx.DealAccepted);
                     if (kind == AIEmpireManager.OfferKind.Trade) Achievements.Unlock(Ach.Deal);
                     Say(DiplomacyLines.Get(leader, DiplomacyLines.Kind.Accept));
                 }
@@ -1584,7 +1785,7 @@ namespace StellarisClone.Rendering
 
             if (_deal.IsEmpty) return;
             bool gift = _deal.IsGift;
-            bool peace = _deal.HasTreaty(DealItemKind.Peace), pact = _deal.HasTreaty(DealItemKind.Pact);
+            bool peace = _deal.HasTreaty(DealItemKind.Peace), pact = _deal.HasTreaty(DealItemKind.Pact) || _deal.HasTreaty(DealItemKind.Alliance);
             if (ai.PlayerPropose(_deal, out var verdict))
             {
                 SFXManager.Play(peace ? Sfx.PeaceSigned : pact ? Sfx.PactSigned : Sfx.DealAccepted);

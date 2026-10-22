@@ -66,6 +66,9 @@ namespace StellarisClone.Core
         public List<AISave> AIs = new List<AISave>();
         public List<AIRelations.PairState> AIPairs = new List<AIRelations.PairState>();
         public CoalitionSave Coalition;
+        /// <summary>Репутация игрока и поводы для войны (null — старое сохранение).</summary>
+        public ReputationSave Reputation;
+        public CasusBelliSave CasusBelli;
         public List<ExploredSave> Explored = new List<ExploredSave>();
         /// <summary>Знакомства цивилизаций (null — старое сохранение: все знакомы).</summary>
         public List<long> Contacts;
@@ -261,7 +264,7 @@ namespace StellarisClone.Core
         public int ScienceWarnLevel;
 
         // Дипломатия
-        public bool AtWar, Pact, CapitalLost;
+        public bool AtWar, Pact, CapitalLost, Alliance;
         public int TruceDays;
         public float Weariness;
         public int WarMonths, SystemsLost, SystemsTaken, ShipsLost, PlayerShipsLost;
@@ -458,6 +461,8 @@ namespace StellarisClone.Core
             foreach (var ai in AIEmpireManager.All) s.AIs.Add(ai.CaptureState());
             s.AIPairs = AIRelations.Capture();
             s.Coalition = AICoalition.Capture();
+            s.Reputation = global::StellarisClone.Core.Reputation.Capture();
+            s.CasusBelli = global::StellarisClone.Core.CasusBelli.Capture();
             s.Explored = Vision.Capture();
             s.Contacts = global::StellarisClone.Core.Contacts.Capture();
             if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
@@ -835,6 +840,8 @@ namespace StellarisClone.Core
             }
             AIRelations.Restore(s.AIPairs);
             AICoalition.Restore(s.Coalition);
+            global::StellarisClone.Core.Reputation.Restore(s.Reputation);
+            global::StellarisClone.Core.CasusBelli.Restore(s.CasusBelli);
             Vision.Restore(s.Explored);
             global::StellarisClone.Core.Contacts.Restore(s.Contacts);
             SiegeManager.Instance?.RestoreState(s.Sieges);

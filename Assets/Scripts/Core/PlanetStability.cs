@@ -245,7 +245,9 @@ namespace StellarisClone.Core
                 int organic = p.OrganicPops;
                 int kin = p.CountOf(s => !s.Robot && SpeciesRegistry.Related(s.Id, founder));
                 float alienShare = organic > 0 ? 1f - kin / (float)organic : 0f;
-                p.Unrest = Mathf.Max(p.Unrest, ConquestUnrest * Mathf.Lerp(0.3f, 1f, alienShare));
+                // Мирная передача по договору встречает вдвое меньше сопротивления, чем завоевание
+                float unrest = ConquestUnrest * Mathf.Lerp(0.3f, 1f, alienShare) * (SiegeManager.IsPeacefulTransfer ? 0.5f : 1f);
+                p.Unrest = Mathf.Max(p.Unrest, unrest);
                 p.RiotMonths = 0;
                 p.PropagandaMonths = 0;
                 p.MartialLawMonths = 0;

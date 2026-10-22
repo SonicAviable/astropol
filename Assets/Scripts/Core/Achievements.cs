@@ -257,7 +257,7 @@ namespace StellarisClone.Core
 
         private void HandleCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
-            if (Live && newOwner == 0 && oldOwner > 0) Achievements.Unlock(Ach.Capture);
+            if (Live && newOwner == 0 && oldOwner > 0 && !SiegeManager.IsPeacefulTransfer) Achievements.Unlock(Ach.Capture);
         }
 
         private void HandleShipDestroyed(FleetData ship, int killer)

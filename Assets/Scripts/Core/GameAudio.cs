@@ -90,7 +90,7 @@ namespace StellarisClone.Core
 
         private void HandleCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
-            if (Suppressed) return;
+            if (Suppressed || SiegeManager.IsPeacefulTransfer) return;   // передачу по договору озвучивает окно сделки
             if (newOwner == 0) SFXManager.Play(Sfx.SystemCaptured);
             else if (oldOwner == 0) SFXManager.Play(Sfx.SystemLost);
         }
