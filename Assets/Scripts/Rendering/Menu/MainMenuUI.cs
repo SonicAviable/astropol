@@ -514,8 +514,16 @@ namespace StellarisClone.Rendering
             y = LGControls.Section(left, y, Loc.T("ПАРТИЯ"), LGIcon.Leader);
             LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Соперники"), Loc.T("Сколько империй ИИ делят с вами галактику"), 270f),
                 NewGameSettings.RivalNames, _ng.RivalCount - 1, i => { _ng.Rivals = i + 1; RefreshNewGame(); });
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Сложность"), Loc.T("Доходы и агрессивность соседних империй"), 270f),
-                NewGameSettings.DifficultyNames, _ng.Difficulty, i => { _ng.Difficulty = i; RefreshNewGame(); });
+            // Под названием — что значит выбранный уровень (меняется вместе с выбором)
+            var diffRow = LGControls.Row(left, ref y, Loc.T("Сложность"), AIDifficulty.Description(_ng.Tier), 270f, 74f);
+            var diffText = diffRow.parent != null ? diffRow.parent.Find("Text") : null;
+            var diffDesc = diffText != null && diffText.childCount > 1 ? diffText.GetChild(1).GetComponent<Text>() : null;
+            LGControls.Selector(diffRow, NewGameSettings.DifficultyNames, _ng.Tier, i =>
+            {
+                _ng.SetLevel(i);
+                if (diffDesc != null) diffDesc.text = AIDifficulty.Description(i);
+                RefreshNewGame();
+            });
             LGControls.Switch(LGControls.Row(left, ref y, Loc.T("Обучение"), Loc.T("Пошаговые подсказки советника в начале"), 270f),
                 _ng.Tutorial, v => _ng.Tutorial = v);
 

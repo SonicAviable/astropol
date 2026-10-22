@@ -79,6 +79,8 @@ namespace StellarisClone.Core
         /// <summary>Главный противник: враг с самой длинной общей границей, иначе самый опасный сосед.</summary>
         private int FocusRival()
         {
+            // Готовимся к войне — смотрим на цель плана: туда стягивается флот
+            if (WarPlanTarget >= 0 && !AtWarWithAnyone && EmpireStats.SystemCount(WarPlanTarget) > 0) return WarPlanTarget;
             int best = -1;
             float bestScore = float.MinValue;
             foreach (int o in OtherEmpires())

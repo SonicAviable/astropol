@@ -138,24 +138,26 @@ namespace StellarisClone.Core
 
                 p.WearA = Mathf.Max(0f, p.WearA - 5f);
                 p.WearB = Mathf.Max(0f, p.WearB - 5f);
-                if (p.TruceDays > 0 || p.CooldownDays > 0) continue;
-                if (!Contacts.Met(a.OwnerId, b.OwnerId)) continue;   // незнакомцы не воюют
-                if (EmpireStats.SharedBorderCount(a.OwnerId, b.OwnerId) == 0) continue;
-
-                float opinion = Opinion(a, b);
-                if (WantsWar(a, b, opinion)) StartWar(p, a, b);
-                else if (WantsWar(b, a, opinion)) StartWar(p, b, a);
+                // Новые войны между ИИ планирует стратегия каждой империи (AIEmpireManager.Strategy):
+                // выбор цели, подготовка флота у границы, объявление — DeclarePlannedWar
             }
         }
 
-        private static bool WantsWar(AIEmpireManager attacker, AIEmpireManager target, float opinion)
+        /// <summary>Можно ли сейчас объявить войну: не воюют, нет перемирия и «остывания» после прошлой войны.</summary>
+        public static bool CanDeclare(int a, int b)
         {
-            if (attacker.IsBankrupt) return false;
-            if (opinion > attacker.Profile.WarOpinionThreshold) return false;
-            float ratio = EmpireStats.MilitaryPower(attacker.OwnerId) / Mathf.Max(1f, EmpireStats.MilitaryPower(target.OwnerId));
-            float need = attacker.Profile.WarPowerRatio * (attacker.AtWar ? 1.5f : 1f);   // уже воюет с игроком — второй фронт осторожнее
-            if (ratio < need) return false;
-            return UnityEngine.Random.value < 0.3f;
+            var p = Get(a, b, false);
+            return p == null || (!p.AtWar && p.TruceDays <= 0 && p.CooldownDays <= 0);
+        }
+
+        /// <summary>Война по плану: стратегия ИИ подготовилась и объявляет её.</summary>
+        public static bool DeclarePlannedWar(AIEmpireManager attacker, AIEmpireManager defender)
+        {
+            if (attacker == null || defender == null || attacker == defender || attacker.IsBankrupt) return false;
+            if (!CanDeclare(attacker.OwnerId, defender.OwnerId)) return false;
+            var p = Get(attacker.OwnerId, defender.OwnerId, true);
+            StartWar(p, attacker, defender);
+            return true;
         }
 
         /// <summary>Вступление в войну по обязательству коалиции: перемирие не мешает, если оно почти истекло.</summary>

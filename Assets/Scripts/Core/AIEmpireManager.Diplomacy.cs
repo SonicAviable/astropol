@@ -109,7 +109,7 @@ namespace StellarisClone.Core
             _memory.Clear();
             PendingOffer = OfferKind.None;
             // Первые годы — время на обустройство: ИИ не объявляет войну
-            _warCooldownDays = GameSession.Settings.Difficulty == 2 ? 360 * 2 : 360 * 4;
+            _warCooldownDays = Mathf.RoundToInt(360f * AIDifficulty.PeaceYears);
             RecomputeOpinion();
             _lastOpinionBucket = Opinion;
         }
@@ -127,9 +127,9 @@ namespace StellarisClone.Core
 
             Add(Loc.F("Характер: {0} империя", Profile.Name.ToLower()), Profile.Summary, Profile.BaseOpinion, LGIcon.Leader);
 
-            int diff = GameSession.Settings.Difficulty;
-            if (diff == 0) Add(Loc.T("Сложность: лёгкая"), Loc.T("Соперник изначально настроен миролюбиво"), 10f, LGIcon.Info);
-            else if (diff == 2) Add(Loc.T("Сложность: сложная"), Loc.T("Соперник изначально подозрителен"), -10f, LGIcon.Info);
+            float bias = AIDifficulty.OpinionBias;
+            if (bias > 0f) Add(Loc.F("Сложность: {0}", NewGameSettings.LevelName(AIDifficulty.Tier).ToLower()), Loc.T("Соперник изначально настроен миролюбиво"), bias, LGIcon.Info);
+            else if (bias < 0f) Add(Loc.F("Сложность: {0}", NewGameSettings.LevelName(AIDifficulty.Tier).ToLower()), Loc.T("Соперник изначально подозрителен"), bias, LGIcon.Info);
 
             // Машины и органики друг другу не доверяют
             bool meMachine = Personality == AIPersonality.Machine;
@@ -317,8 +317,8 @@ namespace StellarisClone.Core
             if (AtWar) ConsiderPeaceOffer();
             else
             {
-                ConsiderWar();
-                if (!AtWar) ConsiderPactOffer();
+                // Войну теперь планирует стратегия (AIEmpireManager.Strategy) — с подготовкой, а не броском кубика
+                ConsiderPactOffer();
                 if (!AtWar) ConsiderAllianceOffer();
                 if (!AtWar) ConsiderTradeOffer();
             }
@@ -329,22 +329,10 @@ namespace StellarisClone.Core
 
         private float PowerRatio => EmpireStats.MilitaryPower(OwnerId) / Mathf.Max(1f, EmpireStats.MilitaryPower(0));
 
-        /// <summary>Порог мнения для войны: на высокой сложности ИИ вспыльчивее.</summary>
-        private float WarThreshold => Profile.WarOpinionThreshold / AggressionFactor;
-
-        private void ConsiderWar()
+        /// <summary>Объявить войну игроку по готовому плану (стратегия проверила условия и собрала флот).</summary>
+        private void DeclareWarOnPlayer(float ratio)
         {
-            if (TruceDays > 0 || _warCooldownDays > 0 || _bankrupt) return;
-            // Союзник по коалиции и по оборонительному союзу на игрока не нападает
-            if (AICoalition.AreAllies(0, OwnerId) || HasAlliance) return;
-            // Уже воюет с другим ИИ — второй фронт откроет только при большом перевесе
-            if (WarsWithAIs > 0 && PowerRatio < Profile.WarPowerRatio * 1.5f) return;
-            if (EmpireStats.SharedBorderCount(OwnerId, 0) == 0 && Personality != AIPersonality.Militarist) return;
-            float ratio = PowerRatio;
-            if (Opinion > WarThreshold || ratio < Profile.WarPowerRatio) return;
-            if (HasPact && !(Personality == AIPersonality.Militarist && Opinion <= -60f && ratio >= 1.6f)) return;
-            if (UnityEngine.Random.value > 0.4f) return;
-
+            if (AtWar || TruceDays > 0 || _bankrupt || AICoalition.AreAllies(0, OwnerId) || HasAlliance) return;
             var reasons = new List<string>();
             foreach (var m in OpinionBreakdown)
                 if (m.Value < 0f && reasons.Count < 2) reasons.Add(m.Label.ToLower());
@@ -404,10 +392,14 @@ namespace StellarisClone.Core
             if (PendingOffer != OfferKind.None || _offerCooldownDays > 0) return;
             bool tired = WarWeariness >= Profile.PeaceWeariness;
             bool losing = _warMonths >= 3 && PowerRatio < 0.6f;
-            if (!tired && !losing && !_capitalLost) return;
+            // Живой игрок фиксирует выигрыш: взяли несколько систем, война затягивается — пора закрепить успех миром
+            bool satisfied = Smart >= 1 && _systemsTakenInWar >= 2 && _systemsTakenInWar > _systemsLostInWar
+                             && WarWeariness >= Profile.PeaceWeariness * 0.5f;
+            if (!tired && !losing && !_capitalLost && !satisfied) return;
 
             string reason = _capitalLost ? Loc.T("их столица пала")
                           : losing ? Loc.T("их флот разбит и уступает вашему")
+                          : satisfied && !tired ? Loc.F("они захватили {0} сист. и хотят закрепить успех", _systemsTakenInWar)
                           : Loc.F("страна устала от войны ({0:0}%)", WarWeariness);
             Offer(OfferKind.Peace, reason);
             NotificationCenter.Show(Loc.T("Предложение мира"), Loc.F("{0} предлагает мир: {1}. Ответьте в окне дипломатии", AIName, reason),
@@ -417,7 +409,9 @@ namespace StellarisClone.Core
         private void ConsiderPactOffer()
         {
             if (HasPact || PendingOffer != OfferKind.None || _offerCooldownDays > 0) return;
-            if (Opinion < Profile.PactOpinion + 15f) return;
+            if (WarPlanTarget == 0) return;
+            // Готовим войну с другой империей — пакт с игроком прикроет тыл, на него согласны охотнее
+            if (Opinion < Profile.PactOpinion + (WarPlanTarget > 0 ? 0f : 15f)) return;
             if (PowerRatio > 1.2f && Personality == AIPersonality.Militarist) return;
             if (UnityEngine.Random.value > 0.25f) return;
             Offer(OfferKind.Pact, Loc.T("они ценят добрососедство и хотят гарантий безопасности"));
@@ -532,6 +526,10 @@ namespace StellarisClone.Core
 
             Add(Loc.T("Отношение к вам"), OpinionLabel(Opinion), Opinion, LGIcon.Diplomacy);
             Add(Loc.T("Требование характера"), Loc.F("{0} империя соглашается при отношении от {1:+0;-0;0}", Profile.Name, Profile.PactOpinion), -Profile.PactOpinion, LGIcon.Leader);
+            if (WarPlanTarget == 0)
+                Add(Loc.T("Уклончивый ответ"), Loc.T("Посол ссылается на «внутренние дела» и уходит от ответа"), -30f, LGIcon.Warning);
+            else if (WarPlanTarget > 0)
+                Add(Loc.T("Им нужен спокойный тыл"), Loc.T("У них свои планы на другом рубеже — пакт с вами кстати"), 12f, LGIcon.Handshake);
             float ratio = PowerRatio;
             if (ratio < 0.85f && Personality != AIPersonality.Militarist)
                 Add(Loc.T("Опасаются вашего флота"), Loc.T("Пакт защищает их от вашего нападения"), 10f, LGIcon.Defense);

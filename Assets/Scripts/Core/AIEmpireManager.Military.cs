@@ -36,6 +36,7 @@ namespace StellarisClone.Core
             // Сплавы: часть бюджета держим на форпосты и районы (у воинственных — меньше); в проигрышной войне — всё на флот
             float reserve = Mathf.Lerp(120f, 30f, Profile.FleetShare);
             if (AtWarWithAnyone) reserve *= 0.4f;
+            else if (IsPreparingWar) reserve *= 0.5f;   // готовимся к войне — сплавы на корабли
             if (LosingWar) reserve = 0f;
 
             // Сплавы копятся без дела (строить больше нечего) — пускаем их во флот сверх плана, но без перегиба
@@ -109,7 +110,7 @@ namespace StellarisClone.Core
                 int sys = s.Data.CurrentSystemId;
                 float mine = SidePower(OwnerId, sys) * MatchupAt(sys);
                 float enemy = EnemyPowerIn(sys);
-                if (enemy <= mine * Profile.RetreatRatio) continue;
+                if (enemy <= mine * Profile.RetreatRatio * AIDifficulty.RetreatMult) continue;
 
                 int haven = SafeHaven(sys);
                 foreach (var t in ships)
@@ -197,6 +198,31 @@ namespace StellarisClone.Core
             if (AtWarWithAnyone)
             {
                 _rallySystemId = StagingSystem();
+
+                // 4а. Охота: сначала разбить вражеский флот, который можно победить, — как сделал бы живой игрок
+                if (AIDifficulty.HuntsFleets)
+                {
+                    if (Mode == ArmyMode.Attack && _hunting && HuntStillWorth(ArmyTargetSystemId, armyPower, ships))
+                    {
+                        MoveAll(ships, ArmyTargetSystemId);
+                        return;
+                    }
+                    _hunting = false;
+                    if (AverageIntegrity(ships) > 0.6f)
+                    {
+                        int prey = PickHuntTarget(armyPower, ships);
+                        if (prey >= 0)
+                        {
+                            Mode = ArmyMode.Attack;
+                            ArmyTargetSystemId = prey;
+                            _hunting = true;
+                            MoveAll(ships, prey);
+                            return;
+                        }
+                    }
+                }
+                _hunting = false;
+
                 if (Mode == ArmyMode.Attack && IsValidSiegeTarget(ArmyTargetSystemId))
                 {
                     MoveAll(ships, ArmyTargetSystemId);
@@ -302,8 +328,7 @@ namespace StellarisClone.Core
             var fm = FleetManager.Instance;
             var myData = DataOf(ships);
             var fromRally = Distances(_rallySystemId >= 0 ? _rallySystemId : CapitalSystemId, 12);
-            int best = -1;
-            float bestScore = float.MinValue;
+            var candidates = new List<(int id, float score)>();
             foreach (var s in EmpireStats.Systems)
             {
                 if (!IsEnemy(s.OwnerId) || !s.HasStarbase) continue;
@@ -313,15 +338,75 @@ namespace StellarisClone.Core
                 float defense = EnemyFleetPowerIn(s.Id) + (CombatManager.Instance != null ? CombatManager.Instance.StarbasePower(s.Id) : 0f);
                 float edgeArmy = armyPower * MatchupVs(myData, s.Id);
                 if (defense > edgeArmy * 0.8f) continue;
+                // Не лезть в осаду под главный флот врага: рядом с целью сила, сопоставимая с нашей, — ждём её
+                if (AIDifficulty.HuntsFleets && EnemyPowerNear(s.Id, 1) > edgeArmy * 0.7f) continue;
 
                 float score = -jumps * 4f - defense / Mathf.Max(1f, edgeArmy) * 40f;
                 if (BordersOwn(s)) score += 20f;
                 foreach (var p in s.Planets) if (p.Population > 0) score += 15f + p.Population * 2f;
                 var owner = For(s.OwnerId);
                 if (s.OwnerId == 0 ? s.Id == EconomyManager.PlayerCapitalId : owner != null && s.Id == owner.CapitalSystemId) score -= 10f;
-                if (score > bestScore) { bestScore = score; best = s.Id; }
+                candidates.Add((s.Id, score));
+            }
+            if (candidates.Count == 0) return -1;
+            candidates.Sort((a, b) => b.score.CompareTo(a.score));
+            // Новичок ошибается: иногда берёт не лучшую цель
+            int pick = 0;
+            if (candidates.Count > 1 && Random.value < AIDifficulty.MistakeChance) pick = Random.Range(1, Mathf.Min(3, candidates.Count));
+            return candidates[pick].id;
+        }
+
+        // ==================== ОХОТА ЗА ФЛОТАМИ ====================
+
+        private bool _hunting;
+
+        /// <summary>Видимая сила врагов в системе и в соседних (radius прыжков) — где может стоять главный флот.</summary>
+        private float EnemyPowerNear(int sysId, int radius)
+        {
+            float p = 0f;
+            foreach (var kv in Distances(sysId, radius)) p += EnemyFleetPowerIn(kv.Key);
+            return p;
+        }
+
+        /// <summary>
+        /// Вражеский флот, который выгодно разбить: видимый, в 6 прыжках, заметный (не меньше 15% нашей силы)
+        /// и слабее нас с запасом (AIDifficulty.HuntEdge). Чем крупнее и ближе — тем лучше.
+        /// </summary>
+        private int PickHuntTarget(float armyPower, List<FleetView> ships)
+        {
+            var myData = DataOf(ships);
+            var dist = Distances(_rallySystemId >= 0 ? _rallySystemId : CapitalSystemId, 6);
+            int best = -1;
+            float bestScore = 0f;
+            foreach (var kv in dist)
+            {
+                int sys = kv.Key;
+                if (!Vision.IsVisible(OwnerId, sys)) continue;
+                float prey = EnemyFleetPowerIn(sys);
+                if (prey < armyPower * 0.15f) continue;
+                if (!HuntFavourable(sys, prey, armyPower, myData)) continue;
+                float score = prey / (1f + kv.Value * 0.3f);
+                if (score > bestScore) { bestScore = score; best = sys; }
             }
             return best;
+        }
+
+        private bool HuntFavourable(int sys, float prey, float armyPower, List<FleetData> myData)
+        {
+            var s = EmpireStats.GetSystem(sys);
+            float defense = prey;
+            if (s != null && IsEnemy(s.OwnerId) && CombatManager.Instance != null) defense += CombatManager.Instance.StarbasePower(sys);
+            return armyPower * MatchupVs(myData, sys) >= defense * AIDifficulty.HuntEdge;
+        }
+
+        /// <summary>Добыча ещё там и по-прежнему по зубам (иначе охота прекращается и цель выбирается заново).</summary>
+        private bool HuntStillWorth(int sys, float armyPower, List<FleetView> ships)
+        {
+            if (sys < 0) return false;
+            if (MilitaryAt(sys, false).Count > 0 && CombatManager.Instance?.GetBattle(sys) != null) return true;   // уже дерёмся
+            if (!Vision.IsVisible(OwnerId, sys)) return false;
+            float prey = EnemyFleetPowerIn(sys);
+            return prey > 0f && HuntFavourable(sys, prey, armyPower, DataOf(ships));
         }
 
         /// <summary>Ближайшая своя колония (там ремонт быстрее), иначе ближайшая своя система.</summary>
@@ -410,6 +495,7 @@ namespace StellarisClone.Core
             s.ArmyTarget = ArmyTargetSystemId;
             s.Rally = _rallySystemId;
             CaptureTactics(s);
+            CaptureStrategy(s);
         }
 
         private void RestoreMilitary(AISave s)
@@ -418,6 +504,7 @@ namespace StellarisClone.Core
             ArmyTargetSystemId = s.ArmyTarget;
             _rallySystemId = s.Rally;
             RestoreTactics(s);
+            RestoreStrategy(s);
         }
     }
 }

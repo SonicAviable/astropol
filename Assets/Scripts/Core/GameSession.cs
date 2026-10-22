@@ -9,14 +9,17 @@ namespace StellarisClone.Core
     public class NewGameSettings
     {
         public int GalaxySize = 1;     // 0 малая · 1 средняя · 2 большая
-        public int Difficulty = 1;     // 0 лёгкая · 1 нормальная · 2 сложная
+        /// <summary>Грубая шкала прежних версий: 0 лёгкая · 1 нормальная · 2 сложная (пираты, шпионаж, коалиции). Выводится из Level.</summary>
+        public int Difficulty = 1;
+        /// <summary>Уровень сложности 0…4 (AIDifficulty); −1 — сохранение прежней версии, уровень берётся из Difficulty.</summary>
+        public int Level = -1;
         public int Seed;
         public bool Tutorial = true;
         public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
         public int Rivals = AIEmpireManager.RivalCount;   // империй ИИ (1…5); в старых сохранениях поля нет — лишних уберёт загрузка
 
         public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
-        public static readonly string[] DifficultyNames = { Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная") };
+        public static readonly string[] DifficultyNames = { Loc.T("Новичок"), Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная"), Loc.T("Безжалостная") };
         public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи"), Loc.T("5 империй") };
         public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
@@ -28,12 +31,24 @@ namespace StellarisClone.Core
         /// <summary>Доминирование — около 55% систем галактики (110 / 210 / 320 звёзд); порог ещё нужно удерживать год.</summary>
         public int DominationTarget => GalaxySize == 0 ? 60 : GalaxySize == 2 ? 176 : 115;
 
+        /// <summary>Уровень сложности 0…4: новичок, лёгкая, нормальная, сложная, безжалостная.</summary>
+        public int Tier => Level >= 0 ? Mathf.Clamp(Level, 0, AIDifficulty.Count - 1) : Mathf.Clamp(Difficulty + 1, 0, AIDifficulty.Count - 1);
+
+        /// <summary>Выбрать уровень и согласовать с ним грубую шкалу.</summary>
+        public void SetLevel(int level)
+        {
+            Level = Mathf.Clamp(level, 0, AIDifficulty.Count - 1);
+            Difficulty = Level <= 1 ? 0 : Level == 2 ? 1 : 2;
+        }
+
+        public static string LevelName(int tier) => DifficultyNames[Mathf.Clamp(tier, 0, DifficultyNames.Length - 1)];
+
         /// <summary>Множитель доходов ИИ.</summary>
-        public float AIIncome => Difficulty == 0 ? 0.7f : Difficulty == 2 ? 1.5f : 1f;
+        public float AIIncome => AIDifficulty.IncomeFor(Tier);
         /// <summary>Как быстро ИИ злится на сильного игрока.</summary>
-        public float AIAggression => Difficulty == 0 ? 0.6f : Difficulty == 2 ? 1.5f : 1f;
+        public float AIAggression => AIDifficulty.AggressionFor(Tier);
         /// <summary>Множитель стартовых ресурсов игрока.</summary>
-        public float PlayerStart => Difficulty == 0 ? 1.3f : Difficulty == 2 ? 0.85f : 1f;
+        public float PlayerStart => AIDifficulty.PlayerStartFor(Tier);
 
         /// <summary>Сколько соперников реально в партии (1…максимум).</summary>
         public int RivalCount => Mathf.Clamp(Rivals, 1, AIEmpireManager.RivalCount);

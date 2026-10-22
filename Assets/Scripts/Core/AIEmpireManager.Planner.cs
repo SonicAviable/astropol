@@ -32,7 +32,7 @@ namespace StellarisClone.Core
         private float DesiredFleetPower()
         {
             float baseline = (350f + YearsPlayed * 140f) * Profile.FleetShare * 2f;
-            float desired = Mathf.Max(baseline, RivalPowerForBuild() * Profile.DesiredPowerRatio);
+            float desired = Mathf.Max(Mathf.Max(baseline, RivalPowerForBuild() * Profile.DesiredPowerRatio), PlannedWarPower());
             if (AtWarWithAnyone) desired *= 1.3f;
             return desired;
         }

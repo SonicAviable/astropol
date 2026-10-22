@@ -359,7 +359,7 @@ namespace StellarisClone.Rendering
                 case Kind.NewGame:
                     return Loc.F("Новая партия   ·   {0} галактика   ·   ", NewGameSettings.SizeNames[Mathf.Clamp(s.GalaxySize, 0, 2)].ToLower()) +
                            $"{NewGameSettings.ShapeNames[Mathf.Clamp(s.Shape, 0, NewGameSettings.ShapeNames.Length - 1)].ToLower()}   ·   " +
-                           Loc.F("сложность: {0}", NewGameSettings.DifficultyNames[Mathf.Clamp(s.Difficulty, 0, 2)].ToLower());
+                           Loc.F("сложность: {0}", NewGameSettings.LevelName(s.Tier).ToLower());
                 case Kind.LoadGame:
                 {
                     var m = GameSession.PendingLoad?.Meta;

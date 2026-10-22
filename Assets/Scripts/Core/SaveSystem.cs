@@ -42,6 +42,8 @@ namespace StellarisClone.Core
         public int Techs;
         public int GalaxySize;
         public int Difficulty;
+        /// <summary>Уровень сложности 0…4 (−1 — сохранение прежней версии).</summary>
+        public int Level = -1;
         public long SavedAtUtcTicks;
         public float PlayTime;
         public bool Auto;
@@ -281,6 +283,9 @@ namespace StellarisClone.Core
 
         // Флот
         public int ArmyMode, ArmyTarget = -1, Rally = -1;
+        /// <summary>Подготовка к войне (AIEmpireManager.Strategy): цель, сколько месяцев идёт, перерыв после отказа.</summary>
+        public int WarPlanTarget = -1, WarPlanMonths, WarPlanCooldown;
+        public bool WarPlanWarned;
 
         // Тактика: какое оружие ставят на новые корабли (-1 — по вкусу фракции)
         public int DesignPrimary = -1, DesignSecondary = -1;
@@ -528,6 +533,7 @@ namespace StellarisClone.Core
             m.Techs = techs;
             m.GalaxySize = s.Settings.GalaxySize;
             m.Difficulty = s.Settings.Difficulty;
+            m.Level = s.Settings.Tier;
             m.SavedAtUtcTicks = DateTime.UtcNow.Ticks;
             m.PlayTime = GameSession.PlayTime;
             m.Auto = auto;

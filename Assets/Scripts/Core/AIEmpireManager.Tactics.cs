@@ -13,7 +13,7 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager
     {
-        public int Smart => Mathf.Clamp(GameSession.Settings.Difficulty, 0, 2);
+        public int Smart => AIDifficulty.Smart;
 
         public WeaponDamageType DesignPrimary { get; private set; } = WeaponDamageType.Energy;
         public WeaponDamageType DesignSecondary { get; private set; } = WeaponDamageType.Kinetic;

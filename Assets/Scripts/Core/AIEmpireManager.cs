@@ -169,7 +169,7 @@ namespace StellarisClone.Core
         /// Темп исследований ИИ. ИИ ведёт одну технологию за раз и берёт самые дешёвые — без поправки
         /// сильная империя обгоняла игрока по числу технологий вдвое и выигрывала науку слишком рано.
         /// </summary>
-        private const float AIResearchPace = 0.8f;
+        private static float AIResearchPace => AIDifficulty.ResearchPace;
 
         // ==================== ПРОЧЕЕ ====================
 
@@ -329,7 +329,7 @@ namespace StellarisClone.Core
             _decisionTimer -= 1f;
             if (_decisionTimer <= 0f)
             {
-                _decisionTimer = Random.Range(3f, 5f);
+                _decisionTimer = AIDifficulty.ThinkDays;
                 ThinkAndAct();
             }
         }
@@ -351,6 +351,7 @@ namespace StellarisClone.Core
 
             MonthlyDiplomacy();
             MonthlyTactics();
+            MonthlyStrategy();
             ThinkDecisions();
         }
 

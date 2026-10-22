@@ -286,7 +286,7 @@ namespace StellarisClone.Core
                 case VictoryManager.Outcome.Diplomatic: Achievements.Unlock(Ach.WinDiplomatic); break;
                 case VictoryManager.Outcome.Score: Achievements.Unlock(Ach.WinScore); break;
             }
-            if (GameSession.Settings != null && GameSession.Settings.Difficulty >= 2) Achievements.Unlock(Ach.WinHard);
+            if (GameSession.Settings != null && GameSession.Settings.Tier >= 3) Achievements.Unlock(Ach.WinHard);
 
             Achievements.AddWonFaction(FactionRegistry.KeyOf(UIManager.Instance?.SelectedFaction));
             var won = Achievements.WonFactions();

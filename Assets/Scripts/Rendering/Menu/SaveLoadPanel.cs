@@ -194,7 +194,7 @@ namespace StellarisClone.Rendering
                 LGBuild.Label(chip.transform, Loc.T("АВТО"), 9, UIManager.DS.Gold, TextAnchor.MiddleCenter, bold: true);
             }
 
-            string diff = NewGameSettings.DifficultyNames[Mathf.Clamp(m.Difficulty, 0, 2)];
+            string diff = NewGameSettings.LevelName(m.Level >= 0 ? m.Level : m.Difficulty + 1);
             string size = NewGameSettings.SizeNames[Mathf.Clamp(m.GalaxySize, 0, 2)];
             var sub = LGBuild.Label(body, Loc.F("<color={0}>{1}</color>   ·   {2}   ·   {3} галактика, {4}", LGBuild.Hex(ec), m.Empire, m.GameDate, size, diff.ToLower()),
                                     11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft);

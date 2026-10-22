@@ -5613,3 +5613,18 @@ VK Play: всё синхронизировано	VK Play: fully synced
 +25% науки на 360 дн.	+25% science for 360 days
 +30% гелия-3 на 360 дн.	+30% helium-3 for 360 days
 Через 30 дн.: +{0:0} науки (5 месяцев исследований)	In 30 days: +{0:0} science (5 months of research)
+Для знакомства с жанром: соседи бедные и миролюбивые, ошибаются, о войне предупреждают заранее	New to the genre: neighbours are poor and peaceful, make mistakes and warn you about wars in advance
+Спокойная игра: ИИ слабее вас и иногда ошибается, нападает не раньше 8-го года	Relaxed game: the AI is weaker than you and sometimes makes mistakes, attacks no earlier than year 8
+Честная игра: равные доходы, ИИ готовится к войнам, охотится за флотами и подбирает оружие против вашей защиты	Fair game: equal income, the AI prepares for wars, hunts fleets and picks weapons against your defences
+Для опытных: ИИ богаче, перехватывает флоты в пути, нападает, когда вы заняты другой войной	For experienced players: the AI is richer, intercepts fleets in transit, attacks when you are busy with another war
+Вызов: ИИ в полтора раза богаче, думает быстрее, почти не выдаёт планы и охотно объединяется против лидера	Challenge: the AI is one and a half times richer, thinks faster, rarely reveals its plans and readily unites against the leader
+Сложность: {0}	Difficulty: {0}
+они захватили {0} сист. и хотят закрепить успех	they captured {0} systems and want to secure their gains
+Уклончивый ответ	Evasive answer
+Посол ссылается на «внутренние дела» и уходит от ответа	The ambassador cites «internal affairs» and avoids answering
+Им нужен спокойный тыл	They need a quiet rear
+У них свои планы на другом рубеже — пакт с вами кстати	They have plans on another front — a pact with you suits them
+Разведка: угроза войны	Intelligence: threat of war
+{0} стягивает флот к вашей границе и достраивает корабли. Похоже, готовится нападение	{0} is massing its fleet at your border and building ships. It looks like an attack is being prepared
+Новичок	Novice
+Безжалостная	Ruthless
