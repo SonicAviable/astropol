@@ -465,6 +465,7 @@ namespace StellarisClone.Rendering
             jb.anchorMin = new Vector2(0, 0); jb.anchorMax = new Vector2(1, 0);
             jb.offsetMin = new Vector2(26, 6); jb.offsetMax = new Vector2(0, 10);
             r.JobBar = LGBuild.Bar(jb, Gold, 0f, 3f);
+            LGFx.Shimmer(r.JobBar);
 
             // Справа: купить, строить…, автостройка
             r.Buy = LGBuild.Button(row, "Buy", new Color(0.36f, 0.28f, 0.06f), Gold, () => BuyFirst(p), null, null, 10, 10f);

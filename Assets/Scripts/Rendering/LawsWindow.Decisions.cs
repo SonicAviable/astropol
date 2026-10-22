@@ -57,6 +57,7 @@ namespace StellarisClone.Rendering
                 BuildDecisionColumn(col, EmpireDecisions.Categories[i], maxCards);
             }
             LG.Skin(_cols);
+            _cascade = false;
         }
 
         private static LGIcon DecisionCategoryIcon(DecisionCategory c) => c switch
@@ -222,7 +223,7 @@ namespace StellarisClone.Rendering
                 lbl.Track(0.8f);
                 var track = LGBuild.Rect(box, "Bar");
                 track.TopBand(18, 10);
-                LGBuild.Bar(track, accent, EmpireDecisions.Progress(d), 6f);
+                LGFx.Shimmer(LGBuild.Bar(track, accent, EmpireDecisions.Progress(d), 6f));
             }
             else
             {
@@ -246,6 +247,8 @@ namespace StellarisClone.Rendering
                 br.offsetMin = new Vector2(12, 10); br.offsetMax = new Vector2(-12, 40);
             }
             TooltipHelper.Attach(bg.gameObject, DecisionTooltip(d, blocker, active, done));
+            LGFx.HoverGlow(bg.gameObject);
+            if (_cascade) LGFx.CascadeIn(card.gameObject, _cascadeIndex++);
         }
 
         private static string DecisionTooltip(DecisionDef d, string blocker, bool active, bool done)

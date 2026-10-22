@@ -52,6 +52,7 @@ namespace StellarisClone.Rendering
             barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
             barHost.offsetMin = new Vector2(38, 8); barHost.offsetMax = new Vector2(-36, 14);
             _bar = LGBuild.Bar(barHost, UIManager.DS.NeonCyan, 0f, 5f);
+            LGFx.Shimmer(_bar);
 
             _more = LGBuild.Label(_root, "", 11, UIManager.DS.Gold, TextAnchor.MiddleRight, bold: true);
             _more.rectTransform.Stretch(0, 0, 12, 0);

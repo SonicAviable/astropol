@@ -1152,6 +1152,7 @@ namespace StellarisClone.Rendering
             barHost.TopBand(78, 6, 14, 14);
             var su = new SlotUi { Index = i };
             su.Bar = LGBuild.Bar(barHost, s.IsPaused ? Gold : Cyan, s.ProgressNormalized, 4f);
+            if (!s.IsPaused) LGFx.Shimmer(su.Bar);
             su.Stats = LGBuild.Label(rt, SlotStats(tm, s), 12, Primary, TextAnchor.UpperLeft);
             su.Stats.rectTransform.TopBand(88, 18, 14, 12);
             _slotUis.Add(su);

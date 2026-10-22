@@ -137,13 +137,12 @@ namespace StellarisClone.Rendering
         public static void SetBar(RectTransform fill, float value, Color? color = null)
         {
             if (fill == null) return;
-            value = Mathf.Clamp01(value);
-            fill.anchorMax = new Vector2(value, 1);
-            var img = fill.GetComponent<Image>();
-            if (img != null)
+            // Заливка доезжает до нового значения плавно (LGBarFill), цвет меняется сразу
+            LGFx.SmoothBar(fill, value);
+            if (color.HasValue)
             {
-                img.enabled = value > 0.001f;
-                if (color.HasValue) img.color = color.Value;
+                var img = fill.GetComponent<Image>();
+                if (img != null) img.color = color.Value;
             }
         }
 

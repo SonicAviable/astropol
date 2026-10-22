@@ -188,6 +188,7 @@ namespace StellarisClone.Rendering
             _progressHost.offsetMin = new Vector2(0, 17);
             _progressHost.offsetMax = new Vector2(0, 21);
             _progressFill = LGBuild.Bar(_progressHost, UIManager.DS.NeonCyan, 0f, 3f);
+            LGFx.Shimmer(_progressFill);
 
             _route = LGBuild.Label(body, "", 10, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
             _route.horizontalOverflow = HorizontalWrapMode.Wrap;

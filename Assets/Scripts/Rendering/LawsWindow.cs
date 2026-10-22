@@ -27,6 +27,9 @@ namespace StellarisClone.Rendering
         private string _key = "";
         /// <summary>0 — законы, 1 — решения.</summary>
         private int _tab;
+        /// <summary>Следующая перестройка — с каскадным появлением карточек (после открытия окна и смены вкладки, не при ежедневном обновлении).</summary>
+        private bool _cascade;
+        private int _cascadeIndex;
         private float _refresh;
 
         private static Color Muted => UIManager.DS.TextMuted;
@@ -72,6 +75,7 @@ namespace StellarisClone.Rendering
             if (_root == null) return;
             if (EmpireDecisions.UnseenCount > 0) _tab = 1;   // есть новые решения — сразу показываем их
             _key = "";
+            _cascade = true; _cascadeIndex = 0;
             Refresh();
             LG.Show(_root);
             _root.transform.SetAsLastSibling();
@@ -138,6 +142,7 @@ namespace StellarisClone.Rendering
             if (_tab == 1) EmpireDecisions.MarkSeen();
             _tab = tab;
             _key = "";
+            _cascade = true; _cascadeIndex = 0;
             SFXManager.Play(Sfx.UiTab, 0.5f);
             TooltipSystem.Hide();
             Refresh();
@@ -206,6 +211,7 @@ namespace StellarisClone.Rendering
                 BuildColumn(col, EmpireLaws.Categories[i]);
             }
             LG.Skin(_cols);
+            _cascade = false;
         }
 
         private static LGIcon CategoryIcon(LawCategory c) => c switch
@@ -339,6 +345,8 @@ namespace StellarisClone.Rendering
             br.anchorMin = new Vector2(0, 0); br.anchorMax = new Vector2(1, 0); br.pivot = new Vector2(0.5f, 0);
             br.offsetMin = new Vector2(12, 12); br.offsetMax = new Vector2(-12, 46);
             TooltipHelper.Attach(bg.gameObject, LawTooltip(law, blocker, active));   // подложка ловит наведение
+            LGFx.HoverGlow(bg.gameObject);
+            if (_cascade) LGFx.CascadeIn(card.gameObject, _cascadeIndex++);
         }
 
         private static string LawTooltip(LawDef law, string blocker, bool active)

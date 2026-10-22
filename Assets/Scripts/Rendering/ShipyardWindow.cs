@@ -441,6 +441,7 @@ namespace StellarisClone.Rendering
                 barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
                 barHost.offsetMin = new Vector2(44, 6); barHost.offsetMax = new Vector2(-40, 12);
                 var bar = LGBuild.Bar(barHost, Neon, active ? job.Progress : 0f, 6f);
+                if (active) LGFx.Shimmer(bar);
 
                 var j = job;
                 var cancel = LGBuild.Button(row.transform, "Cancel", new Color(0.24f, 0.08f, 0.1f), new Color(1f, 0.4f, 0.42f, 0.5f),

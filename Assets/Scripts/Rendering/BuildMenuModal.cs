@@ -600,7 +600,8 @@ namespace StellarisClone.Rendering
             var ph = LGBuild.Rect(row.transform, "Prog");
             ph.anchorMin = new Vector2(0, 0); ph.anchorMax = new Vector2(1, 0);
             ph.offsetMin = new Vector2(34, 4); ph.offsetMax = new Vector2(-136, 8);
-            LGBuild.Bar(ph, active ? Gold : Muted, j.Progress, 3f);
+            var pb = LGBuild.Bar(ph, active ? Gold : Muted, j.Progress, 3f);
+            if (active) LGFx.Shimmer(pb);
 
             // Кнопки справа: купить (только активный), первым (планета), отменить
             float x = -6f;

@@ -688,6 +688,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             int fresh = EmpireDecisions.UnseenCount;
             int n = fresh > 0 ? fresh : EmpireDecisions.AvailableCount;
             _navDecisionPill.gameObject.SetActive(n > 0);
+            LGFx.Pulse(_navDecisionPill.gameObject, fresh > 0);
             if (n <= 0) return;
             _navDecisionBadge.text = n > 9 ? "9+" : n.ToString();
             _navDecisionPill.color = fresh > 0 ? DS.Gold : DS.Green;

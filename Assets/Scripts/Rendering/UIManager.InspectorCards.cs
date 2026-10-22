@@ -190,7 +190,7 @@ namespace StellarisClone.Rendering
                 CardLabel(card, Loc.F("{0} дн.", Mathf.CeilToInt(job.DaysLeft)), 10, DS.TextPrimary, TextAnchor.MiddleRight, true, 0.6f, 1f, y, 14f, 0f, 14f);
                 var track = LGBuild.Rect(card, "Progress");
                 Place(track, 0f, 1f, y + 17f, 8f, 14f, 14f);
-                LGBuild.Bar(track, gold, job.Progress, 5f);
+                LGFx.Shimmer(LGBuild.Bar(track, gold, job.Progress, 5f));
                 y += 30f;
                 return;
             }
