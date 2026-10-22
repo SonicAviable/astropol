@@ -143,13 +143,50 @@ namespace StellarisClone.Rendering
 
             y += 6f;
             y = LGControls.Section(_content, y, Loc.T("КАЧЕСТВО"), LGIcon.Star);
-            var q = new List<string>(QualitySettings.names);
-            if (q.Count > 0)
-                LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Качество графики"), Loc.T("Тени, сглаживание и постобработка")),
-                    q, Mathf.Clamp(GameSettings.Quality, 0, q.Count - 1), GameSettings.SetQuality);
+            BuildQuality(ref y);
 
             LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Неоновое свечение"), Loc.T("Яркость ореола вокруг линий и выделенных элементов")),
                 GameSettings.Glow, 0f, 0.8f, v => Mathf.RoundToInt(v / 0.8f * 100f) + "%", GameSettings.SetGlow);
+        }
+
+        // Пресет и отдельные пункты качества: пресет выставляет все пункты, ручная правка пункта делает пресет «Своим»
+        private LGSelector _qPreset, _qScale, _qAA, _qShadows, _qPost, _qTex;
+
+        private void BuildQuality(ref float y)
+        {
+            GraphicsQuality.EnsureLoaded();
+            _qPreset = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Качество графики"), Loc.T("Набор настроек ниже: от «Низкого» для слабых ПК до «Ультра»")),
+                GraphicsQuality.PresetNames, GraphicsQuality.CurrentPreset, i =>
+                {
+                    if (i == GraphicsQuality.PresetCustom) return;
+                    GameSettings.GraphicsChanged(() => GraphicsQuality.SetPreset(i));
+                    SyncQuality();
+                });
+            _qScale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштаб рендера"), Loc.T("Ниже — быстрее, но галактика мягче; интерфейс остаётся чётким")),
+                GraphicsQuality.ScaleNames, GraphicsQuality.ScaleIndex, i => QualityItem(() => GraphicsQuality.SetScale(i)));
+            _qAA = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Сглаживание"), Loc.T("Убирает «лесенку» на краях кораблей и планет")),
+                GraphicsQuality.AANames, GraphicsQuality.AntiAliasing, i => QualityItem(() => GraphicsQuality.SetAntiAliasing(i)));
+            _qShadows = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Тени"), Loc.T("Тени планет и кораблей вблизи")),
+                GraphicsQuality.ShadowNames, GraphicsQuality.Shadows, i => QualityItem(() => GraphicsQuality.SetShadows(i)));
+            _qPost = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Постобработка"), Loc.T("Свечение звёзд, тонирование и виньетка")),
+                GraphicsQuality.OnOffNames, GraphicsQuality.PostFx ? 1 : 0, i => QualityItem(() => GraphicsQuality.SetPostFx(i == 1)));
+            _qTex = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Текстуры"), Loc.T("Половинные экономят видеопамять на слабых видеокартах")),
+                GraphicsQuality.TextureNames, GraphicsQuality.FullTextures ? 1 : 0, i => QualityItem(() => GraphicsQuality.SetFullTextures(i == 1)));
+        }
+
+        private void QualityItem(System.Action set)
+        {
+            GameSettings.GraphicsChanged(set);
+            if (_qPreset != null) _qPreset.SetIndex(GraphicsQuality.CurrentPreset, false);
+        }
+
+        private void SyncQuality()
+        {
+            _qScale?.SetIndex(GraphicsQuality.ScaleIndex, false);
+            _qAA?.SetIndex(GraphicsQuality.AntiAliasing, false);
+            _qShadows?.SetIndex(GraphicsQuality.Shadows, false);
+            _qPost?.SetIndex(GraphicsQuality.PostFx ? 1 : 0, false);
+            _qTex?.SetIndex(GraphicsQuality.FullTextures ? 1 : 0, false);
         }
 
         private void BuildAudio(ref float y)

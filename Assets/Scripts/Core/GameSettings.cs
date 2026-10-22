@@ -24,7 +24,6 @@ namespace StellarisClone.Core
         public static int ResolutionIndex { get; private set; }
         public static bool VSync { get; private set; }
         public static int FpsIndex { get; private set; }
-        public static int Quality { get; private set; }
         public static float Glow { get; private set; }
         public static float UIBrightness { get; private set; }
 
@@ -107,7 +106,7 @@ namespace StellarisClone.Core
                 : CurrentResolutionIndex();
             VSync = PlayerPrefs.GetInt("set.vsync", 1) == 1;
             FpsIndex = PlayerPrefs.GetInt("set.fps", 1);
-            Quality = PlayerPrefs.GetInt("set.quality", QualitySettings.GetQualityLevel());
+            GraphicsQuality.EnsureLoaded();
             Glow = PlayerPrefs.GetFloat("set.glow", 0.2f);
             UIBrightness = PlayerPrefs.GetFloat("set.uibright", 0.5f);
 
@@ -137,6 +136,7 @@ namespace StellarisClone.Core
             EnsureLoaded();
             SettingsRunner.Ensure();
             if (includeDisplay) ApplyDisplay();
+            GraphicsQuality.Apply();
             QualitySettings.vSyncCount = VSync ? 1 : 0;
             Application.targetFrameRate = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
             ApplyGlass();
@@ -155,8 +155,6 @@ namespace StellarisClone.Core
             if (Screen.width != r.x || Screen.height != r.y || Screen.fullScreenMode != mode)
                 Screen.SetResolution(r.x, r.y, mode);
 #endif
-            if (Quality >= 0 && Quality < QualitySettings.names.Length && QualitySettings.GetQualityLevel() != Quality)
-                QualitySettings.SetQualityLevel(Quality, true);
         }
 
         private static void ApplyGlass()
@@ -210,12 +208,10 @@ namespace StellarisClone.Core
             Commit();
         }
 
-        public static void SetQuality(int i)
+        /// <summary>Пункты качества графики — в GraphicsQuality; здесь только запись на диск и событие изменения.</summary>
+        public static void GraphicsChanged(System.Action apply)
         {
-            Quality = Mathf.Clamp(i, 0, QualitySettings.names.Length - 1);
-            PlayerPrefs.SetInt("set.quality", Quality);
-            QualitySettings.SetQualityLevel(Quality, true);
-            // Смена уровня качества сбрасывает vSync — возвращаем выбор игрока
+            apply?.Invoke();
             QualitySettings.vSyncCount = VSync ? 1 : 0;
             Commit();
         }
@@ -286,8 +282,13 @@ namespace StellarisClone.Core
             s_instance = go.AddComponent<SettingsRunner>();
         }
 
+        private float _gfxWatch;
+
         private void LateUpdate()
         {
+            // Новая сцена или камера — те же настройки графики
+            if ((_gfxWatch -= Time.unscaledDeltaTime) <= 0f) { _gfxWatch = 1f; GraphicsQuality.Watch(); }
+
             if (!GameSettings.Dirty || Input.GetMouseButton(0)) return;
             GameSettings.Dirty = false;
             PlayerPrefs.Save();

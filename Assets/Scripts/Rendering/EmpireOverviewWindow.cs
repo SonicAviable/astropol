@@ -1140,7 +1140,14 @@ namespace StellarisClone.Rendering
                       Loc.T("контакт случится, как только наши корабли или границы увидят чужую империю.") +
                       (unknown > 0 ? Loc.F("\n\nПо данным дальней разведки в галактике есть ещё цивилизаций: {0}.", unknown) : ""));
             else if (unknown > 0)
-                Empty(Loc.F("Ещё не встречено цивилизаций: {0}. Продолжайте разведку.", unknown));
+            {
+                // Под карточками, а не по центру таблицы: центральная надпись ложилась поверх кнопок первой карточки
+                var note = LGBuild.Rect(_list, "UnmetNote");
+                LGBuild.Height(note.gameObject, 36);
+                var t = LGBuild.Label(note, Loc.F("Ещё не встречено цивилизаций: {0}. Продолжайте разведку.", unknown), 13,
+                    UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
+                t.rectTransform.Stretch(10, 0, 10, 0);
+            }
         }
 
         private void BuildRivalCard(AIEmpireManager ai)

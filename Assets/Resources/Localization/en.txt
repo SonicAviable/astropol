@@ -5259,3 +5259,26 @@ VK Play: всё синхронизировано	VK Play: fully synced
 <b>+15% корпус, +10% щиты, +35% влияние, +5% энергия</b>\n	<b>+15% hull, +10% shields, +35% influence, +5% energy</b>\n
 уязвимы к энергии +15% · минералы −10%</color>	vulnerable to energy weapons +15% · minerals −10%</color>
 рост населения −25%</color>	population growth −25%</color>
+Низкое	Low
+Среднее	Medium
+Высокое	High
+Ультра	Ultra
+Своё	Custom
+Выкл	Off
+Низкие	Low
+Средние	Medium
+Высокие	High
+Вкл	On
+Половинные	Half
+Полные	Full
+Набор настроек ниже: от «Низкого» для слабых ПК до «Ультра»	Sets everything below: from “Low” for weak PCs to “Ultra”
+Масштаб рендера	Render Scale
+Ниже — быстрее, но галактика мягче; интерфейс остаётся чётким	Lower is faster but the galaxy looks softer; the interface stays sharp
+Сглаживание	Anti-aliasing
+Убирает «лесенку» на краях кораблей и планет	Removes jagged edges on ships and planets
+Тени	Shadows
+Тени планет и кораблей вблизи	Shadows of planets and ships up close
+Постобработка	Post-processing
+Свечение звёзд, тонирование и виньетка	Star bloom, tone mapping and vignette
+Текстуры	Textures
+Половинные экономят видеопамять на слабых видеокартах	Half resolution saves video memory on weak graphics cards
