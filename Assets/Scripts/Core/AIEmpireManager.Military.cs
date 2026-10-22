@@ -31,42 +31,64 @@ namespace StellarisClone.Core
             int queued = QueuedShips(FleetType.Military);
             if (queued >= ConstructionManager.ShipyardSlots) return;
             float myPower = EmpireStats.MilitaryPower(OwnerId) + queued * 200f;
-            float rivalPower = RivalPowerForBuild();
-            int years = TimeManager.Instance != null ? Mathf.Max(0, TimeManager.Instance.Year - 2200) : 0;
+            float desired = DesiredFleetPower();
 
-            // Желаемая мощь: не отставать от самого опасного соседа (с поправкой на характер) и расти со временем
-            float baseline = (350f + years * 140f) * Profile.FleetShare * 2f;
-            float desired = Mathf.Max(baseline, rivalPower * Profile.DesiredPowerRatio);
-            if (AtWarWithAnyone) desired *= 1.3f;
-            if (myPower >= desired) return;
-
-            ShipClass hull = PickHull();
-            var design = GetDesign(hull);
-            if (design == null) return;
-            float cost = FleetManager.ShipAlloyCost(design.AlloyCost, OwnerId);
-
-            // Сплавы: часть бюджета держим на форпосты и районы (у воинственных — меньше)
+            // Сплавы: часть бюджета держим на форпосты и районы (у воинственных — меньше); в проигрышной войне — всё на флот
             float reserve = Mathf.Lerp(120f, 30f, Profile.FleetShare);
             if (AtWarWithAnyone) reserve *= 0.4f;
-            if (Alloys < cost + reserve || EnergyCredits < FleetManager.WarshipEnergy) return;
+            if (LosingWar) reserve = 0f;
 
-            // Содержание: «больше кораблей — меньше энергии» действует и на ИИ
+            // Сплавы копятся без дела (строить больше нечего) — пускаем их во флот сверх плана, но без перегиба
+            bool surplus = Alloys > 450f + reserve && myPower < desired * 1.6f;
+            if (myPower >= desired && !surplus) return;
+            if (EnergyCredits < FleetManager.WarshipEnergy) return;
+
+            if (!PickHull(reserve, out var hull, out float cost)) return;
+
+            // Содержание: «больше кораблей — меньше энергии» действует и на ИИ.
+            // Запас гелия-3 на два года минуса — строим: план экономики тем временем добавит генераторы
             float extra = EmpireEconomy.ExtraUpkeepForShip(_report, hull);
+            float after = MonthlyEnergyIncome - extra;
+            bool cushion = EnergyCredits > 150f + Mathf.Max(0f, -after) * 24f;
             bool desperate = AtWarWithAnyone && EnergyCredits > 250f;
-            if (MonthlyEnergyIncome - extra < 1f && !desperate) return;
-            if (_report.NavalUsed + EmpireEconomy.NavalSize(hull) > _report.NavalCapacity
-                && !(AtWarWithAnyone && Personality == AIPersonality.Militarist)) return;
+            if (after < 1f && !cushion && !desperate) return;
+
+            // Сверх флотского лимита — только воинственным на войне или когда гелия-3 с избытком (перебор уже учтён в содержании)
+            bool overCap = _report.NavalUsed + EmpireEconomy.NavalSize(hull) > _report.NavalCapacity;
+            if (overCap && !(AtWarWithAnyone && Personality == AIPersonality.Militarist) && !(after > 6f && EnergyCredits > 300f) && !LosingWar)
+                return;
 
             Alloys -= cost;
             EnergyCredits -= FleetManager.WarshipEnergy;
             QueueShip(FleetType.Military, hull, FleetManager.WarshipEnergy, cost);
         }
 
-        private ShipClass PickHull()
+        /// <summary>
+        /// Корпус по карману: самый крупный доступный, на который хватает сплавов сверх резерва.
+        /// Иногда — на класс меньше, чтобы флот был смешанным (мелкие корабли быстрее закрывают бреши).
+        /// </summary>
+        private bool PickHull(float reserve, out ShipClass hull, out float cost)
         {
-            if (Bonuses.DestroyerUnlocked && Alloys > 320f) return ShipClass.Destroyer;
-            if (Alloys > 200f && Random.value < 0.6f) return ShipClass.Frigate;
-            return ShipClass.Corvette;
+            hull = ShipClass.Corvette;
+            cost = 0f;
+            var order = new List<ShipClass>();
+            if (Bonuses.DestroyerUnlocked) order.Add(ShipClass.Destroyer);
+            order.Add(ShipClass.Frigate);
+            order.Add(ShipClass.Corvette);
+
+            var affordable = new List<(ShipClass hull, float cost)>();
+            foreach (var h in order)
+            {
+                var design = GetDesign(h);
+                if (design == null) continue;
+                float c = FleetManager.ShipAlloyCost(design.AlloyCost, OwnerId);
+                if (Alloys >= c + reserve) affordable.Add((h, c));
+            }
+            if (affordable.Count == 0) return false;
+            int pick = affordable.Count > 1 && Random.value < 0.3f ? 1 : 0;
+            hull = affordable[pick].hull;
+            cost = affordable[pick].cost;
+            return true;
         }
 
         // ==================== УПРАВЛЕНИЕ ГРУППОЙ ====================

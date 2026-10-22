@@ -396,14 +396,8 @@ namespace StellarisClone.Core
         private static bool IsIdle(FleetData d)
             => d.State == FleetState.Orbiting && d.Path.Count == 0 && !d.InCombat;
 
-        private int SpawnSystem
-        {
-            get
-            {
-                var cap = EmpireStats.GetSystem(CapitalSystemId);
-                return cap != null && cap.OwnerId == OwnerId ? CapitalSystemId : -1;
-            }
-        }
+        /// <summary>Где появляются новые корабли (столица или запасная система — готовый корабль не пропадает).</summary>
+        private int SpawnSystem => ShipSpawnSystem;
 
         private FleetView CreateCivilian(FleetType type)
         {
@@ -743,17 +737,22 @@ namespace StellarisClone.Core
             int housing = p.HousingCapacity;
             int idle = p.IdlePops;
 
-            if (p.Population >= housing) { type = DistrictType.Urban; urgency = 6f; }
-            else if (idle > 0)
+            if (p.Population >= housing) { type = DistrictType.Urban; urgency = 6f; return true; }
+            if (idle > 0) { type = PlannedProduction(energyLow); urgency = 4f + idle; return true; }
+
+            int freeJobs = p.WorkerSlots - p.Population;
+            // Рабочие места — заранее: следующий житель не должен сидеть без дела
+            if (freeJobs <= 0 && housing - p.Population <= 2) { type = PlannedProduction(energyLow); urgency = 3f; return true; }
+
+            // Перекос экономики: новый район нужного вида — работники перераспределятся поровну, доход выровняется
+            var need = DeficitDistrict(out float worst);
+            if ((worst >= RebalanceDeficit || energyLow) && freeJobs < 2 && p.Population >= 3)
             {
-                urgency = 4f + idle;
-                if (energyLow) type = DistrictType.Generator;
-                else if (MonthlyMineralsIncome < 15f) type = DistrictType.Mining;
-                else if (MonthlyAlloysIncome < 10f) type = DistrictType.Industrial;
-                else type = Profile.PreferredDistrict == DistrictType.Urban ? DistrictType.Generator : Profile.PreferredDistrict;
+                type = energyLow ? DistrictType.Generator : need;
+                urgency = 2f + Mathf.Min(3f, worst * 2f);
+                return true;
             }
-            else return false;
-            return true;
+            return false;
         }
 
         /// <summary>Резерв, который ИИ не тратит на сборку роботов: сплавы нужны флоту и районам.</summary>
@@ -829,8 +828,9 @@ namespace StellarisClone.Core
         {
             int science = CountOwn(FleetType.Science) + QueuedShips(FleetType.Science);
             int builders = CountOwn(FleetType.Constructor) + QueuedShips(FleetType.Constructor);
-            int wantScience = Personality == AIPersonality.Scientific ? 2 : 1;
-            int wantBuilders = Influence > 90f ? 2 : 1;
+            // Пока вокруг много неизведанного, два разведчика у всех: без разведки нечего занимать
+            int wantScience = Personality == AIPersonality.Scientific || YearsPlayed < 25 ? 2 : 1;
+            int wantBuilders = Influence > 60f ? 2 : 1;
 
             float sciCost = FleetManager.ShipAlloyCost(FleetManager.ScienceShipAlloys, OwnerId);
             float conCost = FleetManager.ShipAlloyCost(FleetManager.ConstructorAlloys, OwnerId);
