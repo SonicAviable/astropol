@@ -1032,7 +1032,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             hRt.anchorMin = new Vector2(0, 1);
             hRt.anchorMax = new Vector2(1, 1);
             hRt.pivot = new Vector2(0.5f, 1);
-            hRt.sizeDelta = new Vector2(0, 52);
+            hRt.sizeDelta = new Vector2(0, InspHeaderH);
             var hBg = header.AddComponent<Image>();
             hBg.color = DS.BgHeader;
             hBg.raycastTarget = false;
@@ -1049,17 +1049,33 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             hLine.AddComponent<Image>().color = new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.55f);
             LG.Line(hLine, hairline: true);
 
-            _inspTitle = CreateText(header.transform, "SOL STATION", 15, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
+            // Полоса владельца по верхнему краю и плитка со звездой (планетой) — «паспорт» объекта, как в больших стратегиях
+            _inspAccent = LGBuild.Panel(insp.transform, "OwnerStripe", DS.NeonCyan);
+            _inspAccent.rectTransform.anchorMin = new Vector2(0, 1);
+            _inspAccent.rectTransform.anchorMax = new Vector2(1, 1);
+            _inspAccent.rectTransform.pivot = new Vector2(0.5f, 1);
+            _inspAccent.rectTransform.offsetMin = new Vector2(10, -3);
+            _inspAccent.rectTransform.offsetMax = new Vector2(-10, 0);
+            LG.Ignore(_inspAccent.gameObject);
+
+            var tile = LGBuild.Panel(header.transform, "Tile", new Color(0.01f, 0.03f, 0.05f, 0.95f));
+            tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, -1), new Vector2(42, 42));
+            _inspTileFx = LG.Platter(tile.gameObject, 10f);
+            _inspTileIcon = LGIcons.Create(tile.transform, LGIcon.Star, 26, DS.Gold, "TileIcon");
+            _inspTileIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(26, 26));
+
+            _inspTitle = CreateText(header.transform, "SOL STATION", 18, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
             _inspTitle.rectTransform.anchorMin = new Vector2(0, 0.5f);
             _inspTitle.rectTransform.anchorMax = new Vector2(1, 1);
-            _inspTitle.rectTransform.offsetMin = new Vector2(16, 0);
-            _inspTitle.rectTransform.offsetMax = new Vector2(-40, 0);
+            _inspTitle.rectTransform.offsetMin = new Vector2(66, 0);
+            _inspTitle.rectTransform.offsetMax = new Vector2(-44, -6);
+            _inspTitle.Track(1.4f);
 
-            _inspStatus = CreateText(header.transform, "Starbase  ·  Outpost", 10, FontStyle.Bold, DS.NeonCyan, TextAnchor.MiddleLeft);
+            _inspStatus = CreateText(header.transform, "Starbase  ·  Outpost", 10, FontStyle.Bold, DS.NeonCyan, TextAnchor.UpperLeft);
             _inspStatus.rectTransform.anchorMin = new Vector2(0, 0);
             _inspStatus.rectTransform.anchorMax = new Vector2(1, 0.5f);
-            _inspStatus.rectTransform.offsetMin = new Vector2(16, 0);
-            _inspStatus.rectTransform.offsetMax = new Vector2(-40, 0);
+            _inspStatus.rectTransform.offsetMin = new Vector2(66, 0);
+            _inspStatus.rectTransform.offsetMax = new Vector2(-44, -3);
 
             var closeBtn = CreateCloseButton(header.transform, 26f, HideInspector);
             var cRt = closeBtn.GetComponent<RectTransform>();
@@ -1074,7 +1090,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bbRt.anchorMin = Vector2.zero;
             bbRt.anchorMax = Vector2.one;
             bbRt.offsetMin = new Vector2(13, 120);
-            bbRt.offsetMax = new Vector2(-13, -62);
+            bbRt.offsetMax = new Vector2(-13, -(InspHeaderH + 10f));
 
             var bbBg = bodyBox.AddComponent<Image>();
             bbBg.color = DS.BgSlot;
@@ -1139,6 +1155,27 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
 
         private RectTransform _inspBodyRect, _inspDistrictRect;
+        private Image _inspAccent, _inspTileIcon;
+        private LiquidGlassEffect _inspTileFx;
+        private const float InspHeaderH = 64f;
+
+        /// <summary>Плитка и полоса шапки: значок объекта, его цвет и цвет владельца.</summary>
+        private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor)
+        {
+            if (_inspTileIcon != null) { _inspTileIcon.sprite = LGIcons.Get(icon); _inspTileIcon.color = iconColor; }
+            _inspTileFx?.SetRim(new Color(iconColor.r, iconColor.g, iconColor.b, 0.45f));
+            if (_inspAccent != null) _inspAccent.color = new Color(ownerColor.r, ownerColor.g, ownerColor.b, 0.9f);
+        }
+
+        private static Color StarTint(StarSpectralClass c) => c switch
+        {
+            StarSpectralClass.ClassM => new Color(1f, 0.55f, 0.42f),
+            StarSpectralClass.ClassK => new Color(1f, 0.76f, 0.46f),
+            StarSpectralClass.ClassG => new Color(1f, 0.94f, 0.66f),
+            StarSpectralClass.ClassA => new Color(0.86f, 0.93f, 1f),
+            StarSpectralClass.ClassB => new Color(0.62f, 0.78f, 1f),
+            _ => new Color(0.70f, 0.50f, 1f)
+        };
 
         /// <summary>
         /// Кнопки инспектора складываются снизу вверх (только видимые), над ними — ряд районов,
@@ -1271,6 +1308,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _activePlanet = null;
 
             _inspTitle.text = system.Name.ToUpper();
+            SetInspectorBadge(LGIcon.Star, StarTint(system.SpectralClass),
+                system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.45f, 0.55f, 0.62f));
 
             string owner = system.OwnerId == 0
                 ? Loc.F("<color=#33E6CC>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))
@@ -1332,6 +1371,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (parentSystem != null) _activeSystem = parentSystem;
 
             _inspTitle.text = PlanetNames.Title(planet.Name);
+            SetInspectorBadge(LGIcon.Planet, DS.NeonCyan,
+                parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.45f, 0.55f, 0.62f));
             _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>");
 
             bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;

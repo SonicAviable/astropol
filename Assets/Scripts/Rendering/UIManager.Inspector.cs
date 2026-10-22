@@ -56,6 +56,7 @@ namespace StellarisClone.Rendering
             ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(2, 4), new Vector2(13, 13));
             var t = LGBuild.Label(row, title, 10, DS.Gold, TextAnchor.LowerLeft, bold: true);
             t.rectTransform.Stretch(20, 2, 0, 0);
+            t.Track(1.6f);
             var line = LGBuild.Panel(row, "Line", new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.2f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
             line.rectTransform.anchorMax = new Vector2(1, 0);
@@ -140,10 +141,9 @@ namespace StellarisClone.Rendering
 
         private void BuildSystemCards(StarSystem system)
         {
-            var cyan = DS.NeonCyan;
-            InspChips(
-                (LGIcon.Star, StarClassLabel(system.SpectralClass), StarClassHint(system.SpectralClass), DS.Gold),
-                (LGIcon.Planet, system.Planets.Count.ToString(), Loc.T("орбитальных тел"), cyan),
+            InspStatLine(
+                (LGIcon.Star, StarClassLabel(system.SpectralClass), StarClassHint(system.SpectralClass), StarTint(system.SpectralClass)),
+                (LGIcon.Planet, system.Planets.Count.ToString(), Loc.T("орбитальных тел"), DS.NeonCyan),
                 (LGIcon.MapLanes, system.ConnectedSystemIds.Count.ToString(), Loc.T("гиперкоридоров"), new Color(0.62f, 0.78f, 1f)));
 
             // Ресурсы
@@ -151,9 +151,8 @@ namespace StellarisClone.Rendering
             if (system.IsSurveyed)
             {
                 system.RecalculateHarvest();
-                InspChips(
-                    (LGIcon.Minerals, $"{system.HarvestedMinerals} / {system.TotalMinerals}", Loc.T("титан: добыча / всего"), new Color(0.30f, 0.94f, 0.55f)),
-                    (LGIcon.Energy, $"{system.HarvestedEnergy} / {system.TotalEnergy}", Loc.T("гелий-3: добыча / всего"), new Color(1f, 0.80f, 0.32f)));
+                InspMeter(LGIcon.Minerals, Loc.T("Титан"), Loc.T("добыча / залежи"), system.HarvestedMinerals, system.TotalMinerals, new Color(0.30f, 0.94f, 0.55f));
+                InspMeter(LGIcon.Energy, Loc.T("Гелий-3"), Loc.T("добыча / залежи"), system.HarvestedEnergy, system.TotalEnergy, new Color(1f, 0.80f, 0.32f));
             }
             else InspNote(LGIcon.Sensors, Loc.T("Состав системы неизвестен — отправьте научный корабль"), new Color(1f, 0.67f, 0.53f));
 
@@ -162,16 +161,7 @@ namespace StellarisClone.Rendering
             if (sb != null)
             {
                 InspSection(Loc.T("ЗВЁЗДНАЯ БАЗА"), LGIcon.Starbase);
-                if (sb.Disabled)
-                    InspNote(LGIcon.Warning, Loc.F("Выведена из строя · ремонт {0:0}% из 50%", sb.Hull / Mathf.Max(1f, sb.MaxHull) * 100f), DS.Red);
-                InspBar(LGIcon.Ship, Loc.T("Корпус"), sb.Hull, sb.MaxHull, new Color(0.75f, 0.85f, 0.9f));
-                InspBar(LGIcon.ArmorPlate, Loc.T("Броня"), sb.Armor, sb.MaxArmor, new Color(0.88f, 0.78f, 0.62f));
-                InspBar(LGIcon.ShieldDome, Loc.T("Щиты"), sb.Shields, sb.MaxShields, new Color(0.45f, 0.76f, 1f));
-                float sbPower = CombatManager.Instance.StarbasePower(system.Id);
-                string inShips = CombatManager.PowerInShips(sbPower);
-                InspText(Loc.F("<color=#8AA2A8>Мощь базы</color> <b>{0:N0}</b>", sbPower) + (inShips.Length > 0 ? $"  ·  {inShips}" : "") +
-                         Loc.F("\n<color=#8AA2A8>Залп</color> {0:0} урона  ·  <color=#8AA2A8>мощь считается как у кораблей (значок мечей в панели флота) — сравните с силой своего флота перед атакой</color>", sb.Damage));
-                BuildFortification(system);
+                InspStarbaseCard(system, sb);
             }
 
             // Осада
@@ -223,47 +213,6 @@ namespace StellarisClone.Rendering
                     ? Loc.F("Чтобы захватить систему, держите здесь военный флот без защитников ({0:0} дн. осады).", SiegeManager.RequiredDays(system))
                     : Loc.T("Чужая система. Захват возможен только во время войны — осадой."));
             }
-        }
-
-        /// <summary>Укрепление базы: уровень, что он даёт, и кнопка следующего уровня (только для своих систем).</summary>
-        private void BuildFortification(StarSystem system)
-        {
-            int lvl = system.Fortification;
-            Color gold = DS.Gold;
-            InspText(Loc.F("<color=#8AA2A8>Укрепление</color> <b>{0}</b>  ·  уровень {1} из {2}", Fortifications.Name(lvl), lvl, Fortifications.MaxLevel) +
-                     (lvl > 0 ? Loc.F("\n<color=#8AA2A8>Прочность ×{0:0.##}, урон ×{1:0.##}, осада дольше ×{2:0.##}</color>",
-                         Fortifications.DurabilityMult(lvl), Fortifications.DamageMult(lvl), Fortifications.SiegeMult(lvl)) : ""));
-            if (system.OwnerId != 0) return;
-
-            var job = Fortifications.PendingJob(system.Id);
-            if (job != null)
-            {
-                InspNote(LGIcon.Clock, Loc.F("Строится: {0} · {1} дн.", Fortifications.Name(lvl + 1), Mathf.CeilToInt(job.DaysLeft)), gold);
-                return;
-            }
-            if (lvl >= Fortifications.MaxLevel) return;
-
-            int to = lvl + 1;
-            float m = Fortifications.Minerals(to), a = Fortifications.Alloys(to), d = Fortifications.Days(to);
-            string block = Fortifications.Blocker(system, 0);
-            var eco = EconomyManager.Instance;
-            if (block == null && (eco == null || !eco.CanAfford(0f, m, a, 0f))) block = CostCheck.Full(0f, m, a);
-
-            var btn = LGBuild.Button(_inspStack, "Fortify", new Color(gold.r * 0.12f, gold.g * 0.12f, gold.b * 0.12f, 0.95f),
-                new Color(gold.r, gold.g, gold.b, block == null ? 0.6f : 0.2f), () =>
-                {
-                    if (Fortifications.TryStartPlayer(system)) ShowSystemPanel(system);
-                }, LGIcon.Starbase, Loc.F("УКРЕПИТЬ → {0}", Fortifications.Name(to).ToUpper()), 11);
-            LGBuild.Height(btn.gameObject, 34);
-            btn.interactable = block == null;
-            TooltipHelper.Attach(btn.gameObject,
-                Loc.F("<b>{0}</b>\nЦена: {1:0} титана, {2:0} сплавов · {3:0} дн.\n", Fortifications.Name(to), m, a, d) +
-                Loc.F("Прочность базы ×{0:0.##}, урон ×{1:0.##}, осада дольше ×{2:0.##}\nСодержание +{3:0} гелия-3 в месяц\n",
-                    Fortifications.DurabilityMult(to), Fortifications.DamageMult(to), Fortifications.SiegeMult(to), Fortifications.UpkeepPerLevel) +
-                Loc.T("<color=#8AA2A8>Если систему захватят штурмом, один уровень укреплений будет разрушен</color>") +
-                (block != null ? $"\n<color=#FF8888>{block}</color>" : ""));
-            InspText(Loc.F("<color=#8AA2A8>{0:0} титана, {1:0} сплавов · {2:0} дн. · +{3:0} гелия-3/мес содержания</color>", m, a, d, Fortifications.UpkeepPerLevel) +
-                     (block != null ? $"\n<color=#FF8888>{block}</color>" : ""));
         }
 
         /// <summary>Флоты на орбите системы по владельцам: число кораблей и боевая мощь.</summary>

@@ -5318,3 +5318,15 @@ VK Play: всё синхронизировано	VK Play: fully synced
 <color=#8AA2A8>Если систему захватят штурмом, один уровень укреплений будет разрушен</color>	<color=#8AA2A8>If the system is taken by assault, one fortification level is destroyed</color>
 <color=#8AA2A8>{0:0} титана, {1:0} сплавов · {2:0} дн. · +{3:0} гелия-3/мес содержания</color>	<color=#8AA2A8>{0:0} Titanium, {1:0} Alloys · {2:0} days · +{3:0} Helium-3/mo upkeep</color>
 <color=#8AA2A8>Укрепления баз:</color> <color=#FF8888>-{0:0.#}</color> / мес\n	<color=#8AA2A8>Base fortifications:</color> <color=#FF8888>-{0:0.#}</color> / mo\n
+добыча / залежи	mined / deposits
+МОЩЬ БАЗЫ	BASE POWER
+<b>Мощь звёздной базы: {0:N0}</b>\nЗалп {1:0} урона. Мощь считается так же, как у кораблей (значок мечей в панели флота): 	<b>Starbase power: {0:N0}</b>\nVolley {1:0} damage. Power is counted the same way as for ships (the swords icon in the fleet panel): 
+сравните с силой своего флота перед атакой.\nПока база в строю, осада системы не начнётся.	compare it with your fleet before attacking.\nWhile the base is operational, the system cannot be besieged.
+УКРЕПЛЕНИЕ {0}/{1}	FORTIFICATION {0}/{1}
+ВЫВЕДЕНА ИЗ СТРОЯ · ремонт {0:0}% из 50%	DISABLED · repairs {0:0}% of 50%
+<b>{0}</b> · уровень {1} из {2}	<b>{0}</b> · level {1} of {2}
+\n<color={0}>{1}</color>: прочность ×{2:0.##}, урон ×{3:0.##}, осада дольше ×{4:0.##}	\n<color={0}>{1}</color>: durability ×{2:0.##}, damage ×{3:0.##}, siege takes ×{4:0.##} longer
+\n<color=#8AA2A8>Содержание +{0:0} гелия-3 за уровень. Штурм разрушает один уровень, передача по договору — нет.</color>	\n<color=#8AA2A8>Upkeep +{0:0} Helium-3 per level. An assault destroys one level; a treaty transfer does not.</color>
+СТРОИТСЯ · {0}	UNDER CONSTRUCTION · {0}
+Цитадель — наивысший уровень укреплений	Citadel is the highest fortification level
+−{0:0}/мес	−{0:0}/mo
