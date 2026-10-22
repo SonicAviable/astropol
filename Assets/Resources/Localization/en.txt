@@ -5601,3 +5601,15 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Законы и решения	Laws and Decisions
 <b>Законы и решения</b>\nЗаконы — постоянные правила империи с платой влиянием.\nРешения — проекты за титан и другие ресурсы: особые для вашей фракции, по обстоятельствам (война, кризис, эпоха) и редкие возможности с таймером. Кружок на значке — сколько решений можно принять прямо сейчас (золотой — появились новые)	<b>Laws and Decisions</b>\nLaws are permanent empire rules paid for with influence.\nDecisions are projects for titanium and other resources: unique to your faction, situational (war, crisis, era) and rare timed opportunities. The badge on the icon shows how many decisions you can take right now (gold — new ones have appeared)
 Цена — в основном титан; одновременно до {0} решений. По ходу игры появляются новые решения, а старые уходят.	Costs are mostly titanium; up to {0} decisions at a time. New decisions appear as the game goes on, and old ones fade away.
+{0} завершает великий проект «{1}»	{0} completes the great project «{1}»
+{0} начинает великий проект «{1}»	{0} begins the great project «{1}»
+{0} принимает решение «{1}»	{0} takes the decision «{1}»
++4 влияния в месяц на 12 месяцев	+4 influence per month for 12 months
+Влияние +4 в месяц на год.	Influence +4 per month for a year.
+Флот отрабатывает манёвры на титановых мишенях. Экипажи стреляют быстрее и точнее.	The fleet drills manoeuvres on titanium targets. Crews fire faster and more accurately.
++10% урона и +5 точности на 240 дн.	+10% damage and +5 accuracy for 240 days
+−20% цены кораблей на 240 дн.	−20% ship cost for 240 days
++50% роста населения на 360 дн.	+50% population growth for 360 days
++25% науки на 360 дн.	+25% science for 360 days
++30% гелия-3 на 360 дн.	+30% helium-3 for 360 days
+Через 30 дн.: +{0:0} науки (5 месяцев исследований)	In 30 days: +{0:0} science (5 months of research)

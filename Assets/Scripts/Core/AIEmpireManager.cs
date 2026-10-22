@@ -107,8 +107,13 @@ namespace StellarisClone.Core
         public AIPersonality Personality { get; private set; } = AIPersonality.Militarist;
         public AIProfile Profile { get; private set; } = AIProfile.Get(AIPersonality.Militarist);
 
-        /// <summary>Бонусы технологий, изученных ИИ.</summary>
-        public EmpireBonuses Bonuses { get; private set; } = new EmpireBonuses();
+        /// <summary>Бонусы технологий, изученных ИИ; решения империи (EmpireDecisions) накладываются сюда же по версии.</summary>
+        public EmpireBonuses Bonuses
+        {
+            get { EmpireDecisions.SyncBonuses(OwnerId, _bonuses); return _bonuses; }
+            private set => _bonuses = value;
+        }
+        private EmpireBonuses _bonuses = new EmpireBonuses();
 
         // ==================== ЭКОНОМИКА ====================
 
@@ -346,6 +351,7 @@ namespace StellarisClone.Core
 
             MonthlyDiplomacy();
             MonthlyTactics();
+            ThinkDecisions();
         }
 
         private void ThinkAndAct()
