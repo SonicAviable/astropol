@@ -147,6 +147,11 @@ sup { font-size: 0.7em; }
 .hero-type::after { content: "▌"; color: var(--cyan); animation: blink 1s steps(2) infinite; margin-left: 2px; }
 @keyframes blink { 50% { opacity: 0; } }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; }
+.vk-badge { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 18px; padding: 6px 14px; font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--gold) 9%, transparent); }
+.vk-badge span { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+.nav-links a.nav-vk { color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); padding: 6px 14px; margin-left: 6px; }
+.nav-links a.nav-vk::after { display: none; }
+.nav-links a.nav-vk:hover { background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--gold); }
 
 .clock {
   position: relative; padding: 18px 20px 16px; background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px);
