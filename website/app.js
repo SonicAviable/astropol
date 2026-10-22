@@ -82,7 +82,7 @@
   /* ---------- Счётчики в герое ---------- */
   (function () {
     const box = $("#stats"); if (!box) return;
-    const items = [[5, "империй"], [60, "лет партии"], [D.techs.length, "технологий"], [230, "звёзд на карте"], [D.traits.length, "черт лидеров"], [D.modules.length, "модулей кораблей"]];
+    const items = [[6, "империй"], [60, "лет партии"], [D.techs.length, "технологий"], [320, "звёзд на карте"], [D.traits.length, "черт лидеров"], [D.modules.length, "модулей кораблей"]];
     box.innerHTML = items.map(([v, l]) => `<div class="stat"><b data-v="${v}">0</b><span>${l}</span></div>`).join("");
     const run = (el) => {
       const to = +el.dataset.v, t0 = performance.now(), dur = reduced ? 1 : 1400;
@@ -207,7 +207,7 @@
       <button type="button" class="fac reveal" style="--acc:${f.leader.accent};--e:url(img/emblems/${f.key}.png)" data-k="${f.key}" aria-label="${f.name}">
         <img class="port" src="img/leaders/${f.key}.webp" alt="" loading="lazy" width="480" height="720">
         <span class="emb" aria-hidden="true"></span>
-        <span class="meta"><span class="ttl">${f.title}</span><h3>${f.name}</h3><span class="perks">${f.perks.slice(0, 2).map((p) => `<span class="chip">${p}</span>`).join("")}${f.perks.length > 2 ? `<span class="chip">+${f.perks.length - 2}</span>` : ""}</span></span>
+        <span class="meta"><span class="ttl">${f.title}</span><h3>${f.name}</h3><span class="perks">${f.perks.slice(0, 2).map((p) => `<span class="chip">${p.length > 26 && p.includes(":") ? p.split(":")[0] : p}</span>`).join("")}${f.perks.length > 2 ? `<span class="chip">+${f.perks.length - 2}</span>` : ""}</span></span>
       </button>`).join("");
     $$(".fac", grid).forEach((c) => {
       if (fine && !reduced) {
@@ -243,14 +243,14 @@
   (function () {
     const g = $("#featGrid"); if (!g) return;
     const F = [
-      ["planet", "var(--cyan)", "w8", "Процедурная галактика", "От 85 до 230 звёзд, четыре формы: эллипс, спираль на два и четыре рукава, кольцо. Туман войны скрывает всё, что вы не разведали.", "economy"],
+      ["planet", "var(--cyan)", "w8", "Процедурная галактика", "От 110 до 320 звёзд, четыре формы: эллипс, спираль на два и четыре рукава, кольцо. Туман войны скрывает всё, что вы не разведали.", "economy"],
       ["population", "var(--green)", "", "Колонии и районы", "Четыре типа районов, жильё и рабочие места. Планета растёт так, как вы её спланируете.", "colonies"],
       ["frigate", "var(--rose)", "", "Свои корабли", "Три корпуса, 17 модулей, три типа урона. Собирайте проект под врага, а не под учебник.", "fleet"],
       ["scienceship", "var(--gold)", "w6", "89 технологий", "Три ветви, пять эпох и венец — проект «Вознесение». Дерево с подсветкой цепочек можно изучить прямо здесь.", "tech"],
       ["leader", "var(--violet)", "", "Лидеры", "Учёные, адмиралы, губернаторы и агенты. 24 черты, у каждой свой смысл.", "leaders"],
       ["sensors", "var(--violet)", "", "Шпионаж", "Внедряйтесь в чужие империи, воруйте технологии, стравливайте соседей.", "espionage"],
       ["starbase", "var(--amber)", "w6", "Узлы силы", "Врата, пульсары, монументы. Шесть особых систем дают бонус всей империи, пока там стоит ваш форпост.", "landmarks"],
-      ["trade", "var(--cyan)", "", "ИИ с памятью", "Пять характеров, мнение, обиды, коалиции против лидера. Обманывать ИИ долго не получится.", "empires"],
+      ["trade", "var(--cyan)", "", "ИИ с памятью", "Шесть характеров, мнение, репутация, союзы, обиды, коалиции против лидера. Обманывать ИИ долго не получится.", "empires"],
       ["defense", "var(--rose)", "", "Угрозы и события", "Пираты, аномалии, чума и древние реликвии вмешиваются в партию.", "threats"],
     ];
     g.innerHTML = F.map((f, i) => `<article class="feat ${f[2]} reveal" style="--acc:${f[1]};--d:${(i % 3) * 90}ms">${ic(f[0])}<h3>${f[3]}</h3><p>${f[4]}</p><a class="more" href="#wiki-${f[5]}">В вики →</a></article>`).join("") +

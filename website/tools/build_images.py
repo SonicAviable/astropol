@@ -21,7 +21,7 @@ total += save(fit(Image.open(f'{R}/Menu/menu_bg.jpg').convert('RGB'), 1800), 'ne
 total += save(fit(Image.open(f'{R}/Menu/menu_planet.png').convert('RGBA'), 1100), 'planet.webp', 'WEBP', quality=82, method=6)
 total += save(fit(Image.open(f'{R}/UI/LoadingArt.jpg').convert('RGB'), 1600), 'galaxy.jpg', 'JPEG', quality=78, optimize=True, progressive=True)
 total += save(fit(Image.open(f'{R}/UI/Tutor.jpg').convert('RGB'), 640), 'advisor.webp', 'WEBP', quality=82, method=6)
-for k in ['astrea', 'xarn', 'aquila', 'iridia', 'terraan']:
+for k in ['astrea', 'xarn', 'aquila', 'iridia', 'terraan', 'nol']:
     total += save(fit(Image.open(f'{R}/Leaders/leader_{k}.jpg').convert('RGB'), 700), f'leaders/{k}.webp', 'WEBP', quality=82, method=6)
     total += save(fit(Image.open(f'{R}/Factions/emblem_{k}.png').convert('RGBA'), 320), f'emblems/{k}.png', 'PNG', optimize=True)
 for f in sorted(glob.glob(f'{R}/UI/Events/*.jpg')):

@@ -74,7 +74,7 @@ CPD = float(re.search(r'CostPerRawDay = ([\d.]+)f', tm).group(1))
 
 flav_src = read('Assets/Scripts/Rendering/TechFlavorDatabase.cs')
 flavor = {}
-for m in re.finditer(r'\["(\w+)"\]\s*=\s*((?:\s*"(?:[^"\\]|\\.)*"\s*\+?)+)', flav_src):
+for m in re.finditer(r'\["(\w+)"\]\s*=\s*((?:\s*(?:Loc\.T\(\s*)?"(?:[^"\\]|\\.)*"\s*\)?\s*\+?)+)', flav_src):
     flavor[m.group(1)] = csharp_strings(m.group(2))
 
 techs = []
@@ -95,7 +95,7 @@ print('techs', len(techs), file=sys.stderr)
 # ---------------------------------------------------------------- корпуса и модули
 sd = read('Assets/Scripts/Core/ShipDesignManager.cs')
 hulls = []
-for m in re.finditer(r'Class = ShipClass\.(\w+), DisplayName = "([^"]+)",\s*WeaponSlots = (\d+), DefenseSlots = (\d+), UtilitySlots = (\d+),\s*BaseHull = ([\d.]+)f, BaseArmor = ([\d.]+)f, BaseShields = ([\d.]+)f,\s*BaseEvasion = ([\d.]+)f, BaseSpeed = ([\d.]+)f, BaseAlloyCost = ([\d.]+)f(?:,\s*RequiredTechId = "(\w+)")?', sd):
+for m in re.finditer(r'Class = ShipClass\.(\w+), DisplayName = (?:Loc\.T\()?"([^"]+)"\)?,\s*WeaponSlots = (\d+), DefenseSlots = (\d+), UtilitySlots = (\d+),\s*BaseHull = ([\d.]+)f, BaseArmor = ([\d.]+)f, BaseShields = ([\d.]+)f,\s*BaseEvasion = ([\d.]+)f, BaseSpeed = ([\d.]+)f, BaseAlloyCost = ([\d.]+)f(?:,\s*RequiredTechId = "(\w+)")?', sd):
     hulls.append(dict(id=m.group(1).lower(), name=m.group(2), weapon=int(m.group(3)), defense=int(m.group(4)), utility=int(m.group(5)),
                       hull=float(m.group(6)), armor=float(m.group(7)), shields=float(m.group(8)), evasion=float(m.group(9)),
                       speed=float(m.group(10)), cost=float(m.group(11)), tech=m.group(12) or ''))
@@ -117,7 +117,7 @@ lm = read('Assets/Scripts/Core/LeaderManager.cs')
 traits = []
 for m in re.finditer(r'new TraitDef \{([^}]*)\}', lm):
     f = m.group(1)
-    g = lambda k: (re.search(k + r' = "([^"]*)"', f) or [None, ''])[1]
+    g = lambda k: (re.search(k + r' = (?:Loc\.T\()?"([^"]*)"', f) or [None, ''])[1]
     cls = re.search(r'Class = LeaderClass\.(\w+)', f).group(1)
     traits.append(dict(id=g('Id'), cls=cls.lower(), name=g('Name'), desc=g('Desc'),
                        event='EventOnly = true' in f, negative='Negative = true' in f))
@@ -128,15 +128,15 @@ fd = read('Assets/Scripts/Core/FactionData.cs')
 fac_calls = calls(fd[fd.index('AvailableFactions'):], 'new FactionInfo')
 lp = read('Assets/Scripts/Rendering/LeaderPortraitView.cs')
 leaders = {}
-for key in ['Xarn', 'Astrea', 'Aquila', 'Iridia', 'Terraan']:
+for key in ['Xarn', 'Astrea', 'Aquila', 'Iridia', 'Terraan', 'Nol']:
     blk = lp[lp.index('public static readonly Entry %s' % key):]
     blk = blk[:blk.index('};')]
-    g = lambda k: csharp_strings(re.search(k + r' =\s*((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+)', blk).group(1))
+    g = lambda k: csharp_strings(re.search(k + r' =\s*(?:Loc\.T\()?((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+)', blk).group(1))
     acc = re.search(r'Accent = new Color\(([\d.f, ]+)\)', blk).group(1)
     r, gg, b = [float(x.strip().rstrip('f')) for x in acc.split(',')][:3]
     leaders[key.lower()] = dict(name=g('Name'), title=g('Title'), quote=g('Quote'),
                                 accent='#%02x%02x%02x' % (round(r * 255), round(gg * 255), round(b * 255)))
-keys = ['astrea', 'xarn', 'aquila', 'iridia', 'terraan']
+keys = ['astrea', 'xarn', 'aquila', 'iridia', 'terraan', 'nol']
 factions = []
 for k, a in zip(keys, fac_calls):
     desc = csharp_strings(a[2])
@@ -151,14 +151,16 @@ print('factions', len(factions), file=sys.stderr)
 # ---------------------------------------------------------------- характеры ИИ
 ap = read('Assets/Scripts/Core/AIPersonality.cs')
 personalities = {}
+def parse_personality(blk):
+    nm = re.search(r'p\.Name = (?:Loc\.T\()?"([^"]*)"', blk); sm = re.search(r'p\.Summary = (.*?);', blk, re.S)
+    return dict(name=nm.group(1), summary=csharp_strings(sm.group(1))) if nm and sm else None
 for m in re.finditer(r'case AIPersonality\.(\w+):\s*(.*?)break;', ap, re.S):
-    blk = m.group(2)
-    nm = re.search(r'p\.Name = "([^"]*)"', blk); sm = re.search(r'p\.Summary = ((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+);', blk)
-    if nm and sm: personalities[m.group(1).lower()] = dict(name=nm.group(1), summary=csharp_strings(sm.group(1)))
+    pr = parse_personality(m.group(2))
+    if pr: personalities[m.group(1).lower()] = pr
 m = re.search(r'default:\s*(.*?)break;', ap, re.S)
 if m:
-    nm = re.search(r'p\.Name = "([^"]*)"', m.group(1)); sm = re.search(r'p\.Summary = ((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+);', m.group(1))
-    personalities['militarist'] = dict(name=nm.group(1), summary=csharp_strings(sm.group(1)))
+    pr = parse_personality(m.group(1))
+    if pr: personalities['militarist'] = pr
 print('personalities', list(personalities), file=sys.stderr)
 
 out = dict(version=re.search(r'bundleVersion: (\S+)', read('ProjectSettings/ProjectSettings.asset')).group(1),
