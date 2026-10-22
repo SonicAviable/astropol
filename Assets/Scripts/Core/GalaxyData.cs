@@ -19,6 +19,8 @@ namespace StellarisClone.Core
 
         public int OwnerId = -1;
         public bool HasStarbase;
+        /// <summary>Уровень укрепления звёздной базы (0 — простой форпост … 3 — цитадель).</summary>
+        public int Fortification;
         /// <summary>Узел силы в системе (<see cref="LandmarkType"/>), -1 — обычная система.</summary>
         public int Landmark = -1;
         /// <summary>Система изучена игроком (видны планеты, можно строить форпост).</summary>

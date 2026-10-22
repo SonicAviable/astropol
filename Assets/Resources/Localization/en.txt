@@ -5296,3 +5296,25 @@ VK Play: всё синхронизировано	VK Play: fully synced
 \nГотово через {0} дн. ({1:0}%)	\nDone in {0} days ({1:0}%)
 \nЕщё в очереди системы: {0}	\nMore queued in this system: {0}
 \n<color=#8AA2A8>На ярлыке — стройка, которая закончится раньше всех</color>	\n<color=#8AA2A8>The label shows the construction that finishes first</color>
+Укреплённая база	Fortified Base
+Крепость	Fortress
+Цитадель	Citadel
+Форпост	Outpost
+Нужна ваша звёздная база	Requires your starbase
+Достигнут наивысший уровень — цитадель	Maximum level reached — citadel
+Укрепление уже строится	Fortification is already under construction
+Система в осаде — сначала прогоните врага	The system is under siege — drive the enemy away first
+В системе идёт бой	A battle is going on in the system
+Укрепление построено	Fortification complete
+Укрепление: {0}	Fortification: {0}
+Укрепление базы	Base fortification
+укрепление базы	base fortification
+<color=#8AA2A8>Укрепление</color> <b>{0}</b>  ·  уровень {1} из {2}	<color=#8AA2A8>Fortification</color> <b>{0}</b>  ·  level {1} of {2}
+\n<color=#8AA2A8>Прочность ×{0:0.##}, урон ×{1:0.##}, осада дольше ×{2:0.##}</color>	\n<color=#8AA2A8>Durability ×{0:0.##}, damage ×{1:0.##}, siege takes ×{2:0.##} longer</color>
+Строится: {0} · {1} дн.	Under construction: {0} · {1} days
+УКРЕПИТЬ → {0}	FORTIFY → {0}
+<b>{0}</b>\nЦена: {1:0} титана, {2:0} сплавов · {3:0} дн.\n	<b>{0}</b>\nCost: {1:0} Titanium, {2:0} Alloys · {3:0} days\n
+Прочность базы ×{0:0.##}, урон ×{1:0.##}, осада дольше ×{2:0.##}\nСодержание +{3:0} гелия-3 в месяц\n	Base durability ×{0:0.##}, damage ×{1:0.##}, siege takes ×{2:0.##} longer\nUpkeep +{3:0} Helium-3 per month\n
+<color=#8AA2A8>Если систему захватят штурмом, один уровень укреплений будет разрушен</color>	<color=#8AA2A8>If the system is taken by assault, one fortification level is destroyed</color>
+<color=#8AA2A8>{0:0} титана, {1:0} сплавов · {2:0} дн. · +{3:0} гелия-3/мес содержания</color>	<color=#8AA2A8>{0:0} Titanium, {1:0} Alloys · {2:0} days · +{3:0} Helium-3/mo upkeep</color>
+<color=#8AA2A8>Укрепления баз:</color> <color=#FF8888>-{0:0.#}</color> / мес\n	<color=#8AA2A8>Base fortifications:</color> <color=#FF8888>-{0:0.#}</color> / mo\n

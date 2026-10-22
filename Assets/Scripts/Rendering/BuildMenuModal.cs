@@ -648,6 +648,7 @@ namespace StellarisClone.Rendering
             JobKind.Terraform => LGIcon.Planet,
             JobKind.Robot => LGIcon.Industry,
             JobKind.GeneAdapt => LGIcon.Research,
+            JobKind.Fortify => LGIcon.Starbase,
             _ => j.ShipType == FleetType.Science ? LGIcon.ScienceShip
                : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull)
         };
@@ -660,6 +661,7 @@ namespace StellarisClone.Rendering
             JobKind.Terraform => Loc.T("Терраформинг"),
             JobKind.Robot => FactionTraits.IsMachine(0) ? Loc.T("Сборка синтетов") : Loc.T("Сборка роботов"),
             JobKind.GeneAdapt => Loc.T("Генная адаптация"),
+            JobKind.Fortify => Loc.F("Укрепление: {0}", Fortifications.Name(Mathf.Min(Fortifications.MaxLevel, (EmpireStats.GetSystem(j.SystemId)?.Fortification ?? 0) + 1)).ToLower()),
             _ => j.ShipType == FleetType.Science ? Loc.T("Научный корабль")
                : j.ShipType == FleetType.Constructor ? Loc.T("Строительный корабль")
                : j.Hull == ShipClass.Destroyer ? Loc.T("Эсминец") : j.Hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет")

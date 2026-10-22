@@ -68,7 +68,7 @@ namespace StellarisClone.Core
             float days = BaseSiegeDays;
             foreach (var p in sys.Planets) if (p.Population > 0) days += SiegeDaysPerColony;
             if (IsCapital(sys)) days += CapitalSiegeDays;
-            return days;
+            return days * Fortifications.SiegeMult(sys.Fortification);
         }
 
         private static bool IsCapital(StarSystem sys)

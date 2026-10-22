@@ -1084,17 +1084,25 @@ namespace StellarisClone.Core
             var b = EmpireBonuses.For(sys.OwnerId);
             float oldMaxHull = sb.MaxHull, oldMaxArmor = sb.MaxArmor, oldMaxShields = sb.MaxShields;
 
-            float fort = b.StarbaseMult * Landmarks.StarbaseMult(sys.OwnerId);   // «Звёздные крепости» и Цитадель Древних
+            // «Звёздные крепости», Цитадель Древних и укрепление самой базы
+            float fort = b.StarbaseMult * Landmarks.StarbaseMult(sys.OwnerId) * Fortifications.DurabilityMult(sys.Fortification);
             sb.MaxHull = (400f + colonies * 150f) * k * b.HullMult * fort;
             sb.MaxArmor = (200f + colonies * 60f) * k * b.ArmorMult * fort * (sb.GardenDays > 0 ? FactionTraits.GardenArmor : 1f);
             sb.MaxShields = (150f + colonies * 40f) * k * b.ShieldMult * fort;
-            sb.Damage = (9f + colonies * 4f) * k;
+            sb.Damage = (9f + colonies * 4f) * k * Fortifications.DamageMult(sys.Fortification);
             sb.FireRate = 1f;
 
             // Масштабируем текущие значения при изменении максимума
             if (oldMaxHull > 0f) sb.Hull = sb.Hull / oldMaxHull * sb.MaxHull; else sb.Hull = sb.MaxHull;
             if (oldMaxArmor > 0f) sb.Armor = sb.Armor / oldMaxArmor * sb.MaxArmor; else sb.Armor = sb.MaxArmor;
             if (oldMaxShields > 0f) sb.Shields = sb.Shields / oldMaxShields * sb.MaxShields; else sb.Shields = sb.MaxShields;
+        }
+
+        /// <summary>Пересчитать базу после смены укрепления (текущая прочность растёт вместе с максимумом).</summary>
+        public void RefreshStarbase(int systemId)
+        {
+            var sb = GetStarbase(systemId);
+            if (sb != null && _generator != null) ApplyStarbaseTemplate(sb, _generator.Systems[systemId]);
         }
 
         /// <summary>Звёздная база системы (создаётся при первом обращении). null — у системы нет базы.</summary>
@@ -1268,7 +1276,9 @@ namespace StellarisClone.Core
 
         private void HandleCaptured(StarSystem sys, int oldOwner, int newOwner)
         {
-            // Захваченная база переходит к новому владельцу повреждённой, но в строю; переданная по договору — целой
+            // Захваченная база переходит к новому владельцу повреждённой, но в строю; переданная по договору — целой.
+            // Штурм разрушает один уровень укреплений
+            if (!SiegeManager.IsPeacefulTransfer) sys.Fortification = Mathf.Max(0, sys.Fortification - 1);
             _starbases.Remove(sys.Id);
             if (SiegeManager.IsPeacefulTransfer) return;
             var sb = GetStarbase(sys.Id);

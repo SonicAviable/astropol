@@ -146,18 +146,34 @@ namespace StellarisClone.Core
                     float edge = MatchupVs(DataOf(ships), threat);
                     if (armyPower * edge + baseHelp >= threatPower * 0.9f)
                     {
-                        Mode = ArmyMode.Defend;
-                        ArmyTargetSystemId = threat;
-                        MoveAll(ships, threat);
+                        // Хватает части флота — к угрозе идёт отряд, остальные продолжают своё (наступление, охрана границы)
+                        var squad = PickDetachment(ships, threat, threatPower * DetachMargin - baseHelp, edge);
+                        if (squad != null && squad.Count < ships.Count * MaxDetachShare)
+                        {
+                            MoveAll(squad, threat);
+                            foreach (var sq in squad) ships.Remove(sq);
+                            armyPower = 0f;
+                            foreach (var sh in ships) armyPower += CombatMath.Power(sh.Data);
+                        }
+                        else
+                        {
+                            Mode = ArmyMode.Defend;
+                            ArmyTargetSystemId = threat;
+                            MoveAll(ships, threat);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // Не по силам — копим флот вдали от удара
+                        Mode = ArmyMode.Gather;
+                        _rallySystemId = SafeHaven(CapitalSystemId);
+                        MoveAll(ships, _rallySystemId);
                         return;
                     }
-                    // Не по силам — копим флот вдали от удара
-                    Mode = ArmyMode.Gather;
-                    _rallySystemId = SafeHaven(CapitalSystemId);
-                    MoveAll(ships, _rallySystemId);
-                    return;
                 }
             }
+            if (ships.Count == 0) return;
 
             // 3б. Перехват: сложный ИИ встречает вражеский флот, пока тот ещё в гиперкоридоре
             if (Smart >= 2 && AtWarWithAnyone)
@@ -213,6 +229,33 @@ namespace StellarisClone.Core
             ArmyTargetSystemId = -1;
             _rallySystemId = StagingSystem();
             MoveAll(ships, _rallySystemId);
+        }
+
+        /// <summary>Запас силы отряда над угрозой (базу системы учитываем отдельно).</summary>
+        private const float DetachMargin = 1.3f;
+        /// <summary>Если на угрозу нужна большая часть флота, идёт весь флот.</summary>
+        private const float MaxDetachShare = 0.7f;
+
+        /// <summary>
+        /// Отряд против угрозы: ближайшие к цели свободные корабли, пока их сила (с поправкой на типы оружия)
+        /// не покроет need. null — даже всех свободных не хватает.
+        /// </summary>
+        private List<FleetView> PickDetachment(List<FleetView> ships, int target, float need, float edge)
+        {
+            var dist = Distances(target, 30);
+            int Jumps(FleetView f) => dist.TryGetValue(f.Data.CurrentSystemId, out int d) ? d : 99;
+            var free = new List<FleetView>();
+            foreach (var f in ships) if (!f.Data.InCombat) free.Add(f);
+            free.Sort((a, b) => Jumps(a).CompareTo(Jumps(b)));
+            var squad = new List<FleetView>();
+            float got = 0f;
+            foreach (var f in free)
+            {
+                if (got >= need && squad.Count > 0) break;
+                squad.Add(f);
+                got += CombatMath.Power(f.Data) * edge;
+            }
+            return got >= need && squad.Count > 0 ? squad : null;
         }
 
         private bool IsValidSiegeTarget(int sysId)

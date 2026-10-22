@@ -324,7 +324,7 @@ namespace StellarisClone.Rendering
             {
                 if (j.Owner != 0) continue;
                 bool active;
-                long key = j.IsPlanetJob ? (((long)j.SystemId << 16) | (uint)j.PlanetIndex) : -1;
+                long key = j.IsPlanetJob ? (((long)j.SystemId << 16) | (uint)(j.PlanetIndex & 0xFFFF)) : -1;
                 if (j.IsPlanetJob) active = started.Add(key);
                 else active = ships++ < ConstructionManager.ShipyardSlots;
                 if (!active)
@@ -360,6 +360,7 @@ namespace StellarisClone.Rendering
             JobKind.Terraform => Loc.T("Терраформирование"),
             JobKind.Robot => FactionTraits.IsMachine(0) ? Loc.T("Сборка синтетов") : Loc.T("Сборка роботов"),
             JobKind.GeneAdapt => Loc.T("Генная адаптация"),
+            JobKind.Fortify => Loc.T("Укрепление базы"),
             _ => j.ShipType == FleetType.Science ? Loc.T("Научный корабль")
                : j.ShipType == FleetType.Constructor ? Loc.T("Строительный корабль")
                : j.Hull == ShipClass.Destroyer ? Loc.T("Эсминец") : j.Hull == ShipClass.Frigate ? Loc.T("Фрегат") : Loc.T("Корвет")
@@ -373,6 +374,7 @@ namespace StellarisClone.Rendering
             JobKind.Terraform => LGIcon.Globe,
             JobKind.Robot => LGIcon.Industry,
             JobKind.GeneAdapt => LGIcon.Research,
+            JobKind.Fortify => LGIcon.Starbase,
             _ => j.ShipType == FleetType.Science ? LGIcon.ScienceShip
                : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull)
         };

@@ -357,6 +357,8 @@ namespace StellarisClone.Core
             ThinkEconomy();
             ThinkCivilianShips();
             ThinkShipbuilding();
+            ThinkRetrofit();
+            ThinkFortify();
             ThinkMilitary();
         }
 

@@ -171,6 +171,7 @@ namespace StellarisClone.Rendering
                 string inShips = CombatManager.PowerInShips(sbPower);
                 InspText(Loc.F("<color=#8AA2A8>Мощь базы</color> <b>{0:N0}</b>", sbPower) + (inShips.Length > 0 ? $"  ·  {inShips}" : "") +
                          Loc.F("\n<color=#8AA2A8>Залп</color> {0:0} урона  ·  <color=#8AA2A8>мощь считается как у кораблей (значок мечей в панели флота) — сравните с силой своего флота перед атакой</color>", sb.Damage));
+                BuildFortification(system);
             }
 
             // Осада
@@ -222,6 +223,47 @@ namespace StellarisClone.Rendering
                     ? Loc.F("Чтобы захватить систему, держите здесь военный флот без защитников ({0:0} дн. осады).", SiegeManager.RequiredDays(system))
                     : Loc.T("Чужая система. Захват возможен только во время войны — осадой."));
             }
+        }
+
+        /// <summary>Укрепление базы: уровень, что он даёт, и кнопка следующего уровня (только для своих систем).</summary>
+        private void BuildFortification(StarSystem system)
+        {
+            int lvl = system.Fortification;
+            Color gold = DS.Gold;
+            InspText(Loc.F("<color=#8AA2A8>Укрепление</color> <b>{0}</b>  ·  уровень {1} из {2}", Fortifications.Name(lvl), lvl, Fortifications.MaxLevel) +
+                     (lvl > 0 ? Loc.F("\n<color=#8AA2A8>Прочность ×{0:0.##}, урон ×{1:0.##}, осада дольше ×{2:0.##}</color>",
+                         Fortifications.DurabilityMult(lvl), Fortifications.DamageMult(lvl), Fortifications.SiegeMult(lvl)) : ""));
+            if (system.OwnerId != 0) return;
+
+            var job = Fortifications.PendingJob(system.Id);
+            if (job != null)
+            {
+                InspNote(LGIcon.Clock, Loc.F("Строится: {0} · {1} дн.", Fortifications.Name(lvl + 1), Mathf.CeilToInt(job.DaysLeft)), gold);
+                return;
+            }
+            if (lvl >= Fortifications.MaxLevel) return;
+
+            int to = lvl + 1;
+            float m = Fortifications.Minerals(to), a = Fortifications.Alloys(to), d = Fortifications.Days(to);
+            string block = Fortifications.Blocker(system, 0);
+            var eco = EconomyManager.Instance;
+            if (block == null && (eco == null || !eco.CanAfford(0f, m, a, 0f))) block = CostCheck.Full(0f, m, a);
+
+            var btn = LGBuild.Button(_inspStack, "Fortify", new Color(gold.r * 0.12f, gold.g * 0.12f, gold.b * 0.12f, 0.95f),
+                new Color(gold.r, gold.g, gold.b, block == null ? 0.6f : 0.2f), () =>
+                {
+                    if (Fortifications.TryStartPlayer(system)) ShowSystemPanel(system);
+                }, LGIcon.Starbase, Loc.F("УКРЕПИТЬ → {0}", Fortifications.Name(to).ToUpper()), 11);
+            LGBuild.Height(btn.gameObject, 34);
+            btn.interactable = block == null;
+            TooltipHelper.Attach(btn.gameObject,
+                Loc.F("<b>{0}</b>\nЦена: {1:0} титана, {2:0} сплавов · {3:0} дн.\n", Fortifications.Name(to), m, a, d) +
+                Loc.F("Прочность базы ×{0:0.##}, урон ×{1:0.##}, осада дольше ×{2:0.##}\nСодержание +{3:0} гелия-3 в месяц\n",
+                    Fortifications.DurabilityMult(to), Fortifications.DamageMult(to), Fortifications.SiegeMult(to), Fortifications.UpkeepPerLevel) +
+                Loc.T("<color=#8AA2A8>Если систему захватят штурмом, один уровень укреплений будет разрушен</color>") +
+                (block != null ? $"\n<color=#FF8888>{block}</color>" : ""));
+            InspText(Loc.F("<color=#8AA2A8>{0:0} титана, {1:0} сплавов · {2:0} дн. · +{3:0} гелия-3/мес содержания</color>", m, a, d, Fortifications.UpkeepPerLevel) +
+                     (block != null ? $"\n<color=#FF8888>{block}</color>" : ""));
         }
 
         /// <summary>Флоты на орбите системы по владельцам: число кораблей и боевая мощь.</summary>

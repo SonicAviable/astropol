@@ -104,6 +104,7 @@ namespace StellarisClone.Core
         public bool HasGeneratedPlanets;
         public int OwnerId;
         public bool HasStarbase;
+        public int Fortification;  // укрепление базы (0–3); в старых сохранениях — 0
         public int Landmark = -1;  // узел силы (-1 — нет)
         public bool IsSurveyed;
         public bool SurveyedByAI;  // до версии 2: один флаг на всех ИИ
@@ -538,7 +539,7 @@ namespace StellarisClone.Core
             {
                 Id = sys.Id, Name = sys.Name, Position = sys.Position, Spectral = (int)sys.SpectralClass,
                 HasGeneratedPlanets = sys.HasGeneratedPlanets, OwnerId = sys.OwnerId,
-                HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed, Landmark = sys.Landmark,
+                HasStarbase = sys.HasStarbase, Fortification = sys.Fortification, IsSurveyed = sys.IsSurveyed, Landmark = sys.Landmark,
                 AISurvey = sys.AISurveyMask, SurveyVer = 2
             };
             ss.Connected.AddRange(sys.ConnectedSystemIds);
@@ -611,7 +612,7 @@ namespace StellarisClone.Core
             {
                 var sys = new StarSystem(ss.Id, ss.Name, ss.Position, (StarSpectralClass)ss.Spectral)
                 {
-                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, IsSurveyed = ss.IsSurveyed, Landmark = ss.Landmark,
+                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, Fortification = Mathf.Clamp(ss.Fortification, 0, Fortifications.MaxLevel), IsSurveyed = ss.IsSurveyed, Landmark = ss.Landmark,
                     AISurveyMask = ss.SurveyVer >= 2 ? ss.AISurvey : (ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed) ? ~1 : 0,
                     HasGeneratedPlanets = ss.HasGeneratedPlanets
                 };

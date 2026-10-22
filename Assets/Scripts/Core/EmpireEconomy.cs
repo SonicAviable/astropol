@@ -96,7 +96,7 @@ namespace StellarisClone.Core
             r.OverCapacityMult = 1f + over / (float)Mathf.Max(1, r.NavalCapacity);
             r.UpkeepMult = Mathf.Max(0.3f, bonuses.UpkeepMult);
             r.FleetUpkeep = military * r.OverCapacityMult * r.UpkeepMult;
-            r.OutpostUpkeepTotal = r.Outposts * OutpostUpkeep;
+            r.OutpostUpkeepTotal = r.Outposts * OutpostUpkeep + Fortifications.Upkeep(owner);
             return r;
         }
 

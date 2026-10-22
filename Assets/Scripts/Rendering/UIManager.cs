@@ -1552,7 +1552,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 (eco.TechEnergyOutput > 0f ? Loc.F("<color=#8AA2A8>Реакторные технологии:</color> {0:+0;-0;0} / мес\n", eco.TechEnergyOutput) : "") +
                 Loc.F("<color=#8AA2A8>Военный флот:</color> <color=#FF8888>-{0:0.#}</color> / мес{1}\n", rep.FleetUpkeep, overCap) +
                 Loc.F("<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", rep.CivilianUpkeep) +
-                Loc.F("<color=#8AA2A8>Форпосты ({0} × {1:0.#}):</color> <color=#FF8888>-{2:0.#}</color> / мес\n", rep.Outposts, EmpireEconomy.OutpostUpkeep, rep.OutpostUpkeepTotal) +
+                Loc.F("<color=#8AA2A8>Форпосты ({0} × {1:0.#}):</color> <color=#FF8888>-{2:0.#}</color> / мес\n", rep.Outposts, EmpireEconomy.OutpostUpkeep, rep.Outposts * EmpireEconomy.OutpostUpkeep) +
+                (Fortifications.Upkeep(0) > 0f ? Loc.F("<color=#8AA2A8>Укрепления баз:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", Fortifications.Upkeep(0)) : "") +
                 $"<color=#8AA2A8>──────────────</color>\n" +
                 Loc.F("<color=#8AA2A8>Чистый доход:</color> <color={0}><b>{1:+0.#;-0.#;0} / мес</b></color>\n\n", netColor, net) +
                 Loc.F("<color=#8AA2A8>Флотский лимит: {0} / {1} (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). ", rep.NavalUsed, rep.NavalCapacity, EmpireEconomy.NavalCapacityPerColony) +

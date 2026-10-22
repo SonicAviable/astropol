@@ -6,7 +6,7 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
-    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt }
+    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt, Fortify }
 
     /// <summary>Строительный заказ: оплачен сразу, готов через несколько дней.</summary>
     [Serializable]
@@ -196,6 +196,22 @@ namespace StellarisClone.Core
             return job;
         }
 
+        /// <summary>Стройка всей системы (укрепление звёздной базы): своя очередь у системы, без планеты.</summary>
+        public ConstructionJob EnqueueSystemJob(JobKind kind, int owner, int systemId, float days,
+                                                float energy, float minerals, float alloys, float influence)
+        {
+            var job = new ConstructionJob
+            {
+                Id = _nextId++, Kind = kind, Owner = owner, SystemId = systemId, PlanetIndex = -1,
+                DaysTotal = days, DaysLeft = days,
+                Energy = energy, Minerals = minerals, Alloys = alloys, Influence = influence
+            };
+            _jobs.Add(job);
+            if (owner == 0) SFXManager.Play(Sfx.BuildQueued);
+            OnQueuesChanged?.Invoke();
+            return job;
+        }
+
         /// <param name="systemId">Верфь, где заложен корабль: там он и появится (−1 — главная верфь владельца).</param>
         public ConstructionJob EnqueueShip(int owner, FleetType type, ShipClass hull, string designId, float energy, float alloys, int systemId = -1)
         {
@@ -333,7 +349,7 @@ namespace StellarisClone.Core
             {
                 if (j.IsPlanetJob)
                 {
-                    long key = ((long)j.SystemId << 16) | (uint)j.PlanetIndex;
+                    long key = ((long)j.SystemId << 16) | (uint)(j.PlanetIndex & 0xFFFF);   // −1 — очередь самой системы
                     if (!started.Add(key)) continue;
                 }
                 else
@@ -358,6 +374,7 @@ namespace StellarisClone.Core
         private void Complete(ConstructionJob j)
         {
             if (j.Kind == JobKind.Ship) { CompleteShip(j); OnJobCompleted?.Invoke(j); return; }
+            if (j.Kind == JobKind.Fortify) { Fortifications.Complete(j); OnJobCompleted?.Invoke(j); return; }
 
             var p = PlanetOf(j);
             if (p == null || p.OwnerId != j.Owner) return;
