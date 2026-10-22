@@ -73,6 +73,8 @@ namespace StellarisClone.Core
             }
 
             Add(Loc.T("характеры"), (a.Profile.BaseOpinion + b.Profile.BaseOpinion) * 0.5f + (a.Personality == b.Personality ? 5f : 0f));
+            if ((a.Personality == AIPersonality.Machine) != (b.Personality == AIPersonality.Machine))
+                Add(Loc.T("машины и органики"), -FactionTraits.MachineDistrust);
             int border = EmpireStats.SharedBorderCount(a.OwnerId, b.OwnerId);
             if (border > 0) Add(Loc.F("общая граница ({0})", border), -Mathf.Min(18f, border * 3f));
             float pa = Mathf.Max(1f, EmpireStats.MilitaryPower(a.OwnerId)), pb = Mathf.Max(1f, EmpireStats.MilitaryPower(b.OwnerId));

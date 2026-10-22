@@ -115,7 +115,7 @@ namespace StellarisClone.Core
             return best != null ? best.Species : SpeciesRegistry.FounderOf(OwnerId);
         }
 
-        /// <summary>Самый многочисленный органический вид планеты (-1 — органиков нет).</summary>
+        /// <summary>Самый многочисленный органический вид планеты (-1 — органиков нет; роботы и синтеты не в счёт).</summary>
         public int DominantOrganic
         {
             get
@@ -125,7 +125,7 @@ namespace StellarisClone.Core
                 foreach (var g in Pops)
                 {
                     var s = SpeciesRegistry.Get(g.Species);
-                    if (s == null || s.Robot) continue;
+                    if (s == null || s.Machine) continue;
                     if (best == null || g.Count > best.Count) best = g;
                 }
                 return best != null ? best.Species : -1;
@@ -144,7 +144,7 @@ namespace StellarisClone.Core
             return n;
         }
 
-        public int OrganicPops => CountOf(s => !s.Robot);
+        public int OrganicPops => CountOf(s => !s.Machine);
         public int RobotPops => CountOf(s => s.Robot);
 
         // ==================== ПРОЕКТЫ: РОБОТЫ И ГЕННАЯ ИНЖЕНЕРИЯ ====================
@@ -175,8 +175,9 @@ namespace StellarisClone.Core
             if (!IsPlayerOwned || Population <= 0 || Builds == null || !HasRoomForRobot) return false;
             if (Builds.QueueFor(this).Count >= ConstructionManager.MaxPlanetQueue) return false;
             var eco = EconomyManager.Instance;
-            if (eco == null || !eco.TrySpend(RobotEnergyCost, 0f, RobotAlloysCost, 0f)) return false;
-            Builds.EnqueuePlanetJob(JobKind.Robot, 0, this, DistrictType.Urban, RobotEnergyCost, 0f, RobotAlloysCost, 0f);
+            float energy = FactionTraits.RobotEnergy(OwnerId), alloys = FactionTraits.RobotAlloys(OwnerId);
+            if (eco == null || !eco.TrySpend(energy, 0f, alloys, 0f)) return false;
+            Builds.EnqueuePlanetJob(JobKind.Robot, 0, this, DistrictType.Urban, energy, 0f, alloys, 0f);
             return true;
         }
 

@@ -6,7 +6,7 @@ Shader "Stellaris/OrganicBorders"
     //  • Между двумя империями граница проходит посередине, у каждой стороны — своя цветная кромка.
     //  • Кромка постоянной толщины в пикселях экрана (fwidth), заливка полупрозрачная
     //    и светлее у края — как «подсвеченная» граница в Stellaris.
-    //  • До 384 точек (xy — позиция X/Z, z — владелец: 0 игрок, 1–4 — империи ИИ, 5 — угрозы): системы плюс промежуточные
+    //  • До 512 точек (xy — позиция X/Z, z — владелец: 0 игрок, 1–5 — империи ИИ, 6 — угрозы): системы плюс промежуточные
     //    точки вдоль своих коридоров, чтобы территория не рвалась на длинных переходах.
     Properties
     {
@@ -15,6 +15,7 @@ Shader "Stellaris/OrganicBorders"
         _Enemy2Color ("Second Enemy Color", Color) = (0.74, 0.48, 1.0, 1.0)
         _Enemy3Color ("Third Enemy Color", Color) = (1.0, 0.74, 0.25, 1.0)
         _Enemy4Color ("Fourth Enemy Color", Color) = (0.44, 0.86, 0.34, 1.0)
+        _Enemy5Color ("Fifth Enemy Color", Color) = (0.86, 0.91, 0.97, 1.0)
         _ThreatColor ("Threat Color", Color) = (0.8, 0.3, 0.3, 1.0)
         _ClaimRadius ("Claim Radius", Float) = 15
         _Smooth ("Smooth Union", Float) = 12
@@ -47,6 +48,7 @@ Shader "Stellaris/OrganicBorders"
             fixed4 _Enemy2Color;
             fixed4 _Enemy3Color;
             fixed4 _Enemy4Color;
+            fixed4 _Enemy5Color;
             fixed4 _ThreatColor;
             float _ClaimRadius;
             float _Smooth;
@@ -56,7 +58,7 @@ Shader "Stellaris/OrganicBorders"
             float _LineAlpha;
 
             float _SysCount;
-            float4 _Sys[384];
+            float4 _Sys[512];
 
             v2f vert (appdata_t v)
             {
@@ -76,11 +78,11 @@ Shader "Stellaris/OrganicBorders"
             fixed4 frag (v2f i) : SV_Target
             {
                 float2 p = i.worldPos.xz;
-                float d0 = 10000.0, d1 = 10000.0, d2 = 10000.0, d3 = 10000.0, d4 = 10000.0, d5 = 10000.0;
+                float d0 = 10000.0, d1 = 10000.0, d2 = 10000.0, d3 = 10000.0, d4 = 10000.0, d5 = 10000.0, d6 = 10000.0;
                 int n = (int)_SysCount;
 
                 [loop]
-                for (int k = 0; k < 384; k++)
+                for (int k = 0; k < 512; k++)
                 {
                     if (k >= n) break;
                     float4 s = _Sys[k];
@@ -90,7 +92,8 @@ Shader "Stellaris/OrganicBorders"
                     else if (s.z < 2.5) d2 = smin(d2, d, _Smooth);
                     else if (s.z < 3.5) d3 = smin(d3, d, _Smooth);
                     else if (s.z < 4.5) d4 = smin(d4, d, _Smooth);
-                    else                d5 = smin(d5, d, _Smooth);
+                    else if (s.z < 5.5) d5 = smin(d5, d, _Smooth);
+                    else                d6 = smin(d6, d, _Smooth);
                 }
 
                 // Своя территория — ближайшая (при равенстве — меньший номер владельца);
@@ -102,7 +105,8 @@ Shader "Stellaris/OrganicBorders"
                 if (d2 < dSelf) { dSelf = d2; own = 2; col = _Enemy2Color.rgb; }
                 if (d3 < dSelf) { dSelf = d3; own = 3; col = _Enemy3Color.rgb; }
                 if (d4 < dSelf) { dSelf = d4; own = 4; col = _Enemy4Color.rgb; }
-                if (d5 < dSelf) { dSelf = d5; own = 5; col = _ThreatColor.rgb; }
+                if (d5 < dSelf) { dSelf = d5; own = 5; col = _Enemy5Color.rgb; }
+                if (d6 < dSelf) { dSelf = d6; own = 6; col = _ThreatColor.rgb; }
                 float dOther = 10000.0;
                 if (own != 0) dOther = min(dOther, d0);
                 if (own != 1) dOther = min(dOther, d1);
@@ -110,6 +114,7 @@ Shader "Stellaris/OrganicBorders"
                 if (own != 3) dOther = min(dOther, d3);
                 if (own != 4) dOther = min(dOther, d4);
                 if (own != 5) dOther = min(dOther, d5);
+                if (own != 6) dOther = min(dOther, d6);
                 // Расстояние до края своей территории (положительно внутри):
                 // либо внешний край, либо середина между двумя империями
                 float e = min(-dSelf, (dOther - dSelf) * 0.5);

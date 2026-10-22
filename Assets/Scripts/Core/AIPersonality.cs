@@ -3,10 +3,11 @@ using UnityEngine;
 
 namespace StellarisClone.Core
 {
-    public enum AIPersonality { Militarist, Scientific, Trader, Mystic, Gardener }
+    public enum AIPersonality { Militarist, Scientific, Trader, Mystic, Gardener, Machine }
 
     /// <summary>
-    /// Характер ИИ определяется фракцией: Ксарн — воинственный, Астрея — научная, Аквила — торговая, Иридия — мистическая.
+    /// Характер ИИ определяется фракцией: Ксарн — воинственный, Астрея — научная, Аквила — торговая, Иридия — мистическая,
+    /// Тэрра'ан — терпеливая, «Ноль» — расчётливая.
     /// Профиль задаёт, на что тратятся ресурсы, что изучается в первую очередь и как ИИ ведёт себя в дипломатии.
     /// </summary>
     public class AIProfile
@@ -69,6 +70,7 @@ namespace StellarisClone.Core
                 case "aquila": return AIPersonality.Trader;
                 case "iridia": return AIPersonality.Mystic;
                 case "terraan": return AIPersonality.Gardener;
+                case "nol": return AIPersonality.Machine;
                 default: return AIPersonality.Militarist;
             }
         }
@@ -154,6 +156,27 @@ namespace StellarisClone.Core
                     p.TechWeights[TechCategory.Defense] = 2.5f;
                     p.TechWeights[TechCategory.Sensors] = 2f;
                     p.TechWeights[TechCategory.Reactor] = 1.5f;
+                    break;
+
+                case AIPersonality.Machine:
+                    p.Name = Loc.T("Расчётливая");
+                    p.Summary = Loc.T("Считает всё. Не устаёт от войны и не поддаётся на подарки, строит добычу и промышленность, ") +
+                                Loc.T("нападает, когда расчёт обещает победу, и держит договоры, пока они выгодны.");
+                    p.FleetShare = 0.55f; p.ScienceMult = 1.1f;
+                    p.ColonyWeight = 1.1f; p.ResourceWeight = 1.4f; p.FrontierBias = 0f;
+                    p.PreferredDistrict = DistrictType.Mining;
+                    p.DesiredPowerRatio = 1.1f; p.RetreatRatio = 1.35f;
+                    p.PreferredWeapon = WeaponDamageType.Energy; p.SecondaryWeapon = WeaponDamageType.Kinetic;
+                    p.BaseOpinion = -5f; p.ThreatSensitivity = 1f;
+                    p.WarOpinionThreshold = -35f; p.WarPowerRatio = 1.25f;
+                    // Машины не устают от войны, но и не воюют без расчёта
+                    p.WearinessRate = 0.6f; p.PeaceWeariness = 65f; p.PeaceBias = 0f;
+                    p.PactOpinion = 15f; p.TradeOpinionMult = 1.2f; p.GiftOpinionMult = 0.6f;
+                    p.TechWeights[TechCategory.Industry] = 3f;
+                    p.TechWeights[TechCategory.Reactor] = 2.5f;
+                    p.TechWeights[TechCategory.Construction] = 2f;
+                    p.TechWeights[TechCategory.Weapons] = 2f;
+                    p.TechWeights[TechCategory.Propulsion] = 1.5f;
                     break;
 
                 default:

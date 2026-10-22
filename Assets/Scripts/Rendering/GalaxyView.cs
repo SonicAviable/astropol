@@ -262,8 +262,8 @@ namespace StellarisClone.Rendering
             mr.sortingOrder = -5;
         }
 
-        /// <summary>Слот территории в шейдере границ: 0 — игрок, 1–4 — империи ИИ, 5 — угрозы (пираты, левиафаны).</summary>
-        private static float BorderSlot(int owner) => owner >= 0 && owner <= 4 ? owner : 5f;
+        /// <summary>Слот территории в шейдере границ: 0 — игрок, 1–5 — империи ИИ, 6 — угрозы (пираты, левиафаны).</summary>
+        private static float BorderSlot(int owner) => owner >= 0 && owner <= AIEmpireManager.RivalCount ? owner : 6f;
 
         public void RefreshTerritoryVisuals()
         {
@@ -293,10 +293,10 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // Территории: все системы со звёздной базой, z — слот владельца (BorderSlot: 0 игрок, 1–4 — империи ИИ, 5 — угрозы).
+            // Территории: все системы со звёздной базой, z — слот владельца (BorderSlot: 0 игрок, 1–5 — империи ИИ, 6 — угрозы).
             // Вдоль коридоров между своими системами добавляем промежуточные точки —
             // территория не рвётся на длинных переходах (как в Stellaris).
-            const int MaxSys = 384;
+            const int MaxSys = 512;   // столько же, сколько в шейдере границ
             var sys = new Vector4[MaxSys];
             int count = 0;
             foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
@@ -324,6 +324,7 @@ namespace StellarisClone.Rendering
             _borderMat.SetColor("_Enemy2Color", FleetIndicator.OwnerColor(2));
             _borderMat.SetColor("_Enemy3Color", FleetIndicator.OwnerColor(3));
             _borderMat.SetColor("_Enemy4Color", FleetIndicator.OwnerColor(4));
+            _borderMat.SetColor("_Enemy5Color", FleetIndicator.OwnerColor(5));
             _borderMat.SetColor("_ThreatColor", FleetIndicator.OwnerColor(Threats.PirateOwner));
 
             UpdateEmpireLabel(playerSystems);

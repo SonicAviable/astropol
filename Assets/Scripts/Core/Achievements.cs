@@ -292,7 +292,8 @@ namespace StellarisClone.Core
             var won = Achievements.WonFactions();
             int all = 0;
             foreach (var f in FactionRegistry.AvailableFactions) if (won.Contains(FactionRegistry.KeyOf(f))) all++;
-            if (all >= FactionRegistry.AvailableFactions.Length) Achievements.Unlock(Ach.WinAllFactions);
+            // «Пять корон» — пять разных империй: с шестой фракцией («Ноль») условие не стало строже
+            if (all >= 5) Achievements.Unlock(Ach.WinAllFactions);
         }
 
         private void Update()

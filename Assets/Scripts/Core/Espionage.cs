@@ -365,6 +365,7 @@ namespace StellarisClone.Core
                 case AIPersonality.Mystic: v += 0.08f; break;          // видят заранее
                 case AIPersonality.Scientific: v += 0.05f; break;
                 case AIPersonality.Trader: v += 0.03f; break;
+                case AIPersonality.Machine: v += 0.06f; break;         // у единого разума нет предателей
             }
             return Mathf.Clamp(v, 0.05f, 0.85f);
         }

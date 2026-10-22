@@ -17,8 +17,8 @@ namespace StellarisClone.Core
     /// </summary>
     public partial class AIEmpireManager : MonoBehaviour
     {
-        /// <summary>Наибольшее число империй-соперников (вместе с игроком — пять, все фракции). Сколько в партии — NewGameSettings.Rivals.</summary>
-        public const int RivalCount = 4;
+        /// <summary>Наибольшее число империй-соперников (вместе с игроком — шесть, все фракции). Сколько в партии — NewGameSettings.Rivals.</summary>
+        public const int RivalCount = 5;
 
         /// <summary>Все империи ИИ, по возрастанию номера владельца (1, 2, …).</summary>
         public static readonly List<AIEmpireManager> All = new List<AIEmpireManager>();
@@ -54,7 +54,7 @@ namespace StellarisClone.Core
         /// </summary>
         private static readonly Color[] AltColors =
         {
-            new Color(0.40f, 0.58f, 1f), new Color(1f, 0.74f, 0.25f), new Color(0.95f, 0.40f, 0.85f), new Color(0.85f, 0.88f, 0.92f)
+            new Color(0.40f, 0.58f, 1f), new Color(1f, 0.74f, 0.25f), new Color(0.95f, 0.40f, 0.85f), new Color(0.35f, 0.92f, 0.78f)
         };
 
         private static bool NearPlayer(Color c)

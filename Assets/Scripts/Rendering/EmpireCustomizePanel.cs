@@ -26,7 +26,7 @@ namespace StellarisClone.Rendering
             new Color(0.22f, 0.85f, 0.52f), new Color(0.84f, 0.88f, 0.94f)
         };
 
-        private static readonly string[] EmblemKeys = { "astrea", "xarn", "aquila", "iridia", "terraan" };
+        private static readonly string[] EmblemKeys = { "astrea", "xarn", "aquila", "iridia", "terraan", "nol" };
 
         private static string[] Forms => new[]
         {
@@ -285,7 +285,18 @@ namespace StellarisClone.Rendering
             _title.text = t[UnityEngine.Random.Range(0, t.Length)];
         }
 
-        private void RandomRuler() => _ruler.text = LeaderManager.RandomRulerName(FemaleRuler(FactionRegistry.KeyOf(_base)));
+        private void RandomRuler()
+            => _ruler.text = FactionRegistry.IsMachine(_base) ? MachineRulerName() : LeaderManager.RandomRulerName(FemaleRuler(FactionRegistry.KeyOf(_base)));
+
+        /// <summary>У машин нет имён — только обозначения узлов: «Узел Сигма-7».</summary>
+        private static string MachineRulerName()
+        {
+            string[] heads = { Loc.T("Голос"), Loc.T("Узел"), Loc.T("Индекс"), Loc.T("Ядро") };
+            string[] marks = { "Альфа", "Сигма", "Тета", "Омега", "Дельта", "Каппа" };
+            string mark = Loc.English ? new[] { "Alpha", "Sigma", "Theta", "Omega", "Delta", "Kappa" }[UnityEngine.Random.Range(0, 6)]
+                                      : marks[UnityEngine.Random.Range(0, marks.Length)];
+            return $"{heads[UnityEngine.Random.Range(0, heads.Length)]} {mark}-{UnityEngine.Random.Range(0, 100)}";
+        }
 
         private void RandomAll()
         {

@@ -658,7 +658,7 @@ namespace StellarisClone.Rendering
             JobKind.MiningStation => Loc.T("Добывающий комплекс"),
             JobKind.Colony => Loc.T("Колония"),
             JobKind.Terraform => Loc.T("Терраформинг"),
-            JobKind.Robot => Loc.T("Сборка роботов"),
+            JobKind.Robot => FactionTraits.IsMachine(0) ? Loc.T("Сборка синтетов") : Loc.T("Сборка роботов"),
             JobKind.GeneAdapt => Loc.T("Генная адаптация"),
             _ => j.ShipType == FleetType.Science ? Loc.T("Научный корабль")
                : j.ShipType == FleetType.Constructor ? Loc.T("Строительный корабль")

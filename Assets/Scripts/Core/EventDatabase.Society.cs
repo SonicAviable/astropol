@@ -16,7 +16,7 @@ namespace StellarisClone.Core
         private static int AlienPops(PlanetData p)
         {
             int founder = SpeciesRegistry.FounderOf(0);
-            return p.CountOf(s => !s.Robot && !SpeciesRegistry.Related(s.Id, founder));
+            return p.CountOf(s => !s.Machine && !SpeciesRegistry.Related(s.Id, founder));
         }
 
         /// <summary>Выслать всех жителей чужих видов (на планете остаётся хотя бы один житель); их империи обижаются.</summary>
@@ -28,7 +28,7 @@ namespace StellarisClone.Core
             foreach (var g in new List<PopGroup>(p.Pops))
             {
                 var s = SpeciesRegistry.Get(g.Species);
-                if (s == null || s.Robot || SpeciesRegistry.Related(s.Id, founder)) continue;
+                if (s == null || s.Machine || SpeciesRegistry.Related(s.Id, founder)) continue;
                 int n = Mathf.Min(g.Count, p.Population - 1);
                 if (n <= 0) break;
                 expelled += p.RemovePops(s.Id, n);

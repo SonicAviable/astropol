@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace StellarisClone.Core
 {
-    /// <summary>Черты вида. Положительные и отрицательные; «Механические» — только у роботов.</summary>
+    /// <summary>Черты вида. Положительные и отрицательные; «Механические» — только у роботов, «Синтетические» — у синтетов «Ноля».</summary>
     public enum SpeciesTrait
     {
         Industrious,    // Трудолюбивые: +15% титана и гелия-3
@@ -18,6 +18,7 @@ namespace StellarisClone.Core
         SlowBreeders,   // Медленно размножаются: рост −25%
         Quarrelsome,    // Сварливые: −8 стабильности
         Mechanical,     // Механические: не растут сами, не ведут науку; +10% добычи, вне политики
+        Synthetic,      // Синтетические (Консенсус «Ноль»): растут сборкой, ведут науку, вне политики, климат безразличен
     }
 
     public enum SpeciesKind { Founder, Robot, Hybrid, Adapted }
@@ -41,6 +42,7 @@ namespace StellarisClone.Core
             SpeciesTrait.SlowBreeders  => Loc.T("Медленно размножаются"),
             SpeciesTrait.Quarrelsome   => Loc.T("Сварливые"),
             SpeciesTrait.Mechanical    => Loc.T("Механические"),
+            SpeciesTrait.Synthetic     => Loc.T("Синтетические"),
             _ => "?"
         };
 
@@ -57,6 +59,7 @@ namespace StellarisClone.Core
             SpeciesTrait.SlowBreeders  => Loc.T("рост населения −25%"),
             SpeciesTrait.Quarrelsome   => Loc.T("−8 стабильности"),
             SpeciesTrait.Mechanical    => Loc.T("не размножаются и не ведут науку; +10% титана и гелия-3; не бунтуют"),
+            SpeciesTrait.Synthetic     => Loc.T("не рождаются, а собираются на фабриках; ведут науку; не бунтуют; любой климат — родной"),
             _ => ""
         };
     }
@@ -78,6 +81,8 @@ namespace StellarisClone.Core
         public Color Color = Color.white;
 
         public bool Robot => Kind == SpeciesKind.Robot;
+        /// <summary>Машина (робот или синтет): вне политики, не скрещивается и не меняет гены.</summary>
+        public bool Machine => Robot || Has(SpeciesTrait.Synthetic);
         public bool Has(SpeciesTrait t) => Traits.Contains(t);
 
         public string DisplayName
@@ -154,7 +159,7 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Чувствует ли себя вид дома на планете этого типа.</summary>
-        public bool AtHome(PlanetType t) => Robot || Has(SpeciesTrait.Adaptive) || Home == t;
+        public bool AtHome(PlanetType t) => Machine || Has(SpeciesTrait.Adaptive) || Home == t;
     }
 
     /// <summary>Группа жителей одного вида на планете.</summary>
@@ -262,6 +267,10 @@ namespace StellarisClone.Core
                     n.Name = "Тэрра'ан"; n.Home = PlanetType.Continental; n.Color = new Color(0.46f, 0.90f, 0.46f);
                     n.Traits.AddRange(new[] { SpeciesTrait.Resilient, SpeciesTrait.Adaptive, SpeciesTrait.SlowBreeders });
                     break;
+                case "nol":
+                    n.Name = "Синтеты"; n.Home = PlanetType.Barren; n.Color = new Color(0.82f, 0.90f, 0.96f);
+                    n.Traits.AddRange(new[] { SpeciesTrait.Synthetic, SpeciesTrait.Engineers });
+                    break;
                 default:
                     n.Name = "Поселенцы"; n.Home = PlanetType.Continental; n.Color = new Color(0.75f, 0.80f, 0.84f);
                     n.Traits.AddRange(new[] { SpeciesTrait.Industrious, SpeciesTrait.RapidBreeders });
@@ -299,7 +308,7 @@ namespace StellarisClone.Core
         {
             created = false;
             var sa = Get(a); var sb = Get(b);
-            if (sa == null || sb == null || sa.Robot || sb.Robot) return null;
+            if (sa == null || sb == null || sa.Machine || sb.Machine) return null;
             var ra = Root(a); var rb = Root(b);
             if (ra == null || rb == null || ra.Id == rb.Id) return null;
             foreach (var s in _all)
@@ -326,6 +335,7 @@ namespace StellarisClone.Core
             "aquila" => Loc.T("Аквило"),
             "iridia" => Loc.T("Иридо"),
             "terraan" => Loc.T("Тэрра"),
+            "nol" => Loc.T("Синто"),
             _ => Loc.T("Ново")
         };
 
@@ -336,6 +346,7 @@ namespace StellarisClone.Core
             "aquila" => Loc.T("аквилианцы"),
             "iridia" => Loc.T("иридийцы"),
             "terraan" => Loc.T("тэрра'ан"),
+            "nol" => Loc.T("синтеты"),
             _ => Loc.T("поселенцы")
         };
 
@@ -365,7 +376,7 @@ namespace StellarisClone.Core
         public static Species Adapted(int baseId, PlanetType home)
         {
             var b = Get(baseId);
-            if (b == null || b.Robot) return null;
+            if (b == null || b.Machine) return null;
             foreach (var s in _all)
                 if (s.Kind == SpeciesKind.Adapted && s.ParentA == baseId && s.Home == home) return s;
             var n = new Species
@@ -383,7 +394,7 @@ namespace StellarisClone.Core
         /// <summary>Можно ли адаптировать вид к этому климату (новая линия будет отличаться от исходной).</summary>
         public static bool CanAdapt(Species s, PlanetType home)
         {
-            if (s == null || s.Robot) return false;
+            if (s == null || s.Machine) return false;
             if (s.Kind == SpeciesKind.Adapted && s.Home == home) return false;
             return s.Home != home || FixableTrait(s).HasValue;
         }

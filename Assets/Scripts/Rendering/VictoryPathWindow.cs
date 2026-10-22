@@ -147,7 +147,7 @@ namespace StellarisClone.Rendering
             (Kind k, string t, string d, Color c, LGIcon ic)[] defs =
             {
                 (Kind.Score, Loc.T("ПО ОЧКАМ"), Loc.F("Больше очков, чем у каждого соперника, к 1 января {0} года. Очки — системы, население, наука и флот.", VictoryManager.EndYear), Gold, LGIcon.Trophy),
-                (Kind.Domination, Loc.T("ДОМИНИРОВАНИЕ"), Loc.F("Поставьте форпосты в {0} системах (больше половины галактики) и удерживайте порог {1} мес. Соперники могут сбросить счётчик.", GameSession.Settings.DominationTarget, VictoryManager.DominationHoldMonths), UIManager.DS.NeonCyan, LGIcon.Starbase),
+                (Kind.Domination, Loc.T("ДОМИНИРОВАНИЕ"), Loc.F("Поставьте форпосты в {0} системах (больше половины галактики) и удерживайте порог {1} мес. Соперники могут сбросить счётчик.", VictoryManager.Instance != null ? VictoryManager.Instance.DominationRequired : GameSession.Settings.DominationTarget, VictoryManager.DominationHoldMonths), UIManager.DS.NeonCyan, LGIcon.Starbase),
                 (Kind.Military, Loc.T("ВОЕННАЯ"), Loc.T("Сокрушите всех соперников: у них не должно остаться ни одной системы."), new Color(1f, 0.45f, 0.42f), LGIcon.Swords),
                 (Kind.Tech, Loc.T("ТЕХНОЛОГИЧЕСКАЯ"), Loc.F("Изучите {0} технологий из {1} и завершите проект «Вознесение».", VictoryManager.ScienceTarget, TechnologyManager.TotalTechCount), UIManager.DS.Green, LGIcon.Research),
                 (Kind.Economy, Loc.T("ЭКОНОМИЧЕСКАЯ"), Loc.F("Давайте {0:0}% продукта галактики {1} года подряд.", VictoryManager.EconomyShare * 100f, VictoryManager.EconomyMonths / 12), new Color(0.95f, 0.78f, 0.28f), LGIcon.Trade),

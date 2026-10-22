@@ -136,6 +136,22 @@ namespace StellarisClone.Rendering
                         Loc.T("а деревья хранят память веков. Корабли здесь не собирают, а выращивают из биокоры, и раны их заживают сами.\n\n") +
                         Loc.T("Решения принимает весь Конклав через сеть мицелия, а голос его — старейшая Исинна Кральтэр, Хранительница Корней. ") +
                         Loc.T("Конклав не спешит и терпеливо ждёт, пока соседи истощат себя войнами. Но если сад под угрозой — пробуждается всё, что в нём спало.")
+            },
+            ["nol"] = new Lore
+            {
+                Tagline = Loc.T("Едины, расчётливы, неутомимы"),
+                Emblem = LGIcon.Gear,
+                Traits = new[]
+                {
+                    (LGIcon.Industry, Loc.T("Сборка: синтетов собирают фабрики, роботы вдвое дешевле")),
+                    (LGIcon.Check, Loc.T("Без бунтов: машинам не нужна стабильность")),
+                    (LGIcon.Population, Loc.T("Ассимиляция: чужие виды становятся синтетами")),
+                    (LGIcon.Warning, Loc.T("Органики не доверяют машинам, влияние ниже"))
+                },
+                Story = Loc.T("Их создатели назвали проект «Ноль» — точка отсчёта нового разума. Создатели исчезли четыре тысячи лет назад, ") +
+                        Loc.T("и никто уже не скажет, ушли они сами или их «оптимизировали». Миллиард машин остался — и стал думать как один.\n\n") +
+                        Loc.T("Консенсус не знает страха, усталости и споров: любое решение принимается за доли секунды всеми сразу. ") +
+                        Loc.T("Говорит за него Голос Нуля — аватар, собранный, чтобы органикам было на кого смотреть. Консенсус не ненавидит живых. Он их просчитывает.")
             }
         };
 
@@ -369,11 +385,14 @@ namespace StellarisClone.Rendering
             _cards = LGBuild.Rect(rt, "Cards");
             _cards.anchorMin = _cards.anchorMax = new Vector2(0.5f, 0f);
             _cards.pivot = new Vector2(0.5f, 0f);
-            _cards.anchoredPosition = new Vector2(-150f, 30f);
             var factions = FactionRegistry.AvailableFactions;
             bool compact = factions.Length > 3;
             bool tight = factions.Length > 4;
-            float w = tight ? 214f : compact ? 236f : 270f, gap = tight ? 10f : compact ? 12f : 16f, thumbSize = tight ? 72f : compact ? 80f : 96f;
+            bool crowded = factions.Length > 5;   // шесть фракций — карточки уже, чтобы не задеть кнопки по краям
+            _cards.anchoredPosition = new Vector2(crowded ? -140f : -150f, 30f);
+            float w = crowded ? 180f : tight ? 214f : compact ? 236f : 270f,
+                  gap = crowded ? 8f : tight ? 10f : compact ? 12f : 16f,
+                  thumbSize = crowded ? 60f : tight ? 72f : compact ? 80f : 96f;
             float textX = 10f + thumbSize + 12f;
             const float h = 116f;
             _cards.sizeDelta = new Vector2(factions.Length * (w + gap) - gap, h + 12f);
@@ -399,8 +418,8 @@ namespace StellarisClone.Rendering
                 var tm = LG.RoundedMask(thumb.transform, 4f, 1f);
                 LeaderPortraitView.Create(tm, LeaderPortraits.ForFaction(f), 2.1f, Vector4.zero, false, true, false);
 
-                var name = LGBuild.Label(card.transform, f.Name.ToUpper(), compact ? 14 : 15, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
-                FitText(name, 10);
+                var name = LGBuild.Label(card.transform, f.Name.ToUpper(), crowded ? 13 : compact ? 14 : 15, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
+                FitText(name, crowded ? 9 : 10);
                 name.rectTransform.Stretch(textX, 46, 10, 14);
                 var title = LGBuild.Label(card.transform, f.Title, compact ? 11 : 12, Muted, TextAnchor.LowerLeft, wrap: true);
                 FitText(title, 9);
@@ -634,7 +653,9 @@ namespace StellarisClone.Rendering
             if (f.AlloyBonus > 1.001f) yield return (LGIcon.Alloys, Loc.F("+{0:0}% к производству сплавов", (f.AlloyBonus - 1f) * 100f));
             if (f.InfluenceBonus > 1.001f) yield return (LGIcon.Influence, Loc.F("+{0:0}% к влиянию", (f.InfluenceBonus - 1f) * 100f));
             if (FactionRegistry.IsTerraan(f)) yield return (LGIcon.Defense, Loc.T("+15% корпус, +10% щиты (биокора)"));
+            if (FactionRegistry.IsMachine(f)) yield return (LGIcon.Defense, Loc.T("+10% корпус (машинный флот)"));
             if (f.MineralBonus < 0.999f) yield return (LGIcon.Minerals, Loc.F("−{0:0}% к добыче титана", (1f - f.MineralBonus) * 100f));
+            if (f.InfluenceBonus < 0.999f) yield return (LGIcon.Influence, Loc.F("−{0:0}% к влиянию", (1f - f.InfluenceBonus) * 100f));
         }
 
         private void Trait(ref float y, LGIcon icon, string text, Color col)

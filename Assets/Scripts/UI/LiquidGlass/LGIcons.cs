@@ -126,7 +126,11 @@ namespace StellarisClone.Rendering
 
         /// <summary>Значок черты вида (Resources/UI/Icons/Traits/trait_&lt;черта&gt;.png) или null.</summary>
         public static Sprite TraitArt(StellarisClone.Core.SpeciesTrait t)
-            => LoadArt("Traits/trait_" + t.ToString().ToLowerInvariant());
+        {
+            // У синтетов «Ноля» своего значка нет — та же голова машины, что у роботов
+            if (t == StellarisClone.Core.SpeciesTrait.Synthetic) t = StellarisClone.Core.SpeciesTrait.Mechanical;
+            return LoadArt("Traits/trait_" + t.ToString().ToLowerInvariant());
+        }
 
         /// <summary>Значок закона империи (Resources/UI/Icons/Laws/law_&lt;id закона&gt;.png) или null.</summary>
         public static Sprite LawArt(string lawId)

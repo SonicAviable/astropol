@@ -15,7 +15,7 @@ namespace StellarisClone.Core
         public float AlloyBonus;
         public float InfluenceBonus;
 
-        /// <summary>Постоянный ключ фракции (xarn, astrea, aquila, iridia, terraan) — не зависит от названия,
+        /// <summary>Постоянный ключ фракции (xarn, astrea, aquila, iridia, terraan, nol) — не зависит от названия,
         /// поэтому своё название империи не ломает портреты, гербы, корабли, черты и сохранения.</summary>
         public string Key;
 
@@ -41,7 +41,7 @@ namespace StellarisClone.Core
 
     public static class FactionRegistry
     {
-        /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia, terraan (null — неизвестна).</summary>
+        /// <summary>Короткий ключ фракции: xarn, astrea, aquila, iridia, terraan, nol (null — неизвестна).</summary>
         public static string KeyOf(FactionInfo f)
         {
             if (f == null) return null;
@@ -65,10 +65,12 @@ namespace StellarisClone.Core
             if (n.Contains("Аквил") || n.Contains("Aquil")) return "aquila";
             if (n.Contains("Ирид") || n.Contains("Irid")) return "iridia";
             if (n.Contains("Тэрра") || n.Contains("Terra")) return "terraan";
+            if (n.Contains("Консенсус") || n.Contains("Consensus")) return "nol";
             return null;
         }
 
         public static bool IsTerraan(FactionInfo f) => KeyOf(f) == "terraan";
+        public static bool IsMachine(FactionInfo f) => KeyOf(f) == "nol";
 
         public static readonly FactionInfo[] AvailableFactions = new FactionInfo[]
         {
@@ -126,7 +128,21 @@ namespace StellarisClone.Core
                 Loc.T("<color=#E7A0A0>Стройка +20% дольше · гиперскорость −10%\n") +
                 Loc.T("уязвимы к энергии +15% · минералы −15%</color>"),
                 new Color(0.44f, 0.86f, 0.34f),
-                1.00f, 0.85f, 1.00f, 1.25f)
+                1.00f, 0.85f, 1.00f, 1.25f),
+
+            new FactionInfo(
+                Loc.T("Машинный Консенсус «Ноль»"),
+                Loc.T("Единый Разум"),
+                Loc.T("Когда-то их создатели называли их просто «Проект Ноль». Создателей давно нет, а миллиард машин ") +
+                Loc.T("думает как один разум: без страха, усталости и споров. Консенсус не ненавидит органиков — он их просчитывает.\n\n") +
+                Loc.T("<b>Сборка вместо рождения:</b> синтеты не размножаются — их собирают фабрики, не зависящие от климата\n") +
+                Loc.T("<b>Без бунтов:</b> машинам не нужна стабильность\n") +
+                Loc.T("<b>Роботы вдвое дешевле · ассимиляция чужих видов</b>\n") +
+                Loc.T("<b>+20% титана, +10% сплавов, +10% корпус</b>\n") +
+                Loc.T("<color=#E7A0A0>Влияние −25% · органики не доверяют машинам (−10 к отношению)\n") +
+                Loc.T("рост населения −20%</color>"),
+                new Color(0.86f, 0.91f, 0.97f),
+                1.00f, 1.20f, 1.10f, 0.75f)
         };
     }
 }

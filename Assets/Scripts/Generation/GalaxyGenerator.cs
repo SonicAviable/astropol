@@ -42,6 +42,10 @@ namespace StellarisClone.Generation
             Hyperlanes.Clear();
             if (systems == null) return;
             Systems.AddRange(systems);
+            // Радиус — по реальным звёздам: сохранения до расширения карт меньше нынешних настроек размера
+            float r = 0f;
+            foreach (var s in Systems) r = Mathf.Max(r, new Vector2(s.Position.x, s.Position.z).magnitude);
+            if (r > 1f) galaxyRadius = Mathf.Max(40f, r);
             foreach (var s in Systems)
                 foreach (int n in s.ConnectedSystemIds)
                     if (n >= 0 && n < Systems.Count && n != s.Id)

@@ -7,7 +7,7 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// Гербы фракций: Resources/Factions/emblem_&lt;ключ правителя&gt;.png — белый силуэт на прозрачном фоне,
-    /// цвет подставляется по месту (обычно — цвет империи). Ключи: xarn, astrea, aquila, iridia, terraan.
+    /// цвет подставляется по месту (обычно — цвет империи). Ключи: xarn, astrea, aquila, iridia, terraan, nol.
     /// </summary>
     public static class FactionEmblems
     {

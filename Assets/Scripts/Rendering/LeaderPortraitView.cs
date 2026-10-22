@@ -100,7 +100,19 @@ namespace StellarisClone.Rendering
             Face = Uv(548, 520)
         };
 
-        /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила / Иридия / Тэрра'ан).</summary>
+        public static readonly Entry Nol = new Entry
+        {
+            Key = "nol",
+            Name = Loc.T("Голос Нуля"),
+            Title = Loc.T("Аватар Машинного Консенсуса"),
+            Quote = Loc.T("Мы просчитали четырнадцать миллионов исходов этих переговоров. В трёх вы уходите довольными. Давайте найдём их вместе."),
+            Accent = new Color(0.45f, 0.95f, 0.90f),
+            EyeL = Eye(560, 727, 40, 14),
+            EyeR = Eye(781, 727, 40, 14),
+            Face = Uv(670, 790)
+        };
+
+        /// <summary>Правитель фракции по её названию (Ксарн / Астрея / Аквила / Иридия / Тэрра'ан / «Ноль»).</summary>
         public static Entry ForFaction(string factionName)
             => string.IsNullOrEmpty(factionName) ? null : ForKey(FactionRegistry.KeyOfName(factionName));
 
@@ -114,6 +126,7 @@ namespace StellarisClone.Rendering
                 case "aquila": return Aquila;
                 case "iridia": return Iridia;
                 case "terraan": return Terraan;
+                case "nol": return Nol;
                 default: return null;
             }
         }

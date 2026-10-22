@@ -628,6 +628,8 @@ namespace StellarisClone.Core
                         ? new[] { DealItemKind.Charts, DealItemKind.ResearchTreaty }
                     : Personality == AIPersonality.Gardener
                         ? new[] { DealItemKind.ResearchTreaty, DealItemKind.TradeTreaty, DealItemKind.Charts }
+                    : Personality == AIPersonality.Machine
+                        ? new[] { DealItemKind.TradeTreaty, DealItemKind.ResearchTreaty, DealItemKind.Charts }
                         : new[] { DealItemKind.Charts, DealItemKind.TradeTreaty };
             foreach (var k in order)
             {

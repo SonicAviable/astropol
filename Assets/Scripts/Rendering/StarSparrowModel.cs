@@ -25,6 +25,8 @@ namespace StellarisClone.Rendering
             ["aquila"]  = new[] { 25, 16, 1 },
             ["iridia"]  = new[] { 31, 21, 26 },
             ["terraan"] = new[] { 37, 27, 17 },
+            // У «Ноля» своих корпусов в наборе нет — сборная линия из чужих, узнаётся по серебристой окраске
+            ["nol"]     = new[] { 33, 21, 17 },
         };
         /// <summary>Пираты, угрозы и империи без известной фракции.</summary>
         private static readonly int[] Neutral = { 13, 7, 5 };

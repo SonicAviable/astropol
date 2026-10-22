@@ -167,13 +167,20 @@ namespace StellarisClone.Rendering
             }
             if (colony)
             {
+                // Консенсус «Ноль» собирает не роботов, а полноценных синтетов — и вдвое дешевле
+                bool synth = FactionTraits.IsMachine(0);
                 var o = new BuildOption
                 {
                     Id = "robots", Category = BuildCategory.Project, Icon = LGIcon.Industry, Color = new Color(0.62f, 0.78f, 0.92f),
-                    Title = Loc.T("Сборка роботов"), Effect = Loc.T("+1 житель-робот"),
-                    Detail = Loc.F("{0}: {1}.\n", TraitInfo.Name(SpeciesTrait.Mechanical), TraitInfo.Desc(SpeciesTrait.Mechanical)) +
-                             Loc.T("Робот занимает рабочее место как обычный житель и не снижает стабильность."),
-                    RawDays = ConstructionManager.RobotDays, Days = PlanetDays(p, ConstructionManager.RobotDays), Energy = PlanetData.RobotEnergyCost, Alloys = PlanetData.RobotAlloysCost,
+                    Title = synth ? Loc.T("Сборка синтетов") : Loc.T("Сборка роботов"),
+                    Effect = synth ? Loc.T("+1 синтет") : Loc.T("+1 житель-робот"),
+                    Detail = synth
+                        ? Loc.F("{0}: {1}.\n", TraitInfo.Name(SpeciesTrait.Synthetic), TraitInfo.Desc(SpeciesTrait.Synthetic)) +
+                          Loc.T("Синтет — полноценный житель Консенсуса: работает, ведёт науку и не снижает стабильность.")
+                        : Loc.F("{0}: {1}.\n", TraitInfo.Name(SpeciesTrait.Mechanical), TraitInfo.Desc(SpeciesTrait.Mechanical)) +
+                          Loc.T("Робот занимает рабочее место как обычный житель и не снижает стабильность."),
+                    RawDays = ConstructionManager.RobotDays, Days = PlanetDays(p, ConstructionManager.RobotDays),
+                    Energy = FactionTraits.RobotEnergy(0), Alloys = FactionTraits.RobotAlloys(0),
                     Queued = Count(JobKind.Robot)
                 };
                 o.Blocker = common ?? (!p.HasRoomForRobot ? Loc.T("Нет свободного жилья — постройте городской район")

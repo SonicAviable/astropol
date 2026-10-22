@@ -140,7 +140,7 @@ namespace StellarisClone.Core
             foreach (var g in p.Pops)
             {
                 var sp = SpeciesRegistry.Get(g.Species);
-                if (sp == null || sp.Robot) continue;
+                if (sp == null || sp.Machine) continue;
                 organic += g.Count;
                 if (founder >= 0 && !SpeciesRegistry.Related(sp.Id, founder)) alien += g.Count;
                 if (!sp.AtHome(p.Type)) foreignClimate += g.Count;
@@ -243,7 +243,7 @@ namespace StellarisClone.Core
                 // Освобождённые сородичи радуются, чужаки — сопротивляются
                 int founder = SpeciesRegistry.FounderOf(newOwner);
                 int organic = p.OrganicPops;
-                int kin = p.CountOf(s => !s.Robot && SpeciesRegistry.Related(s.Id, founder));
+                int kin = p.CountOf(s => !s.Machine && SpeciesRegistry.Related(s.Id, founder));
                 float alienShare = organic > 0 ? 1f - kin / (float)organic : 0f;
                 // Мирная передача по договору встречает вдвое меньше сопротивления, чем завоевание
                 float unrest = ConquestUnrest * Mathf.Lerp(0.3f, 1f, alienShare) * (SiegeManager.IsPeacefulTransfer ? 0.5f : 1f);
@@ -291,6 +291,7 @@ namespace StellarisClone.Core
                     else p.RiotMonths = 0;
 
                     TryHybrid(p);
+                    FactionTraits.TryAssimilate(p);
                 }
             }
             foreach (var sys in seceding) Secede(sys);
@@ -349,7 +350,7 @@ namespace StellarisClone.Core
             foreach (var g in p.Pops)
             {
                 var sp = SpeciesRegistry.Get(g.Species);
-                if (sp == null || sp.Robot || g.Count < 2) continue;
+                if (sp == null || sp.Machine || g.Count < 2) continue;
                 if (a == null || g.Count > a.Count) { b = a; a = g; }
                 else if (b == null || g.Count > b.Count) b = g;
             }

@@ -13,19 +13,20 @@ namespace StellarisClone.Core
         public int Seed;
         public bool Tutorial = true;
         public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
-        public int Rivals = AIEmpireManager.RivalCount;   // империй ИИ (1…4); в старых сохранениях поля нет — будет 4
+        public int Rivals = AIEmpireManager.RivalCount;   // империй ИИ (1…5); в старых сохранениях поля нет — лишних уберёт загрузка
 
         public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
         public static readonly string[] DifficultyNames = { Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная") };
-        public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи") };
+        public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи"), Loc.T("5 империй") };
         public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
-        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя
-        public int StarCount => GalaxySize == 0 ? 85 : GalaxySize == 2 ? 230 : 150;
-        public float Radius => GalaxySize == 0 ? 158f : GalaxySize == 2 ? 248f : 218f;
+        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя.
+        // Карты увеличены под шесть империй (игрок и до пяти соперников): ~20–50 систем на каждую.
+        public int StarCount => GalaxySize == 0 ? 110 : GalaxySize == 2 ? 320 : 210;
+        public float Radius => GalaxySize == 0 ? 180f : GalaxySize == 2 ? 300f : 258f;
         public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
-        /// <summary>Доминирование — около 55% систем галактики (85 / 150 / 230 звёзд); порог ещё нужно удерживать год.</summary>
-        public int DominationTarget => GalaxySize == 0 ? 47 : GalaxySize == 2 ? 127 : 83;
+        /// <summary>Доминирование — около 55% систем галактики (110 / 210 / 320 звёзд); порог ещё нужно удерживать год.</summary>
+        public int DominationTarget => GalaxySize == 0 ? 60 : GalaxySize == 2 ? 176 : 115;
 
         /// <summary>Множитель доходов ИИ.</summary>
         public float AIIncome => Difficulty == 0 ? 0.7f : Difficulty == 2 ? 1.5f : 1f;

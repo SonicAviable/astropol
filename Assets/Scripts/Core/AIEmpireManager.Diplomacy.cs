@@ -131,6 +131,13 @@ namespace StellarisClone.Core
             if (diff == 0) Add(Loc.T("Сложность: лёгкая"), Loc.T("Соперник изначально настроен миролюбиво"), 10f, LGIcon.Info);
             else if (diff == 2) Add(Loc.T("Сложность: сложная"), Loc.T("Соперник изначально подозрителен"), -10f, LGIcon.Info);
 
+            // Машины и органики друг другу не доверяют
+            bool meMachine = Personality == AIPersonality.Machine;
+            if (meMachine != FactionTraits.IsMachine(0))
+                Add(meMachine ? Loc.T("Органическая империя") : Loc.T("Машинный разум"),
+                    meMachine ? Loc.T("Консенсус считает органиков непредсказуемыми") : Loc.T("Органики не доверяют бездушным машинам"),
+                    -FactionTraits.MachineDistrust, LGIcon.Leader);
+
             float myPow = Mathf.Max(1f, EmpireStats.MilitaryPower(OwnerId));
             float playerPow = EmpireStats.MilitaryPower(0);
             float ratio = playerPow / myPow;

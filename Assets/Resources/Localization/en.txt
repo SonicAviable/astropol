@@ -5138,3 +5138,116 @@ VK Play: всё синхронизировано	VK Play: fully synced
 \n<color=#F2C747>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>	\n<color=#F2C747>Taken from you — under "Reclaim lost systems" they will cede it for less</color>
 \n<color=#F2C747>На столе — щёлкните, чтобы убрать</color>	\n<color=#F2C747>On the table — click to remove</color>
 \nЩелчок — положить на стол	\nClick to put it on the table
+Органическая империя	Organic empire
+Машинный разум	Machine mind
+Консенсус считает органиков непредсказуемыми	The Consensus considers organics unpredictable
+Органики не доверяют бездушным машинам	Organics don't trust soulless machines
+Расчётливая	Calculating
+Считает всё. Не устаёт от войны и не поддаётся на подарки, строит добычу и промышленность, 	Calculates everything. Never tires of war and can't be swayed by gifts; builds mining and industry, 
+нападает, когда расчёт обещает победу, и держит договоры, пока они выгодны.	attacks when the math promises victory, and keeps treaties as long as they pay off.
+машины и органики	machines vs organics
+Синтет собран	Synth assembled
+{0}: +1 синтет Консенсуса	{0}: +1 Consensus synth
+ПЕРЕСЧЁТ КОНСЕНСУСА	CONSENSUS RECALCULATION
+Раз в два года миллиард разумов Консенсуса замолкает на одну секунду. За эту секунду машины пересчитывают всё: 	Every two years the billion minds of the Consensus fall silent for one second. In that second the machines recalculate everything: 
+каждую фабрику, каждый корабль, каждого органика у границ. Голос Нуля объявит итог — одно решение, которое станет волей всех. 	every factory, every ship, every organic near the borders. The Voice of Zero will announce the result — one decision that becomes the will of all. 
+Какой вектор оптимизации выберет Консенсус?	Which optimization vector will the Consensus choose?
+ОПТИМИЗАЦИЯ ПРОИЗВОДСТВА	PRODUCTION OPTIMIZATION
++{0} титана и +{1} сплавов в месяц на 24 месяца.	+{0} Titanium and +{1} Alloys per month for 24 months.
+Оптимизация производства	Production Optimization
+Пересчёт Консенсуса	Consensus Recalculation
+МАССОВАЯ СБОРКА	MASS ASSEMBLY
+Фабрики работают без остановки: +1 синтет на {0} колониях со свободным жильём.	Factories run nonstop: +1 synth on {0} colonies with free housing.
+Массовая сборка	Mass Assembly
+Собрано синтетов: {0}	Synths assembled: {0}
+Нет колоний со свободным жильём	No colonies with free housing
+ПРОТОКОЛ АССИМИЛЯЦИИ	ASSIMILATION PROTOCOL
+На каждом мире с органиками ({0}) двое жителей становятся синтетами.	On every world with organics ({0}), two inhabitants become synths.
+Ассимиляция	Assimilation
+Новых синтетов: {0}	New synths: {0}
+В империи нет органиков	There are no organics in the empire
+РАСПРЕДЕЛЁННЫЕ ВЫЧИСЛЕНИЯ	DISTRIBUTED COMPUTING
+Все узлы считают одну задачу: +{0} науки сразу и +{1} науки в месяц на 24 месяца.	Every node works on one problem: +{0} Research now and +{1} Research per month for 24 months.
+Распределённые вычисления	Distributed Computing
+Машинный Консенсус «Ноль»	Machine Consensus “Zero”
+Единый Разум	The Single Mind
+Когда-то их создатели называли их просто «Проект Ноль». Создателей давно нет, а миллиард машин 	Their creators once called them simply “Project Zero”. The creators are long gone, and a billion machines 
+думает как один разум: без страха, усталости и споров. Консенсус не ненавидит органиков — он их просчитывает.\n\n	think as one mind: without fear, fatigue or argument. The Consensus does not hate organics — it calculates them.\n\n
+<b>Сборка вместо рождения:</b> синтеты не размножаются — их собирают фабрики, не зависящие от климата\n	<b>Assembled, not born:</b> synths don't breed — they are built by factories that don't care about climate\n
+<b>Без бунтов:</b> машинам не нужна стабильность\n	<b>No revolts:</b> machines don't need stability\n
+<b>Роботы вдвое дешевле · ассимиляция чужих видов</b>\n	<b>Robots at half price · assimilation of other species</b>\n
+<b>+20% титана, +10% сплавов, +10% корпус</b>\n	<b>+20% Titanium, +10% Alloys, +10% hull</b>\n
+<color=#E7A0A0>Влияние −25% · органики не доверяют машинам (−10 к отношению)\n	<color=#E7A0A0>Influence −25% · organics distrust machines (−10 opinion)\n
+рост населения −20%</color>	population growth −20%</color>
+{0}: один из жителей ({1}) стал синтетом Консенсуса	{0}: one inhabitant ({1}) became a Consensus synth
+{0} за одну ночь переписал все свои законы: Консенсус счёл старые «неэффективными»	{0} rewrote all of its laws overnight: the Consensus deemed the old ones “inefficient”
+Фабрики {0} собрали миллиардного синтета — торжеств не было	The factories of {0} assembled their billionth synth — there were no celebrations
+{0} погасил огни целого континента: вычислениям понадобилась энергия	{0} switched off the lights of an entire continent: its computations needed the power
+5 империй	5 empires
+Синтетические	Synthetic
+не рождаются, а собираются на фабриках; ведут науку; не бунтуют; любой климат — родной	built in factories, not born; do research; never revolt; every climate feels like home
+Синто	Synth
+синтеты	synths
+Сборка синтетов	Synth Assembly
++1 синтет	+1 synth
+Синтет — полноценный житель Консенсуса: работает, ведёт науку и не снижает стабильность.	A synth is a full citizen of the Consensus: it works, does research and doesn't lower stability.
+Соединение установлено. Вероятность полезного разговора — 94%.	Connection established. Probability of a useful conversation: 94%.
+Консенсус отмечает: вы предсказуемы. Это высшая похвала, которую мы знаем.	The Consensus notes: you are predictable. That is the highest praise we know.
+Вы в списке надёжных узлов. Говорите.	You are on the list of reliable nodes. Speak.
+Канал открыт. Мы слушаем — все одновременно.	Channel open. We are listening — all of us at once.
+Ваш голос записан. Продолжайте.	Your voice has been recorded. Continue.
+Консенсус «Ноль» на связи. Сформулируйте запрос.	Consensus “Zero” online. State your request.
+Ваши действия классифицированы как угроза. Говорите кратко.	Your actions have been classified as a threat. Be brief.
+Мы пересчитали вас. Результат неблагоприятен.	We have recalculated you. The result is unfavorable.
+Расчёт продолжается. Ваша доля в нём уменьшается.	The calculation continues. Your share in it is shrinking.
+Война — это задача оптимизации. Вы — переменная, которую мы обнуляем.	War is an optimization problem. You are the variable we are setting to zero.
+Наши потери заменимы. Ваши — нет.	Our losses are replaceable. Yours are not.
+Мы не устаём. Мы не боимся. Мы не торопимся.	We do not tire. We do not fear. We do not hurry.
+Принято. Сделка внесена в общий реестр.	Accepted. The deal has been entered into the common ledger.
+Расчёт сходится. Согласны.	The numbers add up. Agreed.
+Консенсус достигнут за 0,003 секунды. Подписано.	Consensus reached in 0.003 seconds. Signed.
+Отклонено. Баланс отрицательный.	Rejected. The balance is negative.
+Расчёт не сходится. Нет.	The numbers don't add up. No.
+Это предложение неэффективно. Мы не тратим ресурсы впустую.	This proposal is inefficient. We do not waste resources.
+Ресурсы получены. Ваш коэффициент доверия пересчитан.	Resources received. Your trust coefficient has been recalculated.
+Нерациональная щедрость. Мы учтём её.	Irrational generosity. We will take it into account.
+Подарок занесён в журнал. Журнал не забывает.	The gift has been logged. The log does not forget.
+Оптимальная версия сделки — перед вами.	The optimal version of the deal is before you.
+Мы исправили ваше предложение. Теперь оно сходится.	We have corrected your proposal. Now it adds up.
+Добавьте это — и расчёт станет положительным.	Add this — and the result turns positive.
+Пересечение интересов: ноль.	Overlap of interests: zero.
+Мы не нашли сделки, выгодной обеим сторонам. Повторите позже.	We found no deal that benefits both sides. Try again later.
+Обнаружен дисбаланс ресурсов. Предлагаем его устранить.	Resource imbalance detected. We propose to correct it.
+Ваши склады и наши дополняют друг друга. Обмен оптимален.	Your stockpiles and ours complement each other. An exchange is optimal.
+Соглашение повысит эффективность обеих систем. Предлагаем подключение.	An agreement will raise the efficiency of both systems. We propose a connection.
+Синхронизация выгодна. Подпишите протокол.	Synchronization is beneficial. Sign the protocol.
+Ваше сопротивление обойдётся дороже, чем эта плата. Мы посчитали.	Your resistance would cost more than this payment. We have done the math.
+Передайте ресурсы. Альтернатива просчитана и вам не понравится.	Transfer the resources. The alternative has been calculated, and you will not like it.
+Продолжение войны неэффективно. Предлагаем остановить процесс.	Continuing the war is inefficient. We propose to halt the process.
+Расчёт показывает: мир выгоднее. Для обоих.	The math shows peace is more profitable. For both of us.
+Пакт снизит вероятность конфликта до приемлемой. Подключайтесь.	A pact will reduce the probability of conflict to an acceptable level. Connect.
+Мы не тронем ваши границы. Это не обещание — это расчёт.	We will not touch your borders. That is not a promise — it is a calculation.
+Органическая цивилизация обнаружена. Машинный Консенсус «Ноль» приветствует вас. Не бойтесь — пока для этого нет причин.	Organic civilization detected. The Machine Consensus “Zero” greets you. Do not be afraid — there is no reason to be. Yet.
+Мы — миллиард голосов, говорящих как один. Мы ждали этого контакта 4 017 лет. Начнём.	We are a billion voices speaking as one. We have awaited this contact for 4,017 years. Let us begin.
+Голос	Voice
+Узел	Node
+Индекс	Index
+Ядро	Core
+Едины, расчётливы, неутомимы	United, calculating, tireless
+Сборка: синтетов собирают фабрики, роботы вдвое дешевле	Assembly: synths are built in factories, robots at half price
+Без бунтов: машинам не нужна стабильность	No revolts: machines don't need stability
+Ассимиляция: чужие виды становятся синтетами	Assimilation: other species become synths
+Органики не доверяют машинам, влияние ниже	Organics distrust machines, lower influence
+Их создатели назвали проект «Ноль» — точка отсчёта нового разума. Создатели исчезли четыре тысячи лет назад, 	Their creators named the project “Zero” — the starting point of a new mind. The creators vanished four thousand years ago, 
+и никто уже не скажет, ушли они сами или их «оптимизировали». Миллиард машин остался — и стал думать как один.\n\n	and no one can say anymore whether they left on their own or were “optimized”. A billion machines remained — and began to think as one.\n\n
+Консенсус не знает страха, усталости и споров: любое решение принимается за доли секунды всеми сразу. 	The Consensus knows no fear, fatigue or dispute: every decision is made in a fraction of a second by all at once. 
+Говорит за него Голос Нуля — аватар, собранный, чтобы органикам было на кого смотреть. Консенсус не ненавидит живых. Он их просчитывает.	It speaks through the Voice of Zero — an avatar built so that organics have someone to look at. The Consensus does not hate the living. It calculates them.
++10% корпус (машинный флот)	+10% hull (machine fleet)
+−{0:0}% к влиянию	−{0:0}% Influence
+Голос Нуля	Voice of Zero
+Аватар Машинного Консенсуса	Avatar of the Machine Consensus
+Мы просчитали четырнадцать миллионов исходов этих переговоров. В трёх вы уходите довольными. Давайте найдём их вместе.	We have calculated fourteen million outcomes of these negotiations. In three of them you leave satisfied. Let us find them together.
+Сборка синтетов начата	Synth assembly started
+<b>Сборка синтетов</b>\n+1 синтет: полноценный житель Консенсуса — работает и ведёт науку.\n	<b>Synth Assembly</b>\n+1 synth: a full citizen of the Consensus — it works and does research.\n
+Фабрики Консенсуса собирают синтетов вдвое дешевле, чем другие империи — роботов.\n	Consensus factories build synths at half the price other empires pay for robots.\n
+Синтеты	Synths

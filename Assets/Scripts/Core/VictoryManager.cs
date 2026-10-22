@@ -137,7 +137,21 @@ namespace StellarisClone.Core
 
         public bool IsFinished => _finished;
         public Outcome Result { get; private set; } = Outcome.None;
-        public int DominationRequired => dominationSystemsRequired;
+        public int DominationRequired { get { FitDominationToGalaxy(); return dominationSystemsRequired; } }
+
+        /// <summary>
+        /// Порог доминирования — от реального числа систем: в сохранениях до расширения карт галактика меньше,
+        /// чем нынешний размер из настроек, и порог масштабируется вместе с ней.
+        /// </summary>
+        private void FitDominationToGalaxy()
+        {
+            var st = GameSession.Settings;
+            int count = EmpireStats.Systems.Count;
+            if (count <= 0 || st.StarCount <= 0) return;
+            dominationSystemsRequired = count == st.StarCount
+                ? st.DominationTarget
+                : Mathf.Max(10, Mathf.RoundToInt(st.DominationTarget * count / (float)st.StarCount));
+        }
         public int ScienceRequired => scienceTechsRequired;
         public int BankruptcyLimit => bankruptcyMonthsRequired;
         public int BankruptMonths => _bankruptMonths;
@@ -313,6 +327,7 @@ namespace StellarisClone.Core
         /// </summary>
         private bool TrackDomination()
         {
+            FitDominationToGalaxy();
             int me = DominationProgress;
             if (me >= dominationSystemsRequired)
             {

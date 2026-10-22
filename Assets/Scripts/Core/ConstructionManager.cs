@@ -382,8 +382,9 @@ namespace StellarisClone.Core
                     Notify(j, Loc.T("Терраформинг завершён"), $"{p.Name}: {p.ClassDisplayName.ToLower()}");
                     break;
                 case JobKind.Robot:
-                    p.AddPops(SpeciesRegistry.RobotId, 1);
-                    Notify(j, Loc.T("Роботы собраны"), Loc.F("{0}: +1 житель-робот", p.Name));
+                    p.AddPops(FactionTraits.AssembledSpecies(j.Owner), 1);
+                    if (FactionTraits.IsMachine(j.Owner)) Notify(j, Loc.T("Синтет собран"), Loc.F("{0}: +1 синтет Консенсуса", p.Name));
+                    else Notify(j, Loc.T("Роботы собраны"), Loc.F("{0}: +1 житель-робот", p.Name));
                     break;
                 case JobKind.GeneAdapt:
                 {

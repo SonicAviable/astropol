@@ -1556,7 +1556,7 @@ namespace StellarisClone.Rendering
             if (_planet == null || TryCancel(JobKind.Robot)) return;
             if (_planet.TryBuildRobot())
             {
-                NotificationCenter.Show(Loc.T("Сборка роботов начата"), Loc.F("{0} · {1:0} дн.", _planet.Name, ConstructionManager.RobotDays), NotificationCenter.Kind.Info, 4f);
+                NotificationCenter.Show(FactionTraits.IsMachine(0) ? Loc.T("Сборка синтетов начата") : Loc.T("Сборка роботов начата"), Loc.F("{0} · {1:0} дн.", _planet.Name, ConstructionManager.RobotDays), NotificationCenter.Kind.Info, 4f);
                 Refresh();
             }
         }
@@ -1861,7 +1861,7 @@ namespace StellarisClone.Rendering
                     _legend[i].text = i == _legend.Length - 1 && groups.Count > _legend.Length
                         ? Loc.F("<color={0}>· ещё видов: {1}</color>", LGBuild.Hex(CMuted), groups.Count - i)
                         : $"<color=#{hex}>■</color> {sp.DisplayName} <color={LGBuild.Hex(CMuted)}>· {groups[i].Count}</color>";
-                bool alien = !sp.Robot && !SpeciesRegistry.Related(sp.Id, founder);
+                bool alien = !sp.Machine && !SpeciesRegistry.Related(sp.Id, founder);
                 tip.Append($"\n\n<color=#{hex}>■</color> <b>{sp.DisplayName}</b> · {groups[i].Count}");
                 if (alien) tip.Append(Loc.T(" <color=#FF9A8A>(чужой вид)</color>"));
                 if (!sp.AtHome(_planet.Type)) tip.Append(Loc.T(" <color=#F2C46B>(чужой климат)</color>"));
@@ -1915,8 +1915,10 @@ namespace StellarisClone.Rendering
             ConstructionJob robJob = FirstJob(JobKind.Robot), geneJob = FirstJob(JobKind.GeneAdapt);
             bool queueFull = Builds != null && Builds.QueueFor(_planet).Count >= ConstructionManager.MaxPlanetQueue;
 
-            // Роботы
-            string robCost = Loc.F("{0:0} спл., {1:0} гел. · {2:0} дн.", PlanetData.RobotAlloysCost, PlanetData.RobotEnergyCost, ConstructionManager.RobotDays);
+            // Роботы (у Консенсуса «Ноль» — синтеты, вдвое дешевле)
+            bool synth = FactionTraits.IsMachine(0);
+            float robEnergy = FactionTraits.RobotEnergy(0), robAlloys = FactionTraits.RobotAlloys(0);
+            string robCost = Loc.F("{0:0} спл., {1:0} гел. · {2:0} дн.", robAlloys, robEnergy, ConstructionManager.RobotDays);
             if (robJob != null) SetAction(_robots, true, LGIcon.Clock, Loc.F("Собираются · {0} дн. — нажмите, чтобы отменить", Mathf.CeilToInt(Builds.DaysUntilDone(robJob))));
             else if (!owned) SetAction(_robots, false, LGIcon.Lock, Loc.T("Не ваша система"));
             else if (!colony) SetAction(_robots, false, LGIcon.Lock, Loc.T("Нужна колония"));
@@ -1924,16 +1926,20 @@ namespace StellarisClone.Rendering
             else if (queueFull) SetAction(_robots, false, LGIcon.Clock, Loc.T("Очередь планеты заполнена"));
             else
             {
-                bool can = eco != null && eco.CanAfford(PlanetData.RobotEnergyCost, 0f, PlanetData.RobotAlloysCost, 0f);
+                bool can = eco != null && eco.CanAfford(robEnergy, 0f, robAlloys, 0f);
                 SetAction(_robots, can, LGIcon.Industry, robCost);
             }
             var robot = SpeciesRegistry.Get(SpeciesRegistry.RobotId);
-            _robots.Tip.SetText(Loc.T("<b>Сборка роботов</b>\n+1 житель-робот: занимает рабочее место, как обычный житель.\n") +
-                Loc.F("<color=#9EF0C8>{0}</color> — {1}\n", TraitInfo.Name(SpeciesTrait.Mechanical), TraitInfo.Desc(SpeciesTrait.Mechanical)) +
-                Loc.T("Роботы не бунтуют и не считаются чужим видом, но и не размножаются: на мире из одних роботов роста нет.\n") +
+            _robots.Tip.SetText((synth
+                    ? Loc.T("<b>Сборка синтетов</b>\n+1 синтет: полноценный житель Консенсуса — работает и ведёт науку.\n") +
+                      Loc.F("<color=#9EF0C8>{0}</color> — {1}\n", TraitInfo.Name(SpeciesTrait.Synthetic), TraitInfo.Desc(SpeciesTrait.Synthetic)) +
+                      Loc.T("Фабрики Консенсуса собирают синтетов вдвое дешевле, чем другие империи — роботов.\n")
+                    : Loc.T("<b>Сборка роботов</b>\n+1 житель-робот: занимает рабочее место, как обычный житель.\n") +
+                      Loc.F("<color=#9EF0C8>{0}</color> — {1}\n", TraitInfo.Name(SpeciesTrait.Mechanical), TraitInfo.Desc(SpeciesTrait.Mechanical)) +
+                      Loc.T("Роботы не бунтуют и не считаются чужим видом, но и не размножаются: на мире из одних роботов роста нет.\n")) +
                 Loc.F("<color={0}>Цена:</color> {1}", Muted, robCost) +
-                (robJob == null && owned && colony && eco != null && !eco.CanAfford(PlanetData.RobotEnergyCost, 0f, PlanetData.RobotAlloysCost, 0f)
-                    ? $"\n<color={Bad}>{CostCheck.Full(PlanetData.RobotEnergyCost, 0f, PlanetData.RobotAlloysCost)}.</color>" : "") +
+                (robJob == null && owned && colony && eco != null && !eco.CanAfford(robEnergy, 0f, robAlloys, 0f)
+                    ? $"\n<color={Bad}>{CostCheck.Full(robEnergy, 0f, robAlloys)}.</color>" : "") +
                 (robot != null && _planet.RobotPops > 0 ? Loc.F("\n\nРоботов на планете: {0}", _planet.RobotPops) : ""));
 
             // Генная адаптация

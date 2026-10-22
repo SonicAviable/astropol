@@ -88,6 +88,7 @@ namespace StellarisClone.Core
             _art["aquila_dividends"] = "Investment";
             _art["decision_iridia"] = "OracleVisions";
             _art["decision_terraan"] = "RootCouncil";
+            _art["decision_nol"] = "Consensus";
             _art["border_incident"] = "BorderIncident";
             _art["crew_unrest"] = "CrewUnrest";
             _art["salvage_wreck"] = "SalvageWreck";
@@ -108,6 +109,7 @@ namespace StellarisClone.Core
         private static void AddFactionDecisions()
         {
             RegisterContentArt();
+            AddMachineDecision();
 
             // ---- Республика Астрея: закон Совета на два года (новый закон заменяет прежний) ----
             Add(new Template
@@ -314,6 +316,78 @@ namespace StellarisClone.Core
                             {
                                 Science(180 * k);
                                 EmpireEffects.Add("council_terraan", Loc.T("Память древних"), Loc.T("Совет Корней"), 24, science: 3 * k);
+                            })));
+                }
+            });
+        }
+
+        /// <summary>Колонии игрока, где есть свободное жильё (для «Массовой сборки» Консенсуса).</summary>
+        private static List<PlanetData> PlayerColoniesWithRoom()
+        {
+            var list = new List<PlanetData>();
+            foreach (var sys in EmpireStats.Systems)
+            {
+                if (sys.OwnerId != 0) continue;
+                foreach (var p in sys.Planets)
+                    if (p.Population > 0 && p.Population < p.HousingCapacity) list.Add(p);
+            }
+            return list;
+        }
+
+        /// <summary>Миры игрока, где ещё живут органики (их может ассимилировать Консенсус).</summary>
+        private static List<PlanetData> PlayerOrganicWorlds()
+        {
+            var list = new List<PlanetData>();
+            foreach (var sys in EmpireStats.Systems)
+            {
+                if (sys.OwnerId != 0) continue;
+                foreach (var p in sys.Planets)
+                    if (p.Population > 0 && p.DominantOrganic >= 0) list.Add(p);
+            }
+            return list;
+        }
+
+        private static void AddMachineDecision()
+        {
+            // ---- Машинный Консенсус «Ноль»: пересчёт ----
+            Add(new Template
+            {
+                Id = "decision_nol", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    var room = PlayerColoniesWithRoom();
+                    var organic = PlayerOrganicWorlds();
+                    int build = Mathf.Min(6, room.Count);
+                    return Ev("decision_nol", Loc.T("ПЕРЕСЧЁТ КОНСЕНСУСА"),
+                        Loc.T("Раз в два года миллиард разумов Консенсуса замолкает на одну секунду. За эту секунду машины пересчитывают всё: ") +
+                        Loc.T("каждую фабрику, каждый корабль, каждого органика у границ. Голос Нуля объявит итог — одно решение, которое станет волей всех. ") +
+                        Loc.T("Какой вектор оптимизации выберет Консенсус?"),
+                        AnomalyType.ColonyIncident, Opts(
+                            new EventOption(Loc.T("ОПТИМИЗАЦИЯ ПРОИЗВОДСТВА"), Loc.F("+{0} титана и +{1} сплавов в месяц на 24 месяца.", R(6 * k), R(3 * k)),
+                                () => EmpireEffects.Add("council_nol", Loc.T("Оптимизация производства"), Loc.T("Пересчёт Консенсуса"), 24, minerals: 6 * k, alloys: 3 * k)),
+                            new EventOption(Loc.T("МАССОВАЯ СБОРКА"), Loc.F("Фабрики работают без остановки: +1 синтет на {0} колониях со свободным жильём.", build), () =>
+                            {
+                                int founder = SpeciesRegistry.FounderOf(0);
+                                for (int i = 0; i < build; i++) room[i].AddPops(founder, 1);
+                                NotificationCenter.Show(Loc.T("Массовая сборка"), Loc.F("Собрано синтетов: {0}", build), NotificationCenter.Kind.Success, 6f);
+                            }, Loc.T("Нет колоний со свободным жильём"), () => build > 0),
+                            new EventOption(Loc.T("ПРОТОКОЛ АССИМИЛЯЦИИ"), Loc.F("На каждом мире с органиками ({0}) двое жителей становятся синтетами.", organic.Count), () =>
+                            {
+                                int founder = SpeciesRegistry.FounderOf(0), n = 0;
+                                foreach (var p in organic)
+                                    for (int i = 0; i < 2; i++)
+                                    {
+                                        int from = p.DominantOrganic;
+                                        if (from < 0) break;
+                                        n += p.ConvertPops(from, founder, 1);
+                                    }
+                                NotificationCenter.Show(Loc.T("Ассимиляция"), Loc.F("Новых синтетов: {0}", n), NotificationCenter.Kind.Success, 6f);
+                            }, Loc.T("В империи нет органиков"), () => organic.Count > 0),
+                            new EventOption(Loc.T("РАСПРЕДЕЛЁННЫЕ ВЫЧИСЛЕНИЯ"), Loc.F("Все узлы считают одну задачу: +{0} науки сразу и +{1} науки в месяц на 24 месяца.", R(150 * k), R(4 * k)), () =>
+                            {
+                                Science(150 * k);
+                                EmpireEffects.Add("council_nol", Loc.T("Распределённые вычисления"), Loc.T("Пересчёт Консенсуса"), 24, science: 4 * k);
                             })));
                 }
             });
