@@ -358,14 +358,14 @@ namespace StellarisClone.Core
                     float k = K();
                     var room = PlayerColoniesWithRoom();
                     var organic = PlayerOrganicWorlds();
-                    int build = Mathf.Min(6, room.Count);
+                    int build = Mathf.Min(3, room.Count);
                     return Ev("decision_nol", Loc.T("ПЕРЕСЧЁТ КОНСЕНСУСА"),
                         Loc.T("Раз в два года миллиард разумов Консенсуса замолкает на одну секунду. За эту секунду машины пересчитывают всё: ") +
                         Loc.T("каждую фабрику, каждый корабль, каждого органика у границ. Голос Нуля объявит итог — одно решение, которое станет волей всех. ") +
                         Loc.T("Какой вектор оптимизации выберет Консенсус?"),
                         AnomalyType.ColonyIncident, Opts(
-                            new EventOption(Loc.T("ОПТИМИЗАЦИЯ ПРОИЗВОДСТВА"), Loc.F("+{0} титана и +{1} сплавов в месяц на 24 месяца.", R(6 * k), R(3 * k)),
-                                () => EmpireEffects.Add("council_nol", Loc.T("Оптимизация производства"), Loc.T("Пересчёт Консенсуса"), 24, minerals: 6 * k, alloys: 3 * k)),
+                            new EventOption(Loc.T("ОПТИМИЗАЦИЯ ПРОИЗВОДСТВА"), Loc.F("+{0} титана и +{1} сплавов в месяц на 24 месяца.", R(5 * k), R(2 * k)),
+                                () => EmpireEffects.Add("council_nol", Loc.T("Оптимизация производства"), Loc.T("Пересчёт Консенсуса"), 24, minerals: 5 * k, alloys: 2 * k)),
                             new EventOption(Loc.T("МАССОВАЯ СБОРКА"), Loc.F("Фабрики работают без остановки: +1 синтет на {0} колониях со свободным жильём.", build), () =>
                             {
                                 int founder = SpeciesRegistry.FounderOf(0);

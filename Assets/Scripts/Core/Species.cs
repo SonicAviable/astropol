@@ -256,7 +256,8 @@ namespace StellarisClone.Core
                     n.Traits.AddRange(new[] { SpeciesTrait.Intelligent, SpeciesTrait.Agreeable });
                     break;
                 case "aquila":
-                    n.Name = "Аквилианцы"; n.Home = PlanetType.Barren; n.Color = new Color(0.95f, 0.78f, 0.36f);
+                    // Родной мир — пустыня: бесплодные миры не колонизируют, и климат «чужой» был бы на любой колонии
+                    n.Name = "Аквилианцы"; n.Home = PlanetType.Desert; n.Color = new Color(0.95f, 0.78f, 0.36f);
                     n.Traits.AddRange(new[] { SpeciesTrait.Industrious, SpeciesTrait.Engineers, SpeciesTrait.SlowBreeders });
                     break;
                 case "iridia":

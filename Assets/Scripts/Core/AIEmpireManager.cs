@@ -669,7 +669,7 @@ namespace StellarisClone.Core
             bool energyLow = MonthlyEnergyIncome < 4f || (_bankrupt && MonthlyEnergyIncome < 10f);
             const float mineralReserve = 40f;
 
-            PlanetData bestColony = null, bestStation = null, bestDistrictPlanet = null;
+            PlanetData bestColony = null, bestStation = null, bestDistrictPlanet = null, bestRobotPlanet = null;
             float colonyScore = float.MinValue, stationScore = float.MinValue, districtScore = float.MinValue;
             DistrictType bestDistrict = DistrictType.Urban;
 
@@ -690,6 +690,10 @@ namespace StellarisClone.Core
                         float s = p.EnergyDeposit * (energyLow ? 3f : 1.1f) + p.MineralDeposit * Profile.ResourceWeight;
                         if (s > stationScore) { stationScore = s; bestStation = p; }
                     }
+                    // Сборка роботов (у «Ноля» — синтетов): туда, где больше всего свободного жилья
+                    if (p.Population > 0 && p.HasRoomForRobot
+                        && (bestRobotPlanet == null || p.HousingCapacity - p.Population > bestRobotPlanet.HousingCapacity - bestRobotPlanet.Population))
+                        bestRobotPlanet = p;
                     if (p.Population > 0 && p.BuiltDistricts + p.PendingDistricts < p.MaxDistricts)
                     {
                         if (!NeedsDistrict(p, energyLow, out var type, out float urgency)) continue;
@@ -725,6 +729,9 @@ namespace StellarisClone.Core
             // 4. Добывающие станции
             if (bestStation != null && Minerals >= FleetManager.MiningStationMinerals + mineralReserve && TryBuildStation(bestStation)) return true;
 
+            // 5. Сборка жителей — по тем же ценам и правилам, что у игрока, из излишков сплавов и гелия-3
+            if (bestRobotPlanet != null && !energyLow && TryAssembleRobot(bestRobotPlanet)) return true;
+
             return false;
         }
 
@@ -746,6 +753,20 @@ namespace StellarisClone.Core
                 else type = Profile.PreferredDistrict == DistrictType.Urban ? DistrictType.Generator : Profile.PreferredDistrict;
             }
             else return false;
+            return true;
+        }
+
+        /// <summary>Резерв, который ИИ не тратит на сборку роботов: сплавы нужны флоту и районам.</summary>
+        private const float RobotAlloyReserve = 150f, RobotEnergyReserve = 100f;
+
+        private bool TryAssembleRobot(PlanetData p)
+        {
+            float a = FactionTraits.RobotAlloys(OwnerId), e = FactionTraits.RobotEnergy(OwnerId);
+            if (Alloys < a + RobotAlloyReserve || EnergyCredits < e + RobotEnergyReserve || MonthlyEnergyIncome < 8f) return false;
+            Alloys -= a;
+            EnergyCredits -= e;
+            if (Builds != null) Builds.EnqueuePlanetJob(JobKind.Robot, OwnerId, p, DistrictType.Urban, e, 0f, a, 0f);
+            else p.AddPops(FactionTraits.AssembledSpecies(OwnerId), 1);
             return true;
         }
 

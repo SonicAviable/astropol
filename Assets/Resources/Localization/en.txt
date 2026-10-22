@@ -5251,3 +5251,11 @@ VK Play: всё синхронизировано	VK Play: fully synced
 <b>Сборка синтетов</b>\n+1 синтет: полноценный житель Консенсуса — работает и ведёт науку.\n	<b>Synth Assembly</b>\n+1 synth: a full citizen of the Consensus — it works and does research.\n
 Фабрики Консенсуса собирают синтетов вдвое дешевле, чем другие империи — роботов.\n	Consensus factories build synths at half the price other empires pay for robots.\n
 Синтеты	Synths
+<b>+10% к Энергии</b>\n	<b>+10% Energy</b>\n
+<b>+15% к Влиянию</b>	<b>+15% Influence</b>
+<b>+25% к Минералам</b>	<b>+25% Minerals</b>
+<b>+30% к Влиянию</b>\n	<b>+30% Influence</b>\n
+<b>+5% к Энергии</b>	<b>+5% Energy</b>
+<b>+15% корпус, +10% щиты, +35% влияние, +5% энергия</b>\n	<b>+15% hull, +10% shields, +35% influence, +5% energy</b>\n
+уязвимы к энергии +15% · минералы −10%</color>	vulnerable to energy weapons +15% · minerals −10%</color>
+рост населения −25%</color>	population growth −25%</color>
