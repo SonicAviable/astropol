@@ -11,8 +11,9 @@ namespace StellarisClone.Rendering
     /// разведка — по три закона в каждом. У закона — описание, плюсы (зелёным) и минусы (красным), плата влиянием
     /// в месяц и влияние на стабильность колоний. Действующий закон подсвечен; «Принять» стоит влияния и закрывает
     /// направление на время — причина, почему нельзя, написана прямо на кнопке.
+    /// Вторая вкладка — «Решения» (EmpireDecisions): особые решения фракции и общие, за титан и другие ресурсы.
     /// </summary>
-    public class LawsWindow : MonoBehaviour
+    public partial class LawsWindow : MonoBehaviour
     {
         public static LawsWindow Instance { get; private set; }
         public static bool IsOpenNow => Instance != null && Instance.IsOpen;
@@ -21,9 +22,11 @@ namespace StellarisClone.Rendering
         private const float W = 1400f, H = 800f, ColGap = 14f, CardGap = 12f;
 
         private GameObject _root;
-        private RectTransform _cols;
-        private Text _subtitle;
+        private RectTransform _cols, _tabs;
+        private Text _title, _subtitle, _hint;
         private string _key = "";
+        /// <summary>0 — законы, 1 — решения.</summary>
+        private int _tab;
         private float _refresh;
 
         private static Color Muted => UIManager.DS.TextMuted;
@@ -44,11 +47,13 @@ namespace StellarisClone.Rendering
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             EmpireLaws.OnChanged += MarkDirty;
+            EmpireDecisions.OnChanged += MarkDirty;
         }
 
         private void OnDestroy()
         {
             EmpireLaws.OnChanged -= MarkDirty;
+            EmpireDecisions.OnChanged -= MarkDirty;
             if (Instance == this) Instance = null;
         }
 
@@ -97,14 +102,16 @@ namespace StellarisClone.Rendering
             LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
 
-            var title = LGBuild.Label(rt, Loc.T("ЗАКОНЫ ИМПЕРИИ"), 26, Color.white, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(32, -20), new Vector2(800, 36));
-            title.Track(1.6f);
+            _title = LGBuild.Label(rt, Loc.T("ЗАКОНЫ ИМПЕРИИ"), 26, Color.white, TextAnchor.UpperLeft, bold: true);
+            _title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(32, -20), new Vector2(700, 36));
+            _title.Track(1.6f);
             _subtitle = LGBuild.Label(rt, "", 13, Muted, TextAnchor.UpperLeft);
             _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(33, -58), new Vector2(W - 140, 20));
-            var hint = LGBuild.Label(rt, Loc.F("Смена закона — {0:0} влияния, после неё направление закрыто на {1} дней. Законы действуют, пока вы их не смените.",
-                EmpireLaws.SwitchCost, EmpireLaws.CooldownDays), 12, Muted, TextAnchor.UpperLeft);
-            hint.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(33, -80), new Vector2(W - 140, 18));
+            _hint = LGBuild.Label(rt, "", 12, Muted, TextAnchor.UpperLeft);
+            _hint.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(33, -80), new Vector2(W - 140, 18));
+
+            _tabs = LGBuild.Rect(rt, "Tabs");
+            _tabs.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-72, -18), new Vector2(330, 38));
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
@@ -115,9 +122,57 @@ namespace StellarisClone.Rendering
             _root.SetActive(false);
         }
 
+        /// <summary>Открыть окно сразу на вкладке решений.</summary>
+        public static void ShowDecisions()
+        {
+            if (Instance == null) new GameObject("[UI] LawsWindow").AddComponent<LawsWindow>();
+            Instance._tab = 1;
+            if (!Instance.IsOpen) Instance.Open(); else Instance.MarkDirty();
+        }
+
+        private void SetTab(int tab)
+        {
+            if (_tab == tab) return;
+            _tab = tab;
+            _key = "";
+            SFXManager.Play(Sfx.UiTab, 0.5f);
+            TooltipSystem.Hide();
+            Refresh();
+        }
+
+        private void BuildTabs()
+        {
+            LGBuild.Clear(_tabs);
+            int running = EmpireDecisions.ActiveCount;
+            string[] labels =
+            {
+                Loc.T("ЗАКОНЫ"),
+                running > 0 ? Loc.F("РЕШЕНИЯ · {0}/{1}", running, EmpireDecisions.MaxActive) : Loc.T("РЕШЕНИЯ")
+            };
+            LGIcon[] icons = { LGIcon.Society, LGIcon.Target };
+            for (int i = 0; i < 2; i++)
+            {
+                int tab = i;
+                bool on = _tab == i;
+                var b = LGBuild.Button(_tabs, i == 0 ? "TabLaws" : "TabDecisions",
+                    on ? new Color(0.06f, 0.20f, 0.22f) : new Color(0.03f, 0.05f, 0.07f),
+                    on ? new Color(0.45f, 0.95f, 0.90f, 0.85f) : new Color(1f, 1f, 1f, 0.14f),
+                    () => SetTab(tab), null, labels[i], 12);
+                var br = (RectTransform)b.transform;
+                br.anchorMin = new Vector2(i * 0.5f, 0); br.anchorMax = new Vector2((i + 1) * 0.5f, 1);
+                br.offsetMin = new Vector2(i == 0 ? 0 : 4, 0); br.offsetMax = new Vector2(i == 0 ? -4 : 0, 0);
+                var ic = LGIcons.Create(b.transform, icons[i], 14, on ? Cyan : Muted);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
+                TooltipHelper.Attach(b.gameObject, i == 0
+                    ? Loc.T("Законы империи: постоянные правила с платой влиянием")
+                    : Loc.T("Решения империи: разовые проекты за титан и другие ресурсы — особые для вашей фракции и общие для всех."));
+            }
+        }
+
         private void Refresh()
         {
             if (_cols == null) return;
+            if (_tab == 1) { RefreshDecisions(); return; }
             var eco = EconomyManager.Instance;
             float infl = eco != null ? eco.Influence : 0f;
             float income = eco != null ? eco.MonthlyInfluenceIncome : 0f;
@@ -126,12 +181,17 @@ namespace StellarisClone.Rendering
 
             // Перестраиваем только при изменениях: законы, сроки, хватает ли влияния
             var sb = new System.Text.StringBuilder();
+            sb.Append("laws|").Append(EmpireDecisions.ActiveCount).Append('|');
             foreach (var c in EmpireLaws.Categories) sb.Append(EmpireLaws.Active(c)?.Id).Append(EmpireLaws.CooldownLeft(c)).Append('|');
             sb.Append(infl >= EmpireLaws.SwitchCost);
             string key = sb.ToString();
             if (key == _key) return;
             _key = key;
 
+            _title.text = Loc.T("ЗАКОНЫ ИМПЕРИИ");
+            _hint.text = Loc.F("Смена закона — {0:0} влияния, после неё направление закрыто на {1} дней. Законы действуют, пока вы их не смените.",
+                EmpireLaws.SwitchCost, EmpireLaws.CooldownDays);
+            BuildTabs();
             LGBuild.Clear(_cols);
             int n = EmpireLaws.Categories.Length;
             for (int i = 0; i < n; i++)

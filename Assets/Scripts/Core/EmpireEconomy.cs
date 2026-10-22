@@ -12,6 +12,11 @@ namespace StellarisClone.Core
         public const float OutpostUpkeep = 2f;
         public const int BaseNavalCapacity = 8;
         public const int NavalCapacityPerColony = 2;
+        /// <summary>Заводы перерабатывают титан в сплавы: столько титана в месяц съедает каждый рабочий промышленного района.</summary>
+        public const float RefinePerWorker = 2f;
+        /// <summary>Склады титана: базовая вместимость и прибавка за каждую колонию. Сверх неё добыча пропадает.</summary>
+        public const float BaseMineralStorage = 3000f;
+        public const float MineralStoragePerColony = 200f;
 
         public struct Report
         {
@@ -29,9 +34,13 @@ namespace StellarisClone.Core
             public float UpkeepMult;
             /// <summary>Доход от узлов силы под контролем (уже с множителем технологий).</summary>
             public float LandmarkEnergy, LandmarkMinerals;
+            /// <summary>Титан, который заводы переплавляют в сплавы (расход в месяц).</summary>
+            public float RefiningMinerals;
+            public int IndustrialWorkers, Colonies;
 
             public float Energy => DistrictEnergy + StationEnergy + TechEnergy + LandmarkEnergy;
-            public float Minerals => DistrictMinerals + StationMinerals + LandmarkMinerals;
+            public float Minerals => DistrictMinerals + StationMinerals + LandmarkMinerals - RefiningMinerals;
+            public float MineralStorage => BaseMineralStorage + MineralStoragePerColony * Colonies;
             public float Alloys => DistrictAlloys;
             public float Upkeep => FleetUpkeep + CivilianUpkeep + OutpostUpkeepTotal;
         }
@@ -62,6 +71,7 @@ namespace StellarisClone.Core
                     min += p.ProducedMineralsPerMonth * LeaderManager.PlanetOutputMult(p, "minerals") * p.OutputMult("minerals");
                     en += p.ProducedEnergyPerMonth * LeaderManager.PlanetOutputMult(p, "energy") * p.OutputMult("energy");
                     al += p.ProducedAlloysPerMonth * LeaderManager.PlanetOutputMult(p, "alloys") * p.OutputMult("alloys");
+                    r.IndustrialWorkers += p.WorkedCount(DistrictType.Industrial);
                 }
             }
 
@@ -73,6 +83,8 @@ namespace StellarisClone.Core
             r.TechEnergy = bonuses.EnergyFlat;
             r.LandmarkEnergy = Landmarks.Energy(owner, bonuses) * penalty;
             r.LandmarkMinerals = Landmarks.Minerals(owner, bonuses) * penalty;
+            r.RefiningMinerals = r.IndustrialWorkers * RefinePerWorker * penalty;
+            r.Colonies = colonies;
 
             r.NavalCapacity = BaseNavalCapacity + colonies * NavalCapacityPerColony + Mathf.RoundToInt(bonuses.NavalCapacity);
             float military = 0f;
@@ -98,6 +110,29 @@ namespace StellarisClone.Core
             r.FleetUpkeep = military * r.OverCapacityMult * r.UpkeepMult;
             r.OutpostUpkeepTotal = r.Outposts * OutpostUpkeep + Fortifications.Upkeep(owner);
             return r;
+        }
+
+        /// <summary>
+        /// Месяц прошёл: титан и сплавы с учётом переработки и складов. Если титана не хватило на заводы —
+        /// сплавов выходит меньше в той же доле; излишек сверх вместимости складов пропадает.
+        /// Возвращает, сколько титана сгорело на переполненных складах (для подсказки игроку).
+        /// </summary>
+        public static float ApplyMonthlyMinerals(Report r, ref float minerals, ref float alloys, float mineralIncome, float alloyIncome)
+        {
+            minerals += mineralIncome;
+            if (minerals < 0f)
+            {
+                // Нехватка сырья: недостающий титан — недоплавленные сплавы
+                float lackShare = r.RefiningMinerals > 0f ? Mathf.Clamp01(-minerals / r.RefiningMinerals) : 0f;
+                alloyIncome -= r.DistrictAlloys * lackShare;
+                minerals = 0f;
+            }
+            alloys += alloyIncome;
+            float cap = r.MineralStorage;
+            if (minerals <= cap) return 0f;
+            float lost = minerals - cap;
+            minerals = cap;
+            return lost;
         }
 
         /// <summary>Содержание, которое добавит ещё один военный корабль (с учётом лимита).</summary>

@@ -51,7 +51,7 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Неизученные системы в пределах N прыжков от границ игрока.</summary>
-        private static List<StarSystem> UnsurveyedNearPlayer(int jumps)
+        internal static List<StarSystem> UnsurveyedNearPlayer(int jumps)
         {
             var dist = new Dictionary<int, int>();
             var q = new Queue<int>();

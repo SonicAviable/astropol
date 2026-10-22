@@ -1610,10 +1610,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         if (_mineralsTip != null)
             _mineralsTip.SetText(
                 Loc.T("<b>Титан</b>\n") +
-                Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Minerals) +
+                Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b> / {1:N0}\n", (int)eco.Minerals, eco.MineralStorage) +
                 Loc.F("<color=#8AA2A8>База:</color> {0:+0;-0;0} / мес\n", eco.BaseMineralsIncome) +
                 Loc.F("<color=#8AA2A8>Горные районы:</color> {0:+0;-0;0} / мес\n", eco.PlanetMineralsOutput) +
                 Loc.F("<color=#8AA2A8>Добывающие станции:</color> {0:+0;-0;0} / мес\n", eco.StationMineralsOutput) +
+                Loc.F("<color=#8AA2A8>Переработка на заводах:</color> {0:+0;-0;0} / мес\n", -eco.RefiningMinerals) +
+                Loc.F("<color=#8AA2A8>Склады вмещают {0:N0} титана (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>\n", eco.MineralStorage, EmpireEconomy.MineralStoragePerColony) +
                 $"<color=#8AA2A8>──────────────</color>\n" +
                 Loc.F("<color=#8AA2A8>Итого:</color> {0}", StatFormat.Income(eco.MonthlyMineralsIncome))
             );

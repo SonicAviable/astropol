@@ -58,6 +58,8 @@ namespace StellarisClone.Core
             return k;
         }
 
+        /// <summary>Ключ фракции владельца (astrea, xarn, aquila, iridia, terraan, nol).</summary>
+        public static string Key(int owner) => KeyOf(owner);
         public static bool IsTerraan(int owner) => KeyOf(owner) == "terraan";
         public static bool IsMachine(int owner) => KeyOf(owner) == "nol";
 

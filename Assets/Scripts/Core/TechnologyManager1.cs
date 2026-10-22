@@ -197,7 +197,7 @@ namespace StellarisClone.Core
         /// <summary>Законы империи (EmpireLaws) накладываются сюда же — при каждом обращении сверяются по версии.</summary>
         public EmpireBonuses Bonuses
         {
-            get { EmpireLaws.SyncBonuses(_bonuses); return _bonuses; }
+            get { EmpireLaws.SyncBonuses(_bonuses); EmpireDecisions.SyncBonuses(_bonuses); return _bonuses; }
             private set => _bonuses = value;
         }
         private EmpireBonuses _bonuses = new EmpireBonuses();

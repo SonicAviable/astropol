@@ -122,9 +122,10 @@ namespace StellarisClone.Core
             if (day != 1) return;
 
             EnergyCredits += MonthlyEnergyIncome;
-            Minerals      += MonthlyMineralsIncome;
-            Alloys        += MonthlyAlloysIncome;
+            float mineralIncome = MonthlyMineralsIncome;
+            float lostMinerals = EmpireEconomy.ApplyMonthlyMinerals(_report, ref Minerals, ref Alloys, mineralIncome, MonthlyAlloysIncome);
             Influence     += MonthlyInfluenceIncome;
+            WarnMinerals(mineralIncome, lostMinerals);
 
             if (EnergyCredits < 0f)
             {
@@ -169,6 +170,36 @@ namespace StellarisClone.Core
             }
 
             OnResourcesChanged?.Invoke();
+        }
+
+        // ==================== ТИТАН: ПЕРЕРАБОТКА И СКЛАДЫ ====================
+
+        private bool _storageWarned, _refineWarned;
+
+        /// <summary>Вместимость складов титана (растёт с числом колоний).</summary>
+        public float MineralStorage => _report.MineralStorage;
+        public float RefiningMinerals => _report.RefiningMinerals;
+
+        private void WarnMinerals(float income, float lost)
+        {
+            if (lost > 0f && !_storageWarned)
+            {
+                _storageWarned = true;
+                NotificationCenter.Show(Loc.T("Склады титана полны"),
+                    Loc.F("Вместимость {0:N0}: излишки добычи пропадают. Пустите титан в дело — решения империи (окно законов), районы, укрепления.", MineralStorage),
+                    NotificationCenter.Kind.Warning, 8f);
+            }
+            else if (Minerals < MineralStorage * 0.9f) _storageWarned = false;
+
+            bool lacking = Minerals <= 0.5f && income < 0f && _report.RefiningMinerals > 0f;
+            if (lacking && !_refineWarned)
+            {
+                _refineWarned = true;
+                NotificationCenter.Show(Loc.T("Заводам не хватает титана"),
+                    Loc.T("Промышленные районы переплавляют титан в сплавы. Сырья нет — сплавов выходит меньше. Стройте горные районы или станции."),
+                    NotificationCenter.Kind.Danger, 8f);
+            }
+            else if (!lacking) _refineWarned = false;
         }
 
         // ==================== ПРОИЗВОДСТВО И СОДЕРЖАНИЕ ====================

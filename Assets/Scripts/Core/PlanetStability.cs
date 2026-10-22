@@ -189,6 +189,7 @@ namespace StellarisClone.Core
 
             if (owner > 0) Add(Loc.T("Опыт управления"), 10f);
             EmpireLaws.StabilityFactors(owner, Add);
+            EmpireDecisions.StabilityFactors(owner, Add);
 
             s = Mathf.Clamp(s, 0f, 100f);
             // Империи ИИ не доводят свои миры до бунта — кроме свежезавоёванных

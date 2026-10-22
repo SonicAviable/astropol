@@ -332,8 +332,7 @@ namespace StellarisClone.Core
         private void MonthlyTick()
         {
             EnergyCredits += MonthlyEnergyIncome;
-            Minerals += MonthlyMineralsIncome;
-            Alloys += MonthlyAlloysIncome;
+            EmpireEconomy.ApplyMonthlyMinerals(_report, ref Minerals, ref Alloys, MonthlyMineralsIncome, MonthlyAlloysIncome);
             Influence += MonthlyInfluenceIncome;
 
             if (EnergyCredits < 0f)

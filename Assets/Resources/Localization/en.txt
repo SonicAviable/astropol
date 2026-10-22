@@ -5330,3 +5330,177 @@ VK Play: всё синхронизировано	VK Play: fully synced
 СТРОИТСЯ · {0}	UNDER CONSTRUCTION · {0}
 Цитадель — наивысший уровень укреплений	Citadel is the highest fortification level
 −{0:0}/мес	−{0:0}/mo
+Склады титана полны	Titanium storage full
+Вместимость {0:N0}: излишки добычи пропадают. Пустите титан в дело — решения империи (окно законов), районы, укрепления.	Capacity {0:N0}: surplus output is lost. Put titanium to work — empire decisions (Laws window), districts, fortifications.
+Заводам не хватает титана	Factories are short of titanium
+Промышленные районы переплавляют титан в сплавы. Сырья нет — сплавов выходит меньше. Стройте горные районы или станции.	Industrial districts refine titanium into alloys. With no raw material, alloy output drops. Build mining districts or stations.
++{0:0} стабильности колоний	+{0:0} colony stability
+Фракция	Faction
+Нет решения	No decision
+Проект завершён	Project complete
+Идёт: ещё {0} дн.	In progress: {0} more days
+Снова через {0} дн.	Available again in {0} days
+Уже идут {0} решения	{0} decisions already in progress
+Нет экономики	No economy
+Не хватает титана	Not enough titanium
+Не хватает гелия-3	Not enough helium-3
+Не хватает сплавов	Not enough alloys
+Не хватает влияния	Not enough influence
+Решение принято: «{0}»	Decision taken: «{0}»
+Строительство займёт {0} дн.	Construction will take {0} days
+Действует {0} дн.	Active for {0} days
+Итог — через {0} дн.	Result in {0} days
+Великий проект завершён — его бонусы действуют до конца партии.	Great project complete — its bonuses last for the rest of the game.
+Срок действия закончился.	The effect has expired.
+Решение «{0}» завершено	Decision «{0}» has ended
+Решение выполнено: «{0}»	Decision complete: «{0}»
+Решение «{0}»	Decision «{0}»
+Исследования продвинулись на {0:0} очков науки.	Research advanced by {0:0} science points.
+Изучено систем: {0}.	Systems surveyed: {0}.
+Отремонтировано кораблей: {0}.	Ships repaired: {0}.
+Синтетами стали {0} жителей.	{0} inhabitants became synthetics.
+Переплавка запасов	Smelt the Stockpiles
+Плавильни работают в три смены: титан со складов уходит в печи и выходит сплавами для верфей.	The smelters run three shifts: titanium from the warehouses goes into the furnaces and comes out as alloys for the shipyards.
+Через 30 дн.: +{0:0} сплавов	In 30 days: +{0:0} alloys
+Склады получили {0:0} сплавов.	The warehouses received {0:0} alloys.
+Сырьевая биржа	Commodity Exchange
+Титан продают перекупщикам из нейтральных систем. Платят гелием-3 — топливом, которого вечно не хватает флоту.	Titanium is sold to traders from neutral systems. They pay in helium-3 — the fuel the fleet is always short of.
+Через 20 дн.: +{0:0} гелия-3	In 20 days: +{0:0} helium-3
+Выручка: {0:0} гелия-3.	Proceeds: {0:0} helium-3.
+Титановые облигации	Titanium Bonds
+Казна выпускает облигации, обеспеченные титаном. Держатели — влиятельные кланы и корпорации — теперь на вашей стороне.	The treasury issues bonds backed by titanium. The holders — powerful clans and corporations — are now on your side.
++2 влияния в месяц на 12 месяцев	+2 influence per month for 12 months
+Держатели облигаций поддерживают правительство	Bondholders back the government
+Влияние +2 в месяц на год.	Influence +2 per month for a year.
+Научный грант	Research Grant
+Щедрый грант лучшим лабораториям: оборудование из титана, лучшие умы — на текущие исследования.	A generous grant to the best laboratories: titanium equipment and the finest minds put on current research.
+Сразу +{0:0} науки (4 месяца исследований)	Immediately +{0:0} science (4 months of research)
+Дальняя экспедиция	Deep Expedition
+Караван исследовательских зондов уходит за границу на два месяца и картографирует всё, до чего дотянется.	A caravan of survey probes crosses the border for two months and maps everything within reach.
+Через 60 дн.: изучены все системы в 4 прыжках от границ	In 60 days: all systems within 4 jumps of your borders surveyed
+Вокруг всё изучено	Everything nearby is surveyed
+Ночные смены в лабораториях	Night Shifts in the Labs
+Учёные получают новые корпуса и трёхсменный график. Науки больше, но заводы делятся мощностями.	Scientists get new buildings and a three-shift schedule. More science, but the factories share their capacity.
++15% науки на 240 дн.	+15% science for 240 days
+Ремонтные доки	Repair Docks
+Полевые доки из титановых ферм собирают прямо на орбитах: весь флот встаёт в строй за неделю.	Field docks of titanium trusses are assembled right in orbit: the whole fleet is back in service within a week.
+Сразу: все корабли полностью отремонтированы	Immediately: all ships fully repaired
+Все корабли целы	All ships are intact
+Военные учения	Military Exercises
+Флот полгода отрабатывает манёвры на титановых мишенях. Экипажи стреляют быстрее и точнее.	The fleet spends half a year drilling on titanium targets. Crews fire faster and more accurately.
++10% урона и +5 точности на 180 дн.	+10% damage and +5 accuracy for 180 days
+Ускоренное судостроение	Accelerated Shipbuilding
+Верфи получают запас титана на годы вперёд: корпуса штампуют потоком, и каждый корабль обходится дешевле.	The shipyards get years' worth of titanium in stock: hulls are stamped out in a stream, and every ship costs less.
+−15% цены кораблей на 180 дн.	−15% ship cost for 180 days
+Монументальное строительство	Monumental Construction
+Титановые монументы героям и основателям встают в каждой столице. Граждане гордятся империей.	Titanium monuments to heroes and founders rise in every capital. Citizens are proud of the empire.
+Действует 360 дн.	Active for 360 days
+Колониальные субсидии	Colonial Subsidies
+Переселенцам — жильё, кредиты и титановые купола. Колонии растут быстрее.	Settlers get housing, loans and titanium domes. Colonies grow faster.
++35% роста населения на 360 дн.	+35% population growth for 360 days
+Галактический форум	Galactic Forum
+Республика созывает послов всех известных империй на Астрею. Три месяца речей, банкетов и тихих договорённостей.	The Republic summons the envoys of every known empire to Astrea. Three months of speeches, banquets and quiet agreements.
+Через 90 дн.: +12 к отношениям со всеми известными империями	In 90 days: +12 relations with every known empire
+Нет известных империй	No known empires
+Послы {0} империй уехали довольными.	Envoys of {0} empires left satisfied.
+Академия Республики	Academy of the Republic
+Свободный университет для учёных всей галактики. Беженцы-гении едут к нам, а не к соседям.	A free university for scientists from across the galaxy. Refugee geniuses come to us, not to our neighbours.
++20% науки на 360 дн.	+20% science for 360 days
+Хартия колоний	Charter of Colonies
+Великий проект: колонии получают самоуправление и голос в Сенате. Республика становится союзом равных.	Great project: the colonies gain self-government and a voice in the Senate. The Republic becomes a union of equals.
+Навсегда: +10% роста населения	Permanently: +10% population growth
+Военный парад	Military Parade
+Над столицей проходит весь флот Доминиона. Народ ликует, враги считают стволы.	The Dominion's entire fleet passes over the capital. The people cheer, the enemies count the guns.
++10% урона на 180 дн.	+10% damage for 180 days
+Мобилизация верфей	Shipyard Mobilization
+Каждая верфь Доминиона переходит на военный график. Корпуса сходят со стапелей каждый день.	Every Dominion shipyard switches to a war schedule. Hulls leave the slipways every day.
+−25% цены кораблей и +8 к флотскому лимиту на 240 дн.	−25% ship cost and +8 naval capacity for 240 days
+Кузницы Ксарна	Forges of Xarn
+Великий проект: в недрах столицы зажигают горны, способные плавить броню целых флотов.	Great project: deep beneath the capital, forges are lit that can melt the armour of entire fleets.
+Навсегда: +10% сплавов и +15% прочности звёздных баз	Permanently: +10% alloys and +15% starbase durability
+Биржевой бум	Market Boom
+Синдикат вкладывает титан в гелиевые фьючерсы. Пока пузырь растёт — растёт и казна.	The Syndicate invests titanium in helium futures. While the bubble grows, so does the treasury.
++25% гелия-3 на 240 дн.	+25% helium-3 for 240 days
+Лоббирование	Lobbying
+Гелий-3 уходит нужным людям в нужных кабинетах. Через месяц нужные решения принимаются сами.	Helium-3 goes to the right people in the right offices. A month later the right decisions make themselves.
+Через 30 дн.: +50 влияния	In 30 days: +50 influence
+Получено 50 влияния.	Received 50 influence.
+Торговая экспансия	Trade Expansion
+Конторы Синдиката открываются во всех известных столицах. Торговля сближает — и приносит гелий.	Syndicate offices open in every known capital. Trade brings people closer — and brings in helium.
+Через 120 дн.: +12 к отношениям с известными империями	In 120 days: +12 relations with known empires
+и +{0:0} гелия-3 в месяц на 12 месяцев	and +{0:0} helium-3 per month for 12 months
+Конторы Синдиката в чужих столицах	Syndicate offices in foreign capitals
+Конторы открыты в {0} столицах.	Offices opened in {0} capitals.
+Галактическая биржа	Galactic Exchange
+Великий проект: главная биржа галактики. Через неё проходит каждый контракт — и с каждого Синдикат берёт свою долю.	Great project: the galaxy's main exchange. Every contract passes through it — and the Syndicate takes its cut of each.
+Навсегда: +10% гелия-3 и +1 влияния в месяц	Permanently: +10% helium-3 and +1 influence per month
+Видение будущего	Vision of the Future
+Верховная Оракул уходит в транс на месяц. Вернувшись, она диктует учёным то, до чего они дошли бы лишь через полгода.	The High Oracle enters a trance for a month. On her return she dictates to the scientists what they would only have reached in half a year.
+Через 30 дн.: +{0:0} науки (6 месяцев исследований)	In 30 days: +{0:0} science (6 months of research)
+Паломничество к Саду	Pilgrimage to the Garden
+Миллионы верующих идут к миру-саду Иридии. Колонии светятся единой мыслью, рождается больше детей.	Millions of the faithful journey to the garden world of Iridia. The colonies glow with a single thought, and more children are born.
++10% роста населения на 180 дн.	+10% population growth for 180 days
+Храм Предвидения	Temple of Foresight
+Великий проект: хрустальный храм, где сотни провидцев читают нити будущего день и ночь.	Great project: a crystal temple where hundreds of seers read the threads of the future day and night.
+Навсегда: +1.5 влияния в месяц и +5% науки	Permanently: +1.5 influence per month and +5% science
+Великое цветение	Great Bloom
+Конклав пробуждает спящие семена на всех мирах сразу. Через два месяца сад приносит новых жителей.	The Conclave awakens dormant seeds on all worlds at once. Two months later the garden yields new inhabitants.
+Через 60 дн.: +1 житель на каждой колонии со свободным жильём	In 60 days: +1 inhabitant on every colony with free housing
+Новые жители на {0} колониях.	New inhabitants on {0} colonies.
+Семена спор	Spore Seeding
+Споры мицелия разлетаются по коридорам и прорастают сенсорной сетью в чужих системах.	Mycelium spores drift along the hyperlanes and sprout into a sensor network in foreign systems.
+Через 45 дн.: изучены все системы в 5 прыжках от границ	In 45 days: all systems within 5 jumps of your borders surveyed
+Корневая оборона	Root Defence
+Корни оплетают звёздные базы, а сок сада питает экипажи. Защищаться дешевле и легче.	Roots entwine the starbases, and the garden's sap nourishes the crews. Defence becomes cheaper and easier.
++30% прочности звёздных баз и −15% содержания флота на 360 дн.	+30% starbase durability and −15% fleet upkeep for 360 days
+Древо Миров	World Tree
+Великий проект: из семени Первого Сада вырастает древо, чьи корни соединяют все миры Конклава.	Great project: from a seed of the First Garden grows a tree whose roots link every world of the Conclave.
+Навсегда: +15% роста населения	Permanently: +15% population growth
+Перепрошивка	Reflashing
+Органики на мирах Консенсуса проходят «добровольную» загрузку в синтетические тела.	Organics on Consensus worlds undergo a «voluntary» upload into synthetic bodies.
+Через 60 дн.: до 2 органиков на каждой колонии станут синтетами	In 60 days: up to 2 organics on each colony become synthetics
+На колониях нет органиков	No organics on your colonies
+Фабрики-ульи	Hive Factories
+Сборочные линии работают без остановки: каждый мир Консенсуса получает новый синтет.	Assembly lines run nonstop: every Consensus world receives a new synthetic.
+Через 90 дн.: +1 синтет на каждой колонии со свободным жильём	In 90 days: +1 synthetic on every colony with free housing
+Новые синтеты на {0} колониях.	New synthetics on {0} colonies.
+Протокол оптимизации	Optimization Protocol
+Консенсус пересчитывает каждую цепочку производства. Лишних операций больше нет.	The Consensus recalculates every production chain. There are no wasted operations anymore.
++10% гелия-3, сплавов и науки на 360 дн.	+10% helium-3, alloys and science for 360 days
+Ядро Консенсуса	Consensus Core
+Великий проект: планетарный вычислитель, в котором сходятся все мысли «Ноля».	Great project: a planetary computer where all the thoughts of «Zero» converge.
+Навсегда: +10% науки и +1.5 влияния в месяц	Permanently: +10% science and +1.5 influence per month
+Титан: <b><color=#33E6CC>{0:0}</color></b> / {1:N0}   ·   идёт решений: <b>{2}</b> из {3}   ·   цены растут с размером империи: ×{4:0.00}	Titanium: <b><color=#33E6CC>{0:0}</color></b> / {1:N0}   ·   decisions in progress: <b>{2}</b> of {3}   ·   costs grow with empire size: ×{4:0.00}
+РЕШЕНИЯ ИМПЕРИИ	EMPIRE DECISIONS
+Решение стоит ресурсов (больше всего — титана), идёт несколько дней и потом закрыто на перезарядку. Одновременно — не больше {0}. Великий проект — один раз за партию, навсегда.	A decision costs resources (mostly titanium), runs for some days and then goes on cooldown. No more than {0} at a time. A great project is taken once per game and lasts forever.
+Особые решения вашей фракции — у других империй их нет. Последнее — великий проект.	Your faction's unique decisions — other empires don't have them. The last one is a great project.
+ВЕЛИКИЙ ПРОЕКТ	GREAT PROJECT
+СРАЗУ	INSTANT
+один раз	once
+перезарядка {0} дн.	cooldown {0} days
+СТРОИТСЯ · ещё {0} дн.	BUILDING · {0} days left
+ДЕЙСТВУЕТ · ещё {0} дн.	ACTIVE · {0} days left
+ИДЁТ · ещё {0} дн.	IN PROGRESS · {0} days left
+ПОСТРОЕНО — ДЕЙСТВУЕТ НАВСЕГДА	BUILT — ACTIVE FOREVER
+НАЧАТЬ ПРОЕКТ	START PROJECT
+ПРИНЯТЬ РЕШЕНИЕ	TAKE DECISION
+  <color=#FFCC5C>· великий проект</color>	  <color=#FFCC5C>· great project</color>
+{0:0} титана	{0:0} titanium
+{0:0} гелия-3	{0:0} helium-3
+{0:0} влияния	{0:0} influence
+<color=#8AA2A8>Цена:</color> {0}	<color=#8AA2A8>Cost:</color> {0}
+Срок: {0} дн.	Duration: {0} days.
+Срабатывает сразу.	Takes effect immediately.
+  Принимается один раз за партию.	  Can be taken once per game.
+  Перезарядка: {0} дн.	  Cooldown: {0} days.
+<color=#FFCC5C>Построено — бонусы действуют до конца партии.</color>	<color=#FFCC5C>Built — bonuses last until the end of the game.</color>
+<color=#8AA2A8>Идёт: ещё {0} дн.</color>	<color=#8AA2A8>In progress: {0} more days.</color>
+<color=#66F29E>Можно принять.</color>	<color=#66F29E>Available.</color>
+ЗАКОНЫ	LAWS
+РЕШЕНИЯ · {0}/{1}	DECISIONS · {0}/{1}
+РЕШЕНИЯ	DECISIONS
+Законы империи: постоянные правила с платой влиянием	Empire laws: permanent rules paid for with influence
+Решения империи: разовые проекты за титан и другие ресурсы — особые для вашей фракции и общие для всех.	Empire decisions: one-off projects for titanium and other resources — unique ones for your faction and common ones for all.
+<color=#8AA2A8>Запас:</color> <b>{0}</b> / {1:N0}\n	<color=#8AA2A8>Stock:</color> <b>{0}</b> / {1:N0}\n
+<color=#8AA2A8>Переработка на заводах:</color> {0:+0;-0;0} / мес\n	<color=#8AA2A8>Refining at factories:</color> {0:+0;-0;0} / month\n
+<color=#8AA2A8>Склады вмещают {0:N0} титана (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>\n	<color=#8AA2A8>Storage holds {0:N0} titanium (+{1:0} per colony) — surplus is lost. Spend spare titanium on empire decisions.</color>\n

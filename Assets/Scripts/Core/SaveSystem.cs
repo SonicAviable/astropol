@@ -84,6 +84,8 @@ namespace StellarisClone.Core
         public EspionageSave Espionage;
         /// <summary>Законы империи (null — старое сохранение: исходные законы).</summary>
         public LawsSave Laws;
+        /// <summary>Решения империи (null — старое сохранение).</summary>
+        public DecisionsSave Decisions;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -476,6 +478,7 @@ namespace StellarisClone.Core
             if (ThreatManager.Instance != null) s.Threats = ThreatManager.Instance.CaptureState();
             if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
             s.Laws = EmpireLaws.Capture();
+            s.Decisions = EmpireDecisions.Capture();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -854,6 +857,7 @@ namespace StellarisClone.Core
             ThreatManager.Instance?.RestoreState(s.Threats);
             EspionageManager.Instance?.RestoreState(s.Espionage);
             EmpireLaws.Restore(s.Laws);
+            EmpireDecisions.Restore(s.Decisions);
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)
