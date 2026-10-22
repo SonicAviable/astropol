@@ -152,6 +152,7 @@ namespace StellarisClone.Core
             EmpireDecisions.DailyTick();
             if (day != 1) return;
             EmpireEffects.MonthlyTick();
+            EmpireDecisions.MonthlyTick();
             if (++_s.MonthsSinceFaction >= FactionDecisionMonths)
             {
                 var decision = EventDatabase.FactionDecision();

@@ -70,6 +70,7 @@ namespace StellarisClone.Rendering
         {
             if (_root == null) Build();
             if (_root == null) return;
+            if (EmpireDecisions.UnseenCount > 0) _tab = 1;   // есть новые решения — сразу показываем их
             _key = "";
             Refresh();
             LG.Show(_root);
@@ -81,6 +82,7 @@ namespace StellarisClone.Rendering
         public void Close()
         {
             if (_root == null) return;
+            if (_tab == 1) EmpireDecisions.MarkSeen();
             LG.Hide(_root);
             UIManager.Instance?.HideModalDimPublic();
             TooltipSystem.Hide();
@@ -133,6 +135,7 @@ namespace StellarisClone.Rendering
         private void SetTab(int tab)
         {
             if (_tab == tab) return;
+            if (_tab == 1) EmpireDecisions.MarkSeen();
             _tab = tab;
             _key = "";
             SFXManager.Play(Sfx.UiTab, 0.5f);
@@ -143,11 +146,12 @@ namespace StellarisClone.Rendering
         private void BuildTabs()
         {
             LGBuild.Clear(_tabs);
-            int running = EmpireDecisions.ActiveCount;
+            int running = EmpireDecisions.ActiveCount, fresh = EmpireDecisions.UnseenCount;
             string[] labels =
             {
                 Loc.T("ЗАКОНЫ"),
-                running > 0 ? Loc.F("РЕШЕНИЯ · {0}/{1}", running, EmpireDecisions.MaxActive) : Loc.T("РЕШЕНИЯ")
+                fresh > 0 ? Loc.F("РЕШЕНИЯ · {0} НОВ.", fresh)
+                : running > 0 ? Loc.F("РЕШЕНИЯ · {0}/{1}", running, EmpireDecisions.MaxActive) : Loc.T("РЕШЕНИЯ")
             };
             LGIcon[] icons = { LGIcon.Society, LGIcon.Target };
             for (int i = 0; i < 2; i++)
@@ -181,7 +185,7 @@ namespace StellarisClone.Rendering
 
             // Перестраиваем только при изменениях: законы, сроки, хватает ли влияния
             var sb = new System.Text.StringBuilder();
-            sb.Append("laws|").Append(EmpireDecisions.ActiveCount).Append('|');
+            sb.Append("laws|").Append(EmpireDecisions.ActiveCount).Append('|').Append(EmpireDecisions.UnseenCount).Append('|');
             foreach (var c in EmpireLaws.Categories) sb.Append(EmpireLaws.Active(c)?.Id).Append(EmpireLaws.CooldownLeft(c)).Append('|');
             sb.Append(infl >= EmpireLaws.SwitchCost);
             string key = sb.ToString();

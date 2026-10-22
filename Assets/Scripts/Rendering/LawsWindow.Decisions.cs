@@ -14,6 +14,7 @@ namespace StellarisClone.Rendering
     public partial class LawsWindow
     {
         private static readonly Color GreatGold = new Color(1f, 0.80f, 0.36f);
+        private static readonly Color OfferOrange = new Color(1f, 0.62f, 0.30f);
 
         private void RefreshDecisions()
         {
@@ -26,25 +27,27 @@ namespace StellarisClone.Rendering
             sb.Append(FactionTraits.Key(0)).Append('|').Append(EmpireDecisions.Scale.ToString("0.00")).Append('|');
             foreach (var c in EmpireDecisions.Categories)
                 foreach (var d in EmpireDecisions.Visible(c))
-                    sb.Append(d.Id).Append(':').Append(EmpireDecisions.Blocker(d)).Append(':').Append(EmpireDecisions.IsDone(d)).Append('|');
+                    sb.Append(d.Id).Append(':').Append(EmpireDecisions.Blocker(d)).Append(':').Append(EmpireDecisions.IsDone(d))
+                      .Append(':').Append(EmpireDecisions.OfferLeft(d)).Append(':').Append(EmpireDecisions.IsNew(d)).Append('|');
             string key = sb.ToString();
             if (key == _key) return;
             _key = key;
 
             _title.text = Loc.T("РЕШЕНИЯ ИМПЕРИИ");
-            _hint.text = Loc.F("Решение стоит ресурсов (больше всего — титана), идёт несколько дней и потом закрыто на перезарядку. Одновременно — не больше {0}. Великий проект — один раз за партию, навсегда.",
-                EmpireDecisions.MaxActive);
+            _hint.text = Loc.F("Цена — в основном титан; одновременно до {0} решений. Новые появляются по ходу игры (война, кризис, эпоха, редкие возможности), старые исчезают. Пока скрыто: {1}.",
+                EmpireDecisions.MaxActive, EmpireDecisions.HiddenCount);
             BuildTabs();
             LGBuild.Clear(_cols);
 
-            // Карточки одной высоты во всех колонках — по самой длинной колонке
-            int maxCards = 1;
+            // Карточки одной высоты во всех колонках — по самой длинной колонке (3–4 на экран, больше — прокрутка)
+            int maxCards = 3;
             foreach (var c in EmpireDecisions.Categories)
             {
                 int k = 0;
                 foreach (var _ in EmpireDecisions.Visible(c)) k++;
                 maxCards = Mathf.Max(maxCards, k);
             }
+            maxCards = Mathf.Min(maxCards, 4);
             int n = EmpireDecisions.Categories.Length;
             for (int i = 0; i < n; i++)
             {
@@ -104,11 +107,32 @@ namespace StellarisClone.Rendering
             float top = 54f;
             float avail = col.rect.height > 10f ? col.rect.height - top : H - 112f - 20f - top;
             float cardH = (avail - CardGap * (maxCards - 1)) / Mathf.Max(1, maxCards);
-            for (int i = 0; i < list.Count; i++)
+            if (list.Count == 0)
             {
-                var card = LGBuild.Rect(col, "Card");
-                card.TopBand(top + i * (cardH + CardGap), cardH);
-                BuildDecisionCard(card, list[i], cc, cardH);
+                var empty = LGBuild.Label(col, Loc.T("Сейчас решений нет — они появятся, когда сложатся условия."), 11, Muted, TextAnchor.UpperLeft, wrap: true);
+                empty.rectTransform.TopBand(top, 40, 4, 4);
+                return;
+            }
+            if (list.Count <= maxCards)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var card = LGBuild.Rect(col, "Card");
+                    card.TopBand(top + i * (cardH + CardGap), cardH);
+                    BuildDecisionCard(card, list[i], cc, cardH);
+                }
+                return;
+            }
+            // Не помещаются — прокрутка колёсиком
+            var area = LGBuild.Rect(col, "ListArea");
+            area.Stretch(0, 0, 0, top);
+            var content = LGBuild.ScrollList(area, CardGap, 0);
+            foreach (var d in list)
+            {
+                var card = LGBuild.Rect(content, "Card");
+                var le = card.gameObject.AddComponent<LayoutElement>();
+                le.preferredHeight = le.minHeight = cardH;
+                BuildDecisionCard(card, d, cc, cardH);
             }
         }
 
@@ -120,6 +144,7 @@ namespace StellarisClone.Rendering
                                                              : new Color(0.03f, 0.055f, 0.075f, 0.9f));
             bg.rectTransform.Stretch();
             LG.Platter(bg.gameObject, 8f).SetRim(active || done ? new Color(accent.r, accent.g, accent.b, 0.85f)
+                                                 : d.IsOffer ? new Color(OfferOrange.r, OfferOrange.g, OfferOrange.b, 0.55f)
                                                  : d.Once ? new Color(accent.r, accent.g, accent.b, 0.30f) : new Color(1f, 1f, 1f, 0.10f));
 
             // Значок решения — крупный бледный водяной знак справа
@@ -132,8 +157,12 @@ namespace StellarisClone.Rendering
             float y = 10f;
             var ic = LGIcons.Create(card, d.Icon, 16, accent);
             ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -y - 1f), new Vector2(16, 16));
-            var tag = LGBuild.Label(card, d.Once ? Loc.T("ВЕЛИКИЙ ПРОЕКТ") : d.Days > 0 ? Loc.F("{0} дн.", d.Days) : Loc.T("СРАЗУ"), 9,
-                d.Once ? GreatGold : Muted, TextAnchor.UpperRight, bold: true);
+            bool offer = d.IsOffer && !active, isNew = EmpireDecisions.IsNew(d);
+            string tagText = offer ? Loc.F("ЕЩЁ {0} ДН.", EmpireDecisions.OfferLeft(d))
+                           : d.Once ? Loc.T("ВЕЛИКИЙ ПРОЕКТ") : d.Days > 0 ? Loc.F("{0} дн.", d.Days) : Loc.T("СРАЗУ");
+            if (isNew) tagText = Loc.T("НОВОЕ") + " · " + tagText;
+            var tag = LGBuild.Label(card, tagText, 9,
+                offer ? OfferOrange : isNew ? Good : d.Once ? GreatGold : Muted, TextAnchor.UpperRight, bold: true);
             tag.rectTransform.TopBand(y + 2f, 14, 12, 12);
             float tagW = tag.preferredWidth + 8f;
             var name = LGBuild.Label(card, d.Name, 14, Color.white, TextAnchor.UpperLeft, bold: true);
@@ -154,14 +183,20 @@ namespace StellarisClone.Rendering
             if (descH >= 12f) { desc.rectTransform.TopBand(y, descH, 12, 12); y += descH + 3f; }
             else desc.gameObject.SetActive(false);
 
+            float noteH = string.IsNullOrEmpty(d.Note) ? 0f : 13f;
             foreach (var (text, good) in d.Effects)
             {
-                if (y + 12f > limit) break;
+                if (y + 12f > limit - noteH) break;
                 var e = LGBuild.Label(card, (good ? "▲ " : "▼ ") + text(), 10, good ? Good : Bad, TextAnchor.UpperLeft, bold: true, wrap: true);
                 e.verticalOverflow = VerticalWrapMode.Truncate;
                 float eh = Mathf.Min(Mathf.Clamp(e.preferredHeight, 13f, 26f), limit - y);
                 e.rectTransform.TopBand(y, eh, 12, 12);
                 y += eh + 1f;
+            }
+            if (noteH > 0f && y + 12f <= limit)
+            {
+                var note = LGBuild.Label(card, "◆ " + d.Note, 9, Muted, TextAnchor.UpperLeft, bold: true);
+                note.rectTransform.TopBand(y, 13f, 12, 12);
             }
 
             // Цена и перезарядка
@@ -219,6 +254,9 @@ namespace StellarisClone.Rendering
             sb.Append("<b>").Append(d.Name).Append("</b>");
             if (d.Once) sb.Append(Loc.T("  <color=#FFCC5C>· великий проект</color>"));
             sb.Append('\n').Append(d.Desc).Append('\n');
+            if (d.IsOffer && !active)
+                sb.Append(Loc.F("<color=#FF9E4D>Редкая возможность: исчезнет через {0} дн., если не принять.</color>", EmpireDecisions.OfferLeft(d))).Append('\n');
+            if (!string.IsNullOrEmpty(d.Note)) sb.Append("<color=#8AA2A8>◆ ").Append(d.Note).Append("</color>\n");
             foreach (var (text, good) in d.Effects)
                 sb.Append(good ? "<color=#66F29E>▲ " : "<color=#FF7A73>▼ ").Append(text()).Append("</color>\n");
 

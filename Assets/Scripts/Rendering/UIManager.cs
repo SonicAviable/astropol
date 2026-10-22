@@ -612,8 +612,21 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, () => ToggleWindow(NavWindow.Empire), null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"), "I");
             Item("NavColonies", LGIcon.Population, Loc.T("Колонии"), DS.Green, ColonyManagerWindow.Toggle, null,
                  Loc.T("<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»"), "C");
-            Item("NavLaws", LGIcon.Menu, Loc.T("Законы"), new Color(0.95f, 0.62f, 0.36f), () => ToggleWindow(NavWindow.Laws), null,
-                 Loc.T("<b>Законы империи</b>\nЭкономика, армия, наука, общество, разведка: долгие решения с плюсами и минусами"), "L");
+            Item("NavLaws", LGIcon.Menu, Loc.T("Законы и решения"), new Color(0.95f, 0.62f, 0.36f), () => ToggleWindow(NavWindow.Laws), null,
+                 Loc.T("<b>Законы и решения</b>\nЗаконы — постоянные правила империи с платой влиянием.\nРешения — проекты за титан и другие ресурсы: особые для вашей фракции, по обстоятельствам (война, кризис, эпоха) и редкие возможности с таймером. Кружок на значке — сколько решений можно принять прямо сейчас (золотой — появились новые)"), "L");
+            // Счётчик решений, которые можно принять, — кружок в углу значка (золотой — есть новые); виден и в свёрнутом меню
+            var lawsTile = menu.transform.Find("NavLaws/IconTile");
+            if (lawsTile != null)
+            {
+                _navDecisionPill = LGBuild.Panel(lawsTile, "DecisionBadge", DS.Green);
+                _navDecisionPill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-1, -1), new Vector2(16, 14));
+                LG.Platter(_navDecisionPill.gameObject, 7f);
+                _navDecisionBadge = CreateText(_navDecisionPill.transform, "", 9, FontStyle.Bold, new Color(0.02f, 0.06f, 0.05f), TextAnchor.MiddleCenter);
+                _navDecisionBadge.rectTransform.anchorMin = Vector2.zero;
+                _navDecisionBadge.rectTransform.anchorMax = Vector2.one;
+                _navDecisionBadge.rectTransform.offsetMin = _navDecisionBadge.rectTransform.offsetMax = Vector2.zero;
+                _navDecisionPill.gameObject.SetActive(false);
+            }
             Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, () => ToggleWindow(NavWindow.Tech), UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"), "T");
             Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => ToggleWindow(NavWindow.Diplomacy), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"), "P");
             Item("NavSpy", LGIcon.Betrayal, Loc.T("Шпионаж"), new Color(0.74f, 0.56f, 1f), () => ToggleWindow(NavWindow.Espionage), null,
@@ -663,6 +676,23 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
 
         /// <summary>Плавная смена ширины меню (только пока идёт анимация — в покое канвас не трогаем).</summary>
+        private Image _navDecisionPill;
+        private Text _navDecisionBadge;
+        private float _navBadgeTimer;
+
+        /// <summary>Раз в секунду: сколько решений можно принять сейчас (на кнопке «Законы и решения»).</summary>
+        private void UpdateDecisionBadge(float dt)
+        {
+            if (_navDecisionPill == null || (_navBadgeTimer -= dt) > 0f) return;
+            _navBadgeTimer = 1f;
+            int fresh = EmpireDecisions.UnseenCount;
+            int n = fresh > 0 ? fresh : EmpireDecisions.AvailableCount;
+            _navDecisionPill.gameObject.SetActive(n > 0);
+            if (n <= 0) return;
+            _navDecisionBadge.text = n > 9 ? "9+" : n.ToString();
+            _navDecisionPill.color = fresh > 0 ? DS.Gold : DS.Green;
+        }
+
         private void UpdateNavMenu(float dt)
         {
             float target = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
@@ -1548,6 +1578,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             UpdateSpeedControl();
             UpdateNavMenu(dt);
+            UpdateDecisionBadge(dt);
             OutlinerPanel.Yield = _inspTargetAlpha > 0.5f;
 
             if (TimeManager.Instance != null && _dateText != null)

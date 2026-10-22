@@ -35,6 +35,11 @@ namespace StellarisClone.Core
         public Func<float, string> OnComplete;
         /// <summary>Особое условие (null — выполнено).</summary>
         public Func<string> Requirement;
+        /// <summary>Когда решение вообще видно (null — всегда): война, кризис, эпоха, сезон… Условие пропало — решение исчезает.</summary>
+        public Func<bool> Shown;
+        /// <summary>Возможность: при условии <see cref="Shown"/> раз в месяц появляется с шансом <see cref="OfferChance"/> и ждёт <see cref="OfferDays"/> дней.</summary>
+        public int OfferDays;
+        public float OfferChance;
         public readonly List<(Func<string> Text, bool Good)> Effects = new List<(Func<string>, bool)>();
 
         public DecisionDef Cost(float minerals = 0f, float energy = 0f, float alloys = 0f, float influence = 0f)
@@ -45,6 +50,12 @@ namespace StellarisClone.Core
         public DecisionDef Stab(float s) { Stability = s; return Line(Loc.F("+{0:0} стабильности колоний", s), true); }
         public DecisionDef Done(Func<float, string> f) { OnComplete = f; return this; }
         public DecisionDef Need(Func<string> f) { Requirement = f; return this; }
+        public DecisionDef When(Func<bool> f) { Shown = f; return this; }
+        /// <summary>Подпись условия («только во время войны») — приглушённо на карточке и в подсказке.</summary>
+        public string Note;
+        public DecisionDef Cond(string note) { Note = note; return this; }
+        public DecisionDef Offer(float monthlyChance, int days) { OfferChance = monthlyChance; OfferDays = days; return this; }
+        public bool IsOffer => OfferDays > 0;
         public DecisionDef Line(string text, bool good = true) { Effects.Add((() => text, good)); return this; }
         public DecisionDef Line(Func<string> text, bool good = true) { Effects.Add((text, good)); return this; }
 
@@ -65,6 +76,8 @@ namespace StellarisClone.Core
         public List<string> CooldownId = new List<string>();
         public List<int> CooldownUntil = new List<int>();
         public List<string> Completed = new List<string>();
+        public List<string> OfferId = new List<string>();
+        public List<int> OfferUntil = new List<int>();
     }
 
     /// <summary>
@@ -83,6 +96,15 @@ namespace StellarisClone.Core
         private static readonly List<Running> s_active = new List<Running>();
         private static readonly Dictionary<string, int> s_cooldown = new Dictionary<string, int>();
         private static readonly HashSet<string> s_completed = new HashSet<string>();
+        /// <summary>Открытые возможности: до какого дня ждут.</summary>
+        private static readonly Dictionary<string, int> s_offers = new Dictionary<string, int>();
+        /// <summary>Решения, которые уже были видны (чтобы сообщать только о новых), и ещё не просмотренные игроком.</summary>
+        private static readonly HashSet<string> s_known = new HashSet<string>();
+        private static readonly HashSet<string> s_unseen = new HashSet<string>();
+        private static bool s_scanned;
+        /// <summary>Когда о решении сообщали в последний раз — чтобы мигающие условия (бой, баланс гелия) не засыпали уведомлениями.</summary>
+        private static readonly Dictionary<string, int> s_notified = new Dictionary<string, int>();
+        private const int RenotifyDays = 120;
         private static int s_version = 1;
 
         public static event Action OnChanged;
@@ -104,14 +126,57 @@ namespace StellarisClone.Core
         /// <summary>Масштаб цен и наград по размеру империи: 1 колония — ×1, каждая следующая +6%, не больше ×2.</summary>
         public static float Scale => Mathf.Clamp(1f + 0.06f * (EmpireStats.Colonies(0) - 1), 1f, 2f);
 
-        /// <summary>Решения, которые видит игрок: общие и особые его фракции.</summary>
+        private static bool OwnFaction(DecisionDef d) => d.Faction == null || d.Faction == FactionTraits.Key(0);
+
+        /// <summary>Видно ли решение сейчас: идущее и построенное — всегда, возможность — пока не истекла, остальное — по условию.</summary>
+        public static bool IsVisible(DecisionDef d)
+        {
+            if (d == null || !OwnFaction(d)) return false;
+            if (IsActive(d) || IsDone(d)) return true;
+            if (d.IsOffer) return s_offers.ContainsKey(d.Id);
+            return d.Shown == null || d.Shown();
+        }
+
+        /// <summary>Решения раздела, которые видит игрок: сначала возможности с таймером, потом остальные.</summary>
         public static IEnumerable<DecisionDef> Visible(DecisionCategory c)
         {
             EnsureDefs();
-            string key = FactionTraits.Key(0);
-            foreach (var d in s_all)
-                if (d.Category == c && (d.Faction == null || d.Faction == key)) yield return d;
+            foreach (var d in s_all) if (d.Category == c && d.IsOffer && IsVisible(d)) yield return d;
+            foreach (var d in s_all) if (d.Category == c && !d.IsOffer && IsVisible(d)) yield return d;
         }
+
+        /// <summary>Сколько решений фракции пока скрыто (откроются при особых условиях).</summary>
+        public static int HiddenCount
+        {
+            get
+            {
+                EnsureDefs();
+                int n = 0;
+                foreach (var d in s_all) if (OwnFaction(d) && !IsVisible(d)) n++;
+                return n;
+            }
+        }
+
+        /// <summary>Сколько решений можно принять прямо сейчас (счётчик на кнопке меню).</summary>
+        public static int AvailableCount
+        {
+            get
+            {
+                EnsureDefs();
+                int n = 0;
+                foreach (var d in s_all) if (IsVisible(d) && Blocker(d) == null) n++;
+                return n;
+            }
+        }
+
+        public static bool IsNew(DecisionDef d) => d != null && s_unseen.Contains(d.Id);
+        public static int UnseenCount => s_unseen.Count;
+        /// <summary>Игрок посмотрел вкладку решений — метки «новое» снимаются.</summary>
+        public static void MarkSeen() { if (s_unseen.Count > 0) { s_unseen.Clear(); OnChanged?.Invoke(); } }
+
+        /// <summary>Сколько дней ещё ждёт возможность.</summary>
+        public static int OfferLeft(DecisionDef d)
+            => d != null && s_offers.TryGetValue(d.Id, out int until) ? Mathf.Max(0, until - EmpireLaws.Today()) : 0;
 
         // ================================================================ Состояние
 
@@ -165,6 +230,8 @@ namespace StellarisClone.Core
             var eco = EconomyManager.Instance;
             if (!eco.TrySpend(d.EnergyCost, d.MineralsCost, d.AlloysCost, d.Influence)) return false;
             float scale = Scale;
+            s_offers.Remove(d.Id);
+            s_unseen.Remove(d.Id);
             if (d.Days <= 0)
             {
                 Finish(d, scale);
@@ -195,12 +262,13 @@ namespace StellarisClone.Core
                 result ?? "", NotificationCenter.Kind.Success, 6f);
         }
 
-        /// <summary>Каждый день: завершить решения, у которых вышел срок.</summary>
+        /// <summary>Каждый день: завершить решения, у которых вышел срок; закрыть упущенные возможности; раз в 5 дней — найти новые решения.</summary>
         public static void DailyTick()
         {
-            if (s_active.Count == 0) return;
             int today = EmpireLaws.Today();
-            bool changed = false;
+            bool changed = ExpireOffers(today);
+            if (!s_scanned || today % 5 == 0) changed |= ScanNew();
+            if (s_active.Count == 0) { if (changed) OnChanged?.Invoke(); return; }
             for (int i = s_active.Count - 1; i >= 0; i--)
             {
                 var r = s_active[i];
@@ -213,6 +281,72 @@ namespace StellarisClone.Core
             s_version++;
             EconomyManager.Instance?.RecalculateAll();
             OnChanged?.Invoke();
+        }
+
+        private static bool ExpireOffers(int today)
+        {
+            if (s_offers.Count == 0) return false;
+            List<string> gone = null;
+            foreach (var kv in s_offers) if (today >= kv.Value) (gone ??= new List<string>()).Add(kv.Key);
+            if (gone == null) return false;
+            foreach (var id in gone)
+            {
+                s_offers.Remove(id);
+                s_unseen.Remove(id);
+                var d = Get(id);
+                if (d == null) continue;
+                s_cooldown[id] = today + Mathf.Max(90, d.Cooldown / 2);   // упущенный шанс вернётся не скоро
+                NotificationCenter.Show(Loc.F("Возможность упущена: «{0}»", d.Name), Loc.T("Решение больше недоступно."), NotificationCenter.Kind.Info, 4f);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Сверить, какие решения стали видны: о новых — уведомление и метка «новое», исчезнувшие забываются
+        /// (появятся снова — снова сообщим). Первый проход после начала партии или загрузки — молча.
+        /// </summary>
+        private static bool ScanNew()
+        {
+            EnsureDefs();
+            bool silent = !s_scanned, changed = false;
+            s_scanned = true;
+            foreach (var d in s_all)
+            {
+                if (d.IsOffer) continue;   // о возможностях сообщает MonthlyTick
+                bool vis = IsVisible(d) && !IsDone(d);
+                if (vis && s_known.Add(d.Id))
+                {
+                    if (silent || d.Shown == null || CooldownLeft(d) > 0) continue;
+                    int today = EmpireLaws.Today();
+                    if (s_notified.TryGetValue(d.Id, out int last) && today - last < RenotifyDays) continue;
+                    s_notified[d.Id] = today;
+                    s_unseen.Add(d.Id);
+                    changed = true;
+                    NotificationCenter.Show(Loc.F("Новое решение: «{0}»", d.Name), Loc.T("Законы (L) → вкладка «Решения»"), NotificationCenter.Kind.Info, 6f);
+                }
+                else if (!vis && s_known.Remove(d.Id)) { s_unseen.Remove(d.Id); changed = true; }
+            }
+            return changed;
+        }
+
+        /// <summary>Раз в месяц: случайные возможности с таймером.</summary>
+        public static void MonthlyTick()
+        {
+            EnsureDefs();
+            int today = EmpireLaws.Today();
+            bool changed = false;
+            foreach (var d in s_all)
+            {
+                if (!d.IsOffer || !OwnFaction(d) || s_offers.ContainsKey(d.Id) || IsActive(d) || CooldownLeft(d) > 0) continue;
+                if (d.Shown != null && !d.Shown()) continue;
+                if (UnityEngine.Random.value >= d.OfferChance) continue;
+                s_offers[d.Id] = today + d.OfferDays;
+                s_unseen.Add(d.Id);
+                changed = true;
+                NotificationCenter.Show(Loc.F("Новая возможность: «{0}»", d.Name),
+                    Loc.F("Ждёт {0} дн. — законы (L) → вкладка «Решения»", d.OfferDays), NotificationCenter.Kind.Success, 7f);
+            }
+            if (changed) OnChanged?.Invoke();
         }
 
         /// <summary>Бонусы, которые сейчас действуют: идущие решения-усиления и завершённые великие проекты.</summary>
@@ -261,6 +395,7 @@ namespace StellarisClone.Core
             s_active.Clear();
             s_cooldown.Clear();
             s_completed.Clear();
+            s_offers.Clear(); s_known.Clear(); s_unseen.Clear(); s_notified.Clear(); s_scanned = false;
             s_version++;
             OnChanged?.Invoke();
         }
@@ -274,6 +409,7 @@ namespace StellarisClone.Core
             }
             foreach (var kv in s_cooldown) { s.CooldownId.Add(kv.Key); s.CooldownUntil.Add(kv.Value); }
             s.Completed.AddRange(s_completed);
+            foreach (var kv in s_offers) { s.OfferId.Add(kv.Key); s.OfferUntil.Add(kv.Value); }
             return s;
         }
 
@@ -282,6 +418,7 @@ namespace StellarisClone.Core
             s_active.Clear();
             s_cooldown.Clear();
             s_completed.Clear();
+            s_offers.Clear(); s_known.Clear(); s_unseen.Clear(); s_notified.Clear(); s_scanned = false;
             if (s != null)
             {
                 for (int i = 0; i < s.ActiveId.Count && i < s.ActiveEnd.Count; i++)
@@ -297,6 +434,9 @@ namespace StellarisClone.Core
                 }
                 for (int i = 0; i < s.CooldownId.Count && i < s.CooldownUntil.Count; i++) s_cooldown[s.CooldownId[i]] = s.CooldownUntil[i];
                 foreach (var id in s.Completed) if (Get(id) != null) s_completed.Add(id);
+                if (s.OfferId != null && s.OfferUntil != null)
+                    for (int i = 0; i < s.OfferId.Count && i < s.OfferUntil.Count; i++)
+                        if (Get(s.OfferId[i]) != null) s_offers[s.OfferId[i]] = s.OfferUntil[i];
             }
             s_version++;
             OnChanged?.Invoke();
@@ -417,6 +557,76 @@ namespace StellarisClone.Core
             return Loc.F("Синтетами стали {0} жителей.", n);
         }
 
+        private static int YearsIn => TimeManager.Instance != null ? TimeManager.Instance.Year - 2200 : 0;
+        private static int MonthNow => TimeManager.Instance != null ? TimeManager.Instance.Month : 1;
+
+        private static bool AtWar()
+        {
+            foreach (var ai in AIEmpireManager.Alive) if (ai.AtWar) return true;
+            return false;
+        }
+
+        private static bool HasPartner()
+        {
+            foreach (var ai in AIEmpireManager.Alive) if (ai.HasPact || ai.HasAlliance) return true;
+            return false;
+        }
+
+        /// <summary>Известные империи воюют между собой (без нас).</summary>
+        private static bool OthersAtWar()
+        {
+            foreach (var ai in AIEmpireManager.Alive) if (Contacts.PlayerMet(ai.OwnerId) && ai.WarsWithAIs > 0) return true;
+            return false;
+        }
+
+        /// <summary>Известный сосед заметно сильнее нашего флота.</summary>
+        private static bool Outgunned()
+        {
+            float mine = EmpireStats.MilitaryPower(0);
+            foreach (var ai in AIEmpireManager.Alive)
+                if (Contacts.PlayerMet(ai.OwnerId) && EmpireStats.MilitaryPower(ai.OwnerId) > mine * 1.3f + 50f) return true;
+            return false;
+        }
+
+        private static bool Unrest()
+        {
+            foreach (var p in PlayerColonies()) if (p.Stability < 40f) return true;
+            return false;
+        }
+
+        private static float AvgStability()
+        {
+            float sum = 0f; int n = 0;
+            foreach (var p in PlayerColonies()) { sum += p.Stability; n++; }
+            return n > 0 ? sum / n : 0f;
+        }
+
+        private static bool EnergyCrisis()
+        {
+            var eco = EconomyManager.Instance;
+            return eco != null && (eco.IsBankrupt || eco.MonthlyEnergyIncome < 0f);
+        }
+
+        private static bool StorageFull()
+        {
+            var eco = EconomyManager.Instance;
+            return eco != null && eco.Minerals >= eco.MineralStorage * 0.85f;
+        }
+
+        /// <summary>Жители на n колоний со свободным жильём.</summary>
+        private static int Settle(int maxColonies)
+        {
+            int n = 0;
+            foreach (var p in PlayerColonies())
+            {
+                if (n >= maxColonies) break;
+                if (p.Population >= p.HousingCapacity) continue;
+                p.AddPops(p.GrowthSpecies(), 1);
+                n++;
+            }
+            return n;
+        }
+
         private static void Gain(float energy = 0f, float minerals = 0f, float alloys = 0f, float influence = 0f)
         {
             var eco = EconomyManager.Instance;
@@ -474,7 +684,7 @@ namespace StellarisClone.Core
                 Loc.T("Караван исследовательских зондов уходит за границу на два месяца и картографирует всё, до чего дотянется."))
                 .Cost(minerals: 400f, energy: 150f).Time(60, 360)
                 .Line(Loc.T("Через 60 дн.: изучены все системы в 4 прыжках от границ"))
-                .Need(() => EventDatabase.UnsurveyedNearPlayer(4).Count == 0 ? Loc.T("Вокруг всё изучено") : null)
+                .When(() => EventDatabase.UnsurveyedNearPlayer(4).Count > 0)
                 .Done(s => Survey(4));
 
             D("dec_labs", null, Sci, LGIcon.Sensors, Loc.T("Ночные смены в лабораториях"),
@@ -488,7 +698,7 @@ namespace StellarisClone.Core
                 Loc.T("Полевые доки из титановых ферм собирают прямо на орбитах: весь флот встаёт в строй за неделю."))
                 .Cost(minerals: 500f, energy: 100f).Time(0, 180)
                 .Line(Loc.T("Сразу: все корабли полностью отремонтированы"))
-                .Need(() => DamagedShips() == 0 ? Loc.T("Все корабли целы") : null)
+                .When(() => DamagedShips() > 0)
                 .Done(s => RepairAll());
 
             D("dec_drills", null, Mil, LGIcon.Target, Loc.T("Военные учения"),
@@ -516,6 +726,129 @@ namespace StellarisClone.Core
                 .Mod((b, k) => { b.PopGrowth += 0.35f * k; })
                 .Line(Loc.T("+35% роста населения на 360 дн."));
 
+            // ================================================================ По обстоятельствам
+            // Появляются, когда сложились условия, и исчезают вместе с ними; возможности ждут считанные дни.
+
+            D("eco_crisis", null, Eco, LGIcon.Warning, Loc.T("Чрезвычайный бюджет"),
+                Loc.T("Казна в минусе. Титан срочно продают за гелий-3, лишь бы флот не встал на прикол."))
+                .Cost(minerals: 600f).Time(0, 360)
+                .When(EnergyCrisis)
+                .Cond(Loc.T("Появляется, когда гелий-3 уходит в минус"))
+                .Line(() => Loc.F("Сразу +{0:0} гелия-3", 350f * Scale))
+                .Done(s => { Gain(energy: 350f * s); return Loc.F("Казна получила {0:0} гелия-3.", 350f * s); });
+
+            D("eco_selloff", null, Eco, LGIcon.Trade, Loc.T("Распродажа излишков"),
+                Loc.T("Склады ломятся от титана. Половину — на внешний рынок: за гелий-3 и за благодарность торговых домов."))
+                .Cost(minerals: 1500f).Time(0, 180)
+                .When(StorageFull)
+                .Cond(Loc.T("Появляется, когда склады титана почти полны"))
+                .Line(() => Loc.F("Сразу +{0:0} гелия-3 и +30 влияния", 500f * Scale))
+                .Done(s => { Gain(energy: 500f * s, influence: 30f); return Loc.F("Выручка: {0:0} гелия-3 и 30 влияния.", 500f * s); });
+
+            D("eco_warbonds", null, Eco, LGIcon.Alloys, Loc.T("Военные облигации"),
+                Loc.T("Граждане покупают облигации победы. Деньги идут прямо на заводы, броня — прямо на фронт."))
+                .Cost(minerals: 800f, influence: 10f).Time(0, 360)
+                .When(AtWar)
+                .Cond(Loc.T("Только во время войны"))
+                .Line(() => Loc.F("+{0:0} сплавов в месяц на 6 месяцев", 12f * Scale))
+                .Done(s =>
+                {
+                    EmpireEffects.Add("eco_warbonds", Loc.T("Военные облигации"), Loc.T("Сборы на нужды фронта"), 6, alloys: 12f * s);
+                    return Loc.F("+{0:0} сплавов в месяц на полгода.", 12f * s);
+                });
+
+            D("eco_caravan", null, Eco, LGIcon.Trade, Loc.T("Торговый караван"),
+                Loc.T("У границы встал караван вольных торговцев. Сплавы у них дешёвые — но ждать они не станут."))
+                .Cost(minerals: 500f).Time(0, 240).Offer(0.06f, 45)
+                .Line(() => Loc.F("Сразу +{0:0} сплавов", 220f * Scale))
+                .Done(s => { Gain(alloys: 220f * s); return Loc.F("Куплено {0:0} сплавов.", 220f * s); });
+
+            D("sci_pioneers", null, Sci, LGIcon.Propulsion, Loc.T("Программа первопроходцев"),
+                Loc.T("Молодая империя ставит на разведку: больше зондов, быстрее корабли. Через 15 лет программа устареет."))
+                .Cost(minerals: 300f).Time(360, 720)
+                .When(() => YearsIn < 15)
+                .Mod((b, k) => { b.SurveySpeed += 0.25f * k; b.HyperlaneSpeed += 0.10f * k; })
+                .Line(Loc.T("+25% скорости исследования систем и +10% скорости в коридорах на 360 дн."))
+                .Cond(Loc.T("Доступно только первые 15 лет"));
+
+            D("sci_exchange", null, Sci, LGIcon.Handshake, Loc.T("Обмен учёными"),
+                Loc.T("Партнёры по договору открывают свои лаборатории. Свежие идеи ускоряют исследования."))
+                .Cost(minerals: 600f, influence: 20f).Time(360, 540)
+                .When(HasPartner)
+                .Mod((b, k) => { b.ResearchMult += 0.15f * k; })
+                .Cond(Loc.T("Нужен пакт или союз с другой империей"))
+                .Line(Loc.T("+15% науки на 360 дн."));
+
+            D("sci_defector", null, Sci, LGIcon.Research, Loc.T("Учёный-перебежчик"),
+                Loc.T("Светило чужой науки просит убежища — с чертежами и тетрадями. Решать надо быстро, пока его не хватились."))
+                .Cost(influence: 25f).Time(0, 360).Offer(0.05f, 60)
+                .Line(() => Loc.F("Сразу +{0:0} науки (3 месяца исследований)", MonthlyScience * 3f))
+                .Done(s => GiveScience(3f));
+
+            D("sci_horizon", null, Sci, LGIcon.Star, Loc.T("Проект «Горизонт»"),
+                Loc.T("Великий проект зрелой империи: научный город на орбите звезды, где работают лучшие умы целых поколений."))
+                .Cost(minerals: 2500f).Time(360, 0).Great()
+                .When(() => YearsIn >= 50)
+                .Mod((b, k) => { b.ResearchMult += 0.15f * k; })
+                .Line(Loc.T("Навсегда: +15% науки"))
+                .Cond(Loc.T("Открывается на 50-й год"));
+
+            D("mil_totaldef", null, Mil, LGIcon.Defense, Loc.T("Тотальная оборона"),
+                Loc.T("Враг у ворот. Каждая база получает щиты и пушки сверх штата, граждане сплачиваются вокруг флага."))
+                .Cost(minerals: 700f).Time(120, 360)
+                .When(AtWar)
+                .Mod((b, k) => { b.StarbaseMult += 0.40f * k; })
+                .Cond(Loc.T("Только во время войны"))
+                .Line(Loc.T("+40% прочности звёздных баз на 120 дн."))
+                .Stab(6f);
+
+            D("mil_armsrace", null, Mil, LGIcon.Shipyard, Loc.T("Гонка вооружений"),
+                Loc.T("Сосед строит флот быстрее нас. Верфи получают приоритет — пока не поздно."))
+                .Cost(minerals: 900f).Time(240, 540)
+                .When(() => !AtWar() && Outgunned())
+                .Mod((b, k) => { b.ShipCostMult -= 0.20f * k; b.NavalCapacity += 4f * k; })
+                .Cond(Loc.T("Появляется, когда известный сосед заметно сильнее"))
+                .Line(Loc.T("−20% цены кораблей и +4 к флотскому лимиту на 240 дн."));
+
+            D("mil_mercs", null, Mil, LGIcon.Swords, Loc.T("Наёмные инструкторы"),
+                Loc.T("Ветераны чужих войн предлагают свои услуги. Дорого, но экипажи учатся стрелять как надо."))
+                .Cost(energy: 300f).Time(180, 360).Offer(0.15f, 60)
+                .When(AtWar)
+                .Mod((b, k) => { b.AllDamage += 0.15f * k; })
+                .Line(Loc.T("+15% урона на 180 дн."));
+
+            D("soc_bread", null, Soc, LGIcon.Society, Loc.T("Хлеба и зрелищ"),
+                Loc.T("Колонии бурлят. Бесплатные пайки, гонки на орбите и праздники — недовольство утихает."))
+                .Cost(minerals: 300f, energy: 300f).Time(180, 360)
+                .When(Unrest)
+                .Cond(Loc.T("Появляется, когда стабильность колонии ниже 40"))
+                .Stab(10f)
+                .Line(Loc.T("Действует 180 дн."));
+
+            D("soc_landrush", null, Soc, LGIcon.Starbase, Loc.T("Земельная лихорадка"),
+                Loc.T("Каждому, кто застолбит новую систему, — налоговые каникулы. Галактика ещё не поделена, но это ненадолго."))
+                .Cost(minerals: 500f).Time(240, 540)
+                .When(() => YearsIn < 25)
+                .Mod((b, k) => { b.OutpostInfluenceDiscount += 10f * k; })
+                .Line(Loc.T("Форпосты на 10 влияния дешевле на 240 дн."))
+                .Cond(Loc.T("Доступно только первые 25 лет"));
+
+            D("soc_refugees", null, Soc, LGIcon.Population, Loc.T("Беженцы с окраин"),
+                Loc.T("Корабли беженцев просят разрешения сесть. Новые руки нужны колониям — но решать надо сейчас."))
+                .Cost(influence: 15f).Time(0, 360).Offer(0.05f, 60)
+                .When(() => ColoniesWithRoom() > 0)
+                .Line(Loc.T("Сразу: +1 житель на 3 колониях со свободным жильём"))
+                .Done(s => Loc.F("Беженцы поселились на {0} колониях.", Settle(3)));
+
+            D("soc_golden", null, Soc, LGIcon.Trophy, Loc.T("Золотой век"),
+                Loc.T("Великий проект процветающей империи: искусство, наука и промышленность на пике. Об этой эпохе будут слагать легенды."))
+                .Cost(minerals: 3000f).Time(360, 0).Great()
+                .When(() => YearsIn >= 40 && AvgStability() >= 60f)
+                .Mod((b, k) => { b.EnergyMult += 0.05f * k; b.AlloysMult += 0.05f * k; b.ResearchMult += 0.05f * k; })
+                .Line(Loc.T("Навсегда: +5% гелия-3, сплавов и науки"))
+                .Stab(3f)
+                .Cond(Loc.T("С 40-го года, при средней стабильности от 60"));
+
             // ================================================================ Фракции
 
             // ---- Республика Астрея ----
@@ -523,7 +856,7 @@ namespace StellarisClone.Core
                 Loc.T("Республика созывает послов всех известных империй на Астрею. Три месяца речей, банкетов и тихих договорённостей."))
                 .Cost(minerals: 600f, influence: 40f).Time(90, 720)
                 .Line(Loc.T("Через 90 дн.: +12 к отношениям со всеми известными империями"))
-                .Need(() => AnyContact() ? null : Loc.T("Нет известных империй"))
+                .When(AnyContact)
                 .Done(s => Loc.F("Послы {0} империй уехали довольными.", Opinion("incident", 12f)));
             D("ast_academy", "astrea", F, LGIcon.Research, Loc.T("Академия Республики"),
                 Loc.T("Свободный университет для учёных всей галактики. Беженцы-гении едут к нам, а не к соседям."))
@@ -536,6 +869,15 @@ namespace StellarisClone.Core
                 .Mod((b, k) => { b.PopGrowth += 0.10f * k; })
                 .Line(Loc.T("Навсегда: +10% роста населения"))
                 .Stab(4f);
+
+            D("ast_peace", "astrea", F, LGIcon.Peace, Loc.T("Миротворческая миссия"),
+                Loc.T("Соседи воюют. Республика предлагает переговоры на нейтральной станции — и получает славу миротворца."))
+                .Cost(minerals: 500f, influence: 30f).Time(120, 540)
+                .When(() => !AtWar() && OthersAtWar())
+                .Cond(Loc.T("Появляется, когда известные империи воюют между собой"))
+                .Stab(5f)
+                .Line(Loc.T("По окончании: +8 к отношениям со всеми известными империями"))
+                .Done(s => Loc.F("Миротворцев благодарят {0} империй.", Opinion("incident", 8f)));
 
             // ---- Доминион Ксарн ----
             D("xarn_parade", "xarn", F, LGIcon.Swords, Loc.T("Военный парад"),
@@ -555,6 +897,14 @@ namespace StellarisClone.Core
                 .Mod((b, k) => { b.AlloysMult += 0.10f * k; b.StarbaseMult += 0.15f * k; })
                 .Line(Loc.T("Навсегда: +10% сплавов и +15% прочности звёздных баз"));
 
+            D("xarn_vendetta", "xarn", F, LGIcon.Target, Loc.T("Кровная месть"),
+                Loc.T("Клан объявляет врагу кровную месть. Пока она не исполнена, ни один воин Ксарна не отступит."))
+                .Cost(minerals: 500f, influence: 20f).Time(120, 360)
+                .When(AtWar)
+                .Mod((b, k) => { b.AllDamage += 0.15f * k; })
+                .Cond(Loc.T("Только во время войны"))
+                .Line(Loc.T("+15% урона на 120 дн."));
+
             // ---- Синдикат Аквила ----
             D("aq_boom", "aquila", F, LGIcon.Energy, Loc.T("Биржевой бум"),
                 Loc.T("Синдикат вкладывает титан в гелиевые фьючерсы. Пока пузырь растёт — растёт и казна."))
@@ -571,7 +921,7 @@ namespace StellarisClone.Core
                 .Cost(minerals: 800f, influence: 20f).Time(120, 720)
                 .Line(Loc.T("Через 120 дн.: +12 к отношениям с известными империями"))
                 .Line(() => Loc.F("и +{0:0} гелия-3 в месяц на 12 месяцев", 8f * Scale))
-                .Need(() => AnyContact() ? null : Loc.T("Нет известных империй"))
+                .When(AnyContact)
                 .Done(s =>
                 {
                     int n = Opinion("trade", 12f);
@@ -583,6 +933,12 @@ namespace StellarisClone.Core
                 .Cost(minerals: 2500f).Time(360, 0).Great()
                 .Mod((b, k) => { b.EnergyMult += 0.10f * k; b.InfluenceFlat += 1f * k; })
                 .Line(Loc.T("Навсегда: +10% гелия-3 и +1 влияния в месяц"));
+
+            D("aq_buyout", "aquila", F, LGIcon.Alloys, Loc.T("Скупка активов"),
+                Loc.T("Чужой концерн разорился. Синдикат забирает его склады сплавов за бесценок — если успеет первым."))
+                .Cost(energy: 400f).Time(0, 360).Offer(0.06f, 30)
+                .Line(() => Loc.F("Сразу +{0:0} сплавов и +15 влияния", 250f * Scale))
+                .Done(s => { Gain(alloys: 250f * s, influence: 15f); return Loc.F("Получено {0:0} сплавов и 15 влияния.", 250f * s); });
 
             // ---- Иридийский Оракул ----
             D("ir_vision", "iridia", F, LGIcon.Star, Loc.T("Видение будущего"),
@@ -602,6 +958,12 @@ namespace StellarisClone.Core
                 .Mod((b, k) => { b.InfluenceFlat += 1.5f * k; b.ResearchMult += 0.05f * k; })
                 .Line(Loc.T("Навсегда: +1.5 влияния в месяц и +5% науки"));
 
+            D("ir_omen", "iridia", F, LGIcon.Star, Loc.T("Знамение звёзд"),
+                Loc.T("Звёзды выстроились в знак, который видят раз в поколение. Если провидцы истолкуют его сейчас — откроется многое."))
+                .Cost(influence: 20f).Time(180, 540).Offer(0.05f, 60)
+                .Mod((b, k) => { b.ResearchMult += 0.25f * k; })
+                .Line(Loc.T("+25% науки на 180 дн."));
+
             // ---- Хлорофиловый Конклав Тэрра'ан ----
             D("ter_bloom", "terraan", F, LGIcon.Population, Loc.T("Великое цветение"),
                 Loc.T("Конклав пробуждает спящие семена на всех мирах сразу. Через два месяца сад приносит новых жителей."))
@@ -613,7 +975,7 @@ namespace StellarisClone.Core
                 Loc.T("Споры мицелия разлетаются по коридорам и прорастают сенсорной сетью в чужих системах."))
                 .Cost(energy: 250f).Time(45, 540)
                 .Line(Loc.T("Через 45 дн.: изучены все системы в 5 прыжках от границ"))
-                .Need(() => EventDatabase.UnsurveyedNearPlayer(5).Count == 0 ? Loc.T("Вокруг всё изучено") : null)
+                .When(() => EventDatabase.UnsurveyedNearPlayer(5).Count > 0)
                 .Done(s => Survey(5));
             D("ter_roots", "terraan", F, LGIcon.Defense, Loc.T("Корневая оборона"),
                 Loc.T("Корни оплетают звёздные базы, а сок сада питает экипажи. Защищаться дешевле и легче."))
@@ -627,12 +989,20 @@ namespace StellarisClone.Core
                 .Line(Loc.T("Навсегда: +15% роста населения"))
                 .Stab(3f);
 
+            D("ter_spring", "terraan", F, LGIcon.Population, Loc.T("Сезон цветения"),
+                Loc.T("Весной соки сада текут быстрее. Конклав может направить их в рост новых жителей — но только пока весна."))
+                .Cost(minerals: 400f).Time(90, 270)
+                .When(() => MonthNow >= 3 && MonthNow <= 5)
+                .Mod((b, k) => { b.PopGrowth += 0.40f * k; })
+                .Cond(Loc.T("Только весной (март–май)"))
+                .Line(Loc.T("+40% роста населения на 90 дн."));
+
             // ---- Машинный Консенсус «Ноль» ----
             D("nol_reflash", "nol", F, LGIcon.Gear, Loc.T("Перепрошивка"),
                 Loc.T("Органики на мирах Консенсуса проходят «добровольную» загрузку в синтетические тела."))
                 .Cost(minerals: 800f, influence: 30f).Time(60, 540)
                 .Line(Loc.T("Через 60 дн.: до 2 органиков на каждой колонии станут синтетами"))
-                .Need(() => OrganicPops() == 0 ? Loc.T("На колониях нет органиков") : null)
+                .When(() => OrganicPops() > 0)
                 .Done(s => Reflash());
             D("nol_hive", "nol", F, LGIcon.Population, Loc.T("Фабрики-ульи"),
                 Loc.T("Сборочные линии работают без остановки: каждый мир Консенсуса получает новый синтет."))
@@ -645,6 +1015,12 @@ namespace StellarisClone.Core
                 .Cost(minerals: 1000f).Time(360, 900)
                 .Mod((b, k) => { b.EnergyMult += 0.10f * k; b.AlloysMult += 0.10f * k; b.ResearchMult += 0.10f * k; })
                 .Line(Loc.T("+10% гелия-3, сплавов и науки на 360 дн."));
+            D("nol_hack", "nol", F, LGIcon.Betrayal, Loc.T("Взлом вражеских сетей"),
+                Loc.T("Консенсус нашёл дыру в протоколах противника. Окно открыто недолго: прицелы врага видят то, что мы им покажем."))
+                .Cost(influence: 25f).Time(120, 360).Offer(0.12f, 45)
+                .When(AtWar)
+                .Mod((b, k) => { b.AllDamage += 0.10f * k; b.Accuracy += 10f * k; })
+                .Line(Loc.T("+10% урона и +10 точности на 120 дн."));
             D("nol_core", "nol", F, LGIcon.Monitor, Loc.T("Ядро Консенсуса"),
                 Loc.T("Великий проект: планетарный вычислитель, в котором сходятся все мысли «Ноля»."))
                 .Cost(minerals: 2500f).Time(360, 0).Great()

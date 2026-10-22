@@ -5504,3 +5504,99 @@ VK Play: всё синхронизировано	VK Play: fully synced
 <color=#8AA2A8>Запас:</color> <b>{0}</b> / {1:N0}\n	<color=#8AA2A8>Stock:</color> <b>{0}</b> / {1:N0}\n
 <color=#8AA2A8>Переработка на заводах:</color> {0:+0;-0;0} / мес\n	<color=#8AA2A8>Refining at factories:</color> {0:+0;-0;0} / month\n
 <color=#8AA2A8>Склады вмещают {0:N0} титана (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>\n	<color=#8AA2A8>Storage holds {0:N0} titanium (+{1:0} per colony) — surplus is lost. Spend spare titanium on empire decisions.</color>\n
+Возможность упущена: «{0}»	Opportunity missed: «{0}»
+Решение больше недоступно.	The decision is no longer available.
+Новое решение: «{0}»	New decision: «{0}»
+Законы (L) → вкладка «Решения»	Laws (L) → «Decisions» tab
+Новая возможность: «{0}»	New opportunity: «{0}»
+Ждёт {0} дн. — законы (L) → вкладка «Решения»	Waits {0} days — Laws (L) → «Decisions» tab
+Чрезвычайный бюджет	Emergency Budget
+Казна в минусе. Титан срочно продают за гелий-3, лишь бы флот не встал на прикол.	The treasury is in the red. Titanium is sold off for helium-3 in a hurry, just so the fleet isn't grounded.
+Появляется, когда гелий-3 уходит в минус	Appears when helium-3 income goes negative
+Сразу +{0:0} гелия-3	Immediately +{0:0} helium-3
+Казна получила {0:0} гелия-3.	The treasury received {0:0} helium-3.
+Распродажа излишков	Surplus Sell-off
+Склады ломятся от титана. Половину — на внешний рынок: за гелий-3 и за благодарность торговых домов.	The warehouses are bursting with titanium. Half goes to the foreign market — for helium-3 and the gratitude of trading houses.
+Появляется, когда склады титана почти полны	Appears when titanium storage is nearly full
+Сразу +{0:0} гелия-3 и +30 влияния	Immediately +{0:0} helium-3 and +30 influence
+Выручка: {0:0} гелия-3 и 30 влияния.	Proceeds: {0:0} helium-3 and 30 influence.
+Военные облигации	War Bonds
+Граждане покупают облигации победы. Деньги идут прямо на заводы, броня — прямо на фронт.	Citizens buy victory bonds. The money goes straight to the factories, the armour straight to the front.
+Только во время войны	Only during war
++{0:0} сплавов в месяц на 6 месяцев	+{0:0} alloys per month for 6 months
+Сборы на нужды фронта	Contributions for the front
++{0:0} сплавов в месяц на полгода.	+{0:0} alloys per month for half a year.
+Торговый караван	Trade Caravan
+У границы встал караван вольных торговцев. Сплавы у них дешёвые — но ждать они не станут.	A caravan of free traders has stopped at the border. Their alloys are cheap — but they won't wait.
+Сразу +{0:0} сплавов	Immediately +{0:0} alloys
+Куплено {0:0} сплавов.	Bought {0:0} alloys.
+Программа первопроходцев	Pioneer Programme
+Молодая империя ставит на разведку: больше зондов, быстрее корабли. Через 15 лет программа устареет.	A young empire bets on exploration: more probes, faster ships. In 15 years the programme will be obsolete.
++25% скорости исследования систем и +10% скорости в коридорах на 360 дн.	+25% system survey speed and +10% hyperlane speed for 360 days
+Доступно только первые 15 лет	Available only in the first 15 years
+Обмен учёными	Scientist Exchange
+Партнёры по договору открывают свои лаборатории. Свежие идеи ускоряют исследования.	Treaty partners open their laboratories. Fresh ideas speed up research.
+Нужен пакт или союз с другой империей	Requires a pact or alliance with another empire
++15% науки на 360 дн.	+15% science for 360 days
+Учёный-перебежчик	Defecting Scientist
+Светило чужой науки просит убежища — с чертежами и тетрадями. Решать надо быстро, пока его не хватились.	A luminary of foreign science asks for asylum — with blueprints and notebooks. Decide quickly, before they're missed.
+Сразу +{0:0} науки (3 месяца исследований)	Immediately +{0:0} science (3 months of research)
+Проект «Горизонт»	Project «Horizon»
+Великий проект зрелой империи: научный город на орбите звезды, где работают лучшие умы целых поколений.	Great project of a mature empire: a science city in orbit around a star, where the best minds of entire generations work.
+Навсегда: +15% науки	Permanently: +15% science
+Открывается на 50-й год	Unlocks in year 50
+Тотальная оборона	Total Defence
+Враг у ворот. Каждая база получает щиты и пушки сверх штата, граждане сплачиваются вокруг флага.	The enemy is at the gates. Every base gets shields and guns beyond its quota, and citizens rally around the flag.
++40% прочности звёздных баз на 120 дн.	+40% starbase durability for 120 days
+Гонка вооружений	Arms Race
+Сосед строит флот быстрее нас. Верфи получают приоритет — пока не поздно.	A neighbour is building its fleet faster than we are. The shipyards get priority — before it's too late.
+Появляется, когда известный сосед заметно сильнее	Appears when a known neighbour is noticeably stronger
+−20% цены кораблей и +4 к флотскому лимиту на 240 дн.	−20% ship cost and +4 naval capacity for 240 days
+Наёмные инструкторы	Mercenary Instructors
+Ветераны чужих войн предлагают свои услуги. Дорого, но экипажи учатся стрелять как надо.	Veterans of foreign wars offer their services. Expensive, but the crews learn to shoot properly.
++15% урона на 180 дн.	+15% damage for 180 days
+Хлеба и зрелищ	Bread and Circuses
+Колонии бурлят. Бесплатные пайки, гонки на орбите и праздники — недовольство утихает.	The colonies are restless. Free rations, orbital races and festivals — the discontent subsides.
+Появляется, когда стабильность колонии ниже 40	Appears when a colony's stability drops below 40
+Действует 180 дн.	Active for 180 days
+Земельная лихорадка	Land Rush
+Каждому, кто застолбит новую систему, — налоговые каникулы. Галактика ещё не поделена, но это ненадолго.	Anyone who stakes out a new system gets a tax holiday. The galaxy isn't divided up yet, but not for long.
+Форпосты на 10 влияния дешевле на 240 дн.	Outposts cost 10 less influence for 240 days
+Доступно только первые 25 лет	Available only in the first 25 years
+Беженцы с окраин	Refugees from the Rim
+Корабли беженцев просят разрешения сесть. Новые руки нужны колониям — но решать надо сейчас.	Refugee ships ask for permission to land. The colonies need new hands — but the decision must be made now.
+Сразу: +1 житель на 3 колониях со свободным жильём	Immediately: +1 inhabitant on 3 colonies with free housing
+Беженцы поселились на {0} колониях.	The refugees settled on {0} colonies.
+Великий проект процветающей империи: искусство, наука и промышленность на пике. Об этой эпохе будут слагать легенды.	Great project of a thriving empire: art, science and industry at their peak. Legends will be told of this era.
+Навсегда: +5% гелия-3, сплавов и науки	Permanently: +5% helium-3, alloys and science
+С 40-го года, при средней стабильности от 60	From year 40, with average stability of 60 or more
+Миротворческая миссия	Peacekeeping Mission
+Соседи воюют. Республика предлагает переговоры на нейтральной станции — и получает славу миротворца.	The neighbours are at war. The Republic offers talks on a neutral station — and earns the glory of a peacemaker.
+Появляется, когда известные империи воюют между собой	Appears when known empires are at war with each other
+По окончании: +8 к отношениям со всеми известными империями	On completion: +8 relations with every known empire
+Миротворцев благодарят {0} империй.	{0} empires thank the peacekeepers.
+Кровная месть	Blood Feud
+Клан объявляет врагу кровную месть. Пока она не исполнена, ни один воин Ксарна не отступит.	The clan declares a blood feud against the enemy. Until it is fulfilled, no Xarn warrior will retreat.
++15% урона на 120 дн.	+15% damage for 120 days
+Скупка активов	Asset Buyout
+Чужой концерн разорился. Синдикат забирает его склады сплавов за бесценок — если успеет первым.	A foreign concern has gone bankrupt. The Syndicate takes its alloy stockpiles for next to nothing — if it gets there first.
+Сразу +{0:0} сплавов и +15 влияния	Immediately +{0:0} alloys and +15 influence
+Получено {0:0} сплавов и 15 влияния.	Received {0:0} alloys and 15 influence.
+Знамение звёзд	Sign of the Stars
+Звёзды выстроились в знак, который видят раз в поколение. Если провидцы истолкуют его сейчас — откроется многое.	The stars have aligned into a sign seen once a generation. If the seers interpret it now, much will be revealed.
++25% науки на 180 дн.	+25% science for 180 days
+Сезон цветения	Blooming Season
+Весной соки сада текут быстрее. Конклав может направить их в рост новых жителей — но только пока весна.	In spring the garden's sap flows faster. The Conclave can direct it into the growth of new inhabitants — but only while spring lasts.
+Только весной (март–май)	Only in spring (March–May)
++40% роста населения на 90 дн.	+40% population growth for 90 days
+Взлом вражеских сетей	Enemy Network Breach
+Консенсус нашёл дыру в протоколах противника. Окно открыто недолго: прицелы врага видят то, что мы им покажем.	The Consensus has found a hole in the enemy's protocols. The window is open briefly: enemy sights see what we show them.
++10% урона и +10 точности на 120 дн.	+10% damage and +10 accuracy for 120 days
+Цена — в основном титан; одновременно до {0} решений. Новые появляются по ходу игры (война, кризис, эпоха, редкие возможности), старые исчезают. Пока скрыто: {1}.	Costs are mostly titanium; up to {0} decisions at a time. New ones appear as the game goes on (war, crisis, era, rare opportunities), old ones disappear. Hidden for now: {1}.
+Сейчас решений нет — они появятся, когда сложатся условия.	No decisions right now — they will appear when conditions are met.
+ЕЩЁ {0} ДН.	{0} DAYS LEFT
+НОВОЕ	NEW
+<color=#FF9E4D>Редкая возможность: исчезнет через {0} дн., если не принять.</color>	<color=#FF9E4D>Rare opportunity: disappears in {0} days unless taken.</color>
+РЕШЕНИЯ · {0} НОВ.	DECISIONS · {0} NEW
+Законы и решения	Laws and Decisions
+<b>Законы и решения</b>\nЗаконы — постоянные правила империи с платой влиянием.\nРешения — проекты за титан и другие ресурсы: особые для вашей фракции, по обстоятельствам (война, кризис, эпоха) и редкие возможности с таймером. Кружок на значке — сколько решений можно принять прямо сейчас (золотой — появились новые)	<b>Laws and Decisions</b>\nLaws are permanent empire rules paid for with influence.\nDecisions are projects for titanium and other resources: unique to your faction, situational (war, crisis, era) and rare timed opportunities. The badge on the icon shows how many decisions you can take right now (gold — new ones have appeared)
