@@ -1,0 +1,4 @@
+Звуки стройки (Construction_*, BuildComplete_*) собраны из записей Freesound с лицензией CC0 1.0
+(общественное достояние, указание авторства не требуется) и переработаны: сдвиг высоты, фильтры, суббас, зал.
+Исходники: freesound.org/s/244983 (ani_music), 406197 (kyles), 433751 (ChrisReierson), 468094 (artinstitute),
+123253 (Skullsmasha), 322021 (Burningmonkey), 396240 (weaveofkev), 703247 (xkeril), 814881 (AudioPapkin).

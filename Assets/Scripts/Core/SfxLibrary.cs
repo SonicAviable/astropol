@@ -29,7 +29,8 @@ namespace StellarisClone.Core.Audio
         HoloScan, TextTick, PanelSlide, AlertPop, AlertDismiss, DealPlace, DealRemove, DealAccepted, MapHover,
         // Звук по смыслу: «опасная» кнопка и тревоги, которые нельзя спутать с обычным щелчком
         UiDanger, RedAlert, Bankrupt, BudgetWarning, AlertUrgent,
-        // Стройка: гидравлика, удары молота по металлу и короткая сварка — слышно, что работа началась
+        // Стройка: сервопривод, тяжёлый удар захвата с суббасом, гидравлика, лязг и сварка в зале ангара
+        // (запись Resources/Audio/Sfx/Construction_*; синтез — запасной вариант)
         Construction,
     }
 
@@ -147,7 +148,8 @@ namespace StellarisClone.Core.Audio
             S(Sfx.Anomaly, 0.40f, 1, 1.00f, 0f, 1, 2, SfxBus.Stinger, 0.5f);
 
             S(Sfx.BuildQueued, 0.24f, 2, 0.08f, 0.02f, 2);
-            S(Sfx.BuildComplete, 0.30f, 2, 0.25f, 0f, 1, 2);
+            // Есть запись (Resources/Audio/Sfx): уровень подобран под неё, синтез ниже — запасной вариант
+            S(Sfx.BuildComplete, 0.55f, 2, 0.25f, 0f, 1, 2);
             S(Sfx.ShipLaunched, 0.34f, 1, 0.40f, 0f, 1, 2, SfxBus.Stinger, 0.25f);
             S(Sfx.ColonyFounded, 0.38f, 1, 1.00f, 0f, 1, 3, SfxBus.Stinger, 0.45f);
             S(Sfx.ResearchComplete, 0.40f, 1, 0.80f, 0f, 1, 3, SfxBus.Stinger, 0.45f);
@@ -195,7 +197,7 @@ namespace StellarisClone.Core.Audio
             S(Sfx.Bankrupt, 0.46f, 1, 8.00f, 0f, 1, 3, SfxBus.Stinger, 0.65f);
             S(Sfx.BudgetWarning, 0.32f, 1, 4.00f, 0f, 1, 2, SfxBus.Ui, 0.3f);
             S(Sfx.AlertUrgent, 0.28f, 1, 1.50f, 0f, 1, 2, SfxBus.Ui, 0.2f);
-            S(Sfx.Construction, 0.34f, 2, 0.35f, 0.04f, 3, 2);
+            S(Sfx.Construction, 0.60f, 2, 0.35f, 0.03f, 3, 2);
             return d;
         }
 

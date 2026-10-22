@@ -9,8 +9,10 @@ using StellarisClone.Core.Audio;
 namespace StellarisClone.Core
 {
     /// <summary>
-    /// Звуковые эффекты. Аудиофайлов нет: каждый звук синтезируется в коде (SfxLibrary) —
+    /// Звуковые эффекты. Почти каждый звук синтезируется в коде (SfxLibrary) —
     /// осцилляторы, шумы, фильтры, ADSR-огибающие, реверберация.
+    /// Записанные звуки лежат в Resources/Audio/Sfx под именем звука (Construction_0.ogg, Construction_1.ogg…):
+    /// если запись есть, она играет вместо синтеза (варианты — случайно).
     ///
     ///   • Генерация идёт в фоновом потоке при старте (сначала интерфейсные звуки); если звук нужен
     ///     раньше, чем готов, — он досчитывается синхронно (несколько миллисекунд).
@@ -37,6 +39,8 @@ namespace StellarisClone.Core
         private readonly ConcurrentDictionary<int, Lazy<float[]>> _pcm = new ConcurrentDictionary<int, Lazy<float[]>>();
         private readonly Dictionary<int, AudioClip> _clips = new Dictionary<int, AudioClip>();
         private readonly ConcurrentQueue<int> _ready = new ConcurrentQueue<int>();
+        /// <summary>Записанные звуки из Resources/Audio/Sfx: индекс звука → варианты.</summary>
+        private readonly Dictionary<int, AudioClip[]> _recorded = new Dictionary<int, AudioClip[]>();
         private CancellationTokenSource _cts;
 
         private class Voice
@@ -67,6 +71,7 @@ namespace StellarisClone.Core
             masterVolume = GameSettings.SfxVolume;
             for (int i = 0; i < _lastPlayed.Length; i++) _lastPlayed[i] = -10f;
             for (int i = 0; i < 16; i++) NewVoice();
+            LoadRecorded();
             Prewarm();
         }
 
@@ -88,6 +93,26 @@ namespace StellarisClone.Core
             return v;
         }
 
+        /// <summary>Записи «Имя_N» из Resources/Audio/Sfx, где Имя — значение Sfx.</summary>
+        private void LoadRecorded()
+        {
+            var byId = new Dictionary<int, List<AudioClip>>();
+            foreach (var c in Resources.LoadAll<AudioClip>("Audio/Sfx"))
+            {
+                if (c == null) continue;
+                int us = c.name.LastIndexOf('_');
+                string baseName = us > 0 ? c.name.Substring(0, us) : c.name;
+                if (!Enum.TryParse(baseName, false, out Sfx id)) continue;
+                if (!byId.TryGetValue((int)id, out var list)) byId[(int)id] = list = new List<AudioClip>();
+                list.Add(c);
+            }
+            foreach (var kv in byId)
+            {
+                kv.Value.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+                _recorded[kv.Key] = kv.Value.ToArray();
+            }
+        }
+
         /// <summary>Фоновый синтез всех звуков: интерфейс и уведомления — первыми.</summary>
         private void Prewarm()
         {
@@ -102,7 +127,7 @@ namespace StellarisClone.Core
                 // Заставка новой партии нужна сразу после меню — считаем её первой среди «стингеров»
                 if (bus == SfxBus.Stinger) order.Add(Key(Sfx.GameStart, 0));
                 foreach (var (id, def) in defs)
-                    if (def.Bus == bus && id != Sfx.GameStart)
+                    if (def.Bus == bus && id != Sfx.GameStart && !_recorded.ContainsKey((int)id))   // записанные синтезировать не нужно
                         for (int v = 0; v < def.Variants; v++) order.Add(Key(id, v));
             }
 
@@ -377,10 +402,15 @@ namespace StellarisClone.Core
             var voice = Acquire(def.Priority);
             if (voice == null) return;
 
-            int variant = def.Variants > 1 ? UnityEngine.Random.Range(0, def.Variants) : 0;
             AudioClip clip;
-            try { clip = Clip(Key(id, variant)); }
-            catch (Exception e) { Debug.LogWarning($"[SFX] {id}: {e.Message}"); return; }
+            if (_recorded.TryGetValue(idx, out var rec))
+                clip = rec[UnityEngine.Random.Range(0, rec.Length)];
+            else
+            {
+                int variant = def.Variants > 1 ? UnityEngine.Random.Range(0, def.Variants) : 0;
+                try { clip = Clip(Key(id, variant)); }
+                catch (Exception e) { Debug.LogWarning($"[SFX] {id}: {e.Message}"); return; }
+            }
 
             _lastPlayed[idx] = now;
             if (def.Priority >= 2 && !IsNotify(id)) _lastImportant = now;
