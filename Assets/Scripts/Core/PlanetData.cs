@@ -43,6 +43,16 @@ namespace StellarisClone.Core
 
     public static class DistrictInfo
     {
+        /// <summary>Место работы жителей района (для подсказок «кто где работает»).</summary>
+        public static string JobPlace(DistrictType t) => t switch
+        {
+            DistrictType.Urban      => Loc.T("служащие"),
+            DistrictType.Mining     => Loc.T("шахты"),
+            DistrictType.Generator  => Loc.T("электростанции"),
+            DistrictType.Industrial => Loc.T("заводы"),
+            _ => "?"
+        };
+
         public static string Name(DistrictType t) => t switch
         {
             DistrictType.Urban      => Loc.T("ГОРОДСКОЙ РАЙОН"),
@@ -424,7 +434,12 @@ namespace StellarisClone.Core
             Pops?.Clear();
             JobPlan = null;
             Stability = 55f; Unrest = 0f; RiotMonths = 0;
+            MigrantsIn = MigrantsOut = 0;
+            // Колонисты — вид империи, которому подходит климат этого мира (Migration.ColonistSpecies)
+            int colonists = Migration.ColonistSpecies(OwnerId, Type, out float integration);
             Population = 2;
+            Pops ??= new List<PopGroup>();
+            Pops.Add(new PopGroup(colonists, 2) { Integration = integration });
             PopGrowthProgress = 0f;
             if (Districts.Count == 0)
             {

@@ -9,6 +9,11 @@ namespace StellarisClone.Core
     /// Население по-прежнему хранится числом (Population) — состав по видам подстраивается под него лениво:
     /// новые жители — от самого многочисленного органического вида (или основателя империи),
     /// убыль — из самой большой группы. Поэтому любой код, который просто меняет Population, остаётся корректным.
+    ///
+    /// Жители работают по способностям: на каждое место встаёт вид, у которого черты подходят лучше
+    /// (инженеры — на заводы, умные — в лаборатории, роботы — в шахты), и производство района считается
+    /// по тем, кто в нём работает. Чужие виды со временем интегрируются (Integration), переселяются туда,
+    /// где есть работа и жильё (Migration), а новые колонии заселяет вид, которому подходит климат.
     /// </summary>
     public partial class PlanetData
     {
@@ -25,6 +30,8 @@ namespace StellarisClone.Core
         public int MartialLawMonths;
         /// <summary>Сколько месяцев подряд на планете бунт (6 — система отделяется).</summary>
         public int RiotMonths;
+        /// <summary>Переселенцы за текущий год: приехали и уехали (обнуляется в январе).</summary>
+        public int MigrantsIn, MigrantsOut;
 
         public StabilityTier Tier => PlanetStability.TierOf(Stability);
 
@@ -47,7 +54,7 @@ namespace StellarisClone.Core
             {
                 // До старта партии фракции империй ИИ ещё не назначены — состав определим позже
                 if (Pops.Count == 0 && !StellarisClone.Rendering.UIManager.IsGameStarted) return;
-                AddToGroup(GrowthSpecies(), Population - sum);
+                AddToGroup(GrowthSpecies(), Population - sum, null);   // родившиеся — свои для своей общины
                 return;
             }
 
@@ -61,20 +68,37 @@ namespace StellarisClone.Core
             }
         }
 
-        private void AddToGroup(int species, int n)
+        /// <summary>
+        /// Добавить жителей в группу вида. integration — их интеграция (null — как у общины, в которую они попадают:
+        /// так растёт население); новая группа без указания интеграции начинает с нуля.
+        /// </summary>
+        private void AddToGroup(int species, int n, float? integration)
         {
             if (n <= 0) return;
-            foreach (var g in Pops) if (g.Species == species) { g.Count += n; return; }
-            Pops.Add(new PopGroup(species, n));
+            foreach (var g in Pops)
+                if (g.Species == species)
+                {
+                    if (integration.HasValue) g.Integration = (g.Integration * g.Count + integration.Value * n) / (g.Count + n);
+                    g.Count += n;
+                    return;
+                }
+            Pops.Add(new PopGroup(species, n) { Integration = Mathf.Clamp01(integration ?? 0f) });
         }
 
-        /// <summary>Добавить жителей конкретного вида (беженцы, роботы, переселенцы).</summary>
-        public void AddPops(int species, int n)
+        /// <summary>Добавить жителей конкретного вида (беженцы, роботы, переселенцы); integration — их интеграция в империи.</summary>
+        public void AddPops(int species, int n, float integration = 0f)
         {
             if (n <= 0 || SpeciesRegistry.Get(species) == null) return;
             SyncPops();
-            AddToGroup(species, n);
+            AddToGroup(species, n, integration);
             Population += n;
+        }
+
+        /// <summary>Интеграция группы вида на планете (0 — группы нет).</summary>
+        public float IntegrationOf(int species)
+        {
+            foreach (var g in Pops) if (g.Species == species) return g.Integration;
+            return 0f;
         }
 
         /// <summary>Убрать жителей конкретного вида (сколько удалось).</summary>
@@ -97,8 +121,9 @@ namespace StellarisClone.Core
         public int ConvertPops(int from, int to, int n)
         {
             if (SpeciesRegistry.Get(to) == null) return 0;
+            float integ = IntegrationOf(from);
             int moved = RemovePops(from, n);
-            if (moved > 0) AddPops(to, moved);
+            if (moved > 0) AddPops(to, moved, integ);
             return moved;
         }
 
@@ -218,8 +243,68 @@ namespace StellarisClone.Core
             return n > 0 ? sum / n : 1f;
         }
 
-        /// <summary>Итоговый множитель производства планеты: черты видов × стабильность.</summary>
-        public float OutputMult(string resource) => SpeciesOutputMult(resource) * PlanetStability.OutputMult(Tier);
+        /// <summary>Итоговый множитель производства планеты: черты тех, кто работает в районах этого ресурса, × стабильность.</summary>
+        public float OutputMult(string resource)
+        {
+            var t = resource == "minerals" ? DistrictType.Mining : resource == "energy" ? DistrictType.Generator
+                  : resource == "alloys" ? DistrictType.Industrial : (DistrictType?)null;
+            float species = t.HasValue ? JobFit(out _)[(int)t.Value] : SpeciesOutputMult(resource);
+            return species * PlanetStability.OutputMult(Tier);
+        }
+
+        /// <summary>Чем район «нагружает» черты вида: ресурс производства или наука у служащих.</summary>
+        public static float FitFor(Species s, DistrictType t) => t switch
+        {
+            DistrictType.Mining => s.OutputMult("minerals"),
+            DistrictType.Generator => s.OutputMult("energy"),
+            DistrictType.Industrial => s.OutputMult("alloys"),
+            _ => s.ResearchMult
+        };
+
+        /// <summary>
+        /// Кто где работает: места районов (Distribute) занимают виды по способностям — сначала там, где у вида
+        /// самое большое преимущество перед его же средним (сравнительное преимущество), потом по силе черты.
+        /// Возвращает средний множитель черт работников каждого вида районов (индекс DistrictType; без работников — 1);
+        /// assigned[группа, вид района] — сколько жителей группы (в порядке Pops) там работает.
+        /// </summary>
+        public float[] JobFit(out int[,] assigned)
+        {
+            SyncPops();
+            var w = Distribute();
+            var fit = new float[] { 1f, 1f, 1f, 1f };
+            assigned = new int[Pops.Count, 4];
+            if (Pops.Count == 0) return fit;
+
+            var pairs = new List<(int g, int t, float f, float adv)>();
+            for (int gi = 0; gi < Pops.Count; gi++)
+            {
+                var sp = SpeciesRegistry.Get(Pops[gi].Species);
+                if (sp == null) continue;
+                float mean = 0f; int jobs = 0;
+                for (int t = 0; t < 4; t++) if (w[t] > 0) { mean += FitFor(sp, (DistrictType)t); jobs++; }
+                if (jobs == 0) continue;
+                mean /= jobs;
+                for (int t = 0; t < 4; t++)
+                    if (w[t] > 0) { float f = FitFor(sp, (DistrictType)t); pairs.Add((gi, t, f, f - mean)); }
+            }
+            pairs.Sort((a, b) => b.adv != a.adv ? b.adv.CompareTo(a.adv) : b.f.CompareTo(a.f));
+
+            var left = new int[Pops.Count];
+            for (int gi = 0; gi < Pops.Count; gi++) left[gi] = Pops[gi].Count;
+            var slots = (int[])w.Clone();
+            var sum = new float[4];
+            var cnt = new int[4];
+            foreach (var p in pairs)
+            {
+                int k = Mathf.Min(left[p.g], slots[p.t]);
+                if (k <= 0) continue;
+                left[p.g] -= k; slots[p.t] -= k;
+                assigned[p.g, p.t] += k;
+                sum[p.t] += p.f * k; cnt[p.t] += k;
+            }
+            for (int t = 0; t < 4; t++) if (cnt[t] > 0) fit[t] = sum[t] / cnt[t];
+            return fit;
+        }
 
         /// <summary>Наука от жителей планеты (в «жителях»: умные дают больше, роботы — ноль; бунт срывает работу лабораторий).</summary>
         public float ResearchPops
@@ -234,9 +319,8 @@ namespace StellarisClone.Core
                     var s = SpeciesRegistry.Get(g.Species);
                     if (s != null) sum += s.ResearchMult * g.Count;
                 }
-                // Служащие городских районов дают ещё по единице науки (с чертами видов колонии)
-                float avg = Population > 0 ? sum / Population : 0f;
-                sum += WorkedCount(DistrictType.Urban) * avg;
+                // Служащие городских районов дают ещё по единице науки — с чертами тех, кто на этих местах работает
+                sum += WorkedCount(DistrictType.Urban) * JobFit(out _)[(int)DistrictType.Urban];
                 return sum * PlanetStability.OutputMult(Tier);
             }
         }

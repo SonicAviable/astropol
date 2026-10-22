@@ -1412,7 +1412,10 @@ namespace StellarisClone.Rendering
             else
             {
                 bool can = eco != null && eco.CanAfford(0f, PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost);
+                var colonist = owned ? SpeciesRegistry.Get(Migration.ColonistSpecies(0, _planet.Type, out _)) : null;
                 colTip = Loc.T("<b>Основать колонию</b>\n") + _planet.ColonyBenefitText() + lockLine +
+                         (colonist != null ? Loc.F("\n<color=#8AA2A8>Колонисты:</color> {0}{1}", colonist.DisplayName,
+                             colonist.AtHome(_planet.Type) ? Loc.T(" <color=#9EF0C8>(родной климат)</color>") : Loc.T(" <color=#F2C46B>(чужой климат)</color>")) : "") +
                          (can || !owned || !surveyed ? "" : $"\n<color={Bad}>{CostCheck.Full(0f, PlanetData.ColonyMineralsCost, PlanetData.ColonyAlloysCost, PlanetData.ColonyInfluenceCost)}.</color>");
             }
             _colony.Tip.SetText(colTip);
@@ -1831,7 +1834,9 @@ namespace StellarisClone.Rendering
             var groups = new List<PopGroup>(_planet.Pops);
             groups.Sort((a, b) => b.Count.CompareTo(a.Count));
             int total = Mathf.Max(1, _planet.Population);
-            _compCaption.text = Loc.F("Виды · {0}", groups.Count) + (_planet.RobotPops > 0 ? Loc.F("  ·  роботов {0}", _planet.RobotPops) : "");
+            _compCaption.text = Loc.F("Виды · {0}", groups.Count) + (_planet.RobotPops > 0 ? Loc.F("  ·  роботов {0}", _planet.RobotPops) : "")
+                + (_planet.MigrantsIn + _planet.MigrantsOut > 0 ? Loc.F("  ·  переезд +{0}/−{1}", _planet.MigrantsIn, _planet.MigrantsOut) : "");
+            _planet.JobFit(out var assigned);
             float x = 0f;
             for (int i = 0; i < _compSegs.Length; i++)
             {
@@ -1863,13 +1868,32 @@ namespace StellarisClone.Rendering
                         : $"<color=#{hex}>■</color> {sp.DisplayName} <color={LGBuild.Hex(CMuted)}>· {groups[i].Count}</color>";
                 bool alien = !sp.Machine && !SpeciesRegistry.Related(sp.Id, founder);
                 tip.Append($"\n\n<color=#{hex}>■</color> <b>{sp.DisplayName}</b> · {groups[i].Count}");
-                if (alien) tip.Append(Loc.T(" <color=#FF9A8A>(чужой вид)</color>"));
+                if (alien) tip.Append(Loc.F(" <color=#FF9A8A>(чужой вид, интеграция {0}%)</color>", Mathf.RoundToInt(groups[i].Integration * 100f)));
                 if (!sp.AtHome(_planet.Type)) tip.Append(Loc.T(" <color=#F2C46B>(чужой климат)</color>"));
+                // Где работают: виды занимают места по способностям
+                int gi = _planet.Pops.IndexOf(groups[i]);
+                if (gi >= 0 && gi < assigned.GetLength(0))
+                {
+                    var jobs = new List<string>();
+                    int worked = 0;
+                    for (int t = 0; t < 4; t++)
+                        if (assigned[gi, t] > 0) { jobs.Add($"{DistrictInfo.JobPlace((DistrictType)t)} {assigned[gi, t]}"); worked += assigned[gi, t]; }
+                    if (worked < groups[i].Count) jobs.Add(Loc.F("без работы {0}", groups[i].Count - worked));
+                    if (jobs.Count > 0) tip.Append(Loc.F("\n  <color=#8AA2A8>Работают: {0}</color>", string.Join(", ", jobs)));
+                }
                 foreach (var t in sp.Traits)
                     tip.Append($"\n  {(TraitInfo.IsNegative(t) ? "<color=#FF9A8A>" : "<color=#9EF0C8>")}{TraitInfo.Name(t)}</color> — {TraitInfo.Desc(t)}");
                 if (i < _legend.Length) ShowTraitIcons(i, i == _legend.Length - 1 && groups.Count > _legend.Length ? null : sp);
             }
             for (int i = groups.Count; i < _legend.Length; i++) { _legend[i].text = ""; ShowTraitIcons(i, null); }
+
+            // Переселение: кто хочет уехать, сколько примет колония, итог за год
+            int push = Migration.Push(_planet), pull = Migration.Pull(_planet);
+            tip.Append(Loc.T("\n\n<b>Переселение</b>"));
+            tip.Append(Loc.F("\n<color=#8AA2A8>За этот год: приехали {0}, уехали {1}</color>", _planet.MigrantsIn, _planet.MigrantsOut));
+            if (push > 0) tip.Append(Loc.F("\n<color=#F2C46B>Хотят уехать: {0} (нет работы или жилья, беспорядки)</color>", push));
+            else if (pull > 0) tip.Append(Loc.F("\n<color=#9EF0C8>Примет переселенцев: {0} (есть жильё и работа)</color>", pull));
+            tip.Append(Loc.T("\n<color=#8AA2A8>Жители сами переезжают из колоний без работы и жилья туда, где они есть, — охотнее в родной климат. Роботы не переезжают.</color>"));
             _compTip.SetText(tip.ToString());
 
             // Пропаганда

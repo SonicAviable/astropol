@@ -29,6 +29,11 @@ namespace StellarisClone.Core
         public const int MartialLawDuration = 6;
         public const float MartialLawBonus = 12f;
 
+        /// <summary>Чужой вид интегрируется полностью за 10 лет (при равноправии видов — за 6–7).</summary>
+        public const float IntegrationPerMonth = 1f / 120f;
+        /// <summary>Полностью интегрированный чужой вид раздражает на 70% меньше.</summary>
+        public const float IntegrationRelief = 0.7f;
+
         public struct Factor
         {
             public string Name;
@@ -135,14 +140,19 @@ namespace StellarisClone.Core
 
             // Состав: доли органиков по чертам; роботы вне политики
             int organic = 0, alien = 0, foreignClimate = 0;
-            float agreeable = 0f, quarrel = 0f, resilient = 0f, harsh = 0f;
+            float agreeable = 0f, quarrel = 0f, resilient = 0f, harsh = 0f, alienWeight = 0f, alienInteg = 0f;
             int founder = owner >= 0 ? SpeciesRegistry.FounderOf(owner) : -1;
             foreach (var g in p.Pops)
             {
                 var sp = SpeciesRegistry.Get(g.Species);
                 if (sp == null || sp.Machine) continue;
                 organic += g.Count;
-                if (founder >= 0 && !SpeciesRegistry.Related(sp.Id, founder)) alien += g.Count;
+                if (founder >= 0 && !SpeciesRegistry.Related(sp.Id, founder))
+                {
+                    alien += g.Count;
+                    alienWeight += g.Count * (1f - IntegrationRelief * g.Integration);
+                    alienInteg += g.Integration * g.Count;
+                }
                 if (!sp.AtHome(p.Type)) foreignClimate += g.Count;
                 if (sp.Has(SpeciesTrait.Agreeable)) agreeable += g.Count;
                 if (sp.Has(SpeciesTrait.Quarrelsome)) quarrel += g.Count;
@@ -170,7 +180,9 @@ namespace StellarisClone.Core
 
             if (organic > 0)
             {
-                if (alien > 0) Add(Loc.F("Чужие виды ({0}%)", Mathf.RoundToInt(share(alien) * 100f)), -15f * share(alien));
+                if (alien > 0)
+                    Add(Loc.F("Чужие виды ({0}%, интеграция {1}%)", Mathf.RoundToInt(share(alien) * 100f), Mathf.RoundToInt(alienInteg / alien * 100f)),
+                        -15f * share(alienWeight));
                 if (foreignClimate > 0) Add(Loc.T("Чужой климат"), -8f * share(foreignClimate));
                 if (agreeable > 0) Add(TraitInfo.Name(SpeciesTrait.Agreeable), 6f * share(agreeable));
                 if (quarrel > 0) Add(TraitInfo.Name(SpeciesTrait.Quarrelsome), -8f * share(quarrel));
@@ -253,6 +265,8 @@ namespace StellarisClone.Core
                 p.PropagandaMonths = 0;
                 p.MartialLawMonths = 0;
                 p.Stability = Mathf.Min(p.Stability, 45f);
+                // Новая власть: сородичи сразу свои, остальным приживаться заново
+                foreach (var g in p.Pops) g.Integration = SpeciesRegistry.Related(g.Species, founder) ? 1f : 0f;
             }
         }
 
@@ -293,9 +307,11 @@ namespace StellarisClone.Core
 
                     TryHybrid(p);
                     FactionTraits.TryAssimilate(p);
+                    Integrate(p);
                 }
             }
             foreach (var sys in seceding) Secede(sys);
+            Migration.MonthlyTick(systems);
         }
 
         /// <summary>Планета — самая населённая в системе (её бунт решает судьбу системы).</summary>
@@ -344,6 +360,32 @@ namespace StellarisClone.Core
         public const float HybridChance = 0.015f;
 
         /// <summary>Два органических вида по 2+ жителя на спокойной планете иногда дают смешанное потомство.</summary>
+        /// <summary>
+        /// Чужие виды понемногу приживаются: быстрее при равноправии видов (закон игрока) и в процветании,
+        /// медленнее в недовольстве, при забастовках и бунте — не приживаются вовсе.
+        /// </summary>
+        private static void Integrate(PlanetData p)
+        {
+            int founder = SpeciesRegistry.FounderOf(p.OwnerId);
+            float rate = IntegrationPerMonth;
+            if (p.OwnerId == 0 && EmpireLaws.IsActive(EmpireLaws.Get("soc_equality"))) rate *= 1.5f;
+            rate *= p.Tier switch
+            {
+                StabilityTier.Prosperity => 1.25f,
+                StabilityTier.Discontent => 0.5f,
+                StabilityTier.Strike => 0f,
+                StabilityTier.Riot => 0f,
+                _ => 1f
+            };
+            if (rate <= 0f) return;
+            foreach (var g in p.Pops)
+            {
+                var sp = SpeciesRegistry.Get(g.Species);
+                if (sp == null || sp.Machine || SpeciesRegistry.Related(sp.Id, founder)) continue;
+                g.Integration = Mathf.Min(1f, g.Integration + rate);
+            }
+        }
+
         private static void TryHybrid(PlanetData p)
         {
             if (p.Stability < 50f || p.Pops.Count < 2) return;

@@ -136,6 +136,9 @@ namespace StellarisClone.Core
         // Общество (нет в старых сохранениях: состав восстановится по фракции владельца)
         public List<int> PopSpecies = new List<int>();
         public List<int> PopCounts = new List<int>();
+        /// <summary>Интеграция групп жителей (null/пусто — сохранение прежней версии).</summary>
+        public List<float> PopIntegration = new List<float>();
+        public int MigrantsIn, MigrantsOut;
         public float Stability = -1f;
         public float Unrest;
         public int Propaganda, MartialLaw, Riot;
@@ -562,11 +565,12 @@ namespace StellarisClone.Core
                     Population = p.Population, PopGrowth = p.PopGrowthProgress, MaxDistricts = p.MaxDistricts,
                     Focus = (int)p.Focus, AutoBuild = p.AutoBuild,
                     Stability = p.Stability, Unrest = p.Unrest, Propaganda = p.PropagandaMonths,
-                    MartialLaw = p.MartialLawMonths, Riot = p.RiotMonths
+                    MartialLaw = p.MartialLawMonths, Riot = p.RiotMonths,
+                    MigrantsIn = p.MigrantsIn, MigrantsOut = p.MigrantsOut
                 };
                 foreach (var d in p.Districts) ps.Districts.Add((int)d.Type);
                 if (p.Pops != null)
-                    foreach (var g in p.Pops) { ps.PopSpecies.Add(g.Species); ps.PopCounts.Add(g.Count); }
+                    foreach (var g in p.Pops) { ps.PopSpecies.Add(g.Species); ps.PopCounts.Add(g.Count); ps.PopIntegration.Add(g.Integration); }
                 if (p.HasJobPlan) ps.JobPlan.AddRange(p.JobPlan);
                 ss.Planets.Add(ps);
             }
@@ -639,12 +643,16 @@ namespace StellarisClone.Core
                         Focus = (ColonyFocus)ps.Focus,
                         AutoBuild = ps.AutoBuild,
                         Stability = ps.Stability >= 0f ? ps.Stability : 55f,
-                        Unrest = ps.Unrest, PropagandaMonths = ps.Propaganda, MartialLawMonths = ps.MartialLaw, RiotMonths = ps.Riot
+                        Unrest = ps.Unrest, PropagandaMonths = ps.Propaganda, MartialLawMonths = ps.MartialLaw, RiotMonths = ps.Riot,
+                        MigrantsIn = ps.MigrantsIn, MigrantsOut = ps.MigrantsOut
                     };
                     foreach (int d in ps.Districts) p.Districts.Add(new DistrictData((DistrictType)d));
                     if (ps.PopSpecies != null && ps.PopCounts != null)
                         for (int i = 0; i < ps.PopSpecies.Count && i < ps.PopCounts.Count; i++)
-                            p.Pops.Add(new PopGroup(ps.PopSpecies[i], ps.PopCounts[i]));
+                            p.Pops.Add(new PopGroup(ps.PopSpecies[i], ps.PopCounts[i])
+                            {
+                                Integration = ps.PopIntegration != null && i < ps.PopIntegration.Count ? ps.PopIntegration[i] : 0f
+                            });
                     if (ps.JobPlan != null && ps.JobPlan.Count == 4) p.JobPlan = new List<int>(ps.JobPlan);
                     sys.Planets.Add(p);
                 }

@@ -5628,3 +5628,19 @@ VK Play: всё синхронизировано	VK Play: fully synced
 {0} стягивает флот к вашей границе и достраивает корабли. Похоже, готовится нападение	{0} is massing its fleet at your border and building ships. It looks like an attack is being prepared
 Новичок	Novice
 Безжалостная	Ruthless
+служащие	clerks
+шахты	mines
+электростанции	power plants
+заводы	factories
+Чужие виды ({0}%, интеграция {1}%)	Alien species ({0}%, integration {1}%)
+\n<color=#8AA2A8>Колонисты:</color> {0}{1}	\n<color=#8AA2A8>Colonists:</color> {0}{1}
+ <color=#9EF0C8>(родной климат)</color>	 <color=#9EF0C8>(native climate)</color>
+  ·  переезд +{0}/−{1}	  ·  moves +{0}/−{1}
+ <color=#FF9A8A>(чужой вид, интеграция {0}%)</color>	 <color=#FF9A8A>(alien species, integration {0}%)</color>
+без работы {0}	unemployed {0}
+\n  <color=#8AA2A8>Работают: {0}</color>	\n  <color=#8AA2A8>Work: {0}</color>
+\n\n<b>Переселение</b>	\n\n<b>Migration</b>
+\n<color=#8AA2A8>За этот год: приехали {0}, уехали {1}</color>	\n<color=#8AA2A8>This year: {0} arrived, {1} left</color>
+\n<color=#F2C46B>Хотят уехать: {0} (нет работы или жилья, беспорядки)</color>	\n<color=#F2C46B>Want to leave: {0} (no jobs or housing, unrest)</color>
+\n<color=#9EF0C8>Примет переселенцев: {0} (есть жильё и работа)</color>	\n<color=#9EF0C8>Will accept migrants: {0} (housing and jobs available)</color>
+\n<color=#8AA2A8>Жители сами переезжают из колоний без работы и жилья туда, где они есть, — охотнее в родной климат. Роботы не переезжают.</color>	\n<color=#8AA2A8>Inhabitants move on their own from colonies without jobs and housing to those that have them — preferably to their native climate. Robots do not move.</color>

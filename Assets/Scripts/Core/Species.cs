@@ -168,6 +168,8 @@ namespace StellarisClone.Core
     {
         public int Species;
         public int Count;
+        /// <summary>Интеграция 0…1: насколько чужой вид прижился в империи (снимает штраф «чужих видов»).</summary>
+        public float Integration;
         public PopGroup() { }
         public PopGroup(int species, int count) { Species = species; Count = count; }
     }
