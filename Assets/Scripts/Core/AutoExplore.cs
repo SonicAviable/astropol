@@ -116,8 +116,8 @@ namespace StellarisClone.Core
                     if (score > bestScore) { bestScore = score; best = id; }
                 }
                 if (dd >= SearchDepth) continue;
-                // Сквозь владения врага и системы с видимой угрозой не прокладываем путь
-                if (id != from && Dangerous(sys)) continue;
+                // Сквозь владения врага, закрытые границы и системы с видимой угрозой не прокладываем путь
+                if (id != from && (Dangerous(sys) || !BorderRules.CanEnter(0, sys))) continue;
                 foreach (int n in sys.ConnectedSystemIds)
                 {
                     if (n < 0 || n >= systems.Count || dist.ContainsKey(n)) continue;

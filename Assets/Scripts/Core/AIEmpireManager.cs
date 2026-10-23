@@ -143,7 +143,8 @@ namespace StellarisClone.Core
         public float MonthlyEnergyIncome => (BaseEnergyIncome + _report.Energy) * IncomeMult - _report.Upkeep + DealIncome("energy");
         public float MonthlyMineralsIncome => (BaseMineralsIncome + _report.Minerals) * IncomeMult + DealIncome("minerals");
         public float MonthlyAlloysIncome => (BaseAlloysIncome + _report.Alloys) * IncomeMult + DealIncome("alloys");
-        public float MonthlyInfluenceIncome => (BaseInfluenceIncome + Bonuses.InfluenceFlat + Landmarks.Influence(OwnerId)) * FactionInfluence * IncomeMult;
+        public float MonthlyInfluenceIncome => (BaseInfluenceIncome + Bonuses.InfluenceFlat + Landmarks.Influence(OwnerId)) * FactionInfluence * IncomeMult
+                                              + NeutralWorlds.Income(OwnerId, "influence");
 
         // ==================== НАУКА ====================
 
@@ -158,7 +159,7 @@ namespace StellarisClone.Core
 
         public float MonthlyScience =>
             (TechnologyManager.BaseScience + EmpireStats.ResearchPops(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId))
-            * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult;
+            * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult * NeutralWorlds.ResearchMult(OwnerId);
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
         private float ResearchThroughput => Mathf.Pow(_researchSlots, 1f - TechnologyManager.SlotSplitExponent);
@@ -259,7 +260,7 @@ namespace StellarisClone.Core
             for (int i = 0; i < _generator.Systems.Count; i++)
             {
                 var s = _generator.Systems[i];
-                if (s.OwnerId >= 0 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0
+                if (s.OwnerId != -1 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0
                     || s.SpectralClass == StarSpectralClass.BlackHole) continue;
                 float d = float.MaxValue;
                 foreach (var c in capitals) d = Mathf.Min(d, Vector3.Distance(c, s.Position));
@@ -353,6 +354,7 @@ namespace StellarisClone.Core
             MonthlyTactics();
             MonthlyStrategy();
             ThinkDecisions();
+            ThinkNeutrals();
         }
 
         private void ThinkAndAct()
@@ -474,7 +476,8 @@ namespace StellarisClone.Core
                     d.State = FleetState.Surveying;
                     d.DaysRemainingSurvey = d.TotalSurveyDays;
                 }
-                else FleetManager.Instance?.IssueMoveOrder(ship, target);
+                else if (FleetManager.Instance == null || !FleetManager.Instance.IssueMoveOrder(ship, target))
+                    d.SurveyTargetSystemId = -1;   // путь закрыт границей — выберем другую цель
             }
         }
 
@@ -516,7 +519,7 @@ namespace StellarisClone.Core
                 if (d.BuildTargetSystemId >= 0)
                 {
                     var t = EmpireStats.GetSystem(d.BuildTargetSystemId);
-                    if (t == null || t.OwnerId >= 0)
+                    if (t == null || t.OwnerId != -1)
                     {
                         // Цель заняли раньше — часть ресурсов возвращается
                         if (t != null && t.OwnerId != OwnerId) Alloys += FactionTraits.StarbaseAlloys(OwnerId) * 0.5f;
@@ -543,7 +546,13 @@ namespace StellarisClone.Core
                     d.TotalConstructionDays = FactionTraits.OutpostDays(OwnerId);
                     d.DaysRemainingConstruction = d.TotalConstructionDays;
                 }
-                else FleetManager.Instance?.IssueMoveOrder(ship, target);
+                else if (FleetManager.Instance == null || !FleetManager.Instance.IssueMoveOrder(ship, target))
+                {
+                    // Путь закрыт границей — стройка отменяется, ресурсы возвращаются
+                    Alloys += FactionTraits.StarbaseAlloys(OwnerId);
+                    Influence += influence;
+                    d.BuildTargetSystemId = -1;
+                }
             }
         }
 
@@ -559,6 +568,7 @@ namespace StellarisClone.Core
                 if (EnemyFleetPowerIn(sys.Id) > 0f) continue;
                 float score = SystemValue(sys);
                 if (fromCapital.TryGetValue(sys.Id, out int jumps)) score -= jumps * 1.2f;
+                else continue;   // путь закрыт чужими границами
                 if (score > bestScore) { bestScore = score; best = sys.Id; }
             }
             return best;
@@ -610,8 +620,13 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Расстояния в прыжках от системы (BFS по гиперкоридорам).</summary>
-        private Dictionary<int, int> Distances(int from, int maxDepth)
+        /// <summary>
+        /// Расстояния в прыжках от системы. walk — только туда, куда наши корабли могут долететь (границы, Borders);
+        /// false — по карте без границ (оценка угроз вокруг).
+        /// </summary>
+        private Dictionary<int, int> Distances(int from, int maxDepth, bool walk = true)
         {
+            if (walk) return BorderRules.Reachable(OwnerId, from, maxDepth);
             var dist = new Dictionary<int, int>();
             var systems = EmpireStats.Systems;
             if (from < 0 || from >= systems.Count) return dist;
@@ -1022,6 +1037,7 @@ namespace StellarisClone.Core
             s.Researched.AddRange(_researched);
             CaptureDiplomacy(s);
             CaptureMilitary(s);
+            CaptureNeutrals(s);
             return s;
         }
 
@@ -1079,6 +1095,7 @@ namespace StellarisClone.Core
             }
             RestoreDiplomacy(s, version);
             RestoreMilitary(s);
+            RestoreNeutrals(s);
             _designs.Clear();
             RecalculateEconomy();
         }

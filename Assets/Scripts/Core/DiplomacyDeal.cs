@@ -17,7 +17,9 @@ namespace StellarisClone.Core
         // Добавлены позже — в конце, чтобы не сдвинуть номера в старых сохранениях
         Alliance,
         /// <summary>Передача звёздной системы; Amount — номер системы.</summary>
-        System
+        System,
+        /// <summary>Договор о границах: корабли сторон проходят через территорию друг друга.</summary>
+        Borders
     }
 
     [Serializable]
@@ -99,7 +101,7 @@ namespace StellarisClone.Core
         public static readonly DealItemKind[] Payments =
             { DealItemKind.MonthlyEnergy, DealItemKind.MonthlyMinerals, DealItemKind.MonthlyAlloys };
         public static readonly DealItemKind[] TreatyKinds =
-            { DealItemKind.Peace, DealItemKind.Pact, DealItemKind.Alliance, DealItemKind.ResearchTreaty, DealItemKind.TradeTreaty, DealItemKind.Charts };
+            { DealItemKind.Peace, DealItemKind.Pact, DealItemKind.Alliance, DealItemKind.Borders, DealItemKind.ResearchTreaty, DealItemKind.TradeTreaty, DealItemKind.Charts };
 
         public static bool IsTreaty(DealItemKind k) => k >= DealItemKind.Charts && k != DealItemKind.System;
         public static bool IsSystem(DealItemKind k) => k == DealItemKind.System;
@@ -132,6 +134,7 @@ namespace StellarisClone.Core
             DealItemKind.Peace => Loc.T("Мирный договор"),
             DealItemKind.Alliance => Loc.T("Оборонительный союз"),
             DealItemKind.System => Loc.T("Звёздная система"),
+            DealItemKind.Borders => Loc.T("Договор о границах"),
             _ => "?"
         };
 
@@ -150,6 +153,7 @@ namespace StellarisClone.Core
             DealItemKind.Peace => Loc.T("Прекращение войны и перемирие на 3 года"),
             DealItemKind.Alliance => Loc.T("Если на одного нападут, другой вступает в войну. Включает пакт о ненападении. Отказ помочь союзнику — удар по репутации"),
             DealItemKind.System => Loc.T("Система переходит к другой стороне вместе с колониями, районами и звёздной базой"),
+            DealItemKind.Borders => Loc.F("Корабли обеих сторон проходят через территорию друг друга {0} лет. Без договора в чужие границы входят только на войне или союзники. Война рвёт договор", TreatyMonths / 12),
             _ => ""
         };
 
@@ -166,6 +170,7 @@ namespace StellarisClone.Core
             DealItemKind.Peace => LGIcon.Peace,
             DealItemKind.Alliance => LGIcon.Defense,
             DealItemKind.System => LGIcon.Starbase,
+            DealItemKind.Borders => LGIcon.Border,
             _ => LGIcon.Info
         };
 
@@ -181,6 +186,7 @@ namespace StellarisClone.Core
             DealItemKind.TradeTreaty => new Color(0.95f, 0.78f, 0.40f),
             DealItemKind.Alliance => new Color(0.55f, 0.80f, 1f),
             DealItemKind.System => new Color(0.95f, 0.85f, 0.55f),
+            DealItemKind.Borders => new Color(0.62f, 0.90f, 0.70f),
             _ => new Color(0.75f, 0.85f, 0.92f)
         };
 

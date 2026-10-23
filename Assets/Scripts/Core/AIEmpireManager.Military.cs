@@ -250,7 +250,17 @@ namespace StellarisClone.Core
                 return;
             }
 
-            // 5. Мирное время — охрана границы
+            // 5. Война с вольным миром — флот держит блокаду его системы
+            int neutral = NeutralWorlds.WarTargetOf(OwnerId);
+            if (neutral >= 0)
+            {
+                Mode = ArmyMode.Attack;
+                ArmyTargetSystemId = neutral;
+                MoveAll(ships, neutral);
+                return;
+            }
+
+            // 6. Мирное время — охрана границы
             Mode = ArmyMode.Gather;
             ArmyTargetSystemId = -1;
             _rallySystemId = StagingSystem();
@@ -364,7 +374,7 @@ namespace StellarisClone.Core
         private float EnemyPowerNear(int sysId, int radius)
         {
             float p = 0f;
-            foreach (var kv in Distances(sysId, radius)) p += EnemyFleetPowerIn(kv.Key);
+            foreach (var kv in Distances(sysId, radius, walk: false)) p += EnemyFleetPowerIn(kv.Key);
             return p;
         }
 

@@ -454,6 +454,8 @@ namespace StellarisClone.Rendering
                 _titleBase = UIManager.DS.NeonCyan;
             else if (_data.OwnerId > 0)
                 _titleBase = Color.Lerp(FleetIndicator.OwnerColor(_data.OwnerId), Color.white, 0.12f);
+            else if (_data.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(_data.Id) != null)
+                _titleBase = Color.Lerp(NeutralWorlds.ColorOf(NeutralWorlds.At(_data.Id).Kind), Color.white, 0.15f);   // вольный мир — цвет характера
             else if (!GalaxyView.IsKnownToPlayer(_data))
                 _titleBase = new Color(0.58f, 0.64f, 0.72f, 0.8f);   // неизведанная — блёклая
             else
@@ -520,6 +522,7 @@ namespace StellarisClone.Rendering
         {
             string owner = _data.OwnerId == 0 ? Loc.T("Ваша империя")
                          : _data.OwnerId > 0 ? Contacts.NameForPlayer(_data.OwnerId, Loc.T("Другая империя"))   // до контакта — без имени
+                         : _data.OwnerId == NeutralWorlds.Owner ? Loc.T("Вольный мир")
                          : Loc.T("Нейтральная");
 
             string tip = $"<b>{_data.Name}</b>\n" +
@@ -537,6 +540,21 @@ namespace StellarisClone.Rendering
                     tip += sb.Disabled ? Loc.T("<color=#FF7A7A>Звёздная база выведена из строя</color>\n")
                                        : Loc.F("<color=#AAB4C0>Звёздная база:</color> мощь {0:N0}", pw) + (cmpText.Length > 0 ? $" ({cmpText})" : "") + "\n";
                 }
+            }
+
+            var nw = NeutralWorlds.At(_data.Id);
+            if (nw != null)
+            {
+                string c = LGBuild.Hex(NeutralWorlds.ColorOf(nw.Kind));
+                tip += Loc.F("\n<color={0}>◆ {1} · {2}</color>\n", c, NeutralWorlds.Title(nw), NeutralWorlds.CharacterName(nw.Kind).ToLower()) +
+                       $"<color=#AAB4C0>{NeutralWorlds.Description(nw.Kind)}</color>\n";
+                if (!nw.Met(0)) tip += Loc.T("<color=#FFAA88>Нет контакта: подведите корабль или границу ближе</color>\n");
+                else if (nw.AtWarWith(0)) tip += Loc.T("<color=#FF7A7A>Война</color>\n");
+                else tip += Loc.F("<color=#AAB4C0>Ваше расположение:</color> {0:+0;-0;0}\n", nw.FavorOf(0));
+                if (nw.Patron >= 0)
+                    tip += Loc.F("<color=#AAB4C0>Покровитель:</color> {0}\n", nw.Patron == 0 ? Loc.T("вы") : Contacts.NameForPlayer(nw.Patron, Loc.T("другая империя")));
+                tip += Loc.T("<color=#8AA2A8>Выберите систему — торговля, посольства и просьбы</color>\n");
+                return tip + FleetsLine() + EtaLine();
             }
 
             if (_data.IsSurveyed)
@@ -600,8 +618,13 @@ namespace StellarisClone.Rendering
             var gen = FindAnyObjectByType<StellarisClone.Generation.GalaxyGenerator>();
             int from = f.Data.State == FleetState.InHyperlane ? f.Data.TargetSystemId : f.Data.CurrentSystemId;
             if (from == _data.Id) return "";
-            var path = GalaxyPathfinder.FindPath(from, _data.Id, gen);
-            if (path == null) return "";
+            var path = GalaxyPathfinder.FindPath(from, _data.Id, gen, f.Data.OwnerId);
+            if (path == null)
+            {
+                return GalaxyPathfinder.FindPath(from, _data.Id, gen) != null
+                    ? "\n" + Loc.T("<color=#FF9A6A>Граница закрыта: нужен договор о границах, союз или война</color>") + "\n"
+                    : "";
+            }
             float days = path.Count * FleetRoute.DaysPerJump(f.Data);
             if (f.Data.State == FleetState.InHyperlane) days += f.Data.DaysRemainingInTransit / FleetRoute.JumpSpeed(f.Data);
             return Loc.F("\n<color=#4DF2DB>{0}: ~{1} ({2} прыжк.)</color>\n", f.Data.Name, FleetRoute.FormatDays(days), path.Count) +
@@ -652,7 +675,7 @@ namespace StellarisClone.Rendering
             float near = 1f - Smooth(NearFrom, NearTo, dist);
             float mid = 1f - Smooth(MidFrom, MidTo, dist);
             float target = baseA * near;
-            if (_data.OwnerId >= 0) target = Mathf.Max(target, mid);
+            if (_data.OwnerId >= 0 || _data.OwnerId == NeutralWorlds.Owner) target = Mathf.Max(target, mid);
             if (GalaxyView.PlayerFleetSystems.Contains(_data.Id)) target = Mathf.Max(target, mid);
             if (_isSelected || _isHovered) target = 1f;
             float resTarget = known ? (1f - Smooth(ResFrom, ResTo, dist)) : 0f;

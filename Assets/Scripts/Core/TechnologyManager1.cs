@@ -221,7 +221,7 @@ namespace StellarisClone.Core
 
         public float MonthlyResearchIncome =>
             (BaseScience + ScienceFromPopulation + FlatScience + Landmarks.Science(0)) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0)
-            * AIEmpireManager.PlayerTreatyResearchMult;
+            * AIEmpireManager.PlayerTreatyResearchMult * NeutralWorlds.ResearchMult(0);
 
         private readonly List<Technology> _allTechs = new List<Technology>();
         public IReadOnlyList<Technology> AllTechs => _allTechs;

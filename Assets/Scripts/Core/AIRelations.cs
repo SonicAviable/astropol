@@ -28,6 +28,8 @@ namespace StellarisClone.Core
             public int WarMonths;
             public float WearA, WearB;
             public float Grudge;
+            /// <summary>Сколько месяцев ещё действует договор о границах (0 — границы закрыты).</summary>
+            public int BorderMonths;
         }
 
         private static readonly List<PairState> _pairs = new List<PairState>();
@@ -35,6 +37,7 @@ namespace StellarisClone.Core
         public static void Reset()
         {
             _pairs.Clear();
+            NeutralWorlds.Reset();
             AICoalition.Reset();
             Reputation.Reset();
             CasusBelli.Reset();
@@ -58,6 +61,41 @@ namespace StellarisClone.Core
         }
 
         public static int TruceDays(int a, int b) => Get(a, b, false)?.TruceDays ?? 0;
+
+        /// <summary>Открыты ли границы двух империй ИИ по договору.</summary>
+        public static bool HasBorderAccess(int a, int b)
+        {
+            var p = Get(a, b, false);
+            return p != null && !p.AtWar && p.BorderMonths > 0;
+        }
+
+        /// <summary>Отношение, ниже которого договор о границах рвут, и выше которого — заключают при нужде.</summary>
+        private const float BorderBreakOpinion = -25f, BorderSignOpinion = 0f;
+
+        /// <summary>
+        /// Договор о границах между ИИ: заключают, когда проход через соседа открывает путь к ничейным системам
+        /// (или просто при хороших отношениях), рвут при сильной вражде и перед войной (план войны против соседа).
+        /// </summary>
+        private static void MonthlyBorders(PairState p, AIEmpireManager a, AIEmpireManager b, float opinion)
+        {
+            if (p.BorderMonths > 0)
+            {
+                p.BorderMonths--;
+                bool hostile = opinion < BorderBreakOpinion || a.WarPlanTarget == b.OwnerId || b.WarPlanTarget == a.OwnerId;
+                if (hostile) p.BorderMonths = 0;
+                if (p.BorderMonths == 0 && (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId)))
+                    GalacticNews.Post(NewsKind.Peace, Loc.F("{0} и {1} закрыли границы друг для друга", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)));
+                return;
+            }
+            if (AICoalition.AreAllies(a.OwnerId, b.OwnerId) || !Contacts.Met(a.OwnerId, b.OwnerId)) return;
+            if (opinion < BorderSignOpinion || a.WarPlanTarget == b.OwnerId || b.WarPlanTarget == a.OwnerId) return;
+            int need = BorderRules.BlockedFrontier(a.OwnerId, b.OwnerId) + BorderRules.BlockedFrontier(b.OwnerId, a.OwnerId);
+            float chance = need > 0 ? 0.25f + 0.05f * Mathf.Min(need, 6) : opinion >= 25f ? 0.06f : 0f;
+            if (UnityEngine.Random.value >= chance) return;
+            p.BorderMonths = DealCatalog.TreatyMonths;
+            if (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId))
+                GalacticNews.Post(NewsKind.Peace, Loc.F("{0} и {1} подписали договор о границах", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)));
+        }
 
         /// <summary>Отношение одной империи ИИ к другой (симметричное), с разбором для подсказки.</summary>
         public static float Opinion(AIEmpireManager a, AIEmpireManager b, List<string> reasons = null)
@@ -102,6 +140,7 @@ namespace StellarisClone.Core
                 if (p.CooldownDays > 0) p.CooldownDays--;
             }
             if (day == 1) Monthly();
+            NeutralWorlds.Tick(day);
         }
 
         private static void Monthly()
@@ -138,6 +177,7 @@ namespace StellarisClone.Core
 
                 p.WearA = Mathf.Max(0f, p.WearA - 5f);
                 p.WearB = Mathf.Max(0f, p.WearB - 5f);
+                MonthlyBorders(p, a, b, Opinion(a, b));
                 // Новые войны между ИИ планирует стратегия каждой империи (AIEmpireManager.Strategy):
                 // выбор цели, подготовка флота у границы, объявление — DeclarePlannedWar
             }
@@ -188,6 +228,7 @@ namespace StellarisClone.Core
             p.AtWar = true;
             p.WarMonths = 0;
             p.WearA = p.WearB = 0f;
+            p.BorderMonths = 0;   // война рвёт договор о границах (на войне границы и так открыты)
             if (Contacts.PlayerMet(attacker.OwnerId) || Contacts.PlayerMet(defender.OwnerId))
                 NotificationCenter.Show(Loc.T("Война соседей"),
                     Loc.F("{0} объявляет войну: {1}", Contacts.NameForPlayer(attacker.OwnerId), Contacts.NameForPlayer(defender.OwnerId)),
@@ -248,6 +289,18 @@ namespace StellarisClone.Core
             if (delta < 0f) p.CooldownDays = 0;
         }
 
+        /// <summary>Сохранение прежней версии: соседи, которые не воюют и не враждуют, получают договор о границах.</summary>
+        public static void OpenBordersForOldSave()
+        {
+            var alive = new List<AIEmpireManager>(AIEmpireManager.Alive);
+            for (int i = 0; i < alive.Count; i++)
+            for (int j = i + 1; j < alive.Count; j++)
+            {
+                var p = Get(alive[i].OwnerId, alive[j].OwnerId, true);
+                if (!p.AtWar && Opinion(alive[i], alive[j]) >= -10f) p.BorderMonths = DealCatalog.TreatyMonths;
+            }
+        }
+
         /// <summary>Империя пала — все её войны окончены.</summary>
         public static void EndAllWars(int owner)
         {
@@ -264,7 +317,8 @@ namespace StellarisClone.Core
                 list.Add(new PairState
                 {
                     A = p.A, B = p.B, AtWar = p.AtWar, TruceDays = p.TruceDays, CooldownDays = p.CooldownDays,
-                    WarMonths = p.WarMonths, WearA = p.WearA, WearB = p.WearB, Grudge = p.Grudge
+                    WarMonths = p.WarMonths, WearA = p.WearA, WearB = p.WearB, Grudge = p.Grudge,
+                    BorderMonths = p.BorderMonths
                 });
             return list;
         }

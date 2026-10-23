@@ -195,9 +195,17 @@ namespace StellarisClone.Rendering
                 }
             }
 
+            // Вольный мир — свои карточки вместо управления
+            var neutral = NeutralWorlds.At(system.Id);
+            if (neutral != null && system.OwnerId == NeutralWorlds.Owner)
+            {
+                BuildNeutralCards(system, neutral);
+                return;
+            }
+
             // Что делать
             InspSection(Loc.T("УПРАВЛЕНИЕ"), LGIcon.Gear);
-            if (!_isInSystemMode && system.OwnerId < 0)
+            if (!_isInSystemMode && system.OwnerId == -1)
                 InspText(!system.IsSurveyed ? Loc.T("Отправьте научный корабль, чтобы изучить систему.")
                                             : Loc.T("Заложите форпост строительным кораблём — система станет вашей."));
             else if (system.OwnerId == 0)

@@ -23,7 +23,7 @@ namespace StellarisClone.Core
         /// <summary>Месячный поток ресурса для ИИ по соглашениям с игроком (+ получает, − платит).</summary>
         public float DealIncome(string resource)
         {
-            float v = 0f;
+            float v = NeutralWorlds.Income(OwnerId, resource);
             foreach (var a in Agreements)
             {
                 if (a.Kind == DealItemKind.TradeTreaty && resource == "energy") v += DealCatalog.TradeTreatyEnergy;
@@ -38,7 +38,7 @@ namespace StellarisClone.Core
         /// <summary>Месячный поток ресурса для игрока по всем соглашениям со всеми империями.</summary>
         public static float PlayerDealIncome(string resource)
         {
-            float v = 0f;
+            float v = NeutralWorlds.Income(0, resource);
             foreach (var ai in All)
             {
                 if (ai.IsEliminated) continue;
@@ -66,6 +66,14 @@ namespace StellarisClone.Core
 
         private void MonthlyAgreements()
         {
+            // Вражда или подготовка к войне против игрока — граница закрывается
+            int bi = Agreements.FindIndex(a => a.Kind == DealItemKind.Borders);
+            if (bi >= 0 && (Opinion < -40f || WarPlanTarget == 0))
+            {
+                Agreements.RemoveAt(bi);
+                NotificationCenter.Show(Loc.T("Граница закрыта"), Loc.F("{0} расторг договор о границах: ваши корабли больше не пройдут через их территорию", AIName),
+                    NotificationCenter.Kind.Warning, 7f);
+            }
             for (int i = Agreements.Count - 1; i >= 0; i--)
             {
                 var a = Agreements[i];
@@ -278,6 +286,21 @@ namespace StellarisClone.Core
                     if (Personality == AIPersonality.Trader) v += 15f;
                     return v;
                 }
+                case DealItemKind.Borders:
+                {
+                    if (HasAgreement(k)) { blocker = Loc.T("Договор уже действует"); return 0f; }
+                    if (HasAlliance) { blocker = Loc.T("Союз уже открывает границы"); return 0f; }
+                    if (Opinion < -20f) { blocker = Loc.T("Слишком плохие отношения"); return 0f; }
+                    if (WarPlanTarget == 0) { blocker = Loc.T("Они не пустят ваши флоты к себе"); return 0f; }
+                    // Проход через вашу территорию открывает им путь к новым системам — договор им нужен
+                    int need = BorderRules.BlockedFrontier(OwnerId, 0);
+                    float v = 2f + Opinion * 0.15f + Mathf.Min(18f, need * 2f);
+                    // Ваш флот сильнее — пускать его к себе опасно
+                    if (PowerRatio < 0.67f) v -= 8f;
+                    if (Personality == AIPersonality.Militarist) v -= 4f;
+                    if (Personality == AIPersonality.Trader) v += 6f;
+                    return v;
+                }
                 case DealItemKind.Charts:
                 {
                     int theyGet = 0, weGet = 0;
@@ -484,6 +507,7 @@ namespace StellarisClone.Core
                         break;
                     case DealItemKind.ResearchTreaty:
                     case DealItemKind.TradeTreaty:
+                    case DealItemKind.Borders:
                         if (!HasAgreement(t.Kind))
                         {
                             int months = DealCatalog.TreatyMonths;
@@ -620,6 +644,17 @@ namespace StellarisClone.Core
 
         private Deal TryTreatyOffer()
         {
+            // Путь к новым системам лежит через вашу территорию — сначала просят открыть границу
+            if (BorderRules.BlockedFrontier(OwnerId, 0) >= 2)
+            {
+                float bv = TreatyValue(DealItemKind.Borders, out string bblock);
+                if (bblock == null && bv >= 8f)
+                {
+                    var bd = new Deal();
+                    bd.Treaties.Add(new DealItem(DealItemKind.Borders, 0f));
+                    return bd;
+                }
+            }
             DealItemKind[] order = Personality == AIPersonality.Trader
                 ? new[] { DealItemKind.TradeTreaty, DealItemKind.Charts, DealItemKind.ResearchTreaty }
                 : Personality == AIPersonality.Scientific

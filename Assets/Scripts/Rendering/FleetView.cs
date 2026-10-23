@@ -590,6 +590,23 @@ namespace StellarisClone.Rendering
         private void StartNextJump()
         {
             if (Data.Path.Count == 0) return;
+            // Граница закрылась по пути (истёк договор, заключён мир) — флот останавливается перед ней
+            var here = EmpireStats.GetSystem(Data.CurrentSystemId);
+            var next = EmpireStats.GetSystem(Data.Path.Peek());
+            if (!BorderRules.CanStep(Data.OwnerId, here, next))
+            {
+                int closed = next != null ? next.OwnerId : -1;
+                int dest = Data.Path.ToArray()[Data.Path.Count - 1];
+                Data.Path.Clear();
+                Data.OrderQueue.Clear();
+                if (Data.OwnerId == 0)
+                {
+                    Data.HasPlayerOrder = false;
+                    BorderRules.NotifyBlocked(dest, closed);
+                }
+                UpdatePathVisuals();
+                return;
+            }
             Data.TargetSystemId = Data.Path.Dequeue();
             Data.State = FleetState.InHyperlane;
             SFXManager.PlayAt(Sfx.FtlJump, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);

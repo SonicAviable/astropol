@@ -764,7 +764,7 @@ namespace StellarisClone.Core
                 _disengaged.Add(d.Id);
                 _stations.Remove(d.Id);
                 _pendingFtl.Remove(d.Id);
-                FleetManager.Instance?.IssueMoveOrder(fv, escape);
+                FleetManager.Instance?.IssueMoveOrder(fv, escape, ignoreBorders: true);
                 Side(battle, d.OwnerId).Disengaged++;
                 AddLog(battle, Loc.F("{0} выходит из боя", d.Name), LogKind.Disengage, d.OwnerId);
                 if (ShowFx(battle.SystemId, fv.transform.position))
@@ -794,7 +794,7 @@ namespace StellarisClone.Core
             {
                 if (n < 0 || n >= _generator.Systems.Count) continue;
                 if (_generator.Systems[n].OwnerId == d.OwnerId) return n;
-                if (any < 0 && !Diplomacy.AtWar(_generator.Systems[n].OwnerId, d.OwnerId)) any = n;
+                if (any < 0 && !Diplomacy.AtWar(_generator.Systems[n].OwnerId, d.OwnerId) && BorderRules.CanEnter(d.OwnerId, _generator.Systems[n])) any = n;
             }
             if (any < 0 && sys.ConnectedSystemIds.Count > 0) any = sys.ConnectedSystemIds[0];
             return any;
@@ -892,10 +892,10 @@ namespace StellarisClone.Core
             d.OrderQueue.Clear();
             _disengaged.Add(d.Id);
             _stations.Remove(d.Id);
-            FleetManager.Instance?.IssueMoveOrder(fleet, escape);
+            FleetManager.Instance?.IssueMoveOrder(fleet, escape, ignoreBorders: true);
             if (preferredTarget >= 0 && preferredTarget != escape)
             {
-                var tail = GalaxyPathfinder.FindPath(escape, preferredTarget, _generator);
+                var tail = GalaxyPathfinder.FindPath(escape, preferredTarget, _generator, d.OwnerId);
                 if (tail != null) foreach (int step in tail) d.Path.Enqueue(step);
             }
             var battle = GetBattle(d.CurrentSystemId);

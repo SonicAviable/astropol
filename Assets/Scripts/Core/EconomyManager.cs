@@ -46,7 +46,7 @@ namespace StellarisClone.Core
             {
                 var tm = TechnologyManager.Instance;
                 float flat = (tm != null ? tm.Bonuses.InfluenceFlat : 0f) + Landmarks.Influence(0);
-                return flat * _factionInfluenceMult;
+                return flat * _factionInfluenceMult + NeutralWorlds.Income(0, "influence");
             }
         }
 

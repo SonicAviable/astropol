@@ -88,6 +88,8 @@ namespace StellarisClone.Core
         public LawsSave Laws;
         /// <summary>Решения империи (null — старое сохранение).</summary>
         public DecisionsSave Decisions;
+        /// <summary>Вольные миры (null — старое сохранение: их в той партии не было).</summary>
+        public NeutralSave Neutrals;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -289,6 +291,8 @@ namespace StellarisClone.Core
         /// <summary>Подготовка к войне (AIEmpireManager.Strategy): цель, сколько месяцев идёт, перерыв после отказа.</summary>
         public int WarPlanTarget = -1, WarPlanMonths, WarPlanCooldown;
         public bool WarPlanWarned;
+        /// <summary>Сколько месяцев длится война с вольным миром.</summary>
+        public int NeutralWarMonths;
 
         // Тактика: какое оружие ставят на новые корабли (-1 — по вкусу фракции)
         public int DesignPrimary = -1, DesignSecondary = -1;
@@ -487,6 +491,7 @@ namespace StellarisClone.Core
             if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
             s.Laws = EmpireLaws.Capture();
             s.Decisions = EmpireDecisions.Capture();
+            s.Neutrals = NeutralWorlds.Capture();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -872,6 +877,8 @@ namespace StellarisClone.Core
             EspionageManager.Instance?.RestoreState(s.Espionage);
             EmpireLaws.Restore(s.Laws);
             EmpireDecisions.Restore(s.Decisions);
+            NeutralWorlds.Restore(s.Neutrals);
+            if (s.Neutrals == null) BorderRules.GrandfatherOldSave();   // до границ: открыть их, где нет вражды
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)

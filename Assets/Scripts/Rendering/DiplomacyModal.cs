@@ -44,7 +44,7 @@ namespace StellarisClone.Rendering
         private const float LeaderX = 410f, LeaderW = 400f, LeaderH = 600f;
         private const float DialogW = 780f, DialogH = 184f, DealW = 420f, DealH = 250f;
         private const float CellSize = 76f, CellGap = 8f;
-        private const int ChanceSegs = 16, SlotCount = 7;
+        private const int ChanceSegs = 16, SlotCount = 8;
 
         private Canvas _host;
         private GameObject _root;
@@ -574,7 +574,7 @@ namespace StellarisClone.Rendering
                 int idx = i;
                 slot.Btn = LGBuild.Button(rt, "Action", SlotBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f), () => _slots[idx].Act?.Invoke(), null, null, 12, 6f);
                 var r = (RectTransform)slot.Btn.transform;
-                r.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(142f, 36f));
+                r.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(Mathf.Min(142f, span * 2f / (SlotCount - 1) - 6f), 36f));
                 r.localRotation = Quaternion.Euler(0f, 0f, slope * 0.55f);
                 slot.Bg = slot.Btn.GetComponent<Image>();
                 slot.Icon = LGIcons.Create(slot.Btn.transform, LGIcon.Handshake, 14, Color.white);
@@ -1152,17 +1152,19 @@ namespace StellarisClone.Rendering
                     Loc.T("Обязательства защищать друг друга снимаются, пакт о ненападении остаётся. Отношение и репутация немного ухудшатся"),
                     alive ? () => ai.PlayerCancelAlliance() : (System.Action)null);
             else TreatySlot(_slots[2], ai, DealItemKind.Alliance, Loc.T("СОЮЗ"), LGIcon.Defense);
-            TreatySlot(_slots[3], ai, DealItemKind.TradeTreaty, Loc.T("ТОРГОВЫЙ ДОГОВОР"), LGIcon.Trade);
-            TreatySlot(_slots[4], ai, DealItemKind.ResearchTreaty, Loc.T("НАУЧНЫЙ ДОГОВОР"), LGIcon.Research);
-            TreatySlot(_slots[5], ai, DealItemKind.Charts, Loc.T("ЗВЁЗДНЫЕ КАРТЫ"), LGIcon.MapExplored);
-            CoalitionSlot(_slots[6], ai);
+            TreatySlot(_slots[3], ai, DealItemKind.Borders, Loc.T("ГРАНИЦЫ"), LGIcon.Border);
+            TreatySlot(_slots[4], ai, DealItemKind.TradeTreaty, Loc.T("ТОРГОВЫЙ ДОГОВОР"), LGIcon.Trade);
+            TreatySlot(_slots[5], ai, DealItemKind.ResearchTreaty, Loc.T("НАУЧНЫЙ ДОГОВОР"), LGIcon.Research);
+            TreatySlot(_slots[6], ai, DealItemKind.Charts, Loc.T("ЗВЁЗДНЫЕ КАРТЫ"), LGIcon.MapExplored);
+            CoalitionSlot(_slots[7], ai);
         }
 
         /// <summary>Договор: щелчок кладёт его на стол (или убирает). Действующий — подсвечен зелёным.</summary>
         private void TreatySlot(Slot s, AIEmpireManager ai, DealItemKind k, string label, LGIcon icon)
         {
             ai.TreatyValue(k, out string block);
-            bool active = ai.HasAgreement(k) || (k == DealItemKind.Alliance && ai.HasAlliance);
+            bool active = ai.HasAgreement(k) || (k == DealItemKind.Alliance && ai.HasAlliance)
+                          || (k == DealItemKind.Borders && ai.HasAlliance);
             bool on = _deal.HasTreaty(k);
             bool can = !ai.IsEliminated && !_viewingOffer && (block == null || on);
             string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
@@ -1205,6 +1207,14 @@ namespace StellarisClone.Rendering
                     foreach (var r in e.Reasons)
                         sb.Append($"\n<color={(r.Value >= 0 ? "#6FE09A" : "#FF8080")}>{r.Value:+0;-0;0}</color>  {r.Label}");
                     return sb.ToString();
+                }
+                case DealItemKind.Borders:
+                {
+                    if (ai == null) return null;
+                    int open = BorderRules.BlockedFrontier(0, ai.OwnerId);
+                    string mine = Loc.F("<color={0}>Для вас:</color> ваши корабли пройдут через их территорию", G);
+                    if (open > 0) mine += Loc.F(" — откроется путь к {0} ничейным системам", open);
+                    return mine + Loc.T("\n<color=#8AA2A8>Их корабли тоже смогут ходить через ваши системы</color>");
                 }
                 case DealItemKind.Charts:
                 {

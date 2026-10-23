@@ -635,23 +635,45 @@ namespace StellarisClone.Core
             IssueMoveOrder(fleet, target);
         }
 
-        public void IssueMoveOrder(FleetView fleet, int targetSystemId)
+        /// <summary>
+        /// Проложить маршрут к системе. Границы (Borders) учитываются: в чужую территорию — только по договору
+        /// о границах, союзу или на войне. ignoreBorders — экстренный прыжок из боя. false — пути нет.
+        /// </summary>
+        public bool IssueMoveOrder(FleetView fleet, int targetSystemId, bool ignoreBorders = false)
         {
-            if (_generator == null || fleet?.Data == null) return;
-            if (fleet.Data.InCombat) return;
+            if (_generator == null || fleet?.Data == null) return false;
+            if (fleet.Data.InCombat) return false;
 
             int startNode = fleet.Data.State == FleetState.InHyperlane
                 ? fleet.Data.TargetSystemId
                 : fleet.Data.CurrentSystemId;
 
-            if (startNode == targetSystemId) return;
+            if (startNode == targetSystemId) return true;
 
-            var route = GalaxyPathfinder.FindPath(startNode, targetSystemId, _generator);
-            if (route == null || route.Count == 0) return;
+            int mover = ignoreBorders ? -1 : fleet.Data.OwnerId;
+            var route = GalaxyPathfinder.FindPath(startNode, targetSystemId, _generator, mover);
+            if (route == null || route.Count == 0)
+            {
+                if (fleet.Data.OwnerId == 0 && !ignoreBorders && GalaxyPathfinder.FindPath(startNode, targetSystemId, _generator) != null)
+                    BorderRules.NotifyBlocked(targetSystemId, BorderRules.ClosedBy(0, targetSystemId));
+                return false;
+            }
 
             fleet.Data.Path.Clear();
             foreach (int step in route) fleet.Data.Path.Enqueue(step);
             fleet.UpdatePathVisuals();
+            return true;
+        }
+
+        /// <summary>Долетит ли корабль до системы с учётом границ (игроку — подсказка, почему нет).</summary>
+        public bool CanReach(FleetView fleet, int targetSystemId)
+        {
+            var d = fleet?.Data;
+            if (d == null || _generator == null) return false;
+            int start = d.State == FleetState.InHyperlane ? d.TargetSystemId : d.CurrentSystemId;
+            if (start == targetSystemId || GalaxyPathfinder.FindPath(start, targetSystemId, _generator, d.OwnerId) != null) return true;
+            if (d.OwnerId == 0) BorderRules.NotifyBlocked(targetSystemId, BorderRules.ClosedBy(0, targetSystemId));
+            return false;
         }
 
         public bool OrderSurveySystem(int targetSystemId) => OrderSurveySystem(targetSystemId, null);
@@ -682,6 +704,7 @@ namespace StellarisClone.Core
             }
 
             if (scienceShip == null) return false;
+            if (!CanReach(scienceShip, targetSystemId)) return false;
 
             scienceShip.Data.SurveyTargetSystemId = targetSystemId;
 
@@ -782,6 +805,7 @@ namespace StellarisClone.Core
             }
 
             if (builder == null) return false;
+            if (!CanReach(builder, targetSystemId)) return false;
 
             eco.TrySpend(0f, 0f, alloys, influence);
             builder.Data.BuildTargetSystemId = targetSystemId;
@@ -805,8 +829,8 @@ namespace StellarisClone.Core
             if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return false;
 
             var system = _generator.Systems[systemId];
-            // Пока строили, систему мог занять кто-то другой
-            if (system.OwnerId >= 0 && system.OwnerId != ownerId) return false;
+            // Пока строили, систему мог занять кто-то другой (или там вольный мир)
+            if (system.OwnerId != -1 && system.OwnerId != ownerId) return false;
             system.OwnerId = ownerId;
             system.HasStarbase = true;
             system.MarkSurveyedByAll();

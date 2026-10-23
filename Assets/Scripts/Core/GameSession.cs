@@ -17,10 +17,15 @@ namespace StellarisClone.Core
         public bool Tutorial = true;
         public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
         public int Rivals = AIEmpireManager.RivalCount;   // империй ИИ (1…5); в старых сохранениях поля нет — лишних уберёт загрузка
+        /// <summary>Вольных миров (нейтральных систем) в партии: 2…6.</summary>
+        public int Neutrals = 4;
+
+        public const int MinNeutrals = 2, MaxNeutrals = 6;
 
         public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
         public static readonly string[] DifficultyNames = { Loc.T("Новичок"), Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная"), Loc.T("Безжалостная") };
         public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи"), Loc.T("5 империй") };
+        public static readonly string[] NeutralNames = { Loc.T("2 мира"), Loc.T("3 мира"), Loc.T("4 мира"), Loc.T("5 миров"), Loc.T("6 миров") };
         public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
         // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя.
@@ -52,6 +57,9 @@ namespace StellarisClone.Core
 
         /// <summary>Сколько соперников реально в партии (1…максимум).</summary>
         public int RivalCount => Mathf.Clamp(Rivals, 1, AIEmpireManager.RivalCount);
+
+        /// <summary>Сколько вольных миров появится (2…6).</summary>
+        public int NeutralCount => Mathf.Clamp(Neutrals, MinNeutrals, MaxNeutrals);
 
         public NewGameSettings Clone() => (NewGameSettings)MemberwiseClone();
 

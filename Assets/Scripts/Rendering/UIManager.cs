@@ -1346,7 +1346,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 ? Loc.F("<color=#33E6CC>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))
                 : system.OwnerId > 0
                     ? Loc.F("<color={0}>◆  Территория: {1}</color>", LGBuild.Hex(FleetIndicator.OwnerColor(system.OwnerId)), AIEmpireManager.NameOf(system.OwnerId, Loc.T("соперник")))
-                    : Loc.T("<color=#8AA2A8>◆  Нейтральный фронтир</color>");
+                    : system.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(system.Id) != null
+                        ? Loc.F("<color={0}>◆  Вольный мир · {1}</color>", LGBuild.Hex(NeutralWorlds.ColorOf(NeutralWorlds.At(system.Id).Kind)), NeutralWorlds.CharacterName(NeutralWorlds.At(system.Id).Kind))
+                        : Loc.T("<color=#8AA2A8>◆  Нейтральный фронтир</color>");
             _inspStatus.text = owner;
 
             PulseInspectorContent();
@@ -1356,7 +1358,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _inspShipyardBtn.gameObject.SetActive(system.OwnerId == 0 && !_isInSystemMode);
 
-            if (!_isInSystemMode && system.OwnerId < 0)
+            if (!_isInSystemMode && system.OwnerId == -1)
             {
                 _inspActionBtn.gameObject.SetActive(true);
 

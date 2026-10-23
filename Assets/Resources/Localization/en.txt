@@ -5644,3 +5644,130 @@ VK Play: всё синхронизировано	VK Play: fully synced
 \n<color=#F2C46B>Хотят уехать: {0} (нет работы или жилья, беспорядки)</color>	\n<color=#F2C46B>Want to leave: {0} (no jobs or housing, unrest)</color>
 \n<color=#9EF0C8>Примет переселенцев: {0} (есть жильё и работа)</color>	\n<color=#9EF0C8>Will accept migrants: {0} (housing and jobs available)</color>
 \n<color=#8AA2A8>Жители сами переезжают из колоний без работы и жилья туда, где они есть, — охотнее в родной климат. Роботы не переезжают.</color>	\n<color=#8AA2A8>Inhabitants move on their own from colonies without jobs and housing to those that have them — preferably to their native climate. Robots do not move.</color>
+Граница закрыта	Border closed
+{0} расторг договор о границах: ваши корабли больше не пройдут через их территорию	{0} has revoked the border treaty: your ships can no longer pass through their territory
+Союз уже открывает границы	The alliance already opens the borders
+Они не пустят ваши флоты к себе	They will not let your fleets in
+{0} · Наёмники	{0} · Mercenaries
+{0} и {1} закрыли границы друг для друга	{0} and {1} have closed their borders to each other
+{0} и {1} подписали договор о границах	{0} and {1} have signed a border treaty
+вольный мир	free world
+{0}: вольный мир пускает только друзей, покровителя и тех, кто с ним воюет	{0}: the free world admits only friends, its patron and those at war with it
+{0}: граница {1} закрыта. Нужен договор о границах, союз или война	{0}: the border of {1} is closed. You need a border treaty, an alliance or a war
+{0}: путь лежит через закрытые границы. Нужен договор о границах, союз или война	{0}: the route crosses closed borders. You need a border treaty, an alliance or a war
+Договор о границах	Border treaty
+Корабли обеих сторон проходят через территорию друг друга {0} лет. Без договора в чужие границы входят только на войне или союзники. Война рвёт договор	Ships of both sides may pass through each other's territory for {0} years. Without a treaty, only allies or enemies at war may cross foreign borders. War breaks the treaty
+2 мира	2 worlds
+3 мира	3 worlds
+4 мира	4 worlds
+5 миров	5 worlds
+6 миров	6 worlds
+Вольный порт {0}	Free Port {0}
+Академия {0}	Academy of {0}
+Кузня {0}	Forge of {0}
+Рудная вольница {0}	Free Mines of {0}
+Святилище {0}	Sanctuary of {0}
+Вольные клинки {0}	Free Blades of {0}
+Торговцы	Traders
+Учёные	Scholars
+Мастера	Craftsmen
+Рудокопы	Miners
+Мистики	Mystics
+Наёмники	Mercenaries
+Живут торговлей. Ценят титан, продают гелий-3 по лучшей цене. Любят соседей: через их владения идут караваны	They live by trade. They value titanium and sell helium-3 at the best price. They favour neighbours: caravans pass through their lands
+Хранители знаний. Ценят гелий-3, делятся открытиями. Уважают самую передовую империю	Keepers of knowledge. They value helium-3 and share discoveries. They respect the most advanced empire
+Мастера-оружейники. Ценят титан, продают сплавы	Master armourers. They value titanium and sell alloys
+Независимые рудокопы. Ценят гелий-3, продают титан	Independent miners. They value helium-3 and sell titanium
+Древний орден. Ценит титан на храмы, дарит покровителю влияние. Войн не прощает	An ancient order. It values titanium for its temples and grants influence to its patron. It never forgives wars
+Вольные клинки. Ценят гелий-3, уважают сильнейший флот, сдают корабли внаём	Free blades. They value helium-3, respect the strongest fleet and hire out ships
++{0:0} гелия-3 в месяц	+{0:0} helium-3 per month
++{0:0}% к науке	+{0:0}% research
++{0:0.#} сплавов в месяц	+{0:0.#} alloys per month
++{0:0} титана в месяц	+{0:0} titanium per month
++{0:0.#} сплавов в месяц, наём кораблей на 40% дешевле	+{0:0.#} alloys per month, ship hire 40% cheaper
+наука	research
+Вы	You
+Вольный мир	Free world
+Установлен контакт: {0} ({1}). Выберите систему, чтобы торговать и добиваться их расположения	Contact established: {0} ({1}). Select the system to trade and win their favour
+Покровительство	Patronage
+Вы стали покровителем: {0}. {1}	You have become the patron of {0}. {1}
+Покровительство потеряно	Patronage lost
+{0}: новый покровитель — {1}	{0}: the new patron is {1}
+{0}: ваше влияние ослабло	{0}: your influence has waned
+{0} берёт под покровительство: {1}	{0} takes {1} under its patronage
+Просят {0} {1}	They ask for {0} {1}
+Просьба вольного мира	Free world request
+{0}: {1}. Кто поможет первым — получит +{2:0} расположения	{0}: {1}. Whoever helps first gains +{2:0} favour
+Вольного мира больше нет	The free world no longer exists
+Нет контакта: подведите корабль или границу ближе	No contact: bring a ship or your border closer
+Посольство вернётся через {0} мес.	The embassy returns in {0} mo.
+Новый дар — через {0} мес.	Next gift in {0} mo.
+Нужно {0:0} {1}	Requires {0:0} {1}
+Наёмники не торгуют — они сдают корабли внаём	Mercenaries do not trade — they hire out ships
+С недругами не торгуют: нужно расположение не ниже нуля	They do not trade with foes: favour must be at least zero
+Караван уже ушёл — следующий в новом месяце	The caravan has left — the next one goes next month
+Просьб сейчас нет	No requests right now
+Нужно {0} {1}	Requires {0} {1}
+{0} выполняет просьбу: {1}	{0} fulfils the request of {1}
+Корабли внаём сдают только наёмники	Only mercenaries hire out ships
+Наёмники служат только друзьям: нужно расположение {0:0}	Mercenaries serve only friends: favour {0:0} required
+Свободный отряд будет через {0} мес.	A free squadron will be available in {0} mo.
+{0}: отряд прибыл в столицу и поступил к вам на службу	{0}: the squadron has arrived at your capital and entered your service
+Нет контакта	No contact
+Перемирие: ещё {0} мес.	Truce: {0} more mo.
+Нападение на вольный мир	Attack on a free world
+Война с вольным миром	War with a free world
+{0}: держите в системе флот сильнее гарнизона ({1:N0}) — {2:0} дн. блокады, и мир ваш. Остальные вольные миры встревожены	{0}: keep a fleet stronger than the garrison ({1:N0}) in the system — {2:0} days of blockade and the world is yours. The other free worlds are alarmed
+Нападение на ваш протекторат	Attack on your protectorate
+{0} напал на {1} — мир под вашим покровительством	{0} has attacked {1} — a world under your patronage
+{0} нападает на вольный мир: {1}	{0} attacks the free world {1}
+Войны нет	There is no war
+Мир с вольным миром	Peace with a free world
+{0}: война окончена, перемирие {1} мес.	{0}: the war is over, truce for {1} mo.
+Потеря при штурме	Lost in the assault
+{0}: гарнизон {1} уничтожил корабль	{0}: the garrison of {1} destroyed the ship
+Вольный мир захвачен	Free world captured
+{0} теперь ваша колония. Жители ещё долго будут чужими	{0} is now your colony. Its people will remain strangers for a long time
+{0} захватывает вольный мир: {1}	{0} captures the free world {1}
+<color={0}>Для вас:</color> ваши корабли пройдут через их территорию	<color={0}>For you:</color> your ships may pass through their territory
+ — откроется путь к {0} ничейным системам	 — opening a route to {0} unclaimed systems
+\n<color=#8AA2A8>Их корабли тоже смогут ходить через ваши системы</color>	\n<color=#8AA2A8>Their ships will also be able to pass through your systems</color>
+Вольные миры	Free worlds
+Нейтральные системы с характером: торговля, покровительство, захват	Neutral systems with a character: trade, patronage, conquest
+<color=#FFAA88>Нет контакта: подведите корабль или границу ближе</color>\n	<color=#FFAA88>No contact: bring a ship or your border closer</color>\n
+<color=#FF7A7A>Война</color>\n	<color=#FF7A7A>War</color>\n
+<color=#AAB4C0>Ваше расположение:</color> {0:+0;-0;0}\n	<color=#AAB4C0>Your favour:</color> {0:+0;-0;0}\n
+<color=#AAB4C0>Покровитель:</color> {0}\n	<color=#AAB4C0>Patron:</color> {0}\n
+<color=#8AA2A8>Выберите систему — торговля, посольства и просьбы</color>\n	<color=#8AA2A8>Select the system for trade, embassies and requests</color>\n
+<color=#FF9A6A>Граница закрыта: нужен договор о границах, союз или война</color>	<color=#FF9A6A>Border closed: you need a border treaty, an alliance or a war</color>
+ВОЛЬНЫЙ МИР	FREE WORLD
+жителей	citizens
+гарнизон	garrison
+расположение	favour
+<color=#6FE09A>вы</color>	<color=#6FE09A>you</color>
+<color=#8AA2A8>Покровитель:</color> {0}\n<color=#8AA2A8>Покровителю:</color> {1}\n<color=#8AA2A8>Другу (от {2:0}):</color> 40% этого и проход через систему	<color=#8AA2A8>Patron:</color> {0}\n<color=#8AA2A8>Patron gets:</color> {1}\n<color=#8AA2A8>Friend (from {2:0}):</color> 40% of that and passage through the system
+<color=#8AA2A8>Соперники:</color> 	<color=#8AA2A8>Rivals:</color> 
+Нет контакта: подведите корабль или границу ближе (2 прыжка)	No contact: bring a ship or your border closer (2 jumps)
+ДЕЙСТВИЯ	ACTIONS
+{0} · ещё {1} мес.	{0} · {1} mo. left
+Выполнить просьбу  · +{0:0}	Fulfil the request  · +{0:0}
+Кто поможет первым, тот получит расположение	Whoever helps first gains their favour
+Посольство  · {0:0} влияния	Embassy  · {0:0} influence
++{0:0} расположения. Раз в {1} мес.	+{0:0} favour. Once every {1} mo.
+Дар  · {0:0} {1}	Gift  · {0:0} {1}
+Обмен  · {0:0} {1} → {2:0} {3}	Trade  · {0:0} {1} → {2:0} {3}
+Караван раз в месяц, +{0:0} расположения. Чем выше расположение, тем выгоднее цена; покровителю — скидка	One caravan per month, +{0:0} favour. The higher the favour, the better the price; the patron gets a discount
+Нанять фрегат  · {0:0} сплавов, {1:0} гелия-3	Hire a frigate  · {0:0} alloys, {1:0} helium-3
+Отряд прибудет в столицу. Раз в {0} мес.; покровителю — на 40% дешевле	The squadron arrives at your capital. Once every {0} mo.; 40% cheaper for the patron
+Точно? Нажмите ещё раз	Sure? Click again
+Объявить войну	Declare war
+Захват — блокадой: флот сильнее гарнизона {0:0} дн. подряд. Остальные вольные миры отвернутся от вас, репутация пострадает	Capture by blockade: a fleet stronger than the garrison for {0:0} days in a row. The other free worlds will turn away from you and your reputation will suffer
+ШТУРМ	ASSAULT
+Блокада	Blockade
+Приведите сюда военный флот	Bring a military fleet here
+Флот слабее гарнизона ({0:N0} против {1:N0}): штурм не идёт, корабли под огнём	The fleet is weaker than the garrison ({0:N0} vs {1:N0}): no progress, ships under fire
+Блокада идёт: {0:0} из {1:0} дн.	Blockade in progress: {0:0} of {1:0} days
+Систему уже блокирует другая империя	Another empire is already blockading the system
+Заключить мир  · {0:0} влияния	Make peace  · {0:0} influence
+Перемирие на {0} мес.; расположение останется низким	Truce for {0} mo.; favour will remain low
+<color={0}>◆  Вольный мир · {1}</color>	<color={0}>◆  Free world · {1}</color>

@@ -56,7 +56,7 @@ namespace StellarisClone.Core
 
             foreach (int wp in d.OrderQueue)
             {
-                var leg = GalaxyPathfinder.FindPath(last, wp, gen);
+                var leg = GalaxyPathfinder.FindPath(last, wp, gen, d.OwnerId);
                 if (leg == null) continue;
                 foreach (int step in leg)
                 {
