@@ -1,0 +1,6 @@
+Модели планет (Sketchfab), сконвертированы Tools/planets/export_planets.py; уменьшены текстуры, упрощена сетка.
+
+Огненный мир — «Fire Planet», автор WeSVa (https://sketchfab.com/WSVideoCarta), лицензия SKETCHFAB Standard (https://sketchfab.com/licenses), https://sketchfab.com/3d-models/fire-planet-fa3ff413c802481b8a1a19fab164339b
+Зелёный мир — «Green Planet», автор jimmyn64 (https://sketchfab.com/jimmyn64), лицензия CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/), https://sketchfab.com/3d-models/green-planet-965dcf47e69e4c139741598162b147cf
+Ледяной гигант — «Neptune», автор SebastianSosnowski (https://sketchfab.com/SebastianSosnowski), лицензия CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/), https://sketchfab.com/3d-models/neptune-fe05e06a265d4a8f9285d34c933878ee
+Обсидиановый мир — «Planet one», автор tamminen (https://sketchfab.com/tamminen), лицензия CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/), https://sketchfab.com/3d-models/planet-one-002e113b44e241f49afa57f232be5a10

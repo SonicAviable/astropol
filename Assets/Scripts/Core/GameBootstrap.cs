@@ -21,8 +21,9 @@ namespace StellarisClone.Core
             Debug.Log($"<color=#5F5>[Bootstrap]</color> === Старт инициализации ({GameSession.Mode}) ===");
             ShaderCache.Diagnose();
 
-            // Чёрный экран → мягкое проявление (и при запуске, и после перехода между партиями)
-            SceneFader.RevealFromBlack(GameSession.Mode == GameSession.StartMode.MainMenu ? 1.4f : 0.8f);
+            // Экран загрузки: при запуске игры показываем сразу; при переходах между партиями
+            // он уже на экране (GameSession.Reload) и сам уйдёт, когда всё будет готово
+            if (!LoadingScreen.IsActive) LoadingScreen.ShowImmediate(LoadingScreen.Kind.Launch);
 
             EnsureCamera();
             EnsureCoreManagers();
@@ -37,12 +38,14 @@ namespace StellarisClone.Core
                 new GameObject("[Save] Loader").AddComponent<SaveLoader>();
 
             Debug.Log("<color=#5F5>[Bootstrap]</color> === Все менеджеры готовы ===");
+            LoadingScreen.NotifyBooted();
         }
 
         /// <summary>Те же параметры, что у генерации партии (для предпросмотра в меню «Новая игра»).</summary>
         public static void ConfigureGenerator(GalaxyGenerator gen, NewGameSettings s)
         {
             gen.Configure(s.StarCount, s.Radius, s.MinStarDistance);
+            gen.Shape = (StellarisClone.Generation.GalaxyShape)Mathf.Clamp(s.Shape, 0, 3);
             TrySetField(gen, "maxConnectionDistance", 30f);
             TrySetField(gen, "maxConnectionsPerStar", 4);
         }
@@ -70,6 +73,9 @@ namespace StellarisClone.Core
             EnsureComp<TechnologyManager>("[Managers] TechnologyManager");
             EnsureComp<MusicManager>("[Managers] MusicManager");
             EnsureComp<SFXManager>("[Managers] SFXManager");
+            EnsureComp<GameAudio>("[Managers] GameAudio");
+            EnsureComp<AchievementTracker>("[Managers] Achievements");
+            EnsureComp<StarterGuide>("[Managers] StarterGuide");
         }
 
         private static void EnsureGalaxy()
@@ -102,10 +108,29 @@ namespace StellarisClone.Core
         {
             EnsureComp<ShipDesignManager>("[Managers] ShipDesignManager");
             EnsureComp<FleetManager>("[Managers] FleetManager");
-            EnsureComp<AIEmpireManager>("[Managers] AIEmpireManager");
+            EnsureRivals();
             EnsureComp<CombatManager>("[Managers] CombatManager");
             EnsureComp<SystemViewManager>("[Managers] SystemViewManager");
+            EnsureComp<SiegeManager>("[Managers] SiegeManager");
+            EnsureComp<ConstructionManager>("[Managers] ConstructionManager");
+            EnsureComp<LeaderManager>("[Managers] LeaderManager");
             EnsureComp<VictoryManager>("[Managers] VictoryManager");
+            EnsureComp<LandmarkWatcher>("[Managers] LandmarkWatcher");
+            EnsureComp<EspionageManager>("[Managers] EspionageManager");
+        }
+
+        /// <summary>Империи-соперники: по одному объекту на каждого (владельцы 1, 2, …).</summary>
+        private static void EnsureRivals()
+        {
+            AIEmpireManager.All.RemoveAll(a => a == null);   // объекты прошлой сцены уже уничтожены
+            if (AIEmpireManager.All.Count > 0) return;
+            // Новая партия — столько соперников, сколько выбрано; при загрузке — все, лишних уберёт сохранение
+            int rivals = GameSession.IsLoading ? AIEmpireManager.RivalCount : GameSession.Settings.RivalCount;
+            for (int owner = 1; owner <= rivals; owner++)
+            {
+                var go = new GameObject($"[Managers] AIEmpire {owner}");
+                go.AddComponent<AIEmpireManager>().Configure(owner);
+            }
         }
 
         private static void EnsureUI()
@@ -125,6 +150,9 @@ namespace StellarisClone.Core
             EnsureComp<ShipDesignerModal>("[UI] ShipDesignerModal");
             EnsureComp<PlanetOverviewModal>("[UI] PlanetOverviewModal");
             EnsureComp<NotificationCenter>("[UI] NotificationCenter");
+            EnsureComp<FleetSelectionController>("[UI] FleetSelectionController");
+            EnsureComp<FleetRouteOverlay>("[UI] FleetRouteOverlay");
+            EnsureComp<FleetCommandHUD>("[UI] FleetCommandHUD");
         }
 
         private static void EnsureComp<T>(string name) where T : Component

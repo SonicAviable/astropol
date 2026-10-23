@@ -11,6 +11,9 @@ namespace StellarisClone.Core
         public event Action OnResourcesChanged;
         public void RaiseResourcesChanged() => OnResourcesChanged?.Invoke();
 
+        /// <summary>Столица игрока — её форпост бесплатен.</summary>
+        public const int PlayerCapitalId = 0;
+
         [Header("Текущие запасы")]
         public float EnergyCredits = 400f;
         public float Minerals = 500f;
@@ -26,21 +29,58 @@ namespace StellarisClone.Core
         [Header("Отладка")]
         [SerializeField] private bool logMonthlyReport = false;
 
-        private float _planetEnergy;
-        private float _planetMinerals;
-        private float _planetAlloys;
-        private float _upkeepEnergy;
+        private EmpireEconomy.Report _report;
 
-        public float MonthlyEnergyIncome    => BaseEnergyIncome + _planetEnergy - _upkeepEnergy;
-        public float MonthlyMineralsIncome  => BaseMineralsIncome + _planetMinerals;
-        public float MonthlyAlloysIncome    => BaseAlloysIncome + _planetAlloys;
-        public float MonthlyInfluenceIncome => BaseInfluenceIncome;
+        public float MonthlyEnergyIncome    => BaseEnergyIncome + _report.Energy - _report.Upkeep + DealEnergy;
+        public float MonthlyMineralsIncome  => BaseMineralsIncome + _report.Minerals + DealMinerals;
+        public float MonthlyAlloysIncome    => BaseAlloysIncome + _report.Alloys + DealAlloys;
+        /// <summary>Выплаты и торговые соглашения с другими империями (+ получаем, − платим).</summary>
+        public float DealEnergy   => AIEmpireManager.PlayerDealIncome("energy");
+        public float DealMinerals => AIEmpireManager.PlayerDealIncome("minerals");
+        public float DealAlloys   => AIEmpireManager.PlayerDealIncome("alloys");
+        /// <summary>Влияние: базовое + технологии («Дипломатическая служба» и далее) + узлы силы, с множителем фракции, минус плата за законы.</summary>
+        public float MonthlyInfluenceIncome => BaseInfluenceIncome + InfluenceExtra - EmpireLaws.InfluenceUpkeep;
+        public float InfluenceExtra
+        {
+            get
+            {
+                var tm = TechnologyManager.Instance;
+                float flat = (tm != null ? tm.Bonuses.InfluenceFlat : 0f) + Landmarks.Influence(0);
+                return flat * _factionInfluenceMult + NeutralWorlds.Income(0, "influence");
+            }
+        }
 
-        public float MonthlyUpkeep          => _upkeepEnergy;
-        public float PlanetEnergyOutput     => _planetEnergy;
-        public float PlanetMineralsOutput   => _planetMinerals;
-        public float PlanetAlloysOutput     => _planetAlloys;
+        public EmpireEconomy.Report Report  => _report;
+        public float MonthlyUpkeep          => _report.Upkeep;
+        public float PlanetEnergyOutput     => _report.DistrictEnergy;
+        public float PlanetMineralsOutput   => _report.DistrictMinerals;
+        public float PlanetAlloysOutput     => _report.DistrictAlloys;
+        public float StationEnergyOutput    => _report.StationEnergy;
+        public float StationMineralsOutput  => _report.StationMinerals;
+        public float TechEnergyOutput       => _report.TechEnergy;
+        public float FleetUpkeep            => _report.FleetUpkeep + _report.CivilianUpkeep;
+        public float OutpostUpkeep          => _report.OutpostUpkeepTotal;
+        public int   NavalUsed              => _report.NavalUsed;
+        public int   NavalCapacity          => _report.NavalCapacity;
         public bool  IsBankrupt             => _bankrupt;
+        public float FactionEnergyMult      => _factionEnergyMult;
+        public float FactionMineralMult     => _factionMineralMult;
+        public float FactionAlloyMult       => _factionAlloyMult;
+
+        /// <summary>Через сколько месяцев казна опустеет при текущем балансе (∞ — если доход положительный).</summary>
+        public float MonthsUntilEmpty
+        {
+            get
+            {
+                float net = MonthlyEnergyIncome;
+                if (net >= 0f) return float.PositiveInfinity;
+                return Mathf.Max(0f, EnergyCredits) / -net;
+            }
+        }
+
+        /// <summary>Порог предупреждения о скором банкротстве (месяцев).</summary>
+        public const float BankruptcyWarnMonths = 6f;
+        public bool BankruptcyLooming => !_bankrupt && MonthsUntilEmpty <= BankruptcyWarnMonths;
 
         private GalaxyGenerator _generator;
 
@@ -51,6 +91,7 @@ namespace StellarisClone.Core
 
         private bool _bankrupt;
         private float _lowEnergyAccum;
+        private int _warnLevel;   // 0 — нет, 1 — ≤6 мес, 2 — ≤3 мес, 3 — ≤1 мес
 
         private void Awake()
         {
@@ -64,8 +105,7 @@ namespace StellarisClone.Core
             if (TimeManager.Instance != null)
                 TimeManager.Instance.OnDayPassed += HandleDayPassed;
 
-            RecalculatePlanetOutput();
-            RecalculateUpkeep();
+            Recalculate();
         }
 
         private void OnDestroy()
@@ -76,15 +116,16 @@ namespace StellarisClone.Core
 
         private void HandleDayPassed(int day, int month, int year)
         {
-            RecalculatePlanetOutput();
-            RecalculateUpkeep();
+            Recalculate();
+            CheckBankruptcyForecast();
 
             if (day != 1) return;
 
             EnergyCredits += MonthlyEnergyIncome;
-            Minerals      += MonthlyMineralsIncome;
-            Alloys        += MonthlyAlloysIncome;
+            float mineralIncome = MonthlyMineralsIncome;
+            float lostMinerals = EmpireEconomy.ApplyMonthlyMinerals(_report, ref Minerals, ref Alloys, mineralIncome, MonthlyAlloysIncome);
             Influence     += MonthlyInfluenceIncome;
+            WarnMinerals(mineralIncome, lostMinerals);
 
             if (EnergyCredits < 0f)
             {
@@ -94,7 +135,15 @@ namespace StellarisClone.Core
                 {
                     _bankrupt = true;
                     Debug.LogWarning("<color=#F55>[Экономика]</color> БАНКРОТСТВО: производство снижено на 50%.");
-                    NotificationCenter.Show("Банкротство", "Производство урезано вдвое", NotificationCenter.Kind.Danger, 8f);
+                    NotificationCenter.Show(Loc.T("Банкротство"),
+                        Loc.T("Производство урезано вдвое. Распустите часть флота или стройте генераторы — иначе экономика рухнет"),
+                        NotificationCenter.Kind.Danger, 10f);
+                }
+                else if (!_bankrupt)
+                {
+                    NotificationCenter.Show(Loc.T("Казна пуста"),
+                        Loc.T("Ещё месяц дефицита — и наступит банкротство (производство ×0.5)"),
+                        NotificationCenter.Kind.Danger, 8f);
                 }
             }
             else if (_bankrupt && EnergyCredits > 60f)
@@ -102,7 +151,7 @@ namespace StellarisClone.Core
                 _bankrupt = false;
                 _lowEnergyAccum = 0f;
                 Debug.Log("<color=#5F5>[Экономика]</color> Кризис преодолён.");
-                NotificationCenter.Show("Кризис преодолён", "Экономика восстанавливается", NotificationCenter.Kind.Success, 5f);
+                NotificationCenter.Show(Loc.T("Кризис преодолён"), Loc.T("Экономика восстанавливается"), NotificationCenter.Kind.Success, 5f);
             }
             else if (EnergyCredits > 5f)
             {
@@ -110,82 +159,87 @@ namespace StellarisClone.Core
             }
 
             ProcessColonyGrowth();
+            PlanetStability.MonthlyTick(_generator != null ? _generator.Systems : null);
+            ProcessAutoBuild();
 
             if (logMonthlyReport)
             {
                 Debug.Log($"<color=#5F5>[Экономика]</color> ⚡{MonthlyEnergyIncome:+0;-0} " +
                           $"◆{MonthlyMineralsIncome:+0;-0} ⬢{MonthlyAlloysIncome:+0;-0} " +
-                          $"★{MonthlyInfluenceIncome:+0;-0}  (содержание ⚡{-_upkeepEnergy:0})");
+                          $"★{MonthlyInfluenceIncome:+0;-0}  (содержание ⚡{-_report.Upkeep:0})");
             }
 
             OnResourcesChanged?.Invoke();
         }
 
-        // ==================== ПРОИЗВОДСТВО ПЛАНЕТ ====================
+        // ==================== ТИТАН: ПЕРЕРАБОТКА И СКЛАДЫ ====================
 
-        private void RecalculatePlanetOutput()
+        private bool _storageWarned, _refineWarned;
+
+        /// <summary>Вместимость складов титана (растёт с числом колоний).</summary>
+        public float MineralStorage => _report.MineralStorage;
+        public float RefiningMinerals => _report.RefiningMinerals;
+
+        private void WarnMinerals(float income, float lost)
         {
-            if (_generator == null) return;
-
-            int min = 0, en = 0, al = 0;
-            foreach (var sys in _generator.Systems)
+            if (lost > 0f && !_storageWarned)
             {
-                if (sys.OwnerId != 0) continue;
-                foreach (var p in sys.Planets)
-                {
-                    if (p.Type == PlanetType.GasGiant || p.Type == PlanetType.Molten) continue;
-                    if (p.Population <= 0) continue;
-                    min += p.ProducedMineralsPerMonth;
-                    en  += p.ProducedEnergyPerMonth;
-                    al  += p.ProducedAlloysPerMonth;
-                }
+                _storageWarned = true;
+                NotificationCenter.Show(Loc.T("Склады титана полны"),
+                    Loc.F("Вместимость {0:N0}: излишки добычи пропадают. Пустите титан в дело — решения империи (окно законов), районы, укрепления.", MineralStorage),
+                    NotificationCenter.Kind.Warning, 8f);
             }
+            else if (Minerals < MineralStorage * 0.9f) _storageWarned = false;
 
-            float penalty = _bankrupt ? 0.5f : 1f;
-            _planetMinerals = min * _factionMineralMult * penalty;
-            _planetEnergy   = en  * _factionEnergyMult  * penalty;
-            _planetAlloys   = al  * _factionAlloyMult   * penalty;
+            bool lacking = Minerals <= 0.5f && income < 0f && _report.RefiningMinerals > 0f;
+            if (lacking && !_refineWarned)
+            {
+                _refineWarned = true;
+                NotificationCenter.Show(Loc.T("Заводам не хватает титана"),
+                    Loc.T("Промышленные районы переплавляют титан в сплавы. Сырья нет — сплавов выходит меньше. Стройте горные районы или станции."),
+                    NotificationCenter.Kind.Danger, 8f);
+            }
+            else if (!lacking) _refineWarned = false;
         }
 
-        // ==================== СОДЕРЖАНИЕ ====================
+        // ==================== ПРОИЗВОДСТВО И СОДЕРЖАНИЕ ====================
 
-        private void RecalculateUpkeep()
+        private void Recalculate()
         {
-            float upkeep = 0f;
+            var bonuses = TechnologyManager.Instance != null ? TechnologyManager.Instance.Bonuses : null;
+            _report = EmpireEconomy.Compute(0, PlayerCapitalId, _factionEnergyMult, _factionMineralMult, _factionAlloyMult,
+                                            bonuses, _bankrupt);
+        }
 
-            var fm = FleetManager.Instance;
-            if (fm != null)
+        // ==================== ПРЕДУПРЕЖДЕНИЕ О БАНКРОТСТВЕ ====================
+
+        private void CheckBankruptcyForecast()
+        {
+            if (_bankrupt) { _warnLevel = 0; return; }
+            float months = MonthsUntilEmpty;
+            int level = months <= 1f ? 3 : months <= 3f ? 2 : months <= BankruptcyWarnMonths ? 1 : 0;
+
+            if (level > _warnLevel)
             {
-                foreach (var f in fm.AllFleets)
-                {
-                    if (f?.Data == null || f.Data.Destroyed) continue;
-                    if (f.Data.OwnerId != 0) continue;
-                    upkeep += f.Data.UpkeepEnergy;
-                }
+                string when = months < 1f ? Loc.T("меньше чем через месяц") : Loc.F("примерно через {0} мес.", Mathf.CeilToInt(months));
+                NotificationCenter.Show(level >= 3 ? Loc.T("Банкротство неизбежно") : Loc.T("Угроза банкротства"),
+                    Loc.F("Расход Гелия-3 превышает доход на {0:0.#}/мес — казна опустеет {1}. ", -MonthlyEnergyIncome, when) +
+                    Loc.T("Сократите флот, откажитесь от лишних форпостов или стройте генераторы."),
+                    level >= 2 ? NotificationCenter.Kind.Danger : NotificationCenter.Kind.Warning, 8f);
             }
-
-            if (_generator != null)
-            {
-                foreach (var sys in _generator.Systems)
-                {
-                    if (sys.OwnerId != 0 || !sys.HasStarbase) continue;
-                    if (sys.Id == 0) continue;
-                    upkeep += 1.5f;
-                }
-            }
-
-            _upkeepEnergy = upkeep;
+            _warnLevel = level;
         }
 
         // ==================== РОСТ НАСЕЛЕНИЯ ====================
 
+        /// <summary>Рост населения во всех колониях галактики (у игрока и у ИИ одинаковые правила).</summary>
         private void ProcessColonyGrowth()
         {
             if (_generator == null) return;
 
             foreach (var sys in _generator.Systems)
             {
-                if (sys.OwnerId != 0) continue;
+                if (sys.OwnerId < 0) continue;
                 foreach (var p in sys.Planets)
                 {
                     if (p.Type == PlanetType.GasGiant || p.Type == PlanetType.Molten) continue;
@@ -194,7 +248,7 @@ namespace StellarisClone.Core
                     int housing = p.HousingCapacity;
                     if (housing <= p.Population) { p.PopGrowthProgress = 0f; continue; }
 
-                    float growth = 4f + (housing - p.Population) * 0.4f;
+                    float growth = p.PopGrowthBaseSpeedPctPerMonth;
                     p.PopGrowthProgress += growth;
 
                     while (p.PopGrowthProgress >= 100f && p.Population < housing)
@@ -204,6 +258,26 @@ namespace StellarisClone.Core
                     }
                 }
             }
+        }
+
+        // ==================== АВТОСТРОЙКА ====================
+
+        /// <summary>Колонии игрока с включённой автостройкой раз в месяц заказывают нужный район, если их очередь пуста.</summary>
+        private void ProcessAutoBuild()
+        {
+            if (_generator == null || ConstructionManager.Instance == null) return;
+            bool any = false;
+            foreach (var sys in _generator.Systems)
+            {
+                if (sys.OwnerId != 0) continue;
+                foreach (var p in sys.Planets)
+                {
+                    if (!p.AutoBuild || ConstructionManager.Instance.HasAnyJob(p)) continue;
+                    var t = p.AutoBuildChoice();
+                    if (t.HasValue && p.TryBuildDistrict(t.Value)) any = true;
+                }
+            }
+            if (any) Recalculate();
         }
 
         // ==================== API ====================
@@ -244,7 +318,11 @@ namespace StellarisClone.Core
             Bankrupt = _bankrupt, LowEnergyAccum = _lowEnergyAccum
         };
 
-        public void RestoreState(EconomySave s)
+        /// <summary>
+        /// Версия 1 вписывала доход добывающих станций и реакторных технологий в базовый доход;
+        /// теперь они считаются от территории и технологий — вычитаем их из базы.
+        /// </summary>
+        public void RestoreState(EconomySave s, int version)
         {
             if (s == null) return;
             EnergyCredits = s.Energy; Minerals = s.Minerals; Alloys = s.Alloys; Influence = s.Influence;
@@ -254,15 +332,30 @@ namespace StellarisClone.Core
             _factionAlloyMult = s.MultAlloys; _factionInfluenceMult = s.MultInfluence;
             _bankrupt = s.Bankrupt;
             _lowEnergyAccum = s.LowEnergyAccum;
+
+            if (version < 2)
+            {
+                if (_generator == null) _generator = FindAnyObjectByType<GalaxyGenerator>();
+                if (_generator != null)
+                    foreach (var sys in _generator.Systems)
+                    {
+                        if (sys.OwnerId != 0) continue;
+                        foreach (var p in sys.Planets)
+                            if (p.HasMiningStation) { BaseEnergyIncome -= p.EnergyDeposit; BaseMineralsIncome -= p.MineralDeposit; }
+                    }
+                var tm = TechnologyManager.Instance;
+                if (tm != null) BaseEnergyIncome -= tm.Bonuses.EnergyFlat;
+                BaseEnergyIncome = Mathf.Max(0f, BaseEnergyIncome);
+                BaseMineralsIncome = Mathf.Max(0f, BaseMineralsIncome);
+            }
             RecalculateAll();
         }
 
-        /// <summary>Пересчитать производство и содержание немедленно (после загрузки).</summary>
+        /// <summary>Пересчитать производство и содержание немедленно (после загрузки, постройки, захвата).</summary>
         public void RecalculateAll()
         {
             if (_generator == null) _generator = FindAnyObjectByType<GalaxyGenerator>();
-            RecalculatePlanetOutput();
-            RecalculateUpkeep();
+            Recalculate();
             OnResourcesChanged?.Invoke();
         }
 

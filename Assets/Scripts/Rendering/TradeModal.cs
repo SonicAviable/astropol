@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Rendering;
@@ -50,8 +50,18 @@ namespace StellarisClone.Core
 
         public void BindHost(Canvas modalCanvas) { _host = modalCanvas; }
 
-        public void Open()
+        private int _partnerOwner = -1;
+
+        /// <summary>Торговый партнёр — выбранная империя ИИ (по умолчанию первая).</summary>
+        private AIEmpireManager Partner => AIEmpireManager.For(_partnerOwner) ?? AIEmpireManager.Instance;
+
+        public void Open() => Open(-1);
+
+        public void Open(int partnerOwner)
         {
+            // Торговля теперь идёт за столом переговоров в окне дипломатии
+            if (DiplomacyModal.Instance != null) { DiplomacyModal.Instance.Open(partnerOwner); return; }
+            _partnerOwner = partnerOwner;
             if (_host == null)
             {
                 var modal = GameObject.Find("ModalCanvas");
@@ -60,9 +70,9 @@ namespace StellarisClone.Core
             if (_host == null) return;
             if (_root == null) Build();
 
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (_titleText != null && ai != null)
-                _titleText.text = $"◆  ТОРГОВЫЙ КАНАЛ · {ai.AIName.ToUpper()}";
+                _titleText.text = Loc.F("◆  ТОРГОВЫЙ КАНАЛ · {0}", ai.AIName.ToUpper());
 
             ResetOffer();
             Refresh();
@@ -177,7 +187,7 @@ namespace StellarisClone.Core
         private void Refresh()
         {
             var eco = EconomyManager.Instance;
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (eco == null || ai == null) return;
 
             _giveEnergyTxt.text    = $"{_giveEnergy} / {(int)eco.EnergyCredits}";
@@ -191,7 +201,7 @@ namespace StellarisClone.Core
             _getInfluenceTxt.text = $"{_getInfluence} / {(int)ai.Influence}";
 
             _aiStockText.text =
-                $"<color=#8AA2A8>Запасы {ai.AIName}:</color>  " +
+                Loc.F("<color=#8AA2A8>Запасы {0}:</color>  ", ai.AIName) +
                 $"<color=#F2C747>⚡{(int)ai.EnergyCredits}</color>  " +
                 $"<color=#33E6CC>◆{(int)ai.Minerals}</color>  " +
                 $"<color=#E59A55>⬢{(int)ai.Alloys}</color>  " +
@@ -199,9 +209,8 @@ namespace StellarisClone.Core
 
             float offerV = OfferValue();
             float requestV = RequestValue();
-            float rel = ai.RelationsWithPlayer;
 
-            float acceptRatio = Mathf.Clamp(0.70f + rel / 200f, 0.55f, 1.05f);
+            float acceptRatio = AcceptRatio(ai);
             float threshold = requestV * acceptRatio;
 
             if (requestV <= 0.01f)
@@ -211,21 +220,29 @@ namespace StellarisClone.Core
 
             if (requestV <= 0.01f && offerV <= 0.01f)
             {
-                _fairnessText.text = "<color=#8AA2A8>Задайте условия сделки</color>";
+                _fairnessText.text = Loc.T("<color=#8AA2A8>Задайте условия сделки</color>");
                 _fairnessTargetColor = UIManager.DS.TextMuted;
             }
             else if (offerV >= threshold)
             {
                 float profit = offerV - requestV;
-                _fairnessText.text = $"<color=#4DF08C>Сделка принята · выгода AI {profit:+0;-0;0}</color>";
+                _fairnessText.text = Loc.F("<color=#4DF08C>Сделка принята · выгода AI {0:+0;-0;0}</color>", profit);
                 _fairnessTargetColor = UIManager.DS.Green;
             }
             else
             {
                 float need = threshold - offerV;
-                _fairnessText.text = $"<color=#FF8888>AI откажет · нужно +{need:0} ценности</color>";
+                _fairnessText.text = Loc.F("<color=#FF8888>AI откажет · нужно +{0:0} ценности</color>", need);
                 _fairnessTargetColor = UIManager.DS.Red;
             }
+        }
+
+        /// <summary>Какую долю запрошенного нужно предложить: зависит от отношения и характера ИИ.</summary>
+        private static float AcceptRatio(AIEmpireManager ai)
+        {
+            float ratio = Mathf.Clamp(0.70f + ai.Opinion / 200f, 0.55f, 1.05f);
+            if (ai.Personality == AIPersonality.Trader) ratio *= 0.92f;
+            return ratio;
         }
 
         private void ChangeGive(ref int field, int delta, float available, ref float flashTimer)
@@ -271,7 +288,7 @@ namespace StellarisClone.Core
         private void TryPropose()
         {
             var eco = EconomyManager.Instance;
-            var ai = AIEmpireManager.Instance;
+            var ai = Partner;
             if (eco == null || ai == null) return;
 
             float offerV = OfferValue();
@@ -279,7 +296,7 @@ namespace StellarisClone.Core
 
             if (offerV <= 0.01f && requestV <= 0.01f)
             {
-                ShowStatus("Пустая сделка.", UIManager.DS.NeonCyan);
+                ShowStatus(Loc.T("Пустая сделка."), UIManager.DS.NeonCyan);
                 return;
             }
             if (_giveEnergy    > eco.EnergyCredits ||
@@ -287,7 +304,7 @@ namespace StellarisClone.Core
                 _giveAlloys    > eco.Alloys        ||
                 _giveInfluence > eco.Influence)
             {
-                ShowStatus("У вас не хватает ресурсов.", UIManager.DS.Red);
+                ShowStatus(Loc.T("У вас не хватает ресурсов."), UIManager.DS.Red);
                 return;
             }
             if (_getEnergy    > ai.EnergyCredits ||
@@ -295,19 +312,23 @@ namespace StellarisClone.Core
                 _getAlloys    > ai.Alloys        ||
                 _getInfluence > ai.Influence)
             {
-                ShowStatus("У AI не хватает ресурсов.", UIManager.DS.Red);
+                ShowStatus(Loc.T("У AI не хватает ресурсов."), UIManager.DS.Red);
                 return;
             }
 
-            float rel = ai.RelationsWithPlayer;
-            float acceptRatio = Mathf.Clamp(0.70f + rel / 200f, 0.55f, 1.05f);
+            if (ai.AtWar)
+            {
+                ShowStatus(Loc.T("Во время войны торговля невозможна."), UIManager.DS.Red);
+                return;
+            }
+            float acceptRatio = AcceptRatio(ai);
             bool accepted = offerV >= requestV * acceptRatio;
 
             if (!accepted)
             {
-                ShowStatus("Предложение отвергнуто.", UIManager.DS.Red);
+                ShowStatus(Loc.T("Предложение отвергнуто."), UIManager.DS.Red);
                 StartCoroutine(ShakeRoot(0.25f, 8f));
-                ai.RelationsWithPlayer = Mathf.Clamp(ai.RelationsWithPlayer - 2f, -100f, 40f);
+                ai.RegisterTrade(-1f);
                 Refresh();
                 return;
             }
@@ -328,16 +349,17 @@ namespace StellarisClone.Core
             ai.AddStock("alloys",    _giveAlloys);
             ai.AddStock("influence", _giveInfluence);
 
-            ai.RelationsWithPlayer = Mathf.Clamp(ai.RelationsWithPlayer + 1.5f, -100f, 40f);
+            // Выгодная для ИИ сделка улучшает отношение (торговая фракция ценит это сильнее)
+            ai.RegisterTrade(1.5f + (offerV - requestV) / 60f);
 
-            NotificationCenter.Show("Сделка заключена",
-                $"Отдано: ⚡{_giveEnergy} ◆{_giveMinerals} ⬢{_giveAlloys} ★{_giveInfluence}   ·   " +
-                $"Получено: ⚡{_getEnergy} ◆{_getMinerals} ⬢{_getAlloys} ★{_getInfluence}",
+            NotificationCenter.Show(Loc.T("Сделка заключена"),
+                Loc.F("Отдано: ⚡{0} ◆{1} ⬢{2} ★{3}   ·   ", _giveEnergy, _giveMinerals, _giveAlloys, _giveInfluence) +
+                Loc.F("Получено: ⚡{0} ◆{1} ⬢{2} ★{3}", _getEnergy, _getMinerals, _getAlloys, _getInfluence),
                 NotificationCenter.Kind.Success, 5f);
 
             ResetOffer();
             Refresh();
-            ShowStatus("Сделка исполнена.", UIManager.DS.Green);
+            ShowStatus(Loc.T("Сделка исполнена."), UIManager.DS.Green);
             StartCoroutine(SwapPulse());
         }
 
@@ -414,7 +436,7 @@ namespace StellarisClone.Core
             headerAccent.AddComponent<Image>().color = UIManager.DS.NeonCyan;
             LG.Line(headerAccent, hairline: true);
 
-            _titleText = MakeText(header.transform, "◆  ТОРГОВЫЙ КАНАЛ", 15, FontStyle.Bold,
+            _titleText = MakeText(header.transform, Loc.T("◆  ТОРГОВЫЙ КАНАЛ"), 15, FontStyle.Bold,
                 UIManager.DS.NeonCyan, TextAnchor.MiddleLeft);
             _titleText.rectTransform.anchorMin = Vector2.zero;
             _titleText.rectTransform.anchorMax = Vector2.one;
@@ -429,10 +451,10 @@ namespace StellarisClone.Core
             cRt.anchoredPosition = new Vector2(-10, 0);
 
             // === КОЛОНКИ ===
-            BuildColumn("ВЫ ОТДАЁТЕ",
+            BuildColumn(Loc.T("ВЫ ОТДАЁТЕ"),
                 new Vector2(0.02f, 0.34f), new Vector2(0.49f, 0.90f),
                 UIManager.DS.NeonCyan, isGive: true);
-            BuildColumn("ВЫ ПОЛУЧАЕТЕ",
+            BuildColumn(Loc.T("ВЫ ПОЛУЧАЕТЕ"),
                 new Vector2(0.51f, 0.34f), new Vector2(0.98f, 0.90f),
                 UIManager.DS.Green, isGive: false);
 
@@ -514,7 +536,7 @@ namespace StellarisClone.Core
             _statusText.rectTransform.offsetMax = new Vector2(-8, 0);
 
             // === PROPOSE ===
-            var propose = MakeBtn(_root.transform, "◆  ПРЕДЛОЖИТЬ СДЕЛКУ", new Vector2(320, 40),
+            var propose = MakeBtn(_root.transform, Loc.T("◆  ПРЕДЛОЖИТЬ СДЕЛКУ"), new Vector2(320, 40),
                 UIManager.DS.BtnSuccess, TryPropose);
             var pRt = propose.GetComponent<RectTransform>();
             pRt.anchorMin = new Vector2(0.5f, 0);
@@ -563,33 +585,33 @@ namespace StellarisClone.Core
 
             if (isGive)
             {
-                BuildRow(col.transform, "⚡", "Энергия",  UIManager.DS.Gold,     ref _giveEnergyTxt,
+                BuildRow(col.transform, "⚡", Loc.T("Энергия"),  UIManager.DS.Gold,     ref _giveEnergyTxt,
                     () => ChangeGive(ref _giveEnergy, -25, EconomyManager.Instance.EnergyCredits, ref _flashGiveE),
                     () => ChangeGive(ref _giveEnergy,  25, EconomyManager.Instance.EnergyCredits, ref _flashGiveE));
-                BuildRow(col.transform, "◆", "Титан",    UIManager.DS.NeonCyan, ref _giveMineralsTxt,
+                BuildRow(col.transform, "◆", Loc.T("Титан"),    UIManager.DS.NeonCyan, ref _giveMineralsTxt,
                     () => ChangeGive(ref _giveMinerals, -25, EconomyManager.Instance.Minerals, ref _flashGiveM),
                     () => ChangeGive(ref _giveMinerals,  25, EconomyManager.Instance.Minerals, ref _flashGiveM));
-                BuildRow(col.transform, "⬢", "Сплавы",   UIManager.DS.Gold,     ref _giveAlloysTxt,
+                BuildRow(col.transform, "⬢", Loc.T("Сплавы"),   UIManager.DS.Gold,     ref _giveAlloysTxt,
                     () => ChangeGive(ref _giveAlloys, -25, EconomyManager.Instance.Alloys, ref _flashGiveA),
                     () => ChangeGive(ref _giveAlloys,  25, EconomyManager.Instance.Alloys, ref _flashGiveA));
-                BuildRow(col.transform, "★", "Влияние",  UIManager.DS.Red,      ref _giveInfluenceTxt,
+                BuildRow(col.transform, "★", Loc.T("Влияние"),  UIManager.DS.Red,      ref _giveInfluenceTxt,
                     () => ChangeGive(ref _giveInfluence, -10, EconomyManager.Instance.Influence, ref _flashGiveI),
                     () => ChangeGive(ref _giveInfluence,  10, EconomyManager.Instance.Influence, ref _flashGiveI));
             }
             else
             {
-                BuildRow(col.transform, "⚡", "Энергия",  UIManager.DS.Gold,     ref _getEnergyTxt,
-                    () => ChangeGet(ref _getEnergy, -25, AIEmpireManager.Instance.EnergyCredits, ref _flashGetE),
-                    () => ChangeGet(ref _getEnergy,  25, AIEmpireManager.Instance.EnergyCredits, ref _flashGetE));
-                BuildRow(col.transform, "◆", "Титан",    UIManager.DS.NeonCyan, ref _getMineralsTxt,
-                    () => ChangeGet(ref _getMinerals, -25, AIEmpireManager.Instance.Minerals, ref _flashGetM),
-                    () => ChangeGet(ref _getMinerals,  25, AIEmpireManager.Instance.Minerals, ref _flashGetM));
-                BuildRow(col.transform, "⬢", "Сплавы",   UIManager.DS.Gold,     ref _getAlloysTxt,
-                    () => ChangeGet(ref _getAlloys, -25, AIEmpireManager.Instance.Alloys, ref _flashGetA),
-                    () => ChangeGet(ref _getAlloys,  25, AIEmpireManager.Instance.Alloys, ref _flashGetA));
-                BuildRow(col.transform, "★", "Влияние",  UIManager.DS.Red,      ref _getInfluenceTxt,
-                    () => ChangeGet(ref _getInfluence, -10, AIEmpireManager.Instance.Influence, ref _flashGetI),
-                    () => ChangeGet(ref _getInfluence,  10, AIEmpireManager.Instance.Influence, ref _flashGetI));
+                BuildRow(col.transform, "⚡", Loc.T("Энергия"),  UIManager.DS.Gold,     ref _getEnergyTxt,
+                    () => ChangeGet(ref _getEnergy, -25, Partner.EnergyCredits, ref _flashGetE),
+                    () => ChangeGet(ref _getEnergy,  25, Partner.EnergyCredits, ref _flashGetE));
+                BuildRow(col.transform, "◆", Loc.T("Титан"),    UIManager.DS.NeonCyan, ref _getMineralsTxt,
+                    () => ChangeGet(ref _getMinerals, -25, Partner.Minerals, ref _flashGetM),
+                    () => ChangeGet(ref _getMinerals,  25, Partner.Minerals, ref _flashGetM));
+                BuildRow(col.transform, "⬢", Loc.T("Сплавы"),   UIManager.DS.Gold,     ref _getAlloysTxt,
+                    () => ChangeGet(ref _getAlloys, -25, Partner.Alloys, ref _flashGetA),
+                    () => ChangeGet(ref _getAlloys,  25, Partner.Alloys, ref _flashGetA));
+                BuildRow(col.transform, "★", Loc.T("Влияние"),  UIManager.DS.Red,      ref _getInfluenceTxt,
+                    () => ChangeGet(ref _getInfluence, -10, Partner.Influence, ref _flashGetI),
+                    () => ChangeGet(ref _getInfluence,  10, Partner.Influence, ref _flashGetI));
             }
         }
 
@@ -649,6 +671,7 @@ namespace StellarisClone.Core
         {
             var go = new GameObject("SmallBtn");
             go.transform.SetParent(parent, false);
+            go.AddComponent<UiPressTag>().Kind = UiPress.Click;   // «+ / −» — частые шаги, не подтверждение и не опасность
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = size;
             go.AddComponent<Image>().color = bg;

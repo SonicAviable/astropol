@@ -17,7 +17,7 @@ namespace StellarisClone.Rendering
         private ScrollRect _scroll;
         private LGTabs _tabs;
 
-        private static readonly string[] TabNames = { "ГРАФИКА", "ЗВУК", "ИНТЕРФЕЙС", "ИГРА" };
+        private static readonly string[] TabNames = { Loc.T("ГРАФИКА"), Loc.T("ЗВУК"), Loc.T("ИНТЕРФЕЙС"), Loc.T("ИГРА") };
         private static readonly LGIcon[] TabIcons = { LGIcon.Monitor, LGIcon.Speaker, LGIcon.Menu, LGIcon.Gear };
 
         public static SettingsPanel Build(RectTransform host)
@@ -63,11 +63,11 @@ namespace StellarisClone.Rendering
             {
                 GameSettings.ResetDefaults();
                 ShowTab(_tabs.Index);
-                NotificationCenter.Show("Настройки сброшены", "Восстановлены значения по умолчанию", NotificationCenter.Kind.Info, 3f);
-            }, LGIcon.Back, "ПО УМОЛЧАНИЮ", 12);
+                NotificationCenter.Show(Loc.T("Настройки сброшены"), Loc.T("Восстановлены значения по умолчанию"), NotificationCenter.Kind.Info, 3f);
+            }, LGIcon.Back, Loc.T("ПО УМОЛЧАНИЮ"), 12);
             ((RectTransform)reset.transform).At(new Vector2(0, 0), new Vector2(0, 0), Vector2.zero, new Vector2(210, 44));
 
-            var hint = LGBuild.Label(rt, "Изменения применяются и сохраняются сразу", 11, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
+            var hint = LGBuild.Label(rt, Loc.T("Изменения применяются и сохраняются сразу"), 11, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
             hint.rectTransform.anchorMin = new Vector2(0, 0);
             hint.rectTransform.anchorMax = new Vector2(1, 0);
             hint.rectTransform.pivot = new Vector2(0.5f, 0);
@@ -119,50 +119,84 @@ namespace StellarisClone.Rendering
 
         private void BuildGraphics(ref float y)
         {
-            y = LGControls.Section(_content, y, "ЭКРАН", LGIcon.Monitor);
+            y = LGControls.Section(_content, y, Loc.T("ЭКРАН"), LGIcon.Monitor);
 #if UNITY_EDITOR
-            var note = LGControls.Row(_content, ref y, "Режим экрана и разрешение", "В редакторе Unity не меняются — работают в собранной игре.", 300f);
-            var nt = LGBuild.Label(note, "только в сборке", 12, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
+            var note = LGControls.Row(_content, ref y, Loc.T("Режим экрана и разрешение"), Loc.T("В редакторе Unity не меняются — работают в собранной игре."), 300f);
+            var nt = LGBuild.Label(note, Loc.T("только в сборке"), 12, UIManager.DS.TextMuted, TextAnchor.MiddleRight);
             nt.fontStyle = FontStyle.Italic;
 #endif
-            LGControls.Selector(LGControls.Row(_content, ref y, "Режим экрана", "Полный экран без рамки удобнее для переключения окон"),
+            LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Режим экрана"), Loc.T("Полный экран без рамки удобнее для переключения окон")),
                 GameSettings.ScreenModeNames, GameSettings.ScreenMode, GameSettings.SetScreenMode);
 
             var res = new List<string>();
             for (int i = 0; i < GameSettings.Resolutions.Count; i++) res.Add(GameSettings.ResolutionName(i));
-            LGControls.Selector(LGControls.Row(_content, ref y, "Разрешение", null),
+            LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Разрешение"), null),
                 res, GameSettings.ResolutionIndex, GameSettings.SetResolution);
 
-            LGControls.Switch(LGControls.Row(_content, ref y, "Вертикальная синхронизация", "Убирает разрывы кадра"),
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Вертикальная синхронизация"), Loc.T("Убирает разрывы кадра")),
                 GameSettings.VSync, GameSettings.SetVSync);
 
             var fps = new List<string>();
-            foreach (int f in GameSettings.FpsOptions) fps.Add(f < 0 ? "Без ограничения" : f + " кадров/с");
-            LGControls.Selector(LGControls.Row(_content, ref y, "Ограничение частоты кадров", "Работает при выключенной синхронизации"),
+            foreach (int f in GameSettings.FpsOptions) fps.Add(f < 0 ? Loc.T("Без ограничения") : f + Loc.T(" кадров/с"));
+            LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Ограничение частоты кадров"), Loc.T("Работает при выключенной синхронизации")),
                 fps, GameSettings.FpsIndex, GameSettings.SetFps);
 
             y += 6f;
-            y = LGControls.Section(_content, y, "КАЧЕСТВО", LGIcon.Star);
-            var q = new List<string>(QualitySettings.names);
-            if (q.Count > 0)
-                LGControls.Selector(LGControls.Row(_content, ref y, "Качество графики", "Тени, сглаживание и постобработка"),
-                    q, Mathf.Clamp(GameSettings.Quality, 0, q.Count - 1), GameSettings.SetQuality);
+            y = LGControls.Section(_content, y, Loc.T("КАЧЕСТВО"), LGIcon.Star);
+            BuildQuality(ref y);
 
-            LGControls.Switch(LGControls.Row(_content, ref y, "Размытие под стеклом", "Эффект «жидкого стекла» у панелей. Выключите на слабых ПК"),
-                GameSettings.GlassBlur, GameSettings.SetGlassBlur);
-
-            LGControls.Slider(LGControls.Row(_content, ref y, "Неоновое свечение", "Яркость ореола вокруг окон и кнопок"),
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Неоновое свечение"), Loc.T("Яркость ореола вокруг линий и выделенных элементов")),
                 GameSettings.Glow, 0f, 0.8f, v => Mathf.RoundToInt(v / 0.8f * 100f) + "%", GameSettings.SetGlow);
+        }
+
+        // Пресет и отдельные пункты качества: пресет выставляет все пункты, ручная правка пункта делает пресет «Своим»
+        private LGSelector _qPreset, _qScale, _qAA, _qShadows, _qPost, _qTex;
+
+        private void BuildQuality(ref float y)
+        {
+            GraphicsQuality.EnsureLoaded();
+            _qPreset = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Качество графики"), Loc.T("Набор настроек ниже: от «Низкого» для слабых ПК до «Ультра»")),
+                GraphicsQuality.PresetNames, GraphicsQuality.CurrentPreset, i =>
+                {
+                    if (i == GraphicsQuality.PresetCustom) return;
+                    GameSettings.GraphicsChanged(() => GraphicsQuality.SetPreset(i));
+                    SyncQuality();
+                });
+            _qScale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштаб рендера"), Loc.T("Ниже — быстрее, но галактика мягче; интерфейс остаётся чётким")),
+                GraphicsQuality.ScaleNames, GraphicsQuality.ScaleIndex, i => QualityItem(() => GraphicsQuality.SetScale(i)));
+            _qAA = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Сглаживание"), Loc.T("Убирает «лесенку» на краях кораблей и планет")),
+                GraphicsQuality.AANames, GraphicsQuality.AntiAliasing, i => QualityItem(() => GraphicsQuality.SetAntiAliasing(i)));
+            _qShadows = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Тени"), Loc.T("Тени планет и кораблей вблизи")),
+                GraphicsQuality.ShadowNames, GraphicsQuality.Shadows, i => QualityItem(() => GraphicsQuality.SetShadows(i)));
+            _qPost = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Постобработка"), Loc.T("Свечение звёзд, тонирование и виньетка")),
+                GraphicsQuality.OnOffNames, GraphicsQuality.PostFx ? 1 : 0, i => QualityItem(() => GraphicsQuality.SetPostFx(i == 1)));
+            _qTex = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Текстуры"), Loc.T("Половинные экономят видеопамять на слабых видеокартах")),
+                GraphicsQuality.TextureNames, GraphicsQuality.FullTextures ? 1 : 0, i => QualityItem(() => GraphicsQuality.SetFullTextures(i == 1)));
+        }
+
+        private void QualityItem(System.Action set)
+        {
+            GameSettings.GraphicsChanged(set);
+            if (_qPreset != null) _qPreset.SetIndex(GraphicsQuality.CurrentPreset, false);
+        }
+
+        private void SyncQuality()
+        {
+            _qScale?.SetIndex(GraphicsQuality.ScaleIndex, false);
+            _qAA?.SetIndex(GraphicsQuality.AntiAliasing, false);
+            _qShadows?.SetIndex(GraphicsQuality.Shadows, false);
+            _qPost?.SetIndex(GraphicsQuality.PostFx ? 1 : 0, false);
+            _qTex?.SetIndex(GraphicsQuality.FullTextures ? 1 : 0, false);
         }
 
         private void BuildAudio(ref float y)
         {
-            y = LGControls.Section(_content, y, "ГРОМКОСТЬ", LGIcon.Speaker);
-            LGControls.Slider(LGControls.Row(_content, ref y, "Общая громкость", null),
+            y = LGControls.Section(_content, y, Loc.T("ГРОМКОСТЬ"), LGIcon.Speaker);
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Общая громкость"), null),
                 GameSettings.MasterVolume, 0f, 1f, Percent, GameSettings.SetMaster);
-            LGControls.Slider(LGControls.Row(_content, ref y, "Музыка", "Фоновый саундтрек"),
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Музыка"), Loc.T("Фоновый саундтрек")),
                 GameSettings.MusicVolume, 0f, 1f, Percent, GameSettings.SetMusic);
-            LGControls.Slider(LGControls.Row(_content, ref y, "Звуки и интерфейс", "Щелчки, корабли, уведомления"),
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Звуки и интерфейс"), Loc.T("Щелчки, корабли, уведомления")),
                 GameSettings.SfxVolume, 0f, 1f, Percent, v =>
                 {
                     GameSettings.SetSfx(v);
@@ -174,49 +208,67 @@ namespace StellarisClone.Rendering
                 });
 
             y += 6f;
-            y = LGControls.Section(_content, y, "ПОВЕДЕНИЕ", LGIcon.Gear);
-            LGControls.Switch(LGControls.Row(_content, ref y, "Тишина в фоне", "Приглушать звук, когда окно игры неактивно"),
+            y = LGControls.Section(_content, y, Loc.T("ПОВЕДЕНИЕ"), LGIcon.Gear);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Тишина в фоне"), Loc.T("Приглушать звук, когда окно игры неактивно")),
                 GameSettings.MuteInBackground, GameSettings.SetMuteInBackground);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Вспышка и вибрация при тревоге"), Loc.T("При атаке и банкротстве края экрана вспыхивают, геймпад вибрирует")),
+                GameSettings.AlarmFx, GameSettings.SetAlarmFx);
         }
 
         private float _lastSfxPreview;
 
         private void BuildInterface(ref float y)
         {
-            y = LGControls.Section(_content, y, "ИНТЕРФЕЙС", LGIcon.Menu);
+            y = LGControls.Section(_content, y, Loc.T("ИНТЕРФЕЙС"), LGIcon.Menu);
+
+            // Язык: подпись на обоих языках, чтобы её нашёл любой игрок; применяется после перезапуска
+            int lang = System.Array.IndexOf(Loc.Codes, Loc.Saved);
+            var langRow = LGControls.Row(_content, ref y, "Язык · Language",
+                Loc.Saved == Loc.Current ? "Перезапустите игру после смены · Restart the game to apply"
+                                         : "<color=#F2C14E>Перезапустите игру, чтобы сменить язык · Restart the game to apply</color>");
+            LGControls.Selector(langRow, Loc.Names, Mathf.Max(0, lang), i =>
+            {
+                Loc.Save(Loc.Codes[i]);
+                NotificationCenter.Show(Loc.Codes[i] == "en" ? "Language: English" : "Язык: русский",
+                    Loc.Codes[i] == Loc.Current ? (Loc.English ? "No restart needed" : "Перезапуск не нужен")
+                                                : "Перезапустите игру · Restart the game to apply", NotificationCenter.Kind.Info, 6f);
+            });
             var scales = new List<string>();
             foreach (float s in GameSettings.UIScaleOptions) scales.Add(Mathf.RoundToInt(s * 100f) + "%");
-            LGControls.Selector(LGControls.Row(_content, ref y, "Масштаб интерфейса", "Крупнее — для больших экранов и 4K"),
+            LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштаб интерфейса"), Loc.T("Крупнее — для больших экранов и 4K")),
                 scales, GameSettings.UIScaleIndex, GameSettings.SetUIScale);
 
-            LGControls.Switch(LGControls.Row(_content, ref y, "Всплывающие подсказки", "Пояснения при наведении на элементы"),
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Яркость интерфейса"), Loc.T("Светлее панели окон, кнопок и списков")),
+                GameSettings.UIBrightness, 0f, 1f, Percent, GameSettings.SetUIBrightness);
+
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Всплывающие подсказки"), Loc.T("Пояснения при наведении на элементы")),
                 GameSettings.Tooltips, GameSettings.SetTooltips);
 
             y += 6f;
-            y = LGControls.Section(_content, y, "КАМЕРА", LGIcon.Target);
-            LGControls.Slider(LGControls.Row(_content, ref y, "Скорость камеры", "Перемещение клавишами WASD / стрелками"),
+            y = LGControls.Section(_content, y, Loc.T("КАМЕРА"), LGIcon.Target);
+            LGControls.Slider(LGControls.Row(_content, ref y, Loc.T("Скорость камеры"), Loc.T("Перемещение клавишами WASD / стрелками")),
                 GameSettings.CameraSpeed, 0.4f, 2.5f, v => $"×{v:0.0}", GameSettings.SetCameraSpeed);
-            LGControls.Switch(LGControls.Row(_content, ref y, "Прокрутка у края экрана", "Камера двигается, когда курсор у края"),
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Прокрутка у края экрана"), Loc.T("Камера двигается, когда курсор у края")),
                 GameSettings.EdgeScroll, GameSettings.SetEdgeScroll);
         }
 
         private void BuildGame(ref float y)
         {
-            y = LGControls.Section(_content, y, "СОХРАНЕНИЯ", LGIcon.Save);
+            y = LGControls.Section(_content, y, Loc.T("СОХРАНЕНИЯ"), LGIcon.Save);
             var auto = new List<string>();
             foreach (int m in GameSettings.AutosaveOptions)
-                auto.Add(m == 0 ? "Выключено" : m == 1 ? "Каждый месяц" : m == 12 ? "Каждый год" : $"Каждые {m} мес.");
-            LGControls.Selector(LGControls.Row(_content, ref y, "Автосохранение", "По игровому календарю, в слот «Автосохранение»"),
+                auto.Add(m == 0 ? Loc.T("Выключено") : m == 1 ? Loc.T("Каждый месяц") : m == 12 ? Loc.T("Каждый год") : Loc.F("Каждые {0} мес.", m));
+            LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Автосохранение"), Loc.T("По игровому календарю, в слот «Автосохранение»")),
                 auto, GameSettings.AutosaveIndex, GameSettings.SetAutosave);
 
-            var keys = LGControls.Row(_content, ref y, "Быстрое сохранение", "F5 — сохранить, F9 — загрузить", 300f);
+            var keys = LGControls.Row(_content, ref y, Loc.T("Быстрое сохранение"), Loc.T("F5 — сохранить, F9 — загрузить"), 300f);
             var k = LGBuild.Label(keys, "<color=#4DF2DB><b>F5</b></color>  /  <color=#4DF2DB><b>F9</b></color>", 15,
                                   UIManager.DS.TextPrimary, TextAnchor.MiddleRight);
             k.rectTransform.offsetMax = new Vector2(-8, 0);
 
-            var folder = LGControls.Row(_content, ref y, "Папка сохранений", SaveSystem.Folder.Replace('\\', '/'), 300f, 70f);
+            var folder = LGControls.Row(_content, ref y, Loc.T("Папка сохранений"), SaveSystem.Folder.Replace('\\', '/'), 300f, 70f);
             var open = LGBuild.Button(folder, "Open", UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.3f),
-                () => Application.OpenURL("file:///" + SaveSystem.Folder.Replace('\\', '/')), LGIcon.Load, "ОТКРЫТЬ", 11);
+                () => Application.OpenURL("file:///" + SaveSystem.Folder.Replace('\\', '/')), LGIcon.Load, Loc.T("ОТКРЫТЬ"), 11);
             ((RectTransform)open.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(150, 36));
         }
 

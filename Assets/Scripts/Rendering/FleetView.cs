@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Core;
 using StellarisClone.Generation;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Rendering
 {
@@ -11,17 +12,20 @@ namespace StellarisClone.Rendering
         private GalaxyGenerator _generator;
         private LineRenderer _pathLine;
         private TrailRenderer _engineTrail;
-        private MeshRenderer[] _renderers;
+        private Renderer[] _renderers;
         private bool _isSelected;
 
         private LineRenderer _laserBeam;
         private Light _workLight;
         private float _animTime;
 
-        private TextMesh _statusBadge;
+        // Ярлык над кораблём: пластина со значком класса и именем, рядом — «+N» выделенных в строю
+        private Transform _tagRoot;
+        private WorldChip _tag, _tagExtra;
+        private string _tagName;
+        private int _tagCount = -1;
         private Transform _camTransform;
 
-        private float _currentRollAngle;
         private WorldTooltipTrigger _worldTooltip;
         private GameObject _typeIcon;
 
@@ -41,8 +45,39 @@ namespace StellarisClone.Rendering
         // Подкрашивать материалы модели в цвет фракции (текстуры сохраняются)
         private const bool TintPrefabMaterials = true;
 
+        // false — процедурные модели ShipMeshFactory (корабли узнаются по силуэту);
+        // true — префабы из Resources/Prefabs/Ships, если они есть
+        private const bool UsePrefabModels = false;
+        private ShipMeshFactory.ShipVisual _visual;
+
         private bool _usesCustomModel;
         // =============================================================
+
+        // ==================== ПОЛЁТ ====================
+        // Профиль перелёта: разгон → инерция → торможение (трапеция скорости, доли пути по времени)
+        private const float AccelShare = 0.22f;
+        private const float TurnRateDeg = 95f;           // как быстро корабль разворачивается на курс
+        private const float MaxBankDeg = 28f;            // крен в развороте
+        private const float CruiseThrottle = 0.12f;      // подруливание на инерционном участке
+
+        private readonly List<Transform> _plumes = new List<Transform>();
+        private readonly List<Transform> _retroPlumes = new List<Transform>();
+        private Material _plumeMat, _retroMat;
+        private Light _engineLight;
+        private float _throttle, _retro, _bank, _nozzleRadius = 0.12f, _retroRadius = 0.06f;
+        private Vector3 _orbitSpot;
+        private bool _gliding;
+        // Строй на орбите (FleetFormation): базовая точка типа флота, место в группе и общий курс группы
+        private Vector3 _anchor, _formHeading;
+        private int _formIndex = -1, _formSystem = -1;
+        // Бой: скорость манёвра, собственные часы «танца» и флаг, чтобы после боя вернуться на орбиту
+        private Vector3 _combatVel;
+        private float _combatClock, _workClock;
+        private bool _wasInCombat;
+        private ShipWorkFx _work;
+        private static Mesh s_plumeQuad;
+        private static Shader s_plumeShader;
+        private static readonly int IdThrottle = Shader.PropertyToID("_Throttle");
 
         public void Initialize(FleetData data, GalaxyGenerator generator)
         {
@@ -56,6 +91,7 @@ namespace StellarisClone.Rendering
             CreateStatusBadge();
             CreateTypeIcon();
             CreateWorkVFX();
+            if (Data.Type != FleetType.Military) _work = ShipWorkFx.Attach(transform);
             SnapToCurrentSystem();
             SetupTooltip();
 
@@ -68,6 +104,8 @@ namespace StellarisClone.Rendering
             if (TimeManager.Instance != null)
                 TimeManager.Instance.OnDayPassed -= HandleDayPassed;
             if (_typeIcon != null) Destroy(_typeIcon);
+            if (_plumeMat != null) Destroy(_plumeMat);
+            if (_retroMat != null) Destroy(_retroMat);
         }
 
         private static Shader FindLitShader() => ShaderCache.Lit;
@@ -87,7 +125,7 @@ namespace StellarisClone.Rendering
 
             Color shipColor = GetBaseColorForType();
 
-            GameObject prefab = LoadShipPrefab(Data.Type);
+            GameObject prefab = UsePrefabModels ? LoadShipPrefab(Data.Type) : null;
             if (prefab != null)
             {
                 _usesCustomModel = true;
@@ -96,15 +134,43 @@ namespace StellarisClone.Rendering
             else
             {
                 _usesCustomModel = false;
-                CreateProceduralShipMesh(litShader, shipColor);
+                _visual = ShipMeshFactory.Build(transform, Data.Type, Data.HullClass, FleetIndicator.OwnerColor(Data.OwnerId), Data.OwnerId);
             }
 
             // Собираем рендереры ПОСЛЕ создания/инстанса модели
-            _renderers = GetComponentsInChildren<MeshRenderer>();
+            _renderers = GetComponentsInChildren<Renderer>();   // и скелетные модели (левиафан)
 
-            // Коллайдер на корне — по нему FleetManager ловит клики
-            var col = gameObject.AddComponent<BoxCollider>();
+            // Коллайдер на корне — по нему FleetManager ловит клики (при пересборке модели — тот же)
+            var col = GetComponent<BoxCollider>();
+            if (col == null) col = gameObject.AddComponent<BoxCollider>();
             col.size = new Vector3(3.5f, 2f, 3.5f);
+        }
+
+        /// <summary>
+        /// Пересобрать модель корабля и двигатели. Стартовые флоты появляются раньше, чем игрок выбирает фракцию
+        /// и цвет империи, — после выбора их корпуса и окраска приводятся к ней (UIManager.ApplyPlayerIdentity).
+        /// </summary>
+        public void RebuildModel()
+        {
+            if (Data == null) return;
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var c = transform.GetChild(i);
+                string n = c.name;
+                if (n != "ShipModel" && n != "Plume" && n != "RetroPlume" && n != "EngineLight" && n != "EngineTrail") continue;
+                c.SetParent(null, false);   // сразу из иерархии: новые рендереры собираются без старых
+                Destroy(c.gameObject);
+            }
+            _plumes.Clear();
+            _retroPlumes.Clear();
+            if (_plumeMat != null) Destroy(_plumeMat);
+            if (_retroMat != null) Destroy(_retroMat);
+            _plumeMat = _retroMat = null;
+            _engineLight = null;
+            _visual = null;
+            _damageAnchors = null;
+            CreateShipMesh();
+            CreateEngineTrail();
         }
 
         private static GameObject LoadShipPrefab(FleetType type)
@@ -158,113 +224,169 @@ namespace StellarisClone.Rendering
             }
         }
 
-        private void CreateProceduralShipMesh(Shader litShader, Color shipColor)
+        private Color EngineColor() => Data.Type switch
         {
-            if (Data.Type == FleetType.Constructor)
-            {
-                var hull = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                hull.transform.SetParent(transform, false);
-                hull.transform.localScale = new Vector3(1.5f, 0.6f, 2.2f);
-                CreatePod(new Vector3(-1.1f, 0f, 0f));
-                CreatePod(new Vector3( 1.1f, 0f, 0f));
-            }
-            else if (Data.Type == FleetType.Science)
-            {
-                var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.SetParent(transform, false);
-                sphere.transform.localScale = new Vector3(1.2f, 1.2f, 1.5f);
+            FleetType.Constructor => new Color(1f, 0.62f, 0.25f),
+            FleetType.Science     => new Color(0.35f, 1f, 0.7f),
+            _                     => new Color(0.45f, 0.78f, 1f)
+        };
 
-                var dish = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                dish.transform.SetParent(transform, false);
-                dish.transform.localPosition = new Vector3(0f, 0.6f, -0.4f);
-                dish.transform.localScale = new Vector3(0.9f, 0.1f, 0.9f);
-                dish.transform.localRotation = Quaternion.Euler(35f, 0f, 0f);
-            }
-            else
-            {
-                var hull = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                hull.transform.SetParent(transform, false);
-                hull.transform.localScale = new Vector3(0.8f, 1.0f, 0.8f);
-                hull.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-
-                var bridge = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                bridge.transform.SetParent(transform, false);
-                bridge.transform.localPosition = new Vector3(0f, 0.35f, -0.4f);
-                bridge.transform.localScale = new Vector3(0.5f, 0.3f, 0.7f);
-            }
-
-            // Убираем коллайдеры у примитивов (на корне свой BoxCollider)
-            foreach (var c in GetComponentsInChildren<Collider>())
-                if (c.gameObject != gameObject) Destroy(c);
-
-            _renderers = GetComponentsInChildren<MeshRenderer>();
-            Material mat = new Material(litShader);
-            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", shipColor);
-            if (mat.HasProperty("_Color")) mat.color = shipColor;
-            mat.EnableKeyword("_EMISSION");
-            if (mat.HasProperty("_EmissionColor"))
-                mat.SetColor("_EmissionColor", shipColor * 0.6f);
-
-            foreach (var r in _renderers) r.material = mat;
-        }
-
-        private void CreatePod(Vector3 localPos)
-        {
-            var pod = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            pod.transform.SetParent(transform, false);
-            pod.transform.localPosition = localPos;
-            pod.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
-            pod.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-        }
-
+        /// <summary>
+        /// Тонкий ионный след за кораблём (виден только на ходу) и факелы у каждого сопла:
+        /// маршевые — назад, тормозные — вперёд. Плюс отсвет двигателей на корпусе.
+        /// </summary>
         private void CreateEngineTrail()
         {
+            Color glowColor = EngineColor();
+            Vector3[] nozzles = _visual != null && _visual.Nozzles.Length > 0 ? _visual.Nozzles : new[] { new Vector3(0, 0, -1.2f) };
+            Vector3 rear = Vector3.zero;
+            foreach (var n in nozzles) rear += n;
+            rear /= nozzles.Length;
+
             GameObject trailObj = new GameObject("EngineTrail");
             trailObj.transform.SetParent(transform, false);
-            trailObj.transform.localPosition = new Vector3(0, 0, -1.2f);
+            trailObj.transform.localPosition = rear;
 
             _engineTrail = trailObj.AddComponent<TrailRenderer>();
-            _engineTrail.time = 0.8f;
-            _engineTrail.startWidth = 0.7f;
-            _engineTrail.endWidth = 0.05f;
+            _engineTrail.time = 1.4f;
+            _engineTrail.minVertexDistance = 0.08f;
+            _engineTrail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.15f, 0.7f), new Keyframe(1f, 0f));
+            _engineTrail.widthMultiplier = Data.Type == FleetType.Military ? 0.32f : 0.24f;
+            _engineTrail.numCapVertices = 2;
+            _engineTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _engineTrail.receiveShadows = false;
 
-            Color glowColor = Data.Type switch
-            {
-                FleetType.Constructor => new Color(1f, 0.55f, 0.1f, 0.8f),
-                FleetType.Science     => new Color(0.2f, 1f, 0.6f, 0.8f),
-                _                     => new Color(0.2f, 0.85f, 1f, 0.8f)
-            };
-
-            var shader = FindUnlitShader();
-            if (shader != null)
-            {
-                Material trailMat = new Material(shader);
-                trailMat.color = glowColor;
-                _engineTrail.material = trailMat;
-            }
+            // Sprites/Default учитывает цвет и прозрачность вершин — след тает к хвосту
+            var shader = ShaderCache.Sprite ?? FindUnlitShader();
+            if (shader != null) _engineTrail.material = new Material(shader);
 
             Gradient g = new Gradient();
             g.SetKeys(
-                new[] { new GradientColorKey(glowColor, 0f), new GradientColorKey(Color.white, 0.3f), new GradientColorKey(glowColor, 1f) },
-                new[] { new GradientAlphaKey(0.85f, 0f), new GradientAlphaKey(0.4f, 0.6f), new GradientAlphaKey(0f, 1f) }
+                new[] { new GradientColorKey(Color.Lerp(glowColor, Color.white, 0.6f), 0f), new GradientColorKey(glowColor, 0.25f), new GradientColorKey(glowColor * 0.6f, 1f) },
+                new[] { new GradientAlphaKey(0.55f, 0f), new GradientAlphaKey(0.22f, 0.3f), new GradientAlphaKey(0f, 1f) }
             );
             _engineTrail.colorGradient = g;
             _engineTrail.emitting = false;
+
+            // У живых существ (левиафан) двигателей нет: без следа, факелов и отсвета сопел
+            if (_visual != null && _visual.Organic)
+            {
+                _engineTrail.enabled = false;
+                return;
+            }
+
+            CreatePlumes(nozzles, glowColor);
+        }
+
+        private void CreatePlumes(Vector3[] nozzles, Color color)
+        {
+            if (s_plumeShader == null) s_plumeShader = Resources.Load<Shader>("Shaders/EnginePlume");
+            if (s_plumeShader == null || !s_plumeShader.isSupported) return;
+            if (s_plumeQuad == null)
+            {
+                s_plumeQuad = new Mesh { name = "PlumeQuad" };
+                s_plumeQuad.vertices = new[] { new Vector3(-0.5f, 0, 0), new Vector3(0.5f, 0, 0), new Vector3(-0.5f, 0, -1f), new Vector3(0.5f, 0, -1f) };
+                s_plumeQuad.triangles = new[] { 0, 2, 1, 1, 2, 3 };
+                // Квад разворачивается к камере в шейдере — границы с запасом, чтобы его не отсекало
+                s_plumeQuad.bounds = new Bounds(new Vector3(0, 0, -0.5f), new Vector3(2f, 2f, 2f));
+            }
+
+            _nozzleRadius = _visual != null ? _visual.NozzleRadius : 0.12f;
+            _retroRadius = _visual != null ? _visual.RetroRadius : 0.06f;
+
+            _plumeMat = new Material(s_plumeShader) { name = "EnginePlume" };
+            _plumeMat.SetColor("_Color", color);
+            _plumeMat.SetFloat("_Seed", Random.Range(0f, 50f));
+            _retroMat = new Material(s_plumeShader) { name = "RetroPlume" };
+            _retroMat.SetColor("_Color", Color.Lerp(color, Color.white, 0.3f));
+            _retroMat.SetFloat("_Seed", Random.Range(0f, 50f));
+            _retroMat.SetFloat("_Intensity", 1.6f);
+
+            foreach (var n in nozzles) _plumes.Add(Plume("Plume", n, Quaternion.identity, _plumeMat));
+            if (_visual != null)
+                foreach (var n in _visual.RetroNozzles) _retroPlumes.Add(Plume("RetroPlume", n, Quaternion.Euler(0f, 180f, 0f), _retroMat));
+
+            var lightGo = new GameObject("EngineLight");
+            lightGo.transform.SetParent(transform, false);
+            Vector3 rear = Vector3.zero;
+            foreach (var n in nozzles) rear += n;
+            lightGo.transform.localPosition = rear / nozzles.Length + new Vector3(0, 0, -0.6f);
+            _engineLight = lightGo.AddComponent<Light>();
+            _engineLight.type = LightType.Point;
+            _engineLight.color = color;
+            _engineLight.range = 3.5f;
+            _engineLight.intensity = 0f;
+            _engineLight.shadows = LightShadows.None;
+            _engineLight.enabled = false;
+
+            ApplyThrottle(0f, 0f);
+        }
+
+        private Transform Plume(string name, Vector3 at, Quaternion rot, Material mat)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = at;
+            go.transform.localRotation = rot;
+            go.AddComponent<MeshFilter>().sharedMesh = s_plumeQuad;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            go.SetActive(false);
+            return go.transform;
+        }
+
+        /// <summary>Тяга маршевых и тормозных двигателей → длина и яркость факелов, отсвет на корпусе.</summary>
+        private void ApplyThrottle(float main, float retro)
+        {
+            float flick = 1f + 0.05f * Mathf.Sin(_animTime * 41f) + 0.04f * Mathf.Sin(_animTime * 17.3f);
+            SetPlumes(_plumes, _plumeMat, main, _nozzleRadius, 0.25f, 1.5f, flick);
+            SetPlumes(_retroPlumes, _retroMat, retro, _retroRadius, 0.15f, 0.7f, flick);
+            if (_engineLight != null)
+            {
+                float li = Mathf.Max(main, retro * 0.5f);
+                _engineLight.enabled = li > 0.02f;
+                _engineLight.intensity = li * 2.2f * flick;
+            }
+        }
+
+        /// <summary>minLen / maxLen — длина факела (в единицах карты) на холостом и на полной тяге.</summary>
+        private static void SetPlumes(List<Transform> plumes, Material mat, float throttle, float radius, float minLen, float maxLen, float flick)
+        {
+            bool on = throttle > 0.01f;
+            if (mat != null) mat.SetFloat(IdThrottle, throttle);
+            foreach (var p in plumes)
+            {
+                if (p == null) continue;
+                if (p.gameObject.activeSelf != on) p.gameObject.SetActive(on);
+                if (!on) continue;
+                float len = Mathf.Lerp(minLen, maxLen, throttle) * flick;
+                float width = radius * Mathf.Lerp(2.2f, 3.2f, throttle);
+                p.localScale = new Vector3(width, 1f, len);
+            }
         }
 
         private void CreateStatusBadge()
         {
-            GameObject badgeObj = new GameObject("FleetStatusBadge");
+            GameObject badgeObj = new GameObject("FleetTag");
             badgeObj.transform.SetParent(transform, false);
             badgeObj.transform.localPosition = new Vector3(0, 4.55f, 0);
+            _tagRoot = badgeObj.transform;
 
-            _statusBadge = badgeObj.AddComponent<TextMesh>();
-            _statusBadge.fontSize = 22;
-            _statusBadge.characterSize = 0.12f;
-            _statusBadge.alignment = TextAlignment.Center;
-            _statusBadge.anchor = TextAnchor.MiddleCenter;
-            _statusBadge.color = Color.white;
-            _statusBadge.text = "";
+            Color oc = Data.OwnerId == 0 ? UIManager.DS.NeonCyan : FleetIndicator.OwnerColor(Data.OwnerId);
+            _tag = WorldChip.Create(_tagRoot, "Tag", 60, true, true);
+            _tag.Height = 0.5f;
+            _tag.SetIcon(Data.Type == FleetType.Science ? LGIcon.ScienceShip
+                       : Data.Type == FleetType.Constructor ? LGIcon.ConstructorShip
+                       : ModuleVisuals.HullIcon(Data.HullClass));
+            _tag.SetColors(new Color(0.015f, 0.04f, 0.055f, 0.86f), new Color(oc.r, oc.g, oc.b, 0.55f), oc, oc, new Color(0.92f, 0.97f, 1f));
+            _tag.SetAlpha(0f);
+
+            _tagExtra = WorldChip.Create(_tagRoot, "Extra", 60, false, false);
+            _tagExtra.Height = 0.42f;
+            _tagExtra.SetColors(new Color(oc.r * 0.25f, oc.g * 0.25f, oc.b * 0.25f, 0.9f), new Color(oc.r, oc.g, oc.b, 0.7f), oc, oc, oc);
+            _tagExtra.SetAlpha(0f);
         }
 
         private void CreateTypeIcon()
@@ -334,27 +456,29 @@ namespace StellarisClone.Rendering
             {
                 FleetType.Science =>
                     $"<b>{Data.Name}</b>\n" +
-                    $"<color=#66FF88>Научный корабль</color>\n\n" +
-                    $"ЛКМ — выбрать\n" +
-                    $"ПКМ по системе — исследовать\n\n" +
-                    $"<i>Состояние: {Data.State}</i>",
+                    Loc.T("<color=#66FF88>Научный корабль</color>\n\n") +
+                    Loc.T("ЛКМ — выбрать\n") +
+                    Loc.T("ПКМ по системе — исследовать\n\n") +
+                    Loc.F("<i>Состояние: {0}</i>", Data.State),
 
                 FleetType.Constructor =>
                     $"<b>{Data.Name}</b>\n" +
-                    $"<color=#FFAA44>Строительный корабль</color>\n\n" +
-                    $"ЛКМ — выбрать\n" +
-                    $"ПКМ по изученной системе — построить аванпост\n\n" +
-                    $"<i>Состояние: {Data.State}</i>",
+                    Loc.T("<color=#FFAA44>Строительный корабль</color>\n\n") +
+                    Loc.T("ЛКМ — выбрать\n") +
+                    Loc.T("ПКМ по изученной системе — построить аванпост\n\n") +
+                    Loc.F("<i>Состояние: {0}</i>", Data.State),
 
                 _ =>
                     $"<b>{Data.Name}</b>\n" +
-                    $"<color=#66E0FF>Боевой корабль</color> · ⚔ {Data.MilitaryPower}\n" +
-                    $"Корпус {Data.HullPoints:0}/{Data.MaxHullPoints:0}  Броня {Data.ArmorPoints:0}  Щиты {Data.ShieldPoints:0}\n\n" +
-                    $"ЛКМ — выбрать\n" +
-                    $"ПКМ по системе — двигаться\n\n" +
-                    $"<i>Состояние: {Data.State}</i>"
+                    Loc.F("<color=#66E0FF>Боевой корабль</color> · ⚔ {0}\n", Data.MilitaryPower) +
+                    Loc.F("Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n\n", Data.HullPoints, Data.MaxHullPoints, Data.ArmorPoints, Data.ShieldPoints) +
+                    Loc.T("ЛКМ — выбрать\n") +
+                    Loc.T("ПКМ по системе — двигаться\n\n") +
+                    Loc.F("<i>Состояние: {0}</i>", Data.State)
             };
         }
+
+        public bool IsSelected => _isSelected;
 
         public void SetSelected(bool selected)
         {
@@ -363,7 +487,12 @@ namespace StellarisClone.Rendering
             Color baseCol = GetBaseColorForType();
             Color selectedCol = new Color(1f, 0.95f, 0.3f);
 
-            if (_usesCustomModel)
+            if (_visual != null)
+            {
+                // Готовые и процедурные корпуса не перекрашиваются: выбор показывает голографический прицел под кораблём
+                SetSelectionMarker(selected);
+            }
+            else if (_usesCustomModel)
             {
                 // Для 3D-модели меняем только свечение — базовый цвет и текстуры сохраняются.
                 Color glow = selected ? selectedCol : baseCol;
@@ -388,31 +517,57 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            _pathLine.enabled = selected;
-            UpdatePathVisuals();
+            // Маршрут рисует FleetRouteOverlay (пунктир, стрелки, дни); старая сплошная линия не нужна
+            _pathLine.enabled = false;
         }
 
-        private void SnapToCurrentSystem()
+        /// <summary>Место на орбите системы; instant — сразу туда, иначе корабль доходит сам.</summary>
+        private void SnapToCurrentSystem(bool instant = true)
         {
             if (_generator == null || _generator.Systems.Count == 0) return;
             Vector3 pos = _generator.Systems[Data.CurrentSystemId].Position;
             float offsetX = Data.Type == FleetType.Constructor ? -2.8f : (Data.Type == FleetType.Science ? 0f : 2.8f);
             float offsetZ = Data.Type == FleetType.Science ? -3.0f : 2.0f;
-            transform.position = pos + new Vector3(offsetX, 0.5f, offsetZ);
+            _anchor = pos + new Vector3(offsetX, 0.5f, offsetZ);
+            // Группа смотрит к звезде с доворотом по орбите — клин тянется наружу, от звезды и соседних групп
+            Vector3 inward = new Vector3(-offsetX, 0f, -offsetZ).normalized;
+            _formHeading = Quaternion.Euler(0f, 30f, 0f) * inward;
+            _formIndex = Mathf.Max(0, FleetFormation.Get(this).Index);
+            _formSystem = Data.CurrentSystemId;
+            _orbitSpot = FormationSpot(_formIndex);
+            _gliding = !instant;
+            if (instant) transform.position = _orbitSpot;
+        }
+
+        private Vector3 FormationSpot(int index)
+        {
+            float spacing = Data.Type == FleetType.Military ? 4.0f : 2.6f;
+            Vector3 off = FleetFormation.LocalOffset(index, spacing);
+            return _anchor + Quaternion.LookRotation(_formHeading, Vector3.up) * off;
+        }
+
+        /// <summary>Флоты прибыли или ушли — корабль переходит на новое место в строю своей группы.</summary>
+        private void UpdateFormation()
+        {
+            if (_formSystem != Data.CurrentSystemId) { SnapToCurrentSystem(instant: false); return; }
+            int index = FleetFormation.Get(this).Index;
+            if (index == _formIndex) return;
+            _formIndex = index;
+            _orbitSpot = FormationSpot(index);
+            _gliding = true;
         }
 
         private void HandleDayPassed(int day, int month, int year)
         {
             if (Data.InCombat) return;
             if (Data.Destroyed) return;
-            if (Data.State == FleetState.Orbiting && Data.Path.Count > 0)
+            // Перехват: из системы с вооружённым врагом военный корабль не уходит, пока не выйдет из боя
+            if (Data.State == FleetState.Orbiting && Data.Path.Count > 0 && !Pinned())
                 StartNextJump();
 
             if (Data.State == FleetState.InHyperlane)
             {
-                float speedBonus = TechnologyManager.Instance != null ? TechnologyManager.Instance.HyperlaneSpeedMultiplier : 1.0f;
-                speedBonus *= Mathf.Max(0.5f, Data.HyperSpeed);
-                Data.DaysRemainingInTransit -= 1f * speedBonus;
+                Data.DaysRemainingInTransit -= JumpRate();
                 if (Data.DaysRemainingInTransit <= 0f) ArriveAtTargetSystem();
             }
 
@@ -424,7 +579,8 @@ namespace StellarisClone.Rendering
 
             if (Data.State == FleetState.Surveying)
             {
-                Data.DaysRemainingSurvey -= 1f;
+                Data.DaysRemainingSurvey -= EmpireBonuses.For(Data.OwnerId).SurveySpeed * LeaderManager.SurveySpeedMult(Data);
+                LeaderManager.Instance?.OnSurveyDay(Data);
                 if (Data.DaysRemainingSurvey <= 0f) CompleteSurvey();
             }
 
@@ -434,34 +590,60 @@ namespace StellarisClone.Rendering
         private void StartNextJump()
         {
             if (Data.Path.Count == 0) return;
+            // Граница закрылась по пути (истёк договор, заключён мир) — флот останавливается перед ней
+            var here = EmpireStats.GetSystem(Data.CurrentSystemId);
+            var next = EmpireStats.GetSystem(Data.Path.Peek());
+            if (!BorderRules.CanStep(Data.OwnerId, here, next))
+            {
+                int closed = next != null ? next.OwnerId : -1;
+                int dest = Data.Path.ToArray()[Data.Path.Count - 1];
+                Data.Path.Clear();
+                Data.OrderQueue.Clear();
+                if (Data.OwnerId == 0)
+                {
+                    Data.HasPlayerOrder = false;
+                    BorderRules.NotifyBlocked(dest, closed);
+                }
+                UpdatePathVisuals();
+                return;
+            }
             Data.TargetSystemId = Data.Path.Dequeue();
             Data.State = FleetState.InHyperlane;
+            SFXManager.PlayAt(Sfx.FtlJump, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);
+            if (ShowJumpFx()) JumpFx.Departure(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));
             Data.DaysRemainingInTransit = Data.TotalDaysForTransit;
 
-            _engineTrail.emitting = true;
-            transform.localScale = new Vector3(0.7f, 0.7f, 1.5f);
+            _gliding = false;
         }
 
         private void ArriveAtTargetSystem()
         {
+            if (ShowJumpFx())
+            {
+                JumpFx.Arrival(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));
+                if (Data.Path.Count == 0) SFXManager.PlayAt(Sfx.FtlArrive, transform.position, Data.OwnerId == 0 ? 1f : 0.6f);   // пролётом — без звука
+            }
             Data.CurrentSystemId = Data.TargetSystemId;
             Data.TargetSystemId = -1;
             Data.State = FleetState.Orbiting;
-            _engineTrail.emitting = false;
-            transform.localScale = Vector3.one;
-
-            if (Data.Path.Count > 0)
+            if (Data.Path.Count > 0 && Pinned())
+            {
+                // Враг в системе — флот останавливается и принимает бой, маршрут продолжит после
+                SnapToCurrentSystem(instant: false);
+            }
+            else if (Data.Path.Count > 0)
             {
                 StartNextJump();
             }
             else
             {
-                SnapToCurrentSystem();
+                SnapToCurrentSystem(instant: false);   // доходит до своего места на орбите на маневровых
 
                 if (Data.Type == FleetType.Constructor && Data.BuildTargetSystemId == Data.CurrentSystemId)
                 {
                     Data.State = FleetState.Constructing;
                     Data.DaysRemainingConstruction = Data.TotalConstructionDays;
+                    if (Data.OwnerId == 0) SFXManager.Play(Sfx.Construction);
                 }
 
                 if (Data.Type == FleetType.Science && Data.SurveyTargetSystemId == Data.CurrentSystemId)
@@ -469,8 +651,87 @@ namespace StellarisClone.Rendering
                     Data.State = FleetState.Surveying;
                     Data.DaysRemainingSurvey = Data.TotalSurveyDays;
                 }
+
+                if (Data.State == FleetState.Orbiting)
+                {
+                    bool more = Data.OrderQueue.Count > 0;
+                    Data.MarkEvent(FleetData.FleetEvent.Arrived);
+                    if (more) FleetManager.Instance?.AdvanceQueue(this);
+                    else if (Data.HasPlayerOrder && Data.OwnerId == 0)
+                        Data.HasPlayerOrder = false;   // прибытие видно по значку флота — без уведомления
+                }
             }
         }
+
+        /// <summary>
+        /// Перехват в коридоре: флот выходит из прыжка в системе systemId — у цели (прилетел раньше)
+        /// или у точки отправления (возвращается; цель снова становится первым пунктом маршрута).
+        /// Там его держит перехват, а маршрут продолжится после боя.
+        /// </summary>
+        public void DropOutOfLane(int systemId)
+        {
+            if (Data == null || Data.State != FleetState.InHyperlane) return;
+            if (ShowJumpFx()) JumpFx.Arrival(transform.position, LaneDir(), FleetIndicator.OwnerColor(Data.OwnerId));   // выбит из коридора
+            int target = Data.TargetSystemId;
+            if (systemId == target)
+            {
+                Data.CurrentSystemId = target;
+            }
+            else if (target >= 0)
+            {
+                var rest = new List<int>(Data.Path);
+                Data.Path.Clear();
+                Data.Path.Enqueue(target);
+                foreach (int step in rest) Data.Path.Enqueue(step);
+            }
+            Data.TargetSystemId = -1;
+            Data.State = FleetState.Orbiting;
+            Data.DaysRemainingInTransit = 0f;
+            SnapToCurrentSystem(instant: false);
+            if (Data.Path.Count == 0 && Data.OrderQueue.Count > 0) FleetManager.Instance?.AdvanceQueue(this);
+            else if (Data.Path.Count == 0 && Data.OwnerId == 0) Data.HasPlayerOrder = false;
+        }
+
+        /// <summary>Ярлык над кораблём: пересобирается только при смене текста, по центру над кораблём.</summary>
+        private void UpdateTag(string label, int more, bool near)
+        {
+            if (_tag == null) return;
+            bool show = near && !string.IsNullOrEmpty(label);
+            if (show && (label != _tagName || more != _tagCount))
+            {
+                _tagName = label;
+                _tagCount = more;
+                _tag.Set(label, 0.27f);
+                float total = _tag.Width;
+                if (more > 0)
+                {
+                    _tagExtra.Set($"+{more}", 0.24f);
+                    total += 0.08f + _tagExtra.Width;
+                    _tagExtra.CenterOn(total * 0.5f - _tagExtra.Width * 0.5f, 0f);
+                }
+                _tag.CenterOn(-total * 0.5f + _tag.Width * 0.5f, 0f);
+            }
+            _tag.SetAlpha(show ? 1f : 0f);
+            _tagExtra.SetAlpha(show && more > 0 ? 1f : 0f);
+        }
+
+        /// <summary>Эффекты прыжка видны на карте галактики — для своих флотов и тех чужих, кого мы видим.</summary>
+        private bool ShowJumpFx()
+        {
+            if (Data == null || Data.Destroyed) return false;
+            if (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView) return false;
+            return Data.OwnerId == 0 || Vision.CanSeeFleet(0, Data);
+        }
+
+        /// <summary>Направление текущего коридора (откуда → куда).</summary>
+        private Vector3 LaneDir()
+        {
+            int a = Data.CurrentSystemId, b = Data.TargetSystemId;
+            if (a < 0 || b < 0 || a >= _generator.Systems.Count || b >= _generator.Systems.Count) return transform.forward;
+            return _generator.Systems[b].Position - _generator.Systems[a].Position;
+        }
+
+        private bool Pinned() => CombatManager.Instance != null && CombatManager.Instance.IsInterdicted(Data, Data.CurrentSystemId);
 
         private void CompleteConstruction()
         {
@@ -478,11 +739,20 @@ namespace StellarisClone.Rendering
             int sysId = Data.BuildTargetSystemId;
             Data.BuildTargetSystemId = -1;
 
-            if (FleetManager.Instance != null && sysId >= 0)
-                FleetManager.Instance.ClaimSystem(sysId, Data.OwnerId);
+            bool claimed = FleetManager.Instance != null && sysId >= 0 && FleetManager.Instance.ClaimSystem(sysId, Data.OwnerId);
+            if (claimed && Data.OwnerId == 0) SFXManager.Play(Sfx.OutpostBuilt);
+            if (FleetManager.Instance != null && sysId >= 0 && !claimed && Data.OwnerId == 0)
+            {
+                // Систему успели занять — половина сплавов возвращается
+                var eco = EconomyManager.Instance;
+                if (eco != null) { eco.Alloys += FactionTraits.StarbaseAlloys(0) * 0.5f; eco.RaiseResourcesChanged(); }
+                NotificationCenter.Show(Loc.T("Форпост не построен"), Loc.T("Систему уже заняли. Возвращено 50% сплавов"), NotificationCenter.Kind.Warning, 5f);
+            }
 
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;
+            Data.MarkEvent(FleetData.FleetEvent.Built);
+            FleetManager.Instance?.AdvanceQueue(this);
         }
 
         private void CompleteSurvey()
@@ -492,115 +762,499 @@ namespace StellarisClone.Rendering
             Data.SurveyTargetSystemId = -1;
 
             if (FleetManager.Instance != null && sysId >= 0)
-                FleetManager.Instance.CompleteSystemSurvey(sysId, Data.OwnerId);
+            {
+                LeaderManager.Instance?.OnSurveyComplete(Data);
+                FleetManager.Instance.CompleteSystemSurvey(sysId, Data.OwnerId, LeaderManager.SurveyRewardMult(Data.Id), Data);
+            }
 
             _laserBeam.enabled = false;
             _workLight.intensity = 0f;
+            Data.MarkEvent(FleetData.FleetEvent.Surveyed);
+            FleetManager.Instance?.AdvanceQueue(this);
+        }
+
+        // Туман войны: чужой флот вне видимости игрока целиком уходит на невидимый слой, его огни гаснут
+        private bool _fogHidden;
+        private Dictionary<GameObject, int> _fogLayers;
+        private Dictionary<Light, int> _fogLights;
+
+        private void ApplyFogVisibility()
+        {
+            bool hide = Data != null && Data.OwnerId != 0 && !Vision.CanSeeFleet(0, Data);
+            if (hide == _fogHidden) return;
+            _fogHidden = hide;
+            if (hide)
+            {
+                _fogLayers = new Dictionary<GameObject, int>();
+                foreach (var t in GetComponentsInChildren<Transform>(true))
+                {
+                    _fogLayers[t.gameObject] = t.gameObject.layer;
+                    t.gameObject.layer = Vision.HiddenLayer;
+                }
+                _fogLights = new Dictionary<Light, int>();
+                foreach (var l in GetComponentsInChildren<Light>(true))
+                {
+                    _fogLights[l] = l.cullingMask;
+                    l.cullingMask = 0;
+                }
+            }
+            else
+            {
+                if (_fogLayers != null)
+                    foreach (var kv in _fogLayers) if (kv.Key != null) kv.Key.layer = kv.Value;
+                if (_fogLights != null)
+                    foreach (var kv in _fogLights) if (kv.Key != null) kv.Key.cullingMask = kv.Value;
+                _fogLayers = null;
+                _fogLights = null;
+            }
+        }
+
+        // Повреждения: дым и огонь из точек на корпусе, пока корабль не починят
+        private float _damageTimer;
+        private Vector3[] _damageAnchors;
+
+        private void TickDamageFx()
+        {
+            if (Data == null || Data.Destroyed || _fogHidden || Data.MaxHullPoints <= 0f) return;
+            float frac = Data.HullPoints / Data.MaxHullPoints;
+            if (frac >= 0.6f) return;
+            if ((_damageTimer -= Time.unscaledDeltaTime) > 0f) return;
+            float severity = Mathf.Clamp01((0.6f - frac) / 0.6f);
+            _damageTimer = Mathf.Lerp(0.32f, 0.09f, severity);
+            if (!CombatFx.CanShow(transform.position)) return;
+            if (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView) return;
+            if (_damageAnchors == null)
+            {
+                var b = new Bounds(transform.position, Vector3.zero);
+                if (_renderers != null) foreach (var r in _renderers) if (r != null && r.enabled) b.Encapsulate(r.bounds);
+                _damageAnchors = new Vector3[3];
+                for (int i = 0; i < _damageAnchors.Length; i++)
+                {
+                    var p = b.center + Vector3.Scale(Random.insideUnitSphere, b.extents * 0.55f);
+                    _damageAnchors[i] = transform.InverseTransformPoint(p);
+                }
+            }
+            // Чем тяжелее повреждения, тем больше очагов
+            int fires = severity > 0.66f ? 3 : severity > 0.33f ? 2 : 1;
+            float size = Data.Type != FleetType.Military ? 0.8f
+                       : Data.HullClass == ShipClass.Destroyer ? 1.5f : Data.HullClass == ShipClass.Frigate ? 1.15f : 0.85f;
+            CombatFx.Instance.ShipDamage(transform, _damageAnchors[Random.Range(0, fires)], severity, size);
+        }
+
+        // ==================== ПРИЦЕЛ ВЫБОРА ====================
+        // Под выбранным кораблём — плоское голографическое кольцо и четыре скобки захвата (лежат горизонтально,
+        // не кренятся вместе с корпусом). При выборе прицел «схлопывается» к кораблю, потом медленно вращается и дышит.
+
+        private Transform _selMarker, _selBrackets;
+        private LineRenderer _selRing, _selRingGlow;
+        private float _selAge;
+        private static Material s_selMat;
+        private static readonly Color SelColor = new Color(0.45f, 0.95f, 1f);
+        private const float SelRadius = 1.3f;
+
+        private void SetSelectionMarker(bool on)
+        {
+            if (on && _selMarker == null) BuildSelectionMarker();
+            if (_selMarker == null) return;
+            _selMarker.gameObject.SetActive(on);
+            if (on) _selAge = 0f;
+        }
+
+        private void BuildSelectionMarker()
+        {
+            if (s_selMat == null)
+            {
+                var add = Resources.Load<Shader>("Shaders/CombatAdditive") ?? ShaderCache.Sprite;
+                s_selMat = new Material(add) { name = "ShipSelection", hideFlags = HideFlags.DontSave, renderQueue = 3050 };
+            }
+            _selMarker = new GameObject("SelectionMarker").transform;
+            _selMarker.SetParent(transform, false);
+            _selRingGlow = SelArc(_selMarker, "RingGlow", 0f, 360f, SelRadius, 0.22f, new Color(SelColor.r, SelColor.g, SelColor.b, 0.18f));
+            _selRing = SelArc(_selMarker, "Ring", 0f, 360f, SelRadius, 0.05f, new Color(SelColor.r, SelColor.g, SelColor.b, 0.9f));
+            _selBrackets = new GameObject("Brackets").transform;
+            _selBrackets.SetParent(_selMarker, false);
+            for (int i = 0; i < 4; i++)
+                SelArc(_selBrackets, "Bracket", i * 90f - 16f, i * 90f + 16f, SelRadius * 1.22f, 0.09f, SelColor);
+            _selMarker.gameObject.SetActive(false);
+        }
+
+        private static LineRenderer SelArc(Transform parent, string name, float fromDeg, float toDeg, float r, float width, Color col)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = false;
+            bool full = toDeg - fromDeg >= 359f;
+            int n = full ? 72 : 12;
+            lr.loop = full;
+            lr.positionCount = n;
+            // Лента лежит в плоскости XY объекта, а объект повёрнут на 90° — кольцо получается горизонтальным
+            for (int i = 0; i < n; i++)
+            {
+                float a = Mathf.Deg2Rad * Mathf.Lerp(fromDeg, toDeg, full ? i / (float)n : i / (float)(n - 1));
+                lr.SetPosition(i, new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f));
+            }
+            lr.alignment = LineAlignment.TransformZ;
+            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            lr.widthMultiplier = width;
+            lr.startColor = lr.endColor = col;
+            lr.numCapVertices = 2;
+            lr.sharedMaterial = s_selMat;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            return lr;
+        }
+
+        private void LateUpdate()
+        {
+            if (_selMarker == null || !_selMarker.gameObject.activeSelf) return;
+            _selAge += Time.unscaledDeltaTime;
+            // Горизонтально под кораблём, независимо от крена и тангажа
+            _selMarker.position = transform.position + Vector3.down * 0.35f;
+            _selMarker.rotation = Quaternion.Euler(0f, _selAge * 18f, 0f);
+            float snap = 1f + 0.6f * Mathf.Exp(-_selAge * 7f);
+            float breathe = 1f + 0.035f * Mathf.Sin(_selAge * 2.6f);
+            _selMarker.localScale = Vector3.one * snap;
+            if (_selBrackets != null)
+            {
+                _selBrackets.localRotation = Quaternion.Euler(0f, -_selAge * 40f, 0f);
+                _selBrackets.localScale = Vector3.one * breathe;
+            }
+            if (_selRingGlow != null)
+            {
+                float a = 0.14f + 0.08f * (0.5f + 0.5f * Mathf.Sin(_selAge * 2.6f));
+                _selRingGlow.startColor = _selRingGlow.endColor = new Color(SelColor.r, SelColor.g, SelColor.b, a);
+            }
         }
 
         private void Update()
         {
+            ApplyFogVisibility();
+            TickDamageFx();
             _animTime += Time.deltaTime;
+            _visual?.Tick(_animTime);
 
-            transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, 6f * Time.deltaTime);
 
-            if (_camTransform != null && _statusBadge != null)
+            bool tagNear = false;
+            if (_camTransform != null && _tagRoot != null)
             {
-                _statusBadge.transform.rotation = _camTransform.rotation;
+                _tagRoot.rotation = _camTransform.rotation;
                 float dist = Vector3.Distance(transform.position, _camTransform.position);
-                _statusBadge.transform.localScale = Vector3.one * Mathf.Clamp(dist / 40f, 0.8f, 3.5f);
+                _tagRoot.localScale = Vector3.one * Mathf.Clamp(dist / 40f, 0.8f, 3.5f);
+                // Издалека состояние показывает значок флота — ярлык только мешал бы
+                tagNear = dist < 70f;
             }
+
+            // Бой или работа закончились — корабль возвращается на своё место на орбите
+            bool working = Data.State == FleetState.Surveying || Data.State == FleetState.Constructing;
+            if (_wasInCombat && !Data.InCombat && !working)
+            {
+                _wasInCombat = false;
+                _combatVel = Vector3.zero;
+                if (Data.State != FleetState.InHyperlane) SnapToCurrentSystem(instant: false);
+            }
+
+            // Над кораблём — только имя выделенного; состояние показывают значок флота, панель флота и эффекты.
+            // В строю подпись одна на группу: над первым выделенным флотом, с числом остальных выделенных
+            string label = "";
+            int more = 0;
+            if (_isSelected && !Data.InCombat)
+            {
+                var slot = FleetFormation.Holds(Data) || FleetFormation.Travels(Data) ? FleetFormation.Get(this) : default;
+                if (slot.SelectedCount <= 1) label = Data.Name;
+                else if (slot.FirstSelected == this) { label = Data.Name; more = slot.SelectedCount - 1; }
+            }
+            UpdateTag(label, more, tagNear);
+            _laserBeam.enabled = false;
+            _workLight.intensity = 0f;
 
             if (Data.State == FleetState.InHyperlane && Data.TargetSystemId != -1)
             {
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
-                _engineTrail.emitting = true;
-
-                Vector3 origin = _generator.Systems[Data.CurrentSystemId].Position;
-                Vector3 destination = _generator.Systems[Data.TargetSystemId].Position;
-
-                float linearProgress = Mathf.Clamp01(1f - Data.DaysRemainingInTransit / Data.TotalDaysForTransit);
-                float smoothProgress = Mathf.SmoothStep(0f, 1f, linearProgress);
-
-                Vector3 targetPos = Vector3.Lerp(origin, destination, smoothProgress);
-                targetPos.y += 0.5f;
-
-                transform.position = Vector3.Lerp(transform.position, targetPos, 12f * Time.deltaTime);
-
-                Vector3 travelDir = (destination - origin).normalized;
-                if (travelDir.sqrMagnitude > 0.001f)
-                {
-                    Quaternion targetLook = Quaternion.LookRotation(travelDir);
-                    float targetRoll = Mathf.Sin(_animTime * 3f) * 12f;
-                    _currentRollAngle = Mathf.Lerp(_currentRollAngle, targetRoll, 5f * Time.deltaTime);
-                    Quaternion rollRot = Quaternion.Euler(0, 0, _currentRollAngle);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetLook * rollRot, 10f * Time.deltaTime);
-                }
-
-                string targetSysName = _generator.Systems[Data.TargetSystemId].Name;
-                _statusBadge.text = $"<color=#FE3>Прыжок ➔ {targetSysName}</color>\n<color=#FFF>{Mathf.Max(0, (int)Data.DaysRemainingInTransit)} дн.</color>";
-            }
-            else if (Data.State == FleetState.Surveying)
-            {
-                _engineTrail.emitting = false;
-                transform.Rotate(Vector3.up, 24f * Time.deltaTime, Space.World);
-
-                Vector3 sysCenter = _generator.Systems[Data.CurrentSystemId].Position;
-                Vector3 scanPoint = sysCenter + new Vector3(Mathf.Cos(_animTime * 2.5f) * 4f, 0, Mathf.Sin(_animTime * 2.5f) * 4f);
-
-                _laserBeam.enabled = true;
-                _laserBeam.startColor = new Color(0.2f, 1f, 0.5f, 0.8f);
-                _laserBeam.endColor = new Color(0.2f, 1f, 0.5f, 0.05f);
-                _laserBeam.SetPosition(0, transform.position);
-                _laserBeam.SetPosition(1, scanPoint);
-
-                _workLight.color = new Color(0.2f, 1f, 0.5f);
-                _workLight.intensity = 1.8f + Mathf.PingPong(_animTime * 4f, 1.2f);
-
-                _statusBadge.text = $"<color=#3FE>Разведка системы</color>\n<color=#FFF>{(int)Data.DaysRemainingSurvey} дн.</color>";
-            }
-            else if (Data.State == FleetState.Constructing)
-            {
-                _engineTrail.emitting = false;
-                transform.Rotate(Vector3.up, 15f * Time.deltaTime, Space.World);
-
-                Vector3 sysCenter = _generator.Systems[Data.CurrentSystemId].Position;
-                Vector3 sparkOffset = Random.insideUnitSphere * 0.8f;
-
-                _laserBeam.enabled = true;
-                _laserBeam.startColor = new Color(1f, 0.6f, 0.1f, 0.9f);
-                _laserBeam.endColor = new Color(1f, 0.9f, 0.3f, 0.6f);
-                _laserBeam.SetPosition(0, transform.position);
-                _laserBeam.SetPosition(1, sysCenter + sparkOffset);
-
-                _workLight.color = new Color(1f, 0.7f, 0.2f);
-                _workLight.intensity = Random.Range(1.0f, 3.5f);
-
-                _statusBadge.text = $"<color=#FE4>Монтаж аванпоста</color>\n<color=#FFF>{(int)Data.DaysRemainingConstruction} дн.</color>";
+                _work?.Stop();
+                Fly();
             }
             else if (Data.InCombat)
             {
-                _engineTrail.emitting = false;
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
-                _statusBadge.text =
-                    $"<color=#FF5555>БОЙ</color>\n" +
-                    $"<color=#FFF>Корпус {Data.HullPoints:0} · Щиты {Data.ShieldPoints:0} · Броня {Data.ArmorPoints:0}</color>";
+                _wasInCombat = true;
+                _work?.Stop();
+                CombatManeuver();
+            }
+            else if (Data.State == FleetState.Surveying)
+            {
+                _wasInCombat = true;
+                Vector3 star = _generator.Systems[Data.CurrentSystemId].Position;
+                SurveyPatrol(star);
+                _work?.Survey(star, 1f - Data.DaysRemainingSurvey / Mathf.Max(0.01f, Data.TotalSurveyDays));
+            }
+            else if (Data.State == FleetState.Constructing)
+            {
+                _wasInCombat = true;
+                Vector3 star = _generator.Systems[Data.CurrentSystemId].Position;
+                Vector3 site = ConstructionSite(star);
+                ConstructionHold(star, site);
+                _work?.Construct(site, 1f - Data.DaysRemainingConstruction / Mathf.Max(0.01f, Data.TotalConstructionDays));
             }
             else
             {
-                _engineTrail.emitting = false;
-                _laserBeam.enabled = false;
-                _workLight.intensity = 0f;
-                transform.position += new Vector3(0, Mathf.Sin(_animTime * 2f) * 0.003f, 0);
-
-                if (_isSelected)
-                    _statusBadge.text = $"<color=#00FFFF>{Data.Name}</color>";
-                else
-                    _statusBadge.text = "";
+                _work?.Stop();
+                Hold();
             }
         }
+
+        // ==================== ПОЛЁТ ====================
+
+        /// <summary>Скорость перелёта в днях пути за игровой день (как в HandleDayPassed).</summary>
+        private float JumpRate()
+        {
+            float rate = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed * Landmarks.HyperSpeedMult(Data.OwnerId);
+            rate *= Mathf.Max(0.5f, Data.HyperSpeed);
+            rate *= LeaderManager.HyperSpeedMult(Data);
+            // Пробуждение сада: мицелий Конклава опутывает вражеские корабли, уходящие из его системы
+            var cm = CombatManager.Instance;
+            if (cm != null && Data.CurrentSystemId >= 0 && cm.IsGardenAwake(Data.CurrentSystemId))
+            {
+                int sysOwner = _generator.Systems[Data.CurrentSystemId].OwnerId;
+                if (sysOwner != Data.OwnerId && Diplomacy.AtWar(Data.OwnerId, sysOwner)) rate *= FactionTraits.GardenSlow;
+            }
+            return rate;
+        }
+
+        /// <summary>Пройденная доля пути по профилю «разгон — инерция — торможение» (t — доля времени).</summary>
+        private static float TravelDistance(float t)
+        {
+            const float a = AccelShare;
+            float vmax = 1f / (1f - a);
+            if (t < a) return 0.5f * vmax * t * t / a;
+            if (t > 1f - a) return 1f - 0.5f * vmax * (1f - t) * (1f - t) / a;
+            return 0.5f * vmax * a + vmax * (t - a);
+        }
+
+        /// <summary>
+        /// Перелёт по гиперкоридору: корабль разворачивается на курс с креном, разгоняется на маршевых,
+        /// идёт по инерции, затем гасит скорость тормозными двигателями. Позиция плавная между дневными тиками.
+        /// </summary>
+        private void Fly()
+        {
+            Vector3 origin = _generator.Systems[Data.CurrentSystemId].Position;
+            Vector3 destination = _generator.Systems[Data.TargetSystemId].Position;
+            float total = Mathf.Max(0.01f, Data.TotalDaysForTransit);
+
+            float frac = 0f;
+            var tm = TimeManager.Instance;
+            if (tm != null && !Data.InCombat) frac = tm.DayFraction * JumpRate();   // на паузе доля дня замирает
+            float t = Mathf.Clamp01((total - Data.DaysRemainingInTransit + frac) / total);
+
+            Vector3 targetPos = Vector3.Lerp(origin, destination, TravelDistance(t));
+            targetPos.y += 0.5f;
+
+            // Разворот на курс: нос — по коридору, крен — в сторону поворота
+            Vector3 dir = destination - origin;
+            dir.y = 0f;
+
+            // Попутчики по коридору идут клином за ведущим, а не друг в друге
+            var slot = FleetFormation.Get(this);
+            if (slot.Index > 0 && dir.sqrMagnitude > 0.0001f)
+            {
+                float spacing = Data.Type == FleetType.Military ? 4.0f : 2.6f;
+                targetPos += Quaternion.LookRotation(dir.normalized, Vector3.up) * FleetFormation.LocalOffset(slot.Index, spacing);
+            }
+            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-10f * Time.deltaTime));
+            float alignment = 1f;
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                Quaternion heading = Quaternion.LookRotation(dir.normalized, Vector3.up);
+                Vector3 fwdBefore = Flat(transform.forward);
+                Quaternion level = Quaternion.LookRotation(fwdBefore.sqrMagnitude > 0.0001f ? fwdBefore : dir.normalized, Vector3.up);
+                Quaternion next = Quaternion.RotateTowards(level, heading, TurnRateDeg * Time.deltaTime);
+
+                float yawRate = Time.deltaTime > 0f ? Vector3.SignedAngle(level * Vector3.forward, next * Vector3.forward, Vector3.up) / Time.deltaTime : 0f;
+                float targetBank = Mathf.Clamp(-yawRate * 0.35f, -MaxBankDeg, MaxBankDeg);
+                _bank = Mathf.Lerp(_bank, targetBank, 1f - Mathf.Exp(-4f * Time.deltaTime));
+                transform.rotation = next * Quaternion.Euler(0f, 0f, _bank);
+
+                alignment = Mathf.Clamp01(1f - Quaternion.Angle(next, heading) / 25f);
+            }
+
+            // Тяга по фазе перелёта; маршевые включаются, только когда нос уже на курсе
+            float main, retro;
+            if (t < AccelShare) { main = alignment; retro = 0f; }
+            else if (t > 1f - AccelShare) { main = 0f; retro = 1f; }
+            else { main = CruiseThrottle; retro = 0f; }
+            if (tm != null && tm.CurrentSpeed == 0) { main *= 0.35f; retro *= 0.35f; }   // пауза — двигатели на холостом
+
+            _throttle = Mathf.MoveTowards(_throttle, main, 2.5f * Time.deltaTime);
+            _retro = Mathf.MoveTowards(_retro, retro, 2.5f * Time.deltaTime);
+            ApplyThrottle(_throttle, _retro);
+            _engineTrail.emitting = true;
+        }
+
+        /// <summary>На орбите: дойти до своего места на маневровых, выровнять крен, слегка «дышать».</summary>
+        private void Hold()
+        {
+            UpdateFormation();
+            float main = 0f;
+            if (_gliding)
+            {
+                Vector3 to = _orbitSpot - transform.position;
+                float dist = to.magnitude;
+                if (dist < 0.02f) _gliding = false;
+                else
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, _orbitSpot, Mathf.Max(0.6f, dist * 1.6f) * Time.deltaTime);
+                    Vector3 flat = Flat(to);
+                    if (flat.sqrMagnitude > 0.01f && dist > 0.6f)
+                    {
+                        Quaternion want = Quaternion.LookRotation(flat.normalized, Vector3.up);
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, want, TurnRateDeg * 0.6f * Time.deltaTime);
+                    }
+                    main = Mathf.Clamp01(dist * 0.25f) * 0.3f;
+                }
+            }
+            else
+            {
+                transform.position += new Vector3(0, Mathf.Sin(_animTime * 1.3f) * 0.0015f, 0);
+            }
+
+            // Выравниваем крен и тангаж — корабль стоит ровно; на месте разворачивается по курсу своей группы
+            Vector3 fwd = Flat(transform.forward);
+            if (!_gliding && _formHeading.sqrMagnitude > 0.0001f && fwd.sqrMagnitude > 0.0001f)
+                fwd = Vector3.RotateTowards(fwd.normalized, _formHeading, TurnRateDeg * 0.5f * Mathf.Deg2Rad * Time.deltaTime, 0f);
+            if (fwd.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(fwd.normalized, Vector3.up), 1f - Mathf.Exp(-2.5f * Time.deltaTime));
+            _bank = Mathf.Lerp(_bank, 0f, 1f - Mathf.Exp(-3f * Time.deltaTime));
+
+            _throttle = Mathf.MoveTowards(_throttle, main, 2f * Time.deltaTime);
+            _retro = Mathf.MoveTowards(_retro, 0f, 2f * Time.deltaTime);
+            ApplyThrottle(_throttle, _retro);
+            _engineTrail.emitting = _throttle > 0.05f;
+        }
+
+        /// <summary>
+        /// Манёвры в бою: корабль выходит на своё место в строю и там не стоит столбом — смещается вбок,
+        /// вперёд-назад и по высоте (корветы резво, эсминцы степенно), держа нос на цели. На переходах
+        /// смотрит по ходу, кренится в разворотах, работает маршевыми и тормозными. На паузе замирает.
+        /// </summary>
+        private void CombatManeuver()
+        {
+            var cm = CombatManager.Instance;
+            if (cm == null || !cm.TryGetCombatStation(Data, out Vector3 station, out Vector3 aim)) { EnginesIdle(); return; }
+            _gliding = false;
+
+            var tm = TimeManager.Instance;
+            float dt = tm != null && tm.CurrentSpeed == 0 ? 0f : Time.deltaTime;
+            if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
+            _combatClock += dt;
+
+            bool military = Data.Type == FleetType.Military;
+            var hull = Data.HullClass;
+            float amp = !military ? 0.35f : hull == ShipClass.Corvette ? 1.3f : hull == ShipClass.Frigate ? 0.9f : 0.55f;
+            float freq = !military ? 0.25f : hull == ShipClass.Corvette ? 0.55f : hull == ShipClass.Frigate ? 0.4f : 0.28f;
+            float smooth = !military ? 1.4f : hull == ShipClass.Corvette ? 0.8f : hull == ShipClass.Frigate ? 1.1f : 1.5f;
+            float maxSpeed = !military ? 4f : hull == ShipClass.Corvette ? 7f : hull == ShipClass.Frigate ? 5.5f : 4f;
+            float turn = !military ? 70f : hull == ShipClass.Corvette ? 130f : hull == ShipClass.Frigate ? 95f : 60f;
+
+            Vector3 axis = Flat(aim - station);
+            axis = axis.sqrMagnitude > 0.01f ? axis.normalized : Vector3.forward;
+            Vector3 side = new Vector3(-axis.z, 0f, axis.x);
+            // Звено одного класса маневрирует синхронно (общая фаза), каждый корабль — с небольшим сдвигом:
+            // соседи в строю качаются вместе и не налетают друг на друга
+            int group = Data.OwnerId * 8 + (military ? (int)hull : 3);
+            float seed = Mathf.Repeat(group * 0.618034f, 1f) * 6.2832f + Mathf.Repeat(Data.Id * 0.381966f, 1f) * 0.35f;
+            float t = _combatClock * freq;
+            Vector3 goal = station
+                         + side * (Mathf.Sin(t + seed) * amp)
+                         + axis * (Mathf.Sin(t * 0.7f + seed * 1.3f) * amp * 0.45f)
+                         + Vector3.up * (Mathf.Sin(t * 1.3f + seed * 2.1f) * 0.18f);
+
+            Steer(goal, aim, smooth, maxSpeed, turn, 0.08f, dt);
+        }
+
+        /// <summary>
+        /// Плавный выход в точку goal: скорость по SmoothDamp, на переходе нос по ходу, на месте — на aim;
+        /// крен в разворотах и при боковом смещении, маршевые вперёд, тормозные назад, idle — тяга на месте.
+        /// </summary>
+        private void Steer(Vector3 goal, Vector3 aim, float smooth, float maxSpeed, float turn, float idle, float dt)
+        {
+            transform.position = Vector3.SmoothDamp(transform.position, goal, ref _combatVel, smooth, maxSpeed, dt);
+
+            Vector3 vel = Flat(_combatVel);
+            bool transit = (goal - transform.position).sqrMagnitude > 4f && vel.sqrMagnitude > 0.5f;
+            Vector3 look = transit ? vel : Flat(aim - transform.position);
+            Vector3 fwdBefore = Flat(transform.forward);
+            if (look.sqrMagnitude > 0.0001f && fwdBefore.sqrMagnitude > 0.0001f)
+            {
+                Quaternion level = Quaternion.LookRotation(fwdBefore.normalized, Vector3.up);
+                Quaternion want = Quaternion.LookRotation(look.normalized, Vector3.up);
+                Quaternion next = Quaternion.RotateTowards(level, want, turn * dt);
+                float yawRate = Vector3.SignedAngle(level * Vector3.forward, next * Vector3.forward, Vector3.up) / dt;
+                float lateral = Vector3.Dot(vel, next * Vector3.right);
+                float targetBank = Mathf.Clamp(-yawRate * 0.3f - lateral * 5f, -MaxBankDeg, MaxBankDeg);
+                _bank = Mathf.Lerp(_bank, targetBank, 1f - Mathf.Exp(-3.5f * dt));
+                transform.rotation = next * Quaternion.Euler(0f, 0f, _bank);
+            }
+
+            float along = Vector3.Dot(_combatVel, transform.forward);
+            float main = idle + Mathf.Clamp01(along / 3f) * 0.8f;
+            float retro = Mathf.Clamp01(-along / 2.5f);
+            _throttle = Mathf.MoveTowards(_throttle, main, 2.5f * dt);
+            _retro = Mathf.MoveTowards(_retro, retro, 2.5f * dt);
+            ApplyThrottle(_throttle, _retro);
+            _engineTrail.emitting = _combatVel.sqrMagnitude > 1.4f;
+        }
+
+        private float WorkDt()
+        {
+            var tm = TimeManager.Instance;
+            return tm != null && tm.CurrentSpeed == 0 ? 0f : Time.deltaTime;
+        }
+
+        /// <summary>
+        /// Разведка: корабль неспешно облетает звезду по широкой орбите носом по курсу, слегка меняя высоту;
+        /// сенсоры (ShipWorkFx) направлены на центр системы.
+        /// </summary>
+        private void SurveyPatrol(Vector3 star)
+        {
+            _gliding = false;
+            float dt = WorkDt();
+            if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
+            _workClock += dt;
+            float seed = Mathf.Repeat(Data.Id * 0.618034f, 1f) * 6.2832f;
+            float a = seed + _workClock * 0.16f;
+            const float r = 4.6f;
+            Vector3 goal = star + new Vector3(Mathf.Cos(a) * r, 0.8f + 0.2f * Mathf.Sin(_workClock * 0.5f), Mathf.Sin(a) * r);
+            Vector3 ahead = star + new Vector3(Mathf.Cos(a + 0.6f) * r, 0.8f, Mathf.Sin(a + 0.6f) * r);
+            Steer(goal, ahead, 1.3f, 3f, 55f, 0.12f, dt);
+        }
+
+        /// <summary>Строительная площадка станции: своя точка у каждой системы, недалеко от звезды.</summary>
+        private static Vector3 ConstructionSite(Vector3 star) => StarbaseVisuals.SiteFor(star);
+
+        /// <summary>Монтаж: корабль висит рядом с площадкой носом к ней и понемногу подруливает, удерживая позицию.</summary>
+        private void ConstructionHold(Vector3 star, Vector3 site)
+        {
+            _gliding = false;
+            float dt = WorkDt();
+            if (dt <= 0f) { ApplyThrottle(_throttle, _retro); return; }
+            _workClock += dt;
+            Vector3 outward = Flat(site - star);
+            outward = outward.sqrMagnitude > 0.01f ? outward.normalized : Vector3.forward;
+            Vector3 side = new Vector3(-outward.z, 0f, outward.x);
+            Vector3 goal = site + outward * 2.5f + Vector3.up * 0.6f
+                         + side * (Mathf.Sin(_workClock * 0.35f) * 0.45f)
+                         + Vector3.up * (Mathf.Sin(_workClock * 0.6f) * 0.12f);
+            Steer(goal, site, 1.4f, 3f, 50f, 0.06f, dt);
+        }
+
+        private void EnginesIdle()
+        {
+            _gliding = false;
+            _throttle = Mathf.MoveTowards(_throttle, 0f, 2f * Time.deltaTime);
+            _retro = Mathf.MoveTowards(_retro, 0f, 2f * Time.deltaTime);
+            ApplyThrottle(_throttle, _retro);
+            _engineTrail.emitting = false;
+        }
+
+        private static Vector3 Flat(Vector3 v) { v.y = 0f; return v; }
 
         public void UpdatePathVisuals()
         {

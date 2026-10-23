@@ -42,6 +42,8 @@ namespace StellarisClone.Core
         public int Techs;
         public int GalaxySize;
         public int Difficulty;
+        /// <summary>Уровень сложности 0…4 (−1 — сохранение прежней версии).</summary>
+        public int Level = -1;
         public long SavedAtUtcTicks;
         public float PlayTime;
         public bool Auto;
@@ -52,11 +54,42 @@ namespace StellarisClone.Core
     {
         public NewGameSettings Settings;
         public string Faction;
+        /// <summary>Ключ фракции и оформление империи игрока (null — старое сохранение: фракция по названию).</summary>
+        public string FactionKey;
+        public string EmpireName, EmpireTitle, RulerName, EmblemKey;
+        public Color EmpireColor;
+        public Color MapColor;
         public int Day, Month, Year;
         public EconomySave Economy;
         public TechSave Tech;
         public VictorySave Victory;
+        /// <summary>Только старые сохранения (одна империя ИИ).</summary>
         public AISave AI;
+        public List<AISave> AIs = new List<AISave>();
+        public List<AIRelations.PairState> AIPairs = new List<AIRelations.PairState>();
+        public CoalitionSave Coalition;
+        /// <summary>Репутация игрока и поводы для войны (null — старое сохранение).</summary>
+        public ReputationSave Reputation;
+        public CasusBelliSave CasusBelli;
+        public List<ExploredSave> Explored = new List<ExploredSave>();
+        /// <summary>Знакомства цивилизаций (null — старое сохранение: все знакомы).</summary>
+        public List<long> Contacts;
+        public List<SiegeSave> Sieges = new List<SiegeSave>();
+        public List<ConstructionJob> Jobs = new List<ConstructionJob>();
+        public List<StarbaseSave> Starbases = new List<StarbaseSave>();
+        public LeaderState Leaders;
+        public EventState Events;
+        public List<TimedEffect> Effects;
+        /// <summary>Виды галактики (null — старое сохранение).</summary>
+        public List<Species> Species;
+        public ThreatSave Threats;
+        public EspionageSave Espionage;
+        /// <summary>Законы империи (null — старое сохранение: исходные законы).</summary>
+        public LawsSave Laws;
+        /// <summary>Решения империи (null — старое сохранение).</summary>
+        public DecisionsSave Decisions;
+        /// <summary>Вольные миры (null — старое сохранение: их в той партии не было).</summary>
+        public NeutralSave Neutrals;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -77,7 +110,12 @@ namespace StellarisClone.Core
         public bool HasGeneratedPlanets;
         public int OwnerId;
         public bool HasStarbase;
+        public int Fortification;  // укрепление базы (0–3); в старых сохранениях — 0
+        public int Landmark = -1;  // узел силы (-1 — нет)
         public bool IsSurveyed;
+        public bool SurveyedByAI;  // до версии 2: один флаг на всех ИИ
+        public int AISurvey;       // с версии 2: бит на каждую империю ИИ
+        public int SurveyVer;      // 0 — старое сохранение (разведка была общей)
         public List<PlanetSave> Planets = new List<PlanetSave>();
     }
 
@@ -95,6 +133,19 @@ namespace StellarisClone.Core
         public float PopGrowth;
         public int MaxDistricts;
         public List<int> Districts = new List<int>();
+        public int Focus;
+        public bool AutoBuild;
+        // Общество (нет в старых сохранениях: состав восстановится по фракции владельца)
+        public List<int> PopSpecies = new List<int>();
+        public List<int> PopCounts = new List<int>();
+        /// <summary>Интеграция групп жителей (null/пусто — сохранение прежней версии).</summary>
+        public List<float> PopIntegration = new List<float>();
+        public int MigrantsIn, MigrantsOut;
+        public float Stability = -1f;
+        public float Unrest;
+        public int Propaganda, MartialLaw, Riot;
+        /// <summary>Ручное распределение жителей по видам работ (пусто — по приоритету).</summary>
+        public List<int> JobPlan = new List<int>();
     }
 
     [Serializable]
@@ -104,6 +155,7 @@ namespace StellarisClone.Core
         public string Name;
         public int Type, Owner, Current, Target, State;
         public List<int> Path = new List<int>();
+        public List<int> Queue = new List<int>();
         public float DaysTransit, TotalTransit;
         public int MilitaryPower;
         public int BuildTarget;
@@ -116,6 +168,12 @@ namespace StellarisClone.Core
         public float HP, Armor, Shield, MaxHP, MaxArmor, MaxShield;
         public float Damage, FireRate, Evasion, HyperSpeed, Upkeep;
         public int Weapon;
+        // Орудия по отдельности (с версии с независимыми орудиями; в старых сохранениях пусто)
+        public List<int> WType = new List<int>();
+        public List<float> WDamage = new List<float>();
+        public List<float> WRate = new List<float>();
+        public float Accuracy;
+        public bool AutoExplore;
     }
 
     [Serializable]
@@ -146,10 +204,27 @@ namespace StellarisClone.Core
         public List<string> ProgressIds = new List<string>();
         public List<float> ProgressDays = new List<float>();
         public List<SlotSave> Slots = new List<SlotSave>();
+        /// <summary>Только версия 1: старая база науки (35 + бонусы событий).</summary>
         public float BaseMonthlyScience;
-        public float ResearchMult = 1f, HyperlaneMult = 1f, MiningMult = 1f, ShipBuildMult = 1f;
-        public float StarbaseDiscount;
-        public bool DestroyerUnlocked;
+        public float FlatScience;
+        public float TempBoost = 1f;
+        public int TempBoostDays;
+    }
+
+    [Serializable]
+    public class StarbaseSave
+    {
+        public int System;
+        public float Hull, Armor, Shields;
+        public bool Disabled;
+    }
+
+    [Serializable]
+    public class SiegeSave
+    {
+        public int System;
+        public int Attacker;
+        public float Progress;
     }
 
     [Serializable]
@@ -167,18 +242,61 @@ namespace StellarisClone.Core
         public int StartYear;
         public int BankruptMonths;
         public bool Started;
+        public int ScoreWarnLevel;
+        public int EconMonths;
+        public int RivalEconOwner = -1;
+        public int RivalEconMonths;
+        public int DomMonths;
+        public int RivalDomOwner = -1;
+        public int RivalDomMonths;
     }
 
     [Serializable]
     public class AISave
     {
+        public int Owner = 1;
         public int Capital = -1;
         public string Name, Title;
         public Color Color;
+        public int Personality;
+        public bool Eliminated;
         public float Energy, Minerals, Alloys, Influence;
-        public float AlloysIncome, InfluenceIncome;
+        public float BaseEnergy = 15f, BaseMinerals = 10f, BaseAlloys = 5f, BaseInfluence = 3f;
+        public bool Bankrupt;
         public float Relations, LastRelationBucket;
         public int WarFleetSerial;
+
+        // Наука
+        public List<string> Researched = new List<string>();
+        public string CurrentTech;
+        public float TechProgress;
+        public int ResearchSlots = 3;
+        public int ScienceWarnLevel;
+
+        // Дипломатия
+        public bool AtWar, Pact, CapitalLost, Alliance;
+        public int TruceDays;
+        public float Weariness;
+        public int WarMonths, SystemsLost, SystemsTaken, ShipsLost, PlayerShipsLost;
+        public int Offer, OfferDays, OfferCooldown, WarCooldown;
+        public string OfferReason;
+        public List<string> MemoryKeys = new List<string>();
+        public List<float> MemoryValues = new List<float>();
+        public List<Agreement> Agreements = new List<Agreement>();
+        public Deal PendingDeal;
+        public int TradeOfferCooldown = 240;
+
+        // Флот
+        public int ArmyMode, ArmyTarget = -1, Rally = -1;
+        /// <summary>Подготовка к войне (AIEmpireManager.Strategy): цель, сколько месяцев идёт, перерыв после отказа.</summary>
+        public int WarPlanTarget = -1, WarPlanMonths, WarPlanCooldown;
+        public bool WarPlanWarned;
+        /// <summary>Сколько месяцев длится война с вольным миром.</summary>
+        public int NeutralWarMonths;
+
+        // Тактика: какое оружие ставят на новые корабли (-1 — по вкусу фракции)
+        public int DesignPrimary = -1, DesignSecondary = -1;
+        public string TacticsNote;
     }
 
     /// <summary>Строка списка сохранений.</summary>
@@ -194,7 +312,8 @@ namespace StellarisClone.Core
 
     public static class SaveSystem
     {
-        public const int FormatVersion = 1;
+        /// <summary>2 — экономика от территории, наука в очках, дипломатия и осады.</summary>
+        public const int FormatVersion = 2;
         public const string AutosaveSlot = "autosave";
         private const string Ext = ".sav";
 
@@ -292,7 +411,7 @@ namespace StellarisClone.Core
             var file = Read(slot);
             if (file == null)
             {
-                NotificationCenter.Show("Загрузка невозможна", "Файл сохранения повреждён", NotificationCenter.Kind.Danger, 5f);
+                NotificationCenter.Show(Loc.T("Загрузка невозможна"), Loc.T("Файл сохранения повреждён"), NotificationCenter.Kind.Danger, 5f);
                 return false;
             }
             SFXManager.Play("ui_click", 0.8f, 0.9f);
@@ -317,14 +436,14 @@ namespace StellarisClone.Core
                 File.Move(tmp, path);
                 OnSavesChanged?.Invoke();
                 if (notify)
-                    NotificationCenter.Show(auto ? "Автосохранение" : "Игра сохранена", file.Meta.Name,
+                    NotificationCenter.Show(auto ? Loc.T("Автосохранение") : Loc.T("Игра сохранена"), file.Meta.Name,
                                             NotificationCenter.Kind.Success, auto ? 2.5f : 3.5f);
                 return true;
             }
             catch (Exception e)
             {
                 Debug.LogError("[Save] Ошибка записи: " + e);
-                NotificationCenter.Show("Ошибка сохранения", e.Message, NotificationCenter.Kind.Danger, 6f);
+                NotificationCenter.Show(Loc.T("Ошибка сохранения"), e.Message, NotificationCenter.Kind.Danger, 6f);
                 return false;
             }
         }
@@ -339,12 +458,40 @@ namespace StellarisClone.Core
 
             s.Settings = GameSession.Settings.Clone();
             s.Faction = faction?.Name;
+            if (faction != null)
+            {
+                s.FactionKey = FactionRegistry.KeyOf(faction);
+                s.EmpireName = faction.Name;
+                s.EmpireTitle = faction.Title;
+                s.RulerName = faction.RulerName;
+                s.EmblemKey = faction.EmblemKey;
+                s.EmpireColor = faction.EmpireColor;
+                s.MapColor = faction.MapColor;
+            }
             if (time != null) { s.Day = time.Day; s.Month = time.Month; s.Year = time.Year; }
 
             s.Economy = EconomyManager.Instance != null ? EconomyManager.Instance.CaptureState() : null;
             s.Tech = TechnologyManager.Instance != null ? TechnologyManager.Instance.CaptureState() : null;
             s.Victory = VictoryManager.Instance != null ? VictoryManager.Instance.CaptureState() : null;
-            s.AI = AIEmpireManager.Instance != null ? AIEmpireManager.Instance.CaptureState() : null;
+            foreach (var ai in AIEmpireManager.All) s.AIs.Add(ai.CaptureState());
+            s.AIPairs = AIRelations.Capture();
+            s.Coalition = AICoalition.Capture();
+            s.Reputation = global::StellarisClone.Core.Reputation.Capture();
+            s.CasusBelli = global::StellarisClone.Core.CasusBelli.Capture();
+            s.Explored = Vision.Capture();
+            s.Contacts = global::StellarisClone.Core.Contacts.Capture();
+            if (SiegeManager.Instance != null) s.Sieges = SiegeManager.Instance.CaptureState();
+            if (ConstructionManager.Instance != null) s.Jobs = ConstructionManager.Instance.CaptureState();
+            if (CombatManager.Instance != null) s.Starbases = CombatManager.Instance.CaptureStarbases();
+            if (LeaderManager.Instance != null) s.Leaders = LeaderManager.Instance.CaptureState();
+            if (AnomalyEventSystem.Instance != null) s.Events = AnomalyEventSystem.Instance.CaptureState();
+            s.Effects = EmpireEffects.Capture();
+            s.Species = SpeciesRegistry.Capture();
+            if (ThreatManager.Instance != null) s.Threats = ThreatManager.Instance.CaptureState();
+            if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
+            s.Laws = EmpireLaws.Capture();
+            s.Decisions = EmpireDecisions.Capture();
+            s.Neutrals = NeutralWorlds.Capture();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -383,7 +530,7 @@ namespace StellarisClone.Core
                 foreach (var t in TechnologyManager.Instance.AllTechs) if (t.IsResearched) techs++;
 
             var m = file.Meta;
-            m.Empire = faction?.Name ?? "Империя";
+            m.Empire = faction?.Name ?? Loc.T("Империя");
             m.EmpireTitle = faction?.Title ?? "";
             m.EmpireColor = faction != null ? faction.EmpireColor : UIManager.DS.NeonCyan;
             m.GameDate = time != null ? time.GetFormattedDate() : "";
@@ -394,10 +541,11 @@ namespace StellarisClone.Core
             m.Techs = techs;
             m.GalaxySize = s.Settings.GalaxySize;
             m.Difficulty = s.Settings.Difficulty;
+            m.Level = s.Settings.Tier;
             m.SavedAtUtcTicks = DateTime.UtcNow.Ticks;
             m.PlayTime = GameSession.PlayTime;
             m.Auto = auto;
-            m.Name = auto ? $"Автосохранение · {m.GameDate}"
+            m.Name = auto ? Loc.F("Автосохранение · {0}", m.GameDate)
                    : string.IsNullOrWhiteSpace(displayName) ? $"{m.Empire} · {m.GameDate}" : displayName.Trim();
             return file;
         }
@@ -408,7 +556,8 @@ namespace StellarisClone.Core
             {
                 Id = sys.Id, Name = sys.Name, Position = sys.Position, Spectral = (int)sys.SpectralClass,
                 HasGeneratedPlanets = sys.HasGeneratedPlanets, OwnerId = sys.OwnerId,
-                HasStarbase = sys.HasStarbase, IsSurveyed = sys.IsSurveyed
+                HasStarbase = sys.HasStarbase, Fortification = sys.Fortification, IsSurveyed = sys.IsSurveyed, Landmark = sys.Landmark,
+                AISurvey = sys.AISurveyMask, SurveyVer = 2
             };
             ss.Connected.AddRange(sys.ConnectedSystemIds);
             foreach (var p in sys.Planets)
@@ -418,9 +567,16 @@ namespace StellarisClone.Core
                     Name = p.Name, Type = (int)p.Type, OrbitRadius = p.OrbitRadius, OrbitSpeed = p.OrbitSpeed,
                     Size = p.Size, Color = p.PlanetColor, Energy = p.EnergyDeposit, Minerals = p.MineralDeposit,
                     HasMiningStation = p.HasMiningStation, Terraforming = p.TerraformingInProgress,
-                    Population = p.Population, PopGrowth = p.PopGrowthProgress, MaxDistricts = p.MaxDistricts
+                    Population = p.Population, PopGrowth = p.PopGrowthProgress, MaxDistricts = p.MaxDistricts,
+                    Focus = (int)p.Focus, AutoBuild = p.AutoBuild,
+                    Stability = p.Stability, Unrest = p.Unrest, Propaganda = p.PropagandaMonths,
+                    MartialLaw = p.MartialLawMonths, Riot = p.RiotMonths,
+                    MigrantsIn = p.MigrantsIn, MigrantsOut = p.MigrantsOut
                 };
                 foreach (var d in p.Districts) ps.Districts.Add((int)d.Type);
+                if (p.Pops != null)
+                    foreach (var g in p.Pops) { ps.PopSpecies.Add(g.Species); ps.PopCounts.Add(g.Count); ps.PopIntegration.Add(g.Integration); }
+                if (p.HasJobPlan) ps.JobPlan.AddRange(p.JobPlan);
                 ss.Planets.Add(ps);
             }
             return ss;
@@ -440,10 +596,17 @@ namespace StellarisClone.Core
                 Hull = (int)d.HullClass, DesignId = d.DesignId, DesignAlloyCost = d.DesignAlloyCost,
                 HP = d.HullPoints, Armor = d.ArmorPoints, Shield = d.ShieldPoints,
                 MaxHP = d.MaxHullPoints, MaxArmor = d.MaxArmorPoints, MaxShield = d.MaxShieldPoints,
-                Damage = d.Damage, FireRate = d.FireRate, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed,
+                Damage = d.Damage, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed, Accuracy = d.Accuracy, AutoExplore = d.AutoExplore,
                 Upkeep = d.UpkeepEnergy, Weapon = (int)d.PrimaryWeapon
             };
+            foreach (var w in d.Weapons)
+            {
+                f.WType.Add((int)w.Type);
+                f.WDamage.Add(w.Damage);
+                f.WRate.Add(w.FireRate);
+            }
             f.Path.AddRange(d.Path);
+            f.Queue.AddRange(d.OrderQueue);
             return f;
         }
 
@@ -461,12 +624,14 @@ namespace StellarisClone.Core
         /// <summary>Галактика из сохранения (вызывается бутстрапом вместо генерации).</summary>
         public static List<StarSystem> BuildSystems(GameState s)
         {
+            SpeciesRegistry.Restore(s.Species);
             var list = new List<StarSystem>(s.Systems.Count);
             foreach (var ss in s.Systems)
             {
                 var sys = new StarSystem(ss.Id, ss.Name, ss.Position, (StarSpectralClass)ss.Spectral)
                 {
-                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, IsSurveyed = ss.IsSurveyed,
+                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, Fortification = Mathf.Clamp(ss.Fortification, 0, Fortifications.MaxLevel), IsSurveyed = ss.IsSurveyed, Landmark = ss.Landmark,
+                    AISurveyMask = ss.SurveyVer >= 2 ? ss.AISurvey : (ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed) ? ~1 : 0,
                     HasGeneratedPlanets = ss.HasGeneratedPlanets
                 };
                 sys.ConnectedSystemIds.AddRange(ss.Connected);
@@ -479,15 +644,32 @@ namespace StellarisClone.Core
                         TerraformingInProgress = ps.Terraforming,
                         Population = ps.Population,
                         PopGrowthProgress = ps.PopGrowth,
-                        MaxDistricts = ps.MaxDistricts
+                        MaxDistricts = ps.MaxDistricts,
+                        Focus = (ColonyFocus)ps.Focus,
+                        AutoBuild = ps.AutoBuild,
+                        Stability = ps.Stability >= 0f ? ps.Stability : 55f,
+                        Unrest = ps.Unrest, PropagandaMonths = ps.Propaganda, MartialLawMonths = ps.MartialLaw, RiotMonths = ps.Riot,
+                        MigrantsIn = ps.MigrantsIn, MigrantsOut = ps.MigrantsOut
                     };
                     foreach (int d in ps.Districts) p.Districts.Add(new DistrictData((DistrictType)d));
+                    if (ps.PopSpecies != null && ps.PopCounts != null)
+                        for (int i = 0; i < ps.PopSpecies.Count && i < ps.PopCounts.Count; i++)
+                            p.Pops.Add(new PopGroup(ps.PopSpecies[i], ps.PopCounts[i])
+                            {
+                                Integration = ps.PopIntegration != null && i < ps.PopIntegration.Count ? ps.PopIntegration[i] : 0f
+                            });
+                    if (ps.JobPlan != null && ps.JobPlan.Count == 4) p.JobPlan = new List<int>(ps.JobPlan);
                     sys.Planets.Add(p);
                 }
                 sys.RestoreDerivedTotals();
                 list.Add(sys);
             }
             list.Sort((a, b) => a.Id.CompareTo(b.Id));
+            // Сохранение до узлов силы: расставляем их при загрузке
+            bool anyLandmark = false;
+            foreach (var sys in list) if (sys.Landmark >= 0) { anyLandmark = true; break; }
+            if (!anyLandmark) Landmarks.Place(list);
+            else Landmarks.Invalidate();
             return list;
         }
 
@@ -501,28 +683,68 @@ namespace StellarisClone.Core
             d.State = (FleetState)f.State;
             d.Path.Clear();
             foreach (int p in f.Path) d.Path.Enqueue(p);
+            d.OrderQueue.Clear();
+            if (f.Queue != null) d.OrderQueue.AddRange(f.Queue);
             d.DaysRemainingInTransit = f.DaysTransit;
-            d.TotalDaysForTransit = f.TotalTransit > 0f ? f.TotalTransit : 15f;
+            d.TotalDaysForTransit = GamePace.JumpDays;          // темп берётся текущий, а не из старого сохранения
             d.MilitaryPower = f.MilitaryPower;
             d.BuildTargetSystemId = f.BuildTarget;
             d.DaysRemainingConstruction = f.DaysConstruction;
-            d.TotalConstructionDays = f.TotalConstruction > 0f ? f.TotalConstruction : 25f;
+            d.TotalConstructionDays = Mathf.Max(FactionTraits.OutpostDays(d.OwnerId), f.DaysConstruction);
             d.SurveyTargetSystemId = f.SurveyTarget;
             d.DaysRemainingSurvey = f.DaysSurvey;
-            d.TotalSurveyDays = f.TotalSurvey > 0f ? f.TotalSurvey : 20f;
+            d.TotalSurveyDays = GamePace.SurveyDays;
             d.HullClass = (ShipClass)f.Hull;
             d.DesignId = f.DesignId;
             d.DesignAlloyCost = f.DesignAlloyCost;
             d.HullPoints = f.HP; d.ArmorPoints = f.Armor; d.ShieldPoints = f.Shield;
             d.MaxHullPoints = f.MaxHP; d.MaxArmorPoints = f.MaxArmor; d.MaxShieldPoints = f.MaxShield;
-            d.Damage = f.Damage; d.FireRate = f.FireRate; d.Evasion = f.Evasion;
-            d.HyperSpeed = f.HyperSpeed; d.UpkeepEnergy = f.Upkeep;
-            d.PrimaryWeapon = (WeaponDamageType)f.Weapon;
+            d.Evasion = f.Evasion;
+            d.Accuracy = f.Accuracy;
+            d.AutoExplore = f.AutoExplore;
+            d.HyperSpeed = f.HyperSpeed;
+            d.SetWeapons(RestoreWeapons(f, d));
+            // Содержание — производное от типа и корпуса (в старых сохранениях ставки были другими)
+            d.UpkeepEnergy = FleetData.UpkeepFor(d.Type, d.HullClass);
             d.InCombat = false;
-            d.FireCooldown = 0f;
             d.Destroyed = false;
             // Корабль «в пути» без цели — просто стоит на орбите
             if (d.State == FleetState.InHyperlane && d.TargetSystemId < 0) d.State = FleetState.Orbiting;
+        }
+
+        /// <summary>
+        /// Орудия корабля из сохранения. В старых сохранениях урон и скорострельность всех орудий
+        /// хранились суммами — берём орудия из проекта, а если проекта нет (автопроекты ИИ),
+        /// делим суммы поровну на слоты оружия корпуса.
+        /// </summary>
+        private static List<WeaponMount> RestoreWeapons(FleetSave f, FleetData d)
+        {
+            var list = new List<WeaponMount>();
+            if (f.WType != null && f.WType.Count > 0)
+            {
+                for (int i = 0; i < f.WType.Count && i < f.WDamage.Count && i < f.WRate.Count; i++)
+                    list.Add(new WeaponMount((WeaponDamageType)f.WType[i], f.WDamage[i], f.WRate[i]));
+                return list;
+            }
+            if (d.Type != FleetType.Military || f.Damage <= 0f) return list;
+
+            var dm = ShipDesignManager.Instance;
+            var design = dm != null ? dm.GetDesign(f.DesignId) : null;
+            if (design != null)
+            {
+                dm.Recalc(design);
+                if (design.Mounts.Count > 0)
+                {
+                    if (f.Accuracy <= 0f) d.Accuracy = design.Accuracy;
+                    return design.Mounts;
+                }
+            }
+
+            var hull = dm != null ? dm.GetHull(d.HullClass) : null;
+            int n = Mathf.Max(1, hull != null ? hull.WeaponSlots : 1);
+            for (int i = 0; i < n; i++)
+                list.Add(new WeaponMount((WeaponDamageType)f.Weapon, f.Damage / n, Mathf.Max(0.1f, f.FireRate / n)));
+            return list;
         }
 
         public static ShipDesign BuildDesign(DesignSave ds)
@@ -532,6 +754,21 @@ namespace StellarisClone.Core
             d.DefenseModuleIds.AddRange(ds.Defense);
             d.UtilityModuleIds.AddRange(ds.Utility);
             return d;
+        }
+
+        /// <summary>Фракция игрока из сохранения: базовая по ключу и поверх — оформление империи.</summary>
+        public static FactionInfo RestorePlayerFaction(GameState s)
+        {
+            var baseF = FactionRegistry.ByKey(s.FactionKey);
+            if (baseF == null) return FindFaction(s.Faction);
+            var f = baseF.Clone();
+            if (!string.IsNullOrEmpty(s.EmpireName)) f.Name = s.EmpireName;
+            if (!string.IsNullOrEmpty(s.EmpireTitle)) f.Title = s.EmpireTitle;
+            f.RulerName = s.RulerName;
+            f.EmblemKey = s.EmblemKey;
+            if (s.EmpireColor.a > 0.01f) f.EmpireColor = s.EmpireColor;
+            f.MapColor = s.MapColor;
+            return f;
         }
 
         public static FactionInfo FindFaction(string name)
@@ -547,14 +784,14 @@ namespace StellarisClone.Core
         {
             int total = Mathf.Max(0, Mathf.RoundToInt(seconds));
             int h = total / 3600, m = (total / 60) % 60;
-            return h > 0 ? $"{h} ч {m:D2} мин" : $"{Mathf.Max(1, m)} мин";
+            return h > 0 ? Loc.F("{0} ч {1:D2} мин", h, m) : Loc.F("{0} мин", Mathf.Max(1, m));
         }
 
         public static string FormatSavedAt(DateTime local)
         {
             var now = DateTime.Now;
-            if (local.Date == now.Date) return "сегодня, " + local.ToString("HH:mm");
-            if (local.Date == now.Date.AddDays(-1)) return "вчера, " + local.ToString("HH:mm");
+            if (local.Date == now.Date) return Loc.T("сегодня, ") + local.ToString("HH:mm");
+            if (local.Date == now.Date.AddDays(-1)) return Loc.T("вчера, ") + local.ToString("HH:mm");
             return local.ToString("dd.MM.yyyy, HH:mm");
         }
     }
@@ -573,7 +810,7 @@ namespace StellarisClone.Core
             var file = GameSession.PendingLoad;
             if (file == null) { Destroy(gameObject); return; }
 
-            try { Apply(file.State); }
+            try { Apply(file.State, file.Version); }
             catch (Exception e)
             {
                 Debug.LogError("[Save] Ошибка восстановления: " + e);
@@ -582,19 +819,26 @@ namespace StellarisClone.Core
             Destroy(gameObject);
         }
 
-        private static void Apply(GameState s)
+        private static void Apply(GameState s, int version)
         {
+            GameAudio.Suppress(2f);   // восстановление состояния не должно «звучать» (война, захваты, уведомления)
             var time = TimeManager.Instance;
             if (time != null) { time.SetDate(s.Day, s.Month, s.Year); time.SetSpeed(0); }
 
-            if (s.Economy != null) EconomyManager.Instance?.RestoreState(s.Economy);
-            if (s.Tech != null) TechnologyManager.Instance?.RestoreState(s.Tech);
+            // Технологии раньше экономики: от них зависят бонусы и перевод старых сохранений
+            if (s.Tech != null) TechnologyManager.Instance?.RestoreState(s.Tech, version);
+            if (s.Economy != null) EconomyManager.Instance?.RestoreState(s.Economy, version);
             if (s.Designs != null && s.Designs.Count > 0 && ShipDesignManager.Instance != null)
             {
                 var designs = new List<ShipDesign>();
                 foreach (var ds in s.Designs) designs.Add(SaveSystem.BuildDesign(ds));
                 ShipDesignManager.Instance.RestoreDesigns(designs);
             }
+
+            if (s.AIs != null && s.AIs.Count > 0)
+                foreach (var a in s.AIs) AIEmpireManager.For(a.Owner)?.RestoreFaction(a);
+            else if (s.AI != null)
+                AIEmpireManager.For(1)?.RestoreFaction(s.AI);
 
             var fm = FleetManager.Instance;
             if (fm != null)
@@ -603,7 +847,38 @@ namespace StellarisClone.Core
                 fm.SetNextFleetId(s.FleetIdCounter);
             }
 
-            if (s.AI != null) AIEmpireManager.Instance?.RestoreState(s.AI);
+            if (s.AIs != null && s.AIs.Count > 0)
+            {
+                foreach (var a in s.AIs) AIEmpireManager.For(a.Owner)?.RestoreState(a, version);
+                // Империи, которых не было в той партии, не появляются посреди игры
+                foreach (var ai in new List<AIEmpireManager>(AIEmpireManager.All))
+                    if (s.AIs.Find(x => x.Owner == ai.OwnerId) == null) ai.RemoveFromGame();
+            }
+            else if (s.AI != null)
+            {
+                // Старое сохранение «один на один»: вторую империю ИИ убираем
+                AIEmpireManager.For(1)?.RestoreState(s.AI, version);
+                foreach (var ai in new List<AIEmpireManager>(AIEmpireManager.All))
+                    if (ai.OwnerId != 1) ai.RemoveFromGame();
+            }
+            AIRelations.Restore(s.AIPairs);
+            AICoalition.Restore(s.Coalition);
+            global::StellarisClone.Core.Reputation.Restore(s.Reputation);
+            global::StellarisClone.Core.CasusBelli.Restore(s.CasusBelli);
+            Vision.Restore(s.Explored);
+            global::StellarisClone.Core.Contacts.Restore(s.Contacts);
+            SiegeManager.Instance?.RestoreState(s.Sieges);
+            ConstructionManager.Instance?.RestoreState(s.Jobs);
+            CombatManager.Instance?.RestoreStarbases(s.Starbases);
+            LeaderManager.Instance?.RestoreState(s.Leaders);
+            AnomalyEventSystem.Instance?.RestoreState(s.Events);
+            EmpireEffects.Restore(s.Effects);
+            ThreatManager.Instance?.RestoreState(s.Threats);
+            EspionageManager.Instance?.RestoreState(s.Espionage);
+            EmpireLaws.Restore(s.Laws);
+            EmpireDecisions.Restore(s.Decisions);
+            NeutralWorlds.Restore(s.Neutrals);
+            if (s.Neutrals == null) BorderRules.GrandfatherOldSave();   // до границ: открыть их, где нет вражды
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
 
             if (s.HasCamera)
@@ -612,10 +887,10 @@ namespace StellarisClone.Core
                 if (cam != null) cam.Teleport(s.CameraPos, s.CameraRot);
             }
 
-            UIManager.Instance?.BeginLoadedGame(SaveSystem.FindFaction(s.Faction));
+            UIManager.Instance?.BeginLoadedGame(SaveSystem.RestorePlayerFaction(s));
             EconomyManager.Instance?.RecalculateAll();
             GalaxyView.Instance?.RefreshTerritoryVisuals();
-            NotificationCenter.Show("Игра загружена", time != null ? time.GetFormattedDate() : "", NotificationCenter.Kind.Info, 3.5f);
+            NotificationCenter.Show(Loc.T("Игра загружена"), time != null ? time.GetFormattedDate() : "", NotificationCenter.Kind.Info, 3.5f);
         }
     }
 
@@ -660,14 +935,14 @@ namespace StellarisClone.Core
             if (IsTyping()) return;
             if (Input.GetKeyDown(KeyCode.F5))
             {
-                if (SaveSystem.CanSaveNow) SaveSystem.Save("Быстрое сохранение");
+                if (SaveSystem.CanSaveNow) SaveSystem.Save(Loc.T("Быстрое сохранение"));
             }
             else if (Input.GetKeyDown(KeyCode.F9))
             {
-                if (SaveSystem.Exists(SaveSystem.SlotFromName("Быстрое сохранение")))
-                    SaveSystem.LoadSlot(SaveSystem.SlotFromName("Быстрое сохранение"));
+                if (SaveSystem.Exists(SaveSystem.SlotFromName(Loc.T("Быстрое сохранение"))))
+                    SaveSystem.LoadSlot(SaveSystem.SlotFromName(Loc.T("Быстрое сохранение")));
                 else
-                    NotificationCenter.Show("Нет быстрого сохранения", "Нажмите F5, чтобы создать", NotificationCenter.Kind.Warning, 3f);
+                    NotificationCenter.Show(Loc.T("Нет быстрого сохранения"), Loc.T("Нажмите F5, чтобы создать"), NotificationCenter.Kind.Warning, 3f);
             }
         }
 

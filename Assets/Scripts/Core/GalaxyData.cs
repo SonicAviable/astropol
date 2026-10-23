@@ -19,7 +19,33 @@ namespace StellarisClone.Core
 
         public int OwnerId = -1;
         public bool HasStarbase;
+        /// <summary>Уровень укрепления звёздной базы (0 — простой форпост … 3 — цитадель).</summary>
+        public int Fortification;
+        /// <summary>Узел силы в системе (<see cref="LandmarkType"/>), -1 — обычная система.</summary>
+        public int Landmark = -1;
+        /// <summary>Система изучена игроком (видны планеты, можно строить форпост).</summary>
         public bool IsSurveyed = false;
+        /// <summary>
+        /// Какие империи ИИ изучили систему (бит на номер владельца). Разведка у каждой империи своя:
+        /// чужая не «закрывает» систему ни для вас, ни для другого ИИ.
+        /// </summary>
+        public int AISurveyMask;
+
+        public bool IsSurveyedBy(int owner)
+            => owner == 0 ? IsSurveyed : owner > 0 && owner < 31 && (AISurveyMask & (1 << owner)) != 0;
+
+        public void MarkSurveyedBy(int owner)
+        {
+            if (owner == 0) IsSurveyed = true;
+            else if (owner > 0 && owner < 31) AISurveyMask |= 1 << owner;
+        }
+
+        /// <summary>Система стала чьей-то территорией — её знают все.</summary>
+        public void MarkSurveyedByAll()
+        {
+            IsSurveyed = true;
+            AISurveyMask = ~1;
+        }
 
         public int TotalEnergy { get; private set; }
         public int TotalMinerals { get; private set; }
@@ -75,16 +101,24 @@ namespace StellarisClone.Core
                 TotalEnergy += energy;
                 TotalMinerals += minerals;
 
-                Planets.Add(new PlanetData($"{Name} {GetRomanNumeral(i + 1)}",
+                Planets.Add(new PlanetData(PlanetNames.Make(Name, i, type),
                     type, currentRadius, speed, size, col, energy, minerals));
             }
             HasGeneratedPlanets = true;
+            LinkPlanets();
             RecalculateHarvest();
+        }
+
+        /// <summary>Проставить планетам ссылку на систему (владелец, принадлежность).</summary>
+        public void LinkPlanets()
+        {
+            foreach (var p in Planets) { p.ParentSystem = this; PlanetNames.MarkUsed(p.Name); }
         }
 
         /// <summary>Пересчитать запасы системы по планетам (после загрузки).</summary>
         public void RestoreDerivedTotals()
         {
+            LinkPlanets();
             TotalEnergy = 0;
             TotalMinerals = 0;
             foreach (var p in Planets)
@@ -110,11 +144,6 @@ namespace StellarisClone.Core
             }
         }
 
-        private string GetRomanNumeral(int n) => n switch
-        {
-            1 => "I", 2 => "II", 3 => "III", 4 => "IV",
-            5 => "V", 6 => "VI", 7 => "VII", _ => n.ToString()
-        };
     }
 
     public class Hyperlane
@@ -132,5 +161,58 @@ namespace StellarisClone.Core
             => obj is Hyperlane o && SystemA == o.SystemA && SystemB == o.SystemB;
 
         public override int GetHashCode() => HashCode.Combine(SystemA, SystemB);
+    }
+
+    /// <summary>
+    /// Имена планет как у настоящих экзопланет: имя звезды и строчная буква по порядку орбит
+    /// («Дата b», «HD 40307 c»). Часть миров — особенно пригодные для жизни — носит собственное имя
+    /// в духе имён, которые МАС присваивает экзопланетам. Собственные имена в партии не повторяются.
+    /// </summary>
+    public static class PlanetNames
+    {
+        private static readonly string[] Proper =
+        {
+            Loc.T("Дагон"), Loc.T("Галилей"), Loc.T("Браге"), Loc.T("Янссен"), Loc.T("Харриот"), Loc.T("Липперсгей"), Loc.T("Димидий"), Loc.T("Тадмор"), Loc.T("Арион"), Loc.T("Аркас"),
+            Loc.T("Кихот"), Loc.T("Росинант"), Loc.T("Санчо"), Loc.T("Саффар"), Loc.T("Самх"), Loc.T("Маджрити"), Loc.T("Смертриос"), Loc.T("Фестиада"), Loc.T("Веритате"), Loc.T("Орбитар"),
+            Loc.T("Эгир"), Loc.T("Аматеру"), Loc.T("Хайтан"), Loc.T("Сараби"), Loc.T("Лаваркс"), Loc.T("Ахра"), Loc.T("Тумбаго"), Loc.T("Ванг"), Loc.T("Набу"), Loc.T("Кемуру"),
+            Loc.T("Пирмах"), Loc.T("Исагель"), Loc.T("Айтхан"), Loc.T("Дзалнава"), Loc.T("Эйрини"), Loc.T("Аумин"), Loc.T("Тапуни"), Loc.T("Мелуна"), Loc.T("Ганимедея"), Loc.T("Иоланта"),
+            Loc.T("Новая Каледония"), Loc.T("Элизиум"), Loc.T("Аркадия"), Loc.T("Гиперион"), Loc.T("Персефона"), Loc.T("Церера"), Loc.T("Кассиопея"), Loc.T("Мнемозина"),
+            Loc.T("Таласса"), Loc.T("Ниобея"), Loc.T("Ифигения"), Loc.T("Эвридика"), Loc.T("Пандора"), Loc.T("Калипсо"), Loc.T("Феакия"), Loc.T("Итака"), Loc.T("Тирея"), Loc.T("Мириада")
+        };
+
+        private static readonly HashSet<string> _used = new HashSet<string>();
+
+        public static void Reset() => _used.Clear();
+
+        /// <summary>Имя для заголовка заглавными, но буква орбиты остаётся строчной: «ДАТА b».</summary>
+        public static string Title(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            int sp = name.LastIndexOf(' ');
+            if (sp > 0 && sp == name.Length - 2 && char.IsLower(name[sp + 1]))
+                return name.Substring(0, sp).ToUpper() + " " + name[sp + 1];
+            return name.ToUpper();
+        }
+
+        /// <summary>Имя уже занято (планеты из сохранения) — новые планеты его не получат.</summary>
+        public static void MarkUsed(string name) { if (!string.IsNullOrEmpty(name)) _used.Add(name); }
+
+        public static string Designation(string star, int orbitIndex) =>
+            $"{star} {(char)('b' + Mathf.Clamp(orbitIndex, 0, 24))}";
+
+        public static string Make(string star, int orbitIndex, PlanetType type)
+        {
+            bool habitable = type == PlanetType.Continental || type == PlanetType.Desert;
+            float chance = habitable ? 0.45f : type == PlanetType.GasGiant ? 0.2f : 0.08f;
+            if (UnityEngine.Random.value < chance && _used.Count < Proper.Length)
+            {
+                for (int tries = 0; tries < 8; tries++)
+                {
+                    string n = Proper[UnityEngine.Random.Range(0, Proper.Length)];
+                    if (_used.Add(n)) return n;
+                }
+            }
+            return Designation(star, orbitIndex);
+        }
     }
 }

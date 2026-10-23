@@ -137,13 +137,12 @@ namespace StellarisClone.Rendering
         public static void SetBar(RectTransform fill, float value, Color? color = null)
         {
             if (fill == null) return;
-            value = Mathf.Clamp01(value);
-            fill.anchorMax = new Vector2(value, 1);
-            var img = fill.GetComponent<Image>();
-            if (img != null)
+            // Заливка доезжает до нового значения плавно (LGBarFill), цвет меняется сразу
+            LGFx.SmoothBar(fill, value);
+            if (color.HasValue)
             {
-                img.enabled = value > 0.001f;
-                if (color.HasValue) img.color = color.Value;
+                var img = fill.GetComponent<Image>();
+                if (img != null) img.color = color.Value;
             }
         }
 
@@ -200,6 +199,16 @@ namespace StellarisClone.Rendering
             if (le == null) le = go.AddComponent<LayoutElement>();
             le.preferredHeight = le.minHeight = h;
             return le;
+        }
+
+        /// <summary>Разрядка заголовка (px между буквами) — см. LGTracking.</summary>
+        public static Text Track(this Text t, float spacing = 1.6f)
+        {
+            if (t == null) return null;
+            var tr = t.GetComponent<LGTracking>();
+            if (tr == null) tr = t.gameObject.AddComponent<LGTracking>();
+            tr.Spacing = spacing;
+            return t;
         }
 
         public static string Hex(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c);

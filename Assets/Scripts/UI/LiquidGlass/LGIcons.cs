@@ -18,7 +18,13 @@ namespace StellarisClone.Rendering
         // Режимы карты
         MapSimple, MapPolitical, MapResources, MapLanes, MapExplored,
         // Меню
-        Save, Load, Speaker, Monitor, Dice, Info, Power, Trash
+        Save, Load, Speaker, Monitor, Dice, Info, Power, Trash,
+        // Дипломатия
+        Swords, Peace, Handshake, Gift, Border, Betrayal, Siege, Wrench,
+        // Модули и корпуса кораблей
+        Laser, Cannon, Missile, ShieldDome, ArmorPlate, Thruster, Corvette, Frigate, Destroyer,
+        // Гражданские корабли (рисованные: Resources/UI/Icons/scienceship.png, constructorship.png)
+        ScienceShip, ConstructorShip
     }
 
     /// <summary>
@@ -31,16 +37,108 @@ namespace StellarisClone.Rendering
         private const int Res = 96;
         private static readonly Dictionary<LGIcon, Sprite> s_Cache = new Dictionary<LGIcon, Sprite>();
 
+        /// <summary>
+        /// В проекте выключена перезагрузка домена при входе в Play Mode — статический кэш переживал запуски
+        /// и держал векторные иконки, даже когда появлялись рисованные. Чистим его в начале каждого запуска.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCache() { s_Cache.Clear(); s_Art.Clear(); }
+
         // ------------------------------------------------------------------ API
 
         public static Sprite Get(LGIcon icon)
         {
             if (s_Cache.TryGetValue(icon, out var s) && s != null) return s;
-            s = Build(Shape(icon));
+            s = ArtIcon(icon) ?? Build(Shape(icon));
             s.name = "LGIcon_" + icon;
             s_Cache[icon] = s;
             return s;
         }
+
+        /// <summary>
+        /// Рисованные иконки (белый силуэт на прозрачном фоне): если картинка есть, она заменяет векторную
+        /// иконку во всём интерфейсе; цвет по-прежнему задаёт Image.color.
+        /// Ресурсы — Resources/UI/Icons/res_&lt;ресурс&gt;.png, остальные — Resources/UI/Icons/&lt;имя LGIcon в нижнем регистре&gt;.png
+        /// (например, population.png, starbase.png, swords.png).
+        /// </summary>
+        private static Sprite ArtIcon(LGIcon icon)
+        {
+            string file = icon switch
+            {
+                LGIcon.Energy => "res_energy",
+                LGIcon.Minerals => "res_minerals",
+                LGIcon.Alloys => "res_alloys",
+                LGIcon.Influence => "res_influence",
+                LGIcon.Research => "res_research",
+                _ => icon.ToString().ToLowerInvariant()
+            };
+            var tex = Resources.Load<Texture2D>("UI/Icons/" + file);
+            if (tex == null) return null;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            // Тот же мировой размер, что у векторных иконок (Res px при 100 px/ед. = 0.96 ед.), — для значков на карте
+            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
+            sp.hideFlags = HideFlags.DontSave;
+            return sp;
+        }
+
+        private static readonly Dictionary<string, Sprite> s_Art = new Dictionary<string, Sprite>();
+
+        /// <summary>Рисованный значок из Resources/UI/Icons/&lt;path&gt;.png (белый силуэт) или null, если картинки нет.</summary>
+        private static Sprite LoadArt(string path)
+        {
+            if (s_Art.TryGetValue(path, out var cached)) return cached;
+            Sprite sp = null;
+            var tex = Resources.Load<Texture2D>("UI/Icons/" + path);
+            if (tex != null)
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
+                sp.hideFlags = HideFlags.DontSave;
+            }
+            s_Art[path] = sp;
+            return sp;
+        }
+
+        /// <summary>
+        /// Рисованный значок модуля корабля (Resources/UI/Icons/Modules/&lt;id модуля&gt;.png) или null,
+        /// если для модуля картинки нет — тогда остаётся общий значок по типу.
+        /// </summary>
+        public static Sprite ModuleArt(string moduleId)
+            => string.IsNullOrEmpty(moduleId) ? null : LoadArt("Modules/" + moduleId);
+
+        /// <summary>
+        /// Крупный рисованный значок направления науки (Resources/UI/Icons/Tech/tech_&lt;направление&gt;.png) или null.
+        /// Детальный — для заголовков и карточки технологии; на мелких узлах дерева остаётся простой значок.
+        /// </summary>
+        public static Sprite TechArt(StellarisClone.Core.TechCategory c)
+            => LoadArt("Tech/tech_" + c.ToString().ToLowerInvariant());
+
+        /// <summary>Значок ветки науки (Resources/UI/Icons/Tech/branch_&lt;ветка&gt;.png) или null.</summary>
+        public static Sprite BranchArt(StellarisClone.Core.TechBranch b)
+            => LoadArt("Tech/branch_" + b.ToString().ToLowerInvariant());
+
+        /// <summary>
+        /// Значок пункта меню строительства (Resources/UI/Icons/Build/build_&lt;id пункта в нижнем регистре&gt;.png) или null:
+        /// build_district_urban, build_mining, build_colony…
+        /// </summary>
+        public static Sprite BuildArt(string optionId)
+            => string.IsNullOrEmpty(optionId) ? null : LoadArt("Build/build_" + optionId.ToLowerInvariant());
+
+        /// <summary>Значок черты вида (Resources/UI/Icons/Traits/trait_&lt;черта&gt;.png) или null.</summary>
+        public static Sprite TraitArt(StellarisClone.Core.SpeciesTrait t)
+        {
+            // У синтетов «Ноля» своего значка нет — та же голова машины, что у роботов
+            if (t == StellarisClone.Core.SpeciesTrait.Synthetic) t = StellarisClone.Core.SpeciesTrait.Mechanical;
+            return LoadArt("Traits/trait_" + t.ToString().ToLowerInvariant());
+        }
+
+        /// <summary>Значок закона империи (Resources/UI/Icons/Laws/law_&lt;id закона&gt;.png) или null.</summary>
+        public static Sprite LawArt(string lawId)
+            => string.IsNullOrEmpty(lawId) ? null : LoadArt("Laws/law_" + lawId);
+
+        /// <summary>Значок категории законов (Resources/UI/Icons/Laws/lawcat_&lt;категория&gt;.png) или null.</summary>
+        public static Sprite LawCategoryArt(StellarisClone.Core.LawCategory c)
+            => LoadArt("Laws/lawcat_" + c.ToString().ToLowerInvariant());
 
         /// <summary>Создаёт Image-иконку заданного размера (по центру родителя, если не перемещать).</summary>
         public static Image Create(Transform parent, LGIcon icon, float size, Color color, string name = null)
@@ -116,6 +214,8 @@ namespace StellarisClone.Rendering
                 case StellarisClone.Core.TechCategory.Reactor:      return LGIcon.Reactor;
                 case StellarisClone.Core.TechCategory.Construction: return LGIcon.Construction;
                 case StellarisClone.Core.TechCategory.Society:      return LGIcon.Society;
+                case StellarisClone.Core.TechCategory.Colonization: return LGIcon.Planet;
+                case StellarisClone.Core.TechCategory.Doctrine:     return LGIcon.Target;
             }
             return LGIcon.Research;
         }
@@ -253,6 +353,10 @@ namespace StellarisClone.Rendering
         {
             switch (icon)
             {
+                // Векторный запас для гражданских кораблей — значки их работы
+                case LGIcon.ScienceShip: return Shape(LGIcon.Sensors);
+                case LGIcon.ConstructorShip: return Shape(LGIcon.Construction);
+
                 case LGIcon.Energy:
                     return p => U(
                         Poly(p, V(0.34f, 0.98f), V(-0.52f, -0.08f), V(0.14f, -0.08f)),
@@ -543,6 +647,143 @@ namespace StellarisClone.Rendering
                             U(Box(p, V(-0.2f, -0.22f), V(0.05f, 0.42f)), Box(p, V(0.2f, -0.22f), V(0.05f, 0.42f)))),
                         Box(p, V(0f, 0.6f), V(0.76f, 0.08f), 0.04f),
                         Box(p, V(0f, 0.76f), V(0.22f, 0.09f), 0.04f));
+
+                case LGIcon.Swords:
+                    return p => U(
+                        Segment(p, V(-0.72f, -0.72f), V(0.62f, 0.62f), 0.09f),
+                        Segment(p, V(0.72f, -0.72f), V(-0.62f, 0.62f), 0.09f),
+                        Triangle(p, V(0.52f, 0.72f), V(0.85f, 0.85f), V(0.72f, 0.52f)),
+                        Triangle(p, V(-0.52f, 0.72f), V(-0.85f, 0.85f), V(-0.72f, 0.52f)),
+                        Segment(p, V(-0.78f, -0.42f), V(-0.42f, -0.78f), 0.08f),
+                        Segment(p, V(0.78f, -0.42f), V(0.42f, -0.78f), 0.08f));
+
+                case LGIcon.Peace:
+                    return p => U(Ring(p, Vector2.zero, 0.78f, 0.1f),
+                                  Mathf.Max(Segment(p, V(0f, 0.78f), V(0f, -0.78f), 0.09f), Circle(p, Vector2.zero, 0.8f)),
+                                  Segment(p, V(0f, -0.05f), V(-0.55f, -0.55f), 0.09f),
+                                  Segment(p, V(0f, -0.05f), V(0.55f, -0.55f), 0.09f));
+
+                case LGIcon.Handshake:
+                    return p => U(
+                        Box(Rot(p - V(-0.38f, 0.02f), 28f), Vector2.zero, V(0.46f, 0.17f), 0.12f),
+                        Box(Rot(p - V(0.38f, 0.02f), -28f), Vector2.zero, V(0.46f, 0.17f), 0.12f),
+                        Box(p, V(0f, -0.12f), V(0.3f, 0.2f), 0.14f),
+                        Box(p, V(-0.86f, 0.3f), V(0.1f, 0.3f), 0.04f),
+                        Box(p, V(0.86f, 0.3f), V(0.1f, 0.3f), 0.04f));
+
+                case LGIcon.Gift:
+                    return p => U(
+                        Sub(Box(p, V(0f, -0.3f), V(0.7f, 0.52f), 0.08f), Box(p, V(0f, -0.3f), V(0.08f, 0.6f))),
+                        Sub(Box(p, V(0f, 0.36f), V(0.82f, 0.16f), 0.06f), Box(p, V(0f, 0.36f), V(0.08f, 0.3f))),
+                        Ring(p, V(-0.24f, 0.7f), 0.18f, 0.07f), Ring(p, V(0.24f, 0.7f), 0.18f, 0.07f));
+
+                case LGIcon.Border:
+                    return p => U(
+                        Segment(p, V(-0.9f, -0.8f), V(-0.9f, 0.8f), 0.06f),
+                        Segment(p, V(0.9f, -0.8f), V(0.9f, 0.8f), 0.06f),
+                        Box(p, V(0f, 0.5f), V(0.1f, 0.24f), 0.04f),
+                        Box(p, V(0f, 0f), V(0.1f, 0.14f), 0.04f),
+                        Box(p, V(0f, -0.5f), V(0.1f, 0.24f), 0.04f),
+                        Triangle(p, V(-0.75f, 0.25f), V(-0.25f, 0f), V(-0.75f, -0.25f)),
+                        Triangle(p, V(0.75f, 0.25f), V(0.25f, 0f), V(0.75f, -0.25f)));
+
+                case LGIcon.Betrayal:
+                    return p =>
+                    {
+                        float heart = U(Circle(p, V(-0.36f, 0.3f), 0.4f), Circle(p, V(0.36f, 0.3f), 0.4f),
+                                        Triangle(p, V(-0.76f, 0.2f), V(0.76f, 0.2f), V(0f, -0.85f)));
+                        float crack = U(Segment(p, V(0.05f, 0.75f), V(-0.12f, 0.25f), 0.07f),
+                                        Segment(p, V(-0.12f, 0.25f), V(0.14f, -0.1f), 0.07f),
+                                        Segment(p, V(0.14f, -0.1f), V(-0.04f, -0.9f), 0.07f));
+                        return Sub(heart, crack);
+                    };
+
+                case LGIcon.Siege:
+                    return p => U(Ring(p, Vector2.zero, 0.42f, 0.08f),
+                                  Triangle(p, V(0f, 0.98f), V(-0.18f, 0.6f), V(0.18f, 0.6f)),
+                                  Triangle(p, V(0f, -0.98f), V(-0.18f, -0.6f), V(0.18f, -0.6f)),
+                                  Triangle(p, V(0.98f, 0f), V(0.6f, -0.18f), V(0.6f, 0.18f)),
+                                  Triangle(p, V(-0.98f, 0f), V(-0.6f, -0.18f), V(-0.6f, 0.18f)),
+                                  Circle(p, Vector2.zero, 0.14f));
+
+                case LGIcon.Wrench:
+                    return p =>
+                    {
+                        float handle = Segment(p, V(-0.66f, -0.66f), V(0.2f, 0.2f), 0.13f);
+                        float head = Sub(Circle(p, V(0.42f, 0.42f), 0.38f), Box(Rot(p - V(0.58f, 0.58f), -45f), Vector2.zero, V(0.12f, 0.36f)));
+                        return U(handle, head);
+                    };
+
+                case LGIcon.Laser:
+                    return p =>
+                    {
+                        Vector2 q = Rot(p, -35f);
+                        return U(Box(q, V(-0.62f, 0f), V(0.26f, 0.2f), 0.07f),
+                                 Segment(q, V(-0.36f, 0f), V(0.62f, 0f), 0.075f),
+                                 Ring(q, V(0.72f, 0f), 0.2f, 0.055f),
+                                 Circle(q, V(0.72f, 0f), 0.08f));
+                    };
+
+                case LGIcon.Cannon:
+                    return p => U(
+                        Box(p, V(-0.3f, -0.66f), V(0.56f, 0.16f), 0.06f),
+                        Mathf.Max(Circle(p, V(-0.3f, -0.5f), 0.36f), -(p.y + 0.5f)),
+                        Segment(p, V(-0.24f, -0.3f), V(0.5f, 0.42f), 0.12f),
+                        Circle(p, V(0.74f, 0.68f), 0.1f),
+                        Circle(p, V(0.9f, 0.32f), 0.08f));
+
+                case LGIcon.Missile:
+                    return p =>
+                    {
+                        Vector2 q = Rot(p, -45f);
+                        return U(Segment(q, V(-0.62f, 0f), V(0.4f, 0f), 0.16f),
+                                 Triangle(q, V(0.38f, 0.16f), V(0.38f, -0.16f), V(0.94f, 0f)),
+                                 Triangle(q, V(-0.3f, 0.12f), V(-0.68f, 0.12f), V(-0.76f, 0.48f)),
+                                 Triangle(q, V(-0.3f, -0.12f), V(-0.68f, -0.12f), V(-0.76f, -0.48f)));
+                    };
+
+                case LGIcon.ShieldDome:
+                    return p => U(
+                        Mathf.Max(Ring(p, V(0f, -0.55f), 1.0f, 0.08f), -(p.y + 0.55f)),
+                        Mathf.Max(Ring(p, V(0f, -0.55f), 0.68f, 0.07f), -(p.y + 0.55f)),
+                        Triangle(p, V(0f, 0.08f), V(-0.3f, -0.62f), V(0.3f, -0.62f)));
+
+                case LGIcon.ArmorPlate:
+                    return p => Sub(Hexagon(p, 0.86f),
+                                    U(Segment(p, Vector2.zero, V(0f, 1f), 0.05f),
+                                      Segment(p, Vector2.zero, Rot(V(0f, 1f), 120f), 0.05f),
+                                      Segment(p, Vector2.zero, Rot(V(0f, 1f), 240f), 0.05f),
+                                      Circle(p, Vector2.zero, 0.16f)));
+
+                case LGIcon.Thruster:
+                    return p => U(
+                        Poly(p, V(-0.3f, 0.9f), V(0.3f, 0.9f), V(0.52f, 0.28f), V(-0.52f, 0.28f)),
+                        Circle(p, V(0f, 0f), 0.26f),
+                        Triangle(p, V(-0.26f, 0f), V(0.26f, 0f), V(0f, -0.96f)),
+                        Triangle(p, V(-0.5f, 0.12f), V(-0.32f, 0.12f), V(-0.46f, -0.58f)),
+                        Triangle(p, V(0.5f, 0.12f), V(0.32f, 0.12f), V(0.46f, -0.58f)));
+
+                case LGIcon.Corvette:
+                    return p => Sub(Triangle(p, V(0f, 0.92f), V(-0.46f, -0.66f), V(0.46f, -0.66f)),
+                                    Triangle(p, V(0f, -0.26f), V(-0.22f, -0.7f), V(0.22f, -0.7f)));
+
+                case LGIcon.Frigate:
+                    return p => U(
+                        Poly(p, V(0f, 0.96f), V(0.24f, 0.4f), V(0.24f, -0.72f), V(-0.24f, -0.72f), V(-0.24f, 0.4f)),
+                        Box(p, V(-0.58f, -0.22f), V(0.13f, 0.42f), 0.08f),
+                        Box(p, V(0.58f, -0.22f), V(0.13f, 0.42f), 0.08f),
+                        Box(p, V(0f, -0.12f), V(0.5f, 0.06f)));
+
+                case LGIcon.Destroyer:
+                    return p =>
+                    {
+                        float hull = Poly(p, V(0f, 0.98f), V(0.3f, 0.3f), V(0.6f, -0.5f), V(0.6f, -0.78f),
+                                          V(-0.6f, -0.78f), V(-0.6f, -0.5f), V(-0.3f, 0.3f));
+                        hull = Sub(hull, U(Triangle(p, V(0f, -0.36f), V(-0.26f, -0.84f), V(0.26f, -0.84f)),
+                                           Segment(p, V(0f, 0.55f), V(0f, -0.1f), 0.045f)));
+                        return U(hull, Box(p, V(-0.76f, -0.3f), V(0.07f, 0.34f), 0.04f),
+                                       Box(p, V(0.76f, -0.3f), V(0.07f, 0.34f), 0.04f));
+                    };
             }
             return p => Circle(p, Vector2.zero, 0.6f);
         }
