@@ -41,7 +41,8 @@
    "ms": "ms",
    "emissionMap": "emission",
    "normal": "",
-   "clouds": ""
+   "clouds": "",
+   "icon": "icon"
   },
   {
    "key": "verdant",
@@ -84,7 +85,8 @@
    "ms": "ms",
    "emissionMap": "emission",
    "normal": "normal",
-   "clouds": "clouds"
+   "clouds": "clouds",
+   "icon": "icon"
   },
   {
    "key": "ice_giant",
@@ -127,7 +129,8 @@
    "ms": "ms",
    "emissionMap": "",
    "normal": "",
-   "clouds": "clouds"
+   "clouds": "clouds",
+   "icon": "icon"
   },
   {
    "key": "obsidian",
@@ -170,7 +173,8 @@
    "ms": "",
    "emissionMap": "",
    "normal": "",
-   "clouds": ""
+   "clouds": "",
+   "icon": "icon"
   }
  ]
 }

@@ -236,6 +236,10 @@ namespace StellarisClone.Rendering
         /// <summary>Шарик планеты для интерфейса (тот же, что на карте).</summary>
         public static Sprite PlanetIcon(PlanetType type, int seed) => PlanetSphereSprite(type, seed);
 
+        /// <summary>Шарик конкретной планеты: у планет с детальной моделью — по её развёртке (как в виде системы).</summary>
+        public static Sprite PlanetIcon(PlanetData planet, int seed)
+            => planet != null ? PlanetSphereSprite(planet, seed) : PlanetSphereSprite(PlanetType.Barren, seed);
+
         private MiniSys CreateMini(StarSystem s)
         {
             int n = s.Planets.Count;
@@ -287,7 +291,7 @@ namespace StellarisClone.Rendering
                 var pg = new GameObject("Planet");
                 pg.transform.SetParent(m.Root.transform, false);
                 var sr = pg.AddComponent<SpriteRenderer>();
-                sr.sprite = PlanetSphereSprite(p.Type, s.Id * 100 + i);
+                sr.sprite = PlanetSphereSprite(p, s.Id * 100 + i);
                 sr.sharedMaterial = _miniSpriteMat;
                 sr.sortingOrder = 12;
                 m.Planets[i] = sr;
@@ -383,6 +387,21 @@ namespace StellarisClone.Rendering
             _ => PlanetVisualType.Ice
         };
 
+        private static readonly Dictionary<string, Sprite> s_modelPlanetSprites = new Dictionary<string, Sprite>();
+
+        /// <summary>Шарик планеты: с детальной моделью — по её развёртке и дымке, иначе — по типу.</summary>
+        private static Sprite PlanetSphereSprite(PlanetData planet, int seed)
+        {
+            var src = PlanetModelLibrary.IconSource(planet, out string model, out Color atmo);
+            if (src == null) return PlanetSphereSprite(planet.Type, seed);
+            int variant = Mathf.Abs(seed) % 3;
+            string id = model + "_" + variant;
+            if (s_modelPlanetSprites.TryGetValue(id, out var cached) && cached != null) return cached;
+            var sp = BuildSphereSprite(src, atmo, planet.Type == PlanetType.Molten, variant, "MiniPlanet_" + id);
+            s_modelPlanetSprites[id] = sp;
+            return sp;
+        }
+
         /// <summary>Спрайт-шарик 128×128 (0,64 ед. в мире): текстура планеты на сфере, свет справа, мягкий край атмосферы.</summary>
         private static Sprite PlanetSphereSprite(PlanetType type, int seed)
         {
@@ -394,10 +413,6 @@ namespace StellarisClone.Rendering
             if (s_miniPlanetSprites.TryGetValue(key, out var cached) && cached != null) return cached;
 
             var src = real != null ? real : PlanetTextureFactory.GeneratePlanetTexture(vt, 4242 + key * 97);
-            const int R = 128;
-            var tex = new Texture2D(R, R, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "MiniPlanet_" + key };
-            var px = new Color32[R * R];
-            var L = new Vector3(1f, 0.25f, 0.45f).normalized;
             Color atmo = real != null ? RealPlanetModel.IconAtmosphere(type) : vt switch
             {
                 PlanetVisualType.Continental => new Color(0.45f, 0.75f, 1f),
@@ -407,6 +422,19 @@ namespace StellarisClone.Rendering
                 PlanetVisualType.Molten => new Color(1f, 0.45f, 0.2f),
                 _ => new Color(1f, 0.8f, 0.6f)
             };
+            var sp = BuildSphereSprite(src, atmo, vt == PlanetVisualType.Molten, variant, "MiniPlanet_" + key);
+            if (real == null) Object.Destroy(src);   // настоящая карта — общий ресурс, её не трогаем
+            s_miniPlanetSprites[key] = sp;
+            return sp;
+        }
+
+        /// <summary>Шарик из развёртки: свет справа, ночная сторона раскалённых миров тлеет, дымка по краю.</summary>
+        private static Sprite BuildSphereSprite(Texture2D src, Color atmo, bool molten, int variant, string name)
+        {
+            const int R = 128;
+            var tex = new Texture2D(R, R, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = name };
+            var px = new Color32[R * R];
+            var L = new Vector3(1f, 0.25f, 0.45f).normalized;
             float spin = variant * 2.1f;
             float c = (R - 1) * 0.5f;
             for (int y = 0; y < R; y++)
@@ -424,7 +452,7 @@ namespace StellarisClone.Rendering
                 float diff = Mathf.Max(0f, Vector3.Dot(n, L));
                 float light = 0.05f + 1.15f * Mathf.Pow(diff, 0.85f);
                 Color o = col * light;
-                if (vt == PlanetVisualType.Molten) o += new Color(0.5f, 0.12f, 0.02f) * (1f - diff) * col.r;   // светится ночная сторона
+                if (molten) o += new Color(0.5f, 0.12f, 0.02f) * (1f - diff) * col.r;   // светится ночная сторона
                 float rim = Mathf.Pow(1f - nz, 3f) * (0.25f + 0.75f * Mathf.Clamp01(diff * 1.5f));
                 o = Color.Lerp(o, atmo, rim * 0.6f);
                 o.a = edge;
@@ -432,10 +460,7 @@ namespace StellarisClone.Rendering
             }
             tex.SetPixels32(px);
             tex.Apply(true);
-            if (real == null) Object.Destroy(src);   // настоящая карта — общий ресурс, её не трогаем
-            var sp = Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), R / 0.64f);
-            s_miniPlanetSprites[key] = sp;
-            return sp;
+            return Sprite.Create(tex, new Rect(0, 0, R, R), new Vector2(0.5f, 0.5f), R / 0.64f);
         }
     }
 }

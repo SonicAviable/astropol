@@ -151,6 +151,38 @@ def save_ms(img, path, metallic_default, size=1024):
     Image.fromarray(out, 'RGBA').save(path, optimize=True)
     meta_for(path, srgb=False)
 
+def save_icon(arr, path):
+    """Развёртка 256×128 для шариков планет на карте и в подсказках (читаемая: Read/Write — как earth_icon)."""
+    Image.fromarray(np.clip(arr * 255, 0, 255).astype(np.uint8), 'RGB').save(path, optimize=True)
+    if os.path.exists(path + '.meta'): return
+    tmpl = TEMPLATES['icon']
+    out = ['guid: ' + uuid.uuid4().hex if l.startswith('guid:') else l for l in tmpl.splitlines()]
+    open(path + '.meta', 'w', newline='\n').write('\n'.join(out) + '\n')
+
+def icon_from(img, size=(256, 128)):
+    return np.asarray(img.convert('RGB').resize(size, Image.LANCZOS)).astype(np.float32) / 255.0
+
+def icon_from_relief(points):
+    """Иконка мира без текстур (каменные плиты): по высоте рельефа — тёмный камень, выступы светлее."""
+    W, H = 256, 128
+    r = np.linalg.norm(points, axis=1)
+    lon = np.arctan2(points[:, 0], points[:, 2]); lat = np.arcsin(np.clip(points[:, 1] / np.maximum(r, 1e-9), -1, 1))
+    x = ((lon / (2 * np.pi) + 0.5) * W).astype(int) % W
+    y = np.clip(((0.5 - lat / np.pi) * H).astype(int), 0, H - 1)
+    h = np.full((H, W), np.nan)
+    for xi, yi, ri in zip(x, y, r):
+        if np.isnan(h[yi, xi]) or ri > h[yi, xi]: h[yi, xi] = ri
+    for _ in range(12):   # дыры между вершинами — соседними высотами
+        m = np.isnan(h)
+        if not m.any(): break
+        pad = np.pad(h, 1, mode='wrap')
+        nb = np.stack([pad[:-2, 1:-1], pad[2:, 1:-1], pad[1:-1, :-2], pad[1:-1, 2:]])
+        h[m] = np.nanmean(nb, axis=0)[m]
+    h = np.nan_to_num(h, nan=1.0)
+    t = np.clip((h - 1.0) / 0.12, 0, 1)[..., None]
+    base = np.array([0.10, 0.10, 0.12]); high = np.array([0.42, 0.44, 0.52])
+    return base * (1 - t) + high * t
+
 def save_mask(img, path, size=2048):
     """Облака/полосы: маска плотности в R (из альфы, если она есть)."""
     img = fit(img, size)
@@ -165,7 +197,8 @@ def main(src, dst, allow_nc=False):
     dst = os.path.normpath(dst)
     real = os.path.join(os.path.dirname(dst), 'Real')
     TEMPLATES = {'color': open(os.path.join(real, 'earth_albedo.png.meta')).read(),
-                 'normal': open(os.path.join(real, 'earth_normal.png.meta')).read()}
+                 'normal': open(os.path.join(real, 'earth_normal.png.meta')).read(),
+                 'icon': open(os.path.join(real, 'earth_icon.png.meta')).read()}
     os.makedirs(dst, exist_ok=True)
     if not os.path.exists(dst + '.meta'):
         open(dst + '.meta', 'w', newline='\n').write(
@@ -190,10 +223,11 @@ def main(src, dst, allow_nc=False):
                      cloudsTint=m.get('cloudsTint', [1, 1, 1]), cloudsOpacity=m.get('cloudsOpacity', 0.0),
                      cloudsShell=m.get('cloudsShell', 1.01),
                      atmoColor=m['atmo']['color'], atmoIntensity=m['atmo']['intensity'], atmoShell=m['atmo']['shell'],
-                     albedo='', ms='', emissionMap='', normal='', clouds='')
+                     albedo='', ms='', emissionMap='', normal='', clouds='', icon='')
         for t, w in m['types'].items(): entry['types'].append(t); entry['weights'].append(w)
 
         # Поверхность
+        relief = []
         if m.get('surfaceAll'):
             parts = [g.mesh(i) for i in range(len(g.js['meshes']))]
             allpos = np.concatenate([p[0] for p in parts])
@@ -208,6 +242,7 @@ def main(src, dst, allow_nc=False):
                         print('  fast_simplification нет — без упрощения')
                 pos, nrm, uv, idx = prepare(pos, nrm, None, idx, np.eye(3), radius)
                 layers.append((key + '/surface' + str(i), pos, nrm, None, idx))
+                relief.append(pos)
                 print(f'  {key} surface{i}: {len(pos)} вершин, {len(idx)} треугольников')
         else:
             pos, nrm, uv, idx = g.mesh(m['surface'])
@@ -235,6 +270,19 @@ def main(src, dst, allow_nc=False):
             save_jpg(g.image(t['normal']), os.path.join(folder, 'normal.jpg'), 2048, normal=True, srgb=False, q=95); entry['normal'] = 'normal'
         if 'clouds' in t:
             save_mask(g.image(t['clouds']), os.path.join(folder, 'clouds.jpg')); entry['clouds'] = 'clouds'
+
+        # Иконка: поверхность со свечением и облаками/полосами — как планета выглядит издалека
+        if 'albedo' in t:
+            ic = icon_from(g.image(t['albedo'])) * np.array(m.get('albedoTint', [1, 1, 1]))
+            if 'emission' in t and m.get('emissionIntensity', 0) >= 1:
+                ic = ic + icon_from(g.image(t['emission'])) * 0.9
+            if 'clouds' in t:
+                cl = g.image(t['clouds']); cm = cl.getchannel('A') if cl.mode in ('LA', 'RGBA') else cl.convert('L')
+                a = np.asarray(cm.resize((256, 128), Image.LANCZOS)).astype(np.float32)[..., None] / 255.0 * m.get('cloudsOpacity', 0.8)
+                ic = ic * (1 - a) + np.array(m.get('cloudsTint', [1, 1, 1])) * a
+        else:
+            ic = icon_from_relief(np.concatenate(relief))
+        save_icon(ic, os.path.join(folder, 'icon.png')); entry['icon'] = 'icon'
         folder_meta = folder + '.meta'
         if not os.listdir(folder):
             os.rmdir(folder)   # текстур нет — папка не нужна

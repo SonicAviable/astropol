@@ -147,7 +147,7 @@ namespace StellarisClone.Rendering
             _planet = planet;
             _seed = seed;
             _refresh = 0.5f;
-            _sphere.sprite = GalaxyView.PlanetIcon(planet.Type, seed);
+            _sphere.sprite = GalaxyView.PlanetIcon(planet, seed);
             Fill();
         }
 

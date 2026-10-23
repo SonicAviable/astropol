@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
             public float smoothness, metallic, emissionIntensity, normalScale = 1f;
             public float[] albedoTint, emission, cloudsTint, atmoColor;
             public float cloudsOpacity, cloudsShell = 1.01f, atmoIntensity, atmoShell = 1.05f;
-            public string albedo, ms, emissionMap, normal, clouds;
+            public string albedo, ms, emissionMap, normal, clouds, icon;
         }
 
         private static Config s_config;
@@ -52,6 +52,7 @@ namespace StellarisClone.Rendering
             s_meshes.Clear();
             s_templates.Clear();
             s_materials.Clear();
+            s_icons.Clear();
             s_root = null;
             s_loaded = s_missing = false;
         }
@@ -71,6 +72,33 @@ namespace StellarisClone.Rendering
             t = Build(def, variant);
             if (t != null) s_templates[id] = t;
             return t;
+        }
+
+        private static readonly Dictionary<string, Texture2D> s_icons = new Dictionary<string, Texture2D>();
+
+        /// <summary>
+        /// Развёртка для шарика планеты на карте и в подсказках, если планете досталась модель (иначе null —
+        /// шарик по типу планеты). key — ключ модели для кэша спрайтов, atmosphere — цвет дымки по краю.
+        /// </summary>
+        public static Texture2D IconSource(PlanetData planet, out string key, out Color atmosphere)
+        {
+            key = null;
+            atmosphere = Color.white;
+            if (planet == null) return null;
+            if (!s_loaded) Load();
+            if (s_missing || s_config == null) return null;
+            var def = Pick(planet);
+            if (def == null || string.IsNullOrEmpty(def.icon)) return null;
+            if (!s_icons.TryGetValue(def.key, out var tex))
+            {
+                tex = Tex(def, def.icon);
+                if (tex != null && !tex.isReadable) tex = null;   // без Read/Write шарик не нарисовать
+                s_icons[def.key] = tex;
+            }
+            if (tex == null) return null;
+            key = def.key;
+            atmosphere = Col(def.atmoColor, new Color(0.6f, 0.75f, 1f));
+            return tex;
         }
 
         /// <summary>Какая модель достанется планете: доля планет типа по весам моделей, остальным — ничего.</summary>
