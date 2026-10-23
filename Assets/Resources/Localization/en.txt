@@ -5771,3 +5771,10 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Заключить мир  · {0:0} влияния	Make peace  · {0:0} influence
 Перемирие на {0} мес.; расположение останется низким	Truce for {0} mo.; favour will remain low
 <color={0}>◆  Вольный мир · {1}</color>	<color={0}>◆  Free world · {1}</color>
+Вольный мир растёт	Free world expands
+{0} присоединяет систему {1} у ваших границ	{0} annexes the {1} system on your border
+{0} присоединяет систему {1}	{0} annexes the {1} system
+<color=#8AA2A8>Присоединённая система вольного мира</color>\n	<color=#8AA2A8>Annexed system of a free world</color>\n
+<color=#8AA2A8>Присоединённая система. Родная система мира — {0}. Территория: {1} из {2}</color>	<color=#8AA2A8>Annexed system. The world's home system is {0}. Territory: {1} of {2}</color>
+<color=#8AA2A8>Территория: {0} из {1} систем. Вольный мир очень медленно растёт — раз в 10–15 лет</color>	<color=#8AA2A8>Territory: {0} of {1} systems. A free world grows very slowly — once every 10–15 years</color>
+<color=#8AA2A8>Блокада идёт в родной системе мира — {0}. С ней перейдут и присоединённые системы</color>	<color=#8AA2A8>The blockade takes place in the world's home system, {0}. Its annexed systems go with it</color>

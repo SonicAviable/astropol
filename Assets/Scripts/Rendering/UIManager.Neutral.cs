@@ -20,6 +20,11 @@ namespace StellarisClone.Rendering
             InspSection(Loc.T("ВОЛЬНЫЙ МИР"), NeutralWorlds.IconOf(kind));
             InspNote(NeutralWorlds.IconOf(kind), $"<b>{NeutralWorlds.Title(w)}</b>  ·  {NeutralWorlds.CharacterName(kind)}", tone);
             InspText($"<color=#AAB4C0>{NeutralWorlds.Description(kind)}</color>");
+            var home = EmpireStats.GetSystem(w.SystemId);
+            int size = 1 + (w.Territory != null ? w.Territory.Count : 0);
+            InspText(system.Id != w.SystemId
+                ? Loc.F("<color=#8AA2A8>Присоединённая система. Родная система мира — {0}. Территория: {1} из {2}</color>", home != null ? home.Name : "?", size, 1 + NeutralWorlds.MaxTerritory)
+                : Loc.F("<color=#8AA2A8>Территория: {0} из {1} систем. Вольный мир очень медленно растёт — раз в 10–15 лет</color>", size, 1 + NeutralWorlds.MaxTerritory));
 
             float favor = w.FavorOf(0);
             Color fc = favor >= NeutralWorlds.FriendFavor ? DS.Green : favor < 0f ? DS.Red : DS.TextMuted;
@@ -33,7 +38,7 @@ namespace StellarisClone.Rendering
                           : w.Patron == 0 ? Loc.T("<color=#6FE09A>вы</color>")
                           : Contacts.NameForPlayer(w.Patron, Loc.T("другая империя"));
             InspText(Loc.F("<color=#8AA2A8>Покровитель:</color> {0}\n<color=#8AA2A8>Покровителю:</color> {1}\n<color=#8AA2A8>Другу (от {2:0}):</color> 40% этого и проход через систему",
-                patron, NeutralWorlds.PatronBonus(kind), NeutralWorlds.FriendFavor));
+                patron, NeutralWorlds.PatronBonus(w), NeutralWorlds.FriendFavor));
 
             // Расположение знакомых империй — с кем идёт борьба за влияние
             var rivals = new System.Text.StringBuilder();
@@ -104,7 +109,10 @@ namespace StellarisClone.Rendering
             InspSection(Loc.T("ШТУРМ"), LGIcon.Siege);
             float need = NeutralWorlds.SiegeNeed(w);
             float defense = NeutralWorlds.Defense(w);
-            float mine = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPowerInSystem(0, system.Id) : 0f;
+            float mine = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPowerInSystem(0, w.SystemId) : 0f;
+            var home = EmpireStats.GetSystem(w.SystemId);
+            if (system.Id != w.SystemId && home != null)
+                InspText(Loc.F("<color=#8AA2A8>Блокада идёт в родной системе мира — {0}. С ней перейдут и присоединённые системы</color>", home.Name));
             InspBar(LGIcon.Siege, Loc.T("Блокада"), w.Besieger == 0 ? w.SiegeDays : 0f, need, DS.Red);
             string state = mine <= 0f ? Loc.T("Приведите сюда военный флот")
                          : mine < defense ? Loc.F("Флот слабее гарнизона ({0:N0} против {1:N0}): штурм не идёт, корабли под огнём", mine, defense)

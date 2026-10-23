@@ -548,6 +548,7 @@ namespace StellarisClone.Rendering
                 string c = LGBuild.Hex(NeutralWorlds.ColorOf(nw.Kind));
                 tip += Loc.F("\n<color={0}>◆ {1} · {2}</color>\n", c, NeutralWorlds.Title(nw), NeutralWorlds.CharacterName(nw.Kind).ToLower()) +
                        $"<color=#AAB4C0>{NeutralWorlds.Description(nw.Kind)}</color>\n";
+                if (nw.SystemId != _data.Id) tip += Loc.T("<color=#8AA2A8>Присоединённая система вольного мира</color>\n");
                 if (!nw.Met(0)) tip += Loc.T("<color=#FFAA88>Нет контакта: подведите корабль или границу ближе</color>\n");
                 else if (nw.AtWarWith(0)) tip += Loc.T("<color=#FF7A7A>Война</color>\n");
                 else tip += Loc.F("<color=#AAB4C0>Ваше расположение:</color> {0:+0;-0;0}\n", nw.FavorOf(0));

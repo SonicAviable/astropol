@@ -131,7 +131,7 @@ namespace StellarisClone.Core
             foreach (var w in NeutralWorlds.All)
             {
                 var sys = EmpireStats.GetSystem(w.SystemId);
-                if (sys == null || !BordersOwn(sys) || NeutralWorlds.WarBlocker(w, OwnerId) != null) continue;
+                if (sys == null || !NeutralWorlds.Touches(w, OwnerId) || NeutralWorlds.WarBlocker(w, OwnerId) != null) continue;
                 if (w.FavorOf(OwnerId) >= 10f || w.Patron == OwnerId) continue;
                 if (myPower < NeutralWorlds.Defense(w) * 1.6f) continue;
                 // Мир под покровительством игрока — только если игрока не боимся

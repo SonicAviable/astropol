@@ -33,6 +33,12 @@ namespace StellarisClone.Core
         /// <summary>Штурм: дни блокады и кто её ведёт.</summary>
         public float SiegeDays;
         public int Besieger = -1;
+        /// <summary>Присоединённые соседние системы (родная — SystemId — сюда не входит).</summary>
+        public List<int> Territory = new List<int>();
+        /// <summary>Месяцев до следующего расширения границ (−1 — ещё не назначено).</summary>
+        public int ExpandWait = -1;
+
+        public bool Owns(int systemId) => systemId == SystemId || (Territory != null && Territory.Contains(systemId));
 
         public NeutralCharacter Kind => (NeutralCharacter)Mathf.Clamp(Character, 0, 5);
         public static bool Valid(int owner) => owner >= 0 && owner < Owners;
@@ -83,9 +89,10 @@ namespace StellarisClone.Core
 
         public static void Reset() { s = new NeutralSave(); s_waitDays = 0; }
 
+        /// <summary>Вольный мир, которому принадлежит система (родная или присоединённая).</summary>
         public static NeutralWorld At(int systemId)
         {
-            foreach (var w in s.Worlds) if (w.SystemId == systemId) return w;
+            foreach (var w in s.Worlds) if (w.Owns(systemId)) return w;
             return null;
         }
 
@@ -129,14 +136,14 @@ namespace StellarisClone.Core
         };
 
         /// <summary>Что получает покровитель (друг — 40%).</summary>
-        public static string PatronBonus(NeutralCharacter c) => c switch
+        public static string PatronBonus(NeutralWorld w) => w.Kind switch
         {
-            NeutralCharacter.Trade => Loc.F("+{0:0} гелия-3 в месяц", Yield(c) ),
-            NeutralCharacter.Science => Loc.F("+{0:0}% к науке", Yield(c) * 100f),
-            NeutralCharacter.Industry => Loc.F("+{0:0.#} сплавов в месяц", Yield(c)),
-            NeutralCharacter.Mining => Loc.F("+{0:0} титана в месяц", Yield(c)),
-            NeutralCharacter.Spiritual => Loc.F("+{0:0.#} влияния в месяц", Yield(c)),
-            _ => Loc.F("+{0:0.#} сплавов в месяц, наём кораблей на 40% дешевле", Yield(c))
+            NeutralCharacter.Trade => Loc.F("+{0:0} гелия-3 в месяц", Yield(w)),
+            NeutralCharacter.Science => Loc.F("+{0:0}% к науке", Yield(w) * 100f),
+            NeutralCharacter.Industry => Loc.F("+{0:0.#} сплавов в месяц", Yield(w)),
+            NeutralCharacter.Mining => Loc.F("+{0:0} титана в месяц", Yield(w)),
+            NeutralCharacter.Spiritual => Loc.F("+{0:0.#} влияния в месяц", Yield(w)),
+            _ => Loc.F("+{0:0.#} сплавов в месяц, наём кораблей на 40% дешевле", Yield(w))
         };
 
         public static Color ColorOf(NeutralCharacter c) => c switch
@@ -209,8 +216,15 @@ namespace StellarisClone.Core
             };
         }
 
-        /// <summary>Гарнизон: растёт на 5% в год.</summary>
-        public static float Defense(NeutralWorld w) => w.BaseDefense * (1f + YearsPlayed * 0.05f);
+        /// <summary>Каждая присоединённая система: +20% к бонусу покровителя и +15% к гарнизону.</summary>
+        public static float SizeMult(NeutralWorld w) => 1f + 0.20f * (w.Territory != null ? w.Territory.Count : 0);
+
+        /// <summary>Бонус характера этого мира (растёт с годами и территорией).</summary>
+        public static float Yield(NeutralWorld w) => Yield(w.Kind) * SizeMult(w);
+
+        /// <summary>Гарнизон: растёт на 5% в год и на 15% за каждую присоединённую систему.</summary>
+        public static float Defense(NeutralWorld w)
+            => w.BaseDefense * (1f + YearsPlayed * 0.05f) * (1f + 0.15f * (w.Territory != null ? w.Territory.Count : 0));
 
         /// <summary>Сколько дней блокады нужно для захвата.</summary>
         public static float SiegeNeed(NeutralWorld w) => w.Kind == NeutralCharacter.Mercenary ? 120f : 90f;
@@ -246,10 +260,10 @@ namespace StellarisClone.Core
                 var c = w.Kind;
                 switch (res)
                 {
-                    case "energy": if (c == NeutralCharacter.Trade) v += Yield(c) * share; break;
-                    case "minerals": if (c == NeutralCharacter.Mining) v += Yield(c) * share; break;
-                    case "alloys": if (c == NeutralCharacter.Industry || c == NeutralCharacter.Mercenary) v += Yield(c) * share; break;
-                    case "influence": if (c == NeutralCharacter.Spiritual) v += Yield(c) * share; break;
+                    case "energy": if (c == NeutralCharacter.Trade) v += Yield(w) * share; break;
+                    case "minerals": if (c == NeutralCharacter.Mining) v += Yield(w) * share; break;
+                    case "alloys": if (c == NeutralCharacter.Industry || c == NeutralCharacter.Mercenary) v += Yield(w) * share; break;
+                    case "influence": if (c == NeutralCharacter.Spiritual) v += Yield(w) * share; break;
                 }
             }
             return v;
@@ -260,7 +274,7 @@ namespace StellarisClone.Core
         {
             float m = 1f;
             foreach (var w in s.Worlds)
-                if (w.Kind == NeutralCharacter.Science) m += Yield(NeutralCharacter.Science) * Share(w, owner);
+                if (w.Kind == NeutralCharacter.Science) m += Yield(w) * Share(w, owner);
             return m;
         }
 
@@ -349,7 +363,8 @@ namespace StellarisClone.Core
                 Character = character,
                 Population = UnityEngine.Random.Range(8, 15),
                 BaseDefense = (NeutralCharacter)character == NeutralCharacter.Mercenary ? UnityEngine.Random.Range(800f, 950f) : UnityEngine.Random.Range(420f, 560f),
-                QuestWait = UnityEngine.Random.Range(4, 10)
+                QuestWait = UnityEngine.Random.Range(4, 10),
+                ExpandWait = FirstExpandMonths()
             };
             s.Worlds.Add(w);
         }
@@ -402,7 +417,7 @@ namespace StellarisClone.Core
             {
                 var sys = EmpireStats.GetSystem(w.SystemId);
                 if (sys == null) continue;
-                var near2 = Hops(new List<int> { w.SystemId }, 2);
+                var near2 = Hops(new List<int>(Systems(w)), 2);
                 foreach (int owner in Empires())
                 {
                     if (w.Met(owner)) continue;
@@ -446,6 +461,7 @@ namespace StellarisClone.Core
                 }
                 Drift(w);
                 MonthlyQuest(w);
+                MonthlyExpand(w);
                 UpdatePatron(w);
             }
         }
@@ -462,8 +478,7 @@ namespace StellarisClone.Core
                 {
                     case NeutralCharacter.Trade:
                         // Соседи — торговые партнёры
-                        var sys = EmpireStats.GetSystem(w.SystemId);
-                        if (sys != null && AIEmpireManager.Borders(sys, o)) w.Favor[o] = Mathf.Min(100f, w.Favor[o] + 0.8f);
+                        if (Touches(w, o)) w.Favor[o] = Mathf.Min(100f, w.Favor[o] + 0.8f);
                         break;
                     case NeutralCharacter.Science:
                     {
@@ -482,6 +497,137 @@ namespace StellarisClone.Core
             if (best >= 0) w.Favor[best] = Mathf.Min(100f, w.Favor[best] + 1f);
         }
 
+        // ==================== РОСТ ГРАНИЦ ====================
+
+        /// <summary>Сколько систем вольный мир может присоединить к родной.</summary>
+        public const int MaxTerritory = 3;
+
+        /// <summary>Первое расширение — на 8–12-м году.</summary>
+        private static int FirstExpandMonths() => UnityEngine.Random.Range(96, 145);
+
+        /// <summary>Дальше — раз в 10–15 лет; торговцы и рудокопы растут на 20% быстрее.</summary>
+        private static int ExpandMonths(NeutralWorld w)
+        {
+            int m = UnityEngine.Random.Range(120, 181);
+            if (w.Kind == NeutralCharacter.Trade || w.Kind == NeutralCharacter.Mining) m = Mathf.RoundToInt(m * 0.8f);
+            return m;
+        }
+
+        /// <summary>Все системы мира: родная и присоединённые.</summary>
+        public static IEnumerable<int> Systems(NeutralWorld w)
+        {
+            yield return w.SystemId;
+            if (w.Territory != null) foreach (int t in w.Territory) yield return t;
+        }
+
+        /// <summary>Граничит ли мир (любой своей системой) с территорией владельца.</summary>
+        public static bool Touches(NeutralWorld w, int owner)
+        {
+            foreach (int id in Systems(w))
+            {
+                var sys = EmpireStats.GetSystem(id);
+                if (sys != null && AIEmpireManager.Borders(sys, owner)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Очень медленный рост, как у городов-государств: на войне не растут; некуда — пробуют снова через год.
+        /// </summary>
+        private static void MonthlyExpand(NeutralWorld w)
+        {
+            w.Territory ??= new List<int>();
+            if (w.ExpandWait < 0) { w.ExpandWait = FirstExpandMonths(); return; }
+            if (w.WarMask != 0 || w.Territory.Count >= MaxTerritory) return;
+            if (--w.ExpandWait > 0) return;
+            int target = PickExpansion(w);
+            w.ExpandWait = target >= 0 ? ExpandMonths(w) : 12;
+            if (target >= 0) Claim(w, target);
+        }
+
+        /// <summary>
+        /// Куда расти: соседняя ничейная система (не узел силы, не цель чужого строителя), которая не перекроет
+        /// проход между частями карты. Богатые залежи — лучше; вплотную к империям — неохотно.
+        /// </summary>
+        private static int PickExpansion(NeutralWorld w)
+        {
+            var building = new HashSet<int>();
+            var fm = FleetManager.Instance;
+            if (fm != null)
+                foreach (var f in fm.AllFleets)
+                    if (f?.Data != null && !f.Data.Destroyed && f.Data.BuildTargetSystemId >= 0) building.Add(f.Data.BuildTargetSystemId);
+
+            int best = -1;
+            float bestScore = float.MinValue;
+            foreach (int own in Systems(w))
+            {
+                var os = EmpireStats.GetSystem(own);
+                if (os == null) continue;
+                foreach (int n in os.ConnectedSystemIds)
+                {
+                    var c = EmpireStats.GetSystem(n);
+                    if (c == null || c.OwnerId != -1 || c.Landmark >= 0 || building.Contains(n)) continue;
+                    if (!KeepsLanesOpen(c)) continue;
+                    c.GeneratePlanets();
+                    float score = c.TotalEnergy + c.TotalMinerals + UnityEngine.Random.value * 3f;
+                    foreach (int m in c.ConnectedSystemIds)
+                    {
+                        var ms = EmpireStats.GetSystem(m);
+                        if (ms != null && ms.OwnerId >= 0 && !Threats.IsThreat(ms.OwnerId)) { score -= 8f; break; }
+                    }
+                    if (score > bestScore) { bestScore = score; best = n; }
+                }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Не перекроет ли система проход: все её соседи (кроме вольных миров) должны оставаться связаны
+        /// друг с другом в обход неё и других вольных миров.
+        /// </summary>
+        private static bool KeepsLanesOpen(StarSystem c)
+        {
+            var systems = EmpireStats.Systems;
+            var need = new List<int>();
+            foreach (int n in c.ConnectedSystemIds)
+                if (n >= 0 && n < systems.Count && systems[n].OwnerId != Owner) need.Add(n);
+            if (need.Count <= 1) return true;
+            var seen = new HashSet<int> { need[0], c.Id };
+            var q = new Queue<(int id, int d)>();
+            q.Enqueue((need[0], 0));
+            int found = 1;
+            while (q.Count > 0 && found < need.Count)
+            {
+                var (cur, d) = q.Dequeue();
+                if (d >= 16) continue;
+                foreach (int n in systems[cur].ConnectedSystemIds)
+                {
+                    if (n < 0 || n >= systems.Count || !seen.Add(n) || systems[n].OwnerId == Owner) continue;
+                    if (need.Contains(n)) found++;
+                    q.Enqueue((n, d + 1));
+                }
+            }
+            return found >= need.Count;
+        }
+
+        private static void Claim(NeutralWorld w, int systemId)
+        {
+            var sys = EmpireStats.GetSystem(systemId);
+            if (sys == null) return;
+            sys.GeneratePlanets();
+            sys.OwnerId = Owner;
+            sys.HasStarbase = false;
+            sys.MarkSurveyedByAll();
+            w.Territory.Add(systemId);
+            GalaxyView.Instance?.RefreshTerritoryVisuals();
+            if (!w.Met(0)) return;
+            if (AIEmpireManager.Borders(sys, 0))
+                NotificationCenter.Show(Loc.T("Вольный мир растёт"), Loc.F("{0} присоединяет систему {1} у ваших границ", Title(w), sys.Name),
+                    NotificationCenter.Kind.Info, 7f);
+            else
+                GalacticNews.Post(NewsKind.Colony, Loc.F("{0} присоединяет систему {1}", Title(w), sys.Name), systemId);
+        }
+
         private static void UpdatePatron(NeutralWorld w)
         {
             int best = -1;
@@ -497,7 +643,7 @@ namespace StellarisClone.Core
             int old = w.Patron;
             w.Patron = best;
             if (best == 0)
-                NotificationCenter.Show(Loc.T("Покровительство"), Loc.F("Вы стали покровителем: {0}. {1}", Title(w), PatronBonus(w.Kind)), NotificationCenter.Kind.Success, 8f);
+                NotificationCenter.Show(Loc.T("Покровительство"), Loc.F("Вы стали покровителем: {0}. {1}", Title(w), PatronBonus(w)), NotificationCenter.Kind.Success, 8f);
             else if (old == 0)
                 NotificationCenter.Show(Loc.T("Покровительство потеряно"),
                     best > 0 ? Loc.F("{0}: новый покровитель — {1}", Title(w), OwnerName(best)) : Loc.F("{0}: ваше влияние ослабло", Title(w)),
@@ -868,6 +1014,16 @@ namespace StellarisClone.Core
         {
             var sys = EmpireStats.GetSystem(w.SystemId);
             s.Worlds.Remove(w);
+            // Присоединённые системы переходят к победителю вместе с родной
+            if (w.Territory != null)
+                foreach (int t in w.Territory)
+                {
+                    var ts = EmpireStats.GetSystem(t);
+                    if (ts == null || ts.OwnerId != Owner) continue;
+                    ts.OwnerId = owner;
+                    ts.HasStarbase = true;
+                    ts.MarkSurveyedByAll();
+                }
             if (sys == null) return;
             sys.OwnerId = owner;
             sys.HasStarbase = true;
@@ -910,6 +1066,7 @@ namespace StellarisClone.Core
             s.Worlds ??= new List<NeutralWorld>();
             foreach (var w in s.Worlds)
             {
+                w.Territory ??= new List<int>();
                 w.Favor = Fit(w.Favor);
                 w.EnvoyCd = Fit(w.EnvoyCd); w.GiftCd = Fit(w.GiftCd); w.TradeCd = Fit(w.TradeCd); w.HireCd = Fit(w.HireCd); w.Truce = Fit(w.Truce);
             }
