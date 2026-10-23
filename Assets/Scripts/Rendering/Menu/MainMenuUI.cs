@@ -625,6 +625,10 @@ namespace StellarisClone.Rendering
             var credits = LGBuild.Label(page, "ASTROPOLITY  " + Version,
                                         10, UIManager.DS.TextMuted, TextAnchor.LowerRight);
             credits.rectTransform.Stretch(0, -18, 0, 0);
+            // Модели планет по лицензии CC BY 4.0 — авторы указаны (Resources/Planets/Models/CREDITS.txt)
+            var models = LGBuild.Label(page, Loc.T("Модели планет (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 и Sketchfab Standard"),
+                                       10, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
+            models.rectTransform.Stretch(0, -18, 220, 0);
         }
 
         private static void Step(RectTransform parent, ref float y, LGIcon icon, string title, string body)

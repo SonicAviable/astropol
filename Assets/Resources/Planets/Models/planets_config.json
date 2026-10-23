@@ -1,0 +1,176 @@
+{
+ "models": [
+  {
+   "key": "fire",
+   "title": "Огненный мир",
+   "types": [
+    "Molten"
+   ],
+   "weights": [
+    0.5
+   ],
+   "smoothness": 0.25,
+   "metallic": 0.0,
+   "albedoTint": [
+    1,
+    1,
+    1
+   ],
+   "emission": [
+    1.0,
+    0.55,
+    0.18
+   ],
+   "emissionIntensity": 2.6,
+   "normalScale": 1.0,
+   "cloudsTint": [
+    1,
+    1,
+    1
+   ],
+   "cloudsOpacity": 0.0,
+   "cloudsShell": 1.01,
+   "atmoColor": [
+    1.0,
+    0.5,
+    0.18
+   ],
+   "atmoIntensity": 0.7,
+   "atmoShell": 1.04,
+   "albedo": "albedo",
+   "ms": "ms",
+   "emissionMap": "emission",
+   "normal": "",
+   "clouds": ""
+  },
+  {
+   "key": "verdant",
+   "title": "Зелёный мир",
+   "types": [
+    "Continental"
+   ],
+   "weights": [
+    0.35
+   ],
+   "smoothness": 0.35,
+   "metallic": 0.0,
+   "albedoTint": [
+    1,
+    1,
+    1
+   ],
+   "emission": [
+    1.0,
+    0.9,
+    0.7
+   ],
+   "emissionIntensity": 0.26,
+   "normalScale": 0.8,
+   "cloudsTint": [
+    0.86,
+    0.92,
+    0.78
+   ],
+   "cloudsOpacity": 0.85,
+   "cloudsShell": 1.012,
+   "atmoColor": [
+    0.5,
+    0.9,
+    0.55
+   ],
+   "atmoIntensity": 1.05,
+   "atmoShell": 1.055,
+   "albedo": "albedo",
+   "ms": "ms",
+   "emissionMap": "emission",
+   "normal": "normal",
+   "clouds": "clouds"
+  },
+  {
+   "key": "ice_giant",
+   "title": "Ледяной гигант",
+   "types": [
+    "GasGiant"
+   ],
+   "weights": [
+    0.4
+   ],
+   "smoothness": 0.15,
+   "metallic": 0.0,
+   "albedoTint": [
+    0.72,
+    0.72,
+    0.72
+   ],
+   "emission": [
+    0,
+    0,
+    0
+   ],
+   "emissionIntensity": 0.0,
+   "normalScale": 1.0,
+   "cloudsTint": [
+    0.82,
+    0.9,
+    1.0
+   ],
+   "cloudsOpacity": 0.45,
+   "cloudsShell": 1.006,
+   "atmoColor": [
+    0.35,
+    0.6,
+    1.0
+   ],
+   "atmoIntensity": 1.25,
+   "atmoShell": 1.06,
+   "albedo": "albedo",
+   "ms": "ms",
+   "emissionMap": "",
+   "normal": "",
+   "clouds": "clouds"
+  },
+  {
+   "key": "obsidian",
+   "title": "Обсидиановый мир",
+   "types": [
+    "Barren"
+   ],
+   "weights": [
+    0.3
+   ],
+   "smoothness": 0.85,
+   "metallic": 0.15,
+   "albedoTint": [
+    0.1,
+    0.1,
+    0.12
+   ],
+   "emission": [
+    0,
+    0,
+    0
+   ],
+   "emissionIntensity": 0.0,
+   "normalScale": 1.0,
+   "cloudsTint": [
+    1,
+    1,
+    1
+   ],
+   "cloudsOpacity": 0.0,
+   "cloudsShell": 1.01,
+   "atmoColor": [
+    0.55,
+    0.65,
+    0.85
+   ],
+   "atmoIntensity": 0.35,
+   "atmoShell": 1.035,
+   "albedo": "",
+   "ms": "",
+   "emissionMap": "",
+   "normal": "",
+   "clouds": ""
+  }
+ ]
+}

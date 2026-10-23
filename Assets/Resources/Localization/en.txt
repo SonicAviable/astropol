@@ -5795,3 +5795,4 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Блокада начинается	The blockade is starting
 <color=#8AA2A8>Родная система: с ней перейдёт всё, что осталось от мира</color>	<color=#8AA2A8>Home system: everything left of the world goes with it</color>
 <color=#8AA2A8>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>	<color=#8AA2A8>Annexed system: it passes to you on its own, the world lives on</color>
+Модели планет (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 и Sketchfab Standard	Planet models (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 and Sketchfab Standard

@@ -238,8 +238,8 @@ namespace StellarisClone.Rendering
             int seed = system.Id * 100 + index;
             PlanetVisualType visualType = (PlanetVisualType)(index % Enum.GetValues(typeof(PlanetVisualType)).Length);
 
-            // Земля / Марс / Луна по настоящим картам, иначе — процедурный префаб
-            GameObject prefab = RealPlanetModel.Template(planet) ?? LoadPlanetPrefabFor(planet.Type, system.Id, index);
+            // Детальные модели (часть планет каждого типа), Земля / Марс / Луна по настоящим картам, иначе — процедурный префаб
+            GameObject prefab = PlanetModelLibrary.Template(planet) ?? RealPlanetModel.Template(planet) ?? LoadPlanetPrefabFor(planet.Type, system.Id, index);
             GameObject planetObj;
             bool isProcedural = false;
             MeshRenderer rend = null;
