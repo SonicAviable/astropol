@@ -1371,8 +1371,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 else
                 {
                     var eco = EconomyManager.Instance;
-                    float finalInfluenceCost = StarbaseInfluenceCost
-                        - (TechnologyManager.Instance != null ? TechnologyManager.Instance.StarbaseCostDiscount : 0f);
+                    float finalInfluenceCost = FleetManager.OutpostInfluenceCost(0);   // с надбавкой за разрастание
                     float outpostAlloys = FactionTraits.StarbaseAlloys(0);
                     bool canAfford = eco != null && eco.Alloys >= outpostAlloys && eco.Influence >= finalInfluenceCost;
 
@@ -1681,6 +1680,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 Loc.F("<color=#8AA2A8>Доход:</color> {0}\n", StatFormat.Income(eco.MonthlyInfluenceIncome)) +
                 (EmpireLaws.InfluenceUpkeep > 0.01f ? Loc.F("<color=#8AA2A8>Из них законы:</color> −{0:0.#} в месяц  <color=#8AA2A8>(L)</color>\n", EmpireLaws.InfluenceUpkeep) : "") + "\n" +
                 Loc.F("<color=#8AA2A8><i>Расходуется на форпосты ({0:0}), колонии ({1:0}), ", FleetManager.OutpostInfluenceCost(0), PlanetData.ColonyInfluenceCost) +
+                (FleetManager.SprawlInfluence(0) > 0f ? Loc.F("<color=#8AA2A8>(форпост дороже на {0:0} — империя разрослась: +{1:0.#} за каждую систему сверх {2})</color> ",
+                    FleetManager.SprawlInfluence(0), FleetManager.SprawlInfluencePerSystem, FleetManager.SprawlFreeSystems) : "") +
                 Loc.F("пакты ({0:0}), мирные предложения ({1:0}) и терраформинг.</i></color>", AIEmpireManager.PactInfluenceCost, AIEmpireManager.PeaceInfluenceCost)
             );
     }

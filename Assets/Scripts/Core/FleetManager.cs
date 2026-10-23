@@ -30,9 +30,21 @@ namespace StellarisClone.Core
         public const float ConstructorAlloys = 80f, ConstructorEnergy = 20f;
         public const float WarshipEnergy = 10f;
 
-        /// <summary>Влияние на форпост с учётом технологий владельца.</summary>
+        /// <summary>Разрастание империи: первые столько систем — по обычной цене форпоста.</summary>
+        public const int SprawlFreeSystems = 12;
+        /// <summary>Сколько влияния прибавляет к цене форпоста каждая система сверх SprawlFreeSystems.</summary>
+        public const float SprawlInfluencePerSystem = 0.6f;
+
+        /// <summary>Надбавка за разрастание: большой империи каждый новый форпост дороже (у всех одинаково).</summary>
+        public static float SprawlInfluence(int owner)
+            => Mathf.Max(0, EmpireStats.SystemCount(owner) - SprawlFreeSystems) * SprawlInfluencePerSystem;
+
+        /// <summary>
+        /// Влияние на форпост: база с учётом технологий владельца плюс надбавка за разрастание. Без неё империя ИИ,
+        /// ставящая форпосты без пауз, к 15–20-му году владела втрое большим числом систем — снежный ком.
+        /// </summary>
         public static float OutpostInfluenceCost(int owner)
-            => Mathf.Max(5f, StarbaseInfluenceCost - EmpireBonuses.For(owner).OutpostInfluenceDiscount);
+            => Mathf.Round(Mathf.Max(5f, StarbaseInfluenceCost - EmpireBonuses.For(owner).OutpostInfluenceDiscount) + SprawlInfluence(owner));
 
         /// <summary>Цена корабля в сплавах с учётом технологий владельца.</summary>
         public static float ShipAlloyCost(float baseCost, int owner)
