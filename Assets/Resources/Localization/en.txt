@@ -5733,7 +5733,6 @@ VK Play: всё синхронизировано	VK Play: fully synced
  — откроется путь к {0} ничейным системам	 — opening a route to {0} unclaimed systems
 \n<color=#8AA2A8>Их корабли тоже смогут ходить через ваши системы</color>	\n<color=#8AA2A8>Their ships will also be able to pass through your systems</color>
 Вольные миры	Free worlds
-Нейтральные системы с характером: торговля, покровительство, захват	Neutral systems with a character: trade, patronage, conquest
 <color=#FFAA88>Нет контакта: подведите корабль или границу ближе</color>\n	<color=#FFAA88>No contact: bring a ship or your border closer</color>\n
 <color=#FF7A7A>Война</color>\n	<color=#FF7A7A>War</color>\n
 <color=#AAB4C0>Ваше расположение:</color> {0:+0;-0;0}\n	<color=#AAB4C0>Your favour:</color> {0:+0;-0;0}\n
@@ -5797,3 +5796,4 @@ VK Play: всё синхронизировано	VK Play: fully synced
 <color=#8AA2A8>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>	<color=#8AA2A8>Annexed system: it passes to you on its own, the world lives on</color>
 Модели планет (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 и Sketchfab Standard	Planet models (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 and Sketchfab Standard
 Пиратский корабль (Sketchfab): jkazulyblanco — CC BY 4.0	Pirate ship (Sketchfab): jkazulyblanco — CC BY 4.0
+Торговля, покровительство, захват	Trade, patronage, conquest

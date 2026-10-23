@@ -514,7 +514,7 @@ namespace StellarisClone.Rendering
             y = LGControls.Section(left, y, Loc.T("ПАРТИЯ"), LGIcon.Leader);
             LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Соперники"), Loc.T("Сколько империй ИИ делят с вами галактику"), 270f),
                 NewGameSettings.RivalNames, _ng.RivalCount - 1, i => { _ng.Rivals = i + 1; RefreshNewGame(); });
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Вольные миры"), Loc.T("Нейтральные системы с характером: торговля, покровительство, захват"), 270f, 54f),
+            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Вольные миры"), Loc.T("Торговля, покровительство, захват"), 270f, 54f),
                 NewGameSettings.NeutralNames, _ng.NeutralCount - NewGameSettings.MinNeutrals, i => { _ng.Neutrals = i + NewGameSettings.MinNeutrals; RefreshNewGame(); });
             // Под названием — что значит выбранный уровень (меняется вместе с выбором)
             var diffRow = LGControls.Row(left, ref y, Loc.T("Сложность"), AIDifficulty.Description(_ng.Tier), 270f, 74f);
