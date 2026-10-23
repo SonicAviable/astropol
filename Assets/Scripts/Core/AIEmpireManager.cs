@@ -342,6 +342,7 @@ namespace StellarisClone.Core
             EnergyCredits += MonthlyEnergyIncome;
             EmpireEconomy.ApplyMonthlyMinerals(_report, ref Minerals, ref Alloys, MonthlyMineralsIncome, MonthlyAlloysIncome);
             Influence += MonthlyInfluenceIncome;
+            SellSurplus();
 
             if (EnergyCredits < 0f)
             {
@@ -357,6 +358,36 @@ namespace StellarisClone.Core
             MonthlyStrategy();
             ThinkDecisions();
             ThinkNeutrals();
+        }
+
+        /// <summary>Потолок гелия-3 у ИИ: 3000 + 80 за колонию, не больше 9000.</summary>
+        public float EnergyCap => Mathf.Min(9000f, 3000f + 80f * _report.Colonies);
+
+        /// <summary>Больше сплавов из излишков за месяц — без резкого рывка флота, когда копилось годами.</summary>
+        private const float SurplusAlloysPerMonth = 300f;
+
+        /// <summary>
+        /// Излишки, которые ИИ не успевает тратить (дальше склады пропадают зря): гелий-3 сверх потолка и титан
+        /// сверх 85% складов. Четверть избытка уходит на рынок по 4 к 1 за сплавы (не больше 300 в месяц),
+        /// остальное сгорает — у игрока излишек титана так же пропадает на переполненных складах.
+        /// Без этого у крупной империи ИИ к середине партии лежали десятки тысяч гелия-3 и полные склады титана.
+        /// </summary>
+        private void SellSurplus()
+        {
+            float alloys = 0f;
+            float ecap = EnergyCap;
+            if (EnergyCredits > ecap)
+            {
+                alloys += (EnergyCredits - ecap) * 0.25f / 4f;
+                EnergyCredits = ecap;
+            }
+            float mcap = _report.MineralStorage * 0.85f;
+            if (Minerals > mcap)
+            {
+                alloys += (Minerals - mcap) * 0.25f / 4f;
+                Minerals = mcap;
+            }
+            Alloys += Mathf.Min(alloys, SurplusAlloysPerMonth);
         }
 
         private void ThinkAndAct()
