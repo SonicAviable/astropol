@@ -76,6 +76,12 @@ namespace StellarisClone.Rendering
             if (type == FleetType.Military)
             {
                 float length = hull == ShipClass.Destroyer ? 3.6f : hull == ShipClass.Frigate ? 3.3f : 3.0f;
+                // Пираты — свой корабль: красно-белый корпус с дугами крыльев (широкий — тоже короче)
+                if (ownerId == Threats.PirateOwner)
+                {
+                    var pirate = PirateShipModel.Build(parent, owner, length * 0.6f);
+                    if (pirate != null) return pirate;
+                }
                 var sparrow = StarSparrowModel.Build(parent, owner, hull, ownerId, length * 0.62f);   // крылатые корпуса шире — заметно короче
                 if (sparrow != null) return sparrow;
                 var model = HarbingerModel.Build(parent, owner, length);

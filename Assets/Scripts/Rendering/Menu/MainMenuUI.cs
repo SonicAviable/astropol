@@ -626,7 +626,8 @@ namespace StellarisClone.Rendering
                                         10, UIManager.DS.TextMuted, TextAnchor.LowerRight);
             credits.rectTransform.Stretch(0, -18, 0, 0);
             // Модели планет по лицензии CC BY 4.0 — авторы указаны (Resources/Planets/Models/CREDITS.txt)
-            var models = LGBuild.Label(page, Loc.T("Модели планет (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 и Sketchfab Standard"),
+            var models = LGBuild.Label(page, Loc.T("Модели планет (Sketchfab): WeSVa, jimmyn64, SebastianSosnowski, tamminen — CC BY 4.0 и Sketchfab Standard") + "\n" +
+                                             Loc.T("Пиратский корабль (Sketchfab): jkazulyblanco — CC BY 4.0"),
                                        10, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
             models.rectTransform.Stretch(0, -18, 220, 0);
         }
