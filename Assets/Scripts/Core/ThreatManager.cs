@@ -144,19 +144,60 @@ namespace StellarisClone.Core
 
         // ==================== ЛЕВИАФАНЫ ====================
 
+        /// <summary>
+        /// Стартовые левиафаны — стражи богатых систем в досягаемости: первый — в 4–6 прыжках от столицы игрока,
+        /// следующие — так же у столиц соперников (по очереди). К любой столице ближе 4 прыжков не селятся.
+        /// Нет места в этом кольце — кольцо шире (3–8), затем — где угодно подальше от столиц.
+        /// </summary>
         private void TrySpawnStartingLeviathans()
         {
-            // Ждём, пока все империи ИИ выберут столицы, — чудовища селятся подальше от них
+            // Ждём, пока все империи ИИ выберут столицы
             foreach (var ai in AIEmpireManager.All) if (ai.CapitalSystemId < 0 && !ai.IsEliminated) return;
             _s.LeviathansSpawned = true;
             int size = GameSession.Settings.GalaxySize;
             int count = (size == 0 ? 1 : size == 2 ? 3 : 2) + (Difficulty == 2 ? 1 : 0) - (Difficulty == 0 && size > 0 ? 1 : 0);
+
+            var capitals = new List<int> { EconomyManager.PlayerCapitalId };
+            foreach (var ai in AIEmpireManager.All)
+                if (ai.CapitalSystemId >= 0 && !ai.IsEliminated) capitals.Add(ai.CapitalSystemId);
             for (int i = 0; i < count; i++)
             {
-                int sys = PickLeviathanSystem(-1, 4, 99);
+                int capital = capitals[i % capitals.Count];
+                int sys = PickNearCapital(capital, capitals, 4, 6);
+                if (sys < 0) sys = PickNearCapital(capital, capitals, 3, 8);
+                if (sys < 0) sys = PickLeviathanSystem(-1, 4, 99);
                 if (sys < 0) break;
                 SpawnLeviathan(sys, LeviathanNames[i % LeviathanNames.Length], 1f);
             }
+        }
+
+        /// <summary>
+        /// Богатая ничейная система в minJumps..maxJumps от столицы capital, не ближе minJumps к любой столице
+        /// и не ближе 4 прыжков к другому левиафану. Ближе к нижней границе кольца — лучше.
+        /// </summary>
+        private int PickNearCapital(int capital, List<int> capitals, int minJumps, int maxJumps)
+        {
+            var dist = MultiBfs(new List<int> { capital }, maxJumps);
+            var any = MultiBfs(capitals, 99);
+            var taken = new HashSet<int>();
+            foreach (var d in FleetsOf(Threats.LeviathanOwner)) taken.Add(d.CurrentSystemId);
+            var takenDist = MultiBfs(new List<int>(taken), 99);
+
+            int best = -1;
+            float bestScore = float.MinValue;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != -1 || s.ConnectedSystemIds.Count == 0 || taken.Contains(s.Id)) continue;
+                if (!dist.TryGetValue(s.Id, out int d) || d < minJumps || d > maxJumps) continue;
+                if (any.TryGetValue(s.Id, out int da) && da < minJumps) continue;
+                if (takenDist.TryGetValue(s.Id, out int td) && td < 4) continue;
+                s.GeneratePlanets();
+                float value = 0f;
+                foreach (var p in s.Planets) value += p.EnergyDeposit + p.MineralDeposit + (p.CanColonize ? 8f : 0f);
+                value += Random.value * 4f - (d - minJumps) * 3f;
+                if (value > bestScore) { bestScore = value; best = s.Id; }
+            }
+            return best;
         }
 
         /// <summary>
