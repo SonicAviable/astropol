@@ -236,7 +236,7 @@ namespace StellarisClone.Rendering
             foreach (var v in _views)
                 if (v.Id == id && !v.Dying) { v.Dying = true; v.DieT = 0f; v.Group.blocksRaycasts = false; }
             _current.RemoveAll(a => a.Id == id);
-            TooltipSystem.Hide();
+            TooltipSystem.ForceHide();   // ПКМ при нажатии закрепил подсказку алерта — снимаем и её
         }
 
         private static float TargetX(int index, int count)
