@@ -101,7 +101,6 @@ namespace StellarisClone.Rendering
         /// <summary>Левый край верхней панели: правее карточки правителя (RulerBadge).</summary>
         public const float TopBarLeft = TopBarMargin + RulerBadge.Width + 8f;
         private const float StarbaseAlloysCost = 50f;
-        private const float StarbaseInfluenceCost = 25f;
 
         private void Awake()
         {
