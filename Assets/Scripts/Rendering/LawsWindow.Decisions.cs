@@ -27,11 +27,12 @@ namespace StellarisClone.Rendering
             sb.Append(FactionTraits.Key(0)).Append('|').Append(EmpireDecisions.Scale.ToString("0.00")).Append('|');
             foreach (var c in EmpireDecisions.Categories)
                 foreach (var d in EmpireDecisions.Visible(c))
-                    sb.Append(d.Id).Append(':').Append(EmpireDecisions.Blocker(d)).Append(':').Append(EmpireDecisions.IsDone(d))
-                      .Append(':').Append(EmpireDecisions.OfferLeft(d)).Append(':').Append(EmpireDecisions.IsNew(d)).Append('|');
+                    sb.Append(d.Id).Append(':').Append(StableBlocker(d)).Append(':').Append(EmpireDecisions.IsDone(d))
+                      .Append(':').Append(EmpireDecisions.OfferLeft(d) > 0).Append(':').Append(EmpireDecisions.IsNew(d)).Append('|');
             string key = sb.ToString();
-            if (key == _key) return;
+            if (key == _key) { RunLive(); return; }
             _key = key;
+            _live.Clear();
 
             _title.text = Loc.T("РЕШЕНИЯ ИМПЕРИИ");
             _hint.text = Loc.F("Цена — в основном титан; одновременно до {0} решений. По ходу игры появляются новые решения, а старые уходят.",
@@ -59,6 +60,26 @@ namespace StellarisClone.Rendering
             LG.Skin(_cols);
             _cascade = false;
         }
+
+        /// <summary>Причина без счётчиков дней: «идёт» и «перезарядка» — одним словом, дни обновляются на месте.</summary>
+        private static string StableBlocker(DecisionDef d)
+        {
+            if (EmpireDecisions.IsActive(d)) return "run";
+            if (EmpireDecisions.CooldownLeft(0, d) > 0) return "cd";
+            return EmpireDecisions.Blocker(d);
+        }
+
+        private static string TagText(DecisionDef d, bool offer, bool isNew)
+        {
+            string t = offer ? Loc.F("ЕЩЁ {0} ДН.", EmpireDecisions.OfferLeft(d))
+                     : d.Once ? Loc.T("ВЕЛИКИЙ ПРОЕКТ") : d.Days > 0 ? Loc.F("{0} дн.", d.Days) : Loc.T("СРАЗУ");
+            return isNew ? Loc.T("НОВОЕ") + " · " + t : t;
+        }
+
+        private static string RunningText(DecisionDef d)
+            => d.Once ? Loc.F("СТРОИТСЯ · ещё {0} дн.", EmpireDecisions.DaysLeft(d))
+             : d.IsModifier ? Loc.F("ДЕЙСТВУЕТ · ещё {0} дн.", EmpireDecisions.DaysLeft(d))
+             : Loc.F("ИДЁТ · ещё {0} дн.", EmpireDecisions.DaysLeft(d));
 
         private static LGIcon DecisionCategoryIcon(DecisionCategory c) => c switch
         {
@@ -159,9 +180,7 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(card, d.Icon, 16, accent);
             ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -y - 1f), new Vector2(16, 16));
             bool offer = d.IsOffer && !active, isNew = EmpireDecisions.IsNew(d);
-            string tagText = offer ? Loc.F("ЕЩЁ {0} ДН.", EmpireDecisions.OfferLeft(d))
-                           : d.Once ? Loc.T("ВЕЛИКИЙ ПРОЕКТ") : d.Days > 0 ? Loc.F("{0} дн.", d.Days) : Loc.T("СРАЗУ");
-            if (isNew) tagText = Loc.T("НОВОЕ") + " · " + tagText;
+            string tagText = TagText(d, offer, isNew);
             var tag = LGBuild.Label(card, tagText, 9,
                 offer ? OfferOrange : isNew ? Good : d.Once ? GreatGold : Muted, TextAnchor.UpperRight, bold: true);
             tag.rectTransform.TopBand(y + 2f, 14, 12, 12);
@@ -216,14 +235,19 @@ namespace StellarisClone.Rendering
                 var box = LGBuild.Rect(card, "Running");
                 box.anchorMin = new Vector2(0, 0); box.anchorMax = new Vector2(1, 0); box.pivot = new Vector2(0.5f, 0);
                 box.offsetMin = new Vector2(12, 10); box.offsetMax = new Vector2(-12, 40);
-                var lbl = LGBuild.Label(box, (d.Once ? Loc.F("СТРОИТСЯ · ещё {0} дн.", EmpireDecisions.DaysLeft(d))
-                                                     : d.IsModifier ? Loc.F("ДЕЙСТВУЕТ · ещё {0} дн.", EmpireDecisions.DaysLeft(d))
-                                                     : Loc.F("ИДЁТ · ещё {0} дн.", EmpireDecisions.DaysLeft(d))), 10, accent, TextAnchor.UpperLeft, bold: true);
+                var lbl = LGBuild.Label(box, RunningText(d), 10, accent, TextAnchor.UpperLeft, bold: true);
                 lbl.rectTransform.TopBand(0, 14);
                 lbl.Track(0.8f);
                 var track = LGBuild.Rect(box, "Bar");
                 track.TopBand(18, 10);
-                LGFx.Shimmer(LGBuild.Bar(track, accent, EmpireDecisions.Progress(d), 6f));
+                var fill = LGBuild.Bar(track, accent, EmpireDecisions.Progress(d), 6f);
+                LGFx.Shimmer(fill);
+                _live.Add(() =>
+                {
+                    if (!EmpireDecisions.IsActive(d)) return;
+                    lbl.text = RunningText(d);
+                    LGBuild.SetBar(fill, EmpireDecisions.Progress(d));
+                });
             }
             else
             {
@@ -241,12 +265,28 @@ namespace StellarisClone.Rendering
                         can ? new Color(0.36f, 0.96f, 0.68f, 0.8f) : new Color(1f, 1f, 1f, 0.12f), () => Take(d), null,
                         can ? (d.Once ? Loc.T("НАЧАТЬ ПРОЕКТ") : Loc.T("ПРИНЯТЬ РЕШЕНИЕ")) : blocker, 10);
                     btn.interactable = can;
+                    if (!can)
+                    {
+                        // «Снова через N дн.» — на месте, без пересборки
+                        var bt = ButtonText(btn);
+                        _live.Add(() =>
+                        {
+                            string b = EmpireDecisions.Blocker(d);
+                            if (b != null && bt != null) bt.text = b;
+                        });
+                    }
                 }
                 var br = (RectTransform)btn.transform;
                 br.anchorMin = new Vector2(0, 0); br.anchorMax = new Vector2(1, 0); br.pivot = new Vector2(0.5f, 0);
                 br.offsetMin = new Vector2(12, 10); br.offsetMax = new Vector2(-12, 40);
             }
             TooltipHelper.Attach(bg.gameObject, DecisionTooltip(d, blocker, active, done));
+            _live.Add(() =>
+            {
+                bool nowActive = EmpireDecisions.IsActive(d);
+                TooltipHelper.Attach(bg.gameObject, DecisionTooltip(d, EmpireDecisions.Blocker(d), nowActive, EmpireDecisions.IsDone(d)));
+                if (offer) tag.text = TagText(d, d.IsOffer && !nowActive, EmpireDecisions.IsNew(d));
+            });
             LGFx.HoverGlow(bg.gameObject);
             if (_cascade) LGFx.CascadeIn(card.gameObject, _cascadeIndex++);
         }

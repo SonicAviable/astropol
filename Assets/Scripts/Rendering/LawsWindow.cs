@@ -29,6 +29,19 @@ namespace StellarisClone.Rendering
         private int _tab;
         /// <summary>Следующая перестройка — с каскадным появлением карточек (после открытия окна и смены вкладки, не при ежедневном обновлении).</summary>
         private bool _cascade;
+        /// <summary>
+        /// Живые подписи (дни перезарядки, сроки, полосы выполнения): обновляются на месте, без пересборки карточек —
+        /// иначе окно перестраивалось каждый игровой день и текст мигал.
+        /// </summary>
+        private readonly List<System.Action> _live = new List<System.Action>();
+
+        private void RunLive()
+        {
+            foreach (var a in _live) a();
+        }
+
+        /// <summary>Текст подписи на кнопке (для живого обновления).</summary>
+        private static Text ButtonText(Button b) => b != null ? b.GetComponentInChildren<Text>(true) : null;
         private int _cascadeIndex;
         private float _refresh;
 
@@ -191,11 +204,13 @@ namespace StellarisClone.Rendering
             // Перестраиваем только при изменениях: законы, сроки, хватает ли влияния
             var sb = new System.Text.StringBuilder();
             sb.Append("laws|").Append(EmpireDecisions.ActiveCount).Append('|').Append(EmpireDecisions.UnseenCount).Append('|');
-            foreach (var c in EmpireLaws.Categories) sb.Append(EmpireLaws.Active(c)?.Id).Append(EmpireLaws.CooldownLeft(c)).Append('|');
+            // Дни перезарядки в ключ не входят — только «закрыто или нет»: счётчики обновляются на месте
+            foreach (var c in EmpireLaws.Categories) sb.Append(EmpireLaws.Active(c)?.Id).Append(EmpireLaws.CooldownLeft(c) > 0).Append('|');
             sb.Append(infl >= EmpireLaws.SwitchCost);
             string key = sb.ToString();
-            if (key == _key) return;
+            if (key == _key) { RunLive(); return; }
             _key = key;
+            _live.Clear();
 
             _title.text = Loc.T("ЗАКОНЫ ИМПЕРИИ");
             _hint.text = Loc.F("Смена закона — {0:0} влияния, после неё направление закрыто на {1} дней. Законы действуют, пока вы их не смените.",
@@ -248,6 +263,11 @@ namespace StellarisClone.Rendering
             int cd = EmpireLaws.CooldownLeft(cat);
             var cdText = LGBuild.Label(head, cd > 0 ? Loc.F("закрыто {0} дн.", cd) : "", 11, Muted, TextAnchor.MiddleRight, bold: true);
             cdText.rectTransform.Stretch(0, 0, 0, 0);
+            _live.Add(() =>
+            {
+                int left = EmpireLaws.CooldownLeft(cat);
+                cdText.text = left > 0 ? Loc.F("закрыто {0} дн.", left) : "";
+            });
             var line = LGBuild.Panel(col, "Line", new Color(cc.r, cc.g, cc.b, 0.5f));
             line.rectTransform.TopBand(42, 2);
 
@@ -345,6 +365,18 @@ namespace StellarisClone.Rendering
             br.anchorMin = new Vector2(0, 0); br.anchorMax = new Vector2(1, 0); br.pivot = new Vector2(0.5f, 0);
             br.offsetMin = new Vector2(12, 12); br.offsetMax = new Vector2(-12, 46);
             TooltipHelper.Attach(bg.gameObject, LawTooltip(law, blocker, active));   // подложка ловит наведение
+            if (!active && blocker != null)
+            {
+                // Причина (например, сколько дней ещё закрыто направление) — на месте, без пересборки
+                var bt = ButtonText(btn);
+                _live.Add(() =>
+                {
+                    string b = EmpireLaws.Blocker(law);
+                    if (b == null) return;
+                    if (bt != null) bt.text = b;
+                    TooltipHelper.Attach(bg.gameObject, LawTooltip(law, b, false));
+                });
+            }
             LGFx.HoverGlow(bg.gameObject);
             if (_cascade) LGFx.CascadeIn(card.gameObject, _cascadeIndex++);
         }
