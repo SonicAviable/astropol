@@ -191,8 +191,8 @@ namespace StellarisClone.Rendering
             name.verticalOverflow = VerticalWrapMode.Truncate;
             y += 22f;
 
-            // Низ карточки: кнопка (34) и строка цены (16) — текст сверху не должен на них заезжать
-            const float bottom = 62f;
+            // Низ карточки: кнопка (30) и строка цены (20) — текст сверху не должен на них заезжать
+            const float bottom = 66f;
             float limit = cardH - bottom;
 
             var desc = LGBuild.Label(card, d.Desc, 10, Primary, TextAnchor.UpperLeft, wrap: true);
@@ -222,11 +222,11 @@ namespace StellarisClone.Rendering
             // Цена и перезарядка
             var cost = LGBuild.Rect(card, "Cost");
             cost.anchorMin = new Vector2(0, 0); cost.anchorMax = new Vector2(1, 0); cost.pivot = new Vector2(0, 0);
-            cost.offsetMin = new Vector2(12, 44); cost.offsetMax = new Vector2(-90, 58);
-            if (!done) BuildMenuModal.CostStrip(cost, d.EnergyCost, d.MineralsCost, d.AlloysCost, d.Influence, 11, TextAnchor.MiddleLeft);
+            cost.offsetMin = new Vector2(12, 43); cost.offsetMax = new Vector2(-90, 63);
+            if (!done) BuildMenuModal.CostStrip(cost, d.EnergyCost, d.MineralsCost, d.AlloysCost, d.Influence, 13, TextAnchor.MiddleLeft);
             var cdText = LGBuild.Label(card, d.Once ? Loc.T("один раз") : Loc.F("перезарядка {0} дн.", d.Cooldown), 9, Muted, TextAnchor.MiddleRight, bold: true);
             cdText.rectTransform.anchorMin = new Vector2(0, 0); cdText.rectTransform.anchorMax = new Vector2(1, 0);
-            cdText.rectTransform.offsetMin = new Vector2(12, 44); cdText.rectTransform.offsetMax = new Vector2(-12, 58);
+            cdText.rectTransform.offsetMin = new Vector2(12, 43); cdText.rectTransform.offsetMax = new Vector2(-12, 63);
 
             string blocker = EmpireDecisions.Blocker(d);
             if (active)

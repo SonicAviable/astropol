@@ -465,9 +465,11 @@ namespace StellarisClone.Rendering
                 hl.spacing = 3f; hl.childControlWidth = true; hl.childControlHeight = true;
                 hl.childForceExpandWidth = false; hl.childForceExpandHeight = false;
                 hl.childAlignment = TextAnchor.MiddleLeft;
-                var ic = LGIcons.Create(row, icon, size + 1, col);
+                // Значок крупнее цифр (в 1,4 раза): мелкий цветной значок на тёмном фоне почти не читался
+                int isz = Mathf.RoundToInt(size * 1.4f);
+                var ic = LGIcons.Create(row, icon, isz, col);
                 var le = ic.gameObject.AddComponent<LayoutElement>();
-                le.preferredWidth = le.minWidth = size + 1; le.preferredHeight = size + 1;
+                le.preferredWidth = le.minWidth = isz; le.preferredHeight = le.minHeight = isz;
                 bool ok = eco == null || have >= v - 0.01f;
                 var t = LGBuild.Label(row, $"{v:0}", size, ok ? Color.white : new Color(1f, 0.45f, 0.45f), TextAnchor.MiddleLeft, bold: true);
                 var tle = t.gameObject.AddComponent<LayoutElement>();
