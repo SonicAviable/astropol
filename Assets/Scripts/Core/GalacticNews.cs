@@ -94,6 +94,7 @@ namespace StellarisClone.Core
         {
             if (owner == 0) return FactionTraits.FactionOf(0)?.Name ?? Loc.T("Наша империя");
             if (Threats.IsThreat(owner)) return Threats.NameOf(owner);
+            if (NeutralWorlds.IsFleetOwner(owner)) return NeutralWorlds.FleetOwnerName(owner);
             return Contacts.PlayerMet(owner) ? AIEmpireManager.NameOf(owner) : Loc.T("Неизвестная империя");
         }
 

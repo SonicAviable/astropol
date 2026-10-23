@@ -262,7 +262,7 @@ namespace StellarisClone.Rendering
             mr.sortingOrder = -5;
         }
 
-        /// <summary>Слот территории в шейдере границ: 0 — игрок, 1–5 — империи ИИ, 6 — угрозы (пираты, левиафаны).</summary>
+        /// <summary>Слот территории в шейдере границ: 0 — игрок, 1–5 — империи ИИ, 6 — вольные миры (угрозы систем не держат).</summary>
         private static float BorderSlot(int owner) => owner >= 0 && owner <= AIEmpireManager.RivalCount ? owner : 6f;
 
         public void RefreshTerritoryVisuals()
@@ -271,6 +271,7 @@ namespace StellarisClone.Rendering
 
             var playerSystems = new List<StarSystem>();
             var enemySystems = new List<StarSystem>();
+            var neutralSystems = new List<StarSystem>();
             var byOwner = new Dictionary<int, List<StarSystem>>();
 
             foreach (var s in _generator.Systems)
@@ -283,6 +284,8 @@ namespace StellarisClone.Rendering
                     if (!byOwner.TryGetValue(s.OwnerId, out var l)) byOwner[s.OwnerId] = l = new List<StarSystem>();
                     l.Add(s);
                 }
+                else if (s.OwnerId == NeutralWorlds.Owner && FogAllows(s))
+                    neutralSystems.Add(s);
             }
 
             if (playerSystems.Count == 0)
@@ -301,13 +304,17 @@ namespace StellarisClone.Rendering
             int count = 0;
             foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
             foreach (var s in enemySystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, BorderSlot(s.OwnerId), 0f);
+            foreach (var s in neutralSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 6f, 0f);
             foreach (var lane in _generator.Hyperlanes)
             {
                 var a = _generator.Systems[lane.SystemA];
                 var b = _generator.Systems[lane.SystemB];
-                if (!a.HasStarbase || !b.HasStarbase || a.OwnerId < 0 || a.OwnerId != b.OwnerId) continue;
+                // Коридор внутри одного вольного мира — его территория тоже не рвётся
+                bool neutralLane = a.OwnerId == NeutralWorlds.Owner && b.OwnerId == NeutralWorlds.Owner
+                                   && NeutralWorlds.At(a.Id) != null && NeutralWorlds.At(a.Id) == NeutralWorlds.At(b.Id);
+                if (!neutralLane && (!a.HasStarbase || !b.HasStarbase || a.OwnerId < 0 || a.OwnerId != b.OwnerId)) continue;
                 if (!FogAllows(a) || !FogAllows(b)) continue;
-                float owner = BorderSlot(a.OwnerId);
+                float owner = neutralLane ? 6f : BorderSlot(a.OwnerId);
                 int steps = Mathf.FloorToInt(Vector3.Distance(a.Position, b.Position) / (_claimRadius * 0.9f));
                 for (int k = 1; k <= steps && count < MaxSys; k++)
                 {
@@ -325,7 +332,7 @@ namespace StellarisClone.Rendering
             _borderMat.SetColor("_Enemy3Color", FleetIndicator.OwnerColor(3));
             _borderMat.SetColor("_Enemy4Color", FleetIndicator.OwnerColor(4));
             _borderMat.SetColor("_Enemy5Color", FleetIndicator.OwnerColor(5));
-            _borderMat.SetColor("_ThreatColor", FleetIndicator.OwnerColor(Threats.PirateOwner));
+            _borderMat.SetColor("_ThreatColor", NeutralWorlds.TerritoryColor);   // слот 6 — территории вольных миров
 
             UpdateEmpireLabel(playerSystems);
             foreach (var ai in AIEmpireManager.All)

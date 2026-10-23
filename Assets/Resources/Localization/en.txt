@@ -5778,3 +5778,20 @@ VK Play: всё синхронизировано	VK Play: fully synced
 <color=#8AA2A8>Присоединённая система. Родная система мира — {0}. Территория: {1} из {2}</color>	<color=#8AA2A8>Annexed system. The world's home system is {0}. Territory: {1} of {2}</color>
 <color=#8AA2A8>Территория: {0} из {1} систем. Вольный мир очень медленно растёт — раз в 10–15 лет</color>	<color=#8AA2A8>Territory: {0} of {1} systems. A free world grows very slowly — once every 10–15 years</color>
 <color=#8AA2A8>Блокада идёт в родной системе мира — {0}. С ней перейдут и присоединённые системы</color>	<color=#8AA2A8>The blockade takes place in the world's home system, {0}. Its annexed systems go with it</color>
+Вольный гарнизон	Free garrison
+{0} основывает колонию «{1}»	{0} founds the colony «{1}»
+{0} · Стража	{0} · Guard
+Страж вольного мира	Free world guardian
+{0}: база {1} уничтожила корабль	{0}: the starbase of {1} destroyed the ship
+Система взята	System taken
+{0}: база пала, система {1} теперь ваша	{0}: the starbase has fallen, the {1} system is now yours
+{0} отбирает у вольного мира систему {1}	{0} takes the {1} system from a free world
+{0}: разбейте стражу (мощь {1:N0}) и держите в родной системе флот сильнее базы ({2:N0}) — {3:0} дн. блокады, и мир ваш. Остальные вольные миры встревожены	{0}: defeat the guard (power {1:N0}) and keep a fleet stronger than the starbase ({2:N0}) in the home system — {3:0} days of blockade and the world is yours. The other free worlds are alarmed
+стража	guard
+<color=#8AA2A8>Звёздная база здесь:</color> мощь {0:N0}   <color=#8AA2A8>Флот стражи:</color> мощь {1:N0}\n<color=#8AA2A8>Колоний:</color> {2} из {3}	<color=#8AA2A8>Starbase here:</color> power {0:N0}   <color=#8AA2A8>Guard fleet:</color> power {1:N0}\n<color=#8AA2A8>Colonies:</color> {2} of {3}
+Захват — блокадой каждой системы: разбейте стражу, затем держите флот сильнее базы ({0:0} дн. в родной, {1:0} — в присоединённых). Остальные вольные миры отвернутся от вас, репутация пострадает	Capture each system by blockade: defeat the guard, then keep a fleet stronger than the starbase ({0:0} days in the home system, {1:0} in annexed ones). The other free worlds will turn away from you and your reputation will suffer
+В системе стража мира (мощь {0:N0}): сначала разбейте её	The world's guard is in the system (power {0:N0}): defeat it first
+Флот слабее базы ({0:N0} против {1:N0}): штурм не идёт, корабли под огнём	The fleet is weaker than the starbase ({0:N0} vs {1:N0}): no progress, ships under fire
+Блокада начинается	The blockade is starting
+<color=#8AA2A8>Родная система: с ней перейдёт всё, что осталось от мира</color>	<color=#8AA2A8>Home system: everything left of the world goes with it</color>
+<color=#8AA2A8>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>	<color=#8AA2A8>Annexed system: it passes to you on its own, the world lives on</color>

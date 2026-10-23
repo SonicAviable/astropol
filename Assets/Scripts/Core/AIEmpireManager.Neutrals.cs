@@ -113,7 +113,7 @@ namespace StellarisClone.Core
                 var w = NeutralWorlds.At(sysId);
                 _neutralWarMonths++;
                 float power = EmpireStats.MilitaryPower(OwnerId);
-                bool hopeless = power < NeutralWorlds.Defense(w) * 0.8f && _neutralWarMonths >= 6;
+                bool hopeless = power < (NeutralWorlds.Defense(w) + NeutralWorlds.GarrisonPower(w)) * 0.8f && _neutralWarMonths >= 6;
                 if ((_neutralWarMonths >= 24 || hopeless || AtWarWithAnyone) && NeutralWorlds.PeaceBlocker(w, OwnerId) == null)
                 {
                     NeutralWorlds.MakePeace(w, OwnerId);
@@ -133,7 +133,7 @@ namespace StellarisClone.Core
                 var sys = EmpireStats.GetSystem(w.SystemId);
                 if (sys == null || !NeutralWorlds.Touches(w, OwnerId) || NeutralWorlds.WarBlocker(w, OwnerId) != null) continue;
                 if (w.FavorOf(OwnerId) >= 10f || w.Patron == OwnerId) continue;
-                if (myPower < NeutralWorlds.Defense(w) * 1.6f) continue;
+                if (myPower < (NeutralWorlds.Defense(w) + NeutralWorlds.GarrisonPower(w)) * 1.6f) continue;
                 // Мир под покровительством игрока — только если игрока не боимся
                 if (w.Patron == 0 && PowerRatio < 1.3f) continue;
                 if (NeutralWorlds.DeclareWar(w, OwnerId)) return true;

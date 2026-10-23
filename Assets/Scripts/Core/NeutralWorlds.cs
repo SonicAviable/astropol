@@ -15,7 +15,12 @@ namespace StellarisClone.Core
 
         public int SystemId;
         public int Character;
+        /// <summary>Жителей на старте (дальше население живёт на планетах мира — NeutralWorlds.TotalPop).</summary>
         public int Population;
+        /// <summary>Владелец кораблей гарнизона (NeutralWorlds.FleetOwnerBase + номер мира).</summary>
+        public int FleetOwner;
+        /// <summary>Месяцев до нового корабля гарнизона и до новой колонии.</summary>
+        public int GarrisonWait, ColonyWait = -1;
         /// <summary>Сила гарнизона на старте (растёт с годами — EffectiveDefense).</summary>
         public float BaseDefense;
         /// <summary>Покровитель (−1 — нет): самое высокое расположение не ниже порога.</summary>
@@ -30,9 +35,8 @@ namespace StellarisClone.Core
         public int[] Truce = new int[Owners];
         /// <summary>Просьба: ресурс (−1 — нет), количество, месяцев до конца; пауза до новой просьбы.</summary>
         public int QuestRes = -1, QuestAmount, QuestMonths, QuestWait = 6;
-        /// <summary>Штурм: дни блокады и кто её ведёт.</summary>
-        public float SiegeDays;
-        public int Besieger = -1;
+        /// <summary>Блокады станций мира: по системе — дни и кто осаждает.</summary>
+        public List<NeutralSiege> Sieges = new List<NeutralSiege>();
         /// <summary>Присоединённые соседние системы (родная — SystemId — сюда не входит).</summary>
         public List<int> Territory = new List<int>();
         /// <summary>Месяцев до следующего расширения границ (−1 — ещё не назначено).</summary>
@@ -45,6 +49,14 @@ namespace StellarisClone.Core
         public bool Met(int owner) => Valid(owner) && (MetMask & (1 << owner)) != 0;
         public bool AtWarWith(int owner) => Valid(owner) && (WarMask & (1 << owner)) != 0;
         public float FavorOf(int owner) => Valid(owner) ? Favor[owner] : 0f;
+    }
+
+    [Serializable]
+    public class NeutralSiege
+    {
+        public int SystemId;
+        public float Days;
+        public int Besieger = -1;
     }
 
     [Serializable]
@@ -70,7 +82,7 @@ namespace StellarisClone.Core
     /// блокада. Это пугает остальные вольные миры, а покровитель жертвы не забудет.
     /// Система вольного мира помечена владельцем <see cref="Owner"/>: форпост в ней не построить.
     /// </summary>
-    public static class NeutralWorlds
+    public static partial class NeutralWorlds
     {
         public const int Owner = -2;
         public const float FriendFavor = 30f, PatronFavor = 60f;
@@ -364,9 +376,13 @@ namespace StellarisClone.Core
                 Population = UnityEngine.Random.Range(8, 15),
                 BaseDefense = (NeutralCharacter)character == NeutralCharacter.Mercenary ? UnityEngine.Random.Range(800f, 950f) : UnityEngine.Random.Range(420f, 560f),
                 QuestWait = UnityEngine.Random.Range(4, 10),
-                ExpandWait = FirstExpandMonths()
+                ExpandWait = FirstExpandMonths(),
+                ColonyWait = UnityEngine.Random.Range(60, 97),
+                FleetOwner = FreeFleetOwner()
             };
             s.Worlds.Add(w);
+            SetupHome(w);
+            for (int i = 0; i < GarrisonStart; i++) SpawnGuard(w);
         }
 
         /// <summary>Прыжки от набора систем по карте (без учёта границ).</summary>
@@ -405,7 +421,12 @@ namespace StellarisClone.Core
                 Spawn();
             }
             if (s.Worlds.Count == 0) return;
-            for (int i = s.Worlds.Count - 1; i >= 0; i--) DailySiege(s.Worlds[i]);
+            for (int i = s.Worlds.Count - 1; i >= 0; i--)
+            {
+                var w = s.Worlds[i];
+                DailyGarrison(w);
+                DailySiege(w);   // может убрать мир из списка (захват)
+            }
             if (day % 5 == 0) UpdateContacts();
             if (day == 1) Monthly();
         }
@@ -462,6 +483,8 @@ namespace StellarisClone.Core
                 Drift(w);
                 MonthlyQuest(w);
                 MonthlyExpand(w);
+                MonthlyGrowth(w);
+                MonthlyGarrison(w);
                 UpdatePatron(w);
             }
         }
@@ -566,7 +589,7 @@ namespace StellarisClone.Core
                 foreach (int n in os.ConnectedSystemIds)
                 {
                     var c = EmpireStats.GetSystem(n);
-                    if (c == null || c.OwnerId != -1 || c.Landmark >= 0 || building.Contains(n)) continue;
+                    if (c == null || c.OwnerId != -1 || c.Landmark >= 0 || building.Contains(n) || ThreatIn(n)) continue;
                     if (!KeepsLanesOpen(c)) continue;
                     c.GeneratePlanets();
                     float score = c.TotalEnergy + c.TotalMinerals + UnityEngine.Random.value * 3f;
@@ -917,8 +940,8 @@ namespace StellarisClone.Core
                 Reputation.Add(-8f, Loc.T("Нападение на вольный мир"));
                 if (patron > 0) AIEmpireManager.For(patron)?.AddMemory("incident", -15f);
                 NotificationCenter.Show(Loc.T("Война с вольным миром"),
-                    Loc.F("{0}: держите в системе флот сильнее гарнизона ({1:N0}) — {2:0} дн. блокады, и мир ваш. Остальные вольные миры встревожены",
-                        Title(w), Defense(w), SiegeNeed(w)), NotificationCenter.Kind.Warning, 9f);
+                    Loc.F("{0}: разбейте стражу (мощь {1:N0}) и держите в родной системе флот сильнее базы ({2:N0}) — {3:0} дн. блокады, и мир ваш. Остальные вольные миры встревожены",
+                        Title(w), GarrisonPower(w), Defense(w), SiegeNeed(w)), NotificationCenter.Kind.Warning, 9f);
             }
             else
             {
@@ -950,111 +973,6 @@ namespace StellarisClone.Core
             return true;
         }
 
-        private static void EndWar(NeutralWorld w, int owner)
-        {
-            w.WarMask &= ~(1 << owner);
-            w.Favor[owner] = Mathf.Min(w.Favor[owner], -40f);
-            w.Truce[owner] = TruceMonths;
-            if (w.Besieger == owner) { w.Besieger = -1; w.SiegeDays = 0f; }
-        }
-
-        /// <summary>Блокада: флот воюющей империи сильнее гарнизона — штурм идёт; гарнизон бьёт по кораблям в системе.</summary>
-        private static void DailySiege(NeutralWorld w)
-        {
-            if (w.WarMask == 0) { w.SiegeDays = 0f; w.Besieger = -1; return; }
-            var fm = FleetManager.Instance;
-            if (fm == null) return;
-            float defense = Defense(w);
-            int best = -1;
-            float bestPower = 0f;
-            for (int o = 0; o < NeutralWorld.Owners; o++)
-            {
-                if (!w.AtWarWith(o)) continue;
-                float p = fm.GetMilitaryPowerInSystem(o, w.SystemId);
-                if (p > bestPower) { bestPower = p; best = o; }
-            }
-
-            if (best >= 0 && bestPower >= defense)
-            {
-                if (w.Besieger != best) { w.Besieger = best; w.SiegeDays = 0f; }
-                w.SiegeDays += 1f;
-            }
-            else w.SiegeDays = Mathf.Max(0f, w.SiegeDays - 2f);
-
-            if (best >= 0) Bombard(w, defense, bestPower >= defense ? 1f : 2f);
-            if (w.Besieger >= 0 && w.SiegeDays >= SiegeNeed(w)) Capture(w, w.Besieger);
-        }
-
-        /// <summary>Гарнизон обстреливает корабли воюющих с ним империй; разбитый корабль гибнет.</summary>
-        private static void Bombard(NeutralWorld w, float defense, float mult)
-        {
-            var fm = FleetManager.Instance;
-            var dead = new List<FleetView>();
-            foreach (var f in fm.AllFleets)
-            {
-                var d = f?.Data;
-                if (d == null || d.Destroyed || d.CurrentSystemId != w.SystemId || d.State == FleetState.InHyperlane) continue;
-                if (!w.AtWarWith(d.OwnerId)) continue;
-                float dmg = defense * 0.0015f * mult;
-                float shield = Mathf.Min(d.ShieldPoints, dmg);
-                d.ShieldPoints -= shield;
-                d.HullPoints -= dmg - shield;
-                if (d.HullPoints <= 0f) dead.Add(f);
-            }
-            foreach (var f in dead)
-            {
-                if (f.Data.OwnerId == 0)
-                    NotificationCenter.Show(Loc.T("Потеря при штурме"), Loc.F("{0}: гарнизон {1} уничтожил корабль", f.Data.Name, Title(w)), NotificationCenter.Kind.Warning, 5f);
-                fm.DisbandFleet(f);
-            }
-        }
-
-        /// <summary>Вольный мир захвачен: система становится колонией победителя, жители остаются (своим видом).</summary>
-        private static void Capture(NeutralWorld w, int owner)
-        {
-            var sys = EmpireStats.GetSystem(w.SystemId);
-            s.Worlds.Remove(w);
-            // Присоединённые системы переходят к победителю вместе с родной
-            if (w.Territory != null)
-                foreach (int t in w.Territory)
-                {
-                    var ts = EmpireStats.GetSystem(t);
-                    if (ts == null || ts.OwnerId != Owner) continue;
-                    ts.OwnerId = owner;
-                    ts.HasStarbase = true;
-                    ts.MarkSurveyedByAll();
-                }
-            if (sys == null) return;
-            sys.OwnerId = owner;
-            sys.HasStarbase = true;
-            sys.MarkSurveyedByAll();
-
-            PlanetData home = null;
-            foreach (var p in sys.Planets)
-                if (p.Type == PlanetType.Continental || p.Type == PlanetType.Desert) { home = p; break; }
-            if (home == null)
-                foreach (var p in sys.Planets)
-                    if (p.Type != PlanetType.GasGiant) { home = p; break; }
-            if (home != null)
-            {
-                home.SetupAsStartingColony(pop: 0, urban: 2, mining: 1, generator: 1, industrial: w.Kind == NeutralCharacter.Industry ? 2 : 1);
-                int pop = Mathf.Clamp(w.Population / 2, 3, 8);
-                home.AddPops(SpeciesRegistry.Founder("generic").Id, pop, 0.2f);
-            }
-
-            // Остальные вольные миры боятся завоевателя
-            foreach (var o in s.Worlds) { o.Favor[owner] = Mathf.Clamp(o.Favor[owner] - 15f, -100f, 100f); UpdatePatron(o); }
-
-            if (owner == 0)
-                NotificationCenter.Show(Loc.T("Вольный мир захвачен"), Loc.F("{0} теперь ваша колония. Жители ещё долго будут чужими", Title(w)), NotificationCenter.Kind.Success, 9f);
-            else if (w.Met(0))
-                GalacticNews.Post(NewsKind.Conquest, Loc.F("{0} захватывает вольный мир: {1}", OwnerName(owner), Title(w)), w.SystemId);
-
-            GalaxyView.Instance?.RefreshTerritoryVisuals();
-            EconomyManager.Instance?.RecalculateAll();
-            TechnologyManager.Instance?.RecountPopulation();
-        }
-
         // ==================== СОХРАНЕНИЕ ====================
 
         public static NeutralSave Capture() => s;
@@ -1067,6 +985,9 @@ namespace StellarisClone.Core
             foreach (var w in s.Worlds)
             {
                 w.Territory ??= new List<int>();
+                w.Sieges ??= new List<NeutralSiege>();
+                if (!IsFleetOwner(w.FleetOwner)) w.FleetOwner = FreeFleetOwner();
+                if (TotalPop(w) == 0) SetupHome(w);   // мир из сохранения до колоний: жители переезжают на планету
                 w.Favor = Fit(w.Favor);
                 w.EnvoyCd = Fit(w.EnvoyCd); w.GiftCd = Fit(w.GiftCd); w.TradeCd = Fit(w.TradeCd); w.HireCd = Fit(w.HireCd); w.Truce = Fit(w.Truce);
             }

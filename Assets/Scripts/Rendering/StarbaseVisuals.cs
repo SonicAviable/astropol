@@ -226,12 +226,14 @@ namespace StellarisClone.Rendering
             var fresh = new List<Entry>();
             foreach (var s in systems)
             {
-                if (s.OwnerId < 0 || !s.HasStarbase) continue;
+                // Базы вольных миров — огни цвета мира (владелец кораблей гарнизона)
+                int owner = StationOwner(s);
+                if (owner < 0) continue;
                 seen.Add(s.Id);
                 if (!_entries.TryGetValue(s.Id, out var e))
                 {
-                    e = new Entry { Owner = s.OwnerId };
-                    var go = StationAssets.Create(_root, s.OwnerId, e.OwnerLights);
+                    e = new Entry { Owner = owner };
+                    var go = StationAssets.Create(_root, owner, e.OwnerLights);
                     if (go == null) continue;
                     go.name = "Starbase_" + s.Name;
                     e.Go = go;
@@ -244,17 +246,17 @@ namespace StellarisClone.Rendering
                     if (_synced) fresh.Add(e);
                     _entries[s.Id] = e;
                 }
-                if (e.Owner != s.OwnerId)
+                if (e.Owner != owner)
                 {
-                    e.Owner = s.OwnerId;
-                    var mat = StationAssets.OwnerLights(s.OwnerId);
+                    e.Owner = owner;
+                    var mat = StationAssets.OwnerLights(owner);
                     foreach (var r in e.OwnerLights) if (r != null && e.LightsOn) r.sharedMaterial = mat;
                 }
-                bool on = cm == null || cm.IsStarbaseActive(s.Id);
+                bool on = cm == null || s.OwnerId == NeutralWorlds.Owner || cm.IsStarbaseActive(s.Id);
                 if (on != e.LightsOn)
                 {
                     e.LightsOn = on;
-                    var mat = on ? StationAssets.OwnerLights(s.OwnerId) : StationAssets.LightsOff;
+                    var mat = on ? StationAssets.OwnerLights(owner) : StationAssets.LightsOff;
                     foreach (var r in e.OwnerLights) if (r != null) r.sharedMaterial = mat;
                 }
                 if ((e.Star - s.Position).sqrMagnitude > 0.01f)
@@ -335,15 +337,28 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>Чья станция в системе: владелец со звёздной базой, у вольного мира — его гарнизон; −1 — станции нет.</summary>
+        private static int StationOwner(StarSystem s)
+        {
+            if (s.OwnerId == NeutralWorlds.Owner)
+            {
+                var w = NeutralWorlds.At(s.Id);
+                return w != null ? w.FleetOwner : -1;
+            }
+            return s.OwnerId >= 0 && s.HasStarbase ? s.OwnerId : -1;
+        }
+
         /// <summary>Станция в виде системы: на собственной орбите внутри первой планеты.</summary>
         public static void SpawnInSystemView(Transform container, StarSystem system)
         {
-            if (container == null || system == null || system.OwnerId < 0 || !system.HasStarbase || !StationAssets.Ready) return;
+            if (container == null || system == null || !StationAssets.Ready) return;
+            int owner = StationOwner(system);
+            if (owner < 0) return;
             float minOrbit = 12f;
             if (system.Planets != null)
                 foreach (var p in system.Planets) minOrbit = Mathf.Min(minOrbit, p.OrbitRadius);
             float r = Mathf.Max(3.5f, minOrbit * 0.55f);
-            var go = StationAssets.Create(container, system.OwnerId, null);
+            var go = StationAssets.Create(container, owner, null);
             if (go == null) return;
             float a = Mathf.Repeat(system.Id * 1.7f, 6.2832f);
             go.transform.localPosition = new Vector3(Mathf.Cos(a) * r, 0.4f, Mathf.Sin(a) * r);

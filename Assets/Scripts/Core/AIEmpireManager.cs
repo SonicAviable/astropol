@@ -34,7 +34,8 @@ namespace StellarisClone.Core
 
         public static bool IsAI(int owner) => For(owner) != null;
 
-        public static string NameOf(int owner, string fallback = null) => For(owner)?.AIName ?? Threats.NameOf(owner) ?? fallback ?? Loc.T("Соперник");
+        public static string NameOf(int owner, string fallback = null)
+            => For(owner)?.AIName ?? Threats.NameOf(owner) ?? NeutralWorlds.FleetOwnerName(owner) ?? fallback ?? Loc.T("Соперник");
 
         /// <summary>Живые империи ИИ (не потерявшие все системы).</summary>
         public static IEnumerable<AIEmpireManager> Alive
@@ -66,6 +67,7 @@ namespace StellarisClone.Core
         public static Color MapColorFor(int owner)
         {
             if (Threats.IsThreat(owner)) return Threats.ColorOf(owner);
+            if (NeutralWorlds.IsFleetOwner(owner)) return NeutralWorlds.FleetOwnerColor(owner);
             var f = For(owner)?.Faction;
             if (f != null)
             {

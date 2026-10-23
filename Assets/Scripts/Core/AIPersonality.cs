@@ -224,7 +224,10 @@ namespace StellarisClone.Core
     {
         public static bool AtWar(int a, int b)
         {
-            if (a == b || a < 0 || b < 0) return false;
+            if (a == b) return false;
+            // Гарнизоны вольных миров: враги тех, кто воюет с их миром, и угроз
+            if (NeutralWorlds.IsFleetOwner(a) || NeutralWorlds.IsFleetOwner(b)) return NeutralWorlds.FleetsHostile(a, b);
+            if (a < 0 || b < 0) return false;
             if (a == 0 || b == 0)
             {
                 var ai = AIEmpireManager.For(a == 0 ? b : a);

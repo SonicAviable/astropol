@@ -28,10 +28,13 @@ namespace StellarisClone.Rendering
 
             float favor = w.FavorOf(0);
             Color fc = favor >= NeutralWorlds.FriendFavor ? DS.Green : favor < 0f ? DS.Red : DS.TextMuted;
+            var guards = NeutralWorlds.Garrison(w);
             InspChips(
-                (LGIcon.Population, w.Population.ToString(), Loc.T("жителей"), DS.NeonCyan),
-                (LGIcon.Defense, $"{NeutralWorlds.Defense(w):N0}", Loc.T("гарнизон"), DS.Red),
+                (LGIcon.Population, NeutralWorlds.TotalPop(w).ToString(), Loc.T("жителей"), DS.NeonCyan),
+                (LGIcon.Fleet, $"{guards.Count}/{NeutralWorlds.GarrisonTarget(w)}", Loc.T("стража"), DS.Red),
                 (LGIcon.Handshake, w.AtWarWith(0) ? Loc.T("война") : $"{favor:+0;-0;0}", Loc.T("расположение"), fc));
+            InspText(Loc.F("<color=#8AA2A8>Звёздная база здесь:</color> мощь {0:N0}   <color=#8AA2A8>Флот стражи:</color> мощь {1:N0}\n<color=#8AA2A8>Колоний:</color> {2} из {3}",
+                NeutralWorlds.StationDefense(w, system.Id), NeutralWorlds.GarrisonPower(w), NeutralWorlds.ColonyCount(w), NeutralWorlds.MaxColonies));
 
             // Покровитель и что он получает
             string patron = w.Patron < 0 ? Loc.T("нет")
@@ -96,7 +99,8 @@ namespace StellarisClone.Rendering
             bool confirming = Time.unscaledTime - _neutralWarConfirm < 3f;
             InspButton(confirming ? Loc.T("Точно? Нажмите ещё раз") : Loc.T("Объявить войну"), LGIcon.Swords, DS.BtnDanger,
                 NeutralWorlds.WarBlocker(w, 0),
-                Loc.F("Захват — блокадой: флот сильнее гарнизона {0:0} дн. подряд. Остальные вольные миры отвернутся от вас, репутация пострадает", NeutralWorlds.SiegeNeed(w)),
+                Loc.F("Захват — блокадой каждой системы: разбейте стражу, затем держите флот сильнее базы ({0:0} дн. в родной, {1:0} — в присоединённых). Остальные вольные миры отвернутся от вас, репутация пострадает",
+                    NeutralWorlds.SiegeNeed(w), NeutralWorlds.TerritorySiegeDays),
                 () =>
                 {
                     if (Time.unscaledTime - _neutralWarConfirm < 3f) { _neutralWarConfirm = -10f; NeutralWorlds.DeclareWar(w, 0); }
@@ -107,18 +111,23 @@ namespace StellarisClone.Rendering
         private void BuildNeutralSiege(StarSystem system, NeutralWorld w)
         {
             InspSection(Loc.T("ШТУРМ"), LGIcon.Siege);
-            float need = NeutralWorlds.SiegeNeed(w);
-            float defense = NeutralWorlds.Defense(w);
-            float mine = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPowerInSystem(0, w.SystemId) : 0f;
-            var home = EmpireStats.GetSystem(w.SystemId);
-            if (system.Id != w.SystemId && home != null)
-                InspText(Loc.F("<color=#8AA2A8>Блокада идёт в родной системе мира — {0}. С ней перейдут и присоединённые системы</color>", home.Name));
-            InspBar(LGIcon.Siege, Loc.T("Блокада"), w.Besieger == 0 ? w.SiegeDays : 0f, need, DS.Red);
+            float need = NeutralWorlds.SiegeNeed(w, system.Id);
+            float defense = NeutralWorlds.StationDefense(w, system.Id);
+            var fm = FleetManager.Instance;
+            float mine = fm != null ? fm.GetMilitaryPowerInSystem(0, system.Id) : 0f;
+            float guards = fm != null ? fm.GetMilitaryPowerInSystem(w.FleetOwner, system.Id) : 0f;
+            var g = NeutralWorlds.SiegeOf(w, system.Id);
+            InspBar(LGIcon.Siege, Loc.T("Блокада"), g != null && g.Besieger == 0 ? g.Days : 0f, need, DS.Red);
             string state = mine <= 0f ? Loc.T("Приведите сюда военный флот")
-                         : mine < defense ? Loc.F("Флот слабее гарнизона ({0:N0} против {1:N0}): штурм не идёт, корабли под огнём", mine, defense)
-                         : w.Besieger == 0 ? Loc.F("Блокада идёт: {0:0} из {1:0} дн.", w.SiegeDays, need)
-                         : Loc.T("Систему уже блокирует другая империя");
+                         : guards > 0f ? Loc.F("В системе стража мира (мощь {0:N0}): сначала разбейте её", guards)
+                         : mine < defense ? Loc.F("Флот слабее базы ({0:N0} против {1:N0}): штурм не идёт, корабли под огнём", mine, defense)
+                         : g != null && g.Besieger == 0 ? Loc.F("Блокада идёт: {0:0} из {1:0} дн.", g.Days, need)
+                         : g != null && g.Besieger > 0 ? Loc.T("Систему уже блокирует другая империя")
+                         : Loc.T("Блокада начинается");
             InspText($"<color=#8AA2A8>{state}</color>");
+            InspText(system.Id == w.SystemId
+                ? Loc.T("<color=#8AA2A8>Родная система: с ней перейдёт всё, что осталось от мира</color>")
+                : Loc.T("<color=#8AA2A8>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>"));
             InspButton(Loc.F("Заключить мир  · {0:0} влияния", NeutralWorlds.PeaceInfluence), LGIcon.Peace, DS.BtnPrimary,
                 NeutralWorlds.PeaceBlocker(w, 0), Loc.F("Перемирие на {0} мес.; расположение останется низким", NeutralWorlds.TruceMonths),
                 () => NeutralWorlds.MakePeace(w, 0), system);

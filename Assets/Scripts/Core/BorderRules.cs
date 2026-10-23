@@ -15,7 +15,7 @@ namespace StellarisClone.Core
     public static class BorderRules
     {
         /// <summary>Пираты, левиафаны и «никто» границ не признают.</summary>
-        public static bool Ignores(int mover) => mover < 0 || Threats.IsThreat(mover);
+        public static bool Ignores(int mover) => mover < 0 || Threats.IsThreat(mover) || NeutralWorlds.IsFleetOwner(mover);
 
         public static bool CanEnter(int mover, int systemId) => CanEnter(mover, EmpireStats.GetSystem(systemId));
 

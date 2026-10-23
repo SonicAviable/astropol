@@ -38,6 +38,7 @@ namespace StellarisClone.Core
         {
             if (a == b || a < 0 || b < 0) return true;
             if (Threats.IsThreat(a) || Threats.IsThreat(b)) return true;
+            if (NeutralWorlds.IsFleetOwner(a) || NeutralWorlds.IsFleetOwner(b)) return true;   // вольные миры — свой учёт контактов
             if (!Vision.Active) return true;
             return _met.Contains(Key(a, b));
         }
@@ -61,6 +62,7 @@ namespace StellarisClone.Core
         public static void Meet(int a, int b)
         {
             if (a == b || a < 0 || b < 0 || Threats.IsThreat(a) || Threats.IsThreat(b)) return;
+            if (NeutralWorlds.IsFleetOwner(a) || NeutralWorlds.IsFleetOwner(b)) return;
             if (!_met.Add(Key(a, b))) return;
             OnFirstContact?.Invoke(a, b);
             if (a == 0 || b == 0) PlayerContact(a == 0 ? b : a);
