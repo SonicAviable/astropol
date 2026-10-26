@@ -830,6 +830,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private void HandleNavHotkeys()
         {
             if (!IsGameStarted || IsBlockingFlowOpen) return;
+            if (StellarisClone.Ground.GroundBattleManager.InBattle) return;
             if (GameFlowUI.Instance != null && GameFlowUI.Instance.BlocksTimeHotkeys) return;
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;
             if (BuildMenuModal.IsOpenNow || (TechConfirmDialog.Instance != null && TechConfirmDialog.Instance.IsOpen)) return;

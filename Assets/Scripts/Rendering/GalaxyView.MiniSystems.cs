@@ -118,7 +118,7 @@ namespace StellarisClone.Rendering
         {
             MiniSys hs = null;
             int hi = -1;
-            bool blocked = off || cam == null
+            bool blocked = off || cam == null || StellarisClone.Ground.GroundBattleManager.InBattle
                            || (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen)
                            || (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject());
             Vector2 mouse = Input.mousePosition;

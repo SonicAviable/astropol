@@ -333,7 +333,8 @@ namespace StellarisClone.Core
 
         public static bool CanSaveNow =>
             UIManager.IsGameStarted && !GameSession.IsLoading
-            && (VictoryManager.Instance == null || !VictoryManager.Instance.IsFinished);
+            && (VictoryManager.Instance == null || !VictoryManager.Instance.IsFinished)
+            && !StellarisClone.Ground.GroundBattleManager.InBattle;
 
         // ------------------------------------------------------------------ Слоты
 
@@ -942,7 +943,12 @@ namespace StellarisClone.Core
             {
                 if (SaveSystem.CanSaveNow) SaveSystem.Save(Loc.T("Быстрое сохранение"));
             }
-            else if (Input.GetKeyDown(KeyCode.F9))
+            else if (Input.GetKeyDown(KeyCode.F9) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && StellarisClone.Ground.GroundSandbox.Allowed)
+            {
+                // Отладочный наземный бой (редактор и dev-сборка)
+                StellarisClone.Ground.GroundSandbox.Launch();
+            }
+            else if (Input.GetKeyDown(KeyCode.F9) && !StellarisClone.Ground.GroundBattleManager.InBattle)
             {
                 if (SaveSystem.Exists(SaveSystem.SlotFromName(Loc.T("Быстрое сохранение"))))
                     SaveSystem.LoadSlot(SaveSystem.SlotFromName(Loc.T("Быстрое сохранение")));

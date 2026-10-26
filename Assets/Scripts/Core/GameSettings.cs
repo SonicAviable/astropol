@@ -41,6 +41,10 @@ namespace StellarisClone.Core
         public static int AutosaveIndex { get; private set; }
         public static bool EdgeScroll { get; private set; }
         public static float CameraSpeed { get; private set; }
+        /// <summary>Наземные бои: кровь и расчленёнка (выкл. — пыль и искры, без ошмётков).</summary>
+        public static bool Gore { get; private set; }
+        /// <summary>Наземные бои: замедление и наезд камеры на добиваниях героев и техники.</summary>
+        public static bool KillCam { get; private set; }
 
         public static float UIScale => UIScaleOptions[Mathf.Clamp(UIScaleIndex, 0, UIScaleOptions.Length - 1)];
         public static int AutosaveMonths => AutosaveOptions[Mathf.Clamp(AutosaveIndex, 0, AutosaveOptions.Length - 1)];
@@ -121,6 +125,8 @@ namespace StellarisClone.Core
             AutosaveIndex = PlayerPrefs.GetInt("set.autosave", 2);
             EdgeScroll = PlayerPrefs.GetInt("set.edge", 0) == 1;
             CameraSpeed = PlayerPrefs.GetFloat("set.camspeed", 1f);
+            Gore = PlayerPrefs.GetInt("set.gore", 1) == 1;
+            KillCam = PlayerPrefs.GetInt("set.killcam", 1) == 1;
         }
 
         private static int FindResolution(int w, int h)
@@ -231,11 +237,14 @@ namespace StellarisClone.Core
         public static void SetEdgeScroll(bool v) { EdgeScroll = v; PlayerPrefs.SetInt("set.edge", v ? 1 : 0); StrategyCameraController.EdgeScrollingSetting = v; Commit(); }
         public static void SetCameraSpeed(float v) { CameraSpeed = Mathf.Clamp(v, 0.4f, 2.5f); PlayerPrefs.SetFloat("set.camspeed", CameraSpeed); StrategyCameraController.PanSpeedSetting = CameraSpeed; Commit(); }
 
+        public static void SetGore(bool v) { Gore = v; PlayerPrefs.SetInt("set.gore", v ? 1 : 0); Commit(); }
+        public static void SetKillCam(bool v) { KillCam = v; PlayerPrefs.SetInt("set.killcam", v ? 1 : 0); Commit(); }
+
         /// <summary>Сбросить вкладку к значениям по умолчанию.</summary>
         public static void ResetDefaults()
         {
             foreach (var k in new[] { "set.vsync", "set.fps", "set.blur", "set.glow", "set.master", "set.music", "set.sfx",
-                                      "set.bgmute", "set.alarmfx", "set.uiscale", "set.uibright", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
+                                      "set.bgmute", "set.alarmfx", "set.uiscale", "set.uibright", "set.tooltips", "set.autosave", "set.edge", "set.camspeed", "set.gore", "set.killcam" })
                 PlayerPrefs.DeleteKey(k);
             s_loaded = false;
             EnsureLoaded();

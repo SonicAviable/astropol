@@ -276,6 +276,13 @@ namespace StellarisClone.Rendering
             var open = LGBuild.Button(folder, "Open", UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.3f),
                 () => Application.OpenURL("file:///" + SaveSystem.Folder.Replace('\\', '/')), LGIcon.Load, Loc.T("ОТКРЫТЬ"), 11);
             ((RectTransform)open.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(150, 36));
+
+            y += 6f;
+            y = LGControls.Section(_content, y, Loc.T("НАЗЕМНЫЕ БОИ"), LGIcon.Swords);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Кровь и расчленёнка"), Loc.T("Выключено: вместо крови — пыль и искры, без ошмётков. Рейтинг 16+")),
+                GameSettings.Gore, GameSettings.SetGore);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Кинокамера добиваний"), Loc.T("Замедление и наезд камеры, когда герой или техника добивает врага")),
+                GameSettings.KillCam, GameSettings.SetKillCam);
         }
 
         private static string Percent(float v) => Mathf.RoundToInt(v * 100f) + "%";

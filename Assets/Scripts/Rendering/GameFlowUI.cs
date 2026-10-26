@@ -118,6 +118,7 @@ namespace StellarisClone.Rendering
         {
             var ui = UIManager.Instance;
             if (ui == null || !UIManager.IsGameStarted || SceneFader.IsBusy || LoadingScreen.IsActive) return;
+            if (StellarisClone.Ground.GroundBattleManager.InBattle) return;   // в бою Esc — отмена приказа; выход — кнопкой «Отозвать десант»
             var sel = UnityEngine.EventSystems.EventSystem.current != null ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
             if (sel != null && sel.GetComponent<InputField>() != null && sel.GetComponent<InputField>().isFocused) return;
 
