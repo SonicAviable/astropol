@@ -21,6 +21,8 @@ namespace StellarisClone.Ground
         private float _intro;
         private Vector3 _punch;
         private const float MinZoom = 18f, MaxZoom = 90f;
+        private UnityEngine.Rendering.VolumeProfile _grade;
+        private UnityEngine.Rendering.Universal.ChromaticAberration _chroma;
 
         public static BattleCamera Create(Transform root, GroundMap map, Vector3 focus)
         {
@@ -45,11 +47,37 @@ namespace StellarisClone.Ground
             bc.Cam = cam;
             bc._map = map;
             bc._focus = focus;
+            bc.BuildGrade(root);
             Instance = bc;
             return bc;
         }
 
-        private void OnDestroy() { if (Instance == this) Instance = null; }
+        /// <summary>Цветокор боя: свой глобальный Volume поверх галактического — контраст, виньетка, хроматизм при сильной тряске.</summary>
+        private void BuildGrade(Transform root)
+        {
+            var go = new GameObject("BattleGrade");
+            go.transform.SetParent(root, false);
+            var vol = go.AddComponent<UnityEngine.Rendering.Volume>();
+            vol.isGlobal = true;
+            vol.priority = 50f;
+            _grade = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
+            _grade.hideFlags = HideFlags.DontSave;
+            var ca = _grade.Add<UnityEngine.Rendering.Universal.ColorAdjustments>(true);
+            ca.contrast.Override(18f);
+            ca.saturation.Override(-8f);
+            var vg = _grade.Add<UnityEngine.Rendering.Universal.Vignette>(true);
+            vg.intensity.Override(0.3f);
+            vg.smoothness.Override(0.45f);
+            _chroma = _grade.Add<UnityEngine.Rendering.Universal.ChromaticAberration>(true);
+            _chroma.intensity.Override(0f);
+            vol.sharedProfile = _grade;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+            if (_grade != null) Destroy(_grade);
+        }
 
         public Vector3 Focus => _focus;
 
@@ -145,6 +173,7 @@ namespace StellarisClone.Ground
                 pos += new Vector3(Mathf.PerlinNoise(t, 0.1f) - 0.5f, Mathf.PerlinNoise(0.2f, t) - 0.5f, Mathf.PerlinNoise(t, t) - 0.5f) * s * 1.6f;
                 rot *= Quaternion.Euler((Mathf.PerlinNoise(t * 0.7f, 3f) - 0.5f) * s * 4f, (Mathf.PerlinNoise(5f, t * 0.7f) - 0.5f) * s * 4f, (Mathf.PerlinNoise(t, 7f) - 0.5f) * s * 3f);
                 _trauma = Mathf.Max(0f, _trauma - dt * 1.4f);
+                if (_chroma != null) _chroma.intensity.value = Mathf.Clamp01((_trauma - 0.35f) * 1.6f);
             }
             // Не уходить под землю
             var l = _map.ToLocal(pos);
