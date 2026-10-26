@@ -273,13 +273,19 @@ namespace StellarisClone.Core
                 Done = () => TechTreePanel.Instance != null && TechTreePanel.Instance.IsOpen
             });
 
-            _steps.Add(new Step
+            string neighbours = Loc.T("В галактике вы не одни. <b>Дипломатия</b> — договоры, торговля и войны. Соперники следят за ") +
+                                Loc.T("вашей мощью: слабую империю попробуют съесть.");
+            Step diplomacy = null;
+            diplomacy = new Step
             {
                 Title = Loc.T("Соседи"),
-                Text = Loc.T("В галактике вы не одни. <b>Дипломатия</b> — договоры, торговля и войны. Соперники следят за ") +
-                       Loc.T("вашей мощью: слабую империю попробуют съесть."),
-                Anchor = UIAnchors.Diplomacy
-            });
+                Text = neighbours,
+                Anchor = UIAnchors.Diplomacy,
+                // Кнопка «Дипломатия» появляется в меню только после первой встречи — до неё объясняем, где её ждать
+                Enter = () => diplomacy.Text = Contacts.PlayerMetAnyEmpire ? neighbours
+                    : neighbours + Loc.T("\n\nРаздел «Дипломатия» появится в меню слева после первой встречи с другой империей — разведывайте галактику.")
+            };
+            _steps.Add(diplomacy);
 
             _steps.Add(new Step
             {

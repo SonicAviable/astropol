@@ -28,13 +28,14 @@ namespace StellarisClone.Core
         public static readonly string[] NeutralNames = { Loc.T("2 мира"), Loc.T("3 мира"), Loc.T("4 мира"), Loc.T("5 миров"), Loc.T("6 миров") };
         public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
-        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя.
-        // Карты увеличены под шесть империй (игрок и до пяти соперников): ~20–50 систем на каждую.
-        public int StarCount => GalaxySize == 0 ? 110 : GalaxySize == 2 ? 320 : 210;
-        public float Radius => GalaxySize == 0 ? 180f : GalaxySize == 2 ? 300f : 258f;
+        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя (~17,5·√N).
+        // Под шесть империй и вольные миры: на средней ~55 систем на империю — к 40-й минуте ещё есть куда расти
+        // (на прежних 210 звёздах империи упирались друг в друга уже к середине партии).
+        public int StarCount => GalaxySize == 0 ? 160 : GalaxySize == 2 ? 480 : 330;
+        public float Radius => GalaxySize == 0 ? 222f : GalaxySize == 2 ? 372f : 318f;
         public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
-        /// <summary>Доминирование — около 55% систем галактики (110 / 210 / 320 звёзд); порог ещё нужно удерживать год.</summary>
-        public int DominationTarget => GalaxySize == 0 ? 60 : GalaxySize == 2 ? 176 : 115;
+        /// <summary>Доминирование — около 55% систем галактики (160 / 330 / 480 звёзд); порог ещё нужно удерживать год.</summary>
+        public int DominationTarget => GalaxySize == 0 ? 88 : GalaxySize == 2 ? 264 : 182;
 
         /// <summary>Уровень сложности 0…4: новичок, лёгкая, нормальная, сложная, безжалостная.</summary>
         public int Tier => Level >= 0 ? Mathf.Clamp(Level, 0, AIDifficulty.Count - 1) : Mathf.Clamp(Difficulty + 1, 0, AIDifficulty.Count - 1);

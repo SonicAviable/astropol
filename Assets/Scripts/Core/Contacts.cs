@@ -49,6 +49,20 @@ namespace StellarisClone.Core
         public static string NameForPlayer(int owner, string fallback = null)
             => PlayerMet(owner) ? AIEmpireManager.NameOf(owner, fallback) : UnknownName;
 
+        /// <summary>
+        /// Встретил ли игрок хоть одну империю. До первой встречи дипломатии не с кем вести — раздел в меню спрятан.
+        /// Вне партии (Vision выключен) — да.
+        /// </summary>
+        public static bool PlayerMetAnyEmpire
+        {
+            get
+            {
+                if (!Vision.Active) return true;
+                foreach (var ai in AIEmpireManager.All) if (PlayerMet(ai.OwnerId)) return true;
+                return false;
+            }
+        }
+
         public static int UnmetByPlayer
         {
             get

@@ -5798,3 +5798,4 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Пиратский корабль (Sketchfab): jkazulyblanco — CC BY 4.0	Pirate ship (Sketchfab): jkazulyblanco — CC BY 4.0
 Торговля, покровительство, захват	Trade, patronage, conquest
 <color=#8AA2A8>(форпост дороже на {0:0} — империя разрослась: +{1:0.#} за каждую систему сверх {2})</color> 	<color=#8AA2A8>(outposts cost {0:0} more — your empire has grown: +{1:0.#} per system beyond {2})</color> 
+\n\nРаздел «Дипломатия» появится в меню слева после первой встречи с другой империей — разведывайте галактику.	\n\nThe «Diplomacy» section will appear in the left menu after your first contact with another empire — keep exploring the galaxy.

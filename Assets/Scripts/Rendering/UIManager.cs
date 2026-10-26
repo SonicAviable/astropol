@@ -556,6 +556,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
+            _navOrder.Clear();
             mRt.anchoredPosition = new Vector2(TopBarMargin, -(TopBarMargin + RulerBadge.Height + 10f));
             LG.Motion(menu, LGAppear.Kind.SlideLeft).distance = 22f;
 
@@ -569,6 +570,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 bRt.pivot = new Vector2(0, 1);
                 bRt.anchoredPosition = new Vector2(0, -y);
                 y += 46f;
+                _navOrder.Add(bRt);
 
                 var bar = LGBuild.Panel(b.transform, "Accent", new Color(accent.r, accent.g, accent.b, 0.95f));
                 bar.rectTransform.anchorMin = new Vector2(0, 0.5f);
@@ -642,7 +644,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tgRt.anchorMin = tgRt.anchorMax = new Vector2(0, 1);
             tgRt.pivot = new Vector2(0, 1);
             tgRt.anchoredPosition = new Vector2(0, -y);
-            _navToggleIcon = LGIcons.Create(tg.transform, LGIcon.Back, 11f, DS.TextMuted);
+            _navOrder.Add(tgRt);
+            _navDiplo = menu.transform.Find("NavDiplo")?.GetComponent<RectTransform>();
+            _navDiploShown = true;
+            RefreshDiplomacyNav(force: true);
+            _navToggleIcon =LGIcons.Create(tg.transform, LGIcon.Back, 11f, DS.TextMuted);
             _navToggleIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(NavMenuCollapsedW * 0.5f, 0), new Vector2(11, 11));
             _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
             var tt = CreateText(tg.transform, Loc.T("СВЕРНУТЬ"), 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleLeft);
@@ -691,6 +697,50 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (n <= 0) return;
             _navDecisionBadge.text = n > 9 ? "9+" : n.ToString();
             _navDecisionPill.color = fresh > 0 ? DS.Gold : DS.Green;
+        }
+
+        // ---------- Дипломатия появляется в меню только после первой встречи с другой империей ----------
+
+        private readonly List<RectTransform> _navOrder = new List<RectTransform>();
+        private RectTransform _navDiplo;
+        private bool _navDiploShown;
+        private bool _navDiploFresh;
+        private float _navDiploTimer;
+
+        /// <summary>
+        /// Раз в полсекунды: встретил ли игрок хоть одну империю. До встречи пункта «Дипломатия» нет —
+        /// остальные пункты сдвигаются вверх без пустого места. Появившийся пункт пульсирует, пока его не откроют.
+        /// </summary>
+        private void RefreshDiplomacyNav(bool force = false, float dt = 0f)
+        {
+            if (_navDiplo == null) return;
+            if (!force && (_navDiploTimer -= dt) > 0f) return;
+            _navDiploTimer = 0.5f;
+            bool show = Contacts.PlayerMetAnyEmpire;
+            if (!force && show == _navDiploShown)
+            {
+                if (_navDiploFresh && IsWindowOpen(NavWindow.Diplomacy))
+                {
+                    _navDiploFresh = false;
+                    LGFx.Pulse(_navDiplo.gameObject, false);
+                }
+                return;
+            }
+            bool appeared = show && !_navDiploShown && !force;
+            _navDiploShown = show;
+            _navDiplo.gameObject.SetActive(show);
+            float y = 0f;
+            foreach (var rt in _navOrder)
+            {
+                if (rt == null || !rt.gameObject.activeSelf) continue;
+                rt.anchoredPosition = new Vector2(0, -y);
+                y += 46f;
+            }
+            if (appeared)
+            {
+                _navDiploFresh = true;
+                LGFx.Pulse(_navDiplo.gameObject, true);
+            }
         }
 
         private void UpdateNavMenu(float dt)
@@ -786,7 +836,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else if (Input.GetKeyDown(KeyCode.I)) ToggleWindow(NavWindow.Empire);
             else if (Input.GetKeyDown(KeyCode.L)) ToggleWindow(NavWindow.Laws);
             else if (Input.GetKeyDown(KeyCode.T)) ToggleWindow(NavWindow.Tech);
-            else if (Input.GetKeyDown(KeyCode.P)) ToggleWindow(NavWindow.Diplomacy);
+            else if (Input.GetKeyDown(KeyCode.P) && Contacts.PlayerMetAnyEmpire) ToggleWindow(NavWindow.Diplomacy);
             else if (Input.GetKeyDown(KeyCode.K)) ToggleWindow(NavWindow.Espionage);
             else if (Input.GetKeyDown(KeyCode.N)) ToggleWindow(NavWindow.Designer);
             else if (Input.GetKeyDown(KeyCode.G)) { CloseMainWindows(null); SelectAllWarships(); }
@@ -1580,6 +1630,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             UpdateSpeedControl();
             UpdateNavMenu(dt);
             UpdateDecisionBadge(dt);
+            RefreshDiplomacyNav(dt: dt);
             OutlinerPanel.Yield = _inspTargetAlpha > 0.5f;
 
             if (TimeManager.Instance != null && _dateText != null)
