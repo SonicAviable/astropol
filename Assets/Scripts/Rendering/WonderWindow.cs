@@ -103,14 +103,14 @@ namespace StellarisClone.Rendering
             // Шапка
             var icon = LGIcons.Create(rt, LGIcon.Wonder, 26, Gold);
             icon.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(28, -24), new Vector2(26, 26));
-            _title = LGBuild.Label(rt, "ЧУДО ФРАКЦИИ", 28, Color.white, TextAnchor.UpperLeft, bold: true);
+            _title = LGBuild.Label(rt, Loc.T("ЧУДО ФРАКЦИИ"), 28, Color.white, TextAnchor.UpperLeft, bold: true);
             _title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(64, -18), new Vector2(700, 36));
             _subtitle = LGBuild.Label(rt, "", 12, Muted, TextAnchor.UpperLeft);
             _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(66, -56), new Vector2(1100, 18));
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, "Закрыть  <color=#8AA2A8>(Esc / U)</color>");
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / U)</color>"));
 
             // ---- Сцена слева ----
             var scene = LGBuild.Panel(rt, "Scene", new Color(0.004f, 0.01f, 0.018f, 1f));
@@ -169,7 +169,7 @@ namespace StellarisClone.Rendering
             _holo = LGBuild.Rect(holoMask, "Holo").gameObject.AddComponent<RawImage>();
             _holo.rectTransform.Stretch();
             _holo.raycastTarget = false;
-            var hl = LGBuild.Label(hf.transform, "ГОЛОГРАММА СТРОЙКИ", 9, Gold, TextAnchor.UpperLeft, bold: true);
+            var hl = LGBuild.Label(hf.transform, Loc.T("ГОЛОГРАММА СТРОЙКИ"), 9, Gold, TextAnchor.UpperLeft, bold: true);
             hl.rectTransform.Stretch(12, 0, 0, 8);
             hl.Track(1.8f);
 
@@ -201,9 +201,9 @@ namespace StellarisClone.Rendering
             int siteId = st.SystemId >= 0 ? st.SystemId : _candidate;
             var site = EmpireStats.GetSystem(siteId);
 
-            _title.text = "ЧУДО ФРАКЦИИ";
-            _subtitle.text = $"<color={LGBuild.Hex(def.Color)}>{def.Name}</color>  ·  {def.Title.ToLower()}  ·  этапов завершено: {st.Built} из 3" +
-                             (st.InProgress ? $"  ·  строится этап {Roman(st.Built + 1)}" : "");
+            _title.text = Loc.T("ЧУДО ФРАКЦИИ");
+            _subtitle.text = Loc.F("<color={0}>{1}</color>  ·  {2}  ·  этапов завершено: {3} из 3", LGBuild.Hex(def.Color), def.Name, def.Title.ToLower(), st.Built) +
+                             (st.InProgress ? Loc.F("  ·  строится этап {0}", Roman(st.Built + 1)) : "");
             _name.text = def.Name.ToUpper();
             _tagline.text = def.Title;
             _tagline.color = def.Color;
@@ -294,19 +294,19 @@ namespace StellarisClone.Rendering
         {
             bool locked = st.SystemId >= 0;
             var card = Card("Site", 104, new Color(def.Color.r, def.Color.g, def.Color.b, 0.35f));
-            Caption(card, locked ? "МЕСТО СТРОЙКИ" : "МЕСТО СТРОЙКИ  ·  ВЫБОР", Muted);
+            Caption(card, locked ? Loc.T("МЕСТО СТРОЙКИ") : Loc.T("МЕСТО СТРОЙКИ  ·  ВЫБОР"), Muted);
 
-            string name = site != null ? site.Name : "нет подходящей системы";
+            string name = site != null ? site.Name : Loc.T("нет подходящей системы");
             string star = site != null ? StarClassName(site.SpectralClass) : "";
             string extra = "";
             if (site != null && def.SiteYield != null)
             {
                 float y = locked ? st.Yield : def.SiteYield(site);
-                extra = $"  ·  отдача <color={(y >= 1f ? "#7CF29A" : "#FF9A8A")}>×{y:0.##}</color>";
+                extra = Loc.F("  ·  отдача <color={0}>×{1:0.##}</color>", (y >= 1f ? "#7CF29A" : "#FF9A8A"), y);
             }
             var t = LGBuild.Label(card, $"<b>{name}</b>   <color=#8AA2A8>{star}{extra}</color>", 16, Color.white, TextAnchor.UpperLeft);
             t.rectTransform.Stretch(18, 0, 120, 32);
-            var rule = LGBuild.Label(card, (locked ? "Место закреплено после закладки первого этапа. " : "") + def.Site + ".",
+            var rule = LGBuild.Label(card, (locked ? Loc.T("Место закреплено после закладки первого этапа. ") : "") + def.Site + ".",
                                      11, Muted, TextAnchor.UpperLeft, wrap: true);
             rule.rectTransform.Stretch(18, 8, 120, 60);
 
@@ -318,8 +318,8 @@ namespace StellarisClone.Rendering
                 var nrt = (RectTransform)next.transform;
                 nrt.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(40, 40));
                 foreach (Transform c in nrt) c.localRotation = Quaternion.Euler(0, 0, 180f);
-                TooltipHelper.Attach(prev.gameObject, $"Предыдущая подходящая система ({sites.Count})");
-                TooltipHelper.Attach(next.gameObject, $"Следующая подходящая система ({sites.Count})");
+                TooltipHelper.Attach(prev.gameObject, Loc.F("Предыдущая подходящая система ({0})", sites.Count));
+                TooltipHelper.Attach(next.gameObject, Loc.F("Следующая подходящая система ({0})", sites.Count));
             }
         }
 
@@ -355,8 +355,8 @@ namespace StellarisClone.Rendering
             var title = LGBuild.Label(card, $"<b>{stage.Name.ToUpper()}</b>", 14, done ? new Color(0.7f, 1f, 0.78f) : Color.white, TextAnchor.UpperLeft);
             title.rectTransform.Stretch(70, 0, 160, 14);
             title.Track(0.8f);
-            string state = done ? "<color=#7CF29A>ЗАВЕРШЁН</color>" : building ? $"<color={LGBuild.Hex(def.Color)}>СТРОИТСЯ</color>"
-                         : next ? "<color=#F2C747>СЛЕДУЮЩИЙ</color>" : "<color=#6F8790>ВПЕРЕДИ</color>";
+            string state = done ? Loc.T("<color=#7CF29A>ЗАВЕРШЁН</color>") : building ? Loc.F("<color={0}>СТРОИТСЯ</color>", LGBuild.Hex(def.Color))
+                         : next ? Loc.T("<color=#F2C747>СЛЕДУЮЩИЙ</color>") : Loc.T("<color=#6F8790>ВПЕРЕДИ</color>");
             var stLbl = LGBuild.Label(card, state, 10, Color.white, TextAnchor.UpperRight, bold: true);
             stLbl.rectTransform.Stretch(0, 0, 18, 16);
             stLbl.Track(1.6f);
@@ -390,7 +390,7 @@ namespace StellarisClone.Rendering
             Res(LGIcon.Influence, CInfluence, inf, eco != null ? eco.Influence : 0f);
             int techs = EmpireStats.TechCount(0);
             LGIcons.IconLabel(row, LGIcon.Clock, WonderManager.FormatDays(WonderManager.StageDays(stage, 0)), 12, Muted, Color.white, 14);
-            LGIcons.IconLabel(row, LGIcon.Research, $"{stage.Techs} техн.", 12, techs >= stage.Techs ? new Color(0.5f, 0.9f, 1f) : new Color(1f, 0.5f, 0.45f),
+            LGIcons.IconLabel(row, LGIcon.Research, Loc.F("{0} техн.", stage.Techs), 12, techs >= stage.Techs ? new Color(0.5f, 0.9f, 1f) : new Color(1f, 0.5f, 0.45f),
                               techs >= stage.Techs ? Color.white : new Color(1f, 0.5f, 0.45f), 14);
 
             if (!building && !next) return;
@@ -413,9 +413,9 @@ namespace StellarisClone.Rendering
                     WonderManager.Instance.CancelStage(0);
                     SFXManager.Play(Core.Audio.Sfx.UiBack);
                     _sig = null; Refresh();
-                }, null, "ОТМЕНИТЬ", 10);
+                }, null, Loc.T("ОТМЕНИТЬ"), 10);
                 ((RectTransform)cancel.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-18, 16), new Vector2(116, 32));
-                TooltipHelper.Attach(cancel.gameObject, "Отменить этап: вернётся половина ресурсов." + (st.Built == 0 ? " Место стройки освободится." : ""));
+                TooltipHelper.Attach(cancel.gameObject, Loc.T("Отменить этап: вернётся половина ресурсов.") + (st.Built == 0 ? Loc.T(" Место стройки освободится.") : ""));
                 return;
             }
 
@@ -428,7 +428,7 @@ namespace StellarisClone.Rendering
                     if (!WonderManager.Instance.StartStage(0, siteId)) { SFXManager.Play(Core.Audio.Sfx.UiDenied); return; }
                     SFXManager.Play(Core.Audio.Sfx.UiConfirm);
                     _sig = null; Refresh();
-                }, null, st.Built == 0 ? "ЗАЛОЖИТЬ ЧУДО" : "ЗАЛОЖИТЬ ЭТАП", 11);
+                }, null, st.Built == 0 ? Loc.T("ЗАЛОЖИТЬ ЧУДО") : Loc.T("ЗАЛОЖИТЬ ЭТАП"), 11);
             ((RectTransform)go.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-18, 16), new Vector2(170, 34));
             go.interactable = can;
             if (!can)
@@ -451,8 +451,8 @@ namespace StellarisClone.Rendering
                 LGBuild.SetBar(bar, p);
                 if (label != null)
                     label.text = paused
-                        ? "<color=#FF9A8A>ОСТАНОВЛЕНО — система потеряна</color>"
-                        : $"{p * 100f:0}%   <color=#8AA2A8>осталось {WonderManager.FormatDays(st.DaysLeft)}</color>";
+                        ? Loc.T("<color=#FF9A8A>ОСТАНОВЛЕНО — система потеряна</color>")
+                        : Loc.F("{0:0}%   <color=#8AA2A8>осталось {1}</color>", p * 100f, WonderManager.FormatDays(st.DaysLeft));
             }
         }
 
@@ -460,11 +460,11 @@ namespace StellarisClone.Rendering
         {
             bool key = EventDatabase.HasChainFlag("wonder_key"), mind = EventDatabase.HasChainFlag("wonder_mind");
             var card = Card("Bonuses", key || mind ? 84 : 64, new Color(0.85f, 0.65f, 0.95f, 0.3f));
-            Caption(card, "УСКОРЕНИЕ СТРОЙКИ", Muted);
+            Caption(card, Loc.T("УСКОРЕНИЕ СТРОЙКИ"), Muted);
             string text = key || mind
-                ? (key ? "<color=#E3B8FF>Ключ Строителей</color> — этапы на 25% дешевле и быстрее.   " : "") +
-                  (mind ? "<color=#E3B8FF>Архитектура Тессерама</color> — этапы на 20% быстрее." : "")
-                : "Пока нет. Цепочки событий «Сердце Тишины» и «Пробуждённый разум» могут дать скидку на стройку.";
+                ? (key ? Loc.T("<color=#E3B8FF>Ключ Строителей</color> — этапы на 25% дешевле и быстрее.   ") : "") +
+                  (mind ? Loc.T("<color=#E3B8FF>Архитектура Тессерама</color> — этапы на 20% быстрее.") : "")
+                : Loc.T("Пока нет. Цепочки событий «Сердце Тишины» и «Пробуждённый разум» могут дать скидку на стройку.");
             var t = LGBuild.Label(card, text, 11, new Color(0.85f, 0.9f, 0.94f), TextAnchor.UpperLeft, wrap: true);
             t.rectTransform.Stretch(18, 8, 18, 32);
         }
@@ -478,12 +478,12 @@ namespace StellarisClone.Rendering
             dests.Sort((x, y) => string.CompareOrdinal(x.Name, y.Name));
             int rows = Mathf.CeilToInt(dests.Count / 3f);
             var card = Card("Gate", 96 + rows * 40, new Color(0.72f, 0.5f, 1f, 0.5f));
-            Caption(card, "СЕТЬ ВРАТ", new Color(0.8f, 0.65f, 1f));
+            Caption(card, Loc.T("СЕТЬ ВРАТ"), new Color(0.8f, 0.65f, 1f));
             int fleets = wm.FleetsAtGate();
             string status = st.GateCooldown > 0
-                ? $"Врата перезаряжаются: ещё {st.GateCooldown} дн."
-                : fleets > 0 ? $"У Врат ({gateSys?.Name}) стоят флотов: <b>{fleets}</b>. Выберите систему — все они перейдут туда мгновенно."
-                             : $"У Врат ({gateSys?.Name}) нет флотов. Приведите флот в систему Врат, чтобы перебросить его.";
+                ? Loc.F("Врата перезаряжаются: ещё {0} дн.", st.GateCooldown)
+                : fleets > 0 ? Loc.F("У Врат ({0}) стоят флотов: <b>{1}</b>. Выберите систему — все они перейдут туда мгновенно.", gateSys?.Name, fleets)
+                             : Loc.F("У Врат ({0}) нет флотов. Приведите флот в систему Врат, чтобы перебросить его.", gateSys?.Name);
             var t = LGBuild.Label(card, status, 11, new Color(0.85f, 0.9f, 0.94f), TextAnchor.UpperLeft, wrap: true);
             t.rectTransform.Stretch(18, 0, 18, 32);
 
@@ -511,7 +511,7 @@ namespace StellarisClone.Rendering
             int n = 0;
             foreach (var ai in AIEmpireManager.All) if (!ai.IsEliminated) n++;
             var card = Card("Rivals", 50 + n * 46, new Color(1f, 1f, 1f, 0.15f));
-            Caption(card, "ЧУДЕСА СОПЕРНИКОВ", Muted);
+            Caption(card, Loc.T("ЧУДЕСА СОПЕРНИКОВ"), Muted);
             float y = -40f;
             foreach (var ai in AIEmpireManager.All)
             {
@@ -528,14 +528,14 @@ namespace StellarisClone.Rendering
                 Color ac = ai.MapColor;
                 var crest = FactionEmblems.Create(row, met ? FactionEmblems.ForOwner(ai.OwnerId) : null, 30, ac);
                 if (crest != null) crest.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(30, 30));
-                string who = met ? $"<b>{ai.AIName}</b>" : "<color=#6F8790>Неизвестная империя</color>";
+                string who = met ? $"<b>{ai.AIName}</b>" : Loc.T("<color=#6F8790>Неизвестная империя</color>");
                 string what = met && def != null ? $"<color=#8AA2A8>{def.Name}</color>" : "<color=#6F8790>—</color>";
                 var name = LGBuild.Label(row, $"{who}\n{what}", 11, Color.white, TextAnchor.MiddleLeft);
                 name.rectTransform.Stretch(40, 0, 180, 0);
 
-                string prog = !met || st == null ? "?" : st.Built >= 3 ? "<color=#F2C747>ЗАВЕРШЕНО</color>"
-                            : st.InProgress ? $"этап {st.Built + 1} из 3 · {wm.Progress(st) * 100f:0}%"
-                            : st.Built > 0 ? $"этапов: {st.Built} из 3" : "не начато";
+                string prog = !met || st == null ? "?" : st.Built >= 3 ? Loc.T("<color=#F2C747>ЗАВЕРШЕНО</color>")
+                            : st.InProgress ? Loc.F("этап {0} из 3 · {1:0}%", st.Built + 1, wm.Progress(st) * 100f)
+                            : st.Built > 0 ? Loc.F("этапов: {0} из 3", st.Built) : Loc.T("не начато");
                 var p = LGBuild.Label(row, prog, 11, Color.white, TextAnchor.MiddleRight, bold: true);
                 p.rectTransform.Stretch(0, 0, 0, 0);
             }
@@ -560,12 +560,12 @@ namespace StellarisClone.Rendering
 
         private static string StarClassName(StarSpectralClass c) => c switch
         {
-            StarSpectralClass.ClassM => "красный карлик (M)",
-            StarSpectralClass.ClassK => "оранжевая звезда (K)",
-            StarSpectralClass.ClassG => "жёлтая звезда (G)",
-            StarSpectralClass.ClassA => "белая звезда (A)",
-            StarSpectralClass.ClassB => "голубой гигант (B)",
-            _ => "чёрная дыра"
+            StarSpectralClass.ClassM => Loc.T("красный карлик (M)"),
+            StarSpectralClass.ClassK => Loc.T("оранжевая звезда (K)"),
+            StarSpectralClass.ClassG => Loc.T("жёлтая звезда (G)"),
+            StarSpectralClass.ClassA => Loc.T("белая звезда (A)"),
+            StarSpectralClass.ClassB => Loc.T("голубой гигант (B)"),
+            _ => Loc.T("чёрная дыра")
         };
     }
 }

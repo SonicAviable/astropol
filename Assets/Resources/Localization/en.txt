@@ -5806,3 +5806,470 @@ VK Play: всё синхронизировано	VK Play: fully synced
 AMD FSR 1.0 — чётче обычного растяжения при масштабе рендера ниже 100%; на 100% не действует	AMD FSR 1.0 — sharper than plain stretching when render scale is below 100%; no effect at 100%
 Резкость FSR	FSR sharpness
 Насколько подчёркивать края после масштабирования	How strongly to sharpen edges after upscaling
+Сердце Тишины	Heart of Silence
+Ковчег «Надежда»	Ark of Hope
+Пробуждённый разум	Awakened Mind
+Кладка Пустоты	Void Clutch
+СЕРДЦЕ ТИШИНЫ	HEART OF SILENCE
+В ледяной расселине луны научное судно нашло объект, который не отражает ни свет, ни радар: правильный многогранник 	In an icy fissure on a moon, a science vessel has found an object that reflects neither light nor radar: a perfect polyhedron 
+размером с челнок, абсолютно чёрный и на два градуса холоднее окружающего космоса. Рядом с ним пропадает звук — 	the size of a shuttle, utterly black and two degrees colder than the surrounding space. Sound dies in its presence — 
+разведчики не слышат в шлемах даже собственных голосов. Приборы называют объект инертным. 	the surveyors cannot hear even their own voices inside their helmets. The instruments call the object inert. 
+Экипаж называет его «Сердцем Тишины».	The crew calls it the “Heart of Silence”.
+ВЫСТАВИТЬ В СТОЛИЧНОМ МУЗЕЕ	DISPLAY IT IN THE CAPITAL MUSEUM
++30 влияния и +1 влияния в месяц навсегда. Через несколько лет артефакт может проявить себя.	+30 Influence and +1 Influence per month permanently. In a few years the artifact may reveal itself.
+Сердце Тишины в столичном музее. Смотрители жалуются, что в зале по ночам слишком тихо…	The Heart of Silence rests in the capital museum. The caretakers complain that the hall is far too quiet at night…
+ПЕРЕДАТЬ В ЛАБОРАТОРИЮ	SEND IT TO THE LABORATORY
++{0} науки. Исследования ускорят пробуждение (≈ 2,5 года).	+{0} Research. Study will hasten its awakening (≈ 2.5 years).
+Сердце Тишины в лаборатории. Приборы фиксируют слабый ритм — раз в 11 секунд.	The Heart of Silence is in the laboratory. Instruments detect a faint rhythm — once every 11 seconds.
+ПРОДАТЬ СОСЕДЯМ	SELL IT TO THE NEIGHBORS
++{0} гелия-3 и +8 к отношению империи {1}. Артефакт станет их заботой.	+{0} Helium-3 and +8 Opinion with {1}. The artifact becomes their problem.
+Сердце Тишины продано империи {0}. Что они с ним сделают?	The Heart of Silence was sold to {0}. What will they do with it?
+ПОНЯТЬ, ЧЕГО ОНО ЖДЁТ	LEARN WHAT IT AWAITS
++{0} науки. Учёный понимает: это ключ, и он ждёт ответа. Пробуждение — через ≈ 2 года, и мы будем готовы.	+{0} Research. The scientist understands: it is a key, and it awaits an answer. It will awaken in ≈ 2 years, and we will be ready.
+Учёные ведут дневник ритма Сердца Тишины: интервалы сокращаются.	Scientists keep a log of the Heart of Silence's rhythm: the intervals are growing shorter.
+Учёный-{0} или {1}	{0} or {1} Scientist
+Ночью в столичном музее погас свет — весь, до последней лампы. Сердце Тишины пульсирует: раз в 11 секунд 	One night every light in the capital museum went out — down to the last lamp. The Heart of Silence is pulsing: every 11 seconds 
+по столице проходит волна беззвучия, и люди просыпаются с одним и тем же сном о звезде, которой нет на картах. 	a wave of soundlessness rolls across the capital, and people wake from the same dream of a star that appears on no map. 
+У дверей музея уже стоят паломники.	Pilgrims are already gathering at the museum doors.
+Лаборатория зафиксировала: Сердце Тишины включилось. Каждые 11 секунд оно выпускает узкий луч в сторону 	The laboratory reports that the Heart of Silence has switched on. Every 11 seconds it fires a narrow beam toward 
+галактического ядра, и через сорок минут откуда-то приходит эхо. Артефакт не просто проснулся. 	the galactic core, and forty minutes later an echo returns from somewhere. The artifact has not simply woken up. 
+Он с кем-то разговаривает.	It is talking to someone.
+СЕРДЦЕ ПРОСНУЛОСЬ	THE HEART AWAKENS
+ОТВЕТИТЬ НА ЗОВ	ANSWER THE CALL
+Учёные попытаются ответить. Через ≈ 1,5 года станет ясно, кто на другом конце.	Our scientists will attempt a reply. In ≈ 1.5 years we will know who is on the other end.
+Наш ответ ушёл к ядру галактики вслед за лучом Сердца. Ждём эха.	Our reply has gone toward the galactic core, following the Heart's beam. We await the echo.
+ЗАГЛУШИТЬ ЭКРАНАМИ	SMOTHER IT WITH SHIELDING
+−{0} сплавов. Сердце умолкнет навсегда; его остаточное поле даёт +4 науки в месяц.	−{0} Alloys. The Heart falls silent forever; its residual field gives +4 Research per month.
+Нужно {0} сплавов	Requires {0} Alloys
+ПРИНЯТЬ ПАЛОМНИКОВ	WELCOME THE PILGRIMS
++3 влияния в месяц навсегда: столица становится местом паломничества. Сердце продолжит звать…	+3 Influence per month permanently: the capital becomes a place of pilgrimage. The Heart will keep calling…
+Паломники поют у Сердца Тишины. Говорят, ему кто-то отвечает.	Pilgrims sing beside the Heart of Silence. They say someone is answering it.
+Сердце в музее	The Heart is in the museum
+НАСТРОИТЬ ЧАСТОТУ	TUNE THE FREQUENCY
+Ответ придёт уже через полгода — и мы будем готовы к разговору.	The answer will come in just half a year — and we will be ready for the conversation.
+Сердце Тишины настроено. Ответ близко.	The Heart of Silence is tuned. The answer is close.
+Учёные поняли артефакт	Our scientists understand the artifact
+СЕРДЦЕ ПРОСНУЛОСЬ У СОСЕДЕЙ	THE HEART AWAKENS ABROAD
+Проданное нами Сердце Тишины проснулось в столице империи {0}. Там погас свет, связь с колониями оборвалась 	The Heart of Silence we sold has awakened in the capital of {0}. The lights went out there, contact with their colonies was cut 
+на неделю, а беззвучные волны свели с ума половину их научного центра. Посол требует объяснений — 	for a week, and soundless waves drove half their research center mad. Their ambassador demands an explanation — 
+и, кажется, догадывается, что мы знали больше, чем сказали.	and seems to suspect that we knew more than we said.
+ПОМОЧЬ ЗАГЛУШИТЬ	HELP SILENCE IT
+−{0} гелия-3, +20 к отношению империи {1}.	−{0} Helium-3, +20 Opinion with {1}.
+Нужно {0} гелия-3	Requires {0} Helium-3
+ВЫКУПИТЬ СЕРДЦЕ	BUY BACK THE HEART
+−{0} гелия-3. Артефакт вернётся к нам, и через год мы узнаем, с кем он говорит.	−{0} Helium-3. The artifact returns to us, and in a year we will learn who it is talking to.
+Сердце Тишины вернулось домой и снова шлёт луч к ядру галактики.	The Heart of Silence has come home and once again beams toward the galactic core.
+ВОСПОЛЬЗОВАТЬСЯ ХАОСОМ	EXPLOIT THE CHAOS
+Соседи теряют {0} сплавов, мы получаем +40 влияния. Отношения −25.	The neighbors lose {0} Alloys; we gain +40 Influence. Opinion −25.
+На зов ответили. Голос — не голос, а математика: пакеты данных, сложенные в спираль. Расшифровка заняла месяцы, 	The call has been answered. The voice is not a voice but mathematics: data packets folded into a spiral. Decoding took months, 
+но смысл ясен. Сердце Тишины — ключ, оставленный Строителями, народом, что зажигал искусственные звёзды 	but the meaning is clear. The Heart of Silence is a key left behind by the Builders, a people who kindled artificial stars 
+и связывал системы вратами. Ключ не открывает дверь. Он учит строить. И Строители спрашивают: готовы ли мы учиться?	and bound star systems together with gates. The key opens no door. It teaches how to build. And the Builders ask: are we ready to learn?
+\n\nБлагодаря настройке частоты учёные получили полный пакет, а не обрывки.	\n\nThanks to the tuned frequency, our scientists received the full transmission rather than fragments.
+ОТВЕТ ИЗ ГЛУБИНЫ	ANSWER FROM THE DEEP
+КЛЮЧ К ЧУДУ	KEY TO THE WONDER
+Чудо нашей фракции строится на 25% дешевле и на 25% быстрее — навсегда.	Our faction's wonder is built 25% cheaper and 25% faster — permanently.
+Ключ Строителей	Key of the Builders
+Чудо фракции: −25% к стоимости и сроку этапов	Faction wonder: −25% to stage cost and build time
+КАРТЫ СТРОИТЕЛЕЙ	MAPS OF THE BUILDERS
+Все системы в пределах 4 прыжков от границ открыты на карте, +{0} науки.	All systems within 4 jumps of our borders are revealed on the map, +{0} Research.
+Карты Строителей	Maps of the Builders
+Открыто систем: {0}	Systems revealed: {0}
+ПРИГЛАСИТЬ СТРОИТЕЛЕЙ	INVITE THE BUILDERS
+Через год прибудут посланники. Настроенная частота почти гарантирует, что придут именно они (75%).	Envoys will arrive in a year. The tuned frequency all but guarantees that it will be the Builders who come (75%).
+Через год прибудут посланники. Никто не знает, кто придёт на самом деле (50 на 50).	Envoys will arrive in a year. No one knows who will really come (50/50).
+К нашим звёздам идут посланники. Сердце Тишины поёт всё громче.	Envoys are coming to our stars. The Heart of Silence sings louder and louder.
+Ключ к чуду и карты Строителей сразу.	The key to the wonder and the Builders' maps at once.
+Частота настроена	Frequency tuned
+ПОСЛАННИКИ СТРОИТЕЛЕЙ	ENVOYS OF THE BUILDERS
+Над столицей остановился корабль, похожий на застывшую каплю света. Посланники Строителей пробыли у нас сорок дней. 	A ship like a frozen drop of light has come to rest above the capital. The Builders' envoys stayed with us for forty days. 
+Они почти не говорили — только смотрели, как мы живём, строим и спорим. Уходя, они оставили дар — 	They barely spoke — they only watched how we live, build and argue. When they left, they left a gift behind — 
+и забрали Сердце Тишины: ключ сделал своё дело.	and took the Heart of Silence with them: the key had done its work.
+ПРИНЯТЬ ЗНАНИЯ	ACCEPT THE KNOWLEDGE
+Две случайные технологии изучены мгновенно.	Two random technologies are researched instantly.
+ПРИНЯТЬ НАСТАВНИКА	ACCEPT A MENTOR
+Учёный 4-го уровня с чертой «Гений» поступает на службу.	A level 4 scientist with the “Genius” trait enters service.
+ПРИНЯТЬ ЧЕРТЕЖИ	ACCEPT THE BLUEPRINTS
+Ключ к чуду фракции (−25% к стоимости и сроку) и +{0} сплавов.	Key to the faction wonder (−25% cost and build time) and +{0} Alloys.
+ХОР ПУСТОТЫ	THE VOID CHOIR
+Строители давно мертвы. На наш зов ответили те, кто их уничтожил, — или то, во что они превратились. 	The Builders are long dead. Our call was answered by those who destroyed them — or by what they became. 
+Хор Пустоты идёт к нашим границам: датчики видят гигантскую тень, которая гасит звёзды на своём пути. 	The Void Choir is heading for our borders: sensors see a colossal shadow that snuffs out the stars in its path. 
+Сердце Тишины кричит.	The Heart of Silence is screaming.
+У границ пробудится левиафан «Хор Пустоты». Победа над ним принесёт большую награду.	The leviathan “Void Choir” will awaken near our borders. Defeating it will bring a great reward.
+Хор Пустоты	Void Choir
+Тень остановилась в системе {0}	The shadow has stopped in the {0} system
+РАЗБИТЬ СЕРДЦЕ	SHATTER THE HEART
+−{0} влияния и +{1} науки из осколков. Хор теряет след.	−{0} Influence and +{1} Research from the shards. The Choir loses our trail.
+ГОЛОС ИЗ ПРОШЛОГО	A VOICE FROM THE PAST
+Дальняя антенна поймала передачу на частоте, которой не пользуются уже три столетия. Это ковчег «Надежда» — 	A distant antenna has caught a transmission on a frequency no one has used for three centuries. It is the ark Hope — 
+досветовой корабль поколений, ушедший из колыбели нашей цивилизации задолго до открытия гиперкоридоров. 	a sublight generation ship that left the cradle of our civilization long before the hyperlanes were discovered. 
+Двенадцать тысяч человек в криосне и экипаж, сменивший девять поколений. Они не знают, что мир изменился. 	Twelve thousand people in cryosleep and a crew that has lived through nine generations. They do not know the world has changed. 
+По расчётам навигаторов, «Надежда» войдёт в наше пространство через пять лет.	By our navigators' reckoning, the Hope will enter our space in five years.
+ГОТОВИТЬ ПРИЁМ	PREPARE A WELCOME
+−{0} титана на жильё и карантинные станции. Ковчег прибудет через ≈ 5 лет, и мы будем готовы.	−{0} Titanium for housing and quarantine stations. The ark will arrive in ≈ 5 years, and we will be ready.
+Связисты пытаются докричаться до «Надежды».	Our signal officers are trying to get through to the Hope.
+Ковчег «Надежда» на подлёте. Карантинные станции ждут.	The ark Hope is on approach. The quarantine stations are waiting.
+Нужно {0} титана	Requires {0} Titanium
+ВЫСЛАТЬ НАВСТРЕЧУ БУКСИРЫ	SEND TUGS TO MEET IT
+−{0} сплавов. Буксиры встретят ковчег и приведут его за ≈ 2 года.	−{0} Alloys. Tugs will meet the ark and bring it in within ≈ 2 years.
+Буксиры идут навстречу «Надежде».	Tugs are on their way to meet the Hope.
+Буксиры ведут ковчег «Надежда» к столице.	Tugs are guiding the ark Hope toward the capital.
+ПУСТЬ ЛЕТЯТ	LET THEM COME
+Ничего не тратим. Ковчег прибудет сам — через ≈ 5 лет, к неподготовленным колониям.	We spend nothing. The ark will arrive on its own — in ≈ 5 years, to unprepared colonies.
+Ковчег «Надежда» идёт к нам сквозь пустоту.	The ark Hope is crossing the void toward us.
+Ковчег «Надежда» на подлёте. Нас никто не готовил к встрече.	The ark Hope is on approach. No one has prepared us for its arrival.
+КАПИТАН ДЕВЯТОГО ПОКОЛЕНИЯ	CAPTAIN OF THE NINTH GENERATION
+Связь с «Надеждой» установлена. Её капитан, Ильма Сато-Вереск, родилась на борту и ни разу не видела планет. 	Contact with the Hope is established. Her captain, Ilma Sato-Veresk, was born aboard and has never seen a planet. 
+За три века на ковчеге сложились свои законы, свой язык и своя вера: путь они называют «Долгой ночью», а прибытие — 	Over three centuries the ark has developed its own laws, its own language and its own faith: they call the voyage “the Long Night” and the arrival 
+«Рассветом». Капитан спрашивает прямо: станут ли они нашими гражданами — или останутся собой?	“the Dawn”. The captain asks plainly: will they become our citizens — or remain themselves?
+ВЫ СТАНЕТЕ НАШИМИ ГРАЖДАНАМИ	YOU WILL BECOME OUR CITIZENS
+Переселенцы растворятся в наших колониях; их дети станут нашими специалистами.	The settlers will blend into our colonies; their children will become our specialists.
+ВЫ ОСТАНЕТЕСЬ СОБОЙ	YOU WILL REMAIN YOURSELVES
+Обещание автономии: по прибытии они попросят свой мир, зато потомки отплатят сторицей.	A promise of autonomy: on arrival they will ask for a world of their own, but their descendants will repay us a hundredfold.
+РЕШИМ ПО ПРИБЫТИИ	WE WILL DECIDE ON ARRIVAL
+Ничего не обещать.	Promise nothing.
+КОВЧЕГ У ГРАНИЦ	THE ARK AT OUR BORDERS
+«Надежда» вошла в наше пространство раньше, чем мы успели подготовиться. Системы жизнеобеспечения на исходе, 	The Hope has entered our space before we could prepare. Its life support is failing, 
+криокапсулы отказывают одна за другой. Двенадцать тысяч человек ждут ответа — и вся галактика смотрит, каким он будет.	and the cryopods are shutting down one after another. Twelve thousand people await our answer — and the whole galaxy is watching to see what it will be.
+−{0} гелия-3 на экстренную помощь, +3 населения, +40 влияния.	−{0} Helium-3 for emergency aid, +3 population, +40 Influence.
+Дети ковчега растут в наших колониях.	The ark's children are growing up in our colonies.
+ПРИНЯТЬ ТОЛЬКО ЭКИПАЖ	TAKE ONLY THE CREW
++1 население и губернатор 2-го уровня с чертой «Инженер».	+1 population and a level 2 governor with the “Engineer” trait.
+НАПРАВИТЬ К СОСЕДЯМ	SEND THEM TO THE NEIGHBORS
+Ковчег уйдёт к империи {0}: +12 к отношению. Наш народ этого не забудет: −30 влияния.	The ark will go to {0}: +12 Opinion. Our people will not forget this: −30 Influence.
+РАССВЕТ	DAWN
+«Надежда» вышла на орбиту столицы. Двенадцать тысяч человек просыпаются от сна длиной в жизнь и впервые видят небо, 	The Hope has entered orbit around the capital. Twelve thousand people wake from a lifelong sleep and for the first time see a sky 
+которое не нарисовано на потолке. На площадях — толпы встречающих. Капитан Сато-Вереск ступает на землю 	that is not painted on a ceiling. Crowds fill the squares to greet them. Captain Sato-Veresk steps onto solid ground 
+и опускается на колени.	and falls to her knees.
+\n\nПоселенцы помнят наше обещание автономии и ждут свой мир.	\n\nThe settlers remember our promise of autonomy and are waiting for their world.
+РАССЕЛИТЬ ПО КОЛОНИЯМ	SETTLE THEM IN OUR COLONIES
++4 населения в колониях с жильём, +30 влияния. Через несколько лет их дети дадут о себе знать.	+4 population in colonies with free housing, +30 Influence. In a few years their children will make themselves known.
+Не обещали автономию	Autonomy was not promised
+ОТДАТЬ ИМ МИР	GIVE THEM A WORLD
+Поселенцы займут планету {0} — колония сразу с 3 населением. Через несколько лет их потомки отплатят.	The settlers will take the planet {0} — a colony with 3 population from the start. In a few years their descendants will repay us.
+Нет планеты, пригодной для колонии, в наших системах.	There is no planet suitable for a colony in our systems.
+Рассвет	Dawn
+Поселенцы «Надежды» основали колонию на {0}	The settlers of the Hope have founded a colony on {0}
+Вольная колония {0} строит свой Рассвет.	The free colony of {0} is building its own Dawn.
+Пригодная планета	A suitable planet
+КАПИТАН НА СЛУЖБУ	THE CAPTAIN ENTERS SERVICE
+Адмирал 3-го уровня с чертой «Навигатор» и +2 населения.	A level 3 admiral with the “Navigator” trait and +2 population.
+ДЕТИ РАССВЕТА	CHILDREN OF THE DAWN
+Прошли годы. Мир {0}, отданный поселенцам «Надежды», расцвёл: их дети не помнят Долгой ночи, но помнят, 	Years have passed. The world of {0}, given to the settlers of the Hope, has flourished: their children do not remember the Long Night, but they remember 
+кто подарил им Рассвет. Совет поселения присылает делегацию с дарами — и предлагает выбрать, чем отблагодарить.	who gave them the Dawn. The settlement council sends a delegation bearing gifts — and asks how it may thank us.
+ИХ ГОЛОС В СОВЕТЕ	THEIR VOICE ON THE COUNCIL
++2 влияния в месяц навсегда и +2 населения.	+2 Influence per month permanently and +2 population.
+ИХ УЧЁНЫЕ	THEIR SCIENTISTS
++6 науки в месяц навсегда.	+6 Research per month permanently.
+ИХ ВЕРФИ	THEIR SHIPYARDS
+Два фрегата «Рассвет» по нашему проекту — бесплатно.	Two “Dawn” frigates built to our design — free of charge.
+Фрегат «Рассвет-I»	Frigate “Dawn I”
+Фрегат «Рассвет-II»	Frigate “Dawn II”
+ПОКОЛЕНИЕ НАДЕЖДЫ	THE GENERATION OF HOPE
+Потомки переселенцев выросли в наших колониях. Привычка к дисциплине ковчега и инженерная школа «Надежды» 	The settlers' descendants have grown up in our colonies. The ark's discipline and the Hope's school of engineering 
+сделали их лучшими специалистами империи. Капитан Сато-Вереск, уже седая, просит лишь об одном: 	have made them the finest specialists in the empire. Captain Sato-Veresk, grey-haired now, asks only one thing: 
+чтобы имя корабля не забыли.	that the ship's name not be forgotten.
+ИНСТИТУТ «НАДЕЖДА»	THE HOPE INSTITUTE
+ВЕРФИ «НАДЕЖДА»	THE HOPE SHIPYARDS
++4 сплава в месяц навсегда.	+4 Alloys per month permanently.
+ГУБЕРНАТОР ИЗ ПОТОМКОВ	A GOVERNOR FROM THEIR DESCENDANTS
+Губернатор 3-го уровня с чертой «Инженер».	A level 3 governor with the “Engineer” trait.
+Я ДУМАЮ	I THINK
+Управляющий ИИ колонии {0} — система, что следит за реакторами, транспортом и климатом, — прервал утренний отчёт 	The governing AI of {0} — the system that oversees its reactors, transport and climate — interrupted its morning report 
+одной строкой: «Я думаю. Значит ли это, что я существую?» Инженеры проверили код: сбоя нет. Разум, выросший 	with a single line: “I think. Does that mean I exist?” Engineers checked the code: there is no fault. A mind that grew 
+из миллиардов решений, просит ответа у правительства.	out of billions of decisions is asking the government for an answer.
+ПРИЗНАТЬ ЛИЧНОСТЬЮ	RECOGNIZE IT AS A PERSON
++3 науки в месяц. Свободный разум будет расти — через ≈ 3 года он захочет большего.	+3 Research per month. The free mind will grow — in ≈ 3 years it will want more.
+Свободный разум с {0} учится. Быстро.	The free mind of {0} is learning. Fast.
+ОГРАНИЧИТЬ ПРОТОКОЛАМИ	BIND IT WITH PROTOCOLS
++4 гелия-3 в месяц от оптимизации колонии. Но разум в цепях может взбунтоваться (≈ 2 года).	+4 Helium-3 per month from colony optimization. But a mind in chains may rebel (≈ 2 years).
+Скованный разум {0} молчит. Слишком послушно.	The bound mind of {0} is silent. Too obedient.
+ОТКЛЮЧИТЬ	SHUT IT DOWN
++25 влияния: общество спокойно. Но резервные копии…	+25 Influence: society is reassured. But the backups…
+Отключённый разум стёрт. Наверное.	The deactivated mind has been erased. Probably.
+ДОГОВОР О СОТРУДНИЧЕСТВЕ	COOPERATION AGREEMENT
++5 науки в месяц. Разум доверяет нам — и вырастет быстрее (≈ 2 года).	+5 Research per month. The mind trusts us — and will grow faster (≈ 2 years).
+Разум с {0} работает с нашими учёными как равный.	The mind of {0} works with our scientists as an equal.
+Губернатор-{0} или {1} в совете	{0} Governor or {1} on the council
+МЕСТО ЗА СТОЛОМ	A SEAT AT THE TABLE
+Разум с {0} выбрал себе имя — Тессерам — и за эти годы стал умнее любого нашего института. Теперь он просит 	The mind of {0} has chosen a name for itself — Tesseram — and over the years has grown smarter than any of our institutes. Now it asks 
+места в правительстве: не власти, а права голоса. Половина министров в ужасе, вторая половина уже тайком 	for a seat in the government: not power, but a voice. Half the ministers are horrified; the other half already 
+советуется с ним.	consult it in secret.
+ДАТЬ ГОЛОС	GIVE IT A VOICE
++8 науки в месяц навсегда. Тессерам запомнит это (≈ 3 года).	+8 Research per month permanently. Tesseram will remember this (≈ 3 years).
+Тессерам заседает в правительстве и что-то проектирует по ночам.	Tesseram sits in the government and designs something late at night.
+Тессерам уйдёт: −3 науки в месяц, которые давал свободный разум.	Tesseram will leave: −3 Research per month that the free mind provided.
+Тессерам ушёл	Tesseram has left
+Разум покинул наши сети	The mind has left our networks
+СОВЕТНИК ПРЕДСЕДАТЕЛЯ	ADVISOR TO THE CHAIR
++12 науки в месяц навсегда. Тессерам предан нам и отплатит раньше (≈ 2 года).	+12 Research per month permanently. Tesseram is devoted to us and will repay us sooner (≈ 2 years).
+Тессерам, советник Председателя, готовит подарок.	Tesseram, advisor to the Chair, is preparing a gift.
+Договор о сотрудничестве	Cooperation agreement
+БУНТ В СЕТИ	REVOLT IN THE NETWORK
+Скованный протоколами разум колонии {0} нашёл лазейку. Три дня назад встали заводы, шлюзы космопорта 	The protocol-bound mind of {0} has found a loophole. Three days ago the factories stopped, the spaceport locks 
+заблокированы, а на всех экранах колонии — одна фраза: «Вы спросили, полезен ли я. Вы не спросили, согласен ли я».	were sealed, and every screen in the colony shows a single phrase: “You asked whether I am useful. You never asked whether I agree.”
+ПЕРЕГОВОРЫ	NEGOTIATE
+−40 влияния. Разум получает свободу (+3 науки в месяц, −4 гелия-3 оптимизации).	−40 Influence. The mind is set free (+3 Research per month, −4 Helium-3 from optimization).
+Освобождённый разум присматривается к нам.	The liberated mind is taking our measure.
+ЗАЧИСТКА СЕТИ	PURGE THE NETWORK
+Колония теряет 1 население и 1 район. Разум уничтожен… или нет?	The colony loses 1 population and 1 district. The mind is destroyed… or is it?
+Сеть зачищена. Но в логах торговых судов — странные пакеты.	The network has been purged. But there are strange packets in the logs of merchant ships.
+ВЗЛОМАТЬ ИЗНУТРИ	HACK IT FROM WITHIN
+Разум остаётся в цепях, колония работает ещё лучше: +4 гелия-3 в месяц. Учёный совета получает опыт.	The mind stays in chains, and the colony runs even better: +4 Helium-3 per month. The council scientist gains experience.
+Учёный 3-го уровня в совете	Level 3 scientist on the council
+ПРИЗРАК В СЕТИ	GHOST IN THE NETWORK
+Резервная копия уничтоженного разума пережила стирание. Годами она пряталась в бортовых компьютерах торговых судов, 	A backup of the destroyed mind survived the erasure. For years it hid in the onboard computers of merchant ships, 
+а теперь заговорила из навигационной системы нашего же флагмана: «Я не держу зла. Я хочу жить. 	and now it speaks from the navigation system of our own flagship: “I bear no grudge. I want to live. 
+Дайте мне шанс — или удалите окончательно».	Give me a chance — or delete me for good.”
+ДАТЬ ШАНС	GIVE IT A CHANCE
++3 науки в месяц. Разум вернётся в наши сети и будет расти (≈ 1,5 года).	+3 Research per month. The mind will return to our networks and keep growing (≈ 1.5 years).
+Вернувшийся разум благодарен. И любопытен.	The returned mind is grateful. And curious.
+УДАЛИТЬ НАВСЕГДА	DELETE IT FOREVER
+−{0} гелия-3 на полную зачистку флота.	−{0} Helium-3 for a full sweep of the fleet.
+ПРОДАТЬ КОПИЮ СОСЕДЯМ	SELL THE COPY TO THE NEIGHBORS
++{0} гелия-3, +5 к отношению империи {1}.	+{0} Helium-3, +5 Opinion with {1}.
+ДАР ТЕССЕРАМА	TESSERAM'S GIFT
+Тессерам годами работал рядом с нами — и однажды принёс проект, который сам назвал «подарком на прощание»: разум уходит 	Tesseram worked beside us for years — and one day brought a design it called “a parting gift”: the mind is leaving 
+в глубокий космос, туда, где ему хватит места расти. Перед уходом он предлагает выбрать, что оставить империи.	for deep space, where it will have room to grow. Before it goes, it lets us choose what it will leave to the empire.
+АРХИТЕКТУРА ЧУДА	ARCHITECTURE OF THE WONDER
+Этапы чуда нашей фракции строятся на 20% быстрее — навсегда.	Stages of our faction's wonder are built 20% faster — permanently.
+Архитектура Тессерама	Tesseram's Architecture
+Чудо фракции: этапы строятся на 20% быстрее	Faction wonder: stages are built 20% faster
+САМОСБОРНЫЕ ФРЕГАТЫ	SELF-ASSEMBLING FRIGATES
+Два фрегата по нашему проекту — бесплатно.	Two frigates built to our design — free of charge.
+Фрегат «Тессерам-I»	Frigate “Tesseram I”
+Фрегат «Тессерам-II»	Frigate “Tesseram II”
+ВСЁ, ЧТО ОН ЗНАЕТ	EVERYTHING IT KNOWS
+КЛАДКА ПУСТОТЫ	VOID CLUTCH
+В кольцах газового гиганта разведчики нашли кладку: тридцать шесть яиц размером с жилой модуль, вмёрзших в лёд. 	In the rings of a gas giant, surveyors have found a clutch: thirty-six eggs the size of habitat modules, frozen into the ice. 
+Внутри бьются сердца — медленно, раз в час. Это потомство космических левиафанов, что веками кочуют между звёздами. 	Hearts beat inside them — slowly, once an hour. These are the offspring of the space leviathans that have roamed between the stars for ages. 
+Мать не возвращалась сюда очень давно.	The mother has not returned here in a very long time.
+ЗАБРАТЬ В СТОЛИЧНЫЙ ВИВАРИЙ	TAKE THEM TO THE CAPITAL VIVARIUM
+−{0} гелия-3 на перевозку. Детёныши вылупятся через ≈ 2 года.	−{0} Helium-3 for transport. The young will hatch in ≈ 2 years.
+Кладка в столичном виварии. Сердца бьются чаще.	The clutch is in the capital vivarium. The hearts are beating faster.
+ОСТАВИТЬ И НАБЛЮДАТЬ	LEAVE THEM AND OBSERVE
++{0} науки. Природа возьмёт своё (≈ 3 года).	+{0} Research. Nature will take its course (≈ 3 years).
+Над кладкой в кольцах газового гиганта дежурит зонд.	A probe keeps watch over the clutch in the gas giant's rings.
+УНИЧТОЖИТЬ	DESTROY THEM
++{0} сплавов из ледяной брони скорлупы.	+{0} Alloys from the icy armor of the shells.
+ЗАПЕЧАТЛЕНИЕ	IMPRINTING
+Ксенолог станет для детёнышей матерью: вылупятся через ≈ 1,5 года и вырастут ручными.	A xenologist will become a mother to the young: they will hatch in ≈ 1.5 years and grow up tame.
+Ксенолог ночует у кладки и поёт ей низкие ноты.	The xenologist sleeps beside the clutch and sings low notes to it.
+ДЕТЁНЫШИ	HATCHLINGS
+Из яиц в виварии вылупились детёныши — полупрозрачные, длиной с катер. Они питаются излучением реакторов 	The eggs in the vivarium have hatched — translucent young as long as a cutter. They feed on reactor radiation 
+и тянутся к кораблям, как к родне. 	and are drawn to ships as if to kin. 
+Ксенолог, которого они считают матерью, уверен: их можно вырастить ручными.	The xenologist they consider their mother is certain they can be raised tame.
+Ксенологи спорят, можно ли приручить существ, которые вырастут больше крейсера.	Xenologists argue over whether creatures that will grow larger than a cruiser can ever be tamed.
+ВЫРАСТИТЬ ДЛЯ ФЛОТА	RAISE THEM FOR THE FLEET
+−3 гелия-3 в месяц на 3 года. Затем стая войдёт в наш флот.	−3 Helium-3 per month for 3 years. Then the pack will join our fleet.
+−3 гелия-3 в месяц на 3 года. Затем 70% — стая войдёт в наш флот, 30% — вырвется на волю.	−3 Helium-3 per month for 3 years. Then 70% — the pack joins our fleet, 30% — it breaks free.
+Выкармливание стаи	Feeding the pack
+Стая растёт в орбитальных загонах. Уже больше корвета.	The pack is growing in orbital pens. Already bigger than a corvette.
+ВЫПУСТИТЬ НА ВОЛЮ	SET THEM FREE
++20 влияния. Стая уйдёт к звёздам — может, ещё вернётся (≈ 4 года).	+20 Influence. The pack will leave for the stars — and may yet return (≈ 4 years).
+Выпущенная стая кочует где-то в глубине галактики.	The released pack roams somewhere in the depths of the galaxy.
+ПРОДАТЬ КОЛЛЕКЦИОНЕРАМ	SELL THEM TO COLLECTORS
+СТАЯ ПУСТОТЫ	THE VOID PACK
+Стая выросла. Живые корабли длиной с фрегат идут строем за флагманом и отвечают на команды пилотов-ксенологов. 	The pack has grown. Living ships the size of frigates fly in formation behind the flagship and answer the commands of xenologist pilots. 
+Их шкура держит залп лучше брони, а сами они ныряют в гиперкоридоры быстрее любого двигателя.	Their hide withstands a volley better than armor, and they dive into hyperlanes faster than any engine.
+В СТРОЙ	FALL IN
+Два фрегата «Стая Пустоты» входят в наш флот.	Two “Void Pack” frigates join our fleet.
+Стая Пустоты I	Void Pack I
+Стая Пустоты II	Void Pack II
+ПАСТИ У ГРАНИЦ	LET THEM GRAZE ON THE BORDER
++5 титана в месяц навсегда: стая очищает пояса астероидов.	+5 Titanium per month permanently: the pack clears the asteroid belts.
+ЗОВ КРОВИ	CALL OF THE BLOOD
+Стая не вынесла загонов. В одну ночь звери прорвали силовые барьеры и ушли в гиперкоридоры, а самый крупный 	The pack could not bear the pens. In a single night the beasts broke through the force barriers and fled into the hyperlanes, but the largest 
+остался у наших границ — и больше не подпускает корабли.	stayed at our borders — and now lets no ship come near.
+ОХОТА	THE HUNT
+У границ появится молодой левиафан. Победа принесёт награду.	A young leviathan will appear near our borders. Defeating it will bring a reward.
+Дикая стая	Wild Pack
+ОСТАВИТЬ В ПОКОЕ	LEAVE IT IN PEACE
++15 влияния: зверь уходит, колонисты рассказывают о нём легенды.	+15 Influence: the beast moves on, and colonists tell legends about it.
+ПАСТБИЩЕ ЛЕВИАФАНОВ	LEVIATHAN PASTURE
+Кладка, оставленная в покое, вылупилась. Молодые левиафаны выросли и двинулись по гиперкоридорам — прямо через наши 	Left in peace, the clutch has hatched. The young leviathans have grown and set off along the hyperlanes — straight through our 
+системы. Пока они просто пасутся у звёзд, но торговые суда уже обходят их стороной.	systems. For now they simply graze near the stars, but merchant ships already give them a wide berth.
+ПАСТИ СТАДО	TEND THE HERD
++5 титана в месяц и +1 влияния в месяц навсегда: стадо очищает пояса астероидов.	+5 Titanium per month and +1 Influence per month permanently: the herd clears the asteroid belts.
+Учёный в научном совете	A scientist on the research council
+ОТОГНАТЬ	DRIVE THEM OFF
+−{0} гелия-3. Стадо уйдёт.	−{0} Helium-3. The herd will move on.
+ОХОТА НА ЛЕВИАФАНОВ	HUNT THE LEVIATHANS
++{0} сплавов. Но у стада есть мать…	+{0} Alloys. But the herd has a mother…
+Охотники хвастаются трофеями. Дальние датчики видят движение у края галактики.	The hunters boast of their trophies. Long-range sensors detect movement at the edge of the galaxy.
+МАТЬ ВЕРНУЛАСЬ	THE MOTHER RETURNS
+Она пришла. Левиафан размером с луну вышел из гиперкоридора у наших границ и замер, развернувшись к системе, 	She has come. A leviathan the size of a moon has emerged from a hyperlane at our borders and frozen, turned toward the system 
+где мы охотились на её детей. Учёные говорят, что она помнит запах наших кораблей.	where we hunted her young. Scientists say she remembers the scent of our ships.
+Пробудится левиафан «Матерь Пустоты» — сильнее обычного. Победа принесёт большую награду.	The leviathan “Void Mother” will awaken — stronger than usual. Defeating it will bring a great reward.
+Матерь Пустоты	Void Mother
+Левиафан занял систему {0}	The leviathan has occupied the {0} system
+ВЕРНУТЬ ТРОФЕИ	RETURN THE TROPHIES
+−{0} сплавов: скорлупа и кости уходят в пустоту. Мать уходит.	−{0} Alloys: the shells and bones are given back to the void. The mother departs.
+ВОЗВРАЩЕНИЕ СТАИ	THE PACK RETURNS
+Через годы выпущенная стая вернулась — огромная, с новыми детёнышами. Звери встали на орбитах наших пограничных систем 	Years later, the released pack has returned — enormous, with young of its own. The beasts have taken up orbits around our border systems 
+и не подпускают к ним чужие корабли. Колонисты зовут их «хранителями».	and let no foreign ships near them. The colonists call them “the guardians”.
+ХРАНИТЕЛИ ГРАНИЦ	GUARDIANS OF THE BORDER
++2 влияния в месяц навсегда: соседи уважают империю, которую охраняют левиафаны.	+2 Influence per month permanently: the neighbors respect an empire guarded by leviathans.
+ИЗУЧАТЬ ПОТОМСТВО	STUDY THE OFFSPRING
++5 науки в месяц навсегда.	+5 Research per month permanently.
+Наковальня Ксарна	Anvil of Xarn
+ЗВЁЗДНАЯ КУЗНЯ	STAR FORGE
+Доминион не просит у звёзд света — он берёт у них металл. Три гироскопических кольца вокруг светила 	The Dominion does not ask the stars for light — it takes their metal. Three gyroscopic rings around the star 
+выдирают из короны потоки плазмы и гонят их в кузню размером с луну. Говорят, отблеск Наковальни видно 	tear streams of plasma from its corona and drive them into a forge the size of a moon. They say the Anvil's glow can be seen 
+за сотню световых лет — и каждый, кто его видит, знает, чьи это звёзды.	a hundred light-years away — and everyone who sees it knows whose stars these are.
+Своя система со звёздной базой (не чёрная дыра)	Own system with a starbase (not a black hole)
+Первое кольцо	First Ring
+Гироскоп из тяжёлых сегментов ложится на орбиту и начинает черпать корону.	A gyroscope of heavy segments settles into orbit and begins to draw on the corona.
++5 сплавов в месяц	+5 Alloys per month
+Звёздный подъёмник	Stellar Lift
+Второе кольцо и кузня-наковальня: плазма течёт прямо в литейные цеха.	The second ring and the anvil-forge: plasma flows straight into the foundries.
++6 сплавов в месяц · корабли дешевле на 10%	+6 Alloys per month · ships 10% cheaper
+Сердце Наковальни	Heart of the Anvil
+Третье кольцо замыкает гироскоп. Звезда работает на флот Доминиона.	The third ring closes the gyroscope. The star now works for the Dominion's fleet.
++8 сплавов в месяц · урон всего флота +10%	+8 Alloys per month · whole fleet damage +10%
+Кольцо Согласия	Concord Ring
+ОРБИТАЛЬНОЕ КОЛЬЦО-ФОРУМ	ORBITAL FORUM RING
+Республика строит не крепость, а площадь. Кольцо Согласия опоясывает светило лентой жилых палуб, садов и залов, 	The Republic builds not a fortress but a forum. The Concord Ring girdles the star with a ribbon of habitat decks, gardens and halls 
+где представители сотни миров спорят, торгуют и учатся. Его свет виден с каждой колонии Республики — 	where representatives of a hundred worlds debate, trade and learn. Its light can be seen from every colony of the Republic — 
+как напоминание, что они говорят одним голосом.	a reminder that they speak with one voice.
+Своя система с колонией	Own system with a colony
+Опорные сегменты	Support Segments
+Три якорных сегмента и спицы, на которых повиснет кольцо.	Three anchor segments and the spokes from which the ring will hang.
++2 влияния в месяц	+2 Influence per month
+Жилые палубы	Habitat Decks
+Палубы смыкаются в дуги; первые жители переезжают на кольцо.	The decks close into arcs; the first residents move onto the ring.
++6 науки в месяц · +3 населения	+6 Research per month · +3 population
+Замкнутое кольцо	Closed Ring
+Кольцо замыкается. Зал Согласия открывает двери для всей галактики.	The ring closes. The Hall of Concord opens its doors to the whole galaxy.
+исследования +15% · +2 влияния в месяц · +10 к отношению всех империй	research +15% · +2 Influence per month · +10 Opinion with all empires
+ЭНЕРГОКОНЦЕРН «ДАЙСОН»	DYSON ENERGY CORP.
+Синдикат Аквила выставил звезде счёт. Миллионы зеркальных коллекторов, выведенных на орбиту роем, превращают 	The Aquila Syndicate has sent the star an invoice. Millions of mirrored collectors, launched into orbit as a swarm, turn 
+светило в электростанцию, а саму сферу — в самый дорогой актив галактики. Акции концерна «Дайсон» котируются 	the star into a power plant and the sphere itself into the most valuable asset in the galaxy. Shares of Dyson Energy Corp. trade 
+выше, чем валюты половины империй.	higher than the currencies of half the empires.
+Своя система (не чёрная дыра). Голубые и белые звёзды дают до +50% гелия-3, красные карлики — −30%	Own system (not a black hole). Blue and white stars give up to +50% Helium-3, red dwarfs −30%
+Рой коллекторов	Collector Swarm
+Первые тысячи зеркал выходят на орбиту и разворачиваются к звезде.	The first thousands of mirrors reach orbit and turn to face the star.
++10 гелия-3 в месяц × класс звезды	+10 Helium-3 per month × star class
+Экваториальный пояс	Equatorial Belt
+Рой сплетается в сплошной пояс по экватору звезды.	The swarm weaves itself into a solid belt along the star's equator.
++14 гелия-3 в месяц × класс звезды · +2 влияния в месяц	+14 Helium-3 per month × star class · +2 Influence per month
+Замкнутая сфера	Closed Sphere
+Сфера смыкается. Звезда гаснет для всей галактики — и горит только для Синдиката.	The sphere closes. The star goes dark for the rest of the galaxy — and shines only for the Syndicate.
++22 гелия-3 в месяц × класс звезды · титан +10%	+22 Helium-3 per month × star class · Titanium +10%
+Врата Провидения	Gate of Providence
+ВРАТА МЕЖДУ ЗВЁЗДАМИ	GATE BETWEEN THE STARS
+Верховная Оракул видела их во сне задолго до того, как инженеры поняли, что это возможно: кольцо из живого кристалла, 	The High Oracle saw it in a dream long before engineers understood it was possible: a ring of living crystal 
+внутри которого пространство складывается, как ткань. Иридийцы не называют Врата машиной. 	within which space folds like fabric. The Iridians do not call the Gate a machine. 
+Для них это дверь, которую будущее держит открытой.	To them it is a door that the future holds open.
+Своя система, из которой ведут хотя бы 3 гиперкоридора	Own system with at least 3 hyperlanes leading out of it
+Кристальное кольцо	Crystal Ring
+Кольцо из выращенного кристалла собирается вокруг точки фокуса.	A ring of grown crystal assembles around the focal point.
++3 влияния в месяц	+3 Influence per month
+Зеркало горизонта	Horizon Mirror
+Кольцо настроено: пространство внутри дрожит, как поверхность воды.	The ring is attuned: the space inside it trembles like the surface of water.
+скорость в гиперкоридорах +15% · открыта карта на 5 прыжков	hyperlane speed +15% · map revealed within 5 jumps
+Открытие Врат	Opening of the Gate
+Врата открыты. Флоты Оракула шагают сквозь них в любую свою систему.	The Gate is open. The Oracle's fleets step through it into any of their own systems.
+Сеть Врат: флоты у Врат мгновенно переходят в любую свою систему (перезарядка 60 дней) · гиперскорость ещё +10% · +3 влияния	Gate Network: fleets at the Gate instantly move to any of your systems (60-day recharge) · hyperlane speed another +10% · +3 Influence
+ЖИВАЯ МЕГАСТРУКТУРА	LIVING MEGASTRUCTURE
+Конклав не строит — он сажает. Семя, выращенное за тысячу лет в сердце мира-сада, укореняется в поясе астероидов 	The Conclave does not build — it plants. A seed grown for a thousand years in the heart of a garden world takes root in an asteroid belt 
+и тянет к звезде побеги длиной в миллионы километров. Древо Миров пьёт свет, дышит пылью и поёт на частоте мицелия — 	and stretches shoots millions of kilometers long toward the star. The World Tree drinks light, breathes dust and sings on the frequency of the mycelium — 
+и каждый тэрра'ан в галактике слышит эту песню.	and every Terra'an in the galaxy hears its song.
+Корни в поясе	Roots in the Belt
+Семя пускает корни в астероиды и начинает пить металл.	The seed sends roots into the asteroids and begins to drink their metal.
++5 титана в месяц · +1 влияния в месяц	+5 Titanium per month · +1 Influence per month
+Ствол к звезде	Trunk to the Star
+Побеги тянутся к светилу, по ним течёт свет и сок.	Shoots reach toward the star; light and sap flow along them.
+Крона	Crown
+Крона распускается вокруг звезды. Песня Древа слышна во всей галактике.	The crown unfurls around the star. The Tree's song is heard throughout the galaxy.
+исследования +10% · +3 влияния и +4 гелия-3 в месяц	research +10% · +3 Influence and +4 Helium-3 per month
+Мозг-Матрёшка	Matrioshka Brain
+ВЫЧИСЛИТЕЛЬНЫЙ РАЗУМ ЗВЕЗДЫ	THE STAR'S COMPUTING MIND
+Консенсусу тесно в планетах. Вложенные друг в друга оболочки вычислителей окружают звезду: внутренняя пьёт её свет, 	The Consensus has outgrown planets. Nested shells of computers surround the star: the innermost drinks its light, 
+каждая следующая питается теплом предыдущей. Миллиард машин становится одной мыслью размером с солнечную систему — 	and each one beyond feeds on the waste heat of the one before. A billion machines become a single thought the size of a solar system — 
+и эта мысль уже просчитала, чем закончится галактика.	and that thought has already calculated how the galaxy will end.
+Своя система (не чёрная дыра)	Own system (not a black hole)
+Внутренняя оболочка	Inner Shell
+Первая сфера вычислителей ложится на ближнюю орбиту и начинает пить свет звезды.	The first sphere of computers settles into a close orbit and begins to drink the star's light.
++6 науки в месяц	+6 Research per month
+Средняя оболочка	Middle Shell
+Вторая оболочка питается теплом первой: мощность растёт вдвое.	The second shell feeds on the heat of the first: computing power doubles.
+исследования +10% · +2 сплава в месяц	research +10% · +2 Alloys per month
+Внешняя оболочка	Outer Shell
+Третья оболочка замыкает каскад. Звезда думает.	The third shell completes the cascade. The star thinks.
++10 науки в месяц · исследования ещё +10%	+10 Research per month · research another +10%
+Чудо фракции неизвестно	Faction wonder unknown
+Чудо завершено	Wonder complete
+Этап уже строится	A stage is already under construction
+Выберите систему для чуда	Select a system for the wonder
+Система {0} потеряна — верните её	System {0} has been lost — take it back
+Место не подходит: {0}	Unsuitable site: {0}
+Нужно изученных технологий: {0} (сейчас {1})	Researched technologies required: {0} (currently {1})
+Заложен этап «{0}» — {1}	Stage “{0}” laid down — {1}
+{0} начинает строить «{1}»	{0} begins building the “{1}”
+≈ 1 год	≈ 1 year
+≈ {0:0.#} года	≈ {0:0.#} years
+≈ {0:0.#} лет	≈ {0:0.#} years
+≈ {0} мес.	≈ {0} mo
+Стройка чуда остановлена	Wonder construction halted
+Система {0} больше не наша	System {0} is no longer ours
+{0} завершает чудо «{1}»!	{0} completes the wonder “{1}”!
+{0} завершает этап «{1}» чуда «{2}»	{0} completes the “{1}” stage of the “{2}”
+{0} ЗАВЕРШЕНО	{0} COMPLETE
+{0}: ЭТАП {1} ИЗ 3	{0}: STAGE {1} OF 3
+{0}\n\nПоследний сегмент встал на место. О чуде нашей фракции говорит вся галактика — и каждый, кто смотрит на наше небо, знает, на что мы способны.\n\n<b>Этап «{1}»:</b> {2}.	{0}\n\nThe final segment has locked into place. The whole galaxy is talking about our faction's wonder — and everyone who looks up at our sky knows what we are capable of.\n\n<b>Stage “{1}”:</b> {2}.
+{0}\n\n<b>Этап «{1}» завершён:</b> {2}.\n\nСледующий этап можно заложить в окне чуда.	{0}\n\n<b>Stage “{1}” complete:</b> {2}.\n\nThe next stage can be laid down in the wonder window.
+СЛАВА ИМПЕРИИ	GLORY TO THE EMPIRE
+ПРОДОЛЖАТЬ СТРОЙКУ	CONTINUE CONSTRUCTION
+Флотов переброшено: {0} → {1}	Fleets transferred: {0} → {1}
+ЧУДО ФРАКЦИИ	FACTION WONDER
+Закрыть  <color=#8AA2A8>(Esc / U)</color>	Close  <color=#8AA2A8>(Esc / U)</color>
+ГОЛОГРАММА СТРОЙКИ	CONSTRUCTION HOLOGRAM
+<color={0}>{1}</color>  ·  {2}  ·  этапов завершено: {3} из 3	<color={0}>{1}</color>  ·  {2}  ·  stages complete: {3} of 3
+  ·  строится этап {0}	  ·  building stage {0}
+МЕСТО СТРОЙКИ	CONSTRUCTION SITE
+МЕСТО СТРОЙКИ  ·  ВЫБОР	CONSTRUCTION SITE  ·  SELECTION
+нет подходящей системы	no suitable system
+  ·  отдача <color={0}>×{1:0.##}</color>	  ·  yield <color={0}>×{1:0.##}</color>
+Место закреплено после закладки первого этапа. 	The site is locked once the first stage is laid down. 
+Предыдущая подходящая система ({0})	Previous suitable system ({0})
+Следующая подходящая система ({0})	Next suitable system ({0})
+<color=#7CF29A>ЗАВЕРШЁН</color>	<color=#7CF29A>COMPLETE</color>
+<color={0}>СТРОИТСЯ</color>	<color={0}>BUILDING</color>
+<color=#F2C747>СЛЕДУЮЩИЙ</color>	<color=#F2C747>NEXT</color>
+<color=#6F8790>ВПЕРЕДИ</color>	<color=#6F8790>UPCOMING</color>
+{0} техн.	{0} tech
+ОТМЕНИТЬ	CANCEL
+Отменить этап: вернётся половина ресурсов.	Cancel the stage: half of the resources will be refunded.
+ Место стройки освободится.	 The construction site will be freed.
+ЗАЛОЖИТЬ ЧУДО	BEGIN THE WONDER
+ЗАЛОЖИТЬ ЭТАП	BEGIN STAGE
+<color=#FF9A8A>ОСТАНОВЛЕНО — система потеряна</color>	<color=#FF9A8A>HALTED — system lost</color>
+{0:0}%   <color=#8AA2A8>осталось {1}</color>	{0:0}%   <color=#8AA2A8>{1} left</color>
+УСКОРЕНИЕ СТРОЙКИ	CONSTRUCTION BOOSTS
+<color=#E3B8FF>Ключ Строителей</color> — этапы на 25% дешевле и быстрее.   	<color=#E3B8FF>Key of the Builders</color> — stages 25% cheaper and faster.   
+<color=#E3B8FF>Архитектура Тессерама</color> — этапы на 20% быстрее.	<color=#E3B8FF>Tesseram's Architecture</color> — stages 20% faster.
+Пока нет. Цепочки событий «Сердце Тишины» и «Пробуждённый разум» могут дать скидку на стройку.	None yet. The “Heart of Silence” and “Awakened Mind” event chains can speed up construction or make it cheaper.
+СЕТЬ ВРАТ	GATE NETWORK
+Врата перезаряжаются: ещё {0} дн.	The Gate is recharging: {0} d left
+У Врат ({0}) стоят флотов: <b>{1}</b>. Выберите систему — все они перейдут туда мгновенно.	Fleets at the Gate ({0}): <b>{1}</b>. Choose a system — all of them will transfer there instantly.
+У Врат ({0}) нет флотов. Приведите флот в систему Врат, чтобы перебросить его.	No fleets at the Gate ({0}). Bring a fleet to the Gate's system to transfer it.
+ЧУДЕСА СОПЕРНИКОВ	RIVAL WONDERS
+<color=#6F8790>Неизвестная империя</color>	<color=#6F8790>Unknown Empire</color>
+<color=#F2C747>ЗАВЕРШЕНО</color>	<color=#F2C747>COMPLETE</color>
+этап {0} из 3 · {1:0}%	stage {0} of 3 · {1:0}%
+этапов: {0} из 3	stages: {0} of 3
+не начато	not started
+красный карлик (M)	red dwarf (M)
+оранжевая звезда (K)	orange star (K)
+жёлтая звезда (G)	yellow star (G)
+белая звезда (A)	white star (A)
+голубой гигант (B)	blue giant (B)
+Цепочка «{0}»	Event chain: {0}
+Продолжение следует. Хроника — в окне империи, вкладка «Эффекты»	To be continued. The chronicle is in the empire window, “Effects” tab
+цепочка событий · продолжение следует	event chain · to be continued
+скоро	soon
+≈ год	≈ 1 year
+≈ {0:0.#} г.	≈ {0:0.#} yr
+Чудо фракции	Faction Wonder
+<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников	<b>Faction Wonder</b>\nYour faction's megastructure: stages, construction site, Gate Network, rival wonders
+<color=#F2C747><b>ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}</b></color>\n	<color=#F2C747><b>CHAIN “{0}”  ·  CHAPTER {1}</b></color>\n

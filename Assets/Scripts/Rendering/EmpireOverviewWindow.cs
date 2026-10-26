@@ -1112,7 +1112,7 @@ namespace StellarisClone.Rendering
                     n++;
                     var row = Row(null, new Color(0.85f, 0.65f, 0.95f, 0.3f));
                     IconCell(row, 0f, 0.06f, LGIcon.Research, new Color(0.85f, 0.65f, 0.95f));
-                    TwoLine(row, 0.06f, 0.42f, pc.Chain, "цепочка событий · продолжение следует");
+                    TwoLine(row, 0.06f, 0.42f, pc.Chain, Loc.T("цепочка событий · продолжение следует"));
                     var hint = TextCell(row, 0.42f, 0.84f, $"<i>{pc.Hint}</i>", UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
                     hint.horizontalOverflow = HorizontalWrapMode.Wrap;
                     hint.lineSpacing = 0.95f;
@@ -1145,10 +1145,10 @@ namespace StellarisClone.Rendering
         /// <summary>Примерный срок до главы цепочки: точная дата — спойлер, поэтому округляем.</summary>
         private static string ChainEta(int days)
         {
-            if (days <= 45) return "скоро";
-            if (days < 300) return $"≈ {Mathf.Max(1, Mathf.RoundToInt(days / 30f))} мес.";
+            if (days <= 45) return Loc.T("скоро");
+            if (days < 300) return Loc.F("≈ {0} мес.", Mathf.Max(1, Mathf.RoundToInt(days / 30f)));
             float years = days / 360f;
-            return years < 1.25f ? "≈ год" : $"≈ {years:0.#} г.";
+            return years < 1.25f ? Loc.T("≈ год") : Loc.F("≈ {0:0.#} г.", years);
         }
 
         // ---------- Соперник ----------

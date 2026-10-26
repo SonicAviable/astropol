@@ -2126,7 +2126,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             {
                 // Глава цепочки — золотой строкой над подзаголовком: игрок видит, что история продолжается
                 string chain = string.IsNullOrEmpty(ev.Chain) ? ""
-                    : $"<color=#F2C747><b>ЦЕПОЧКА «{ev.Chain.ToUpper()}»  ·  ГЛАВА {Roman(ev.Step)}</b></color>\n";
+                    : Loc.F("<color=#F2C747><b>ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}</b></color>\n", ev.Chain.ToUpper(), Roman(ev.Step));
                 _eventDescText.text = string.IsNullOrEmpty(ev.Subtitle)
                     ? (chain.Length > 0 ? chain + "\n" : "") + ev.Description
                     : $"{chain}<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";

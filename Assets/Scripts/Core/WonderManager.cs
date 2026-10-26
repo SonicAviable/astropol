@@ -143,21 +143,21 @@ namespace StellarisClone.Core
             // ---- Доминион Ксарн ----
             var forge = new WonderDef
             {
-                Key = "xarn", Id = "forge", Name = "Наковальня Ксарна", Title = "ЗВЁЗДНАЯ КУЗНЯ", Art = "Wonder_Forge|Drills",
+                Key = "xarn", Id = "forge", Name = Loc.T("Наковальня Ксарна"), Title = Loc.T("ЗВЁЗДНАЯ КУЗНЯ"), Art = "Wonder_Forge|Drills",
                 Color = new Color(1f, 0.42f, 0.22f),
-                Lore = "Доминион не просит у звёзд света — он берёт у них металл. Три гироскопических кольца вокруг светила " +
-                       "выдирают из короны потоки плазмы и гонят их в кузню размером с луну. Говорят, отблеск Наковальни видно " +
-                       "за сотню световых лет — и каждый, кто его видит, знает, чьи это звёзды.",
-                Site = "Своя система со звёздной базой (не чёрная дыра)",
+                Lore = Loc.T("Доминион не просит у звёзд света — он берёт у них металл. Три гироскопических кольца вокруг светила ") +
+                       Loc.T("выдирают из короны потоки плазмы и гонят их в кузню размером с луну. Говорят, отблеск Наковальни видно ") +
+                       Loc.T("за сотню световых лет — и каждый, кто его видит, знает, чьи это звёзды."),
+                Site = Loc.T("Своя система со звёздной базой (не чёрная дыра)"),
                 SiteOk = (s, o) => Owned(s, o) && s.HasStarbase && s.SpectralClass != StarSpectralClass.BlackHole,
                 Stages = new[]
                 {
-                    Stage("Первое кольцо", "Гироскоп из тяжёлых сегментов ложится на орбиту и начинает черпать корону.",
-                          "+5 сплавов в месяц", 5, 360, 250f, 350f),
-                    Stage("Звёздный подъёмник", "Второе кольцо и кузня-наковальня: плазма течёт прямо в литейные цеха.",
-                          "+6 сплавов в месяц · корабли дешевле на 10%", 13, 540, 450f, 500f, 0f, 80f),
-                    Stage("Сердце Наковальни", "Третье кольцо замыкает гироскоп. Звезда работает на флот Доминиона.",
-                          "+8 сплавов в месяц · урон всего флота +10%", 22, 720, 700f, 0f, 600f, 150f),
+                    Stage(Loc.T("Первое кольцо"), Loc.T("Гироскоп из тяжёлых сегментов ложится на орбиту и начинает черпать корону."),
+                          Loc.T("+5 сплавов в месяц"), 5, 360, 250f, 350f),
+                    Stage(Loc.T("Звёздный подъёмник"), Loc.T("Второе кольцо и кузня-наковальня: плазма течёт прямо в литейные цеха."),
+                          Loc.T("+6 сплавов в месяц · корабли дешевле на 10%"), 13, 540, 450f, 500f, 0f, 80f),
+                    Stage(Loc.T("Сердце Наковальни"), Loc.T("Третье кольцо замыкает гироскоп. Звезда работает на флот Доминиона."),
+                          Loc.T("+8 сплавов в месяц · урон всего флота +10%"), 22, 720, 700f, 0f, 600f, 150f),
                 }
             };
             forge.Stages[0].IncAlloys = 5f;
@@ -168,21 +168,21 @@ namespace StellarisClone.Core
             // ---- Республика Астрея ----
             var ring = new WonderDef
             {
-                Key = "astrea", Id = "ring", Name = "Кольцо Согласия", Title = "ОРБИТАЛЬНОЕ КОЛЬЦО-ФОРУМ", Art = "Wonder_Ring|Festival",
+                Key = "astrea", Id = "ring", Name = Loc.T("Кольцо Согласия"), Title = Loc.T("ОРБИТАЛЬНОЕ КОЛЬЦО-ФОРУМ"), Art = "Wonder_Ring|Festival",
                 Color = new Color(0.35f, 0.85f, 1f),
-                Lore = "Республика строит не крепость, а площадь. Кольцо Согласия опоясывает светило лентой жилых палуб, садов и залов, " +
-                       "где представители сотни миров спорят, торгуют и учатся. Его свет виден с каждой колонии Республики — " +
-                       "как напоминание, что они говорят одним голосом.",
-                Site = "Своя система с колонией",
+                Lore = Loc.T("Республика строит не крепость, а площадь. Кольцо Согласия опоясывает светило лентой жилых палуб, садов и залов, ") +
+                       Loc.T("где представители сотни миров спорят, торгуют и учатся. Его свет виден с каждой колонии Республики — ") +
+                       Loc.T("как напоминание, что они говорят одним голосом."),
+                Site = Loc.T("Своя система с колонией"),
                 SiteOk = (s, o) => Owned(s, o) && HasColony(s),
                 Stages = new[]
                 {
-                    Stage("Опорные сегменты", "Три якорных сегмента и спицы, на которых повиснет кольцо.",
-                          "+2 влияния в месяц", 5, 360, 250f, 400f),
-                    Stage("Жилые палубы", "Палубы смыкаются в дуги; первые жители переезжают на кольцо.",
-                          "+6 науки в месяц · +3 населения", 13, 540, 400f, 500f, 0f, 100f),
-                    Stage("Замкнутое кольцо", "Кольцо замыкается. Зал Согласия открывает двери для всей галактики.",
-                          "исследования +15% · +2 влияния в месяц · +10 к отношению всех империй", 22, 720, 650f, 0f, 700f, 150f),
+                    Stage(Loc.T("Опорные сегменты"), Loc.T("Три якорных сегмента и спицы, на которых повиснет кольцо."),
+                          Loc.T("+2 влияния в месяц"), 5, 360, 250f, 400f),
+                    Stage(Loc.T("Жилые палубы"), Loc.T("Палубы смыкаются в дуги; первые жители переезжают на кольцо."),
+                          Loc.T("+6 науки в месяц · +3 населения"), 13, 540, 400f, 500f, 0f, 100f),
+                    Stage(Loc.T("Замкнутое кольцо"), Loc.T("Кольцо замыкается. Зал Согласия открывает двери для всей галактики."),
+                          Loc.T("исследования +15% · +2 влияния в месяц · +10 к отношению всех империй"), 22, 720, 650f, 0f, 700f, 150f),
                 }
             };
             ring.Stages[0].IncInfluence = 2f;
@@ -194,22 +194,22 @@ namespace StellarisClone.Core
             // ---- Синдикат Аквила ----
             var dyson = new WonderDef
             {
-                Key = "aquila", Id = "dyson", Name = "Сфера Дайсона", Title = "ЭНЕРГОКОНЦЕРН «ДАЙСОН»", Art = "Wonder_Dyson|Trade",
+                Key = "aquila", Id = "dyson", Name = Loc.T("Сфера Дайсона"), Title = Loc.T("ЭНЕРГОКОНЦЕРН «ДАЙСОН»"), Art = "Wonder_Dyson|Trade",
                 Color = new Color(1f, 0.78f, 0.25f),
-                Lore = "Синдикат Аквила выставил звезде счёт. Миллионы зеркальных коллекторов, выведенных на орбиту роем, превращают " +
-                       "светило в электростанцию, а саму сферу — в самый дорогой актив галактики. Акции концерна «Дайсон» котируются " +
-                       "выше, чем валюты половины империй.",
-                Site = "Своя система (не чёрная дыра). Голубые и белые звёзды дают до +50% гелия-3, красные карлики — −30%",
+                Lore = Loc.T("Синдикат Аквила выставил звезде счёт. Миллионы зеркальных коллекторов, выведенных на орбиту роем, превращают ") +
+                       Loc.T("светило в электростанцию, а саму сферу — в самый дорогой актив галактики. Акции концерна «Дайсон» котируются ") +
+                       Loc.T("выше, чем валюты половины империй."),
+                Site = Loc.T("Своя система (не чёрная дыра). Голубые и белые звёзды дают до +50% гелия-3, красные карлики — −30%"),
                 SiteOk = (s, o) => Owned(s, o) && s.SpectralClass != StarSpectralClass.BlackHole,
                 SiteYield = StarYield,
                 Stages = new[]
                 {
-                    Stage("Рой коллекторов", "Первые тысячи зеркал выходят на орбиту и разворачиваются к звезде.",
-                          "+10 гелия-3 в месяц × класс звезды", 5, 360, 250f, 400f),
-                    Stage("Экваториальный пояс", "Рой сплетается в сплошной пояс по экватору звезды.",
-                          "+14 гелия-3 в месяц × класс звезды · +2 влияния в месяц", 13, 540, 450f, 600f, 0f, 80f),
-                    Stage("Замкнутая сфера", "Сфера смыкается. Звезда гаснет для всей галактики — и горит только для Синдиката.",
-                          "+22 гелия-3 в месяц × класс звезды · титан +10%", 22, 720, 700f, 0f, 500f, 150f),
+                    Stage(Loc.T("Рой коллекторов"), Loc.T("Первые тысячи зеркал выходят на орбиту и разворачиваются к звезде."),
+                          Loc.T("+10 гелия-3 в месяц × класс звезды"), 5, 360, 250f, 400f),
+                    Stage(Loc.T("Экваториальный пояс"), Loc.T("Рой сплетается в сплошной пояс по экватору звезды."),
+                          Loc.T("+14 гелия-3 в месяц × класс звезды · +2 влияния в месяц"), 13, 540, 450f, 600f, 0f, 80f),
+                    Stage(Loc.T("Замкнутая сфера"), Loc.T("Сфера смыкается. Звезда гаснет для всей галактики — и горит только для Синдиката."),
+                          Loc.T("+22 гелия-3 в месяц × класс звезды · титан +10%"), 22, 720, 700f, 0f, 500f, 150f),
                 }
             };
             dyson.Stages[0].IncEnergy = 10f;
@@ -220,21 +220,21 @@ namespace StellarisClone.Core
             // ---- Иридийский Оракул ----
             var gate = new WonderDef
             {
-                Key = "iridia", Id = "gate", Name = "Врата Провидения", Title = "ВРАТА МЕЖДУ ЗВЁЗДАМИ", Art = "Wonder_Gate|Rift",
+                Key = "iridia", Id = "gate", Name = Loc.T("Врата Провидения"), Title = Loc.T("ВРАТА МЕЖДУ ЗВЁЗДАМИ"), Art = "Wonder_Gate|Rift",
                 Color = new Color(0.72f, 0.5f, 1f),
-                Lore = "Верховная Оракул видела их во сне задолго до того, как инженеры поняли, что это возможно: кольцо из живого кристалла, " +
-                       "внутри которого пространство складывается, как ткань. Иридийцы не называют Врата машиной. " +
-                       "Для них это дверь, которую будущее держит открытой.",
-                Site = "Своя система, из которой ведут хотя бы 3 гиперкоридора",
+                Lore = Loc.T("Верховная Оракул видела их во сне задолго до того, как инженеры поняли, что это возможно: кольцо из живого кристалла, ") +
+                       Loc.T("внутри которого пространство складывается, как ткань. Иридийцы не называют Врата машиной. ") +
+                       Loc.T("Для них это дверь, которую будущее держит открытой."),
+                Site = Loc.T("Своя система, из которой ведут хотя бы 3 гиперкоридора"),
                 SiteOk = (s, o) => Owned(s, o) && s.ConnectedSystemIds.Count >= 3,
                 Stages = new[]
                 {
-                    Stage("Кристальное кольцо", "Кольцо из выращенного кристалла собирается вокруг точки фокуса.",
-                          "+3 влияния в месяц", 5, 360, 250f, 350f),
-                    Stage("Зеркало горизонта", "Кольцо настроено: пространство внутри дрожит, как поверхность воды.",
-                          "скорость в гиперкоридорах +15% · открыта карта на 5 прыжков", 13, 540, 400f, 500f, 0f, 100f),
-                    Stage("Открытие Врат", "Врата открыты. Флоты Оракула шагают сквозь них в любую свою систему.",
-                          "Сеть Врат: флоты у Врат мгновенно переходят в любую свою систему (перезарядка 60 дней) · гиперскорость ещё +10% · +3 влияния",
+                    Stage(Loc.T("Кристальное кольцо"), Loc.T("Кольцо из выращенного кристалла собирается вокруг точки фокуса."),
+                          Loc.T("+3 влияния в месяц"), 5, 360, 250f, 350f),
+                    Stage(Loc.T("Зеркало горизонта"), Loc.T("Кольцо настроено: пространство внутри дрожит, как поверхность воды."),
+                          Loc.T("скорость в гиперкоридорах +15% · открыта карта на 5 прыжков"), 13, 540, 400f, 500f, 0f, 100f),
+                    Stage(Loc.T("Открытие Врат"), Loc.T("Врата открыты. Флоты Оракула шагают сквозь них в любую свою систему."),
+                          Loc.T("Сеть Врат: флоты у Врат мгновенно переходят в любую свою систему (перезарядка 60 дней) · гиперскорость ещё +10% · +3 влияния"),
                           22, 720, 650f, 0f, 700f, 150f),
                 }
             };
@@ -246,21 +246,21 @@ namespace StellarisClone.Core
             // ---- Конклав Тэрра'ан ----
             var tree = new WonderDef
             {
-                Key = "terraan", Id = "tree", Name = "Древо Миров", Title = "ЖИВАЯ МЕГАСТРУКТУРА", Art = "Wonder_Tree|Amoeba",
+                Key = "terraan", Id = "tree", Name = Loc.T("Древо Миров"), Title = Loc.T("ЖИВАЯ МЕГАСТРУКТУРА"), Art = "Wonder_Tree|Amoeba",
                 Color = new Color(0.45f, 1f, 0.45f),
-                Lore = "Конклав не строит — он сажает. Семя, выращенное за тысячу лет в сердце мира-сада, укореняется в поясе астероидов " +
-                       "и тянет к звезде побеги длиной в миллионы километров. Древо Миров пьёт свет, дышит пылью и поёт на частоте мицелия — " +
-                       "и каждый тэрра'ан в галактике слышит эту песню.",
-                Site = "Своя система с колонией",
+                Lore = Loc.T("Конклав не строит — он сажает. Семя, выращенное за тысячу лет в сердце мира-сада, укореняется в поясе астероидов ") +
+                       Loc.T("и тянет к звезде побеги длиной в миллионы километров. Древо Миров пьёт свет, дышит пылью и поёт на частоте мицелия — ") +
+                       Loc.T("и каждый тэрра'ан в галактике слышит эту песню."),
+                Site = Loc.T("Своя система с колонией"),
                 SiteOk = (s, o) => Owned(s, o) && HasColony(s),
                 Stages = new[]
                 {
-                    Stage("Корни в поясе", "Семя пускает корни в астероиды и начинает пить металл.",
-                          "+5 титана в месяц · +1 влияния в месяц", 5, 360, 200f, 450f),
-                    Stage("Ствол к звезде", "Побеги тянутся к светилу, по ним течёт свет и сок.",
-                          "+6 науки в месяц · +3 населения", 13, 540, 400f, 550f, 0f, 100f),
-                    Stage("Крона", "Крона распускается вокруг звезды. Песня Древа слышна во всей галактике.",
-                          "исследования +10% · +3 влияния и +4 гелия-3 в месяц", 22, 720, 600f, 0f, 700f, 150f),
+                    Stage(Loc.T("Корни в поясе"), Loc.T("Семя пускает корни в астероиды и начинает пить металл."),
+                          Loc.T("+5 титана в месяц · +1 влияния в месяц"), 5, 360, 200f, 450f),
+                    Stage(Loc.T("Ствол к звезде"), Loc.T("Побеги тянутся к светилу, по ним течёт свет и сок."),
+                          Loc.T("+6 науки в месяц · +3 населения"), 13, 540, 400f, 550f, 0f, 100f),
+                    Stage(Loc.T("Крона"), Loc.T("Крона распускается вокруг звезды. Песня Древа слышна во всей галактике."),
+                          Loc.T("исследования +10% · +3 влияния и +4 гелия-3 в месяц"), 22, 720, 600f, 0f, 700f, 150f),
                 }
             };
             tree.Stages[0].IncMinerals = 5f; tree.Stages[0].IncInfluence = 1f;
@@ -271,21 +271,21 @@ namespace StellarisClone.Core
             // ---- Машинный Консенсус «Ноль» ----
             var brain = new WonderDef
             {
-                Key = "nol", Id = "brain", Name = "Мозг-Матрёшка", Title = "ВЫЧИСЛИТЕЛЬНЫЙ РАЗУМ ЗВЕЗДЫ", Art = "Wonder_Brain|Breakthrough",
+                Key = "nol", Id = "brain", Name = Loc.T("Мозг-Матрёшка"), Title = Loc.T("ВЫЧИСЛИТЕЛЬНЫЙ РАЗУМ ЗВЕЗДЫ"), Art = "Wonder_Brain|Breakthrough",
                 Color = new Color(0.7f, 0.92f, 1f),
-                Lore = "Консенсусу тесно в планетах. Вложенные друг в друга оболочки вычислителей окружают звезду: внутренняя пьёт её свет, " +
-                       "каждая следующая питается теплом предыдущей. Миллиард машин становится одной мыслью размером с солнечную систему — " +
-                       "и эта мысль уже просчитала, чем закончится галактика.",
-                Site = "Своя система (не чёрная дыра)",
+                Lore = Loc.T("Консенсусу тесно в планетах. Вложенные друг в друга оболочки вычислителей окружают звезду: внутренняя пьёт её свет, ") +
+                       Loc.T("каждая следующая питается теплом предыдущей. Миллиард машин становится одной мыслью размером с солнечную систему — ") +
+                       Loc.T("и эта мысль уже просчитала, чем закончится галактика."),
+                Site = Loc.T("Своя система (не чёрная дыра)"),
                 SiteOk = (s, o) => Owned(s, o) && s.SpectralClass != StarSpectralClass.BlackHole,
                 Stages = new[]
                 {
-                    Stage("Внутренняя оболочка", "Первая сфера вычислителей ложится на ближнюю орбиту и начинает пить свет звезды.",
-                          "+6 науки в месяц", 5, 360, 250f, 400f),
-                    Stage("Средняя оболочка", "Вторая оболочка питается теплом первой: мощность растёт вдвое.",
-                          "исследования +10% · +2 сплава в месяц", 13, 540, 450f, 500f, 0f, 80f),
-                    Stage("Внешняя оболочка", "Третья оболочка замыкает каскад. Звезда думает.",
-                          "+10 науки в месяц · исследования ещё +10%", 22, 720, 700f, 0f, 600f, 120f),
+                    Stage(Loc.T("Внутренняя оболочка"), Loc.T("Первая сфера вычислителей ложится на ближнюю орбиту и начинает пить свет звезды."),
+                          Loc.T("+6 науки в месяц"), 5, 360, 250f, 400f),
+                    Stage(Loc.T("Средняя оболочка"), Loc.T("Вторая оболочка питается теплом первой: мощность растёт вдвое."),
+                          Loc.T("исследования +10% · +2 сплава в месяц"), 13, 540, 450f, 500f, 0f, 80f),
+                    Stage(Loc.T("Внешняя оболочка"), Loc.T("Третья оболочка замыкает каскад. Звезда думает."),
+                          Loc.T("+10 науки в месяц · исследования ещё +10%"), 22, 720, 700f, 0f, 600f, 120f),
                 }
             };
             brain.Stages[0].Science = 6f;
@@ -358,30 +358,30 @@ namespace StellarisClone.Core
             reason = null;
             var st = StateOf(owner);
             var def = DefOf(owner);
-            if (st == null || def == null) { reason = "Чудо фракции неизвестно"; return false; }
-            if (st.Built >= def.Stages.Length) { reason = "Чудо завершено"; return false; }
-            if (st.InProgress) { reason = "Этап уже строится"; return false; }
+            if (st == null || def == null) { reason = Loc.T("Чудо фракции неизвестно"); return false; }
+            if (st.Built >= def.Stages.Length) { reason = Loc.T("Чудо завершено"); return false; }
+            if (st.InProgress) { reason = Loc.T("Этап уже строится"); return false; }
             var stage = def.Stages[st.Built];
             int sysId = st.SystemId >= 0 ? st.SystemId : systemId;
             var sys = EmpireStats.GetSystem(sysId);
-            if (sys == null) { reason = "Выберите систему для чуда"; return false; }
+            if (sys == null) { reason = Loc.T("Выберите систему для чуда"); return false; }
             if (!def.SiteOk(sys, owner))
             {
-                reason = st.SystemId >= 0 && sys.OwnerId != owner ? $"Система {sys.Name} потеряна — верните её" : $"Место не подходит: {def.Site.ToLower()}";
+                reason = st.SystemId >= 0 && sys.OwnerId != owner ? Loc.F("Система {0} потеряна — верните её", sys.Name) : Loc.F("Место не подходит: {0}", def.Site.ToLower());
                 return false;
             }
             int techs = TechCount(owner);
-            if (techs < stage.Techs) { reason = $"Нужно изученных технологий: {stage.Techs} (сейчас {techs})"; return false; }
+            if (techs < stage.Techs) { reason = Loc.F("Нужно изученных технологий: {0} (сейчас {1})", stage.Techs, techs); return false; }
             Cost(stage, owner, out float e, out float m, out float a, out float i);
             if (owner == 0)
             {
                 var eco = EconomyManager.Instance;
-                if (eco == null || !eco.CanAfford(e, m, a, i)) { reason = "Не хватает ресурсов"; return false; }
+                if (eco == null || !eco.CanAfford(e, m, a, i)) { reason = Loc.T("Не хватает ресурсов"); return false; }
             }
             else
             {
                 var ai = AIEmpireManager.For(owner);
-                if (ai == null || ai.EnergyCredits < e || ai.Minerals < m || ai.Alloys < a || ai.Influence < i) { reason = "Не хватает ресурсов"; return false; }
+                if (ai == null || ai.EnergyCredits < e || ai.Minerals < m || ai.Alloys < a || ai.Influence < i) { reason = Loc.T("Не хватает ресурсов"); return false; }
             }
             return true;
         }
@@ -413,9 +413,9 @@ namespace StellarisClone.Core
             if (owner == 0)
             {
                 SFXManager.Play(Sfx.BuildQueued);
-                NotificationCenter.Show(def.Name, $"Заложен этап «{stage.Name}» — {FormatDays(st.DaysTotal)}", NotificationCenter.Kind.Success, 5f);
+                NotificationCenter.Show(def.Name, Loc.F("Заложен этап «{0}» — {1}", stage.Name, FormatDays(st.DaysTotal)), NotificationCenter.Kind.Success, 5f);
             }
-            else NotifyRival(owner, def, $"начинает строить «{def.Name}»", st.Built == 0);
+            else NotifyRival(owner, def, Loc.F("{0} начинает строить «{1}»", AIEmpireManager.NameOf(owner), def.Name), st.Built == 0);
             OnChanged?.Invoke();
             return true;
         }
@@ -441,8 +441,12 @@ namespace StellarisClone.Core
 
         public static string FormatDays(float days)
         {
-            if (days >= 330f) { float y = days / 360f; return y < 1.1f ? "≈ 1 год" : $"≈ {y:0.#} {(y < 5f ? "года" : "лет")}"; }
-            return $"≈ {Mathf.Max(1, Mathf.RoundToInt(days / 30f))} мес.";
+            if (days >= 330f)
+            {
+                float y = days / 360f;
+                return y < 1.1f ? Loc.T("≈ 1 год") : y < 5f ? Loc.F("≈ {0:0.#} года", y) : Loc.F("≈ {0:0.#} лет", y);
+            }
+            return Loc.F("≈ {0} мес.", Mathf.Max(1, Mathf.RoundToInt(days / 30f)));
         }
 
         // ==================== КАЛЕНДАРЬ ====================
@@ -460,7 +464,7 @@ namespace StellarisClone.Core
                 {
                     // Система потеряна — стройка замирает до возвращения
                     if (!st.PauseNoted && st.Owner == 0)
-                        NotificationCenter.Show("Стройка чуда остановлена", $"Система {sys?.Name ?? "?"} больше не наша", NotificationCenter.Kind.Danger, 6f);
+                        NotificationCenter.Show(Loc.T("Стройка чуда остановлена"), Loc.F("Система {0} больше не наша", sys?.Name ?? "?"), NotificationCenter.Kind.Danger, 6f);
                     st.PauseNoted = true;
                     continue;
                 }
@@ -488,7 +492,9 @@ namespace StellarisClone.Core
 
             bool done = st.Built >= def.Stages.Length;
             if (st.Owner == 0) PresentStage(def, stage, st.Built, done);
-            else NotifyRival(st.Owner, def, done ? $"завершает чудо «{def.Name}»!" : $"завершает этап «{stage.Name}» чуда «{def.Name}»", done);
+            else NotifyRival(st.Owner, def, done
+                ? Loc.F("{0} завершает чудо «{1}»!", AIEmpireManager.NameOf(st.Owner), def.Name)
+                : Loc.F("{0} завершает этап «{1}» чуда «{2}»", AIEmpireManager.NameOf(st.Owner), stage.Name, def.Name), done);
         }
 
         private static void ApplyIncome(int owner, WonderStage stage, float yield)
@@ -519,24 +525,23 @@ namespace StellarisClone.Core
         /// <summary>Торжественное окно игроку: иллюстрация чуда, что дал этап.</summary>
         private static void PresentStage(WonderDef def, WonderStage stage, int built, bool done)
         {
-            string title = done ? $"{def.Name.ToUpper()} ЗАВЕРШЕНО" : $"{def.Name.ToUpper()}: ЭТАП {built} ИЗ 3";
+            string title = done ? Loc.F("{0} ЗАВЕРШЕНО", def.Name.ToUpper()) : Loc.F("{0}: ЭТАП {1} ИЗ 3", def.Name.ToUpper(), built);
             string text = done
-                ? $"{stage.Desc}\n\nПоследний сегмент встал на место. О чуде нашей фракции говорит вся галактика — и каждый, кто смотрит на " +
-                  $"наше небо, знает, на что мы способны.\n\n<b>Этап «{stage.Name}»:</b> {stage.Effect}."
-                : $"{stage.Desc}\n\n<b>Этап «{stage.Name}» завершён:</b> {stage.Effect}.\n\nСледующий этап можно заложить в окне чуда.";
+                ? Loc.F("{0}\n\nПоследний сегмент встал на место. О чуде нашей фракции говорит вся галактика — и каждый, кто смотрит на наше небо, знает, на что мы способны.\n\n<b>Этап «{1}»:</b> {2}.", stage.Desc, stage.Name, stage.Effect)
+                : Loc.F("{0}\n\n<b>Этап «{1}» завершён:</b> {2}.\n\nСледующий этап можно заложить в окне чуда.", stage.Desc, stage.Name, stage.Effect);
             var ev = new GameEventData("wonder_" + def.Id, title, text, AnomalyType.PrecursorRelic, new List<EventOption>
             {
-                new EventOption(done ? "СЛАВА ИМПЕРИИ" : "ПРОДОЛЖАТЬ СТРОЙКУ", stage.Effect, () => { })
+                new EventOption(done ? Loc.T("СЛАВА ИМПЕРИИ") : Loc.T("ПРОДОЛЖАТЬ СТРОЙКУ"), stage.Effect, () => { })
             })
             { Art = def.Art, Subtitle = def.Title };
             if (AnomalyEventSystem.Instance != null) AnomalyEventSystem.Instance.Present(ev);
             else NotificationCenter.Show(title, stage.Effect, NotificationCenter.Kind.Success, 8f);
         }
 
-        private static void NotifyRival(int owner, WonderDef def, string what, bool important)
+        private static void NotifyRival(int owner, WonderDef def, string text, bool important)
         {
             if (!Contacts.PlayerMet(owner)) return;
-            NotificationCenter.Show(def.Name, $"{AIEmpireManager.NameOf(owner)} {what}",
+            NotificationCenter.Show(def.Name, text,
                 important ? NotificationCenter.Kind.Warning : NotificationCenter.Kind.Info, important ? 7f : 5f);
         }
 
@@ -606,7 +611,7 @@ namespace StellarisClone.Core
             {
                 st.GateCooldown = GateRecharge;
                 SFXManager.Play(Sfx.FtlJump);
-                NotificationCenter.Show("Врата Провидения", $"Флотов переброшено: {moved} → {target.Name}", NotificationCenter.Kind.Success, 5f);
+                NotificationCenter.Show(Loc.T("Врата Провидения"), Loc.F("Флотов переброшено: {0} → {1}", moved, target.Name), NotificationCenter.Kind.Success, 5f);
                 OnChanged?.Invoke();
             }
             return moved;

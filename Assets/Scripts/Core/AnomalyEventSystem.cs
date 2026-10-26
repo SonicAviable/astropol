@@ -116,7 +116,7 @@ namespace StellarisClone.Core
             {
                 _lastChainNote = chain;
                 _lastChainFrame = Time.frameCount;
-                NotificationCenter.Show($"Цепочка «{chain}»", "Продолжение следует. Хроника — в окне империи, вкладка «Эффекты»",
+                NotificationCenter.Show(Loc.F("Цепочка «{0}»", chain), Loc.T("Продолжение следует. Хроника — в окне империи, вкладка «Эффекты»"),
                     NotificationCenter.Kind.Info, 5f);
             }
         }
