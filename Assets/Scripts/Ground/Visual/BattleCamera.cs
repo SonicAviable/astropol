@@ -16,22 +16,23 @@ namespace StellarisClone.Ground
         public Camera Cam { get; private set; }
         private GroundMap _map;
         private Vector3 _focus;
-        private float _yaw, _zoom = 48f, _zoomTarget = 48f;
+        private float _yaw, _zoom = 34f, _zoomTarget = 34f;
         private float _trauma;
         private float _intro;
         private Vector3 _punch;
-        private const float MinZoom = 18f, MaxZoom = 90f;
+        private const float MinZoom = 13f, MaxZoom = 78f;
         private UnityEngine.Rendering.VolumeProfile _grade;
         private UnityEngine.Rendering.Universal.ChromaticAberration _chroma;
+        private UnityEngine.Rendering.Universal.LensDistortion _lens;
 
         public static BattleCamera Create(Transform root, GroundMap map, Vector3 focus)
         {
             var go = new GameObject("BattleCamera");
             go.transform.SetParent(root, false);
             var cam = go.AddComponent<Camera>();
-            cam.fieldOfView = 45f;
+            cam.fieldOfView = 40f;
             cam.nearClipPlane = 0.3f;
-            cam.farClipPlane = 700f;
+            cam.farClipPlane = 900f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = map.Biome.Sky;
             cam.allowHDR = true;
@@ -62,14 +63,42 @@ namespace StellarisClone.Ground
             vol.priority = 50f;
             _grade = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
             _grade.hideFlags = HideFlags.DontSave;
+            var b = _map.Biome;
+
+            // Кино-тонмаппинг: насыщенные тени, мягкий пересвет вспышек
+            var tm = _grade.Add<UnityEngine.Rendering.Universal.Tonemapping>(true);
+            tm.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.ACES);
             var ca = _grade.Add<UnityEngine.Rendering.Universal.ColorAdjustments>(true);
-            ca.contrast.Override(18f);
-            ca.saturation.Override(-8f);
+            ca.postExposure.Override(b.Exposure);
+            ca.contrast.Override(24f);
+            ca.saturation.Override(b.Saturation);
+            // Холодные тени и тёплые света — «военная» палитра
+            var st = _grade.Add<UnityEngine.Rendering.Universal.SplitToning>(true);
+            st.shadows.Override(b.ShadowTint);
+            st.highlights.Override(b.HighlightTint);
+            st.balance.Override(-15f);
+            var smh = _grade.Add<UnityEngine.Rendering.Universal.ShadowsMidtonesHighlights>(true);
+            smh.shadows.Override(new Vector4(0.92f, 0.95f, 1.02f, -0.08f));
+            smh.highlights.Override(new Vector4(1.04f, 1f, 0.94f, 0.02f));
+            // Свечение дульных вспышек, взрывов, огня
+            var bloom = _grade.Add<UnityEngine.Rendering.Universal.Bloom>(true);
+            bloom.threshold.Override(1.05f);
+            bloom.intensity.Override(0.9f);
+            bloom.scatter.Override(0.72f);
+            bloom.tint.Override(new Color(1f, 0.9f, 0.8f));
             var vg = _grade.Add<UnityEngine.Rendering.Universal.Vignette>(true);
-            vg.intensity.Override(0.3f);
-            vg.smoothness.Override(0.45f);
+            vg.intensity.Override(0.34f);
+            vg.smoothness.Override(0.5f);
+            vg.color.Override(new Color(0.03f, 0.02f, 0.02f));
+            // Плёночное зерно — «грязь» войны
+            var fg = _grade.Add<UnityEngine.Rendering.Universal.FilmGrain>(true);
+            fg.type.Override(UnityEngine.Rendering.Universal.FilmGrainLookup.Medium3);
+            fg.intensity.Override(0.22f);
+            fg.response.Override(0.75f);
             _chroma = _grade.Add<UnityEngine.Rendering.Universal.ChromaticAberration>(true);
             _chroma.intensity.Override(0f);
+            _lens = _grade.Add<UnityEngine.Rendering.Universal.LensDistortion>(true);
+            _lens.intensity.Override(0f);
             vol.sharedProfile = _grade;
         }
 
@@ -156,7 +185,9 @@ namespace StellarisClone.Ground
             _zoom = Mathf.Lerp(_zoom, _zoomTarget, 1f - Mathf.Exp(-dt * 8f));
             _punch = Vector3.Lerp(_punch, Vector3.zero, 1f - Mathf.Exp(-dt * 3f));
 
-            float pitch = Mathf.Lerp(40f, 65f, (_zoom - MinZoom) / (MaxZoom - MinZoom));
+            // Как в Dawn of War: вблизи камера почти у земли (видно горизонт и дым), отдаляясь — встаёт выше
+            float zt = Mathf.Clamp01((_zoom - MinZoom) / (MaxZoom - MinZoom));
+            float pitch = Mathf.Lerp(30f, 60f, Mathf.Pow(zt, 0.75f));
             Place(_zoom, pitch, dt);
         }
 
@@ -173,7 +204,8 @@ namespace StellarisClone.Ground
                 pos += new Vector3(Mathf.PerlinNoise(t, 0.1f) - 0.5f, Mathf.PerlinNoise(0.2f, t) - 0.5f, Mathf.PerlinNoise(t, t) - 0.5f) * s * 1.6f;
                 rot *= Quaternion.Euler((Mathf.PerlinNoise(t * 0.7f, 3f) - 0.5f) * s * 4f, (Mathf.PerlinNoise(5f, t * 0.7f) - 0.5f) * s * 4f, (Mathf.PerlinNoise(t, 7f) - 0.5f) * s * 3f);
                 _trauma = Mathf.Max(0f, _trauma - dt * 1.4f);
-                if (_chroma != null) _chroma.intensity.value = Mathf.Clamp01((_trauma - 0.35f) * 1.6f);
+                if (_chroma != null) _chroma.intensity.value = Mathf.Clamp01((_trauma - 0.3f) * 1.6f);
+                if (_lens != null) _lens.intensity.value = -Mathf.Clamp01(_trauma - 0.45f) * 0.35f;
             }
             // Не уходить под землю
             var l = _map.ToLocal(pos);

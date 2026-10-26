@@ -13,7 +13,7 @@ namespace StellarisClone.Ground
     /// </summary>
     public static class GroundMapGenerator
     {
-        private const int Grid = 131;               // вершин по стороне (шаг 2 м)
+        private const int Grid = 197;               // вершин по стороне (шаг ~1,3 м — видны воронки и колеи)
         private const float Step = GroundMap.Half * 2f / (Grid - 1);
 
         // Площадки районов и ретрансляторов (локальные X, Z)
@@ -65,6 +65,15 @@ namespace StellarisClone.Ground
                     map.Craters.Add((c, Rand(rng, 4f, 11f), Rand(rng, 1.2f, 2.6f)));
                 }
 
+            // Воронки от снарядов — на любом мире: поле уже видело бои
+            int shells = b.Craters > 0f ? 10 : 18;
+            for (int i = 0; i < shells; i++)
+            {
+                var c = new Vector2(Rand(rng, -100f, 100f), Rand(rng, -80f, 70f));
+                if (NearFlat(map, c, 4f)) continue;
+                map.Craters.Add((c, Rand(rng, 2.2f, 4.2f), Rand(rng, 0.6f, 1.2f)));
+            }
+
             // ---- Земля ----
             map.Terrain = BuildTerrain(map, root, rng);
 
@@ -89,6 +98,7 @@ namespace StellarisClone.Ground
             BuildHq(map, root, setup);
             BuildFortifications(map, root, rng, setup);
             Scatter(map, root, rng);
+            Battlefield(map, root, rng);
             if (map.HasRiver) BuildRiver(map, root);
             return map;
         }
@@ -131,6 +141,7 @@ namespace StellarisClone.Ground
             mesh.uv = uvs;
             mesh.triangles = tris;
             mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
             mesh.RecalculateBounds();
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
@@ -138,6 +149,23 @@ namespace StellarisClone.Ground
             var tex = GroundTexture(map, rng);
             if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", tex);
             if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", tex);
+            // Рельеф: карта нормалей всего поля (валы воронок, бугры) + тайловая детальная текстура (щебень, песок, трещины) каждые ~6,5 м
+            if (mat.HasProperty("_BumpMap"))
+            {
+                mat.SetTexture("_BumpMap", GroundDetail.MacroNormal(map));
+                mat.SetFloat("_BumpScale", 1f);
+                mat.EnableKeyword("_NORMALMAP");
+            }
+            if (mat.HasProperty("_DetailAlbedoMap"))
+            {
+                GroundDetail.Make(map.Biome.Type, rng.Next(1, 100000), out var dAlb, out var dNrm);
+                mat.SetTexture("_DetailAlbedoMap", dAlb);
+                mat.SetTextureScale("_DetailAlbedoMap", new Vector2(40f, 40f));
+                mat.SetFloat("_DetailAlbedoMapScale", 1f);
+                mat.SetTexture("_DetailNormalMap", dNrm);
+                mat.SetFloat("_DetailNormalMapScale", 1f);
+                mat.EnableKeyword("_DETAIL_MULX2");
+            }
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", map.Biome.Type == PlanetType.Molten ? 0.25f : 0.08f);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0f);
             if (map.Biome.Type == PlanetType.Molten && mat.HasProperty("_EmissionColor"))
@@ -177,6 +205,18 @@ namespace StellarisClone.Ground
                     Color c = Color.Lerp(b.GroundA, b.GroundB, n1);
                     c = Color.Lerp(c, b.GroundC, Mathf.Clamp01((n2 - 0.55f) * 2.2f));
                     c *= 0.88f + n3 * 0.24f;
+                    // Крупные пятна сырости/пыли — без них поле выглядит залитым одним цветом
+                    float patch = Mathf.PerlinNoise(lx * 0.012f + ox * 0.3f, lz * 0.012f + 7f);
+                    c *= Mathf.Lerp(0.78f, 1.12f, patch);
+
+                    // Воронки: тёмная выжженная середина, светлый выброс грунта по валу
+                    foreach (var cr in map.Craters)
+                    {
+                        float d = Vector2.Distance(new Vector2(lx, lz), cr.c) / cr.r;
+                        if (d > 1.5f) continue;
+                        if (d < 1f) c = Color.Lerp(c, c * 0.42f, (1f - d) * 0.8f);
+                        else c = Color.Lerp(c, Color.Lerp(c, b.GroundC, 0.6f) * 1.08f, (1.5f - d) * 1.2f);
+                    }
 
                     // Площадки — утоптанная земля
                     foreach (var f in map.Flats)
@@ -188,6 +228,8 @@ namespace StellarisClone.Ground
                     float rd = float.MaxValue;
                     foreach (var r in roads) rd = Mathf.Min(rd, SegDist(new Vector2(lx, lz), r.a, r.c));
                     if (rd < 3f) c = Color.Lerp(c, b.Rock * 0.85f, (1f - rd / 3f) * 0.6f);
+                    // Колеи техники по краям дороги
+                    if (rd > 0.8f && rd < 1.7f) c *= 0.72f + Mathf.Abs(rd - 1.25f) * 0.5f;
                     // Берега и русло
                     if (map.HasRiver)
                     {
@@ -338,14 +380,14 @@ namespace StellarisClone.Ground
             go.transform.SetParent(root, false);
             go.transform.position = world;
             go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            var body = GroundMats.Part(go.transform, PrimitiveType.Cube, new Vector3(0f, size.y * 0.5f - 0.3f, 0f), size, mat, "Body");
+            var body = GroundMats.Box(go.transform, new Vector3(0f, size.y * 0.5f - 0.3f, 0f), size, mat, "Body", null, Mathf.Min(0.35f, Mathf.Min(size.x, size.z) * 0.06f));
             var d = new Destructible { Type = kind, Go = go, Pos = world, Radius = Mathf.Max(size.x, size.z) * 0.6f, Hp = hp, MaxHp = hp, District = district, Side = 1 };
-            d.Renderers.Add(body.GetComponent<Renderer>());
             var col = go.AddComponent<BoxCollider>();
             col.center = new Vector3(0f, size.y * 0.5f - 0.3f, 0f);
             col.size = size;
             d.Colliders.Add(col);
             map.Destructibles.Add(d);
+            d.Size = size;
             // Точки укрытия по периметру (с внешней стороны стен)
             if (around != CoverKind.None)
             {
@@ -377,9 +419,11 @@ namespace StellarisClone.Ground
         /// <summary>Объекты района вокруг точки: квартал, завод с кранами, электростанция с градирнями, шахта.</summary>
         private static void BuildDistrict(GroundMap map, StrategicPoint p, Transform root, Random rng, GroundBattleSetup setup)
         {
-            var concrete = GroundMats.Lit(new Color(0.55f, 0.56f, 0.58f), 0.05f, 0.25f);
-            var dark = GroundMats.Lit(new Color(0.28f, 0.3f, 0.33f), 0.5f, 0.45f);
-            var windows = GroundMats.Glow(new Color(1f, 0.82f, 0.5f) * 1.6f);
+            var concrete = GroundMats.Lit(new Color(0.42f, 0.41f, 0.4f), 0.05f, 0.22f);
+            var concreteDk = GroundMats.Lit(new Color(0.26f, 0.25f, 0.25f), 0.05f, 0.2f);
+            var dark = GroundMats.Lit(new Color(0.2f, 0.21f, 0.23f), 0.6f, 0.45f);
+            var windows = GroundMats.Glow(new Color(1f, 0.72f, 0.38f) * 2.2f);
+            var glass = GroundMats.Lit(new Color(0.04f, 0.05f, 0.06f), 0.6f, 0.85f);
             Vector3 c = p.Pos;
             switch (p.Kind)
             {
@@ -392,9 +436,7 @@ namespace StellarisClone.Ground
                         var pos = map.Snap(c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Rand(rng, 16f, 22f));
                         var size = new Vector3(Rand(rng, 6f, 9f), Rand(rng, 6f, 13f), Rand(rng, 6f, 9f));
                         var d = Building(map, root, pos, size, Rand(rng, 0f, 90f), concrete, Destructible.Kind.Building, 1400f, DistrictType.Urban);
-                        // Окна — светящиеся полосы
-                        for (int f = 1; f < Mathf.FloorToInt(size.y / 3f); f++)
-                            GroundMats.Part(d.Go.transform, PrimitiveType.Cube, new Vector3(0f, f * 3f, 0f), new Vector3(size.x + 0.05f, 0.35f, size.z + 0.05f), windows, "Windows");
+                        Facade(d.Go.transform, size, concreteDk, windows, glass, rng);
                     }
                     break;
                 }
@@ -456,6 +498,8 @@ namespace StellarisClone.Ground
             GroundMats.Part(d.Go.transform, PrimitiveType.Cube, new Vector3(0f, 12f, 0f), new Vector3(10f, 4f, 8f), hull, "Tower");
             GroundMats.Part(d.Go.transform, PrimitiveType.Cylinder, new Vector3(0f, 17f, 0f), new Vector3(0.4f, 3f, 0.4f), hull, "Antenna");
             GroundMats.Part(d.Go.transform, PrimitiveType.Cube, new Vector3(0f, 6f, -7.05f), new Vector3(14f, 0.6f, 0.1f), accent, "Stripe");
+            Facade(d.Go.transform, new Vector3(18f, 10f, 14f), GroundMats.Lit(new Color(0.24f, 0.25f, 0.27f), 0.5f, 0.4f),
+                GroundMats.Glow(Color.Lerp(setup.Defender.Color, Color.white, 0.3f) * 1.8f), GroundMats.Lit(new Color(0.04f, 0.05f, 0.06f), 0.6f, 0.85f), new Random(setup.Seed));
             map.Hq = d;
 
             // Щитовой купол над штабом (укрепление 3): пока у защитника есть электростанция, штаб неуязвим
@@ -528,7 +572,15 @@ namespace StellarisClone.Ground
                 {
                     var pos = map.ToWorld(i == 0 ? -22f : 22f, 70f);
                     var d = Building(map, root, pos, new Vector3(6f, 2.6f, 4.5f), 180f, bunkerMat, Destructible.Kind.Bunker, 2600f, null);
-                    GroundMats.Part(d.Go.transform, PrimitiveType.Cube, new Vector3(0f, 1.6f, 2.26f), new Vector3(4f, 0.35f, 0.1f), slit, "Slit");
+                    var bt = d.Go.transform;
+                    // Скошенная бетонная крыша, амбразура с отсветом, мешки по бокам
+                    GroundMats.Box(bt, new Vector3(0f, 2.35f, 0.2f), new Vector3(6.6f, 0.6f, 5.2f), bunkerMat, "Roof", Quaternion.Euler(-6f, 0f, 0f), 0.2f);
+                    GroundMats.Box(bt, new Vector3(0f, 1.45f, 2.3f), new Vector3(4.2f, 0.42f, 0.12f), GroundMats.Lit(new Color(0.02f, 0.02f, 0.02f), 0f, 0.1f), "Embrasure", null, 0.02f);
+                    GroundMats.Box(bt, new Vector3(0f, 1.45f, 2.25f), new Vector3(3.8f, 0.16f, 0.1f), slit, "Slit", null, 0.02f);
+                    var bag = GroundMats.Lit(Color.Lerp(map.Biome.GroundC, new Color(0.5f, 0.45f, 0.32f), 0.5f), 0f, 0.15f);
+                    for (int k = 0; k < 4; k++)
+                        GroundMats.Box(bt, new Vector3(-2.4f + k * 1.6f, 0.35f, 2.9f), new Vector3(1.5f, 0.7f, 0.7f), bag, "Bag", null, 0.3f);
+                    GroundMats.Box(bt, new Vector3(2.3f, 2.85f, -1.2f), new Vector3(0.6f, 0.5f, 0.6f), GroundMats.Lit(new Color(0.18f, 0.19f, 0.2f), 0.7f, 0.5f), "Vent", null, 0.05f);
                     d.Weapon = new WeaponDef { Name = Loc.T("Пулемёт бункера"), Kind = WeaponKind.Heavy, Range = 44f, Damage = 7f, Cooldown = 0.14f, Accuracy = 0.4f, Suppression = 3f, Burst = 14, Reload = 2f };
                 }
             if (f >= 2)
@@ -537,8 +589,13 @@ namespace StellarisClone.Ground
                 Vector2[] tur = { new Vector2(-40f, 30f), new Vector2(40f, 30f), new Vector2(0f, 64f) };
                 foreach (var t in tur)
                 {
-                    var d = Building(map, root, map.ToWorld(t.x, t.y), new Vector3(3f, 2f, 3f), 0f, steel, Destructible.Kind.Turret, 1200f, null, CoverKind.Light);
-                    GroundMats.Part(d.Go.transform, PrimitiveType.Cylinder, new Vector3(0f, 2.4f, 1.2f), new Vector3(0.35f, 1.4f, 0.35f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
+                    var d = Building(map, root, map.ToWorld(t.x, t.y), new Vector3(3.2f, 1.4f, 3.2f), 180f, steel, Destructible.Kind.Turret, 1200f, null, CoverKind.Light);
+                    var tt = d.Go.transform;
+                    GroundMats.Box(tt, new Vector3(0f, 1.75f, 0f), new Vector3(2.2f, 1.1f, 2.4f), steel, "Housing", null, 0.25f);
+                    GroundMats.Box(tt, new Vector3(0f, 1.75f, 1.25f), new Vector3(1.0f, 0.7f, 0.3f), GroundMats.Lit(new Color(0.1f, 0.1f, 0.11f), 0.8f, 0.5f), "Mantlet", null, 0.06f);
+                    GroundMats.Part(tt, PrimitiveType.Cylinder, new Vector3(-0.22f, 1.75f, 2.3f), new Vector3(0.22f, 1.0f, 0.22f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
+                    GroundMats.Part(tt, PrimitiveType.Cylinder, new Vector3(0.22f, 1.75f, 2.3f), new Vector3(0.22f, 1.0f, 0.22f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
+                    GroundMats.Box(tt, new Vector3(0f, 2.35f, -0.4f), new Vector3(0.5f, 0.12f, 0.5f), slit, "Sensor", null, 0.03f);
                     d.Weapon = new WeaponDef { Name = Loc.T("Автопушка турели"), Kind = WeaponKind.Heavy, Range = 46f, Damage = 16f, Cooldown = 0.4f, Accuracy = 0.45f, Suppression = 2.5f, Burst = 6, Reload = 2f, Pierce = 0.4f, Splash = 1.2f };
                 }
                 // Минные поля на подступах к районам
@@ -555,8 +612,12 @@ namespace StellarisClone.Ground
                 var steel = GroundMats.Lit(new Color(0.26f, 0.27f, 0.3f), 0.8f, 0.5f);
                 for (int i = 0; i < 2; i++)
                 {
-                    var d = Building(map, root, map.ToWorld(i == 0 ? -12f : 12f, 82f), new Vector3(5f, 3f, 5f), 0f, steel, Destructible.Kind.Turret, 2600f, null);
-                    GroundMats.Part(d.Go.transform, PrimitiveType.Cylinder, new Vector3(0f, 3.6f, 2.4f), new Vector3(0.6f, 2.6f, 0.6f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
+                    var d = Building(map, root, map.ToWorld(i == 0 ? -12f : 12f, 82f), new Vector3(5.5f, 2f, 5.5f), 180f, steel, Destructible.Kind.Turret, 2600f, null);
+                    var tt = d.Go.transform;
+                    GroundMats.Box(tt, new Vector3(0f, 2.4f, -0.3f), new Vector3(3.8f, 1.8f, 4.2f), steel, "Housing", null, 0.4f);
+                    GroundMats.Box(tt, new Vector3(0f, 2.4f, 1.9f), new Vector3(1.6f, 1.2f, 0.5f), GroundMats.Lit(new Color(0.1f, 0.1f, 0.11f), 0.8f, 0.5f), "Mantlet", null, 0.1f);
+                    GroundMats.Part(tt, PrimitiveType.Cylinder, new Vector3(0f, 2.4f, 4.4f), new Vector3(0.55f, 2.4f, 0.55f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
+                    GroundMats.Box(tt, new Vector3(0f, 2.4f, 6.7f), new Vector3(0.9f, 0.7f, 0.6f), GroundMats.Lit(new Color(0.1f, 0.1f, 0.11f), 0.8f, 0.5f), "Brake", null, 0.08f);
                     d.Weapon = new WeaponDef { Name = Loc.T("Тяжёлое орудие"), Kind = WeaponKind.Explosive, Range = 70f, Damage = 140f, Cooldown = 6f, Accuracy = 0.5f, Splash = 4f, Pierce = 0.9f, Suppression = 20f, StructureMult = 1.5f };
                 }
             }
@@ -572,7 +633,10 @@ namespace StellarisClone.Ground
             go.transform.SetParent(root, false);
             go.transform.position = pos + Vector3.down * size * 0.25f;
             go.transform.rotation = Quaternion.Euler(Rand(rng, -15f, 15f), Rand(rng, 0f, 360f), Rand(rng, -15f, 15f));
-            GroundMats.Part(go.transform, PrimitiveType.Sphere, Vector3.zero, new Vector3(size * 1.4f, size, size * 1.15f), mat, "Stone");
+            GroundMats.MeshPart(go.transform, ProcMesh.Rock(rng.Next()), Vector3.zero, new Vector3(size * 0.78f, size * 0.62f, size * 0.66f), mat, "Stone");
+            // Мелкие осколки вокруг
+            for (int i = 0; i < 2; i++)
+                GroundMats.MeshPart(go.transform, ProcMesh.Rock(rng.Next()), new Vector3(Rand(rng, -1f, 1f) * size, -size * 0.1f, Rand(rng, -1f, 1f) * size), Vector3.one * size * Rand(rng, 0.12f, 0.22f), mat, "Shard");
             if (size > 1.4f)
             {
                 var col = go.AddComponent<SphereCollider>();
@@ -662,6 +726,150 @@ namespace StellarisClone.Ground
                     var w = map.ToWorld(c.c.x + Mathf.Cos(a) * c.r * 0.82f, c.c.y + Mathf.Sin(a) * c.r * 0.82f);
                     if (map.Inside(w)) map.Cover.Add(w, CoverKind.Light, Vector3.zero);
                 }
+            }
+        }
+
+
+        // ================================================================ Фасады и война
+
+        /// <summary>
+        /// Фасад здания: цоколь, карниз, пилястры-контрфорсы, окна по этажам (часть горит тёплым светом, часть разбита и темна),
+        /// на крыше — вентиляция и баки. Превращает «коробку» в дом.
+        /// </summary>
+        private static void Facade(Transform t, Vector3 size, Material trim, Material lit, Material dark, Random rng)
+        {
+            float y0 = -0.3f;
+            GroundMats.Box(t, new Vector3(0f, y0 + 0.5f, 0f), new Vector3(size.x + 0.35f, 1.0f, size.z + 0.35f), trim, "Plinth", null, 0.12f);
+            GroundMats.Box(t, new Vector3(0f, y0 + size.y - 0.15f, 0f), new Vector3(size.x + 0.45f, 0.4f, size.z + 0.45f), trim, "Cornice", null, 0.12f);
+            // Пилястры на длинных сторонах
+            int bays = Mathf.Max(2, Mathf.RoundToInt(size.x / 3f));
+            for (int i = 0; i <= bays; i++)
+            {
+                float x = -size.x * 0.5f + i * size.x / bays;
+                foreach (float zs in new[] { -1f, 1f })
+                    GroundMats.Box(t, new Vector3(x, y0 + size.y * 0.5f, zs * (size.z * 0.5f + 0.14f)), new Vector3(0.5f, size.y, 0.3f), trim, "Pilaster", null, 0.08f);
+            }
+            // Окна
+            int floors = Mathf.Max(1, Mathf.FloorToInt((size.y - 1.5f) / 3f));
+            for (int f = 0; f < floors; f++)
+            {
+                float y = y0 + 2.3f + f * 3f;
+                for (int i = 0; i < bays; i++)
+                {
+                    float x = -size.x * 0.5f + (i + 0.5f) * size.x / bays;
+                    foreach (float zs in new[] { -1f, 1f })
+                        GroundMats.Box(t, new Vector3(x, y, zs * (size.z * 0.5f + 0.03f)), new Vector3(Mathf.Min(1.1f, size.x / bays * 0.5f), 1.4f, 0.08f),
+                            rng.NextDouble() < 0.45 ? lit : dark, "Window", null, 0.02f);
+                }
+                int side = Mathf.Max(1, Mathf.RoundToInt(size.z / 3f));
+                for (int i = 0; i < side; i++)
+                {
+                    float z = -size.z * 0.5f + (i + 0.5f) * size.z / side;
+                    foreach (float xs in new[] { -1f, 1f })
+                        GroundMats.Box(t, new Vector3(xs * (size.x * 0.5f + 0.03f), y, z), new Vector3(0.08f, 1.4f, Mathf.Min(1.1f, size.z / side * 0.5f)),
+                            rng.NextDouble() < 0.4 ? lit : dark, "Window", null, 0.02f);
+                }
+            }
+            // Крыша
+            var roofMat = GroundMats.Lit(new Color(0.16f, 0.17f, 0.18f), 0.7f, 0.45f);
+            int units = 1 + rng.Next(3);
+            for (int i = 0; i < units; i++)
+                GroundMats.Box(t, new Vector3(Rand(rng, -size.x * 0.3f, size.x * 0.3f), y0 + size.y + 0.45f, Rand(rng, -size.z * 0.3f, size.z * 0.3f)),
+                    new Vector3(Rand(rng, 1f, 2.2f), 0.9f, Rand(rng, 1f, 2.2f)), roofMat, "RoofUnit", null, 0.1f);
+            if (rng.NextDouble() < 0.5)
+                GroundMats.Part(t, PrimitiveType.Cylinder, new Vector3(size.x * 0.25f, y0 + size.y + 1.2f, -size.z * 0.2f), new Vector3(1.6f, 1.1f, 1.6f), roofMat, "Tank");
+        }
+
+        /// <summary>
+        /// Следы прошлых боёв: сгоревшие остовы техники (тяжёлое укрытие, часть ещё дымит), противотанковые «ежи»
+        /// (лёгкое укрытие), разбитые стены (тяжёлое) — на нейтральной полосе, вне площадок, дорог и реки.
+        /// </summary>
+        private static void Battlefield(GroundMap map, Transform root, Random rng)
+        {
+            var burnt = GroundMats.Lit(new Color(0.07f, 0.065f, 0.06f), 0.35f, 0.2f);
+            var rust = GroundMats.Lit(new Color(0.26f, 0.14f, 0.08f), 0.4f, 0.25f);
+            var steel = GroundMats.Lit(new Color(0.2f, 0.2f, 0.21f), 0.85f, 0.45f);
+            var wall = GroundMats.Lit(Color.Lerp(new Color(0.4f, 0.39f, 0.37f), map.Biome.GroundC, 0.3f), 0.05f, 0.2f);
+
+            bool Free(Vector2 l, float r)
+            {
+                if (NearFlat(map, l, r)) return false;
+                var w = map.ToWorld(l.x, l.y);
+                return map.Inside(w, 10f) && !map.InRiver(w, 3f);
+            }
+
+            // Остовы
+            int wrecks = 6 + rng.Next(3), placed = 0;
+            for (int tries = 0; tries < 40 && placed < wrecks; tries++)
+            {
+                var l = new Vector2(Rand(rng, -105f, 105f), Rand(rng, -75f, 75f));
+                if (!Free(l, 6f)) continue;
+                placed++;
+                var w = map.ToWorld(l.x, l.y);
+                float yaw = Rand(rng, 0f, 360f);
+                var d = Building(map, root, w + Vector3.down * 0.25f, new Vector3(3f, 1.2f, 5.6f), yaw, burnt, Destructible.Kind.Rock, 6000f, null);
+                d.Side = -1;
+                var t = d.Go.transform;
+                t.rotation *= Quaternion.Euler(Rand(rng, -5f, 5f), 0f, Rand(rng, -7f, 7f));
+                GroundMats.Box(t, new Vector3(-1.75f, 0.35f, 0f), new Vector3(0.8f, 1.1f, 5.8f), rust, "Track", null, 0.25f);
+                if (rng.NextDouble() < 0.7)
+                    GroundMats.Box(t, new Vector3(1.75f, 0.35f, 0f), new Vector3(0.8f, 1.1f, 5.8f), rust, "Track", null, 0.25f);
+                else
+                    GroundMats.Box(t, new Vector3(3.2f, 0f, 1.2f), new Vector3(0.8f, 0.3f, 4f), rust, "TrackOff", Quaternion.Euler(0f, 20f, 85f), 0.1f);
+                if (rng.NextDouble() < 0.6)
+                {
+                    // Башня сорвана и лежит рядом
+                    var tur = GroundMats.Box(t, new Vector3(Rand(rng, -3f, 3f), 0.6f, Rand(rng, -5f, -3f)), new Vector3(2f, 0.8f, 2.4f), burnt, "Turret",
+                        Quaternion.Euler(Rand(rng, -25f, 25f), Rand(rng, 0f, 360f), Rand(rng, -30f, 30f)), 0.2f);
+                    GroundMats.Part(tur, PrimitiveType.Cylinder, new Vector3(0f, 0f, 2f), new Vector3(0.22f, 1.2f, 0.22f), steel, "Gun", Quaternion.Euler(90f + Rand(rng, -20f, 20f), 0f, 0f));
+                }
+                else
+                {
+                    var tur = GroundMats.Box(t, new Vector3(0f, 1.15f, -0.2f), new Vector3(2f, 0.75f, 2.4f), burnt, "Turret", Quaternion.Euler(0f, Rand(rng, -90f, 90f), 0f), 0.2f);
+                    GroundMats.Part(tur, PrimitiveType.Cylinder, new Vector3(0f, -0.1f, 2.2f), new Vector3(0.22f, 1.3f, 0.22f), steel, "Gun", Quaternion.Euler(100f, 0f, 0f));
+                }
+                if (placed <= 4) map.Burning.Add(w + Vector3.up * 1.2f);
+            }
+
+            // Противотанковые ежи: три скрещённые балки, группами
+            for (int g = 0; g < 7; g++)
+            {
+                var c = new Vector2(Rand(rng, -100f, 100f), Rand(rng, -60f, 60f));
+                if (!Free(c, 5f)) continue;
+                int n = 2 + rng.Next(4);
+                float dir = Rand(rng, 0f, 180f) * Mathf.Deg2Rad;
+                for (int i = 0; i < n; i++)
+                {
+                    var l = c + new Vector2(Mathf.Cos(dir), Mathf.Sin(dir)) * (i * 3.2f);
+                    if (!Free(l, 2f)) continue;
+                    var w = map.ToWorld(l.x, l.y);
+                    var go = new GameObject("TankTrap");
+                    go.transform.SetParent(root, false);
+                    go.transform.position = w;
+                    go.transform.rotation = Quaternion.Euler(0f, Rand(rng, 0f, 360f), 0f);
+                    GroundMats.Box(go.transform, new Vector3(0f, 0.7f, 0f), new Vector3(0.22f, 2.2f, 0.22f), rust, "Beam", Quaternion.Euler(45f, 0f, 0f), 0.03f);
+                    GroundMats.Box(go.transform, new Vector3(0f, 0.7f, 0f), new Vector3(0.22f, 2.2f, 0.22f), rust, "Beam", Quaternion.Euler(-45f, 0f, 0f), 0.03f);
+                    GroundMats.Box(go.transform, new Vector3(0f, 0.7f, 0f), new Vector3(0.22f, 2.2f, 0.22f), rust, "Beam", Quaternion.Euler(0f, 0f, 90f), 0.03f);
+                    map.Cover.Add(map.Snap(w + go.transform.forward * 1.1f), CoverKind.Light, -go.transform.forward);
+                    map.Cover.Add(map.Snap(w - go.transform.forward * 1.1f), CoverKind.Light, go.transform.forward);
+                }
+            }
+
+            // Разбитые стены: обломок с рваным верхом
+            for (int i = 0; i < 6; i++)
+            {
+                var l = new Vector2(Rand(rng, -95f, 95f), Rand(rng, -70f, 70f));
+                if (!Free(l, 5f)) continue;
+                var w = map.ToWorld(l.x, l.y);
+                float len = Rand(rng, 5f, 9f);
+                var d = Building(map, root, w, new Vector3(len, Rand(rng, 1.4f, 2.2f), 0.7f), Rand(rng, 0f, 180f), wall, Destructible.Kind.Building, 900f, null);
+                d.Side = -1;
+                int chunks = 2 + rng.Next(3);
+                for (int k = 0; k < chunks; k++)
+                    GroundMats.Box(d.Go.transform, new Vector3(Rand(rng, -len * 0.4f, len * 0.4f), Rand(rng, 1.6f, 2.8f), 0f), new Vector3(Rand(rng, 0.8f, 2f), Rand(rng, 0.8f, 1.8f), 0.7f), wall, "Chunk",
+                        Quaternion.Euler(0f, 0f, Rand(rng, -15f, 15f)), 0.08f);
+                for (int k = 0; k < 3; k++)
+                    GroundMats.MeshPart(d.Go.transform, ProcMesh.Rock(rng.Next()), new Vector3(Rand(rng, -len * 0.5f, len * 0.5f), 0.1f, Rand(rng, -1.6f, 1.6f)), Vector3.one * Rand(rng, 0.3f, 0.6f), wall, "Rubble");
             }
         }
 

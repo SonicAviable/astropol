@@ -18,6 +18,8 @@ namespace StellarisClone.Ground
         public readonly List<Destructible> Destructibles = new List<Destructible>();
         /// <summary>Мины защитника (локальные координаты).</summary>
         public readonly List<Vector3> Mines = new List<Vector3>();
+        /// <summary>Горящие остовы (у них атмосфера поднимает столбы дыма).</summary>
+        public readonly List<Vector3> Burning = new List<Vector3>();
         public Vector3 AttackerBeacon, DefenderBeacon;
         public Destructible Hq, ShieldDome;
         public GameObject Terrain;

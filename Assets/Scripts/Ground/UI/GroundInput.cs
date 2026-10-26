@@ -140,13 +140,13 @@ namespace StellarisClone.Ground
                 {
                     foreach (var s in s_selected) s.OrderAttack(enemy);
                     gm.Hud?.Ping(enemy.Center, new Color(1f, 0.3f, 0.25f));
-                    SFXManager.Play(Core.Audio.Sfx.OrderMove, 0.7f, 0.85f);
+                    GroundSfx.Radio(0.75f);
                 }
                 else if (StructureUnderMouse(gm, player, out var d))
                 {
                     foreach (var s in s_selected) s.OrderAttack(d);
                     gm.Hud?.Ping(d.Pos, new Color(1f, 0.3f, 0.25f));
-                    SFXManager.Play(Core.Audio.Sfx.OrderMove, 0.7f, 0.85f);
+                    GroundSfx.Radio(0.75f);
                 }
                 else if (gm.Cam.GroundUnderMouse(out var p)) IssueMove(p, false);
             }
@@ -168,7 +168,7 @@ namespace StellarisClone.Ground
                 s_selected[i].OrderMove(gm.Map.Clamp(p + right * off), attack);
             }
             gm.Hud?.Ping(p, attack ? new Color(1f, 0.55f, 0.2f) : new Color(0.4f, 1f, 0.6f));
-            SFXManager.Play(Core.Audio.Sfx.OrderMove, 0.7f);
+            GroundSfx.Radio(0.7f);
         }
 
         private void UseAbility(int slot)
@@ -253,7 +253,7 @@ namespace StellarisClone.Ground
             _lastClick = Time.unscaledTime;
             _lastClicked = sq;
             Select(sq, add);
-            if (sq != null) SFXManager.Play(sq.Def.Vehicle ? Core.Audio.Sfx.SelectMilitary : Core.Audio.Sfx.UiClick, 0.6f);
+            if (sq != null) GroundSfx.Radio(sq.Def.Vehicle ? 0.55f : 0.45f);
         }
 
         private static bool OnScreen(GroundBattleManager gm, Vector3 p)

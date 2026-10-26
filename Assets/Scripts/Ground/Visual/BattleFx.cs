@@ -91,7 +91,7 @@ namespace StellarisClone.Ground
                 case WeaponKind.Flame: c = new Color(1f, 0.55f, 0.15f) * 2f; width = 0.5f; life = 0.12f; break;
                 case WeaponKind.Sniper: c = new Color(1f, 0.95f, 0.8f) * 2.4f; width = 0.05f; life = 0.25f; break;
                 case WeaponKind.Explosive: c = new Color(1f, 0.7f, 0.4f) * 1.6f; width = 0.18f; life = 0.15f; break;
-                default: c = new Color(1f, 0.85f, 0.45f) * 1.8f; width = 0.05f; life = 0.06f; break;
+                default: c = new Color(1f, 0.8f, 0.4f) * 3.2f; width = w.Kind == WeaponKind.Heavy ? 0.11f : 0.08f; life = 0.07f; break;
             }
             if (w.Kind == WeaponKind.Flame)
             {
@@ -116,11 +116,51 @@ namespace StellarisClone.Ground
             if (Random.value < 0.35f || big > 1f)
                 FlashLight(at, w.Kind == WeaponKind.Energy ? new Color(0.6f, 0.9f, 1f) : new Color(1f, 0.75f, 0.4f), 2.5f * big, 5f * big, 0.05f + 0.03f * big);
             if (big > 2f) ParticleVfx.Play(ParticleVfx.Effect.TinyExplosion, at, 0.5f);
+            // Видимая вспышка у дула (яркая — ловит свечение) и клочок порохового дыма
+            Color fc = w.Kind == WeaponKind.Energy ? new Color(0.5f, 0.85f, 1f) * 5f : new Color(1f, 0.72f, 0.35f) * 5f;
+            Glint(at, fc, 0.55f * big + 0.35f, 0.045f + 0.02f * big);
+            if (w.Kind != WeaponKind.Energy && Random.value < 0.35f) GoreFx.SmokePuff(at);
+        }
+
+        private ParticleSystem _glints;
+
+        /// <summary>Короткая яркая вспышка-звезда (дуло, детонация).</summary>
+        public void Glint(Vector3 at, Color c, float size, float life)
+        {
+            if (_glints == null)
+            {
+                var go = new GameObject("Glints");
+                go.transform.SetParent(transform, false);
+                _glints = go.AddComponent<ParticleSystem>();
+                _glints.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                var main = _glints.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.maxParticles = 400;
+                var em = _glints.emission; em.enabled = false;
+                var sh = _glints.shape; sh.enabled = false;
+                var sz = _glints.sizeOverLifetime;
+                sz.enabled = true;
+                sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.4f));
+                var r = go.GetComponent<ParticleSystemRenderer>();
+                r.sharedMaterial = new Material(GroundMats.Additive) { name = "Glint", hideFlags = HideFlags.DontSave, mainTexture = FxTextures.Soft };
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                _glints.Play();
+            }
+            _glints.Emit(new ParticleSystem.EmitParams
+            {
+                position = at, startSize = size, startLifetime = life, startColor = c, rotation = Random.Range(0f, 360f), applyShapeToPosition = false
+            }, 1);
         }
 
         public void Impact(Vector3 at, WeaponDef w)
         {
-            if (Random.value < 0.4f) GoreFx.Dust(at, 0.4f);
+            // Фонтанчик грунта: пыль, комья, иногда искра от камня
+            if (Random.value < 0.7f) GoreFx.Dust(at, w != null && w.Kind == WeaponKind.Heavy ? 0.7f : 0.45f);
+            if (Random.value < 0.25f) GoreFx.Sparks(at + Vector3.up * 0.1f, 3);
+            GroundSfx.Impact(at, w);
         }
 
         public void Sparks(Vector3 at, float size)
@@ -132,8 +172,9 @@ namespace StellarisClone.Ground
         {
             ParticleVfx.Play(radius >= 4f ? ParticleVfx.Effect.BigExplosion : radius >= 1.8f ? ParticleVfx.Effect.SmallExplosion : ParticleVfx.Effect.TinyExplosion,
                 at + Vector3.up * 0.3f, Mathf.Clamp(radius * 0.45f, 0.4f, 3f), null, -1f, Vector3.up);
-            FlashLight(at + Vector3.up * 1.5f, new Color(1f, 0.6f, 0.25f), 6f + radius * 2f, radius * 5f + 6f, 0.15f);
-            GoreFx.Dust(at, radius * 0.6f);
+            FlashLight(at + Vector3.up * 1.5f, new Color(1f, 0.6f, 0.25f), 8f + radius * 3f, radius * 6f + 8f, 0.18f);
+            GoreFx.Blast(at, radius);
+            Glint(at + Vector3.up * 0.8f, new Color(1f, 0.62f, 0.3f) * 5f, radius * 2.6f, 0.12f);
         }
 
         public void Fire(Vector3 at, float size)
@@ -165,10 +206,34 @@ namespace StellarisClone.Ground
         {
             var pod = new GameObject("DropPod");
             pod.transform.SetParent(transform, false);
-            var hull = GroundMats.Lit(new Color(0.25f, 0.26f, 0.28f), 0.7f, 0.5f);
-            GroundMats.Part(pod.transform, PrimitiveType.Cylinder, new Vector3(0f, 1.6f, 0f), new Vector3(2.2f, 1.6f, 2.2f), hull, "Body");
-            GroundMats.Part(pod.transform, PrimitiveType.Sphere, new Vector3(0f, 3.3f, 0f), new Vector3(2.2f, 1.6f, 2.2f), hull, "Nose");
-            GroundMats.Part(pod.transform, PrimitiveType.Cube, new Vector3(0f, 1.6f, 1.12f), new Vector3(1.2f, 2f, 0.05f), GroundMats.Glow(side * 1.6f), "Stripe");
+            // Десантная капсула: тёмный сердечник, броневые лепестки цвета стороны (раскрываются после удара),
+            // конус-обтекатель, стабилизаторы и кольцо дюз
+            var armor = GroundMats.Lit(UnitMeshFactory.ArmorColor(side), 0.35f, 0.55f);
+            var dark = GroundMats.Lit(new Color(0.09f, 0.095f, 0.1f), 0.75f, 0.5f);
+            var scorched = GroundMats.Lit(new Color(0.12f, 0.1f, 0.09f), 0.4f, 0.3f);
+            GroundMats.Part(pod.transform, PrimitiveType.Cylinder, new Vector3(0f, 1.9f, 0f), new Vector3(1.6f, 1.9f, 1.6f), dark, "Core");
+            GroundMats.Part(pod.transform, PrimitiveType.Sphere, new Vector3(0f, 4.1f, 0f), new Vector3(1.9f, 1.6f, 1.9f), scorched, "Nose");
+            GroundMats.Part(pod.transform, PrimitiveType.Cylinder, new Vector3(0f, 0.2f, 0f), new Vector3(2.5f, 0.2f, 2.5f), dark, "Base");
+            GroundMats.Part(pod.transform, PrimitiveType.Cylinder, new Vector3(0f, 0.02f, 0f), new Vector3(1.9f, 0.04f, 1.9f), GroundMats.Glow(new Color(1f, 0.55f, 0.2f) * 2.5f), "Jets");
+            var petals = new List<Transform>();
+            for (int i = 0; i < 5; i++)
+            {
+                float yaw = i * 72f;
+                var pv = new GameObject("Petal").transform;
+                pv.SetParent(pod.transform, false);
+                pv.localPosition = Quaternion.Euler(0f, yaw, 0f) * new Vector3(0f, 0.35f, 1.05f);
+                pv.localRotation = Quaternion.Euler(-6f, yaw, 0f);
+                GroundMats.Box(pv, new Vector3(0f, 1.75f, 0f), new Vector3(1.3f, 3.5f, 0.2f), armor, "Plate", null, 0.08f);
+                GroundMats.Box(pv, new Vector3(0f, 1.75f, 0.11f), new Vector3(0.22f, 2.6f, 0.04f), GroundMats.Glow(side * 1.5f), "Stripe", null, 0.01f);
+                petals.Add(pv);
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                var fin = new GameObject("Fin").transform;
+                fin.SetParent(pod.transform, false);
+                fin.localRotation = Quaternion.Euler(0f, i * 120f + 36f, 0f);
+                GroundMats.Box(fin, new Vector3(0f, 4.3f, 1.0f), new Vector3(0.12f, 1.4f, 0.8f), dark, "Vane", null, 0.03f);
+            }
             var tr = pod.AddComponent<TrailRenderer>();
             tr.sharedMaterial = GroundMats.Additive;
             tr.time = 0.6f;
@@ -187,6 +252,16 @@ namespace StellarisClone.Ground
                     FlashLight(at + Vector3.up * 2f, new Color(1f, 0.6f, 0.3f), 10f, 18f, 0.25f);
                     GameObject.Destroy(pod.GetComponent<TrailRenderer>());
                     Smoke(pod.transform, 8f);
+                    // Лепестки с лязгом падают наружу — десант выходит
+                    for (int k = 1; k <= 8; k++)
+                    {
+                        float t = k / 8f;
+                        Delayed(0.25f + t * 0.35f, () =>
+                        {
+                            foreach (var pv in petals)
+                                if (pv != null) pv.localRotation = Quaternion.Euler(Mathf.Lerp(-6f, 78f, t * t), pv.localEulerAngles.y, 0f);
+                        });
+                    }
                     done?.Invoke();
                     Delayed(25f, () => { if (pod != null) Destroy(pod); });
                 }
@@ -239,7 +314,8 @@ namespace StellarisClone.Ground
             var t = d.Go.transform;
             // Здание оседает и темнеет: груда обломков
             var rubble = GroundMats.Lit(new Color(0.22f, 0.21f, 0.2f), 0f, 0.1f);
-            foreach (var r in d.Renderers) if (r != null) r.sharedMaterial = rubble;
+            foreach (var r in d.Go.GetComponentsInChildren<Renderer>()) if (r != null) r.sharedMaterial = rubble;
+            t.rotation *= Quaternion.Euler(Random.Range(-6f, 6f), 0f, Random.Range(-6f, 6f));
             _movers.Add(new Mover { T = t, From = t.position, To = t.position + Vector3.down * Mathf.Max(1f, d.Radius * 0.9f), Life = 0f, Max = 1.6f, Arc = -1f });
             Explosion(d.Pos + Vector3.up * 2f, Mathf.Clamp(d.Radius, 2f, 6f));
             for (int i = 0; i < 3; i++) Fire(d.Pos + Random.insideUnitSphere.WithY(0f) * d.Radius * 0.6f, 1.2f);

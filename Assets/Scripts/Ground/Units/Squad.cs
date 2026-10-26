@@ -188,7 +188,7 @@ namespace StellarisClone.Ground
             fwd.Normalize();
             Vector3 right = Vector3.Cross(Vector3.up, fwd);
             int i = 0, n = Alive;
-            float spacing = Def.Vehicle ? 7f * Mathf.Max(1f, Def.Scale) : Def.Role == UnitRole.Swarm ? 1.1f : 1.9f;
+            float spacing = Def.Vehicle ? 7f * Mathf.Max(1f, Def.Scale) : Def.Role == UnitRole.Swarm ? 1.1f : 2.3f;
             int perRow = Def.Role == UnitRole.Swarm ? 6 : Mathf.Max(1, Mathf.CeilToInt(n / 2f));
             var map = GroundBattleManager.Instance.Map;
             foreach (var m in Members)

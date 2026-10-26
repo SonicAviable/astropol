@@ -51,15 +51,35 @@ namespace StellarisClone.Ground
                 case WeaponKind.Heavy: PlayAt(SfxId.GroundMg, at, 0.8f); break;
                 case WeaponKind.Explosive: PlayAt(w.Indirect || w.Damage > 100f ? SfxId.GroundCannon : SfxId.WeaponMissile, at, 0.9f); break;
                 case WeaponKind.Flame: PlayAt(SfxId.GroundFlamer, at, 0.8f); break;
-                case WeaponKind.Energy: PlayAt(SfxId.WeaponEnergy, at, 0.45f, 1.6f); break;
+                case WeaponKind.Energy: PlayAt(SfxId.GroundRifle, at, 0.6f, 1.25f); PlayAt(SfxId.WeaponEnergy, at, 0.18f, 0.9f); break;
                 case WeaponKind.Sniper: PlayAt(SfxId.GroundSniper, at, 1f); break;
             }
         }
 
         public void Explosion(Vector3 at, float r)
         {
-            PlayAt(r >= 3.5f ? SfxId.ExplosionLarge : SfxId.ExplosionSmall, at, Mathf.Clamp(0.5f + r * 0.12f, 0.5f, 1.2f), r >= 3.5f ? 0.85f : 1.05f);
+            // Взрыв на земле — с дождём комьев; крупные (снаряды, орбита, техника) — тяжелее и ниже
+            bool big = r >= 3.5f;
+            PlayAt(big ? SfxId.GroundBlastBig : SfxId.GroundBlast, at, Mathf.Clamp(0.6f + r * 0.1f, 0.6f, 1.25f), big ? Mathf.Lerp(1f, 0.8f, Mathf.Clamp01((r - 3.5f) / 6f)) : 1.05f);
         }
+
+        private static float s_impactBudget, s_lastImpact;
+
+        /// <summary>Попадание или промах: шлепок в грунт, изредка — вой рикошета (прореживается, чтобы не трещало).</summary>
+        public static void Impact(Vector3 at, WeaponDef w)
+        {
+            if (w == null || w.Kind == WeaponKind.Flame || w.Kind == WeaponKind.Explosive || w.Kind == WeaponKind.Melee) return;
+            float now = Time.unscaledTime;
+            s_impactBudget = Mathf.Min(4f, s_impactBudget + (now - s_lastImpact) * 10f);
+            s_lastImpact = now;
+            if (s_impactBudget < 1f) return;
+            s_impactBudget -= 1f;
+            if (Random.value < 0.06f) PlayAt(SfxId.GroundRicochet, at, 0.8f);
+            else PlayAt(SfxId.GroundImpact, at, 0.7f);
+        }
+
+        /// <summary>Отклик рации на приказ (вместо интерфейсного писка).</summary>
+        public static void Radio(float vol = 0.8f) => SFXManager.Play(SfxId.GroundRadio, vol);
 
         public void Melee(Vector3 at) => PlayAt(SfxId.HitArmor, at, 0.6f, 1.4f);
         public void Crunch(Vector3 at) => PlayAt(SfxId.GroundCrunch, at, 1f);

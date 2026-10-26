@@ -49,12 +49,16 @@ namespace StellarisClone.Ground
             s_decals.Clear();
             s_gibs.Clear();
             s_corpses.Clear();
-            var soft = SoftTexture();
-            s_blood = MakePs("Blood", AlphaMat(soft), 1.6f, 1200);
-            s_dust = MakePs("Dust", AlphaMat(soft), 0.15f, 800);
-            s_smoke = MakePs("Smoke", AlphaMat(soft), -0.06f, 900);
-            s_fire = MakePs("Fire", AddMat(soft), -0.25f, 600);
-            s_sparksPs = MakePs("Sparks", AddMat(soft), 1.2f, 600);
+            // Дым, пыль и кровяная взвесь — клубящаяся текстура; огонь — языки пламени; искры — мягкая точка
+            s_blood = MakePs("Blood", AlphaMat(FxTextures.Smoke), 1.6f, 1200);
+            s_dust = MakePs("Dust", AlphaMat(FxTextures.Smoke), 0.15f, 900);
+            s_smoke = MakePs("Smoke", AlphaMat(FxTextures.Smoke), -0.06f, 1200);
+            s_fire = MakePs("Fire", AddMat(FxTextures.Flame), -0.25f, 700);
+            s_sparksPs = MakePs("Sparks", AddMat(FxTextures.Soft), 1.2f, 700);
+            var sr = s_sparksPs.GetComponent<ParticleSystemRenderer>();
+            sr.renderMode = ParticleSystemRenderMode.Stretch;
+            sr.velocityScale = 0.05f;
+            sr.lengthScale = 2f;
             s_decalMat = DecalMat(SplatTexture(false));
             s_scorchMat = DecalMat(SplatTexture(true));
             s_charred = GroundMats.Lit(new Color(0.05f, 0.045f, 0.04f), 0.1f, 0.1f);
@@ -98,6 +102,12 @@ namespace StellarisClone.Ground
             g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
                       new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.8f, 0.6f), new GradientAlphaKey(0f, 1f) });
             colLife.color = g;
+            if (name != "Sparks")
+            {
+                var rot = ps.rotationOverLifetime;
+                rot.enabled = true;
+                rot.z = new ParticleSystem.MinMaxCurve(-0.6f, 0.6f);
+            }
             var r = go.GetComponent<ParticleSystemRenderer>();
             r.sharedMaterial = mat;
             r.renderMode = ParticleSystemRenderMode.Billboard;
@@ -127,22 +137,6 @@ namespace StellarisClone.Ground
             m.mainTexture = tex;
             m.renderQueue = 2450;
             return m;
-        }
-
-        private static Texture2D SoftTexture()
-        {
-            const int N = 64;
-            var t = new Texture2D(N, N, TextureFormat.RGBA32, false) { name = "SoftDot", wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
-            var px = new Color[N * N];
-            for (int y = 0; y < N; y++)
-                for (int x = 0; x < N; x++)
-                {
-                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(N * 0.5f, N * 0.5f)) / (N * 0.5f);
-                    float a = Mathf.Clamp01(1f - d);
-                    px[y * N + x] = new Color(1f, 1f, 1f, a * a);
-                }
-            t.SetPixels(px); t.Apply();
-            return t;
         }
 
         /// <summary>Пятно крови (рваные края, брызги) или гари (мягкое чёрное пятно).</summary>
@@ -341,7 +335,8 @@ namespace StellarisClone.Ground
         private static void Emit(ParticleSystem ps, Vector3 pos, Vector3 vel, float size, float life, Color c)
         {
             if (ps == null) return;
-            var e = new ParticleSystem.EmitParams { position = pos, velocity = vel, startSize = size, startLifetime = life, startColor = c, applyShapeToPosition = false };
+            var e = new ParticleSystem.EmitParams { position = pos, velocity = vel, startSize = size, startLifetime = life, startColor = c, applyShapeToPosition = false,
+                                                    rotation = Random.Range(0f, 360f) };
             ps.Emit(e, 1);
         }
 
@@ -376,6 +371,50 @@ namespace StellarisClone.Ground
             for (int i = 0; i < n; i++)
                 Emit(s_sparksPs, at, (Random.insideUnitSphere + Vector3.up * 0.5f) * Random.Range(3f, 7f), Random.Range(0.04f, 0.08f), Random.Range(0.2f, 0.45f),
                      new Color(1f, 0.8f, 0.4f, 1f));
+        }
+
+        /// <summary>
+        /// Наземный взрыв «как в Dawn of War»: столб грунта вверх, комья разлетаются и падают, кольцо пыли бежит по земле,
+        /// над воронкой встаёт и медленно расходится тёмный дым, на земле остаётся выжженное пятно.
+        /// </summary>
+        public static void Blast(Vector3 at, float r)
+        {
+            if (s_map == null) return;
+            var b = s_map.Biome;
+            Color dirt = Color.Lerp(b.GroundB, new Color(0.18f, 0.15f, 0.12f), 0.5f);
+            dirt.a = 1f;
+            Color dust = Color.Lerp(b.GroundC, new Color(0.55f, 0.52f, 0.48f), 0.4f);
+            dust.a = 0.85f;
+            float g = 1f / Mathf.Max(0.3f, b.Gravity);
+            // Столб грунта
+            int col = Mathf.Clamp(Mathf.RoundToInt(r * 10f), 8, 44);
+            for (int i = 0; i < col; i++)
+            {
+                var v = new Vector3(Random.Range(-1f, 1f) * r * 0.9f, Random.Range(6f, 13f) * Mathf.Sqrt(r) * 0.75f, Random.Range(-1f, 1f) * r * 0.9f);
+                Emit(s_dust, at + Random.insideUnitSphere * r * 0.3f, v * 0.55f, r * Random.Range(0.7f, 1.4f), Random.Range(1.4f, 2.6f) * Mathf.Sqrt(g), dust);
+            }
+            // Комья (падают под тяжестью)
+            int clods = Mathf.Clamp(Mathf.RoundToInt(r * 9f), 6, 40);
+            for (int i = 0; i < clods; i++)
+            {
+                var dir = Random.insideUnitSphere; dir.y = Mathf.Abs(dir.y) + 0.6f;
+                Emit(s_blood, at + Vector3.up * 0.2f, dir.normalized * Random.Range(5f, 12f) * Mathf.Sqrt(r), Random.Range(0.12f, 0.3f), Random.Range(0.8f, 1.6f) * Mathf.Sqrt(g), dirt);
+            }
+            // Кольцо пыли по земле
+            int ring = Mathf.Clamp(Mathf.RoundToInt(r * 7f), 8, 32);
+            for (int i = 0; i < ring; i++)
+            {
+                float a = i / (float)ring * Mathf.PI * 2f;
+                var d = new Vector3(Mathf.Cos(a), 0.08f, Mathf.Sin(a));
+                Emit(s_dust, at + d * r * 0.4f, d * Random.Range(5f, 9f) * Mathf.Sqrt(r), r * Random.Range(0.6f, 1f), Random.Range(0.9f, 1.6f), new Color(dust.r, dust.g, dust.b, 0.6f));
+            }
+            // Дым над воронкой
+            int smoke = Mathf.Clamp(Mathf.RoundToInt(r * 3f), 3, 14);
+            for (int i = 0; i < smoke; i++)
+                Emit(s_smoke, at + Vector3.up * Random.Range(0.5f, 2f) + Random.insideUnitSphere * r * 0.5f,
+                     new Vector3(Random.Range(-0.6f, 0.6f), Random.Range(1f, 2.4f), Random.Range(-0.6f, 0.6f)), r * Random.Range(1.2f, 2f), Random.Range(4f, 7f),
+                     new Color(0.1f, 0.095f, 0.09f, 0.7f));
+            Decal(at, r * 1.8f, Color.black, true);
         }
 
         public static void Crater(Vector3 at, float r)

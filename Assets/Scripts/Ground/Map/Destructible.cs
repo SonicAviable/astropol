@@ -17,6 +17,8 @@ namespace StellarisClone.Ground
         public Vector3 Pos;
         /// <summary>Радиус «попадания» взрывом (по площади основания).</summary>
         public float Radius = 3f;
+        /// <summary>Габарит основного корпуса (для декора и обломков).</summary>
+        public Vector3 Size;
         public float Hp = 1000f, MaxHp = 1000f;
         /// <summary>Сторона, которой принадлежит (−1 — ничья). Турели и бункеры стреляют по врагам этой стороны.</summary>
         public int Side = -1;

@@ -17,7 +17,7 @@ namespace StellarisClone.Ground
         private static Material s_additive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetCache() { s_lit.Clear(); s_glow.Clear(); s_prims.Clear(); s_add = null; s_additive = null; }
+        private static void ResetCache() { s_lit.Clear(); s_glow.Clear(); s_prims.Clear(); s_rings.Clear(); s_add = null; s_additive = null; }
 
         private static int Key(Color c, float a = 0f, float b = 0f)
             => (Mathf.RoundToInt(c.r * 255f) << 24) ^ (Mathf.RoundToInt(c.g * 255f) << 16) ^ (Mathf.RoundToInt(c.b * 255f) << 8)
@@ -63,6 +63,8 @@ namespace StellarisClone.Ground
                 if (s_add == null) s_add = Resources.Load<Shader>("Shaders/CombatAdditive");
                 s_additive = s_add != null ? new Material(s_add) { name = "GroundAdditive", hideFlags = HideFlags.DontSave }
                                            : new Material(ShaderCache.Sprite) { name = "GroundAdditive", hideFlags = HideFlags.DontSave };
+                // В бою вспышки и трассеры ярче порога свечения — светятся, как в кино
+                if (s_additive.HasProperty("_Intensity")) s_additive.SetFloat("_Intensity", 2.6f);
                 return s_additive;
             }
         }
@@ -92,13 +94,51 @@ namespace StellarisClone.Ground
             return go.transform;
         }
 
+        /// <summary>Часть модели: параллелепипед со скруглёнными рёбрами (размер — в метрах, масштаб 1).</summary>
+        public static Transform Box(Transform parent, Vector3 pos, Vector3 size, Material mat, string name = "Box", Quaternion? rot = null, float bevel = 0.04f)
+            => MeshPart(parent, ProcMesh.Box(size, bevel), pos, Vector3.one, mat, name, rot);
+
+        /// <summary>Часть модели из готового меша.</summary>
+        public static Transform MeshPart(Transform parent, Mesh mesh, Vector3 pos, Vector3 scale, Material mat, string name = "Part", Quaternion? rot = null)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localScale = scale;
+            if (rot.HasValue) go.transform.localRotation = rot.Value;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            return go.transform;
+        }
+
+        private static readonly Dictionary<int, Material> s_rings = new Dictionary<int, Material>();
+
+        /// <summary>Материал кольца под бойцом (цвет стороны; выделенные — ярче).</summary>
+        public static Material Ring(Color c, bool selected)
+        {
+            int k = Key(c) ^ (selected ? 0x5a5a5a5 : 0);
+            if (s_rings.TryGetValue(k, out var m) && m != null) return m;
+            m = new Material(ShaderCache.Sprite) { name = "GroundRing", hideFlags = HideFlags.DontSave, mainTexture = FxTextures.Ring };
+            Color col = selected ? Color.Lerp(c, Color.white, 0.35f) : c;
+            col.a = selected ? 1f : 0.55f;
+            m.color = col;
+            m.renderQueue = 2460;
+            s_rings[k] = m;
+            return m;
+        }
+
         /// <summary>Освободить материалы боя (после его окончания).</summary>
         public static void Release()
         {
             foreach (var m in s_lit.Values) if (m != null) Object.Destroy(m);
             foreach (var m in s_glow.Values) if (m != null) Object.Destroy(m);
+            foreach (var m in s_rings.Values) if (m != null) Object.Destroy(m);
             s_lit.Clear();
             s_glow.Clear();
+            s_rings.Clear();
+            ProcMesh.Release();
             if (s_additive != null) Object.Destroy(s_additive);
             s_additive = null;
         }

@@ -35,6 +35,8 @@ namespace StellarisClone.Ground
         /// <summary>Сдвиг фазы покачивания (у каждого дрона роя свой).</summary>
         private float _bobPhase;
         private bool _visible = true;
+        private Renderer _ring;
+        private bool _ringSelected;
         private Vector3 _lastPos;
 
         public Vector3 Pos => transform.position;
@@ -55,9 +57,15 @@ namespace StellarisClone.Ground
             if (def.Role == UnitRole.MachineGun && sergeant) Weapon = def.SergeantWeapon ?? def.Weapon;
             transform.position = pos;
             Rig = UnitMeshFactory.Build(transform, def, squad.Side.Color, sergeant, squad.Side.FactionKey);
+            // Кольцо стороны под ногами (как в Dawn of War); выделенный отряд — ярче
+            float ringSize = def.Vehicle ? (def.Role == UnitRole.Walker ? 9f : 6.2f) : def.Role == UnitRole.Swarm ? 0.9f : 1.25f * def.Scale * UnitMeshFactory.Heroic;
+            _ring = GroundMats.MeshPart(transform, ProcMesh.FlatQuad, new Vector3(0f, 0.07f, 0f), new Vector3(ringSize, 1f, ringSize), GroundMats.Ring(squad.Side.Color, false), "Ring")
+                .GetComponent<Renderer>();
+            _ring.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _ring.receiveShadows = false;
 
             Agent = gameObject.AddComponent<NavMeshAgent>();
-            Agent.radius = def.Vehicle ? 1.6f * Mathf.Max(1f, def.Scale * 0.8f) : def.Role == UnitRole.Swarm ? 0.25f : 0.38f;
+            Agent.radius = def.Vehicle ? 1.6f * Mathf.Max(1f, def.Scale * 0.8f) : def.Role == UnitRole.Swarm ? 0.25f : 0.46f;
             Agent.height = Rig.Height;
             Agent.speed = def.Speed * speedMult;
             Agent.acceleration = def.Vehicle ? 6f : 18f;
@@ -94,6 +102,7 @@ namespace StellarisClone.Ground
             if (v == _visible || Rig?.Renderers == null) return;
             _visible = v;
             foreach (var r in Rig.Renderers) if (r != null) r.enabled = v;
+            if (_ring != null) _ring.enabled = v;
         }
 
         public bool VisibleNow => _visible;
@@ -106,6 +115,11 @@ namespace StellarisClone.Ground
             if (BurnLeft > 0f) TickBurning(dt);
             if (Dead) return;
             Animate(dt);
+            if (_ring != null && Squad.Selected != _ringSelected)
+            {
+                _ringSelected = Squad.Selected;
+                _ring.sharedMaterial = GroundMats.Ring(Squad.Side.Color, _ringSelected);
+            }
             if (InSyncKill) return;
 
             var w = Weapon;
@@ -214,7 +228,7 @@ namespace StellarisClone.Ground
             {
                 // Отдача ствола и лёгкое покачивание корпуса
                 _recoil = Mathf.MoveTowards(_recoil, 0f, dt * 3f);
-                if (Rig.Barrel != null && Def.Role != UnitRole.Artillery) Rig.Barrel.localPosition = new Vector3(0f, 0.05f, (Def.Role == UnitRole.Tank ? 1.2f : 0.5f) - _recoil * 0.5f);
+                if (Rig.Barrel != null) Rig.Barrel.localPosition = Rig.BarrelRest - Rig.Barrel.localRotation * Vector3.forward * (_recoil * (Def.Role == UnitRole.Artillery ? 0.9f : 0.5f));
                 if (Rig.Turret != null && Target == null && Squad.EngagedStructure == null)
                     Rig.Turret.localRotation = Quaternion.Slerp(Rig.Turret.localRotation, Quaternion.identity, dt * 1.5f);
                 return;
@@ -241,7 +255,7 @@ namespace StellarisClone.Ground
             float targetProne = Squad.Pinned && !Moving ? 1f : 0f;
             _prone = Mathf.MoveTowards(_prone, targetProne, dt * 2.5f);
             float bob = Mathf.Abs(Mathf.Sin(_walk)) * 0.06f * k;
-            if (Rig.Hips != null) Rig.Hips.localPosition = new Vector3(0f, 0.92f + bob - _prone * 0.62f, 0f);
+            if (Rig.Hips != null) Rig.Hips.localPosition = new Vector3(0f, Rig.HipsY + bob - _prone * 0.62f, 0f);
             if (Rig.Torso != null)
             {
                 float lean = 8f * k + _prone * 70f;
@@ -249,7 +263,16 @@ namespace StellarisClone.Ground
                 Rig.Torso.localRotation = Quaternion.Euler(lean - _recoil * 6f, 0f, 0f);
             }
             if (Rig.ArmR != null && Rig.Gun != null)
-                Rig.Gun.localPosition = new Vector3(Rig.Gun.localPosition.x, Rig.Gun.localPosition.y, 0.3f - _recoil * 0.08f);
+                Rig.Gun.localPosition = Rig.GunRest - new Vector3(0f, 0f, _recoil * 0.08f);
+            // Голова чуть поворачивается к цели, при беге наклон вперёд, руки качаются в такт
+            if (Rig.Head != null && Target != null && !Target.Dead)
+            {
+                var d = transform.InverseTransformPoint(Target.Pos);
+                float yaw = Mathf.Clamp(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -40f, 40f);
+                Rig.Head.localRotation = Quaternion.Slerp(Rig.Head.localRotation, Quaternion.Euler(0f, yaw, 0f), dt * 6f);
+            }
+            if (Rig.ArmL != null && k > 0.1f && _prone < 0.3f)
+                Rig.ArmL.localRotation = Quaternion.Euler(-62f + Mathf.Sin(_walk) * 10f * k, 28f, 0f);
             if (_prone > 0.5f && Rig.LegL != null)
             {
                 Rig.LegL.localRotation = Quaternion.Euler(-70f * _prone, 0f, 0f);

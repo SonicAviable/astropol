@@ -215,7 +215,7 @@ namespace StellarisClone.Ground
                 y -= 34f;
             }
             y -= 6f;
-            _orbitalBtn = LGBuild.Button(_reinforce, "Orbital", UIManager.DS.BtnNeutral, new Color(1f, 0.35f, 0.3f, 0.6f), () => GroundInput.BeginOrbital(), LGIcon.Target, null, 11);
+            _orbitalBtn = LGBuild.Button(_reinforce, "Orbital", UIManager.DS.BtnNeutral, new Color(1f, 0.35f, 0.3f, 0.6f), () => GroundInput.BeginOrbital(), null, null, 11);
             var ort = (RectTransform)_orbitalBtn.transform;
             ort.anchorMin = new Vector2(0f, 1f); ort.anchorMax = new Vector2(1f, 1f); ort.pivot = new Vector2(0.5f, 1f);
             ort.offsetMin = new Vector2(10f, y - 34f); ort.offsetMax = new Vector2(-10f, y);
@@ -227,7 +227,7 @@ namespace StellarisClone.Ground
             if (special != null)
             {
                 _specialBtn = LGBuild.Button(_reinforce, "Special", UIManager.DS.BtnNeutral, new Color(player.Color.r, player.Color.g, player.Color.b, 0.6f),
-                    () => _gm.UseFactionSpecial(player), LGIcon.Leader, null, 11);
+                    () => _gm.UseFactionSpecial(player), null, null, 11);
                 var srt = (RectTransform)_specialBtn.transform;
                 srt.anchorMin = new Vector2(0f, 1f); srt.anchorMax = new Vector2(1f, 1f); srt.pivot = new Vector2(0.5f, 1f);
                 srt.offsetMin = new Vector2(10f, y - 34f); srt.offsetMax = new Vector2(-10f, y);
@@ -470,7 +470,7 @@ namespace StellarisClone.Ground
                     tag.State.color = s.InCover && !s.Pinned && !s.Broken && !s.Retreating ? (CoverQuality(s) >= 2 ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.85f, 0.3f)) : new Color(1f, 0.55f, 0.45f);
                     tag.Chevrons.text = s.Veterancy > 0 ? new string('^', s.Veterancy) : "";
                     tag.Callout.text = Time.time < s.CalloutUntil ? s.Callout : "";
-                    tag.Bracket.enabled = s.Selected;
+                    tag.Bracket.enabled = false;   // выделение видно по кольцам под бойцами
                 }
             for (; i < _tags.Count; i++) _tags[i].Root.gameObject.SetActive(false);
         }

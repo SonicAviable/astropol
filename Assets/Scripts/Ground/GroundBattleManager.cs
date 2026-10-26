@@ -62,6 +62,10 @@ namespace StellarisClone.Ground
         private FogMode _fogModeBefore;
         private float _fogStartBefore, _fogEndBefore;
         private UnityEngine.Rendering.AmbientMode _ambientModeBefore;
+        private Color _skyBefore, _equatorBefore, _groundBefore;
+        private Light _sunBefore;
+        private float _shadowDistBefore = -1f;
+        private int _cascadesBefore;
 
         public static GroundBattleManager Ensure()
         {
@@ -128,6 +132,7 @@ namespace StellarisClone.Ground
             // Камера — над своими: у атакующего точка высадки, у защитника штаб
             bool defends = Sides[1].IsPlayer && !Sides[0].IsPlayer;
             Cam = BattleCamera.Create(_root, Map, defends ? Map.DefenderBeacon + new Vector3(0f, 0f, -30f) : Map.AttackerBeacon + new Vector3(0f, 0f, 30f));
+            BattleAmbience.Create(_root);
             Controls = gameObject.AddComponent<GroundInput>();
             Hud = GroundHud.Create(this);
 
@@ -889,10 +894,20 @@ namespace StellarisClone.Ground
             SyncKills.Reset();
             foreach (var s in Sides) s?.Squads.Clear();
             _all.Clear();
+            // Текстуры земли создаются на бой — выгрузить вместе с материалом
+            var tr = Map?.Terrain != null ? Map.Terrain.GetComponent<Renderer>() : null;
+            if (tr != null && tr.sharedMaterial != null)
+            {
+                var m = tr.sharedMaterial;
+                foreach (var prop in new[] { "_BaseMap", "_BumpMap", "_DetailAlbedoMap", "_DetailNormalMap", "_EmissionMap" })
+                    if (m.HasProperty(prop) && m.GetTexture(prop) != null) Destroy(m.GetTexture(prop));
+                Destroy(m);
+            }
             if (_root != null) Destroy(_root.gameObject);
             _root = null;
             Map = null;
             GroundMats.Release();
+            FxTextures.Release();
             Time.timeScale = 1f;
         }
 
@@ -926,30 +941,74 @@ namespace StellarisClone.Ground
             _fogModeBefore = RenderSettings.fogMode;
             _fogStartBefore = RenderSettings.fogStartDistance;
             _fogEndBefore = RenderSettings.fogEndDistance;
+            _skyBefore = RenderSettings.ambientSkyColor;
+            _sunBefore = RenderSettings.sun;
+            _equatorBefore = RenderSettings.ambientEquatorColor;
+            _groundBefore = RenderSettings.ambientGroundColor;
         }
 
         private void SetupEnvironment()
         {
             var b = Map.Biome;
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = b.Ambient;
+            // Окружение с трёх сторон: небо сверху, горизонт, отражённый от земли свет снизу — объём вместо плоской заливки
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = b.AmbientSky;
+            RenderSettings.ambientEquatorColor = b.AmbientEquator;
+            RenderSettings.ambientGroundColor = b.AmbientGround;
+            RenderSettings.ambientLight = b.AmbientSky;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = b.Fog;
             RenderSettings.fogStartDistance = b.FogStart;
             RenderSettings.fogEndDistance = b.FogEnd;
+
+            // Солнце: низкое, длинные мягкие тени
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.transform.SetParent(_root, false);
             sun.type = LightType.Directional;
             sun.color = b.Sun;
             sun.intensity = b.SunIntensity;
             sun.shadows = LightShadows.Soft;
+            sun.shadowStrength = 0.92f;
+            sun.shadowBias = 0.04f;
+            sun.shadowNormalBias = 0.35f;
             sun.transform.rotation = Quaternion.Euler(b.SunEuler);
+            RenderSettings.sun = sun;
+            // Контровой свет с противоположной стороны: силуэты отрядов отделяются от земли
+            var rim = new GameObject("Rim").AddComponent<Light>();
+            rim.transform.SetParent(_root, false);
+            rim.type = LightType.Directional;
+            rim.color = b.Rim;
+            rim.intensity = b.RimIntensity;
+            rim.shadows = LightShadows.None;
+            rim.transform.rotation = Quaternion.Euler(22f, b.SunEuler.y + 165f, 0f);
+
+            // Тени на всю глубину кадра RTS-камеры (в галактике хватает 50 м, здесь камера висит выше)
+            var asset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            if (asset != null)
+            {
+                _shadowDistBefore = asset.shadowDistance;
+                _cascadesBefore = asset.shadowCascadeCount;
+                asset.shadowDistance = 170f;
+                if (asset.shadowCascadeCount < 4 && GraphicsQuality.Shadows >= 2) asset.shadowCascadeCount = 4;
+            }
+            BattleAtmosphere.Create(_root, Map);
             _stormTimer = Random.Range(90f, 140f);
         }
 
         private void RestoreStrategy()
         {
+            var asset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            if (asset != null && _shadowDistBefore >= 0f)
+            {
+                asset.shadowDistance = _shadowDistBefore;
+                asset.shadowCascadeCount = _cascadesBefore;
+                _shadowDistBefore = -1f;
+            }
+            RenderSettings.ambientSkyColor = _skyBefore;
+            RenderSettings.sun = _sunBefore;
+            RenderSettings.ambientEquatorColor = _equatorBefore;
+            RenderSettings.ambientGroundColor = _groundBefore;
             RenderSettings.ambientMode = _ambientModeBefore;
             RenderSettings.ambientLight = _ambientBefore;
             RenderSettings.fog = _fogBefore;
