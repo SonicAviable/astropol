@@ -325,6 +325,7 @@ namespace StellarisClone.Rendering
                     sys[count++] = new Vector4(m.x, m.z, owner, 0f);
                 }
             }
+            FitBorderPlane();
             _borderMat.SetVectorArray("_Sys", sys);
             _borderMat.SetFloat("_SysCount", count);
             _borderMat.SetFloat("_ClaimRadius", _claimRadius);
@@ -349,6 +350,26 @@ namespace StellarisClone.Rendering
         }
 
         public void RefreshSystemBorders() => RefreshTerritoryVisuals();
+
+        /// <summary>
+        /// Плоскость границ — по всей галактике с запасом на радиус владения: шейдер считает территорию в мировых
+        /// координатах, а фиксированный квадрат обрезал границы окраинных систем на больших картах.
+        /// </summary>
+        private void FitBorderPlane()
+        {
+            if (_organicBorderPlane == null || _generator == null || _generator.Systems.Count == 0) return;
+            float minX = float.MaxValue, maxX = float.MinValue, minZ = float.MaxValue, maxZ = float.MinValue;
+            foreach (var s in _generator.Systems)
+            {
+                minX = Mathf.Min(minX, s.Position.x); maxX = Mathf.Max(maxX, s.Position.x);
+                minZ = Mathf.Min(minZ, s.Position.z); maxZ = Mathf.Max(maxZ, s.Position.z);
+            }
+            float pad = _claimRadius * 2.5f + 10f;
+            float size = Mathf.Max(GalaxyPlaneSize, Mathf.Max(maxX - minX, maxZ - minZ) + pad * 2f);
+            var t = _organicBorderPlane.transform;
+            t.position = new Vector3((minX + maxX) * 0.5f, t.position.y, (minZ + maxZ) * 0.5f);
+            t.localScale = new Vector3(size, size, 1f);
+        }
 
         private float _claimRadius = 15f;
 
