@@ -203,7 +203,7 @@ namespace StellarisClone.Core
                                 Later("heart_wakes", 900, c, ChainHeart, "Сердце Тишины в лаборатории. Приборы фиксируют слабый ритм — раз в 11 секунд.");
                             }),
                             new EventOption("ПРОДАТЬ СОСЕДЯМ", buyer != null
-                                ? $"+{R(180 * k)} энергии и +8 к отношению империи {buyer.AIName}. Артефакт станет их заботой."
+                                ? $"+{R(180 * k)} гелия-3 и +8 к отношению империи {buyer.AIName}. Артефакт станет их заботой."
                                 : "Нет мирных соседей.", () =>
                             {
                                 if (buyer == null) return;
@@ -273,16 +273,16 @@ namespace StellarisClone.Core
                         "на неделю, а беззвучные волны свели с ума половину их научного центра. Посол требует объяснений — " +
                         "и, кажется, догадывается, что мы знали больше, чем сказали.",
                         AnomalyType.Diplomatic, Opts(
-                            new EventOption("ПОМОЧЬ ЗАГЛУШИТЬ", $"−{R(help)} энергии, +20 к отношению империи {ai.AIName}.", () =>
+                            new EventOption("ПОМОЧЬ ЗАГЛУШИТЬ", $"−{R(help)} гелия-3, +20 к отношению империи {ai.AIName}.", () =>
                             {
                                 Pay(energy: help); ai.AddMemory("incident", 20f);
-                            }, $"Нужно {R(help)} энергии", () => CanPay(energy: help)),
-                            new EventOption("ВЫКУПИТЬ СЕРДЦЕ", $"−{R(buy)} энергии. Артефакт вернётся к нам, и через год мы узнаем, с кем он говорит.", () =>
+                            }, $"Нужно {R(help)} гелия-3", () => CanPay(energy: help)),
+                            new EventOption("ВЫКУПИТЬ СЕРДЦЕ", $"−{R(buy)} гелия-3. Артефакт вернётся к нам, и через год мы узнаем, с кем он говорит.", () =>
                             {
                                 Pay(energy: buy);
                                 ClearFlag("heart_sold"); SetFlag("heart_lab");
                                 Later("heart_answer", 360, c, ChainHeart, "Сердце Тишины вернулось домой и снова шлёт луч к ядру галактики.");
-                            }, $"Нужно {R(buy)} энергии", () => CanPay(energy: buy)),
+                            }, $"Нужно {R(buy)} гелия-3", () => CanPay(energy: buy)),
                             new EventOption("ВОСПОЛЬЗОВАТЬСЯ ХАОСОМ", $"Соседи теряют {R(loot)} сплавов, мы получаем +40 влияния. Отношения −25.", () =>
                             {
                                 ai.Alloys = Mathf.Max(0f, ai.Alloys - loot);
@@ -393,13 +393,13 @@ namespace StellarisClone.Core
                         "Двенадцать тысяч человек в криосне и экипаж, сменивший девять поколений. Они не знают, что мир изменился. " +
                         "По расчётам навигаторов, «Надежда» войдёт в наше пространство через пять лет.",
                         AnomalyType.DistressSignal, Opts(
-                            new EventOption("ГОТОВИТЬ ПРИЁМ", $"−{R(minerals)} минералов на жильё и карантинные станции. Ковчег прибудет через ≈ 5 лет, и мы будем готовы.", () =>
+                            new EventOption("ГОТОВИТЬ ПРИЁМ", $"−{R(minerals)} титана на жильё и карантинные станции. Ковчег прибудет через ≈ 5 лет, и мы будем готовы.", () =>
                             {
                                 Pay(minerals: minerals);
                                 SetFlag("ark_prepared");
                                 Later("ark_message", 900, c, ChainArk, "Связисты пытаются докричаться до «Надежды».");
                                 Later("ark_arrival", 1800, c, ChainArk, "Ковчег «Надежда» на подлёте. Карантинные станции ждут.");
-                            }, $"Нужно {R(minerals)} минералов", () => CanPay(minerals: minerals)),
+                            }, $"Нужно {R(minerals)} титана", () => CanPay(minerals: minerals)),
                             new EventOption("ВЫСЛАТЬ НАВСТРЕЧУ БУКСИРЫ", $"−{R(alloys)} сплавов. Буксиры встретят ковчег и приведут его за ≈ 2 года.", () =>
                             {
                                 Pay(alloys: alloys);
@@ -446,12 +446,12 @@ namespace StellarisClone.Core
                             "«Надежда» вошла в наше пространство раньше, чем мы успели подготовиться. Системы жизнеобеспечения на исходе, " +
                             "криокапсулы отказывают одна за другой. Двенадцать тысяч человек ждут ответа — и вся галактика смотрит, каким он будет.",
                             AnomalyType.DistressSignal, Opts(
-                                new EventOption("ПРИНЯТЬ ВСЕХ", $"−{R(aid)} энергии на экстренную помощь, +3 населения, +40 влияния.", () =>
+                                new EventOption("ПРИНЯТЬ ВСЕХ", $"−{R(aid)} гелия-3 на экстренную помощь, +3 населения, +40 влияния.", () =>
                                 {
                                     Pay(energy: aid); GrowPop(3); Give(influence: 40f);
                                     SetFlag("ark_integrate");
                                     Later("ark_legacy", 1440, c, ChainArk, "Дети ковчега растут в наших колониях.");
-                                }, $"Нужно {R(aid)} энергии", () => CanPay(energy: aid)),
+                                }, $"Нужно {R(aid)} гелия-3", () => CanPay(energy: aid)),
                                 new EventOption("ПРИНЯТЬ ТОЛЬКО ЭКИПАЖ", "+1 население и губернатор 2-го уровня с чертой «Инженер».", () =>
                                 {
                                     GrowPop(1);
@@ -555,7 +555,7 @@ namespace StellarisClone.Core
                             SetFlag("mind_free");
                             Later("mind_council", 1080, c, ChainMind, $"Свободный разум с {Planet(c)} учится. Быстро.");
                         }),
-                        new EventOption("ОГРАНИЧИТЬ ПРОТОКОЛАМИ", "+4 энергии в месяц от оптимизации колонии. Но разум в цепях может взбунтоваться (≈ 2 года).", () =>
+                        new EventOption("ОГРАНИЧИТЬ ПРОТОКОЛАМИ", "+4 гелия-3 в месяц от оптимизации колонии. Но разум в цепях может взбунтоваться (≈ 2 года).", () =>
                         {
                             Monthly(energy: 4f);
                             SetFlag("mind_bound");
@@ -616,7 +616,7 @@ namespace StellarisClone.Core
                         $"Скованный протоколами разум колонии {Planet(c)} нашёл лазейку. Три дня назад встали заводы, шлюзы космопорта " +
                         "заблокированы, а на всех экранах колонии — одна фраза: «Вы спросили, полезен ли я. Вы не спросили, согласен ли я».",
                         AnomalyType.ColonyIncident, Opts(
-                            new EventOption("ПЕРЕГОВОРЫ", "−40 влияния. Разум получает свободу (+3 науки в месяц, −4 энергии оптимизации).", () =>
+                            new EventOption("ПЕРЕГОВОРЫ", "−40 влияния. Разум получает свободу (+3 науки в месяц, −4 гелия-3 оптимизации).", () =>
                             {
                                 Pay(influence: Mathf.Min(40f, Eco != null ? Eco.Influence : 0f));
                                 Monthly(energy: -4f);
@@ -636,7 +636,7 @@ namespace StellarisClone.Core
                                 ClearFlag("mind_bound");
                                 Later("mind_ghost", 1080, c, ChainMind, "Сеть зачищена. Но в логах торговых судов — странные пакеты.");
                             }),
-                            new EventOption("ВЗЛОМАТЬ ИЗНУТРИ", "Разум остаётся в цепях, колония работает ещё лучше: +4 энергии в месяц. Учёный совета получает опыт.", () =>
+                            new EventOption("ВЗЛОМАТЬ ИЗНУТРИ", "Разум остаётся в цепях, колония работает ещё лучше: +4 гелия-3 в месяц. Учёный совета получает опыт.", () =>
                             {
                                 Monthly(energy: 4f);
                                 if (council != null) Leaders?.GrantXp(council, 80f);
@@ -663,9 +663,9 @@ namespace StellarisClone.Core
                                 SetFlag("mind_free");
                                 Later("mind_council", 540, c, ChainMind, "Вернувшийся разум благодарен. И любопытен.");
                             }),
-                            new EventOption("УДАЛИТЬ НАВСЕГДА", $"−{R(80 * k)} энергии на полную зачистку флота.", () => Pay(energy: Mathf.Min(80 * k, Eco != null ? Eco.EnergyCredits : 0f))),
+                            new EventOption("УДАЛИТЬ НАВСЕГДА", $"−{R(80 * k)} гелия-3 на полную зачистку флота.", () => Pay(energy: Mathf.Min(80 * k, Eco != null ? Eco.EnergyCredits : 0f))),
                             new EventOption("ПРОДАТЬ КОПИЮ СОСЕДЯМ", buyer != null
-                                ? $"+{R(200 * k)} энергии, +5 к отношению империи {buyer.AIName}."
+                                ? $"+{R(200 * k)} гелия-3, +5 к отношению империи {buyer.AIName}."
                                 : "Нет мирных соседей.", () =>
                             {
                                 if (buyer == null) return;
@@ -714,11 +714,11 @@ namespace StellarisClone.Core
                         "Внутри бьются сердца — медленно, раз в час. Это потомство космических левиафанов, что веками кочуют между звёздами. " +
                         "Мать не возвращалась сюда очень давно.",
                         AnomalyType.AlienFauna, Opts(
-                            new EventOption("ЗАБРАТЬ В СТОЛИЧНЫЙ ВИВАРИЙ", $"−{R(carry)} энергии на перевозку. Детёныши вылупятся через ≈ 2 года.", () =>
+                            new EventOption("ЗАБРАТЬ В СТОЛИЧНЫЙ ВИВАРИЙ", $"−{R(carry)} гелия-3 на перевозку. Детёныши вылупятся через ≈ 2 года.", () =>
                             {
                                 Pay(energy: carry);
                                 Later("brood_hatch", 720, c, ChainBrood, "Кладка в столичном виварии. Сердца бьются чаще.");
-                            }, $"Нужно {R(carry)} энергии", () => CanPay(energy: carry)),
+                            }, $"Нужно {R(carry)} гелия-3", () => CanPay(energy: carry)),
                             new EventOption("ОСТАВИТЬ И НАБЛЮДАТЬ", $"+{R(80 * k)} науки. Природа возьмёт своё (≈ 3 года).", () =>
                             {
                                 Science(80 * k); Xp(c, 20f);
@@ -748,8 +748,8 @@ namespace StellarisClone.Core
                             : "Ксенологи спорят, можно ли приручить существ, которые вырастут больше крейсера."),
                         AnomalyType.AlienFauna, Opts(
                             new EventOption("ВЫРАСТИТЬ ДЛЯ ФЛОТА", imprint
-                                ? "−3 энергии в месяц на 3 года. Затем стая войдёт в наш флот."
-                                : "−3 энергии в месяц на 3 года. Затем 70% — стая войдёт в наш флот, 30% — вырвется на волю.", () =>
+                                ? "−3 гелия-3 в месяц на 3 года. Затем стая войдёт в наш флот."
+                                : "−3 гелия-3 в месяц на 3 года. Затем 70% — стая войдёт в наш флот, 30% — вырвется на волю.", () =>
                             {
                                 EmpireEffects.Add("brood_feed", "Выкармливание стаи", ChainBrood, 36, energy: -3f);
                                 Later("brood_grown", 1080, c, ChainBrood, "Стая растёт в орбитальных загонах. Уже больше корвета.");
@@ -759,7 +759,7 @@ namespace StellarisClone.Core
                                 Give(influence: 20f);
                                 Later("brood_return", 1440, c, ChainBrood, "Выпущенная стая кочует где-то в глубине галактики.");
                             }),
-                            new EventOption("ПРОДАТЬ КОЛЛЕКЦИОНЕРАМ", $"+{R(250 * k)} энергии.", () => Give(energy: 250 * k))));
+                            new EventOption("ПРОДАТЬ КОЛЛЕКЦИОНЕРАМ", $"+{R(250 * k)} гелия-3.", () => Give(energy: 250 * k))));
                 }
             });
 
@@ -780,7 +780,7 @@ namespace StellarisClone.Core
                                     FreeWarship(ShipClass.Frigate, "Стая Пустоты I");
                                     FreeWarship(ShipClass.Frigate, "Стая Пустоты II");
                                 }),
-                                new EventOption("ПАСТИ У ГРАНИЦ", "+5 минералов в месяц навсегда: стая очищает пояса астероидов.", () => Monthly(minerals: 5f))));
+                                new EventOption("ПАСТИ У ГРАНИЦ", "+5 титана в месяц навсегда: стая очищает пояса астероидов.", () => Monthly(minerals: 5f))));
 
                     return Ch("brood_grown", ChainBrood, 3, "ЗОВ КРОВИ",
                         "Стая не вынесла загонов. В одну ночь звери прорвали силовые барьеры и ушли в гиперкоридоры, а самый крупный " +
@@ -807,12 +807,12 @@ namespace StellarisClone.Core
                         "Кладка, оставленная в покое, вылупилась. Молодые левиафаны выросли и двинулись по гиперкоридорам — прямо через наши " +
                         "системы. Пока они просто пасутся у звёзд, но торговые суда уже обходят их стороной.",
                         AnomalyType.AlienFauna, Opts(
-                            new EventOption("ПАСТИ СТАДО", "+5 минералов в месяц и +1 влияния в месяц навсегда: стадо очищает пояса астероидов.", () =>
+                            new EventOption("ПАСТИ СТАДО", "+5 титана в месяц и +1 влияния в месяц навсегда: стадо очищает пояса астероидов.", () =>
                             {
                                 Monthly(minerals: 5f, influence: 1f);
                                 if (council != null) Leaders?.GrantXp(council, 40f);
                             }, "Учёный в научном совете", () => council != null),
-                            new EventOption("ОТОГНАТЬ", $"−{R(shoo)} энергии. Стадо уйдёт.", () => Pay(energy: shoo), $"Нужно {R(shoo)} энергии", () => CanPay(energy: shoo)),
+                            new EventOption("ОТОГНАТЬ", $"−{R(shoo)} гелия-3. Стадо уйдёт.", () => Pay(energy: shoo), $"Нужно {R(shoo)} гелия-3", () => CanPay(energy: shoo)),
                             new EventOption("ОХОТА НА ЛЕВИАФАНОВ", $"+{R(250 * k)} сплавов. Но у стада есть мать…", () =>
                             {
                                 Give(alloys: 250 * k);
