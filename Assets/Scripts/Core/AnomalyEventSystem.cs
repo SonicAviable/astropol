@@ -92,9 +92,12 @@ namespace StellarisClone.Core
             Fire(EventDatabase.RollSurvey(ctx, _s));
         }
 
-        public void Schedule(string id, int days, EventContext ctx)
+        public void Schedule(string id, int days, EventContext ctx) => Schedule(id, days, ctx, null, null);
+
+        /// <summary>Продолжение цепочки через days дней; chain и hint попадают в хронику империи.</summary>
+        public void Schedule(string id, int days, EventContext ctx, string chain, string hint)
         {
-            var p = new PendingEventSave { Id = id, Days = Mathf.Max(1, days) };
+            var p = new PendingEventSave { Id = id, Days = Mathf.Max(1, days), TotalDays = Mathf.Max(1, days), Chain = chain, Hint = hint };
             if (ctx != null)
             {
                 p.SystemId = ctx.System != null ? ctx.System.Id : -1;
@@ -105,7 +108,19 @@ namespace StellarisClone.Core
                 p.Ally = ctx.Ally;
             }
             _s.Pending.Add(p);
+
+            // Одна заметка на решение (некоторые варианты планируют сразу две главы)
+            if (!string.IsNullOrEmpty(chain) && !string.IsNullOrEmpty(hint) && (_lastChainNote != chain || _lastChainFrame != Time.frameCount))
+            {
+                _lastChainNote = chain;
+                _lastChainFrame = Time.frameCount;
+                NotificationCenter.Show($"Цепочка «{chain}»", "Продолжение следует. Хроника — в окне империи, вкладка «Эффекты»",
+                    NotificationCenter.Kind.Info, 5f);
+            }
         }
+
+        private string _lastChainNote;
+        private int _lastChainFrame = -1;
 
         private void Fire(GameEventData ev)
         {
@@ -133,6 +148,12 @@ namespace StellarisClone.Core
             yield return new WaitForSecondsRealtime(0.45f);
             if (_queue.Count > 0) Show(_queue.Dequeue());
             else _showing = false;
+        }
+
+        /// <summary>Ожидающие продолжения цепочек с подсказками (для хроники).</summary>
+        public IEnumerable<PendingEventSave> PendingChains
+        {
+            get { foreach (var p in _s.Pending) if (!string.IsNullOrEmpty(p.Chain) && !string.IsNullOrEmpty(p.Hint)) yield return p; }
         }
 
         // ==================== КАЛЕНДАРЬ ====================

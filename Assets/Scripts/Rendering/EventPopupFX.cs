@@ -129,6 +129,16 @@ namespace StellarisClone.Rendering
         private static Texture2D Load(string art)
         {
             if (string.IsNullOrEmpty(art)) return null;
+            // «Новая|Запасная»: своя иллюстрация, а пока её нет — подходящая из уже имеющихся
+            if (art.IndexOf('|') >= 0)
+            {
+                foreach (var part in art.Split('|'))
+                {
+                    var t = Load(part.Trim());
+                    if (t != null) return t;
+                }
+                return null;
+            }
             if (s_Art.TryGetValue(art, out var tex) && tex != null) return tex;
             tex = Resources.Load<Texture2D>("UI/Events/" + art);
             if (tex != null)

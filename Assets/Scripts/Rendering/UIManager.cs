@@ -2117,9 +2117,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _eventTitleText.color = accent;
             }
             if (_eventDescText != null)
+            {
+                // Глава цепочки — золотой строкой над подзаголовком: игрок видит, что история продолжается
+                string chain = string.IsNullOrEmpty(ev.Chain) ? ""
+                    : $"<color=#F2C747><b>ЦЕПОЧКА «{ev.Chain.ToUpper()}»  ·  ГЛАВА {Roman(ev.Step)}</b></color>\n";
                 _eventDescText.text = string.IsNullOrEmpty(ev.Subtitle)
-                    ? ev.Description
-                    : $"<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";
+                    ? (chain.Length > 0 ? chain + "\n" : "") + ev.Description
+                    : $"{chain}<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";
+            }
 
             bool hasArt = _eventFx != null && _eventFx.SetArt(ev.Art, accent);
             float artH = hasArt ? EventArtHeight + 10f : 0f;
@@ -2199,6 +2204,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             LG.Skin(_eventPopupModal.transform);
             _eventFx?.Play();
         }
+
+        private static string Roman(int n) => n switch
+        {
+            1 => "I", 2 => "II", 3 => "III", 4 => "IV", 5 => "V", 6 => "VI", _ => n.ToString()
+        };
 
         private void HandleAnomalyEvent(GameEventData ev)
         {

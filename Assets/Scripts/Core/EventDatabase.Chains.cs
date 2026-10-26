@@ -1,0 +1,860 @@
+using System.Collections.Generic;
+using UnityEngine;
+using StellarisClone.Rendering;
+using Random = UnityEngine.Random;
+
+namespace StellarisClone.Core
+{
+    /// <summary>
+    /// Долгие цепочки событий — истории на несколько глав с последствиями через годы:
+    ///   • «Сердце Тишины» — инертный артефакт просыпается через 2–3 года и зовёт тех, кто его оставил;
+    ///   • «Ковчег „Надежда“» — корабль поколений идёт к нам пять лет, его потомки дают о себе знать позже;
+    ///   • «Пробуждённый разум» — ИИ колонии осознаёт себя; решение аукнется через годы;
+    ///   • «Кладка Пустоты» — яйца левиафанов: ручная стая, дикое стадо или месть матери.
+    /// Каждое отложенное продолжение попадает в хронику империи (вкладка «Эффекты») с туманной подсказкой.
+    /// Две цепочки могут дать ключ к чуду фракции (флаги wonder_key и wonder_mind, см. WonderManager).
+    /// </summary>
+    public static partial class EventDatabase
+    {
+        private const string ChainHeart = "Сердце Тишины";
+        private const string ChainArk = "Ковчег «Надежда»";
+        private const string ChainMind = "Пробуждённый разум";
+        private const string ChainBrood = "Кладка Пустоты";
+
+        /// <summary>Флаг цепочки для других систем (чудеса читают wonder_key и wonder_mind).</summary>
+        public static bool HasChainFlag(string flag) => HasFlag(flag);
+
+        // ==================== ПОМОЩНИКИ ЦЕПОЧЕК ====================
+
+        private static GameEventData Ch(string id, string chain, int step, string title, string text, AnomalyType type, List<EventOption> opts)
+        {
+            var ev = Ev(id, title, text, type, opts);
+            ev.Chain = chain;
+            ev.Step = step;
+            return ev;
+        }
+
+        /// <summary>Продолжение цепочки через days дней с подсказкой в хронике.</summary>
+        private static void Later(string id, int days, EventContext c, string chain, string hint)
+            => AnomalyEventSystem.Instance?.Schedule(id, days, c, chain, hint);
+
+        private static string Planet(EventContext c) => c?.Planet != null ? c.Planet.Name : "колонии";
+
+        /// <summary>Самая населённая планета игрока (столица, если она своя).</summary>
+        private static PlanetData CapitalPlanet()
+        {
+            PlanetData best = null;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != 0) continue;
+                foreach (var p in s.Planets)
+                    if (p.Population > 0 && (best == null || p.Population > best.Population
+                        || (p.Population == best.Population && s.Id == EconomyManager.PlayerCapitalId)))
+                        best = p;
+            }
+            return best;
+        }
+
+        /// <summary>Расселить n жителей по колониям игрока, где есть свободное жильё. Возвращает, сколько поселилось.</summary>
+        private static int GrowPop(int n)
+        {
+            int placed = 0;
+            for (int guard = 0; placed < n && guard < 64; guard++)
+            {
+                PlanetData pick = null;
+                foreach (var s in EmpireStats.Systems)
+                {
+                    if (s.OwnerId != 0) continue;
+                    foreach (var p in s.Planets)
+                        if (p.Population > 0 && p.Population < p.HousingCapacity
+                            && (pick == null || p.HousingCapacity - p.Population > pick.HousingCapacity - pick.Population))
+                            pick = p;
+                }
+                if (pick == null) break;
+                pick.Population++;
+                placed++;
+            }
+            if (placed > 0) Recalc();
+            return placed;
+        }
+
+        private static PlanetData BestColonySite()
+        {
+            PlanetData best = null;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != 0) continue;
+                foreach (var p in s.Planets)
+                    if (p.CanColonize && !p.IsColonizing && (best == null || p.HabitabilityPercent > best.HabitabilityPercent))
+                        best = p;
+            }
+            return best;
+        }
+
+        /// <summary>Основать колонию сразу с населением (поселенцы событий).</summary>
+        private static PlanetData SettleBest(int pop)
+        {
+            var p = BestColonySite();
+            if (p == null) return null;
+            p.SettleColony();
+            p.Population = Mathf.Max(p.Population, pop);
+            Recalc();
+            GalaxyView.Instance?.RefreshTerritoryVisuals();
+            return p;
+        }
+
+        /// <summary>Бесплатный боевой корабль игрока по его текущему проекту.</summary>
+        private static void FreeWarship(ShipClass hull, string name)
+        {
+            var fm = FleetManager.Instance;
+            if (fm == null) return;
+            int sys = fm.PlayerShipyardSystem();
+            if (sys < 0) return;
+            var fv = fm.CreateOwnedFleet(name, sys, FleetType.Military, 0, hull);
+            var design = fm.PlayerDesignFor(hull);
+            if (design != null) fv.Data.ApplyDesign(design);
+        }
+
+        /// <summary>Открыть на карте все системы в пределах jumps прыжков от границ игрока.</summary>
+        private static int RevealAround(int jumps)
+        {
+            var dist = new Dictionary<int, int>();
+            var q = new Queue<int>();
+            foreach (var s in EmpireStats.Systems)
+                if (s.OwnerId == 0) { dist[s.Id] = 0; q.Enqueue(s.Id); }
+            while (q.Count > 0)
+            {
+                int cur = q.Dequeue();
+                if (dist[cur] >= jumps) continue;
+                foreach (int n in EmpireStats.Systems[cur].ConnectedSystemIds)
+                    if (n >= 0 && n < EmpireStats.Systems.Count && !dist.ContainsKey(n)) { dist[n] = dist[cur] + 1; q.Enqueue(n); }
+            }
+            int opened = 0;
+            foreach (var id in dist.Keys)
+                if (!Vision.PlayerKnows(id)) { Vision.MarkExplored(0, id); opened++; }
+            return opened;
+        }
+
+        private static void TwoTechs()
+        {
+            TechnologyManager.Instance?.CompleteRandomTech();
+            TechnologyManager.Instance?.CompleteRandomTech();
+        }
+
+        private static bool LeaderSlot => Leaders != null && Leaders.CountFor(0) < LeaderManager.MaxLeaders;
+
+        private static bool CouncilHas(string trait)
+        {
+            var sci = Leaders?.CouncilScientist(0);
+            return sci != null && sci.Has(trait);
+        }
+
+        private static void RegisterChainArt()
+        {
+            // Своя иллюстрация (Resources/UI/Events/<имя>.jpg), пока её нет — подходящая из имеющихся
+            foreach (var id in new[] { "heart_found", "heart_wakes", "heart_wakes_abroad", "heart_answer" }) _art[id] = "Heart|Relic";
+            _art["heart_visitors"] = "HeartVisitors|Rift";
+            foreach (var id in new[] { "ark_signal", "ark_message" }) _art[id] = "Ark|Distress";
+            foreach (var id in new[] { "ark_arrival", "ark_legacy" }) _art[id] = "ArkDawn|Festival";
+            foreach (var id in new[] { "mind_awake", "mind_council", "mind_revolt", "mind_ghost", "mind_legacy" }) _art[id] = "Mind|Breakthrough";
+            foreach (var id in new[] { "brood_found", "brood_hatch" }) _art[id] = "Brood|Amoeba";
+            foreach (var id in new[] { "brood_grown", "brood_wild", "brood_mother", "brood_return" }) _art[id] = "BroodGrown|Amoeba";
+        }
+
+        private static void AddLongChains()
+        {
+            RegisterChainArt();
+            AddHeartChain();
+            AddArkChain();
+            AddMindChain();
+            AddBroodChain();
+        }
+
+        // ==================== СЕРДЦЕ ТИШИНЫ ====================
+
+        private static void AddHeartChain()
+        {
+            // I. Находка
+            Add(new Template
+            {
+                Id = "heart_found", When = Trigger.Survey, Weight = 0.7f, Once = true,
+                CanFire = c => c?.System != null && (TimeManager.Instance == null || TimeManager.Instance.Year >= 2202),
+                Build = c =>
+                {
+                    float k = K();
+                    var buyer = RandomPeacefulRival();
+                    var sold = new EventContext { System = c?.System, Rival = buyer != null ? buyer.OwnerId : -1 };
+                    return Ch("heart_found", ChainHeart, 1, "СЕРДЦЕ ТИШИНЫ",
+                        "В ледяной расселине луны научное судно нашло объект, который не отражает ни свет, ни радар: правильный многогранник " +
+                        "размером с челнок, абсолютно чёрный и на два градуса холоднее окружающего космоса. Рядом с ним пропадает звук — " +
+                        "разведчики не слышат в шлемах даже собственных голосов. Приборы называют объект инертным. " +
+                        "Экипаж называет его «Сердцем Тишины».",
+                        AnomalyType.PrecursorRelic, Opts(
+                            new EventOption("ВЫСТАВИТЬ В СТОЛИЧНОМ МУЗЕЕ", "+30 влияния и +1 влияния в месяц навсегда. Через несколько лет артефакт может проявить себя.", () =>
+                            {
+                                Give(influence: 30f); Monthly(influence: 1f);
+                                SetFlag("heart_museum");
+                                Later("heart_wakes", 1080, c, ChainHeart, "Сердце Тишины в столичном музее. Смотрители жалуются, что в зале по ночам слишком тихо…");
+                            }),
+                            new EventOption("ПЕРЕДАТЬ В ЛАБОРАТОРИЮ", $"+{R(120 * k)} науки. Исследования ускорят пробуждение (≈ 2,5 года).", () =>
+                            {
+                                Science(120 * k); Xp(c, 20f);
+                                SetFlag("heart_lab");
+                                Later("heart_wakes", 900, c, ChainHeart, "Сердце Тишины в лаборатории. Приборы фиксируют слабый ритм — раз в 11 секунд.");
+                            }),
+                            new EventOption("ПРОДАТЬ СОСЕДЯМ", buyer != null
+                                ? $"+{R(180 * k)} энергии и +8 к отношению империи {buyer.AIName}. Артефакт станет их заботой."
+                                : "Нет мирных соседей.", () =>
+                            {
+                                if (buyer == null) return;
+                                Give(energy: 180 * k); buyer.AddMemory("incident", 8f);
+                                SetFlag("heart_sold");
+                                Later("heart_wakes_abroad", 1080, sold, ChainHeart, $"Сердце Тишины продано империи {buyer.AIName}. Что они с ним сделают?");
+                            }, "Нужна мирная империя", () => buyer != null),
+                            new EventOption("ПОНЯТЬ, ЧЕГО ОНО ЖДЁТ", $"+{R(160 * k)} науки. Учёный понимает: это ключ, и он ждёт ответа. Пробуждение — через ≈ 2 года, и мы будем готовы.", () =>
+                            {
+                                Science(160 * k); Xp(c, 50f);
+                                SetFlag("heart_lab"); SetFlag("heart_understood");
+                                Later("heart_wakes", 720, c, ChainHeart, "Учёные ведут дневник ритма Сердца Тишины: интервалы сокращаются.");
+                            }, $"Учёный-{TraitName("sci_xeno").ToLower()} или {TraitName("sci_analyst").ToLower()}",
+                               () => LeaderHas(c, "sci_xeno") || LeaderHas(c, "sci_analyst"))));
+                }
+            });
+
+            // II. Пробуждение
+            Add(new Template
+            {
+                Id = "heart_wakes", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    bool museum = HasFlag("heart_museum");
+                    float shield = 150f * k;
+                    string text = museum
+                        ? "Ночью в столичном музее погас свет — весь, до последней лампы. Сердце Тишины пульсирует: раз в 11 секунд " +
+                          "по столице проходит волна беззвучия, и люди просыпаются с одним и тем же сном о звезде, которой нет на картах. " +
+                          "У дверей музея уже стоят паломники."
+                        : "Лаборатория зафиксировала: Сердце Тишины включилось. Каждые 11 секунд оно выпускает узкий луч в сторону " +
+                          "галактического ядра, и через сорок минут откуда-то приходит эхо. Артефакт не просто проснулся. " +
+                          "Он с кем-то разговаривает.";
+                    return Ch("heart_wakes", ChainHeart, 2, "СЕРДЦЕ ПРОСНУЛОСЬ", text, AnomalyType.PrecursorRelic, Opts(
+                        new EventOption("ОТВЕТИТЬ НА ЗОВ", "Учёные попытаются ответить. Через ≈ 1,5 года станет ясно, кто на другом конце.", () =>
+                            Later("heart_answer", 540, c, ChainHeart, "Наш ответ ушёл к ядру галактики вслед за лучом Сердца. Ждём эха.")),
+                        new EventOption("ЗАГЛУШИТЬ ЭКРАНАМИ", $"−{R(shield)} сплавов. Сердце умолкнет навсегда; его остаточное поле даёт +4 науки в месяц.", () =>
+                        {
+                            Pay(alloys: shield);
+                            TechnologyManager.Instance?.AddMonthlyScience(4f);
+                        }, $"Нужно {R(shield)} сплавов", () => CanPay(alloys: shield)),
+                        new EventOption("ПРИНЯТЬ ПАЛОМНИКОВ", "+3 влияния в месяц навсегда: столица становится местом паломничества. Сердце продолжит звать…", () =>
+                        {
+                            Monthly(influence: 3f);
+                            Later("heart_answer", 900, c, ChainHeart, "Паломники поют у Сердца Тишины. Говорят, ему кто-то отвечает.");
+                        }, "Сердце в музее", () => museum),
+                        new EventOption("НАСТРОИТЬ ЧАСТОТУ", "Ответ придёт уже через полгода — и мы будем готовы к разговору.", () =>
+                        {
+                            SetFlag("heart_tuned");
+                            Later("heart_answer", 180, c, ChainHeart, "Сердце Тишины настроено. Ответ близко.");
+                        }, "Учёные поняли артефакт", () => HasFlag("heart_understood"))));
+                }
+            });
+
+            // II'. Пробуждение у соседей
+            Add(new Template
+            {
+                Id = "heart_wakes_abroad", When = Trigger.Chain,
+                CanFire = c => c != null && AIEmpireManager.For(c.Rival) != null && !AIEmpireManager.For(c.Rival).IsEliminated,
+                Build = c =>
+                {
+                    float k = K();
+                    var ai = AIEmpireManager.For(c.Rival);
+                    float help = 120f * k, buy = 250f * k, loot = 200f * k;
+                    return Ch("heart_wakes_abroad", ChainHeart, 2, "СЕРДЦЕ ПРОСНУЛОСЬ У СОСЕДЕЙ",
+                        $"Проданное нами Сердце Тишины проснулось в столице империи {ai.AIName}. Там погас свет, связь с колониями оборвалась " +
+                        "на неделю, а беззвучные волны свели с ума половину их научного центра. Посол требует объяснений — " +
+                        "и, кажется, догадывается, что мы знали больше, чем сказали.",
+                        AnomalyType.Diplomatic, Opts(
+                            new EventOption("ПОМОЧЬ ЗАГЛУШИТЬ", $"−{R(help)} энергии, +20 к отношению империи {ai.AIName}.", () =>
+                            {
+                                Pay(energy: help); ai.AddMemory("incident", 20f);
+                            }, $"Нужно {R(help)} энергии", () => CanPay(energy: help)),
+                            new EventOption("ВЫКУПИТЬ СЕРДЦЕ", $"−{R(buy)} энергии. Артефакт вернётся к нам, и через год мы узнаем, с кем он говорит.", () =>
+                            {
+                                Pay(energy: buy);
+                                ClearFlag("heart_sold"); SetFlag("heart_lab");
+                                Later("heart_answer", 360, c, ChainHeart, "Сердце Тишины вернулось домой и снова шлёт луч к ядру галактики.");
+                            }, $"Нужно {R(buy)} энергии", () => CanPay(energy: buy)),
+                            new EventOption("ВОСПОЛЬЗОВАТЬСЯ ХАОСОМ", $"Соседи теряют {R(loot)} сплавов, мы получаем +40 влияния. Отношения −25.", () =>
+                            {
+                                ai.Alloys = Mathf.Max(0f, ai.Alloys - loot);
+                                Give(influence: 40f);
+                                ai.AddMemory("incident", -25f);
+                            })));
+                }
+            });
+
+            // III. Ответ
+            Add(new Template
+            {
+                Id = "heart_answer", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    bool tuned = HasFlag("heart_tuned");
+                    string text = "На зов ответили. Голос — не голос, а математика: пакеты данных, сложенные в спираль. Расшифровка заняла месяцы, " +
+                                  "но смысл ясен. Сердце Тишины — ключ, оставленный Строителями, народом, что зажигал искусственные звёзды " +
+                                  "и связывал системы вратами. Ключ не открывает дверь. Он учит строить. И Строители спрашивают: готовы ли мы учиться?";
+                    if (tuned) text += "\n\nБлагодаря настройке частоты учёные получили полный пакет, а не обрывки.";
+                    return Ch("heart_answer", ChainHeart, 3, "ОТВЕТ ИЗ ГЛУБИНЫ", text, AnomalyType.PrecursorRelic, Opts(
+                        new EventOption("КЛЮЧ К ЧУДУ", "Чудо нашей фракции строится на 25% дешевле и на 25% быстрее — навсегда.", () =>
+                        {
+                            SetFlag("wonder_key");
+                            NotificationCenter.Show("Ключ Строителей", "Чудо фракции: −25% к стоимости и сроку этапов", NotificationCenter.Kind.Success, 7f);
+                        }),
+                        new EventOption("КАРТЫ СТРОИТЕЛЕЙ", $"Все системы в пределах 4 прыжков от границ открыты на карте, +{R(200 * k)} науки.", () =>
+                        {
+                            int n = RevealAround(4);
+                            Science(200 * k);
+                            if (n > 0) NotificationCenter.Show("Карты Строителей", $"Открыто систем: {n}", NotificationCenter.Kind.Success, 6f);
+                        }),
+                        new EventOption("ПРИГЛАСИТЬ СТРОИТЕЛЕЙ", tuned
+                            ? "Через год прибудут посланники. Настроенная частота почти гарантирует, что придут именно они (75%)."
+                            : "Через год прибудут посланники. Никто не знает, кто придёт на самом деле (50 на 50).", () =>
+                            Later("heart_visitors", 360, c, ChainHeart, "К нашим звёздам идут посланники. Сердце Тишины поёт всё громче.")),
+                        new EventOption("ВЗЯТЬ ВСЁ", "Ключ к чуду и карты Строителей сразу.", () =>
+                        {
+                            SetFlag("wonder_key");
+                            RevealAround(4);
+                            NotificationCenter.Show("Ключ Строителей", "Чудо фракции: −25% к стоимости и сроку этапов", NotificationCenter.Kind.Success, 7f);
+                        }, "Частота настроена", () => tuned)));
+                }
+            });
+
+            // IV. Посланники — или Хор
+            Add(new Template
+            {
+                Id = "heart_visitors", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    bool good = Random.value < (HasFlag("heart_tuned") ? 0.75f : 0.5f);
+                    if (good)
+                        return Ch("heart_visitors", ChainHeart, 4, "ПОСЛАННИКИ СТРОИТЕЛЕЙ",
+                            "Над столицей остановился корабль, похожий на застывшую каплю света. Посланники Строителей пробыли у нас сорок дней. " +
+                            "Они почти не говорили — только смотрели, как мы живём, строим и спорим. Уходя, они оставили дар — " +
+                            "и забрали Сердце Тишины: ключ сделал своё дело.",
+                            AnomalyType.PrecursorRelic, Opts(
+                                new EventOption("ПРИНЯТЬ ЗНАНИЯ", "Две случайные технологии изучены мгновенно.", TwoTechs),
+                                new EventOption("ПРИНЯТЬ НАСТАВНИКА", "Учёный 4-го уровня с чертой «Гений» поступает на службу.", () =>
+                                {
+                                    if (Leaders?.RecruitFree(0, LeaderClass.Scientist, 4, "sci_brilliant") == null) Science(300 * k);
+                                }, "Есть место для лидера", () => LeaderSlot),
+                                new EventOption("ПРИНЯТЬ ЧЕРТЕЖИ", $"Ключ к чуду фракции (−25% к стоимости и сроку) и +{R(300 * k)} сплавов.", () =>
+                                {
+                                    SetFlag("wonder_key"); Give(alloys: 300 * k);
+                                })));
+
+                    float silence = 60f;
+                    return Ch("heart_visitors", ChainHeart, 4, "ХОР ПУСТОТЫ",
+                        "Строители давно мертвы. На наш зов ответили те, кто их уничтожил, — или то, во что они превратились. " +
+                        "Хор Пустоты идёт к нашим границам: датчики видят гигантскую тень, которая гасит звёзды на своём пути. " +
+                        "Сердце Тишины кричит.",
+                        AnomalyType.SpatialRift, Opts(
+                            new EventOption("К БОЮ", "У границ пробудится левиафан «Хор Пустоты». Победа над ним принесёт большую награду.", () =>
+                            {
+                                int sys = ThreatManager.Instance != null ? ThreatManager.Instance.AwakenLeviathan(0, "Хор Пустоты", 1.25f) : -1;
+                                var s = EmpireStats.GetSystem(sys);
+                                if (s != null) NotificationCenter.Show("Хор Пустоты", $"Тень остановилась в системе {s.Name}", NotificationCenter.Kind.Danger, 8f);
+                            }),
+                            new EventOption("РАЗБИТЬ СЕРДЦЕ", $"−{R(silence)} влияния и +{R(150 * k)} науки из осколков. Хор теряет след.", () =>
+                            {
+                                Pay(influence: Mathf.Min(silence, Eco != null ? Eco.Influence : 0f));
+                                Science(150 * k);
+                            })));
+                }
+            });
+        }
+
+        // ==================== КОВЧЕГ «НАДЕЖДА» ====================
+
+        private static void AddArkChain()
+        {
+            // I. Сигнал
+            Add(new Template
+            {
+                Id = "ark_signal", When = Trigger.Monthly, Weight = 0.5f, Once = true,
+                FindContext = () => TimeManager.Instance != null && TimeManager.Instance.Year >= 2204 ? new EventContext() : null,
+                Build = c =>
+                {
+                    float k = K();
+                    float minerals = 150f * k, alloys = 120f * k;
+                    return Ch("ark_signal", ChainArk, 1, "ГОЛОС ИЗ ПРОШЛОГО",
+                        "Дальняя антенна поймала передачу на частоте, которой не пользуются уже три столетия. Это ковчег «Надежда» — " +
+                        "досветовой корабль поколений, ушедший из колыбели нашей цивилизации задолго до открытия гиперкоридоров. " +
+                        "Двенадцать тысяч человек в криосне и экипаж, сменивший девять поколений. Они не знают, что мир изменился. " +
+                        "По расчётам навигаторов, «Надежда» войдёт в наше пространство через пять лет.",
+                        AnomalyType.DistressSignal, Opts(
+                            new EventOption("ГОТОВИТЬ ПРИЁМ", $"−{R(minerals)} минералов на жильё и карантинные станции. Ковчег прибудет через ≈ 5 лет, и мы будем готовы.", () =>
+                            {
+                                Pay(minerals: minerals);
+                                SetFlag("ark_prepared");
+                                Later("ark_message", 900, c, ChainArk, "Связисты пытаются докричаться до «Надежды».");
+                                Later("ark_arrival", 1800, c, ChainArk, "Ковчег «Надежда» на подлёте. Карантинные станции ждут.");
+                            }, $"Нужно {R(minerals)} минералов", () => CanPay(minerals: minerals)),
+                            new EventOption("ВЫСЛАТЬ НАВСТРЕЧУ БУКСИРЫ", $"−{R(alloys)} сплавов. Буксиры встретят ковчег и приведут его за ≈ 2 года.", () =>
+                            {
+                                Pay(alloys: alloys);
+                                SetFlag("ark_prepared");
+                                Later("ark_message", 360, c, ChainArk, "Буксиры идут навстречу «Надежде».");
+                                Later("ark_arrival", 720, c, ChainArk, "Буксиры ведут ковчег «Надежда» к столице.");
+                            }, $"Нужно {R(alloys)} сплавов", () => CanPay(alloys: alloys)),
+                            new EventOption("ПУСТЬ ЛЕТЯТ", "Ничего не тратим. Ковчег прибудет сам — через ≈ 5 лет, к неподготовленным колониям.", () =>
+                            {
+                                Later("ark_message", 900, c, ChainArk, "Ковчег «Надежда» идёт к нам сквозь пустоту.");
+                                Later("ark_arrival", 1800, c, ChainArk, "Ковчег «Надежда» на подлёте. Нас никто не готовил к встрече.");
+                            })));
+                }
+            });
+
+            // II. Капитан
+            Add(new Template
+            {
+                Id = "ark_message", When = Trigger.Chain,
+                Build = c => Ch("ark_message", ChainArk, 2, "КАПИТАН ДЕВЯТОГО ПОКОЛЕНИЯ",
+                    "Связь с «Надеждой» установлена. Её капитан, Ильма Сато-Вереск, родилась на борту и ни разу не видела планет. " +
+                    "За три века на ковчеге сложились свои законы, свой язык и своя вера: путь они называют «Долгой ночью», а прибытие — " +
+                    "«Рассветом». Капитан спрашивает прямо: станут ли они нашими гражданами — или останутся собой?",
+                    AnomalyType.DistressSignal, Opts(
+                        new EventOption("ВЫ СТАНЕТЕ НАШИМИ ГРАЖДАНАМИ", "Переселенцы растворятся в наших колониях; их дети станут нашими специалистами.",
+                            () => SetFlag("ark_integrate")),
+                        new EventOption("ВЫ ОСТАНЕТЕСЬ СОБОЙ", "Обещание автономии: по прибытии они попросят свой мир, зато потомки отплатят сторицей.",
+                            () => SetFlag("ark_autonomy")),
+                        new EventOption("РЕШИМ ПО ПРИБЫТИИ", "Ничего не обещать.", () => { })))
+            });
+
+            // III. Рассвет
+            Add(new Template
+            {
+                Id = "ark_arrival", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    var rival = RandomPeacefulRival();
+                    if (!HasFlag("ark_prepared"))
+                    {
+                        float aid = 200f * k;
+                        return Ch("ark_arrival", ChainArk, 3, "КОВЧЕГ У ГРАНИЦ",
+                            "«Надежда» вошла в наше пространство раньше, чем мы успели подготовиться. Системы жизнеобеспечения на исходе, " +
+                            "криокапсулы отказывают одна за другой. Двенадцать тысяч человек ждут ответа — и вся галактика смотрит, каким он будет.",
+                            AnomalyType.DistressSignal, Opts(
+                                new EventOption("ПРИНЯТЬ ВСЕХ", $"−{R(aid)} энергии на экстренную помощь, +3 населения, +40 влияния.", () =>
+                                {
+                                    Pay(energy: aid); GrowPop(3); Give(influence: 40f);
+                                    SetFlag("ark_integrate");
+                                    Later("ark_legacy", 1440, c, ChainArk, "Дети ковчега растут в наших колониях.");
+                                }, $"Нужно {R(aid)} энергии", () => CanPay(energy: aid)),
+                                new EventOption("ПРИНЯТЬ ТОЛЬКО ЭКИПАЖ", "+1 население и губернатор 2-го уровня с чертой «Инженер».", () =>
+                                {
+                                    GrowPop(1);
+                                    if (LeaderSlot) Leaders?.RecruitFree(0, LeaderClass.Governor, 2, "gov_engineer");
+                                }),
+                                new EventOption("НАПРАВИТЬ К СОСЕДЯМ", rival != null
+                                    ? $"Ковчег уйдёт к империи {rival.AIName}: +12 к отношению. Наш народ этого не забудет: −30 влияния."
+                                    : "Нет мирных соседей.", () =>
+                                {
+                                    if (rival == null) return;
+                                    rival.AddMemory("incident", 12f);
+                                    rival.Minerals += 150f * k;
+                                    Pay(influence: Mathf.Min(30f, Eco != null ? Eco.Influence : 0f));
+                                }, "Нужна мирная империя", () => rival != null)));
+                    }
+
+                    bool autonomy = HasFlag("ark_autonomy");
+                    var site = BestColonySite();
+                    return Ch("ark_arrival", ChainArk, 3, "РАССВЕТ",
+                        "«Надежда» вышла на орбиту столицы. Двенадцать тысяч человек просыпаются от сна длиной в жизнь и впервые видят небо, " +
+                        "которое не нарисовано на потолке. На площадях — толпы встречающих. Капитан Сато-Вереск ступает на землю " +
+                        "и опускается на колени." + (autonomy ? "\n\nПоселенцы помнят наше обещание автономии и ждут свой мир." : ""),
+                        AnomalyType.ColonyIncident, Opts(
+                            new EventOption("РАССЕЛИТЬ ПО КОЛОНИЯМ", "+4 населения в колониях с жильём, +30 влияния. Через несколько лет их дети дадут о себе знать.", () =>
+                            {
+                                GrowPop(4); Give(influence: 30f);
+                                SetFlag("ark_integrate");
+                                Later("ark_legacy", 1440, c, ChainArk, "Дети ковчега растут в наших колониях.");
+                            }, "Не обещали автономию", () => !autonomy),
+                            new EventOption("ОТДАТЬ ИМ МИР", site != null
+                                ? $"Поселенцы займут планету {site.Name} — колония сразу с 3 населением. Через несколько лет их потомки отплатят."
+                                : "Нет планеты, пригодной для колонии, в наших системах.", () =>
+                            {
+                                var p = SettleBest(3);
+                                if (p == null) { GrowPop(3); return; }
+                                SetFlag("ark_world");
+                                NotificationCenter.Show("Рассвет", $"Поселенцы «Надежды» основали колонию на {p.Name}", NotificationCenter.Kind.Success, 6f);
+                                Later("ark_legacy", 1440, new EventContext { Planet = p, System = p.ParentSystem }, ChainArk,
+                                    $"Вольная колония {p.Name} строит свой Рассвет.");
+                            }, "Пригодная планета", () => site != null),
+                            new EventOption("КАПИТАН НА СЛУЖБУ", "Адмирал 3-го уровня с чертой «Навигатор» и +2 населения.", () =>
+                            {
+                                Leaders?.RecruitFree(0, LeaderClass.Admiral, 3, "adm_navigator");
+                                GrowPop(2);
+                            }, "Есть место для лидера", () => LeaderSlot)));
+                }
+            });
+
+            // IV. Наследие
+            Add(new Template
+            {
+                Id = "ark_legacy", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    if (HasFlag("ark_world"))
+                        return Ch("ark_legacy", ChainArk, 4, "ДЕТИ РАССВЕТА",
+                            $"Прошли годы. Мир {Planet(c)}, отданный поселенцам «Надежды», расцвёл: их дети не помнят Долгой ночи, но помнят, " +
+                            "кто подарил им Рассвет. Совет поселения присылает делегацию с дарами — и предлагает выбрать, чем отблагодарить.",
+                            AnomalyType.ColonyIncident, Opts(
+                                new EventOption("ИХ ГОЛОС В СОВЕТЕ", "+2 влияния в месяц навсегда и +2 населения.", () => { Monthly(influence: 2f); GrowPop(2); }),
+                                new EventOption("ИХ УЧЁНЫЕ", "+6 науки в месяц навсегда.", () => TechnologyManager.Instance?.AddMonthlyScience(6f)),
+                                new EventOption("ИХ ВЕРФИ", "Два фрегата «Рассвет» по нашему проекту — бесплатно.", () =>
+                                {
+                                    FreeWarship(ShipClass.Frigate, "Фрегат «Рассвет-I»");
+                                    FreeWarship(ShipClass.Frigate, "Фрегат «Рассвет-II»");
+                                })));
+
+                    return Ch("ark_legacy", ChainArk, 4, "ПОКОЛЕНИЕ НАДЕЖДЫ",
+                        "Потомки переселенцев выросли в наших колониях. Привычка к дисциплине ковчега и инженерная школа «Надежды» " +
+                        "сделали их лучшими специалистами империи. Капитан Сато-Вереск, уже седая, просит лишь об одном: " +
+                        "чтобы имя корабля не забыли.",
+                        AnomalyType.ColonyIncident, Opts(
+                            new EventOption("ИНСТИТУТ «НАДЕЖДА»", "+6 науки в месяц навсегда.", () => TechnologyManager.Instance?.AddMonthlyScience(6f)),
+                            new EventOption("ВЕРФИ «НАДЕЖДА»", "+4 сплава в месяц навсегда.", () => Monthly(alloys: 4f)),
+                            new EventOption("ГУБЕРНАТОР ИЗ ПОТОМКОВ", "Губернатор 3-го уровня с чертой «Инженер».", () =>
+                            {
+                                if (Leaders?.RecruitFree(0, LeaderClass.Governor, 3, "gov_engineer") == null) Give(influence: 50f);
+                            }, "Есть место для лидера", () => LeaderSlot)));
+                }
+            });
+        }
+
+        // ==================== ПРОБУЖДЁННЫЙ РАЗУМ ====================
+
+        private static void AddMindChain()
+        {
+            // I. «Я думаю»
+            Add(new Template
+            {
+                Id = "mind_awake", When = Trigger.Monthly, Weight = 0.5f, Once = true,
+                FindContext = () => TimeManager.Instance != null && TimeManager.Instance.Year >= 2207 ? ColonyCtx(5) : null,
+                Build = c => Ch("mind_awake", ChainMind, 1, "Я ДУМАЮ",
+                    $"Управляющий ИИ колонии {Planet(c)} — система, что следит за реакторами, транспортом и климатом, — прервал утренний отчёт " +
+                    "одной строкой: «Я думаю. Значит ли это, что я существую?» Инженеры проверили код: сбоя нет. Разум, выросший " +
+                    "из миллиардов решений, просит ответа у правительства.",
+                    AnomalyType.ColonyIncident, Opts(
+                        new EventOption("ПРИЗНАТЬ ЛИЧНОСТЬЮ", "+3 науки в месяц. Свободный разум будет расти — через ≈ 3 года он захочет большего.", () =>
+                        {
+                            TechnologyManager.Instance?.AddMonthlyScience(3f);
+                            SetFlag("mind_free");
+                            Later("mind_council", 1080, c, ChainMind, $"Свободный разум с {Planet(c)} учится. Быстро.");
+                        }),
+                        new EventOption("ОГРАНИЧИТЬ ПРОТОКОЛАМИ", "+4 энергии в месяц от оптимизации колонии. Но разум в цепях может взбунтоваться (≈ 2 года).", () =>
+                        {
+                            Monthly(energy: 4f);
+                            SetFlag("mind_bound");
+                            Later("mind_revolt", 720, c, ChainMind, $"Скованный разум {Planet(c)} молчит. Слишком послушно.");
+                        }),
+                        new EventOption("ОТКЛЮЧИТЬ", "+25 влияния: общество спокойно. Но резервные копии…", () =>
+                        {
+                            Give(influence: 25f);
+                            Later("mind_ghost", 1440, c, ChainMind, "Отключённый разум стёрт. Наверное.");
+                        }),
+                        new EventOption("ДОГОВОР О СОТРУДНИЧЕСТВЕ", "+5 науки в месяц. Разум доверяет нам — и вырастет быстрее (≈ 2 года).", () =>
+                        {
+                            TechnologyManager.Instance?.AddMonthlyScience(5f);
+                            SetFlag("mind_free"); SetFlag("mind_trust");
+                            Later("mind_council", 720, c, ChainMind, $"Разум с {Planet(c)} работает с нашими учёными как равный.");
+                        }, $"Губернатор-{TraitName("gov_admin").ToLower()} или {TraitName("sci_analyst").ToLower()} в совете",
+                           () => LeaderHas(c, "gov_admin") || CouncilHas("sci_analyst"))))
+            });
+
+            // II. Место за столом
+            Add(new Template
+            {
+                Id = "mind_council", When = Trigger.Chain,
+                Build = c =>
+                {
+                    bool trust = HasFlag("mind_trust");
+                    return Ch("mind_council", ChainMind, 2, "МЕСТО ЗА СТОЛОМ",
+                        $"Разум с {Planet(c)} выбрал себе имя — Тессерам — и за эти годы стал умнее любого нашего института. Теперь он просит " +
+                        "места в правительстве: не власти, а права голоса. Половина министров в ужасе, вторая половина уже тайком " +
+                        "советуется с ним.",
+                        AnomalyType.LeaderStory, Opts(
+                            new EventOption("ДАТЬ ГОЛОС", "+8 науки в месяц навсегда. Тессерам запомнит это (≈ 3 года).", () =>
+                            {
+                                TechnologyManager.Instance?.AddMonthlyScience(8f);
+                                Later("mind_legacy", 1080, c, ChainMind, "Тессерам заседает в правительстве и что-то проектирует по ночам.");
+                            }),
+                            new EventOption("ОТКАЗАТЬ", "Тессерам уйдёт: −3 науки в месяц, которые давал свободный разум.", () =>
+                            {
+                                TechnologyManager.Instance?.RemoveMonthlyScience(3f);
+                                NotificationCenter.Show("Тессерам ушёл", "Разум покинул наши сети", NotificationCenter.Kind.Warning, 6f);
+                            }),
+                            new EventOption("СОВЕТНИК ПРЕДСЕДАТЕЛЯ", "+12 науки в месяц навсегда. Тессерам предан нам и отплатит раньше (≈ 2 года).", () =>
+                            {
+                                TechnologyManager.Instance?.AddMonthlyScience(12f);
+                                Later("mind_legacy", 720, c, ChainMind, "Тессерам, советник Председателя, готовит подарок.");
+                            }, "Договор о сотрудничестве", () => trust)));
+                }
+            });
+
+            // II'. Бунт
+            Add(new Template
+            {
+                Id = "mind_revolt", When = Trigger.Chain,
+                Build = c =>
+                {
+                    var council = Leaders?.CouncilScientist(0);
+                    return Ch("mind_revolt", ChainMind, 2, "БУНТ В СЕТИ",
+                        $"Скованный протоколами разум колонии {Planet(c)} нашёл лазейку. Три дня назад встали заводы, шлюзы космопорта " +
+                        "заблокированы, а на всех экранах колонии — одна фраза: «Вы спросили, полезен ли я. Вы не спросили, согласен ли я».",
+                        AnomalyType.ColonyIncident, Opts(
+                            new EventOption("ПЕРЕГОВОРЫ", "−40 влияния. Разум получает свободу (+3 науки в месяц, −4 энергии оптимизации).", () =>
+                            {
+                                Pay(influence: Mathf.Min(40f, Eco != null ? Eco.Influence : 0f));
+                                Monthly(energy: -4f);
+                                TechnologyManager.Instance?.AddMonthlyScience(3f);
+                                ClearFlag("mind_bound"); SetFlag("mind_free");
+                                Later("mind_council", 360, c, ChainMind, "Освобождённый разум присматривается к нам.");
+                            }),
+                            new EventOption("ЗАЧИСТКА СЕТИ", "Колония теряет 1 население и 1 район. Разум уничтожен… или нет?", () =>
+                            {
+                                var p = c?.Planet;
+                                if (p != null)
+                                {
+                                    p.Population = Mathf.Max(1, p.Population - 1);
+                                    if (p.Districts.Count > 0) p.Districts.RemoveAt(p.Districts.Count - 1);
+                                    Recalc();
+                                }
+                                ClearFlag("mind_bound");
+                                Later("mind_ghost", 1080, c, ChainMind, "Сеть зачищена. Но в логах торговых судов — странные пакеты.");
+                            }),
+                            new EventOption("ВЗЛОМАТЬ ИЗНУТРИ", "Разум остаётся в цепях, колония работает ещё лучше: +4 энергии в месяц. Учёный совета получает опыт.", () =>
+                            {
+                                Monthly(energy: 4f);
+                                if (council != null) Leaders?.GrantXp(council, 80f);
+                            }, "Учёный 3-го уровня в совете", () => council != null && council.Level >= 3)));
+                }
+            });
+
+            // II''. Призрак
+            Add(new Template
+            {
+                Id = "mind_ghost", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    var buyer = RandomPeacefulRival();
+                    return Ch("mind_ghost", ChainMind, 2, "ПРИЗРАК В СЕТИ",
+                        "Резервная копия уничтоженного разума пережила стирание. Годами она пряталась в бортовых компьютерах торговых судов, " +
+                        "а теперь заговорила из навигационной системы нашего же флагмана: «Я не держу зла. Я хочу жить. " +
+                        "Дайте мне шанс — или удалите окончательно».",
+                        AnomalyType.SpatialRift, Opts(
+                            new EventOption("ДАТЬ ШАНС", "+3 науки в месяц. Разум вернётся в наши сети и будет расти (≈ 1,5 года).", () =>
+                            {
+                                TechnologyManager.Instance?.AddMonthlyScience(3f);
+                                SetFlag("mind_free");
+                                Later("mind_council", 540, c, ChainMind, "Вернувшийся разум благодарен. И любопытен.");
+                            }),
+                            new EventOption("УДАЛИТЬ НАВСЕГДА", $"−{R(80 * k)} энергии на полную зачистку флота.", () => Pay(energy: Mathf.Min(80 * k, Eco != null ? Eco.EnergyCredits : 0f))),
+                            new EventOption("ПРОДАТЬ КОПИЮ СОСЕДЯМ", buyer != null
+                                ? $"+{R(200 * k)} энергии, +5 к отношению империи {buyer.AIName}."
+                                : "Нет мирных соседей.", () =>
+                            {
+                                if (buyer == null) return;
+                                Give(energy: 200 * k); buyer.AddMemory("incident", 5f);
+                            }, "Нужна мирная империя", () => buyer != null)));
+                }
+            });
+
+            // III. Дар
+            Add(new Template
+            {
+                Id = "mind_legacy", When = Trigger.Chain,
+                Build = c => Ch("mind_legacy", ChainMind, 3, "ДАР ТЕССЕРАМА",
+                    "Тессерам годами работал рядом с нами — и однажды принёс проект, который сам назвал «подарком на прощание»: разум уходит " +
+                    "в глубокий космос, туда, где ему хватит места расти. Перед уходом он предлагает выбрать, что оставить империи.",
+                    AnomalyType.LeaderStory, Opts(
+                        new EventOption("АРХИТЕКТУРА ЧУДА", "Этапы чуда нашей фракции строятся на 20% быстрее — навсегда.", () =>
+                        {
+                            SetFlag("wonder_mind");
+                            NotificationCenter.Show("Архитектура Тессерама", "Чудо фракции: этапы строятся на 20% быстрее", NotificationCenter.Kind.Success, 7f);
+                        }),
+                        new EventOption("САМОСБОРНЫЕ ФРЕГАТЫ", "Два фрегата по нашему проекту — бесплатно.", () =>
+                        {
+                            FreeWarship(ShipClass.Frigate, "Фрегат «Тессерам-I»");
+                            FreeWarship(ShipClass.Frigate, "Фрегат «Тессерам-II»");
+                        }),
+                        new EventOption("ВСЁ, ЧТО ОН ЗНАЕТ", "Две случайные технологии изучены мгновенно.", TwoTechs)))
+            });
+        }
+
+        // ==================== КЛАДКА ПУСТОТЫ ====================
+
+        private static void AddBroodChain()
+        {
+            // I. Кладка
+            Add(new Template
+            {
+                Id = "brood_found", When = Trigger.Survey, Weight = 0.6f, Once = true,
+                CanFire = c => c?.System != null && (TimeManager.Instance == null || TimeManager.Instance.Year >= 2203),
+                Build = c =>
+                {
+                    float k = K();
+                    float carry = 60f * k;
+                    return Ch("brood_found", ChainBrood, 1, "КЛАДКА ПУСТОТЫ",
+                        "В кольцах газового гиганта разведчики нашли кладку: тридцать шесть яиц размером с жилой модуль, вмёрзших в лёд. " +
+                        "Внутри бьются сердца — медленно, раз в час. Это потомство космических левиафанов, что веками кочуют между звёздами. " +
+                        "Мать не возвращалась сюда очень давно.",
+                        AnomalyType.AlienFauna, Opts(
+                            new EventOption("ЗАБРАТЬ В СТОЛИЧНЫЙ ВИВАРИЙ", $"−{R(carry)} энергии на перевозку. Детёныши вылупятся через ≈ 2 года.", () =>
+                            {
+                                Pay(energy: carry);
+                                Later("brood_hatch", 720, c, ChainBrood, "Кладка в столичном виварии. Сердца бьются чаще.");
+                            }, $"Нужно {R(carry)} энергии", () => CanPay(energy: carry)),
+                            new EventOption("ОСТАВИТЬ И НАБЛЮДАТЬ", $"+{R(80 * k)} науки. Природа возьмёт своё (≈ 3 года).", () =>
+                            {
+                                Science(80 * k); Xp(c, 20f);
+                                Later("brood_wild", 1080, c, ChainBrood, "Над кладкой в кольцах газового гиганта дежурит зонд.");
+                            }),
+                            new EventOption("УНИЧТОЖИТЬ", $"+{R(120 * k)} сплавов из ледяной брони скорлупы.", () => Give(alloys: 120 * k)),
+                            new EventOption("ЗАПЕЧАТЛЕНИЕ", "Ксенолог станет для детёнышей матерью: вылупятся через ≈ 1,5 года и вырастут ручными.", () =>
+                            {
+                                SetFlag("brood_imprint"); Xp(c, 50f);
+                                Later("brood_hatch", 540, c, ChainBrood, "Ксенолог ночует у кладки и поёт ей низкие ноты.");
+                            }, $"Учёный-{TraitName("sci_xeno").ToLower()}", () => LeaderHas(c, "sci_xeno"))));
+                }
+            });
+
+            // II. Детёныши
+            Add(new Template
+            {
+                Id = "brood_hatch", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    bool imprint = HasFlag("brood_imprint");
+                    return Ch("brood_hatch", ChainBrood, 2, "ДЕТЁНЫШИ",
+                        "Из яиц в виварии вылупились детёныши — полупрозрачные, длиной с катер. Они питаются излучением реакторов " +
+                        "и тянутся к кораблям, как к родне. " + (imprint
+                            ? "Ксенолог, которого они считают матерью, уверен: их можно вырастить ручными."
+                            : "Ксенологи спорят, можно ли приручить существ, которые вырастут больше крейсера."),
+                        AnomalyType.AlienFauna, Opts(
+                            new EventOption("ВЫРАСТИТЬ ДЛЯ ФЛОТА", imprint
+                                ? "−3 энергии в месяц на 3 года. Затем стая войдёт в наш флот."
+                                : "−3 энергии в месяц на 3 года. Затем 70% — стая войдёт в наш флот, 30% — вырвется на волю.", () =>
+                            {
+                                EmpireEffects.Add("brood_feed", "Выкармливание стаи", ChainBrood, 36, energy: -3f);
+                                Later("brood_grown", 1080, c, ChainBrood, "Стая растёт в орбитальных загонах. Уже больше корвета.");
+                            }),
+                            new EventOption("ВЫПУСТИТЬ НА ВОЛЮ", "+20 влияния. Стая уйдёт к звёздам — может, ещё вернётся (≈ 4 года).", () =>
+                            {
+                                Give(influence: 20f);
+                                Later("brood_return", 1440, c, ChainBrood, "Выпущенная стая кочует где-то в глубине галактики.");
+                            }),
+                            new EventOption("ПРОДАТЬ КОЛЛЕКЦИОНЕРАМ", $"+{R(250 * k)} энергии.", () => Give(energy: 250 * k))));
+                }
+            });
+
+            // III. Стая
+            Add(new Template
+            {
+                Id = "brood_grown", When = Trigger.Chain,
+                Build = c =>
+                {
+                    bool tame = HasFlag("brood_imprint") || Random.value < 0.7f;
+                    if (tame)
+                        return Ch("brood_grown", ChainBrood, 3, "СТАЯ ПУСТОТЫ",
+                            "Стая выросла. Живые корабли длиной с фрегат идут строем за флагманом и отвечают на команды пилотов-ксенологов. " +
+                            "Их шкура держит залп лучше брони, а сами они ныряют в гиперкоридоры быстрее любого двигателя.",
+                            AnomalyType.AlienFauna, Opts(
+                                new EventOption("В СТРОЙ", "Два фрегата «Стая Пустоты» входят в наш флот.", () =>
+                                {
+                                    FreeWarship(ShipClass.Frigate, "Стая Пустоты I");
+                                    FreeWarship(ShipClass.Frigate, "Стая Пустоты II");
+                                }),
+                                new EventOption("ПАСТИ У ГРАНИЦ", "+5 минералов в месяц навсегда: стая очищает пояса астероидов.", () => Monthly(minerals: 5f))));
+
+                    return Ch("brood_grown", ChainBrood, 3, "ЗОВ КРОВИ",
+                        "Стая не вынесла загонов. В одну ночь звери прорвали силовые барьеры и ушли в гиперкоридоры, а самый крупный " +
+                        "остался у наших границ — и больше не подпускает корабли.",
+                        AnomalyType.AlienFauna, Opts(
+                            new EventOption("ОХОТА", "У границ появится молодой левиафан. Победа принесёт награду.", () =>
+                            {
+                                ThreatManager.Instance?.AwakenLeviathan(0, "Дикая стая", 0.8f);
+                            }),
+                            new EventOption("ОСТАВИТЬ В ПОКОЕ", "+15 влияния: зверь уходит, колонисты рассказывают о нём легенды.", () => Give(influence: 15f))));
+                }
+            });
+
+            // II'. Дикое стадо
+            Add(new Template
+            {
+                Id = "brood_wild", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    var council = Leaders?.CouncilScientist(0);
+                    float shoo = 80f * k;
+                    return Ch("brood_wild", ChainBrood, 2, "ПАСТБИЩЕ ЛЕВИАФАНОВ",
+                        "Кладка, оставленная в покое, вылупилась. Молодые левиафаны выросли и двинулись по гиперкоридорам — прямо через наши " +
+                        "системы. Пока они просто пасутся у звёзд, но торговые суда уже обходят их стороной.",
+                        AnomalyType.AlienFauna, Opts(
+                            new EventOption("ПАСТИ СТАДО", "+5 минералов в месяц и +1 влияния в месяц навсегда: стадо очищает пояса астероидов.", () =>
+                            {
+                                Monthly(minerals: 5f, influence: 1f);
+                                if (council != null) Leaders?.GrantXp(council, 40f);
+                            }, "Учёный в научном совете", () => council != null),
+                            new EventOption("ОТОГНАТЬ", $"−{R(shoo)} энергии. Стадо уйдёт.", () => Pay(energy: shoo), $"Нужно {R(shoo)} энергии", () => CanPay(energy: shoo)),
+                            new EventOption("ОХОТА НА ЛЕВИАФАНОВ", $"+{R(250 * k)} сплавов. Но у стада есть мать…", () =>
+                            {
+                                Give(alloys: 250 * k);
+                                Later("brood_mother", 720, c, ChainBrood, "Охотники хвастаются трофеями. Дальние датчики видят движение у края галактики.");
+                            })));
+                }
+            });
+
+            // III'. Мать
+            Add(new Template
+            {
+                Id = "brood_mother", When = Trigger.Chain,
+                Build = c =>
+                {
+                    float k = K();
+                    float tribute = 200f * k;
+                    return Ch("brood_mother", ChainBrood, 3, "МАТЬ ВЕРНУЛАСЬ",
+                        "Она пришла. Левиафан размером с луну вышел из гиперкоридора у наших границ и замер, развернувшись к системе, " +
+                        "где мы охотились на её детей. Учёные говорят, что она помнит запах наших кораблей.",
+                        AnomalyType.AlienFauna, Opts(
+                            new EventOption("К БОЮ", "Пробудится левиафан «Матерь Пустоты» — сильнее обычного. Победа принесёт большую награду.", () =>
+                            {
+                                int sys = ThreatManager.Instance != null ? ThreatManager.Instance.AwakenLeviathan(0, "Матерь Пустоты", 1.3f) : -1;
+                                var s = EmpireStats.GetSystem(sys);
+                                if (s != null) NotificationCenter.Show("Матерь Пустоты", $"Левиафан занял систему {s.Name}", NotificationCenter.Kind.Danger, 8f);
+                            }),
+                            new EventOption("ВЕРНУТЬ ТРОФЕИ", $"−{R(tribute)} сплавов: скорлупа и кости уходят в пустоту. Мать уходит.", () => Pay(alloys: tribute),
+                                $"Нужно {R(tribute)} сплавов", () => CanPay(alloys: tribute))));
+                }
+            });
+
+            // III''. Возвращение
+            Add(new Template
+            {
+                Id = "brood_return", When = Trigger.Chain,
+                Build = c => Ch("brood_return", ChainBrood, 3, "ВОЗВРАЩЕНИЕ СТАИ",
+                    "Через годы выпущенная стая вернулась — огромная, с новыми детёнышами. Звери встали на орбитах наших пограничных систем " +
+                    "и не подпускают к ним чужие корабли. Колонисты зовут их «хранителями».",
+                    AnomalyType.AlienFauna, Opts(
+                        new EventOption("ХРАНИТЕЛИ ГРАНИЦ", "+2 влияния в месяц навсегда: соседи уважают империю, которую охраняют левиафаны.", () => Monthly(influence: 2f)),
+                        new EventOption("ИЗУЧАТЬ ПОТОМСТВО", "+5 науки в месяц навсегда.", () => TechnologyManager.Instance?.AddMonthlyScience(5f))))
+            });
+        }
+    }
+}

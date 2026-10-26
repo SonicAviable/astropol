@@ -63,8 +63,11 @@ namespace StellarisClone.Core
         public List<EventOption> Options;
         /// <summary>Строка над описанием: где и с кем это случилось.</summary>
         public string Subtitle;
-        /// <summary>Иллюстрация из Resources/UI/Events (null — окно без картинки).</summary>
+        /// <summary>Иллюстрация из Resources/UI/Events (null — окно без картинки). «Новая|Запасная» — первая найденная.</summary>
         public string Art;
+        /// <summary>Название цепочки событий (null — одиночное событие) и номер главы в ней.</summary>
+        public string Chain;
+        public int Step;
 
         public GameEventData(string id, string title, string description, AnomalyType anomaly, List<EventOption> options)
         {
@@ -83,6 +86,9 @@ namespace StellarisClone.Core
         public string Id;
         public int Days;
         public int SystemId = -1, ShipId = -1, LeaderId = -1, PlanetIndex = -1, Rival = -1, Ally = -1;
+        /// <summary>Хроника: цепочка, которой принадлежит продолжение, и туманная подсказка игроку (null — не показывать).</summary>
+        public string Chain, Hint;
+        public int TotalDays;
     }
 
     [Serializable]
