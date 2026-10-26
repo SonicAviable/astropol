@@ -44,9 +44,9 @@ namespace StellarisClone.Core
         /// <summary>
         /// Апскейлер: AMD FidelityFX Super Resolution 1.0 (встроен в URP) — при масштабе рендера ниже 100% картинка
         /// растягивается до экрана с восстановлением краёв и резкостью вместо простого размытия. На 100% не действует.
-        /// Отдельно от пресетов: включён по умолчанию, пресеты его не трогают.
+        /// Отдельно от пресетов: выключен по умолчанию, пресеты его не трогают.
         /// </summary>
-        public static int Upscaler { get; private set; } = UpscaleFsr;
+        public static int Upscaler { get; private set; } = UpscaleLinear;
         public static int Sharpness { get; private set; } = 2;
         /// <summary>FSR сейчас реально работает: выбран и рендер ниже 100%.</summary>
         public static bool FsrActive => Upscaler == UpscaleFsr && RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] < 0.999f;
@@ -88,7 +88,7 @@ namespace StellarisClone.Core
         {
             if (s_loaded) return;
             s_loaded = true;
-            Upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleFsr), 0, UpscaleFsr);
+            Upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleLinear), 0, UpscaleFsr);
             Sharpness = Mathf.Clamp(PlayerPrefs.GetInt("gfx.sharp", 2), 0, SharpnessValues.Length - 1);
             if (!PlayerPrefs.HasKey("gfx.scale"))
             {
