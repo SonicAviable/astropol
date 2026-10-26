@@ -178,6 +178,14 @@ namespace StellarisClone.Rendering
                              : siege.Active ? Loc.F("Идёт: {0:0} из {1:0} дн.", siege.Progress, need)
                              : Loc.T("Осаждающие ушли — прогресс спадает");
                 InspText($"<color=#8AA2A8>{state}</color>");
+                // Колонию можно взять штурмом, не дожидаясь конца осады
+                if (mine && StellarisClone.Ground.GroundBattleLink.HasColony(system))
+                {
+                    StellarisClone.Ground.GroundBattleLink.CanPlayerAssault(system, out string why);
+                    InspButton(Loc.T("ВЫСАДКА"), LGIcon.Swords, DS.BtnDanger, why,
+                        Loc.T("<b>Наземный штурм колонии</b>\nКомандовать боем лично или решить автобоем. Победа — система ваша сразу; поражение — осада начнётся заново, флот потеряет 10% корпуса."),
+                        () => StellarisClone.Ground.GroundBattleLink.OpenAssaultDialog(system), system);
+                }
             }
 
             // Флоты на орбите

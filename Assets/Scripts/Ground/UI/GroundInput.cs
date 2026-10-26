@@ -64,7 +64,14 @@ namespace StellarisClone.Ground
             if (Input.GetKeyDown(KeyCode.Space)) gm.TogglePause();
             if (Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus)) gm.ChangeSpeed(1);
             if (Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus)) gm.ChangeSpeed(-1);
-            if (Input.GetKeyDown(KeyCode.Escape)) { if (Targeting != Mode.None) Cancel(); else Select(null, false); }
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (Targeting != Mode.None) Cancel();
+                else if (s_selected.Count > 0) Select(null, false);
+                // Ничего не выделено — выход из боя (с подтверждением; бой засчитывается проигранным атакующим)
+                else if (player.Index == 0) ResultScreen.Confirm(Loc.T("Покинуть бой?"), Loc.T("Десант будет отозван: штурм проигран, осада начнётся заново."), () => gm.Surrender());
+                else ResultScreen.Confirm(Loc.T("Покинуть бой?"), Loc.T("Гарнизон сложит оружие: колония достанется врагу."), () => gm.Capitulate());
+            }
             if (Input.GetKeyDown(KeyCode.T)) foreach (var s in s_selected) s.OrderRetreat();
             if (Input.GetKeyDown(KeyCode.B)) gm.Hud?.ToggleReinforcements();
             if (Input.GetKeyDown(KeyCode.O)) { if (player.OrbitalCooldown <= 0f && player.Energy >= GroundBattleManager.OrbitalEnergy) BeginOrbital(); else gm.Hud?.Flash(Loc.T("Орбитальный удар не готов"), Color.white); }

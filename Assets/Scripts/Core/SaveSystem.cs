@@ -176,6 +176,8 @@ namespace StellarisClone.Core
         public List<float> WRate = new List<float>();
         public float Accuracy;
         public bool AutoExplore;
+        // Ветеранский десант после наземных штурмов (0–3; в старых сохранениях 0)
+        public int GroundVeterans;
     }
 
     [Serializable]
@@ -600,7 +602,7 @@ namespace StellarisClone.Core
                 Hull = (int)d.HullClass, DesignId = d.DesignId, DesignAlloyCost = d.DesignAlloyCost,
                 HP = d.HullPoints, Armor = d.ArmorPoints, Shield = d.ShieldPoints,
                 MaxHP = d.MaxHullPoints, MaxArmor = d.MaxArmorPoints, MaxShield = d.MaxShieldPoints,
-                Damage = d.Damage, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed, Accuracy = d.Accuracy, AutoExplore = d.AutoExplore,
+                Damage = d.Damage, Evasion = d.Evasion, HyperSpeed = d.HyperSpeed, Accuracy = d.Accuracy, AutoExplore = d.AutoExplore, GroundVeterans = d.GroundVeterans,
                 Upkeep = d.UpkeepEnergy, Weapon = (int)d.PrimaryWeapon
             };
             foreach (var w in d.Weapons)
@@ -706,6 +708,7 @@ namespace StellarisClone.Core
             d.Evasion = f.Evasion;
             d.Accuracy = f.Accuracy;
             d.AutoExplore = f.AutoExplore;
+            d.GroundVeterans = Mathf.Clamp(f.GroundVeterans, 0, 3);
             d.HyperSpeed = f.HyperSpeed;
             d.SetWeapons(RestoreWeapons(f, d));
             // Содержание — производное от типа и корпуса (в старых сохранениях ставки были другими)

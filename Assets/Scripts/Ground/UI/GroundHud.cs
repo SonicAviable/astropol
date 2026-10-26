@@ -137,7 +137,7 @@ namespace StellarisClone.Ground
             _speed.rectTransform.Stretch(0, 10, 14, 0);
 
             // ---- Кнопка «Отозвать десант» ----
-            var quit = LGBuild.Button(_canvas, "Withdraw", UIManager.DS.BtnNeutral, new Color(1f, 0.45f, 0.45f, 0.5f), ConfirmWithdraw, LGIcon.Back, Loc.T("ОТОЗВАТЬ ДЕСАНТ"), 11);
+            var quit = LGBuild.Button(_canvas, "Withdraw", UIManager.DS.BtnNeutral, new Color(1f, 0.45f, 0.45f, 0.5f), ConfirmWithdraw, LGIcon.Back, _gm.Player != null && _gm.Player.Index == 1 ? Loc.T("СДАТЬ КОЛОНИЮ") : Loc.T("ОТОЗВАТЬ ДЕСАНТ"), 11);
             ((RectTransform)quit.transform).At(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-14f, -14f), new Vector2(190f, 38f));
             TooltipHelper.Attach(quit.gameObject, Loc.T("Прекратить штурм: бой будет проигран, осада сброшена"));
 
@@ -682,7 +682,10 @@ namespace StellarisClone.Ground
 
         private void ConfirmWithdraw()
         {
-            ResultScreen.Confirm(Loc.T("Отозвать десант?"), Loc.T("Штурм будет проигран: осада сбросится, флот потеряет часть корпуса."), () => _gm.Surrender());
+            if (_gm.Player != null && _gm.Player.Index == 1)
+                ResultScreen.Confirm(Loc.T("Сдать колонию?"), Loc.T("Гарнизон сложит оружие: колония достанется врагу."), () => _gm.Capitulate());
+            else
+                ResultScreen.Confirm(Loc.T("Отозвать десант?"), Loc.T("Штурм будет проигран: осада сбросится, флот потеряет часть корпуса."), () => _gm.Surrender());
         }
 
         private System.Collections.IEnumerator Tutorial()

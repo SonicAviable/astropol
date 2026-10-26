@@ -54,6 +54,8 @@ namespace StellarisClone.Core
         public bool Destroyed;
         /// <summary>Научный корабль игрока сам выбирает и исследует неизученные системы.</summary>
         public bool AutoExplore;
+        /// <summary>Ветеранский десант (0–3): штурмы, выигранные этим флотом. +5% силы в автобое и +1 шеврон стартовым отрядам за уровень.</summary>
+        public int GroundVeterans;
 
         // ==================== ОЧЕРЕДЬ ПРИКАЗОВ ====================
 

@@ -125,7 +125,9 @@ namespace StellarisClone.Ground
                 Sides[i].Ai = ss.IsPlayer ? null : new GroundCommanderAI(Sides[i]);
             }
 
-            Cam = BattleCamera.Create(_root, Map, Map.AttackerBeacon + new Vector3(0f, 0f, 30f));
+            // Камера — над своими: у атакующего точка высадки, у защитника штаб
+            bool defends = Sides[1].IsPlayer && !Sides[0].IsPlayer;
+            Cam = BattleCamera.Create(_root, Map, defends ? Map.DefenderBeacon + new Vector3(0f, 0f, -30f) : Map.AttackerBeacon + new Vector3(0f, 0f, 30f));
             Controls = gameObject.AddComponent<GroundInput>();
             Hud = GroundHud.Create(this);
 
@@ -847,6 +849,7 @@ namespace StellarisClone.Ground
         // ================================================================ Конец
 
         public void Surrender() => End(false, Loc.T("Десант отозван"), true);
+        public void Capitulate() => End(true, Loc.T("Гарнизон сложил оружие"));
 
         private void End(bool attackerWon, string reason, bool retreated = false)
         {

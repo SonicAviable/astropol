@@ -21,7 +21,7 @@ namespace StellarisClone.Ground
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() { s_root = null; s_confirm = null; s_pausedByConfirm = false; }
 
-        private static RectTransform NewCanvas(string name, int order)
+        internal static RectTransform NewCanvas(string name, int order)
         {
             var go = new GameObject(name);
             var canvas = go.AddComponent<Canvas>();
@@ -38,7 +38,7 @@ namespace StellarisClone.Ground
             return rt;
         }
 
-        private static RectTransform Window(RectTransform canvas, Vector2 size, Color rim)
+        internal static RectTransform Window(RectTransform canvas, Vector2 size, Color rim)
         {
             var img = LGBuild.Panel(canvas, "Window", new Color(0.02f, 0.05f, 0.07f, 0.96f), raycast: true);
             img.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size);
