@@ -71,7 +71,7 @@ namespace StellarisClone.Rendering
 
             var shadowObj = new GameObject("TitleShadow");
             shadowObj.transform.SetParent(_plateRoot.transform, false);
-            shadowObj.transform.localPosition = new Vector3(0.08f, -0.08f, 0.02f);
+            shadowObj.transform.localPosition = new Vector3(0.045f, -0.06f, 0.02f);
 
             _titleShadow = shadowObj.AddComponent<TextMesh>();
             _titleShadow.font = font;
@@ -116,10 +116,33 @@ namespace StellarisClone.Rendering
             _chipMin.SetAlpha(0f);
             _chipEn.SetAlpha(0f);
 
+            CreateTitleScrim(font);
             CreateLandmarkChip();
             CreateBuildChip();
             CreateColonyChips();
             UpdateResourceBadge();
+        }
+
+        private SpriteRenderer _scrim;
+
+        /// <summary>
+        /// Мягкая тёмная подложка под названием: текст читается на любом фоне (туманности, территории),
+        /// без жёсткой «приклеенной» тени.
+        /// </summary>
+        private void CreateTitleScrim(Font font)
+        {
+            var go = new GameObject("TitleScrim");
+            go.transform.SetParent(_plateRoot.transform, false);
+            go.transform.localPosition = new Vector3(0f, 0f, 0.04f);
+            _scrim = go.AddComponent<SpriteRenderer>();
+            _scrim.sprite = WorldChip.GlowSprite();
+            _scrim.drawMode = SpriteDrawMode.Sliced;
+            _scrim.sortingOrder = 48;
+            _scrim.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _scrim.receiveShadows = false;
+            float w = font != null ? WorldChip.MeasureLine(_data.Name, 52, 0.16f, FontStyle.Bold) : _data.Name.Length * 0.45f;
+            _scrim.size = new Vector2(w + 2.4f, 1.5f);
+            _scrim.color = new Color(0f, 0f, 0f, 0f);
         }
 
         private void CreateBuildChip()
@@ -130,6 +153,7 @@ namespace StellarisClone.Rendering
             _chipBuild = WorldChip.Create(row.transform, "OutpostChip", 53, true, true);
             _chipBuild.SetIcon(LGIcon.Starbase);
             Color g = UIManager.DS.Green;
+            _chipBuild.GlowStrength = 0.5f;   // активная стройка — главный ярлык системы
             _chipBuild.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.90f), new Color(g.r, g.g, g.b, 0.85f), g, g, Color.white);
             _chipBuild.SetAlpha(0f);
             _buildScan = Random.value * 0.25f;   // подписи обновляются вразнобой, не все в один кадр
@@ -149,6 +173,7 @@ namespace StellarisClone.Rendering
             _chipPop.SetAlpha(0f);
             _chipJob = WorldChip.Create(_starRow, "ColonyJob", 51, false, true);
             _chipJob.SetIcon(LGIcon.Construction);
+            _chipJob.GlowStrength = 0.36f;
             _chipJob.SetColors(new Color(0.08f, 0.05f, 0.02f, 0.88f), new Color(o.r, o.g, o.b, 0.75f), o, o, Color.white);
             _chipJob.SetAlpha(0f);
             _colScan = Random.value * 0.5f;
@@ -268,6 +293,7 @@ namespace StellarisClone.Rendering
                     _chipJob.Set(t, 0.36f);
                     _chipJob.CenterOn(0f, 0f);
                 }
+                _chipJob.SetProgress(best.Progress);
                 _chipJob.Root.localPosition = new Vector3(starR + gap + _chipJob.Width * 0.5f, 0f, -0.02f);
             }
         }
@@ -312,18 +338,23 @@ namespace StellarisClone.Rendering
             _buildScan = 0.25f;
             string text;
             LGIcon icon;
+            float progress = -1f;   // полоска снизу: только когда работа идёт (строитель ещё в пути — без неё)
             if (PlayerOutpostEta(_data.Id, out bool building, out float days))
             {
                 text = building ? Loc.F("ФОРПОСТ · {0}", FleetRoute.FormatDays(days)) : Loc.F("ФОРПОСТ · ~{0}", FleetRoute.FormatDays(days));
                 icon = LGIcon.Starbase;
+                float total = FactionTraits.OutpostDays(0);
+                if (building && total > 0f) progress = 1f - days / total;
             }
             else if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
             {
                 text = $"{ProjectName(job.Kind)} · {FleetRoute.FormatDays(jdays)}";
                 icon = job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe;
+                progress = job.Progress;
             }
             else { _buildOn = false; return; }
             _buildOn = true;
+            _chipBuild.SetProgress(progress);
             if (text == _buildKey) return;
             _buildKey = text;
             _chipBuild.SetIcon(icon);
@@ -377,6 +408,7 @@ namespace StellarisClone.Rendering
             row.transform.SetParent(_plateRoot.transform, false);
             row.transform.localPosition = new Vector3(0, 1.45f, 0);
             _chipLm = WorldChip.Create(row.transform, "LandmarkChip", 52, true, true);
+            _chipLm.GlowStrength = 0.34f;
             _chipLm.SetIcon(LandmarkIcon(_data.Landmark));
             _chipLm.Set(Landmarks.Name(_data.Landmark), 0.40f);
             _chipLm.CenterOn(0f, 0f);
@@ -494,7 +526,12 @@ namespace StellarisClone.Rendering
             if (_titleMesh == null) return;
             var t = _titleBase; t.a *= _alpha;
             _titleMesh.color = t;
-            if (_titleShadow != null) _titleShadow.color = new Color(0f, 0f, 0f, 0.95f * _alpha);
+            if (_titleShadow != null) _titleShadow.color = new Color(0f, 0f, 0f, 0.8f * _alpha);
+            if (_scrim != null)
+            {
+                _scrim.color = new Color(0.005f, 0.012f, 0.025f, 0.5f * _alpha);
+                if (_scrim.enabled != (_alpha > 0.01f)) _scrim.enabled = _alpha > 0.01f;
+            }
             bool on = _alpha > 0.01f;
             if (_titleMr != null && _titleMr.enabled != on) _titleMr.enabled = on;
             if (_shadowMr != null && _shadowMr.enabled != on) _shadowMr.enabled = on;
@@ -689,7 +726,9 @@ namespace StellarisClone.Rendering
                 float bTarget = _buildOn ? Mathf.Max(1f - Smooth(MidFrom + 90f, MidTo + 160f, dist), _isSelected || _isHovered ? 1f : 0f) : 0f;
                 float nb = Mathf.MoveTowards(_buildAlpha, bTarget, Time.unscaledDeltaTime * 5f);
                 if (Mathf.Abs(nb - _buildAlpha) > 0.0005f) { _buildAlpha = nb; _chipBuild.SetAlpha(_buildAlpha); }
+                if (_buildAlpha > 0.01f) _chipBuild.Pulse(Time.unscaledTime);
             }
+            if (_jobOn && _alpha > 0.01f) _chipJob?.Pulse(Time.unscaledTime + 1.3f);
 
             if (_chipPop != null)
             {
