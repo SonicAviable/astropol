@@ -32,6 +32,8 @@ namespace StellarisClone.Ground
         private float _cool, _reload;
         private int _burst;
         private float _walk, _recoil, _prone, _meleeCool;
+        /// <summary>Сдвиг фазы покачивания (у каждого дрона роя свой).</summary>
+        private float _bobPhase;
         private bool _visible = true;
         private Vector3 _lastPos;
 
@@ -46,6 +48,7 @@ namespace StellarisClone.Ground
         {
             Squad = squad;
             Def = def;
+            _bobPhase = Random.value * 6.2832f;
             Sergeant = sergeant;
             MaxHp = Hp = def.Hp * hpMult * (sergeant && !def.Vehicle ? 1.25f : 1f);
             Weapon = sergeant && def.SergeantWeapon != null && !def.Vehicle ? def.SergeantWeapon : def.Weapon;
@@ -204,7 +207,7 @@ namespace StellarisClone.Ground
 
             if (Def.Role == UnitRole.Swarm)
             {
-                if (Rig.Hips != null) Rig.Hips.localPosition = new Vector3(0f, 1.1f + Mathf.Sin(Time.time * 6f + GetInstanceID()) * 0.12f, 0f);
+                if (Rig.Hips != null) Rig.Hips.localPosition = new Vector3(0f, 1.1f + Mathf.Sin(Time.time * 6f + _bobPhase) * 0.12f, 0f);
                 return;
             }
             if (IsVehicle && Def.Role != UnitRole.Walker)
