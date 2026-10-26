@@ -26,7 +26,7 @@ namespace StellarisClone.Ground
             var a = go.AddComponent<BattleAmbience>();
             a._sr = AudioSettings.outputSampleRate > 0 ? AudioSettings.outputSampleRate : 48000;
             int sr = a._sr;
-            a._job = Task.Run(() => SfxLibrary.Render(SfxId.GroundAmbience, 0, sr));
+            a._job = Task.Run(() => Core.Audio.SfxLibrary.Render(SfxId.GroundAmbience, 0, sr));
             return a;
         }
 
