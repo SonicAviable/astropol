@@ -12,7 +12,7 @@ Cinematic sci-fi concept art for a AAA 4X space strategy game, 16:9 widescreen, 
 
 ---
 
-## Чудеса фракций (5 штук)
+## Чудеса фракций (6 штук)
 
 ### 1. Wonder_Dyson — «Сфера Дайсона» (Синдикат Аквила, золото)
 ```
@@ -37,6 +37,11 @@ A titanic stellar forge around an orange-red star: three heavy gyroscopic rings 
 ### 5. Wonder_Tree — «Древо Миров» (Конклав Тэрра'ан, зелёный)
 ```
 A colossal living world-tree megastructure growing through space: three gigantic bark-covered trunks rooted in an asteroid belt spiral toward a golden star and branch into a vast cradle-like crown that embraces the star, glowing green-gold sap veins, bioluminescent seed pods and leaves made of light; drifting spores sparkle in the starlight; ancient, sacred, serene atmosphere; deep greens, emerald and gold palette
+```
+
+### 5b. Wonder_Brain — «Мозг-Матрёшка» (Машинный Консенсус «Ноль», холодный белый)
+```
+A Matrioshka brain megastructure around a white star: three nested spherical shells made of thin silver computing rings at many inclinations, studded with glowing data-core modules, streams of pale cyan data light racing along the rings, the inner shell glowing hot from starlight and each outer shell dimmer; cold, precise, inhuman intelligence; silver, ice-white and pale cyan palette against black space
 ```
 
 ---

@@ -14,6 +14,7 @@ namespace StellarisClone.Rendering
     ///   • Врата Провидения — кристаллическое кольцо из 12 сегментов, пилоны и воронка горизонта.
     ///   • Наковальня Ксарна — гироскоп из трёх колец тяжёлых блоков с раскалёнными швами, кузня и струи плазмы.
     ///   • Древо Миров — три живых ствола от пояса к звезде, крона-колыбель вокруг светила и светящиеся плоды.
+    ///   • Мозг-Матрёшка — три вложенные оболочки из колец-вычислителей с узлами-ядрами, по кольцам бегут данные.
     /// </summary>
     public static class WonderModels
     {
@@ -45,6 +46,7 @@ namespace StellarisClone.Rendering
                 case "iridia": Gate(s, root.transform, spin); break;
                 case "xarn": Forge(s, root.transform, spin); break;
                 case "terraan": Tree(s, root.transform, spin); break;
+                case "nol": Brain(s, root.transform, spin); break;
             }
             return root;
         }
@@ -885,6 +887,57 @@ namespace StellarisClone.Rendering
             Emit(pods, root, "Pods", Fx("tree_pods", new Color(0.85f, 1f, 0.45f) * 2.2f, 0, 2f));
             var leafGo = Emit(leaves, root, "Leaves", Fx("tree_leaves", new Color(0.4f, 1f, 0.5f) * 1.2f, 0, 0.8f));
             if (leafGo != null) spin.Add(leafGo.transform, Vector3.up, 0.6f);
+        }
+
+        // ==================== МОЗГ-МАТРЁШКА ====================
+
+        private static void Brain(Spec s, Transform root, WonderSpin spin)
+        {
+            Color data = new Color(0.7f, 0.92f, 1f);
+            float k = Mathf.Max(0.8f, s.StarMul);
+            float[] radii = { 2.9f * k, 3.7f * k, 4.5f * k };
+            float[] speeds = { 6f, -4.5f, 3f };
+            var frame = Lit("brain_frame", new Color(0.78f, 0.82f, 0.88f), new Color(0.08f, 0.12f, 0.16f), 0.75f, 0.7f);
+            var coreMat = Lit("brain_core", new Color(0.2f, 0.24f, 0.3f), new Color(0.25f, 0.55f, 0.75f), 0.5f, 0.85f);
+            var dataMat = Fx("brain_data", data * 1.8f, 2, 1.6f);
+
+            for (int sh = 0; sh < 3; sh++)
+            {
+                var shell = new GameObject("Shell" + sh).transform;
+                shell.SetParent(root, false);
+                shell.localRotation = Quaternion.Euler(0f, sh * 23f, sh * 11f);
+                spin.Add(shell, new Vector3(0.15f * sh, 1f, 0f).normalized, speeds[sh]);
+
+                var cores = new MB();
+                var flow = new MB();
+                var scaffold = new MB { Lines = true };
+                float R = radii[sh];
+                int ringsN = 4 + sh;
+                for (int i = 0; i < ringsN; i++)
+                {
+                    // Кольца-вычислители по большим кругам с разным наклоном; бегущие данные — лентой поверх
+                    var q = Quaternion.Euler(90f / ringsN * i * 2f + 15f, 180f / ringsN * i, 0f);
+                    var show = Part(s, sh, (i + 0.5f) / ringsN);
+                    if (show == Show.Hidden) continue;
+                    var ring = new MB();
+                    if (show == Show.Solid)
+                    {
+                        Torus(ring, R, 0.05f * k, 0f, Mathf.PI * 2f, 5);
+                        Band(flow, R + 0.07f * k, -0.035f * k, 0.035f * k, 0f, Mathf.PI * 2f, false, 3f);
+                        for (int n = 0; n < 6; n++)
+                            Box(cores, Dir(n * Mathf.PI / 3f + i * 0.4f) * R, Quaternion.LookRotation(Dir(n * Mathf.PI / 3f + i * 0.4f)), new Vector3(0.32f, 0.32f, 0.22f) * k, Color.white);
+                    }
+                    else Arc(scaffold, R, 0f, 0f, Mathf.PI * 2f, data);
+                    var holder = new GameObject("Ring" + i).transform;
+                    holder.SetParent(shell, false);
+                    holder.localRotation = q;
+                    Emit(ring, holder, "Frame", frame);
+                    Emit(cores, holder, "Cores", coreMat);
+                    Emit(flow, holder, "Data", dataMat);
+                    Emit(scaffold, holder, "Scaffold", Scaffold(s, data));
+                    cores = new MB(); flow = new MB(); scaffold = new MB { Lines = true };
+                }
+            }
         }
     }
 
