@@ -91,6 +91,11 @@ namespace StellarisClone.Generation
             int maxAttempts = starCount * 50;
             var names = new StarNameGenerator();
             PlanetNames.Reset();
+            // Сетка с шагом minStarDistance: звезда ближе minStarDistance (даже по 3D) лежит в соседней клетке по X/Z,
+            // поэтому достаточно проверить 3×3 клетки — ответ тот же, что у перебора всех звёзд, но в разы быстрее
+            float cell = minStarDistance;
+            var grid = new Dictionary<long, List<int>>();
+            long CellKey(int cx, int cz) => ((long)cx << 32) ^ (uint)cz;
 
             while (Systems.Count < starCount && attempts < maxAttempts)
             {
@@ -99,14 +104,14 @@ namespace StellarisClone.Generation
                 Vector3 pos = SamplePosition();
 
                 bool tooClose = false;
-                for (int i = 0; i < Systems.Count; i++)
-                {
-                    if (Vector3.Distance(pos, Systems[i].Position) < minStarDistance)
+                int gx = Mathf.FloorToInt(pos.x / cell), gz = Mathf.FloorToInt(pos.z / cell);
+                for (int dx = -1; dx <= 1 && !tooClose; dx++)
+                    for (int dz = -1; dz <= 1 && !tooClose; dz++)
                     {
-                        tooClose = true;
-                        break;
+                        if (!grid.TryGetValue(CellKey(gx + dx, gz + dz), out var near)) continue;
+                        foreach (int i in near)
+                            if (Vector3.Distance(pos, Systems[i].Position) < minStarDistance) { tooClose = true; break; }
                     }
-                }
 
                 if (!tooClose)
                 {
@@ -114,6 +119,9 @@ namespace StellarisClone.Generation
                     StarSpectralClass spectral = Systems.Count > 0 && Random.value < BlackHoleChance
                         ? StarSpectralClass.BlackHole
                         : (StarSpectralClass)Random.Range(0, 5);
+                    long key = CellKey(gx, gz);
+                    if (!grid.TryGetValue(key, out var bucket)) grid[key] = bucket = new List<int>();
+                    bucket.Add(Systems.Count);
                     Systems.Add(new StarSystem(Systems.Count, names.Next(), pos, spectral));
                 }
             }
@@ -214,34 +222,51 @@ namespace StellarisClone.Generation
         {
             // Радиус связи подстраивается под плотность формы: в узких рукавах звёзды стоят иначе,
             // чем в эллипсе. Берём 2,3 медианных расстояния до ближайшего соседа.
+            // Тяжёлая часть — расстояния «каждая с каждой» — считается на всех ядрах процессора над копией координат.
+            // Прокладка коридоров зависит от уже проложенных, поэтому идёт как раньше — по очереди, в главном потоке.
+            int n = Systems.Count;
+            var pos = new Vector3[n];
+            for (int i = 0; i < n; i++) pos[i] = Systems[i].Position;
+
             float connect = maxConnectionDistance;
-            if (Systems.Count > 2)
+            if (n > 2)
             {
-                var nn = new List<float>(Systems.Count);
-                foreach (var s in Systems)
+                var nn = new float[n];
+                Threaded.For(n, i =>
                 {
                     float best = float.MaxValue;
-                    foreach (var o in Systems)
-                        if (o != s) best = Mathf.Min(best, Vector3.Distance(s.Position, o.Position));
-                    nn.Add(best);
-                }
-                nn.Sort();
-                connect = Mathf.Max(connect, nn[nn.Count / 2] * 2.3f);
+                    for (int j = 0; j < n; j++)
+                        if (j != i) best = Mathf.Min(best, Vector3.Distance(pos[i], pos[j]));
+                    nn[i] = best;
+                });
+                System.Array.Sort(nn);
+                connect = Mathf.Max(connect, nn[n / 2] * 2.3f);
             }
 
-            for (int i = 0; i < Systems.Count; i++)
+            // Для каждой звезды — соседи ближе connect, от ближнего к дальнему (при равенстве — по номеру)
+            var near = new int[n][];
+            float reach = connect;
+            Threaded.For(n, i =>
+            {
+                var list = new List<(float d, int j)>();
+                for (int j = 0; j < n; j++)
+                {
+                    if (j == i) continue;
+                    float d = Vector3.Distance(pos[i], pos[j]);
+                    if (d <= reach) list.Add((d, j));
+                }
+                list.Sort((a, b) => a.d != b.d ? a.d.CompareTo(b.d) : a.j.CompareTo(b.j));
+                var ids = new int[list.Count];
+                for (int k = 0; k < ids.Length; k++) ids[k] = list[k].j;
+                near[i] = ids;
+            });
+
+            for (int i = 0; i < n; i++)
             {
                 var systemA = Systems[i];
-                var candidates = new List<StarSystem>(Systems);
-                candidates.Remove(systemA);
-                candidates.Sort((a, b) =>
-                    Vector3.Distance(systemA.Position, a.Position)
-                        .CompareTo(Vector3.Distance(systemA.Position, b.Position)));
-
-                foreach (var systemB in candidates)
+                foreach (int jb in near[i])
                 {
-                    float dist = Vector3.Distance(systemA.Position, systemB.Position);
-                    if (dist > connect) break;
+                    var systemB = Systems[jb];
 
                     if (systemA.ConnectedSystemIds.Count >= maxConnectionsPerStar ||
                         systemB.ConnectedSystemIds.Count >= maxConnectionsPerStar) continue;
