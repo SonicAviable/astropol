@@ -150,7 +150,7 @@ namespace StellarisClone.Rendering
         }
 
         // Пресет и отдельные пункты качества: пресет выставляет все пункты, ручная правка пункта делает пресет «Своим»
-        private LGSelector _qPreset, _qScale, _qAA, _qShadows, _qPost, _qTex;
+        private LGSelector _qPreset, _qScale, _qUpscale, _qSharp, _qAA, _qShadows, _qPost, _qTex;
 
         private void BuildQuality(ref float y)
         {
@@ -164,6 +164,10 @@ namespace StellarisClone.Rendering
                 });
             _qScale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштаб рендера"), Loc.T("Ниже — быстрее, но галактика мягче; интерфейс остаётся чётким")),
                 GraphicsQuality.ScaleNames, GraphicsQuality.ScaleIndex, i => QualityItem(() => GraphicsQuality.SetScale(i)));
+            _qUpscale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштабирование"), Loc.T("AMD FSR 1.0 — чётче обычного растяжения при масштабе рендера ниже 100%; на 100% не действует")),
+                GraphicsQuality.UpscalerNames, GraphicsQuality.Upscaler, i => GameSettings.GraphicsChanged(() => GraphicsQuality.SetUpscaler(i)));
+            _qSharp = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Резкость FSR"), Loc.T("Насколько подчёркивать края после масштабирования")),
+                GraphicsQuality.SharpnessNames, GraphicsQuality.Sharpness, i => GameSettings.GraphicsChanged(() => GraphicsQuality.SetSharpness(i)));
             _qAA = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Сглаживание"), Loc.T("Убирает «лесенку» на краях кораблей и планет")),
                 GraphicsQuality.AANames, GraphicsQuality.AntiAliasing, i => QualityItem(() => GraphicsQuality.SetAntiAliasing(i)));
             _qShadows = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Тени"), Loc.T("Тени планет и кораблей вблизи")),
@@ -183,6 +187,8 @@ namespace StellarisClone.Rendering
         private void SyncQuality()
         {
             _qScale?.SetIndex(GraphicsQuality.ScaleIndex, false);
+            _qUpscale?.SetIndex(GraphicsQuality.Upscaler, false);
+            _qSharp?.SetIndex(GraphicsQuality.Sharpness, false);
             _qAA?.SetIndex(GraphicsQuality.AntiAliasing, false);
             _qShadows?.SetIndex(GraphicsQuality.Shadows, false);
             _qPost?.SetIndex(GraphicsQuality.PostFx ? 1 : 0, false);

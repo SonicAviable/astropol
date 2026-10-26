@@ -30,12 +30,26 @@ namespace StellarisClone.Core
         public static string[] ShadowNames => new[] { Loc.T("Выкл"), Loc.T("Низкие"), Loc.T("Средние"), Loc.T("Высокие"), Loc.T("Ультра") };
         public static string[] OnOffNames => new[] { Loc.T("Выкл"), Loc.T("Вкл") };
         public static string[] TextureNames => new[] { Loc.T("Половинные"), Loc.T("Полные") };
+        /// <summary>Чем растягивать картинку до размера экрана, когда масштаб рендера ниже 100%.</summary>
+        public static string[] UpscalerNames => new[] { Loc.T("Обычное"), "AMD FSR 1.0" };
+        public static string[] SharpnessNames => new[] { Loc.T("Мягкая"), Loc.T("Средняя"), Loc.T("Высокая") };
+        private static readonly float[] SharpnessValues = { 0.5f, 0.75f, 0.92f };
+        public const int UpscaleLinear = 0, UpscaleFsr = 1;
 
         public static int ScaleIndex { get; private set; } = 4;
         public static int AntiAliasing { get; private set; } = AASmaa;
         public static int Shadows { get; private set; } = 3;
         public static bool PostFx { get; private set; } = true;
         public static bool FullTextures { get; private set; } = true;
+        /// <summary>
+        /// Апскейлер: AMD FidelityFX Super Resolution 1.0 (встроен в URP) — при масштабе рендера ниже 100% картинка
+        /// растягивается до экрана с восстановлением краёв и резкостью вместо простого размытия. На 100% не действует.
+        /// Отдельно от пресетов: включён по умолчанию, пресеты его не трогают.
+        /// </summary>
+        public static int Upscaler { get; private set; } = UpscaleFsr;
+        public static int Sharpness { get; private set; } = 2;
+        /// <summary>FSR сейчас реально работает: выбран и рендер ниже 100%.</summary>
+        public static bool FsrActive => Upscaler == UpscaleFsr && RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] < 0.999f;
 
         private struct Set
         {
@@ -74,6 +88,8 @@ namespace StellarisClone.Core
         {
             if (s_loaded) return;
             s_loaded = true;
+            Upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleFsr), 0, UpscaleFsr);
+            Sharpness = Mathf.Clamp(PlayerPrefs.GetInt("gfx.sharp", 2), 0, SharpnessValues.Length - 1);
             if (!PlayerPrefs.HasKey("gfx.scale"))
             {
                 // Прежняя настройка — уровень качества Unity (0 «Mobile», 1 «PC») → пресет «Среднее» / «Высокое»
@@ -100,6 +116,8 @@ namespace StellarisClone.Core
             PlayerPrefs.SetInt("gfx.shadows", Shadows);
             PlayerPrefs.SetInt("gfx.post", PostFx ? 1 : 0);
             PlayerPrefs.SetInt("gfx.tex", FullTextures ? 1 : 0);
+            PlayerPrefs.SetInt("gfx.upscaler", Upscaler);
+            PlayerPrefs.SetInt("gfx.sharp", Sharpness);
         }
 
         // ------------------------------------------------------------------ Сеттеры (применяют сразу)
@@ -117,6 +135,8 @@ namespace StellarisClone.Core
         public static void SetShadows(int i) { EnsureLoaded(); Shadows = Mathf.Clamp(i, 0, ShadowRes.Length - 1); Changed(); }
         public static void SetPostFx(bool v) { EnsureLoaded(); PostFx = v; Changed(); }
         public static void SetFullTextures(bool v) { EnsureLoaded(); FullTextures = v; Changed(); }
+        public static void SetUpscaler(int i) { EnsureLoaded(); Upscaler = Mathf.Clamp(i, 0, UpscaleFsr); Changed(); }
+        public static void SetSharpness(int i) { EnsureLoaded(); Sharpness = Mathf.Clamp(i, 0, SharpnessValues.Length - 1); Changed(); }
 
         private static void Changed()
         {
@@ -151,6 +171,11 @@ namespace StellarisClone.Core
             Remember(asset);
             asset.renderScale = RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)];
             asset.msaaSampleCount = AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
+            // FSR 1.0 — фильтр масштабирования URP; через отражение, как и тени: если в версии URP поле зовут иначе,
+            // игра не падает, остаётся обычное растяжение и предупреждение в логе
+            SetMember(asset, "upscalingFilter", "m_UpscalingFilter", Upscaler == UpscaleFsr ? "FSR" : "Auto");
+            SetMember(asset, "fsrOverrideSharpness", "m_FsrOverrideSharpness", true);
+            SetMember(asset, "fsrSharpness", "m_FsrSharpness", SharpnessValues[Mathf.Clamp(Sharpness, 0, SharpnessValues.Length - 1)]);
             bool shadows = Shadows > 0;
             SetMember(asset, "supportsMainLightShadows", "m_MainLightShadowsSupported", shadows);
             if (shadows)
@@ -170,7 +195,9 @@ namespace StellarisClone.Core
                 var data = cam.GetUniversalAdditionalCameraData();
                 if (data == null || data.renderType != CameraRenderType.Base) continue;
                 // FXAA и SMAA идут проходом постобработки — без неё камера их не сделает
-                data.renderPostProcessing = PostFx || postAA;
+                // FSR выполняется в финальном проходе постобработки — при пониженном масштабе держим его включённым
+                // (объёмы эффектов при «Постобработка выкл» всё равно погашены ниже)
+                data.renderPostProcessing = PostFx || postAA || FsrActive;
                 data.antialiasing = AntiAliasing == AAFxaa ? AntialiasingMode.FastApproximateAntialiasing
                                   : AntiAliasing == AASmaa ? AntialiasingMode.SubpixelMorphologicalAntiAliasing
                                   : AntialiasingMode.None;
@@ -227,7 +254,30 @@ namespace StellarisClone.Core
         }
 
         private static object Convert(object value, System.Type to)
-            => to.IsEnum ? System.Enum.ToObject(to, value) : System.Convert.ChangeType(value, to);
+        {
+            if (value != null && to.IsInstanceOfType(value)) return value;
+            if (to.IsEnum) return value is string name ? System.Enum.Parse(to, name) : System.Enum.ToObject(to, value);
+            return System.Convert.ChangeType(value, to);
+        }
+
+        /// <summary>Прочитать свойство или поле (для запоминания исходных значений ассета); null — нет такого.</summary>
+        private static object GetMember(object target, string property, string field)
+        {
+            const BindingFlags F = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            try
+            {
+                var t = target.GetType();
+                var p = t.GetProperty(property, F);
+                if (p?.GetGetMethod(true) != null) return p.GetValue(target);
+                for (var tt = t; tt != null; tt = tt.BaseType)
+                {
+                    var f = tt.GetField(field, F);
+                    if (f != null) return f.GetValue(target);
+                }
+            }
+            catch (System.Exception) { }
+            return null;
+        }
 
         // ------------------------------------------------------------------ Исходные значения ассета (для редактора)
 
@@ -235,6 +285,7 @@ namespace StellarisClone.Core
         private static float s_origScale;
         private static int s_origMsaa, s_origCascades, s_origShadowRes;
         private static bool s_origShadows;
+        private static object s_origUpscale, s_origFsrOverride, s_origFsrSharp;
 
         private static void Remember(UniversalRenderPipelineAsset asset)
         {
@@ -246,6 +297,9 @@ namespace StellarisClone.Core
             s_origCascades = asset.shadowCascadeCount;
             s_origShadows = asset.supportsMainLightShadows;
             s_origShadowRes = asset.mainLightShadowmapResolution;
+            s_origUpscale = GetMember(asset, "upscalingFilter", "m_UpscalingFilter");
+            s_origFsrOverride = GetMember(asset, "fsrOverrideSharpness", "m_FsrOverrideSharpness");
+            s_origFsrSharp = GetMember(asset, "fsrSharpness", "m_FsrSharpness");
 #if UNITY_EDITOR
             Application.quitting -= Restore;
             Application.quitting += Restore;
@@ -261,6 +315,9 @@ namespace StellarisClone.Core
             a.shadowCascadeCount = s_origCascades;
             SetMember(a, "supportsMainLightShadows", "m_MainLightShadowsSupported", s_origShadows);
             SetMember(a, "mainLightShadowmapResolution", "m_MainLightShadowmapResolution", s_origShadowRes);
+            if (s_origUpscale != null) SetMember(a, "upscalingFilter", "m_UpscalingFilter", s_origUpscale);
+            if (s_origFsrOverride != null) SetMember(a, "fsrOverrideSharpness", "m_FsrOverrideSharpness", s_origFsrOverride);
+            if (s_origFsrSharp != null) SetMember(a, "fsrSharpness", "m_FsrSharpness", s_origFsrSharp);
             s_remembered = null;
         }
     }
