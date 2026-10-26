@@ -19,7 +19,9 @@ namespace StellarisClone.Ground
         public static GroundBattleManager Instance { get; private set; }
         public static bool InBattle => Instance != null && Instance._running;
 
-        public const float TimeLimit = 12f * 60f;
+        public const float TimeLimit = 15f * 60f;
+        /// <summary>Первые минуты тикеты за точки не тают: у защитника все районы с начала, атакующему нужно время дойти.</summary>
+        public const float BleedGrace = 150f;
         public const float TicketBleedInterval = 10f;
         public const float OrbitalCooldown = 75f;
         public const float OrbitalEnergy = 60f;
@@ -124,7 +126,8 @@ namespace StellarisClone.Ground
                 {
                     Index = i, Setup = ss, Color = ss.Color, FactionKey = ss.FactionKey, IsPlayer = ss.IsPlayer,
                     SlotLimit = ss.Slots, Beacon = i == 0 ? Map.AttackerBeacon : Map.DefenderBeacon,
-                    IncomeMult = i == 1 ? 1.25f : 1f, Requisition = i == 1 ? 300f : 400f, Energy = 100f
+                    IncomeMult = i == 1 ? 1.15f : 1f, Requisition = i == 1 ? 250f : 600f, Energy = i == 1 ? 60f : 150f,
+                    Tickets = i == 0 ? 650f : 500f
                 };
                 Sides[i].Ai = ss.IsPlayer ? null : new GroundCommanderAI(Sides[i]);
             }
@@ -147,7 +150,7 @@ namespace StellarisClone.Ground
             var a = Sides[0];
             var d = Sides[1];
             // Атакующий: десант капсулами у точки высадки
-            string[] opening = { "assault", "assault", "heavy", "mg" };
+            string[] opening = { "assault", "assault", "heavy", "mg", "rocket" };
             for (int i = 0; i < opening.Length; i++)
             {
                 var def = UnitCatalog.Get(opening[i]);
@@ -155,10 +158,11 @@ namespace StellarisClone.Ground
                 var sq = SpawnSquad(a, def, pos);
                 if (sq != null) sq.Veterancy = Mathf.Clamp(Setup.Attacker.StartVeterancy, 0, 3);
             }
-            if (Setup.Attacker.GeneralLeaderId >= 0 || Setup.Sandbox) SpawnHero(a, a.Beacon + new Vector3(0f, 0f, 2f));
+            // Командир десанта — всегда (бесплатно, один на бой); адмирал флота только усиливает его
+            SpawnHero(a, a.Beacon + new Vector3(0f, 0f, 2f));
 
             // Защитник: гарнизон у района и штаба
-            int garrison = Mathf.Clamp(Setup.GarrisonSquads, 1, 10);
+            int garrison = Mathf.Clamp(Setup.GarrisonSquads, 1, 7);
             var spots = new List<Vector3>();
             foreach (var p in Map.Points) if (p.Owner == 1) spots.Add(p.Pos);
             spots.Add(d.Beacon);
@@ -482,18 +486,29 @@ namespace StellarisClone.Ground
         {
             foreach (var side in Sides)
             {
-                float req = 1f, en = 0f;
-                foreach (var p in Map.Points) if (p.Owner == side.Index) { req += p.ReqIncome; en += p.EnergyIncome; }
-                side.Requisition += req * side.IncomeMult * dt;
-                side.Energy += (0.5f + en) * side.IncomeMult * dt;
+                IncomeOf(side, out float req, out float en);
+                side.Requisition += req * dt;
+                side.Energy += en * dt;
             }
+        }
+
+        /// <summary>Доход стороны в секунду: атакующего снабжает флот с орбиты (чем мощнее, тем больше), защитника — склады колонии; плюс точки.</summary>
+        public void IncomeOf(BattleSide side, out float req, out float en)
+        {
+            bool attacker = side.Index == 0;
+            req = attacker ? 6f + Mathf.Clamp(side.Setup.FleetPower / 4000f, 0f, 4f) : 2.5f;
+            en = attacker ? 1.2f : 0.6f;
+            foreach (var p in Map.Points) if (p.Owner == side.Index) { req += p.ReqIncome; en += p.EnergyIncome; }
+            req *= side.IncomeMult;
+            en *= side.IncomeMult;
         }
 
         private void BleedTickets()
         {
+            if (Elapsed < BleedGrace) return;
             int a = 0, d = 0;
             foreach (var p in Map.Points) { if (p.Owner == 0) a++; else if (p.Owner == 1) d++; }
-            if (a < d) Sides[0].Tickets -= (d - a) * 3f;
+            if (a < d) Sides[0].Tickets -= (d - a) * 2f;
             else if (d < a) Sides[1].Tickets -= (a - d) * 3f;
         }
 
@@ -505,7 +520,7 @@ namespace StellarisClone.Ground
             if (Map.Hq != null && Map.Hq.Dead) { End(true, Loc.T("Штаб колонии разрушен")); return; }
             if (atk.Tickets <= 0f) { End(false, Loc.T("У атакующих кончились силы")); return; }
             if (def.Tickets <= 0f) { End(true, Loc.T("Оборона сломлена")); return; }
-            if (def.AliveSquads == 0 && def.Requisition < 100f && Elapsed > 30f) { End(true, Loc.T("Защитники капитулировали")); return; }
+            if (def.AliveSquads == 0 && Elapsed > 30f && !DefenderCanRecover()) { End(true, Loc.T("Защитники капитулировали")); return; }
             if (atk.AliveSquads == 0 && atk.Requisition < 100f && Elapsed > 30f) { End(false, Loc.T("Десант уничтожен")); return; }
             if (Elapsed >= TimeLimit)
             {
@@ -513,6 +528,14 @@ namespace StellarisClone.Ground
                 foreach (var p in Map.Points) { if (p.Owner == 0) a++; else if (p.Owner == 1) d++; }
                 End(a > d, a > d ? Loc.T("Время вышло: атакующие держат большинство точек") : Loc.T("Время вышло: колония устояла"));
             }
+        }
+
+        /// <summary>Защитник ещё может собрать силы: у него есть городской район (ополчение) или деньги на отряд.</summary>
+        private bool DefenderCanRecover()
+        {
+            if (Sides[1].Requisition >= 100f) return true;
+            foreach (var p in Map.Points) if (p.Kind == PointKind.Urban && p.Owner == 1) return true;
+            return false;
         }
 
         // ---- Сооружения ----
@@ -665,11 +688,11 @@ namespace StellarisClone.Ground
         {
             var d = Sides[1];
             if ((d.MilitiaTimer -= dt) > 0f) return;
-            d.MilitiaTimer = 90f;
+            d.MilitiaTimer = 120f;
             foreach (var p in Map.Points)
             {
                 if (p.Kind != PointKind.Urban || p.Owner != 1) continue;
-                if (d.SlotsUsed + 6 > d.SlotLimit + 12) break;
+                if (d.SlotsUsed + 6 > d.SlotLimit || d.AliveSquads >= 10) break;
                 var sq = SpawnSquad(d, UnitCatalog.Get("militia"), p.Pos + new Vector3(Random.Range(-5f, 5f), 0f, Random.Range(-5f, 5f)));
                 if (sq != null) { sq.Shout(GroundCallouts.Home(sq)); sq.TakeCover(p.Pos); }
             }
@@ -894,6 +917,7 @@ namespace StellarisClone.Ground
             SyncKills.Reset();
             foreach (var s in Sides) s?.Squads.Clear();
             _all.Clear();
+            if (Map != null) foreach (var o in Map.Owned) if (o != null) Destroy(o);
             // Текстуры земли создаются на бой — выгрузить вместе с материалом
             var tr = Map?.Terrain != null ? Map.Terrain.GetComponent<Renderer>() : null;
             if (tr != null && tr.sharedMaterial != null)

@@ -162,7 +162,7 @@ namespace StellarisClone.Ground
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) move += fwd;
             if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) move -= fwd;
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) move += right;
-            if (Input.GetKey(KeyCode.A) && !GroundInput.AttackModifier || Input.GetKey(KeyCode.LeftArrow)) move -= right;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) move -= right;
             if (GameSettings.EdgeScroll && Application.isFocused)
             {
                 var mp = Input.mousePosition;

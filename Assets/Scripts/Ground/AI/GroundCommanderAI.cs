@@ -45,62 +45,197 @@ namespace StellarisClone.Ground
             var map = gm.Map;
             bool defender = _side.Index == 1;
             int me = _side.Index;
+            float now = Time.time;
+            Remember(gm, now);
 
             _targets.Clear();
             foreach (var p in map.Points) if (p.Owner != me) _targets.Add(p);
-            // Защитнику нужны и свои точки — держать
+
+            // Своя точка под натиском — туда стягиваются ближние
             StrategicPoint threatened = null;
             float threat = 0f;
             foreach (var p in map.Points)
             {
                 if (p.Owner != me) continue;
-                float t = EnemyPressure(gm, p.Pos, 24f);
+                float t = EnemyPressure(gm, p.Pos, 26f);
                 if (t > threat) { threat = t; threatened = p; }
             }
 
             var stale = new List<Squad>();
             foreach (var kv in _assigned) if (kv.Key.Destroyed || kv.Value.Owner == me && kv.Value != threatened) stale.Add(kv.Key);
             foreach (var s in stale) _assigned.Remove(s);
+            _guards.RemoveWhere(g => g.Destroyed);
+
+            // Охрана: защитник держит по отряду у каждого своего района, остальное — в поле
+            if (defender)
+                foreach (var p in map.Points)
+                {
+                    if (p.Owner != me || !p.District.HasValue) continue;
+                    bool has = false;
+                    foreach (var g in _guards) if ((g.Center - p.Pos).sqrMagnitude < 30f * 30f) { has = true; break; }
+                    if (has) continue;
+                    Squad best = null; float bd = float.MaxValue;
+                    foreach (var sq in _side.Squads)
+                    {
+                        if (sq.Destroyed || sq.Retreating || sq.Def.Vehicle || _guards.Contains(sq)) continue;
+                        float d = (sq.Center - p.Pos).sqrMagnitude;
+                        if (d < bd) { bd = d; best = sq; }
+                    }
+                    if (best != null && bd < 60f * 60f && GuardCount() < Mathf.Max(1, _side.AliveSquads / 3))
+                    {
+                        _guards.Add(best);
+                        Order(best, Around(gm, p.Pos, 5f), now);
+                    }
+                }
+
+            // Волна: раз в 50–80 с все свободные отряды разом идут на самую выгодную цель
+            bool wave = false;
+            if ((_waveTimer -= ThinkInterval) <= 0f)
+            {
+                _waveTimer = Random.Range(50f, 80f) - _tier * 6f;
+                int free = 0;
+                foreach (var sq in _side.Squads) if (!sq.Destroyed && !sq.Retreating && !_guards.Contains(sq)) free++;
+                wave = free >= 3;
+            }
+            Vector3 waveTarget = wave ? WaveTarget(gm) : Vector3.zero;
 
             foreach (var sq in _side.Squads)
             {
                 if (sq.Destroyed || sq.Retreating) continue;
                 if (sq.Def.Role == UnitRole.Artillery) { ArtilleryThink(gm, sq); continue; }
 
-                // Отступление при низкой морали или потерях — сохранить отряд
+                // Отступление при низкой морали или больших потерях — сохранить отряд
                 if (!sq.Def.Fearless && (sq.Morale < sq.MaxMorale * 0.25f || sq.Alive <= Mathf.Max(1, sq.Def.Size / 3) && !sq.Def.Vehicle && sq.Def.Size > 2))
                 {
-                    if (!gm.NearReinforcePoint(sq)) { sq.OrderRetreat(); _assigned.Remove(sq); continue; }
+                    if (!gm.NearReinforcePoint(sq)) { sq.OrderRetreat(); _assigned.Remove(sq); _guards.Remove(sq); continue; }
                 }
 
                 UseAbilities(gm, sq);
 
-                // Уже воюет — не дёргаем (кроме рукопашников, они и так сближаются)
-                if (sq.Engaged != null && sq.Order != SquadOrder.Move) continue;
-
-                // Защита своей точки под натиском
-                if (threatened != null && threat > 0f && (defender || Random.value < 0.4f) && (sq.Center - threatened.Pos).sqrMagnitude < 70f * 70f
-                    && (!_assigned.TryGetValue(sq, out var cur) || cur != threatened))
+                // Уже воюет — зовёт соседей и держится
+                if (sq.Engaged != null && sq.Order != SquadOrder.Move)
                 {
-                    _assigned[sq] = threatened;
-                    sq.OrderMove(Around(gm, threatened.Pos, 6f), true);
+                    CallHelp(gm, sq, now);
                     continue;
                 }
 
+                bool guard = _guards.Contains(sq);
+                // Охрана сидит у своего района; уходит только помочь соседней точке под натиском
+                if (guard && (threatened == null || threat <= 0f || (sq.Center - threatened.Pos).sqrMagnitude > 80f * 80f)) continue;
+
+                // Защита своей точки под натиском
+                if (threatened != null && threat > 0f && (sq.Center - threatened.Pos).sqrMagnitude < 80f * 80f
+                    && (!_assigned.TryGetValue(sq, out var cur) || cur != threatened))
+                {
+                    _assigned[sq] = threatened;
+                    Order(sq, Around(gm, threatened.Pos, 6f), now);
+                    continue;
+                }
+
+                if (wave && !guard)
+                {
+                    _assigned.Remove(sq);
+                    Order(sq, Around(gm, waveTarget, 8f), now);
+                    continue;
+                }
+
+                // Не дёргать отряд, пока он выполняет недавний приказ
+                if (now - Last(sq) < 8f && sq.Order != SquadOrder.None) continue;
                 if (_assigned.TryGetValue(sq, out var tgt) && tgt.Owner != me) continue;
 
                 var pick = PickPoint(gm, sq);
                 if (pick != null)
                 {
                     _assigned[sq] = pick;
-                    sq.OrderMove(Around(gm, pick.Pos, 5f), true);
+                    Order(sq, Around(gm, pick.Pos, 5f), now);
                 }
                 else if (!defender && map.Hq != null && !map.Hq.Dead && !gm.ShieldUp)
                 {
                     // Все точки наши — на штаб
                     sq.OrderAttack(map.Hq);
+                    _lastOrder[sq] = now;
+                }
+                else if (sq.Order == SquadOrder.None || now - Last(sq) > 25f)
+                {
+                    // Делать нечего — охота: туда, где последний раз видели врага, иначе к его маяку
+                    Order(sq, Around(gm, HuntTarget(gm, sq), 8f), now);
                 }
             }
+        }
+
+        // ---- Память, помощь, цели волн ----
+
+        private readonly HashSet<Squad> _guards = new HashSet<Squad>();
+        private readonly Dictionary<Squad, float> _lastOrder = new Dictionary<Squad, float>();
+        private readonly Dictionary<Squad, (Vector3 pos, float at)> _seen = new Dictionary<Squad, (Vector3, float)>();
+        private float _waveTimer = 35f;
+
+        private int GuardCount() { int n = 0; foreach (var g in _guards) if (!g.Destroyed) n++; return n; }
+        private float Last(Squad sq) => _lastOrder.TryGetValue(sq, out var t) ? t : -100f;
+
+        private void Order(Squad sq, Vector3 at, float now)
+        {
+            sq.OrderMove(at, true);
+            _lastOrder[sq] = now;
+        }
+
+        private void Remember(GroundBattleManager gm, float now)
+        {
+            foreach (var e in gm.Sides[1 - _side.Index].Squads)
+                if (!e.Destroyed && e.VisibleTo[_side.Index]) _seen[e] = (e.Center, now);
+            var gone = new List<Squad>();
+            foreach (var kv in _seen) if (kv.Key.Destroyed || now - kv.Value.at > 90f) gone.Add(kv.Key);
+            foreach (var g in gone) _seen.Remove(g);
+            var dead = new List<Squad>();
+            foreach (var kv in _lastOrder) if (kv.Key.Destroyed) dead.Add(kv.Key);
+            foreach (var d in dead) _lastOrder.Remove(d);
+        }
+
+        /// <summary>Отряд в бою: свободные соседи в радиусе 40 м идут на помощь.</summary>
+        private void CallHelp(GroundBattleManager gm, Squad sq, float now)
+        {
+            var target = sq.Engaged;
+            if (target == null) return;
+            foreach (var o in _side.Squads)
+            {
+                if (o == sq || o.Destroyed || o.Retreating || o.Engaged != null || _guards.Contains(o)) continue;
+                if ((o.Center - sq.Center).sqrMagnitude > 40f * 40f || now - Last(o) < 4f) continue;
+                o.OrderAttack(target);
+                _lastOrder[o] = now;
+            }
+        }
+
+        private Vector3 HuntTarget(GroundBattleManager gm, Squad sq)
+        {
+            Vector3 best = gm.Sides[1 - _side.Index].Beacon;
+            float bd = float.MaxValue;
+            foreach (var kv in _seen)
+            {
+                float d = (kv.Value.pos - sq.Center).sqrMagnitude;
+                if (d < bd) { bd = d; best = kv.Value.pos; }
+            }
+            return best;
+        }
+
+        /// <summary>Цель волны: вражеская точка с наименьшей охраной, иначе крупнейшее замеченное скопление, иначе маяк врага.</summary>
+        private Vector3 WaveTarget(GroundBattleManager gm)
+        {
+            StrategicPoint best = null;
+            float bs = float.MaxValue;
+            foreach (var p in gm.Map.Points)
+            {
+                if (p.Owner == _side.Index) continue;
+                float score = EnemyPressure(gm, p.Pos, 25f) * 10f + Vector3.Distance(p.Pos, _side.Beacon) * 0.2f + (p.Owner < 0 ? 0f : -15f);
+                if (score < bs) { bs = score; best = p; }
+            }
+            if (best != null) return best.Pos;
+            if (_seen.Count > 0)
+            {
+                Vector3 c = Vector3.zero;
+                foreach (var kv in _seen) c += kv.Value.pos;
+                return c / _seen.Count;
+            }
+            return gm.Sides[1 - _side.Index].Beacon;
         }
 
         /// <summary>Ближайшая нужная точка: ничьи дешевле, вражеские — если хватает сил; не больше трёх отрядов на точку.</summary>

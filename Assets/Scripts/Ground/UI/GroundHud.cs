@@ -22,7 +22,7 @@ namespace StellarisClone.Ground
         public static bool PointerOverUi => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
 
         private GroundBattleManager _gm;
-        private RectTransform _canvas, _world, _cards, _abilities, _reinforce, _minimapDots;
+        private RectTransform _canvas, _world, _cards, _abilities, _reinforce, _minimapDots, _selPanel, _selContent;
         private Text _ticketA, _ticketD, _timer, _req, _energy, _slots, _speed, _orbitalLabel, _special, _flash;
         private RectTransform _barA, _barD, _pointsRow;
         private Image _dragRect;
@@ -39,7 +39,8 @@ namespace StellarisClone.Ground
         private Button _orbitalBtn, _specialBtn;
         private bool _reinforceOpen = true;
 
-        private static readonly Color CPanel = new Color(0.02f, 0.05f, 0.07f, 0.9f);
+        private static readonly Color CPanel = new Color(0.05f, 0.043f, 0.036f, 0.94f);
+        private static readonly Color Bronze = new Color(0.78f, 0.58f, 0.32f, 0.7f);
         private static Color Muted => UIManager.DS.TextMuted;
 
         private sealed class WorldTag
@@ -47,7 +48,9 @@ namespace StellarisClone.Ground
             public RectTransform Root;
             public RectTransform Hp, Morale;
             public Text State, Callout, Chevrons;
-            public Image Bracket;
+            public Image Bracket, Frame, Band;
+            public Image Icon;
+            public LGIcon IconKind = (LGIcon)(-1);
         }
 
         public static GroundHud Create(GroundBattleManager gm)
@@ -142,25 +145,30 @@ namespace StellarisClone.Ground
             TooltipHelper.Attach(quit.gameObject, Loc.T("Прекратить штурм: бой будет проигран, осада сброшена"));
 
             // ---- Подкрепления и способности флота ----
-            _reinforce = Panel("Reinforce", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(14f, 14f), new Vector2(300f, 420f), new Color(1f, 1f, 1f, 0.2f));
+            _reinforce = Panel("Reinforce", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-14f, 316f), new Vector2(300f, 420f), Bronze);
             BuildReinforce();
 
             // ---- Миникарта ----
-            var mm = Panel("Minimap", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-14f, 14f), new Vector2(240f, 240f), new Color(1f, 1f, 1f, 0.25f));
+            var mm = Panel("Minimap", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(14f, 14f), new Vector2(260f, 260f), Bronze);
             var mmBg = LGBuild.Panel(mm, "Ground", Color.Lerp(_gm.Map.Biome.GroundB, Color.black, 0.55f), raycast: true);
             mmBg.rectTransform.Stretch(10, 10, 10, 10);
             mmBg.gameObject.AddComponent<MinimapClick>().Hud = this;
             _minimapDots = mmBg.rectTransform;
 
-            // ---- Карточки отрядов ----
-            _cards = LGBuild.Rect(_canvas, "Cards");
-            _cards.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(980f, 96f));
+            // ---- Лента армии (все отряды игрока, как в Dawn of War) ----
+            var strip = Panel("Army", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-40f, 10f), new Vector2(1020f, 110f), Bronze);
+            _cards = LGBuild.Rect(strip, "Cards");
+            _cards.Stretch(12, 10, 12, 10);
             var cl = _cards.gameObject.AddComponent<HorizontalLayoutGroup>();
-            cl.spacing = 8f; cl.childAlignment = TextAnchor.LowerCenter; cl.childControlWidth = false; cl.childControlHeight = false;
-            _abilities = LGBuild.Rect(_canvas, "Abilities");
-            _abilities.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 118f), new Vector2(560f, 46f));
-            var al = _abilities.gameObject.AddComponent<HorizontalLayoutGroup>();
-            al.spacing = 8f; al.childAlignment = TextAnchor.MiddleCenter; al.childControlWidth = false; al.childControlHeight = false;
+            cl.spacing = 6f; cl.childAlignment = TextAnchor.MiddleLeft; cl.childControlWidth = false; cl.childControlHeight = false;
+
+            // ---- Панель выбранного отряда: описание, бойцы, опыт, способности и команды ----
+            _selPanel = Panel("Selection", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-14f, 10f), new Vector2(300f, 296f), Bronze);
+            _selContent = LGBuild.Rect(_selPanel, "Content");
+            _selContent.Stretch();
+            _abilities = LGBuild.Rect(_selPanel, "Abilities");
+            _abilities.anchorMin = new Vector2(0f, 0f); _abilities.anchorMax = new Vector2(1f, 0f); _abilities.pivot = new Vector2(0.5f, 0f);
+            _abilities.offsetMin = new Vector2(12f, 12f); _abilities.offsetMax = new Vector2(-12f, 120f);
 
             // ---- Сообщения и рамка ----
             _flash = LGBuild.Label(_canvas, "", 18, Color.white, TextAnchor.MiddleCenter, bold: true);
@@ -285,7 +293,7 @@ namespace StellarisClone.Ground
             var d = _gm.Sides[1];
             _ticketA.text = Loc.F("ДЕСАНТ  {0:0}", Mathf.Max(0f, a.Tickets));
             _ticketD.text = Loc.F("{0:0}  ОБОРОНА", Mathf.Max(0f, d.Tickets));
-            LGBuild.SetBar(_barA, a.Tickets / 500f);
+            LGBuild.SetBar(_barA, a.Tickets / 650f);
             LGBuild.SetBar(_barD, d.Tickets / 500f);
             float left = Mathf.Max(0f, GroundBattleManager.TimeLimit - _gm.Elapsed);
             _timer.text = $"{(int)(left / 60f):00}:{(int)(left % 60f):00}";
@@ -298,10 +306,9 @@ namespace StellarisClone.Ground
             var pl = _gm.Player;
             if (pl != null)
             {
-                float reqRate = 1f, enRate = 0.5f;
-                foreach (var p in _gm.Map.Points) if (p.Owner == pl.Index) { reqRate += p.ReqIncome; enRate += p.EnergyIncome; }
-                _req.text = Loc.F("Реквизиция  {0:0}  <color=#7CF29A>+{1:0.#}/с</color>", pl.Requisition, reqRate * pl.IncomeMult);
-                _energy.text = Loc.F("Энергия  {0:0}  <color=#7CF29A>+{1:0.#}/с</color>", pl.Energy, enRate * pl.IncomeMult);
+                _gm.IncomeOf(pl, out float reqRate, out float enRate);
+                _req.text = Loc.F("Реквизиция  {0:0}  <color=#7CF29A>+{1:0.#}/с</color>", pl.Requisition, reqRate);
+                _energy.text = Loc.F("Энергия  {0:0}  <color=#7CF29A>+{1:0.#}/с</color>", pl.Energy, enRate);
                 _slots.text = Loc.F("Места  {0} / {1}", pl.SlotsUsed, pl.SlotLimit);
                 if (_orbitalLabel != null)
                     _orbitalLabel.text = pl.OrbitalCooldown > 0f ? Loc.F("ОРБИТАЛЬНЫЙ УДАР · {0:0} с", pl.OrbitalCooldown)
@@ -332,102 +339,210 @@ namespace StellarisClone.Ground
             _flashUntil = Time.unscaledTime + 3f;
         }
 
-        // ---- Карточки ----
+        // ---- Лента армии ----
+
+        private float _lastCardClick;
+        private Squad _lastCardSquad;
+        private string _selSig;
+        private Text _selTitle, _selRole, _selDesc, _selStats, _selState;
+        private RectTransform _selXp;
 
         private void UpdateCards()
         {
-            var sel = GroundInput.Selected;
+            var pl = _gm.Player;
+            if (pl == null) return;
             var sb = new System.Text.StringBuilder();
-            foreach (var s in sel) sb.Append(s.Id).Append(':').Append(s.Alive).Append(s.Veterancy).Append(',');
+            foreach (var s in pl.Squads) if (!s.Destroyed) sb.Append(s.Id).Append(':').Append(s.Veterancy).Append(',');
             string sig = sb.ToString();
             if (sig != _cardsSig)
             {
                 _cardsSig = sig;
                 LGBuild.Clear(_cards);
-                LGBuild.Clear(_abilities);
                 int n = 0;
-                foreach (var s in sel) { if (n++ >= 9) break; BuildCard(s); }
-                if (sel.Count > 0) BuildAbilities(sel[0]);
+                foreach (var s in pl.Squads) { if (s.Destroyed) continue; if (n++ >= 14) break; BuildCard(s); }
             }
-            // Живые значения
-            for (int i = 0; i < _cards.childCount && i < sel.Count; i++)
+            // Живые значения: здоровье, бойцы, выделение, тревога
+            int k = 0;
+            foreach (var s in pl.Squads)
             {
-                var card = _cards.GetChild(i);
-                var s = sel[i];
+                if (s.Destroyed) continue;
+                if (k >= _cards.childCount) break;
+                var card = _cards.GetChild(k++);
                 var hp = card.Find("Hp/BarTrack/BarFill") as RectTransform;
-                var mo = card.Find("Mo/BarTrack/BarFill") as RectTransform;
-                if (hp != null) LGBuild.SetBar(hp, s.Health01);
-                if (mo != null) LGBuild.SetBar(mo, s.MaxMorale <= 0f ? 0f : s.Morale / s.MaxMorale, s.Broken ? new Color(1f, 0.4f, 0.3f) : new Color(0.95f, 0.85f, 0.4f));
-                var st = card.Find("State")?.GetComponent<Text>();
-                if (st != null) st.text = StateText(s);
+                if (hp != null) LGBuild.SetBar(hp, s.Health01, s.Health01 < 0.35f ? new Color(1f, 0.35f, 0.3f) : new Color(0.35f, 0.7f, 1f));
+                var cnt = card.Find("Count")?.GetComponent<Text>();
+                if (cnt != null) cnt.text = s.Def.Vehicle ? "" : $"{s.Alive}/{s.Def.Size}";
+                var ol = card.GetComponent<Outline>();
+                if (ol != null) ol.effectColor = s.Selected ? new Color(1f, 0.82f, 0.4f, 1f) : new Color(0f, 0f, 0f, 0f);
+                var alarm = card.Find("Alarm")?.GetComponent<Image>();
+                if (alarm != null)
+                {
+                    bool bad = s.Broken || s.Retreating || s.Pinned;
+                    bool hit = Time.time - s.LastHurt < 1.5f;
+                    alarm.color = bad ? new Color(0.8f, 0.1f, 0.08f, 0.55f) : hit ? new Color(0.8f, 0.2f, 0.1f, 0.25f + 0.2f * Mathf.Sin(Time.unscaledTime * 12f)) : new Color(0f, 0f, 0f, 0f);
+                }
             }
-            for (int i = 0; i < _abilities.childCount; i++)
-            {
-                var t = _abilities.GetChild(i).Find("Cd")?.GetComponent<Text>();
-                if (t != null && sel.Count > 0) t.text = sel[0].AbilityCooldown > 0f ? $"{sel[0].AbilityCooldown:0}" : "";
-            }
+            UpdateSelection();
         }
 
         private void BuildCard(Squad s)
         {
-            var card = LGBuild.Panel(_cards, "Card", CPanel, raycast: true);
-            card.rectTransform.sizeDelta = new Vector2(104f, 92f);
-            LG.Platter(card.gameObject, 12f).SetRim(new Color(s.Side.Color.r, s.Side.Color.g, s.Side.Color.b, 0.55f));
-            var ic = LGIcons.Create(card.transform, IconOf(s.Def), 20, Color.white);
-            ic.rectTransform.At(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -8f), new Vector2(20f, 20f));
-            var name = LGBuild.Label(card.transform, s.Def.Name, 9, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
-            name.rectTransform.Stretch(32, 0, 4, 6);
-            name.rectTransform.offsetMin = new Vector2(32f, 58f);
-            string chev = s.Veterancy > 0 ? new string('^', s.Veterancy) : "";
-            var vet = LGBuild.Label(card.transform, chev, 13, Gold, TextAnchor.UpperRight, bold: true);
-            vet.rectTransform.Stretch(0, 0, 6, 2);
-            // Бойцы точками
-            string dots = s.Def.Vehicle ? "" : new string('•', Mathf.Clamp(s.Alive, 0, 20)) + "<color=#33444A>" + new string('•', Mathf.Clamp(s.Def.Size - s.Alive, 0, 20)) + "</color>";
-            var dl = LGBuild.Label(card.transform, dots, 11, Color.Lerp(s.Side.Color, Color.white, 0.5f), TextAnchor.UpperLeft);
-            dl.rectTransform.Stretch(8, 0, 4, 34);
+            var card = LGBuild.Panel(_cards, "Card", new Color(0.09f, 0.075f, 0.06f, 1f), raycast: true);
+            card.rectTransform.sizeDelta = new Vector2(64f, 90f);
+            var ol = card.gameObject.AddComponent<Outline>();
+            ol.effectDistance = new Vector2(2f, 2f);
+            ol.effectColor = new Color(0f, 0f, 0f, 0f);
+            // Подложка цвета стороны и крупная иконка роли
+            var plate = LGBuild.Panel(card.transform, "Plate", new Color(s.Side.Color.r * 0.35f, s.Side.Color.g * 0.35f, s.Side.Color.b * 0.35f, 1f));
+            plate.rectTransform.Stretch(3, 18, 3, 12);
+            var alarm = LGBuild.Panel(card.transform, "Alarm", new Color(0f, 0f, 0f, 0f));
+            alarm.name = "Alarm";
+            alarm.rectTransform.Stretch(3, 18, 3, 12);
+            var ic = LGIcons.Create(card.transform, IconOf(s.Def), 34, Color.Lerp(s.Side.Color, Color.white, 0.55f));
+            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(34f, 34f));
             var hpHost = LGBuild.Rect(card.transform, "Hp");
-            hpHost.anchorMin = new Vector2(0f, 0f); hpHost.anchorMax = new Vector2(1f, 0f);
-            hpHost.offsetMin = new Vector2(8f, 26f); hpHost.offsetMax = new Vector2(-8f, 32f);
-            LGBuild.Bar(hpHost, new Color(0.4f, 1f, 0.55f), s.Health01, 5f);
-            var moHost = LGBuild.Rect(card.transform, "Mo");
-            moHost.anchorMin = new Vector2(0f, 0f); moHost.anchorMax = new Vector2(1f, 0f);
-            moHost.offsetMin = new Vector2(8f, 18f); moHost.offsetMax = new Vector2(-8f, 24f);
-            LGBuild.Bar(moHost, new Color(0.95f, 0.85f, 0.4f), s.Morale / Mathf.Max(1f, s.MaxMorale), 5f);
-            var st = LGBuild.Label(card.transform, "", 8, Muted, TextAnchor.LowerLeft, bold: true);
-            st.name = "State";
-            st.rectTransform.Stretch(8, 3, 4, 0);
+            hpHost.anchorMin = new Vector2(0f, 1f); hpHost.anchorMax = new Vector2(1f, 1f);
+            hpHost.offsetMin = new Vector2(3f, -9f); hpHost.offsetMax = new Vector2(-3f, -3f);
+            LGBuild.Bar(hpHost, new Color(0.35f, 0.7f, 1f), s.Health01, 5f);
+            var vet = LGBuild.Label(card.transform, s.Veterancy > 0 ? new string('^', s.Veterancy) : "", 12, Gold, TextAnchor.UpperRight, bold: true);
+            vet.rectTransform.Stretch(0, 0, 5, 12);
+            var cnt = LGBuild.Label(card.transform, "", 10, Color.white, TextAnchor.LowerCenter, bold: true);
+            cnt.name = "Count";
+            cnt.rectTransform.Stretch(0, 3, 0, 0);
             var btn = card.gameObject.AddComponent<Button>();
             var sq = s;
-            btn.onClick.AddListener(() => { GroundInput.Select(sq, false); _gm.Cam.LookAt(sq.Center); });
+            btn.onClick.AddListener(() =>
+            {
+                bool add = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                // Двойной клик — камера к отряду
+                if (_lastCardSquad == sq && Time.unscaledTime - _lastCardClick < 0.35f) _gm.Cam.LookAt(sq.Center);
+                _lastCardSquad = sq;
+                _lastCardClick = Time.unscaledTime;
+                GroundInput.Select(sq, add);
+                GroundSfx.Radio(0.4f);
+            });
             TooltipHelper.Attach(card.gameObject, $"<b>{s.Def.Name}</b>\n{s.Def.Desc}\n<color=#8AA2A8>{Loc.F("Убито врагов: {0}", s.Kills)}</color>");
         }
 
-        private void BuildAbilities(Squad s)
+        // ---- Панель выбранного отряда ----
+
+        public static string RoleName(UnitDef d) => d.Role switch
         {
+            UnitRole.Assault => Loc.T("Линейная пехота"),
+            UnitRole.Heavy => Loc.T("Штурмовая пехота ближнего боя"),
+            UnitRole.MachineGun => Loc.T("Пехота подавления"),
+            UnitRole.Rocket => Loc.T("Противотанковая пехота"),
+            UnitRole.Sniper => Loc.T("Разведка и снайперы"),
+            UnitRole.Flamer => Loc.T("Зачистка укрытий"),
+            UnitRole.Militia => Loc.T("Ополчение"),
+            UnitRole.Apc => Loc.T("Лёгкая техника"),
+            UnitRole.Tank => Loc.T("Тяжёлая техника"),
+            UnitRole.Artillery => Loc.T("Артиллерия"),
+            UnitRole.Hero => Loc.T("Командир"),
+            UnitRole.Walker => Loc.T("Сверхтяжёлый шагоход"),
+            UnitRole.Swarm => Loc.T("Рой дронов"),
+            UnitRole.Seer => Loc.T("Псайкер"),
+            UnitRole.Mercenary => Loc.T("Наёмники"),
+            _ => ""
+        };
+
+        private void UpdateSelection()
+        {
+            var sel = GroundInput.Selected;
+            var s = sel.Count > 0 ? sel[0] : null;
+            string sig = s == null ? "" : s.Id + ":" + sel.Count;
+            if (sig != _selSig)
+            {
+                _selSig = sig;
+                LGBuild.Clear(_selContent);
+                LGBuild.Clear(_abilities);
+                _selPanel.gameObject.SetActive(s != null);
+                if (s != null) BuildSelection(s, sel.Count);
+            }
+            if (s == null || _selStats == null) return;
+            int nextKills = s.Veterancy >= 3 ? 30 : s.Veterancy == 2 ? 30 : s.Veterancy == 1 ? 15 : 6;
+            int prevKills = s.Veterancy >= 3 ? 30 : s.Veterancy == 2 ? 15 : s.Veterancy == 1 ? 6 : 0;
+            LGBuild.SetBar(_selXp, s.Veterancy >= 3 ? 1f : Mathf.Clamp01((s.Kills - prevKills) / (float)Mathf.Max(1, nextKills - prevKills)));
+            _selStats.text = s.Def.Vehicle
+                ? Loc.F("Прочность {0:0}%   ·   Убито {1}", s.Health01 * 100f, s.Kills)
+                : Loc.F("Бойцов {0}/{1}   ·   Здоровье {2:0}%   ·   Убито {3}", s.Alive, s.Def.Size, s.Health01 * 100f, s.Kills);
+            _selState.text = StateText(s);
+            for (int i = 0; i < _abilities.childCount; i++)
+            {
+                var t = _abilities.GetChild(i).Find("Cd")?.GetComponent<Text>();
+                if (t != null) t.text = s.AbilityCooldown > 0f ? $"{s.AbilityCooldown:0}" : "";
+            }
+        }
+
+        private void BuildSelection(Squad s, int count)
+        {
+            _selTitle = LGBuild.Label(_selContent, count > 1 ? Loc.F("{0}  (+{1})", s.Def.Name, count - 1) : s.Def.Name, 16, Color.white, TextAnchor.UpperLeft, bold: true);
+            _selTitle.rectTransform.Stretch(14, 0, 14, 10);
+            _selRole = LGBuild.Label(_selContent, RoleName(s.Def), 12, new Color(1f, 0.62f, 0.28f), TextAnchor.UpperLeft, bold: true);
+            _selRole.rectTransform.Stretch(14, 0, 14, 32);
+            var big = LGIcons.Create(_selContent, IconOf(s.Def), 40, Color.Lerp(s.Side.Color, Color.white, 0.4f));
+            big.rectTransform.At(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-14f, -12f), new Vector2(40f, 40f));
+            _selDesc = LGBuild.Label(_selContent, "• " + s.Def.Desc, 11, new Color(0.88f, 0.85f, 0.8f), TextAnchor.UpperLeft, wrap: true);
+            _selDesc.rectTransform.Stretch(14, 0, 14, 54);
+            _selDesc.rectTransform.offsetMin = new Vector2(14f, 160f);
+            _selStats = LGBuild.Label(_selContent, "", 11, Color.white, TextAnchor.UpperLeft, bold: true);
+            _selStats.rectTransform.Stretch(14, 0, 14, 140);
+            _selState = LGBuild.Label(_selContent, "", 10, new Color(1f, 0.55f, 0.45f), TextAnchor.UpperRight, bold: true);
+            _selState.rectTransform.Stretch(14, 0, 14, 140);
+            var xpCap = LGBuild.Label(_selContent, Loc.T("ОПЫТ"), 9, Muted, TextAnchor.UpperLeft, bold: true);
+            xpCap.rectTransform.Stretch(14, 0, 14, 160);
+            var xpHost = LGBuild.Rect(_selContent, "Xp");
+            xpHost.anchorMin = new Vector2(0f, 1f); xpHost.anchorMax = new Vector2(1f, 1f);
+            xpHost.offsetMin = new Vector2(52f, -170f); xpHost.offsetMax = new Vector2(-14f, -164f);
+            _selXp = LGBuild.Bar(xpHost, Gold, 0f, 5f);
+
+            // Способности (Z, X, C) и команды — квадратные кнопки, как в DoW
             string[] keys = { "Z", "X", "C" };
+            float x = 0f;
             for (int i = 0; i < s.Def.Abilities.Length && i < 3; i++)
             {
                 string id = s.Def.Abilities[i];
-                int slot = i;
-                var b = LGBuild.Button(_abilities, "Ab", UIManager.DS.BtnNeutral, new Color(1f, 0.8f, 0.4f, 0.5f), () =>
+                SquareButton(x, 0f, LGIcon.Target, keys[i], Abilities.Name(id), $"<b>{Abilities.Name(id)}</b>  ({keys[i]})\n{Abilities.Tip(id)}", () =>
                 {
                     if (Abilities.Instant(id)) Abilities.UseAt(GroundInput.Selected, id, s.Center, null);
                     else GroundInput.BeginAbilityTargeting(id);
-                }, null, null, 11);
-                ((RectTransform)b.transform).sizeDelta = new Vector2(150f, 40f);
-                var l = LGBuild.Label(b.transform, $"{Abilities.Name(id)}  <color=#8AA2A8>{keys[slot]}</color>", 11, Color.white, TextAnchor.MiddleCenter, bold: true);
-                var cd = LGBuild.Label(b.transform, "", 11, new Color(1f, 0.6f, 0.5f), TextAnchor.MiddleRight, bold: true);
-                cd.name = "Cd";
-                cd.rectTransform.Stretch(0, 0, 8, 0);
-                TooltipHelper.Attach(b.gameObject, $"<b>{Abilities.Name(id)}</b>\n{Abilities.Tip(id)}");
+                }, true);
+                x += 62f;
             }
-            var r = LGBuild.Button(_abilities, "Retreat", UIManager.DS.BtnNeutral, new Color(1f, 0.45f, 0.45f, 0.5f), () =>
+            SquareButton(0f, 58f, LGIcon.Back, "T", Loc.T("Отход"),
+                Loc.T("<b>Отступление</b>\nОтряд бегом уходит к точке высадки, получает вдвое меньше урона и не стреляет. Так сохраняют ветеранов"),
+                () => { foreach (var q in GroundInput.Selected) q.OrderRetreat(); }, false);
+            SquareButton(62f, 58f, LGIcon.Pause, "", Loc.T("Стоять"),
+                Loc.T("<b>Стоять</b>\nОтряд останавливается и занимает ближайшие укрытия"),
+                () => { foreach (var q in GroundInput.Selected) q.OrderMove(q.Center, false); GroundSfx.Radio(0.6f); }, false);
+            SquareButton(124f, 58f, LGIcon.Swords, "Ctrl", Loc.T("Атака"),
+                Loc.T("<b>Идти в атаке</b>\nCtrl + клик по земле: отряд идёт к точке и вступает в бой со всеми, кого встретит"),
+                () => Flash(Loc.T("Ctrl + клик по земле — идти в атаке"), Color.white), false);
+        }
+
+        private void SquareButton(float x, float y, LGIcon icon, string key, string label, string tip, System.Action act, bool ability)
+        {
+            var b = LGBuild.Button(_abilities, "Ab", new Color(0.12f, 0.1f, 0.08f, 1f), ability ? new Color(1f, 0.75f, 0.35f, 0.7f) : Bronze, act, null, null, 11);
+            var rt = (RectTransform)b.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0f, 0f);
+            rt.anchoredPosition = new Vector2(x, y);
+            rt.sizeDelta = new Vector2(56f, 52f);
+            var ic = LGIcons.Create(rt, icon, 20, Color.white);
+            ic.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(20f, 20f));
+            var l = LGBuild.Label(rt, label, 8, new Color(0.9f, 0.85f, 0.75f), TextAnchor.LowerCenter, bold: true);
+            l.rectTransform.Stretch(2, 4, 2, 0);
+            if (!string.IsNullOrEmpty(key))
             {
-                foreach (var x in GroundInput.Selected) x.OrderRetreat();
-            }, null, null, 11);
-            ((RectTransform)r.transform).sizeDelta = new Vector2(150f, 40f);
-            LGBuild.Label(r.transform, Loc.T("ОТСТУПИТЬ  <color=#8AA2A8>T</color>"), 11, Color.white, TextAnchor.MiddleCenter, bold: true);
-            TooltipHelper.Attach(r.gameObject, Loc.T("<b>Отступление</b>\nОтряд бегом уходит к точке высадки, получает вдвое меньше урона и не стреляет. Так сохраняют ветеранов"));
+                var k = LGBuild.Label(rt, key, 8, Gold, TextAnchor.UpperRight, bold: true);
+                k.rectTransform.Stretch(0, 0, 3, 2);
+            }
+            if (ability)
+            {
+                var cd = LGBuild.Label(rt, "", 14, new Color(1f, 0.6f, 0.5f), TextAnchor.MiddleCenter, bold: true);
+                cd.name = "Cd";
+            }
+            TooltipHelper.Attach(b.gameObject, tip);
         }
 
         private static string StateText(Squad s)
@@ -457,15 +572,30 @@ namespace StellarisClone.Ground
                     if (pl != null && side != pl && !s.VisibleTo[pl.Index]) continue;
                     var leader = s.Leader;
                     if (leader == null) continue;
-                    var sp = cam.WorldToScreenPoint(s.Center + Vector3.up * (leader.Rig.Height + 1.2f));
+                    var sp = cam.WorldToScreenPoint(s.Center + Vector3.up * (leader.Rig.Height + 1.6f));
                     if (sp.z < 0f || sp.x < -50f || sp.x > Screen.width + 50f || sp.y < -50f || sp.y > Screen.height + 50f) continue;
                     var tag = GetTag(i++);
                     tag.Root.gameObject.SetActive(true);
                     tag.Root.anchoredPosition = new Vector2(sp.x, sp.y) / Mathf.Max(0.01f, scale);
-                    LGBuild.SetBar(tag.Hp, s.Health01, side.Color);
+                    bool mine = pl == null || side == pl;
+                    Color band = mine ? new Color(0.3f, 0.62f, 1f) : new Color(0.9f, 0.18f, 0.15f);
+                    LGBuild.SetBar(tag.Hp, s.Health01, mine ? new Color(0.35f, 0.75f, 1f) : new Color(1f, 0.32f, 0.25f));
+                    tag.Band.color = band;
+                    tag.Frame.color = s.Selected ? new Color(1f, 0.82f, 0.4f, 1f) : new Color(0.06f, 0.05f, 0.04f, 0.92f);
+                    var kind = IconOf(s.Def);
+                    if (tag.IconKind != kind)
+                    {
+                        tag.IconKind = kind;
+                        if (tag.Icon != null) Destroy(tag.Icon.gameObject);
+                        tag.Icon = LGIcons.Create(tag.Root, kind, 16, Color.white);
+                        tag.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -1f), new Vector2(16f, 16f));
+                        tag.Icon.raycastTarget = false;
+                    }
+                    if (tag.Icon != null) tag.Icon.color = s.Broken || s.Retreating ? new Color(1f, 0.6f, 0.5f) : Color.white;
                     LGBuild.SetBar(tag.Morale, s.MaxMorale <= 0f ? 0f : s.Morale / s.MaxMorale, s.Broken ? new Color(1f, 0.4f, 0.3f) : new Color(0.95f, 0.85f, 0.4f));
                     tag.Morale.parent.parent.gameObject.SetActive(!s.Def.Fearless);
                     string state = s.Retreating ? Loc.T("◀ ОТСТУПАЕТ") : s.Broken ? Loc.T("СЛОМЛЕН") : s.Pinned ? Loc.T("▼ ПРИЖАТ") : s.InCover ? "◆" : "";
+                    if (!mine && state.Length > 1) state = "";
                     tag.State.text = state;
                     tag.State.color = s.InCover && !s.Pinned && !s.Broken && !s.Retreating ? (CoverQuality(s) >= 2 ? new Color(0.4f, 1f, 0.5f) : new Color(1f, 0.85f, 0.3f)) : new Color(1f, 0.55f, 0.45f);
                     tag.Chevrons.text = s.Veterancy > 0 ? new string('^', s.Veterancy) : "";
@@ -487,29 +617,34 @@ namespace StellarisClone.Ground
         private WorldTag GetTag(int i)
         {
             if (i < _tags.Count) return _tags[i];
+            // Метка как в Dawn of War: щиток с иконкой роли, полоса стороны сверху, здоровье над щитком
             var root = LGBuild.Rect(_world, "Tag");
             root.anchorMin = root.anchorMax = Vector2.zero;
-            root.sizeDelta = new Vector2(64f, 20f);
+            root.sizeDelta = new Vector2(30f, 30f);
+            var frame = LGBuild.Panel(root, "Frame", new Color(0.06f, 0.05f, 0.04f, 0.92f));
+            frame.rectTransform.Stretch(-2, -2, -2, -2);
+            var body = LGBuild.Panel(root, "Body", new Color(0.1f, 0.085f, 0.07f, 0.95f));
+            body.rectTransform.Stretch();
+            var band = LGBuild.Panel(root, "Band", Color.white);
+            band.rectTransform.anchorMin = new Vector2(0f, 1f); band.rectTransform.anchorMax = new Vector2(1f, 1f);
+            band.rectTransform.offsetMin = new Vector2(0f, -5f); band.rectTransform.offsetMax = Vector2.zero;
             var hpHost = LGBuild.Rect(root, "Hp");
-            hpHost.anchorMin = new Vector2(0f, 0.5f); hpHost.anchorMax = new Vector2(1f, 0.5f);
-            hpHost.offsetMin = new Vector2(0f, 1f); hpHost.offsetMax = new Vector2(0f, 6f);
+            hpHost.anchorMin = new Vector2(0.5f, 1f); hpHost.anchorMax = new Vector2(0.5f, 1f);
+            hpHost.offsetMin = new Vector2(-22f, 5f); hpHost.offsetMax = new Vector2(22f, 10f);
             var hp = LGBuild.Bar(hpHost, Color.white, 1f, 4f);
             var moHost = LGBuild.Rect(root, "Mo");
-            moHost.anchorMin = new Vector2(0f, 0.5f); moHost.anchorMax = new Vector2(1f, 0.5f);
-            moHost.offsetMin = new Vector2(0f, -5f); moHost.offsetMax = new Vector2(0f, 0f);
+            moHost.anchorMin = new Vector2(0.5f, 0f); moHost.anchorMax = new Vector2(0.5f, 0f);
+            moHost.offsetMin = new Vector2(-15f, -6f); moHost.offsetMax = new Vector2(15f, -3f);
             var mo = LGBuild.Bar(moHost, Color.yellow, 1f, 3f);
-            var state = LGBuild.Label(root, "", 10, Color.white, TextAnchor.LowerCenter, bold: true);
-            state.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 2f), new Vector2(160f, 16f));
+            var state = LGBuild.Label(root, "", 10, Color.white, TextAnchor.UpperCenter, bold: true);
+            state.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(160f, 16f));
             var callout = LGBuild.Label(root, "", 13, Color.white, TextAnchor.LowerCenter, bold: true);
-            callout.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(320f, 20f));
-            var chev = LGBuild.Label(root, "", 12, Gold, TextAnchor.MiddleLeft, bold: true);
-            chev.rectTransform.At(new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(30f, 16f));
-            var bracket = LGBuild.Panel(root, "Sel", new Color(0.4f, 1f, 0.7f, 0f));
-            bracket.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(74f, 28f));
-            var ol = bracket.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(0.4f, 1f, 0.7f, 0.9f);
-            ol.effectDistance = new Vector2(1.5f, 1.5f);
-            var tag = new WorldTag { Root = root, Hp = hp, Morale = mo, State = state, Callout = callout, Chevrons = chev, Bracket = bracket };
+            callout.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 22f), new Vector2(320f, 20f));
+            var chev = LGBuild.Label(root, "", 12, Gold, TextAnchor.LowerCenter, bold: true);
+            chev.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 9f), new Vector2(40f, 14f));
+            var bracket = LGBuild.Panel(root, "Sel", new Color(0f, 0f, 0f, 0f));
+            bracket.rectTransform.Stretch();
+            var tag = new WorldTag { Root = root, Hp = hp, Morale = mo, State = state, Callout = callout, Chevrons = chev, Bracket = bracket, Frame = frame, Band = band };
             _tags.Add(tag);
             return tag;
         }

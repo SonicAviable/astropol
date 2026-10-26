@@ -84,7 +84,7 @@ namespace StellarisClone.Ground
                 setup.Generator = planet.GetDistrictCount(DistrictType.Generator);
                 setup.Industrial = planet.GetDistrictCount(DistrictType.Industrial);
             }
-            setup.GarrisonSquads = Mathf.Clamp(2 + setup.Population / 4 + setup.Fortification * 2, 2, 10);
+            setup.GarrisonSquads = Mathf.Clamp(2 + setup.Population / 6 + setup.Fortification, 2, 7);
 
             // ---- Атакующий: флот на орбите, адмирал, ветераны ----
             var a = setup.Attacker;

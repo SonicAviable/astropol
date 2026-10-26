@@ -99,6 +99,7 @@ namespace StellarisClone.Ground
             BuildFortifications(map, root, rng, setup);
             Scatter(map, root, rng);
             Battlefield(map, root, rng);
+            Dressing(map, root, rng);
             if (map.HasRiver) BuildRiver(map, root);
             return map;
         }
@@ -581,7 +582,7 @@ namespace StellarisClone.Ground
                     for (int k = 0; k < 4; k++)
                         GroundMats.Box(bt, new Vector3(-2.4f + k * 1.6f, 0.35f, 2.9f), new Vector3(1.5f, 0.7f, 0.7f), bag, "Bag", null, 0.3f);
                     GroundMats.Box(bt, new Vector3(2.3f, 2.85f, -1.2f), new Vector3(0.6f, 0.5f, 0.6f), GroundMats.Lit(new Color(0.18f, 0.19f, 0.2f), 0.7f, 0.5f), "Vent", null, 0.05f);
-                    d.Weapon = new WeaponDef { Name = Loc.T("Пулемёт бункера"), Kind = WeaponKind.Heavy, Range = 44f, Damage = 7f, Cooldown = 0.14f, Accuracy = 0.4f, Suppression = 3f, Burst = 14, Reload = 2f };
+                    d.Weapon = new WeaponDef { Name = Loc.T("Пулемёт бункера"), Kind = WeaponKind.Heavy, Range = 40f, Damage = 5f, Cooldown = 0.15f, Accuracy = 0.35f, Suppression = 3f, Burst = 12, Reload = 2.5f };
                 }
             if (f >= 2)
             {
@@ -596,7 +597,7 @@ namespace StellarisClone.Ground
                     GroundMats.Part(tt, PrimitiveType.Cylinder, new Vector3(-0.22f, 1.75f, 2.3f), new Vector3(0.22f, 1.0f, 0.22f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
                     GroundMats.Part(tt, PrimitiveType.Cylinder, new Vector3(0.22f, 1.75f, 2.3f), new Vector3(0.22f, 1.0f, 0.22f), steel, "Barrel", Quaternion.Euler(90f, 0f, 0f));
                     GroundMats.Box(tt, new Vector3(0f, 2.35f, -0.4f), new Vector3(0.5f, 0.12f, 0.5f), slit, "Sensor", null, 0.03f);
-                    d.Weapon = new WeaponDef { Name = Loc.T("Автопушка турели"), Kind = WeaponKind.Heavy, Range = 46f, Damage = 16f, Cooldown = 0.4f, Accuracy = 0.45f, Suppression = 2.5f, Burst = 6, Reload = 2f, Pierce = 0.4f, Splash = 1.2f };
+                    d.Weapon = new WeaponDef { Name = Loc.T("Автопушка турели"), Kind = WeaponKind.Heavy, Range = 42f, Damage = 12f, Cooldown = 0.45f, Accuracy = 0.4f, Suppression = 2.5f, Burst = 6, Reload = 2.5f, Pierce = 0.4f, Splash = 1.2f };
                 }
                 // Минные поля на подступах к районам
                 foreach (var p in map.Points)
@@ -871,6 +872,158 @@ namespace StellarisClone.Ground
                 for (int k = 0; k < 3; k++)
                     GroundMats.MeshPart(d.Go.transform, ProcMesh.Rock(rng.Next()), new Vector3(Rand(rng, -len * 0.5f, len * 0.5f), 0.1f, Rand(rng, -1.6f, 1.6f)), Vector3.one * Rand(rng, 0.3f, 0.6f), wall, "Rubble");
             }
+        }
+
+
+        // ================================================================ Обстановка колонии
+
+        /// <summary>
+        /// Обстановка, которой поле «дышит», как в Dawn of War: металлические площадки с жёлто-чёрной разметкой
+        /// у районов, штаба и зоны высадки, фонари с тёплым светом, штабеля ящиков и бочек (лёгкое укрытие),
+        /// россыпь обломков по всему полю.
+        /// </summary>
+        private static void Dressing(GroundMap map, Transform root, Random rng)
+        {
+            var deckTex = DeckTexture(rng);
+            var deck = new Material(Rendering.ShaderCache.Lit) { name = "GroundDeck", hideFlags = HideFlags.DontSave };
+            if (deck.HasProperty("_BaseMap")) deck.SetTexture("_BaseMap", deckTex);
+            if (deck.HasProperty("_MainTex")) deck.SetTexture("_MainTex", deckTex);
+            if (deck.HasProperty("_Metallic")) deck.SetFloat("_Metallic", 0.55f);
+            if (deck.HasProperty("_Smoothness")) deck.SetFloat("_Smoothness", 0.38f);
+            map.Owned.Add(deckTex);
+            map.Owned.Add(deck);
+            var pole = GroundMats.Lit(new Color(0.1f, 0.1f, 0.11f), 0.8f, 0.45f);
+            var lampGlow = GroundMats.Glow(new Color(1f, 0.72f, 0.4f) * 3f);
+            var crateA = GroundMats.Lit(new Color(0.24f, 0.26f, 0.18f), 0.2f, 0.3f);
+            var crateB = GroundMats.Lit(new Color(0.3f, 0.22f, 0.14f), 0.1f, 0.25f);
+            var band = GroundMats.Lit(new Color(0.12f, 0.12f, 0.12f), 0.8f, 0.5f);
+            var barrelR = GroundMats.Lit(new Color(0.42f, 0.12f, 0.07f), 0.5f, 0.45f);
+            var barrelY = GroundMats.Lit(new Color(0.7f, 0.52f, 0.1f), 0.5f, 0.45f);
+            int lights = 0;
+
+            foreach (var f in map.Flats)
+            {
+                var c = map.ToWorld(f.c.x, f.c.y);
+                // Площадка
+                float side = f.r * 1.3f;
+                var plate = GroundMats.MeshPart(root, ProcMesh.FlatQuad, map.Snap(c) + Vector3.up * 0.05f, new Vector3(side, 1f, side), deck, "Deck",
+                    Quaternion.Euler(0f, rng.Next(4) * 90f, 0f));
+                plate.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // Фонари по углам площадки
+                for (int i = 0; i < 4 && lights < 18; i++)
+                {
+                    if (rng.NextDouble() < 0.35) continue;
+                    float a = (i * 90f + 45f) * Mathf.Deg2Rad;
+                    var w = map.Snap(c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * side * 0.62f);
+                    var go = new GameObject("Lamp");
+                    go.transform.SetParent(root, false);
+                    go.transform.position = w;
+                    go.transform.rotation = Quaternion.LookRotation((c - w).WithY(0f).normalized);
+                    GroundMats.Part(go.transform, PrimitiveType.Cylinder, new Vector3(0f, 2.6f, 0f), new Vector3(0.16f, 2.6f, 0.16f), pole, "Pole");
+                    GroundMats.Box(go.transform, new Vector3(0f, 0.25f, 0f), new Vector3(0.5f, 0.5f, 0.5f), pole, "Foot", null, 0.06f);
+                    GroundMats.Box(go.transform, new Vector3(0f, 5.1f, 0.5f), new Vector3(0.12f, 0.12f, 1.1f), pole, "Arm", null, 0.02f);
+                    GroundMats.Box(go.transform, new Vector3(0f, 4.95f, 1.0f), new Vector3(0.42f, 0.18f, 0.32f), pole, "Head", null, 0.04f);
+                    GroundMats.Box(go.transform, new Vector3(0f, 4.85f, 1.0f), new Vector3(0.34f, 0.04f, 0.24f), lampGlow, "Bulb", null, 0.01f);
+                    var l = new GameObject("LampLight").AddComponent<Light>();
+                    l.transform.SetParent(go.transform, false);
+                    l.transform.localPosition = new Vector3(0f, 4.6f, 1.0f);
+                    l.type = LightType.Point;
+                    l.color = new Color(1f, 0.68f, 0.38f);
+                    l.range = 13f;
+                    l.intensity = 2.6f;
+                    l.shadows = LightShadows.None;
+                    lights++;
+                }
+                // Ящики и бочки — лёгкое укрытие
+                int stacks = 2 + rng.Next(2);
+                for (int k = 0; k < stacks; k++)
+                {
+                    float a = (float)rng.NextDouble() * Mathf.PI * 2f;
+                    var w = map.Snap(c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * f.r * Rand(rng, 0.45f, 0.7f));
+                    var go = new GameObject("Supplies");
+                    go.transform.SetParent(root, false);
+                    go.transform.position = w;
+                    go.transform.rotation = Quaternion.Euler(0f, Rand(rng, 0f, 360f), 0f);
+                    int crates = 2 + rng.Next(3);
+                    for (int i = 0; i < crates; i++)
+                    {
+                        var size = new Vector3(Rand(rng, 0.9f, 1.4f), Rand(rng, 0.7f, 1.1f), Rand(rng, 0.9f, 1.4f));
+                        var pos = new Vector3((i % 2) * 1.35f - 0.6f, size.y * 0.5f + (i >= 2 ? 1f : 0f), (i / 2 % 2) * 0.2f);
+                        var cr = GroundMats.Box(go.transform, pos, size, rng.NextDouble() < 0.5 ? crateA : crateB, "Crate", Quaternion.Euler(0f, Rand(rng, -12f, 12f), 0f), 0.05f);
+                        GroundMats.Box(cr, Vector3.zero, new Vector3(size.x + 0.03f, 0.08f, size.z + 0.03f), band, "Strap", null, 0.01f);
+                    }
+                    int barrels = 2 + rng.Next(3);
+                    for (int i = 0; i < barrels; i++)
+                        GroundMats.Part(go.transform, PrimitiveType.Cylinder, new Vector3(1.6f + (i % 2) * 0.75f, 0.5f, -0.4f + (i / 2) * 0.75f), new Vector3(0.65f, 0.5f, 0.65f),
+                            rng.NextDouble() < 0.5 ? barrelR : barrelY, "Barrel");
+                    map.Cover.Add(map.Snap(w + go.transform.forward * 1.4f), CoverKind.Light, -go.transform.forward);
+                    map.Cover.Add(map.Snap(w - go.transform.forward * 1.4f), CoverKind.Light, go.transform.forward);
+                }
+            }
+
+            // Обломки и камешки по всему полю (без коллайдеров)
+            var rubble = GroundMats.Lit(Color.Lerp(map.Biome.Rock, map.Biome.GroundB, 0.4f) * 0.9f, 0.05f, 0.2f);
+            var metal = GroundMats.Lit(new Color(0.18f, 0.16f, 0.15f), 0.7f, 0.35f);
+            for (int i = 0; i < 160; i++)
+            {
+                var l = new Vector2(Rand(rng, -118f, 118f), Rand(rng, -110f, 110f));
+                var w = map.ToWorld(l.x, l.y);
+                if (map.InRiver(w, 1f)) continue;
+                w = map.Snap(w);
+                if (rng.NextDouble() < 0.75)
+                    GroundMats.MeshPart(root, ProcMesh.Rock(rng.Next()), w, Vector3.one * Rand(rng, 0.12f, 0.45f), rubble, "Pebble",
+                        Quaternion.Euler(Rand(rng, 0f, 360f), Rand(rng, 0f, 360f), Rand(rng, 0f, 360f)));
+                else
+                    GroundMats.Box(root, w + Vector3.up * 0.05f, new Vector3(Rand(rng, 0.3f, 1.4f), 0.06f, Rand(rng, 0.2f, 0.8f)), metal, "Scrap",
+                        Quaternion.Euler(Rand(rng, -10f, 10f), Rand(rng, 0f, 360f), Rand(rng, -10f, 10f)), 0.01f);
+            }
+        }
+
+        /// <summary>Настил площадки: стальные плиты со швами и заклёпками, грязь и копоть, жёлто-чёрная разметка по краю.</summary>
+        private static Texture2D DeckTexture(Random rng)
+        {
+            const int N = 512;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "Deck", wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave, anisoLevel = 8 };
+            var px = new Color[N * N];
+            float ox = (float)rng.NextDouble() * 50f;
+            const int plates = 4;
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float u = x / (float)N, v = y / (float)N;
+                    int pxI = (int)(u * plates), pyI = (int)(v * plates);
+                    float fu = u * plates - pxI, fv = v * plates - pyI;
+                    float tone = 0.34f + ((pxI * 7 + pyI * 13) % 5) * 0.012f;
+                    var c = new Color(tone, tone * 0.98f, tone * 0.95f);
+                    // Рифление плит
+                    float tread = Mathf.Abs(Mathf.Sin((u + v) * 260f)) > 0.92f ? 0.04f : 0f;
+                    c += new Color(tread, tread, tread);
+                    // Швы и заклёпки
+                    float seam = Mathf.Min(Mathf.Min(fu, 1f - fu), Mathf.Min(fv, 1f - fv));
+                    if (seam < 0.012f) c *= 0.35f;
+                    else if (seam < 0.03f) c *= 1.12f;
+                    foreach (var cu in new[] { 0.06f, 0.94f })
+                        foreach (var cv in new[] { 0.06f, 0.94f })
+                            if ((fu - cu) * (fu - cu) + (fv - cv) * (fv - cv) < 0.00025f) c = new Color(0.55f, 0.53f, 0.5f);
+                    // Грязь и копоть
+                    float grime = Mathf.PerlinNoise(u * 6f + ox, v * 6f);
+                    c *= Mathf.Lerp(0.6f, 1.05f, grime);
+                    float soot = Mathf.PerlinNoise(u * 2.2f + ox * 2f, v * 2.2f + 3f);
+                    if (soot > 0.66f) c *= Mathf.Lerp(1f, 0.45f, (soot - 0.66f) * 3f);
+                    // Жёлто-чёрная разметка по краю
+                    float edge = Mathf.Min(Mathf.Min(u, 1f - u), Mathf.Min(v, 1f - v));
+                    if (edge < 0.05f && edge > 0.012f)
+                    {
+                        bool yellow = Mathf.Repeat((u + v) * 22f, 1f) < 0.5f;
+                        var stripe = yellow ? new Color(0.78f, 0.6f, 0.08f) : new Color(0.06f, 0.06f, 0.06f);
+                        c = Color.Lerp(c, stripe * Mathf.Lerp(0.65f, 1f, grime), 0.9f);
+                    }
+                    c.a = 1f;
+                    px[y * N + x] = c;
+                }
+            tex.SetPixels(px);
+            tex.Apply(true);
+            return tex;
         }
 
         // ================================================================ Навмеш

@@ -6511,3 +6511,25 @@ T — отступление: отряд бежит к маяку, получа�
 Выключено: вместо крови — пыль и искры, без ошмётков. Рейтинг 16+	Off: dust and sparks instead of blood, no gibs. Rated 16+
 Кинокамера добиваний	Kill-cam for executions
 Замедление и наезд камеры, когда герой или техника добивает врага	Slow motion and a camera push-in when a hero or vehicle finishes off an enemy
+Линейная пехота	Line infantry
+Штурмовая пехота ближнего боя	Close-combat assault infantry
+Пехота подавления	Suppression infantry
+Противотанковая пехота	Anti-tank infantry
+Разведка и снайперы	Recon and snipers
+Зачистка укрытий	Cover clearing
+Лёгкая техника	Light vehicle
+Тяжёлая техника	Heavy vehicle
+Командир	Commander
+Сверхтяжёлый шагоход	Super-heavy walker
+Рой дронов	Drone swarm
+Псайкер	Psyker
+Прочность {0:0}%   ·   Убито {1}	Integrity {0:0}%   ·   Kills {1}
+Бойцов {0}/{1}   ·   Здоровье {2:0}%   ·   Убито {3}	Models {0}/{1}   ·   Health {2:0}%   ·   Kills {3}
+{0}  (+{1})	{0}  (+{1})
+ОПЫТ	EXPERIENCE
+Отход	Fall back
+Стоять	Hold
+<b>Стоять</b>\nОтряд останавливается и занимает ближайшие укрытия	<b>Hold</b>\nThe squad stops and takes the nearest cover
+Атака	Attack
+<b>Идти в атаке</b>\nCtrl + клик по земле: отряд идёт к точке и вступает в бой со всеми, кого встретит	<b>Attack-move</b>\nCtrl + click on the ground: the squad moves to the point and engages everyone it meets
+Ctrl + клик по земле — идти в атаке	Ctrl + click on the ground — attack-move

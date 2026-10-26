@@ -6,7 +6,7 @@ namespace StellarisClone.Ground
 {
     /// <summary>
     /// Управление боем: ЛКМ/рамка — выделение (двойной клик — все такие же на экране), ПКМ — идти/атаковать,
-    /// A+ЛКМ — идти в атаке, T — отступление, Z/X/C — способности отряда, B — подкрепления (ЛКМ по земле — место капсулы),
+    /// Ctrl+ЛКМ / Ctrl+ПКМ — идти в атаке (A свободна для камеры), T — отступление, Z/X/C — способности отряда, B — подкрепления (ЛКМ по земле — место капсулы),
     /// O — орбитальный удар, Ctrl+1…9 / 1…9 — группы, Пробел — тактическая пауза, +/− — скорость, Esc — отмена.
     /// </summary>
     public sealed class GroundInput : MonoBehaviour
@@ -17,7 +17,7 @@ namespace StellarisClone.Ground
         public static UnitDef ReinforceDef { get; private set; }
         public static string AbilityId { get; private set; }
         /// <summary>A зажата при выделенных отрядах — ЛКМ отдаёт приказ «идти в атаке» (камера на A не едет).</summary>
-        public static bool AttackModifier => Input.GetKey(KeyCode.A) && s_selected.Count > 0;
+        public static bool AttackModifier => (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && s_selected.Count > 0;
 
         private static readonly List<Squad> s_selected = new List<Squad>();
         public static IReadOnlyList<Squad> Selected => s_selected;
@@ -148,7 +148,7 @@ namespace StellarisClone.Ground
                     gm.Hud?.Ping(d.Pos, new Color(1f, 0.3f, 0.25f));
                     GroundSfx.Radio(0.75f);
                 }
-                else if (gm.Cam.GroundUnderMouse(out var p)) IssueMove(p, false);
+                else if (gm.Cam.GroundUnderMouse(out var p)) IssueMove(p, AttackModifier);
             }
         }
 
