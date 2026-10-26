@@ -39,6 +39,8 @@ namespace StellarisClone.Core
             if (GetComponent<ThreatManager>() == null) gameObject.AddComponent<ThreatManager>();
             if (GetComponent<AutoExplore>() == null) gameObject.AddComponent<AutoExplore>();
             if (GetComponent<StarbaseVisuals>() == null) gameObject.AddComponent<StarbaseVisuals>();
+            if (GetComponent<WonderManager>() == null) gameObject.AddComponent<WonderManager>();
+            if (GetComponent<WonderVisuals>() == null) gameObject.AddComponent<WonderVisuals>();
             Vision.Reset();
             Contacts.Reset();
             if (GetComponent<ContactGreeter>() == null) gameObject.AddComponent<ContactGreeter>();
@@ -121,6 +123,9 @@ namespace StellarisClone.Core
 
         private string _lastChainNote;
         private int _lastChainFrame = -1;
+
+        /// <summary>Показать готовое окно (например, о завершении этапа чуда) — в общей очереди событий.</summary>
+        public void Present(GameEventData ev) => Fire(ev);
 
         private void Fire(GameEventData ev)
         {

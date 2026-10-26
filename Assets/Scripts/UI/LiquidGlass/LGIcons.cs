@@ -24,7 +24,9 @@ namespace StellarisClone.Rendering
         // Модули и корпуса кораблей
         Laser, Cannon, Missile, ShieldDome, ArmorPlate, Thruster, Corvette, Frigate, Destroyer,
         // Гражданские корабли (рисованные: Resources/UI/Icons/scienceship.png, constructorship.png)
-        ScienceShip, ConstructorShip
+        ScienceShip, ConstructorShip,
+        // Чудо фракции (рисованное: Resources/UI/Icons/wonder.png; без него — звезда)
+        Wonder
     }
 
     /// <summary>
@@ -356,6 +358,7 @@ namespace StellarisClone.Rendering
                 // Векторный запас для гражданских кораблей — значки их работы
                 case LGIcon.ScienceShip: return Shape(LGIcon.Sensors);
                 case LGIcon.ConstructorShip: return Shape(LGIcon.Construction);
+                case LGIcon.Wonder: return Shape(LGIcon.Star);
 
                 case LGIcon.Energy:
                     return p => U(

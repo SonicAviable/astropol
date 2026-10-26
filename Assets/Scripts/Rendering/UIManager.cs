@@ -552,7 +552,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 10 * 46f + 30f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 11 * 46f + 30f);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
@@ -635,6 +635,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ToggleWindow(NavWindow.Designer), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"), "N");
             Item("NavFleet", LGIcon.Fleet, Loc.T("Флот"), DS.NeonCyan, SelectAllWarships, null, Loc.T("<b>Флот</b>\nВыделить все военные флоты"), "G");
             Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, null, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V");
+            Item("NavWonder", LGIcon.Wonder, Loc.T("Чудо фракции"), new Color(1f, 0.78f, 0.35f), () => ToggleWindow(NavWindow.Wonder), null,
+                 Loc.T("<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников"), "U");
             Item("NavHelp", LGIcon.Info, Loc.T("Справка"), DS.TextMuted, () => ToggleWindow(NavWindow.Help), null,
                  Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново"), "F1");
 
@@ -758,7 +760,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         // ---------- Главные окна: клавиши и «одно окно за раз» ----------
 
-        public enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Help }
+        public enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Wonder, Help }
 
         /// <summary>Открыть главное окно (если уже открыто — оставить), остальные закрыть. Для целей и подсказок.</summary>
         public void OpenNavWindow(NavWindow w)
@@ -776,6 +778,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             NavWindow.Espionage => EspionageWindow.Instance != null && EspionageWindow.Instance.IsOpen,
             NavWindow.Designer => ShipDesignerModal.Instance != null && ShipDesignerModal.Instance.IsOpen,
             NavWindow.Victory => VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen,
+            NavWindow.Wonder => WonderWindow.Instance != null && WonderWindow.Instance.IsOpen,
             _ => HelpOverlay.IsOpenNow
         };
 
@@ -792,6 +795,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 case NavWindow.Espionage: EspionageWindow.Instance.Close(); break;
                 case NavWindow.Designer: ShipDesignerModal.Instance.Close(); break;
                 case NavWindow.Victory: VictoryPathWindow.Instance.Close(); break;
+                case NavWindow.Wonder: WonderWindow.Instance.Close(); break;
                 case NavWindow.Help: HelpOverlay.Instance.Close(); break;
             }
         }
@@ -817,6 +821,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 case NavWindow.Espionage: OpenEspionageModal(); break;
                 case NavWindow.Designer: ShipDesignerModal.Instance?.Open(); break;
                 case NavWindow.Victory: VictoryPathWindow.Toggle(); break;
+                case NavWindow.Wonder: WonderWindow.Toggle(_activeSystem); break;
                 case NavWindow.Help: HelpOverlay.Toggle(); break;
             }
         }
@@ -839,6 +844,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else if (Input.GetKeyDown(KeyCode.P) && Contacts.PlayerMetAnyEmpire) ToggleWindow(NavWindow.Diplomacy);
             else if (Input.GetKeyDown(KeyCode.K)) ToggleWindow(NavWindow.Espionage);
             else if (Input.GetKeyDown(KeyCode.N)) ToggleWindow(NavWindow.Designer);
+            else if (Input.GetKeyDown(KeyCode.U)) ToggleWindow(NavWindow.Wonder);
             else if (Input.GetKeyDown(KeyCode.G)) { CloseMainWindows(null); SelectAllWarships(); }
             else if (Input.GetKeyDown(KeyCode.C)) CloseMainWindows(NavWindow.Colonies);
             else if (Input.GetKeyDown(KeyCode.V)) CloseMainWindows(NavWindow.Victory);

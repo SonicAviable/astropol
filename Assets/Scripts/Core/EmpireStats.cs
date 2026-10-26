@@ -97,8 +97,8 @@ namespace StellarisClone.Core
 
         public struct ScoreBreakdown
         {
-            public int Systems, Population, Techs, Military;
-            public int Total => Systems + Population + Techs + Military;
+            public int Systems, Population, Techs, Military, Wonders;
+            public int Total => Systems + Population + Techs + Military + Wonders;
         }
 
         public static ScoreBreakdown Score(int owner) => new ScoreBreakdown
@@ -106,7 +106,8 @@ namespace StellarisClone.Core
             Systems = SystemCount(owner) * ScorePerSystem,
             Population = Population(owner) * ScorePerPop,
             Techs = TechCount(owner) * ScorePerTech,
-            Military = Mathf.RoundToInt(MilitaryPower(owner) * ScorePerPower)
+            Military = Mathf.RoundToInt(MilitaryPower(owner) * ScorePerPower),
+            Wonders = WonderManager.ScoreOf(owner)
         };
 
         // ==================== ЭКОНОМИКА И ГОЛОСА (пути к победе) ====================

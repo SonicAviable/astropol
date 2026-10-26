@@ -692,6 +692,28 @@ namespace StellarisClone.Rendering
             else if (Data.Path.Count == 0 && Data.OwnerId == 0) Data.HasPlayerOrder = false;
         }
 
+        /// <summary>
+        /// Переход через Врата Провидения: флот на орбите (не в бою) мгновенно оказывается в системе systemId.
+        /// Маршрут и очередь приказов сбрасываются. false — флот сейчас не может пройти.
+        /// </summary>
+        public bool GateTransfer(int systemId)
+        {
+            if (Data == null || Data.Destroyed || Data.State != FleetState.Orbiting || Data.InCombat) return false;
+            if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return false;
+            Color c = FleetIndicator.OwnerColor(Data.OwnerId);
+            Vector3 from = transform.position;
+            Vector3 dir = (_generator.Systems[systemId].Position - from).normalized;
+            if (ShowJumpFx()) JumpFx.Departure(from, dir, c);
+            Data.Path.Clear();
+            Data.OrderQueue.Clear();
+            Data.HasPlayerOrder = false;
+            Data.CurrentSystemId = systemId;
+            Data.TargetSystemId = -1;
+            SnapToCurrentSystem(instant: true);
+            if (ShowJumpFx()) JumpFx.Arrival(transform.position, dir, c);
+            return true;
+        }
+
         /// <summary>Ярлык над кораблём: пересобирается только при смене текста, по центру над кораблём.</summary>
         private void UpdateTag(string label, int more, bool near)
         {

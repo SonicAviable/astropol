@@ -79,6 +79,8 @@ namespace StellarisClone.Core
         public List<StarbaseSave> Starbases = new List<StarbaseSave>();
         public LeaderState Leaders;
         public EventState Events;
+        /// <summary>Чудеса фракций (старые сохранения — null).</summary>
+        public List<WonderSave> Wonders;
         public List<TimedEffect> Effects;
         /// <summary>Виды галактики (null — старое сохранение).</summary>
         public List<Species> Species;
@@ -487,6 +489,7 @@ namespace StellarisClone.Core
             if (AnomalyEventSystem.Instance != null) s.Events = AnomalyEventSystem.Instance.CaptureState();
             s.Effects = EmpireEffects.Capture();
             s.Species = SpeciesRegistry.Capture();
+            if (WonderManager.Instance != null) s.Wonders = WonderManager.Instance.CaptureState();
             if (ThreatManager.Instance != null) s.Threats = ThreatManager.Instance.CaptureState();
             if (EspionageManager.Instance != null) s.Espionage = EspionageManager.Instance.CaptureState();
             s.Laws = EmpireLaws.Capture();
@@ -880,6 +883,8 @@ namespace StellarisClone.Core
             NeutralWorlds.Restore(s.Neutrals);
             if (s.Neutrals == null) BorderRules.GrandfatherOldSave();   // до границ: открыть их, где нет вражды
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
+            // После технологий и ИИ: множители чудес накладываются на уже пересобранные бонусы
+            WonderManager.Instance?.RestoreState(s.Wonders);
 
             if (s.HasCamera)
             {

@@ -689,7 +689,10 @@ namespace StellarisClone.Rendering
             ApplySkyMood(isolate);
         }
 
-        private Color GetStellarisColor(StarSpectralClass c) => c switch
+        private Color GetStellarisColor(StarSpectralClass c) => StarColor(c);
+
+        /// <summary>Цвет звезды по спектральному классу (карта, студии окон).</summary>
+        public static Color StarColor(StarSpectralClass c) => c switch
         {
             StarSpectralClass.ClassM => new Color(1.00f, 0.35f, 0.25f),
             StarSpectralClass.ClassK => new Color(1.00f, 0.65f, 0.30f),
