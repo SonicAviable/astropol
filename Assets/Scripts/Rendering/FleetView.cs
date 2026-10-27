@@ -476,6 +476,20 @@ namespace StellarisClone.Rendering
                     Loc.T("ПКМ по системе — двигаться\n\n") +
                     Loc.F("<i>Состояние: {0}</i>", Data.State)
             };
+            // У боевых кораблей подсказка живая: прочность и десант на борту меняются
+            _worldTooltip.Dynamic = Data.Type == FleetType.Military ? (System.Func<string>)MilitaryTooltip : null;
+        }
+
+        private string MilitaryTooltip()
+        {
+            var d = Data;
+            if (d == null) return "";
+            string troops = StellarisClone.Cards.ArmyManager.TroopSummary(d);
+            return $"<b>{d.Name}</b>\n" +
+                   Loc.F("<color=#66E0FF>Боевой корабль</color> · ⚔ {0}\n", d.MilitaryPower) +
+                   Loc.F("Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n", d.HullPoints, d.MaxHullPoints, d.ArmorPoints, d.ShieldPoints) +
+                   (troops != null ? "\n" + troops + "\n" : "") +
+                   (d.OwnerId == 0 ? Loc.T("\nЛКМ — выбрать\nПКМ по системе — двигаться") : "");
         }
 
         public bool IsSelected => _isSelected;

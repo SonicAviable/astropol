@@ -366,6 +366,34 @@ namespace StellarisClone.Cards
 
         private static float Score(CardInstance c) => c.D == null ? 0 : c.D.Power * 2 + c.D.Armor * 0.5f + c.D.Cost + c.Stars * 2;
 
+        /// <summary>
+        /// Состав десанта корабля для подсказок: «Десант 2/2» и список карт с уроном и бронёй.
+        /// null — у корабля нет десантных мест.
+        /// </summary>
+        public static string TroopSummary(FleetData d, bool header = true)
+        {
+            var am = Instance;
+            if (am == null || d == null) return null;
+            int cap = Capacity(d);
+            if (cap <= 0) return null;
+            var cards = am.OnFleet(d.Id);
+            var sb = new System.Text.StringBuilder();
+            if (header) sb.Append(Loc.F("<color=#F2C766><b>Десант</b> · мест {0}/{1}</color>", am.Used(d.Id), cap));
+            if (cards.Count == 0) sb.Append(header ? "\n" : "").Append(Loc.T("<color=#8AA2A8>Трюм пуст — загрузите карты в «Арсенале» (J)</color>"));
+            foreach (var c in cards)
+            {
+                var def = c.D;
+                if (def == null) continue;
+                sb.Append('\n').Append("• ").Append(def.Name);
+                if (c.Stars > 0) sb.Append(" <color=#FFD15C>").Append(new string('★', Mathf.Min(3, c.Stars))).Append("</color>");
+                if (def.IsBoardUnit) sb.Append(Loc.F("  <color=#FFC94D>урон {0}</color> · <color=#FF7B6E>броня {1}</color>", def.Power, def.Armor));
+                else sb.Append(Loc.F("  <color=#B48CFF>{0}</color>", def.KindName.ToLower()));
+                if (c.Wounded) sb.Append(Loc.F("  <color=#FF8080>ранен, {0} дн.</color>", c.WoundDays));
+            }
+            if (d.OwnerId == 0 && cards.Count > 0) sb.Append('\n').Append(am.AutoLoad(d.Id) ? Loc.T("<color=#8AA2A8>Автопогрузка включена</color>") : Loc.T("<color=#8AA2A8>Автопогрузка выключена</color>"));
+            return sb.ToString();
+        }
+
         public static FleetData FindFleet(int id)
         {
             var fm = FleetManager.Instance;

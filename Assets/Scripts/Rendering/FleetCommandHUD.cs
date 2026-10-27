@@ -555,8 +555,18 @@ namespace StellarisClone.Rendering
                     Loc.T("<b>Цена форпоста</b>\nВлияние за новую систему"));
                 SetChip(c++, LGIcon.Alloys, new Color(0.85f, 0.7f, 1f), $"{FactionTraits.StarbaseAlloys(d.OwnerId):0}", Loc.T("<b>Сплавы на форпост</b>"));
             }
-            SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), Loc.F("{0:0} дн/прыжок", FleetRoute.DaysPerJump(d)),
-                Loc.F("<b>Скорость</b>\nДней на один гиперпрыжок · содержание {0:0.#} энергии в месяц", d.UpkeepEnergy));
+            string troops = d.Type == FleetType.Military ? StellarisClone.Cards.ArmyManager.TroopSummary(d) : null;
+            var am = StellarisClone.Cards.ArmyManager.Instance;
+            if (troops != null && am != null)
+            {
+                // Десант на борту вместо скорости (скорость — в подсказке)
+                int used = am.Used(d.Id), cap = StellarisClone.Cards.ArmyManager.Capacity(d);
+                SetChip(c++, LGIcon.Population, used > 0 ? new Color(1f, 0.82f, 0.4f) : UIManager.DS.TextMuted, Loc.F("десант {0}/{1}", used, cap),
+                    troops + Loc.F("\n\n<color=#8AA2A8>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>", FleetRoute.DaysPerJump(d), d.UpkeepEnergy));
+            }
+            else
+                SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), Loc.F("{0:0} дн/прыжок", FleetRoute.DaysPerJump(d)),
+                    Loc.F("<b>Скорость</b>\nДней на один гиперпрыжок · содержание {0:0.#} энергии в месяц", d.UpkeepEnergy));
             for (; c < _chips.Length; c++) _chips[c].Go.SetActive(false);
         }
 

@@ -334,6 +334,8 @@ namespace StellarisClone.Rendering
     public class WorldTooltipTrigger : MonoBehaviour
     {
         [TextArea(2, 6)] public string text;
+        /// <summary>Живой текст (пересчитывается при каждом наведении) — вместо статичного text.</summary>
+        public System.Func<string> Dynamic;
         private SystemNameplate _nameplate;
         private bool _hovered;
         private string _shown;
@@ -365,7 +367,7 @@ namespace StellarisClone.Rendering
 
             if (hitThis)
             {
-                string currentText = _nameplate != null ? _nameplate.GetTooltipContent() : text;
+                string currentText = _nameplate != null ? _nameplate.GetTooltipContent() : Dynamic != null ? Dynamic() : text;
 
                 if (!_hovered)
                 {

@@ -6598,3 +6598,49 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 <b>Щит Штаба</b>\nЭнергетический купол над защитниками Штаба. Пока он стоит, прорыв в Штаб невозможен.\nКупол держится, пока электростанция у защитника. Снять его: захватить сектор «Электростанция» или применить «Диверсию» / ЭМИ.	<b>HQ Shield</b>\nAn energy dome over the HQ defenders. While it stands, a breach into the HQ is impossible.\nThe dome holds while the defender controls the power plant. To take it down, capture the "Power Plant" sector or use "Sabotage" / EMP.
 СКОРОСТЬ	SPEED
 ЩИТ СНЯТ	SHIELD DOWN
+<color=#F2C766><b>Десант</b> · мест {0}/{1}</color>	<color=#F2C766><b>Troops</b> · slots {0}/{1}</color>
+<color=#8AA2A8>Трюм пуст — загрузите карты в «Арсенале» (J)</color>	<color=#8AA2A8>Hold is empty — load cards in the "Arsenal" (J)</color>
+  <color=#FFC94D>урон {0}</color> · <color=#FF7B6E>броня {1}</color>	  <color=#FFC94D>damage {0}</color> · <color=#FF7B6E>armor {1}</color>
+  <color=#FF8080>ранен, {0} дн.</color>	  <color=#FF8080>wounded, {0} d.</color>
+<color=#8AA2A8>Автопогрузка включена</color>	<color=#8AA2A8>Auto-load on</color>
+<color=#8AA2A8>Автопогрузка выключена</color>	<color=#8AA2A8>Auto-load off</color>
+Наземные войска для штурма колоний: производство, десант на кораблях, гарнизоны	Ground forces for assaulting colonies: production, troops on ships, garrisons
+Предыдущая колония	Previous colony
+Следующая колония	Next colony
+КАРТ	CARDS
+Всего карт наземных войск	Total ground force cards
+НА КОРАБЛЯХ	ON SHIPS
+Десант на кораблях — пойдёт в бой при штурме	Troops on ships — they fight in an assault
+В РЕЗЕРВЕ	IN RESERVE
+Готовые карты на колониях — ждут погрузки	Ready cards at colonies — waiting to be loaded
+ГАРНИЗОНЫ	GARRISONS
+Защитники колоний — не покидают их	Colony defenders — they never leave
+ГЕЛИЯ/МЕС	HELIUM/MO
+Содержание армии в месяц	Army upkeep per month
+РАНЕНЫ	WOUNDED
+Раненые не грузятся на корабли, пока не вылечатся	The wounded can't board ships until they heal
+Набираются из жителей колонии: нужен городской район, призывников не больше половины жителей	Recruited from colonists: requires an urban district, conscripts are capped at half the population
+Собираются на заводах: нужен промышленный район	Assembled at factories: requires an industrial district
+Выдаёт штаб в столице — сразу, без очереди	Issued by the HQ in the capital — instantly, no queue
+Строятся на месте и защищают колонию при штурме — на корабли не грузятся	Built on site and defend the colony during an assault — never loaded onto ships
+НЕТ КОЛОНИЙ	NO COLONIES
+жители <color=#F2E2C4>{0}</color>   ·   городских районов <color=#F2E2C4>{1}</color>   ·   промышленных <color=#F2E2C4>{2}</color>   ·   укрепления <color=#F2E2C4>{3}</color>	pop <color=#F2E2C4>{0}</color>   ·   urban districts <color=#F2E2C4>{1}</color>   ·   industrial <color=#F2E2C4>{2}</color>   ·   fortifications <color=#F2E2C4>{3}</color>
+{0}д	{0}d
+НЕДОСТУПНО	UNAVAILABLE
+НЕ ХВАТАЕТ	CAN'T AFFORD
+\n<color=#8AA2A8>Содержание: {0:0.#} гелия в месяц</color>	\n<color=#8AA2A8>Upkeep: {0:0.#} Helium-3 per month</color>
+\n<color=#8AA2A8>Мест на корабле: {0}</color>	\n<color=#8AA2A8>Ship slots: {0}</color>
+Корвет берёт 1 место, фрегат — 2, эсминец — 4. Приказы места не занимают	A corvette carries 1 slot, a frigate 2, a destroyer 4. Orders take no slots
+Нет военных кораблей — постройте корвет, фрегат или эсминец	No warships — build a corvette, frigate or destroyer
+Клик по карте резерва — погрузить на корабль у этой колонии	Click a reserve card to load it onto a ship at this colony
+{0}   ·   мест <b>{1}/{2}</b>	{0}   ·   slots <b>{1}/{2}</b>
+АВТО: ВКЛ	AUTO: ON
+АВТО: ВЫКЛ	AUTO: OFF
+резерв {0} · гарнизон {1}	reserve {0} · garrison {1}
+   ·   клик по карте — погрузить	   ·   click a card to load
+   ·   у колонии нет кораблей	   ·   no ships at the colony
+ГАРНИЗОН — ЗАЩИЩАЕТ КОЛОНИЮ ПРИ ШТУРМЕ	GARRISON — DEFENDS THE COLONY IN AN ASSAULT
+десант {0}/{1}	troops {0}/{1}
+\n\n<color=#8AA2A8>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>	\n\n<color=#8AA2A8>Speed: {0:0} d/jump · upkeep {1:0.#} energy per month</color>
+Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n	Hull {0:0}/{1:0}  Armor {2:0}  Shields {3:0}\n
+\nЛКМ — выбрать\nПКМ по системе — двигаться	\nLMB — select\nRMB on a system — move
