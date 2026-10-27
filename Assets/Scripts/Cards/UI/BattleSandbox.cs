@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,9 +7,11 @@ using StellarisClone.Core;
 namespace StellarisClone.Cards
 {
     /// <summary>
-    /// Тестовый карточный бой — только в редакторе Unity. В Play Mode, в любом месте игры (и в главном меню):
+    /// Тестовый карточный бой. В любом месте игры (и в главном меню):
     ///   F10 — штурм (вы атакуете), Shift+F10 — оборона (вы защищаете колонию),
-    ///   Ctrl+F10 — 200 автобоёв без экрана, сводка баланса в консоль.
+    ///   Ctrl+F10 — 200 автобоёв без экрана, сводка баланса в консоль (только в редакторе).
+    /// ВРЕМЕННО клавиша работает и в обычной сборке игры (<see cref="InBuild"/>) — для показа и проверки боя;
+    /// перед релизом поставить InBuild = false. Тестовый бой не трогает партию: колоды случайные, итог никуда не пишется.
     /// Колоды и укрепления случайные; фракция игрока — из партии, если она начата, иначе случайная.
     /// Пункты меню «Astropolity → Тестовый бой» (Editor/CardBattleTestMenu.cs) запускают то же и из режима правки.
     /// </summary>
@@ -18,6 +19,9 @@ namespace StellarisClone.Cards
     {
         private static readonly string[] Factions = { "astrea", "xarn", "aquila", "iridia", "terraan", "nol" };
         private static readonly string[] Common = { "U1", "U1", "U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "O1", "O2", "O3", "O4", "O5", "O6", "O7", "O9" };
+
+        /// <summary>ВРЕМЕННО: F10 открывает тестовый бой и в сборке игры. Перед релизом — false.</summary>
+        public static readonly bool InBuild = true;
 
         /// <summary>Отложенный запуск после входа в Play Mode из меню редактора: 1 — штурм, 2 — оборона.</summary>
         public const string PendingKey = "Astropolity.TestBattle";
@@ -29,12 +33,15 @@ namespace StellarisClone.Cards
         private static void Boot()
         {
             if (s_instance != null) return;
-            var go = new GameObject("[Debug] CardBattleSandbox");
+            if (!Application.isEditor && !InBuild) return;
+            var go = new GameObject("[Test] CardBattleSandbox");
             DontDestroyOnLoad(go);
             s_instance = go.AddComponent<BattleSandbox>();
+#if UNITY_EDITOR
             int pending = UnityEditor.SessionState.GetInt(PendingKey, 0);
             UnityEditor.SessionState.EraseInt(PendingKey);
             if (pending > 0) s_instance.StartCoroutine(s_instance.Delayed(pending == 2));
+#endif
         }
 
         private IEnumerator Delayed(bool defend)
@@ -50,7 +57,7 @@ namespace StellarisClone.Cards
             if (!Input.GetKeyDown(KeyCode.F10)) return;
             bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.LeftCommand);
             bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            if (ctrl) RunAutoBatch(200);
+            if (ctrl) { if (Application.isEditor) RunAutoBatch(200); }
             else StartTest(shift);
         }
 
@@ -156,4 +163,3 @@ namespace StellarisClone.Cards
         }
     }
 }
-#endif
