@@ -6273,3 +6273,306 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Чудо фракции	Faction Wonder
 <b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников	<b>Faction Wonder</b>\nYour faction's megastructure: stages, construction site, Gate Network, rival wonders
 <color=#F2C747><b>ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}</b></color>\n	<color=#F2C747><b>CHAIN “{0}”  ·  CHAPTER {1}</b></color>\n
+Бой окончен	Battle is over
+Карты нет в руке	Card is not in hand
+Выберите сектор	Choose a sector
+Сооружения стоят с начала боя	Structures are in place from the start of the battle
+Не хватает очков приказов	Not enough order points
+Нужен флот мощью от 1500 на орбите	Requires a fleet of 1500+ power in orbit
+Песчаная буря	Sandstorm
+Артиллерия не бьёт по соседям, снайперы теряют двойной урон	Artillery can't hit adjacent sectors, snipers lose double damage
+Лавовый прорыв	Lava breach
+Все в одном секторе получают 2 урона	Everyone in one sector takes 2 damage
+Низкая гравитация	Low gravity
+Приказы стоят на 1 очко меньше	Orders cost 1 point less
+Ливень	Downpour
+Техника −1 к силе	Vehicles −1 power
+Штурмовая пехота	Assault Infantry
+Основа любого десанта.	The backbone of any landing force.
+Гренадёры	Grenadiers
+При раскрытии: 2 урона случайному врагу в секторе.	On reveal: 2 damage to a random enemy in the sector.
+Тяжёлая пехота	Heavy Infantry
+Укрытие 2: первые 2 урона за ход не проходят.	Cover 2: the first 2 damage each turn don't get through.
+Снайперы	Snipers
+Бьют самого хрупкого врага. По пехоте — двойной урон.	Shoot the most fragile enemy. Double damage to infantry.
+Огнемётчики	Flamethrowers
+Игнорируют укрытие. По сооружениям — двойной урон.	Ignore cover. Double damage to structures.
+Медики	Medics
+В конце хода: +2 брони самому раненому союзнику в секторе.	End of turn: +2 armor to the most wounded ally in the sector.
+При раскрытии: обезвредить ловушку врага, иначе — баррикада (+2 укрытия союзникам сектора на этот ход).	On reveal: disarm an enemy trap, otherwise build a barricade (+2 cover to allies in the sector this turn).
+Дроны-разведчики	Scout Drones
+При раскрытии: снимают одну скрытую ловушку врага в секторе.	On reveal: remove one hidden enemy trap in the sector.
+БТР «Мул»	"Mule" APC
+При раскрытии: высаживает пехоту ценой до 2 из колоды в этот сектор.	On reveal: deploys infantry costing up to 2 from your deck into this sector.
+Танк «Бастион»	"Bastion" Tank
+Бронебой: по технике и сооружениям — двойной урон.	Armor-piercing: double damage to vehicles and structures.
+Артиллерия	Artillery
+Навесной огонь: бьёт и соседний сектор половиной силы.	Indirect fire: also hits an adjacent sector at half power.
+Шагоход	Walker
+При раскрытии давит пехоту врага с бронёй до 2.	On reveal: crushes enemy infantry with armor up to 2.
+Огневой вал флота	Fleet Barrage
+2 урона каждому врагу в секторе.	2 damage to every enemy in the sector.
+Орбитальный удар	Orbital Strike
+7 урона по сильнейшим врагам сектора, укрытие не спасает. Район сектора разрушен. Нужен флот мощью от 1500.	7 damage to the strongest enemies in the sector, cover doesn't help. The sector's district is ruined. Requires a fleet of 1500+ power.
+Десантная капсула	Drop Pod
+Высаживает юнит из колоды ценой до 3; капсула наносит 2 урона при посадке.	Deploys a unit costing up to 3 from your deck; the pod deals 2 damage on landing.
+Обход	Flanking
+Ваш сильнейший юнит сектора уходит в соседний, где враг слабее, и получает +2 силы на этот ход.	Your strongest unit in the sector moves to an adjacent one where the enemy is weaker and gets +2 power this turn.
+Дымовая завеса	Smoke Screen
+В этом секторе в этот ход никто не стреляет.	Nobody shoots in this sector this turn.
+Мобилизация	Mobilization
+Возьмите 2 карты.	Draw 2 cards.
+Сооружения врага в секторе отключены на 2 хода. В Штабе — снимает щит на ход.	Enemy structures in the sector are disabled for 2 turns. In the HQ, drops the shield for a turn.
+Ополчение врага в секторе переходит к вам (если стабильность колонии ниже 50), иначе −1 к его силе.	Enemy militia in the sector defects to you (if colony stability is below 50), otherwise −1 to its power.
+ЭМИ-заряд	EMP Charge
+Техника и сооружения врага в секторе не стреляют в этот ход.	Enemy vehicles and structures in the sector don't fire this turn.
+Ополчение	Militia
+Жители колонии с оружием. Погибшее ополчение — минус житель.	Armed colonists. Every militia killed costs a pop.
+Гарнизон	Garrison
+Обученные защитники колонии.	Trained colony defenders.
+Бункер	Bunker
+Сооружение. Все защитники сектора получают укрытие 1 в каждой перестрелке.	Structure. All defenders in the sector get cover 1 in every firefight.
+Турель	Turret
+Сооружение. Стреляет, пока электростанция у защитника.	Structure. Fires while the defender holds the power plant.
+Минное поле	Minefield
+Ловушка: 4 урона первому раскрытому врагу в секторе.	Trap: 4 damage to the first enemy revealed in the sector.
+Щит Штаба	HQ Shield
+Энергетический купол: по нему не стреляют. Пока электростанция у защитника, прорыв в Штаб невозможен. Снимают захват электростанции или диверсия.	Energy dome: it can't be targeted. While the defender holds the power plant, a breach into the HQ is impossible. Taken down by capturing the power plant or by sabotage.
+Добровольцы Свободы	Freedom Volunteers
+При раскрытии: +1 к силе за каждого союзника в секторе.	On reveal: +1 power for each ally in the sector.
+Переговорщик	Negotiator
+При раскрытии: одно ополчение врага в секторе складывает оружие и уходит.	On reveal: one enemy militia in the sector lays down arms and leaves.
+Миротворцы	Peacekeepers
++3 к силе, если вы не применяли «Орбитальный удар» в этом бою.	+3 power if you haven't used "Orbital Strike" in this battle.
+Ополчение Республики	Republic Militia
+Поднять 2 отряда ополчения в секторе (1/2).	Raise 2 militia squads in the sector (1/2).
+Штрафной батальон	Penal Battalion
+Погибает в конце хода.	Dies at the end of the turn.
+Знамя Доминиона	Dominion Banner
+При раскрытии: все союзники в секторе +1 к силе до конца боя.	On reveal: all allies in the sector get +1 power until the end of the battle.
+Децимация	Decimation
+Ваш самый слабый юнит в секторе казнён; остальные +2 к силе до конца боя.	Your weakest unit in the sector is executed; the rest get +2 power until the end of the battle.
+Титан «Молот Ксарна»	"Hammer of Xarn" Titan
+Давит пехоту до 2 брони. Бронебой.	Crushes infantry with up to 2 armor. Armor-piercing.
+Наёмники «Сокол»	"Falcon" Mercenaries
+Можно купить прямо в бою за 60 гелия-3.	Can be bought right in battle for 60 Helium-3.
+Подкуп	Bribe
+Сильнейший враг сектора с силой до 3 не стреляет 2 хода.	The strongest enemy in the sector with power up to 3 doesn't fire for 2 turns.
+Контракт на ликвидацию	Assassination Contract
+Уничтожить вражеского героя в секторе, иначе — 4 урона сильнейшему.	Destroy an enemy hero in the sector, otherwise 4 damage to the strongest enemy.
+Частная охрана	Private Security
+Укрытие 1.	Cover 1.
+Провидица	Seer
+При раскрытии: вы видите руку врага до конца боя.	On reveal: you see the enemy's hand until the end of the battle.
+Видение исхода	Vision of the Outcome
+Сильнейший враг сектора, раскрытый в этом ходу, возвращается в руку владельца.	The strongest enemy in the sector revealed this turn returns to its owner's hand.
+Хор Оракула	Oracle Choir
+При раскрытии: +1 очко приказов в следующем ходу.	On reveal: +1 order point next turn.
+Пси-шторм	Psi Storm
+3 урона ВСЕМ юнитам в секторе — и своим тоже.	3 damage to ALL units in the sector — yours too.
+Споровое облако	Spore Cloud
+Все враги сектора −1 к силе до конца боя.	All enemies in the sector −1 power until the end of the battle.
+Корни-ловушки	Root Snares
+Ловушка: первый раскрытый враг в секторе обездвижен и не стреляет 2 хода.	Trap: the first enemy revealed in the sector is immobilized and doesn't fire for 2 turns.
+Рой опылителей	Pollinator Swarm
+Рой: сила не больше оставшейся брони.	Swarm: power can't exceed remaining armor.
+Древо-бастион	Bastion Tree
+В конце хода: +1 броня всем союзникам сектора.	End of turn: +1 armor to all allies in the sector.
+Рой дронов	Drone Swarm
+Узел Консенсуса	Consensus Node
+Все ваши дроны в секторе +1 к силе в каждой перестрелке.	All your drones in the sector get +1 power in every firefight.
+Пересборка	Reassembly
+Два погибших ваших дрона снова в строю в этом секторе.	Two of your dead drones return to service in this sector.
+Уничтожить слабейшего врага сектора: на его месте — ваш дрон.	Destroy the weakest enemy in the sector: your drone takes its place.
+Морская пехота	Marines
+Экипаж кораблей флота. Есть у любого флота, но потери ослабляют корабли.	Fleet ship crews. Every fleet has them, but losses weaken the ships.
+Дрон	Drone
+Ассимилированный враг.	Assimilated enemy.
+Генерал	General
+При раскрытии «Прорыв»: союзники в секторе +1 к силе до конца боя.	On reveal, "Breakthrough": allies in the sector get +1 power until the end of the battle.
+Комендант	Commandant
+«Стойкость»: союзники в секторе получают укрытие 1 каждый ход.	"Steadfast": allies in the sector get cover 1 every turn.
+Карта недоступна вашей фракции	Card is not available to your faction
+Нужна столица	Requires a capital
+Нужна ваша колония	Requires your colony
+Нужна колония с жителями	Requires a colony with population
+Нужен городской район — там набирают пехоту	Requires an urban district — infantry is recruited there
+Призывников в системе не больше {0} (половина жителей)	No more than {0} conscripts in the system (half the population)
+Нужен промышленный район — там собирают технику	Requires an industrial district — vehicles are assembled there
+Сооружений не больше {0}: укрепите звёздную базу, чтобы строить больше	No more than {0} structures: upgrade the starbase fortifications to build more
+Не больше 3 минных полей на колонию	No more than 3 minefields per colony
+Гарнизон не больше трети жителей	Garrison can't exceed a third of the population
+Карта в резерве	Card added to reserve
+Отряд готов	Squad ready
+Нет корабля	No ship
+Гарнизон не покидает колонию	The garrison doesn't leave the colony
+Ранены — ещё {0} дн.	Wounded — {0} more days
+Уже во флоте	Already in a fleet
+Чужой флот	Foreign fleet
+Флот должен стоять у этой колонии	The fleet must be at this colony
+Нет десантных мест	No troop slots
+Десант погиб	Landing force lost
+Вместе с кораблями потеряно карт: {0}	Cards lost along with the ships: {0}
+Гарнизон потерян	Garrison lost
+{0}: потеряно карт — {1}	{0}: cards lost — {1}
+Штурм нужен только колониям	Only colonies need a ground assault
+Уже идёт штурм	An assault is already underway
+Сначала осадите систему военным флотом	Besiege the system with a military fleet first
+Звёздная база ещё в строю — подавите её в бою	The starbase is still operational — suppress it in battle
+На орбите флот защитника — сначала разбейте его	A defending fleet is in orbit — defeat it first
+Десант перегруппируется: ещё {0} дн.	The landing force is regrouping: {0} more days
+{0} берёт {1} штурмом	{0} storms {1}
+Штурм {0} отбит: {1} удержали колонию	Assault on {0} repelled: {1} held the colony
+АРСЕНАЛ	ARSENAL
+Закрыть  <color=#8AA2A8>(Esc / J)</color>	Close  <color=#8AA2A8>(Esc / J)</color>
+ВОЙСКА	FORCES
+Карт: {0}  ·  на кораблях {1}  ·  в резерве {2}  ·  гарнизоны {3}{4}  ·  содержание {5:0.#} гелия в месяц	Cards: {0}  ·  on ships {1}  ·  in reserve {2}  ·  garrisons {3}{4}  ·  upkeep {5:0.#} Helium-3 per month
+  ·  ранены {0}	  ·  wounded {0}
+набор в городских районах	recruited in urban districts
+сборка в промышленных районах	assembled in industrial districts
+штаб в столице, сразу	HQ in the capital, instant
+строится на месте, колонию не покидает	built on site, never leaves the colony
+Нет колоний	No colonies
+Карты производят колонии с жителями	Cards are produced by colonies with population
+жители {0}  ·  городских районов {1}  ·  промышленных {2}  ·  укрепления {3}	pop {0}  ·  urban districts {1}  ·  industrial {2}  ·  fortifications {3}
+В ПРОИЗВОДСТВЕ · {0}	IN PRODUCTION · {0}
+ПЕХОТА · ГОРОДСКИЕ РАЙОНЫ	INFANTRY · URBAN DISTRICTS
+ТЕХНИКА · ПРОМЫШЛЕННЫЕ РАЙОНЫ	VEHICLES · INDUSTRIAL DISTRICTS
+ПРИКАЗЫ И ГЕРОИ · ШТАБ В СТОЛИЦЕ	ORDERS AND HEROES · CAPITAL HQ
+ОБОРОНА КОЛОНИИ	COLONY DEFENSE
+{0}  <color=#8AA2A8>· {1:0} дн.</color>	{0}  <color=#8AA2A8>· {1:0} d.</color>
+{0}  ·  сила {1}  ·  броня {2}	{0}  ·  power {1}  ·  armor {2}
+  ·  мест на корабле: {0}	  ·  ship slots: {0}
+· {0:0.#}/мес.	· {0:0.#}/mo.
+ЗАКАЗАТЬ	ORDER
+ДЕСАНТ НА КОРАБЛЯХ · {0}	TROOPS ON SHIPS · {0}
+Нет военных кораблей с десантными местами: корвет берёт 1 место, фрегат 2, эсминец 4	No warships with troop slots: a corvette carries 1 slot, a frigate 2, a destroyer 4
+КОЛОНИИ: РЕЗЕРВ И ГАРНИЗОНЫ	COLONIES: RESERVE AND GARRISONS
+Резерв пуст — закажите карты слева. Готовые карты ждут на колонии, корабли с автопогрузкой забирают их сами	Reserve is empty — order cards on the left. Finished cards wait at the colony; ships with auto-load pick them up on their own
+в пути	in transit
+мест {0}/{1}	slots {0}/{1}
+<b>Автопогрузка</b>\nКорабль у своей колонии сам забирает готовые карты резерва — сильнейшие первыми	<b>Auto-load</b>\nA ship at your colony picks up ready reserve cards on its own — strongest first
+ВЫСАДИТЬ	UNLOAD
+Весь десант корабля — в резерв этой колонии	All of the ship's troops go to this colony's reserve
+Высадить можно у своей колонии со звёздной базой	You can unload at your own colony with a starbase
+Трюм пуст	Hold is empty
+{0}  <color=#8AA2A8>· резерв {1} · гарнизон {2}</color>	{0}  <color=#8AA2A8>· reserve {1} · garrison {2}</color>
+клик по карте резерва — погрузить на корабль	click a reserve card to load it onto a ship
+у колонии нет кораблей — карты ждут погрузки	no ships at the colony — cards are waiting to be loaded
+У колонии нет кораблей с десантными местами	No ships with troop slots at the colony
+Не погрузить	Can't load
+РАНЕН {0} дн.	WOUNDED {0} d.
+ГАРНИЗОН — защищает колонию при штурме	GARRISON — defends the colony during an assault
+ДЕСАНТ	LANDING
+ОБОРОНА	DEFENSE
+{0} карт против {1}	{0} cards vs {1}
+Перетащите карты в секторы. Enter — закончить ход. Пробел или ПКМ — ускорить анимацию	Drag cards into sectors. Enter ends the turn. Space or right mouse button speeds up animations
+Ход {0}: у вас {1} очк. приказов	Turn {0}: you have {1} order points
+Враг	Enemy
+ПОСЛЕДНИЙ ХОД	FINAL TURN
+ХОД {0}	TURN {0}
+Очки приказов: {0}	Order points: {0}
+<color=#F2C766>— Ход {0} —</color>	<color=#F2C766>— Turn {0} —</color>
+ЛОВУШКА	TRAP
+−{0} укр.	−{0} cover
++2 укрытие	+2 cover
+ сила	 power
+{0} переходит на сторону: {1}	{0} switches sides: {1}
+<color=#7CF29A>Сектор «{0}» ваш</color>	<color=#7CF29A>Sector "{0}" is yours</color>
+<color=#FF8A80>Сектор «{0}» у врага</color>	<color=#FF8A80>Sector "{0}" is held by the enemy</color>
+<color=#8FD3FF>Щит Штаба пал</color>	<color=#8FD3FF>The HQ shield has fallen</color>
+ЩИТ ШТАБА ПАЛ	HQ SHIELD DOWN
+Теперь возможен прорыв: 9+ силы в Штабе	A breach is now possible: 9+ power in the HQ
+Враг может прорваться в Штаб	The enemy can break into the HQ
+ПРОРЫВ В ШТАБ!	HQ BREACHED!
+Командный центр колонии пал	The colony's command center has fallen
+ДЕСАНТ ОТСТУПАЕТ	LANDING FORCE RETREATS
+ГАРНИЗОН СДАЁТСЯ	GARRISON SURRENDERS
+{0}: ловушка «{1}» обезврежена	{0}: trap "{1}" disarmed
+<color=#FF8A80>Ловушка «{0}» сработала</color>	<color=#FF8A80>Trap "{0}" triggered</color>
+ЛОВУШКА!	TRAP!
+{0}: приказ «{1}»	{0}: order "{1}"
+{0} — <color=#FF8A80>{1} погиб</color>	{0} — <color=#FF8A80>{1} killed</color>
+ПОДАВЛЕН	SUPPRESSED
+ОТКЛЮЧЁН	DISABLED
+СКОВАН	PINNED
+ЭЛИТА: НЕ ДРОГНУЛА	ELITE: HELD FIRM
+ВИДИТ РУКУ ВРАГА	SEES ENEMY HAND
+{0}: {1} в строю	{0}: {1} joins the fight
+{0} вернулся в руку	{0} returned to hand
+{0} сложил оружие	{0} laid down arms
+{0} обходит с фланга	{0} flanks
+<color=#9FD0FF>Погода: {0}</color>	<color=#9FD0FF>Weather: {0}</color>
+НЕТ ЭНЕРГИИ	NO POWER
+ПЛАНЕТА ВЗЯТА	PLANET TAKEN
+ДЕСАНТ ОТСТУПИЛ	LANDING FORCE WITHDREW
+ШТУРМ ОТБИТ	ASSAULT REPELLED
+КОЛОНИЯ ПАЛА	COLONY FALLEN
+ОБОРОНА УСТОЯЛА	DEFENSE HELD
+ход.	turns
+ · прорыв в Штаб	 · HQ breach
+Ваши потери:	Your losses:
+{0} карт (навсегда)	{0} cards (permanently)
+Потери врага:	Enemy losses:
+{0} карт	{0} cards
+Выжившие ветераны:	Surviving veterans:
+{0} получат звезду ★	{0} will earn a star ★
+Ранены:	Wounded:
+{0} — лечение {1} дн.	{0} — {1} days to heal
+Погибло жителей (ополчение):	Colonists killed (militia):
+Разрушено районов:	Districts ruined:
+Трофей:	Trophy:
+ШТУРМ · {0}	ASSAULT · {0}
+ДЕСАНТ · атака	LANDING · attack
+ГАРНИЗОН · оборона	GARRISON · defense
+ВРАГ	ENEMY
+ОЧКИ ПРИКАЗОВ	ORDER POINTS
+СДАТЬСЯ	SURRENDER
+ДОСЧИТАТЬ	RESOLVE
+Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)	Play out the battle for both sides instantly (the AI commands your side)
+НАЁМНИКИ · 60	MERCENARIES · 60
+<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору	<b>"Falcon" Mercenaries</b> 4/4 for 60 Helium-3 from the treasury — no order points needed. Then click a sector
+ЗАКОНЧИТЬ ХОД	END TURN
+ХОД БОЯ	BATTLE LOG
+АНИМАЦИИ ×{0:0.#}	ANIMATIONS ×{0:0.#}
+ПРИКАЗ ОТДАН · клик — отменить	ORDER GIVEN · click to cancel
+БОЙ ИДЁТ…	BATTLE IN PROGRESS…
+БОЙ ОКОНЧЕН	BATTLE OVER
+ХОД {0} / {1}	TURN {0} / {1}
+Секторы: вы {0} : {1} враг · нужно 2 из 3{2}	Sectors: you {0} : {1} enemy · 2 of 3 needed{2}
+ (ничья — за обороной)	 (a tie goes to the defender)
+Погода планеты откроется на 3-м ходу	The planet's weather will be revealed on turn 3
+Колода: {0} · рука: {1}\nВ бою потеряно: {2}	Deck: {0} · hand: {1}\nLost in battle: {2}
+Рука врага: {0} · колода {1}	Enemy hand: {0} · deck {1}
+<color=#7CF29A>ВАШ</color>	<color=#7CF29A>YOURS</color>
+<color=#FF8A80>У ВРАГА</color>	<color=#FF8A80>ENEMY</color>
+ВЗЯТ	TAKEN
+ПОТЕРЯН	LOST
+Щёлкните по сектору, куда высадить наёмников	Click the sector to land the mercenaries in
+НАЁМНИКИ	MERCENARIES
+ВРАГ ВЫСАЖИВАЕТСЯ!	ENEMY LANDING!
+{0} штурмует колонию {1}. Гарнизон, ополчение и укрепления готовы к бою.\nКомандовать обороной лично или довериться автобою?	{0} is assaulting the colony {1}. The garrison, militia and fortifications are ready for battle.\nCommand the defense yourself or trust the auto-battle?
+ЗАЩИЩАТЬСЯ ЛИЧНО	DEFEND IN PERSON
+АВТОБОЙ	AUTO-BATTLE
+ЭЛЕКТРОСТАНЦИЯ	POWER PLANT
+ЗАВОД	FACTORY
+ШТАБ	HQ
+ШАХТА	MINE
+ГОРОД	CITY
+КОСМОПОРТ	SPACEPORT
+Пока у защитника — работают турели и щит Штаба	While the defender holds it, turrets and the HQ shield work
+Держащий получает +1 карту каждый ход	The holder draws +1 card every turn
+Щит снят и 9+ силы — прорыв, планета пала	Shield down and 9+ power — breach, the planet falls
+Держащий получает +1 очко приказов	The holder gets +1 order point
+Жители-ополченцы защищают дома	Colonist militia defend their homes
+Удобное место для высадки	A convenient landing site
+Отряд: {0}	Squad: {0}
+Отряд	Squad
+отряд армии	army squad
+Десант на кораблях: {0} карт	Troops on ships: {0} cards
+На кораблях нет десанта — загрузите карты в «Арсенале» (J); в бой пойдут только экипажи	No troops on ships — load cards in the "Arsenal" (J); only the crews will fight
+<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, 6 ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт	<b>Ground assault</b>\nA card battle for the colony: 3 sectors, 6 turns. Victory takes the colony at once, without waiting for the siege to end. Killed cards are lost forever, survivors gain experience
+Штурм без экрана боя: исход рассчитают правила, решения примет ИИ	Assault without the battle screen: the rules decide the outcome, the AI makes the decisions
+Арсенал	Arsenal
+<b>Арсенал</b>\nКарты наземных войск: производство в колониях, десант на кораблях, гарнизоны. Нужны для штурма осаждённых колоний	<b>Arsenal</b>\nGround force cards: production in colonies, troops on ships, garrisons. Needed to assault besieged colonies
+<color=#8AA2A8>Армия (карты):</color> <color=#FF8888>-{0:0.#}</color> / мес\n	<color=#8AA2A8>Army (cards):</color> <color=#FF8888>-{0:0.#}</color> / mo\n
