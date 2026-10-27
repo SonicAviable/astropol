@@ -72,6 +72,8 @@ namespace StellarisClone.Cards
         public Func<float> Treasury;
         public Action<float> SpendTreasury;
         public bool SeesEnemyHand;
+        /// <summary>Стартовая рука уже пересдана (муллиган — один раз за бой).</summary>
+        public bool Mulliganed;
     }
 
     /// <summary>Что произошло — экран боя проигрывает эти события по порядку (анимации), автобой их игнорирует.</summary>

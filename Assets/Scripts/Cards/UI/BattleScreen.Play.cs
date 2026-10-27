@@ -60,6 +60,7 @@ namespace StellarisClone.Cards
             }
             yield return W(0.5f);
             yield return PlayEvents();
+            yield return MulliganPhase();
             _busy = false;
             Hint(Loc.T("Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода"));
         }
@@ -315,6 +316,7 @@ namespace StellarisClone.Cards
                     {
                         _fx.Explosion(p + Random.insideUnitCircle * 160f, 1.3f);
                         _fx.Shake(22f, 0.4f);
+                        Kick(0.02f);
                         SFXManager.Play(Sfx.Boom, 0.9f);
                         yield return W(0.12f);
                     }
@@ -470,6 +472,7 @@ namespace StellarisClone.Cards
                     _fx.Line(top, target, new Color(0.6f, 0.9f, 1f, 0.9f), 280f, 0.8f);
                     _fx.Flash(Color.white, 0.95f, 2.2f);
                     _fx.Shake(26f, 0.8f);
+                    Kick(0.025f);
                     SFXManager.Play(Sfx.Boom, 1f, 0.8f);
                     SFXManager.PlayDelayed(Sfx.BoomSmall, 0.12f, 0.8f, 0.7f);
                     for (int i = 0; i < 4; i++) _fx.Explosion(target + Random.insideUnitCircle * 140f, 1.5f);
@@ -716,7 +719,7 @@ namespace StellarisClone.Cards
             int shots = heavy ? 1 : 3;
             float fly = heavy ? 0.2f : 0.16f;
             bool auto = !heavy && (d.Power >= 3 || d.Has(Kw.Drone));
-            if (heavy) SFXManager.Play(Sfx.GunHeavy, 1f, voice * Random.Range(0.96f, 1.03f), Pan(a));
+            if (heavy) { SFXManager.Play(Sfx.GunHeavy, 1f, voice * Random.Range(0.96f, 1.03f), Pan(a)); Kick(0.008f); }
             else if (auto) SFXManager.Play(Sfx.GunAuto, 0.9f, voice, Pan(a));
             for (int i = 0; i < shots; i++)
             {
@@ -785,6 +788,7 @@ namespace StellarisClone.Cards
                 _fx.Explosion(p, def.Cost >= 5 ? 1.6f : 1.1f);
                 _fx.Shake(def.Cost >= 5 ? 18f : 10f, 0.4f);
                 SFXManager.Play(def.Cost >= 5 ? Sfx.Boom : Sfx.BoomSmall, 0.9f, 1f, Pan(p));
+                Kick(def.Cost >= 5 ? 0.016f : 0.01f);
                 SFXManager.PlayDelayed(Sfx.UnitDown, 0.08f, 0.7f);
             }
             else if (def.Has(Kw.Drone))

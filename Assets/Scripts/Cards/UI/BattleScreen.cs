@@ -80,6 +80,8 @@ namespace StellarisClone.Cards
             public RectTransform Col, Header, PowerBar;
             public Image Plate, Wash, Dome, Highlight, HighlightFill, OrbGlowE, OrbGlowP, DomeBadge;
             public LiquidGlassEffect PlateFx, ChipFx;
+            /// <summary>Прогноз «+3» у вашего гнезда силы, пока карта над сектором.</summary>
+            public Text Projection;
             public Image Chip;
             public Text ChipText;
             public Text DomeText;
@@ -168,6 +170,7 @@ namespace StellarisClone.Cards
             SFXManager.PlayDelayed(Sfx.BoomFar, 0.5f, 1f);
             SFXManager.PlayDelayed(Sfx.Radio, 1.1f, 0.8f);
             StartAmbience();
+            MusicManager.Instance?.SetBattle(true);
 
             _state.Begin();
             // Сооружения и скрытые свои ловушки — на столе с начала
@@ -191,6 +194,9 @@ namespace StellarisClone.Cards
             _particles?.SetActive(false);
             _ambWant = 0f;
             if (_amb != null) _amb.Stop();
+            MusicManager.Instance?.SetBattle(false);
+            _kick = 0f;
+            if (_board != null) _board.localScale = Vector3.one;
             if (_root != null) _root.SetActive(false);
             var tm = TimeManager.Instance;
             if (tm != null) tm.SetSpeed(_savedSpeed);
@@ -492,6 +498,11 @@ namespace StellarisClone.Cards
             s.OrbGlowP = OrbGlow(col, new Vector2(OrbX, -OrbY), CardSkin.Teal);
             s.PowE = Orb(col, CardSkin.Red, new Vector2(OrbX, OrbY), 64f, 28);
             s.PowP = Orb(col, CardSkin.Teal, new Vector2(OrbX, -OrbY), 64f, 28);
+            s.Projection = Caption(col, "", 22, new Color(0.45f, 1f, 0.6f, 0f), TextAnchor.MiddleLeft, 0.5f);
+            s.Projection.rectTransform.At(Mid, Mid, new Vector2(OrbX + 70f, -OrbY), new Vector2(110, 34));
+            var pjol = s.Projection.gameObject.AddComponent<Outline>();
+            pjol.effectColor = new Color(0f, 0.05f, 0.02f, 0.9f);
+            pjol.effectDistance = new Vector2(1.5f, -1.5f);
             TooltipHelper.Attach(s.PowE.transform.parent.gameObject, Loc.T("Сила врага в секторе"));
             TooltipHelper.Attach(s.PowP.transform.parent.gameObject, Loc.T("Ваша сила в секторе"));
 
@@ -862,10 +873,11 @@ namespace StellarisClone.Cards
             if (_preview != null) Destroy(_preview.gameObject);
             _preview = CardView.Create(_previewRoot, v.Card, v.Side, v.SideFaction, PreviewCard, false);
             _preview.Rt.anchoredPosition = Vector2.zero;
+            BUnit pu = null;
             if (v.Uid >= 0)
             {
-                var u = _state.FindUnit(v.Uid);
-                if (u != null) _preview.RefreshNumbers(_state.Power(u), u.Armor, u.MaxArmor, false);
+                pu = _state.FindUnit(v.Uid);
+                if (pu != null) _preview.RefreshNumbers(_state.Power(pu), pu.Armor, pu.MaxArmor, false);
             }
             var croot = (RectTransform)_canvas.transform;
             var screen = RectTransformUtility.WorldToScreenPoint(null, v.Rt.position);
@@ -876,11 +888,12 @@ namespace StellarisClone.Cards
             _previewRoot.SetAsLastSibling();
             _preview.Punch(0.05f);
             foreach (var g in _preview.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
+            ShowGlossary(v.Card, pu, pos, PreviewCard, side);
         }
 
         private void HidePreview(CardView v)
         {
-            if (_preview != null && (v == null || _preview.Card == v.Card)) { Destroy(_preview.gameObject); _preview = null; }
+            if (_preview != null && (v == null || _preview.Card == v.Card)) { Destroy(_preview.gameObject); _preview = null; ClearGlossary(); }
         }
 
         // ==================== РУКА ====================
@@ -893,8 +906,19 @@ namespace StellarisClone.Cards
             v.HoverLift = 150f;
             v.HoverScale = 0.28f;
             v.IdleBob = 1f;
-            v.OnHoverIn = x => { if (_dragging != null) return; _handHover = x; x.Rt.SetAsLastSibling(); LayoutHand(false); SFXManager.Play(Sfx.CardHover, 1f, UnityEngine.Random.Range(0.95f, 1.1f)); };
-            v.OnHoverOut = x => { if (_handHover == x) _handHover = null; LayoutHand(false); };
+            v.OnHoverIn = x =>
+            {
+                if (_dragging != null) return;
+                _handHover = x; x.Rt.SetAsLastSibling(); LayoutHand(false);
+                SFXManager.Play(Sfx.CardHover, 1f, UnityEngine.Random.Range(0.95f, 1.1f));
+                // Подсказки по свойствам — рядом с поднятой картой (она поднимается на HoverLift и растёт на HoverScale)
+                var croot = (RectTransform)_canvas.transform;
+                var sp = RectTransformUtility.WorldToScreenPoint(null, x.Rt.position);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(croot, sp, null, out var lp);
+                var lifted = new Vector2(lp.x, lp.y + x.HoverLift);
+                ShowGlossary(x.Card, null, lifted, HandCard * (1f + x.HoverScale), lp.x < 250f ? 1f : -1f);
+            };
+            v.OnHoverOut = x => { if (_handHover == x) { _handHover = null; ClearGlossary(); } LayoutHand(false); };
             v.OnDragBegin = BeginDrag;
             v.OnDragMove = Drag;
             v.OnDragEnd = EndDrag;
@@ -941,6 +965,7 @@ namespace StellarisClone.Cards
             v.Rt.SetAsLastSibling();
             _targets.Remove(v);
             HidePreview(null);
+            ClearGlossary();
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_dragLayer, e.position, null, out var lp);
             _dragOffset = (Vector2)v.Rt.localPosition - lp;
             v.Rt.localScale = Vector3.one * 0.8f;
@@ -1124,6 +1149,7 @@ namespace StellarisClone.Cards
             AmbientTick(dt);
             AmbienceTick(dt);
             TableTick(dt);
+            KickTick(dt);
             LogTick(dt);
 
             // Дорожки. Пока карта в руке над столом, подсветка держится каждый кадр (даже если мышь стоит):
@@ -1138,9 +1164,28 @@ namespace StellarisClone.Cards
                 {
                     bool ok = _state.CanPlay(_P, _dragging.Card, si) == null;
                     s.HighT = si == under ? 1f : ok ? 0.32f : 0f;
+                    // Прогноз: сколько силы станет у вас в секторе и хватит ли её, чтобы взять сектор
+                    var dd = _dragging.Card.Def;
+                    if (s.Projection != null)
+                    {
+                        if (si == under && ok && (dd.IsBoardUnit || dd.Kind == CardKind.Hero))
+                        {
+                            int gain = dd.Power + (_dragging.Card.Stars >= 2 ? 1 : 0) + (_dragging.Card.Stars >= 3 ? 1 : 0);
+                            int mine = _state.SectorPower(_P, si) + PendingPower(si), theirs = _state.SectorPower(_E, si);
+                            bool take = mine + gain > theirs;
+                            s.Projection.text = string.Format("+{0} <size=15>→ {1}</size>", gain, mine + gain);
+                            s.Projection.color = take ? new Color(0.45f, 1f, 0.6f, 1f) : new Color(1f, 0.78f, 0.35f, 1f);
+                            s.OrbGlowP.color = new Color(CardSkin.Teal.r, CardSkin.Teal.g, CardSkin.Teal.b, 0.6f + 0.3f * Mathf.Sin(Time.unscaledTime * 8f));
+                        }
+                        else if (s.Projection.color.a > 0f) { s.Projection.color = new Color(1f, 1f, 1f, 0f); RefreshSector(si); }
+                    }
                     if (si == under || ok) s.HighC = ok ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f);
                 }
-                else s.HighT = 0f;
+                else
+                {
+                    s.HighT = 0f;
+                    if (s.Projection != null && s.Projection.color.a > 0f) { s.Projection.color = new Color(1f, 1f, 1f, 0f); RefreshSector(si); }
+                }
                 s.HighA = Mathf.MoveTowards(s.HighA, s.HighT, dt * (s.HighA < s.HighT ? 7f : 2.5f));
                 float hp = s.HighT >= 1f ? 0.82f + 0.18f * Mathf.Sin(Time.unscaledTime * 7f) : 1f;
                 s.Highlight.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, Mathf.Clamp01(s.HighA * 1.3f * hp));
@@ -1166,6 +1211,27 @@ namespace StellarisClone.Cards
         }
 
         private float _ambientT;
+
+        // ---------- «удар камеры»: стол на миг «приближается» от тяжёлого попадания ----------
+        private float _kick;
+        private void Kick(float amount) => _kick = Mathf.Max(_kick, amount);
+
+        private void KickTick(float dt)
+        {
+            if (_board == null) return;
+            _kick = Mathf.MoveTowards(_kick, 0f, dt * 0.12f) * Mathf.Exp(-dt * 7f);
+            _board.localScale = Vector3.one * (1f + _kick);
+        }
+
+        /// <summary>Сила ваших карт, уже выложенных в этом ходу в сектор (рубашкой вверх).</summary>
+        private int PendingPower(int sector)
+        {
+            int p = 0;
+            foreach (var pd in _state.Sides[_P].Pending)
+                if (pd.sector == sector && (pd.card.Def.IsBoardUnit || pd.card.Def.Kind == CardKind.Hero))
+                    p += pd.card.Def.Power + (pd.card.Stars >= 2 ? 1 : 0) + (pd.card.Stars >= 3 ? 1 : 0);
+            return p;
+        }
 
         // ---------- живой стол ----------
         private readonly List<(Image img, float speed, float alpha, float phase)> _fog = new List<(Image, float, float, float)>();

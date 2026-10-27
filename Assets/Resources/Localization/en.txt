@@ -6691,3 +6691,45 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Удержите перевес ещё ход — и прорыв	Hold the advantage one more turn to break through
 Ещё ход — и враг прорвётся. Усильте Штаб!	One more turn and the enemy breaks through. Reinforce the HQ!
 <color=#7CF2D8>Подкрепления: {0}</color>	<color=#7CF2D8>Reinforcements: {0}</color>
+НАЧАЛЬНЫЙ РАСКЛАД	STARTING HAND
+Щёлкните по картам, которые хотите заменить. Замена — один раз за бой	Click the cards you want to replace. You can replace once per battle
+ЗАМЕНИТЬ	REPLACE
+Начальный расклад: заменено карт — {0}	Starting hand: {0} card(s) replaced
+Приказ	Order
+Кладётся рубашкой вверх, срабатывает при раскрытии в конце хода и сгорает.	Played face down, takes effect when revealed at the end of the turn, then burns.
+Ловушка	Trap
+Скрыта от врага. Срабатывает на первом раскрытом враге в секторе.	Hidden from the enemy. Triggers on the first enemy revealed in the sector.
+Сооружение	Structure
+Стоит на столе с начала боя, держит сектор и стреляет.	On the table from the start of the battle: holds the sector and fires.
+Герой	Hero
+Лидер стороны: всегда в стартовой руке, усиливает своих.	The side's leader: always in the starting hand, strengthens allies.
+По технике и сооружениям — двойной урон.	Double damage to vehicles and structures.
+Навесной огонь	Indirect fire
+Ещё бьёт по соседнему сектору половиной силы.	Also hits an adjacent sector with half its power.
+Давит	Crush
+При раскрытии уничтожает пехоту врага с бронёй до 2.	When revealed, destroys enemy infantry with up to 2 armor.
+Рой	Swarm
+Сила не больше оставшейся брони: теряя дронов, рой слабеет.	Power cannot exceed remaining armor: the swarm weakens as it loses drones.
+Снайпер	Sniper
+Бьёт самого хрупкого врага; по пехоте — двойной урон.	Hits the most fragile enemy; double damage to infantry.
+Огонь	Flame
+Игнорирует укрытие; по сооружениям — двойной урон.	Ignores cover; double damage to structures.
+Одноразовый	Expendable
+От электростанции	Grid-powered
+Работает, пока электростанция у защитника.	Works while the defender holds the power plant.
+Покупаются прямо в бою за гелий-3 казны.	Bought right in battle for treasury helium-3.
+Жители колонии с оружием: погибшее ополчение — минус житель.	Armed colonists: every militia lost costs a pop.
+Укрытие {0}	Cover {0}
+Первые {0} урона за ход не проходят.	The first {0} damage each turn is blocked.
+Залп {0}	Salvo {0}
+При раскрытии сразу наносит {0} урона врагу в секторе.	When revealed, immediately deals {0} damage to an enemy in the sector.
+Ветеран 	Veteran 
+Опыт прошлых боёв: ★ — +1 броня, ★★ — ещё +1 сила, ★★★ — ещё +1 к силе и броне.	Battle experience: ★ — +1 armor, ★★ — another +1 power, ★★★ — another +1 power and armor.
+Подавлен	Suppressed
+Не стреляет ещё {0} ход.	Cannot fire for {0} more turn(s).
+Отключён	Disabled
+Не работает ещё {0} ход.	Out of action for {0} more turn(s).
+Скован	Pinned
+Не стреляет и не двигается ещё {0} ход.	Cannot fire or move for {0} more turn(s).
+Сила и броня	Power and armor
+Сила — урон за ход и вклад в контроль сектора. Броня — сколько урона карта выдержит.	Power is damage per turn and its share of sector control. Armor is how much damage the card can take.

@@ -47,6 +47,29 @@ namespace StellarisClone.Cards
             }
         }
 
+        /// <summary>
+        /// Муллиган ИИ: сдать дорогие карты (5+), если их больше одной, и самую дорогую, когда в руке нет
+        /// дешёвого юнита на первые ходы (до 2 очков).
+        /// </summary>
+        public static void Mulligan(BattleState b, int side)
+        {
+            var hand = b.Sides[side].Hand;
+            var back = new List<BCard>();
+            var pricey = new List<BCard>();
+            foreach (var c in hand) if (c.Def.Kind != CardKind.Hero && b.CostOf(side, c) >= 5) pricey.Add(c);
+            pricey.Sort((x, y) => b.CostOf(side, y).CompareTo(b.CostOf(side, x)));
+            for (int i = 0; i + 1 < pricey.Count; i++) back.Add(pricey[i]);   // одну дорогую оставить на финал
+            bool cheapUnit = false;
+            foreach (var c in hand) if (c.Def.IsBoardUnit && b.CostOf(side, c) <= 2) { cheapUnit = true; break; }
+            if (!cheapUnit)
+            {
+                BCard worst = null;
+                foreach (var c in hand) if (c.Def.Kind != CardKind.Hero && !back.Contains(c) && (worst == null || b.CostOf(side, c) > b.CostOf(side, worst))) worst = c;
+                if (worst != null) back.Add(worst);
+            }
+            b.Mulligan(side, back);
+        }
+
         /// <summary>Атакующий уводит десант, когда штурм безнадёжен (карты сохранятся во флоте).</summary>
         /// <summary>Отладка баланса: ИИ никогда не отступает.</summary>
         public static bool NoRetreat;

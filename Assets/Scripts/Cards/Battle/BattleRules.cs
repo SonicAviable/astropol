@@ -21,6 +21,8 @@ namespace StellarisClone.Cards
                 int deck = Sides[s].Deck.Count;
                 DrawCards(s, StartHand + (deck >= 14 ? 1 : 0) + (deck >= 18 ? 1 : 0));
             }
+            // ИИ сразу пересдаёт неудачные карты; игрок — на экране «Начальный расклад»
+            for (int s = 0; s < 2; s++) if (!Sides[s].IsPlayer) BattleAI.Mulligan(this, s);
             StartTurn();
         }
 
@@ -81,6 +83,39 @@ namespace StellarisClone.Cards
                 sd.Pending.Clear();
             }
             if (Turn == 3) RevealWeather();
+        }
+
+        /// <summary>
+        /// Муллиган: заменить выбранные карты стартовой руки — один раз за бой, до первого розыгрыша.
+        /// Новые карты берутся с верха колоды, сданные возвращаются в колоду в случайные места (герой не меняется).
+        /// </summary>
+        public int Mulligan(int side, List<BCard> cards)
+        {
+            var sd = Sides[side];
+            if (Over || sd.Mulliganed || Turn > 1 || sd.Pending.Count > 0 || cards == null) return 0;
+            sd.Mulliganed = true;
+            var back = new List<BCard>();
+            foreach (var c in cards)
+                if (c != null && c.Def.Kind != CardKind.Hero && sd.Hand.Remove(c)) back.Add(c);
+            if (back.Count == 0) return 0;
+            int take = Math.Min(back.Count, sd.Deck.Count);
+            for (int i = 0; i < take; i++)
+            {
+                var c = sd.Deck[0];
+                sd.Deck.RemoveAt(0);
+                sd.Hand.Add(c);
+                Log(EvType.Draw, side, def: c.Def, text: "mulligan");
+            }
+            foreach (var c in back) sd.Deck.Insert(Rng.Next(sd.Deck.Count + 1), c);
+            // Колода была меньше, чем сдано, — добрать (может вернуться и сданная карта)
+            for (int i = take; i < back.Count && sd.Deck.Count > 0; i++)
+            {
+                var c = sd.Deck[0];
+                sd.Deck.RemoveAt(0);
+                sd.Hand.Add(c);
+                Log(EvType.Draw, side, def: c.Def, text: "mulligan");
+            }
+            return back.Count;
         }
 
         /// <summary>Можно ли выложить карту из руки в сектор (очки, тип карты).</summary>

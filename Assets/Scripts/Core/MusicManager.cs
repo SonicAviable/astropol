@@ -149,6 +149,16 @@ private void LoadTracksFromResources()
 
         public bool WarMood { get; private set; }
         private float _moodCheck;
+        private bool _battle;
+
+        /// <summary>Идёт карточный бой: играют боевые треки (как во время войны), после боя — снова по обстановке.</summary>
+        public void SetBattle(bool on)
+        {
+            if (_battle == on) return;
+            _battle = on;
+            _moodCheck = 0f;
+            _manualPick = false;
+        }
         private bool _manualPick;
 
         public bool IsWarTrack(int i) => i >= 0 && i < TrackCount && tracks[i] != null && tracks[i].name.StartsWith("war__");
@@ -166,7 +176,7 @@ private void LoadTracksFromResources()
             _moodCheck -= Time.unscaledDeltaTime;
             if (_moodCheck > 0f) return;
             _moodCheck = 2f;
-            bool war = PlayerAtWar();
+            bool war = _battle || PlayerAtWar();
             if (war == WarMood) return;
             WarMood = war;
             if (_isRunning && !_paused && !_manualPick && IsWarTrack(_currentIndex) != war) PlayNextTrack();
