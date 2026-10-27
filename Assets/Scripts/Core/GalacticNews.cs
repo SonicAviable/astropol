@@ -117,8 +117,6 @@ namespace StellarisClone.Core
             bool player = oldOwner == 0 || newOwner == 0;
             string text = SiegeManager.IsPeacefulTransfer && oldOwner >= 0
                 ? Loc.F("{0} по договору передаёт систему {1} империи {2}", Who(oldOwner), Place(sys), Who(newOwner))
-                : oldOwner >= 0 && StellarisClone.Ground.GroundBattleLink.Storming
-                ? Loc.F("{0} берёт систему {1} штурмом у {2}", Who(newOwner), Place(sys), Who(oldOwner))
                 : oldOwner >= 0
                 ? Loc.F("{0} захватывает систему {1} у {2}", Who(newOwner), Place(sys), Who(oldOwner))
                 : Loc.F("{0} берёт под контроль систему {1}", Who(newOwner), Place(sys));

@@ -71,7 +71,7 @@ namespace StellarisClone.Rendering
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.V) && UIManager.IsGameStarted && !IsTyping() && !StellarisClone.Ground.GroundBattleManager.InBattle) Toggle();
+            if (Input.GetKeyDown(KeyCode.V) && UIManager.IsGameStarted && !IsTyping()) Toggle();
             if (!IsOpen) return;
             if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); return; }
             if ((_refresh -= Time.unscaledDeltaTime) <= 0f) { _refresh = 1f; Refresh(); }

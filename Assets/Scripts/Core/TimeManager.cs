@@ -57,7 +57,6 @@ namespace StellarisClone.Core
         private void HandleInput()
         {
             if (!StellarisClone.Rendering.UIManager.IsGameStarted) return;   // меню, выбор цивилизации
-            if (StellarisClone.Ground.GroundBattleManager.InBattle) return;   // наземный бой: пробел — тактическая пауза боя
             var flow = StellarisClone.Rendering.GameFlowUI.Instance;
             if (flow != null && flow.BlocksTimeHotkeys) return;
 

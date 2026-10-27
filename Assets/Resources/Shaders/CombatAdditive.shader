@@ -5,7 +5,6 @@ Shader "Astropolity/FX/CombatAdditive"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-        _Intensity ("Intensity (HDR)", Float) = 1
     }
     SubShader
     {
@@ -24,7 +23,6 @@ Shader "Astropolity/FX/CombatAdditive"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            half _Intensity;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; fixed4 color : COLOR; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; fixed4 color : COLOR; };
@@ -38,12 +36,9 @@ Shader "Astropolity/FX/CombatAdditive"
                 return o;
             }
 
-            half4 frag(v2f i) : SV_Target
+            fixed4 frag(v2f i) : SV_Target
             {
-                // Цвет вершин ограничен 0–1; _Intensity выводит вспышки за порог свечения (bloom)
-                half4 c = tex2D(_MainTex, i.uv) * i.color;
-                c.rgb *= _Intensity;
-                return c;
+                return tex2D(_MainTex, i.uv) * i.color;
             }
             ENDCG
         }

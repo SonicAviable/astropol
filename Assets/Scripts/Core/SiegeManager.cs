@@ -99,7 +99,6 @@ namespace StellarisClone.Core
             }
 
             var captured = new List<(StarSystem sys, int attacker)>();
-            var assaults = new List<(StarSystem sys, Siege siege)>();
 
             foreach (var sys in systems)
             {
@@ -148,18 +147,11 @@ namespace StellarisClone.Core
 
                 // Несколько кораблей осаждают быстрее (до ×2)
                 siege.Progress += Mathf.Min(2f, 1f + (ships - 1) * 0.25f);
-                // Колонизированная система: возможен наземный штурм (у ИИ — сам решает, у игрока — кнопка «ВЫСАДКА»)
-                if (StellarisClone.Ground.GroundBattleLink.HasColony(sys)) assaults.Add((sys, siege));
                 if (siege.Progress >= RequiredDays(sys)) captured.Add((sys, attacker));
             }
 
-            // Штурмы — после обхода (захват меняет владельцев); штурмованная система по таймеру в этот день не берётся
-            var stormed = new HashSet<int>();
-            foreach (var (sys, siege) in assaults)
-                if (StellarisClone.Ground.GroundBattleLink.OnSiegeDay(sys, siege, RequiredDays(sys))) stormed.Add(sys.Id);
-
             foreach (var (sys, attacker) in captured)
-                if (!stormed.Contains(sys.Id) && sys.OwnerId != attacker) Capture(sys, attacker);
+                Capture(sys, attacker);
         }
 
         private static void AnnounceSiege(StarSystem sys, int attacker)

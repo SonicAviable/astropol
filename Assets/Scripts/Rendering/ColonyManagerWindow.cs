@@ -71,7 +71,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             bool typing = IsTyping();
-            if (Input.GetKeyDown(KeyCode.C) && UIManager.IsGameStarted && !typing && !StellarisClone.Ground.GroundBattleManager.InBattle && !BuildMenuModal.IsOpenNow
+            if (Input.GetKeyDown(KeyCode.C) && UIManager.IsGameStarted && !typing && !BuildMenuModal.IsOpenNow
                 && !(PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen)) Toggle();
             if (!IsOpen) return;
             if (BuildMenuModal.IsOpenNow) return;

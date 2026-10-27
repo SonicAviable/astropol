@@ -47,7 +47,7 @@ namespace StellarisClone.Rendering
             var fm = FleetManager.Instance;
             if (fm == null) return;
             if (_cam == null) _cam = Camera.main;
-            if (_cam == null || StellarisClone.Ground.GroundBattleManager.InBattle) return;
+            if (_cam == null) return;
             if (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView) { CancelDrag(); return; }
 
             bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
