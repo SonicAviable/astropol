@@ -76,7 +76,8 @@ namespace StellarisClone.Cards
             _fx.Explosion(land, 0.9f * scale);
             _fx.Dust(land, 1.4f * scale);
             _fx.Shake(10f * scale, 0.35f);
-            SFXManager.Play(Sfx.ExplosionSmall, 0.8f);
+            SFXManager.Play(Sfx.BoomSmall, 0.8f, 0.85f);
+            SFXManager.Play(Sfx.CardSlam, 0.7f, 0.8f);
         }
 
         // ==================== ХОД ====================
@@ -97,7 +98,7 @@ namespace StellarisClone.Cards
                 _pending[p.card] = v;
                 LayoutAll(false);
                 v.Punch(0.2f);
-                SFXManager.Play(Sfx.DealPlace, 0.7f, 0.9f);
+                SFXManager.Play(Sfx.CardPlace, 0.7f, 0.92f);
                 yield return W(0.14f);
             }
             yield return W(0.35f);
@@ -170,7 +171,7 @@ namespace StellarisClone.Cards
                     if (e.Side == _P)
                     {
                         var c = FindUnshownHandCard(e.Def);
-                        if (c != null) { AddHandCard(c, true); SFXManager.Play(Sfx.PanelSlide, 0.5f, 1.2f); yield return W(0.14f); }
+                        if (c != null) { AddHandCard(c, true); SFXManager.Play(Sfx.CardDraw, 0.8f); yield return W(0.14f); }
                     }
                     break;
 
@@ -206,7 +207,7 @@ namespace StellarisClone.Cards
                         var p = _fx.Local(v.Rt);
                         _fx.Number(p + new Vector2(0, 30), Loc.F("−{0} укр.", e.Amount), new Color(0.55f, 0.85f, 1f), 22, 0.8f);
                         _fx.Ring(p, new Color(0.5f, 0.8f, 1f, 0.8f), 40f, 150f, 0.3f);
-                        SFXManager.Play(Sfx.HitShield, 0.5f);
+                        SFXManager.Play(Sfx.ImpactShield, 0.5f);
                     }
                     yield return W(0.05f);
                     break;
@@ -259,6 +260,7 @@ namespace StellarisClone.Cards
                         v.Side = u.Side;
                         AddLog(Loc.F("{0} переходит на сторону: {1}", u.Def.Name, SideName(u.Side)));
                         SFXManager.Play(Sfx.DealAccepted);
+                        SFXManager.Play(Sfx.CardFlip, 0.7f, 0.9f);
                     }
                     yield return W(0.4f);
                     break;
@@ -269,6 +271,7 @@ namespace StellarisClone.Cards
                     var name = CardArt.SectorName(_state.Sectors[e.Sector].Type);
                     AddLog(e.Side == _P ? Loc.F("<color=#7CF29A>Сектор «{0}» ваш</color>", name) : Loc.F("<color=#FF8A80>Сектор «{0}» у врага</color>", name));
                     SFXManager.Play(e.Side == _P ? Sfx.SystemCaptured : Sfx.UiDanger, 0.7f);
+                    SFXManager.Play(Sfx.CardSlam, 0.6f, 0.7f);
                     _fx.Ring(_fx.Local(_sec[e.Sector].PowerBar), e.Side == _P ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f), 60f, 520f, 0.6f);
                     yield return W(0.45f);
                     break;
@@ -285,6 +288,7 @@ namespace StellarisClone.Cards
                         _fx.Flash(new Color(0.6f, 0.85f, 1f), 0.4f);
                         _fx.Shake(12f, 0.5f);
                         SFXManager.Play(Sfx.StarbaseDown);
+                        SFXManager.Play(Sfx.ImpactShield, 1f, 0.7f);
                     }
                     AddLog(Loc.T("<color=#8FD3FF>Щит Штаба пал</color>"));
                     yield return Banner(Loc.T("ЩИТ ШТАБА ПАЛ"), _P == BattleState.Attacker ? Loc.T("Теперь возможен прорыв: 9+ силы в Штабе") : Loc.T("Враг может прорваться в Штаб"),
@@ -300,7 +304,7 @@ namespace StellarisClone.Cards
                     {
                         _fx.Explosion(p + Random.insideUnitCircle * 160f, 1.3f);
                         _fx.Shake(22f, 0.4f);
-                        SFXManager.Play(Sfx.ExplosionLarge, 0.8f);
+                        SFXManager.Play(Sfx.Boom, 0.9f);
                         yield return W(0.12f);
                     }
                     _fx.Flash(new Color(1f, 0.85f, 0.6f), 0.9f, 1.5f);
@@ -340,7 +344,7 @@ namespace StellarisClone.Cards
             v.SetAlpha(1f);
             v.SetStatus(null, Color.clear);
             bool wasDown = !v.FaceUp;
-            if (wasDown) { v.SetFace(true, false); yield return W(0.22f); }
+            if (wasDown) { v.SetFace(true, false); SFXManager.Play(Sfx.CardFlip, 0.8f, Random.Range(0.95f, 1.08f)); yield return W(0.22f); }
             v.RefreshNumbers(u.BasePower, u.Armor, u.MaxArmor, false);
             v.Punch(u.Def.Has(Kw.Vehicle) ? 0.35f : 0.22f);
             var p = _fx.Local(v.Rt);
@@ -354,8 +358,8 @@ namespace StellarisClone.Cards
                 _fx.Burst(p, 30, CardSprites.Spark, new Color(1f, 0.85f, 0.45f), 200f, 520f, 0.4f, 0.9f, 20f, 6f, 0f, 2f, align: true, stretch: 3f);
                 _fx.Flash(new Color(1f, 0.85f, 0.5f), 0.25f);
             }
-            if (heavy) { _fx.Shake(heavy ? 9f : 4f, 0.3f); SFXManager.Play(Sfx.HitArmor, 0.9f, 0.6f); }
-            SFXManager.Play(Sfx.DealPlace, 0.9f, heavy ? 0.8f : 1f);
+            if (heavy) { _fx.Shake(9f, 0.3f); SFXManager.Play(Sfx.ImpactMetal, 0.8f, 0.7f); }
+            SFXManager.Play(Sfx.CardSlam, heavy ? 1f : 0.7f, heavy ? 0.85f : 1f);
             AddLog(Loc.F("{0}: {1} → {2}", SideName(u.Side), u.Def.Name, CardArt.SectorName(_state.Sectors[u.Sector].Type).ToLower()));
             LayoutAll(false);
             yield return W(heavy ? 0.4f : 0.28f);
@@ -381,6 +385,7 @@ namespace StellarisClone.Cards
             {
                 if (trap != null) _fx.Sparks(_fx.Local(trap.Rt), new Color(1f, 0.85f, 0.45f), 20, 1f);
                 SFXManager.Play(Sfx.HoloScan, 0.7f);
+                SFXManager.Play(Sfx.ImpactMetal, 0.5f, 1.3f);
                 AddLog(Loc.F("{0}: ловушка «{1}» обезврежена", SideName(e.Side), e.Def != null ? e.Def.Name : "?"));
                 yield return W(0.3f);
             }
@@ -391,7 +396,7 @@ namespace StellarisClone.Cards
                 _fx.Explosion(p, 1.2f);
                 _fx.Ring(p, new Color(1f, 0.35f, 0.25f, 1f), 30f, 420f, 0.5f);
                 _fx.Shake(14f, 0.4f);
-                SFXManager.Play(Sfx.ExplosionLarge, 0.8f);
+                SFXManager.Play(Sfx.Boom, 0.85f);
                 AddLog(Loc.F("<color=#FF8A80>Ловушка «{0}» сработала</color>", e.Def != null ? e.Def.Name : "?"));
                 yield return Banner(Loc.T("ЛОВУШКА!"), e.Def != null ? e.Def.Name : "", new Color(1f, 0.4f, 0.3f), 0.8f);
             }
@@ -416,7 +421,8 @@ namespace StellarisClone.Cards
             v.SetAlpha(1f);
             v.Punch(0.4f);
             v.GlowBoost = 1.2f;
-            SFXManager.Play(Sfx.AlertPop, 0.8f);
+            SFXManager.Play(Sfx.CardFlip, 0.7f);
+            SFXManager.Play(Sfx.OrderCast, 0.9f);
             AddLog(Loc.F("{0}: приказ «{1}»", SideName(e.Side), e.Def.Name));
             yield return W(0.45f);
             yield return OrderCinematic(e.Def, e.Side, e.Sector);
@@ -449,7 +455,8 @@ namespace StellarisClone.Cards
                     _fx.Line(top, target, new Color(0.6f, 0.9f, 1f, 0.9f), 280f, 0.8f);
                     _fx.Flash(Color.white, 0.95f, 2.2f);
                     _fx.Shake(26f, 0.8f);
-                    SFXManager.Play(Sfx.ExplosionLarge);
+                    SFXManager.Play(Sfx.Boom, 1f, 0.8f);
+                    SFXManager.PlayDelayed(Sfx.BoomSmall, 0.12f, 0.8f, 0.7f);
                     for (int i = 0; i < 4; i++) _fx.Explosion(target + Random.insideUnitCircle * 140f, 1.5f);
                     _fx.Ring(target, new Color(1f, 0.95f, 0.8f, 1f), 40f, 900f, 0.8f);
                     _fx.Burst(target, 40, CardSprites.Dot, new Color(1f, 0.6f, 0.2f, 1f), 100f, 600f, 1.2f, 2.6f, 8f, 3f, 260f, 0.8f, 90f, 160f);
@@ -459,11 +466,12 @@ namespace StellarisClone.Cards
                 case "O1":   // Огневой вал с кораблей
                 {
                     SFXManager.Play(Sfx.WeaponMissile);
+                    SFXManager.PlayDelayed(Sfx.ShellWhistle, 0.05f, 0.9f);
                     for (int i = 0; i < 10; i++)
                     {
                         var p = target + new Vector2(Random.Range(-190f, 190f), Random.Range(-50f, 50f));
                         _fx.Projectile(p + new Vector2(-500f, 700f), p, new Color(1f, 0.75f, 0.35f), 0.3f * Pace, 16f);
-                        StartCoroutine(Later(0.3f, () => { _fx.Explosion(p, 0.7f); _fx.Shake(6f, 0.15f); SFXManager.Play(Sfx.ExplosionSmall, 0.5f); }));
+                        StartCoroutine(Later(0.3f, () => { _fx.Explosion(p, 0.7f); _fx.Shake(6f, 0.15f); SFXManager.Play(Sfx.BoomSmall, 0.55f, Random.Range(0.85f, 1.1f)); }));
                         yield return W(0.06f);
                     }
                     yield return W(0.4f);
@@ -475,6 +483,7 @@ namespace StellarisClone.Cards
                 case "O5":
                     for (int i = 0; i < 4; i++) { _fx.Smoke(target + Random.insideUnitCircle * 140f, 2.4f, new Color(0.65f, 0.67f, 0.7f, 0.7f)); _fx.Smoke(own + Random.insideUnitCircle * 140f, 2.4f, new Color(0.65f, 0.67f, 0.7f, 0.7f)); }
                     SFXManager.Play(Sfx.Disengage);
+                    SFXManager.Play(Sfx.Whoosh, 0.8f, 0.7f);
                     yield return W(0.6f);
                     break;
                 case "O6":
@@ -503,6 +512,7 @@ namespace StellarisClone.Cards
                     _fx.Sparks(target, new Color(0.55f, 0.85f, 1f), 40, 1.4f);
                     _fx.Flash(new Color(0.45f, 0.75f, 1f), 0.45f);
                     SFXManager.Play(Sfx.HitShield);
+                    SFXManager.Play(Sfx.ImpactShield, 1f, 0.6f);
                     yield return W(0.6f);
                     break;
                 case "I4":   // Пси-шторм: молнии по всему сектору
@@ -527,12 +537,13 @@ namespace StellarisClone.Cards
                     break;
                 case "X3":   // Децимация
                     _fx.Flash(new Color(0.8f, 0.05f, 0.05f), 0.35f);
-                    SFXManager.Play(Sfx.WeaponKinetic);
+                    SFXManager.Play(Sfx.GunAuto, 1f, 0.9f);
+                    SFXManager.PlayDelayed(Sfx.GunAuto, 0.18f, 0.8f, 1.05f);
                     yield return W(0.4f);
                     break;
                 case "Q3":   // Ликвидация: снайперская линия
                     _fx.Line(own + new Vector2(0, -400), target, new Color(1f, 0.9f, 0.5f, 1f), 3f, 0.3f);
-                    SFXManager.Play(Sfx.WeaponKinetic, 1f, 0.7f);
+                    SFXManager.Play(Sfx.GunSniper);
                     yield return W(0.3f);
                     break;
                 case "N3":
@@ -609,7 +620,8 @@ namespace StellarisClone.Cards
                 _fx.Shake(16f, 0.4f);
                 _fx.Dust(b, 1.6f);
                 _fx.Impact(b, ang, new Color(1f, 0.8f, 0.5f), 1.4f);
-                SFXManager.Play(Sfx.HitArmor, 1f, 0.5f);
+                SFXManager.Play(Sfx.ImpactMetal, 1f, 0.6f);
+                SFXManager.Play(Sfx.CardSlam, 1f, 0.7f);
                 yield return W(0.25f);
                 yield break;
             }
@@ -618,7 +630,7 @@ namespace StellarisClone.Cards
             if (d.Has(Kw.Flame))
             {
                 // Огнемёт: плотная струя пламени и жар на цели
-                SFXManager.Play(Sfx.WeaponEnergy, 0.7f, 0.55f);
+                SFXManager.Play(Sfx.GunFlame, 1f, Random.Range(0.92f, 1.08f));
                 _fx.Particles?.Play(CardParticles.Fx.Flame, a, 1f, ang);
                 for (int i = 0; i < 6; i++)
                 {
@@ -638,13 +650,14 @@ namespace StellarisClone.Cards
                 _fx.Muzzle(a, 90f, c, 1.4f);
                 _fx.Smoke(a, 0.5f, new Color(0.35f, 0.33f, 0.3f, 0.6f));
                 _fx.Shake(5f, 0.15f);
-                SFXManager.Play(Sfx.WeaponMissile, 0.6f);
+                SFXManager.Play(Sfx.GunMortar, 0.9f);
+                SFXManager.PlayDelayed(Sfx.ShellWhistle, dur * Pace * 0.35f / Mathf.Max(0.1f, _animSpeed), 0.7f);
                 _fx.Projectile(a, b, c, dur * Pace, 16f, true);
                 StartCoroutine(ShellTrail(a, b, dur * Pace));
                 yield return W(dur);
                 _fx.Explosion(b, 0.75f);
                 _fx.Shake(10f, 0.3f);
-                SFXManager.Play(Sfx.ExplosionSmall, 0.7f);
+                SFXManager.Play(Sfx.BoomSmall, 0.8f);
                 yield return W(0.12f);
                 yield break;
             }
@@ -656,7 +669,7 @@ namespace StellarisClone.Cards
                 yield return W(0.22f);
                 _fx.Muzzle(a, ang, c, 1f);
                 _fx.Beam(a, b, new Color(1f, 0.95f, 0.75f), 3f, 0.12f);
-                SFXManager.Play(Sfx.WeaponKinetic, 0.8f, 0.7f);
+                SFXManager.Play(Sfx.GunSniper);
                 yield return W(0.05f);
                 _fx.Impact(b, ang, new Color(1f, 0.9f, 0.6f), 1.1f);
                 yield return W(0.08f);
@@ -671,7 +684,7 @@ namespace StellarisClone.Cards
                 {
                     _fx.Muzzle(a, ang, c, heavy ? 1.3f : 0.8f);
                     _fx.Beam(a + Random.insideUnitCircle * 6f, b + Random.insideUnitCircle * 10f, c, heavy ? 7f : 4f, 0.14f);
-                    SFXManager.Play(Sfx.WeaponEnergy, 0.45f, Random.Range(0.95f, 1.1f));
+                    SFXManager.Play(Sfx.GunLaser, heavy ? 1f : 0.75f, heavy ? 0.8f : Random.Range(0.95f, 1.1f));
                     _fx.Impact(b, ang, c, heavy ? 1.2f : 0.8f);
                     if (heavy) _fx.Energy(b, c, 0.6f);
                     yield return W(0.09f);
@@ -682,19 +695,26 @@ namespace StellarisClone.Cards
             // Кинетика: очередь трассеров у пехоты, один тяжёлый снаряд у техники
             int shots = heavy ? 1 : 3;
             float fly = heavy ? 0.2f : 0.16f;
+            bool auto = !heavy && (d.Power >= 3 || d.Has(Kw.Drone));
+            if (heavy) SFXManager.Play(Sfx.GunHeavy, 1f, Random.Range(0.92f, 1.05f));
+            else if (auto) SFXManager.Play(Sfx.GunAuto, 0.9f);
             for (int i = 0; i < shots; i++)
             {
                 var spread = Random.insideUnitCircle * (heavy ? 6f : 16f);
                 _fx.Muzzle(a, ang, c, heavy ? 1.5f : 0.75f);
                 _fx.Bullet(a, b + spread, c, fly * Pace, heavy ? 22f : 11f);
-                SFXManager.Play(Sfx.WeaponKinetic, heavy ? 0.6f : 0.35f, heavy ? 0.7f : Random.Range(1f, 1.2f));
+                if (!heavy && !auto) SFXManager.Play(Sfx.GunRifle, i == 0 ? 0.9f : 0.6f, Random.Range(0.94f, 1.08f));
                 if (heavy) { src.Punch(0.08f); _fx.Shake(4f, 0.12f); }
                 bool flesh = tgt.Card.Def.Has(Kw.Infantry) || tgt.Card.Def.Has(Kw.Militia);
-                StartCoroutine(Later(fly, () => _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f, flesh)));
+                StartCoroutine(Later(fly, () =>
+                {
+                    _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f, flesh);
+                    SFXManager.Play(flesh ? Sfx.ImpactFlesh : Sfx.ImpactMetal, heavy ? 0.9f : 0.45f, Random.Range(0.9f, 1.15f));
+                }));
                 yield return W(heavy ? 0.05f : 0.07f);
             }
             yield return W(fly);
-            if (heavy) { _fx.Flipbook("fx_explosion", 6, 6, b, 120f, 0.7f, Color.white, 170f, Random.Range(0f, 360f)); _fx.Shake(8f, 0.2f); }
+            if (heavy) { _fx.Flipbook("fx_explosion", 6, 6, b, 120f, 0.7f, Color.white, 170f, Random.Range(0f, 360f)); _fx.Shake(8f, 0.2f); SFXManager.Play(Sfx.BoomSmall, 0.6f, 1.1f); }
         }
 
         /// <summary>Шлейф дыма за навесным снарядом (повторяет его дугу).</summary>
@@ -726,7 +746,8 @@ namespace StellarisClone.Cards
             }
             else
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 0.6f);
-            SFXManager.Play(Sfx.HitArmor, 0.5f, Random.Range(0.9f, 1.15f));
+            bool metal = def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure || def.Has(Kw.Drone);
+            SFXManager.Play(metal ? Sfx.ImpactMetal : Sfx.ImpactFlesh, 0.55f, Random.Range(0.9f, 1.15f));
             v.RefreshNumbers(v.ShownPower, v.ShownArmor - e.Amount, v.MaxArmor);
             yield return W(0.12f);
         }
@@ -743,20 +764,23 @@ namespace StellarisClone.Cards
             {
                 _fx.Explosion(p, def.Cost >= 5 ? 1.6f : 1.1f);
                 _fx.Shake(def.Cost >= 5 ? 18f : 10f, 0.4f);
-                SFXManager.Play(def.Cost >= 5 ? Sfx.ExplosionLarge : Sfx.ExplosionSmall, 0.9f);
+                SFXManager.Play(def.Cost >= 5 ? Sfx.Boom : Sfx.BoomSmall, 0.9f);
+                SFXManager.PlayDelayed(Sfx.UnitDown, 0.08f, 0.7f);
             }
             else if (def.Has(Kw.Drone))
             {
                 _fx.Sparks(p, new Color(0.85f, 0.95f, 1f), 24, 1.1f);
                 _fx.Smoke(p, 0.6f);
-                SFXManager.Play(Sfx.ExplosionSmall, 0.5f, 1.4f);
+                SFXManager.Play(Sfx.BoomSmall, 0.45f, 1.4f);
+                SFXManager.Play(Sfx.ImpactMetal, 0.6f, 1.3f);
             }
             else
             {
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 1.5f);
                 _fx.Particles?.Play(CardParticles.Fx.FleshHit, p, 1.3f, 90f);
                 _fx.Dust(p + new Vector2(0, -50), 0.6f);
-                SFXManager.Play(Sfx.HitArmor, 0.8f, 0.7f);
+                SFXManager.Play(Sfx.ImpactFlesh, 0.9f, 0.8f);
+                SFXManager.Play(Sfx.UnitDown, 0.45f, 1.15f);
             }
             AddLog(Loc.F("{0} — <color=#FF8A80>{1} погиб</color>", SideName(v.Side), def.Name));
             StartCoroutine(Shatter(v, hard));
@@ -845,7 +869,7 @@ namespace StellarisClone.Cards
             v.Rt.anchoredPosition = new Vector2(0, e.Text == "apc" ? 0 : 240);
             v.Punch(0.35f);
             _fx.Dust(land, 0.9f);
-            SFXManager.Play(Sfx.DealPlace);
+            SFXManager.Play(Sfx.CardSlam, 0.8f);
             AddLog(Loc.F("{0}: {1} в строю", SideName(u.Side), u.Def.Name));
             LayoutAll(false);
             yield return W(0.3f);
@@ -894,7 +918,8 @@ namespace StellarisClone.Cards
                 for (int i = 0; i < 5; i++) _fx.Explosion(p + Random.insideUnitCircle * 180f, 1.1f);
                 _fx.Burst(p, 40, CardSprites.Dot, new Color(1f, 0.5f, 0.15f, 1f), 200f, 700f, 0.8f, 1.6f, 10f, 4f, 900f, 0.4f, 90f, 120f);
                 _fx.Shake(18f, 0.6f);
-                SFXManager.Play(Sfx.ExplosionLarge);
+                SFXManager.Play(Sfx.Boom);
+                SFXManager.PlayDelayed(Sfx.BoomSmall, 0.2f, 0.7f, 0.8f);
             }
             if (_setup.Terrain == Terrain.Desert)
                 for (int i = 0; i < 12; i++) _fx.Smoke(new Vector2(-_fxLayer.rect.width * 0.5f, Random.Range(-300f, 300f)), 3f, new Color(0.85f, 0.65f, 0.4f, 0.35f));
@@ -926,6 +951,7 @@ namespace StellarisClone.Cards
             var s = Caption(band.rectTransform, sub, 16, new Color(1, 1, 1, 0f), TextAnchor.LowerCenter, 1.2f);
             s.rectTransform.Stretch(0, 12, 0, 0);
             SFXManager.Play(Sfx.AlertPop, 0.6f);
+            SFXManager.Play(Sfx.Whoosh, 0.8f);
             float total = dur * 1.3f / Mathf.Max(0.1f, _animSpeed * (Fast ? 3f : 1f));
             float time = 0f;
             while (time < total)

@@ -29,7 +29,7 @@ namespace StellarisClone.Cards
         // Раскладка (центр экрана 1920×1080, y вверх)
         private const float TrayY = 80f, TrayW = 1480f, TrayH = 600f, Lane = 482f, LaneW = 470f, RowOff = 200f;
         private const float PlaqueW = 440f, PlaqueH = 118f, OrbX = 170f, OrbY = 66f;
-        private const float RX = 828f, LX = -828f, HandY = -470f;
+        private const float RX = 848f, LX = -848f, HandY = -470f;
         private static readonly Vector2 BoardCard = new Vector2(128, 178);
         private static readonly Vector2 HandCard = new Vector2(200, 280);
         private static readonly Vector2 PreviewCard = new Vector2(300, 420);
@@ -79,21 +79,15 @@ namespace StellarisClone.Cards
         {
             public RectTransform Col, Header, PowerBar;
             public Image Plate, Wash, Dome, Highlight, HighlightFill, OrbGlowE, OrbGlowP, DomeBadge;
-            public LiquidGlassEffect PlateFx;
+            public LiquidGlassEffect PlateFx, ChipFx;
+            public Image Chip;
+            public Text ChipText;
             public Text DomeText;
             public bool DomeWasUp = true;
             public Text Name, Rule, PowE, PowP, Stamp;
-            public float WashA, HighA;
+            public float WashA, HighA, HighT;
             public Color WashC, HighC;
             public int LastControl = -2;
-
-            /// <summary>Подсветка дорожки при перетаскивании карты: 1 — можно сыграть, −1 — нельзя, 0 — гаснет.</summary>
-            public void HeaderGlowSet(int state)
-            {
-                if (state == 0) return;
-                HighC = state > 0 ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f);
-                HighA = 0.5f;
-            }
         }
 
         // ==================== СОЗДАНИЕ ====================
@@ -159,6 +153,7 @@ namespace StellarisClone.Cards
             _mercPicking = false;
             _enemyHandShown = -1;
             _endState = null;
+            _pointsShown = -1;
             _handHover = null;
             _units.Clear(); _pending.Clear(); _hand.Clear(); _targets.Clear(); _targetRot.Clear(); _log.Clear(); _crystals.Clear(); _dying.Clear();
             foreach (Transform c in _canvas.transform) Destroy(c.gameObject);
@@ -253,7 +248,6 @@ namespace StellarisClone.Cards
             BuildPortraits();
             BuildRight();
             BuildLeft();
-            BuildPoints();
 
             _hintText = Caption(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 0.8f);
             var hol = _hintText.gameObject.AddComponent<Outline>();
@@ -562,30 +556,44 @@ namespace StellarisClone.Cards
         }
 
         /// <summary>
-        /// Правая колонка — пульт боя в стеклянной панели игры: номер хода, большая кнопка «Закончить ход»
-        /// (бирюзовая — ещё есть что сыграть, зелёная с пульсом — всё сыграно), счёт секторов, погода, кнопки управления.
+        /// Правая колонка — пульт боя в стеклянной панели игры, сверху вниз:
+        ///   • номер хода в круглом чипе с кольцом прогресса (заполняется к 6-му ходу; на последнем — красная надпись);
+        ///   • большая кнопка «Закончить ход» (бирюзовая — ещё есть что сыграть, зелёная с пульсом — всё сыграно);
+        ///   • счёт и три мини-индикатора секторов: значок, «ваша сила : сила врага», кромка — кто держит;
+        ///   • погода; очки приказов — крупная цифра и кристаллы; кнопки скорости, автобоя и отступления.
         /// </summary>
         private void BuildRight()
         {
             bool merc = _state.Sides[_P].Faction == "aquila";
-            float bottom = merc ? -286f : -232f, top = 370f;
-            var console = GlassAt(_board, "Console", new Vector2(RX, (top + bottom) * 0.5f), new Vector2(236, top - bottom), PanelTint, RimCyan, false, 18f);
-            var ch = PanelHeader(console.rectTransform, Loc.T("ШТУРМ"));
-            ch.rectTransform.TopBand(14, 16, 12, 12);
+            const float W = 196f, Inner = 180f;
+            float bottom = merc ? -330f : -264f, top = 372f;
+            var console = GlassAt(_board, "Console", new Vector2(RX, (top + bottom) * 0.5f), new Vector2(W, top - bottom), PanelTint, RimCyan, false, 18f);
+            PanelHeader(console.rectTransform, _P == BattleState.Attacker ? Loc.T("ШТУРМ") : Loc.T("ОБОРОНА"));
 
-            // Номер хода — круглый чип; под ним «ход из 6»
-            var turnChip = ChipAt(_board, "TurnChip", new Vector2(RX, 272), new Vector2(92, 92), SubTint, new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f));
-            _turnText = Caption(turnChip.rectTransform, "1", 40, Color.white, TextAnchor.MiddleCenter, 0f);
+            // Ход: кольцо прогресса вокруг чипа с номером
+            var ringBack = CardSkin.Simple(_board, "TurnRingBack", "ring", new Color(Cyan.r, Cyan.g, Cyan.b, 0.12f));
+            ringBack.sprite = CardSprites.Ring;
+            ringBack.rectTransform.At(Mid, Mid, new Vector2(RX, 286), new Vector2(104, 104));
+            _turnRing = CardSkin.Simple(_board, "TurnRing", "ring", new Color(Cyan.r, Cyan.g, Cyan.b, 0.95f));
+            _turnRing.sprite = CardSprites.Ring;
+            _turnRing.type = Image.Type.Filled;
+            _turnRing.fillMethod = Image.FillMethod.Radial360;
+            _turnRing.fillOrigin = (int)Image.Origin360.Top;
+            _turnRing.fillClockwise = true;
+            _turnRing.fillAmount = 0f;
+            _turnRing.rectTransform.At(Mid, Mid, new Vector2(RX, 286), new Vector2(104, 104));
+            var turnChip = ChipAt(_board, "TurnChip", new Vector2(RX, 286), new Vector2(80, 80), SubTint, new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f));
+            _turnText = Caption(turnChip.rectTransform, "1", 38, Color.white, TextAnchor.MiddleCenter, 0f);
             _turnText.rectTransform.Stretch(0, 0, 0, -2);
-            var tl = Caption(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 11, Gold, TextAnchor.MiddleCenter, 1.4f);
-            tl.rectTransform.At(Mid, Mid, new Vector2(RX, 212), new Vector2(220, 18));
+            _turnCap = Caption(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 11, Gold, TextAnchor.MiddleCenter, 1.4f);
+            _turnCap.rectTransform.At(Mid, Mid, new Vector2(RX, 222), new Vector2(Inner, 18));
 
             // Кнопка хода: мягкий ореол цвета состояния и стеклянная кнопка игры
             _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.6f, 0f));
-            _endGlow.rectTransform.At(Mid, Mid, new Vector2(RX, 140), new Vector2(300, 170));
+            _endGlow.rectTransform.At(Mid, Mid, new Vector2(RX, 166), new Vector2(280, 150));
             _endButton = LGBuild.Button(_board, "EndTurn", UIManager.DS.BtnPrimary, new Color(Cyan.r, Cyan.g, Cyan.b, 0.8f), OnEndTurn, null, Loc.T("ЗАКОНЧИТЬ\nХОД"), 17, 16f);
             _endButtonImg = _endButton.GetComponent<Image>();
-            _endButtonImg.rectTransform.At(Mid, Mid, new Vector2(RX, 140), new Vector2(204, 80));
+            _endButtonImg.rectTransform.At(Mid, Mid, new Vector2(RX, 166), new Vector2(Inner, 74));
             _endFx = _endButton.GetComponent<LiquidGlassEffect>();
             var eit = _endButton.GetComponent<LGInteractive>();
             if (eit != null) eit.animateScale = false;   // своя «пружина» при нажатии
@@ -595,38 +603,75 @@ namespace StellarisClone.Cards
             _endLabel.Track(1.6f);
             TooltipHelper.Attach(_endButton.gameObject, Loc.T("Закончить ход  <color=#8AA2A8>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно"));
 
-            // Счёт секторов
-            var sep1 = LGBuild.Panel(_board, "Sep", new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.22f));
-            sep1.raycastTarget = false;
-            sep1.rectTransform.At(Mid, Mid, new Vector2(RX, 82), new Vector2(190, 1));
-            _scoreText = Caption(_board, "", 15, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 0.8f);
-            _scoreText.rectTransform.At(Mid, Mid, new Vector2(RX, 52), new Vector2(220, 44));
+            // Счёт и мини-индикаторы секторов
+            _scoreText = Caption(_board, "", 14, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 0.8f);
+            _scoreText.rectTransform.At(Mid, Mid, new Vector2(RX, 106), new Vector2(Inner, 40));
             _scoreText.supportRichText = true;
+            for (int i = 0; i < 3; i++)
+            {
+                var s = _sec[i];
+                var type = _state.Sectors[i].Type;
+                s.Chip = GlassAt(_board, "SectorChip", new Vector2(RX + (i - 1) * 61f, 58), new Vector2(56, 46), SubTint, RimSoft, true, 12f, raycast: true);
+                s.ChipFx = s.Chip.GetComponent<LiquidGlassEffect>();
+                var sic = LGIcons.Create(s.Chip.rectTransform, CardArt.SectorIcon(type), 13, Muted);
+                sic.rectTransform.At(new Vector2(0.5f, 1f), Mid, new Vector2(0, -12), new Vector2(13, 13));
+                s.ChipText = Caption(s.Chip.rectTransform, "0:0", 13, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 0f);
+                s.ChipText.rectTransform.At(new Vector2(0.5f, 0f), Mid, new Vector2(0, 13), new Vector2(56, 18));
+                s.ChipText.supportRichText = true;
+                TooltipHelper.Attach(s.Chip.gameObject, CardArt.SectorName(type) + "\n" + CardArt.SectorRule(type));
+            }
 
-            // Погода — подложка внутри пульта
-            var wp = GlassAt(_board, "Weather", new Vector2(RX, -22), new Vector2(204, 74), SubTint, RimSoft, true, 12f);
-            _weatherTitle = Caption(wp.rectTransform, Loc.T("ПОГОДА"), 11, Gold, TextAnchor.UpperCenter, 1.4f);
-            _weatherTitle.rectTransform.Stretch(10, 0, 10, 8);
-            _weatherText = LGBuild.Label(wp.rectTransform, "", 12, Muted, TextAnchor.MiddleCenter, wrap: true);
-            _weatherText.rectTransform.Stretch(12, 6, 12, 26);
+            // Погода — подложка со значком
+            var wp = GlassAt(_board, "Weather", new Vector2(RX, -10), new Vector2(Inner, 66), SubTint, RimSoft, true, 12f);
+            _weatherIcon = LGIcons.Create(wp.rectTransform, LGIcon.Globe, 13, new Color(0.65f, 0.82f, 1f));
+            _weatherIcon.rectTransform.At(new Vector2(0, 1f), Mid, new Vector2(16, -15), new Vector2(13, 13));
+            _weatherTitle = Caption(wp.rectTransform, Loc.T("ПОГОДА"), 11, Gold, TextAnchor.MiddleLeft, 1.4f);
+            _weatherTitle.rectTransform.TopBand(6, 18, 28, 8);
+            _weatherTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _weatherTitle.resizeTextForBestFit = true; _weatherTitle.resizeTextMinSize = 8; _weatherTitle.resizeTextMaxSize = 11;
+            _weatherText = LGBuild.Label(wp.rectTransform, "", 11, Muted, TextAnchor.MiddleCenter, wrap: true);
+            _weatherText.rectTransform.Stretch(8, 4, 8, 24);
+            _weatherText.resizeTextForBestFit = true; _weatherText.resizeTextMinSize = 8; _weatherText.resizeTextMaxSize = 11;
             _weatherText.raycastTarget = false;
 
+            // Очки приказов — на виду: крупная цифра и кристаллы в два ряда
+            var pp = GlassAt(_board, "Points", new Vector2(RX, -104), new Vector2(Inner, 100), SubTint, new Color(0.45f, 0.75f, 1f, 0.35f), true, 12f, raycast: true);
+            var pcap = Caption(pp.rectTransform, Loc.T("ОЧКИ ПРИКАЗОВ"), 11, Gold, TextAnchor.UpperCenter, 1.4f);
+            pcap.rectTransform.TopBand(8, 16, 6, 6);
+            _pointsGlow = CardSkin.Simple(pp.rectTransform, "PointsGlow", "glow", new Color(0.45f, 0.75f, 1f, 0f));
+            _pointsGlow.rectTransform.At(new Vector2(0, 0.5f), Mid, new Vector2(36, -10), new Vector2(110, 90));
+            _pointsText = Caption(pp.rectTransform, "0/0", 28, Color.white, TextAnchor.MiddleCenter, 0f);
+            _pointsText.rectTransform.At(new Vector2(0, 0.5f), Mid, new Vector2(36, -10), new Vector2(70, 40));
+            var pol = _pointsText.gameObject.AddComponent<Outline>();
+            pol.effectColor = new Color(0.05f, 0.15f, 0.35f, 0.9f);
+            pol.effectDistance = new Vector2(1.5f, -1.5f);
+            for (int k = 0; k < 10; k++)
+            {
+                var c = CardSkin.Simple(pp.rectTransform, "Crystal", "crystal_empty", Color.white);
+                c.rectTransform.At(new Vector2(0, 0.5f), Mid, new Vector2(84 + (k % 5) * 21f, k < 5 ? 2 : -21), new Vector2(22, 22));
+                _crystals.Add(c);
+            }
+            TooltipHelper.Attach(pp.gameObject, Loc.T("Очки приказов: столько стоят карты. Каждый ход их становится больше"));
+
             // Кнопки управления боем
-            _speedLabel = SquareButton(new Vector2(RX - 66, -122), null, SpeedText(), Loc.T("СКОРОСТЬ"), OnSpeed, Loc.T("Скорость анимаций боя"), out _);
-            SquareButton(new Vector2(RX, -122), LGIcon.Fastest, null, Loc.T("ДОСЧИТАТЬ"), OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
-            SquareButton(new Vector2(RX + 66, -122), LGIcon.Back, null, _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), OnRetreat,
+            _speedLabel = SquareButton(new Vector2(RX - 60, -196), null, SpeedText(), Loc.T("СКОРОСТЬ"), OnSpeed, Loc.T("Скорость анимаций боя"), out _);
+            SquareButton(new Vector2(RX, -196), LGIcon.Fastest, null, Loc.T("ДОСЧИТАТЬ"), OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
+            SquareButton(new Vector2(RX + 60, -196), LGIcon.Back, null, _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), OnRetreat,
                 _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton, UIManager.DS.Red);
 
             // Наёмники Аквилы — купить прямо в бою
             if (merc)
             {
                 _mercButton = LGBuild.Button(_board, "Merc", UIManager.DS.BtnNeutral, new Color(Gold.r, Gold.g, Gold.b, 0.6f), OnMerc, LGIcon.Trade, Loc.T("НАЁМНИКИ · 60"), 12, 14f);
-                _mercButton.GetComponent<Image>().rectTransform.At(Mid, Mid, new Vector2(RX, -238), new Vector2(200, 44));
+                _mercButton.GetComponent<Image>().rectTransform.At(Mid, Mid, new Vector2(RX, -292), new Vector2(Inner, 42));
                 TooltipHelper.Attach(_mercButton.gameObject, Loc.T("<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору"));
             }
         }
 
         private LiquidGlassEffect _endFx;
+        private Image _turnRing, _pointsGlow, _weatherIcon;
+        private Text _turnCap;
+        private int _pointsShown = -1;
 
         /// <summary>Квадратная кнопка пульта — стеклянная кнопка игры с иконкой (или текстом) и подписью под ней.</summary>
         private Text SquareButton(Vector2 pos, LGIcon? icon, string label, string caption, Action act, string tip, out Button btn, Color? accent = null)
@@ -657,19 +702,76 @@ namespace StellarisClone.Cards
             return t;
         }
 
-        /// <summary>Левая колонка: колоды врага и ваша, между ними хроника боя в стеклянной панели.</summary>
+        /// <summary>Левая колонка: колоды врага и ваша, между ними хроника боя — стеклянная панель, сворачивается щелчком по заголовку.</summary>
         private void BuildLeft()
         {
             _deckE = Deck(new Vector2(LX, 300), FactionOf(_E));
             _deckP = Deck(new Vector2(LX, -168), FactionOf(_P));
 
-            var hp = GlassAt(_board, "Log", new Vector2(LX, 66), new Vector2(232, 258), PanelTint, RimCyan, false, 18f);
+            var hp = GlassAt(_board, "Log", Vector2.zero, new Vector2(LogW, LogH), PanelTint, RimCyan, false, 18f, raycast: true);
+            hp.rectTransform.At(Mid, new Vector2(0.5f, 1f), new Vector2(LX, LogTop), new Vector2(LogW, LogH));
+            _logPanel = hp.rectTransform;
             PanelHeader(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"));
-            _logText = LGBuild.Label(hp.rectTransform, "", 12, Muted, TextAnchor.UpperLeft, wrap: true);
-            _logText.rectTransform.Stretch(14, 12, 12, 44);
+
+            // Заголовок — кнопка: стрелка показывает, куда сложится панель; точка — новые записи в свёрнутой хронике
+            var hit = LGBuild.Panel(hp.rectTransform, "Toggle", new Color(0, 0, 0, 0), raycast: true);
+            hit.rectTransform.TopBand(0, LogMin, 0, 0);
+            var tb = hit.gameObject.AddComponent<Button>();
+            tb.transition = Selectable.Transition.None;
+            tb.onClick.AddListener(ToggleLog);
+            TooltipHelper.Attach(hit.gameObject, Loc.T("Свернуть / развернуть хронику"));
+            _logChevron = LGIcons.Create(hp.rectTransform, LGIcon.Back, 11, Muted);
+            _logChevron.rectTransform.At(new Vector2(1f, 1f), Mid, new Vector2(-16, -19), new Vector2(11, 11));
+            _logDot = LGBuild.Panel(hp.rectTransform, "NewDot", new Color(Cyan.r, Cyan.g, Cyan.b, 0f));
+            _logDot.sprite = CardSprites.Dot;
+            _logDot.raycastTarget = false;
+            _logDot.rectTransform.At(new Vector2(0f, 1f), Mid, new Vector2(16, -19), new Vector2(9, 9));
+
+            // Текст — в обрезающем «теле» под заголовком: при сворачивании он прячется вместе с панелью
+            var body = LGBuild.Rect(hp.rectTransform, "Body");
+            body.Stretch(0, 0, 0, LogMin + 2);
+            body.gameObject.AddComponent<RectMask2D>();
+            _logText = LGBuild.Label(body, "", 12, Muted, TextAnchor.UpperLeft, wrap: true);
+            _logText.rectTransform.Stretch(14, 12, 12, 4);
             _logText.verticalOverflow = VerticalWrapMode.Truncate;
             _logText.raycastTarget = false;
             _logText.supportRichText = true;
+
+            _logCollapsed = PlayerPrefs.GetInt("cards.logCollapsed", 0) == 1;
+            _logH = _logCollapsed ? LogMin : LogH;
+            _logPanel.sizeDelta = new Vector2(LogW, _logH);
+            _logChevron.rectTransform.localRotation = Quaternion.Euler(0, 0, _logCollapsed ? 90f : -90f);
+            _logSeen = _logTotal;
+        }
+
+        private const float LogW = 196f, LogH = 258f, LogMin = 40f, LogTop = 195f;
+        private RectTransform _logPanel;
+        private Image _logChevron, _logDot;
+        private bool _logCollapsed;
+        private float _logH;
+        private int _logTotal, _logSeen;
+
+        private void ToggleLog()
+        {
+            _logCollapsed = !_logCollapsed;
+            PlayerPrefs.SetInt("cards.logCollapsed", _logCollapsed ? 1 : 0);
+            if (!_logCollapsed) _logSeen = _logTotal;
+            SFXManager.Play(Sfx.PanelSlide, 0.7f);
+        }
+
+        /// <summary>Сворачивание хроники: высота плавно к цели, стрелка поворачивается, точка новых записей мигает.</summary>
+        private void LogTick(float dt)
+        {
+            if (_logPanel == null) return;
+            float want = _logCollapsed ? LogMin : LogH;
+            _logH = Mathf.Lerp(_logH, want, 1f - Mathf.Exp(-dt * 14f));
+            if (Mathf.Abs(_logH - want) < 0.5f) _logH = want;
+            _logPanel.sizeDelta = new Vector2(LogW, _logH);
+            var rot = Quaternion.Euler(0, 0, _logCollapsed ? 90f : -90f);
+            _logChevron.rectTransform.localRotation = Quaternion.Slerp(_logChevron.rectTransform.localRotation, rot, 1f - Mathf.Exp(-dt * 14f));
+            if (!_logCollapsed) _logSeen = _logTotal;
+            float da = _logCollapsed && _logTotal != _logSeen ? 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 6f) : 0f;
+            _logDot.color = new Color(Cyan.r, Cyan.g, Cyan.b, da);
         }
 
         private Text Deck(Vector2 pos, string faction)
@@ -684,22 +786,6 @@ namespace StellarisClone.Cards
             var t = Orb(_board, Cyan, pos + new Vector2(50, -54), 44f, 17);
             TooltipHelper.Attach(t.transform.parent.gameObject, Loc.T("Карт в колоде"));
             return t;
-        }
-
-        /// <summary>Кристаллы очков приказов — справа от руки, на стеклянной подложке, как кристаллы маны.</summary>
-        private void BuildPoints()
-        {
-            GlassAt(_board, "PointsPlate", new Vector2(700, -500), new Vector2(520, 56), PanelTint, RimSoft, false, 28f);
-            _pointsText = Caption(_board, "0/0", 26, Color.white, TextAnchor.MiddleRight, 0.6f);
-            _pointsText.rectTransform.At(Mid, Mid, new Vector2(505, -500), new Vector2(110, 40));
-            for (int k = 0; k < 10; k++)
-            {
-                var c = CardSkin.Simple(_board, "Crystal", "crystal_empty", Color.white);
-                c.rectTransform.At(Mid, Mid, new Vector2(585 + k * 38, -500), new Vector2(38, 38));
-                _crystals.Add(c);
-            }
-            var cap = Caption(_board, Loc.T("ОЧКИ ПРИКАЗОВ"), 11, Gold, TextAnchor.MiddleLeft, 1.4f);
-            cap.rectTransform.At(Mid, Mid, new Vector2(680, -458), new Vector2(240, 18));
         }
 
         private string SpeedText() => Loc.F("×{0:0.#}", _animSpeed);
@@ -778,7 +864,7 @@ namespace StellarisClone.Cards
             v.SetHoverable(true);
             v.HoverLift = 150f;
             v.HoverScale = 0.28f;
-            v.OnHoverIn = x => { if (_dragging != null) return; _handHover = x; x.Rt.SetAsLastSibling(); LayoutHand(false); SFXManager.Play(Sfx.UiHover, 0.4f); };
+            v.OnHoverIn = x => { if (_dragging != null) return; _handHover = x; x.Rt.SetAsLastSibling(); LayoutHand(false); SFXManager.Play(Sfx.CardHover, 1f, UnityEngine.Random.Range(0.95f, 1.1f)); };
             v.OnHoverOut = x => { if (_handHover == x) _handHover = null; LayoutHand(false); };
             v.OnDragBegin = BeginDrag;
             v.OnDragMove = Drag;
@@ -830,7 +916,7 @@ namespace StellarisClone.Cards
             _dragOffset = (Vector2)v.Rt.localPosition - lp;
             v.Rt.localScale = Vector3.one * 0.8f;
             LayoutHand(false);
-            SFXManager.Play(Sfx.UiTab);
+            SFXManager.Play(Sfx.CardPick);
         }
 
         private void Drag(CardView v, PointerEventData e)
@@ -841,9 +927,6 @@ namespace StellarisClone.Cards
             v.Rt.localPosition = Vector3.Lerp(v.Rt.localPosition, target, 0.6f);
             float vx = e.delta.x;
             v.Rt.localRotation = Quaternion.Euler(0, 0, Mathf.Clamp(-vx * 0.6f, -18f, 18f));
-            int sec = SectorUnder(e.position);
-            for (int i = 0; i < 3; i++)
-                _sec[i].HeaderGlowSet(i == sec ? (_state.CanPlay(_P, v.Card, i) == null ? 1 : -1) : 0);
         }
 
         private void EndDrag(CardView v, PointerEventData e)
@@ -871,7 +954,7 @@ namespace StellarisClone.Cards
                 var p = _fx.Local(pv.Rt);
                 _fx.Dust(p + new Vector2(0, -60), 0.7f);
                 _fx.Ring(p, new Color(0.5f, 0.85f, 1f, 0.7f), 40f, 220f, 0.35f);
-                SFXManager.Play(Sfx.DealPlace);
+                SFXManager.Play(Sfx.CardPlace);
                 LayoutAll(false);
                 LayoutHand(false);
                 RefreshPanels();
@@ -893,7 +976,7 @@ namespace StellarisClone.Cards
             HidePreview(null);
             Destroy(pv.gameObject);
             AddHandCard(pv.Card, false);
-            SFXManager.Play(Sfx.DealRemove);
+            SFXManager.Play(Sfx.CardPick, 0.8f, 0.9f);
             LayoutAll(false);
             RefreshPanels();
         }
@@ -960,6 +1043,22 @@ namespace StellarisClone.Cards
                 }
             else foreach (var v in _hand) v.Playable = false;
 
+            // Кольцо хода плавно дотягивается до текущего хода; на последнем ходу надпись пульсирует
+            if (_turnRing != null)
+            {
+                float want = Mathf.Clamp01(Mathf.Clamp(_state.Turn, 1, BattleState.Turns) / (float)BattleState.Turns);
+                _turnRing.fillAmount = Mathf.MoveTowards(_turnRing.fillAmount, want, dt * 0.6f);
+                bool last = _state.Turn >= BattleState.Turns;
+                var rc = last ? UIManager.DS.Red : Cyan;
+                _turnRing.color = new Color(rc.r, rc.g, rc.b, 0.75f + 0.2f * Mathf.Sin(Time.unscaledTime * (last ? 5f : 1.5f)));
+                if (last && _turnCap != null) _turnCap.color = new Color(_turnCap.color.r, _turnCap.color.g, _turnCap.color.b, 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * 5f));
+            }
+            if (_pointsGlow != null)
+            {
+                float pg = _state.Sides[_P].Points > 0 ? 0.25f : 0f;
+                _pointsGlow.color = new Color(0.45f, 0.75f, 1f, Mathf.MoveTowards(_pointsGlow.color.a, pg, dt * 0.8f));
+            }
+
             // Кнопка хода: бирюзовая — ещё есть что сыграть, зелёная с пульсом — всё сыграно, приглушённая — идёт бой
             if (_endButtonImg != null)
             {
@@ -986,14 +1085,27 @@ namespace StellarisClone.Cards
 
             // Атмосфера: пыль/пепел/дождь
             AmbientTick(dt);
+            LogTick(dt);
 
-            // Дорожки: подсветка при перетаскивании гаснет, свечение плашки — к цвету контроля
-            foreach (var s in _sec)
+            // Дорожки. Пока карта в руке над столом, подсветка держится каждый кадр (даже если мышь стоит):
+            // все дорожки, куда карту можно положить, — мягко зелёным, дорожка под картой — ярко и с пульсом
+            // (зелёная — можно, красная — нельзя). Без перетаскивания подсветка гаснет; свечение плашки — к цвету контроля.
+            int under = _dragging != null ? SectorUnder(Input.mousePosition) : -1;
+            for (int si = 0; si < _sec.Length; si++)
             {
+                var s = _sec[si];
                 if (s == null) continue;
-                s.HighA = Mathf.MoveTowards(s.HighA, 0f, dt * 2.5f);
-                s.Highlight.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 1.6f);
-                s.HighlightFill.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 0.14f);
+                if (_dragging != null)
+                {
+                    bool ok = _state.CanPlay(_P, _dragging.Card, si) == null;
+                    s.HighT = si == under ? 1f : ok ? 0.32f : 0f;
+                    if (si == under || ok) s.HighC = ok ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f);
+                }
+                else s.HighT = 0f;
+                s.HighA = Mathf.MoveTowards(s.HighA, s.HighT, dt * (s.HighA < s.HighT ? 7f : 2.5f));
+                float hp = s.HighT >= 1f ? 0.82f + 0.18f * Mathf.Sin(Time.unscaledTime * 7f) : 1f;
+                s.Highlight.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, Mathf.Clamp01(s.HighA * 1.3f * hp));
+                s.HighlightFill.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 0.2f * hp);
                 s.WashA = Mathf.MoveTowards(s.WashA, 0.55f, dt * 0.7f);
                 s.Wash.color = new Color(s.WashC.r, s.WashC.g, s.WashC.b, Mathf.Clamp01(s.WashA * (0.9f + 0.1f * Mathf.Sin(Time.unscaledTime * 1.6f))));
                 if (s.Stamp.color.a > 0f) { var sc = s.Stamp.color; sc.a = Mathf.Max(0, sc.a - dt * 0.55f); s.Stamp.color = sc; }
@@ -1053,10 +1165,19 @@ namespace StellarisClone.Cards
             _scoreText.text = Loc.F("СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>", mine, theirs) + "\n" +
                               Loc.T("<size=11><color=#9AA6B0>нужно 2 из 3</color></size>");
             _weatherTitle.text = _state.WeatherActive ? (_state.WeatherName ?? "").ToUpper() : Loc.T("ПОГОДА");
+            if (_weatherIcon != null) _weatherIcon.color = _state.WeatherActive ? new Color(1f, 0.72f, 0.4f) : new Color(0.65f, 0.82f, 1f);
+            bool last = _state.Turn >= BattleState.Turns;
+            if (_turnCap != null)
+            {
+                _turnCap.text = last ? Loc.T("ПОСЛЕДНИЙ ХОД") : Loc.F("ХОД ИЗ {0}", BattleState.Turns);
+                _turnCap.color = last ? UIManager.DS.Red : Gold;
+            }
             _weatherText.text = _state.WeatherActive ? _state.WeatherText : Loc.T("откроется на 3-м ходу");
 
             int total = Mathf.Max(me.Points, _state.Turn + me.PointsPerTurn);
             _pointsText.text = Loc.F("{0}/{1}", me.Points, total);
+            if (_pointsShown >= 0 && me.Points > _pointsShown && _pointsGlow != null) _pointsGlow.color = new Color(0.45f, 0.75f, 1f, 0.9f);   // прибавились — вспышка
+            _pointsShown = me.Points;
             for (int i = 0; i < _crystals.Count; i++)
             {
                 _crystals[i].gameObject.SetActive(i < Mathf.Max(total, me.Points));
@@ -1105,6 +1226,11 @@ namespace StellarisClone.Cards
             s.OrbGlowP.color = new Color(CardSkin.Teal.r, CardSkin.Teal.g, CardSkin.Teal.b, pp > pe ? 0.85f : 0f);
             int c = _state.Sectors[i].Control;
             var col = c == _P ? CardSkin.Teal : CardSkin.Red;
+            if (s.ChipText != null)
+            {
+                s.ChipText.text = string.Format("<color=#7CF2D8>{0}</color>:<color=#FF8A80>{1}</color>", pp, pe);
+                if (s.ChipFx != null) s.ChipFx.SetRim(new Color(col.r, col.g, col.b, 0.7f));
+            }
             if (s.LastControl != c)
             {
                 s.WashC = col;
@@ -1130,6 +1256,7 @@ namespace StellarisClone.Cards
         private void AddLog(string line)
         {
             _log.Add(line);
+            _logTotal++;
             if (_log.Count > 60) _log.RemoveAt(0);
         }
 
@@ -1178,7 +1305,7 @@ namespace StellarisClone.Cards
             Hook(pv);
             _pending[bc] = pv;
             pv.Punch(0.3f);
-            SFXManager.Play(Sfx.DealPlace);
+            SFXManager.Play(Sfx.CardPlace);
             LayoutAll(false);
             RefreshPanels();
         }

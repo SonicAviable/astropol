@@ -32,6 +32,11 @@ namespace StellarisClone.Core.Audio
         // Стройка: сервопривод, тяжёлый удар захвата с суббасом, гидравлика, лязг и сварка в зале ангара
         // (запись Resources/Audio/Sfx/Construction_*; синтез — запасной вариант)
         Construction,
+        // Карточный бой: записи Resources/Audio/Sfx/<Имя>_N.ogg, сведённые из CC0-библиотек (Tools/card_audio);
+        // без файлов звучит близкий синтез (CardFallback)
+        CardDraw, CardHover, CardPick, CardPlace, CardSlam, CardFlip, OrderCast,
+        GunRifle, GunAuto, GunSniper, GunHeavy, GunMortar, ShellWhistle, GunLaser, GunFlame,
+        Boom, BoomSmall, ImpactMetal, ImpactFlesh, ImpactShield, UnitDown, Whoosh,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -198,6 +203,31 @@ namespace StellarisClone.Core.Audio
             S(Sfx.BudgetWarning, 0.32f, 1, 4.00f, 0f, 1, 2, SfxBus.Ui, 0.3f);
             S(Sfx.AlertUrgent, 0.28f, 1, 1.50f, 0f, 1, 2, SfxBus.Ui, 0.2f);
             S(Sfx.Construction, 0.60f, 2, 0.35f, 0.03f, 3, 2);
+
+            // Карточный бой. Карты — шина интерфейса (это ответ на действие игрока), оружие и взрывы — «мир».
+            // Записи нормированы по пику, поэтому громкость задаёт баланс: выстрел < очередь < орудие < взрыв.
+            S(Sfx.CardDraw, 0.42f, 3, 0.05f, 0.04f);
+            S(Sfx.CardHover, 0.22f, 2, 0.06f, 0.05f, 1, 0);
+            S(Sfx.CardPick, 0.40f, 2, 0.05f, 0.04f);
+            S(Sfx.CardPlace, 0.50f, 2, 0.05f, 0.03f);
+            S(Sfx.CardSlam, 0.55f, 3, 0.05f, 0.03f, 1, 2, SfxBus.World);
+            S(Sfx.CardFlip, 0.40f, 3, 0.04f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.OrderCast, 0.45f, 2, 0.10f, 0.02f, 1, 2, SfxBus.World);
+            S(Sfx.GunRifle, 0.50f, 6, 0.03f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.GunAuto, 0.48f, 4, 0.05f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.GunSniper, 0.60f, 2, 0.10f, 0.03f, 1, 2, SfxBus.World);
+            S(Sfx.GunHeavy, 0.60f, 3, 0.06f, 0.04f, 1, 2, SfxBus.World, 0.15f);
+            S(Sfx.GunMortar, 0.52f, 3, 0.06f, 0.05f, 1, 2, SfxBus.World);
+            S(Sfx.ShellWhistle, 0.30f, 3, 0.05f, 0.06f, 1, 1, SfxBus.World);
+            S(Sfx.GunLaser, 0.38f, 5, 0.04f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.GunFlame, 0.45f, 2, 0.10f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.Boom, 0.70f, 3, 0.10f, 0.05f, 1, 3, SfxBus.World, 0.3f);
+            S(Sfx.BoomSmall, 0.55f, 4, 0.05f, 0.06f, 1, 2, SfxBus.World, 0.1f);
+            S(Sfx.ImpactMetal, 0.34f, 5, 0.04f, 0.06f, 1, 1, SfxBus.World);
+            S(Sfx.ImpactFlesh, 0.30f, 5, 0.04f, 0.06f, 1, 1, SfxBus.World);
+            S(Sfx.ImpactShield, 0.40f, 3, 0.08f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.UnitDown, 0.55f, 3, 0.06f, 0.05f, 1, 2, SfxBus.World);
+            S(Sfx.Whoosh, 0.34f, 3, 0.06f, 0.05f, 1, 1, SfxBus.World);
             return d;
         }
 
@@ -525,6 +555,9 @@ namespace StellarisClone.Core.Audio
         /// <summary>Синтезировать звук. Возвращает интерлив-стерео float[] (L,R,L,R…), нормализованный.</summary>
         public static float[] Render(Sfx id, int variant, int sr)
         {
+            var alias = CardFallback(id);
+            if (alias != id) return Render(alias, variant % Math.Max(1, Def(alias).Variants), sr);
+
             int seed = (int)id * 7919 + variant * 104729 + 17;
             var rng = new Noise(seed);
             Stereo b;
@@ -1465,6 +1498,25 @@ namespace StellarisClone.Core.Audio
             }
 
             return b.Finish(-1f, lp);
+        }
+
+        /// <summary>Звуки карточного боя — записи; если файлов нет, играет ближайший синтезированный звук.</summary>
+        private static Sfx CardFallback(Sfx id)
+        {
+            switch (id)
+            {
+                case Sfx.CardDraw: case Sfx.CardPick: case Sfx.CardHover: case Sfx.CardFlip: case Sfx.Whoosh: return Sfx.PanelSlide;
+                case Sfx.CardPlace: case Sfx.CardSlam: return Sfx.DealPlace;
+                case Sfx.OrderCast: return Sfx.HoloScan;
+                case Sfx.GunRifle: case Sfx.GunAuto: case Sfx.GunSniper: case Sfx.GunHeavy: case Sfx.GunMortar: return Sfx.WeaponKinetic;
+                case Sfx.ShellWhistle: case Sfx.GunFlame: return Sfx.WeaponMissile;
+                case Sfx.GunLaser: return Sfx.WeaponEnergy;
+                case Sfx.Boom: return Sfx.ExplosionLarge;
+                case Sfx.BoomSmall: case Sfx.UnitDown: return Sfx.ExplosionSmall;
+                case Sfx.ImpactMetal: case Sfx.ImpactFlesh: return Sfx.HitArmor;
+                case Sfx.ImpactShield: return Sfx.HitShield;
+                default: return id;
+            }
         }
 
         /// <summary>«Спутниковый» пинг: синус с лёгким падением высоты, тихий обертон, пинг-понг эхо и зал.</summary>

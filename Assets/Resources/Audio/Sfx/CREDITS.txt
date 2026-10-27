@@ -2,3 +2,11 @@
 (общественное достояние, указание авторства не требуется) и переработаны: сдвиг высоты, фильтры, суббас, зал.
 Исходники: freesound.org/s/244983 (ani_music), 406197 (kyles), 433751 (ChrisReierson), 468094 (artinstitute),
 123253 (Skullsmasha), 322021 (Burningmonkey), 396240 (weaveofkev), 703247 (xkeril), 814881 (AudioPapkin).
+
+Звуки карточного боя (Card*, Gun*, Boom*, Impact*, UnitDown, ShellWhistle, OrderCast, Whoosh) сведены
+скриптом Tools/card_audio/build.py только из источников с лицензией CC0 1.0 (общественное достояние):
+  • The Free Firearm Sound Library (Prepared SFX Library) — opengameart.org/content/the-free-firearm-sound-library
+    (записи АК-47, AR-15, СКС, Мосина, .300 Blackout, «Карл Густав», ППШ, Mossberg, Nova, Model 12);
+  • Kenney: Casino Audio, Impact Sounds, Sci-fi Sounds, Interface Sounds — kenney.nl (CC0);
+  • «100 CC0 SFX» и «50 CC0 Sci-Fi SFX» (rubberduck) — opengameart.org (CC0).
+Переработка: нарезка одиночных выстрелов и очередей, сдвиг высоты, суббас-толчок, обломки, зал, мягкое ограничение.
