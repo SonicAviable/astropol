@@ -626,21 +626,45 @@ namespace StellarisClone.Cards
             return n;
         }
 
+        /// <summary>Сколько приказов берёт десант: до двух на военный корабль, не больше 6.</summary>
+        public static int OrderCap(int owner, int systemId) => Mathf.Min(6, Warships(owner, systemId) * 2);
+
+        /// <summary>Карты, которые могут лететь на штурм: готовые (не раненые), не оборонительные, сильнейшие первыми.</summary>
+        public List<CardInstance> AttackPool(int owner)
+        {
+            var l = Ready(owner);
+            l.RemoveAll(c => c.DefenseOnly);
+            return l;
+        }
+
         /// <summary>
         /// Десант атакующего: лучшие готовые карты резерва, сколько поместится на военные корабли у системы.
         /// Приказы мест не занимают — до двух на корабль (не больше 6). Оборонительные карты не летают.
         /// </summary>
-        public List<CardInstance> AttackDeck(int owner, int systemId)
+        public List<CardInstance> AttackDeck(int owner, int systemId) => PickDeck(owner, systemId, null);
+
+        /// <summary>
+        /// Десант по выбору игрока: карты из <paramref name="ids"/> в их порядке, сколько разрешают места и лимит приказов
+        /// (лишнее и недоступное отбрасывается). ids == null — лучшие карты автоматически.
+        /// </summary>
+        public List<CardInstance> PickDeck(int owner, int systemId, IList<long> ids)
         {
             var l = new List<CardInstance>();
             int places = LandingPlaces(owner, systemId);
             if (places <= 0) return l;
-            int orderCap = Mathf.Min(6, Warships(owner, systemId) * 2);
+            int orderCap = OrderCap(owner, systemId);
+            var pool = AttackPool(owner);
+            if (ids != null)
+            {
+                var byId = new Dictionary<long, CardInstance>();
+                foreach (var c in pool) byId[c.Id] = c;
+                pool.Clear();
+                foreach (var id in ids) if (byId.TryGetValue(id, out var c)) { pool.Add(c); byId.Remove(id); }
+            }
             int used = 0, orders = 0;
-            foreach (var c in Ready(owner))
+            foreach (var c in pool)
             {
                 if (l.Count >= MaxDeck) break;
-                if (c.DefenseOnly) continue;
                 if (c.D.Size <= 0) { if (orders < orderCap) { orders++; l.Add(c); } continue; }
                 if (used + c.D.Size > places) continue;
                 used += c.D.Size;

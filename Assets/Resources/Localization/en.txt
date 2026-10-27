@@ -6781,3 +6781,37 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 В бой пойдут {0} карт из резерва империи (мест на кораблях: {1})	{0} cards from the empire reserve will fight (ship slots: {1})
 Резерв армии пуст — в бой пойдут только экипажи. Состав армии — в «Арсенале» (J)	The army reserve is empty — only the crews will fight. Army composition is in the "Arsenal" (J)
 <b>Арсенал</b>\nСостав армии для штурма и обороны колоний. Империя сама производит и пополняет карты, в бой они идут из общего резерва	<b>Arsenal</b>\nThe army for assaulting and defending colonies. The empire builds and replenishes the cards itself; they fight from a shared reserve
+СБОР ДЕСАНТА	ASSEMBLE THE LANDING FORCE
+Отменить штурм  <color=#8AA2A8>(Esc)</color>	Cancel the assault  <color=#8AA2A8>(Esc)</color>
+<b>Десантные места</b>\nСколько карт увезут военные корабли на орбите: корвет 2 места, фрегат 4, эсминец 6. Техника занимает больше места, чем пехота	<b>Troop slots</b>\nHow many cards the warships in orbit can carry: corvette 2 slots, frigate 4, destroyer 6. Vehicles take more space than infantry
+ЛУЧШИЕ	BEST
+Взять сильнейшие карты резерва, сколько поместится	Take the strongest reserve cards, as many as fit
+ОЧИСТИТЬ	CLEAR
+Убрать все карты из десанта	Remove all cards from the landing force
+В БОЙ	ATTACK
+<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#8AA2A8>(Enter)</color>	<b>Assault</b>\nA card battle for the colony with the chosen landing force  <color=#8AA2A8>(Enter)</color>
+Тот же десант, но без экрана боя: исход рассчитают правила, решения примет ИИ	The same landing force, but without the battle screen: the rules resolve the outcome and the AI makes the decisions
+Не штурмовать  <color=#8AA2A8>(Esc)</color>	Don't assault  <color=#8AA2A8>(Esc)</color>
+В колоде не больше {0} карт	No more than {0} cards in the deck
+Приказов не больше {0}: по два на военный корабль	No more than {0} orders: two per warship
+Не хватает мест: нужно {0}, свободно {1}	Not enough slots: {0} needed, {1} free
+Штурм не начат	Assault not started
+Цель: <b>{0}</b> · {1}. Выберите, какими картами резерва нападать: клик по карте — взять или убрать	Target: <b>{0}</b> · {1}. Choose which reserve cards to attack with: click a card to take or remove it
+Места на кораблях: {0} / {1}	Ship slots: {0} / {1}
+Приказы: {0} / {1}	Orders: {0} / {1}
+В колоде {0} карт + экипажи {1} + генерал	{0} cards in the deck + {1} crews + general
+В колоде {0} карт + генерал	{0} cards in the deck + general
+<b>Разведка</b>  ·  в обороне карт резерва: <b>{0}</b>  ·  ополчение: <b>{1}</b>  ·  укрепления базы: <b>{2}</b>{3}	<b>Intel</b>  ·  reserve cards defending: <b>{0}</b>  ·  militia: <b>{1}</b>  ·  starbase fortifications: <b>{2}</b>{3}
+  ·  щит Штаба	  ·  HQ shield
+В ДЕСАНТЕ · {0}	LANDING FORCE · {0}
+Десант пуст — в бой пойдут только экипажи кораблей. Возьмите карты из резерва ниже	The landing force is empty — only the ship crews will fight. Take cards from the reserve below
+РЕЗЕРВ · ВСЕ ГОТОВЫЕ КАРТЫ УЖЕ В ДЕСАНТЕ	RESERVE · ALL READY CARDS ARE ALREADY IN THE LANDING FORCE
+РАНЕНЫ · {0} · ПРОПУСКАЮТ БОЙ	WOUNDED · {0} · SITTING OUT THE BATTLE
+Резерв армии пуст — задайте состав армии в «Арсенале» (J), империя произведёт карты сама	The army reserve is empty — set the army composition in the "Arsenal" (J) and the empire will build the cards itself
+РЕЗЕРВ · ПЕХОТА	RESERVE · INFANTRY
+РЕЗЕРВ · ТЕХНИКА	RESERVE · VEHICLES
+РЕЗЕРВ · ПРИКАЗЫ	RESERVE · ORDERS
+МЕСТ {0}	{0} SLOTS
+Десант: до {0} карт из резерва империи (мест на кораблях: {1}). Карты выбираются перед штурмом	Landing force: up to {0} cards from the empire reserve (ship slots: {1}). Cards are chosen before the assault
+<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт.\n<color=#8AA2A8>Сначала откроется «Сбор десанта» — выберите, какими картами нападать</color>	<b>Ground assault</b>\nA card battle for the colony: 3 sectors, {0} turns. Victory makes the colony yours at once, without waiting for the siege to end. Fallen cards are lost forever, survivors gain experience.\n<color=#8AA2A8>"Assemble the landing force" opens first — choose which cards to attack with</color>
+Быстрый штурм без экрана боя и без выбора карт: в десант пойдут лучшие карты резерва, исход рассчитают правила	A quick assault without the battle screen or card choice: the best reserve cards land and the rules resolve the outcome

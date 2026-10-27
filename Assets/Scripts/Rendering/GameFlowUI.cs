@@ -124,6 +124,7 @@ namespace StellarisClone.Rendering
             // Окна, которые сами обрабатывают Esc (закрылось в этом кадре раньше нас — тоже не открываем паузу)
             if (UIEsc.ConsumedThisFrame) return;
             if (ColonyManagerWindow.IsOpenNow || BuildMenuModal.IsOpenNow) return;
+            if (StellarisClone.Cards.AssaultDeckWindow.IsOpenNow || StellarisClone.Cards.ArsenalWindow.IsOpenNow) return;
             if (VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen) return;
             if (LawsWindow.IsOpenNow || HelpOverlay.IsOpenNow) return;
             if (EmpireOverviewWindow.Instance != null && EmpireOverviewWindow.Instance.IsOpen) return;

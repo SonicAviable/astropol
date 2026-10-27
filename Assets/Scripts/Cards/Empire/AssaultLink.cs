@@ -73,10 +73,14 @@ namespace StellarisClone.Cards
             }
         }
 
-        private static string NameOf(int owner)
+        public static string NameOf(int owner)
             => owner == 0 ? (FactionTraits.FactionOf(0)?.Name ?? Loc.T("Наша империя")) : AIEmpireManager.NameOf(owner, Loc.T("Империя"));
 
-        public static BattleSetup Build(int attacker, StarSystem sys)
+        /// <summary>Ополчение защитника: 1 карта на 5 жителей (от 1 до 8).</summary>
+        public static int MilitiaFor(StarSystem sys) => Mathf.Clamp(ArmyManager.SystemPopulation(sys) / 5, 1, 8);
+
+        /// <summary>Собрать бой. <paramref name="chosen"/> — карты десанта, выбранные игроком (null — лучшие автоматически).</summary>
+        public static BattleSetup Build(int attacker, StarSystem sys, IList<long> chosen = null)
         {
             var army = ArmyManager.Instance;
             int defender = sys.OwnerId;
@@ -105,7 +109,7 @@ namespace StellarisClone.Cards
             a.Owner = attacker; a.Faction = FactionTraits.Key(attacker); a.Name = NameOf(attacker); a.IsPlayer = attacker == 0;
             a.FleetPower = ArmyManager.FleetPowerAt(attacker, sys.Id);
             a.PointsPerTurn = 1;   // господство флота на орбите
-            if (army != null) foreach (var c in army.AttackDeck(attacker, sys.Id)) s.AttackerCards.Add(new BCard(c.D, c.Id, c.Stars));
+            if (army != null) foreach (var c in army.PickDeck(attacker, sys.Id, chosen)) s.AttackerCards.Add(new BCard(c.D, c.Id, c.Stars));
             int crew = Mathf.Min(ArmyManager.Warships(attacker, sys.Id), ArmyManager.MinDeck - s.AttackerCards.Count);
             for (int i = 0; i < crew; i++) s.AttackerCards.Add(new BCard(CardCatalog.Crew));
             s.AttackerHero = HeroFor(attacker, sys, true);
@@ -126,7 +130,7 @@ namespace StellarisClone.Cards
             d.Owner = defender; d.Faction = FactionTraits.Key(defender); d.Name = NameOf(defender); d.IsPlayer = defender == 0;
             d.Stability = col != null ? col.Stability : 60f;
             if (army != null) foreach (var c in army.DefenseCards(defender, sys.Id)) s.DefenderCards.Add(new BCard(c.D, c.Id, c.Stars));
-            int militia = Mathf.Clamp(ArmyManager.SystemPopulation(sys) / 5, 1, 8);
+            int militia = MilitiaFor(sys);
             for (int i = 0; i < militia; i++) s.DefenderCards.Add(new BCard(CardCatalog.Militia));
             if (sys.Fortification >= 1) s.DefenderCards.Add(new BCard(CardCatalog.ShieldHQ));
             s.DefenderHero = HeroFor(defender, sys, false);
@@ -171,11 +175,11 @@ namespace StellarisClone.Cards
 
         // ==================== ЗАПУСК ====================
 
-        /// <summary>Игрок начинает штурм (кнопка «ШТУРМ»): экран боя или автобой.</summary>
-        public static bool StartPlayerAssault(StarSystem sys, bool auto)
+        /// <summary>Игрок начинает штурм (окно «Сбор десанта» или кнопка «АВТОБОЙ»): экран боя или автобой.</summary>
+        public static bool StartPlayerAssault(StarSystem sys, bool auto, IList<long> chosen = null)
         {
             if (Blocker(0, sys) != null) return false;
-            var setup = Build(0, sys);
+            var setup = Build(0, sys, chosen);
             Run(setup, auto);
             return true;
         }

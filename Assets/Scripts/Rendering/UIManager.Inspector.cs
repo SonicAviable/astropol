@@ -186,12 +186,12 @@ namespace StellarisClone.Rendering
                     int places = StellarisClone.Cards.ArmyManager.LandingPlaces(0, system.Id);
                     string blocker = StellarisClone.Cards.AssaultLink.Blocker(0, system);
                     InspNote(LGIcon.Weapons, deck > 0
-                        ? Loc.F("В бой пойдут {0} карт из резерва империи (мест на кораблях: {1})", deck, places)
+                        ? Loc.F("Десант: до {0} карт из резерва империи (мест на кораблях: {1}). Карты выбираются перед штурмом", deck, places)
                         : Loc.T("Резерв армии пуст — в бой пойдут только экипажи. Состав армии — в «Арсенале» (J)"), deck > 0 ? DS.Gold : DS.TextMuted);
-                    string tip = Loc.F("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт", StellarisClone.Cards.BattleState.Turns);
+                    string tip = Loc.F("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт.\n<color=#8AA2A8>Сначала откроется «Сбор десанта» — выберите, какими картами нападать</color>", StellarisClone.Cards.BattleState.Turns);
                     InspButton(Loc.T("ШТУРМ"), LGIcon.Target, new Color(0.55f, 0.16f, 0.12f, 0.95f), blocker, tip,
-                        () => StellarisClone.Cards.AssaultLink.StartPlayerAssault(system, false), system);
-                    InspButton(Loc.T("АВТОБОЙ"), LGIcon.Fast, DS.BtnNeutral, blocker, Loc.T("Штурм без экрана боя: исход рассчитают правила, решения примет ИИ"),
+                        () => StellarisClone.Cards.AssaultDeckWindow.Open(system), system);
+                    InspButton(Loc.T("АВТОБОЙ"), LGIcon.Fast, DS.BtnNeutral, blocker, Loc.T("Быстрый штурм без экрана боя и без выбора карт: в десант пойдут лучшие карты резерва, исход рассчитают правила"),
                         () => StellarisClone.Cards.AssaultLink.StartPlayerAssault(system, true), system);
                 }
             }
