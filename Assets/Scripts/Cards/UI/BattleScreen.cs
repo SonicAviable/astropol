@@ -10,24 +10,32 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Cards
 {
     /// <summary>
-    /// Экран карточного штурма — полноэкранный стол поверх галактики (время стратегии на паузе).
-    /// Сверху — враг, снизу — вы, при любой роли. Три сектора-колонки: шапка с правилом сектора, ряд врага,
-    /// полоса сил с контролем, ваш ряд. Внизу — рука веером, слева — очки приказов и колода, справа — «Закончить ход».
-    /// Наведение на любую карту — крупный предпросмотр слева. Карты перетаскиваются в сектор, клик по своей
-    /// выложенной — вернуть в руку. Ход подводится анимациями из журнала событий правил (BattleScreen.Play.cs).
+    /// Экран карточного штурма — полноэкранный стол поверх галактики (время стратегии на паузе), в духе Hearthstone:
+    ///   • в центре — стол в массивной бронзовой раме, сквозь него видна поверхность планеты; три сектора-дорожки:
+    ///     сверху ряд врага, посередине плашка сектора с артом и правилом, по краям плашки — гнёзда силы (враг/вы),
+    ///     снизу ваш ряд; пустые места под карты — вдавленные выемки;
+    ///   • портрет врага в золотой раме над столом, его рука — рубашками; ваш портрет слева от руки;
+    ///   • рука веером снизу: наведение поднимает и увеличивает карту, карта перетаскивается в сектор;
+    ///   • справа — счётчик хода, большая кнопка «Закончить ход» (янтарная — есть что сыграть, зелёная — всё сыграно),
+    ///     счёт секторов, погода, скорость/автобой/отступление; внизу справа — кристаллы очков приказов;
+    ///   • слева — колоды обеих сторон и хроника боя.
+    /// Ход подводится анимациями из журнала событий правил (BattleScreen.Play.cs).
     /// </summary>
     public sealed partial class BattleScreen : MonoBehaviour
     {
         public static BattleScreen Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root != null && Instance._root.activeSelf;
 
-        // Размеры (канвас 1920×1080)
-        private const float ColW = 440f, ColGap = 12f, ColTop = -112f, ColH = 560f;
-        private static readonly Vector2 BoardCard = new Vector2(112, 156);
-        private static readonly Vector2 HandCard = new Vector2(168, 236);
-        private static readonly Vector2 PreviewCard = new Vector2(270, 378);
+        // Раскладка (центр экрана 1920×1080, y вверх)
+        private const float TrayY = 80f, TrayW = 1480f, TrayH = 600f, Lane = 482f, LaneW = 470f, RowOff = 200f;
+        private const float PlaqueW = 440f, PlaqueH = 118f, OrbX = 170f, OrbY = 66f;
+        private const float RX = 850f, LX = -850f, HandY = -470f;
+        private static readonly Vector2 BoardCard = new Vector2(128, 178);
+        private static readonly Vector2 HandCard = new Vector2(200, 280);
+        private static readonly Vector2 PreviewCard = new Vector2(300, 420);
 
         private Canvas _canvas;
+        private CanvasScaler _scaler;
         private GameObject _root;
         private RectTransform _board, _fxLayer, _overlay, _handRoot, _previewRoot;
         private UIFx _fx;
@@ -52,32 +60,35 @@ namespace StellarisClone.Cards
         private readonly SectorUI[] _sec = new SectorUI[3];
         private CardView _preview;
         private CardView _dragging;
+        private CardView _handHover;
         private Vector2 _dragOffset;
 
         // Панели
-        private Text _turnText, _scoreText, _weatherText, _pointsText, _deckText, _enemyHandText, _logText, _endLabel, _hintText, _speedLabel;
-        private Image _endButtonImg;
+        private Text _turnText, _scoreText, _weatherTitle, _weatherText, _pointsText, _logText, _endLabel, _hintText, _speedLabel, _deckE, _deckP;
+        private Image _endButtonImg, _endGlow;
         private Button _endButton, _retreatButton, _autoButton, _mercButton;
-        private readonly List<Image> _pointPips = new List<Image>();
+        private readonly List<Image> _crystals = new List<Image>();
         private RectTransform _enemyHandRow;
+        private int _enemyHandShown = -1;
         private readonly List<string> _log = new List<string>();
         private bool _mercPicking;
+        private string _endState;
 
         private sealed class SectorUI
         {
             public RectTransform Col, Header, PowerBar;
-            public Image Plate, Wash, Dome, ControlFill, HeaderGlow;
-            public Text Name, Rule, PowE, PowP, Control, Stamp;
-            public float WashA;
+            public Image Plate, Wash, Dome, Highlight, OrbGlowE, OrbGlowP;
+            public Text Name, Rule, PowE, PowP, Stamp;
+            public float WashA, HighA;
+            public Color WashC, HighC;
             public int LastControl = -2;
 
-            /// <summary>Подсветка сектора при перетаскивании карты: 1 — можно сыграть, −1 — нельзя, 0 — нет.</summary>
+            /// <summary>Подсветка дорожки при перетаскивании карты: 1 — можно сыграть, −1 — нельзя, 0 — гаснет.</summary>
             public void HeaderGlowSet(int state)
             {
                 if (state == 0) return;
-                var c = state > 0 ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f);
-                Wash.color = new Color(c.r, c.g, c.b, 0.55f);
-                WashA = 0.55f;
+                HighC = state > 0 ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f);
+                HighA = 0.5f;
             }
         }
 
@@ -112,13 +123,20 @@ namespace StellarisClone.Cards
             _canvas = go.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 3000;
-            var scaler = go.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-            scaler.matchWidthOrHeight = 0.5f;
+            _scaler = go.AddComponent<CanvasScaler>();
+            _scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            _scaler.referenceResolution = new Vector2(1920, 1080);
             go.AddComponent<GraphicRaycaster>();
             _root = go;
             go.SetActive(false);
+        }
+
+        /// <summary>Стол рассчитан на 1920×1080: на любом экране он целиком помещается (узкий — по ширине, широкий — по высоте).</summary>
+        private void FitScaler()
+        {
+            if (_scaler == null) return;
+            float aspect = Screen.height > 0 ? Screen.width / (float)Screen.height : 16f / 9f;
+            _scaler.matchWidthOrHeight = aspect >= 16f / 9f ? 1f : 0f;
         }
 
         // ==================== ОТКРЫТИЕ ====================
@@ -126,6 +144,7 @@ namespace StellarisClone.Cards
         public void Open(BattleSetup setup, Action<BattleState> onDone)
         {
             if (_canvas == null) BuildCanvas();
+            FitScaler();
             _setup = setup;
             _onDone = onDone;
             _P = setup.Defender.IsPlayer && !setup.Attacker.IsPlayer ? BattleState.Defender : BattleState.Attacker;
@@ -134,7 +153,10 @@ namespace StellarisClone.Cards
             _evCursor = 0;
             _busy = false;
             _mercPicking = false;
-            _units.Clear(); _pending.Clear(); _hand.Clear(); _targets.Clear(); _targetRot.Clear(); _log.Clear(); _pointPips.Clear();
+            _enemyHandShown = -1;
+            _endState = null;
+            _handHover = null;
+            _units.Clear(); _pending.Clear(); _hand.Clear(); _targets.Clear(); _targetRot.Clear(); _log.Clear(); _crystals.Clear(); _dying.Clear();
             foreach (Transform c in _canvas.transform) Destroy(c.gameObject);
 
             var tm = TimeManager.Instance;
@@ -174,54 +196,65 @@ namespace StellarisClone.Cards
 
         // ==================== СЦЕНА ====================
 
+        private static RectTransform At(RectTransform parent, string name, Vector2 pos, Vector2 size)
+        {
+            var r = LGBuild.Rect(parent, name);
+            r.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, size);
+            return r;
+        }
+
+        private static RawImage Raw(RectTransform parent, string name, Texture tex, Color c)
+        {
+            var r = LGBuild.Rect(parent, name).gameObject.AddComponent<RawImage>();
+            r.texture = tex;
+            r.color = c;
+            r.raycastTarget = false;
+            return r;
+        }
+
+        private static void Cover(RawImage img, float frameAspect, float yBias = 0.5f)
+        {
+            if (img.texture == null) return;
+            float ta = img.texture.width / (float)img.texture.height;
+            img.uvRect = ta > frameAspect ? new Rect((1 - frameAspect / ta) * 0.5f, 0, frameAspect / ta, 1)
+                                          : new Rect(0, (1 - ta / frameAspect) * yBias, 1, ta / frameAspect);
+        }
+
         private void BuildScene()
         {
             var croot = (RectTransform)_canvas.transform;
 
-            // Фон: поверхность планеты, затемнение, виньетка
+            // Фон: поверхность планеты, приглушённая, и тяжёлая виньетка
             var bgRt = LGBuild.Rect(croot, "Bg");
             bgRt.Stretch();
             var bgBlock = bgRt.gameObject.AddComponent<Image>();
-            bgBlock.color = new Color(0.01f, 0.015f, 0.025f, 1f);
+            bgBlock.color = new Color(0.01f, 0.012f, 0.02f, 1f);
             bgBlock.raycastTarget = true;   // клики не проходят на карту галактики
-            _bg = LGBuild.Rect(bgRt, "Terrain").gameObject.AddComponent<RawImage>();
+            var table = CardArt.Table(_setup.Terrain);
+            _bg = Raw(bgRt, "Terrain", table, new Color(0.36f, 0.36f, 0.4f, 1f));
             _bg.rectTransform.Stretch(-40, -40, -40, -40);
-            _bg.texture = CardArt.Table(_setup.Terrain);
-            _bg.raycastTarget = false;
-            if (_bg.texture != null)
-            {
-                float ta = _bg.texture.width / (float)_bg.texture.height, sa = 16f / 9f;
-                _bg.uvRect = ta > sa ? new Rect((1 - sa / ta) * 0.5f, 0, sa / ta, 1) : new Rect(0, (1 - ta / sa) * 0.5f, 1, ta / sa);
-            }
-            _bg.color = new Color(0.55f, 0.55f, 0.6f, 1f);
-            var dark = LGBuild.Panel(bgRt, "Dark", new Color(0.01f, 0.02f, 0.035f, 0.45f));
-            dark.rectTransform.Stretch();
-            var vig = LGBuild.Panel(bgRt, "Vignette", new Color(0, 0, 0, 0.92f));
+            Cover(_bg, 16f / 9f);
+            var vig = LGBuild.Panel(bgRt, "Vignette", new Color(0, 0, 0, 0.95f));
             vig.sprite = CardSprites.Vignette;
+            vig.raycastTarget = false;
             vig.rectTransform.Stretch();
-            var bottomShade = LGBuild.Panel(bgRt, "BottomShade", new Color(0, 0, 0, 0.85f));
-            bottomShade.sprite = CardSprites.Fade;
-            bottomShade.rectTransform.anchorMin = new Vector2(0, 0);
-            bottomShade.rectTransform.anchorMax = new Vector2(1, 0.32f);
-            bottomShade.rectTransform.offsetMin = bottomShade.rectTransform.offsetMax = Vector2.zero;
-            bottomShade.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
 
             _board = LGBuild.Rect(croot, "Board");
             _board.Stretch();
 
-            BuildTopBar();
+            BuildTray(table);
             for (int i = 0; i < 3; i++) BuildSector(i);
-            BuildBottom();
+            BuildPortraits();
+            BuildRight();
+            BuildLeft();
+            BuildPoints();
 
-            _handRoot = LGBuild.Rect(_board, "Hand");
-            _handRoot.anchorMin = _handRoot.anchorMax = new Vector2(0.5f, 0f);
-            _handRoot.sizeDelta = new Vector2(1100, 260);
-            _handRoot.anchoredPosition = new Vector2(0, 150);
+            _hintText = CardSkin.TitleText(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 1.5f);
+            _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -255), new Vector2(900, 30));
 
-            _previewRoot = LGBuild.Rect(croot, "Preview");
-            _previewRoot.anchorMin = _previewRoot.anchorMax = new Vector2(0f, 0.5f);
-            _previewRoot.sizeDelta = PreviewCard;
-            _previewRoot.anchoredPosition = new Vector2(PreviewCard.x * 0.5f + 12f, 60f);
+            _handRoot = At(_board, "Hand", new Vector2(0, HandY), new Vector2(1100, 300));
+
+            _previewRoot = At(croot, "Preview", Vector2.zero, PreviewCard);
 
             _fxLayer = LGBuild.Rect(croot, "Fx");
             _fxLayer.Stretch();
@@ -233,57 +266,45 @@ namespace StellarisClone.Cards
             _overlay.Stretch();
         }
 
-        private void BuildTopBar()
+        /// <summary>Стол: тень, окно в поверхность планеты под тёмным стеклом, бронзовая рама, разделители дорожек.</summary>
+        private void BuildTray(Texture table)
         {
-            var a = _setup.Attacker; var d = _setup.Defender;
-            var me = _P == BattleState.Attacker ? a : d;
-            var en = _P == BattleState.Attacker ? d : a;
-            SidePlate(new Vector2(0, 1), new Vector2(20, -16), en, _E, true);
-            SidePlate(new Vector2(1, 1), new Vector2(-20, -16), me, _P, false);
+            var shadow = LGBuild.Panel(_board, "TrayShadow", new Color(0, 0, 0, 0.85f));
+            shadow.sprite = CardSprites.RoundGlow;
+            shadow.type = Image.Type.Sliced;
+            shadow.raycastTarget = false;
+            shadow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TrayY - 14), new Vector2(TrayW + 90, TrayH + 90));
 
-            var center = LGBuild.Panel(_board, "Turn", new Color(0.02f, 0.04f, 0.06f, 0.88f));
-            center.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -12), new Vector2(420, 84));
-            LG.Platter(center.gameObject, 14f).SetRim(new Color(1f, 0.82f, 0.4f, 0.45f));
-            var title = LGBuild.Label(center.rectTransform, Loc.F("ШТУРМ · {0}", _setup.PlanetName.ToUpper()), 15, new Color(1f, 0.85f, 0.5f), TextAnchor.UpperCenter, bold: true);
-            title.rectTransform.Stretch(10, 0, 10, 8);
-            title.Track(1.4f);
-            _turnText = LGBuild.Label(center.rectTransform, "", 24, Color.white, TextAnchor.MiddleCenter, bold: true);
-            _turnText.rectTransform.Stretch(10, 4, 10, 26);
-            _scoreText = LGBuild.Label(center.rectTransform, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
-            _scoreText.rectTransform.Stretch(10, 6, 10, 0);
+            var mask = LGBuild.Panel(_board, "TrayMask", Color.white);
+            mask.sprite = CardSprites.Round;
+            mask.type = Image.Type.Sliced;
+            mask.raycastTarget = false;
+            mask.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TrayY), new Vector2(TrayW - 36, TrayH - 36));
+            mask.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+            var surf = Raw(mask.rectTransform, "Surface", table, new Color(0.62f, 0.62f, 0.66f, 1f));
+            surf.rectTransform.Stretch();
+            Cover(surf, (TrayW - 36) / (TrayH - 36));
+            var glass = LGBuild.Panel(mask.rectTransform, "Glass", new Color(0.02f, 0.045f, 0.075f, 0.45f));
+            glass.rectTransform.Stretch();
+            glass.raycastTarget = false;
+            // Голосетка: еле заметные соты по всему столу
+            var grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.5f, 0.8f, 1f, 0.05f));
+            grid.rectTransform.Stretch();
+            var inner = LGBuild.Panel(mask.rectTransform, "InnerShade", new Color(0, 0, 0, 0.7f));
+            inner.sprite = CardSprites.Vignette;
+            inner.raycastTarget = false;
+            inner.rectTransform.Stretch();
 
-            var weather = LGBuild.Panel(_board, "Weather", new Color(0.02f, 0.04f, 0.06f, 0.82f));
-            weather.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -100), new Vector2(560, 26));
-            LG.Platter(weather.gameObject, 10f).SetRim(new Color(0.6f, 0.8f, 1f, 0.25f));
-            _weatherText = LGBuild.Label(weather.rectTransform, "", 11, new Color(0.75f, 0.85f, 0.95f), TextAnchor.MiddleCenter);
-
-            // Рука врага — рубашки сверху
-            _enemyHandRow = LGBuild.Rect(_board, "EnemyHand");
-            _enemyHandRow.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(330, -26), new Vector2(200, 50));
-            _enemyHandText = LGBuild.Label(_enemyHandRow, "", 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, bold: true);
-            _enemyHandText.rectTransform.Stretch(0, 0, 0, 0);
-        }
-
-        private void SidePlate(Vector2 anchor, Vector2 pos, BSide side, int idx, bool left)
-        {
-            var c = CardArt.Faction(side.Faction);
-            var p = LGBuild.Panel(_board, "Side" + idx, new Color(0.02f, 0.04f, 0.06f, 0.85f));
-            p.rectTransform.At(anchor, anchor, pos, new Vector2(340, 74));
-            LG.Platter(p.gameObject, 14f).SetRim(new Color(c.r, c.g, c.b, 0.5f));
-            var port = LGBuild.Rect(p.rectTransform, "Portrait").gameObject.AddComponent<RawImage>();
-            port.texture = CardArt.Leader(side.Faction);
-            port.raycastTarget = false;
-            if (port.texture != null)
+            // Разделители дорожек
+            for (int i = 1; i < 3; i++)
             {
-                float ta = port.texture.width / (float)port.texture.height;
-                port.uvRect = ta > 1 ? new Rect((1 - 1 / ta) * 0.5f, 0, 1 / ta, 1) : new Rect(0, 1 - ta, 1, ta);
+                var dv = LGBuild.Panel(_board, "Divider", new Color(1f, 0.8f, 0.55f, 0.22f));
+                dv.raycastTarget = false;
+                dv.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((i - 1.5f) * Lane, TrayY), new Vector2(2, TrayH - 70));
             }
-            port.rectTransform.At(new Vector2(left ? 0 : 1, 0.5f), new Vector2(left ? 0 : 1, 0.5f), new Vector2(left ? 8 : -8, 0), new Vector2(60, 60));
-            var t = LGBuild.Label(p.rectTransform, side.Name ?? "", 15, c, left ? TextAnchor.UpperLeft : TextAnchor.UpperRight, bold: true);
-            t.rectTransform.Stretch(left ? 78 : 10, 0, left ? 10 : 78, 12);
-            var role = LGBuild.Label(p.rectTransform, idx == BattleState.Attacker ? Loc.T("ДЕСАНТ · атака") : Loc.T("ГАРНИЗОН · оборона"), 11, UIManager.DS.TextMuted, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight, bold: true);
-            role.rectTransform.Stretch(left ? 78 : 10, 12, left ? 10 : 78, 0);
-            role.Track(1.2f);
+
+            var frame = CardSkin.Sliced(_board, "TrayFrame", "frame_card", CardSkin.Bronze, 0.6f);
+            frame.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TrayY), new Vector2(TrayW, TrayH));
         }
 
         private void BuildSector(int i)
@@ -291,168 +312,297 @@ namespace StellarisClone.Cards
             var s = new SectorUI();
             _sec[i] = s;
             var type = _state.Sectors[i].Type;
-            float x = (i - 1) * (ColW + ColGap);
-            var col = LGBuild.Rect(_board, "Sector" + i);
-            col.anchorMin = col.anchorMax = new Vector2(0.5f, 1f);
-            col.pivot = new Vector2(0.5f, 1f);
-            col.sizeDelta = new Vector2(ColW, ColH);
-            col.anchoredPosition = new Vector2(x, ColTop - 26);
+            float lx = (i - 1) * Lane;
+            var col = At(_board, "Sector" + i, new Vector2(lx, TrayY), new Vector2(LaneW, TrayH - 30));
             s.Col = col;
 
-            // Плита: голографическая платформа
-            s.Plate = LGBuild.Panel(col, "Plate", new Color(0.02f, 0.05f, 0.08f, 0.62f));
-            s.Plate.rectTransform.Stretch();
-            LG.Platter(s.Plate.gameObject, 18f).SetRim(new Color(0.5f, 0.8f, 1f, 0.28f));
+            // Клик по дорожке — для наёмников
+            var hit = LGBuild.Panel(col, "Hit", new Color(0, 0, 0, 0), raycast: true);
+            hit.rectTransform.Stretch();
+            int idx = i;
+            hit.gameObject.AddComponent<SectorClick>().OnClick = () => OnSectorClicked(idx);
+
+            // Подсветка дорожки при перетаскивании
+            s.Highlight = LGBuild.Panel(col, "Highlight", new Color(1, 1, 1, 0));
+            s.Highlight.sprite = CardSprites.RoundGlow;
+            s.Highlight.type = Image.Type.Sliced;
+            s.Highlight.raycastTarget = false;
+            s.Highlight.rectTransform.Stretch(-6, -6, -6, -6);
+
+            // Места под карты — вдавленные выемки
+            for (int r = 0; r < 2; r++)
+                for (int k = 0; k < 3; k++)
+                {
+                    var sl = CardSkin.Simple(col, "Slot", "slot", Color.white);
+                    sl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((k - 1) * 138f, r == 0 ? RowOff : -RowOff), BoardCard);
+                }
+
+            // Ряды: враг сверху, вы снизу
+            _rows[i, 0] = At(col, "RowEnemy", new Vector2(0, RowOff), new Vector2(LaneW - 10, BoardCard.y + 10));
+            _rows[i, 1] = At(col, "RowMine", new Vector2(0, -RowOff), new Vector2(LaneW - 10, BoardCard.y + 10));
+
+            // Плашка сектора: свечение контроля, арт, рама, название и правило
             s.Wash = LGBuild.Panel(col, "Wash", new Color(1, 1, 1, 0));
             s.Wash.sprite = CardSprites.RoundGlow;
             s.Wash.type = Image.Type.Sliced;
-            s.Wash.rectTransform.Stretch(-10, -10, -10, -10);
+            s.Wash.raycastTarget = false;
+            s.Wash.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW + 70, PlaqueH + 70));
 
-            // Шапка
-            var head = LGBuild.Panel(col, "Header", new Color(0.03f, 0.07f, 0.11f, 0.95f));
-            head.rectTransform.TopBand(0, 54, 0, 0);
-            LG.Platter(head.gameObject, 14f).SetRim(new Color(1f, 0.82f, 0.42f, 0.35f));
-            s.Header = head.rectTransform;
-            var ic = LGIcons.Create(head.rectTransform, CardArt.SectorIcon(type), 22, new Color(1f, 0.82f, 0.42f));
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(22, 22));
-            s.Name = LGBuild.Label(head.rectTransform, CardArt.SectorName(type), 16, Color.white, TextAnchor.UpperLeft, bold: true);
-            s.Name.rectTransform.Stretch(46, 0, 8, 7);
-            s.Name.Track(1.6f);
-            s.Rule = LGBuild.Label(head.rectTransform, CardArt.SectorRule(type), 10, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
-            s.Rule.rectTransform.Stretch(46, 7, 8, 0);
-            s.Control = LGBuild.Label(head.rectTransform, "", 11, Color.white, TextAnchor.MiddleRight, bold: true);
-            s.Control.rectTransform.Stretch(0, 0, 12, 0);
+            var plate = LGBuild.Panel(col, "Plaque", Color.white);
+            plate.sprite = CardSprites.Round;
+            plate.type = Image.Type.Sliced;
+            plate.raycastTarget = false;
+            plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW - 12, PlaqueH - 12));
+            plate.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+            plate.color = new Color(0.03f, 0.05f, 0.08f, 1f);
+            s.Plate = plate;
+            var art = Raw(plate.rectTransform, "Art", CardArt.Sector(type), new Color(0.75f, 0.75f, 0.78f, 1f));
+            art.rectTransform.Stretch();
+            Cover(art, (PlaqueW - 12) / (PlaqueH - 12));
+            var dim = LGBuild.Panel(plate.rectTransform, "Dim", new Color(0.01f, 0.02f, 0.04f, 0.55f));
+            dim.raycastTarget = false;
+            dim.rectTransform.Stretch();
+            var pframe = CardSkin.Sliced(col, "PlaqueFrame", "frame_card", CardSkin.Gold, 0.4f);
+            pframe.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW, PlaqueH));
+            s.Header = s.PowerBar = pframe.rectTransform;
 
-            // Ряды: враг сверху, вы снизу
-            float rowH = BoardCard.y + 14f;
-            _rows[i, 0] = Row(col, "RowEnemy", 64, rowH);
-            _rows[i, 1] = Row(col, "RowMine", 64 + rowH + 70, rowH);
+            var ic = LGIcons.Create(pframe.rectTransform, CardArt.SectorIcon(type), 22, CardSkin.Gold);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34, 18), new Vector2(22, 22));
+            s.Name = CardSkin.TitleText(pframe.rectTransform, CardArt.SectorName(type), 21, new Color(1f, 0.92f, 0.78f), TextAnchor.MiddleLeft, 2f);
+            s.Name.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(54, 18), new Vector2(300, 30));
+            s.Rule = LGBuild.Label(pframe.rectTransform, CardArt.SectorRule(type), 13, new Color(0.84f, 0.88f, 0.93f), TextAnchor.UpperLeft, wrap: true);
+            s.Rule.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 1f), new Vector2(26, -2), new Vector2(PlaqueW - 150, 40));
+            s.Rule.raycastTarget = false;
+            var rsh = s.Rule.gameObject.AddComponent<Shadow>();
+            rsh.effectColor = new Color(0, 0, 0, 0.9f);
 
-            // Полоса сил между рядами
-            var bar = LGBuild.Panel(col, "Power", new Color(0.01f, 0.03f, 0.05f, 0.9f));
-            bar.rectTransform.TopBand(64 + rowH + 6, 58, 12, 12);
-            LG.Platter(bar.gameObject, 12f).SetRim(new Color(1, 1, 1, 0.12f));
-            s.PowerBar = bar.rectTransform;
-            var track = LGBuild.Panel(bar.rectTransform, "Track", new Color(0.4f, 0.75f, 1f, 0.25f));
-            track.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(ColW - 170, 8));
-            s.ControlFill = LGBuild.Panel(track.rectTransform, "Fill", new Color(1f, 0.4f, 0.35f, 0.95f));
-            s.ControlFill.rectTransform.anchorMin = new Vector2(0, 0);
-            s.ControlFill.rectTransform.anchorMax = new Vector2(0.5f, 1);
-            s.ControlFill.rectTransform.offsetMin = s.ControlFill.rectTransform.offsetMax = Vector2.zero;
-            s.PowE = LGBuild.Label(bar.rectTransform, "0", 30, CardArt.Faction(_state.Sides[_E].Faction), TextAnchor.MiddleLeft, bold: true);
-            s.PowE.rectTransform.Stretch(18, 0, 0, 0);
-            s.PowP = LGBuild.Label(bar.rectTransform, "0", 30, CardArt.Faction(_state.Sides[_P].Faction), TextAnchor.MiddleRight, bold: true);
-            s.PowP.rectTransform.Stretch(0, 0, 18, 0);
-            var lblE = LGBuild.Label(bar.rectTransform, Loc.T("ВРАГ"), 9, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
-            lblE.rectTransform.Stretch(60, 0, 0, 8);
-            var lblP = LGBuild.Label(bar.rectTransform, Loc.T("ВЫ"), 9, UIManager.DS.TextMuted, TextAnchor.UpperRight, bold: true);
-            lblP.rectTransform.Stretch(0, 0, 60, 8);
+            // Гнёзда силы: враг сверху (красное), вы снизу (бирюзовое)
+            s.OrbGlowE = OrbGlow(col, new Vector2(OrbX, OrbY), CardSkin.Red);
+            s.OrbGlowP = OrbGlow(col, new Vector2(OrbX, -OrbY), CardSkin.Teal);
+            s.PowE = Orb(col, "orb_red", new Vector2(OrbX, OrbY), 72f, 32);
+            s.PowP = Orb(col, "orb_teal", new Vector2(OrbX, -OrbY), 72f, 32);
+            TooltipHelper.Attach(s.PowE.transform.parent.gameObject, Loc.T("Сила врага в секторе"));
+            TooltipHelper.Attach(s.PowP.transform.parent.gameObject, Loc.T("Ваша сила в секторе"));
 
             // Штамп «ВЗЯТ» / «ПОТЕРЯН»
-            s.Stamp = LGBuild.Label(col, "", 44, new Color(1, 1, 1, 0), TextAnchor.MiddleCenter, bold: true);
-            s.Stamp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(ColW, 80));
-            s.Stamp.rectTransform.localRotation = Quaternion.Euler(0, 0, 8f);
-            var ol = s.Stamp.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(0, 0, 0, 0.7f);
-            ol.effectDistance = new Vector2(3, -3);
+            s.Stamp = CardSkin.TitleText(col, "", 52, new Color(1, 1, 1, 0), TextAnchor.MiddleCenter, 3f);
+            s.Stamp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(LaneW, 90));
+            s.Stamp.rectTransform.localRotation = Quaternion.Euler(0, 0, 7f);
 
-            // Купол щита над рядом защитника в Штабе
+            // Купол щита над рядом защитника в Штабе: соты в полусфере
             if (type == SectorType.HQ)
             {
                 int defRow = _P == BattleState.Defender ? 1 : 0;
-                s.Dome = LGBuild.Panel(_rows[i, defRow], "Dome", new Color(0.45f, 0.75f, 1f, 0f));
+                s.Dome = LGBuild.Panel(col, "Dome", new Color(0.45f, 0.75f, 1f, 0f));
                 s.Dome.sprite = CardSprites.Dome;
-                s.Dome.rectTransform.anchorMin = new Vector2(0, defRow == 0 ? 0 : 0);
-                s.Dome.rectTransform.anchorMax = new Vector2(1, 1);
-                s.Dome.rectTransform.offsetMin = new Vector2(-6, -6);
-                s.Dome.rectTransform.offsetMax = new Vector2(6, 26);
-                if (defRow == 1) s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 0);
-                else s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
+                s.Dome.raycastTarget = false;
+                s.Dome.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, defRow == 0 ? RowOff + 10 : -RowOff - 10), new Vector2(LaneW, 236));
+                if (defRow == 0) s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
+                s.Dome.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+                var hex = CardSkin.Simple(s.Dome.rectTransform, "Hex", "hexgrid", new Color(0.55f, 0.85f, 1f, 0.45f));
+                hex.rectTransform.Stretch(0, 0, 0, -LaneW + 236);
+                s.Dome.transform.SetSiblingIndex(_rows[i, defRow].GetSiblingIndex());
             }
-
-            // Клик по колонке — для наёмников и подсказки
-            var hit = LGBuild.Panel(col, "Hit", new Color(0, 0, 0, 0), raycast: true);
-            hit.rectTransform.Stretch();
-            hit.transform.SetAsFirstSibling();
-            int idx = i;
-            var trig = hit.gameObject.AddComponent<SectorClick>();
-            trig.OnClick = () => OnSectorClicked(idx);
         }
 
-        private RectTransform Row(RectTransform col, string name, float top, float h)
+        private Image OrbGlow(RectTransform parent, Vector2 pos, Color c)
         {
-            var r = LGBuild.Rect(col, name);
-            r.TopBand(top, h, 8, 8);
-            return r;
+            var g = CardSkin.Simple(parent, "OrbGlow", "glow", new Color(c.r, c.g, c.b, 0f));
+            g.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(150, 150));
+            return g;
         }
 
-        private void BuildBottom()
+        private Text Orb(RectTransform parent, string sprite, Vector2 pos, float size, int font)
         {
-            // Очки приказов и колода — слева
-            var left = LGBuild.Panel(_board, "Command", new Color(0.02f, 0.04f, 0.06f, 0.88f));
-            left.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(20, 20), new Vector2(300, 196));
-            LG.Platter(left.gameObject, 16f).SetRim(new Color(1f, 0.82f, 0.4f, 0.4f));
-            var cap = LGBuild.Label(left.rectTransform, Loc.T("ОЧКИ ПРИКАЗОВ"), 11, new Color(1f, 0.82f, 0.42f), TextAnchor.UpperLeft, bold: true);
-            cap.rectTransform.Stretch(16, 0, 10, 12);
-            cap.Track(1.4f);
-            _pointsText = LGBuild.Label(left.rectTransform, "0", 46, Color.white, TextAnchor.UpperLeft, bold: true);
-            _pointsText.rectTransform.Stretch(16, 0, 10, 30);
-            var pips = LGBuild.Rect(left.rectTransform, "Pips");
-            pips.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(110, -48), new Vector2(180, 20));
-            for (int i = 0; i < 8; i++)
+            var o = CardSkin.Simple(parent, "Orb", sprite, Color.white);
+            o.raycastTarget = true;
+            o.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(size, size));
+            var t = CardSkin.TitleText(o.rectTransform, "0", font, Color.white, TextAnchor.MiddleCenter, 2.5f);
+            t.rectTransform.Stretch(0, 0, 0, -2);
+            return t;
+        }
+
+        /// <summary>Портреты в золотых рамах: враг над столом (его рука рубашками рядом), вы — слева от руки.</summary>
+        private void BuildPortraits()
+        {
+            var a = _setup.Attacker; var d = _setup.Defender;
+            var me = _P == BattleState.Attacker ? a : d;
+            var en = _P == BattleState.Attacker ? d : a;
+            Portrait(en, _E, new Vector2(0, 455), true);
+            Portrait(me, _P, new Vector2(-640, -430), false);
+
+            _enemyHandRow = At(_board, "EnemyHand", new Vector2(205, 470), new Vector2(260, 100));
+        }
+
+        private void Portrait(BSide side, int idx, Vector2 pos, bool enemy)
+        {
+            var fc = CardArt.Faction(side.Faction);
+            const float S = 124f;
+            var glow = CardSkin.Simple(_board, "PortraitGlow", "glow", new Color(fc.r, fc.g, fc.b, 0.55f));
+            glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(230, 230));
+            var disc = CardSkin.Simple(_board, "Portrait", "disc", Color.white);
+            disc.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(S, S));
+            disc.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+            var p = Raw(disc.rectTransform, "Leader", CardArt.Leader(side.Faction), Color.white);
+            p.rectTransform.Stretch();
+            if (p.texture != null)
             {
-                var pip = LGBuild.Panel(pips, "Pip", new Color(1f, 0.82f, 0.4f, 0.15f));
-                pip.sprite = CardSprites.Hex;
-                pip.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(i * 21, 0), new Vector2(18, 18));
-                _pointPips.Add(pip);
+                float ta = p.texture.width / (float)p.texture.height;
+                p.uvRect = ta > 1 ? new Rect((1 - 1 / ta) * 0.5f, 0, 1 / ta, 1) : new Rect(0, 1 - ta - (1 - ta) * 0.12f, 1, ta);
             }
-            _deckText = LGBuild.Label(left.rectTransform, "", 12, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            _deckText.rectTransform.Stretch(16, 0, 10, 92);
-            _retreatButton = LGBuild.Button(left.rectTransform, "Retreat", new Color(0.35f, 0.08f, 0.08f, 0.95f), new Color(1f, 0.4f, 0.4f, 0.6f), OnRetreat, LGIcon.Back,
-                _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), 11);
-            ((RectTransform)_retreatButton.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(14, 14), new Vector2(130, 34));
-            _autoButton = LGBuild.Button(left.rectTransform, "Auto", UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.35f), OnAuto, LGIcon.Fastest, Loc.T("ДОСЧИТАТЬ"), 11);
-            ((RectTransform)_autoButton.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(152, 14), new Vector2(134, 34));
-            TooltipHelper.Attach(_autoButton.gameObject, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"));
+            var ring = CardSkin.Simple(_board, "PortraitFrame", "frame_round", CardSkin.Gold);
+            ring.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(S + 24, S + 24));
+            var rb = CardSkin.Sliced(_board, "NameRibbon", "ribbon", Color.white, 0.5f);
+            var rpos = pos + new Vector2(0, enemy ? -72 : 74);
+            rb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), rpos, new Vector2(270, 34));
+            var nm = CardSkin.TitleText(rb.rectTransform, (side.Name ?? side.Faction ?? "").ToUpper(), 14, CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
+            nm.rectTransform.Stretch(26, 0, 26, 1);
+            nm.horizontalOverflow = HorizontalWrapMode.Wrap;
+            nm.resizeTextForBestFit = true; nm.resizeTextMinSize = 8; nm.resizeTextMaxSize = 14;
+            var role = CardSkin.TitleText(_board, idx == BattleState.Attacker ? Loc.T("ДЕСАНТ") : Loc.T("ГАРНИЗОН"), 11, new Color(fc.r, fc.g, fc.b, 1f), TextAnchor.MiddleCenter, 1.5f);
+            role.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), rpos + new Vector2(0, enemy ? -24 : 24), new Vector2(200, 18));
+            role.Track(3f);
+        }
+
+        /// <summary>Правая колонка: счётчик хода, кнопка хода, счёт секторов, погода, служебные кнопки.</summary>
+        private void BuildRight()
+        {
+            var turnOrb = CardSkin.Simple(_board, "TurnOrb", "orb_gray", Color.white);
+            turnOrb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 300), new Vector2(112, 112));
+            _turnText = CardSkin.TitleText(turnOrb.rectTransform, "1", 46, CardSkin.Parchment, TextAnchor.MiddleCenter, 3f);
+            _turnText.rectTransform.Stretch(0, 0, 0, -3);
+            var tl = CardSkin.TitleText(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 15, new Color(0.95f, 0.8f, 0.55f), TextAnchor.MiddleCenter, 1.5f);
+            tl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 228), new Vector2(220, 22));
+            tl.Track(2f);
+
+            _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.4f, 0f));
+            _endGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 122), new Vector2(330, 190));
+            var endBtn = LGBuild.Rect(_board, "EndTurn");
+            endBtn.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 122), new Vector2(222, 84));
+            _endButtonImg = endBtn.gameObject.AddComponent<Image>();
+            _endButtonImg.sprite = CardSkin.Spr("btn_end_amber");
+            _endButtonImg.type = Image.Type.Sliced;
+            _endButtonImg.pixelsPerUnitMultiplier = 2.3f;
+            _endButton = endBtn.gameObject.AddComponent<Button>();
+            _endButton.targetGraphic = _endButtonImg;
+            _endButton.onClick.AddListener(OnEndTurn);
+            _endLabel = CardSkin.TitleText(endBtn, Loc.T("ЗАКОНЧИТЬ\nХОД"), 19, Color.white, TextAnchor.MiddleCenter, 2f);
+            _endLabel.rectTransform.Stretch(14, 0, 14, 0);
+            _endLabel.lineSpacing = 0.9f;
+            TooltipHelper.Attach(endBtn.gameObject, Loc.T("Закончить ход  <color=#8AA2A8>(Enter)</color>\nЯнтарная — ещё есть что сыграть, зелёная — всё сыграно"));
+
+            _scoreText = CardSkin.TitleText(_board, "", 16, new Color(0.92f, 0.9f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
+            _scoreText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 46), new Vector2(240, 44));
+            _scoreText.supportRichText = true;
+
+            var wp = CardSkin.Sliced(_board, "Weather", "panel_leather", Color.white, 0.3f);
+            wp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -34), new Vector2(226, 74));
+            _weatherTitle = CardSkin.TitleText(wp.rectTransform, Loc.T("ПОГОДА"), 12, new Color(0.65f, 0.82f, 1f), TextAnchor.UpperCenter, 1f);
+            _weatherTitle.rectTransform.Stretch(10, 0, 10, 9);
+            _weatherText = LGBuild.Label(wp.rectTransform, "", 12, new Color(0.85f, 0.88f, 0.93f), TextAnchor.MiddleCenter, wrap: true);
+            _weatherText.rectTransform.Stretch(12, 6, 12, 26);
+            _weatherText.raycastTarget = false;
+
+            // Служебные круглые кнопки: скорость анимаций, досчитать, отступить
+            _speedLabel = RoundButton(new Vector2(RX - 68, -128), null, SpeedText(), OnSpeed, Loc.T("Скорость анимаций"), out _);
+            RoundButton(new Vector2(RX, -128), LGIcon.Fastest, null, OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
+            RoundButton(new Vector2(RX + 68, -128), LGIcon.Back, null, OnRetreat, _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton);
 
             // Наёмники Аквилы — купить прямо в бою
             if (_state.Sides[_P].Faction == "aquila")
             {
-                _mercButton = LGBuild.Button(_board, "Merc", new Color(0.35f, 0.27f, 0.06f, 0.95f), new Color(1f, 0.8f, 0.35f, 0.7f), OnMerc, LGIcon.Energy, Loc.T("НАЁМНИКИ · 60"), 11);
-                ((RectTransform)_mercButton.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(20, 226), new Vector2(180, 34));
-                TooltipHelper.Attach(_mercButton.gameObject, Loc.T("<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору"));
+                var mrt = LGBuild.Rect(_board, "Merc");
+                mrt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -196), new Vector2(214, 46));
+                var mimg = mrt.gameObject.AddComponent<Image>();
+                mimg.sprite = CardSkin.Spr("btn_end_amber");
+                mimg.type = Image.Type.Sliced;
+                mimg.pixelsPerUnitMultiplier = 3.5f;
+                _mercButton = mrt.gameObject.AddComponent<Button>();
+                _mercButton.targetGraphic = mimg;
+                _mercButton.onClick.AddListener(OnMerc);
+                var ml = CardSkin.TitleText(mrt, Loc.T("НАЁМНИКИ · 60"), 14, Color.white, TextAnchor.MiddleCenter, 1.5f);
+                ml.rectTransform.Stretch();
+                TooltipHelper.Attach(mrt.gameObject, Loc.T("<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору"));
             }
-
-            // Кнопка хода — справа
-            var endBtn = LGBuild.Button(_board, "EndTurn", new Color(0.06f, 0.32f, 0.22f, 0.98f), new Color(0.45f, 1f, 0.6f, 0.85f), OnEndTurn, null, null, 12, 18f);
-            var ert = (RectTransform)endBtn.transform;
-            ert.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 120), new Vector2(250, 86));
-            _endButton = endBtn;
-            _endButtonImg = endBtn.GetComponent<Image>();
-            _endLabel = LGBuild.Label(ert, Loc.T("ЗАКОНЧИТЬ ХОД"), 20, Color.white, TextAnchor.MiddleCenter, bold: true);
-            _endLabel.Track(1.2f);
-            _hintText = LGBuild.Label(_board, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerRight);
-            _hintText.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 214), new Vector2(420, 40));
-            _hintText.horizontalOverflow = HorizontalWrapMode.Wrap;
-
-            var speed = LGBuild.Button(_board, "Speed", UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.3f), OnSpeed, LGIcon.Fast, SpeedText(), 11);
-            ((RectTransform)speed.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 38));
-            _speedLabel = speed.GetComponentInChildren<Text>();
-
-            // Журнал — над кнопкой хода
-            var log = LGBuild.Panel(_board, "Log", new Color(0.02f, 0.04f, 0.06f, 0.75f));
-            log.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 70), new Vector2(232, 300));
-            LG.Platter(log.gameObject, 12f).SetRim(new Color(1, 1, 1, 0.1f));
-            var lc = LGBuild.Label(log.rectTransform, Loc.T("ХОД БОЯ"), 10, new Color(1f, 0.82f, 0.42f), TextAnchor.UpperLeft, bold: true);
-            lc.rectTransform.Stretch(12, 0, 8, 10);
-            lc.Track(1.4f);
-            _logText = LGBuild.Label(log.rectTransform, "", 11, new Color(0.82f, 0.88f, 0.94f), TextAnchor.UpperLeft);
-            _logText.rectTransform.Stretch(12, 10, 10, 30);
-            _logText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _logText.verticalOverflow = VerticalWrapMode.Truncate;
         }
 
-        private string SpeedText() => Loc.F("АНИМАЦИИ ×{0:0.#}", _animSpeed);
+        private Text RoundButton(Vector2 pos, LGIcon? icon, string label, Action act, string tip, out Button btn)
+        {
+            var rt = LGBuild.Rect(_board, "RoundBtn");
+            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(56, 56));
+            var bg = rt.gameObject.AddComponent<Image>();
+            bg.sprite = CardSkin.Spr("disc");
+            bg.color = new Color(0.06f, 0.08f, 0.11f, 1f);
+            btn = rt.gameObject.AddComponent<Button>();
+            btn.targetGraphic = bg;
+            var cb = btn.colors; cb.highlightedColor = new Color(1.6f, 1.6f, 1.6f, 1f); cb.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f); btn.colors = cb;
+            btn.onClick.AddListener(() => act());
+            var ring = CardSkin.Simple(rt, "Ring", "frame_round", CardSkin.Steel);
+            ring.rectTransform.Stretch(-5, -5, -5, -5);
+            Text t = null;
+            if (icon.HasValue)
+            {
+                var ic = LGIcons.Create(rt, icon.Value, 20, new Color(0.92f, 0.9f, 0.85f));
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
+            }
+            else
+            {
+                t = CardSkin.TitleText(rt, label ?? "", 15, new Color(0.95f, 0.92f, 0.86f), TextAnchor.MiddleCenter, 1.5f);
+                t.rectTransform.Stretch();
+            }
+            if (!string.IsNullOrEmpty(tip)) TooltipHelper.Attach(rt.gameObject, tip);
+            return t;
+        }
+
+        /// <summary>Левая колонка: колоды врага и ваша, между ними хроника боя.</summary>
+        private void BuildLeft()
+        {
+            _deckE = Deck(new Vector2(LX, 300), FactionOf(_E));
+            _deckP = Deck(new Vector2(LX, -168), FactionOf(_P));
+
+            var hp = CardSkin.Sliced(_board, "Log", "panel_leather", Color.white, 0.3f);
+            hp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(LX, 66), new Vector2(226, 250));
+            var lc = CardSkin.TitleText(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"), 13, new Color(0.95f, 0.8f, 0.55f), TextAnchor.UpperCenter, 1f);
+            lc.rectTransform.Stretch(10, 0, 10, 12);
+            lc.Track(2f);
+            _logText = LGBuild.Label(hp.rectTransform, "", 12, new Color(0.86f, 0.88f, 0.92f), TextAnchor.LowerLeft, wrap: true);
+            _logText.rectTransform.Stretch(14, 12, 12, 34);
+            _logText.verticalOverflow = VerticalWrapMode.Truncate;
+            _logText.raycastTarget = false;
+            _logText.supportRichText = true;
+        }
+
+        private Text Deck(Vector2 pos, string faction)
+        {
+            for (int k = 0; k < 3; k++)
+            {
+                var b = CardView.Create(_board, new BCard(CardCatalog.Crew ?? CardCatalog.Militia), 0, faction, new Vector2(92, 128), true);
+                b.SetFace(false, true);
+                b.Rt.anchoredPosition = pos + new Vector2(-4 + k * 4, k * 3);
+                foreach (var g in b.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
+            }
+            var t = Orb(_board, "orb_gray", pos + new Vector2(50, -54), 50f, 20);
+            TooltipHelper.Attach(t.transform.parent.gameObject, Loc.T("Карт в колоде"));
+            return t;
+        }
+
+        /// <summary>Кристаллы очков приказов — справа от руки, как кристаллы маны.</summary>
+        private void BuildPoints()
+        {
+            _pointsText = CardSkin.TitleText(_board, "0/0", 30, Color.white, TextAnchor.MiddleRight, 2.5f);
+            _pointsText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(505, -500), new Vector2(110, 40));
+            for (int k = 0; k < 10; k++)
+            {
+                var c = CardSkin.Simple(_board, "Crystal", "crystal_empty", Color.white);
+                c.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(585 + k * 38, -500), new Vector2(40, 40));
+                _crystals.Add(c);
+            }
+            var cap = CardSkin.TitleText(_board, Loc.T("ОЧКИ ПРИКАЗОВ"), 12, new Color(0.62f, 0.82f, 1f), TextAnchor.MiddleLeft, 1f);
+            cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(660, -466), new Vector2(240, 20));
+            cap.Track(2f);
+        }
+
+        private string SpeedText() => Loc.F("×{0:0.#}", _animSpeed);
 
         private void OnSpeed()
         {
@@ -484,12 +634,15 @@ namespace StellarisClone.Cards
         {
             v.OnHoverIn = ShowPreview;
             v.OnHoverOut = HidePreview;
-            v.SetHoverable(false);
+            v.SetHoverable(true);
+            v.HoverLift = 6f;
+            v.HoverScale = 0.06f;
         }
 
+        /// <summary>Крупная карта рядом с наведённой картой стола (с той стороны, где больше места).</summary>
         private void ShowPreview(CardView v)
         {
-            if (v == null || v.Card == null) return;
+            if (v == null || v.Card == null || _dragging != null) return;
             if (!v.FaceUp && v.Side != _P) return;   // рубашку врага не подсмотреть
             if (_preview != null) Destroy(_preview.gameObject);
             _preview = CardView.Create(_previewRoot, v.Card, v.Side, v.SideFaction, PreviewCard, false);
@@ -499,7 +652,14 @@ namespace StellarisClone.Cards
                 var u = _state.FindUnit(v.Uid);
                 if (u != null) _preview.RefreshNumbers(_state.Power(u), u.Armor, u.MaxArmor, false);
             }
-            _preview.Punch(0.04f);
+            var croot = (RectTransform)_canvas.transform;
+            var screen = RectTransformUtility.WorldToScreenPoint(null, v.Rt.position);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(croot, screen, null, out var lp);
+            float side = lp.x < 300f ? 1f : -1f;
+            var pos = new Vector2(lp.x + side * (PreviewCard.x * 0.5f + v.Rt.rect.width * 0.5f + 24f), Mathf.Clamp(lp.y, -300f, 300f));
+            _previewRoot.anchoredPosition = pos;
+            _previewRoot.SetAsLastSibling();
+            _preview.Punch(0.05f);
             foreach (var g in _preview.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
         }
 
@@ -515,14 +675,18 @@ namespace StellarisClone.Cards
             var v = CardView.Create(_handRoot, c, _P, FactionOf(_P), HandCard, false);
             v.Interactive = true;
             v.SetHoverable(true);
-            v.OnHoverIn = x => { ShowPreview(x); x.Rt.SetAsLastSibling(); };
-            v.OnHoverOut = HidePreview;
+            v.HoverLift = 150f;
+            v.HoverScale = 0.28f;
+            v.OnHoverIn = x => { if (_dragging != null) return; _handHover = x; x.Rt.SetAsLastSibling(); LayoutHand(false); SFXManager.Play(Sfx.UiHover, 0.4f); };
+            v.OnHoverOut = x => { if (_handHover == x) _handHover = null; LayoutHand(false); };
             v.OnDragBegin = BeginDrag;
             v.OnDragMove = Drag;
             v.OnDragEnd = EndDrag;
             if (animateFromDeck)
             {
-                v.Rt.anchoredPosition = new Vector2(-700, -40);
+                // Из колоды слева — переворотом в руку
+                var deckPos = _deckP != null ? (Vector2)_handRoot.InverseTransformPoint(_deckP.transform.position) : new Vector2(-700, 100);
+                v.Rt.anchoredPosition = deckPos;
                 v.Rt.localRotation = Quaternion.Euler(0, 0, 30f);
                 v.SetFace(false, true);
                 v.SetFace(true, false);
@@ -534,28 +698,37 @@ namespace StellarisClone.Cards
         private void LayoutHand(bool instant)
         {
             int n = _hand.Count;
-            float spread = Mathf.Min(150f, n > 1 ? 960f / (n - 1) : 0f);
+            float spread = Mathf.Min(150f, n > 1 ? 900f / (n - 1) : 0f);
+            int hi = _handHover != null ? _hand.IndexOf(_handHover) : -1;
             for (int i = 0; i < n; i++)
             {
                 float t = n > 1 ? i / (float)(n - 1) - 0.5f : 0f;
-                var pos = new Vector2(t * spread * (n - 1), -Mathf.Abs(t) * Mathf.Abs(t) * 90f * (n > 4 ? 1f : 0.5f));
-                float rot = -t * (n > 1 ? 14f : 0f);
+                var pos = new Vector2(t * spread * (n - 1), -Mathf.Abs(t) * Mathf.Abs(t) * 70f * (n > 4 ? 1f : 0.5f));
+                float rot = -t * (n > 1 ? 12f : 0f);
+                if (hi >= 0 && i != hi) pos.x += (i < hi ? -1f : 1f) * 46f;   // соседи расступаются
+                if (i == hi) rot = 0f;
                 _targets[_hand[i]] = pos;
                 _targetRot[_hand[i]] = rot;
+                if (i != hi) _hand[i].Rt.SetSiblingIndex(i);
                 if (instant) { _hand[i].Rt.anchoredPosition = pos; _hand[i].Rt.localRotation = Quaternion.Euler(0, 0, rot); }
             }
+            if (hi >= 0) _hand[hi].Rt.SetAsLastSibling();
         }
 
         private void BeginDrag(CardView v, PointerEventData e)
         {
             if (_busy || _state.Over) return;
             _dragging = v;
+            _handHover = null;
+            v.SetHoverable(false);
             v.Rt.SetParent(_board, true);
             v.Rt.SetAsLastSibling();
             _targets.Remove(v);
             HidePreview(null);
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_board, e.position, null, out var lp);
             _dragOffset = (Vector2)v.Rt.localPosition - lp;
+            v.Rt.localScale = Vector3.one * 0.8f;
+            LayoutHand(false);
             SFXManager.Play(Sfx.UiTab);
         }
 
@@ -576,7 +749,7 @@ namespace StellarisClone.Cards
         {
             if (_dragging != v) return;
             _dragging = null;
-            for (int i = 0; i < 3; i++) _sec[i].HeaderGlowSet(0);
+            v.SetHoverable(true);
             int sec = SectorUnder(e.position);
             string why = sec >= 0 ? _state.CanPlay(_P, v.Card, sec) : null;
             if (sec >= 0 && why == null && _state.Play(_P, v.Card, sec))
@@ -588,14 +761,15 @@ namespace StellarisClone.Cards
                 Destroy(v.gameObject);
                 var pv = CardView.Create(_rows[sec, 1], v.Card, _P, FactionOf(_P), BoardCard, true);
                 pv.Rt.position = pos;
-                pv.SetAlpha(0.82f);
+                pv.SetAlpha(0.85f);
                 pv.SetStatus(Loc.T("ПРИКАЗ ОТДАН · клик — отменить"), new Color(0.5f, 0.85f, 1f));
+                Hook(pv);
                 pv.OnClick = UnplayView;
-                pv.OnHoverIn = ShowPreview;
-                pv.OnHoverOut = HidePreview;
                 _pending[v.Card] = pv;
-                pv.Punch(0.2f);
-                _fx.Dust(_fx.Local(_rows[sec, 1]), 0.6f);
+                pv.Punch(0.25f);
+                var p = _fx.Local(pv.Rt);
+                _fx.Dust(p + new Vector2(0, -60), 0.7f);
+                _fx.Ring(p, new Color(0.5f, 0.85f, 1f, 0.7f), 40f, 220f, 0.35f);
                 SFXManager.Play(Sfx.DealPlace);
                 LayoutAll(false);
                 LayoutHand(false);
@@ -604,6 +778,7 @@ namespace StellarisClone.Cards
             }
             // Не вышло — карта возвращается в руку
             v.Rt.SetParent(_handRoot, true);
+            v.Rt.localScale = Vector3.one;
             v.Hit(0.4f);
             if (sec >= 0 && why != null) { Hint(why, true); SFXManager.Play(Sfx.UiDenied); }
             LayoutHand(false);
@@ -644,8 +819,8 @@ namespace StellarisClone.Cards
                         if (v != null && !_dying.Contains(v)) list.Add(v);
                     }
                     int n = list.Count;
-                    float w = ColW - 30f;
-                    float step = n > 1 ? Mathf.Min(BoardCard.x + 8f, (w - BoardCard.x) / (n - 1)) : 0f;
+                    float w = LaneW - 24f;
+                    float step = n > 1 ? Mathf.Min(BoardCard.x + 10f, (w - BoardCard.x) / (n - 1)) : 0f;
                     for (int i = 0; i < n; i++)
                     {
                         var pos = new Vector2((i - (n - 1) * 0.5f) * step, 0f);
@@ -660,7 +835,7 @@ namespace StellarisClone.Cards
 
         private void Update()
         {
-            if (!IsOpen) return;
+            if (!IsOpen || _state == null) return;
             float dt = Time.unscaledDeltaTime;
             var dead = new List<CardView>();
             foreach (var kv in _targets)
@@ -675,29 +850,52 @@ namespace StellarisClone.Cards
             foreach (var v in dead) _targets.Remove(v);
 
             // Подсветка: что можно сыграть
+            bool anyPlayable = false;
             if (!_busy && !_state.Over)
-                foreach (var v in _hand) v.Playable = _state.CostOf(_P, v.Card) <= _state.Sides[_P].Points && v.Card.Def.Kind != CardKind.Structure;
+                foreach (var v in _hand)
+                {
+                    v.Playable = _state.CostOf(_P, v.Card) <= _state.Sides[_P].Points && v.Card.Def.Kind != CardKind.Structure;
+                    anyPlayable |= v.Playable;
+                }
             else foreach (var v in _hand) v.Playable = false;
 
-            // Кнопка хода пульсирует, пока очки не потрачены
+            // Кнопка хода: янтарная — есть что сыграть, зелёная (пульсирует) — всё сыграно, серая — идёт бой
             if (_endButtonImg != null)
             {
                 bool idle = !_busy && !_state.Over;
-                float p = idle && _state.Sides[_P].Points == 0 ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4f) : 0f;
-                _endButtonImg.color = idle ? Color.Lerp(new Color(0.06f, 0.32f, 0.22f, 0.98f), new Color(0.12f, 0.55f, 0.36f, 1f), p) : new Color(0.08f, 0.1f, 0.12f, 0.9f);
-                _endLabel.text = _busy ? Loc.T("БОЙ ИДЁТ…") : Loc.T("ЗАКОНЧИТЬ ХОД");
+                string st = !idle ? "btn_end_gray" : anyPlayable ? "btn_end_amber" : "btn_end_green";
+                string key = st + (_state.Over ? "|over" : "");
+                if (key != _endState)
+                {
+                    _endState = key;
+                    _endButtonImg.sprite = CardSkin.Spr(st);
+                    _endLabel.text = _state.Over ? Loc.T("БОЙ\nОКОНЧЕН") : _busy ? Loc.T("БОЙ\nИДЁТ…") : Loc.T("ЗАКОНЧИТЬ\nХОД");
+                }
+                float pulse = idle && !anyPlayable ? 0.45f + 0.35f * Mathf.Sin(Time.unscaledTime * 4f) : idle ? 0.2f : 0f;
+                var gc = anyPlayable ? new Color(1f, 0.75f, 0.25f) : new Color(0.3f, 1f, 0.4f);
+                _endGlow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_endGlow.color.a, pulse, 1f - Mathf.Exp(-dt * 8f)));
             }
+
+            if (_endButtonImg != null) _endButtonImg.rectTransform.localScale = Vector3.Lerp(_endButtonImg.rectTransform.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 12f));
 
             // Атмосфера: пыль/пепел/дождь
             AmbientTick(dt);
 
-            // Плиты секторов: волна цвета при смене контроля
+            // Дорожки: подсветка при перетаскивании гаснет, свечение плашки — к цвету контроля
             foreach (var s in _sec)
             {
                 if (s == null) continue;
-                s.WashA = Mathf.MoveTowards(s.WashA, 0.18f, dt * 0.5f);
-                var c = s.Wash.color; c.a = s.WashA; s.Wash.color = c;
-                if (s.Stamp.color.a > 0f) { var sc = s.Stamp.color; sc.a = Mathf.Max(0, sc.a - dt * 0.6f); s.Stamp.color = sc; }
+                s.HighA = Mathf.MoveTowards(s.HighA, 0f, dt * 2.5f);
+                s.Highlight.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 0.8f);
+                s.WashA = Mathf.MoveTowards(s.WashA, 0.5f, dt * 0.6f);
+                s.Wash.color = new Color(s.WashC.r, s.WashC.g, s.WashC.b, s.WashA * (0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 2f)));
+                if (s.Stamp.color.a > 0f) { var sc = s.Stamp.color; sc.a = Mathf.Max(0, sc.a - dt * 0.55f); s.Stamp.color = sc; }
+                if (s.Dome != null)
+                {
+                    bool up = _state.ShieldUp;
+                    float a = up ? 0.22f + 0.06f * Mathf.Sin(Time.unscaledTime * 2.2f) : 0f;
+                    s.Dome.color = new Color(0.45f, 0.75f, 1f, Mathf.MoveTowards(s.Dome.color.a, a, dt * 0.8f));
+                }
             }
 
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) OnEndTurn();
@@ -715,10 +913,10 @@ namespace StellarisClone.Cards
             switch (_setup.Terrain)
             {
                 case Terrain.Molten:
-                    _fx.Burst(new Vector2(pos.x, -r.height * 0.5f), 1, CardSprites.Dot, new Color(1f, 0.55f, 0.2f, 0.9f), 40f, 120f, 4f, 7f, 6f, 2f, -30f, 0.2f, 90f, 40f);
+                    _fx.Burst(new Vector2(pos.x, -r.height * 0.5f), 1, CardSkin.Spr("k_spark1"), new Color(1f, 0.55f, 0.2f, 0.9f), 40f, 120f, 4f, 7f, 10f, 4f, -30f, 0.2f, 90f, 40f);
                     break;
                 case Terrain.Desert:
-                    _fx.Burst(new Vector2(-r.width * 0.5f - 20f, UnityEngine.Random.Range(-r.height * 0.4f, r.height * 0.4f)), 1, CardSprites.Smoke, new Color(0.8f, 0.6f, 0.4f, 0.12f), 140f, 260f, 5f, 8f, 120f, 220f, 0f, 0.1f, 0f, 20f);
+                    _fx.Burst(new Vector2(-r.width * 0.5f - 20f, UnityEngine.Random.Range(-r.height * 0.4f, r.height * 0.4f)), 1, CardSkin.Spr("k_smoke1"), new Color(0.8f, 0.6f, 0.4f, 0.1f), 140f, 260f, 5f, 8f, 160f, 300f, 0f, 0.1f, 0f, 20f);
                     break;
                 case Terrain.Continental:
                     if (_state.WeatherActive) _fx.Burst(pos, 3, CardSprites.Spark, new Color(0.7f, 0.8f, 0.95f, 0.35f), 900f, 1200f, 1.2f, 1.6f, 22f, 22f, 0f, 0f, 255f, 6f, align: true, stretch: 3f);
@@ -735,24 +933,46 @@ namespace StellarisClone.Cards
         private void RefreshPanels()
         {
             var me = _state.Sides[_P];
-            _turnText.text = _state.Over ? Loc.T("БОЙ ОКОНЧЕН") : Loc.F("ХОД {0} / {1}", Mathf.Max(1, _state.Turn), BattleState.Turns);
+            var en = _state.Sides[_E];
+            _turnText.text = Mathf.Clamp(_state.Turn, 1, BattleState.Turns).ToString();
             int mine = 0, theirs = 0;
             for (int i = 0; i < 3; i++) { if (_state.Sectors[i].Control == _P) mine++; else theirs++; }
-            _scoreText.text = Loc.F("Секторы: вы {0} : {1} враг · нужно 2 из 3{2}", mine, theirs, _P == BattleState.Attacker ? Loc.T(" (ничья — за обороной)") : "");
-            _weatherText.text = _state.WeatherActive ? Loc.F("<b>{0}</b> · {1}", _state.WeatherName, _state.WeatherText)
-                : Loc.T("Погода планеты откроется на 3-м ходу");
-            _pointsText.text = me.Points.ToString();
+            _scoreText.text = Loc.F("СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>", mine, theirs) + "\n" +
+                              Loc.T("<size=11><color=#9AA6B0>нужно 2 из 3</color></size>");
+            _weatherTitle.text = _state.WeatherActive ? (_state.WeatherName ?? "").ToUpper() : Loc.T("ПОГОДА");
+            _weatherText.text = _state.WeatherActive ? _state.WeatherText : Loc.T("откроется на 3-м ходу");
+
             int total = Mathf.Max(me.Points, _state.Turn + me.PointsPerTurn);
-            for (int i = 0; i < _pointPips.Count; i++)
+            _pointsText.text = Loc.F("{0}/{1}", me.Points, total);
+            for (int i = 0; i < _crystals.Count; i++)
             {
-                _pointPips[i].gameObject.SetActive(i < Mathf.Max(total, me.Points));
-                _pointPips[i].color = i < me.Points ? new Color(1f, 0.82f, 0.4f, 1f) : new Color(1f, 0.82f, 0.4f, 0.15f);
+                _crystals[i].gameObject.SetActive(i < Mathf.Max(total, me.Points));
+                var spr = i < me.Points ? "crystal_full" : "crystal_empty";
+                if (_crystals[i].sprite == null || _crystals[i].sprite.name != spr) _crystals[i].sprite = CardSkin.Spr(spr);
             }
-            _deckText.text = Loc.F("Колода: {0} · рука: {1}\nВ бою потеряно: {2}", me.Deck.Count, me.Hand.Count, CountDead(_P));
-            _enemyHandText.text = Loc.F("Рука врага: {0} · колода {1}", _state.Sides[_E].Hand.Count, _state.Sides[_E].Deck.Count);
+            if (_deckP != null) _deckP.text = me.Deck.Count.ToString();
+            if (_deckE != null) _deckE.text = en.Deck.Count.ToString();
+            RefreshEnemyHand(en.Hand.Count);
             for (int i = 0; i < 3; i++) RefreshSector(i);
-            _logText.text = string.Join("\n", _log.Count > 14 ? _log.GetRange(_log.Count - 14, 14) : _log);
+            _logText.text = string.Join("\n", _log.Count > 10 ? _log.GetRange(_log.Count - 10, 10) : _log);
             if (_mercButton != null) _mercButton.interactable = !_busy && !_state.Over && me.Treasury != null && me.Treasury() >= 60f;
+        }
+
+        /// <summary>Рука врага — рубашки веером рядом с его портретом.</summary>
+        private void RefreshEnemyHand(int n)
+        {
+            if (n == _enemyHandShown || _enemyHandRow == null) return;
+            _enemyHandShown = n;
+            for (int i = _enemyHandRow.childCount - 1; i >= 0; i--) Destroy(_enemyHandRow.GetChild(i).gameObject);
+            for (int k = 0; k < n; k++)
+            {
+                var b = CardView.Create(_enemyHandRow, new BCard(CardCatalog.Crew ?? CardCatalog.Militia), _E, FactionOf(_E), new Vector2(60, 84), true);
+                b.SetFace(false, true);
+                float t = n > 1 ? k / (float)(n - 1) - 0.5f : 0f;
+                b.Rt.anchoredPosition = new Vector2(-90 + k * Mathf.Min(34f, 200f / Mathf.Max(1, n - 1)), Mathf.Abs(t) * 6f);
+                b.Rt.localRotation = Quaternion.Euler(0, 0, -t * 16f);
+                foreach (var g in b.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
+            }
         }
 
         private int CountDead(int side)
@@ -768,27 +988,20 @@ namespace StellarisClone.Cards
             int pe = _state.SectorPower(_E, i), pp = _state.SectorPower(_P, i);
             s.PowE.text = pe.ToString();
             s.PowP.text = pp.ToString();
-            float f = pe + pp <= 0 ? 0.5f : pe / (float)(pe + pp);
-            s.ControlFill.rectTransform.anchorMax = new Vector2(f, 1f);
-            s.ControlFill.color = CardArt.Faction(FactionOf(_E));
+            s.OrbGlowE.color = new Color(CardSkin.Red.r, CardSkin.Red.g, CardSkin.Red.b, pe > pp ? 0.85f : 0f);
+            s.OrbGlowP.color = new Color(CardSkin.Teal.r, CardSkin.Teal.g, CardSkin.Teal.b, pp > pe ? 0.85f : 0f);
             int c = _state.Sectors[i].Control;
-            s.Control.text = c == _P ? Loc.T("<color=#7CF29A>ВАШ</color>") : Loc.T("<color=#FF8A80>У ВРАГА</color>");
-            if (s.Dome != null)
-            {
-                bool up = _state.ShieldUp;
-                s.Dome.color = new Color(0.45f, 0.75f, 1f, up ? 0.35f + 0.08f * Mathf.Sin(Time.unscaledTime * 2f) : 0f);
-            }
+            var col = c == _P ? CardSkin.Teal : CardSkin.Red;
             if (s.LastControl != c)
             {
+                s.WashC = col;
                 if (s.LastControl != -2)
                 {
-                    var col = c == _P ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f);
-                    s.Wash.color = new Color(col.r, col.g, col.b, 0.9f);
-                    s.WashA = 0.9f;
+                    s.WashA = 1.2f;
                     s.Stamp.text = c == _P ? Loc.T("ВЗЯТ") : Loc.T("ПОТЕРЯН");
                     s.Stamp.color = new Color(col.r, col.g, col.b, 1f);
                 }
-                else s.Wash.color = c == _P ? new Color(0.45f, 1f, 0.6f, 0.18f) : new Color(1f, 0.4f, 0.35f, 0.18f);
+                else s.WashA = 0.5f;
                 s.LastControl = c;
             }
         }
@@ -797,7 +1010,7 @@ namespace StellarisClone.Cards
         {
             if (_hintText == null) return;
             _hintText.text = text;
-            _hintText.color = bad ? new Color(1f, 0.55f, 0.5f) : UIManager.DS.TextMuted;
+            _hintText.color = bad ? new Color(1f, 0.55f, 0.5f) : new Color(1f, 0.93f, 0.8f);
         }
 
         private void AddLog(string line)
@@ -812,6 +1025,7 @@ namespace StellarisClone.Cards
         {
             if (_busy || _state == null || _state.Over || _dragging != null) return;
             SFXManager.Play(Sfx.UiConfirm);
+            _endButtonImg.rectTransform.localScale = Vector3.one * 0.92f;
             StartCoroutine(ResolveTurn());
         }
 
@@ -845,9 +1059,9 @@ namespace StellarisClone.Cards
             var sd = _state.Sides[_P];
             var bc = sd.Pending[sd.Pending.Count - 1].card;
             var pv = CardView.Create(_rows[i, 1], bc, _P, FactionOf(_P), BoardCard, true);
-            pv.SetAlpha(0.82f);
+            pv.SetAlpha(0.85f);
             pv.SetStatus(Loc.T("НАЁМНИКИ"), new Color(1f, 0.8f, 0.35f));
-            pv.OnHoverIn = ShowPreview; pv.OnHoverOut = HidePreview;
+            Hook(pv);
             _pending[bc] = pv;
             pv.Punch(0.3f);
             SFXManager.Play(Sfx.DealPlace);
@@ -860,40 +1074,52 @@ namespace StellarisClone.Cards
         private void ShowDefensePrompt(int attacker, StarSystem sys)
         {
             if (_canvas == null) BuildCanvas();
+            FitScaler();
             var tm = TimeManager.Instance;
             int saved = tm != null ? tm.CurrentSpeed : 1;
             if (tm != null) tm.SetSpeed(0);
             AssaultLink.BattleRunning = true;
             foreach (Transform c in _canvas.transform) Destroy(c.gameObject);
             _root.SetActive(true);
+            _state = null;
             var croot = (RectTransform)_canvas.transform;
-            var dim = LGBuild.Panel(croot, "Dim", new Color(0, 0, 0, 0.7f), raycast: true);
+            var dim = LGBuild.Panel(croot, "Dim", new Color(0, 0, 0, 0.75f), raycast: true);
             dim.rectTransform.Stretch();
-            var box = LGBuild.Panel(croot, "Prompt", new Color(0.03f, 0.05f, 0.08f, 0.97f));
-            box.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(640, 300));
-            LG.Glass(box.gameObject).SetRim(new Color(1f, 0.4f, 0.35f, 0.7f));
+            var box = CardSkin.Sliced(croot, "Prompt", "panel_plates", Color.white, 0.6f);
+            box.raycastTarget = true;
+            box.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700, 330));
+            var fr = CardSkin.Sliced(box.rectTransform, "Frame", "frame_card", CardSkin.Red, 0.5f);
+            fr.rectTransform.Stretch();
             LG.Motion(box.gameObject, LGAppear.Kind.Pop);
-            var t = LGBuild.Label(box.rectTransform, Loc.T("ВРАГ ВЫСАЖИВАЕТСЯ!"), 30, new Color(1f, 0.5f, 0.45f), TextAnchor.UpperCenter, bold: true);
-            t.rectTransform.Stretch(20, 0, 20, 26);
-            t.Track(1.5f);
+            var t = CardSkin.TitleText(box.rectTransform, Loc.T("ВРАГ ВЫСАЖИВАЕТСЯ!"), 34, new Color(1f, 0.55f, 0.48f), TextAnchor.UpperCenter, 2.5f);
+            t.rectTransform.Stretch(20, 0, 20, 30);
+            t.Track(2f);
             var body = LGBuild.Label(box.rectTransform, Loc.F("{0} штурмует колонию {1}. Гарнизон, ополчение и укрепления готовы к бою.\nКомандовать обороной лично или довериться автобою?",
-                AIEmpireManager.NameOf(attacker, Loc.T("Враг")), sys.Name), 15, Color.white, TextAnchor.UpperCenter, wrap: true);
-            body.rectTransform.Stretch(40, 100, 40, 84);
+                AIEmpireManager.NameOf(attacker, Loc.T("Враг")), sys.Name), 16, new Color(0.92f, 0.9f, 0.86f), TextAnchor.UpperCenter, wrap: true);
+            body.rectTransform.Stretch(50, 110, 50, 92);
             SFXManager.Play(Sfx.RedAlert);
-            Button Btn(string label, Color tint, Vector2 pos, Action act)
+            void Btn(string label, string sprite, Vector2 pos, Action act)
             {
-                var b = LGBuild.Button(box.rectTransform, label, tint, new Color(1, 1, 1, 0.5f), act, null, label, 14);
-                ((RectTransform)b.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, new Vector2(270, 54));
-                return b;
+                var rt = LGBuild.Rect(box.rectTransform, label);
+                rt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, new Vector2(270, 66));
+                var img = rt.gameObject.AddComponent<Image>();
+                img.sprite = CardSkin.Spr(sprite);
+                img.type = Image.Type.Sliced;
+                img.pixelsPerUnitMultiplier = 2.6f;
+                var b = rt.gameObject.AddComponent<Button>();
+                b.targetGraphic = img;
+                b.onClick.AddListener(() => act());
+                var l = CardSkin.TitleText(rt, label, 16, Color.white, TextAnchor.MiddleCenter, 2f);
+                l.rectTransform.Stretch(16, 0, 16, 0);
             }
-            Btn(Loc.T("ЗАЩИЩАТЬСЯ ЛИЧНО"), new Color(0.08f, 0.38f, 0.26f, 1f), new Vector2(-145, 26), () =>
+            Btn(Loc.T("ЗАЩИЩАТЬСЯ ЛИЧНО"), "btn_end_green", new Vector2(-148, 30), () =>
             {
                 AssaultLink.BattleRunning = false;
                 _root.SetActive(false);
                 if (tm != null) tm.SetSpeed(saved);
                 AssaultLink.StartDefense(attacker, sys, false);
             });
-            Btn(Loc.T("АВТОБОЙ"), UIManager.DS.BtnNeutral, new Vector2(145, 26), () =>
+            Btn(Loc.T("АВТОБОЙ"), "btn_end_gray", new Vector2(148, 30), () =>
             {
                 AssaultLink.BattleRunning = false;
                 _root.SetActive(false);
@@ -902,7 +1128,7 @@ namespace StellarisClone.Cards
             });
         }
 
-        /// <summary>Щелчок по колонке сектора.</summary>
+        /// <summary>Щелчок по дорожке сектора.</summary>
         private sealed class SectorClick : MonoBehaviour, IPointerClickHandler
         {
             public Action OnClick;

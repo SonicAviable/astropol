@@ -274,6 +274,7 @@ namespace StellarisClone.Cards
                     if (hq >= 0)
                     {
                         var p = _fx.Local(_rows[hq, _P == BattleState.Defender ? 1 : 0]);
+                        _fx.Energy(p, new Color(0.55f, 0.85f, 1f), 2f);
                         _fx.Ring(p, new Color(0.5f, 0.8f, 1f, 1f), 60f, 700f, 0.7f);
                         _fx.Sparks(p, new Color(0.6f, 0.85f, 1f), 50, 1.6f);
                         _fx.Flash(new Color(0.6f, 0.85f, 1f), 0.4f);
@@ -487,6 +488,7 @@ namespace StellarisClone.Cards
                     yield return W(0.3f);
                     break;
                 case "O9":   // ЭМИ
+                    _fx.Energy(target, new Color(0.45f, 0.8f, 1f), 1.6f);
                     _fx.Ring(target, new Color(0.4f, 0.75f, 1f, 1f), 40f, 900f, 0.7f);
                     _fx.Ring(target, new Color(0.7f, 0.9f, 1f, 0.8f), 20f, 600f, 0.5f);
                     _fx.Sparks(target, new Color(0.55f, 0.85f, 1f), 40, 1.4f);
@@ -504,6 +506,7 @@ namespace StellarisClone.Cards
                         _fx.Burst(b, 4, CardSprites.Spark, new Color(0.85f, 0.6f, 1f), 100f, 300f, 0.2f, 0.4f, 12f, 4f, 0f, 2f, align: true, stretch: 2f);
                         yield return W(0.05f);
                     }
+                    _fx.Energy(target, new Color(0.8f, 0.5f, 1f), 1.8f);
                     _fx.Flash(new Color(0.7f, 0.4f, 1f), 0.5f);
                     _fx.Shake(10f, 0.4f);
                     yield return W(0.3f);
@@ -575,7 +578,9 @@ namespace StellarisClone.Cards
             bool lob = e.Text == "lob" || e.Text == "salvo";
             bool flame = d.Has(Kw.Flame);
             // Вспышка у ствола
-            _fx.Burst(a, 4, CardSprites.Spark, c, 160f, 320f, 0.08f, 0.16f, 16f, 6f, 0f, 3f, Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg, 30f, align: true, stretch: 2.5f);
+            float shotAng = Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
+            _fx.Muzzle(a, shotAng, c, d.Has(Kw.Vehicle) ? 1.3f : 0.8f);
+            _fx.Burst(a, 4, CardSprites.Spark, c, 160f, 320f, 0.08f, 0.16f, 16f, 6f, 0f, 3f, shotAng, 30f, align: true, stretch: 2.5f);
             src.Punch(0.06f);
             if (flame)
             {
@@ -602,7 +607,10 @@ namespace StellarisClone.Cards
             _fx.Number(p + new Vector2(Random.Range(-20f, 20f), 10), "−" + e.Amount, new Color(1f, 0.4f, 0.32f), 32 + Mathf.Min(16, e.Amount * 2), 0.9f);
             var def = v.Card.Def;
             if (def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure || def.Has(Kw.Drone))
+            {
                 _fx.Sparks(p, new Color(1f, 0.8f, 0.45f), 12, 0.9f);
+                if (e.Amount >= 3) _fx.Flipbook("fx_explosion", 6, 6, p + Random.insideUnitCircle * 20f, 110f, 0.7f, Color.white, 150f, Random.Range(0f, 360f));
+            }
             else
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 0.6f);
             SFXManager.Play(Sfx.HitArmor, 0.5f, Random.Range(0.9f, 1.15f));
@@ -786,14 +794,20 @@ namespace StellarisClone.Cards
         {
             var band = LGBuild.Panel(_overlay, "Banner", new Color(0.01f, 0.02f, 0.04f, 0f));
             band.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(2400, 0));
+            band.sprite = CardSprites.RoundGlow;
+            band.type = Image.Type.Sliced;
             var line1 = LGBuild.Panel(band.rectTransform, "L1", new Color(c.r, c.g, c.b, 0.9f));
-            line1.rectTransform.anchorMin = new Vector2(0, 1); line1.rectTransform.anchorMax = new Vector2(1, 1); line1.rectTransform.sizeDelta = new Vector2(0, 2);
+            line1.sprite = CardSprites.Beam;
+            line1.rectTransform.anchorMin = new Vector2(0.15f, 1); line1.rectTransform.anchorMax = new Vector2(0.85f, 1); line1.rectTransform.sizeDelta = new Vector2(0, 3);
             var line2 = LGBuild.Panel(band.rectTransform, "L2", new Color(c.r, c.g, c.b, 0.9f));
-            line2.rectTransform.anchorMin = new Vector2(0, 0); line2.rectTransform.anchorMax = new Vector2(1, 0); line2.rectTransform.sizeDelta = new Vector2(0, 2);
-            var t = LGBuild.Label(band.rectTransform, title, 54, new Color(c.r, c.g, c.b, 0f), TextAnchor.MiddleCenter, bold: true);
+            line2.sprite = CardSprites.Beam;
+            line2.rectTransform.anchorMin = new Vector2(0.15f, 0); line2.rectTransform.anchorMax = new Vector2(0.85f, 0); line2.rectTransform.sizeDelta = new Vector2(0, 3);
+            var flare = CardSkin.Simple(band.rectTransform, "Flare", "k_flare", new Color(c.r, c.g, c.b, 0.9f));
+            flare.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700, 160));
+            var t = CardSkin.TitleText(band.rectTransform, title, 58, new Color(c.r, c.g, c.b, 0f), TextAnchor.MiddleCenter, 3f);
             t.rectTransform.Stretch(0, 22, 0, 0);
             t.Track(4f);
-            var s = LGBuild.Label(band.rectTransform, sub, 17, new Color(1, 1, 1, 0f), TextAnchor.LowerCenter);
+            var s = LGBuild.Label(band.rectTransform, sub, 18, new Color(1, 1, 1, 0f), TextAnchor.LowerCenter);
             s.rectTransform.Stretch(0, 12, 0, 0);
             SFXManager.Play(Sfx.AlertPop, 0.6f);
             float total = dur / Mathf.Max(0.1f, _animSpeed * (Fast ? 3f : 1f));
@@ -804,7 +818,8 @@ namespace StellarisClone.Cards
                 float k = time / total;
                 float a = k < 0.2f ? k / 0.2f : k > 0.75f ? 1f - (k - 0.75f) / 0.25f : 1f;
                 band.rectTransform.sizeDelta = new Vector2(2400, Mathf.Lerp(0, 120, Mathf.Min(1f, k / 0.15f)) * (k > 0.85f ? 1f - (k - 0.85f) / 0.15f : 1f));
-                band.color = new Color(0.01f, 0.02f, 0.04f, 0.8f * a);
+                band.color = new Color(0.01f, 0.02f, 0.04f, 0.85f * a);
+                flare.color = new Color(c.r, c.g, c.b, 0.9f * a);
                 t.color = new Color(c.r, c.g, c.b, a);
                 s.color = new Color(1, 1, 1, a * 0.85f);
                 t.rectTransform.localScale = Vector3.one * (1.15f - 0.15f * Mathf.Min(1f, k / 0.25f));
@@ -868,17 +883,21 @@ namespace StellarisClone.Cards
 
             var dim = LGBuild.Panel(_overlay, "ResultDim", new Color(0, 0, 0, 0.72f), raycast: true);
             dim.rectTransform.Stretch();
-            var box = LGBuild.Panel(_overlay, "Result", new Color(0.02f, 0.04f, 0.07f, 0.97f));
-            box.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(880, 560));
             var accent = win ? new Color(1f, 0.82f, 0.4f) : new Color(1f, 0.45f, 0.4f);
-            LG.Glass(box.gameObject).SetRim(new Color(accent.r, accent.g, accent.b, 0.7f));
+            var rays = CardSkin.Simple(_overlay, "Rays", "k_star", new Color(accent.r, accent.g, accent.b, win ? 0.35f : 0.12f));
+            rays.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 230), new Vector2(1400, 1400));
+            var box = CardSkin.Sliced(_overlay, "Result", "panel_plates", Color.white, 0.7f);
+            box.raycastTarget = true;
+            box.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(880, 560));
+            var bframe = CardSkin.Sliced(box.rectTransform, "Frame", "frame_card", accent, 0.6f);
+            bframe.rectTransform.Stretch();
             LG.Motion(box.gameObject, LGAppear.Kind.Pop);
 
             string head;
             if (_P == BattleState.Attacker) head = r.AttackerWon ? Loc.T("ПЛАНЕТА ВЗЯТА") : r.Retreated ? Loc.T("ДЕСАНТ ОТСТУПИЛ") : Loc.T("ШТУРМ ОТБИТ");
             else head = r.AttackerWon ? Loc.T("КОЛОНИЯ ПАЛА") : Loc.T("ОБОРОНА УСТОЯЛА");
-            var t = LGBuild.Label(box.rectTransform, head, 46, accent, TextAnchor.UpperCenter, bold: true);
-            t.rectTransform.Stretch(20, 0, 20, 28);
+            var t = CardSkin.TitleText(box.rectTransform, head, 50, accent, TextAnchor.UpperCenter, 3f);
+            t.rectTransform.Stretch(20, 0, 20, 32);
             t.Track(4f);
             var sub = LGBuild.Label(box.rectTransform, Loc.F("{0} · {1} {2}{3}", _setup.PlanetName, r.Turns, Loc.T("ход."), r.Breach ? Loc.T(" · прорыв в Штаб") : ""), 15, UIManager.DS.TextMuted, TextAnchor.UpperCenter);
             sub.rectTransform.Stretch(20, 0, 20, 92);
@@ -901,8 +920,17 @@ namespace StellarisClone.Cards
             body.rectTransform.Stretch(110, 120, 60, 150);
             body.lineSpacing = 1.35f;
 
-            var btn = LGBuild.Button(box.rectTransform, "Continue", new Color(accent.r * 0.3f, accent.g * 0.3f, accent.b * 0.3f, 1f), new Color(accent.r, accent.g, accent.b, 0.8f), Close, null, Loc.T("ПРОДОЛЖИТЬ"), 18);
-            ((RectTransform)btn.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 32), new Vector2(320, 62));
+            var brt = LGBuild.Rect(box.rectTransform, "Continue");
+            brt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 34), new Vector2(300, 76));
+            var bimg = brt.gameObject.AddComponent<Image>();
+            bimg.sprite = CardSkin.Spr(win ? "btn_end_green" : "btn_end_amber");
+            bimg.type = Image.Type.Sliced;
+            bimg.pixelsPerUnitMultiplier = 2.4f;
+            var btn = brt.gameObject.AddComponent<Button>();
+            btn.targetGraphic = bimg;
+            btn.onClick.AddListener(Close);
+            var bl = CardSkin.TitleText(brt, Loc.T("ПРОДОЛЖИТЬ"), 20, Color.white, TextAnchor.MiddleCenter, 2f);
+            bl.rectTransform.Stretch();
             _busy = false;
         }
     }

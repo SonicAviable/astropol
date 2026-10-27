@@ -67,6 +67,22 @@ namespace StellarisClone.Cards
             return tex;
         }
 
+        /// <summary>Арт плашки сектора: Resources/UI/Cards/sector_&lt;тип&gt;, иначе подходящая иллюстрация событий.</summary>
+        public static Texture Sector(SectorType t)
+        {
+            string id = "sector_" + t.ToString().ToLower();
+            if (s_cache.TryGetValue(id, out var tex) && tex != null) return tex;
+            tex = Resources.Load<Texture2D>("UI/Cards/" + id);
+            if (tex == null)
+            {
+                string ev = t == SectorType.Power ? "Strike" : t == SectorType.Factory ? "Drills" : t == SectorType.HQ ? "PrecursorVault"
+                          : t == SectorType.Mine ? "Quake" : t == SectorType.City ? "Festival" : "Trade";
+                tex = Resources.Load<Texture2D>("UI/Events/" + ev);
+            }
+            s_cache[id] = tex;
+            return tex;
+        }
+
         public static Texture Emblem(string faction)
         {
             if (string.IsNullOrEmpty(faction)) return null;

@@ -6576,3 +6576,20 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Арсенал	Arsenal
 <b>Арсенал</b>\nКарты наземных войск: производство в колониях, десант на кораблях, гарнизоны. Нужны для штурма осаждённых колоний	<b>Arsenal</b>\nGround force cards: production in colonies, troops on ships, garrisons. Needed to assault besieged colonies
 <color=#8AA2A8>Армия (карты):</color> <color=#FF8888>-{0:0.#}</color> / мес\n	<color=#8AA2A8>Army (cards):</color> <color=#FF8888>-{0:0.#}</color> / mo\n
+Сила врага в секторе	Enemy power in the sector
+Ваша сила в секторе	Your power in the sector
+ГАРНИЗОН	GARRISON
+ХОД ИЗ {0}	TURN OF {0}
+ЗАКОНЧИТЬ\nХОД	END\nTURN
+Закончить ход  <color=#8AA2A8>(Enter)</color>\nЯнтарная — ещё есть что сыграть, зелёная — всё сыграно	End turn  <color=#8AA2A8>(Enter)</color>\nAmber — you still have cards to play, green — everything is played
+ПОГОДА	WEATHER
+Скорость анимаций	Animation speed
+Отступить: десант возвращается на корабли, погибшие потеряны	Retreat: the landing force returns to the ships, the fallen are lost
+Сдать колонию	Surrender the colony
+ХРОНИКА БОЯ	BATTLE LOG
+Карт в колоде	Cards in deck
+БОЙ\nОКОНЧЕН	BATTLE\nOVER
+БОЙ\nИДЁТ…	BATTLE\nIN PROGRESS…
+СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>	SECTORS  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>
+<size=11><color=#9AA6B0>нужно 2 из 3</color></size>	<size=11><color=#9AA6B0>2 of 3 needed</color></size>
+откроется на 3-м ходу	revealed on turn 3

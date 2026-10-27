@@ -37,6 +37,19 @@ namespace StellarisClone.Cards
             public bool Move;
         }
 
+        /// <summary>Покадровая анимация из атласа (взрыв, дым, энергия) на RawImage.</summary>
+        private sealed class FB
+        {
+            public RawImage Img;
+            public RectTransform Rt;
+            public int Cols, Rows, Frames;
+            public float Age, Dur, Size0, Size1, Rot, Delay;
+            public Vector2 Pos, Vel;
+            public Color C;
+            public bool Alive;
+        }
+
+        private readonly List<FB> _fbs = new List<FB>();
         private RectTransform _layer;
         private RectTransform _shakeTarget;
         private Vector2 _shakeBase;
@@ -98,7 +111,7 @@ namespace StellarisClone.Cards
         /// </summary>
         public void Burst(Vector2 pos, int count, Sprite sp, Color c, float speedMin, float speedMax, float lifeMin, float lifeMax,
                           float size, float sizeEnd, float gravity = 0f, float drag = 1.5f, float dir = 90f, float spread = 360f,
-                          bool align = false, Color? end = null, float stretch = 1f)
+                          bool align = false, Color? end = null, float stretch = 1f, bool rotate = true)
         {
             for (int i = 0; i < count; i++)
             {
@@ -111,8 +124,8 @@ namespace StellarisClone.Cards
                 p.Life = Random.Range(lifeMin, lifeMax);
                 p.Size0 = size * Random.Range(0.75f, 1.25f);
                 p.Size1 = sizeEnd * Random.Range(0.75f, 1.25f);
-                p.Rot = Random.Range(0f, 360f);
-                p.RotVel = align ? 0f : Random.Range(-120f, 120f);
+                p.Rot = rotate ? Random.Range(0f, 360f) : 0f;
+                p.RotVel = align || !rotate ? 0f : Random.Range(-120f, 120f);
                 p.Drag = drag;
                 p.Gravity = gravity;
                 p.C0 = c;
@@ -123,24 +136,99 @@ namespace StellarisClone.Cards
             }
         }
 
+        // ---------------------------------------------------------------- флипбуки
+
+        /// <summary>Покадровый атлас tex (cols×rows, кадры слева направо сверху вниз) в точке pos за dur секунд.</summary>
+        public void Flipbook(string tex, int cols, int rows, Vector2 pos, float size, float dur, Color c, float sizeEnd = -1f, float rot = 0f, Vector2 vel = default, float delay = 0f)
+        {
+            var t = CardSkin.Tex(tex);
+            if (t == null || _layer == null) return;
+            FB f = null;
+            foreach (var q in _fbs) if (!q.Alive) { f = q; break; }
+            if (f == null)
+            {
+                if (_fbs.Count >= 60) return;
+                var go = new GameObject("FB", typeof(RectTransform));
+                go.transform.SetParent(_layer, false);
+                f = new FB { Rt = (RectTransform)go.transform, Img = go.AddComponent<RawImage>() };
+                f.Img.raycastTarget = false;
+                f.Rt.anchorMin = f.Rt.anchorMax = new Vector2(0.5f, 0.5f);
+                _fbs.Add(f);
+            }
+            f.Img.texture = t;
+            f.Img.enabled = delay <= 0f;
+            f.Rt.SetAsLastSibling();
+            f.Cols = cols; f.Rows = rows; f.Frames = cols * rows;
+            f.Age = 0f; f.Dur = dur; f.Delay = delay;
+            f.Size0 = size; f.Size1 = sizeEnd > 0f ? sizeEnd : size;
+            f.Pos = pos; f.Vel = vel; f.Rot = rot; f.C = c;
+            f.Alive = true;
+            ApplyFB(f);
+        }
+
+        private static void ApplyFB(FB f)
+        {
+            float t = Mathf.Clamp01(f.Age / Mathf.Max(0.01f, f.Dur));
+            int fr = Mathf.Min(f.Frames - 1, Mathf.FloorToInt(t * f.Frames));
+            int cx = fr % f.Cols, cy = fr / f.Cols;
+            f.Img.uvRect = new Rect(cx / (float)f.Cols, 1f - (cy + 1) / (float)f.Rows, 1f / f.Cols, 1f / f.Rows);
+            float s = Mathf.Lerp(f.Size0, f.Size1, t);
+            f.Rt.sizeDelta = new Vector2(s, s);
+            f.Rt.anchoredPosition = f.Pos;
+            f.Rt.localRotation = Quaternion.Euler(0, 0, f.Rot);
+            f.Img.color = new Color(f.C.r, f.C.g, f.C.b, f.C.a * (t > 0.85f ? 1f - (t - 0.85f) / 0.15f : 1f));
+        }
+
         // ---------------------------------------------------------------- готовые эффекты
 
+        private static Sprite K(string n) => CardSkin.Spr(n);
+
         public void Sparks(Vector2 pos, Color c, int n = 18, float power = 1f)
-            => Burst(pos, n, CardSprites.Spark, c, 180f * power, 520f * power, 0.25f, 0.6f, 22f, 6f, 600f, 2.2f, align: true, stretch: 3.2f);
+        {
+            Burst(pos, n, CardSprites.Spark, c, 180f * power, 520f * power, 0.25f, 0.6f, 22f, 6f, 600f, 2.2f, align: true, stretch: 3.2f);
+            Burst(pos, 1, K("k_flare"), new Color(c.r, c.g, c.b, 0.9f), 0f, 0f, 0.18f, 0.22f, 70f * power, 140f * power, 0f, 0f, rotate: false);
+        }
 
         public void Dust(Vector2 pos, float scale = 1f, Color? c = null)
-            => Burst(pos, Mathf.RoundToInt(10 * scale), CardSprites.Smoke, c ?? new Color(0.62f, 0.55f, 0.46f, 0.55f), 40f, 160f * scale, 0.7f, 1.4f, 50f * scale, 120f * scale, -20f, 2.5f, 90f, 200f);
+            => Burst(pos, Mathf.RoundToInt(8 * scale) + 1, K(Random.value < 0.5f ? "k_smoke1" : "k_smoke2"), c ?? new Color(0.62f, 0.55f, 0.46f, 0.5f), 40f, 170f * scale, 0.8f, 1.5f, 70f * scale, 170f * scale, -20f, 2.5f, 90f, 200f);
 
         public void Smoke(Vector2 pos, float scale = 1f, Color? c = null)
-            => Burst(pos, Mathf.RoundToInt(6 * scale), CardSprites.Smoke, c ?? new Color(0.12f, 0.12f, 0.13f, 0.7f), 20f, 70f, 1.4f, 2.6f, 60f * scale, 160f * scale, -40f, 1.2f, 90f, 120f);
+        {
+            var col = c ?? new Color(0.14f, 0.13f, 0.13f, 0.75f);
+            Burst(pos, Mathf.RoundToInt(5 * scale) + 1, K("k_smoke1"), col, 20f, 70f, 1.6f, 2.8f, 80f * scale, 210f * scale, -45f, 1.2f, 90f, 120f);
+            Flipbook("fx_smoke", 5, 5, pos + new Vector2(0, 20f * scale), 220f * scale, 1.8f, new Color(col.r * 2.2f, col.g * 2.2f, col.b * 2.2f, col.a), 300f * scale, Random.Range(0f, 360f), new Vector2(0, 30f));
+        }
 
+        /// <summary>Взрыв: настоящий огненный флипбук, вспышка, обломки, искры, дым и ударная волна.</summary>
         public void Explosion(Vector2 pos, float scale = 1f)
         {
-            Burst(pos, 1, CardSprites.Glow, new Color(1f, 0.85f, 0.55f, 1f), 0f, 0f, 0.35f, 0.35f, 60f * scale, 260f * scale, 0f, 0f, end: new Color(1f, 0.4f, 0.1f, 0f));
-            Burst(pos, Mathf.RoundToInt(14 * scale), CardSprites.Glow, new Color(1f, 0.55f, 0.15f, 0.9f), 60f, 260f * scale, 0.25f, 0.55f, 40f * scale, 10f, 0f, 3f, end: new Color(0.6f, 0.1f, 0.02f, 0f));
+            Flipbook("fx_explosion", 6, 6, pos, 230f * scale, 1.0f, Color.white, 300f * scale, Random.Range(0f, 360f));
+            Burst(pos, 1, K("k_light"), new Color(1f, 0.85f, 0.55f, 1f), 0f, 0f, 0.3f, 0.3f, 120f * scale, 420f * scale, 0f, 0f, end: new Color(1f, 0.4f, 0.1f, 0f), rotate: false);
+            Burst(pos, Mathf.RoundToInt(6 * scale) + 2, K("k_fire1"), new Color(1f, 0.6f, 0.2f, 0.9f), 80f, 300f * scale, 0.25f, 0.5f, 60f * scale, 20f, 0f, 3f, end: new Color(0.6f, 0.1f, 0.02f, 0f));
+            Burst(pos, Mathf.RoundToInt(8 * scale) + 2, K("k_dirt"), new Color(0.25f, 0.2f, 0.17f, 1f), 250f, 650f * scale, 0.6f, 1.1f, 24f * scale, 14f * scale, 1400f, 0.6f, 90f, 160f);
             Sparks(pos, new Color(1f, 0.8f, 0.4f), Mathf.RoundToInt(16 * scale), scale);
             Smoke(pos, scale);
-            Ring(pos, new Color(1f, 0.75f, 0.45f, 0.8f), 20f * scale, 260f * scale, 0.45f);
+            Ring(pos, new Color(1f, 0.75f, 0.45f, 0.8f), 30f * scale, 300f * scale, 0.45f);
+            Burst(pos, 1, K("k_scorch"), new Color(0.05f, 0.03f, 0.02f, 0.6f), 0f, 0f, 2.5f, 2.5f, 160f * scale, 170f * scale, 0f, 0f);
+        }
+
+        /// <summary>Энергетический разряд (щит, ЭМИ, пси): флипбук энергии в цвете c.</summary>
+        public void Energy(Vector2 pos, Color c, float scale = 1f)
+        {
+            Flipbook("fx_energy", 6, 6, pos, 200f * scale, 0.8f, c, 280f * scale, Random.Range(0f, 360f));
+            Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 1f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 260f * scale, 0f, 0f, rotate: false);
+        }
+
+        /// <summary>Вспышка выстрела у ствола, направленная по углу ang (градусы).</summary>
+        public void Muzzle(Vector2 pos, float ang, Color c, float scale = 1f)
+        {
+            var p = Get(K(Random.value < 0.5f ? "k_muzzle1" : "k_muzzle2"));
+            if (p == null) return;
+            p.Pos = pos; p.Vel = Vector2.zero; p.Life = 0.09f; p.Size0 = 64f * scale; p.Size1 = 80f * scale;
+            p.Rot = ang - 90f; p.RotVel = 0f; p.Drag = 0f; p.Gravity = 0f;
+            p.C0 = new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f), 1f);
+            p.C1 = new Color(c.r, c.g, c.b, 0f);
+            Apply(p);
         }
 
         /// <summary>Брызги по видам: кровь людей, фиолетовая у Иридии, зелёный сок Тэрра'ан, хладагент и искры «Ноля».</summary>
@@ -154,7 +242,8 @@ namespace StellarisClone.Cards
             Color c = k == BloodKind.Violet ? new Color(0.55f, 0.18f, 0.85f) : k == BloodKind.Green ? new Color(0.35f, 0.85f, 0.25f)
                     : k == BloodKind.Coolant ? new Color(0.85f, 0.95f, 1f) : new Color(0.72f, 0.04f, 0.05f);
             Burst(pos, Mathf.RoundToInt(22 * scale), CardSprites.Drop, c, 140f, 520f * scale, 0.45f, 0.9f, 14f * scale, 8f, 1400f, 1.2f, 90f, 260f, align: true, end: new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f, 0f), stretch: 1.8f);
-            Burst(pos, Mathf.RoundToInt(5 * scale), CardSprites.Smoke, new Color(c.r, c.g, c.b, 0.55f), 20f, 90f, 0.5f, 0.9f, 36f * scale, 90f * scale, 60f, 2f);
+            Burst(pos, Mathf.RoundToInt(4 * scale) + 1, K("k_smoke2"), new Color(c.r, c.g, c.b, 0.6f), 20f, 90f, 0.5f, 0.9f, 50f * scale, 120f * scale, 60f, 2f);
+            Burst(pos, 1, K("k_magic"), new Color(c.r, c.g, c.b, 0.8f), 0f, 0f, 0.35f, 0.35f, 60f * scale, 140f * scale, 0f, 0f);
             if (k == BloodKind.Coolant) Sparks(pos, new Color(0.7f, 0.9f, 1f), 14, scale);
         }
 
@@ -162,7 +251,7 @@ namespace StellarisClone.Cards
 
         public void Ring(Vector2 pos, Color c, float from, float to, float dur, Sprite sp = null)
         {
-            var p = Get(sp ?? CardSprites.Ring);
+            var p = Get(sp ?? K("ring"));
             if (p == null) return;
             p.Pos = pos; p.Vel = Vector2.zero; p.Life = dur; p.Size0 = from; p.Size1 = to; p.Rot = 0f; p.RotVel = 0f;
             p.Drag = 0f; p.Gravity = 0f; p.C0 = c; p.C1 = new Color(c.r, c.g, c.b, 0f);
@@ -186,9 +275,9 @@ namespace StellarisClone.Cards
         /// <summary>Снаряд: светящееся ядро летит из a в b за dur (с хвостом искр). Вернёт время полёта.</summary>
         public float Projectile(Vector2 a, Vector2 b, Color c, float dur, float size = 18f, bool lob = false)
         {
-            var p = Get(CardSprites.Glow);
+            var p = Get(K("k_light"));
             if (p == null) return dur;
-            p.Pos = a; p.Life = dur; p.Size0 = size; p.Size1 = size * 0.8f; p.C0 = c; p.C1 = c; p.Drag = 0f; p.Rot = 0f; p.RotVel = 0f;
+            p.Pos = a; p.Life = dur; p.Size0 = size * 2.2f; p.Size1 = size * 1.8f; p.C0 = c; p.C1 = c; p.Drag = 0f; p.Rot = 0f; p.RotVel = 0f;
             var v = (b - a) / Mathf.Max(0.01f, dur);
             p.Gravity = 0f;
             if (lob)
@@ -223,14 +312,11 @@ namespace StellarisClone.Cards
 
         public void Number(Vector2 pos, string text, Color c, int size = 34, float life = 1.1f)
         {
-            var t = LGBuild.Label(_layer, text, size, c, TextAnchor.MiddleCenter, bold: true);
+            var t = CardSkin.TitleText(_layer, text, size, c, TextAnchor.MiddleCenter, 2.5f);
             var rt = t.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.sizeDelta = new Vector2(200, 60);
             rt.anchoredPosition = pos;
-            var ol = t.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(0, 0, 0, 0.85f);
-            ol.effectDistance = new Vector2(2, -2);
             _numbers.Add((t, rt, pos, 0f, life, c));
         }
 
@@ -271,6 +357,15 @@ namespace StellarisClone.Cards
                 p.Pos += p.Vel * dt;
                 p.Rot += p.RotVel * dt;
                 Apply(p);
+            }
+            foreach (var f in _fbs)
+            {
+                if (!f.Alive) continue;
+                if (f.Delay > 0f) { f.Delay -= dt; if (f.Delay > 0f) continue; f.Img.enabled = true; }
+                f.Age += dt;
+                if (f.Age >= f.Dur) { f.Alive = false; f.Img.enabled = false; continue; }
+                f.Pos += f.Vel * dt;
+                ApplyFB(f);
             }
             for (int i = _tweens.Count - 1; i >= 0; i--)
             {
@@ -319,6 +414,7 @@ namespace StellarisClone.Cards
         public void ClearAll()
         {
             foreach (var p in _pool) { p.Alive = false; if (p.Img != null) p.Img.enabled = false; }
+            foreach (var f in _fbs) { f.Alive = false; if (f.Img != null) f.Img.enabled = false; }
             foreach (var n in _numbers) if (n.t != null) Destroy(n.t.gameObject);
             _numbers.Clear();
             _tweens.Clear();

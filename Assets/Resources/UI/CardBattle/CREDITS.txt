@@ -1,0 +1,6 @@
+Текстуры интерфейса карточного боя — сгенерированы для Astropolity (scratchpad/hs/gen.py).
+Использованы материалы с открытой лицензией:
+  • Kenney Particle Pack 1.1 (k_*.png) — Kenney Vleugels, kenney.nl — CC0 1.0
+  • ambientCG: Metal046B, Leather026, MetalPlates006 (детали металла и кожи) — ambientcg.com — CC0 1.0
+  • Unity Particle Pack (fx_explosion, fx_smoke, fx_energy — перекрашенные флипбуки) — Unity Technologies, Asset Store EULA
+Шрифт Russo One (Fonts/RussoOne-Regular.ttf) — Jovanny Lemonad, SIL Open Font License 1.1

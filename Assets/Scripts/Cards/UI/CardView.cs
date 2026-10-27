@@ -41,6 +41,8 @@ namespace StellarisClone.Cards
         public bool Playable;
         public bool Selected;
         public float GlowBoost;
+        /// <summary>Наведение: на сколько поднять карту и увеличить (в руке — сильно, как в Hearthstone).</summary>
+        public float HoverLift = 18f, HoverScale = 0.12f;
 
         public Action<CardView> OnHoverIn, OnHoverOut, OnClick;
         public Action<CardView, PointerEventData> OnDragBegin, OnDragMove, OnDragEnd;
@@ -70,156 +72,31 @@ namespace StellarisClone.Cards
         private void Build(Vector2 size)
         {
             var d = Card.Def;
-            float k = size.y / 280f;   // масштаб шрифтов и отступов
             _group = gameObject.AddComponent<CanvasGroup>();
             _frameColor = CardArt.Frame(d, Card.Stars, SideFaction);
+            if (Compact) BuildCompact(size, d); else BuildFull(size, d);
 
-            _glow = LGBuild.Panel(Rt, "Glow", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f));
-            _glow.sprite = CardSprites.RoundGlow;
-            _glow.type = Image.Type.Sliced;
-            _glow.rectTransform.Stretch(-26 * k - 10, -26 * k - 10, -26 * k - 10, -26 * k - 10);
-
-            _content = LGBuild.Rect(Rt, "Content");
-            _content.Stretch();
-
-            // Тень под картой
-            var shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.55f));
-            shadow.sprite = CardSprites.RoundGlow;
-            shadow.type = Image.Type.Sliced;
-            shadow.rectTransform.Stretch(-14 * k, -22 * k, -14 * k, -6 * k);
-
-            _body = Img(_content, "Body", CardSprites.Round, new Color(0.035f, 0.05f, 0.075f, 1f));
-            _body.rectTransform.Stretch();
-            _body.type = Image.Type.Sliced;
-
-            // Арт в маске
-            var maskImg = Img(_content, "ArtMask", CardSprites.Round, Color.white);
-            maskImg.type = Image.Type.Sliced;
-            var mask = maskImg.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = false;
-            float pad = 5f * k + 2f;
-            float artH = Compact ? 0f : size.y * 0.52f;
-            if (Compact) maskImg.rectTransform.Stretch(pad, pad, pad, pad);
-            else maskImg.rectTransform.TopBand(pad, artH, pad, pad);
-            _art = LGBuild.Rect(maskImg.rectTransform, "Art").gameObject.AddComponent<RawImage>();
-            _art.rectTransform.Stretch(-8 * k, -8 * k, -8 * k, -8 * k);
-            _art.texture = CardArt.Get(d, SideFaction);
-            _art.raycastTarget = false;
-            FitArt(_art, maskImg.rectTransform, size, Compact ? (size.x - 2 * pad) / (size.y - 2 * pad) : (size.x - 2 * pad) / artH);
-
-            // Затемнение низа арта — под имя и цифры
-            var shade = Img(maskImg.rectTransform, "Shade", CardSprites.Fade, new Color(0.01f, 0.015f, 0.03f, 0.92f));
-            shade.rectTransform.anchorMin = new Vector2(0, 0);
-            shade.rectTransform.anchorMax = new Vector2(1, Compact ? 0.45f : 0.35f);
-            shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
-            shade.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
-
-            // Блик «фольги» — внутри маски
-            _sheen = Img(maskImg.rectTransform, "Sheen", CardSprites.Sheen, new Color(1f, 1f, 1f, 0f));
-            _sheenRt = _sheen.rectTransform;
-            _sheenRt.anchorMin = _sheenRt.anchorMax = new Vector2(0.5f, 0.5f);
-            _sheenRt.sizeDelta = new Vector2(size.x * 0.55f, size.y * 1.8f);
-            _sheenRt.localRotation = Quaternion.Euler(0, 0, -24f);
-            _sheenT = UnityEngine.Random.value * 4f;
-
-            _cracks = Img(maskImg.rectTransform, "Cracks", CardSprites.Cracks, new Color(1f, 0.9f, 0.8f, 0f));
-            _cracks.rectTransform.Stretch();
-
-            _hitFlash = Img(_content, "Hit", CardSprites.Round, new Color(1f, 0.3f, 0.2f, 0f));
-            _hitFlash.type = Image.Type.Sliced;
-            _hitFlash.rectTransform.Stretch();
-
-            _frame = Img(_content, "Frame", CardSprites.RoundEdge, _frameColor);
-            _frame.type = Image.Type.Sliced;
-            _frame.rectTransform.Stretch(-1, -1, -1, -1);
-
-            if (!Compact)
-            {
-                // Имя на ленте под артом
-                _name = Lbl(_content, d.Name.ToUpper(), Mathf.RoundToInt(15 * k), Color.white, TextAnchor.MiddleCenter, true);
-                _name.rectTransform.TopBand(pad + artH - 30 * k, 30 * k, 10 * k, 10 * k);
-                _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 8; _name.resizeTextMaxSize = Mathf.RoundToInt(15 * k);
-                _name.horizontalOverflow = HorizontalWrapMode.Wrap;
-                // Тег типа
-                var tag = Img(_content, "Tag", CardSprites.Round, new Color(_frameColor.r * 0.35f, _frameColor.g * 0.35f, _frameColor.b * 0.35f, 0.95f));
-                tag.type = Image.Type.Sliced;
-                tag.rectTransform.TopBand(pad + artH + 6 * k, 20 * k, 12 * k, size.x - 12 * k - 92 * k);
-                _kind = Lbl(tag.rectTransform, d.KindName, Mathf.RoundToInt(10 * k), _frameColor, TextAnchor.MiddleCenter, true);
-                _kind.Track(1.2f);
-                // Текст эффекта
-                _text = Lbl(_content, d.Text, Mathf.RoundToInt(12 * k), new Color(0.80f, 0.86f, 0.92f), TextAnchor.UpperLeft, false);
-                _text.horizontalOverflow = HorizontalWrapMode.Wrap;
-                _text.rectTransform.Stretch(12 * k, 46 * k, 12 * k, pad + artH + 32 * k);
-                _text.resizeTextForBestFit = true; _text.resizeTextMinSize = 7; _text.resizeTextMaxSize = Mathf.RoundToInt(12 * k);
-                _text.lineSpacing = 0.95f;
-                // Цена
-                var hex = Img(_content, "Cost", CardSprites.Hex, new Color(0.05f, 0.08f, 0.12f, 1f));
-                hex.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(22 * k, -22 * k), new Vector2(44 * k, 44 * k));
-                var hexRim = Img(hex.rectTransform, "Rim", CardSprites.Hex, new Color(1f, 0.83f, 0.42f, 1f));
-                hexRim.rectTransform.Stretch(-3 * k, -3 * k, -3 * k, -3 * k);
-                hexRim.transform.SetAsFirstSibling();
-                _cost = Lbl(hex.rectTransform, d.Cost.ToString(), Mathf.RoundToInt(24 * k), new Color(1f, 0.88f, 0.55f), TextAnchor.MiddleCenter, true);
-            }
-            else
-            {
-                _name = Lbl(_content, d.Name, Mathf.RoundToInt(15 * k), Color.white, TextAnchor.LowerCenter, true);
-                _name.rectTransform.Stretch(6, 30 * k, 6, 0);
-                _name.horizontalOverflow = HorizontalWrapMode.Wrap;
-                _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 7; _name.resizeTextMaxSize = Mathf.RoundToInt(15 * k);
-            }
-
-            // Сила и броня (у приказов и ловушек нет)
-            if (d.IsBoardUnit)
-            {
-                float bs = (Compact ? 44f : 40f) * k;
-                _powerBadge = Badge(CardSprites.Diamond, new Color(1f, 0.78f, 0.32f), new Vector2(0, 0), new Vector2(bs * 0.62f, bs * 0.62f), bs, out _power);
-                _armorBadge = Badge(CardSprites.ShieldShape, new Color(0.55f, 0.82f, 1f), new Vector2(1, 0), new Vector2(-bs * 0.62f, bs * 0.62f), bs, out _armor);
-                if (Compact)
-                {
-                    var hp = LGBuild.Panel(_content, "HpTrack", new Color(0, 0, 0, 0.7f));
-                    hp.rectTransform.anchorMin = new Vector2(0.18f, 0f);
-                    hp.rectTransform.anchorMax = new Vector2(0.82f, 0f);
-                    hp.rectTransform.sizeDelta = new Vector2(0, 5);
-                    hp.rectTransform.anchoredPosition = new Vector2(0, 6);
-                    _hpFill = LGBuild.Panel(hp.rectTransform, "Fill", new Color(0.4f, 1f, 0.55f));
-                    _hpFill.rectTransform.anchorMin = Vector2.zero;
-                    _hpFill.rectTransform.anchorMax = Vector2.one;
-                    _hpFill.rectTransform.offsetMin = _hpFill.rectTransform.offsetMax = Vector2.zero;
-                }
-            }
-
-            // Звёзды ветеранства
-            if (Card.Stars > 0)
-            {
-                _stars = Lbl(_content, new string('★', Mathf.Min(3, Card.Stars)), Mathf.RoundToInt(16 * k), new Color(1f, 0.82f, 0.35f), TextAnchor.UpperRight, true);
-                _stars.rectTransform.Stretch(0, 0, 9 * k, 6 * k);
-            }
-
-            // Значок состояния (подавлен, отключён, обездвижен)
-            _statusIcon = Img(_content, "Status", CardSprites.Round, new Color(0.9f, 0.3f, 0.3f, 0f));
-            _statusIcon.type = Image.Type.Sliced;
-            _statusIcon.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -6 * k), new Vector2(size.x * 0.8f, 18 * k));
-            _statusText = Lbl(_statusIcon.rectTransform, "", Mathf.RoundToInt(10 * k), Color.white, TextAnchor.MiddleCenter, true);
-
-            // Рубашка
-            _back = Img(_content, "Back", CardSprites.Round, new Color(0.03f, 0.05f, 0.08f, 1f));
-            _back.type = Image.Type.Sliced;
+            // Рубашка: тёмная броня с заклёпками, эмблема фракции, рама цвета фракции
+            float k = size.y / 280f;
+            _back = CardSkin.Sliced(_content, "Back", "panel_plates", Color.white, 0.32f * k * (Compact ? 1.4f : 1f));
             _back.rectTransform.Stretch();
             var bc = CardArt.Faction(SideFaction);
-            _backPattern = Img(_back.rectTransform, "Pattern", CardSprites.BackPattern, new Color(bc.r, bc.g, bc.b, 0.55f));
-            _backPattern.rectTransform.Stretch(4, 4, 4, 4);
+            _backPattern = Img(_back.rectTransform, "Pattern", CardSprites.BackPattern, new Color(bc.r, bc.g, bc.b, 0.22f));
+            _backPattern.rectTransform.Stretch(8, 8, 8, 8);
             var emb = CardArt.Emblem(SideFaction);
             if (emb != null)
             {
+                var halo = CardSkin.Simple(_back.rectTransform, "Halo", "glow", new Color(bc.r, bc.g, bc.b, 0.45f));
+                float hs = Mathf.Min(size.x, size.y) * 1.0f;
+                halo.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(hs, hs));
                 _backEmblem = LGBuild.Rect(_back.rectTransform, "Emblem").gameObject.AddComponent<RawImage>();
                 _backEmblem.texture = emb;
                 _backEmblem.raycastTarget = false;
-                float es = Mathf.Min(size.x, size.y) * 0.62f;
+                float es = Mathf.Min(size.x, size.y) * 0.66f;
                 _backEmblem.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(es, es));
             }
-            var backRim = Img(_back.rectTransform, "Rim", CardSprites.RoundEdge, new Color(bc.r, bc.g, bc.b, 0.9f));
-            backRim.type = Image.Type.Sliced;
-            backRim.rectTransform.Stretch(-1, -1, -1, -1);
+            var backRim = CardSkin.Sliced(_back.rectTransform, "Rim", "frame_card", Color.Lerp(bc, CardSkin.Bronze, 0.4f), (Compact ? 0.26f : 0.38f) * k * (Compact ? 280f / 178f : 1f));
+            backRim.rectTransform.Stretch();
             _back.gameObject.SetActive(false);
 
             // Луч на всю карту ловит мышь
@@ -232,17 +109,176 @@ namespace StellarisClone.Cards
                            d.Armor + (Card.Stars >= 1 ? 1 : 0) + (Card.Stars >= 3 ? 1 : 0), false);
         }
 
-        private RectTransform Badge(Sprite sp, Color c, Vector2 anchor, Vector2 pos, float s, out Text label)
+        /// <summary>Общая часть: свечение, тень, корпус, арт в маске с бликом, трещинами и вспышкой урона.</summary>
+        private RectTransform BuildBase(Vector2 size, float k, float bodyScale, out RectTransform mask)
         {
-            var b = Img(_content, "Badge", sp, new Color(0.04f, 0.06f, 0.09f, 1f));
-            b.rectTransform.At(anchor, new Vector2(0.5f, 0.5f), pos, new Vector2(s, s));
-            var rim = Img(b.rectTransform, "Rim", sp, c);
-            rim.rectTransform.Stretch(-3, -3, -3, -3);
-            rim.transform.SetAsFirstSibling();
-            label = Lbl(b.rectTransform, "0", Mathf.RoundToInt(s * 0.5f), Color.white, TextAnchor.MiddleCenter, true);
-            var ol = label.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(0, 0, 0, 0.8f);
-            return b.rectTransform;
+            _glow = LGBuild.Panel(Rt, "Glow", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f));
+            _glow.sprite = CardSprites.RoundGlow;
+            _glow.type = Image.Type.Sliced;
+            _glow.raycastTarget = false;
+            _glow.rectTransform.Stretch(-30 * k - 10, -30 * k - 10, -30 * k - 10, -30 * k - 10);
+
+            _content = LGBuild.Rect(Rt, "Content");
+            _content.Stretch();
+
+            var shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.7f));
+            shadow.sprite = CardSprites.RoundGlow;
+            shadow.type = Image.Type.Sliced;
+            shadow.raycastTarget = false;
+            shadow.rectTransform.Stretch(-12 * k, -26 * k, -16 * k, -4 * k);
+
+            _body = CardSkin.Sliced(_content, "Body", "panel_dark", Color.white, bodyScale);
+            _body.rectTransform.Stretch();
+
+            var maskImg = Img(_content, "ArtMask", CardSprites.Round, Color.white);
+            maskImg.type = Image.Type.Sliced;
+            var m = maskImg.gameObject.AddComponent<Mask>();
+            m.showMaskGraphic = false;
+            mask = maskImg.rectTransform;
+            return _content;
+        }
+
+        private void FillArt(RectTransform mask, Vector2 size, float aspect, float k, bool bottomShade)
+        {
+            _art = LGBuild.Rect(mask, "Art").gameObject.AddComponent<RawImage>();
+            _art.rectTransform.Stretch(-6 * k, -6 * k, -6 * k, -6 * k);
+            _art.texture = CardArt.Get(Card.Def, SideFaction);
+            _art.raycastTarget = false;
+            FitArt(_art, mask, size, aspect);
+            if (bottomShade)
+            {
+                var shade = Img(mask, "Shade", CardSprites.Fade, new Color(0.01f, 0.015f, 0.03f, 0.95f));
+                shade.rectTransform.anchorMin = new Vector2(0, 0);
+                shade.rectTransform.anchorMax = new Vector2(1, 0.48f);
+                shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
+                shade.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
+            }
+            // Верхний свет — арт «под стеклом»
+            var gloss = Img(mask, "Gloss", CardSprites.Fade, new Color(1f, 1f, 1f, 0.07f));
+            gloss.rectTransform.anchorMin = new Vector2(0, 0.6f);
+            gloss.rectTransform.anchorMax = new Vector2(1, 1f);
+            gloss.rectTransform.offsetMin = gloss.rectTransform.offsetMax = Vector2.zero;
+
+            _sheen = Img(mask, "Sheen", CardSprites.Sheen, new Color(1f, 1f, 1f, 0f));
+            _sheenRt = _sheen.rectTransform;
+            _sheenRt.anchorMin = _sheenRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _sheenRt.sizeDelta = new Vector2(size.x * 0.55f, size.y * 1.8f);
+            _sheenRt.localRotation = Quaternion.Euler(0, 0, -24f);
+            _sheenT = UnityEngine.Random.value * 4f;
+
+            _cracks = Img(mask, "Cracks", CardSprites.Cracks, new Color(1f, 0.9f, 0.8f, 0f));
+            _cracks.rectTransform.Stretch();
+        }
+
+        /// <summary>Полная карта (рука, предпросмотр): арт, лента с именем, тип, текст на тёмной коже, рама, самоцветы.</summary>
+        private void BuildFull(Vector2 size, CardDef d)
+        {
+            float k = size.y / 280f;
+            BuildBase(size, k, 0.5f * k, out var mask);
+            float pad = 10f * k;
+            float artH = size.y * 0.55f;
+            mask.TopBand(pad, artH, pad, pad);
+            FillArt(mask, size, (size.x - 2 * pad) / artH, k, false);
+
+            var artFrame = CardSkin.Sliced(_content, "ArtFrame", "frame_thin", _frameColor, 0.35f * k);
+            artFrame.rectTransform.TopBand(pad - 3 * k, artH + 6 * k, pad - 3 * k, pad - 3 * k);
+
+            // Текст эффекта — на тёмной коже
+            var tp = CardSkin.Sliced(_content, "TextPanel", "panel_text", Color.white, 0.4f * k);
+            tp.rectTransform.Stretch(12 * k, 12 * k, 12 * k, pad + artH + 22 * k);
+            _text = Lbl(tp.rectTransform, d.Text, Mathf.RoundToInt(12 * k), new Color(0.9f, 0.87f, 0.82f), TextAnchor.MiddleCenter, false);
+            _text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _text.rectTransform.Stretch(9 * k, 14 * k, 9 * k, 14 * k);
+            _text.resizeTextForBestFit = true; _text.resizeTextMinSize = 7; _text.resizeTextMaxSize = Mathf.RoundToInt(12.5f * k);
+            _text.lineSpacing = 0.95f;
+            _text.supportRichText = true;
+
+            // Лента с именем поперёк низа арта
+            var rb = CardSkin.Sliced(_content, "Ribbon", "ribbon", Color.white, 0.55f * k);
+            rb.rectTransform.TopBand(pad + artH - 18 * k, 36 * k, -8 * k, -8 * k);
+            _name = CardSkin.TitleText(rb.rectTransform, d.Name.ToUpper(), Mathf.RoundToInt(15 * k), CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
+            _name.rectTransform.Stretch(22 * k, 0, 22 * k, 1);
+            _name.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 7; _name.resizeTextMaxSize = Mathf.RoundToInt(15 * k);
+
+            // Тип карты — маленькой капсулой под лентой
+            var tag = Img(_content, "Tag", CardSprites.Round, new Color(_frameColor.r * 0.25f, _frameColor.g * 0.25f, _frameColor.b * 0.25f, 0.95f));
+            tag.type = Image.Type.Sliced;
+            tag.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -(pad + artH + 26 * k)), new Vector2(84 * k, 17 * k));
+            var tagRim = CardSkin.Sliced(tag.rectTransform, "Rim", "frame_thin", _frameColor, 0.15f * k);
+            tagRim.rectTransform.Stretch();
+            _kind = CardSkin.TitleText(tag.rectTransform, d.KindName, Mathf.RoundToInt(9 * k), _frameColor, TextAnchor.MiddleCenter, 0f);
+            _kind.Track(1.3f);
+
+            _hitFlash = Img(_content, "Hit", CardSprites.Round, new Color(1f, 0.3f, 0.2f, 0f));
+            _hitFlash.type = Image.Type.Sliced;
+            _hitFlash.rectTransform.Stretch();
+
+            _frame = CardSkin.Sliced(_content, "Frame", "frame_card", _frameColor, 0.38f * k);
+            _frame.rectTransform.Stretch();
+
+            // Цена — синий кристалл в углу
+            _cost = CardSkin.Gem(_content, "gem_cost", new Vector2(0, 1), new Vector2(14 * k, -14 * k), 56 * k, d.Cost.ToString(), out _);
+            if (d.IsBoardUnit)
+            {
+                _power = CardSkin.Gem(_content, "gem_power", new Vector2(0, 0), new Vector2(16 * k, 14 * k), 58 * k, "0", out _powerBadge);
+                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-16 * k, 14 * k), 58 * k, "0", out _armorBadge);
+            }
+            Stars(k);
+            Status(size, k);
+        }
+
+        /// <summary>Карта на столе: арт во всю карту под рамой, имя внизу, крупные сила и броня.</summary>
+        private void BuildCompact(Vector2 size, CardDef d)
+        {
+            float k = size.y / 178f;
+            BuildBase(size, k, 0.4f * k, out var mask);
+            float pad = 6f * k;
+            mask.Stretch(pad, pad, pad, pad);
+            FillArt(mask, size, (size.x - 2 * pad) / (size.y - 2 * pad), k, true);
+
+            _hitFlash = Img(_content, "Hit", CardSprites.Round, new Color(1f, 0.3f, 0.2f, 0f));
+            _hitFlash.type = Image.Type.Sliced;
+            _hitFlash.rectTransform.Stretch();
+
+            _frame = CardSkin.Sliced(_content, "Frame", "frame_card", _frameColor, 0.26f * k);
+            _frame.rectTransform.Stretch();
+
+            _name = CardSkin.TitleText(_content, d.Name, Mathf.RoundToInt(12 * k), CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
+            _name.rectTransform.anchorMin = new Vector2(0, 0); _name.rectTransform.anchorMax = new Vector2(1, 0);
+            _name.rectTransform.pivot = new Vector2(0.5f, 0);
+            _name.rectTransform.sizeDelta = new Vector2(-16 * k, 30 * k);
+            _name.rectTransform.anchoredPosition = new Vector2(0, d.IsBoardUnit ? 24 * k : 10 * k);
+            _name.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 7; _name.resizeTextMaxSize = Mathf.RoundToInt(12 * k);
+
+            if (d.IsBoardUnit)
+            {
+                _power = CardSkin.Gem(_content, "gem_power", new Vector2(0, 0), new Vector2(10 * k, 8 * k), 48 * k, "0", out _powerBadge);
+                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-10 * k, 8 * k), 48 * k, "0", out _armorBadge);
+            }
+            Stars(k * 0.8f);
+            Status(size, k * 280f / 178f * 0.75f);
+        }
+
+        private void Stars(float k)
+        {
+            if (Card.Stars <= 0) return;
+            _stars = Lbl(_content, new string('★', Mathf.Min(3, Card.Stars)), Mathf.RoundToInt(17 * k), new Color(1f, 0.82f, 0.35f), TextAnchor.UpperRight, true);
+            _stars.rectTransform.Stretch(0, 0, 12 * k, 10 * k);
+            var ol = _stars.gameObject.AddComponent<Outline>();
+            ol.effectColor = new Color(0, 0, 0, 0.9f);
+        }
+
+        /// <summary>Лента состояния (подавлен, отключён, приказ отдан) поперёк верха карты.</summary>
+        private void Status(Vector2 size, float k)
+        {
+            _statusIcon = CardSkin.Sliced(_content, "Status", "ribbon", new Color(1f, 1f, 1f, 0f), 0.4f * k);
+            _statusIcon.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -8 * k), new Vector2(size.x + 12 * k, 24 * k));
+            _statusText = CardSkin.TitleText(_statusIcon.rectTransform, "", Mathf.RoundToInt(10 * k), Color.white, TextAnchor.MiddleCenter, 1f);
+            _statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _statusText.resizeTextForBestFit = true; _statusText.resizeTextMinSize = 6; _statusText.resizeTextMaxSize = Mathf.RoundToInt(10 * k);
+            _statusText.rectTransform.Stretch(14 * k, 0, 14 * k, 0);
         }
 
         private static void FitArt(RawImage art, RectTransform frame, Vector2 size, float frameAspect)
@@ -313,7 +349,7 @@ namespace StellarisClone.Cards
         {
             if (_statusIcon == null) return;
             bool on = !string.IsNullOrEmpty(text);
-            _statusIcon.color = on ? new Color(c.r * 0.6f, c.g * 0.6f, c.b * 0.6f, 0.92f) : new Color(0, 0, 0, 0);
+            _statusIcon.color = on ? new Color(Mathf.Lerp(c.r, 1f, 0.35f), Mathf.Lerp(c.g, 1f, 0.35f), Mathf.Lerp(c.b, 1f, 0.35f), 1f) : new Color(0, 0, 0, 0);
             _statusText.text = on ? text : "";
         }
 
@@ -374,8 +410,8 @@ namespace StellarisClone.Cards
             _punch = Mathf.MoveTowards(_punch, 0f, dt * 1.6f);
             float shake = 0f;
             if (_shakeT > 0f) { _shakeT -= dt; shake = Mathf.Sin(Time.unscaledTime * 70f) * 5f * Mathf.Clamp01(_shakeT * 4f); }
-            _content.localPosition = new Vector3(shake, _hover * 18f, 0f);
-            float s = 1f + _hover * 0.12f + _punch;
+            _content.localPosition = new Vector3(shake, _hover * HoverLift, 0f);
+            float s = 1f + _hover * HoverScale + _punch;
             _content.localRotation = Quaternion.Euler(_tilt.x, _tilt.y, 0f);
             Rt.localScale = new Vector3(s, s, 1f);
 
