@@ -831,6 +831,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             if (!IsGameStarted || IsBlockingFlowOpen) return;
             if (GameFlowUI.Instance != null && GameFlowUI.Instance.BlocksTimeHotkeys) return;
+            if (StellarisClone.Cards.BattleScreen.IsOpen) return;
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;
             if (BuildMenuModal.IsOpenNow || (TechConfirmDialog.Instance != null && TechConfirmDialog.Instance.IsOpen)) return;
             var es = UnityEngine.EventSystems.EventSystem.current;

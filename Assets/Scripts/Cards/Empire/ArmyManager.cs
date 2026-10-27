@@ -64,6 +64,7 @@ namespace StellarisClone.Cards
             if (Instance != null && Instance != this) { Destroy(this); return; }
             Instance = this;
             AssaultLink.ResetForNewGame();
+            BattleScreen.Ensure();
         }
 
         private void Start() => Subscribe();
