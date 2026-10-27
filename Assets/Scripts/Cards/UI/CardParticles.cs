@@ -226,6 +226,10 @@ namespace StellarisClone.Cards
                 life = Mathf.Max(life, l);
             }
             foreach (var light in go.GetComponentsInChildren<Light>(true)) light.enabled = false;
+            // В префабах попаданий пака на корне лежит серая сфера-«мишень» из демо-сцены — на столе она
+            // выглядела как шар поверх карты. Рисуем только частицы: обычные меши выключаем.
+            foreach (var mr in go.GetComponentsInChildren<MeshRenderer>(true)) mr.enabled = false;
+            foreach (var sr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) sr.enabled = false;
             foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true)) mb.enabled = false;
             if (systems.Length > 0) systems[0].Play(true);
             return Mathf.Min(life / Mathf.Max(0.2f, Speed), MaxLife);
