@@ -9,13 +9,13 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Cards
 {
     /// <summary>
-    /// Окно «Арсенал» (левое меню, клавиша J) — наземные войска для штурма колоний. Оформлено в общем стиле окон игры
-    /// (стекло, бирюзовая кромка, золотые подписи — как «Управление колониями»):
-    ///   • слева — колония производства (переключатель), её районы, сводка армии и подсказка;
-    ///   • вкладка «ПРОИЗВОДСТВО» — витрина карт сеткой с фильтрами по типу, доступности и сортировкой; под картой —
-    ///     цена и кнопка «Заказать»; закрытые технологией — затемнены, с замком и названием технологии;
-    ///   • вкладка «ВОЙСКА» — корабли с десантными местами (карты в выемках, автопогрузка, высадка), резерв и гарнизоны.
-    /// Клик по карте резерва — погрузить на корабль у колонии, клик по карте на корабле — высадить.
+    /// Окно «Арсенал» (левое меню, клавиша J) — армия для штурма и обороны колоний. Оформлено в общем стиле окон игры
+    /// (стекло, бирюзовая кромка, золотые подписи):
+    ///   • слева — режим состава (авто или вручную), размер армии, военная база империи и сводка резерва;
+    ///   • вкладка «СОСТАВ АРМИИ» — витрина карт с кнопками −/+ (сколько держать в армии), сверху — общая очередь
+    ///     производства (клик по карте — отменить); закрытые технологией — затемнены, с замком;
+    ///   • вкладка «РЕЗЕРВ» — готовые карты империи, раненые и ветераны.
+    /// Ни погрузки на корабли, ни заказов по колониям: империя сама производит недостающее и пополняет потери.
     /// </summary>
     public sealed class ArsenalWindow : MonoBehaviour
     {
@@ -29,22 +29,22 @@ namespace StellarisClone.Cards
         private static readonly Vector2 BigCard = new Vector2(280, 392);
         private const float TileW = 176f, TileH = 318f;
 
-        private enum Tab { Production, Forces }
+        private enum Tab { Doctrine, Reserve }
         private enum KindFilter { All, Infantry, Vehicles, Orders, Defense, Faction }
-        private enum AvailFilter { All, Ready, Locked }
+        private enum AvailFilter { All, InArmy, Locked }
         private enum SortBy { Cost, Power, Armor, Name }
 
         private GameObject _root;
         private RectTransform _rt, _content, _list, _previewRoot, _filterBar, _tabBar;
-        private Text _subtitle, _colonyName, _colonyInfo, _sideHint;
+        private Text _subtitle, _baseInfo, _sideHint, _sizeLabel, _sizeValue;
+        private Button _sizeMinus, _sizePlus;
         private readonly List<Text> _sideValues = new List<Text>();
         private ScrollRect _scroll;
         private CardView _preview;
-        private int _colony = -1;
         private string _sig;
         private float _refresh;
         private bool _dirty;
-        private Tab _tab = Tab.Production;
+        private Tab _tab = Tab.Doctrine;
         private KindFilter _kind = KindFilter.All;
         private AvailFilter _avail = AvailFilter.All;
         private SortBy _sort = SortBy.Cost;
@@ -56,6 +56,7 @@ namespace StellarisClone.Cards
         private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.90f);
         private static readonly Color CTile = new Color(0.030f, 0.065f, 0.090f, 0.92f);
         private static readonly Color Accent = new Color(0.95f, 0.45f, 0.35f);
+        private static readonly Color Warn = new Color(1f, 0.62f, 0.42f);
 
         public static void Toggle()
         {
@@ -104,13 +105,6 @@ namespace StellarisClone.Cards
             if (ArmyManager.Instance == null) return;
             if (_root == null) Build();
             if (_root == null) return;
-            var cols = Colonies();
-            if (_colony < 0 || cols.Find(s => s.Id == _colony) == null)
-            {
-                var sel = UIManager.Instance != null ? UIManager.Instance.ActiveSystemPublic : null;
-                _colony = sel != null && sel.OwnerId == 0 && ArmyManager.SystemPopulation(sel) > 0 ? sel.Id
-                        : cols.Count > 0 ? (cols.Find(s => s.Id == ArmyManager.CapitalOf(0)) ?? cols[0]).Id : -1;
-            }
             _sig = null;
             _dirty = true;
             LG.Show(_root);
@@ -131,43 +125,22 @@ namespace StellarisClone.Cards
 
         // ================================================================ Данные
 
-        private static List<StarSystem> Colonies()
-        {
-            var l = new List<StarSystem>();
-            foreach (var s in EmpireStats.Systems)
-                if (s != null && s.OwnerId == 0 && s.HasStarbase && ArmyManager.SystemPopulation(s) > 0) l.Add(s);
-            l.Sort((a, b) => ArmyManager.SystemPopulation(b).CompareTo(ArmyManager.SystemPopulation(a)));
-            return l;
-        }
-
-        private static List<FleetData> TroopShips()
-        {
-            var l = new List<FleetData>();
-            var fm = FleetManager.Instance;
-            if (fm == null) return l;
-            foreach (var f in fm.AllFleets)
-            {
-                var d = f?.Data;
-                if (d != null && !d.Destroyed && d.OwnerId == 0 && ArmyManager.Capacity(d) > 0) l.Add(d);
-            }
-            var am = ArmyManager.Instance;
-            l.Sort((a, b) => (am != null ? am.Used(b.Id) : 0).CompareTo(am != null ? am.Used(a.Id) : 0));
-            return l;
-        }
-
         private string Signature()
         {
             var eco = EconomyManager.Instance;
-            var sb = new StringBuilder();
-            sb.Append(_colony).Append('|').Append((int)_tab).Append((int)_kind).Append((int)_avail).Append((int)_sort).Append('|');
-            if (eco != null) sb.Append((int)eco.EnergyCredits / 5).Append(',').Append((int)eco.Minerals / 5).Append(',').Append((int)eco.Alloys / 5).Append(',').Append((int)eco.Influence / 5).Append('|');
             var am = ArmyManager.Instance;
-            if (am != null) foreach (var c in am.Of(0)) sb.Append(c.Id).Append(c.Fleet).Append(c.System).Append(c.WoundDays > 0 ? 'w' : '-');
-            sb.Append('|');
-            var cm = ConstructionManager.Instance;
-            if (cm != null) foreach (var j in cm.Jobs) if (j.Owner == 0 && j.Kind == JobKind.Troop) sb.Append(j.Id).Append(':').Append((int)(j.Progress * 20)).Append(',');
-            if (_tab == Tab.Forces)
-                foreach (var f in TroopShips()) sb.Append(f.Id).Append('@').Append(f.CurrentSystemId).Append(f.State == FleetState.InHyperlane ? 'h' : 'o').Append(am != null && am.AutoLoad(f.Id) ? 'a' : 'm');
+            var sb = new StringBuilder();
+            sb.Append((int)_tab).Append((int)_kind).Append((int)_avail).Append((int)_sort).Append('|');
+            if (eco != null) sb.Append((int)eco.EnergyCredits / 5).Append(',').Append((int)eco.Minerals / 5).Append(',').Append((int)eco.Alloys / 5).Append(',').Append((int)eco.Influence / 5).Append('|');
+            if (am != null)
+            {
+                foreach (var c in am.Of(0)) sb.Append(c.Id).Append(c.WoundDays > 0 ? 'w' : '-').Append(c.Stars);
+                sb.Append('|');
+                foreach (var j in am.JobsOf(0)) sb.Append(j.Def).Append(':').Append((int)(j.Progress * 20)).Append(',');
+                sb.Append('|').Append(am.TargetTotal(0)).Append(am.PlayerManual ? 'm' : 'a').Append(am.PlayerSize);
+            }
+            var b = ArmyManager.BaseOf(0);
+            sb.Append('|').Append(b.Colonies).Append(b.Urban).Append(',').Append(b.Industrial).Append(',').Append(b.Population / 4);
             var tm = TechnologyManager.Instance;
             if (tm != null) { int n = 0; foreach (var t in tm.AllTechs) if (t.IsResearched) n++; sb.Append('t').Append(n); }
             return sb.ToString();
@@ -207,8 +180,8 @@ namespace StellarisClone.Cards
             _tabBar.anchorMin = new Vector2(0, 1); _tabBar.anchorMax = new Vector2(1, 1); _tabBar.pivot = new Vector2(0, 1);
             _tabBar.offsetMin = new Vector2(SideW + 40f, -126f); _tabBar.offsetMax = new Vector2(-20f, -88f);
             float tx = 0f;
-            tx += Chip(_tabBar, Loc.T("ПРОИЗВОДСТВО"), LGIcon.Industry, tx, 190f, () => _tab == Tab.Production, () => SetTab(Tab.Production), 38f, 12);
-            tx += Chip(_tabBar, Loc.T("ВОЙСКА"), LGIcon.Fleet, tx, 160f, () => _tab == Tab.Forces, () => SetTab(Tab.Forces), 38f, 12);
+            tx += Chip(_tabBar, Loc.T("СОСТАВ АРМИИ"), LGIcon.Swords, tx, 200f, () => _tab == Tab.Doctrine, () => SetTab(Tab.Doctrine), 38f, 12);
+            tx += Chip(_tabBar, Loc.T("РЕЗЕРВ"), LGIcon.Planet, tx, 150f, () => _tab == Tab.Reserve, () => SetTab(Tab.Reserve), 38f, 12);
 
             _filterBar = LGBuild.Rect(_rt, "Filters");
             _filterBar.anchorMin = new Vector2(0, 1); _filterBar.anchorMax = new Vector2(1, 1); _filterBar.pivot = new Vector2(0, 1);
@@ -221,7 +194,7 @@ namespace StellarisClone.Cards
             fx += Chip(_filterBar, Loc.T("Оборона"), LGIcon.Starbase, fx, 108f, () => _kind == KindFilter.Defense, () => SetKind(KindFilter.Defense));
             fx += Chip(_filterBar, Loc.T("Фракция"), LGIcon.Star, fx, 104f, () => _kind == KindFilter.Faction, () => SetKind(KindFilter.Faction));
             fx += 18f;
-            fx += Chip(_filterBar, Loc.T("Можно заказать"), LGIcon.Check, fx, 160f, () => _avail == AvailFilter.Ready, () => SetAvail(_avail == AvailFilter.Ready ? AvailFilter.All : AvailFilter.Ready));
+            fx += Chip(_filterBar, Loc.T("В составе"), LGIcon.Check, fx, 130f, () => _avail == AvailFilter.InArmy, () => SetAvail(_avail == AvailFilter.InArmy ? AvailFilter.All : AvailFilter.InArmy));
             fx += Chip(_filterBar, Loc.T("Закрыто технологией"), LGIcon.Lock, fx, 196f, () => _avail == AvailFilter.Locked, () => SetAvail(_avail == AvailFilter.Locked ? AvailFilter.All : AvailFilter.Locked));
             fx += 18f;
             var sl = LGBuild.Label(_filterBar, Loc.T("СОРТИРОВКА"), 10, Gold, TextAnchor.MiddleLeft, bold: true);
@@ -279,7 +252,7 @@ namespace StellarisClone.Cards
                 c.bg.color = on ? new Color(0.10f, 0.38f, 0.42f, 0.95f) : new Color(0.05f, 0.11f, 0.14f, 0.9f);
                 c.t.color = on ? Color.white : UIManager.DS.TextMuted;
             }
-            if (_filterBar != null) _filterBar.gameObject.SetActive(_tab == Tab.Production);
+            if (_filterBar != null) _filterBar.gameObject.SetActive(_tab == Tab.Doctrine);
         }
 
         private void SetTab(Tab t) { _tab = t; _dirty = true; if (_scroll != null) _scroll.verticalNormalizedPosition = 1f; }
@@ -295,41 +268,48 @@ namespace StellarisClone.Cards
             s.offsetMin = new Vector2(20, 20); s.offsetMax = new Vector2(20 + SideW, -88);
             LG.Platter(side.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
 
-            var head = LGBuild.Label(s, Loc.T("КОЛОНИЯ ПРОИЗВОДСТВА"), 11, Gold, TextAnchor.UpperLeft, bold: true);
+            var head = LGBuild.Label(s, Loc.T("СОСТАВ АРМИИ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
             head.rectTransform.TopBand(16, 18, 18, 18);
             head.Track(1.4f);
-            var row = LGBuild.Rect(s, "Colony");
-            row.TopBand(40, 40, 18, 18);
-            var prev = LGBuild.Button(row, "Prev", UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.22f), () => Cycle(-1), LGIcon.Back, null, 11);
-            ((RectTransform)prev.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(34, 34));
-            TooltipHelper.Attach(prev.gameObject, Loc.T("Предыдущая колония"));
-            var next = LGBuild.Button(row, "Next", UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.22f), () => Cycle(1), LGIcon.Back, null, 11);
-            ((RectTransform)next.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(34, 34));
-            next.transform.localScale = new Vector3(-1, 1, 1);
-            TooltipHelper.Attach(next.gameObject, Loc.T("Следующая колония"));
-            _colonyName = LGBuild.Label(row, "", 16, Color.white, TextAnchor.MiddleCenter, bold: true);
-            _colonyName.rectTransform.Stretch(42, 0, 42, 0);
-            _colonyInfo = LGBuild.Label(s, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            _colonyInfo.rectTransform.TopBand(88, 76, 18, 18);
-            _colonyInfo.lineSpacing = 1.2f;
-            _colonyInfo.supportRichText = true;
+
+            // Режим: империя подбирает состав сама или игрок задаёт его кнопками −/+
+            var mode = LGBuild.Rect(s, "Mode");
+            mode.TopBand(40, 36, 18, 18);
+            Chip(mode, Loc.T("АВТО"), LGIcon.Star, 0f, 126f, () => ArmyManager.Instance != null && !ArmyManager.Instance.PlayerManual, () => ArmyManager.Instance?.SetPlayerAuto(true), 34f, 12);
+            Chip(mode, Loc.T("ВРУЧНУЮ"), LGIcon.Gear, 134f, 126f, () => ArmyManager.Instance != null && ArmyManager.Instance.PlayerManual, () => ArmyManager.Instance?.SetPlayerAuto(false), 34f, 12);
+            TooltipHelper.Attach(mode.GetChild(0).gameObject, Loc.T("<b>Автосостав</b>\nИмперия сама подбирает карты под размер армии: пехота, техника, приказы и оборона, лучшие из открытых. Состав обновляется с новыми технологиями"));
+            TooltipHelper.Attach(mode.GetChild(1).gameObject, Loc.T("<b>Вручную</b>\nВы сами задаёте, сколько карт каждого вида держать, — кнопками −/+ под картами. Любое изменение включает этот режим"));
+
+            var size = LGBuild.Rect(s, "Size");
+            size.TopBand(86, 34, 18, 18);
+            _sizeLabel = LGBuild.Label(size, "", 12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
+            _sizeLabel.rectTransform.Stretch(0, 0, 120, 0);
+            _sizeMinus = Step(size, "-", -102f, () => { var a = ArmyManager.Instance; if (a != null) a.SetPlayerSize(a.PlayerSize - 4); });
+            _sizePlus = Step(size, "+", -2f, () => { var a = ArmyManager.Instance; if (a != null) a.SetPlayerSize(a.PlayerSize + 4); });
+            _sizeValue = LGBuild.Label(size, "", 16, Color.white, TextAnchor.MiddleCenter, bold: true);
+            _sizeValue.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-38, 0), new Vector2(28, 30));
+            TooltipHelper.Attach(size.gameObject, Loc.T("<b>Размер армии</b>\nСколько карт империя держит в резерве в режиме «Авто». Больше армия — больше содержание"));
+
+            _baseInfo = LGBuild.Label(s, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
+            _baseInfo.rectTransform.TopBand(130, 70, 18, 18);
+            _baseInfo.lineSpacing = 1.2f;
+            _baseInfo.supportRichText = true;
 
             var sep = LGBuild.Panel(s, "Sep", new Color(Gold.r, Gold.g, Gold.b, 0.22f));
-            sep.rectTransform.TopBand(172, 1, 18, 18);
+            sep.rectTransform.TopBand(208, 1, 18, 18);
 
-            var h2 = LGBuild.Label(s, Loc.T("АРМИЯ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
-            h2.rectTransform.TopBand(186, 18, 18, 18);
+            var h2 = LGBuild.Label(s, Loc.T("РЕЗЕРВ ИМПЕРИИ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
+            h2.rectTransform.TopBand(222, 18, 18, 18);
             h2.Track(1.4f);
             (LGIcon, Color, string)[] rows =
             {
-                (LGIcon.Swords, new Color(1f, 0.82f, 0.45f), Loc.T("Карт всего")),
-                (LGIcon.Fleet, Cyan, Loc.T("На кораблях")),
-                (LGIcon.Planet, UIManager.DS.TextPrimary, Loc.T("В резерве")),
-                (LGIcon.Starbase, new Color(0.55f, 0.85f, 1f), Loc.T("Гарнизоны")),
+                (LGIcon.Swords, new Color(1f, 0.82f, 0.45f), Loc.T("Карт в резерве")),
+                (LGIcon.Check, UIManager.DS.Green, Loc.T("Готовы к бою")),
                 (LGIcon.Warning, new Color(1f, 0.5f, 0.45f), Loc.T("Ранены")),
+                (LGIcon.Construction, Cyan, Loc.T("В производстве")),
                 (LGIcon.Energy, BuildMenuModal.CEnergy, Loc.T("Содержание в месяц")),
             };
-            float y = 212f;
+            float y = 248f;
             foreach (var (icon, col, label) in rows)
             {
                 var r = LGBuild.Rect(s, "Stat");
@@ -343,20 +323,17 @@ namespace StellarisClone.Cards
                 y += 30f;
             }
             _sideHint = LGBuild.Label(s, "", 12, Muted, TextAnchor.UpperLeft, wrap: true);
-            _sideHint.rectTransform.TopBand(y + 14, 220, 18, 18);
+            _sideHint.rectTransform.TopBand(y + 14, 260, 18, 18);
             _sideHint.lineSpacing = 1.15f;
             _sideHint.supportRichText = true;
         }
 
-        private void Cycle(int dir)
+        /// <summary>Маленькая кнопка шага (−/+), прижатая к правому краю родителя со смещением x.</summary>
+        private static Button Step(RectTransform parent, string label, float x, System.Action act)
         {
-            var cols = Colonies();
-            if (cols.Count == 0) return;
-            int i = cols.FindIndex(s => s.Id == _colony);
-            i = ((i < 0 ? 0 : i + dir) % cols.Count + cols.Count) % cols.Count;
-            _colony = cols[i].Id;
-            SFXManager.Play(Sfx.UiTab);
-            _dirty = true;
+            var b = LGBuild.Button(parent, "Step" + label, UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.25f), () => { act(); SFXManager.Play(Sfx.UiClick, 0.7f); }, null, label, 16);
+            ((RectTransform)b.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(x, 0), new Vector2(32, 30));
+            return b;
         }
 
         // ================================================================ Наполнение
@@ -367,33 +344,43 @@ namespace StellarisClone.Cards
             if (am == null) return;
             HidePreview();
             RefreshChips();
+            var b = ArmyManager.BaseOf(0);
             var mine = am.Of(0);
-            int onShips = 0, reserve = 0, garrison = 0, wounded = 0;
-            foreach (var c in mine) { if (c.Fleet >= 0) onShips++; else if (c.Garrison) garrison++; else reserve++; if (c.Wounded) wounded++; }
+            var jobs = am.JobsOf(0);
+            int wounded = 0;
+            foreach (var c in mine) if (c.Wounded) wounded++;
             _sideValues[0].text = mine.Count.ToString();
-            _sideValues[1].text = onShips.ToString();
-            _sideValues[2].text = reserve.ToString();
-            _sideValues[3].text = garrison.ToString();
-            _sideValues[4].text = wounded.ToString();
-            _sideValues[5].text = am.Upkeep(0).ToString("0.#");
-            _subtitle.text = Loc.T("Наземные войска для штурма колоний: производство в колониях, десант на кораблях, гарнизоны. Карты открываются технологиями");
-            _sideHint.text = _tab == Tab.Production
-                ? Loc.T("<b>Как это работает</b>\nПехоту набирают в городских районах, технику собирают в промышленных, оборону строят на месте, приказы выдаёт штаб столицы.\nГотовые карты ждут на колонии — боевые корабли с автопогрузкой забирают их сами.")
-                : Loc.T("<b>Десант</b>\nКорвет берёт 1 место, фрегат — 2, эсминец — 4; приказы места не занимают.\nКлик по карте резерва — погрузить на корабль у этой колонии, по карте на корабле — высадить.");
+            _sideValues[1].text = (mine.Count - wounded).ToString();
+            _sideValues[2].text = wounded.ToString();
+            _sideValues[3].text = jobs.Count.ToString();
+            _sideValues[4].text = am.Upkeep(0).ToString("0.#");
 
-            var sys = EmpireStats.GetSystem(_colony);
-            if (sys != null && sys.OwnerId == 0)
-            {
-                _colonyName.text = sys.Name;
-                _colonyInfo.text = Loc.F("Жители: <b>{0}</b>\nГородских районов: <b>{1}</b> · промышленных: <b>{2}</b>\nУкрепления базы: <b>{3}</b>",
-                    ArmyManager.SystemPopulation(sys), ArmyManager.Districts(sys, DistrictType.Urban), ArmyManager.Districts(sys, DistrictType.Industrial), sys.Fortification);
-            }
-            else { _colonyName.text = Loc.T("Нет колоний"); _colonyInfo.text = Loc.T("Карты производят колонии с жителями"); }
+            bool auto = !am.PlayerManual;
+            _sizeLabel.text = auto ? Loc.T("Размер армии") : Loc.T("Карт в составе");
+            _sizeValue.text = (auto ? am.PlayerSize : am.TargetTotal(0)).ToString();
+            _sizeMinus.gameObject.SetActive(auto);
+            _sizePlus.gameObject.SetActive(auto);
+            _sizeMinus.interactable = am.PlayerSize > ArmyManager.MinSize;
+            _sizePlus.interactable = am.PlayerSize < ArmyManager.MaxSize;
+            _sizeValue.rectTransform.anchoredPosition = new Vector2(auto ? -52 : -14, 0);
+
+            int infantry = 0;
+            foreach (var c in mine) if (c.D != null && c.D.Site == ProdSite.City && c.D.Has(Kw.Infantry)) infantry++;
+            foreach (var j in jobs) { var d = CardCatalog.Get(j.Def); if (d != null && d.Site == ProdSite.City && d.Has(Kw.Infantry)) infantry++; }
+            _baseInfo.text = b.Colonies == 0
+                ? Loc.T("<color=#FF8080>Нет колоний с жителями — производить армию негде</color>")
+                : Loc.F("Линий производства: <b>{0}</b> <color=#8AA2A8>(районы {1} + {2})</color>\nПризывников: <b>{3}/{4}</b> <color=#8AA2A8>(половина жителей)</color>\nСооружений обороны: до <b>{5}</b>",
+                    b.Lines, b.Urban, b.Industrial, infantry, b.InfantryCap, b.StructureCap);
+
+            _subtitle.text = Loc.T("Армия для штурма и обороны колоний. Задайте состав — империя сама производит и пополняет карты. Карты открываются технологиями");
+            _sideHint.text = _tab == Tab.Doctrine
+                ? Loc.T("<b>Как это работает</b>\nКнопки −/+ под картой — сколько таких держать в армии (с Shift — по 5). Империя сама заказывает недостающее и пополняет потери, когда хватает ресурсов.\nПри штурме в бой идут лучшие карты резерва — сколько поместится на корабли у цели: корвет 2 места, фрегат 4, эсминец 6. При обороне — сколько вместит колония.")
+                : Loc.T("<b>Резерв</b>\nОбщий для всей империи: грузить на корабли и развозить по колониям ничего не нужно.\nРаненые лечатся 30 дней и пропускают бои. Выжившие в бою получают звезду ветерана.");
 
             float sp = _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
             Canvas.ForceUpdateCanvases();
             LGBuild.Clear(_list);
-            if (_tab == Tab.Production) BuildProduction(sys, am); else BuildForces(am);
+            if (_tab == Tab.Doctrine) BuildDoctrine(am, b, jobs); else BuildReserve(am, mine);
             Canvas.ForceUpdateCanvases();
             if (_scroll != null) _scroll.verticalNormalizedPosition = sp;
         }
@@ -415,24 +402,26 @@ namespace StellarisClone.Cards
         {
             switch (s)
             {
-                case ProdSite.City: return Loc.T("ПЕХОТА · ГОРОДСКИЕ РАЙОНЫ");
-                case ProdSite.Industry: return Loc.T("ТЕХНИКА · ПРОМЫШЛЕННЫЕ РАЙОНЫ");
+                case ProdSite.City: return Loc.T("ПЕХОТА · НУЖЕН ГОРОДСКОЙ РАЙОН");
+                case ProdSite.Industry: return Loc.T("ТЕХНИКА · НУЖЕН ПРОМЫШЛЕННЫЙ РАЙОН");
                 case ProdSite.Command: return Loc.T("ПРИКАЗЫ И ГЕРОИ · ШТАБ В СТОЛИЦЕ");
-                default: return Loc.T("ОБОРОНА КОЛОНИИ");
+                default: return Loc.T("ОБОРОНА · ТОЛЬКО ДЛЯ ЗАЩИТЫ КОЛОНИЙ");
             }
         }
 
-        private void BuildProduction(StarSystem sys, ArmyManager am)
+        private int PerRow(float itemW)
         {
-            if (sys == null || sys.OwnerId != 0) { Note(Loc.T("Нет колоний с жителями — карты производить негде")); return; }
+            float width = _list.rect.width - 16f;
+            if (width < 300f) width = 1400f;
+            return Mathf.Max(1, Mathf.FloorToInt((width + 12f) / (itemW + 12f)));
+        }
 
-            // Очередь — строка мини-карт с прогрессом
-            var cm = ConstructionManager.Instance;
-            if (cm != null)
+        private void BuildDoctrine(ArmyManager am, ArmyManager.Base b, List<ArmyJob> jobs)
+        {
+            if (jobs.Count > 0)
             {
-                var jobs = new List<ConstructionJob>();
-                foreach (var j in cm.Jobs) if (j.Owner == 0 && j.Kind == JobKind.Troop && j.SystemId == sys.Id) jobs.Add(j);
-                if (jobs.Count > 0) { Header(Loc.F("В ПРОИЗВОДСТВЕ · {0}", jobs.Count), LGIcon.Construction); QueueRow(jobs); }
+                Header(Loc.F("В ПРОИЗВОДСТВЕ · {0} · ЛИНИЙ {1}   ·   клик по карте — отменить заказ", jobs.Count, b.Lines), LGIcon.Construction);
+                QueueRow(jobs, b.Lines, am);
             }
 
             string faction = FactionTraits.Key(0);
@@ -443,16 +432,14 @@ namespace StellarisClone.Cards
                 if (d.Site == ProdSite.None || !Match(d, _kind)) continue;
                 bool locked = !ArmyManager.Unlocked(0, d);
                 if (_avail == AvailFilter.Locked && !locked) continue;
-                if (_avail == AvailFilter.Ready && (locked || am.ProduceBlocker(0, d, d.Site == ProdSite.Command ? null : sys) != null || !Affordable(d))) continue;
+                if (_avail == AvailFilter.InArmy && am.Target(0, d.Id) <= 0 && am.Count(0, d.Id) <= 0) continue;
                 if (!groups.TryGetValue((int)d.Site, out var l)) groups[(int)d.Site] = l = new List<CardDef>();
                 l.Add(d);
                 shown++;
             }
             if (shown == 0) { Note(Loc.T("Под фильтр не подходит ни одна карта")); return; }
 
-            float width = _list.rect.width - 16f;
-            if (width < 300f) width = 1400f;
-            int perRow = Mathf.Max(1, Mathf.FloorToInt((width + 12f) / (TileW + 12f)));
+            int perRow = PerRow(TileW);
             foreach (var kv in groups)
             {
                 var list = kv.Value;
@@ -463,7 +450,7 @@ namespace StellarisClone.Cards
                     var row = LGBuild.Rect(_list, "Row");
                     LGBuild.Height(row.gameObject, TileH);
                     for (int k = 0; k < perRow && i + k < list.Count; k++)
-                        Tile(row, list[i + k], sys, am, 4 + k * (TileW + 12f));
+                        Tile(row, list[i + k], b, am, 4 + k * (TileW + 12f));
                 }
             }
         }
@@ -483,13 +470,6 @@ namespace StellarisClone.Cards
         }
 
         private static LGIcon SiteIcon(ProdSite s) => s == ProdSite.City ? LGIcon.Population : s == ProdSite.Industry ? LGIcon.Industry : s == ProdSite.Command ? LGIcon.Target : LGIcon.Starbase;
-
-        private static bool Affordable(CardDef d)
-        {
-            ArmyManager.Cost(d, out float e, out float m, out float a, out float inf);
-            var eco = EconomyManager.Instance;
-            return eco != null && eco.EnergyCredits >= e && eco.Minerals >= m && eco.Alloys >= a && eco.Influence >= inf;
-        }
 
         private void Header(string text, LGIcon icon)
         {
@@ -514,42 +494,51 @@ namespace StellarisClone.Cards
             t.rectTransform.Stretch(10, 0, 10, 0);
         }
 
-        private void QueueRow(List<ConstructionJob> jobs)
+        /// <summary>Очередь империи: мини-карты с прогрессом; первые <paramref name="lines"/> — в работе. Клик — отменить.</summary>
+        private void QueueRow(List<ArmyJob> jobs, int lines, ArmyManager am)
         {
-            var row = LGBuild.Rect(_list, "Queue");
-            LGBuild.Height(row.gameObject, MiniCard.y + 34);
-            for (int i = 0; i < jobs.Count; i++)
+            int perRow = PerRow(MiniCard.x + 2f);
+            for (int i0 = 0; i0 < jobs.Count; i0 += perRow)
             {
-                var j = jobs[i];
-                var d = CardCatalog.Get(j.DesignId);
-                if (d == null) continue;
-                float x = 10 + MiniCard.x * 0.5f + i * (MiniCard.x + 14f);
-                var cv = CardView.Create(row, new BCard(d), 0, FactionTraits.Key(0), MiniCard, true);
-                cv.Rt.anchorMin = cv.Rt.anchorMax = new Vector2(0, 1);
-                cv.Rt.anchoredPosition = new Vector2(x, -MiniCard.y * 0.5f - 2);
-                cv.SetAlpha(0.55f + 0.45f * j.Progress);
-                HookPreview(cv);
-                var host = LGBuild.Rect(row, "Bar");
-                host.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(x, -MiniCard.y - 12), new Vector2(MiniCard.x - 6, 6));
-                LGBuild.Bar(host, Cyan, j.Progress, 5f);
-                var days = LGBuild.Label(row, Loc.F("{0:0} дн.", Mathf.Ceil(j.DaysLeft)), 11, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
-                days.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(x, -MiniCard.y - 26), new Vector2(MiniCard.x, 16));
+                var row = LGBuild.Rect(_list, "Queue");
+                LGBuild.Height(row.gameObject, MiniCard.y + 34);
+                for (int i = i0; i < jobs.Count && i < i0 + perRow; i++)
+                {
+                    var j = jobs[i];
+                    var d = CardCatalog.Get(j.Def);
+                    if (d == null) continue;
+                    bool active = i < lines;
+                    float x = 10 + MiniCard.x * 0.5f + (i - i0) * (MiniCard.x + 14f);
+                    var cv = CardView.Create(row, new BCard(d), 0, FactionTraits.Key(0), MiniCard, true);
+                    cv.Rt.anchorMin = cv.Rt.anchorMax = new Vector2(0, 1);
+                    cv.Rt.anchoredPosition = new Vector2(x, -MiniCard.y * 0.5f - 2);
+                    cv.SetAlpha(active ? 0.55f + 0.45f * j.Progress : 0.4f);
+                    HookPreview(cv);
+                    cv.OnClick = _ => { am.CancelJob(j); SFXManager.Play(Sfx.DealRemove); };
+                    var host = LGBuild.Rect(row, "Bar");
+                    host.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(x, -MiniCard.y - 12), new Vector2(MiniCard.x - 6, 6));
+                    LGBuild.Bar(host, active ? Cyan : new Color(1f, 1f, 1f, 0.25f), j.Progress, 5f);
+                    var days = LGBuild.Label(row, active ? Loc.F("{0:0} дн.", Mathf.Ceil(j.DaysLeft)) : Loc.T("в очереди"), 11,
+                        active ? UIManager.DS.TextPrimary : Muted, TextAnchor.MiddleCenter, bold: true);
+                    days.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(x, -MiniCard.y - 26), new Vector2(MiniCard.x + 10, 16));
+                }
             }
         }
 
-        /// <summary>Плитка витрины: стеклянная подложка, карта, цена и кнопка. Закрытая технологией — с замком.</summary>
-        private void Tile(RectTransform row, CardDef d, StarSystem sys, ArmyManager am, float x)
+        /// <summary>Плитка состава: карта, сколько в резерве и строится, цена и кнопки −/+ (сколько держать в армии).</summary>
+        private void Tile(RectTransform row, CardDef d, ArmyManager.Base b, ArmyManager am, float x)
         {
             bool locked = !ArmyManager.Unlocked(0, d);
-            string blocker = am.ProduceBlocker(0, d, d.Site == ProdSite.Command ? null : sys);
+            string site = ArmyManager.SiteBlocker(0, d, b);
+            int target = am.Target(0, d.Id), have = am.Count(0, d.Id), queued = am.Queued(0, d.Id);
+            string wait = target > 0 ? am.WaitReason(0, d) : null;
             ArmyManager.Cost(d, out float e, out float m, out float a, out float inf);
             var eco = EconomyManager.Instance;
-            bool afford = Affordable(d);
-            bool can = blocker == null && afford;
 
             var tile = LGBuild.Panel(row, d.Id, CTile);
             tile.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, 0), new Vector2(TileW, TileH - 6));
-            LG.Platter(tile.gameObject, 12f).SetRim(can ? new Color(0.45f, 0.95f, 0.90f, 0.35f) : new Color(1f, 1f, 1f, 0.08f));
+            LG.Platter(tile.gameObject, 12f).SetRim(target > 0 ? (wait != null ? new Color(Warn.r, Warn.g, Warn.b, 0.45f) : new Color(Gold.r, Gold.g, Gold.b, 0.5f))
+                                                               : new Color(1f, 1f, 1f, 0.08f));
 
             var cv = CardView.Create(tile.rectTransform, new BCard(d), 0, FactionTraits.Key(0), ShopCard, false);
             cv.Rt.anchorMin = cv.Rt.anchorMax = new Vector2(0.5f, 1f);
@@ -558,7 +547,7 @@ namespace StellarisClone.Cards
             cv.HoverLift = 6f;
             cv.HoverScale = 0.04f;
             HookPreview(cv);
-            if (locked || blocker != null) cv.SetAlpha(locked ? 0.4f : 0.6f);
+            if (locked || site != null) cv.SetAlpha(locked ? 0.4f : 0.6f);
 
             if (locked)
             {
@@ -576,9 +565,15 @@ namespace StellarisClone.Cards
                 lk.raycastTarget = true;
             }
 
+            // Сколько есть
+            string stock = queued > 0 ? Loc.F("в резерве {0} · строится {1}", have, queued) : Loc.F("в резерве {0}", have);
+            var st = LGBuild.Label(tile.rectTransform, wait != null ? Loc.T("ждёт") + " · " + stock : stock, 11,
+                wait != null ? Warn : have > 0 ? UIManager.DS.TextPrimary : Muted, TextAnchor.MiddleCenter, bold: true);
+            st.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 20), new Vector2(TileW - 8, 16));
+
             // Цена
             var price = LGBuild.Rect(tile.rectTransform, "Price");
-            price.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 26), new Vector2(TileW - 8, 18));
+            price.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 40), new Vector2(TileW - 8, 18));
             var parts = new List<(LGIcon ic, string v, bool ok, Color c)>();
             if (e > 0) parts.Add((LGIcon.Energy, e.ToString("0"), eco != null && eco.EnergyCredits >= e, BuildMenuModal.CEnergy));
             if (m > 0) parts.Add((LGIcon.Minerals, m.ToString("0"), eco != null && eco.Minerals >= m, BuildMenuModal.CMinerals));
@@ -597,177 +592,90 @@ namespace StellarisClone.Cards
                 px += 15 + p.v.Length * 7f + 6;
             }
 
-            string label = can ? Loc.T("ЗАКАЗАТЬ") : locked ? Loc.T("ЗАКРЫТО") : blocker != null ? Loc.T("НЕДОСТУПНО") : Loc.T("НЕ ХВАТАЕТ");
-            var btn = LGBuild.Button(tile.rectTransform, "Order", can ? UIManager.DS.BtnPrimary : UIManager.DS.BtnDisabled,
-                can ? UIManager.DS.BtnPrimaryHi : new Color(1, 1, 1, 0.12f), () => Order(d), can ? LGIcon.Check : (LGIcon?)null, label, 11);
-            ((RectTransform)btn.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 12), new Vector2(TileW - 24, 32));
-            btn.interactable = can;
+            // Состав: − N +
+            bool canAdd = !locked && site == null && target < ArmyManager.MaxDeck;
+            var minus = LGBuild.Button(tile.rectTransform, "Minus", target > 0 ? UIManager.DS.BtnNeutral : UIManager.DS.BtnDisabled, new Color(1, 1, 1, 0.22f),
+                () => Change(d, -1), null, "−", 18);
+            ((RectTransform)minus.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-58, 12), new Vector2(40, 32));
+            minus.interactable = target > 0;
+            var plus = LGBuild.Button(tile.rectTransform, "Plus", canAdd ? UIManager.DS.BtnPrimary : UIManager.DS.BtnDisabled,
+                canAdd ? UIManager.DS.BtnPrimaryHi : new Color(1, 1, 1, 0.12f), () => Change(d, 1), null, "+", 18);
+            ((RectTransform)plus.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(58, 12), new Vector2(40, 32));
+            plus.interactable = canAdd;
+            var val = LGBuild.Panel(tile.rectTransform, "Target", new Color(0.02f, 0.05f, 0.07f, 0.9f), raycast: true);
+            val.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 12), new Vector2(66, 32));
+            LG.Chip(val.gameObject, target > 0 ? new Color(Gold.r, Gold.g, Gold.b, 0.5f) : new Color(1f, 1f, 1f, 0.12f), 10f);
+            var vt = LGBuild.Label(val.transform, target.ToString(), 16, target > 0 ? Color.white : Muted, TextAnchor.MiddleCenter, bold: true);
+            vt.rectTransform.Stretch(0, 0, 0, 0);
+
             string tip = $"<b>{d.Name}</b>\n{d.Text}";
+            tip += Loc.F("\n\nВ составе армии: <b>{0}</b> · в резерве {1} · строится {2}", target, have, queued);
             if (d.Upkeep > 0f) tip += Loc.F("\n<color=#8AA2A8>Содержание: {0:0.#} гелия в месяц</color>", d.Upkeep);
-            if (d.Size > 0) tip += Loc.F("\n<color=#8AA2A8>Мест на корабле: {0}</color>", d.Size);
-            if (blocker != null) tip += $"\n<color=#FF8080>{blocker}</color>";
-            else if (!afford) tip += "\n<color=#FF8080>" + Loc.T("Не хватает ресурсов") + "</color>";
-            TooltipHelper.Attach(btn.gameObject, tip);
+            if (d.Size > 0 && d.Site != ProdSite.Garrison) tip += Loc.F("\n<color=#8AA2A8>Мест на кораблях: {0}</color>", d.Size);
+            if (site != null) tip += $"\n<color=#FF8080>{site}</color>";
+            else if (wait != null) tip += $"\n<color=#FFB080>{wait}</color>";
+            tip += Loc.T("\n<color=#8AA2A8>−/+ — сколько держать в армии (Shift — по 5)</color>");
+            TooltipHelper.Attach(val.gameObject, tip);
+            TooltipHelper.Attach(plus.gameObject, tip);
+            TooltipHelper.Attach(minus.gameObject, tip);
         }
 
-        private void Order(CardDef d)
+        private void Change(CardDef d, int dir)
         {
-            var sys = EmpireStats.GetSystem(_colony);
             var am = ArmyManager.Instance;
             if (am == null) return;
-            if (am.TryProducePlayer(d, d.Site == ProdSite.Command ? null : sys))
-            {
-                SFXManager.Play(Sfx.BuildQueued);
-                UIManager.Instance?.RefreshResourceBarPublic();
-            }
-            else SFXManager.Play(Sfx.UiDenied);
+            int step = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? 5 : 1;
+            int before = am.Target(0, d.Id);
+            am.SetTarget(0, d.Id, before + dir * step);
+            SFXManager.Play(am.Target(0, d.Id) != before ? (dir > 0 ? Sfx.BuildQueued : Sfx.DealRemove) : Sfx.UiDenied, 0.8f);
+            UIManager.Instance?.RefreshResourceBarPublic();
             _dirty = true;
         }
 
-        // ---------------------------------------------------------------- войска
+        // ---------------------------------------------------------------- резерв
 
-        private void BuildForces(ArmyManager am)
+        private void BuildReserve(ArmyManager am, List<CardInstance> mine)
         {
-            var ships = TroopShips();
-            Header(Loc.F("ДЕСАНТ НА КОРАБЛЯХ · {0}", ships.Count), LGIcon.Fleet);
-            if (ships.Count == 0) Note(Loc.T("Нет военных кораблей — постройте корвет, фрегат или эсминец"));
-            foreach (var f in ships) FleetRow(f, am);
-
-            Header(Loc.T("КОЛОНИИ: РЕЗЕРВ И ГАРНИЗОНЫ"), LGIcon.Planet);
-            bool any = false;
-            foreach (var s in Colonies())
+            Header(Loc.F("РЕЗЕРВ ИМПЕРИИ · {0}", mine.Count), LGIcon.Swords);
+            if (mine.Count == 0)
             {
-                var here = am.AtSystem(0, s.Id);
-                if (here.Count == 0) continue;
-                any = true;
-                ColonyRow(s, here, am, ships);
+                Note(am.TargetTotal(0) > 0
+                    ? Loc.T("Резерв пока пуст — карты в производстве, империя заказывает их сама, когда хватает ресурсов")
+                    : Loc.T("Резерв пуст — включите «Авто» или задайте состав армии на вкладке «Состав армии»"));
+                return;
             }
-            if (!any) Note(Loc.T("Резерв пуст — закажите карты на вкладке «Производство». Готовые карты ждут на колонии, корабли с автопогрузкой забирают их сами"));
-        }
-
-        private RectTransform Block(string name, bool active)
-        {
-            var b = LGBuild.Panel(_list, name, CTile);
-            LG.Platter(b.gameObject, 12f).SetRim(active ? new Color(Gold.r, Gold.g, Gold.b, 0.4f) : new Color(1f, 1f, 1f, 0.08f));
-            return b.rectTransform;
-        }
-
-        /// <summary>Места под карты: выемки по числу мест, карты ложатся в них по порядку.</summary>
-        private void Slots(RectTransform parent, List<CardInstance> cards, int slots, float left, float top,
-                           System.Action<CardView, CardInstance> hook, System.Func<CardInstance, string> status)
-        {
-            int n = Mathf.Max(slots, cards.Count);
-            for (int i = 0; i < n; i++)
+            var groups = new SortedDictionary<int, List<CardInstance>>();
+            foreach (var c in mine)
             {
-                var pos = new Vector2(left + MiniCard.x * 0.5f + i * (MiniCard.x + 10f), -top - MiniCard.y * 0.5f);
-                if (i >= cards.Count)
-                {
-                    var sl = CardSkin.Simple(parent, "Slot", "slot", Color.white);
-                    sl.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), pos, MiniCard);
-                    continue;
-                }
-                var c = cards[i];
                 if (c.D == null) continue;
-                var cv = CardView.Create(parent, new BCard(c.D, c.Id, c.Stars), 0, FactionTraits.Key(0), MiniCard, true);
-                cv.Rt.anchorMin = cv.Rt.anchorMax = new Vector2(0, 1);
-                cv.Rt.anchoredPosition = pos;
-                string st = status?.Invoke(c);
-                if (st != null) cv.SetStatus(st, new Color(1f, 0.55f, 0.45f));
-                if (c.Wounded) cv.SetAlpha(0.6f);
-                HookPreview(cv);
-                cv.HoverLift = 6f;
-                cv.HoverScale = 0.08f;
-                hook?.Invoke(cv, c);
+                int k = (int)c.D.Site;
+                if (!groups.TryGetValue(k, out var l)) groups[k] = l = new List<CardInstance>();
+                l.Add(c);
             }
-        }
-
-        /// <summary>Строка корабля: значок и имя, где стоит и заполнение мест, кнопки — слева; места с картами — справа.</summary>
-        private void FleetRow(FleetData f, ArmyManager am)
-        {
-            var cards = am.OnFleet(f.Id);
-            int used = am.Used(f.Id), cap = ArmyManager.Capacity(f);
-            var b = Block("Fleet" + f.Id, used > 0);
-            LGBuild.Height(b.gameObject, MiniCard.y + 24);
-            var sys = EmpireStats.GetSystem(f.CurrentSystemId);
-            bool moving = f.State == FleetState.InHyperlane;
-
-            var ic = LGIcons.Create(b, LGIcon.Ship, 22, used > 0 ? Gold : Cyan);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(28, -26), new Vector2(22, 22));
-            var t = LGBuild.Label(b, f.Name, 15, Color.white, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(50, -24), new Vector2(300, 22));
-            var loc = LGBuild.Label(b, moving ? Loc.T("в пути") : sys != null ? sys.Name : "?", 12, Muted, TextAnchor.MiddleLeft);
-            loc.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(50, -44), new Vector2(300, 18));
-            var bar = LGBuild.Rect(b, "Cap");
-            bar.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(50, -64), new Vector2(170, 6));
-            LGBuild.Bar(bar, used >= cap ? Gold : Cyan, cap > 0 ? (float)used / cap : 0f, 5f);
-            var capT = LGBuild.Label(b, Loc.F("мест {0}/{1}", used, cap), 11, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold: true);
-            capT.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(228, -64), new Vector2(90, 16));
-
-            bool auto = am.AutoLoad(f.Id);
-            var ab = LGBuild.Button(b, "Auto", auto ? UIManager.DS.BtnSuccess : UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.25f),
-                () => { am.SetAutoLoad(f.Id, !auto); SFXManager.Play(Sfx.UiClick); }, auto ? LGIcon.Check : (LGIcon?)null, Loc.T("АВТОПОГРУЗКА"), 10);
-            ((RectTransform)ab.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(50, 12), new Vector2(150, 30));
-            TooltipHelper.Attach(ab.gameObject, Loc.T("<b>Автопогрузка</b>\nКорабль у своей колонии сам забирает готовые карты резерва — сильнейшие первыми"));
-            bool canUnload = !moving && sys != null && sys.OwnerId == 0 && sys.HasStarbase && cards.Count > 0;
-            var un = LGBuild.Button(b, "Unload", canUnload ? UIManager.DS.BtnPrimary : UIManager.DS.BtnDisabled, new Color(1, 1, 1, 0.25f),
-                () => { if (am.Unload(f) > 0) SFXManager.Play(Sfx.DealRemove); }, null, Loc.T("ВЫСАДИТЬ"), 10);
-            ((RectTransform)un.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(208, 12), new Vector2(112, 30));
-            un.interactable = canUnload;
-            TooltipHelper.Attach(un.gameObject, canUnload ? Loc.T("Весь десант корабля — в резерв этой колонии") : Loc.T("Высадить можно у своей колонии со звёздной базой"));
-
-            Slots(b, cards, Mathf.Max(0, cap - used + cards.Count), 340f, 12f, (cv, c) =>
+            int perRow = PerRow(MiniCard.x - 2f);
+            foreach (var kv in groups)
             {
-                cv.OnClick = _ =>
+                var list = kv.Value;
+                list.Sort((x, y) => { int c = string.CompareOrdinal(x.Def, y.Def); return c != 0 ? c : y.Stars.CompareTo(x.Stars); });
+                Header(SiteHeader((ProdSite)kv.Key) + "  ·  " + list.Count, SiteIcon((ProdSite)kv.Key));
+                for (int i = 0; i < list.Count; i += perRow)
                 {
-                    if (moving || sys == null || sys.OwnerId != 0 || !sys.HasStarbase) { SFXManager.Play(Sfx.UiDenied); return; }
-                    am.UnloadOne(c);
-                    SFXManager.Play(Sfx.DealRemove);
-                };
-            }, null);
-        }
-
-        private void ColonyRow(StarSystem s, List<CardInstance> here, ArmyManager am, List<FleetData> ships)
-        {
-            var reserve = new List<CardInstance>();
-            var gar = new List<CardInstance>();
-            foreach (var c in here) (c.Garrison ? gar : reserve).Add(c);
-            var docked = new List<FleetData>();
-            foreach (var f in ships) if (f.State != FleetState.InHyperlane && f.CurrentSystemId == s.Id) docked.Add(f);
-
-            var b = Block("Sys" + s.Id, false);
-            int lines = (reserve.Count > 0 ? 1 : 0) + (gar.Count > 0 ? 1 : 0);
-            LGBuild.Height(b.gameObject, 24 + Mathf.Max(1, lines) * (MiniCard.y + 14));
-            var ic = LGIcons.Create(b, LGIcon.Planet, 22, Cyan);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(28, -26), new Vector2(22, 22));
-            var t = LGBuild.Label(b, s.Name, 15, Color.white, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(50, -24), new Vector2(280, 22));
-            var info = LGBuild.Label(b, Loc.F("резерв {0} · гарнизон {1}", reserve.Count, gar.Count) + "\n" +
-                (reserve.Count == 0 ? "" : docked.Count > 0 ? Loc.T("клик по карте — погрузить") : Loc.T("у колонии нет кораблей")), 12, Muted, TextAnchor.UpperLeft);
-            info.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(50, -38), new Vector2(280, 40));
-
-            float top = 12f;
-            if (reserve.Count > 0)
-            {
-                Slots(b, reserve, 0, 340f, top, (cv, c) =>
-                {
-                    cv.OnClick = _ =>
+                    var row = LGBuild.Rect(_list, "Row");
+                    LGBuild.Height(row.gameObject, MiniCard.y + 12);
+                    for (int k = 0; k < perRow && i + k < list.Count; k++)
                     {
-                        foreach (var f in docked)
-                            if (am.LoadBlocker(f, c) == null) { am.Load(f, c); SFXManager.Play(Sfx.DealPlace); return; }
-                        string why = docked.Count == 0 ? Loc.T("У колонии нет кораблей с десантными местами") : am.LoadBlocker(docked[0], c);
-                        NotificationCenter.Show(Loc.T("Не погрузить"), why, NotificationCenter.Kind.Warning, 3f);
-                        SFXManager.Play(Sfx.UiDenied);
-                    };
-                }, c => c.Wounded ? Loc.F("РАНЕН {0} дн.", c.WoundDays) : null);
-                top += MiniCard.y + 14;
+                        var c = list[i + k];
+                        var cv = CardView.Create(row, new BCard(c.D, c.Id, c.Stars), 0, FactionTraits.Key(0), MiniCard, true);
+                        cv.Rt.anchorMin = cv.Rt.anchorMax = new Vector2(0, 1);
+                        cv.Rt.anchoredPosition = new Vector2(10 + MiniCard.x * 0.5f + k * (MiniCard.x + 10f), -MiniCard.y * 0.5f - 4);
+                        if (c.Wounded) { cv.SetStatus(Loc.F("РАНЕН {0} дн.", c.WoundDays), new Color(1f, 0.55f, 0.45f)); cv.SetAlpha(0.6f); }
+                        HookPreview(cv);
+                        cv.HoverLift = 6f;
+                        cv.HoverScale = 0.08f;
+                    }
+                }
             }
-            if (gar.Count > 0)
-            {
-                var gl = LGBuild.Label(b, Loc.T("ГАРНИЗОН"), 10, new Color(0.55f, 0.85f, 1f), TextAnchor.MiddleRight, bold: true);
-                gl.rectTransform.At(new Vector2(0, 1), new Vector2(1, 0.5f), new Vector2(330, -top - MiniCard.y * 0.5f), new Vector2(120, 16));
-                gl.Track(1.2f);
-                Slots(b, gar, 0, 340f, top, null, c => c.Wounded ? Loc.F("РАНЕН {0} дн.", c.WoundDays) : null);
-            }
+            Note(Loc.T("Сооружения, мины и гарнизонные отряды идут в бой только при обороне колоний"));
         }
 
         // ---------------------------------------------------------------- предпросмотр

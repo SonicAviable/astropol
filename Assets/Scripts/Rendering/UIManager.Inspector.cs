@@ -179,14 +179,15 @@ namespace StellarisClone.Rendering
                              : Loc.T("Осаждающие ушли — прогресс спадает");
                 InspText($"<color=#8AA2A8>{state}</color>");
 
-                // Наземный штурм колонии: карты десанта с кораблей на орбите
+                // Наземный штурм колонии: десант из резерва империи, сколько поместится на корабли на орбите
                 if (mine && StellarisClone.Cards.AssaultLink.IsColony(system) && StellarisClone.Cards.ArmyManager.Instance != null)
                 {
                     int deck = StellarisClone.Cards.ArmyManager.Instance.AttackDeck(0, system.Id).Count;
+                    int places = StellarisClone.Cards.ArmyManager.LandingPlaces(0, system.Id);
                     string blocker = StellarisClone.Cards.AssaultLink.Blocker(0, system);
                     InspNote(LGIcon.Weapons, deck > 0
-                        ? Loc.F("Десант на кораблях: {0} карт", deck)
-                        : Loc.T("На кораблях нет десанта — загрузите карты в «Арсенале» (J); в бой пойдут только экипажи"), deck > 0 ? DS.Gold : DS.TextMuted);
+                        ? Loc.F("В бой пойдут {0} карт из резерва империи (мест на кораблях: {1})", deck, places)
+                        : Loc.T("Резерв армии пуст — в бой пойдут только экипажи. Состав армии — в «Арсенале» (J)"), deck > 0 ? DS.Gold : DS.TextMuted);
                     string tip = Loc.F("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт", StellarisClone.Cards.BattleState.Turns);
                     InspButton(Loc.T("ШТУРМ"), LGIcon.Target, new Color(0.55f, 0.16f, 0.12f, 0.95f), blocker, tip,
                         () => StellarisClone.Cards.AssaultLink.StartPlayerAssault(system, false), system);

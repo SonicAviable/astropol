@@ -559,9 +559,9 @@ namespace StellarisClone.Rendering
             var am = StellarisClone.Cards.ArmyManager.Instance;
             if (troops != null && am != null)
             {
-                // Десант на борту вместо скорости (скорость — в подсказке)
-                int used = am.Used(d.Id), cap = StellarisClone.Cards.ArmyManager.Capacity(d);
-                SetChip(c++, LGIcon.Population, used > 0 ? new Color(1f, 0.82f, 0.4f) : UIManager.DS.TextMuted, Loc.F("десант {0}/{1}", used, cap),
+                // Десантные места вместо скорости (скорость — в подсказке)
+                int cap = StellarisClone.Cards.ArmyManager.Capacity(d);
+                SetChip(c++, LGIcon.Population, new Color(1f, 0.82f, 0.4f), Loc.F("десант {0}", cap),
                     troops + Loc.F("\n\n<color=#8AA2A8>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>", FleetRoute.DaysPerJump(d), d.UpkeepEnergy));
             }
             else

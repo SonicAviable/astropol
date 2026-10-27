@@ -6733,3 +6733,51 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Не стреляет и не двигается ещё {0} ход.	Cannot fire or move for {0} more turn(s).
 Сила и броня	Power and armor
 Сила — урон за ход и вклад в контроль сектора. Броня — сколько урона карта выдержит.	Power is damage per turn and its share of sector control. Armor is how much damage the card can take.
+Нужен городской район хотя бы в одной колонии — там набирают пехоту	Needs an urban district in at least one colony — infantry is recruited there
+Нужен промышленный район хотя бы в одной колонии — там собирают технику	Needs an industrial district in at least one colony — vehicles are built there
+Призывников не больше {0} — половины жителей империи	No more than {0} conscripts — half of the empire's population
+Сооружений не больше {0}: по одному на колонию плюс уровни укреплений баз	No more than {0} structures: one per colony plus starbase fortification levels
+Минных полей не больше {0}	No more than {0} minefields
+Гарнизонных отрядов не больше {0} — трети жителей империи	No more than {0} garrison units — a third of the empire's population
+Пополнение армии	Army reinforcements
+Ждёт места в очереди: заказов не больше двух на линию производства	Waiting for a queue slot: no more than two orders per production line
+Ждёт ресурсов: на один заказ уходит не больше четверти запасов	Waiting for resources: one order uses no more than a quarter of the stockpile
+<color=#F2C766><b>Десант</b> · мест {0}</color>\n	<color=#F2C766><b>Troops</b> · {0} slots</color>\n
+<color=#8AA2A8>При штурме корабль сам берёт лучшие карты из резерва империи (готово: {0}). Погрузка не нужна</color>	<color=#8AA2A8>In an assault the ship takes the best cards from the empire reserve on its own (ready: {0}). No loading needed</color>
+СОСТАВ АРМИИ	ARMY COMPOSITION
+РЕЗЕРВ	RESERVE
+В составе	In the army
+ВРУЧНУЮ	MANUAL
+<b>Автосостав</b>\nИмперия сама подбирает карты под размер армии: пехота, техника, приказы и оборона, лучшие из открытых. Состав обновляется с новыми технологиями	<b>Auto composition</b>\nThe empire picks cards for the army size on its own: infantry, vehicles, orders and defenses, the best of those unlocked. The composition updates with new technologies
+<b>Вручную</b>\nВы сами задаёте, сколько карт каждого вида держать, — кнопками −/+ под картами. Любое изменение включает этот режим	<b>Manual</b>\nYou set how many cards of each kind to keep with the −/+ buttons under the cards. Any change switches to this mode
+<b>Размер армии</b>\nСколько карт империя держит в резерве в режиме «Авто». Больше армия — больше содержание	<b>Army size</b>\nHow many cards the empire keeps in reserve in "Auto" mode. A bigger army costs more upkeep
+РЕЗЕРВ ИМПЕРИИ	EMPIRE RESERVE
+Карт в резерве	Cards in reserve
+Готовы к бою	Ready for battle
+В производстве	In production
+Размер армии	Army size
+Карт в составе	Cards in composition
+<color=#FF8080>Нет колоний с жителями — производить армию негде</color>	<color=#FF8080>No populated colonies — nowhere to raise an army</color>
+Линий производства: <b>{0}</b> <color=#8AA2A8>(районы {1} + {2})</color>\nПризывников: <b>{3}/{4}</b> <color=#8AA2A8>(половина жителей)</color>\nСооружений обороны: до <b>{5}</b>	Production lines: <b>{0}</b> <color=#8AA2A8>(districts {1} + {2})</color>\nConscripts: <b>{3}/{4}</b> <color=#8AA2A8>(half the population)</color>\nDefense structures: up to <b>{5}</b>
+Армия для штурма и обороны колоний. Задайте состав — империя сама производит и пополняет карты. Карты открываются технологиями	The army for assaulting and defending colonies. Set the composition and the empire builds and replenishes the cards itself. Cards are unlocked by technologies
+<b>Как это работает</b>\nКнопки −/+ под картой — сколько таких держать в армии (с Shift — по 5). Империя сама заказывает недостающее и пополняет потери, когда хватает ресурсов.\nПри штурме в бой идут лучшие карты резерва — сколько поместится на корабли у цели: корвет 2 места, фрегат 4, эсминец 6. При обороне — сколько вместит колония.	<b>How it works</b>\nThe −/+ buttons under a card set how many to keep in the army (Shift: by 5). The empire orders what is missing and replaces losses on its own when resources allow.\nIn an assault the best reserve cards go into battle, as many as fit on the ships at the target: corvette 2 slots, frigate 4, destroyer 6. In defense, as many as the colony can hold.
+<b>Резерв</b>\nОбщий для всей империи: грузить на корабли и развозить по колониям ничего не нужно.\nРаненые лечатся 30 дней и пропускают бои. Выжившие в бою получают звезду ветерана.	<b>Reserve</b>\nShared by the whole empire: nothing needs to be loaded onto ships or moved between colonies.\nThe wounded heal for 30 days and skip battles. Survivors of a battle earn a veteran star.
+ПЕХОТА · НУЖЕН ГОРОДСКОЙ РАЙОН	INFANTRY · NEEDS AN URBAN DISTRICT
+ТЕХНИКА · НУЖЕН ПРОМЫШЛЕННЫЙ РАЙОН	VEHICLES · NEEDS AN INDUSTRIAL DISTRICT
+ОБОРОНА · ТОЛЬКО ДЛЯ ЗАЩИТЫ КОЛОНИЙ	DEFENSES · COLONY DEFENSE ONLY
+В ПРОИЗВОДСТВЕ · {0} · ЛИНИЙ {1}   ·   клик по карте — отменить заказ	IN PRODUCTION · {0} · LINES {1}   ·   click a card to cancel the order
+в очереди	queued
+в резерве {0} · строится {1}	{0} in reserve · {1} being built
+в резерве {0}	{0} in reserve
+ждёт	waiting
+\n\nВ составе армии: <b>{0}</b> · в резерве {1} · строится {2}	\n\nIn the army: <b>{0}</b> · {1} in reserve · {2} being built
+\n<color=#8AA2A8>Мест на кораблях: {0}</color>	\n<color=#8AA2A8>Ship slots: {0}</color>
+\n<color=#8AA2A8>−/+ — сколько держать в армии (Shift — по 5)</color>	\n<color=#8AA2A8>−/+ sets how many to keep in the army (Shift: by 5)</color>
+РЕЗЕРВ ИМПЕРИИ · {0}	EMPIRE RESERVE · {0}
+Резерв пока пуст — карты в производстве, империя заказывает их сама, когда хватает ресурсов	The reserve is empty for now — cards are in production; the empire orders them itself when resources allow
+Резерв пуст — включите «Авто» или задайте состав армии на вкладке «Состав армии»	The reserve is empty — turn on "Auto" or set the army composition on the "Army composition" tab
+Сооружения, мины и гарнизонные отряды идут в бой только при обороне колоний	Structures, minefields and garrison units only fight when defending colonies
+десант {0}	troops {0}
+В бой пойдут {0} карт из резерва империи (мест на кораблях: {1})	{0} cards from the empire reserve will fight (ship slots: {1})
+Резерв армии пуст — в бой пойдут только экипажи. Состав армии — в «Арсенале» (J)	The army reserve is empty — only the crews will fight. Army composition is in the "Arsenal" (J)
+<b>Арсенал</b>\nСостав армии для штурма и обороны колоний. Империя сама производит и пополняет карты, в бой они идут из общего резерва	<b>Arsenal</b>\nThe army for assaulting and defending colonies. The empire builds and replenishes the cards itself; they fight from a shared reserve

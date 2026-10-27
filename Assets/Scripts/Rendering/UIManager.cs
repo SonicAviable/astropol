@@ -636,7 +636,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                  Loc.T("<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов"), "K");
             Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ToggleWindow(NavWindow.Designer), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"), "N");
             Item("NavArmy", LGIcon.Swords, Loc.T("Арсенал"), new Color(0.95f, 0.45f, 0.35f), () => ToggleWindow(NavWindow.Army), null,
-                 Loc.T("<b>Арсенал</b>\nКарты наземных войск: производство в колониях, десант на кораблях, гарнизоны. Нужны для штурма осаждённых колоний"), "J");
+                 Loc.T("<b>Арсенал</b>\nСостав армии для штурма и обороны колоний. Империя сама производит и пополняет карты, в бой они идут из общего резерва"), "J");
             Item("NavFleet", LGIcon.Fleet, Loc.T("Флот"), DS.NeonCyan, SelectAllWarships, null, Loc.T("<b>Флот</b>\nВыделить все военные флоты"), "G");
             Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, null, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V");
             Item("NavWonder", LGIcon.Wonder, Loc.T("Чудо фракции"), new Color(1f, 0.78f, 0.35f), () => ToggleWindow(NavWindow.Wonder), null,
