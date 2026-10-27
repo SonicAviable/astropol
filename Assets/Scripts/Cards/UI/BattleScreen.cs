@@ -958,7 +958,9 @@ namespace StellarisClone.Cards
                 var p = _fx.Local(pv.Rt);
                 _fx.Dust(p + new Vector2(0, -60), 0.7f);
                 _fx.Ring(p, new Color(0.5f, 0.85f, 1f, 0.7f), 40f, 220f, 0.35f);
-                SFXManager.Play(Sfx.CardPlace);
+                // Карта легла на стол — приказ уходит по рации
+                SFXManager.Play(Sfx.CardPlace, 0.5f, 1f, Pan(p));
+                SFXManager.Play(Sfx.RadioOrder, 1f, UnityEngine.Random.Range(0.97f, 1.03f));
                 LayoutAll(false);
                 LayoutHand(false);
                 RefreshPanels();
@@ -980,7 +982,8 @@ namespace StellarisClone.Cards
             HidePreview(null);
             Destroy(pv.gameObject);
             AddHandCard(pv.Card, false);
-            SFXManager.Play(Sfx.CardPick, 0.8f, 0.9f);
+            SFXManager.Play(Sfx.CardPick, 0.6f, 0.9f);
+            SFXManager.Play(Sfx.RadioCancel);
             LayoutAll(false);
             RefreshPanels();
         }
@@ -1137,6 +1140,9 @@ namespace StellarisClone.Cards
         }
 
         private float _ambientT;
+
+        /// <summary>Стереопанорама по положению на столе: выстрел слева звучит слева.</summary>
+        private static float Pan(Vector2 local) => Mathf.Clamp(local.x / 900f, -0.75f, 0.75f);
 
         // ---------- звуковой фон: ветер над полем и редкие далёкие разрывы ----------
 
@@ -1352,7 +1358,8 @@ namespace StellarisClone.Cards
             Hook(pv);
             _pending[bc] = pv;
             pv.Punch(0.3f);
-            SFXManager.Play(Sfx.CardPlace);
+            SFXManager.Play(Sfx.CardPlace, 0.5f);
+            SFXManager.Play(Sfx.RadioOrder);
             LayoutAll(false);
             RefreshPanels();
         }

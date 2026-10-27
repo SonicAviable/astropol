@@ -38,6 +38,7 @@ namespace StellarisClone.Core.Audio
         GunRifle, GunAuto, GunSniper, GunHeavy, GunMortar, ShellWhistle, GunLaser, GunFlame,
         Boom, BoomSmall, ImpactMetal, ImpactFlesh, ImpactShield, UnitDown, Whoosh,
         GunCock, EngineRev, Servo, Radio, BoomFar, ElecZap,
+        RadioOrder, RadioCancel,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -235,6 +236,9 @@ namespace StellarisClone.Core.Audio
             S(Sfx.Radio, 0.30f, 2, 0.30f, 0.03f, 1, 1, SfxBus.World);
             S(Sfx.BoomFar, 0.30f, 2, 0.80f, 0.06f, 1, 0, SfxBus.World);
             S(Sfx.ElecZap, 0.38f, 4, 0.05f, 0.06f, 1, 1, SfxBus.World);
+            // Карта на стол — приказ уходит по рации (ответ на действие игрока — шина интерфейса)
+            S(Sfx.RadioOrder, 0.42f, 2, 0.08f, 0.02f);
+            S(Sfx.RadioCancel, 0.36f, 2, 0.08f, 0.02f);
             return d;
         }
 
@@ -1514,7 +1518,7 @@ namespace StellarisClone.Core.Audio
             {
                 case Sfx.CardDraw: case Sfx.CardPick: case Sfx.CardHover: case Sfx.CardFlip: case Sfx.Whoosh: return Sfx.PanelSlide;
                 case Sfx.CardPlace: case Sfx.CardSlam: return Sfx.DealPlace;
-                case Sfx.OrderCast: case Sfx.Radio: return Sfx.HoloScan;
+                case Sfx.OrderCast: case Sfx.Radio: case Sfx.RadioOrder: case Sfx.RadioCancel: return Sfx.HoloScan;
                 case Sfx.GunCock: case Sfx.Servo: return Sfx.DealPlace;
                 case Sfx.EngineRev: return Sfx.Disengage;
                 case Sfx.BoomFar: return Sfx.ExplosionSmall;

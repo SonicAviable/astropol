@@ -369,6 +369,37 @@ def build(src, out):
         r = highpass(lowpass(norm(cut(L(BSB(n)), t, d)), 3800), 350)
         radio.append(fade(r, 0.005, 0.3))
     emit('Radio', radio, peak=-4.0)
+    # --- карта на стол = приказ уходит по рации: щелчок тангенты, «пшш» шумоподавителя, треск эфира,
+    #     короткий сигнал цифровой линии, «роджер-бип» и хвост шума. Всё через полосу рации 300–3400 Гц с перегрузом.
+    def radio_chain(x, drive=2.5):
+        return highpass(lowpass(soft(x, drive), 3400), 300)
+
+    def tone(f, dur, amp=1.0):
+        t = np.arange(int(dur * SR)) / SR
+        e = np.minimum(1, t / 0.004) * np.minimum(1, (dur - t) / 0.006)
+        return np.sin(2 * np.pi * f * t) * e * amp
+
+    def hiss(dur, decay):
+        t = np.arange(int(dur * SR)) / SR
+        return RNG.standard_normal(len(t)) * np.exp(-t / decay)
+
+    statics = [norm(cut(L(BSB(n)), t, 0.45)) for n, t in (('0313', 0.15), ('0313', 1.95), ('0312', 2.5), ('0312', 3.3))]
+    order_tx = []
+    for i in range(4):
+        click = highpass(hiss(0.012, 0.002), 2000)
+        k = 1.0 + 0.04 * i
+        parts = [(click, 0.6, 0),
+                 (hiss(0.09, 0.03), 0.35, 0.01),                                   # «пшш» — открылся шумоподавитель
+                 (statics[i] * np.linspace(1, 0.6, len(statics[i])), 0.45, 0.03),   # эфир
+                 (tone(1250 * k, 0.045), 0.32, 0.10), (tone(1870 * k, 0.045), 0.32, 0.15),   # цифровая «рукопожатие»
+                 (tone(2400 * k, 0.07), 0.28, 0.40),                                # «роджер-бип»
+                 (hiss(0.16, 0.05), 0.4, 0.47)]                                     # «кшш» — конец передачи
+        tx = radio_chain(mix(*parts))
+        order_tx.append(fade(tx, 0.001, 0.15))
+    emit('RadioOrder', order_tx, peak=-3.0)
+    emit('RadioCancel', [fade(radio_chain(mix((highpass(hiss(0.012, 0.002), 2000), 0.6, 0), (hiss(0.08, 0.025), 0.35, 0.01),
+                                                (tone(1870, 0.05), 0.3, 0.07), (tone(1250, 0.07), 0.3, 0.13),
+                                                (hiss(0.14, 0.04), 0.4, 0.22))), 0.001, 0.2) for _ in range(3)], peak=-4.0)
     sweep = L(BSB('2618'))
     emit('OrderCast', [mix((R(radio, i), 0.9, 0), (highpass(lowpass(norm(cut(sweep, 0.85 + i * 1.3, 0.7)), 4000), 300), 0.45, 0.12),
                            (norm(L(BSB(str(1984 + i)))), 0.5, 0.65)) for i in range(4)], peak=-3.0)

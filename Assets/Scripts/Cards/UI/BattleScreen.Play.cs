@@ -76,8 +76,8 @@ namespace StellarisClone.Cards
             _fx.Explosion(land, 0.9f * scale);
             _fx.Dust(land, 1.4f * scale);
             _fx.Shake(10f * scale, 0.35f);
-            SFXManager.Play(Sfx.BoomSmall, 0.8f, 0.85f);
-            SFXManager.Play(Sfx.CardSlam, 0.7f, 0.8f);
+            SFXManager.Play(Sfx.BoomSmall, 0.8f, 0.85f, Pan(land));
+            SFXManager.Play(Sfx.CardSlam, 0.7f, 0.8f, Pan(land));
         }
 
         // ==================== ХОД ====================
@@ -345,7 +345,7 @@ namespace StellarisClone.Cards
             v.SetAlpha(1f);
             v.SetStatus(null, Color.clear);
             bool wasDown = !v.FaceUp;
-            if (wasDown) { v.SetFace(true, false); SFXManager.Play(Sfx.CardFlip, 0.8f, Random.Range(0.95f, 1.08f)); yield return W(0.22f); }
+            if (wasDown) { v.SetFace(true, false); SFXManager.Play(Sfx.CardFlip, 0.8f, Random.Range(0.95f, 1.08f), Pan(_fx.Local(v.Rt))); yield return W(0.22f); }
             v.RefreshNumbers(u.BasePower, u.Armor, u.MaxArmor, false);
             v.Punch(u.Def.Has(Kw.Vehicle) ? 0.35f : 0.22f);
             var p = _fx.Local(v.Rt);
@@ -359,8 +359,8 @@ namespace StellarisClone.Cards
                 _fx.Burst(p, 30, CardSprites.Spark, new Color(1f, 0.85f, 0.45f), 200f, 520f, 0.4f, 0.9f, 20f, 6f, 0f, 2f, align: true, stretch: 3f);
                 _fx.Flash(new Color(1f, 0.85f, 0.5f), 0.25f);
             }
-            if (heavy) { _fx.Shake(9f, 0.3f); SFXManager.Play(Sfx.ImpactMetal, 0.8f, 0.7f); }
-            SFXManager.Play(Sfx.CardSlam, heavy ? 1f : 0.7f, heavy ? 0.85f : 1f);
+            if (heavy) { _fx.Shake(9f, 0.3f); SFXManager.Play(Sfx.ImpactMetal, 0.8f, 0.7f, Pan(p)); }
+            SFXManager.Play(Sfx.CardSlam, heavy ? 1f : 0.7f, heavy ? 0.85f : 1f, Pan(p));
             // Голос юнита: техника заводит дизель, сооружения и дроны — сервоприводы, пехота передёргивает затвор
             if (u.Def.Has(Kw.Vehicle)) SFXManager.PlayDelayed(Sfx.EngineRev, 0.12f, 0.9f, Random.Range(0.9f, 1.05f));
             else if (u.Def.Kind == CardKind.Structure || u.Def.Has(Kw.Drone)) SFXManager.PlayDelayed(Sfx.Servo, 0.1f, 0.9f);
@@ -596,7 +596,6 @@ namespace StellarisClone.Cards
             var s = _sec[sector];
             s.HighC = new Color(1f, 0.82f, 0.4f);
             s.HighA = 0.55f;
-            SFXManager.Play(Sfx.Radio, 0.45f);
             yield return W(0.3f);
         }
 
@@ -629,8 +628,8 @@ namespace StellarisClone.Cards
                 _fx.Shake(16f, 0.4f);
                 _fx.Dust(b, 1.6f);
                 _fx.Impact(b, ang, new Color(1f, 0.8f, 0.5f), 1.4f);
-                SFXManager.Play(Sfx.ImpactMetal, 1f, 0.6f);
-                SFXManager.Play(Sfx.CardSlam, 1f, 0.7f);
+                SFXManager.Play(Sfx.ImpactMetal, 1f, 0.6f, Pan(b));
+                SFXManager.Play(Sfx.CardSlam, 1f, 0.7f, Pan(b));
                 yield return W(0.25f);
                 yield break;
             }
@@ -639,7 +638,7 @@ namespace StellarisClone.Cards
             if (d.Has(Kw.Flame))
             {
                 // Огнемёт: плотная струя пламени и жар на цели
-                SFXManager.Play(Sfx.GunFlame, 1f, Random.Range(0.92f, 1.08f));
+                SFXManager.Play(Sfx.GunFlame, 1f, Random.Range(0.92f, 1.08f), Pan(a));
                 _fx.Particles?.Play(CardParticles.Fx.Flame, a, 1f, ang);
                 for (int i = 0; i < 6; i++)
                 {
@@ -659,14 +658,14 @@ namespace StellarisClone.Cards
                 _fx.Muzzle(a, 90f, c, 1.4f);
                 _fx.Smoke(a, 0.5f, new Color(0.35f, 0.33f, 0.3f, 0.6f));
                 _fx.Shake(5f, 0.15f);
-                SFXManager.Play(Sfx.GunMortar, 0.9f);
+                SFXManager.Play(Sfx.GunMortar, 0.9f, 1f, Pan(a));
                 SFXManager.PlayDelayed(Sfx.ShellWhistle, dur * Pace * 0.35f / Mathf.Max(0.1f, _animSpeed), 0.7f);
                 _fx.Projectile(a, b, c, dur * Pace, 16f, true);
                 StartCoroutine(ShellTrail(a, b, dur * Pace));
                 yield return W(dur);
                 _fx.Explosion(b, 0.75f);
                 _fx.Shake(10f, 0.3f);
-                SFXManager.Play(Sfx.BoomSmall, 0.8f);
+                SFXManager.Play(Sfx.BoomSmall, 0.8f, 1f, Pan(b));
                 yield return W(0.12f);
                 yield break;
             }
@@ -678,7 +677,7 @@ namespace StellarisClone.Cards
                 yield return W(0.22f);
                 _fx.Muzzle(a, ang, c, 1f);
                 _fx.Beam(a, b, new Color(1f, 0.95f, 0.75f), 3f, 0.12f);
-                SFXManager.Play(Sfx.GunSniper);
+                SFXManager.Play(Sfx.GunSniper, 1f, 1f, Pan(a));
                 yield return W(0.05f);
                 _fx.Impact(b, ang, new Color(1f, 0.9f, 0.6f), 1.1f);
                 yield return W(0.08f);
@@ -693,7 +692,7 @@ namespace StellarisClone.Cards
                 {
                     _fx.Muzzle(a, ang, c, heavy ? 1.3f : 0.8f);
                     _fx.Beam(a + Random.insideUnitCircle * 6f, b + Random.insideUnitCircle * 10f, c, heavy ? 7f : 4f, 0.14f);
-                    SFXManager.Play(Sfx.GunLaser, heavy ? 1f : 0.75f, heavy ? 0.8f : Random.Range(0.95f, 1.1f));
+                    SFXManager.Play(Sfx.GunLaser, heavy ? 1f : 0.75f, heavy ? 0.8f : Random.Range(0.95f, 1.1f), Pan(a));
                     _fx.Impact(b, ang, c, heavy ? 1.2f : 0.8f);
                     if (heavy) _fx.Energy(b, c, 0.6f);
                     yield return W(0.09f);
@@ -705,25 +704,25 @@ namespace StellarisClone.Cards
             int shots = heavy ? 1 : 3;
             float fly = heavy ? 0.2f : 0.16f;
             bool auto = !heavy && (d.Power >= 3 || d.Has(Kw.Drone));
-            if (heavy) SFXManager.Play(Sfx.GunHeavy, 1f, Random.Range(0.92f, 1.05f));
-            else if (auto) SFXManager.Play(Sfx.GunAuto, 0.9f);
+            if (heavy) SFXManager.Play(Sfx.GunHeavy, 1f, Random.Range(0.92f, 1.05f), Pan(a));
+            else if (auto) SFXManager.Play(Sfx.GunAuto, 0.9f, 1f, Pan(a));
             for (int i = 0; i < shots; i++)
             {
                 var spread = Random.insideUnitCircle * (heavy ? 6f : 16f);
                 _fx.Muzzle(a, ang, c, heavy ? 1.5f : 0.75f);
                 _fx.Bullet(a, b + spread, c, fly * Pace, heavy ? 22f : 11f);
-                if (!heavy && !auto) SFXManager.Play(Sfx.GunRifle, i == 0 ? 0.9f : 0.6f, Random.Range(0.94f, 1.08f));
+                if (!heavy && !auto) SFXManager.Play(Sfx.GunRifle, i == 0 ? 0.9f : 0.6f, Random.Range(0.94f, 1.08f), Pan(a));
                 if (heavy) { src.Punch(0.08f); _fx.Shake(4f, 0.12f); }
                 bool flesh = tgt.Card.Def.Has(Kw.Infantry) || tgt.Card.Def.Has(Kw.Militia);
                 StartCoroutine(Later(fly, () =>
                 {
                     _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f, flesh);
-                    SFXManager.Play(flesh ? Sfx.ImpactFlesh : Sfx.ImpactMetal, heavy ? 0.9f : 0.45f, Random.Range(0.9f, 1.15f));
+                    SFXManager.Play(flesh ? Sfx.ImpactFlesh : Sfx.ImpactMetal, heavy ? 0.9f : 0.45f, Random.Range(0.9f, 1.15f), Pan(b));
                 }));
                 yield return W(heavy ? 0.05f : 0.07f);
             }
             yield return W(fly);
-            if (heavy) { _fx.Flipbook("fx_explosion", 6, 6, b, 120f, 0.7f, Color.white, 170f, Random.Range(0f, 360f)); _fx.Shake(8f, 0.2f); SFXManager.Play(Sfx.BoomSmall, 0.6f, 1.1f); }
+            if (heavy) { _fx.Flipbook("fx_explosion", 6, 6, b, 120f, 0.7f, Color.white, 170f, Random.Range(0f, 360f)); _fx.Shake(8f, 0.2f); SFXManager.Play(Sfx.BoomSmall, 0.6f, 1.1f, Pan(b)); }
         }
 
         /// <summary>Шлейф дыма за навесным снарядом (повторяет его дугу).</summary>
@@ -756,7 +755,7 @@ namespace StellarisClone.Cards
             else
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 0.6f);
             bool metal = def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure || def.Has(Kw.Drone);
-            SFXManager.Play(metal ? Sfx.ImpactMetal : Sfx.ImpactFlesh, 0.55f, Random.Range(0.9f, 1.15f));
+            SFXManager.Play(metal ? Sfx.ImpactMetal : Sfx.ImpactFlesh, 0.55f, Random.Range(0.9f, 1.15f), Pan(p));
             v.RefreshNumbers(v.ShownPower, v.ShownArmor - e.Amount, v.MaxArmor);
             yield return W(0.12f);
         }
@@ -773,23 +772,23 @@ namespace StellarisClone.Cards
             {
                 _fx.Explosion(p, def.Cost >= 5 ? 1.6f : 1.1f);
                 _fx.Shake(def.Cost >= 5 ? 18f : 10f, 0.4f);
-                SFXManager.Play(def.Cost >= 5 ? Sfx.Boom : Sfx.BoomSmall, 0.9f);
+                SFXManager.Play(def.Cost >= 5 ? Sfx.Boom : Sfx.BoomSmall, 0.9f, 1f, Pan(p));
                 SFXManager.PlayDelayed(Sfx.UnitDown, 0.08f, 0.7f);
             }
             else if (def.Has(Kw.Drone))
             {
                 _fx.Sparks(p, new Color(0.85f, 0.95f, 1f), 24, 1.1f);
                 _fx.Smoke(p, 0.6f);
-                SFXManager.Play(Sfx.BoomSmall, 0.45f, 1.4f);
-                SFXManager.Play(Sfx.ImpactMetal, 0.6f, 1.3f);
+                SFXManager.Play(Sfx.BoomSmall, 0.45f, 1.4f, Pan(p));
+                SFXManager.Play(Sfx.ImpactMetal, 0.6f, 1.3f, Pan(p));
             }
             else
             {
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 1.5f);
                 _fx.Particles?.Play(CardParticles.Fx.FleshHit, p, 1.3f, 90f);
                 _fx.Dust(p + new Vector2(0, -50), 0.6f);
-                SFXManager.Play(Sfx.ImpactFlesh, 0.9f, 0.8f);
-                SFXManager.Play(Sfx.UnitDown, 0.45f, 1.15f);
+                SFXManager.Play(Sfx.ImpactFlesh, 0.9f, 0.8f, Pan(p));
+                SFXManager.Play(Sfx.UnitDown, 0.45f, 1.15f, Pan(p));
             }
             AddLog(Loc.F("{0} — <color=#FF8A80>{1} погиб</color>", SideName(v.Side), def.Name));
             StartCoroutine(Shatter(v, hard));
@@ -878,7 +877,7 @@ namespace StellarisClone.Cards
             v.Rt.anchoredPosition = new Vector2(0, e.Text == "apc" ? 0 : 240);
             v.Punch(0.35f);
             _fx.Dust(land, 0.9f);
-            SFXManager.Play(Sfx.CardSlam, 0.8f);
+            SFXManager.Play(Sfx.CardSlam, 0.8f, 1f, Pan(land));
             AddLog(Loc.F("{0}: {1} в строю", SideName(u.Side), u.Def.Name));
             LayoutAll(false);
             yield return W(0.3f);

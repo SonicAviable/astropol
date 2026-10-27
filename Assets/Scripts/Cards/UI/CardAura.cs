@@ -20,7 +20,7 @@ namespace StellarisClone.Cards
         /// <summary>0..1 — сила бегущих огоньков и искр.</summary>
         public float Comets;
         /// <summary>Ширина ореола наружу от края карты, px.</summary>
-        public float Width = 24f;
+        public float Width = 10f;
         /// <summary>Скругление контура (как у рамки карты), px.</summary>
         public float Corner = 12f;
         /// <summary>Насколько контур заходит под край карты, px.</summary>
@@ -97,7 +97,7 @@ namespace StellarisClone.Cards
             // Искры-угольки срываются с голов огоньков и улетают наружу, слегка всплывая
             if (Comets > 0.05f && isActiveAndEnabled)
             {
-                _emit += dt * 34f * Comets;
+                _emit += dt * 20f * Comets;
                 while (_emit >= 1f) { _emit -= 1f; Emit(); }
             }
             for (int i = _sparks.Count - 1; i >= 0; i--)
@@ -125,10 +125,10 @@ namespace StellarisClone.Cards
             _sparks.Add(new Spark
             {
                 P = p + n * (Inset + Random.Range(0f, 4f)),
-                V = n * Random.Range(35f, 110f) + tan * Random.Range(-40f, 25f),
+                V = n * Random.Range(20f, 60f) + tan * Random.Range(-25f, 15f),
                 Max = max,
                 Life = max,
-                Size = Random.Range(3.5f, 8f) * Mathf.Clamp(Width / 24f, 0.6f, 1.6f),
+                Size = Random.Range(2f, 4f) * Mathf.Clamp(Width / 10f, 0.6f, 1.4f),
             });
         }
 
@@ -187,7 +187,7 @@ namespace StellarisClone.Cards
                 }
                 comet *= Comets;
                 float b = Level * flick + comet;
-                float wm = (0.7f + 0.45f * flick) * (1f + 0.55f * Mathf.Min(1f, comet));
+                float wm = (0.9f + 0.15f * flick) * (1f + 0.35f * Mathf.Min(1f, comet));
                 var col = Color.Lerp(Tint, hot, Mathf.Clamp01(comet * 0.8f));
                 var inner = col; inner.a = Mathf.Clamp01(b);
                 var mid = col; mid.a = Mathf.Clamp01(b * 0.55f);

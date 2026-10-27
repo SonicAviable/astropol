@@ -122,7 +122,7 @@ namespace StellarisClone.Cards
             var auraRt = LGBuild.Rect(_content, "Aura");
             auraRt.Stretch();
             _aura = auraRt.gameObject.AddComponent<CardAura>();
-            _aura.Width = 26f * gs;
+            _aura.Width = 10f * gs;
             _aura.Corner = 13f * gs;
             _aura.Inset = 3f * gs;
             _aura.Tint = _frameColor;
@@ -465,8 +465,8 @@ namespace StellarisClone.Cards
             _glowPulse += dt;
             float g = GlowBoost;
             bool focus = Selected || (_hovered && _hoverable);
-            if (Playable) g = Mathf.Max(g, 0.42f + 0.12f * Mathf.Sin(_glowPulse * 2.6f));
-            if (focus) g = Mathf.Max(g, 0.85f);
+            if (Playable) g = Mathf.Max(g, 0.32f + 0.08f * Mathf.Sin(_glowPulse * 2.6f));
+            if (focus) g = Mathf.Max(g, 0.7f);
             float comets = focus ? 1f : Mathf.Max(Playable ? 0.2f : 0f, Mathf.Clamp01(GlowBoost) * 0.8f);
             GlowBoost = Mathf.MoveTowards(GlowBoost, 0f, dt * 1.5f);
             var gc = focus ? new Color(1f, 0.78f, 0.32f) : Playable ? new Color(0.3f, 1f, 0.5f) : _frameColor;

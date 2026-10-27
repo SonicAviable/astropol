@@ -31,4 +31,5 @@ python3 Tools/card_audio/build.py <папка_исходников> Assets/Resou
 | ImpactMetal / Flesh / Shield, UnitDown | стальные полосы и лом, удар и земля, разряд и гул трансформатора |
 | GunCock, EngineRev, Servo | появление юнита: затвор (пехота), дизель (техника), пневматика (сооружения, дроны) |
 | Radio, OrderCast | треск рации (захват сектора, приказы) |
+| RadioOrder, RadioCancel | карта легла на стол / снята: щелчок тангенты, «пшш» шумоподавителя, треск эфира, сигнал цифровой линии, «роджер-бип»; всё в полосе рации 300–3400 Гц с перегрузом |
 | CardDraw / Hover / Pick / Place / Slam / Flip, Whoosh | настоящие карты (Kenney Casino), удар о стол, «вжух» |
