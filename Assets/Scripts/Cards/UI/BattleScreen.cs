@@ -278,7 +278,7 @@ namespace StellarisClone.Cards
             _particles = CardParticles.Create(_fxLayer);
             _particles.Speed = _animSpeed;
             _particles.SetActive(true);
-            _fx.P = _particles;
+            _fx.Particles = _particles;
 
             _overlay = LGBuild.Rect(croot, "Overlay");
             _overlay.Stretch();

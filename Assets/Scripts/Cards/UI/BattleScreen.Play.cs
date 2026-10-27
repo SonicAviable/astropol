@@ -72,7 +72,7 @@ namespace StellarisClone.Cards
             _fx.Projectile(from, land, new Color(1f, 0.7f, 0.35f), dur * Pace, 30f * scale);
             _fx.Line(from, land, new Color(1f, 0.55f, 0.2f, 0.5f), 16f * scale, (dur + 0.25f) * Pace);
             yield return W(dur);
-            _fx.P?.Play(CardParticles.Fx.Dust, land, scale);
+            _fx.Particles?.Play(CardParticles.Fx.Dust, land, scale);
             _fx.Explosion(land, 0.9f * scale);
             _fx.Dust(land, 1.4f * scale);
             _fx.Shake(10f * scale, 0.35f);
@@ -444,7 +444,7 @@ namespace StellarisClone.Cards
                         _fx.Burst(p, 1, CardSprites.Glow, new Color(1f, 0.2f, 0.1f, 0.9f), 0, 0, 0.25f, 0.25f, 24f, 10f);
                         yield return W(0.07f);
                     }
-                    _fx.P?.Play(CardParticles.Fx.Plasma, target, 1.5f);
+                    _fx.Particles?.Play(CardParticles.Fx.Plasma, target, 1.5f);
                     _fx.Line(top, target, new Color(1f, 1f, 1f, 1f), 160f, 0.55f);
                     _fx.Line(top, target, new Color(0.6f, 0.9f, 1f, 0.9f), 280f, 0.8f);
                     _fx.Flash(Color.white, 0.95f, 2.2f);
@@ -497,7 +497,7 @@ namespace StellarisClone.Cards
                     break;
                 case "O9":   // ЭМИ
                     _fx.Energy(target, new Color(0.45f, 0.8f, 1f), 1.6f);
-                    _fx.P?.Play(CardParticles.Fx.Electric, target, 1.3f);
+                    _fx.Particles?.Play(CardParticles.Fx.Electric, target, 1.3f);
                     _fx.Ring(target, new Color(0.4f, 0.75f, 1f, 1f), 40f, 900f, 0.7f);
                     _fx.Ring(target, new Color(0.7f, 0.9f, 1f, 0.8f), 20f, 600f, 0.5f);
                     _fx.Sparks(target, new Color(0.55f, 0.85f, 1f), 40, 1.4f);
@@ -619,7 +619,7 @@ namespace StellarisClone.Cards
             {
                 // Огнемёт: плотная струя пламени и жар на цели
                 SFXManager.Play(Sfx.WeaponEnergy, 0.7f, 0.55f);
-                _fx.P?.Play(CardParticles.Fx.Flame, a, 1f, ang);
+                _fx.Particles?.Play(CardParticles.Fx.Flame, a, 1f, ang);
                 for (int i = 0; i < 6; i++)
                 {
                     _fx.Burst(a, 4, CardSkin.Spr(i % 2 == 0 ? "k_fire1" : "k_flame"), new Color(1f, 0.6f, 0.2f, 0.95f), 650f, 900f, 0.28f, 0.38f, 30f, 90f, -60f, 1f, ang, 14f, end: new Color(0.5f, 0.12f, 0.04f, 0f));
@@ -754,7 +754,7 @@ namespace StellarisClone.Cards
             else
             {
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 1.5f);
-                _fx.P?.Play(CardParticles.Fx.FleshHit, p, 1.3f, 90f);
+                _fx.Particles?.Play(CardParticles.Fx.FleshHit, p, 1.3f, 90f);
                 _fx.Dust(p + new Vector2(0, -50), 0.6f);
                 SFXManager.Play(Sfx.HitArmor, 0.8f, 0.7f);
             }

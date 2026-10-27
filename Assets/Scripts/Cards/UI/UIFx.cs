@@ -61,7 +61,7 @@ namespace StellarisClone.Cards
         private readonly List<(Text t, RectTransform rt, Vector2 pos, float age, float life, Color c)> _numbers = new List<(Text, RectTransform, Vector2, float, float, Color)>();
         public float Speed = 1f;
         /// <summary>Настоящие частицы Particle Pack поверх стола (null — только спрайты).</summary>
-        public CardParticles P;
+        public CardParticles Particles;
 
         public RectTransform Layer => _layer;
 
@@ -206,7 +206,7 @@ namespace StellarisClone.Cards
         {
             // Настоящий взрыв из пака: огонь, дым, обломки, ударная волна; спрайты — только вспышка и нагар сверху
             var big = scale >= 1.1f ? CardParticles.Fx.BigExplosion : scale >= 0.6f ? CardParticles.Fx.SmallExplosion : CardParticles.Fx.TinyExplosion;
-            if (P != null && P.Play(big, pos, Mathf.Max(0.6f, scale)))
+            if (Particles != null && Particles.Play(big, pos, Mathf.Max(0.6f, scale)))
             {
                 Burst(pos, 1, K("k_light"), new Color(1f, 0.85f, 0.55f, 1f), 0f, 0f, 0.25f, 0.25f, 120f * scale, 380f * scale, 0f, 0f, end: new Color(1f, 0.4f, 0.1f, 0f), rotate: false);
                 Burst(pos, 1, K("k_scorch"), new Color(0.05f, 0.03f, 0.02f, 0.55f), 0f, 0f, 2.5f, 2.5f, 150f * scale, 160f * scale, 0f, 0f);
@@ -225,7 +225,7 @@ namespace StellarisClone.Cards
         /// <summary>Энергетический разряд (щит, ЭМИ, пси): флипбук энергии в цвете c.</summary>
         public void Energy(Vector2 pos, Color c, float scale = 1f)
         {
-            if (P != null && P.Play(CardParticles.Fx.Energy, pos, scale)) { Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 0.8f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 220f * scale, 0f, 0f, rotate: false); return; }
+            if (Particles != null && Particles.Play(CardParticles.Fx.Energy, pos, scale)) { Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 0.8f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 220f * scale, 0f, 0f, rotate: false); return; }
             Flipbook("fx_energy", 6, 6, pos, 200f * scale, 0.8f, c, 280f * scale, Random.Range(0f, 360f));
             Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 1f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 260f * scale, 0f, 0f, rotate: false);
         }
@@ -268,7 +268,7 @@ namespace StellarisClone.Cards
         /// <summary>Попадание: вспышка-звезда, искры по направлению выстрела, ударная волна.</summary>
         public void Impact(Vector2 pos, float dirDeg, Color c, float scale = 1f, bool flesh = false)
         {
-            P?.Play(flesh ? CardParticles.Fx.FleshHit : CardParticles.Fx.MetalHit, pos, scale, dirDeg);
+            Particles?.Play(flesh ? CardParticles.Fx.FleshHit : CardParticles.Fx.MetalHit, pos, scale, dirDeg);
             Burst(pos, 1, K("k_star2"), new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f), 1f), 0f, 0f, 0.14f, 0.16f, 70f * scale, 130f * scale, 0f, 0f, rotate: true);
             Burst(pos, Mathf.RoundToInt(8 * scale) + 2, CardSprites.Spark, c, 200f * scale, 520f * scale, 0.15f, 0.35f, 16f * scale, 4f, 500f, 2f, dirDeg + 180f, 110f, align: true, stretch: 3f);
             Ring(pos, new Color(c.r, c.g, c.b, 0.6f), 10f * scale, 90f * scale, 0.22f);
@@ -277,7 +277,7 @@ namespace StellarisClone.Cards
         /// <summary>Вспышка выстрела у ствола, направленная по углу ang (градусы).</summary>
         public void Muzzle(Vector2 pos, float ang, Color c, float scale = 1f)
         {
-            if (P != null && P.Play(CardParticles.Fx.Muzzle, pos, scale, ang)) return;
+            if (Particles != null && Particles.Play(CardParticles.Fx.Muzzle, pos, scale, ang)) return;
             var p = Get(K(Random.value < 0.5f ? "k_muzzle1" : "k_muzzle2"));
             if (p == null) return;
             p.Pos = pos; p.Vel = Vector2.zero; p.Life = 0.09f; p.Size0 = 64f * scale; p.Size1 = 80f * scale;
@@ -469,7 +469,7 @@ namespace StellarisClone.Cards
 
         public void ClearAll()
         {
-            P?.Clear();
+            Particles?.Clear();
             foreach (var p in _pool) { p.Alive = false; if (p.Img != null) p.Img.enabled = false; }
             foreach (var f in _fbs) { f.Alive = false; if (f.Img != null) f.Img.enabled = false; }
             foreach (var n in _numbers) if (n.t != null) Destroy(n.t.gameObject);
