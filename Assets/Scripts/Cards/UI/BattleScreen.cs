@@ -592,7 +592,8 @@ namespace StellarisClone.Cards
             _turnPips.Clear();
             for (int i = 0; i < BattleState.Turns; i++)
             {
-                const float pw = 24f, gap = 5f;
+                const float gap = 5f;
+                float pw = Mathf.Min(24f, (Inner - 8f - (BattleState.Turns - 1) * gap) / BattleState.Turns);
                 float x0 = -(BattleState.Turns * pw + (BattleState.Turns - 1) * gap) * 0.5f + pw * 0.5f;
                 var pip = LGBuild.Panel(_board, "TurnPip", new Color(1f, 1f, 1f, 0.12f));
                 pip.sprite = CardSprites.Round;

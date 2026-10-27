@@ -187,7 +187,7 @@ namespace StellarisClone.Rendering
                     InspNote(LGIcon.Weapons, deck > 0
                         ? Loc.F("Десант на кораблях: {0} карт", deck)
                         : Loc.T("На кораблях нет десанта — загрузите карты в «Арсенале» (J); в бой пойдут только экипажи"), deck > 0 ? DS.Gold : DS.TextMuted);
-                    string tip = Loc.T("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, 6 ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт");
+                    string tip = Loc.F("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт", StellarisClone.Cards.BattleState.Turns);
                     InspButton(Loc.T("ШТУРМ"), LGIcon.Target, new Color(0.55f, 0.16f, 0.12f, 0.95f), blocker, tip,
                         () => StellarisClone.Cards.AssaultLink.StartPlayerAssault(system, false), system);
                     InspButton(Loc.T("АВТОБОЙ"), LGIcon.Fast, DS.BtnNeutral, blocker, Loc.T("Штурм без экрана боя: исход рассчитают правила, решения примет ИИ"),

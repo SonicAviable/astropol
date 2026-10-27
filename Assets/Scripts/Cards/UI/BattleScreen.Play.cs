@@ -171,7 +171,17 @@ namespace StellarisClone.Cards
                     if (e.Side == _P)
                     {
                         var c = FindUnshownHandCard(e.Def);
-                        if (c != null) { AddHandCard(c, true); SFXManager.Play(Sfx.CardDraw, 0.8f); yield return W(0.14f); }
+                        if (c != null)
+                        {
+                            AddHandCard(c, true);
+                            SFXManager.Play(Sfx.CardDraw, 0.8f);
+                            if (e.Text == "reinforce")
+                            {
+                                AddLog(Loc.F("<color=#7CF2D8>Подкрепления: {0}</color>", e.Def.Name));
+                                SFXManager.Play(Sfx.Radio, 0.7f);
+                            }
+                            yield return W(0.14f);
+                        }
                     }
                     break;
 
@@ -848,6 +858,19 @@ namespace StellarisClone.Cards
             if (e.Text == "smoke")
             {
                 yield break;   // дым уже показан приказом
+            }
+            if (e.Text == "breach_warn")
+            {
+                // Перевес в Штабе при снятом щите: ещё ход — и прорыв
+                var hq = _sec[e.Sector];
+                hq.HighC = new Color(1f, 0.35f, 0.3f);
+                hq.HighA = 1f;
+                AddLog(Loc.T("<color=#FF8A80>Штаб под угрозой: ещё ход — и прорыв</color>"));
+                SFXManager.Play(Sfx.Radio, 1f, 0.9f);
+                yield return Banner(Loc.T("ШТАБ ПОД УГРОЗОЙ"),
+                    e.Side == _P ? Loc.T("Удержите перевес ещё ход — и прорыв") : Loc.T("Ещё ход — и враг прорвётся. Усильте Штаб!"),
+                    new Color(1f, 0.4f, 0.32f), 1.1f);
+                yield break;
             }
             var v = ViewOf(e.Uid);
             if (v == null) yield break;

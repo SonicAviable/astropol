@@ -70,7 +70,7 @@ namespace StellarisClone.Cards
             for (int s = 0; s < 2; s++)
             {
                 var sd = Sides[s];
-                sd.Points = Turn + sd.PointsPerTurn + sd.BonusNext;
+                sd.Points = Math.Min(Turn, PointsCap) + sd.PointsPerTurn + sd.BonusNext;
                 sd.BonusNext = 0;
                 if (HoldsSector(s, SectorType.Mine)) sd.BonusNext += 1;
                 if (Turn > 1)
@@ -351,19 +351,24 @@ namespace StellarisClone.Cards
             UpdateControl();
             if (shieldBefore && !ShieldUp) Log(EvType.ShieldDown, Defender, SectorIndex(SectorType.HQ));
 
-            // Прорыв: щит снят, в Штабе у атакующего ≥ 9 силы и больше, чем у защитника
+            // Прорыв: щит снят, в Штабе у атакующего ≥ 9 силы и больше, чем у защитника — два хода подряд.
+            // После первого хода — тревога «Штаб под угрозой»: у защитника есть ход, чтобы ответить.
             int hq = SectorIndex(SectorType.HQ);
+            bool threat = false;
             if (hq >= 0 && !ShieldUp)
             {
                 int a = SectorPower(Attacker, hq), d = SectorPower(Defender, hq);
-                if (a >= BreachPower && a > d)
+                threat = a >= BreachPower && a > d;
+                if (threat && BreachWarned)
                 {
                     Log(EvType.Breach, Attacker, hq, amount: a);
                     Result.Breach = true;
                     Finish(Attacker);
                     return;
                 }
+                if (threat && Turn < Turns) Log(EvType.Status, Attacker, hq, amount: a, text: "breach_warn");
             }
+            BreachWarned = threat;
             // Одна из сторон осталась без войск и карт
             for (int s = 0; s < 2; s++)
             {

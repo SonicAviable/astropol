@@ -124,15 +124,17 @@ namespace StellarisClone.Cards
     }
 
     /// <summary>
-    /// Карточный штурм: 3 сектора, 6 ходов. Обе стороны выкладывают карты рубашкой вверх, потом всё раскрывается,
+    /// Карточный штурм: 3 сектора, 8 ходов. Обе стороны выкладывают карты рубашкой вверх, потом всё раскрывается,
     /// и в каждом секторе идёт перестрелка: сила наносит урон, броня его принимает, погибшие уходят навсегда.
-    /// Победа — 2 сектора из 3 после 6-го хода или прорыв в Штаб при снятом щите. Ничья — в пользу защитника.
+    /// Очки приказов растут с номером хода до <see cref="PointsCap"/>; кончилась колода — приходят подкрепления
+    /// (ополчение у обороны, экипажи с кораблей у десанта). Победа — 2 сектора из 3 после 8-го хода или прорыв
+    /// в Штаб при снятом щите, если перевес продержался два хода подряд (после первого — тревога). Ничья — защитнику.
     /// Чистый C# без Unity: экран боя только показывает события из <see cref="Events"/>; автобой и ИИ против ИИ
     /// гоняют те же правила мгновенно.
     /// </summary>
     public sealed partial class BattleState
     {
-        public const int Turns = 6, StartHand = 4, HandLimit = 8, BreachPower = 9;
+        public const int Turns = 8, StartHand = 4, HandLimit = 8, BreachPower = 9, PointsCap = 6;
         public const int Attacker = 0, Defender = 1;
 
         public readonly BSide[] Sides = new BSide[2];
@@ -144,6 +146,8 @@ namespace StellarisClone.Cards
         public bool Over;
         public int Winner = -1;
         public bool WeatherActive;
+        /// <summary>Штаб под угрозой: перевес для прорыва уже был в конце прошлого хода — ещё ход, и прорыв.</summary>
+        public bool BreachWarned;
         /// <summary>Погода (описание для экрана), открывается на 3-м ходу.</summary>
         public string WeatherName, WeatherText;
         public BattleResult Result;
@@ -414,7 +418,17 @@ namespace StellarisClone.Cards
             var s = Sides[side];
             for (int i = 0; i < n; i++)
             {
-                if (s.Deck.Count == 0 || s.Hand.Count >= HandLimit) return;
+                if (s.Hand.Count >= HandLimit) return;
+                if (s.Deck.Count == 0)
+                {
+                    // Колода кончилась — подкрепления: жители колонии берут оружие, флот спускает экипажи
+                    var rd = side == Defender ? CardCatalog.Militia : s.FleetPower > 0f ? CardCatalog.Crew : null;
+                    if (Turn < 2 || rd == null) return;
+                    var rc = new BCard(rd);
+                    s.Hand.Add(rc);
+                    Log(EvType.Draw, side, def: rd, text: "reinforce");
+                    return;
+                }
                 var c = s.Deck[0];
                 s.Deck.RemoveAt(0);
                 s.Hand.Add(c);

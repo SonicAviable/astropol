@@ -6685,3 +6685,9 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Очки приказов: столько стоят карты. Каждый ход их становится больше	Order points: cards cost this much. You get more every turn
 Свернуть / развернуть хронику	Collapse / expand the battle log
 <b>Погода</b>\nОткроется на 3-м ходу и изменит правила боя до конца штурма	<b>Weather</b>\nRevealed on turn 3 and changes the rules of battle until the assault ends
+<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт	<b>Ground assault</b>\nA card battle for the colony: 3 sectors, {0} turns. Victory takes the colony at once, without waiting for the siege to end. Killed cards are lost forever, survivors gain experience
+<color=#FF8A80>Штаб под угрозой: ещё ход — и прорыв</color>	<color=#FF8A80>HQ under threat: one more turn and it falls</color>
+ШТАБ ПОД УГРОЗОЙ	HQ UNDER THREAT
+Удержите перевес ещё ход — и прорыв	Hold the advantage one more turn to break through
+Ещё ход — и враг прорвётся. Усильте Штаб!	One more turn and the enemy breaks through. Reinforce the HQ!
+<color=#7CF2D8>Подкрепления: {0}</color>	<color=#7CF2D8>Reinforcements: {0}</color>

@@ -71,6 +71,8 @@ namespace StellarisClone.Cards
                 // Победа — 2 сектора из 3, поэтому все сектора важны; Штаб чуть важнее (прорыв), электростанция —
                 // пока защищает щит и турели
                 case SectorType.HQ:
+                    // «Штаб под угрозой» — ещё ход, и прорыв: атакующий давит, защитник бросает туда всё
+                    if (b.BreachWarned) return atk ? 1.6f : 1.8f;
                     return atk ? (b.ShieldUp ? 1.0f : 1.35f) : 1.2f;
                 case SectorType.Power:
                     if (!atk) return 1.12f;
