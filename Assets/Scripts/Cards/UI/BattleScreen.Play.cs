@@ -99,6 +99,7 @@ namespace StellarisClone.Cards
                 _pending[p.card] = v;
                 LayoutAll(false);
                 v.Punch(0.2f);
+                FlyFx(v, new Color(1f, 0.45f, 0.35f));
                 SFXManager.Play(Sfx.CardPlace, 0.7f, 0.92f);
                 yield return W(0.14f);
             }
@@ -284,6 +285,7 @@ namespace StellarisClone.Cards
                     SFXManager.Play(Sfx.Radio, 0.9f, e.Side == _P ? 1f : 0.92f);
                     SFXManager.Play(Sfx.CardSlam, 0.6f, 0.7f);
                     _fx.Ring(_fx.Local(_sec[e.Sector].PowerBar), e.Side == _P ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f), 60f, 520f, 0.6f);
+                    VortexFx(_fx.Local(_sec[e.Sector].PowerBar), e.Side == _P ? new Color(0.45f, 1f, 0.65f) : new Color(1f, 0.35f, 0.3f), 0.8f);
                     yield return W(0.45f);
                     break;
                 }
@@ -295,6 +297,8 @@ namespace StellarisClone.Cards
                         var p = _fx.Local(_rows[hq, _P == BattleState.Defender ? 1 : 0]);
                         _fx.Energy(p, new Color(0.55f, 0.85f, 1f), 2f);
                         _fx.Ring(p, new Color(0.5f, 0.8f, 1f, 1f), 60f, 700f, 0.7f);
+                        _arc?.RingWave(p, new Color(0.55f, 0.9f, 1f, 1f), 60f, 620f, 12f, 0.7f, 0.6f);
+                        _arc?.Spikes(p, new Color(0.6f, 0.9f, 1f), 14, 320f, 9f, 0.4f);
                         _fx.Sparks(p, new Color(0.6f, 0.85f, 1f), 50, 1.6f);
                         _fx.Flash(new Color(0.6f, 0.85f, 1f), 0.4f);
                         _fx.Shake(12f, 0.5f);
@@ -312,6 +316,7 @@ namespace StellarisClone.Cards
                 {
                     int hq = e.Sector;
                     var p = _fx.Local(_sec[hq].Col);
+                    VortexFx(p, new Color(1f, 0.3f, 0.2f), 1.6f);
                     for (int i = 0; i < 6; i++)
                     {
                         _fx.Explosion(p + Random.insideUnitCircle * 160f, 1.3f);
@@ -366,6 +371,7 @@ namespace StellarisClone.Cards
             _fx.Ring(p, new Color(1f, 0.9f, 0.7f, 0.6f), 40f, heavy ? 360f : 220f, 0.4f);
             _fx.Burst(p, 1, CardSkin.Spr("k_flare"), new Color(1f, 0.92f, 0.75f, 0.9f), 0f, 0f, 0.3f, 0.3f, 120f, heavy ? 420f : 300f, 0f, 0f, rotate: false);
             _fx.Burst(p, 10, CardSkin.Spr("k_spark1"), new Color(1f, 0.85f, 0.55f, 0.9f), 60f, 220f, 0.3f, 0.6f, 14f, 4f, -60f, 2f);
+            RevealFx(v, heavy, u.Def.Kind == CardKind.Hero);
             if (u.Def.Kind == CardKind.Hero)
             {
                 _fx.Burst(p, 30, CardSprites.Spark, new Color(1f, 0.85f, 0.45f), 200f, 520f, 0.4f, 0.9f, 20f, 6f, 0f, 2f, align: true, stretch: 3f);
@@ -619,7 +625,10 @@ namespace StellarisClone.Cards
             var src = ViewOf(e.Uid);
             var tgt = ViewOf(e.Uid2);
             if (src == null || tgt == null) yield break;
-            yield return FocusSector(e.Sector >= 0 ? e.Sector : _state.FindUnit(e.Uid2)?.Sector ?? -1);
+            int shotSec = e.Sector >= 0 ? e.Sector : _state.FindUnit(e.Uid2)?.Sector ?? -1;
+            bool newSector = shotSec >= 0 && shotSec != _focusSector;
+            yield return FocusSector(shotSec);
+            if (newSector) SweepRow(shotSec, tgt.Side == _P ? 1 : 0, ShotColor(src.Side, src));
             var a = _fx.Local(src.Rt, new Vector2(0, src.Side == _P ? 70 : -70));
             var b = _fx.Local(tgt.Rt);
             var dir = (b - a).normalized;
@@ -635,6 +644,21 @@ namespace StellarisClone.Cards
             src.GlowBoost = 0.8f;
             yield return W(0.1f);
 
+            if (d.Kind == CardKind.Hero && e.Text != "crush")
+            {
+                // Командир бьёт голографическим клинком: взмах через цель, режущая дуга, удар
+                var gold = new Color(1f, 0.8f, 0.38f);
+                float reach = Mathf.Clamp((b - a).magnitude * 0.95f, 300f, 620f);
+                float sweep = src.Side == _P ? 1f : -1f;
+                StartCoroutine(GhostBlade(a, ang + 75f * sweep, ang - 75f * sweep, gold, reach, 0.3f));
+                yield return W(0.17f);
+                HitFx(b, gold, ang, 1.4f, "cross");
+                _fx.Shake(9f, 0.25f);
+                SFXManager.Play(Sfx.ImpactMetal, 0.9f, 1.2f, Pan(b));
+                yield return W(0.2f);
+                yield break;
+            }
+
             if (e.Text == "crush")
             {
                 // Таран: карта вминается в цель, земля трясётся
@@ -643,6 +667,8 @@ namespace StellarisClone.Cards
                 _fx.Shake(16f, 0.4f);
                 _fx.Dust(b, 1.6f);
                 _fx.Impact(b, ang, new Color(1f, 0.8f, 0.5f), 1.4f);
+                HitFx(b, new Color(1f, 0.7f, 0.35f), ang, 1.6f, "bolt");
+                _arc?.Slash(b, 150f, ang + 80f, ang - 80f, 42f, new Color(1f, 0.95f, 0.8f), new Color(1f, 0.6f, 0.25f), new Color(0.9f, 0.25f, 0.08f), 0.45f, 0.7f, 0f, true);
                 SFXManager.Play(Sfx.ImpactMetal, 1f, 0.6f, Pan(b));
                 SFXManager.Play(Sfx.CardSlam, 1f, 0.7f, Pan(b));
                 yield return W(0.25f);
@@ -661,6 +687,8 @@ namespace StellarisClone.Cards
                     yield return W(0.035f);
                 }
                 _fx.Burst(b, 6, CardSkin.Spr("k_fire2"), new Color(1f, 0.55f, 0.15f, 0.9f), 20f, 80f, 0.4f, 0.7f, 60f, 110f, -120f, 1f, 90f, 80f);
+                _fx.Flipbook("fx_fireball", 8, 8, b, 170f, 0.7f, new Color(1f, 0.85f, 0.7f, 0.95f), 220f, Random.Range(0f, 360f), default, 0f, true);
+                _arc?.Embers(b, new Color(1f, 0.85f, 0.5f), new Color(0.8f, 0.2f, 0.05f, 0f), 18, 120f, 420f, 90f, 200f, 0.4f, 0.9f, 200f);
                 _fx.Smoke(b, 0.6f);
                 yield return W(0.12f);
                 yield break;
@@ -679,6 +707,8 @@ namespace StellarisClone.Cards
                 StartCoroutine(ShellTrail(a, b, dur * Pace));
                 yield return W(dur);
                 _fx.Explosion(b, 0.75f);
+                _arc?.RingWave(b, new Color(1f, 0.75f, 0.45f, 0.9f), 20f, 220f, 7f, 0.4f, 0.6f);
+                _arc?.Embers(b, new Color(1f, 0.9f, 0.6f), new Color(0.8f, 0.25f, 0.05f, 0f), 22, 200f, 640f, 90f, 220f, 0.4f, 1f, 900f);
                 _fx.Shake(10f, 0.3f);
                 SFXManager.Play(Sfx.BoomSmall, 0.8f, 1f, Pan(b));
                 yield return W(0.12f);
@@ -695,6 +725,8 @@ namespace StellarisClone.Cards
                 SFXManager.Play(Sfx.GunSniper, 1f, 1f, Pan(a));
                 yield return W(0.05f);
                 _fx.Impact(b, ang, new Color(1f, 0.9f, 0.6f), 1.1f);
+                HitFx(b, new Color(1f, 0.85f, 0.55f), ang, 1.1f, "cross");
+                _arc?.Glint((a + b) * 0.5f, new Color(1f, 0.85f, 0.6f), (b - a).magnitude * 1.05f, 5f, 0.18f, ang);
                 yield return W(0.08f);
                 yield break;
             }
@@ -709,6 +741,7 @@ namespace StellarisClone.Cards
                     _fx.Beam(a + Random.insideUnitCircle * 6f, b + Random.insideUnitCircle * 10f, c, heavy ? 7f : 4f, 0.14f);
                     SFXManager.Play(Sfx.GunLaser, heavy ? 1f : 0.75f, heavy ? 0.8f : Random.Range(0.95f, 1.1f), Pan(a));
                     _fx.Impact(b, ang, c, heavy ? 1.2f : 0.8f);
+                    HitFx(b, c, ang, heavy ? 1.3f : 0.75f, "ring");
                     if (heavy) _fx.Energy(b, c, 0.6f);
                     yield return W(0.09f);
                 }
@@ -732,11 +765,13 @@ namespace StellarisClone.Cards
                 StartCoroutine(Later(fly, () =>
                 {
                     _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f, flesh);
+                    _arc?.Spikes(b + spread, c, 5, heavy ? 110f : 60f, heavy ? 6f : 4f, 0.16f);
                     SFXManager.Play(flesh ? Sfx.ImpactFlesh : Sfx.ImpactMetal, heavy ? 0.9f : 0.45f, Random.Range(0.9f, 1.15f), Pan(b));
                 }));
                 yield return W(heavy ? 0.05f : 0.07f);
             }
             yield return W(fly);
+            HitFx(b, c, ang, heavy ? 1.4f : 0.8f, "bolt");
             if (heavy) { _fx.Flipbook("fx_explosion", 6, 6, b, 120f, 0.7f, Color.white, 170f, Random.Range(0f, 360f)); _fx.Shake(8f, 0.2f); SFXManager.Play(Sfx.BoomSmall, 0.6f, 1.1f, Pan(b)); }
         }
 
@@ -783,6 +818,7 @@ namespace StellarisClone.Cards
             var p = _fx.Local(v.Rt);
             var def = v.Card.Def;
             bool hard = def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure;
+            KillFx(p, hard, def.Cost >= 5, def.Has(Kw.Drone) ? new Color(0.6f, 0.9f, 1f) : v.Side == _P ? new Color(1f, 0.5f, 0.35f) : new Color(1f, 0.75f, 0.4f));
             if (hard)
             {
                 _fx.Explosion(p, def.Cost >= 5 ? 1.6f : 1.1f);

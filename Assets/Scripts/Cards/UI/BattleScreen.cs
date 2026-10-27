@@ -191,6 +191,7 @@ namespace StellarisClone.Cards
         {
             StopAllCoroutines();
             _fx?.ClearAll();
+            _arc?.ClearAll();
             _particles?.SetActive(false);
             _ambWant = 0f;
             if (_amb != null) _amb.Stop();
@@ -288,6 +289,7 @@ namespace StellarisClone.Cards
             _particles.Speed = _animSpeed;
             _particles.SetActive(true);
             _fx.Particles = _particles;
+            VfxInit();
 
             _overlay = LGBuild.Rect(croot, "Overlay");
             _overlay.Stretch();
@@ -1005,6 +1007,7 @@ namespace StellarisClone.Cards
                 pv.OnClick = UnplayView;
                 _pending[v.Card] = pv;
                 pv.Punch(0.25f);
+                FlyFx(pv, new Color(0.45f, 0.85f, 1f));
                 var p = _fx.Local(pv.Rt);
                 _fx.Dust(p + new Vector2(0, -60), 0.7f);
                 _fx.Ring(p, new Color(0.5f, 0.85f, 1f, 0.7f), 40f, 220f, 0.35f);
@@ -1077,6 +1080,7 @@ namespace StellarisClone.Cards
         private void Update()
         {
             if (!IsOpen || _state == null) return;
+            VfxTick();
             float dt = Time.unscaledDeltaTime;
             var dead = new List<CardView>();
             foreach (var kv in _targets)

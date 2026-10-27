@@ -43,7 +43,7 @@ namespace StellarisClone.Cards
             public RawImage Img;
             public RectTransform Rt;
             public int Cols, Rows, Frames;
-            public float Age, Dur, Size0, Size1, Rot, Delay;
+            public float Age, Dur, Size0, Size1, Rot, Delay, Aspect = 1f;
             public Vector2 Pos, Vel;
             public Color C;
             public bool Alive;
@@ -88,7 +88,7 @@ namespace StellarisClone.Cards
         private static Material s_glowMat;
 
         /// <summary>Материал «свечения» (UIAdditiveSoft): вспышки, искры, пламя и трассеры складываются со столом как свет.</summary>
-        private static Material GlowMat
+        internal static Material GlowMat
         {
             get
             {
@@ -172,8 +172,12 @@ namespace StellarisClone.Cards
 
         // ---------------------------------------------------------------- флипбуки
 
-        /// <summary>Покадровый атлас tex (cols×rows, кадры слева направо сверху вниз) в точке pos за dur секунд.</summary>
-        public void Flipbook(string tex, int cols, int rows, Vector2 pos, float size, float dur, Color c, float sizeEnd = -1f, float rot = 0f, Vector2 vel = default, float delay = 0f)
+        /// <summary>
+        /// Покадровый атлас tex (cols×rows, кадры слева направо сверху вниз) в точке pos за dur секунд.
+        /// additive — светом (вспышки, огонь, попадания), иначе обычным смешиванием (дым); aspect — высота кадра к ширине.
+        /// </summary>
+        public void Flipbook(string tex, int cols, int rows, Vector2 pos, float size, float dur, Color c, float sizeEnd = -1f, float rot = 0f, Vector2 vel = default,
+                             float delay = 0f, bool additive = false, float aspect = 1f)
         {
             var t = CardSkin.Tex(tex);
             if (t == null || _layer == null) return;
@@ -181,7 +185,7 @@ namespace StellarisClone.Cards
             foreach (var q in _fbs) if (!q.Alive) { f = q; break; }
             if (f == null)
             {
-                if (_fbs.Count >= 60) return;
+                if (_fbs.Count >= 90) return;
                 var go = new GameObject("FB", typeof(RectTransform));
                 go.transform.SetParent(_layer, false);
                 f = new FB { Rt = (RectTransform)go.transform, Img = go.AddComponent<RawImage>() };
@@ -190,6 +194,8 @@ namespace StellarisClone.Cards
                 _fbs.Add(f);
             }
             f.Img.texture = t;
+            f.Img.material = additive ? GlowMat : null;
+            f.Aspect = aspect;
             f.Img.enabled = delay <= 0f;
             f.Rt.SetAsLastSibling();
             f.Cols = cols; f.Rows = rows; f.Frames = cols * rows;
@@ -207,7 +213,7 @@ namespace StellarisClone.Cards
             int cx = fr % f.Cols, cy = fr / f.Cols;
             f.Img.uvRect = new Rect(cx / (float)f.Cols, 1f - (cy + 1) / (float)f.Rows, 1f / f.Cols, 1f / f.Rows);
             float s = Mathf.Lerp(f.Size0, f.Size1, t);
-            f.Rt.sizeDelta = new Vector2(s, s);
+            f.Rt.sizeDelta = new Vector2(s, s * f.Aspect);
             f.Rt.anchoredPosition = f.Pos;
             f.Rt.localRotation = Quaternion.Euler(0, 0, f.Rot);
             f.Img.color = new Color(f.C.r, f.C.g, f.C.b, f.C.a * (t > 0.85f ? 1f - (t - 0.85f) / 0.15f : 1f));
