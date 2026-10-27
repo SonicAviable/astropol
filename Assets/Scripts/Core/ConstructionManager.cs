@@ -6,7 +6,7 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
-    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt, Fortify }
+    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt, Fortify, Troop }
 
     /// <summary>Строительный заказ: оплачен сразу, готов через несколько дней.</summary>
     [Serializable]
@@ -212,6 +212,18 @@ namespace StellarisClone.Core
             return job;
         }
 
+        /// <summary>Очередь карт армии у колонии — PlanetIndex −3: своя очередь, не мешает районам и укреплениям.</summary>
+        public const int TroopLane = -3;
+
+        /// <summary>Карта армии (отряд, техника, оборона) — строится в системе; DesignId — id карты.</summary>
+        public ConstructionJob EnqueueTroopJob(int owner, int systemId, string cardId, float days, float energy, float minerals, float alloys, float influence)
+        {
+            var job = EnqueueSystemJob(JobKind.Troop, owner, systemId, days, energy, minerals, alloys, influence);
+            job.PlanetIndex = TroopLane;
+            job.DesignId = cardId;
+            return job;
+        }
+
         /// <param name="systemId">Верфь, где заложен корабль: там он и появится (−1 — главная верфь владельца).</param>
         public ConstructionJob EnqueueShip(int owner, FleetType type, ShipClass hull, string designId, float energy, float alloys, int systemId = -1)
         {
@@ -375,6 +387,7 @@ namespace StellarisClone.Core
         {
             if (j.Kind == JobKind.Ship) { CompleteShip(j); OnJobCompleted?.Invoke(j); return; }
             if (j.Kind == JobKind.Fortify) { Fortifications.Complete(j); OnJobCompleted?.Invoke(j); return; }
+            if (j.Kind == JobKind.Troop) { StellarisClone.Cards.ArmyManager.Instance?.CompleteJob(j); OnJobCompleted?.Invoke(j); return; }
 
             var p = PlanetOf(j);
             if (p == null || p.OwnerId != j.Owner) return;

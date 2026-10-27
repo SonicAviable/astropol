@@ -1684,6 +1684,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 Loc.F("<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", rep.CivilianUpkeep) +
                 Loc.F("<color=#8AA2A8>Форпосты ({0} × {1:0.#}):</color> <color=#FF8888>-{2:0.#}</color> / мес\n", rep.Outposts, EmpireEconomy.OutpostUpkeep, rep.Outposts * EmpireEconomy.OutpostUpkeep) +
                 (Fortifications.Upkeep(0) > 0f ? Loc.F("<color=#8AA2A8>Укрепления баз:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", Fortifications.Upkeep(0)) : "") +
+                (rep.ArmyUpkeep > 0.01f ? Loc.F("<color=#8AA2A8>Армия (карты):</color> <color=#FF8888>-{0:0.#}</color> / мес\n", rep.ArmyUpkeep) : "") +
                 $"<color=#8AA2A8>──────────────</color>\n" +
                 Loc.F("<color=#8AA2A8>Чистый доход:</color> <color={0}><b>{1:+0.#;-0.#;0} / мес</b></color>\n\n", netColor, net) +
                 Loc.F("<color=#8AA2A8>Флотский лимит: {0} / {1} (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). ", rep.NavalUsed, rep.NavalCapacity, EmpireEconomy.NavalCapacityPerColony) +

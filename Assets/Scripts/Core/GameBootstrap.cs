@@ -117,6 +117,7 @@ namespace StellarisClone.Core
             EnsureComp<VictoryManager>("[Managers] VictoryManager");
             EnsureComp<LandmarkWatcher>("[Managers] LandmarkWatcher");
             EnsureComp<EspionageManager>("[Managers] EspionageManager");
+            EnsureComp<StellarisClone.Cards.ArmyManager>("[Managers] ArmyManager");
         }
 
         /// <summary>Империи-соперники: по одному объекту на каждого (владельцы 1, 2, …).</summary>

@@ -27,6 +27,8 @@ namespace StellarisClone.Core
 
             // Содержание
             public float FleetUpkeep, CivilianUpkeep, OutpostUpkeepTotal;
+            /// <summary>Содержание армии — карт в резерве и на борту (гелий-3 в месяц).</summary>
+            public float ArmyUpkeep;
             public int Outposts;
             public int NavalUsed, NavalCapacity;
             public float OverCapacityMult;
@@ -42,7 +44,7 @@ namespace StellarisClone.Core
             public float Minerals => DistrictMinerals + StationMinerals + LandmarkMinerals - RefiningMinerals;
             public float MineralStorage => BaseMineralStorage + MineralStoragePerColony * Colonies;
             public float Alloys => DistrictAlloys;
-            public float Upkeep => FleetUpkeep + CivilianUpkeep + OutpostUpkeepTotal;
+            public float Upkeep => FleetUpkeep + CivilianUpkeep + OutpostUpkeepTotal + ArmyUpkeep;
         }
 
         /// <summary>Сколько «мест» флота занимает корабль.</summary>
@@ -109,6 +111,7 @@ namespace StellarisClone.Core
             r.UpkeepMult = Mathf.Max(0.3f, bonuses.UpkeepMult);
             r.FleetUpkeep = military * r.OverCapacityMult * r.UpkeepMult;
             r.OutpostUpkeepTotal = r.Outposts * OutpostUpkeep + Fortifications.Upkeep(owner);
+            r.ArmyUpkeep = StellarisClone.Cards.ArmyManager.UpkeepOf(owner);
             return r;
         }
 

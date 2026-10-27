@@ -244,6 +244,7 @@ namespace StellarisClone.Rendering
             JobKind.Robot => Loc.T("роботы"),
             JobKind.GeneAdapt => Loc.T("генная адаптация"),
             JobKind.Fortify => Loc.T("укрепление базы"),
+            JobKind.Troop => Loc.T("отряд армии"),
             _ => Loc.T("заказ")
         };
 

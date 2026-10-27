@@ -30,6 +30,8 @@ namespace StellarisClone.Core
         public const float SiegeDaysPerColony = 8f;
         public const float CapitalSiegeDays = 20f * GamePace.SiegeMult;
         public const float DecayPerDay = 2f;
+        /// <summary>Во сколько раз дольше осада колонии без штурма.</summary>
+        public const float StarvationMult = 3f;
 
         public class Siege
         {
@@ -62,13 +64,22 @@ namespace StellarisClone.Core
 
         public Siege GetSiege(int systemId) => _sieges.TryGetValue(systemId, out var s) ? s : null;
 
+        /// <summary>Штурм отбит — осада начинается заново.</summary>
+        public void ResetSiege(int systemId)
+        {
+            if (_sieges.TryGetValue(systemId, out var s)) s.Progress = 0f;
+        }
+
         public static float RequiredDays(StarSystem sys)
         {
             if (sys == null) return BaseSiegeDays;
             float days = BaseSiegeDays;
             foreach (var p in sys.Planets) if (p.Population > 0) days += SiegeDaysPerColony;
             if (IsCapital(sys)) days += CapitalSiegeDays;
-            return days * Fortifications.SiegeMult(sys.Fortification);
+            days *= Fortifications.SiegeMult(sys.Fortification);
+            // Колонию осада берёт только «голодом» — втрое дольше; быстрый путь — карточный штурм
+            if (StellarisClone.Cards.AssaultLink.IsColony(sys)) days *= StarvationMult;
+            return days;
         }
 
         private static bool IsCapital(StarSystem sys)
@@ -148,6 +159,7 @@ namespace StellarisClone.Core
                 // Несколько кораблей осаждают быстрее (до ×2)
                 siege.Progress += Mathf.Min(2f, 1f + (ships - 1) * 0.25f);
                 if (siege.Progress >= RequiredDays(sys)) captured.Add((sys, attacker));
+                else if (attacker > 0) StellarisClone.Cards.AssaultLink.ThinkAI(sys, attacker);   // ИИ может пойти на штурм
             }
 
             foreach (var (sys, attacker) in captured)
