@@ -6684,3 +6684,4 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Закончить ход  <color=#8AA2A8>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно	End turn  <color=#8AA2A8>(Enter)</color>\nGreen and pulsing — everything playable has been played
 Очки приказов: столько стоят карты. Каждый ход их становится больше	Order points: cards cost this much. You get more every turn
 Свернуть / развернуть хронику	Collapse / expand the battle log
+<b>Погода</b>\nОткроется на 3-м ходу и изменит правила боя до конца штурма	<b>Weather</b>\nRevealed on turn 3 and changes the rules of battle until the assault ends

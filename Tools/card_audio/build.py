@@ -1,5 +1,5 @@
 """
-Звуки карточного боя: нарезка и сведение из CC0-библиотек (см. README.md рядом).
+Звуки карточного боя: нарезка и сведение из CC0-записей (см. README.md рядом).
 
     python3 Tools/card_audio/build.py <папка_с_исходниками> Assets/Resources/Audio/Sfx
 
@@ -184,10 +184,22 @@ def reverb(x, wet=0.18, length=1.2, damp=3500.0, predelay=0.012):
 # ------------------------------------------------------------------ сборка звуков
 
 def build(src, out):
+    """
+    Только настоящие записи: никакой синтетики в бою. Взрыв = реальный хлопок (пушечный салют, дробовик
+    на октаву ниже) + раскат (запись грома и дальнего взрыва) + суббас + осыпающиеся камни и металл;
+    выстрел = запись оружия + хвост отражений + звон гильз; приказ = треск рации.
+    """
     os.makedirs(out, exist_ok=True)
     K = lambda p: os.path.join(src, p)
     FA = K('firearm/Prepared SFX Library/')
+    BSB = lambda n: K('bsb/' + n + ('.flac' if os.path.exists(K('bsb/' + n + '.flac')) else '.wav'))
     made = []
+    cache = {}
+
+    def L(path, rate=1.0):
+        key = (path, rate)
+        if key not in cache: cache[key] = load(path, rate)
+        return cache[key]
 
     def emit(name, variants, peak=-1.0, q=5):
         for old in glob.glob(os.path.join(out, name + '_*.ogg')):
@@ -202,140 +214,195 @@ def build(src, out):
             made.append(p)
         print(f'{name}: {len(variants)}')
 
+    def events(x, thr=-20, gap=0.25):
+        return [i / SR for i in onsets(x, thr, gap)]
+
+    def piece(path, k, dur, rate=1.0, thr=-20, gap=0.25):
+        """k-е событие записи (по атакам), длительность dur."""
+        x = L(path, rate)
+        ev = events(x, thr, gap)
+        return norm(fade(cut(x, ev[k % len(ev)], dur), 0.001, 0.3))
+
     def shots(path, idx, dur, rate=1.0):
-        x = load(FA + path, rate)
+        x = L(FA + path, rate)
         o = onsets(x)
-        return [cut(x, o[i] / SR, dur) for i in idx if i < len(o)]
+        return [norm(cut(x, o[i] / SR, dur)) for i in idx if i < len(o)]
 
-    # --- оружие: одиночные винтовочные выстрелы (АК одиночными, AR-15, СКС)
+    casings556 = [norm(L(BSB(str(i)))) for i in range(1361, 1367)]
+    casings762 = [norm(L(BSB(str(i)))) for i in range(1367, 1372)]
+    thunder = L(BSB('3115'))
+    rumble = [norm(lowpass(fade(cut(thunder, t, 2.6), 0.03, 0.6), 1400)) for t in (1.35, 2.05, 3.35, 3.65)]
+    farboom = [norm(L(BSB('1023'))), norm(L(BSB('1806')))]
+    stones = [piece(BSB('1022'), k, 0.9) for k in range(10)]
+    steel = [norm(L(BSB(n))) for n in ('1771', '1772', '1774', '1776', '1778', '0235')]
+    bangs = [norm(L(K(f'oga_bang/{n}.ogg'))) for n in ('cannon_01', 'cannon_02', 'cannon_03', 'cannon_04', 'cannon_05', 'bang_01', 'bang_03', 'bang_06', 'bang_10')]
+    R = lambda lst, i: lst[i % len(lst)]
+
+    # --- винтовка: одиночный выстрел + отражения + звон гильзы о бетон
     rifle = shots('AK-47/C_28P.wav', [0, 1, 2, 3], 1.0) + shots('AR-15/D_32P.wav', [0, 1], 1.0) + shots('SKS/U_14P.wav', [0, 2, 4], 1.0)
-    emit('GunRifle', [soft(fade(norm(s), 0.001, 0.45), 1.3) for s in rifle])
+    rifle += [norm(L(BSB('2853'))), norm(L(BSB('2854')))]
+    emit('GunRifle', [soft(mix((fade(s, 0.001, 0.45), 1.0, 0), (R(casings556, i), 0.10, 0.32 + 0.05 * (i % 3))), 1.3) for i, s in enumerate(rifle)])
 
-    # --- очереди: 3–5 патронов с хвостом (АК, «Карл Густав», ППШ)
+    # --- очередь: 3–5 патронов + россыпь гильз
     def burst(path, start_idx, n, tail=0.7):
-        x = load(FA + path)
+        x = L(FA + path)
         o = onsets(x)
         if start_idx + n - 1 >= len(o): return None
         t0, t1 = o[start_idx] / SR, o[start_idx + n - 1] / SR
-        return fade(cut(x, t0, t1 - t0 + tail), 0.001, 0.35)
-    bursts = [burst('AK-47/C_29P.wav', 0, 4), burst('AK-47/C_29P.wav', 4, 4), burst('AK-47/C_27P.wav', 0, 5),
-              burst('Carl Gustav M45/G_33P.wav', 0, 4), burst('Carl Gustav M45/G_33P.wav', 4, 3), burst('PPSh/P_16P.wav', 0, 5)]
-    emit('GunAuto', [soft(norm(b), 1.3) for b in bursts if b is not None])
+        return norm(fade(cut(x, t0, t1 - t0 + tail), 0.001, 0.35)), (t1 - t0) / max(1, n - 1), n
+    raw = [burst('AK-47/C_29P.wav', 0, 4), burst('AK-47/C_29P.wav', 4, 4), burst('AK-47/C_27P.wav', 0, 5),
+           burst('Carl Gustav M45/G_33P.wav', 0, 4), burst('Carl Gustav M45/G_33P.wav', 4, 3), burst('PPSh/P_16P.wav', 0, 5)]
+    autos = []
+    for i, b in enumerate([r for r in raw if r is not None]):
+        sig, step, n = b
+        parts = [(sig, 1.0, 0)]
+        for j in range(n):
+            parts.append((R(casings762, i + j), 0.08, 0.3 + j * step + 0.03 * RNG.random()))
+        autos.append(soft(mix(*parts), 1.3))
+    emit('GunAuto', autos)
 
-    # --- снайпер: мощный одиночный (Мосин, .300 Blackout, Марлин) — длинный хвост эха
+    # --- снайпер: тяжёлый выстрел, долгое эхо, затем щелчок затвора
     sn = shots('Mosin Nagant/M_21P.wav', [0, 1, 2, 3], 1.6) + shots('Savage 10 .300 Blackout/T_27P.wav', [0, 1], 1.6)
-    emit('GunSniper', [soft(fade(mix((norm(s), 1.0, 0), (sub(110, 50, 0.3, 0.07), 0.35, 0)), 0.001, 0.5), 1.4) for s in sn])
+    sn.append(norm(cut(L(BSB('0397')), 0.98, 1.8)))
+    emit('GunSniper', [soft(mix((fade(s, 0.001, 0.5), 1.0, 0), (sub(110, 50, 0.3, 0.07), 0.3, 0),
+                                (norm(L(BSB(str(1988 + i % 4)))), 0.16, 0.75), (R(casings762, i), 0.07, 1.05)), 1.4)
+                       for i, s in enumerate(sn)])
 
-    # --- тяжёлое орудие (танк, турель): дробовик на октаву ниже + суббас + треск + зал
+    # --- танковое орудие / турель: пушечный хлопок + дробовик на октаву ниже + суббас + раскат + лязг
     heavy = []
-    for path, i in [('Mossberg/N_30P.wav', 0), ('Mossberg/N_30P.wav', 1), ('Nova/O_21P.wav', 0), ('Nova/O_21P.wav', 1)]:
-        x = load(FA + path, rate=0.62)
+    for i, (path, k) in enumerate([('Mossberg/N_30P.wav', 0), ('Mossberg/N_30P.wav', 1), ('Nova/O_21P.wav', 0), ('Nova/O_21P.wav', 1)]):
+        x = L(FA + path, rate=0.55)
         o = onsets(x)
-        if i >= len(o): continue
-        s = norm(cut(x, o[i] / SR, 1.8))
-        crack = norm(load(K(f'sci-fi-sounds/Audio/explosionCrunch_00{i % 5}.ogg')))
-        heavy.append(soft(reverb(fade(mix((s, 1.0, 0), (sub(95, 34, 0.7, 0.22), 0.8, 0), (highpass(crack, 900), 0.25, 0.005)), 0.001, 0.45), 0.16, 1.4), 1.6))
+        body = norm(cut(x, o[k] / SR, 1.6))
+        bang = norm(lowpass(R(bangs, i), 5000))
+        parts = [(bang, 0.8, 0), (body, 0.9, 0.002), (sub(90, 32, 0.8, 0.25), 0.85, 0),
+                 (R(rumble, i), 0.35, 0.05), (highpass(R(steel, i), 300), 0.12, 0.08)]
+        heavy.append(soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.12, 1.6), 1.6))
     emit('GunHeavy', heavy)
 
-    # --- миномёт / гаубица (навесной): глухой «бумп» и свист снаряда
+    # --- миномёт / гаубица: глухой выстрел вдалеке
     mort = []
-    for path, i in [('Mossberg/N_26P.wav', 0), ('Model 12/K_22P.wav', 0), ('Nova/O_17P.wav', 0)]:
-        x = load(FA + path, rate=0.45)
-        o = onsets(x)
-        s = lowpass(norm(cut(x, o[i] / SR, 1.4)), 2400)
-        mort.append(soft(reverb(fade(mix((s, 1.0, 0), (sub(70, 30, 0.6, 0.2), 0.9, 0)), 0.001, 0.5), 0.2, 1.6), 1.5))
+    for i in range(4):
+        b = norm(lowpass(R(bangs, i + 2), 1600))
+        mort.append(soft(reverb(fade(mix((b, 1.0, 0), (sub(70, 30, 0.6, 0.2), 0.8, 0), (R(rumble, i + 1), 0.3, 0.06)), 0.001, 0.5), 0.18, 1.8), 1.5))
     emit('GunMortar', mort)
-    whistle = []
-    for k in range(3):
-        f0, f1 = 2300 - k * 200, 900 - k * 80
-        w = noise_band(0.62, lambda t, f0=f0, f1=f1: f0 * (f1 / f0) ** t, 0.08)
+
+    # --- снаряд на подлёте: настоящий «вжух» воздуха, ниже и с нарастанием (без мультяшного свиста)
+    rush = []
+    for i, n in enumerate(('1795', '1796', '1800', '1801')):
+        w = norm(L(BSB(n), 0.55))
         tt = np.linspace(0, 1, len(w))
-        whistle.append(fade(w * (0.25 + 0.75 * tt), 0.08, 0.12))
-    emit('ShellWhistle', whistle, peak=-8.0)
+        rush.append(fade(lowpass(w, 3500) * (0.3 + 0.7 * tt ** 1.5), 0.05, 0.1))
+    emit('ShellWhistle', rush, peak=-6.0)
 
-    # --- лазер / плазма (Kenney sci-fi): луч + низкий «тук» отдачи
-    las = [mix((norm(load(K(f'sci-fi-sounds/Audio/laserLarge_00{i}.ogg'))), 1.0, 0), (sub(140, 60, 0.25, 0.05), 0.4, 0)) for i in range(5)]
-    emit('GunLaser', [soft(reverb(fade(l, 0.001, 0.3), 0.14, 0.9), 1.3) for l in las])
+    # --- энергооружие (плазма/рельса): сухой треск выстрела + электрический разряд
+    zap_src = L(BSB('0134'))
+    zaps = [norm(fade(cut(zap_src, t, 0.5), 0.001, 0.5)) for t in events(zap_src, -10, 0.3)[:6]]
+    fence = [piece(BSB('1252'), k, 0.6) for k in range(6)]
+    las = []
+    for i in range(5):
+        crack = highpass(R(rifle, i + 3), 1200)
+        las.append(soft(reverb(mix((crack, 0.7, 0), (R(zaps, i), 0.8, 0.003), (R(fence, i), 0.35, 0.01), (sub(150, 60, 0.2, 0.05), 0.35, 0)), 0.12, 0.9), 1.4))
+    emit('GunLaser', las)
+    emit('ElecZap', [soft(mix((R(zaps, i), 1.0, 0), (R(fence, i + 2), 0.5, 0.05)), 1.3) for i in range(5)])
 
-    # --- огнемёт: рёв форсунки с атакой и хвостом
+    # --- огнемёт: «вуп» воспламенения бензина + рёв горелки
     fl = []
-    for i in range(3):
-        x = norm(load(K(f'sci-fi-sounds/Audio/thrusterFire_00{i}.ogg')))
-        s = x[int(0.3 * SR):int(1.3 * SR)]
-        hiss = noise_band(1.0, lambda t: 2500.0, 0.9)
-        fl.append(fade(mix((s, 1.0, 0), (hiss, 0.12, 0)), 0.03, 0.35))
+    torch = L(BSB('0930'))
+    for i, (n, t) in enumerate((('1341', 0.25), ('1340', 0.25), ('1340', 1.65))):
+        ign = norm(cut(L(BSB(n)), t, 1.1))
+        roar = norm(cut(torch, 2.85 + i * 0.4, 1.1))
+        fl.append(fade(mix((ign, 1.0, 0), (roar, 0.55, 0.05)), 0.01, 0.35))
     emit('GunFlame', fl, peak=-2.0)
 
-    # --- взрывы: треск + тело + суббас + обломки + зал
+    # --- взрывы: хлопок ниже на кварту-октаву + дальний взрыв + раскат + суббас + камни и металл
     def boom(i, big):
-        body = norm(load(K(f'sci-fi-sounds/Audio/lowFrequency_explosion_00{i % 2}.ogg'), 0.8 if big else 1.0))
-        crack = norm(load(K(f'sci-fi-sounds/Audio/explosionCrunch_00{(i * 2) % 5}.ogg'), 0.9 if big else 1.1))
-        alt = norm(load(K('oga_100-CC0-SFX_0/explosion.ogg') if i % 3 == 0 else K(f'oga_sci-fi-sfx/explosion_0{1 + i % 2}.ogg'), 0.85 if big else 1.0))
-        debris = []
+        bang = norm(R(bangs, i) if not big else lowpass(R(bangs, i), 3000))
+        body = norm(L(FA + ('Mossberg/N_30P.wav' if i % 2 else 'Nova/O_21P.wav'), 0.42 if big else 0.6))
+        o = onsets(body)
+        body = norm(cut(body, o[0] / SR, 1.8))
+        parts = [(bang, 0.85, 0), (body, 0.8, 0.002), (R(farboom, i), 0.5 if big else 0.3, 0.01),
+                 (R(rumble, i), 0.75 if big else 0.4, 0.06), (sub(75, 26, 1.1 if big else 0.6, 0.38 if big else 0.18), 1.0 if big else 0.6, 0)]
         for j in range(4 if big else 2):
-            d = norm(load(K(f'impact-sounds/Audio/impactMining_00{(i + j) % 5}.ogg'), 0.9 + 0.2 * RNG.random()))
-            debris.append((highpass(d, 600), 0.12, 0.25 + 0.18 * j + 0.05 * RNG.random()))
-        parts = [(crack, 0.9, 0), (body, 1.0, 0.005), (alt, 0.45, 0.01), (sub(80, 28, 1.0 if big else 0.6, 0.35 if big else 0.18), 1.0 if big else 0.6, 0)] + debris
-        return soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.25 if big else 0.15, 2.0 if big else 1.2), 1.8)
-    emit('Boom', [boom(i, True) for i in range(4)])
-    emit('BoomSmall', [boom(i, False) for i in range(5)])
+            parts.append((highpass(R(stones, i * 3 + j), 250), 0.22 if big else 0.15, 0.3 + 0.22 * j + 0.06 * RNG.random()))
+        if big: parts.append((highpass(R(steel, i), 400), 0.12, 0.45))
+        return soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.22 if big else 0.14, 2.2 if big else 1.3), 1.8)
+    emit('Boom', [boom(i, True) for i in range(5)])
+    emit('BoomSmall', [boom(i + 2, False) for i in range(6)])
+    emit('BoomFar', [norm(lowpass(mix((R(farboom, i), 1.0, 0), (R(rumble, i), 0.8, 0.05)), 900 - 100 * i)) for i in range(4)], peak=-3.0)
 
-    # --- попадания
-    emit('ImpactMetal', [soft(mix((norm(load(K(f'impact-sounds/Audio/impactMetal_heavy_00{i}.ogg'))), 0.8, 0),
-                                   (norm(load(K(f'impact-sounds/Audio/impactPlate_heavy_00{i}.ogg'))), 0.6, 0),
-                                   (sub(160, 70, 0.2, 0.04), 0.35, 0)), 1.4) for i in range(5)])
-    emit('ImpactFlesh', [soft(mix((norm(load(K(f'impact-sounds/Audio/impactPunch_heavy_00{i}.ogg'))), 0.9, 0),
-                                   (norm(load(K(f'impact-sounds/Audio/impactSoft_heavy_00{i}.ogg'))), 0.6, 0.004)), 1.3) for i in range(5)])
-    emit('ImpactShield', [reverb(norm(load(K(f'sci-fi-sounds/Audio/forceField_00{i}.ogg'))), 0.2, 1.0) for i in range(5)])
+    # --- попадания: металл (стальные полосы, лом), пехота (удар + земля), щит (электрический треск)
+    emit('ImpactMetal', [soft(mix((norm(cut(R(steel, i), 0.05, 0.6)), 0.8, 0),
+                                   (norm(L(K(f'impact-sounds/Audio/impactMetal_heavy_00{i}.ogg'))), 0.55, 0),
+                                   (sub(160, 70, 0.2, 0.04), 0.3, 0)), 1.4) for i in range(5)])
+    emit('ImpactFlesh', [soft(mix((norm(L(K(f'impact-sounds/Audio/impactPunch_heavy_00{i}.ogg'))), 0.9, 0),
+                                   (highpass(R(stones, i), 400), 0.35, 0.004)), 1.3) for i in range(5)])
+    hum = L(BSB('0064'))
+    emit('ImpactShield', [soft(reverb(mix((R(fence, i), 0.9, 0), (R(zaps, i + 2), 0.6, 0.02),
+                                           (fade(norm(cut(hum, 1.0 + i, 0.9)), 0.05, 0.6), 0.35, 0)), 0.2, 1.0), 1.3) for i in range(5)])
 
-    # --- гибель юнита: тяжёлый удар, лязг, осыпающиеся обломки
+    # --- гибель: тяжёлый удар, падающий металл, осыпь камней
     down = []
-    for i in range(4):
-        hit = norm(load(K(f'impact-sounds/Audio/impactMetal_heavy_00{(i + 2) % 5}.ogg'), 0.8))
-        clang = norm(load(K(f'impact-sounds/Audio/impactBell_heavy_00{i}.ogg'), 0.7))
-        parts = [(hit, 1.0, 0), (clang, 0.25, 0.02), (sub(70, 30, 0.6, 0.2), 0.7, 0)]
+    for i in range(5):
+        parts = [(norm(L(K(f'impact-sounds/Audio/impactMetal_heavy_00{(i + 2) % 5}.ogg'), 0.8)), 0.8, 0),
+                 (R(steel, i + 1), 0.6, 0.03), (sub(70, 30, 0.6, 0.2), 0.7, 0)]
         for j in range(3):
-            parts.append((highpass(norm(load(K(f'impact-sounds/Audio/impactMining_00{(i + j) % 5}.ogg'), 1.1)), 800), 0.18, 0.18 + 0.15 * j))
-        down.append(soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.18, 1.4), 1.5))
+            parts.append((highpass(R(stones, i * 2 + j), 300), 0.25, 0.2 + 0.18 * j))
+        down.append(soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.14, 1.4), 1.5))
     emit('UnitDown', down)
 
-    # --- карты: бумага + удар о стол
-    C = lambda n: norm(load(K(f'casino-audio/Audio/{n}.ogg')))
+    # --- юнит готов к бою: затвор / заряжание; техника: дизель; сооружение/дрон: пневматика и сервопривод
+    emit('GunCock', [norm(L(BSB(str(n)))) for n in (1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991)], peak=-3.0)
+    eng = []
+    for i, (n, t) in enumerate((('0967', 1.4), ('0967', 3.0), ('1145', 0.75), ('1145', 2.4))):
+        e = norm(cut(L(BSB(n)), t, 1.6))
+        eng.append(fade(e, 0.08, 0.5))
+    emit('EngineRev', eng, peak=-3.0)
+    srv = []
+    for i in range(4):
+        srv.append(mix((norm(L(BSB(str(1491 + i % 3)))), 0.9, 0), (norm(L(BSB(('2911', '2919', '2929')[i % 3]))), 0.5, 0.05)))
+    emit('Servo', srv, peak=-3.0)
+
+    # --- рация: короткий треск эфира (приказы, захват сектора, начало хода)
+    radio = []
+    for i, (n, t, d) in enumerate((('0313', 0.15, 0.9), ('0313', 1.95, 0.9), ('0312', 2.5, 1.0), ('0312', 3.3, 0.9))):
+        r = highpass(lowpass(norm(cut(L(BSB(n)), t, d)), 3800), 350)
+        radio.append(fade(r, 0.005, 0.3))
+    emit('Radio', radio, peak=-4.0)
+    sweep = L(BSB('2618'))
+    emit('OrderCast', [mix((R(radio, i), 0.9, 0), (highpass(lowpass(norm(cut(sweep, 0.85 + i * 1.3, 0.7)), 4000), 300), 0.45, 0.12),
+                           (norm(L(BSB(str(1984 + i)))), 0.5, 0.65)) for i in range(4)], peak=-3.0)
+
+    # --- карты: настоящие карты (Kenney Casino) и удар о стол; переворот — короткий «вжух» воздуха
+    C = lambda n: norm(L(K(f'casino-audio/Audio/{n}.ogg')))
+    W = [norm(L(BSB(n))) for n in ('1795', '1796', '1797', '1798', '1799', '1800', '1801', '1802')]
     emit('CardDraw', [C(f'card-slide-{i}') for i in (1, 3, 5, 7)], peak=-4.0)
     emit('CardHover', [highpass(C(f'card-slide-{i}')[:int(0.14 * SR)], 1500) for i in (2, 4, 6)], peak=-12.0)
     emit('CardPick', [C(f'card-shove-{i}') for i in (1, 2, 3, 4)], peak=-5.0)
-    emit('CardPlace', [mix((C(f'card-place-{i}'), 1.0, 0), (norm(load(K(f'impact-sounds/Audio/impactSoft_medium_00{i}.ogg'))), 0.55, 0.002))
+    emit('CardPlace', [mix((C(f'card-place-{i}'), 1.0, 0), (norm(L(K(f'impact-sounds/Audio/impactSoft_medium_00{i}.ogg'))), 0.55, 0.002))
                        for i in (1, 2, 3, 4)], peak=-3.0)
-    slam = []
-    for i in range(4):
-        slam.append(soft(reverb(mix((C(f'card-place-{1 + i % 4}'), 0.7, 0),
-                                    (norm(load(K(f'impact-sounds/Audio/impactPunch_heavy_00{i}.ogg'))), 0.9, 0.003),
-                                    (norm(load(K(f'impact-sounds/Audio/impactMetal_light_00{i}.ogg'))), 0.25, 0.01),
-                                    (sub(85, 36, 0.55, 0.18), 0.9, 0)), 0.15, 1.1), 1.5))
-    emit('CardSlam', slam)
-    flip = []
-    for i in range(3):
-        wh = noise_band(0.32, lambda t, i=i: 600 * (5.0 + i) ** t, 0.5, 0.3)
-        tt = np.linspace(0, 1, len(wh))
-        wh *= np.sin(np.pi * tt) ** 1.5
-        flip.append(mix((C(f'card-fan-{1 + i % 2}'), 0.6, 0), (wh, 0.5, 0)))
-    emit('CardFlip', flip, peak=-5.0)
-    order = []
-    for i in range(3):
-        rise = noise_band(0.5, lambda t, i=i: 400 * (8.0 + i) ** t, 0.25)
-        tt = np.linspace(0, 1, len(rise))
-        rise *= tt ** 2
-        ping = norm(load(K(f'interface-sounds/Audio/maximize_00{3 + i}.ogg')))
-        field = norm(load(K(f'sci-fi-sounds/Audio/forceField_00{i}.ogg')))
-        order.append(reverb(mix((rise, 0.35, 0), (ping, 0.7, 0.45), (field, 0.35, 0.45)), 0.22, 1.2))
-    emit('OrderCast', order, peak=-3.0)
-    whoosh = []
-    for i in range(3):
-        wh = noise_band(0.7, lambda t, i=i: 250 * (10.0 + 3 * i) ** np.sin(np.pi * t), 0.45, 0.4)
-        tt = np.linspace(0, 1, len(wh))
-        whoosh.append(wh * np.sin(np.pi * tt) ** 2)
-    emit('Whoosh', whoosh, peak=-4.0)
-    print('files:', len(made))
+    emit('CardSlam', [soft(reverb(mix((C(f'card-place-{1 + i % 4}'), 0.7, 0),
+                                      (norm(L(K(f'impact-sounds/Audio/impactPunch_heavy_00{i}.ogg'))), 0.9, 0.003),
+                                      (highpass(R(stones, i + 4), 400), 0.2, 0.01),
+                                      (sub(85, 36, 0.55, 0.18), 0.9, 0)), 0.12, 1.1), 1.5) for i in range(4)])
+    emit('CardFlip', [mix((C(f'card-fan-{1 + i % 2}'), 0.7, 0), (highpass(R(W, i + 2), 500), 0.35, 0)) for i in range(4)], peak=-5.0)
+    emit('Whoosh', [lowpass(R(W, i), 6000) for i in range(8)], peak=-4.0)
+
+    # --- фон боя: ветер над полем (петля), поверх него код изредка пускает BoomFar
+    amb_dir = os.path.join(os.path.dirname(out.rstrip('/')), 'CardBattle')
+    os.makedirs(amb_dir, exist_ok=True)
+    wind = L(BSB('0595'))
+    n, xf = int(34 * SR), int(3 * SR)
+    a = wind[int(5 * SR):int(5 * SR) + n + xf].copy()
+    loop = a[:n].copy()
+    ramp = np.linspace(0, 1, xf)
+    loop[:xf] = a[:xf] * ramp + a[n:n + xf] * (1 - ramp)
+    amb = os.path.join(amb_dir, 'battle_wind.ogg')
+    save(amb, norm(lowpass(loop, 5000), -6.0), 3)
+    if not os.path.exists(amb + '.meta'):
+        with open(amb + '.meta', 'w') as f:
+            f.write(META.replace('loadType: 0', 'loadType: 2').format(guid=uuid.uuid4().hex))
+    print('files:', len(made) + 1)
 
 
 if __name__ == '__main__':

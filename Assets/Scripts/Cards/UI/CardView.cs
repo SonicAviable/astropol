@@ -25,7 +25,8 @@ namespace StellarisClone.Cards
         public RectTransform Rt;
         private RectTransform _content;
         private CanvasGroup _group;
-        private Image _glow, _body, _frame, _sheen, _hitFlash, _cracks, _back, _backPattern, _hpFill, _statusIcon;
+        private CardAura _aura;
+        private Image _body, _frame, _sheen, _hitFlash, _cracks, _back, _backPattern, _hpFill, _statusIcon;
         private RawImage _art, _backEmblem;
         private Text _name, _cost, _power, _armor, _kind, _text, _stars, _statusText;
         private RectTransform _powerBadge, _armorBadge, _sheenRt;
@@ -115,11 +116,16 @@ namespace StellarisClone.Cards
             _content = LGBuild.Rect(Rt, "Content");
             _content.Stretch();
 
-            // Свечение только по контуру карты (середина пустая): доступна — зелёное, наведение — золотое.
-            // Живёт внутри Content — поднимается и наклоняется вместе с картой, а не остаётся «квадратом» на старом месте.
-            float gs = 0.38f * size.y / 280f;
-            _glow = CardSkin.Sliced(_content, "Glow", "glow_edge", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f), gs);
-            _glow.rectTransform.Stretch(-64 * gs, -64 * gs, -64 * gs, -64 * gs);
+            // Живое свечение по контуру (CardAura): доступна — зелёное «дыхание», наведение — золото с бегущими огоньками
+            // и искрами. Живёт внутри Content — поднимается и наклоняется вместе с картой.
+            float gs = size.y / 280f;
+            var auraRt = LGBuild.Rect(_content, "Aura");
+            auraRt.Stretch();
+            _aura = auraRt.gameObject.AddComponent<CardAura>();
+            _aura.Width = 26f * gs;
+            _aura.Corner = 13f * gs;
+            _aura.Inset = 3f * gs;
+            _aura.Tint = _frameColor;
 
             var shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.7f));
             shadow.sprite = CardSprites.RoundGlow;
@@ -458,11 +464,16 @@ namespace StellarisClone.Cards
             // Свечение: доступна для розыгрыша / выбрана / подсветка эффекта
             _glowPulse += dt;
             float g = GlowBoost;
-            if (Playable) g = Mathf.Max(g, 0.26f + 0.12f * Mathf.Sin(_glowPulse * 3f));
-            if (Selected || (_hovered && _hoverable)) g = Mathf.Max(g, 0.9f);
+            bool focus = Selected || (_hovered && _hoverable);
+            if (Playable) g = Mathf.Max(g, 0.42f + 0.12f * Mathf.Sin(_glowPulse * 2.6f));
+            if (focus) g = Mathf.Max(g, 0.85f);
+            float comets = focus ? 1f : Mathf.Max(Playable ? 0.2f : 0f, Mathf.Clamp01(GlowBoost) * 0.8f);
             GlowBoost = Mathf.MoveTowards(GlowBoost, 0f, dt * 1.5f);
-            var gc = (_hovered && _hoverable) || Selected ? new Color(1f, 0.85f, 0.4f) : Playable ? new Color(0.35f, 1f, 0.5f) : _frameColor;
-            _glow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_glow.color.a, Mathf.Clamp01(g), 1f - Mathf.Exp(-dt * 10f)));
+            var gc = focus ? new Color(1f, 0.78f, 0.32f) : Playable ? new Color(0.3f, 1f, 0.5f) : _frameColor;
+            float k = 1f - Mathf.Exp(-dt * 10f);
+            _aura.Tint = Color.Lerp(_aura.Tint, gc, k);
+            _aura.Level = Mathf.Lerp(_aura.Level, Mathf.Clamp01(g), k);
+            _aura.Comets = Mathf.Lerp(_aura.Comets, comets, 1f - Mathf.Exp(-dt * 6f));
         }
 
         // ==================== ВВОД ====================

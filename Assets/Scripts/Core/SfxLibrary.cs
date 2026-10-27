@@ -37,6 +37,7 @@ namespace StellarisClone.Core.Audio
         CardDraw, CardHover, CardPick, CardPlace, CardSlam, CardFlip, OrderCast,
         GunRifle, GunAuto, GunSniper, GunHeavy, GunMortar, ShellWhistle, GunLaser, GunFlame,
         Boom, BoomSmall, ImpactMetal, ImpactFlesh, ImpactShield, UnitDown, Whoosh,
+        GunCock, EngineRev, Servo, Radio, BoomFar, ElecZap,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -228,6 +229,12 @@ namespace StellarisClone.Core.Audio
             S(Sfx.ImpactShield, 0.40f, 3, 0.08f, 0.04f, 1, 1, SfxBus.World);
             S(Sfx.UnitDown, 0.55f, 3, 0.06f, 0.05f, 1, 2, SfxBus.World);
             S(Sfx.Whoosh, 0.34f, 3, 0.06f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.GunCock, 0.40f, 3, 0.05f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.EngineRev, 0.42f, 2, 0.20f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.Servo, 0.38f, 2, 0.10f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.Radio, 0.30f, 2, 0.30f, 0.03f, 1, 1, SfxBus.World);
+            S(Sfx.BoomFar, 0.30f, 2, 0.80f, 0.06f, 1, 0, SfxBus.World);
+            S(Sfx.ElecZap, 0.38f, 4, 0.05f, 0.06f, 1, 1, SfxBus.World);
             return d;
         }
 
@@ -1507,7 +1514,11 @@ namespace StellarisClone.Core.Audio
             {
                 case Sfx.CardDraw: case Sfx.CardPick: case Sfx.CardHover: case Sfx.CardFlip: case Sfx.Whoosh: return Sfx.PanelSlide;
                 case Sfx.CardPlace: case Sfx.CardSlam: return Sfx.DealPlace;
-                case Sfx.OrderCast: return Sfx.HoloScan;
+                case Sfx.OrderCast: case Sfx.Radio: return Sfx.HoloScan;
+                case Sfx.GunCock: case Sfx.Servo: return Sfx.DealPlace;
+                case Sfx.EngineRev: return Sfx.Disengage;
+                case Sfx.BoomFar: return Sfx.ExplosionSmall;
+                case Sfx.ElecZap: return Sfx.WeaponEnergy;
                 case Sfx.GunRifle: case Sfx.GunAuto: case Sfx.GunSniper: case Sfx.GunHeavy: case Sfx.GunMortar: return Sfx.WeaponKinetic;
                 case Sfx.ShellWhistle: case Sfx.GunFlame: return Sfx.WeaponMissile;
                 case Sfx.GunLaser: return Sfx.WeaponEnergy;
