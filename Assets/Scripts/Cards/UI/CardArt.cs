@@ -38,9 +38,12 @@ namespace StellarisClone.Cards
             if (d == null) return null;
             string key = d.Id + "|" + (d.Kind == CardKind.Hero ? sideFaction : "");
             if (s_cache.TryGetValue(key, out var t) && t != null) return t;
-            t = Resources.Load<Texture2D>("UI/Cards/" + d.Id);
+            // Герой: сначала версия под фракцию (H1_xarn), потом общая (H1), потом портрет лидера
+            if (d.Kind == CardKind.Hero && !string.IsNullOrEmpty(sideFaction))
+                t = Resources.Load<Texture2D>("UI/Cards/" + d.Id + "_" + sideFaction);
+            if (t == null) t = Resources.Load<Texture2D>("UI/Cards/" + d.Id);
             if (t == null && d.Kind == CardKind.Hero && !string.IsNullOrEmpty(sideFaction))
-                t = Resources.Load<Texture2D>("UI/Cards/" + d.Id + "_" + sideFaction) ?? Resources.Load<Texture2D>("Leaders/leader_" + sideFaction);
+                t = Resources.Load<Texture2D>("Leaders/leader_" + sideFaction);
             if (t == null && Fallback.TryGetValue(d.Id, out var ev)) t = Resources.Load<Texture2D>("UI/Events/" + ev);
             if (t == null) t = Resources.Load<Texture2D>("UI/LoadingArt");
             s_cache[key] = t;
