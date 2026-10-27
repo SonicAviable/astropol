@@ -75,12 +75,26 @@ namespace StellarisClone.Cards
             _subscribed = true;
             TimeManager.Instance.OnDayPassed += HandleDay;
             SiegeManager.OnSystemCaptured += HandleCaptured;
+            TechnologyManager.OnTechCompleted += HandleTech;
+        }
+
+        /// <summary>Изучена технология — сообщить, какие карты она открыла.</summary>
+        private void HandleTech(Technology t)
+        {
+            if (t == null) return;
+            var names = new List<string>();
+            string mine = FactionTraits.Key(0);
+            foreach (var d in CardCatalog.ForFaction(mine)) if (CardCatalog.TechOf(d) == t.Id) names.Add(d.Name);
+            if (names.Count == 0) return;
+            NotificationCenter.Show(Loc.T("Новые карты в Арсенале"), string.Join(", ", names), NotificationCenter.Kind.Success, 5f);
+            Changed();
         }
 
         private void OnDestroy()
         {
             if (_subscribed && TimeManager.Instance != null) TimeManager.Instance.OnDayPassed -= HandleDay;
             SiegeManager.OnSystemCaptured -= HandleCaptured;
+            TechnologyManager.OnTechCompleted -= HandleTech;
             if (Instance == this) Instance = null;
         }
 
@@ -184,10 +198,36 @@ namespace StellarisClone.Cards
         public static bool Available(int owner, CardDef d)
             => d != null && !d.Virtual && (d.Faction == null || d.Faction == FactionTraits.Key(owner));
 
+        /// <summary>Изучена ли технология у империи (игрок — дерево технологий, ИИ — свой список).</summary>
+        public static bool HasTech(int owner, string techId)
+        {
+            if (string.IsNullOrEmpty(techId)) return true;
+            if (owner == 0)
+            {
+                var t = TechnologyManager.Instance != null ? TechnologyManager.Instance.FindTech(techId) : null;
+                return t == null || t.IsResearched;   // нет такой технологии в дереве — не блокируем
+            }
+            var ai = AIEmpireManager.For(owner);
+            return ai == null || ai.HasTech(techId);
+        }
+
+        /// <summary>Открыта ли карта технологией.</summary>
+        public static bool Unlocked(int owner, CardDef d) => HasTech(owner, CardCatalog.TechOf(d));
+
+        /// <summary>Название технологии, которая открывает карту (для подсказок и замка в Арсенале).</summary>
+        public static string TechName(CardDef d)
+        {
+            var id = CardCatalog.TechOf(d);
+            if (id == null) return null;
+            var t = TechnologyManager.Instance != null ? TechnologyManager.Instance.FindTech(id) : null;
+            return t != null ? t.Name : id;
+        }
+
         /// <summary>Почему нельзя заказать карту в этой системе (null — можно; ресурсы проверяются отдельно).</summary>
         public string ProduceBlocker(int owner, CardDef d, StarSystem sys)
         {
             if (!Available(owner, d)) return Loc.T("Карта недоступна вашей фракции");
+            if (!Unlocked(owner, d)) return Loc.F("Нужна технология «{0}»", TechName(d));
             if (d.Site == ProdSite.Command)
             {
                 if (CapitalOf(owner) < 0) return Loc.T("Нужна столица");

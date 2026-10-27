@@ -274,10 +274,46 @@ namespace StellarisClone.Cards
                 Text = Loc.T("«Стойкость»: союзники в секторе получают укрытие 1 каждый ход."),
                 OnPreCombat = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u) a.CoverLeft += 1; } });
             FixDrones();
+            ApplyTechUnlocks();
         }
 
         /// <summary>Дроны «Ноля» — не техника: бронебой их не удваивает.</summary>
         private static void FixDrones() { foreach (var id in new[] { "N1", "N2" }) { var d = Get(id); if (d != null) d.Kw &= ~Kw.Vehicle; } }
+
+        /// <summary>
+        /// Какая технология открывает карту (id из дерева технологий). Карт нет в списке — доступны с начала партии.
+        /// Фракционные карты открыты своей фракции сразу (Unlock = "faction").
+        /// </summary>
+        private static readonly Dictionary<string, string> TechUnlocks = new Dictionary<string, string>
+        {
+            ["U3"] = "def_arm_1",   // Тяжёлая пехота — Титановая броня I
+            ["U4"] = "sen_tac_1",   // Снайперы — Тактические вычислители
+            ["U5"] = "ind_min_1",   // Огнемётчики — Плазменные буры
+            ["U6"] = "col_gro_2",   // Медики — Биоинженерия
+            ["U7"] = "cns_mod_1",   // Инженеры — Модульное строительство
+            ["U8"] = "sen_ai_1",    // Дроны-разведчики — Простейший ИИ
+            ["U9"] = "prp_eng_1",   // БТР «Мул» — Импульсные двигатели
+            ["U10"] = "def_arm_2",  // Танк «Бастион» — Титановая броня II
+            ["U11"] = "wpn_kin_2",  // Артиллерия — Кинетические орудия II
+            ["U12"] = "ind_all_2",  // Шагоход — Нанофабрикация
+            ["O1"] = "doc_flt_1",   // Огневой вал флота — Флотская доктрина
+            ["O2"] = "wpn_las_2",   // Орбитальный удар — Лазерные батареи II
+            ["O3"] = "doc_log_1",   // Десантная капсула — Военная логистика
+            ["O4"] = "doc_drl_1",   // Обход — Учения флота
+            ["O7"] = "sen_crp_1",   // Диверсия — Криптография
+            ["O8"] = "soc_inf_1",   // Пропаганда — Дипломатическая служба
+            ["O9"] = "def_shl_1",   // ЭМИ-заряд — Энергощиты I
+            ["D4"] = "wpn_kin_1",   // Турель — Кинетические орудия I
+            ["D5"] = "col_frt_1",   // Минное поле — Пограничные протоколы
+        };
+
+        private static void ApplyTechUnlocks()
+        {
+            foreach (var kv in TechUnlocks) { var d = Get(kv.Key); if (d != null && d.Faction == null) d.Unlock = kv.Value; }
+        }
+
+        /// <summary>Технология, открывающая карту (null — открыта с начала или фракционная).</summary>
+        public static string TechOf(CardDef d) => d == null || string.IsNullOrEmpty(d.Unlock) || d.Unlock == "faction" ? null : d.Unlock;
 
         private static CardDef F(string faction, CardDef d) { d.Faction = faction; if (d.Unlock == null) d.Unlock = "faction"; return d; }
 
