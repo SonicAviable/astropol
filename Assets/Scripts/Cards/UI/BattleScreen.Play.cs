@@ -13,10 +13,13 @@ namespace StellarisClone.Cards
     {
         private bool Fast => Input.GetKey(KeyCode.Space) || Input.GetMouseButton(1);
 
+        /// <summary>Темп боя: множитель длительности всех пауз (1 — быстро, больше — размеренно, «кинематографично»).</summary>
+        private const float Pace = 1.45f;
+
         private IEnumerator W(float s)
         {
             float k = _animSpeed * (Fast ? 4f : 1f);
-            float t = s / Mathf.Max(0.1f, k);
+            float t = s * Pace / Mathf.Max(0.1f, k);
             float end = Time.unscaledTime + t;
             while (Time.unscaledTime < end) yield return null;
         }
@@ -66,8 +69,8 @@ namespace StellarisClone.Cards
         {
             var from = land + new Vector2(-260f, 900f);
             float dur = 0.42f;
-            _fx.Projectile(from, land, new Color(1f, 0.7f, 0.35f), dur, 30f * scale);
-            _fx.Line(from, land, new Color(1f, 0.55f, 0.2f, 0.5f), 16f * scale, dur + 0.25f);
+            _fx.Projectile(from, land, new Color(1f, 0.7f, 0.35f), dur * Pace, 30f * scale);
+            _fx.Line(from, land, new Color(1f, 0.55f, 0.2f, 0.5f), 16f * scale, (dur + 0.25f) * Pace);
             yield return W(dur);
             _fx.Explosion(land, 0.9f * scale);
             _fx.Dust(land, 1.4f * scale);
@@ -155,6 +158,7 @@ namespace StellarisClone.Cards
             switch (e.T)
             {
                 case EvType.TurnStart:
+                    _focusSector = -1;
                     RefreshPanels();
                     yield return Banner(e.Amount >= BattleState.Turns ? Loc.T("ПОСЛЕДНИЙ ХОД") : Loc.F("ХОД {0}", e.Amount),
                         Loc.F("Очки приказов: {0}", _state.Sides[_P].Points), new Color(1f, 0.85f, 0.5f), 0.9f);
@@ -342,6 +346,8 @@ namespace StellarisClone.Cards
             bool heavy = u.Def.Has(Kw.Vehicle) || u.Def.Cost >= 5;
             _fx.Dust(p + new Vector2(0, -60), heavy ? 1.3f : 0.7f);
             _fx.Ring(p, new Color(1f, 0.9f, 0.7f, 0.6f), 40f, heavy ? 360f : 220f, 0.4f);
+            _fx.Burst(p, 1, CardSkin.Spr("k_flare"), new Color(1f, 0.92f, 0.75f, 0.9f), 0f, 0f, 0.3f, 0.3f, 120f, heavy ? 420f : 300f, 0f, 0f, rotate: false);
+            _fx.Burst(p, 10, CardSkin.Spr("k_spark1"), new Color(1f, 0.85f, 0.55f, 0.9f), 60f, 220f, 0.3f, 0.6f, 14f, 4f, -60f, 2f);
             if (u.Def.Kind == CardKind.Hero)
             {
                 _fx.Burst(p, 30, CardSprites.Spark, new Color(1f, 0.85f, 0.45f), 200f, 520f, 0.4f, 0.9f, 20f, 6f, 0f, 2f, align: true, stretch: 3f);
@@ -454,7 +460,7 @@ namespace StellarisClone.Cards
                     for (int i = 0; i < 10; i++)
                     {
                         var p = target + new Vector2(Random.Range(-190f, 190f), Random.Range(-50f, 50f));
-                        _fx.Projectile(p + new Vector2(-500f, 700f), p, new Color(1f, 0.75f, 0.35f), 0.3f, 16f);
+                        _fx.Projectile(p + new Vector2(-500f, 700f), p, new Color(1f, 0.75f, 0.35f), 0.3f * Pace, 16f);
                         StartCoroutine(Later(0.3f, () => { _fx.Explosion(p, 0.7f); _fx.Shake(6f, 0.15f); SFXManager.Play(Sfx.ExplosionSmall, 0.5f); }));
                         yield return W(0.06f);
                     }
@@ -557,45 +563,147 @@ namespace StellarisClone.Cards
             return new Color(1f, 0.78f, 0.4f);
         }
 
+        private int _focusSector = -1;
+
+        /// <summary>Перестрелка переходит в новый сектор — дорожка вспыхивает золотом, короткая пауза «прицеливания».</summary>
+        private IEnumerator FocusSector(int sector)
+        {
+            if (sector < 0 || sector > 2 || sector == _focusSector) yield break;
+            _focusSector = sector;
+            var s = _sec[sector];
+            s.HighC = new Color(1f, 0.82f, 0.4f);
+            s.HighA = 0.55f;
+            SFXManager.Play(Sfx.HoloScan, 0.35f, 0.8f);
+            yield return W(0.3f);
+        }
+
+        private bool EnergyWeapons(int side) { var f = FactionOf(side); return f == "iridia" || f == "nol" || f == "astrea"; }
+
         private IEnumerator OnShot(BEvent e)
         {
             var src = ViewOf(e.Uid);
             var tgt = ViewOf(e.Uid2);
             if (src == null || tgt == null) yield break;
-            var a = _fx.Local(src.Rt, new Vector2(0, src.Side == _P ? 60 : -60));
+            yield return FocusSector(e.Sector >= 0 ? e.Sector : _state.FindUnit(e.Uid2)?.Sector ?? -1);
+            var a = _fx.Local(src.Rt, new Vector2(0, src.Side == _P ? 70 : -70));
             var b = _fx.Local(tgt.Rt);
+            var dir = (b - a).normalized;
+            float ang = Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
             var c = ShotColor(src.Side, src);
             var d = src.Card.Def;
+            bool heavy = d.Has(Kw.Vehicle) || d.Cost >= 5;
+
+            // Выпад атакующей карты к цели (как в Hearthstone), короткое «прицеливание»
+            src.Lunge(dir, heavy ? 16f : 24f);
+            src.GlowBoost = 0.8f;
+            yield return W(0.1f);
+
             if (e.Text == "crush")
             {
-                src.Punch(0.3f);
-                _fx.Shake(14f, 0.35f);
-                _fx.Dust(b, 1.4f);
+                // Таран: карта вминается в цель, земля трясётся
+                src.Lunge(dir, 60f);
+                yield return W(0.1f);
+                _fx.Shake(16f, 0.4f);
+                _fx.Dust(b, 1.6f);
+                _fx.Impact(b, ang, new Color(1f, 0.8f, 0.5f), 1.4f);
                 SFXManager.Play(Sfx.HitArmor, 1f, 0.5f);
-                yield return W(0.2f);
+                yield return W(0.25f);
                 yield break;
             }
+
             bool lob = e.Text == "lob" || e.Text == "salvo";
-            bool flame = d.Has(Kw.Flame);
-            // Вспышка у ствола
-            float shotAng = Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
-            _fx.Muzzle(a, shotAng, c, d.Has(Kw.Vehicle) ? 1.3f : 0.8f);
-            _fx.Burst(a, 4, CardSprites.Spark, c, 160f, 320f, 0.08f, 0.16f, 16f, 6f, 0f, 3f, shotAng, 30f, align: true, stretch: 2.5f);
-            src.Punch(0.06f);
-            if (flame)
+            if (d.Has(Kw.Flame))
             {
-                // Струя пламени
-                for (int i = 0; i < 3; i++) _fx.Burst(a, 8, CardSprites.Glow, new Color(1f, 0.55f, 0.15f, 0.9f), 500f, 800f, 0.25f, 0.35f, 26f, 60f, 0f, 1f,
-                    Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg, 18f, end: new Color(0.4f, 0.1f, 0.05f, 0f));
-                SFXManager.Play(Sfx.WeaponEnergy, 0.7f, 0.6f);
-                yield return W(0.18f);
+                // Огнемёт: плотная струя пламени и жар на цели
+                SFXManager.Play(Sfx.WeaponEnergy, 0.7f, 0.55f);
+                for (int i = 0; i < 6; i++)
+                {
+                    _fx.Burst(a, 4, CardSkin.Spr(i % 2 == 0 ? "k_fire1" : "k_flame"), new Color(1f, 0.6f, 0.2f, 0.95f), 650f, 900f, 0.28f, 0.38f, 30f, 90f, -60f, 1f, ang, 14f, end: new Color(0.5f, 0.12f, 0.04f, 0f));
+                    yield return W(0.035f);
+                }
+                _fx.Burst(b, 6, CardSkin.Spr("k_fire2"), new Color(1f, 0.55f, 0.15f, 0.9f), 20f, 80f, 0.4f, 0.7f, 60f, 110f, -120f, 1f, 90f, 80f);
+                _fx.Smoke(b, 0.6f);
+                yield return W(0.12f);
                 yield break;
             }
-            float dur = lob ? 0.42f : d.Has(Kw.Sniper) ? 0.06f : 0.14f;
-            if (d.Has(Kw.Sniper)) _fx.Line(a, b, new Color(1f, 0.95f, 0.75f, 1f), 3f, 0.2f);
-            _fx.Projectile(a, b, c, dur, d.Has(Kw.Vehicle) ? 22f : 14f, lob);
-            SFXManager.Play(lob ? Sfx.WeaponMissile : (FactionOf(src.Side) == "iridia" || FactionOf(src.Side) == "nol" ? Sfx.WeaponEnergy : Sfx.WeaponKinetic), 0.45f);
-            yield return W(Mathf.Min(dur, 0.12f));
+
+            if (lob)
+            {
+                // Навесной снаряд: дым у орудия, шлейф по дуге, взрыв в точке падения
+                float dur = 0.55f;
+                _fx.Muzzle(a, 90f, c, 1.4f);
+                _fx.Smoke(a, 0.5f, new Color(0.35f, 0.33f, 0.3f, 0.6f));
+                _fx.Shake(5f, 0.15f);
+                SFXManager.Play(Sfx.WeaponMissile, 0.6f);
+                _fx.Projectile(a, b, c, dur * Pace, 16f, true);
+                StartCoroutine(ShellTrail(a, b, dur * Pace));
+                yield return W(dur);
+                _fx.Explosion(b, 0.75f);
+                _fx.Shake(10f, 0.3f);
+                SFXManager.Play(Sfx.ExplosionSmall, 0.7f);
+                yield return W(0.12f);
+                yield break;
+            }
+
+            if (d.Has(Kw.Sniper))
+            {
+                // Снайпер: тонкий луч прицела, пауза, мгновенный выстрел с хлопком
+                _fx.Line(a, b, new Color(1f, 0.25f, 0.2f, 0.7f), 2f, 0.35f);
+                yield return W(0.22f);
+                _fx.Muzzle(a, ang, c, 1f);
+                _fx.Beam(a, b, new Color(1f, 0.95f, 0.75f), 3f, 0.12f);
+                SFXManager.Play(Sfx.WeaponKinetic, 0.8f, 0.7f);
+                yield return W(0.05f);
+                _fx.Impact(b, ang, new Color(1f, 0.9f, 0.6f), 1.1f);
+                yield return W(0.08f);
+                yield break;
+            }
+
+            if (EnergyWeapons(src.Side))
+            {
+                // Энергетическое оружие: импульсы-лучи
+                int pulses = heavy ? 1 : 2;
+                for (int i = 0; i < pulses; i++)
+                {
+                    _fx.Muzzle(a, ang, c, heavy ? 1.3f : 0.8f);
+                    _fx.Beam(a + Random.insideUnitCircle * 6f, b + Random.insideUnitCircle * 10f, c, heavy ? 7f : 4f, 0.14f);
+                    SFXManager.Play(Sfx.WeaponEnergy, 0.45f, Random.Range(0.95f, 1.1f));
+                    _fx.Impact(b, ang, c, heavy ? 1.2f : 0.8f);
+                    if (heavy) _fx.Energy(b, c, 0.6f);
+                    yield return W(0.09f);
+                }
+                yield break;
+            }
+
+            // Кинетика: очередь трассеров у пехоты, один тяжёлый снаряд у техники
+            int shots = heavy ? 1 : 3;
+            float fly = heavy ? 0.2f : 0.16f;
+            for (int i = 0; i < shots; i++)
+            {
+                var spread = Random.insideUnitCircle * (heavy ? 6f : 16f);
+                _fx.Muzzle(a, ang, c, heavy ? 1.5f : 0.75f);
+                _fx.Bullet(a, b + spread, c, fly * Pace, heavy ? 22f : 11f);
+                SFXManager.Play(Sfx.WeaponKinetic, heavy ? 0.6f : 0.35f, heavy ? 0.7f : Random.Range(1f, 1.2f));
+                if (heavy) { src.Punch(0.08f); _fx.Shake(4f, 0.12f); }
+                StartCoroutine(Later(fly, () => _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f)));
+                yield return W(heavy ? 0.05f : 0.07f);
+            }
+            yield return W(fly);
+            if (heavy) { _fx.Flipbook("fx_explosion", 6, 6, b, 120f, 0.7f, Color.white, 170f, Random.Range(0f, 360f)); _fx.Shake(8f, 0.2f); }
+        }
+
+        /// <summary>Шлейф дыма за навесным снарядом (повторяет его дугу).</summary>
+        private IEnumerator ShellTrail(Vector2 a, Vector2 b, float dur)
+        {
+            const float g = 2400f;
+            float t = 0f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime * _animSpeed;
+                var p = a + (b - a) * (t / dur) + new Vector2(0, 0.5f * g * t * (dur - t));
+                _fx.Burst(p, 1, CardSkin.Spr("k_smoke2"), new Color(0.6f, 0.58f, 0.55f, 0.35f), 0f, 15f, 0.5f, 0.8f, 16f, 46f, -20f, 1f);
+                yield return null;
+            }
         }
 
         private IEnumerator OnDamage(BEvent e)
@@ -615,7 +723,7 @@ namespace StellarisClone.Cards
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 0.6f);
             SFXManager.Play(Sfx.HitArmor, 0.5f, Random.Range(0.9f, 1.15f));
             v.RefreshNumbers(v.ShownPower, v.ShownArmor - e.Amount, v.MaxArmor);
-            yield return W(0.07f);
+            yield return W(0.12f);
         }
 
         private IEnumerator OnDeath(BEvent e)
@@ -810,7 +918,7 @@ namespace StellarisClone.Cards
             var s = LGBuild.Label(band.rectTransform, sub, 18, new Color(1, 1, 1, 0f), TextAnchor.LowerCenter);
             s.rectTransform.Stretch(0, 12, 0, 0);
             SFXManager.Play(Sfx.AlertPop, 0.6f);
-            float total = dur / Mathf.Max(0.1f, _animSpeed * (Fast ? 3f : 1f));
+            float total = dur * 1.3f / Mathf.Max(0.1f, _animSpeed * (Fast ? 3f : 1f));
             float time = 0f;
             while (time < total)
             {

@@ -175,39 +175,36 @@ namespace StellarisClone.Cards
             float k = size.y / 280f;
             BuildBase(size, k, 0.5f * k, out var mask);
             float pad = 10f * k;
-            float artH = size.y * 0.55f;
+            float artH = size.y * 0.47f;
             mask.TopBand(pad, artH, pad, pad);
             FillArt(mask, size, (size.x - 2 * pad) / artH, k, false);
 
             var artFrame = CardSkin.Sliced(_content, "ArtFrame", "frame_thin", _frameColor, 0.35f * k);
             artFrame.rectTransform.TopBand(pad - 3 * k, artH + 6 * k, pad - 3 * k, pad - 3 * k);
 
-            // Текст эффекта — на тёмной коже
+            // Текстовая панель: сверху тип карты, ниже текст эффекта (шрифт сам ужимается, чтобы всё влезло)
+            bool unit = ShowsPower(d) || d.IsBoardUnit;
             var tp = CardSkin.Sliced(_content, "TextPanel", "panel_text", Color.white, 0.4f * k);
-            tp.rectTransform.Stretch(12 * k, 12 * k, 12 * k, pad + artH + 22 * k);
-            _text = Lbl(tp.rectTransform, d.Text, Mathf.RoundToInt(12 * k), new Color(0.9f, 0.87f, 0.82f), TextAnchor.MiddleCenter, false);
+            tp.rectTransform.Stretch(11 * k, 11 * k, 11 * k, pad + artH + 19 * k);
+            _kind = CardSkin.TitleText(tp.rectTransform, d.KindName, Mathf.RoundToInt(9 * k), Color.Lerp(_frameColor, Color.white, 0.25f), TextAnchor.MiddleCenter, 0f);
+            _kind.rectTransform.TopBand(5 * k, 13 * k, 8 * k, 8 * k);
+            _kind.Track(2f);
+            _text = Lbl(tp.rectTransform, d.Text, Mathf.RoundToInt(12 * k), new Color(0.92f, 0.89f, 0.84f), TextAnchor.MiddleCenter, false);
             _text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _text.rectTransform.Stretch(9 * k, 14 * k, 9 * k, 14 * k);
-            _text.resizeTextForBestFit = true; _text.resizeTextMinSize = 7; _text.resizeTextMaxSize = Mathf.RoundToInt(12.5f * k);
-            _text.lineSpacing = 0.95f;
+            _text.verticalOverflow = VerticalWrapMode.Truncate;     // без этого Unity не ужимает шрифт
+            _text.rectTransform.Stretch(8 * k, unit ? 27 * k : 8 * k, 8 * k, 18 * k);
+            _text.resizeTextForBestFit = true; _text.resizeTextMinSize = Mathf.Max(6, Mathf.RoundToInt(7 * k)); _text.resizeTextMaxSize = Mathf.RoundToInt(12.5f * k);
+            _text.lineSpacing = 0.92f;
             _text.supportRichText = true;
 
             // Лента с именем поперёк низа арта
-            var rb = CardSkin.Sliced(_content, "Ribbon", "ribbon", Color.white, 0.55f * k);
-            rb.rectTransform.TopBand(pad + artH - 18 * k, 36 * k, -8 * k, -8 * k);
-            _name = CardSkin.TitleText(rb.rectTransform, d.Name.ToUpper(), Mathf.RoundToInt(15 * k), CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
+            var rb = CardSkin.Sliced(_content, "Ribbon", "ribbon", Color.white, 0.5f * k);
+            rb.rectTransform.TopBand(pad + artH - 15 * k, 32 * k, -7 * k, -7 * k);
+            _name = CardSkin.TitleText(rb.rectTransform, d.Name.ToUpper(), Mathf.RoundToInt(14 * k), CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
             _name.rectTransform.Stretch(22 * k, 0, 22 * k, 1);
             _name.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 7; _name.resizeTextMaxSize = Mathf.RoundToInt(15 * k);
-
-            // Тип карты — маленькой капсулой под лентой
-            var tag = Img(_content, "Tag", CardSprites.Round, new Color(_frameColor.r * 0.25f, _frameColor.g * 0.25f, _frameColor.b * 0.25f, 0.95f));
-            tag.type = Image.Type.Sliced;
-            tag.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -(pad + artH + 26 * k)), new Vector2(84 * k, 17 * k));
-            var tagRim = CardSkin.Sliced(tag.rectTransform, "Rim", "frame_thin", _frameColor, 0.15f * k);
-            tagRim.rectTransform.Stretch();
-            _kind = CardSkin.TitleText(tag.rectTransform, d.KindName, Mathf.RoundToInt(9 * k), _frameColor, TextAnchor.MiddleCenter, 0f);
-            _kind.Track(1.3f);
+            _name.verticalOverflow = VerticalWrapMode.Truncate;
+            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 6; _name.resizeTextMaxSize = Mathf.RoundToInt(14 * k);
 
             _hitFlash = Img(_content, "Hit", CardSprites.Round, new Color(1f, 0.3f, 0.2f, 0f));
             _hitFlash.type = Image.Type.Sliced;
@@ -216,16 +213,18 @@ namespace StellarisClone.Cards
             _frame = CardSkin.Sliced(_content, "Frame", "frame_card", _frameColor, 0.38f * k);
             _frame.rectTransform.Stretch();
 
-            // Цена — синий кристалл в углу
-            _cost = CardSkin.Gem(_content, "gem_cost", new Vector2(0, 1), new Vector2(14 * k, -14 * k), 56 * k, d.Cost.ToString(), out _);
+            // Цена — синий кристалл в углу; урон и броня — в нижних углах, внутри рамы (не налезают на текст)
+            _cost = CardSkin.Gem(_content, "gem_cost", new Vector2(0, 1), new Vector2(16 * k, -16 * k), 48 * k, d.Cost.ToString(), out _);
+            if (ShowsPower(d))
+                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(19 * k, 19 * k), 46 * k, "0", out _powerBadge);
             if (d.IsBoardUnit)
-            {
-                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(16 * k, 14 * k), 60 * k, "0", out _powerBadge);
-                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-16 * k, 14 * k), 58 * k, "0", out _armorBadge);
-            }
+                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-19 * k, 19 * k), 45 * k, "0", out _armorBadge);
             Stars(k);
             Status(size, k);
         }
+
+        /// <summary>Показывать ли урон: у сооружений без атаки (бункер, щит) — нет, чтобы не путать «0».</summary>
+        private static bool ShowsPower(CardDef d) => d.IsBoardUnit && !(d.Kind == CardKind.Structure && d.Power <= 0);
 
         /// <summary>Карта на столе: арт во всю карту под рамой, имя внизу, крупные сила и броня.</summary>
         private void BuildCompact(Vector2 size, CardDef d)
@@ -249,13 +248,13 @@ namespace StellarisClone.Cards
             _name.rectTransform.sizeDelta = new Vector2(-16 * k, 30 * k);
             _name.rectTransform.anchoredPosition = new Vector2(0, d.IsBoardUnit ? 24 * k : 10 * k);
             _name.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _name.verticalOverflow = VerticalWrapMode.Truncate;
             _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 7; _name.resizeTextMaxSize = Mathf.RoundToInt(12 * k);
 
+            if (ShowsPower(d))
+                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(12 * k, 10 * k), 44 * k, "0", out _powerBadge);
             if (d.IsBoardUnit)
-            {
-                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(10 * k, 8 * k), 50 * k, "0", out _powerBadge);
-                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-10 * k, 8 * k), 48 * k, "0", out _armorBadge);
-            }
+                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-12 * k, 10 * k), 43 * k, "0", out _armorBadge);
             Stars(k * 0.8f);
             Status(size, k * 280f / 178f * 0.75f);
         }
@@ -276,6 +275,7 @@ namespace StellarisClone.Cards
             _statusIcon.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -8 * k), new Vector2(size.x + 12 * k, 24 * k));
             _statusText = CardSkin.TitleText(_statusIcon.rectTransform, "", Mathf.RoundToInt(10 * k), Color.white, TextAnchor.MiddleCenter, 1f);
             _statusText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _statusText.verticalOverflow = VerticalWrapMode.Truncate;
             _statusText.resizeTextForBestFit = true; _statusText.resizeTextMinSize = 6; _statusText.resizeTextMaxSize = Mathf.RoundToInt(10 * k);
             _statusText.rectTransform.Stretch(14 * k, 0, 14 * k, 0);
         }
@@ -373,6 +373,17 @@ namespace StellarisClone.Cards
         }
 
         public void SetAlpha(float a) { if (_group != null) _group.alpha = a; }
+
+        private Vector2 _lungeDir;
+        private float _lungeT = 1f, _lungeDist;
+
+        /// <summary>Выпад к цели при атаке: карта резко подаётся вперёд по направлению dir и пружиной возвращается.</summary>
+        public void Lunge(Vector2 dir, float dist = 22f)
+        {
+            _lungeDir = dir.sqrMagnitude > 0.001f ? dir.normalized : Vector2.up;
+            _lungeDist = dist;
+            _lungeT = 0f;
+        }
         public void SetHoverable(bool on) { _hoverable = on; }
 
         private void ApplyFlip()
@@ -409,7 +420,15 @@ namespace StellarisClone.Cards
             _punch = Mathf.MoveTowards(_punch, 0f, dt * 1.6f);
             float shake = 0f;
             if (_shakeT > 0f) { _shakeT -= dt; shake = Mathf.Sin(Time.unscaledTime * 70f) * 5f * Mathf.Clamp01(_shakeT * 4f); }
-            _content.localPosition = new Vector3(shake, _hover * HoverLift, 0f);
+            Vector2 lunge = Vector2.zero;
+            if (_lungeT < 1f)
+            {
+                _lungeT = Mathf.Min(1f, _lungeT + dt * 3.2f);
+                // быстрый выпад (первые 20%), затем пружина назад с лёгким перелётом
+                float c = _lungeT < 0.2f ? Mathf.SmoothStep(0f, 1f, _lungeT / 0.2f) : Mathf.Exp(-(_lungeT - 0.2f) * 6f) * Mathf.Cos((_lungeT - 0.2f) * 9f);
+                lunge = _lungeDir * _lungeDist * c;
+            }
+            _content.localPosition = new Vector3(shake + lunge.x, _hover * HoverLift + lunge.y, 0f);
             float s = 1f + _hover * HoverScale + _punch;
             _content.localRotation = Quaternion.Euler(_tilt.x, _tilt.y, 0f);
             Rt.localScale = new Vector3(s, s, 1f);

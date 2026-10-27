@@ -6594,3 +6594,7 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 <size=11><color=#9AA6B0>нужно 2 из 3</color></size>	<size=11><color=#9AA6B0>2 of 3 needed</color></size>
 откроется на 3-м ходу	revealed on turn 3
 Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода	Drag cards into sectors · golden sword — damage per turn, red shield — armor · Enter — end turn
+ЩИТ ШТАБА	HQ SHIELD
+<b>Щит Штаба</b>\nЭнергетический купол над защитниками Штаба. Пока он стоит, прорыв в Штаб невозможен.\nКупол держится, пока электростанция у защитника. Снять его: захватить сектор «Электростанция» или применить «Диверсию» / ЭМИ.	<b>HQ Shield</b>\nAn energy dome over the HQ defenders. While it stands, a breach into the HQ is impossible.\nThe dome holds while the defender controls the power plant. To take it down, capture the "Power Plant" sector or use "Sabotage" / EMP.
+СКОРОСТЬ	SPEED
+ЩИТ СНЯТ	SHIELD DOWN

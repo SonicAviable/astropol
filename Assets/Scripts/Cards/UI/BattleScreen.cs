@@ -77,7 +77,9 @@ namespace StellarisClone.Cards
         private sealed class SectorUI
         {
             public RectTransform Col, Header, PowerBar;
-            public Image Plate, Wash, Dome, Highlight, HighlightFill, OrbGlowE, OrbGlowP;
+            public Image Plate, Wash, Dome, Highlight, HighlightFill, OrbGlowE, OrbGlowP, DomeBadge;
+            public Text DomeText;
+            public bool DomeWasUp = true;
             public Text Name, Rule, PowE, PowP, Stamp;
             public float WashA, HighA;
             public Color WashC, HighC;
@@ -173,6 +175,7 @@ namespace StellarisClone.Cards
                 foreach (var u in _state.Sectors[s].Units)
                 {
                     if (u.IsTrap && u.Side != _P) continue;   // вражеские мины не видны
+                    if (u.Has(Kw.Shield)) continue;           // щит Штаба — купол над рядом, а не карта
                     var v = MakeUnitView(u, revealed: !u.IsTrap);
                     v.SetAlpha(1f);
                 }
@@ -412,8 +415,22 @@ namespace StellarisClone.Cards
                 // Основание купола — у плашки, свод — над картами защитника (полупрозрачный, поверх них)
                 s.Dome = CardSkin.Simple(col, "Dome", "dome", new Color(0.6f, 0.85f, 1f, 0f));
                 float baseY = defRow == 0 ? RowOff - BoardCard.y * 0.5f - 8f : -RowOff + BoardCard.y * 0.5f + 8f;
-                s.Dome.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0, baseY), new Vector2(LaneW - 6, BoardCard.y + 46));
+                const float domeH = 192f;
+                s.Dome.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0, baseY), new Vector2(LaneW - 6, domeH));
                 if (defRow == 1) s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
+
+                // Табличка на своде купола: что это и почему держится
+                float apex = baseY + (defRow == 0 ? domeH - 2f : -domeH + 2f);
+                s.DomeBadge = CardSkin.Sliced(col, "DomeBadge", "panel_dark", Color.white, 0.25f);
+                s.DomeBadge.raycastTarget = true;
+                s.DomeBadge.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, apex), new Vector2(176, 30));
+                var brim = CardSkin.Sliced(s.DomeBadge.rectTransform, "Rim", "frame_thin", new Color(0.55f, 0.85f, 1f), 0.25f);
+                brim.rectTransform.Stretch(-2, -2, -2, -2);
+                var bic = CardSkin.Simple(s.DomeBadge.rectTransform, "Icon", "gem_armor", new Color(0.6f, 0.85f, 1f));
+                bic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(4, 0), new Vector2(34, 34));
+                s.DomeText = CardSkin.TitleText(s.DomeBadge.rectTransform, Loc.T("ЩИТ ШТАБА"), 13, new Color(0.7f, 0.92f, 1f), TextAnchor.MiddleCenter, 1.5f);
+                s.DomeText.rectTransform.Stretch(22, 0, 6, 0);
+                TooltipHelper.Attach(s.DomeBadge.gameObject, Loc.T("<b>Щит Штаба</b>\nЭнергетический купол над защитниками Штаба. Пока он стоит, прорыв в Штаб невозможен.\nКупол держится, пока электростанция у защитника. Снять его: захватить сектор «Электростанция» или применить «Диверсию» / ЭМИ."));
             }
         }
 
@@ -516,15 +533,16 @@ namespace StellarisClone.Cards
             _weatherText.raycastTarget = false;
 
             // Служебные круглые кнопки: скорость анимаций, досчитать, отступить
-            _speedLabel = RoundButton(new Vector2(RX - 68, -128), null, SpeedText(), OnSpeed, Loc.T("Скорость анимаций"), out _);
-            RoundButton(new Vector2(RX, -128), LGIcon.Fastest, null, OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
-            RoundButton(new Vector2(RX + 68, -128), LGIcon.Back, null, OnRetreat, _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton);
+            _speedLabel = RoundButton(new Vector2(RX - 70, -128), null, SpeedText(), Loc.T("СКОРОСТЬ"), OnSpeed, Loc.T("Скорость анимаций"), out _);
+            RoundButton(new Vector2(RX, -128), LGIcon.Fastest, null, Loc.T("ДОСЧИТАТЬ"), OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
+            RoundButton(new Vector2(RX + 70, -128), LGIcon.Back, null, _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), OnRetreat,
+                _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton);
 
             // Наёмники Аквилы — купить прямо в бою
             if (_state.Sides[_P].Faction == "aquila")
             {
                 var mrt = LGBuild.Rect(_board, "Merc");
-                mrt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -196), new Vector2(214, 46));
+                mrt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -214), new Vector2(214, 46));
                 var mimg = mrt.gameObject.AddComponent<Image>();
                 mimg.sprite = CardSkin.Spr("btn_end_amber");
                 mimg.type = Image.Type.Sliced;
@@ -538,24 +556,30 @@ namespace StellarisClone.Cards
             }
         }
 
-        private Text RoundButton(Vector2 pos, LGIcon? icon, string label, Action act, string tip, out Button btn)
+        /// <summary>Круглая кнопка в стиле стола: стеклянная сфера в металлической оправе, значок, подпись под ней.</summary>
+        private Text RoundButton(Vector2 pos, LGIcon? icon, string label, string caption, Action act, string tip, out Button btn)
         {
             var rt = LGBuild.Rect(_board, "RoundBtn");
-            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(56, 56));
+            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(58, 58));
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.sprite = CardSkin.Spr("disc");
-            bg.color = new Color(0.06f, 0.08f, 0.11f, 1f);
+            bg.sprite = CardSkin.Spr("orb_gray");
+            bg.color = Color.white;
             btn = rt.gameObject.AddComponent<Button>();
             btn.targetGraphic = bg;
-            var cb = btn.colors; cb.highlightedColor = new Color(1.6f, 1.6f, 1.6f, 1f); cb.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f); btn.colors = cb;
-            btn.onClick.AddListener(() => act());
-            var ring = CardSkin.Simple(rt, "Ring", "frame_round", CardSkin.Steel);
-            ring.rectTransform.Stretch(-5, -5, -5, -5);
+            var cb = btn.colors; cb.highlightedColor = new Color(1.35f, 1.3f, 1.15f, 1f); cb.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f); cb.fadeDuration = 0.08f; btn.colors = cb;
+            btn.onClick.AddListener(() => { rt.localScale = Vector3.one * 0.9f; act(); });
+            rt.gameObject.AddComponent<PressSpring>();
+            if (!string.IsNullOrEmpty(caption))
+            {
+                var cap = CardSkin.TitleText(_board, caption, 10, new Color(0.85f, 0.78f, 0.62f), TextAnchor.MiddleCenter, 1f);
+                cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos + new Vector2(0, -42), new Vector2(80, 14));
+                cap.Track(1f);
+            }
             Text t = null;
             if (icon.HasValue)
             {
-                var ic = LGIcons.Create(rt, icon.Value, 20, new Color(0.92f, 0.9f, 0.85f));
-                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
+                var ic = LGIcons.Create(rt, icon.Value, 22, new Color(1f, 0.95f, 0.85f));
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22, 22));
             }
             else
             {
@@ -906,6 +930,12 @@ namespace StellarisClone.Cards
                 if (s.Dome != null)
                 {
                     bool up = _state.ShieldUp;
+                    if (up != s.DomeWasUp)
+                    {
+                        s.DomeWasUp = up;
+                        s.DomeText.text = up ? Loc.T("ЩИТ ШТАБА") : Loc.T("ЩИТ СНЯТ");
+                        s.DomeText.color = up ? new Color(0.7f, 0.92f, 1f) : new Color(1f, 0.55f, 0.48f);
+                    }
                     float a = up ? 0.8f + 0.2f * Mathf.Sin(Time.unscaledTime * 2.2f) : 0f;
                     s.Dome.color = new Color(0.6f, 0.85f, 1f, Mathf.MoveTowards(s.Dome.color.a, a, dt * 1.5f));
                 }
@@ -1139,6 +1169,12 @@ namespace StellarisClone.Cards
                 if (tm != null) tm.SetSpeed(saved);
                 AssaultLink.StartDefense(attacker, sys, true);
             });
+        }
+
+        /// <summary>Кнопка пружинит обратно к обычному размеру после нажатия.</summary>
+        private sealed class PressSpring : MonoBehaviour
+        {
+            private void Update() { transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 14f)); }
         }
 
         /// <summary>Щелчок по дорожке сектора.</summary>

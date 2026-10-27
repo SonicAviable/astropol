@@ -219,6 +219,49 @@ namespace StellarisClone.Cards
             Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 1f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 260f * scale, 0f, 0f, rotate: false);
         }
 
+        /// <summary>Пуля/снаряд: яркий вытянутый трассер с ореолом летит из a в b ровно за dur.</summary>
+        public void Bullet(Vector2 a, Vector2 b, Color c, float dur, float size = 14f)
+        {
+            var v = (b - a) / Mathf.Max(0.01f, dur);
+            var core = Get(CardSprites.Spark);
+            if (core != null)
+            {
+                core.Pos = a; core.Vel = v; core.Life = dur; core.Size0 = core.Size1 = size; core.Stretch = 4.5f; core.Align = true;
+                core.Drag = 0f; core.Gravity = 0f; core.RotVel = 0f;
+                core.C0 = new Color(Mathf.Lerp(c.r, 1f, 0.6f), Mathf.Lerp(c.g, 1f, 0.6f), Mathf.Lerp(c.b, 1f, 0.6f), 1f); core.C1 = core.C0;
+                Apply(core);
+            }
+            var halo = Get(K("k_light"));
+            if (halo != null)
+            {
+                halo.Pos = a; halo.Vel = v; halo.Life = dur; halo.Size0 = halo.Size1 = size * 3.2f; halo.Align = false; halo.Rot = 0f; halo.RotVel = 0f;
+                halo.Drag = 0f; halo.Gravity = 0f; halo.C0 = new Color(c.r, c.g, c.b, 0.85f); halo.C1 = halo.C0;
+                Apply(halo);
+            }
+        }
+
+        /// <summary>Энергетический луч: белое ядро, цветной ореол, мерцание по длине; гаснет за dur.</summary>
+        public void Beam(Vector2 a, Vector2 b, Color c, float width, float dur)
+        {
+            Line(a, b, new Color(c.r, c.g, c.b, 0.55f), width * 3.2f, dur * 1.2f);
+            Line(a, b, new Color(c.r, c.g, c.b, 0.95f), width * 1.4f, dur);
+            Line(a, b, new Color(1f, 1f, 1f, 1f), width * 0.45f, dur * 0.8f);
+            var d = b - a;
+            for (int i = 0; i < 5; i++)
+            {
+                var p = a + d * Random.value;
+                Burst(p, 1, K("k_light"), new Color(c.r, c.g, c.b, 0.7f), 0f, 0f, dur, dur * 1.3f, width * 3f, width * 5f, 0f, 0f, rotate: false);
+            }
+        }
+
+        /// <summary>Попадание: вспышка-звезда, искры по направлению выстрела, ударная волна.</summary>
+        public void Impact(Vector2 pos, float dirDeg, Color c, float scale = 1f)
+        {
+            Burst(pos, 1, K("k_star2"), new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f), 1f), 0f, 0f, 0.14f, 0.16f, 70f * scale, 130f * scale, 0f, 0f, rotate: true);
+            Burst(pos, Mathf.RoundToInt(8 * scale) + 2, CardSprites.Spark, c, 200f * scale, 520f * scale, 0.15f, 0.35f, 16f * scale, 4f, 500f, 2f, dirDeg + 180f, 110f, align: true, stretch: 3f);
+            Ring(pos, new Color(c.r, c.g, c.b, 0.6f), 10f * scale, 90f * scale, 0.22f);
+        }
+
         /// <summary>Вспышка выстрела у ствола, направленная по углу ang (градусы).</summary>
         public void Muzzle(Vector2 pos, float ang, Color c, float scale = 1f)
         {
