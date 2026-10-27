@@ -31,6 +31,7 @@ namespace StellarisClone.Cards
             tex.Apply(false);
             sp = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), ppu, 0, SpriteMeshType.FullRect, border);
             sp.hideFlags = HideFlags.DontSave;
+            sp.name = key;   // по имени эффекты решают, светится спрайт или нет (UIFx.IsLight)
             s_cache[key] = sp;
             return sp;
         }
@@ -71,6 +72,15 @@ namespace StellarisClone.Cards
         {
             float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)) * 2f;
             return Mathf.Clamp01((1f - d) * 3f);
+        });
+
+        /// <summary>Ударная волна: тонкое мягкое кольцо с еле заметной дымкой внутри (не «бублик»).</summary>
+        public static Sprite Shock => Make("shock", 256, 256, (u, v) =>
+        {
+            float d = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)) * 2f;
+            float ring = Mathf.Exp(-Mathf.Pow((d - 0.9f) / 0.035f, 2f));
+            float haze = Mathf.Clamp01(d / 0.9f) * Mathf.Clamp01((0.92f - d) * 8f) * 0.12f;
+            return Mathf.Clamp01(ring + haze);
         });
 
         public static Sprite Ring => Make("ring", 128, 128, (u, v) =>

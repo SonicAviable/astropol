@@ -382,9 +382,31 @@ namespace StellarisClone.Cards
             var glass = LGBuild.Panel(mask.rectTransform, "Glass", new Color(0.01f, 0.035f, 0.055f, 0.5f));
             glass.rectTransform.Stretch();
             glass.raycastTarget = false;
-            // Голосетка: еле заметные соты по всему столу
-            var grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.45f, 0.95f, 0.9f, 0.05f));
-            grid.rectTransform.Stretch();
+            // Дрейфующий туман и дым над полем боя: большие клубы медленно плывут по ветру
+            _fog.Clear();
+            var fogTint = FogTint(_setup.Terrain);
+            for (int f = 0; f < 4; f++)
+            {
+                var fog = CardSkin.Simple(mask.rectTransform, "Fog", f % 2 == 0 ? "k_smoke1" : "k_smoke2", new Color(fogTint.r, fogTint.g, fogTint.b, 0f));
+                float fw = UnityEngine.Random.Range(700f, 1000f);
+                fog.rectTransform.At(Mid, Mid, new Vector2(UnityEngine.Random.Range(-700f, 700f), UnityEngine.Random.Range(-200f, 200f)), new Vector2(fw, fw * 0.55f));
+                fog.rectTransform.localRotation = Quaternion.Euler(0, 0, UnityEngine.Random.Range(0f, 360f));
+                _fog.Add((fog, UnityEngine.Random.Range(14f, 30f) * (f % 2 == 0 ? 1f : 0.7f), fogTint.a * UnityEngine.Random.Range(0.6f, 1f), UnityEngine.Random.Range(0f, 10f)));
+            }
+            // Голосетка: еле заметные соты по всему столу (мерцает волной)
+            _grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.45f, 0.95f, 0.9f, 0.05f));
+            _grid.rectTransform.Stretch();
+            // Полоса «сканера» тактического стола — раз в несколько секунд проходит слева направо
+            _scan = LGBuild.Panel(mask.rectTransform, "Scan", new Color(0.45f, 0.95f, 0.9f, 0f));
+            _scan.sprite = CardSkin.Spr("glow");
+            _scan.raycastTarget = false;
+            _scan.rectTransform.At(Mid, Mid, new Vector2(-2000f, 0f), new Vector2(160f, TrayH * 1.6f));
+            _scanT = UnityEngine.Random.Range(0f, 4f);
+            // Отблеск далёких разрывов за краем стола (вспыхивает вместе со звуком канонады)
+            _horizon = LGBuild.Panel(mask.rectTransform, "Horizon", new Color(1f, 0.55f, 0.25f, 0f));
+            _horizon.sprite = CardSkin.Spr("glow");
+            _horizon.raycastTarget = false;
+            _horizon.rectTransform.At(Mid, Mid, new Vector2(0f, TrayH * 0.5f), new Vector2(700f, 420f));
             var inner = LGBuild.Panel(mask.rectTransform, "InnerShade", new Color(0, 0, 0, 0.7f));
             inner.sprite = CardSprites.Vignette;
             inner.raycastTarget = false;
@@ -814,6 +836,7 @@ namespace StellarisClone.Cards
             int row = u.Side == _P ? 1 : 0;
             var v = CardView.Create(_rows[u.Sector, row], u.Card, u.Side, FactionOf(u.Side), BoardCard, true);
             v.Uid = u.Uid;
+            v.IdleBreathe = u.IsTrap ? 0f : 1f;
             v.SetFace(revealed || u.Side == _P, true);
             if (u.IsTrap && u.Side == _P) { v.SetFace(true, true); v.SetStatus(Loc.T("ЛОВУШКА"), new Color(1f, 0.4f, 0.3f)); v.SetAlpha(0.8f); }
             v.RefreshNumbers(_state.Power(u), u.Armor, u.MaxArmor, false);
@@ -869,6 +892,7 @@ namespace StellarisClone.Cards
             v.SetHoverable(true);
             v.HoverLift = 150f;
             v.HoverScale = 0.28f;
+            v.IdleBob = 1f;
             v.OnHoverIn = x => { if (_dragging != null) return; _handHover = x; x.Rt.SetAsLastSibling(); LayoutHand(false); SFXManager.Play(Sfx.CardHover, 1f, UnityEngine.Random.Range(0.95f, 1.1f)); };
             v.OnHoverOut = x => { if (_handHover == x) _handHover = null; LayoutHand(false); };
             v.OnDragBegin = BeginDrag;
@@ -1099,6 +1123,7 @@ namespace StellarisClone.Cards
             // Атмосфера: пыль/пепел/дождь
             AmbientTick(dt);
             AmbienceTick(dt);
+            TableTick(dt);
             LogTick(dt);
 
             // Дорожки. Пока карта в руке над столом, подсветка держится каждый кадр (даже если мышь стоит):
@@ -1142,6 +1167,80 @@ namespace StellarisClone.Cards
 
         private float _ambientT;
 
+        // ---------- живой стол ----------
+        private readonly List<(Image img, float speed, float alpha, float phase)> _fog = new List<(Image, float, float, float)>();
+        private Image _grid, _scan, _horizon;
+        private float _scanT, _horizonA, _plateSweepT;
+
+        private static Color FogTint(Terrain t)
+        {
+            switch (t)
+            {
+                case Terrain.Desert: return new Color(0.85f, 0.65f, 0.42f, 0.13f);
+                case Terrain.Molten: return new Color(0.55f, 0.3f, 0.2f, 0.16f);
+                case Terrain.Barren: return new Color(0.7f, 0.72f, 0.78f, 0.1f);
+                default: return new Color(0.62f, 0.68f, 0.72f, 0.12f);
+            }
+        }
+
+        private void TableTick(float dt)
+        {
+            float t = Time.unscaledTime;
+            float halfW = (TrayW - 28) * 0.5f;
+            // Туман плывёт по ветру, за правым краем возвращается слева; прозрачность медленно «дышит»
+            for (int i = 0; i < _fog.Count; i++)
+            {
+                var f = _fog[i];
+                if (f.img == null) continue;
+                var rt = f.img.rectTransform;
+                var p = rt.anchoredPosition;
+                p.x += f.speed * dt;
+                if (p.x - rt.sizeDelta.x * 0.5f > halfW) p.x = -halfW - rt.sizeDelta.x * 0.5f;
+                rt.anchoredPosition = p;
+                rt.localRotation = Quaternion.Euler(0, 0, rt.localEulerAngles.z + dt * 1.5f);
+                var c = f.img.color;
+                c.a = f.alpha * (0.65f + 0.35f * Mathf.Sin(t * 0.25f + f.phase));
+                f.img.color = c;
+            }
+            if (_grid != null) _grid.color = new Color(0.45f, 0.95f, 0.9f, 0.04f + 0.02f * Mathf.Sin(t * 0.8f));
+            // Сканер: проход ~2,2 с, затем пауза
+            if (_scan != null)
+            {
+                _scanT += dt;
+                const float pass = 2.2f, period = 9f;
+                float k = Mathf.Repeat(_scanT, period) / pass;
+                if (k <= 1f)
+                {
+                    _scan.rectTransform.anchoredPosition = new Vector2(Mathf.Lerp(-halfW - 120f, halfW + 120f, k), 0f);
+                    _scan.color = new Color(0.45f, 0.95f, 0.9f, 0.07f * Mathf.Sin(k * Mathf.PI));
+                }
+                else if (_scan.color.a > 0f) _scan.color = new Color(0.45f, 0.95f, 0.9f, 0f);
+            }
+            if (_horizon != null)
+            {
+                _horizonA = Mathf.MoveTowards(_horizonA, 0f, dt * 0.5f);
+                _horizon.color = new Color(1f, 0.55f, 0.25f, _horizonA * (0.85f + 0.15f * Mathf.Sin(t * 30f)));
+            }
+            // Блик стекла пробегает по плашкам секторов по очереди
+            _plateSweepT += dt;
+            for (int i = 0; i < 3; i++)
+            {
+                var fx = _sec[i]?.PlateFx;
+                if (fx == null) continue;
+                float k = (Mathf.Repeat(_plateSweepT - i * 0.35f, 7f)) / 0.9f;
+                fx.SetSweep(k <= 1f ? Mathf.Max(0.001f, k) : 0f);
+            }
+        }
+
+        /// <summary>Отблеск далёкого разрыва за краем стола (вызывается вместе со звуком канонады).</summary>
+        private void HorizonFlash(float strength)
+        {
+            if (_horizon == null) return;
+            bool top = UnityEngine.Random.value < 0.5f;
+            _horizon.rectTransform.anchoredPosition = new Vector2(UnityEngine.Random.Range(-600f, 600f), (top ? 1f : -1f) * (TrayH * 0.5f + 60f));
+            _horizonA = Mathf.Max(_horizonA, strength);
+        }
+
         /// <summary>Стереопанорама по положению на столе: выстрел слева звучит слева.</summary>
         private static float Pan(Vector2 local) => Mathf.Clamp(local.x / 900f, -0.75f, 0.75f);
 
@@ -1177,15 +1276,27 @@ namespace StellarisClone.Cards
             if (_farBoomT <= 0f && !_state.Over)
             {
                 _farBoomT = UnityEngine.Random.Range(7f, 16f);
-                SFXManager.Play(Sfx.BoomFar, UnityEngine.Random.Range(0.35f, 0.75f), UnityEngine.Random.Range(0.85f, 1.05f), UnityEngine.Random.Range(-0.8f, 0.8f));
+                float vol = UnityEngine.Random.Range(0.35f, 0.75f);
+                SFXManager.Play(Sfx.BoomFar, vol, UnityEngine.Random.Range(0.85f, 1.05f), UnityEngine.Random.Range(-0.8f, 0.8f));
+                HorizonFlash(0.12f + 0.2f * vol);
             }
+        }
+
+        /// <summary>Атмосфера без «пузырьков»: редкие пылинки (крошечные, едва видные) и медленные клубы дымки над полем.</summary>
+        private void Haze(Rect r, Color c)
+        {
+            var p = new Vector2(UnityEngine.Random.Range(-r.width * 0.45f, r.width * 0.45f), UnityEngine.Random.Range(-r.height * 0.35f, r.height * 0.35f));
+            if (UnityEngine.Random.value < 0.25f)
+                _fx.Burst(p, 1, CardSkin.Spr(UnityEngine.Random.value < 0.5f ? "k_smoke1" : "k_smoke2"), c, 8f, 20f, 6f, 9f, 260f, 420f, 0f, 0.05f, 0f, 30f);
+            else
+                _fx.Burst(p, 1, CardSprites.Spark, new Color(1f, 0.95f, 0.85f, 0.16f), 6f, 18f, 3f, 5f, 2.5f, 2f, -3f, 0.1f, 20f, 60f, align: true, stretch: 1.3f);
         }
 
         private void AmbientTick(float dt)
         {
             _ambientT -= dt;
             if (_ambientT > 0f || _fx == null) return;
-            _ambientT = 0.12f;
+            _ambientT = 0.2f;
             var r = _fxLayer.rect;
             var pos = new Vector2(UnityEngine.Random.Range(-r.width * 0.5f, r.width * 0.5f), r.height * 0.5f + 20f);
             switch (_setup.Terrain)
@@ -1198,10 +1309,10 @@ namespace StellarisClone.Cards
                     break;
                 case Terrain.Continental:
                     if (_state.WeatherActive) _fx.Burst(pos, 3, CardSprites.Spark, new Color(0.7f, 0.8f, 0.95f, 0.35f), 900f, 1200f, 1.2f, 1.6f, 22f, 22f, 0f, 0f, 255f, 6f, align: true, stretch: 3f);
-                    else _fx.Burst(pos, 1, CardSprites.Dot, new Color(0.8f, 0.85f, 0.9f, 0.25f), 20f, 50f, 8f, 12f, 4f, 4f, 6f, 0f, 270f, 60f);
+                    else Haze(r, new Color(0.7f, 0.75f, 0.8f, 0.07f));
                     break;
                 default:
-                    _fx.Burst(pos, 1, CardSprites.Dot, new Color(0.8f, 0.8f, 0.85f, 0.25f), 10f, 30f, 10f, 14f, 3f, 3f, 4f, 0f, 270f, 90f);
+                    Haze(r, new Color(0.75f, 0.75f, 0.78f, 0.06f));
                     break;
             }
         }

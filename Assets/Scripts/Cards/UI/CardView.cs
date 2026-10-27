@@ -44,6 +44,12 @@ namespace StellarisClone.Cards
         public float GlowBoost;
         /// <summary>Наведение: на сколько поднять карту и увеличить (в руке — сильно, как в Hearthstone).</summary>
         public float HoverLift = 18f, HoverScale = 0.12f;
+        /// <summary>Покачивание в руке (0..1): карта чуть плавает и поворачивается, будто её держат.</summary>
+        public float IdleBob;
+        /// <summary>«Дыхание» юнита на столе (0..1): едва заметный пульс масштаба.</summary>
+        public float IdleBreathe;
+        private Rect _artUv;
+        private float _idlePhase;
 
         public Action<CardView> OnHoverIn, OnHoverOut, OnClick;
         public Action<CardView, PointerEventData> OnDragBegin, OnDragMove, OnDragEnd;
@@ -122,7 +128,7 @@ namespace StellarisClone.Cards
             var auraRt = LGBuild.Rect(_content, "Aura");
             auraRt.Stretch();
             _aura = auraRt.gameObject.AddComponent<CardAura>();
-            _aura.Width = 10f * gs;
+            _aura.Width = 8f * gs;
             _aura.Corner = 13f * gs;
             _aura.Inset = 3f * gs;
             _aura.Tint = _frameColor;
@@ -151,6 +157,8 @@ namespace StellarisClone.Cards
             _art.texture = CardArt.Get(Card.Def, SideFaction);
             _art.raycastTarget = false;
             FitArt(_art, mask, size, aspect);
+            _artUv = _art.uvRect;
+            _idlePhase = UnityEngine.Random.value * 100f;
             if (bottomShade)
             {
                 var shade = Img(mask, "Shade", CardSprites.Fade, new Color(0.01f, 0.015f, 0.03f, 0.95f));
@@ -435,9 +443,27 @@ namespace StellarisClone.Cards
                 float c = _lungeT < 0.2f ? Mathf.SmoothStep(0f, 1f, _lungeT / 0.2f) : Mathf.Exp(-(_lungeT - 0.2f) * 6f) * Mathf.Cos((_lungeT - 0.2f) * 9f);
                 lunge = _lungeDir * _lungeDist * c;
             }
-            _content.localPosition = new Vector3(shake + lunge.x, _hover * HoverLift + lunge.y, 0f);
-            float s = 1f + _hover * HoverScale + _punch;
-            _content.localRotation = Quaternion.Euler(_tilt.x, _tilt.y, 0f);
+            // Живые карты: в руке — лёгкое покачивание (затихает при наведении), на столе — «дыхание»
+            float tt = Time.unscaledTime + _idlePhase;
+            float calm = 1f - _hover;
+            float bob = IdleBob * calm * Mathf.Sin(tt * 1.35f) * 2.6f;
+            float sway = IdleBob * calm * Mathf.Sin(tt * 0.83f) * 0.7f;
+            float breathe = IdleBreathe * Mathf.Sin(tt * 1.15f) * 0.006f;
+            _content.localPosition = new Vector3(shake + lunge.x, _hover * HoverLift + lunge.y + bob, 0f);
+            float s = 1f + _hover * HoverScale + _punch + breathe;
+            _content.localRotation = Quaternion.Euler(_tilt.x, _tilt.y, sway);
+
+            // «Живой» арт: медленный наезд и дрейф камеры по картинке, при наклоне — параллакс
+            if (_art != null && _art.texture != null && _artUv.width > 0f)
+            {
+                float z = 0.93f + 0.025f * Mathf.Sin(tt * 0.11f);
+                float w = _artUv.width * z, h = _artUv.height * z;
+                float fx = 0.5f + 0.35f * Mathf.Sin(tt * 0.07f) + _tilt.y / 12f * 0.45f;
+                float fy = 0.5f + 0.35f * Mathf.Cos(tt * 0.09f) - _tilt.x / 10f * 0.45f;
+                float x = _artUv.x + (_artUv.width - w) * Mathf.Clamp01(fx);
+                float y = _artUv.y + (_artUv.height - h) * Mathf.Clamp01(fy);
+                _art.uvRect = new Rect(x, y, w, h);
+            }
             Rt.localScale = new Vector3(s, s, 1f);
 
             // Вспышка урона
@@ -465,9 +491,9 @@ namespace StellarisClone.Cards
             _glowPulse += dt;
             float g = GlowBoost;
             bool focus = Selected || (_hovered && _hoverable);
-            if (Playable) g = Mathf.Max(g, 0.32f + 0.08f * Mathf.Sin(_glowPulse * 2.6f));
-            if (focus) g = Mathf.Max(g, 0.7f);
-            float comets = focus ? 1f : Mathf.Max(Playable ? 0.2f : 0f, Mathf.Clamp01(GlowBoost) * 0.8f);
+            if (Playable) g = Mathf.Max(g, 0.45f + 0.1f * Mathf.Sin(_glowPulse * 2.6f));
+            if (focus) g = Mathf.Max(g, 0.8f);
+            float comets = focus ? 0.9f : Mathf.Max(Playable ? 0.3f : 0f, Mathf.Clamp01(GlowBoost) * 0.8f);
             GlowBoost = Mathf.MoveTowards(GlowBoost, 0f, dt * 1.5f);
             var gc = focus ? new Color(1f, 0.78f, 0.32f) : Playable ? new Color(0.3f, 1f, 0.5f) : _frameColor;
             float k = 1f - Mathf.Exp(-dt * 10f);

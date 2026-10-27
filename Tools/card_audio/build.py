@@ -239,9 +239,12 @@ def build(src, out):
     R = lambda lst, i: lst[i % len(lst)]
 
     # --- винтовка: одиночный выстрел + отражения + звон гильзы о бетон
-    rifle = shots('AK-47/C_28P.wav', [0, 1, 2, 3], 1.0) + shots('AR-15/D_32P.wav', [0, 1], 1.0) + shots('SKS/U_14P.wav', [0, 2, 4], 1.0)
+    rifle = shots('AK-47/C_28P.wav', [0, 1, 2, 3], 1.0) + shots('AR-15/D_32P.wav', [0, 1], 1.0) + shots('SKS/U_14P.wav', [0, 1, 2, 3, 4], 1.0)
+    rifle += shots('Tikka/W_29P.wav', [0, 1], 1.0) + shots('Model 1894/L_23P.wav', [0, 1], 1.0) + shots('Arisaka/E_25P.wav', [0, 1], 1.0)
+    rifle += shots('Marlin 336/I_22P.wav', [0, 1], 1.0) + shots('1917/B_24P.wav', [0, 1], 1.0)
     rifle += [norm(L(BSB('2853'))), norm(L(BSB('2854')))]
-    emit('GunRifle', [soft(mix((fade(s, 0.001, 0.45), 1.0, 0), (R(casings556, i), 0.10, 0.32 + 0.05 * (i % 3))), 1.3) for i, s in enumerate(rifle)])
+    emit('GunRifle', [soft(mix((fade(s, 0.001, 0.45), 1.0, 0), (R(casings556 + casings762, i), 0.06 + 0.06 * RNG.random(), 0.28 + 0.12 * RNG.random())), 1.3)
+                      for i, s in enumerate(rifle)])
 
     # --- очередь: 3–5 патронов + россыпь гильз
     def burst(path, start_idx, n, tail=0.7):
@@ -251,7 +254,9 @@ def build(src, out):
         t0, t1 = o[start_idx] / SR, o[start_idx + n - 1] / SR
         return norm(fade(cut(x, t0, t1 - t0 + tail), 0.001, 0.35)), (t1 - t0) / max(1, n - 1), n
     raw = [burst('AK-47/C_29P.wav', 0, 4), burst('AK-47/C_29P.wav', 4, 4), burst('AK-47/C_27P.wav', 0, 5),
-           burst('Carl Gustav M45/G_33P.wav', 0, 4), burst('Carl Gustav M45/G_33P.wav', 4, 3), burst('PPSh/P_16P.wav', 0, 5)]
+           burst('Carl Gustav M45/G_33P.wav', 0, 4), burst('Carl Gustav M45/G_33P.wav', 4, 3), burst('PPSh/P_16P.wav', 0, 5),
+           burst('AK-47/C_27P.wav', 10, 5), burst('PPSh/P_34P.wav', 0, 6), burst('PPSh/P_34P.wav', 9, 5),
+           burst('Carl Gustav M45/G_35P.wav', 0, 4), burst('Carl Gustav M45/G_35P.wav', 10, 5), burst('PPSh/P_32P.wav', 2, 4)]
     autos = []
     for i, b in enumerate([r for r in raw if r is not None]):
         sig, step, n = b
@@ -318,7 +323,7 @@ def build(src, out):
     # --- взрывы: хлопок ниже на кварту-октаву + дальний взрыв + раскат + суббас + камни и металл
     def boom(i, big):
         bang = norm(R(bangs, i) if not big else lowpass(R(bangs, i), 3000))
-        body = norm(L(FA + ('Mossberg/N_30P.wav' if i % 2 else 'Nova/O_21P.wav'), 0.42 if big else 0.6))
+        body = norm(L(FA + ('Mossberg/N_30P.wav' if i % 2 else 'Nova/O_21P.wav'), (0.38 + 0.04 * (i % 3)) if big else (0.55 + 0.05 * (i % 3))))
         o = onsets(body)
         body = norm(cut(body, o[0] / SR, 1.8))
         parts = [(bang, 0.85, 0), (body, 0.8, 0.002), (R(farboom, i), 0.5 if big else 0.3, 0.01),
@@ -327,16 +332,18 @@ def build(src, out):
             parts.append((highpass(R(stones, i * 3 + j), 250), 0.22 if big else 0.15, 0.3 + 0.22 * j + 0.06 * RNG.random()))
         if big: parts.append((highpass(R(steel, i), 400), 0.12, 0.45))
         return soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.22 if big else 0.14, 2.2 if big else 1.3), 1.8)
-    emit('Boom', [boom(i, True) for i in range(5)])
-    emit('BoomSmall', [boom(i + 2, False) for i in range(6)])
+    emit('Boom', [boom(i, True) for i in range(8)])
+    emit('BoomSmall', [boom(i + 2, False) for i in range(9)])
     emit('BoomFar', [norm(lowpass(mix((R(farboom, i), 1.0, 0), (R(rumble, i), 0.8, 0.05)), 900 - 100 * i)) for i in range(4)], peak=-3.0)
 
     # --- попадания: металл (стальные полосы, лом), пехота (удар + земля), щит (электрический треск)
     emit('ImpactMetal', [soft(mix((norm(cut(R(steel, i), 0.05, 0.6)), 0.8, 0),
-                                   (norm(L(K(f'impact-sounds/Audio/impactMetal_heavy_00{i}.ogg'))), 0.55, 0),
-                                   (sub(160, 70, 0.2, 0.04), 0.3, 0)), 1.4) for i in range(5)])
-    emit('ImpactFlesh', [soft(mix((norm(L(K(f'impact-sounds/Audio/impactPunch_heavy_00{i}.ogg'))), 0.9, 0),
-                                   (highpass(R(stones, i), 400), 0.35, 0.004)), 1.3) for i in range(5)])
+                                   (norm(L(K(f'impact-sounds/Audio/impactMetal_heavy_00{(i * 3) % 5}.ogg'), 0.9 + 0.05 * (i % 4))), 0.55, 0),
+                                   (norm(L(K(f'impact-sounds/Audio/impactPlate_heavy_00{i % 5}.ogg'))), 0.3 if i >= 5 else 0.0, 0.003),
+                                   (sub(160, 70, 0.2, 0.04), 0.3, 0)), 1.4) for i in range(10)])
+    emit('ImpactFlesh', [soft(mix((norm(L(K(f'impact-sounds/Audio/impactPunch_{"heavy" if i < 5 else "medium"}_00{i % 5}.ogg'))), 0.9, 0),
+                                   (norm(L(K(f'impact-sounds/Audio/impactSoft_heavy_00{(i * 2) % 5}.ogg'))), 0.35, 0.002),
+                                   (highpass(R(stones, i), 400), 0.35, 0.004)), 1.3) for i in range(10)])
     hum = L(BSB('0064'))
     emit('ImpactShield', [soft(reverb(mix((R(fence, i), 0.9, 0), (R(zaps, i + 2), 0.6, 0.02),
                                            (fade(norm(cut(hum, 1.0 + i, 0.9)), 0.05, 0.6), 0.35, 0)), 0.2, 1.0), 1.3) for i in range(5)])
@@ -363,16 +370,21 @@ def build(src, out):
         srv.append(mix((norm(L(BSB(str(1491 + i % 3)))), 0.9, 0), (norm(L(BSB(('2911', '2919', '2929')[i % 3]))), 0.5, 0.05)))
     emit('Servo', srv, peak=-3.0)
 
-    # --- рация: короткий треск эфира (приказы, захват сектора, начало хода)
+    # --- рация: короткий треск эфира (захват сектора, начало хода) — 10 разных кусков эфира
+    sweep = L(BSB('2618'))
     radio = []
-    for i, (n, t, d) in enumerate((('0313', 0.15, 0.9), ('0313', 1.95, 0.9), ('0312', 2.5, 1.0), ('0312', 3.3, 0.9))):
-        r = highpass(lowpass(norm(cut(L(BSB(n)), t, d)), 3800), 350)
+    for i, (n, t, d) in enumerate((('0313', 0.15, 0.9), ('0313', 1.95, 0.9), ('0313', 0.75, 0.7), ('0313', 2.9, 0.8),
+                                   ('0312', 2.5, 1.0), ('0312', 3.3, 0.9), ('0312', 0.2, 0.8), ('0312', 1.3, 0.9),
+                                   ('2618', 1.2, 0.7), ('2618', 3.5, 0.8))):
+        r = highpass(lowpass(norm(cut(L(BSB(n)), t, d)), 3400 + 400 * (i % 3)), 300 + 50 * (i % 2))
         radio.append(fade(r, 0.005, 0.3))
     emit('Radio', radio, peak=-4.0)
-    # --- карта на стол = приказ уходит по рации: щелчок тангенты, «пшш» шумоподавителя, треск эфира,
-    #     короткий сигнал цифровой линии, «роджер-бип» и хвост шума. Всё через полосу рации 300–3400 Гц с перегрузом.
-    def radio_chain(x, drive=2.5):
-        return highpass(lowpass(soft(x, drive), 3400), 300)
+
+    # --- карта на стол = приказ уходит по рации. Двенадцать разных передач: обычная с «роджер-бипом»,
+    #     без тонов (двойной щелчок тангенты), цифровой пакет данных, сильные помехи с пропаданием,
+    #     двойное «пи-пи» подтверждения, обрывок свипа частот. Всё — через полосу рации с перегрузом.
+    def radio_chain(x, lo=300, hi=3400, drive=2.5):
+        return highpass(lowpass(soft(x, drive), hi), lo)
 
     def tone(f, dur, amp=1.0):
         t = np.arange(int(dur * SR)) / SR
@@ -383,40 +395,64 @@ def build(src, out):
         t = np.arange(int(dur * SR)) / SR
         return RNG.standard_normal(len(t)) * np.exp(-t / decay)
 
-    statics = [norm(cut(L(BSB(n)), t, 0.45)) for n, t in (('0313', 0.15), ('0313', 1.95), ('0312', 2.5), ('0312', 3.3))]
+    def click():
+        return highpass(hiss(0.012, 0.002), 2000)
+
+    statics = [norm(cut(L(BSB(n)), t, d)) for n, t, d in (('0313', 0.15, 0.45), ('0313', 1.95, 0.45), ('0312', 2.5, 0.5), ('0312', 3.3, 0.45),
+                                                          ('0313', 0.75, 0.6), ('0312', 1.3, 0.55))]
     order_tx = []
-    for i in range(4):
-        click = highpass(hiss(0.012, 0.002), 2000)
-        k = 1.0 + 0.04 * i
-        parts = [(click, 0.6, 0),
-                 (hiss(0.09, 0.03), 0.35, 0.01),                                   # «пшш» — открылся шумоподавитель
-                 (statics[i] * np.linspace(1, 0.6, len(statics[i])), 0.45, 0.03),   # эфир
-                 (tone(1250 * k, 0.045), 0.32, 0.10), (tone(1870 * k, 0.045), 0.32, 0.15),   # цифровая «рукопожатие»
-                 (tone(2400 * k, 0.07), 0.28, 0.40),                                # «роджер-бип»
-                 (hiss(0.16, 0.05), 0.4, 0.47)]                                     # «кшш» — конец передачи
-        tx = radio_chain(mix(*parts))
-        order_tx.append(fade(tx, 0.001, 0.15))
+    for i in range(12):
+        kind = i % 6
+        k = 0.92 + 0.16 * RNG.random()                 # разброс высоты тонов — разные станции
+        st = R(statics, i + (i // 6) * 3)              # вторая дюжина — другие куски эфира
+        if i >= 6: st = st[::-1].copy() if i % 2 else st * (0.6 + 0.4 * np.abs(np.sin(np.linspace(0, 9, len(st)))))
+        parts = [(click(), 0.6, 0), (hiss(0.06 + 0.06 * RNG.random(), 0.03), 0.35, 0.01)]
+        if kind == 0:     # обычная передача: эфир, «рукопожатие» линии, «роджер-бип»
+            parts += [(st * np.linspace(1, 0.6, len(st)), 0.45, 0.03), (tone(1250 * k, 0.045), 0.32, 0.10),
+                      (tone(1870 * k, 0.045), 0.32, 0.15), (tone(2400 * k, 0.07), 0.28, 0.40), (hiss(0.16, 0.05), 0.4, 0.47)]
+        elif kind == 1:   # без тонов: эфир и двойной щелчок тангенты в конце
+            parts += [(st, 0.55, 0.03), (click(), 0.55, 0.42), (click(), 0.45, 0.48), (hiss(0.12, 0.04), 0.35, 0.5)]
+        elif kind == 2:   # цифровой пакет: быстрая морзянка двух частот
+            seq = [1200 * k if RNG.random() < 0.5 else 2100 * k for _ in range(9)]
+            for j, f in enumerate(seq): parts.append((tone(f, 0.028), 0.26, 0.08 + j * 0.031))
+            parts += [(st[:int(0.25 * SR)], 0.3, 0.38), (hiss(0.14, 0.04), 0.35, 0.6)]
+        elif kind == 3:   # сильные помехи: эфир рвётся, в конце низкий бип
+            gate = (np.sin(np.linspace(0, 40 * np.pi * (0.8 + 0.4 * RNG.random()), len(st))) > -0.2).astype(float)
+            parts += [(st * gate, 0.7, 0.03), (hiss(0.3, 0.12), 0.25, 0.05), (tone(900 * k, 0.09), 0.3, 0.45), (hiss(0.14, 0.04), 0.4, 0.56)]
+        elif kind == 4:   # подтверждение «пи-пи»
+            parts += [(st[:int(0.3 * SR)], 0.35, 0.03), (tone(2000 * k, 0.05), 0.32, 0.30), (tone(2000 * k, 0.05), 0.32, 0.38),
+                      (hiss(0.12, 0.04), 0.35, 0.46)]
+        else:             # обрывок свипа частот и короткий бип
+            sw = highpass(lowpass(norm(cut(sweep, 0.6 + RNG.random() * 6.0, 0.35)), 3800), 300)
+            parts += [(sw, 0.5, 0.03), (tone(1600 * k, 0.06), 0.3, 0.38), (hiss(0.14, 0.04), 0.35, 0.46)]
+        lo, hi = (300, 3400) if i % 3 else (450, 2800)  # иногда рация «уже» и хрипит сильнее
+        order_tx.append(fade(radio_chain(mix(*parts), lo, hi, 2.0 + 1.5 * RNG.random()), 0.001, 0.15))
     emit('RadioOrder', order_tx, peak=-3.0)
-    emit('RadioCancel', [fade(radio_chain(mix((highpass(hiss(0.012, 0.002), 2000), 0.6, 0), (hiss(0.08, 0.025), 0.35, 0.01),
-                                                (tone(1870, 0.05), 0.3, 0.07), (tone(1250, 0.07), 0.3, 0.13),
-                                                (hiss(0.14, 0.04), 0.4, 0.22))), 0.001, 0.2) for _ in range(3)], peak=-4.0)
-    sweep = L(BSB('2618'))
+    cancel = []
+    for i in range(6):
+        k = 0.92 + 0.16 * RNG.random()
+        parts = [(click(), 0.6, 0), (hiss(0.08, 0.025), 0.35, 0.01)]
+        if i % 2 == 0: parts += [(tone(1870 * k, 0.05), 0.3, 0.07), (tone(1250 * k, 0.07), 0.3, 0.13)]
+        else: parts += [(tone(1100 * k, 0.1), 0.3, 0.08)]
+        parts.append((hiss(0.14, 0.04), 0.4, 0.22))
+        cancel.append(fade(radio_chain(mix(*parts)), 0.001, 0.2))
+    emit('RadioCancel', cancel, peak=-4.0)
     emit('OrderCast', [mix((R(radio, i), 0.9, 0), (highpass(lowpass(norm(cut(sweep, 0.85 + i * 1.3, 0.7)), 4000), 300), 0.45, 0.12),
                            (norm(L(BSB(str(1984 + i)))), 0.5, 0.65)) for i in range(4)], peak=-3.0)
 
     # --- карты: настоящие карты (Kenney Casino) и удар о стол; переворот — короткий «вжух» воздуха
     C = lambda n: norm(L(K(f'casino-audio/Audio/{n}.ogg')))
     W = [norm(L(BSB(n))) for n in ('1795', '1796', '1797', '1798', '1799', '1800', '1801', '1802')]
-    emit('CardDraw', [C(f'card-slide-{i}') for i in (1, 3, 5, 7)], peak=-4.0)
+    emit('CardDraw', [C(f'card-slide-{i}') for i in range(1, 9)], peak=-4.0)
     emit('CardHover', [highpass(C(f'card-slide-{i}')[:int(0.14 * SR)], 1500) for i in (2, 4, 6)], peak=-12.0)
     emit('CardPick', [C(f'card-shove-{i}') for i in (1, 2, 3, 4)], peak=-5.0)
-    emit('CardPlace', [mix((C(f'card-place-{i}'), 1.0, 0), (norm(L(K(f'impact-sounds/Audio/impactSoft_medium_00{i}.ogg'))), 0.55, 0.002))
-                       for i in (1, 2, 3, 4)], peak=-3.0)
+    emit('CardPlace', [mix((C(f'card-place-{1 + i % 4}'), 1.0, 0), (norm(L(K(f'impact-sounds/Audio/impactSoft_medium_00{(i * 3) % 5}.ogg'))), 0.4 + 0.1 * (i % 3), 0.002))
+                       for i in range(8)], peak=-3.0)
     emit('CardSlam', [soft(reverb(mix((C(f'card-place-{1 + i % 4}'), 0.7, 0),
-                                      (norm(L(K(f'impact-sounds/Audio/impactPunch_heavy_00{i}.ogg'))), 0.9, 0.003),
+                                      (norm(L(K(f'impact-sounds/Audio/impactPunch_heavy_00{i % 5}.ogg'))), 0.9, 0.003),
                                       (highpass(R(stones, i + 4), 400), 0.2, 0.01),
-                                      (sub(85, 36, 0.55, 0.18), 0.9, 0)), 0.12, 1.1), 1.5) for i in range(4)])
-    emit('CardFlip', [mix((C(f'card-fan-{1 + i % 2}'), 0.7, 0), (highpass(R(W, i + 2), 500), 0.35, 0)) for i in range(4)], peak=-5.0)
+                                      (sub(85 + 6 * (i % 3), 36, 0.55, 0.18), 0.9, 0)), 0.12, 1.1), 1.5) for i in range(8)])
+    emit('CardFlip', [mix((C(f'card-fan-{1 + i % 2}'), 0.7, 0), (highpass(R(W, i + 2), 500), 0.35, 0)) for i in range(6)], peak=-5.0)
     emit('Whoosh', [lowpass(R(W, i), 6000) for i in range(8)], peak=-4.0)
 
     # --- фон боя: ветер над полем (петля), поверх него код изредка пускает BoomFar

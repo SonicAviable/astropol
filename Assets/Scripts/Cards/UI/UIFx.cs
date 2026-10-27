@@ -84,6 +84,37 @@ namespace StellarisClone.Cards
             return local + offset;
         }
 
+        // ---------- свечение ----------
+        private static Material s_glowMat;
+
+        /// <summary>Материал «свечения» (UIAdditiveSoft): вспышки, искры, пламя и трассеры складываются со столом как свет.</summary>
+        private static Material GlowMat
+        {
+            get
+            {
+                if (s_glowMat == null)
+                {
+                    var sh = Resources.Load<Shader>("Shaders/UIAdditiveSoft");
+                    if (sh != null) s_glowMat = new Material(sh) { name = "UIFxGlow", hideFlags = HideFlags.DontSave };
+                }
+                return s_glowMat;
+            }
+        }
+
+        /// <summary>Светящиеся спрайты рисуются аддитивно; дым, грязь, нагар и брызги — обычным смешиванием.</summary>
+        private static bool IsLight(Sprite sp)
+        {
+            if (sp == null) return false;
+            switch (sp.name)
+            {
+                case "glow": case "k_flare": case "k_spark1": case "k_spark2": case "k_spark3": case "spark": case "beam":
+                case "k_muzzle1": case "k_muzzle2": case "k_fire1": case "k_fire2": case "k_flame": case "shock":
+                case "k_trace": case "k_trace2": case "k_slash":
+                    return true;
+                default: return false;
+            }
+        }
+
         private P Get(Sprite sp)
         {
             P p = null;
@@ -98,6 +129,7 @@ namespace StellarisClone.Cards
                 _pool.Add(p);
             }
             p.Img.sprite = sp;
+            p.Img.material = IsLight(sp) ? GlowMat : null;
             p.Img.enabled = true;
             p.Rt.SetAsLastSibling();
             p.Alive = true;
@@ -183,7 +215,19 @@ namespace StellarisClone.Cards
 
         // ---------------------------------------------------------------- готовые эффекты
 
-        private static Sprite K(string n) => CardSkin.Spr(n);
+        /// <summary>
+        /// Спрайт эффекта по имени. Мультяшные заменены: «вспышка с кольцами» (k_light) → мягкое свечение,
+        /// четырёхлучевые «звёздочки» → тонкий блик линзы, «пузырь» (k_circle) → свечение.
+        /// </summary>
+        private static Sprite K(string n)
+        {
+            switch (n)
+            {
+                case "k_light": case "k_circle": n = "glow"; break;
+                case "k_star": case "k_star2": n = "k_flare"; break;
+            }
+            return CardSkin.Spr(n);
+        }
 
         public void Sparks(Vector2 pos, Color c, int n = 18, float power = 1f)
         {
@@ -271,7 +315,6 @@ namespace StellarisClone.Cards
             Particles?.Play(flesh ? CardParticles.Fx.FleshHit : CardParticles.Fx.MetalHit, pos, scale, dirDeg);
             Burst(pos, 1, K("k_star2"), new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f), 1f), 0f, 0f, 0.14f, 0.16f, 70f * scale, 130f * scale, 0f, 0f, rotate: true);
             Burst(pos, Mathf.RoundToInt(8 * scale) + 2, CardSprites.Spark, c, 200f * scale, 520f * scale, 0.15f, 0.35f, 16f * scale, 4f, 500f, 2f, dirDeg + 180f, 110f, align: true, stretch: 3f);
-            Ring(pos, new Color(c.r, c.g, c.b, 0.6f), 10f * scale, 90f * scale, 0.22f);
         }
 
         /// <summary>Вспышка выстрела у ствола, направленная по углу ang (градусы).</summary>
@@ -299,7 +342,6 @@ namespace StellarisClone.Cards
                     : k == BloodKind.Coolant ? new Color(0.85f, 0.95f, 1f) : new Color(0.72f, 0.04f, 0.05f);
             Burst(pos, Mathf.RoundToInt(22 * scale), CardSprites.Drop, c, 140f, 520f * scale, 0.45f, 0.9f, 14f * scale, 8f, 1400f, 1.2f, 90f, 260f, align: true, end: new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f, 0f), stretch: 1.8f);
             Burst(pos, Mathf.RoundToInt(4 * scale) + 1, K("k_smoke2"), new Color(c.r, c.g, c.b, 0.6f), 20f, 90f, 0.5f, 0.9f, 50f * scale, 120f * scale, 60f, 2f);
-            Burst(pos, 1, K("k_magic"), new Color(c.r, c.g, c.b, 0.8f), 0f, 0f, 0.35f, 0.35f, 60f * scale, 140f * scale, 0f, 0f);
             if (k == BloodKind.Coolant) Sparks(pos, new Color(0.7f, 0.9f, 1f), 14, scale);
         }
 
@@ -307,10 +349,12 @@ namespace StellarisClone.Cards
 
         public void Ring(Vector2 pos, Color c, float from, float to, float dur, Sprite sp = null)
         {
-            var p = Get(sp ?? K("ring"));
+            // Ударная волна — тонкое мягкое кольцо свечением, приглушённое: читается как волна воздуха, а не «бублик»
+            var p = Get(sp ?? CardSprites.Shock);
             if (p == null) return;
+            var cc = new Color(c.r, c.g, c.b, c.a * 0.55f);
             p.Pos = pos; p.Vel = Vector2.zero; p.Life = dur; p.Size0 = from; p.Size1 = to; p.Rot = 0f; p.RotVel = 0f;
-            p.Drag = 0f; p.Gravity = 0f; p.C0 = c; p.C1 = new Color(c.r, c.g, c.b, 0f);
+            p.Drag = 0f; p.Gravity = 0f; p.C0 = cc; p.C1 = new Color(c.r, c.g, c.b, 0f);
             Apply(p);
         }
 

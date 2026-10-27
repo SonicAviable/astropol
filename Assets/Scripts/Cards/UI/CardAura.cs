@@ -20,13 +20,15 @@ namespace StellarisClone.Cards
         /// <summary>0..1 — сила бегущих огоньков и искр.</summary>
         public float Comets;
         /// <summary>Ширина ореола наружу от края карты, px.</summary>
-        public float Width = 10f;
+        public float Width = 8f;
         /// <summary>Скругление контура (как у рамки карты), px.</summary>
         public float Corner = 12f;
         /// <summary>Насколько контур заходит под край карты, px.</summary>
         public float Inset = 3f;
         /// <summary>Оборотов огонька в секунду.</summary>
         public float Speed = 0.28f;
+        /// <summary>Искр в секунду от бликов (0 — без искр: чистый контур).</summary>
+        public float SparkRate = 0f;
 
         private const int Segs = 128;
         private const float Tau = Mathf.PI * 2f;
@@ -97,7 +99,7 @@ namespace StellarisClone.Cards
             // Искры-угольки срываются с голов огоньков и улетают наружу, слегка всплывая
             if (Comets > 0.05f && isActiveAndEnabled)
             {
-                _emit += dt * 20f * Comets;
+                _emit += dt * SparkRate * Comets;
                 while (_emit >= 1f) { _emit -= 1f; Emit(); }
             }
             for (int i = _sparks.Count - 1; i >= 0; i--)
@@ -172,34 +174,41 @@ namespace StellarisClone.Cards
             var uv = new Vector2(0.5f, 0.5f);
             var hot = Color.Lerp(Tint, Color.white, 0.65f);
 
-            // Ореол: на каждом шаге контура три вершины — под краем карты (ярко), посередине, снаружи (прозрачно)
+            // Контур как у карт в дорогих карточных играх: чёткая светящаяся линия по самому краю карты,
+            // за ней — узкое мягкое свечение в несколько пикселей; по линии пробегает короткий яркий блик.
+            // Ширина не «дышит» (иначе край выглядит рыхлым пятном) — живёт только яркость.
+            float px = Mathf.Max(0.6f, Width / 8f);   // пиксель в масштабе карты
             for (int i = 0; i <= Segs; i++)
             {
                 float s = i / (float)Segs;
                 Perim(r, s, out var p, out var n);
-                // «Языки»: две волны, бегущие навстречу друг другу, — край живой, а не ровная полоса
-                float flick = 0.8f + 0.2f * Mathf.Sin(s * Tau * 7f + _t * Tau * 3.3f) * Mathf.Sin(s * Tau * 3f - _t * Tau * 1.9f);
+                float shimmer = 0.9f + 0.1f * Mathf.Sin(s * Tau * 5f + _t * Tau * 2.2f);
                 float comet = 0f;
                 for (int k = 0; k < 2; k++)
                 {
-                    float behind = Mathf.Repeat(_t + k * 0.5f - s, 1f);   // расстояние позади головы огонька
-                    comet += Mathf.Exp(-behind * 16f) + 0.35f * Mathf.Exp(-behind * 4f);
+                    float behind = Mathf.Repeat(_t + k * 0.5f - s, 1f);   // расстояние позади головы блика
+                    comet += Mathf.Exp(-behind * 30f) + 0.25f * Mathf.Exp(-behind * 8f);
                 }
                 comet *= Comets;
-                float b = Level * flick + comet;
-                float wm = (0.9f + 0.15f * flick) * (1f + 0.35f * Mathf.Min(1f, comet));
-                var col = Color.Lerp(Tint, hot, Mathf.Clamp01(comet * 0.8f));
-                var inner = col; inner.a = Mathf.Clamp01(b);
-                var mid = col; mid.a = Mathf.Clamp01(b * 0.55f);
-                var outer = col; outer.a = 0f;
-                vh.AddVert(p - n * 1f, inner, uv);
-                vh.AddVert(p + n * (Inset + Width * 0.3f * wm), mid, uv);
-                vh.AddVert(p + n * (Inset + Width * wm), outer, uv);
+                float b = Level * shimmer + comet;
+                var col = Color.Lerp(Tint, hot, Mathf.Clamp01(0.25f + comet * 0.9f));
+                var edge = p + n * Inset;
+                var c0 = col; c0.a = Mathf.Clamp01(b * 0.9f);
+                var c1 = col; c1.a = Mathf.Clamp01(b);
+                var c2 = Tint; c2.a = Mathf.Clamp01(b * 0.35f);
+                var c3 = Tint; c3.a = 0f;
+                vh.AddVert(p - n * 1f, c0, uv);
+                vh.AddVert(edge + n * (1.3f * px), c1, uv);
+                vh.AddVert(edge + n * (3f * px), c2, uv);
+                vh.AddVert(edge + n * Width, c3, uv);
                 if (i > 0)
                 {
-                    int a0 = (i - 1) * 3, a1 = i * 3;
-                    vh.AddTriangle(a0, a1, a0 + 1); vh.AddTriangle(a1, a1 + 1, a0 + 1);
-                    vh.AddTriangle(a0 + 1, a1 + 1, a0 + 2); vh.AddTriangle(a1 + 1, a1 + 2, a0 + 2);
+                    int a0 = (i - 1) * 4, a1 = i * 4;
+                    for (int q = 0; q < 3; q++)
+                    {
+                        vh.AddTriangle(a0 + q, a1 + q, a0 + q + 1);
+                        vh.AddTriangle(a1 + q, a1 + q + 1, a0 + q + 1);
+                    }
                 }
             }
 

@@ -41,6 +41,7 @@ namespace StellarisClone.Core
         private readonly ConcurrentQueue<int> _ready = new ConcurrentQueue<int>();
         /// <summary>Записанные звуки из Resources/Audio/Sfx: индекс звука → варианты.</summary>
         private readonly Dictionary<int, AudioClip[]> _recorded = new Dictionary<int, AudioClip[]>();
+        private readonly Dictionary<int, int> _lastVariant = new Dictionary<int, int>();
         private CancellationTokenSource _cts;
 
         private class Voice
@@ -404,7 +405,13 @@ namespace StellarisClone.Core
 
             AudioClip clip;
             if (_recorded.TryGetValue(idx, out var rec))
-                clip = rec[UnityEngine.Random.Range(0, rec.Length)];
+            {
+                // Без повтора подряд: один и тот же вариант два раза кряду слышен как «машинный» звук
+                int vi = UnityEngine.Random.Range(0, rec.Length);
+                if (rec.Length > 1 && _lastVariant.TryGetValue(idx, out int lv) && vi == lv) vi = (vi + 1 + UnityEngine.Random.Range(0, rec.Length - 1)) % rec.Length;
+                _lastVariant[idx] = vi;
+                clip = rec[vi];
+            }
             else
             {
                 int variant = def.Variants > 1 ? UnityEngine.Random.Range(0, def.Variants) : 0;
