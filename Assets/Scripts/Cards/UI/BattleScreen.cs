@@ -39,6 +39,7 @@ namespace StellarisClone.Cards
         private GameObject _root;
         private RectTransform _board, _fxLayer, _overlay, _handRoot, _previewRoot, _dragLayer;
         private UIFx _fx;
+        private CardParticles _particles;
         private RawImage _bg;
 
         private BattleSetup _setup;
@@ -188,6 +189,7 @@ namespace StellarisClone.Cards
         {
             StopAllCoroutines();
             _fx?.ClearAll();
+            _particles?.SetActive(false);
             if (_root != null) _root.SetActive(false);
             var tm = TimeManager.Instance;
             if (tm != null) tm.SetSpeed(_savedSpeed);
@@ -271,6 +273,12 @@ namespace StellarisClone.Cards
             _fx = _fxLayer.gameObject.AddComponent<UIFx>();
             _fx.Init(_fxLayer, _board);
             _fx.Speed = _animSpeed;
+            // Настоящие частицы (Particle Pack) — своей камерой в текстуру под спрайтовыми эффектами
+            if (_particles != null) Destroy(_particles.gameObject);
+            _particles = CardParticles.Create(_fxLayer);
+            _particles.Speed = _animSpeed;
+            _particles.SetActive(true);
+            _fx.P = _particles;
 
             _overlay = LGBuild.Rect(croot, "Overlay");
             _overlay.Stretch();
@@ -493,98 +501,137 @@ namespace StellarisClone.Cards
             role.Track(3f);
         }
 
-        /// <summary>Правая колонка: счётчик хода, кнопка хода, счёт секторов, погода, служебные кнопки.</summary>
+        /// <summary>
+        /// Правая колонка — «командный пульт» в бронзовой раме (как стол): диск хода, большая кнопка-самоцвет
+        /// «Закончить ход» с бегущим бликом, счёт секторов, погода, квадратные кнопки управления боем.
+        /// </summary>
         private void BuildRight()
         {
+            bool merc = _state.Sides[_P].Faction == "aquila";
+            float bottom = merc ? -286f : -232f, top = 370f;
+            var console = CardSkin.Sliced(_board, "Console", "panel_plates", Color.white, 0.45f);
+            console.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, (top + bottom) * 0.5f), new Vector2(236, top - bottom));
+            var cframe = CardSkin.Sliced(_board, "ConsoleFrame", "frame_card", CardSkin.Bronze, 0.45f);
+            cframe.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, (top + bottom) * 0.5f), new Vector2(236, top - bottom));
+
+            // Диск хода
             var turnOrb = CardSkin.Simple(_board, "TurnOrb", "orb_gray", Color.white);
-            turnOrb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 300), new Vector2(112, 112));
-            _turnText = CardSkin.TitleText(turnOrb.rectTransform, "1", 46, CardSkin.Parchment, TextAnchor.MiddleCenter, 3f);
+            turnOrb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 290), new Vector2(104, 104));
+            _turnText = CardSkin.TitleText(turnOrb.rectTransform, "1", 44, CardSkin.Parchment, TextAnchor.MiddleCenter, 3f);
             _turnText.rectTransform.Stretch(0, 0, 0, -3);
-            var tl = CardSkin.TitleText(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 15, new Color(0.95f, 0.8f, 0.55f), TextAnchor.MiddleCenter, 1.5f);
-            tl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 228), new Vector2(220, 22));
+            var tl = CardSkin.TitleText(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 14, new Color(0.95f, 0.8f, 0.55f), TextAnchor.MiddleCenter, 1.5f);
+            tl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 224), new Vector2(220, 22));
             tl.Track(2f);
 
+            // Кнопка хода: ореол, самоцвет, бегущий блик
             _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.4f, 0f));
-            _endGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 122), new Vector2(330, 190));
+            _endGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 140), new Vector2(330, 200));
             var endBtn = LGBuild.Rect(_board, "EndTurn");
-            endBtn.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 122), new Vector2(222, 84));
+            endBtn.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 140), new Vector2(208, 88));
             _endButtonImg = endBtn.gameObject.AddComponent<Image>();
             _endButtonImg.sprite = CardSkin.Spr("btn_end_amber");
             _endButtonImg.type = Image.Type.Sliced;
-            _endButtonImg.pixelsPerUnitMultiplier = 2.3f;
+            _endButtonImg.pixelsPerUnitMultiplier = 192f / 88f;
             _endButton = endBtn.gameObject.AddComponent<Button>();
             _endButton.targetGraphic = _endButtonImg;
+            var ecb = _endButton.colors; ecb.highlightedColor = new Color(1.18f, 1.15f, 1.05f, 1f); ecb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f); ecb.fadeDuration = 0.08f; _endButton.colors = ecb;
             _endButton.onClick.AddListener(OnEndTurn);
+            var glintMask = LGBuild.Rect(endBtn, "GlintMask");
+            glintMask.Stretch(10, 10, 10, 10);
+            glintMask.gameObject.AddComponent<RectMask2D>();
+            _endGlint = CardSkin.Simple(glintMask, "Glint", "k_light", new Color(1f, 1f, 1f, 0.55f));
+            _endGlint.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-200, 0), new Vector2(70, 120));
+            _endGlint.rectTransform.localRotation = Quaternion.Euler(0, 0, -20f);
             _endLabel = CardSkin.TitleText(endBtn, Loc.T("ЗАКОНЧИТЬ\nХОД"), 19, Color.white, TextAnchor.MiddleCenter, 2f);
             _endLabel.rectTransform.Stretch(14, 0, 14, 0);
             _endLabel.lineSpacing = 0.9f;
             TooltipHelper.Attach(endBtn.gameObject, Loc.T("Закончить ход  <color=#8AA2A8>(Enter)</color>\nЯнтарная — ещё есть что сыграть, зелёная — всё сыграно"));
 
-            _scoreText = CardSkin.TitleText(_board, "", 16, new Color(0.92f, 0.9f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
-            _scoreText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 46), new Vector2(240, 44));
+            // Счёт секторов
+            var sep1 = LGBuild.Panel(_board, "Sep", new Color(1f, 0.8f, 0.55f, 0.25f));
+            sep1.sprite = CardSprites.Beam; sep1.raycastTarget = false;
+            sep1.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 82), new Vector2(190, 2));
+            _scoreText = CardSkin.TitleText(_board, "", 17, new Color(0.92f, 0.9f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
+            _scoreText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 52), new Vector2(220, 44));
             _scoreText.supportRichText = true;
 
-            var wp = CardSkin.Sliced(_board, "Weather", "panel_leather", Color.white, 0.3f);
-            wp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -34), new Vector2(226, 74));
+            // Погода
+            var wp = CardSkin.Sliced(_board, "Weather", "panel_dark", Color.white, 0.3f);
+            wp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -22), new Vector2(204, 74));
+            var wrim = CardSkin.Sliced(wp.rectTransform, "Rim", "frame_thin", new Color(0.55f, 0.75f, 1f, 0.8f), 0.25f);
+            wrim.rectTransform.Stretch(-2, -2, -2, -2);
             _weatherTitle = CardSkin.TitleText(wp.rectTransform, Loc.T("ПОГОДА"), 12, new Color(0.65f, 0.82f, 1f), TextAnchor.UpperCenter, 1f);
             _weatherTitle.rectTransform.Stretch(10, 0, 10, 9);
             _weatherText = LGBuild.Label(wp.rectTransform, "", 12, new Color(0.85f, 0.88f, 0.93f), TextAnchor.MiddleCenter, wrap: true);
             _weatherText.rectTransform.Stretch(12, 6, 12, 26);
             _weatherText.raycastTarget = false;
 
-            // Служебные круглые кнопки: скорость анимаций, досчитать, отступить
-            _speedLabel = RoundButton(new Vector2(RX - 70, -128), null, SpeedText(), Loc.T("СКОРОСТЬ"), OnSpeed, Loc.T("Скорость анимаций"), out _);
-            RoundButton(new Vector2(RX, -128), LGIcon.Fastest, null, Loc.T("ДОСЧИТАТЬ"), OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
-            RoundButton(new Vector2(RX + 70, -128), LGIcon.Back, null, _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), OnRetreat,
-                _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton);
+            // Кнопки управления боем
+            _speedLabel = SquareButton(new Vector2(RX - 66, -122), null, SpeedText(), Loc.T("СКОРОСТЬ"), OnSpeed, Loc.T("Скорость анимаций боя"), out _);
+            SquareButton(new Vector2(RX, -122), LGIcon.Fastest, null, Loc.T("ДОСЧИТАТЬ"), OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
+            SquareButton(new Vector2(RX + 66, -122), LGIcon.Back, null, _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), OnRetreat,
+                _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton, new Color(1f, 0.55f, 0.48f));
 
             // Наёмники Аквилы — купить прямо в бою
-            if (_state.Sides[_P].Faction == "aquila")
+            if (merc)
             {
                 var mrt = LGBuild.Rect(_board, "Merc");
-                mrt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -214), new Vector2(214, 46));
+                mrt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -238), new Vector2(200, 50));
                 var mimg = mrt.gameObject.AddComponent<Image>();
                 mimg.sprite = CardSkin.Spr("btn_end_amber");
                 mimg.type = Image.Type.Sliced;
-                mimg.pixelsPerUnitMultiplier = 3.5f;
+                mimg.pixelsPerUnitMultiplier = 192f / 50f;
                 _mercButton = mrt.gameObject.AddComponent<Button>();
                 _mercButton.targetGraphic = mimg;
                 _mercButton.onClick.AddListener(OnMerc);
+                mrt.gameObject.AddComponent<PressSpring>();
                 var ml = CardSkin.TitleText(mrt, Loc.T("НАЁМНИКИ · 60"), 14, Color.white, TextAnchor.MiddleCenter, 1.5f);
                 ml.rectTransform.Stretch();
                 TooltipHelper.Attach(mrt.gameObject, Loc.T("<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору"));
             }
         }
 
-        /// <summary>Круглая кнопка в стиле стола: стеклянная сфера в металлической оправе, значок, подпись под ней.</summary>
-        private Text RoundButton(Vector2 pos, LGIcon? icon, string label, string caption, Action act, string tip, out Button btn)
+        private Image _endGlint;
+        private float _glintT;
+
+        /// <summary>Квадратная кнопка пульта: тёмная броня в стальной оправе (при наведении — золотой), значок, подпись.</summary>
+        private Text SquareButton(Vector2 pos, LGIcon? icon, string label, string caption, Action act, string tip, out Button btn, Color? iconColor = null)
         {
-            var rt = LGBuild.Rect(_board, "RoundBtn");
+            var rt = LGBuild.Rect(_board, "CmdBtn");
             rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(58, 58));
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.sprite = CardSkin.Spr("orb_gray");
-            bg.color = Color.white;
+            bg.sprite = CardSkin.Spr("panel_dark");
+            bg.type = Image.Type.Sliced;
+            bg.pixelsPerUnitMultiplier = 1f / 0.3f;
+            var rim = CardSkin.Sliced(rt, "Rim", "frame_thin", Color.white, 0.3f);
+            rim.rectTransform.Stretch(-2, -2, -2, -2);
             btn = rt.gameObject.AddComponent<Button>();
-            btn.targetGraphic = bg;
-            var cb = btn.colors; cb.highlightedColor = new Color(1.35f, 1.3f, 1.15f, 1f); cb.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f); cb.fadeDuration = 0.08f; btn.colors = cb;
-            btn.onClick.AddListener(() => { rt.localScale = Vector3.one * 0.9f; act(); });
+            btn.targetGraphic = rim;
+            var cb = btn.colors;
+            cb.normalColor = new Color(0.8f, 0.82f, 0.86f, 1f);
+            cb.highlightedColor = new Color(1f, 0.82f, 0.45f, 1f);
+            cb.pressedColor = new Color(1f, 0.6f, 0.3f, 1f);
+            cb.disabledColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+            cb.fadeDuration = 0.08f;
+            btn.colors = cb;
+            btn.onClick.AddListener(() => { rt.localScale = Vector3.one * 0.9f; SFXManager.Play(Sfx.UiClick, 0.6f); act(); });
             rt.gameObject.AddComponent<PressSpring>();
-            if (!string.IsNullOrEmpty(caption))
-            {
-                var cap = CardSkin.TitleText(_board, caption, 10, new Color(0.85f, 0.78f, 0.62f), TextAnchor.MiddleCenter, 1f);
-                cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos + new Vector2(0, -42), new Vector2(80, 14));
-                cap.Track(1f);
-            }
             Text t = null;
             if (icon.HasValue)
             {
-                var ic = LGIcons.Create(rt, icon.Value, 22, new Color(1f, 0.95f, 0.85f));
-                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22, 22));
+                var ic = LGIcons.Create(rt, icon.Value, 24, iconColor ?? new Color(1f, 0.95f, 0.85f));
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(24, 24));
             }
             else
             {
-                t = CardSkin.TitleText(rt, label ?? "", 15, new Color(0.95f, 0.92f, 0.86f), TextAnchor.MiddleCenter, 1.5f);
+                t = CardSkin.TitleText(rt, label ?? "", 17, new Color(1f, 0.95f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
                 t.rectTransform.Stretch();
+            }
+            if (!string.IsNullOrEmpty(caption))
+            {
+                var cap = CardSkin.TitleText(_board, caption, 9, new Color(0.85f, 0.78f, 0.62f), TextAnchor.MiddleCenter, 1f);
+                cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos + new Vector2(0, -40), new Vector2(76, 14));
+                cap.Track(1f);
             }
             if (!string.IsNullOrEmpty(tip)) TooltipHelper.Attach(rt.gameObject, tip);
             return t;
@@ -596,8 +643,10 @@ namespace StellarisClone.Cards
             _deckE = Deck(new Vector2(LX, 300), FactionOf(_E));
             _deckP = Deck(new Vector2(LX, -168), FactionOf(_P));
 
-            var hp = CardSkin.Sliced(_board, "Log", "panel_leather", Color.white, 0.3f);
-            hp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(LX, 66), new Vector2(226, 250));
+            var hp = CardSkin.Sliced(_board, "Log", "panel_plates", Color.white, 0.45f);
+            hp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(LX, 66), new Vector2(232, 258));
+            var hf = CardSkin.Sliced(hp.rectTransform, "Frame", "frame_card", CardSkin.Bronze, 0.4f);
+            hf.rectTransform.Stretch();
             var lc = CardSkin.TitleText(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"), 13, new Color(0.95f, 0.8f, 0.55f), TextAnchor.UpperCenter, 1f);
             lc.rectTransform.Stretch(10, 0, 10, 12);
             lc.Track(2f);
@@ -645,6 +694,7 @@ namespace StellarisClone.Cards
             _animSpeed = _animSpeed >= 2f ? 1f : _animSpeed + 0.5f;
             PlayerPrefs.SetFloat("cards.speed", _animSpeed);
             if (_fx != null) _fx.Speed = _animSpeed;
+            if (_particles != null) _particles.Speed = _animSpeed;
             if (_speedLabel != null) _speedLabel.text = SpeedText();
             SFXManager.Play(Sfx.UiClick);
         }
@@ -912,6 +962,14 @@ namespace StellarisClone.Cards
                 _endGlow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_endGlow.color.a, pulse, 1f - Mathf.Exp(-dt * 8f)));
             }
 
+            if (_endGlint != null)
+            {
+                // Блик пробегает по кнопке раз в 2.5 с; чаще, когда всё сыграно
+                _glintT += dt * (_endState != null && _endState.StartsWith("btn_end_green") ? 1.4f : 0.8f);
+                float g = Mathf.Repeat(_glintT, 2.5f) / 0.7f;
+                _endGlint.rectTransform.anchoredPosition = new Vector2(Mathf.Lerp(-170f, 170f, Mathf.Clamp01(g)), 0);
+                _endGlint.color = new Color(1f, 1f, 1f, g <= 1f && _endState != null && !_endState.StartsWith("btn_end_gray") ? 0.5f : 0f);
+            }
             if (_endButtonImg != null) _endButtonImg.rectTransform.localScale = Vector3.Lerp(_endButtonImg.rectTransform.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 12f));
 
             // Атмосфера: пыль/пепел/дождь

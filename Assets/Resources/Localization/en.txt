@@ -6644,3 +6644,40 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 \n\n<color=#8AA2A8>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>	\n\n<color=#8AA2A8>Speed: {0:0} d/jump · upkeep {1:0.#} energy per month</color>
 Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n	Hull {0:0}/{1:0}  Armor {2:0}  Shields {3:0}\n
 \nЛКМ — выбрать\nПКМ по системе — двигаться	\nLMB — select\nRMB on a system — move
+Новые карты в Арсенале	New cards in the Arsenal
+Нужна технология «{0}»	Requires technology "{0}"
+Пехота	Infantry
+Техника	Vehicles
+Приказы	Orders
+Можно заказать	Can order
+Закрыто технологией	Locked by technology
+СОРТИРОВКА	SORT
+Сила	Power
+Имя	Name
+КОЛОНИЯ ПРОИЗВОДСТВА	PRODUCTION COLONY
+АРМИЯ	ARMY
+Карт всего	Total cards
+На кораблях	On ships
+В резерве	In reserve
+Гарнизоны	Garrisons
+Ранены	Wounded
+Содержание в месяц	Upkeep per month
+Наземные войска для штурма колоний: производство в колониях, десант на кораблях, гарнизоны. Карты открываются технологиями	Ground forces for assaulting colonies: production in colonies, troops on ships, garrisons. Cards are unlocked by technologies
+<b>Как это работает</b>\nПехоту набирают в городских районах, технику собирают в промышленных, оборону строят на месте, приказы выдаёт штаб столицы.\nГотовые карты ждут на колонии — боевые корабли с автопогрузкой забирают их сами.	<b>How it works</b>\nInfantry is recruited in urban districts, vehicles are assembled in industrial ones, defenses are built on site, orders are issued by the capital HQ.\nFinished cards wait at the colony — warships with auto-load pick them up on their own.
+<b>Десант</b>\nКорвет берёт 1 место, фрегат — 2, эсминец — 4; приказы места не занимают.\nКлик по карте резерва — погрузить на корабль у этой колонии, по карте на корабле — высадить.	<b>Troops</b>\nA corvette carries 1 slot, a frigate 2, a destroyer 4; orders take no slots.\nClick a reserve card to load it onto a ship at this colony, click a card on a ship to unload it.
+Жители: <b>{0}</b>\nГородских районов: <b>{1}</b> · промышленных: <b>{2}</b>\nУкрепления базы: <b>{3}</b>	Population: <b>{0}</b>\nUrban districts: <b>{1}</b> · industrial: <b>{2}</b>\nStarbase fortifications: <b>{3}</b>
+Нет колоний с жителями — карты производить негде	No colonies with population — nowhere to produce cards
+Под фильтр не подходит ни одна карта	No cards match the filter
+<b>{0}</b>\nОткроется технологией «{1}» — её можно изучить в окне технологий (T)	<b>{0}</b>\nUnlocked by the "{1}" technology — research it in the technology window (T)
+Резерв пуст — закажите карты на вкладке «Производство». Готовые карты ждут на колонии, корабли с автопогрузкой забирают их сами	Reserve is empty — order cards on the "Production" tab. Finished cards wait at the colony; ships with auto-load pick them up on their own
+АВТОПОГРУЗКА	AUTO-LOAD
+клик по карте — погрузить	click a card to load
+у колонии нет кораблей	no ships at the colony
+ВАШИ ПОТЕРИ	YOUR LOSSES
+ПОТЕРИ ВРАГА	ENEMY LOSSES
+ВЕТЕРАНЫ ★	VETERANS ★
+ПОГИБЛО ЖИТЕЛЕЙ	COLONISTS KILLED
+ПОГИБ	KILLED
++★ ОПЫТ	+★ EXPERIENCE
+ТРОФЕЙ: {0}	TROPHY: {0}
+Скорость анимаций боя	Battle animation speed

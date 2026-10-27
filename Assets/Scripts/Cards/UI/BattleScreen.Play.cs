@@ -72,6 +72,7 @@ namespace StellarisClone.Cards
             _fx.Projectile(from, land, new Color(1f, 0.7f, 0.35f), dur * Pace, 30f * scale);
             _fx.Line(from, land, new Color(1f, 0.55f, 0.2f, 0.5f), 16f * scale, (dur + 0.25f) * Pace);
             yield return W(dur);
+            _fx.P?.Play(CardParticles.Fx.Dust, land, scale);
             _fx.Explosion(land, 0.9f * scale);
             _fx.Dust(land, 1.4f * scale);
             _fx.Shake(10f * scale, 0.35f);
@@ -443,6 +444,7 @@ namespace StellarisClone.Cards
                         _fx.Burst(p, 1, CardSprites.Glow, new Color(1f, 0.2f, 0.1f, 0.9f), 0, 0, 0.25f, 0.25f, 24f, 10f);
                         yield return W(0.07f);
                     }
+                    _fx.P?.Play(CardParticles.Fx.Plasma, target, 1.5f);
                     _fx.Line(top, target, new Color(1f, 1f, 1f, 1f), 160f, 0.55f);
                     _fx.Line(top, target, new Color(0.6f, 0.9f, 1f, 0.9f), 280f, 0.8f);
                     _fx.Flash(Color.white, 0.95f, 2.2f);
@@ -495,6 +497,7 @@ namespace StellarisClone.Cards
                     break;
                 case "O9":   // ЭМИ
                     _fx.Energy(target, new Color(0.45f, 0.8f, 1f), 1.6f);
+                    _fx.P?.Play(CardParticles.Fx.Electric, target, 1.3f);
                     _fx.Ring(target, new Color(0.4f, 0.75f, 1f, 1f), 40f, 900f, 0.7f);
                     _fx.Ring(target, new Color(0.7f, 0.9f, 1f, 0.8f), 20f, 600f, 0.5f);
                     _fx.Sparks(target, new Color(0.55f, 0.85f, 1f), 40, 1.4f);
@@ -616,6 +619,7 @@ namespace StellarisClone.Cards
             {
                 // Огнемёт: плотная струя пламени и жар на цели
                 SFXManager.Play(Sfx.WeaponEnergy, 0.7f, 0.55f);
+                _fx.P?.Play(CardParticles.Fx.Flame, a, 1f, ang);
                 for (int i = 0; i < 6; i++)
                 {
                     _fx.Burst(a, 4, CardSkin.Spr(i % 2 == 0 ? "k_fire1" : "k_flame"), new Color(1f, 0.6f, 0.2f, 0.95f), 650f, 900f, 0.28f, 0.38f, 30f, 90f, -60f, 1f, ang, 14f, end: new Color(0.5f, 0.12f, 0.04f, 0f));
@@ -685,7 +689,8 @@ namespace StellarisClone.Cards
                 _fx.Bullet(a, b + spread, c, fly * Pace, heavy ? 22f : 11f);
                 SFXManager.Play(Sfx.WeaponKinetic, heavy ? 0.6f : 0.35f, heavy ? 0.7f : Random.Range(1f, 1.2f));
                 if (heavy) { src.Punch(0.08f); _fx.Shake(4f, 0.12f); }
-                StartCoroutine(Later(fly, () => _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f)));
+                bool flesh = tgt.Card.Def.Has(Kw.Infantry) || tgt.Card.Def.Has(Kw.Militia);
+                StartCoroutine(Later(fly, () => _fx.Impact(b + spread, ang, c, heavy ? 1.3f : 0.7f, flesh)));
                 yield return W(heavy ? 0.05f : 0.07f);
             }
             yield return W(fly);
@@ -749,6 +754,7 @@ namespace StellarisClone.Cards
             else
             {
                 _fx.Blood(p, CardArt.Blood(FactionOf(v.Side)), 1.5f);
+                _fx.P?.Play(CardParticles.Fx.FleshHit, p, 1.3f, 90f);
                 _fx.Dust(p + new Vector2(0, -50), 0.6f);
                 SFXManager.Play(Sfx.HitArmor, 0.8f, 0.7f);
             }
@@ -987,59 +993,141 @@ namespace StellarisClone.Cards
             var r = _state.Result;
             bool win = (_P == BattleState.Attacker) == r.AttackerWon;
             SFXManager.Play(win ? Sfx.BattleVictory : Sfx.BattleDefeat);
-            if (win) { _fx.Flash(new Color(1f, 0.9f, 0.6f), 0.5f, 1f); for (int i = 0; i < 4; i++) _fx.Sparks(new Vector2(Random.Range(-500f, 500f), Random.Range(-200f, 200f)), new Color(1f, 0.85f, 0.45f), 40, 1.5f); }
-
-            var dim = LGBuild.Panel(_overlay, "ResultDim", new Color(0, 0, 0, 0.72f), raycast: true);
-            dim.rectTransform.Stretch();
             var accent = win ? new Color(1f, 0.82f, 0.4f) : new Color(1f, 0.45f, 0.4f);
-            var rays = CardSkin.Simple(_overlay, "Rays", "k_star", new Color(accent.r, accent.g, accent.b, win ? 0.35f : 0.12f));
-            rays.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 230), new Vector2(1400, 1400));
-            var box = CardSkin.Sliced(_overlay, "Result", "panel_plates", Color.white, 0.7f);
-            box.raycastTarget = true;
-            box.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(880, 560));
-            var bframe = CardSkin.Sliced(box.rectTransform, "Frame", "frame_card", accent, 0.6f);
-            bframe.rectTransform.Stretch();
-            LG.Motion(box.gameObject, LGAppear.Kind.Pop);
+            if (win)
+            {
+                _fx.Flash(new Color(1f, 0.9f, 0.6f), 0.5f, 1f);
+                for (int i = 0; i < 4; i++) _fx.Sparks(new Vector2(Random.Range(-500f, 500f), Random.Range(-200f, 200f)), new Color(1f, 0.85f, 0.45f), 40, 1.5f);
+            }
 
+            // Затемнение и вращающиеся лучи за лентой
+            var dim = LGBuild.Panel(_overlay, "ResultDim", new Color(0, 0, 0, 0f), raycast: true);
+            dim.rectTransform.Stretch();
+            var rays = CardSkin.Simple(_overlay, "Rays", "k_star", new Color(accent.r, accent.g, accent.b, 0f));
+            rays.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 250), new Vector2(1500, 1500));
+            var rays2 = CardSkin.Simple(_overlay, "Rays2", "k_star2", new Color(accent.r, accent.g, accent.b, 0f));
+            rays2.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 250), new Vector2(900, 900));
+
+            // Лента-заголовок
             string head;
             if (_P == BattleState.Attacker) head = r.AttackerWon ? Loc.T("ПЛАНЕТА ВЗЯТА") : r.Retreated ? Loc.T("ДЕСАНТ ОТСТУПИЛ") : Loc.T("ШТУРМ ОТБИТ");
             else head = r.AttackerWon ? Loc.T("КОЛОНИЯ ПАЛА") : Loc.T("ОБОРОНА УСТОЯЛА");
-            var t = CardSkin.TitleText(box.rectTransform, head, 50, accent, TextAnchor.UpperCenter, 3f);
-            t.rectTransform.Stretch(20, 0, 20, 32);
-            t.Track(4f);
-            var sub = LGBuild.Label(box.rectTransform, Loc.F("{0} · {1} {2}{3}", _setup.PlanetName, r.Turns, Loc.T("ход."), r.Breach ? Loc.T(" · прорыв в Штаб") : ""), 15, UIManager.DS.TextMuted, TextAnchor.UpperCenter);
-            sub.rectTransform.Stretch(20, 0, 20, 92);
+            var ribbon = CardSkin.Sliced(_overlay, "ResultRibbon", "ribbon", win ? new Color(1f, 0.85f, 0.6f) : new Color(1f, 0.6f, 0.55f), 1.1f);
+            ribbon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 250), new Vector2(900, 104));
+            var title = CardSkin.TitleText(ribbon.rectTransform, head, 52, accent, TextAnchor.MiddleCenter, 3f);
+            title.rectTransform.Stretch(80, 0, 80, 4);
+            title.Track(4f);
+            var sub = CardSkin.TitleText(_overlay, Loc.F("{0} · {1} {2}{3}", _setup.PlanetName, r.Turns, Loc.T("ход."), r.Breach ? Loc.T(" · прорыв в Штаб") : ""), 15, new Color(0.85f, 0.85f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
+            sub.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 182), new Vector2(900, 24));
 
+            // Плитки с цифрами
             int myLost = r.LostCount[_P], enLost = r.LostCount[_E];
             int veterans = 0, wounded = 0;
             foreach (var s in r.Survivors) if (s.side == _P && s.fought) { veterans++; if (s.hp < 0.5f) wounded++; }
-            string Stat(string label, string val) => $"<color=#8AA2A8>{label}</color>  <b>{val}</b>";
-            var lines = new List<string>
+            var tiles = new List<(string label, int val, Color c, string spr)>
             {
-                Stat(Loc.T("Ваши потери:"), Loc.F("{0} карт (навсегда)", myLost)),
-                Stat(Loc.T("Потери врага:"), Loc.F("{0} карт", enLost)),
-                Stat(Loc.T("Выжившие ветераны:"), Loc.F("{0} получат звезду ★", veterans)),
+                (Loc.T("ВАШИ ПОТЕРИ"), myLost, new Color(1f, 0.5f, 0.45f), "gem_armor"),
+                (Loc.T("ПОТЕРИ ВРАГА"), enLost, new Color(1f, 0.82f, 0.4f), "gem_attack"),
+                (Loc.T("ВЕТЕРАНЫ ★"), veterans, new Color(0.45f, 0.9f, 1f), "gem_cost"),
+                (r.MilitiaKilled > 0 ? Loc.T("ПОГИБЛО ЖИТЕЛЕЙ") : Loc.T("РАНЕНЫ"), r.MilitiaKilled > 0 ? r.MilitiaKilled : wounded, new Color(0.85f, 0.85f, 0.85f), "orb_gray"),
             };
-            if (wounded > 0) lines.Add(Stat(Loc.T("Ранены:"), Loc.F("{0} — лечение {1} дн.", wounded, ArmyManager.WoundDaysAfterBattle)));
-            if (r.MilitiaKilled > 0) lines.Add(Stat(Loc.T("Погибло жителей (ополчение):"), r.MilitiaKilled.ToString()));
-            if (r.Ruined.Count > 0) lines.Add(Stat(Loc.T("Разрушено районов:"), r.Ruined.Count.ToString()));
-            if (r.Trophy != null && _P == BattleState.Attacker && r.AttackerWon) lines.Add(Stat(Loc.T("Трофей:"), r.Trophy.Name));
-            var body = LGBuild.Label(box.rectTransform, string.Join("\n", lines), 18, Color.white, TextAnchor.UpperLeft);
-            body.rectTransform.Stretch(110, 120, 60, 150);
-            body.lineSpacing = 1.35f;
+            var counters = new List<(Text t, int v)>();
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                var tl = tiles[i];
+                var p = CardSkin.Sliced(_overlay, "Tile", "panel_dark", Color.white, 0.5f);
+                p.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((i - 1.5f) * 210f, 70), new Vector2(196, 128));
+                var rim = CardSkin.Sliced(p.rectTransform, "Rim", "frame_thin", new Color(tl.c.r, tl.c.g, tl.c.b, 0.9f), 0.35f);
+                rim.rectTransform.Stretch(-2, -2, -2, -2);
+                var gem = CardSkin.Simple(p.rectTransform, "Gem", tl.spr, Color.white);
+                gem.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(44, 44));
+                var num = CardSkin.TitleText(p.rectTransform, "0", 46, tl.c, TextAnchor.MiddleCenter, 2.5f);
+                num.rectTransform.Stretch(0, 30, 0, 22);
+                var lab = CardSkin.TitleText(p.rectTransform, tl.label, 11, new Color(0.75f, 0.78f, 0.8f), TextAnchor.LowerCenter, 1f);
+                lab.rectTransform.Stretch(6, 12, 6, 0);
+                lab.Track(1.5f);
+                LG.Motion(p.gameObject, LGAppear.Kind.Pop);
+                counters.Add((num, tl.val));
+            }
 
-            var brt = LGBuild.Rect(box.rectTransform, "Continue");
-            brt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 34), new Vector2(300, 76));
+            // Карты: погибшие ваши (затемнены, навсегда) и выжившие ветераны (+★)
+            var dead = new List<BCard>();
+            var vets = new List<BCard>();
+            foreach (var sec in _state.Sectors)
+                foreach (var u in sec.Units)
+                {
+                    if (u.Side != _P || u.IsTrap || u.Has(Kw.Shield) || u.Card.InstId < 0) continue;
+                    if (u.Dead) dead.Add(u.Card); else vets.Add(u.Card);
+                }
+            var row = LGBuild.Rect(_overlay, "Cards");
+            row.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -110), new Vector2(1200, 150));
+            var all = new List<(BCard c, bool lost)>();
+            foreach (var c in dead) all.Add((c, true));
+            foreach (var c in vets) all.Add((c, false));
+            if (all.Count > 10) all.RemoveRange(10, all.Count - 10);
+            var mini = new Vector2(92, 128);
+            for (int i = 0; i < all.Count; i++)
+            {
+                var cv = CardView.Create(row, all[i].c, _P, FactionOf(_P), mini, true);
+                cv.Rt.anchoredPosition = new Vector2((i - (all.Count - 1) * 0.5f) * (mini.x + 12f), 0);
+                Hook(cv);
+                if (all[i].lost) { cv.SetAlpha(0.45f); cv.SetStatus(Loc.T("ПОГИБ"), new Color(1f, 0.35f, 0.3f)); }
+                else cv.SetStatus(Loc.T("+★ ОПЫТ"), new Color(0.45f, 0.9f, 1f));
+                cv.Punch(0.3f);
+            }
+            if (r.Trophy != null && _P == BattleState.Attacker && r.AttackerWon)
+            {
+                var tr = CardSkin.TitleText(_overlay, Loc.F("ТРОФЕЙ: {0}", r.Trophy.Name.ToUpper()), 16, new Color(1f, 0.85f, 0.45f), TextAnchor.MiddleCenter, 1.5f);
+                tr.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -205), new Vector2(900, 24));
+            }
+
+            // Кнопка
+            var brt = LGBuild.Rect(_overlay, "Continue");
+            brt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -280), new Vector2(320, 84));
             var bimg = brt.gameObject.AddComponent<Image>();
             bimg.sprite = CardSkin.Spr(win ? "btn_end_green" : "btn_end_amber");
             bimg.type = Image.Type.Sliced;
-            bimg.pixelsPerUnitMultiplier = 2.4f;
+            bimg.pixelsPerUnitMultiplier = 192f / 84f;
             var btn = brt.gameObject.AddComponent<Button>();
             btn.targetGraphic = bimg;
+            var cb = btn.colors; cb.highlightedColor = new Color(1.2f, 1.2f, 1.1f, 1f); btn.colors = cb;
             btn.onClick.AddListener(Close);
-            var bl = CardSkin.TitleText(brt, Loc.T("ПРОДОЛЖИТЬ"), 20, Color.white, TextAnchor.MiddleCenter, 2f);
+            brt.gameObject.AddComponent<PressSpring>();
+            var bl = CardSkin.TitleText(brt, Loc.T("ПРОДОЛЖИТЬ"), 22, Color.white, TextAnchor.MiddleCenter, 2f);
             bl.rectTransform.Stretch();
             _busy = false;
+
+            // Анимация: затемнение, лучи, лента въезжает, цифры набегают
+            float t = 0f;
+            var rpos = ribbon.rectTransform.anchoredPosition;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime * 1.6f;
+                float e = 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
+                dim.color = new Color(0, 0, 0, 0.78f * e);
+                rays.color = new Color(accent.r, accent.g, accent.b, (win ? 0.35f : 0.14f) * e);
+                rays2.color = new Color(accent.r, accent.g, accent.b, (win ? 0.5f : 0.2f) * e);
+                ribbon.rectTransform.localScale = Vector3.one * Mathf.Lerp(1.6f, 1f, e);
+                ribbon.color = new Color(ribbon.color.r, ribbon.color.g, ribbon.color.b, e);
+                title.color = new Color(accent.r, accent.g, accent.b, e);
+                foreach (var cn in counters) cn.t.text = Mathf.RoundToInt(cn.v * e).ToString();
+                yield return null;
+            }
+            foreach (var cn in counters) { cn.t.text = cn.v.ToString(); cn.t.rectTransform.localScale = Vector3.one * 1.2f; }
+            SFXManager.Play(Sfx.DealAccepted, 0.7f);
+            StartCoroutine(SpinRays(rays, rays2, counters));
+        }
+
+        /// <summary>Лучи за лентой итогов медленно вращаются, цифры оседают после «щелчка».</summary>
+        private IEnumerator SpinRays(Image rays, Image rays2, List<(Text t, int v)> counters)
+        {
+            while (rays != null && _root != null && _root.activeSelf)
+            {
+                rays.rectTransform.localRotation = Quaternion.Euler(0, 0, Time.unscaledTime * 6f);
+                rays2.rectTransform.localRotation = Quaternion.Euler(0, 0, -Time.unscaledTime * 10f);
+                foreach (var cn in counters) if (cn.t != null) cn.t.rectTransform.localScale = Vector3.Lerp(cn.t.rectTransform.localScale, Vector3.one, Time.unscaledDeltaTime * 8f);
+                yield return null;
+            }
         }
     }
 }
