@@ -79,6 +79,7 @@ namespace StellarisClone.Cards
         {
             public RectTransform Col, Header, PowerBar;
             public Image Plate, Wash, Dome, Highlight, HighlightFill, OrbGlowE, OrbGlowP, DomeBadge;
+            public LiquidGlassEffect PlateFx;
             public Text DomeText;
             public bool DomeWasUp = true;
             public Text Name, Rule, PowE, PowP, Stamp;
@@ -254,7 +255,10 @@ namespace StellarisClone.Cards
             BuildLeft();
             BuildPoints();
 
-            _hintText = CardSkin.TitleText(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 1.5f);
+            _hintText = Caption(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 0.8f);
+            var hol = _hintText.gameObject.AddComponent<Outline>();
+            hol.effectColor = new Color(0f, 0.02f, 0.04f, 0.85f);
+            hol.effectDistance = new Vector2(1.5f, -1.5f);
             _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -255), new Vector2(900, 30));
 
             // Рука, перетаскиваемая карта, предпросмотр, эффекты и баннеры — отдельными слоями поверх стола:
@@ -294,45 +298,106 @@ namespace StellarisClone.Cards
             if (raycast) rt.gameObject.AddComponent<GraphicRaycaster>();
         }
 
-        /// <summary>Стол: тень, окно в поверхность планеты под тёмным стеклом, бронзовая рама, разделители дорожек.</summary>
+        // ==================== ОФОРМЛЕНИЕ В СТИЛЕ ИГРЫ ====================
+        // Рамки, пульт, хроника и таблички — то же «жидкое стекло», что в окнах стратегии:
+        // тёмное стекло с бирюзовой кромкой, шрифт игры, золотые заголовки разрядкой. Карты остаются картами.
+
+        private static readonly Vector2 Mid = new Vector2(0.5f, 0.5f);
+        private static Color Muted => UIManager.DS.TextMuted;
+        private static Color Gold => UIManager.DS.Gold;
+        private static Color Cyan => UIManager.DS.NeonCyan;
+        private static readonly Color PanelTint = new Color(0.010f, 0.025f, 0.038f, 0.92f);
+        private static readonly Color SubTint = new Color(0.020f, 0.045f, 0.065f, 0.90f);
+        private static readonly Color RimCyan = new Color(0.45f, 0.95f, 0.90f, 0.42f);
+        private static readonly Color RimSoft = new Color(0.45f, 0.95f, 0.90f, 0.18f);
+
+        /// <summary>Стеклянная панель (окно) или подложка (platter) с цветной кромкой.</summary>
+        private static Image GlassAt(RectTransform parent, string name, Vector2 pos, Vector2 size, Color tint, Color rim, bool platter = false, float radius = -1f, bool raycast = false)
+        {
+            var img = LGBuild.Panel(parent, name, tint, raycast);
+            img.rectTransform.At(Mid, Mid, pos, size);
+            var fx = platter ? LG.Platter(img.gameObject, radius) : LG.Glass(img.gameObject, radius);
+            if (fx != null) fx.SetRim(rim);
+            return img;
+        }
+
+        /// <summary>Капсула-индикатор с неоновой кромкой (круглая при равных сторонах).</summary>
+        private static Image ChipAt(RectTransform parent, string name, Vector2 pos, Vector2 size, Color tint, Color rim, bool raycast = false)
+        {
+            var img = LGBuild.Panel(parent, name, tint, raycast);
+            img.rectTransform.At(Mid, Mid, pos, size);
+            LG.Chip(img.gameObject, rim, Mathf.Min(size.x, size.y) * 0.5f);
+            return img;
+        }
+
+        /// <summary>Подпись шрифтом игры (жирный Play) с разрядкой — заголовки, числа, кнопки.</summary>
+        private static Text Caption(Transform parent, string text, int size, Color c, TextAnchor anchor = TextAnchor.MiddleCenter, float track = 1.4f)
+        {
+            var t = LGBuild.Label(parent, text, size, c, anchor, bold: true);
+            if (track > 0f) t.Track(track);
+            return t;
+        }
+
+        /// <summary>Заголовок панели как в окнах игры: золотые капители с разрядкой и тонкая линия под ними.</summary>
+        private static Text PanelHeader(RectTransform panel, string text, float top = 12f)
+        {
+            var h = Caption(panel, text, 11, Gold, TextAnchor.UpperCenter, 1.4f);
+            h.rectTransform.TopBand(top, 16, 12, 12);
+            var line = LGBuild.Panel(panel, "HeaderLine", new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.22f));
+            line.raycastTarget = false;
+            line.rectTransform.TopBand(top + 22, 1, 18, 18);
+            return h;
+        }
+
+        /// <summary>Крупный штамп поверх дорожки («ВЗЯТ» / «ПОТЕРЯН»): шрифт игры с плотной обводкой.</summary>
+        private static Text Stamp(RectTransform parent, int size)
+        {
+            var t = Caption(parent, "", size, new Color(1, 1, 1, 0), TextAnchor.MiddleCenter, 4f);
+            var ol = t.gameObject.AddComponent<Outline>();
+            ol.effectColor = new Color(0f, 0.02f, 0.04f, 0.9f);
+            ol.effectDistance = new Vector2(2.5f, -2.5f);
+            return t;
+        }
+
+        /// <summary>Стол: тень, поверхность планеты под тёмным стеклом в стеклянной оправе с бирюзовой кромкой.</summary>
         private void BuildTray(Texture table)
         {
-            var shadow = LGBuild.Panel(_board, "TrayShadow", new Color(0, 0, 0, 0.85f));
+            var shadow = LGBuild.Panel(_board, "TrayShadow", new Color(0, 0, 0, 0.8f));
             shadow.sprite = CardSprites.RoundGlow;
             shadow.type = Image.Type.Sliced;
             shadow.raycastTarget = false;
-            shadow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TrayY - 14), new Vector2(TrayW + 90, TrayH + 90));
+            shadow.rectTransform.At(Mid, Mid, new Vector2(0, TrayY - 14), new Vector2(TrayW + 90, TrayH + 90));
+
+            // Оправа — стеклянная панель игры; поверхность вставлена внутрь с отступом, по краю видна кромка
+            GlassAt(_board, "TrayBezel", new Vector2(0, TrayY), new Vector2(TrayW, TrayH), PanelTint, RimCyan, false, 26f);
 
             var mask = LGBuild.Panel(_board, "TrayMask", Color.white);
             mask.sprite = CardSprites.Round;
             mask.type = Image.Type.Sliced;
             mask.raycastTarget = false;
-            mask.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TrayY), new Vector2(TrayW - 36, TrayH - 36));
+            mask.rectTransform.At(Mid, Mid, new Vector2(0, TrayY), new Vector2(TrayW - 28, TrayH - 28));
             mask.gameObject.AddComponent<Mask>().showMaskGraphic = false;
             var surf = Raw(mask.rectTransform, "Surface", table, new Color(0.62f, 0.62f, 0.66f, 1f));
             surf.rectTransform.Stretch();
-            Cover(surf, (TrayW - 36) / (TrayH - 36));
-            var glass = LGBuild.Panel(mask.rectTransform, "Glass", new Color(0.02f, 0.045f, 0.075f, 0.45f));
+            Cover(surf, (TrayW - 28) / (TrayH - 28));
+            var glass = LGBuild.Panel(mask.rectTransform, "Glass", new Color(0.01f, 0.035f, 0.055f, 0.5f));
             glass.rectTransform.Stretch();
             glass.raycastTarget = false;
             // Голосетка: еле заметные соты по всему столу
-            var grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.5f, 0.8f, 1f, 0.05f));
+            var grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.45f, 0.95f, 0.9f, 0.05f));
             grid.rectTransform.Stretch();
             var inner = LGBuild.Panel(mask.rectTransform, "InnerShade", new Color(0, 0, 0, 0.7f));
             inner.sprite = CardSprites.Vignette;
             inner.raycastTarget = false;
             inner.rectTransform.Stretch();
 
-            // Разделители дорожек
+            // Разделители дорожек — тонкие бирюзовые линии, как в окнах игры
             for (int i = 1; i < 3; i++)
             {
-                var dv = LGBuild.Panel(_board, "Divider", new Color(1f, 0.8f, 0.55f, 0.22f));
+                var dv = LGBuild.Panel(_board, "Divider", new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.16f));
                 dv.raycastTarget = false;
-                dv.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((i - 1.5f) * Lane, TrayY), new Vector2(2, TrayH - 70));
+                dv.rectTransform.At(Mid, Mid, new Vector2((i - 1.5f) * Lane, TrayY), new Vector2(1, TrayH - 80));
             }
-
-            var frame = CardSkin.Sliced(_board, "TrayFrame", "frame_card", CardSkin.Bronze, 0.6f);
-            frame.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TrayY), new Vector2(TrayW, TrayH));
         }
 
         private void BuildSector(int i)
@@ -356,64 +421,62 @@ namespace StellarisClone.Cards
             s.HighlightFill.type = Image.Type.Sliced;
             s.HighlightFill.raycastTarget = false;
             s.HighlightFill.rectTransform.Stretch(4, 4, 4, 4);
-            s.Highlight = CardSkin.Sliced(col, "Highlight", "glow_edge", new Color(1, 1, 1, 0), 0.45f);
-            s.Highlight.rectTransform.Stretch(-64 * 0.45f + 4, -64 * 0.45f + 4, -64 * 0.45f + 4, -64 * 0.45f + 4);
+            s.Highlight = CardSkin.Sliced(col, "Highlight", "glow_edge", new Color(1, 1, 1, 0), 0.35f);
+            s.Highlight.rectTransform.Stretch(-64 * 0.35f + 4, -64 * 0.35f + 4, -64 * 0.35f + 4, -64 * 0.35f + 4);
 
-            // Места под карты — вдавленные выемки
+            // Места под карты — стеклянные гнёзда с еле заметной кромкой
             for (int r = 0; r < 2; r++)
                 for (int k = 0; k < 3; k++)
                 {
-                    var sl = CardSkin.Simple(col, "Slot", "slot", Color.white);
-                    sl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((k - 1) * 138f, r == 0 ? RowOff : -RowOff), BoardCard);
+                    var sl = LGBuild.Panel(col, "Slot", new Color(0.02f, 0.06f, 0.08f, 0.35f));
+                    sl.raycastTarget = false;
+                    sl.rectTransform.At(Mid, Mid, new Vector2((k - 1) * 138f, r == 0 ? RowOff : -RowOff), BoardCard);
+                    LG.Chip(sl.gameObject, new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.14f), 12f);
                 }
 
             // Ряды: враг сверху, вы снизу
             _rows[i, 0] = At(col, "RowEnemy", new Vector2(0, RowOff), new Vector2(LaneW - 10, BoardCard.y + 10));
             _rows[i, 1] = At(col, "RowMine", new Vector2(0, -RowOff), new Vector2(LaneW - 10, BoardCard.y + 10));
 
-            // Плашка сектора: свечение контроля, арт, рама, название и правило
-            s.Wash = CardSkin.Sliced(col, "Wash", "glow_edge", new Color(1, 1, 1, 0), 0.5f);
-            s.Wash.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW + 64 - 6, PlaqueH + 64 - 6));
+            // Плашка сектора: мягкое свечение цвета контроля, стеклянная табличка с артом сектора внутри
+            s.Wash = CardSkin.Sliced(col, "Wash", "glow_edge", new Color(1, 1, 1, 0), 0.4f);
+            s.Wash.rectTransform.At(Mid, Mid, Vector2.zero, new Vector2(PlaqueW + 52, PlaqueH + 52));
 
-            var plate = LGBuild.Panel(col, "Plaque", Color.white);
-            plate.sprite = CardSprites.Round;
-            plate.type = Image.Type.Sliced;
-            plate.raycastTarget = false;
-            plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW - 12, PlaqueH - 12));
-            plate.gameObject.AddComponent<Mask>().showMaskGraphic = true;
-            plate.color = new Color(0.03f, 0.05f, 0.08f, 1f);
+            var plate = GlassAt(col, "Plaque", Vector2.zero, new Vector2(PlaqueW, PlaqueH), PanelTint, RimCyan, false, 16f);
             s.Plate = plate;
-            var art = Raw(plate.rectTransform, "Art", CardArt.Sector(type), new Color(0.75f, 0.75f, 0.78f, 1f));
+            s.PlateFx = plate.GetComponent<LiquidGlassEffect>();
+            var am = LG.RoundedMask(plate.rectTransform, 14f, 3f);
+            var art = Raw(am, "Art", CardArt.Sector(type), new Color(0.62f, 0.66f, 0.7f, 0.9f));
             art.rectTransform.Stretch();
-            Cover(art, (PlaqueW - 12) / (PlaqueH - 12));
-            var dim = LGBuild.Panel(plate.rectTransform, "Dim", new Color(0.01f, 0.02f, 0.04f, 0.55f));
+            Cover(art, (PlaqueW - 6) / (PlaqueH - 6));
+            // Затемнение слева направо: текст читается, справа видна картинка
+            var dim = LGBuild.Panel(am, "Dim", new Color(0.01f, 0.025f, 0.04f, 0.62f));
             dim.raycastTarget = false;
             dim.rectTransform.Stretch();
-            var pframe = CardSkin.Sliced(col, "PlaqueFrame", "frame_card", CardSkin.Gold, 0.4f);
-            pframe.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW, PlaqueH));
-            s.Header = s.PowerBar = pframe.rectTransform;
+            s.Header = s.PowerBar = plate.rectTransform;
 
-            var ic = LGIcons.Create(pframe.rectTransform, CardArt.SectorIcon(type), 22, CardSkin.Gold);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34, 18), new Vector2(22, 22));
-            s.Name = CardSkin.TitleText(pframe.rectTransform, CardArt.SectorName(type), 21, new Color(1f, 0.92f, 0.78f), TextAnchor.MiddleLeft, 2f);
-            s.Name.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(54, 18), new Vector2(300, 30));
-            s.Rule = LGBuild.Label(pframe.rectTransform, CardArt.SectorRule(type), 13, new Color(0.84f, 0.88f, 0.93f), TextAnchor.UpperLeft, wrap: true);
-            s.Rule.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 1f), new Vector2(26, -2), new Vector2(PlaqueW - 150, 40));
+            var ic = LGIcons.Create(plate.rectTransform, CardArt.SectorIcon(type), 18, Cyan);
+            ic.rectTransform.At(new Vector2(0, 0.5f), Mid, new Vector2(28, 26), new Vector2(18, 18));
+            s.Name = Caption(plate.rectTransform, CardArt.SectorName(type).ToUpper(), 17, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 1.6f);
+            s.Name.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(44, 26), new Vector2(260, 26));
+            var acc = LGBuild.Panel(plate.rectTransform, "Accent", new Color(Gold.r, Gold.g, Gold.b, 0.85f));
+            acc.raycastTarget = false;
+            acc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 10), new Vector2(36, 2));
+            s.Rule = LGBuild.Label(plate.rectTransform, CardArt.SectorRule(type), 12, Muted, TextAnchor.UpperLeft, wrap: true);
+            s.Rule.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 1f), new Vector2(20, 2), new Vector2(PlaqueW - 150, 44));
             s.Rule.raycastTarget = false;
-            var rsh = s.Rule.gameObject.AddComponent<Shadow>();
-            rsh.effectColor = new Color(0, 0, 0, 0.9f);
 
-            // Гнёзда силы: враг сверху (красное), вы снизу (бирюзовое)
+            // Гнёзда силы: враг сверху (красное), вы снизу (бирюзовое) — круглые стеклянные чипы с неоновой кромкой
             s.OrbGlowE = OrbGlow(col, new Vector2(OrbX, OrbY), CardSkin.Red);
             s.OrbGlowP = OrbGlow(col, new Vector2(OrbX, -OrbY), CardSkin.Teal);
-            s.PowE = Orb(col, "orb_red", new Vector2(OrbX, OrbY), 72f, 32);
-            s.PowP = Orb(col, "orb_teal", new Vector2(OrbX, -OrbY), 72f, 32);
+            s.PowE = Orb(col, CardSkin.Red, new Vector2(OrbX, OrbY), 64f, 28);
+            s.PowP = Orb(col, CardSkin.Teal, new Vector2(OrbX, -OrbY), 64f, 28);
             TooltipHelper.Attach(s.PowE.transform.parent.gameObject, Loc.T("Сила врага в секторе"));
             TooltipHelper.Attach(s.PowP.transform.parent.gameObject, Loc.T("Ваша сила в секторе"));
 
             // Штамп «ВЗЯТ» / «ПОТЕРЯН»
-            s.Stamp = CardSkin.TitleText(col, "", 52, new Color(1, 1, 1, 0), TextAnchor.MiddleCenter, 3f);
-            s.Stamp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(LaneW, 90));
+            s.Stamp = Stamp(col, 50);
+            s.Stamp.rectTransform.At(Mid, Mid, Vector2.zero, new Vector2(LaneW, 90));
             s.Stamp.rectTransform.localRotation = Quaternion.Euler(0, 0, 7f);
 
             // Купол щита над рядом защитника в Штабе: соты в полусфере
@@ -424,20 +487,16 @@ namespace StellarisClone.Cards
                 s.Dome = CardSkin.Simple(col, "Dome", "dome", new Color(0.6f, 0.85f, 1f, 0f));
                 float baseY = defRow == 0 ? RowOff - BoardCard.y * 0.5f - 8f : -RowOff + BoardCard.y * 0.5f + 8f;
                 const float domeH = 192f;
-                s.Dome.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0, baseY), new Vector2(LaneW - 6, domeH));
+                s.Dome.rectTransform.At(Mid, new Vector2(0.5f, 0f), new Vector2(0, baseY), new Vector2(LaneW - 6, domeH));
                 if (defRow == 1) s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
 
                 // Табличка на своде купола: что это и почему держится
                 float apex = baseY + (defRow == 0 ? domeH - 2f : -domeH + 2f);
-                s.DomeBadge = CardSkin.Sliced(col, "DomeBadge", "panel_dark", Color.white, 0.25f);
-                s.DomeBadge.raycastTarget = true;
-                s.DomeBadge.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, apex), new Vector2(176, 30));
-                var brim = CardSkin.Sliced(s.DomeBadge.rectTransform, "Rim", "frame_thin", new Color(0.55f, 0.85f, 1f), 0.25f);
-                brim.rectTransform.Stretch(-2, -2, -2, -2);
-                var bic = CardSkin.Simple(s.DomeBadge.rectTransform, "Icon", "gem_armor", new Color(0.6f, 0.85f, 1f));
-                bic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(4, 0), new Vector2(34, 34));
-                s.DomeText = CardSkin.TitleText(s.DomeBadge.rectTransform, Loc.T("ЩИТ ШТАБА"), 13, new Color(0.7f, 0.92f, 1f), TextAnchor.MiddleCenter, 1.5f);
-                s.DomeText.rectTransform.Stretch(22, 0, 6, 0);
+                s.DomeBadge = ChipAt(col, "DomeBadge", new Vector2(0, apex), new Vector2(172, 28), SubTint, new Color(0.55f, 0.85f, 1f, 0.6f), raycast: true);
+                var bic = LGIcons.Create(s.DomeBadge.rectTransform, LGIcon.ShieldDome, 13, new Color(0.6f, 0.88f, 1f));
+                bic.rectTransform.At(new Vector2(0, 0.5f), Mid, new Vector2(18, 0), new Vector2(13, 13));
+                s.DomeText = Caption(s.DomeBadge.rectTransform, Loc.T("ЩИТ ШТАБА"), 11, new Color(0.7f, 0.92f, 1f), TextAnchor.MiddleCenter, 1.4f);
+                s.DomeText.rectTransform.Stretch(26, 0, 8, 0);
                 TooltipHelper.Attach(s.DomeBadge.gameObject, Loc.T("<b>Щит Штаба</b>\nЭнергетический купол над защитниками Штаба. Пока он стоит, прорыв в Штаб невозможен.\nКупол держится, пока электростанция у защитника. Снять его: захватить сектор «Электростанция» или применить «Диверсию» / ЭМИ."));
             }
         }
@@ -445,21 +504,23 @@ namespace StellarisClone.Cards
         private Image OrbGlow(RectTransform parent, Vector2 pos, Color c)
         {
             var g = CardSkin.Simple(parent, "OrbGlow", "glow", new Color(c.r, c.g, c.b, 0f));
-            g.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(150, 150));
+            g.rectTransform.At(Mid, Mid, pos, new Vector2(140, 140));
             return g;
         }
 
-        private Text Orb(RectTransform parent, string sprite, Vector2 pos, float size, int font)
+        /// <summary>Круглый стеклянный чип с числом (сила в секторе, карты в колоде).</summary>
+        private Text Orb(RectTransform parent, Color rim, Vector2 pos, float size, int font)
         {
-            var o = CardSkin.Simple(parent, "Orb", sprite, Color.white);
-            o.raycastTarget = true;
-            o.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(size, size));
-            var t = CardSkin.TitleText(o.rectTransform, "0", font, Color.white, TextAnchor.MiddleCenter, 2.5f);
-            t.rectTransform.Stretch(0, 0, 0, -2);
+            var o = ChipAt(parent, "Orb", pos, new Vector2(size, size), SubTint, new Color(rim.r, rim.g, rim.b, 0.75f), raycast: true);
+            var t = Caption(o.rectTransform, "0", font, Color.white, TextAnchor.MiddleCenter, 0f);
+            t.rectTransform.Stretch(0, 0, 0, -1);
+            var ol = t.gameObject.AddComponent<Outline>();
+            ol.effectColor = new Color(rim.r * 0.3f, rim.g * 0.3f, rim.b * 0.3f, 0.8f);
+            ol.effectDistance = new Vector2(1.2f, -1.2f);
             return t;
         }
 
-        /// <summary>Портреты в золотых рамах: враг над столом (его рука рубашками рядом), вы — слева от руки.</summary>
+        /// <summary>Портреты в стеклянных кольцах цвета фракции: враг над столом (его рука рубашками рядом), вы — слева от руки.</summary>
         private void BuildPortraits()
         {
             var a = _setup.Attacker; var d = _setup.Defender;
@@ -474,11 +535,12 @@ namespace StellarisClone.Cards
         private void Portrait(BSide side, int idx, Vector2 pos, bool enemy)
         {
             var fc = CardArt.Faction(side.Faction);
-            const float S = 124f;
-            var glow = CardSkin.Simple(_board, "PortraitGlow", "glow", new Color(fc.r, fc.g, fc.b, 0.55f));
-            glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(230, 230));
+            const float S = 120f;
+            var glow = CardSkin.Simple(_board, "PortraitGlow", "glow", new Color(fc.r, fc.g, fc.b, 0.4f));
+            glow.rectTransform.At(Mid, Mid, pos, new Vector2(220, 220));
+            ChipAt(_board, "PortraitRing", pos, new Vector2(S + 14, S + 14), PanelTint, new Color(fc.r, fc.g, fc.b, 0.85f));
             var disc = CardSkin.Simple(_board, "Portrait", "disc", Color.white);
-            disc.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(S, S));
+            disc.rectTransform.At(Mid, Mid, pos, new Vector2(S, S));
             disc.gameObject.AddComponent<Mask>().showMaskGraphic = false;
             var p = Raw(disc.rectTransform, "Leader", CardArt.Leader(side.Faction), Color.white);
             p.rectTransform.Stretch();
@@ -487,82 +549,65 @@ namespace StellarisClone.Cards
                 float ta = p.texture.width / (float)p.texture.height;
                 p.uvRect = ta > 1 ? new Rect((1 - 1 / ta) * 0.5f, 0, 1 / ta, 1) : new Rect(0, 1 - ta - (1 - ta) * 0.12f, 1, ta);
             }
-            var ring = CardSkin.Simple(_board, "PortraitFrame", "frame_round", CardSkin.Gold);
-            ring.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(S + 24, S + 24));
-            var rb = CardSkin.Sliced(_board, "NameRibbon", "ribbon", Color.white, 0.5f);
-            var rpos = pos + new Vector2(0, enemy ? -72 : 74);
-            rb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), rpos, new Vector2(270, 34));
-            var nm = CardSkin.TitleText(rb.rectTransform, (side.Name ?? side.Faction ?? "").ToUpper(), 14, CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
-            nm.rectTransform.Stretch(26, 0, 26, 1);
+
+            // Имя — стеклянная капсула под портретом (у врага) или над ним (у вас); роль — подпись цветом фракции
+            var rpos = pos + new Vector2(0, enemy ? -78 : 80);
+            var rb = ChipAt(_board, "NameChip", rpos, new Vector2(250, 30), PanelTint, new Color(fc.r, fc.g, fc.b, 0.55f));
+            var nm = Caption(rb.rectTransform, (side.Name ?? side.Faction ?? "").ToUpper(), 13, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 1.2f);
+            nm.rectTransform.Stretch(16, 0, 16, 0);
             nm.horizontalOverflow = HorizontalWrapMode.Wrap;
-            nm.resizeTextForBestFit = true; nm.resizeTextMinSize = 8; nm.resizeTextMaxSize = 14;
-            var role = CardSkin.TitleText(_board, idx == BattleState.Attacker ? Loc.T("ДЕСАНТ") : Loc.T("ГАРНИЗОН"), 11, new Color(fc.r, fc.g, fc.b, 1f), TextAnchor.MiddleCenter, 1.5f);
-            role.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), rpos + new Vector2(0, enemy ? -24 : 24), new Vector2(200, 18));
-            role.Track(3f);
+            nm.resizeTextForBestFit = true; nm.resizeTextMinSize = 8; nm.resizeTextMaxSize = 13;
+            var role = Caption(_board, idx == BattleState.Attacker ? Loc.T("ДЕСАНТ") : Loc.T("ГАРНИЗОН"), 10, new Color(fc.r, fc.g, fc.b, 1f), TextAnchor.MiddleCenter, 2.4f);
+            role.rectTransform.At(Mid, Mid, rpos + new Vector2(0, enemy ? -24 : 24), new Vector2(200, 16));
         }
 
         /// <summary>
-        /// Правая колонка — «командный пульт» в бронзовой раме (как стол): диск хода, большая кнопка-самоцвет
-        /// «Закончить ход» с бегущим бликом, счёт секторов, погода, квадратные кнопки управления боем.
+        /// Правая колонка — пульт боя в стеклянной панели игры: номер хода, большая кнопка «Закончить ход»
+        /// (бирюзовая — ещё есть что сыграть, зелёная с пульсом — всё сыграно), счёт секторов, погода, кнопки управления.
         /// </summary>
         private void BuildRight()
         {
             bool merc = _state.Sides[_P].Faction == "aquila";
             float bottom = merc ? -286f : -232f, top = 370f;
-            var console = CardSkin.Sliced(_board, "Console", "panel_plates", Color.white, 0.45f);
-            console.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, (top + bottom) * 0.5f), new Vector2(236, top - bottom));
-            var cframe = CardSkin.Sliced(_board, "ConsoleFrame", "frame_card", CardSkin.Bronze, 0.45f);
-            cframe.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, (top + bottom) * 0.5f), new Vector2(236, top - bottom));
+            var console = GlassAt(_board, "Console", new Vector2(RX, (top + bottom) * 0.5f), new Vector2(236, top - bottom), PanelTint, RimCyan, false, 18f);
+            var ch = PanelHeader(console.rectTransform, Loc.T("ШТУРМ"));
+            ch.rectTransform.TopBand(14, 16, 12, 12);
 
-            // Диск хода
-            var turnOrb = CardSkin.Simple(_board, "TurnOrb", "orb_gray", Color.white);
-            turnOrb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 290), new Vector2(104, 104));
-            _turnText = CardSkin.TitleText(turnOrb.rectTransform, "1", 44, CardSkin.Parchment, TextAnchor.MiddleCenter, 3f);
-            _turnText.rectTransform.Stretch(0, 0, 0, -3);
-            var tl = CardSkin.TitleText(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 14, new Color(0.95f, 0.8f, 0.55f), TextAnchor.MiddleCenter, 1.5f);
-            tl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 224), new Vector2(220, 22));
-            tl.Track(2f);
+            // Номер хода — круглый чип; под ним «ход из 6»
+            var turnChip = ChipAt(_board, "TurnChip", new Vector2(RX, 272), new Vector2(92, 92), SubTint, new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f));
+            _turnText = Caption(turnChip.rectTransform, "1", 40, Color.white, TextAnchor.MiddleCenter, 0f);
+            _turnText.rectTransform.Stretch(0, 0, 0, -2);
+            var tl = Caption(_board, Loc.F("ХОД ИЗ {0}", BattleState.Turns), 11, Gold, TextAnchor.MiddleCenter, 1.4f);
+            tl.rectTransform.At(Mid, Mid, new Vector2(RX, 212), new Vector2(220, 18));
 
-            // Кнопка хода: ореол, самоцвет, бегущий блик
-            _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.4f, 0f));
-            _endGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 140), new Vector2(330, 200));
-            var endBtn = LGBuild.Rect(_board, "EndTurn");
-            endBtn.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 140), new Vector2(208, 88));
-            _endButtonImg = endBtn.gameObject.AddComponent<Image>();
-            _endButtonImg.sprite = CardSkin.Spr("btn_end_amber");
-            _endButtonImg.type = Image.Type.Sliced;
-            _endButtonImg.pixelsPerUnitMultiplier = 192f / 88f;
-            _endButton = endBtn.gameObject.AddComponent<Button>();
-            _endButton.targetGraphic = _endButtonImg;
-            var ecb = _endButton.colors; ecb.highlightedColor = new Color(1.18f, 1.15f, 1.05f, 1f); ecb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f); ecb.fadeDuration = 0.08f; _endButton.colors = ecb;
-            _endButton.onClick.AddListener(OnEndTurn);
-            var glintMask = LGBuild.Rect(endBtn, "GlintMask");
-            glintMask.Stretch(10, 10, 10, 10);
-            glintMask.gameObject.AddComponent<RectMask2D>();
-            _endGlint = CardSkin.Simple(glintMask, "Glint", "k_light", new Color(1f, 1f, 1f, 0.55f));
-            _endGlint.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-200, 0), new Vector2(70, 120));
-            _endGlint.rectTransform.localRotation = Quaternion.Euler(0, 0, -20f);
-            _endLabel = CardSkin.TitleText(endBtn, Loc.T("ЗАКОНЧИТЬ\nХОД"), 19, Color.white, TextAnchor.MiddleCenter, 2f);
-            _endLabel.rectTransform.Stretch(14, 0, 14, 0);
+            // Кнопка хода: мягкий ореол цвета состояния и стеклянная кнопка игры
+            _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.6f, 0f));
+            _endGlow.rectTransform.At(Mid, Mid, new Vector2(RX, 140), new Vector2(300, 170));
+            _endButton = LGBuild.Button(_board, "EndTurn", UIManager.DS.BtnPrimary, new Color(Cyan.r, Cyan.g, Cyan.b, 0.8f), OnEndTurn, null, Loc.T("ЗАКОНЧИТЬ\nХОД"), 17, 16f);
+            _endButtonImg = _endButton.GetComponent<Image>();
+            _endButtonImg.rectTransform.At(Mid, Mid, new Vector2(RX, 140), new Vector2(204, 80));
+            _endFx = _endButton.GetComponent<LiquidGlassEffect>();
+            var eit = _endButton.GetComponent<LGInteractive>();
+            if (eit != null) eit.animateScale = false;   // своя «пружина» при нажатии
+            UiSound.Mark(_endButton, UiPress.Confirm);
+            _endLabel = _endButton.GetComponentInChildren<Text>();
             _endLabel.lineSpacing = 0.9f;
-            TooltipHelper.Attach(endBtn.gameObject, Loc.T("Закончить ход  <color=#8AA2A8>(Enter)</color>\nЯнтарная — ещё есть что сыграть, зелёная — всё сыграно"));
+            _endLabel.Track(1.6f);
+            TooltipHelper.Attach(_endButton.gameObject, Loc.T("Закончить ход  <color=#8AA2A8>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно"));
 
             // Счёт секторов
-            var sep1 = LGBuild.Panel(_board, "Sep", new Color(1f, 0.8f, 0.55f, 0.25f));
-            sep1.sprite = CardSprites.Beam; sep1.raycastTarget = false;
-            sep1.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 82), new Vector2(190, 2));
-            _scoreText = CardSkin.TitleText(_board, "", 17, new Color(0.92f, 0.9f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
-            _scoreText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, 52), new Vector2(220, 44));
+            var sep1 = LGBuild.Panel(_board, "Sep", new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.22f));
+            sep1.raycastTarget = false;
+            sep1.rectTransform.At(Mid, Mid, new Vector2(RX, 82), new Vector2(190, 1));
+            _scoreText = Caption(_board, "", 15, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 0.8f);
+            _scoreText.rectTransform.At(Mid, Mid, new Vector2(RX, 52), new Vector2(220, 44));
             _scoreText.supportRichText = true;
 
-            // Погода
-            var wp = CardSkin.Sliced(_board, "Weather", "panel_dark", Color.white, 0.3f);
-            wp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -22), new Vector2(204, 74));
-            var wrim = CardSkin.Sliced(wp.rectTransform, "Rim", "frame_thin", new Color(0.55f, 0.75f, 1f, 0.8f), 0.25f);
-            wrim.rectTransform.Stretch(-2, -2, -2, -2);
-            _weatherTitle = CardSkin.TitleText(wp.rectTransform, Loc.T("ПОГОДА"), 12, new Color(0.65f, 0.82f, 1f), TextAnchor.UpperCenter, 1f);
-            _weatherTitle.rectTransform.Stretch(10, 0, 10, 9);
-            _weatherText = LGBuild.Label(wp.rectTransform, "", 12, new Color(0.85f, 0.88f, 0.93f), TextAnchor.MiddleCenter, wrap: true);
+            // Погода — подложка внутри пульта
+            var wp = GlassAt(_board, "Weather", new Vector2(RX, -22), new Vector2(204, 74), SubTint, RimSoft, true, 12f);
+            _weatherTitle = Caption(wp.rectTransform, Loc.T("ПОГОДА"), 11, Gold, TextAnchor.UpperCenter, 1.4f);
+            _weatherTitle.rectTransform.Stretch(10, 0, 10, 8);
+            _weatherText = LGBuild.Label(wp.rectTransform, "", 12, Muted, TextAnchor.MiddleCenter, wrap: true);
             _weatherText.rectTransform.Stretch(12, 6, 12, 26);
             _weatherText.raycastTarget = false;
 
@@ -570,88 +615,58 @@ namespace StellarisClone.Cards
             _speedLabel = SquareButton(new Vector2(RX - 66, -122), null, SpeedText(), Loc.T("СКОРОСТЬ"), OnSpeed, Loc.T("Скорость анимаций боя"), out _);
             SquareButton(new Vector2(RX, -122), LGIcon.Fastest, null, Loc.T("ДОСЧИТАТЬ"), OnAuto, Loc.T("Доиграть бой за обе стороны мгновенно (вашей стороной командует ИИ)"), out _autoButton);
             SquareButton(new Vector2(RX + 66, -122), LGIcon.Back, null, _P == BattleState.Attacker ? Loc.T("ОТСТУПИТЬ") : Loc.T("СДАТЬСЯ"), OnRetreat,
-                _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton, new Color(1f, 0.55f, 0.48f));
+                _P == BattleState.Attacker ? Loc.T("Отступить: десант возвращается на корабли, погибшие потеряны") : Loc.T("Сдать колонию"), out _retreatButton, UIManager.DS.Red);
 
             // Наёмники Аквилы — купить прямо в бою
             if (merc)
             {
-                var mrt = LGBuild.Rect(_board, "Merc");
-                mrt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(RX, -238), new Vector2(200, 50));
-                var mimg = mrt.gameObject.AddComponent<Image>();
-                mimg.sprite = CardSkin.Spr("btn_end_amber");
-                mimg.type = Image.Type.Sliced;
-                mimg.pixelsPerUnitMultiplier = 192f / 50f;
-                _mercButton = mrt.gameObject.AddComponent<Button>();
-                _mercButton.targetGraphic = mimg;
-                _mercButton.onClick.AddListener(OnMerc);
-                mrt.gameObject.AddComponent<PressSpring>();
-                var ml = CardSkin.TitleText(mrt, Loc.T("НАЁМНИКИ · 60"), 14, Color.white, TextAnchor.MiddleCenter, 1.5f);
-                ml.rectTransform.Stretch();
-                TooltipHelper.Attach(mrt.gameObject, Loc.T("<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору"));
+                _mercButton = LGBuild.Button(_board, "Merc", UIManager.DS.BtnNeutral, new Color(Gold.r, Gold.g, Gold.b, 0.6f), OnMerc, LGIcon.Trade, Loc.T("НАЁМНИКИ · 60"), 12, 14f);
+                _mercButton.GetComponent<Image>().rectTransform.At(Mid, Mid, new Vector2(RX, -238), new Vector2(200, 44));
+                TooltipHelper.Attach(_mercButton.gameObject, Loc.T("<b>Наёмники «Сокол»</b> 4/4 за 60 гелия-3 из казны — без очков приказов. Затем щёлкните по сектору"));
             }
         }
 
-        private Image _endGlint;
-        private float _glintT;
+        private LiquidGlassEffect _endFx;
 
-        /// <summary>Квадратная кнопка пульта: тёмная броня в стальной оправе (при наведении — золотой), значок, подпись.</summary>
-        private Text SquareButton(Vector2 pos, LGIcon? icon, string label, string caption, Action act, string tip, out Button btn, Color? iconColor = null)
+        /// <summary>Квадратная кнопка пульта — стеклянная кнопка игры с иконкой (или текстом) и подписью под ней.</summary>
+        private Text SquareButton(Vector2 pos, LGIcon? icon, string label, string caption, Action act, string tip, out Button btn, Color? accent = null)
         {
-            var rt = LGBuild.Rect(_board, "CmdBtn");
-            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(58, 58));
-            var bg = rt.gameObject.AddComponent<Image>();
-            bg.sprite = CardSkin.Spr("panel_dark");
-            bg.type = Image.Type.Sliced;
-            bg.pixelsPerUnitMultiplier = 1f / 0.3f;
-            var rim = CardSkin.Sliced(rt, "Rim", "frame_thin", Color.white, 0.3f);
-            rim.rectTransform.Stretch(-2, -2, -2, -2);
-            btn = rt.gameObject.AddComponent<Button>();
-            btn.targetGraphic = rim;
-            var cb = btn.colors;
-            cb.normalColor = new Color(0.8f, 0.82f, 0.86f, 1f);
-            cb.highlightedColor = new Color(1f, 0.82f, 0.45f, 1f);
-            cb.pressedColor = new Color(1f, 0.6f, 0.3f, 1f);
-            cb.disabledColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
-            cb.fadeDuration = 0.08f;
-            btn.colors = cb;
-            btn.onClick.AddListener(() => { rt.localScale = Vector3.one * 0.9f; SFXManager.Play(Sfx.UiClick, 0.6f); act(); });
-            rt.gameObject.AddComponent<PressSpring>();
+            var img = LGBuild.Panel(_board, "CmdBtn", UIManager.DS.BtnNeutral, raycast: true);
+            img.rectTransform.At(Mid, Mid, pos, new Vector2(56, 56));
+            btn = img.gameObject.AddComponent<Button>();
+            btn.onClick.AddListener(() => act());
+            var ac = accent ?? Cyan;
+            LG.Button(img.gameObject, new Color(ac.r, ac.g, ac.b, accent.HasValue ? 0.55f : 0.3f), 14f);
             Text t = null;
             if (icon.HasValue)
             {
-                var ic = LGIcons.Create(rt, icon.Value, 24, iconColor ?? new Color(1f, 0.95f, 0.85f));
-                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(24, 24));
+                var ic = LGIcons.Create(img.rectTransform, icon.Value, 22, accent ?? UIManager.DS.TextPrimary);
+                ic.rectTransform.At(Mid, Mid, Vector2.zero, new Vector2(22, 22));
             }
             else
             {
-                t = CardSkin.TitleText(rt, label ?? "", 17, new Color(1f, 0.95f, 0.85f), TextAnchor.MiddleCenter, 1.5f);
+                t = Caption(img.rectTransform, label ?? "", 16, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 0f);
                 t.rectTransform.Stretch();
             }
             if (!string.IsNullOrEmpty(caption))
             {
-                var cap = CardSkin.TitleText(_board, caption, 9, new Color(0.85f, 0.78f, 0.62f), TextAnchor.MiddleCenter, 1f);
-                cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos + new Vector2(0, -40), new Vector2(76, 14));
-                cap.Track(1f);
+                var cap = Caption(_board, caption, 9, Muted, TextAnchor.MiddleCenter, 1f);
+                cap.rectTransform.At(Mid, Mid, pos + new Vector2(0, -40), new Vector2(76, 14));
             }
-            if (!string.IsNullOrEmpty(tip)) TooltipHelper.Attach(rt.gameObject, tip);
+            if (!string.IsNullOrEmpty(tip)) TooltipHelper.Attach(img.gameObject, tip);
             return t;
         }
 
-        /// <summary>Левая колонка: колоды врага и ваша, между ними хроника боя.</summary>
+        /// <summary>Левая колонка: колоды врага и ваша, между ними хроника боя в стеклянной панели.</summary>
         private void BuildLeft()
         {
             _deckE = Deck(new Vector2(LX, 300), FactionOf(_E));
             _deckP = Deck(new Vector2(LX, -168), FactionOf(_P));
 
-            var hp = CardSkin.Sliced(_board, "Log", "panel_plates", Color.white, 0.45f);
-            hp.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(LX, 66), new Vector2(232, 258));
-            var hf = CardSkin.Sliced(hp.rectTransform, "Frame", "frame_card", CardSkin.Bronze, 0.4f);
-            hf.rectTransform.Stretch();
-            var lc = CardSkin.TitleText(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"), 13, new Color(0.95f, 0.8f, 0.55f), TextAnchor.UpperCenter, 1f);
-            lc.rectTransform.Stretch(10, 0, 10, 12);
-            lc.Track(2f);
-            _logText = LGBuild.Label(hp.rectTransform, "", 12, new Color(0.86f, 0.88f, 0.92f), TextAnchor.UpperLeft, wrap: true);
-            _logText.rectTransform.Stretch(14, 12, 12, 34);
+            var hp = GlassAt(_board, "Log", new Vector2(LX, 66), new Vector2(232, 258), PanelTint, RimCyan, false, 18f);
+            PanelHeader(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"));
+            _logText = LGBuild.Label(hp.rectTransform, "", 12, Muted, TextAnchor.UpperLeft, wrap: true);
+            _logText.rectTransform.Stretch(14, 12, 12, 44);
             _logText.verticalOverflow = VerticalWrapMode.Truncate;
             _logText.raycastTarget = false;
             _logText.supportRichText = true;
@@ -666,25 +681,25 @@ namespace StellarisClone.Cards
                 b.Rt.anchoredPosition = pos + new Vector2(-4 + k * 4, k * 3);
                 foreach (var g in b.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
             }
-            var t = Orb(_board, "orb_gray", pos + new Vector2(50, -54), 50f, 20);
+            var t = Orb(_board, Cyan, pos + new Vector2(50, -54), 44f, 17);
             TooltipHelper.Attach(t.transform.parent.gameObject, Loc.T("Карт в колоде"));
             return t;
         }
 
-        /// <summary>Кристаллы очков приказов — справа от руки, как кристаллы маны.</summary>
+        /// <summary>Кристаллы очков приказов — справа от руки, на стеклянной подложке, как кристаллы маны.</summary>
         private void BuildPoints()
         {
-            _pointsText = CardSkin.TitleText(_board, "0/0", 30, Color.white, TextAnchor.MiddleRight, 2.5f);
-            _pointsText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(505, -500), new Vector2(110, 40));
+            GlassAt(_board, "PointsPlate", new Vector2(700, -500), new Vector2(520, 56), PanelTint, RimSoft, false, 28f);
+            _pointsText = Caption(_board, "0/0", 26, Color.white, TextAnchor.MiddleRight, 0.6f);
+            _pointsText.rectTransform.At(Mid, Mid, new Vector2(505, -500), new Vector2(110, 40));
             for (int k = 0; k < 10; k++)
             {
                 var c = CardSkin.Simple(_board, "Crystal", "crystal_empty", Color.white);
-                c.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(585 + k * 38, -500), new Vector2(40, 40));
+                c.rectTransform.At(Mid, Mid, new Vector2(585 + k * 38, -500), new Vector2(38, 38));
                 _crystals.Add(c);
             }
-            var cap = CardSkin.TitleText(_board, Loc.T("ОЧКИ ПРИКАЗОВ"), 12, new Color(0.62f, 0.82f, 1f), TextAnchor.MiddleLeft, 1f);
-            cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(660, -466), new Vector2(240, 20));
-            cap.Track(2f);
+            var cap = Caption(_board, Loc.T("ОЧКИ ПРИКАЗОВ"), 11, Gold, TextAnchor.MiddleLeft, 1.4f);
+            cap.rectTransform.At(Mid, Mid, new Vector2(680, -458), new Vector2(240, 18));
         }
 
         private string SpeedText() => Loc.F("×{0:0.#}", _animSpeed);
@@ -945,32 +960,29 @@ namespace StellarisClone.Cards
                 }
             else foreach (var v in _hand) v.Playable = false;
 
-            // Кнопка хода: янтарная — есть что сыграть, зелёная (пульсирует) — всё сыграно, серая — идёт бой
+            // Кнопка хода: бирюзовая — ещё есть что сыграть, зелёная с пульсом — всё сыграно, приглушённая — идёт бой
             if (_endButtonImg != null)
             {
                 bool idle = !_busy && !_state.Over;
-                string st = !idle ? "btn_end_gray" : anyPlayable ? "btn_end_amber" : "btn_end_green";
-                string key = st + (_state.Over ? "|over" : "");
+                string key = !idle ? "busy" : anyPlayable ? "play" : "done";
+                if (_state.Over) key = "over";
                 if (key != _endState)
                 {
                     _endState = key;
-                    _endButtonImg.sprite = CardSkin.Spr(st);
                     _endLabel.text = _state.Over ? Loc.T("БОЙ\nОКОНЧЕН") : _busy ? Loc.T("БОЙ\nИДЁТ…") : Loc.T("ЗАКОНЧИТЬ\nХОД");
+                    _endLabel.color = idle ? UIManager.DS.TextPrimary : Muted;
+                    var rim = !idle ? new Color(1f, 1f, 1f, 0.16f) : anyPlayable ? new Color(Cyan.r, Cyan.g, Cyan.b, 0.8f) : new Color(UIManager.DS.Green.r, UIManager.DS.Green.g, UIManager.DS.Green.b, 0.95f);
+                    if (_endFx != null) _endFx.SetRim(rim);
                 }
-                float pulse = idle && !anyPlayable ? 0.45f + 0.35f * Mathf.Sin(Time.unscaledTime * 4f) : idle ? 0.2f : 0f;
-                var gc = anyPlayable ? new Color(1f, 0.75f, 0.25f) : new Color(0.3f, 1f, 0.4f);
-                _endGlow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_endGlow.color.a, pulse, 1f - Mathf.Exp(-dt * 8f)));
+                var tint = !idle ? UIManager.DS.BtnDisabled : anyPlayable ? UIManager.DS.BtnPrimary : UIManager.DS.BtnSuccess;
+                _endButtonImg.color = Color.Lerp(_endButtonImg.color, tint, 1f - Mathf.Exp(-dt * 8f));
+                float wave = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3.6f);
+                if (_endFx != null) _endFx.SetPulse(idle && !anyPlayable ? wave : 0f);
+                float halo = idle && !anyPlayable ? 0.3f + 0.3f * wave : idle ? 0.14f : 0f;
+                var gc = anyPlayable ? Cyan : UIManager.DS.Green;
+                _endGlow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_endGlow.color.a, halo, 1f - Mathf.Exp(-dt * 8f)));
+                _endButtonImg.rectTransform.localScale = Vector3.Lerp(_endButtonImg.rectTransform.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 12f));
             }
-
-            if (_endGlint != null)
-            {
-                // Блик пробегает по кнопке раз в 2.5 с; чаще, когда всё сыграно
-                _glintT += dt * (_endState != null && _endState.StartsWith("btn_end_green") ? 1.4f : 0.8f);
-                float g = Mathf.Repeat(_glintT, 2.5f) / 0.7f;
-                _endGlint.rectTransform.anchoredPosition = new Vector2(Mathf.Lerp(-170f, 170f, Mathf.Clamp01(g)), 0);
-                _endGlint.color = new Color(1f, 1f, 1f, g <= 1f && _endState != null && !_endState.StartsWith("btn_end_gray") ? 0.5f : 0f);
-            }
-            if (_endButtonImg != null) _endButtonImg.rectTransform.localScale = Vector3.Lerp(_endButtonImg.rectTransform.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 12f));
 
             // Атмосфера: пыль/пепел/дождь
             AmbientTick(dt);
@@ -1096,6 +1108,7 @@ namespace StellarisClone.Cards
             if (s.LastControl != c)
             {
                 s.WashC = col;
+                if (s.PlateFx != null) s.PlateFx.SetRim(new Color(col.r, col.g, col.b, 0.75f));
                 if (s.LastControl != -2)
                 {
                     s.WashA = 1f;
@@ -1126,7 +1139,7 @@ namespace StellarisClone.Cards
         {
             if (_busy || _state == null || _state.Over || _dragging != null) return;
             SFXManager.Play(Sfx.UiConfirm);
-            _endButtonImg.rectTransform.localScale = Vector3.one * 0.92f;
+            _endButtonImg.rectTransform.localScale = Vector3.one * 0.93f;
             StartCoroutine(ResolveTurn());
         }
 
@@ -1186,53 +1199,38 @@ namespace StellarisClone.Cards
             var croot = (RectTransform)_canvas.transform;
             var dim = LGBuild.Panel(croot, "Dim", new Color(0, 0, 0, 0.75f), raycast: true);
             dim.rectTransform.Stretch();
-            var box = CardSkin.Sliced(croot, "Prompt", "panel_plates", Color.white, 0.6f);
-            box.raycastTarget = true;
-            box.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700, 330));
-            var fr = CardSkin.Sliced(box.rectTransform, "Frame", "frame_card", CardSkin.Red, 0.5f);
-            fr.rectTransform.Stretch();
+            var box = GlassAt(croot, "Prompt", Vector2.zero, new Vector2(700, 330), PanelTint, new Color(1f, 0.45f, 0.42f, 0.6f), false, 20f, raycast: true);
             LG.Motion(box.gameObject, LGAppear.Kind.Pop);
-            var t = CardSkin.TitleText(box.rectTransform, Loc.T("ВРАГ ВЫСАЖИВАЕТСЯ!"), 34, new Color(1f, 0.55f, 0.48f), TextAnchor.UpperCenter, 2.5f);
-            t.rectTransform.Stretch(20, 0, 20, 30);
-            t.Track(2f);
+            var acc = LGBuild.Panel(box.rectTransform, "Accent", UIManager.DS.Red);
+            acc.raycastTarget = false;
+            acc.rectTransform.TopBand(26, 3, 300, 300);
+            var t = Caption(box.rectTransform, Loc.T("ВРАГ ВЫСАЖИВАЕТСЯ!"), 28, new Color(1f, 0.6f, 0.55f), TextAnchor.UpperCenter, 2f);
+            t.rectTransform.Stretch(20, 0, 20, 42);
             var body = LGBuild.Label(box.rectTransform, Loc.F("{0} штурмует колонию {1}. Гарнизон, ополчение и укрепления готовы к бою.\nКомандовать обороной лично или довериться автобою?",
-                AIEmpireManager.NameOf(attacker, Loc.T("Враг")), sys.Name), 16, new Color(0.92f, 0.9f, 0.86f), TextAnchor.UpperCenter, wrap: true);
-            body.rectTransform.Stretch(50, 110, 50, 92);
+                AIEmpireManager.NameOf(attacker, Loc.T("Враг")), sys.Name), 15, Muted, TextAnchor.UpperCenter, wrap: true);
+            body.rectTransform.Stretch(50, 110, 50, 100);
             SFXManager.Play(Sfx.RedAlert);
-            void Btn(string label, string sprite, Vector2 pos, Action act)
+            void Btn(string label, Color tint, Color rim, Vector2 pos, Action act)
             {
-                var rt = LGBuild.Rect(box.rectTransform, label);
-                rt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, new Vector2(270, 66));
-                var img = rt.gameObject.AddComponent<Image>();
-                img.sprite = CardSkin.Spr(sprite);
-                img.type = Image.Type.Sliced;
-                img.pixelsPerUnitMultiplier = 2.6f;
-                var b = rt.gameObject.AddComponent<Button>();
-                b.targetGraphic = img;
-                b.onClick.AddListener(() => act());
-                var l = CardSkin.TitleText(rt, label, 16, Color.white, TextAnchor.MiddleCenter, 2f);
-                l.rectTransform.Stretch(16, 0, 16, 0);
+                var b = LGBuild.Button(box.rectTransform, label, tint, rim, act, null, label, 15, 14f);
+                b.GetComponent<Image>().rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, new Vector2(270, 58));
+                var l = b.GetComponentInChildren<Text>();
+                if (l != null) l.Track(1.4f);
             }
-            Btn(Loc.T("ЗАЩИЩАТЬСЯ ЛИЧНО"), "btn_end_green", new Vector2(-148, 30), () =>
+            Btn(Loc.T("ЗАЩИЩАТЬСЯ ЛИЧНО"), UIManager.DS.BtnSuccess, new Color(UIManager.DS.Green.r, UIManager.DS.Green.g, UIManager.DS.Green.b, 0.8f), new Vector2(-148, 30), () =>
             {
                 AssaultLink.BattleRunning = false;
                 _root.SetActive(false);
                 if (tm != null) tm.SetSpeed(saved);
                 AssaultLink.StartDefense(attacker, sys, false);
             });
-            Btn(Loc.T("АВТОБОЙ"), "btn_end_gray", new Vector2(148, 30), () =>
+            Btn(Loc.T("АВТОБОЙ"), UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), new Vector2(148, 30), () =>
             {
                 AssaultLink.BattleRunning = false;
                 _root.SetActive(false);
                 if (tm != null) tm.SetSpeed(saved);
                 AssaultLink.StartDefense(attacker, sys, true);
             });
-        }
-
-        /// <summary>Кнопка пружинит обратно к обычному размеру после нажатия.</summary>
-        private sealed class PressSpring : MonoBehaviour
-        {
-            private void Update() { transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, 1f - Mathf.Exp(-Time.unscaledDeltaTime * 14f)); }
         }
 
         /// <summary>Щелчок по дорожке сектора.</summary>

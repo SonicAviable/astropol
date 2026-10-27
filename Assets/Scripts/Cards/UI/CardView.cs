@@ -112,13 +112,14 @@ namespace StellarisClone.Cards
         /// <summary>Общая часть: свечение, тень, корпус, арт в маске с бликом, трещинами и вспышкой урона.</summary>
         private RectTransform BuildBase(Vector2 size, float k, float bodyScale, out RectTransform mask)
         {
-            // Свечение только по контуру карты (середина пустая): доступна — зелёное, наведение — золотое
-            float gs = 0.55f * size.y / 280f;
-            _glow = CardSkin.Sliced(Rt, "Glow", "glow_edge", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f), gs);
-            _glow.rectTransform.Stretch(-64 * gs, -64 * gs, -64 * gs, -64 * gs);
-
             _content = LGBuild.Rect(Rt, "Content");
             _content.Stretch();
+
+            // Свечение только по контуру карты (середина пустая): доступна — зелёное, наведение — золотое.
+            // Живёт внутри Content — поднимается и наклоняется вместе с картой, а не остаётся «квадратом» на старом месте.
+            float gs = 0.38f * size.y / 280f;
+            _glow = CardSkin.Sliced(_content, "Glow", "glow_edge", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f), gs);
+            _glow.rectTransform.Stretch(-64 * gs, -64 * gs, -64 * gs, -64 * gs);
 
             var shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.7f));
             shadow.sprite = CardSprites.RoundGlow;
@@ -457,7 +458,7 @@ namespace StellarisClone.Cards
             // Свечение: доступна для розыгрыша / выбрана / подсветка эффекта
             _glowPulse += dt;
             float g = GlowBoost;
-            if (Playable) g = Mathf.Max(g, 0.35f + 0.2f * Mathf.Sin(_glowPulse * 3f));
+            if (Playable) g = Mathf.Max(g, 0.26f + 0.12f * Mathf.Sin(_glowPulse * 3f));
             if (Selected || (_hovered && _hoverable)) g = Mathf.Max(g, 0.9f);
             GlowBoost = Mathf.MoveTowards(GlowBoost, 0f, dt * 1.5f);
             var gc = (_hovered && _hoverable) || Selected ? new Color(1f, 0.85f, 0.4f) : Playable ? new Color(0.35f, 1f, 0.5f) : _frameColor;

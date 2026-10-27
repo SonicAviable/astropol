@@ -6681,3 +6681,4 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 +★ ОПЫТ	+★ EXPERIENCE
 ТРОФЕЙ: {0}	TROPHY: {0}
 Скорость анимаций боя	Battle animation speed
+Закончить ход  <color=#8AA2A8>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно	End turn  <color=#8AA2A8>(Enter)</color>\nGreen and pulsing — everything playable has been played
