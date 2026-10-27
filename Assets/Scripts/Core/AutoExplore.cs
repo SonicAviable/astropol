@@ -9,13 +9,16 @@ namespace StellarisClone.Core
     /// неизученную ничейную систему на границе известного космоса и летит её исследовать, затем следующую.
     ///   • Обходит системы, где игрок видит вооружённого врага (флоты, пираты, левиафаны), и владения врагов.
     ///   • Два разведчика не берут одну и ту же цель.
-    ///   • Когда исследовать поблизости нечего, режим выключается с уведомлением.
+    ///   • Когда исследовать нечего, корабль сам возвращается к ближайшей своей колонии и помогает исследованиям
+    ///     (<see cref="ResearchAssist"/>); режим остаётся включённым — появится новая цель, корабль полетит сам.
     ///   • Любой ручной приказ кораблю выключает авторазведку.
     /// </summary>
     public class AutoExplore : MonoBehaviour
     {
         private const int SearchDepth = 14;
         private float _timer;
+        /// <summary>Корабли, о возвращении которых домой уже сообщили (сброс — когда снова нашлась цель).</summary>
+        private static readonly HashSet<int> s_homeNotified = new HashSet<int>();
 
         private void Update()
         {
@@ -86,11 +89,23 @@ namespace StellarisClone.Core
                 int target = FindTarget(d.CurrentSystemId, claimed);
                 if (target < 0)
                 {
-                    d.AutoExplore = false;
-                    NotificationCenter.Show(Loc.T("Авторазведка завершена"),
-                        Loc.F("{0}: поблизости не осталось доступных неизученных систем", d.Name), NotificationCenter.Kind.Info, 5f);
+                    if (ResearchAssist.IsAssisting(d)) continue;   // уже дома и помогает учёным — ждёт новую цель
+                    int home = ResearchAssist.NearestColony(d.OwnerId, d.CurrentSystemId);
+                    if (home < 0)
+                    {
+                        d.AutoExplore = false;
+                        NotificationCenter.Show(Loc.T("Авторазведка завершена"),
+                            Loc.F("{0}: поблизости не осталось доступных неизученных систем", d.Name), NotificationCenter.Kind.Info, 6f, d.CurrentSystemId);
+                        continue;
+                    }
+                    if (home != d.CurrentSystemId && !fm.IssueMoveOrder(f, home)) { d.AutoExplore = false; continue; }
+                    if (s_homeNotified.Add(d.Id))
+                        NotificationCenter.Show(Loc.T("Разведка окончена — корабль помогает учёным"),
+                            Loc.F("{0}: изучать поблизости больше нечего. Корабль возвращается к {1} и даёт +{2:0} науки в месяц. Появится новая цель — полетит сам",
+                                d.Name, EmpireStats.GetSystem(home)?.Name ?? "?", ResearchAssist.ShipScience(d)), NotificationCenter.Kind.Info, 8f, home);
                     continue;
                 }
+                s_homeNotified.Remove(d.Id);
                 if (fm.OrderSurveySystem(target, f)) claimed.Add(target);
             }
         }

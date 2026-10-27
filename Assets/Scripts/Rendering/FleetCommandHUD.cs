@@ -489,6 +489,7 @@ namespace StellarisClone.Rendering
                 case FleetState.Constructing: Status(Loc.T("МОНТАЖ ФОРПОСТА"), CCon, false); return;
             }
             if (d.Path.Count > 0) Status(Loc.T("К ПРЫЖКУ"), UIManager.DS.NeonCyan, false);
+            else if (ResearchAssist.IsAssisting(d)) Status(Loc.F("ПОМОГАЕТ УЧЁНЫМ +{0:0}", ResearchAssist.ShipScience(d)), CSci, false);
             else if (d.AutoExplore) Status(Loc.T("АВТОРАЗВЕДКА"), CSci, false);
             else if (fm != null && fm.NeedsRepair(d)) Status(Loc.T("РЕМОНТ"), UIManager.DS.Gold, false);
             else Status(Loc.T("НА ОРБИТЕ"), UIManager.DS.TextMuted, false);

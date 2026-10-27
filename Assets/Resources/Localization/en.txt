@@ -6815,3 +6815,31 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Десант: до {0} карт из резерва империи (мест на кораблях: {1}). Карты выбираются перед штурмом	Landing force: up to {0} cards from the empire reserve (ship slots: {1}). Cards are chosen before the assault
 <b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт.\n<color=#8AA2A8>Сначала откроется «Сбор десанта» — выберите, какими картами нападать</color>	<b>Ground assault</b>\nA card battle for the colony: 3 sectors, {0} turns. Victory makes the colony yours at once, without waiting for the siege to end. Fallen cards are lost forever, survivors gain experience.\n<color=#8AA2A8>"Assemble the landing force" opens first — choose which cards to attack with</color>
 Быстрый штурм без экрана боя и без выбора карт: в десант пойдут лучшие карты резерва, исход рассчитают правила	A quick assault without the battle screen or card choice: the best reserve cards land and the rules resolve the outcome
+Журнал событий	Event log
+<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события	<b>Event log</b>\nEvery pop-up message of this game. Click an entry to move the camera to where it happened
+<color=#8AA2A8>Научные корабли у колоний ({0}):</color> +{1:0.#}\n	<color=#8AA2A8>Science ships at colonies ({0}):</color> +{1:0.#}\n
+ОСТАВИТЬ КАК ЕСТЬ	LEAVE IT BE
+Ничего не делать: подходящих вариантов сейчас нет	Do nothing: no suitable option is available right now
+<color=#8AA2A8><b>Учёный</b> — лидер-исследователь. Он служит на борту научного корабля (тогда события аномалий учитывают его черты) или в научном совете. Нанять учёного: окно «Империя» (I) → вкладка «Лидеры» → «НАНЯТЬ», затем «НАЗНАЧИТЬ» — на научный корабль или в совет.</color>	<color=#8AA2A8>A <b>scientist</b> is a research leader. They serve aboard a science ship (then anomaly events take their traits into account) or on the science council. To hire one: "Empire" window (I) → "Leaders" tab → "HIRE", then "ASSIGN" them to a science ship or the council.</color>
+ПОМОГАЕТ УЧЁНЫМ +{0:0}	ASSISTING RESEARCH +{0:0}
+Помогает учёным: +{0:0} науки · {1}	Assisting research: +{0:0} science · {1}
+Разведка окончена — корабль помогает учёным	Exploration done — the ship assists research
+{0}: изучать поблизости больше нечего. Корабль возвращается к {1} и даёт +{2:0} науки в месяц. Появится новая цель — полетит сам	{0}: nothing left to survey nearby. The ship returns to {1} and gives +{2:0} science per month. When a new target appears, it will fly there on its own
+ЖУРНАЛ СОБЫТИЙ	EVENT LOG
+Закрыть  <color=#8AA2A8>(Esc / O)</color>	Close  <color=#8AA2A8>(Esc / O)</color>
+Все сообщения партии. Клик по записи с прицелом — камера к месту события	Every message of this game. Click an entry with a crosshair to move the camera to where it happened
+Важные	Important
+С местом	With location
+записей: {0}	entries: {0}
+Пока ничего не случилось	Nothing has happened yet
+Под фильтр ничего не подходит	Nothing matches the filter
+Камера к системе {0}	Camera to {0}
+ЛКМ — к месту события · ПКМ — убрать · все сообщения — в журнале (O)	LMB — go to the event · RMB — dismiss · every message is in the log (O)
+ПКМ — убрать · все сообщения — в журнале (O)	RMB — dismiss · every message is in the log (O)
+нет базы	no starbase
+строится: {0}, {1:0} дн.	building: {0}, {1:0} days
+наивысший уровень	highest level
+улучшение: {0:0} мин. · {1:0} спл.	upgrade: {0:0} min. · {1:0} all.
+<b>Улучшить до «{0}»</b>\n{1:0} минералов, {2:0} сплавов, {3:0} дней.\nБаза крепче и бьёт сильнее, осада идёт дольше; содержание +{4:0.#} гелия-3 в месяц	<b>Upgrade to "{0}"</b>\n{1:0} minerals, {2:0} alloys, {3:0} days.\nThe starbase gets tougher and hits harder, sieges take longer; upkeep +{4:0.#} helium-3 per month
+К следующей колонии (Shift — к предыдущей)	To the next colony (Shift: previous)
+Журнал событий: все сообщения, клик — к месту события	Event log: every message, click to go to the event

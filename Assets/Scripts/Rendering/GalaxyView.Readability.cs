@@ -32,6 +32,8 @@ namespace StellarisClone.Rendering
             public StarSystem Sys;
             public Transform Root;
             public SpriteRenderer Back, Rim, Icon;
+            /// <summary>Уровень укреплений звёздной базы: до трёх золотых точек под значком.</summary>
+            public SpriteRenderer[] Pips;
             public MarkerKind Kind;
             public float Alpha;
         }
@@ -212,7 +214,15 @@ namespace StellarisClone.Rendering
                     Back = Make("Back", FleetIndicator.GetDiscSprite(), 30, 1f),
                     Rim = Make("Rim", FleetIndicator.GetRingSprite(), 31, 1f),
                     Icon = Make("Icon", LGIcons.Get(LGIcon.Planet), 32, 0.62f),
+                    Pips = new SpriteRenderer[Fortifications.MaxLevel],
                 };
+                for (int i = 0; i < m.Pips.Length; i++)
+                {
+                    var pip = Make("Pip" + i, FleetIndicator.GetDiscSprite(), 33, 0.3f);
+                    pip.transform.localPosition = new Vector3((i - (m.Pips.Length - 1) * 0.5f) * 0.38f, -0.72f, 0f);
+                    pip.gameObject.SetActive(false);
+                    m.Pips[i] = pip;
+                }
                 root.gameObject.SetActive(false);
                 _markers.Add(m);
             }
@@ -259,6 +269,13 @@ namespace StellarisClone.Rendering
             m.Rim.color = rim;
             m.Icon.color = icon;
             m.Back.color = new Color(owner.r * 0.12f, owner.g * 0.12f, owner.b * 0.12f, 0.92f * m.Alpha);
+            int fort = m.Sys.HasStarbase ? m.Sys.Fortification : 0;
+            for (int i = 0; i < m.Pips.Length; i++)
+            {
+                bool on = i < fort;
+                if (m.Pips[i].gameObject.activeSelf != on) m.Pips[i].gameObject.SetActive(on);
+                m.Pips[i].color = new Color(1f, 0.82f, 0.35f, m.Alpha);
+            }
         }
 
         // ==================== КАЖДЫЙ КАДР ====================
@@ -344,6 +361,7 @@ namespace StellarisClone.Rendering
                 SetAlpha(m.Back, 0.92f * m.Alpha);
                 SetAlpha(m.Rim, m.Alpha);
                 SetAlpha(m.Icon, m.Alpha);
+                foreach (var pip in m.Pips) if (pip.gameObject.activeSelf) SetAlpha(pip, m.Alpha);
             }
         }
 

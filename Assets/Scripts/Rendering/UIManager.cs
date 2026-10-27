@@ -407,6 +407,7 @@ namespace StellarisClone.Rendering
 
             // Новости галактики (лента справа внизу) и гражданский трафик по коридорам
             GalacticNews.Reset();
+            NotificationCenter.ClearHistory();
             if (FindFirstObjectByType<NewsFeedPanel>() == null)
                 new GameObject("[UI] NewsFeed").AddComponent<NewsFeedPanel>().Init(_canvas);
             if (FindFirstObjectByType<CivilianTraffic>() == null)
@@ -554,7 +555,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 12 * 46f + 30f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 13 * 46f + 30f);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
@@ -641,6 +642,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, null, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V");
             Item("NavWonder", LGIcon.Wonder, Loc.T("Чудо фракции"), new Color(1f, 0.78f, 0.35f), () => ToggleWindow(NavWindow.Wonder), null,
                  Loc.T("<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников"), "U");
+            Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, null,
+                 Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O");
+            NotificationLog.AttachBadge(menu.transform.Find("NavLog/IconTile"));
             Item("NavHelp", LGIcon.Info, Loc.T("Справка"), DS.TextMuted, () => ToggleWindow(NavWindow.Help), null,
                  Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново"), "F1");
 
@@ -857,6 +861,50 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else if (Input.GetKeyDown(KeyCode.G)) { CloseMainWindows(null); SelectAllWarships(); }
             else if (Input.GetKeyDown(KeyCode.C)) CloseMainWindows(NavWindow.Colonies);
             else if (Input.GetKeyDown(KeyCode.V)) CloseMainWindows(NavWindow.Victory);
+            else if (Input.GetKeyDown(KeyCode.O)) NotificationLog.Toggle();
+            else if (Input.GetKeyDown(KeyCode.Tab)) CycleColony(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? -1 : 1);
+        }
+
+        private int _colonyCursor = -1;
+
+        /// <summary>Tab / Shift+Tab на карте: по очереди к своим колониям (столица первой, дальше по числу жителей).</summary>
+        private void CycleColony(int dir)
+        {
+            var list = new List<StarSystem>();
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s == null || s.OwnerId != 0) continue;
+                foreach (var p in s.Planets) if (p.Population > 0) { list.Add(s); break; }
+            }
+            if (list.Count == 0) return;
+            int Pop(StarSystem sy) { int n = 0; foreach (var p in sy.Planets) n += Mathf.Max(0, p.Population); return n; }
+            list.Sort((a, b) =>
+            {
+                bool ca = a.Id == EconomyManager.PlayerCapitalId, cb = b.Id == EconomyManager.PlayerCapitalId;
+                if (ca != cb) return ca ? -1 : 1;
+                int c = Pop(b).CompareTo(Pop(a));
+                return c != 0 ? c : a.Id.CompareTo(b.Id);
+            });
+            int i = list.FindIndex(s => s.Id == _colonyCursor);
+            i = i < 0 ? (dir > 0 ? 0 : list.Count - 1) : ((i + dir) % list.Count + list.Count) % list.Count;
+            _colonyCursor = list[i].Id;
+            SFXManager.Play(Sfx.UiTab, 0.6f);
+            FocusSystem(list[i]);
+        }
+
+        /// <summary>
+        /// Камера к системе, выделить её и открыть панель — из списков, уведомлений, перебора колоний.
+        /// Из вида системы сначала возвращает на карту галактики.
+        /// </summary>
+        public void FocusSystem(StarSystem sys)
+        {
+            if (sys == null) return;
+            var svm = SystemViewManager.Instance;
+            if (svm != null && svm.IsInSystemView) svm.ExitToGalaxyView();
+            var cam = FindAnyObjectByType<StrategyCameraController>();
+            if (cam != null) cam.FocusOn(sys.Position);
+            GalaxyView.Instance?.SelectSystem(sys.Id);
+            ShowSystemPanel(sys);
         }
 
         private void SelectAllWarships()
@@ -1770,6 +1818,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 Loc.F("<color=#8AA2A8>Администрация:</color> +{0:0.#}\n", TechnologyManager.BaseScience) +
                 Loc.F("<color=#8AA2A8>Население ({0} жит.; виды и стабильность):</color> +{1:0.#}\n", tm.Population, tm.ScienceFromPopulation) +
                 (tm.FlatScience > 0f ? Loc.F("<color=#8AA2A8>Открытия и события:</color> +{0:0.#}\n", tm.FlatScience) : "") +
+                AssistLine() +
                 (Mathf.Abs(mult - 1f) > 0.01f ? Loc.F("<color=#8AA2A8>Множитель технологий и событий:</color> ×{0:0.##}\n", mult) : "") +
                 $"<color=#8AA2A8>──────────────</color>\n" +
                 Loc.F("<color=#8AA2A8>Итого:</color> <b>+{0:0.#} / мес</b>\n", tm.MonthlyResearchIncome) +
@@ -1780,6 +1829,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
     }
 }
+
+        /// <summary>Строка подсказки науки: научные корабли у колоний помогают исследованиям.</summary>
+        private static string AssistLine()
+        {
+            float s = ResearchAssist.Science(0, out int ships);
+            return ships > 0 ? Loc.F("<color=#8AA2A8>Научные корабли у колоний ({0}):</color> +{1:0.#}\n", ships, s) : "";
+        }
 
 // ==================== ХЕЛПЕРЫ ДЛЯ ТУЛТИПОВ ====================
 
@@ -2145,6 +2201,24 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bool hasArt = _eventFx != null && _eventFx.SetArt(ev.Art, accent);
             float artH = hasArt ? EventArtHeight + 10f : 0f;
 
+            // Нет ни одного доступного варианта (например, все требуют учёного) — окно не должно запирать игру
+            bool anyAvailable = false, needScientist = false;
+            if (ev.Options != null)
+                foreach (var o in ev.Options)
+                {
+                    if (o == null) continue;
+                    if (o.Available) anyAvailable = true;
+                    else if (IsScientistRequirement(o.Requirement)) needScientist = true;
+                }
+            if (!anyAvailable)
+            {
+                ev.Options ??= new List<EventOption>();
+                ev.Options.Add(new EventOption(Loc.T("ОСТАВИТЬ КАК ЕСТЬ"), Loc.T("Ничего не делать: подходящих вариантов сейчас нет"), null));
+            }
+            // Пояснение, кто такие учёные и где их взять — прямо в окне, не только в подсказке
+            if (needScientist && _eventDescText != null)
+                _eventDescText.text += "\n\n" + ScientistHint;
+
             // Высота блока вариантов — по их числу, описание занимает остальное
             int optCount = 0;
             if (ev.Options != null) foreach (var o in ev.Options) if (o != null) optCount++;
@@ -2206,6 +2280,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
                     string tip = opt.ResultTooltip ?? "";
                     if (special) tip = (available ? Loc.T("<color=#F2C747>Особый вариант: ") : Loc.T("<color=#FF8A8A>Недоступно — требуется: ")) + opt.Requirement + "</color>\n" + tip;
+                    if (!available && IsScientistRequirement(opt.Requirement)) tip += "\n\n" + ScientistHint;
                     if (!string.IsNullOrEmpty(tip))
                     {
                         var tt = btnGo.GetComponent<TooltipTrigger>();
@@ -2220,6 +2295,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             LG.Skin(_eventPopupModal.transform);
             _eventFx?.Play();
         }
+
+        /// <summary>Вариант события требует учёного (лидера-исследователя).</summary>
+        private static bool IsScientistRequirement(string req)
+            => !string.IsNullOrEmpty(req) && (req.IndexOf("чён", System.StringComparison.OrdinalIgnoreCase) >= 0
+                                               || req.IndexOf("cientist", System.StringComparison.OrdinalIgnoreCase) >= 0);
+
+        /// <summary>Кто такие учёные и где их взять.</summary>
+        private static string ScientistHint => Loc.T("<color=#8AA2A8><b>Учёный</b> — лидер-исследователь. Он служит на борту научного корабля (тогда события аномалий учитывают его черты) или в научном совете. Нанять учёного: окно «Империя» (I) → вкладка «Лидеры» → «НАНЯТЬ», затем «НАЗНАЧИТЬ» — на научный корабль или в совет.</color>");
 
         private static string Roman(int n) => n switch
         {

@@ -220,7 +220,7 @@ namespace StellarisClone.Core
         public float ScienceFromPopulation => EmpireStats.ResearchPops(0) * SciencePerPop;
 
         public float MonthlyResearchIncome =>
-            (BaseScience + ScienceFromPopulation + FlatScience + Landmarks.Science(0)) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0)
+            (BaseScience + ScienceFromPopulation + FlatScience + Landmarks.Science(0) + ResearchAssist.Science(0)) * Bonuses.ResearchMult * TempBoost * LeaderManager.ResearchMult(0)
             * AIEmpireManager.PlayerTreatyResearchMult * NeutralWorlds.ResearchMult(0);
 
         private readonly List<Technology> _allTechs = new List<Technology>();

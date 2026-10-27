@@ -420,6 +420,7 @@ namespace StellarisClone.Rendering
                         break;
                     default:
                         if (d.InCombat) row.Status = Loc.F("БОЙ: {0}", here);
+                        else if (ResearchAssist.IsAssisting(d)) row.Status = Loc.F("Помогает учёным: +{0:0} науки · {1}", ResearchAssist.ShipScience(d), here);
                         else if (d.Type != FleetType.Military && d.OrderQueue.Count == 0) { row.Status = Loc.F("Простаивает: {0}", here); row.Warn = true; }
                         else row.Status = Loc.F("На орбите: {0}", here);
                         break;

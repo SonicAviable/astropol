@@ -444,7 +444,9 @@ namespace StellarisClone.Cam
         {
             var gen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
             if (gen == null || gen.Systems.Count == 0) return;
-            FocusOn(gen.Systems[0].Position);
+            // Столица — не обязательно первая система в списке
+            var cap = StellarisClone.Core.EmpireStats.GetSystem(StellarisClone.Core.EconomyManager.PlayerCapitalId);
+            FocusOn((cap ?? gen.Systems[0]).Position);
         }
 
         // ==================== ФОКУС ====================

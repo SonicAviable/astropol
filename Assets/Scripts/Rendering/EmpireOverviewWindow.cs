@@ -858,10 +858,10 @@ namespace StellarisClone.Rendering
         /// </summary>
         private void BuildSystems()
         {
-            HeaderCols((0.06f, 0.34f, Loc.T("СИСТЕМА"), TextAnchor.MiddleLeft),
-                       (0.34f, 0.46f, Loc.T("ЗВЕЗДА"), TextAnchor.MiddleLeft),
-                       (0.46f, 0.64f, Loc.T("ЖИТЕЛИ"), TextAnchor.MiddleLeft),
-                       (0.64f, 0.74f, Loc.T("РАЙОНЫ"), TextAnchor.MiddleCenter),
+            HeaderCols((0.06f, 0.30f, Loc.T("СИСТЕМА"), TextAnchor.MiddleLeft),
+                       (0.30f, 0.52f, Loc.T("ЗВЁЗДНАЯ БАЗА"), TextAnchor.MiddleLeft),
+                       (0.52f, 0.66f, Loc.T("ЖИТЕЛИ"), TextAnchor.MiddleLeft),
+                       (0.66f, 0.74f, Loc.T("РАЙОНЫ"), TextAnchor.MiddleCenter),
                        (0.74f, 1f, Loc.T("ПРОИЗВОДСТВО / МЕС"), TextAnchor.MiddleRight));
             if (_gen == null) { Empty(Loc.T("У империи не осталось систем.")); return; }
 
@@ -901,10 +901,11 @@ namespace StellarisClone.Rendering
                             : colonies.Count > 0 ? Loc.F("Колоний: {0}", colonies.Count)
                             : sys.HasStarbase ? Loc.T("Пограничный форпост") : Loc.T("Контролируемая система");
                 if (sys.Landmark >= 0) kind += " · ★ " + Landmarks.Name(sys.Landmark);
-                TwoLine(row, 0.06f, 0.34f, sys.Name, kind);
-                TextCell(row, 0.34f, 0.46f, StarClass(sys.SpectralClass), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
+                kind += " · " + StarClass(sys.SpectralClass);
+                TwoLine(row, 0.06f, 0.30f, sys.Name, kind);
+                BaseCell(row, 0.30f, 0.52f, sys);
                 int pop = Pop(sys);
-                TextCell(row, 0.46f, 0.64f, pop > 0 ? Loc.F("{0} жит.", pop) : Loc.F("планет: {0}", sys.Planets.Count),
+                TextCell(row, 0.52f, 0.66f, pop > 0 ? Loc.F("{0} жит.", pop) : Loc.F("планет: {0}", sys.Planets.Count),
                     pop > 0 ? UIManager.DS.TextPrimary : UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 12, pop > 0);
                 if (sys.IsSurveyed)
                     MiniStats(row, 0.74f, 1f,
@@ -923,14 +924,14 @@ namespace StellarisClone.Rendering
                     sub.GetComponent<Image>().color = RowSub;
                     IconCell(sub, 0.04f, 0.09f, LGIcon.Planet, Color.Lerp(p.PlanetColor, Color.white, 0.25f));
                     var tier = p.Tier;
-                    TwoLine(sub, 0.09f, 0.34f, PlanetNames.Title(p.Name),
+                    TwoLine(sub, 0.09f, 0.30f, PlanetNames.Title(p.Name),
                         p.ClassDisplayName + Loc.F(" · стабильность <color=#{0}>{1:0}</color>", PlanetStability.Hex(PlanetStability.TierColor(tier)), p.Stability));
-                    TextCell(sub, 0.34f, 0.46f, Loc.T("колония"), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
+                    TextCell(sub, 0.30f, 0.52f, Loc.T("колония"), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 11);
                     float fillPop = p.HousingCapacity > 0 ? p.Population / (float)p.HousingCapacity : 1f;
                     Color popCol = p.Population < p.HousingCapacity ? UIManager.DS.Green : CGold;
-                    BarCell(sub, 0.46f, 0.64f, fillPop, popCol,
+                    BarCell(sub, 0.52f, 0.66f, fillPop, popCol,
                         $"{p.Population} / {p.HousingCapacity}" + (p.IdlePops > 0 ? Loc.F("   <color=#F2C747>безраб. {0}</color>", p.IdlePops) : ""));
-                    TextCell(sub, 0.64f, 0.74f, $"{p.BuiltDistricts} / {p.MaxDistricts}", UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 12, true);
+                    TextCell(sub, 0.66f, 0.74f, $"{p.BuiltDistricts} / {p.MaxDistricts}", UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 12, true);
                     MiniStats(sub, 0.74f, 1f,
                         (LGIcon.Minerals, CMinerals, "+" + ColonyManagerWindow.Output(p, "minerals").ToString("0.#")),
                         (LGIcon.Energy, CEnergy, "+" + ColonyManagerWindow.Output(p, "energy").ToString("0.#")),
@@ -938,6 +939,59 @@ namespace StellarisClone.Rendering
                 }
             }
             if (systems.Count == 0) Empty(Loc.T("У империи не осталось систем."));
+        }
+
+        /// <summary>
+        /// Звёздная база в списке систем: уровень (ромбы), что строится и кнопка «Улучшить» прямо в строке —
+        /// не нужно искать систему на карте.
+        /// </summary>
+        private void BaseCell(RectTransform row, float x0, float x1, StarSystem sys)
+        {
+            var c = Cell(row, x0, x1);
+            if (!sys.HasStarbase)
+            {
+                LGBuild.Label(c, Loc.T("нет базы"), 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft);
+                return;
+            }
+            int lv = sys.Fortification;
+            var pips = new System.Text.StringBuilder();
+            for (int i = 1; i <= Fortifications.MaxLevel; i++) pips.Append(i <= lv ? "◆" : "◇");
+            var t1 = LGBuild.Label(c, $"{Fortifications.Name(lv)}  <color=#F2C747>{pips}</color>", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+            t1.supportRichText = true;
+            t1.rectTransform.offsetMax = new Vector2(-40, -6);
+
+            var job = Fortifications.PendingJob(sys.Id);
+            string blocker = Fortifications.Blocker(sys, 0);
+            int to = lv + 1;
+            string sub = job != null ? Loc.F("строится: {0}, {1:0} дн.", Fortifications.Name(to).ToLower(), Mathf.Ceil(job.DaysLeft))
+                       : lv >= Fortifications.MaxLevel ? Loc.T("наивысший уровень")
+                       : Loc.F("улучшение: {0:0} мин. · {1:0} спл.", Fortifications.Minerals(to), Fortifications.Alloys(to));
+            var t2 = LGBuild.Label(c, sub, 10, job != null ? CGold : UIManager.DS.TextMuted, TextAnchor.LowerLeft);
+            t2.rectTransform.offsetMin = new Vector2(0, 6);
+            t2.rectTransform.offsetMax = new Vector2(-40, 0);
+            if (job != null || lv >= Fortifications.MaxLevel) return;
+
+            var eco = EconomyManager.Instance;
+            bool afford = eco != null && eco.CanAfford(0f, Fortifications.Minerals(to), Fortifications.Alloys(to), 0f);
+            bool can = blocker == null && afford;
+            var captured = sys;
+            var btn = LGBuild.Button(c, "Upgrade", can ? UIManager.DS.BtnSuccess : UIManager.DS.BtnDisabled, new Color(1f, 1f, 1f, 0.25f), () =>
+            {
+                if (Fortifications.TryStartPlayer(captured))
+                {
+                    SFXManager.Play(StellarisClone.Core.Audio.Sfx.BuildQueued);
+                    UIManager.Instance?.RefreshResourceBarPublic();
+                    RebuildList();
+                }
+                else SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiDenied);
+            }, LGIcon.Construction, null, 11);
+            ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(34, 30));
+            btn.interactable = can;
+            string tip = Loc.F("<b>Улучшить до «{0}»</b>\n{1:0} минералов, {2:0} сплавов, {3:0} дней.\nБаза крепче и бьёт сильнее, осада идёт дольше; содержание +{4:0.#} гелия-3 в месяц",
+                Fortifications.Name(to), Fortifications.Minerals(to), Fortifications.Alloys(to), Fortifications.Days(to), Fortifications.UpkeepPerLevel);
+            if (blocker != null) tip += $"\n<color=#FF8080>{blocker}</color>";
+            else if (!afford) tip += "\n<color=#FF8080>" + Loc.T("Не хватает ресурсов") + "</color>";
+            TooltipHelper.Attach(btn.gameObject, tip);
         }
 
         private void OpenColony(PlanetData p)
@@ -1277,10 +1331,7 @@ namespace StellarisClone.Rendering
         {
             if (sys == null) return;
             Close();
-            var cam = FindAnyObjectByType<StrategyCameraController>();
-            if (cam != null) cam.FocusOn(sys.Position);
-            GalaxyView.Instance?.SelectSystem(sys.Id);
-            UIManager.Instance?.ShowSystemPanel(sys);
+            UIManager.Instance?.FocusSystem(sys);
         }
 
         private void FocusFleet(FleetView fv)

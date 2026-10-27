@@ -342,9 +342,10 @@ namespace StellarisClone.Core
         }
 
         /// <summary>
-        /// Враждебные военные флоты в одном коридоре: встречные — когда поравнялись, попутные — когда
-        /// догоняющий настиг. Оба выходят из прыжка в ближайшей к месту встречи системе; там их держит перехват,
-        /// и начинается бой. Флоты, вышедшие из боя аварийным прыжком, не перехватываются.
+        /// Враждебные флоты в одном коридоре: встречные — когда поравнялись, попутные — когда догоняющий настиг.
+        /// Нужен хотя бы один вооружённый: военный корабль перехватывает и чужие научные и строительные суда.
+        /// Оба выходят из прыжка в ближайшей к месту встречи системе; там их держит перехват, и начинается бой.
+        /// Флоты, вышедшие из боя аварийным прыжком, не перехватываются.
         /// </summary>
         private void CheckLaneEncounters(FleetManager fm, Dictionary<int, List<FleetView>> bySystem)
         {
@@ -353,7 +354,7 @@ namespace StellarisClone.Core
             {
                 var d = fv?.Data;
                 if (d == null || d.Destroyed || d.State != FleetState.InHyperlane || d.TargetSystemId < 0) continue;
-                if (d.Type != FleetType.Military || _escaping.Contains(d.Id)) continue;
+                if (_escaping.Contains(d.Id)) continue;
                 long key = (long)Mathf.Min(d.CurrentSystemId, d.TargetSystemId) * 100000L + Mathf.Max(d.CurrentSystemId, d.TargetSystemId);
                 if (!lanes.TryGetValue(key, out var list)) lanes[key] = list = new List<FleetView>();
                 list.Add(fv);
@@ -371,7 +372,8 @@ namespace StellarisClone.Core
                     for (int j = i + 1; j < list.Count; j++)
                     {
                         FleetData a = list[i].Data, b = list[j].Data;
-                        if (!Diplomacy.AtWar(a.OwnerId, b.OwnerId) || (a.Damage <= 0f && b.Damage <= 0f)) continue;
+                        bool armedA = a.Type == FleetType.Military && a.Damage > 0f, armedB = b.Type == FleetType.Military && b.Damage > 0f;
+                        if (!Diplomacy.AtWar(a.OwnerId, b.OwnerId) || (!armedA && !armedB)) continue;
                         if (a.OwnerId == Threats.LeviathanOwner || b.OwnerId == Threats.LeviathanOwner) continue;
                         float pa = LanePos(a, lo), pb = LanePos(b, lo);
                         var pk = (a.Id, b.Id, a.CurrentSystemId, b.CurrentSystemId);
@@ -497,13 +499,14 @@ namespace StellarisClone.Core
         // ==================== ПЕРЕХВАТ ====================
 
         /// <summary>
-        /// Держит ли система этот флот: военный корабль не может пройти через систему, где стоит
-        /// вооружённый враг или действует вражеская звёздная база, — он останавливается и принимает бой.
-        /// Выходящие из боя (аварийный прыжок, отход на ремонт) не задерживаются.
+        /// Держит ли система этот флот: корабль не может пройти через систему, где стоит вооружённый враг
+        /// или действует вражеская звёздная база, — он останавливается и принимает бой. Это касается и научных,
+        /// и строительных судов: в войне их перехватывают и уничтожают. Выходящие из боя (аварийный прыжок,
+        /// отход на ремонт) не задерживаются.
         /// </summary>
         public bool IsInterdicted(FleetData d, int systemId)
         {
-            if (d == null || d.Destroyed || d.Type != FleetType.Military || _generator == null) return false;
+            if (d == null || d.Destroyed || _generator == null) return false;
             if (systemId < 0 || systemId >= _generator.Systems.Count || _disengaged.Contains(d.Id)) return false;
             var sys = _generator.Systems[systemId];
             if (sys.OwnerId >= 0 && sys.OwnerId != d.OwnerId && Diplomacy.AtWar(d.OwnerId, sys.OwnerId) && IsStarbaseActive(systemId))
