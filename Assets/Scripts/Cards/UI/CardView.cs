@@ -112,11 +112,10 @@ namespace StellarisClone.Cards
         /// <summary>Общая часть: свечение, тень, корпус, арт в маске с бликом, трещинами и вспышкой урона.</summary>
         private RectTransform BuildBase(Vector2 size, float k, float bodyScale, out RectTransform mask)
         {
-            _glow = LGBuild.Panel(Rt, "Glow", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f));
-            _glow.sprite = CardSprites.RoundGlow;
-            _glow.type = Image.Type.Sliced;
-            _glow.raycastTarget = false;
-            _glow.rectTransform.Stretch(-30 * k - 10, -30 * k - 10, -30 * k - 10, -30 * k - 10);
+            // Свечение только по контуру карты (середина пустая): доступна — зелёное, наведение — золотое
+            float gs = 0.55f * size.y / 280f;
+            _glow = CardSkin.Sliced(Rt, "Glow", "glow_edge", new Color(_frameColor.r, _frameColor.g, _frameColor.b, 0f), gs);
+            _glow.rectTransform.Stretch(-64 * gs, -64 * gs, -64 * gs, -64 * gs);
 
             _content = LGBuild.Rect(Rt, "Content");
             _content.Stretch();
@@ -221,7 +220,7 @@ namespace StellarisClone.Cards
             _cost = CardSkin.Gem(_content, "gem_cost", new Vector2(0, 1), new Vector2(14 * k, -14 * k), 56 * k, d.Cost.ToString(), out _);
             if (d.IsBoardUnit)
             {
-                _power = CardSkin.Gem(_content, "gem_power", new Vector2(0, 0), new Vector2(16 * k, 14 * k), 58 * k, "0", out _powerBadge);
+                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(16 * k, 14 * k), 60 * k, "0", out _powerBadge);
                 _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-16 * k, 14 * k), 58 * k, "0", out _armorBadge);
             }
             Stars(k);
@@ -254,7 +253,7 @@ namespace StellarisClone.Cards
 
             if (d.IsBoardUnit)
             {
-                _power = CardSkin.Gem(_content, "gem_power", new Vector2(0, 0), new Vector2(10 * k, 8 * k), 48 * k, "0", out _powerBadge);
+                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(10 * k, 8 * k), 50 * k, "0", out _powerBadge);
                 _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-10 * k, 8 * k), 48 * k, "0", out _armorBadge);
             }
             Stars(k * 0.8f);
@@ -442,8 +441,8 @@ namespace StellarisClone.Cards
             if (Playable) g = Mathf.Max(g, 0.35f + 0.2f * Mathf.Sin(_glowPulse * 3f));
             if (Selected || (_hovered && _hoverable)) g = Mathf.Max(g, 0.9f);
             GlowBoost = Mathf.MoveTowards(GlowBoost, 0f, dt * 1.5f);
-            var gc = Playable ? new Color(0.45f, 1f, 0.6f) : _frameColor;
-            _glow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_glow.color.a, g * 0.85f, 1f - Mathf.Exp(-dt * 10f)));
+            var gc = (_hovered && _hoverable) || Selected ? new Color(1f, 0.85f, 0.4f) : Playable ? new Color(0.35f, 1f, 0.5f) : _frameColor;
+            _glow.color = new Color(gc.r, gc.g, gc.b, Mathf.Lerp(_glow.color.a, Mathf.Clamp01(g), 1f - Mathf.Exp(-dt * 10f)));
         }
 
         // ==================== ВВОД ====================

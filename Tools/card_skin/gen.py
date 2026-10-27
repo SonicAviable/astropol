@@ -410,3 +410,95 @@ if __name__ == '__main__':
     if what in ('all', 'fx'):
         flipbooks(); kenney()
     print('ok', OUT)
+
+
+# ================================================================ v2: свечение по контуру, купол щита, самоцвет атаки
+def glow_edge(name, S=256, edge=64, r=26, inner=10.0):
+    """Свечение вокруг прямоугольника со скруглением: яркое у кромки, гаснет наружу, середина пустая (9-slice 96)."""
+    w = h = S * SS
+    x, y = grid(w, h)
+    e = edge * SS
+    d = sd_roundrect(x, y, w / 2, h / 2, w / 2 - e, h / 2 - e, r * SS)
+    out = np.exp(-np.clip(d, 0, None) / (e * 0.32)) * (d >= 0)
+    ins = np.exp(-np.clip(-d, 0, None) / (inner * SS)) * (d < 0)
+    a = np.clip(out + ins * 0.85, 0, 1) ** 1.2
+    line = np.exp(-(d / (1.6 * SS)) ** 2) * 0.6
+    a = np.clip(a + line, 0, 1)
+    save(name, np.ones((h, w, 3)), a, (S, S))
+
+def dome(name, W=512, Hh=256):
+    """Энергетический купол: полусфера (основание снизу) с сотами, яркой кромкой (френель) и мягким основанием."""
+    w, h = W * SS, Hh * SS
+    x, y = grid(w, h)
+    cx, cy = w / 2, h
+    rx, ry = w / 2 - 4 * SS, h - 4 * SS
+    nxp = (x - cx) / rx; nyp = (cy - y) / ry
+    rr = np.sqrt(nxp ** 2 + nyp ** 2)
+    inside = rr < 1
+    z = np.sqrt(np.clip(1 - rr ** 2, 0, 1))
+    fres = (1 - z) ** 2.2
+    # соты, «натянутые» на сферу
+    size = 22 * SS
+    u = x + (x - cx) * (1 - z) * 0.35; v = y + (y - cy) * (1 - z) * 0.35
+    q = (u * math.sqrt(3) / 3 - v / 3) / size; r_ = (v * 2 / 3) / size
+    cxh, czh = q, r_; cyh = -cxh - czh
+    rxh, ryh, rzh = np.round(cxh), np.round(cyh), np.round(czh)
+    dx, dy, dz = np.abs(rxh - cxh), np.abs(ryh - cyh), np.abs(rzh - czh)
+    mx = (dx > dy) & (dx > dz); my = (~mx) & (dy > dz)
+    rxh = np.where(mx, -ryh - rzh, rxh); ryh = np.where(my, -rxh - rzh, ryh)
+    fx, fz = cxh - rxh, czh - rzh; fy = -fx - fz
+    edge = np.maximum(np.maximum(np.abs(fx - fy), np.abs(fy - fz)), np.abs(fz - fx))
+    hexl = np.exp(-((1 - np.clip(edge, 0, 1)) / 0.05) ** 2)
+    rim = np.exp(-((rr - 0.985) / 0.02) ** 2)
+    base = smooth(0.0, 0.12, nyp)       # основание растворяется
+    a = (0.035 + fres * 0.6 + hexl * (0.22 + 0.55 * fres)) * base + rim * 1.0 * base
+    a = np.where(inside | (rim > 0.05), a, 0)
+    col = np.dstack([0.55 + 0.45 * fres, 0.82 + 0.18 * fres, np.ones_like(fres)])
+    hl = np.exp(-(((nxp + 0.35) / 0.25) ** 2 + ((nyp - 0.75) / 0.12) ** 2)) * inside
+    a = np.clip(a + hl * 0.35, 0, 1)
+    save(name, col, a, (W, Hh))
+
+def gem_attack(name, S=128):
+    """Атака: золотой круглый самоцвет с выгравированным мечом — сразу читается как урон."""
+    w = h = S * SS
+    x, y = grid(w, h)
+    c = w / 2; R = w / 2 - 3 * SS
+    d = sd_circle(x, y, c, c, R)
+    a = cov(d, SS)
+    sw = R * 0.16
+    t = np.clip(-d / sw, 0, 1)
+    det = tile(METAL_N, w, h)
+    sock = shade(metal(w, h, (1.0, 0.82, 0.45)), np.sin(t * math.pi) * 4 * SS, strength=1.0, detail=det, detail_k=0.2, spec_pow=30, spec_k=0.9)
+    gx, gy = (x - c) / (R - sw), (y - c) / (R - sw)
+    z = np.sqrt(np.clip(1 - gx * gx - gy * gy, 0, 1))
+    col = np.array([1.0, 0.72, 0.12])
+    diff = np.clip(gx * L[0] + gy * L[1] + z * L[2], 0, 1)
+    stone = col * (0.35 + 0.75 * diff[..., None]) + col * 0.35 * np.exp(-((gx) ** 2 + ((gy - 0.5) / 0.5) ** 2) * 2)[..., None]
+    # меч по диагонали (из левого низа в правый верх): клинок, гарда, рукоять
+    ang = math.radians(45)
+    ca, sa = math.cos(ang), math.sin(ang)
+    px = (gx * ca + gy * sa); py = (-gx * sa + gy * ca)     # повёрнутые координаты: py вдоль меча (вверх — минус)
+    blade = (np.abs(px) < 0.11 - np.clip(-py - 0.45, 0, 1) * 0.25) & (py > -0.82) & (py < 0.30)
+    tip = (py <= -0.62) & (np.abs(px) < (py + 0.86) * 0.45)
+    guard = (np.abs(py - 0.33) < 0.06) & (np.abs(px) < 0.36)
+    grip = (np.abs(px) < 0.06) & (py > 0.33) & (py < 0.66)
+    pommel = ((px) ** 2 + (py - 0.72) ** 2) < 0.09 ** 2
+    sword = (blade & ~((py <= -0.62) & ~tip)) | guard | grip | pommel
+    sword = np.where(blade & (py <= -0.62), tip, sword)
+    swf = np.array(Image.fromarray((sword * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2 * SS))).astype(np.float32) / 255
+    stone = stone * (1 - swf[..., None] * 0.55)          # тёмная гравировка
+    sh = np.array(Image.fromarray((sword * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(2 * SS))).astype(np.float32) / 255
+    stone = stone + np.roll(np.roll(sh, -2 * SS, 0), -2 * SS, 1)[..., None] * 0.18 * (1 - swf[..., None])   # блик по кромке гравировки
+    spec = np.clip(gx * H[0] + gy * H[1] + z * H[2], 0, 1) ** 70
+    hl = np.exp(-(((gx + 0.35) / 0.25) ** 2 + ((gy + 0.45) / 0.14) ** 2))
+    stone = stone + spec[..., None] * 0.5 + hl[..., None] * 0.5
+    stone = stone * (1 - np.exp(-np.clip(-(d + sw), 0, None) / (3 * SS))[..., None] * 0.6)
+    m = smooth(0.9, 1.0, t)[..., None]
+    save(name, sock * (1 - m) + stone * m, a, (S, S))
+
+if __name__ == '__main__' and (len(sys.argv) > 2 and sys.argv[2] in ('all', 'v2')):
+    glow_edge('glow_edge')
+    dome('dome')
+    gem_attack('gem_attack')
+    gem('gem_armor', 128, 'shield', (0.95, 0.2, 0.18), facets=8, glow=0.7)
+    print('v2 ok')

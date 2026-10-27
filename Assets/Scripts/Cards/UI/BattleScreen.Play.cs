@@ -58,7 +58,7 @@ namespace StellarisClone.Cards
             yield return W(0.5f);
             yield return PlayEvents();
             _busy = false;
-            Hint(Loc.T("Перетащите карты в секторы. Enter — закончить ход. Пробел или ПКМ — ускорить анимацию"));
+            Hint(Loc.T("Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода"));
         }
 
         /// <summary>Десантная капсула: огненный след сверху, удар, пыль и ударная волна.</summary>

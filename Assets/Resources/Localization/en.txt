@@ -6593,3 +6593,4 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>	SECTORS  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>
 <size=11><color=#9AA6B0>нужно 2 из 3</color></size>	<size=11><color=#9AA6B0>2 of 3 needed</color></size>
 откроется на 3-м ходу	revealed on turn 3
+Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода	Drag cards into sectors · golden sword — damage per turn, red shield — armor · Enter — end turn

@@ -26,6 +26,7 @@ namespace StellarisClone.Cards
             switch (n)
             {
                 case "frame_card": return new Vector4(70, 70, 70, 70);
+                case "glow_edge": return new Vector4(96, 96, 96, 96);
                 case "frame_thin": return new Vector4(40, 40, 40, 40);
                 case "panel_dark": return new Vector4(40, 40, 40, 40);
                 case "panel_leather": return new Vector4(60, 60, 60, 60);
@@ -61,7 +62,9 @@ namespace StellarisClone.Cards
         {
             if (name.StartsWith("frame")) return CardSprites.RoundEdge;
             if (name.StartsWith("panel") || name.StartsWith("btn") || name == "slot") return CardSprites.Round;
-            if (name.StartsWith("gem_power")) return CardSprites.Diamond;
+            if (name.StartsWith("gem_power") || name == "gem_attack") return CardSprites.Diamond;
+            if (name == "dome") return CardSprites.Dome;
+            if (name == "glow_edge") return CardSprites.RoundGlow;
             if (name.StartsWith("gem_armor")) return CardSprites.ShieldShape;
             if (name.StartsWith("gem") || name.StartsWith("crystal")) return CardSprites.Hex;
             if (name.StartsWith("orb") || name == "disc") return CardSprites.Dot;

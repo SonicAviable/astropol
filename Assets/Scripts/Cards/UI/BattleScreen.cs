@@ -29,7 +29,7 @@ namespace StellarisClone.Cards
         // Раскладка (центр экрана 1920×1080, y вверх)
         private const float TrayY = 80f, TrayW = 1480f, TrayH = 600f, Lane = 482f, LaneW = 470f, RowOff = 200f;
         private const float PlaqueW = 440f, PlaqueH = 118f, OrbX = 170f, OrbY = 66f;
-        private const float RX = 850f, LX = -850f, HandY = -470f;
+        private const float RX = 828f, LX = -828f, HandY = -470f;
         private static readonly Vector2 BoardCard = new Vector2(128, 178);
         private static readonly Vector2 HandCard = new Vector2(200, 280);
         private static readonly Vector2 PreviewCard = new Vector2(300, 420);
@@ -37,7 +37,7 @@ namespace StellarisClone.Cards
         private Canvas _canvas;
         private CanvasScaler _scaler;
         private GameObject _root;
-        private RectTransform _board, _fxLayer, _overlay, _handRoot, _previewRoot;
+        private RectTransform _board, _fxLayer, _overlay, _handRoot, _previewRoot, _dragLayer;
         private UIFx _fx;
         private RawImage _bg;
 
@@ -77,7 +77,7 @@ namespace StellarisClone.Cards
         private sealed class SectorUI
         {
             public RectTransform Col, Header, PowerBar;
-            public Image Plate, Wash, Dome, Highlight, OrbGlowE, OrbGlowP;
+            public Image Plate, Wash, Dome, Highlight, HighlightFill, OrbGlowE, OrbGlowP;
             public Text Name, Rule, PowE, PowP, Stamp;
             public float WashA, HighA;
             public Color WashC, HighC;
@@ -252,18 +252,35 @@ namespace StellarisClone.Cards
             _hintText = CardSkin.TitleText(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 1.5f);
             _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -255), new Vector2(900, 30));
 
+            // Рука, перетаскиваемая карта, предпросмотр, эффекты и баннеры — отдельными слоями поверх стола:
+            // порядок отрисовки задан явно, карта из руки никогда не уйдёт «под стол»
             _handRoot = At(_board, "Hand", new Vector2(0, HandY), new Vector2(1100, 300));
-
+            Layer(_handRoot, 1, true);
+            _dragLayer = LGBuild.Rect(croot, "Drag");
+            _dragLayer.Stretch();
+            Layer(_dragLayer, 2, false);
             _previewRoot = At(croot, "Preview", Vector2.zero, PreviewCard);
+            Layer(_previewRoot, 3, false);
 
             _fxLayer = LGBuild.Rect(croot, "Fx");
             _fxLayer.Stretch();
+            Layer(_fxLayer, 4, false);
             _fx = _fxLayer.gameObject.AddComponent<UIFx>();
             _fx.Init(_fxLayer, _board);
             _fx.Speed = _animSpeed;
 
             _overlay = LGBuild.Rect(croot, "Overlay");
             _overlay.Stretch();
+            Layer(_overlay, 5, true);
+        }
+
+        /// <summary>Вложенный канвас со своим порядком отрисовки поверх стола (и своим лучом для кликов, если нужен).</summary>
+        private void Layer(RectTransform rt, int order, bool raycast)
+        {
+            var c = rt.gameObject.AddComponent<Canvas>();
+            c.overrideSorting = true;
+            c.sortingOrder = _canvas.sortingOrder + order;
+            if (raycast) rt.gameObject.AddComponent<GraphicRaycaster>();
         }
 
         /// <summary>Стол: тень, окно в поверхность планеты под тёмным стеклом, бронзовая рама, разделители дорожек.</summary>
@@ -323,11 +340,13 @@ namespace StellarisClone.Cards
             hit.gameObject.AddComponent<SectorClick>().OnClick = () => OnSectorClicked(idx);
 
             // Подсветка дорожки при перетаскивании
-            s.Highlight = LGBuild.Panel(col, "Highlight", new Color(1, 1, 1, 0));
-            s.Highlight.sprite = CardSprites.RoundGlow;
-            s.Highlight.type = Image.Type.Sliced;
-            s.Highlight.raycastTarget = false;
-            s.Highlight.rectTransform.Stretch(-6, -6, -6, -6);
+            s.HighlightFill = LGBuild.Panel(col, "HighlightFill", new Color(1, 1, 1, 0));
+            s.HighlightFill.sprite = CardSprites.Round;
+            s.HighlightFill.type = Image.Type.Sliced;
+            s.HighlightFill.raycastTarget = false;
+            s.HighlightFill.rectTransform.Stretch(4, 4, 4, 4);
+            s.Highlight = CardSkin.Sliced(col, "Highlight", "glow_edge", new Color(1, 1, 1, 0), 0.45f);
+            s.Highlight.rectTransform.Stretch(-64 * 0.45f + 4, -64 * 0.45f + 4, -64 * 0.45f + 4, -64 * 0.45f + 4);
 
             // Места под карты — вдавленные выемки
             for (int r = 0; r < 2; r++)
@@ -342,11 +361,8 @@ namespace StellarisClone.Cards
             _rows[i, 1] = At(col, "RowMine", new Vector2(0, -RowOff), new Vector2(LaneW - 10, BoardCard.y + 10));
 
             // Плашка сектора: свечение контроля, арт, рама, название и правило
-            s.Wash = LGBuild.Panel(col, "Wash", new Color(1, 1, 1, 0));
-            s.Wash.sprite = CardSprites.RoundGlow;
-            s.Wash.type = Image.Type.Sliced;
-            s.Wash.raycastTarget = false;
-            s.Wash.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW + 70, PlaqueH + 70));
+            s.Wash = CardSkin.Sliced(col, "Wash", "glow_edge", new Color(1, 1, 1, 0), 0.5f);
+            s.Wash.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PlaqueW + 64 - 6, PlaqueH + 64 - 6));
 
             var plate = LGBuild.Panel(col, "Plaque", Color.white);
             plate.sprite = CardSprites.Round;
@@ -393,15 +409,11 @@ namespace StellarisClone.Cards
             if (type == SectorType.HQ)
             {
                 int defRow = _P == BattleState.Defender ? 1 : 0;
-                s.Dome = LGBuild.Panel(col, "Dome", new Color(0.45f, 0.75f, 1f, 0f));
-                s.Dome.sprite = CardSprites.Dome;
-                s.Dome.raycastTarget = false;
-                s.Dome.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, defRow == 0 ? RowOff + 10 : -RowOff - 10), new Vector2(LaneW, 236));
-                if (defRow == 0) s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
-                s.Dome.gameObject.AddComponent<Mask>().showMaskGraphic = true;
-                var hex = CardSkin.Simple(s.Dome.rectTransform, "Hex", "hexgrid", new Color(0.55f, 0.85f, 1f, 0.45f));
-                hex.rectTransform.Stretch(0, 0, 0, -LaneW + 236);
-                s.Dome.transform.SetSiblingIndex(_rows[i, defRow].GetSiblingIndex());
+                // Основание купола — у плашки, свод — над картами защитника (полупрозрачный, поверх них)
+                s.Dome = CardSkin.Simple(col, "Dome", "dome", new Color(0.6f, 0.85f, 1f, 0f));
+                float baseY = defRow == 0 ? RowOff - BoardCard.y * 0.5f - 8f : -RowOff + BoardCard.y * 0.5f + 8f;
+                s.Dome.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(0, baseY), new Vector2(LaneW - 6, BoardCard.y + 46));
+                if (defRow == 1) s.Dome.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
             }
         }
 
@@ -565,7 +577,7 @@ namespace StellarisClone.Cards
             var lc = CardSkin.TitleText(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"), 13, new Color(0.95f, 0.8f, 0.55f), TextAnchor.UpperCenter, 1f);
             lc.rectTransform.Stretch(10, 0, 10, 12);
             lc.Track(2f);
-            _logText = LGBuild.Label(hp.rectTransform, "", 12, new Color(0.86f, 0.88f, 0.92f), TextAnchor.LowerLeft, wrap: true);
+            _logText = LGBuild.Label(hp.rectTransform, "", 12, new Color(0.86f, 0.88f, 0.92f), TextAnchor.UpperLeft, wrap: true);
             _logText.rectTransform.Stretch(14, 12, 12, 34);
             _logText.verticalOverflow = VerticalWrapMode.Truncate;
             _logText.raycastTarget = false;
@@ -721,11 +733,11 @@ namespace StellarisClone.Cards
             _dragging = v;
             _handHover = null;
             v.SetHoverable(false);
-            v.Rt.SetParent(_board, true);
+            v.Rt.SetParent(_dragLayer, true);
             v.Rt.SetAsLastSibling();
             _targets.Remove(v);
             HidePreview(null);
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(_board, e.position, null, out var lp);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(_dragLayer, e.position, null, out var lp);
             _dragOffset = (Vector2)v.Rt.localPosition - lp;
             v.Rt.localScale = Vector3.one * 0.8f;
             LayoutHand(false);
@@ -735,7 +747,7 @@ namespace StellarisClone.Cards
         private void Drag(CardView v, PointerEventData e)
         {
             if (_dragging != v) return;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(_board, e.position, null, out var lp);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(_dragLayer, e.position, null, out var lp);
             var target = lp + _dragOffset * 0.3f;
             v.Rt.localPosition = Vector3.Lerp(v.Rt.localPosition, target, 0.6f);
             float vx = e.delta.x;
@@ -886,15 +898,16 @@ namespace StellarisClone.Cards
             {
                 if (s == null) continue;
                 s.HighA = Mathf.MoveTowards(s.HighA, 0f, dt * 2.5f);
-                s.Highlight.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 0.8f);
-                s.WashA = Mathf.MoveTowards(s.WashA, 0.5f, dt * 0.6f);
-                s.Wash.color = new Color(s.WashC.r, s.WashC.g, s.WashC.b, s.WashA * (0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 2f)));
+                s.Highlight.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 1.6f);
+                s.HighlightFill.color = new Color(s.HighC.r, s.HighC.g, s.HighC.b, s.HighA * 0.14f);
+                s.WashA = Mathf.MoveTowards(s.WashA, 0.55f, dt * 0.7f);
+                s.Wash.color = new Color(s.WashC.r, s.WashC.g, s.WashC.b, Mathf.Clamp01(s.WashA * (0.9f + 0.1f * Mathf.Sin(Time.unscaledTime * 1.6f))));
                 if (s.Stamp.color.a > 0f) { var sc = s.Stamp.color; sc.a = Mathf.Max(0, sc.a - dt * 0.55f); s.Stamp.color = sc; }
                 if (s.Dome != null)
                 {
                     bool up = _state.ShieldUp;
-                    float a = up ? 0.22f + 0.06f * Mathf.Sin(Time.unscaledTime * 2.2f) : 0f;
-                    s.Dome.color = new Color(0.45f, 0.75f, 1f, Mathf.MoveTowards(s.Dome.color.a, a, dt * 0.8f));
+                    float a = up ? 0.8f + 0.2f * Mathf.Sin(Time.unscaledTime * 2.2f) : 0f;
+                    s.Dome.color = new Color(0.6f, 0.85f, 1f, Mathf.MoveTowards(s.Dome.color.a, a, dt * 1.5f));
                 }
             }
 
@@ -997,7 +1010,7 @@ namespace StellarisClone.Cards
                 s.WashC = col;
                 if (s.LastControl != -2)
                 {
-                    s.WashA = 1.2f;
+                    s.WashA = 1f;
                     s.Stamp.text = c == _P ? Loc.T("ВЗЯТ") : Loc.T("ПОТЕРЯН");
                     s.Stamp.color = new Color(col.r, col.g, col.b, 1f);
                 }

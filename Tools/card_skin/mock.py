@@ -100,7 +100,7 @@ def card_full(a, name, kind, txt, cost, pw, ar, frame=STEEL, w=200, h=280, stars
         dd.text((x, y + 1), str(val), font=font(FONT_T, int(s * 0.46)), fill=(255, 255, 255), anchor='mm', stroke_width=3, stroke_fill=(0, 0, 0))
     gem('gem_cost', ox + 14, oy + 14, 54, cost)
     if pw is not None:
-        gem('gem_power', ox + 16, oy + h - 14, 56, pw)
+        gem('gem_attack', ox + 16, oy + h - 14, 56, pw)
         gem('gem_armor', ox + w - 16, oy + h - 14, 56, ar)
     if stars: d.text((ox + w - 16, oy + 18), '★' * stars, font=font(FONT_B, 16), fill=(255, 210, 90), anchor='rm')
     return c
@@ -123,7 +123,7 @@ def card_board(a, name, pw, ar, frame=STEEL, w=128, h=178, hurt=False, status=No
         g = tex(n).resize((s, s), Image.LANCZOS); c.alpha_composite(g, (x - s // 2, y - s // 2))
         ImageDraw.Draw(c).text((x, y + 1), str(val), font=font(FONT_T, int(s * 0.48)), fill=col, anchor='mm', stroke_width=3, stroke_fill=(0, 0, 0))
     if pw is not None:
-        gem('gem_power', ox + 10, oy + h - 8, 46, pw)
+        gem('gem_attack', ox + 10, oy + h - 8, 46, pw)
         gem('gem_armor', ox + w - 10, oy + h - 8, 46, ar, (255, 130, 120) if hurt else (255, 255, 255))
     if status:
         rb = tex('ribbon').resize((w + 10, 26), Image.LANCZOS); c.alpha_composite(tint(rb, (1, 0.6, 0.4)), (ox - 5, oy + 6))
@@ -144,7 +144,7 @@ def card_back(fac, w=128, h=178):
 # ================================================================ ЭКРАН
 def build(out):
     cv = Image.new('RGBA', (W, H), (0, 0, 0, 255))
-    bg = cover(art('UI/Events/Quake.jpg'), W, H, 0.5)
+    bg = cover(art('UI/Cards/table_molten.jpg'), W, H, 0.5)
     bg = ImageEnhance.Brightness(bg).enhance(0.45).filter(ImageFilter.GaussianBlur(3))
     cv.alpha_composite(bg)
     vig = tint(tex('halo'), (0, 0, 0)).resize((int(W * 1.6), int(H * 1.9)))
@@ -152,7 +152,7 @@ def build(out):
 
     # ---- стол: окно в поверхность планеты в массивной раме
     TX, TY, TW, TH = 0, 80, 1480, 600
-    inner = cover(art('UI/Events/Quake.jpg'), TW - 40, TH - 40, 0.5)
+    inner = cover(art('UI/Cards/table_molten.jpg'), TW - 40, TH - 40, 0.5)
     inner = ImageEnhance.Brightness(inner).enhance(0.62)
     m = round_mask(TW - 40, TH - 40, 22)
     x0, y0 = P(TX - (TW - 40) / 2, TY + (TH - 40) / 2)
@@ -165,6 +165,7 @@ def build(out):
     place(cv, frame, TX, TY)
 
     LANE = 482
+    domes = []
     sectors = [('ЭЛЕКТРОСТАНЦИЯ', 'Пока у защитника — работают турели и щит Штаба', 'Strike.jpg', 2, 0, -1),
                ('ЗАВОД', 'Держащий получает +1 карту каждый ход', 'Drills.jpg', 0, 3, 1),
                ('ШТАБ', 'Щит снят и 9+ силы — прорыв, планета пала', 'PrecursorVault.jpg', 0, 0, -1)]
@@ -187,7 +188,7 @@ def build(out):
         for j in range(PW - 16): gd.line((j, 0, j, PH), fill=(4, 8, 14, int(max(0, 230 - j * 0.9))))
         pl.alpha_composite(gr, (8, 8))
         col = TEAL if ctl == 1 else RED
-        if ctl != 0: glow(cv, lx, TY, PW + 90, PH + 90, col, 0.55)
+        if ctl != 0: place(cv, tint(nine(tex('glow_edge'), (PW + 58, PH + 58), 96, 0.5), col, 0.6), lx, TY)
         pl.alpha_composite(tint(nine(tex('frame_card'), (PW, PH), 70, 0.4), GOLD), (0, 0))
         place(cv, pl, lx, TY)
         text(cv, nm, lx - 185, TY + 22, FONT_T, 22, (255, 236, 200), anchor='lm')
@@ -201,23 +202,16 @@ def build(out):
             place(cv, tex(orbn), lx + 170, TY + oy, (70, 70))
             text(cv, str(val), lx + 170, TY + oy + 1, FONT_T, 32, (255, 255, 255), stroke=3)
         if i == 2:
-            # купол щита над рядом защитника
-            dome = Image.new('RGBA', (450, 230), (0, 0, 0, 0))
-            hx = tex('hexgrid').resize((450, 450))
-            mm = Image.new('L', (450, 230), 0); ImageDraw.Draw(mm).ellipse((-10, 10, 460, 450), fill=255)
-            hx = tint(hx, (0.45, 0.8, 1.0), 0.35)
-            dome.paste(hx.crop((0, 0, 450, 230)), (0, 0), mm)
-            rim = Image.new('RGBA', (450, 230), (0, 0, 0, 0)); ImageDraw.Draw(rim).ellipse((-10, 10, 460, 450), outline=(140, 210, 255, 200), width=3)
-            dome.alpha_composite(rim.filter(ImageFilter.GaussianBlur(1.5)))
-            place(cv, dome, lx, TY + 215)
-
+            dm = tint(tex('dome').resize((464, 224)), (0.6, 0.85, 1.0), 0.9)
+            domes.append((dm, lx))
     # ---- карты на столе
-    place(cv, card_board('UI/Events/Strike.jpg', 'Бункер', 0, 6, STEEL), -LANE - 69, TY + 200)
-    place(cv, card_board('UI/Events/Drills.jpg', 'Турель', 2, 5, STEEL, stars=0) if False else card_board('UI/Events/Drills.jpg', 'Турель', 2, 5, BRONZE), -LANE + 69, TY + 200)
-    place(cv, card_board('UI/Events/PrecursorVault.jpg', 'Щит Штаба', 0, 13, (0.5, 0.8, 1.0)), LANE, TY + 200)
-    place(cv, card_board('UI/Events/LegionReview.jpg', 'Штурмовики', 3, 2, STEEL, hurt=True), -69, TY - 200)
+    place(cv, card_board('UI/Cards/D3.jpg', 'Бункер', 0, 6, STEEL), -LANE - 69, TY + 200)
+    place(cv, card_board('UI/Events/Drills.jpg', 'Турель', 2, 5, STEEL, stars=0) if False else card_board('UI/Cards/D4.jpg', 'Турель', 2, 5, BRONZE), -LANE + 69, TY + 200)
+    place(cv, card_board('UI/Cards/D6.jpg', 'Щит Штаба', 0, 13, (0.5, 0.8, 1.0)), LANE, TY + 200)
+    place(cv, card_board('UI/Cards/U1.jpg', 'Штурмовики', 3, 2, STEEL, hurt=True), -69, TY - 200)
     place(cv, card_back('nol'), 69, TY - 200)
     glow(cv, 0, TY - 200, 380, 260, TEAL, 0.0)
+    for dm, lx in domes: place(cv, dm, lx, TY + 103 + 112)
 
     # ---- портреты
     for (cy, fac, nm, role, col) in ((455, 'xarn', 'ДОМИНИОН КСАРН', 'ГАРНИЗОН', RED), (-430, 'nol', 'КОНСЕНСУС «НОЛЬ»', 'ДЕСАНТ', TEAL)):
@@ -241,23 +235,23 @@ def build(out):
         place(cv, b, 120 + k * 34, 470 + abs(k - 2.5) * 3)
 
     # ---- рука игрока
-    hand = [('LegionReview.jpg', 'БТР «МУЛ»', 'ЮНИТ', 'При раскрытии: высаживает пехоту ценой до 2 из колоды в этот сектор.', 2, 1, 5, STEEL, 0),
-            ('Meteor.jpg', 'ОРБИТАЛЬНЫЙ УДАР', 'ПРИКАЗ', '7 урона по сильнейшим врагам сектора, укрытие не спасает.', 5, None, None, (0.78, 0.55, 1.0), 0),
-            ('Consensus.jpg', 'УЗЕЛ КОНСЕНСУСА', 'ЮНИТ', 'Все ваши дроны в секторе +1 к силе в каждой перестрелке.', 3, 1, 6, (0.88, 0.92, 0.98), 0),
-            ('DoubleAgent.jpg', 'СНАЙПЕРЫ', 'ЮНИТ', 'Бьют самого хрупкого врага. По пехоте — двойной урон.', 2, 2, 2, BRONZE, 2),
-            ('Battlefield.jpg', 'ТЯЖЁЛАЯ ПЕХОТА', 'ЮНИТ', 'Укрытие 2: первые 2 урона за ход не проходят.', 3, 2, 6, STEEL, 0),
-            ('Mind.jpg', 'ГЕНЕРАЛ', 'ГЕРОЙ', 'При раскрытии «Прорыв»: союзники в секторе +1 к силе до конца боя.', 4, 3, 6, GOLD, 0)]
+    hand = [('U9.jpg', 'БТР «МУЛ»', 'ЮНИТ', 'При раскрытии: высаживает пехоту ценой до 2 из колоды в этот сектор.', 2, 1, 5, STEEL, 0),
+            ('O2.jpg', 'ОРБИТАЛЬНЫЙ УДАР', 'ПРИКАЗ', '7 урона по сильнейшим врагам сектора, укрытие не спасает.', 5, None, None, (0.78, 0.55, 1.0), 0),
+            ('Z_DRONE.jpg', 'РОЙ ДРОНОВ', 'ЮНИТ', 'Все ваши дроны в секторе +1 к силе в каждой перестрелке.', 3, 1, 6, (0.88, 0.92, 0.98), 0),
+            ('U4.jpg', 'СНАЙПЕРЫ', 'ЮНИТ', 'Бьют самого хрупкого врага. По пехоте — двойной урон.', 2, 2, 2, BRONZE, 2),
+            ('U3.jpg', 'ТЯЖЁЛАЯ ПЕХОТА', 'ЮНИТ', 'Укрытие 2: первые 2 урона за ход не проходят.', 3, 2, 6, STEEL, 0),
+            ('U12.jpg', 'ШАГОХОД', 'ГЕРОЙ', 'При раскрытии «Прорыв»: союзники в секторе +1 к силе до конца боя.', 4, 3, 6, GOLD, 0)]
     n = len(hand)
     for k, (a, nm, kd, tx, co, pw, ar, fr, st) in enumerate(hand):
         t = k / (n - 1) - 0.5
         x = t * 150 * (n - 1); y = -470 - abs(t) * abs(t) * 60
         if k == 3: y += 110   # наведённая карта поднята
-        c = card_full('UI/Events/' + a, nm, kd, tx, co, pw, ar, fr, stars=st)
+        c = card_full('UI/Cards/' + a, nm, kd, tx, co, pw, ar, fr, stars=st)
         if k == 3:
             c = c.resize((int(c.width * 1.12), int(c.height * 1.12)), Image.LANCZOS)
-            glow(cv, x, y, 330, 420, (0.45, 1.0, 0.6), 0.55)
+            ge = tint(nine(tex('glow_edge'), (int(224+70), int(314+70)), 96, 0.55), (1.0, 0.85, 0.4)); place(cv, ge, x, y)
         elif co <= 3:
-            glow(cv, x, y, 280, 360, (0.45, 1.0, 0.6), 0.3)
+            ge = tint(nine(tex('glow_edge'), (200+70, 280+70), 96, 0.55), (0.35, 1.0, 0.5), 0.8); place(cv, ge, x, y + 20)
         c = c.rotate(-t * 14 if k != 3 else 0, expand=True, resample=Image.BICUBIC)
         place(cv, c, x, y)
 
