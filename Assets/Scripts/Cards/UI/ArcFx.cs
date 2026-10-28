@@ -11,7 +11,7 @@ namespace StellarisClone.Cards
     ///   • Vortex — сходящаяся спираль из нескольких рукавов (удар по Штабу, захват);
     ///   • Trail — шлейф за летящей картой (берёт её положение каждый кадр);
     ///   • Glint — анаморфный блик (горизонтальная «линза»), Spikes — лучи удара, RingWave — тонкая ударная волна;
-    ///   • Embers — искры-штрихи (вытянуты по скорости — не «пузырьки»), Ambient — тлеющие искры над столом.
+    ///   • Embers — искры-штрихи (вытянуты по скорости и гаснут, замедлившись, — не «точки»), Ambient — тлеющие искры над столом.
     /// Ширина ленты — по текстуре поперёк (яркая середина, мягкий край), поэтому линии чёткие на любом разрешении.
     /// </summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -559,11 +559,13 @@ namespace StellarisClone.Cards
                 var col = Color.Lerp(s.C0, s.C1, k);
                 float a = Mathf.Clamp01(s.Age * 12f) * (1f - k * k);
                 if (s.Flick > 0f) a *= 0.55f + 0.45f * Mathf.Sin((s.Age + s.FlickPhase) * s.Flick);
+                float sp = s.Vel.magnitude;
+                // Замедлившаяся искра гаснет: короткий штрих на месте выглядел «точкой»
+                if (s.Flick <= 0f) a *= Mathf.Clamp01((sp - 30f) / 120f);
                 col.a *= a;
                 if (col.a <= 0.003f) continue;
-                float sp = s.Vel.magnitude;
                 var dir = sp > 1f ? s.Vel / sp : Vector2.up;
-                float len = s.Len + sp * 0.035f;
+                float len = Mathf.Max(s.Len, s.W * 5f) + sp * 0.035f;
                 var nrm = new Vector2(-dir.y, dir.x) * (s.W * 0.5f);
                 var head = s.Pos;
                 var tail = s.Pos - dir * len;

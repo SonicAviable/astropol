@@ -1088,9 +1088,12 @@ namespace StellarisClone.Cards
                 var v = kv.Key;
                 if (v == null) { dead.Add(v); continue; }
                 if (v == _dragging) continue;
+                // Карта в пути наклоняется в 3D: передний по ходу край к столу, задний приподнят (Perspective3D)
+                var way = kv.Value - v.Rt.anchoredPosition;
                 v.Rt.anchoredPosition = Vector2.Lerp(v.Rt.anchoredPosition, kv.Value, 1f - Mathf.Exp(-dt * 11f * _animSpeed));
                 float rot = _targetRot.TryGetValue(v, out var r) ? r : 0f;
-                v.Rt.localRotation = Quaternion.Slerp(v.Rt.localRotation, Quaternion.Euler(0, 0, rot), 1f - Mathf.Exp(-dt * 10f));
+                var lean = Quaternion.Euler(Mathf.Clamp(way.y * 0.09f, -26f, 26f), Mathf.Clamp(-way.x * 0.09f, -26f, 26f), rot);
+                v.Rt.localRotation = Quaternion.Slerp(v.Rt.localRotation, lean, 1f - Mathf.Exp(-dt * 10f));
             }
             foreach (var v in dead) _targets.Remove(v);
 
@@ -1352,14 +1355,12 @@ namespace StellarisClone.Cards
             }
         }
 
-        /// <summary>Атмосфера без «пузырьков»: редкие пылинки (крошечные, едва видные) и медленные клубы дымки над полем.</summary>
+        /// <summary>Атмосфера без «точек» и «пузырьков»: только медленные клубы дымки над полем.</summary>
         private void Haze(Rect r, Color c)
         {
+            if (UnityEngine.Random.value > 0.25f) return;
             var p = new Vector2(UnityEngine.Random.Range(-r.width * 0.45f, r.width * 0.45f), UnityEngine.Random.Range(-r.height * 0.35f, r.height * 0.35f));
-            if (UnityEngine.Random.value < 0.25f)
-                _fx.Burst(p, 1, CardSkin.Spr(UnityEngine.Random.value < 0.5f ? "k_smoke1" : "k_smoke2"), c, 8f, 20f, 6f, 9f, 260f, 420f, 0f, 0.05f, 0f, 30f);
-            else
-                _fx.Burst(p, 1, CardSprites.Spark, new Color(1f, 0.95f, 0.85f, 0.16f), 6f, 18f, 3f, 5f, 2.5f, 2f, -3f, 0.1f, 20f, 60f, align: true, stretch: 1.3f);
+            _fx.Burst(p, 1, CardSkin.Spr(UnityEngine.Random.value < 0.5f ? "k_smoke1" : "k_smoke2"), c, 8f, 20f, 6f, 9f, 260f, 420f, 0f, 0.05f, 0f, 30f);
         }
 
         private void AmbientTick(float dt)
@@ -1372,7 +1373,7 @@ namespace StellarisClone.Cards
             switch (_setup.Terrain)
             {
                 case Terrain.Molten:
-                    _fx.Burst(new Vector2(pos.x, -r.height * 0.5f), 1, CardSkin.Spr("k_spark1"), new Color(1f, 0.55f, 0.2f, 0.9f), 40f, 120f, 4f, 7f, 10f, 4f, -30f, 0.2f, 90f, 40f);
+                    _fx.Burst(new Vector2(pos.x, -r.height * 0.5f), 1, CardSprites.Spark, new Color(1f, 0.55f, 0.2f, 0.8f), 140f, 260f, 2.5f, 4f, 9f, 6f, -20f, 0.1f, 90f, 30f, align: true, stretch: 4f);
                     break;
                 case Terrain.Desert:
                     _fx.Burst(new Vector2(-r.width * 0.5f - 20f, UnityEngine.Random.Range(-r.height * 0.4f, r.height * 0.4f)), 1, CardSkin.Spr("k_smoke1"), new Color(0.8f, 0.6f, 0.4f, 0.1f), 140f, 260f, 5f, 8f, 160f, 300f, 0f, 0.1f, 0f, 20f);

@@ -146,7 +146,45 @@ namespace StellarisClone.Cards
             // Скорость боя — скорость частиц
             foreach (var a in _alive)
                 if (a.go != null)
-                    foreach (var ps in a.go.GetComponentsInChildren<ParticleSystem>()) { var m = ps.main; m.simulationSpeed = Speed; }
+                    foreach (var ps in a.go.GetComponentsInChildren<ParticleSystem>())
+                    {
+                        var m = ps.main; m.simulationSpeed = Speed;
+                        Flatten(ps);
+                    }
+        }
+
+        private static ParticleSystem.Particle[] s_buf = new ParticleSystem.Particle[512];
+
+        /// <summary>
+        /// Искры и обломки пака летят во все стороны в 3D; камера смотрит сверху, и те, что летят к ней или от неё,
+        /// вытягиваются вдоль взгляда — на экране это «точки». Скорость таких частиц кладём в плоскость стола,
+        /// сохраняя её величину: каждая искра — видимый штрих.
+        /// </summary>
+        private static void Flatten(ParticleSystem ps)
+        {
+            var r = ps.GetComponent<ParticleSystemRenderer>();
+            if (r == null || !(r.renderMode == ParticleSystemRenderMode.Stretch || ps.trails.enabled)) return;
+            int n = ps.particleCount;
+            if (n == 0) return;
+            if (s_buf.Length < n) s_buf = new ParticleSystem.Particle[n];
+            n = ps.GetParticles(s_buf, n);
+            bool local = ps.main.simulationSpace == ParticleSystemSimulationSpace.Local;
+            var tr = ps.transform;
+            bool changed = false;
+            for (int i = 0; i < n; i++)
+            {
+                var v = s_buf[i].velocity;
+                var w = local ? tr.TransformDirection(v) : v;
+                if (Mathf.Abs(w.z) < 0.001f) continue;
+                float speed = w.magnitude;
+                var xy = new Vector2(w.x, w.y);
+                if (xy.sqrMagnitude < 1e-6f) xy = Random.insideUnitCircle;
+                xy = xy.normalized * speed;
+                w = new Vector3(xy.x, xy.y, 0f);
+                s_buf[i].velocity = local ? tr.InverseTransformDirection(w) : w;
+                changed = true;
+            }
+            if (changed) ps.SetParticles(s_buf, n);
         }
 
         private GameObject Prefab(int i)

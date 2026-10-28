@@ -115,6 +115,17 @@ namespace StellarisClone.Cards
             }
         }
 
+        /// <summary>Мелкие круглые искры и капли: в россыпи они читались как «точки» — рисуем их только штрихами.</summary>
+        private static bool IsPoint(Sprite sp)
+        {
+            if (sp == null) return false;
+            switch (sp.name)
+            {
+                case "spark": case "k_spark1": case "k_spark2": case "k_spark3": case "drop": return true;
+                default: return false;
+            }
+        }
+
         private P Get(Sprite sp)
         {
             P p = null;
@@ -147,6 +158,15 @@ namespace StellarisClone.Cards
                           float size, float sizeEnd, float gravity = 0f, float drag = 1.5f, float dir = 90f, float spread = 360f,
                           bool align = false, Color? end = null, float stretch = 1f, bool rotate = true)
         {
+            if (IsPoint(sp))
+            {
+                // Искра — всегда штрих вдоль скорости; круглую «звёздочку» заменяет вытянутая искра
+                if (sp.name.StartsWith("k_spark")) sp = CardSprites.Spark;
+                align = true;
+                stretch = Mathf.Max(stretch, 2.6f);
+                size = Mathf.Max(size, 7f);
+                sizeEnd = Mathf.Max(sizeEnd, size * 0.6f);
+            }
             for (int i = 0; i < count; i++)
             {
                 var p = Get(sp);
@@ -444,10 +464,18 @@ namespace StellarisClone.Cards
                 // Линия: ширина задана, длина — в sizeDelta.y при создании
                 p.Rt.sizeDelta = new Vector2(s, p.Rt.sizeDelta.y);
             }
-            else p.Rt.sizeDelta = new Vector2(s * (p.Align ? p.Stretch : 1f), s);
+            else if (p.Align)
+            {
+                // Штрих: длина растёт со скоростью; замедлившаяся искра гаснет, а не остаётся висеть «точкой»
+                float sp = p.Vel.magnitude;
+                p.Rt.sizeDelta = new Vector2(s * Mathf.Max(2.2f, p.Stretch * Mathf.Clamp(sp / 320f, 0.6f, 1.3f)), s);
+            }
+            else p.Rt.sizeDelta = new Vector2(s, s);
             p.Rt.anchoredPosition = p.Pos;
             p.Rt.localRotation = Quaternion.Euler(0, 0, p.Align && p.Vel.sqrMagnitude > 1f ? Mathf.Atan2(p.Vel.y, p.Vel.x) * Mathf.Rad2Deg : p.Rot);
-            p.Img.color = Color.Lerp(p.C0, p.C1, t);
+            var col = Color.Lerp(p.C0, p.C1, t);
+            if (p.Align && p.Life > 0.05f && p.Stretch > 1f) col.a *= Mathf.Clamp01((p.Vel.magnitude - 30f) / 120f);
+            p.Img.color = col;
         }
 
         private void Update()

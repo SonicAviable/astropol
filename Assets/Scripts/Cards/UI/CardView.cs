@@ -11,7 +11,8 @@ namespace StellarisClone.Cards
     /// Карта на экране. Два вида: полная (рука, предпросмотр — арт сверху, имя, тип, текст, цена) и компактная (на столе —
     /// арт во всю карту, сила и броня по углам). Рамка по редкости, «фольга» с бегущим бликом у элиты, фракционных и героев,
     /// рубашка с эмблемой фракции. Живёт сама: наклон к курсору и подъём в руке, переворот, «удар» при выходе на стол,
-    /// вспышка урона, трещины при тяжёлых повреждениях, свечение доступности.
+    /// вспышка урона, трещины при тяжёлых повреждениях, свечение доступности. Наклоны — в настоящей перспективе
+    /// (Perspective3D): атака с замахом и отрывом от стола, качание от попадания, переворот вокруг вертикали.
     /// </summary>
     public sealed class CardView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler,
                                    IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
@@ -31,6 +32,12 @@ namespace StellarisClone.Cards
         private Text _name, _cost, _power, _armor, _kind, _text, _stars, _statusText;
         private RectTransform _powerBadge, _armorBadge, _sheenRt;
         private Color _frameColor;
+        private Image _shadow;
+        private Color _shadowColor;
+        private Vector2 _shadowBase;
+        /// <summary>Все картинки карты — для перспективы (Perspective3D) при наклоне.</summary>
+        private Graphic[] _graphics;
+        private bool _wasTilted;
 
         // Состояние анимаций
         private float _flip = 1f, _flipTarget = 1f;   // 1 — лицом, −1 — рубашкой (через 0 — ребро)
@@ -114,7 +121,14 @@ namespace StellarisClone.Cards
             MaxArmor = ShownArmor = d.Armor;
             RefreshNumbers(d.Power + (Card.Stars >= 2 ? 1 : 0) + (Card.Stars >= 3 ? 1 : 0), d.Armor + (Card.Stars >= 1 ? 1 : 0) + (Card.Stars >= 3 ? 1 : 0),
                            d.Armor + (Card.Stars >= 1 ? 1 : 0) + (Card.Stars >= 3 ? 1 : 0), false);
+
+            // Перспектива последней в цепочке эффектов сетки (после теней и разрядки текста)
+            _graphics = Perspective3D.Attach(Rt);
+            if (_shadow != null) _shadowBase = _shadow.rectTransform.anchoredPosition;
         }
+
+        /// <summary>Картинка арта (для осколков при гибели).</summary>
+        public RawImage ArtImage => _art;
 
         /// <summary>Общая часть: свечение, тень, корпус, арт в маске с бликом, трещинами и вспышкой урона.</summary>
         private RectTransform BuildBase(Vector2 size, float k, float bodyScale, out RectTransform mask)
@@ -133,7 +147,8 @@ namespace StellarisClone.Cards
             _aura.Inset = 3f * gs;
             _aura.Tint = _frameColor;
 
-            var shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.7f));
+            var shadow = _shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.7f));
+            _shadowColor = shadow.color;
             shadow.sprite = CardSprites.RoundGlow;
             shadow.type = Image.Type.Sliced;
             shadow.raycastTarget = false;
@@ -385,26 +400,43 @@ namespace StellarisClone.Cards
         {
             _hitA = Mathf.Max(_hitA, 0.75f * strength);
             _shakeT = Mathf.Max(_shakeT, 0.3f * strength);
+            // Удар отбрасывает край карты — она качается в 3D и успокаивается
+            _joltDir = UnityEngine.Random.insideUnitCircle.normalized;
+            _joltPower = Mathf.Clamp(strength, 0.3f, 1.5f);
+            _joltT = 0f;
         }
 
         public void SetAlpha(float a) { if (_group != null) _group.alpha = a; }
 
-        private Vector2 _lungeDir;
-        private float _lungeT = 1f, _lungeDist;
+        private Vector2 _lungeDir, _joltDir;
+        private float _lungeT = 1f, _lungeDist, _joltT = 1f, _joltPower, _raiseT = 1f, _raiseDur = 0.5f;
 
-        /// <summary>Выпад к цели при атаке: карта резко подаётся вперёд по направлению dir и пружиной возвращается.</summary>
+        /// <summary>
+        /// Атака в 3D: карта отрывается от стола (больше, тень уходит в сторону), замахивается — передний край
+        /// приподнимается, — затем бьёт к цели, наклоняясь передним краем к ней, и пружиной ложится обратно.
+        /// </summary>
         public void Lunge(Vector2 dir, float dist = 22f)
         {
             _lungeDir = dir.sqrMagnitude > 0.001f ? dir.normalized : Vector2.up;
             _lungeDist = dist;
             _lungeT = 0f;
         }
+
+        /// <summary>Подъём над столом на dur секунд (переход в другой сектор, перенос): карта «летит» и ложится.</summary>
+        public void Raise(float dur = 0.5f)
+        {
+            _raiseDur = Mathf.Max(0.1f, dur);
+            _raiseT = 0f;
+        }
         public void SetHoverable(bool on) { _hoverable = on; }
 
+        private float _flipYaw;
+
+        /// <summary>Переворот — настоящий поворот вокруг вертикали (с перспективой); рубашка не зеркалится.</summary>
         private void ApplyFlip()
         {
-            float sx = Mathf.Abs(_flip);
-            _content.localScale = new Vector3(Mathf.Max(0.001f, sx), 1f, 1f);
+            _flipYaw = Mathf.Acos(Mathf.Clamp01(Mathf.Abs(_flip))) * Mathf.Rad2Deg * (_flip < 0f ? -1f : 1f);
+            _content.localRotation = Quaternion.Euler(0f, _flipYaw, 0f);
             bool showBack = _flip < 0f;
             if (_back.gameObject.activeSelf != showBack) _back.gameObject.SetActive(showBack);
         }
@@ -435,13 +467,45 @@ namespace StellarisClone.Cards
             _punch = Mathf.MoveTowards(_punch, 0f, dt * 1.6f);
             float shake = 0f;
             if (_shakeT > 0f) { _shakeT -= dt; shake = Mathf.Sin(Time.unscaledTime * 70f) * 5f * Mathf.Clamp01(_shakeT * 4f); }
-            Vector2 lunge = Vector2.zero;
+            Vector2 lunge = Vector2.zero, tilt3 = Vector2.zero;
+            float lift = 0f;
             if (_lungeT < 1f)
             {
-                _lungeT = Mathf.Min(1f, _lungeT + dt * 3.2f);
-                // быстрый выпад (первые 20%), затем пружина назад с лёгким перелётом
-                float c = _lungeT < 0.2f ? Mathf.SmoothStep(0f, 1f, _lungeT / 0.2f) : Mathf.Exp(-(_lungeT - 0.2f) * 6f) * Mathf.Cos((_lungeT - 0.2f) * 9f);
+                _lungeT = Mathf.Min(1f, _lungeT + dt / 0.5f);
+                float t = _lungeT, c, tl;
+                if (t < 0.12f)
+                {
+                    // замах: чуть назад, передний край вверх, карта отрывается от стола
+                    float u = Mathf.SmoothStep(0f, 1f, t / 0.12f);
+                    c = -0.25f * u; tl = -0.55f * u; lift = u;
+                }
+                else if (t < 0.22f)
+                {
+                    // удар: резко вперёд, передний край к цели
+                    float u = (t - 0.12f) / 0.1f; u *= u;
+                    c = Mathf.Lerp(-0.25f, 1f, u); tl = Mathf.Lerp(-0.55f, 1f, u); lift = 1f;
+                }
+                else
+                {
+                    // пружина назад с лёгким перелётом, карта ложится на стол
+                    float u = (t - 0.22f) / 0.78f;
+                    c = tl = Mathf.Exp(-u * 5f) * Mathf.Cos(u * 9f);
+                    lift = 1f - Mathf.SmoothStep(0f, 1f, u);
+                }
                 lunge = _lungeDir * _lungeDist * c;
+                // ближний к цели край уходит «в стол» (дальше от зрителя), задний поднимается
+                tilt3 += new Vector2(_lungeDir.y, -_lungeDir.x) * 24f * tl;
+            }
+            if (_raiseT < 1f)
+            {
+                _raiseT = Mathf.Min(1f, _raiseT + dt / _raiseDur);
+                lift = Mathf.Max(lift, Mathf.Sin(_raiseT * Mathf.PI));
+            }
+            if (_joltT < 1f)
+            {
+                _joltT = Mathf.Min(1f, _joltT + dt / 0.55f);
+                float j = Mathf.Exp(-_joltT * 6f) * Mathf.Cos(_joltT * 22f) * (1f - _joltT);
+                tilt3 += new Vector2(_joltDir.y, -_joltDir.x) * 16f * _joltPower * j;
             }
             // Живые карты: в руке — лёгкое покачивание (затихает при наведении), на столе — «дыхание»
             float tt = Time.unscaledTime + _idlePhase;
@@ -450,8 +514,14 @@ namespace StellarisClone.Cards
             float sway = IdleBob * calm * Mathf.Sin(tt * 0.83f) * 0.7f;
             float breathe = IdleBreathe * Mathf.Sin(tt * 1.15f) * 0.006f;
             _content.localPosition = new Vector3(shake + lunge.x, _hover * HoverLift + lunge.y + bob, 0f);
-            float s = 1f + _hover * HoverScale + _punch + breathe;
-            _content.localRotation = Quaternion.Euler(_tilt.x, _tilt.y, sway);
+            float s = 1f + _hover * HoverScale + _punch + breathe + lift * 0.1f;
+            _content.localRotation = Quaternion.Euler(_tilt.x + tilt3.x, _tilt.y + tilt3.y + _flipYaw, sway);
+            // Поднятая карта: тень отходит и светлеет — карта висит над столом
+            if (_shadow != null)
+            {
+                _shadow.rectTransform.anchoredPosition = _shadowBase + new Vector2(lift * 14f, -lift * 22f);
+                _shadow.color = new Color(_shadowColor.r, _shadowColor.g, _shadowColor.b, _shadowColor.a * (1f - 0.35f * lift));
+            }
 
             // «Живой» арт: медленный наезд и дрейф камеры по картинке, при наклоне — параллакс
             if (_art != null && _art.texture != null && _artUv.width > 0f)
@@ -500,6 +570,14 @@ namespace StellarisClone.Cards
             _aura.Tint = Color.Lerp(_aura.Tint, gc, k);
             _aura.Level = Mathf.Lerp(_aura.Level, Mathf.Clamp01(g), k);
             _aura.Comets = Mathf.Lerp(_aura.Comets, comets, 1f - Mathf.Exp(-dt * 6f));
+        }
+
+        private void LateUpdate()
+        {
+            // Перспектива: пока карта наклонена по X/Y (или только что выпрямилась) — перестроить сетки
+            bool tilted = _content != null && Perspective3D.Tilted(_content);
+            if (tilted || _wasTilted) Perspective3D.Refresh(_graphics);
+            _wasTilted = tilted;
         }
 
         // ==================== ВВОД ====================

@@ -853,23 +853,30 @@ namespace StellarisClone.Cards
             if (v == null) yield break;
             _dying.Add(v);
             _targets.Remove(v);
-            var p = _fx.Local(v.Rt);
             if (hard)
             {
+                // Техника разлетается осколками арта: каждый кувыркается в 3D и падает
                 var col = CardArt.Frame(v.Card.Def, v.Card.Stars, v.SideFaction);
-                _fx.Burst(p, 14, CardSprites.Round, new Color(col.r * 0.5f, col.g * 0.5f, col.b * 0.5f, 1f), 200f, 600f, 0.6f, 1.1f, 26f, 14f, 1400f, 0.6f, 90f, 160f);
+                ShardsFx(v, new Color(col.r * 0.45f, col.g * 0.45f, col.b * 0.45f, 0.9f));
+                v.SetAlpha(0f);
+                yield return W(0.2f);
             }
-            float t = 0f;
-            var start = v.Rt.localRotation;
-            float spin = Random.Range(-25f, 25f);
-            while (t < 1f && v != null)
+            else
             {
-                t += Time.unscaledDeltaTime * 2.2f * _animSpeed;
-                v.SetAlpha(1f - t);
-                v.Rt.localRotation = start * Quaternion.Euler(0, 0, spin * t);
-                v.Rt.localScale = Vector3.one * (hard ? 1f + t * 0.3f : 1f - t * 0.35f);
-                v.Rt.anchoredPosition += new Vector2(0, hard ? 0f : -60f * Time.unscaledDeltaTime);
-                yield return null;
+                // Пехота падает навзничь: карта опрокидывается от зрителя (перспектива), темнеет и гаснет
+                float t = 0f;
+                var start = v.Rt.localRotation.eulerAngles.z;
+                float spin = Random.Range(-14f, 14f);
+                float back = v.Side == _P ? -78f : 78f;
+                while (t < 1f && v != null)
+                {
+                    t += Time.unscaledDeltaTime * 1.6f * _animSpeed;
+                    float e = t * t;
+                    v.SetAlpha(1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.35f, 1f, t)));
+                    v.Rt.localRotation = Quaternion.Euler(back * e, 0f, start + spin * t);
+                    v.Rt.localScale = Vector3.one * (1f - t * 0.12f);
+                    yield return null;
+                }
             }
             _dying.Remove(v);
             if (v != null) Destroy(v.gameObject);
@@ -882,13 +889,18 @@ namespace StellarisClone.Cards
             _dying.Add(v);
             _targets.Remove(v);
             var p = _fx.Local(v.Rt);
-            _fx.Burst(p, 22, CardSprites.Spark, new Color(c.r, c.g, c.b, 1f), 40f, 220f, 0.5f, 1f, 9f, 2f, -80f, 1f, align: true, stretch: 2.2f);
+            _arc?.Glint(p, c, 360f, 7f, 0.35f);
+            _arc?.Embers(p, new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f)), new Color(c.r, c.g, c.b, 0f), 14, 200f, 420f, 90f, 120f, 0.35f, 0.7f, -150f);
+            // Уходит со стола: поднимается и разворачивается ребром (3D), растворяясь
             float t = 0f;
+            float turn = Random.value < 0.5f ? -90f : 90f;
             while (t < 1f && v != null)
             {
-                t += Time.unscaledDeltaTime * 2.4f * _animSpeed;
-                v.SetAlpha(1f - t);
-                v.Rt.localScale = Vector3.one * (1f + t * 0.25f);
+                t += Time.unscaledDeltaTime * 2f * _animSpeed;
+                float e = Mathf.SmoothStep(0f, 1f, t);
+                v.SetAlpha(1f - e);
+                v.Rt.localRotation = Quaternion.Euler(0f, turn * e, 0f);
+                v.Rt.localScale = Vector3.one * (1f + e * 0.2f);
                 yield return null;
             }
             _dying.Remove(v);
@@ -964,7 +976,9 @@ namespace StellarisClone.Cards
             var u = _state.FindUnit(e.Uid);
             if (u == null) yield break;
             Reparent(v, _rows[u.Sector, u.Side == _P ? 1 : 0]);
-            _fx.Burst(_fx.Local(v.Rt), 12, CardSprites.Spark, new Color(0.5f, 1f, 0.6f), 100f, 260f, 0.3f, 0.5f, 12f, 4f, 0f, 2f, align: true, stretch: 2f);
+            // Перебежка: карта поднимается над столом, наклоняется по ходу (раскладка) и тянет за собой шлейф
+            v.Raise(0.6f);
+            _arc?.Trail(v.Rt, new Color(0.5f, 1f, 0.6f), 26f, 0.3f);
             AddLog(Loc.F("{0} обходит с фланга", u.Def.Name));
             LayoutAll(false);
             yield return W(0.4f);

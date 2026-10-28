@@ -12,7 +12,7 @@ namespace StellarisClone.Cards
     ///   • голографический клинок командира — взмах с режущей дугой (герои, таран);
     ///   • светящийся шлейф и наклон летящей карты, вспышка-линза при раскрытии;
     ///   • попадания из флипбуков (молния, кольцо, крест) в цвете оружия, лучи и искры-штрихи;
-    ///   • HD-взрыв техники, вихрь над Штабом при прорыве и смене контроля, тлеющие искры в воздухе.
+    ///   • HD-взрыв техники и разлёт карты 3D-осколками, вихрь над Штабом при прорыве и смене контроля.
     /// Ленты и искры — ArcFx (одна сетка), флипбуки — UIFx; всё светом, без «пузырей».
     /// </summary>
     public sealed partial class BattleScreen
@@ -31,7 +31,7 @@ namespace StellarisClone.Cards
             _arc.Speed = _animSpeed;
             var r = _fxLayer.rect;
             if (r.width > 10f) _arc.AmbientArea = new Rect(r.xMin + 40f, r.yMin + 40f, r.width - 80f, r.height - 140f);
-            _arc.Ambient = true;
+            _arc.Ambient = false;   // тлеющие искры над столом читались как висящие «точки»
         }
 
         private void VfxTick()
@@ -158,6 +158,82 @@ namespace StellarisClone.Cards
                 _arc?.Spikes(p, c, 8, 150f, 8f, 0.3f);
                 _arc?.Embers(p, Hot(c), new Color(c.r, c.g * 0.4f, c.b * 0.3f, 0f), 16, 120f, 420f, 90f, 360f, 0.4f, 0.9f, 400f);
             }
+        }
+
+        // ---------------------------------------------------------------- осколки
+
+        private sealed class Shard
+        {
+            public RectTransform Rt;
+            public RawImage Img;
+            public Vector2 Vel;
+            public Vector3 Rot, Spin;
+        }
+
+        /// <summary>Карта раскалывается: арт режется на куски, каждый летит от центра, кувыркаясь в 3D (Perspective3D).</summary>
+        private void ShardsFx(CardView v, Color edge)
+        {
+            var art = v != null ? v.ArtImage : null;
+            if (art == null || art.texture == null || _fxLayer == null) return;
+            var center = _fx.Local(v.Rt);
+            float k = v.Rt.lossyScale.x / Mathf.Max(1e-5f, _fxLayer.lossyScale.x);
+            var size = v.Rt.rect.size * k;
+            const int cols = 3, rows = 4;
+            var cell = new Vector2(size.x / cols, size.y / rows);
+            var uv = art.uvRect;
+            var list = new System.Collections.Generic.List<Shard>(cols * rows);
+            for (int y = 0; y < rows; y++)
+                for (int x = 0; x < cols; x++)
+                {
+                    var go = new GameObject("Shard", typeof(RectTransform));
+                    go.transform.SetParent(_fxLayer, false);
+                    var rt = (RectTransform)go.transform;
+                    rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.sizeDelta = cell * Random.Range(0.9f, 1f);
+                    var off = new Vector2((x + 0.5f) * cell.x - size.x * 0.5f, (y + 0.5f) * cell.y - size.y * 0.5f);
+                    rt.anchoredPosition = center + off;
+                    var img = go.AddComponent<RawImage>();
+                    img.texture = art.texture;
+                    img.uvRect = new Rect(uv.x + uv.width * x / cols, uv.y + uv.height * y / rows, uv.width / cols, uv.height / rows);
+                    img.color = new Color(0.9f, 0.86f, 0.82f, 1f);
+                    img.raycastTarget = false;
+                    var ol = go.AddComponent<Outline>();
+                    ol.effectColor = edge;
+                    ol.effectDistance = new Vector2(2f, -2f);
+                    go.AddComponent<Perspective3D>().Root = rt;
+                    var dir = off.sqrMagnitude > 1f ? off.normalized : Random.insideUnitCircle.normalized;
+                    list.Add(new Shard
+                    {
+                        Rt = rt, Img = img,
+                        Vel = dir * Random.Range(260f, 620f) + new Vector2(Random.Range(-60f, 60f), Random.Range(280f, 520f)),
+                        Spin = new Vector3(Random.Range(-1f, 1f) * Random.Range(220f, 560f), Random.Range(-1f, 1f) * Random.Range(220f, 560f), Random.Range(-200f, 200f)),
+                    });
+                }
+            StartCoroutine(FlyShards(list, 1.15f));
+        }
+
+        private IEnumerator FlyShards(System.Collections.Generic.List<Shard> list, float dur)
+        {
+            float t = 0f;
+            while (t < dur)
+            {
+                float dt = Time.unscaledDeltaTime * _animSpeed;
+                t += dt;
+                float a = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(dur * 0.5f, dur, t));
+                foreach (var s in list)
+                {
+                    if (s.Rt == null) continue;
+                    s.Vel.y -= 1500f * dt;
+                    s.Vel *= 1f / (1f + 0.6f * dt);
+                    s.Rt.anchoredPosition += s.Vel * dt;
+                    s.Rot += s.Spin * dt;
+                    s.Rt.localRotation = Quaternion.Euler(s.Rot);
+                    var c = s.Img.color; c.a = a; s.Img.color = c;
+                    s.Img.SetVerticesDirty();
+                }
+                yield return null;
+            }
+            foreach (var s in list) if (s.Rt != null) Destroy(s.Rt.gameObject);
         }
 
         // ---------------------------------------------------------------- карты
