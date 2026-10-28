@@ -5,7 +5,7 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// Оформление обычной кнопки действия в стиле игры (как «Укрепить → крепость» в окне звёздной базы): тёмное
-    /// стекло, светящаяся планка цвета действия у левого края, значок в своей круглой ячейке, подпись слева
+    /// стекло, светящаяся планка цвета действия у левого края, значок в своей ячейке, подпись по центру
     /// капслоком с разрядкой, кромка цвета действия с мягким свечением и изредка пробегающий блик.
     /// Вешается сам на кнопки из <see cref="LGBuild.Button"/>; применяется, когда кнопка получила размер,
     /// и только к кнопкам-полосам с подписью (ширина от 150, высота 28…58 px) — круглые, маленькие и кнопки-значки
@@ -92,13 +92,14 @@ namespace StellarisClone.Rendering
 
             var t = old;
             t.transform.SetAsLastSibling();
-            t.alignment = TextAnchor.MiddleLeft;
+            t.alignment = TextAnchor.MiddleCenter;
             t.rectTransform.anchorMin = Vector2.zero;
             t.rectTransform.anchorMax = Vector2.one;
             t.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             t.rectTransform.localRotation = Quaternion.identity;
             t.rectTransform.localScale = Vector3.one;
-            t.rectTransform.Stretch(textLeft, 0, 10, 0);
+            // По центру кнопки: справа такое же поле, как под значком слева (у узких кнопок — только отступ)
+            t.rectTransform.Stretch(textLeft, 0, r.width >= 260f ? textLeft : 10f, 0);
             if (!on) t.color = UIManager.DS.TextMuted;
             t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Wrap;

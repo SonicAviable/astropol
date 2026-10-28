@@ -725,7 +725,7 @@ namespace StellarisClone.Rendering
                 rt.offsetMin = new Vector2(4, 0);
                 rt.offsetMax = new Vector2(-4, 0);
             }
-            var back = LGBuild.Button(card, "Back", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f), () => { _discordPick = false; Rebuild(); }, LGIcon.Back, Loc.T("ОТМЕНА"), 10);
+            var back = LGBuild.Button(card, "Back", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f), () => { _discordPick = false; Rebuild(); }, LGIcon.Close, Loc.T("ОТМЕНА"), 10);
             ((RectTransform)back.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-14, 12), new Vector2(140, 32));
             Txt(card, Loc.F("<color=#F2C766>★{0:0}</color> · {1} мес. · {2}", SpyInfo.Cost(SpyOp.Discord), SpyInfo.Months(SpyOp.Discord), SpyInfo.Desc(SpyOp.Discord)),
                  10, UIManager.DS.TextMuted, 130, 28, 18, 170, wrap: true);

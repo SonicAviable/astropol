@@ -64,7 +64,7 @@ namespace StellarisClone.Rendering
                 GameSettings.ResetDefaults();
                 ShowTab(_tabs.Index);
                 NotificationCenter.Show(Loc.T("Настройки сброшены"), Loc.T("Восстановлены значения по умолчанию"), NotificationCenter.Kind.Info, 3f);
-            }, LGIcon.Back, Loc.T("ПО УМОЛЧАНИЮ"), 12);
+            }, null, Loc.T("ПО УМОЛЧАНИЮ"), 12);
             ((RectTransform)reset.transform).At(new Vector2(0, 0), new Vector2(0, 0), Vector2.zero, new Vector2(210, 44));
 
             var hint = LGBuild.Label(rt, Loc.T("Изменения применяются и сохраняются сразу"), 11, UIManager.DS.TextMuted, TextAnchor.MiddleRight);

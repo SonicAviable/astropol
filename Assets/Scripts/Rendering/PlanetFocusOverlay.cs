@@ -1698,7 +1698,7 @@ namespace StellarisClone.Rendering
 
         private void BuildHeader(RectTransform rt)
         {
-            var close = LGBuild.Button(rt, "Close", new Color(0.10f, 0.28f, 0.32f), CCyan, Close, LGIcon.Back, Loc.T("ЗАКРЫТЬ  (ESC)"), 12);
+            var close = LGBuild.Button(rt, "Close", new Color(0.10f, 0.28f, 0.32f), CCyan, Close, LGIcon.Close, Loc.T("ЗАКРЫТЬ  (ESC)"), 12);
             ((RectTransform)close.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -30), new Vector2(170, 40));
             LG.Motion(close.gameObject, LGAppear.Kind.Fade).delay = 0.12f;
 

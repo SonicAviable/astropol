@@ -245,6 +245,10 @@ namespace StellarisClone.Rendering
                 _inspTileIcon.color = tint;
             }
             if (_inspRingB != null) _inspRingB.color = new Color(owner.r, owner.g, owner.b, 0.7f);
+            // Звезда — просто светило в космосе, без голографических колец: кольца с эмблемой — знак звёздной базы,
+            // и звезда в кольцах путалась с ней. Кольца остаются у планет и прочих объектов
+            if (_inspRingA != null) _inspRingA.gameObject.SetActive(!star);
+            if (_inspRingB != null) _inspRingB.gameObject.SetActive(!star);
             if (_inspHeaderGlow != null) _inspHeaderGlow.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.16f : 0.08f);
             if (_inspOwnerGlow != null) _inspOwnerGlow.color = new Color(owner.r, owner.g, owner.b, 0.35f);
         }
@@ -285,11 +289,12 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(tile.transform, icon, 15f, a);
             ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
 
-            var t = CreateText(go.transform, label.ToUpper(), 11, FontStyle.Bold, enabled ? DS.TextPrimary : DS.TextMuted, TextAnchor.MiddleLeft);
+            // Подпись по центру кнопки (поля симметричны значку слева, чтобы текст стоял ровно посередине)
+            var t = CreateText(go.transform, label.ToUpper(), 11, FontStyle.Bold, enabled ? DS.TextPrimary : DS.TextMuted, TextAnchor.MiddleCenter);
             t.rectTransform.anchorMin = Vector2.zero;
             t.rectTransform.anchorMax = Vector2.one;
             t.rectTransform.offsetMin = new Vector2(size.y + 12f, 0);
-            t.rectTransform.offsetMax = new Vector2(-10, 0);
+            t.rectTransform.offsetMax = new Vector2(-(size.x >= 260f ? size.y + 12f : 10f), 0);
             t.Track(1.2f);
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
             t.resizeTextForBestFit = true; t.resizeTextMinSize = 8; t.resizeTextMaxSize = 11;
