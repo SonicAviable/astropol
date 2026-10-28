@@ -1,58 +1,110 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
-<!-- Обложка новости «SmartBiz ищет людей в команду» (1920×1080), в стиле обложек обновлений. Рендер: node Tools/news/render.js hiring -->
+<!-- Обложка новости «SmartBiz ищет людей в команду» (1920×1080). Рендер: node Tools/news/render.js hiring -->
 <style>
 @font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
 @font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
 @font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+:root { --gold: #F2C766; --cyan: #66DBD1; --muted: #93AEBA; }
 * { box-sizing: border-box; margin: 0; }
 body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
 #cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
-.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 40%/cover; filter: brightness(0.55) saturate(1.1); }
-.art { position: absolute; top: 0; bottom: 0; left: 820px; right: 0; background: url(../../Assets/Resources/UI/LoadingArt_2.jpg) center/cover;
-  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%); filter: brightness(0.75); }
-.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.97) 0%, rgba(3,7,15,0.9) 40%, rgba(3,7,15,0.2) 62%, rgba(3,7,15,0.05) 100%); }
-.slash { position: absolute; top: -40px; bottom: -40px; left: 1040px; width: 4px; background: linear-gradient(180deg, rgba(120,240,230,0), #8FF5EA 45%, rgba(120,240,230,0));
-  box-shadow: 0 0 18px #5FE6DA, 0 0 40px rgba(95,230,218,0.6); transform: skewX(-12deg); }
-.left { position: absolute; left: 130px; top: 150px; }
-.logo { font-family: Russo; font-size: 118px; letter-spacing: 6px; line-height: 1;
-  background: linear-gradient(180deg, #FFF3CF 0%, #F2C766 55%, #C98A35 100%); -webkit-background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 24px rgba(242,199,102,0.4)); }
-.studio { display: flex; align-items: center; gap: 22px; margin-top: 22px; }
-.studio span { font-weight: 700; font-size: 28px; letter-spacing: 10px; color: #CFE3E8; }
-.flags { display: flex; gap: 0; border-radius: 4px; overflow: hidden; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.35), 0 4px 14px rgba(0,0,0,0.6); }
-.flags svg { display: block; width: 66px; height: 44px; }
-.kicker { font-weight: 700; font-size: 26px; letter-spacing: 12px; color: #9FC9CF; margin-top: 18px; }
-.ver { font-family: Russo; font-size: 62px; letter-spacing: 6px; margin-top: 34px; }
-.list { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
-.list div { font-family: Russo; font-size: 33px; letter-spacing: 3px; color: #E4F1F4; }
-.list div::before { content: '•'; color: #F2C766; margin-right: 16px; }
-.note { margin-top: 30px; font-size: 26px; color: #9FC9CF; letter-spacing: 1px; }
-.note b { color: #F2C766; }
-.badge { position: absolute; right: 120px; bottom: 110px; padding: 22px 34px; border: 2px solid rgba(242,199,102,0.7); border-radius: 8px;
-  background: rgba(5,12,24,0.85); font-family: Russo; font-size: 34px; letter-spacing: 4px; color: #F2C766; box-shadow: 0 0 30px rgba(242,199,102,0.2); }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 40%/cover; filter: brightness(0.5) saturate(1.1); }
+.art { position: absolute; top: 0; bottom: 0; left: 860px; right: 0; background: url(../../Assets/Resources/UI/LoadingArt_2.jpg) center/cover;
+  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%); filter: brightness(0.72); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.97) 0%, rgba(3,7,15,0.92) 42%, rgba(3,7,15,0.25) 64%, rgba(3,7,15,0.1) 100%),
+  linear-gradient(0deg, rgba(3,7,15,0.8), rgba(3,7,15,0) 35%); }
+.slash { position: absolute; top: -40px; bottom: -40px; left: 1085px; width: 3px; background: linear-gradient(180deg, rgba(120,240,230,0), #8FF5EA 45%, rgba(120,240,230,0));
+  box-shadow: 0 0 16px #5FE6DA, 0 0 36px rgba(95,230,218,0.5); transform: skewX(-12deg); }
+
+.left { position: absolute; left: 120px; top: 108px; width: 900px; }
+.logo { font-family: Russo; font-size: 104px; letter-spacing: 7px; line-height: 1;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(242,199,102,0.35)); }
+.studio { display: flex; align-items: center; gap: 24px; margin-top: 22px; }
+.studio .t { display: flex; flex-direction: column; gap: 4px; }
+.studio b { font-weight: 700; font-size: 25px; letter-spacing: 9px; color: #E6F1F4; }
+.studio i { font-style: normal; font-size: 17px; letter-spacing: 4px; color: var(--muted); }
+.rule { height: 1px; width: 760px; margin: 34px 0 30px; background: linear-gradient(90deg, rgba(242,199,102,0.8), rgba(242,199,102,0)); }
+.head { font-weight: 700; font-size: 20px; letter-spacing: 8px; color: var(--cyan); }
+.title { font-weight: 700; font-size: 46px; letter-spacing: 2px; margin-top: 8px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; width: 820px; }
+.role { display: flex; gap: 18px; align-items: flex-start; padding: 18px 20px; border: 1px solid rgba(102,219,209,0.22); border-radius: 6px;
+  background: linear-gradient(135deg, rgba(14,30,52,0.85), rgba(6,14,26,0.85)); }
+.role svg { width: 34px; height: 34px; flex: none; margin-top: 2px; stroke: var(--gold); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.role b { display: block; font-weight: 700; font-size: 25px; letter-spacing: 1px; }
+.role span { display: block; font-size: 17px; color: var(--muted); margin-top: 4px; line-height: 1.3; }
+.note { margin-top: 26px; font-size: 21px; color: var(--muted); letter-spacing: 0.5px; }
+.note b { color: var(--gold); font-weight: 700; }
+
+.badges { position: absolute; right: 110px; bottom: 96px; display: flex; flex-direction: column; gap: 14px; align-items: flex-end; }
+.badge { display: flex; align-items: center; gap: 18px; padding: 16px 26px; border-radius: 6px; background: rgba(5,12,24,0.88);
+  border: 1px solid rgba(242,199,102,0.55); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.badge .k { font-weight: 700; font-size: 15px; letter-spacing: 5px; color: var(--muted); }
+.badge .v { font-weight: 700; font-size: 27px; letter-spacing: 3px; color: var(--gold); }
+.badge.steam { border-color: rgba(102,219,209,0.5); } .badge.steam .v { color: #DFF6F8; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #5BE38A; box-shadow: 0 0 10px #5BE38A; }
+.dot.soon { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
 </style></head>
 <body><div id="cover">
   <div class="space"></div><div class="art"></div><div class="fade"></div><div class="slash"></div>
   <div class="left">
     <div class="logo">ASTROPOLITY</div>
-    <div class="studio"><span>СТУДИЯ SMARTBIZ</span>
-      <div class="flags">
-        <svg viewBox="0 0 3 2"><rect width="3" height="2" fill="#fff"/><rect y="0.667" width="3" height="0.667" fill="#0039A6"/><rect y="1.333" width="3" height="0.667" fill="#D52B1E"/></svg>
-        <svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#00AFCA"/>
-          <g fill="#FEC50C"><circle cx="31" cy="17" r="6"/>
-            <g stroke="#FEC50C" stroke-width="1.2"><line x1="31" y1="17" x2="42.0" y2="17.0"/><line x1="31" y1="17" x2="41.8" y2="19.1"/><line x1="31" y1="17" x2="41.2" y2="21.2"/><line x1="31" y1="17" x2="40.1" y2="23.1"/><line x1="31" y1="17" x2="38.8" y2="24.8"/><line x1="31" y1="17" x2="37.1" y2="26.1"/><line x1="31" y1="17" x2="35.2" y2="27.2"/><line x1="31" y1="17" x2="33.1" y2="27.8"/><line x1="31" y1="17" x2="31.0" y2="28.0"/><line x1="31" y1="17" x2="28.9" y2="27.8"/><line x1="31" y1="17" x2="26.8" y2="27.2"/><line x1="31" y1="17" x2="24.9" y2="26.1"/><line x1="31" y1="17" x2="23.2" y2="24.8"/><line x1="31" y1="17" x2="21.9" y2="23.1"/><line x1="31" y1="17" x2="20.8" y2="21.2"/><line x1="31" y1="17" x2="20.2" y2="19.1"/><line x1="31" y1="17" x2="20.0" y2="17.0"/><line x1="31" y1="17" x2="20.2" y2="14.9"/><line x1="31" y1="17" x2="20.8" y2="12.8"/><line x1="31" y1="17" x2="21.9" y2="10.9"/><line x1="31" y1="17" x2="23.2" y2="9.2"/><line x1="31" y1="17" x2="24.9" y2="7.9"/><line x1="31" y1="17" x2="26.8" y2="6.8"/><line x1="31" y1="17" x2="28.9" y2="6.2"/><line x1="31" y1="17" x2="31.0" y2="6.0"/><line x1="31" y1="17" x2="33.1" y2="6.2"/><line x1="31" y1="17" x2="35.2" y2="6.8"/><line x1="31" y1="17" x2="37.1" y2="7.9"/><line x1="31" y1="17" x2="38.8" y2="9.2"/><line x1="31" y1="17" x2="40.1" y2="10.9"/><line x1="31" y1="17" x2="41.2" y2="12.8"/><line x1="31" y1="17" x2="41.8" y2="14.9"/></g>
-            <path d="M18 29 q13 -5 26 0 q-13 2 -26 0z"/>
-            <rect x="4" y="4" width="3" height="32"/></g></svg>
-      </div></div>
-    <div class="ver">ИЩЕМ В КОМАНДУ</div>
-    <div class="list">
-      <div>ДИЗАЙНЕРОВ</div>
-      <div>3D-МОДЕЛЛЕРОВ</div>
-      <div>SMM-МЕНЕДЖЕРОВ</div>
-      <div>ТЕСТИРОВЩИКОВ</div>
+    <div class="studio">
+      <!-- Флаги России и Казахстана на скрещённых древках, развеваются (волна — фильтр смещения, объём — полосы света) -->
+      <svg width="196" height="102" viewBox="0 0 150 78">
+        <defs>
+          <filter id="wave" x="-10%" y="-20%" width="120%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035 0.012" numOctaves="1" seed="4"/>
+            <feDisplacementMap in="SourceGraphic" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <linearGradient id="fold" x1="0" x2="1">
+            <stop offset="0" stop-color="#000" stop-opacity="0.35"/><stop offset="0.22" stop-color="#fff" stop-opacity="0.22"/>
+            <stop offset="0.45" stop-color="#000" stop-opacity="0.28"/><stop offset="0.7" stop-color="#fff" stop-opacity="0.18"/>
+            <stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+          </linearGradient>
+          <clipPath id="c1"><rect x="10" y="6" width="58" height="38"/></clipPath>
+        </defs>
+        <line x1="8" y1="4" x2="70" y2="76" stroke="#C9A55A" stroke-width="2.4"/>
+        <line x1="142" y1="4" x2="80" y2="76" stroke="#C9A55A" stroke-width="2.4"/>
+        <circle cx="8" cy="4" r="3" fill="#F2C766"/><circle cx="142" cy="4" r="3" fill="#F2C766"/>
+        <g filter="url(#wave)">
+          <g transform="translate(10 6) skewY(10)">
+            <rect width="58" height="13" fill="#fff"/><rect y="13" width="58" height="13" fill="#0039A6"/><rect y="26" width="58" height="13" fill="#D52B1E"/>
+            <rect width="58" height="39" fill="url(#fold)"/>
+          </g>
+          <g transform="translate(82 16) skewY(-10)">
+            <rect width="58" height="39" fill="#00AFCA"/>
+            <circle cx="31" cy="17" r="6" fill="#FEC50C"/>
+            <g stroke="#FEC50C" stroke-width="1">
+              <line x1="31" y1="6" x2="31" y2="9"/><line x1="31" y1="25" x2="31" y2="28"/><line x1="20" y1="17" x2="23" y2="17"/><line x1="39" y1="17" x2="42" y2="17"/>
+              <line x1="23.2" y1="9.2" x2="25.3" y2="11.3"/><line x1="36.7" y1="22.7" x2="38.8" y2="24.8"/><line x1="23.2" y1="24.8" x2="25.3" y2="22.7"/><line x1="36.7" y1="11.3" x2="38.8" y2="9.2"/>
+            </g>
+            <path d="M19 31 q12 -5 24 0 q-12 2 -24 0z" fill="#FEC50C"/>
+            <rect x="4" y="3" width="2.5" height="33" fill="#FEC50C" opacity="0.9"/>
+            <rect width="58" height="39" fill="url(#fold)"/>
+          </g>
+        </g>
+      </svg>
+      <div class="t"><b>СТУДИЯ SMARTBIZ</b><i>РОССИЯ · КАЗАХСТАН</i></div>
     </div>
-    <div class="note">Подходит новичкам · <b>портфолио на вышедшей игре</b></div>
+    <div class="rule"></div>
+    <div class="head">ОТКРЫТ НАБОР</div>
+    <div class="title">Ищем людей в команду</div>
+    <div class="grid">
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5S14 15 15.5 15H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
+        <div><b>Дизайнеры</b><span>интерфейс, иконки, промо-арт</span></div></div>
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/></svg>
+        <div><b>3D-моделлеры</b><span>корабли, станции, планеты</span></div></div>
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
+        <div><b>SMM-менеджеры</b><span>новости, посты, сообщество</span></div></div>
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 14h9"/></svg>
+        <div><b>Тестировщики</b><span>ошибки, баланс, отчёты</span></div></div>
+    </div>
+    <div class="note">Можно без опыта · <b>портфолио на вышедшей игре</b> · удалённо</div>
   </div>
-  <div class="badge">ИГРА УЖЕ НА VK PLAY</div>
+  <div class="badges">
+    <div class="badge"><div class="dot"></div><div class="k">VK PLAY</div><div class="v">УЖЕ В ПРОДАЖЕ · В ЛИДЕРАХ</div></div>
+    <div class="badge steam"><div class="dot soon"></div><div class="k">STEAM</div><div class="v">КОНЕЦ 2026 ГОДА</div></div>
+  </div>
 </div></body></html>
