@@ -43,7 +43,8 @@ namespace StellarisClone.Rendering
         private void InspStatLine(params (LGIcon icon, string value, string label, Color col)[] items)
         {
             var row = LGBuild.Panel(_inspStack, "Stats", InspCardBg);
-            LGBuild.Height(row.gameObject, 46);
+            LGBuild.Height(row.gameObject, 54);
+            LGFx.HoverGlow(row.gameObject);
             LG.Platter(row.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, 0.08f));
             int n = items.Length;
             for (int i = 0; i < n; i++)
@@ -53,12 +54,20 @@ namespace StellarisClone.Rendering
                 cell.anchorMin = new Vector2(i / (float)n, 0);
                 cell.anchorMax = new Vector2((i + 1) / (float)n, 1);
                 cell.offsetMin = cell.offsetMax = Vector2.zero;
-                var ic = LGIcons.Create(cell, it.icon, 16, it.col);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(16, 16));
-                var v = LGBuild.Label(cell, it.value, 14, DS.TextPrimary, TextAnchor.LowerLeft, bold: true);
-                v.rectTransform.Stretch(36, 22, 4, 5);
+                var glow = LGBuild.Panel(cell, "Glow", new Color(it.col.r, it.col.g, it.col.b, 0.3f));
+                glow.sprite = FactionSelectScreen.RadialSprite();
+                glow.raycastTarget = false;
+                glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(40, 40));
+                var chip = LGBuild.Panel(cell, "IconChip", new Color(it.col.r * 0.12f, it.col.g * 0.12f, it.col.b * 0.12f, 0.95f));
+                chip.raycastTarget = false;
+                chip.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(28, 28));
+                LG.Chip(chip.gameObject, new Color(it.col.r, it.col.g, it.col.b, 0.55f), 14f);
+                var ic = LGIcons.Create(cell, it.icon, 15, it.col);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(15, 15));
+                var v = LGBuild.Label(cell, it.value, 16, DS.TextPrimary, TextAnchor.LowerLeft, bold: true);
+                v.rectTransform.Stretch(42, 24, 4, 4);
                 var l = LGBuild.Label(cell, it.label, 9, InspLabelCol, TextAnchor.UpperLeft);
-                l.rectTransform.Stretch(36, 4, 4, 25);
+                l.rectTransform.Stretch(42, 4, 4, 27);
                 if (i < n - 1)
                 {
                     var sep = LGBuild.Panel(cell, "Sep", new Color(1f, 1f, 1f, 0.08f));
@@ -85,7 +94,7 @@ namespace StellarisClone.Rendering
                 11, c, TextAnchor.MiddleRight, true, 0.35f, 1f, 0f, 18f, 0f, 2f);
             var track = LGBuild.Rect(row, "Track");
             Place(track, 0f, 1f, 21f, 6f, 22f, 2f);
-            LGBuild.Bar(track, c, empty ? 0f : value / max, 4f);
+            GrowBar(track, c, empty ? 0f : value / max, 4f, value > 0f);
         }
 
         // ==================== ЗВЁЗДНАЯ БАЗА ====================
@@ -99,16 +108,48 @@ namespace StellarisClone.Rendering
             Color gold = DS.Gold;
 
             var card = LGBuild.Panel(_inspStack, "StarbaseCard", InspCardBg).rectTransform;
-            LG.Platter(card.gameObject, 12f).SetRim(new Color(owner.r, owner.g, owner.b, 0.28f));
+            LG.Platter(card.gameObject, 12f).SetRim(new Color(owner.r, owner.g, owner.b, 0.32f));
+            LGFx.HoverGlow(card.gameObject);
+            // Свет цвета владельца из-за эмблемы — карточка «подсвечена» своей станцией
+            var cardGlow = LGBuild.Panel(card, "OwnerLight", new Color(owner.r, owner.g, owner.b, 0.14f));
+            cardGlow.sprite = FactionSelectScreen.RadialSprite();
+            cardGlow.raycastTarget = false;
+            cardGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(40, -40), new Vector2(260, 160));
             float y = 12f;
 
-            // Мощь — крупно; сравнение с вашими кораблями — под ней
+            // Эмблема станции: значок в ячейке и голографическое кольцо цвета владельца
+            var emb = LGBuild.Rect(card, "Emblem");
+            emb.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(38, -(y + 26f)), new Vector2(60, 60));
+            var ringSp = ResSprite("UI/CardBattle/holo_ring_a");
+            if (ringSp != null)
+            {
+                var ring = LGBuild.Panel(emb, "Ring", new Color(owner.r, owner.g, owner.b, sb.Disabled ? 0.25f : 0.75f));
+                ring.sprite = ringSp;
+                ring.raycastTarget = false;
+                ring.material = StellarisClone.Cards.UIFx.HoloMat;
+                ring.rectTransform.Stretch();
+                LG.Ignore(ring.gameObject);
+                StellarisClone.Cards.HoloSpin.Add(ring, sb.Disabled ? 0f : 12f, 0.15f);
+            }
+            var ec = LGBuild.Panel(emb, "Cell", new Color(owner.r * 0.12f, owner.g * 0.12f, owner.b * 0.12f, 0.96f));
+            ec.raycastTarget = false;
+            ec.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(38, 38));
+            LG.Chip(ec.gameObject, new Color(owner.r, owner.g, owner.b, 0.6f), 19f);
+            var ei = LGIcons.Create(emb, LGIcon.Starbase, 20, sb.Disabled ? DS.Red : Color.Lerp(owner, Color.white, 0.35f));
+            ei.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
+            const float px = 74f;   // текст — правее эмблемы
+
+            // Мощь — крупно («набегает» при открытии); сравнение с вашими кораблями — под ней
             float power = cm != null ? cm.StarbasePower(system.Id) : 0f;
             string inShips = CombatManager.PowerInShips(power);
-            CardLabel(card, Loc.T("МОЩЬ БАЗЫ"), 9, InspLabelCol, TextAnchor.UpperLeft, true, 0f, 0.55f, y, 12f, 14f, 0f, 1.6f);
-            CardLabel(card, power.ToString("N0"), 26, sb.Disabled ? DS.Red : DS.TextPrimary, TextAnchor.UpperLeft, true, 0f, 0.55f, y + 12f, 32f, 14f);
+            CardLabel(card, Loc.T("МОЩЬ БАЗЫ"), 9, InspLabelCol, TextAnchor.UpperLeft, true, 0f, 0.6f, y, 12f, px, 0f, 1.6f);
+            var powerText = CardLabel(card, power.ToString("N0"), 28, sb.Disabled ? DS.Red : DS.TextPrimary, TextAnchor.UpperLeft, true, 0f, 0.6f, y + 11f, 34f, px);
+            var psh = powerText.gameObject.AddComponent<Shadow>();
+            psh.effectColor = new Color(owner.r, owner.g, owner.b, 0.35f);
+            psh.effectDistance = new Vector2(0f, -2f);
+            InspCountUp.Run(powerText, power);
             if (inShips.Length > 0)
-                CardLabel(card, inShips, 10, InspLabelCol, TextAnchor.UpperLeft, false, 0f, 0.6f, y + 46f, 14f, 14f);
+                CardLabel(card, inShips, 10, InspLabelCol, TextAnchor.UpperLeft, false, 0f, 0.7f, y + 46f, 14f, px);
             var powerHit = LGBuild.Panel(card, "PowerTip", new Color(0f, 0f, 0f, 0f), raycast: true);
             Place(powerHit.rectTransform, 0f, 0.55f, y, 60f);
             TooltipHelper.Attach(powerHit.gameObject,
@@ -117,13 +158,31 @@ namespace StellarisClone.Rendering
 
             // Укрепление — знак справа: название и три «пипса» уровня
             CardLabel(card, Fortifications.Name(lvl).ToUpper(), 11, lvl > 0 ? gold : InspLabelCol, TextAnchor.UpperRight, true, 0.45f, 1f, y + 2f, 14f, 0f, 14f, 1.2f);
+            // Уровень — ромбы: построенные горят золотом со свечением, остальные — пустые грани
             var pips = LGBuild.Rect(card, "Pips");
-            Place(pips, 0.5f, 1f, y + 22f, 6f, 0f, 14f);
+            Place(pips, 0.5f, 1f, y + 20f, 12f, 0f, 14f);
             for (int i = 0; i < Fortifications.MaxLevel; i++)
             {
                 bool on = i < lvl;
-                var pip = LGBuild.Panel(pips, "Pip", on ? gold : new Color(1f, 1f, 1f, 0.12f));
-                pip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-(Fortifications.MaxLevel - 1 - i) * 24f, 0), new Vector2(20, 5));
+                float x = -(Fortifications.MaxLevel - 1 - i) * 20f - 6f;
+                if (on)
+                {
+                    var pg = LGBuild.Panel(pips, "PipGlow", new Color(gold.r, gold.g, gold.b, 0.45f));
+                    pg.sprite = FactionSelectScreen.RadialSprite();
+                    pg.raycastTarget = false;
+                    pg.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0), new Vector2(26, 26));
+                    StellarisClone.Cards.HoloSpin.Add(pg, 0f, 0.25f, 0f, i * 0.9f);
+                }
+                var pip = LGBuild.Panel(pips, "Pip", on ? gold : new Color(0.04f, 0.07f, 0.09f, 1f));
+                pip.raycastTarget = false;
+                pip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0), new Vector2(9, 9));
+                pip.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+                if (!on)
+                {
+                    var rim = pip.gameObject.AddComponent<Outline>();
+                    rim.effectColor = new Color(gold.r, gold.g, gold.b, 0.35f);
+                    rim.effectDistance = new Vector2(1f, -1f);
+                }
             }
             CardLabel(card, Loc.F("УКРЕПЛЕНИЕ {0}/{1}", lvl, Fortifications.MaxLevel), 9, InspLabelCol, TextAnchor.UpperRight, true, 0.45f, 1f, y + 32f, 12f, 0f, 14f, 1.2f);
             var fortHit = LGBuild.Panel(card, "FortTip", new Color(0f, 0f, 0f, 0f), raycast: true);
@@ -155,7 +214,7 @@ namespace StellarisClone.Rendering
             CardLabel(card, label, 10, InspLabelCol, TextAnchor.MiddleLeft, false, 0f, 0.3f, y, 17f, 31f);
             var track = LGBuild.Rect(card, "Track");
             Place(track, 0.27f, 0.75f, y, 17f, 0f, 6f);
-            LGBuild.Bar(track, col, max > 0f ? value / max : 0f, 4f);
+            GrowBar(track, col, max > 0f ? value / max : 0f, 5f, icon == LGIcon.ShieldDome);
             CardLabel(card, $"{value:0} / {max:0}", 10, col, TextAnchor.MiddleRight, true, 0.7f, 1f, y, 17f, 0f, 14f);
             y += 20f;
         }
@@ -215,6 +274,7 @@ namespace StellarisClone.Rendering
                 }, LGIcon.Starbase, Loc.F("УКРЕПИТЬ → {0}", Fortifications.Name(to).ToUpper()), 11);
             Place((RectTransform)btn.transform, 0f, 1f, y, 34f, 14f, 14f);
             btn.interactable = can;
+            if (can) InspSweep.Add(btn.gameObject, 4.5f, 0.16f);
             TooltipHelper.Attach(btn.gameObject, FortTooltip(to) + (can ? "" : $"\n<color=#FF8888>{block}</color>"));
             y += 40f;
 

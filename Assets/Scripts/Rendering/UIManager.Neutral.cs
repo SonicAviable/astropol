@@ -146,8 +146,9 @@ namespace StellarisClone.Rendering
                     RefreshResourceBar();
                     if (_activeSystem == system && !_isInSystemMode) ShowSystemPanel(system);
                 }, icon, label, 11, 8f);
-            LGBuild.Height(btn.gameObject, 30);
+            LGBuild.Height(btn.gameObject, 34);
             btn.interactable = can;
+            if (can) InspSweep.Add(btn.gameObject, 5f, 0.14f);
             TooltipHelper.Attach(btn.gameObject, can ? tip : $"{tip}\n<color=#FF8080>{blocker}</color>");
         }
     }

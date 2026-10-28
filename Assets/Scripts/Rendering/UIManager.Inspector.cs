@@ -40,7 +40,7 @@ namespace StellarisClone.Rendering
             float content = LayoutUtility.GetPreferredHeight(_inspStack);
             float canvasH = ((RectTransform)_canvas.transform).rect.height;
             float maxH = Mathf.Max(320f, canvasH - InspectorTop - 196f);
-            float h = Mathf.Clamp(62f + content + bottomArea + 6f, 240f, maxH);
+            float h = Mathf.Clamp(InspHeaderH - 2f + content + bottomArea + 6f, 280f, maxH);
             _inspectorRect.sizeDelta = new Vector2(InspectorWidth, h);
         }
 
@@ -48,19 +48,36 @@ namespace StellarisClone.Rendering
 
         private static Color InspMuted => DS.TextMuted;
 
+        /// <summary>
+        /// Заголовок секции: золотой ромб-маркер со свечением, значок, надпись с разрядкой и черта,
+        /// тающая вправо (как разделы в меню больших игр).
+        /// </summary>
         private void InspSection(string title, LGIcon icon)
         {
             var row = LGBuild.Rect(_inspStack, "Section");
-            LGBuild.Height(row.gameObject, 24);
-            var ic = LGIcons.Create(row, icon, 13, DS.Gold);
-            ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(2, 4), new Vector2(13, 13));
-            var t = LGBuild.Label(row, title, 10, DS.Gold, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.Stretch(20, 2, 0, 0);
-            t.Track(1.6f);
-            var line = LGBuild.Panel(row, "Line", new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.2f));
+            LGBuild.Height(row.gameObject, 30);
+            Color g = DS.Gold;
+            var glow = LGBuild.Panel(row, "Glow", new Color(g.r, g.g, g.b, 0.35f));
+            glow.sprite = FactionSelectScreen.RadialSprite();
+            glow.raycastTarget = false;
+            glow.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(6, 10), new Vector2(26, 26));
+            var dia = LGBuild.Panel(row, "Diamond", g);
+            dia.raycastTarget = false;
+            dia.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(6, 10), new Vector2(7, 7));
+            dia.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+            var ic = LGIcons.Create(row, icon, 13, new Color(g.r, g.g, g.b, 0.85f));
+            ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(16, 4), new Vector2(13, 13));
+            var t = LGBuild.Label(row, title, 11, g, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.Stretch(34, 2, 0, 0);
+            t.Track(2.2f);
+            var line = LGBuild.Panel(row, "Line", new Color(g.r, g.g, g.b, 0.55f));
+            line.sprite = UIManager.FadeRightSprite;
+            line.raycastTarget = false;
             line.rectTransform.anchorMin = new Vector2(0, 0);
             line.rectTransform.anchorMax = new Vector2(1, 0);
-            line.rectTransform.sizeDelta = new Vector2(0, 1);
+            line.rectTransform.pivot = new Vector2(0, 0);
+            line.rectTransform.sizeDelta = new Vector2(0, 1.5f);
+            line.rectTransform.anchoredPosition = Vector2.zero;
         }
 
         private void InspText(string text)
@@ -106,19 +123,28 @@ namespace StellarisClone.Rendering
             v.rectTransform.offsetMin = new Vector2(84, 0); v.rectTransform.offsetMax = new Vector2(176, 0);
             var host = LGBuild.Rect(row, "Track");
             host.Stretch(186, 0, 2, 0);
-            LGBuild.Bar(host, col, max > 0f ? value / max : 0f, 7f);
+            GrowBar(host, col, max > 0f ? value / max : 0f, 7f, true);
         }
 
         /// <summary>Строка с иконкой и текстом (статус, предупреждение, флот на орбите).</summary>
         private void InspNote(LGIcon icon, string text, Color col)
         {
-            var row = LGBuild.Panel(_inspStack, "Note", new Color(col.r * 0.08f, col.g * 0.08f, col.b * 0.08f, 0.9f));
-            LGBuild.Height(row.gameObject, 34);
-            LG.Platter(row.gameObject, 10f).SetRim(new Color(col.r, col.g, col.b, 0.25f));
+            var row = LGBuild.Panel(_inspStack, "Note", new Color(col.r * 0.08f, col.g * 0.08f, col.b * 0.08f, 0.92f));
+            LGBuild.Height(row.gameObject, 38);
+            LG.Platter(row.gameObject, 10f).SetRim(new Color(col.r, col.g, col.b, 0.3f));
+            LGFx.HoverGlow(row.gameObject);
+            // Полоска цвета слева и значок в круглой ячейке со свечением
+            var bar = LGBuild.Panel(row.transform, "Accent", new Color(col.r, col.g, col.b, 0.9f));
+            bar.raycastTarget = false;
+            bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(3, 0), new Vector2(2.5f, 22));
+            var cg = LGBuild.Panel(row.transform, "IconGlow", new Color(col.r, col.g, col.b, 0.28f));
+            cg.sprite = FactionSelectScreen.RadialSprite();
+            cg.raycastTarget = false;
+            cg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(34, 34));
             var ic = LGIcons.Create(row.transform, icon, 15, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(15, 15));
-            var t = LGBuild.Label(row.transform, text, 10, DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
-            t.rectTransform.Stretch(32, 0, 8, 0);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(15, 15));
+            var t = LGBuild.Label(row.transform, text, 11, DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
+            t.rectTransform.Stretch(40, 0, 8, 0);
         }
 
         // ==================== СИСТЕМА ====================

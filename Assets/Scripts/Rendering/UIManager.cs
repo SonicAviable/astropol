@@ -1170,6 +1170,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             inspBg.color = DS.BgDeep;
             inspBg.raycastTarget = false;
             LG.Glass(insp, 22f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.34f));
+            BuildInspectorDecor(_inspectorRect);
 
             var header = new GameObject("Header");
             header.transform.SetParent(insp.transform, false);
@@ -1182,6 +1183,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             hBg.color = DS.BgHeader;
             hBg.raycastTarget = false;
             LG.Header(header);
+            // Свет звезды поверх фона шапки (под портретом и надписями) и редкий блик по шапке
+            if (_inspHeaderGlow != null)
+            {
+                _inspHeaderGlow.transform.SetParent(header.transform, false);
+                _inspHeaderGlow.transform.SetAsFirstSibling();
+                _inspHeaderGlow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(60, 0), new Vector2(460, 240));
+            }
+            InspSweep.Add(header, 7f, 0.07f);
 
             var hLine = new GameObject("HeaderLine");
             hLine.transform.SetParent(header.transform, false);
@@ -1202,25 +1211,36 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspAccent.rectTransform.offsetMin = new Vector2(10, -3);
             _inspAccent.rectTransform.offsetMax = new Vector2(-10, 0);
             LG.Ignore(_inspAccent.gameObject);
+            // Свечение под полосой владельца — цвет империи «стекает» на шапку
+            _inspOwnerGlow = LGBuild.Panel(insp.transform, "OwnerGlow", new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.35f));
+            _inspOwnerGlow.sprite = FactionSelectScreen.RadialSprite();
+            _inspOwnerGlow.raycastTarget = false;
+            _inspOwnerGlow.rectTransform.anchorMin = new Vector2(0.1f, 1);
+            _inspOwnerGlow.rectTransform.anchorMax = new Vector2(0.9f, 1);
+            _inspOwnerGlow.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            _inspOwnerGlow.rectTransform.sizeDelta = new Vector2(0, 26);
+            _inspOwnerGlow.rectTransform.anchoredPosition = Vector2.zero;
+            LG.Ignore(_inspOwnerGlow.gameObject);
 
-            var tile = LGBuild.Panel(header.transform, "Tile", new Color(0.01f, 0.03f, 0.05f, 0.95f));
-            tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, -1), new Vector2(42, 42));
-            _inspTileFx = LG.Platter(tile.gameObject, 10f);
-            _inspTileIcon = LGIcons.Create(tile.transform, LGIcon.Star, 26, DS.Gold, "TileIcon");
-            _inspTileIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(26, 26));
+            // Портрет: живая звезда (или значок планеты) в голографических кольцах цвета владельца
+            BuildInspectorPortrait(header.transform);
 
-            _inspTitle = CreateText(header.transform, "SOL STATION", 18, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
+            _inspTitle = CreateText(header.transform, "SOL STATION", 23, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
             _inspTitle.rectTransform.anchorMin = new Vector2(0, 0.5f);
             _inspTitle.rectTransform.anchorMax = new Vector2(1, 1);
-            _inspTitle.rectTransform.offsetMin = new Vector2(66, 0);
-            _inspTitle.rectTransform.offsetMax = new Vector2(-44, -6);
-            _inspTitle.Track(1.4f);
+            _inspTitle.rectTransform.offsetMin = new Vector2(104, 2);
+            _inspTitle.rectTransform.offsetMax = new Vector2(-48, -8);
+            _inspTitle.Track(2f);
+            var tsh = _inspTitle.gameObject.AddComponent<Shadow>();
+            tsh.effectColor = new Color(0f, 0f, 0f, 0.6f);
+            tsh.effectDistance = new Vector2(0f, -2f);
 
-            _inspStatus = CreateText(header.transform, "Starbase  ·  Outpost", 10, FontStyle.Bold, DS.NeonCyan, TextAnchor.UpperLeft);
+            _inspStatus = CreateText(header.transform, "Starbase  ·  Outpost", 11, FontStyle.Bold, DS.NeonCyan, TextAnchor.UpperLeft);
             _inspStatus.rectTransform.anchorMin = new Vector2(0, 0);
             _inspStatus.rectTransform.anchorMax = new Vector2(1, 0.5f);
-            _inspStatus.rectTransform.offsetMin = new Vector2(66, 0);
-            _inspStatus.rectTransform.offsetMax = new Vector2(-44, -3);
+            _inspStatus.rectTransform.offsetMin = new Vector2(104, 0);
+            _inspStatus.rectTransform.offsetMax = new Vector2(-48, -5);
+            _inspStatus.Track(1.2f);
 
             var closeBtn = CreateCloseButton(header.transform, 26f, HideInspector);
             var cRt = closeBtn.GetComponent<RectTransform>();
@@ -1273,6 +1293,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             abRt.anchoredPosition = new Vector2(0, 12);
 
             _inspActionBtnBg = actionBtn.GetComponent<Image>();
+            InspSweep.Add(actionBtn, 5f, 0.14f);
             _inspActionBtn = actionBtn.GetComponent<Button>();
             _inspActionBtnText = CreateText(actionBtn.transform, Loc.T("ДЕЙСТВИЕ"), 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             _inspActionBtnText.rectTransform.sizeDelta = abRt.sizeDelta;
@@ -1285,6 +1306,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             sbRt.pivot = new Vector2(0.5f, 0);
             sbRt.anchoredPosition = new Vector2(0, 48);
             _inspShipyardBtn = shipyardBtn.GetComponent<Button>();
+            InspSweep.Add(shipyardBtn, 6.5f, 0.10f);
             LGIcons.IconLabel(shipyardBtn.transform, LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), 10, DS.NeonCyan, Color.white, 14f);
 
             var exitBtn = CreateButton(insp.transform, "ExitSystemBtn", new Vector2(395, 28),
@@ -1301,14 +1323,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private RectTransform _inspBodyRect, _inspDistrictRect;
         private Image _inspAccent, _inspTileIcon;
-        private LiquidGlassEffect _inspTileFx;
-        private const float InspHeaderH = 64f;
+        private const float InspHeaderH = 96f;
 
         /// <summary>Плитка и полоса шапки: значок объекта, его цвет и цвет владельца.</summary>
         private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor)
         {
-            if (_inspTileIcon != null) { _inspTileIcon.sprite = LGIcons.Get(icon); _inspTileIcon.color = iconColor; }
-            _inspTileFx?.SetRim(new Color(iconColor.r, iconColor.g, iconColor.b, 0.45f));
+            PaintInspectorPortrait(icon == LGIcon.Star, icon, iconColor, ownerColor);
             if (_inspAccent != null) _inspAccent.color = new Color(ownerColor.r, ownerColor.g, ownerColor.b, 0.9f);
         }
 
@@ -1463,12 +1483,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     : system.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(system.Id) != null
                         ? Loc.F("<color={0}>◆  Вольный мир · {1}</color>", LGBuild.Hex(NeutralWorlds.ColorOf(NeutralWorlds.At(system.Id).Kind)), NeutralWorlds.CharacterName(NeutralWorlds.At(system.Id).Kind))
                         : Loc.T("<color=#8AA2A8>◆  Нейтральный фронтир</color>");
-            _inspStatus.text = owner;
+            _inspStatus.text = owner.Replace("◆  ", "");
 
             PulseInspectorContent();
             ClearInspectorBody();
 
             BuildSystemCards(system);
+            InspCascade(system.Id);
 
             _inspShipyardBtn.gameObject.SetActive(system.OwnerId == 0 && !_isInSystemMode);
 
@@ -1519,7 +1540,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspTitle.text = PlanetNames.Title(planet.Name);
             SetInspectorBadge(LGIcon.Planet, DS.NeonCyan,
                 parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.45f, 0.55f, 0.62f));
-            _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>");
+            _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>").Replace("◆  ", "");
 
             bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;
 
@@ -1567,6 +1588,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             CommitBody();
+            InspCascade(-1000 - (_activeSystem != null ? _activeSystem.Id * 16 : 0) - (_activeSystem != null ? _activeSystem.Planets.IndexOf(planet) : 0));
 
             if (isSurveyed && planet.Type != PlanetType.GasGiant && planet.Type != PlanetType.Molten)
                 AddDistrictRowFor(planet);
