@@ -6891,3 +6891,6 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Советник заново покажет главное: разведку, колонии, науку, флот, меню империи и штурм колоний	The advisor will show the essentials again: scouting, colonies, science, fleet, the empire menu and colony assaults
 <color=#AAB4C0>Укрепление:</color> {0} <color=#F2C747>{1}</color>	<color=#AAB4C0>Fortification:</color> {0} <color=#F2C747>{1}</color>
  · <color=#8AA2A8>осада ×{0:0.##} дольше</color>	 · <color=#8AA2A8>siege ×{0:0.##} longer</color>
+\n<color=#66FF88>ЗАЛЕЖИ</color> <color=#8AA2A8>(пока не добываются)</color>\n	\n<color=#66FF88>DEPOSITS</color> <color=#8AA2A8>(not mined yet)</color>\n
+<color=#4DE6CC>Титан</color>: +{0}\n	<color=#4DE6CC>Titanium</color>: +{0}\n
+<color=#F2C747>Гелий-3</color>: +{0}\n	<color=#F2C747>Helium-3</color>: +{0}\n
