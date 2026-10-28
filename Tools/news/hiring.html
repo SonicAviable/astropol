@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Обложка новости «SmartBiz ищет людей в команду» (1920×1080), в стиле обложек обновлений. Рендер: node Tools/news/render.js hiring -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 40%/cover; filter: brightness(0.55) saturate(1.1); }
+.art { position: absolute; top: 0; bottom: 0; left: 820px; right: 0; background: url(../../Assets/Resources/UI/LoadingArt_2.jpg) center/cover;
+  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%); filter: brightness(0.75); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.97) 0%, rgba(3,7,15,0.9) 40%, rgba(3,7,15,0.2) 62%, rgba(3,7,15,0.05) 100%); }
+.slash { position: absolute; top: -40px; bottom: -40px; left: 1040px; width: 4px; background: linear-gradient(180deg, rgba(120,240,230,0), #8FF5EA 45%, rgba(120,240,230,0));
+  box-shadow: 0 0 18px #5FE6DA, 0 0 40px rgba(95,230,218,0.6); transform: skewX(-12deg); }
+.left { position: absolute; left: 130px; top: 150px; }
+.logo { font-family: Russo; font-size: 118px; letter-spacing: 6px; line-height: 1;
+  background: linear-gradient(180deg, #FFFFFF 10%, #BFF5F0 60%, #6FD8CF 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 22px rgba(102,219,209,0.35)); }
+.kicker { font-weight: 700; font-size: 26px; letter-spacing: 12px; color: #9FC9CF; margin-top: 18px; }
+.ver { font-family: Russo; font-size: 62px; letter-spacing: 6px; margin-top: 34px; }
+.list { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+.list div { font-family: Russo; font-size: 33px; letter-spacing: 3px; color: #E4F1F4; }
+.list div::before { content: '•'; color: #F2C766; margin-right: 16px; }
+.note { margin-top: 30px; font-size: 26px; color: #9FC9CF; letter-spacing: 1px; }
+.note b { color: #F2C766; }
+.badge { position: absolute; right: 120px; bottom: 110px; padding: 22px 34px; border: 2px solid rgba(242,199,102,0.7); border-radius: 8px;
+  background: rgba(5,12,24,0.85); font-family: Russo; font-size: 34px; letter-spacing: 4px; color: #F2C766; box-shadow: 0 0 30px rgba(242,199,102,0.2); }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="art"></div><div class="fade"></div><div class="slash"></div>
+  <div class="left">
+    <div class="logo">SMARTBIZ</div>
+    <div class="kicker">СТУДИЯ ASTROPOLITY</div>
+    <div class="ver">ИЩЕМ В КОМАНДУ</div>
+    <div class="list">
+      <div>ДИЗАЙНЕРОВ</div>
+      <div>3D-МОДЕЛЛЕРОВ</div>
+      <div>SMM-МЕНЕДЖЕРОВ</div>
+      <div>ТЕСТИРОВЩИКОВ</div>
+    </div>
+    <div class="note">Подходит новичкам · <b>портфолио на вышедшей игре</b></div>
+  </div>
+  <div class="badge">ИГРА УЖЕ НА VK PLAY</div>
+</div></body></html>
