@@ -39,6 +39,10 @@ namespace StellarisClone.Core.Audio
         Boom, BoomSmall, ImpactMetal, ImpactFlesh, ImpactShield, UnitDown, Whoosh,
         GunCock, EngineRev, Servo, Radio, BoomFar, ElecZap,
         RadioOrder, RadioCancel,
+        // Карточный бой: приказы и эффекты (Tools/card_audio, build.py … fx) — гонги, поющие чаши, тарелки, стекло,
+        // разряды, огонь и пар ниже/выше по высоте, задом наперёд, с залом и суббасом
+        FxCast, FxShowcase, FxStinger, FxBuff, FxHeal, FxShieldUp, FxDebuff, FxShatter, FxBurn, FxPsi, FxSpores,
+        FxCapture, FxLost,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -239,6 +243,21 @@ namespace StellarisClone.Core.Audio
             // Карта на стол — приказ уходит по рации (ответ на действие игрока — шина интерфейса)
             S(Sfx.RadioOrder, 0.42f, 2, 0.08f, 0.02f);
             S(Sfx.RadioCancel, 0.36f, 2, 0.08f, 0.02f);
+            // Приказы и эффекты: «большие» моменты (приказ, показ карты, захват) — приоритетнее и чуть приглушают музыку;
+            // усиления и лечение звучат часто — тише, с разбросом высоты
+            S(Sfx.FxCast, 0.55f, 2, 0.15f, 0.02f, 1, 3, SfxBus.World, 0.25f);
+            S(Sfx.FxShowcase, 0.50f, 2, 0.15f, 0.02f, 1, 2, SfxBus.World, 0.2f);
+            S(Sfx.FxStinger, 0.42f, 1, 0.40f, 0.01f, 1, 2, SfxBus.Ui, 0.15f);
+            S(Sfx.FxBuff, 0.36f, 3, 0.08f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.FxHeal, 0.34f, 3, 0.08f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.FxShieldUp, 0.38f, 2, 0.10f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.FxDebuff, 0.38f, 3, 0.08f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.FxShatter, 0.55f, 2, 0.15f, 0.03f, 1, 2, SfxBus.World, 0.15f);
+            S(Sfx.FxBurn, 0.32f, 3, 0.08f, 0.05f, 1, 1, SfxBus.World);
+            S(Sfx.FxPsi, 0.48f, 2, 0.15f, 0.03f, 1, 2, SfxBus.World, 0.15f);
+            S(Sfx.FxSpores, 0.42f, 2, 0.15f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.FxCapture, 0.48f, 1, 0.30f, 0.01f, 1, 2, SfxBus.World, 0.2f);
+            S(Sfx.FxLost, 0.48f, 1, 0.30f, 0.01f, 1, 2, SfxBus.World, 0.2f);
             return d;
         }
 
@@ -1530,6 +1549,12 @@ namespace StellarisClone.Core.Audio
                 case Sfx.BoomSmall: case Sfx.UnitDown: return Sfx.ExplosionSmall;
                 case Sfx.ImpactMetal: case Sfx.ImpactFlesh: return Sfx.HitArmor;
                 case Sfx.ImpactShield: return Sfx.HitShield;
+                case Sfx.FxCast: case Sfx.FxShowcase: case Sfx.FxPsi: return Sfx.HoloScan;
+                case Sfx.FxStinger: case Sfx.FxCapture: return Sfx.NotifySuccess;
+                case Sfx.FxBuff: case Sfx.FxHeal: case Sfx.FxShieldUp: return Sfx.DealAccepted;
+                case Sfx.FxDebuff: case Sfx.FxLost: return Sfx.NotifyWarning;
+                case Sfx.FxShatter: return Sfx.HitShield;
+                case Sfx.FxBurn: case Sfx.FxSpores: return Sfx.PanelSlide;
                 default: return id;
             }
         }
