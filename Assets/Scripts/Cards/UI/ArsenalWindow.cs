@@ -582,15 +582,7 @@ namespace StellarisClone.Cards
         {
             var row = LGBuild.Rect(parent ?? _list, "H");
             LGBuild.Height(row.gameObject, 30);
-            var ic = LGIcons.Create(row, icon, 14, Gold);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(6, -2), new Vector2(14, 14));
-            var t = LGBuild.Label(row, text, 11, Gold, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.Stretch(28, 4, 4, 0);
-            t.Track(1.4f);
-            var line = LGBuild.Panel(row, "Line", new Color(Gold.r, Gold.g, Gold.b, 0.22f));
-            line.raycastTarget = false;
-            line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
-            line.rectTransform.sizeDelta = new Vector2(0, 1);
+            LGBuild.SectionDecor(row, text, icon);
         }
 
         /// <summary>Три шага сверху витрины: что делают −/+, кто строит и что идёт в бой.</summary>

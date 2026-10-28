@@ -363,15 +363,7 @@ namespace StellarisClone.Cards
         {
             var row = LGBuild.Rect(_list, "H");
             LGBuild.Height(row.gameObject, 30);
-            var ic = LGIcons.Create(row, icon, 14, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(6, -2), new Vector2(14, 14));
-            var t = LGBuild.Label(row, text, 11, col, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.Stretch(28, 4, 4, 0);
-            t.Track(1.4f);
-            var line = LGBuild.Panel(row, "Line", new Color(col.r, col.g, col.b, 0.22f));
-            line.raycastTarget = false;
-            line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
-            line.rectTransform.sizeDelta = new Vector2(0, 1);
+            LGBuild.SectionDecor(row, text, icon, col);
         }
 
         private void Note(string text)

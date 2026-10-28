@@ -213,6 +213,40 @@ namespace StellarisClone.Rendering
             return t;
         }
 
+        /// <summary>
+        /// Заголовок секции в общем стиле игры (как в окне звёздной базы): ромб со свечением, значок, надпись капслоком
+        /// с разрядкой и черта, тающая вправо. Заполняет готовую строку row (её размер и место задаёт вызывающий).
+        /// </summary>
+        public static void SectionDecor(RectTransform row, string title, LGIcon? icon, Color? accent = null, int size = 11)
+        {
+            Color g = accent ?? UIManager.DS.Gold;
+            var glow = Panel(row, "Glow", new Color(g.r, g.g, g.b, 0.35f));
+            glow.sprite = FactionSelectScreen.RadialSprite();
+            glow.raycastTarget = false;
+            glow.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(5, 9), new Vector2(24, 24));
+            var dia = Panel(row, "Diamond", g);
+            dia.raycastTarget = false;
+            dia.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(5, 9), new Vector2(7, 7));
+            dia.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+            float x = 16f;
+            if (icon.HasValue)
+            {
+                var ic = LGIcons.Create(row, icon.Value, 13, new Color(g.r, g.g, g.b, 0.85f));
+                ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(x, 3), new Vector2(13, 13));
+                x += 18f;
+            }
+            var t = Label(row, title.ToUpper(), size, g, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.Stretch(x, 1, 0, 0);
+            t.Track(2f);
+            var line = Panel(row, "Line", new Color(g.r, g.g, g.b, 0.55f));
+            line.sprite = UIManager.FadeRightSprite;
+            line.raycastTarget = false;
+            line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
+            line.rectTransform.pivot = new Vector2(0, 0);
+            line.rectTransform.sizeDelta = new Vector2(0, 1.5f);
+            line.rectTransform.anchoredPosition = Vector2.zero;
+        }
+
         public static string Hex(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c);
 
         public static string Signed(float v, string fmt = "0.#")

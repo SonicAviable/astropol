@@ -198,10 +198,7 @@ namespace StellarisClone.Rendering
         {
             var head = LGBuild.Rect(parent, "Section");
             head.TopBand(top, 24);
-            var ic = LGIcons.Create(head, icon, 14, Gold);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            var t = LGBuild.Label(head, text, 11, Gold, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.Stretch(22, 0, 0, 0);
+            LGBuild.SectionDecor(head, text, icon);
         }
 
         private void AddOption(RectTransform parent, FleetType type, ShipClass hull, string name, LGIcon icon, Color tint, int index)

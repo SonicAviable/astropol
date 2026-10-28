@@ -1385,16 +1385,7 @@ namespace StellarisClone.Rendering
         {
             var row = LGBuild.Rect(_detailList, "Section");
             LGBuild.Height(row.gameObject, 32f);
-            var ic = LGIcons.Create(row, icon, 13, tint);
-            ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(2, 5), new Vector2(13, 13));
-            var t = LGBuild.Label(row, text, 12, Dim, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.Stretch(22, 4, 0, 0);
-            var line = LGBuild.Panel(row, "Line", new Color(1f, 1f, 1f, 0.08f));
-            line.rectTransform.anchorMin = new Vector2(0, 0);
-            line.rectTransform.anchorMax = new Vector2(1, 0);
-            line.rectTransform.offsetMin = Vector2.zero;
-            line.rectTransform.offsetMax = new Vector2(0, 1f);
-            LG.Ignore(line.gameObject);
+            LGBuild.SectionDecor(row, text, icon, tint);
         }
 
         private Text Paragraph(string text, int size, Color col)

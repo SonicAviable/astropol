@@ -971,12 +971,10 @@ namespace StellarisClone.Rendering
 
         private float Section(string title, float y)
         {
-            var t = LGBuild.Label(_stats, title, 12, Color.white, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.TopBand(y, 20f);
-            t.Track(1.0f);
-            var line = LGBuild.Panel(_stats, "Line", new Color(Neon.r, Neon.g, Neon.b, 0.25f));
-            line.rectTransform.TopBand(y + 22f, 1f);
-            return y + 28f;
+            var row = LGBuild.Rect(_stats, "Section");
+            row.TopBand(y, 24f);
+            LGBuild.SectionDecor(row, title, null);
+            return y + 30f;
         }
 
         private float Row(string label, float value, float prev, string fmt, float y, bool lowerIsBetter = false)
