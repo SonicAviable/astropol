@@ -102,13 +102,13 @@ namespace StellarisClone.Core
                 Debug.Log("[VK Play] Игра запущена не из Игрового центра — достижения копятся локально");
                 return;
             }
-            if (PlayerPrefs.GetString(GuardKey, "") == Application.version)
+            if (PlayerPrefs.GetString(GuardKey, "") == GameVersion.Current)
             {
                 Status = State.Blocked;
                 Debug.LogWarning("[VK Play] Прошлый запуск завершился аварийно при подключённой библиотеке — в этой версии она отключена");
                 return;
             }
-            PlayerPrefs.SetString(GuardKey, Application.version);
+            PlayerPrefs.SetString(GuardKey, GameVersion.Current);
             PlayerPrefs.Save();
             s_guardArmed = true;
             SaveFpu();
