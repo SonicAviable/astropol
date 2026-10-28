@@ -1317,6 +1317,14 @@ namespace StellarisClone.Cards
             var rays2 = CardSkin.Simple(_overlay, "Rays2", "k_flare", new Color(accent.r, accent.g, accent.b, 0f));
             rays2.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 250), new Vector2(900, 900));
 
+            // Непрозрачная подложка под весь блок итогов: стол (плашки секторов, карты) не просвечивает сквозь цифры и
+            // текст; лучи остаются ореолом вокруг. Сверху — стеклянная кромка цвета исхода
+            var back = LGBuild.Panel(_overlay, "ResultBack", new Color(0.012f, 0.028f, 0.042f, 0f), raycast: true);
+            back.sprite = CardSprites.Round;
+            back.type = Image.Type.Sliced;
+            back.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -6), new Vector2(1340, 680));
+            var backRim = GlassAt(_overlay, "ResultFrame", new Vector2(0, -6), new Vector2(1340, 680), new Color(0.02f, 0.05f, 0.07f, 0f), new Color(accent.r, accent.g, accent.b, 0.5f), false, 24f);
+
             // Лента-заголовок
             string head;
             if (_P == BattleState.Attacker) head = r.AttackerWon ? Loc.T("ПЛАНЕТА ВЗЯТА") : r.Retreated ? Loc.T("ДЕСАНТ ОТСТУПИЛ") : Loc.T("ШТУРМ ОТБИТ");
@@ -1346,6 +1354,12 @@ namespace StellarisClone.Cards
             for (int i = 0; i < tiles.Count; i++)
             {
                 var tl = tiles[i];
+                // Плитка — плотная (под стеклом сплошная заливка), иначе сквозь неё читается стол
+                var solid = LGBuild.Panel(_overlay, "TileBack", new Color(0.025f, 0.055f, 0.078f, 1f));
+                solid.sprite = CardSprites.Round;
+                solid.type = Image.Type.Sliced;
+                solid.rectTransform.At(Mid, Mid, new Vector2((i - 1.5f) * 210f, 70), new Vector2(192, 124));
+                LG.Motion(solid.gameObject, LGAppear.Kind.Pop);
                 var p = GlassAt(_overlay, "Tile", new Vector2((i - 1.5f) * 210f, 70), new Vector2(196, 128), SubTint, new Color(tl.c.r, tl.c.g, tl.c.b, 0.55f), true, 16f);
                 var ic = LGIcons.Create(p.rectTransform, tl.icon, 18, tl.c);
                 ic.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(18, 18));
@@ -1404,7 +1418,9 @@ namespace StellarisClone.Cards
             {
                 t += Time.unscaledDeltaTime * 1.6f;
                 float e = 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
-                dim.color = new Color(0, 0, 0, 0.78f * e);
+                dim.color = new Color(0.005f, 0.01f, 0.02f, 0.9f * e);
+                back.color = new Color(0.012f, 0.028f, 0.042f, 0.97f * e);
+                backRim.color = new Color(0.02f, 0.05f, 0.07f, 0.35f * e);
                 rays.color = new Color(accent.r, accent.g, accent.b, (win ? 0.35f : 0.14f) * e);
                 rays2.color = new Color(accent.r, accent.g, accent.b, (win ? 0.5f : 0.2f) * e);
                 ribbon.rectTransform.localScale = Vector3.one * Mathf.Lerp(1.6f, 1f, e);
