@@ -8,3 +8,6 @@
   • «Hit Animation», «Hit Animation 2», «Animations - Blood, Hit and Both» (fx_hit_bolt, fx_hit_ring, fx_hit_cross — переведены в белый
     для подкраски) — Sinestesia, opengameart.org — CC0 1.0
 Шрифт Russo One (Fonts/RussoOne-Regular.ttf) — Jovanny Lemonad, SIL Open Font License 1.1
+
+Оформление карт по редкостям (cardframe_*, card_shade_*, card_plate_*, card_cost_*, card_atk_*, card_def_*, card_gem_*,
+card_mask, card_foil, card_crest, cardback_bg) — нарисованы для игры (HTML/SVG-макет промо набора карт, отрисован в PNG).

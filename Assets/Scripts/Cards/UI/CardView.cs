@@ -8,9 +8,10 @@ using StellarisClone.Rendering;
 namespace StellarisClone.Cards
 {
     /// <summary>
-    /// Карта на экране. Два вида: полная (рука, предпросмотр — арт сверху, имя, тип, текст, цена) и компактная (на столе —
-    /// арт во всю карту, сила и броня по углам). Рамка по редкости, «фольга» с бегущим бликом у элиты, фракционных и героев,
-    /// рубашка с эмблемой фракции. Живёт сама: наклон к курсору и подъём в руке, переворот, «удар» при выходе на стол,
+    /// Карта на экране в оформлении по редкостям: литая рама из металла редкости (сталь, серебро, фиолет, золото,
+    /// красное золото у командиров), арт во всю карту под стеклянной панелью, лента имени, кристалл цены, гербы силы и брони,
+    /// значок редкости, голо-фольга у эпических и выше, гребень у легендарных. Два вида: полная (рука, предпросмотр — с типом
+    /// и текстом) и компактная (на столе — крупнее имя и числа, без текста). Рубашка — гравировка в цвете фракции с эмблемой. Живёт сама: наклон к курсору и подъём в руке, переворот, «удар» при выходе на стол,
     /// вспышка урона, трещины при тяжёлых повреждениях, свечение доступности. Наклоны — в настоящей перспективе
     /// (Perspective3D): атака с замахом и отрывом от стола, качание от попадания, переворот вокруг вертикали.
     /// </summary>
@@ -27,11 +28,14 @@ namespace StellarisClone.Cards
         private RectTransform _content;
         private CanvasGroup _group;
         private CardAura _aura;
-        private Image _body, _frame, _sheen, _hitFlash, _cracks, _back, _backPattern, _hpFill, _statusIcon;
+        private Image _body, _frame, _sheen, _hitFlash, _cracks, _back, _hpFill, _statusIcon, _foil;
         private RawImage _art, _backEmblem;
         private Text _name, _cost, _power, _armor, _kind, _text, _stars, _statusText;
         private RectTransform _powerBadge, _armorBadge, _sheenRt;
         private Color _frameColor;
+        private CardRarity _rarity;
+        private string _rk = "common";
+        private float _foilA;
         private Image _shadow;
         private Color _shadowColor;
         private Vector2 _shadowBase;
@@ -87,29 +91,27 @@ namespace StellarisClone.Cards
         {
             var d = Card.Def;
             _group = gameObject.AddComponent<CanvasGroup>();
-            _frameColor = CardArt.Frame(d, Card.Stars, SideFaction);
+            _rarity = CardArt.Rarity(d, Card.Stars);
+            _rk = CardArt.RarityKey(_rarity);
+            _frameColor = CardArt.RarityColor(_rarity);
             if (Compact) BuildCompact(size, d); else BuildFull(size, d);
 
-            // Рубашка: тёмная броня с заклёпками, эмблема фракции, рама цвета фракции
-            float k = size.y / 280f;
-            _back = CardSkin.Sliced(_content, "Back", "panel_plates", Color.white, 0.32f * k * (Compact ? 1.4f : 1f));
-            _back.rectTransform.Stretch();
+            // Рубашка: тёмная гравировка с кольцом в цвете фракции, эмблема, золотая рама
+            float u = size.x / 330f;
             var bc = CardArt.Faction(SideFaction);
-            _backPattern = Img(_back.rectTransform, "Pattern", CardSprites.BackPattern, new Color(bc.r, bc.g, bc.b, 0.22f));
-            _backPattern.rectTransform.Stretch(8, 8, 8, 8);
+            _back = CardSkin.Simple(_content, "Back", "cardback_bg", Color.Lerp(bc, Color.white, 0.2f));
+            _back.rectTransform.Stretch();
             var emb = CardArt.Emblem(SideFaction);
             if (emb != null)
             {
-                var halo = CardSkin.Simple(_back.rectTransform, "Halo", "glow", new Color(bc.r, bc.g, bc.b, 0.45f));
-                float hs = Mathf.Min(size.x, size.y) * 1.0f;
-                halo.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(hs, hs));
+                var halo = CardSkin.Simple(_back.rectTransform, "Halo", "glow", new Color(bc.r, bc.g, bc.b, 0.5f));
+                halo.rectTransform.At(new Vector2(0.5f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(300f * u, 300f * u));
                 _backEmblem = LGBuild.Rect(_back.rectTransform, "Emblem").gameObject.AddComponent<RawImage>();
                 _backEmblem.texture = emb;
                 _backEmblem.raycastTarget = false;
-                float es = Mathf.Min(size.x, size.y) * 0.66f;
-                _backEmblem.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(es, es));
+                _backEmblem.rectTransform.At(new Vector2(0.5f, 0.54f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(190f * u, 190f * u));
             }
-            var backRim = CardSkin.Sliced(_back.rectTransform, "Rim", "frame_card", Color.Lerp(bc, CardSkin.Bronze, 0.4f), (Compact ? 0.26f : 0.38f) * k * (Compact ? 280f / 178f : 1f));
+            var backRim = CardSkin.Simple(_back.rectTransform, "Rim", "cardframe_legend", Color.white);
             backRim.rectTransform.Stretch();
             _back.gameObject.SetActive(false);
 
@@ -130,21 +132,24 @@ namespace StellarisClone.Cards
         /// <summary>Картинка арта (для осколков при гибели).</summary>
         public RawImage ArtImage => _art;
 
-        /// <summary>Общая часть: свечение, тень, корпус, арт в маске с бликом, трещинами и вспышкой урона.</summary>
-        private RectTransform BuildBase(Vector2 size, float k, float bodyScale, out RectTransform mask)
+        /// <summary>
+        /// Общая часть (по промо-макету набора): свечение, тень, тёмная подложка, арт в маске со срезанными углами,
+        /// голо-фольга (эпические и выше), затемнение с нижней стеклянной панелью и литая рама цвета редкости.
+        /// Все размеры — в единицах макета: карта 330×462, u = ширина / 330.
+        /// </summary>
+        private void BuildBase(Vector2 size, float u)
         {
             _content = LGBuild.Rect(Rt, "Content");
             _content.Stretch();
 
             // Живое свечение по контуру (CardAura): доступна — зелёное «дыхание», наведение — золото с бегущими огоньками
             // и искрами. Живёт внутри Content — поднимается и наклоняется вместе с картой.
-            float gs = size.y / 280f;
             var auraRt = LGBuild.Rect(_content, "Aura");
             auraRt.Stretch();
             _aura = auraRt.gameObject.AddComponent<CardAura>();
-            _aura.Width = 8f * gs;
-            _aura.Corner = 13f * gs;
-            _aura.Inset = 3f * gs;
+            _aura.Width = 13f * u;
+            _aura.Corner = 18f * u;
+            _aura.Inset = 4f * u;
             _aura.Tint = _frameColor;
 
             var shadow = _shadow = LGBuild.Panel(_content, "Shadow", new Color(0, 0, 0, 0.7f));
@@ -152,41 +157,35 @@ namespace StellarisClone.Cards
             shadow.sprite = CardSprites.RoundGlow;
             shadow.type = Image.Type.Sliced;
             shadow.raycastTarget = false;
-            shadow.rectTransform.Stretch(-12 * k, -26 * k, -16 * k, -4 * k);
+            shadow.rectTransform.Stretch(-20 * u, -42 * u, -26 * u, -6 * u);
 
-            _body = CardSkin.Sliced(_content, "Body", "panel_dark", Color.white, bodyScale);
+            _body = CardSkin.Simple(_content, "Body", "card_mask", new Color(0.027f, 0.043f, 0.07f, 1f));
             _body.rectTransform.Stretch();
 
-            var maskImg = Img(_content, "ArtMask", CardSprites.Round, Color.white);
-            maskImg.type = Image.Type.Sliced;
-            var m = maskImg.gameObject.AddComponent<Mask>();
-            m.showMaskGraphic = false;
-            mask = maskImg.rectTransform;
-            return _content;
-        }
+            var maskImg = CardSkin.Simple(_content, "ArtMask", "card_mask", Color.white);
+            maskImg.rectTransform.Stretch();
+            maskImg.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+            var mask = maskImg.rectTransform;
 
-        private void FillArt(RectTransform mask, Vector2 size, float aspect, float k, bool bottomShade)
-        {
+            // Арт — верхние три четверти, снизу его закрывает стеклянная панель
             _art = LGBuild.Rect(mask, "Art").gameObject.AddComponent<RawImage>();
-            _art.rectTransform.Stretch(-6 * k, -6 * k, -6 * k, -6 * k);
+            _art.rectTransform.anchorMin = new Vector2(0f, 0.25f);
+            _art.rectTransform.anchorMax = Vector2.one;
+            _art.rectTransform.offsetMin = _art.rectTransform.offsetMax = Vector2.zero;
             _art.texture = CardArt.Get(Card.Def, SideFaction);
             _art.raycastTarget = false;
-            FitArt(_art, mask, size, aspect);
+            FitArt(_art, mask, size, size.x / (size.y * 0.75f));
             _artUv = _art.uvRect;
             _idlePhase = UnityEngine.Random.value * 100f;
-            if (bottomShade)
+
+            // Голографическая фольга: перелив светом поверх арта (дышит и ярче при наведении)
+            _foilA = _rarity == CardRarity.Legendary ? 0.24f : _rarity == CardRarity.Epic ? 0.2f : _rarity == CardRarity.Commander ? 0.12f : 0f;
+            if (_foilA > 0f)
             {
-                var shade = Img(mask, "Shade", CardSprites.Fade, new Color(0.01f, 0.015f, 0.03f, 0.95f));
-                shade.rectTransform.anchorMin = new Vector2(0, 0);
-                shade.rectTransform.anchorMax = new Vector2(1, 0.48f);
-                shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
-                shade.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);
+                _foil = CardSkin.Simple(mask, "Foil", "card_foil", new Color(1f, 1f, 1f, _foilA));
+                _foil.material = UIFx.GlowMat;
+                _foil.rectTransform.Stretch();
             }
-            // Верхний свет — арт «под стеклом»
-            var gloss = Img(mask, "Gloss", CardSprites.Fade, new Color(1f, 1f, 1f, 0.07f));
-            gloss.rectTransform.anchorMin = new Vector2(0, 0.6f);
-            gloss.rectTransform.anchorMax = new Vector2(1, 1f);
-            gloss.rectTransform.offsetMin = gloss.rectTransform.offsetMax = Vector2.zero;
 
             _sheen = Img(mask, "Sheen", CardSprites.Sheen, new Color(1f, 1f, 1f, 0f));
             _sheenRt = _sheen.rectTransform;
@@ -196,104 +195,152 @@ namespace StellarisClone.Cards
             _sheenT = UnityEngine.Random.value * 4f;
 
             _cracks = Img(mask, "Cracks", CardSprites.Cracks, new Color(1f, 0.9f, 0.8f, 0f));
-            _cracks.rectTransform.Stretch();
-        }
+            _cracks.rectTransform.anchorMin = new Vector2(0f, 0.25f);
+            _cracks.rectTransform.anchorMax = Vector2.one;
+            _cracks.rectTransform.offsetMin = _cracks.rectTransform.offsetMax = Vector2.zero;
 
-        /// <summary>Полная карта (рука, предпросмотр): арт, лента с именем, тип, текст на тёмной коже, рама, самоцветы.</summary>
-        private void BuildFull(Vector2 size, CardDef d)
-        {
-            float k = size.y / 280f;
-            BuildBase(size, k, 0.5f * k, out var mask);
-            float pad = 10f * k;
-            float artH = size.y * 0.47f;
-            mask.TopBand(pad, artH, pad, pad);
-            FillArt(mask, size, (size.x - 2 * pad) / artH, k, false);
+            var shade = CardSkin.Simple(mask, "Shade", "card_shade_" + _rk, Color.white);
+            shade.rectTransform.Stretch();
 
-            var artFrame = CardSkin.Sliced(_content, "ArtFrame", "frame_thin", _frameColor, 0.35f * k);
-            artFrame.rectTransform.TopBand(pad - 3 * k, artH + 6 * k, pad - 3 * k, pad - 3 * k);
-
-            // Текстовая панель: сверху тип карты, ниже текст эффекта (шрифт сам ужимается, чтобы всё влезло)
-            bool unit = ShowsPower(d) || d.IsBoardUnit;
-            var tp = CardSkin.Sliced(_content, "TextPanel", "panel_text", Color.white, 0.4f * k);
-            tp.rectTransform.Stretch(11 * k, 11 * k, 11 * k, pad + artH + 19 * k);
-            _kind = CardSkin.TitleText(tp.rectTransform, d.KindName, Mathf.RoundToInt(9 * k), Color.Lerp(_frameColor, Color.white, 0.25f), TextAnchor.MiddleCenter, 0f);
-            _kind.rectTransform.TopBand(5 * k, 13 * k, 8 * k, 8 * k);
-            _kind.Track(2f);
-            _text = Lbl(tp.rectTransform, d.Text, Mathf.RoundToInt(12 * k), new Color(0.92f, 0.89f, 0.84f), TextAnchor.MiddleCenter, false);
-            _text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _text.verticalOverflow = VerticalWrapMode.Truncate;     // без этого Unity не ужимает шрифт
-            _text.rectTransform.Stretch(8 * k, unit ? 27 * k : 8 * k, 8 * k, 18 * k);
-            _text.resizeTextForBestFit = true; _text.resizeTextMinSize = Mathf.Max(6, Mathf.RoundToInt(7 * k)); _text.resizeTextMaxSize = Mathf.RoundToInt(12.5f * k);
-            _text.lineSpacing = 0.92f;
-            _text.supportRichText = true;
-
-            // Лента с именем поперёк низа арта
-            var rb = CardSkin.Sliced(_content, "Ribbon", "ribbon", Color.white, 0.5f * k);
-            rb.rectTransform.TopBand(pad + artH - 15 * k, 32 * k, -7 * k, -7 * k);
-            _name = CardSkin.TitleText(rb.rectTransform, d.Name.ToUpper(), Mathf.RoundToInt(14 * k), CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
-            _name.rectTransform.Stretch(22 * k, 0, 22 * k, 1);
-            _name.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _name.verticalOverflow = VerticalWrapMode.Truncate;
-            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 6; _name.resizeTextMaxSize = Mathf.RoundToInt(14 * k);
-
-            _hitFlash = Img(_content, "Hit", CardSprites.Round, new Color(1f, 0.3f, 0.2f, 0f));
-            _hitFlash.type = Image.Type.Sliced;
+            _hitFlash = CardSkin.Simple(_content, "HitFlash", "card_mask", new Color(1f, 0.3f, 0.2f, 0f));
             _hitFlash.rectTransform.Stretch();
 
-            _frame = CardSkin.Sliced(_content, "Frame", "frame_card", _frameColor, 0.38f * k);
+            _frame = CardSkin.Simple(_content, "Frame", "cardframe_" + _rk, Color.white);
             _frame.rectTransform.Stretch();
+        }
 
-            // Цена — синий кристалл в углу; урон и броня — в нижних углах, внутри рамы (не налезают на текст)
-            _cost = CardSkin.Gem(_content, "gem_cost", new Vector2(0, 1), new Vector2(16 * k, -16 * k), 48 * k, d.Cost.ToString(), out _);
+        /// <summary>Лента имени поперёк карты: литая кромка цвета редкости, тёмная середина, имя шрифтом заголовков.</summary>
+        private void Plate(CardDef d, float u, float fromTop, float h, float font)
+        {
+            var plate = CardSkin.Simple(_content, "Plate", "card_plate_" + _rk, Color.white);
+            plate.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -fromTop - h * 0.5f), new Vector2(334f * u, h));
+            bool gold = _rarity == CardRarity.Legendary || _rarity == CardRarity.Commander;
+            _name = CardSkin.TitleText(plate.rectTransform, d.Name.ToUpper(), Mathf.RoundToInt(font), gold ? new Color(1f, 0.87f, 0.5f) : new Color(0.96f, 0.92f, 0.84f), TextAnchor.MiddleCenter, Mathf.Max(1f, 1.5f * u * 2f));
+            _name.rectTransform.Stretch(26f * u, 0f, 26f * u, 1f);
+            _name.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _name.verticalOverflow = VerticalWrapMode.Truncate;
+            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 6; _name.resizeTextMaxSize = Mathf.RoundToInt(font);
+        }
+
+        /// <summary>Самоцвет из оформления редкости (цена, сила, броня) с числом.</summary>
+        private Text Badge(string sprite, Vector2 anchor, Vector2 pos, Vector2 sz, float font, string value, out RectTransform rt)
+        {
+            var g = CardSkin.Simple(_content, "Gem_" + sprite, sprite + "_" + _rk, Color.white);
+            g.rectTransform.At(anchor, new Vector2(0.5f, 0.5f), pos, sz);
+            rt = g.rectTransform;
+            var t = CardSkin.TitleText(g.rectTransform, value, Mathf.RoundToInt(font), Color.white, TextAnchor.MiddleCenter, Mathf.Max(1.2f, font / 15f));
+            t.rectTransform.Stretch(0, 0, 0, 0);
+            return t;
+        }
+
+        /// <summary>Эмблема фракции в правом верхнем углу (фракционные карты и командиры).</summary>
+        private void FactionMark(CardDef d, float u, float sz)
+        {
+            var f = d.Faction ?? (d.Kind == CardKind.Hero ? SideFaction : null);
+            var tex = CardArt.Emblem(f);
+            if (tex == null) return;
+            var back = Img(_content, "FactionShade", CardSprites.Glow, new Color(0f, 0f, 0f, 0.75f));
+            back.rectTransform.At(Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(-38f * u, -38f * u), new Vector2(sz * 1.5f, sz * 1.5f));
+            var img = LGBuild.Rect(_content, "Faction").gameObject.AddComponent<RawImage>();
+            img.texture = tex;
+            img.raycastTarget = false;
+            img.rectTransform.At(Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(-38f * u, -38f * u), new Vector2(sz, sz));
+        }
+
+        /// <summary>Значок редкости внизу по центру (и подпись на полной карте).</summary>
+        private void RarityMark(float u, float gem, bool label)
+        {
+            var g = CardSkin.Simple(_content, "RarityGem", "card_gem_" + _rk, Color.white);
+            g.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 20f * u), new Vector2(gem, gem));
+            if (!label) return;
+            var t = Lbl(_content, CardArt.RarityName(_rarity), Mathf.RoundToInt(9f * u), new Color(0.56f, 0.63f, 0.68f), TextAnchor.MiddleCenter, true);
+            t.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 38f * u), new Vector2(200f * u, 14f * u));
+            t.Track(2.5f * u);
+        }
+
+        /// <summary>Подпись типа: «ЮНИТ · ТЕХНИКА», «ПРИКАЗ», «ГЕРОЙ · ПЕХОТА».</summary>
+        private static string TypeLine(CardDef d)
+        {
+            string sub = d.Has(Kw.Vehicle) ? Loc.T("ТЕХНИКА") : d.Has(Kw.Drone) ? Loc.T("ДРОН") : d.Has(Kw.Infantry) ? Loc.T("ПЕХОТА") : d.Has(Kw.Militia) ? Loc.T("ОПОЛЧЕНИЕ") : null;
+            return sub == null ? d.KindName : d.KindName + " · " + sub;
+        }
+
+        /// <summary>Ключевое слово в начале текста («Бронебой:», «При раскрытии:») — жирным в цвете редкости.</summary>
+        private static string RichText(string text, Color acc)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            int i = text.IndexOf(':');
+            int dot = text.IndexOf('.');
+            if (i <= 0 || i > 32 || (dot >= 0 && dot < i)) return text;
+            string hex = ColorUtility.ToHtmlStringRGB(Color.Lerp(acc, Color.white, 0.35f));
+            return "<b><color=#" + hex + ">" + text.Substring(0, i + 1) + "</color></b>" + text.Substring(i + 1);
+        }
+
+        /// <summary>Полная карта (рука, предпросмотр) — как в макете: арт во всю карту, лента имени, тип, текст, самоцветы.</summary>
+        private void BuildFull(Vector2 size, CardDef d)
+        {
+            float u = size.x / 330f;
+            BuildBase(size, u);
+            float plateTop = size.y * 0.55f;
+            Plate(d, u, plateTop, 46f * u, 19f * u);
+
+            _kind = CardSkin.TitleText(_content, TypeLine(d), Mathf.RoundToInt(10.5f * u), Color.Lerp(_frameColor, Color.white, 0.2f), TextAnchor.MiddleCenter, 0f);
+            _kind.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -plateTop - 59f * u), new Vector2(300f * u, 15f * u));
+            _kind.Track(3f * u);
+
+            _text = Lbl(_content, RichText(d.Text, _frameColor), Mathf.RoundToInt(13.5f * u), new Color(0.89f, 0.87f, 0.82f), TextAnchor.MiddleCenter, false);
+            _text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _text.verticalOverflow = VerticalWrapMode.Truncate;     // без этого Unity не ужимает шрифт
+            _text.rectTransform.Stretch(36f * u, 50f * u, 36f * u, plateTop + 70f * u);
+            _text.resizeTextForBestFit = true; _text.resizeTextMinSize = Mathf.Max(6, Mathf.RoundToInt(8 * u)); _text.resizeTextMaxSize = Mathf.RoundToInt(13.5f * u);
+            _text.lineSpacing = 0.95f;
+            _text.supportRichText = true;
+
+            FactionMark(d, u, 44f * u);
+            if (_rarity == CardRarity.Legendary || _rarity == CardRarity.Commander) Crest(u);
+            RarityMark(u, 26f * u, true);
+
+            _cost = Badge("card_cost", new Vector2(0, 1), new Vector2(29f * u, -32f * u), new Vector2(70f * u, 76f * u), 30f * u, d.Cost.ToString(), out _);
             if (ShowsPower(d))
-                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(19 * k, 19 * k), 46 * k, "0", out _powerBadge);
+                _power = Badge("card_atk", Vector2.zero, new Vector2(28f * u, 31f * u), new Vector2(64f * u, 70f * u), 28f * u, "0", out _powerBadge);
             if (d.IsBoardUnit)
-                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-19 * k, 19 * k), 45 * k, "0", out _armorBadge);
-            Stars(k);
-            Status(size, k);
+                _armor = Badge("card_def", new Vector2(1, 0), new Vector2(-28f * u, 31f * u), new Vector2(64f * u, 70f * u), 28f * u, "0", out _armorBadge);
+            Stars(u);
+            Status(size, size.y / 280f);
+        }
+
+        /// <summary>Гребень над рамкой легендарных карт и командиров.</summary>
+        private void Crest(float u)
+        {
+            var c = CardSkin.Simple(_content, "Crest", "card_crest", Color.white);
+            c.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -5f * u), new Vector2(160f * u, 42f * u));
         }
 
         /// <summary>Показывать ли урон: у сооружений без атаки (бункер, щит) — нет, чтобы не путать «0».</summary>
         private static bool ShowsPower(CardDef d) => d.IsBoardUnit && !(d.Kind == CardKind.Structure && d.Power <= 0);
 
-        /// <summary>Карта на столе: арт во всю карту под рамой, имя внизу, крупные сила и броня.</summary>
+        /// <summary>Карта на столе: то же оформление, но без текста — крупнее имя, сила и броня, значок редкости.</summary>
         private void BuildCompact(Vector2 size, CardDef d)
         {
-            float k = size.y / 178f;
-            BuildBase(size, k, 0.4f * k, out var mask);
-            float pad = 6f * k;
-            mask.Stretch(pad, pad, pad, pad);
-            FillArt(mask, size, (size.x - 2 * pad) / (size.y - 2 * pad), k, true);
-
-            _hitFlash = Img(_content, "Hit", CardSprites.Round, new Color(1f, 0.3f, 0.2f, 0f));
-            _hitFlash.type = Image.Type.Sliced;
-            _hitFlash.rectTransform.Stretch();
-
-            _frame = CardSkin.Sliced(_content, "Frame", "frame_card", _frameColor, 0.26f * k);
-            _frame.rectTransform.Stretch();
-
-            _name = CardSkin.TitleText(_content, d.Name, Mathf.RoundToInt(12 * k), CardSkin.Parchment, TextAnchor.MiddleCenter, 1.5f);
-            _name.rectTransform.anchorMin = new Vector2(0, 0); _name.rectTransform.anchorMax = new Vector2(1, 0);
-            _name.rectTransform.pivot = new Vector2(0.5f, 0);
-            _name.rectTransform.sizeDelta = new Vector2(-16 * k, 30 * k);
-            _name.rectTransform.anchoredPosition = new Vector2(0, d.IsBoardUnit ? 24 * k : 10 * k);
-            _name.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _name.verticalOverflow = VerticalWrapMode.Truncate;
-            _name.resizeTextForBestFit = true; _name.resizeTextMinSize = 7; _name.resizeTextMaxSize = Mathf.RoundToInt(12 * k);
-
+            float u = size.x / 330f;
+            BuildBase(size, u);
+            Plate(d, u, size.y * 0.6f, 70f * u, 30f * u);
+            FactionMark(d, u, 62f * u);
+            if (_rarity == CardRarity.Legendary || _rarity == CardRarity.Commander) Crest(u);
+            RarityMark(u, 40f * u, false);
             if (ShowsPower(d))
-                _power = CardSkin.Gem(_content, "gem_attack", new Vector2(0, 0), new Vector2(12 * k, 10 * k), 44 * k, "0", out _powerBadge);
+                _power = Badge("card_atk", Vector2.zero, new Vector2(42f * u, 46f * u), new Vector2(96f * u, 105f * u), 44f * u, "0", out _powerBadge);
             if (d.IsBoardUnit)
-                _armor = CardSkin.Gem(_content, "gem_armor", new Vector2(1, 0), new Vector2(-12 * k, 10 * k), 43 * k, "0", out _armorBadge);
-            Stars(k * 0.8f);
-            Status(size, k * 280f / 178f * 0.75f);
+                _armor = Badge("card_def", new Vector2(1, 0), new Vector2(-42f * u, 46f * u), new Vector2(96f * u, 105f * u), 44f * u, "0", out _armorBadge);
+            Stars(u * 1.6f);
+            Status(size, size.y / 178f * 280f / 178f * 0.75f);
         }
 
-        private void Stars(float k)
+        private void Stars(float u)
         {
             if (Card.Stars <= 0) return;
-            _stars = Lbl(_content, new string('★', Mathf.Min(3, Card.Stars)), Mathf.RoundToInt(17 * k), new Color(1f, 0.82f, 0.35f), TextAnchor.UpperRight, true);
-            _stars.rectTransform.Stretch(0, 0, 12 * k, 10 * k);
+            _stars = Lbl(_content, new string('★', Mathf.Min(3, Card.Stars)), Mathf.RoundToInt(16 * u), new Color(1f, 0.82f, 0.35f), TextAnchor.MiddleCenter, true);
+            _stars.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -36f * u), new Vector2(120f * u, 22f * u));
             var ol = _stars.gameObject.AddComponent<Outline>();
             ol.effectColor = new Color(0, 0, 0, 0.9f);
         }
@@ -542,6 +589,9 @@ namespace StellarisClone.Cards
             // Значки силы/брони возвращаются к обычному размеру
             if (_powerBadge != null) _powerBadge.localScale = Vector3.Lerp(_powerBadge.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 10f));
             if (_armorBadge != null) _armorBadge.localScale = Vector3.Lerp(_armorBadge.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 10f));
+
+            // Голо-фольга дышит и разгорается при наведении
+            if (_foil != null) _foil.color = new Color(1f, 1f, 1f, _foilA * (0.75f + 0.25f * Mathf.Sin(tt * 0.9f) + 0.8f * _hover));
 
             // Фольга: блик бегает раз в несколько секунд; при наклоне следует за курсором
             bool foil = CardArt.Foil(Card.Def, Card.Stars);

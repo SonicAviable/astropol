@@ -9,6 +9,9 @@ namespace StellarisClone.Cards
     /// Арты и цвета карт. Арт ищется в Resources/UI/Cards/&lt;id&gt; (картинки из Gemini), иначе — подходящая иллюстрация
     /// событий игры, у героев — портрет лидера фракции. Цвета фракций, рамки по редкости, кровь по виду.
     /// </summary>
+    /// <summary>Редкость карты в оформлении (см. CardArt.Rarity).</summary>
+    public enum CardRarity { Common, Rare, Epic, Legendary, Commander }
+
     public static class CardArt
     {
         private static readonly Dictionary<string, Texture> s_cache = new Dictionary<string, Texture>();
@@ -135,8 +138,60 @@ namespace StellarisClone.Cards
             }
         }
 
-        /// <summary>«Фольга» — блик бежит по карте: элита, фракционные, герои.</summary>
-        public static bool Foil(CardDef d, int stars) => stars >= 3 || d.Faction != null || d.Kind == CardKind.Hero;
+        /// <summary>«Фольга» — голографический перелив и бегущий блик: эпические, легендарные, командиры.</summary>
+        public static bool Foil(CardDef d, int stars) => Rarity(d, stars) >= CardRarity.Epic;
+
+        /// <summary>
+        /// Редкость для оформления (рамка, свечение, фольга): командир — герой; легендарная — ветеран ★★★ или карта
+        /// ценой от 5; эпическая — фракционная; редкая — ветеран или цена от 4; остальное — обычная.
+        /// </summary>
+        public static CardRarity Rarity(CardDef d, int stars)
+        {
+            if (d == null) return CardRarity.Common;
+            if (d.Kind == CardKind.Hero) return CardRarity.Commander;
+            if (stars >= 3 || d.Cost >= 5) return CardRarity.Legendary;
+            if (d.Faction != null) return CardRarity.Epic;
+            if (stars >= 1 || d.Cost >= 4) return CardRarity.Rare;
+            return CardRarity.Common;
+        }
+
+        /// <summary>Суффикс текстур оформления (cardframe_&lt;key&gt;, card_cost_&lt;key&gt;…).</summary>
+        public static string RarityKey(CardRarity r)
+        {
+            switch (r)
+            {
+                case CardRarity.Rare: return "rare";
+                case CardRarity.Epic: return "epic";
+                case CardRarity.Legendary: return "legend";
+                case CardRarity.Commander: return "cmd";
+                default: return "common";
+            }
+        }
+
+        /// <summary>Цвет редкости: кромка рамки, свечение, ключевые слова в тексте.</summary>
+        public static Color RarityColor(CardRarity r)
+        {
+            switch (r)
+            {
+                case CardRarity.Rare: return new Color(0.37f, 0.78f, 1f);
+                case CardRarity.Epic: return new Color(0.77f, 0.55f, 1f);
+                case CardRarity.Legendary: return new Color(1f, 0.81f, 0.35f);
+                case CardRarity.Commander: return new Color(1f, 0.36f, 0.29f);
+                default: return new Color(0.66f, 0.72f, 0.78f);
+            }
+        }
+
+        public static string RarityName(CardRarity r)
+        {
+            switch (r)
+            {
+                case CardRarity.Rare: return Loc.T("РЕДКАЯ");
+                case CardRarity.Epic: return Loc.T("ЭПИЧЕСКАЯ");
+                case CardRarity.Legendary: return Loc.T("ЛЕГЕНДАРНАЯ");
+                case CardRarity.Commander: return Loc.T("КОМАНДИР");
+                default: return Loc.T("ОБЫЧНАЯ");
+            }
+        }
 
         public static string SectorName(SectorType t)
         {
