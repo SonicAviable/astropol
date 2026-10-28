@@ -26,6 +26,12 @@ namespace StellarisClone.Core
         public static float DurabilityMult(int level) => 1f + 0.75f * Mathf.Clamp(level, 0, MaxLevel);
         /// <summary>Множитель урона батарей базы.</summary>
         public static float DamageMult(int level) => 1f + 0.6f * Mathf.Clamp(level, 0, MaxLevel);
+        /// <summary>
+        /// Турелей укреплений в обороне колонии при штурме: по одной на уровень. Они не из резерва империи —
+        /// стоят при базе и не теряются; стреляют, пока электростанция у защитника.
+        /// </summary>
+        public static int GroundTurrets(int level) => Mathf.Clamp(level, 0, MaxLevel);
+
         /// <summary>Во сколько раз дольше осада.</summary>
         public static float SiegeMult(int level) => 1f + 0.25f * Mathf.Clamp(level, 0, MaxLevel);
 

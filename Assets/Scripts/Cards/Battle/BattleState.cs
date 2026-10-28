@@ -138,6 +138,8 @@ namespace StellarisClone.Cards
     public sealed partial class BattleState
     {
         public const int Turns = 8, StartHand = 4, HandLimit = 8, BreachPower = 9, PointsCap = 6;
+        /// <summary>Сколько пехотинцев врага давит машина при раскрытии (Kw.Crush).</summary>
+        public const int CrushLimit = 2;
         public const int Attacker = 0, Defender = 1;
 
         public readonly BSide[] Sides = new BSide[2];

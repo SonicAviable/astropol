@@ -36,7 +36,9 @@ namespace StellarisClone.Cards
 
         private GameObject _root;
         private RectTransform _rt, _content, _list, _previewRoot, _filterBar, _tabBar;
-        private Text _subtitle, _baseInfo, _sideHint, _sizeLabel, _sizeValue;
+        private Text _subtitle, _baseInfo, _sideHint, _sizeLabel, _sizeValue, _budgetInfo;
+        private GameObject[] _budgetRows;
+        private readonly Text[] _budgetVals = new Text[8];
         private Button _sizeMinus, _sizePlus;
         private readonly List<Text> _sideValues = new List<Text>();
         private ScrollRect _scroll;
@@ -300,16 +302,65 @@ namespace StellarisClone.Cards
             _sizeValue.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-38, 0), new Vector2(28, 30));
             TooltipHelper.Attach(size.gameObject, Loc.T("<b>Размер армии</b>\nСколько карт империя держит в резерве в режиме «Авто». Больше армия — больше содержание"));
 
+            // Военный бюджет: какая доля месячного дохода идёт в фонд армии (из него империя оплачивает заказы)
+            var bh = LGBuild.Label(s, Loc.T("ВОЕННЫЙ БЮДЖЕТ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
+            bh.rectTransform.TopBand(132, 18, 18, 18);
+            bh.Track(1.4f);
+            var bud = LGBuild.Rect(s, "Budget");
+            bud.TopBand(154, 30, 18, 18);
+            (ArmyBudget b, string label, string tip)[] modes =
+            {
+                (ArmyBudget.Stop, "0", Loc.T("<b>Стоп</b>\nНа армию не тратится ничего: потери не пополняются, очередь стоит")),
+                (ArmyBudget.Low, "25%", Loc.T("<b>Мирный</b>\nЧетверть месячного дохода — в фонд армии. Армия растёт медленно, экономика почти не чувствует её")),
+                (ArmyBudget.Normal, "50%", Loc.T("<b>Обычный</b>\nПоловина месячного дохода — в фонд армии. Хороший выбор, пока войны нет")),
+                (ArmyBudget.War, "100%", Loc.T("<b>Военный</b>\nВесь доход — в фонд армии: стройка и флот ждут, пока армия не будет собрана")),
+                (ArmyBudget.Mobilize, Loc.T("МОБ"), Loc.T("<b>Мобилизация</b>\nАрмия строится не только из дохода, но и из запасов — до четверти склада на каждый заказ. Быстро, но опустошает казну")),
+            };
+            float bx = 0f, bw = (SideW - 36f - 4 * 6f) / modes.Length;
+            foreach (var (mb, label, tip) in modes)
+            {
+                var m = mb;
+                Chip(bud, label, null, bx, bw, () => ArmyManager.Instance != null && ArmyManager.Instance.PlayerBudget == m, () => ArmyManager.Instance?.SetPlayerBudget(m), 30f, 11);
+                TooltipHelper.Attach(bud.GetChild(bud.childCount - 1).gameObject, tip);
+                bx += bw + 6f;
+            }
+            // Две строки «значок — число»: бюджет в месяц и накопленный фонд
+            (LGIcon, Color)[] res = { (LGIcon.Energy, BuildMenuModal.CEnergy), (LGIcon.Minerals, BuildMenuModal.CMinerals), (LGIcon.Alloys, BuildMenuModal.CAlloys), (LGIcon.Influence, BuildMenuModal.CInfluence) };
+            _budgetRows = new GameObject[2];
+            for (int r = 0; r < 2; r++)
+            {
+                var row = LGBuild.Rect(s, "BudgetRow");
+                row.TopBand(192 + r * 24, 22, 18, 18);
+                _budgetRows[r] = row.gameObject;
+                var cap = LGBuild.Label(row, r == 0 ? Loc.T("в месяц") : Loc.T("в фонде"), 11, Muted, TextAnchor.MiddleLeft);
+                cap.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(64, 20));
+                float cw = (SideW - 36f - 64f) / 4f;
+                for (int k = 0; k < 4; k++)
+                {
+                    var ic = LGIcons.Create(row, res[k].Item1, 12, res[k].Item2);
+                    ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(64 + k * cw, 0), new Vector2(12, 12));
+                    var v = LGBuild.Label(row, "", 12, r == 0 ? UIManager.DS.TextPrimary : Color.white, TextAnchor.MiddleLeft, bold: r == 1);
+                    v.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(64 + k * cw + 15, 0), new Vector2(cw - 15, 20));
+                    _budgetVals[r * 4 + k] = v;
+                }
+            }
+            _budgetInfo = LGBuild.Label(s, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
+            _budgetInfo.rectTransform.TopBand(190, 54, 18, 18);
+            _budgetInfo.lineSpacing = 1.2f;
+            _budgetInfo.supportRichText = true;
+            _budgetInfo.raycastTarget = true;
+            TooltipHelper.Attach(_budgetInfo.gameObject, Loc.T("<b>Фонд армии</b>\nКаждый день в него откладывается доля дохода по выбранному бюджету — пока армии чего-то не хватает. Заказ уходит, когда фонд покрывает цену карты: армия не забирает запасы, нужные на стройку и флот. Отменённый заказ возвращает ресурсы и в казну, и в фонд"));
+
             _baseInfo = LGBuild.Label(s, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            _baseInfo.rectTransform.TopBand(130, 70, 18, 18);
+            _baseInfo.rectTransform.TopBand(252, 70, 18, 18);
             _baseInfo.lineSpacing = 1.2f;
             _baseInfo.supportRichText = true;
 
             var sep = LGBuild.Panel(s, "Sep", new Color(Gold.r, Gold.g, Gold.b, 0.22f));
-            sep.rectTransform.TopBand(208, 1, 18, 18);
+            sep.rectTransform.TopBand(330, 1, 18, 18);
 
             var h2 = LGBuild.Label(s, Loc.T("РЕЗЕРВ ИМПЕРИИ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
-            h2.rectTransform.TopBand(222, 18, 18, 18);
+            h2.rectTransform.TopBand(344, 18, 18, 18);
             h2.Track(1.4f);
             (LGIcon, Color, string)[] rows =
             {
@@ -319,7 +370,7 @@ namespace StellarisClone.Cards
                 (LGIcon.Construction, Cyan, Loc.T("В производстве")),
                 (LGIcon.Energy, BuildMenuModal.CEnergy, Loc.T("Содержание в месяц")),
             };
-            float y = 248f;
+            float y = 370f;
             foreach (var (icon, col, label) in rows)
             {
                 var r = LGBuild.Rect(s, "Stat");
@@ -333,7 +384,7 @@ namespace StellarisClone.Cards
                 y += 30f;
             }
             _sideHint = LGBuild.Label(s, "", 12, Muted, TextAnchor.UpperLeft, wrap: true);
-            _sideHint.rectTransform.TopBand(y + 14, 260, 18, 18);
+            _sideHint.rectTransform.TopBand(y + 14, 220, 18, 18);
             _sideHint.lineSpacing = 1.15f;
             _sideHint.supportRichText = true;
         }
@@ -398,6 +449,20 @@ namespace StellarisClone.Cards
                 ? Loc.T("<color=#FF8080>Нет колоний с жителями — производить армию негде</color>")
                 : Loc.F("Линий производства: <b>{0}</b> <color=#8AA2A8>(районы {1} + {2})</color>\nПризывников: <b>{3}/{4}</b> <color=#8AA2A8>(половина жителей)</color>\nСооружений обороны: до <b>{5}</b>",
                     b.Lines, b.Urban, b.Industrial, infantry, b.InfantryCap, b.StructureCap);
+
+            // Военный бюджет: доля дохода в месяц и накопленный фонд
+            var bud = am.PlayerBudget;
+            if (bud == ArmyBudget.Stop) _budgetInfo.text = Loc.T("<color=#FF8080>Армия не пополняется</color>\n<color=#8AA2A8>Фонд не копится, заказы не уходят</color>");
+            else if (bud == ArmyBudget.Mobilize) _budgetInfo.text = Loc.T("<color=#FFB080>Мобилизация:</color> заказы из запасов\n<color=#8AA2A8>до четверти склада на каждую карту</color>");
+            else
+            {
+                var mb = am.MonthlyBudget(0);
+                var f = am.FundOf(0);
+                for (int k = 0; k < 4; k++) { _budgetVals[k].text = mb[k].ToString("0.#"); _budgetVals[4 + k].text = f[k].ToString("0"); }
+                _budgetInfo.text = "";
+            }
+            bool rows = bud != ArmyBudget.Stop && bud != ArmyBudget.Mobilize;
+            foreach (var r in _budgetRows) if (r.activeSelf != rows) r.SetActive(rows);
 
             _subtitle.text = Loc.T("Армия для штурма и обороны колоний. Задайте состав — империя сама производит и пополняет карты. Карты открываются технологиями");
             _sideHint.text = _tab == Tab.Doctrine
@@ -594,7 +659,7 @@ namespace StellarisClone.Cards
             {
                 am.PlayerManual ? Loc.T("<b>Задайте состав</b> — кнопками −/+ под картой: сколько таких карт держать в армии")
                                 : Loc.T("<b>Состав подбирает империя</b> (режим «Авто»). Нажмите −/+ под картой — перейдёте на ручной"),
-                Loc.T("<b>Империя строит сама</b> недостающие карты, когда хватает ресурсов. Очередь — ниже"),
+                Loc.T("<b>Империя строит сама</b> недостающие карты на военный бюджет — долю дохода (слева). Очередь — ниже"),
                 Loc.T("<b>В бой идут готовые карты</b> из резерва: при штурме — сколько влезет на корабли у цели"),
             };
             for (int i = 0; i < steps.Length; i++)

@@ -10,7 +10,7 @@ namespace StellarisClone.Cards
     /// Связь карточного штурма со стратегией. Колонию (систему с жителями) осада по таймеру берёт лишь «голодом» — втрое дольше;
     /// быстрый путь — штурм, когда флот подавил звёздную базу и держит орбиту. Колода атакующего — лучшие карты резерва его империи,
     /// сколько поместится на военные корабли у системы; защитника — карты резерва, сколько вместит колония, плюс ополчение
-    /// из жителей (1 карта на 5 жителей). Генерал — адмирал
+    /// из жителей (1 карта на 5 жителей), щит Штаба и турели укреплений базы (по одной на уровень). Генерал — адмирал
     /// флота, комендант — губернатор. Итог: захват системы, потери карт, ветераны, разрушенные районы, погибшие жители,
     /// опыт лидерам, новости. ИИ против ИИ — мгновенный автобой по тем же правилам.
     /// </summary>
@@ -79,8 +79,11 @@ namespace StellarisClone.Cards
         /// <summary>Ополчение защитника: 1 карта на 5 жителей (от 1 до 8).</summary>
         public static int MilitiaFor(StarSystem sys) => Mathf.Clamp(ArmyManager.SystemPopulation(sys) / 5, 1, 8);
 
-        /// <summary>Собрать бой. <paramref name="chosen"/> — карты десанта, выбранные игроком (null — лучшие автоматически).</summary>
-        public static BattleSetup Build(int attacker, StarSystem sys, IList<long> chosen = null)
+        /// <summary>
+        /// Собрать бой. <paramref name="chosen"/> — карты десанта, выбранные игроком (null — лучшие автоматически).
+        /// <paramref name="forecast"/> — для прогноза в «Сборе десанта»: без казны (наёмники не покупаются) и без привязки лидеров.
+        /// </summary>
+        public static BattleSetup Build(int attacker, StarSystem sys, IList<long> chosen = null, bool forecast = false)
         {
             var army = ArmyManager.Instance;
             int defender = sys.OwnerId;
@@ -112,8 +115,9 @@ namespace StellarisClone.Cards
             if (army != null) foreach (var c in army.PickDeck(attacker, sys.Id, chosen)) s.AttackerCards.Add(new BCard(c.D, c.Id, c.Stars));
             int crew = Mathf.Min(ArmyManager.Warships(attacker, sys.Id), ArmyManager.MinDeck - s.AttackerCards.Count);
             for (int i = 0; i < crew; i++) s.AttackerCards.Add(new BCard(CardCatalog.Crew));
-            s.AttackerHero = HeroFor(attacker, sys, true);
-            if (attacker == 0)
+            s.AttackerHero = HeroFor(attacker, sys, true, forecast);
+            if (forecast) { /* прогноз: без казны — наёмники в нём не покупаются */ }
+            else if (attacker == 0)
             {
                 a.Treasury = () => EconomyManager.Instance != null ? EconomyManager.Instance.EnergyCredits : 0f;
                 a.SpendTreasury = v => { var e = EconomyManager.Instance; if (e != null) { e.EnergyCredits = Mathf.Max(0, e.EnergyCredits - v); e.RaiseResourcesChanged(); } };
@@ -133,12 +137,14 @@ namespace StellarisClone.Cards
             int militia = MilitiaFor(sys);
             for (int i = 0; i < militia; i++) s.DefenderCards.Add(new BCard(CardCatalog.Militia));
             if (sys.Fortification >= 1) s.DefenderCards.Add(new BCard(CardCatalog.ShieldHQ));
-            s.DefenderHero = HeroFor(defender, sys, false);
+            // Турели укреплений базы: по одной на уровень, не из резерва (не теряются)
+            for (int i = 0; i < Fortifications.GroundTurrets(sys.Fortification); i++) s.DefenderCards.Add(new BCard(CardCatalog.FortTurret));
+            s.DefenderHero = HeroFor(defender, sys, false, forecast);
             return s;
         }
 
         /// <summary>Герой — лидер: адмирал сильнейшего корабля у системы (атака) или губернатор колонии (оборона).</summary>
-        private static BCard HeroFor(int owner, StarSystem sys, bool attack)
+        private static BCard HeroFor(int owner, StarSystem sys, bool attack, bool forecast = false)
         {
             var lm = LeaderManager.Instance;
             Leader l = null;
@@ -166,12 +172,26 @@ namespace StellarisClone.Cards
             var def = attack ? CardCatalog.HeroAttack : CardCatalog.HeroDefense;
             int stars = l != null ? Mathf.Clamp(l.Level / 2, 0, 3) : 0;
             var card = new BCard(def, -1, stars);
-            if (l != null) HeroLeader[card] = l;
+            if (l != null && !forecast) HeroLeader[card] = l;
             return card;
         }
 
         /// <summary>Лидер, стоящий за картой героя (для имени и опыта).</summary>
         public static readonly Dictionary<BCard, Leader> HeroLeader = new Dictionary<BCard, Leader>();
+
+        // ==================== ПРОГНОЗ ====================
+
+        /// <summary>
+        /// Один автобой прогноза: тот же десант и известная оборона, своё зерно. Реальные резервы и казна не трогаются —
+        /// правила боя работают только с копией расклада.
+        /// </summary>
+        public static bool ForecastRun(StarSystem sys, IList<long> chosen, int seed)
+        {
+            var s = Build(0, sys, chosen, true);
+            s.Seed = seed;
+            var r = BattleAI.AutoResolve(s, out _);
+            return r != null && r.AttackerWon;
+        }
 
         // ==================== ЗАПУСК ====================
 

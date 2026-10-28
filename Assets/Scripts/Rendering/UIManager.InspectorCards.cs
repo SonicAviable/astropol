@@ -230,6 +230,7 @@ namespace StellarisClone.Rendering
                 sb.Append(Loc.F("\n<color={0}>{1}</color>: прочность ×{2:0.##}, урон ×{3:0.##}, осада дольше ×{4:0.##}",
                     c, Fortifications.Name(i), Fortifications.DurabilityMult(i), Fortifications.DamageMult(i), Fortifications.SiegeMult(i)));
             }
+            sb.Append(Loc.T("\n<color=#8AA2A8>При штурме колонии: с 1-го уровня — щит Штаба, на каждый уровень — турель и +2 места для карт резерва в обороне.</color>"));
             sb.Append(Loc.F("\n<color=#8AA2A8>Содержание +{0:0} гелия-3 за уровень. Штурм разрушает один уровень, передача по договору — нет.</color>",
                 Fortifications.UpkeepPerLevel));
             return sb.ToString();

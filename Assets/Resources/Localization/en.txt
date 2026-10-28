@@ -6898,3 +6898,46 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 <b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#8AA2A8>(F1)</color>	<b>Help</b>\nAll hotkeys, where things are, replay the tutorial  <color=#8AA2A8>(F1)</color>
 {0} ({1}, пригодность {2}%). Щёлкните — откроется планета, там кнопка «Основать колонию».	{0} ({1}, habitability {2}%). Click to open the planet — it has the «Found colony» button.
 открыть планету	open planet
+При раскрытии давит до двух пехотинцев врага с бронёй до 2.	On reveal: crushes up to two enemy infantry with armor 2 or less.
+Погибает в конце хода. Гибель штрафников злит остальных: союзники в секторе +1 к силе до конца боя.	Dies at the end of the turn. Their death enrages the rest: allies in the sector get +1 power for the rest of the battle.
+Давит до двух пехотинцев с бронёй до 2. Бронебой.	Crushes up to two infantry with armor 2 or less. Armor-piercing.
+Сильнейший враг сектора уходит под низ колоды владельца.	The strongest enemy in the sector goes to the bottom of its owner's deck.
+3 урона всем врагам в секторе и 1 — своим: пси-волна не разбирает своих.	3 damage to every enemy in the sector and 1 to your own: the psi wave doesn't pick sides.
+ПРИКАЗ	ORDER
+СООРУЖЕНИЕ	STRUCTURE
+ГЕРОЙ	HERO
+ЮНИТ	UNIT
+Мирный	Peace
+Обычный	Normal
+Военный	War
+{0} {1:0} / {2:0}	{0} {1:0} / {2:0}
+Военный бюджет остановлен — армия не пополняется	Military budget is stopped — the army is not replenished
+Ждёт ресурсов: при мобилизации на заказ уходит не больше четверти запасов	Waiting for resources: under mobilization an order takes at most a quarter of the stockpile
+Ждёт ресурсов: столько нет на складах	Waiting for resources: there isn't that much in storage
+Ждёт военного бюджета: {0}	Waiting for the military budget: {0}
+ВОЕННЫЙ БЮДЖЕТ	MILITARY BUDGET
+<b>Стоп</b>\nНа армию не тратится ничего: потери не пополняются, очередь стоит	<b>Stop</b>\nNothing is spent on the army: losses are not replaced, the queue is paused
+<b>Мирный</b>\nЧетверть месячного дохода — в фонд армии. Армия растёт медленно, экономика почти не чувствует её	<b>Peace</b>\nA quarter of monthly income goes to the army fund. The army grows slowly and the economy barely feels it
+<b>Обычный</b>\nПоловина месячного дохода — в фонд армии. Хороший выбор, пока войны нет	<b>Normal</b>\nHalf of monthly income goes to the army fund. A good choice while there is no war
+<b>Военный</b>\nВесь доход — в фонд армии: стройка и флот ждут, пока армия не будет собрана	<b>War</b>\nAll income goes to the army fund: construction and the fleet wait until the army is complete
+МОБ	MOB
+<b>Мобилизация</b>\nАрмия строится не только из дохода, но и из запасов — до четверти склада на каждый заказ. Быстро, но опустошает казну	<b>Mobilization</b>\nThe army is built from stockpiles as well as income — up to a quarter of storage per order. Fast, but it drains the treasury
+в фонде	in fund
+<b>Фонд армии</b>\nКаждый день в него откладывается доля дохода по выбранному бюджету — пока армии чего-то не хватает. Заказ уходит, когда фонд покрывает цену карты: армия не забирает запасы, нужные на стройку и флот. Отменённый заказ возвращает ресурсы и в казну, и в фонд	<b>Army fund</b>\nEvery day it receives a share of income set by the budget — while the army is missing cards. An order is placed once the fund covers the card's price: the army doesn't take stockpiles needed for construction and the fleet. A cancelled order returns resources to both the treasury and the fund
+<color=#FF8080>Армия не пополняется</color>\n<color=#8AA2A8>Фонд не копится, заказы не уходят</color>	<color=#FF8080>The army is not replenished</color>\n<color=#8AA2A8>The fund does not grow, no orders are placed</color>
+<color=#FFB080>Мобилизация:</color> заказы из запасов\n<color=#8AA2A8>до четверти склада на каждую карту</color>	<color=#FFB080>Mobilization:</color> orders from stockpiles\n<color=#8AA2A8>up to a quarter of storage per card</color>
+<b>Империя строит сама</b> недостающие карты на военный бюджет — долю дохода (слева). Очередь — ниже	<b>The empire builds</b> missing cards from the military budget — a share of income (left). Queue below
+<b>Прогноз штурма</b>\nДоля побед в {0} автобоях с этим десантом против обороны, известной разведке: карты резерва врага, ополчение, щит и турели укреплений. В бою вы решаете сами — исход может быть и лучше, и хуже	<b>Assault forecast</b>\nShare of wins in {0} auto-battles with this landing force against the defense known to intelligence: enemy reserve cards, militia, shield and fortification turrets. In battle you make the calls — the outcome can be better or worse
+<color=#8AA2A8>Прогноз: считаем…</color>	<color=#8AA2A8>Forecast: calculating…</color>
+уверенная победа	confident victory
+скорее победа	likely victory
+рискованно	risky
+скорее поражение	likely defeat
+почти без шансов	almost hopeless
+Прогноз: <color=#{0}>{1:0}%</color> · {2}	Forecast: <color=#{0}>{1:0}%</color> · {2}
+  ·  щит Штаба и турелей: {0}	  ·  HQ shield and turrets: {0}
+При раскрытии уничтожает до двух пехотинцев врага с бронёй до 2.	On reveal destroys up to two enemy infantry with armor 2 or less.
+{0}: {1}	{0}: {1}
+Строит она на <b>военный бюджет</b> — долю дохода, которую вы выберете (25%, 50%, 100%): армия не забирает запасы на стройку и флот. 	It builds from the <b>military budget</b> — the share of income you choose (25%, 50%, 100%): the army doesn't take stockpiles needed for construction and the fleet. 
+В окне «Сбор десанта» выберите карты — внизу будет <b>прогноз</b>: доля побед в автобоях с этим десантом. 	In the "Landing Force" window pick your cards — at the bottom you'll see a <b>forecast</b>: the share of wins in auto-battles with this force. 
+\n<color=#8AA2A8>При штурме колонии: с 1-го уровня — щит Штаба, на каждый уровень — турель и +2 места для карт резерва в обороне.</color>	\n<color=#8AA2A8>When the colony is assaulted: from level 1 — the HQ shield, each level — a turret and +2 slots for reserve cards in defense.</color>

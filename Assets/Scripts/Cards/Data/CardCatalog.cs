@@ -7,7 +7,8 @@ namespace StellarisClone.Cards
     /// <summary>
     /// Все карты штурма: 12 общих юнитов, 9 приказов, 6 карт обороны колонии, по 4 фракционные на каждую из 6 фракций,
     /// служебные (экипаж, ополчение, герои, жетоны). Производство: пехота — город, техника — промышленный район,
-    /// приказы — штаб за влияние, оборона — гарнизон колонии. Цены сбалансированы под доход средней колонии.
+    /// приказы — штаб за гелий-3 и немного влияния, оборона — гарнизон колонии. Цены сбалансированы под доход средней
+    /// колонии: техника — около корвета (60 сплавов) за танк, пехота — титан из городов.
     /// </summary>
     public static class CardCatalog
     {
@@ -29,8 +30,13 @@ namespace StellarisClone.Cards
         private static CardDef U(string id, string name, int cost, int power, int armor, string text, Kw kw = Kw.Infantry)
             => Add(new CardDef { Id = id, Name = name, Kind = CardKind.Unit, Cost = cost, Power = power, Armor = armor, Text = text, Kw = kw, Size = 1 });
 
-        private static CardDef O(string id, string name, int cost, string text, Action<BattleState, int, int> fx, float influence)
-            => Add(new CardDef { Id = id, Name = name, Kind = CardKind.Order, Cost = cost, Text = text, OnOrder = fx, Size = 0, Site = ProdSite.Command, Influence = influence });
+        /// <summary>
+        /// Приказ. <paramref name="price"/> — цена в условных единицах: штаб платит в основном гелием-3 (снабжение, ×1.5),
+        /// влияние — малая доля (÷4, не меньше 3): иначе приказы съедали всё влияние, нужное на экспансию и дипломатию.
+        /// </summary>
+        private static CardDef O(string id, string name, int cost, string text, Action<BattleState, int, int> fx, float price)
+            => Add(new CardDef { Id = id, Name = name, Kind = CardKind.Order, Cost = cost, Text = text, OnOrder = fx, Size = 0, Site = ProdSite.Command,
+                                 Energy = price * 1.5f, Influence = Math.Max(3f, (float)Math.Round(price * 0.25f)) });
 
         private static CardDef City(CardDef d, float min, float en, float al, int days, float upkeep = 0.2f)
         { d.Site = ProdSite.City; d.Minerals = min; d.Energy = en; d.Alloys = al; d.Days = days; d.Upkeep = upkeep; return d; }
@@ -42,6 +48,8 @@ namespace StellarisClone.Cards
         public static CardDef Crew => Get("Z_CREW");
         public static CardDef Militia => Get("D1");
         public static CardDef ShieldHQ => Get("D6");
+        /// <summary>Турель укреплений базы (по одной на уровень укреплений в обороне колонии).</summary>
+        public static CardDef FortTurret => Get("D4");
         public static CardDef HeroAttack => Get("H1");
         public static CardDef HeroDefense => Get("H2");
 
@@ -53,7 +61,7 @@ namespace StellarisClone.Cards
             City(U("U1", Loc.T("Штурмовая пехота"), 1, 2, 3, Loc.T("Основа любого десанта.")), 30, 10, 0, 20);
             City(Add(new CardDef { Id = "U2", Name = Loc.T("Гренадёры"), Kind = CardKind.Unit, Cost = 2, Power = 2, Armor = 3, Salvo = 2, Kw = Kw.Infantry,
                 Text = Loc.T("При раскрытии: 2 урона случайному врагу в секторе.") }), 40, 15, 0, 25);
-            City(Add(new CardDef { Id = "U3", Name = Loc.T("Тяжёлая пехота"), Kind = CardKind.Unit, Cost = 3, Power = 3, Armor = 6, Cover = 2, Kw = Kw.Infantry,
+            City(Add(new CardDef { Id = "U3", Name = Loc.T("Тяжёлая пехота"), Kind = CardKind.Unit, Cost = 3, Power = 3, Armor = 5, Cover = 2, Kw = Kw.Infantry,
                 Text = Loc.T("Укрытие 2: первые 2 урона за ход не проходят.") }), 60, 20, 20, 35, 0.3f);
             City(U("U4", Loc.T("Снайперы"), 2, 2, 2, Loc.T("Бьют самого хрупкого врага. По пехоте — двойной урон."), Kw.Infantry | Kw.Sniper), 45, 10, 0, 30);
             City(U("U5", Loc.T("Огнемётчики"), 3, 4, 3, Loc.T("Игнорируют укрытие. По сооружениям — двойной урон."), Kw.Infantry | Kw.Flame), 50, 10, 20, 30, 0.3f);
@@ -65,10 +73,10 @@ namespace StellarisClone.Cards
                 if (b.ClearTrap(u.Side, u.Sector)) return;
                 foreach (var a in b.UnitsOf(u.Side, u.Sector)) { a.CoverLeft += 2; b.Log(EvType.Buff, a.Side, a.Sector, a.Uid, amount: 0, text: "cover"); }
             };
-            var scout = Ind(U("U8", Loc.T("Дроны-разведчики"), 1, 1, 1, Loc.T("При раскрытии: снимают одну скрытую ловушку врага в секторе."), Kw.Drone), 20, 0, 15, 1, 0.2f);
+            var scout = Ind(U("U8", Loc.T("Дроны-разведчики"), 1, 1, 1, Loc.T("При раскрытии: снимают одну скрытую ловушку врага в секторе."), Kw.Drone), 15, 0, 15, 1, 0.2f);
             scout.Kw &= ~Kw.Vehicle;
             scout.OnReveal = (b, u) => b.ClearTrap(u.Side, u.Sector);
-            var apc = Ind(U("U9", Loc.T("БТР «Мул»"), 2, 1, 5, Loc.T("При раскрытии: высаживает пехоту ценой до 2 из колоды в этот сектор.")), 50, 0, 40, 2);
+            var apc = Ind(U("U9", Loc.T("БТР «Мул»"), 2, 1, 5, Loc.T("При раскрытии: высаживает пехоту ценой до 2 из колоды в этот сектор.")), 35, 10, 40, 2);
             apc.OnReveal = (b, u) =>
             {
                 var deck = b.Sides[u.Side].Deck;
@@ -82,9 +90,9 @@ namespace StellarisClone.Cards
                     return;
                 }
             };
-            Ind(U("U10", Loc.T("Танк «Бастион»"), 4, 5, 8, Loc.T("Бронебой: по технике и сооружениям — двойной урон."), Kw.Pierce), 90, 30, 60, 2);
-            Ind(U("U11", Loc.T("Артиллерия"), 4, 3, 3, Loc.T("Навесной огонь: бьёт и соседний сектор половиной силы."), Kw.Indirect), 80, 0, 55, 2);
-            Ind(U("U12", Loc.T("Шагоход"), 5, 6, 10, Loc.T("При раскрытии давит пехоту врага с бронёй до 2.")).AddKw(Kw.Crush), 140, 40, 80, 3, 1f);
+            Ind(U("U10", Loc.T("Танк «Бастион»"), 4, 5, 8, Loc.T("Бронебой: по технике и сооружениям — двойной урон."), Kw.Pierce), 60, 30, 60, 2);
+            Ind(U("U11", Loc.T("Артиллерия"), 4, 3, 3, Loc.T("Навесной огонь: бьёт и соседний сектор половиной силы."), Kw.Indirect), 55, 15, 55, 2);
+            Ind(U("U12", Loc.T("Шагоход"), 5, 6, 10, Loc.T("При раскрытии давит до двух пехотинцев врага с бронёй до 2.")).AddKw(Kw.Crush), 95, 40, 80, 3, 1f);
 
             // ============================== ПРИКАЗЫ ==============================
             O("O1", Loc.T("Огневой вал флота"), 3, Loc.T("2 урона каждому врагу в секторе."), (b, side, sec) =>
@@ -151,7 +159,7 @@ namespace StellarisClone.Cards
                 Text = Loc.T("Сооружение. Все защитники сектора получают укрытие 1 в каждой перестрелке."), Site = ProdSite.Garrison, Minerals = 50, Alloys = 30, Days = 30, Size = 0,
                 OnPreCombat = (b, u) => b.BunkerAura(u) });
             Add(new CardDef { Id = "D4", Name = Loc.T("Турель"), Kind = CardKind.Structure, Cost = 3, Power = 2, Armor = 4, Kw = Kw.NeedsPower,
-                Text = Loc.T("Сооружение. Стреляет, пока электростанция у защитника."), Site = ProdSite.Garrison, Alloys = 60, Days = 35, Size = 0 });
+                Text = Loc.T("Сооружение. Стреляет, пока электростанция у защитника."), Site = ProdSite.Garrison, Alloys = 45, Days = 35, Size = 0 });
             Add(new CardDef { Id = "D5", Name = Loc.T("Минное поле"), Kind = CardKind.Trap, Cost = 1, Text = Loc.T("Ловушка: 4 урона первому раскрытому врагу в секторе."),
                 Site = ProdSite.Garrison, Minerals = 30, Days = 15, Size = 0, OnTrap = (b, t, victim) => b.Damage(null, victim, 4, true) });
             Add(new CardDef { Id = "D6", Name = Loc.T("Щит Штаба"), Kind = CardKind.Structure, Cost = 0, Power = 0, Armor = 12, Kw = Kw.Shield, Virtual = true,
@@ -163,7 +171,7 @@ namespace StellarisClone.Cards
                 Text = Loc.T("При раскрытии: +1 к силе за каждого союзника в секторе."),
                 OnReveal = (b, u) => { int n = 0; foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u) n++; if (n > 0) b.Buff(u, n, true, "volunteers"); } }), 25, 10, 0, 18));
             F("astrea", Add(new CardDef { Id = "A2", Name = Loc.T("Переговорщик"), Kind = CardKind.Unit, Cost = 2, Power = 0, Armor = 3, Kw = Kw.Infantry,
-                Text = Loc.T("При раскрытии: одно ополчение врага в секторе складывает оружие и уходит."), Site = ProdSite.Command, Influence = 30, Days = 20, Upkeep = 0.2f,
+                Text = Loc.T("При раскрытии: одно ополчение врага в секторе складывает оружие и уходит."), Site = ProdSite.Command, Energy = 45, Influence = 8, Days = 20, Upkeep = 0.2f,
                 OnReveal = (b, u) => { foreach (var e in b.Enemies(u.Side, u.Sector)) if (e.Has(Kw.Militia)) { b.RemoveFromBoard(e, "surrender"); return; } } }));
             F("astrea", City(Add(new CardDef { Id = "A3", Name = Loc.T("Миротворцы"), Kind = CardKind.Unit, Cost = 4, Power = 4, Armor = 6, Kw = Kw.Infantry,
                 Text = Loc.T("+3 к силе, если вы не применяли «Орбитальный удар» в этом бою."),
@@ -172,9 +180,10 @@ namespace StellarisClone.Cards
             { b.Spawn(Militia, side, sec); b.Spawn(Militia, side, sec); }, 25));
 
             // Доминион Ксарн — массы, знамёна, жестокая дисциплина
-            F("xarn", City(Add(new CardDef { Id = "X1", Name = Loc.T("Штрафной батальон"), Kind = CardKind.Unit, Cost = 1, Power = 3, Armor = 1, Kw = Kw.Infantry | Kw.Fragile,
-                Text = Loc.T("Погибает в конце хода.") }), 15, 5, 0, 10, 0.1f));
-            F("xarn", City(Add(new CardDef { Id = "X2", Name = Loc.T("Знамя Доминиона"), Kind = CardKind.Unit, Cost = 2, Power = 1, Armor = 4, Kw = Kw.Infantry,
+            F("xarn", City(Add(new CardDef { Id = "X1", Name = Loc.T("Штрафной батальон"), Kind = CardKind.Unit, Cost = 1, Power = 4, Armor = 1, Kw = Kw.Infantry | Kw.Fragile,
+                Text = Loc.T("Погибает в конце хода. Гибель штрафников злит остальных: союзники в секторе +1 к силе до конца боя."),
+                OnDeath = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u) b.Buff(a, 1, true, "banner"); } }), 15, 5, 0, 10, 0.1f));
+            F("xarn", City(Add(new CardDef { Id = "X2", Name = Loc.T("Знамя Доминиона"), Kind = CardKind.Unit, Cost = 2, Power = 1, Armor = 3, Kw = Kw.Infantry,
                 Text = Loc.T("При раскрытии: все союзники в секторе +1 к силе до конца боя."),
                 OnReveal = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u) b.Buff(a, 1, true, "banner"); } }), 40, 10, 10, 25));
             F("xarn", O("X3", Loc.T("Децимация"), 0, Loc.T("Ваш самый слабый юнит в секторе казнён; остальные +2 к силе до конца боя."), (b, side, sec) =>
@@ -185,8 +194,8 @@ namespace StellarisClone.Cards
                 b.Kill(weak);
                 foreach (var u in b.UnitsOf(side, sec)) b.Buff(u, 2, true, "decimation");
             }, 10));
-            F("xarn", Ind(Add(new CardDef { Id = "X4", Name = Loc.T("Титан «Молот Ксарна»"), Kind = CardKind.Unit, Cost = 6, Power = 8, Armor = 14, Kw = Kw.Crush | Kw.Pierce,
-                Text = Loc.T("Давит пехоту до 2 брони. Бронебой.") }), 220, 60, 110, 4, 1.5f));
+            F("xarn", Ind(Add(new CardDef { Id = "X4", Name = Loc.T("Титан «Молот Ксарна»"), Kind = CardKind.Unit, Cost = 6, Power = 6, Armor = 9, Kw = Kw.Crush | Kw.Pierce,
+                Text = Loc.T("Давит до двух пехотинцев с бронёй до 2. Бронебой.") }), 150, 60, 110, 4, 1.5f));
 
             // Синдикат Аквила — наёмники и деньги
             F("aquila", Add(new CardDef { Id = "Q1", Name = Loc.T("Наёмники «Сокол»"), Kind = CardKind.Unit, Cost = 3, Power = 4, Armor = 4, Kw = Kw.Infantry | Kw.Merc,
@@ -203,28 +212,28 @@ namespace StellarisClone.Cards
                 var t = b.StrongestEnemy(side, sec);
                 if (t != null) b.Damage(null, t, 4, true);
             }, 35));
-            F("aquila", City(Add(new CardDef { Id = "Q4", Name = Loc.T("Частная охрана"), Kind = CardKind.Unit, Cost = 2, Power = 2, Armor = 5, Cover = 1, Kw = Kw.Infantry,
+            F("aquila", City(Add(new CardDef { Id = "Q4", Name = Loc.T("Частная охрана"), Kind = CardKind.Unit, Cost = 2, Power = 2, Armor = 4, Cover = 1, Kw = Kw.Infantry,
                 Text = Loc.T("Укрытие 1.") }), 45, 20, 10, 25, 0.3f));
 
             // Иридийский Оракул — предвидение и пси-сила
-            F("iridia", City(Add(new CardDef { Id = "I1", Name = Loc.T("Провидица"), Kind = CardKind.Unit, Cost = 2, Power = 1, Armor = 3, Kw = Kw.Infantry,
+            F("iridia", City(Add(new CardDef { Id = "I1", Name = Loc.T("Провидица"), Kind = CardKind.Unit, Cost = 2, Power = 2, Armor = 3, Kw = Kw.Infantry,
                 Text = Loc.T("При раскрытии: вы видите руку врага до конца боя."),
                 OnReveal = (b, u) => { b.Sides[u.Side].SeesEnemyHand = true; b.Log(EvType.Status, u.Side, u.Sector, u.Uid, text: "foresight"); } }), 40, 20, 0, 25));
-            F("iridia", O("I2", Loc.T("Видение исхода"), 1, Loc.T("Сильнейший враг сектора, раскрытый в этом ходу, возвращается в руку владельца."), (b, side, sec) =>
+            F("iridia", O("I2", Loc.T("Видение исхода"), 1, Loc.T("Сильнейший враг сектора уходит под низ колоды владельца."), (b, side, sec) =>
             {
                 BUnit best = null;
                 foreach (var e in b.Enemies(side, sec))
                     if (!e.IsStructure && e.Def.Kind != CardKind.Hero && (best == null || b.Power(e) > b.Power(best))) best = e;
                 if (best == null) return;
                 b.RemoveFromBoard(best, "rewind");
-                b.Sides[best.Side].Hand.Add(best.Card);
+                b.Sides[best.Side].Deck.Add(best.Card);   // под низ: вернётся нескоро, а не на следующий ход
             }, 25));
-            F("iridia", City(Add(new CardDef { Id = "I3", Name = Loc.T("Хор Оракула"), Kind = CardKind.Unit, Cost = 3, Power = 2, Armor = 4, Kw = Kw.Infantry,
+            F("iridia", City(Add(new CardDef { Id = "I3", Name = Loc.T("Хор Оракула"), Kind = CardKind.Unit, Cost = 3, Power = 3, Armor = 5, Kw = Kw.Infantry,
                 Text = Loc.T("При раскрытии: +1 очко приказов в следующем ходу."),
                 OnReveal = (b, u) => b.Sides[u.Side].BonusNext += 1 }), 50, 20, 0, 30));
-            F("iridia", O("I4", Loc.T("Пси-шторм"), 4, Loc.T("3 урона ВСЕМ юнитам в секторе — и своим тоже."), (b, side, sec) =>
+            F("iridia", O("I4", Loc.T("Пси-шторм"), 4, Loc.T("3 урона всем врагам в секторе и 1 — своим: пси-волна не разбирает своих."), (b, side, sec) =>
             {
-                foreach (var u in new List<BUnit>(b.Sectors[sec].Units)) if (u.Alive && u.Revealed && !u.IsTrap) b.Damage(null, u, 3, true);
+                foreach (var u in new List<BUnit>(b.Sectors[sec].Units)) if (u.Alive && u.Revealed && !u.IsTrap) b.Damage(null, u, u.Side == side ? 1 : 3, true);
             }, 30));
 
             // Хлорофиловый Конклав Тэрра'ан — споры, корни, живая крепость
@@ -240,12 +249,12 @@ namespace StellarisClone.Cards
                 OnEndTurn = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) b.Heal(a, 1); } }), 80, 30, 0, 45, 0.4f));
 
             // Машинный Консенсус «Ноль» — рои дронов, пересборка, ассимиляция
-            F("nol", Ind(Add(new CardDef { Id = "N1", Name = Loc.T("Рой дронов"), Kind = CardKind.Unit, Cost = 1, Power = 3, Armor = 3, Kw = Kw.Swarm | Kw.Drone,
-                Text = Loc.T("Рой: сила не больше оставшейся брони.") }), 25, 10, 15, 1, 0.2f));
-            F("nol", Ind(Add(new CardDef { Id = "N2", Name = Loc.T("Узел Консенсуса"), Kind = CardKind.Unit, Cost = 3, Power = 0, Armor = 6, Kw = Kw.Drone,
+            F("nol", Ind(Add(new CardDef { Id = "N1", Name = Loc.T("Рой дронов"), Kind = CardKind.Unit, Cost = 1, Power = 3, Armor = 4, Kw = Kw.Swarm | Kw.Drone,
+                Text = Loc.T("Рой: сила не больше оставшейся брони.") }), 20, 10, 15, 1, 0.2f));
+            F("nol", Ind(Add(new CardDef { Id = "N2", Name = Loc.T("Узел Консенсуса"), Kind = CardKind.Unit, Cost = 3, Power = 1, Armor = 6, Kw = Kw.Drone,
                 Text = Loc.T("Все ваши дроны в секторе +1 к силе в каждой перестрелке."),
-                OnPreCombat = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u && a.Has(Kw.Drone)) b.Buff(a, 1, false, "node"); } }), 60, 20, 35, 2));
-            F("nol", O("N3", Loc.T("Пересборка"), 2, Loc.T("Два погибших ваших дрона снова в строю в этом секторе."), (b, side, sec) =>
+                OnPreCombat = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u && a.Has(Kw.Drone)) b.Buff(a, 1, false, "node"); } }), 40, 20, 35, 2));
+            F("nol", O("N3", Loc.T("Пересборка"), 1, Loc.T("Два погибших ваших дрона снова в строю в этом секторе."), (b, side, sec) =>
             {
                 int n = 0;
                 foreach (var s in b.Sectors)
@@ -253,7 +262,7 @@ namespace StellarisClone.Cards
                         if (n < 2 && u.Dead && !u.Hidden && u.Side == side && u.Has(Kw.Drone) && !u.IsTrap)
                         { u.Hidden = true; b.Spawn(u.Def, side, sec); n++; }   // Hidden — этот дрон уже пересобран
             }, 20));
-            F("nol", O("N4", Loc.T("Ассимиляция"), 4, Loc.T("Уничтожить слабейшего врага сектора: на его месте — ваш дрон."), (b, side, sec) =>
+            F("nol", O("N4", Loc.T("Ассимиляция"), 3, Loc.T("Уничтожить слабейшего врага сектора: на его месте — ваш дрон."), (b, side, sec) =>
             {
                 BUnit weak = null;
                 foreach (var e in b.Enemies(side, sec)) if (!e.IsStructure && (weak == null || e.Armor < weak.Armor)) weak = e;

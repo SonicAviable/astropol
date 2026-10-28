@@ -266,8 +266,12 @@ namespace StellarisClone.Cards
                 Log(EvType.Reveal, side, sector, u.Uid, def: d);
                 if (d.Salvo > 0) { var t = RandomEnemy(side, sector); if (t != null) { Log(EvType.Shot, side, sector, u.Uid, t.Uid, d.Salvo, "salvo"); Damage(u, t, d.Salvo); } }
                 if (d.Has(Kw.Crush))
+                {
+                    // Давит не больше двух пехотинцев: иначе одна машина сметала весь сектор экипажей и ополчения
+                    int crushed = 0;
                     foreach (var e in Enemies(side, sector))
-                        if (e.Has(Kw.Infantry) && e.Armor <= 2) { Log(EvType.Shot, side, sector, u.Uid, e.Uid, e.Armor, "crush"); Kill(e, u); }
+                        if (crushed < CrushLimit && e.Has(Kw.Infantry) && e.Armor <= 2) { Log(EvType.Shot, side, sector, u.Uid, e.Uid, e.Armor, "crush"); Kill(e, u); crushed++; }
+                }
                 d.OnReveal?.Invoke(this, u);
                 TriggerTraps(u);
                 if (Over) return;

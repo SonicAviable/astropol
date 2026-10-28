@@ -32,6 +32,13 @@ namespace StellarisClone.Cards
         private readonly List<long> _sel = new List<long>();
         private float _warnUntil;
         private bool _dirty;
+        // Прогноз: автобои с выбранным десантом идут понемногу каждый кадр, чтобы окно не подвисало
+        private const int ForecastRuns = 40, ForecastPerFrame = 4;
+        private Text _forecast;
+        private RectTransform _forecastFill;
+        private string _fcSig;
+        private int _fcDone, _fcWins;
+        private float _fcStart;
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
@@ -77,6 +84,7 @@ namespace StellarisClone.Cards
             }
             if (_warn != null && _warn.text.Length > 0 && Time.unscaledTime > _warnUntil) _warn.text = "";
             if (_dirty) { _dirty = false; Rebuild(); }
+            UpdateForecast();
         }
 
         private void Show(StarSystem sys)
@@ -181,8 +189,21 @@ namespace StellarisClone.Cards
                 Loc.T("Взять сильнейшие карты резерва, сколько поместится"));
             FootButton(foot, Loc.T("ОЧИСТИТЬ"), null, UIManager.DS.BtnNeutral, true, 160f, 140f, () => { _sel.Clear(); SFXManager.Play(Sfx.DealRemove, 0.7f); _dirty = true; },
                 Loc.T("Убрать все карты из десанта"));
+            // Прогноз исхода: доля побед в автобоях с этим десантом против известной обороны
+            var fc = LGBuild.Rect(foot, "Forecast");
+            fc.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(316, 0), new Vector2(300, 52));
+            var fi = LGIcons.Create(fc, LGIcon.Target, 18, Accent);
+            fi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 6), new Vector2(18, 18));
+            _forecast = LGBuild.Label(fc, "", 15, Color.white, TextAnchor.MiddleLeft, bold: true);
+            _forecast.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 6), new Vector2(274, 24));
+            _forecast.supportRichText = true;
+            _forecast.raycastTarget = true;
+            var ft = LGBuild.Rect(fc, "Bar");
+            ft.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(26, -16), new Vector2(240, 8));
+            _forecastFill = LGBuild.Bar(ft, Gold, 0f, 6f);
+            TooltipHelper.Attach(_forecast.gameObject, Loc.F("<b>Прогноз штурма</b>\nДоля побед в {0} автобоях с этим десантом против обороны, известной разведке: карты резерва врага, ополчение, щит и турели укреплений. В бою вы решаете сами — исход может быть и лучше, и хуже", ForecastRuns));
             _warn = LGBuild.Label(foot, "", 13, new Color(1f, 0.55f, 0.45f), TextAnchor.MiddleLeft, bold: true);
-            _warn.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(316, 0), new Vector2(560, 30));
+            _warn.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(640, 0), new Vector2(520, 30));
             FootButton(foot, Loc.T("В БОЙ"), LGIcon.Target, new Color(0.55f, 0.16f, 0.12f, 0.95f), false, 0f, 210f, () => Launch(false),
                 Loc.T("<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#8AA2A8>(Enter)</color>"));
             FootButton(foot, Loc.T("АВТОБОЙ"), LGIcon.Fast, UIManager.DS.BtnNeutral, false, 220f, 160f, () => Launch(true),
@@ -272,6 +293,38 @@ namespace StellarisClone.Cards
                 NotificationCenter.Show(Loc.T("Штурм не начат"), AssaultLink.Blocker(0, sys) ?? "", NotificationCenter.Kind.Warning, 4f);
         }
 
+        // ================================================================ Прогноз
+
+        /// <summary>Выбор изменился — прогноз считается заново (с паузой, пока игрок щёлкает картами), по нескольку боёв за кадр.</summary>
+        private void UpdateForecast()
+        {
+            if (_forecast == null) return;
+            var sys = EmpireStats.GetSystem(_system);
+            if (sys == null) return;
+            string sig = _system + ":" + string.Join(",", _sel);
+            if (sig != _fcSig)
+            {
+                _fcSig = sig; _fcDone = 0; _fcWins = 0;
+                _fcStart = Time.unscaledTime + 0.25f;
+                _forecast.text = Loc.T("<color=#8AA2A8>Прогноз: считаем…</color>");
+                LGBuild.SetBar(_forecastFill, 0f);
+                return;
+            }
+            if (_fcDone >= ForecastRuns || Time.unscaledTime < _fcStart) return;
+            var ids = new List<long>(_sel);
+            for (int i = 0; i < ForecastPerFrame && _fcDone < ForecastRuns; i++, _fcDone++)
+                if (AssaultLink.ForecastRun(sys, ids, 7919 * (_fcDone + 1) + _system)) _fcWins++;
+            if (_fcDone < ForecastRuns) return;
+            float p = _fcWins / (float)ForecastRuns;
+            Color c = p >= 0.6f ? UIManager.DS.Green : p >= 0.35f ? Gold : UIManager.DS.Red;
+            string verdict = p >= 0.75f ? Loc.T("уверенная победа") : p >= 0.6f ? Loc.T("скорее победа") : p >= 0.35f ? Loc.T("рискованно")
+                           : p >= 0.15f ? Loc.T("скорее поражение") : Loc.T("почти без шансов");
+            _forecast.text = Loc.F("Прогноз: <color=#{0}>{1:0}%</color> · {2}", ColorUtility.ToHtmlStringRGB(c), p * 100f, verdict);
+            LGBuild.SetBar(_forecastFill, p);
+            var img = _forecastFill.GetComponent<Image>();
+            if (img != null) img.color = c;
+        }
+
         // ================================================================ Наполнение
 
         private void Rebuild()
@@ -299,8 +352,10 @@ namespace StellarisClone.Cards
                 : Loc.F("В колоде {0} карт + генерал", load.Cards);
 
             var defense = am.DefenseCards(sys.OwnerId, sys.Id);
+            int turrets = Fortifications.GroundTurrets(sys.Fortification);
             _intel.text = Loc.F("<b>Разведка</b>  ·  в обороне карт резерва: <b>{0}</b>  ·  ополчение: <b>{1}</b>  ·  укрепления базы: <b>{2}</b>{3}",
-                defense.Count, AssaultLink.MilitiaFor(sys), sys.Fortification, sys.Fortification >= 1 ? Loc.T("  ·  щит Штаба") : "");
+                defense.Count, AssaultLink.MilitiaFor(sys), sys.Fortification,
+                sys.Fortification >= 1 ? Loc.F("  ·  щит Штаба и турелей: {0}", turrets) : "");
 
             float sp = _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
             Canvas.ForceUpdateCanvases();

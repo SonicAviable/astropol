@@ -51,6 +51,17 @@ namespace StellarisClone.Cards
         public int Count;
     }
 
+    /// <summary>Накопленный военный бюджет империи: сколько ресурсов отложено на армию.</summary>
+    [Serializable]
+    public class ArmyFund
+    {
+        public int Owner;
+        public float Energy, Minerals, Alloys, Influence;
+    }
+
+    /// <summary>Сколько дохода империя отдаёт армии.</summary>
+    public enum ArmyBudget { Stop = 0, Low = 1, Normal = 2, War = 3, Mobilize = 4 }
+
     [Serializable]
     public class ArmySave
     {
@@ -63,12 +74,19 @@ namespace StellarisClone.Cards
         /// <summary>Игрок сам задаёт состав армии (иначе — автосостав).</summary>
         public bool PlayerManual;
         public int PlayerSize;
+        /// <summary>Военный бюджет игрока (ArmyBudget); старые сохранения — обычный.</summary>
+        public int PlayerBudget = (int)ArmyBudget.Normal;
+        public List<ArmyFund> Funds = new List<ArmyFund>();
+        /// <summary>Стартовые отряды уже выданы (новая партия — один раз).</summary>
+        public bool StarterDone;
     }
 
     /// <summary>
     /// Армия империй — один общий резерв карт. Игрок задаёт состав армии (сколько карт каждого вида держать) или доверяет
-    /// автосоставу; империя сама заказывает недостающее, когда хватает ресурсов (не больше части запасов за раз), и
-    /// пополняет потери. Производство общее на империю: число линий растёт с городскими и промышленными районами,
+    /// автосоставу; империя сама заказывает недостающее и пополняет потери — из военного бюджета: каждый день в фонд армии
+    /// откладывается выбранная доля месячного дохода (25%, 50%, 100%), и заказ уходит, когда фонд покрывает цену.
+    /// Так армия не выкачивает запасы, нужные на стройку и флот; «Мобилизация» разрешает тратить и запасы (до четверти
+    /// за заказ). В начале партии у каждой империи — стартовый отряд. Производство общее на империю: число линий растёт с городскими и промышленными районами,
     /// пехоте нужен хотя бы один городской район, технике — промышленный, приказам — столица. Погрузки нет: при штурме
     /// в бой идут лучшие карты резерва, сколько поместится на военные корабли у цели (десантные места: корвет 2,
     /// фрегат 4, эсминец 6); при обороне — сколько вместит колония (жители и укрепления), сооружения и мины — только
@@ -83,8 +101,10 @@ namespace StellarisClone.Cards
         public const int WoundDaysAfterBattle = 30;
         public const int MaxDeck = 20, MinDeck = 8;
         public const int DefaultSize = 16, MinSize = 4, MaxSize = 40;
-        /// <summary>Какую долю запасов каждого ресурса можно отдать за один заказ при автопополнении.</summary>
-        private const float PlayerShare = 0.25f, AIShare = 0.33f;
+        /// <summary>«Мобилизация»: какую долю запасов каждого ресурса можно отдать за один заказ.</summary>
+        private const float MobilizeShare = 0.25f;
+        /// <summary>Фонд армии копится не больше чем на столько месяцев бюджета (плюс запас на самую дорогую карту).</summary>
+        private const float FundMonths = 6f, FundFloor = 150f;
         private const int ReplenishEveryDays = 3;
 
         private readonly List<CardInstance> _cards = new List<CardInstance>();
@@ -92,11 +112,109 @@ namespace StellarisClone.Cards
         private readonly Dictionary<int, Dictionary<string, int>> _targets = new Dictionary<int, Dictionary<string, int>>();
         private long _nextId = 1;
         private bool _subscribed;
+        /// <summary>Фонд армии по империям: гелий-3, титан, сплавы, влияние.</summary>
+        private readonly Dictionary<int, float[]> _fund = new Dictionary<int, float[]>();
+        private readonly Dictionary<int, ArmyBudget> _budget = new Dictionary<int, ArmyBudget>();
+        private bool _starterDone;
 
         /// <summary>Игрок задаёт состав сам; false — состав подбирает империя (по умолчанию).</summary>
         public bool PlayerManual { get; private set; }
         /// <summary>Размер армии игрока для автосостава.</summary>
         public int PlayerSize { get; private set; } = DefaultSize;
+
+        // ==================== ВОЕННЫЙ БЮДЖЕТ ====================
+
+        /// <summary>Доля месячного дохода, которая уходит в фонд армии.</summary>
+        public static float ShareOf(ArmyBudget b)
+            => b == ArmyBudget.Stop ? 0f : b == ArmyBudget.Low ? 0.25f : b == ArmyBudget.Normal ? 0.5f : 1f;
+
+        public static string BudgetName(ArmyBudget b)
+            => b == ArmyBudget.Stop ? Loc.T("Стоп") : b == ArmyBudget.Low ? Loc.T("Мирный") : b == ArmyBudget.Normal ? Loc.T("Обычный")
+             : b == ArmyBudget.War ? Loc.T("Военный") : Loc.T("Мобилизация");
+
+        public ArmyBudget BudgetOf(int owner) => _budget.TryGetValue(owner, out var b) ? b : ArmyBudget.Normal;
+        public ArmyBudget PlayerBudget => BudgetOf(0);
+
+        public void SetPlayerBudget(ArmyBudget b)
+        {
+            _budget[0] = b;
+            Replenish(0);
+            Changed();
+        }
+
+        /// <summary>Фонд армии: [гелий-3, титан, сплавы, влияние].</summary>
+        public float[] FundOf(int owner)
+        {
+            if (!_fund.TryGetValue(owner, out var f)) _fund[owner] = f = new float[4];
+            return f;
+        }
+
+        /// <summary>Месячный доход империи по ресурсам (только положительный) — от него считается бюджет.</summary>
+        public static void Income(int owner, out float e, out float m, out float a, out float inf)
+        {
+            e = m = a = inf = 0f;
+            if (owner == 0)
+            {
+                var eco = EconomyManager.Instance;
+                if (eco == null) return;
+                e = eco.MonthlyEnergyIncome; m = eco.MonthlyMineralsIncome; a = eco.MonthlyAlloysIncome; inf = eco.MonthlyInfluenceIncome;
+            }
+            else
+            {
+                var ai = AIEmpireManager.For(owner);
+                if (ai == null || ai.IsEliminated) return;
+                e = ai.MonthlyEnergyIncome; m = ai.MonthlyMineralsIncome; a = ai.MonthlyAlloysIncome; inf = ai.MonthlyInfluenceIncome;
+            }
+            e = Mathf.Max(0f, e); m = Mathf.Max(0f, m); a = Mathf.Max(0f, a); inf = Mathf.Max(0f, inf);
+        }
+
+        /// <summary>Бюджет армии в месяц по ресурсам: доля дохода.</summary>
+        public float[] MonthlyBudget(int owner)
+        {
+            Income(owner, out float e, out float m, out float a, out float inf);
+            float k = ShareOf(BudgetOf(owner));
+            return new[] { e * k, m * k, a * k, inf * k };
+        }
+
+        /// <summary>День прошёл: в фонд армии — дневная доля бюджета, пока армии чего-то не хватает (иначе фонд не копится впрок).</summary>
+        private void AccrueFund(int owner)
+        {
+            if (!Lacking(owner)) return;
+            var mb = MonthlyBudget(owner);
+            var f = FundOf(owner);
+            for (int i = 0; i < 4; i++) f[i] = Mathf.Min(f[i] + mb[i] / 30f, Mathf.Max(mb[i] * FundMonths, FundFloor));
+        }
+
+        /// <summary>Есть ли в составе армии карты, которых нет в резерве и очереди.</summary>
+        private bool Lacking(int owner)
+        {
+            if (!_targets.TryGetValue(owner, out var t)) return false;
+            foreach (var kv in t) if (Count(owner, kv.Key) + Queued(owner, kv.Key) < kv.Value) return true;
+            return false;
+        }
+
+        /// <summary>Покрывает ли фонд цену карты (при «Мобилизации» — запасы, до четверти на заказ).</summary>
+        public bool FundCovers(int owner, CardDef d)
+        {
+            if (d == null) return false;
+            if (BudgetOf(owner) == ArmyBudget.Mobilize) return Affordable(owner, d, MobilizeShare);
+            if (!Affordable(owner, d)) return false;
+            Cost(d, out float e, out float m, out float a, out float inf);
+            var f = FundOf(owner);
+            const float eps = 0.01f;
+            return e <= f[0] + eps && m <= f[1] + eps && a <= f[2] + eps && inf <= f[3] + eps;
+        }
+
+        /// <summary>Чего не хватает в фонде на карту — для подсказки («сплавы 12 / 60»); null — хватает.</summary>
+        public string FundLack(int owner, CardDef d)
+        {
+            Cost(d, out float e, out float m, out float a, out float inf);
+            var f = FundOf(owner);
+            var parts = new List<string>();
+            void P(float need, float have, string name) { if (need > have + 0.01f) parts.Add(Loc.F("{0} {1:0} / {2:0}", name, have, need)); }
+            P(e, f[0], Loc.T("гелий-3")); P(m, f[1], Loc.T("титан")); P(a, f[2], Loc.T("сплавы")); P(inf, f[3], Loc.T("влияние"));
+            return parts.Count == 0 ? null : string.Join(", ", parts);
+        }
 
         public IReadOnlyList<CardInstance> All => _cards;
         public IReadOnlyList<ArmyJob> Jobs => _jobs;
@@ -374,14 +492,23 @@ namespace StellarisClone.Cards
         }
 
         /// <summary>Оплатить и поставить в очередь империи (приказы и карты без срока — сразу в резерв).</summary>
-        private bool Order(int owner, CardDef d, Base b, float share)
+        private bool Order(int owner, CardDef d, Base b)
         {
-            if (ProduceBlocker(owner, d, b) != null || !Affordable(owner, d, share)) return false;
+            if (ProduceBlocker(owner, d, b) != null || !FundCovers(owner, d)) return false;
             Cost(d, out float e, out float m, out float a, out float inf);
             Pay(owner, e, m, a, inf, 1);
+            if (BudgetOf(owner) != ArmyBudget.Mobilize) Spend(owner, e, m, a, inf, 1);
             if (d.Site == ProdSite.Command || d.Days <= 0) { Create(owner, d.Id); _ready.Add((owner, d.Name)); }
             else _jobs.Add(new ArmyJob { Owner = owner, Def = d.Id, Days = d.Days, DaysLeft = d.Days, Energy = e, Minerals = m, Alloys = a, Influence = inf });
             return true;
+        }
+
+        /// <summary>Списать с фонда армии (sign = −1 — вернуть в фонд при отмене заказа).</summary>
+        private void Spend(int owner, float e, float m, float a, float inf, int sign)
+        {
+            var f = FundOf(owner);
+            f[0] = Mathf.Max(0f, f[0] - e * sign); f[1] = Mathf.Max(0f, f[1] - m * sign);
+            f[2] = Mathf.Max(0f, f[2] - a * sign); f[3] = Mathf.Max(0f, f[3] - inf * sign);
         }
 
         /// <summary>Снять с очереди ещё не начатую карту этого вида (с конца) и вернуть ресурсы.</summary>
@@ -392,6 +519,7 @@ namespace StellarisClone.Cards
                 var j = _jobs[i];
                 if (j.Owner != owner || j.Def != defId) continue;
                 Pay(owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1);
+                Spend(owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1);
                 _jobs.RemoveAt(i);
                 return true;
             }
@@ -403,6 +531,7 @@ namespace StellarisClone.Cards
         {
             if (j == null || !_jobs.Remove(j)) return;
             Pay(j.Owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1);
+            Spend(j.Owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1);
             int want = Target(j.Owner, j.Def);
             int have = Count(j.Owner, j.Def) + Queued(j.Owner, j.Def);
             if (want > have) SetTargetRaw(j.Owner, j.Def, have);
@@ -476,8 +605,8 @@ namespace StellarisClone.Cards
             Changed();
         }
 
-        /// <summary>Сила карты для отбора в колоду и в автосостав.</summary>
-        public static float Score(CardDef d) => d == null ? 0 : d.Power * 2 + d.Armor * 0.5f + d.Cost;
+        /// <summary>Сила карты для отбора в колоду и в автосостав. Смертник (гибнет в конце хода) ценится вдвое меньше.</summary>
+        public static float Score(CardDef d) => d == null ? 0 : d.Power * (d.Has(Kw.Fragile) ? 1f : 2f) + d.Armor * 0.5f + d.Cost;
         private static float Score(CardInstance c) => c.D == null ? 0 : Score(c.D) + c.Stars * 2;
 
         /// <summary>
@@ -541,13 +670,18 @@ namespace StellarisClone.Cards
             {
                 var j = _jobs[i];
                 if (j.Owner != owner || j.Started) continue;
-                if (Count(owner, j.Def) + Queued(owner, j.Def) > Target(owner, j.Def)) { Pay(owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1); _jobs.RemoveAt(i); }
+                if (Count(owner, j.Def) + Queued(owner, j.Def) > Target(owner, j.Def))
+                {
+                    Pay(owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1);
+                    Spend(owner, j.Energy, j.Minerals, j.Alloys, j.Influence, -1);
+                    _jobs.RemoveAt(i);
+                }
             }
         }
 
         /// <summary>
         /// Автопополнение: заказать недостающие до состава карты — сперва те, которых не хватает больше всего.
-        /// Не больше 2 заказов за раз, не больше доли запасов на каждый и не длиннее двух заказов на линию —
+        /// Не больше 2 заказов за раз, только на средства фонда армии и не длиннее двух заказов на линию —
         /// ресурсы не замораживаются в далёкой очереди.
         /// </summary>
         private bool Replenish(int owner)
@@ -565,14 +699,13 @@ namespace StellarisClone.Cards
             }
             if (need.Count == 0) return false;
             need.Sort((x, y) => y.lack.CompareTo(x.lack));
-            float share = owner == 0 ? PlayerShare : AIShare;
             int orders = 0, room = QueueRoom(owner, b);
             foreach (var (d, _) in need)
             {
                 if (orders >= 2) break;
                 bool instant = d.Site == ProdSite.Command || d.Days <= 0;
                 if (!instant && room <= 0) continue;
-                if (!Order(owner, d, b, share)) continue;
+                if (!Order(owner, d, b)) continue;
                 orders++;
                 if (!instant) room--;
             }
@@ -597,8 +730,14 @@ namespace StellarisClone.Cards
             if (s != null) return s;
             if (d.Site != ProdSite.Command && d.Days > 0 && QueueRoom(owner, b) <= 0)
                 return Loc.T("Ждёт места в очереди: заказов не больше двух на линию производства");
-            if (!Affordable(owner, d, owner == 0 ? PlayerShare : AIShare))
-                return Loc.T("Ждёт ресурсов: на один заказ уходит не больше четверти запасов");
+            var bud = BudgetOf(owner);
+            if (bud == ArmyBudget.Stop) return Loc.T("Военный бюджет остановлен — армия не пополняется");
+            if (!FundCovers(owner, d))
+            {
+                if (bud == ArmyBudget.Mobilize) return Loc.T("Ждёт ресурсов: при мобилизации на заказ уходит не больше четверти запасов");
+                if (!Affordable(owner, d)) return Loc.T("Ждёт ресурсов: столько нет на складах");
+                return Loc.F("Ждёт военного бюджета: {0}", FundLack(owner, d));
+            }
             return null;
         }
 
@@ -791,6 +930,13 @@ namespace StellarisClone.Cards
             // Раны заживают
             foreach (var c in _cards) if (c.WoundDays > 0) { c.WoundDays--; if (c.WoundDays == 0) changed = true; }
 
+            // Новая партия: стартовые отряды каждой империи
+            if (!_starterDone) { GiveStarters(); changed = true; }
+
+            // Военный бюджет: дневная доля дохода — в фонд армии
+            AccrueFund(0);
+            foreach (var ai in AIEmpireManager.Alive) AccrueFund(ai.OwnerId);
+
             // Производство: у каждой империи идут первые N заказов очереди (N — линии производства)
             if (_jobs.Count > 0)
             {
@@ -844,6 +990,26 @@ namespace StellarisClone.Cards
             if (changed) Changed();
         }
 
+        // ==================== СТАРТ ====================
+
+        /// <summary>Стартовый отряд: 3 штурмовые пехоты и гарнизон — чтобы первые месяцы было чем встретить десант.</summary>
+        private void GiveStarters()
+        {
+            if (EmpireStats.Systems == null || EmpireStats.Systems.Count == 0) return;
+            _starterDone = true;
+            var owners = new List<int> { 0 };
+            foreach (var ai in AIEmpireManager.Alive) owners.Add(ai.OwnerId);
+            foreach (int o in owners)
+            {
+                bool any = false;
+                foreach (var c in _cards) if (c.Owner == o) { any = true; break; }
+                foreach (var j in _jobs) if (j.Owner == o) { any = true; break; }
+                if (any) continue;
+                for (int i = 0; i < 3; i++) Create(o, "U1");
+                Create(o, "D2");
+            }
+        }
+
         // ==================== ИИ ====================
 
         /// <summary>ИИ раз в месяц: в войне или при подготовке к ней держит армию больше. Состав — тот же автосостав, что у игрока.</summary>
@@ -852,6 +1018,7 @@ namespace StellarisClone.Cards
             if (ai == null || ai.IsEliminated) return;
             bool war = ai.AtWar || ai.Mode == AIEmpireManager.ArmyMode.Attack;
             int size = ai.MonthlyEnergyIncome < 3f ? Mathf.Min(8, TargetTotal(ai.OwnerId)) : war ? 24 : 12;
+            _budget[ai.OwnerId] = war ? ArmyBudget.War : ArmyBudget.Normal;
             ApplyAutoDoctrine(ai.OwnerId, size);
         }
 
@@ -859,7 +1026,8 @@ namespace StellarisClone.Cards
 
         public ArmySave CaptureState()
         {
-            var s = new ArmySave { NextId = _nextId, PlayerManual = PlayerManual, PlayerSize = PlayerSize };
+            var s = new ArmySave { NextId = _nextId, PlayerManual = PlayerManual, PlayerSize = PlayerSize, PlayerBudget = (int)PlayerBudget, StarterDone = _starterDone };
+            foreach (var kv in _fund) s.Funds.Add(new ArmyFund { Owner = kv.Key, Energy = kv.Value[0], Minerals = kv.Value[1], Alloys = kv.Value[2], Influence = kv.Value[3] });
             s.Cards.AddRange(_cards);
             s.Jobs.AddRange(_jobs);
             foreach (var kv in _targets)
@@ -873,10 +1041,16 @@ namespace StellarisClone.Cards
             _jobs.Clear();
             _targets.Clear();
             _ready.Clear();
+            _fund.Clear();
+            _budget.Clear();
+            _starterDone = false;
             _nextId = 1;
             PlayerManual = false;
             PlayerSize = DefaultSize;
             if (s == null) { Changed(); return; }
+            _starterDone = s.StarterDone;
+            _budget[0] = Enum.IsDefined(typeof(ArmyBudget), s.PlayerBudget) ? (ArmyBudget)s.PlayerBudget : ArmyBudget.Normal;
+            if (s.Funds != null) foreach (var f in s.Funds) if (f != null) _fund[f.Owner] = new[] { f.Energy, f.Minerals, f.Alloys, f.Influence };
             foreach (var c in s.Cards)
             {
                 if (c == null || !CardCatalog.Exists(c.Def)) continue;
