@@ -163,7 +163,7 @@ namespace StellarisClone.Rendering
             _headIcon = LGIcons.Create(head.transform, LGIcon.Menu, 14, Cyan);
             _headIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
             var ht = LGBuild.Label(head.transform, Loc.T("ПЛАНИРОВЩИК"), 12, Primary, TextAnchor.MiddleLeft, bold: true);
-            ht.rectTransform.Stretch(34, 0, 112, 0);
+            ht.rectTransform.Stretch(34, 0, 90, 0);
             ht.Track(1.6f);
 
             // плашка «требует внимания»
@@ -178,10 +178,10 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(_alertChip, Loc.T("Требуют внимания: простаивающие корабли, свободные слоты исследований и бои"));
             _alertChip.SetActive(false);
 
-            // Справка — маленькая круглая кнопка «?» в шапке (раньше — пункт левого меню)
+            // Справка — отдельная круглая кнопка «?» снаружи, слева от шапки планировщика (раньше — пункт левого меню)
             var help = LGBuild.Button(head.transform, "Help", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f),
-                () => UIManager.Instance?.ToggleWindowPublic(UIManager.NavWindow.Help), null, "?", 12, 11f);
-            ((RectTransform)help.transform).At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-96, 0), new Vector2(22, 22));
+                () => UIManager.Instance?.ToggleWindowPublic(UIManager.NavWindow.Help), null, "?", 14, 15f);
+            ((RectTransform)help.transform).At(new Vector2(0, 0.5f), new Vector2(1f, 0.5f), new Vector2(-8, 0), new Vector2(30, 30));
             TooltipHelper.Attach(help.gameObject, Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#8AA2A8>(F1)</color>"));
             UIAnchors.Register(UIAnchors.Help, (RectTransform)help.transform);
 
