@@ -18,9 +18,9 @@ Dark gritty military sci-fi card illustration for a collectible card game, verti
 
 ## Доминион Ксарн — красный и чёрный, жёсткий милитаризм (4 карты)
 
-### X1 — «Штрафной батальон» (юнит, пехота; погибает в конце хода)
+### X1 — «Штрафной батальон» (юнит, пехота; погибает в конце хода, гибель злит союзников: +1 к силе)
 ```
-A desperate charge of a penal battalion of the Xarn Dominion: gaunt soldiers in battered black armor with red penal markings and chains on their wrists, cheap rifles and demolition charges, sprinting through a hail of tracer fire across a burning wasteland; red-armored officers with laser pistols drive them forward from behind; doomed, savage, heroic; black steel, blood red and orange explosion light
+A desperate charge of a penal battalion of the Xarn Dominion: gaunt soldiers in battered black armor with red penal markings and chains on their wrists, cheap rifles and demolition charges, sprinting through a hail of tracer fire across a burning wasteland; red-armored officers with laser pistols drive them forward from behind, and the troopers behind roar in fury as the first ranks fall; doomed, savage, heroic; black steel, blood red and orange explosion light
 ```
 
 ### X2 — «Знамя Доминиона» (юнит, пехота; при раскрытии все союзники сектора +1 к силе)
@@ -33,7 +33,7 @@ A towering Xarn standard bearer in heavy black power armor with crimson trim pla
 A grim execution in a ruined trench line of the Xarn Dominion: a stern commissar in a long black greatcoat with crimson epaulettes raises a heavy pistol, a line of kneeling disgraced soldiers in front of him, behind them rows of hardened troopers watching in silence, their eyes now burning with fury; cold rain, red signal flares in the sky; brutal, oppressive discipline; desaturated black and grey with harsh red light
 ```
 
-### X4 — «Титан „Молот Ксарна“» (юнит, техника, цена 6; давит пехоту, бронебой)
+### X4 — «Титан „Молот Ксарна“» (юнит, техника, цена 6; давит до двух пехотинцев, бронебой)
 ```
 A colossal Xarn war titan, a walking fortress over fifty meters tall in black armor plates with glowing red seams, a giant hammer-shaped siege cannon on one arm and a plasma lance on the other, crushing a ruined city block underfoot; tiny enemy soldiers scatter around its feet; the cannon fires with a blinding muzzle flash; seen from a low heroic angle; overwhelming scale and power; black, crimson and molten orange palette
 ```
@@ -71,7 +71,7 @@ A gigantic living fortress-tree of the Terra'an Conclave rising over a battlefie
 A dense swarm of small white-and-silver combat drones of the machine collective, each a sleek disk with a single glowing cyan eye and twin micro-guns, pouring out of a dark sky in a spiral formation over a ruined city; hundreds of cyan laser tracers rain down; cold, precise, inhuman; ice white, silver and cyan against dark smoky sky
 ```
 
-### N2 — «Узел Консенсуса» (юнит, дрон; все ваши дроны в секторе +1 к силе)
+### N2 — «Узел Консенсуса» (юнит, дрон, 1/6; все ваши дроны в секторе +1 к силе)
 ```
 A tall floating machine hub of the Consensus: a monolithic white and silver spire with rotating data rings and a blazing cyan core, projecting lines of light to dozens of drones hovering around it in perfect geometric formation; holographic data streams in the air; cold, intelligent, commanding presence over a dark battlefield; white, silver and cyan palette
 ```
@@ -90,9 +90,9 @@ A human soldier in heavy armor being assimilated by the machine collective: silv
 
 ## Иридийский Оракул — фиолетовый, псионика (1 карта)
 
-### I4 — «Пси-шторм» (приказ; 3 урона ВСЕМ юнитам в секторе, и своим тоже)
+### I4 — «Пси-шторм» (приказ; 3 урона всем врагам в секторе и 1 — своим)
 ```
-A devastating psionic storm tears through a battlefield: a towering vortex of violet and magenta lightning descends from a purple sky, soldiers and vehicles of both sides lifted into the air and thrown around, armor cracking with violet light; at the eye of the storm a robed Iridian seer floats with glowing white eyes and arms raised; apocalyptic, uncontrollable power; violet, magenta and white palette
+A devastating psionic storm tears through a battlefield: a towering vortex of violet and magenta lightning descends from a purple sky, enemy soldiers and vehicles lifted into the air and thrown around, armor cracking with violet light, even the seer's own guards stagger and shield their eyes; at the eye of the storm a robed Iridian seer floats with glowing white eyes and arms raised; apocalyptic, uncontrollable power; violet, magenta and white palette
 ```
 
 ---
