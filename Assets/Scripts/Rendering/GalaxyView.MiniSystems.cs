@@ -391,6 +391,10 @@ namespace StellarisClone.Rendering
         private static readonly Dictionary<string, Sprite> s_modelPlanetSprites = new Dictionary<string, Sprite>();
 
         /// <summary>Шарик планеты: с детальной моделью — по её развёртке и дымке, иначе — по типу.</summary>
+        /// <summary>Портрет планеты (тот же шарик, что у звезды на карте) — для шапки панели системы.</summary>
+        internal static Sprite PlanetPortrait(StarSystem s, PlanetData planet)
+            => s == null || planet == null ? null : PlanetSphereSprite(planet, s.Id * 100 + s.Planets.IndexOf(planet));
+
         private static Sprite PlanetSphereSprite(PlanetData planet, int seed)
         {
             var src = PlanetModelLibrary.IconSource(planet, out string model, out Color atmo);

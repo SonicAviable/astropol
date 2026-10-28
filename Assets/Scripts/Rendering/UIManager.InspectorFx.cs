@@ -13,7 +13,7 @@ namespace StellarisClone.Rendering
     public partial class UIManager
     {
         private RectTransform _inspPortrait;
-        private Image _inspStarHalo, _inspStarCore, _inspStarHot, _inspRingA, _inspRingB, _inspHeaderGlow, _inspOwnerGlow;
+        private Image _inspStarHalo, _inspStarCore, _inspStarHot, _inspPlanet, _inspRingA, _inspRingB, _inspHeaderGlow, _inspOwnerGlow;
         private int _inspCascadeKey = int.MinValue;
 
         // ==================== СПРАЙТЫ ====================
@@ -52,23 +52,10 @@ namespace StellarisClone.Rendering
 
         // ==================== ДЕКОР ПАНЕЛИ ====================
 
-        /// <summary>Сетка по стеклу, свет звезды из-под шапки, свечение полосы владельца, уголки-скобы.</summary>
+        /// <summary>Свет звезды из-под шапки и уголки-скобы (фон — чистое тёмное стекло, без сетки).</summary>
         private void BuildInspectorDecor(RectTransform insp)
         {
             // Тонкая шестигранная сетка по всему стеклу (едва заметна — «голографический планшет»)
-            var hexSp = ResSprite("UI/CardBattle/hexgrid");
-            if (hexSp != null)
-            {
-                // Плиткой средствами UI (саму текстуру не трогаем — её же растягивает экран боя)
-                var hex = LGBuild.Panel(insp, "HexGrid", new Color(0.55f, 0.95f, 1f, 0.035f));
-                hex.sprite = hexSp;
-                hex.type = Image.Type.Tiled;
-                hex.pixelsPerUnitMultiplier = hexSp.rect.width / 70f * (100f / Mathf.Max(1f, hexSp.pixelsPerUnit));
-                hex.raycastTarget = false;
-                hex.rectTransform.Stretch(4, 4, 4, 4);
-                LG.Ignore(hex.gameObject);
-            }
-
             // Свет звезды: мягкое пятно её цвета, выходящее из шапки вниз
             _inspHeaderGlow = LGBuild.Panel(insp, "StarLight", new Color(1f, 0.9f, 0.6f, 0.0f));
             _inspHeaderGlow.sprite = FactionSelectScreen.RadialSprite();
@@ -121,6 +108,10 @@ namespace StellarisClone.Rendering
             var disc = Layer("Disc", FleetIndicator.GetDiscSprite(), 58f, new Color(0.01f, 0.02f, 0.035f, 0.92f));
             _inspStarCore = Layer("Star", radial, 64f, new Color(1f, 0.92f, 0.6f, 1f));
             _inspStarHot = Layer("Core", radial, 26f, new Color(1f, 1f, 1f, 0.95f));
+            // Картинка планеты — главная планета системы (или выбранная); звезда тогда светит из-за неё ореолом
+            _inspPlanet = Layer("Planet", null, 60f, Color.white);
+            _inspPlanet.preserveAspect = true;
+            _inspPlanet.gameObject.SetActive(false);
             StellarisClone.Cards.HoloSpin.Add(_inspStarHalo, 0f, 0.22f, 0.06f);
             StellarisClone.Cards.HoloSpin.Add(_inspStarHot, 0f, 0.12f, 0.08f, 0.8f);
 
@@ -131,20 +122,37 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Цвета портрета: звезда (свет — её цвета) или значок объекта; кольца — цвета владельца.</summary>
-        private void PaintInspectorPortrait(bool star, LGIcon icon, Color tint, Color owner)
+        private void PaintInspectorPortrait(bool star, LGIcon icon, Color tint, Color owner, Sprite planet = null)
         {
             if (_inspPortrait == null) return;
+            bool hasPlanet = planet != null;
+            if (_inspPlanet != null) { _inspPlanet.sprite = planet; _inspPlanet.gameObject.SetActive(hasPlanet); }
+            if (hasPlanet) icon = LGIcon.Planet;
+            star = star && !hasPlanet;
             if (_inspStarCore != null) { _inspStarCore.gameObject.SetActive(star); _inspStarCore.color = new Color(tint.r, tint.g, tint.b, 1f); }
             if (_inspStarHot != null) _inspStarHot.gameObject.SetActive(star);
-            if (_inspStarHalo != null) _inspStarHalo.color = new Color(tint.r, tint.g, tint.b, star ? 0.55f : 0.3f);
+            if (_inspStarHalo != null) _inspStarHalo.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.55f : 0.3f);
             if (_inspTileIcon != null)
             {
-                _inspTileIcon.gameObject.SetActive(!star);
+                _inspTileIcon.gameObject.SetActive(!star && !hasPlanet);
                 _inspTileIcon.sprite = LGIcons.Get(icon);
                 _inspTileIcon.color = tint;
             }
             if (_inspRingB != null) _inspRingB.color = new Color(owner.r, owner.g, owner.b, 0.7f);
-            if (_inspHeaderGlow != null) _inspHeaderGlow.color = new Color(tint.r, tint.g, tint.b, star ? 0.16f : 0.08f);
+            if (_inspHeaderGlow != null) _inspHeaderGlow.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.16f : 0.08f);
+        }
+
+        /// <summary>Главная планета системы для шапки: колония с наибольшим населением, иначе самая крупная планета.</summary>
+        private static PlanetData HeaderPlanet(StarSystem s)
+        {
+            if (s == null || !s.IsSurveyed || s.Planets == null || s.Planets.Count == 0) return null;
+            PlanetData best = null;
+            foreach (var p in s.Planets)
+                if (p.Population > 0 && (best == null || p.Population > best.Population)) best = p;
+            if (best != null) return best;
+            foreach (var p in s.Planets)
+                if (best == null || p.Size > best.Size) best = p;
+            return best;
             if (_inspOwnerGlow != null) _inspOwnerGlow.color = new Color(owner.r, owner.g, owner.b, 0.35f);
         }
 

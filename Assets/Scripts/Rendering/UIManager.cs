@@ -1326,9 +1326,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private const float InspHeaderH = 96f;
 
         /// <summary>Плитка и полоса шапки: значок объекта, его цвет и цвет владельца.</summary>
-        private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor)
+        private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor, Sprite planet = null)
         {
-            PaintInspectorPortrait(icon == LGIcon.Star, icon, iconColor, ownerColor);
+            PaintInspectorPortrait(icon == LGIcon.Star, icon, iconColor, ownerColor, planet);
             if (_inspAccent != null) _inspAccent.color = new Color(ownerColor.r, ownerColor.g, ownerColor.b, 0.9f);
         }
 
@@ -1474,7 +1474,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _inspTitle.text = system.Name.ToUpper();
             SetInspectorBadge(LGIcon.Star, StarTint(system.SpectralClass),
-                system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.45f, 0.55f, 0.62f));
+                system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.45f, 0.55f, 0.62f),
+                GalaxyView.PlanetPortrait(system, HeaderPlanet(system)));
 
             string owner = system.OwnerId == 0
                 ? Loc.F("<color=#33E6CC>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))
@@ -1538,8 +1539,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (parentSystem != null) _activeSystem = parentSystem;
 
             _inspTitle.text = PlanetNames.Title(planet.Name);
-            SetInspectorBadge(LGIcon.Planet, DS.NeonCyan,
-                parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.45f, 0.55f, 0.62f));
+            SetInspectorBadge(LGIcon.Planet, parentSystem != null ? StarTint(parentSystem.SpectralClass) : DS.NeonCyan,
+                parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.45f, 0.55f, 0.62f),
+                GalaxyView.PlanetPortrait(parentSystem, planet));
             _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>").Replace("◆  ", "");
 
             bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;
