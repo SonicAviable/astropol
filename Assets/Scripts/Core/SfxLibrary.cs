@@ -39,8 +39,8 @@ namespace StellarisClone.Core.Audio
         Boom, BoomSmall, ImpactMetal, ImpactFlesh, ImpactShield, UnitDown, Whoosh,
         GunCock, EngineRev, Servo, Radio, BoomFar, ElecZap,
         RadioOrder, RadioCancel,
-        // Карточный бой: приказы и эффекты (Tools/card_audio, build.py … fx) — гонги, поющие чаши, тарелки, стекло,
-        // разряды, огонь и пар ниже/выше по высоте, задом наперёд, с залом и суббасом
+        // Карточный бой: приказы и эффекты (Tools/card_audio, build.py … fx) — без колоколов: гул неона и трансформатора
+        // вверх/вниз по высоте, разряды, «вжух» задом наперёд, низкие взрывы, стекло, огонь и пар, с залом и суббасом
         FxCast, FxShowcase, FxStinger, FxBuff, FxHeal, FxShieldUp, FxDebuff, FxShatter, FxBurn, FxPsi, FxSpores,
         FxCapture, FxLost,
     }

@@ -476,7 +476,7 @@ namespace StellarisClone.Cards
             v.Punch(0.4f);
             v.GlowBoost = 1.2f;
             SFXManager.Play(Sfx.CardFlip, 0.7f);
-            // Приказ срабатывает: подвод тарелкой задом наперёд — удар гонга с суббасом — звон чаши; поверх тихая рация
+            // Приказ срабатывает: «заряд» (втянутый «вжух», гул вверх) — удар с разрядом и суббасом; поверх тихая рация
             SFXManager.Play(Sfx.FxCast, 1f, e.Side == _P ? 1f : 0.94f, Pan(_fx.Local(_sec[e.Sector].Header)));
             SFXManager.Play(Sfx.OrderCast, 0.4f);
             AddLog(Loc.F("{0}: приказ «{1}»", SideName(e.Side), e.Def.Name));
