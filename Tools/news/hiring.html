@@ -16,8 +16,12 @@ body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; fon
   box-shadow: 0 0 18px #5FE6DA, 0 0 40px rgba(95,230,218,0.6); transform: skewX(-12deg); }
 .left { position: absolute; left: 130px; top: 150px; }
 .logo { font-family: Russo; font-size: 118px; letter-spacing: 6px; line-height: 1;
-  background: linear-gradient(180deg, #FFFFFF 10%, #BFF5F0 60%, #6FD8CF 100%); -webkit-background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 22px rgba(102,219,209,0.35)); }
+  background: linear-gradient(180deg, #FFF3CF 0%, #F2C766 55%, #C98A35 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 24px rgba(242,199,102,0.4)); }
+.studio { display: flex; align-items: center; gap: 22px; margin-top: 22px; }
+.studio span { font-weight: 700; font-size: 28px; letter-spacing: 10px; color: #CFE3E8; }
+.flags { display: flex; gap: 0; border-radius: 4px; overflow: hidden; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.35), 0 4px 14px rgba(0,0,0,0.6); }
+.flags svg { display: block; width: 66px; height: 44px; }
 .kicker { font-weight: 700; font-size: 26px; letter-spacing: 12px; color: #9FC9CF; margin-top: 18px; }
 .ver { font-family: Russo; font-size: 62px; letter-spacing: 6px; margin-top: 34px; }
 .list { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
@@ -31,8 +35,16 @@ body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; fon
 <body><div id="cover">
   <div class="space"></div><div class="art"></div><div class="fade"></div><div class="slash"></div>
   <div class="left">
-    <div class="logo">SMARTBIZ</div>
-    <div class="kicker">СТУДИЯ ASTROPOLITY</div>
+    <div class="logo">ASTROPOLITY</div>
+    <div class="studio"><span>СТУДИЯ SMARTBIZ</span>
+      <div class="flags">
+        <svg viewBox="0 0 3 2"><rect width="3" height="2" fill="#fff"/><rect y="0.667" width="3" height="0.667" fill="#0039A6"/><rect y="1.333" width="3" height="0.667" fill="#D52B1E"/></svg>
+        <svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#00AFCA"/>
+          <g fill="#FEC50C"><circle cx="31" cy="17" r="6"/>
+            <g stroke="#FEC50C" stroke-width="1.2"><line x1="31" y1="17" x2="42.0" y2="17.0"/><line x1="31" y1="17" x2="41.8" y2="19.1"/><line x1="31" y1="17" x2="41.2" y2="21.2"/><line x1="31" y1="17" x2="40.1" y2="23.1"/><line x1="31" y1="17" x2="38.8" y2="24.8"/><line x1="31" y1="17" x2="37.1" y2="26.1"/><line x1="31" y1="17" x2="35.2" y2="27.2"/><line x1="31" y1="17" x2="33.1" y2="27.8"/><line x1="31" y1="17" x2="31.0" y2="28.0"/><line x1="31" y1="17" x2="28.9" y2="27.8"/><line x1="31" y1="17" x2="26.8" y2="27.2"/><line x1="31" y1="17" x2="24.9" y2="26.1"/><line x1="31" y1="17" x2="23.2" y2="24.8"/><line x1="31" y1="17" x2="21.9" y2="23.1"/><line x1="31" y1="17" x2="20.8" y2="21.2"/><line x1="31" y1="17" x2="20.2" y2="19.1"/><line x1="31" y1="17" x2="20.0" y2="17.0"/><line x1="31" y1="17" x2="20.2" y2="14.9"/><line x1="31" y1="17" x2="20.8" y2="12.8"/><line x1="31" y1="17" x2="21.9" y2="10.9"/><line x1="31" y1="17" x2="23.2" y2="9.2"/><line x1="31" y1="17" x2="24.9" y2="7.9"/><line x1="31" y1="17" x2="26.8" y2="6.8"/><line x1="31" y1="17" x2="28.9" y2="6.2"/><line x1="31" y1="17" x2="31.0" y2="6.0"/><line x1="31" y1="17" x2="33.1" y2="6.2"/><line x1="31" y1="17" x2="35.2" y2="6.8"/><line x1="31" y1="17" x2="37.1" y2="7.9"/><line x1="31" y1="17" x2="38.8" y2="9.2"/><line x1="31" y1="17" x2="40.1" y2="10.9"/><line x1="31" y1="17" x2="41.2" y2="12.8"/><line x1="31" y1="17" x2="41.8" y2="14.9"/></g>
+            <path d="M18 29 q13 -5 26 0 q-13 2 -26 0z"/>
+            <rect x="4" y="4" width="3" height="32"/></g></svg>
+      </div></div>
     <div class="ver">ИЩЕМ В КОМАНДУ</div>
     <div class="list">
       <div>ДИЗАЙНЕРОВ</div>
