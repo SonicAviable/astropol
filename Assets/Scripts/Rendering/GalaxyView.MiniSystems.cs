@@ -315,8 +315,9 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < m.Planets.Length; i++)
             {
                 var lr = m.Orbits[i];
-                lr.startWidth = lr.endWidth = wpp * 1.1f;
-                lr.startColor = lr.endColor = new Color(orbitCol.r, orbitCol.g, orbitCol.b, 0.16f * a);
+                // Орбиты — фон, а не главное на карте: тонкие и полупрозрачные, чтобы не спорить с коридорами и ярлыками
+                lr.startWidth = lr.endWidth = wpp * 1.0f;
+                lr.startColor = lr.endColor = new Color(orbitCol.r, orbitCol.g, orbitCol.b, 0.10f * a);
 
                 float ang = (m.Phase[i] + time * m.Speed[i]) * Mathf.Deg2Rad;
                 var local = new Vector3(Mathf.Cos(ang) * m.Radius[i], 0.1f, Mathf.Sin(ang) * m.Radius[i]);
