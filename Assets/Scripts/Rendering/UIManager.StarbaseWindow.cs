@@ -41,32 +41,37 @@ namespace StellarisClone.Rendering
             var light = LGBuild.Panel(row.transform, "Light", new Color(owner.r, owner.g, owner.b, 0.12f));
             light.sprite = FactionSelectScreen.RadialSprite();
             light.raycastTarget = false;
-            light.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34, 0), new Vector2(200, 120));
+            light.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(54, 0), new Vector2(200, 120));
 
-            SbEmblem(row.rectTransform, new Vector2(34, 0), 50f, owner, sb.Disabled, new Vector2(0, 0.5f));
+            // Ручка у левого края: окно базы выезжает влево от панели — стрелка смотрит туда же («‹» открыть, «›» закрыть)
+            var tab = LGBuild.Panel(row.transform, "Handle", new Color(owner.r * 0.15f, owner.g * 0.15f, owner.b * 0.15f, 0.95f));
+            tab.raycastTarget = false;
+            tab.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(5, 0), new Vector2(16, 44));
+            LG.Chip(tab.gameObject, new Color(owner.r, owner.g, owner.b, open ? 0.8f : 0.45f), 8f);
+            var arrow = LGIcons.Create(tab.transform, LGIcon.Back, 11, open ? DS.Gold : Color.Lerp(owner, Color.white, 0.4f));
+            arrow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(11, 11));
+            arrow.rectTransform.localRotation = Quaternion.Euler(0, 0, open ? 180f : 0f);
+
+            SbEmblem(row.rectTransform, new Vector2(52, 0), 50f, owner, sb.Disabled, new Vector2(0, 0.5f));
 
             var cap = LGBuild.Label(row.transform, Loc.T("ЗВЁЗДНАЯ БАЗА"), 9, InspLabelCol, TextAnchor.UpperLeft, bold: true);
-            Place(cap.rectTransform, 0f, 0.7f, 11f, 12f, 70f);
+            Place(cap.rectTransform, 0f, 0.7f, 11f, 12f, 88f);
             cap.Track(1.6f);
             var name = LGBuild.Label(row.transform, Fortifications.Name(lvl).ToUpper(), 13, lvl > 0 ? DS.Gold : DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            Place(name.rectTransform, 0f, 0.7f, 24f, 18f, 70f);
+            Place(name.rectTransform, 0f, 0.75f, 24f, 18f, 88f);
             name.Track(1.2f);
             float power = cm != null ? cm.StarbasePower(system.Id) : 0f;
             var pw = LGBuild.Label(row.transform, sb.Disabled ? Loc.T("выведена из строя") : Loc.F("мощь {0:N0}", power), 10, sb.Disabled ? DS.Red : InspLabelCol, TextAnchor.UpperLeft);
-            Place(pw.rectTransform, 0f, 0.7f, 42f, 14f, 70f);
+            Place(pw.rectTransform, 0f, 0.7f, 42f, 14f, 88f);
 
             // Уровень ромбами и стрелка «открыть»
             for (int i = 0; i < Fortifications.MaxLevel; i++)
             {
                 var pip = LGBuild.Panel(row.transform, "Pip", i < lvl ? DS.Gold : new Color(0.05f, 0.08f, 0.1f, 1f));
                 pip.raycastTarget = false;
-                pip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-92 + i * 15, 0), new Vector2(7, 7));
+                pip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-50 + i * 15, 0), new Vector2(7, 7));
                 pip.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
             }
-            var arrow = LGIcons.Create(row.transform, LGIcon.Back, 14, open ? DS.Gold : DS.NeonCyan);
-            arrow.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-22, 0), new Vector2(14, 14));
-            // Окно открывается влево — стрелка смотрит туда же
-            arrow.rectTransform.localRotation = Quaternion.Euler(0, 0, open ? 180f : 0f);
             TooltipHelper.Attach(row.gameObject, open ? Loc.T("Скрыть окно звёздной базы") : Loc.T("Открыть звёздную базу: прочность, укрепления и их стройка"));
         }
 

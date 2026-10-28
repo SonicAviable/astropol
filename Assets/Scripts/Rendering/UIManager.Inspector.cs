@@ -222,21 +222,6 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // Флоты на орбите
-            var fleets = FleetsInOrbit(system.Id);
-            if (fleets.Count > 0)
-            {
-                InspSection(Loc.T("НА ОРБИТЕ"), LGIcon.Fleet);
-                foreach (var kv in fleets)
-                {
-                    int owner = kv.Key;
-                    string who = owner == 0 ? Loc.T("Ваши корабли") : AIEmpireManager.NameOf(owner, Loc.T("Чужие корабли"));
-                    string power = kv.Value.power > 0f ? Loc.F("  ·  мощь {0:N0}", kv.Value.power) : "";
-                    string war = owner > 0 && Diplomacy.AtWar(0, owner) ? Loc.T("  ·  <color=#FF6A6A>враг</color>") : "";
-                    InspNote(LGIcon.Fleet, $"{who}: {kv.Value.count}{power}{war}", FleetIndicator.OwnerColor(owner));
-                }
-            }
-
             // Вольный мир — свои карточки вместо управления
             var neutral = NeutralWorlds.At(system.Id);
             if (neutral != null && system.OwnerId == NeutralWorlds.Owner)
@@ -245,24 +230,7 @@ namespace StellarisClone.Rendering
                 return;
             }
 
-            // Что делать
-            InspSection(Loc.T("УПРАВЛЕНИЕ"), LGIcon.Gear);
-            if (!_isInSystemMode && system.OwnerId == -1)
-                InspText(!system.IsSurveyed ? Loc.T("Отправьте научный корабль, чтобы изучить систему.")
-                                            : Loc.T("Заложите форпост строительным кораблём — система станет вашей."));
-            else if (system.OwnerId == 0)
-            {
-                InspText(Loc.T("Система под вашим контролем."));
-                var fm = FleetManager.Instance;
-                if (fm != null) InspText(Loc.F("<color=#8AA2A8>Ремонт кораблей здесь:</color> {0:0}% в день", fm.RepairRateAt(system.Id, 0) * 100f));
-            }
-            else
-            {
-                var ai = AIEmpireManager.For(system.OwnerId);
-                InspText(ai != null && ai.AtWar
-                    ? Loc.F("Чтобы захватить систему, держите здесь военный флот без защитников ({0:0} дн. осады).", SiegeManager.RequiredDays(system))
-                    : Loc.T("Чужая система. Захват возможен только во время войны — осадой."));
-            }
+            // Секции «На орбите» и «Управление» убраны: флоты видны на карте, подсказки — в нижней кнопке действия
         }
 
         /// <summary>Флоты на орбите системы по владельцам: число кораблей и боевая мощь.</summary>
