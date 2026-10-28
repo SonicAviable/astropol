@@ -65,12 +65,20 @@ namespace StellarisClone.Rendering
             Place(pw.rectTransform, 0f, 0.7f, 42f, 14f, 88f);
 
             // Уровень ромбами и стрелка «открыть»
+            // Уровень укреплений — звёзды: построенные горят золотом (со свечением), недостроенные — тусклые
             for (int i = 0; i < Fortifications.MaxLevel; i++)
             {
-                var pip = LGBuild.Panel(row.transform, "Pip", i < lvl ? DS.Gold : new Color(0.05f, 0.08f, 0.1f, 1f));
-                pip.raycastTarget = false;
-                pip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-50 + i * 15, 0), new Vector2(7, 7));
-                pip.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+                bool lit = i < lvl;
+                var pos = new Vector2(-56 + i * 18, 0);
+                if (lit)
+                {
+                    var g = LGBuild.Panel(row.transform, "StarGlow", new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.35f));
+                    g.sprite = FactionSelectScreen.RadialSprite();
+                    g.raycastTarget = false;
+                    g.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(30, 30));
+                }
+                var st = LGIcons.Create(row.transform, LGIcon.Star, 15, lit ? DS.Gold : new Color(0.55f, 0.62f, 0.7f, 0.25f));
+                st.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(15, 15));
             }
             TooltipHelper.Attach(row.gameObject, open ? Loc.T("Скрыть окно звёздной базы") : Loc.T("Открыть звёздную базу: прочность, укрепления и их стройка"));
         }
