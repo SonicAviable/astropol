@@ -134,20 +134,23 @@ namespace StellarisClone.Cards
             var am = ArmyManager.Instance;
             var sb = new StringBuilder();
             sb.Append((int)_tab).Append((int)_kind).Append((int)_avail).Append((int)_sort).Append('|');
-            // Ресурсы и прогресс заказов меняются каждую секунду игры — их обновляет RefreshLive без пересборки
-            // (пересборка пересоздаёт все карты витрины, и они «дёргаются»). Сюда — только то, что меняет состав
+            // Пересборка пересоздаёт десятки карт — дорого, поэтому сюда только то, что меняет саму витрину: вкладку,
+            // фильтры, состав армии (цели), открытые технологии, районы. Ресурсы, заказы, «ждёт», резерв на плитках,
+            // сводка слева обновляются на месте (RefreshLive) — пока идёт время, окно не пересобирается
             if (am != null)
             {
-                foreach (var c in am.Of(0)) sb.Append(c.Id).Append(c.WoundDays > 0 ? 'w' : '-').Append(c.Stars);
-                sb.Append('|');
-                foreach (var j in am.JobsOf(0)) sb.Append(j.Def).Append(',');
+                if (_tab == Tab.Reserve)
+                    foreach (var c in am.Of(0)) sb.Append(c.Id).Append(c.WoundDays > 0 ? 'w' : '-').Append(c.Stars);
                 sb.Append('|');
                 foreach (var d in CardCatalog.ForFaction(FactionTraits.Key(0)))
-                    if (am.Target(0, d.Id) > 0) sb.Append(am.WaitReason(0, d) != null ? '!' : '.');
-                sb.Append('|').Append(am.TargetTotal(0)).Append(am.PlayerManual ? 'm' : 'a').Append(am.PlayerSize);
+                {
+                    int t = am.Target(0, d.Id);
+                    if (t > 0) sb.Append(d.Id).Append(':').Append(t).Append(',');
+                }
+                sb.Append('|').Append(am.PlayerManual ? 'm' : 'a').Append(am.PlayerSize);
             }
             var b = ArmyManager.BaseOf(0);
-            sb.Append('|').Append(b.Colonies).Append(b.Urban).Append(',').Append(b.Industrial).Append(',').Append(b.Population / 4);
+            sb.Append('|').Append(b.Colonies).Append(b.Urban).Append(',').Append(b.Industrial);
             var tm = TechnologyManager.Instance;
             if (tm != null) { int n = 0; foreach (var t in tm.AllTechs) if (t.IsResearched) n++; sb.Append('t').Append(n); }
             return sb.ToString();
@@ -354,6 +357,23 @@ namespace StellarisClone.Cards
             var b = ArmyManager.BaseOf(0);
             var mine = am.Of(0);
             var jobs = am.JobsOf(0);
+            UpdateSide(am, b, mine, jobs);
+
+            float sp = _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
+            Canvas.ForceUpdateCanvases();
+            LGBuild.Clear(_list);
+            _prices.Clear();
+            _queueUi.Clear();
+            _tiles.Clear();
+            _queueHost = null;
+            if (_tab == Tab.Doctrine) BuildDoctrine(am, b, jobs); else BuildReserve(am, mine);
+            Canvas.ForceUpdateCanvases();
+            if (_scroll != null) _scroll.verticalNormalizedPosition = sp;
+        }
+
+        /// <summary>Сводка слева: резерв, раненые, заказы, содержание, размер армии и военная база.</summary>
+        private void UpdateSide(ArmyManager am, ArmyManager.Base b, List<CardInstance> mine, List<ArmyJob> jobs)
+        {
             int wounded = 0;
             foreach (var c in mine) if (c.Wounded) wounded++;
             _sideValues[0].text = mine.Count.ToString();
@@ -383,20 +403,38 @@ namespace StellarisClone.Cards
             _sideHint.text = _tab == Tab.Doctrine
                 ? Loc.T("<b>Сколько карт идёт в бой</b>\nПри штурме — лучшие готовые карты резерва, сколько поместится на корабли у цели: корвет 2 места, фрегат 4, эсминец 6. При обороне — сколько вместит колония.\n\n<b>Подсказки</b>\nShift + −/+ — по 5 карт. Наведите на карту — она покажется крупно.")
                 : Loc.T("<b>Резерв</b>\nОбщий для всей империи: грузить на корабли и развозить по колониям ничего не нужно.\nРаненые лечатся 30 дней и пропускают бои. Выжившие в бою получают звезду ветерана.");
-
-            float sp = _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
-            Canvas.ForceUpdateCanvases();
-            LGBuild.Clear(_list);
-            _prices.Clear();
-            _queueUi.Clear();
-            if (_tab == Tab.Doctrine) BuildDoctrine(am, b, jobs); else BuildReserve(am, mine);
-            Canvas.ForceUpdateCanvases();
-            if (_scroll != null) _scroll.verticalNormalizedPosition = sp;
         }
 
         /// <summary>Раз в секунду: цены краснеют/белеют по запасам, полосы заказов и дни до готовности — на месте.</summary>
         private void RefreshLive()
         {
+            var am = ArmyManager.Instance;
+            if (am == null) return;
+            var b = ArmyManager.BaseOf(0);
+            var jobs = am.JobsOf(0);
+            UpdateSide(am, b, am.Of(0), jobs);
+
+            // Очередь производства: состав изменился — пересобрать только её (несколько мини-карт), а не всю витрину
+            if (_queueHost != null)
+            {
+                string qs = QueueSignature(jobs, b.Lines);
+                if (qs != _queueSig) { BuildQueue(am, b, jobs); LayoutRebuilder.MarkLayoutForRebuild(_list); }
+            }
+            // Плитки: «готово / строится / ждёт» и полоса — на месте
+            foreach (var t in _tiles)
+            {
+                if (t.Status == null) continue;
+                TileState(t.D, am, b, out string text, out Color col, out float ratio);
+                if (t.Status.text != text) t.Status.text = text;
+                t.Status.color = col;
+                if (t.Fill != null)
+                {
+                    LGBuild.SetBar(t.Fill, ratio);
+                    var fi = t.Fill.GetComponent<Image>();
+                    if (fi != null) fi.color = col;
+                }
+            }
+
             foreach (var p in _prices)
                 if (p.t != null) p.t.color = p.ok() ? UIManager.DS.TextPrimary : UIManager.DS.Red;
             foreach (var q in _queueUi)
@@ -408,6 +446,48 @@ namespace StellarisClone.Cards
                 if (q.active && q.days != null) q.days.text = Loc.F("{0:0} дн.", Mathf.Ceil(q.j.DaysLeft));
                 if (q.cv != null) q.cv.SetAlpha(q.active ? 0.55f + 0.45f * q.j.Progress : 0.4f);
             }
+        }
+
+        private sealed class TileLive { public CardDef D; public Text Status; public RectTransform Fill; }
+        private readonly List<TileLive> _tiles = new List<TileLive>();
+        private RectTransform _queueHost;
+        private string _queueSig;
+
+        private static string QueueSignature(List<ArmyJob> jobs, int lines)
+        {
+            var sb = new StringBuilder();
+            sb.Append(lines).Append('|');
+            foreach (var j in jobs) sb.Append(j.Def).Append(',');
+            return sb.ToString();
+        }
+
+        /// <summary>Строка состояния плитки и доля «готово из нужного».</summary>
+        private static void TileState(CardDef d, ArmyManager am, ArmyManager.Base b, out string text, out Color col, out float ratio)
+        {
+            bool locked = !ArmyManager.Unlocked(0, d);
+            string site = ArmyManager.SiteBlocker(0, d, b);
+            int target = am.Target(0, d.Id), have = am.Count(0, d.Id), queued = am.Queued(0, d.Id);
+            string wait = target > 0 ? am.WaitReason(0, d) : null;
+            ratio = target > 0 ? Mathf.Clamp01(have / (float)target) : 0f;
+            if (locked) { text = Loc.T("НУЖНА ТЕХНОЛОГИЯ"); col = Muted; }
+            else if (site != null) { text = Loc.T("НЕГДЕ ПРОИЗВОДИТЬ"); col = Warn; }
+            else if (target <= 0) { text = have > 0 ? Loc.F("НЕ В СОСТАВЕ · в резерве {0}", have) : Loc.T("НЕ В СОСТАВЕ"); col = Muted; }
+            else if (have >= target) { text = Loc.F("ГОТОВО {0} ИЗ {1}", have, target); col = UIManager.DS.Green; }
+            else if (wait != null) { text = Loc.F("ЖДЁТ · ГОТОВО {0} ИЗ {1}", have, target); col = Warn; }
+            else if (queued > 0) { text = Loc.F("СТРОИТСЯ {0} · ГОТОВО {1} ИЗ {2}", queued, have, target); col = Cyan; }
+            else { text = Loc.F("ГОТОВО {0} ИЗ {1}", have, target); col = UIManager.DS.TextPrimary; }
+        }
+
+        /// <summary>Очередь производства в своём контейнере: при новых заказах пересобирается только она.</summary>
+        private void BuildQueue(ArmyManager am, ArmyManager.Base b, List<ArmyJob> jobs)
+        {
+            if (_queueHost == null) return;
+            _queueSig = QueueSignature(jobs, b.Lines);
+            _queueUi.Clear();
+            LGBuild.Clear(_queueHost);
+            if (jobs.Count == 0) return;
+            Header(Loc.F("В ПРОИЗВОДСТВЕ · {0} · ЛИНИЙ {1}   ·   клик по карте — отменить заказ", jobs.Count, b.Lines), LGIcon.Construction, _queueHost);
+            QueueRow(jobs, b.Lines, am, _queueHost);
         }
 
         private static bool Match(CardDef d, KindFilter k)
@@ -444,11 +524,12 @@ namespace StellarisClone.Cards
         private void BuildDoctrine(ArmyManager am, ArmyManager.Base b, List<ArmyJob> jobs)
         {
             HowItWorks(am);
-            if (jobs.Count > 0)
-            {
-                Header(Loc.F("В ПРОИЗВОДСТВЕ · {0} · ЛИНИЙ {1}   ·   клик по карте — отменить заказ", jobs.Count, b.Lines), LGIcon.Construction);
-                QueueRow(jobs, b.Lines, am);
-            }
+            _queueHost = LGBuild.Rect(_list, "QueueHost");
+            var ql = _queueHost.gameObject.AddComponent<VerticalLayoutGroup>();
+            ql.childControlHeight = true; ql.childControlWidth = true;
+            ql.childForceExpandHeight = false; ql.childForceExpandWidth = true;
+            ql.spacing = 10f;
+            BuildQueue(am, b, jobs);
 
             string faction = FactionTraits.Key(0);
             var groups = new SortedDictionary<int, List<CardDef>>();
@@ -497,9 +578,9 @@ namespace StellarisClone.Cards
 
         private static LGIcon SiteIcon(ProdSite s) => s == ProdSite.City ? LGIcon.Population : s == ProdSite.Industry ? LGIcon.Industry : s == ProdSite.Command ? LGIcon.Target : LGIcon.Starbase;
 
-        private void Header(string text, LGIcon icon)
+        private void Header(string text, LGIcon icon, RectTransform parent = null)
         {
-            var row = LGBuild.Rect(_list, "H");
+            var row = LGBuild.Rect(parent ?? _list, "H");
             LGBuild.Height(row.gameObject, 30);
             var ic = LGIcons.Create(row, icon, 14, Gold);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(6, -2), new Vector2(14, 14));
@@ -548,12 +629,12 @@ namespace StellarisClone.Cards
         }
 
         /// <summary>Очередь империи: мини-карты с прогрессом; первые <paramref name="lines"/> — в работе. Клик — отменить.</summary>
-        private void QueueRow(List<ArmyJob> jobs, int lines, ArmyManager am)
+        private void QueueRow(List<ArmyJob> jobs, int lines, ArmyManager am, RectTransform parent = null)
         {
             int perRow = PerRow(MiniCard.x + 2f);
             for (int i0 = 0; i0 < jobs.Count; i0 += perRow)
             {
-                var row = LGBuild.Rect(_list, "Queue");
+                var row = LGBuild.Rect(parent ?? _list, "Queue");
                 LGBuild.Height(row.gameObject, MiniCard.y + 34);
                 for (int i = i0; i < jobs.Count && i < i0 + perRow; i++)
                 {
@@ -593,6 +674,10 @@ namespace StellarisClone.Cards
 
             var tile = LGBuild.Panel(row, d.Id, CTile);
             tile.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, 0), new Vector2(TileW, TileH - 6));
+            // Свой холст у плитки: живая карта (фольга, свечение) и смена цифр перерисовывают только эту плитку,
+            // а не весь список из десятков карт — иначе окно тормозит, пока идёт время
+            tile.gameObject.AddComponent<Canvas>();
+            tile.gameObject.AddComponent<GraphicRaycaster>();
             LG.Platter(tile.gameObject, 12f).SetRim(target > 0 ? (wait != null ? new Color(Warn.r, Warn.g, Warn.b, 0.45f) : new Color(Gold.r, Gold.g, Gold.b, 0.5f))
                                                                : new Color(1f, 1f, 1f, 0.08f));
 
@@ -625,22 +710,18 @@ namespace StellarisClone.Cards
 
             // Состояние одной строкой и полосой «готово / нужно»: зелёное — всё есть, бирюзовое — строится,
             // оранжевое — ждёт (ресурсов, места в очереди), серое — карта не в составе армии
-            string stText; Color stCol;
-            if (locked) { stText = Loc.T("НУЖНА ТЕХНОЛОГИЯ"); stCol = Muted; }
-            else if (site != null) { stText = Loc.T("НЕГДЕ ПРОИЗВОДИТЬ"); stCol = Warn; }
-            else if (target <= 0) { stText = have > 0 ? Loc.F("НЕ В СОСТАВЕ · в резерве {0}", have) : Loc.T("НЕ В СОСТАВЕ"); stCol = Muted; }
-            else if (have >= target) { stText = Loc.F("ГОТОВО {0} ИЗ {1}", have, target); stCol = UIManager.DS.Green; }
-            else if (wait != null) { stText = Loc.F("ЖДЁТ · ГОТОВО {0} ИЗ {1}", have, target); stCol = Warn; }
-            else if (queued > 0) { stText = Loc.F("СТРОИТСЯ {0} · ГОТОВО {1} ИЗ {2}", queued, have, target); stCol = Cyan; }
-            else { stText = Loc.F("ГОТОВО {0} ИЗ {1}", have, target); stCol = UIManager.DS.TextPrimary; }
+            TileState(d, am, b, out string stText, out Color stCol, out float stRatio);
+            var live = new TileLive { D = d };
+            _tiles.Add(live);
             var st = LGBuild.Label(tile.rectTransform, stText, 10, stCol, TextAnchor.MiddleCenter, bold: true);
             st.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 20), new Vector2(TileW - 8, 16));
             st.resizeTextForBestFit = true; st.resizeTextMinSize = 8; st.resizeTextMaxSize = 10;
+            live.Status = st;
             if (target > 0 && !locked && site == null)
             {
                 var bh = LGBuild.Rect(tile.rectTransform, "Ready");
                 bh.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 33), new Vector2(TileW - 36, 5));
-                LGBuild.Bar(bh, stCol, Mathf.Clamp01(have / (float)target), 4f);
+                live.Fill = LGBuild.Bar(bh, stCol, stRatio, 4f);
             }
 
             // Цена одной карты

@@ -583,9 +583,12 @@ namespace StellarisClone.Cards
             float bob = IdleBob * calm * Mathf.Sin(tt * 1.35f) * 2.6f;
             float sway = IdleBob * calm * Mathf.Sin(tt * 0.83f) * 0.7f;
             float breathe = IdleBreathe * Mathf.Sin(tt * 1.15f) * 0.006f;
-            _content.localPosition = new Vector3(shake + lunge.x, _hover * HoverLift + lunge.y + bob, 0f);
+            // Пишем в трансформ только при изменении: каждая запись заставляет холст пересобрать геометрию
+            var pos = new Vector3(shake + lunge.x, _hover * HoverLift + lunge.y + bob, 0f);
+            if (_content.localPosition != pos) _content.localPosition = pos;
             float s = 1f + _hover * HoverScale + _punch + breathe + lift * 0.1f;
-            _content.localRotation = Quaternion.Euler(_tilt.x + tilt3.x, _tilt.y + tilt3.y + _flipYaw, sway);
+            var rot = Quaternion.Euler(_tilt.x + tilt3.x, _tilt.y + tilt3.y + _flipYaw, sway);
+            if (_content.localRotation != rot) _content.localRotation = rot;
             // Поднятая карта: тень отходит и светлеет — карта висит над столом
             if (_shadow != null)
             {
@@ -604,7 +607,8 @@ namespace StellarisClone.Cards
                 float y = _artUv.y + (_artUv.height - h) * Mathf.Clamp01(fy);
                 _art.uvRect = new Rect(x, y, w, h);
             }
-            Rt.localScale = new Vector3(s, s, 1f);
+            var sc = new Vector3(s, s, 1f);
+            if (Rt.localScale != sc) Rt.localScale = sc;
 
             // Вспышка урона
             if (_hitA > 0f) { _hitA = Mathf.Max(0f, _hitA - dt * 3f); _hitFlash.color = new Color(1f, 0.25f, 0.15f, _hitA * 0.22f); }
@@ -619,12 +623,13 @@ namespace StellarisClone.Cards
             if (_armorBadge != null) _armorBadge.localScale = Vector3.Lerp(_armorBadge.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 10f));
 
             // Голо-фольга дышит и разгорается при наведении
-            if (_foil != null) _foil.color = new Color(1f, 1f, 1f, _foilA * (0.75f + 0.25f * Mathf.Sin(tt * 0.9f) + 0.8f * _hover));
+            // У спокойной карты витрины фольга не «дышит» сама — только разгорается под курсором
+            if (_foil != null) _foil.color = new Color(1f, 1f, 1f, _foilA * ((Calm ? 0.85f : 0.75f + 0.25f * Mathf.Sin(tt * 0.9f)) + 0.8f * _hover));
 
             // Фольга: блик бегает раз в несколько секунд; при наклоне следует за курсором
             bool foil = CardArt.Foil(Card.Def, Card.Stars);
             _sheenT += dt;
-            if (foil || _hover > 0.01f)
+            if ((foil && !Calm) || _hover > 0.01f)
             {
                 float cyc = Mathf.Repeat(_sheenT, 3.6f) / 1.2f;
                 float x = _hover > 0.01f ? _tilt.y / 12f : Mathf.Lerp(-1.4f, 1.4f, cyc);
