@@ -41,35 +41,35 @@ namespace StellarisClone.Rendering
             var light = LGBuild.Panel(row.transform, "Light", new Color(owner.r, owner.g, owner.b, 0.12f));
             light.sprite = FactionSelectScreen.RadialSprite();
             light.raycastTarget = false;
-            light.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(54, 0), new Vector2(200, 120));
+            light.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(40, 0), new Vector2(200, 120));
 
-            // Ручка у левого края: окно базы выезжает влево от панели — стрелка смотрит туда же («‹» открыть, «›» закрыть)
+            // Ручка у правого края: окно базы встаёт у правого края экрана, панель системы отъезжает влево —
+            // стрелка смотрит туда, где появится окно («›» открыть, «‹» закрыть)
             var tab = LGBuild.Panel(row.transform, "Handle", new Color(owner.r * 0.15f, owner.g * 0.15f, owner.b * 0.15f, 0.95f));
             tab.raycastTarget = false;
-            tab.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(5, 0), new Vector2(16, 44));
+            tab.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-5, 0), new Vector2(16, 44));
             LG.Chip(tab.gameObject, new Color(owner.r, owner.g, owner.b, open ? 0.8f : 0.45f), 8f);
             var arrow = LGIcons.Create(tab.transform, LGIcon.Back, 11, open ? DS.Gold : Color.Lerp(owner, Color.white, 0.4f));
             arrow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(11, 11));
-            arrow.rectTransform.localRotation = Quaternion.Euler(0, 0, open ? 180f : 0f);
+            arrow.rectTransform.localRotation = Quaternion.Euler(0, 0, open ? 0f : 180f);
 
-            SbEmblem(row.rectTransform, new Vector2(52, 0), 50f, owner, sb.Disabled, new Vector2(0, 0.5f));
+            SbEmblem(row.rectTransform, new Vector2(40, 0), 50f, owner, sb.Disabled, new Vector2(0, 0.5f));
 
             var cap = LGBuild.Label(row.transform, Loc.T("ЗВЁЗДНАЯ БАЗА"), 9, InspLabelCol, TextAnchor.UpperLeft, bold: true);
-            Place(cap.rectTransform, 0f, 0.7f, 11f, 12f, 88f);
+            Place(cap.rectTransform, 0f, 0.7f, 11f, 12f, 76f);
             cap.Track(1.6f);
             var name = LGBuild.Label(row.transform, Fortifications.Name(lvl).ToUpper(), 13, lvl > 0 ? DS.Gold : DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            Place(name.rectTransform, 0f, 0.75f, 24f, 18f, 88f);
+            Place(name.rectTransform, 0f, 0.75f, 24f, 18f, 76f);
             name.Track(1.2f);
             float power = cm != null ? cm.StarbasePower(system.Id) : 0f;
             var pw = LGBuild.Label(row.transform, sb.Disabled ? Loc.T("выведена из строя") : Loc.F("мощь {0:N0}", power), 10, sb.Disabled ? DS.Red : InspLabelCol, TextAnchor.UpperLeft);
-            Place(pw.rectTransform, 0f, 0.7f, 42f, 14f, 88f);
+            Place(pw.rectTransform, 0f, 0.7f, 42f, 14f, 76f);
 
-            // Уровень ромбами и стрелка «открыть»
             // Уровень укреплений — звёзды: построенные горят золотом (со свечением), недостроенные — тусклые
             for (int i = 0; i < Fortifications.MaxLevel; i++)
             {
                 bool lit = i < lvl;
-                var pos = new Vector2(-56 + i * 18, 0);
+                var pos = new Vector2(-72 + i * 18, 0);
                 if (lit)
                 {
                     var g = LGBuild.Panel(row.transform, "StarGlow", new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.35f));
@@ -166,7 +166,11 @@ namespace StellarisClone.Rendering
             _sbBody.Stretch();
         }
 
-        private Vector2 SbRestPos => InspectorRestPos + new Vector2(-(InspectorWidth + 12f), 0f);
+        /// <summary>Окно базы стоит у правого края экрана (на месте панели системы), панель отъезжает влево.</summary>
+        private Vector2 SbRestPos => InspectorRestPos;
+
+        /// <summary>Положение панели системы: выезд справа при появлении и сдвиг влево, пока открыто окно базы.</summary>
+        private Vector2 InspectorPos => InspectorRestPos + new Vector2((1f - Mathf.Clamp01(_inspShow)) * 40f - Mathf.Clamp01(_sbShow) * (SbWidth + 12f), 0f);
 
         private void BuildStarbaseWindow(StarSystem system)
         {
@@ -410,7 +414,7 @@ namespace StellarisClone.Rendering
             y += 100f;
         }
 
-        /// <summary>Каждый кадр (из Update): окно выезжает из-под панели системы влево на пружине и тает при закрытии.</summary>
+        /// <summary>Каждый кадр (из Update): окно выезжает справа на пружине (панель системы уступает место) и тает при закрытии.</summary>
         private void UpdateStarbaseWindow(float dt)
         {
             if (_sbWin == null) return;
@@ -422,6 +426,7 @@ namespace StellarisClone.Rendering
             _sbGroup.alpha = LGEase.OutCubic(k);
             _sbWin.anchoredPosition = SbRestPos + new Vector2((1f - k) * 60f, 0f);
             _sbWin.localScale = Vector3.one * Mathf.LerpUnclamped(0.97f, 1f, _sbShow);
+            if (_inspectorRect != null) _inspectorRect.anchoredPosition = InspectorPos;
         }
     }
 }

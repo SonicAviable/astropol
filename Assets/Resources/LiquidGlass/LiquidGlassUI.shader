@@ -220,7 +220,7 @@ Shader "Astropolity/UI/LiquidGlass"
                         bodyCol += rim.rgb * pow(saturate(tv), 10.0) * 0.035;
                     }
                     else
-                        bodyCol = tint + 0.018;
+                        bodyCol = tint + float3(0.0015, 0.003, 0.008);   // чуть светлее окна, но в тёмно-синий, не в серый
                     bodyA = fill;
                 }
                 else if (mode < 2.5)
@@ -247,11 +247,19 @@ Shader "Astropolity/UI/LiquidGlass"
 
                 if (mode < 1.5)
                 {
-                    // Яркость интерфейса (настройка): светлеют только тёмные окна и пластины — в глубокий сине-бирюзовый
+                    // Яркость интерфейса (настройка): светлеют только тёмные окна и пластины — в глубокий тёмно-синий.
+                    // Цвета здесь линейные: прибавка 0.02 к каждому каналу — это уже заметный серо-бирюзовый налёт,
+                    // поэтому подмешиваем только синеву (≈ #0E1C33 поверх чёрного при полной яркости)
                     float bodyLum = dot(bodyCol, float3(0.2126, 0.7152, 0.0722));
                     float darkW = 1.0 - smoothstep(0.10, 0.35, bodyLum);
-                    bodyCol = lerp(bodyCol, bodyCol * 1.35 + float3(0.010, 0.022, 0.032), saturate(_LGBrightness) * darkW);
-                    bodyCol += hover * 0.035;
+                    // Единый тёмно-синий тон: тёмные бирюзовые и серо-голубые подложки (их цвета разбросаны по окнам)
+                    // уводим в глубокий синий той же силы. Тёплые, красные и зелёные (статусные) тела не трогаем.
+                    float cmx  = max(max(bodyCol.g, bodyCol.b), 1e-5);
+                    float cool = saturate((min(bodyCol.g, bodyCol.b) - bodyCol.r) / cmx * 2.5)
+                               * saturate((bodyCol.b - 0.7 * bodyCol.g) / max(0.3 * bodyCol.g, 1e-5));
+                    bodyCol = lerp(bodyCol, float3(0.20, 0.42, 1.0) * cmx, cool * darkW * 0.85);
+                    bodyCol = lerp(bodyCol, bodyCol * 1.25 + float3(0.0016, 0.0034, 0.0105), saturate(_LGBrightness) * darkW);
+                    bodyCol += hover * float3(0.006, 0.012, 0.030);
                 }
 
                 // --- Тень ---

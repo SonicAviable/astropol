@@ -581,7 +581,7 @@ namespace StellarisClone.Rendering
             Color tint = c32;
             Color.RGBToHSV(tint, out float h, out float sat, out float val);
             bool neutral = sat < 0.25f || val < 0.16f;
-            float wash = Mathf.Lerp(0.03f, 0.12f, Mathf.Clamp01(val * 1.4f));   // выбранные (более яркие) — чуть заметнее
+            float wash = Mathf.Lerp(0.02f, 0.07f, Mathf.Clamp01(val * 1.4f));   // выбранные (более яркие) — чуть заметнее
             if (neutral && useRimOverride)
             {
                 Color.RGBToHSV(rimOverride, out float rh, out float rs, out float rv);
@@ -591,8 +591,8 @@ namespace StellarisClone.Rendering
             float rimA = neutral ? 0.30f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
             Color accent = neutral ? new Color(0.62f, 0.80f, 0.86f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
             // Тело — тёмно-синее стекло; цветная кнопка мягко светится цветом кромки (как «Укрепить» в окне базы)
-            Color body = Color.Lerp(new Color(0.010f, 0.022f, 0.040f), accent, neutral ? 0f : wash);
-            body.a = Mathf.Min(tint.a, 0.85f);
+            Color body = Color.Lerp(new Color(0.012f, 0.026f, 0.054f), accent, neutral ? 0f : wash);
+            body.a = Mathf.Min(tint.a, 0.94f);   // почти непрозрачное: карта под кнопкой не высветляет тело
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
             s.Fill = Mathf.Max(s.Fill, 0.94f);

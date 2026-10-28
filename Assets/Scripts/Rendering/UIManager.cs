@@ -1703,7 +1703,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _inspShow = LGEase.Spring(_inspShow, _inspTargetAlpha, ref _inspShowV, 2.4f, 0.78f, dt);
                 float k = Mathf.Clamp01(_inspShow);
                 _inspectorGroup.alpha = LGEase.OutCubic(k);
-                _inspectorRect.anchoredPosition = InspectorRestPos + new Vector2((1f - k) * 40f, 0f);
+                _inspectorRect.anchoredPosition = InspectorPos;
                 _inspectorRect.localScale = Vector3.one * Mathf.LerpUnclamped(0.965f, 1f, _inspShow);
             }
 
