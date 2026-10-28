@@ -577,14 +577,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 y += 46f;
                 _navOrder.Add(bRt);
 
-                var bar = LGBuild.Panel(b.transform, "Accent", new Color(accent.r, accent.g, accent.b, 0.95f));
-                bar.rectTransform.anchorMin = new Vector2(0, 0.5f);
-                bar.rectTransform.anchorMax = new Vector2(0, 0.5f);
-                bar.rectTransform.pivot = new Vector2(0, 0.5f);
-                bar.rectTransform.sizeDelta = new Vector2(2.5f, 22f);
-                bar.rectTransform.anchoredPosition = new Vector2(3f, 0f);
-                LG.Line(bar.gameObject);
-
                 var tile = LGBuild.Panel(b.transform, "IconTile", new Color(accent.r * 0.16f, accent.g * 0.16f, accent.b * 0.16f, 0.95f));
                 tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(28, 28));
                 LG.Chip(tile.gameObject, new Color(accent.r, accent.g, accent.b, 0.45f));

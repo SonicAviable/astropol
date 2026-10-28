@@ -277,11 +277,6 @@ namespace StellarisClone.Rendering
             btn.interactable = enabled;
             Color a = enabled ? accent : new Color(0.45f, 0.52f, 0.58f);
 
-            var bar = LGBuild.Panel(go.transform, "Accent", new Color(a.r, a.g, a.b, enabled ? 0.95f : 0.4f));
-            bar.raycastTarget = false;
-            bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(3f, 0f), new Vector2(2.5f, size.y * 0.55f));
-            LG.Line(bar.gameObject);
-
             var tile = LGBuild.Panel(go.transform, "IconTile", new Color(a.r * 0.16f, a.g * 0.16f, a.b * 0.16f, 0.95f));
             tile.raycastTarget = false;
             tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(size.y - 12f, size.y - 12f));
