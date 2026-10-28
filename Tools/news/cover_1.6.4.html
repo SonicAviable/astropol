@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Обложка новости об обновлении 1.6.4 (1920×1080). Рендер: node Tools/news/render.js cover_1.6.4 -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+:root { --cyan: #66DBD1; --gold: #F2C766; --navy: #050B18; --text: #F0FAFF; --muted: #AAC4D2; }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: var(--navy); font-family: Play, sans-serif; color: var(--text); }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: -20px; background: url(../../Assets/Resources/UI/Cards/table_continental.jpg) center/cover; filter: saturate(0.95) brightness(0.9) blur(1px); }
+.grade { position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(4,9,22,0.97) 0%, rgba(4,9,22,0.88) 36%, rgba(4,9,22,0.25) 62%, rgba(4,9,22,0.35) 100%),
+    linear-gradient(180deg, rgba(4,9,22,0.55) 0%, rgba(4,9,22,0) 30%, rgba(4,9,22,0) 70%, rgba(4,9,22,0.85) 100%); }
+.glow { position: absolute; width: 1100px; height: 1100px; right: -120px; top: -40px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(242,199,102,0.30) 0%, rgba(242,120,60,0.12) 32%, rgba(4,9,22,0) 66%); }
+.scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(102,219,209,0.035) 0 1px, transparent 1px 4px); }
+
+/* ---------- левая колонка */
+.left { position: absolute; left: 110px; top: 96px; width: 860px; }
+.tag { display: inline-flex; align-items: center; gap: 12px; padding: 9px 20px 9px 16px; border: 1.5px solid rgba(102,219,209,0.6);
+  border-radius: 6px; background: rgba(8,24,40,0.85); font-weight: 700; font-size: 22px; letter-spacing: 5px; color: var(--cyan); }
+.tag i { width: 10px; height: 10px; background: var(--cyan); transform: rotate(45deg); box-shadow: 0 0 12px var(--cyan); }
+.ver { font-family: Russo; font-size: 210px; line-height: 0.95; margin-top: 26px; letter-spacing: 4px;
+  background: linear-gradient(180deg, #FFF3CF 0%, #F2C766 55%, #C98A35 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 28px rgba(242,199,102,0.35)); }
+.title { font-family: Russo; font-size: 64px; letter-spacing: 6px; margin-top: 6px; text-shadow: 0 0 24px rgba(102,219,209,0.25); }
+.sub { font-size: 27px; color: var(--muted); margin-top: 14px; line-height: 1.35; }
+.line { height: 2px; width: 620px; margin: 34px 0 30px; background: linear-gradient(90deg, var(--gold), rgba(242,199,102,0)); }
+.items { display: flex; flex-direction: column; gap: 20px; }
+.item { display: flex; align-items: center; gap: 22px; }
+.ico { width: 62px; height: 62px; flex: none; border-radius: 8px; border: 1.5px solid rgba(102,219,209,0.55); background: rgba(10,28,48,0.9);
+  display: grid; place-items: center; box-shadow: 0 0 18px rgba(102,219,209,0.18) inset; }
+.ico svg { width: 34px; height: 34px; stroke: var(--cyan); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.item.gold .ico { border-color: rgba(242,199,102,0.6); } .item.gold .ico svg { stroke: var(--gold); }
+.it b { display: block; font-size: 30px; font-weight: 700; letter-spacing: 0.5px; }
+.it span { display: block; font-size: 21px; color: var(--muted); margin-top: 3px; }
+
+/* ---------- веер карт */
+.fan { position: absolute; left: 990px; top: 120px; width: 820px; height: 760px; }
+.card { position: absolute; width: 300px; height: 420px; left: 260px; top: 150px; transform-origin: 50% 230%;
+  border-radius: 14px; padding: 7px; background: linear-gradient(160deg, #FFE7A8, #B9822F 45%, #6E4A1A); box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(242,199,102,0.18); }
+.card.cy { background: linear-gradient(160deg, #B8FFF6, #2F9C93 45%, #13423F); box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(102,219,209,0.2); }
+.card .art { width: 100%; height: 100%; border-radius: 9px; background-size: cover; background-position: center; position: relative; overflow: hidden; }
+.card .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(3,8,18,0.92) 100%); }
+.card .name { position: absolute; left: 18px; right: 18px; bottom: 54px; z-index: 2; font-family: Russo; font-size: 22px; letter-spacing: 1px; text-shadow: 0 2px 6px #000; }
+.card .stats { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2; display: flex; justify-content: space-between; }
+.pill { min-width: 46px; height: 34px; padding: 0 10px; border-radius: 17px; display: grid; place-items: center; font-family: Russo; font-size: 20px; }
+.pow { background: #3A1410; border: 1.5px solid #FF8A5C; color: #FFC3A6; }
+.arm { background: #0E2638; border: 1.5px solid #6FB8FF; color: #CFE6FF; }
+.cost { position: absolute; top: 12px; left: 12px; z-index: 2; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 35% 30%, #BFFFF8, #2AA79C 55%, #0C3A36); border: 2px solid #DFFFFB; font-family: Russo; font-size: 24px; color: #04201D; }
+.c1 { transform: rotate(-20deg) translateY(26px); z-index: 1; } .c2 { transform: rotate(-10deg) translateY(4px); z-index: 2; }
+.c3 { transform: rotate(0deg) translateY(-10px) scale(1.06); z-index: 5; }
+.c4 { transform: rotate(10deg) translateY(4px); z-index: 2; } .c5 { transform: rotate(20deg) translateY(26px); z-index: 1; }
+
+.foot { position: absolute; left: 110px; right: 110px; bottom: 48px; display: flex; justify-content: space-between; align-items: center; }
+.logo { font-family: Russo; font-size: 34px; letter-spacing: 10px; }
+.logo small { font-family: Play; font-size: 20px; letter-spacing: 3px; color: var(--muted); margin-left: 18px; }
+.corner { position: absolute; width: 60px; height: 60px; border-color: rgba(102,219,209,0.55); border-style: solid; }
+.tl { left: 36px; top: 36px; border-width: 2px 0 0 2px; } .tr { right: 36px; top: 36px; border-width: 2px 2px 0 0; }
+.bl { left: 36px; bottom: 36px; border-width: 0 0 2px 2px; } .br { right: 36px; bottom: 36px; border-width: 0 2px 2px 0; }
+</style></head>
+<body><div id="cover">
+  <div class="bg"></div><div class="grade"></div><div class="glow"></div><div class="scan"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="left">
+    <div class="tag"><i></i>ОБНОВЛЕНИЕ</div>
+    <div class="ver">1.6.4</div>
+    <div class="title">ШТУРМ КОЛОНИЙ</div>
+    <div class="sub">Колонии теперь берут карточным боем: армия, десант с кораблей<br>и сражение за три сектора планеты</div>
+    <div class="line"></div>
+    <div class="items">
+      <div class="item gold"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="11" height="15" rx="1.5"/><path d="M8 3h11a1.5 1.5 0 0 1 1.5 1.5V18"/></svg></div>
+        <div class="it"><b>Карточный бой за колонию</b><span>49 карт, 6 фракций, герои — адмиралы и губернаторы</span></div></div>
+      <div class="item"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></div>
+        <div class="it"><b>Армия на военный бюджет</b><span>Арсенал, доля дохода на армию и прогноз штурма</span></div></div>
+      <div class="item"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="it"><b>Крепости на карте</b><span>Окно звёздной базы, турели укреплений в обороне колонии</span></div></div>
+      <div class="item"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 21h8"/></svg></div>
+        <div class="it"><b>Новый тёмно-синий интерфейс</b><span>Панель системы, кнопки, подсказки со значками</span></div></div>
+    </div>
+  </div>
+
+  <div class="fan">
+    <div class="card c1"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/O2.jpg)"><div class="cost">5</div><div class="name">Орбитальный удар</div></div></div>
+    <div class="card cy c2"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/A3.jpg)"><div class="cost">4</div><div class="name">Миротворцы</div><div class="stats"><div class="pill pow">4</div><div class="pill arm">6</div></div></div></div>
+    <div class="card c3"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/U12.jpg)"><div class="cost">5</div><div class="name">Шагоход</div><div class="stats"><div class="pill pow">6</div><div class="pill arm">10</div></div></div></div>
+    <div class="card cy c4"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/U10.jpg)"><div class="cost">4</div><div class="name">Танк «Бастион»</div><div class="stats"><div class="pill pow">5</div><div class="pill arm">8</div></div></div></div>
+    <div class="card c5"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/U3.jpg)"><div class="cost">3</div><div class="name">Тяжёлая пехота</div><div class="stats"><div class="pill pow">3</div><div class="pill arm">5</div></div></div></div>
+  </div>
+
+  <div class="foot"><div class="logo">ASTROPOLITY<small>ранний доступ · VK Play</small></div></div>
+</div></body></html>
