@@ -659,8 +659,8 @@ namespace StellarisClone.Rendering
                 int tmin = harvest ? _data.HarvestedMinerals : _data.PotentialMinerals;
                 int ten = harvest ? _data.HarvestedEnergy : _data.PotentialEnergy;
                 tip += (harvest ? Loc.T("\n<color=#66FF88>ДОБЫЧА</color>\n") : Loc.T("\n<color=#66FF88>ЗАЛЕЖИ</color> <color=#8AA2A8>(пока не добываются)</color>\n")) +
-                       Loc.F("<color=#4DE6CC>Титан</color>: +{0}\n", tmin) +
-                       Loc.F("<color=#F2C747>Гелий-3</color>: +{0}\n", ten);
+                       "[[Minerals:#4DE6CC]]" + Loc.F("<color=#4DE6CC>Титан</color>: +{0}\n", tmin) +
+                       "[[Energy:#F2C747]]" + Loc.F("<color=#F2C747>Гелий-3</color>: +{0}\n", ten);
             }
             else
             {
