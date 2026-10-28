@@ -181,6 +181,8 @@ namespace StellarisClone.Cards
                     if (u.Has(Kw.Shield)) continue;           // щит Штаба — купол над рядом, а не карта
                     var v = MakeUnitView(u, revealed: !u.IsTrap);
                     v.SetAlpha(1f);
+                    // Укрепления — целыми: урон артподготовки покажут её события в начале боя
+                    if (u.IsStructure) v.RefreshNumbers(_state.Power(u), u.MaxArmor, u.MaxArmor, false);
                 }
             LayoutAll(true);
             RefreshPanels();
@@ -918,7 +920,11 @@ namespace StellarisClone.Cards
                 var sp = RectTransformUtility.WorldToScreenPoint(null, x.Rt.position);
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(croot, sp, null, out var lp);
                 var lifted = new Vector2(lp.x, lp.y + x.HoverLift);
-                ShowGlossary(x.Card, null, lifted, HandCard * (1f + x.HoverScale), lp.x < 250f ? 1f : -1f);
+                // Столбик подсказок — над верхом руки: соседние карты и их имена остаются видны
+                var hp = RectTransformUtility.WorldToScreenPoint(null, _handRoot.position);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(croot, hp, null, out var handLp);
+                float handTop = handLp.y + HandCard.y * 0.5f + 16f;
+                ShowGlossary(x.Card, null, lifted, HandCard * (1f + x.HoverScale), lp.x < 250f ? 1f : -1f, handTop);
             };
             v.OnHoverOut = x => { if (_handHover == x) { _handHover = null; ClearGlossary(); } LayoutHand(false); };
             v.OnDragBegin = BeginDrag;

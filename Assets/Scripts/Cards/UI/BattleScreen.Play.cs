@@ -62,7 +62,9 @@ namespace StellarisClone.Cards
             yield return PlayEvents();
             yield return MulliganPhase();
             _busy = false;
-            Hint(Loc.T("Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода"));
+            Hint(_P == BattleState.Attacker
+                ? Loc.T("Сначала секторы держит гарнизон — так и задумано: за 8 ходов отбейте 2 из 3 · перетащите карты в секторы · Enter — конец хода")
+                : Loc.T("Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода"));
         }
 
         /// <summary>Десантная капсула: огненный след сверху, удар, пыль и ударная волна.</summary>
@@ -909,6 +911,28 @@ namespace StellarisClone.Cards
 
         private IEnumerator OnStatus(BEvent e)
         {
+            if (e.Text == "barrage")
+            {
+                // Артподготовка с орбиты перед первым ходом: снаряды по укреплениям колонии, дальше — числа урона
+                bool mine = e.Side == _P;
+                AddLog(Loc.F("<color=#F2C766>Артподготовка с орбиты: укрепления −{0} брони</color>", e.Amount));
+                SFXManager.Play(Sfx.ShellWhistle, 1f);
+                yield return Banner(Loc.T("АРТПОДГОТОВКА"),
+                    mine ? Loc.F("Флот бьёт с орбиты по укреплениям: −{0} брони каждому", e.Amount)
+                         : Loc.F("Флот врага бьёт по вашим укреплениям: −{0} брони каждому", e.Amount),
+                    new Color(1f, 0.7f, 0.35f), 0.9f);
+                foreach (var kv in new List<KeyValuePair<int, CardView>>(_units))
+                {
+                    var u = _state.FindUnit(kv.Key);
+                    if (u == null || kv.Value == null || u.Side == e.Side || !u.IsStructure || u.Has(Kw.Shield)) continue;
+                    var p = _fx.Local(kv.Value.Rt);
+                    _fx.Explosion(p, 0.8f);
+                    _fx.Shake(8f, 0.22f);
+                    SFXManager.Play(Sfx.BoomSmall, 0.8f, Random.Range(0.9f, 1.05f), Pan(p));
+                    yield return W(0.14f);
+                }
+                yield break;
+            }
             if (e.Text == "smoke")
             {
                 yield break;   // дым уже показан приказом

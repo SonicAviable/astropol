@@ -15,6 +15,7 @@ namespace StellarisClone.Cards
             Result = new BattleResult();
             DealDeck(Attacker, Setup.AttackerCards, Setup.AttackerHero);
             DealDeck(Defender, Setup.DefenderCards, Setup.DefenderHero);
+            OrbitalBarrage();
             // Большая армия даёт больше вариантов с первого хода: +1 карта в руку при колоде от 14, ещё +1 от 18
             for (int s = 0; s < 2; s++)
             {
@@ -60,6 +61,26 @@ namespace StellarisClone.Cards
                 Place(c, side, sec, false, hidden: true);
                 Log(EvType.TrapSet, side, sec, def: c.Def);
             }
+        }
+
+        /// <summary>Урон артподготовки по каждому сооружению защитника (кроме щита); флот от 3000 мощи — сильнее.</summary>
+        public int BarrageDamage => Sides[Attacker].FleetPower >= 3000f ? 3 : Sides[Attacker].FleetPower > 0f ? 2 : 0;
+
+        /// <summary>
+        /// Артподготовка с орбиты перед первым ходом: флот десанта бьёт по укреплениям колонии (укрытие не спасает).
+        /// Без неё бункеры и турели держали секторы с первого хода, а у десанта было 1–2 очка — штурм казался проигранным.
+        /// </summary>
+        private void OrbitalBarrage()
+        {
+            int dmg = BarrageDamage;
+            if (dmg <= 0) return;
+            var targets = new List<BUnit>();
+            foreach (var sec in Sectors)
+                foreach (var u in sec.Units)
+                    if (u.Side == Defender && u.Alive && u.IsStructure && !u.Has(Kw.Shield)) targets.Add(u);
+            if (targets.Count == 0) return;
+            Log(EvType.Status, Attacker, -1, amount: dmg, text: "barrage");
+            foreach (var u in targets) Damage(null, u, dmg, true);
         }
 
         // ==================== ХОД ====================

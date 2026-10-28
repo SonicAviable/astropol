@@ -134,6 +134,7 @@ namespace StellarisClone.Cards
             s.Attacker.Name = fa; s.Defender.Name = fd;
             s.Attacker.IsPlayer = !playerDefends; s.Defender.IsPlayer = playerDefends;
             s.Attacker.FleetPower = 2000f;
+            s.Attacker.PointsPerTurn = 1;   // как в кампании (AssaultLink): господство флота на орбите
             s.Defender.Stability = 40 + rnd.Next(40);
             var me = playerDefends ? s.Defender : s.Attacker;
             me.Treasury = () => s_instance != null ? s_instance._treasury : 500f;

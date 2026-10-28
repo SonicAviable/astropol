@@ -54,8 +54,9 @@ namespace StellarisClone.Cards
         /// <summary>
         /// Столбик плашек рядом с картой: center/size — карта в координатах экрана боя (канвас 1920×1080 от центра),
         /// side — с какой стороны (+1 справа, −1 слева). Плашки живут в слое превью — поверх руки и стола.
+        /// floor — ниже этой высоты столбик не опускается (у руки — верх соседних карт, чтобы не закрывать их имена).
         /// </summary>
-        private void ShowGlossary(BCard card, BUnit u, Vector2 center, Vector2 size, float side)
+        private void ShowGlossary(BCard card, BUnit u, Vector2 center, Vector2 size, float side, float floor = float.MinValue)
         {
             ClearGlossary();
             var items = GlossaryFor(card, u);
@@ -64,7 +65,9 @@ namespace StellarisClone.Cards
             float x = center.x + side * (size.x * 0.5f + 14f + w * 0.5f);
             // Не вылезать за экран: если места нет, плашки — по другую сторону
             if (Mathf.Abs(x) + w * 0.5f > 950f) x = center.x - side * (size.x * 0.5f + 14f + w * 0.5f);
-            float y = Mathf.Min(center.y + size.y * 0.5f, 520f);
+            float total = 0f;
+            for (int i = 0; i < items.Count && i < 6; i++) total += 36f + Mathf.Max(1, Mathf.CeilToInt(items[i].text.Length / 34f)) * 16f + 8f;
+            float y = Mathf.Min(Mathf.Max(center.y + size.y * 0.5f, floor + total), 520f);
             var layer = _previewRoot;
             var origin = _previewRoot.anchoredPosition;
             int n = 0;
