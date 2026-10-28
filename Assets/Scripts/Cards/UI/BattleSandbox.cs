@@ -21,8 +21,8 @@ namespace StellarisClone.Cards
         private static readonly string[] Factions = { "astrea", "xarn", "aquila", "iridia", "terraan", "nol" };
         private static readonly string[] Common = { "U1", "U1", "U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "O1", "O2", "O3", "O4", "O5", "O6", "O7", "O9" };
 
-        /// <summary>ВРЕМЕННО: F10 открывает тестовый бой и в сборке игры. Перед релизом — false.</summary>
-        public static readonly bool InBuild = true;
+        /// <summary>Тестовый бой по F10 — только в редакторе; в сборке игры клавиши выключены.</summary>
+        public static readonly bool InBuild = false;
 
         /// <summary>Отложенный запуск после входа в Play Mode из меню редактора: 1 — штурм, 2 — оборона.</summary>
         public const string PendingKey = "Astropolity.TestBattle";
