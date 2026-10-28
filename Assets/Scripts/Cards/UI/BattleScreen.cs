@@ -436,6 +436,21 @@ namespace StellarisClone.Cards
                 // бирюзовая), линия фронта, гнездо счёта слева, гнездо кнопки хода справа, плиты под имена и кнопки
                 var screen = CardSkin.Simple(_board, "BoardScreen", "board_screen", Color.white);
                 screen.rectTransform.At(Mid, Mid, Vector2.zero, new Vector2(1920f, 1080f));
+                // Неоновые контуры — отдельным слоем света: переливаются по радуге, по ним пробегает блик (шейдер Holo)
+                if (CardSkin.Tex("board_lines") != null)
+                {
+                    var lines = CardSkin.Simple(_board, "BoardLines", "board_lines", Color.white);
+                    lines.rectTransform.At(Mid, Mid, Vector2.zero, new Vector2(1920f, 1080f));
+                    lines.material = UIFx.HoloMat;
+                }
+                // По линии фронта время от времени пробегает импульс энергии
+                var pulse = LGBuild.Panel(_board, "FrontPulse", new Color(0.55f, 1f, 0.95f, 0f));
+                pulse.sprite = CardSprites.Spark;
+                pulse.material = UIFx.GlowMat;
+                pulse.raycastTarget = false;
+                pulse.rectTransform.At(Mid, Mid, new Vector2(-790, 0), new Vector2(180, 12));
+                var run = pulse.gameObject.AddComponent<HoloRunner>();
+                run.From = new Vector2(-790, 0); run.To = new Vector2(700, 0);
                 return;
             }
             // Разделители дорожек — тонкие бирюзовые линии, как в окнах игры
@@ -590,8 +605,8 @@ namespace StellarisClone.Cards
             {
                 // Плашки игроков в углах (как имена в больших карточных играх), рука врага — рубашками у верхнего края,
                 // счёт секторов — в гнезде слева на линии фронта
-                PlayerPlate(en, _E, new Vector2(-760, 497), true);
-                PlayerPlate(me, _P, new Vector2(-760, -497), false);
+                PlayerPlate(en, _E, new Vector2(-720, 476), true);
+                PlayerPlate(me, _P, new Vector2(-720, -476), false);
                 BuildScoreSocket();
                 _enemyHandRow = At(_board, "EnemyHand", new Vector2(0, 512), new Vector2(460, 120));
                 return;
@@ -609,8 +624,14 @@ namespace StellarisClone.Cards
             var fc = CardArt.Faction(side.Faction);
             var pp = pos + new Vector2(-130, 0);
             const float S = 84f;
-            var glow = CardSkin.Simple(_board, "PlateGlow", "glow", new Color(fc.r, fc.g, fc.b, 0.45f));
-            glow.rectTransform.At(Mid, Mid, pp, new Vector2(170, 170));
+            var glow = CardSkin.Simple(_board, "PlateGlow", "glow", new Color(fc.r, fc.g, fc.b, 0.5f));
+            glow.rectTransform.At(Mid, Mid, pp, new Vector2(230, 230));
+            HoloSpin.Add(glow, 0f, 0.3f, 0.06f, enemy ? 1.3f : 0f);
+            // За портретом — живая голограмма цвета фракции: лучи, два встречных кольца и искры, поднимающиеся из-за круга
+            HoloLayer(_board, "holo_rays", pp, 270f, new Color(fc.r, fc.g, fc.b, 0.55f), 6f, enemy ? 2f : 0f);
+            HoloLayer(_board, "holo_ring_b", pp, 162f, new Color(fc.r, fc.g, fc.b, 0.75f), -14f, enemy ? 1f : 0f);
+            HoloLayer(_board, "holo_ring_a", pp, 128f, new Color(1f, 1f, 1f, 0.55f), 22f, enemy ? 0.5f : 2.5f);
+            HoloMotes.Add(_board, pp, new Color(fc.r, fc.g, fc.b, 0.9f), 44f);
             ChipAt(_board, "PlateRing", pp, new Vector2(S + 10, S + 10), PanelTint, new Color(fc.r, fc.g, fc.b, 0.95f));
             var disc = CardSkin.Simple(_board, "Portrait", "disc", Color.white);
             disc.rectTransform.At(Mid, Mid, pp, new Vector2(S, S));
@@ -624,11 +645,22 @@ namespace StellarisClone.Cards
             }
             var nm = Caption(_board, (side.Name ?? side.Faction ?? "").ToUpper(), 22, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 1.2f);
             if (CardSkin.Title != null) { nm.font = CardSkin.Title; nm.fontStyle = FontStyle.Normal; }
-            nm.rectTransform.At(Mid, new Vector2(0f, 0.5f), pos + new Vector2(-70, 12), new Vector2(300, 30));
+            nm.rectTransform.At(Mid, new Vector2(0f, 0.5f), pos + new Vector2(-36, 12), new Vector2(300, 30));
             nm.horizontalOverflow = HorizontalWrapMode.Wrap;
             nm.resizeTextForBestFit = true; nm.resizeTextMinSize = 10; nm.resizeTextMaxSize = 22;
             var role = Caption(_board, idx == BattleState.Attacker ? Loc.T("ДЕСАНТ") : Loc.T("ГАРНИЗОН"), 12, new Color(fc.r, fc.g, fc.b, 1f), TextAnchor.MiddleLeft, 2.4f);
-            role.rectTransform.At(Mid, new Vector2(0f, 0.5f), pos + new Vector2(-70, -16), new Vector2(300, 18));
+            role.rectTransform.At(Mid, new Vector2(0f, 0.5f), pos + new Vector2(-36, -16), new Vector2(300, 18));
+        }
+
+        /// <summary>Вращающийся голографический слой (кольцо, лучи) с переливом Holo; нет картинки — ничего.</summary>
+        private static Image HoloLayer(RectTransform parent, string tex, Vector2 pos, float size, Color c, float spin, float phase = 0f)
+        {
+            if (CardSkin.Tex(tex) == null) return null;
+            var img = CardSkin.Simple(parent, "Holo", tex, c);
+            img.rectTransform.At(Mid, Mid, pos, new Vector2(size, size));
+            img.material = UIFx.HoloMat;
+            HoloSpin.Add(img, spin, 0.2f, 0f, phase);
+            return img;
         }
 
         /// <summary>Гнездо счёта слева на линии фронта: сверху — секторы врага, снизу — ваши.</summary>
@@ -644,6 +676,8 @@ namespace StellarisClone.Cards
         {
             var g = CardSkin.Simple(_board, "ScoreGlow", "glow", new Color(c.r, c.g, c.b, 0.4f));
             g.rectTransform.At(Mid, Mid, pos, new Vector2(150, 150));
+            HoloSpin.Add(g, 0f, 0.3f, 0.05f, top ? 1.5f : 0f);
+            HoloLayer(_board, "holo_ring_a", pos, 112f, new Color(c.r, c.g, c.b, 0.8f), top ? -18f : 18f);
             var o = ChipAt(_board, "ScoreGem", pos, new Vector2(80, 80), SubTint, new Color(c.r, c.g, c.b, 0.95f), raycast: true);
             var t = Caption(o.rectTransform, "0", 44, Color.white, TextAnchor.MiddleCenter, 0f);
             if (CardSkin.Title != null) { t.font = CardSkin.Title; t.fontStyle = FontStyle.Normal; }
@@ -896,7 +930,8 @@ namespace StellarisClone.Cards
             TooltipHelper.Attach(wrow.gameObject, Loc.T("<b>Погода</b>\nОткроется на 3-м ходу и изменит правила боя до конца штурма"));
             _weatherTip = wrow.GetComponent<TooltipTrigger>();
 
-            // Большая круглая кнопка хода в гнезде
+            // Большая круглая кнопка хода в гнезде; снаружи гнезда медленно вращается голографическое кольцо
+            HoloLayer(_board, "holo_ring_b", c0, 366f, new Color(0.3f, 0.95f, 0.85f, 0.4f), 5f);
             _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.6f, 0f));
             _endGlow.rectTransform.At(Mid, Mid, c0, new Vector2(340, 340));
             _endButton = LGBuild.Button(_board, "EndTurn", UIManager.DS.BtnPrimary, new Color(Cyan.r, Cyan.g, Cyan.b, 0.9f), OnEndTurn, null, Loc.T("ЗАКОНЧИТЬ\nХОД"), 20, 76f);
@@ -984,7 +1019,7 @@ namespace StellarisClone.Cards
             _deckP = Deck(skin ? new Vector2(LX, -300) : new Vector2(LX, -168), FactionOf(_P));
 
             var hp = GlassAt(_board, "Log", Vector2.zero, new Vector2(LogW, LogH), PanelTint, RimCyan, false, 18f, raycast: true);
-            hp.rectTransform.At(Mid, new Vector2(0.5f, 1f), new Vector2(skin ? -830f : LX, skin ? 430f : LogTop), new Vector2(LogW, LogH));
+            hp.rectTransform.At(Mid, new Vector2(0.5f, 1f), new Vector2(skin ? -830f : LX, skin ? 380f : LogTop), new Vector2(LogW, LogH));
             _logPanel = hp.rectTransform;
             PanelHeader(hp.rectTransform, Loc.T("ХРОНИКА БОЯ"));
 
@@ -1012,7 +1047,8 @@ namespace StellarisClone.Cards
             _logText.raycastTarget = false;
             _logText.supportRichText = true;
 
-            _logCollapsed = PlayerPrefs.GetInt("cards.logCollapsed", 0) == 1;
+            // На новом столе хроника по умолчанию свёрнута: под ней — кольца портрета врага и гнездо счёта
+            _logCollapsed = PlayerPrefs.GetInt("cards.logCollapsed", BoardSkin ? 1 : 0) == 1;
             _logH = _logCollapsed ? LogMin : LogH;
             _logPanel.sizeDelta = new Vector2(LogW, _logH);
             _logChevron.rectTransform.localRotation = Quaternion.Euler(0, 0, _logCollapsed ? 90f : -90f);

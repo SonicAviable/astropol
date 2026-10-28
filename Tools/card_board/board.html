@@ -1,9 +1,12 @@
 <!doctype html>
 <html><head><meta charset="utf-8">
 <!--
-  Стол карточного боя в духе тактического стола десанта: бронированная рама, посадочные площадки под ряды карт,
-  линия фронта. Рендер в PNG: node Tools/card_board/render.js <папка>. Геометрия совпадает с BattleScreen:
-  стол 1480×600 (TrayW×TrayH), рама — с запасом 60 px со всех сторон; площадка — под ряд одного сектора.
+  Поле карточного боя на весь экран в стиле голографического тактического стола: тёмное дымчатое стекло и неоновые
+  контуры (без металла). Два слоя: #screen — стекло (обычная прозрачность), #lines — только светящиеся контуры,
+  в игре они рисуются шейдером Holo (перелив цвета и бегущий блик). Кольца #ring_a / #ring_b и лучи #rays —
+  вращаются за портретами лидеров и вокруг кнопки хода.
+  Рендер в PNG: node Tools/card_board/render.js <папка>. Геометрия совпадает с BattleScreen: центр экрана (960, 540),
+  ряды карт на y = ±214, секторы через 470 px, гнездо счёта — x −845, гнездо кнопки хода — x +835.
 -->
 <style>
   body { margin: 0; background: transparent; }
@@ -11,278 +14,205 @@
   svg { display: block; }
 </style></head>
 <body>
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <!-- металл: вертикальный градиент + шлифовка (шум) -->
-    <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5b6875"/><stop offset=".18" stop-color="#3a4550"/>
-      <stop offset=".55" stop-color="#232c35"/><stop offset=".85" stop-color="#2f3a45"/><stop offset="1" stop-color="#4b5764"/>
-    </linearGradient>
-    <linearGradient id="gmH" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#4a5663"/><stop offset=".5" stop-color="#26303a"/><stop offset="1" stop-color="#45515e"/>
-    </linearGradient>
-    <linearGradient id="gCap" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8794a1"/><stop offset=".35" stop-color="#4c5865"/><stop offset=".7" stop-color="#2a333d"/><stop offset="1" stop-color="#5a6774"/>
-    </linearGradient>
-    <filter id="brush" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="2" seed="4" result="n"/>
-      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .09 0"/>
-      <feComposite in2="SourceGraphic" operator="in"/>
-    </filter>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="glowS" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="drop" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity=".7"/>
-    </filter>
-    <pattern id="hazard" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <rect width="11" height="22" fill="#e8b23a"/><rect x="11" width="11" height="22" fill="#15191e"/>
-    </pattern>
-    <pattern id="hex" width="27.7" height="48" patternUnits="userSpaceOnUse" patternTransform="scale(.75)">
-      <path d="M13.85 0 L27.7 8 L27.7 24 L13.85 32 L0 24 L0 8 Z M13.85 32 L13.85 48" fill="none" stroke="#ffffff" stroke-opacity=".07" stroke-width="1.2"/>
-    </pattern>
-    <radialGradient id="rivet" cx=".35" cy=".35" r=".7">
-      <stop offset="0" stop-color="#c9d3dc"/><stop offset=".45" stop-color="#6c7884"/><stop offset="1" stop-color="#1c232a"/>
-    </radialGradient>
-    <linearGradient id="gPad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4a5764" stop-opacity=".9"/><stop offset=".5" stop-color="#2c3641" stop-opacity=".86"/><stop offset="1" stop-color="#404c58" stop-opacity=".9"/>
-    </linearGradient>
-  </defs>
-</svg>
-
-<!-- ======================== РАМА 1600×720 (окно 1480×600 с отступом 60) ======================== -->
-<div class="a" id="frame"><svg width="1600" height="720" viewBox="0 0 1600 720"></svg></div>
-<div class="a" id="pad_enemy"><svg width="460" height="230" viewBox="0 0 460 230"></svg></div>
-<div class="a" id="pad_mine"><svg width="460" height="230" viewBox="0 0 460 230"></svg></div>
-<div class="a" id="midline"><svg width="1460" height="56" viewBox="0 0 1460 56"></svg></div>
-<!-- ======================== ВЕСЬ ЭКРАН 1920×1080: палубы, линия фронта, гнёзда счёта и кнопки хода ======================== -->
 <div class="a" id="screen"><svg width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
-
+<div class="a" id="lines"><svg width="1920" height="1080" viewBox="0 0 1920 1080"></svg></div>
+<div class="a" id="ring_a"><svg width="512" height="512" viewBox="0 0 512 512"></svg></div>
+<div class="a" id="ring_b"><svg width="512" height="512" viewBox="0 0 512 512"></svg></div>
+<div class="a" id="rays"><svg width="512" height="512" viewBox="0 0 512 512"></svg></div>
 <script>
 const NS = 'http://www.w3.org/2000/svg';
-function el(parent, tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
-function cham(x, y, w, h, c) { return `M${x+c} ${y} L${x+w-c} ${y} L${x+w} ${y+c} L${x+w} ${y+h-c} L${x+w-c} ${y+h} L${x+c} ${y+h} L${x} ${y+h-c} L${x} ${y+c} Z`; }
-
-// ---------- рама ----------
-(function () {
-  const s = document.querySelector('#frame svg');
-  const W = 1600, H = 720;
-  const win = [68, 68, W - 136, H - 136];          // внутреннее окно (поле): край стола на 8 px внутрь
-  const outer = cham(8, 8, W - 16, H - 16, 50);
-  const inner = cham(win[0], win[1], win[2], win[3], 28);
-  const g = el(s, 'g', { filter: 'url(#drop)' });
-  // основная полоса рамы + выступы сверху/снизу под портреты
-  el(g, 'path', { d: outer + ' ' + inner, 'fill-rule': 'evenodd', fill: 'url(#gm)' });
-  el(s, 'path', { d: outer + ' ' + inner, 'fill-rule': 'evenodd', fill: '#fff', filter: 'url(#brush)' });
-  // фаски: светлая сверху-слева, тёмная снизу-справа
-  el(s, 'path', { d: outer, fill: 'none', stroke: '#9aa6b2', 'stroke-opacity': .55, 'stroke-width': 2 });
-  el(s, 'path', { d: cham(14, 14, W - 28, H - 28, 47), fill: 'none', stroke: '#0b0f13', 'stroke-opacity': .8, 'stroke-width': 2 });
-  // утопленный бортик вокруг окна
-  el(s, 'path', { d: cham(win[0]-12, win[1]-12, win[2]+24, win[3]+24, 36) + ' ' + inner, 'fill-rule': 'evenodd', fill: '#0d1217', opacity: .85 });
-  el(s, 'path', { d: cham(win[0]-12, win[1]-12, win[2]+24, win[3]+24, 36), fill: 'none', stroke: '#6f7c89', 'stroke-opacity': .6, 'stroke-width': 1.5 });
-  // светящаяся кромка поля
-  el(s, 'path', { d: inner, fill: 'none', stroke: '#4df2db', 'stroke-width': 2.2, filter: 'url(#glow)', opacity: .95 });
-  el(s, 'path', { d: inner, fill: 'none', stroke: '#e9fffb', 'stroke-width': 0.8, opacity: .9 });
-  // швы панелей поперёк полосы
-  for (let x = 170; x < W - 120; x += 150) {
-    if (Math.abs(x - W/2) < 260) continue;
-    for (const [y0, y1] of [[10, 62], [H - 62, H - 10]]) {
-      el(s, 'line', { x1: x, y1: y0, x2: x, y2: y1, stroke: '#0a0e12', 'stroke-width': 2, opacity: .8 });
-      el(s, 'line', { x1: x + 2, y1: y0, x2: x + 2, y2: y1, stroke: '#8d99a5', 'stroke-width': 1, opacity: .35 });
-    }
-  }
-  for (let y = 170; y < H - 120; y += 130) {
-    for (const [x0, x1] of [[10, 62], [W - 62, W - 10]]) {
-      el(s, 'line', { x1: x0, y1: y, x2: x1, y2: y, stroke: '#0a0e12', 'stroke-width': 2, opacity: .8 });
-      el(s, 'line', { x1: x0, y1: y + 2, x2: x1, y2: y + 2, stroke: '#8d99a5', 'stroke-width': 1, opacity: .35 });
-    }
-  }
-  // заклёпки по середине полосы
-  const rv = (x, y) => el(s, 'circle', { cx: x, cy: y, r: 4.2, fill: 'url(#rivet)', stroke: '#0a0d10', 'stroke-width': 1 });
-  for (let x = 130; x < W - 100; x += 75) { if (Math.abs(x - W/2) < 250) continue; rv(x, 36); rv(x, H - 36); }
-  for (let y = 130; y < H - 100; y += 75) { rv(36, y); rv(W - 36, y); }
-  // угловые бронеплиты: Г-образные накладки, полоса «опасность», лампа
-  const corner = (sx, sy) => {
-    const t = (x, y) => `${sx < 0 ? W - x : x} ${sy < 0 ? H - y : y}`;
-    const cap = `M${t(8, 58)} L${t(58, 8)} L${t(250, 8)} L${t(232, 30)} L${t(90, 30)} L${t(30, 90)} L${t(30, 210)} L${t(8, 228)} Z`;
-    el(s, 'path', { d: cap, fill: 'url(#gCap)', stroke: '#c5ced6', 'stroke-opacity': .5, 'stroke-width': 1.5 });
-    const hz = `M${t(96, 34)} L${t(214, 34)} L${t(204, 46)} L${t(92, 46)} Z`;
-    el(s, 'path', { d: hz, fill: 'url(#hazard)', opacity: .85 });
-    const hz2 = `M${t(34, 96)} L${t(34, 204)} L${t(46, 194)} L${t(46, 92)} Z`;
-    el(s, 'path', { d: hz2, fill: 'url(#hazard)', opacity: .85 });
-    const [lx, ly] = t(40, 40).split(' ').map(Number);
-    el(s, 'circle', { cx: lx, cy: ly, r: 7, fill: '#ffb347', filter: 'url(#glow)' });
-    el(s, 'circle', { cx: lx, cy: ly, r: 3, fill: '#fff6d8' });
-  };
-  corner(1, 1); corner(-1, 1); corner(1, -1); corner(-1, -1);
-  // выступы под портреты: сверху и снизу — плита со световой полосой
-  for (const top of [true, false]) {
-    const y0 = top ? 6 : H - 6, d = top ? 1 : -1;
-    const p = `M${W/2-250} ${y0} L${W/2+250} ${y0} L${W/2+220} ${y0+d*40} L${W/2-220} ${y0+d*40} Z`;
-    el(s, 'path', { d: p, fill: 'url(#gCap)', stroke: '#c5ced6', 'stroke-opacity': .45, 'stroke-width': 1.5 });
-    el(s, 'rect', { x: W/2 - 150, y: top ? y0 + 16 : y0 - 22, width: 300, height: 6, rx: 3, fill: '#4df2db', filter: 'url(#glowS)' });
-    for (const k of [-1, 1]) {
-      for (let i = 0; i < 4; i++) {
-        const cx = W/2 + k * (175 + i * 14);
-        el(s, 'path', { d: `M${cx - 4*k} ${y0 + d*13} L${cx + 4*k} ${y0 + d*20} L${cx - 4*k} ${y0 + d*27}`, fill: 'none', stroke: '#4df2db', 'stroke-width': 2.2, opacity: .35 + i * .18, filter: 'url(#glowS)' });
-      }
-    }
-  }
-  // боковые маяки посередине
-  for (const x of [22, W - 30]) {
-    el(s, 'rect', { x: x, y: H/2 - 46, width: 8, height: 92, rx: 4, fill: '#4df2db', filter: 'url(#glow)', opacity: .9 });
-  }
-})();
-
-// ---------- посадочная площадка под ряд сектора ----------
-function pad(sel, accent, stripTop) {
-  const s = document.querySelector(sel + ' svg');
-  const W = 460, H = 230, c = 22;
-  const body = cham(4, 4, W - 8, H - 8, c);
-  el(s, 'path', { d: body, fill: 'url(#gPad)', filter: 'url(#drop)' });
-  el(s, 'path', { d: body, fill: 'url(#hex)' });
-  el(s, 'path', { d: body, fill: '#fff', filter: 'url(#brush)', opacity: .6 });
-  el(s, 'path', { d: body, fill: 'none', stroke: '#8c98a4', 'stroke-opacity': .55, 'stroke-width': 2 });
-  el(s, 'path', { d: cham(12, 12, W - 24, H - 24, c - 6), fill: 'none', stroke: '#05080b', 'stroke-opacity': .7, 'stroke-width': 2 });
-  // световая полоса со стороны линии фронта
-  const y = stripTop ? 10 : H - 16;
-  el(s, 'rect', { x: 60, y: y, width: W - 120, height: 6, rx: 3, fill: accent, filter: 'url(#glow)' });
-  el(s, 'rect', { x: 70, y: y + 2, width: W - 140, height: 2, rx: 1, fill: '#ffffff', opacity: .85 });
-  // шевроны на концах полосы
-  for (const k of [0, 1]) {
-    for (let i = 0; i < 3; i++) {
-      const x = k ? W - 52 + i * 11 : 52 - i * 11, dir = k ? 1 : -1;
-      el(s, 'path', { d: `M${x} ${y - 4} L${x + dir * 7} ${y + 3} L${x} ${y + 10}`, fill: 'none', stroke: accent, 'stroke-width': 2.4, opacity: .9 - i * .25, filter: 'url(#glowS)' });
-    }
-  }
-  // угловые болты и метки посадки
-  for (const [x, y2] of [[24, 24], [W - 24, 24], [24, H - 24], [W - 24, H - 24]]) {
-    el(s, 'circle', { cx: x, cy: y2, r: 4, fill: 'url(#rivet)', stroke: '#0a0d10', 'stroke-width': 1 });
-  }
-  for (const x of [W * 0.25, W * 0.5, W * 0.75]) {
-    el(s, 'path', { d: `M${x - 10} ${H/2} L${x + 10} ${H/2} M${x} ${H/2 - 10} L${x} ${H/2 + 10}`, stroke: accent, 'stroke-opacity': .18, 'stroke-width': 1.5 });
-  }
+function el(p, t, a) { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; }
+// прямоугольник со срезанными углами
+function cham(x, y, w, h, c) { return `M${x + c} ${y} L${x + w - c} ${y} L${x + w} ${y + c} L${x + w} ${y + h - c} L${x + w - c} ${y + h} L${x + c} ${y + h} L${x} ${y + h - c} L${x} ${y + c} Z`; }
+function grad(defs, id, stops, v = true) {
+  const g = el(defs, 'linearGradient', v ? { id, x1: 0, y1: 0, x2: 0, y2: 1 } : { id, x1: 0, y1: 0, x2: 1, y2: 0 });
+  stops.forEach(([o, c, a]) => el(g, 'stop', { offset: o, 'stop-color': c, 'stop-opacity': a }));
+  return g;
 }
-pad('#pad_enemy', '#ff5a45', false);
-pad('#pad_mine', '#4df2db', true);
+function glowFilters(defs) {
+  const f = el(defs, 'filter', { id: 'g', x: '-30%', y: '-30%', width: '160%', height: '160%' });
+  el(f, 'feGaussianBlur', { stdDeviation: 5, result: 'b' });
+  const m = el(f, 'feMerge', {}); el(m, 'feMergeNode', { in: 'b' }); el(m, 'feMergeNode', { in: 'SourceGraphic' });
+  const f2 = el(defs, 'filter', { id: 'gs', x: '-50%', y: '-50%', width: '200%', height: '200%' });
+  el(f2, 'feGaussianBlur', { stdDeviation: 2, result: 'b' });
+  const m2 = el(f2, 'feMerge', {}); el(m2, 'feMergeNode', { in: 'b' }); el(m2, 'feMergeNode', { in: 'SourceGraphic' });
+  const f3 = el(defs, 'filter', { id: 'soft', x: '-50%', y: '-50%', width: '200%', height: '200%' });
+  el(f3, 'feGaussianBlur', { stdDeviation: 14 });
+}
+const X = x => 960 + x, Y = y => 540 - y;
+const RED = '#ff5a4a', TEAL = '#4df2db', ICE = '#a8e6ff', GOLD = '#ffc861';
+const DW = 1440, DH = 236;   // палуба под ряд
 
-// ---------- линия фронта ----------
-(function () {
-  const s = document.querySelector('#midline svg');
-  const W = 1460, H = 56, y = H / 2;
-  const defs = el(s, 'defs', {});
-  const lg = el(defs, 'linearGradient', { id: 'ml', x1: 0, y1: 0, x2: 1, y2: 0 });
-  [[0, 0], [.08, 1], [.92, 1], [1, 0]].forEach(([o, a]) => el(lg, 'stop', { offset: o, 'stop-color': '#4df2db', 'stop-opacity': a }));
-  el(s, 'rect', { x: 0, y: y - 6, width: W, height: 12, fill: 'url(#ml)', opacity: .35, filter: 'url(#glow)' });
-  el(s, 'rect', { x: 0, y: y - 1.5, width: W, height: 3, fill: 'url(#ml)', filter: 'url(#glowS)' });
-  el(s, 'rect', { x: 20, y: y - 0.6, width: W - 40, height: 1.2, fill: '#ffffff', opacity: .8 });
-  // ромбы-узлы в промежутках между секторами
-  for (const x of [W / 2 - 241, W / 2 + 241, 30, W - 30]) {
-    el(s, 'path', { d: `M${x} ${y - 11} L${x + 11} ${y} L${x} ${y + 11} L${x - 11} ${y} Z`, fill: '#0d1a20', stroke: '#4df2db', 'stroke-width': 2, filter: 'url(#glowS)' });
-    el(s, 'circle', { cx: x, cy: y, r: 3, fill: '#e9fffb' });
-  }
-})();
-
-// ---------- весь экран боя (как поле в больших карточных играх, но стол десанта) ----------
-// Геометрия совпадает с BattleScreen: центр экрана (960, 540); ряды карт на y = ±214, дорожки через 470 px,
-// гнездо счёта — x −845, гнездо кнопки хода — x +835.
+// ======================== СТЕКЛО ========================
 (function () {
   const s = document.querySelector('#screen svg');
-  const X = x => 960 + x, Y = y => 540 - y;
-  // тёмные полосы сверху и снизу — под руки
   const defs = el(s, 'defs', {});
-  const vt = el(defs, 'linearGradient', { id: 'vt', x1: 0, y1: 0, x2: 0, y2: 1 });
-  [[0, .85], [.12, .35], [.22, 0], [.8, 0], [.9, .45], [1, .9]].forEach(([o, a]) => el(vt, 'stop', { offset: o, 'stop-color': '#03060a', 'stop-opacity': a }));
+  glowFilters(defs);
+  // полосы сверху и снизу — под руки: глубокий синий, без резкой границы
+  grad(defs, 'vt', [[0, '#02050b', .9], [.13, '#02050b', .4], [.24, '#02050b', 0], [.78, '#02050b', 0], [.9, '#02050b', .5], [1, '#02050b', .92]]);
   el(s, 'rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#vt)' });
-  const sg = el(defs, 'radialGradient', { id: 'sock', cx: .4, cy: .35, r: .75 });
-  [[0, '#7b8794'], [.5, '#3a4450'], [1, '#171d24']].forEach(([o, c]) => el(sg, 'stop', { offset: o, 'stop-color': c }));
+  // сетка-голограмма, гаснет к краям
+  const hp = el(defs, 'pattern', { id: 'hex', width: 27.7, height: 48, patternUnits: 'userSpaceOnUse' });
+  el(hp, 'path', { d: 'M13.85 0 L27.7 8 L27.7 24 L13.85 32 L0 24 L0 8 Z M13.85 32 L13.85 48', fill: 'none', stroke: ICE, 'stroke-opacity': .5, 'stroke-width': 1 });
+  const rg = el(defs, 'radialGradient', { id: 'fade', cx: .5, cy: .5, r: .6 });
+  [[0, 1], [.6, .5], [1, 0]].forEach(([o, a]) => el(rg, 'stop', { offset: o, 'stop-color': '#fff', 'stop-opacity': a }));
+  const mk = el(defs, 'mask', { id: 'mfade' }); el(mk, 'rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#fade)' });
 
-  // палубы под ряды: враг сверху (красная подсветка к фронту), вы снизу (бирюзовая)
-  const deck = (yc, accent, stripTop) => {
-    const x0 = X(-720), w = 1440, h = 236, y0 = Y(yc) - h / 2;
-    const d = cham(x0, y0, w, h, 34);
-    el(s, 'path', { d: d, fill: 'url(#gPad)', filter: 'url(#drop)' });
-    el(s, 'path', { d: d, fill: 'url(#hex)' });
-    el(s, 'path', { d: d, fill: '#fff', filter: 'url(#brush)', opacity: .55 });
-    el(s, 'path', { d: d, fill: 'none', stroke: '#9aa6b2', 'stroke-opacity': .55, 'stroke-width': 2 });
-    el(s, 'path', { d: cham(x0 + 8, y0 + 8, w - 16, h - 16, 28), fill: 'none', stroke: '#05080b', 'stroke-opacity': .75, 'stroke-width': 2 });
-    // швы между дорожками
+  // палубы: дымчатое стекло, у кромки к фронту — подсветка цвета стороны
+  const deck = (yc, accent, front) => {
+    const x0 = X(-DW / 2), y0 = Y(yc) - DH / 2;
+    const d = cham(x0, y0, DW, DH, 26);
+    const id = 'dk' + (front > 0 ? 'b' : 't');
+    grad(defs, id, front > 0
+      ? [[0, '#0a1622', .5], [.65, '#081420', .62], [1, accent, .28]]
+      : [[0, accent, .28], [.35, '#081420', .62], [1, '#0a1622', .5]]);
+    el(s, 'path', { d, fill: 'url(#' + id + ')' });
+    el(s, 'path', { d, fill: 'url(#hex)', opacity: .05 });
+    // строки развёртки
+    for (let y = y0 + 4; y < y0 + DH; y += 5) el(s, 'rect', { x: x0 + 10, y, width: DW - 20, height: 1, fill: ICE, opacity: .025 });
+    // мягкие «окна» под секторы — чуть светлее посередине дорожки
+    for (const lx of [-470, 0, 470]) el(s, 'ellipse', { cx: X(lx), cy: Y(yc), rx: 200, ry: 92, fill: ICE, opacity: .035, filter: 'url(#soft)' });
+  };
+  deck(214, RED, 1);
+  deck(-214, TEAL, -1);
+
+  // общая тонкая сетка по полю (видна между палубами, тает к краям)
+  el(s, 'rect', { x: 0, y: 0, width: 1920, height: 1080, fill: 'url(#hex)', opacity: .03, mask: 'url(#mfade)' });
+  // полоса фронта
+  grad(defs, 'fband', [[0, '#04080d', 0], [.5, '#04080d', .55], [1, '#04080d', 0]]);
+  el(s, 'rect', { x: X(-800), y: Y(0) - 60, width: 1512, height: 120, fill: 'url(#fband)' });
+
+  // гнездо счёта: стеклянная капсула
+  { const cx = X(-845), cy = Y(0);
+    grad(defs, 'cap', [[0, '#0c1824', .82], [.5, '#050b12', .9], [1, '#0c1824', .82]]);
+    el(s, 'rect', { x: cx - 56, y: cy - 150, width: 112, height: 300, rx: 56, fill: 'url(#cap)' });
+    for (const [dy, c] of [[-78, RED], [78, TEAL]]) {
+      el(s, 'circle', { cx, cy: cy + dy, r: 44, fill: '#03070c', opacity: .95 });
+      el(s, 'circle', { cx, cy: cy + dy, r: 40, fill: c, opacity: .12, filter: 'url(#soft)' });
+    }
+  }
+  // гнездо кнопки хода: стеклянный диск
+  { const cx = X(835), cy = Y(0);
+    const sg = el(defs, 'radialGradient', { id: 'disk', cx: .5, cy: .5, r: .5 });
+    [[0, '#02060a', .95], [.62, '#061019', .92], [.85, '#0b1a27', .85], [1, '#0b1a27', .0]].forEach(([o, c, a]) => el(sg, 'stop', { offset: o, 'stop-color': c, 'stop-opacity': a }));
+    el(s, 'circle', { cx, cy, r: 140, fill: 'url(#disk)' });
+  }
+  // угловые плиты: стекло, растворяется к середине экрана
+  grad(defs, 'pl', [[0, '#071321', .88], [.75, '#071321', .6], [1, '#071321', 0]], false);
+  grad(defs, 'pr', [[0, '#071321', 0], [.25, '#071321', .6], [1, '#071321', .88]], false);
+  el(s, 'path', { d: 'M0 0 L600 0 L556 92 L0 92 Z', fill: 'url(#pl)' });
+  el(s, 'path', { d: 'M0 1080 L600 1080 L556 988 L0 988 Z', fill: 'url(#pl)' });
+  el(s, 'path', { d: 'M1920 0 L1630 0 L1672 74 L1920 74 Z', fill: 'url(#pr)' });
+})();
+
+// ======================== НЕОНОВЫЕ КОНТУРЫ ========================
+// Только свет: в игре слой складывается со сценой и переливается (шейдер Holo).
+(function () {
+  const s = document.querySelector('#lines svg');
+  const defs = el(s, 'defs', {});
+  glowFilters(defs);
+  const line = (d, c, w, o = 1, f = 'gs') => el(s, 'path', { d, fill: 'none', stroke: c, 'stroke-width': w, 'stroke-opacity': o, filter: 'url(#' + f + ')', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+
+  const deck = (yc, accent, front) => {
+    const x0 = X(-DW / 2), y0 = Y(yc) - DH / 2, x1 = x0 + DW, y1 = y0 + DH, c = 26;
+    line(cham(x0, y0, DW, DH, c), ICE, 1.2, .35);
+    // уголки-скобы
+    const L = 70;
+    for (const [sx, sy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const ox = sx ? x1 : x0, oy = sy ? y1 : y0, dx = sx ? -1 : 1, dy = sy ? -1 : 1;
+      line(`M${ox + dx * (c + L)} ${oy} L${ox + dx * c} ${oy} L${ox} ${oy + dy * c} L${ox} ${oy + dy * (c + L * .6)}`, ICE, 2.6, .95);
+    }
+    // кромка к фронту — цвет стороны
+    const fy = front > 0 ? y1 : y0;
+    line(`M${x0 + 120} ${fy} L${x1 - 120} ${fy}`, accent, 3, 1, 'g');
+    line(`M${x0 + 150} ${fy} L${x1 - 150} ${fy}`, '#ffffff', 1, .85);
+    // шевроны к центру по краям кромки
+    for (let i = 0; i < 3; i++) for (const k of [-1, 1]) {
+      const cx = k < 0 ? x0 + 96 - i * 13 : x1 - 96 + i * 13, dir = k;
+      line(`M${cx} ${fy - 7} L${cx + dir * 7} ${fy} L${cx} ${fy + 7}`, accent, 2.2, .9 - i * .25);
+    }
+    // швы между секторами: пунктир с ромбом
     for (const lx of [-235, 235]) {
-      el(s, 'rect', { x: X(lx) - 3, y: y0 + 10, width: 6, height: h - 20, fill: '#0a0e12', opacity: .85 });
-      el(s, 'rect', { x: X(lx) + 3, y: y0 + 10, width: 1.5, height: h - 20, fill: '#9aa6b2', opacity: .35 });
-    }
-    // торцевые кронштейны с лампой
-    for (const k of [-1, 1]) {
-      const bx = X(k * 720) - (k > 0 ? 30 : 0);
-      el(s, 'path', { d: cham(bx, y0 + 30, 30, h - 60, 8), fill: 'url(#gCap)', stroke: '#c5ced6', 'stroke-opacity': .45, 'stroke-width': 1.2 });
-      el(s, 'path', { d: `M${bx + 4} ${y0 + 50} L${bx + 26} ${y0 + 50} L${bx + 26} ${y0 + 92} L${bx + 4} ${y0 + 92} Z`, fill: 'url(#hazard)', opacity: .8 });
-      el(s, 'circle', { cx: bx + 15, cy: y0 + h - 52, r: 5, fill: accent, filter: 'url(#glow)' });
-    }
-    const sy = stripTop ? y0 + 9 : y0 + h - 15;
-    el(s, 'rect', { x: x0 + 70, y: sy, width: w - 140, height: 6, rx: 3, fill: accent, filter: 'url(#glow)' });
-    el(s, 'rect', { x: x0 + 80, y: sy + 2, width: w - 160, height: 2, rx: 1, fill: '#fff', opacity: .85 });
-    for (let i = 0; i < 4; i++) for (const k of [0, 1]) {
-      const cx = k ? x0 + w - 60 + i * 11 : x0 + 60 - i * 11, dir = k ? 1 : -1;
-      el(s, 'path', { d: `M${cx} ${sy - 4} L${cx + dir * 7} ${sy + 3} L${cx} ${sy + 10}`, fill: 'none', stroke: accent, 'stroke-width': 2.4, opacity: .9 - i * .2, filter: 'url(#glowS)' });
+      for (let y = y0 + 18; y < y1 - 18; y += 16) line(`M${X(lx)} ${y} L${X(lx)} ${y + 7}`, ICE, 1.4, .4);
+      const my = (y0 + y1) / 2;
+      line(`M${X(lx)} ${my - 8} L${X(lx) + 6} ${my} L${X(lx)} ${my + 8} L${X(lx) - 6} ${my} Z`, ICE, 1.4, .7);
     }
   };
-  deck(214, '#ff5a45', false);
-  deck(-214, '#4df2db', true);
+  deck(214, RED, 1);
+  deck(-214, TEAL, -1);
 
-  // линия фронта: от гнезда счёта до гнезда кнопки
-  const lg = el(defs, 'linearGradient', { id: 'fl', x1: 0, y1: 0, x2: 1, y2: 0 });
-  [[0, .9], [.5, 1], [1, .9]].forEach(([o, a]) => el(lg, 'stop', { offset: o, 'stop-color': '#4df2db', 'stop-opacity': a }));
-  const lx0 = X(-800), lx1 = X(712);
-  el(s, 'rect', { x: lx0, y: Y(0) - 7, width: lx1 - lx0, height: 14, fill: '#0b1218', opacity: .85 });
-  el(s, 'rect', { x: lx0, y: Y(0) - 5, width: lx1 - lx0, height: 10, fill: 'url(#fl)', opacity: .3, filter: 'url(#glow)' });
-  el(s, 'rect', { x: lx0, y: Y(0) - 1.5, width: lx1 - lx0, height: 3, fill: 'url(#fl)', filter: 'url(#glowS)' });
-  el(s, 'rect', { x: lx0, y: Y(0) - .6, width: lx1 - lx0, height: 1.2, fill: '#fff', opacity: .8 });
+  // линия фронта: энергетическая нить с узлами
+  const fy = Y(0), lx0 = X(-790), lx1 = X(700);
+  grad(defs, 'fl', [[0, TEAL, 0], [.08, TEAL, .9], [.5, ICE, 1], [.92, TEAL, .9], [1, TEAL, 0]], false);
+  el(s, 'rect', { x: lx0, y: fy - 2, width: lx1 - lx0, height: 4, fill: 'url(#fl)', filter: 'url(#g)' });
+  el(s, 'rect', { x: lx0 + 30, y: fy - .6, width: lx1 - lx0 - 60, height: 1.2, fill: '#ffffff', opacity: .9 });
   for (const x of [-235, 235]) {
-    el(s, 'path', { d: `M${X(x)} ${Y(0) - 12} L${X(x) + 12} ${Y(0)} L${X(x)} ${Y(0) + 12} L${X(x) - 12} ${Y(0)} Z`, fill: '#0d1a20', stroke: '#4df2db', 'stroke-width': 2, filter: 'url(#glowS)' });
-    el(s, 'circle', { cx: X(x), cy: Y(0), r: 3, fill: '#e9fffb' });
+    line(`M${X(x)} ${fy - 13} L${X(x) + 13} ${fy} L${X(x)} ${fy + 13} L${X(x) - 13} ${fy} Z`, TEAL, 2, 1);
+    el(s, 'circle', { cx: X(x), cy: fy, r: 3.5, fill: '#ffffff', filter: 'url(#gs)' });
   }
 
-  // гнездо счёта секторов слева: капсула с двумя лунками (враг сверху, вы снизу)
-  {
-    const cx = X(-845), cy = Y(0);
-    el(s, 'rect', { x: cx - 56, y: cy - 150, width: 112, height: 300, rx: 56, fill: 'url(#gm)', filter: 'url(#drop)' });
-    el(s, 'rect', { x: cx - 56, y: cy - 150, width: 112, height: 300, rx: 56, fill: '#fff', filter: 'url(#brush)' });
-    el(s, 'rect', { x: cx - 56, y: cy - 150, width: 112, height: 300, rx: 56, fill: 'none', stroke: '#9aa6b2', 'stroke-opacity': .6, 'stroke-width': 2 });
-    for (const [dy, c] of [[-78, '#ff5a45'], [78, '#4df2db']]) {
-      el(s, 'circle', { cx: cx, cy: cy + dy, r: 44, fill: '#070b10', stroke: c, 'stroke-width': 2.5, filter: 'url(#glowS)' });
+  // гнездо счёта
+  { const cx = X(-845), cy = Y(0);
+    el(s, 'rect', { x: cx - 56, y: cy - 150, width: 112, height: 300, rx: 56, fill: 'none', stroke: ICE, 'stroke-width': 1.6, 'stroke-opacity': .6, filter: 'url(#gs)' });
+    for (const [dy, c] of [[-78, RED], [78, TEAL]]) {
+      el(s, 'circle', { cx, cy: cy + dy, r: 44, fill: 'none', stroke: c, 'stroke-width': 2.6, filter: 'url(#g)' });
     }
-    el(s, 'rect', { x: cx - 30, y: cy - 4, width: 60, height: 8, rx: 4, fill: '#4df2db', filter: 'url(#glowS)', opacity: .8 });
+    el(s, 'rect', { x: cx - 30, y: cy - 3, width: 60, height: 6, rx: 3, fill: TEAL, filter: 'url(#gs)', opacity: .85 });
   }
 
-  // гнездо кнопки хода справа: кольцо с пазом под деления ходов (сверху) и очки приказов (снизу)
-  {
-    const cx = X(835), cy = Y(0);
-    el(s, 'circle', { cx: cx, cy: cy, r: 132, fill: 'url(#sock)', filter: 'url(#drop)' });
-    el(s, 'circle', { cx: cx, cy: cy, r: 132, fill: '#fff', filter: 'url(#brush)' });
-    el(s, 'circle', { cx: cx, cy: cy, r: 131, fill: 'none', stroke: '#c5ced6', 'stroke-opacity': .55, 'stroke-width': 2 });
-    el(s, 'circle', { cx: cx, cy: cy, r: 104, fill: 'none', stroke: '#06090c', 'stroke-width': 20, opacity: .85 });
-    el(s, 'circle', { cx: cx, cy: cy, r: 114, fill: 'none', stroke: '#8d99a5', 'stroke-opacity': .35, 'stroke-width': 1 });
-    el(s, 'circle', { cx: cx, cy: cy, r: 86, fill: '#05080c', stroke: '#4df2db', 'stroke-width': 2, filter: 'url(#glowS)' });
-    for (let a = 0; a < 360; a += 30) {
-      const r0 = 120, r1 = 128, t = a * Math.PI / 180;
-      el(s, 'line', { x1: cx + Math.cos(t) * r0, y1: cy + Math.sin(t) * r0, x2: cx + Math.cos(t) * r1, y2: cy + Math.sin(t) * r1, stroke: '#0a0e12', 'stroke-width': 3 });
+  // гнездо кнопки хода: кольца паза и риски
+  { const cx = X(835), cy = Y(0);
+    el(s, 'circle', { cx, cy, r: 132, fill: 'none', stroke: ICE, 'stroke-width': 1.6, 'stroke-opacity': .7, filter: 'url(#gs)' });
+    el(s, 'circle', { cx, cy, r: 116, fill: 'none', stroke: ICE, 'stroke-width': 1, 'stroke-opacity': .35 });
+    el(s, 'circle', { cx, cy, r: 92, fill: 'none', stroke: ICE, 'stroke-width': 1, 'stroke-opacity': .35 });
+    el(s, 'circle', { cx, cy, r: 84, fill: 'none', stroke: TEAL, 'stroke-width': 2.4, filter: 'url(#g)' });
+    for (let a = 0; a < 360; a += 6) {
+      const t = a * Math.PI / 180, big = a % 30 === 0, r0 = big ? 122 : 125, r1 = 129;
+      el(s, 'line', { x1: cx + Math.cos(t) * r0, y1: cy + Math.sin(t) * r0, x2: cx + Math.cos(t) * r1, y2: cy + Math.sin(t) * r1, stroke: ICE, 'stroke-width': big ? 2 : 1, 'stroke-opacity': big ? .8 : .4 });
     }
   }
 
-  // угловые плиты: имена игроков слева сверху и снизу, кнопки управления справа сверху
-  const plate = (pts) => {
-    el(s, 'path', { d: pts, fill: 'url(#gm)', filter: 'url(#drop)' });
-    el(s, 'path', { d: pts, fill: '#fff', filter: 'url(#brush)' });
-    el(s, 'path', { d: pts, fill: 'none', stroke: '#9aa6b2', 'stroke-opacity': .55, 'stroke-width': 2 });
+  // угловые плиты: светящаяся кромка по скосу
+  line('M0 92 L556 92 L600 0', ICE, 1.6, .7);
+  line('M0 988 L556 988 L600 1080', ICE, 1.6, .7);
+  line('M1920 74 L1672 74 L1630 0', ICE, 1.6, .7);
+  line('M20 92 L200 92', RED, 3, 1, 'g');
+  line('M20 988 L200 988', TEAL, 3, 1, 'g');
+  for (const [x, y, c] of [[556, 92, RED], [556, 988, TEAL], [1672, 74, GOLD]]) el(s, 'circle', { cx: x, cy: y, r: 4, fill: c, filter: 'url(#g)' });
+})();
+
+// ======================== КОЛЬЦА И ЛУЧИ (вращаются в игре) ========================
+(function () {
+  const c = 256;
+  const arc = (p, r, a0, a1, w, o) => {
+    const t0 = a0 * Math.PI / 180, t1 = a1 * Math.PI / 180;
+    el(p, 'path', { d: `M${c + Math.cos(t0) * r} ${c + Math.sin(t0) * r} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${c + Math.cos(t1) * r} ${c + Math.sin(t1) * r}`, fill: 'none', stroke: '#fff', 'stroke-width': w, 'stroke-opacity': o, 'stroke-linecap': 'round', filter: 'url(#gs)' });
   };
-  plate('M0 0 L560 0 L520 86 L0 86 Z');
-  plate('M0 1080 L560 1080 L520 994 L0 994 Z');
-  plate('M1920 0 L1640 0 L1680 72 L1920 72 Z');
-  for (const [x, y] of [[505, 43], [505, 1037], [1700, 36]]) {
-    el(s, 'circle', { cx: x, cy: y, r: 6, fill: '#ffb347', filter: 'url(#glow)' });
+  // кольцо А: риски и разомкнутые дуги
+  const a = document.querySelector('#ring_a svg'); glowFilters(el(a, 'defs', {}));
+  for (let d = 0; d < 360; d += 4) {
+    const t = d * Math.PI / 180, big = d % 40 === 0, r0 = big ? 212 : 220, r1 = 232;
+    el(a, 'line', { x1: c + Math.cos(t) * r0, y1: c + Math.sin(t) * r0, x2: c + Math.cos(t) * r1, y2: c + Math.sin(t) * r1, stroke: '#fff', 'stroke-width': big ? 4 : 2, 'stroke-opacity': big ? 1 : .5, filter: 'url(#gs)' });
+  }
+  for (let k = 0; k < 3; k++) arc(a, 196, k * 120 + 10, k * 120 + 100, 5, 1);
+  arc(a, 244, 200, 330, 2, .7);
+  arc(a, 244, 20, 150, 2, .7);
+
+  // кольцо Б: сегменты и точки
+  const b = document.querySelector('#ring_b svg'); glowFilters(el(b, 'defs', {}));
+  for (let k = 0; k < 12; k++) arc(b, 210, k * 30 + 4, k * 30 + 22, 10, k % 3 === 0 ? 1 : .55);
+  for (let k = 0; k < 24; k++) { const t = (k * 15 + 7) * Math.PI / 180; el(b, 'circle', { cx: c + Math.cos(t) * 236, cy: c + Math.sin(t) * 236, r: 3, fill: '#fff', opacity: .8, filter: 'url(#gs)' }); }
+  arc(b, 180, 0, 359.9, 1.5, .45);
+
+  // лучи: мягкий нимб с расходящимися лучами (за портретом лидера)
+  const r = document.querySelector('#rays svg'); const defs2 = el(r, 'defs', {}); glowFilters(defs2);
+  const rg = el(defs2, 'radialGradient', { id: 'rf', cx: .5, cy: .5, r: .5 });
+  [[0, 1], [.25, .8], [.7, .15], [1, 0]].forEach(([o, op]) => el(rg, 'stop', { offset: o, 'stop-color': '#fff', 'stop-opacity': op }));
+  const mk = el(defs2, 'mask', { id: 'mr' }); el(mk, 'rect', { x: 0, y: 0, width: 512, height: 512, fill: 'url(#rf)' });
+  const g = el(r, 'g', { mask: 'url(#mr)' });
+  for (let k = 0; k < 18; k++) {
+    const t = k * 20 + (k % 2 ? 6 : 0), w = k % 3 === 0 ? 7 : 3.5, t0 = (t - w) * Math.PI / 180, t1 = (t + w) * Math.PI / 180;
+    el(g, 'path', { d: `M${c} ${c} L${c + Math.cos(t0) * 256} ${c + Math.sin(t0) * 256} L${c + Math.cos(t1) * 256} ${c + Math.sin(t1) * 256} Z`, fill: '#fff', opacity: k % 3 === 0 ? .55 : .3, filter: 'url(#gs)' });
   }
 })();
 </script>

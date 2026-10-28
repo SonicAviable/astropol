@@ -120,6 +120,25 @@ namespace StellarisClone.Cards
             }
         }
 
+        private static Material s_holoMat;
+
+        /// <summary>
+        /// Голографический перелив (шейдер Holo): неоновые контуры стола, кольца и лучи за лидерами переливаются
+        /// по радуге, по ним пробегает блик. Нет шейдера — обычное свечение.
+        /// </summary>
+        internal static Material HoloMat
+        {
+            get
+            {
+                if (s_holoMat == null)
+                {
+                    var sh = Resources.Load<Shader>("Shaders/UIHolo");
+                    if (sh != null) s_holoMat = new Material(sh) { name = "UIHolo", hideFlags = HideFlags.DontSave };
+                }
+                return s_holoMat != null ? s_holoMat : GlowMat;
+            }
+        }
+
         /// <summary>Светящиеся спрайты рисуются аддитивно; дым, грязь, нагар и брызги — обычным смешиванием.</summary>
         private static bool IsLight(Sprite sp)
         {
