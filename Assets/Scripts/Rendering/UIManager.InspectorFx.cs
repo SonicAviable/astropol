@@ -14,6 +14,7 @@ namespace StellarisClone.Rendering
     {
         private RectTransform _inspPortrait;
         private Image _inspStarHalo, _inspStarCore, _inspStarHot, _inspPlanet, _inspRingA, _inspRingB, _inspHeaderGlow, _inspOwnerGlow;
+        private Image _inspStarCorona, _inspStarFlare, _inspStarFlare2, _inspDisc;
         private int _inspCascadeKey = int.MinValue;
         // Фон шапки — «кадр системы»: космос, большая главная планета справа, свет звезды, затемнение под текстом
         private RectTransform _inspBanner;
@@ -24,6 +25,42 @@ namespace StellarisClone.Rendering
 
         private static Sprite s_fadeRight, s_hexTile;
         private static readonly System.Collections.Generic.Dictionary<string, Sprite> s_resSprites = new System.Collections.Generic.Dictionary<string, Sprite>();
+
+        private static Sprite s_sunDisc, s_starCorona, s_starFlare;
+        private static Sprite StarCorona => s_starCorona != null ? s_starCorona : (s_starCorona = StarFx.CoronaSprite(256));
+        private static Sprite StarFlare => s_starFlare != null ? s_starFlare : (s_starFlare = StarFx.FlareSprite(256));
+
+        /// <summary>
+        /// Тело звезды как на карте: раскалённое ядро, мягкое свечение и дымка — без твёрдого края (иначе это «шарик»);
+        /// край свечения чуть неровный. Белая — красится цветом звезды через Image.color.
+        /// </summary>
+        private static Sprite SunDiscSprite
+        {
+            get
+            {
+                if (s_sunDisc != null) return s_sunDisc;
+                const int res = 128;
+                var tex = new Texture2D(res, res, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "StarBody" };
+                var px = new Color32[res * res];
+                float c = (res - 1) * 0.5f;
+                for (int y = 0; y < res; y++)
+                for (int x = 0; x < res; x++)
+                {
+                    float dx = (x - c) / c, dy = (y - c) / c;
+                    float r = Mathf.Sqrt(dx * dx + dy * dy);
+                    float ang = Mathf.Atan2(dy, dx);
+                    float warp = 0.88f + Mathf.PerlinNoise(Mathf.Cos(ang) * 2.2f + 5f, Mathf.Sin(ang) * 2.2f + 5f) * 0.24f;
+                    float w = r / warp;
+                    float core = Mathf.Clamp01(Mathf.Exp(-w * w * 200f) * 1.4f + Mathf.Exp(-w * w * 45f));
+                    float a = (core + Mathf.Exp(-w * w * 12f) * 0.55f + Mathf.Exp(-w * w * 4f) * 0.15f) * (1f - Mathf.SmoothStep(0.75f, 1f, r));
+                    px[y * res + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(a));
+                }
+                tex.SetPixels32(px);
+                tex.Apply();
+                s_sunDisc = Sprite.Create(tex, new Rect(0, 0, res, res), new Vector2(0.5f, 0.5f), 100);
+                return s_sunDisc;
+            }
+        }
 
         /// <summary>Полоса, тающая вправо: подчёркивание заголовков секций.</summary>
         internal static Sprite FadeRightSprite
@@ -110,9 +147,17 @@ namespace StellarisClone.Rendering
             var ringA = ResSprite("UI/CardBattle/holo_ring_a");
             if (ringB != null) { _inspRingB = Layer("RingB", ringB, 96f, new Color(0.3f, 0.95f, 0.85f, 0.7f), holo); StellarisClone.Cards.HoloSpin.Add(_inspRingB, -10f, 0.18f); }
             if (ringA != null) { _inspRingA = Layer("RingA", ringA, 80f, new Color(1f, 1f, 1f, 0.5f), holo); StellarisClone.Cards.HoloSpin.Add(_inspRingA, 16f, 0.18f, 0f, 1.7f); }
-            var disc = Layer("Disc", FleetIndicator.GetDiscSprite(), 58f, new Color(0.01f, 0.02f, 0.035f, 0.92f));
-            _inspStarCore = Layer("Star", radial, 64f, new Color(1f, 0.92f, 0.6f, 1f));
-            _inspStarHot = Layer("Core", radial, 26f, new Color(1f, 1f, 1f, 0.95f));
+            // Тёмная подложка — только под значком планеты/объекта; звезда светит прямо в космосе
+            _inspDisc = Layer("Disc", FleetIndicator.GetDiscSprite(), 58f, new Color(0.01f, 0.02f, 0.035f, 0.92f));
+            // Звезда как на карте: неровная корона, светило с потемнением к краю и «зерном», раскалённое ядро, блик-лучи
+            _inspStarCorona = Layer("Corona", StarCorona, 112f, new Color(1f, 0.9f, 0.6f, 0.75f));
+            _inspStarCore = Layer("Star", SunDiscSprite, 70f, new Color(1f, 0.92f, 0.6f, 1f));
+            _inspStarHot = Layer("Core", radial, 24f, new Color(1f, 1f, 1f, 0.9f));
+            _inspStarFlare2 = Layer("Flare2", StarFlare, 70f, new Color(1f, 0.95f, 0.85f, 0.35f));
+            _inspStarFlare2.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+            _inspStarFlare = Layer("Flare", StarFlare, 104f, new Color(1f, 0.97f, 0.9f, 0.85f));
+            StellarisClone.Cards.HoloSpin.Add(_inspStarCorona, 3f, 0.12f, 0.04f);
+            StellarisClone.Cards.HoloSpin.Add(_inspStarFlare, 0f, 0.18f, 0.05f, 0.4f);
             // Картинка планеты — главная планета системы (или выбранная); звезда тогда светит из-за неё ореолом
             _inspPlanet = Layer("Planet", null, 60f, Color.white);
             _inspPlanet.preserveAspect = true;
@@ -123,7 +168,6 @@ namespace StellarisClone.Rendering
             // Значок (для планеты) — поверх диска
             _inspTileIcon = LGIcons.Create(_inspPortrait, LGIcon.Star, 30, DS.Gold, "TileIcon");
             _inspTileIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(30, 30));
-            _ = disc;
         }
 
         /// <summary>Фон шапки: обрезан по шапке, лежит под светом, портретом и надписями.</summary>
@@ -188,6 +232,11 @@ namespace StellarisClone.Rendering
             if (hasPlanet) icon = LGIcon.Planet;
             if (_inspStarCore != null) { _inspStarCore.gameObject.SetActive(star); _inspStarCore.color = new Color(tint.r, tint.g, tint.b, 1f); }
             if (_inspStarHot != null) _inspStarHot.gameObject.SetActive(star);
+            if (_inspDisc != null) _inspDisc.gameObject.SetActive(!star);
+            if (_inspStarCorona != null) { _inspStarCorona.gameObject.SetActive(star); _inspStarCorona.color = new Color(tint.r, tint.g, tint.b, 0.85f); }
+            Color flare = Color.Lerp(tint, Color.white, 0.65f);
+            if (_inspStarFlare != null) { _inspStarFlare.gameObject.SetActive(star); _inspStarFlare.color = new Color(flare.r, flare.g, flare.b, 0.85f); }
+            if (_inspStarFlare2 != null) { _inspStarFlare2.gameObject.SetActive(star); _inspStarFlare2.color = new Color(flare.r, flare.g, flare.b, 0.35f); }
             if (_inspStarHalo != null) _inspStarHalo.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.55f : 0.3f);
             if (_inspTileIcon != null)
             {
