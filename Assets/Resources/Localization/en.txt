@@ -6889,3 +6889,5 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 СТРОИТСЯ {0} · ГОТОВО {1} ИЗ {2}	BUILDING {0} · READY {1} OF {2}
 Арсенал: армия для штурма и обороны колоний	Arsenal: army for assaulting and defending colonies
 Советник заново покажет главное: разведку, колонии, науку, флот, меню империи и штурм колоний	The advisor will show the essentials again: scouting, colonies, science, fleet, the empire menu and colony assaults
+<color=#AAB4C0>Укрепление:</color> {0} <color=#F2C747>{1}</color>	<color=#AAB4C0>Fortification:</color> {0} <color=#F2C747>{1}</color>
+ · <color=#8AA2A8>осада ×{0:0.##} дольше</color>	 · <color=#8AA2A8>siege ×{0:0.##} longer</color>

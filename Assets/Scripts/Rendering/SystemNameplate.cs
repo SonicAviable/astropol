@@ -15,6 +15,12 @@ namespace StellarisClone.Rendering
         private TextMesh _titleShadow;
         // Добыча системы — плашки со значками: титан (бирюзовый) и гелий-3 (золотой)
         private WorldChip _chipMin, _chipEn;
+        // Укрепление звёздной базы: плашка слева от названия — щит и уровень (I · II · III)
+        private WorldChip _chipFort;
+        private Transform _fortRow;
+        private bool _fortOn;
+        private int _fortKey = -1;
+        private float _fortScan, _titleW;
         // Узел силы: плашка над названием («★ Врата Предтеч»)
         private WorldChip _chipLm;
         private float _lmAlpha;
@@ -117,6 +123,7 @@ namespace StellarisClone.Rendering
             _chipEn.SetAlpha(0f);
 
             CreateTitleScrim(font);
+            CreateFortChip();
             CreateLandmarkChip();
             CreateBuildChip();
             CreateColonyChips();
@@ -141,8 +148,51 @@ namespace StellarisClone.Rendering
             _scrim.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _scrim.receiveShadows = false;
             float w = font != null ? WorldChip.MeasureLine(_data.Name, 52, 0.16f, FontStyle.Bold) : _data.Name.Length * 0.45f;
+            _titleW = w;
             _scrim.size = new Vector2(w + 2.4f, 1.5f);
             _scrim.color = new Color(0f, 0f, 0f, 0f);
+        }
+
+        private void CreateFortChip()
+        {
+            _fortRow = new GameObject("Fortification").transform;
+            _fortRow.SetParent(_plateRoot.transform, false);
+            _fortRow.localPosition = Vector3.zero;
+            _chipFort = WorldChip.Create(_fortRow, "FortChip", 51, false, true);
+            _chipFort.SetIcon(LGIcon.ShieldDome);
+            Color g = UIManager.DS.Gold;
+            _chipFort.SetColors(new Color(0.07f, 0.05f, 0.01f, 0.9f), new Color(g.r, g.g, g.b, 0.8f), g, g, Color.white);
+            _chipFort.SetAlpha(0f);
+            _fortScan = Random.value;
+            UpdateFortChip();
+        }
+
+        /// <summary>Уровень укреплений базы виден, если система ваша или вы её знаете (как значок поселения).</summary>
+        private int VisibleFortification()
+        {
+            if (_data == null || !_data.HasStarbase || _data.OwnerId < 0) return 0;
+            if (_data.OwnerId != 0 && !Vision.PlayerKnows(_data.Id)) return 0;
+            return Mathf.Clamp(_data.Fortification, 0, Fortifications.MaxLevel);
+        }
+
+        private static string Roman(int n) => n == 1 ? "I" : n == 2 ? "II" : n == 3 ? "III" : "";
+
+        private void UpdateFortChip()
+        {
+            if (_chipFort == null) return;
+            int lv = VisibleFortification();
+            bool was = _fortOn;
+            _fortOn = lv > 0;
+            if (lv != _fortKey)
+            {
+                _fortKey = lv;
+                if (lv > 0)
+                {
+                    _chipFort.Set(Roman(lv), 0.40f);
+                    _chipFort.CenterOn(-(_titleW * 0.5f + 0.45f + _chipFort.Width * 0.5f), 0f);
+                }
+            }
+            if (was != _fortOn) ApplyAlpha();
         }
 
         private void CreateBuildChip()
@@ -498,6 +548,7 @@ namespace StellarisClone.Rendering
 
             RefreshLandmarkColors();
             UpdateResourceBadge();
+            UpdateFortChip();
             ApplyAlpha();
         }
 
@@ -541,6 +592,7 @@ namespace StellarisClone.Rendering
                 _chipEn.SetAlpha(_hasEn ? _resAlpha : 0f);
             }
             _chipLm?.SetAlpha(_lmAlpha);
+            _chipFort?.SetAlpha(_fortOn ? _alpha : 0f);
             _chipBuild?.SetAlpha(_buildAlpha);
             _chipPop?.SetAlpha(_popOn ? _alpha : 0f);
             _chipJob?.SetAlpha(_jobOn ? _alpha : 0f);
@@ -576,6 +628,11 @@ namespace StellarisClone.Rendering
                     string cmpText = CombatManager.PowerInShips(pw);
                     tip += sb.Disabled ? Loc.T("<color=#FF7A7A>Звёздная база выведена из строя</color>\n")
                                        : Loc.F("<color=#AAB4C0>Звёздная база:</color> мощь {0:N0}", pw) + (cmpText.Length > 0 ? $" ({cmpText})" : "") + "\n";
+                    int lv = Mathf.Clamp(_data.Fortification, 0, Fortifications.MaxLevel);
+                    var pips = new System.Text.StringBuilder();
+                    for (int i = 1; i <= Fortifications.MaxLevel; i++) pips.Append(i <= lv ? "◆" : "◇");
+                    tip += Loc.F("<color=#AAB4C0>Укрепление:</color> {0} <color=#F2C747>{1}</color>", Fortifications.Name(lv), pips) +
+                           (lv > 0 ? Loc.F(" · <color=#8AA2A8>осада ×{0:0.##} дольше</color>", Fortifications.SiegeMult(lv)) : "") + "\n";
                 }
             }
 
@@ -735,6 +792,13 @@ namespace StellarisClone.Rendering
                 bool wasPop = _popOn, wasJob = _jobOn;
                 UpdateColonyChips();
                 if (wasPop != _popOn || wasJob != _jobOn) ApplyAlpha();
+            }
+
+            // Укрепление: уровень может вырасти (стройка) или упасть (захват) — сверяем раз в секунду
+            if (_chipFort != null)
+            {
+                _fortScan -= Time.unscaledDeltaTime;
+                if (_fortScan <= 0f) { _fortScan = 1f; UpdateFortChip(); }
             }
 
             // Узлы силы видны издалека: это цели на карте

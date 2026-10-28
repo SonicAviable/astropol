@@ -32,8 +32,13 @@ namespace StellarisClone.Rendering
             public StarSystem Sys;
             public Transform Root;
             public SpriteRenderer Back, Rim, Icon;
-            /// <summary>Уровень укреплений звёздной базы: до трёх золотых точек под значком.</summary>
-            public SpriteRenderer[] Pips;
+            /// <summary>
+            /// Уровень укреплений звёздной базы: ряд из трёх отметок над значком (золотые — построено, тёмные — нет)
+            /// на тёмной подложке, и золотое кольцо вокруг значка — заметнее с каждым уровнем.
+            /// </summary>
+            public SpriteRenderer[] Pips, PipBacks;
+            public SpriteRenderer FortRing;
+            public int Fort;
             public MarkerKind Kind;
             public float Alpha;
         }
@@ -215,11 +220,20 @@ namespace StellarisClone.Rendering
                     Rim = Make("Rim", FleetIndicator.GetRingSprite(), 31, 1f),
                     Icon = Make("Icon", LGIcons.Get(LGIcon.Planet), 32, 0.62f),
                     Pips = new SpriteRenderer[Fortifications.MaxLevel],
+                    PipBacks = new SpriteRenderer[Fortifications.MaxLevel],
                 };
+                m.FortRing = Make("FortRing", FleetIndicator.GetRingSprite(), 31, 1.32f);
+                m.FortRing.gameObject.SetActive(false);
+                // Отметки — над значком: снизу их закрывало свечение звезды
                 for (int i = 0; i < m.Pips.Length; i++)
                 {
-                    var pip = Make("Pip" + i, FleetIndicator.GetDiscSprite(), 33, 0.3f);
-                    pip.transform.localPosition = new Vector3((i - (m.Pips.Length - 1) * 0.5f) * 0.38f, -0.72f, 0f);
+                    float x = (i - (m.Pips.Length - 1) * 0.5f) * 0.46f;
+                    var back = Make("PipBack" + i, FleetIndicator.GetDiscSprite(), 33, 0.44f);
+                    back.transform.localPosition = new Vector3(x, 0.86f, 0f);
+                    back.gameObject.SetActive(false);
+                    m.PipBacks[i] = back;
+                    var pip = Make("Pip" + i, FleetIndicator.GetDiscSprite(), 34, 0.3f);
+                    pip.transform.localPosition = new Vector3(x, 0.86f, -0.01f);
                     pip.gameObject.SetActive(false);
                     m.Pips[i] = pip;
                 }
@@ -269,14 +283,24 @@ namespace StellarisClone.Rendering
             m.Rim.color = rim;
             m.Icon.color = icon;
             m.Back.color = new Color(owner.r * 0.12f, owner.g * 0.12f, owner.b * 0.12f, 0.92f * m.Alpha);
-            int fort = m.Sys.HasStarbase ? m.Sys.Fortification : 0;
+            int fort = m.Sys.HasStarbase ? Mathf.Clamp(m.Sys.Fortification, 0, Fortifications.MaxLevel) : 0;
+            m.Fort = fort;
+            // Ряд отметок — только у укреплённых баз: все три места, построенные — золотом («2 из 3» видно сразу)
             for (int i = 0; i < m.Pips.Length; i++)
             {
-                bool on = i < fort;
-                if (m.Pips[i].gameObject.activeSelf != on) m.Pips[i].gameObject.SetActive(on);
-                m.Pips[i].color = new Color(1f, 0.82f, 0.35f, m.Alpha);
+                bool show = fort > 0;
+                if (m.Pips[i].gameObject.activeSelf != show) m.Pips[i].gameObject.SetActive(show);
+                if (m.PipBacks[i].gameObject.activeSelf != show) m.PipBacks[i].gameObject.SetActive(show);
+                m.Pips[i].color = i < fort ? new Color(1f, 0.82f, 0.35f, m.Alpha) : new Color(0.32f, 0.36f, 0.4f, m.Alpha);
+                m.PipBacks[i].color = new Color(0.02f, 0.03f, 0.05f, 0.9f * m.Alpha);
             }
+            bool ring = fort > 0;
+            if (m.FortRing.gameObject.activeSelf != ring) m.FortRing.gameObject.SetActive(ring);
+            m.FortRing.color = new Color(1f, 0.8f, 0.35f, FortRingAlpha(fort) * m.Alpha);
         }
+
+        /// <summary>Яркость золотого кольца укреплений: база — едва, крепость — заметно, цитадель — в полную силу.</summary>
+        private static float FortRingAlpha(int fort) => fort <= 0 ? 0f : fort == 1 ? 0.45f : fort == 2 ? 0.7f : 1f;
 
         // ==================== КАЖДЫЙ КАДР ====================
 
@@ -341,10 +365,12 @@ namespace StellarisClone.Rendering
                     continue;
                 }
                 float dist = Vector3.Distance(camPos, m.Sys.Position);
+                // Укреплённая база — важная точка обороны: видна издалека, как колония
                 float target = m.Kind switch
                 {
                     MarkerKind.Capital => 1f,
                     MarkerKind.Colony => 1f - Smooth(230f, 290f, dist),
+                    _ when m.Fort > 0 => 1f - Smooth(230f, 290f, dist),
                     _ => 1f - Smooth(120f, 170f, dist)
                 };
                 m.Alpha = Mathf.MoveTowards(m.Alpha, target, dt * 4f);
@@ -362,6 +388,8 @@ namespace StellarisClone.Rendering
                 SetAlpha(m.Rim, m.Alpha);
                 SetAlpha(m.Icon, m.Alpha);
                 foreach (var pip in m.Pips) if (pip.gameObject.activeSelf) SetAlpha(pip, m.Alpha);
+                foreach (var pb in m.PipBacks) if (pb.gameObject.activeSelf) SetAlpha(pb, 0.9f * m.Alpha);
+                if (m.FortRing.gameObject.activeSelf) SetAlpha(m.FortRing, FortRingAlpha(m.Fort) * m.Alpha);
             }
         }
 
