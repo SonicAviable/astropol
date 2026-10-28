@@ -590,12 +590,13 @@ namespace StellarisClone.Rendering
             // Кромка — тонкая и сдержанная; выбранная кнопка (яркая кромка) заметнее невыбранной
             float rimA = neutral ? 0.30f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
             Color accent = neutral ? new Color(0.62f, 0.80f, 0.86f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
-            Color body = Color.Lerp(new Color(0.012f, 0.022f, 0.030f), accent, neutral ? 0f : wash);
-            body.a = Mathf.Min(tint.a, 0.72f);
+            // Тело — тёмно-синее стекло; цветная кнопка мягко светится цветом кромки (как «Укрепить» в окне базы)
+            Color body = Color.Lerp(new Color(0.010f, 0.022f, 0.040f), accent, neutral ? 0f : wash);
+            body.a = Mathf.Min(tint.a, 0.85f);
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
-            s.Fill = Mathf.Max(s.Fill, 0.92f);
-            s.Glow *= 0.15f;
+            s.Fill = Mathf.Max(s.Fill, 0.94f);
+            s.Glow *= neutral ? 0.15f : 0.55f;
             s.Shadow *= 0.5f;
             s.Border = 1f;
             s.Flags |= 8;
@@ -764,9 +765,9 @@ namespace StellarisClone.Rendering
         /// <summary>Множитель преломления и хроматической аберрации стекла.</summary>
         public const float Refraction = 0.35f;
         /// <summary>Минимальная плотность больших стеклянных окон (меньше просвечивают).</summary>
-        public const float GlassFill = 0.62f;
+        public const float GlassFill = 0.86f;
         /// <summary>Множитель плотности вложенных пластин.</summary>
-        public const float PlatterFill = 1.3f;
+        public const float PlatterFill = 1.5f;
     }
 
     public sealed class LGIgnore : MonoBehaviour

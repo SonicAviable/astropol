@@ -97,6 +97,8 @@ namespace StellarisClone.Rendering
             var btn = img.gameObject.AddComponent<UnityEngine.UI.Button>();
             btn.onClick.AddListener(() => onClick?.Invoke());
             LG.Button(img.gameObject, rim, radius);
+            // Кнопки-полосы с подписью — в общем стиле игры (планка, значок в ячейке, подпись слева); см. LGGameButton
+            img.gameObject.AddComponent<LGGameButton>().Init(icon, rim, tint);
 
             if (icon.HasValue && string.IsNullOrEmpty(label))
             {
