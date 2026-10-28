@@ -140,6 +140,7 @@ namespace StellarisClone.Rendering
             }
             if (_inspRingB != null) _inspRingB.color = new Color(owner.r, owner.g, owner.b, 0.7f);
             if (_inspHeaderGlow != null) _inspHeaderGlow.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.16f : 0.08f);
+            if (_inspOwnerGlow != null) _inspOwnerGlow.color = new Color(owner.r, owner.g, owner.b, 0.35f);
         }
 
         /// <summary>Главная планета системы для шапки: колония с наибольшим населением, иначе самая крупная планета.</summary>
@@ -153,7 +154,6 @@ namespace StellarisClone.Rendering
             foreach (var p in s.Planets)
                 if (best == null || p.Size > best.Size) best = p;
             return best;
-            if (_inspOwnerGlow != null) _inspOwnerGlow.color = new Color(owner.r, owner.g, owner.b, 0.35f);
         }
 
         /// <summary>
