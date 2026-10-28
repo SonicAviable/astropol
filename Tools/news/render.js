@@ -6,6 +6,10 @@ const path = require('path');
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
   await p.goto('file://' + path.join(__dirname, name + '.html'));
+  // CSS-маска из file:// Chromium не грузит (другой «источник») — подставляем маску карты как data URI
+  const fs = require('fs');
+  const mask = fs.readFileSync(path.join(__dirname, '..', '..', 'Assets', 'Resources', 'UI', 'CardBattle', 'card_mask.png')).toString('base64');
+  await p.addStyleTag({ content: `.body, .mask { -webkit-mask-image: url(data:image/png;base64,${mask}) !important; }` });
   await p.evaluate(() => document.fonts.ready);
   await p.waitForTimeout(400);
   await p.locator('#cover').screenshot({ path: path.join(__dirname, '..', '..', 'VKPlay', 'news', name + '.png') });

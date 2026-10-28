@@ -38,23 +38,35 @@ body { width: 1920px; height: 1080px; overflow: hidden; background: var(--navy);
 .it b { display: block; font-size: 30px; font-weight: 700; letter-spacing: 0.5px; }
 .it span { display: block; font-size: 21px; color: var(--muted); margin-top: 3px; }
 
-/* ---------- веер карт */
-.fan { position: absolute; left: 990px; top: 120px; width: 820px; height: 760px; }
-.card { position: absolute; width: 300px; height: 420px; left: 260px; top: 150px; transform-origin: 50% 230%;
-  border-radius: 14px; padding: 7px; background: linear-gradient(160deg, #FFE7A8, #B9822F 45%, #6E4A1A); box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(242,199,102,0.18); }
-.card.cy { background: linear-gradient(160deg, #B8FFF6, #2F9C93 45%, #13423F); box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(102,219,209,0.2); }
-.card .art { width: 100%; height: 100%; border-radius: 9px; background-size: cover; background-position: center; position: relative; overflow: hidden; }
-.card .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(3,8,18,0.92) 100%); }
-.card .name { position: absolute; left: 18px; right: 18px; bottom: 54px; z-index: 2; font-family: Russo; font-size: 22px; letter-spacing: 1px; text-shadow: 0 2px 6px #000; }
-.card .stats { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2; display: flex; justify-content: space-between; }
-.pill { min-width: 46px; height: 34px; padding: 0 10px; border-radius: 17px; display: grid; place-items: center; font-family: Russo; font-size: 20px; }
-.pow { background: #3A1410; border: 1.5px solid #FF8A5C; color: #FFC3A6; }
-.arm { background: #0E2638; border: 1.5px solid #6FB8FF; color: #CFE6FF; }
-.cost { position: absolute; top: 12px; left: 12px; z-index: 2; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle at 35% 30%, #BFFFF8, #2AA79C 55%, #0C3A36); border: 2px solid #DFFFFB; font-family: Russo; font-size: 24px; color: #04201D; }
-.c1 { transform: rotate(-20deg) translateY(26px); z-index: 1; } .c2 { transform: rotate(-10deg) translateY(4px); z-index: 2; }
-.c3 { transform: rotate(0deg) translateY(-10px) scale(1.06); z-index: 5; }
-.c4 { transform: rotate(10deg) translateY(4px); z-index: 2; } .c5 { transform: rotate(20deg) translateY(26px); z-index: 1; }
+/* ---------- веер карт: карта собрана из тех же слоёв, что CardView в игре (макет 330×462) */
+.fan { position: absolute; left: 975px; top: 110px; width: 840px; height: 800px; }
+.slot { position: absolute; left: 255px; top: 150px; width: 330px; height: 462px; transform-origin: 50% 100%; }
+.card { position: absolute; inset: 0; filter: drop-shadow(0 30px 40px rgba(0,0,0,0.75)); }
+.card > * { position: absolute; }
+.L { inset: 0; width: 330px; height: 462px; background-size: 100% 100%; }
+.body { -webkit-mask: url(../../Assets/Resources/UI/CardBattle/card_mask.png) 0 0/100% 100%; background: #070B12; }
+.mask { inset: 0; -webkit-mask: url(../../Assets/Resources/UI/CardBattle/card_mask.png) 0 0/100% 100%; }
+.mask .art { position: absolute; left: 0; right: 0; top: 0; height: 75%; background-size: cover; background-position: center 30%; }
+.mask .foil { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/CardBattle/card_foil.png) 0 0/100% 100%; mix-blend-mode: screen; opacity: 0.35; }
+.mask .shade { position: absolute; inset: 0; background-size: 100% 100%; }
+.plate { left: -2px; width: 334px; top: 254px; height: 46px; background-size: 100% 100%; display: grid; place-items: center; }
+.plate b { font-family: Russo; font-weight: normal; font-size: 19px; color: #F5EBD6; text-shadow: 0 2px 2px #000, 0 0 3px #000; letter-spacing: 0.3px; }
+.legend .plate b { color: #FFDE80; }
+.kind { left: 15px; width: 300px; top: 307px; text-align: center; font-family: Russo; font-size: 10.5px; letter-spacing: 3px; }
+.text { left: 36px; right: 36px; top: 324px; bottom: 54px; display: grid; place-items: center; text-align: center; font-family: Play; font-size: 13.5px; line-height: 1.05; color: #E3DED1; }
+.text i { font-style: normal; font-weight: 700; }
+.rlabel { left: 65px; width: 200px; bottom: 31px; text-align: center; font-family: Play; font-weight: 700; font-size: 9px; letter-spacing: 2.5px; color: #8FA1AD; }
+.rgem { left: 152px; bottom: 7px; width: 26px; height: 26px; background-size: 100% 100%; }
+.gem { background-size: 100% 100%; display: grid; place-items: center; font-family: Russo; color: #fff;
+  text-shadow: 2px -2px 0 rgba(0,0,0,0.9), -1px 1px 0 rgba(0,0,0,0.9), 0 3px 2px rgba(0,0,0,0.6); }
+.cost { left: -6px; top: -6px; width: 70px; height: 76px; font-size: 30px; }
+.atk { left: -4px; bottom: -4px; width: 64px; height: 70px; font-size: 28px; }
+.def { right: -4px; bottom: -4px; width: 64px; height: 70px; font-size: 28px; }
+.crest { left: 85px; top: -16px; width: 160px; height: 42px; background: url(../../Assets/Resources/UI/CardBattle/card_crest.png) 0 0/100% 100%; }
+.fmark { right: 16px; top: 16px; width: 44px; height: 44px; background-size: contain; background-repeat: no-repeat; filter: drop-shadow(0 0 6px #000); }
+.s1 { transform: translateX(-215px) rotate(-12deg) translateY(40px) scale(0.92); z-index: 1; }
+.s2 { transform: translateY(-14px) scale(1.08); z-index: 5; }
+.s3 { transform: translateX(215px) rotate(12deg) translateY(40px) scale(0.92); z-index: 1; }
 
 .foot { position: absolute; left: 110px; right: 110px; bottom: 48px; display: flex; justify-content: space-between; align-items: center; }
 .logo { font-family: Russo; font-size: 34px; letter-spacing: 10px; }
@@ -85,13 +97,42 @@ body { width: 1920px; height: 1080px; overflow: hidden; background: var(--navy);
     </div>
   </div>
 
-  <div class="fan">
-    <div class="card c1"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/O2.jpg)"><div class="cost">5</div><div class="name">Орбитальный удар</div></div></div>
-    <div class="card cy c2"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/A3.jpg)"><div class="cost">4</div><div class="name">Миротворцы</div><div class="stats"><div class="pill pow">4</div><div class="pill arm">6</div></div></div></div>
-    <div class="card c3"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/U12.jpg)"><div class="cost">5</div><div class="name">Шагоход</div><div class="stats"><div class="pill pow">6</div><div class="pill arm">10</div></div></div></div>
-    <div class="card cy c4"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/U10.jpg)"><div class="cost">4</div><div class="name">Танк «Бастион»</div><div class="stats"><div class="pill pow">5</div><div class="pill arm">8</div></div></div></div>
-    <div class="card c5"><div class="art" style="background-image:url(../../Assets/Resources/UI/Cards/U3.jpg)"><div class="cost">3</div><div class="name">Тяжёлая пехота</div><div class="stats"><div class="pill pow">3</div><div class="pill arm">5</div></div></div></div>
-  </div>
+  <div class="fan" id="fan"></div>
 
   <div class="foot"><div class="logo">ASTROPOLITY<small>ранний доступ · VK Play</small></div></div>
-</div></body></html>
+</div>
+<script>
+const R = '../../Assets/Resources/UI/';
+const COL = { common: '#A8B8C7', rare: '#5EC7FF', epic: '#C48CFF', legend: '#FFCF59' };
+// Карты как в игре: редкость — по правилам CardArt.Rarity (цена от 5 — легендарная, фракционная — эпическая, от 4 — редкая)
+const CARDS = [
+  { id: 'A3', r: 'epic', cost: 4, name: 'МИРОТВОРЦЫ', kind: 'ЮНИТ · ПЕХОТА', p: 4, a: 6, f: 'astrea', text: '+3 к силе, если вы не применяли «Орбитальный удар» в этом бою.' },
+  { id: 'U12', r: 'legend', cost: 5, name: 'ШАГОХОД', kind: 'ЮНИТ · ТЕХНИКА', p: 6, a: 10, text: '<i>При раскрытии</i> давит до двух пехотинцев врага с бронёй до 2.' },
+  { id: 'O2', r: 'legend', cost: 5, name: 'ОРБИТАЛЬНЫЙ УДАР', kind: 'ПРИКАЗ', text: '7 урона по сильнейшим врагам сектора, укрытие не спасает. Район сектора разрушен. Нужен флот мощью от 1500.' },
+];
+const RN = { common: 'ОБЫЧНАЯ', rare: 'РЕДКАЯ', epic: 'ЭПИЧЕСКАЯ', legend: 'ЛЕГЕНДАРНАЯ' };
+const fan = document.getElementById('fan');
+CARDS.forEach((c, i) => {
+  const k = c.r, cb = R + 'CardBattle/', col = COL[k];
+  const text = c.text.replace(/<i>/g, `<i style="color:${col}">`);
+  fan.insertAdjacentHTML('beforeend', `
+  <div class="slot s${i + 1}"><div class="card ${k}">
+    <div class="L body"></div>
+    <div class="L mask"><div class="art" style="background-image:url(${R}Cards/${c.id}.jpg)"></div>
+      ${k === 'epic' || k === 'legend' ? '<div class="foil"></div>' : ''}
+      <div class="shade" style="background-image:url(${cb}card_shade_${k}.png)"></div></div>
+    <div class="L" style="background-image:url(${cb}cardframe_${k}.png)"></div>
+    ${k === 'legend' ? '<div class="crest"></div>' : ''}
+    ${c.f ? `<div class="fmark" style="background-image:url(../../Assets/Resources/Factions/emblem_${c.f}.png)"></div>` : ''}
+    <div class="plate" style="background-image:url(${cb}card_plate_${k}.png)"><b>${c.name}</b></div>
+    <div class="kind" style="color:${col}">${c.kind}</div>
+    <div class="text"><div>${text}</div></div>
+    <div class="rlabel">${RN[k]}</div>
+    <div class="rgem" style="background-image:url(${cb}card_gem_${k}.png)"></div>
+    <div class="gem cost" style="background-image:url(${cb}card_cost_${k}.png)">${c.cost}</div>
+    ${c.p !== undefined ? `<div class="gem atk" style="background-image:url(${cb}card_atk_${k}.png)">${c.p}</div>` : ''}
+    ${c.a !== undefined ? `<div class="gem def" style="background-image:url(${cb}card_def_${k}.png)">${c.a}</div>` : ''}
+  </div></div>`);
+});
+</script>
+</body></html>
