@@ -154,18 +154,13 @@ namespace StellarisClone.Rendering
             _inspBannerPlanet.preserveAspect = true;
             _inspBannerPlanet.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-70, -18), new Vector2(230, 230));
 
-            // Затемнение слева (под названием) и снизу (к карточкам) — текст читается на любом кадре
+            // Затемнение слева (под названием) — текст читается на любом кадре
             var shadeL = LGBuild.Panel(_inspBanner, "ShadeLeft", new Color(0.01f, 0.02f, 0.03f, 0.92f));
             shadeL.sprite = FadeRightSprite;
             shadeL.raycastTarget = false;
             shadeL.rectTransform.anchorMin = new Vector2(0, 0); shadeL.rectTransform.anchorMax = new Vector2(0.85f, 1);
             shadeL.rectTransform.offsetMin = shadeL.rectTransform.offsetMax = Vector2.zero;
-            var shadeB = LGBuild.Panel(_inspBanner, "ShadeBottom", new Color(0.01f, 0.02f, 0.03f, 0.55f));
-            shadeB.raycastTarget = false;
-            shadeB.rectTransform.anchorMin = new Vector2(0, 0); shadeB.rectTransform.anchorMax = new Vector2(1, 0);
-            shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
-            shadeB.rectTransform.sizeDelta = new Vector2(0, 18);
-            foreach (var g in new Graphic[] { _inspBannerSky, _inspBannerStar, _inspBannerPlanet, shadeL, shadeB }) LG.Ignore(g.gameObject);
+            foreach (var g in new Graphic[] { _inspBannerSky, _inspBannerStar, _inspBannerPlanet, shadeL }) LG.Ignore(g.gameObject);
         }
 
         /// <summary>Кадр системы в фоне шапки: свой кусок туманности и свет звезды её цвета.</summary>
