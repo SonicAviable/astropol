@@ -168,7 +168,7 @@ namespace StellarisClone.Rendering
             foreach (var g in new Graphic[] { _inspBannerSky, _inspBannerStar, _inspBannerPlanet, shadeL, shadeB }) LG.Ignore(g.gameObject);
         }
 
-        /// <summary>Кадр системы в фоне шапки: свой кусок космоса, звезда её цвета, главная планета.</summary>
+        /// <summary>Кадр системы в фоне шапки: свой кусок туманности и свет звезды её цвета.</summary>
         private void PaintInspectorBanner(Color star, Sprite planet, int seed)
         {
             if (_inspBanner == null) return;
@@ -178,12 +178,9 @@ namespace StellarisClone.Rendering
                 float u = Mathf.Abs(seed * 0.137f) % 0.6f, v = Mathf.Abs(seed * 0.291f) % 0.55f;
                 _inspBannerSky.uvRect = new Rect(u, v, 0.4f, 0.4f * 96f / InspectorWidth * 2.2f);
             }
-            if (_inspBannerStar != null) _inspBannerStar.color = new Color(star.r, star.g, star.b, planet != null ? 0.5f : 0.75f);
-            if (_inspBannerPlanet != null)
-            {
-                _inspBannerPlanet.sprite = planet;
-                _inspBannerPlanet.gameObject.SetActive(planet != null);
-            }
+            // Фон шапки — только туманность и свет звезды; планеты в кадре нет
+            if (_inspBannerStar != null) _inspBannerStar.color = new Color(star.r, star.g, star.b, 0.6f);
+            if (_inspBannerPlanet != null) _inspBannerPlanet.gameObject.SetActive(false);
         }
 
         /// <summary>Цвета портрета: звезда (свет — её цвета) или значок объекта; кольца — цвета владельца.</summary>
