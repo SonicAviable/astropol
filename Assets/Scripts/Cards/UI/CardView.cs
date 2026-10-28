@@ -207,6 +207,24 @@ namespace StellarisClone.Cards
 
             _frame = CardSkin.Simple(_content, "Frame", "cardframe_" + _rk, Color.white);
             _frame.rectTransform.Stretch();
+
+            // Вспышка по краю: урон — красным, лечение — зелёным, усиление — золотом (вместо заливки всей карты)
+            float es = 0.5f * u;
+            _edge = CardSkin.Sliced(_content, "EdgeFlash", "glow_edge", new Color(1f, 1f, 1f, 0f), es);
+            _edge.material = UIFx.GlowMat;
+            float eo = -96f * es * 0.55f;
+            _edge.rectTransform.Stretch(eo, eo, eo, eo);
+        }
+
+        private Image _edge;
+        private Color _edgeC = Color.white;
+        private float _edgeA;
+
+        /// <summary>Свечение по контуру карты цветом c (урон, лечение, усиление); гаснет само.</summary>
+        public void EdgeFlash(Color c, float strength = 1f)
+        {
+            _edgeC = c;
+            _edgeA = Mathf.Max(_edgeA, strength);
         }
 
         /// <summary>Лента имени поперёк карты: литая кромка цвета редкости, тёмная середина, имя шрифтом заголовков.</summary>
@@ -328,10 +346,11 @@ namespace StellarisClone.Cards
             FactionMark(d, u, 62f * u);
             if (_rarity == CardRarity.Legendary || _rarity == CardRarity.Commander) Crest(u);
             RarityMark(u, 40f * u, false);
+            // На столе главное — сила и броня: крупные гербы с крупными цифрами, читаются с первого взгляда
             if (ShowsPower(d))
-                _power = Badge("card_atk", Vector2.zero, new Vector2(42f * u, 46f * u), new Vector2(96f * u, 105f * u), 44f * u, "0", out _powerBadge);
+                _power = Badge("card_atk", Vector2.zero, new Vector2(48f * u, 52f * u), new Vector2(112f * u, 122f * u), 56f * u, "0", out _powerBadge);
             if (d.IsBoardUnit)
-                _armor = Badge("card_def", new Vector2(1, 0), new Vector2(-42f * u, 46f * u), new Vector2(96f * u, 105f * u), 44f * u, "0", out _armorBadge);
+                _armor = Badge("card_def", new Vector2(1, 0), new Vector2(-48f * u, 52f * u), new Vector2(112f * u, 122f * u), 56f * u, "0", out _armorBadge);
             Stars(u * 1.6f);
             Status(size, size.y / 178f * 280f / 178f * 0.75f);
         }
@@ -447,6 +466,7 @@ namespace StellarisClone.Cards
         {
             _hitA = Mathf.Max(_hitA, 0.75f * strength);
             _shakeT = Mathf.Max(_shakeT, 0.3f * strength);
+            EdgeFlash(new Color(1f, 0.3f, 0.18f), Mathf.Clamp(0.7f * strength, 0.5f, 1.2f));
             // Удар отбрасывает край карты — она качается в 3D и успокаивается
             _joltDir = UnityEngine.Random.insideUnitCircle.normalized;
             _joltPower = Mathf.Clamp(strength, 0.3f, 1.5f);
@@ -584,7 +604,12 @@ namespace StellarisClone.Cards
             Rt.localScale = new Vector3(s, s, 1f);
 
             // Вспышка урона
-            if (_hitA > 0f) { _hitA = Mathf.Max(0f, _hitA - dt * 3f); _hitFlash.color = new Color(1f, 0.25f, 0.15f, _hitA * 0.6f); }
+            if (_hitA > 0f) { _hitA = Mathf.Max(0f, _hitA - dt * 3f); _hitFlash.color = new Color(1f, 0.25f, 0.15f, _hitA * 0.22f); }
+            if (_edge != null && (_edgeA > 0f || _edge.color.a > 0f))
+            {
+                _edgeA = Mathf.Max(0f, _edgeA - dt * 2.2f);
+                _edge.color = new Color(_edgeC.r, _edgeC.g, _edgeC.b, Mathf.Clamp01(_edgeA));
+            }
 
             // Значки силы/брони возвращаются к обычному размеру
             if (_powerBadge != null) _powerBadge.localScale = Vector3.Lerp(_powerBadge.localScale, Vector3.one, 1f - Mathf.Exp(-dt * 10f));

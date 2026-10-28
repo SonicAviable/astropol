@@ -62,6 +62,7 @@ namespace StellarisClone.Cards
             yield return PlayEvents();
             yield return MulliganPhase();
             _busy = false;
+            StartCoroutine(Callout(Loc.T("ВАШ ХОД"), CalloutGold));
             Hint(_P == BattleState.Attacker
                 ? Loc.T("Сначала секторы держит гарнизон — так и задумано: за 8 ходов отбейте 2 из 3 · перетащите карты в секторы · Enter — конец хода")
                 : Loc.T("Перетащите карты в секторы · золотой меч — урон за ход, красный щит — броня · Enter — конец хода"));
@@ -109,8 +110,10 @@ namespace StellarisClone.Cards
             // Свои выложенные карты: метка «приказ отдан» гаснет
             foreach (var kv in _pending) if (kv.Value != null && kv.Value.Side == _P) { kv.Value.SetStatus(null, Color.clear); kv.Value.OnClick = null; }
             if (!_state.Over) _state.Resolve();
+            StartCoroutine(Callout(Loc.T("РАСКРЫТИЕ"), new Color(1f, 0.6f, 0.45f), 0.8f));
             yield return PlayEvents();
             _busy = false;
+            if (!_state.Over) StartCoroutine(Callout(Loc.T("ВАШ ХОД"), CalloutGold));
             if (!_state.Over) Hint(Loc.F("Ход {0}: у вас {1} очк. приказов", _state.Turn, _state.Sides[_P].Points));
         }
 
@@ -233,7 +236,8 @@ namespace StellarisClone.Cards
                     if (v != null)
                     {
                         var p = _fx.Local(v.Rt);
-                        _fx.Number(p, "+" + e.Amount, new Color(0.45f, 1f, 0.55f), 30, 0.9f);
+                        _fx.Number(p, "+" + e.Amount, new Color(0.45f, 1f, 0.55f), 42, 1f);
+                        v.EdgeFlash(new Color(0.4f, 1f, 0.55f), 1f);
                         _fx.Burst(p, 10, CardSprites.Spark, new Color(0.5f, 1f, 0.6f, 0.9f), 40f, 120f, 0.6f, 1f, 9f, 3f, -120f, 1f, 90f, 120f, align: true, stretch: 2f);
                         v.RefreshNumbers(v.ShownPower, v.ShownArmor + e.Amount, v.MaxArmor);
                     }
@@ -245,14 +249,16 @@ namespace StellarisClone.Cards
                     var v = ViewOf(e.Uid);
                     if (v != null && e.Text == "cover")
                     {
-                        _fx.Number(_fx.Local(v.Rt, new Vector2(0, 40)), Loc.T("+2 укрытие"), new Color(0.55f, 0.85f, 1f), 18, 0.9f);
+                        _fx.Number(_fx.Local(v.Rt, new Vector2(0, 40)), Loc.T("+2 укрытие"), new Color(0.55f, 0.85f, 1f), 26, 1f);
+                        v.EdgeFlash(new Color(0.5f, 0.82f, 1f), 0.9f);
                         _fx.Ring(_fx.Local(v.Rt), new Color(0.5f, 0.8f, 1f, 0.6f), 30f, 130f, 0.35f);
                     }
                     else if (v != null && e.Amount != 0)
                     {
                         var p = _fx.Local(v.Rt, new Vector2(-30, -40));
                         bool up = e.Amount > 0;
-                        _fx.Number(p, (up ? "+" : "") + e.Amount + Loc.T(" сила"), up ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.45f, 0.4f), 22, 0.9f);
+                        _fx.Number(p, (up ? "+" : "") + e.Amount + Loc.T(" сила"), up ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.45f, 0.4f), 34, 1f);
+                        v.EdgeFlash(up ? new Color(1f, 0.82f, 0.35f) : new Color(1f, 0.35f, 0.3f), 1f);
                         _fx.Burst(p, 8, CardSprites.Spark, up ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.4f, 0.35f), 60f, 180f, 0.3f, 0.6f, 14f, 4f, up ? -300f : 300f, 2f, up ? 90f : 270f, 60f, align: true, stretch: 2f);
                         v.RefreshNumbers(v.ShownPower + e.Amount, v.ShownArmor, v.MaxArmor);
                         v.GlowBoost = 1f;
@@ -287,6 +293,8 @@ namespace StellarisClone.Cards
                     SFXManager.Play(Sfx.Radio, 0.9f, e.Side == _P ? 1f : 0.92f);
                     SFXManager.Play(Sfx.CardSlam, 0.6f, 0.7f);
                     _fx.Ring(_fx.Local(_sec[e.Sector].PowerBar), e.Side == _P ? new Color(0.45f, 1f, 0.6f) : new Color(1f, 0.4f, 0.35f), 60f, 520f, 0.6f);
+                    // Волна цвета на весь стол: сектор взят — бирюзой, потерян — красным
+                    _fx.Flash(e.Side == _P ? new Color(0.35f, 1f, 0.75f) : new Color(1f, 0.28f, 0.22f), 0.2f, 1.4f);
                     VortexFx(_fx.Local(_sec[e.Sector].PowerBar), e.Side == _P ? new Color(0.45f, 1f, 0.65f) : new Color(1f, 0.35f, 0.3f), 0.8f);
                     yield return W(0.45f);
                     break;
@@ -363,6 +371,13 @@ namespace StellarisClone.Cards
             Hook(v);
             v.SetAlpha(1f);
             v.SetStatus(null, Color.clear);
+            if (Showcased(u.Def, u.Card.Stars))
+            {
+                // Розыгрыш крупным планом; карта на столе ждёт его невидимой и встаёт уже лицом
+                v.SetAlpha(0f);
+                yield return Showcase(v, u.Card, u.Side);
+                if (v != null) { v.SetAlpha(1f); v.SetFace(true, true); }
+            }
             bool wasDown = !v.FaceUp;
             if (wasDown) { v.SetFace(true, false); SFXManager.Play(Sfx.CardFlip, 0.8f, Random.Range(0.95f, 1.08f), Pan(_fx.Local(v.Rt))); yield return W(0.22f); }
             v.RefreshNumbers(u.BasePower, u.Armor, u.MaxArmor, false);
@@ -438,6 +453,10 @@ namespace StellarisClone.Cards
                 if (kv.Value != null && kv.Value.Side == e.Side && kv.Key.Def == e.Def) { v = kv.Value; key = kv.Key; break; }
             if (key != null) _pending.Remove(key);
             if (v == null) v = CardView.Create(_rows[e.Sector, e.Side == _P ? 1 : 0], new BCard(e.Def), e.Side, FactionOf(e.Side), BoardCard, true);
+            // Приказ — крупным планом посреди стола, затем над сектором срабатывает
+            v.SetAlpha(0f);
+            yield return Showcase(v, key ?? new BCard(e.Def), e.Side);
+            if (v == null) yield break;
             // Карта приказа поднимается над сектором и раскрывается
             Reparent(v, _fxLayer);
             _targets[v] = _fx.Local(_sec[e.Sector].Header, new Vector2(0, -150));
@@ -797,7 +816,7 @@ namespace StellarisClone.Cards
             if (v == null) yield break;
             var p = _fx.Local(v.Rt);
             v.Hit(Mathf.Clamp(e.Amount / 3f, 0.5f, 1.5f));
-            _fx.Number(p + new Vector2(Random.Range(-20f, 20f), 10), "−" + e.Amount, new Color(1f, 0.4f, 0.32f), 32 + Mathf.Min(16, e.Amount * 2), 0.9f);
+            _fx.Number(p + new Vector2(Random.Range(-20f, 20f), 14), "−" + e.Amount, new Color(1f, 0.42f, 0.25f), 46 + Mathf.Min(22, e.Amount * 3), 1f);
             var def = v.Card.Def;
             if (def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure || def.Has(Kw.Drone))
             {
@@ -826,6 +845,7 @@ namespace StellarisClone.Cards
                 _fx.Explosion(p, def.Cost >= 5 ? 1.6f : 1.1f);
                 _fx.Shake(def.Cost >= 5 ? 18f : 10f, 0.4f);
                 SFXManager.Play(def.Cost >= 5 ? Sfx.Boom : Sfx.BoomSmall, 0.9f, 1f, Pan(p));
+                if (def.Cost >= 5) _fx.Flash(new Color(1f, 0.6f, 0.3f), 0.16f, 2f);
                 Kick(def.Cost >= 5 ? 0.016f : 0.01f);
                 SFXManager.PlayDelayed(Sfx.UnitDown, 0.08f, 0.7f);
             }
@@ -917,6 +937,7 @@ namespace StellarisClone.Cards
                 bool mine = e.Side == _P;
                 AddLog(Loc.F("<color=#F2C766>Артподготовка с орбиты: укрепления −{0} брони</color>", e.Amount));
                 SFXManager.Play(Sfx.ShellWhistle, 1f);
+                _fx.Flash(new Color(1f, 0.55f, 0.25f), 0.2f, 1.2f);
                 yield return Banner(Loc.T("АРТПОДГОТОВКА"),
                     mine ? Loc.F("Флот бьёт с орбиты по укреплениям: −{0} брони каждому", e.Amount)
                          : Loc.F("Флот врага бьёт по вашим укреплениям: −{0} брони каждому", e.Amount),
@@ -1040,6 +1061,118 @@ namespace StellarisClone.Cards
         }
 
         // ---------------------------------------------------------------- баннер
+
+        private static readonly Color CalloutGold = new Color(1f, 0.84f, 0.42f);
+
+        /// <summary>
+        /// Крупная надпись прямо на столе, без плашки («ВАШ ХОД», «РАСКРЫТИЕ»): влетает с увеличением, держится и гаснет.
+        /// Не блокирует ход — запускается через StartCoroutine.
+        /// </summary>
+        private IEnumerator Callout(string text, Color c, float dur = 1.1f)
+        {
+            if (_overlay == null) yield break;
+            var at = new Vector2(0f, TrayY);
+            var glow = CardSkin.Simple(_overlay, "CalloutGlow", "glow", new Color(c.r, c.g, c.b, 0f));
+            glow.rectTransform.At(Mid, Mid, at, new Vector2(980, 300));
+            var t = Caption(_overlay, text, 76, new Color(c.r, c.g, c.b, 0f), TextAnchor.MiddleCenter, 5f);
+            if (CardSkin.Title != null) { t.font = CardSkin.Title; t.fontStyle = FontStyle.Normal; }
+            t.rectTransform.At(Mid, Mid, at, new Vector2(1500, 130));
+            var ol = t.gameObject.AddComponent<Outline>();
+            ol.effectColor = new Color(0.12f, 0.06f, 0f, 0.95f);
+            ol.effectDistance = new Vector2(3f, -3f);
+            var sh = t.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(0f, 0f, 0f, 0.65f);
+            sh.effectDistance = new Vector2(0f, -7f);
+            _arc?.Glint(at, c, 1300f, 11f, 0.55f);
+            SFXManager.Play(Sfx.Whoosh, 0.6f, 1.15f);
+            float total = dur / Mathf.Max(0.1f, _animSpeed * (Fast ? 3f : 1f));
+            float time = 0f;
+            while (time < total && t != null)
+            {
+                time += Time.unscaledDeltaTime;
+                float k = time / total;
+                float a = k < 0.12f ? k / 0.12f : k > 0.7f ? 1f - (k - 0.7f) / 0.3f : 1f;
+                float e = 1f - Mathf.Pow(1f - Mathf.Clamp01(k / 0.14f), 3f);
+                t.color = new Color(c.r, c.g, c.b, a);
+                glow.color = new Color(c.r, c.g, c.b, 0.32f * a);
+                t.rectTransform.localScale = Vector3.one * (Mathf.Lerp(1.7f, 1f, e) + 0.05f * k);
+                yield return null;
+            }
+            if (t != null) Destroy(t.gameObject);
+            if (glow != null) Destroy(glow.gameObject);
+        }
+
+        /// <summary>Крупно показываем: приказы, героев, карты от 4 очков и эпические и выше.</summary>
+        private static bool Showcased(CardDef d, int stars)
+            => d != null && (d.Kind == CardKind.Order || d.Kind == CardKind.Hero || d.Cost >= 4 || CardArt.Rarity(d, stars) >= CardRarity.Epic);
+
+        /// <summary>
+        /// Розыгрыш крупным планом: карта взлетает с места на середину стола, разворачиваясь из наклона (3D),
+        /// держится в ореоле цвета редкости и возвращается на место. Пробел или правая кнопка — пропустить.
+        /// </summary>
+        private IEnumerator Showcase(CardView from, BCard card, int side)
+        {
+            if (Fast || from == null || card == null || _fxLayer == null) yield break;
+            var start = _fx.Local(from.Rt);
+            var center = new Vector2(Mathf.Clamp(start.x * 0.35f, -260f, 260f), TrayY + 10f);
+            var rarity = CardArt.Rarity(card.Def, card.Stars);
+            var rc = CardArt.RarityColor(rarity);
+            bool grand = rarity >= CardRarity.Legendary || card.Def.Kind == CardKind.Order;
+
+            var halo = CardSkin.Simple(_fxLayer, "ShowHalo", "glow", new Color(rc.r, rc.g, rc.b, 0f));
+            halo.rectTransform.At(Mid, Mid, center, new Vector2(640, 640));
+            var wrap = At(_fxLayer, "Showcase", start, PreviewCard);
+            var big = CardView.Create(wrap, card, side, FactionOf(side), PreviewCard, false);
+            big.Rt.anchoredPosition = Vector2.zero;
+            foreach (var g in big.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
+            float small = BoardCard.y / PreviewCard.y;
+            SFXManager.Play(Sfx.Whoosh, 0.65f, 1.1f, Pan(start));
+            SFXManager.PlayDelayed(Sfx.CardFlip, 0.08f, 0.7f, 1.05f);
+
+            float spd = Mathf.Max(0.1f, _animSpeed);
+            float t = 0f;
+            // Влёт: из ряда на середину, из наклона — лицом к игроку
+            while (t < 1f && wrap != null)
+            {
+                t += Time.unscaledDeltaTime * spd / 0.22f;
+                float e = 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3f);
+                wrap.anchoredPosition = Vector2.Lerp(start, center, e);
+                wrap.localScale = Vector3.one * Mathf.Lerp(small, 1f, e);
+                wrap.localRotation = Quaternion.Euler(38f * (1f - e), (start.x < center.x ? -1f : 1f) * 20f * (1f - e), -8f * (1f - e));
+                halo.color = new Color(rc.r, rc.g, rc.b, 0.5f * e);
+                yield return null;
+            }
+            if (wrap == null) { if (halo != null) Destroy(halo.gameObject); yield break; }
+            _arc?.Glint(center, rc, grand ? 900f : 620f, grand ? 11f : 8f, 0.4f);
+            _arc?.RingWave(center, new Color(rc.r, rc.g, rc.b, 0.85f), 120f, grand ? 520f : 380f, 7f, 0.5f, 0.7f);
+            if (grand) { _fx.Flash(rc, 0.14f, 1.8f); SFXManager.Play(Sfx.OrderCast, 0.5f, 1.1f); }
+            big.Punch(0.06f);
+            // Держится: лёгкое покачивание
+            float hold = (grand ? 0.55f : 0.4f) / spd, h = 0f;
+            while (h < hold && wrap != null)
+            {
+                h += Time.unscaledDeltaTime;
+                float k = h / hold;
+                wrap.localRotation = Quaternion.Euler(Mathf.Sin(k * Mathf.PI) * -4f, Mathf.Sin(k * Mathf.PI * 2f) * 5f, 0f);
+                halo.color = new Color(rc.r, rc.g, rc.b, 0.5f + 0.15f * Mathf.Sin(k * Mathf.PI * 3f));
+                yield return null;
+            }
+            // Возврат на место
+            var end = from != null ? _fx.Local(from.Rt) : start;
+            t = 0f;
+            while (t < 1f && wrap != null)
+            {
+                t += Time.unscaledDeltaTime * spd / 0.18f;
+                float e = Mathf.Clamp01(t) * Mathf.Clamp01(t);
+                wrap.anchoredPosition = Vector2.Lerp(center, end, e);
+                wrap.localScale = Vector3.one * Mathf.Lerp(1f, small, e);
+                wrap.localRotation = Quaternion.Euler(-24f * e, 0f, 0f);
+                halo.color = new Color(rc.r, rc.g, rc.b, 0.5f * (1f - e));
+                yield return null;
+            }
+            if (wrap != null) Destroy(wrap.gameObject);
+            if (halo != null) Destroy(halo.gameObject);
+        }
 
         private IEnumerator Banner(string title, string sub, Color c, float dur)
         {

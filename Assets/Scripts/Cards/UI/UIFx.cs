@@ -164,8 +164,11 @@ namespace StellarisClone.Cards
                 if (sp.name.StartsWith("k_spark")) sp = CardSprites.Spark;
                 align = true;
                 stretch = Mathf.Max(stretch, 2.6f);
-                size = Mathf.Max(size, 7f);
-                sizeEnd = Mathf.Max(sizeEnd, size * 0.6f);
+                if (stretch < 8f)   // длинные тонкие штрихи (дождь) остаются тонкими
+                {
+                    size = Mathf.Max(size, 7f);
+                    sizeEnd = Mathf.Max(sizeEnd, size * 0.6f);
+                }
             }
             for (int i = 0; i < count; i++)
             {
@@ -441,7 +444,8 @@ namespace StellarisClone.Cards
             var t = CardSkin.TitleText(_layer, text, size, c, TextAnchor.MiddleCenter, 2.5f);
             var rt = t.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(200, 60);
+            rt.sizeDelta = new Vector2(Mathf.Max(200f, size * 6f), Mathf.Max(60f, size * 1.6f));
+            t.verticalOverflow = VerticalWrapMode.Overflow;
             rt.anchoredPosition = pos;
             _numbers.Add((t, rt, pos, 0f, life, c));
         }
