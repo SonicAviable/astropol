@@ -24,6 +24,11 @@ body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; fon
 .studio { display: flex; align-items: center; gap: 24px; margin-top: 22px; }
 .studio .t { display: flex; flex-direction: column; gap: 4px; }
 .studio b { font-weight: 700; font-size: 24px; letter-spacing: 7px; color: #E6F1F4; }
+.studio .name { font-family: Russo; font-size: 50px; letter-spacing: 5px; line-height: 1.05; color: #EAFBFA;
+  text-shadow: 0 0 18px rgba(102,219,209,0.55), 0 0 2px rgba(255,255,255,0.6); }
+.studio .name span { background: linear-gradient(180deg, #BFFFF8, #66DBD1 60%, #2E9E95); -webkit-background-clip: text; color: transparent; text-shadow: none;
+  filter: drop-shadow(0 0 14px rgba(102,219,209,0.6)); }
+.studio .t { border-left: 2px solid rgba(242,199,102,0.7); padding-left: 22px; }
 .studio i { font-style: normal; font-size: 17px; letter-spacing: 4px; color: var(--muted); }
 .rule { height: 1px; width: 760px; margin: 34px 0 30px; background: linear-gradient(90deg, rgba(242,199,102,0.8), rgba(242,199,102,0)); }
 .head { font-weight: 700; font-size: 20px; letter-spacing: 8px; color: var(--cyan); }
@@ -64,7 +69,7 @@ body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; fon
         <line x1="150" y1="0" x2="0" y2="100" stroke="#F2C766" stroke-width="3"/>
         <rect width="150" height="100" fill="url(#fg)"/><rect x="1" y="1" width="148" height="98" fill="none" stroke="#F2C766" stroke-width="2"/>
       </svg>
-      <div class="t"><b>ИГРОВАЯ СТУДИЯ SMARTBIZ</b><i>РОССИЯ · КАЗАХСТАН</i></div>
+      <div class="t"><i>ИГРОВАЯ СТУДИЯ</i><div class="name">SMART<span>BIZ</span></div><i>РОССИЯ · КАЗАХСТАН</i></div>
     </div>
     <div class="rule"></div>
     <div class="head">ОТКРЫТ НАБОР</div>
