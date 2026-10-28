@@ -101,6 +101,25 @@ namespace StellarisClone.Cards
             }
         }
 
+        private static Material s_rampMat;
+
+        /// <summary>
+        /// Материал своих эффектов (FxRamp): яркость — из альфы флипбука fx2_*, ядро раскаляется до белого,
+        /// края — цвета оттенка. Нет шейдера — обычное свечение.
+        /// </summary>
+        internal static Material RampMat
+        {
+            get
+            {
+                if (s_rampMat == null)
+                {
+                    var sh = Resources.Load<Shader>("Shaders/UIFxRamp");
+                    if (sh != null) s_rampMat = new Material(sh) { name = "UIFxRamp", hideFlags = HideFlags.DontSave };
+                }
+                return s_rampMat != null ? s_rampMat : GlowMat;
+            }
+        }
+
         /// <summary>Светящиеся спрайты рисуются аддитивно; дым, грязь, нагар и брызги — обычным смешиванием.</summary>
         private static bool IsLight(Sprite sp)
         {
@@ -200,7 +219,7 @@ namespace StellarisClone.Cards
         /// additive — светом (вспышки, огонь, попадания), иначе обычным смешиванием (дым); aspect — высота кадра к ширине.
         /// </summary>
         public void Flipbook(string tex, int cols, int rows, Vector2 pos, float size, float dur, Color c, float sizeEnd = -1f, float rot = 0f, Vector2 vel = default,
-                             float delay = 0f, bool additive = false, float aspect = 1f)
+                             float delay = 0f, bool additive = false, float aspect = 1f, bool ramp = false)
         {
             var t = CardSkin.Tex(tex);
             if (t == null || _layer == null) return;
@@ -217,7 +236,7 @@ namespace StellarisClone.Cards
                 _fbs.Add(f);
             }
             f.Img.texture = t;
-            f.Img.material = additive ? GlowMat : null;
+            f.Img.material = ramp ? RampMat : additive ? GlowMat : null;
             f.Aspect = aspect;
             f.Img.enabled = delay <= 0f;
             f.Rt.SetAsLastSibling();
@@ -240,6 +259,28 @@ namespace StellarisClone.Cards
             f.Rt.anchoredPosition = f.Pos;
             f.Rt.localRotation = Quaternion.Euler(0, 0, f.Rot);
             f.Img.color = new Color(f.C.r, f.C.g, f.C.b, f.C.a * (t > 0.85f ? 1f - (t - 0.85f) / 0.15f : 1f));
+        }
+
+        // ---------------------------------------------------------------- свои эффекты (fx2_*)
+
+        /// <summary>Эффекты Tools/card_fx/gen_fx.py: имя → сетка кадров и пропорции кадра (высота к ширине).</summary>
+        public enum Fx2 { Impact, Slash, Shock, Burst, Circle, Pillar, Lightning, Sparkle, HexShield }
+
+        private static readonly (string tex, int cols, int rows, float aspect)[] Fx2Sheets =
+        {
+            ("fx2_impact", 4, 4, 1f), ("fx2_slash", 4, 4, 0.5f), ("fx2_shock", 4, 4, 1f), ("fx2_burst", 6, 6, 1f),
+            ("fx2_circle", 6, 6, 1f), ("fx2_pillar", 4, 4, 2f), ("fx2_lightning", 4, 4, 1f), ("fx2_sparkle", 4, 4, 1f),
+            ("fx2_hexshield", 4, 4, 1f),
+        };
+
+        /// <summary>
+        /// Свой эффект цвета c: ядро белое, края — цвет. size — ширина кадра на столе (px), dur — длительность,
+        /// sizeEnd — к какому размеру вырасти, rot — поворот (градусы), delay — задержка.
+        /// </summary>
+        public void Play(Fx2 fx, Vector2 pos, Color c, float size, float dur, float sizeEnd = -1f, float rot = 0f, float delay = 0f, Vector2 vel = default)
+        {
+            var sh = Fx2Sheets[(int)fx];
+            Flipbook(sh.tex, sh.cols, sh.rows, pos, size, dur, c, sizeEnd, rot, vel, delay, false, sh.aspect, true);
         }
 
         // ---------------------------------------------------------------- готовые эффекты
@@ -279,6 +320,8 @@ namespace StellarisClone.Cards
         {
             // Настоящий взрыв из пака: огонь, дым, обломки, ударная волна; спрайты — только вспышка и нагар сверху
             var big = scale >= 1.1f ? CardParticles.Fx.BigExplosion : scale >= 0.6f ? CardParticles.Fx.SmallExplosion : CardParticles.Fx.TinyExplosion;
+            Play(Fx2.Shock, pos, new Color(1f, 0.55f, 0.22f), 140f * scale, 0.55f, 520f * scale);
+            Play(Fx2.Impact, pos, new Color(1f, 0.6f, 0.25f), 260f * scale, 0.4f, 320f * scale, Random.Range(0f, 360f));
             if (Particles != null && Particles.Play(big, pos, Mathf.Max(0.6f, scale)))
             {
                 Burst(pos, 1, K("k_light"), new Color(1f, 0.85f, 0.55f, 1f), 0f, 0f, 0.25f, 0.25f, 120f * scale, 380f * scale, 0f, 0f, end: new Color(1f, 0.4f, 0.1f, 0f), rotate: false);
@@ -298,7 +341,9 @@ namespace StellarisClone.Cards
         /// <summary>Энергетический разряд (щит, ЭМИ, пси): флипбук энергии в цвете c.</summary>
         public void Energy(Vector2 pos, Color c, float scale = 1f)
         {
-            if (Particles != null && Particles.Play(CardParticles.Fx.Energy, pos, scale)) { Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 0.8f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 220f * scale, 0f, 0f, rotate: false); return; }
+            Play(Fx2.Lightning, pos, c, 260f * scale, 0.55f, 300f * scale, Random.Range(0f, 360f));
+            Play(Fx2.Shock, pos, c, 120f * scale, 0.5f, 380f * scale);
+            if (Particles != null && Particles.Play(CardParticles.Fx.Energy, pos, scale)) return;
             Flipbook("fx_energy", 6, 6, pos, 200f * scale, 0.8f, c, 280f * scale, Random.Range(0f, 360f));
             Burst(pos, 1, K("k_star"), new Color(c.r, c.g, c.b, 1f), 0f, 0f, 0.3f, 0.3f, 60f * scale, 260f * scale, 0f, 0f, rotate: false);
         }
@@ -342,8 +387,9 @@ namespace StellarisClone.Cards
         public void Impact(Vector2 pos, float dirDeg, Color c, float scale = 1f, bool flesh = false)
         {
             Particles?.Play(flesh ? CardParticles.Fx.FleshHit : CardParticles.Fx.MetalHit, pos, scale, dirDeg);
-            Burst(pos, 1, K("k_star2"), new Color(Mathf.Lerp(c.r, 1f, 0.5f), Mathf.Lerp(c.g, 1f, 0.5f), Mathf.Lerp(c.b, 1f, 0.5f), 1f), 0f, 0f, 0.14f, 0.16f, 70f * scale, 130f * scale, 0f, 0f, rotate: true);
-            Burst(pos, Mathf.RoundToInt(8 * scale) + 2, CardSprites.Spark, c, 200f * scale, 520f * scale, 0.15f, 0.35f, 16f * scale, 4f, 500f, 2f, dirDeg + 180f, 110f, align: true, stretch: 3f);
+            // Вспышка-звезда с лучами и кольцом (раскалённое ядро, края — цвет оружия)
+            Play(Fx2.Impact, pos, c, 190f * scale, 0.38f, 230f * scale, Random.Range(0f, 360f));
+            Burst(pos, Mathf.RoundToInt(5 * scale) + 2, CardSprites.Spark, c, 220f * scale, 560f * scale, 0.15f, 0.32f, 14f * scale, 6f, 500f, 2f, dirDeg + 180f, 100f, align: true, stretch: 3f);
         }
 
         /// <summary>Вспышка выстрела у ствола, направленная по углу ang (градусы).</summary>

@@ -12,7 +12,9 @@ namespace StellarisClone.Cards
     ///   • голографический клинок командира — взмах с режущей дугой (герои, таран);
     ///   • светящийся шлейф и наклон летящей карты, вспышка-линза при раскрытии;
     ///   • попадания из флипбуков (молния, кольцо, крест) в цвете оружия, лучи и искры-штрихи;
-    ///   • HD-взрыв техники и разлёт карты 3D-осколками, вихрь над Штабом при прорыве и смене контроля.
+    ///   • HD-взрыв техники и разлёт карты 3D-осколками, вихрь над Штабом при прорыве и смене контроля;
+    ///   • свои флипбуки fx2_* (Tools/card_fx/gen_fx.py, шейдер FxRamp): звезда удара, рассекающая дуга, ударная волна,
+    ///     лучи легендарных, рунный круг приказов, столб света усилений, блёстки, молнии, сотовый щит.
     /// Ленты и искры — ArcFx (одна сетка), флипбуки — UIFx; всё светом, без «пузырей».
     /// </summary>
     public sealed partial class BattleScreen
@@ -132,10 +134,26 @@ namespace StellarisClone.Cards
         /// <summary>Попадание: флипбук в цвете оружия (молния — пули, кольцо — энергия, крест — снайпер), лучи и искры.</summary>
         private void HitFx(Vector2 p, Color c, float ang, float scale, string kind = "bolt")
         {
-            string tex = kind == "ring" ? "fx_hit_ring" : kind == "cross" ? "fx_hit_cross" : "fx_hit_bolt";
-            _fx.Flipbook(tex, 4, 4, p, 190f * scale, 0.42f, Hot(c), 230f * scale, ang - 45f + Random.Range(-20f, 20f), default, 0f, true);
-            _arc?.Spikes(p, c, scale >= 1.2f ? 9 : 6, 120f * scale, 7f * Mathf.Sqrt(scale), 0.22f);
-            _arc?.Embers(p, Hot(c), new Color(c.r, c.g * 0.4f, c.b * 0.3f, 0f), Mathf.RoundToInt(8 * scale), 160f, 520f * scale, ang, 120f, 0.25f, 0.6f, 520f);
+            // Свои вспышки: звезда удара; энергия — ещё и ударная волна; клинок/снайпер — рассекающая дуга поперёк выстрела
+            _fx.Play(UIFx.Fx2.Impact, p, c, 210f * scale, 0.4f, 250f * scale, ang + Random.Range(-30f, 30f));
+            if (kind == "ring") _fx.Play(UIFx.Fx2.Shock, p, c, 80f * scale, 0.45f, 300f * scale);
+            if (kind == "cross") _fx.Play(UIFx.Fx2.Slash, p, Hot(c), 300f * scale, 0.32f, 340f * scale, ang - 90f + Random.Range(-15f, 15f));
+            _arc?.Embers(p, Hot(c), new Color(c.r, c.g * 0.4f, c.b * 0.3f, 0f), Mathf.RoundToInt(6 * scale), 200f, 560f * scale, ang, 110f, 0.25f, 0.55f, 520f);
+        }
+
+        /// <summary>Усиление: столб золотого света снизу вверх и блёстки; цвет c — лечение зелёным, укрытие голубым.</summary>
+        private void BuffFx(CardView v, Color c, float scale = 1f)
+        {
+            if (v == null) return;
+            var p = _fx.Local(v.Rt);
+            _fx.Play(UIFx.Fx2.Pillar, p + new Vector2(0, 40f * scale), c, 150f * scale, 0.75f, 160f * scale);
+            _fx.Play(UIFx.Fx2.Sparkle, p, c, 230f * scale, 0.8f, 250f * scale, 0f, 0.05f);
+        }
+
+        /// <summary>Энергощит: волна по сотам вокруг карты (укрытие, щит Штаба).</summary>
+        private void ShieldFx(Vector2 p, Color c, float size)
+        {
+            _fx.Play(UIFx.Fx2.HexShield, p, c, size * 0.85f, 0.6f, size);
         }
 
         /// <summary>Гибель: техника — HD-взрыв, огненный шар и волна; пехота — вспышка-крест и искры.</summary>
@@ -144,18 +162,19 @@ namespace StellarisClone.Cards
             if (hard)
             {
                 float s = big ? 1.5f : 1.1f;
+                _fx.Play(UIFx.Fx2.Burst, p, new Color(1f, 0.6f, 0.25f), 300f * s, 0.9f, 460f * s, Random.Range(0f, 360f));
                 _fx.Flipbook("fx_boom_hd", 5, 5, p + new Vector2(0, 20f * s), 300f * s, 1.25f, Color.white, 380f * s, Random.Range(-15f, 15f));
                 _fx.Flipbook("fx_fireball", 8, 8, p, 200f * s, 0.75f, new Color(1f, 0.85f, 0.7f, 0.9f), 260f * s, Random.Range(0f, 360f), default, 0f, true);
                 _fx.Flipbook("fx_flame", 16, 4, p + new Vector2(0, 40f), 70f * s, 1.6f, new Color(1f, 0.8f, 0.6f, 0.8f), 70f * s, 0f, new Vector2(0, 6f), 0.35f, true, 2f);
                 _fx.Flipbook("fx_wisp", 8, 8, p + new Vector2(0, 80f), 220f * s, 2.4f, new Color(0.55f, 0.52f, 0.5f, 0.55f), 320f * s, Random.Range(0f, 360f), new Vector2(8f, 40f), 0.4f);
-                _arc?.RingWave(p, new Color(1f, 0.75f, 0.45f, 0.9f), 30f, 360f * s, 10f, 0.5f, 0.55f);
+                _fx.Play(UIFx.Fx2.Shock, p, new Color(1f, 0.6f, 0.3f), 120f * s, 0.6f, 560f * s);
                 _arc?.Glint(p, new Color(1f, 0.7f, 0.35f), 700f * s, 12f, 0.4f);
                 _arc?.Embers(p, new Color(1f, 0.9f, 0.6f), new Color(0.8f, 0.2f, 0.05f, 0f), Mathf.RoundToInt(40 * s), 250f, 900f * s, 90f, 300f, 0.6f, 1.4f, 900f, 3f);
             }
             else
             {
-                _fx.Flipbook("fx_hit_cross", 4, 4, p, 260f, 0.5f, Hot(c), 300f, Random.Range(-20f, 20f), default, 0f, true);
-                _arc?.Spikes(p, c, 8, 150f, 8f, 0.3f);
+                _fx.Play(UIFx.Fx2.Impact, p, c, 300f, 0.5f, 360f, Random.Range(0f, 360f));
+                _fx.Play(UIFx.Fx2.Shock, p, c, 90f, 0.55f, 340f);
                 _arc?.Embers(p, Hot(c), new Color(c.r, c.g * 0.4f, c.b * 0.3f, 0f), 16, 120f, 420f, 90f, 360f, 0.4f, 0.9f, 400f);
             }
         }
@@ -248,7 +267,7 @@ namespace StellarisClone.Cards
             {
                 if (v == null || _arc == null) return;
                 var p = _fx.Local(v.Rt);
-                _arc.RingWave(p, new Color(c.r, c.g, c.b, 0.9f), 50f, 190f, 6f, 0.4f, 0.6f);
+                _fx.Play(UIFx.Fx2.Shock, p, c, 90f, 0.45f, 300f);
                 _arc.Embers(p + new Vector2(0, -70f), Hot(c), new Color(c.r, c.g, c.b, 0f), 12, 80f, 320f, 90f, 160f, 0.3f, 0.6f, 500f);
             }));
         }
@@ -261,8 +280,8 @@ namespace StellarisClone.Cards
             var c = v.Side == _P ? new Color(0.55f, 0.9f, 1f) : new Color(1f, 0.55f, 0.4f);
             if (hero) c = new Color(1f, 0.82f, 0.4f);
             _arc.Glint(p, c, heavy || hero ? 640f : 420f, heavy || hero ? 10f : 7f, 0.34f);
-            _arc.RingWave(p, new Color(c.r, c.g, c.b, 0.8f), 40f, heavy ? 260f : 180f, 5f, 0.45f, 0.62f);
-            if (heavy || hero) _arc.Spikes(p, c, 10, heavy ? 190f : 160f, 7f, 0.3f);
+            _fx.Play(UIFx.Fx2.Shock, p, c, 80f, 0.5f, heavy ? 380f : 280f);
+            if (heavy || hero) _fx.Play(UIFx.Fx2.Burst, p, hero ? new Color(1f, 0.8f, 0.35f) : c, 240f, 0.8f, 360f, Random.Range(0f, 360f));
             if (hero)
             {
                 bool mine = v.Side == _P;
@@ -274,7 +293,8 @@ namespace StellarisClone.Cards
         private void VortexFx(Vector2 p, Color c, float scale = 1f)
         {
             _arc?.Vortex(p, 150f * scale, c, 1.1f, 3, 15f * scale, -460f);
-            _arc?.RingWave(p, new Color(c.r, c.g, c.b, 0.9f), 20f, 260f * scale, 7f, 0.6f);
+            _fx.Play(UIFx.Fx2.Burst, p, c, 280f * scale, 0.9f, 420f * scale, Random.Range(0f, 360f));
+            _fx.Play(UIFx.Fx2.Shock, p, c, 100f * scale, 0.6f, 480f * scale);
         }
     }
 }

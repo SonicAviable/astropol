@@ -11,3 +11,6 @@
 
 Оформление карт по редкостям (cardframe_*, card_shade_*, card_plate_*, card_cost_*, card_atk_*, card_def_*, card_gem_*,
 card_mask, card_foil, card_crest, cardback_bg) — нарисованы для игры (HTML/SVG-макет промо набора карт, отрисован в PNG).
+
+Эффекты fx2_* (удар, дуга, ударная волна, лучи, рунный круг, столб света, молнии, блёстки, сотовый щит) — нарисованы кодом
+для игры: Tools/card_fx/gen_fx.py; шейдер окраски — Resources/Shaders/UIFxRamp.shader.

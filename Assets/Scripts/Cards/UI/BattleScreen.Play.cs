@@ -238,7 +238,7 @@ namespace StellarisClone.Cards
                         var p = _fx.Local(v.Rt);
                         _fx.Number(p, "+" + e.Amount, new Color(0.45f, 1f, 0.55f), 42, 1f);
                         v.EdgeFlash(new Color(0.4f, 1f, 0.55f), 1f);
-                        _fx.Burst(p, 10, CardSprites.Spark, new Color(0.5f, 1f, 0.6f, 0.9f), 40f, 120f, 0.6f, 1f, 9f, 3f, -120f, 1f, 90f, 120f, align: true, stretch: 2f);
+                        BuffFx(v, new Color(0.35f, 1f, 0.5f), 0.9f);
                         v.RefreshNumbers(v.ShownPower, v.ShownArmor + e.Amount, v.MaxArmor);
                     }
                     yield return W(0.1f);
@@ -251,7 +251,7 @@ namespace StellarisClone.Cards
                     {
                         _fx.Number(_fx.Local(v.Rt, new Vector2(0, 40)), Loc.T("+2 укрытие"), new Color(0.55f, 0.85f, 1f), 26, 1f);
                         v.EdgeFlash(new Color(0.5f, 0.82f, 1f), 0.9f);
-                        _fx.Ring(_fx.Local(v.Rt), new Color(0.5f, 0.8f, 1f, 0.6f), 30f, 130f, 0.35f);
+                        ShieldFx(_fx.Local(v.Rt), new Color(0.45f, 0.8f, 1f), 230f);
                     }
                     else if (v != null && e.Amount != 0)
                     {
@@ -259,7 +259,8 @@ namespace StellarisClone.Cards
                         bool up = e.Amount > 0;
                         _fx.Number(p, (up ? "+" : "") + e.Amount + Loc.T(" сила"), up ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.45f, 0.4f), 34, 1f);
                         v.EdgeFlash(up ? new Color(1f, 0.82f, 0.35f) : new Color(1f, 0.35f, 0.3f), 1f);
-                        _fx.Burst(p, 8, CardSprites.Spark, up ? new Color(1f, 0.85f, 0.4f) : new Color(1f, 0.4f, 0.35f), 60f, 180f, 0.3f, 0.6f, 14f, 4f, up ? -300f : 300f, 2f, up ? 90f : 270f, 60f, align: true, stretch: 2f);
+                        if (up) BuffFx(v, new Color(1f, 0.78f, 0.3f));
+                        else _fx.Play(UIFx.Fx2.Impact, _fx.Local(v.Rt), new Color(1f, 0.3f, 0.25f), 170f, 0.4f, 210f, Random.Range(0f, 360f));
                         v.RefreshNumbers(v.ShownPower + e.Amount, v.ShownArmor, v.MaxArmor);
                         v.GlowBoost = 1f;
                     }
@@ -306,7 +307,8 @@ namespace StellarisClone.Cards
                     {
                         var p = _fx.Local(_rows[hq, _P == BattleState.Defender ? 1 : 0]);
                         _fx.Energy(p, new Color(0.55f, 0.85f, 1f), 2f);
-                        _fx.Ring(p, new Color(0.5f, 0.8f, 1f, 1f), 60f, 700f, 0.7f);
+                        ShieldFx(p, new Color(0.5f, 0.82f, 1f), 640f);
+                        _fx.Play(UIFx.Fx2.Lightning, p, new Color(0.55f, 0.85f, 1f), 520f, 0.7f, 600f, Random.Range(0f, 360f));
                         _arc?.RingWave(p, new Color(0.55f, 0.9f, 1f, 1f), 60f, 620f, 12f, 0.7f, 0.6f);
                         _arc?.Spikes(p, new Color(0.6f, 0.9f, 1f), 14, 320f, 9f, 0.4f);
                         _fx.Sparks(p, new Color(0.6f, 0.85f, 1f), 50, 1.6f);
@@ -468,6 +470,9 @@ namespace StellarisClone.Cards
             SFXManager.Play(Sfx.CardFlip, 0.7f);
             SFXManager.Play(Sfx.OrderCast, 0.9f);
             AddLog(Loc.F("{0}: приказ «{1}»", SideName(e.Side), e.Def.Name));
+            // Рунный круг над сектором, куда отдан приказ: свои — бирюзой, врага — красным
+            var oc = e.Side == _P ? new Color(0.4f, 0.9f, 1f) : new Color(1f, 0.45f, 0.35f);
+            _fx.Play(UIFx.Fx2.Circle, RowCenter(e.Sector, BattleState.Enemy(e.Side)), oc, 300f, 1.3f, 340f);
             yield return W(0.45f);
             yield return OrderCinematic(e.Def, e.Side, e.Sector);
             // Карта сгорает
@@ -816,6 +821,7 @@ namespace StellarisClone.Cards
             if (v == null) yield break;
             var p = _fx.Local(v.Rt);
             v.Hit(Mathf.Clamp(e.Amount / 3f, 0.5f, 1.5f));
+            if (e.Uid2 < 0) _fx.Play(UIFx.Fx2.Impact, p, new Color(1f, 0.45f, 0.2f), 170f, 0.38f, 220f, Random.Range(0f, 360f));
             _fx.Number(p + new Vector2(Random.Range(-20f, 20f), 14), "−" + e.Amount, new Color(1f, 0.42f, 0.25f), 46 + Mathf.Min(22, e.Amount * 3), 1f);
             var def = v.Card.Def;
             if (def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure || def.Has(Kw.Drone))
@@ -1084,6 +1090,7 @@ namespace StellarisClone.Cards
             sh.effectColor = new Color(0f, 0f, 0f, 0.65f);
             sh.effectDistance = new Vector2(0f, -7f);
             _arc?.Glint(at, c, 1300f, 11f, 0.55f);
+            _fx?.Play(UIFx.Fx2.Burst, at, new Color(c.r, c.g, c.b, 0.55f), 420f, dur * 0.9f, 720f, Random.Range(0f, 360f));
             SFXManager.Play(Sfx.Whoosh, 0.6f, 1.15f);
             float total = dur / Mathf.Max(0.1f, _animSpeed * (Fast ? 3f : 1f));
             float time = 0f;
@@ -1121,6 +1128,11 @@ namespace StellarisClone.Cards
 
             var halo = CardSkin.Simple(_fxLayer, "ShowHalo", "glow", new Color(rc.r, rc.g, rc.b, 0f));
             halo.rectTransform.At(Mid, Mid, center, new Vector2(640, 640));
+            // Позади карты (создаются раньше неё — рисуются под ней): лучи у легендарных, рунный круг у приказов, волна у всех
+            float lead = 0.2f / Mathf.Max(0.1f, _animSpeed);
+            if (card.Def.Kind == CardKind.Order) _fx.Play(UIFx.Fx2.Circle, center, rc, 560f, 1.1f, 620f, 0f, lead);
+            else if (grand) _fx.Play(UIFx.Fx2.Burst, center, rc, 520f, 1f, 760f, Random.Range(0f, 360f), lead);
+            _fx.Play(UIFx.Fx2.Shock, center, rc, 200f, 0.6f, 640f, 0f, lead);
             var wrap = At(_fxLayer, "Showcase", start, PreviewCard);
             var big = CardView.Create(wrap, card, side, FactionOf(side), PreviewCard, false);
             big.Rt.anchoredPosition = Vector2.zero;
