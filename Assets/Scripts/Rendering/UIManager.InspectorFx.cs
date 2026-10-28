@@ -15,6 +15,10 @@ namespace StellarisClone.Rendering
         private RectTransform _inspPortrait;
         private Image _inspStarHalo, _inspStarCore, _inspStarHot, _inspPlanet, _inspRingA, _inspRingB, _inspHeaderGlow, _inspOwnerGlow;
         private int _inspCascadeKey = int.MinValue;
+        // Фон шапки — «кадр системы»: космос, большая главная планета справа, свет звезды, затемнение под текстом
+        private RectTransform _inspBanner;
+        private RawImage _inspBannerSky;
+        private Image _inspBannerPlanet, _inspBannerStar;
 
         // ==================== СПРАЙТЫ ====================
 
@@ -84,6 +88,7 @@ namespace StellarisClone.Rendering
         /// </summary>
         private void BuildInspectorPortrait(Transform header)
         {
+            BuildInspectorBanner(header);
             _inspPortrait = LGBuild.Rect(header, "Portrait");
             _inspPortrait.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(52, -2), new Vector2(84, 84));
 
@@ -121,14 +126,74 @@ namespace StellarisClone.Rendering
             _ = disc;
         }
 
+        /// <summary>Фон шапки: обрезан по шапке, лежит под светом, портретом и надписями.</summary>
+        private void BuildInspectorBanner(Transform header)
+        {
+            _inspBanner = LGBuild.Rect(header, "Banner");
+            _inspBanner.Stretch(1, 1, 1, 1);
+            _inspBanner.gameObject.AddComponent<RectMask2D>();
+            _inspBanner.SetAsFirstSibling();
+            LG.Ignore(_inspBanner.gameObject);
+
+            var skyTex = Resources.Load<Texture2D>("Menu/menu_bg");
+            var skyGo = new GameObject("Sky", typeof(RectTransform));
+            skyGo.transform.SetParent(_inspBanner, false);
+            _inspBannerSky = skyGo.AddComponent<RawImage>();
+            _inspBannerSky.texture = skyTex;
+            _inspBannerSky.color = skyTex != null ? new Color(0.75f, 0.8f, 0.9f, 1f) : new Color(0f, 0f, 0f, 0f);
+            _inspBannerSky.raycastTarget = false;
+            _inspBannerSky.rectTransform.Stretch();
+
+            _inspBannerStar = LGBuild.Panel(_inspBanner, "StarLight", new Color(1f, 0.9f, 0.6f, 0.5f));
+            _inspBannerStar.sprite = FactionSelectScreen.RadialSprite();
+            _inspBannerStar.raycastTarget = false;
+            _inspBannerStar.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-250, 30), new Vector2(360, 300));
+
+            _inspBannerPlanet = LGBuild.Panel(_inspBanner, "Planet", Color.white);
+            _inspBannerPlanet.raycastTarget = false;
+            _inspBannerPlanet.preserveAspect = true;
+            _inspBannerPlanet.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-70, -18), new Vector2(230, 230));
+
+            // Затемнение слева (под названием) и снизу (к карточкам) — текст читается на любом кадре
+            var shadeL = LGBuild.Panel(_inspBanner, "ShadeLeft", new Color(0.01f, 0.02f, 0.03f, 0.92f));
+            shadeL.sprite = FadeRightSprite;
+            shadeL.raycastTarget = false;
+            shadeL.rectTransform.anchorMin = new Vector2(0, 0); shadeL.rectTransform.anchorMax = new Vector2(0.85f, 1);
+            shadeL.rectTransform.offsetMin = shadeL.rectTransform.offsetMax = Vector2.zero;
+            var shadeB = LGBuild.Panel(_inspBanner, "ShadeBottom", new Color(0.01f, 0.02f, 0.03f, 0.55f));
+            shadeB.raycastTarget = false;
+            shadeB.rectTransform.anchorMin = new Vector2(0, 0); shadeB.rectTransform.anchorMax = new Vector2(1, 0);
+            shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
+            shadeB.rectTransform.sizeDelta = new Vector2(0, 18);
+            foreach (var g in new Graphic[] { _inspBannerSky, _inspBannerStar, _inspBannerPlanet, shadeL, shadeB }) LG.Ignore(g.gameObject);
+        }
+
+        /// <summary>Кадр системы в фоне шапки: свой кусок космоса, звезда её цвета, главная планета.</summary>
+        private void PaintInspectorBanner(Color star, Sprite planet, int seed)
+        {
+            if (_inspBanner == null) return;
+            if (_inspBannerSky != null)
+            {
+                // Каждой системе — свой кусок неба (кадр стабилен для системы)
+                float u = Mathf.Abs(seed * 0.137f) % 0.6f, v = Mathf.Abs(seed * 0.291f) % 0.55f;
+                _inspBannerSky.uvRect = new Rect(u, v, 0.4f, 0.4f * 96f / InspectorWidth * 2.2f);
+            }
+            if (_inspBannerStar != null) _inspBannerStar.color = new Color(star.r, star.g, star.b, planet != null ? 0.5f : 0.75f);
+            if (_inspBannerPlanet != null)
+            {
+                _inspBannerPlanet.sprite = planet;
+                _inspBannerPlanet.gameObject.SetActive(planet != null);
+            }
+        }
+
         /// <summary>Цвета портрета: звезда (свет — её цвета) или значок объекта; кольца — цвета владельца.</summary>
         private void PaintInspectorPortrait(bool star, LGIcon icon, Color tint, Color owner, Sprite planet = null)
         {
             if (_inspPortrait == null) return;
-            bool hasPlanet = planet != null;
+            PaintInspectorBanner(tint, planet, planet != null ? planet.GetHashCode() : Mathf.RoundToInt(tint.r * 1000 + tint.b * 37));
+            bool hasPlanet = planet != null && !star;
             if (_inspPlanet != null) { _inspPlanet.sprite = planet; _inspPlanet.gameObject.SetActive(hasPlanet); }
             if (hasPlanet) icon = LGIcon.Planet;
-            star = star && !hasPlanet;
             if (_inspStarCore != null) { _inspStarCore.gameObject.SetActive(star); _inspStarCore.color = new Color(tint.r, tint.g, tint.b, 1f); }
             if (_inspStarHot != null) _inspStarHot.gameObject.SetActive(star);
             if (_inspStarHalo != null) _inspStarHalo.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.55f : 0.3f);
@@ -154,6 +219,49 @@ namespace StellarisClone.Rendering
             foreach (var p in s.Planets)
                 if (best == null || p.Size > best.Size) best = p;
             return best;
+        }
+
+        /// <summary>
+        /// Кнопка в стиле пунктов левого меню игры: тёмное стекло, светящаяся планка цвета действия слева, значок в своей
+        /// ячейке, подпись капслоком с разрядкой. Недоступная — приглушена (её причина — в подсказке).
+        /// </summary>
+        private Button InspGameButton(Transform parent, string name, LGIcon icon, string label, Color accent, bool enabled, System.Action act, Vector2 size)
+        {
+            var go = CreateButton(parent, name, size, new Color(0.012f, 0.040f, 0.055f, 0.94f), enabled ? accent : new Color(0.5f, 0.55f, 0.6f), act);
+            var btn = go.GetComponent<Button>();
+            btn.interactable = enabled;
+            Color a = enabled ? accent : new Color(0.45f, 0.52f, 0.58f);
+
+            var bar = LGBuild.Panel(go.transform, "Accent", new Color(a.r, a.g, a.b, enabled ? 0.95f : 0.4f));
+            bar.raycastTarget = false;
+            bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(3f, 0f), new Vector2(2.5f, size.y * 0.55f));
+            LG.Line(bar.gameObject);
+
+            var tile = LGBuild.Panel(go.transform, "IconTile", new Color(a.r * 0.16f, a.g * 0.16f, a.b * 0.16f, 0.95f));
+            tile.raycastTarget = false;
+            tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(size.y - 12f, size.y - 12f));
+            LG.Chip(tile.gameObject, new Color(a.r, a.g, a.b, enabled ? 0.5f : 0.2f));
+            var ic = LGIcons.Create(tile.transform, icon, 15f, a);
+            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
+
+            var t = CreateText(go.transform, label.ToUpper(), 11, FontStyle.Bold, enabled ? DS.TextPrimary : DS.TextMuted, TextAnchor.MiddleLeft);
+            t.rectTransform.anchorMin = Vector2.zero;
+            t.rectTransform.anchorMax = Vector2.one;
+            t.rectTransform.offsetMin = new Vector2(size.y + 12f, 0);
+            t.rectTransform.offsetMax = new Vector2(-10, 0);
+            t.Track(1.2f);
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 8; t.resizeTextMaxSize = 11;
+            if (enabled) InspSweep.Add(go, 5.5f, 0.12f);
+            return btn;
+        }
+
+        /// <summary>Цвет кнопки из её заливки: тёмный оттенок вытягивается до яркого неона того же тона.</summary>
+        private static Color AccentOf(Color fill)
+        {
+            float m = Mathf.Max(0.001f, Mathf.Max(fill.r, Mathf.Max(fill.g, fill.b)));
+            var c = new Color(fill.r / m, fill.g / m, fill.b / m);
+            return Color.Lerp(c, Color.white, 0.25f);
         }
 
         /// <summary>

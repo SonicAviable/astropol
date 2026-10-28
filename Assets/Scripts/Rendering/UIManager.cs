@@ -1298,26 +1298,21 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspActionBtnText = CreateText(actionBtn.transform, Loc.T("ДЕЙСТВИЕ"), 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             _inspActionBtnText.rectTransform.sizeDelta = abRt.sizeDelta;
 
-            var shipyardBtn = CreateButton(insp.transform, "ShipyardBtn", new Vector2(395, 28),
-                new Color(0.10f, 0.36f, 0.42f, 1f), DS.NeonCyan, OpenShipyardModal);
-            var sbRt = shipyardBtn.GetComponent<RectTransform>();
+            // Кнопки снизу — в стиле пунктов левого меню (планка цвета действия, значок в ячейке, капслок)
+            _inspShipyardBtn = InspGameButton(insp.transform, "ShipyardBtn", LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), DS.NeonCyan, true, OpenShipyardModal, new Vector2(395, 38));
+            var sbRt = (RectTransform)_inspShipyardBtn.transform;
             sbRt.anchorMin = new Vector2(0.5f, 0);
             sbRt.anchorMax = new Vector2(0.5f, 0);
             sbRt.pivot = new Vector2(0.5f, 0);
             sbRt.anchoredPosition = new Vector2(0, 48);
-            _inspShipyardBtn = shipyardBtn.GetComponent<Button>();
-            InspSweep.Add(shipyardBtn, 6.5f, 0.10f);
-            LGIcons.IconLabel(shipyardBtn.transform, LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), 10, DS.NeonCyan, Color.white, 14f);
 
-            var exitBtn = CreateButton(insp.transform, "ExitSystemBtn", new Vector2(395, 28),
-                DS.BtnDanger, DS.Red, () => SystemViewManager.Instance?.ExitToGalaxyView());
-            var ebRt = exitBtn.GetComponent<RectTransform>();
+            _inspExitBtn = InspGameButton(insp.transform, "ExitSystemBtn", LGIcon.Back, Loc.T("ВЕРНУТЬСЯ В ГАЛАКТИКУ"), DS.Red, true, () => SystemViewManager.Instance?.ExitToGalaxyView(), new Vector2(395, 38));
+            var ebRt = (RectTransform)_inspExitBtn.transform;
             ebRt.anchorMin = new Vector2(0.5f, 0);
             ebRt.anchorMax = new Vector2(0.5f, 0);
             ebRt.pivot = new Vector2(0.5f, 0);
             ebRt.anchoredPosition = new Vector2(0, 48);
-            _inspExitBtn = exitBtn.GetComponent<Button>();
-            LGIcons.IconLabel(exitBtn.transform, LGIcon.Back, Loc.T("ВЕРНУТЬСЯ В ГАЛАКТИКУ"), 10, Color.white, Color.white, 13f);
+            var exitBtn = _inspExitBtn.gameObject;
             exitBtn.SetActive(false);
         }
 
@@ -1358,8 +1353,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 y += h + 6f;
             }
             Stack(_inspActionBtn, 32f);
-            Stack(_inspShipyardBtn, 28f);
-            Stack(_inspExitBtn, 28f);
+            Stack(_inspShipyardBtn, 38f);
+            Stack(_inspExitBtn, 38f);
 
             bool districts = _districtRowRoot != null && _districtRowRoot.transform.childCount > 0;
             if (districts)

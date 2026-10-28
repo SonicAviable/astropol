@@ -137,18 +137,15 @@ namespace StellarisClone.Rendering
         private void InspButton(string label, LGIcon icon, Color tint, string blocker, string tip, Action act, StarSystem system)
         {
             bool can = blocker == null;
-            var btn = LGBuild.Button(_inspStack, "Act", can ? tint : new Color(0.10f, 0.14f, 0.17f, 0.9f),
-                new Color(1f, 1f, 1f, can ? 0.35f : 0.12f), () =>
+            var btn = InspGameButton(_inspStack, "Act", icon, label, AccentOf(tint), can, () =>
                 {
                     if (!can) return;
                     SFXManager.Play(Sfx.UiClick);
                     act?.Invoke();
                     RefreshResourceBar();
                     if (_activeSystem == system && !_isInSystemMode) ShowSystemPanel(system);
-                }, icon, label, 11, 8f);
-            LGBuild.Height(btn.gameObject, 34);
-            btn.interactable = can;
-            if (can) InspSweep.Add(btn.gameObject, 5f, 0.14f);
+                }, new Vector2(InspectorWidth - 46f, 40f));
+            LGBuild.Height(btn.gameObject, 40);
             TooltipHelper.Attach(btn.gameObject, can ? tip : $"{tip}\n<color=#FF8080>{blocker}</color>");
         }
     }

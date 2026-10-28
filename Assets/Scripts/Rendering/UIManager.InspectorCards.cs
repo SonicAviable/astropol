@@ -267,16 +267,13 @@ namespace StellarisClone.Rendering
             if (block == null && (eco == null || !eco.CanAfford(0f, m, a, 0f))) block = CostCheck.Full(0f, m, a);
             bool can = block == null;
 
-            var btn = LGBuild.Button(card, "Fortify", new Color(gold.r * (can ? 0.22f : 0.08f), gold.g * (can ? 0.18f : 0.07f), gold.b * (can ? 0.08f : 0.05f), 0.98f),
-                new Color(gold.r, gold.g, gold.b, can ? 0.7f : 0.18f), () =>
+            var btn = InspGameButton(card, "Fortify", LGIcon.Starbase, Loc.F("УКРЕПИТЬ → {0}", Fortifications.Name(to).ToUpper()), gold, can, () =>
                 {
                     if (Fortifications.TryStartPlayer(system)) ShowSystemPanel(system);
-                }, LGIcon.Starbase, Loc.F("УКРЕПИТЬ → {0}", Fortifications.Name(to).ToUpper()), 11);
-            Place((RectTransform)btn.transform, 0f, 1f, y, 34f, 14f, 14f);
-            btn.interactable = can;
-            if (can) InspSweep.Add(btn.gameObject, 4.5f, 0.16f);
+                }, new Vector2(300f, 40f));
+            Place((RectTransform)btn.transform, 0f, 1f, y, 40f, 14f, 14f);
             TooltipHelper.Attach(btn.gameObject, FortTooltip(to) + (can ? "" : $"\n<color=#FF8888>{block}</color>"));
-            y += 40f;
+            y += 46f;
 
             // Цена значками: титан, сплавы, срок, содержание
             var cost = LGBuild.Rect(card, "Cost");
