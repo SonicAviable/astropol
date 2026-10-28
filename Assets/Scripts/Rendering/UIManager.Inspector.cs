@@ -186,8 +186,8 @@ namespace StellarisClone.Rendering
             var sb = CombatManager.Instance?.GetStarbase(system.Id);
             if (sb != null)
             {
-                InspSection(Loc.T("ЗВЁЗДНАЯ БАЗА"), LGIcon.Starbase);
-                InspStarbaseCard(system, sb);
+                // Подробности базы — в отдельном окне: здесь только строка «Звёздная база» (клик — открыть)
+                InspStarbaseRow(system, sb);
             }
 
             // Осада

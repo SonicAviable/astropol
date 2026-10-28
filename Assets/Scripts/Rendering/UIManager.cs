@@ -1486,6 +1486,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             BuildSystemCards(system);
             InspCascade(system.Id);
+            SyncStarbaseWindow(system);
 
             _inspShipyardBtn.gameObject.SetActive(system.OwnerId == 0 && !_isInSystemMode);
 
@@ -1532,6 +1533,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _activePlanet = planet;
             if (parentSystem != null) _activeSystem = parentSystem;
+            CloseStarbaseWindow();
 
             _inspTitle.text = PlanetNames.Title(planet.Name);
             SetInspectorBadge(LGIcon.Planet, parentSystem != null ? StarTint(parentSystem.SpectralClass) : DS.NeonCyan,
@@ -1711,6 +1713,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _inspBodyGroup.alpha = LGEase.OutCubic(_inspBodyFade);
             }
 
+            UpdateStarbaseWindow(dt);
             UpdateSpeedControl();
             UpdateNavMenu(dt);
             UpdateDecisionBadge(dt);
