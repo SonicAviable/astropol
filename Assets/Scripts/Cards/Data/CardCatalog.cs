@@ -149,7 +149,7 @@ namespace StellarisClone.Cards
             garrison.Site = ProdSite.Garrison; garrison.Minerals = 40; garrison.Days = 20; garrison.Upkeep = 0.2f;
             Add(new CardDef { Id = "D3", Name = Loc.T("Бункер"), Kind = CardKind.Structure, Cost = 2, Power = 0, Armor = 6, Cover = 1, Kw = Kw.None,
                 Text = Loc.T("Сооружение. Все защитники сектора получают укрытие 1 в каждой перестрелке."), Site = ProdSite.Garrison, Minerals = 50, Alloys = 30, Days = 30, Size = 0,
-                OnPreCombat = (b, u) => { foreach (var a in b.UnitsOf(u.Side, u.Sector)) if (a != u) a.CoverLeft += 1; } });
+                OnPreCombat = (b, u) => b.BunkerAura(u) });
             Add(new CardDef { Id = "D4", Name = Loc.T("Турель"), Kind = CardKind.Structure, Cost = 3, Power = 2, Armor = 4, Kw = Kw.NeedsPower,
                 Text = Loc.T("Сооружение. Стреляет, пока электростанция у защитника."), Site = ProdSite.Garrison, Alloys = 60, Days = 35, Size = 0 });
             Add(new CardDef { Id = "D5", Name = Loc.T("Минное поле"), Kind = CardKind.Trap, Cost = 1, Text = Loc.T("Ловушка: 4 урона первому раскрытому врагу в секторе."),

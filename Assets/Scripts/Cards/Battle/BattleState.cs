@@ -271,7 +271,7 @@ namespace StellarisClone.Cards
             var u = new BUnit
             {
                 Uid = _uid++, Card = card, Side = side, Sector = sector,
-                BasePower = d.Power + (stars >= 2 ? 1 : 0) + (stars >= 3 ? 1 : 0),
+                BasePower = Math.Max(0, d.Power + (stars >= 2 ? 1 : 0) + (stars >= 3 ? 1 : 0) + (d.Kind == CardKind.Structure && d.Has(Kw.NeedsPower) ? TurretPowerDelta : 0)),
                 MaxArmor = d.Armor + (stars >= 1 ? 1 : 0) + (stars >= 3 ? 1 : 0),
                 Revealed = revealed, Hidden = hidden
             };

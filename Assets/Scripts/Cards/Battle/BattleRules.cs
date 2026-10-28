@@ -63,8 +63,31 @@ namespace StellarisClone.Cards
             }
         }
 
+        // ---- Настройки баланса укреплений и десанта (подбираются пакетным автобоем BattleSandbox.RunBalanceSweep)
+        /// <summary>Урон артподготовки по каждому сооружению (флот от 3000 мощи — на 1 больше).</summary>
+        public static int BarrageBase = 2;
+        /// <summary>Укрытие, которое бункер даёт защитникам своего сектора в каждой перестрелке.</summary>
+        public static int BunkerCover = 1;
+        /// <summary>Бункер укрывает только пехоту и гарнизон (не технику и не другие сооружения).</summary>
+        public static bool BunkerCoverTroopsOnly;
+        /// <summary>Прибавка к силе турелей.</summary>
+        public static int TurretPowerDelta;
+        /// <summary>Дополнительные очки приказов десанту каждый ход.</summary>
+        public static int AttackerBonusPoints;
+
         /// <summary>Урон артподготовки по каждому сооружению защитника (кроме щита); флот от 3000 мощи — сильнее.</summary>
-        public int BarrageDamage => Sides[Attacker].FleetPower >= 3000f ? 3 : Sides[Attacker].FleetPower > 0f ? 2 : 0;
+        public int BarrageDamage => Sides[Attacker].FleetPower <= 0f ? 0 : BarrageBase + (Sides[Attacker].FleetPower >= 3000f ? 1 : 0);
+
+        /// <summary>Бункер в начале перестрелки: укрытие защитникам сектора (см. <see cref="BunkerCover"/>).</summary>
+        public void BunkerAura(BUnit bunker)
+        {
+            foreach (var a in UnitsOf(bunker.Side, bunker.Sector))
+            {
+                if (a == bunker) continue;
+                if (BunkerCoverTroopsOnly && (a.IsStructure || a.Has(Kw.Vehicle) || a.Has(Kw.Drone))) continue;
+                a.CoverLeft += BunkerCover;
+            }
+        }
 
         /// <summary>
         /// Артподготовка с орбиты перед первым ходом: флот десанта бьёт по укреплениям колонии (укрытие не спасает).
@@ -93,7 +116,7 @@ namespace StellarisClone.Cards
             for (int s = 0; s < 2; s++)
             {
                 var sd = Sides[s];
-                sd.Points = Math.Min(Turn, PointsCap) + sd.PointsPerTurn + sd.BonusNext;
+                sd.Points = Math.Min(Turn, PointsCap) + sd.PointsPerTurn + sd.BonusNext + (s == Attacker ? AttackerBonusPoints : 0);
                 sd.BonusNext = 0;
                 if (HoldsSector(s, SectorType.Mine)) sd.BonusNext += 1;
                 if (Turn > 1)

@@ -9,7 +9,8 @@ namespace StellarisClone.Cards
     /// <summary>
     /// Тестовый карточный бой. В любом месте игры (и в главном меню):
     ///   F10 — штурм (вы атакуете), Shift+F10 — оборона (вы защищаете колонию),
-    ///   Ctrl+F10 — 200 автобоёв без экрана, сводка баланса в консоль (только в редакторе).
+    ///   Ctrl+F10 — 200 автобоёв без экрана, сводка баланса в консоль (только в редакторе);
+    ///   Ctrl+Shift+F10 — то же для набора вариантов настроек укреплений и десанта (RunBalanceSweep).
     /// ВРЕМЕННО клавиша работает и в обычной сборке игры (<see cref="InBuild"/>) — для показа и проверки боя;
     /// перед релизом поставить InBuild = false. Тестовый бой не трогает партию: колоды случайные, итог никуда не пишется.
     /// Колоды и укрепления случайные; фракция игрока — из партии, если она начата, иначе случайная.
@@ -57,7 +58,7 @@ namespace StellarisClone.Cards
             if (!Input.GetKeyDown(KeyCode.F10)) return;
             bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.LeftCommand);
             bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            if (ctrl) { if (Application.isEditor) RunAutoBatch(200); }
+            if (ctrl) { if (Application.isEditor) { if (shift) RunBalanceSweep(200); else RunAutoBatch(200); } }
             else StartTest(shift);
         }
 
@@ -107,6 +108,60 @@ namespace StellarisClone.Cards
             sb.Append($"[Автобой ×{n}] атакующий побеждает {win * 100f / n:0}%, прорывов {breach}, отступлений {retreat}, в среднем ходов {turns / (float)n:0.0}\n");
             for (int f = 0; f < 4; f++)
                 if (byFort[f] > 0) sb.Append($"  укрепления {f}: {winsByFort[f] * 100f / byFort[f]:0}% побед атаки из {byFort[f]}\n");
+            Debug.Log(sb.ToString());
+        }
+
+        /// <summary>
+        /// Подбор баланса: те же 200 расстановок (одинаковые сиды) для каждого варианта настроек
+        /// (BattleState.BarrageBase, BunkerCover, BunkerCoverTroopsOnly, TurretPowerDelta, AttackerBonusPoints).
+        /// Таблица — в консоль: процент побед атаки всего и по уровню укреплений. Настройки после прогона возвращаются.
+        /// </summary>
+        public static void RunBalanceSweep(int n)
+        {
+            int b0 = BattleState.BarrageBase, c0 = BattleState.BunkerCover, t0 = BattleState.TurretPowerDelta, p0 = BattleState.AttackerBonusPoints;
+            bool o0 = BattleState.BunkerCoverTroopsOnly;
+            var variants = new (string name, int barrage, int cover, bool troops, int turret, int points)[]
+            {
+                ("сейчас", b0, c0, o0, t0, p0),
+                ("артподготовка 3", 3, c0, o0, t0, p0),
+                ("артподготовка 4", 4, c0, o0, t0, p0),
+                ("бункер укрывает только пехоту", b0, c0, true, t0, p0),
+                ("бункер не укрывает других", b0, 0, o0, t0, p0),
+                ("турели сила 1", b0, c0, o0, -1, p0),
+                ("десант +1 очко", b0, c0, o0, t0, 1),
+                ("арт 3 + бункер пехоте", 3, c0, true, t0, p0),
+                ("арт 3 + турели 1", 3, c0, o0, -1, p0),
+                ("арт 3 + бункер пехоте + турели 1", 3, c0, true, -1, p0),
+            };
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"[Подбор баланса ×{n}] вариант: всего | укр.0 | укр.1 | укр.2 | укр.3 | ходов\n");
+            try
+            {
+                foreach (var v in variants)
+                {
+                    BattleState.BarrageBase = v.barrage; BattleState.BunkerCover = v.cover; BattleState.BunkerCoverTroopsOnly = v.troops;
+                    BattleState.TurretPowerDelta = v.turret; BattleState.AttackerBonusPoints = v.points;
+                    int win = 0, turns = 0;
+                    var byFort = new int[4]; var winsByFort = new int[4];
+                    for (int i = 0; i < n; i++)
+                    {
+                        var st = Build(false, i * 7919 + 13, out int fort);
+                        st.Attacker.IsPlayer = false;
+                        var r = BattleAI.AutoResolve(st, out _);
+                        byFort[fort]++;
+                        if (r.AttackerWon) { win++; winsByFort[fort]++; }
+                        turns += r.Turns;
+                    }
+                    sb.Append($"  {v.name}: {win * 100f / n:0}%");
+                    for (int f = 0; f < 4; f++) sb.Append(byFort[f] > 0 ? $" | {winsByFort[f] * 100f / byFort[f]:0}%" : " | —");
+                    sb.Append($" | {turns / (float)n:0.0}\n");
+                }
+            }
+            finally
+            {
+                BattleState.BarrageBase = b0; BattleState.BunkerCover = c0; BattleState.BunkerCoverTroopsOnly = o0;
+                BattleState.TurretPowerDelta = t0; BattleState.AttackerBonusPoints = p0;
+            }
             Debug.Log(sb.ToString());
         }
 
