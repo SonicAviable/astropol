@@ -27,7 +27,7 @@ namespace StellarisClone.Cards
         private static readonly Vector2 ShopCard = new Vector2(156, 218);
         private static readonly Vector2 MiniCard = new Vector2(84, 118);
         private static readonly Vector2 BigCard = new Vector2(280, 392);
-        private const float TileW = 176f, TileH = 318f;
+        private const float TileW = 176f, TileH = 348f;
 
         private enum Tab { Doctrine, Reserve }
         private enum KindFilter { All, Infantry, Vehicles, Orders, Defense, Faction }
@@ -49,6 +49,9 @@ namespace StellarisClone.Cards
         private AvailFilter _avail = AvailFilter.All;
         private SortBy _sort = SortBy.Cost;
         private readonly List<(Image bg, Text t, System.Func<bool> on)> _chips = new List<(Image, Text, System.Func<bool>)>();
+        // Живые значения без пересборки витрины: цены (хватает ли ресурсов) и прогресс заказов
+        private readonly List<(Text t, System.Func<bool> ok)> _prices = new List<(Text, System.Func<bool>)>();
+        private readonly List<(ArmyJob j, RectTransform fill, Text days, CardView cv, bool active)> _queueUi = new List<(ArmyJob, RectTransform, Text, CardView, bool)>();
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
@@ -97,6 +100,7 @@ namespace StellarisClone.Cards
                 _refresh = 1f;
                 string sig = Signature();
                 if (_dirty || sig != _sig) { _dirty = false; _sig = sig; Rebuild(); }
+                else RefreshLive();
             }
         }
 
@@ -127,16 +131,19 @@ namespace StellarisClone.Cards
 
         private string Signature()
         {
-            var eco = EconomyManager.Instance;
             var am = ArmyManager.Instance;
             var sb = new StringBuilder();
             sb.Append((int)_tab).Append((int)_kind).Append((int)_avail).Append((int)_sort).Append('|');
-            if (eco != null) sb.Append((int)eco.EnergyCredits / 5).Append(',').Append((int)eco.Minerals / 5).Append(',').Append((int)eco.Alloys / 5).Append(',').Append((int)eco.Influence / 5).Append('|');
+            // Ресурсы и прогресс заказов меняются каждую секунду игры — их обновляет RefreshLive без пересборки
+            // (пересборка пересоздаёт все карты витрины, и они «дёргаются»). Сюда — только то, что меняет состав
             if (am != null)
             {
                 foreach (var c in am.Of(0)) sb.Append(c.Id).Append(c.WoundDays > 0 ? 'w' : '-').Append(c.Stars);
                 sb.Append('|');
-                foreach (var j in am.JobsOf(0)) sb.Append(j.Def).Append(':').Append((int)(j.Progress * 20)).Append(',');
+                foreach (var j in am.JobsOf(0)) sb.Append(j.Def).Append(',');
+                sb.Append('|');
+                foreach (var d in CardCatalog.ForFaction(FactionTraits.Key(0)))
+                    if (am.Target(0, d.Id) > 0) sb.Append(am.WaitReason(0, d) != null ? '!' : '.');
                 sb.Append('|').Append(am.TargetTotal(0)).Append(am.PlayerManual ? 'm' : 'a').Append(am.PlayerSize);
             }
             var b = ArmyManager.BaseOf(0);
@@ -374,15 +381,33 @@ namespace StellarisClone.Cards
 
             _subtitle.text = Loc.T("Армия для штурма и обороны колоний. Задайте состав — империя сама производит и пополняет карты. Карты открываются технологиями");
             _sideHint.text = _tab == Tab.Doctrine
-                ? Loc.T("<b>Как это работает</b>\nКнопки −/+ под картой — сколько таких держать в армии (с Shift — по 5). Империя сама заказывает недостающее и пополняет потери, когда хватает ресурсов.\nПри штурме в бой идут лучшие карты резерва — сколько поместится на корабли у цели: корвет 2 места, фрегат 4, эсминец 6. При обороне — сколько вместит колония.")
+                ? Loc.T("<b>Сколько карт идёт в бой</b>\nПри штурме — лучшие готовые карты резерва, сколько поместится на корабли у цели: корвет 2 места, фрегат 4, эсминец 6. При обороне — сколько вместит колония.\n\n<b>Подсказки</b>\nShift + −/+ — по 5 карт. Наведите на карту — она покажется крупно.")
                 : Loc.T("<b>Резерв</b>\nОбщий для всей империи: грузить на корабли и развозить по колониям ничего не нужно.\nРаненые лечатся 30 дней и пропускают бои. Выжившие в бою получают звезду ветерана.");
 
             float sp = _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
             Canvas.ForceUpdateCanvases();
             LGBuild.Clear(_list);
+            _prices.Clear();
+            _queueUi.Clear();
             if (_tab == Tab.Doctrine) BuildDoctrine(am, b, jobs); else BuildReserve(am, mine);
             Canvas.ForceUpdateCanvases();
             if (_scroll != null) _scroll.verticalNormalizedPosition = sp;
+        }
+
+        /// <summary>Раз в секунду: цены краснеют/белеют по запасам, полосы заказов и дни до готовности — на месте.</summary>
+        private void RefreshLive()
+        {
+            foreach (var p in _prices)
+                if (p.t != null) p.t.color = p.ok() ? UIManager.DS.TextPrimary : UIManager.DS.Red;
+            foreach (var q in _queueUi)
+            {
+                if (q.fill == null) continue;
+                var img = q.fill.GetComponent<Image>();
+                if (img != null && q.j.Progress > 0.001f) img.enabled = true;
+                LGBuild.SetBar(q.fill, q.j.Progress);
+                if (q.active && q.days != null) q.days.text = Loc.F("{0:0} дн.", Mathf.Ceil(q.j.DaysLeft));
+                if (q.cv != null) q.cv.SetAlpha(q.active ? 0.55f + 0.45f * q.j.Progress : 0.4f);
+            }
         }
 
         private static bool Match(CardDef d, KindFilter k)
@@ -418,6 +443,7 @@ namespace StellarisClone.Cards
 
         private void BuildDoctrine(ArmyManager am, ArmyManager.Base b, List<ArmyJob> jobs)
         {
+            HowItWorks(am);
             if (jobs.Count > 0)
             {
                 Header(Loc.F("В ПРОИЗВОДСТВЕ · {0} · ЛИНИЙ {1}   ·   клик по карте — отменить заказ", jobs.Count, b.Lines), LGIcon.Construction);
@@ -486,6 +512,33 @@ namespace StellarisClone.Cards
             line.rectTransform.sizeDelta = new Vector2(0, 1);
         }
 
+        /// <summary>Три шага сверху витрины: что делают −/+, кто строит и что идёт в бой.</summary>
+        private void HowItWorks(ArmyManager am)
+        {
+            var row = LGBuild.Rect(_list, "Steps");
+            LGBuild.Height(row.gameObject, 58);
+            string[] steps =
+            {
+                am.PlayerManual ? Loc.T("<b>Задайте состав</b> — кнопками −/+ под картой: сколько таких карт держать в армии")
+                                : Loc.T("<b>Состав подбирает империя</b> (режим «Авто»). Нажмите −/+ под картой — перейдёте на ручной"),
+                Loc.T("<b>Империя строит сама</b> недостающие карты, когда хватает ресурсов. Очередь — ниже"),
+                Loc.T("<b>В бой идут готовые карты</b> из резерва: при штурме — сколько влезет на корабли у цели"),
+            };
+            for (int i = 0; i < steps.Length; i++)
+            {
+                var cell = LGBuild.Panel(row, "Step", new Color(0.03f, 0.07f, 0.095f, 0.92f));
+                cell.rectTransform.anchorMin = new Vector2(i / 3f, 0f); cell.rectTransform.anchorMax = new Vector2((i + 1) / 3f, 1f);
+                cell.rectTransform.offsetMin = new Vector2(4, 4); cell.rectTransform.offsetMax = new Vector2(-4, -4);
+                LG.Platter(cell.gameObject, 10f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.22f));
+                var num = LGBuild.Label(cell.rectTransform, (i + 1).ToString(), 22, Gold, TextAnchor.MiddleCenter, bold: true);
+                num.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(26, 40));
+                var t = LGBuild.Label(cell.rectTransform, steps[i], 12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, wrap: true);
+                t.rectTransform.Stretch(44, 4, 10, 4);
+                t.supportRichText = true;
+                t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = 12;
+            }
+        }
+
         private void Note(string text)
         {
             var row = LGBuild.Rect(_list, "Note");
@@ -517,10 +570,13 @@ namespace StellarisClone.Cards
                     cv.OnClick = _ => { am.CancelJob(j); SFXManager.Play(Sfx.DealRemove); };
                     var host = LGBuild.Rect(row, "Bar");
                     host.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(x, -MiniCard.y - 12), new Vector2(MiniCard.x - 6, 6));
-                    LGBuild.Bar(host, active ? Cyan : new Color(1f, 1f, 1f, 0.25f), j.Progress, 5f);
+                    var fill = LGBuild.Bar(host, active ? Cyan : new Color(1f, 1f, 1f, 0.25f), j.Progress, 5f);
                     var days = LGBuild.Label(row, active ? Loc.F("{0:0} дн.", Mathf.Ceil(j.DaysLeft)) : Loc.T("в очереди"), 11,
                         active ? UIManager.DS.TextPrimary : Muted, TextAnchor.MiddleCenter, bold: true);
                     days.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(x, -MiniCard.y - 26), new Vector2(MiniCard.x + 10, 16));
+                    cv.Calm = true;
+                    cv.HoverLift = 0f;
+                    _queueUi.Add((j, fill, days, cv, active));
                 }
             }
         }
@@ -544,8 +600,10 @@ namespace StellarisClone.Cards
             cv.Rt.anchorMin = cv.Rt.anchorMax = new Vector2(0.5f, 1f);
             cv.Rt.anchoredPosition = new Vector2(0, -ShopCard.y * 0.5f - 10);
             cv.SetHoverable(true);
-            cv.HoverLift = 6f;
-            cv.HoverScale = 0.04f;
+            // Без подъёма и наклона: у края карта уходила из-под курсора и дёргалась туда-сюда; только лёгкое увеличение
+            cv.Calm = true;
+            cv.HoverLift = 0f;
+            cv.HoverScale = 0.03f;
             HookPreview(cv);
             if (locked || site != null) cv.SetAlpha(locked ? 0.4f : 0.6f);
 
@@ -565,21 +623,35 @@ namespace StellarisClone.Cards
                 lk.raycastTarget = true;
             }
 
-            // Сколько есть
-            string stock = queued > 0 ? Loc.F("в резерве {0} · строится {1}", have, queued) : Loc.F("в резерве {0}", have);
-            var st = LGBuild.Label(tile.rectTransform, wait != null ? Loc.T("ждёт") + " · " + stock : stock, 11,
-                wait != null ? Warn : have > 0 ? UIManager.DS.TextPrimary : Muted, TextAnchor.MiddleCenter, bold: true);
+            // Состояние одной строкой и полосой «готово / нужно»: зелёное — всё есть, бирюзовое — строится,
+            // оранжевое — ждёт (ресурсов, места в очереди), серое — карта не в составе армии
+            string stText; Color stCol;
+            if (locked) { stText = Loc.T("НУЖНА ТЕХНОЛОГИЯ"); stCol = Muted; }
+            else if (site != null) { stText = Loc.T("НЕГДЕ ПРОИЗВОДИТЬ"); stCol = Warn; }
+            else if (target <= 0) { stText = have > 0 ? Loc.F("НЕ В СОСТАВЕ · в резерве {0}", have) : Loc.T("НЕ В СОСТАВЕ"); stCol = Muted; }
+            else if (have >= target) { stText = Loc.F("ГОТОВО {0} ИЗ {1}", have, target); stCol = UIManager.DS.Green; }
+            else if (wait != null) { stText = Loc.F("ЖДЁТ · ГОТОВО {0} ИЗ {1}", have, target); stCol = Warn; }
+            else if (queued > 0) { stText = Loc.F("СТРОИТСЯ {0} · ГОТОВО {1} ИЗ {2}", queued, have, target); stCol = Cyan; }
+            else { stText = Loc.F("ГОТОВО {0} ИЗ {1}", have, target); stCol = UIManager.DS.TextPrimary; }
+            var st = LGBuild.Label(tile.rectTransform, stText, 10, stCol, TextAnchor.MiddleCenter, bold: true);
             st.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 20), new Vector2(TileW - 8, 16));
+            st.resizeTextForBestFit = true; st.resizeTextMinSize = 8; st.resizeTextMaxSize = 10;
+            if (target > 0 && !locked && site == null)
+            {
+                var bh = LGBuild.Rect(tile.rectTransform, "Ready");
+                bh.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 33), new Vector2(TileW - 36, 5));
+                LGBuild.Bar(bh, stCol, Mathf.Clamp01(have / (float)target), 4f);
+            }
 
-            // Цена
+            // Цена одной карты
             var price = LGBuild.Rect(tile.rectTransform, "Price");
-            price.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 40), new Vector2(TileW - 8, 18));
-            var parts = new List<(LGIcon ic, string v, bool ok, Color c)>();
-            if (e > 0) parts.Add((LGIcon.Energy, e.ToString("0"), eco != null && eco.EnergyCredits >= e, BuildMenuModal.CEnergy));
-            if (m > 0) parts.Add((LGIcon.Minerals, m.ToString("0"), eco != null && eco.Minerals >= m, BuildMenuModal.CMinerals));
-            if (a > 0) parts.Add((LGIcon.Alloys, a.ToString("0"), eco != null && eco.Alloys >= a, BuildMenuModal.CAlloys));
-            if (inf > 0) parts.Add((LGIcon.Influence, inf.ToString("0"), eco != null && eco.Influence >= inf, BuildMenuModal.CInfluence));
-            parts.Add((LGIcon.Clock, d.Days > 0 && d.Site != ProdSite.Command ? Loc.F("{0}д", d.Days) : Loc.T("сразу"), true, Muted));
+            price.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y - 52), new Vector2(TileW - 8, 18));
+            var parts = new List<(LGIcon ic, string v, bool ok, Color c, System.Func<bool> check)>();
+            if (e > 0) parts.Add((LGIcon.Energy, e.ToString("0"), eco != null && eco.EnergyCredits >= e, BuildMenuModal.CEnergy, () => EconomyManager.Instance != null && EconomyManager.Instance.EnergyCredits >= e));
+            if (m > 0) parts.Add((LGIcon.Minerals, m.ToString("0"), eco != null && eco.Minerals >= m, BuildMenuModal.CMinerals, () => EconomyManager.Instance != null && EconomyManager.Instance.Minerals >= m));
+            if (a > 0) parts.Add((LGIcon.Alloys, a.ToString("0"), eco != null && eco.Alloys >= a, BuildMenuModal.CAlloys, () => EconomyManager.Instance != null && EconomyManager.Instance.Alloys >= a));
+            if (inf > 0) parts.Add((LGIcon.Influence, inf.ToString("0"), eco != null && eco.Influence >= inf, BuildMenuModal.CInfluence, () => EconomyManager.Instance != null && EconomyManager.Instance.Influence >= inf));
+            parts.Add((LGIcon.Clock, d.Days > 0 && d.Site != ProdSite.Command ? Loc.F("{0}д", d.Days) : Loc.T("сразу"), true, Muted, null));
             float w = 0f;
             foreach (var p in parts) w += 15 + p.v.Length * 7f + 6;
             float px = -w * 0.5f;
@@ -589,10 +661,14 @@ namespace StellarisClone.Cards
                 i.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(px, 0), new Vector2(12, 12));
                 var t = LGBuild.Label(price, p.v, 12, p.ok ? UIManager.DS.TextPrimary : UIManager.DS.Red, TextAnchor.MiddleLeft, bold: true);
                 t.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(px + 15, 0), new Vector2(60, 16));
+                if (p.check != null) _prices.Add((t, p.check));
                 px += 15 + p.v.Length * 7f + 6;
             }
 
-            // Состав: − N +
+            // Состав: − N + и подпись над ним — что это за число
+            var cap = LGBuild.Label(tile.rectTransform, Loc.T("ДЕРЖАТЬ В АРМИИ"), 9, Muted, TextAnchor.MiddleCenter, bold: true);
+            cap.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0, 54), new Vector2(TileW - 8, 12));
+            cap.Track(1.2f);
             bool canAdd = !locked && site == null && target < ArmyManager.MaxDeck;
             var minus = LGBuild.Button(tile.rectTransform, "Minus", target > 0 ? UIManager.DS.BtnNeutral : UIManager.DS.BtnDisabled, new Color(1, 1, 1, 0.22f),
                 () => Change(d, -1), null, "−", 18);
@@ -670,8 +746,9 @@ namespace StellarisClone.Cards
                         cv.Rt.anchoredPosition = new Vector2(10 + MiniCard.x * 0.5f + k * (MiniCard.x + 10f), -MiniCard.y * 0.5f - 4);
                         if (c.Wounded) { cv.SetStatus(Loc.F("РАНЕН {0} дн.", c.WoundDays), new Color(1f, 0.55f, 0.45f)); cv.SetAlpha(0.6f); }
                         HookPreview(cv);
-                        cv.HoverLift = 6f;
-                        cv.HoverScale = 0.08f;
+                        cv.Calm = true;
+                        cv.HoverLift = 0f;
+                        cv.HoverScale = 0.06f;
                     }
                 }
             }

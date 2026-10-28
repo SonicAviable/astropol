@@ -59,6 +59,9 @@ namespace StellarisClone.Cards
         public float IdleBob;
         /// <summary>«Дыхание» юнита на столе (0..1): едва заметный пульс масштаба.</summary>
         public float IdleBreathe;
+        /// <summary>Спокойная карта витрины (Арсенал): без наклона к курсору и без «живого» дрейфа арта —
+        /// в сетке из десятков карт движение читается как дрожь, а наклон у края уводит карту из-под курсора.</summary>
+        public bool Calm;
         private Rect _artUv;
         private float _idlePhase;
 
@@ -523,7 +526,7 @@ namespace StellarisClone.Cards
             float hoverTarget = _hovered && _hoverable ? 1f : 0f;
             _hover = Mathf.MoveTowards(_hover, hoverTarget, dt * 7f);
             Vector2 tiltTarget = Vector2.zero;
-            if (_hovered && _hoverable)
+            if (_hovered && _hoverable && !Calm)
             {
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(Rt, Input.mousePosition, null, out var lp);
                 var r = Rt.rect;
@@ -593,10 +596,10 @@ namespace StellarisClone.Cards
             // «Живой» арт: медленный наезд и дрейф камеры по картинке, при наклоне — параллакс
             if (_art != null && _art.texture != null && _artUv.width > 0f)
             {
-                float z = 0.93f + 0.025f * Mathf.Sin(tt * 0.11f);
+                float z = Calm ? 0.95f : 0.93f + 0.025f * Mathf.Sin(tt * 0.11f);
                 float w = _artUv.width * z, h = _artUv.height * z;
-                float fx = 0.5f + 0.35f * Mathf.Sin(tt * 0.07f) + _tilt.y / 12f * 0.45f;
-                float fy = 0.5f + 0.35f * Mathf.Cos(tt * 0.09f) - _tilt.x / 10f * 0.45f;
+                float fx = Calm ? 0.5f : 0.5f + 0.35f * Mathf.Sin(tt * 0.07f) + _tilt.y / 12f * 0.45f;
+                float fy = Calm ? 0.5f : 0.5f + 0.35f * Mathf.Cos(tt * 0.09f) - _tilt.x / 10f * 0.45f;
                 float x = _artUv.x + (_artUv.width - w) * Mathf.Clamp01(fx);
                 float y = _artUv.y + (_artUv.height - h) * Mathf.Clamp01(fy);
                 _art.uvRect = new Rect(x, y, w, h);
