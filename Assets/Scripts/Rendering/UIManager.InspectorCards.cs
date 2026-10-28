@@ -143,10 +143,11 @@ namespace StellarisClone.Rendering
             float power = cm != null ? cm.StarbasePower(system.Id) : 0f;
             string inShips = CombatManager.PowerInShips(power);
             CardLabel(card, Loc.T("МОЩЬ БАЗЫ"), 9, InspLabelCol, TextAnchor.UpperLeft, true, 0f, 0.6f, y, 12f, px, 0f, 1.6f);
-            var powerText = CardLabel(card, power.ToString("N0"), 28, sb.Disabled ? DS.Red : DS.TextPrimary, TextAnchor.UpperLeft, true, 0f, 0.6f, y + 11f, 34f, px);
+            // Мощь — чистые белые цифры без цветной тени (она «двоила» число), только тёмная подложка для читаемости
+            var powerText = CardLabel(card, power.ToString("N0"), 26, sb.Disabled ? DS.Red : Color.white, TextAnchor.UpperLeft, true, 0f, 0.6f, y + 12f, 32f, px);
             var psh = powerText.gameObject.AddComponent<Shadow>();
-            psh.effectColor = new Color(owner.r, owner.g, owner.b, 0.35f);
-            psh.effectDistance = new Vector2(0f, -2f);
+            psh.effectColor = new Color(0f, 0f, 0f, 0.5f);
+            psh.effectDistance = new Vector2(0f, -1f);
             InspCountUp.Run(powerText, power);
             if (inShips.Length > 0)
                 CardLabel(card, inShips, 10, InspLabelCol, TextAnchor.UpperLeft, false, 0f, 0.7f, y + 46f, 14f, px);
