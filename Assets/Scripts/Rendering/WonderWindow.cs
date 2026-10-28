@@ -274,13 +274,77 @@ namespace StellarisClone.Rendering
             BuildRivals();
         }
 
-        private RectTransform Card(string name, float height, Color rim)
+        /// <param name="seed">От чего зависит кусок туманности (место стройки — от системы, чтобы фон менялся вместе с ней).</param>
+        /// <param name="numeral">Римская цифра этапа — крупно на фоне вместо туманности.</param>
+        /// <param name="icon">Крупный значок на фоне вместо туманности.</param>
+        private RectTransform Card(string name, float height, Color rim, string seed = null, string numeral = null, LGIcon? icon = null)
         {
             var card = LGBuild.Panel(_right, name, CPanel);
             LGBuild.Height(card.gameObject, height);
             LG.Platter(card.gameObject, 16f).SetRim(rim);
-            AddBackdrop(card.rectTransform, name, rim);
+            if (numeral != null || icon.HasValue) AddEmblemBackdrop(card.rectTransform, rim, numeral, icon);
+            else AddBackdrop(card.rectTransform, seed ?? name, rim);
             return card.rectTransform;
+        }
+
+        /// <summary>
+        /// Фон этапа: огромная римская цифра (или значок) справа — как гравировка на металле: заливка едва видна,
+        /// грань светится цветом кромки; за ней — свет того же цвета и тонкие косые «технические» линии.
+        /// </summary>
+        private static void AddEmblemBackdrop(RectTransform card, Color rim, string numeral, LGIcon? icon)
+        {
+            var host = LGBuild.Rect(card, "Backdrop");
+            host.Stretch(3, 3, 3, 3);
+            host.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(12, 12);
+            LG.Ignore(host.gameObject);
+            Color c = new Color(rim.r, rim.g, rim.b, 1f);
+
+            var light = LGBuild.Panel(host, "Light", new Color(c.r, c.g, c.b, 0.16f));
+            light.sprite = FactionSelectScreen.RadialSprite();
+            light.raycastTarget = false;
+            light.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-110, 0), new Vector2(380, 240));
+            LG.Ignore(light.gameObject);
+
+            // Косые линии — тонкая «разметка» под цифрой
+            for (int k = 0; k < 9; k++)
+            {
+                var ln = LGBuild.Panel(host, "Hatch", new Color(c.r, c.g, c.b, k % 3 == 0 ? 0.07f : 0.035f));
+                ln.raycastTarget = false;
+                ln.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-40 - k * 26, 0), new Vector2(k % 3 == 0 ? 2f : 1f, 420));
+                ln.rectTransform.localRotation = Quaternion.Euler(0, 0, -35f);
+                LG.Ignore(ln.gameObject);
+            }
+
+            if (numeral != null)
+            {
+                var t = LGBuild.Label(host, numeral, 150, new Color(c.r, c.g, c.b, 0.08f), TextAnchor.MiddleRight, bold: true);
+                t.rectTransform.anchorMin = new Vector2(0.4f, 0f);
+                t.rectTransform.anchorMax = new Vector2(1f, 1f);
+                t.rectTransform.offsetMin = new Vector2(0, -40);
+                t.rectTransform.offsetMax = new Vector2(-28, 40);
+                t.horizontalOverflow = HorizontalWrapMode.Overflow;
+                t.verticalOverflow = VerticalWrapMode.Overflow;
+                t.raycastTarget = false;
+                var edge = t.gameObject.AddComponent<Outline>();
+                edge.effectColor = new Color(c.r, c.g, c.b, 0.28f);
+                edge.effectDistance = new Vector2(1.5f, -1.5f);
+                LG.Ignore(t.gameObject);
+            }
+            else if (icon.HasValue)
+            {
+                var ic = LGIcons.Create(host, icon.Value, 120, new Color(c.r, c.g, c.b, 0.09f));
+                ic.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-90, 0), new Vector2(120, 120));
+                ic.rectTransform.localRotation = Quaternion.Euler(0, 0, -12f);
+                LG.Ignore(ic.gameObject);
+            }
+
+            var shade = LGBuild.Panel(host, "Shade", new Color(0.01f, 0.02f, 0.03f, 0.6f));
+            shade.sprite = UIManager.FadeRightSprite;
+            shade.raycastTarget = false;
+            shade.rectTransform.anchorMin = Vector2.zero;
+            shade.rectTransform.anchorMax = new Vector2(0.7f, 1f);
+            shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
+            LG.Ignore(shade.gameObject);
         }
 
         /// <summary>
@@ -296,7 +360,8 @@ namespace StellarisClone.Rendering
             host.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(14, 14);
             LG.Ignore(host.gameObject);
 
-            int seed = Mathf.Abs(name.GetHashCode());
+            int seed = 0;
+            foreach (char ch in name) seed = (seed * 31 + ch) & 0x7FFFFFFF;
             var go = new GameObject("Nebula", typeof(RectTransform));
             go.transform.SetParent(host, false);
             var raw = go.AddComponent<RawImage>();
@@ -331,7 +396,7 @@ namespace StellarisClone.Rendering
         private void BuildSite(WonderDef def, WonderSave st, StarSystem site, List<int> sites)
         {
             bool locked = st.SystemId >= 0;
-            var card = Card("Site", 104, new Color(def.Color.r, def.Color.g, def.Color.b, 0.35f));
+            var card = Card("Site", 104, new Color(def.Color.r, def.Color.g, def.Color.b, 0.35f), seed: site != null ? "site" + site.Id : "site-none");
             Caption(card, locked ? Loc.T("МЕСТО СТРОЙКИ") : Loc.T("МЕСТО СТРОЙКИ  ·  ВЫБОР"), Muted);
 
             string name = site != null ? site.Name : Loc.T("нет подходящей системы");
@@ -377,7 +442,7 @@ namespace StellarisClone.Rendering
             bool done = i < st.Built, building = i == st.Built && st.InProgress, next = i == st.Built && !st.InProgress;
             Color rim = done ? new Color(0.45f, 1f, 0.6f, 0.4f) : building ? new Color(def.Color.r, def.Color.g, def.Color.b, 0.6f)
                       : next ? new Color(1f, 0.8f, 0.4f, 0.45f) : new Color(1f, 1f, 1f, 0.12f);
-            var card = Card("Stage" + i, building || next ? 178 : 132, rim);
+            var card = Card("Stage" + i, building || next ? 178 : 132, rim, numeral: Roman(i + 1));
 
             // Номер этапа
             var badge = LGBuild.Panel(card, "Badge", done ? new Color(0.1f, 0.3f, 0.16f, 1f) : new Color(0.06f, 0.1f, 0.14f, 1f));
@@ -497,7 +562,7 @@ namespace StellarisClone.Rendering
         private void BuildBonuses()
         {
             bool key = EventDatabase.HasChainFlag("wonder_key"), mind = EventDatabase.HasChainFlag("wonder_mind");
-            var card = Card("Bonuses", key || mind ? 84 : 64, new Color(0.85f, 0.65f, 0.95f, 0.3f));
+            var card = Card("Bonuses", key || mind ? 84 : 64, new Color(0.85f, 0.65f, 0.95f, 0.3f), icon: LGIcon.Fast);
             Caption(card, Loc.T("УСКОРЕНИЕ СТРОЙКИ"), Muted);
             string text = key || mind
                 ? (key ? Loc.T("<color=#E3B8FF>Ключ Строителей</color> — этапы на 25% дешевле и быстрее.   ") : "") +
