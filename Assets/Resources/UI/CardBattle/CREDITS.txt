@@ -14,3 +14,4 @@ card_mask, card_foil, card_crest, cardback_bg) — нарисованы для �
 
 Эффекты fx2_* (удар, дуга, ударная волна, лучи, рунный круг, столб света, молнии, блёстки, сотовый щит) — нарисованы кодом
 для игры: Tools/card_fx/gen_fx.py; шейдер окраски — Resources/Shaders/UIFxRamp.shader.
+Стол (board_frame, board_pad_enemy, board_pad_mine, board_midline) — нарисован для игры: Tools/card_board/board.html.

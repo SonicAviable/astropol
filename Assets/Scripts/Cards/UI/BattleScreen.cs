@@ -29,7 +29,7 @@ namespace StellarisClone.Cards
         public static bool IsOpen => Instance != null && Instance._root != null && Instance._root.activeSelf;
 
         // Раскладка (центр экрана 1920×1080, y вверх)
-        private const float TrayY = 80f, TrayW = 1480f, TrayH = 600f, Lane = 482f, LaneW = 470f, RowOff = 200f;
+        private const float TrayY = 80f, TrayW = 1480f, TrayH = 600f, Lane = 482f, LaneW = 470f, RowOff = 192f;
         private const float PlaqueW = 440f, PlaqueH = 118f, OrbX = 170f, OrbY = 66f;
         private const float RX = 848f, LX = -848f, HandY = -470f;
         private static readonly Vector2 BoardCard = new Vector2(140, 194);
@@ -269,7 +269,7 @@ namespace StellarisClone.Cards
             var hol = _hintText.gameObject.AddComponent<Outline>();
             hol.effectColor = new Color(0f, 0.02f, 0.04f, 0.85f);
             hol.effectDistance = new Vector2(1.5f, -1.5f);
-            _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -255), new Vector2(900, 30));
+            _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, BoardSkin ? -300 : -255), new Vector2(900, 30));
 
             // Рука, перетаскиваемая карта, предпросмотр, эффекты и баннеры — отдельными слоями поверх стола:
             // порядок отрисовки задан явно, карта из руки никогда не уйдёт «под стол»
@@ -379,19 +379,22 @@ namespace StellarisClone.Cards
             shadow.raycastTarget = false;
             shadow.rectTransform.At(Mid, Mid, new Vector2(0, TrayY - 14), new Vector2(TrayW + 90, TrayH + 90));
 
-            // Оправа — стеклянная панель игры; поверхность вставлена внутрь с отступом, по краю видна кромка
-            GlassAt(_board, "TrayBezel", new Vector2(0, TrayY), new Vector2(TrayW, TrayH), PanelTint, RimCyan, false, 26f);
+            // Стол — тактический стол десанта (Tools/card_board): поле под бронированной рамой. Нет картинок рамы —
+            // прежняя стеклянная оправа
+            bool skin = BoardSkin;
+            float inset = skin ? 8f : 28f;
+            if (!skin) GlassAt(_board, "TrayBezel", new Vector2(0, TrayY), new Vector2(TrayW, TrayH), PanelTint, RimCyan, false, 26f);
 
             var mask = LGBuild.Panel(_board, "TrayMask", Color.white);
             mask.sprite = CardSprites.Round;
             mask.type = Image.Type.Sliced;
             mask.raycastTarget = false;
-            mask.rectTransform.At(Mid, Mid, new Vector2(0, TrayY), new Vector2(TrayW - 28, TrayH - 28));
+            mask.rectTransform.At(Mid, Mid, new Vector2(0, TrayY), new Vector2(TrayW - inset, TrayH - inset));
             mask.gameObject.AddComponent<Mask>().showMaskGraphic = false;
             var surf = Raw(mask.rectTransform, "Surface", table, new Color(0.88f, 0.88f, 0.92f, 1f));
             surf.rectTransform.Stretch();
-            Cover(surf, (TrayW - 28) / (TrayH - 28));
-            var glass = LGBuild.Panel(mask.rectTransform, "Glass", new Color(0.01f, 0.035f, 0.055f, 0.24f));
+            Cover(surf, (TrayW - inset) / (TrayH - inset));
+            var glass = LGBuild.Panel(mask.rectTransform, "Glass", new Color(0.01f, 0.035f, 0.055f, skin ? 0.1f : 0.24f));
             glass.rectTransform.Stretch();
             glass.raycastTarget = false;
             // Дрейфующий туман и дым над полем боя: большие клубы медленно плывут по ветру
@@ -424,6 +427,22 @@ namespace StellarisClone.Cards
             inner.raycastTarget = false;
             inner.rectTransform.Stretch();
 
+            if (skin)
+            {
+                // Линия фронта посередине, посадочные площадки под ряды (враг — красная подсветка к фронту, вы — бирюзовая)
+                // и бронированная рама поверх края поля; карты и плашки секторов — выше рамы
+                var front = CardSkin.Simple(_board, "FrontLine", "board_midline", Color.white);
+                front.rectTransform.At(Mid, Mid, new Vector2(0, TrayY), new Vector2(1460, 56));
+                for (int i = 0; i < 3; i++)
+                    for (int r = 0; r < 2; r++)
+                    {
+                        var pad = CardSkin.Simple(_board, "Pad", r == 0 ? "board_pad_enemy" : "board_pad_mine", Color.white);
+                        pad.rectTransform.At(Mid, Mid, new Vector2((i - 1) * Lane, TrayY + (r == 0 ? RowOff : -RowOff)), new Vector2(LaneW - 10, BoardCard.y + 22));
+                    }
+                var frame = CardSkin.Simple(_board, "Frame", "board_frame", Color.white);
+                frame.rectTransform.At(Mid, Mid, new Vector2(0, TrayY), new Vector2(TrayW + 120, TrayH + 120));
+                return;
+            }
             // Разделители дорожек — тонкие бирюзовые линии, как в окнах игры
             for (int i = 1; i < 3; i++)
             {
@@ -432,6 +451,9 @@ namespace StellarisClone.Cards
                 dv.rectTransform.At(Mid, Mid, new Vector2((i - 1.5f) * Lane, TrayY), new Vector2(1, TrayH - 80));
             }
         }
+
+        /// <summary>Есть ли картинки тактического стола (рама, площадки, линия фронта).</summary>
+        private static bool BoardSkin => CardSkin.Tex("board_frame") != null && CardSkin.Tex("board_pad_mine") != null;
 
         private void BuildSector(int i)
         {
@@ -457,7 +479,8 @@ namespace StellarisClone.Cards
             s.Highlight = CardSkin.Sliced(col, "Highlight", "glow_edge", new Color(1, 1, 1, 0), 0.35f);
             s.Highlight.rectTransform.Stretch(-64 * 0.35f + 4, -64 * 0.35f + 4, -64 * 0.35f + 4, -64 * 0.35f + 4);
 
-            // Места под карты — стеклянные гнёзда с еле заметной кромкой
+            // Места под карты — стеклянные гнёзда с еле заметной кромкой (на тактическом столе их заменяют площадки)
+            if (!BoardSkin)
             for (int r = 0; r < 2; r++)
                 for (int k = 0; k < 3; k++)
                 {
