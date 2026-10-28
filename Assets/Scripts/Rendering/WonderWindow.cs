@@ -279,7 +279,45 @@ namespace StellarisClone.Rendering
             var card = LGBuild.Panel(_right, name, CPanel);
             LGBuild.Height(card.gameObject, height);
             LG.Platter(card.gameObject, 16f).SetRim(rim);
+            AddBackdrop(card.rectTransform, name, rim);
             return card.rectTransform;
+        }
+
+        /// <summary>
+        /// Фон карточки — кусок туманности (у каждой карточки свой), справа — свет цвета её кромки, слева — затемнение
+        /// под текстом. Края мягко растворяются, чтобы не спорить со скруглёнными углами.
+        /// </summary>
+        private static void AddBackdrop(RectTransform card, string name, Color rim)
+        {
+            var tex = Resources.Load<Texture2D>("Menu/menu_bg");
+            if (tex == null) return;
+            var host = LGBuild.Rect(card, "Backdrop");
+            host.Stretch(3, 3, 3, 3);
+            host.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(14, 14);
+            LG.Ignore(host.gameObject);
+
+            int seed = Mathf.Abs(name.GetHashCode());
+            var go = new GameObject("Nebula", typeof(RectTransform));
+            go.transform.SetParent(host, false);
+            var raw = go.AddComponent<RawImage>();
+            raw.texture = tex;
+            raw.raycastTarget = false;
+            raw.color = new Color(0.6f, 0.66f, 0.78f, 0.6f);
+            raw.rectTransform.Stretch();
+            raw.uvRect = new Rect((seed % 53) / 100f, (seed / 53 % 47) / 100f, 0.45f, 0.18f);
+
+            var light = LGBuild.Panel(host, "Light", new Color(rim.r, rim.g, rim.b, 0.22f));
+            light.sprite = FactionSelectScreen.RadialSprite();
+            light.raycastTarget = false;
+            light.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-90, 0), new Vector2(420, 260));
+
+            var shade = LGBuild.Panel(host, "Shade", new Color(0.01f, 0.02f, 0.03f, 0.85f));
+            shade.sprite = UIManager.FadeRightSprite;
+            shade.raycastTarget = false;
+            shade.rectTransform.anchorMin = Vector2.zero;
+            shade.rectTransform.anchorMax = new Vector2(0.85f, 1f);
+            shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
+            foreach (var g in new Graphic[] { raw, light, shade }) LG.Ignore(g.gameObject);
         }
 
         private static Text Caption(RectTransform parent, string text, Color col, float top = 12f)
