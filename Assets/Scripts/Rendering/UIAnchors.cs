@@ -18,6 +18,16 @@ namespace StellarisClone.Rendering
         public const string Diplomacy = "diplomacy";
         public const string MapModes = "mapmodes";
         public const string FleetHud = "fleethud";
+        // Левое меню империи: всё меню целиком и отдельные пункты
+        public const string NavMenu = "navmenu";
+        public const string Colonies = "colonies";
+        public const string Laws = "laws";
+        public const string Spy = "spy";
+        public const string Army = "army";
+        public const string Victory = "victory";
+        public const string Wonder = "wonder";
+        /// <summary>«Журнал событий» и «Справка» — соседние пункты, подсвечиваются вместе.</summary>
+        public const string LogHelp = "loghelp";
 
         private static readonly Dictionary<string, List<RectTransform>> s_All = new Dictionary<string, List<RectTransform>>();
         private static readonly Vector3[] s_Corners = new Vector3[4];

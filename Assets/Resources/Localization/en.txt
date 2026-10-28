@@ -6843,3 +6843,49 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 <b>Улучшить до «{0}»</b>\n{1:0} минералов, {2:0} сплавов, {3:0} дней.\nБаза крепче и бьёт сильнее, осада идёт дольше; содержание +{4:0.#} гелия-3 в месяц	<b>Upgrade to "{0}"</b>\n{1:0} minerals, {2:0} alloys, {3:0} days.\nThe starbase gets tougher and hits harder, sieges take longer; upkeep +{4:0.#} helium-3 per month
 К следующей колонии (Shift — к предыдущей)	To the next colony (Shift: previous)
 Журнал событий: все сообщения, клик — к месту события	Event log: every message, click to go to the event
+<b>I</b> империя, <b>C</b> колонии, <b>L</b> законы, <b>T</b> технологии, <b>J</b> арсенал, 	<b>I</b> empire, <b>C</b> colonies, <b>L</b> laws, <b>T</b> technologies, <b>J</b> arsenal, 
+<b>V</b> путь к победе, <b>F1</b> справка.\n\nКнопка «Свернуть» внизу оставит только значки, если меню мешает.	<b>V</b> path to victory, <b>F1</b> help.\n\nThe «Collapse» button at the bottom leaves only the icons if the menu gets in the way.
+<b>В бой идут готовые карты</b> из резерва: при штурме — сколько влезет на корабли у цели	<b>Ready cards go into battle</b> from the reserve: in an assault, as many as fit on the ships at the target
+<b>Задайте состав</b> — кнопками −/+ под картой: сколько таких карт держать в армии	<b>Set the composition</b> with the −/+ buttons under a card: how many of those cards to keep in the army
+<b>Законы</b> (L) — постоянные правила империи за влияние. <b>Решения</b> — разовые проекты за ресурсы: 	<b>Laws</b> (L) are permanent empire rules paid for with influence. <b>Decisions</b> are one-off projects paid for with resources: 
+<b>Империя строит сама</b> недостающие карты, когда хватает ресурсов. Очередь — ниже	<b>The empire builds</b> missing cards on its own when resources allow. The queue is below
+<b>Сколько карт идёт в бой</b>\nПри штурме — лучшие готовые карты резерва, сколько поместится на корабли у цели: корвет 2 места, фрегат 4, эсминец 6. При обороне — сколько вместит колония.\n\n<b>Подсказки</b>\nShift + −/+ — по 5 карт. Наведите на карту — она покажется крупно.	<b>How many cards go into battle</b>\nIn an assault — the best ready cards of the reserve, as many as fit on the ships at the target: corvette 2 slots, frigate 4, destroyer 6. In defense — as many as the colony holds.\n\n<b>Tips</b>\nShift + −/+ changes by 5 cards. Hover a card to see it enlarged.
+<b>Состав подбирает империя</b> (режим «Авто»). Нажмите −/+ под картой — перейдёте на ручной	<b>The empire picks the composition</b> («Auto» mode). Press −/+ under a card to switch to manual
+<b>Справка</b> (F1) — все горячие клавиши и кнопка «Пройти обучение заново».	<b>Help</b> (F1) has all hotkeys and a «Replay tutorial» button.
+<b>Шпионаж</b> (K) — тайная война: агенты внедряются в чужие империи, крадут технологии 	<b>Espionage</b> (K) is a secret war: agents infiltrate other empires, steal technologies 
+В <b>Арсенале</b> (J) задайте, сколько каких карт держать, — империя сама их построит и пополнит потери. 	In the <b>Arsenal</b> (J), set how many of each card to keep — the empire builds them and replaces losses on its own. 
+В <b>конструкторе</b> (N) собираются проекты кораблей: корпус, оружие, броня и щиты. 	The <b>ship designer</b> (N) is where ship designs are assembled: hull, weapons, armor and shields. 
+Все колонии сразу	All colonies at once
+ДЕРЖАТЬ В АРМИИ	KEEP IN ARMY
+Держите больше силы в двух секторах из трёх к концу 8-го хода — и колония ваша. 	Hold more power in two sectors out of three by the end of turn 8 — and the colony is yours. 
+Журнал и справка	Log and help
+Как взять колонию: осадите систему военным флотом и выберите её — в панели появится кнопка <b>«ШТУРМ»</b>. 	How to take a colony: besiege the system with a war fleet and select it — an <b>«ASSAULT»</b> button appears in the panel. 
+Когда колоний станет несколько, удобнее окно <b>«Колонии»</b> (клавиша <b>C</b>): все миры одной таблицей — 	Once you have several colonies, the <b>«Colonies»</b> window (key <b>C</b>) is handier: all worlds in one table — 
+Кружок на значке — сколько решений можно принять прямо сейчас.	The badge on the icon shows how many decisions can be taken right now.
+Меню империи	Empire menu
+НЕ В СОСТАВЕ	NOT IN ARMY
+НЕГДЕ ПРОИЗВОДИТЬ	NOWHERE TO PRODUCE
+НУЖНА ТЕХНОЛОГИЯ	TECHNOLOGY NEEDED
+Начнётся карточный бой за три сектора. Карты стоят очки приказов, с каждым ходом их больше. 	A card battle for three sectors begins. Cards cost command points, and you get more every turn. 
+Откройте Арсенал	Open the Arsenal
+Откройте окно колоний, затем закройте его (Esc)	Open the colonies window, then close it (Esc)
+Победить можно доминированием, наукой или по очкам к концу эпохи. Кто к какой победе ближе — 	You can win by domination, science or on points at the end of the era. Who is closest to which victory — 
+Погибшие карты теряются, выжившие получают опыт.\n\nЗакройте Арсенал (Esc), когда будете готовы.	Dead cards are lost, survivors gain experience.\n\nClose the Arsenal (Esc) when you are ready.
+Пропустили сообщение? <b>Журнал событий</b> (O) хранит их все — щелчок по записи наведёт камеру. 	Missed a message? The <b>Event log</b> (O) keeps them all — click an entry to move the camera there. 
+Режим «Авто» подберёт состав за вас.	«Auto» mode picks the composition for you.
+Слева — меню империи. Каждый пункт открывает своё окно, справа от названия — горячая клавиша: 	On the left is the empire menu. Each item opens its own window, with its hotkey to the right of the name: 
+Соперники строят свои — следите за ними в том же окне.	Rivals build theirs — track them in the same window.
+Технологии открывают новые модули — обновляйте проекты, и верфи будут строить по ним.	Technologies unlock new modules — update your designs and the shipyards will build them.
+У каждой фракции — своё <b>чудо</b> (U): мегаструктура в несколько этапов с мощным бонусом. 	Every faction has its own <b>wonder</b> (U): a multi-stage megastructure with a powerful bonus. 
+Чужие колонии берут штурмом — для этого нужна армия: карты пехоты, техники и приказов. 	Enemy colonies are taken by assault — that takes an army: infantry, vehicle and order cards. 
+Штурм колонии	Colony assault
+в окне <b>«Путь к победе»</b> (V).\n\nУдачи, Командующий. ОРАКУЛ-7 на связи.	see the <b>«Path to victory»</b> window (V).\n\nGood luck, Commander. ORACLE-7 standing by.
+жители, стабильность, производство, стройка и кнопка «Купить».	population, stability, production, construction and the «Buy» button.
+и устраивают диверсии. Они же защищают вас от чужих агентов.	and carry out sabotage. They also protect you from enemy agents.
+особые для вашей фракции, по обстоятельствам и редкие — с таймером.\n\n	special to your faction, situational, and rare timed ones.\n\n
+ГОТОВО {0} ИЗ {1}	READY {0} OF {1}
+ЖДЁТ · ГОТОВО {0} ИЗ {1}	WAITING · READY {0} OF {1}
+НЕ В СОСТАВЕ · в резерве {0}	NOT IN ARMY · in reserve {0}
+СТРОИТСЯ {0} · ГОТОВО {1} ИЗ {2}	BUILDING {0} · READY {1} OF {2}
+Арсенал: армия для штурма и обороны колоний	Arsenal: army for assaulting and defending colonies
+Советник заново покажет главное: разведку, колонии, науку, флот, меню империи и штурм колоний	The advisor will show the essentials again: scouting, colonies, science, fleet, the empire menu and colony assaults

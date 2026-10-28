@@ -39,6 +39,8 @@ namespace StellarisClone.Core
             public Func<Vector3?> World;
             public Action Focus;
             public Action Enter;
+            /// <summary>Фраза озвучки: Resources/Audio/Tutorial/&lt;Voice&gt; (Tools/tutorial_voice). null — без голоса.</summary>
+            public string Voice;
         }
 
         private readonly List<Step> _steps = new List<Step>();
@@ -80,7 +82,7 @@ namespace StellarisClone.Core
         // --- состояние заданий ---
         private int _speedAtEnter;
         private MapModeController.MapMode _modeAtEnter;
-        private bool _overviewSeen;
+        private bool _overviewSeen, _coloniesSeen;
 
         private void Awake()
         {
@@ -133,6 +135,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Связь установлена"),
+                Voice = "tut_01",
                 Text = Loc.T("Командующий, я ОРАКУЛ-7, бортовой ИИ-советник. Проведу вас через первые шаги: время, ") +
                        Loc.T("разведку, границы, колонии и науку.\n\nПодсвеченный элемент — то, с чем нужно поработать. ") +
                        Loc.T("Кнопка <b>«Показать»</b> наведёт камеру на цель.")
@@ -141,6 +144,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Правитель и обзор империи"),
+                Voice = "tut_02",
                 Text = Loc.T("В левом верхнем углу — правитель вашей империи. Щёлчок по портрету открывает ") +
                        Loc.T("<b>обзор империи</b>: ресурсы, колонии, флоты, лидеры, соперники и путь к победе."),
                 Task = Loc.T("Откройте обзор империи, затем закройте его (Esc)"),
@@ -156,7 +160,18 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
+                Title = Loc.T("Меню империи"),
+                Text = Loc.T("Слева — меню империи. Каждый пункт открывает своё окно, справа от названия — горячая клавиша: ") +
+                       Loc.T("<b>I</b> империя, <b>C</b> колонии, <b>L</b> законы, <b>T</b> технологии, <b>J</b> арсенал, ") +
+                       Loc.T("<b>V</b> путь к победе, <b>F1</b> справка.\n\nКнопка «Свернуть» внизу оставит только значки, если меню мешает."),
+                Anchor = UIAnchors.NavMenu,
+                Voice = "tut_menu"
+            });
+
+            _steps.Add(new Step
+            {
                 Title = Loc.T("Ресурсы"),
+                Voice = "tut_03",
                 Text = Loc.T("<color=#F2C747>Гелий-3</color> питает флот и станции, <color=#4DE6CC>титан</color> идёт на стройку, ") +
                        Loc.T("<color=#F29E5C>сплавы</color> — на корабли, <color=#FF7A94>влияние</color> — на форпосты и лидеров, ") +
                        Loc.T("<color=#5CF59A>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы."),
@@ -166,6 +181,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Ход времени"),
+                Voice = "tut_04",
                 Text = Loc.T("Галактика живёт в реальном времени. <b>Пробел</b> — пауза и пуск, клавиши <b>1</b>, <b>2</b>, <b>3</b> — скорость. ") +
                        Loc.T("На паузе можно спокойно отдавать приказы."),
                 Task = Loc.T("Запустите время или смените скорость"),
@@ -177,6 +193,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Научный корабль"),
+                Voice = "tut_05",
                 Text = Loc.T("Ваш первый инструмент — научный корабль. Он изучает соседние системы, находит залежи, ") +
                        Loc.T("аномалии и места для колоний."),
                 Task = Loc.T("Выделите научный корабль — щелчок ЛКМ по его значку"),
@@ -188,6 +205,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Разведка"),
+                Voice = "tut_06",
                 Text = Loc.T("Серые системы ещё не изучены. Щелчок <b>ПКМ</b> по системе отправляет корабль; пунктир покажет маршрут ") +
                        Loc.T("и дни в пути. <b>Shift+ПКМ</b> добавляет цель в очередь."),
                 Task = Loc.T("ПКМ по подсвеченной системе — отправьте разведчика"),
@@ -199,6 +217,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Панель флота"),
+                Voice = "tut_07",
                 Text = Loc.T("Внизу — панель выделенного флота: состояние, прочность, маршрут и лидер на борту. ") +
                        Loc.T("Кнопки справа: стоп, следующая цель, очистить очередь, камера к флоту, снять выделение."),
                 Anchor = UIAnchors.FleetHud
@@ -207,6 +226,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Строительный корабль"),
+                Voice = "tut_08",
                 Text = Loc.T("Границы растут форпостами. Их строит строительный корабль — за титан, а каждый форпост ") +
                        Loc.T("стоит 2 гелия-3 в месяц."),
                 Task = Loc.T("Выделите строительный корабль"),
@@ -218,6 +238,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Первый форпост"),
+                Voice = "tut_09",
                 Text = Loc.T("Форпост можно заложить только в изученной системе. Если подходящей пока нет — ускорьте время ") +
                        Loc.T("(клавиша <b>3</b>) и дождитесь разведчика."),
                 Task = Loc.T("ПКМ строительным кораблём по изученной соседней системе"),
@@ -229,6 +250,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Режимы карты"),
+                Voice = "tut_10",
                 Text = Loc.T("Карта умеет показывать разное: <b>политику</b> (чьи системы), <b>ресурсы</b>, <b>коридоры</b> и ") +
                        Loc.T("<b>разведку</b>. Удобно, когда галактика разрастётся."),
                 Task = Loc.T("Переключите режим карты"),
@@ -240,6 +262,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Столица"),
+                Voice = "tut_11",
                 Text = Loc.T("Внутри системы видны планеты, станции и флоты. Столица — сердце империи: здесь строятся районы."),
                 Task = Loc.T("Двойной щелчок по звезде столицы"),
                 World = () => SystemPos(Capital()),
@@ -250,6 +273,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Обзор планеты"),
+                Voice = "tut_12",
                 Text = Loc.T("Щёлкните по обитаемой планете — откроется её обзор: население, производство и районы."),
                 Task = Loc.T("Откройте обзор планеты-столицы"),
                 Done = () => PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen
@@ -258,6 +282,7 @@ namespace StellarisClone.Core
             _steps.Add(new Step
             {
                 Title = Loc.T("Районы"),
+                Voice = "tut_13",
                 Text = Loc.T("Каждый район — рабочие места: <b>городской</b> даёт жильё, <b>горнодобывающий</b> — титан, ") +
                        Loc.T("<b>энергетический</b> — гелий-3, <b>промышленный</b> — сплавы. Население растёт, пока есть жильё.\n\n") +
                        Loc.T("Закройте обзор (Esc), когда будете готовы.")
@@ -265,12 +290,71 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
+                Title = Loc.T("Все колонии сразу"),
+                Text = Loc.T("Когда колоний станет несколько, удобнее окно <b>«Колонии»</b> (клавиша <b>C</b>): все миры одной таблицей — ") +
+                       Loc.T("жители, стабильность, производство, стройка и кнопка «Купить»."),
+                Task = Loc.T("Откройте окно колоний, затем закройте его (Esc)"),
+                Anchor = UIAnchors.Colonies,
+                Voice = "tut_colonies",
+                Enter = () => _coloniesSeen = false,
+                Done = () =>
+                {
+                    bool open = ColonyManagerWindow.IsOpenNow;
+                    if (open) _coloniesSeen = true;
+                    return _coloniesSeen && !open;
+                }
+            });
+
+            _steps.Add(new Step
+            {
                 Title = Loc.T("Исследования"),
+                Voice = "tut_14",
                 Text = Loc.T("Наука открывает новые районы, корабли и бонусы. Выберите направление в одной из трёх ветвей — ") +
                        Loc.T("физика, общество, инженерия."),
                 Task = Loc.T("Откройте исследования"),
                 Anchor = UIAnchors.Tech,
                 Done = () => TechTreePanel.Instance != null && TechTreePanel.Instance.IsOpen
+            });
+
+            _steps.Add(new Step
+            {
+                Title = Loc.T("Законы и решения"),
+                Text = Loc.T("<b>Законы</b> (L) — постоянные правила империи за влияние. <b>Решения</b> — разовые проекты за ресурсы: ") +
+                       Loc.T("особые для вашей фракции, по обстоятельствам и редкие — с таймером.\n\n") +
+                       Loc.T("Кружок на значке — сколько решений можно принять прямо сейчас."),
+                Anchor = UIAnchors.Laws,
+                Voice = "tut_laws"
+            });
+
+            _steps.Add(new Step
+            {
+                Title = Loc.T("Конструктор судов"),
+                Text = Loc.T("В <b>конструкторе</b> (N) собираются проекты кораблей: корпус, оружие, броня и щиты. ") +
+                       Loc.T("Технологии открывают новые модули — обновляйте проекты, и верфи будут строить по ним."),
+                Anchor = UIAnchors.Designer,
+                Voice = "tut_designer"
+            });
+
+            _steps.Add(new Step
+            {
+                Title = Loc.T("Арсенал"),
+                Text = Loc.T("Чужие колонии берут штурмом — для этого нужна армия: карты пехоты, техники и приказов. ") +
+                       Loc.T("В <b>Арсенале</b> (J) задайте, сколько каких карт держать, — империя сама их построит и пополнит потери. ") +
+                       Loc.T("Режим «Авто» подберёт состав за вас."),
+                Task = Loc.T("Откройте Арсенал"),
+                Anchor = UIAnchors.Army,
+                Voice = "tut_army",
+                Done = () => StellarisClone.Cards.ArsenalWindow.IsOpenNow
+            });
+
+            _steps.Add(new Step
+            {
+                Title = Loc.T("Штурм колонии"),
+                Text = Loc.T("Как взять колонию: осадите систему военным флотом и выберите её — в панели появится кнопка <b>«ШТУРМ»</b>. ") +
+                       Loc.T("Начнётся карточный бой за три сектора. Карты стоят очки приказов, с каждым ходом их больше. ") +
+                       Loc.T("Держите больше силы в двух секторах из трёх к концу 8-го хода — и колония ваша. ") +
+                       Loc.T("Погибшие карты теряются, выжившие получают опыт.\n\nЗакройте Арсенал (Esc), когда будете готовы."),
+                Voice = "tut_assault"
             });
 
             string neighbours = Loc.T("В галактике вы не одни. <b>Дипломатия</b> — договоры, торговля и войны. Соперники следят за ") +
@@ -279,6 +363,7 @@ namespace StellarisClone.Core
             diplomacy = new Step
             {
                 Title = Loc.T("Соседи"),
+                Voice = "tut_15",
                 Text = neighbours,
                 Anchor = UIAnchors.Diplomacy,
                 // Кнопка «Дипломатия» появляется в меню только после первой встречи — до неё объясняем, где её ждать
@@ -289,9 +374,38 @@ namespace StellarisClone.Core
 
             _steps.Add(new Step
             {
+                Title = Loc.T("Шпионаж"),
+                Text = Loc.T("<b>Шпионаж</b> (K) — тайная война: агенты внедряются в чужие империи, крадут технологии ") +
+                       Loc.T("и устраивают диверсии. Они же защищают вас от чужих агентов."),
+                Anchor = UIAnchors.Spy,
+                Voice = "tut_spy"
+            });
+
+            _steps.Add(new Step
+            {
+                Title = Loc.T("Чудо фракции"),
+                Text = Loc.T("У каждой фракции — своё <b>чудо</b> (U): мегаструктура в несколько этапов с мощным бонусом. ") +
+                       Loc.T("Соперники строят свои — следите за ними в том же окне."),
+                Anchor = UIAnchors.Wonder,
+                Voice = "tut_wonder"
+            });
+
+            _steps.Add(new Step
+            {
+                Title = Loc.T("Журнал и справка"),
+                Text = Loc.T("Пропустили сообщение? <b>Журнал событий</b> (O) хранит их все — щелчок по записи наведёт камеру. ") +
+                       Loc.T("<b>Справка</b> (F1) — все горячие клавиши и кнопка «Пройти обучение заново»."),
+                Anchor = UIAnchors.LogHelp,
+                Voice = "tut_log"
+            });
+
+            _steps.Add(new Step
+            {
                 Title = Loc.T("Путь к победе"),
-                Text = Loc.T("Победить можно доминированием, наукой или по очкам к концу эпохи. Цели и прогресс — в обзоре империи ") +
-                       Loc.T("и в меню (Esc).\n\nУдачи, Командующий. ОРАКУЛ-7 на связи.")
+                Voice = "tut_16",
+                Text = Loc.T("Победить можно доминированием, наукой или по очкам к концу эпохи. Кто к какой победе ближе — ") +
+                       Loc.T("в окне <b>«Путь к победе»</b> (V).\n\nУдачи, Командующий. ОРАКУЛ-7 на связи."),
+                Anchor = UIAnchors.Victory
             });
         }
 
@@ -327,7 +441,8 @@ namespace StellarisClone.Core
             // Голос: фраза шага; текст набирается в такт речи
             _typeSpeed = TypeSpeed;
             // Озвучка только русская: в английской версии — субтитры без голоса
-            var clip = Loc.English ? null : Resources.Load<AudioClip>($"Audio/Tutorial/tut_{index + 1:00}");
+            // Фраза привязана к шагу по имени, а не по номеру: новые шаги не сдвигают озвучку старых
+            var clip = Loc.English || s.Voice == null ? null : Resources.Load<AudioClip>("Audio/Tutorial/" + s.Voice);
             if (clip != null)
             {
                 _typeSpeed = Mathf.Clamp(_visibleLen / Mathf.Max(1f, clip.length - 0.8f), 30f, 110f);

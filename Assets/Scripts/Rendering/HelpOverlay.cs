@@ -15,7 +15,7 @@ namespace StellarisClone.Rendering
         public static bool IsOpenNow => Instance != null && Instance.IsOpen;
         public bool IsOpen => _root != null && LG.IsVisible(_root);
 
-        private const float W = 1240f, H = 780f;
+        private const float W = 1240f, H = 860f;
         private GameObject _root;
 
         private static Color Muted => UIManager.DS.TextMuted;
@@ -86,11 +86,13 @@ namespace StellarisClone.Rendering
             y = Group(keys, y, Loc.T("ОКНА"),
                 ("I", Loc.T("Империя: системы, флоты, лидеры")),
                 ("C", Loc.T("Колонии: все планеты одной таблицей")),
-                ("L", Loc.T("Законы империи")),
+                ("L", Loc.T("Законы и решения")),
                 ("T", Loc.T("Технологии")),
                 ("P", Loc.T("Дипломатия")),
                 ("K", Loc.T("Шпионаж")),
                 ("N", Loc.T("Конструктор судов")),
+                ("J", Loc.T("Арсенал: армия для штурма и обороны колоний")),
+                ("U", Loc.T("Чудо фракции")),
                 ("V", Loc.T("Путь к победе")),
                 ("G", Loc.T("Выделить все военные флоты")),
                 ("M", Loc.T("Музыка")),
@@ -131,7 +133,7 @@ namespace StellarisClone.Rendering
             var tr = (RectTransform)tut.transform;
             tr.anchorMin = new Vector2(0, 0); tr.anchorMax = new Vector2(1, 0); tr.pivot = new Vector2(0.5f, 0);
             tr.offsetMin = new Vector2(18, 18); tr.offsetMax = new Vector2(-18, 60);
-            TooltipHelper.Attach(tut.gameObject, Loc.T("Советник заново покажет главное: разведку, колонии, науку, флот"));
+            TooltipHelper.Attach(tut.gameObject, Loc.T("Советник заново покажет главное: разведку, колонии, науку, флот, меню империи и штурм колоний"));
 
             _root.SetActive(false);
         }
