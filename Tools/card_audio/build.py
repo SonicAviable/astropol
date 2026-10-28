@@ -183,15 +183,10 @@ def reverb(x, wet=0.18, length=1.2, damp=3500.0, predelay=0.012):
 
 # ------------------------------------------------------------------ сборка звуков
 
-def build(src, out):
-    """
-    Только настоящие записи: никакой синтетики в бою. Взрыв = реальный хлопок (пушечный салют, дробовик
-    на октаву ниже) + раскат (запись грома и дальнего взрыва) + суббас + осыпающиеся камни и металл;
-    выстрел = запись оружия + хвост отражений + звон гильз; приказ = треск рации.
-    """
+def tools(src, out):
+    """Общие помощники сборки: пути к исходникам, загрузка с кэшем, запись вариантов «Имя_N.ogg»."""
     os.makedirs(out, exist_ok=True)
     K = lambda p: os.path.join(src, p)
-    FA = K('firearm/Prepared SFX Library/')
     BSB = lambda n: K('bsb/' + n + ('.flac' if os.path.exists(K('bsb/' + n + '.flac')) else '.wav'))
     made = []
     cache = {}
@@ -214,14 +209,78 @@ def build(src, out):
             made.append(p)
         print(f'{name}: {len(variants)}')
 
-    def events(x, thr=-20, gap=0.25):
-        return [i / SR for i in onsets(x, thr, gap)]
-
     def piece(path, k, dur, rate=1.0, thr=-20, gap=0.25):
         """k-е событие записи (по атакам), длительность dur."""
         x = L(path, rate)
-        ev = events(x, thr, gap)
+        ev = [i / SR for i in onsets(x, thr, gap)]
         return norm(fade(cut(x, ev[k % len(ev)], dur), 0.001, 0.3))
+
+    return K, BSB, L, emit, piece, made
+
+
+def build_hits(src, out):
+    """
+    Урон и гибель карт. Без лёгкого «жестяного» металла (кастрюли, банки, тонкие пластины звенят высоко
+    и звучат игрушечно): вес даёт тело — короткие низкие взрывы и хлопки ниже по высоте, суббас, грунт.
+    Металл только тяжёлый (стальные ворота, полосы) — на полоктавы-октаву ниже и под ФНЧ, чтобы не звенел.
+    """
+    K, BSB, L, emit, piece, made = tools(src, out)
+    rng = np.random.default_rng(11)
+    R = lambda lst, i: lst[i % len(lst)]
+    bangs = [norm(L(K(f'oga_bang/{n}.ogg'))) for n in ('cannon_01', 'cannon_02', 'cannon_03', 'cannon_04', 'cannon_05', 'bang_01', 'bang_03', 'bang_06', 'bang_10')]
+    thumps = [norm(L(BSB(n), r)) for n in ('1807', '1808') for r in (0.62, 0.75, 0.9)]      # короткие низкие взрывы
+    gate = [piece(BSB(n), k, 0.7, 0.6) for n in ('2358', '2359', '2360') for k in range(3)]  # стальные ворота, ниже
+    stones = [highpass(piece(BSB('1022'), k, 0.9), 350) for k in range(10)]
+    dirt = [highpass(piece(BSB('1305'), k, 0.4), 120) for k in range(12)]                  # лопата в грунт
+    gore = [lowpass(piece(BSB(n), k, 0.35), 3000) for n in ('2593', '2594', '2595', '2596') for k in range(2)]
+    bones = [lowpass(piece(BSB(n), k, 0.4), 4000) for n in ('1408', '1409') for k in range(2)]
+    steel = [norm(lowpass(cut(L(BSB(n), 0.7), 0.0, 1.6), 2200)) for n in ('1771', '1772', '1774', '1776', '1778', '0235')]
+    thunder = L(BSB('3115'))
+    rumble = [norm(lowpass(fade(cut(thunder, t, 2.0), 0.03, 0.6), 900)) for t in (1.35, 2.05, 3.35, 3.65)]
+
+    # --- попадание в технику/сооружение: глухой удар по броне — хлопок, низкий взрыв, тяжёлая сталь, суббас, крошка
+    metal = []
+    for i in range(10):
+        crack = norm(lowpass(cut(R(bangs, i), 0.0, 0.25), 5000))
+        parts = [(crack, 0.55, 0), (lowpass(R(thumps, i), 2500), 0.9, 0.002), (lowpass(R(gate, i * 2), 1800), 0.45, 0.004),
+                 (sub(130 - 6 * (i % 4), 45, 0.35, 0.07), 0.7, 0), (R(stones, i), 0.12 + 0.05 * rng.random(), 0.04 + 0.03 * rng.random())]
+        metal.append(soft(reverb(fade(mix(*parts), 0.001, 0.35), 0.1, 0.8, 2500), 1.5))
+    emit('ImpactMetal', metal)
+
+    # --- попадание в пехоту: глухой удар в грунт/тело — земля, приглушённый влажный шлепок, низкий толчок
+    flesh = []
+    for i in range(10):
+        thud = norm(lowpass(cut(R(bangs, i + 3), 0.0, 0.2), 1400))
+        parts = [(R(dirt, i), 0.8, 0), (thud, 0.55, 0.001), (R(gore, i), 0.25, 0.006),
+                 (sub(110, 50, 0.25, 0.05), 0.6, 0), (lowpass(R(thumps, i + 1), 1500), 0.35, 0.002)]
+        flesh.append(soft(fade(mix(*parts), 0.001, 0.35), 1.4))
+    emit('ImpactFlesh', flesh)
+
+    # --- гибель: тяжёлый обвал — низкий взрыв, сталь ворот на октаву ниже, оседающие обломки и грунт, раскат, суббас
+    down = []
+    for i in range(6):
+        parts = [(lowpass(R(thumps, i), 2000), 0.9, 0), (lowpass(R(gate, i * 2 + 1), 1500), 0.55, 0.02),
+                 (R(steel, i), 0.25, 0.12), (R(rumble, i), 0.4, 0.04), (sub(75, 28, 0.8, 0.25), 0.85, 0),
+                 (R(bones, i), 0.18, 0.03)]
+        for j in range(3):
+            parts.append((R(stones, i * 3 + j), 0.2, 0.18 + 0.17 * j + 0.05 * rng.random()))
+            parts.append((R(dirt, i * 2 + j), 0.22, 0.1 + 0.2 * j))
+        down.append(soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.14, 1.4, 2500), 1.5))
+    emit('UnitDown', down)
+    return made
+
+
+def build(src, out):
+    """
+    Только настоящие записи: никакой синтетики в бою. Взрыв = реальный хлопок (пушечный салют, дробовик
+    на октаву ниже) + раскат (запись грома и дальнего взрыва) + суббас + осыпающиеся камни и металл;
+    выстрел = запись оружия + хвост отражений + звон гильз; приказ = треск рации.
+    """
+    K, BSB, L, emit, piece, made = tools(src, out)
+    FA = K('firearm/Prepared SFX Library/')
+
+    def events(x, thr=-20, gap=0.25):
+        return [i / SR for i in onsets(x, thr, gap)]
 
     def shots(path, idx, dur, rate=1.0):
         x = L(FA + path, rate)
@@ -336,27 +395,10 @@ def build(src, out):
     emit('BoomSmall', [boom(i + 2, False) for i in range(9)])
     emit('BoomFar', [norm(lowpass(mix((R(farboom, i), 1.0, 0), (R(rumble, i), 0.8, 0.05)), 900 - 100 * i)) for i in range(4)], peak=-3.0)
 
-    # --- попадания: металл (стальные полосы, лом), пехота (удар + земля), щит (электрический треск)
-    emit('ImpactMetal', [soft(mix((norm(cut(R(steel, i), 0.05, 0.6)), 0.8, 0),
-                                   (norm(L(K(f'impact-sounds/Audio/impactMetal_heavy_00{(i * 3) % 5}.ogg'), 0.9 + 0.05 * (i % 4))), 0.55, 0),
-                                   (norm(L(K(f'impact-sounds/Audio/impactPlate_heavy_00{i % 5}.ogg'))), 0.3 if i >= 5 else 0.0, 0.003),
-                                   (sub(160, 70, 0.2, 0.04), 0.3, 0)), 1.4) for i in range(10)])
-    emit('ImpactFlesh', [soft(mix((norm(L(K(f'impact-sounds/Audio/impactPunch_{"heavy" if i < 5 else "medium"}_00{i % 5}.ogg'))), 0.9, 0),
-                                   (norm(L(K(f'impact-sounds/Audio/impactSoft_heavy_00{(i * 2) % 5}.ogg'))), 0.35, 0.002),
-                                   (highpass(R(stones, i), 400), 0.35, 0.004)), 1.3) for i in range(10)])
+    # --- попадания и гибель — build_hits; здесь только щит (электрический треск)
     hum = L(BSB('0064'))
     emit('ImpactShield', [soft(reverb(mix((R(fence, i), 0.9, 0), (R(zaps, i + 2), 0.6, 0.02),
                                            (fade(norm(cut(hum, 1.0 + i, 0.9)), 0.05, 0.6), 0.35, 0)), 0.2, 1.0), 1.3) for i in range(5)])
-
-    # --- гибель: тяжёлый удар, падающий металл, осыпь камней
-    down = []
-    for i in range(5):
-        parts = [(norm(L(K(f'impact-sounds/Audio/impactMetal_heavy_00{(i + 2) % 5}.ogg'), 0.8)), 0.8, 0),
-                 (R(steel, i + 1), 0.6, 0.03), (sub(70, 30, 0.6, 0.2), 0.7, 0)]
-        for j in range(3):
-            parts.append((highpass(R(stones, i * 2 + j), 300), 0.25, 0.2 + 0.18 * j))
-        down.append(soft(reverb(fade(mix(*parts), 0.001, 0.4), 0.14, 1.4), 1.5))
-    emit('UnitDown', down)
 
     # --- юнит готов к бою: затвор / заряжание; техника: дизель; сооружение/дрон: пневматика и сервопривод
     emit('GunCock', [norm(L(BSB(str(n)))) for n in (1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991)], peak=-3.0)
@@ -469,8 +511,10 @@ def build(src, out):
     if not os.path.exists(amb + '.meta'):
         with open(amb + '.meta', 'w') as f:
             f.write(META.replace('loadType: 0', 'loadType: 2').format(guid=uuid.uuid4().hex))
+    made += build_hits(src, out)
     print('files:', len(made) + 1)
 
 
 if __name__ == '__main__':
-    build(sys.argv[1], sys.argv[2])
+    # третий аргумент «hits» — пересобрать только урон и гибель (ImpactMetal, ImpactFlesh, UnitDown)
+    (build_hits if sys.argv[3:] == ['hits'] else build)(sys.argv[1], sys.argv[2])
