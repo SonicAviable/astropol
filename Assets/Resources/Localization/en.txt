@@ -6896,3 +6896,5 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 <color=#F2C747>Гелий-3</color>: +{0}\n	<color=#F2C747>Helium-3</color>: +{0}\n
 <b>Справка</b> — кнопка «?» в шапке планировщика справа (F1): все горячие клавиши и «Пройти обучение заново».	<b>Help</b> is the «?» button in the planner header on the right (F1): all hotkeys and «Replay tutorial».
 <b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#8AA2A8>(F1)</color>	<b>Help</b>\nAll hotkeys, where things are, replay the tutorial  <color=#8AA2A8>(F1)</color>
+{0} ({1}, пригодность {2}%). Щёлкните — откроется планета, там кнопка «Основать колонию».	{0} ({1}, habitability {2}%). Click to open the planet — it has the «Found colony» button.
+открыть планету	open planet

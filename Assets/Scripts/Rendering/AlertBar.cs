@@ -420,9 +420,9 @@ namespace StellarisClone.Rendering
                     {
                         Id = "colony", Icon = LGIcon.Planet, Color = UIManager.DS.Green,
                         Title = Loc.T("Планета пригодна для колонии"),
-                        Body = Loc.F("{0} ({1}, пригодность {2}%). Войдите в систему {3} двойным кликом и нажмите «Основать колонию».", p.Name, p.ClassDisplayName, p.HabitabilityPercent, sys.Name),
-                        ActionHint = Loc.T("показать систему"),
-                        Action = () => Focus(sys)
+                        Body = Loc.F("{0} ({1}, пригодность {2}%). Щёлкните — откроется планета, там кнопка «Основать колонию».", p.Name, p.ClassDisplayName, p.HabitabilityPercent),
+                        ActionHint = Loc.T("открыть планету"),
+                        Action = () => OpenPlanet(sys, p)
                     });
                 }
 
@@ -586,6 +586,19 @@ namespace StellarisClone.Rendering
             if (cam != null) cam.FocusOn(sys.Position);
             GalaxyView.Instance?.SelectSystem(sys.Id);
             UIManager.Instance?.ShowSystemPanel(sys);
+        }
+
+        /// <summary>Сразу к планете: вход в систему (если ещё не в ней) и обзор планеты с её действиями.</summary>
+        private static void OpenPlanet(StarSystem sys, PlanetData planet)
+        {
+            if (sys == null || planet == null) return;
+            var svm = SystemViewManager.Instance;
+            if (svm != null && !svm.IsInSystemView)
+            {
+                Focus(sys);
+                svm.EnterSystemView(sys);
+            }
+            UIManager.Instance?.ShowPlanetInspector(planet, sys);
         }
 
         private static void Focus(FleetView fv)
