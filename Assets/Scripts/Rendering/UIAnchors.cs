@@ -26,8 +26,10 @@ namespace StellarisClone.Rendering
         public const string Army = "army";
         public const string Victory = "victory";
         public const string Wonder = "wonder";
-        /// <summary>«Журнал событий» и «Справка» — соседние пункты, подсвечиваются вместе.</summary>
+        /// <summary>«Журнал событий» в левом меню.</summary>
         public const string LogHelp = "loghelp";
+        /// <summary>Кнопка «?» справки в шапке планировщика.</summary>
+        public const string Help = "help";
 
         private static readonly Dictionary<string, List<RectTransform>> s_All = new Dictionary<string, List<RectTransform>>();
         private static readonly Vector3[] s_Corners = new Vector3[4];

@@ -178,6 +178,13 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(_alertChip, Loc.T("Требуют внимания: простаивающие корабли, свободные слоты исследований и бои"));
             _alertChip.SetActive(false);
 
+            // Справка — маленькая круглая кнопка «?» в шапке (раньше — пункт левого меню)
+            var help = LGBuild.Button(head.transform, "Help", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f),
+                () => UIManager.Instance?.ToggleWindowPublic(UIManager.NavWindow.Help), null, "?", 12, 11f);
+            ((RectTransform)help.transform).At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-72, 0), new Vector2(22, 22));
+            TooltipHelper.Attach(help.gameObject, Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#8AA2A8>(F1)</color>"));
+            UIAnchors.Register(UIAnchors.Help, (RectTransform)help.transform);
+
             _toggleLabel = LGBuild.Label(head.transform, "", 14, Muted, TextAnchor.MiddleRight, bold: true);
             _toggleLabel.rectTransform.Stretch(0, 0, 12, 0);
             var hb = head.gameObject.AddComponent<Button>();

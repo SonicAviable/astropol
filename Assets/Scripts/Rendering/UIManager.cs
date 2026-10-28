@@ -555,7 +555,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 13 * 46f + 30f);
+            mRt.sizeDelta = new Vector2(NavMenuW, 11 * 46f + 30f);
             _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
             _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
             _navItems.Clear();
@@ -639,15 +639,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ToggleWindow(NavWindow.Designer), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"), "N");
             Item("NavArmy", LGIcon.Swords, Loc.T("Арсенал"), new Color(0.95f, 0.45f, 0.35f), () => ToggleWindow(NavWindow.Army), UIAnchors.Army,
                  Loc.T("<b>Арсенал</b>\nСостав армии для штурма и обороны колоний. Империя сама производит и пополняет карты, в бой они идут из общего резерва"), "J");
-            Item("NavFleet", LGIcon.Fleet, Loc.T("Флот"), DS.NeonCyan, SelectAllWarships, null, Loc.T("<b>Флот</b>\nВыделить все военные флоты"), "G");
+            // «Флот» убран из меню: все военные флоты по-прежнему выделяет клавиша G
             Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, UIAnchors.Victory, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V");
             Item("NavWonder", LGIcon.Wonder, Loc.T("Чудо фракции"), new Color(1f, 0.78f, 0.35f), () => ToggleWindow(NavWindow.Wonder), UIAnchors.Wonder,
                  Loc.T("<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников"), "U");
             Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, UIAnchors.LogHelp,
                  Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O");
             NotificationLog.AttachBadge(menu.transform.Find("NavLog/IconTile"));
-            Item("NavHelp", LGIcon.Info, Loc.T("Справка"), DS.TextMuted, () => ToggleWindow(NavWindow.Help), UIAnchors.LogHelp,
-                 Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново"), "F1");
+            // «Справка» — маленькая кнопка «?» в шапке планировщика справа (OutlinerPanel), клавиша F1
 
             // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
             var tg = CreateButton(menu.transform, "NavToggle", new Vector2(_navW, 24), new Color(0.010f, 0.030f, 0.042f, 0.85f), DS.TextMuted, ToggleNavMenu);
@@ -818,6 +817,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
 
         /// <summary>Открыть главное окно (остальные закрываются) или закрыть, если оно уже открыто.</summary>
+        public void ToggleWindowPublic(NavWindow w) => ToggleWindow(w);
+
         private void ToggleWindow(NavWindow w)
         {
             if (IsWindowOpen(w)) { CloseWindow(w); return; }
