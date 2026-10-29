@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
-<!-- Шапка группы VK 1920×768 в стиле действующей: золотой логотип по центру, лидеры Аквилы и Иридии по краям
-     за светящимися косыми срезами; добавлена строка «Игровая студия SmartBiz». На телефоне ВК показывает всю ширину,
+<!-- Шапка группы VK 1920×768 в стиле действующей: золотой логотип по центру, арты игры по краям
+     в косых светящихся панелях; добавлена строка «Игровая студия SmartBiz». На телефоне ВК показывает всю ширину,
      сверху — строка состояния и кнопки, снизу слева — аватар: текст держим в середине по высоте. -->
 <style>
 @font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
@@ -11,15 +11,14 @@ body { background: #03070F; }
 #cover { position: relative; width: 1920px; height: 768px; overflow: hidden; background: #03070F; font-family: Play; color: #fff; }
 .space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center 40%/cover; filter: brightness(0.5); }
 .vign { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at center, rgba(3,7,15,0.1), rgba(3,7,15,0.7)); }
-.lead { position: absolute; top: 0; bottom: 0; width: 520px; overflow: hidden; }
-.lead div { position: absolute; inset: 0; background-size: cover; background-position: center 15%; }
-.l { left: -60px; clip-path: polygon(0 0, 100% 0, 62% 100%, 0 100%); }
-.r { right: -60px; clip-path: polygon(38% 0, 100% 0, 100% 100%, 0 100%); }
-.edge { position: absolute; top: -20px; bottom: -20px; width: 3px; background: linear-gradient(180deg, rgba(160,240,255,0), #CDEBFF 40%, #8FD8FF 60%, rgba(160,240,255,0));
-  box-shadow: 0 0 14px #9ADFFF, 0 0 34px rgba(140,210,255,0.6); }
-.e1 { left: 371px; transform: skewX(-21.3deg); transform-origin: top; } .e2 { right: 371px; transform: skewX(21.3deg); transform-origin: top; }
+.panels { position: absolute; inset: 0; }
+.pn { position: absolute; top: -10px; bottom: -10px; width: 300px; transform: skewX(-10deg); overflow: hidden;
+  border-left: 3px solid rgba(190,235,255,0.85); border-right: 3px solid rgba(190,235,255,0.85);
+  box-shadow: 0 0 22px rgba(140,210,255,0.55), inset 0 0 40px rgba(0,0,0,0.5); }
+.pn div { position: absolute; inset: 0 -140px; background-size: cover; transform: skewX(10deg); filter: brightness(0.85) saturate(1.1); }
+.mid { position: absolute; left: 470px; right: 470px; top: 0; bottom: 0; background: radial-gradient(ellipse at center, rgba(3,7,15,0.25), rgba(3,7,15,0) 70%); }
 .center { position: absolute; left: 0; right: 0; top: 150px; text-align: center; }
-.logo { font-family: Russo; font-size: 132px; letter-spacing: 6px; line-height: 1;
+.logo { font-family: Russo; font-size: 124px; letter-spacing: 5px; line-height: 1;
   background: linear-gradient(180deg, #FFE9A8 0%, #F2C766 45%, #C48A2E 100%); -webkit-background-clip: text; color: transparent;
   filter: drop-shadow(0 4px 0 rgba(0,0,0,0.5)) drop-shadow(0 0 24px rgba(242,199,102,0.3)); }
 .sub { font-family: Russo; font-size: 58px; letter-spacing: 8px; margin-top: 26px; color: #FFFFFF; text-shadow: 0 3px 0 rgba(0,0,0,0.6); }
@@ -31,13 +30,14 @@ body { background: #03070F; }
 </style></head>
 <body><div id="cover">
   <div class="space"></div><div class="vign"></div>
-  <div class="lead l"><div style="background-image:url(../../Assets/Resources/Leaders/leader_aquila.jpg)"></div></div>
-  <div class="lead r"><div style="background-image:url(../../Assets/Resources/Leaders/leader_iridia.jpg)"></div></div>
-  <svg class="edges" width="1920" height="768" style="position:absolute;inset:0"><defs>
-    <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BDE6FF" stop-opacity="0"/><stop offset="0.35" stop-color="#E2F4FF"/><stop offset="0.7" stop-color="#9ADFFF"/><stop offset="1" stop-color="#9ADFFF" stop-opacity="0"/></linearGradient>
-    <filter id="eglow" x="-50%" y="-10%" width="200%" height="120%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-    <g filter="url(#eglow)" stroke="url(#eg)" stroke-width="3"><line x1="460" y1="0" x2="262.4" y2="768"/><line x1="1460" y1="0" x2="1657.6" y2="768"/></g>
-  </svg>
+  <!-- Арты игры в косых панелях по краям: слева флот у красной звезды и колония, справа галактика и мостик -->
+  <div class="panels">
+    <div class="pn" style="left:-215px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt_4.jpg);background-position:30% 50%"></div></div>
+    <div class="pn" style="left:75px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt_3.jpg);background-position:60% 50%"></div></div>
+    <div class="pn" style="left:1545px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt.jpg);background-position:45% 50%"></div></div>
+    <div class="pn" style="left:1835px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt_2.jpg);background-position:35% 50%"></div></div>
+  </div>
+  <div class="mid"></div>
   <div class="center">
     <div class="logo">ASTROPOLITY</div>
     <div class="sub">КОСМИЧЕСКАЯ СТРАТЕГИЯ</div>
