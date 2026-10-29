@@ -135,7 +135,13 @@ namespace StellarisClone.Core
         {
             EnsureLoaded();
             SettingsRunner.Ensure();
-            if (includeDisplay) ApplyDisplay();
+            if (includeDisplay)
+            {
+                // Сразу после запуска окно не трогаем: смена размера/режима в первые кадры, пока к окну цепляются
+                // оверлеи лаунчеров (VK Play), роняла игру в оконном режиме. Режим применится через пару секунд.
+                if (Time.realtimeSinceStartup < StartupDisplayDelay) DisplayAt = StartupDisplayDelay;
+                else ApplyDisplay();
+            }
             GraphicsQuality.Apply();
             QualitySettings.vSyncCount = VSync ? 1 : 0;
             Application.targetFrameRate = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
@@ -146,6 +152,13 @@ namespace StellarisClone.Core
             StrategyCameraController.PanSpeedSetting = CameraSpeed;
         }
 
+        /// <summary>Сколько секунд после запуска игры не менять окно (см. ApplyAll).</summary>
+        private const float StartupDisplayDelay = 3f;
+        /// <summary>Отложенное применение режима экрана: время с запуска игры, когда применить (≤ 0 — нечего).</summary>
+        internal static float DisplayAt;
+
+        internal static void ApplyDisplayDeferred() { DisplayAt = 0f; ApplyDisplay(); }
+
         private static void ApplyDisplay()
         {
 #if !UNITY_EDITOR
@@ -153,7 +166,10 @@ namespace StellarisClone.Core
             var mode = ScreenMode == 1 ? FullScreenMode.ExclusiveFullScreen
                      : ScreenMode == 2 ? FullScreenMode.Windowed : FullScreenMode.FullScreenWindow;
             if (Screen.width != r.x || Screen.height != r.y || Screen.fullScreenMode != mode)
+            {
+                Debug.Log($"[Settings] Режим экрана: {Screen.width}×{Screen.height} {Screen.fullScreenMode} → {r.x}×{r.y} {mode}");
                 Screen.SetResolution(r.x, r.y, mode);
+            }
 #endif
         }
 
@@ -288,6 +304,7 @@ namespace StellarisClone.Core
         {
             // Новая сцена или камера — те же настройки графики
             if ((_gfxWatch -= Time.unscaledDeltaTime) <= 0f) { _gfxWatch = 1f; GraphicsQuality.Watch(); }
+            if (GameSettings.DisplayAt > 0f && Time.realtimeSinceStartup >= GameSettings.DisplayAt) GameSettings.ApplyDisplayDeferred();
 
             if (!GameSettings.Dirty || Input.GetMouseButton(0)) return;
             GameSettings.Dirty = false;
