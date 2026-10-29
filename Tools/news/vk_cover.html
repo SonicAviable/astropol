@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Шапка группы VK: ?v=pc — 1920×768 (всё важное в центральной безопасной зоне ~1100×440: на телефоне края и верх обрезаются),
+     ?v=mob — живая обложка для телефона 1080×1920. Рендер: node Tools/news/render_vk.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#cover { position: relative; overflow: hidden; background: #03070F; }
+.pc #cover { width: 1920px; height: 768px; } .mob #cover { width: 1080px; height: 1920px; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/LoadingArt.jpg) center/cover; filter: brightness(0.55) saturate(1.1); }
+.vign { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(3,7,15,0.25) 0%, rgba(3,7,15,0.75) 70%, rgba(3,7,15,0.95) 100%); }
+.side { position: absolute; top: 0; bottom: 0; display: flex; transform: skewX(-12deg); }
+.side .s { width: 150px; overflow: hidden; border-left: 3px solid rgba(143,245,234,0.65); position: relative; }
+.side .s div { position: absolute; inset: 0 -60px; background-size: cover; background-position: center 18%; transform: skewX(12deg); }
+.side .s::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(3,7,15,0.8), rgba(3,7,15,0) 50%); }
+.pc .left { left: -60px; } .pc .right { right: -60px; }
+.mob .side { display: none; }
+.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.pc .center { top: 56%; }
+.logo { font-family: Russo; font-size: 130px; letter-spacing: 8px; line-height: 1;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 28px rgba(242,199,102,0.4)); }
+.kick { font-weight: 700; font-size: 24px; letter-spacing: 12px; color: #8FE3DA; margin-top: 16px; }
+.studio { display: flex; align-items: center; gap: 22px; margin-top: 34px; }
+.studio .t { text-align: left; border-left: 2px solid rgba(242,199,102,0.7); padding-left: 20px; }
+.studio i { display: block; font-style: normal; font-size: 16px; letter-spacing: 6px; color: #93AEBA; }
+.studio .name { font-family: Russo; font-size: 44px; letter-spacing: 5px; line-height: 1.1; color: #EAFBFA; text-shadow: 0 0 18px rgba(102,219,209,0.5); }
+.studio .name span { background: linear-gradient(180deg, #BFFFF8, #66DBD1 60%, #2E9E95); -webkit-background-clip: text; color: transparent; text-shadow: none; }
+.tags { display: flex; gap: 14px; margin-top: 30px; }
+.tags span { padding: 10px 20px; border: 1px solid rgba(242,199,102,0.5); border-radius: 5px; background: rgba(5,12,24,0.85); font-weight: 700; font-size: 18px; letter-spacing: 3px; color: #F2C766; }
+.tags span.s2 { border-color: rgba(102,219,209,0.45); color: #DFF6F8; }
+.mob .logo { font-size: 104px; letter-spacing: 6px; }
+.mob .studio { flex-direction: column; gap: 26px; margin-top: 60px; }
+.mob .studio .t { border-left: none; padding-left: 0; text-align: center; }
+.mob .tags { flex-direction: column; align-items: center; margin-top: 50px; }
+.mob .portraits { display: flex; gap: 0; margin-bottom: 70px; transform: skewX(-10deg); }
+.pc .portraits { display: none; }
+.portraits .s { width: 150px; height: 420px; overflow: hidden; border-left: 3px solid rgba(143,245,234,0.65); position: relative; }
+.portraits .s div { position: absolute; inset: 0 -50px; background-size: cover; background-position: center 18%; transform: skewX(10deg); }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="vign"></div>
+  <div class="side left" id="L"></div><div class="side right" id="R"></div>
+  <div class="center">
+    <div class="portraits" id="P"></div>
+    <div class="logo">ASTROPOLITY</div>
+    <div class="kick">КОСМИЧЕСКАЯ 4X-СТРАТЕГИЯ</div>
+    <div class="studio">
+      <svg width="132" height="88" viewBox="0 0 150 100">
+        <defs><clipPath id="fa"><polygon points="0,0 150,0 0,100"/></clipPath><clipPath id="fb"><polygon points="150,0 150,100 0,100"/></clipPath>
+          <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.3"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/></linearGradient></defs>
+        <g clip-path="url(#fa)"><rect width="150" height="33.3" fill="#fff"/><rect y="33.3" width="150" height="33.4" fill="#0039A6"/><rect y="66.7" width="150" height="33.3" fill="#D52B1E"/></g>
+        <g clip-path="url(#fb)"><rect width="150" height="100" fill="#00AFCA"/><circle cx="104" cy="58" r="12" fill="#FEC50C"/>
+          <g stroke="#FEC50C" stroke-width="1.6"><line x1="104" y1="40" x2="104" y2="44"/><line x1="86" y1="58" x2="90" y2="58"/><line x1="118" y1="58" x2="122" y2="58"/><line x1="91.3" y1="45.3" x2="94.1" y2="48.1"/><line x1="113.9" y1="48.1" x2="116.7" y2="45.3"/></g>
+          <path d="M82 82 q22 -9 44 0 q-22 4 -44 0z" fill="#FEC50C"/></g>
+        <line x1="150" y1="0" x2="0" y2="100" stroke="#F2C766" stroke-width="3"/>
+        <rect width="150" height="100" fill="url(#fg)"/><rect x="1" y="1" width="148" height="98" fill="none" stroke="#F2C766" stroke-width="2"/>
+      </svg>
+      <div class="t"><i>ИГРОВАЯ СТУДИЯ</i><div class="name">SMART<span>BIZ</span></div><i>РОССИЯ · КАЗАХСТАН</i></div>
+    </div>
+    <div class="tags"><span>УЖЕ НА VK PLAY</span><span class="s2">STEAM · КОНЕЦ 2026</span></div>
+  </div>
+</div>
+<script>
+const mob = location.search.includes('mob');
+document.body.className = mob ? 'mob' : 'pc';
+const L = 'url(../../Assets/Resources/Leaders/leader_', S = (f) => `<div class="s"><div style="background-image:${L}${f}.jpg)"></div></div>`;
+document.getElementById('L').innerHTML = ['xarn', 'astrea', 'aquila'].map(S).join('');
+document.getElementById('R').innerHTML = ['iridia', 'nol', 'terraan'].map(S).join('');
+document.getElementById('P').innerHTML = ['astrea', 'xarn', 'iridia', 'nol', 'terraan', 'aquila'].map(S).join('');
+</script></body></html>
