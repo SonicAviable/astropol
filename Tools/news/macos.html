@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Картинка новости «Скоро на macOS» (1920×1080): логотип и подпись слева, ноутбук с игрой справа.
+     Логотип Apple не используем — только название системы. Рендер: node Tools/news/render.js macos -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center/cover; filter: brightness(0.5); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.95) 0%, rgba(3,7,15,0.8) 40%, rgba(3,7,15,0.2) 75%); }
+.glow { position: absolute; right: 120px; top: 170px; width: 1000px; height: 760px; background: radial-gradient(ellipse, rgba(102,219,209,0.22), rgba(3,7,15,0) 65%); }
+.left { position: absolute; left: 120px; top: 230px; width: 880px; }
+.logo { font-family: Russo; font-size: 96px; letter-spacing: 5px; line-height: 1;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(242,199,102,0.35)); }
+.kick { font-weight: 700; font-size: 24px; letter-spacing: 11px; color: #8FE3DA; margin-top: 20px; }
+.rule { height: 1px; width: 620px; margin: 36px 0 30px; background: linear-gradient(90deg, rgba(242,199,102,0.8), rgba(242,199,102,0)); }
+.soon { font-weight: 700; font-size: 26px; letter-spacing: 9px; color: #F2C766; }
+.mac { font-family: Russo; font-size: 120px; letter-spacing: 2px; line-height: 1.05; margin-top: 8px; color: #fff; text-shadow: 0 0 30px rgba(102,219,209,0.35); }
+.sub { font-size: 26px; color: #9DB6C1; margin-top: 18px; line-height: 1.4; }
+.plats { display: flex; gap: 12px; margin-top: 34px; }
+.plats span { padding: 10px 18px; border-radius: 5px; font-weight: 700; font-size: 19px; letter-spacing: 3px; border: 1px solid rgba(102,219,209,0.4); background: rgba(6,16,30,0.85); color: #CFE8EC; }
+.plats span.new { border-color: rgba(242,199,102,0.7); color: #F2C766; }
+/* Ноутбук */
+.laptop { position: absolute; right: 110px; top: 270px; width: 800px; }
+.lid { width: 800px; height: 506px; border-radius: 26px 26px 10px 10px; background: linear-gradient(180deg, #2A3038, #14181E); padding: 22px;
+  box-shadow: 0 40px 90px rgba(0,0,0,0.75), 0 0 0 1.5px rgba(255,255,255,0.12) inset; }
+.screen { width: 100%; height: 100%; border-radius: 10px; overflow: hidden; position: relative; background: #000; }
+.screen .shot { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/LoadingArt.jpg) center/cover; }
+.screen .sheen { position: absolute; inset: 0; background: linear-gradient(120deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 40%); }
+.screen .hud { position: absolute; left: 0; right: 0; top: 0; height: 34px; background: rgba(4,10,20,0.75); border-bottom: 1px solid rgba(102,219,209,0.35); }
+.screen .tl { position: absolute; left: 30px; bottom: 30px; font-family: Russo; font-size: 40px; letter-spacing: 3px; color: #F2C766; text-shadow: 0 2px 10px #000; }
+.base { width: 890px; margin-left: -45px; height: 30px; border-radius: 0 0 22px 22px; background: linear-gradient(180deg, #C9CED6, #7D848E); box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative; }
+.base::before { content: ''; position: absolute; left: 50%; top: 0; width: 160px; height: 10px; margin-left: -80px; border-radius: 0 0 10px 10px; background: #8E959F; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="fade"></div><div class="glow"></div>
+  <div class="left">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="kick">КОСМИЧЕСКАЯ 4X-СТРАТЕГИЯ</div>
+    <div class="rule"></div>
+    <div class="soon">СКОРО</div>
+    <div class="mac">НА macOS</div>
+    <div class="sub">Готовим версию для Mac — та же галактика,<br>те же империи и войны за звёзды.</div>
+    <div class="plats"><span>WINDOWS</span><span class="new">macOS · СКОРО</span></div>
+  </div>
+  <div class="laptop">
+    <div class="lid"><div class="screen"><div class="shot"></div><div class="hud"></div><div class="sheen"></div><div class="tl">ASTROPOLITY</div></div></div>
+    <div class="base"></div>
+  </div>
+</div></body></html>
