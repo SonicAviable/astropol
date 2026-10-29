@@ -16,6 +16,8 @@ namespace StellarisClone.Core
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static bool s_firstBoot = true;
+
         private static void Boot()
         {
             Debug.Log($"<color=#5F5>[Bootstrap]</color> === Старт инициализации ({GameSession.Mode}) ===");
@@ -24,6 +26,7 @@ namespace StellarisClone.Core
             // Экран загрузки: при запуске игры показываем сразу; при переходах между партиями
             // он уже на экране (GameSession.Reload) и сам уйдёт, когда всё будет готово
             if (!LoadingScreen.IsActive) LoadingScreen.ShowImmediate(LoadingScreen.Kind.Launch);
+            if (s_firstBoot) Debug.Log("[Bootstrap] Экран загрузки показан");
 
             EnsureCamera();
             EnsureCoreManagers();
@@ -38,6 +41,7 @@ namespace StellarisClone.Core
                 new GameObject("[Save] Loader").AddComponent<SaveLoader>();
 
             Debug.Log("<color=#5F5>[Bootstrap]</color> === Все менеджеры готовы ===");
+            s_firstBoot = false;
             LoadingScreen.NotifyBooted();
         }
 
@@ -159,6 +163,8 @@ namespace StellarisClone.Core
         private static void EnsureComp<T>(string name) where T : Component
         {
             if (Object.FindFirstObjectByType<T>() != null) return;
+            // При первом запуске — каждая система строкой в Player.log: если игра упадёт на старте, видно, на какой
+            if (s_firstBoot) Debug.Log("[Bootstrap] " + name);
             var go = new GameObject(name);
             go.AddComponent<T>();
         }
