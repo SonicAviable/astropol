@@ -111,6 +111,8 @@ namespace StellarisClone.Core
             PlayerPrefs.SetString(GuardKey, GameVersion.Current);
             PlayerPrefs.Save();
             s_guardArmed = true;
+            // Каждый шаг — отдельной строкой в Player.log: если библиотека уронит игру, по последней строке видно, на чём
+            Debug.Log("[VK Play] Запуск из Игрового центра — подключаем достижения");
             SaveFpu();
             try
             {
@@ -124,6 +126,7 @@ namespace StellarisClone.Core
                 foreach (var c in candidates)
                 {
                     if (!File.Exists(c)) continue;
+                    Debug.Log($"[VK Play] Загружаю {c} ({new FileInfo(c).Length / 1024} КБ)");
                     s_lib = LoadLibraryW(c);
                     RestoreFpu();
                     if (s_lib != IntPtr.Zero) break;
@@ -133,6 +136,7 @@ namespace StellarisClone.Core
                 // VK Play перечисляет среди поддерживаемых SteamAPI_Init (true — успех) — пробуем её первой;
                 // в библиотеках, где её нет, — SteamAPI_InitFlat из новых SDK (0 — успех)
                 bool ok = false;
+                Debug.Log("[VK Play] Библиотека загружена, вызываю SteamAPI_Init");
                 var init = Fn<BoolFn>("SteamAPI_Init");
                 if (init != null) ok = init();
                 else
@@ -146,7 +150,8 @@ namespace StellarisClone.Core
                     }
                 }
                 RestoreFpu();
-                if (!ok) { Status = State.InitFailed; DisarmGuard(); return; }
+                if (!ok) { Status = State.InitFailed; DisarmGuard(); Debug.LogWarning("[VK Play] SteamAPI_Init не удался — достижения копятся локально"); return; }
+                Debug.Log("[VK Play] SteamAPI_Init прошёл, получаю статистику");
 
                 foreach (var v in new[] { "SteamAPI_SteamUserStats_v013", "SteamAPI_SteamUserStats_v012", "SteamAPI_SteamUserStats_v011" })
                 {
