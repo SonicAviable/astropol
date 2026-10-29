@@ -15,9 +15,9 @@ namespace StellarisClone.Core
             Boot();
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static bool s_firstBoot = true;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
         {
             Debug.Log($"<color=#5F5>[Bootstrap]</color> === Старт инициализации ({GameSession.Mode}) ===");
