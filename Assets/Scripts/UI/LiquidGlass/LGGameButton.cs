@@ -6,7 +6,7 @@ namespace StellarisClone.Rendering
     /// <summary>
     /// Единый дизайн кнопок игры — тот же, что у главной кнопки (<see cref="MenuPrimaryButton"/>): сплошная заливка
     /// со свечением, прямоугольник со скруглением 8 px, подпись капслоком по центру, пробегающий блик.
-    /// Гамма одна: главная кнопка — яркая бирюза с тёмной подписью; обычные — глубокая бирюза со светлой подписью
+    /// Гамма одна: главная кнопка — яркая бирюза с тёмной подписью; обычные — тёмно-синие со светлой подписью
     /// (при наведении светлеют к главной); от неё отличаются только смысловые цвета — опасное (красная) и
     /// успешное (зелёная) действие, тоже глубокие. Нейтральные («Назад», неактивная вкладка) — почти тёмные.
     /// Недоступная — тусклая серая. Без радуги на одном экране.
@@ -44,7 +44,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Оттенок кнопки: красный (опасное) и зелёный (успех) сохраняются, всё остальное — бирюза главной кнопки.
+        /// Оттенок кнопки: красный (опасное) и зелёный (успех) сохраняются, всё остальное — тёмно-синий тон интерфейса.
         /// </summary>
         private static float HueOf(Color accent)
         {
@@ -55,7 +55,7 @@ namespace StellarisClone.Rendering
             return Teal;
         }
 
-        private const float Teal = 0.475f;
+        private const float Teal = 0.605f;   // тёмно-синий — тон всего интерфейса
 
         /// <summary>Нейтральная кнопка («Назад», неактивная вкладка) — тише обычной: почти тёмная заливка.</summary>
         private static bool Quiet(Color accent)
@@ -68,9 +68,10 @@ namespace StellarisClone.Rendering
         private static Color FillOf(Color accent, float hover)
         {
             float h = HueOf(accent);
-            if (Quiet(accent)) return Color.Lerp(Color.HSVToRGB(h, 0.45f, 0.17f), Color.HSVToRGB(h, 0.55f, 0.32f), hover);
-            var deep = Color.HSVToRGB(h, 0.62f, 0.30f);
-            var lit = Color.HSVToRGB(h, 0.55f, 0.50f);
+            if (Quiet(accent)) return Color.Lerp(Color.HSVToRGB(h, 0.55f, 0.18f), Color.HSVToRGB(h, 0.62f, 0.32f), hover);
+            bool navy = Mathf.Approximately(h, Teal);
+            var deep = navy ? Color.HSVToRGB(h, 0.68f, 0.30f) : Color.HSVToRGB(h, 0.62f, 0.30f);
+            var lit = navy ? Color.HSVToRGB(h, 0.62f, 0.48f) : Color.HSVToRGB(h, 0.55f, 0.50f);
             return Color.Lerp(deep, lit, hover);
         }
 
