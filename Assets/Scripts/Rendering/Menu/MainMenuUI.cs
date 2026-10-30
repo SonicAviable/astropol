@@ -464,7 +464,7 @@ namespace StellarisClone.Rendering
             _corners.Stretch();
             _cornersCg = _corners.gameObject.AddComponent<CanvasGroup>();
 
-            var exit = MenuLink.Create(_corners, Loc.T("ВЫХОД"), new Color(0.86f, 0.55f, 0.52f), () => SceneFader.FadeOutThen(GameSession.Quit, 0.5f));
+            var exit = MenuLink.Create(_corners, Loc.T("ВЫХОД"), new Color(0.86f, 0.55f, 0.52f), () => SceneFader.FadeOutThen(GameSession.Quit, 0.5f), LGIcon.Power);
             ((RectTransform)exit.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(56, -50), new Vector2(160, 36));
 
             var set = LGControls.IconButton(_corners, LGIcon.Gear, 56, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.28f), () => Open(Panel.Settings));
@@ -1088,13 +1088,13 @@ namespace StellarisClone.Rendering
     public sealed class MenuLink : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         private Text _text;
-        private Image _line;
+        private Image _line, _icon;
         private Color _color;
         private System.Action _onClick;
         private bool _over;
         private float _h, _hv;
 
-        public static MenuLink Create(Transform parent, string label, Color color, System.Action onClick)
+        public static MenuLink Create(Transform parent, string label, Color color, System.Action onClick, LGIcon? icon = null)
         {
             var rt = LGBuild.Rect(parent, "Link_" + label);
             var hit = rt.gameObject.AddComponent<Image>();
@@ -1103,10 +1103,17 @@ namespace StellarisClone.Rendering
             var l = rt.gameObject.AddComponent<MenuLink>();
             l._color = color;
             l._onClick = onClick;
+            float x = 0f;
+            if (icon.HasValue)
+            {
+                l._icon = LGIcons.Create(rt, icon.Value, 18, color);
+                l._icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(18, 18));
+                x = 28f;
+            }
             l._text = LGBuild.Label(rt, label, 16, color, TextAnchor.MiddleLeft, bold: true);
-            l._text.rectTransform.Stretch();
+            l._text.rectTransform.Stretch(x, 0, 0, 0);
             l._line = LGBuild.Panel(rt, "Line", color);
-            l._line.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(0, 4), new Vector2(0, 2));
+            l._line.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(x, 4), new Vector2(0, 2));
             LG.Ignore(l._line.gameObject);
             return l;
         }
@@ -1134,6 +1141,7 @@ namespace StellarisClone.Rendering
             var c = Color.Lerp(new Color(_color.r, _color.g, _color.b, 0.75f), Color.Lerp(_color, Color.white, 0.4f), h);
             _text.color = c;
             _line.color = c;
+            if (_icon != null) _icon.color = c;
             _line.rectTransform.sizeDelta = new Vector2(_text.preferredWidth * h, 2f);
         }
     }

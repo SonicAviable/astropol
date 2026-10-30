@@ -116,6 +116,7 @@ namespace StellarisClone.Rendering
         private CanvasGroup _textCg;
         private RawImage _artA, _artB;
         private Rect _uvA, _uvB;
+        private Vector2 _panelPos, _textPos;   // места покоя растянутых панелей (их anchoredPosition не ноль)
         private float _k, _kv, _textT = 1f, _artMix = 1f, _t, _openT;
         private bool _shown;
         private System.Action _onClose;
@@ -159,16 +160,19 @@ namespace StellarisClone.Rendering
             {
                 float edge = (n * tw + (n - 1) * gap) * 0.5f + 42f;
                 var prev = LGControls.IconButton(_tabsRow, LGIcon.Back, 44, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), () => Step(-1));
-                ((RectTransform)prev.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-edge, 0), new Vector2(44, 44));
+                ((RectTransform)prev.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-edge, 14), new Vector2(44, 44));
+                KeyCap(_tabsRow, "Q", new Vector2(-edge, -32));
                 TooltipHelper.Attach(prev.gameObject, Loc.T("Предыдущая  <color=#8AA2A8>(Q)</color>"));
                 var next = LGControls.IconButton(_tabsRow, LGIcon.Back, 44, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), () => Step(1), 180f);
-                ((RectTransform)next.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(edge, 0), new Vector2(44, 44));
+                ((RectTransform)next.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(edge, 14), new Vector2(44, 44));
+                KeyCap(_tabsRow, "E", new Vector2(edge, -32));
                 TooltipHelper.Attach(next.gameObject, Loc.T("Следующая  <color=#8AA2A8>(E)</color>"));
             }
 
             // Основная панель
             _panel = LGBuild.Rect(rt, "Panel");
             _panel.Stretch(Side, PanelBottom, Side, PanelTop);
+            _panelPos = _panel.anchoredPosition;
             var bg = LGBuild.Panel(_panel, "Bg", new Color(0.02f, 0.04f, 0.07f, 0.96f), raycast: true);
             bg.rectTransform.Stretch();
             LG.Glass(bg.gameObject, 24f).SetRim(new Color(1f, 0.82f, 0.48f, 0.35f));
@@ -202,6 +206,7 @@ namespace StellarisClone.Rendering
             _textHost.offsetMin = new Vector2(46, 22);
             _textHost.offsetMax = new Vector2(-30, -30);
             _textCg = _textHost.gameObject.AddComponent<CanvasGroup>();
+            _textPos = _textHost.anchoredPosition;
 
             // Подсказка снизу
             var hint = MenuLink.Create(rt, Loc.T("ESC  ·  ЗАКРЫТЬ"), new Color(0.80f, 0.88f, 0.92f), () => _onClose?.Invoke());
@@ -213,6 +218,16 @@ namespace StellarisClone.Rendering
                 var keys = LGBuild.Label(rt, Loc.T("Q / E — листать новости"), 12, UIManager.DS.TextMuted, TextAnchor.LowerRight);
                 keys.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-Side, 36), new Vector2(400, 20));
             }
+        }
+
+        /// <summary>Клавиша-подсказка: светлая «клавиша» с буквой.</summary>
+        private static void KeyCap(RectTransform parent, string key, Vector2 pos)
+        {
+            var cap = LGBuild.Panel(parent, "Key_" + key, new Color(0.80f, 0.86f, 0.90f, 0.92f));
+            cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(26, 26));
+            LG.Chip(cap.gameObject, new Color(1f, 1f, 1f, 0.5f), 5f);
+            var t = LGBuild.Label(cap.transform, key, 14, new Color(0.04f, 0.07f, 0.10f), TextAnchor.MiddleCenter, bold: true);
+            t.rectTransform.Stretch();
         }
 
         private static RawImage Art(RectTransform parent, string name)
@@ -376,7 +391,7 @@ namespace StellarisClone.Rendering
             _cg.blocksRaycasts = _shown;
             float s = Mathf.Lerp(0.97f, 1f, k);
             _panel.localScale = new Vector3(s, s, 1f);
-            _panel.anchoredPosition = new Vector2(0f, -24f * (1f - k));
+            _panel.anchoredPosition = _panelPos + new Vector2(0f, -24f * (1f - k));
             if (!_shown && k < 0.01f) { gameObject.SetActive(false); return; }
 
             if (_shown)
@@ -389,7 +404,7 @@ namespace StellarisClone.Rendering
             _textT = Mathf.Min(1f, _textT + dt / 0.38f);
             float te = LGEase.OutCubic(_textT);
             _textCg.alpha = te;
-            _textHost.anchoredPosition = new Vector2(-26f * (1f - te), 0f);
+            _textHost.anchoredPosition = _textPos + new Vector2(-26f * (1f - te), 0f);
 
             // Обложки: новая проявляется, обе медленно наезжают и дрейфуют
             _artMix = Mathf.Min(1f, _artMix + dt / 0.55f);
@@ -472,7 +487,9 @@ namespace StellarisClone.Rendering
             title.rectTransform.Stretch(18, 38, size.x * 0.4f, 44);
             title.resizeTextForBestFit = true; title.resizeTextMinSize = 14; title.resizeTextMaxSize = 20;
             var head = LGBuild.Label(body.transform, n.Headline, 12, new Color(0.78f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
-            head.rectTransform.Stretch(18, 6, size.x * 0.4f, 76);
+            head.rectTransform.Stretch(18, 8, size.x * 0.4f, 76);
+            head.verticalOverflow = VerticalWrapMode.Truncate;
+            head.lineSpacing = 0.95f;
             var sh = title.gameObject.AddComponent<Shadow>();
             sh.effectColor = new Color(0f, 0f, 0f, 0.8f);
             sh.effectDistance = new Vector2(1f, -1f);
