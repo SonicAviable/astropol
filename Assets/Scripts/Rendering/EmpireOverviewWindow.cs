@@ -216,21 +216,6 @@ namespace StellarisClone.Rendering
             _portraitHost = LG.RoundedMask(_portrait.transform, 18f, 0f);
             TooltipHelper.Attach(_portrait.gameObject, "");
             _portraitTip = _portrait.GetComponent<TooltipTrigger>();
-            var fade = LGBuild.Panel(banner.transform, "Fade", UIManager.DS.BgHeader);
-            fade.sprite = MenuArt.HorizontalFade;
-            fade.rectTransform.anchorMin = new Vector2(0, 0);
-            fade.rectTransform.anchorMax = new Vector2(0, 1);
-            fade.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            fade.rectTransform.offsetMin = new Vector2(260, 0);
-            fade.rectTransform.offsetMax = new Vector2(562, 0);
-            fade.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);   // прозрачно у лица, плотно к правому краю портрета
-            fade.raycastTarget = false;
-            LG.Ignore(fade.gameObject);
-            var floor = LGBuild.Panel(banner.transform, "Floor", UIManager.DS.BgHeader);
-            floor.sprite = MenuArt.VerticalFade;
-            floor.rectTransform.Stretch();
-            floor.raycastTarget = false;
-            LG.Ignore(floor.gameObject);
 
             // Герб
             _emblem = LGBuild.Panel(banner.transform, "Emblem", new Color(0.2f, 0.5f, 0.6f));
@@ -556,10 +541,12 @@ namespace StellarisClone.Rendering
             _subtitle.text = ruler != null
                 ? Loc.F("<color={0}>{1}</color>   ·   правитель {2}   ·   {3}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), ruler.Name, date)
                 : Loc.F("<color={0}>{1}</color>   ·   {2}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), date);
-            _emblemIcon.color = Color.Lerp(fc, Color.white, 0.35f);
+            // Герб — в цвете фракции (как на экране выбора империи), а не в цвете на карте
+            var crestCol = ruler != null ? ruler.Accent : fc;
+            _emblemIcon.color = Color.Lerp(crestCol, Color.white, 0.25f);
             // Герб фракции вместо общего значка правителя — крупно, без подложки
             var crest = FactionEmblems.ForFaction(f);
-            _emblem.color = crest != null ? Color.clear : new Color(fc.r * 0.45f, fc.g * 0.45f, fc.b * 0.45f, 1f);
+            _emblem.color = crest != null ? Color.clear : new Color(crestCol.r * 0.45f, crestCol.g * 0.45f, crestCol.b * 0.45f, 1f);
             if (crest != null && _emblemIcon.sprite != crest)
             {
                 _emblemIcon.sprite = crest;
@@ -609,12 +596,13 @@ namespace StellarisClone.Rendering
                 _portraitKey = key;
                 LGBuild.Clear(_portraitHost);
                 // Без «сбоев сигнала»: в широкой шапке они режут портрет на полосы
-                bool ok = LeaderPortraitView.Create(_portraitHost, leader, 1.25f, Vector4.zero, false, true, false) != null;
+                // Портрет сам растворяется вправо и вниз (шейдер), поэтому край не рвётся на любом фоне шапки
+                bool ok = LeaderPortraitView.Create(_portraitHost, leader, 1.25f, new Vector4(0f, 0.55f, 0.4f, 0f), false, true, false) != null;
                 _portraitIcon.gameObject.SetActive(!ok);
             }
             _portraitTip?.SetText(f != null ? $"<b>{f.Name}</b>\n{f.Description}" : "");
             _lawsTip?.SetText(LawsSummary());
-            _portrait.color = new Color(fc.r * 0.15f, fc.g * 0.15f, fc.b * 0.18f, 1f);
+            _portrait.color = Color.clear;   // подложки нет: портрет растворяется прямо в шапку
             _portraitIcon.color = Color.Lerp(fc, Color.white, 0.3f);
             int power = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
             _leaderPower.text = Loc.F("Мощь флота: {0:N0}", power);
