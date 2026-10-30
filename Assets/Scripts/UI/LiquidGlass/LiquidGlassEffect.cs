@@ -5,16 +5,16 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Превращает обычный Image (без спрайта) в элемент Liquid Glass.
-    /// Цвет Image = оттенок стекла, альфа = общая непрозрачность.
+    /// Оформляет обычный Image (без спрайта) в «тактическом» стиле интерфейса — плоско, без стекла.
+    /// Цвет Image = цвет тела, альфа = непрозрачность (окна всегда почти непрозрачны).
     /// Если на объекте есть Outline — он отключается, а его цвет/толщина становятся
-    /// неоновой обводкой стекла (код, который анимирует Outline, продолжает работать).
+    /// кромкой элемента (код, который анимирует Outline, продолжает работать).
     ///
     /// Роль Auto определяет вид по геометрии и контексту:
-    ///   тонкая полоса → неоновая линия; маленький квадрат → светящаяся точка;
-    ///   кнопка → стеклянная капсула; верхнеуровневая панель → стекло с блюром;
-    ///   вложенный контейнер → полупрозрачная пластина; яркая узкая полоса → заливка-прогресс;
-    ///   полноэкранный фон → размытый скрим.
+    ///   тонкая полоса → линия; маленький квадрат → точка;
+    ///   кнопка → капсула с тонкой кромкой; верхнеуровневая панель → непрозрачное окно с неоновой линией сверху;
+    ///   вложенный контейнер → ровная пластина; яркая узкая полоса → заливка-прогресс;
+    ///   полноэкранный фон → затемнение.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
@@ -37,6 +37,9 @@ namespace StellarisClone.Rendering
         [SerializeField] private bool forceHairline;
 
         private float _hover;
+        private static int s_LabelStagger;
+        private int _labelCheck = (s_LabelStagger++ & 31);   // раз в ~30 кадров кнопка проверяет свои подписи (проверки разнесены по кадрам)
+        private int _sweepQ;   // 0 — блика нет, 1..63 — положение полосы блика (пробегает по кнопке при наведении)
         private float _pulse;
         private Image _image;
         private Selectable _selectable;
@@ -62,6 +65,18 @@ namespace StellarisClone.Rendering
             set { if (role == value) return; role = value; Dirty(); }
         }
 
+        private bool chamfer;
+
+        /// <summary>
+        /// Срезанные углы вместо скругления (кнопки «приборной панели»): слева сверху и справа снизу угол срезан под 45°,
+        /// размер среза — <see cref="Radius"/>; два других угла прямые.
+        /// </summary>
+        public bool Chamfer
+        {
+            get => chamfer;
+            set { if (chamfer == value) return; chamfer = value; Dirty(); }
+        }
+
         /// <summary>Радиус скругления (&lt; 0 — авто).</summary>
         public float Radius
         {
@@ -85,6 +100,13 @@ namespace StellarisClone.Rendering
             Dirty();
         }
 
+        /// <summary>Заданный цвет кромки, если он переопределён (по нему, например, угадывается смысл кнопки).</summary>
+        public bool TryGetRim(out Color c)
+        {
+            c = rimOverride;
+            return useRimOverride;
+        }
+
         public void ClearRim()
         {
             if (!useRimOverride) return;
@@ -98,6 +120,18 @@ namespace StellarisClone.Rendering
             h = Mathf.Clamp01(h);
             if (Mathf.Abs(_hover - h) < 0.002f) return;
             _hover = h;
+            Dirty();
+        }
+
+        /// <summary>
+        /// Световой блик, пробегающий по элементу: t 0..1 — от левого края к правому, ≤0 — блика нет.
+        /// Передаётся в шейдер в старших битах байта режима (режим занимает только 0..3).
+        /// </summary>
+        public void SetSweep(float t)
+        {
+            int q = t <= 0f ? 0 : Mathf.Clamp(Mathf.RoundToInt(t * 62f) + 1, 1, 63);
+            if (q == _sweepQ) return;
+            _sweepQ = q;
             Dirty();
         }
 
@@ -198,6 +232,13 @@ namespace StellarisClone.Rendering
                 return;
             }
 
+            // Подписи простых кнопок — в общем стиле (заглавные, жирные, с разрядкой)
+            if (--_labelCheck <= 0)
+            {
+                _labelCheck = 30;
+                if (ResolveRole() == Role.Button) LGButtonLabel.Apply(this);
+            }
+
             if (_outline != null)
             {
                 if (_outline.enabled) _outline.enabled = false;
@@ -218,13 +259,23 @@ namespace StellarisClone.Rendering
             public Vector4 Radii;     // TL TR BR BL
             public float Fill, Glow, Shadow, Specular, Refraction, Border, GlowRadius, ShadowRadius;
             public Color Rim;
-            public int Flags;         // 1 hairline, 2 border-only, 4 no-specular
+            public int Flags;         // 1 hairline, 2 border-only, 4 no-specular, 8 «приборная» кнопка, 16 срезанные углы
             public bool ForceOpaqueVertex;
         }
 
         private Role ResolveRole()
         {
-            if (role != Role.Auto) return role;
+            if (role != Role.Auto)
+            {
+                // Нажимаемые плашки, чипы и вкладки выглядят как кнопки — один вид для всего, что нажимается
+                if (role == Role.Platter || role == Role.Chip || role == Role.Header)
+                {
+                    CacheComponents();
+                    if ((_selectable is Button || _selectable is Toggle) && graphic != null && graphic.color.a >= 0.05f)
+                        return Role.Button;
+                }
+                return role;
+            }
 
             var rt = rectTransform;
             Rect r = rt.rect;
@@ -288,17 +339,29 @@ namespace StellarisClone.Rendering
 
         private float BaseRadius(Role r, float w, float h)
         {
+            float br = RawRadius(r, w, h);
+            // Линии и точки остаются круглыми; явно заданные круги и капсулы (радиус ≈ половине стороны) — тоже;
+            // всё остальное — сдержанные, «приборные» углы
+            if (r == Role.Line || r == Role.Dot) return br;
+            if (radius >= 0f && br >= Mathf.Min(w, h) * 0.45f) return br;
+            return Mathf.Min(br * LGTone.RadiusScale, LGTone.MaxRadius);
+        }
+
+        private float RawRadius(Role r, float w, float h)
+        {
             float minS = Mathf.Min(w, h);
             float maxS = Mathf.Max(w, h);
             if (radius >= 0f) return Mathf.Min(radius, minS * 0.5f);
             switch (r)
             {
-                case Role.Glass:   return Mathf.Min(minS * 0.5f, maxS >= 500f ? 24f : 18f);
+                // Голо-стиль: строгие окна и кнопки с малым скруглением (как панели приборов), не капсулы
+                // Голо-стиль: размер фаски срезанного угла (шейдер режет 45°: крупно — слева сверху и справа снизу)
+                case Role.Glass:   return Mathf.Min(minS * 0.3f, maxS >= 500f ? 22f : 16f);
                 case Role.Platter:
-                case Role.Header:  return Mathf.Clamp(minS * 0.25f, 6f, 14f);
-                case Role.Button:  return h <= 48f ? h * 0.5f : 14f;
+                case Role.Header:  return Mathf.Clamp(minS * 0.2f, 4f, 10f);
+                case Role.Button:  return Mathf.Min(h * 0.35f, 10f);
                 case Role.Field:
-                case Role.Chip:    return minS * 0.5f;
+                case Role.Chip:    return Mathf.Min(minS * 0.35f, 7f);
                 case Role.Line:
                 case Role.Dot:     return minS * 0.5f;
                 case Role.Fill:    return Mathf.Min(minS * 0.5f, 8f);
@@ -312,7 +375,8 @@ namespace StellarisClone.Rendering
         internal Vector4 ResolveRadii()
         {
             Rect r = rectTransform.rect;
-            float br = BaseRadius(ResolveRole(), r.width, r.height);
+            var role = ResolveRole();
+            float br = role == Role.Button ? ButtonRadius(r) : BaseRadius(role, r.width, r.height);
             return new Vector4(br, br, br, br);
         }
 
@@ -346,9 +410,9 @@ namespace StellarisClone.Rendering
                     s.ShadowRadius = maxS >= 500f ? 30f : 18f;
                     s.Specular = 1f;
                     s.Refraction = 1f;
-                    s.Border = 1.2f;
+                    s.Border = 1.2f;   // тонкая точная кромка; верх и срезанные углы подсвечивает шейдер
                     s.GlowRadius = 12f;
-                    s.Rim = hasOutline ? outlineCol : new Color(1f, 1f, 1f, 0.22f);
+                    s.Rim = hasOutline ? outlineCol : new Color(0.45f, 0.95f, 0.90f, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;
                     break;
 
@@ -357,7 +421,7 @@ namespace StellarisClone.Rendering
                     s.Fill = 0.32f;
                     s.Specular = 0.55f;
                     s.Border = 1f;
-                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : new Color(1f, 1f, 1f, 0.09f);
+                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : new Color(0.45f, 0.95f, 0.90f, 0.12f);
                     s.Glow = hasOutline ? 0.10f * (distBoost - 1f) : 0f;
                     s.GlowRadius = 8f;
                     break;
@@ -453,6 +517,13 @@ namespace StellarisClone.Rendering
                     break;
             }
 
+            if (chamfer)
+            {
+                s.Flags |= 16;
+                float cut = radius >= 0f ? radius : 10f;
+                s.Radii = new Vector4(cut, cut, cut, cut);   // размер среза передаётся через радиус
+            }
+
             if (useRimOverride)
             {
                 s.Rim = rimOverride;
@@ -469,6 +540,12 @@ namespace StellarisClone.Rendering
                 s.Shadow = Mathf.Max(s.Shadow, elevation);
                 s.ShadowRadius = Mathf.Max(s.ShadowRadius, 22f);
             }
+
+            // Общий тон интерфейса: меньше бликов, свечения и преломления, панели плотнее
+            if (s.Mode == 0) { s.Fill = Mathf.Max(s.Fill, LGTone.GlassFill); s.Refraction *= LGTone.Refraction; }
+            else if (s.Mode == 1) s.Fill *= LGTone.PlatterFill;
+            s.Specular *= LGTone.Specular;
+            s.Glow *= LGTone.Glow;
 
             s.Fill *= fillMultiplier;
             s.Glow = Mathf.Clamp01(s.Glow * glowMultiplier + _pulse * 0.6f);
@@ -513,6 +590,51 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>
+        /// Кнопка в стиле «Готово»: строгая капсула (у высоких плиток — скруглённый прямоугольник) без срезанных углов,
+        /// тёмное полупрозрачное тело и тонкая кромка. Цвет кнопки — только лёгкий оттенок тела и кромка,
+        /// никаких цветных заливок, полос и свечения. Цвет берётся из заливки, а если она нейтральная — из цвета кромки.
+        /// </summary>
+        private void TacticalButton(ref Style s, ref Color32 c32)
+        {
+            Color tint = c32;
+            Color.RGBToHSV(tint, out float h, out float sat, out float val);
+            bool neutral = sat < 0.25f || val < 0.16f;
+            float wash = Mathf.Lerp(0.02f, 0.07f, Mathf.Clamp01(val * 1.4f));   // выбранные (более яркие) — чуть заметнее
+            if (neutral && useRimOverride)
+            {
+                Color.RGBToHSV(rimOverride, out float rh, out float rs, out float rv);
+                if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.05f : 0.025f; }
+            }
+            // Кромка — тонкая и сдержанная; выбранная кнопка (яркая кромка) заметнее невыбранной
+            float rimA = neutral ? 0.30f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
+            Color accent = neutral ? new Color(0.62f, 0.80f, 0.86f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
+            // Тело — тёмно-синее стекло; цветная кнопка мягко светится цветом кромки (как «Укрепить» в окне базы)
+            Color body = Color.Lerp(new Color(0.012f, 0.026f, 0.054f), accent, neutral ? 0f : wash);
+            body.a = Mathf.Min(tint.a, 0.94f);   // почти непрозрачное: карта под кнопкой не высветляет тело
+            c32 = body;
+            s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
+            s.Fill = Mathf.Max(s.Fill, 0.94f);
+            s.Glow *= neutral ? 0.15f : 0.55f;
+            s.Shadow *= 0.5f;
+            s.Border = 1f;
+            s.Flags |= 8;
+
+            float rad = chamfer ? (radius >= 0f ? radius : 10f) : ButtonRadius(rectTransform.rect);
+            s.Radii = new Vector4(rad, rad, rad, rad);
+        }
+
+        /// <summary>
+        /// Форма кнопки по единому дизайну: прямоугольник со скруглением 8 px, как у главной кнопки (MenuPrimaryButton).
+        /// Капсулы больше не рисуются; круглыми остаются только явно заданные круги — кнопки-значки (радиус ≈ половине стороны).
+        /// </summary>
+        private float ButtonRadius(Rect r)
+        {
+            float minS = Mathf.Min(r.width, r.height);
+            if (radius >= minS * 0.45f) return minS * 0.5f;
+            return Mathf.Min(8f, minS * 0.5f);
+        }
+
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }
 
         private static Color LightRim(Color tint, float a)
@@ -544,6 +666,7 @@ namespace StellarisClone.Rendering
 
             Style s = Resolve(r, (Color)c32);
             if (s.ForceOpaqueVertex) c32.a = 255;
+            if (ResolveRole() == Role.Button) TacticalButton(ref s, ref c32);
 
             Color rim = s.Rim;
             if (QualitySettings.activeColorSpace == ColorSpace.Linear && !IsGammaVertexCanvas())
@@ -566,7 +689,7 @@ namespace StellarisClone.Rendering
             var uv3 = new Vector4(
                 Pack3(s.Fill, s.Glow, s.Shadow),
                 Pack3(s.Specular, s.Refraction, _hover),
-                PackRaw(s.Mode, Mathf.RoundToInt(s.Border * 32f), s.Flags),
+                PackRaw(s.Mode + 4 * _sweepQ, Mathf.RoundToInt(s.Border * 32f), s.Flags),
                 PackRaw(Mathf.RoundToInt(s.GlowRadius), Mathf.RoundToInt(s.ShadowRadius), Mathf.RoundToInt(intensity * 255f)));
 
             vh.Clear();
@@ -644,6 +767,28 @@ namespace StellarisClone.Rendering
 
     /// <summary>Пометка: не превращать этот Image (и, опционально, его детей) в стекло.</summary>
     [DisallowMultipleComponent]
+    /// <summary>
+    /// Общий «тон» стекла для всей игры. Меньше значения — строже и «приборнее» интерфейс,
+    /// больше — мягче и игрушечнее. Меняется в одном месте.
+    /// </summary>
+    public static class LGTone
+    {
+        /// <summary>Множитель скругления углов (кроме линий и точек).</summary>
+        public const float RadiusScale = 0.3f;
+        /// <summary>Предельный радиус угла, px.</summary>
+        public const float MaxRadius = 4f;
+        /// <summary>Множитель бликов (френель, свет сверху, кромка).</summary>
+        public const float Specular = 0.4f;
+        /// <summary>Множитель неонового свечения вокруг элементов.</summary>
+        public const float Glow = 0.5f;
+        /// <summary>Множитель преломления и хроматической аберрации стекла.</summary>
+        public const float Refraction = 0.35f;
+        /// <summary>Минимальная плотность больших стеклянных окон (меньше просвечивают).</summary>
+        public const float GlassFill = 0.86f;
+        /// <summary>Множитель плотности вложенных пластин.</summary>
+        public const float PlatterFill = 1.5f;
+    }
+
     public sealed class LGIgnore : MonoBehaviour
     {
         public bool includeChildren = true;

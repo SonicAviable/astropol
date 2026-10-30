@@ -9,24 +9,58 @@ namespace StellarisClone.Core
     public class NewGameSettings
     {
         public int GalaxySize = 1;     // 0 малая · 1 средняя · 2 большая
-        public int Difficulty = 1;     // 0 лёгкая · 1 нормальная · 2 сложная
+        /// <summary>Грубая шкала прежних версий: 0 лёгкая · 1 нормальная · 2 сложная (пираты, шпионаж, коалиции). Выводится из Level.</summary>
+        public int Difficulty = 1;
+        /// <summary>Уровень сложности 0…4 (AIDifficulty); −1 — сохранение прежней версии, уровень берётся из Difficulty.</summary>
+        public int Level = -1;
         public int Seed;
         public bool Tutorial = true;
+        public int Shape = 1;          // GalaxyShape: 0 эллипс · 1 спираль-2 · 2 спираль-4 · 3 кольцо
+        public int Rivals = AIEmpireManager.RivalCount;   // империй ИИ (1…5); в старых сохранениях поля нет — лишних уберёт загрузка
+        /// <summary>Вольных миров (нейтральных систем) в партии: 2…6.</summary>
+        public int Neutrals = 4;
 
-        public static readonly string[] SizeNames = { "Малая", "Средняя", "Большая" };
-        public static readonly string[] DifficultyNames = { "Лёгкая", "Нормальная", "Сложная" };
+        public const int MinNeutrals = 2, MaxNeutrals = 6;
 
-        public int StarCount => GalaxySize == 0 ? 50 : GalaxySize == 2 ? 120 : 80;
-        public float Radius => GalaxySize == 0 ? 120f : GalaxySize == 2 ? 178f : 160f;
+        public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
+        public static readonly string[] DifficultyNames = { Loc.T("Новичок"), Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная"), Loc.T("Безжалостная") };
+        public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи"), Loc.T("5 империй") };
+        public static readonly string[] NeutralNames = { Loc.T("2 мира"), Loc.T("3 мира"), Loc.T("4 мира"), Loc.T("5 миров"), Loc.T("6 миров") };
+        public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
+
+        // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя (~17,5·√N).
+        // Под шесть империй и вольные миры: на средней ~55 систем на империю — к 40-й минуте ещё есть куда расти
+        // (на прежних 210 звёздах империи упирались друг в друга уже к середине партии).
+        public int StarCount => GalaxySize == 0 ? 160 : GalaxySize == 2 ? 480 : 330;
+        public float Radius => GalaxySize == 0 ? 222f : GalaxySize == 2 ? 372f : 318f;
         public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
-        public int DominationTarget => GalaxySize == 0 ? 25 : GalaxySize == 2 ? 60 : 40;
+        /// <summary>Доминирование — около 55% систем галактики (160 / 330 / 480 звёзд); порог ещё нужно удерживать год.</summary>
+        public int DominationTarget => GalaxySize == 0 ? 88 : GalaxySize == 2 ? 264 : 182;
+
+        /// <summary>Уровень сложности 0…4: новичок, лёгкая, нормальная, сложная, безжалостная.</summary>
+        public int Tier => Level >= 0 ? Mathf.Clamp(Level, 0, AIDifficulty.Count - 1) : Mathf.Clamp(Difficulty + 1, 0, AIDifficulty.Count - 1);
+
+        /// <summary>Выбрать уровень и согласовать с ним грубую шкалу.</summary>
+        public void SetLevel(int level)
+        {
+            Level = Mathf.Clamp(level, 0, AIDifficulty.Count - 1);
+            Difficulty = Level <= 1 ? 0 : Level == 2 ? 1 : 2;
+        }
+
+        public static string LevelName(int tier) => DifficultyNames[Mathf.Clamp(tier, 0, DifficultyNames.Length - 1)];
 
         /// <summary>Множитель доходов ИИ.</summary>
-        public float AIIncome => Difficulty == 0 ? 0.7f : Difficulty == 2 ? 1.5f : 1f;
+        public float AIIncome => AIDifficulty.IncomeFor(Tier);
         /// <summary>Как быстро ИИ злится на сильного игрока.</summary>
-        public float AIAggression => Difficulty == 0 ? 0.6f : Difficulty == 2 ? 1.5f : 1f;
+        public float AIAggression => AIDifficulty.AggressionFor(Tier);
         /// <summary>Множитель стартовых ресурсов игрока.</summary>
-        public float PlayerStart => Difficulty == 0 ? 1.3f : Difficulty == 2 ? 0.85f : 1f;
+        public float PlayerStart => AIDifficulty.PlayerStartFor(Tier);
+
+        /// <summary>Сколько соперников реально в партии (1…максимум).</summary>
+        public int RivalCount => Mathf.Clamp(Rivals, 1, AIEmpireManager.RivalCount);
+
+        /// <summary>Сколько вольных миров появится (2…6).</summary>
+        public int NeutralCount => Mathf.Clamp(Neutrals, MinNeutrals, MaxNeutrals);
 
         public NewGameSettings Clone() => (NewGameSettings)MemberwiseClone();
 
@@ -127,7 +161,10 @@ namespace StellarisClone.Core
         {
             if (s_reloading) return;
             s_reloading = true;
-            StellarisClone.Rendering.SceneFader.FadeOutThen(DoReload);
+            var kind = Mode == StartMode.LoadGame ? StellarisClone.Rendering.LoadingScreen.Kind.LoadGame
+                     : Mode == StartMode.NewGame ? StellarisClone.Rendering.LoadingScreen.Kind.NewGame
+                     : StellarisClone.Rendering.LoadingScreen.Kind.Menu;
+            StellarisClone.Rendering.LoadingScreen.Begin(kind, DoReload);
         }
 
         private static void DoReload()
@@ -135,17 +172,19 @@ namespace StellarisClone.Core
             Time.timeScale = 1f;
             SceneManager.sceneLoaded += OnSceneReloaded;
 
+            // Асинхронно — экран загрузки показывает реальный прогресс
             var scene = SceneManager.GetActiveScene();
-            if (scene.buildIndex >= 0)
+            AsyncOperation op;
+            if (scene.buildIndex >= 0) op = SceneManager.LoadSceneAsync(scene.buildIndex);
+            else
             {
-                SceneManager.LoadScene(scene.buildIndex);
-                return;
-            }
 #if UNITY_EDITOR
-            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
+                op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(scene.path, new LoadSceneParameters(LoadSceneMode.Single));
 #else
-            SceneManager.LoadScene(0);
+                op = SceneManager.LoadSceneAsync(0);
 #endif
+            }
+            StellarisClone.Rendering.LoadingScreen.TrackSceneLoad(op);
         }
 
         private static void OnSceneReloaded(Scene scene, LoadSceneMode mode)

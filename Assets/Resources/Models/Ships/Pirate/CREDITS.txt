@@ -1,0 +1,2 @@
+Пиратский корабль — «Space ship», автор jkazulyblanco (https://sketchfab.com/jkazulyblanco), лицензия CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/), https://sketchfab.com/3d-models/space-ship-72f5546a4dec4f9da7576ce2ae94b752
+Сконвертирован Tools/ships/export_pirate.py; текстуры уменьшены.

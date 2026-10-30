@@ -8,6 +8,23 @@ namespace StellarisClone.Core
     public enum ModuleSlotType { Weapon, Defense, Utility }
     public enum WeaponDamageType { Energy, Kinetic, Explosive }
 
+    /// <summary>Одно орудие корабля: стреляет независимо, своим типом урона и со своей перезарядкой.</summary>
+    [Serializable]
+    public class WeaponMount
+    {
+        public WeaponDamageType Type;
+        public float Damage;
+        public float FireRate;
+        [NonSerialized] public float Cooldown;
+
+        public WeaponMount(WeaponDamageType type, float damage, float fireRate)
+        {
+            Type = type; Damage = damage; FireRate = fireRate;
+        }
+
+        public float Dps => Damage * FireRate;
+    }
+
     [Serializable]
     public class ShipModule
     {
@@ -28,6 +45,9 @@ namespace StellarisClone.Core
         public float PowerProduce;
         public float PowerDraw;
         public float AlloyCost;
+        /// <summary>Точность: на столько пунктов снижает уклонение цели.</summary>
+        public float Accuracy;
+        public float Dps => Damage * FireRate;
 
         public ShipModule(
             string id, string name, string desc, ModuleSlotType slot,
@@ -97,14 +117,18 @@ namespace StellarisClone.Core
         public float Hull;
         public float Armor;
         public float Shields;
+        /// <summary>Суммарный урон одного залпа всех орудий.</summary>
         public float Damage;
-        public float FireRate;
         public float Evasion;
         public float Speed;
+        public float Accuracy;
+        public float PowerProduce;
+        public float PowerDraw;
         public float PowerBalance;
         public float AlloyCost;
         public float Dps;
         public WeaponDamageType PrimaryWeapon = WeaponDamageType.Energy;
+        public readonly List<WeaponMount> Mounts = new List<WeaponMount>();
 
         public void Recalculate(HullBlueprint hull, IReadOnlyDictionary<string, ShipModule> catalog)
         {
@@ -112,13 +136,12 @@ namespace StellarisClone.Core
             Armor = hull.BaseArmor;
             Shields = hull.BaseShields;
             Damage = 0f;
-            FireRate = 0f;
             Evasion = hull.BaseEvasion;
             Speed = hull.BaseSpeed;
-            PowerBalance = 0f;
+            Accuracy = 0f;
+            PowerProduce = PowerDraw = 0f;
             AlloyCost = hull.BaseAlloyCost;
-            PrimaryWeapon = WeaponDamageType.Energy;
-            float bestDmg = -1f;
+            Mounts.Clear();
 
             void Acc(string mid)
             {
@@ -126,16 +149,16 @@ namespace StellarisClone.Core
                 Hull += m.Hull;
                 Armor += m.Armor;
                 Shields += m.Shields;
-                Damage += m.Damage;
-                FireRate += m.FireRate;
                 Evasion += m.Evasion;
                 Speed += m.SpeedBonus;
-                PowerBalance += m.PowerProduce - m.PowerDraw;
+                Accuracy += m.Accuracy;
+                PowerProduce += m.PowerProduce;
+                PowerDraw += m.PowerDraw;
                 AlloyCost += m.AlloyCost;
-                if (m.SlotType == ModuleSlotType.Weapon && m.Damage > bestDmg)
+                if (m.SlotType == ModuleSlotType.Weapon && m.Damage > 0f)
                 {
-                    bestDmg = m.Damage;
-                    PrimaryWeapon = m.DamageType;
+                    Mounts.Add(new WeaponMount(m.DamageType, m.Damage, m.FireRate));
+                    Damage += m.Damage;
                 }
             }
 
@@ -143,8 +166,32 @@ namespace StellarisClone.Core
             foreach (var id in DefenseModuleIds) Acc(id);
             foreach (var id in UtilityModuleIds) Acc(id);
 
-            if (FireRate < 0.25f && Damage > 0f) FireRate = 0.6f;
-            Dps = Damage * FireRate;
+            Evasion = Mathf.Max(0f, Evasion);
+            PowerBalance = PowerProduce - PowerDraw;
+            Dps = 0f;
+            foreach (var w in Mounts) Dps += w.Dps;
+            PrimaryWeapon = DominantType(Mounts, WeaponDamageType.Energy);
+        }
+
+        public float DpsOf(WeaponDamageType t)
+        {
+            float s = 0f;
+            foreach (var w in Mounts) if (w.Type == t) s += w.Dps;
+            return s;
+        }
+
+        /// <summary>Тип оружия с наибольшим вкладом в урон (для цвета, подсказок и ИИ).</summary>
+        public static WeaponDamageType DominantType(List<WeaponMount> mounts, WeaponDamageType fallback)
+        {
+            float e = 0f, k = 0f, x = 0f;
+            foreach (var w in mounts)
+            {
+                if (w.Type == WeaponDamageType.Energy) e += w.Dps;
+                else if (w.Type == WeaponDamageType.Kinetic) k += w.Dps;
+                else x += w.Dps;
+            }
+            if (e <= 0f && k <= 0f && x <= 0f) return fallback;
+            return e >= k && e >= x ? WeaponDamageType.Energy : k >= x ? WeaponDamageType.Kinetic : WeaponDamageType.Explosive;
         }
 
         public bool IsPowerValid => PowerBalance >= -0.01f;

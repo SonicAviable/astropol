@@ -1,0 +1,27 @@
+Звуки стройки (Construction_*, BuildComplete_*) собраны из записей Freesound с лицензией CC0 1.0
+(общественное достояние, указание авторства не требуется) и переработаны: сдвиг высоты, фильтры, суббас, зал.
+Исходники: freesound.org/s/244983 (ani_music), 406197 (kyles), 433751 (ChrisReierson), 468094 (artinstitute),
+123253 (Skullsmasha), 322021 (Burningmonkey), 396240 (weaveofkev), 703247 (xkeril), 814881 (AudioPapkin).
+
+Звуки карточного боя (Card*, Gun*, Boom*, Impact*, UnitDown, ShellWhistle, OrderCast, Whoosh, GunCock, EngineRev,
+Servo, Radio, ElecZap) и фон Audio/CardBattle/battle_wind сведены скриптом Tools/card_audio/build.py только из
+настоящих записей с лицензией CC0 1.0 (общественное достояние):
+  • BigSoundBank (Joseph Sardin) — bigsoundbank.com: дальние взрывы (1023, 1806), гром (3115), осыпь камней (1022),
+    падающий металл (1771–1778, 0235), гильзы 5,56 и 7,62 мм (1361–1371), выстрелы (2853, 2854, 0397),
+    затворы и заряжание (1984–1991), «вжух» (1795–1802), бензиновое пламя (1340, 1341), горелка (0930),
+    дизель и грузовик (0967, 1145), пневматика и сервоприводы (1491–1493, 2911, 2919, 2929), рация (0312, 0313, 2618),
+    электроразряды и гул трансформатора (0134, 1252, 0064), ветер (0595), короткие взрывы (1807, 1808),
+    стальные ворота (2358–2360), лопата в грунт (1305), влажные шлепки (2593–2596), хруст (1408, 1409);
+  • BigSoundBank — приказы и эффекты (Fx*): гул неона и трансформатора (2118, 0064), электроразряды (0134),
+    стекло и зеркало (0148, 0387, 1121), бензиновое пламя (1340), пар (0227), пузыри (1074), «вжух» (1796, 1798, 0128),
+    короткие взрывы (1807, 1808), гром (3115); пушечные хлопки — из «25 CC0 bang / firework SFX» (ниже);
+  • The Free Firearm Sound Library — opengameart.org/content/the-free-firearm-sound-library (АК-47, AR-15, СКС,
+    Мосин, .300 Blackout, «Карл Густав», ППШ, Mossberg, Nova, Model 12);
+  • «25 CC0 bang / firework SFX» (rubberduck) — opengameart.org/node/92774 (записи пушечных салютов);
+  • Kenney: Casino Audio (карты), Impact Sounds — kenney.nl (CC0).
+Переработка: нарезка, сдвиг высоты, слои (хлопок + раскат + суббас + обломки), зал, мягкое ограничение.
+
+Звуки интерфейса, уведомлений и космоса (UiClick, UiConfirm, UiDenied, WindowOpen, WindowClose, AlertPop,
+NotifySuccess, NotifyWarning, ResearchComplete, OutpostBuilt, BuildQueued, ColonyFounded, FtlJump, DealAccepted,
+SurveyComplete, Anomaly, WarDeclared, WeaponEnergy, HitShield, WeaponMissile, ExplosionSmall, SystemEnter) —
+Epic Stock Media, «Sci-fi Evolution Gift Pack» (royalty-free), обрезаны, сведены в моно и выровнены по громкости.

@@ -4,12 +4,19 @@ using StellarisClone.Core;
 
 namespace StellarisClone.Generation
 {
+    /// <summary>Форма галактики (как при создании партии в Stellaris).</summary>
+    public enum GalaxyShape { Elliptical, Spiral2, Spiral4, Ring }
+
     public class GalaxyGenerator : MonoBehaviour
     {
+        /// <summary>Форма галактики для следующей генерации.</summary>
+        public GalaxyShape Shape = GalaxyShape.Spiral2;
+
         [Header("Настройки формы")]
         [SerializeField] private int starCount = 100;
         [SerializeField] private float galaxyRadius = 120f;
         [SerializeField] private float minStarDistance = 12f;
+        private const float BlackHoleChance = 0.04f;
 
         [Header("Настройки связей (гиперкоридоры)")]
         [SerializeField] private float maxConnectionDistance = 45f;
@@ -35,6 +42,10 @@ namespace StellarisClone.Generation
             Hyperlanes.Clear();
             if (systems == null) return;
             Systems.AddRange(systems);
+            // Радиус — по реальным звёздам: сохранения до расширения карт меньше нынешних настроек размера
+            float r = 0f;
+            foreach (var s in Systems) r = Mathf.Max(r, new Vector2(s.Position.x, s.Position.z).magnitude);
+            if (r > 1f) galaxyRadius = Mathf.Max(40f, r);
             foreach (var s in Systems)
                 foreach (int n in s.ConnectedSystemIds)
                     if (n >= 0 && n < Systems.Count && n != s.Id)
@@ -45,6 +56,7 @@ namespace StellarisClone.Generation
         public void GenerateGalaxy()
         {
             Systems.Clear();
+            SpeciesRegistry.Reset();   // новая партия — виды заново (основатели появятся по фракциям)
             Hyperlanes.Clear();
 
             GenerateStarPositions();
@@ -67,6 +79,7 @@ namespace StellarisClone.Generation
                 }
             }
 
+            Landmarks.Place(Systems);   // узлы силы — после связей: нужны расстояния в прыжках
             Debug.Log($"[GalaxyGenerator] Галактика готова: {Systems.Count} звёзд, {Hyperlanes.Count} гиперкоридоров.");
         }
 
@@ -76,54 +89,191 @@ namespace StellarisClone.Generation
         {
             int attempts = 0;
             int maxAttempts = starCount * 50;
+            var names = new StarNameGenerator();
+            PlanetNames.Reset();
+            // Сетка с шагом minStarDistance: звезда ближе minStarDistance (даже по 3D) лежит в соседней клетке по X/Z,
+            // поэтому достаточно проверить 3×3 клетки — ответ тот же, что у перебора всех звёзд, но в разы быстрее
+            float cell = minStarDistance;
+            var grid = new Dictionary<long, List<int>>();
+            long CellKey(int cx, int cz) => ((long)cx << 32) ^ (uint)cz;
 
             while (Systems.Count < starCount && attempts < maxAttempts)
             {
                 attempts++;
 
-                // Дисковое распределение с концентрацией к центру
-                float angle = Random.Range(0f, Mathf.PI * 2f);
-                float radius = Mathf.Sqrt(Random.Range(0.05f, 1f)) * galaxyRadius;
-                Vector3 pos = new Vector3(Mathf.Cos(angle) * radius, 0, Mathf.Sin(angle) * radius);
+                Vector3 pos = SamplePosition();
 
                 bool tooClose = false;
-                for (int i = 0; i < Systems.Count; i++)
-                {
-                    if (Vector3.Distance(pos, Systems[i].Position) < minStarDistance)
+                int gx = Mathf.FloorToInt(pos.x / cell), gz = Mathf.FloorToInt(pos.z / cell);
+                for (int dx = -1; dx <= 1 && !tooClose; dx++)
+                    for (int dz = -1; dz <= 1 && !tooClose; dz++)
                     {
-                        tooClose = true;
-                        break;
+                        if (!grid.TryGetValue(CellKey(gx + dx, gz + dz), out var near)) continue;
+                        foreach (int i in near)
+                            if (Vector3.Distance(pos, Systems[i].Position) < minStarDistance) { tooClose = true; break; }
                     }
-                }
 
                 if (!tooClose)
                 {
-                    StarSpectralClass spectral = (StarSpectralClass)Random.Range(0, 5);
-                    Systems.Add(new StarSystem(Systems.Count, $"Система-{Systems.Count + 1}", pos, spectral));
+                    // Чёрные дыры редки (~4%); система 0 — столица игрока, у неё всегда звезда
+                    StarSpectralClass spectral = Systems.Count > 0 && Random.value < BlackHoleChance
+                        ? StarSpectralClass.BlackHole
+                        : (StarSpectralClass)Random.Range(0, 5);
+                    long key = CellKey(gx, gz);
+                    if (!grid.TryGetValue(key, out var bucket)) grid[key] = bucket = new List<int>();
+                    bucket.Add(Systems.Count);
+                    Systems.Add(new StarSystem(Systems.Count, names.Next(), pos, spectral));
                 }
             }
         }
 
+        /// <summary>Точка по форме галактики. Центр оставлен пустым — там «ядро», как в Stellaris.</summary>
+        private Vector3 SamplePosition()
+        {
+            float R = galaxyRadius;
+            Vector2 p;
+            switch (Shape)
+            {
+                case GalaxyShape.Elliptical:
+                {
+                    // Плотный центр, разрежённая периферия; эллипс 1 : 0,65
+                    p = new Vector2(Gauss(), Gauss()) * 0.42f;
+                    if (p.magnitude > 1f) p = p.normalized * Random.Range(0.55f, 1f);
+                    if (p.magnitude < 0.12f) p = (p.sqrMagnitude < 1e-6f ? Vector2.right : p.normalized) * Random.Range(0.12f, 0.2f);
+                    p.y *= 0.65f;
+                    break;
+                }
+                case GalaxyShape.Ring:
+                {
+                    float a = Random.Range(0f, Mathf.PI * 2f);
+                    float r = Mathf.Clamp(0.74f + Gauss() * 0.1f, 0.5f, 1f);
+                    p = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                    break;
+                }
+                default:
+                {
+                    int arms = Shape == GalaxyShape.Spiral4 ? 4 : 2;
+                    if (Random.value < 0.12f)
+                    {
+                        // Кольцо звёзд вокруг ядра (балдж)
+                        float a = Random.Range(0f, Mathf.PI * 2f);
+                        p = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Random.Range(0.15f, 0.27f);
+                        break;
+                    }
+                    int arm = Random.Range(0, arms);
+                    float t = Mathf.Pow(Random.value, 0.85f);              // 0 — у ядра, 1 — край рукава
+                    float rr = Mathf.Lerp(0.2f, 1f, t);
+                    float twist = arms == 2 ? 3.3f : 2.4f;                 // закрутка рукава, радиан
+                    float ang = arm * Mathf.PI * 2f / arms + t * twist;
+                    float spread = Mathf.Lerp(0.035f, 0.085f, t) * (arms == 2 ? 1f : 0.8f);
+                    p = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * rr + new Vector2(Gauss(), Gauss()) * spread;
+                    break;
+                }
+            }
+            return new Vector3(p.x * R, 0f, p.y * R);
+        }
+
+        /// <summary>Нормальное распределение (Бокс — Мюллер) на UnityEngine.Random — повторяемо по сиду.</summary>
+        private static float Gauss()
+        {
+            float u1 = Mathf.Max(1e-6f, Random.value), u2 = Random.value;
+            return Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Cos(2f * Mathf.PI * u2);
+        }
+
         // ==================== ГИПЕРКОРИДОРЫ ====================
+
+        private bool CrossesExistingLane(StarSystem a, StarSystem b)
+        {
+            Vector2 p1 = new Vector2(a.Position.x, a.Position.z), p2 = new Vector2(b.Position.x, b.Position.z);
+            foreach (var lane in Hyperlanes)
+            {
+                if (lane.SystemA == a.Id || lane.SystemA == b.Id || lane.SystemB == a.Id || lane.SystemB == b.Id) continue;
+                var c = Systems[lane.SystemA].Position;
+                var d = Systems[lane.SystemB].Position;
+                if (SegmentsIntersect(p1, p2, new Vector2(c.x, c.z), new Vector2(d.x, d.z))) return true;
+            }
+            return false;
+        }
+
+        private bool PassesNearStar(StarSystem a, StarSystem b, float clearance = 4f)
+        {
+            Vector2 p1 = new Vector2(a.Position.x, a.Position.z), p2 = new Vector2(b.Position.x, b.Position.z);
+            Vector2 seg = p2 - p1;
+            float len2 = Mathf.Max(1e-4f, seg.sqrMagnitude);
+            foreach (var s in Systems)
+            {
+                if (s.Id == a.Id || s.Id == b.Id) continue;
+                Vector2 q = new Vector2(s.Position.x, s.Position.z);
+                float t = Mathf.Clamp01(Vector2.Dot(q - p1, seg) / len2);
+                if (t <= 0f || t >= 1f) continue;
+                if ((p1 + seg * t - q).sqrMagnitude < clearance * clearance) return true;
+            }
+            return false;
+        }
+
+        private static bool SegmentsIntersect(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
+        {
+            float Cross(Vector2 o, Vector2 a, Vector2 b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            float d1 = Cross(p3, p4, p1), d2 = Cross(p3, p4, p2), d3 = Cross(p1, p2, p3), d4 = Cross(p1, p2, p4);
+            return ((d1 > 0f && d2 < 0f) || (d1 < 0f && d2 > 0f)) && ((d3 > 0f && d4 < 0f) || (d3 < 0f && d4 > 0f));
+        }
 
         private void GenerateHyperlanes()
         {
-            for (int i = 0; i < Systems.Count; i++)
+            // Радиус связи подстраивается под плотность формы: в узких рукавах звёзды стоят иначе,
+            // чем в эллипсе. Берём 2,3 медианных расстояния до ближайшего соседа.
+            // Тяжёлая часть — расстояния «каждая с каждой» — считается на всех ядрах процессора над копией координат.
+            // Прокладка коридоров зависит от уже проложенных, поэтому идёт как раньше — по очереди, в главном потоке.
+            int n = Systems.Count;
+            var pos = new Vector3[n];
+            for (int i = 0; i < n; i++) pos[i] = Systems[i].Position;
+
+            float connect = maxConnectionDistance;
+            if (n > 2)
+            {
+                var nn = new float[n];
+                Threaded.For(n, i =>
+                {
+                    float best = float.MaxValue;
+                    for (int j = 0; j < n; j++)
+                        if (j != i) best = Mathf.Min(best, Vector3.Distance(pos[i], pos[j]));
+                    nn[i] = best;
+                });
+                System.Array.Sort(nn);
+                connect = Mathf.Max(connect, nn[n / 2] * 2.3f);
+            }
+
+            // Для каждой звезды — соседи ближе connect, от ближнего к дальнему (при равенстве — по номеру)
+            var near = new int[n][];
+            float reach = connect;
+            Threaded.For(n, i =>
+            {
+                var list = new List<(float d, int j)>();
+                for (int j = 0; j < n; j++)
+                {
+                    if (j == i) continue;
+                    float d = Vector3.Distance(pos[i], pos[j]);
+                    if (d <= reach) list.Add((d, j));
+                }
+                list.Sort((a, b) => a.d != b.d ? a.d.CompareTo(b.d) : a.j.CompareTo(b.j));
+                var ids = new int[list.Count];
+                for (int k = 0; k < ids.Length; k++) ids[k] = list[k].j;
+                near[i] = ids;
+            });
+
+            for (int i = 0; i < n; i++)
             {
                 var systemA = Systems[i];
-                var candidates = new List<StarSystem>(Systems);
-                candidates.Remove(systemA);
-                candidates.Sort((a, b) =>
-                    Vector3.Distance(systemA.Position, a.Position)
-                        .CompareTo(Vector3.Distance(systemA.Position, b.Position)));
-
-                foreach (var systemB in candidates)
+                foreach (int jb in near[i])
                 {
-                    float dist = Vector3.Distance(systemA.Position, systemB.Position);
-                    if (dist > maxConnectionDistance) break;
+                    var systemB = Systems[jb];
 
                     if (systemA.ConnectedSystemIds.Count >= maxConnectionsPerStar ||
                         systemB.ConnectedSystemIds.Count >= maxConnectionsPerStar) continue;
+
+                    // Как в Stellaris: коридоры не пересекаются и не проходят «сквозь» чужие звёзды —
+                    // карта читается как сеть маршрутов, а не паутина
+                    if (CrossesExistingLane(systemA, systemB) || PassesNearStar(systemA, systemB)) continue;
 
                     AddHyperlane(systemA, systemB);
                 }
@@ -146,8 +296,10 @@ namespace StellarisClone.Generation
                 var components = FindConnectedComponents();
                 if (components.Count <= 1) return;
 
-                // Ищем пару звёзд из разных компонент с минимальным расстоянием
+                // Ищем пару звёзд из разных компонент с минимальным расстоянием;
+                // мост, не пересекающий существующие коридоры, всегда предпочтительнее
                 float bestDist = float.MaxValue;
+                bool bestCrosses = true;
                 int bestA = -1, bestB = -1;
 
                 for (int c = 1; c < components.Count; c++)
@@ -157,9 +309,12 @@ namespace StellarisClone.Generation
                         foreach (int idB in components[c])
                         {
                             float d = Vector3.Distance(Systems[idA].Position, Systems[idB].Position);
-                            if (d < bestDist)
+                            if (!bestCrosses && d >= bestDist) continue;
+                            bool crosses = CrossesExistingLane(Systems[idA], Systems[idB]);
+                            if ((!crosses && bestCrosses) || (crosses == bestCrosses && d < bestDist))
                             {
                                 bestDist = d;
+                                bestCrosses = crosses;
                                 bestA = idA;
                                 bestB = idB;
                             }

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Шапка группы VK 1920×768 в стиле действующей: золотой логотип по центру, арты игры по краям
+     в косых светящихся панелях; добавлена строка «Игровая студия SmartBiz». На телефоне ВК показывает всю ширину,
+     сверху — строка состояния и кнопки, снизу слева — аватар: текст держим в середине по высоте. -->
+<style>
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { background: #03070F; }
+#cover { position: relative; width: 1920px; height: 768px; overflow: hidden; background: #03070F; font-family: Play; color: #fff; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center 40%/cover; filter: brightness(0.5); }
+.vign { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at center, rgba(3,7,15,0.1), rgba(3,7,15,0.7)); }
+.panels { position: absolute; inset: 0; }
+.pn { position: absolute; top: -10px; bottom: -10px; width: 300px; transform: skewX(-10deg); overflow: hidden;
+  border-left: 3px solid rgba(190,235,255,0.85); border-right: 3px solid rgba(190,235,255,0.85);
+  box-shadow: 0 0 22px rgba(140,210,255,0.55), inset 0 0 40px rgba(0,0,0,0.5); }
+.pn div { position: absolute; inset: 0 -140px; background-size: cover; transform: skewX(10deg); filter: brightness(0.85) saturate(1.1); }
+.mid { position: absolute; left: 470px; right: 470px; top: 0; bottom: 0; background: radial-gradient(ellipse at center, rgba(3,7,15,0.25), rgba(3,7,15,0) 70%); }
+.center { position: absolute; left: 0; right: 0; top: 150px; text-align: center; }
+.logo { font-family: Russo; font-size: 124px; letter-spacing: 5px; line-height: 1;
+  background: linear-gradient(180deg, #FFE9A8 0%, #F2C766 45%, #C48A2E 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.5)) drop-shadow(0 0 24px rgba(242,199,102,0.3)); }
+.sub { font-family: Russo; font-size: 58px; letter-spacing: 8px; margin-top: 26px; color: #FFFFFF; text-shadow: 0 3px 0 rgba(0,0,0,0.6); }
+.line { width: 150px; height: 4px; margin: 22px auto; background: #F2C766; border-radius: 2px; box-shadow: 0 0 12px rgba(242,199,102,0.6); }
+.avail { font-family: Russo; font-size: 36px; letter-spacing: 7px; color: #F2C766; }
+.studio { display: inline-flex; align-items: center; gap: 18px; margin-top: 22px; font-family: Russo; font-size: 36px; letter-spacing: 7px; color: #DCEFF2; }
+.studio b { font-weight: normal; color: #8FE3DA; text-shadow: 0 0 14px rgba(102,219,209,0.5); }
+.studio svg { width: 66px; height: 44px; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="vign"></div>
+  <!-- Арты игры в косых панелях по краям: слева флот у красной звезды и колония, справа галактика и мостик -->
+  <div class="panels">
+    <div class="pn" style="left:-215px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt_4.jpg);background-position:30% 50%"></div></div>
+    <div class="pn" style="left:75px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt_3.jpg);background-position:60% 50%"></div></div>
+    <div class="pn" style="left:1545px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt.jpg);background-position:45% 50%"></div></div>
+    <div class="pn" style="left:1835px"><div style="background-image:url(../../Assets/Resources/UI/LoadingArt_2.jpg);background-position:35% 50%"></div></div>
+  </div>
+  <div class="mid"></div>
+  <div class="center">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="sub">КОСМИЧЕСКАЯ СТРАТЕГИЯ</div>
+    <div class="line"></div>
+    <div class="avail">ДОСТУПНО В VK PLAY</div>
+    <div class="studio">
+      <svg viewBox="0 0 150 100"><defs><clipPath id="fa"><polygon points="0,0 150,0 0,100"/></clipPath><clipPath id="fb"><polygon points="150,0 150,100 0,100"/></clipPath></defs>
+        <g clip-path="url(#fa)"><rect width="150" height="33.3" fill="#fff"/><rect y="33.3" width="150" height="33.4" fill="#0039A6"/><rect y="66.7" width="150" height="33.3" fill="#D52B1E"/></g>
+        <g clip-path="url(#fb)"><rect width="150" height="100" fill="#00AFCA"/><circle cx="104" cy="58" r="13" fill="#FEC50C"/><path d="M82 82 q22 -9 44 0 q-22 4 -44 0z" fill="#FEC50C"/></g>
+        <line x1="150" y1="0" x2="0" y2="100" stroke="#F2C766" stroke-width="4"/><rect x="2" y="2" width="146" height="96" fill="none" stroke="#F2C766" stroke-width="4"/></svg>
+      ИГРОВАЯ СТУДИЯ <b>SMARTBIZ</b>
+    </div>
+  </div>
+</div></body></html>

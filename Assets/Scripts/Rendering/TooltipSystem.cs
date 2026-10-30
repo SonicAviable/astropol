@@ -133,15 +133,44 @@ namespace StellarisClone.Rendering
             Instance.RequestHide();
         }
 
+        /// <summary>
+        /// Спрятать подсказку даже закреплённую: элемент под ней исчез (например, алерт скрыт правым кликом —
+        /// тот же ПКМ при нажатии успел закрепить его подсказку, а скрытие приходит при отпускании).
+        /// </summary>
+        public static void ForceHide()
+        {
+            if (Instance == null) return;
+            Instance._isLocked = false;
+            Instance.RequestHide();
+        }
+
+        /// <summary>
+        /// Спрятать подсказку, только если это та самая, что показывал вызывающий (text). Нужно подсказкам
+        /// объектов карты: курсор ушёл со звезды на значок интерфейса — значок уже попросил свою подсказку,
+        /// и звезда не должна её погасить.
+        /// </summary>
+        public static void HideIf(string text)
+        {
+            if (Instance == null || string.IsNullOrEmpty(text)) return;
+            Instance.RequestHideIf(text);
+        }
+
         private void RequestShow(string text)
         {
             if (_root == null) BuildTooltipUI();
             if (_root == null) return;
             if (_isLocked) return;
+            if (_suppressed) return;
 
             _pendingText = text;
             _hoverTimer = 0f;
         }
+
+        // После клика по карте подсказка не всплывает, пока мышь не сдвинется:
+        // ПКМ по системе — это приказ флоту, а не просьба показать справку.
+        private bool _suppressed;
+        private Vector2 _suppressPos;
+        private const float SuppressMovePx = 14f;
 
         private void RequestHide()
         {
@@ -151,15 +180,107 @@ namespace StellarisClone.Rendering
             StartClosingAnimation();
         }
 
+        private void RequestHideIf(string text)
+        {
+            if (_isLocked) return;
+            if (_pendingText == text) { RequestHide(); return; }
+            // На экране ещё наша подсказка, а своей очереди ждёт чужая — гасим нашу, чужая откроется следом
+            if (_text != null && _shownRaw == text && _targetAlpha > 0.1f) StartClosingAnimation();
+        }
+
+        // ---------- значки в тексте: [[Minerals]] или [[Energy:#F2C747]] → настоящий значок интерфейса ----------
+        private const string IconGap = "\u2002\u2002\u2002";   // место под значок: три полукруглые шпации
+        private static readonly System.Text.RegularExpressions.Regex IconToken =
+            new System.Text.RegularExpressions.Regex(@"\[\[(\w+)(?::(#[0-9A-Fa-f]{6}))?\]\]");
+        private static readonly System.Text.RegularExpressions.Regex RichTag =
+            new System.Text.RegularExpressions.Regex("<[^>]+>");
+        private readonly System.Collections.Generic.List<(int full, int visible, LGIcon icon, Color c)> _iconMarks =
+            new System.Collections.Generic.List<(int, int, LGIcon, Color)>();
+        /// <summary>Текст подсказки как его передали (с метками значков) — по нему узнаём «свою» подсказку.</summary>
+        private string _shownRaw;
+        private readonly System.Collections.Generic.List<Image> _iconPool = new System.Collections.Generic.List<Image>();
+
+        /// <summary>Заменить метки значков местом под них и запомнить, где они стоят (с тегами и без).</summary>
+        private string ParseIcons(string text)
+        {
+            _iconMarks.Clear();
+            if (text.IndexOf("[[", System.StringComparison.Ordinal) < 0) return text;
+            var sb = new System.Text.StringBuilder();
+            int last = 0;
+            foreach (System.Text.RegularExpressions.Match m in IconToken.Matches(text))
+            {
+                sb.Append(text, last, m.Index - last);
+                last = m.Index + m.Length;
+                if (!System.Enum.TryParse(m.Groups[1].Value, out LGIcon icon)) continue;
+                Color c = Color.white;
+                if (m.Groups[2].Success) ColorUtility.TryParseHtmlString(m.Groups[2].Value, out c);
+                int full = sb.Length;
+                int visible = RichTag.Replace(sb.ToString(), "").Length;
+                _iconMarks.Add((full, visible, icon, c));
+                sb.Append(IconGap);
+            }
+            sb.Append(text, last, text.Length - last);
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Поставить значки на места меток. Позиции символов — из генератора текста под итоговый размер; в разных
+        /// версиях Unity он считает символы с тегами разметки или без, поэтому берётся тот индекс, что подходит по длине.
+        /// </summary>
+        private void PlaceIcons(Vector2 textSize)
+        {
+            int used = 0;
+            if (_iconMarks.Count > 0)
+            {
+                var gen = new TextGenerator();
+                gen.Populate(_text.text, _text.GetGenerationSettings(textSize));
+                float ppu = _text.pixelsPerUnit > 0f ? _text.pixelsPerUnit : 1f;
+                var chars = gen.characters;
+                var lines = gen.lines;
+                int visibleLen = RichTag.Replace(_text.text, "").Length;
+                bool byVisible = gen.characterCount <= visibleLen + 1;
+                float size = _text.fontSize * 1.15f;
+                foreach (var mk in _iconMarks)
+                {
+                    int idx = byVisible ? mk.visible : mk.full;
+                    if (idx < 0 || idx >= chars.Count) continue;
+                    var ci = chars[idx];
+                    float lineH = _text.fontSize * 1.2f;
+                    for (int l = lines.Count - 1; l >= 0; l--)
+                        if (lines[l].startCharIdx <= idx) { lineH = lines[l].height; break; }
+                    if (used >= _iconPool.Count)
+                    {
+                        var go = new GameObject("InlineIcon", typeof(RectTransform));
+                        go.transform.SetParent(_text.transform, false);
+                        var im = go.AddComponent<Image>();
+                        im.raycastTarget = false;
+                        im.preserveAspect = true;
+                        _iconPool.Add(im);
+                    }
+                    var img = _iconPool[used++];
+                    img.sprite = LGIcons.Get(mk.icon);
+                    img.color = mk.c;
+                    var rt = img.rectTransform;
+                    rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.sizeDelta = new Vector2(size, size);
+                    rt.anchoredPosition = new Vector2(ci.cursorPos.x / ppu + size * 0.5f + 1f, (ci.cursorPos.y - lineH * 0.5f) / ppu);
+                    img.gameObject.SetActive(true);
+                }
+            }
+            for (int i = used; i < _iconPool.Count; i++) _iconPool[i].gameObject.SetActive(false);
+        }
+
         private void TriggerOpen(string text, bool lockInPlace = false)
         {
-            _text.text = text;
+            _shownRaw = text;
+            _text.text = ParseIcons(text);
             _root.gameObject.SetActive(true);
 
             float preferredW = _text.preferredWidth + Pad * 2f + 16f;
             float w = Mathf.Clamp(preferredW, 240f, 400f);
             float h = _text.preferredHeight + Pad * 2f + 12f;
             _root.sizeDelta = new Vector2(w, h);
+            PlaceIcons(new Vector2(w - Pad * 2f, h - Pad * 2f - 4f));
 
             UpdatePosition();
 
@@ -203,10 +324,25 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            if (Input.GetMouseButtonDown(1) && !string.IsNullOrEmpty(_pendingText))
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool click = Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
+
+            // Закрепление ПКМ — только для подсказок интерфейса (на карте ПКМ отдаёт приказ)
+            if (Input.GetMouseButtonDown(1) && overUi && !string.IsNullOrEmpty(_pendingText))
             {
                 TriggerOpen(_pendingText, true);
             }
+            else if (click && !overUi && !_isLocked)
+            {
+                _suppressed = true;
+                _suppressPos = Input.mousePosition;
+                _pendingText = "";
+                _hoverTimer = 0f;
+                StartClosingAnimation();
+            }
+
+            if (_suppressed && Vector2.Distance(_suppressPos, Input.mousePosition) > SuppressMovePx)
+                _suppressed = false;
 
             if (_isLocked && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Escape)))
             {
@@ -282,8 +418,11 @@ namespace StellarisClone.Rendering
     public class WorldTooltipTrigger : MonoBehaviour
     {
         [TextArea(2, 6)] public string text;
+        /// <summary>Живой текст (пересчитывается при каждом наведении) — вместо статичного text.</summary>
+        public System.Func<string> Dynamic;
         private SystemNameplate _nameplate;
         private bool _hovered;
+        private string _shown;
 
         public void SetNameplate(SystemNameplate plate) => _nameplate = plate;
         public void SetText(string t) => text = t;
@@ -295,7 +434,8 @@ namespace StellarisClone.Rendering
             var es = EventSystem.current;
             if (es != null && es.IsPointerOverGameObject())
             {
-                if (_hovered) { _hovered = false; TooltipSystem.Hide(); }
+                // Курсор ушёл на интерфейс (например, на значок агента у звезды) — гасим только свою подсказку
+                if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
                 return;
             }
 
@@ -306,27 +446,30 @@ namespace StellarisClone.Rendering
                 var trigger = hit.collider.GetComponentInParent<WorldTooltipTrigger>();
                 if (trigger == this) hitThis = true;
             }
+            // Над планетой мини-системы своя карточка — подсказка звезды не нужна
+            if (hitThis && GalaxyView.HoveredMiniPlanet != null) hitThis = false;
 
             if (hitThis)
             {
-                string currentText = _nameplate != null ? _nameplate.GetTooltipContent() : text;
+                string currentText = _nameplate != null ? _nameplate.GetTooltipContent() : Dynamic != null ? Dynamic() : text;
 
                 if (!_hovered)
                 {
                     _hovered = true;
+                    _shown = currentText;
                     TooltipSystem.Show(currentText);
                 }
             }
             else if (_hovered)
             {
                 _hovered = false;
-                TooltipSystem.Hide();
+                TooltipSystem.HideIf(_shown);
             }
         }
 
         private void OnDisable()
         {
-            if (_hovered) { _hovered = false; TooltipSystem.Hide(); }
+            if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
         }
     }
 

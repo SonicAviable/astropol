@@ -1,0 +1,36 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1400px; height: 860px; background: radial-gradient(ellipse at 30% 30%, #2A1A12, #03070F 70%); font-family: Play; color: #EAF6FA; display:flex; gap:60px; padding:50px 70px; }
+.panel { width: 600px; background: linear-gradient(180deg,#0B1726,#060C16); border:1px solid rgba(111,230,218,0.5); border-radius: 14px; padding: 26px 30px; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+.t { text-align:center; font-weight:700; font-size:26px; letter-spacing:2px; margin-bottom: 20px; }
+.g { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.b { height: 50px; border-radius: 8px; display:grid; place-items:center; font-weight:700; font-size:14px; letter-spacing:3px; position:relative; overflow:hidden; }
+.w { grid-column: span 2; }
+.p { background:#80F0E1; color:#03141A; box-shadow:0 0 28px rgba(110,240,225,0.45); height:58px; font-size:17px; }
+.s { background:#182B4C; color:#C6DBFF; box-shadow:0 0 12px rgba(70,110,200,0.28); }
+.q { background:#141D2D; color:#C7DBE5; }
+.r { background:#4C211D; color:#FFCBC6; box-shadow:0 0 12px rgba(200,80,60,0.25); }
+.gr { background:#1D4C2A; color:#C6FFD6; box-shadow:0 0 12px rgba(60,200,110,0.22); }
+.sep { grid-column: span 2; text-align:center; color:#8DA6AE; font-size:12px; letter-spacing:2px; margin:6px 0; }
+.leg div { display:flex; align-items:center; gap:18px; margin-bottom:22px; font-size:16px; }
+.leg .b { width:220px; display:grid; place-items:center; }
+</style></head><body>
+<div class="panel"><div class="t">ПАУЗА</div><div class="g">
+<div class="b p w">ПРОДОЛЖИТЬ</div>
+<div class="b gr">СОХРАНИТЬ</div><div class="b s">ЗАГРУЗИТЬ</div>
+<div class="b q">НАСТРОЙКИ</div><div class="b q">УПРАВЛЕНИЕ</div>
+<div class="b s">ЦЕЛИ И ПОБЕДА</div><div class="b s">ДОСТИЖЕНИЯ 4/31</div>
+<div class="b s w">ИТОГИ ПАРТИИ</div>
+<div class="sep">ВЫХОД</div>
+<div class="b s">НАЧАТЬ ЗАНОВО</div><div class="b s">В ГЛАВНОЕ МЕНЮ</div>
+<div class="b r w">ВЫЙТИ ИЗ ИГРЫ</div></div></div>
+<div class="leg" style="padding-top:30px"><div style="font-size:24px;font-weight:700;letter-spacing:2px;margin-bottom:30px">ОДНА ГАММА</div>
+<div><div class="b p">ГЛАВНАЯ</div>одно главное действие экрана</div>
+<div><div class="b s">ОБЫЧНАЯ</div>тёмно-синяя, светлая подпись</div>
+<div><div class="b gr">УСПЕХ</div>принять, сохранить, исследовать</div>
+<div><div class="b r">ОПАСНАЯ</div>выйти, удалить, отменить</div>
+<div><div class="b q">НЕЙТРАЛЬНАЯ</div>назад, неактивная вкладка</div>
+<div style="color:#8DA6AE;font-size:14px">При наведении любая кнопка светлеет к главной</div></div>
+</body></html>

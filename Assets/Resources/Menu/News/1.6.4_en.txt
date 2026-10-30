@@ -1,0 +1,24 @@
+@order 10
+@tag UPDATE
+@title Update 1.6.4
+@headline Card assaults on colonies
+@cover Menu/News/cover_1.6.4
+@art 0.73,0.5,0.45
+@thumb 0.73,0.42,0.42
+@tile UI/Cards/U12 | 0.5,0.35,0.9 | Walker
+@tile UI/Cards/O2 | 0.5,0.35,0.9 | Orbital strike
+@tile UI/Cards/A3 | 0.5,0.35,0.9 | Peacekeepers
+@tile UI/Cards/table_continental | 0.5,0.5,0.7 | Battlefield
+Real-time ground battles are gone — colonies are now taken with card assaults. The army is built on a separate military budget, and the whole interface moved to dark navy tones.
+# CARD ASSAULTS
+- Besiege a system, suppress its starbase, and the system panel shows an "ASSAULT" button.
+- The battle is fought over three planet sectors for 8 turns: hold two sectors or break into the HQ.
+- 49 cards: infantry, vehicles, orders, structures and traps, plus 4 unique cards per faction.
+- Surviving cards become veterans, wounded ones heal for 30 days. There is an "AUTO BATTLE" button.
+# ARSENAL AND MILITARY BUDGET
+- The Arsenal (J) is your empire's army. Set its makeup or switch on "Auto".
+- The army is funded from a share of monthly income and no longer drains stockpiles needed for building and fleets.
+- The assault forecast shows the win chance over 40 auto battles.
+# FORTIFICATIONS
+- Fortress level is shown right on the map; starbases have their own window.
+- Each fortification level gives the defence a turret and an extra card slot.
