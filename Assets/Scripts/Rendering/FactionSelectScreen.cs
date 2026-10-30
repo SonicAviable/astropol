@@ -443,13 +443,14 @@ namespace StellarisClone.Rendering
                 SFXManager.Play(Sfx.UiTab);
                 Select((_index + UnityEngine.Random.Range(1, Mathf.Max(2, n))) % n);
             });
-            Btn(rt, "Next", LGIcon.Play, Loc.T("ДАЛЬШЕ"), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-64, 40), 214f, () =>
+            var next = MenuPrimaryButton.Create(rt, Loc.T("ДАЛЬШЕ  ›"), 17, () =>
             {
                 SFXManager.Play(Sfx.UiConfirm);
                 // Второй шаг — оформление империи: название, правитель, цвет, герб (бонусы остаются от фракции)
                 if (_customize == null) _customize = EmpireCustomizePanel.Create(rt);
                 _customize.Open(FactionRegistry.AvailableFactions[_index], f => _onChoose?.Invoke(f), null);
             });
+            ((RectTransform)next.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-64, 40), new Vector2(214, 52));
         }
 
         private static void Btn(RectTransform rt, string name, LGIcon icon, string label, Vector2 anchor, Vector2 pivot, Vector2 pos, float w, Action act)

@@ -68,12 +68,10 @@ namespace StellarisClone.Cards
             }
 
             bool done = false;
-            var ok = LGBuild.Button(root, "Done", UIManager.DS.BtnPrimary, new Color(Cyan.r, Cyan.g, Cyan.b, 0.85f), () => done = true, null, Loc.T("ГОТОВО"), 18, 16f);
-            ok.GetComponent<Image>().rectTransform.At(Mid, Mid, new Vector2(0, -270), new Vector2(280, 62));
-            var okl = ok.GetComponentInChildren<Text>();
-            if (okl != null) okl.Track(3f);
-            UiSound.Mark(ok, UiPress.Confirm);
-            var okRt = ok.GetComponent<RectTransform>();
+            var ok = MenuPrimaryButton.Create(root, Loc.T("ГОТОВО"), 20, () => done = true);
+            var okRt = (RectTransform)ok.transform;
+            okRt.At(Mid, Mid, new Vector2(0, -270), new Vector2(280, 62));
+            ok.Label.Track(3f);
             okRt.localScale = Vector3.zero;
 
             // Появление: затемнение, заголовок, карты одна за другой снизу

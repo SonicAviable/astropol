@@ -204,8 +204,11 @@ namespace StellarisClone.Cards
             TooltipHelper.Attach(_forecast.gameObject, Loc.F("<b>Прогноз штурма</b>\nДоля побед в {0} автобоях с этим десантом против обороны, известной разведке: карты резерва врага, ополчение, щит и турели укреплений. В бою вы решаете сами — исход может быть и лучше, и хуже", ForecastRuns));
             _warn = LGBuild.Label(foot, "", 13, new Color(1f, 0.55f, 0.45f), TextAnchor.MiddleLeft, bold: true);
             _warn.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(640, 0), new Vector2(520, 30));
-            FootButton(foot, Loc.T("В БОЙ"), LGIcon.Target, new Color(0.55f, 0.16f, 0.12f, 0.95f), false, 0f, 210f, () => Launch(false),
-                Loc.T("<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#8AA2A8>(Enter)</color>"));
+            // Главное действие окна — яркая кнопка, как во всех меню
+            var fight = MenuPrimaryButton.Create(foot, Loc.T("В БОЙ  ›"), 17, () => Launch(false), MenuPrimaryButton.Red);
+            ((RectTransform)fight.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(210, 52));
+            fight.Label.Track(2f);
+            TooltipHelper.Attach(fight.Label.transform.parent.gameObject, Loc.T("<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#8AA2A8>(Enter)</color>"));
             FootButton(foot, Loc.T("АВТОБОЙ"), LGIcon.Fast, UIManager.DS.BtnNeutral, false, 220f, 160f, () => Launch(true),
                 Loc.T("Тот же десант, но без экрана боя: исход рассчитают правила, решения примет ИИ"));
             FootButton(foot, Loc.T("ОТМЕНА"), null, UIManager.DS.BtnNeutral, false, 390f, 130f, Close, Loc.T("Не штурмовать  <color=#8AA2A8>(Esc)</color>"));

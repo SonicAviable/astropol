@@ -45,7 +45,7 @@ namespace StellarisClone.Rendering
         private Text _endTitle, _endBody, _endStats;
         private Image _endIcon;
         private LiquidGlassEffect _endFx;
-        private Button _endContinue;
+        private MenuPrimaryButton _endContinue;
 
         private RectTransform _domBar, _sciBar, _survBar;
         private Text _domVal, _sciVal, _survVal;
@@ -292,7 +292,9 @@ namespace StellarisClone.Rendering
             }
 
             float y = 80f;
-            Wide(ref y, Loc.T("ПРОДОЛЖИТЬ"), UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, () => ClosePause(), 54f, 15);
+            var cont = MenuPrimaryButton.Create(_pageHost, Loc.T("ПРОДОЛЖИТЬ"), 17, () => ClosePause());
+            ((RectTransform)cont.transform).TopBand(y, 54f);
+            y += 62f;
             y += 8f;
 
             // Игра: две колонки
@@ -583,12 +585,12 @@ namespace StellarisClone.Rendering
             row.offsetMin = new Vector2(40, 32);
             row.offsetMax = new Vector2(-40, 82);
 
-            _endContinue = LGBuild.Button(row, "Continue", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, () =>
+            _endContinue = MenuPrimaryButton.Create(row, Loc.T("ПРОДОЛЖИТЬ"), 13, () =>
             {
                 LG.Hide(_end);
                 UIManager.Instance?.HideModalDimPublic();
                 MapModeController.ShowGlobal();
-            }, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), 12);
+            });
             ((RectTransform)_endContinue.transform).Column(0f, 0.25f, 0, 5);
             // Итоги партии: окно с графиками поверх; после закрытия экран итогов возвращается
             var summary = LGBuild.Button(row, "Summary", UIManager.DS.BtnNeutral, UIManager.DS.NeonCyan, () =>

@@ -32,7 +32,7 @@ namespace StellarisClone.Rendering
         private RawImage _scanlines;
         private RectTransform _portraitHost;
         private LeaderPortraitView _portrait;
-        private Button _startBtn;
+        private MenuPrimaryButton _startBtn;
         private readonly List<Image> _bars = new List<Image>();
         private readonly List<(RectTransform rt, CanvasGroup g)> _chips = new List<(RectTransform, CanvasGroup)>();
         private readonly List<Mote> _motes = new List<Mote>();
@@ -231,7 +231,7 @@ namespace StellarisClone.Rendering
                                    12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
             ot.rectTransform.Stretch(24, 0, 0, 0);
 
-            _startBtn = LGBuild.Button(right, "StartGameBtn", UIManager.DS.BtnSuccess, UIManager.DS.Green, Confirm, LGIcon.Play, Loc.T("ВСТУПИТЬ В ДОЛЖНОСТЬ"), 13);
+            _startBtn = MenuPrimaryButton.Create(right, Loc.T("ВСТУПИТЬ В ДОЛЖНОСТЬ  ›"), 15, Confirm);
             var brt = (RectTransform)_startBtn.transform;
             brt.At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(300, 46));
             _buttonGroup = _startBtn.gameObject.AddComponent<CanvasGroup>();

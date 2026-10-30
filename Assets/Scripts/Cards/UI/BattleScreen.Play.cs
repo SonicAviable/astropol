@@ -1403,11 +1403,9 @@ namespace StellarisClone.Cards
             }
 
             // Кнопка
-            var okc = win ? UIManager.DS.Green : Cyan;
-            var btn = LGBuild.Button(_overlay, "Continue", win ? UIManager.DS.BtnSuccess : UIManager.DS.BtnPrimary, new Color(okc.r, okc.g, okc.b, 0.85f), Close, null, Loc.T("ПРОДОЛЖИТЬ"), 18, 16f);
-            btn.GetComponent<Image>().rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -280), new Vector2(300, 62));
-            var bl = btn.GetComponentInChildren<Text>();
-            if (bl != null) bl.Track(2f);
+            var btn = MenuPrimaryButton.Create(_overlay, Loc.T("ПРОДОЛЖИТЬ"), 20, Close, win ? MenuPrimaryButton.Green : MenuPrimaryButton.Cyan);
+            ((RectTransform)btn.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -280), new Vector2(300, 62));
+            btn.Label.Track(2f);
             LG.Motion(btn.gameObject, LGAppear.Kind.Pop);
             _busy = false;
 

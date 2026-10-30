@@ -374,13 +374,13 @@ namespace StellarisClone.Rendering
             }
 
             // «Кнопка» — часть карточки (кликается вся карточка); светится и по ней пробегает блик
-            var go = LGBuild.Panel(c.Content, "Go", Color.Lerp(accent, Color.white, 0.2f));
-            go.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 36), new Vector2(300, 56));
-            LG.Fill(go.gameObject);
-            var gt = LGBuild.Label(go.transform, Loc.T("В ИГРУ"), 19, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
-            gt.rectTransform.Stretch();
-            InspSweep.Add(go.gameObject, 4.5f, 0.35f);
-            c.Glow = go.rectTransform;
+            var go = MenuPrimaryButton.Create(c.Content, Loc.T("В ИГРУ  ›"), 20, () =>
+            {
+                if (c.Disabled) return;
+                var l = SaveSystem.Latest();
+                if (l != null) SaveSystem.LoadSlot(l.Slot);
+            }, Color.Lerp(accent, Color.white, 0.2f));
+            ((RectTransform)go.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 36), new Vector2(300, 58));
             return c;
         }
 
@@ -395,13 +395,8 @@ namespace StellarisClone.Rendering
             c.Title = t;
             var cap = LGBuild.Label(c.Content, Loc.T("Создайте галактику, выберите цивилизацию\nи поведите её к звёздам"), 17, new Color(0.72f, 0.82f, 0.86f), TextAnchor.UpperLeft);
             cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -216), new Vector2(560, 50));
-            var go = LGBuild.Panel(c.Content, "Go", new Color(0.55f, 0.97f, 0.92f));
-            go.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 36), new Vector2(340, 56));
-            LG.Fill(go.gameObject);
-            var gt = LGBuild.Label(go.transform, Loc.T("СОЗДАТЬ ГАЛАКТИКУ"), 18, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
-            gt.rectTransform.Stretch();
-            InspSweep.Add(go.gameObject, 4.5f, 0.35f);
-            c.Glow = go.rectTransform;
+            var go = MenuPrimaryButton.Create(c.Content, Loc.T("СОЗДАТЬ ГАЛАКТИКУ  ›"), 19, () => Open(Panel.NewGame));
+            ((RectTransform)go.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 36), new Vector2(340, 58));
         }
 
         /// <summary>Полоса последней новости под карточками: обложка, метка, заголовок. Клик — окно новостей.</summary>

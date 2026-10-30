@@ -182,33 +182,49 @@ namespace StellarisClone.Rendering
     }
 
     /// <summary>
-    /// Главная кнопка экрана (как в макетах): сплошная светящаяся бирюза, тёмная подпись капслоком,
+    /// Главная кнопка экрана (как в макетах): сплошная светящаяся заливка, тёмная подпись капслоком,
     /// мягкий ореол позади, пробегающий блик; при наведении — ярче и чуть крупнее, при нажатии — «вдавливается».
+    /// Масштабирует только свою внутреннюю часть — корень свободен для чужих анимаций (появление, «дыхание»).
     /// </summary>
     public sealed class MenuPrimaryButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler,
                                             IPointerDownHandler, IPointerUpHandler
     {
-        private static readonly Color Base = new Color(0.50f, 0.94f, 0.88f);
+        public static readonly Color Cyan = new Color(0.50f, 0.94f, 0.88f);
+        public static readonly Color Green = new Color(0.45f, 0.95f, 0.62f);
+        public static readonly Color Red = new Color(1f, 0.50f, 0.42f);
+
+        private Color _base = Cyan;
+        private RectTransform _inner;
         private Image _body, _halo;
         private Text _label;
         private System.Action _onClick;
-        private bool _over, _down;
+        private bool _over, _down, _interactable = true;
         private float _h, _hv, _p, _pv, _t;
 
         public Text Label => _label;
 
-        public static MenuPrimaryButton Create(Transform parent, string label, int fontSize, System.Action onClick)
+        /// <summary>Выключенная кнопка тускнеет и не нажимается.</summary>
+        public bool Interactable
+        {
+            get => _interactable;
+            set { _interactable = value; if (!value) { _over = _down = false; } }
+        }
+
+        public static MenuPrimaryButton Create(Transform parent, string label, int fontSize, System.Action onClick, Color? color = null)
         {
             var root = LGBuild.Rect(parent, "Primary");
             var b = root.gameObject.AddComponent<MenuPrimaryButton>();
             b._onClick = onClick;
+            b._base = color ?? Cyan;
 
-            b._halo = LGBuild.Panel(root, "Halo", new Color(Base.r, Base.g, Base.b, 0.25f));
+            b._inner = LGBuild.Rect(root, "Inner");
+            b._inner.Stretch();
+            b._halo = LGBuild.Panel(b._inner, "Halo", new Color(b._base.r, b._base.g, b._base.b, 0.25f));
             b._halo.sprite = MenuArt.SoftDisc;
             b._halo.rectTransform.Stretch(-40, -30, -40, -30);
             LG.Ignore(b._halo.gameObject);
 
-            b._body = LGBuild.Panel(root, "Body", Base, raycast: true);
+            b._body = LGBuild.Panel(b._inner, "Body", b._base, raycast: true);
             b._body.rectTransform.Stretch();
             LG.Fill(b._body.gameObject);
             InspSweep.Add(b._body.gameObject, 4.5f, 0.35f);
@@ -223,17 +239,27 @@ namespace StellarisClone.Rendering
 
         public void OnPointerEnter(PointerEventData e)
         {
+            if (!_interactable) return;
             _over = true;
             if (SFXManager.Has("ui_hover")) SFXManager.Play("ui_hover", 0.35f, 1.1f);
         }
 
         public void OnPointerExit(PointerEventData e) { _over = false; _down = false; }
-        public void OnPointerDown(PointerEventData e) { if (e.button == PointerEventData.InputButton.Left) _down = true; }
+        public void OnPointerDown(PointerEventData e) { if (_interactable && e.button == PointerEventData.InputButton.Left) _down = true; }
         public void OnPointerUp(PointerEventData e) => _down = false;
 
         public void OnPointerClick(PointerEventData e)
         {
-            if (e.button != PointerEventData.InputButton.Left) return;
+            if (!_interactable || e.button != PointerEventData.InputButton.Left) return;
+            SFXManager.Play("ui_click", 1f, 0.85f);
+            _onClick?.Invoke();
+        }
+
+        /// <summary>Нажать из кода (клавиша Enter и т. п.).</summary>
+        public void Press()
+        {
+            if (!_interactable) return;
+            _p = 1f;
             SFXManager.Play("ui_click", 1f, 0.85f);
             _onClick?.Invoke();
         }
@@ -246,10 +272,11 @@ namespace StellarisClone.Rendering
             _p = LGEase.Spring(_p, _down ? 1f : 0f, ref _pv, 7f, 0.75f, dt);
             float h = Mathf.Clamp01(_h);
             float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 2.2f);
-            _body.color = Color.Lerp(Base, new Color(0.72f, 1f, 0.96f), h * 0.6f);
-            _halo.color = new Color(Base.r, Base.g, Base.b, 0.16f + 0.10f * breathe + 0.22f * h);
+            var lit = Color.Lerp(_base, Color.white, 0.35f);
+            _body.color = _interactable ? Color.Lerp(_base, lit, h * 0.6f) : new Color(_base.r * 0.4f, _base.g * 0.4f, _base.b * 0.4f, 0.8f);
+            _halo.color = new Color(_base.r, _base.g, _base.b, _interactable ? 0.16f + 0.10f * breathe + 0.22f * h : 0f);
             float sc = 1f + 0.025f * _h - 0.04f * _p;
-            transform.localScale = new Vector3(sc, sc, 1f);
+            _inner.localScale = new Vector3(sc, sc, 1f);
         }
     }
 

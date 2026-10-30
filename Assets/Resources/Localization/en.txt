@@ -7107,3 +7107,9 @@ FSR чётче растягивает картинку при масштабе �
 Половинные экономят видеопамять	Half-size textures save video memory
 ВЫБРАНО	SELECTED
 ДАЛЕЕ — ЦИВИЛИЗАЦИЯ  ›	NEXT — CIVILIZATION  ›
+В ИГРУ  ›	PLAY  ›
+СОЗДАТЬ ГАЛАКТИКУ  ›	CREATE GALAXY  ›
+ДАЛЬШЕ  ›	NEXT  ›
+НАЧАТЬ ПРАВЛЕНИЕ  ›	BEGIN YOUR REIGN  ›
+ВСТУПИТЬ В ДОЛЖНОСТЬ  ›	ASSUME COMMAND  ›
+В БОЙ  ›	ATTACK  ›
