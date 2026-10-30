@@ -437,22 +437,29 @@ namespace StellarisClone.Rendering
             body.rectTransform.Stretch();
             t._fx = LG.Glass(body.gameObject, 16f);
             var m = LG.RoundedMask(body.transform, 15f, 2f);
+            // Обложка — правая половина; слева под текстом сплошная подложка, переходящая в картинку
             var tex = n.CoverTex;
             if (tex != null)
             {
                 var host = LGBuild.Rect(m, "Thumb");
-                host.anchorMin = new Vector2(0.42f, 0);
+                host.anchorMin = new Vector2(0.45f, 0);
                 host.anchorMax = Vector2.one;
                 host.offsetMin = host.offsetMax = Vector2.zero;
                 var img = host.gameObject.AddComponent<RawImage>();
                 img.texture = tex;
                 img.raycastTarget = false;
-                img.uvRect = MenuNews.Crop(tex, n.Thumb, size.x * 0.58f / size.y);
+                img.uvRect = MenuNews.Crop(tex, n.Thumb, size.x * 0.55f / size.y);
             }
-            var fade = LGBuild.Panel(m, "Fade", new Color(0.03f, 0.05f, 0.09f, 1f));
+            var ink = new Color(0.03f, 0.05f, 0.09f, 1f);
+            var solid = LGBuild.Panel(m, "Solid", ink);
+            solid.rectTransform.anchorMin = Vector2.zero;
+            solid.rectTransform.anchorMax = new Vector2(0.45f, 1);
+            solid.rectTransform.offsetMin = solid.rectTransform.offsetMax = Vector2.zero;
+            LG.Ignore(solid.gameObject);
+            var fade = LGBuild.Panel(m, "Fade", ink);
             fade.sprite = MenuArt.HorizontalFade;
-            fade.rectTransform.anchorMin = Vector2.zero;
-            fade.rectTransform.anchorMax = new Vector2(0.8f, 1);
+            fade.rectTransform.anchorMin = new Vector2(0.45f, 0);
+            fade.rectTransform.anchorMax = new Vector2(0.85f, 1);
             fade.rectTransform.offsetMin = fade.rectTransform.offsetMax = Vector2.zero;
             LG.Ignore(fade.gameObject);
 
@@ -461,11 +468,14 @@ namespace StellarisClone.Rendering
             LG.Chip(chip.gameObject, new Color(t._accent.r, t._accent.g, t._accent.b, 0.6f));
             var ct = LGBuild.Label(chip.transform, n.Tag, 11, t._accent, TextAnchor.MiddleCenter, bold: true);
             ct.rectTransform.Stretch();
-            var title = LGBuild.Label(body.transform, n.Title, 21, Color.white, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.Stretch(18, 0, 18, 44);
-            title.rectTransform.offsetMin = new Vector2(18, 38);
+            var title = LGBuild.Label(body.transform, n.Title, 20, Color.white, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.Stretch(18, 38, size.x * 0.4f, 44);
+            title.resizeTextForBestFit = true; title.resizeTextMinSize = 14; title.resizeTextMaxSize = 20;
             var head = LGBuild.Label(body.transform, n.Headline, 12, new Color(0.78f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
-            head.rectTransform.Stretch(18, 6, 120, 76);
+            head.rectTransform.Stretch(18, 6, size.x * 0.4f, 76);
+            var sh = title.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            sh.effectDistance = new Vector2(1f, -1f);
             return t;
         }
 

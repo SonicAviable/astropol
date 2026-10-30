@@ -4,11 +4,11 @@
 @title Update 1.6.5
 @headline Advisor, game summary and empire goals
 @cover Menu/News/cover_1.6.5
-@art 0.74,0.5,0.45
-@thumb 0.2,0.42,0.42
+@art 0.76,0.5,0.46
+@thumb 0.71,0.42,0.26
 @tile Menu/News/cover_1.6.5 | 0.75,0.16,0.34 | ORACLE-7 advisor
-@tile Menu/News/cover_1.6.5 | 0.69,0.68,0.3 | Game summary
-@tile Menu/News/cover_1.6.5 | 0.875,0.83,0.22 | Empire goals
+@tile Menu/News/cover_1.6.5 | 0.685,0.635,0.31 | Game summary
+@tile Menu/News/cover_1.6.5 | 0.86,0.833,0.27 | Empire goals
 Your empire gets an advisor, every game its own chronicle with charts, and your ruler new goals for the years ahead.
 # ORACLE-7 ADVISOR
 - Tells you when construction or science ships sit idle, helium-3 goes negative or a research slot is empty.

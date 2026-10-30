@@ -260,7 +260,7 @@ namespace StellarisClone.Rendering
         // ================================================================ Карточки по центру
 
         private RectTransform _logo, _hero, _corners;
-        private CanvasGroup _logoCg, _heroCg;
+        private CanvasGroup _logoCg, _heroCg, _cornersCg;
         private float _heroK = 1f, _heroV;   // 1 — карточки на месте, 0 — убраны вниз (открыто окно)
         private MenuCard _continueCard;
         private NewsWindow _newsWin;
@@ -462,6 +462,7 @@ namespace StellarisClone.Rendering
         {
             _corners = LGBuild.Rect(_root, "Corners");
             _corners.Stretch();
+            _cornersCg = _corners.gameObject.AddComponent<CanvasGroup>();
 
             var exit = MenuLink.Create(_corners, Loc.T("ВЫХОД"), new Color(0.86f, 0.55f, 0.52f), () => SceneFader.FadeOutThen(GameSession.Quit, 0.5f));
             ((RectTransform)exit.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(56, -50), new Vector2(160, 36));
@@ -488,6 +489,11 @@ namespace StellarisClone.Rendering
             _hero.anchoredPosition = new Vector2(0f, -120f * (1f - k));
             _logoCg.alpha = k;
             _logo.anchoredPosition = new Vector2(0f, -112f + 60f * (1f - k));
+
+            // Окно новостей занимает верх экрана — «Выход» и кнопки в углах на это время прячутся
+            bool news = _open == Panel.News;
+            _cornersCg.alpha = Mathf.MoveTowards(_cornersCg.alpha, news ? 0f : 1f, dt * 6f);
+            _cornersCg.blocksRaycasts = _cornersCg.interactable = !news;
         }
 
         private static string ContinueCaption(SaveEntry e) =>
