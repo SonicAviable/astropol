@@ -109,8 +109,10 @@ namespace StellarisClone.Rendering
             var canvasObj = GameObject.Find("GalaxyCanvas");
             if (canvasObj == null) return;
             var rt = LGBuild.Rect(canvasObj.transform, "[UI] NotificationLog");
-            rt.anchorMin = new Vector2(1, 0); rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(1, 0.5f);
-            rt.offsetMin = new Vector2(-W - 18f, 130f); rt.offsetMax = new Vector2(-18f, -70f);
+            // Слева, сразу за левым меню (оно открывает журнал) — справа места занимают панель системы и планировщик
+            float left = UIManager.NavMenuW + 34f;
+            rt.anchorMin = new Vector2(0, 0); rt.anchorMax = new Vector2(0, 1); rt.pivot = new Vector2(0, 0.5f);
+            rt.offsetMin = new Vector2(left, 130f); rt.offsetMax = new Vector2(left + W, -70f);
             _root = rt.gameObject;
             var sub = _root.AddComponent<Canvas>();
             sub.overrideSorting = true;
@@ -120,7 +122,7 @@ namespace StellarisClone.Rendering
             bg.color = new Color(0.010f, 0.025f, 0.038f, 0.96f);
             bg.raycastTarget = true;
             LG.Glass(_root, 16f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.40f));
-            LG.Motion(_root, LGAppear.Kind.SlideRight).distance = 26f;
+            LG.Motion(_root, LGAppear.Kind.SlideLeft).distance = 26f;
 
             var ic = LGIcons.Create(rt, LGIcon.Calendar, 16, UIManager.DS.NeonCyan);
             ic.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(26, -26), new Vector2(16, 16));
