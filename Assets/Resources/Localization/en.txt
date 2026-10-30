@@ -7114,3 +7114,10 @@ FSR чётче растягивает картинку при масштабе �
 ВСТУПИТЬ В ДОЛЖНОСТЬ  ›	ASSUME COMMAND  ›
 В БОЙ  ›	ATTACK  ›
 несохранённое пропадёт	unsaved progress will be lost
+ВРЕМЯ ОСТАНОВЛЕНО  ·  {0}	TIME STOPPED  ·  {0}
+ПАУЗА  ·  {0}	PAUSED  ·  {0}
+ЕЩЁ РАЗ	AGAIN?
+В МЕНЮ	TO MENU
+ВЫЙТИ	QUIT
+ещё не сохранялась	not saved yet
+сохранено {0}	saved {0}

@@ -80,6 +80,7 @@ namespace StellarisClone.Rendering
             if (ui == null) return;
             _modalRoot = (RectTransform)ui.ModalCanvas.transform;
             BuildPauseMenu(ui.ModalCanvas.transform);
+            BuildSideMenu(ui.ModalCanvas.transform);
             BuildEndScreen(ui.ModalCanvas.transform);
             // Трекер целей на HUD убран: прогресс к победе — в меню Esc (страница «Цели»), справа — аутлайнер
 
@@ -217,19 +218,18 @@ namespace StellarisClone.Rendering
             }
             UIManager.Instance?.ShowModalDimPublic();
             MapModeController.HideGlobal();
-            ShowPage(Page.Main);
-            _pauseSize = PauseMain;
+            _pauseSize = PauseNarrow;
             _pauseSizeV = Vector2.zero;
             _pauseRt.sizeDelta = _pauseSize;
-            LG.Show(_pause);
-            _pause.transform.SetAsLastSibling();
+            ShowPage(Page.Main);
         }
 
         public void ClosePause(bool resume = true)
         {
             if (!_pauseOpen) return;
             _pauseOpen = false;
-            LG.Hide(_pause);
+            if (LG.IsVisible(_pause)) LG.Hide(_pause);
+            if (_side != null && LG.IsVisible(_side)) LG.Hide(_side);
             UIManager.Instance?.HideModalDimPublic();
             MapModeController.ShowGlobal();
             if (resume && TimeManager.Instance != null) TimeManager.Instance.SetSpeed(_speedBeforePause);
@@ -238,6 +238,18 @@ namespace StellarisClone.Rendering
         private void ShowPage(Page page)
         {
             _page = page;
+            _restartArmed = _quitArmed = _menuArmed = 0f;
+            // Главная страница — боковая панель, остальные — окно по центру
+            if (page == Page.Main && _side != null)
+            {
+                if (LG.IsVisible(_pause)) LG.Hide(_pause);
+                BuildMainPage();
+                LG.Show(_side);
+                _side.transform.SetAsLastSibling();
+                return;
+            }
+            if (_side != null && LG.IsVisible(_side)) LG.Hide(_side);
+            if (!LG.IsVisible(_pause)) { LG.Show(_pause); _pause.transform.SetAsLastSibling(); }
             LGBuild.Clear(_pageHost);
             _restartArmed = _quitArmed = _menuArmed = 0f;
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
@@ -259,7 +271,6 @@ namespace StellarisClone.Rendering
 
             switch (page)
             {
-                case Page.Main: BuildMainPage(); break;
                 case Page.Goals: BuildGoalsPage(); break;
                 case Page.Achievements: BuildAchievementsPage(); break;
                 case Page.Controls: BuildControlsPage(); break;
@@ -268,121 +279,180 @@ namespace StellarisClone.Rendering
             LG.Skin(_pageHost);
         }
 
+        // ================================================================ Пауза: боковая панель (главная страница)
+
+        // Главная страница паузы — панель слева на всю высоту: правитель, империя, цифры, кнопки столбиком;
+        // справа поверх карты — полупрозрачная надпись «ПАУЗА». Остальные страницы (сохранение, цели, достижения,
+        // управление) — прежнее окно по центру.
+        private GameObject _side;
+        private RectTransform _sidePanel, _sideHost;
+        private Text _sideMarkDate;
+
+        private void BuildSideMenu(Transform host)
+        {
+            var root = LGBuild.Rect(host, "PauseSide");
+            root.Stretch();
+            _side = root.gameObject;
+            LG.Motion(_side, LGAppear.Kind.Fade).inDuration = 0.3f;
+
+            // Надпись поверх карты справа
+            var mark = LGBuild.Rect(root, "Mark");
+            mark.anchorMin = new Vector2(0, 0);
+            mark.anchorMax = new Vector2(1, 1);
+            mark.offsetMin = new Vector2(620, 0);
+            mark.offsetMax = Vector2.zero;
+            LG.Ignore(mark.gameObject);
+            var big = LGBuild.Label(mark, Loc.T("ПАУЗА"), 120, new Color(0.92f, 0.97f, 0.98f, 0.12f), TextAnchor.MiddleCenter, bold: true);
+            big.rectTransform.Stretch(0, 40, 0, 0);
+            big.Track(30f);
+            _sideMarkDate = LGBuild.Label(mark, "", 18, new Color(0.55f, 0.65f, 0.70f, 0.9f), TextAnchor.MiddleCenter);
+            _sideMarkDate.rectTransform.Stretch(0, 0, 0, 0);
+            _sideMarkDate.rectTransform.offsetMax = new Vector2(0, -620);
+            _sideMarkDate.rectTransform.offsetMin = new Vector2(0, 360);
+            _sideMarkDate.Track(4f);
+
+            // Панель слева
+            var panel = LGBuild.Panel(root, "Panel", UIManager.DS.BgDeep, raycast: true);
+            _sidePanel = panel.rectTransform;
+            _sidePanel.anchorMin = new Vector2(0, 0);
+            _sidePanel.anchorMax = new Vector2(0, 1);
+            _sidePanel.pivot = new Vector2(0, 0.5f);
+            _sidePanel.offsetMin = new Vector2(-24, -24);
+            _sidePanel.offsetMax = new Vector2(580, 24);
+            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.35f));
+            var mo = LG.Motion(panel.gameObject, LGAppear.Kind.SlideLeft);
+            mo.distance = 90f;
+            mo.inDuration = 0.45f;
+
+            _sideHost = LGBuild.Rect(_sidePanel, "Content");
+            _sideHost.Stretch(24, 24, 0, 24);
+            _side.SetActive(false);
+        }
+
         private void BuildMainPage()
         {
-            // Сводка империи: четыре плитки с текущими цифрами
-            var strip = LGBuild.Rect(_pageHost, "Summary");
-            strip.TopBand(0, 62);
-            var cyan = UIManager.DS.NeonCyan;
+            LGBuild.Clear(_sideHost);
+            var host = _sideHost;
+            var faction = UIManager.Instance?.SelectedFaction;
+            string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
+            if (_sideMarkDate != null) _sideMarkDate.text = Loc.F("ВРЕМЯ ОСТАНОВЛЕНО  ·  {0}", date);
+
+            // Шапка: правитель (живой портрет) и империя
+            var head = LGBuild.Rect(host, "Head");
+            head.TopBand(0, 260);
+            var mask = LG.RoundedMask(head, 20f, 0f);
+            var leader = faction != null ? LeaderPortraits.ForFaction(faction) : null;
+            if (leader != null) LeaderPortraitView.Create(mask, leader, 1.7f, new Vector4(0f, 0f, 0.45f, 0f), false, true, false);
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.02f, 0.04f, 0.08f, 1f));
+            shade.sprite = MenuArt.VerticalFade;
+            shade.rectTransform.Stretch();
+            LG.Ignore(shade.gameObject);
+            var cap = LGBuild.Label(head, Loc.F("ПАУЗА  ·  {0}", date), 13, UIManager.DS.NeonCyan, TextAnchor.LowerLeft, bold: true);
+            cap.rectTransform.Stretch(40, 82, 20, 0);
+            var name = LGBuild.Label(head, faction?.Name ?? Loc.T("Империя"), 34, Color.white, TextAnchor.LowerLeft, bold: true);
+            name.rectTransform.Stretch(40, 38, 20, 0);
+            name.resizeTextForBestFit = true; name.resizeTextMinSize = 20; name.resizeTextMaxSize = 34;
+            var sub = LGBuild.Label(head, SideSubtitle(faction, leader), 14, new Color(0.62f, 0.72f, 0.76f), TextAnchor.LowerLeft);
+            sub.rectTransform.Stretch(40, 14, 20, 0);
+
+            // Цифры империи
+            var strip = LGBuild.Rect(host, "Summary");
+            strip.TopBand(280, 70, 40, 40);
             (string v, string k, Color c)[] stats =
             {
-                (EmpireStats.SystemCount(0).ToString(), Loc.T("СИСТЕМ"), cyan),
+                (EmpireStats.SystemCount(0).ToString(), Loc.T("СИСТЕМ"), UIManager.DS.NeonCyan),
                 (EmpireStats.Population(0).ToString(), Loc.T("НАСЕЛЕНИЕ"), UIManager.DS.Green),
                 (EmpireStats.TechCount(0).ToString(), Loc.T("ТЕХНОЛОГИЙ"), new Color(0.62f, 0.72f, 1f)),
                 (Mathf.RoundToInt(EmpireStats.MilitaryPower(0)).ToString(), Loc.T("МОЩЬ ФЛОТА"), new Color(1f, 0.55f, 0.45f)),
             };
-            const float sg = 8f;
             for (int i = 0; i < stats.Length; i++)
             {
-                var tile = LGBuild.Panel(strip, "Stat", new Color(0.025f, 0.05f, 0.075f, 0.85f));
+                var tile = LGBuild.Panel(strip, "Stat", new Color(0.03f, 0.06f, 0.10f, 0.9f));
                 tile.rectTransform.anchorMin = new Vector2(i / 4f, 0);
                 tile.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
-                tile.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : sg * 0.5f, 0);
-                tile.rectTransform.offsetMax = new Vector2(i == 3 ? 0 : -sg * 0.5f, 0);
-                var c = stats[i].c;
-                LG.Platter(tile.gameObject, 10f).SetRim(new Color(c.r, c.g, c.b, 0.30f));
-                var v = LGBuild.Label(tile.transform, stats[i].v, 20, c, TextAnchor.UpperCenter, bold: true);
-                v.rectTransform.Stretch(4, 0, 4, 8);
+                tile.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : 5, 0);
+                tile.rectTransform.offsetMax = new Vector2(i == 3 ? 0 : -5, 0);
+                LG.Platter(tile.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, 0.08f));
+                var v = LGBuild.Label(tile.transform, stats[i].v, 24, stats[i].c, TextAnchor.UpperCenter, bold: true);
+                v.rectTransform.Stretch(4, 0, 4, 10);
                 var k = LGBuild.Label(tile.transform, stats[i].k, 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter, bold: true);
-                k.rectTransform.Stretch(4, 9, 4, 0);
+                k.rectTransform.Stretch(4, 10, 4, 0);
             }
 
-            float y = 80f;
-            var cont = MenuPrimaryButton.Create(_pageHost, Loc.T("ПРОДОЛЖИТЬ"), 17, () => ClosePause());
-            ((RectTransform)cont.transform).TopBand(y, 54f);
-            y += 62f;
-            y += 8f;
+            // Продолжить — главная кнопка
+            float y = 372f;
+            var cont = MenuPrimaryButton.Create(host, Loc.T("ПРОДОЛЖИТЬ"), 18, () => ClosePause());
+            ((RectTransform)cont.transform).TopBand(y, 60f, 40, 40);
+            y += 72f;
 
-            // Игра: две колонки
-            var save = Half(y, 0, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, () => ShowPage(Page.Save));
+            var save = Item(ref y, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, () => ShowPage(Page.Save));
             if (!SaveSystem.CanSaveNow) save.GetComponentInParent<Button>().interactable = false;
-            Half(y, 1, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => OpenFull(true));
-            y += RowStep;
-            Half(y, 0, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.85f, 0.95f), () => OpenFull(false));
-            Half(y, 1, Loc.T("УПРАВЛЕНИЕ"), new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
-            y += RowStep;
-            Half(y, 0, Loc.T("ЦЕЛИ И ПОБЕДА"), UIManager.DS.Gold, () => ShowPage(Page.Goals));
-            Half(y, 1, Loc.F("ДОСТИЖЕНИЯ  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), new Color(1f, 0.84f, 0.40f), () => ShowPage(Page.Achievements));
-            y += RowStep;
-            Wide(ref y, Loc.T("ИТОГИ ПАРТИИ"), UIManager.DS.BtnNeutral, UIManager.DS.NeonCyan, () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
+            Item(ref y, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => OpenFull(true));
+            Item(ref y, Loc.T("ЦЕЛИ И ПОБЕДА"), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Goals));
+            Item(ref y, Loc.F("ДОСТИЖЕНИЯ  ·  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Achievements));
+            Item(ref y, Loc.T("ИТОГИ ПАРТИИ"), new Color(0.55f, 0.8f, 1f), () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
+            Item(ref y, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.8f, 0.85f), () => OpenFull(false));
+            Item(ref y, Loc.T("УПРАВЛЕНИЕ"), new Color(0.7f, 0.8f, 0.85f), () => ShowPage(Page.Controls));
 
-            // Выход — отдельно, под разделителем
-            y += 10f;
-            Divider(y, Loc.T("ВЫХОД"));
-            y += 30f;
-            _restartLabel = Half(y, 0, Loc.T("НАЧАТЬ ЗАНОВО"), UIManager.DS.Gold, () =>
+            // Выход — три кнопки в ряд у нижнего края
+            var exitRow = LGBuild.Rect(host, "Exit");
+            exitRow.anchorMin = new Vector2(0, 0);
+            exitRow.anchorMax = new Vector2(1, 0);
+            exitRow.pivot = new Vector2(0.5f, 0);
+            exitRow.offsetMin = new Vector2(40, 52);
+            exitRow.offsetMax = new Vector2(-40, 104);
+            _restartLabel = Third(exitRow, 0, Loc.T("НАЧАТЬ ЗАНОВО"), new Color(0.7f, 0.8f, 0.85f), () =>
             {
                 if (_restartArmed > 0f) { RestartGame(); return; }
                 _restartArmed = 3f;
-                _restartLabel.text = Loc.T("ЕЩЁ РАЗ — ВСЁ СНАЧАЛА");
-            }, new Color(0.16f, 0.12f, 0.04f));
-            _menuLabel = Half(y, 1, Loc.T("В ГЛАВНОЕ МЕНЮ"), new Color(0.6f, 0.75f, 1f), () =>
+                _restartLabel.text = Loc.T("ЕЩЁ РАЗ");
+            });
+            _menuLabel = Third(exitRow, 1, Loc.T("В МЕНЮ"), new Color(0.7f, 0.8f, 0.85f), () =>
             {
                 if (_menuArmed > 0f) { GameSession.ReturnToMainMenu(); return; }
                 _menuArmed = 3f;
-                _menuLabel.text = Loc.T("ЕЩЁ РАЗ — В МЕНЮ");
+                _menuLabel.text = Loc.T("ЕЩЁ РАЗ");
             });
-            y += RowStep;
-            _quitLabel = Wide(ref y, Loc.T("ВЫЙТИ ИЗ ИГРЫ"), UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
+            _quitLabel = Third(exitRow, 2, Loc.T("ВЫЙТИ"), UIManager.DS.Red, () =>
             {
                 if (_quitArmed > 0f) { QuitGame(); return; }
                 _quitArmed = 3f;
-                _quitLabel.text = Loc.T("НАЖМИТЕ ЕЩЁ РАЗ ДЛЯ ВЫХОДА");
+                _quitLabel.text = Loc.T("ЕЩЁ РАЗ");
             });
 
-            var hint = LGBuild.Label(_pageHost, Loc.T("Esc — вернуться в игру   ·   F5 — быстрое сохранение"), 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
-            hint.rectTransform.Stretch(0, 0, 0, 0);
+            var hint = LGBuild.Label(host, Loc.T("Esc — вернуться в игру   ·   F5 — быстрое сохранение"), 11, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
+            hint.rectTransform.Stretch(40, 18, 40, 0);
+            LG.Skin(host);
         }
 
-        private const float RowH = 46f, RowStep = 54f, ColGap = 12f;
-
-        private Text Wide(ref float y, string label, Color tint, Color rim, System.Action onClick, float h = RowH, int size = 13)
+        /// <summary>«Элина Сорель · последнее сохранение: сегодня, 13:05» — по сохранениям этой империи.</summary>
+        private static string SideSubtitle(FactionInfo f, LeaderPortraits.Entry leader)
         {
-            var b = LGBuild.Button(_pageHost, "Btn", tint, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, size);
-            ((RectTransform)b.transform).TopBand(y, h);
-            y += h + 8f;
+            string ruler = f != null && !string.IsNullOrEmpty(f.RulerName) ? f.RulerName : leader?.Name;
+            string saved = Loc.T("ещё не сохранялась");
+            if (f != null)
+                foreach (var e in SaveSystem.List())   // от новых к старым
+                    if (e.Meta.Empire == f.Name) { saved = Loc.F("сохранено {0}", SaveSystem.FormatSavedAt(e.SavedAtLocal)); break; }
+            return string.IsNullOrEmpty(ruler) ? saved : $"{ruler}  ·  {saved}";
+        }
+
+        private Text Item(ref float y, string label, Color rim, System.Action onClick)
+        {
+            var b = LGBuild.Button(_sideHost, "Btn", UIManager.DS.BtnNeutral, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, 14);
+            ((RectTransform)b.transform).TopBand(y, 50f, 40, 40);
+            y += 58f;
             return b.GetComponentInChildren<Text>();
         }
 
-        /// <summary>Кнопка в полколонки: col 0 — слева, 1 — справа.</summary>
-        private Text Half(float y, int col, string label, Color rim, System.Action onClick, Color? tint = null)
+        private static Text Third(RectTransform row, int i, string label, Color rim, System.Action onClick)
         {
-            var b = LGBuild.Button(_pageHost, "Btn", tint ?? UIManager.DS.BtnNeutral, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, 13);
+            var b = LGBuild.Button(row, "Btn", UIManager.DS.BtnNeutral, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, 13);
             var rt = (RectTransform)b.transform;
-            rt.anchorMin = new Vector2(col * 0.5f, 1);
-            rt.anchorMax = new Vector2(col * 0.5f + 0.5f, 1);
-            rt.pivot = new Vector2(0.5f, 1);
-            rt.offsetMin = new Vector2(col == 0 ? 0 : ColGap * 0.5f, -y - RowH);
-            rt.offsetMax = new Vector2(col == 0 ? -ColGap * 0.5f : 0, -y);
+            rt.anchorMin = new Vector2(i / 3f, 0);
+            rt.anchorMax = new Vector2((i + 1) / 3f, 1);
+            rt.offsetMin = new Vector2(i == 0 ? 0 : 5, 0);
+            rt.offsetMax = new Vector2(i == 2 ? 0 : -5, 0);
             return b.GetComponentInChildren<Text>();
-        }
-
-        /// <summary>Разделитель с подписью посередине: ——— ВЫХОД ———</summary>
-        private void Divider(float y, string text)
-        {
-            var t = LGBuild.Label(_pageHost, text, 10, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, bold: true);
-            t.rectTransform.TopBand(y, 18);
-            for (int side = 0; side < 2; side++)
-            {
-                var l = LGBuild.Panel(_pageHost, "Line", new Color(1f, 1f, 1f, 0.10f));
-                var r = l.rectTransform;
-                r.anchorMin = new Vector2(side == 0 ? 0f : 0.5f, 1);
-                r.anchorMax = new Vector2(side == 0 ? 0.5f : 1f, 1);
-                r.pivot = new Vector2(0.5f, 1);
-                r.offsetMin = new Vector2(side == 0 ? 0 : 44, -y - 9.5f);
-                r.offsetMax = new Vector2(side == 0 ? -44 : 0, -y - 8.5f);
-                LG.Ignore(l.gameObject);
-            }
         }
 
         private void BuildAchievementsPage()
@@ -439,7 +509,8 @@ namespace StellarisClone.Rendering
         private void OpenFull(bool load)
         {
             if (_modalRoot == null) return;
-            LG.Hide(_pause);
+            if (LG.IsVisible(_pause)) LG.Hide(_pause);
+            if (_side != null && LG.IsVisible(_side)) LG.Hide(_side);
             if (load)
             {
                 if (_loadScr == null) { _loadScr = LoadScreen.Create(_modalRoot, CloseFull); _loadScr.ConfirmLoad = true; }
@@ -462,15 +533,13 @@ namespace StellarisClone.Rendering
             SFXManager.Play("ui_click", 0.5f, 0.9f);
             if (!_pauseOpen) return;
             ShowPage(Page.Main);
-            LG.Show(_pause);
-            _pause.transform.SetAsLastSibling();
         }
 
         private void ResetConfirmLabels()
         {
             if (_restartLabel != null && _restartArmed <= 0f) _restartLabel.text = Loc.T("НАЧАТЬ ЗАНОВО");
-            if (_menuLabel != null && _menuArmed <= 0f) _menuLabel.text = Loc.T("В ГЛАВНОЕ МЕНЮ");
-            if (_quitLabel != null && _quitArmed <= 0f) _quitLabel.text = Loc.T("ВЫЙТИ ИЗ ИГРЫ");
+            if (_menuLabel != null && _menuArmed <= 0f) _menuLabel.text = Loc.T("В МЕНЮ");
+            if (_quitLabel != null && _quitArmed <= 0f) _quitLabel.text = Loc.T("ВЫЙТИ");
         }
 
         private void BuildGoalsPage()
