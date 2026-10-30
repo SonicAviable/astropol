@@ -4,28 +4,28 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Единый дизайн кнопок игры. Форма у всех одна — прямоугольник со скруглением 8 px, подпись по центру капслоком.
-    ///   • Главная (<see cref="MenuPrimaryButton"/>) — сплошная светящаяся заливка, тёмная подпись: одно главное действие экрана.
-    ///   • Обычная (этот компонент) — тёмная заливка, кромка и подпись цвета действия; опасные действия — красные.
-    ///   • Недоступная — серая, без блика.
+    /// Единый дизайн кнопок игры — как у главной кнопки (<see cref="MenuPrimaryButton"/>): сплошная светящаяся заливка
+    /// цвета действия, тёмная подпись капслоком по центру, прямоугольник со скруглением 8 px, пробегающий блик;
+    /// при наведении кнопка светлеет. Цвет говорит о действии: бирюзовая — обычное, золотая — важное, красная — опасное,
+    /// серо-голубая — нейтральное («Назад», «Управление»); недоступная — тусклая серая. Главная кнопка экрана
+    /// ярче остальных и дышит ореолом.
     /// Вешается сам на кнопки из <see cref="LGBuild.Button"/> (кнопки-полосы с подписью: ширина от 150, высота 28…58 px);
     /// круглые, маленькие и кнопки-значки остаются как были. Если код потом перекрашивает кнопку (например, «удалить?» —
-    /// красным), новый цвет становится цветом кромки и подписи, а заливка остаётся тёмной — дизайн не ломается.
+    /// красным), новый цвет становится цветом заливки — дизайн не ломается.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LGGameButton : MonoBehaviour
+    public sealed class LGGameButton : MonoBehaviour, UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler
     {
-        /// <summary>Тёмная заливка обычной кнопки — одна на всю игру.</summary>
-        public static readonly Color Body = new Color(0.035f, 0.07f, 0.11f, 0.96f);
-        private static readonly Color BodyOff = new Color(0.03f, 0.045f, 0.06f, 0.85f);
-        private static readonly Color Off = new Color(0.45f, 0.52f, 0.58f);
+        private static readonly Color Ink = new Color(0.02f, 0.07f, 0.09f);
+        private static readonly Color Off = new Color(0.22f, 0.27f, 0.31f, 0.9f);
 
         private Color _accent = new Color(0.40f, 0.86f, 0.82f);
-        private bool _done, _applied, _wasOn;
+        private Color _set;
+        private bool _done, _applied, _over;
+        private float _h, _hv;
         private Image _img;
         private Button _btn;
         private Text _label;
-        private LiquidGlassEffect _fx;
         private InspSweep _sweep;
 
         /// <summary>Цвет действия — из цвета кромки, а если она нейтральная — из заливки кнопки.</summary>
@@ -39,9 +39,15 @@ namespace StellarisClone.Rendering
         {
             Color.RGBToHSV(rim, out float h, out float s, out float v);
             if (s < 0.25f || v < 0.3f) Color.RGBToHSV(tint, out h, out s, out v);
-            if (s < 0.2f || v < 0.08f) return new Color(0.62f, 0.80f, 0.86f);   // нейтральная кнопка — холодный серо-голубой
+            if (s < 0.2f || v < 0.08f) return new Color(0.62f, 0.78f, 0.86f);   // нейтральная кнопка — холодный серо-голубой
             return Color.HSVToRGB(h, Mathf.Clamp01(s * 0.85f), 1f);
         }
+
+        /// <summary>Заливка обычной кнопки: цвет действия чуть глубже, чем у главной.</summary>
+        private static Color FillOf(Color accent) => Color.Lerp(accent, new Color(0.05f, 0.12f, 0.16f), 0.22f);
+
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e) => _over = true;
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) => _over = false;
 
         private void OnRectTransformDimensionsChange()
         {
@@ -59,32 +65,26 @@ namespace StellarisClone.Rendering
                 Apply(r);
                 if (!_applied) { enabled = false; return; }
             }
-            Watch();
+            Tick();
         }
 
-        /// <summary>Код перекрасил кнопку или выключил её — пересобрать вид в том же дизайне.</summary>
-        private void Watch()
+        private void Tick()
         {
             if (_img == null) return;
-            bool on = _btn == null || _btn.interactable;
-            var want = on ? Body : BodyOff;
-            if (_img.color != want)
-            {
-                // Новый цвет из кода — это смысл действия (опасное, успешное, нейтральное): он идёт в кромку и подпись
-                _accent = AccentOf(Color.clear, _img.color);
-                _img.color = want;
-                Restyle(on);
-            }
-            else if (on != _wasOn) Restyle(on);
-        }
+            // Код перекрасил кнопку — новый цвет означает действие (опасное, успешное, нейтральное)
+            if (_img.color != _set) _accent = AccentOf(Color.clear, _img.color);
 
-        private void Restyle(bool on)
-        {
-            _wasOn = on;
-            Color a = on ? _accent : Off;
-            if (_fx != null) _fx.SetRim(new Color(a.r, a.g, a.b, on ? 0.7f : 0.2f));
-            if (_label != null) _label.color = on ? Color.Lerp(a, Color.white, 0.55f) : UIManager.DS.TextMuted;
-            if (_sweep != null) _sweep.enabled = on;
+            bool on = _btn == null || _btn.interactable;
+            _h = LGEase.Spring(_h, on && _over ? 1f : 0f, ref _hv, 4f, 0.7f, Time.unscaledDeltaTime);
+            var fill = on ? Color.Lerp(FillOf(_accent), Color.white, 0.22f * Mathf.Clamp01(_h)) : Off;
+            if (fill != _img.color) _img.color = fill;
+            _set = fill;
+            if (_label != null)
+            {
+                var lc = on ? Ink : new Color(0.62f, 0.68f, 0.72f, 0.8f);
+                if (_label.color != lc) _label.color = lc;
+            }
+            if (_sweep != null && _sweep.enabled != on) _sweep.enabled = on;
         }
 
         private void Apply(Rect r)
@@ -96,8 +96,6 @@ namespace StellarisClone.Rendering
             int size = Mathf.Max(11, old.fontSize);
             _btn = GetComponent<Button>();
             _img = GetComponent<Image>();
-            _fx = GetComponent<LiquidGlassEffect>();
-            bool on = _btn == null || _btn.interactable;
 
             // Подпись сохраняем (её ссылку держит вызывающий код и меняет текст) — переносим прямо на кнопку,
             // остальное (старый значок, обёртка «значок + подпись») убираем
@@ -124,16 +122,18 @@ namespace StellarisClone.Rendering
             t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
             t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = size;
+            t.fontStyle = FontStyle.Bold;
+            var sh = t.GetComponent<Shadow>();
+            if (sh != null) sh.enabled = false;   // тёмная подпись на светлой заливке — без тени
             if (!t.TryGetComponent<LGButtonLabel>(out _)) t.gameObject.AddComponent<LGButtonLabel>();
 
-            if (_fx != null)
-            {
-                _fx.Radius = 8f;               // та же форма, что у главной кнопки
-                _fx.FillMultiplier = 1.6f;     // тёмная заливка читается как плотная, а не прозрачная
-            }
-            _sweep = InspSweep.Add(gameObject, 6f, 0.12f);
-            if (_img != null) _img.color = on ? Body : BodyOff;
-            Restyle(on);
+            // Та же заливка, что у главной кнопки: сплошная, светящаяся, скругление 8 px
+            var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Fill, 8f);
+            if (fx != null) fx.Radius = 8f;
+            _sweep = InspSweep.Add(gameObject, 6f, 0.25f);
+            _set = _img != null ? _img.color : Color.clear;
+            if (_img != null) _img.color = _set = FillOf(_accent);
+            Tick();
         }
     }
 }
