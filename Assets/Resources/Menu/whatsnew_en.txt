@@ -1,0 +1,23 @@
+This update gives your empire an advisor, every game its own chronicle with charts, and your ruler new goals for the years ahead.
+# ORACLE-7 ADVISOR
+- Tells you when construction or science ships sit idle, helium-3 goes negative or a research slot is empty.
+- Warns about enemies in your systems, looming unrest and a fleet over capacity.
+- Lets you know when an assault is possible or a new colony is within reach. Click a tip to jump to the system.
+- Can be turned off in Settings: "Advisor" → "In-game advice".
+# GAME SUMMARY
+- Open it from the pause menu or the victory/defeat screen.
+- Yearly charts for every empire: score, systems, population, technologies, fleet power.
+- 12 stat tiles and a chronicle of the game: contacts, wars, captures, assaults, achievements. Click an entry to move the camera there.
+# RANDOM EMPIRE GOALS
+- After the starter goals (or 10 years in) your empire offers three goals to choose from.
+- Each goal has 10 years. Success pays out alloys, titanium, helium-3 or influence.
+- The current goal is shown in the bottom-right corner; double-click the cross to abandon it.
+# NEW SOUNDS
+- 22 interface, notification, jump, weapon and explosion sounds replaced with studio recordings.
+# INTERFACE
+- New main menu: continue your last game in one click (or press Enter).
+- Reworked pause menu: empire summary, two-column buttons, a separate exit block.
+- The event log opens on the left. System labels on the map no longer overlap.
+- Buttons now show text only, without extra icons.
+# FIXES
+- The game should no longer crash on launch from VK Play in windowed mode on laptops with two GPUs.

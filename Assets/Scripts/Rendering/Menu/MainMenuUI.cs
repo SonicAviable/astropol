@@ -9,15 +9,16 @@ using StellarisClone.Generation;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Главное меню: живая галактика на фоне (облёт камеры), анимированный логотип,
-    /// стеклянное меню слева и выезжающие панели справа:
-    /// «Новая игра» (параметры + предпросмотр галактики), «Загрузка», «Настройки», «Об игре».
+    /// Главное меню: живая галактика на фоне (облёт камеры), анимированный логотип по центру,
+    /// под ним три карточки (новая игра · продолжить партию с живым портретом правителя · загрузка)
+    /// и полоса «Что нового». Пункты открывают окно по центру — карточки на это время уезжают вниз:
+    /// «Новая игра» (параметры + предпросмотр галактики), «Загрузка», «Настройки», «Об игре», «Что нового».
     /// </summary>
     public class MainMenuUI : MonoBehaviour
     {
         public static MainMenuUI Instance { get; private set; }
 
-        private enum Panel { None, NewGame, Load, Settings, About }
+        private enum Panel { None, NewGame, Load, Settings, About, News }
 
         /// <summary>Версия берётся из настроек проекта (Player → Version), чтобы меню и сборка не расходились.</summary>
         public static string Version => "v" + GameVersion.Current + " · " + Loc.T("ранний доступ");
@@ -26,17 +27,14 @@ namespace StellarisClone.Rendering
         private RectTransform _window, _body;
         private Text _winTitle, _winSub;
         private Image _winIcon;
-        private GameObject _news, _escHint;
         private Panel _open = Panel.None;
         private readonly Dictionary<Panel, GameObject> _pages = new Dictionary<Panel, GameObject>();
-        private readonly List<MainMenuButton> _buttons = new List<MainMenuButton>();
 
         // Логотип
         private readonly List<Letter> _title = new List<Letter>();
         private readonly List<Letter> _subtitle = new List<Letter>();
         private RectTransform _underline;
         private Image _titleGlow;
-        private Text _tagline;
         private float _t;
 
         // Новая игра
@@ -73,7 +71,8 @@ namespace StellarisClone.Rendering
             // Живое небо за галактикой и пылинки под кнопками; игровые подсказки карты в меню скрыты
             gameObject.AddComponent<MenuAtmosphere>().Init(_root);
             BuildLogo();
-            BuildMenu();
+            BuildHero();
+            BuildCorners();
             BuildWindow();
             BuildFooter();
 
@@ -85,9 +84,14 @@ namespace StellarisClone.Rendering
         {
             _t += Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
             AnimateLogo();
+            AnimateHero();
             FitWindow();
 
             if (Input.GetKeyDown(KeyCode.Escape) && _open != Panel.None && !IsTyping()) Close();
+            // Enter — сразу в последнюю партию
+            if (_open == Panel.None && _continueCard != null && !_continueCard.Disabled && _heroK > 0.9f && !IsTyping()
+                && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+                _continueCard.Click();
         }
 
         private static bool IsTyping()
@@ -126,18 +130,11 @@ namespace StellarisClone.Rendering
 
             var ink = new Color(0.006f, 0.016f, 0.026f, 1f);
 
-            // Затемнение слева под меню
-            var left = LGBuild.Panel(shade, "Left", ink);
-            left.sprite = MenuArt.HorizontalFade;
-            left.rectTransform.anchorMin = new Vector2(0, 0);
-            left.rectTransform.anchorMax = new Vector2(0.68f, 1);
-            left.rectTransform.offsetMin = left.rectTransform.offsetMax = Vector2.zero;
-
-            // Низ
+            // Низ — под карточками и полосой новостей
             var bottom = LGBuild.Panel(shade, "Bottom", ink);
             bottom.sprite = MenuArt.VerticalFade;
             bottom.rectTransform.anchorMin = new Vector2(0, 0);
-            bottom.rectTransform.anchorMax = new Vector2(1, 0.34f);
+            bottom.rectTransform.anchorMax = new Vector2(1, 0.62f);
             bottom.rectTransform.offsetMin = bottom.rectTransform.offsetMax = Vector2.zero;
 
             // Виньетка
@@ -151,35 +148,35 @@ namespace StellarisClone.Rendering
         private void BuildLogo()
         {
             var logo = LGBuild.Rect(_root, "Logo");
-            logo.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(110, -96), new Vector2(900, 200));
+            logo.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -112), new Vector2(1400, 230));
             LG.Ignore(logo.gameObject);
+            _logo = logo;
+            _logoCg = logo.gameObject.AddComponent<CanvasGroup>();
+            _logoCg.blocksRaycasts = false;
 
             _titleGlow = LGBuild.Panel(logo, "Glow", new Color(0.30f, 0.95f, 0.86f, 0f));
             _titleGlow.sprite = MenuArt.SoftDisc;
-            _titleGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(330, -60), new Vector2(980, 300));
+            _titleGlow.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -70), new Vector2(1500, 360));
 
+            // Слова строятся слева направо — ширину узнаём после сборки и центрируем контейнер
             var word = LGBuild.Rect(logo, "Title");
-            word.At(new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(800, 112));
-            BuildTrackedWord(word, "ASTROPOLITY", GameFont.Bold, 98, FontStyle.Bold, 10f, _title, 0.35f, 0.055f);
+            float tw = BuildTrackedWord(word, "ASTROPOLITY", GameFont.Bold, 124, FontStyle.Bold, 16f, _title, 0.35f, 0.055f);
+            word.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(tw, 150));
 
             var sub = LGBuild.Rect(logo, "Subtitle");
-            sub.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -122), new Vector2(800, 24));
-            BuildTrackedWord(sub, Loc.T("ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ"), GameFont.Regular, 16, FontStyle.Normal, 7f, _subtitle, 1.15f, 0.022f);
+            float sw = BuildTrackedWord(sub, Loc.T("ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ"), GameFont.Regular, 18, FontStyle.Normal, 12f, _subtitle, 1.15f, 0.022f);
+            sub.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -160), new Vector2(sw, 26));
             foreach (var l in _subtitle) l.Text.color = new Color(0.30f, 0.95f, 0.86f, 0f);
 
             var line = LGBuild.Panel(logo, "Underline", new Color(0.30f, 0.95f, 0.86f, 0.75f));
             _underline = line.rectTransform;
-            _underline.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(6, -156), new Vector2(0, 2));
+            _underline.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -200), new Vector2(0, 2));
             LG.Line(line.gameObject, hairline: true);
-
-            _tagline = LGBuild.Label(logo, Loc.T("Исследуйте  ·  Расширяйтесь  ·  Развивайтесь  ·  Побеждайте"), 13,
-                                     new Color(0.62f, 0.74f, 0.80f, 0f), TextAnchor.UpperLeft);
-            _tagline.fontStyle = FontStyle.Italic;
-            _tagline.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -170), new Vector2(800, 22));
         }
 
-        private static void BuildTrackedWord(RectTransform parent, string word, Font font, int size, FontStyle style,
-                                             float tracking, List<Letter> output, float baseDelay, float stagger)
+        /// <summary>Слово по буквам (каждая анимируется отдельно); возвращает ширину слова.</summary>
+        private static float BuildTrackedWord(RectTransform parent, string word, Font font, int size, FontStyle style,
+                                              float tracking, List<Letter> output, float baseDelay, float stagger)
         {
             font.RequestCharactersInTexture(word, size, style);
             float x = 0f;
@@ -214,6 +211,7 @@ namespace StellarisClone.Rendering
                 x += adv + tracking;
                 i++;
             }
+            return Mathf.Max(1f, x - tracking);
         }
 
         private void AnimateLogo()
@@ -253,69 +251,249 @@ namespace StellarisClone.Rendering
             }
 
             float lineK = LGEase.InOutCubic(Mathf.Clamp01((_t - 1.0f) / 0.9f));
-            _underline.sizeDelta = new Vector2(560f * lineK, 2f);
-
-            var tc = _tagline.color;
-            tc.a = 0.9f * LGEase.OutCubic(Mathf.Clamp01((_t - 1.8f) / 0.8f));
-            _tagline.color = tc;
+            _underline.sizeDelta = new Vector2(520f * lineK, 2f);
 
             float glowIn = LGEase.OutCubic(Mathf.Clamp01((_t - 0.3f) / 1.5f));
             _titleGlow.color = new Color(neon.r, neon.g, neon.b, glowIn * (0.10f + 0.035f * Mathf.Sin(_t * 0.9f)));
         }
 
-        // ================================================================ Меню слева
+        // ================================================================ Карточки по центру
 
-        private void BuildMenu()
+        private RectTransform _logo, _hero, _corners;
+        private CanvasGroup _logoCg, _heroCg;
+        private float _heroK = 1f, _heroV;   // 1 — карточки на месте, 0 — убраны вниз (открыто окно)
+        private MenuCard _continueCard;
+        private Text _loadCaption, _continueMeta;
+
+        private static readonly Color LoadAccent = new Color(0.55f, 0.80f, 1f);
+
+        private void BuildHero()
         {
-            var col = LGBuild.Rect(_root, "MenuColumn");
-            col.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(110, -330), new Vector2(450, 560));
+            _hero = LGBuild.Rect(_root, "Hero");
+            _hero.Stretch();
+            _heroCg = _hero.gameObject.AddComponent<CanvasGroup>();
 
-            float y = 0f;
-            float delay = 0.9f;
+            var row = LGBuild.Rect(_hero, "Cards");
+            row.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -78), new Vector2(1540, 400));
+
             var latest = SaveSystem.Latest();
             if (latest != null)
             {
-                _continueBtn = AddButton(col, ref y, ref delay, Panel.None, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), ContinueCaption(latest),
-                    UIManager.DS.NeonCyan, () =>
-                    {
-                        var l = SaveSystem.Latest();
-                        if (l != null) SaveSystem.LoadSlot(l.Slot);
-                    }, primary: true);
-                y += 8f;
+                _continueCard = BuildContinueCard(row, latest);
+                SideCard(row, -1, Loc.T("НОВАЯ ИГРА"), Loc.T("Создать галактику\nи выбрать цивилизацию"),
+                         Resources.Load<Texture2D>("Menu/menu_planet"), new Rect(0.38f, 0.03f, 0.6f, 0.94f),
+                         UIManager.DS.NeonCyan, () => Open(Panel.NewGame), 0.75f);
             }
-            AddButton(col, ref y, ref delay, Panel.NewGame, LGIcon.Globe, Loc.T("НОВАЯ ИГРА"), Loc.T("Создать галактику и выбрать цивилизацию"),
-                      UIManager.DS.NeonCyan, () => Open(Panel.NewGame), primary: latest == null);
-            _loadBtn = AddButton(col, ref y, ref delay, Panel.Load, LGIcon.Load, Loc.T("ЗАГРУЗИТЬ"), LoadCaption(SaveSystem.List().Count),
-                      new Color(0.55f, 0.80f, 1f), () => Open(Panel.Load));
-            AddButton(col, ref y, ref delay, Panel.Settings, LGIcon.Gear, Loc.T("НАСТРОЙКИ"), Loc.T("Графика, звук, интерфейс"),
-                      new Color(0.75f, 0.85f, 0.95f), () => Open(Panel.Settings));
-            AddButton(col, ref y, ref delay, Panel.About, LGIcon.Info, Loc.T("ОБ ИГРЕ"), Loc.T("Как играть и пути к победе"),
-                      UIManager.DS.Gold, () => Open(Panel.About));
-            y += 8f;
-            AddButton(col, ref y, ref delay, Panel.None, LGIcon.Power, Loc.T("ВЫХОД"), Loc.T("Вернуться на рабочий стол"),
-                      UIManager.DS.Red, () => SceneFader.FadeOutThen(GameSession.Quit, 0.5f));
+            else
+            {
+                BuildNewGameCard(row);
+                SideCard(row, -1, Loc.T("ОБ ИГРЕ"), Loc.T("Как играть\nи пути к победе"),
+                         Resources.Load<Texture2D>("Menu/menu_bg"), new Rect(0.55f, 0.25f, 0.4f, 0.62f),
+                         UIManager.DS.Gold, () => Open(Panel.About), 0.75f);
+            }
+            _loadCaption = SideCard(row, 1, Loc.T("ЗАГРУЗИТЬ"), LoadCaption(SaveSystem.List().Count),
+                                    Resources.Load<Texture2D>("Menu/menu_bg"), new Rect(0.04f, 0.3f, 0.4f, 0.62f),
+                                    LoadAccent, () => Open(Panel.Load), 0.85f);
+            BuildNewsStrip();
         }
 
-        private MainMenuButton AddButton(RectTransform col, ref float y, ref float delay, Panel panel, LGIcon icon, string title,
-                                         string caption, Color accent, System.Action onClick, bool primary = false)
+        /// <summary>Боковая карточка 380×330: арт сверху, название и подпись снизу. side −1 — слева, 1 — справа.</summary>
+        private Text SideCard(RectTransform row, int side, string title, string caption, Texture art, Rect uv, Color accent,
+                              System.Action onClick, float delay)
         {
-            var b = MainMenuButton.Create(col, icon, title, caption, accent, onClick, primary);
-            b.Panel = (int)panel;
-            var rt = (RectTransform)b.transform;
-            rt.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -y), new Vector2(440, 64));
-            b.AppearDelay = delay;
-            _buttons.Add(b);
-            y += 74f;
-            delay += 0.07f;
-            return b;
+            var c = MenuCard.Create(row, title, new Vector2(380, 330), new Vector2(side * 578f, 0f), accent, false, onClick);
+            c.AppearDelay = delay;
+            c.SetArt(art, uv);
+            var t = LGBuild.Label(c.Content, title, 30, UIManager.DS.TextPrimary, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.Stretch(32, 92, 24, 0);
+            var cap = LGBuild.Label(c.Content, caption, 16, new Color(0.66f, 0.76f, 0.80f), TextAnchor.UpperLeft, wrap: true);
+            cap.rectTransform.anchorMin = Vector2.zero;
+            cap.rectTransform.anchorMax = new Vector2(1, 0);
+            cap.rectTransform.pivot = new Vector2(0.5f, 0);
+            cap.rectTransform.offsetMin = new Vector2(32, 26);
+            cap.rectTransform.offsetMax = new Vector2(-24, 84);
+            c.Title = t;
+            return cap;
         }
 
-        private MainMenuButton _continueBtn, _loadBtn;
+        /// <summary>Главная карточка 700×400: последняя партия — правитель справа, империя, дата и цифры, кнопка «В игру».</summary>
+        private MenuCard BuildContinueCard(RectTransform row, SaveEntry e)
+        {
+            var leader = LeaderPortraits.ForFaction(e.Meta.Empire);
+            Color accent = leader != null ? leader.Accent : UIManager.DS.NeonCyan;
+            var c = MenuCard.Create(row, "Continue", new Vector2(700, 400), Vector2.zero, accent, true, () =>
+            {
+                var l = SaveSystem.Latest();
+                if (l != null) SaveSystem.LoadSlot(l.Slot);
+            });
+            c.AppearDelay = 0.6f;
+
+            // Правитель — живой портрет (моргает, огни дышат), мягко растворяется к тексту
+            if (leader != null)
+            {
+                var host = LGBuild.Rect(c.ArtMask, "Leader");
+                host.anchorMin = new Vector2(1, 0);
+                host.anchorMax = new Vector2(1, 1);
+                host.pivot = new Vector2(1, 0.5f);
+                host.sizeDelta = new Vector2(440, 0);
+                host.anchoredPosition = Vector2.zero;
+                c.Portrait = LeaderPortraitView.Create(host, leader, 1.55f, new Vector4(0.5f, 0f, 0f, 0f), false, true, false);
+            }
+
+            var chip = LGBuild.Panel(c.Content, "Chip", new Color(accent.r * 0.2f, accent.g * 0.2f, accent.b * 0.2f, 0.9f));
+            chip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -40), new Vector2(214, 28));
+            LG.Chip(chip.gameObject, new Color(accent.r, accent.g, accent.b, 0.5f));
+            var ct = LGBuild.Label(chip.transform, Loc.T("ПРОДОЛЖИТЬ ПАРТИЮ"), 12, Color.Lerp(accent, Color.white, 0.35f), TextAnchor.MiddleCenter, bold: true);
+            ct.rectTransform.Stretch();
+
+            var name = LGBuild.Label(c.Content, e.Meta.Empire, 44, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
+            name.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -84), new Vector2(340, 112));
+            name.resizeTextForBestFit = true; name.resizeTextMinSize = 26; name.resizeTextMaxSize = 44;
+            name.lineSpacing = 0.92f;
+            c.Title = name;
+
+            _continueMeta = LGBuild.Label(c.Content, ContinueCaption(e), 16, new Color(0.68f, 0.78f, 0.82f), TextAnchor.UpperLeft);
+            _continueMeta.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -202), new Vector2(380, 22));
+
+            (int v, string k)[] stats =
+            {
+                (e.Meta.Systems, Loc.T("СИСТЕМ")), (e.Meta.Population, Loc.T("НАСЕЛЕНИЕ")), (e.Meta.Techs, Loc.T("ТЕХНОЛОГИЙ"))
+            };
+            float x = 40f;
+            foreach (var (v, k) in stats)
+            {
+                var n = LGBuild.Label(c.Content, v.ToString(), 28, Color.Lerp(accent, Color.white, 0.15f), TextAnchor.UpperLeft, bold: true);
+                n.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(x, 132), new Vector2(110, 34));
+                var l = LGBuild.Label(c.Content, k, 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
+                l.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(x, 112), new Vector2(120, 18));
+                x += 112f;
+            }
+
+            // «Кнопка» — часть карточки (кликается вся карточка); светится и по ней пробегает блик
+            var go = LGBuild.Panel(c.Content, "Go", Color.Lerp(accent, Color.white, 0.2f));
+            go.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 36), new Vector2(300, 56));
+            LG.Fill(go.gameObject);
+            var gt = LGBuild.Label(go.transform, Loc.T("В ИГРУ"), 19, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
+            gt.rectTransform.Stretch();
+            InspSweep.Add(go.gameObject, 4.5f, 0.35f);
+            c.Glow = go.rectTransform;
+            return c;
+        }
+
+        /// <summary>Сохранений нет — в центре большая «Новая игра» с планетой во всю карточку.</summary>
+        private void BuildNewGameCard(RectTransform row)
+        {
+            var c = MenuCard.Create(row, "NewGame", new Vector2(700, 400), Vector2.zero, UIManager.DS.NeonCyan, true, () => Open(Panel.NewGame));
+            c.AppearDelay = 0.6f;
+            c.SetArt(Resources.Load<Texture2D>("Menu/menu_planet"), new Rect(0.25f, 0.06f, 0.75f, 0.75f * 1.792f / 1.75f));
+            var t = LGBuild.Label(c.Content, Loc.T("НОВАЯ ИГРА"), 48, Color.white, TextAnchor.UpperLeft, bold: true);
+            t.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -150), new Vector2(560, 60));
+            c.Title = t;
+            var cap = LGBuild.Label(c.Content, Loc.T("Создайте галактику, выберите цивилизацию\nи поведите её к звёздам"), 17, new Color(0.72f, 0.82f, 0.86f), TextAnchor.UpperLeft);
+            cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -216), new Vector2(560, 50));
+            var go = LGBuild.Panel(c.Content, "Go", new Color(0.55f, 0.97f, 0.92f));
+            go.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 36), new Vector2(340, 56));
+            LG.Fill(go.gameObject);
+            var gt = LGBuild.Label(go.transform, Loc.T("СОЗДАТЬ ГАЛАКТИКУ"), 18, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
+            gt.rectTransform.Stretch();
+            InspSweep.Add(go.gameObject, 4.5f, 0.35f);
+            c.Glow = go.rectTransform;
+        }
+
+        /// <summary>Полоса «Что нового» под карточками: обложка обновления, метка версии, заголовок. Клик — список изменений.</summary>
+        private void BuildNewsStrip()
+        {
+            var c = MenuCard.Create(_hero, "News", new Vector2(760, 116), Vector2.zero, UIManager.DS.Gold, false, () => Open(Panel.News));
+            var rt = (RectTransform)c.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0);
+            rt.pivot = new Vector2(0.5f, 0);
+            rt.anchoredPosition = new Vector2(0, 54);
+            c.Rebase();
+            c.AppearDelay = 1.15f;
+            c.Lift = 4f;
+            c.Scale = 0.015f;
+
+            var tex = Resources.Load<Texture2D>("Menu/news_cover");
+            if (tex != null)
+            {
+                var thumb = LGBuild.Rect(c.ArtMask, "Thumb");
+                thumb.anchorMin = new Vector2(0, 0);
+                thumb.anchorMax = new Vector2(0, 1);
+                thumb.pivot = new Vector2(0, 0.5f);
+                thumb.sizeDelta = new Vector2(230, 0);
+                thumb.anchoredPosition = Vector2.zero;
+                var img = thumb.gameObject.AddComponent<RawImage>();
+                img.texture = tex;
+                img.raycastTarget = false;
+                // Левая часть обложки (логотип и список) без растяжения: высота кадра — по пропорциям миниатюры
+                const float w = 0.62f;
+                float hh = Mathf.Min(1f, w * tex.width / (float)tex.height / (230f / 116f));
+                img.uvRect = new Rect(0.02f, 0.5f - hh * 0.5f, w, hh);
+                c.Art = img;
+                var fade = LGBuild.Panel(thumb, "Fade", new Color(0.03f, 0.06f, 0.10f, 1f));
+                fade.sprite = MenuArt.HorizontalFade;
+                fade.rectTransform.Stretch();
+                fade.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+                LG.Ignore(fade.gameObject);
+            }
+
+            var gold = new Color(1f, 0.82f, 0.48f);
+            var chip = LGBuild.Panel(c.Content, "Chip", new Color(0.22f, 0.16f, 0.05f, 0.9f));
+            chip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(256, -22), new Vector2(150, 26));
+            LG.Chip(chip.gameObject, new Color(gold.r, gold.g, gold.b, 0.55f));
+            var ct = LGBuild.Label(chip.transform, Loc.F("НОВОЕ · {0}", GameVersion.Current), 12, gold, TextAnchor.MiddleCenter, bold: true);
+            ct.rectTransform.Stretch();
+            c.Glow = chip.rectTransform;
+
+            var t = LGBuild.Label(c.Content, Loc.T(WhatsNewHeadline), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true, wrap: true);
+            t.rectTransform.Stretch(256, 10, 90, 56);
+            c.Title = t;
+
+            var arrow = LGControls.IconButton(c.Content, LGIcon.Back, 40, new Color(0.18f, 0.13f, 0.04f, 0.9f), new Color(gold.r, gold.g, gold.b, 0.6f), () => Open(Panel.News), 180f);
+            ((RectTransform)arrow.transform).At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-46, 0), new Vector2(40, 40));
+            c.Arrow = (RectTransform)arrow.transform;
+        }
+
+        /// <summary>Заголовок новости текущей версии (полный список — Resources/Menu/whatsnew_*.txt).</summary>
+        private const string WhatsNewHeadline = "Советник, итоги партии и цели империи";
+
+        /// <summary>Углы экрана: «Выход» слева, настройки и справка справа.</summary>
+        private void BuildCorners()
+        {
+            _corners = LGBuild.Rect(_root, "Corners");
+            _corners.Stretch();
+
+            var exit = MenuLink.Create(_corners, Loc.T("ВЫХОД"), new Color(0.86f, 0.55f, 0.52f), () => SceneFader.FadeOutThen(GameSession.Quit, 0.5f));
+            ((RectTransform)exit.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(56, -50), new Vector2(160, 36));
+
+            var set = LGControls.IconButton(_corners, LGIcon.Gear, 56, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.28f), () => Open(Panel.Settings));
+            ((RectTransform)set.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-136, -44), new Vector2(56, 56));
+            TooltipHelper.Attach(set.gameObject, Loc.T("Настройки"));
+            var help = LGControls.IconButton(_corners, LGIcon.Info, 56, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.28f), () => Open(Panel.About));
+            ((RectTransform)help.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-60, -44), new Vector2(56, 56));
+            TooltipHelper.Attach(help.gameObject, Loc.T("Об игре: как играть и пути к победе"));
+            foreach (var b in new[] { set.transform, help.transform }) b.gameObject.AddComponent<MenuFadeIn>().Delay = 1.3f;
+            exit.gameObject.AddComponent<MenuFadeIn>().Delay = 1.3f;
+        }
+
+        /// <summary>Окно открыто — карточки уезжают вниз и гаснут, логотип поднимается и тает; закрыто — всё возвращается.</summary>
+        private void AnimateHero()
+        {
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
+            float target = _open == Panel.None ? 1f : 0f;
+            _heroK = LGEase.Spring(_heroK, target, ref _heroV, 4.2f, 0.9f, dt);
+            float k = Mathf.Clamp01(_heroK);
+            _heroCg.alpha = k;
+            _heroCg.blocksRaycasts = _heroCg.interactable = k > 0.85f && target > 0.5f;
+            _hero.anchoredPosition = new Vector2(0f, -120f * (1f - k));
+            _logoCg.alpha = k;
+            _logo.anchoredPosition = new Vector2(0f, -112f + 60f * (1f - k));
+        }
 
         private static string ContinueCaption(SaveEntry e) =>
-            $"{e.Meta.Empire}  ·  {e.Meta.GameDate}  ·  {SaveSystem.FormatSavedAt(e.SavedAtLocal)}";
+            $"{e.Meta.GameDate}  ·  {SaveSystem.FormatSavedAt(e.SavedAtLocal)}";
 
-        private static string LoadCaption(int count) => count == 0 ? Loc.T("Сохранений пока нет") : Loc.F("Сохранений: {0}", count);
+        private static string LoadCaption(int count) => count == 0 ? Loc.T("Сохранений пока нет") : Loc.F("Сохранений: {0}\nпродолжите любую партию", count);
 
         private void OnEnable() => SaveSystem.OnSavesChanged += RefreshSaveInfo;
         private void OnDisable() => SaveSystem.OnSavesChanged -= RefreshSaveInfo;
@@ -324,10 +502,10 @@ namespace StellarisClone.Rendering
         private void RefreshSaveInfo()
         {
             var list = SaveSystem.List();
-            if (_loadBtn != null) _loadBtn.Caption.text = LoadCaption(list.Count);
-            if (_continueBtn == null) return;
-            if (list.Count == 0) _continueBtn.Disable(Loc.T("Сохранений больше нет"));
-            else _continueBtn.Caption.text = ContinueCaption(list[0]);
+            if (_loadCaption != null) _loadCaption.text = LoadCaption(list.Count);
+            if (_continueCard == null) return;
+            if (list.Count == 0) { _continueCard.Disable(); if (_continueMeta != null) _continueMeta.text = Loc.T("Сохранений больше нет"); }
+            else if (_continueMeta != null) _continueMeta.text = ContinueCaption(list[0]);
         }
 
         // ================================================================ Окно справа
@@ -335,15 +513,15 @@ namespace StellarisClone.Rendering
         private void BuildWindow()
         {
             var w = LGBuild.Rect(_root, "Window");
-            w.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-70, -14), new Vector2(1080, 800));
+            w.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -20), new Vector2(1180, 820));
             _window = w;
             var bg = w.gameObject.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
             var fx = LG.Glass(w.gameObject, 28f);
             fx.SetRim(new Color(0.45f, 0.95f, 0.90f, 0.32f));
-            var mo = LG.Motion(w.gameObject, LGAppear.Kind.SlideRight);
-            mo.distance = 80f;
+            var mo = LG.Motion(w.gameObject, LGAppear.Kind.SlideUp);
+            mo.distance = 60f;
             mo.inDuration = 0.5f;
             mo.outDuration = 0.22f;
 
@@ -381,8 +559,8 @@ namespace StellarisClone.Rendering
         {
             if (_window == null) return;
             var r = _root.rect;
-            float w = Mathf.Clamp(r.width - 600f - 70f, 760f, 1080f);
-            float h = Mathf.Clamp(r.height - 170f, 600f, 820f);
+            float w = Mathf.Clamp(r.width - 300f, 900f, 1180f);
+            float h = Mathf.Clamp(r.height - 150f, 600f, 860f);
             var cur = _window.sizeDelta;
             if (Mathf.Abs(cur.x - w) > 0.5f || Mathf.Abs(cur.y - h) > 0.5f) _window.sizeDelta = new Vector2(w, h);
         }
@@ -393,7 +571,6 @@ namespace StellarisClone.Rendering
             if (_open == p) { Close(); return; }
             SFXManager.Play("ui_click", 0.7f, 1.05f);
             _open = p;
-            foreach (var b in _buttons) b.SetSelected(b.Panel == (int)p);
 
             switch (p)
             {
@@ -408,6 +585,9 @@ namespace StellarisClone.Rendering
                     break;
                 case Panel.About:
                     SetHeader(LGIcon.Info, Loc.T("ОБ ИГРЕ"), Loc.T("Astropolity — космическая 4X-стратегия в реальном времени с паузой"));
+                    break;
+                case Panel.News:
+                    SetHeader(LGIcon.Star, Loc.F("ЧТО НОВОГО В {0}", GameVersion.Current), Loc.T(WhatsNewHeadline));
                     break;
             }
 
@@ -430,7 +610,6 @@ namespace StellarisClone.Rendering
                 LG.Show(_window.gameObject);
                 _window.SetAsLastSibling();
             }
-            if (_news != null) LG.Hide(_news);
         }
 
         private void Close()
@@ -438,9 +617,7 @@ namespace StellarisClone.Rendering
             if (_open == Panel.None) return;
             SFXManager.Play("ui_click", 0.5f, 0.9f);
             _open = Panel.None;
-            foreach (var b in _buttons) b.SetSelected(false);
             LG.Hide(_window.gameObject);
-            if (_news != null) LG.Show(_news);
         }
 
         private void SetHeader(LGIcon icon, string title, string sub)
@@ -461,6 +638,7 @@ namespace StellarisClone.Rendering
                 case Panel.Load: SaveLoadPanel.Build(page, SaveLoadPanel.Mode.Load, confirmLoad: false); break;
                 case Panel.Settings: SettingsPanel.Build(page); break;
                 case Panel.About: BuildAboutPage(page); break;
+                case Panel.News: BuildNewsPage(page); break;
             }
             return page.gameObject;
         }
@@ -673,12 +851,44 @@ namespace StellarisClone.Rendering
             y += 66f;
         }
 
+        // ================================================================ Что нового
+
+        /// <summary>
+        /// Список изменений из Resources/Menu/whatsnew_ru|en.txt: «# » — раздел, «- » — пункт, остальное — абзац.
+        /// </summary>
+        private static void BuildNewsPage(RectTransform page)
+        {
+            var asset = Resources.Load<TextAsset>("Menu/whatsnew_" + Loc.Current) ?? Resources.Load<TextAsset>("Menu/whatsnew_ru");
+            var list = LGBuild.ScrollList(page, 8f, 4);
+            if (asset == null) return;
+            var gold = new Color(1f, 0.82f, 0.48f);
+            foreach (var raw in asset.text.Replace("\r", "").Split('\n'))
+            {
+                string line = raw.TrimEnd();
+                if (line.Length == 0) continue;
+                Text t;
+                if (line.StartsWith("# "))
+                {
+                    var gap = LGBuild.Rect(list, "Gap");
+                    LGBuild.Height(gap.gameObject, 6f);
+                    t = LGBuild.Label(list, line.Substring(2), 17, gold, TextAnchor.UpperLeft, bold: true, wrap: true);
+                }
+                else if (line.StartsWith("- "))
+                    t = LGBuild.Label(list, "<color=#6FE6DA>•</color>   " + line.Substring(2), 15, new Color(0.84f, 0.90f, 0.93f), TextAnchor.UpperLeft, wrap: true);
+                else
+                    t = LGBuild.Label(list, line, 15, new Color(0.74f, 0.82f, 0.86f), TextAnchor.UpperLeft, wrap: true);
+                t.supportRichText = true;
+                t.lineSpacing = 1.12f;
+            }
+        }
+
         // ================================================================ Подвал
 
         private void BuildFooter()
         {
-            var ver = LGBuild.Label(_root, $"<b>ASTROPOLITY</b>   {Version}", 11, new Color(0.62f, 0.74f, 0.80f, 0.8f), TextAnchor.LowerLeft);
-            ver.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(110, 30), new Vector2(500, 20));
+            var ver = LGBuild.Label(_root, $"<b>ASTROPOLITY</b>   {Version}", 12, new Color(0.62f, 0.74f, 0.80f, 0.8f), TextAnchor.LowerLeft);
+            ver.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(56, 44), new Vector2(500, 20));
+            ver.gameObject.AddComponent<MenuFadeIn>().Delay = 1.4f;
         }
 
         // ================================================================ Вспомогательные компоненты
@@ -713,95 +923,122 @@ namespace StellarisClone.Rendering
         }
     }
 
-    // ====================================================================== Кнопка главного меню
+    // ====================================================================== Карточка главного меню
 
-    public sealed class MainMenuButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    /// <summary>
+    /// Карточка главного меню: тёмное стекло со скруглённой маской под арт, ореол цвета действия позади.
+    /// Анимации: появление снизу с лёгким «пружинящим» масштабом, при наведении — подъём, увеличение, яркая кромка,
+    /// ореол и наезд на арт (арт и без наведения медленно дрейфует), нажатие — короткое «вдавливание».
+    /// Главная карточка дышит свечением; портрет правителя на ней подсвечивается при наведении.
+    /// </summary>
+    public sealed class MenuCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler,
+                                   IPointerDownHandler, IPointerUpHandler
     {
-        public int Panel;
         public float AppearDelay;
+        public float Lift = 10f, Scale = 0.035f;
+        /// <summary>Content — слой текста; ArtMask — скруглённая маска под арт и портрет.</summary>
+        public RectTransform Content, ArtMask;
+        /// <summary>Glow — элемент, который «вспухает» при наведении (кнопка, метка); Arrow — сдвигается вправо.</summary>
+        public RectTransform Glow, Arrow;
+        public RawImage Art;
+        public Text Title;
+        public LeaderPortraitView Portrait;
+        public bool Disabled { get; private set; }
 
-        private RectTransform _rt, _content, _accent, _arrow;
+        private RectTransform _rt;
         private CanvasGroup _cg;
-        private Text _title;
-        private Image _iconBg;
-        private LiquidGlassEffect _fx, _iconFx;
-        private Color _accentColor;
+        private LiquidGlassEffect _fx;
+        private Image _halo;
+        private Color _accent;
         private System.Action _onClick;
-        private bool _over, _selected, _primary;
-        private float _h, _hv, _t;
+        private bool _over, _down, _primary;
+        private float _h, _hv, _t, _press, _pv, _seed;
+        private Vector2 _rest, _arrowRest;
+        private Rect _uv;
+        private Color _titleBase = Color.white;
+        private bool _titleKnown, _arrowKnown;
 
-        public static MainMenuButton Create(Transform parent, LGIcon icon, string title, string caption, Color accent,
-                                            System.Action onClick, bool primary)
+        public static MenuCard Create(Transform parent, string name, Vector2 size, Vector2 pos, Color accent, bool primary, System.Action onClick)
         {
-            var bg = LGBuild.Panel(parent, "Btn_" + title, primary ? new Color(0.06f, 0.26f, 0.28f, 1f) : UIManager.DS.BgDeep, raycast: true);
-            var b = bg.gameObject.AddComponent<MainMenuButton>();
-            b._accentColor = accent;
-            b._onClick = onClick;
-            b._primary = primary;
-            b._rt = bg.rectTransform;
-            b._cg = bg.gameObject.AddComponent<CanvasGroup>();
-            b._cg.alpha = 0f;
-            b._fx = LG.Glass(bg.gameObject, 20f);
-            b._fx.SetRim(new Color(accent.r, accent.g, accent.b, primary ? 0.55f : 0.16f));
-            b._fx.GlowMultiplier = primary ? 0.8f : 0.3f;
+            var root = LGBuild.Rect(parent, "Card_" + name);
+            root.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, size);
+            var c = root.gameObject.AddComponent<MenuCard>();
+            c._rt = root;
+            c._rest = pos;
+            c._accent = accent;
+            c._primary = primary;
+            c._onClick = onClick;
+            c._seed = Random.Range(0f, 50f);
+            c._cg = root.gameObject.AddComponent<CanvasGroup>();
+            c._cg.alpha = 0f;
 
-            b._content = LGBuild.Rect(bg.transform, "Content");
-            b._content.Stretch();
+            // Ореол позади карточки
+            c._halo = LGBuild.Panel(root, "Halo", new Color(accent.r, accent.g, accent.b, 0f));
+            c._halo.sprite = MenuArt.SoftDisc;
+            c._halo.rectTransform.Stretch(-size.x * 0.22f, -size.y * 0.35f, -size.x * 0.22f, -size.y * 0.35f);
+            LG.Ignore(c._halo.gameObject);
 
-            var acc = LGBuild.Panel(b._content, "Accent", accent);
-            b._accent = acc.rectTransform;
-            b._accent.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(7, 0), new Vector2(3, 0));
-            LG.Fill(acc.gameObject);
-
-            b._iconBg = LGBuild.Panel(b._content, "IconBg", new Color(accent.r * 0.18f, accent.g * 0.18f, accent.b * 0.18f, 1f));
-            b._iconBg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(42, 42));
-            b._iconFx = LG.Platter(b._iconBg.gameObject, 21f);
-            b._iconFx.FillMultiplier = 1.8f;
-            b._iconFx.SetRim(new Color(accent.r, accent.g, accent.b, 0.45f));
-            var ic = LGIcons.Create(b._iconBg.transform, icon, 20, accent);
-            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
-
-            var text = LGBuild.Rect(b._content, "Text");
-            text.Stretch(76, 11, 48, 11);
-            b._title = LGBuild.Label(text, title, 17, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            var cap = LGBuild.Label(text, caption, 11, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
-            cap.horizontalOverflow = HorizontalWrapMode.Wrap;
-            cap.verticalOverflow = VerticalWrapMode.Truncate;
-            b.Caption = cap;
-
-            var arrow = LGIcons.Create(b._content, LGIcon.Back, 16, accent);
-            b._arrow = arrow.rectTransform;
-            b._arrow.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-24, 0), new Vector2(16, 16));
-            b._arrow.localRotation = Quaternion.Euler(0, 0, 180f);
-            return b;
+            var body = LGBuild.Panel(root, "Body", new Color(0.025f, 0.05f, 0.085f, 0.94f), raycast: true);
+            body.rectTransform.Stretch();
+            c._fx = LG.Glass(body.gameObject, 24f);
+            c._fx.GlowMultiplier = primary ? 0.9f : 0.35f;
+            c._fx.SetRim(new Color(accent.r, accent.g, accent.b, primary ? 0.6f : 0.22f));
+            c.ArtMask = LG.RoundedMask(body.transform, 22f, 2f);
+            c.Content = LGBuild.Rect(body.transform, "Content");
+            c.Content.Stretch();
+            InspSweep.Add(body.gameObject, primary ? 6.5f : 9f + Random.Range(0f, 3f), primary ? 0.09f : 0.05f);
+            return c;
         }
 
-        public Text Caption { get; private set; }
-        private bool _disabled;
-
-        public void SetSelected(bool v) => _selected = v;
-
-        public void Disable(string caption)
+        /// <summary>Арт во всю карточку (uv — какой кусок картинки показать) и затемнение снизу под текст.</summary>
+        public void SetArt(Texture tex, Rect uv)
         {
-            _disabled = true;
+            if (tex == null) return;
+            var img = LGBuild.Rect(ArtMask, "Art").gameObject.AddComponent<RawImage>();
+            img.rectTransform.Stretch();
+            img.texture = tex;
+            img.uvRect = uv;
+            img.raycastTarget = false;
+            Art = img;
+            _uv = uv;
+            var shade = LGBuild.Panel(ArtMask, "Shade", new Color(0.02f, 0.045f, 0.08f, 1f));
+            shade.sprite = MenuArt.VerticalFade;
+            shade.rectTransform.Stretch();
+            LG.Ignore(shade.gameObject);
+        }
+
+        /// <summary>Карточку переставили (другие якоря) — запомнить новое место покоя.</summary>
+        public void Rebase() => _rest = _rt.anchoredPosition;
+
+        public void Disable()
+        {
+            Disabled = true;
             _over = false;
-            Caption.text = caption;
-            _title.color = UIManager.DS.TextMuted;
+        }
+
+        public void Click()
+        {
+            if (Disabled || _cg.alpha < 0.5f) return;
+            SFXManager.Play("ui_click", 0.8f, 1f);
+            _h += 0.3f;
+            _onClick?.Invoke();
         }
 
         public void OnPointerEnter(PointerEventData e)
         {
+            if (Disabled) return;
             _over = true;
             if (SFXManager.Has("ui_hover")) SFXManager.Play("ui_hover", 0.35f, 1.1f);
         }
 
-        public void OnPointerExit(PointerEventData e) => _over = false;
+        public void OnPointerExit(PointerEventData e) { _over = false; _down = false; }
+        public void OnPointerDown(PointerEventData e) { if (e.button == PointerEventData.InputButton.Left) _down = true; }
+        public void OnPointerUp(PointerEventData e) => _down = false;
 
         public void OnPointerClick(PointerEventData e)
         {
-            if (e.button != PointerEventData.InputButton.Left || _cg.alpha < 0.5f || _disabled) return;
-            _h += 0.35f;   // короткий «толчок» при нажатии
-            _onClick?.Invoke();
+            if (e.button != PointerEventData.InputButton.Left) return;
+            Click();
         }
 
         private void Update()
@@ -809,27 +1046,129 @@ namespace StellarisClone.Rendering
             float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
             _t += dt;
 
-            // Появление: выезд слева с затуханием
-            float k = LGEase.OutCubic(Mathf.Clamp01((_t - AppearDelay) / 0.55f));
-            _cg.alpha = _disabled ? k * 0.45f : k;
-            if (_disabled) { _over = false; _selected = false; }
-            _cg.blocksRaycasts = k > 0.5f;
+            // Появление: снизу, с затуханием и лёгким пружинящим масштабом
+            float k = Mathf.Clamp01((_t - AppearDelay) / 0.7f);
+            float e = LGEase.OutCubic(k);
+            float pop = Mathf.LerpUnclamped(0.92f, 1f, LGEase.OutBack(k, 1.3f));
+            _cg.alpha = Disabled ? e * 0.5f : e;
+            _cg.blocksRaycasts = k > 0.6f;
 
-            float target = _over || _selected ? 1f : 0f;
-            _h = LGEase.Spring(_h, target, ref _hv, 3.4f, 0.62f, dt);
+            _h = LGEase.Spring(_h, _over && !Disabled ? 1f : 0f, ref _hv, 3.6f, 0.62f, dt);
+            _press = LGEase.Spring(_press, _down ? 1f : 0f, ref _pv, 7f, 0.75f, dt);
             float h = Mathf.Clamp01(_h);
 
-            _content.anchoredPosition = new Vector2(-46f * (1f - k) + 12f * _h, 0f);
-            _accent.sizeDelta = new Vector2(3f, Mathf.Lerp(_primary ? 22f : 0f, 40f, h));
-            _arrow.anchoredPosition = new Vector2(-30f + 10f * h, 0f);
-            var ac = _arrow.GetComponent<Image>();
-            if (ac != null) { var c = _accentColor; c.a = h; ac.color = c; }
+            float sc = pop * (1f + Scale * _h - 0.03f * _press);
+            _rt.localScale = new Vector3(sc, sc, 1f);
+            _rt.anchoredPosition = _rest + new Vector2(0f, -56f * (1f - e) + Lift * _h);
 
-            _fx.SetHover(h * 0.8f);
-            _fx.SetRim(new Color(_accentColor.r, _accentColor.g, _accentColor.b, Mathf.Lerp(_primary ? 0.55f : 0.16f, 0.85f, h)));
-            _iconFx.SetRim(new Color(_accentColor.r, _accentColor.g, _accentColor.b, Mathf.Lerp(0.45f, 0.95f, h)));
-            _title.color = _disabled ? UIManager.DS.TextMuted
-                         : Color.Lerp(UIManager.DS.TextPrimary, Color.Lerp(_accentColor, Color.white, 0.55f), h * 0.6f);
+            float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 1.9f + _seed);
+            _fx.SetHover(h * 0.7f);
+            _fx.SetRim(new Color(_accent.r, _accent.g, _accent.b, Mathf.Lerp(_primary ? 0.5f + 0.15f * breathe : 0.22f, 0.95f, h)));
+            if (_primary) _fx.SetPulse(0.12f + 0.14f * breathe + 0.2f * h);
+            _halo.color = new Color(_accent.r, _accent.g, _accent.b, e * ((_primary ? 0.10f + 0.06f * breathe : 0f) + 0.20f * h));
+
+            // Арт: медленный дрейф и наезд при наведении
+            if (Art != null)
+            {
+                float zoom = 1f - 0.07f * h - 0.025f * (0.5f + 0.5f * Mathf.Sin(_t * 0.21f + _seed));
+                var c = _uv.center + new Vector2(Mathf.Sin(_t * 0.07f + _seed), Mathf.Cos(_t * 0.05f + _seed)) * 0.012f;
+                var size = _uv.size * zoom;
+                Art.uvRect = new Rect(c - size * 0.5f, size);
+            }
+            if (Portrait != null) Portrait.Glow = h;
+
+            if (Glow != null)
+            {
+                float g = 1f + 0.05f * h - 0.03f * _press;
+                Glow.localScale = new Vector3(g, g, 1f);
+            }
+            if (Arrow != null)
+            {
+                if (!_arrowKnown) { _arrowRest = Arrow.anchoredPosition; _arrowKnown = true; }
+                Arrow.anchoredPosition = _arrowRest + new Vector2(8f * h, 0f);
+            }
+            if (Title != null)
+            {
+                if (!_titleKnown) { _titleBase = Title.color; _titleKnown = true; }
+                Title.color = Color.Lerp(_titleBase, Color.Lerp(_accent, Color.white, 0.55f), h * 0.45f);
+            }
+        }
+    }
+
+    /// <summary>Текстовая ссылка в углу меню («Выход»): при наведении светлеет, под ней вырастает черта.</summary>
+    public sealed class MenuLink : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    {
+        private Text _text;
+        private Image _line;
+        private Color _color;
+        private System.Action _onClick;
+        private bool _over;
+        private float _h, _hv;
+
+        public static MenuLink Create(Transform parent, string label, Color color, System.Action onClick)
+        {
+            var rt = LGBuild.Rect(parent, "Link_" + label);
+            var hit = rt.gameObject.AddComponent<Image>();
+            hit.color = new Color(0, 0, 0, 0);
+            LG.Ignore(rt.gameObject);
+            var l = rt.gameObject.AddComponent<MenuLink>();
+            l._color = color;
+            l._onClick = onClick;
+            l._text = LGBuild.Label(rt, label, 16, color, TextAnchor.MiddleLeft, bold: true);
+            l._text.rectTransform.Stretch();
+            l._line = LGBuild.Panel(rt, "Line", color);
+            l._line.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(0, 4), new Vector2(0, 2));
+            LG.Ignore(l._line.gameObject);
+            return l;
+        }
+
+        public void OnPointerEnter(PointerEventData e)
+        {
+            _over = true;
+            if (SFXManager.Has("ui_hover")) SFXManager.Play("ui_hover", 0.3f, 1.2f);
+        }
+
+        public void OnPointerExit(PointerEventData e) => _over = false;
+
+        public void OnPointerClick(PointerEventData e)
+        {
+            if (e.button != PointerEventData.InputButton.Left) return;
+            SFXManager.Play("ui_click", 0.6f, 0.9f);
+            _onClick?.Invoke();
+        }
+
+        private void Update()
+        {
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
+            _h = LGEase.Spring(_h, _over ? 1f : 0f, ref _hv, 4f, 0.7f, dt);
+            float h = Mathf.Clamp01(_h);
+            var c = Color.Lerp(new Color(_color.r, _color.g, _color.b, 0.75f), Color.Lerp(_color, Color.white, 0.4f), h);
+            _text.color = c;
+            _line.color = c;
+            _line.rectTransform.sizeDelta = new Vector2(_text.preferredWidth * h, 2f);
+        }
+    }
+
+    /// <summary>Плавное появление элемента меню через Delay секунд после открытия.</summary>
+    public sealed class MenuFadeIn : MonoBehaviour
+    {
+        public float Delay;
+        private CanvasGroup _cg;
+        private float _t;
+
+        private void Awake()
+        {
+            _cg = GetComponent<CanvasGroup>();
+            if (_cg == null) _cg = gameObject.AddComponent<CanvasGroup>();
+            _cg.alpha = 0f;
+        }
+
+        private void Update()
+        {
+            _t += Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
+            float k = Mathf.Clamp01((_t - Delay) / 0.6f);
+            _cg.alpha = LGEase.OutCubic(k);
+            if (k >= 1f) enabled = false;
         }
     }
 
