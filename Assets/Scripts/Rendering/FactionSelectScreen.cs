@@ -661,12 +661,12 @@ namespace StellarisClone.Rendering
         private void Trait(ref float y, LGIcon icon, string text, Color col)
         {
             var row = LGBuild.Rect(_traits, "Trait");
-            row.TopBand(y, 26);
-            var ic = LGIcons.Create(row, icon, 16, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
+            row.TopBand(y, 30);
+            var ic = LGIcons.Create(row, icon, 24, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(24, 24));
             var t = LGBuild.Label(row, text, 15, new Color(0.86f, 0.91f, 0.94f), TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(28, 0, 0, 0);
-            y += 30f;
+            t.rectTransform.Stretch(36, 0, 0, 0);
+            y += 32f;
         }
 
         private static string StripBonuses(string d)

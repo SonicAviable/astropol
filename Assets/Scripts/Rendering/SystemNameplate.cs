@@ -31,8 +31,7 @@ namespace StellarisClone.Rendering
         private string _buildKey = "";
         // Колония игрока (как в Master of Orion): слева от названия — жители и рост, справа — текущая стройка
         private WorldChip _chipPop, _chipJob;
-        private Transform _starRow;          // ряд у самой звезды: жители слева, стройка справа
-        private SpriteRenderer _starCore;
+        private Transform _statusRow;        // строка состояния под названием: жители · проект · стройка
         private bool _popOn, _jobOn;
         private float _colScan;
         private string _popKey = "", _jobKey = "";
@@ -197,10 +196,8 @@ namespace StellarisClone.Rendering
 
         private void CreateBuildChip()
         {
-            var row = new GameObject("OutpostBuild");
-            row.transform.SetParent(_plateRoot.transform, false);
-            row.transform.localPosition = new Vector3(0, _chipLm != null ? 2.6f : 1.45f, 0);
-            _chipBuild = WorldChip.Create(row.transform, "OutpostChip", 53, true, true);
+            EnsureStatusRow();
+            _chipBuild = WorldChip.Create(_statusRow, "OutpostChip", 53, true, true);
             _chipBuild.SetIcon(LGIcon.Starbase);
             Color g = UIManager.DS.Green;
             _chipBuild.GlowStrength = 0.5f;   // активная стройка — главный ярлык системы
@@ -212,21 +209,53 @@ namespace StellarisClone.Rendering
         private void CreateColonyChips()
         {
             Color g = UIManager.DS.Green, o = new Color(1f, 0.66f, 0.30f);
-            _starRow = new GameObject("ColonyRow").transform;
-            _starRow.SetParent(transform, false);
-            _starRow.localPosition = Vector3.zero;
-            var core = transform.Find("StarCore");
-            if (core != null) _starCore = core.GetComponent<SpriteRenderer>();
-            _chipPop = WorldChip.Create(_starRow, "ColonyPop", 51, false, true);
+            EnsureStatusRow();
+            _chipPop = WorldChip.Create(_statusRow, "ColonyPop", 51, false, true);
             _chipPop.SetIcon(LGIcon.Population);
             _chipPop.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.88f), new Color(g.r, g.g, g.b, 0.75f), g, g, Color.white);
             _chipPop.SetAlpha(0f);
-            _chipJob = WorldChip.Create(_starRow, "ColonyJob", 51, false, true);
+            _chipJob = WorldChip.Create(_statusRow, "ColonyJob", 51, false, true);
             _chipJob.SetIcon(LGIcon.Construction);
             _chipJob.GlowStrength = 0.36f;
             _chipJob.SetColors(new Color(0.08f, 0.05f, 0.02f, 0.88f), new Color(o.r, o.g, o.b, 0.75f), o, o, Color.white);
             _chipJob.SetAlpha(0f);
             _colScan = Random.value * 0.5f;
+        }
+
+        /// <summary>
+        /// Плашки состояния (жители, колонизация/форпост, стройка) — одной строкой под ресурсами, а не вокруг звезды:
+        /// у звезды они наезжали друг на друга и на название при любом зуме.
+        /// </summary>
+        private void EnsureStatusRow()
+        {
+            if (_statusRow != null) return;
+            _statusRow = new GameObject("StatusRow").transform;
+            _statusRow.SetParent(_plateRoot.transform, false);
+            _statusRow.localPosition = new Vector3(0, -2.3f, -0.02f);
+        }
+
+        private float _popVis, _buildVis, _jobVis;
+
+        /// <summary>
+        /// Раскладка строки состояния по центру: видимые плашки встык с зазором, исчезающая плавно отдаёт место.
+        /// </summary>
+        private void LayoutStatusRow()
+        {
+            if (_statusRow == null) return;
+            float k = Time.unscaledDeltaTime * 6f;
+            _popVis = Mathf.MoveTowards(_popVis, _popOn && _alpha > 0.01f ? 1f : 0f, k);
+            _jobVis = Mathf.MoveTowards(_jobVis, _jobOn && _alpha > 0.01f ? 1f : 0f, k);
+            _buildVis = Mathf.MoveTowards(_buildVis, _buildOn && _buildAlpha > 0.01f ? 1f : 0f, k);
+            const float gap = 0.3f;
+            float wp = _chipPop != null ? (_chipPop.Width + gap) * _popVis : 0f;
+            float wb = _chipBuild != null ? (_chipBuild.Width + gap) * _buildVis : 0f;
+            float wj = _chipJob != null ? (_chipJob.Width + gap) * _jobVis : 0f;
+            float x = -(wp + wb + wj - gap * Mathf.Max(_popVis, Mathf.Max(_buildVis, _jobVis))) * 0.5f;
+            if (_chipPop != null) _chipPop.Root.localPosition = new Vector3(x + _chipPop.Width * 0.5f, 0f, 0f);
+            x += wp;
+            if (_chipBuild != null) _chipBuild.Root.localPosition = new Vector3(x + _chipBuild.Width * 0.5f, 0f, 0f);
+            x += wb;
+            if (_chipJob != null) _chipJob.Root.localPosition = new Vector3(x + _chipJob.Width * 0.5f, 0f, 0f);
         }
 
         private ConstructionJob _chipJobRef;
@@ -312,11 +341,6 @@ namespace StellarisClone.Rendering
                     if (j.DaysLeft < bestDays) { bestDays = j.DaysLeft; best = j; }
                 }
 
-            // Радиус звезды в единицах ряда (звезда на карте не мельче нескольких пикселей — берём её спрайт)
-            float rowScale = Mathf.Max(0.0001f, _starRow.lossyScale.x);
-            float starR = _starCore != null ? _starCore.bounds.extents.x / rowScale * 0.55f : 0.9f;
-            starR = Mathf.Clamp(starR, 0.6f, 3f);
-            const float gap = 0.35f;
             if (main != null)
             {
                 _popOn = true;
@@ -328,7 +352,6 @@ namespace StellarisClone.Rendering
                     _chipPop.Set(t, 0.36f);
                     _chipPop.CenterOn(0f, 0f);
                 }
-                _chipPop.Root.localPosition = new Vector3(-(starR + gap + _chipPop.Width * 0.5f), 0f, -0.02f);
             }
             _chipJobRef = best;
             if (best != null)
@@ -344,7 +367,6 @@ namespace StellarisClone.Rendering
                     _chipJob.CenterOn(0f, 0f);
                 }
                 _chipJob.SetProgress(best.Progress);
-                _chipJob.Root.localPosition = new Vector3(starR + gap + _chipJob.Width * 0.5f, 0f, -0.02f);
             }
         }
 
@@ -569,7 +591,6 @@ namespace StellarisClone.Rendering
         {
             _hiddenByIsolation = !visible;
             if (_plateRoot != null) _plateRoot.SetActive(visible);
-            if (_starRow != null) _starRow.gameObject.SetActive(visible);
         }
 
         private void ApplyAlpha()
@@ -755,18 +776,12 @@ namespace StellarisClone.Rendering
 
             if (_hiddenByIsolation) return;
             if (!_plateRoot.activeSelf) _plateRoot.SetActive(true);
-            if (_starRow != null && !_starRow.gameObject.activeSelf) _starRow.gameObject.SetActive(true);
 
             _plateRoot.transform.rotation = _cam.rotation;
 
             float dist = Vector3.Distance(_cam.position, transform.position);
             float scale = Mathf.Clamp(dist * 0.012f, 1.1f, 3.2f);
             _plateRoot.transform.localScale = Vector3.one * scale;
-            if (_starRow != null)
-            {
-                _starRow.rotation = _cam.rotation;
-                _starRow.localScale = Vector3.one * scale;
-            }
 
             // Видимость подписи по зуму
             bool known = GalaxyView.IsKnownToPlayer(_data);
@@ -797,6 +812,7 @@ namespace StellarisClone.Rendering
                 UpdateColonyChips();
                 if (wasPop != _popOn || wasJob != _jobOn) ApplyAlpha();
             }
+            LayoutStatusRow();
 
             // Укрепление: уровень может вырасти (стройка) или упасть (захват) — сверяем раз в секунду
             if (_chipFort != null)
@@ -830,7 +846,6 @@ namespace StellarisClone.Rendering
                 SystemNameplateHover.Instance.Unregister(this);
 
             if (_plateRoot != null) Destroy(_plateRoot);
-            if (_starRow != null) Destroy(_starRow.gameObject);
         }
     }
 }
