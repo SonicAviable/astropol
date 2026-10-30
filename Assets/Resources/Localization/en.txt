@@ -7121,3 +7121,4 @@ FSR чётче растягивает картинку при масштабе �
 ВЫЙТИ	QUIT
 ещё не сохранялась	not saved yet
 сохранено {0}	saved {0}
+Подробнее о путях к победе  <color=#8AA2A8>(V)</color>	Paths to victory in detail  <color=#8AA2A8>(V)</color>

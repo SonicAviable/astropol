@@ -33,7 +33,8 @@ namespace StellarisClone.Rendering
         private RectTransform _attention;
         private string _attentionKey = "";
         private int _rowIndex;
-        private const float LeftW = 380f;
+        private const float LeftW = 400f;          // ширина правой колонки (цифры, внимание, победа)
+        private const float BannerH = 212f;
         // Строки — полупрозрачные светлые слои поверх панели (а не плотный тёмный цвет: панели шейдер подсвечивает,
         // и непрозрачные строки на их фоне выглядели чёрными провалами)
         private static readonly Color RowA = new Color(0.60f, 0.85f, 0.95f, 0.055f);
@@ -120,7 +121,7 @@ namespace StellarisClone.Rendering
         private void BuildWindow(Transform host)
         {
             var rootRt = LGBuild.Rect(host, "EmpireOverviewWindow");
-            rootRt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1440, 860));
+            rootRt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1520, 900));
             _root = rootRt.gameObject;
             var bg = _root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
@@ -128,26 +129,27 @@ namespace StellarisClone.Rendering
             LG.Glass(_root).SetRim(WindowRim);
             LG.Motion(_root, LGAppear.Kind.Pop).inDuration = 0.45f;
 
-            BuildHeader(rootRt);
+            // «Штаб»: шапка с правителем и гербом, полоса ресурсов, слева вкладки с таблицей,
+            // справа — империя в цифрах, требует внимания и путь к победе
+            BuildBanner(rootRt);
             BuildResourceRow(rootRt);
 
             var body = LGBuild.Rect(rootRt, "Body");
-            body.Stretch(20, 20, 20, 150);
+            body.Stretch(24, 22, 24, BannerH + 88);
 
-            var left = LGBuild.Rect(body, "Left");
-            left.anchorMin = new Vector2(0, 0);
-            left.anchorMax = new Vector2(0, 1);
-            left.pivot = new Vector2(0, 1);
-            left.offsetMin = Vector2.zero;
-            left.offsetMax = new Vector2(LeftW, 0);
-            BuildLeaderCard(left);
-            BuildStats(left);
-            BuildAttention(left);
-            BuildVictory(left);
+            var side = LGBuild.Rect(body, "Side");
+            side.anchorMin = new Vector2(1, 0);
+            side.anchorMax = new Vector2(1, 1);
+            side.pivot = new Vector2(1, 1);
+            side.offsetMin = new Vector2(-LeftW, 0);
+            side.offsetMax = Vector2.zero;
+            BuildStats(side);
+            BuildAttention(side);
+            BuildVictory(side);
 
-            var right = LGBuild.Rect(body, "Right");
-            right.Stretch(LeftW + 16, 0, 0, 0);
-            BuildTabs(right);
+            var main = LGBuild.Rect(body, "Main");
+            main.Stretch(0, 0, LeftW + 18, 0);
+            BuildTabs(main);
 
             LG.Skin(_root.transform);
             _root.SetActive(false);
@@ -191,42 +193,90 @@ namespace StellarisClone.Rendering
             return b;
         }
 
-        private void BuildHeader(RectTransform root)
+        /// <summary>
+        /// Шапка «штаба»: слева живой портрет правителя, растворяющийся вправо; герб; крупно империя,
+        /// строй, правитель и дата; кнопка «Законы империи» и мощь флота; справа — закрыть.
+        /// </summary>
+        private void BuildBanner(RectTransform root)
         {
-            var header = LGBuild.Panel(root, "Header", UIManager.DS.BgHeader);
-            header.rectTransform.TopBand(0, 72);
-            LG.Header(header.gameObject);
+            var banner = LGBuild.Panel(root, "Banner", UIManager.DS.BgHeader);
+            banner.rectTransform.TopBand(0, BannerH);
+            LG.Header(banner.gameObject);
 
-            _emblem = LGBuild.Panel(header.transform, "Emblem", new Color(0.2f, 0.5f, 0.6f));
-            _emblem.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(22, 0), new Vector2(48, 48));
-            LG.Platter(_emblem.gameObject, 24f).FillMultiplier = 2.4f;
-            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 28, Color.white);
+            // Портрет (кадр по пояс) — фон левой части шапки
+            _portrait = LGBuild.Panel(banner.transform, "Portrait", new Color(0.2f, 0.4f, 0.5f));
+            var prt = _portrait.rectTransform;
+            prt.anchorMin = new Vector2(0, 0);
+            prt.anchorMax = new Vector2(0, 1);
+            prt.pivot = new Vector2(0, 0.5f);
+            prt.offsetMin = new Vector2(0, 0);
+            prt.offsetMax = new Vector2(560, 0);
+            LG.Ignore(_portrait.gameObject);
+            _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 64, Color.white);
+            _portraitHost = LG.RoundedMask(_portrait.transform, 18f, 0f);
+            TooltipHelper.Attach(_portrait.gameObject, "");
+            _portraitTip = _portrait.GetComponent<TooltipTrigger>();
+            var fade = LGBuild.Panel(banner.transform, "Fade", UIManager.DS.BgHeader);
+            fade.sprite = MenuArt.HorizontalFade;
+            fade.rectTransform.anchorMin = new Vector2(0, 0);
+            fade.rectTransform.anchorMax = new Vector2(0, 1);
+            fade.rectTransform.pivot = new Vector2(0, 0.5f);
+            fade.rectTransform.offsetMin = new Vector2(300, 0);
+            fade.rectTransform.offsetMax = new Vector2(560, 0);
+            fade.rectTransform.localScale = new Vector3(-1f, 1f, 1f);   // гаснет к правому краю портрета
+            fade.raycastTarget = false;
+            LG.Ignore(fade.gameObject);
+            var floor = LGBuild.Panel(banner.transform, "Floor", UIManager.DS.BgHeader);
+            floor.sprite = MenuArt.VerticalFade;
+            floor.rectTransform.Stretch();
+            floor.raycastTarget = false;
+            LG.Ignore(floor.gameObject);
 
-            var titleRt = LGBuild.Rect(header.transform, "TitleBox");
-            titleRt.Stretch(86, 0, 80, 0);
-            _title = LGBuild.Label(titleRt, Loc.T("ИМПЕРИЯ"), 22, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            _title.rectTransform.offsetMax = new Vector2(0, -12);
-            _title.Track(1.4f);
-            _subtitle = LGBuild.Label(titleRt, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
-            _subtitle.rectTransform.offsetMin = new Vector2(0, 12);
+            // Герб
+            _emblem = LGBuild.Panel(banner.transform, "Emblem", new Color(0.2f, 0.5f, 0.6f));
+            _emblem.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(470, 14), new Vector2(104, 104));
+            LG.Ignore(_emblem.gameObject);
+            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 92, Color.white);
 
-            var close = LGBuild.Button(header.transform, "Close", new Color(0.16f, 0.20f, 0.24f),
-                new Color(1f, 0.45f, 0.48f, 0.5f), Close, LGIcon.Close, null, 12, 17f);
-            ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-22, 0), new Vector2(34, 34));
+            // Империя
+            var box = LGBuild.Rect(banner.transform, "TitleBox");
+            box.Stretch(548, 0, 90, 0);
+            var cap = LGBuild.Label(box, Loc.T("ОБЗОР ИМПЕРИИ"), 12, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            cap.rectTransform.TopBand(40, 18);
+            cap.Track(2.5f);
+            _title = LGBuild.Label(box, Loc.T("ИМПЕРИЯ"), 40, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+            _title.rectTransform.TopBand(60, 52);
+            _title.resizeTextForBestFit = true; _title.resizeTextMinSize = 24; _title.resizeTextMaxSize = 40;
+            _subtitle = LGBuild.Label(box, "", 15, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
+            _subtitle.rectTransform.TopBand(114, 22);
+            _leaderTitle = LGBuild.Label(box, "", 12, new Color(0.55f, 0.65f, 0.70f), TextAnchor.UpperLeft);
+            _leaderTitle.rectTransform.TopBand(136, 18);
+            _leaderName = LGBuild.Label(box, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft);
+            _leaderName.gameObject.SetActive(false);   // имя правителя — в строке под названием
+
+            var laws = LGBuild.Button(box, "Laws", UIManager.DS.BtnNeutral, new Color(CGold.r, CGold.g, CGold.b, 0.55f),
+                () => { Close(); LawsWindow.Toggle(); }, null, Loc.T("ЗАКОНЫ ИМПЕРИИ"), 12);
+            ((RectTransform)laws.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -160), new Vector2(220, 40));
+            TooltipHelper.Attach(laws.gameObject, "");
+            _lawsTip = laws.GetComponent<TooltipTrigger>();
+
+            var powerRow = LGBuild.Rect(box, "Power");
+            powerRow.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(240, -170), new Vector2(300, 20));
+            var pic = LGIcons.Create(powerRow, LGIcon.Fleet, 16, CGold);
+            pic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
+            _leaderPower = LGBuild.Label(powerRow, "", 14, CGold, TextAnchor.MiddleLeft, bold: true);
+            _leaderPower.rectTransform.offsetMin = new Vector2(24, 0);
+
+            var close = LGControls.IconButton(banner.transform, LGIcon.Close, 42, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), Close);
+            ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -22), new Vector2(42, 42));
             TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / I)</color>"));
-
-            var line = LGBuild.Panel(header.transform, "Line", new Color(1f, 1f, 1f, 0.18f));
-            line.rectTransform.anchorMin = new Vector2(0, 0);
-            line.rectTransform.anchorMax = new Vector2(1, 0);
-            line.rectTransform.sizeDelta = new Vector2(-60, 1.2f);
-            LG.Line(line.gameObject, hairline: true);
         }
 
         /// <summary>Ресурсы — одна тонкая полоса: запас и доход за месяц (подробности — в подсказках верхней панели).</summary>
         private void BuildResourceRow(RectTransform root)
         {
             var strip = Block(root, "Resources");
-            strip.rectTransform.TopBand(84, 54, 20, 20);
+            strip.rectTransform.TopBand(BannerH + 12, 62, 24, 24);
 
             var defs = new (LGIcon icon, string label, Color col)[]
             {
@@ -262,51 +312,11 @@ namespace StellarisClone.Rendering
             }
         }
 
-        /// <summary>Правитель: портрет (наведение — история фракции), имя, титул, мощь флота и кнопка «Законы».</summary>
-        private void BuildLeaderCard(RectTransform left)
-        {
-            var card = Block(left, "LeaderCard");
-            card.rectTransform.TopBand(0, 148);
-
-            _portrait = LGBuild.Panel(card.transform, "Portrait", new Color(0.2f, 0.4f, 0.5f));
-            _portrait.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -14), new Vector2(92, 120));
-            LG.Platter(_portrait.gameObject, 8f).FillMultiplier = 2.2f;
-            _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 48, Color.white);
-            _portraitHost = LG.RoundedMask(_portrait.transform, 8f, 1f);
-            TooltipHelper.Attach(_portrait.gameObject, "");
-            _portraitTip = _portrait.GetComponent<TooltipTrigger>();
-
-            var info = LGBuild.Rect(card.transform, "Info");
-            info.Stretch(122, 14, 14, 14);
-            var cap = LGBuild.Label(info, Loc.T("ПРАВИТЕЛЬ"), 9, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
-            cap.rectTransform.TopBand(0, 14);
-            cap.Track(1.4f);
-            _leaderName = LGBuild.Label(info, "", 16, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            _leaderName.rectTransform.TopBand(16, 22);
-            _leaderTitle = LGBuild.Label(info, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft, wrap: true);
-            _leaderTitle.rectTransform.TopBand(39, 28);
-
-            var powerRow = LGBuild.Rect(info, "Power");
-            powerRow.TopBand(68, 18);
-            var pic = LGIcons.Create(powerRow, LGIcon.Fleet, 14, CGold);
-            pic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            _leaderPower = LGBuild.Label(powerRow, "", 12, CGold, TextAnchor.MiddleLeft, bold: true);
-            _leaderPower.rectTransform.offsetMin = new Vector2(20, 0);
-
-            var laws = LGBuild.Button(info, "Laws", new Color(0.10f, 0.07f, 0.03f), new Color(CGold.r, CGold.g, CGold.b, 0.55f),
-                () => { Close(); LawsWindow.Toggle(); }, LGIcon.Menu, Loc.T("ЗАКОНЫ ИМПЕРИИ"), 10);
-            var lr = (RectTransform)laws.transform;
-            lr.anchorMin = new Vector2(0, 0); lr.anchorMax = new Vector2(1, 0); lr.pivot = new Vector2(0.5f, 0);
-            lr.offsetMin = new Vector2(0, 0); lr.offsetMax = new Vector2(0, 30);
-            TooltipHelper.Attach(laws.gameObject, "");
-            _lawsTip = laws.GetComponent<TooltipTrigger>();
-        }
-
         /// <summary>«Империя в цифрах»: строки-ссылки — клик ведёт туда, где с этим работают.</summary>
         private void BuildStats(RectTransform left)
         {
             var block = Block(left, "Stats");
-            block.rectTransform.TopBand(160, 150);
+            block.rectTransform.TopBand(0, 150);
             Caption(block.transform, 10, Loc.T("ИМПЕРИЯ В ЦИФРАХ"), UIManager.DS.TextMuted);
 
             AddStatRow(block.transform, 0, 0, "systems", LGIcon.Star, Loc.T("Системы"), UIManager.DS.NeonCyan, () => SwitchTab(Tab.Systems));
@@ -342,7 +352,7 @@ namespace StellarisClone.Rendering
         private void BuildAttention(RectTransform left)
         {
             var block = Block(left, "Attention");
-            block.rectTransform.TopBand(322, 224);
+            block.rectTransform.TopBand(162, 210);
             block.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.20f));
             var row = TopRow(block.transform, 10, 18, 16, 16);
             var ic = LGIcons.Create(row, LGIcon.Warning, 13, CGold);
@@ -429,9 +439,10 @@ namespace StellarisClone.Rendering
             var tl = LGBuild.Label(titleRow, Loc.T("ПУТЬ К ПОБЕДЕ"), 10, CGold, TextAnchor.MiddleLeft, bold: true);
             tl.rectTransform.offsetMin = new Vector2(20, 0);
             tl.Track(1.4f);
-            var more = LGBuild.Button(titleRow, "More", new Color(0.10f, 0.08f, 0.03f), new Color(CGold.r, CGold.g, CGold.b, 0.45f),
-                () => { Close(); VictoryPathWindow.Toggle(); }, null, Loc.T("ПОДРОБНЕЕ · V"), 9);
-            ((RectTransform)more.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(118, 22));
+            var more = LGControls.IconButton(titleRow, LGIcon.Back, 24, UIManager.DS.BgDeep, new Color(CGold.r, CGold.g, CGold.b, 0.45f),
+                () => { Close(); VictoryPathWindow.Toggle(); }, 180f);
+            ((RectTransform)more.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(24, 24));
+            TooltipHelper.Attach(more.gameObject, Loc.T("Подробнее о путях к победе  <color=#8AA2A8>(V)</color>"));
 
             _domText = VictoryRow(block.transform, 36, LGIcon.Starbase, Loc.T("Доминирование"), UIManager.DS.NeonCyan, out _domBar);
             _sciText = VictoryRow(block.transform, 62, LGIcon.Research, Loc.T("Наука"), CResearch, out _sciBar);
@@ -541,21 +552,21 @@ namespace StellarisClone.Rendering
         {
             var f = Faction;
             Color fc = f != null ? f.EmpireColor : UIManager.DS.NeonCyan;
-            _title.text = (f?.Name ?? Loc.T("Империя")).ToUpper();
+            _title.text = f?.Name ?? Loc.T("Империя");
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
             var ruler = LeaderPortraits.ForFaction(f);
             _subtitle.text = ruler != null
                 ? Loc.F("<color={0}>{1}</color>   ·   правитель {2}   ·   {3}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), ruler.Name, date)
                 : Loc.F("<color={0}>{1}</color>   ·   {2}", LGBuild.Hex(fc), f?.Title ?? Loc.T("Правительство"), date);
-            _emblem.color = new Color(fc.r * 0.45f, fc.g * 0.45f, fc.b * 0.45f, 1f);
             _emblemIcon.color = Color.Lerp(fc, Color.white, 0.35f);
-            // Герб фракции вместо общего значка правителя
+            // Герб фракции вместо общего значка правителя — крупно, без подложки
             var crest = FactionEmblems.ForFaction(f);
+            _emblem.color = crest != null ? Color.clear : new Color(fc.r * 0.45f, fc.g * 0.45f, fc.b * 0.45f, 1f);
             if (crest != null && _emblemIcon.sprite != crest)
             {
                 _emblemIcon.sprite = crest;
                 _emblemIcon.preserveAspect = true;
-                _emblemIcon.rectTransform.sizeDelta = new Vector2(38, 38);
+                _emblemIcon.rectTransform.sizeDelta = new Vector2(100, 100);
             }
         }
 
@@ -599,13 +610,12 @@ namespace StellarisClone.Rendering
             {
                 _portraitKey = key;
                 LGBuild.Clear(_portraitHost);
-                bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.5f) != null;
+                bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.25f) != null;
                 _portraitIcon.gameObject.SetActive(!ok);
             }
             _portraitTip?.SetText(f != null ? $"<b>{f.Name}</b>\n{f.Description}" : "");
             _lawsTip?.SetText(LawsSummary());
-            _portrait.color = new Color(fc.r * 0.4f, fc.g * 0.4f, fc.b * 0.4f, 1f);
-            _portrait.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(fc.r, fc.g, fc.b, 0.6f));
+            _portrait.color = new Color(fc.r * 0.15f, fc.g * 0.15f, fc.b * 0.18f, 1f);
             _portraitIcon.color = Color.Lerp(fc, Color.white, 0.3f);
             int power = FleetManager.Instance != null ? FleetManager.Instance.GetMilitaryPower(0) : 0;
             _leaderPower.text = Loc.F("Мощь флота: {0:N0}", power);
