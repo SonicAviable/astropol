@@ -606,14 +606,14 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Форма кнопки: невысокие (до 60 px, включая строки списков) — капсулы, высокие плитки — мягкий прямоугольник.
-        /// Явно заданный круг или капсула (радиус ≈ половине меньшей стороны) — круг при любом размере (кнопка хода в бою).
+        /// Форма кнопки по единому дизайну: прямоугольник со скруглением 8 px, как у главной кнопки (MenuPrimaryButton).
+        /// Капсулы больше не рисуются; круглыми остаются только явно заданные круги — кнопки-значки (радиус ≈ половине стороны).
         /// </summary>
         private float ButtonRadius(Rect r)
         {
             float minS = Mathf.Min(r.width, r.height);
             if (radius >= minS * 0.45f) return minS * 0.5f;
-            return r.height <= 60f ? minS * 0.5f : Mathf.Min(8f, minS * 0.5f);
+            return Mathf.Min(8f, minS * 0.5f);
         }
 
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }
