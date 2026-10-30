@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты окна «Управление колониями» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_colonies.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: -20px; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 60%/cover; filter: blur(6px) brightness(0.4); }
+.win { position: absolute; left: 40px; right: 40px; top: 28px; bottom: 22px; background: linear-gradient(180deg, rgba(12,24,44,0.97), rgba(6,12,24,0.98)); border: 1px solid rgba(120,220,215,0.3); border-radius: 18px; box-shadow: 0 30px 70px rgba(0,0,0,0.6); overflow: hidden; }
+.mut { color: #8DA6AE; } .cy { color: #6FE6DA; } .gold { color: #FFD27A; } .gr { color: #5CF599; } .rd { color: #FF8A73; } .bl { color: #9FB4FF; } .or { color:#FFA65C; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 12px; color: #6FE6DA; }
+.card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; }
+.b { height: 38px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; letter-spacing: 2px; position: relative; clip-path: polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px); background: #16243C; color: #D6E4FF; padding: 0 16px; white-space: nowrap; }
+.b::before { content:''; position:absolute; left:0; top:9px; bottom:0; width:3px; background:#6E9BFF; }
+.b.q { background:#0F1828; color:#9FB2BE; } .b.q::before { background:#3A4A5E; }
+.b.g::before { background:#4FD98A; } .b.on { background:#173A33; color:#BFF5DF; } .b.on::before { background:#4FD98A; }
+.b.p { background:#6FE3D6; color:#04161A; } .b.p::before { display:none; }
+.close { position: absolute; right: 22px; top: 20px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.2); font-size: 18px; color: #CFE2E6; }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 6px; padding: 6px 20px; border-radius: 20px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 16px; letter-spacing: 3px; z-index: 50; }
+.bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); } .bar i { display: block; height: 100%; border-radius: 3px; }
+.pl { border-radius: 50%; flex: none; box-shadow: inset -10px -8px 18px rgba(0,0,0,0.65), 0 0 18px rgba(255,255,255,0.06); }
+.p1 { background: radial-gradient(circle at 35% 30%, #F5D58A, #C9862F 55%, #6B3A12); }
+.p2 { background: radial-gradient(circle at 35% 30%, #9EE7FF, #2C7FB8 50%, #0E2E55); }
+.p3 { background: radial-gradient(circle at 35% 30%, #B9F59A, #3E9B52 50%, #123A22); }
+.p4 { background: radial-gradient(circle at 35% 30%, #F0B3FF, #8A4FC4 50%, #2A1550); }
+.p5 { background: radial-gradient(circle at 35% 30%, #E8E8EE, #8C95A6 50%, #2D3440); }
+.tag { display:inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.seg div { flex: 1; text-align: center; padding: 9px 12px; border-radius: 9px; font-weight: 700; font-size: 13px; color: #9DB3BA; letter-spacing: 1px; white-space: nowrap; }
+.seg div.on { background: rgba(95,230,218,0.20); color: #fff; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.7); }
+.res { display: flex; gap: 10px; }
+.res div { flex: 1; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); }
+.res b { font-size: 20px; } .res span { display: block; font-size: 11px; letter-spacing: 1.5px; font-weight: 700; color: #8DA6AE; margin-bottom: 2px; } .res i { font-style: normal; font-size: 13px; margin-left: 8px; }
+.att { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(255,210,122,0.06); border-left: 3px solid #FFD27A; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.att.ok { background: rgba(92,245,153,0.05); border-color: #5CF599; }
+.ring { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 16px; flex: none; }
+.prod { display: flex; gap: 14px; font-weight: 700; font-size: 15px; }
+.prod span small { display:block; font-size: 10px; letter-spacing: 1px; color:#8DA6AE; font-weight:700; }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const C = [
+ {n:'Гиперион', cls:'Пустынный мир · столица', p:'p1', pop:6, hou:6, st:65, sl:'Спокойствие', e:'+7,2', m:'+7,6', a:'+5,4', s:'+6,6', f:'Равномерно', job:null, auto:false, warn:'нет жилья'},
+ {n:'Аквилон II', cls:'Океанический мир', p:'p2', pop:4, hou:7, st:58, sl:'Спокойствие', e:'+3,1', m:'+1,8', a:'+0,6', s:'+2,4', f:'Энергетика', job:['Электростанция',62,'14 дн.'], auto:true},
+ {n:'Сильва', cls:'Континентальный мир', p:'p3', pop:3, hou:5, st:72, sl:'Подъём', e:'+1,2', m:'+4,0', a:'+0,4', s:'+1,1', f:'Добыча титана', job:['Шахтёрский район',28,'41 дн.'], auto:false},
+ {n:'Ирис b', cls:'Тропический мир · новая', p:'p4', pop:1, hou:3, st:41, sl:'Брожение', e:'+0,4', m:'+0,6', a:'0', s:'+0,3', f:'Равномерно', job:null, auto:true},
+ {n:'Кеплер IV', cls:'Холодный мир', p:'p5', pop:2, hou:4, st:63, sl:'Спокойствие', e:'+0,8', m:'+2,2', a:'+1,6', s:'+0,5', f:'Промышленность', job:['Литейный цех',84,'5 дн.'], auto:false},
+];
+const stc = s => s>=60?'#6FE6DA':s>=50?'#FFD27A':'#FF8A73';
+const RES = `<div><span>ГЕЛИЙ-3</span><b>220</b><i class="gr">+15</i></div><div><span>ТИТАН</span><b>280</b><i class="gr">+13</i></div><div><span>СПЛАВЫ</span><b>160</b><i class="gr">+10</i></div><div><span>ВЛИЯНИЕ</span><b>60</b><i class="gr">+4</i></div><div><span>НАУКА</span><b>+30</b><i class="mut">/мес</i></div>`;
+const HEAD = (title, sub) => `<div style="position:absolute;left:34px;top:24px"><div class="h">ИРИДИЙСКИЙ ОРАКУЛ · КОЛОНИИ</div><div style="font-weight:700;font-size:36px;margin-top:2px">${title}</div><div class="mut" style="font-size:14px;margin-top:2px">${sub}</div></div><div class="close">✕</div>`;
+const JOB = (c, w) => c.job ? `<div style="font-size:13px;font-weight:700">${c.job[0]} <span class="mut" style="font-weight:400">· ${c.job[2]}</span></div><div class="bar" style="width:${w}px;margin-top:6px"><i style="width:${c.job[1]}%;background:#6FE6DA"></i></div>`
+  : c.auto ? `<div class="mut" style="font-size:13px">Автостройка выберет сама</div><div class="bar" style="width:${w}px;margin-top:6px"></div>`
+  : `<div class="gold" style="font-size:13px;font-weight:700">⚠ Ничего не строится</div><div class="bar" style="width:${w}px;margin-top:6px"></div>`;
+const POP = (c,w) => `<div style="font-size:15px;font-weight:700">${c.pop} <span class="mut" style="font-size:12px">/ ${c.hou}</span></div><div class="bar" style="width:${w}px;margin-top:5px"><i style="width:${c.pop/c.hou*100}%;background:${c.pop>=c.hou?'#FFD27A':'#5CF599'}"></i></div>${c.warn?`<div class="gold" style="font-size:11px;margin-top:4px">${c.warn}</div>`:''}`;
+
+const T = {
+a: () => `<div class="lbl2">ВАРИАНТ A · ПУЛЬТ</div><div class="bg"></div>
+ <div class="win">${HEAD('Управление колониями','5 колоний · 16 жителей · клик по строке — окно планеты')}
+  <div style="position:absolute;left:34px;right:34px;top:126px"><div class="res">${RES}<div style="flex:1.2;border-color:rgba(255,210,122,0.4);background:rgba(255,210,122,0.06)"><span class="gold">ПРОСТАИВАЮТ</span><b class="gold">2</b><i class="mut">очередь пуста</i></div></div></div>
+  <div style="position:absolute;left:34px;right:34px;top:214px;display:flex;gap:14px;align-items:center">
+    <div class="seg" style="width:560px"><div class="on">Все · 5</div><div>Простаивают · 2</div><div>Нет жилья · 1</div><div>Неспокойные · 1</div></div>
+    <div style="flex:1"></div><span class="mut" style="font-size:13px">Сортировка:</span><div class="seg" style="width:330px"><div class="on">Жители ▾</div><div>Стабильность</div><div>Доход</div></div>
+    <div class="b g">ВКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ</div>
+  </div>
+  <div style="position:absolute;left:34px;right:34px;top:282px">
+   <div style="display:grid;grid-template-columns:330px 150px 190px 300px 210px 1fr 230px;padding:0 18px 8px;font-size:11px;font-weight:700;letter-spacing:2px;color:#8DA6AE"><div>КОЛОНИЯ</div><div>ЖИТЕЛИ</div><div>СТАБИЛЬНОСТЬ</div><div>ДОХОД / МЕС</div><div>ПРИОРИТЕТ</div><div>СТРОИТСЯ</div><div></div></div>
+   ${C.map((c,i)=>`<div class="card" style="display:grid;grid-template-columns:330px 150px 190px 300px 210px 1fr 230px;align-items:center;padding:14px 18px;margin-bottom:10px;${!c.job&&!c.auto?'border-color:rgba(255,210,122,0.35);box-shadow:inset 3px 0 0 #FFD27A;':''}">
+     <div style="display:flex;gap:14px;align-items:center"><div class="pl ${c.p}" style="width:52px;height:52px"></div><div><div style="font-weight:700;font-size:18px">${c.n}</div><div class="mut" style="font-size:12px">${c.cls}</div></div></div>
+     <div>${POP(c,110)}</div>
+     <div style="display:flex;gap:10px;align-items:center"><div class="ring" style="width:46px;height:46px;font-size:14px;background:conic-gradient(${stc(c.st)} ${c.st}%,rgba(255,255,255,0.08) 0);-webkit-mask:radial-gradient(circle,transparent 17px,#000 18px)"></div><div style="margin-left:-56px;width:46px;text-align:center;font-weight:700">${c.st}</div><div style="font-size:12px;color:${stc(c.st)}">${c.sl}</div></div>
+     <div class="prod"><span class="cy">${c.e}<small>ГЕЛИЙ</small></span><span class="gold">${c.m}<small>ТИТАН</small></span><span class="or">${c.a}<small>СПЛАВЫ</small></span><span class="gr">${c.s}<small>НАУКА</small></span></div>
+     <div><div class="b q" style="width:180px;justify-content:space-between">${c.f.toUpperCase()} <span>▾</span></div></div>
+     <div>${JOB(c,260)}</div>
+     <div style="display:flex;gap:8px;justify-content:flex-end"><div class="b">СТРОИТЬ…</div><div class="b ${c.auto?'on':'q'}">АВТО${c.auto?' ✓':''}</div></div>
+   </div>`).join('')}
+  </div>
+ </div>`,
+
+b: () => `<div class="lbl2">ВАРИАНТ B · КАРТОЧКИ</div><div class="bg"></div>
+ <div class="win">${HEAD('Управление колониями','Ваши миры — карточками. Клик по карточке — окно планеты')}
+  <div style="position:absolute;left:34px;top:130px;width:330px;bottom:30px;display:flex;flex-direction:column;gap:14px">
+    <div class="card" style="padding:18px">
+      <div class="h" style="margin-bottom:12px">СВОДКА</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px"><div style="flex:1"><div style="font-size:30px;font-weight:700">16</div><div class="mut" style="font-size:11px;letter-spacing:1px;font-weight:700">ЖИТЕЛЕЙ</div></div><div style="flex:1"><div style="font-size:30px;font-weight:700">5</div><div class="mut" style="font-size:11px;letter-spacing:1px;font-weight:700">КОЛОНИЙ</div></div><div style="flex:1"><div style="font-size:30px;font-weight:700" class="cy">60</div><div class="mut" style="font-size:11px;letter-spacing:1px;font-weight:700">СТАБИЛ.</div></div></div>
+      ${[['Гелий-3','220','+15','cy'],['Титан','280','+13','gold'],['Сплавы','160','+10','or'],['Влияние','60','+4','bl'],['Наука','','+30 / мес','gr']].map(([n,a,b,c])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(255,255,255,0.05);font-size:14px"><span class="${c}" style="font-weight:700">${n}</span><span><b>${a}</b> <span class="gr">${b}</span></span></div>`).join('')}
+    </div>
+    <div class="card" style="padding:18px"><div class="h" style="margin-bottom:12px;color:#FFD27A">ТРЕБУЕТ ВНИМАНИЯ</div>
+      <div class="att">⚠ Гиперион — нет жилья</div><div class="att">⚠ Гиперион — ничего не строится</div><div class="att" style="border-color:#FF8A73;background:rgba(255,138,115,0.06)">☹ Ирис b — брожение (41)</div></div>
+    <div style="flex:1"></div>
+    <div class="b g" style="width:100%">ВКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ</div>
+  </div>
+  <div style="position:absolute;left:390px;right:34px;top:130px;display:flex;gap:12px;align-items:center"><div class="seg" style="width:520px"><div class="on">Все · 5</div><div>Простаивают · 2</div><div>Нет жилья · 1</div></div><div style="flex:1"></div><div class="seg" style="width:340px"><div class="on">Жители ▾</div><div>Стабильность</div><div>Доход</div></div></div>
+  <div style="position:absolute;left:390px;right:34px;top:196px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+   ${C.map(c=>`<div class="card" style="overflow:hidden;${!c.job&&!c.auto?'border-color:rgba(255,210,122,0.45)':''}">
+     <div style="position:relative;height:110px;overflow:hidden;background:linear-gradient(90deg,rgba(6,12,24,1) 35%,rgba(6,12,24,0.2)),radial-gradient(circle at 80% 50%,rgba(120,180,255,0.12),transparent 60%)">
+       <div class="pl ${c.p}" style="position:absolute;right:-30px;top:-34px;width:180px;height:180px"></div>
+       <div style="position:absolute;left:20px;top:20px"><div style="font-weight:700;font-size:22px">${c.n}</div><div class="mut" style="font-size:12px;margin-top:2px">${c.cls}</div>
+       <div style="margin-top:10px"><span class="tag" style="background:rgba(111,230,218,0.12);color:#9EEFE6">${c.f.toUpperCase()}</span>${c.auto?' <span class="tag" style="background:rgba(92,245,153,0.12);color:#8FF5BC">АВТО ✓</span>':''}</div></div>
+     </div>
+     <div style="padding:14px 20px 18px">
+       <div style="display:flex;gap:18px;align-items:center">
+         <div style="flex:1"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:4px">ЖИТЕЛИ</div>${POP(c,150)}</div>
+         <div style="flex:1"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:4px">СТАБИЛЬНОСТЬ</div><div style="font-size:15px;font-weight:700;color:${stc(c.st)}">${c.st} <span style="font-size:12px;font-weight:400">${c.sl}</span></div><div class="bar" style="margin-top:5px"><i style="width:${c.st}%;background:${stc(c.st)}"></i></div></div>
+       </div>
+       <div class="prod" style="margin:14px 0;justify-content:space-between;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03)"><span class="cy">${c.e}<small>ГЕЛИЙ</small></span><span class="gold">${c.m}<small>ТИТАН</small></span><span class="or">${c.a}<small>СПЛАВЫ</small></span><span class="gr">${c.s}<small>НАУКА</small></span></div>
+       ${JOB(c,470)}
+       <div style="display:flex;gap:8px;margin-top:14px"><div class="b" style="flex:1">СТРОИТЬ…</div><div class="b q" style="flex:1">ПРИОРИТЕТ ▾</div><div class="b ${c.auto?'on':'q'}">АВТО</div></div>
+     </div></div>`).join('')}
+     <div class="card" style="display:grid;place-items:center;border-style:dashed;color:#8DA6AE;font-size:14px;text-align:center;padding:30px">＋<br>Новая колония<br><span style="font-size:12px">выберите пригодную планету<br>и проект «Колония»</span></div>
+  </div>
+ </div>`,
+
+c: () => `<div class="lbl2">ВАРИАНТ C · СПИСОК + ДЕТАЛИ</div><div class="bg"></div>
+ <div class="win">${HEAD('Управление колониями','Слева — все миры, справа — выбранная колония целиком')}
+  <div style="position:absolute;left:34px;right:34px;top:126px"><div class="res">${RES}</div></div>
+  <div style="position:absolute;left:34px;top:212px;width:560px;bottom:30px;display:flex;flex-direction:column">
+   <div class="seg" style="margin-bottom:12px"><div class="on">Все · 5</div><div>Простаивают · 2</div><div>Проблемы · 2</div></div>
+   ${C.map((c,i)=>`<div class="card" style="display:flex;gap:14px;align-items:center;padding:12px 16px;margin-bottom:8px;${i==0?'background:rgba(95,230,218,0.08);border-color:rgba(111,230,218,0.6);box-shadow:inset 3px 0 0 #6FE6DA':''}">
+     <div class="pl ${c.p}" style="width:46px;height:46px"></div>
+     <div style="flex:1"><div style="font-weight:700;font-size:17px">${c.n}</div><div class="mut" style="font-size:12px">${c.f} · ${c.pop}/${c.hou} жит.</div></div>
+     <div style="text-align:right;width:150px">${c.job?`<div style="font-size:12px;font-weight:700">${c.job[0]}</div><div class="bar" style="margin-top:5px"><i style="width:${c.job[1]}%;background:#6FE6DA"></i></div>`:c.auto?'<div class="mut" style="font-size:12px">автостройка</div>':'<div class="gold" style="font-size:12px;font-weight:700">⚠ простаивает</div>'}</div>
+     <div style="width:40px;text-align:right;font-weight:700;color:${stc(c.st)}">${c.st}</div>
+   </div>`).join('')}
+   <div style="flex:1"></div><div class="b g">ВКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ</div>
+  </div>
+  <div class="card" style="position:absolute;left:620px;right:34px;top:212px;bottom:30px;overflow:hidden;background:rgba(5,12,22,0.7)">
+   <div class="pl p1" style="position:absolute;right:-120px;top:-140px;width:560px;height:560px;opacity:0.9"></div>
+   <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,12,24,1) 40%,rgba(6,12,24,0.3) 75%,rgba(6,12,24,0.1)),linear-gradient(0deg,rgba(6,12,24,1) 35%,transparent 60%)"></div>
+   <div style="position:absolute;left:34px;top:30px;right:34px">
+     <div class="h">СТОЛИЦА · ПУСТЫННЫЙ МИР</div><div style="font-weight:700;font-size:46px;margin-top:4px">Гиперион</div>
+     <div class="mut" style="font-size:15px;margin-top:4px">Система Улва · размер 18 · районов 9 / 12</div>
+     <div style="display:flex;gap:10px;margin-top:18px"><div class="b p" style="width:220px">ОТКРЫТЬ ПЛАНЕТУ</div><div class="b">СТРОИТЬ…</div><div class="b q">АВТО</div></div>
+   </div>
+   <div style="position:absolute;left:34px;top:250px;width:640px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+     <div class="card" style="padding:16px"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px">ЖИТЕЛИ</div><div style="font-size:32px;font-weight:700">6 <span class="mut" style="font-size:16px">/ 6</span></div><div class="bar" style="margin-top:6px"><i style="width:100%;background:#FFD27A"></i></div><div class="gold" style="font-size:12px;margin-top:6px">нет жилья — стройте жилой район</div></div>
+     <div class="card" style="padding:16px"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px">СТАБИЛЬНОСТЬ</div><div style="font-size:32px;font-weight:700" class="cy">65</div><div class="bar" style="margin-top:6px"><i style="width:65%;background:#6FE6DA"></i></div><div class="cy" style="font-size:12px;margin-top:6px">Спокойствие · +5% к доходу</div></div>
+     <div class="card" style="padding:16px"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px">ДОХОД / МЕС</div><div class="prod" style="margin-top:8px;flex-wrap:wrap;gap:10px 18px"><span class="cy">+7,2<small>ГЕЛИЙ</small></span><span class="gold">+7,6<small>ТИТАН</small></span><span class="or">+5,4<small>СПЛАВЫ</small></span><span class="gr">+6,6<small>НАУКА</small></span></div></div>
+   </div>
+   <div style="position:absolute;left:34px;top:420px;width:640px"><div class="h" style="margin-bottom:10px">ПРИОРИТЕТ КОЛОНИИ</div>
+     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${[['Равномерно','всё понемногу',1],['Титан','шахты',0],['Энергетика','электростанции',0],['Промышленность','литейные',0]].map(([a,b,o])=>`<div class="card" style="padding:14px;${o?'background:rgba(95,230,218,0.14);border-color:rgba(111,230,218,0.8)':''}"><div style="font-weight:700;font-size:15px">${a}</div><div class="mut" style="font-size:12px;margin-top:2px">${b}</div></div>`).join('')}</div></div>
+   <div style="position:absolute;left:34px;top:540px;width:640px"><div class="h" style="margin-bottom:10px">ОЧЕРЕДЬ СТРОИТЕЛЬСТВА</div>
+     <div class="att">⚠ Очередь пуста, автостройка выключена — колония простаивает</div>
+     <div class="mut" style="font-size:13px;margin-top:6px">Совет: жилой район снимет ограничение по жилью (+3 места).</div>
+     <div style="display:flex;gap:10px;margin-top:14px"><div class="b g">＋ ЖИЛОЙ РАЙОН · 120 дн.</div><div class="b">ВЫБРАТЬ ПОСТРОЙКУ…</div></div></div>
+   <div style="position:absolute;right:34px;bottom:30px;width:420px"><div class="h" style="margin-bottom:10px">РАЙОНЫ</div>
+     ${[['Жилые','2 / 3','#9FB4FF',66],['Шахтёрские','3 / 4','#FFD27A',75],['Энергетические','2 / 3','#6FE6DA',66],['Промышленные','2 / 2','#FFA65C',100]].map(([n,t,c,p])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>${n}</span><span style="color:${c}">${t}</span></div><div class="bar" style="margin-top:4px"><i style="width:${p}%;background:${c}"></i></div></div>`).join('')}</div>
+  </div>
+ </div>`,
+};
+document.getElementById('s').innerHTML = T[v]();
+</script></body></html>
