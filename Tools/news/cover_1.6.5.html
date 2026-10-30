@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Обложка новости об обновлении 1.6.5 (1920×1080) в стиле прошлых новостей: слева логотип и список,
+     справа арт за косыми срезами и окна новых систем — советник, итоги партии, цель империи. Рендер: node Tools/news/render.js cover_1.6.5 -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 20% 40%/cover; filter: brightness(0.55) saturate(1.1); }
+/* Арт справа за косым срезом */
+.art { position: absolute; top: 0; bottom: 0; left: 760px; right: 0; background: url(../../Assets/Resources/Leaders/leader_nol.jpg) 60% 25%/cover;
+  clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%); filter: brightness(0.8) saturate(1.05); }
+.art2 { position: absolute; top: 0; bottom: 0; left: 1010px; width: 260px; background: url(../../Assets/Resources/Menu/menu_planet.png) center/cover;
+  clip-path: polygon(62% 0, 100% 0, 38% 100%, 0 100%); opacity: 0.55; filter: brightness(0.9); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.96) 0%, rgba(3,7,15,0.88) 38%, rgba(3,7,15,0.15) 60%, rgba(3,7,15,0) 100%),
+  linear-gradient(0deg, rgba(3,7,15,0.7), rgba(3,7,15,0) 30%); }
+.slash { position: absolute; top: -40px; bottom: -40px; width: 4px; background: linear-gradient(180deg, rgba(120,240,230,0), #8FF5EA 45%, rgba(120,240,230,0));
+  box-shadow: 0 0 18px #5FE6DA, 0 0 40px rgba(95,230,218,0.6); transform: skewX(-12deg); }
+.sl1 { left: 990px; } .sl2 { left: 1062px; width: 2px; opacity: 0.6; }
+/* Текст слева — как на прошлых обложках */
+.left { position: absolute; left: 130px; top: 190px; }
+.logo { font-family: Russo; font-size: 118px; letter-spacing: 6px; line-height: 1;
+  background: linear-gradient(180deg, #FFFFFF 10%, #BFF5F0 60%, #6FD8CF 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 22px rgba(102,219,209,0.35)); }
+.kicker { font-family: Play; font-weight: 700; font-size: 26px; letter-spacing: 12px; color: #9FC9CF; margin-top: 18px; }
+.ver { font-family: Russo; font-size: 66px; letter-spacing: 7px; margin-top: 34px; color: #FFFFFF; text-shadow: 0 0 20px rgba(255,255,255,0.15); }
+.list { margin-top: 30px; display: flex; flex-direction: column; gap: 12px; }
+.list div { font-family: Russo; font-size: 31px; letter-spacing: 3px; color: #E4F1F4; }
+.list div::before { content: '•'; color: #F2C766; margin-right: 16px; }
+/* ---------- окна новых систем — в духе интерфейса игры (тёмное стекло, светящаяся кромка) */
+.win { position: absolute; z-index: 5; background: linear-gradient(180deg, rgba(10,22,40,0.94), rgba(5,12,24,0.94));
+  border: 1.5px solid rgba(110,230,220,0.55); border-radius: 18px; box-shadow: 0 0 28px rgba(80,220,210,0.25), 0 30px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08); }
+.cap { font-family: Play; font-weight: 700; font-size: 15px; letter-spacing: 4px; color: #8FE8DF; }
+/* Советник */
+.adv { left: 1120px; top: 90px; width: 640px; padding: 24px 28px 26px 120px; }
+.adv .ava { position: absolute; left: 22px; top: 24px; width: 78px; height: 78px; border-radius: 50%; background: url(../../Assets/Resources/Leaders/leader_nol.jpg) 50% 20%/180%;
+  border: 2px solid #6FE6DA; box-shadow: 0 0 16px rgba(111,230,218,0.6); }
+.adv .t { font-family: Play; font-size: 21px; line-height: 1.35; color: #E6F2F5; margin-top: 10px; }
+.adv .t b { color: #FFD27A; }
+/* Итоги партии */
+.sum { left: 1040px; top: 575px; width: 560px; height: 330px; padding: 22px 26px; }
+.sum svg { position: absolute; left: 26px; top: 60px; }
+.leg { position: absolute; left: 26px; bottom: 18px; display: flex; gap: 20px; font-size: 14px; color: #B9CBD2; }
+.leg span::before { content: ''; display: inline-block; width: 18px; height: 4px; border-radius: 2px; margin-right: 8px; vertical-align: middle; background: var(--c); }
+.tabs { position: absolute; right: 24px; top: 18px; display: flex; gap: 8px; }
+.tabs span { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; padding: 5px 10px; border-radius: 8px; color: #8FA8B0; border: 1px solid rgba(255,255,255,0.12); }
+.tabs span.on { color: #03141A; background: #7FEBE0; border-color: #7FEBE0; }
+/* Цель империи */
+.goal { left: 1470px; top: 820px; width: 420px; padding: 22px 26px; border-color: rgba(255,205,110,0.6); box-shadow: 0 0 28px rgba(255,200,90,0.22), 0 30px 60px rgba(0,0,0,0.7); }
+.goal .cap { color: #FFD27A; }
+.goal .g { font-family: Russo; font-size: 24px; color: #FFFFFF; margin-top: 12px; letter-spacing: 0.5px; }
+.goal .bar { margin-top: 16px; height: 10px; border-radius: 5px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.goal .bar i { display: block; width: 66%; height: 100%; background: linear-gradient(90deg, #FFB84A, #FFE08A); box-shadow: 0 0 12px #FFC860; }
+.goal .row { display: flex; justify-content: space-between; margin-top: 12px; font-size: 16px; color: #B9CBD2; }
+.goal .row b { color: #7FF0B0; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="art"></div><div class="art2"></div><div class="fade"></div>
+  <div class="slash sl1"></div><div class="slash sl2"></div>
+  <div class="left">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="kicker">ВАША ПАРТИЯ — ВАША ИСТОРИЯ</div>
+    <div class="ver">ОБНОВЛЕНИЕ 1.6.5</div>
+    <div class="list">
+      <div>СОВЕТНИК ОРАКУЛ-7</div>
+      <div>ИТОГИ ПАРТИИ С ГРАФИКАМИ</div>
+      <div>СЛУЧАЙНЫЕ ЦЕЛИ ИМПЕРИИ</div>
+      <div>НОВЫЕ ЗВУКИ</div>
+      <div>НОВОЕ МЕНЮ ПАУЗЫ</div>
+    </div>
+  </div>
+
+  <div class="win adv"><div class="ava"></div>
+    <div class="cap">СОВЕТНИК ОРАКУЛ-7</div>
+    <div class="t">Орбита над колонией <b>Талита</b> ваша — можно идти на штурм. Выберите систему и нажмите «ШТУРМ».</div>
+  </div>
+
+  <div class="win sum">
+    <div class="cap">ИТОГИ ПАРТИИ</div>
+    <div class="tabs"><span class="on">ОЧКИ</span><span>СИСТЕМЫ</span><span>НАСЕЛЕНИЕ</span></div>
+    <svg width="508" height="210" id="chart"></svg>
+    <div class="leg"><span style="--c:#5FE6DA">Астрея</span><span style="--c:#FF5A4E">Ксарн</span><span style="--c:#E8B640">Аквила</span></div>
+  </div>
+
+  <div class="win goal">
+    <div class="cap">ЦЕЛЬ ИМПЕРИИ</div>
+    <div class="g">Владейте 6 колониями</div>
+    <div class="bar"><i></i></div>
+    <div class="row"><span>4 из 6 · осталось 7 лет</span><b>+300 сплавов</b></div>
+  </div>
+</div>
+<script>
+// Линии графика: плавный рост с колебаниями, как в окне итогов
+const svg = document.getElementById('chart'), W = 508, H = 210;
+let g = '';
+for (let i = 0; i <= 4; i++) g += `<line x1="0" x2="${W}" y1="${H * i / 4}" y2="${H * i / 4}" stroke="rgba(140,190,215,0.14)" stroke-width="1"/>`;
+function line(c, k, wob, seed, w) {
+  let pts = [];
+  for (let i = 0; i <= 40; i++) {
+    const x = W * i / 40, t = i / 40;
+    const v = k(t) + wob * Math.sin(i * 0.9 + seed) * (0.3 + t);
+    pts.push(`${x.toFixed(1)},${(H - v * H).toFixed(1)}`);
+  }
+  return `<polyline points="${pts.join(' ')}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 6px ${c})"/>`;
+}
+g += line('#E8B640', t => 0.06 + 0.55 * Math.pow(t, 1.2), 0.015, 2, 3);
+g += line('#FF5A4E', t => 0.06 + 0.62 * t - 0.18 * Math.max(0, t - 0.7), 0.02, 4, 3);
+g += line('#5FE6DA', t => 0.05 + 0.88 * Math.pow(t, 1.5), 0.012, 1, 4);
+svg.innerHTML = g;
+</script>
+</body></html>

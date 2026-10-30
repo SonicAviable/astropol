@@ -6,6 +6,6 @@ namespace StellarisClone.Core
     /// </summary>
     public static class GameVersion
     {
-        public const string Current = "1.6.4";
+        public const string Current = "1.6.5";
     }
 }
