@@ -4,7 +4,7 @@ const path = require('path');
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
-  for (const v of ['a', 'b', 'c']) {
+  for (const v of (process.argv[2] ? process.argv.slice(2) : ['a', 'b', 'c', 'b2'])) {
     await p.goto('file://' + path.join(__dirname, 'menu.html') + '?v=' + v);
     await p.evaluate(() => document.fonts.ready);
     await p.waitForTimeout(300);
