@@ -49,7 +49,7 @@ namespace StellarisClone.Rendering
         {
             public PlanetData Planet;
             public LiquidGlassEffect Fx;
-            public Image World;
+            public RawImage World;
             public Text Name, Sub, FocusTag, AutoTag, Pop, Growth, Stab, Min, En, Al, Sci, Job, BuyText, Auto;
             public RectTransform FocusChip, AutoChip, PopBar, StabBar, JobBar;
             public Image JobIcon;
@@ -249,24 +249,26 @@ namespace StellarisClone.Rendering
             _sumPop = Big(0, Loc.T("ЖИТЕЛЕЙ"), Color.white);
             _sumCol = Big(1, Loc.T("КОЛОНИЙ"), Color.white);
             _sumStab = Big(2, Loc.T("СТАБИЛ."), Cyan);
-            (Color, string)[] rows =
+            (LGIcon, Color, string)[] rows =
             {
-                (BuildMenuModal.CEnergy, Loc.T("Гелий-3")),
-                (BuildMenuModal.CMinerals, Loc.T("Титан")),
-                (BuildMenuModal.CAlloys, Loc.T("Сплавы")),
-                (BuildMenuModal.CInfluence, Loc.T("Влияние")),
-                (CSci, Loc.T("Наука")),
+                (LGIcon.Energy, BuildMenuModal.CEnergy, Loc.T("Гелий-3")),
+                (LGIcon.Minerals, BuildMenuModal.CMinerals, Loc.T("Титан")),
+                (LGIcon.Alloys, BuildMenuModal.CAlloys, Loc.T("Сплавы")),
+                (LGIcon.Influence, BuildMenuModal.CInfluence, Loc.T("Влияние")),
+                (LGIcon.Research, CSci, Loc.T("Наука")),
             };
             float y = 112f;
-            foreach (var (col, label) in rows)
+            foreach (var (icon, col, label) in rows)
             {
                 var line = LGBuild.Panel(sum, "Sep", new Color(1f, 1f, 1f, 0.05f));
                 line.rectTransform.TopBand(y, 1, 20, 20);
                 LG.Ignore(line.gameObject);
                 var r = LGBuild.Rect(sum, "Res");
                 r.TopBand(y + 1, 33, 20, 20);
+                var ic = LGIcons.Create(r, icon, 16, col);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
                 var l = LGBuild.Label(r, label, 14, col, TextAnchor.MiddleLeft, bold: true);
-                l.rectTransform.Stretch();
+                l.rectTransform.Stretch(24, 0, 0, 0);
                 var v = LGBuild.Label(r, "", 14, Color.white, TextAnchor.MiddleRight, bold: true);
                 v.rectTransform.Stretch();
                 _sideValues.Add(v);
@@ -436,39 +438,6 @@ namespace StellarisClone.Rendering
 
         // ================================================================ Карточка колонии
 
-        private static Sprite s_sphere;
-
-        /// <summary>Шар планеты: освещённая сфера с мягким краем (красится в цвет мира).</summary>
-        private static Sprite Sphere()
-        {
-            if (s_sphere != null) return s_sphere;
-            const int N = 192;
-            var tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
-            var px = new Color32[N * N];
-            var light = new Vector3(-0.55f, 0.55f, 0.63f).normalized;
-            for (int y = 0; y < N; y++)
-                for (int x = 0; x < N; x++)
-                {
-                    float u = (x + 0.5f) / N * 2f - 1f, v = (y + 0.5f) / N * 2f - 1f;
-                    float r2 = u * u + v * v;
-                    float a = Mathf.Clamp01((1f - Mathf.Sqrt(r2)) * N * 0.5f);
-                    if (a <= 0f) { px[y * N + x] = new Color32(0, 0, 0, 0); continue; }
-                    var n = new Vector3(u, v, Mathf.Sqrt(Mathf.Max(0f, 1f - r2)));
-                    float diff = Mathf.Clamp01(Vector3.Dot(n, light));
-                    float lit = 0.10f + 0.95f * Mathf.Pow(diff, 0.8f);
-                    float spec = Mathf.Pow(Mathf.Clamp01(Vector3.Dot(Vector3.Reflect(-light, n), Vector3.forward)), 18f) * 0.35f;
-                    float rim = Mathf.Pow(1f - n.z, 3f) * 0.25f * diff;
-                    float c = Mathf.Clamp01(lit + rim);
-                    float w = Mathf.Clamp01(spec);
-                    px[y * N + x] = new Color(Mathf.Lerp(c, 1f, w), Mathf.Lerp(c, 1f, w), Mathf.Lerp(c, 1f, w), a);
-                }
-            tex.SetPixels32(px);
-            tex.Apply();
-            s_sphere = Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f));
-            s_sphere.hideFlags = HideFlags.DontSave;
-            return s_sphere;
-        }
-
         private static Text Caption(Transform parent, string text)
         {
             var t = LGBuild.Label(parent, text, 11, Muted, TextAnchor.UpperLeft, bold: true);
@@ -504,10 +473,11 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(head.gameObject, Loc.T("Открыть окно планеты"));
             var hmask = head.gameObject.AddComponent<RectMask2D>();
             hmask.softness = Vector2Int.zero;
-            r.World = LGBuild.Panel(head.transform, "World", p.PlanetColor);
-            r.World.sprite = Sphere();
-            r.World.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-60, -56), new Vector2(184, 184));
-            LG.Ignore(r.World.gameObject);
+            // Снимок настоящей модели планеты (как в окне планеты); появляется через кадр после открытия
+            r.World = LGBuild.Rect(head.transform, "World").gameObject.AddComponent<RawImage>();
+            r.World.texture = PlanetThumbs.Get(p);
+            r.World.raycastTarget = false;
+            r.World.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-62, -56), new Vector2(210, 210));
             var glow = LGBuild.Panel(head.transform, "Glow", new Color(p.PlanetColor.r, p.PlanetColor.g, p.PlanetColor.b, 0.18f));
             glow.sprite = MenuArt.SoftDisc;
             glow.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-60, -56), new Vector2(300, 300));
@@ -563,22 +533,24 @@ namespace StellarisClone.Rendering
             var prod = LGBuild.Panel(body, "Income", new Color(1f, 1f, 1f, 0.035f));
             prod.rectTransform.TopBand(76, 46);
             LG.Platter(prod.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, 0.05f));
-            Text Prod(int i, string cap, Color col)
+            Text Prod(int i, LGIcon icon, string cap, Color col)
             {
                 var cell = LGBuild.Rect(prod.transform, "Cell");
                 cell.anchorMin = new Vector2(i / 4f, 0); cell.anchorMax = new Vector2((i + 1) / 4f, 1);
-                cell.offsetMin = new Vector2(12, 0); cell.offsetMax = Vector2.zero;
+                cell.offsetMin = new Vector2(10, 0); cell.offsetMax = Vector2.zero;
+                var ic = LGIcons.Create(cell, icon, 20, col);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(20, 20));
                 var v = LGBuild.Label(cell, "", 15, col, TextAnchor.UpperLeft, bold: true);
-                v.rectTransform.Stretch(0, 20, 0, 6);
+                v.rectTransform.Stretch(26, 20, 0, 6);
                 var l = LGBuild.Label(cell, cap, 9, Muted, TextAnchor.LowerLeft, bold: true);
-                l.rectTransform.Stretch(0, 6, 0, 0);
+                l.rectTransform.Stretch(26, 6, 0, 0);
                 l.Track(1.2f);
                 return v;
             }
-            r.En = Prod(0, Loc.T("ГЕЛИЙ"), BuildMenuModal.CEnergy);
-            r.Min = Prod(1, Loc.T("ТИТАН"), BuildMenuModal.CMinerals);
-            r.Al = Prod(2, Loc.T("СПЛАВЫ"), BuildMenuModal.CAlloys);
-            r.Sci = Prod(3, Loc.T("НАУКА"), CSci);
+            r.En = Prod(0, LGIcon.Energy, Loc.T("ГЕЛИЙ"), BuildMenuModal.CEnergy);
+            r.Min = Prod(1, LGIcon.Minerals, Loc.T("ТИТАН"), BuildMenuModal.CMinerals);
+            r.Al = Prod(2, LGIcon.Alloys, Loc.T("СПЛАВЫ"), BuildMenuModal.CAlloys);
+            r.Sci = Prod(3, LGIcon.Research, Loc.T("НАУКА"), CSci);
 
             // Текущая стройка
             var job = LGBuild.Panel(body, "Job", new Color(1f, 1f, 1f, 0f), raycast: true);
@@ -650,7 +622,6 @@ namespace StellarisClone.Rendering
             r.Name.text = PlanetNames.Title(p.Name);
             r.Sub.text = p.ClassDisplayName + (p.ParentSystem != null && p.ParentSystem.Id == EconomyManager.PlayerCapitalId ? Loc.T(" · столица") : "")
                        + (gov != null ? Loc.F(" · губ. {0}", gov.Name) : "");
-            r.World.color = p.PlanetColor;
 
             r.FocusTag.text = ColonyFocusInfo.Name(p.Focus).ToUpper();
             float fw = r.FocusTag.preferredWidth + 18f;
