@@ -1,4 +1,15 @@
-This update gives your empire an advisor, every game its own chronicle with charts, and your ruler new goals for the years ahead.
+@order 40
+@tag UPDATE
+@chip NEW · 1.6.5
+@title Update 1.6.5
+@headline Advisor, game summary and empire goals
+@cover Menu/News/cover_1.6.5
+@art 0.74,0.5,0.45
+@thumb 0.2,0.42,0.42
+@tile Menu/News/cover_1.6.5 | 0.75,0.16,0.34 | ORACLE-7 advisor
+@tile Menu/News/cover_1.6.5 | 0.69,0.68,0.3 | Game summary
+@tile Menu/News/cover_1.6.5 | 0.875,0.83,0.22 | Empire goals
+Your empire gets an advisor, every game its own chronicle with charts, and your ruler new goals for the years ahead.
 # ORACLE-7 ADVISOR
 - Tells you when construction or science ships sit idle, helium-3 goes negative or a research slot is empty.
 - Warns about enemies in your systems, looming unrest and a fleet over capacity.
@@ -15,9 +26,8 @@ This update gives your empire an advisor, every game its own chronicle with char
 # NEW SOUNDS
 - 22 interface, notification, jump, weapon and explosion sounds replaced with studio recordings.
 # INTERFACE
-- New main menu: continue your last game in one click (or press Enter).
+- New main menu: continue your last game in one click (or press Enter) and read the news right in the game.
 - Reworked pause menu: empire summary, two-column buttons, a separate exit block.
 - The event log opens on the left. System labels on the map no longer overlap.
-- Buttons now show text only, without extra icons.
 # FIXES
 - The game should no longer crash on launch from VK Play in windowed mode on laptops with two GPUs.

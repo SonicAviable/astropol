@@ -7047,9 +7047,10 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 В ИГРУ	PLAY
 Создайте галактику, выберите цивилизацию\nи поведите её к звёздам	Create a galaxy, choose a civilization\nand lead it to the stars
 СОЗДАТЬ ГАЛАКТИКУ	CREATE GALAXY
-НОВОЕ · {0}	NEW · {0}
 Настройки	Settings
 Об игре: как играть и пути к победе	About: how to play and paths to victory
 Сохранений: {0}\nпродолжите любую партию	Saves: {0}\ncontinue any game
-ЧТО НОВОГО В {0}	WHAT'S NEW IN {0}
-Советник, итоги партии и цели империи	Advisor, game summary and empire goals
+Предыдущая  <color=#8AA2A8>(Q)</color>	Previous  <color=#8AA2A8>(Q)</color>
+Следующая  <color=#8AA2A8>(E)</color>	Next  <color=#8AA2A8>(E)</color>
+ESC  ·  ЗАКРЫТЬ	ESC  ·  CLOSE
+Q / E — листать новости	Q / E — browse news

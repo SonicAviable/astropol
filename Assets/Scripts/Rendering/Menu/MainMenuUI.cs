@@ -263,6 +263,7 @@ namespace StellarisClone.Rendering
         private CanvasGroup _logoCg, _heroCg;
         private float _heroK = 1f, _heroV;   // 1 — карточки на месте, 0 — убраны вниз (открыто окно)
         private MenuCard _continueCard;
+        private NewsWindow _newsWin;
         private Text _loadCaption, _continueMeta;
 
         private static readonly Color LoadAccent = new Color(0.55f, 0.80f, 1f);
@@ -400,9 +401,12 @@ namespace StellarisClone.Rendering
             c.Glow = go.rectTransform;
         }
 
-        /// <summary>Полоса «Что нового» под карточками: обложка обновления, метка версии, заголовок. Клик — список изменений.</summary>
+        /// <summary>Полоса последней новости под карточками: обложка, метка, заголовок. Клик — окно новостей.</summary>
         private void BuildNewsStrip()
         {
+            var news = MenuNews.All();
+            if (news.Count == 0) return;
+            var item = news[0];
             var c = MenuCard.Create(_hero, "News", new Vector2(760, 116), Vector2.zero, UIManager.DS.Gold, false, () => Open(Panel.News));
             var rt = (RectTransform)c.transform;
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0);
@@ -413,7 +417,7 @@ namespace StellarisClone.Rendering
             c.Lift = 4f;
             c.Scale = 0.015f;
 
-            var tex = Resources.Load<Texture2D>("Menu/news_cover");
+            var tex = item.CoverTex;
             if (tex != null)
             {
                 var thumb = LGBuild.Rect(c.ArtMask, "Thumb");
@@ -425,27 +429,26 @@ namespace StellarisClone.Rendering
                 var img = thumb.gameObject.AddComponent<RawImage>();
                 img.texture = tex;
                 img.raycastTarget = false;
-                // Левая часть обложки (логотип и список) без растяжения: высота кадра — по пропорциям миниатюры
-                const float w = 0.62f;
-                float hh = Mathf.Min(1f, w * tex.width / (float)tex.height / (230f / 116f));
-                img.uvRect = new Rect(0.02f, 0.5f - hh * 0.5f, w, hh);
-                c.Art = img;
-                var fade = LGBuild.Panel(thumb, "Fade", new Color(0.03f, 0.06f, 0.10f, 1f));
+                img.uvRect = MenuNews.Crop(tex, item.Thumb, 230f / 112f);
+                c.UseArt(img);
+                var fade = LGBuild.Panel(thumb, "Fade", new Color(0.025f, 0.05f, 0.085f, 1f));
                 fade.sprite = MenuArt.HorizontalFade;
                 fade.rectTransform.Stretch();
-                fade.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+                fade.rectTransform.localScale = new Vector3(-1f, 1f, 1f);   // гаснет к правому краю миниатюры
                 LG.Ignore(fade.gameObject);
             }
 
             var gold = new Color(1f, 0.82f, 0.48f);
-            var chip = LGBuild.Panel(c.Content, "Chip", new Color(0.22f, 0.16f, 0.05f, 0.9f));
+            var accent = item.IsUpdate ? gold : UIManager.DS.NeonCyan;
+            var chip = LGBuild.Panel(c.Content, "Chip", new Color(accent.r * 0.22f, accent.g * 0.22f, accent.b * 0.22f, 0.9f));
             chip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(256, -22), new Vector2(150, 26));
-            LG.Chip(chip.gameObject, new Color(gold.r, gold.g, gold.b, 0.55f));
-            var ct = LGBuild.Label(chip.transform, Loc.F("НОВОЕ · {0}", GameVersion.Current), 12, gold, TextAnchor.MiddleCenter, bold: true);
+            LG.Chip(chip.gameObject, new Color(accent.r, accent.g, accent.b, 0.55f));
+            var ct = LGBuild.Label(chip.transform, item.Chip, 12, accent, TextAnchor.MiddleCenter, bold: true);
             ct.rectTransform.Stretch();
             c.Glow = chip.rectTransform;
 
-            var t = LGBuild.Label(c.Content, Loc.T(WhatsNewHeadline), 20, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true, wrap: true);
+            var t = LGBuild.Label(c.Content, string.IsNullOrEmpty(item.Headline) ? item.Title : item.Headline, 20,
+                                  UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true, wrap: true);
             t.rectTransform.Stretch(256, 10, 90, 56);
             c.Title = t;
 
@@ -453,9 +456,6 @@ namespace StellarisClone.Rendering
             ((RectTransform)arrow.transform).At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-46, 0), new Vector2(40, 40));
             c.Arrow = (RectTransform)arrow.transform;
         }
-
-        /// <summary>Заголовок новости текущей версии (полный список — Resources/Menu/whatsnew_*.txt).</summary>
-        private const string WhatsNewHeadline = "Советник, итоги партии и цели империи";
 
         /// <summary>Углы экрана: «Выход» слева, настройки и справка справа.</summary>
         private void BuildCorners()
@@ -570,7 +570,17 @@ namespace StellarisClone.Rendering
             if (p == Panel.None) return;
             if (_open == p) { Close(); return; }
             SFXManager.Play("ui_click", 0.7f, 1.05f);
+            if (_open == Panel.News) _newsWin.Hide();
             _open = p;
+
+            // Новости — своё окно во весь экран
+            if (p == Panel.News)
+            {
+                if (LG.IsVisible(_window.gameObject)) LG.Hide(_window.gameObject);
+                if (_newsWin == null) _newsWin = NewsWindow.Create(_root, Close);
+                _newsWin.Show();
+                return;
+            }
 
             switch (p)
             {
@@ -585,9 +595,6 @@ namespace StellarisClone.Rendering
                     break;
                 case Panel.About:
                     SetHeader(LGIcon.Info, Loc.T("ОБ ИГРЕ"), Loc.T("Astropolity — космическая 4X-стратегия в реальном времени с паузой"));
-                    break;
-                case Panel.News:
-                    SetHeader(LGIcon.Star, Loc.F("ЧТО НОВОГО В {0}", GameVersion.Current), Loc.T(WhatsNewHeadline));
                     break;
             }
 
@@ -616,8 +623,9 @@ namespace StellarisClone.Rendering
         {
             if (_open == Panel.None) return;
             SFXManager.Play("ui_click", 0.5f, 0.9f);
+            if (_open == Panel.News) { if (_newsWin != null) _newsWin.Hide(); }
+            else LG.Hide(_window.gameObject);
             _open = Panel.None;
-            LG.Hide(_window.gameObject);
         }
 
         private void SetHeader(LGIcon icon, string title, string sub)
@@ -638,7 +646,6 @@ namespace StellarisClone.Rendering
                 case Panel.Load: SaveLoadPanel.Build(page, SaveLoadPanel.Mode.Load, confirmLoad: false); break;
                 case Panel.Settings: SettingsPanel.Build(page); break;
                 case Panel.About: BuildAboutPage(page); break;
-                case Panel.News: BuildNewsPage(page); break;
             }
             return page.gameObject;
         }
@@ -851,37 +858,6 @@ namespace StellarisClone.Rendering
             y += 66f;
         }
 
-        // ================================================================ Что нового
-
-        /// <summary>
-        /// Список изменений из Resources/Menu/whatsnew_ru|en.txt: «# » — раздел, «- » — пункт, остальное — абзац.
-        /// </summary>
-        private static void BuildNewsPage(RectTransform page)
-        {
-            var asset = Resources.Load<TextAsset>("Menu/whatsnew_" + Loc.Current) ?? Resources.Load<TextAsset>("Menu/whatsnew_ru");
-            var list = LGBuild.ScrollList(page, 8f, 4);
-            if (asset == null) return;
-            var gold = new Color(1f, 0.82f, 0.48f);
-            foreach (var raw in asset.text.Replace("\r", "").Split('\n'))
-            {
-                string line = raw.TrimEnd();
-                if (line.Length == 0) continue;
-                Text t;
-                if (line.StartsWith("# "))
-                {
-                    var gap = LGBuild.Rect(list, "Gap");
-                    LGBuild.Height(gap.gameObject, 6f);
-                    t = LGBuild.Label(list, line.Substring(2), 17, gold, TextAnchor.UpperLeft, bold: true, wrap: true);
-                }
-                else if (line.StartsWith("- "))
-                    t = LGBuild.Label(list, "<color=#6FE6DA>•</color>   " + line.Substring(2), 15, new Color(0.84f, 0.90f, 0.93f), TextAnchor.UpperLeft, wrap: true);
-                else
-                    t = LGBuild.Label(list, line, 15, new Color(0.74f, 0.82f, 0.86f), TextAnchor.UpperLeft, wrap: true);
-                t.supportRichText = true;
-                t.lineSpacing = 1.12f;
-            }
-        }
-
         // ================================================================ Подвал
 
         private void BuildFooter()
@@ -1005,6 +981,13 @@ namespace StellarisClone.Rendering
             shade.sprite = MenuArt.VerticalFade;
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
+        }
+
+        /// <summary>Свой арт (уже с кадром) — карточка будет так же медленно дрейфовать и наезжать на него.</summary>
+        public void UseArt(RawImage img)
+        {
+            Art = img;
+            _uv = img.uvRect;
         }
 
         /// <summary>Карточку переставили (другие якоря) — запомнить новое место покоя.</summary>
