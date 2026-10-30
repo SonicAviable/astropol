@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты главного меню (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center/cover; }
+.planet { position: absolute; background: url(../../Assets/Resources/Menu/menu_planet.png) center/contain no-repeat; }
+.logo { font-family: Russo; letter-spacing: 8px; line-height: 1; color: #F4FBFD;
+  background: linear-gradient(180deg, #FFFFFF 10%, #CFF6F2 60%, #7FDCD3 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(102,219,209,0.35)); }
+.sub { font-weight: 700; letter-spacing: 10px; color: #6FD8CF; font-size: 17px; }
+.glass { background: linear-gradient(180deg, rgba(10,22,40,0.82), rgba(5,12,24,0.86)); border: 1px solid rgba(120,220,215,0.25);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); backdrop-filter: blur(6px); }
+.muted { color: #8DA6AE; }
+.chip { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; }
+.port { background: url(../../Assets/Resources/Leaders/leader_astrea.jpg) 50% 18%/cover; }
+.emb { background: url(../../Assets/Resources/Factions/emblem_astrea.png) center/contain no-repeat; }
+.news .img { background: url(../../VKPlay/news/cover_1.6.5.png) 70% center/cover; }
+
+/* ===== A: «Командный центр» — список слева без кругов-значков, справа карточка продолжения и новости ===== */
+.A .bg { filter: brightness(0.75); }
+.A .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(2,6,14,0.92) 0%, rgba(2,6,14,0.7) 32%, rgba(2,6,14,0) 60%); }
+.A .planet { right: -260px; top: 120px; width: 1100px; height: 1100px; opacity: 0.9; }
+.A .logo { position: absolute; left: 110px; top: 110px; font-size: 104px; }
+.A .sub { position: absolute; left: 116px; top: 236px; }
+.A .menu { position: absolute; left: 110px; top: 330px; width: 520px; }
+.A .it { position: relative; padding: 18px 0 18px 30px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.A .it b { display: block; font-family: Russo; font-weight: normal; font-size: 30px; letter-spacing: 3px; color: #DCEBF0; }
+.A .it span { font-size: 15px; color: #7F97A0; }
+.A .it.on { background: linear-gradient(90deg, rgba(95,230,218,0.20), rgba(95,230,218,0)); }
+.A .it.on::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 2px; background: #6FE6DA; box-shadow: 0 0 14px #6FE6DA; }
+.A .it.on b { color: #FFFFFF; }
+.A .it.exit b { color: #D98C88; font-size: 22px; }
+.A .cont { position: absolute; right: 110px; top: 330px; width: 560px; border-radius: 20px; overflow: hidden; }
+.A .cont .port { height: 230px; position: relative; }
+.A .cont .port::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(5,12,24,1), rgba(5,12,24,0) 60%); }
+.A .cont .in { padding: 0 28px 26px; margin-top: -60px; position: relative; }
+.A .cont h3 { font-family: Russo; font-weight: normal; font-size: 30px; letter-spacing: 1px; }
+.A .stats { display: flex; gap: 10px; margin: 16px 0 20px; }
+.A .stats div { flex: 1; text-align: center; padding: 10px 0; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.A .stats b { display: block; font-size: 24px; color: #6FE6DA; }
+.A .stats span { font-size: 11px; letter-spacing: 1.5px; color: #8DA6AE; font-weight: 700; }
+.A .btn { text-align: center; padding: 16px; border-radius: 14px; font-family: Russo; font-size: 20px; letter-spacing: 4px; color: #03141A;
+  background: linear-gradient(180deg, #8FF5EA, #4FD6CA); box-shadow: 0 0 24px rgba(95,230,218,0.5); }
+.A .news { position: absolute; right: 110px; top: 840px; width: 560px; height: 120px; border-radius: 16px; display: flex; overflow: hidden; }
+.A .news .img { width: 210px; }
+.A .news .t { padding: 18px 22px; }
+.A .foot { position: absolute; left: 110px; bottom: 44px; font-size: 14px; letter-spacing: 1px; }
+
+/* ===== B: «Кинематограф» — логотип по центру, крупная карточка продолжения, кнопки рядом внизу ===== */
+.B .bg { filter: brightness(0.8) saturate(1.1); }
+.B .planet { left: 50%; top: 470px; width: 1500px; height: 1500px; margin-left: -750px; opacity: 0.95; }
+.B .shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(2,6,14,0.95) 0%, rgba(2,6,14,0.55) 34%, rgba(2,6,14,0) 60%),
+  radial-gradient(ellipse at 50% 22%, rgba(2,6,14,0) 0%, rgba(2,6,14,0.5) 70%); }
+.B .logo { position: absolute; left: 0; right: 0; top: 150px; text-align: center; font-size: 140px; letter-spacing: 16px; }
+.B .sub { position: absolute; left: 0; right: 0; top: 315px; text-align: center; letter-spacing: 16px; font-size: 20px; }
+.B .line { position: absolute; left: 50%; top: 352px; width: 520px; margin-left: -260px; height: 2px; background: linear-gradient(90deg, rgba(111,230,218,0), #6FE6DA, rgba(111,230,218,0)); box-shadow: 0 0 12px #6FE6DA; }
+.B .row { position: absolute; left: 0; right: 0; bottom: 110px; display: flex; justify-content: center; gap: 22px; align-items: flex-end; }
+.B .card { width: 250px; height: 150px; border-radius: 18px; padding: 22px; position: relative; }
+.B .card b { font-family: Russo; font-weight: normal; font-size: 24px; letter-spacing: 3px; display: block; }
+.B .card span { display: block; margin-top: 10px; font-size: 14px; color: #8DA6AE; line-height: 1.35; }
+.B .card.main { width: 470px; height: 200px; padding: 0; overflow: hidden; border-color: rgba(111,230,218,0.75); box-shadow: 0 0 40px rgba(95,230,218,0.35), 0 20px 50px rgba(0,0,0,0.6); }
+.B .card.main .port { position: absolute; right: 0; top: 0; bottom: 0; width: 230px; -webkit-mask: linear-gradient(90deg, transparent, #000 45%); }
+.B .card.main .in { position: absolute; left: 26px; top: 24px; width: 260px; }
+.B .card.main b { font-size: 32px; color: #fff; }
+.B .card.main .go { position: absolute; left: 26px; bottom: 22px; font-weight: 700; letter-spacing: 3px; font-size: 15px; color: #6FE6DA; }
+.B .corner { position: absolute; right: 60px; top: 50px; display: flex; gap: 14px; }
+.B .corner div { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.B .foot { position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 14px; letter-spacing: 1.5px; }
+.B .exit { position: absolute; left: 60px; top: 56px; font-weight: 700; letter-spacing: 3px; font-size: 15px; color: #C98582; }
+
+/* ===== C: «Голографическая панель» — стеклянная колонна во всю высоту слева, справа лидер последней партии ===== */
+.C .bg { filter: brightness(0.7); }
+.C .planet { right: 120px; top: 160px; width: 760px; height: 760px; opacity: 0.85; }
+.C .lead { position: absolute; right: 0; top: 0; bottom: 0; width: 980px; background: url(../../Assets/Resources/Leaders/leader_astrea.jpg) 50% 15%/cover;
+  -webkit-mask: linear-gradient(90deg, transparent 0%, #000 45%); opacity: 0.95; }
+.C .side { position: absolute; left: 70px; top: 60px; bottom: 60px; width: 600px; border-radius: 28px; padding: 54px 50px; }
+.C .logo { font-size: 60px; letter-spacing: 4px; }
+.C .sub { margin-top: 14px; font-size: 14px; letter-spacing: 8px; }
+.C .ver { margin-top: 16px; }
+.C .menu { margin-top: 46px; display: flex; flex-direction: column; gap: 12px; }
+.C .b { height: 66px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px;
+  background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); font-family: Russo; font-size: 21px; letter-spacing: 3px; color: #DCEBF0; }
+.C .b small { font-family: Play; font-size: 14px; letter-spacing: 0; color: #7F97A0; }
+.C .b.main { height: 96px; background: linear-gradient(90deg, rgba(95,230,218,0.28), rgba(95,230,218,0.06)); border-color: rgba(111,230,218,0.7); box-shadow: 0 0 26px rgba(95,230,218,0.25); flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; }
+.C .b.main span { font-size: 26px; color: #fff; }
+.C .b.ex { color: #D98C88; background: rgba(255,90,80,0.05); border-color: rgba(255,110,100,0.25); }
+.C .news { position: absolute; left: 50px; right: 50px; bottom: 46px; height: 110px; border-radius: 16px; overflow: hidden; display: flex; border: 1px solid rgba(255,255,255,0.08); }
+.C .news .img { width: 190px; }
+.C .news .t { padding: 18px 20px; background: rgba(255,255,255,0.03); flex: 1; }
+.C .tag { position: absolute; right: 90px; bottom: 90px; text-align: right; text-shadow: 0 2px 8px #000, 0 0 20px #000; }
+.C .tag .muted { color: #CFE2E6; }
+.C .tag h3 { font-family: Russo; font-weight: normal; font-size: 40px; letter-spacing: 2px; }
+.C .tag .emb { width: 90px; height: 90px; margin-left: auto; margin-bottom: 14px; }
+.lbl { position: absolute; left: 50%; transform: translateX(-50%); top: 18px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a').toUpperCase();
+const s = document.getElementById('s'); s.className = v;
+const NEWS = `<div class="img"></div><div class="t"><div class="chip" style="background:rgba(255,210,120,0.15);color:#FFD27A">НОВОЕ · 1.6.5</div>
+  <div style="margin-top:10px;font-size:18px;font-weight:700">Советник, итоги партии и цели империи</div></div>`;
+const T = {
+A: `<div class="lbl">ВАРИАНТ A · КОМАНДНЫЙ ЦЕНТР</div><div class="bg"></div><div class="planet"></div><div class="shade"></div>
+  <div class="logo">ASTROPOLITY</div><div class="sub">ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ</div>
+  <div class="menu">
+    <div class="it on"><b>ПРОДОЛЖИТЬ</b><span>Республика Астрея · 23.05.2203</span></div>
+    <div class="it"><b>НОВАЯ ИГРА</b><span>Создать галактику и выбрать цивилизацию</span></div>
+    <div class="it"><b>ЗАГРУЗИТЬ</b><span>Сохранений: 2</span></div>
+    <div class="it"><b>НАСТРОЙКИ</b><span>Графика, звук, интерфейс</span></div>
+    <div class="it"><b>ОБ ИГРЕ</b><span>Как играть и пути к победе</span></div>
+    <div class="it exit"><b>ВЫХОД</b></div>
+  </div>
+  <div class="glass cont"><div class="port"></div><div class="in">
+    <div class="chip" style="background:rgba(111,230,218,0.15);color:#8FF0E6">ПОСЛЕДНЯЯ ПАРТИЯ</div>
+    <h3 style="margin-top:12px">Республика Астрея</h3><div class="muted" style="font-size:15px;margin-top:4px">23.05.2203 · сохранено сегодня в 11:59</div>
+    <div class="stats"><div><b>14</b><span>СИСТЕМ</span></div><div><b>86</b><span>НАСЕЛЕНИЕ</span></div><div><b>31</b><span>ТЕХНОЛОГИЙ</span></div><div><b>5/31</b><span>ДОСТИЖЕНИЯ</span></div></div>
+    <div class="btn">ПРОДОЛЖИТЬ</div></div></div>
+  <div class="glass news">${NEWS}</div>
+  <div class="foot muted">v1.6.5 · ранний доступ  ·  VK Play</div>`,
+B: `<div class="lbl">ВАРИАНТ B · КИНЕМАТОГРАФ</div><div class="bg"></div><div class="planet"></div><div class="shade"></div>
+  <div class="exit">⏻  ВЫХОД</div>
+  <div class="corner"><div class="glass">⚙</div><div class="glass">?</div></div>
+  <div class="logo">ASTROPOLITY</div><div class="sub">ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ</div><div class="line"></div>
+  <div class="row">
+    <div class="glass card"><b>НОВАЯ ИГРА</b><span>Создать галактику<br>и выбрать цивилизацию</span></div>
+    <div class="glass card main"><div class="port"></div><div class="in">
+      <div class="chip" style="background:rgba(111,230,218,0.15);color:#8FF0E6">ПРОДОЛЖИТЬ</div>
+      <b style="margin-top:12px">Республика<br>Астрея</b></div>
+      <div class="go">23.05.2203  ·  ▶ В ИГРУ</div></div>
+    <div class="glass card"><b>ЗАГРУЗИТЬ</b><span>Сохранений: 2<br>последнее — сегодня</span></div>
+  </div>
+  <div class="foot muted">v1.6.5 · ранний доступ   ·   Новое: советник, итоги партии и цели империи</div>`,
+C: `<div class="lbl">ВАРИАНТ C · ГОЛОГРАФИЧЕСКАЯ ПАНЕЛЬ</div><div class="bg"></div><div class="planet"></div><div class="lead"></div>
+  <div class="tag"><div class="emb"></div><h3>Республика Астрея</h3><div class="muted" style="font-size:16px;margin-top:6px">Элина Сорель · 23.05.2203</div></div>
+  <div class="glass side">
+    <div class="logo">ASTROPOLITY</div><div class="sub">ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ</div>
+    <div class="ver"><span class="chip" style="background:rgba(255,255,255,0.06);color:#9FB5BC">v1.6.5 · РАННИЙ ДОСТУП</span></div>
+    <div class="menu">
+      <div class="b main"><small style="color:#8FF0E6;font-weight:700;letter-spacing:2px">ПРОДОЛЖИТЬ</small><span>Республика Астрея</span></div>
+      <div class="b">НОВАЯ ИГРА <small>галактика и цивилизация</small></div>
+      <div class="b">ЗАГРУЗИТЬ <small>2 сохранения</small></div>
+      <div class="b">НАСТРОЙКИ <small>графика, звук</small></div>
+      <div class="b">ОБ ИГРЕ <small>как играть</small></div>
+      <div class="b ex">ВЫХОД</div>
+    </div>
+    <div class="news">${NEWS}</div>
+  </div>`
+};
+s.innerHTML = T[v];
+</script></body></html>
