@@ -7035,3 +7035,9 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 ОРАКУЛ-7 подскажет: простаивающие корабли, дефицит, угроза колонии, шанс на штурм	ORACLE-7 will point out idle ships, deficits, threats to colonies and chances to assault
 ОЧКИ	SCORE
 МОЩЬ ФЛОТА	FLEET POWER
+СИСТЕМ	SYSTEMS
+ТЕХНОЛОГИЙ	TECHS
+ЦЕЛИ И ПОБЕДА	GOALS & VICTORY
+ДОСТИЖЕНИЯ  {0}/{1}	ACHIEVEMENTS  {0}/{1}
+ЕЩЁ РАЗ — ВСЁ СНАЧАЛА	AGAIN — START OVER
+ЕЩЁ РАЗ — В МЕНЮ	AGAIN — TO MENU

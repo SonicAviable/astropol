@@ -36,6 +36,7 @@ namespace StellarisClone.Rendering
         private Vector2 _pauseSize = new Vector2(520, 810), _pauseSizeV;
 
         private static readonly Vector2 PauseNarrow = new Vector2(520, 810);
+        private static readonly Vector2 PauseMain = new Vector2(580, 680);
         private static readonly Vector2 PauseWide = new Vector2(1000, 790);
 
         private Text _restartLabel, _quitLabel, _menuLabel;
@@ -102,7 +103,7 @@ namespace StellarisClone.Rendering
             // Окно паузы плавно меняет размер под страницу (узкое меню ↔ широкие настройки/сохранения)
             if (_pauseRt != null && _pause.activeInHierarchy)
             {
-                var target = _page == Page.Save || _page == Page.Load || _page == Page.Settings || _page == Page.Achievements ? PauseWide : PauseNarrow;
+                var target = PageSize(_page);
                 float dt = Time.unscaledDeltaTime;
                 float vx = _pauseSizeV.x, vy = _pauseSizeV.y;
                 _pauseSize.x = LGEase.Spring(_pauseSize.x, target.x, ref vx, 3.2f, 0.85f, dt);
@@ -113,6 +114,13 @@ namespace StellarisClone.Rendering
 
             UpdateTracker();
         }
+
+        private static Vector2 PageSize(Page p) => p switch
+        {
+            Page.Save or Page.Load or Page.Settings or Page.Achievements => PauseWide,
+            Page.Main => PauseMain,
+            _ => PauseNarrow
+        };
 
         private void HandleEscape()
         {
@@ -156,7 +164,7 @@ namespace StellarisClone.Rendering
         private void BuildPauseMenu(Transform host)
         {
             var rt = LGBuild.Rect(host, "PauseMenu");
-            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, PauseNarrow);
+            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, PauseMain);
             _pauseRt = rt;
             _pause = rt.gameObject;
             var bg = _pause.AddComponent<Image>();
@@ -174,6 +182,13 @@ namespace StellarisClone.Rendering
             _pauseTitle = title;
             _pauseSubtitle = LGBuild.Label(header.transform, "", 11, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             _pauseSubtitle.rectTransform.Stretch(0, 8, 0, 0);
+            // Тонкая светящаяся черта по низу шапки: к краям гаснет
+            for (int i = 0; i < 2; i++)
+            {
+                var ln = LGBuild.Panel(header.transform, "Accent", new Color(0.45f, 0.95f, 0.90f, i == 0 ? 0.55f : 0.18f));
+                ln.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(i == 0 ? 180f : 420f, i == 0 ? 2f : 1f));
+                LG.Ignore(ln.gameObject);
+            }
 
             _pageHost = LGBuild.Rect(rt, "Page");
             _pageHost.Stretch(30, 26, 30, 106);
@@ -195,7 +210,7 @@ namespace StellarisClone.Rendering
             UIManager.Instance?.ShowModalDimPublic();
             MapModeController.HideGlobal();
             ShowPage(Page.Main);
-            _pauseSize = PauseNarrow;
+            _pauseSize = PauseMain;
             _pauseSizeV = Vector2.zero;
             _pauseRt.sizeDelta = _pauseSize;
             LG.Show(_pause);
@@ -249,30 +264,68 @@ namespace StellarisClone.Rendering
 
         private void BuildMainPage()
         {
-            float y = 0f;
-            MenuButton(ref y, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, () => ClosePause());
-            var save = MenuButton(ref y, LGIcon.Save, Loc.T("СОХРАНИТЬ ИГРУ"), UIManager.DS.BtnNeutral, UIManager.DS.Green, () => ShowPage(Page.Save));
+            // Сводка империи: четыре плитки с текущими цифрами
+            var strip = LGBuild.Rect(_pageHost, "Summary");
+            strip.TopBand(0, 62);
+            var cyan = UIManager.DS.NeonCyan;
+            (string v, string k, Color c)[] stats =
+            {
+                (EmpireStats.SystemCount(0).ToString(), Loc.T("СИСТЕМ"), cyan),
+                (EmpireStats.Population(0).ToString(), Loc.T("НАСЕЛЕНИЕ"), UIManager.DS.Green),
+                (EmpireStats.TechCount(0).ToString(), Loc.T("ТЕХНОЛОГИЙ"), new Color(0.62f, 0.72f, 1f)),
+                (Mathf.RoundToInt(EmpireStats.MilitaryPower(0)).ToString(), Loc.T("МОЩЬ ФЛОТА"), new Color(1f, 0.55f, 0.45f)),
+            };
+            const float sg = 8f;
+            for (int i = 0; i < stats.Length; i++)
+            {
+                var tile = LGBuild.Panel(strip, "Stat", new Color(0.025f, 0.05f, 0.075f, 0.85f));
+                tile.rectTransform.anchorMin = new Vector2(i / 4f, 0);
+                tile.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
+                tile.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : sg * 0.5f, 0);
+                tile.rectTransform.offsetMax = new Vector2(i == 3 ? 0 : -sg * 0.5f, 0);
+                var c = stats[i].c;
+                LG.Platter(tile.gameObject, 10f).SetRim(new Color(c.r, c.g, c.b, 0.30f));
+                var v = LGBuild.Label(tile.transform, stats[i].v, 20, c, TextAnchor.UpperCenter, bold: true);
+                v.rectTransform.Stretch(4, 0, 4, 8);
+                var k = LGBuild.Label(tile.transform, stats[i].k, 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter, bold: true);
+                k.rectTransform.Stretch(4, 9, 4, 0);
+            }
+
+            float y = 80f;
+            Wide(ref y, Loc.T("ПРОДОЛЖИТЬ"), UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan, () => ClosePause(), 54f, 15);
+            y += 8f;
+
+            // Игра: две колонки
+            var save = Half(y, 0, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, () => ShowPage(Page.Save));
             if (!SaveSystem.CanSaveNow) save.GetComponentInParent<Button>().interactable = false;
-            MenuButton(ref y, LGIcon.Load, Loc.T("ЗАГРУЗИТЬ"), UIManager.DS.BtnNeutral, new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Load));
-            MenuButton(ref y, LGIcon.Gear, Loc.T("НАСТРОЙКИ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
-            MenuButton(ref y, LGIcon.Trophy, Loc.T("ЦЕЛИ И УСЛОВИЯ ПОБЕДЫ"), UIManager.DS.BtnNeutral, UIManager.DS.Gold, () => ShowPage(Page.Goals));
-            MenuButton(ref y, LGIcon.Star, Loc.F("ДОСТИЖЕНИЯ  ·  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), UIManager.DS.BtnNeutral, new Color(1f, 0.84f, 0.40f), () => ShowPage(Page.Achievements));
-            MenuButton(ref y, LGIcon.Calendar, Loc.T("ИТОГИ ПАРТИИ"), UIManager.DS.BtnNeutral, UIManager.DS.NeonCyan, () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
-            MenuButton(ref y, LGIcon.Menu, Loc.T("УПРАВЛЕНИЕ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
-            y += 12f;
-            _restartLabel = MenuButton(ref y, LGIcon.Globe, Loc.T("НАЧАТЬ ЗАНОВО"), new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, () =>
+            Half(y, 1, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Load));
+            y += RowStep;
+            Half(y, 0, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
+            Half(y, 1, Loc.T("УПРАВЛЕНИЕ"), new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
+            y += RowStep;
+            Half(y, 0, Loc.T("ЦЕЛИ И ПОБЕДА"), UIManager.DS.Gold, () => ShowPage(Page.Goals));
+            Half(y, 1, Loc.F("ДОСТИЖЕНИЯ  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), new Color(1f, 0.84f, 0.40f), () => ShowPage(Page.Achievements));
+            y += RowStep;
+            Wide(ref y, Loc.T("ИТОГИ ПАРТИИ"), UIManager.DS.BtnNeutral, UIManager.DS.NeonCyan, () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
+
+            // Выход — отдельно, под разделителем
+            y += 10f;
+            Divider(y, Loc.T("ВЫХОД"));
+            y += 30f;
+            _restartLabel = Half(y, 0, Loc.T("НАЧАТЬ ЗАНОВО"), UIManager.DS.Gold, () =>
             {
                 if (_restartArmed > 0f) { RestartGame(); return; }
                 _restartArmed = 3f;
-                _restartLabel.text = Loc.T("ЕЩЁ РАЗ — ПРОГРЕСС БУДЕТ ПОТЕРЯН");
-            });
-            _menuLabel = MenuButton(ref y, LGIcon.Back, Loc.T("В ГЛАВНОЕ МЕНЮ"), new Color(0.12f, 0.16f, 0.24f), new Color(0.6f, 0.75f, 1f), () =>
+                _restartLabel.text = Loc.T("ЕЩЁ РАЗ — ВСЁ СНАЧАЛА");
+            }, new Color(0.16f, 0.12f, 0.04f));
+            _menuLabel = Half(y, 1, Loc.T("В ГЛАВНОЕ МЕНЮ"), new Color(0.6f, 0.75f, 1f), () =>
             {
                 if (_menuArmed > 0f) { GameSession.ReturnToMainMenu(); return; }
                 _menuArmed = 3f;
-                _menuLabel.text = Loc.T("ЕЩЁ РАЗ — НЕСОХРАНЁННОЕ ПРОПАДЁТ");
+                _menuLabel.text = Loc.T("ЕЩЁ РАЗ — В МЕНЮ");
             });
-            _quitLabel = MenuButton(ref y, LGIcon.Power, Loc.T("ВЫЙТИ ИЗ ИГРЫ"), UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
+            y += RowStep;
+            _quitLabel = Wide(ref y, Loc.T("ВЫЙТИ ИЗ ИГРЫ"), UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
             {
                 if (_quitArmed > 0f) { QuitGame(); return; }
                 _quitArmed = 3f;
@@ -281,6 +334,47 @@ namespace StellarisClone.Rendering
 
             var hint = LGBuild.Label(_pageHost, Loc.T("Esc — вернуться в игру   ·   F5 — быстрое сохранение"), 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             hint.rectTransform.Stretch(0, 0, 0, 0);
+        }
+
+        private const float RowH = 46f, RowStep = 54f, ColGap = 12f;
+
+        private Text Wide(ref float y, string label, Color tint, Color rim, System.Action onClick, float h = RowH, int size = 13)
+        {
+            var b = LGBuild.Button(_pageHost, "Btn", tint, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, size);
+            ((RectTransform)b.transform).TopBand(y, h);
+            y += h + 8f;
+            return b.GetComponentInChildren<Text>();
+        }
+
+        /// <summary>Кнопка в полколонки: col 0 — слева, 1 — справа.</summary>
+        private Text Half(float y, int col, string label, Color rim, System.Action onClick, Color? tint = null)
+        {
+            var b = LGBuild.Button(_pageHost, "Btn", tint ?? UIManager.DS.BtnNeutral, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, 13);
+            var rt = (RectTransform)b.transform;
+            rt.anchorMin = new Vector2(col * 0.5f, 1);
+            rt.anchorMax = new Vector2(col * 0.5f + 0.5f, 1);
+            rt.pivot = new Vector2(0.5f, 1);
+            rt.offsetMin = new Vector2(col == 0 ? 0 : ColGap * 0.5f, -y - RowH);
+            rt.offsetMax = new Vector2(col == 0 ? -ColGap * 0.5f : 0, -y);
+            return b.GetComponentInChildren<Text>();
+        }
+
+        /// <summary>Разделитель с подписью посередине: ——— ВЫХОД ———</summary>
+        private void Divider(float y, string text)
+        {
+            var t = LGBuild.Label(_pageHost, text, 10, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, bold: true);
+            t.rectTransform.TopBand(y, 18);
+            for (int side = 0; side < 2; side++)
+            {
+                var l = LGBuild.Panel(_pageHost, "Line", new Color(1f, 1f, 1f, 0.10f));
+                var r = l.rectTransform;
+                r.anchorMin = new Vector2(side == 0 ? 0f : 0.5f, 1);
+                r.anchorMax = new Vector2(side == 0 ? 0.5f : 1f, 1);
+                r.pivot = new Vector2(0.5f, 1);
+                r.offsetMin = new Vector2(side == 0 ? 0 : 44, -y - 9.5f);
+                r.offsetMax = new Vector2(side == 0 ? -44 : 0, -y - 8.5f);
+                LG.Ignore(l.gameObject);
+            }
         }
 
         private void BuildAchievementsPage()
@@ -346,14 +440,6 @@ namespace StellarisClone.Rendering
             if (_restartLabel != null && _restartArmed <= 0f) _restartLabel.text = Loc.T("НАЧАТЬ ЗАНОВО");
             if (_menuLabel != null && _menuArmed <= 0f) _menuLabel.text = Loc.T("В ГЛАВНОЕ МЕНЮ");
             if (_quitLabel != null && _quitArmed <= 0f) _quitLabel.text = Loc.T("ВЫЙТИ ИЗ ИГРЫ");
-        }
-
-        private Text MenuButton(ref float y, LGIcon icon, string label, Color tint, Color rim, System.Action onClick)
-        {
-            var b = LGBuild.Button(_pageHost, "Btn", tint, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, icon, label, 13);
-            ((RectTransform)b.transform).TopBand(y, 46);
-            y += 54f;
-            return b.GetComponentInChildren<Text>();
         }
 
         private void BuildGoalsPage()
