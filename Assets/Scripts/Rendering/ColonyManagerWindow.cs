@@ -7,10 +7,10 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// «Управление колониями» (клавиша C, пункт левого меню) — все колонии империи одной таблицей:
-    /// жители и рост, стабильность, производство, приоритет, текущая стройка с прогрессом и кнопками
-    /// «Купить» / «Строить…» / автостройка. Слева — сводка империи и подсказка, где колонии простаивают.
-    /// Клик по названию — окно планеты. Заголовки столбцов сортируют таблицу.
+    /// «Управление колониями» (клавиша C, пункт левого меню) — колонии империи карточками.
+    /// Карточка: шар мира, название и класс, приоритет и автостройка, жители и стабильность полосами, доход,
+    /// текущая стройка с прогрессом и кнопками «Строить…» / «Приоритет» / «Авто». Клик по шапке — окно планеты.
+    /// Слева — сводка империи и «Требует внимания» (простой, нет жилья, брожение); сверху — фильтры и сортировка.
     /// </summary>
     public class ColonyManagerWindow : MonoBehaviour
     {
@@ -18,42 +18,45 @@ namespace StellarisClone.Rendering
         public static bool IsOpenNow => Instance != null && Instance.IsOpen;
         public bool IsOpen => _root != null && LG.IsVisible(_root);
 
-        private const float SideW = 300f, RowH = 66f, HeadH = 30f;
+        private const float SideW = 330f, CardH = 366f, HeadArt = 112f, Gap = 16f, Pad = 34f, Top = 124f;
+        private const int Cols = 3;
 
         private GameObject _root;
         private GameObject _focusPopup;
-        private Text _subtitle;
-        private RectTransform _list;
-        private readonly List<Row> _rows = new List<Row>();
-        private string _rowsKey = "";
+        private Text _cap, _subtitle;
+        private RectTransform _list, _attention;
+        private readonly List<Card> _cards = new List<Card>();
+        private string _cardsKey = "", _attKey = "";
         private float _refresh;
         private Sort _sort = Sort.Population;
-        private bool _sortDesc = true;
+        private int _filter;
+        private MenuSegment _filterSeg, _sortSeg;
         private readonly List<Text> _sideValues = new List<Text>();
-        private Text _sideIdle;
+        private Text _sumPop, _sumCol, _sumStab;
         private Text _autoAllText;
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.90f);
+        private static readonly Color CCard = new Color(0.030f, 0.060f, 0.100f, 0.95f);
+        private static readonly Color CHead = new Color(0.016f, 0.036f, 0.066f, 1f);
+        private static readonly Color CSci = new Color(0.5f, 0.92f, 0.62f);
+        private static readonly Color CRed = new Color(1f, 0.54f, 0.45f);
 
-        private enum Sort { Name, Population, Stability, Minerals, Energy, Alloys, Science }
+        private enum Sort { Population, Stability, Income }
 
-        // Столбцы: левая граница (px от начала таблицы) и ширина
-        private static readonly float[] ColX = { 12f, 262f, 392f, 520f, 592f, 664f, 736f, 812f, 968f };
-        private static readonly float[] ColW = { 240f, 120f, 118f, 66f, 66f, 66f, 66f, 146f, 0f };
-
-        private class Row
+        private class Card
         {
             public PlanetData Planet;
-            public GameObject Go;
-            public Image Bg, World, Idle;
-            public Text Name, Sub, Pop, Growth, Stab, Min, En, Al, Sci, Focus, Job, JobDays, BuyText, Auto;
-            public RectTransform StabBar, JobBar;
-            public Image JobIcon, BuyBg, AutoBg;
-            public Button Buy, AutoBtn;
-            public TooltipTrigger StabTip, BuyTip, JobTip, PopTip;
+            public LiquidGlassEffect Fx;
+            public Image World;
+            public Text Name, Sub, FocusTag, AutoTag, Pop, Growth, Stab, Min, En, Al, Sci, Job, BuyText, Auto;
+            public RectTransform FocusChip, AutoChip, PopBar, StabBar, JobBar;
+            public Image JobIcon;
+            public Button Buy, AutoBtn, FocusBtn;
+            public Image AutoBg;
+            public TooltipTrigger StabTip, PopTip, JobTip, BuyTip;
+            public bool AutoShown;
         }
 
         public static void Toggle()
@@ -90,7 +93,7 @@ namespace StellarisClone.Rendering
         {
             if (_root == null) Build();
             if (_root == null) return;
-            _rowsKey = "";
+            _cardsKey = _attKey = "";
             Refresh();
             LG.Show(_root);
             _root.transform.SetAsLastSibling();
@@ -139,25 +142,30 @@ namespace StellarisClone.Rendering
             return list;
         }
 
-        private float SortValue(PlanetData p) => _sort switch
+        private static float Income(PlanetData p) => Output(p, "minerals") + Output(p, "energy") + Output(p, "alloys") + Science(p);
+
+        private static bool IsIdle(PlanetData p)
         {
-            Sort.Population => p.Population,
-            Sort.Stability => p.Stability,
-            Sort.Minerals => Output(p, "minerals"),
-            Sort.Energy => Output(p, "energy"),
-            Sort.Alloys => Output(p, "alloys"),
-            Sort.Science => Science(p),
-            _ => 0f
+            var cm = ConstructionManager.Instance;
+            return cm != null && cm.QueueFor(p).Count == 0 && !p.AutoBuild;
+        }
+        private static bool NoHousing(PlanetData p) => p.Population >= p.HousingCapacity;
+        private static bool Unstable(PlanetData p) => p.Tier <= StabilityTier.Discontent;
+
+        private bool Pass(PlanetData p) => _filter switch
+        {
+            1 => IsIdle(p),
+            2 => NoHousing(p),
+            3 => Unstable(p),
+            _ => true
         };
 
-        private void SetSort(Sort s)
+        private float SortValue(PlanetData p) => _sort switch
         {
-            if (_sort == s) _sortDesc = !_sortDesc;
-            else { _sort = s; _sortDesc = s != Sort.Name; }
-            SFXManager.Play(Sfx.UiClick, 0.5f);
-            _rowsKey = "";
-            Refresh();
-        }
+            Sort.Stability => p.Stability,
+            Sort.Income => Income(p),
+            _ => p.Population + Income(p) * 0.001f
+        };
 
         // ================================================================ Построение
 
@@ -170,128 +178,113 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.010f, 0.025f, 0.038f, 0.97f);
+            bg.color = new Color(0.024f, 0.047f, 0.086f, 0.97f);
             bg.raycastTarget = true;
-            LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
+            LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.32f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
 
-            var accent = LGBuild.Panel(rt, "Accent", new Color(0.95f, 0.42f, 0.42f));
-            accent.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(26, -24), new Vector2(5, 30));
-            var title = LGBuild.Label(rt, Loc.T("УПРАВЛЕНИЕ КОЛОНИЯМИ"), 26, Color.white, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(42, -18), new Vector2(700, 36));
-            title.Track(1.6f);
-            _subtitle = LGBuild.Label(rt, "", 12, Muted, TextAnchor.UpperLeft);
-            _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(43, -54), new Vector2(1000, 18));
-            var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
-            ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
+            _cap = LGBuild.Label(rt, "", 12, Cyan, TextAnchor.UpperLeft, bold: true);
+            _cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -26), new Vector2(900, 18));
+            _cap.Track(3f);
+            var title = LGBuild.Label(rt, Loc.T("Управление колониями"), 34, Color.white, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -44), new Vector2(900, 44));
+            _subtitle = LGBuild.Label(rt, "", 14, Muted, TextAnchor.UpperLeft);
+            _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -88), new Vector2(1100, 20));
+            var close = LGControls.IconButton(rt, LGIcon.Close, 40, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), Close);
+            ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -20), new Vector2(40, 40));
             TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / C)</color>"));
 
             BuildSide(rt);
 
-            // Таблица
-            var table = LGBuild.Panel(rt, "Table", CPanel);
-            table.rectTransform.anchorMin = Vector2.zero; table.rectTransform.anchorMax = Vector2.one;
-            table.rectTransform.offsetMin = new Vector2(SideW + 40f, 20f); table.rectTransform.offsetMax = new Vector2(-20f, -88f);
-            LG.Platter(table.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
-            var head = LGBuild.Rect(table.rectTransform, "Head");
-            head.TopBand(8, HeadH, 10, 10);
-            HeadCell(head, 0, Loc.T("КОЛОНИЯ"), Sort.Name, null);
-            HeadCell(head, 1, Loc.T("ЖИТЕЛИ"), Sort.Population, LGIcon.Population);
-            HeadCell(head, 2, Loc.T("СТАБИЛЬНОСТЬ"), Sort.Stability, LGIcon.Society);
-            HeadCell(head, 3, "", Sort.Minerals, LGIcon.Minerals);
-            HeadCell(head, 4, "", Sort.Energy, LGIcon.Energy);
-            HeadCell(head, 5, "", Sort.Alloys, LGIcon.Alloys);
-            HeadCell(head, 6, "", Sort.Science, LGIcon.Research);
-            HeadCell(head, 7, Loc.T("ПРИОРИТЕТ"), null, null);
-            HeadCell(head, 8, Loc.T("СТРОИТСЯ"), null, LGIcon.Construction);
-            var line = LGBuild.Panel(table.rectTransform, "Line", new Color(Gold.r, Gold.g, Gold.b, 0.22f));
-            line.rectTransform.TopBand(8 + HeadH + 2, 1, 10, 10);
+            // Фильтры и сортировка
+            float left = Pad + SideW + 26f;
+            var fHost = LGBuild.Rect(rt, "Filter");
+            fHost.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(left, -Top), new Vector2(660, 46));
+            _filterSeg = MenuSegment.Create(fHost, new[] { Loc.T("Все"), Loc.T("Простаивают"), Loc.T("Нет жилья"), Loc.T("Неспокойные") }, null, _filter,
+                                            i => { _filter = i; _cardsKey = ""; Refresh(); });
+            _filterSeg.GetComponent<RectTransform>().Stretch();
+            var sHost = LGBuild.Rect(rt, "Sort");
+            sHost.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Pad, -Top), new Vector2(380, 46));
+            _sortSeg = MenuSegment.Create(sHost, new[] { Loc.T("Жители"), Loc.T("Стабильность"), Loc.T("Доход") }, null, (int)_sort,
+                                          i => { _sort = (Sort)i; _cardsKey = ""; Refresh(); });
+            _sortSeg.GetComponent<RectTransform>().Stretch();
+            var sl = LGBuild.Label(rt, Loc.T("Сортировка"), 12, Muted, TextAnchor.MiddleRight);
+            sl.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Pad - 392, -Top), new Vector2(160, 46));
 
-            var listHost = LGBuild.Rect(table.rectTransform, "ListHost");
-            listHost.Stretch(6, 8, 6, 8 + HeadH + 6);
-            _list = LGBuild.ScrollList(listHost, 4f, 4);
+            // Сетка карточек
+            var listHost = LGBuild.Rect(rt, "Cards");
+            listHost.Stretch(left - 4, 20, Pad - 4, Top + 46 + 12);
+            _list = LGBuild.ScrollList(listHost, Gap, 4);
             _root.SetActive(false);
         }
 
-        private void HeadCell(RectTransform head, int col, string text, Sort? sort, LGIcon? icon)
+        private RectTransform SideCard(RectTransform parent, string name, string cap, Color capCol)
         {
-            var cell = LGBuild.Panel(head, "H" + col, new Color(1f, 1f, 1f, 0f), raycast: sort.HasValue);
-            var crt = cell.rectTransform;
-            crt.anchorMin = new Vector2(0, 0);
-            crt.anchorMax = col == ColX.Length - 1 ? new Vector2(1, 1) : new Vector2(0, 1);
-            crt.pivot = new Vector2(0, 0.5f);
-            crt.offsetMin = new Vector2(ColX[col], 0);
-            crt.offsetMax = col == ColX.Length - 1 ? Vector2.zero : new Vector2(ColX[col] + ColW[col], 0);
-            float x = 0f;
-            if (icon.HasValue)
-            {
-                Color ic = icon.Value == LGIcon.Minerals ? BuildMenuModal.CMinerals : icon.Value == LGIcon.Energy ? BuildMenuModal.CEnergy
-                         : icon.Value == LGIcon.Alloys ? BuildMenuModal.CAlloys : icon.Value == LGIcon.Research ? new Color(0.5f, 0.92f, 0.62f) : Muted;
-                var i = LGIcons.Create(cell.transform, icon.Value, 14, ic);
-                i.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-                x = 20f;
-            }
-            var t = LGBuild.Label(cell.transform, text, 10, Gold, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.Stretch(x, 0, 0, 0);
-            t.Track(1.2f);
-            if (sort.HasValue)
-            {
-                var b = cell.gameObject.AddComponent<Button>();
-                b.transition = Selectable.Transition.None;
-                var s = sort.Value;
-                b.onClick.AddListener(() => SetSort(s));
-                string what = icon == LGIcon.Minerals ? Loc.T("титан в месяц") : icon == LGIcon.Energy ? Loc.T("гелий-3 в месяц")
-                            : icon == LGIcon.Alloys ? Loc.T("сплавы в месяц") : icon == LGIcon.Research ? Loc.T("наука в месяц") : text.ToLower();
-                TooltipHelper.Attach(cell.gameObject, Loc.F("<b>{0}</b>\nНажмите, чтобы отсортировать", what));
-            }
+            var c = LGBuild.Panel(parent, name, new Color(1f, 1f, 1f, 0.03f));
+            LG.Platter(c.gameObject, 14f).SetRim(new Color(1f, 1f, 1f, 0.07f));
+            var h = LGBuild.Label(c.transform, cap, 12, capCol, TextAnchor.UpperLeft, bold: true);
+            h.rectTransform.TopBand(20, 18, 20, 20);
+            h.Track(3f);
+            return c.rectTransform;
         }
 
         private void BuildSide(RectTransform rt)
         {
-            var side = LGBuild.Panel(rt, "Summary", CPanel);
-            var s = side.rectTransform;
-            s.anchorMin = new Vector2(0, 0); s.anchorMax = new Vector2(0, 1); s.pivot = new Vector2(0, 0.5f);
-            s.offsetMin = new Vector2(20, 20); s.offsetMax = new Vector2(20 + SideW, -88);
-            LG.Platter(side.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            var side = LGBuild.Rect(rt, "Side");
+            side.anchorMin = new Vector2(0, 0); side.anchorMax = new Vector2(0, 1); side.pivot = new Vector2(0, 0.5f);
+            side.offsetMin = new Vector2(Pad, 24); side.offsetMax = new Vector2(Pad + SideW, -Top);
 
-            var head = LGBuild.Label(s, Loc.T("СВОДКА ИМПЕРИИ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
-            head.rectTransform.TopBand(16, 18, 18, 18);
-            head.Track(1.4f);
-            (LGIcon, Color, string)[] rows =
+            // Сводка: три крупных числа и ресурсы
+            var sum = SideCard(side, "Summary", Loc.T("СВОДКА"), Cyan);
+            sum.TopBand(0, 290);
+            Text Big(int i, string cap, Color c)
             {
-                (LGIcon.Population, Cyan, Loc.T("Население")),
-                (LGIcon.Planet, Cyan, Loc.T("Колонии")),
-                (LGIcon.Society, new Color(0.98f, 0.55f, 0.85f), Loc.T("Средняя стабильность")),
-                (LGIcon.Energy, BuildMenuModal.CEnergy, Loc.T("Гелий-3")),
-                (LGIcon.Minerals, BuildMenuModal.CMinerals, Loc.T("Титан")),
-                (LGIcon.Alloys, BuildMenuModal.CAlloys, Loc.T("Сплавы")),
-                (LGIcon.Influence, BuildMenuModal.CInfluence, Loc.T("Влияние")),
-                (LGIcon.Research, new Color(0.5f, 0.92f, 0.62f), Loc.T("Наука")),
+                var v = LGBuild.Label(sum, "", 30, c, TextAnchor.UpperLeft, bold: true);
+                v.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20 + i * 100, -46), new Vector2(100, 36));
+                var l = LGBuild.Label(sum, cap, 11, Muted, TextAnchor.UpperLeft, bold: true);
+                l.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20 + i * 100, -84), new Vector2(100, 16));
+                l.Track(1.2f);
+                return v;
+            }
+            _sumPop = Big(0, Loc.T("ЖИТЕЛЕЙ"), Color.white);
+            _sumCol = Big(1, Loc.T("КОЛОНИЙ"), Color.white);
+            _sumStab = Big(2, Loc.T("СТАБИЛ."), Cyan);
+            (Color, string)[] rows =
+            {
+                (BuildMenuModal.CEnergy, Loc.T("Гелий-3")),
+                (BuildMenuModal.CMinerals, Loc.T("Титан")),
+                (BuildMenuModal.CAlloys, Loc.T("Сплавы")),
+                (BuildMenuModal.CInfluence, Loc.T("Влияние")),
+                (CSci, Loc.T("Наука")),
             };
-            float y = 44f;
-            foreach (var (icon, col, label) in rows)
+            float y = 112f;
+            foreach (var (col, label) in rows)
             {
-                var r = LGBuild.Rect(s, "Stat");
-                r.TopBand(y, 30, 18, 18);
-                var ic = LGIcons.Create(r, icon, 16, col);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(16, 16));
-                var l = LGBuild.Label(r, label, 12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-                l.rectTransform.Stretch(26, 0, 0, 0);
-                var v = LGBuild.Label(r, "", 13, Color.white, TextAnchor.MiddleRight, bold: true);
+                var line = LGBuild.Panel(sum, "Sep", new Color(1f, 1f, 1f, 0.05f));
+                line.rectTransform.TopBand(y, 1, 20, 20);
+                LG.Ignore(line.gameObject);
+                var r = LGBuild.Rect(sum, "Res");
+                r.TopBand(y + 1, 33, 20, 20);
+                var l = LGBuild.Label(r, label, 14, col, TextAnchor.MiddleLeft, bold: true);
+                l.rectTransform.Stretch();
+                var v = LGBuild.Label(r, "", 14, Color.white, TextAnchor.MiddleRight, bold: true);
+                v.rectTransform.Stretch();
                 _sideValues.Add(v);
-                y += 32f;
-                if (label == Loc.T("Средняя стабильность")) y += 10f;
+                y += 34f;
             }
 
-            _sideIdle = LGBuild.Label(s, "", 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            _sideIdle.rectTransform.TopBand(y + 12, 120, 18, 18);
-            _sideIdle.lineSpacing = 1.15f;
+            // Требует внимания
+            var att = SideCard(side, "Attention", Loc.T("ТРЕБУЕТ ВНИМАНИЯ"), Gold);
+            att.anchorMin = new Vector2(0, 0); att.anchorMax = new Vector2(1, 1);
+            att.offsetMin = new Vector2(0, 66); att.offsetMax = new Vector2(0, -306);
+            _attention = LGBuild.Rect(att, "Items");
+            _attention.Stretch(14, 14, 14, 50);
 
-            var autoAll = LGBuild.Button(s, "AutoAll", UIManager.DS.BtnPrimary, Cyan, ToggleAutoAll, null, null, 11, 10f);
+            var autoAll = LGBuild.Button(side, "AutoAll", UIManager.DS.BtnSuccess, UIManager.DS.Green, ToggleAutoAll, null, " ", 12);
             var aRt = (RectTransform)autoAll.transform;
             aRt.anchorMin = new Vector2(0, 0); aRt.anchorMax = new Vector2(1, 0); aRt.pivot = new Vector2(0.5f, 0);
-            aRt.offsetMin = new Vector2(18, 18); aRt.offsetMax = new Vector2(-18, 54);
-            _autoAllText = LGBuild.Label(autoAll.transform, "", 11, Color.white, TextAnchor.MiddleCenter, bold: true);
+            aRt.offsetMin = new Vector2(0, 0); aRt.offsetMax = new Vector2(0, 46);
+            _autoAllText = autoAll.GetComponentInChildren<Text>();
             TooltipHelper.Attach(autoAll.gameObject, Loc.T("<b>Автостройка</b>\nКолония с пустой очередью сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету."));
         }
 
@@ -309,188 +302,344 @@ namespace StellarisClone.Rendering
         private void Refresh()
         {
             if (_root == null) return;
-            var list = Colonies();
-            list.Sort((a, b) =>
-            {
-                int c = _sort == Sort.Name ? string.Compare(a.Name, b.Name, System.StringComparison.CurrentCulture)
-                                           : SortValue(a).CompareTo(SortValue(b));
-                return _sortDesc ? -c : c;
-            });
+            var all = Colonies();
+            int idle = 0, house = 0, unst = 0;
+            foreach (var p in all) { if (IsIdle(p)) idle++; if (NoHousing(p)) house++; if (Unstable(p)) unst++; }
+            _filterSeg.SetLabel(0, Loc.F("Все · {0}", all.Count));
+            _filterSeg.SetLabel(1, Loc.F("Простаивают · {0}", idle));
+            _filterSeg.SetLabel(2, Loc.F("Нет жилья · {0}", house));
+            _filterSeg.SetLabel(3, Loc.F("Неспокойные · {0}", unst));
 
-            string key = "";
+            var list = all.FindAll(Pass);
+            list.Sort((a, b) => _sort == Sort.Population && a.Population == b.Population
+                ? string.Compare(a.Name, b.Name, System.StringComparison.CurrentCulture)
+                : SortValue(b).CompareTo(SortValue(a)));
+
+            string key = _filter + "|";
             foreach (var p in list) key += p.GetHashCode() + ",";
-            if (key != _rowsKey)
+            if (key != _cardsKey)
             {
-                _rowsKey = key;
+                _cardsKey = key;
                 LGBuild.Clear(_list);
-                _rows.Clear();
-                for (int i = 0; i < list.Count; i++) _rows.Add(MakeRow(list[i], i));
-                if (list.Count == 0)
+                _cards.Clear();
+                int n = list.Count + (_filter == 0 ? 1 : 0);   // в «Все» — ещё карточка «Новая колония»
+                for (int row = 0; row * Cols < n; row++)
                 {
-                    var e = LGBuild.Label(_list, Loc.T("Колоний пока нет. Основайте первую: выберите пригодную планету в своей системе и проект «Колония»."),
-                        13, Muted, TextAnchor.MiddleCenter, wrap: true);
-                    LGBuild.Height(e.gameObject, 80f);
+                    var line = LGBuild.Rect(_list, "Row");
+                    LGBuild.Height(line.gameObject, CardH);
+                    for (int c = 0; c < Cols; c++)
+                    {
+                        int i = row * Cols + c;
+                        if (i >= n) break;
+                        var slot = LGBuild.Rect(line, "Slot");
+                        slot.anchorMin = new Vector2(c / (float)Cols, 0);
+                        slot.anchorMax = new Vector2((c + 1) / (float)Cols, 1);
+                        slot.offsetMin = new Vector2(Gap * 2f * c / Cols, 0);
+                        slot.offsetMax = new Vector2(-Gap * 2f * (Cols - 1 - c) / Cols, 0);
+                        if (i < list.Count) _cards.Add(MakeCard(slot, list[i]));
+                        else MakeNewColonyCard(slot);
+                    }
+                }
+                if (list.Count == 0 && _filter != 0)
+                {
+                    var e = LGBuild.Label(_list, Loc.T("Здесь пусто — все колонии в порядке."), 15, Muted, TextAnchor.MiddleCenter);
+                    LGBuild.Height(e.gameObject, 120f);
                 }
                 LG.Skin(_list);
             }
-            foreach (var r in _rows) FillRow(r);
-            RefreshSide(list);
+            foreach (var c in _cards) FillCard(c);
+            RefreshSide(all);
         }
 
         private void RefreshSide(List<PlanetData> list)
         {
-            int pop = 0, robots = 0, idle = 0, jobless = 0;
-            float stab = 0f, sci = 0f;
-            var cm = ConstructionManager.Instance;
-            foreach (var p in list)
-            {
-                pop += p.Population; robots += p.RobotPops; stab += p.Stability * p.Population; sci += Science(p);
-                if (cm != null && cm.QueueFor(p).Count == 0 && !p.AutoBuild) idle++;
-                jobless += p.IdlePops;
-            }
+            int pop = 0, robots = 0;
+            float stab = 0f;
+            foreach (var p in list) { pop += p.Population; robots += p.RobotPops; stab += p.Stability * p.Population; }
             float avg = pop > 0 ? stab / pop : 0f;
             var eco = EconomyManager.Instance;
             var tm = TechnologyManager.Instance;
-            _subtitle.text = Loc.F("{0} · колоний {1} · клик по названию — окно планеты, по заголовку столбца — сортировка", FactionTraits.FactionOf(0)?.Name ?? Loc.T("Ваша империя"), list.Count);
-            string Inc(float stock, float inc) => $"{stock:0} <color={(inc >= 0f ? "#9EF0C8" : "#FF8A8A")}>{(inc >= 0f ? "+" : "")}{inc:0}</color>";
+            string empire = FactionTraits.FactionOf(0)?.Name ?? Loc.T("Ваша империя");
+            _cap.text = Loc.F("{0} · КОЛОНИИ", empire.ToUpper());
+            _subtitle.text = Loc.F("Колоний {0} · жителей {1}{2} · клик по карточке — окно планеты", list.Count, pop,
+                                   robots > 0 ? Loc.F(" (роботов {0})", robots) : "");
+            _sumPop.text = pop.ToString();
+            _sumCol.text = list.Count.ToString();
+            _sumStab.text = avg.ToString("0");
+            _sumStab.color = PlanetStability.TierColor(PlanetStability.TierOf(avg));
+
+            string Inc(float stock, float inc) => $"{stock:0} <color={(inc >= 0f ? "#5CF599" : "#FF8A8A")}>{(inc >= 0f ? "+" : "")}{inc:0}</color>";
             int i = 0;
-            _sideValues[i++].text = robots > 0 ? Loc.F("{0} <color=#8AA2A8>(роботов {1})</color>", pop, robots) : pop.ToString();
-            _sideValues[i++].text = list.Count.ToString();
-            var tier = PlanetStability.TierOf(avg);
-            _sideValues[i++].text = $"<color=#{PlanetStability.Hex(PlanetStability.TierColor(tier))}>{avg:0} · {PlanetStability.TierName(tier)}</color>";
             _sideValues[i++].text = eco != null ? Inc(eco.EnergyCredits, eco.MonthlyEnergyIncome) : "—";
             _sideValues[i++].text = eco != null ? Inc(eco.Minerals, eco.MonthlyMineralsIncome) : "—";
             _sideValues[i++].text = eco != null ? Inc(eco.Alloys, eco.MonthlyAlloysIncome) : "—";
             _sideValues[i++].text = eco != null ? Inc(eco.Influence, eco.MonthlyInfluenceIncome) : "—";
-            _sideValues[i++].text = tm != null ? Loc.F("+{0:0} / мес", tm.MonthlyResearchIncome) : "—";
+            _sideValues[i++].text = tm != null ? Loc.F("<color=#5CF599>+{0:0}</color> / мес", tm.MonthlyResearchIncome) : "—";
 
-            string s = idle > 0 ? Loc.F("<color=#F2C46B>Простаивают: {0}</color> — очередь пуста и автостройка выключена.\n", idle) : Loc.T("<color=#9EF0C8>Все колонии заняты делом.</color>\n");
-            if (jobless > 0) s += Loc.F("<color=#F2C46B>Безработных: {0}</color> — нужны районы.\n", jobless);
-            int unstable = list.FindAll(p => p.Tier <= StabilityTier.Strike).Count;
-            if (unstable > 0) s += Loc.F("<color=#FF8A8A>Неспокойно на {0} планетах</color> — пропаганда или губернатор помогут.", unstable);
-            _sideIdle.text = s;
             bool anyOff = list.Exists(p => !p.AutoBuild);
             _autoAllText.text = anyOff ? Loc.T("ВКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ") : Loc.T("ВЫКЛЮЧИТЬ АВТОСТРОЙКУ ВЕЗДЕ");
+            RefreshAttention(list);
         }
 
-        // ================================================================ Строка колонии
-
-        private Text Cell(RectTransform row, int col, int size, Color c, bool bold = true, TextAnchor anchor = TextAnchor.MiddleLeft)
+        /// <summary>«Требует внимания»: простой, нет жилья, безработные, брожение. Клик — окно планеты.</summary>
+        private void RefreshAttention(List<PlanetData> list)
         {
-            var t = LGBuild.Label(row, "", size, c, anchor, bold: bold);
-            var r = t.rectTransform;
-            r.anchorMin = new Vector2(0, 0); r.anchorMax = new Vector2(0, 1); r.pivot = new Vector2(0, 0.5f);
-            r.offsetMin = new Vector2(ColX[col], 0); r.offsetMax = new Vector2(ColX[col] + ColW[col], 0);
+            var items = new List<(string text, Color col, LGIcon icon, PlanetData p)>();
+            foreach (var p in list)
+            {
+                string n = PlanetNames.Title(p.Name);
+                if (Unstable(p)) items.Add((Loc.F("{0} — {1} ({2:0})", n, PlanetStability.TierName(p.Tier).ToLower(), p.Stability), CRed, LGIcon.Warning, p));
+                if (IsIdle(p)) items.Add((Loc.F("{0} — ничего не строится", n), Gold, LGIcon.Construction, p));
+                if (NoHousing(p)) items.Add((Loc.F("{0} — нет жилья", n), Gold, LGIcon.Population, p));
+                else if (p.IdlePops > 0) items.Add((Loc.F("{0} — безработных {1}", n, p.IdlePops), Gold, LGIcon.Population, p));
+            }
+            string key = "";
+            foreach (var it in items) key += it.text + "|";
+            if (key == _attKey) return;
+            _attKey = key;
+            LGBuild.Clear(_attention);
+
+            if (items.Count == 0)
+            {
+                var ok = LGBuild.Label(_attention, Loc.T("Все колонии заняты делом."), 13, new Color(0.62f, 0.94f, 0.78f), TextAnchor.UpperLeft, bold: true);
+                ok.rectTransform.TopBand(4, 20);
+                return;
+            }
+            const float H = 38f;
+            int max = Mathf.Max(1, Mathf.FloorToInt((_attention.rect.height > 1f ? _attention.rect.height : 400f) / (H + 6f)));
+            int shown = items.Count > max ? max - 1 : items.Count;
+            for (int i = 0; i < shown; i++)
+            {
+                var it = items[i];
+                var b = LGBuild.Panel(_attention, "Item", new Color(it.col.r, it.col.g, it.col.b, 0.07f), raycast: true);
+                b.rectTransform.TopBand(i * (H + 6f), H);
+                LG.Ignore(b.gameObject);
+                var bar = LGBuild.Panel(b.transform, "Bar", it.col);
+                bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(3, H));
+                var ic = LGIcons.Create(b.transform, it.icon, 14, it.col);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(14, 14));
+                var t = LGBuild.Label(b.transform, it.text, 13, Color.white, TextAnchor.MiddleLeft, bold: true);
+                t.rectTransform.Stretch(36, 0, 8, 0);
+                t.resizeTextForBestFit = true; t.resizeTextMinSize = 10; t.resizeTextMaxSize = 13;
+                var btn = b.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                var p = it.p;
+                btn.onClick.AddListener(() => OpenPlanet(p));
+                TooltipHelper.Attach(b.gameObject, Loc.T("Открыть окно планеты"));
+            }
+            if (shown < items.Count)
+            {
+                var more = LGBuild.Label(_attention, Loc.F("…и ещё {0}", items.Count - shown), 12, Muted, TextAnchor.MiddleLeft);
+                more.rectTransform.TopBand(shown * (H + 6f), H, 14, 0);
+            }
+        }
+
+        // ================================================================ Карточка колонии
+
+        private static Sprite s_sphere;
+
+        /// <summary>Шар планеты: освещённая сфера с мягким краем (красится в цвет мира).</summary>
+        private static Sprite Sphere()
+        {
+            if (s_sphere != null) return s_sphere;
+            const int N = 192;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
+            var px = new Color32[N * N];
+            var light = new Vector3(-0.55f, 0.55f, 0.63f).normalized;
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float u = (x + 0.5f) / N * 2f - 1f, v = (y + 0.5f) / N * 2f - 1f;
+                    float r2 = u * u + v * v;
+                    float a = Mathf.Clamp01((1f - Mathf.Sqrt(r2)) * N * 0.5f);
+                    if (a <= 0f) { px[y * N + x] = new Color32(0, 0, 0, 0); continue; }
+                    var n = new Vector3(u, v, Mathf.Sqrt(Mathf.Max(0f, 1f - r2)));
+                    float diff = Mathf.Clamp01(Vector3.Dot(n, light));
+                    float lit = 0.10f + 0.95f * Mathf.Pow(diff, 0.8f);
+                    float spec = Mathf.Pow(Mathf.Clamp01(Vector3.Dot(Vector3.Reflect(-light, n), Vector3.forward)), 18f) * 0.35f;
+                    float rim = Mathf.Pow(1f - n.z, 3f) * 0.25f * diff;
+                    float c = Mathf.Clamp01(lit + rim);
+                    float w = Mathf.Clamp01(spec);
+                    px[y * N + x] = new Color(Mathf.Lerp(c, 1f, w), Mathf.Lerp(c, 1f, w), Mathf.Lerp(c, 1f, w), a);
+                }
+            tex.SetPixels32(px);
+            tex.Apply();
+            s_sphere = Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f));
+            s_sphere.hideFlags = HideFlags.DontSave;
+            return s_sphere;
+        }
+
+        private static Text Caption(Transform parent, string text)
+        {
+            var t = LGBuild.Label(parent, text, 11, Muted, TextAnchor.UpperLeft, bold: true);
+            t.Track(1.5f);
             return t;
         }
 
-        private Row MakeRow(PlanetData p, int index)
+        private static RectTransform Chip(Transform parent, Color col, out Text label)
         {
-            var r = new Row { Planet = p };
-            var bg = LGBuild.Panel(_list, "Colony", new Color(1f, 1f, 1f, index % 2 == 0 ? 0.035f : 0.02f), raycast: true);
-            r.Go = bg.gameObject; r.Bg = bg;
-            LGBuild.Height(bg.gameObject, RowH);
-            LG.Platter(bg.gameObject, 12f).SetRim(new Color(1f, 1f, 1f, 0.06f));
-            var row = bg.rectTransform;
+            var c = LGBuild.Panel(parent, "Tag", new Color(col.r, col.g, col.b, 0.14f));
+            LG.Chip(c.gameObject, new Color(col.r, col.g, col.b, 0.5f), 6f);
+            label = LGBuild.Label(c.transform, "", 11, Color.Lerp(col, Color.white, 0.35f), TextAnchor.MiddleCenter, bold: true);
+            label.rectTransform.Stretch();
+            label.Track(1f);
+            return c.rectTransform;
+        }
 
-            r.Idle = LGBuild.Panel(row, "IdleEdge", Gold);
-            r.Idle.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(3, RowH - 18));
-            LG.Ignore(r.Idle.gameObject);
+        private Card MakeCard(RectTransform slot, PlanetData p)
+        {
+            var r = new Card { Planet = p };
+            var card = LGBuild.Panel(slot, "Colony", CCard, raycast: true);
+            card.rectTransform.Stretch();
+            r.Fx = LG.Platter(card.gameObject, 14f);
+            r.Fx.SetRim(new Color(1f, 1f, 1f, 0.08f));
 
-            // Колония: шар цвета мира, название, класс; клик — окно планеты
-            var nameBtn = LGBuild.Panel(row, "Open", new Color(1f, 1f, 1f, 0f), raycast: true);
-            nameBtn.rectTransform.anchorMin = new Vector2(0, 0); nameBtn.rectTransform.anchorMax = new Vector2(0, 1);
-            nameBtn.rectTransform.offsetMin = new Vector2(ColX[0], 4); nameBtn.rectTransform.offsetMax = new Vector2(ColX[0] + ColW[0], -4);
-            var nb = nameBtn.gameObject.AddComponent<Button>();
-            nb.transition = Selectable.Transition.None;
-            nb.onClick.AddListener(() => OpenPlanet(p));
-            TooltipHelper.Attach(nameBtn.gameObject, Loc.T("Открыть окно планеты"));
-            r.World = LGIcons.Create(nameBtn.transform, LGIcon.Planet, 36, p.PlanetColor);
-            r.World.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(36, 36));
-            r.Name = LGBuild.Label(nameBtn.transform, "", 14, Color.white, TextAnchor.LowerLeft, bold: true);
-            r.Name.rectTransform.Stretch(46, RowH * 0.5f - 2, 0, 0);
-            r.Sub = LGBuild.Label(nameBtn.transform, "", 10, Muted, TextAnchor.UpperLeft);
-            r.Sub.rectTransform.Stretch(46, 0, 0, RowH * 0.5f);
+            // Шапка: тёмная подложка, шар мира справа, название слева; клик — окно планеты
+            var mask = LG.RoundedMask(card.transform, 13f, 1f);
+            var head = LGBuild.Panel(mask, "Head", CHead, raycast: true);
+            head.rectTransform.TopBand(0, HeadArt);
+            var hb = head.gameObject.AddComponent<Button>();
+            hb.transition = Selectable.Transition.None;
+            hb.onClick.AddListener(() => OpenPlanet(p));
+            TooltipHelper.Attach(head.gameObject, Loc.T("Открыть окно планеты"));
+            var hmask = head.gameObject.AddComponent<RectMask2D>();
+            hmask.softness = Vector2Int.zero;
+            r.World = LGBuild.Panel(head.transform, "World", p.PlanetColor);
+            r.World.sprite = Sphere();
+            r.World.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-60, -56), new Vector2(184, 184));
+            LG.Ignore(r.World.gameObject);
+            var glow = LGBuild.Panel(head.transform, "Glow", new Color(p.PlanetColor.r, p.PlanetColor.g, p.PlanetColor.b, 0.18f));
+            glow.sprite = MenuArt.SoftDisc;
+            glow.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-60, -56), new Vector2(300, 300));
+            glow.transform.SetSiblingIndex(0);
+            LG.Ignore(glow.gameObject);
+            var fade = LGBuild.Panel(head.transform, "Fade", CHead);
+            fade.sprite = MenuArt.HorizontalFade;
+            fade.rectTransform.anchorMin = Vector2.zero; fade.rectTransform.anchorMax = new Vector2(0.8f, 1);
+            fade.rectTransform.offsetMin = fade.rectTransform.offsetMax = Vector2.zero;
+            LG.Ignore(fade.gameObject);
 
-            r.Pop = Cell(row, 1, 15, Color.white);
-            r.Pop.rectTransform.offsetMin += new Vector2(0, RowH * 0.32f);
-            r.Growth = Cell(row, 1, 10, Muted, false);
-            r.Growth.rectTransform.offsetMax -= new Vector2(0, RowH * 0.42f);
+            r.Name = LGBuild.Label(head.transform, "", 22, Color.white, TextAnchor.UpperLeft, bold: true);
+            r.Name.rectTransform.TopBand(16, 28, 20, 150);
+            r.Name.gameObject.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.7f);
+            r.Sub = LGBuild.Label(head.transform, "", 12, Muted, TextAnchor.UpperLeft);
+            r.Sub.rectTransform.TopBand(46, 18, 20, 150);
+            r.FocusChip = Chip(head.transform, Cyan, out r.FocusTag);
+            r.FocusChip.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -72), new Vector2(110, 22));
+            r.AutoChip = Chip(head.transform, UIManager.DS.Green, out r.AutoTag);
+            r.AutoTag.text = Loc.T("АВТО ✓");
+            r.AutoChip.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(140, -72), new Vector2(70, 22));
+
+            // Жители и стабильность
+            var body = LGBuild.Rect(card.transform, "Body");
+            body.Stretch(20, 0, 20, HeadArt + 14);
+            var pc = LGBuild.Rect(body, "Pop");
+            pc.anchorMin = new Vector2(0, 1); pc.anchorMax = new Vector2(0.5f, 1); pc.pivot = new Vector2(0, 1);
+            pc.offsetMin = new Vector2(0, -64); pc.offsetMax = new Vector2(-12, 0);
+            Caption(pc, Loc.T("ЖИТЕЛИ")).rectTransform.TopBand(0, 16);
+            r.Pop = LGBuild.Label(pc, "", 16, Color.white, TextAnchor.UpperLeft, bold: true);
+            r.Pop.rectTransform.TopBand(18, 22);
             r.Pop.raycastTarget = true;
             TooltipHelper.Attach(r.Pop.gameObject, "");
             r.PopTip = r.Pop.GetComponent<TooltipTrigger>();
+            var pb = LGBuild.Rect(pc, "Bar"); pb.TopBand(42, 6);
+            r.PopBar = LGBuild.Bar(pb, UIManager.DS.Green, 0f, 6f);
+            r.Growth = LGBuild.Label(pc, "", 11, Muted, TextAnchor.UpperLeft);
+            r.Growth.rectTransform.TopBand(50, 16);
 
-            r.Stab = Cell(row, 2, 13, Color.white);
-            r.Stab.rectTransform.offsetMin += new Vector2(0, RowH * 0.30f);
+            var sc = LGBuild.Rect(body, "Stab");
+            sc.anchorMin = new Vector2(0.5f, 1); sc.anchorMax = new Vector2(1, 1); sc.pivot = new Vector2(0, 1);
+            sc.offsetMin = new Vector2(12, -64); sc.offsetMax = new Vector2(0, 0);
+            Caption(sc, Loc.T("СТАБИЛЬНОСТЬ")).rectTransform.TopBand(0, 16);
+            r.Stab = LGBuild.Label(sc, "", 16, Color.white, TextAnchor.UpperLeft, bold: true);
+            r.Stab.rectTransform.TopBand(18, 22);
             r.Stab.raycastTarget = true;
             TooltipHelper.Attach(r.Stab.gameObject, "");
             r.StabTip = r.Stab.GetComponent<TooltipTrigger>();
-            var sbHost = LGBuild.Rect(row, "StabBar");
-            sbHost.anchorMin = new Vector2(0, 0.5f); sbHost.anchorMax = new Vector2(0, 0.5f); sbHost.pivot = new Vector2(0, 0.5f);
-            sbHost.anchoredPosition = new Vector2(ColX[2], -12); sbHost.sizeDelta = new Vector2(ColW[2] - 14, 6);
-            r.StabBar = LGBuild.Bar(sbHost, Cyan, 0.5f, 5f);
+            var sb = LGBuild.Rect(sc, "Bar"); sb.TopBand(42, 6);
+            r.StabBar = LGBuild.Bar(sb, Cyan, 0f, 6f);
 
-            r.Min = Cell(row, 3, 13, BuildMenuModal.CMinerals);
-            r.En = Cell(row, 4, 13, BuildMenuModal.CEnergy);
-            r.Al = Cell(row, 5, 13, BuildMenuModal.CAlloys);
-            r.Sci = Cell(row, 6, 13, new Color(0.5f, 0.92f, 0.62f));
+            // Доход в месяц
+            var prod = LGBuild.Panel(body, "Income", new Color(1f, 1f, 1f, 0.035f));
+            prod.rectTransform.TopBand(76, 46);
+            LG.Platter(prod.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, 0.05f));
+            Text Prod(int i, string cap, Color col)
+            {
+                var cell = LGBuild.Rect(prod.transform, "Cell");
+                cell.anchorMin = new Vector2(i / 4f, 0); cell.anchorMax = new Vector2((i + 1) / 4f, 1);
+                cell.offsetMin = new Vector2(12, 0); cell.offsetMax = Vector2.zero;
+                var v = LGBuild.Label(cell, "", 15, col, TextAnchor.UpperLeft, bold: true);
+                v.rectTransform.Stretch(0, 20, 0, 6);
+                var l = LGBuild.Label(cell, cap, 9, Muted, TextAnchor.LowerLeft, bold: true);
+                l.rectTransform.Stretch(0, 6, 0, 0);
+                l.Track(1.2f);
+                return v;
+            }
+            r.En = Prod(0, Loc.T("ГЕЛИЙ"), BuildMenuModal.CEnergy);
+            r.Min = Prod(1, Loc.T("ТИТАН"), BuildMenuModal.CMinerals);
+            r.Al = Prod(2, Loc.T("СПЛАВЫ"), BuildMenuModal.CAlloys);
+            r.Sci = Prod(3, Loc.T("НАУКА"), CSci);
 
-            // Приоритет: выпадающий список
-            RectTransform frt = null;
-            var focus = LGBuild.Button(row, "Focus", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f), () => OpenFocusMenu(p, frt), null, null, 10, 10f);
-            frt = (RectTransform)focus.transform;
-            frt.anchorMin = new Vector2(0, 0.5f); frt.anchorMax = new Vector2(0, 0.5f); frt.pivot = new Vector2(0, 0.5f);
-            frt.anchoredPosition = new Vector2(ColX[7], 0); frt.sizeDelta = new Vector2(ColW[7] - 12, 32);
-            r.Focus = LGBuild.Label(focus.transform, "", 10, Color.white, TextAnchor.MiddleCenter, bold: true);
-            r.Focus.rectTransform.Stretch(6, 0, 20, 0);
-            var chev = LGIcons.Create(focus.transform, LGIcon.Back, 10, Color.white);
-            chev.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(10, 10));
-            chev.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f);
-            TooltipHelper.Attach(focus.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы выбрать."));
-
-            // Стройка: значок, название, дни и полоса
-            var jobHost = LGBuild.Panel(row, "Job", new Color(1f, 1f, 1f, 0f), raycast: true);
-            var jrt = jobHost.rectTransform;
-            jrt.anchorMin = new Vector2(0, 0); jrt.anchorMax = new Vector2(1, 1);
-            jrt.offsetMin = new Vector2(ColX[8], 6); jrt.offsetMax = new Vector2(-252, -6);
-            TooltipHelper.Attach(jobHost.gameObject, "");
-            r.JobTip = jobHost.GetComponent<TooltipTrigger>();
-            r.JobIcon = LGIcons.Create(jrt, LGIcon.Construction, 18, Gold);
-            r.JobIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 4), new Vector2(18, 18));
-            r.Job = LGBuild.Label(jrt, "", 12, Color.white, TextAnchor.MiddleLeft, bold: true);
-            r.Job.rectTransform.Stretch(26, 14, 60, 0);
-            r.JobDays = LGBuild.Label(jrt, "", 11, Gold, TextAnchor.MiddleRight, bold: true);
-            r.JobDays.rectTransform.Stretch(0, 14, 0, 0);
-            var jb = LGBuild.Rect(jrt, "Bar");
-            jb.anchorMin = new Vector2(0, 0); jb.anchorMax = new Vector2(1, 0);
-            jb.offsetMin = new Vector2(26, 6); jb.offsetMax = new Vector2(0, 10);
-            r.JobBar = LGBuild.Bar(jb, Gold, 0f, 3f);
+            // Текущая стройка
+            var job = LGBuild.Panel(body, "Job", new Color(1f, 1f, 1f, 0f), raycast: true);
+            job.rectTransform.TopBand(134, 40);
+            TooltipHelper.Attach(job.gameObject, "");
+            r.JobTip = job.GetComponent<TooltipTrigger>();
+            r.JobIcon = LGIcons.Create(job.transform, LGIcon.Construction, 15, Gold);
+            r.JobIcon.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -2), new Vector2(15, 15));
+            r.Job = LGBuild.Label(job.transform, "", 13, Color.white, TextAnchor.UpperLeft, bold: true);
+            r.Job.rectTransform.TopBand(0, 20, 22, 110);
+            r.Job.resizeTextForBestFit = true; r.Job.resizeTextMinSize = 10; r.Job.resizeTextMaxSize = 13;
+            var jb = LGBuild.Rect(job.transform, "Bar"); jb.TopBand(28, 6);
+            r.JobBar = LGBuild.Bar(jb, Cyan, 0f, 6f);
             LGFx.Shimmer(r.JobBar);
-
-            // Справа: купить, строить…, автостройка
-            r.Buy = LGBuild.Button(row, "Buy", new Color(0.36f, 0.28f, 0.06f), Gold, () => BuyFirst(p), null, null, 10, 10f);
-            ((RectTransform)r.Buy.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-150, 0), new Vector2(94, 34));
-            r.BuyBg = r.Buy.GetComponent<Image>();
-            var bi = LGIcons.Create(r.Buy.transform, LGIcon.Energy, 12, BuildMenuModal.CEnergy);
-            bi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(9, 0), new Vector2(12, 12));
-            r.BuyText = LGBuild.Label(r.Buy.transform, "", 11, Color.white, TextAnchor.MiddleLeft, bold: true);
-            r.BuyText.rectTransform.Stretch(25, 0, 4, 0);
+            r.Buy = LGBuild.Button(job.transform, "Buy", new Color(0.36f, 0.28f, 0.06f), Gold, () => BuyFirst(p), null, " ", 11);
+            r.Buy.GetComponent<LGGameButton>().Compact = true;
+            ((RectTransform)r.Buy.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(0, 4), new Vector2(104, 26));
+            r.BuyText = r.Buy.GetComponentInChildren<Text>();
             TooltipHelper.Attach(r.Buy.gameObject, "");
             r.BuyTip = r.Buy.GetComponent<TooltipTrigger>();
 
-            var add = LGBuild.Button(row, "Add", UIManager.DS.BtnPrimary, Cyan, () => BuildMenuModal.Open(p), LGIcon.Construction, null, 12, 10f);
-            ((RectTransform)add.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-96, 0), new Vector2(46, 34));
+            // Кнопки
+            Button Btn(string name, string label, Color tint, Color rim, System.Action act, float a0, float a1)
+            {
+                var b = LGBuild.Button(card.transform, name, tint, rim, act, null, label, 12);
+                b.GetComponent<LGGameButton>().Compact = true;
+                var brt = (RectTransform)b.transform;
+                brt.anchorMin = new Vector2(a0, 0); brt.anchorMax = new Vector2(a1, 0); brt.pivot = new Vector2(0.5f, 0);
+                brt.offsetMin = new Vector2(a0 == 0f ? 20f : 5f, 18f); brt.offsetMax = new Vector2(a1 == 1f ? -20f : -5f, 18f + 38f);
+                return b;
+            }
+            var add = Btn("Build", Loc.T("СТРОИТЬ…"), UIManager.DS.BtnPrimary, Cyan, () => BuildMenuModal.Open(p), 0f, 0.4f);
             TooltipHelper.Attach(add.gameObject, Loc.T("<b>Строить…</b>\nМеню строительства этой планеты"));
-
-            r.AutoBtn = LGBuild.Button(row, "Auto", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f), () => { p.AutoBuild = !p.AutoBuild; Refresh(); }, null, null, 9, 10f);
-            ((RectTransform)r.AutoBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(78, 34));
+            RectTransform frt = null;
+            r.FocusBtn = Btn("Focus", Loc.T("ПРИОРИТЕТ"), UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), () => OpenFocusMenu(p, frt), 0.4f, 0.76f);
+            frt = (RectTransform)r.FocusBtn.transform;
+            TooltipHelper.Attach(r.FocusBtn.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что строит автостройка. Нажмите, чтобы выбрать."));
+            r.AutoBtn = Btn("Auto", Loc.T("АВТО"), UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), () => { p.AutoBuild = !p.AutoBuild; Refresh(); }, 0.76f, 1f);
             r.AutoBg = r.AutoBtn.GetComponent<Image>();
-            r.Auto = LGBuild.Label(r.AutoBtn.transform, "", 10, Color.white, TextAnchor.MiddleCenter, bold: true);
+            r.Auto = r.AutoBtn.GetComponentInChildren<Text>();
+            r.AutoShown = !p.AutoBuild;   // чтобы первый FillCard перекрасил кнопку
             TooltipHelper.Attach(r.AutoBtn.gameObject, Loc.T("<b>Автостройка</b>\nКогда очередь пуста, колония сама заказывает нужный район в начале месяца."));
             return r;
         }
 
-        private void FillRow(Row r)
+        private void MakeNewColonyCard(RectTransform slot)
+        {
+            var c = LGBuild.Panel(slot, "NewColony", new Color(1f, 1f, 1f, 0.015f));
+            c.rectTransform.Stretch();
+            LG.Platter(c.gameObject, 14f).SetRim(new Color(1f, 1f, 1f, 0.06f));
+            var plus = LGBuild.Label(c.transform, "+", 34, new Color(0.55f, 0.66f, 0.70f), TextAnchor.MiddleCenter, bold: true);
+            plus.rectTransform.Stretch(0, 40, 0, 0);
+            var t = LGBuild.Label(c.transform, Loc.T("Новая колония"), 16, new Color(0.62f, 0.72f, 0.76f), TextAnchor.MiddleCenter, bold: true);
+            t.rectTransform.Stretch(0, 0, 0, 10);
+            var d = LGBuild.Label(c.transform, Loc.T("Выберите пригодную планету в своей системе\nи проект «Колония»"), 12, Muted, TextAnchor.UpperCenter);
+            d.rectTransform.Stretch(20, 0, 20, CardH * 0.5f + 18f);
+            d.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            d.rectTransform.offsetMax = new Vector2(-20, -18);
+        }
+
+        private void FillCard(Card r)
         {
             var p = r.Planet;
             if (p == null) return;
@@ -503,9 +652,17 @@ namespace StellarisClone.Rendering
                        + (gov != null ? Loc.F(" · губ. {0}", gov.Name) : "");
             r.World.color = p.PlanetColor;
 
-            r.Pop.text = $"{p.Population}<size=11><color=#8AA2A8> / {p.HousingCapacity}</color></size>";
+            r.FocusTag.text = ColonyFocusInfo.Name(p.Focus).ToUpper();
+            float fw = r.FocusTag.preferredWidth + 18f;
+            r.FocusChip.sizeDelta = new Vector2(fw, 22);
+            r.AutoChip.gameObject.SetActive(p.AutoBuild);
+            r.AutoChip.anchoredPosition = new Vector2(20 + fw + 8, -72);
+
+            bool full = NoHousing(p);
+            r.Pop.text = $"{p.Population}<size=12><color=#8AA2A8> / {p.HousingCapacity}</color></size>";
+            LGBuild.SetBar(r.PopBar, p.HousingCapacity > 0 ? p.Population / (float)p.HousingCapacity : 1f, full ? Gold : UIManager.DS.Green);
             int months = p.MonthsToNextPop;
-            r.Growth.text = p.Population >= p.HousingCapacity ? Loc.T("<color=#F2C46B>нет жилья</color>")
+            r.Growth.text = full ? Loc.T("<color=#F2C46B>нет жилья</color>")
                           : months < 0 ? Loc.T("рост остановлен")
                           : Loc.F("+1 через {0} мес.", months);
             var dom = SpeciesRegistry.Get(p.DominantOrganic);
@@ -515,7 +672,7 @@ namespace StellarisClone.Rendering
 
             var tier = p.Tier;
             Color tc = PlanetStability.TierColor(tier);
-            r.Stab.text = $"<color=#{PlanetStability.Hex(tc)}>{p.Stability:0}</color> <size=10><color=#8AA2A8>{PlanetStability.TierName(tier)}</color></size>";
+            r.Stab.text = $"<color=#{PlanetStability.Hex(tc)}>{p.Stability:0}</color> <size=12><color=#{PlanetStability.Hex(tc)}>{PlanetStability.TierName(tier)}</color></size>";
             LGBuild.SetBar(r.StabBar, p.Stability / 100f, tc);
             r.StabTip.SetText(PlanetStability.Tooltip(p));
 
@@ -523,45 +680,46 @@ namespace StellarisClone.Rendering
             r.En.text = Num(Output(p, "energy"));
             r.Al.text = Num(Output(p, "alloys"));
             r.Sci.text = Num(Science(p));
-            r.Focus.text = ColonyFocusInfo.Name(p.Focus).ToUpper();
 
             // Текущая стройка
             var job = queue.Count > 0 ? queue[0] : null;
             if (job != null)
             {
                 r.JobIcon.sprite = LGIcons.Get(BuildMenuModal.JobIcon(job));
-                r.JobIcon.color = Gold;
-                r.Job.text = BuildMenuModal.JobTitle(job) + (queue.Count > 1 ? Loc.F("  <color=#8AA2A8>+{0}</color>", queue.Count - 1) : "");
-                r.JobDays.text = Loc.F("{0} дн.", Mathf.CeilToInt(job.DaysLeft));
-                LGBuild.SetBar(r.JobBar, job.Progress, Gold);
-                var sb = new System.Text.StringBuilder(Loc.T("<b>Очередь планеты</b>"));
-                foreach (var j in queue) sb.Append($"\n• {BuildMenuModal.JobTitle(j)} — {Mathf.CeilToInt(cm.DaysUntilDone(j))} " + Loc.T("дн."));
-                r.JobTip.SetText(sb.ToString());
+                r.JobIcon.color = Cyan;
+                r.Job.text = BuildMenuModal.JobTitle(job) + Loc.F("  <color=#8AA2A8>· {0} дн.</color>", Mathf.CeilToInt(job.DaysLeft))
+                           + (queue.Count > 1 ? Loc.F("  <color=#8AA2A8>+{0} в очереди</color>", queue.Count - 1) : "");
+                LGBuild.SetBar(r.JobBar, job.Progress, Cyan);
+                var sbq = new System.Text.StringBuilder(Loc.T("<b>Очередь планеты</b>"));
+                foreach (var j in queue) sbq.Append($"\n• {BuildMenuModal.JobTitle(j)} — {Mathf.CeilToInt(cm.DaysUntilDone(j))} " + Loc.T("дн."));
+                r.JobTip.SetText(sbq.ToString());
             }
             else
             {
                 r.JobIcon.sprite = LGIcons.Get(p.AutoBuild ? LGIcon.Gear : LGIcon.Warning);
                 r.JobIcon.color = p.AutoBuild ? Muted : Gold;
                 r.Job.text = p.AutoBuild ? Loc.T("<color=#8AA2A8>Автостройка выберет сама</color>") : Loc.T("<color=#F2C46B>Ничего не строится</color>");
-                r.JobDays.text = "";
-                LGBuild.SetBar(r.JobBar, 0f, Gold);
+                LGBuild.SetBar(r.JobBar, 0f, Cyan);
                 r.JobTip.SetText(Loc.T("Очередь пуста. Нажмите «Строить…», чтобы выбрать постройку."));
             }
-            r.Idle.enabled = job == null && !p.AutoBuild;
+            bool idle = job == null && !p.AutoBuild;
+            r.Fx.SetRim(idle ? new Color(Gold.r, Gold.g, Gold.b, 0.55f) : new Color(1f, 1f, 1f, 0.08f));
 
-            bool canBuy = job != null && cm.BuyBlocker(job) == null;
             r.Buy.gameObject.SetActive(job != null);
             if (job != null)
             {
-                r.Buy.interactable = canBuy;
-                r.BuyBg.color = canBuy ? new Color(0.36f, 0.28f, 0.06f) : UIManager.DS.BtnDisabled;
+                var blocker = cm.BuyBlocker(job);
+                r.Buy.interactable = blocker == null;
                 r.BuyText.text = Loc.F("КУПИТЬ {0}", ConstructionManager.BuyCost(job));
-                r.BuyText.color = canBuy ? Color.white : Muted;
-                r.BuyTip.SetText(BuildMenuModal.BuyTip(job, cm.BuyBlocker(job)));
+                r.BuyTip.SetText(BuildMenuModal.BuyTip(job, blocker));
             }
-            r.AutoBg.color = p.AutoBuild ? UIManager.DS.BtnPrimary : UIManager.DS.BtnNeutral;
-            r.Auto.text = p.AutoBuild ? Loc.T("АВТО ✓") : Loc.T("АВТО");
-            r.Auto.color = p.AutoBuild ? Color.white : Muted;
+
+            if (r.AutoShown != p.AutoBuild)
+            {
+                r.AutoShown = p.AutoBuild;
+                r.AutoBg.color = p.AutoBuild ? UIManager.DS.BtnSuccess : UIManager.DS.BtnNeutral;   // полоса: зелёная — включена
+                r.Auto.text = p.AutoBuild ? Loc.T("АВТО ✓") : Loc.T("АВТО");
+            }
         }
 
         private static string Num(float v) => v <= 0.05f ? "<color=#5C7480>—</color>" : $"+{v:0.#}";

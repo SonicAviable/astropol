@@ -99,6 +99,12 @@ namespace StellarisClone.Rendering
             return s;
         }
 
+        /// <summary>Сменить подпись варианта (например, счётчик «Простаивают · 2»).</summary>
+        public void SetLabel(int i, string text)
+        {
+            if (i >= 0 && i < _opts.Count && _opts[i].Title.text != text) _opts[i].Title.text = text;
+        }
+
         public void Set(int i, bool notify)
         {
             i = Mathf.Clamp(i, 0, _opts.Count - 1);

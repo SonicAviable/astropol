@@ -7141,3 +7141,33 @@ FSR чётче растягивает картинку при масштабе �
 ХРОНИКА ЭТОЙ ПАРТИИ	THIS CAMPAIGN
 Эта партия	This campaign
 ещё раз — заменить	again to replace
+  <color=#8AA2A8>+{0} в очереди</color>	  <color=#8AA2A8>+{0} queued</color>
+  <color=#8AA2A8>· {0} дн.</color>	  <color=#8AA2A8>· {0} d.</color>
+ (роботов {0})	 ({0} robots)
+<color=#5CF599>+{0:0}</color> / мес	<color=#5CF599>+{0:0}</color> / mo
+{0} · КОЛОНИИ	{0} · COLONIES
+{0} — {1} ({2:0})	{0} — {1} ({2:0})
+{0} — безработных {1}	{0} — {1} unemployed
+{0} — нет жилья	{0} — no housing
+{0} — ничего не строится	{0} — nothing under construction
+Все · {0}	All · {0}
+Все колонии заняты делом.	All colonies are busy.
+Выберите пригодную планету в своей системе\nи проект «Колония»	Pick a habitable planet in your system\nand the “Colony” project
+ГЕЛИЙ	HELIUM
+Доход	Income
+ЖИТЕЛЕЙ	POPS
+Жители	Pops
+Здесь пусто — все колонии в порядке.	Nothing here — all colonies are fine.
+Колоний {0} · жителей {1}{2} · клик по карточке — окно планеты	{0} colonies · {1} pops{2} · click a card to open the planet
+Неспокойные	Unrest
+Неспокойные · {0}	Unrest · {0}
+Нет жилья	No housing
+Нет жилья · {0}	No housing · {0}
+Новая колония	New colony
+Простаивают	Idle
+Простаивают · {0}	Idle · {0}
+СВОДКА	SUMMARY
+СТАБИЛ.	STABIL.
+Сортировка	Sort by
+Управление колониями	Colony management
+…и ещё {0}	…and {0} more

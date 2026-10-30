@@ -26,6 +26,9 @@ namespace StellarisClone.Rendering
         private static readonly Color Ink = new Color(0.84f, 0.89f, 1f);
         private static readonly Color InkQuiet = new Color(0.62f, 0.70f, 0.75f);
 
+        /// <summary>Узкая кнопка (от 60 px) тоже в общем стиле — для тесных мест вроде карточек.</summary>
+        public bool Compact;
+
         private Color _accent = new Color(0.40f, 0.86f, 0.82f);
         private Color _set;
         private bool _done, _applied, _over;
@@ -80,7 +83,7 @@ namespace StellarisClone.Rendering
                 var r = ((RectTransform)transform).rect;
                 if (r.width < 1f) return;                                   // размер ещё не выставлен
                 _done = true;
-                if (r.width < 150f || r.height < 28f || r.height > 58f) { enabled = false; return; }
+                if (r.width < (Compact ? 60f : 150f) || r.height < (Compact ? 24f : 28f) || r.height > 58f) { enabled = false; return; }
                 Apply(r);
                 if (!_applied) { enabled = false; return; }
             }
