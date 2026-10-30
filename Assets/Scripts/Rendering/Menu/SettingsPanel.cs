@@ -260,6 +260,11 @@ namespace StellarisClone.Rendering
 
         private void BuildGame(ref float y)
         {
+            y = LGControls.Section(_content, y, Loc.T("СОВЕТНИК"), LGIcon.Info);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Советы по ходу партии"), Loc.T("ОРАКУЛ-7 подскажет: простаивающие корабли, дефицит, угроза колонии, шанс на штурм")),
+                GameSettings.Advisor, GameSettings.SetAdvisor);
+            y += 6f;
+
             y = LGControls.Section(_content, y, Loc.T("СОХРАНЕНИЯ"), LGIcon.Save);
             var auto = new List<string>();
             foreach (int m in GameSettings.AutosaveOptions)

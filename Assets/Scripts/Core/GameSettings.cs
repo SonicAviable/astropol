@@ -38,6 +38,8 @@ namespace StellarisClone.Core
         // ------------------------------------------------------------------ Интерфейс / игра
         public static int UIScaleIndex { get; private set; }
         public static bool Tooltips { get; private set; }
+        /// <summary>Советы ОРАКУЛА-7 по ходу партии (Advisor).</summary>
+        public static bool Advisor { get; private set; }
         public static int AutosaveIndex { get; private set; }
         public static bool EdgeScroll { get; private set; }
         public static float CameraSpeed { get; private set; }
@@ -118,6 +120,7 @@ namespace StellarisClone.Core
 
             UIScaleIndex = PlayerPrefs.GetInt("set.uiscale", 2);
             Tooltips = PlayerPrefs.GetInt("set.tooltips", 1) == 1;
+            Advisor = PlayerPrefs.GetInt("set.advisor", 1) == 1;
             AutosaveIndex = PlayerPrefs.GetInt("set.autosave", 2);
             EdgeScroll = PlayerPrefs.GetInt("set.edge", 0) == 1;
             CameraSpeed = PlayerPrefs.GetFloat("set.camspeed", 1f);
@@ -242,6 +245,7 @@ namespace StellarisClone.Core
         public static void SetAlarmFx(bool v) { AlarmFx = v; PlayerPrefs.SetInt("set.alarmfx", v ? 1 : 0); Commit(); }
 
         public static void SetUIScale(int i) { UIScaleIndex = Mathf.Clamp(i, 0, UIScaleOptions.Length - 1); PlayerPrefs.SetInt("set.uiscale", UIScaleIndex); ApplyUIScale(); Commit(); }
+        public static void SetAdvisor(bool v) { Advisor = v; PlayerPrefs.SetInt("set.advisor", v ? 1 : 0); Commit(); }
         public static void SetTooltips(bool v) { Tooltips = v; PlayerPrefs.SetInt("set.tooltips", v ? 1 : 0); if (!v) TooltipSystem.Hide(); Commit(); }
         public static void SetAutosave(int i) { AutosaveIndex = Mathf.Clamp(i, 0, AutosaveOptions.Length - 1); PlayerPrefs.SetInt("set.autosave", AutosaveIndex); Commit(); }
         public static void SetEdgeScroll(bool v) { EdgeScroll = v; PlayerPrefs.SetInt("set.edge", v ? 1 : 0); StrategyCameraController.EdgeScrollingSetting = v; Commit(); }

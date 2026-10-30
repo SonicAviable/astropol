@@ -33,9 +33,9 @@ namespace StellarisClone.Rendering
         private Page _page = Page.Main;
         private int _speedBeforePause = 1;
         private bool _pauseOpen;
-        private Vector2 _pauseSize = new Vector2(520, 756), _pauseSizeV;
+        private Vector2 _pauseSize = new Vector2(520, 810), _pauseSizeV;
 
-        private static readonly Vector2 PauseNarrow = new Vector2(520, 756);
+        private static readonly Vector2 PauseNarrow = new Vector2(520, 810);
         private static readonly Vector2 PauseWide = new Vector2(1000, 790);
 
         private Text _restartLabel, _quitLabel, _menuLabel;
@@ -125,7 +125,7 @@ namespace StellarisClone.Rendering
             if (UIEsc.ConsumedThisFrame) return;
             if (ColonyManagerWindow.IsOpenNow || BuildMenuModal.IsOpenNow) return;
             if (StellarisClone.Cards.AssaultDeckWindow.IsOpenNow || StellarisClone.Cards.ArsenalWindow.IsOpenNow) return;
-            if (NotificationLog.IsOpenNow) return;
+            if (NotificationLog.IsOpenNow || GameSummaryWindow.IsOpenNow || EmpireGoalsChoice.IsOpenNow) return;
             if (VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen) return;
             if (LawsWindow.IsOpenNow || HelpOverlay.IsOpenNow) return;
             if (EmpireOverviewWindow.Instance != null && EmpireOverviewWindow.Instance.IsOpen) return;
@@ -257,6 +257,7 @@ namespace StellarisClone.Rendering
             MenuButton(ref y, LGIcon.Gear, Loc.T("НАСТРОЙКИ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
             MenuButton(ref y, LGIcon.Trophy, Loc.T("ЦЕЛИ И УСЛОВИЯ ПОБЕДЫ"), UIManager.DS.BtnNeutral, UIManager.DS.Gold, () => ShowPage(Page.Goals));
             MenuButton(ref y, LGIcon.Star, Loc.F("ДОСТИЖЕНИЯ  ·  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), UIManager.DS.BtnNeutral, new Color(1f, 0.84f, 0.40f), () => ShowPage(Page.Achievements));
+            MenuButton(ref y, LGIcon.Calendar, Loc.T("ИТОГИ ПАРТИИ"), UIManager.DS.BtnNeutral, UIManager.DS.NeonCyan, () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
             MenuButton(ref y, LGIcon.Menu, Loc.T("УПРАВЛЕНИЕ"), UIManager.DS.BtnNeutral, new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
             y += 12f;
             _restartLabel = MenuButton(ref y, LGIcon.Globe, Loc.T("НАЧАТЬ ЗАНОВО"), new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, () =>
@@ -461,7 +462,7 @@ namespace StellarisClone.Rendering
         private void BuildEndScreen(Transform host)
         {
             var rt = LGBuild.Rect(host, "EndScreen");
-            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(660, 560));
+            rt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760, 560));
             _end = rt.gameObject;
             var bg = _end.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
@@ -502,12 +503,19 @@ namespace StellarisClone.Rendering
                 UIManager.Instance?.HideModalDimPublic();
                 MapModeController.ShowGlobal();
             }, LGIcon.Play, Loc.T("ПРОДОЛЖИТЬ"), 12);
-            ((RectTransform)_endContinue.transform).Column(0f, 0.33f, 0, 5);
+            ((RectTransform)_endContinue.transform).Column(0f, 0.25f, 0, 5);
+            // Итоги партии: окно с графиками поверх; после закрытия экран итогов возвращается
+            var summary = LGBuild.Button(row, "Summary", UIManager.DS.BtnNeutral, UIManager.DS.NeonCyan, () =>
+            {
+                LG.Hide(_end);
+                GameSummaryWindow.Open(() => { UIManager.Instance?.ShowModalDimPublic(); LG.Show(_end); _end.transform.SetAsLastSibling(); });
+            }, LGIcon.Calendar, Loc.T("ИТОГИ"), 12);
+            ((RectTransform)summary.transform).Column(0.25f, 0.5f, 5, 5);
             var again = LGBuild.Button(row, "Again", new Color(0.30f, 0.24f, 0.08f), UIManager.DS.Gold, RestartGame, LGIcon.Globe, Loc.T("НОВАЯ ИГРА"), 12);
-            ((RectTransform)again.transform).Column(0.33f, 0.67f, 5, 5);
+            ((RectTransform)again.transform).Column(0.5f, 0.75f, 5, 5);
             var menu = LGBuild.Button(row, "Menu", new Color(0.12f, 0.16f, 0.24f), new Color(0.6f, 0.75f, 1f),
                                       GameSession.ReturnToMainMenu, LGIcon.Back, Loc.T("ГЛАВНОЕ МЕНЮ"), 12);
-            ((RectTransform)menu.transform).Column(0.67f, 1f, 5, 0);
+            ((RectTransform)menu.transform).Column(0.75f, 1f, 5, 0);
 
             LG.Skin(_end.transform);
             _end.SetActive(false);

@@ -306,7 +306,8 @@ namespace StellarisClone.Rendering
             float news = NewsFeedPanel.TopEdge;
             var pos = new Vector2(-10f, (news > 0f ? news : 12f) + Gap);
             if ((_root.anchoredPosition - pos).sqrMagnitude > 1f) _root.anchoredPosition = pos;
-            OutlinerPanel.BottomReserve = _group.alpha > 0.01f ? pos.y + _root.sizeDelta.y + Gap : 0f;
+            // Когда директив нет, место снизу может занимать карточка «Цель империи»
+            OutlinerPanel.BottomReserve = _group.alpha > 0.01f ? pos.y + _root.sizeDelta.y + Gap : EmpireGoalsPanel.Reserve;
         }
 
         private void Refresh()

@@ -6941,3 +6941,97 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Строит она на <b>военный бюджет</b> — долю дохода, которую вы выберете (25%, 50%, 100%): армия не забирает запасы на стройку и флот. 	It builds from the <b>military budget</b> — the share of income you choose (25%, 50%, 100%): the army doesn't take stockpiles needed for construction and the fleet. 
 В окне «Сбор десанта» выберите карты — внизу будет <b>прогноз</b>: доля побед в автобоях с этим десантом. 	In the "Landing Force" window pick your cards — at the bottom you'll see a <b>forecast</b>: the share of wins in auto-battles with this force. 
 \n<color=#8AA2A8>При штурме колонии: с 1-го уровня — щит Штаба, на каждый уровень — турель и +2 места для карт резерва в обороне.</color>	\n<color=#8AA2A8>When the colony is assaulted: from level 1 — the HQ shield, each level — a turret and +2 slots for reserve cards in defense.</color>
+Советник ОРАКУЛ-7	ORACLE-7 Advisor
+Строительный корабль «{0}» простаивает уже месяц. Форпосты расширяют границы — щелкните, чтобы найти его, и отправьте к соседней системе (ПКМ).	Construction ship "{0}" has been idle for a month. Outposts expand your borders — click to find it and send it to a neighbouring system (RMB).
+Научный корабль «{0}» без дела. Включите авторазведку на панели флота — он сам найдёт неизученные системы.	Science ship "{0}" is idle. Turn on auto-explore in the fleet panel — it will find unexplored systems by itself.
+Гелий-3 уходит в минус: {0:0.#} в месяц, запасов хватит примерно на {1:0} мес. Постройте генераторы в колониях или распустите лишние корабли — при банкротстве империя рушится.	Helium-3 is running negative: {0:0.#} per month, reserves will last about {1:0} months. Build generators in your colonies or disband extra ships — bankruptcy brings the empire down.
+Один из слотов исследований пустует — наука копится впустую. Откройте технологии (T) и выберите проект.	One of your research slots is empty — science is going to waste. Open technologies (T) and pick a project.
+Влияния накопилось {0:0}. Его стоит пустить в дело: законы и решения (L), форпосты, договоры с соседями.	You have {0:0} influence piled up. Put it to work: laws and decisions (L), outposts, treaties with neighbours.
+Враг в системе {0}! Соберите флот и встретьте его, пока не началась осада.	Enemy in {0}! Gather your fleet and meet them before a siege begins.
+На планете {0} стабильность {1:0}% — грозит бунт. Помогут законы порядка, жильё и решения империи.	Stability on {0} is {1:0}% — unrest is coming. Order laws, housing and empire decisions will help.
+Флот больше лимита ({0} из {1}): содержание кораблей дорожает. Новые колонии и технологии поднимают лимит.	Fleet over capacity ({0} of {1}): ship upkeep is rising. New colonies and technologies raise the limit.
+Идёт война, а армии для штурмов почти нет. В Арсенале (J) поднимите военный бюджет — колонии врага берут только десантом.	You are at war but have almost no army for assaults. Raise the military budget in the Arsenal (J) — enemy colonies can only be taken by landing troops.
+Орбита над колонией {0} ваша — можно идти на штурм. Выберите систему и нажмите «ШТУРМ».	You hold the orbit over {0} — time to assault. Select the system and press "ASSAULT".
+В системе {0} есть пригодная планета. Новая колония — это жители, ресурсы и голоса в совете.	There is a habitable planet in {0}. A new colony means pops, resources and council votes.
+Новая цель империи	New empire goal
+Выберите, к чему империя будет стремиться следующие 10 лет.	Choose what your empire will strive for over the next 10 years.
+Цель империи: {0}	Empire goal: {0}
+Цель империи достигнута: {0}	Empire goal achieved: {0}
+Цель достигнута: {0}	Goal achieved: {0}
+Срок цели истёк: {0}	Goal expired: {0}
+Ничего страшного — новая цель появится через полгода.	No harm done — a new goal will appear in half a year.
+Цель не достигнута: {0}	Goal not achieved: {0}
++{0} влияния	+{0} influence
++{0} сплавов	+{0} alloys
++{0} титана	+{0} titanium
++{0} гелия-3	+{0} helium-3
+Расширьте империю до {0} систем	Expand the empire to {0} systems
+Форпосты строительных кораблей и захваты расширяют границы.	Construction ship outposts and conquests expand your borders.
+Владейте {0} колониями	Own {0} colonies
+Ищите пригодные планеты в своих системах и основывайте колонии.	Find habitable planets in your systems and found colonies.
+Вырастите население до {0}	Grow the population to {0}
+Жильё, пища и стабильность ускоряют рост; новые колонии — тоже.	Housing, food and stability speed up growth; so do new colonies.
+Изучите {0} технологий	Research {0} technologies
+Больше учёных и исследовательских районов — быстрее наука. Технологии — клавиша T.	More scientists and research districts mean faster science. Technologies — the T key.
+Доведите мощь флота до {0}	Raise fleet power to {0}
+Стройте корабли на верфях и улучшайте проекты в конструкторе (N).	Build ships at shipyards and improve designs in the designer (N).
+Дайте {0}% продукта галактики	Produce {0}% of the galaxy's output
+Промышленные и добывающие районы, торговля и сплавы повышают долю в экономике галактики.	Industrial and mining districts, trade and alloys raise your share of the galactic economy.
+Захватите {0} систем соперников	Capture {0} rival systems
+Подавите звёздную базу флотом и удержите орбиту; колонии берут штурмом.	Disable the starbase with your fleet and hold the orbit; colonies are taken by assault.
+Возьмите штурмом колоний: {0}	Take colonies by assault: {0}
+Осадите колонию флотом, держите орбиту и нажмите «ШТУРМ». Армия — в Арсенале (J).	Besiege a colony with your fleet, hold the orbit and press "ASSAULT". The army is in the Arsenal (J).
+Заключите договоры с империями: {0}	Sign treaties with empires: {0}
+Пакт или союз в дипломатии (P). Подарки и общие враги улучшают отношения.	A pact or alliance in diplomacy (P). Gifts and common enemies improve relations.
+Соберите армию из {0} карт	Build an army of {0} cards
+Задайте состав в Арсенале (J) и поднимите военный бюджет.	Set the composition in the Arsenal (J) and raise the military budget.
+Поднимите среднюю стабильность до {0}%	Raise average stability to {0}%
+Законы порядка, жильё, развлечения и решения империи успокаивают колонии.	Order laws, housing, amenities and empire decisions calm your colonies.
+Война с империей «{0}»	War with "{0}"
+Захвачена система {0}	Captured system {0}
+Потеряна система {0}	Lost system {0}
+Достижение «{0}»	Achievement "{0}"
+Первый контакт: {0}	First contact: {0}
+Колония {0} взята штурмом	Colony {0} taken by assault
+Штурм колонии {0} отбит	Assault on {0} repelled
+Враг взял колонию {0} штурмом	The enemy took colony {0} by assault
+Колония {0} отбила штурм	Colony {0} repelled an assault
+ЦЕЛЬ ИМПЕРИИ	EMPIRE GOAL
+Отказаться от цели (дважды). Следующая — через год	Abandon the goal (click twice). The next one comes in a year
+ЦЕЛЬ ИМПЕРИИ  <color=#8AA2A8>· выполнено {0}</color>	EMPIRE GOAL  <color=#8AA2A8>· completed {0}</color>
+Империя ждёт решения: выберите цель на 10 лет	Your empire awaits: choose a goal for 10 years
+щелкните, чтобы выбрать	click to choose
+осталось {0} г. {1} мес.	{0} y {1} mo left
+осталось {0} мес.	{0} mo left
+Выберите, к чему империя будет стремиться ближайшие 10 лет. За успех — награда; провал ничего не отнимает.	Choose what your empire will strive for over the next 10 years. Success is rewarded; failure costs nothing.
+ПОЗЖЕ	LATER
+Не выбирать сейчас — новые цели предложат через год  <color=#8AA2A8>(Esc)</color>	Don't choose now — new goals will be offered in a year  <color=#8AA2A8>(Esc)</color>
+ИТОГИ ПАРТИИ	GAME SUMMARY
+ИТОГИ	SUMMARY
+Летопись только началась — графики появятся через пару игровых месяцев	The chronicle has just begun — charts will appear in a couple of game months
+ИТОГИ ИМПЕРИИ	EMPIRE RESULTS
+ЛЕТОПИСЬ	CHRONICLE
+  ·  <color=#F2C766><b>Победа</b></color>	  ·  <color=#F2C766><b>Victory</b></color>
+  ·  <color=#FF8080><b>Поражение</b></color>	  ·  <color=#FF8080><b>Defeat</b></color>
+<b>{0}</b>  ·  {1} — {2}  ·  лет у власти: {3}{4}	<b>{0}</b>  ·  {1} — {2}  ·  years in power: {3}{4}
+{0:00}.{1}	{0:00}.{1}
+к	k
+Лет у власти	Years in power
+Достижений за партию	Achievements this game
+Пик систем	Peak systems
+Пик населения	Peak population
+Пик мощи флота	Peak fleet power
+Кораблей врага сбито	Enemy ships destroyed
+Своих кораблей потеряно	Own ships lost
+Систем захвачено / потеряно	Systems captured / lost
+Штурмов: побед / отбито	Assaults: won / repelled
+Штурмов врага отбито	Enemy assaults repelled
+Войн / контактов	Wars / contacts
+Целей империи выполнено	Empire goals completed
+Пока тихо: захваты, штурмы, войны, достижения и цели империи появятся здесь	All quiet so far: captures, assaults, wars, achievements and empire goals will appear here
+Показать на карте	Show on map
+СОВЕТНИК	ADVISOR
+Советы по ходу партии	In-game advice
+ОРАКУЛ-7 подскажет: простаивающие корабли, дефицит, угроза колонии, шанс на штурм	ORACLE-7 will point out idle ships, deficits, threats to colonies and chances to assault
+ОЧКИ	SCORE
+МОЩЬ ФЛОТА	FLEET POWER

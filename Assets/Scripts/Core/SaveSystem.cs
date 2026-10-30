@@ -94,6 +94,9 @@ namespace StellarisClone.Core
         public NeutralSave Neutrals;
         /// <summary>Армия: карты в резерве, гарнизонах и на борту флотов (null — старое сохранение).</summary>
         public StellarisClone.Cards.ArmySave Army;
+        /// <summary>Летопись для «Итогов партии» и цели империи (null — старое сохранение).</summary>
+        public ChronicleSave Chronicle;
+        public ObjectivesSave Objectives;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -498,6 +501,8 @@ namespace StellarisClone.Core
             s.Decisions = EmpireDecisions.Capture();
             s.Neutrals = NeutralWorlds.Capture();
             if (StellarisClone.Cards.ArmyManager.Instance != null) s.Army = StellarisClone.Cards.ArmyManager.Instance.CaptureState();
+            if (GameChronicle.Instance != null) s.Chronicle = GameChronicle.Instance.CaptureState();
+            if (EmpireObjectives.Instance != null) s.Objectives = EmpireObjectives.Instance.CaptureState();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -885,6 +890,8 @@ namespace StellarisClone.Core
             EmpireDecisions.Restore(s.Decisions);
             NeutralWorlds.Restore(s.Neutrals);
             StellarisClone.Cards.ArmyManager.Instance?.RestoreState(s.Army);
+            GameChronicle.Instance?.RestoreState(s.Chronicle);
+            EmpireObjectives.Instance?.RestoreState(s.Objectives);
             if (s.Neutrals == null) BorderRules.GrandfatherOldSave();   // до границ: открыть их, где нет вражды
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
             // После технологий и ИИ: множители чудес накладываются на уже пересобранные бонусы

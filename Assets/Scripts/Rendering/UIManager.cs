@@ -131,6 +131,8 @@ namespace StellarisClone.Rendering
             new GameObject("[UI] SystemPlanetTags").AddComponent<SystemPlanetTags>().Init(_canvas);
             new GameObject("[UI] Outliner").AddComponent<OutlinerPanel>().Init(_canvas);
             new GameObject("[UI] Directives").AddComponent<StarterGoalsPanel>().Init(_canvas);
+            new GameObject("[UI] EmpireGoals").AddComponent<EmpireGoalsPanel>().Init(_canvas);
+            EmpireGoalsChoice.Ensure();
             BuildEmpireOverviewModal();
             BuildEspionageModal();
             BuildEventPopupModal();
