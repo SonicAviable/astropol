@@ -837,7 +837,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         /// <summary>Клавиши главных окон (как подписаны в левом меню). C и V окна ловят сами — здесь лишь закрываем остальные.</summary>
         private void HandleNavHotkeys()
         {
-            if (!IsGameStarted || IsBlockingFlowOpen) return;
+            if (!IsGameStarted || IsBlockingFlowOpen || LoadingScreen.IsActive) return;
             if (GameFlowUI.Instance != null && GameFlowUI.Instance.BlocksTimeHotkeys) return;
             if (StellarisClone.Cards.BattleScreen.IsOpen) return;
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;

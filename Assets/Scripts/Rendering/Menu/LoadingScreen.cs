@@ -132,6 +132,7 @@ namespace StellarisClone.Rendering
             // Фон: чёрная подложка + арт «на весь экран с обрезкой» (cover)
             var black = NewImage(root, "Black", new Color(0.01f, 0.015f, 0.03f, 1f));
             Stretch(black.rectTransform);
+            black.raycastTarget = true;   // ловит все клики и наведение, пока идёт загрузка — сквозь экран ничего не нажать
 
             var tex = PickArt();
             var art = new GameObject("Art").AddComponent<RawImage>();
@@ -247,6 +248,9 @@ namespace StellarisClone.Rendering
             _coveredFrames = 0;
             _tipTimer = 0f;
             _group.blocksRaycasts = true;
+            // Выделенная кнопка нажимается и с клавиатуры (Enter/пробел) — снимаем выделение
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null) es.SetSelectedGameObject(null);
             _artRt.localScale = Vector3.one;
             var tex = PickArt();
             if (tex != null && _art != null)

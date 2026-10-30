@@ -545,7 +545,7 @@ namespace StellarisClone.Core
                 if (_completeTimer < 0f) { Go(_index + 1); return; }
             }
 
-            if (Input.GetKeyDown(KeyCode.Return) && s.Done == null && !blocked) Next();
+            if (Input.GetKeyDown(KeyCode.Return) && s.Done == null && !blocked && !LoadingScreen.IsActive) Next();
 
             UpdateHighlight(s, blocked, dt);
 

@@ -948,7 +948,7 @@ namespace StellarisClone.Core
             if (!UIManager.IsGameStarted) return;
             GameSession.PlayTime += Time.unscaledDeltaTime;
 
-            if (IsTyping()) return;
+            if (IsTyping() || StellarisClone.Rendering.LoadingScreen.IsActive) return;
             if (Input.GetKeyDown(KeyCode.F5))
             {
                 if (SaveSystem.CanSaveNow) SaveSystem.Save(Loc.T("Быстрое сохранение"));

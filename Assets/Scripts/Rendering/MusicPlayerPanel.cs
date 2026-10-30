@@ -65,7 +65,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             // Горячая клавиша M — открыть/закрыть плеер (не в полях ввода)
-            if (Input.GetKeyDown(KeyCode.M) && !InputFocused()) Toggle();
+            if (Input.GetKeyDown(KeyCode.M) && !InputFocused() && !LoadingScreen.IsActive) Toggle();
 
             // Открытая панель — поверх остального HUD (значки оповещений и пр. создаются позже и иначе ложатся сверху)
             if (_root != null && _root.gameObject.activeSelf && _root.parent != null

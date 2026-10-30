@@ -247,6 +247,7 @@ namespace StellarisClone.Rendering
 
         private void UpdatePick()
         {
+            if (LoadingScreen.IsActive) return;
             bool alive = false;
             foreach (var a in EspionageManager.PlayerAgents()) if (a == _pickAgent) { alive = true; break; }
             if (!alive || Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) { EndPick(); return; }

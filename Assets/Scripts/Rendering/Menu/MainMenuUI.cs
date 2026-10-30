@@ -87,6 +87,7 @@ namespace StellarisClone.Rendering
             AnimateNewGame();
             FitWindow();
 
+            if (LoadingScreen.IsActive) return;   // идёт загрузка — меню не слушает клавиши
             if (Input.GetKeyDown(KeyCode.Escape) && _open != Panel.None && !IsTyping()) Close();
             // Enter — сразу в последнюю партию
             if (_open == Panel.None && _continueCard != null && !_continueCard.Disabled && _heroK > 0.9f && !IsTyping()

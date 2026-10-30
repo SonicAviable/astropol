@@ -43,7 +43,7 @@ namespace StellarisClone.Rendering
 
         private void Update()
         {
-            if (!UIManager.IsGameStarted) return;
+            if (!UIManager.IsGameStarted || LoadingScreen.IsActive) { CancelDrag(); return; }
             var fm = FleetManager.Instance;
             if (fm == null) return;
             if (_cam == null) _cam = Camera.main;

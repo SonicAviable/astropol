@@ -537,6 +537,7 @@ namespace StellarisClone.Rendering
 
             private void OnMouseDown()
             {
+                if (LoadingScreen.IsActive) return;
                 if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                     return;
 

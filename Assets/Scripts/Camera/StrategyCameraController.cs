@@ -113,6 +113,9 @@ namespace StellarisClone.Cam
 
         private void Update()
         {
+            // 0. Идёт загрузка — камера не слушает мышь и клавиши
+            if (StellarisClone.Rendering.LoadingScreen.IsActive) return;
+
             // 1. Возврат из системы (высший приоритет, блокирует всё)
             if (IsReturningFromSystem)
             {

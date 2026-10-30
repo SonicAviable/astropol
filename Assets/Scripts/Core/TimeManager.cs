@@ -57,6 +57,7 @@ namespace StellarisClone.Core
         private void HandleInput()
         {
             if (!StellarisClone.Rendering.UIManager.IsGameStarted) return;   // меню, выбор цивилизации
+            if (StellarisClone.Rendering.LoadingScreen.IsActive) return;     // идёт загрузка — клавиши не работают
             if (StellarisClone.Cards.BattleScreen.IsOpen) return;            // карточный штурм: время на паузе, клавиши заняты боем
             var flow = StellarisClone.Rendering.GameFlowUI.Instance;
             if (flow != null && flow.BlocksTimeHotkeys) return;

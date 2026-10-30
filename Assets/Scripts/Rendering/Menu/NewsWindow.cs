@@ -394,7 +394,7 @@ namespace StellarisClone.Rendering
             _panel.anchoredPosition = _panelPos + new Vector2(0f, -24f * (1f - k));
             if (!_shown && k < 0.01f) { gameObject.SetActive(false); return; }
 
-            if (_shown)
+            if (_shown && !LoadingScreen.IsActive)
             {
                 if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.LeftArrow)) Step(-1);
                 if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.RightArrow)) Step(1);

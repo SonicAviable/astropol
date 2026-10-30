@@ -26,7 +26,7 @@ private void OnMouseDown()
     if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         return;
 
-    if (Data == null || MenuAtmosphere.IsActive) return;
+    if (Data == null || MenuAtmosphere.IsActive || LoadingScreen.IsActive) return;
     // Под курсором планета мини-системы — клик её (откроет экран планеты)
     if (GalaxyView.HoveredMiniPlanet != null) return;
 
