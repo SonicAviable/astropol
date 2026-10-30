@@ -266,6 +266,7 @@ namespace StellarisClone.Rendering
         private MenuCard _continueCard;
         private NewsWindow _newsWin;
         private LoadScreen _loadScr;
+        private SettingsScreen _settingsScr;
         private Text _loadCaption, _continueMeta;
 
         private static readonly Color LoadAccent = new Color(0.55f, 0.80f, 1f);
@@ -493,7 +494,7 @@ namespace StellarisClone.Rendering
             _logo.anchoredPosition = new Vector2(0f, -112f + 60f * (1f - k));
 
             // Окно новостей занимает верх экрана — «Выход» и кнопки в углах на это время прячутся
-            bool news = _open == Panel.News || _open == Panel.NewGame || _open == Panel.Load;
+            bool news = _open != Panel.None && _open != Panel.About;   // полноэкранные экраны прячут углы
             _cornersCg.alpha = Mathf.MoveTowards(_cornersCg.alpha, news ? 0f : 1f, dt * 6f);
             _cornersCg.blocksRaycasts = _cornersCg.interactable = !news;
         }
@@ -580,7 +581,17 @@ namespace StellarisClone.Rendering
             SFXManager.Play("ui_click", 0.7f, 1.05f);
             if (_open == Panel.News) _newsWin.Hide();
             if (_open == Panel.Load && _loadScr != null) _loadScr.Hide();
+            if (_open == Panel.Settings && _settingsScr != null) _settingsScr.Hide();
             _open = p;
+
+            // Настройки — вкладки и карточки качества во весь экран
+            if (p == Panel.Settings)
+            {
+                if (LG.IsVisible(_window.gameObject)) LG.Hide(_window.gameObject);
+                if (_settingsScr == null) _settingsScr = SettingsScreen.Create(_root, Close);
+                _settingsScr.Show();
+                return;
+            }
 
             // Загрузка — партии и их хроника во весь экран
             if (p == Panel.Load)
@@ -610,9 +621,6 @@ namespace StellarisClone.Rendering
 
             switch (p)
             {
-                case Panel.Settings:
-                    SetHeader(LGIcon.Gear, Loc.T("НАСТРОЙКИ"), Loc.T("Графика, звук, интерфейс и сохранения"));
-                    break;
                 case Panel.About:
                     SetHeader(LGIcon.Info, Loc.T("ОБ ИГРЕ"), Loc.T("Astropolity — космическая 4X-стратегия в реальном времени с паузой"));
                     break;
@@ -645,6 +653,7 @@ namespace StellarisClone.Rendering
             SFXManager.Play("ui_click", 0.5f, 0.9f);
             if (_open == Panel.News) { if (_newsWin != null) _newsWin.Hide(); }
             else if (_open == Panel.Load) { if (_loadScr != null) _loadScr.Hide(); }
+            else if (_open == Panel.Settings) { if (_settingsScr != null) _settingsScr.Hide(); }
             else if (_open != Panel.NewGame) LG.Hide(_window.gameObject);
             _open = Panel.None;
         }
@@ -663,7 +672,6 @@ namespace StellarisClone.Rendering
             page.gameObject.AddComponent<PageFade>();
             switch (p)
             {
-                case Panel.Settings: SettingsPanel.Build(page); break;
                 case Panel.About: BuildAboutPage(page); break;
             }
             return page.gameObject;

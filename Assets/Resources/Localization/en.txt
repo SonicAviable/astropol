@@ -7090,3 +7090,19 @@ Q / E — листать новости	Q / E — browse news
 сохранений	saves
 сохранение	save
 сохранения	saves
+ПАРАМЕТРЫ	OPTIONS
+Графика	Graphics
+Звук	Sound
+Интерфейс	Interface
+Игра	Game
+КАЧЕСТВО ГРАФИКИ	GRAPHICS QUALITY
+Сейчас: свой набор настроек	Current: custom settings
+для слабых ПК и ноутбуков	for weak PCs and laptops
+баланс скорости и вида	balance of speed and looks
+тени, постобработка, сглаживание	shadows, post-processing, anti-aliasing
+всё на максимум	everything maxed out
+ТОЧНАЯ НАСТРОЙКА	FINE TUNING
+Ниже — быстрее, интерфейс остаётся чётким	Lower is faster; the interface stays sharp
+FSR чётче растягивает картинку при масштабе ниже 100%	FSR upscales more sharply below 100% render scale
+Половинные экономят видеопамять	Half-size textures save video memory
+ВЫБРАНО	SELECTED
