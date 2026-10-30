@@ -7113,3 +7113,4 @@ FSR чётче растягивает картинку при масштабе �
 НАЧАТЬ ПРАВЛЕНИЕ  ›	BEGIN YOUR REIGN  ›
 ВСТУПИТЬ В ДОЛЖНОСТЬ  ›	ASSUME COMMAND  ›
 В БОЙ  ›	ATTACK  ›
+несохранённое пропадёт	unsaved progress will be lost

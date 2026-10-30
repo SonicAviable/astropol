@@ -47,6 +47,12 @@ namespace StellarisClone.Rendering
         private LiquidGlassEffect _endFx;
         private MenuPrimaryButton _endContinue;
 
+        // Загрузка и настройки из паузы — те же экраны во весь экран, что в главном меню
+        private RectTransform _modalRoot;
+        private LoadScreen _loadScr;
+        private SettingsScreen _setScr;
+        private MonoBehaviour _fullOpen;
+
         private RectTransform _domBar, _sciBar, _survBar;
         private Text _domVal, _sciVal, _survVal;
         private AlertBar _alerts;
@@ -72,6 +78,7 @@ namespace StellarisClone.Rendering
         {
             var ui = UIManager.Instance;
             if (ui == null) return;
+            _modalRoot = (RectTransform)ui.ModalCanvas.transform;
             BuildPauseMenu(ui.ModalCanvas.transform);
             BuildEndScreen(ui.ModalCanvas.transform);
             // Трекер целей на HUD убран: прогресс к победе — в меню Esc (страница «Цели»), справа — аутлайнер
@@ -141,6 +148,7 @@ namespace StellarisClone.Rendering
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;
 
             if (_end != null && LG.IsVisible(_end)) return;
+            if (_fullOpen != null) { CloseFull(); return; }
             if (_pauseOpen) { if (_page != Page.Main) ShowPage(Page.Main); else ClosePause(); return; }
 
             if (TechConfirmDialog.Instance != null && TechConfirmDialog.Instance.IsOpen) { TechConfirmDialog.Instance.Close(); return; }
@@ -256,8 +264,6 @@ namespace StellarisClone.Rendering
                 case Page.Achievements: BuildAchievementsPage(); break;
                 case Page.Controls: BuildControlsPage(); break;
                 case Page.Save: BuildSaveLoadPage(SaveLoadPanel.Mode.Save); break;
-                case Page.Load: BuildSaveLoadPage(SaveLoadPanel.Mode.Load); break;
-                case Page.Settings: BuildSettingsPage(); break;
             }
             LG.Skin(_pageHost);
         }
@@ -300,9 +306,9 @@ namespace StellarisClone.Rendering
             // Игра: две колонки
             var save = Half(y, 0, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, () => ShowPage(Page.Save));
             if (!SaveSystem.CanSaveNow) save.GetComponentInParent<Button>().interactable = false;
-            Half(y, 1, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Load));
+            Half(y, 1, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => OpenFull(true));
             y += RowStep;
-            Half(y, 0, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Settings));
+            Half(y, 0, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.85f, 0.95f), () => OpenFull(false));
             Half(y, 1, Loc.T("УПРАВЛЕНИЕ"), new Color(0.7f, 0.85f, 0.95f), () => ShowPage(Page.Controls));
             y += RowStep;
             Half(y, 0, Loc.T("ЦЕЛИ И ПОБЕДА"), UIManager.DS.Gold, () => ShowPage(Page.Goals));
@@ -429,12 +435,35 @@ namespace StellarisClone.Rendering
             BackButton();
         }
 
-        private void BuildSettingsPage()
+        /// <summary>Загрузка (load) или настройки поверх игры; окно паузы на это время прячется.</summary>
+        private void OpenFull(bool load)
         {
-            var area = LGBuild.Rect(_pageHost, "Area");
-            area.Stretch(0, 62, 0, 0);
-            SettingsPanel.Build(area);
-            BackButton();
+            if (_modalRoot == null) return;
+            LG.Hide(_pause);
+            if (load)
+            {
+                if (_loadScr == null) { _loadScr = LoadScreen.Create(_modalRoot, CloseFull); _loadScr.ConfirmLoad = true; }
+                _loadScr.Show();
+                _fullOpen = _loadScr;
+            }
+            else
+            {
+                if (_setScr == null) _setScr = SettingsScreen.Create(_modalRoot, CloseFull);
+                _setScr.Show();
+                _fullOpen = _setScr;
+            }
+        }
+
+        private void CloseFull()
+        {
+            if (_fullOpen == _loadScr && _loadScr != null) _loadScr.Hide();
+            if (_fullOpen == _setScr && _setScr != null) _setScr.Hide();
+            _fullOpen = null;
+            SFXManager.Play("ui_click", 0.5f, 0.9f);
+            if (!_pauseOpen) return;
+            ShowPage(Page.Main);
+            LG.Show(_pause);
+            _pause.transform.SetAsLastSibling();
         }
 
         private void ResetConfirmLabels()

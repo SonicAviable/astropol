@@ -32,6 +32,10 @@ namespace StellarisClone.Rendering
         private float _armedT, _k, _kv;
         private bool _shown;
 
+        /// <summary>Загрузка из идущей партии: первый клик «Загрузить» только спрашивает — несохранённое пропадёт.</summary>
+        public bool ConfirmLoad;
+        private string _armedLoad;
+
         public static LoadScreen Create(RectTransform root, System.Action onClose)
         {
             var rt = LGBuild.Rect(root, "Load");
@@ -97,7 +101,7 @@ namespace StellarisClone.Rendering
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
             _shown = true;
-            _armedDelete = null;
+            _armedDelete = _armedLoad = null;
             foreach (var s in _slides) s.Restart();
             Refresh(true);
         }
@@ -149,7 +153,7 @@ namespace StellarisClone.Rendering
         private void Select(int i, bool animate = true)
         {
             if (i < 0 || i >= _camps.Count) return;
-            if (i != _sel) { SFXManager.Play("ui_click", 0.6f, 1.1f); _selSlot = null; _armedDelete = null; }
+            if (i != _sel) { SFXManager.Play("ui_click", 0.6f, 1.1f); _selSlot = null; _armedDelete = _armedLoad = null; }
             _sel = i;
             for (int k = 0; k < _cards.Count; k++) _cards[k].Selected = k == i;
             BuildHead(_camps[i]);
@@ -214,6 +218,7 @@ namespace StellarisClone.Rendering
                 var e = c.Saves[i];
                 bool on = e.Slot == _selSlot;
                 bool armed = _armedDelete == e.Slot;
+                bool armedLoad = _armedLoad == e.Slot;
                 var row = LGBuild.Rect(_timeline, "Save");
                 LGBuild.Height(row.gameObject, 92f);
 
@@ -230,8 +235,8 @@ namespace StellarisClone.Rendering
                 body.rectTransform.Stretch(36, 0, 0, 0);
                 LG.Platter(body.gameObject, 16f).SetRim(on ? new Color(0.44f, 0.95f, 0.88f, 0.7f) : new Color(1f, 1f, 1f, 0.07f));
                 string slot = e.Slot;
-                body.gameObject.AddComponent<RowClick>().Init(() => { if (_selSlot != slot) { _selSlot = slot; _armedDelete = null; BuildTimeline(c, false); } },
-                                                             () => SaveSystem.LoadSlot(slot));
+                body.gameObject.AddComponent<RowClick>().Init(() => { if (_selSlot != slot) { _selSlot = slot; _armedDelete = _armedLoad = null; BuildTimeline(c, false); } },
+                                                             () => LoadOrArm(slot, c));
 
                 var date = LGBuild.Label(body.transform, e.Meta.GameDate, 26, Color.white, TextAnchor.MiddleLeft, bold: true);
                 date.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 0), new Vector2(200, 40));
@@ -251,15 +256,21 @@ namespace StellarisClone.Rendering
 
                 // Выбранное сохранение — яркая главная кнопка, остальные — обычные
                 Transform load = on
-                    ? MenuPrimaryButton.Create(body.transform, Loc.T("ЗАГРУЗИТЬ"), 16, () => SaveSystem.LoadSlot(slot)).transform
+                    ? MenuPrimaryButton.Create(body.transform, armedLoad ? Loc.T("ТОЧНО?") : Loc.T("ЗАГРУЗИТЬ"), 16, () => LoadOrArm(slot, c),
+                                               armedLoad ? MenuPrimaryButton.Red : MenuPrimaryButton.Cyan).transform
                     : LGBuild.Button(body.transform, "Load", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f),
-                                     () => SaveSystem.LoadSlot(slot), null, Loc.T("ЗАГРУЗИТЬ"), 15).transform;
+                                     () => LoadOrArm(slot, c), null, Loc.T("ЗАГРУЗИТЬ"), 15).transform;
                 ((RectTransform)load).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-84, 0), new Vector2(190, 50));
 
                 var del = LGControls.IconButton(body.transform, LGIcon.Trash, 46, armed ? new Color(0.45f, 0.08f, 0.06f) : UIManager.DS.BtnNeutral,
                                                 armed ? new Color(1f, 0.4f, 0.35f, 0.9f) : new Color(1f, 1f, 1f, 0.25f), () => OnDelete(slot, c));
                 ((RectTransform)del.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-22, 0), new Vector2(46, 46));
                 TooltipHelper.Attach(del.gameObject, armed ? Loc.T("Нажмите ещё раз — сохранение будет удалено") : Loc.T("Удалить сохранение"));
+                if (armedLoad && !armed)
+                {
+                    var warn = LGBuild.Label(body.transform, Loc.T("несохранённое пропадёт"), 12, new Color(1f, 0.55f, 0.5f), TextAnchor.MiddleRight, bold: true);
+                    warn.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-284, 0), new Vector2(180, 20));
+                }
                 if (armed)
                 {
                     var warn = LGBuild.Label(body.transform, Loc.T("ещё раз — удалить"), 12, new Color(1f, 0.55f, 0.5f), TextAnchor.MiddleRight, bold: true);
@@ -268,6 +279,16 @@ namespace StellarisClone.Rendering
 
                 if (animate) MenuSlideIn.Add(row.gameObject, 0.18f + 0.06f * i, new Vector2(30f, 0f));
             }
+        }
+
+        private void LoadOrArm(string slot, Campaign c)
+        {
+            if (!ConfirmLoad || _armedLoad == slot) { SaveSystem.LoadSlot(slot); return; }
+            _armedLoad = slot;
+            _armedDelete = null;
+            _selSlot = slot;
+            _armedT = 3f;
+            BuildTimeline(c, false);
         }
 
         private void OnDelete(string slot, Campaign c)
@@ -281,6 +302,7 @@ namespace StellarisClone.Rendering
                 return;
             }
             _armedDelete = slot;
+            _armedLoad = null;
             _armedT = 3f;
             BuildTimeline(c, false);
         }
@@ -294,10 +316,10 @@ namespace StellarisClone.Rendering
             if (!_shown && _k < 0.01f) { gameObject.SetActive(false); return; }
 
             // Подтверждение удаления гаснет через 3 секунды
-            if (_armedDelete != null)
+            if (_armedDelete != null || _armedLoad != null)
             {
                 _armedT -= dt;
-                if (_armedT <= 0f && _sel >= 0 && _sel < _camps.Count) { _armedDelete = null; BuildTimeline(_camps[_sel], false); }
+                if (_armedT <= 0f && _sel >= 0 && _sel < _camps.Count) { _armedDelete = _armedLoad = null; BuildTimeline(_camps[_sel], false); }
             }
         }
 
