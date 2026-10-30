@@ -7054,3 +7054,23 @@ AMD FSR 1.0 — чётче обычного растяжения при масш
 Следующая  <color=#8AA2A8>(E)</color>	Next  <color=#8AA2A8>(E)</color>
 ESC  ·  ЗАКРЫТЬ	ESC  ·  CLOSE
 Q / E — листать новости	Q / E — browse news
+ШАГ 1 ИЗ 2	STEP 1 OF 2
+{0} систем	{0} systems
+Размер галактики	Galaxy size
+Спираль·2	Spiral·2
+Спираль·4	Spiral·4
+Норм.	Normal
+Безжал.	Ruthless
+ДРУГАЯ КАРТА	ANOTHER MAP
+Случайная галактика — новое зерно генерации	Random galaxy — a new generation seed
+Зерно	Seed
+Зерно генерации: одинаковое зерно — одинаковая карта	Generation seed: the same seed gives the same map
+ЭКОНОМИКА	ECONOMY
+ДАЛЕЕ — ЦИВИЛИЗАЦИЯ	NEXT — CIVILIZATION
+ПРЕДПРОСМОТР ГАЛАКТИКИ	GALAXY PREVIEW
+{0} · {1} систем · соперников: {2} · вольных миров: {3}	{0} · {1} systems · rivals: {2} · free worlds: {3}
+систем с форпостами	systems with outposts
+технологий и «Вознесение»	technologies and "Ascension"
+{0:0}%	{0:0}%
+продукта галактики {0} {1} — или совет	of galactic output for {0} {1} — or the council
+больше всех очков к этому году	most points by this year

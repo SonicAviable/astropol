@@ -41,7 +41,6 @@ namespace StellarisClone.Rendering
         private NewGameSettings _ng;
         private GalaxyPreview _preview;
         private InputField _seedInput;
-        private Text _ngGoals;
 
         private struct Letter
         {
@@ -85,6 +84,7 @@ namespace StellarisClone.Rendering
             _t += Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
             AnimateLogo();
             AnimateHero();
+            AnimateNewGame();
             FitWindow();
 
             if (Input.GetKeyDown(KeyCode.Escape) && _open != Panel.None && !IsTyping()) Close();
@@ -491,7 +491,7 @@ namespace StellarisClone.Rendering
             _logo.anchoredPosition = new Vector2(0f, -112f + 60f * (1f - k));
 
             // Окно новостей занимает верх экрана — «Выход» и кнопки в углах на это время прячутся
-            bool news = _open == Panel.News;
+            bool news = _open == Panel.News || _open == Panel.NewGame;
             _cornersCg.alpha = Mathf.MoveTowards(_cornersCg.alpha, news ? 0f : 1f, dt * 6f);
             _cornersCg.blocksRaycasts = _cornersCg.interactable = !news;
         }
@@ -579,6 +579,14 @@ namespace StellarisClone.Rendering
             if (_open == Panel.News) _newsWin.Hide();
             _open = p;
 
+            // Новая игра — свой экран во весь экран
+            if (p == Panel.NewGame)
+            {
+                if (LG.IsVisible(_window.gameObject)) LG.Hide(_window.gameObject);
+                ShowNewGame(true);
+                return;
+            }
+
             // Новости — своё окно во весь экран
             if (p == Panel.News)
             {
@@ -590,9 +598,6 @@ namespace StellarisClone.Rendering
 
             switch (p)
             {
-                case Panel.NewGame:
-                    SetHeader(LGIcon.Globe, Loc.T("НОВАЯ ИГРА"), Loc.T("Настройте галактику — цивилизацию вы выберете на следующем шаге"));
-                    break;
                 case Panel.Load:
                     SetHeader(LGIcon.Load, Loc.T("ЗАГРУЗКА"), Loc.T("Продолжите одну из своих партий"));
                     break;
@@ -630,7 +635,7 @@ namespace StellarisClone.Rendering
             if (_open == Panel.None) return;
             SFXManager.Play("ui_click", 0.5f, 0.9f);
             if (_open == Panel.News) { if (_newsWin != null) _newsWin.Hide(); }
-            else LG.Hide(_window.gameObject);
+            else if (_open != Panel.NewGame) LG.Hide(_window.gameObject);
             _open = Panel.None;
         }
 
@@ -648,7 +653,6 @@ namespace StellarisClone.Rendering
             page.gameObject.AddComponent<PageFade>();
             switch (p)
             {
-                case Panel.NewGame: BuildNewGamePage(page); break;
                 case Panel.Load: SaveLoadPanel.Build(page, SaveLoadPanel.Mode.Load, confirmLoad: false); break;
                 case Panel.Settings: SettingsPanel.Build(page); break;
                 case Panel.About: BuildAboutPage(page); break;
@@ -658,109 +662,212 @@ namespace StellarisClone.Rendering
 
         // ================================================================ Новая игра
 
-        private void BuildNewGamePage(RectTransform page)
+        // Экран «Новая игра» во весь экран: слева колонка настроек, справа — большая карта будущей галактики,
+        // снизу пути к победе и кнопка «Далее»
+        private RectTransform _ngScreen;
+        private CanvasGroup _ngCg;
+        private float _ngK, _ngV;
+        private Text _ngSeedLabel, _ngStats, _ngDiffDesc;
+        private readonly List<Text> _ngVictory = new List<Text>();
+        private readonly List<MenuSlideIn> _ngSlides = new List<MenuSlideIn>();
+
+        private void ShowNewGame(bool on)
         {
-            var left = LGBuild.Rect(page, "Left");
-            left.anchorMin = new Vector2(0, 0);
-            left.anchorMax = new Vector2(0.55f, 1);
-            left.offsetMin = new Vector2(0, 80);
-            left.offsetMax = new Vector2(-12, 0);
+            if (on && _ngScreen == null) BuildNewGameScreen();
+            if (_ngScreen == null) return;
+            if (on)
+            {
+                _ngScreen.gameObject.SetActive(true);
+                _ngScreen.SetAsLastSibling();
+                foreach (var sl in _ngSlides) sl.Restart();
+                RefreshNewGame();
+            }
+        }
 
-            float y = 0f;
-            y = LGControls.Section(left, y, Loc.T("ГАЛАКТИКА"), LGIcon.Star);
+        private void AnimateNewGame()
+        {
+            if (_ngScreen == null || !_ngScreen.gameObject.activeSelf) return;
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
+            bool on = _open == Panel.NewGame;
+            _ngK = LGEase.Spring(_ngK, on ? 1f : 0f, ref _ngV, 4.5f, 0.9f, dt);
+            _ngCg.alpha = Mathf.Clamp01(_ngK);
+            _ngCg.blocksRaycasts = _ngCg.interactable = on;
+            if (!on && _ngK < 0.01f) _ngScreen.gameObject.SetActive(false);
+        }
 
-            var sizes = new List<string>();
+        private void BuildNewGameScreen()
+        {
+            _ngScreen = LGBuild.Rect(_root, "NewGame");
+            _ngScreen.Stretch();
+            _ngCg = _ngScreen.gameObject.AddComponent<CanvasGroup>();
+            _ngCg.alpha = 0f;
+            var dim = LGBuild.Panel(_ngScreen, "Dim", new Color(0.005f, 0.012f, 0.022f, 0.45f), raycast: true);
+            dim.rectTransform.Stretch();
+            LG.Ignore(dim.gameObject);
+
+            var back = MenuLink.Create(_ngScreen, Loc.T("НАЗАД"), new Color(0.75f, 0.85f, 0.90f), Close, LGIcon.Back);
+            ((RectTransform)back.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(60, -48), new Vector2(160, 36));
+
+            // ---------- Колонка настроек ----------
+            var col = LGBuild.Panel(_ngScreen, "Column", new Color(0.03f, 0.06f, 0.10f, 0.9f), raycast: true);
+            var crt = col.rectTransform;
+            crt.anchorMin = new Vector2(0, 0);
+            crt.anchorMax = new Vector2(0, 1);
+            crt.pivot = new Vector2(0, 0.5f);
+            crt.offsetMin = new Vector2(60, 60);
+            crt.offsetMax = new Vector2(60 + 540, -110);
+            LG.Glass(col.gameObject, 24f).SetRim(new Color(0.45f, 0.95f, 0.9f, 0.3f));
+            _ngSlides.Add(MenuSlideIn.Add(col.gameObject, 0.05f, new Vector2(-60f, 0f)));
+
+            var step = LGBuild.Label(crt, Loc.T("ШАГ 1 ИЗ 2"), 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            step.rectTransform.TopBand(32, 18, 34, 30);
+            var title = LGBuild.Label(crt, Loc.T("НОВАЯ ИГРА"), 34, Color.white, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.TopBand(54, 44, 34, 30);
+
+            float y = 118f;
+            var sizes = new List<string>(); var sizeSubs = new List<string>();
             for (int i = 0; i < 3; i++)
             {
-                var tmp = new NewGameSettings { GalaxySize = i };
-                sizes.Add(Loc.F("{0} · {1} систем", NewGameSettings.SizeNames[i], tmp.StarCount));
+                sizes.Add(NewGameSettings.SizeNames[i]);
+                sizeSubs.Add(Loc.F("{0} систем", new NewGameSettings { GalaxySize = i }.StarCount));
             }
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Размер"), Loc.T("Сколько звёздных систем в галактике"), 270f),
-                sizes, _ng.GalaxySize, i => { _ng.GalaxySize = i; RefreshNewGame(); });
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Форма"), Loc.T("Расположение звёзд: рукава спирали дают узкие проходы и фронты"), 270f),
-                NewGameSettings.ShapeNames, Mathf.Clamp(_ng.Shape, 0, NewGameSettings.ShapeNames.Length - 1),
-                i => { _ng.Shape = i; RefreshNewGame(); });
+            Segment(crt, ref y, Loc.T("Размер галактики"), sizes, sizeSubs, _ng.GalaxySize, i => { _ng.GalaxySize = i; RefreshNewGame(); }, 58f);
+            Segment(crt, ref y, Loc.T("Форма"), new[] { Loc.T("Эллипс"), Loc.T("Спираль·2"), Loc.T("Спираль·4"), Loc.T("Кольцо") }, null,
+                    Mathf.Clamp(_ng.Shape, 0, 3), i => { _ng.Shape = i; RefreshNewGame(); });
+            Segment(crt, ref y, Loc.T("Соперники"), new[] { "1", "2", "3", "4", "5" }, null, _ng.RivalCount - 1, i => { _ng.Rivals = i + 1; RefreshNewGame(); });
+            var neutral = new List<string>();
+            for (int i = NewGameSettings.MinNeutrals; i <= NewGameSettings.MaxNeutrals; i++) neutral.Add(i.ToString());
+            Segment(crt, ref y, Loc.T("Вольные миры"), neutral, null, _ng.NeutralCount - NewGameSettings.MinNeutrals,
+                    i => { _ng.Neutrals = i + NewGameSettings.MinNeutrals; RefreshNewGame(); });
+            Segment(crt, ref y, Loc.T("Сложность"), new[] { Loc.T("Новичок"), Loc.T("Лёгкая"), Loc.T("Норм."), Loc.T("Сложная"), Loc.T("Безжал.") }, null,
+                    _ng.Tier, i => { _ng.SetLevel(i); RefreshNewGame(); });
+            _ngDiffDesc = LGBuild.Label(crt, "", 13, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft, wrap: true);
+            _ngDiffDesc.rectTransform.TopBand(y - 8f, 52, 34, 30);
+            y += 54f;
 
-            var seedHost = LGControls.Row(left, ref y, Loc.T("Зерно генерации"), Loc.T("Одинаковое зерно — одинаковая карта"), 270f);
-            var inputHost = LGBuild.Rect(seedHost, "SeedInput");
-            inputHost.Stretch(0, 0, 50, 0);
-            _seedInput = LGControls.Input(inputHost, _ng.Seed.ToString(), Loc.T("Случайное"), 7);
-            _seedInput.contentType = InputField.ContentType.IntegerNumber;
-            _seedInput.onEndEdit.AddListener(s =>
-            {
-                if (int.TryParse(s, out int v) && v > 0) _ng.Seed = v;
-                else { _ng.Seed = NewGameSettings.RandomSeed(); _seedInput.text = _ng.Seed.ToString(); }
-                RefreshNewGame();
-            });
-            var dice = LGControls.IconButton(seedHost, LGIcon.Dice, 40, UIManager.DS.BtnNeutral, new Color(0.45f, 0.95f, 0.9f, 0.5f), () =>
+            var tut = LGBuild.Rect(crt, "Tutorial");
+            tut.TopBand(y, 50, 34, 30);
+            var tl = LGBuild.Label(tut, Loc.T("Обучение"), 17, Color.white, TextAnchor.UpperLeft, bold: true);
+            tl.rectTransform.Stretch(0, 0, 120, 0);
+            var td = LGBuild.Label(tut, Loc.T("Пошаговые подсказки советника в начале"), 13, new Color(0.56f, 0.66f, 0.71f), TextAnchor.LowerLeft);
+            td.rectTransform.Stretch(0, 2, 120, 0);
+            LGControls.Switch(tut, _ng.Tutorial, v => _ng.Tutorial = v);
+
+            // ---------- Карта ----------
+            var map = LGBuild.Rect(_ngScreen, "Map");
+            map.Stretch(640, 196, 60, 110);
+            _preview = map.gameObject.AddComponent<GalaxyPreview>();
+            _preview.Build(map);
+            _preview.Caption.gameObject.SetActive(false);   // сводку пишем в шапку над картой
+            _ngSlides.Add(MenuSlideIn.Add(map.gameObject, 0.15f, new Vector2(0f, 0f)));
+
+            var head = LGBuild.Rect(_ngScreen, "MapHead");
+            head.TopBand(56, 40, 640, 60);
+            _ngSeedLabel = LGBuild.Label(head, "", 14, UIManager.DS.NeonCyan, TextAnchor.MiddleLeft, bold: true);
+            _ngSeedLabel.rectTransform.Stretch(0, 0, 0, 0);
+            _ngSeedLabel.rectTransform.anchorMax = new Vector2(0, 1);
+            _ngSeedLabel.rectTransform.sizeDelta = new Vector2(260, 0);
+            var reroll = LGBuild.Button(head, "Reroll", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f), () =>
             {
                 _ng.Seed = NewGameSettings.RandomSeed();
-                _seedInput.text = _ng.Seed.ToString();
                 RefreshNewGame();
-            });
-            ((RectTransform)dice.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(40, 40));
-            TooltipHelper.Attach(dice.gameObject, Loc.T("Случайная галактика"));
-
-            y += 6f;
-            y = LGControls.Section(left, y, Loc.T("ПАРТИЯ"), LGIcon.Leader);
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Соперники"), Loc.T("Сколько империй ИИ делят с вами галактику"), 270f),
-                NewGameSettings.RivalNames, _ng.RivalCount - 1, i => { _ng.Rivals = i + 1; RefreshNewGame(); });
-            LGControls.Selector(LGControls.Row(left, ref y, Loc.T("Вольные миры"), Loc.T("Торговля, покровительство, захват"), 270f, 54f),
-                NewGameSettings.NeutralNames, _ng.NeutralCount - NewGameSettings.MinNeutrals, i => { _ng.Neutrals = i + NewGameSettings.MinNeutrals; RefreshNewGame(); });
-            // Под названием — что значит выбранный уровень (меняется вместе с выбором)
-            var diffRow = LGControls.Row(left, ref y, Loc.T("Сложность"), AIDifficulty.Description(_ng.Tier), 270f, 74f);
-            var diffText = diffRow.parent != null ? diffRow.parent.Find("Text") : null;
-            var diffDesc = diffText != null && diffText.childCount > 1 ? diffText.GetChild(1).GetComponent<Text>() : null;
-            LGControls.Selector(diffRow, NewGameSettings.DifficultyNames, _ng.Tier, i =>
+            }, null, Loc.T("ДРУГАЯ КАРТА"), 13);
+            ((RectTransform)reroll.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(270, 0), new Vector2(190, 38));
+            TooltipHelper.Attach(reroll.gameObject, Loc.T("Случайная галактика — новое зерно генерации"));
+            var seedHost = LGBuild.Rect(head, "Seed");
+            seedHost.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(474, 0), new Vector2(130, 38));
+            _seedInput = LGControls.Input(seedHost, _ng.Seed.ToString(), Loc.T("Зерно"), 7);
+            _seedInput.contentType = InputField.ContentType.IntegerNumber;
+            _seedInput.onEndEdit.AddListener(sv =>
             {
-                _ng.SetLevel(i);
-                if (diffDesc != null) diffDesc.text = AIDifficulty.Description(i);
+                if (int.TryParse(sv, out int v) && v > 0) _ng.Seed = v;
+                else _ng.Seed = NewGameSettings.RandomSeed();
                 RefreshNewGame();
             });
-            LGControls.Switch(LGControls.Row(left, ref y, Loc.T("Обучение"), Loc.T("Пошаговые подсказки советника в начале"), 270f),
-                _ng.Tutorial, v => _ng.Tutorial = v);
+            TooltipHelper.Attach(seedHost.gameObject, Loc.T("Зерно генерации: одинаковое зерно — одинаковая карта"));
+            _ngStats = LGBuild.Label(head, "", 14, new Color(0.62f, 0.72f, 0.76f), TextAnchor.MiddleRight);
+            _ngStats.rectTransform.Stretch(620, 0, 0, 0);
+            _ngSlides.Add(MenuSlideIn.Add(head.gameObject, 0.2f, new Vector2(0f, 14f)));
 
-            // Справа — предпросмотр
-            var right = LGBuild.Panel(page, "Preview", new Color(0.01f, 0.025f, 0.04f, 0.9f));
-            right.rectTransform.anchorMin = new Vector2(0.55f, 0);
-            right.rectTransform.anchorMax = new Vector2(1, 1);
-            right.rectTransform.offsetMin = new Vector2(12, 80);
-            right.rectTransform.offsetMax = Vector2.zero;
-            var pfx = LG.Platter(right.gameObject, 22f);
-            pfx.FillMultiplier = 1.4f;
-            pfx.GlowMultiplier = 0f;
-            pfx.SetRim(new Color(0.45f, 0.95f, 0.9f, 0.18f));
-            _preview = right.gameObject.AddComponent<GalaxyPreview>();
-            _preview.Build(right.rectTransform);
+            // ---------- Пути к победе ----------
+            var vic = LGBuild.Rect(_ngScreen, "Victory");
+            vic.anchorMin = new Vector2(0, 0);
+            vic.anchorMax = new Vector2(1, 0);
+            vic.pivot = new Vector2(0.5f, 0);
+            vic.offsetMin = new Vector2(640, 60);
+            vic.offsetMax = new Vector2(-520, 166);
+            (string k, Color c)[] paths =
+            {
+                (Loc.T("ДОМИНИРОВАНИЕ"), UIManager.DS.NeonCyan), (Loc.T("НАУКА"), new Color(0.36f, 0.96f, 0.60f)),
+                (Loc.T("ЭКОНОМИКА"), new Color(0.50f, 0.85f, 1f)), (Loc.T("ПО ОЧКАМ"), new Color(1f, 0.82f, 0.48f))
+            };
+            _ngVictory.Clear();
+            for (int i = 0; i < paths.Length; i++)
+            {
+                var tile = LGBuild.Panel(vic, "Path", new Color(0.03f, 0.06f, 0.10f, 0.88f));
+                tile.rectTransform.anchorMin = new Vector2(i / 4f, 0);
+                tile.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
+                tile.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : 7, 0);
+                tile.rectTransform.offsetMax = new Vector2(i == 3 ? 0 : -7, 0);
+                LG.Platter(tile.gameObject, 14f).SetRim(new Color(paths[i].c.r, paths[i].c.g, paths[i].c.b, 0.3f));
+                var k = LGBuild.Label(tile.transform, paths[i].k, 11, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft, bold: true);
+                k.rectTransform.Stretch(16, 0, 10, 14);
+                var v = LGBuild.Label(tile.transform, "", 26, paths[i].c, TextAnchor.UpperLeft, bold: true);
+                v.rectTransform.Stretch(16, 0, 10, 32);
+                var d = LGBuild.Label(tile.transform, "", 11, new Color(0.56f, 0.66f, 0.71f), TextAnchor.LowerLeft, wrap: true);
+                d.rectTransform.Stretch(16, 10, 10, 0);
+                _ngVictory.Add(v);
+                _ngVictory.Add(d);
+                _ngSlides.Add(MenuSlideIn.Add(tile.gameObject, 0.3f + 0.07f * i, new Vector2(0f, -30f)));
+            }
 
-            // Низ: цели и кнопка старта
-            _ngGoals = LGBuild.Label(page, "", 12, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
-            _ngGoals.rectTransform.anchorMin = new Vector2(0, 0);
-            _ngGoals.rectTransform.anchorMax = new Vector2(1, 0);
-            _ngGoals.rectTransform.pivot = new Vector2(0.5f, 0);
-            _ngGoals.rectTransform.offsetMin = new Vector2(4, 0);
-            _ngGoals.rectTransform.offsetMax = new Vector2(-470, 60);
-
-            var start = LGBuild.Button(page, "Start", new Color(0.08f, 0.42f, 0.40f), UIManager.DS.NeonCyan, () =>
+            // ---------- Далее ----------
+            var start = LGBuild.Button(_ngScreen, "Start", new Color(0.10f, 0.46f, 0.44f), UIManager.DS.NeonCyan, () =>
             {
                 SFXManager.Play("ui_click", 1f, 0.8f);
                 GameSession.StartNewGame(_ng);
-            }, LGIcon.Play, Loc.T("ДАЛЕЕ — ВЫБОР ЦИВИЛИЗАЦИИ"), 14);
-            ((RectTransform)start.transform).At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(450, 60));
+            }, null, Loc.T("ДАЛЕЕ — ЦИВИЛИЗАЦИЯ"), 18);
+            ((RectTransform)start.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-60, 82), new Vector2(430, 58));
             var sfx = start.GetComponent<LiquidGlassEffect>();
             if (sfx != null) start.gameObject.AddComponent<PulseGlow>().Init(sfx);
+            InspSweep.Add(start.gameObject, 4.5f, 0.2f);
+            _ngSlides.Add(MenuSlideIn.Add(start.gameObject, 0.55f, new Vector2(40f, 0f)));
 
-            RefreshNewGame();
+            _ngScreen.gameObject.SetActive(false);
+        }
+
+        /// <summary>Подпись и сегментный переключатель под ней; y — отступ сверху колонки.</summary>
+        private static void Segment(RectTransform col, ref float y, string label, IList<string> options, IList<string> subs, int value,
+                                    System.Action<int> onChange, float height = 46f)
+        {
+            var l = LGBuild.Label(col, label, 17, Color.white, TextAnchor.UpperLeft, bold: true);
+            l.rectTransform.TopBand(y, 22, 34, 30);
+            var seg = MenuSegment.Create(col, options, subs, value, onChange);
+            seg.GetComponent<RectTransform>().TopBand(y + 28f, height, 34, 30);
+            y += 28f + height + 22f;
         }
 
         private void RefreshNewGame()
         {
             if (_preview != null) _preview.Show(_ng);
-            if (_ngGoals != null)
-                _ngGoals.text =
-                    Loc.T("<b><color=#E8F6FA>Пути к победе</color></b>") + "\n" +
-                    Loc.F("<color=#4DF2DB>форпосты в {0} системах</color>   ·   <color=#5CF599>{1} технологий и «Вознесение»</color>", _ng.DominationTarget, VictoryManager.ScienceTarget) + "\n" +
-                    Loc.F("<color=#7FD8FF>экономика или совет галактики</color>   ·   <color=#FFCC52>больше всех очков в {0} году</color>", VictoryManager.EndYear);
+            if (_seedInput != null && !_seedInput.isFocused) _seedInput.text = _ng.Seed.ToString();
+            if (_ngSeedLabel != null) _ngSeedLabel.text = Loc.T("ПРЕДПРОСМОТР ГАЛАКТИКИ");
+            if (_ngStats != null)
+                _ngStats.text = Loc.F("{0} · {1} систем · соперников: {2} · вольных миров: {3}",
+                    NewGameSettings.ShapeNames[Mathf.Clamp(_ng.Shape, 0, 3)], _ng.StarCount, _ng.RivalCount, _ng.NeutralCount);
+            if (_ngDiffDesc != null) _ngDiffDesc.text = AIDifficulty.Description(_ng.Tier);
+            if (_ngVictory.Count >= 8)
+            {
+                int econYears = VictoryManager.EconomyMonths / 12;
+                _ngVictory[0].text = _ng.DominationTarget.ToString();
+                _ngVictory[1].text = Loc.T("систем с форпостами");
+                _ngVictory[2].text = VictoryManager.ScienceTarget.ToString();
+                _ngVictory[3].text = Loc.T("технологий и «Вознесение»");
+                _ngVictory[4].text = Loc.F("{0:0}%", VictoryManager.EconomyShare * 100f);
+                _ngVictory[5].text = Loc.F("продукта галактики {0} {1} — или совет", econYears, VictoryManager.YearsWord(econYears));
+                _ngVictory[6].text = VictoryManager.EndYear.ToString();
+                _ngVictory[7].text = Loc.T("больше всех очков к этому году");
+            }
         }
 
         // ================================================================ Об игре
@@ -1199,6 +1306,9 @@ namespace StellarisClone.Rendering
             _caption = LGBuild.Label(host, "", 11, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             _caption.rectTransform.Stretch(16, 14, 16, 0);
         }
+
+        /// <summary>Строка-сводка под картой (размер, форма, системы, коридоры, сид).</summary>
+        public Text Caption => _caption;
 
         public void Show(NewGameSettings s)
         {
