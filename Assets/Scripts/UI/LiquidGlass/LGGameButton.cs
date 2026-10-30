@@ -89,7 +89,11 @@ namespace StellarisClone.Rendering
 
             // Кромка цвета действия с мягким свечением, как у кнопки укрепления
             var fx = GetComponent<LiquidGlassEffect>();
-            if (fx != null) fx.SetRim(new Color(a.r, a.g, a.b, on ? 0.65f : 0.2f));
+            if (fx != null)
+            {
+                fx.SetRim(new Color(a.r, a.g, a.b, on ? 0.65f : 0.2f));
+                fx.Radius = 8f;   // та же форма, что у главной кнопки (MenuPrimaryButton), — не «таблетка»
+            }
             if (on) InspSweep.Add(gameObject, 6f, 0.12f);
         }
     }

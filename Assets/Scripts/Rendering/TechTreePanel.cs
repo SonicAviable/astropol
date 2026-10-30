@@ -128,9 +128,10 @@ namespace StellarisClone.Rendering
         private Image _detailBadge, _detailIcon, _pillBg;
         private LiquidGlassEffect _detailBadgeFx;
         private Text _detailName, _detailSub, _pillText;
-        private Button _primaryBtn, _secondaryBtn;
-        private Image _primaryImg, _secondaryImg;
-        private Text _primaryLabel, _secondaryLabel;
+        private MenuPrimaryButton _primaryBtn;
+        private Button _secondaryBtn;
+        private Image _secondaryImg;
+        private Text _secondaryLabel;
         private System.Action _primaryAction, _secondaryAction;
 
         // ==================== ЖИЗНЕННЫЙ ЦИКЛ ====================
@@ -528,7 +529,14 @@ namespace StellarisClone.Rendering
             host.Stretch(6, 108, 6, 128);
             _detailList = LGBuild.ScrollList(host, 6f, 10);
 
-            (_primaryBtn, _primaryImg, _primaryLabel) = ActionButton(col, "Primary", 56f, 40f, () => _primaryAction?.Invoke());
+            // Главное действие — яркая кнопка, как во всех меню
+            _primaryBtn = MenuPrimaryButton.Create(col, " ", 15, () => _primaryAction?.Invoke());
+            var prt = (RectTransform)_primaryBtn.transform;
+            prt.anchorMin = new Vector2(0, 0);
+            prt.anchorMax = new Vector2(1, 0);
+            prt.pivot = new Vector2(0.5f, 0);
+            prt.offsetMin = new Vector2(16, 56f);
+            prt.offsetMax = new Vector2(-16, 56f + 44f);
             (_secondaryBtn, _secondaryImg, _secondaryLabel) = ActionButton(col, "Secondary", 14f, 34f, () => _secondaryAction?.Invoke());
         }
 
@@ -1319,18 +1327,18 @@ namespace StellarisClone.Rendering
             switch (st)
             {
                 case CardState.Researched:
-                    SetPrimary(Loc.T("ТЕХНОЛОГИЯ ИЗУЧЕНА"), UIManager.DS.BtnSuccess, false, null);
+                    SetPrimary(Loc.T("ТЕХНОЛОГИЯ ИЗУЧЕНА"), MenuPrimaryButton.Green, false, null);
                     _secondaryBtn.gameObject.SetActive(false);
                     break;
                 case CardState.Researching:
                     int idx = IndexOf(tm, slot);
-                    SetPrimary(slot.IsPaused ? Loc.T("ПРОДОЛЖИТЬ") : Loc.T("ПРИОСТАНОВИТЬ"), UIManager.DS.BtnPrimary, true,
+                    SetPrimary(slot.IsPaused ? Loc.T("ПРОДОЛЖИТЬ") : Loc.T("ПРИОСТАНОВИТЬ"), MenuPrimaryButton.Cyan, true,
                         () => { tm.ToggleSlotPause(idx); SFXManager.Play(Sfx.UiClick); });
                     SetSecondary(Loc.T("ОТМЕНИТЬ ИССЛЕДОВАНИЕ"), UIManager.DS.BtnDanger,
                         () => { tm.CancelCurrent(idx); SFXManager.Play(Sfx.UiBack); });
                     break;
                 case CardState.Queued:
-                    SetPrimary(Loc.T("В ОЧЕРЕДИ"), UIManager.DS.BtnNeutral, false, null);
+                    SetPrimary(Loc.T("В ОЧЕРЕДИ"), MenuPrimaryButton.Cyan, false, null);
                     SetSecondary(Loc.T("УБРАТЬ ИЗ ОЧЕРЕДИ"), UIManager.DS.BtnDanger,
                         () => { tm.RemoveFromQueue(t); SFXManager.Play(Sfx.UiBack); });
                     break;
@@ -1338,11 +1346,11 @@ namespace StellarisClone.Rendering
                     bool free = tm.HasFreeSlot;
                     bool canQueue = free || QueueHasRoom(tm);
                     SetPrimary(free ? Loc.T("ИССЛЕДОВАТЬ") : canQueue ? Loc.T("ПОСТАВИТЬ В ОЧЕРЕДЬ") : Loc.T("ОЧЕРЕДИ ЗАПОЛНЕНЫ"),
-                        free ? UIManager.DS.BtnSuccess : UIManager.DS.BtnPrimary, canQueue, () => TryResearch(t));
+                        free ? MenuPrimaryButton.Green : MenuPrimaryButton.Cyan, canQueue, () => TryResearch(t));
                     _secondaryBtn.gameObject.SetActive(false);
                     break;
                 default:
-                    SetPrimary(Loc.T("СНАЧАЛА: ") + MissingReqName(t, tm).ToUpper(), UIManager.DS.BtnDisabled, false, null);
+                    SetPrimary(Loc.T("СНАЧАЛА: ") + MissingReqName(t, tm).ToUpper(), MenuPrimaryButton.Cyan, false, null);
                     _secondaryBtn.gameObject.SetActive(false);
                     break;
             }
@@ -1364,10 +1372,10 @@ namespace StellarisClone.Rendering
         private void SetPrimary(string text, Color tint, bool interactable, System.Action action)
         {
             _primaryBtn.gameObject.SetActive(true);
-            _primaryLabel.text = text;
-            _primaryImg.color = tint;
-            _primaryBtn.interactable = interactable;
-            _primaryLabel.color = interactable ? Color.white : new Color(1f, 1f, 1f, 0.55f);
+            _primaryBtn.SetLabel(text);
+            _primaryBtn.SetColor(tint);
+            _primaryBtn.Interactable = interactable;
+            _primaryBtn.Label.color = interactable ? new Color(0.01f, 0.08f, 0.10f) : new Color(0.85f, 0.92f, 0.94f, 0.75f);
             _primaryAction = action;
         }
 

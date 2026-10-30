@@ -255,6 +255,13 @@ namespace StellarisClone.Rendering
             _onClick?.Invoke();
         }
 
+        public void SetLabel(string text) => _label.text = text;
+
+        /// <summary>Сменить цвет заливки (например, «Исследовать» — зелёная, «В очередь» — бирюзовая).</summary>
+        public void SetColor(Color c) => _base = c;
+
+        public void SetAction(System.Action onClick) => _onClick = onClick;
+
         /// <summary>Нажать из кода (клавиша Enter и т. п.).</summary>
         public void Press()
         {
