@@ -37,8 +37,8 @@ namespace StellarisClone.Rendering
         private const float BannerH = 212f;
         // Строки — полупрозрачные светлые слои поверх панели (а не плотный тёмный цвет: панели шейдер подсвечивает,
         // и непрозрачные строки на их фоне выглядели чёрными провалами)
-        private static readonly Color RowA = new Color(0.60f, 0.85f, 0.95f, 0.055f);
-        private static readonly Color RowB = new Color(0.60f, 0.85f, 0.95f, 0.025f);
+        private static readonly Color RowA = new Color(0.60f, 0.85f, 0.95f, 0.06f);
+        private static readonly Color RowB = new Color(0.60f, 0.85f, 0.95f, 0.045f);
         private static readonly Color RowSub = new Color(0.60f, 0.85f, 0.95f, 0.015f);
         private static readonly Color RowHover = new Color(0.55f, 0.92f, 1f, 0.13f);
         private readonly Dictionary<Tab, string> _tabNames = new Dictionary<Tab, string>();
@@ -220,10 +220,10 @@ namespace StellarisClone.Rendering
             fade.sprite = MenuArt.HorizontalFade;
             fade.rectTransform.anchorMin = new Vector2(0, 0);
             fade.rectTransform.anchorMax = new Vector2(0, 1);
-            fade.rectTransform.pivot = new Vector2(0, 0.5f);
-            fade.rectTransform.offsetMin = new Vector2(300, 0);
-            fade.rectTransform.offsetMax = new Vector2(560, 0);
-            fade.rectTransform.localScale = new Vector3(-1f, 1f, 1f);   // гаснет к правому краю портрета
+            fade.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            fade.rectTransform.offsetMin = new Vector2(260, 0);
+            fade.rectTransform.offsetMax = new Vector2(562, 0);
+            fade.rectTransform.localRotation = Quaternion.Euler(0, 0, 180f);   // прозрачно у лица, плотно к правому краю портрета
             fade.raycastTarget = false;
             LG.Ignore(fade.gameObject);
             var floor = LGBuild.Panel(banner.transform, "Floor", UIManager.DS.BgHeader);
@@ -275,8 +275,9 @@ namespace StellarisClone.Rendering
         /// <summary>Ресурсы — одна тонкая полоса: запас и доход за месяц (подробности — в подсказках верхней панели).</summary>
         private void BuildResourceRow(RectTransform root)
         {
-            var strip = Block(root, "Resources");
-            strip.rectTransform.TopBand(BannerH + 12, 62, 24, 24);
+            var stripRt = LGBuild.Rect(root, "Resources");
+            stripRt.TopBand(BannerH + 12, 62, 24, 24);
+            var strip = stripRt;
 
             var defs = new (LGIcon icon, string label, Color col)[]
             {
@@ -290,8 +291,11 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < defs.Length; i++)
             {
                 var d = defs[i];
-                var cell = LGBuild.Rect(strip.transform, "Res_" + i);
-                cell.Column(i / 5f, (i + 1) / 5f, 14, 10);
+                // Каждый ресурс — своя плитка
+                var tile = Block(strip, "Res_" + i);
+                tile.rectTransform.Column(i / 5f, (i + 1) / 5f, i == 0 ? 0 : 6, i == 4 ? 0 : 6);
+                var cell = LGBuild.Rect(tile.transform, "Cell");
+                cell.Stretch(14, 0, 12, 0);
                 var ic = LGIcons.Create(cell, d.icon, 22, d.col);
                 ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(22, 22));
                 _resLabel[i] = LGBuild.Label(cell, d.label, 9, UIManager.DS.TextMuted, TextAnchor.UpperLeft, bold: true);
@@ -300,15 +304,7 @@ namespace StellarisClone.Rendering
                 _resValue[i].rectTransform.Stretch(34, 7, 0, 0);
                 _resIncome[i] = LGBuild.Label(cell, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerRight, bold: true);
                 _resIncome[i].rectTransform.Stretch(34, 8, 0, 0);
-                if (i < defs.Length - 1)
-                {
-                    var sep = LGBuild.Panel(strip.transform, "Sep", new Color(1f, 1f, 1f, 0.07f));
-                    sep.rectTransform.anchorMin = new Vector2((i + 1) / 5f, 0.2f);
-                    sep.rectTransform.anchorMax = new Vector2((i + 1) / 5f, 0.8f);
-                    sep.rectTransform.offsetMin = Vector2.zero;
-                    sep.rectTransform.offsetMax = new Vector2(1, 0);
-                    LG.Ignore(sep.gameObject);
-                }
+
             }
         }
 
@@ -477,7 +473,7 @@ namespace StellarisClone.Rendering
         private void BuildTabs(RectTransform right)
         {
             var strip = Block(right, "Tabs");
-            strip.rectTransform.TopBand(0, 46);
+            strip.rectTransform.TopBand(0, 50);
             AddTab(strip.rectTransform, Tab.Systems, LGIcon.Star, Loc.T("СИСТЕМЫ"), 0);
             AddTab(strip.rectTransform, Tab.Fleets, LGIcon.Fleet, Loc.T("ФЛОТЫ"), 1);
             AddTab(strip.rectTransform, Tab.Leaders, LGIcon.Leader, Loc.T("ЛИДЕРЫ"), 2);
@@ -487,7 +483,7 @@ namespace StellarisClone.Rendering
 
             var table = Block(right, "Table");
             table.color = UIManager.DS.BgVisor;
-            table.rectTransform.Stretch(0, 0, 0, 56);
+            table.rectTransform.Stretch(0, 0, 0, 62);
 
             _tableHeader = LGBuild.Rect(table.transform, "TableHeader");
             _tableHeader.TopBand(8, 26, 16, 16);
@@ -497,7 +493,7 @@ namespace StellarisClone.Rendering
 
             var listHost = LGBuild.Rect(table.transform, "ListHost");
             listHost.Stretch(8, 8, 8, 42);
-            _list = LGBuild.ScrollList(listHost, 2f, 4);
+            _list = LGBuild.ScrollList(listHost, 6f, 4);
 
             _emptyText = LGBuild.Label(table.transform, "", 13, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
             _emptyText.rectTransform.Stretch(80, 40, 80, 40);
@@ -509,12 +505,14 @@ namespace StellarisClone.Rendering
             var hit = LGBuild.Panel(strip, "Tab_" + tab, new Color(1f, 1f, 1f, 0f), raycast: true);
             hit.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 6 : 2, index == TabCount - 1 ? 6 : 2);
             HoverArea(hit, () => SwitchTab(tab), new Color(1f, 1f, 1f, 0.05f));
+            // Активная вкладка — подсвеченная плашка (как сегментный переключатель в меню)
+            var line = LGBuild.Panel(hit.transform, "Plate", new Color(0.17f, 0.38f, 0.40f, 0.95f));
+            line.raycastTarget = false;
+            line.rectTransform.Stretch(2, 5, 2, 5);
+            var pfx = LG.Chip(line.gameObject, new Color(0.44f, 0.90f, 0.85f, 0.75f), 9f);
+            pfx.FillMultiplier = 1.8f;
             var t = LGIcons.IconLabel(hit.transform, icon, label, 12, UIManager.DS.TextMuted, UIManager.DS.TextMuted, 14f);
             var iconImg = t.transform.parent.GetChild(0).GetComponent<Image>();
-            var line = LGBuild.Panel(hit.transform, "Underline", UIManager.DS.NeonCyan);
-            line.raycastTarget = false;
-            line.rectTransform.anchorMin = new Vector2(0.12f, 0); line.rectTransform.anchorMax = new Vector2(0.88f, 0);
-            line.rectTransform.offsetMin = new Vector2(0, 3); line.rectTransform.offsetMax = new Vector2(0, 6);
             _tabs[tab] = (hit, line, t, iconImg);
             _tabNames[tab] = label;
         }
@@ -610,7 +608,8 @@ namespace StellarisClone.Rendering
             {
                 _portraitKey = key;
                 LGBuild.Clear(_portraitHost);
-                bool ok = LeaderPortraitView.Create(_portraitHost, leader, zoom: 1.25f) != null;
+                // Без «сбоев сигнала»: в широкой шапке они режут портрет на полосы
+                bool ok = LeaderPortraitView.Create(_portraitHost, leader, 1.25f, Vector4.zero, false, true, false) != null;
                 _portraitIcon.gameObject.SetActive(!ok);
             }
             _portraitTip?.SetText(f != null ? $"<b>{f.Name}</b>\n{f.Description}" : "");
