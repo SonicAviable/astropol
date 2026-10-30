@@ -7122,3 +7122,22 @@ FSR чётче растягивает картинку при масштабе �
 ещё не сохранялась	not saved yet
 сохранено {0}	saved {0}
 Подробнее о путях к победе  <color=#8AA2A8>(V)</color>	Paths to victory in detail  <color=#8AA2A8>(V)</color>
+<color=#7FE0B0>Новое сохранение</color>	<color=#7FE0B0>New save</color>
+<color=#FFB27A>Заменит сохранение</color>  ·  {0}  ·  {1}	<color=#FFB27A>Replaces save</color>  ·  {0}  ·  {1}
+<color=#FFB27A>Заменит существующее сохранение</color>	<color=#FFB27A>Replaces an existing save</color>
+<color={0}>{1}</color>  ·  правитель {2}	<color={0}>{1}</color>  ·  ruler {2}
+В ИГРЕ	PLAYED
+В этой партии ещё нет сохранений — сохраните первое слева.	No saves in this campaign yet — make the first one on the left.
+ВСЕ СОХРАНЕНИЯ	ALL SAVES
+Все сохранения	All saves
+Клик по сохранению подставит его название. Перезапись и удаление — вторым нажатием.	Click a save to reuse its name. Overwrite and delete need a second click.
+Куда сохранить	Where to save
+НАЗВАНИЕ СОХРАНЕНИЯ	SAVE NAME
+СОХРАНЕНО	SAVED
+Сейчас сохранить нельзя: партия завершена или ещё не началась.	Saving is not possible right now: the game is over or has not started.
+Сохранение	Save
+Сохранений пока нет.	No saves yet.
+ТЕКУЩАЯ ПАРТИЯ	CURRENT CAMPAIGN
+ХРОНИКА ЭТОЙ ПАРТИИ	THIS CAMPAIGN
+Эта партия	This campaign
+ещё раз — заменить	again to replace

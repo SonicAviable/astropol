@@ -51,6 +51,7 @@ namespace StellarisClone.Rendering
         private RectTransform _modalRoot;
         private LoadScreen _loadScr;
         private SettingsScreen _setScr;
+        private SaveScreen _saveScr;
         private MonoBehaviour _fullOpen;
 
         private RectTransform _domBar, _sciBar, _survBar;
@@ -385,7 +386,7 @@ namespace StellarisClone.Rendering
             ((RectTransform)cont.transform).TopBand(y, 60f, 40, 40);
             y += 72f;
 
-            var save = Item(ref y, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, () => ShowPage(Page.Save));
+            var save = Item(ref y, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, OpenSave);
             if (!SaveSystem.CanSaveNow) save.GetComponentInParent<Button>().interactable = false;
             Item(ref y, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => OpenFull(true));
             Item(ref y, Loc.T("ЦЕЛИ И ПОБЕДА"), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Goals));
@@ -525,8 +526,20 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>Сохранение — полноэкранный экран в стиле экрана загрузки.</summary>
+        private void OpenSave()
+        {
+            if (_modalRoot == null) return;
+            if (LG.IsVisible(_pause)) LG.Hide(_pause);
+            if (_side != null && LG.IsVisible(_side)) LG.Hide(_side);
+            if (_saveScr == null) _saveScr = SaveScreen.Create(_modalRoot, CloseFull);
+            _saveScr.Show();
+            _fullOpen = _saveScr;
+        }
+
         private void CloseFull()
         {
+            if (_fullOpen == _saveScr && _saveScr != null) _saveScr.Hide();
             if (_fullOpen == _loadScr && _loadScr != null) _loadScr.Hide();
             if (_fullOpen == _setScr && _setScr != null) _setScr.Hide();
             _fullOpen = null;
