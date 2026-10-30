@@ -734,6 +734,7 @@ namespace StellarisClone.Rendering
             crt.offsetMin = new Vector2(60, 60);
             crt.offsetMax = new Vector2(60 + 540, -110);
             LG.Glass(col.gameObject, 24f).SetRim(new Color(0.45f, 0.95f, 0.9f, 0.3f));
+            MenuPanelFx.Sheen(crt);
             _ngSlides.Add(MenuSlideIn.Add(col.gameObject, 0.05f, new Vector2(-60f, 0f)));
 
             var step = LGBuild.Label(crt, Loc.T("ШАГ 1 ИЗ 2"), 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
@@ -839,15 +840,8 @@ namespace StellarisClone.Rendering
             }
 
             // ---------- Далее ----------
-            var start = LGBuild.Button(_ngScreen, "Start", new Color(0.10f, 0.46f, 0.44f), UIManager.DS.NeonCyan, () =>
-            {
-                SFXManager.Play("ui_click", 1f, 0.8f);
-                GameSession.StartNewGame(_ng);
-            }, null, Loc.T("ДАЛЕЕ — ЦИВИЛИЗАЦИЯ"), 18);
-            ((RectTransform)start.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-60, 82), new Vector2(430, 58));
-            var sfx = start.GetComponent<LiquidGlassEffect>();
-            if (sfx != null) start.gameObject.AddComponent<PulseGlow>().Init(sfx);
-            InspSweep.Add(start.gameObject, 4.5f, 0.2f);
+            var start = MenuPrimaryButton.Create(_ngScreen, Loc.T("ДАЛЕЕ — ЦИВИЛИЗАЦИЯ  ›"), 20, () => GameSession.StartNewGame(_ng));
+            ((RectTransform)start.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-60, 80), new Vector2(430, 64));
             _ngSlides.Add(MenuSlideIn.Add(start.gameObject, 0.55f, new Vector2(40f, 0f)));
 
             _ngScreen.gameObject.SetActive(false);
@@ -1014,18 +1008,6 @@ namespace StellarisClone.Rendering
                 _cg.alpha = k;
                 _rt.anchoredPosition = new Vector2(22f * (1f - k), 0f);
             }
-        }
-
-        /// <summary>Медленное «дыхание» свечения главной кнопки.</summary>
-        private sealed class PulseGlow : MonoBehaviour
-        {
-            private LiquidGlassEffect _fx;
-            public void Init(LiquidGlassEffect fx) => _fx = fx;
-            private void Update()
-            {
-                if (_fx != null) _fx.SetPulse(0.25f + 0.25f * Mathf.Sin(Time.unscaledTime * 2.2f));
-            }
-            private void OnDisable() { if (_fx != null) _fx.SetPulse(0f); }
         }
     }
 

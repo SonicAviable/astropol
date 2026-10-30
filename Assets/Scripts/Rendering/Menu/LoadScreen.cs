@@ -76,6 +76,7 @@ namespace StellarisClone.Rendering
             _panel = panel.rectTransform;
             _panel.Stretch(680, 60, 80, 130);
             LG.Glass(panel.gameObject, 22f).SetRim(new Color(0.45f, 0.95f, 0.9f, 0.3f));
+            MenuPanelFx.Sheen(_panel);
             _slides.Add(MenuSlideIn.Add(panel.gameObject, 0.12f, new Vector2(50f, 0f)));
 
             _head = LGBuild.Rect(_panel, "Head");
@@ -248,10 +249,12 @@ namespace StellarisClone.Rendering
                                       13, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft);
                 w.rectTransform.Stretch(236, 0, 330, 52);
 
-                var load = LGBuild.Button(body.transform, "Load", on ? new Color(0.10f, 0.46f, 0.44f) : UIManager.DS.BtnNeutral,
-                                          on ? UIManager.DS.NeonCyan : new Color(1f, 1f, 1f, 0.3f), () => SaveSystem.LoadSlot(slot), null, Loc.T("ЗАГРУЗИТЬ"), 15);
-                ((RectTransform)load.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-84, 0), new Vector2(190, 50));
-                if (on) InspSweep.Add(load.gameObject, 4.5f, 0.2f);
+                // Выбранное сохранение — яркая главная кнопка, остальные — обычные
+                Transform load = on
+                    ? MenuPrimaryButton.Create(body.transform, Loc.T("ЗАГРУЗИТЬ"), 16, () => SaveSystem.LoadSlot(slot)).transform
+                    : LGBuild.Button(body.transform, "Load", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.3f),
+                                     () => SaveSystem.LoadSlot(slot), null, Loc.T("ЗАГРУЗИТЬ"), 15).transform;
+                ((RectTransform)load).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-84, 0), new Vector2(190, 50));
 
                 var del = LGControls.IconButton(body.transform, LGIcon.Trash, 46, armed ? new Color(0.45f, 0.08f, 0.06f) : UIManager.DS.BtnNeutral,
                                                 armed ? new Color(1f, 0.4f, 0.35f, 0.9f) : new Color(1f, 1f, 1f, 0.25f), () => OnDelete(slot, c));

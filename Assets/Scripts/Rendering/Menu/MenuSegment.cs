@@ -56,12 +56,15 @@ namespace StellarisClone.Rendering
             var fx = LG.Platter(bg.gameObject, 14f);
             fx.SetRim(new Color(1f, 1f, 1f, 0.08f));
 
-            var plate = LGBuild.Panel(bg.transform, "Plate", new Color(Neon.r * 0.35f, Neon.g * 0.35f, Neon.b * 0.35f, 0.85f));
+            // Плашка выбранного варианта: насыщенная бирюза с яркой кромкой и свечением (как в макетах)
+            var plate = LGBuild.Panel(bg.transform, "Plate", new Color(Neon.r * 0.62f, Neon.g * 0.62f, Neon.b * 0.62f, 1f));
             s._plate = plate.rectTransform;
             s._plate.anchorMin = new Vector2(0, 0);
             s._plate.anchorMax = new Vector2(0, 1);
             s._plate.pivot = new Vector2(0, 0.5f);
-            LG.Chip(plate.gameObject, new Color(Neon.r, Neon.g, Neon.b, 0.75f), 10f);
+            var pfx = LG.Chip(plate.gameObject, new Color(Neon.r, Neon.g, Neon.b, 0.95f), 10f);
+            pfx.FillMultiplier = 1.9f;
+            pfx.GlowMultiplier = 2.2f;
 
             int n = labels.Count;
             for (int i = 0; i < n; i++)
@@ -175,6 +178,96 @@ namespace StellarisClone.Rendering
             _cg.alpha = k;
             _rt.anchoredPosition = _rest + From * (1f - k);
             if (k >= 1f) enabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Главная кнопка экрана (как в макетах): сплошная светящаяся бирюза, тёмная подпись капслоком,
+    /// мягкий ореол позади, пробегающий блик; при наведении — ярче и чуть крупнее, при нажатии — «вдавливается».
+    /// </summary>
+    public sealed class MenuPrimaryButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler,
+                                            IPointerDownHandler, IPointerUpHandler
+    {
+        private static readonly Color Base = new Color(0.50f, 0.94f, 0.88f);
+        private Image _body, _halo;
+        private Text _label;
+        private System.Action _onClick;
+        private bool _over, _down;
+        private float _h, _hv, _p, _pv, _t;
+
+        public Text Label => _label;
+
+        public static MenuPrimaryButton Create(Transform parent, string label, int fontSize, System.Action onClick)
+        {
+            var root = LGBuild.Rect(parent, "Primary");
+            var b = root.gameObject.AddComponent<MenuPrimaryButton>();
+            b._onClick = onClick;
+
+            b._halo = LGBuild.Panel(root, "Halo", new Color(Base.r, Base.g, Base.b, 0.25f));
+            b._halo.sprite = MenuArt.SoftDisc;
+            b._halo.rectTransform.Stretch(-40, -30, -40, -30);
+            LG.Ignore(b._halo.gameObject);
+
+            b._body = LGBuild.Panel(root, "Body", Base, raycast: true);
+            b._body.rectTransform.Stretch();
+            LG.Fill(b._body.gameObject);
+            InspSweep.Add(b._body.gameObject, 4.5f, 0.35f);
+
+            b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
+            b._label.rectTransform.Stretch(12, 0, 12, 0);
+            b._label.resizeTextForBestFit = true;
+            b._label.resizeTextMinSize = 10;
+            b._label.resizeTextMaxSize = fontSize;
+            return b;
+        }
+
+        public void OnPointerEnter(PointerEventData e)
+        {
+            _over = true;
+            if (SFXManager.Has("ui_hover")) SFXManager.Play("ui_hover", 0.35f, 1.1f);
+        }
+
+        public void OnPointerExit(PointerEventData e) { _over = false; _down = false; }
+        public void OnPointerDown(PointerEventData e) { if (e.button == PointerEventData.InputButton.Left) _down = true; }
+        public void OnPointerUp(PointerEventData e) => _down = false;
+
+        public void OnPointerClick(PointerEventData e)
+        {
+            if (e.button != PointerEventData.InputButton.Left) return;
+            SFXManager.Play("ui_click", 1f, 0.85f);
+            _onClick?.Invoke();
+        }
+
+        private void Update()
+        {
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 1f / 20f);
+            _t += dt;
+            _h = LGEase.Spring(_h, _over ? 1f : 0f, ref _hv, 4f, 0.7f, dt);
+            _p = LGEase.Spring(_p, _down ? 1f : 0f, ref _pv, 7f, 0.75f, dt);
+            float h = Mathf.Clamp01(_h);
+            float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 2.2f);
+            _body.color = Color.Lerp(Base, new Color(0.72f, 1f, 0.96f), h * 0.6f);
+            _halo.color = new Color(Base.r, Base.g, Base.b, 0.16f + 0.10f * breathe + 0.22f * h);
+            float sc = 1f + 0.025f * _h - 0.04f * _p;
+            transform.localScale = new Vector3(sc, sc, 1f);
+        }
+    }
+
+    /// <summary>Мягкий блик сверху большой стеклянной панели — объём вместо «плоской» заливки.</summary>
+    public static class MenuPanelFx
+    {
+        public static void Sheen(RectTransform panel, float alpha = 0.07f)
+        {
+            var top = LGBuild.Panel(panel, "Sheen", new Color(0.55f, 0.95f, 0.92f, alpha));
+            top.sprite = MenuArt.VerticalFade;
+            top.rectTransform.anchorMin = new Vector2(0, 0.55f);
+            top.rectTransform.anchorMax = Vector2.one;
+            top.rectTransform.offsetMin = new Vector2(2, 0);
+            top.rectTransform.offsetMax = new Vector2(-2, -2);
+            top.rectTransform.localScale = new Vector3(1f, -1f, 1f);   // ярче у верхнего края
+            top.raycastTarget = false;
+            LG.Ignore(top.gameObject);
+            top.transform.SetSiblingIndex(0);
         }
     }
 }

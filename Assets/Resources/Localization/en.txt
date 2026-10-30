@@ -7106,3 +7106,4 @@ Q / E — листать новости	Q / E — browse news
 FSR чётче растягивает картинку при масштабе ниже 100%	FSR upscales more sharply below 100% render scale
 Половинные экономят видеопамять	Half-size textures save video memory
 ВЫБРАНО	SELECTED
+ДАЛЕЕ — ЦИВИЛИЗАЦИЯ  ›	NEXT — CIVILIZATION  ›
