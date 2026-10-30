@@ -226,8 +226,13 @@ namespace StellarisClone.Rendering
 
             b._body = LGBuild.Panel(b._inner, "Body", b._base, raycast: true);
             b._body.rectTransform.Stretch();
-            LG.Fill(b._body.gameObject);
-            InspSweep.Add(b._body.gameObject, 4.5f, 0.35f);
+            // Та же форма, что у всех кнопок: срезанные углы, без свечения (единый дизайн «приборной панели»)
+            var fx = LG.Fill(b._body.gameObject);
+            fx.Radius = LGGameButton.Cut;
+            fx.Chamfer = true;
+            fx.GlowMultiplier = 0f;
+            fx.SpecularMultiplier = 0.3f;
+            InspSweep.Add(b._body.gameObject, 5.5f, 0.18f);
 
             b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
             b._label.rectTransform.Stretch(12, 0, 12, 0);
@@ -281,7 +286,7 @@ namespace StellarisClone.Rendering
             float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 2.2f);
             var lit = Color.Lerp(_base, Color.white, 0.35f);
             _body.color = _interactable ? Color.Lerp(_base, lit, h * 0.6f) : new Color(_base.r * 0.4f, _base.g * 0.4f, _base.b * 0.4f, 0.8f);
-            _halo.color = new Color(_base.r, _base.g, _base.b, _interactable ? 0.16f + 0.10f * breathe + 0.22f * h : 0f);
+            _halo.color = new Color(_base.r, _base.g, _base.b, _interactable ? 0.05f * breathe + 0.08f * h : 0f);   // ореол едва заметен
             float sc = 1f + 0.025f * _h - 0.04f * _p;
             _inner.localScale = new Vector3(sc, sc, 1f);
         }

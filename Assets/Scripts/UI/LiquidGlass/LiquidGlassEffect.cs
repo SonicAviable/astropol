@@ -65,6 +65,18 @@ namespace StellarisClone.Rendering
             set { if (role == value) return; role = value; Dirty(); }
         }
 
+        private bool chamfer;
+
+        /// <summary>
+        /// Срезанные углы вместо скругления (кнопки «приборной панели»): слева сверху и справа снизу угол срезан под 45°,
+        /// размер среза — <see cref="Radius"/>; два других угла прямые.
+        /// </summary>
+        public bool Chamfer
+        {
+            get => chamfer;
+            set { if (chamfer == value) return; chamfer = value; Dirty(); }
+        }
+
         /// <summary>Радиус скругления (&lt; 0 — авто).</summary>
         public float Radius
         {
@@ -247,7 +259,7 @@ namespace StellarisClone.Rendering
             public Vector4 Radii;     // TL TR BR BL
             public float Fill, Glow, Shadow, Specular, Refraction, Border, GlowRadius, ShadowRadius;
             public Color Rim;
-            public int Flags;         // 1 hairline, 2 border-only, 4 no-specular, 8 «приборная» кнопка
+            public int Flags;         // 1 hairline, 2 border-only, 4 no-specular, 8 «приборная» кнопка, 16 срезанные углы
             public bool ForceOpaqueVertex;
         }
 
@@ -505,6 +517,13 @@ namespace StellarisClone.Rendering
                     break;
             }
 
+            if (chamfer)
+            {
+                s.Flags |= 16;
+                float cut = radius >= 0f ? radius : 10f;
+                s.Radii = new Vector4(cut, cut, cut, cut);   // размер среза передаётся через радиус
+            }
+
             if (useRimOverride)
             {
                 s.Rim = rimOverride;
@@ -601,7 +620,7 @@ namespace StellarisClone.Rendering
             s.Border = 1f;
             s.Flags |= 8;
 
-            float rad = ButtonRadius(rectTransform.rect);
+            float rad = chamfer ? (radius >= 0f ? radius : 10f) : ButtonRadius(rectTransform.rect);
             s.Radii = new Vector4(rad, rad, rad, rad);
         }
 

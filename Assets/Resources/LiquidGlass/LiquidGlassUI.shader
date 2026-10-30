@@ -160,6 +160,23 @@ Shader "Astropolity/UI/LiquidGlass"
                 return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
             }
 
+            // Прямоугольник со срезанными углами слева сверху и справа снизу (кнопки «приборной панели»).
+            // c — размер среза (берётся из радиуса угла)
+            float SdChamferBox(float2 p, float2 b, float c)
+            {
+                float2 q = abs(p) - b;
+                float d0 = min(max(q.x, q.y), 0.0) + length(max(q, 0.0));
+                float k = b.x + b.y - c;
+                float dTL = (-p.x + p.y - k) * 0.70710678;
+                float dBR = ( p.x - p.y - k) * 0.70710678;
+                return max(d0, max(dTL, dBR));
+            }
+
+            float SdShape(float2 p, float2 b, float4 r, bool chamfer)
+            {
+                return chamfer ? SdChamferBox(p, b, r.z) : SdRoundBox(p, b, r);
+            }
+
             float BitSet(float flags, float bit)
             {
                 return fmod(floor(flags / bit), 2.0);
@@ -190,11 +207,12 @@ Shader "Astropolity/UI/LiquidGlass"
                 bool fHairline   = BitSet(flags, 1.0) > 0.5;
                 bool fBorderOnly = BitSet(flags, 2.0) > 0.5;
                 bool fButton     = BitSet(flags, 8.0) > 0.5;
+                bool fChamfer    = BitSet(flags, 16.0) > 0.5;
 
                 float unitPx = max(length(float2(ddx(p.x), ddy(p.x))), 1e-4);
                 float pxPerUnit = 1.0 / unitPx;
 
-                float d = SdRoundBox(p, b, r4);
+                float d = SdShape(p, b, r4, fChamfer);
                 float cov = saturate(0.5 - d * pxPerUnit);
                 float insidePx = max(-d, 0.0) * pxPerUnit;
                 float tv = (p.y / b.y) * 0.5 + 0.5;                  // 0 — низ, 1 — верх
@@ -264,7 +282,7 @@ Shader "Astropolity/UI/LiquidGlass"
 
                 // --- Тень ---
                 float2 so = float2(0.0, -shadowR * 0.32);
-                float sdS = SdRoundBox(p - so, b, r4);
+                float sdS = SdShape(p - so, b, r4, fChamfer);
                 float shA = shadow * 0.6 * (1.0 - smoothstep(-shadowR * 0.35, shadowR, sdS));
 
                 // --- Ореол (только у линий и выделенных элементов, сдержанный) ---

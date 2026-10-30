@@ -4,29 +4,35 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Единый дизайн кнопок игры — тот же, что у главной кнопки (<see cref="MenuPrimaryButton"/>): сплошная заливка
-    /// со свечением, прямоугольник со скруглением 8 px, подпись капслоком по центру, пробегающий блик.
-    /// Гамма одна: главная кнопка — яркая бирюза с тёмной подписью; обычные — тёмно-синие со светлой подписью
-    /// (при наведении светлеют к главной); от неё отличаются только смысловые цвета — опасное (красная) и
-    /// успешное (зелёная) действие, тоже глубокие. Нейтральные («Назад», неактивная вкладка) — почти тёмные.
-    /// Недоступная — тусклая серая. Без радуги на одном экране.
+    /// Единый дизайн кнопок игры — «приборная панель»: плотная тёмно-синяя плашка со срезанными углами
+    /// (слева сверху и справа снизу), полоса цвета действия по левому краю, светлая подпись капслоком по центру,
+    /// без свечения. Цвет полосы — смысл действия: синяя — обычное, зелёная — успех, красная — опасное,
+    /// серая — нейтральное («Назад», неактивная вкладка). Недоступная — тусклая. При наведении плашка светлеет,
+    /// полоса расширяется. Главная кнопка экрана (<see cref="MenuPrimaryButton"/>) той же формы, но сплошь бирюзовая.
     /// Вешается сам на кнопки из <see cref="LGBuild.Button"/> (кнопки-полосы с подписью: ширина от 150, высота 28…58 px);
     /// круглые, маленькие и кнопки-значки остаются как были. Если код потом перекрашивает кнопку (например, «удалить?» —
-    /// красным), новый цвет становится цветом заливки — дизайн не ломается.
+    /// красным), новый цвет становится цветом полосы — дизайн не ломается.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LGGameButton : MonoBehaviour, UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler
     {
-        private static readonly Color Off = new Color(0.22f, 0.27f, 0.31f, 0.9f);
+        /// <summary>Размер среза углов у всех кнопок.</summary>
+        public const float Cut = 10f;
+
+        private static readonly Color Plate = new Color(0.086f, 0.141f, 0.235f, 0.97f);      // #16243C
+        private static readonly Color PlateLit = new Color(0.13f, 0.21f, 0.34f, 0.97f);
+        private static readonly Color PlateQuiet = new Color(0.059f, 0.094f, 0.157f, 0.95f); // #0F1828
+        private static readonly Color PlateOff = new Color(0.05f, 0.07f, 0.10f, 0.85f);
+        private static readonly Color Ink = new Color(0.84f, 0.89f, 1f);
+        private static readonly Color InkQuiet = new Color(0.62f, 0.70f, 0.75f);
 
         private Color _accent = new Color(0.40f, 0.86f, 0.82f);
         private Color _set;
         private bool _done, _applied, _over;
         private float _h, _hv;
-        private Image _img;
+        private Image _img, _bar;
         private Button _btn;
         private Text _label;
-        private InspSweep _sweep;
 
         /// <summary>Цвет действия — из цвета кромки, а если она нейтральная — из заливки кнопки.</summary>
         public void Init(LGIcon? icon, Color rim, Color tint)
@@ -43,39 +49,21 @@ namespace StellarisClone.Rendering
             return Color.HSVToRGB(h, Mathf.Clamp01(s * 0.85f), 1f);
         }
 
-        /// <summary>
-        /// Оттенок кнопки: красный (опасное) и зелёный (успех) сохраняются, всё остальное — тёмно-синий тон интерфейса.
-        /// </summary>
-        private static float HueOf(Color accent)
-        {
-            Color.RGBToHSV(accent, out float h, out float s, out _);
-            if (s < 0.3f) return Teal;
-            if (h < 0.05f || h > 0.93f) return 0.015f;          // красный
-            if (h > 0.25f && h < 0.42f) return 0.38f;           // зелёный
-            return Teal;
-        }
-
-        private const float Teal = 0.605f;   // тёмно-синий — тон всего интерфейса
-
-        /// <summary>Нейтральная кнопка («Назад», неактивная вкладка) — тише обычной: почти тёмная заливка.</summary>
         private static bool Quiet(Color accent)
         {
             Color.RGBToHSV(accent, out _, out float s, out _);
             return s < 0.3f;
         }
 
-        /// <summary>Заливка обычной кнопки: тот же оттенок, что у главной, но глубокий.</summary>
-        private static Color FillOf(Color accent, float hover)
+        /// <summary>Цвет полосы: красный (опасное), зелёный (успех), серый (нейтральное), остальное — синий.</summary>
+        private static Color BarOf(Color accent)
         {
-            float h = HueOf(accent);
-            if (Quiet(accent)) return Color.Lerp(Color.HSVToRGB(h, 0.55f, 0.18f), Color.HSVToRGB(h, 0.62f, 0.32f), hover);
-            bool navy = Mathf.Approximately(h, Teal);
-            var deep = navy ? Color.HSVToRGB(h, 0.68f, 0.30f) : Color.HSVToRGB(h, 0.62f, 0.30f);
-            var lit = navy ? Color.HSVToRGB(h, 0.62f, 0.48f) : Color.HSVToRGB(h, 0.55f, 0.50f);
-            return Color.Lerp(deep, lit, hover);
+            if (Quiet(accent)) return new Color(0.23f, 0.29f, 0.37f);                // #3A4A5E
+            Color.RGBToHSV(accent, out float h, out _, out _);
+            if (h < 0.05f || h > 0.93f) return new Color(1f, 0.46f, 0.39f);         // #FF7564
+            if (h > 0.25f && h < 0.42f) return new Color(0.31f, 0.85f, 0.54f);      // #4FD98A
+            return new Color(0.43f, 0.61f, 1f);                                      // #6E9BFF
         }
-
-        private static Color InkOf(Color accent) => Quiet(accent) ? new Color(0.78f, 0.86f, 0.90f) : Color.HSVToRGB(HueOf(accent), 0.22f, 1f);
 
         public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e) => _over = true;
         public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) => _over = false;
@@ -106,16 +94,23 @@ namespace StellarisClone.Rendering
             if (_img.color != _set) _accent = AccentOf(Color.clear, _img.color);
 
             bool on = _btn == null || _btn.interactable;
+            bool quiet = Quiet(_accent);
             _h = LGEase.Spring(_h, on && _over ? 1f : 0f, ref _hv, 4f, 0.7f, Time.unscaledDeltaTime);
-            var fill = on ? FillOf(_accent, Mathf.Clamp01(_h)) : Off;
+            float h = Mathf.Clamp01(_h);
+            var fill = !on ? PlateOff : Color.Lerp(quiet ? PlateQuiet : Plate, PlateLit, h);
             if (fill != _img.color) _img.color = fill;
             _set = fill;
+            if (_bar != null)
+            {
+                var bc = on ? BarOf(_accent) : new Color(0.2f, 0.24f, 0.28f);
+                if (_bar.color != bc) _bar.color = bc;
+                _bar.rectTransform.sizeDelta = new Vector2(3f + 3f * h, -Cut);
+            }
             if (_label != null)
             {
-                var lc = on ? InkOf(_accent) : new Color(0.62f, 0.68f, 0.72f, 0.8f);
+                var lc = !on ? new Color(0.45f, 0.52f, 0.56f, 0.8f) : quiet ? Color.Lerp(InkQuiet, Ink, h) : Ink;
                 if (_label.color != lc) _label.color = lc;
             }
-            if (_sweep != null && _sweep.enabled != on) _sweep.enabled = on;
         }
 
         private void Apply(Rect r)
@@ -139,6 +134,17 @@ namespace StellarisClone.Rendering
                 Destroy(c.gameObject);
             }
 
+            // Полоса цвета действия по левому краю (ниже среза верхнего левого угла)
+            _bar = LGBuild.Panel(transform, "Bar", BarOf(_accent));
+            var br = _bar.rectTransform;
+            br.anchorMin = new Vector2(0, 0);
+            br.anchorMax = new Vector2(0, 1);
+            br.pivot = new Vector2(0, 0);
+            br.anchoredPosition = Vector2.zero;
+            br.sizeDelta = new Vector2(3f, -Cut);
+            _bar.raycastTarget = false;
+            LG.Ignore(_bar.gameObject);
+
             const float textLeft = 16f;
             var t = old;
             _label = t;
@@ -156,12 +162,18 @@ namespace StellarisClone.Rendering
             t.fontStyle = FontStyle.Bold;
             if (!t.TryGetComponent<LGButtonLabel>(out _)) t.gameObject.AddComponent<LGButtonLabel>();
 
-            // Та же заливка, что у главной кнопки: сплошная, светящаяся, скругление 8 px
-            var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Fill, 8f);
-            if (fx != null) fx.Radius = 8f;
-            _sweep = InspSweep.Add(gameObject, 6f, 0.14f);
-            _set = _img != null ? _img.color : Color.clear;
-            if (_img != null) _img.color = _set = FillOf(_accent, 0f);
+            // Плотная плашка со срезанными углами, без свечения
+            var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Fill, Cut);
+            if (fx != null)
+            {
+                fx.Radius = Cut;
+                fx.Chamfer = true;
+                fx.GlowMultiplier = 0f;
+                fx.SpecularMultiplier = 0.2f;
+            }
+            var sweep = GetComponent<InspSweep>();
+            if (sweep != null) Destroy(sweep);
+            if (_img != null) _img.color = _set = Plate;
             Tick();
         }
     }
