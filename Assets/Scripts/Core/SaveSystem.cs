@@ -47,6 +47,10 @@ namespace StellarisClone.Core
         public long SavedAtUtcTicks;
         public float PlayTime;
         public bool Auto;
+        /// <summary>Партия, к которой относится сохранение (экран загрузки группирует по ней); пусто — старое сохранение.</summary>
+        public string Campaign;
+        public string FactionKey, Ruler, Emblem;
+        public int Shape = -1;
     }
 
     [Serializable]
@@ -556,6 +560,11 @@ namespace StellarisClone.Core
             m.SavedAtUtcTicks = DateTime.UtcNow.Ticks;
             m.PlayTime = GameSession.PlayTime;
             m.Auto = auto;
+            m.Campaign = $"{s.Settings.Seed}|{s.Settings.GalaxySize}|{s.Settings.Shape}|{m.Empire}";
+            m.FactionKey = s.FactionKey;
+            m.Ruler = s.RulerName;
+            m.Emblem = s.EmblemKey;
+            m.Shape = s.Settings.Shape;
             m.Name = auto ? Loc.F("Автосохранение · {0}", m.GameDate)
                    : string.IsNullOrWhiteSpace(displayName) ? $"{m.Empire} · {m.GameDate}" : displayName.Trim();
             return file;

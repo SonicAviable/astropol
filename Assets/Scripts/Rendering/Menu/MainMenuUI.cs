@@ -265,6 +265,7 @@ namespace StellarisClone.Rendering
         private float _heroK = 1f, _heroV;   // 1 — карточки на месте, 0 — убраны вниз (открыто окно)
         private MenuCard _continueCard;
         private NewsWindow _newsWin;
+        private LoadScreen _loadScr;
         private Text _loadCaption, _continueMeta;
 
         private static readonly Color LoadAccent = new Color(0.55f, 0.80f, 1f);
@@ -492,7 +493,7 @@ namespace StellarisClone.Rendering
             _logo.anchoredPosition = new Vector2(0f, -112f + 60f * (1f - k));
 
             // Окно новостей занимает верх экрана — «Выход» и кнопки в углах на это время прячутся
-            bool news = _open == Panel.News || _open == Panel.NewGame;
+            bool news = _open == Panel.News || _open == Panel.NewGame || _open == Panel.Load;
             _cornersCg.alpha = Mathf.MoveTowards(_cornersCg.alpha, news ? 0f : 1f, dt * 6f);
             _cornersCg.blocksRaycasts = _cornersCg.interactable = !news;
         }
@@ -578,7 +579,17 @@ namespace StellarisClone.Rendering
             if (_open == p) { Close(); return; }
             SFXManager.Play("ui_click", 0.7f, 1.05f);
             if (_open == Panel.News) _newsWin.Hide();
+            if (_open == Panel.Load && _loadScr != null) _loadScr.Hide();
             _open = p;
+
+            // Загрузка — партии и их хроника во весь экран
+            if (p == Panel.Load)
+            {
+                if (LG.IsVisible(_window.gameObject)) LG.Hide(_window.gameObject);
+                if (_loadScr == null) _loadScr = LoadScreen.Create(_root, Close);
+                _loadScr.Show();
+                return;
+            }
 
             // Новая игра — свой экран во весь экран
             if (p == Panel.NewGame)
@@ -599,9 +610,6 @@ namespace StellarisClone.Rendering
 
             switch (p)
             {
-                case Panel.Load:
-                    SetHeader(LGIcon.Load, Loc.T("ЗАГРУЗКА"), Loc.T("Продолжите одну из своих партий"));
-                    break;
                 case Panel.Settings:
                     SetHeader(LGIcon.Gear, Loc.T("НАСТРОЙКИ"), Loc.T("Графика, звук, интерфейс и сохранения"));
                     break;
@@ -636,6 +644,7 @@ namespace StellarisClone.Rendering
             if (_open == Panel.None) return;
             SFXManager.Play("ui_click", 0.5f, 0.9f);
             if (_open == Panel.News) { if (_newsWin != null) _newsWin.Hide(); }
+            else if (_open == Panel.Load) { if (_loadScr != null) _loadScr.Hide(); }
             else if (_open != Panel.NewGame) LG.Hide(_window.gameObject);
             _open = Panel.None;
         }
@@ -654,7 +663,6 @@ namespace StellarisClone.Rendering
             page.gameObject.AddComponent<PageFade>();
             switch (p)
             {
-                case Panel.Load: SaveLoadPanel.Build(page, SaveLoadPanel.Mode.Load, confirmLoad: false); break;
                 case Panel.Settings: SettingsPanel.Build(page); break;
                 case Panel.About: BuildAboutPage(page); break;
             }

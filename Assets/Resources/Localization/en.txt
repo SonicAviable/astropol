@@ -7074,3 +7074,19 @@ Q / E — листать новости	Q / E — browse news
 {0:0}%	{0:0}%
 продукта галактики {0} {1} — или совет	of galactic output for {0} {1} — or the council
 больше всех очков к этому году	most points by this year
+ВАШИ ПАРТИИ	YOUR GAMES
+Сохранения сгруппированы по партиям: выберите империю слева, затем точку в её истории.	Saves are grouped by game: pick an empire on the left, then a point in its history.
+Сохранений пока нет — начните новую партию.	No saves yet — start a new game.
+ХРОНИКА ПАРТИИ	GAME CHRONICLE
+КОЛОНИЙ	COLONIES
+ТЕХН.	TECH
+{0} галактика	{0} galaxy
+Ручное сохранение	Manual save
+РУЧНОЕ	MANUAL
+{0}  ·  в игре {1}	{0}  ·  played {1}
+Нажмите ещё раз — сохранение будет удалено	Click again to delete this save
+ещё раз — удалить	again to delete
+{0} {1}  ·  {2}	{0} {1}  ·  {2}
+сохранений	saves
+сохранение	save
+сохранения	saves
