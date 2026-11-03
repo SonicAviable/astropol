@@ -1161,7 +1161,7 @@ namespace StellarisClone.Rendering
         private void BuildProduction(RectTransform rt)
         {
             var host = LGBuild.Rect(rt, "Production");
-            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -ProdTop), new Vector2(LeftW, ProdTileS + 100));
+            host.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(Pad, 26), new Vector2(LeftW, ProdTileS + 100));   // внизу слева
             _prodRoot = host.gameObject;
             LG.Motion(_prodRoot, LGAppear.Kind.SlideLeft).delay = 0.12f;
 
@@ -1384,6 +1384,7 @@ namespace StellarisClone.Rendering
                       : Loc.T("Нейтральный фронтир");
             _ownerText.text = on;
             _ownerText.color = oc;
+            _subtitle.text += $"   <color={LGBuild.Hex(CMuted)}>·</color>   <color={LGBuild.Hex(oc)}>{on}</color>";   // владелец — в строке над названием
             _ownerIcon.color = oc;
             _ownerIcon.sprite = LGIcons.Get(owner >= 0 ? LGIcon.Starbase : LGIcon.Star);
 
@@ -1849,13 +1850,14 @@ namespace StellarisClone.Rendering
             var chip = LGBuild.Panel(rt, "Owner", UIManager.DS.BgSlot);
             chip.rectTransform.At(new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(-6, -122), new Vector2(260, 30));
             LG.Chip(chip.gameObject, new Color(1f, 1f, 1f, 0.2f));
+            chip.gameObject.SetActive(false);   // плашка наезжала на кольца планеты; владелец — в подзаголовке
             _ownerIcon = LGIcons.Create(chip.transform, LGIcon.Starbase, 18, FleetIndicator.OwnColor);
             _ownerIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(18, 18));
             _ownerText = LGBuild.Label(chip.transform, "", 12, Color.white, TextAnchor.MiddleLeft, bold: true);
             _ownerText.rectTransform.Stretch(42, 0, 12, 0);
 
             var gov = LGBuild.Panel(rt, "Governor", UIManager.DS.BgSlot);
-            gov.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 1), new Vector2(6, -122), new Vector2(260, 30));
+            gov.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -84), new Vector2(260, 30));   // под «Закрыть»
             LG.Chip(gov.gameObject, new Color(1f, 0.80f, 0.32f, 0.3f));
             _govChip = gov.gameObject;
             var faceHost = LGBuild.Rect(gov.transform, "Face");
