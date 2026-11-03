@@ -1734,19 +1734,6 @@ namespace StellarisClone.Rendering
             _stage.pivot = new Vector2(0.5f, 0.5f);
             _stage.sizeDelta = new Vector2(540, 540);
 
-            // Голо-постамент под планетой: свечение и сплющенные кольца
-            var padGlow = Deco(_stage, "PadGlow", HaloSprite(), new Color(CCyan.r, CCyan.g, CCyan.b, 0.22f));
-            padGlow.rectTransform.anchorMin = new Vector2(-0.12f, -0.12f); padGlow.rectTransform.anchorMax = new Vector2(1.12f, 0.14f);
-            padGlow.rectTransform.offsetMin = padGlow.rectTransform.offsetMax = Vector2.zero;
-            float[] pads = { 0.80f, 0.66f, 0.52f };
-            for (int i = 0; i < pads.Length; i++)
-            {
-                var ring = Deco(_stage, "PadRing", RingSprite(512, i == 0 ? 3f : 2f), new Color(CCyan.r, CCyan.g, CCyan.b, i == 0 ? 0.55f : 0.22f));
-                ring.rectTransform.anchorMin = new Vector2(0.5f - pads[i], 0.02f - pads[i]);   // квадрат вокруг центра — масштабируется со сценой
-                ring.rectTransform.anchorMax = new Vector2(0.5f + pads[i], 0.02f + pads[i]);
-                ring.rectTransform.offsetMin = ring.rectTransform.offsetMax = Vector2.zero;
-                ring.rectTransform.localScale = new Vector3(1f, 0.16f, 1f);
-            }
             // Наклонная орбита за планетой
             var orbit = Deco(_stage, "Orbit", RingSprite(512, 2f), new Color(CGold.r, CGold.g, CGold.b, 0.45f));
             Fit(orbit.rectTransform, -0.30f);
