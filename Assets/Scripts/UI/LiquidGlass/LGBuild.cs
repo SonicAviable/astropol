@@ -90,7 +90,21 @@ namespace StellarisClone.Rendering
             float k = 1f - Mathf.Clamp01(dim);
             img.color = new Color(k, k, k * 1.05f, 1f);
             img.raycastTarget = false;
+            img.gameObject.AddComponent<WindowBgFx>().Init(img, FxTint(bg));
             return img;
+        }
+
+        /// <summary>Цвет искр и падающих звёзд под картинку задника.</summary>
+        private static Color FxTint(string bg)
+        {
+            switch (bg)
+            {
+                case "espionage":    return new Color(0.85f, 0.60f, 1.00f);
+                case "empire":       return new Color(1.00f, 0.86f, 0.55f);
+                case "shipdesigner": return new Color(0.55f, 0.90f, 1.00f);
+                case "colonies":     return new Color(0.60f, 1.00f, 0.85f);
+                default:             return new Color(0.75f, 0.90f, 1.00f);
+            }
         }
 
         public static Image Panel(Transform parent, string name, Color tint, bool raycast = false)
