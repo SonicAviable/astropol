@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
         private const float Pad = 40f, Gap = 14f, HeaderH = 104f;
         private const float LeftW = 380f;                       // левая колонна: доход, приоритет, производство
         private const float StatsTop = 330f, StatsH = 214f;
-        private const float PriorityTop = StatsTop;   // блок дохода скрыт: всё это уже видно на картах и выносках
+        private const float PriorityTop = 700f;   // внизу слева, над производством (блок дохода скрыт)
         private const float ProdTop = PriorityTop + 146f, ProdTileS = 92f;
         private const float CardW = 196f, CardH = 262f, CardGap = 14f;   // карты районов (+ карта «Строить»)
         private const float InfoW = 470f, InfoH = 300f, SocietyH = 236f, RightW = 360f;
