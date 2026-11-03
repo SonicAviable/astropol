@@ -16,11 +16,13 @@ namespace StellarisClone.Station3D
         internal Transform Panel;
         private float _focus, _focusTarget;
         private Vector3 _panelBase;
+        private float _phase;
 
         public void Init(StationActions.Entry e, Transform panel, Image glow)
         {
             Entry = e; Panel = panel; Glow = glow;
             _panelBase = panel != null ? panel.localPosition : Vector3.zero;
+            _phase = UnityEngine.Random.value * 6.283f;
         }
 
         public void SetFocused(bool on) => _focusTarget = on ? 1f : 0f;
@@ -31,7 +33,7 @@ namespace StellarisClone.Station3D
             _focus = Mathf.MoveTowards(_focus, _focusTarget, dt * 6f);
             if (Panel != null)
             {
-                float bob = Mathf.Sin(Time.unscaledTime * 1.3f + transform.GetInstanceID() * 0.37f) * 0.015f;
+                float bob = Mathf.Sin(Time.unscaledTime * 1.3f + _phase) * 0.015f;
                 Panel.localPosition = _panelBase + new Vector3(0f, bob + _focus * 0.04f, 0f);
                 Panel.localScale = Vector3.one * (1f + _focus * 0.06f);
             }
