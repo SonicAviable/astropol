@@ -24,6 +24,13 @@ namespace StellarisClone.Rendering
         public static string Version => "v" + GameVersion.Current + " · " + Loc.T("ранний доступ");
 
         private RectTransform _root;
+
+        /// <summary>Открывает окно первого запуска поверх меню (также для отладки из редактора).</summary>
+        public void ShowFirstRun()
+        {
+            if (FirstRunScreen.IsOpen || _root == null) return;
+            FirstRunScreen.Create(_root, () => GameSettings.ApplyNewGameDefaults(_ng));
+        }
         private RectTransform _window, _body;
         private Text _winTitle, _winSub;
         private Image _winIcon;
@@ -76,7 +83,7 @@ namespace StellarisClone.Rendering
             BuildWindow();
             BuildFooter();
             // Первый запуск — язык, графика, интерфейс и опыт игрока поверх меню
-            if (!GameSettings.FirstRunDone) FirstRunScreen.Create(_root, () => GameSettings.ApplyNewGameDefaults(_ng));
+            if (!GameSettings.FirstRunDone) ShowFirstRun();
 
             var cam = Camera.main;
             if (cam != null && cam.GetComponent<MainMenuCamera>() == null) cam.gameObject.AddComponent<MainMenuCamera>();
