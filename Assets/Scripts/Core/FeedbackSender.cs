@@ -21,6 +21,8 @@ namespace StellarisClone.Core
     {
         public const string Email = "astropolitymail@gmail.com";
         private const string Endpoint = "https://formsubmit.co/ajax/" + Email;
+        private const string PageOrigin = "https://astropolity.game";
+        private const string PageUrl = PageOrigin + "/feedback";
         private const int LogTailChars = 8000;
 
         public static readonly string[] CategoryKeys = { "Баг", "Идея", "Другое" };
@@ -61,6 +63,13 @@ namespace StellarisClone.Core
                 req.downloadHandler = new DownloadHandlerBuffer();
                 req.SetRequestHeader("Content-Type", "application/json");
                 req.SetRequestHeader("Accept", "application/json");
+                // FormSubmit отклоняет запросы без Referer/Origin («open this page through a web server»).
+                try
+                {
+                    req.SetRequestHeader("Referer", PageUrl);
+                    req.SetRequestHeader("Origin", PageOrigin);
+                }
+                catch (Exception e) { Debug.LogWarning("[Обратная связь] Заголовок не задан: " + e.Message); }
                 req.timeout = 20;
                 yield return req.SendWebRequest();
 
