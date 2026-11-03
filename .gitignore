@@ -41,3 +41,7 @@ crashlytics-build.properties
 # Сторонние ассеты из Asset Store — тяжёлые, хранятся локально (список — в README)
 /[Aa]ssets/ThirdParty/
 /[Aa]ssets/ThirdParty.meta
+
+# Unity Version Control (не используем)
+/.plastic/
+ignore.conf
