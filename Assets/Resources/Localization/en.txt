@@ -7225,3 +7225,29 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 Рекомендуем качество «{0}»	Recommended quality: {0}
 Тени, сглаживание и масштаб рендера	Shadows, anti-aliasing and render scale
 Экран	Display
+ОБРАТНАЯ СВЯЗЬ	FEEDBACK
+Сообщить о баге или предложить идею	Report a bug or suggest an idea
+Нашли баг или есть идея?	Found a bug or have an idea?
+Сообщение придёт разработчику на почту. Опишите, что делали и что пошло не так — так баг найдётся быстрее.	Your message goes straight to the developer's inbox. Describe what you were doing and what went wrong — it helps us find the bug faster.
+Баг	Bug
+Идея	Idea
+Другое	Other
+Что случилось? Что вы делали перед этим? Повторяется ли?	What happened? What were you doing just before? Does it happen again?
+Контакт для ответа	Contact for a reply
+Почта, VK или Telegram — необязательно	Email, VK or Telegram — optional
+необязательно	optional
+Приложить сведения о системе	Attach system info
+Версия, ОС, видеокарта и журнал игры — помогает найти баг	Version, OS, graphics card and game log — helps track down bugs
+ОТПРАВИТЬ	SEND
+ЧЕРЕЗ ПОЧТУ	VIA EMAIL APP
+Открыть почтовую программу с готовым письмом на {0}	Open your email app with a ready-made message to {0}
+Опишите чуть подробнее — хотя бы пару слов.	Please add a bit more detail — at least a few words.
+Сообщение уже отправлено. Подождите полминуты перед следующим.	Message already sent. Please wait half a minute before sending another.
+Нет подключения к интернету.	No internet connection.
+ОТПРАВЛЯЕМ…	SENDING…
+Отправляем сообщение…	Sending your message…
+ОТПРАВЛЕНО	SENT
+Спасибо! Сообщение отправлено — мы его прочитаем.	Thank you! Your message has been sent — we'll read it.
+Не удалось отправить.	Couldn't send.
+ПОВТОРИТЬ	RETRY
+Попробуйте ещё раз или нажмите «Через почту» — откроется письмо с уже заполненным текстом.	Try again or press "Via email app" — it opens a message with your text already filled in.

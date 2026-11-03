@@ -139,7 +139,7 @@ namespace StellarisClone.Rendering
             if (sel != null && sel.GetComponent<InputField>() != null && sel.GetComponent<InputField>().isFocused) return;
 
             // Окна, которые сами обрабатывают Esc (закрылось в этом кадре раньше нас — тоже не открываем паузу)
-            if (UIEsc.ConsumedThisFrame) return;
+            if (UIEsc.ConsumedThisFrame || FeedbackWindow.IsOpen) return;
             if (ColonyManagerWindow.IsOpenNow || BuildMenuModal.IsOpenNow) return;
             if (StellarisClone.Cards.AssaultDeckWindow.IsOpenNow || StellarisClone.Cards.ArsenalWindow.IsOpenNow) return;
             if (NotificationLog.IsOpenNow || GameSummaryWindow.IsOpenNow || EmpireGoalsChoice.IsOpenNow) return;
@@ -394,6 +394,7 @@ namespace StellarisClone.Rendering
             Item(ref y, Loc.T("ИТОГИ ПАРТИИ"), new Color(0.55f, 0.8f, 1f), () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
             Item(ref y, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.8f, 0.85f), () => OpenFull(false));
             Item(ref y, Loc.T("УПРАВЛЕНИЕ"), new Color(0.7f, 0.8f, 0.85f), () => ShowPage(Page.Controls));
+            Item(ref y, Loc.T("ОБРАТНАЯ СВЯЗЬ"), new Color(0.7f, 0.8f, 0.85f), () => FeedbackWindow.Open(_modalRoot));
 
             // Выход — три кнопки в ряд у нижнего края
             var exitRow = LGBuild.Rect(host, "Exit");

@@ -90,7 +90,7 @@ namespace StellarisClone.Rendering
             AnimateNewGame();
             FitWindow();
 
-            if (LoadingScreen.IsActive || FirstRunScreen.IsOpen) return;   // идёт загрузка или окно первого запуска — меню не слушает клавиши
+            if (LoadingScreen.IsActive || FirstRunScreen.IsOpen || FeedbackWindow.IsOpen) return;   // идёт загрузка или окно первого запуска — меню не слушает клавиши
             if (Input.GetKeyDown(KeyCode.Escape) && _open != Panel.None && !IsTyping()) Close();
             // Enter — сразу в последнюю партию
             if (_open == Panel.None && _continueCard != null && !_continueCard.Disabled && _heroK > 0.9f && !IsTyping()
@@ -458,7 +458,7 @@ namespace StellarisClone.Rendering
             c.Arrow = (RectTransform)arrow.transform;
         }
 
-        /// <summary>Углы экрана: «Выход» слева, настройки и справка справа.</summary>
+        /// <summary>Углы экрана: «Выход» слева, настройки и справка справа, обратная связь справа внизу.</summary>
         private void BuildCorners()
         {
             _corners = LGBuild.Rect(_root, "Corners");
@@ -476,6 +476,12 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(help.gameObject, Loc.T("Об игре: как играть и пути к победе"));
             foreach (var b in new[] { set.transform, help.transform }) b.gameObject.AddComponent<MenuFadeIn>().Delay = 1.3f;
             exit.gameObject.AddComponent<MenuFadeIn>().Delay = 1.3f;
+
+            // Справа внизу — обратная связь: баг, идея, вопрос разработчику на почту
+            var fb = MenuLink.Create(_corners, Loc.T("ОБРАТНАЯ СВЯЗЬ"), new Color(0.62f, 0.80f, 0.86f), () => FeedbackWindow.Open(_root), LGIcon.Warning);
+            ((RectTransform)fb.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-56, 36), new Vector2(214, 36));
+            TooltipHelper.Attach(fb.gameObject, Loc.T("Сообщить о баге или предложить идею"));
+            fb.gameObject.AddComponent<MenuFadeIn>().Delay = 1.4f;
         }
 
         /// <summary>Окно открыто — карточки уезжают вниз и гаснут, логотип поднимается и тает; закрыто — всё возвращается.</summary>
