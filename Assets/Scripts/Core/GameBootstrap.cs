@@ -161,6 +161,7 @@ namespace StellarisClone.Core
             EnsureComp<FleetSelectionController>("[UI] FleetSelectionController");
             EnsureComp<FleetRouteOverlay>("[UI] FleetRouteOverlay");
             EnsureComp<FleetCommandHUD>("[UI] FleetCommandHUD");
+            EnsureComp<StellarisClone.Station3D.StationWalkMode>("[3D] StationWalkMode");
         }
 
         private static void EnsureComp<T>(string name) where T : Component

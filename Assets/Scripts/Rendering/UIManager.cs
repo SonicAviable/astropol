@@ -640,6 +640,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, UIAnchors.LogHelp,
                  Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O");
             NotificationLog.AttachBadge(menu.transform.Find("NavLog/IconTile"));
+            Item("NavStation3D", LGIcon.Starbase, Loc.T("Станция 3D"), DS.NeonCyan, StellarisClone.Station3D.StationWalkMode.Toggle, null,
+                 Loc.T("<b>Звёздная станция в 3D</b>\nПерейти на борт своей станции и пройтись по ней. Пульты открывают те же окна, что и меню: технологии, колонии, верфь, дипломатия. Игра идёт как обычно. Esc — назад на карту"), "Y");
             // «Справка» — маленькая кнопка «?» в шапке планировщика справа (OutlinerPanel), клавиша F1
 
             // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
@@ -768,6 +770,20 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         public void OpenNavWindow(NavWindow w)
         {
             if (!IsWindowOpen(w)) ToggleWindow(w);
+        }
+
+        /// <summary>Открыто ли какое-либо главное окно или модалка (3D-станция в это время отпускает курсор).</summary>
+        private static NavWindow[] s_navAll;
+
+        public bool AnyWindowOpenPublic
+        {
+            get
+            {
+                s_navAll ??= (NavWindow[])System.Enum.GetValues(typeof(NavWindow));
+                foreach (var w in s_navAll)
+                    if (IsWindowOpen(w)) return true;
+                return (_modalDim != null && LG.IsVisible(_modalDim)) || IsShipyardOpen || StarbaseWindowOpen || IsBlockingFlowOpen;
+            }
         }
 
         private static bool IsWindowOpen(NavWindow w) => w switch
