@@ -58,6 +58,31 @@ namespace StellarisClone.Rendering
             return rt;
         }
 
+        private static Texture2D s_nebula;
+
+        /// <summary>
+        /// Задник окна — затемнённая туманность (Menu/menu_bg) внутри скруглённой маски окна. Не ловит клики,
+        /// стекло её не размывает (LG.Ignore). dim — сила затемнения, 0..1.
+        /// </summary>
+        public static RawImage Nebula(Transform root, float radius, float dim = 0.55f, Rect? uv = null)
+        {
+            if (s_nebula == null) s_nebula = Resources.Load<Texture2D>("Menu/menu_bg");
+            var mask = LG.RoundedMask(root, radius);
+            mask.SetAsFirstSibling();
+            LG.Ignore(mask.gameObject);
+            var go = new GameObject("Nebula", typeof(RectTransform), typeof(RawImage));
+            go.transform.SetParent(mask, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.GetComponent<RawImage>();
+            img.texture = s_nebula;
+            img.uvRect = uv ?? new Rect(0.1f, 0.15f, 0.8f, 0.7f);
+            float k = 1f - Mathf.Clamp01(dim);
+            img.color = new Color(k, k, k * 1.05f, 1f);
+            img.raycastTarget = false;
+            return img;
+        }
+
         public static Image Panel(Transform parent, string name, Color tint, bool raycast = false)
         {
             var rt = Rect(parent, name);
