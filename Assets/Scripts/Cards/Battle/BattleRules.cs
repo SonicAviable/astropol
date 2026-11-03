@@ -127,7 +127,11 @@ namespace StellarisClone.Cards
                 sd.Pending.Clear();
             }
             if (Turn == 3) RevealWeather();
+            if (Turn == EventTurn && EnableBattleEvents) RollBattleEvent();
         }
+
+        /// <summary>События боя на <see cref="EventTurn"/>-м ходу (отключаются для сравнения баланса).</summary>
+        public static bool EnableBattleEvents = true;
 
         /// <summary>
         /// Муллиган: заменить выбранные карты стартовой руки — один раз за бой, до первого розыгрыша.
@@ -232,10 +236,13 @@ namespace StellarisClone.Cards
             if (!Over) RevealSide(Enemy(first));
             if (Over) return;
 
-            // Ауры на этот ход (комендант, узел дронов)
+            // Ауры на этот ход (комендант, узел дронов), затем приказы героев и доктрины фракций
             foreach (var sec in Sectors)
                 foreach (var u in new List<BUnit>(sec.Units))
                     if (u.Alive && u.Revealed && !u.IsTrap) u.Def.OnPreCombat?.Invoke(this, u);
+            ApplyHeroPowers();
+            if (Over) return;
+            ApplyDoctrines();
             for (int i = 0; i < 3; i++) Combat(i);
             EndTurn();
         }

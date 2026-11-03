@@ -332,6 +332,9 @@ namespace StellarisClone.Cards
                     break;
                 }
                 case EvType.Weather: yield return OnWeather(e); break;
+                case EvType.Synergy: yield return OnSynergy(e); break;
+                case EvType.HeroPower: yield return OnHeroPowerEvent(e); break;
+                case EvType.BattleEvent: yield return OnBattleEvent(e); break;
                 case EvType.Breach:
                 {
                     int hq = e.Sector;

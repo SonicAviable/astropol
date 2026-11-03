@@ -7305,3 +7305,51 @@ Enter — начать · Esc — оставить как есть	Enter — sta
    ·   <color=#66F59E>пакт</color>	   ·   <color=#66F59E>pact</color>
 Вы пока не встретили ни одной империи.	You have not met any empire yet.
 \n<color=#8AA2A8>До следующего уровня:</color> {0:0} опыта	\n<color=#8AA2A8>To next level:</color> {0:0} XP
+Братство	Brotherhood
+Железная дисциплина	Iron Discipline
+Выгодный контракт	Lucrative Contract
+Единое сознание	One Mind
+Симбиоз	Symbiosis
+Сеть роя	Swarm Network
+2+ карты Республики в секторе: все ваши в секторе укрытие 2, карты Республики +1 к силе	2+ Republic cards in a sector: all your units there get cover 2, Republic cards +1 power
+2+ карты Доминиона в секторе: они +2 к силе	2+ Dominion cards in a sector: they get +2 power
+2+ карты Синдиката в секторе: они +2 к силе и +1 очко приказов в следующем ходу	2+ Syndicate cards in a sector: they get +2 power and +1 order point next turn
+2+ карты Оракула в секторе: враги сектора −1 к силе	2+ Oracle cards in a sector: enemies there get −1 power
+2+ карты Конклава в секторе: все ваши в секторе +2 брони, карты Конклава +1 к силе	2+ Conclave cards in a sector: all your units there +2 armor, Conclave cards +1 power
+2+ дрона в секторе: каждый дрон +1 к силе	2+ drones in a sector: each drone +1 power
+Держать строй!	Hold the Line!
+В атаку!	Charge!
+Раз за бой: союзники в секторе героя получают укрытие 3 и +2 брони на этот ход	Once per battle: allies in the hero's sector get cover 3 and +2 armor this turn
+Раз за бой: союзники в секторе героя +2 к силе на этот ход, герой бьёт первым	Once per battle: allies in the hero's sector +2 power this turn, the hero strikes first
+Приказы героев отключены	Hero orders are disabled
+Приказ героя уже отдан в этом бою	The hero order has already been used this battle
+Герой ещё не на столе	The hero is not on the table yet
+Обломки с орбиты	Orbital Debris
+В один сектор падают обломки кораблей: по 2 урона случайному юниту каждой стороны	Ship wreckage falls on a sector: 2 damage to a random unit of each side
+Сброс снабжения	Supply Drop
+Обе стороны берут по карте	Both sides draw a card
+Глушение связи	Comms Jamming
+В этом ходу у обеих сторон на 1 очко приказов меньше	Both sides have 1 fewer order point this turn
+Подкрепление с орбиты	Orbital Reinforcements
+Флот десанта сбрасывает отряд морской пехоты в самый тяжёлый сектор	The landing fleet drops a marine squad into the hardest sector
+Мятеж ополчения	Militia Mutiny
+Недовольное ополчение колонии переходит на сторону десанта	Disgruntled colony militia defects to the attackers
+Народное ополчение	People's Militia
+Жители верной колонии берут оружие: ополчение в Штабе	Loyal colonists take up arms: militia in the HQ
+<b>Прогноз хода</b>\nНа основе {0} прогонов этого хода с вашими выложенными картами: враг отвечает как ИИ, его карты вам неизвестны.\nШанс — сектор останется за вами после перестрелки; потери — сколько ваших : вражеских юнитов в среднем погибнет	<b>Turn forecast</b>\nBased on {0} simulations of this turn with the cards you have placed: the enemy responds as the AI, its cards are unknown to you.\nChance — the sector stays yours after the firefight; losses — how many of your : enemy units die on average
+Доктрина	Doctrine
+ПРИКАЗ ГЕРОЯ	HERO ORDER
+<color=#9AA6B0>доктрина {0}/{1}</color>	<color=#9AA6B0>doctrine {0}/{1}</color>
+ОТМЕНИТЬ ПРИКАЗ	CANCEL ORDER
+ПРИКАЗ ОТДАН	ORDER USED
+Приказ героя	Hero order
+Сработает при подведении хода, после раскрытия карт. Клавиша H	Triggers when the turn resolves, after cards are revealed. Key H
+<color=#{0}><b>{1}%</b></color> <color=#9AA6B0>удержать</color>  <color=#8AA2A8>потери {2:0.#}:{3:0.#}</color>	<color=#{0}><b>{1}%</b></color> <color=#9AA6B0>hold</color>  <color=#8AA2A8>losses {2:0.#}:{3:0.#}</color>
+Прогноз: этот ход может решить бой в вашу пользу ({0:0}%)	Forecast: this turn may win the battle ({0:0}%)
+Прогноз: при таком ходе бой, скорее всего, будет проигран ({0:0}%)	Forecast: with this play the battle will most likely be lost ({0:0}%)
+Приказ героя «{0}» сработает при подведении хода	Hero order “{0}” will trigger when the turn resolves
+<color=#{0}>Доктрина «{1}» — {2}, сектор «{3}»</color>	<color=#{0}>Doctrine “{1}” — {2}, sector “{3}”</color>
+<color=#FFD36B>{0}: приказ героя «{1}»</color>	<color=#FFD36B>{0}: hero order “{1}”</color>
+Ваш герой	Your hero
+Вражеский герой	Enemy hero
+<color=#C4A8FF>Событие боя: {0}</color>	<color=#C4A8FF>Battle event: {0}</color>

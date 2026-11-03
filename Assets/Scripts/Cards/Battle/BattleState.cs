@@ -31,6 +31,8 @@ namespace StellarisClone.Cards
         /// <summary>Бонус к силе до конца боя и только на этот ход.</summary>
         public int PowerBonus, TempPower;
         public int CoverLeft;
+        /// <summary>Бонус доктрины фракции: пересчитывается каждый ход и входит в силу, в том числе для контроля сектора.</summary>
+        public int Doctrine;
         public int Suppressed, Disabled, Immobile;
         public bool Dead, Revealed, Hidden;
         public CardDef Def => Card.Def;
@@ -74,13 +76,21 @@ namespace StellarisClone.Cards
         public bool SeesEnemyHand;
         /// <summary>Стартовая рука уже пересдана (муллиган — один раз за бой).</summary>
         public bool Mulliganed;
+        /// <summary>Приказ героя (раз за бой): уже применён / отдан в этом ходу и сработает при подведении.</summary>
+        public bool HeroPowerUsed, HeroPowerQueued;
     }
 
     /// <summary>Что произошло — экран боя проигрывает эти события по порядку (анимации), автобой их игнорирует.</summary>
     public enum EvType
     {
         TurnStart, Draw, Reveal, OrderFx, TrapSet, TrapFire, Shot, Damage, Cover, Heal, Death, Spawn, Move,
-        Status, Buff, Control, ShieldDown, Weather, Breach, Retreat, End, Log, Steal
+        Status, Buff, Control, ShieldDown, Weather, Breach, Retreat, End, Log, Steal,
+        /// <summary>Доктрина фракции сработала в секторе (Text — ключ фракции, Amount — сколько карт).</summary>
+        Synergy,
+        /// <summary>Приказ героя (Text — id карты героя).</summary>
+        HeroPower,
+        /// <summary>Событие боя на 5-м ходу (Text — id события).</summary>
+        BattleEvent
     }
 
     public sealed class BEvent
@@ -217,7 +227,7 @@ namespace StellarisClone.Cards
         public int Power(BUnit u)
         {
             if (u == null || u.Dead || u.IsTrap) return 0;
-            int p = u.BasePower + u.PowerBonus + u.TempPower;
+            int p = u.BasePower + u.PowerBonus + u.TempPower + u.Doctrine;
             if (u.Has(Kw.Swarm)) p = Math.Min(p, u.Armor);
             if (WeatherActive && Setup.Terrain == Terrain.Continental && u.Has(Kw.Vehicle)) p -= 1;
             return Math.Max(0, p);

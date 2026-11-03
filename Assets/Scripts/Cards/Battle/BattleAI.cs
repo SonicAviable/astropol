@@ -45,6 +45,24 @@ namespace StellarisClone.Cards
                 b.Play(side, bestCard, bestSec);
                 Apply(b, side, bestCard, bestSec, mine, theirs);
             }
+            PlanHeroPower(b, side, skill, mine, theirs);
+        }
+
+        /// <summary>
+        /// Приказ героя — в спорном секторе (перевес не больше 4 в любую сторону) или на последнем ходу.
+        /// Слабый ИИ иногда забывает о нём.
+        /// </summary>
+        private static void PlanHeroPower(BattleState b, int side, int skill, float[] mine, float[] theirs)
+        {
+            if (b.Sides[side].HeroPowerQueued || b.CanHeroPower(side) != null) return;
+            var hero = b.HeroOnBoard(side);
+            int s = hero.Sector;
+            bool contested = theirs[s] > 0 && Math.Abs(mine[s] - theirs[s]) <= 4f;
+            bool last = b.Turn >= BattleState.Turns;
+            bool hqThreat = b.BreachWarned && b.Sectors[s].Type == SectorType.HQ;
+            if (!(contested || last || hqThreat)) return;
+            if (skill <= 1 && b.Rng.NextDouble() < 0.4) return;
+            b.ToggleHeroPower(side);
         }
 
         /// <summary>
@@ -135,6 +153,10 @@ namespace StellarisClone.Cards
                 if (d.Id == "U9") gainMine += 2f;
                 if (d.Id == "U7" || d.Id == "U8") extra += 0.03f;
                 if (d.Has(Kw.Indirect)) extra += 0.04f;
+                // Доктрина фракции: карта добивает нужное число своих в секторе
+                string f = b.Sides[side].Faction;
+                bool counts = f == "nol" ? d.Has(Kw.Drone) : d.Faction != null && d.Faction == f;
+                if (counts && b.DoctrineCount(side, s) == b.DoctrineNeed(side) - 1) extra += 0.07f;
             }
             else if (d.Kind == CardKind.Trap)
             {

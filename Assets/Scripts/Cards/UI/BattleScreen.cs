@@ -266,6 +266,7 @@ namespace StellarisClone.Cards
             BuildPortraits();
             BuildRight();
             BuildLeft();
+            BuildExtras();
 
             _hintText = Caption(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 0.8f);
             var hol = _hintText.gameObject.AddComponent<Outline>();
@@ -1500,6 +1501,7 @@ namespace StellarisClone.Cards
             }
 
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) OnEndTurn();
+            TickExtras(dt);
         }
 
         private float _ambientT;
@@ -1719,6 +1721,7 @@ namespace StellarisClone.Cards
             for (int i = 0; i < 3; i++) RefreshSector(i);
             _logText.text = string.Join("\n", _log.Count > 10 ? _log.GetRange(_log.Count - 10, 10) : _log);
             if (_mercButton != null) _mercButton.interactable = !_busy && !_state.Over && me.Treasury != null && me.Treasury() >= 60f;
+            RefreshExtras();
         }
 
         /// <summary>Рука врага — рубашки веером рядом с его портретом.</summary>
