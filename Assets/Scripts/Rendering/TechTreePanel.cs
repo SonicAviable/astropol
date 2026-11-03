@@ -796,7 +796,7 @@ namespace StellarisClone.Rendering
             c.Fx.SpecularMultiplier = 0.6f;
             c.Hover = bg.gameObject.AddComponent<TechCardFX>();
 
-            var art = LGIcons.TechArt(t.Category);
+            var art = LGIcons.TechArt(t.Id, t.Category);
             c.Icon = LGIcons.Create(c.Disc.transform, LGIcons.ForTechCategory(t.Category), art != null ? N * 0.66f : N * 0.46f, cc);
             if (art != null) { c.Icon.sprite = art; c.Icon.preserveAspect = true; }
             c.StateIcon = LGIcons.Create(rt, LGIcon.Lock, 15, Muted);
@@ -1141,7 +1141,7 @@ namespace StellarisClone.Rendering
             sel.transition = Selectable.Transition.None;
             sel.onClick.AddListener(() => Reveal(t));
 
-            var art = LGIcons.TechArt(t.Category);
+            var art = LGIcons.TechArt(t.Id, t.Category);
             var ic = LGIcons.Create(rt, LGIcons.ForTechCategory(t.Category), art != null ? 42f : 26f, cc);
             if (art != null) { ic.sprite = art; ic.preserveAspect = true; }
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 4), new Vector2(42, 42));
@@ -1229,7 +1229,7 @@ namespace StellarisClone.Rendering
             _detailName.text = t.Name;
             _detailSub.text = $"<color={LGBuild.Hex(TechBranchInfo.Color(br))}>{TechBranchInfo.Name(br)}</color>  ·  " +
                               $"{TechCategoryInfo.Name(t.Category)}  ·  {(t.Tier == 0 ? Loc.T("БАЗОВАЯ") : Loc.T("УРОВЕНЬ ") + Roman(t.Tier))}";
-            var detailArt = LGIcons.TechArt(t.Category);
+            var detailArt = LGIcons.TechArt(t.Id, t.Category);
             _detailIcon.sprite = detailArt ?? LGIcons.Get(LGIcons.ForTechCategory(t.Category));
             _detailIcon.rectTransform.sizeDelta = detailArt != null ? new Vector2(54, 54) : new Vector2(38, 38);
             _detailIcon.color = cc;

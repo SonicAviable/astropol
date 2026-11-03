@@ -115,6 +115,13 @@ namespace StellarisClone.Rendering
         public static Sprite TechArt(StellarisClone.Core.TechCategory c)
             => LoadArt("Tech/tech_" + c.ToString().ToLowerInvariant());
 
+        /// <summary>
+        /// Свой значок технологии (Resources/UI/Icons/Tech/&lt;id технологии&gt;.png, например wpn_kin_1.png),
+        /// а если его нет — общий значок её направления.
+        /// </summary>
+        public static Sprite TechArt(string techId, StellarisClone.Core.TechCategory c)
+            => (string.IsNullOrEmpty(techId) ? null : LoadArt("Tech/" + techId)) ?? TechArt(c);
+
         /// <summary>Значок ветки науки (Resources/UI/Icons/Tech/branch_&lt;ветка&gt;.png) или null.</summary>
         public static Sprite BranchArt(StellarisClone.Core.TechBranch b)
             => LoadArt("Tech/branch_" + b.ToString().ToLowerInvariant());
