@@ -85,7 +85,7 @@ namespace StellarisClone.Rendering
             var shade = LGBuild.Panel(shadeMask, "Shade", new Color(0.016f, 0.016f, 0.04f, 0.62f));
             shade.rectTransform.Stretch();
             LG.Ignore(shadeMask.gameObject);
-            LGBuild.Nebula(rootRt, 26f, 0.5f);   // туманность под затемнением
+            LGBuild.Nebula(rootRt, 26f, 0.15f, bg: "espionage");   // туманность под затемнением
 
             BuildHeader(rootRt);
 

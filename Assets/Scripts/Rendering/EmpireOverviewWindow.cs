@@ -128,7 +128,7 @@ namespace StellarisClone.Rendering
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(WindowRim);
             LG.Motion(_root, LGAppear.Kind.Pop).inDuration = 0.45f;
-            LGBuild.Nebula(rootRt, 24f, 0.62f);   // задник — туманность
+            LGBuild.Nebula(rootRt, 24f, 0.35f, bg: "empire");   // задник — туманность
 
             // «Штаб»: шапка с правителем и гербом, полоса ресурсов, слева вкладки с таблицей,
             // справа — империя в цифрах, требует внимания и путь к победе

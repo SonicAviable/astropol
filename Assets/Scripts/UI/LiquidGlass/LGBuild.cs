@@ -58,15 +58,25 @@ namespace StellarisClone.Rendering
             return rt;
         }
 
-        private static Texture2D s_nebula;
+        private static readonly System.Collections.Generic.Dictionary<string, Texture2D> s_bg =
+            new System.Collections.Generic.Dictionary<string, Texture2D>();
 
         /// <summary>
         /// Задник окна — затемнённая туманность (Menu/menu_bg) внутри скруглённой маски окна. Не ловит клики,
-        /// стекло её не размывает (LG.Ignore). dim — сила затемнения, 0..1.
+        /// стекло её не размывает (LG.Ignore). dim — сила затемнения, 0..1. bg — картинка из Resources/WindowBg
+        /// (если её нет — туманность меню).
         /// </summary>
-        public static RawImage Nebula(Transform root, float radius, float dim = 0.55f, Rect? uv = null)
+        public static RawImage Nebula(Transform root, float radius, float dim = 0.55f, Rect? uv = null, string bg = null)
         {
-            if (s_nebula == null) s_nebula = Resources.Load<Texture2D>("Menu/menu_bg");
+            string key = bg ?? "";
+            if (!s_bg.TryGetValue(key, out var tex) || tex == null)
+            {
+                tex = bg != null ? Resources.Load<Texture2D>("WindowBg/" + bg) : null;
+                if (tex != null) uv = uv ?? new Rect(0f, 0f, 1f, 1f);
+                else tex = Resources.Load<Texture2D>("Menu/menu_bg");
+                s_bg[key] = tex;
+            }
+            else if (bg != null && tex.name == bg) uv = uv ?? new Rect(0f, 0f, 1f, 1f);
             var mask = LG.RoundedMask(root, radius);
             mask.SetAsFirstSibling();
             LG.Ignore(mask.gameObject);
@@ -75,7 +85,7 @@ namespace StellarisClone.Rendering
             var rt = (RectTransform)go.transform;
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
             var img = go.GetComponent<RawImage>();
-            img.texture = s_nebula;
+            img.texture = tex;
             img.uvRect = uv ?? new Rect(0.1f, 0.15f, 0.8f, 0.7f);
             float k = 1f - Mathf.Clamp01(dim);
             img.color = new Color(k, k, k * 1.05f, 1f);
