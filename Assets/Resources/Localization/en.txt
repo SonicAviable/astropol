@@ -7251,3 +7251,57 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 Не удалось отправить.	Couldn't send.
 ПОВТОРИТЬ	RETRY
 Попробуйте ещё раз или нажмите «Через почту» — откроется письмо с уже заполненным текстом.	Try again or press "Via email app" — it opens a message with your text already filled in.
+Агентов {0}   ·   защита вашей империи <color=#66E0D0>{1:0}%</color>	Agents {0}   ·   your empire's defense <color=#66E0D0>{1:0}%</color>
+  <size=14><color=#8DA2B4>· ур. {0}</color></size>	  <size=14><color=#8DA2B4>· lvl {0}</color></size>
+ЖДЁТ НАЗНАЧЕНИЯ	AWAITING ORDERS
+КОНТРРАЗВЕДКА	COUNTERINTELLIGENCE
+СТРОИТ СЕТЬ	BUILDING NETWORK
+система не выбрана	no system chosen
+Отношение {0:+0;-0;0}   ·   защита цели {1:0}%	Opinion {0:+0;-0;0}   ·   target defense {1:0}%
+Сеть в системе агента {0:0}%	Network in the agent's system {0:0}%
+<color=#F2C766>заморожена</color>	<color=#F2C766>frozen</color>
+<color=#66F59E>+{0:0.#}</color> / мес	<color=#66F59E>+{0:0.#}</color> / mo
+Империя пала — отзовите агента.	The empire has fallen — recall the agent.
+ОПЕРАЦИИ	OPERATIONS
+Вернуться к операциям	Back to operations
+Запасы, доходы, наука и мощь флота цели — открываются при сети {0:0}%	Target's stockpiles, income, science and fleet power — unlocked at {0:0}% network
+<color=#8AA2A8>Следующее:</color>  <color=#BD8FFF><b>{0}</b></color> при {1:0}%  <color=#8AA2A8>(ещё {2:0.#}%)</color>	<color=#8AA2A8>Next:</color>  <color=#BD8FFF><b>{0}</b></color> at {1:0}%  <color=#8AA2A8>({2:0.#}% to go)</color>
+<color=#66F59E>Все награды разведки открыты</color>	<color=#66F59E>All intelligence rewards unlocked</color>
+<color={0}><b>{1:0}%</b></color> успех   <color=#F2C766>★{2:0}</color>   {3} мес.	<color={0}><b>{1:0}%</b></color> success   <color=#F2C766>★{2:0}</color>   {3} mo
+нужна сеть {0:0}%  ·  ещё {1:0.#}%	needs {0:0}% network  ·  {1:0.#}% to go
+ВЫБРАТЬ	CHOOSE
+\nстравливаем с {0}	\nturning them against {0}
+Осталось {0} мес.   ·   шанс успеха {1:0}%	{0} mo left   ·   success chance {1:0}%
+ Пока идёт операция, сеть не растёт.	 The network does not grow while the operation is under way.
+Досье закрыто\n<size=12><color=#8AA2A8>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>	Dossier locked\n<size=12><color=#8AA2A8>Opens at {0:0}% network — now {1:0}%.\nTarget's stockpiles, income, science and fleet power.</color></size>
+<color={0}>Систем</color> {1}   <color={2}>Население</color> {3}\n	<color={0}>Systems</color> {1}   <color={2}>Population</color> {3}\n
+<color={0}>Мощь флота</color> {1:N0}\n	<color={0}>Fleet power</color> {1:N0}\n
+<color={0}>Технологий</color> {1} из {2}\n	<color={0}>Technologies</color> {1} of {2}\n
+<color={0}>Изучает</color> {1}	<color={0}>Researching</color> {1}
+ЗАЩИТА ИМПЕРИИ	EMPIRE DEFENSE
+Агент  <color=#66E0D0><b>+{0:0}%</b></color>\nБазовая  {1:0}%\nТехнологии  +{2:0}%	Agent  <color=#66E0D0><b>+{0:0}%</b></color>\nBase  {1:0}%\nTechnologies  +{2:0}%
+сорвано чужих операций	foreign operations foiled
+прорывов к вам	breaches against you
+СМЕНИТЬ ПОСТ	CHANGE POST
+Снять агента с контрразведки и выбрать ему новый пост. Защита империи сразу снизится.	Take the agent off counterintelligence and choose a new post. Your empire's defense drops at once.
+Контрразведка защищает вашу империю. Внедрение — агент строит разведсеть в чужой империи; систему вы выберете на карте.	Counterintelligence protects your empire. Infiltration — the agent builds a spy network in a foreign empire; you pick the system on the map.
+Защита вашей империи +{0:0}%	Your empire's defense +{0:0}%
+отношение {0:+0;-0;0}  ·  защита {1:0}%  ·  сеть {2:0}%	opinion {0:+0;-0;0}  ·  defense {1:0}%  ·  network {2:0}%
+  ·  <color=#FF7A7A>война</color>	  ·  <color=#FF7A7A>war</color>
+Выбрать на карте систему, откуда агент будет строить сеть	Pick the system on the map from which the agent will build the network
+Кандидатов в агенты нет\n<size=12><color=#8AA2A8>Список кандидатов обновляется каждый год.</color></size>	No agent candidates\n<size=12><color=#8AA2A8>The candidate list refreshes every year.</color></size>
+{0} лет	{0} years old
+<color=#F2C766>★{0:0}</color> найм   ·   {1:0.#} гелия-3 в месяц   ·   лидеров {2}/{3}	<color=#F2C766>★{0:0}</color> to hire   ·   {1:0.#} helium-3 per month   ·   leaders {2}/{3}
+Без вашего агента: {0}.	No agent of yours in: {0}.
+Контрразведка дома не занята.	Counterintelligence at home is unmanned.
+НАНЯТЬ АГЕНТА  ★{0:0}	HIRE AGENT  ★{0:0}
+Наймите агента — колонка справа	Hire an agent — column on the right
+АГЕНТОВ ПОКА НЕТ	NO AGENTS YET
+Внедрите агента в чужую империю. Он строит разведсеть из выбранной вами системы — сильнее всего там, слабее у соседей по гиперкоридорам. Без агента сеть тает.	Infiltrate an agent into a foreign empire. They build a spy network from the system you choose — strongest there, weaker in neighbors along the hyperlanes. Without an agent the network fades.
+ЧТО ОТКРЫВАЕТ СЕТЬ	WHAT THE NETWORK UNLOCKS
+РАЗВЕДСЕТЬ ПО ИМПЕРИЯМ	SPY NETWORK BY EMPIRE
+нет агента	no agent
+<b>{0}</b>\nСеть {1:0}%   ·   защита {2:0}%   ·   отношение {3:+0;-0;0}	<b>{0}</b>\nNetwork {1:0}%   ·   defense {2:0}%   ·   opinion {3:+0;-0;0}
+   ·   <color=#66F59E>пакт</color>	   ·   <color=#66F59E>pact</color>
+Вы пока не встретили ни одной империи.	You have not met any empire yet.
+\n<color=#8AA2A8>До следующего уровня:</color> {0:0} опыта	\n<color=#8AA2A8>To next level:</color> {0:0} XP
