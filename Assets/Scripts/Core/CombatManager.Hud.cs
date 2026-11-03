@@ -41,7 +41,7 @@ namespace StellarisClone.Core
         }
 
         private static readonly LGIcon[] ClassIcons = { LGIcon.Corvette, LGIcon.Frigate, LGIcon.Destroyer, LGIcon.Starbase };
-        private static readonly string[] ClassNames = { Loc.T("Корветы"), Loc.T("Фрегаты"), Loc.T("Эсминцы"), Loc.T("Звёздная база") };
+        private static string[] ClassNames => new[] { Loc.T("Корветы"), Loc.T("Фрегаты"), Loc.T("Эсминцы"), Loc.T("Звёздная база") };
 
         private void BuildHud()
         {

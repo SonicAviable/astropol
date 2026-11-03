@@ -120,6 +120,24 @@ namespace StellarisClone.Core
             PlayerPrefs.SetInt("gfx.sharp", Sharpness);
         }
 
+        /// <summary>
+        /// Пресет по железу для окна первого запуска: встроенная графика или меньше 2 ГБ видеопамяти — «Низкое»,
+        /// до 4 ГБ — «Среднее», до 10 ГБ — «Высокое», больше — «Ультра».
+        /// </summary>
+        public static int RecommendedPreset()
+        {
+            int vram = SystemInfo.graphicsMemorySize;
+            string gpu = (SystemInfo.graphicsDeviceName ?? "").ToLowerInvariant();
+            bool integrated = gpu.Contains("intel") && !gpu.Contains("arc")
+                              || gpu.Contains("radeon(tm) graphics") || gpu.Contains("radeon graphics") || gpu.Contains("vega 8")
+                              || gpu.Contains("microsoft basic") || gpu.Contains("llvmpipe");
+            if (integrated || vram > 0 && vram < 2000) return 0;
+            if (gpu.Contains("apple")) return 2;   // память общая с системой — объём ничего не говорит о мощности
+            if (vram > 0 && vram < 3900) return 1;
+            if (vram <= 0 || vram < 9900) return 2;
+            return 3;
+        }
+
         // ------------------------------------------------------------------ Сеттеры (применяют сразу)
 
         public static void SetPreset(int i)

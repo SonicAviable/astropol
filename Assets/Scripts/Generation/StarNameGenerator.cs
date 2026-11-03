@@ -50,7 +50,7 @@ namespace StellarisClone.Generation
             Loc.T("Райской Птицы"), Loc.T("Южной Гидры"), Loc.T("Октанта"), Loc.T("Столовой Горы"), Loc.T("Летучей Рыбы"), Loc.T("Живописца"), Loc.T("Резца")
         };
 
-        private static readonly string[] Catalog = { Loc.T("Глизе"), Loc.T("Кеплер-"), Loc.T("Вольф"), Loc.T("Росс"), Loc.T("Лейтен"), Loc.T("Лаланд"), Loc.T("Струве"), Loc.T("Грумбридж"), "HD", "HIP", Loc.T("Козак"), Loc.T("Ван Маанен"), Loc.T("Тиго") };
+        private static string[] Catalog => new[] { Loc.T("Глизе"), Loc.T("Кеплер-"), Loc.T("Вольф"), Loc.T("Росс"), Loc.T("Лейтен"), Loc.T("Лаланд"), Loc.T("Струве"), Loc.T("Грумбридж"), "HD", "HIP", Loc.T("Козак"), Loc.T("Ван Маанен"), Loc.T("Тиго") };
 
         private static readonly string[] SylStart =
         {

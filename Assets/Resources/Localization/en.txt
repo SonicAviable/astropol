@@ -7196,3 +7196,32 @@ FSR чётче растягивает картинку при масштабе �
 очков · ×{0:0.#} за уровень	points · ×{0:0.#} per tier
 при {0:0.#} / мес	at {0:0.#} / mo
 рано · срок ×{0:0.0}	early · time ×{0:0.0}
+Enter — начать · Esc — оставить как есть	Enter — start · Esc — keep as is
+{0} × {1} · {2} Гц	{0} × {1} · {2} Hz
+{0} ГБ	{0} GB
+{0} потоков	{0} threads
+Без обучения и советника, сложность «Нормальная». Всё меняется в «Новой игре» и «Настройках».	No tutorial or advisor, Normal difficulty. You can change all of this in New Game and Settings.
+Без рамки удобнее переключаться между окнами	Borderless makes switching between windows easier
+ВАШ КОМПЬЮТЕР	YOUR COMPUTER
+ВЫ ИГРАЛИ В КОСМИЧЕСКИЕ СТРАТЕГИИ?	HAVE YOU PLAYED SPACE STRATEGY GAMES?
+Видеокарта	Graphics card
+Впервые	First time
+Громкость	Volume
+ДОБРО ПОЖАЛОВАТЬ	WELCOME
+ИНТЕРФЕЙС И ЗВУК	INTERFACE AND SOUND
+Качество	Quality
+Крупнее — удобнее на ноутбуке, 4K и телевизоре	Larger is easier to read on laptops, 4K screens and TVs
+Мы уже подобрали параметры по вашему компьютеру. Проверьте их и нажмите «Начать» — всё это можно поменять позже в «Настройках».	We've picked settings for your computer. Check them and press Start — you can change all of this later in Settings.
+НАЧАТЬ	START
+Настроим игру под вас	Let's set up the game for you
+Немного	A little
+Обучение в первой партии, советы ОРАКУЛА-7, сложность «Новичок».	Tutorial in your first game, ORACLE-7 advice, Novice difficulty.
+Обучение можно пропустить в любой момент, советы ОРАКУЛА-7, сложность «Лёгкая».	Tutorial you can skip at any time, ORACLE-7 advice, Easy difficulty.
+Обучение, советник и сложность первой партии	Tutorial, advisor and difficulty of your first game
+Общая — музыку и звуки отдельно можно настроить позже	Master — music and effects can be adjusted separately later
+Опыт	Experience
+Память	Memory
+Процессор	Processor
+Рекомендуем качество «{0}»	Recommended quality: {0}
+Тени, сглаживание и масштаб рендера	Shadows, anti-aliasing and render scale
+Экран	Display

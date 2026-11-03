@@ -33,7 +33,7 @@ namespace StellarisClone.Rendering
         private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
 
         private enum Sec { Research, Build, Military, Science, Constructor }
-        private static readonly string[] SecNames = { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ") };
+        private static string[] SecNames => new[] { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ") };
         private static readonly LGIcon[] SecIcons = { LGIcon.Research, LGIcon.Construction, LGIcon.Fleet, LGIcon.Sensors, LGIcon.Wrench };
         private static readonly Color[] SecColors =
         {

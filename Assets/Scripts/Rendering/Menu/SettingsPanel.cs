@@ -17,7 +17,7 @@ namespace StellarisClone.Rendering
         private ScrollRect _scroll;
         private LGTabs _tabs;
 
-        private static readonly string[] TabNames = { Loc.T("ГРАФИКА"), Loc.T("ЗВУК"), Loc.T("ИНТЕРФЕЙС"), Loc.T("ИГРА") };
+        private static string[] TabNames => new[] { Loc.T("ГРАФИКА"), Loc.T("ЗВУК"), Loc.T("ИНТЕРФЕЙС"), Loc.T("ИГРА") };
         private static readonly LGIcon[] TabIcons = { LGIcon.Monitor, LGIcon.Speaker, LGIcon.Menu, LGIcon.Gear };
 
         public static SettingsPanel Build(RectTransform host)

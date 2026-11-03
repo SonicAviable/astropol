@@ -56,6 +56,7 @@ namespace StellarisClone.Rendering
         {
             Instance = this;
             _ng = new NewGameSettings { Seed = NewGameSettings.RandomSeed() };
+            GameSettings.ApplyNewGameDefaults(_ng);
         }
 
         private void OnDestroy()
@@ -74,6 +75,8 @@ namespace StellarisClone.Rendering
             BuildCorners();
             BuildWindow();
             BuildFooter();
+            // Первый запуск — язык, графика, интерфейс и опыт игрока поверх меню
+            if (!GameSettings.FirstRunDone) FirstRunScreen.Create(_root, () => GameSettings.ApplyNewGameDefaults(_ng));
 
             var cam = Camera.main;
             if (cam != null && cam.GetComponent<MainMenuCamera>() == null) cam.gameObject.AddComponent<MainMenuCamera>();
@@ -87,7 +90,7 @@ namespace StellarisClone.Rendering
             AnimateNewGame();
             FitWindow();
 
-            if (LoadingScreen.IsActive) return;   // идёт загрузка — меню не слушает клавиши
+            if (LoadingScreen.IsActive || FirstRunScreen.IsOpen) return;   // идёт загрузка или окно первого запуска — меню не слушает клавиши
             if (Input.GetKeyDown(KeyCode.Escape) && _open != Panel.None && !IsTyping()) Close();
             // Enter — сразу в последнюю партию
             if (_open == Panel.None && _continueCard != null && !_continueCard.Disabled && _heroK > 0.9f && !IsTyping()

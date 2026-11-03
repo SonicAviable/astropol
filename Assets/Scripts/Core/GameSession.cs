@@ -22,11 +22,11 @@ namespace StellarisClone.Core
 
         public const int MinNeutrals = 2, MaxNeutrals = 6;
 
-        public static readonly string[] SizeNames = { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
-        public static readonly string[] DifficultyNames = { Loc.T("Новичок"), Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная"), Loc.T("Безжалостная") };
-        public static readonly string[] RivalNames = { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи"), Loc.T("5 империй") };
-        public static readonly string[] NeutralNames = { Loc.T("2 мира"), Loc.T("3 мира"), Loc.T("4 мира"), Loc.T("5 миров"), Loc.T("6 миров") };
-        public static readonly string[] ShapeNames = { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
+        public static string[] SizeNames => new[] { Loc.T("Малая"), Loc.T("Средняя"), Loc.T("Большая") };
+        public static string[] DifficultyNames => new[] { Loc.T("Новичок"), Loc.T("Лёгкая"), Loc.T("Нормальная"), Loc.T("Сложная"), Loc.T("Безжалостная") };
+        public static string[] RivalNames => new[] { Loc.T("1 империя"), Loc.T("2 империи"), Loc.T("3 империи"), Loc.T("4 империи"), Loc.T("5 империй") };
+        public static string[] NeutralNames => new[] { Loc.T("2 мира"), Loc.T("3 мира"), Loc.T("4 мира"), Loc.T("5 миров"), Loc.T("6 миров") };
+        public static string[] ShapeNames => new[] { Loc.T("Эллипс"), Loc.T("Спираль · 2 рукава"), Loc.T("Спираль · 4 рукава"), Loc.T("Кольцо") };
 
         // Площадь растёт вместе с числом систем: радиус ∝ √(систем), плотность звёзд прежняя (~17,5·√N).
         // Под шесть империй и вольные миры: на средней ~55 систем на империю — к 40-й минуте ещё есть куда расти

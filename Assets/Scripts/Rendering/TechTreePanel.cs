@@ -29,7 +29,7 @@ namespace StellarisClone.Rendering
         private const int TierCount = 5;
         private const float NodeD = 84f, NameH = 36f, StatusH = 30f;
         private const float DoubleClick = 0.4f;
-        private static readonly string[] TierNames = { Loc.T("БАЗОВЫЕ"), Loc.T("УРОВЕНЬ I"), Loc.T("УРОВЕНЬ II"), Loc.T("УРОВЕНЬ III"), Loc.T("УРОВЕНЬ IV") };
+        private static string[] TierNames => new[] { Loc.T("БАЗОВЫЕ"), Loc.T("УРОВЕНЬ I"), Loc.T("УРОВЕНЬ II"), Loc.T("УРОВЕНЬ III"), Loc.T("УРОВЕНЬ IV") };
 
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;

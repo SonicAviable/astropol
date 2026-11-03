@@ -15,7 +15,7 @@ namespace StellarisClone.Core
         public static event Action Changed;
 
         // ------------------------------------------------------------------ Графика
-        public static readonly string[] ScreenModeNames = { Loc.T("Полный экран"), Loc.T("Эксклюзивный"), Loc.T("В окне") };
+        public static string[] ScreenModeNames => new[] { Loc.T("Полный экран"), Loc.T("Эксклюзивный"), Loc.T("В окне") };
         public static readonly int[] FpsOptions = { 30, 60, 120, 144, 240, -1 };
         public static readonly int[] AutosaveOptions = { 0, 1, 3, 6, 12 };
         public static readonly float[] UIScaleOptions = { 0.8f, 0.9f, 1f, 1.1f, 1.25f };
@@ -250,6 +250,66 @@ namespace StellarisClone.Core
         public static void SetAutosave(int i) { AutosaveIndex = Mathf.Clamp(i, 0, AutosaveOptions.Length - 1); PlayerPrefs.SetInt("set.autosave", AutosaveIndex); Commit(); }
         public static void SetEdgeScroll(bool v) { EdgeScroll = v; PlayerPrefs.SetInt("set.edge", v ? 1 : 0); StrategyCameraController.EdgeScrollingSetting = v; Commit(); }
         public static void SetCameraSpeed(float v) { CameraSpeed = Mathf.Clamp(v, 0.4f, 2.5f); PlayerPrefs.SetFloat("set.camspeed", CameraSpeed); StrategyCameraController.PanSpeedSetting = CameraSpeed; Commit(); }
+
+        // ------------------------------------------------------------------ Первый запуск
+
+        private const string FirstRunKey = "set.firstrun", ExperienceKey = "set.experience";
+        private const string NgTutorialKey = "ng.tutorial", NgLevelKey = "ng.level";
+
+        /// <summary>
+        /// Окно первого запуска уже пройдено. Игроки прежних версий (есть сохранения или менялись настройки) его не видят.
+        /// </summary>
+        public static bool FirstRunDone
+        {
+            get
+            {
+                if (PlayerPrefs.HasKey(FirstRunKey)) return PlayerPrefs.GetInt(FirstRunKey) == 1;
+                foreach (var k in new[] { "set.master", "set.music", "set.uiscale", "set.lang", "set.screenMode", "set.resW", "gfx.scale", "set.advisor" })
+                    if (PlayerPrefs.HasKey(k)) return true;
+                try { return SaveSystem.Latest() != null; }
+                catch (Exception) { return false; }
+            }
+        }
+
+        /// <summary>Окно открыто: до «Начать» оно покажется снова (и после перезагрузки меню при смене языка).</summary>
+        public static void BeginFirstRun()
+        {
+            if (PlayerPrefs.HasKey(FirstRunKey)) return;
+            PlayerPrefs.SetInt(FirstRunKey, 0);
+            PlayerPrefs.Save();
+        }
+
+        public static void MarkFirstRunDone()
+        {
+            PlayerPrefs.SetInt(FirstRunKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Опыт игрока из окна первого запуска: 0 впервые · 1 немного · 2 ветеран; −1 — не спрашивали.</summary>
+        public static int Experience => PlayerPrefs.GetInt(ExperienceKey, -1);
+
+        /// <summary>
+        /// Опыт задаёт советника и параметры новой партии по умолчанию: впервые — обучение и уровень «Новичок»,
+        /// немного — обучение и «Лёгкая», ветеран — без обучения и советника, «Нормальная».
+        /// </summary>
+        public static void SetExperience(int v)
+        {
+            v = Mathf.Clamp(v, 0, 2);
+            PlayerPrefs.SetInt(ExperienceKey, v);
+            PlayerPrefs.SetInt(NgTutorialKey, v < 2 ? 1 : 0);
+            PlayerPrefs.SetInt(NgLevelKey, v);
+            Advisor = v < 2;
+            PlayerPrefs.SetInt("set.advisor", Advisor ? 1 : 0);
+            Commit();
+        }
+
+        /// <summary>Обучение и сложность новой партии по умолчанию — из ответа об опыте в окне первого запуска.</summary>
+        public static void ApplyNewGameDefaults(NewGameSettings ng)
+        {
+            if (ng == null) return;
+            if (PlayerPrefs.HasKey(NgTutorialKey)) ng.Tutorial = PlayerPrefs.GetInt(NgTutorialKey, 1) == 1;
+            if (PlayerPrefs.HasKey(NgLevelKey)) ng.SetLevel(PlayerPrefs.GetInt(NgLevelKey, 2));
+        }
 
         /// <summary>Сбросить вкладку к значениям по умолчанию.</summary>
         public static void ResetDefaults()

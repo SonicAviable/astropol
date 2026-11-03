@@ -49,6 +49,19 @@ namespace StellarisClone.Core
             PlayerPrefs.Save();
         }
 
+        /// <summary>
+        /// Сменить язык прямо сейчас (окно первого запуска): таблица перезагружается, а вызывающий заново строит сцену
+        /// (GameSession.ReturnToMainMenu), чтобы окна собрались на новом языке. В партии так делать нельзя — только в меню.
+        /// </summary>
+        public static void Switch(string code)
+        {
+            Save(code);
+            Current = code == "en" ? "en" : "ru";
+            _table = null;
+            _missing = null;
+            if (English) Load();
+        }
+
         private static void Load()
         {
             _table = new Dictionary<string, string>(8192);
