@@ -784,9 +784,9 @@ namespace StellarisClone.Rendering
         /// <summary>Множитель преломления и хроматической аберрации стекла.</summary>
         public const float Refraction = 0.35f;
         /// <summary>Минимальная плотность больших стеклянных окон (меньше просвечивают).</summary>
-        public const float GlassFill = 0.86f;
+        public const float GlassFill = 0.62f;
         /// <summary>Множитель плотности вложенных пластин.</summary>
-        public const float PlatterFill = 1.5f;
+        public const float PlatterFill = 1.3f;
     }
 
     public sealed class LGIgnore : MonoBehaviour

@@ -23,15 +23,14 @@ namespace StellarisClone.Rendering
         /// </summary>
         public static class DS
         {
-            // Оттенки стекла: глубокий тёмно-синий (как окно звёздной базы) — плотнее и темнее прежнего сине-бирюзового,
-            // на нём лучше читаются золотые заголовки и неоновые кромки
-            public static readonly Color BgDeep        = new Color(0.016f, 0.036f, 0.064f, 1.00f);
-            public static readonly Color BgPanel       = new Color(0.022f, 0.046f, 0.080f, 1.00f);
-            public static readonly Color BgHeader      = new Color(0.036f, 0.072f, 0.118f, 0.96f);
-            public static readonly Color BgSlot        = new Color(0.026f, 0.054f, 0.092f, 0.94f);
-            public static readonly Color BgRowEven     = new Color(0.024f, 0.050f, 0.086f, 0.82f);
-            public static readonly Color BgRowOdd      = new Color(0.032f, 0.062f, 0.102f, 0.82f);
-            public static readonly Color BgVisor       = new Color(0.010f, 0.024f, 0.046f, 0.96f);
+            // Оттенки стекла (холодный дымчатый сине-бирюзовый, прозрачный Liquid Glass)
+            public static readonly Color BgDeep        = new Color(0.030f, 0.062f, 0.088f, 1.00f);
+            public static readonly Color BgPanel       = new Color(0.040f, 0.080f, 0.110f, 1.00f);
+            public static readonly Color BgHeader      = new Color(0.070f, 0.130f, 0.170f, 0.95f);
+            public static readonly Color BgSlot        = new Color(0.055f, 0.110f, 0.150f, 0.90f);
+            public static readonly Color BgRowEven     = new Color(0.050f, 0.100f, 0.135f, 0.75f);
+            public static readonly Color BgRowOdd      = new Color(0.060f, 0.118f, 0.155f, 0.75f);
+            public static readonly Color BgVisor       = new Color(0.018f, 0.045f, 0.065f, 0.95f);
 
             // Акценты (приглушённый неон)
             public static readonly Color NeonCyan      = new Color(0.40f, 0.86f, 0.82f, 1.00f);
