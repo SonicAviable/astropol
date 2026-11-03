@@ -128,7 +128,7 @@ namespace StellarisClone.Core
         {
             if (_generator == null || systemId < 0 || systemId >= _generator.Systems.Count) return 0f;
             var sys = _generator.Systems[systemId];
-            if (sys.OwnerId != ownerId) return 0f;
+            if (sys.OwnerId != ownerId || NaturalWonders.BlocksRepair(systemId)) return 0f;
             foreach (var p in sys.Planets) if (p.Population > 0) return RepairPerDayColony;
             return RepairPerDayOwn;
         }

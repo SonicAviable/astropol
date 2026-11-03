@@ -160,7 +160,7 @@ namespace StellarisClone.Core
         public bool HasTech(string id) => _researched.Contains(id);
 
         public float MonthlyScience =>
-            (TechnologyManager.BaseScience + EmpireStats.ResearchPops(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId))
+            (TechnologyManager.BaseScience + EmpireStats.ResearchPops(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId) + NaturalWonders.Science(OwnerId))
             * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult * NeutralWorlds.ResearchMult(OwnerId);
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
@@ -262,7 +262,7 @@ namespace StellarisClone.Core
             for (int i = 0; i < _generator.Systems.Count; i++)
             {
                 var s = _generator.Systems[i];
-                if (s.OwnerId != -1 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0
+                if (s.OwnerId != -1 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0 || s.Phenomenon >= 0
                     || s.SpectralClass == StarSpectralClass.BlackHole) continue;
                 float d = float.MaxValue;
                 foreach (var c in capitals) d = Mathf.Min(d, Vector3.Distance(c, s.Position));
@@ -631,6 +631,7 @@ namespace StellarisClone.Core
             };
             v += Mathf.Max(0, sys.ConnectedSystemIds.Count - 2) * 1.2f;
             v += Landmarks.AIValue(sys);
+            v += NaturalWonders.AIValue(sys);
 
             bool nearRival = false;
             foreach (int id in sys.ConnectedSystemIds)

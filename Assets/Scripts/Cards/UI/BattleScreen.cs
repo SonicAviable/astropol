@@ -147,6 +147,7 @@ namespace StellarisClone.Cards
 
         public void Open(BattleSetup setup, Action<BattleState> onDone)
         {
+            Codex.DiscoverBattle(setup);   // карты этого боя — в кодекс
             if (_canvas == null) BuildCanvas();
             FitScaler();
             _setup = setup;

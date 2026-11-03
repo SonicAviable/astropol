@@ -7358,3 +7358,52 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 ТРОЙНОЙ УДАР	TRIPLE KILL
 РАЗГРОМ	RAMPAGE
 БОЙНЯ	MASSACRE
+Магнитар	Magnetar
+Туманность «Покров»	The Veil Nebula
+Ионный шторм	Ion Storm
+Звёздные ясли	Stellar Nursery
+Кристаллическое кольцо	Crystal Ring
+Гравитационный колодец	Gravity Well
+Чудо природы	Natural wonder
+щиты кораблей и звёздной базы в системе не работают	ship and starbase shields in the system do not work
+флоты внутри не видны издалека, их сенсоры не видят соседей; уклонение в бою +{0:0}	fleets inside cannot be seen from afar and their sensors cannot see neighbours; +{0:0} evasion in combat
+корабли теряют {0:0.#}% корпуса в день (до {1:0}%), ремонт невозможен; энергетическое оружие +{2:0}%	ships lose {0:0.#}% hull per day (down to {1:0}%), repairs are impossible; energy weapons +{2:0}%
+население колоний системы растёт на {0:0}% быстрее	colony population in the system grows {0:0}% faster
+добывающие станции системы дают вдвое больше; энергетическое оружие −{0:0}%	mining stations in the system yield double; energy weapons −{0:0}%
+всё оружие −{0:0}% урона; владелец системы получает +{1:0} науки в месяц	all weapons −{0:0}% damage; the system owner gets +{1:0} research per month
+Мёртвая звезда с магнитным полем в триллион раз сильнее земного. Защитные поля кораблей здесь просто стекают с корпусов, как вода.	A dead star with a magnetic field a trillion times stronger than Earth's. Ship shields simply run off the hulls here like water.
+Облако ионизированного газа размером с десяток звёздных систем. Внутри сенсоры слепнут, а флоты исчезают с карт, словно их и не было.	A cloud of ionized gas the size of a dozen star systems. Inside, sensors go blind and fleets vanish from the maps as if they never existed.
+Две звезды обмениваются плазмой, и пространство между ними кипит. Корабли выходят из шторма с оплавленной обшивкой, если выходят вообще.	Two stars trade plasma and the space between them boils. Ships leave the storm with melted plating — if they leave at all.
+Молодое скопление, где звёзды ещё рождаются. Тёплый свет, богатые органикой миры — колонисты называют эти места колыбелью.	A young cluster where stars are still being born. Warm light and organic-rich worlds — colonists call these places the cradle.
+Пояс астероидов из чистого кварца и рудных кристаллов. Лучи энергетических орудий рассеиваются в нём радужными брызгами.	A belt of asteroids of pure quartz and ore crystals. Energy beams scatter in it in rainbow sprays.
+Горизонт событий чёрной дыры искривляет всё — свет, время и траектории снарядов. Учёные готовы на всё ради места поближе к краю.	The black hole's event horizon bends everything — light, time and the paths of shells. Scientists would do anything for a spot closer to the edge.
+Открыто чудо природы	Natural wonder discovered
+{0} · система {1}: {2}.	{0} · {1} system: {2}.
+Фракции	Factions
+Карты штурма	Assault cards
+Узлы силы	Power nodes
+Чудеса природы	Natural wonders
+Народ-основатель	Founding people
+Доктрина штурма	Assault doctrine
+Общая карта	Common card
+  ·  сила {0}  ·  броня {1}	  ·  power {0}  ·  armor {1}
+  ·  стоит {0} очк.	  ·  costs {0} pts
+Открывает технология «{0}»	Unlocked by the “{0}” technology
+Бонус владельцу	Owner bonus
+Действует, пока в системе стоит ваш форпост. Технология «Археотехнология» усиливает бонус на 50%.	Works while your outpost stands in the system. The “Archaeotechnology” tech boosts the bonus by 50%.
+Закон системы	System law
+Действует на всех, кто находится в системе, — и на вас, и на врага.	Affects everyone in the system — you and your enemies alike.
+КОДЕКС	CODEX
+Закрыть  <color=#8AA2A8>(Esc / X)</color>	Close  <color=#8AA2A8>(Esc / X)</color>
+Запись откроется при первой встрече с этой цивилизацией.	This entry unlocks on first contact with this civilization.
+Запись откроется, когда вы изучите эту технологию.	This entry unlocks when you research this technology.
+Запись откроется, когда карта появится в вашем арсенале или в бою — вашем или вражеском.	This entry unlocks when the card appears in your arsenal or in battle — yours or the enemy's.
+Запись откроется, когда разведка найдёт этот узел силы на карте.	This entry unlocks when your scouts find this power node on the map.
+Запись откроется, когда разведка найдёт это чудо природы на карте.	This entry unlocks when your scouts find this natural wonder on the map.
+Энциклопедия галактики. Открыто <color=#7CF2D8>{0}</color> из {1} записей ({2}%). Открытия сохраняются между партиями.	Encyclopedia of the galaxy. Unlocked <color=#7CF2D8>{0}</color> of {1} entries ({2}%). Discoveries carry over between games.
+\n<color={0}>ЧУДО ПРИРОДЫ · {1}</color>\n	\n<color={0}>NATURAL WONDER · {1}</color>\n
+В системе {0}\n	In the system, {0}\n
+<color=#8AA2A8>Действует на всех, кто здесь находится</color>\n	<color=#8AA2A8>Affects everyone present here</color>\n
+Кодекс	Codex
+<b>Кодекс</b>\nЭнциклопедия галактики: фракции, технологии, карты штурма, узлы силы и чудеса природы. Записи открываются по ходу игры и сохраняются между партиями	<b>Codex</b>\nEncyclopedia of the galaxy: factions, technologies, assault cards, power nodes and natural wonders. Entries unlock as you play and carry over between games
+Кодекс: энциклопедия галактики	Codex: encyclopedia of the galaxy

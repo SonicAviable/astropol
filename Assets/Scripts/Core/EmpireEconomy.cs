@@ -65,7 +65,11 @@ namespace StellarisClone.Core
                 if (sys.HasStarbase && sys.Id != capitalSystemId) r.Outposts++;
                 foreach (var p in sys.Planets)
                 {
-                    if (p.HasMiningStation) { stE += p.EnergyDeposit; stM += p.MineralDeposit; }
+                    if (p.HasMiningStation)
+                    {
+                        float k = NaturalWonders.StationMult(sys);   // кристаллическое кольцо: станции вдвое
+                        stE += Mathf.RoundToInt(p.EnergyDeposit * k); stM += Mathf.RoundToInt(p.MineralDeposit * k);
+                    }
                     if (p.Type == PlanetType.GasGiant || p.Type == PlanetType.Molten) continue;
                     if (p.Population <= 0) continue;
                     colonies++;

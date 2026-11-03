@@ -654,7 +654,8 @@ namespace StellarisClone.Core
                 var db = EmpireBonuses.For(target.Owner);
                 float accuracy = ab.Accuracy + (shooter.Fleet != null ? shooter.Fleet.Data.Accuracy : 0f);
                 float evade = Mathf.Clamp01((target.Fleet.Data.Evasion * db.EvasionMult * StanceEvasionMult(battle, target.Owner)
-                                             * LeaderManager.AdmiralEvasionMult(target.Owner, battle.SystemId) - accuracy) / 100f);
+                                             * LeaderManager.AdmiralEvasionMult(target.Owner, battle.SystemId)
+                                             + NaturalWonders.EvasionBonus(battle.SystemId) - accuracy) / 100f);
                 if (Random.value < evade * 0.45f)
                 {
                     if (show)
@@ -670,6 +671,12 @@ namespace StellarisClone.Core
             if (shooter.Fleet != null) raw *= LeaderManager.AdmiralDamageMult(shooter.Owner, battle.SystemId);
             if (target.Fleet != null) raw *= FactionTraits.IncomingDamage(target.Owner, weapon);   // биокора Конклава боится энергии
             raw *= StanceDamageMult(battle, shooter.Owner) * StanceIncomingMult(battle, target.Owner);
+            raw *= NaturalWonders.DamageMult(battle.SystemId, weapon);   // чудо природы: ионный шторм, кристаллы, колодец
+            if (NaturalWonders.ShieldsDown(battle.SystemId))
+            {
+                if (target.Fleet != null) target.Fleet.Data.ShieldPoints = 0f;
+                else if (target.Base != null) target.Base.Shields = 0f;
+            }
             float shieldBefore = target.Fleet != null ? target.Fleet.Data.ShieldPoints : target.Base.Shields;
             float armorBefore = target.Fleet != null ? target.Fleet.Data.ArmorPoints : target.Base.Armor;
             float dealt;

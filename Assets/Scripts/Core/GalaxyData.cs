@@ -23,6 +23,8 @@ namespace StellarisClone.Core
         public int Fortification;
         /// <summary>Узел силы в системе (<see cref="LandmarkType"/>), -1 — обычная система.</summary>
         public int Landmark = -1;
+        /// <summary>Чудо природы в системе (<see cref="PhenomenonType"/>), -1 — нет.</summary>
+        public int Phenomenon = -1;
         /// <summary>Система изучена игроком (видны планеты, можно строить форпост).</summary>
         public bool IsSurveyed = false;
         /// <summary>

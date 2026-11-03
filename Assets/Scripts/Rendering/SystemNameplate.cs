@@ -22,7 +22,8 @@ namespace StellarisClone.Rendering
         private int _fortKey = -1;
         private float _fortScan, _titleW;
         // Узел силы: плашка над названием («★ Врата Предтеч»)
-        private WorldChip _chipLm;
+        private WorldChip _chipLm, _chipPh;
+        private float _phAlpha;
         private float _lmAlpha;
         // Форпост, который строит (или летит строить) ваш строительный корабль: сколько дней до готовности
         private WorldChip _chipBuild;
@@ -124,6 +125,7 @@ namespace StellarisClone.Rendering
             CreateTitleScrim(font);
             CreateFortChip();
             CreateLandmarkChip();
+            CreatePhenomenonChip();
             CreateBuildChip();
             CreateColonyChips();
             UpdateResourceBadge();
@@ -488,6 +490,23 @@ namespace StellarisClone.Rendering
             RefreshLandmarkColors();
         }
 
+        /// <summary>Плашка чуда природы — на месте плашки узла (в одной системе их не бывает).</summary>
+        private void CreatePhenomenonChip()
+        {
+            if (_data.Phenomenon < 0) return;
+            var row = new GameObject("Phenomenon");
+            row.transform.SetParent(_plateRoot.transform, false);
+            row.transform.localPosition = new Vector3(0, 1.45f, 0);
+            _chipPh = WorldChip.Create(row.transform, "PhenomenonChip", 52, true, true);
+            _chipPh.GlowStrength = 0.4f;
+            _chipPh.SetIcon(NaturalWonders.Icon(_data.Phenomenon));
+            _chipPh.Set(NaturalWonders.Name(_data.Phenomenon), 0.40f);
+            _chipPh.CenterOn(0f, 0f);
+            _chipPh.SetAlpha(0f);
+            Color pc = NaturalWonders.Color(_data.Phenomenon);
+            _chipPh.SetColors(new Color(0.03f, 0.02f, 0.07f, 0.88f), new Color(pc.r, pc.g, pc.b, 0.7f), pc, pc, Color.white);
+        }
+
         /// <summary>Цвет плашки: цвет узла, а если им владеет империя — кромка её цвета.</summary>
         private void RefreshLandmarkColors()
         {
@@ -613,6 +632,7 @@ namespace StellarisClone.Rendering
                 _chipEn.SetAlpha(_hasEn ? _resAlpha : 0f);
             }
             _chipLm?.SetAlpha(_lmAlpha);
+            _chipPh?.SetAlpha(_phAlpha);
             _chipFort?.SetAlpha(_fortOn ? _alpha : 0f);
             _chipBuild?.SetAlpha(_buildAlpha);
             _chipPop?.SetAlpha(_popOn ? _alpha : 0f);
@@ -697,6 +717,14 @@ namespace StellarisClone.Rendering
                        (mine ? Loc.T("<color=#66FF88>Под вашим контролем</color>\n")
                              : _data.HasStarbase && _data.OwnerId >= 0 ? Loc.T("<color=#FF8866>Удерживает ") + AIEmpireManager.NameOf(_data.OwnerId, Loc.T("другая империя")) + "</color>\n"
                              : Loc.T("<color=#8AA2A8>Постройте здесь форпост, чтобы получить бонус</color>\n"));
+            }
+
+            if (_data.Phenomenon >= 0)
+            {
+                string c = LGBuild.Hex(NaturalWonders.Color(_data.Phenomenon));
+                tip += Loc.F("\n<color={0}>ЧУДО ПРИРОДЫ · {1}</color>\n", c, NaturalWonders.Name(_data.Phenomenon)) +
+                       Loc.F("В системе {0}\n", NaturalWonders.Rule(_data.Phenomenon)) +
+                       Loc.T("<color=#8AA2A8>Действует на всех, кто здесь находится</color>\n");
             }
 
             if (PlayerOutpostEta(_data.Id, out bool building, out float bdays))
@@ -828,6 +856,14 @@ namespace StellarisClone.Rendering
                 if (_isSelected || _isHovered) lmTarget = known ? 1f : 0f;
                 float nl = Mathf.MoveTowards(_lmAlpha, lmTarget, Time.unscaledDeltaTime * 5f);
                 if (Mathf.Abs(nl - _lmAlpha) > 0.0005f) { _lmAlpha = nl; _chipLm.SetAlpha(_lmAlpha); }
+            }
+            // Чудеса природы — так же, как узлы: заметны издалека
+            if (_chipPh != null)
+            {
+                float phTarget = known ? 1f - Smooth(MidFrom + 70f, MidTo + 110f, dist) : 0f;
+                if (_isSelected || _isHovered) phTarget = known ? 1f : 0f;
+                float np = Mathf.MoveTowards(_phAlpha, phTarget, Time.unscaledDeltaTime * 5f);
+                if (Mathf.Abs(np - _phAlpha) > 0.0005f) { _phAlpha = np; _chipPh.SetAlpha(_phAlpha); }
             }
 
             float k = Time.unscaledDeltaTime * 5f;

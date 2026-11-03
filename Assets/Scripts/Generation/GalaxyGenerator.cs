@@ -80,6 +80,7 @@ namespace StellarisClone.Generation
             }
 
             Landmarks.Place(Systems);   // узлы силы — после связей: нужны расстояния в прыжках
+            NaturalWonders.Place(Systems);   // чудеса природы — после узлов: не на них
             Debug.Log($"[GalaxyGenerator] Галактика готова: {Systems.Count} звёзд, {Hyperlanes.Count} гиперкоридоров.");
         }
 

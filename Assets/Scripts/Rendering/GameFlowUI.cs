@@ -144,7 +144,7 @@ namespace StellarisClone.Rendering
             if (StellarisClone.Cards.AssaultDeckWindow.IsOpenNow || StellarisClone.Cards.ArsenalWindow.IsOpenNow) return;
             if (NotificationLog.IsOpenNow || GameSummaryWindow.IsOpenNow || EmpireGoalsChoice.IsOpenNow) return;
             if (VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen) return;
-            if (LawsWindow.IsOpenNow || HelpOverlay.IsOpenNow) return;
+            if (LawsWindow.IsOpenNow || HelpOverlay.IsOpenNow || CodexWindow.IsOpenNow) return;
             if (EmpireOverviewWindow.Instance != null && EmpireOverviewWindow.Instance.IsOpen) return;
             if (EspionageWindow.Instance != null && EspionageWindow.Instance.IsOpen) return;
             if (PlanetFocusOverlay.Instance != null && PlanetFocusOverlay.Instance.IsOpen) return;

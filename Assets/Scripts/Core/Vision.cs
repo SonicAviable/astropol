@@ -75,6 +75,7 @@ namespace StellarisClone.Core
         {
             if (d == null || d.Destroyed) return false;
             if (!Active || d.OwnerId == viewer) return true;
+            if (NaturalWonders.HidesFleet(viewer, d)) return false;   // туманность «Покров»
             if (d.State == FleetState.InHyperlane)
                 return IsVisible(viewer, d.CurrentSystemId) || (d.TargetSystemId >= 0 && IsVisible(viewer, d.TargetSystemId));
             return IsVisible(viewer, d.CurrentSystemId);
@@ -126,7 +127,7 @@ namespace StellarisClone.Core
                 {
                     var d = f?.Data;
                     if (d == null || d.Destroyed || !fresh.TryGetValue(d.OwnerId, out var set)) continue;
-                    int jumps = FactionTraits.VisionJumps(d);   // мицелий Конклава: научные корабли видят дальше
+                    int jumps = NaturalWonders.SensorJumps(d, FactionTraits.VisionJumps(d));   // мицелий Конклава видит дальше; туманность слепит
                     if (d.CurrentSystemId >= 0) Spread(set, d.CurrentSystemId, jumps);
                     if (d.State == FleetState.InHyperlane && d.TargetSystemId >= 0) Spread(set, d.TargetSystemId, jumps);
                 }

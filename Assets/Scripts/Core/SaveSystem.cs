@@ -123,6 +123,7 @@ namespace StellarisClone.Core
         public bool HasStarbase;
         public int Fortification;  // укрепление базы (0–3); в старых сохранениях — 0
         public int Landmark = -1;  // узел силы (-1 — нет)
+        public int Phenomenon = -2;  // чудо природы (-1 — нет; -2 — сохранение до чудес)
         public bool IsSurveyed;
         public bool SurveyedByAI;  // до версии 2: один флаг на всех ИИ
         public int AISurvey;       // с версии 2: бит на каждую империю ИИ
@@ -576,7 +577,7 @@ namespace StellarisClone.Core
             {
                 Id = sys.Id, Name = sys.Name, Position = sys.Position, Spectral = (int)sys.SpectralClass,
                 HasGeneratedPlanets = sys.HasGeneratedPlanets, OwnerId = sys.OwnerId,
-                HasStarbase = sys.HasStarbase, Fortification = sys.Fortification, IsSurveyed = sys.IsSurveyed, Landmark = sys.Landmark,
+                HasStarbase = sys.HasStarbase, Fortification = sys.Fortification, IsSurveyed = sys.IsSurveyed, Landmark = sys.Landmark, Phenomenon = sys.Phenomenon,
                 AISurvey = sys.AISurveyMask, SurveyVer = 2
             };
             ss.Connected.AddRange(sys.ConnectedSystemIds);
@@ -650,7 +651,7 @@ namespace StellarisClone.Core
             {
                 var sys = new StarSystem(ss.Id, ss.Name, ss.Position, (StarSpectralClass)ss.Spectral)
                 {
-                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, Fortification = Mathf.Clamp(ss.Fortification, 0, Fortifications.MaxLevel), IsSurveyed = ss.IsSurveyed, Landmark = ss.Landmark,
+                    OwnerId = ss.OwnerId, HasStarbase = ss.HasStarbase, Fortification = Mathf.Clamp(ss.Fortification, 0, Fortifications.MaxLevel), IsSurveyed = ss.IsSurveyed, Landmark = ss.Landmark, Phenomenon = Mathf.Max(-1, ss.Phenomenon),
                     AISurveyMask = ss.SurveyVer >= 2 ? ss.AISurvey : (ss.SurveyVer > 0 ? ss.SurveyedByAI : ss.IsSurveyed) ? ~1 : 0,
                     HasGeneratedPlanets = ss.HasGeneratedPlanets
                 };
@@ -690,6 +691,10 @@ namespace StellarisClone.Core
             foreach (var sys in list) if (sys.Landmark >= 0) { anyLandmark = true; break; }
             if (!anyLandmark) Landmarks.Place(list);
             else Landmarks.Invalidate();
+            // Сохранение до чудес природы: расставляем их при загрузке
+            bool oldNoWonders = s.Systems.Count > 0 && s.Systems[0].Phenomenon == -2;
+            if (oldNoWonders) NaturalWonders.Place(list);
+            else NaturalWonders.Invalidate();
             return list;
         }
 

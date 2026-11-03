@@ -248,7 +248,7 @@ namespace StellarisClone.Core
                     int housing = p.HousingCapacity;
                     if (housing <= p.Population) { p.PopGrowthProgress = 0f; continue; }
 
-                    float growth = p.PopGrowthBaseSpeedPctPerMonth;
+                    float growth = p.PopGrowthBaseSpeedPctPerMonth * NaturalWonders.GrowthMult(p);
                     p.PopGrowthProgress += growth;
 
                     while (p.PopGrowthProgress >= 100f && p.Population < housing)
