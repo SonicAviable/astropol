@@ -18,10 +18,13 @@ namespace StellarisClone.Cards
 
         private IEnumerator W(float s)
         {
-            float k = _animSpeed * (Fast ? 4f : 1f);
-            float t = s * Pace / Mathf.Max(0.1f, k);
-            float end = Time.unscaledTime + t;
-            while (Time.unscaledTime < end) yield return null;
+            // Пауза в «игровом» времени: стоп-кадр и замедление (BattleScreen.Juice) её растягивают
+            float need = s * Pace, acc = 0f;
+            while (acc < need)
+            {
+                yield return null;
+                acc += Time.unscaledDeltaTime * Mathf.Max(0.1f, _animSpeed * (Fast ? 4f : 1f)) * TimeFactor;
+            }
         }
 
         // ==================== ВСТУПЛЕНИЕ ====================
@@ -164,6 +167,7 @@ namespace StellarisClone.Cards
 
         private IEnumerator Handle(BEvent e)
         {
+            JuiceEvent(e);
             switch (e.T)
             {
                 case EvType.TurnStart:

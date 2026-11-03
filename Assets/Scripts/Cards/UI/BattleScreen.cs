@@ -1356,8 +1356,9 @@ namespace StellarisClone.Cards
         private void Update()
         {
             if (!IsOpen || _state == null) return;
+            JuiceTick();
             VfxTick();
-            float dt = Time.unscaledDeltaTime;
+            float dt = Time.unscaledDeltaTime * TimeFactor;
             var dead = new List<CardView>();
             foreach (var kv in _targets)
             {

@@ -32,11 +32,12 @@ namespace StellarisClone.Cards
             _fcChip = new Image[3]; _docChip = new Image[3];
             _fcSig = null;
             _fc = null;
+            BuildJuice();
             for (int i = 0; i < 3; i++)
             {
                 var col = _sec[i].Col;
                 const float y = -88f;
-                _fcChip[i] = ChipAt(col, "Forecast", new Vector2(-112, y), new Vector2(196, 26), SubTint, new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.5f), raycast: true);
+                _fcChip[i] = ChipAt(col, "Forecast", new Vector2(-122, y), new Vector2(196, 26), SubTint, new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.5f), raycast: true);
                 _fcText[i] = Caption(_fcChip[i].rectTransform, "", 12, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, 0.6f);
                 _fcText[i].rectTransform.Stretch(6, 0, 6, 0);
                 _fcText[i].supportRichText = true;
@@ -44,7 +45,7 @@ namespace StellarisClone.Cards
                     "<b>Прогноз хода</b>\nНа основе {0} прогонов этого хода с вашими выложенными картами: враг отвечает как ИИ, его карты вам неизвестны.\n" +
                     "Шанс — сектор останется за вами после перестрелки; потери — сколько ваших : вражеских юнитов в среднем погибнет", ForecastSamples));
 
-                _docChip[i] = ChipAt(col, "Doctrine", new Vector2(98, y), new Vector2(170, 26), SubTint, new Color(Gold.r, Gold.g, Gold.b, 0.45f), raycast: true);
+                _docChip[i] = ChipAt(col, "Doctrine", new Vector2(50, y), new Vector2(140, 26), SubTint, new Color(Gold.r, Gold.g, Gold.b, 0.45f), raycast: true);
                 _docText[i] = Caption(_docChip[i].rectTransform, "", 11, Gold, TextAnchor.MiddleCenter, 0.8f);
                 _docText[i].rectTransform.Stretch(6, 0, 6, 0);
                 _docText[i].supportRichText = true;
