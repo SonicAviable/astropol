@@ -182,6 +182,7 @@ namespace StellarisClone.Rendering
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.32f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
+            LGBuild.Nebula(rt, 24f, 0.35f, bg: "colonies");   // задник — ночная планета
 
             _cap = LGBuild.Label(rt, "", 12, Cyan, TextAnchor.UpperLeft, bold: true);
             _cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -26), new Vector2(900, 18));

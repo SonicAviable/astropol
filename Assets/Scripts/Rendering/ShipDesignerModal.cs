@@ -209,6 +209,7 @@ namespace StellarisClone.Rendering
             var mo = LG.Motion(_root, LGAppear.Kind.Fade);
             mo.inDuration = 0.35f;
             mo.outDuration = 0.25f;
+            LGBuild.Nebula(rt, 0f, 0.45f, bg: "shipdesigner");   // задник — ангар с чертежом
 
             // Мягкое свечение за кораблём
             var glow = LGBuild.Panel(rt, "Glow", new Color(0.30f, 0.80f, 0.95f, 0.07f));
