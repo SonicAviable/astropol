@@ -7171,3 +7171,28 @@ FSR чётче растягивает картинку при масштабе �
 Сортировка	Sort by
 Управление колониями	Colony management
 …и ещё {0}	…and {0} more
+  ·  <color={0}>в работе {1}</color>	  ·  <color={0}>{1} in progress</color>
+  ·  ИЗУЧЕНО {0} ИЗ {1}	  ·  RESEARCHED {0} OF {1}
+  ·  НАУЧНАЯ ПОБЕДА <color={0}>{1}</color> / {2}	  ·  SCIENCE VICTORY <color={0}>{1}</color> / {2}
+<b>{0:0}</b> очков науки — ×{1:0.#} к базовой цене за уровень	<b>{0:0}</b> research points — ×{1:0.#} to base cost for the tier
+<b>{0}</b>\nИзучено {1} из {2}	<b>{0}</b>\nResearched {1} of {2}
+<b>{0}</b>\nИзучено {1} из {2} · в работе {3}	<b>{0}</b>\nResearched {1} of {2} · {3} in progress
+<b>{0}</b>\nНажмите, чтобы показать технологию	<b>{0}</b>\nClick to show the technology
+<b>Очередь слота</b>	<b>Slot queue</b>
+<color={0}>найдено {1}</color>	<color={0}>{1} found</color>
+<color={0}>очередь {1}</color> · дальше: {2}	<color={0}>queue {1}</color> · next: {2}
+\n\n<color=#8AA2A8>Убрать из очереди — в досье технологии</color>	\n\n<color=#8AA2A8>Remove from queue in the technology dossier</color>
+{0} · ВЕТВЬ	{0} · BRANCH
+{0} из {1}  ·  наука <color={2}>+{3:0.#}</color> / мес	{0} of {1}  ·  science <color={2}>+{3:0.#}</color> / mo
+Выберите технологию — двойной щелчок или «Исследовать»	Pick a technology — double-click or “Research”
+Доступна с {0} г. — сейчас {1}: изучение дольше в {2:0.0} раза	Available from {0} — now {1}: research takes {2:0.0}× longer
+Изучено {0} из {1}	Researched {0} of {1}
+НАУКА <color={0}>+{1:0.#}</color> / МЕС	SCIENCE <color={0}>+{1:0.#}</color> / MO
+СЛОТ {0}  ·  СВОБОДЕН	SLOT {0}  ·  FREE
+СРОК	TIME
+Срок при нынешних {0:0.#} науки в месяц и занятых слотах	Time at the current {0:0.#} science per month and busy slots
+ЭПОХА	ERA
+время пришло	its time has come
+очков · ×{0:0.#} за уровень	points · ×{0:0.#} per tier
+при {0:0.#} / мес	at {0:0.#} / mo
+рано · срок ×{0:0.0}	early · time ×{0:0.0}
