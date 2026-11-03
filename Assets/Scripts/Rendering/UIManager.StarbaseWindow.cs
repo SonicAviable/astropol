@@ -130,13 +130,6 @@ namespace StellarisClone.Rendering
             ShowSystemPanel(system);   // перестроит строку («открыто») и само окно (SyncStarbaseWindow)
         }
 
-        /// <summary>Открыть окно базы системы (если уже открыто — оставить). Для пульта на 3D-станции.</summary>
-        public void OpenStarbaseWindowPublic(StarSystem system)
-        {
-            if (system == null || (StarbaseWindowOpen && _sbSystemId == system.Id)) return;
-            ToggleStarbaseWindow(system);
-        }
-
         private void CloseStarbaseWindow()
         {
             _sbTarget = 0f;

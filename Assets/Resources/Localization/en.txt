@@ -7305,17 +7305,3 @@ Enter — начать · Esc — оставить как есть	Enter — sta
    ·   <color=#66F59E>пакт</color>	   ·   <color=#66F59E>pact</color>
 Вы пока не встретили ни одной империи.	You have not met any empire yet.
 \n<color=#8AA2A8>До следующего уровня:</color> {0:0} опыта	\n<color=#8AA2A8>To next level:</color> {0:0} XP
-Обзор империи	Empire overview
-Строительство	Construction
-Торговля	Trade
-Столица потеряна	The capital is lost
-на карте	on the map
-Пока нет контактов с другими империями	No contact with other empires yet
-В столице нет звёздной базы	There is no starbase in the capital
-Станция 3D	3D Station
-<b>Звёздная станция в 3D</b>\nПерейти на борт своей станции и пройтись по ней. Пульты открывают те же окна, что и меню: технологии, колонии, верфь, дипломатия. Игра идёт как обычно. Esc — назад на карту	<b>3D starbase</b>\nGo aboard your station and walk around it. Consoles open the same windows as the menu: technologies, colonies, shipyard, diplomacy. The game keeps running. Esc — back to the map
-Вы на борту станции	You are aboard the station
-Подойдите к пульту и нажмите E. Esc или Y — вернуться на карту	Walk up to a console and press E. Esc or Y — back to the map
-флагманская	Flagship
-Звёздная станция «{0}»	Starbase “{0}”
-WASD — ходьба   ·   Shift — бег   ·   E — пульт   ·   Alt — курсор   ·   Esc / Y — на карту	WASD — walk   ·   Shift — run   ·   E — console   ·   Alt — cursor   ·   Esc / Y — map

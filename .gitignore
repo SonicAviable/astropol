@@ -37,11 +37,3 @@ sysinfo.txt
 *.unitypackage
 *.app
 crashlytics-build.properties
-# Кит Creepy Cat (3D Scifi Kit, ~1.2 ГБ) — лежит локально, в репозиторий не идёт.
-# Station3DKit.asset и URP-копии материалов пересоздаются сами (Tools → Станция 3D)
-/[Aa]ssets/Creepy_Cat/
-/[Aa]ssets/Creepy_Cat.meta
-/[Aa]ssets/Station3D_URP/
-/[Aa]ssets/Station3D_URP.meta
-/[Aa]ssets/Resources/Station3DKit.asset
-/[Aa]ssets/Resources/Station3DKit.asset.meta
