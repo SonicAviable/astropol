@@ -9,16 +9,12 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Экран колонии — по мотивам экрана колонии Master of Orion, в стиле игры:
-    ///   • слева сверху — строка показателей: жители, производство за месяц, стабильность, занятость;
-    ///   • под ней — приоритет колонии (выпадающий список) и автостройка;
-    ///   • ряды работ: добыча титана, энергетика, промышленность, город — фигурки жителей на рабочих местах
-    ///     (цвет — их вид), над каждым местом — сколько оно даёт; клик по ряду — приоритет на этот ресурс,
-    ///     «+» в конце ряда — построить ещё район этого вида;
-    ///   • под рядами — производство: текущая стройка, «Купить» за гелий-3, очередь и «+» (меню строительства);
-    ///   • внизу слева — проекты планеты: добывающий комплекс, колония, терраформинг, роботы, генная адаптация;
-    ///   • справа — крупная вращающаяся планета, сверху справа — информация о планете, под ней — общество;
-    ///   • справа внизу — предыдущая / следующая колония и «Готово».
+    /// Экран колонии в стиле «голостола»:
+    ///   • по центру — вращающаяся планета на голо-постаменте с наклонной орбитой, над ней название и владелец;
+    ///   • снизу веером — карты районов (титан, гелий-3, сплавы, город): выработка, жители на местах, полоса стройки/роста;
+    ///     клик по карте — приоритет на этот ресурс, жителей можно перетаскивать между картами;
+    ///   • слева — доход колонии, приоритет и автостройка, производство и очередь;
+    ///   • справа — информация о планете, общество, проекты планеты и «Готово»; вверху справа — соседние колонии.
     /// Переключение колоний — также Tab / Shift+Tab, меню строительства — B, закрыть — Esc.
     /// </summary>
     public class PlanetFocusOverlay : MonoBehaviour
@@ -113,14 +109,16 @@ namespace StellarisClone.Rendering
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.09f);
 
         // Раскладка (в единицах канваса 1920×1080)
+        // «Голостол»: планета в центре на голо-постаменте, районы — картами веером снизу,
+        // слева доход, приоритет и производство, справа информация, общество и проекты.
         private const float Pad = 40f, Gap = 14f, HeaderH = 104f;
-        private const float LeftW = 800f;                       // левая колонна: показатели, ряды работ, производство
-        private const float StatsTop = HeaderH + 14f, StatsH = 74f;
-        private const float PriorityTop = StatsTop + StatsH + 18f;
-        private const float JobsTop = PriorityTop + 58f, JobRowH = 84f;
-        private const float ProdTop = JobsTop + 4 * JobRowH + 34f, ProdTileS = 92f;
-        private const float InfoW = 470f, InfoH = 300f;
-        private const int MaxSlots = 11;
+        private const float LeftW = 380f;                       // левая колонна: доход, приоритет, производство
+        private const float StatsTop = 150f, StatsH = 214f;
+        private const float PriorityTop = StatsTop + StatsH + 14f;
+        private const float ProdTop = PriorityTop + 146f, ProdTileS = 92f;
+        private const float CardW = 214f, CardH = 262f, CardGap = 16f;   // карты районов
+        private const float InfoW = 470f, InfoH = 300f, SocietyH = 236f;
+        private const int MaxSlots = 5;                         // фигурок на карте района
 
         // ================================================================ Типы
 
@@ -260,7 +258,7 @@ namespace StellarisClone.Rendering
         {
             if (_stage == null || _rootRt == null) return;
             var r = _rootRt.rect;
-            float s = Mathf.Min(r.height * 0.86f, r.width * 0.50f);
+            float s = Mathf.Min(r.height * 0.50f, r.width * 0.30f);
             if (Mathf.Abs(_stage.sizeDelta.x - s) > 0.5f) _stage.sizeDelta = new Vector2(s, s);
         }
 
@@ -677,11 +675,12 @@ namespace StellarisClone.Rendering
             int total = count + pending;
             int shown = Mathf.Min(MaxSlots, total);
             float per = PerWorker(r.Type);
+            float x0 = Mathf.Max(0f, (CardW - 20f - shown * (W + G) + G) * 0.5f);   // ряд мест — по центру карты
             for (int i = 0; i < shown; i++)
             {
                 bool building = i >= count;
                 bool busy = !building && i < worked;
-                float x = i * (W + G);
+                float x = x0 + i * (W + G);
 
                 // Подставка-параллелограмм
                 var ped = LGBuild.Panel(r.Slots, "Pedestal", building ? new Color(CGold.r, CGold.g, CGold.b, 0.55f)
@@ -729,12 +728,12 @@ namespace StellarisClone.Rendering
             if (total > shown)
             {
                 var more = LGBuild.Label(r.Slots, $"+{total - shown}", 13, CMuted, TextAnchor.MiddleLeft, bold: true);
-                more.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(shown * (W + G), 12), new Vector2(40, 24));
+                more.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(0, 40), new Vector2(40, 20));
             }
             if (total == 0)
             {
-                var none = LGBuild.Label(r.Slots, Loc.T("районов нет — постройте в меню «СТРОИТЬ»"), 11, CMuted, TextAnchor.MiddleLeft);
-                none.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 12), new Vector2(300, 24));
+                var none = LGBuild.Label(r.Slots, Loc.T("районов нет — «СТРОИТЬ»"), 11, CMuted, TextAnchor.MiddleCenter, wrap: true);
+                none.rectTransform.Stretch(0, 4, 0, 4);
             }
             LG.Skin(r.Slots);
         }
@@ -955,17 +954,23 @@ namespace StellarisClone.Rendering
                 (LGIcon.Society, new Color(0.98f, 0.55f, 0.85f), Loc.T("СТАБИЛЬНОСТЬ")),
                 (LGIcon.Industry, CCyan, Loc.T("ЗАНЯТОСТЬ")),
             };
-            float[] widths = { 0.15f, 0.12f, 0.12f, 0.12f, 0.12f, 0.21f, 0.16f };
+            // Сетка 2×4: жители и занятость, ресурсы парами, стабильность
+            Vector2Int[] cellAt = { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(0, 3), new Vector2Int(1, 0) };
+            var capT = LGBuild.Label(strip.transform, Loc.T("ДОХОД КОЛОНИИ"), 11, CCyan, TextAnchor.UpperLeft, bold: true);
+            capT.rectTransform.TopBand(12, 14, 16, 16);
+            capT.Track(1.8f);
+            const float gridTop = 32f, rowH = 44f;
             _stats = new StatCell[defs.Length];
-            float x = 0f;
             for (int i = 0; i < defs.Length; i++)
             {
                 var d = defs[i];
                 var cell = LGBuild.Panel(strip.transform, "Cell", new Color(1f, 1f, 1f, 0f), raycast: true);
                 var cr = cell.rectTransform;
-                cr.anchorMin = new Vector2(x, 0); cr.anchorMax = new Vector2(x + widths[i], 1);
-                cr.offsetMin = new Vector2(i == 0 ? 14 : 8, 6); cr.offsetMax = new Vector2(-4, -6);
-                x += widths[i];
+                var at = cellAt[i];
+                bool wide = i == 5;
+                cr.anchorMin = new Vector2(at.x * 0.5f, 1); cr.anchorMax = new Vector2(wide ? 1f : at.x * 0.5f + 0.5f, 1);
+                cr.pivot = new Vector2(0.5f, 1);
+                cr.offsetMin = new Vector2(16, -gridTop - (at.y + 1) * rowH); cr.offsetMax = new Vector2(-6, -gridTop - at.y * rowH);
                 var cap = LGBuild.Label(cell.transform, d.cap, 10, Color.Lerp(d.col, CMuted, 0.35f), TextAnchor.UpperLeft, bold: true);
                 cap.rectTransform.TopBand(2, 14);
                 cap.Track(1.0f);
@@ -975,17 +980,11 @@ namespace StellarisClone.Rendering
                 val.rectTransform.Stretch(26, 4, 0, 20);
                 TooltipHelper.Attach(cell.gameObject, d.cap);
                 _stats[i] = new StatCell { Caption = cap, Value = val, Icon = ic, Tip = cell.GetComponent<TooltipTrigger>() };
-                if (i > 0)
-                {
-                    var sep = LGBuild.Panel(strip.transform, "Sep", new Color(1f, 1f, 1f, 0.08f));
-                    sep.rectTransform.anchorMin = new Vector2(x - widths[i], 0.2f); sep.rectTransform.anchorMax = new Vector2(x - widths[i], 0.8f);
-                    sep.rectTransform.offsetMin = new Vector2(0, 0); sep.rectTransform.offsetMax = new Vector2(1, 0);
-                    LG.Ignore(sep.gameObject);
-                }
             }
 
             _bankruptText = LGBuild.Label(rt, Loc.T("БАНКРОТСТВО: ПРОИЗВОДСТВО УРЕЗАНО ВДВОЕ"), 11, UIManager.DS.Red, TextAnchor.UpperRight, bold: true);
-            _bankruptText.rectTransform.At(new Vector2(0, 1), new Vector2(1, 1), new Vector2(Pad + LeftW, -StatsTop - StatsH - 4), new Vector2(400, 16));
+            _bankruptText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -StatsTop + 20), new Vector2(LeftW, 16));
+            _bankruptText.alignment = TextAnchor.UpperLeft;
             _bankruptText.gameObject.SetActive(false);
         }
 
@@ -993,7 +992,7 @@ namespace StellarisClone.Rendering
         private void BuildPriority(RectTransform rt)
         {
             var row = LGBuild.Rect(rt, "Priority");
-            row.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop), new Vector2(LeftW, 44));
+            row.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop), new Vector2(LeftW, 90));
             _priorityRow = row.gameObject;
 
             var label = LGBuild.Label(row, Loc.T("ПРИОРИТЕТ КОЛОНИИ"), 12, Color.white, TextAnchor.UpperLeft, bold: true);
@@ -1001,7 +1000,7 @@ namespace StellarisClone.Rendering
             label.Track(1.4f);
 
             var drop = LGBuild.Button(row, "FocusDrop", new Color(0.10f, 0.36f, 0.40f), CCyan, ToggleFocusList, null, null, 12, 8f);
-            ((RectTransform)drop.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -20), new Vector2(330, 32));
+            ((RectTransform)drop.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -20), new Vector2(200, 32));
             _focusText = LGBuild.Label(drop.transform, "", 12, Color.white, TextAnchor.MiddleCenter, bold: true);
             _focusText.rectTransform.Stretch(10, 0, 30, 0);
             var chev = LGIcons.Create(drop.transform, LGIcon.Back, 12, Color.white);
@@ -1010,7 +1009,7 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(drop.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что заказывает автостройка. Также — клик по ряду работ."));
 
             var auto = LGBuild.Button(row, "Auto", new Color(0.07f, 0.13f, 0.17f), new Color(0.36f, 0.88f, 0.60f, 0.5f), ToggleAutoBuild, null, null, 11, 8f);
-            ((RectTransform)auto.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(344, -20), new Vector2(220, 32));
+            ((RectTransform)auto.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(208, -20), new Vector2(172, 32));
             _autoBg = auto.GetComponent<Image>();
             _autoIcon = LGIcons.Create(auto.transform, LGIcon.Construction, 13, CMuted);
             _autoIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(13, 13));
@@ -1019,14 +1018,14 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(auto.gameObject, Loc.T("<b>Автостройка</b>\nКогда очередь пуста, колония сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету."));
 
             var reset = LGBuild.Button(row, "ResetPlan", new Color(0.30f, 0.22f, 0.06f), CGold, ResetPlan, null, null, 10, 8f);
-            ((RectTransform)reset.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(578, -20), new Vector2(222, 32));
+            ((RectTransform)reset.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -58), new Vector2(LeftW, 28));
             LGBuild.Label(reset.transform, Loc.T("СБРОСИТЬ РУЧНУЮ РАССТАНОВКУ"), 10, Color.white, TextAnchor.MiddleCenter, bold: true);
             TooltipHelper.Attach(reset.gameObject, Loc.T("<b>Ручная расстановка</b>\nВы расставили жителей сами. Нажмите, чтобы снова распределял приоритет колонии."));
             _resetPlanBtn = reset.gameObject;
 
             // Выпадающий список приоритетов
             var list = LGBuild.Panel(rt, "FocusList", new Color(0.02f, 0.05f, 0.07f, 0.98f), raycast: true);
-            list.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 54), new Vector2(330, ColonyFocusInfo.All.Length * 36 + 8));
+            list.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 54), new Vector2(260, ColonyFocusInfo.All.Length * 36 + 8));
             LG.Platter(list.gameObject, 10f).SetRim(new Color(CCyan.r, CCyan.g, CCyan.b, 0.45f));
             _focusList = list.gameObject;
             _focusOptBg = new Image[ColonyFocusInfo.All.Length];
@@ -1044,34 +1043,50 @@ namespace StellarisClone.Rendering
 
         private static readonly DistrictType[] RowOrder = { DistrictType.Mining, DistrictType.Generator, DistrictType.Industrial, DistrictType.Urban };
 
-        /// <summary>Ряды работ — по ряду на вид района.</summary>
+        /// <summary>
+        /// Районы — карты веером под планетой: значок, выработка, название, жители на местах и полоса стройки/роста.
+        /// Клик по карте — приоритет на этот ресурс; жителей можно перетаскивать между картами.
+        /// </summary>
         private void BuildJobs(RectTransform rt)
         {
+            int n = RowOrder.Length;
+            float total = n * CardW + (n - 1) * CardGap;
             var host = LGBuild.Rect(rt, "Jobs");
-            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -JobsTop), new Vector2(LeftW, 4 * JobRowH + 30));
-            LG.Motion(host.gameObject, LGAppear.Kind.SlideLeft).delay = 0.08f;
+            host.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 26), new Vector2(total, CardH + 30));
+            LG.Motion(host.gameObject, LGAppear.Kind.SlideUp).delay = 0.08f;
 
             _noColonyText = LGBuild.Label(host, "", 14, CMuted, TextAnchor.MiddleCenter, wrap: true);
-            _noColonyText.rectTransform.TopBand(40, 120, 40, 40);
+            _noColonyText.rectTransform.Stretch(40, 40, 40, 40);
 
-            _jobs = new JobRow[RowOrder.Length];
-            for (int i = 0; i < RowOrder.Length; i++)
+            float[] tilt = { 4f, 1.5f, -1.5f, -4f };
+            float[] lift = { 0f, 12f, 12f, 0f };
+            _jobs = new JobRow[n];
+            for (int i = 0; i < n; i++)
             {
                 var t = RowOrder[i];
                 Color dc = DistrictInfo.Color(t);
                 var r = new JobRow { Type = t, Focus = FocusOf(t) };
-                r.Bg = LGBuild.Panel(host, "Row_" + t, new Color(0.02f, 0.045f, 0.065f, 0.82f), raycast: false);
-                r.Bg.rectTransform.TopBand(i * JobRowH, JobRowH - 8);
-                LG.Platter(r.Bg.gameObject, 12f).SetRim(new Color(dc.r, dc.g, dc.b, 0.18f));
+                r.Bg = LGBuild.Panel(host, "Card_" + t, new Color(0.02f, 0.045f, 0.065f, 0.82f), raycast: false);
+                var br = r.Bg.rectTransform;
+                br.anchorMin = br.anchorMax = new Vector2(0, 0);
+                br.pivot = new Vector2(0.5f, 0);
+                br.sizeDelta = new Vector2(CardW, CardH);
+                br.anchoredPosition = new Vector2(CardW * 0.5f + i * (CardW + CardGap), lift[i]);
+                br.localRotation = Quaternion.Euler(0, 0, tilt[i]);
+                LG.Platter(r.Bg.gameObject, 14f).SetRim(new Color(dc.r, dc.g, dc.b, 0.30f));
 
+                // Верхняя кромка цвета ресурса и свечение под ней
                 r.Rim = LGBuild.Panel(r.Bg.transform, "Edge", dc);
-                r.Rim.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(3, JobRowH - 26));
+                r.Rim.rectTransform.TopBand(0, 3, 14, 14);
                 LG.Ignore(r.Rim.gameObject);
+                var glow = Deco(r.Bg.transform, "Glow", HaloSprite(), new Color(dc.r, dc.g, dc.b, 0.16f));
+                glow.rectTransform.anchorMin = new Vector2(-0.2f, 0.55f); glow.rectTransform.anchorMax = new Vector2(1.2f, 1.25f);
+                glow.rectTransform.offsetMin = glow.rectTransform.offsetMax = Vector2.zero;
 
-                // Левая часть — значение, подпись, полоса; клик — приоритет
+                // Верх карты — значение, подпись, полоса; клик — приоритет
                 var info = LGBuild.Panel(r.Bg.transform, "Info", new Color(1f, 1f, 1f, 0f), raycast: true);
-                info.rectTransform.anchorMin = new Vector2(0, 0); info.rectTransform.anchorMax = new Vector2(0, 1);
-                info.rectTransform.offsetMin = new Vector2(10, 6); info.rectTransform.offsetMax = new Vector2(300, -6);
+                info.rectTransform.anchorMin = new Vector2(0, 0); info.rectTransform.anchorMax = new Vector2(1, 1);
+                info.rectTransform.offsetMin = new Vector2(10, 74); info.rectTransform.offsetMax = new Vector2(-10, -8);
                 var ib = info.gameObject.AddComponent<Button>();
                 ib.transition = Selectable.Transition.None;
                 var focus = r.Focus;
@@ -1080,37 +1095,38 @@ namespace StellarisClone.Rendering
                 r.InfoTip = info.GetComponent<TooltipTrigger>();
 
                 r.IconBg = LGBuild.Panel(info.transform, "IconBg", new Color(dc.r * 0.18f, dc.g * 0.18f, dc.b * 0.18f, 1f));
-                r.IconBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(4, -4), new Vector2(34, 34));
-                LG.Chip(r.IconBg.gameObject, new Color(dc.r, dc.g, dc.b, 0.6f), 17f);
+                r.IconBg.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(60, 60));
+                LG.Chip(r.IconBg.gameObject, new Color(dc.r, dc.g, dc.b, 0.6f), 30f);
                 var dArt = BuildCatalog.DistrictArt(t);
-                var ic = LGIcons.Create(r.IconBg.transform, BuildCatalog.DistrictIcon(t), dArt != null ? 28 : 18, dc);
+                var ic = LGIcons.Create(r.IconBg.transform, BuildCatalog.DistrictIcon(t), dArt != null ? 50 : 30, dc);
                 if (dArt != null) ic.sprite = dArt;
                 ic.raycastTarget = false;
 
-                r.Value = LGBuild.Label(info.transform, "", 22, Color.white, TextAnchor.UpperLeft, bold: true);
-                r.Value.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -2), new Vector2(240, 28));
-                r.Sub = LGBuild.Label(info.transform, "", 10, CMuted, TextAnchor.UpperLeft);
-                r.Sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(48, -32), new Vector2(250, 14));
-                var barHost = LGBuild.Rect(info.transform, "Bar");
-                barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
-                barHost.offsetMin = new Vector2(48, 4); barHost.offsetMax = new Vector2(-6, 9);
-                r.Bar = LGBuild.Bar(barHost, CGold, 0f, 4f);
+                r.Value = LGBuild.Label(info.transform, "", 28, Color.white, TextAnchor.UpperCenter, bold: true);
+                r.Value.rectTransform.TopBand(72, 36);
+                r.Value.horizontalOverflow = HorizontalWrapMode.Overflow;
+                r.Sub = LGBuild.Label(info.transform, "", 11, CMuted, TextAnchor.UpperCenter, wrap: true);
+                r.Sub.rectTransform.TopBand(110, 60, 2, 2);
 
-                // Рабочие места
+                // Низ карты — жители на местах и полоса
                 r.Slots = LGBuild.Rect(r.Bg.transform, "Slots");
-                r.Slots.anchorMin = new Vector2(0, 0); r.Slots.anchorMax = new Vector2(1, 1);
-                r.Slots.offsetMin = new Vector2(312, 6); r.Slots.offsetMax = new Vector2(-10, -8);
+                r.Slots.anchorMin = new Vector2(0, 0); r.Slots.anchorMax = new Vector2(1, 0);
+                r.Slots.offsetMin = new Vector2(10, 18); r.Slots.offsetMax = new Vector2(-10, 74);
+                var barHost = LGBuild.Rect(r.Bg.transform, "Bar");
+                barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
+                barHost.offsetMin = new Vector2(18, 8); barHost.offsetMax = new Vector2(-18, 12);
+                r.Bar = LGBuild.Bar(barHost, CGold, 0f, 4f);
                 _jobs[i] = r;
             }
-            _idleText = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperLeft);
-            _idleText.rectTransform.TopBand(4 * JobRowH - 2, 18, 4, 4);
+            _idleText = LGBuild.Label(rt, "", 12, CMuted, TextAnchor.UpperLeft, wrap: true);
+            _idleText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 96), new Vector2(LeftW, 40));
         }
 
         /// <summary>Производство: текущая стройка, «Купить», очередь и «+» (меню строительства).</summary>
         private void BuildProduction(RectTransform rt)
         {
             var host = LGBuild.Rect(rt, "Production");
-            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -ProdTop), new Vector2(LeftW, ProdTileS + 30));
+            host.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -ProdTop), new Vector2(LeftW, ProdTileS + 100));
             _prodRoot = host.gameObject;
             LG.Motion(_prodRoot, LGAppear.Kind.SlideLeft).delay = 0.12f;
 
@@ -1133,14 +1149,14 @@ namespace StellarisClone.Rendering
 
             // Название, срок, полоса и «Купить»
             _curName = LGBuild.Label(host, "", 15, Color.white, TextAnchor.UpperLeft, bold: true);
-            _curName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -26), new Vector2(270, 22));
+            _curName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -26), new Vector2(170, 22));
             _curSub = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperLeft);
-            _curSub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -50), new Vector2(270, 16));
+            _curSub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -50), new Vector2(170, 16));
             var barHost = LGBuild.Rect(host, "Bar");
-            barHost.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -70), new Vector2(256, 6));
+            barHost.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -70), new Vector2(166, 6));
             _curBar = LGBuild.Bar(barHost, CGold, 0f, 4f);
             _buyBtn = LGBuild.Button(host, "Buy", new Color(0.36f, 0.28f, 0.06f), CGold, OnBuyCurrent, null, null, 11, 8f);
-            ((RectTransform)_buyBtn.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -82), new Vector2(170, 34));
+            ((RectTransform)_buyBtn.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -82), new Vector2(166, 34));
             _buyBg = _buyBtn.GetComponent<Image>();
             var bi = LGIcons.Create(_buyBtn.transform, LGIcon.Energy, 14, CEnergy);
             bi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
@@ -1151,7 +1167,7 @@ namespace StellarisClone.Rendering
 
             // Очередь — плитки следующих заказов
             _queueTiles = LGBuild.Rect(host, "QueueTiles");
-            _queueTiles.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 300, -24 - (ProdTileS - 58f) * 0.5f), new Vector2(4 * 66f + 44f, 58f));
+            _queueTiles.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -24 - ProdTileS - 12f), new Vector2(4 * 66f + 44f, 58f));
 
             // «+» — меню строительства
             _addBtn = LGBuild.Button(host, "BuildMenu", new Color(0.40f, 0.26f, 0.06f), CGold, OpenBuildMenu, null, null, 14, 12f);
@@ -1212,36 +1228,30 @@ namespace StellarisClone.Rendering
             return s;
         }
 
-        /// <summary>Справа внизу: предыдущая / следующая колония и «Готово».</summary>
+        /// <summary>Вверху справа — предыдущая / следующая колония, внизу справа — «Готово».</summary>
         private void BuildNav(RectTransform rt)
         {
             var host = LGBuild.Rect(rt, "Nav");
-            host.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-Pad, 24), new Vector2(720, 74));
-            LG.Motion(host.gameObject, LGAppear.Kind.SlideUp).delay = 0.16f;
+            host.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Pad, -30), new Vector2(300, 40));
+            LG.Motion(host.gameObject, LGAppear.Kind.Fade).delay = 0.12f;
 
-            _navText = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperRight, bold: true);
-            _navText.rectTransform.TopBand(0, 16);
-            _navText.Track(1.2f);
-
-            _prevBtn = LGBuild.Button(host, "Prev", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(-1), null, null, 12, 8f);
-            ((RectTransform)_prevBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(262, 46));
-            var pi = LGIcons.Create(_prevBtn.transform, LGIcon.Back, 14, Color.white);
-            pi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(14, 14));
-            var pt = LGBuild.Label(_prevBtn.transform, Loc.T("ПРЕДЫДУЩАЯ КОЛОНИЯ"), 12, Color.white, TextAnchor.MiddleCenter, bold: true);
-            pt.rectTransform.Stretch(26, 0, 6, 0);
+            _prevBtn = LGBuild.Button(host, "Prev", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(-1), LGIcon.Back, null, 12, 8f);
+            ((RectTransform)_prevBtn.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(48, 40));
             TooltipHelper.Attach(_prevBtn.gameObject, Loc.T("<b>Предыдущая колония</b>\nShift+Tab"));
 
+            _navText = LGBuild.Label(host, "", 11, CMuted, TextAnchor.MiddleCenter, bold: true);
+            _navText.rectTransform.Stretch(54, 0, 54, 0);
+            _navText.Track(1.2f);
+
             _nextBtn = LGBuild.Button(host, "Next", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(1), null, null, 12, 8f);
-            ((RectTransform)_nextBtn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(272, 0), new Vector2(262, 46));
-            var nt = LGBuild.Label(_nextBtn.transform, Loc.T("СЛЕДУЮЩАЯ КОЛОНИЯ"), 12, Color.white, TextAnchor.MiddleCenter, bold: true);
-            nt.rectTransform.Stretch(6, 0, 26, 0);
+            ((RectTransform)_nextBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(48, 40));
             var ni = LGIcons.Create(_nextBtn.transform, LGIcon.Back, 14, Color.white);
-            ni.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(14, 14));
             ni.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
             TooltipHelper.Attach(_nextBtn.gameObject, Loc.T("<b>Следующая колония</b>\nTab"));
 
-            var done = LGBuild.Button(host, "Done", new Color(0.12f, 0.42f, 0.30f), UIManager.DS.Green, Close, LGIcon.Check, Loc.T("ГОТОВО"), 12, 8f);
-            ((RectTransform)done.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(170, 46));
+            var done = LGBuild.Button(rt, "Done", new Color(0.12f, 0.42f, 0.30f), UIManager.DS.Green, Close, LGIcon.Check, Loc.T("ГОТОВО"), 13, 8f);
+            ((RectTransform)done.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-Pad, 26), new Vector2(InfoW, 46));
+            LG.Motion(done.gameObject, LGAppear.Kind.SlideUp).delay = 0.16f;
             TooltipHelper.Attach(done.gameObject, Loc.T("Вернуться на карту  <color=#8AA2A8>(Esc)</color>"));
         }
 
@@ -1607,21 +1617,34 @@ namespace StellarisClone.Rendering
             var vig = Deco(rt, "Vignette", VignetteSprite(), new Color(0f, 0f, 0f, 0.85f));
             vig.rectTransform.Stretch();
 
-            var line = LGBuild.Panel(rt, "HeaderLine", new Color(0.45f, 0.95f, 0.90f, 0.16f));
-            line.rectTransform.anchorMin = new Vector2(0, 1);
-            line.rectTransform.anchorMax = new Vector2(1, 1);
-            line.rectTransform.offsetMin = new Vector2(Pad, -HeaderH - 1);
-            line.rectTransform.offsetMax = new Vector2(-Pad, -HeaderH);
-            LG.Line(line.gameObject, hairline: true);
         }
 
         /// <summary>Сцена планеты: ореолы, кольца-приборы, дуги населения и роста, сама планета.</summary>
         private void BuildStage(RectTransform rt)
         {
             _stage = LGBuild.Rect(rt, "PlanetStage");
-            _stage.anchorMin = _stage.anchorMax = new Vector2(0.735f, 0.42f);   // справа, как в Master of Orion
+            _stage.anchorMin = _stage.anchorMax = new Vector2(0.5f, 0.595f);   // по центру, над картами районов
             _stage.pivot = new Vector2(0.5f, 0.5f);
-            _stage.sizeDelta = new Vector2(670, 670);
+            _stage.sizeDelta = new Vector2(540, 540);
+
+            // Голо-постамент под планетой: свечение и сплющенные кольца
+            var padGlow = Deco(_stage, "PadGlow", HaloSprite(), new Color(CCyan.r, CCyan.g, CCyan.b, 0.22f));
+            padGlow.rectTransform.anchorMin = new Vector2(-0.25f, -0.13f); padGlow.rectTransform.anchorMax = new Vector2(1.25f, 0.13f);
+            padGlow.rectTransform.offsetMin = padGlow.rectTransform.offsetMax = Vector2.zero;
+            float[] pads = { 1.05f, 0.90f, 0.72f };
+            for (int i = 0; i < pads.Length; i++)
+            {
+                var ring = Deco(_stage, "PadRing", RingSprite(512, i == 0 ? 3f : 2f), new Color(CCyan.r, CCyan.g, CCyan.b, i == 0 ? 0.55f : 0.22f));
+                ring.rectTransform.anchorMin = new Vector2(0.5f - pads[i], 0.02f - pads[i]);   // квадрат вокруг центра — масштабируется со сценой
+                ring.rectTransform.anchorMax = new Vector2(0.5f + pads[i], 0.02f + pads[i]);
+                ring.rectTransform.offsetMin = ring.rectTransform.offsetMax = Vector2.zero;
+                ring.rectTransform.localScale = new Vector3(1f, 0.16f, 1f);
+            }
+            // Наклонная орбита за планетой
+            var orbit = Deco(_stage, "Orbit", RingSprite(512, 2f), new Color(CGold.r, CGold.g, CGold.b, 0.45f));
+            Fit(orbit.rectTransform, -0.30f);
+            orbit.rectTransform.localScale = new Vector3(1f, 0.26f, 1f);
+            orbit.rectTransform.localRotation = Quaternion.Euler(0, 0, 12f);
 
             _haloOuter = Deco(_stage, "HaloOuter", HaloSprite(), Color.clear);
             Fit(_haloOuter.rectTransform, -0.45f);
@@ -1704,20 +1727,21 @@ namespace StellarisClone.Rendering
 
             // Акцентная черта цвета мира перед названием
             _titleAccent = LGBuild.Panel(rt, "TitleAccent", CCyan);
-            _titleAccent.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(232, -24), new Vector2(4, 58));
+            _titleAccent.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -98), new Vector2(120, 2));
             LG.Ignore(_titleAccent.gameObject);
 
-            _title = LGBuild.Label(rt, "", 40, Color.white, TextAnchor.UpperLeft, bold: true);
-            _title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(250, -16), new Vector2(560, 48));
+            _title = LGBuild.Label(rt, "", 46, Color.white, TextAnchor.UpperCenter, bold: true);
+            _title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -36), new Vector2(900, 56));
             var glow = _title.gameObject.AddComponent<Outline>();
             glow.effectColor = new Color(0.30f, 0.90f, 0.85f, 0.18f);
             glow.effectDistance = new Vector2(1.5f, -1.5f);
-            _subtitle = LGBuild.Label(rt, "", 13, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(252, -64), new Vector2(560, 20));
+            _subtitle = LGBuild.Label(rt, "", 13, CGold, TextAnchor.UpperCenter, bold: true);
+            _subtitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(900, 20));
+            _subtitle.Track(1.6f);
 
             // Владелец и губернатор — по центру шапки, в одну строку
             var chip = LGBuild.Panel(rt, "Owner", UIManager.DS.BgSlot);
-            chip.rectTransform.At(new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(0, -34), new Vector2(300, 34));
+            chip.rectTransform.At(new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(-6, -108), new Vector2(260, 30));
             LG.Chip(chip.gameObject, new Color(1f, 1f, 1f, 0.2f));
             _ownerIcon = LGIcons.Create(chip.transform, LGIcon.Starbase, 18, FleetIndicator.OwnColor);
             _ownerIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(18, 18));
@@ -1725,7 +1749,7 @@ namespace StellarisClone.Rendering
             _ownerText.rectTransform.Stretch(42, 0, 12, 0);
 
             var gov = LGBuild.Panel(rt, "Governor", UIManager.DS.BgSlot);
-            gov.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 1), new Vector2(10, -34), new Vector2(260, 34));
+            gov.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 1), new Vector2(6, -108), new Vector2(260, 30));
             LG.Chip(gov.gameObject, new Color(1f, 0.80f, 0.32f, 0.3f));
             _govChip = gov.gameObject;
             var faceHost = LGBuild.Rect(gov.transform, "Face");
@@ -1746,7 +1770,7 @@ namespace StellarisClone.Rendering
             r.anchorMin = r.anchorMax = new Vector2(1, 1);
             r.pivot = new Vector2(1, 1);
             r.anchoredPosition = new Vector2(-Pad, -StatsTop - InfoH - 12f);
-            r.sizeDelta = new Vector2(290, 272);
+            r.sizeDelta = new Vector2(InfoW, SocietyH);
             _society = card.gameObject;
 
             // Стабильность: подпись, число и уровень, шкала, действие уровня (всё под одной подсказкой)
@@ -2000,10 +2024,11 @@ namespace StellarisClone.Rendering
         {
             var card = Glass(rt, "Projects", LGIcon.Planet, Loc.T("ПРОЕКТЫ ПЛАНЕТЫ"), CCyan, LGAppear.Kind.SlideUp, 0.20f, out var body);
             var r = card.rectTransform;
-            r.anchorMin = r.anchorMax = new Vector2(0, 0);
-            r.pivot = new Vector2(0, 0);
-            r.anchoredPosition = new Vector2(Pad, 24);
-            r.sizeDelta = new Vector2(LeftW, 156);
+            r.anchorMin = r.anchorMax = new Vector2(1, 0);
+            r.pivot = new Vector2(1, 0);
+            r.anchoredPosition = new Vector2(-Pad, 84);
+            float projTop = StatsTop + InfoH + 12f + SocietyH + 12f;
+            r.sizeDelta = new Vector2(InfoW, 1080f - projTop - 84f);
 
             _mine = BuildAction(body, 0, Loc.T("ДОБЫВАЮЩИЙ КОМПЛЕКС"), new Color(0.10f, 0.36f, 0.26f), UIManager.DS.Green, OnMine);
             _colony = BuildAction(body, 1, Loc.T("КОЛОНИЯ"), new Color(0.10f, 0.32f, 0.40f), CCyan, OnColony);
@@ -2017,26 +2042,27 @@ namespace StellarisClone.Rendering
         {
             var b = LGBuild.Button(parent, "Project", tint, new Color(accent.r, accent.g, accent.b, 0.55f), onClick, null, null, 11, 12f);
             var r = (RectTransform)b.transform;
-            r.anchorMin = new Vector2(index / (float)ProjectCount, 0);
-            r.anchorMax = new Vector2((index + 1) / (float)ProjectCount, 1);
-            r.offsetMin = new Vector2(index == 0 ? 0 : 4, 0);
-            r.offsetMax = new Vector2(index == ProjectCount - 1 ? 0 : -4, 0);
+            // Строки сверху вниз: значок, название слева, состояние справа
+            r.anchorMin = new Vector2(0, 1f - (index + 1) / (float)ProjectCount);
+            r.anchorMax = new Vector2(1, 1f - index / (float)ProjectCount);
+            r.offsetMin = new Vector2(0, index == ProjectCount - 1 ? 0 : 3);
+            r.offsetMax = new Vector2(0, index == 0 ? 0 : -3);
 
             var badge = LGBuild.Panel(b.transform, "Badge", new Color(0.05f, 0.1f, 0.12f));
-            badge.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(8, -8), new Vector2(30, 30));
+            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(28, 28));
             LG.Platter(badge.gameObject, 15f).SetRim(new Color(accent.r, accent.g, accent.b, 0.6f));
             var ic = LGIcons.Create(badge.transform, LGIcon.Check, 15, Color.white);
 
             var t = LGBuild.Label(b.transform, title, 11, accent, TextAnchor.MiddleLeft, bold: true, wrap: true);
-            t.rectTransform.anchorMin = new Vector2(0, 1);
-            t.rectTransform.anchorMax = new Vector2(1, 1);
-            t.rectTransform.offsetMin = new Vector2(44, -40);
-            t.rectTransform.offsetMax = new Vector2(-6, -6);
-            var st = LGBuild.Label(b.transform, "", 10, Color.white, TextAnchor.UpperLeft, wrap: true);
-            st.rectTransform.anchorMin = new Vector2(0, 0);
+            t.rectTransform.anchorMin = new Vector2(0, 0);
+            t.rectTransform.anchorMax = new Vector2(0.42f, 1);
+            t.rectTransform.offsetMin = new Vector2(44, 0);
+            t.rectTransform.offsetMax = new Vector2(0, 0);
+            var st = LGBuild.Label(b.transform, "", 10, Color.white, TextAnchor.MiddleLeft, wrap: true);
+            st.rectTransform.anchorMin = new Vector2(0.42f, 0);
             st.rectTransform.anchorMax = new Vector2(1, 1);
-            st.rectTransform.offsetMin = new Vector2(8, 4);
-            st.rectTransform.offsetMax = new Vector2(-6, -44);
+            st.rectTransform.offsetMin = new Vector2(8, 2);
+            st.rectTransform.offsetMax = new Vector2(-8, -2);
             TooltipHelper.Attach(b.gameObject, title);
             return new ActionButton { Btn = b, Bg = b.GetComponent<Image>(), Icon = ic, Badge = badge, Status = st, Tint = tint, Accent = accent,
                                       Tip = b.GetComponent<TooltipTrigger>() };
