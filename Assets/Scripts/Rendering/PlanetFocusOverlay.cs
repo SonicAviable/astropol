@@ -1089,8 +1089,8 @@ namespace StellarisClone.Rendering
                 r.Rim = LGBuild.Panel(r.Bg.transform, "Edge", dc);
                 r.Rim.rectTransform.TopBand(0, 3, 14, 14);
                 LG.Ignore(r.Rim.gameObject);
-                var glow = Deco(r.Bg.transform, "Glow", HaloSprite(), new Color(dc.r, dc.g, dc.b, 0.16f));
-                glow.rectTransform.anchorMin = new Vector2(-0.2f, 0.55f); glow.rectTransform.anchorMax = new Vector2(1.2f, 1.25f);
+                var glow = Deco(r.Bg.transform, "Glow", HaloSprite(), new Color(dc.r, dc.g, dc.b, 0.10f));
+                glow.rectTransform.anchorMin = new Vector2(0.05f, 0.62f); glow.rectTransform.anchorMax = new Vector2(0.95f, 1.08f);
                 glow.rectTransform.offsetMin = glow.rectTransform.offsetMax = Vector2.zero;
 
                 // Верх карты — значение, подпись, полоса; клик — приоритет
@@ -1182,11 +1182,11 @@ namespace StellarisClone.Rendering
 
             // Название, срок, полоса и «Купить»
             _curName = LGBuild.Label(host, "", 15, Color.white, TextAnchor.UpperLeft, bold: true);
-            _curName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -26), new Vector2(170, 22));
+            _curName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -26), new Vector2(270, 22));
             _curSub = LGBuild.Label(host, "", 11, CMuted, TextAnchor.UpperLeft);
-            _curSub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -50), new Vector2(170, 16));
+            _curSub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -50), new Vector2(270, 16));
             var barHost = LGBuild.Rect(host, "Bar");
-            barHost.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -70), new Vector2(166, 6));
+            barHost.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -70), new Vector2(260, 6));
             _curBar = LGBuild.Bar(barHost, CGold, 0f, 4f);
             _buyBtn = LGBuild.Button(host, "Buy", new Color(0.36f, 0.28f, 0.06f), CGold, OnBuyCurrent, null, null, 11, 8f);
             ((RectTransform)_buyBtn.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(ProdTileS + 14, -82), new Vector2(166, 34));
@@ -1210,6 +1210,7 @@ namespace StellarisClone.Rendering
             var addT = LGBuild.Label(_addBtn.transform, Loc.T("СТРОИТЬ"), 11, Color.white, TextAnchor.LowerCenter, bold: true);
             addT.rectTransform.Stretch(0, 10, 0, 0);
             TooltipHelper.Attach(_addBtn.gameObject, Loc.T("<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#8AA2A8>(B)</color>"));
+            _addBtn.gameObject.SetActive(false);   // строить — пятой картой под планетой
         }
 
         /// <summary>Информация о планете — справа сверху: шкалы, климат, сооружения.</summary>
@@ -1709,6 +1710,8 @@ namespace StellarisClone.Rendering
         /// <summary>Фон: подсветка цвета мира за планетой, виньетка по краям, линия под шапкой.</summary>
         private void BuildBackdrop(RectTransform rt)
         {
+            LGBuild.Nebula(rt, 0f, 0.6f);   // звёзды и туманность за сценой
+
             _worldTint = Deco(rt, "WorldTint", HaloSprite(), Color.clear);
             var t = _worldTint.rectTransform;
             t.anchorMin = new Vector2(0.30f, -0.30f);
@@ -1758,8 +1761,8 @@ namespace StellarisClone.Rendering
             Fit(_ringDash.rectTransform, -0.035f);
 
             // Население — дуга слева, по часовой снизу вверх; рост — короткая дуга справа
-            Arc("PopTrack", 5f, PopArc, 0.75f, new Color(1f, 1f, 1f, 0.08f), PopArc);
-            _popFill = Arc("PopFill", 5f, PopArc, 0.75f, CCyan, 0f);
+            Arc("PopTrack", 3f, PopArc, 0.75f, new Color(1f, 1f, 1f, 0.08f), PopArc);
+            _popFill = Arc("PopFill", 3f, PopArc, 0.75f, CCyan, 0f);
             Arc("GrowTrack", 3f, GrowArc, 0.25f, new Color(1f, 1f, 1f, 0.07f), GrowArc);
             _growFill = Arc("GrowFill", 3f, GrowArc, 0.25f, UIManager.DS.Green, 0f);
 
@@ -1828,21 +1831,21 @@ namespace StellarisClone.Rendering
 
             // Акцентная черта цвета мира перед названием
             _titleAccent = LGBuild.Panel(rt, "TitleAccent", CCyan);
-            _titleAccent.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -98), new Vector2(120, 2));
+            _titleAccent.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -114), new Vector2(120, 2));
             LG.Ignore(_titleAccent.gameObject);
 
             _title = LGBuild.Label(rt, "", 46, Color.white, TextAnchor.UpperCenter, bold: true);
-            _title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -36), new Vector2(900, 56));
+            _title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -52), new Vector2(900, 56));
             var glow = _title.gameObject.AddComponent<Outline>();
             glow.effectColor = new Color(0.30f, 0.90f, 0.85f, 0.18f);
             glow.effectDistance = new Vector2(1.5f, -1.5f);
             _subtitle = LGBuild.Label(rt, "", 13, CGold, TextAnchor.UpperCenter, bold: true);
-            _subtitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(900, 20));
+            _subtitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -32), new Vector2(900, 20));
             _subtitle.Track(1.6f);
 
             // Владелец и губернатор — по центру шапки, в одну строку
             var chip = LGBuild.Panel(rt, "Owner", UIManager.DS.BgSlot);
-            chip.rectTransform.At(new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(-6, -108), new Vector2(260, 30));
+            chip.rectTransform.At(new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(-6, -122), new Vector2(260, 30));
             LG.Chip(chip.gameObject, new Color(1f, 1f, 1f, 0.2f));
             _ownerIcon = LGIcons.Create(chip.transform, LGIcon.Starbase, 18, FleetIndicator.OwnColor);
             _ownerIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(18, 18));
@@ -1850,7 +1853,7 @@ namespace StellarisClone.Rendering
             _ownerText.rectTransform.Stretch(42, 0, 12, 0);
 
             var gov = LGBuild.Panel(rt, "Governor", UIManager.DS.BgSlot);
-            gov.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 1), new Vector2(6, -108), new Vector2(260, 30));
+            gov.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 1), new Vector2(6, -122), new Vector2(260, 30));
             LG.Chip(gov.gameObject, new Color(1f, 0.80f, 0.32f, 0.3f));
             _govChip = gov.gameObject;
             var faceHost = LGBuild.Rect(gov.transform, "Face");
@@ -2149,6 +2152,8 @@ namespace StellarisClone.Rendering
         private static ActionButton BuildAction(RectTransform parent, int index, string title, Color tint, Color accent, System.Action onClick)
         {
             var b = LGBuild.Button(parent, "Project", tint, new Color(accent.r, accent.g, accent.b, 0.55f), onClick, null, null, 11, 12f);
+            var skin = b.GetComponent<LGGameButton>();
+            if (skin != null) Object.DestroyImmediate(skin);   // своя раскладка: значок, название, состояние
             var r = (RectTransform)b.transform;
             // Строки сверху вниз: значок, название слева, состояние справа
             r.anchorMin = new Vector2(0, 1f - (index + 1) / (float)ProjectCount);
@@ -2162,15 +2167,16 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(badge.transform, LGIcon.Check, 15, Color.white);
 
             var t = LGBuild.Label(b.transform, title, 11, accent, TextAnchor.MiddleLeft, bold: true, wrap: true);
-            t.rectTransform.anchorMin = new Vector2(0, 0);
-            t.rectTransform.anchorMax = new Vector2(0.42f, 1);
-            t.rectTransform.offsetMin = new Vector2(44, 0);
-            t.rectTransform.offsetMax = new Vector2(0, 0);
-            var st = LGBuild.Label(b.transform, "", 10, Color.white, TextAnchor.MiddleLeft, wrap: true);
-            st.rectTransform.anchorMin = new Vector2(0.42f, 0);
-            st.rectTransform.anchorMax = new Vector2(1, 1);
-            st.rectTransform.offsetMin = new Vector2(8, 2);
-            st.rectTransform.offsetMax = new Vector2(-8, -2);
+            t.rectTransform.anchorMin = new Vector2(0, 0.5f);
+            t.rectTransform.anchorMax = new Vector2(1, 1);
+            t.rectTransform.offsetMin = new Vector2(46, 0);
+            t.rectTransform.offsetMax = new Vector2(-8, -4);
+            t.alignment = TextAnchor.LowerLeft;
+            var st = LGBuild.Label(b.transform, "", 10, Color.white, TextAnchor.UpperLeft, wrap: true);
+            st.rectTransform.anchorMin = new Vector2(0, 0);
+            st.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            st.rectTransform.offsetMin = new Vector2(46, 2);
+            st.rectTransform.offsetMax = new Vector2(-8, -1);
             TooltipHelper.Attach(b.gameObject, title);
             return new ActionButton { Btn = b, Bg = b.GetComponent<Image>(), Icon = ic, Badge = badge, Status = st, Tint = tint, Accent = accent,
                                       Tip = b.GetComponent<TooltipTrigger>() };
