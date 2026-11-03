@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
         private const float Pad = 40f, Gap = 14f, HeaderH = 104f;
         private const float LeftW = 380f;                       // левая колонна: доход, приоритет, производство
         private const float StatsTop = 330f, StatsH = 214f;
-        private const float PriorityTop = StatsTop + StatsH + 14f;
+        private const float PriorityTop = StatsTop;   // блок дохода скрыт: всё это уже видно на картах и выносках
         private const float ProdTop = PriorityTop + 146f, ProdTileS = 92f;
         private const float CardW = 196f, CardH = 262f, CardGap = 14f;   // карты районов (+ карта «Строить»)
         private const float InfoW = 470f, InfoH = 300f, SocietyH = 236f, RightW = 360f;
@@ -653,10 +653,11 @@ namespace StellarisClone.Rendering
             }
 
             int idle = _planet.IdlePops;
-            _idleText.text = idle > 0
+            string sum = Loc.F("<color=#7FCFFF>Наука +{0:0.#}</color>  ·  работают {1} из {2} мест\n", ScienceOut(), _planet.EmployedPops, _planet.WorkerSlots);
+            _idleText.text = sum + (idle > 0
                 ? Loc.F("<color=#F2C46B>Безработных {0}</color> — нет свободных мест: постройте районы («СТРОИТЬ»).", idle)
                 : _planet.BuiltDistricts >= _planet.MaxDistricts ? Loc.F("<color=#8AA2A8>Все {0} мест под районы застроены.</color>", _planet.MaxDistricts)
-                : Loc.F("<color=#8AA2A8>Перетаскивайте жителей мышью между рядами · свободных мест под районы: {0} из {1}</color>", _planet.MaxDistricts - _planet.BuiltDistricts - pendingAll, _planet.MaxDistricts);
+                : Loc.F("<color=#8AA2A8>Перетаскивайте жителей мышью между рядами · свободных мест под районы: {0} из {1}</color>", _planet.MaxDistricts - _planet.BuiltDistricts - pendingAll, _planet.MaxDistricts));
         }
 
         /// <summary>
@@ -953,6 +954,7 @@ namespace StellarisClone.Rendering
             strip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -StatsTop), new Vector2(LeftW, StatsH));
             LG.Glass(strip.gameObject, 14f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.28f));
             LG.Motion(strip.gameObject, LGAppear.Kind.SlideDown).distance = 20f;
+            strip.gameObject.SetActive(false);   // дублировал карты районов и выноски; наука и занятость — в строке под приоритетом
 
             (LGIcon icon, Color col, string cap)[] defs =
             {
@@ -1152,7 +1154,7 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(build.gameObject, Loc.T("<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#8AA2A8>(B)</color>"));
 
             _idleText = LGBuild.Label(rt, "", 12, CMuted, TextAnchor.UpperLeft, wrap: true);
-            _idleText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 96), new Vector2(LeftW, 40));
+            _idleText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 96), new Vector2(LeftW, 56));
         }
 
         /// <summary>Производство: текущая стройка, «Купить», очередь и «+» (меню строительства).</summary>
