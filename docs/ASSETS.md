@@ -22,6 +22,10 @@
 |---|---|---|
 | **Starter Assets – FirstPerson** | Unity | база FPS-контроллера (§8.1) |
 | **Low Poly Shooter Pack – Free Sample** | Infima Games | руки + оружие + анимации стрельбы, временно до своих стволов (§8.2) |
+| **AK-74 (HDRP)** | Creation Wasteland | реалистичный АК-74 (материалы перевести в URP вручную) |
+| **Free FPS Weapon - AKM** | Delthor Games | АКМ |
+| **Weapon Pack - AK (Kalashnikov) - FREE** | TessaraOxygen | семейство АК |
+| **FA: FPS Weapons Pack - Free** | SIGN | револьвер, нож |
 | **War FX** | Jean Moreno (JMO) | вспышки выстрелов, попадания, взрывы (М5, М12) |
 | **Unity Particle Pack** | Unity | огонь/искры/дым — аномалии «Огневушка», Огневик |
 | **DOTween (HOTween v2)** | Demigiant | анимация UI, КПК |
@@ -68,7 +72,7 @@
 Вне Asset Store: **freesound.org** (CC0) — гул, ветер, радиопомехи, вой.
 
 ## 6. Чего бесплатно нет — делать самим / искать / покупать позже
-- Модели советского оружия (АК, ПМ, СВД) — Sketchfab с CC-BY лицензией или заказать.
+- ПМ, СВД, Сайга, ПКМ, РПГ-7 — Sketchfab (CC-BY). Анимации стволов — процедурные, кодом (отдача, покачивание, прицел, перезарядка).
 - Советский транспорт (УАЗ, ПАЗ, ЗИЛ, тепловоз) — Sketchfab CC-BY.
 - Памятник, ДК, панельки снаружи — собрать в ProBuilder по модульной сетке.
 - Самоцветы — простые шейдеры Shader Graph (кристалл + свечение).
