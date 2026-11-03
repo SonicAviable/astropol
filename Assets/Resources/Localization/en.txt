@@ -7354,7 +7354,6 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 Вражеский герой	Enemy hero
 <color=#C4A8FF>Событие боя: {0}</color>	<color=#C4A8FF>Battle event: {0}</color>
 СОКРУШИТЕЛЬНО	DEVASTATING
-УНИЧТОЖЕН	DESTROYED
 ДВОЙНОЙ УДАР	DOUBLE KILL
 ТРОЙНОЙ УДАР	TRIPLE KILL
 РАЗГРОМ	RAMPAGE
