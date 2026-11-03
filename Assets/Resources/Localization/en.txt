@@ -7379,31 +7379,6 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 Горизонт событий чёрной дыры искривляет всё — свет, время и траектории снарядов. Учёные готовы на всё ради места поближе к краю.	The black hole's event horizon bends everything — light, time and the paths of shells. Scientists would do anything for a spot closer to the edge.
 Открыто чудо природы	Natural wonder discovered
 {0} · система {1}: {2}.	{0} · {1} system: {2}.
-Фракции	Factions
-Карты штурма	Assault cards
-Узлы силы	Power nodes
-Чудеса природы	Natural wonders
-Народ-основатель	Founding people
-Доктрина штурма	Assault doctrine
-Общая карта	Common card
-  ·  сила {0}  ·  броня {1}	  ·  power {0}  ·  armor {1}
-  ·  стоит {0} очк.	  ·  costs {0} pts
-Открывает технология «{0}»	Unlocked by the “{0}” technology
-Бонус владельцу	Owner bonus
-Действует, пока в системе стоит ваш форпост. Технология «Археотехнология» усиливает бонус на 50%.	Works while your outpost stands in the system. The “Archaeotechnology” tech boosts the bonus by 50%.
-Закон системы	System law
-Действует на всех, кто находится в системе, — и на вас, и на врага.	Affects everyone in the system — you and your enemies alike.
-КОДЕКС	CODEX
-Закрыть  <color=#8AA2A8>(Esc / X)</color>	Close  <color=#8AA2A8>(Esc / X)</color>
-Запись откроется при первой встрече с этой цивилизацией.	This entry unlocks on first contact with this civilization.
-Запись откроется, когда вы изучите эту технологию.	This entry unlocks when you research this technology.
-Запись откроется, когда карта появится в вашем арсенале или в бою — вашем или вражеском.	This entry unlocks when the card appears in your arsenal or in battle — yours or the enemy's.
-Запись откроется, когда разведка найдёт этот узел силы на карте.	This entry unlocks when your scouts find this power node on the map.
-Запись откроется, когда разведка найдёт это чудо природы на карте.	This entry unlocks when your scouts find this natural wonder on the map.
-Энциклопедия галактики. Открыто <color=#7CF2D8>{0}</color> из {1} записей ({2}%). Открытия сохраняются между партиями.	Encyclopedia of the galaxy. Unlocked <color=#7CF2D8>{0}</color> of {1} entries ({2}%). Discoveries carry over between games.
 \n<color={0}>ЧУДО ПРИРОДЫ · {1}</color>\n	\n<color={0}>NATURAL WONDER · {1}</color>\n
 В системе {0}\n	In the system, {0}\n
 <color=#8AA2A8>Действует на всех, кто здесь находится</color>\n	<color=#8AA2A8>Affects everyone present here</color>\n
-Кодекс	Codex
-<b>Кодекс</b>\nЭнциклопедия галактики: фракции, технологии, карты штурма, узлы силы и чудеса природы. Записи открываются по ходу игры и сохраняются между партиями	<b>Codex</b>\nEncyclopedia of the galaxy: factions, technologies, assault cards, power nodes and natural wonders. Entries unlock as you play and carry over between games
-Кодекс: энциклопедия галактики	Codex: encyclopedia of the galaxy

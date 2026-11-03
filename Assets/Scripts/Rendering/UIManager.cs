@@ -640,8 +640,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, UIAnchors.LogHelp,
                  Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O");
             NotificationLog.AttachBadge(menu.transform.Find("NavLog/IconTile"));
-            Item("NavCodex", LGIcon.Info, Loc.T("Кодекс"), new Color(0.6f, 0.85f, 1f), CodexWindow.Toggle, null,
-                 Loc.T("<b>Кодекс</b>\nЭнциклопедия галактики: фракции, технологии, карты штурма, узлы силы и чудеса природы. Записи открываются по ходу игры и сохраняются между партиями"), "X");
             // «Справка» — маленькая кнопка «?» в шапке планировщика справа (OutlinerPanel), клавиша F1
 
             // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
@@ -860,7 +858,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else if (Input.GetKeyDown(KeyCode.C)) CloseMainWindows(NavWindow.Colonies);
             else if (Input.GetKeyDown(KeyCode.V)) CloseMainWindows(NavWindow.Victory);
             else if (Input.GetKeyDown(KeyCode.O)) NotificationLog.Toggle();
-            else if (Input.GetKeyDown(KeyCode.X)) CodexWindow.Toggle();
             else if (Input.GetKeyDown(KeyCode.Tab)) CycleColony(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? -1 : 1);
         }
 

@@ -315,14 +315,12 @@ namespace StellarisClone.Core
         {
             if (!UIManager.IsGameStarted) return;
             NaturalWonders.DailyTick();
-            if (!_init || day % 7 == 1) Codex.ScanGame();   // открытия кодекса — раз в неделю
             foreach (var s in NaturalWonders.All)
             {
                 bool known = Vision.PlayerKnows(s.Id) || s.OwnerId == 0;
                 if (!known) continue;
-                if (!_init) { _announced.Add(s.Id); Codex.Discover("wonder." + s.Phenomenon); continue; }
+                if (!_init) { _announced.Add(s.Id); continue; }
                 if (!_announced.Add(s.Id)) continue;
-                Codex.Discover("wonder." + s.Phenomenon);
                 NotificationCenter.Show(Loc.T("Открыто чудо природы"),
                     Loc.F("{0} · система {1}: {2}.", NaturalWonders.Name(s.Phenomenon), s.Name, NaturalWonders.Rule(s.Phenomenon)),
                     NotificationCenter.Kind.Info, 8f, s.Id);
