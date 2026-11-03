@@ -28,8 +28,8 @@
 | Что | Где | Зачем |
 |---|---|---|
 | Terrain Tools, Terrain Sample Asset Pack | Package Manager / Asset Store (Unity) | Рельеф, кисти, скалы, трава |
-| Book of the Dead: Environment (HDRP → вручную под URP) или **Nature Starter Kit 2** | Asset Store | Лес, деревья, кусты |
-| **POLYGON** — нет; вместо него **Quaternius «Post-Apocalypse»**, **Kenney «City Kit»** | quaternius.com, kenney.nl (CC0) | Заброшенные дома, машины, хлам |
+| **Nature Starter Kit 2**, **Conifers [BOTD]** | Asset Store | Лес, деревья, кусты |
+| **Quaternius** (наборы постапокалипсиса и зданий), **Kenney** (City Kit) | quaternius.com, kenney.nl (CC0) | Заброшенные дома, машины, хлам |
 | **Poly Haven** — HDRI, текстуры, модели | polyhaven.com (CC0) | Небо, бетон, ржавчина, грунт |
 | **ambientCG** | ambientcg.com (CC0) | PBR-материалы: асфальт, кирпич, металл |
 | **Sketchfab** (фильтр «Downloadable», CC0/CC-BY) | sketchfab.com | Советские постройки, техника, мебель |
