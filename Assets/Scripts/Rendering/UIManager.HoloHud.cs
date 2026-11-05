@@ -13,8 +13,8 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class UIManager
     {
-        private const float DiskD = 136f;          // диаметр диска времени
-        private const float DiskCenterY = 89f;     // центр диска от верха экрана: риски (DiskD + 34) целиком на экране
+        private const float DiskD = 118f;          // диаметр диска времени
+        private const float DiskCenterY = 78f;     // центр диска от верха экрана: риски (DiskD + 34) целиком на экране
         private const float WingH = 64f;
         private const float WingGap = 18f;          // зазор между диском и крылом
         private const float CellStep = 154f;        // ширина ячейки ресурса (150) + зазор
@@ -334,13 +334,13 @@ namespace StellarisClone.Rendering
 
             // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
             _diskMonth = CreateText(disk, "", 11, FontStyle.Bold, HoloLine, TextAnchor.MiddleCenter);
-            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 36f), new Vector2(DiskD, 16f));
+            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 31f), new Vector2(DiskD, 16f));
             _diskMonth.Track(3f);
-            _diskDay = CreateText(disk, "", 42, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
+            _diskDay = CreateText(disk, "", 36, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
             _diskDay.font = GameFont.Display;
-            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 5f), new Vector2(DiskD, 50f));
+            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 4f), new Vector2(DiskD, 44f));
             _diskYear = CreateText(disk, "", 13, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
-            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -30f), new Vector2(DiskD, 18f));
+            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -26f), new Vector2(DiskD, 18f));
             _diskYear.Track(4.5f);
 
             BuildSpeedArc(disk);
@@ -445,7 +445,7 @@ namespace StellarisClone.Rendering
             UIAnchors.Register(UIAnchors.Speed, arc);
         }
 
-        private const float GaugeR = 108f, GaugeW = 7f, GaugeLeft = 236f, GaugeRight = 124f;
+        private const float GaugeR = 94f, GaugeW = 7f, GaugeLeft = 236f, GaugeRight = 124f;
         private Image _gaugeFill, _gaugeGlow, _knobGlow;
         private RectTransform _knob;
         private readonly Image[] _gaugeTicks = new Image[4];

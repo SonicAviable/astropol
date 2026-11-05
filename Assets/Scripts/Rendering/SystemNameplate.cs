@@ -28,6 +28,7 @@ namespace StellarisClone.Rendering
         // Форпост, который строит (или летит строить) ваш строительный корабль: сколько дней до готовности
         private float _buildAlpha, _buildScan;
         private bool _buildOn;
+        private string _workTip;   // подсказка маяка работы на кольце
         private string _buildKey = "";
         // Колония игрока (как в Master of Orion): слева от названия — жители и рост, справа — текущая стройка
         private WorldChip _chipPop, _chipJob;
@@ -299,7 +300,9 @@ namespace StellarisClone.Rendering
         /// <summary>Подсказка ярлыка под курсором (жители или стройка); null — курсор не над ярлыком.</summary>
         public string ChipTooltipAt(Camera cam, Vector2 screen)
         {
-            if (_data == null || _data.OwnerId != 0) return null;
+            if (_data == null) return null;
+            if (_buildOn && _work != null && _workTip != null && _work.ContainsScreenPoint(cam, screen)) return _workTip;
+            if (_data.OwnerId != 0) return null;
             if (_popOn && _chipPop != null && _chipPop.ContainsScreenPoint(cam, screen)) return PopTooltip();
             if (_jobOn && _chipJob != null && _chipJob.ContainsScreenPoint(cam, screen)) return JobTooltip();
             return null;
@@ -444,7 +447,7 @@ namespace StellarisClone.Rendering
             _buildScan -= Time.unscaledDeltaTime;
             if (_buildScan > 0f) return;
             _buildScan = 0.25f;
-            string text;
+            string text, tip;
             LGIcon icon;
             Color col;
             float progress = 0f;
@@ -455,6 +458,7 @@ namespace StellarisClone.Rendering
                 float total = FactionTraits.OutpostDays(0);
                 progress = total > 0f ? 1f - days / total : 0f;
                 text = DaysNum(days);
+                tip = Loc.F("<b>Форпост · {0}</b>\nСтроительство: {1:0}% · осталось {2}", _data.Name, progress * 100f, FleetRoute.FormatDays(days));
                 icon = LGIcon.Starbase;
                 col = SystemWorkRing.BuildCol;
             }
@@ -462,6 +466,7 @@ namespace StellarisClone.Rendering
             {
                 progress = sp;
                 text = DaysNum(sdays);
+                tip = Loc.F("<b>Разведка · {0}</b>\nНаучный корабль изучает систему: {1:0}% · осталось {2}", _data.Name, sp * 100f, FleetRoute.FormatDays(sdays));
                 icon = LGIcon.Sensors;
                 col = SystemWorkRing.SurveyCol;
             }
@@ -469,6 +474,7 @@ namespace StellarisClone.Rendering
             {
                 wait = true;   // строитель ещё летит — пунктирное кольцо
                 text = "~" + DaysNum(days);
+                tip = Loc.F("<b>Форпост · {0}</b>\nСтроитель в пути — форпост будет готов примерно через {1}", _data.Name, FleetRoute.FormatDays(days));
                 icon = LGIcon.Starbase;
                 col = SystemWorkRing.BuildCol;
             }
@@ -476,11 +482,14 @@ namespace StellarisClone.Rendering
             {
                 progress = job.Progress;
                 text = DaysNum(jdays);
+                tip = Loc.F("<b>{0} · {1}</b>\nВыполнено {2:0}% · осталось {3}", job.Kind == JobKind.Colony ? Loc.T("Колонизация") : Loc.T("Терраформинг"),
+                    _data.Name, job.Progress * 100f, FleetRoute.FormatDays(jdays));
                 icon = job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe;
                 col = SystemWorkRing.ColonyCol;
             }
-            else { _buildOn = false; return; }
+            else { _buildOn = false; _workTip = null; return; }
             _buildOn = true;
+            _workTip = tip + Loc.T("\n<color=#8AA2A8>Значок: ромб заливается по мере работы, число — дней до завершения</color>");
             _work.Set(col, progress, wait, icon, text);
         }
 

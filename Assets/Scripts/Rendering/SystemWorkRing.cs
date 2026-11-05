@@ -59,6 +59,8 @@ namespace StellarisClone.Rendering
             _cap.Set(icon, days, col);
         }
 
+        public bool ContainsScreenPoint(Camera cam, Vector2 p) => _go != null && _go.activeSelf && _cap.ContainsScreenPoint(cam, p);
+
         public void Hide() { if (_go != null && _go.activeSelf) _go.SetActive(false); _alpha = 0f; _progress = -1f; }
 
         /// <summary>Каждый кадр: прозрачность (0 — скрыто), масштаб подписи системы, расстояние до камеры.</summary>
@@ -230,8 +232,8 @@ namespace StellarisClone.Rendering
     /// </summary>
     public sealed class RingCapsule
     {
-        private const float R = 0.42f;            // полудиагональ ромба
-        private const float Stem = 0.34f;         // ножка от кольца до нижнего угла ромба
+        private const float R = 0.62f;            // полудиагональ ромба
+        private const float Stem = 0.40f;         // ножка от кольца до нижнего угла ромба
         private const int FontSize = 64;
         private static readonly Color PlateCol = new Color(0.02f, 0.045f, 0.08f, 0.94f);
         private static readonly Color UnitCol = new Color(0.62f, 0.70f, 0.74f, 1f);
@@ -256,8 +258,8 @@ namespace StellarisClone.Rendering
             _glow = Sprite("Glow", FactionSelectScreen.RadialSprite(), order, new Vector3(0f, cy, 0.004f), R * 4.2f);
             _plate = Sprite("Plate", HudArt.Diamond(false), order + 1, new Vector3(0f, cy, 0f), R * 2f);
             _frame = Sprite("Frame", HudArt.Diamond(true), order + 3, new Vector3(0f, cy, -0.006f), R * 2f);
-            _icon = Sprite("Icon", null, order + 4, new Vector3(0f, cy, -0.008f), R * 0.95f);
-            _dot = Sprite("Dot", HudArt.Disc(), order + 2, Vector3.zero, 0.09f);
+            _icon = Sprite("Icon", null, order + 4, new Vector3(0f, cy, -0.008f), R * 1.1f);
+            _dot = Sprite("Dot", HudArt.Disc(), order + 2, Vector3.zero, 0.11f);
 
             if (s_mat == null && ShaderCache.Sprite != null)
                 s_mat = new Material(ShaderCache.Sprite) { name = "RingBeacon", renderQueue = 3050 };
@@ -273,9 +275,9 @@ namespace StellarisClone.Rendering
             _mesh.MarkDynamic();
             mgo.AddComponent<MeshFilter>().sharedMesh = _mesh;
 
-            float cs = 0.40f / (FontSize * 0.1f) * 1.25f;          // высота цифр ≈ 0.40 ед.
-            _days = Text("Days", order + 4, GameFont.Bold, cs, new Vector3(R + 0.12f, cy + 0.07f, -0.01f));
-            _unit = Text("Unit", order + 4, GameFont.Regular, cs * 0.5f, new Vector3(R + 0.14f, cy - 0.21f, -0.01f));
+            float cs = 0.52f / (FontSize * 0.1f) * 1.25f;          // высота цифр ≈ 0.52 ед.
+            _days = Text("Days", order + 4, GameFont.Bold, cs, new Vector3(R + 0.14f, cy + 0.09f, -0.01f));
+            _unit = Text("Unit", order + 4, GameFont.Regular, cs * 0.5f, new Vector3(R + 0.17f, cy - 0.28f, -0.01f));
             _unit.text = Loc.T("дн.");
             SetAlpha(0f);
         }
@@ -285,7 +287,7 @@ namespace StellarisClone.Rendering
         {
             _col = col;
             _icon.sprite = LGIcons.Get(icon);
-            Fit(_icon, R * 0.95f);
+            Fit(_icon, R * 1.1f);
             _days.text = days ?? "";
             _prog = -1f;
             Apply();
@@ -301,6 +303,19 @@ namespace StellarisClone.Rendering
         }
 
         public void SetAlpha(float a) => SetAlpha(a, 1f);
+
+        /// <summary>Курсор над ромбом или над цифрой рядом с ним (экранные координаты).</summary>
+        public bool ContainsScreenPoint(Camera cam, Vector2 p)
+        {
+            if (cam == null || _alpha < 0.3f || !_body.gameObject.activeInHierarchy) return false;
+            Vector3 c = cam.WorldToScreenPoint(_body.TransformPoint(new Vector3(0f, Stem + R, 0f)));
+            if (c.z <= 0f) return false;
+            Vector3 e = cam.WorldToScreenPoint(_body.TransformPoint(new Vector3(R * 1.1f, Stem + R, 0f)));
+            float r = Mathf.Max(10f, Vector2.Distance(c, e));
+            float dx = p.x - c.x, dy = p.y - c.y;
+            float right = _days.gameObject.activeSelf ? r * 3.2f : r;
+            return dx >= -r && dx <= right && Mathf.Abs(dy) <= r;
+        }
 
         /// <summary>a — общая прозрачность, textA — доля для цифры (издалека гаснет).</summary>
         public void SetAlpha(float a, float textA)
