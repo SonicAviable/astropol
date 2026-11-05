@@ -71,9 +71,9 @@ namespace StellarisClone.Rendering
         {
             Instance = this;
             _root = LGBuild.Rect(hud, "[UI] AlertBar");
-            // Под правым крылом ресурсов (оно кончается на 72 px от верха), от его левого края (+106 от середины
+            // Под правым крылом ресурсов (оно кончается на 72 px от верха), правее шкалы скорости (+150 от середины
             // экрана) вправо; над рядом — подпись «Требует внимания»
-            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(106f, -96f), new Vector2(10, Size));
+            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(150f, -96f), new Vector2(10, Size));
             _root.gameObject.SetActive(false);
 
             // Подпись над рядом — видна, пока есть хотя бы один алерт
@@ -205,56 +205,44 @@ namespace StellarisClone.Rendering
             v.Glow.sprite = FactionSelectScreen.RadialSprite();
             v.Glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size + 44f, Size + 44f));
 
-            // Волна-рамка при появлении (та же форма, что у плитки)
+            // Волна-кольцо при появлении
             v.RippleImg = LGBuild.Panel(rt, "Ripple", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
-            v.RippleImg.sprite = HudArt.CutFrame(9, 1.5f);
-            v.RippleImg.type = Image.Type.Sliced;
+            v.RippleImg.sprite = HudArt.Ring(0.92f, 1f);
             v.RippleImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size, Size));
             v.Ripple = v.RippleImg.rectTransform;
 
-            // Плитка в стиле верхнего меню: тёмное тело со срезанными углами, рамка цвета алерта, снизу — полоска важности
-            v.Bg = LGBuild.Panel(rt, "Bg", new Color(0.030f, 0.068f, 0.095f, 0.96f), raycast: true);
-            v.Bg.sprite = HudArt.CutPanel(9);
-            v.Bg.type = Image.Type.Sliced;
+            // Вариант «Прибор»: без плитки — светящийся значок цвета алерта и цветная черта под ним.
+            // Bg — невидимая зона клика на всю ячейку.
+            v.Bg = LGBuild.Panel(rt, "Hit", new Color(0f, 0f, 0f, 0f), raycast: true);
             v.Bg.rectTransform.Stretch();
-            // Отсвет цвета алерта снизу плитки и мягкое свечение за значком
-            // (той же формы, что плитка, — без прямоугольника, торчащего из срезанных углов)
-            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.13f));
-            tint.sprite = HudArt.CutPanel(9);
-            tint.type = Image.Type.Sliced;
-            tint.rectTransform.Stretch();
-            var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.40f));
+            var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.45f));
             iconGlow.sprite = FactionSelectScreen.RadialSprite();
-            iconGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(Size + 6f, Size + 6f));
-            v.Rim = LGBuild.Panel(v.Bg.transform, "Rim", new Color(a.Color.r, a.Color.g, a.Color.b, 0.85f));
-            v.Rim.sprite = HudArt.CutFrame(9, 1.5f);
-            v.Rim.type = Image.Type.Sliced;
-            v.Rim.rectTransform.Stretch();
+            iconGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(Size + 4f, Size + 4f));
             var btn = v.Bg.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => { v.Action?.Invoke(); SFXManager.Play("ui_click", 1f, 1.05f); });
             v.Bg.gameObject.AddComponent<AlertRightClick>().OnRight = () => Dismiss(v.Id);
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
 
-            // Значок насыщенного цвета алерта с тёмной подложкой-тенью (не белёсый)
-            v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 21f, Saturate(a.Color));
+            v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 26f, Saturate(a.Color));
             var ish = v.Icon.gameObject.AddComponent<Shadow>();
-            ish.effectColor = new Color(0f, 0f, 0f, 0.7f);
+            ish.effectColor = new Color(0f, 0f, 0f, 0.75f);
             ish.effectDistance = new Vector2(0f, -1.5f);
-            v.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(20f, 20f));
-            var sev = LGBuild.Panel(v.Bg.transform, "Severity", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
-            sev.sprite = FactionSelectScreen.RadialSprite();
-            sev.rectTransform.anchorMin = new Vector2(0.15f, 0f);
-            sev.rectTransform.anchorMax = new Vector2(0.85f, 0f);
-            sev.rectTransform.sizeDelta = new Vector2(0f, 2f);
-            sev.rectTransform.anchoredPosition = new Vector2(0f, 4f);
-            sev.raycastTarget = false;
+            v.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(26f, 26f));
+
+            // Черта под значком (она же «рамка» для пульса свежего алерта) и её свечение
+            var barGlow = LGBuild.Panel(v.Bg.transform, "BarGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.5f));
+            barGlow.sprite = FactionSelectScreen.RadialSprite();
+            barGlow.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), new Vector2(44f, 14f));
+            v.Rim = LGBuild.Panel(v.Bg.transform, "Bar", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
+            v.Rim.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), new Vector2(26f, 3f));
 
             // Счётчик (например, число простаивающих кораблей) — кружок в правом верхнем углу
             // кружок цвета алерта, чуть за углом плитки (как в референсе)
             var badge = LGBuild.Panel(rt, "Badge", Color.Lerp(a.Color, Color.white, 0.15f));
-            badge.sprite = HudArt.Disc();
-            badge.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(1, 1), new Vector2(17, 17));
+            badge.sprite = HudArt.CutPanel(4);
+            badge.type = Image.Type.Sliced;
+            badge.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-4, -2), new Vector2(18, 14));
             v.Count = LGBuild.Label(badge.transform, "", 10, new Color(0.01f, 0.05f, 0.07f), TextAnchor.MiddleCenter, bold: true);
             badge.gameObject.SetActive(false);
 

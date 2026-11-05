@@ -16,7 +16,7 @@ namespace StellarisClone.Rendering
         private Image _frame;
         private LiquidGlassEffect _fx;
         private RectTransform _textRt, _band;
-        private Image _bandBg, _bandLine, _orb, _orbGlow, _orbIcon, _badge;
+        private Image _bandBg, _bandLine, _orb, _orbGlow, _orbIcon, _badge, _orbCore;
         private Text _title, _sub, _badgeText;
         private static readonly Color PanelTint = new Color(0.022f, 0.052f, 0.074f, 0.97f);
 
@@ -101,7 +101,8 @@ namespace StellarisClone.Rendering
             _bandBg = Img(_band, "Bg", MenuArt.HorizontalFade, Color.white);
             _bandBg.rectTransform.Stretch();
             _orbGlow = Img(_band, "OrbGlow", FactionSelectScreen.RadialSprite(), Color.white);
-            _orb = Img(_band, "Orb", HudArt.Sphere(), Color.white);
+            _orb = Img(_band, "Orb", HudArt.Star(), Color.white);
+            _orbCore = Img(_band, "OrbCore", FactionSelectScreen.RadialSprite(), Color.white);
             _orbIcon = Img(_band, "OrbIcon", null, Color.white);
             _orbIcon.preserveAspect = true;
             _bandLine = Img(_band, "Line", null, Color.white);
@@ -364,6 +365,7 @@ namespace StellarisClone.Rendering
 
             float x = 14f;
             _orb.gameObject.SetActive(h.Orb);
+            _orbCore.gameObject.SetActive(h.Orb);
             _orbGlow.gameObject.SetActive(visual);
             _orbIcon.gameObject.SetActive(!h.Orb && h.HasIcon);
             if (visual)
@@ -373,8 +375,11 @@ namespace StellarisClone.Rendering
                 _orbGlow.color = new Color(a.r, a.g, a.b, 0.45f);
                 if (h.Orb)
                 {
-                    _orb.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(40f, 40f));
-                    _orb.color = Color.Lerp(a, Color.white, 0.1f);
+                    // Нарисованная звезда: корона и лучи цвета звезды, белое ядро
+                    _orb.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(62f, 62f));
+                    _orb.color = Color.Lerp(a, Color.white, 0.15f);
+                    _orbCore.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(16f, 16f));
+                    _orbCore.color = new Color(1f, 1f, 1f, 0.95f);
                 }
                 else
                 {

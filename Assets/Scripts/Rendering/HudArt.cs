@@ -202,6 +202,28 @@ namespace StellarisClone.Rendering
             return sp;
         }
 
+        /// <summary>
+        /// Звезда для превью: яркое ядро, корона с мягким спадом и лучи (крест и короткая диагональ).
+        /// Белая — Image.color окрашивает её в цвет звезды; поверх кладётся маленькое белое ядро.
+        /// </summary>
+        public static Sprite Star()
+        {
+            const int n = 128;
+            float r = n * 0.5f;
+            return Make("star", n, n, (x, y) =>
+            {
+                float u = (x - r) / r, v = (y - r) / r;
+                float d = Mathf.Sqrt(u * u + v * v);
+                float core = Mathf.Clamp01((0.22f - d) / 0.05f);
+                float corona = Mathf.Exp(-d * 5.5f) * 0.9f;
+                float au = Mathf.Abs(u), av = Mathf.Abs(v);
+                float spike = Mathf.Max(Mathf.Exp(-av * 90f) * Mathf.Clamp01(1f - au), Mathf.Exp(-au * 90f) * Mathf.Clamp01(1f - av)) * 0.85f;
+                float du = Mathf.Abs(u - v) * 0.7071f, dv = Mathf.Abs(u + v) * 0.7071f;
+                float diag = Mathf.Max(Mathf.Exp(-du * 110f), Mathf.Exp(-dv * 110f)) * Mathf.Clamp01(1f - d * 1.7f) * 0.45f;
+                return Mathf.Clamp01(core + corona + spike + diag) * Mathf.Clamp01((1f - d) * 6f);
+            });
+        }
+
         /// <summary>Шкала-разделитель: повторяемая риска (Image.Type.Tiled), шаг 8 px.</summary>
         public static Sprite TickRow()
         {
