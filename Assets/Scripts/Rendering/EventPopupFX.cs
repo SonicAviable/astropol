@@ -18,6 +18,9 @@ namespace StellarisClone.Rendering
         private const float DescDelay = 0.18f, OptDelay = 0.38f, OptStep = 0.07f, ItemTime = 0.32f;
         private const float LabelShift = 18f;
 
+        /// <summary>Фон окна события: в него тает картинка (окно кладёт под картинку подложку этого же цвета).</summary>
+        public static readonly Color Bg = new Color(0.020f, 0.034f, 0.044f, 1f);
+
         private static readonly Dictionary<string, Texture2D> s_Art = new Dictionary<string, Texture2D>();
         private static Sprite s_Vertical, s_Horizontal;
 
@@ -73,11 +76,11 @@ namespace StellarisClone.Rendering
             _fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
 
             // Снизу картинка растворяется в фоне окна, сверху — лёгкое затемнение под шапку
-            var bottom = Layer("FadeBottom", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 1f));
+            var bottom = Layer("FadeBottom", VerticalSprite(), Bg);
             bottom.rectTransform.anchorMax = new Vector2(1, 0.62f);
-            var under = Layer("FadeTitle", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 0.55f));   // подложка под заголовок
+            var under = Layer("FadeTitle", VerticalSprite(), new Color(Bg.r, Bg.g, Bg.b, 0.55f));   // подложка под заголовок
             under.rectTransform.anchorMax = new Vector2(1, 0.85f);
-            var topShade = Layer("FadeTop", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 0.45f));
+            var topShade = Layer("FadeTop", VerticalSprite(), new Color(Bg.r, Bg.g, Bg.b, 0.45f));
             topShade.rectTransform.anchorMin = new Vector2(0, 0.75f);
             topShade.rectTransform.localScale = new Vector3(1, -1, 1);
 
@@ -89,7 +92,7 @@ namespace StellarisClone.Rendering
             _sweep.rectTransform.sizeDelta = new Vector2(140f, 0);
 
             // Шторка проявления
-            _cover = Layer("Cover", null, new Color(0.030f, 0.062f, 0.088f, 1f));
+            _cover = Layer("Cover", null, Bg);
 
             // Светящаяся кромка снизу
             _edge = Layer("Edge", HorizontalSprite(), Color.clear);

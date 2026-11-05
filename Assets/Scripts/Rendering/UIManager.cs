@@ -2056,6 +2056,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         // плашка типа, крупный заголовок и подзаголовок по центру, ниже текст; варианты ответа — карточки в ряд.
         private const float EventW = 1040f, EventArtHeight = 430f, EventCardH = 118f, EventCardGap = 14f;
         private Text _eventKindText, _eventSubText;
+        private Image _eventTitleGlow;
         private RectTransform _eventKindRt, _eventTitleRt, _eventBodyRt;
         private GridLayoutGroup _eventGrid;
         private LiquidGlassEffect _eventWindowFx;
@@ -2074,6 +2075,14 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventPopupModal.AddComponent<Image>().color = DS.BgDeep;
             _eventWindowFx = LG.Glass(_eventPopupModal);
             LG.Motion(_eventPopupModal, LGAppear.Kind.Pop);
+
+            // Тёмная подложка цвета, в который тает картинка: без неё под картинкой виден светлый край стекла
+            var backdrop = new GameObject("Backdrop").AddComponent<Image>();
+            backdrop.transform.SetParent(_eventPopupModal.transform, false);
+            backdrop.color = EventPopupFX.Bg;
+            backdrop.raycastTarget = false;
+            backdrop.rectTransform.Stretch(1f, 1f, 1f, 1f);
+            LG.Ignore(backdrop.gameObject);
 
             // Тело (заголовок + текст) — отдельный блок: EventPopupFX проявляет его после картинки
             var body = new GameObject("Body");
@@ -2123,7 +2132,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventKindText.Track(3.5f);
             LG.Ignore(kind);
 
-            // Крупный заголовок с мягким свечением цвета аномалии
+            // Мягкое свечение цвета аномалии за заголовком (без обводки букв)
+            _eventTitleGlow = new GameObject("TitleGlow").AddComponent<Image>();
+            _eventTitleGlow.transform.SetParent(body.transform, false);
+            _eventTitleGlow.sprite = FactionSelectScreen.RadialSprite();
+            _eventTitleGlow.raycastTarget = false;
+            var gRt = _eventTitleGlow.rectTransform;
+            gRt.anchorMin = gRt.anchorMax = new Vector2(0.5f, 1f);
+            gRt.pivot = new Vector2(0.5f, 0.5f);
+            gRt.sizeDelta = new Vector2(EventW * 0.62f, 110f);
+            LG.Ignore(_eventTitleGlow.gameObject);
+
+            // Крупный заголовок
             _eventTitleText = CreateText(body.transform, "", 34, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
             _eventTitleText.font = GameFont.Display;
             _eventTitleRt = _eventTitleText.rectTransform;
@@ -2134,7 +2154,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventTitleText.resizeTextForBestFit = true;
             _eventTitleText.resizeTextMinSize = 20;
             _eventTitleText.resizeTextMaxSize = 34;
-            _eventTitleText.gameObject.AddComponent<Outline>().effectDistance = new Vector2(2f, -2f);
             var tsh = _eventTitleText.gameObject.AddComponent<Shadow>();
             tsh.effectColor = new Color(0, 0, 0, 0.9f); tsh.effectDistance = new Vector2(0, -2);
 
@@ -2197,8 +2216,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventKindRt.sizeDelta = new Vector2(Mathf.Max(140f, kindW), 24f);
 
             _eventTitleText.text = (ev.Title ?? "").ToUpper();
-            var glow = _eventTitleText.GetComponent<Outline>();
-            if (glow != null) glow.effectColor = new Color(accent.r, accent.g, accent.b, 0.35f);
+            _eventTitleGlow.color = new Color(accent.r, accent.g, accent.b, 0.22f);
             _eventSubText.text = string.IsNullOrEmpty(ev.Subtitle) ? "" : "◆  " + ev.Subtitle.ToUpper();
             _eventDescText.text = ev.Description ?? "";
 
@@ -2231,12 +2249,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             float y = hasArt ? EventArtHeight - 150f : 64f;
             _eventKindRt.anchoredPosition = new Vector2(0, -y);
             _eventTitleRt.anchoredPosition = new Vector2(0, -(y + 34f));
+            _eventTitleGlow.rectTransform.anchoredPosition = new Vector2(0, -(y + 59f));
             float descTop = y + 34f + 56f;
             float descH = Mathf.Ceil(_eventDescText.preferredHeight) + 4f;
             _eventDescBox.sizeDelta = new Vector2(EventW - 260f, descH);
             _eventDescBox.anchoredPosition = new Vector2(0, -descTop);
-            float h = descTop + descH + 34f + optsH + 30f;
-            _eventPopupModal.GetComponent<RectTransform>().sizeDelta = new Vector2(EventW, Mathf.Max(hasArt ? 640f : 400f, h));
+            float h = descTop + descH + 30f + optsH + 30f;
+            _eventPopupModal.GetComponent<RectTransform>().sizeDelta = new Vector2(EventW, Mathf.Max(hasArt ? EventArtHeight + 60f + optsH : 360f, h));
             _eventFx?.ClearOptions();
 
             for (int i = _eventOptionsHolder.childCount - 1; i >= 0; i--)
@@ -2262,7 +2281,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
 
         /// <summary>
-        /// Карточка варианта ответа: значок (номер, звезда особого варианта или замок), текст варианта жирным,
+        /// Карточка варианта ответа: номер в кружке (цвет — обычный, особый или недоступный), текст варианта жирным,
         /// под ним — первая строка последствий или чего не хватает; подробности — в подсказке.
         /// </summary>
         private void BuildEventCard(EventOption opt, int idx, Color accent, bool primary)
@@ -2296,18 +2315,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             ic.pivot = new Vector2(0, 1);
             ic.anchoredPosition = new Vector2(18, -16);
             ic.sizeDelta = new Vector2(26, 26);
-            Color icCol = !available ? new Color(0.55f, 0.64f, 0.68f, 1f) : special ? DS.Gold : primary ? accent : DS.NeonCyan;
-            if (!available || special)
-                LGIcons.Create(ic, available ? LGIcon.Star : LGIcon.Lock, 20f, icCol);
-            else
-            {
-                var ring = ic.gameObject.AddComponent<Image>();
-                ring.sprite = HudArt.Ring(0.86f, 1f);
-                ring.color = icCol;
-                ring.raycastTarget = false;
-                var n = CreateText(ic, idx.ToString(), 12, FontStyle.Bold, icCol, TextAnchor.MiddleCenter);
-                n.rectTransform.Stretch();
-            }
+            Color icCol = !available ? new Color(0.40f, 0.47f, 0.51f, 1f) : special ? DS.Gold : primary ? accent : DS.NeonCyan;
+            var ring = ic.gameObject.AddComponent<Image>();
+            ring.sprite = HudArt.Ring(0.86f, 1f);
+            ring.color = icCol;
+            ring.raycastTarget = false;
+            var n = CreateText(ic, idx.ToString(), 12, FontStyle.Bold, icCol, TextAnchor.MiddleCenter);
+            n.rectTransform.Stretch();
 
             // Особый вариант — что он требует, мелко справа от значка
             if (special)
