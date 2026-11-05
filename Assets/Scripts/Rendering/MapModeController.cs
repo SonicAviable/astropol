@@ -22,8 +22,11 @@ namespace StellarisClone.Rendering
         public MapMode Active => _active;
         private readonly Dictionary<MapMode, Image> _buttonBgs = new Dictionary<MapMode, Image>();
         private readonly Dictionary<MapMode, Image> _buttonAccents = new Dictionary<MapMode, Image>();
-        private readonly Dictionary<MapMode, LiquidGlassEffect> _buttonFx = new Dictionary<MapMode, LiquidGlassEffect>();
         private readonly Dictionary<MapMode, Color> _buttonAccentColors = new Dictionary<MapMode, Color>();
+        private readonly Dictionary<MapMode, Image> _buttonIcons = new Dictionary<MapMode, Image>();
+        private readonly Dictionary<MapMode, string> _modeNames = new Dictionary<MapMode, string>();
+        private Text _modeCaption;
+        private static readonly Color BtnIdle = new Color(0.030f, 0.070f, 0.098f, 0.95f);
         private bool _built;
 
         // === Поля для скрытия при открытых модалках ===
@@ -99,6 +102,19 @@ namespace StellarisClone.Rendering
             var motion = LG.Motion(root, LGAppear.Kind.SlideUp);
             motion.distance = 16f;
 
+            // Подпись текущего режима над мини-картой (как у диска времени)
+            var capGo = new GameObject("ModeCaption");
+            capGo.transform.SetParent(root.transform, false);
+            _modeCaption = capGo.AddComponent<Text>();
+            _modeCaption.font = GameFont.Display;
+            _modeCaption.fontSize = 10;
+            _modeCaption.color = UIManager.DS.TextMuted;
+            _modeCaption.alignment = TextAnchor.MiddleCenter;
+            _modeCaption.raycastTarget = false;
+            _modeCaption.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _modeCaption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(240f, 16f));
+            _modeCaption.Track(2.4f);
+
             CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 100f);
             CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  75f);
             CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      50f);
@@ -113,7 +129,7 @@ namespace StellarisClone.Rendering
             var btnObj = new GameObject($"MapModeBtn_{mode}");
             btnObj.transform.SetParent(parent, false);
 
-            const float R = 154f, D = 36f;   // снаружи безеля мини-карты (радиус 127)
+            const float R = 156f, D = 34f;   // снаружи безеля мини-карты (радиус 127)
             var rt = btnObj.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
@@ -121,29 +137,29 @@ namespace StellarisClone.Rendering
             float a = angleDeg * Mathf.Deg2Rad;
             rt.anchoredPosition = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * R;
 
+            // Круглая голо-кнопка: тёмный диск и кольцо цвета режима (активный — залит цветом)
             var bg = btnObj.AddComponent<Image>();
-            bg.color = UIManager.DS.BtnNeutral;
+            bg.sprite = HudArt.Disc();
+            bg.color = BtnIdle;
             bg.raycastTarget = true;
+            LG.Ignore(btnObj);
 
             var btn = btnObj.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
             var captured = mode;
             btn.onClick.AddListener(() => ApplyMode(captured));
-            _buttonFx[mode] = LG.Button(btnObj, new Color(accent.r, accent.g, accent.b, 0.45f), D * 0.5f);
             _buttonAccentColors[mode] = accent;
+            _modeNames[mode] = label;
 
-            // Светящаяся "капля"-индикатор под активным режимом
-            var accentStrip = new GameObject("Accent");
-            accentStrip.transform.SetParent(btnObj.transform, false);
-            var sRt = accentStrip.AddComponent<RectTransform>();
-            sRt.anchorMin = new Vector2(0.5f, 0);
-            sRt.anchorMax = new Vector2(0.5f, 0);
-            sRt.pivot = new Vector2(0.5f, 0.5f);
-            sRt.sizeDelta = new Vector2(14f, 2.2f);
-            sRt.anchoredPosition = new Vector2(0, 5f);
-            var sImg = accentStrip.AddComponent<Image>();
-            sImg.color = accent;
+            var ringGo = new GameObject("Ring");
+            ringGo.transform.SetParent(btnObj.transform, false);
+            var sImg = ringGo.AddComponent<Image>();
+            sImg.sprite = HudArt.Ring(0.88f, 1f);
+            sImg.color = new Color(accent.r, accent.g, accent.b, 0.45f);
             sImg.raycastTarget = false;
-            LG.Line(accentStrip);
+            sImg.rectTransform.anchorMin = Vector2.zero;
+            sImg.rectTransform.anchorMax = Vector2.one;
+            sImg.rectTransform.offsetMin = sImg.rectTransform.offsetMax = Vector2.zero;
 
             LGIcon iconId = mode switch
             {
@@ -154,8 +170,10 @@ namespace StellarisClone.Rendering
                 MapMode.Intel      => LGIcon.Betrayal,
                 _                  => LGIcon.MapSimple
             };
-            var iconImg = LGIcons.Create(btnObj.transform, iconId, 18f, accent);
-            iconImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 1), new Vector2(18, 18));
+            var iconImg = LGIcons.Create(btnObj.transform, iconId, 17f, accent);
+            iconImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(17, 17));
+            iconImg.raycastTarget = false;
+            _buttonIcons[mode] = iconImg;
 
             _buttonBgs[mode] = bg;
             _buttonAccents[mode] = sImg;
@@ -204,22 +222,13 @@ namespace StellarisClone.Rendering
             foreach (var kv in _buttonBgs)
             {
                 bool active = kv.Key == mode;
-                kv.Value.color = active ? UIManager.DS.BtnPrimary : UIManager.DS.BtnNeutral;
-                if (_buttonAccents.TryGetValue(kv.Key, out var acc))
-                {
-                    var c = acc.color;
-                    c.a = active ? 1f : 0.25f;
-                    acc.color = c;
-                }
-                if (_buttonFx.TryGetValue(kv.Key, out var fx) && fx != null
-                    && _buttonAccentColors.TryGetValue(kv.Key, out var ac))
-                {
-                    // Активный режим — яркая неоновая кромка со свечением, остальные — приглушённое стекло
-                    fx.SetRim(new Color(ac.r, ac.g, ac.b, active ? 0.85f : 0.22f));
-                    fx.GlowMultiplier = active ? 2.2f : 0.6f;
-                    fx.FillMultiplier = active ? 1.2f : 0.7f;
-                }
+                var ac = _buttonAccentColors.TryGetValue(kv.Key, out var c0) ? c0 : UIManager.DS.NeonCyan;
+                kv.Value.color = active ? new Color(ac.r * 0.40f, ac.g * 0.40f, ac.b * 0.40f, 0.96f) : BtnIdle;
+                if (_buttonAccents.TryGetValue(kv.Key, out var ring)) ring.color = new Color(ac.r, ac.g, ac.b, active ? 1f : 0.45f);
+                if (_buttonIcons.TryGetValue(kv.Key, out var ic)) ic.color = active ? Color.white : ac;
             }
+            if (_modeCaption != null && _modeNames.TryGetValue(mode, out var name))
+                _modeCaption.text = Loc.F("РЕЖИМ · {0}", name);
 
             _galaxyView?.SetMapMode(mode);
         }

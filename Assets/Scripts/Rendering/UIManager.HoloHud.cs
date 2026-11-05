@@ -161,7 +161,7 @@ namespace StellarisClone.Rendering
             LG.Ignore(disk.gameObject);
             LG.Motion(disk.gameObject, LGAppear.Kind.SlideDown).distance = 18f;
 
-            var glow = HoloImage(disk, "Glow", FactionSelectScreen.RadialSprite(), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.14f));
+            var glow = HoloImage(disk, "Glow", FactionSelectScreen.RadialSprite(), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.06f));
             glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD + 120f));
 
             var ticks = HoloImage(disk, "Ticks", HudArt.Ticks(72, 6, 0.95f, 0.89f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.5f));
@@ -174,7 +174,7 @@ namespace StellarisClone.Rendering
             RadialFill(_monthRing, 0f);
 
             // Сам диск — кнопка паузы
-            var face = HoloImage(disk, "Face", HudArt.Disc(), new Color(0.028f, 0.072f, 0.098f, 0.97f));
+            var face = HoloImage(disk, "Face", HudArt.Disc(), new Color(0.016f, 0.026f, 0.034f, 0.97f));
             face.rectTransform.Stretch();
             face.raycastTarget = true;
             var faceBtn = face.gameObject.AddComponent<Button>();
@@ -192,9 +192,6 @@ namespace StellarisClone.Rendering
             _diskDay = CreateText(disk, "", 46, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
             _diskDay.font = GameFont.Display;
             _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 5f), new Vector2(DiskD, 52f));
-            var dayGlow = _diskDay.gameObject.AddComponent<Outline>();
-            dayGlow.effectColor = new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.22f);
-            dayGlow.effectDistance = new Vector2(1.5f, -1.5f);
             var rule = HoloImage(disk, "Rule", HudArt.EdgeFade(0.35f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.6f));
             rule.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -24f), new Vector2(70f, 1f));
             _diskYear = CreateText(disk, "", 12, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);

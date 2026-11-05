@@ -7419,3 +7419,4 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 НОЯ	NOV
 ДЕК	DEC
 МЕНЮ	MENU
+РЕЖИМ · {0}	MODE · {0}

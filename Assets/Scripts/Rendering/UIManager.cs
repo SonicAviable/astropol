@@ -669,8 +669,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         /// <summary>Кнопка под колонкой сот: свернуть меню (соты уезжают влево и тают) или развернуть обратно.</summary>
         private void BuildNavFoldButton(Transform menu, float x)
         {
-            _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
-            _navFold = _navCollapsed ? 1f : 0f;
+            _navCollapsed = false;          // с начала партии меню всегда раскрыто
+            _navFold = 0f;
             _navFoldRt = LGBuild.Rect(menu, "NavFold");
             _navFoldRt.At(new Vector2(0, 1), new Vector2(0.5f, 1f), new Vector2(x, 0f), new Vector2(44f, 22f));
             var bg = HoloImage(_navFoldRt, "Bg", HudArt.CutPanel(6), new Color(0.030f, 0.070f, 0.098f, 0.95f));
@@ -690,7 +690,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             b.onClick.AddListener(() =>
             {
                 _navCollapsed = !_navCollapsed;
-                PlayerPrefs.SetInt("nav.collapsed", _navCollapsed ? 1 : 0);
                 SFXManager.Play(Sfx.PanelSlide);
             });
             TooltipHelper.Attach(bg.gameObject, Loc.T("Свернуть или развернуть меню"));

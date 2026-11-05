@@ -126,6 +126,16 @@ public static void ShowGlobal()
             bzImg.raycastTarget = false;
             LG.Ignore(bz);
 
+            // Внешняя шкала-деления (как у диска времени): мелкие риски и длинные — через каждые 45°
+            var tk = new GameObject("Ticks");
+            tk.transform.SetParent(root.transform, false);
+            var tkImg = tk.AddComponent<Image>();
+            tkImg.sprite = HudArt.Ticks(80, 10, 0.955f, 0.90f, 1f);
+            tkImg.color = new Color(0.37f, 0.82f, 0.75f, 0.55f);
+            tkImg.raycastTarget = false;
+            tkImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(mapSize + 40f, mapSize + 40f));
+            LG.Ignore(tk);
+
             // Внутренний "колодец" карты — чуть темнее, с мягкой кромкой
             var well = new GameObject("MapWell");
             well.transform.SetParent(root.transform, false);

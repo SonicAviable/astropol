@@ -28,6 +28,8 @@ namespace StellarisClone.Rendering
         private static Color Green => UIManager.DS.Green;
         private static Color Red => UIManager.DS.Red;
 
+        /// <summary>Тон плашек голо-HUD (как у крыльев ресурсов и диска времени).</summary>
+        private static readonly Color HoloTint = new Color(0.030f, 0.068f, 0.095f, 0.95f);
         private static readonly Color RowBg = new Color(0.030f, 0.055f, 0.075f, 0.92f);
         private static readonly Color RowWarnBg = new Color(0.120f, 0.085f, 0.030f, 0.92f);
         private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
@@ -107,17 +109,15 @@ namespace StellarisClone.Rendering
             BuildTabs();
 
             // Тело: высота подстраивается под содержимое
-            var body = LGBuild.Panel(_root, "Body", new Color(0.012f, 0.026f, 0.040f, 0.94f), raycast: true);
+            var body = LGBuild.Panel(_root, "Body", HoloTint, raycast: true);
+            body.sprite = HudArt.CutPanel(14);
+            body.type = Image.Type.Sliced;
             _body = body.rectTransform;
             _body.anchorMin = new Vector2(0, 1);
             _body.anchorMax = new Vector2(1, 1);
             _body.pivot = new Vector2(0.5f, 1);
             _body.anchoredPosition = new Vector2(0, -(HeadH + TabH + 8f));
             _body.sizeDelta = new Vector2(0, 60f);
-            var bfx = LG.Platter(body.gameObject, 8f);
-            bfx.FillMultiplier = 3f;
-            bfx.SpecularMultiplier = 0.25f;
-            bfx.SetRim(new Color(0.55f, 0.95f, 1f, 0.12f));
             LG.Ignore(body.gameObject, includeChildren: false);
 
             // мягкое свечение у верхнего края
@@ -139,14 +139,18 @@ namespace StellarisClone.Rendering
 
         private void BuildHeader()
         {
-            var head = LGBuild.Panel(_root, "Head", new Color(0.020f, 0.045f, 0.065f, 0.96f), raycast: true);
+            // Шапка — как крылья ресурсов сверху: тёмная плашка со скошенным левым краем и светлой кромкой
+            var head = LGBuild.Panel(_root, "Head", HoloTint, raycast: true);
+            head.sprite = HudArt.Wing(true);
+            head.type = Image.Type.Sliced;
             _headRt = head.rectTransform;
             _headRt.TopBand(0, HeadH);
-            var hfx = LG.Platter(head.gameObject, 8f);
-            hfx.FillMultiplier = 3f;
-            hfx.SpecularMultiplier = 0.3f;
-            hfx.SetRim(new Color(0.55f, 0.95f, 1f, 0.20f));
             LG.Ignore(head.gameObject, includeChildren: false);
+            var hrim = LGBuild.Panel(head.transform, "Rim", new Color(0.37f, 0.82f, 0.75f, 0.55f));
+            hrim.sprite = HudArt.WingRim(true);
+            hrim.type = Image.Type.Sliced;
+            hrim.raycastTarget = false;
+            hrim.rectTransform.Stretch();
 
             // бегущий блик по шапке
             var clip = LGBuild.Rect(head.transform, "Clip");
@@ -171,10 +175,11 @@ namespace StellarisClone.Rendering
             _headLine = line;
 
             _headIcon = LGIcons.Create(head.transform, LGIcon.Menu, 14, Cyan);
-            _headIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
-            var ht = LGBuild.Label(head.transform, Loc.T("ПЛАНИРОВЩИК"), 12, Primary, TextAnchor.MiddleLeft, bold: true);
-            ht.rectTransform.Stretch(34, 0, 90, 0);
-            ht.Track(1.6f);
+            _headIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(14, 14));
+            var ht = LGBuild.Label(head.transform, Loc.T("ПЛАНИРОВЩИК"), 13, Primary, TextAnchor.MiddleLeft);
+            ht.font = GameFont.Display;
+            ht.rectTransform.Stretch(40, 0, 90, 0);
+            ht.Track(1.8f);
 
             // плашка «требует внимания»
             var chip = LGBuild.Panel(head.transform, "Alert", new Color(0.30f, 0.20f, 0.04f, 0.95f));
@@ -222,7 +227,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < 6; i++)
             {
                 int sec = i - 1;
-                var bg = LGBuild.Panel(_tabBar, "Tab" + i, new Color(0.020f, 0.045f, 0.065f, 0.94f), raycast: true);
+                var bg = LGBuild.Panel(_tabBar, "Tab" + i, HoloTint, raycast: true);
                 bg.rectTransform.anchorMin = new Vector2(i / 6f, 0f);
                 bg.rectTransform.anchorMax = new Vector2((i + 1) / 6f, 1f);
                 bg.rectTransform.offsetMin = new Vector2(i == 0 ? 0f : 1f, 0f);
@@ -267,7 +272,7 @@ namespace StellarisClone.Rendering
                 if (_tabBg[i] == null) continue;
                 bool on = _tab == i - 1;
                 var col = i == 0 ? Cyan : SecColors[i - 1];
-                _tabBg[i].color = on ? new Color(col.r * 0.22f, col.g * 0.22f + 0.02f, col.b * 0.22f + 0.03f, 0.96f) : new Color(0.020f, 0.045f, 0.065f, 0.94f);
+                _tabBg[i].color = on ? new Color(col.r * 0.22f, col.g * 0.22f + 0.02f, col.b * 0.22f + 0.03f, 0.96f) : HoloTint;
                 _tabLine[i].enabled = on;
                 _tabLabel[i].color = on ? Primary : Muted;
             }
