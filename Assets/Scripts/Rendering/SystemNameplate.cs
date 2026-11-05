@@ -454,28 +454,28 @@ namespace StellarisClone.Rendering
             {
                 float total = FactionTraits.OutpostDays(0);
                 progress = total > 0f ? 1f - days / total : 0f;
-                text = Loc.F("ФОРПОСТ · {0}", FleetRoute.FormatDays(days));
+                text = DaysNum(days);
                 icon = LGIcon.Starbase;
                 col = SystemWorkRing.BuildCol;
             }
             else if (PlayerSurvey(_data.Id, out float sp, out float sdays))
             {
                 progress = sp;
-                text = Loc.F("РАЗВЕДКА · {0:0}% · {1}", sp * 100f, FleetRoute.FormatDays(sdays));
+                text = DaysNum(sdays);
                 icon = LGIcon.Sensors;
                 col = SystemWorkRing.SurveyCol;
             }
             else if (outpost)
             {
                 wait = true;   // строитель ещё летит — пунктирное кольцо
-                text = Loc.F("ФОРПОСТ · ~{0}", FleetRoute.FormatDays(days));
+                text = "~" + DaysNum(days);
                 icon = LGIcon.Starbase;
                 col = SystemWorkRing.BuildCol;
             }
             else if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
             {
                 progress = job.Progress;
-                text = $"{ProjectName(job.Kind)} · {FleetRoute.FormatDays(jdays)}";
+                text = DaysNum(jdays);
                 icon = job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe;
                 col = SystemWorkRing.ColonyCol;
             }
@@ -483,6 +483,8 @@ namespace StellarisClone.Rendering
             _buildOn = true;
             _work.Set(col, progress, wait, icon, text);
         }
+
+        private static string DaysNum(float days) => Mathf.Max(1, Mathf.CeilToInt(days)).ToString();
 
         /// <summary>Ваш научный корабль разведывает эту систему: прогресс 0..1 и сколько дней осталось.</summary>
         public static bool PlayerSurvey(int systemId, out float progress, out float days)
@@ -523,7 +525,6 @@ namespace StellarisClone.Rendering
             return true;
         }
 
-        private static string ProjectName(JobKind k) => k == JobKind.Colony ? Loc.T("КОЛОНИЯ") : Loc.T("ТЕРРАФОРМИНГ");
 
         private static string PlanetName(ConstructionJob j)
         {
@@ -910,7 +911,7 @@ namespace StellarisClone.Rendering
                 UpdateBuildChip();
                 float bTarget = _buildOn ? Mathf.Max(1f - Smooth(MidFrom + 90f, MidTo + 160f, dist), _isSelected || _isHovered ? 1f : 0f) : 0f;
                 _buildAlpha = Mathf.MoveTowards(_buildAlpha, bTarget, Time.unscaledDeltaTime * 5f);
-                _work.Tick(_cam, _buildAlpha, scale, Time.unscaledTime);
+                _work.Tick(_cam, _buildAlpha, scale, dist, Time.unscaledTime);
             }
             if (_jobOn && _alpha > 0.01f) _chipJob?.Pulse(Time.unscaledTime + 1.3f);
 

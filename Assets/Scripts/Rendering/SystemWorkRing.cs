@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using StellarisClone.Core;
 
 namespace StellarisClone.Rendering
 {
@@ -7,8 +8,8 @@ namespace StellarisClone.Rendering
     /// Работа в вашей системе (вариант B «Кольцо системы»): толстое кольцо вокруг звезды цвета задачи —
     /// голубое — разведка, золотое — форпост, зелёное — колония и терраформинг. Дуга прогресса растёт от «12 часов»
     /// по часовой, на конце — светящаяся точка; четыре риски по сторонам; строитель ещё в пути — пунктирное кольцо.
-    /// Сверху на кольце — капсула: значок, задача, проценты и дни. Кольцо лежит в плоскости галактики,
-    /// капсула смотрит в камеру и масштабируется как подпись системы. Данные и видимость задаёт SystemNameplate.
+    /// Сверху на кольце — маяк (RingCapsule): ромб со значком, заливка по прогрессу, число дней. Кольцо лежит
+    /// в плоскости галактики, маяк смотрит в камеру и издалека держит постоянный экранный размер. Данные и видимость задаёт SystemNameplate.
     /// </summary>
     public sealed class SystemWorkRing
     {
@@ -44,24 +45,24 @@ namespace StellarisClone.Rendering
 
         public SystemWorkRing(Transform owner) { _owner = owner; }
 
-        /// <summary>Что показывать: цвет задачи, прогресс 0..1 (wait — работа ещё не началась), значок и текст капсулы.</summary>
-        public void Set(Color col, float progress, bool wait, LGIcon icon, string text)
+        /// <summary>Что показывать: цвет задачи, прогресс 0..1 (wait — работа ещё не началась), значок и число дней.</summary>
+        public void Set(Color col, float progress, bool wait, LGIcon icon, string days)
         {
             if (!EnsureBuilt()) return;
             if (_progress < 0f || col != _col) _shown = Mathf.Max(0f, progress);   // новая работа — без «догоняния» с нуля
             _col = col;
             _wait = wait;
             _progress = wait ? 0f : Mathf.Clamp01(progress);
-            string key = text + "|" + (int)icon + "|" + ColorUtility.ToHtmlStringRGB(col);
+            string key = days + "|" + (int)icon + "|" + ColorUtility.ToHtmlStringRGB(col);
             if (key == _capKey) return;
             _capKey = key;
-            _cap.Set(icon, text, col);
+            _cap.Set(icon, days, col);
         }
 
         public void Hide() { if (_go != null && _go.activeSelf) _go.SetActive(false); _alpha = 0f; _progress = -1f; }
 
-        /// <summary>Каждый кадр: прозрачность (0 — скрыто), масштаб подписи системы, поворот камеры.</summary>
-        public void Tick(Transform cam, float alpha, float scale, float time)
+        /// <summary>Каждый кадр: прозрачность (0 — скрыто), масштаб подписи системы, расстояние до камеры.</summary>
+        public void Tick(Transform cam, float alpha, float scale, float dist, float time)
         {
             if (_go == null) return;
             bool on = alpha > 0.01f && _progress >= 0f;
@@ -80,13 +81,15 @@ namespace StellarisClone.Rendering
                 || _wait != _bWait || _col != _bCol)
                 Rebuild(scale);
 
-            // Капсула — на дальней точке кольца (сверху на экране), смотрит в камеру
+            // Маяк — на дальней точке кольца (сверху на экране), смотрит в камеру. Подпись системы перестаёт
+            // расти на 3.2, а маяк растёт дальше — на экране не мельче, чем у этой границы; цифра издалека гаснет.
             Vector3 up = cam != null ? Vector3.ProjectOnPlane(cam.forward, Vector3.up) : Vector3.forward;
             up = up.sqrMagnitude > 1e-4f ? up.normalized : Vector3.forward;
             _capRoot.position = c + up * Radius + Vector3.up * 0.05f;
             if (cam != null) _capRoot.rotation = cam.rotation;
-            _capRoot.localScale = Vector3.one * scale;
-            _cap.SetAlpha(alpha);
+            _capRoot.localScale = Vector3.one * Mathf.Clamp(dist * 0.012f, scale, 14f);
+            _cap.SetAlpha(alpha, 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(215f, 285f, dist)));
+            _cap.SetProgress(_shown, _wait);
             _cap.Pulse(time);
 
             // Голова дуги: мягкое свечение и яркая точка
@@ -221,108 +224,175 @@ namespace StellarisClone.Rendering
     }
 
     /// <summary>
-    /// Капсула на кольце работы: тёмная «таблетка» с контуром цвета задачи и мягким свечением,
-    /// слева — значок в цветном кружке, затем задача жирным и приглушённое значение («31% · 52 дня»).
-    /// Текст «ЗАДАЧА · значение» делится по первой « · ». Корень — по центру капсулы.
+    /// Маяк работы на кольце (вариант C): тёмный ромб с контуром цвета задачи на пунктирной ножке над кольцом.
+    /// Ромб заливается снизу вверх по прогрессу, в центре — значок задачи, справа крупно число дней и «дн.».
+    /// Издалека цифра гаснет и остаётся один ромб. Корень — в точке кольца, локальная +Y — вверх по экрану.
     /// </summary>
     public sealed class RingCapsule
     {
-        private const float H = 0.56f;            // высота: при ней концы «таблетки» — ровные полукруги
+        private const float R = 0.42f;            // полудиагональ ромба
+        private const float Stem = 0.34f;         // ножка от кольца до нижнего угла ромба
         private const int FontSize = 64;
-        private static readonly Color PlateCol = new Color(0.02f, 0.045f, 0.08f, 0.93f);
-        private static readonly Color ValueCol = new Color(0.70f, 0.79f, 0.85f, 1f);
+        private static readonly Color PlateCol = new Color(0.02f, 0.045f, 0.08f, 0.94f);
+        private static readonly Color UnitCol = new Color(0.62f, 0.70f, 0.74f, 1f);
+        private static Material s_mat;
 
         private readonly Transform _body;
-        private readonly SpriteRenderer _glow, _plate, _frame, _disc, _icon;
-        private readonly TextMesh _label, _value;
+        private readonly SpriteRenderer _glow, _plate, _frame, _icon, _dot;
+        private readonly TextMesh _days, _unit;
+        private readonly Mesh _mesh;
+        private readonly List<Vector3> _v = new List<Vector3>(64);
+        private readonly List<Color> _c = new List<Color>(64);
+        private readonly List<int> _t = new List<int>(96);
         private Color _col = Color.white;
-        private float _alpha = -1f, _pulse = 1f;
-
-        public float Width { get; private set; }
+        private float _alpha = -1f, _textA = -1f, _pulse = 1f, _prog = -1f;
+        private bool _wait;
 
         public RingCapsule(Transform parent, int order)
         {
-            _body = new GameObject("Capsule").transform;
+            _body = new GameObject("Beacon").transform;
             _body.SetParent(parent, false);
-            _glow = Sprite("Glow", WorldChip.GlowSprite(), order, true);
-            _plate = Sprite("Plate", HudArt.Pill(false), order + 1, true);
-            _frame = Sprite("Frame", HudArt.Pill(true), order + 2, true);
-            _disc = Sprite("Disc", HudArt.Disc(), order + 3, false);
-            _icon = Sprite("Icon", null, order + 4, false);
-            _label = Text("Label", order + 4);
-            _value = Text("Value", order + 4);
+            float cy = Stem + R;
+            _glow = Sprite("Glow", FactionSelectScreen.RadialSprite(), order, new Vector3(0f, cy, 0.004f), R * 4.2f);
+            _plate = Sprite("Plate", HudArt.Diamond(false), order + 1, new Vector3(0f, cy, 0f), R * 2f);
+            _frame = Sprite("Frame", HudArt.Diamond(true), order + 3, new Vector3(0f, cy, -0.006f), R * 2f);
+            _icon = Sprite("Icon", null, order + 4, new Vector3(0f, cy, -0.008f), R * 0.95f);
+            _dot = Sprite("Dot", HudArt.Disc(), order + 2, Vector3.zero, 0.09f);
+
+            if (s_mat == null && ShaderCache.Sprite != null)
+                s_mat = new Material(ShaderCache.Sprite) { name = "RingBeacon", renderQueue = 3050 };
+            var mgo = new GameObject("Fill");
+            mgo.transform.SetParent(_body, false);
+            mgo.transform.localPosition = new Vector3(0f, 0f, -0.003f);
+            var mr = mgo.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = s_mat;
+            mr.sortingOrder = order + 2;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            _mesh = new Mesh { name = "RingBeacon" };
+            _mesh.MarkDynamic();
+            mgo.AddComponent<MeshFilter>().sharedMesh = _mesh;
+
+            float cs = 0.40f / (FontSize * 0.1f) * 1.25f;          // высота цифр ≈ 0.40 ед.
+            _days = Text("Days", order + 4, GameFont.Bold, cs, new Vector3(R + 0.12f, cy + 0.07f, -0.01f));
+            _unit = Text("Unit", order + 4, GameFont.Regular, cs * 0.5f, new Vector3(R + 0.14f, cy - 0.21f, -0.01f));
+            _unit.text = Loc.T("дн.");
             SetAlpha(0f);
         }
 
-        public void Set(LGIcon icon, string text, Color col)
+        /// <summary>Значок, число дней (строкой, например «131» или «~131») и цвет задачи.</summary>
+        public void Set(LGIcon icon, string days, Color col)
         {
             _col = col;
-            string label = text ?? "", val = "";
-            int cut = label.IndexOf(" · ", System.StringComparison.Ordinal);
-            if (cut > 0) { val = label.Substring(cut + 3); label = label.Substring(0, cut); }
-            _label.text = label;
-            _value.text = val;
-
-            float cs = 0.25f / (FontSize * 0.1f) * 1.25f;          // высота строки ≈ 0.25 ед.
-            _label.characterSize = _value.characterSize = cs;
-            float x = H * 0.5f;                                    // центр кружка — в центре левого полукруга
-            float d = H * 0.74f;
-            _disc.transform.localPosition = new Vector3(x - H * 0.5f + H * 0.13f + d * 0.5f, 0f, -0.01f);
-            Fit(_disc, d);
             _icon.sprite = LGIcons.Get(icon);
-            _icon.transform.localPosition = _disc.transform.localPosition + new Vector3(0f, 0f, -0.002f);
-            Fit(_icon, d * 0.62f);
-            x = H * 0.13f + d + H * 0.24f;
-            _label.transform.localPosition = new Vector3(x, 0.005f, -0.01f);
-            x += WorldChip.MeasureLine(label, FontSize, cs, FontStyle.Normal, GameFont.Bold);
-            if (val.Length > 0)
-            {
-                x += H * 0.22f;
-                _value.transform.localPosition = new Vector3(x, 0.005f, -0.01f);
-                x += WorldChip.MeasureLine(val, FontSize, cs, FontStyle.Normal, GameFont.Regular);
-            }
-            x += H * 0.42f;
-            Width = x;
-
-            _plate.size = _frame.size = new Vector2(Width, H);
-            _plate.transform.localPosition = new Vector3(Width * 0.5f, 0f, 0f);
-            _frame.transform.localPosition = new Vector3(Width * 0.5f, 0f, -0.004f);
-            float gp = 0.34f;
-            _glow.size = new Vector2(Width + gp * 2f, H + gp * 2f);
-            _glow.transform.localPosition = new Vector3(Width * 0.5f, 0f, 0.004f);
-            _body.localPosition = new Vector3(-Width * 0.5f, 0f, 0f);
+            Fit(_icon, R * 0.95f);
+            _days.text = days ?? "";
+            _prog = -1f;
             Apply();
         }
 
-        public void SetAlpha(float a)
+        /// <summary>Прогресс 0..1 (заливка ромба снизу вверх); wait — строитель в пути, заливки нет.</summary>
+        public void SetProgress(float p, bool wait)
         {
-            if (Mathf.Approximately(a, _alpha)) return;
-            _alpha = a;
-            Apply();
+            p = wait ? 0f : Mathf.Clamp01(p);
+            if (wait == _wait && Mathf.Abs(p - _prog) < 0.002f) return;
+            _prog = p; _wait = wait;
+            RebuildMesh();
         }
 
-        /// <summary>Мягкое «дыхание» свечения, пока работа идёт.</summary>
+        public void SetAlpha(float a) => SetAlpha(a, 1f);
+
+        /// <summary>a — общая прозрачность, textA — доля для цифры (издалека гаснет).</summary>
+        public void SetAlpha(float a, float textA)
+        {
+            if (Mathf.Approximately(a, _alpha) && Mathf.Approximately(textA, _textA)) return;
+            bool rebuild = !Mathf.Approximately(a, _alpha);
+            _alpha = a; _textA = textA;
+            Apply();
+            if (rebuild) RebuildMesh();
+        }
+
+        /// <summary>Мягкое «дыхание» свечения; пока строитель в пути — мигает и контур.</summary>
         public void Pulse(float time)
         {
             float k = 0.75f + 0.25f * Mathf.Sin(time * 2.4f);
             if (Mathf.Abs(k - _pulse) < 0.01f) return;
             _pulse = k;
-            _glow.color = new Color(_col.r, _col.g, _col.b, 0.32f * _pulse * _alpha);
+            float a = Mathf.Max(0f, _alpha);
+            _glow.color = new Color(_col.r, _col.g, _col.b, 0.30f * _pulse * a);
+            if (_wait) _frame.color = new Color(_col.r, _col.g, _col.b, (0.55f + 0.4f * _pulse) * a);
         }
 
         private void Apply()
         {
-            float a = Mathf.Max(0f, _alpha);
-            Color lit = Color.Lerp(_col, Color.white, 0.25f);
+            float a = Mathf.Max(0f, _alpha), ta = a * Mathf.Clamp01(_textA);
             _plate.color = new Color(PlateCol.r, PlateCol.g, PlateCol.b, PlateCol.a * a);
-            _frame.color = new Color(_col.r, _col.g, _col.b, 0.85f * a);
-            _glow.color = new Color(_col.r, _col.g, _col.b, 0.32f * _pulse * a);
-            _disc.color = new Color(lit.r, lit.g, lit.b, a);
-            _icon.color = new Color(PlateCol.r, PlateCol.g, PlateCol.b, a);
-            _label.color = new Color(1f, 1f, 1f, a);
-            _value.color = new Color(ValueCol.r, ValueCol.g, ValueCol.b, a);
+            _frame.color = new Color(_col.r, _col.g, _col.b, 0.95f * a);
+            _glow.color = new Color(_col.r, _col.g, _col.b, 0.30f * _pulse * a);
+            _icon.color = new Color(1f, 1f, 1f, a);
+            _dot.color = new Color(_col.r, _col.g, _col.b, a);
+            Color lit = Color.Lerp(_col, Color.white, 0.15f);
+            _days.color = new Color(lit.r, lit.g, lit.b, ta);
+            _unit.color = new Color(UnitCol.r, UnitCol.g, UnitCol.b, ta);
+            bool txt = ta > 0.01f;
+            if (_days.gameObject.activeSelf != txt) { _days.gameObject.SetActive(txt); _unit.gameObject.SetActive(txt); }
             bool on = a > 0.01f;
             if (_body.gameObject.activeSelf != on) _body.gameObject.SetActive(on);
+        }
+
+        // Заливка ромба снизу до уровня прогресса и пунктир ножки — один меш с цветами вершин
+        private void RebuildMesh()
+        {
+            _v.Clear(); _c.Clear(); _t.Clear();
+            float a = Mathf.Max(0f, _alpha);
+            float cy = Stem + R;
+
+            // Пунктир ножки: от точки кольца до нижнего угла ромба
+            const int dashes = 3;
+            float hw = 0.018f, step = Stem / dashes;
+            Color sc = new Color(_col.r, _col.g, _col.b, 0.75f * a);
+            for (int i = 0; i < dashes; i++)
+            {
+                float y0 = 0.06f + i * step, y1 = Mathf.Min(Stem - 0.02f, y0 + step * 0.55f);
+                if (y1 <= y0) continue;
+                Quad(new Vector3(-hw, y0), new Vector3(hw, y0), new Vector3(hw, y1), new Vector3(-hw, y1), sc);
+            }
+
+            // Заливка: ромб чуть меньше контура, обрезан сверху горизонталью на уровне прогресса
+            if (_prog > 0.001f)
+            {
+                float r = R * 0.84f, L = -r + 2f * r * _prog;   // уровень относительно центра
+                Color fc = new Color(_col.r, _col.g, _col.b, 0.42f * a);
+                int s0 = _v.Count;
+                _v.Add(new Vector3(0f, cy - r)); _c.Add(fc);                       // нижний угол
+                if (L <= 0f)
+                {
+                    float w = r + L;   // r - |L|
+                    _v.Add(new Vector3(w, cy + L)); _v.Add(new Vector3(-w, cy + L));
+                }
+                else
+                {
+                    float w = r - L;
+                    _v.Add(new Vector3(r, cy)); _v.Add(new Vector3(w, cy + L)); _v.Add(new Vector3(-w, cy + L)); _v.Add(new Vector3(-r, cy));
+                }
+                while (_c.Count < _v.Count) _c.Add(fc);
+                for (int i = s0 + 1; i < _v.Count - 1; i++) { _t.Add(s0); _t.Add(i + 1); _t.Add(i); }
+            }
+
+            _mesh.Clear();
+            _mesh.SetVertices(_v);
+            _mesh.SetColors(_c);
+            _mesh.SetTriangles(_t, 0);
+            _mesh.RecalculateBounds();
+        }
+
+        private void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color col)
+        {
+            int s = _v.Count;
+            _v.Add(a); _v.Add(b); _v.Add(c); _v.Add(d);
+            for (int i = 0; i < 4; i++) _c.Add(col);
+            _t.Add(s); _t.Add(s + 2); _t.Add(s + 1);
+            _t.Add(s); _t.Add(s + 3); _t.Add(s + 2);
         }
 
         private static void Fit(SpriteRenderer r, float size)
@@ -331,26 +401,29 @@ namespace StellarisClone.Rendering
             r.transform.localScale = Vector3.one * (size / Mathf.Max(0.0001f, w));
         }
 
-        private SpriteRenderer Sprite(string name, Sprite sp, int order, bool sliced)
+        private SpriteRenderer Sprite(string name, Sprite sp, int order, Vector3 pos, float size)
         {
             var go = new GameObject(name);
             go.transform.SetParent(_body, false);
+            go.transform.localPosition = pos;
             var r = go.AddComponent<SpriteRenderer>();
             r.sprite = sp;
             r.sortingOrder = order;
-            if (sliced) r.drawMode = SpriteDrawMode.Sliced;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
+            if (sp != null) Fit(r, size);
             return r;
         }
 
-        private TextMesh Text(string name, int order)
+        private TextMesh Text(string name, int order, Font font, float cs, Vector3 pos)
         {
             var go = new GameObject(name);
             go.transform.SetParent(_body, false);
+            go.transform.localPosition = pos;
             var t = go.AddComponent<TextMesh>();
-            t.font = name == "Value" ? GameFont.Regular : GameFont.Bold;
+            t.font = font;
             t.fontSize = FontSize;
+            t.characterSize = cs;
             t.anchor = TextAnchor.MiddleLeft;
             t.alignment = TextAlignment.Left;
             t.richText = false;

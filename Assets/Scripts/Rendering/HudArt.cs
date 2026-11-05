@@ -257,6 +257,20 @@ namespace StellarisClone.Rendering
             }, new Vector4(r, r, r, r));
         }
 
+        /// <summary>Ромб (квадрат на углу) во весь спрайт, слегка скруглённые углы; frame — только контур ~7 px из 128.</summary>
+        public static Sprite Diamond(bool frame)
+        {
+            const int n = 128;
+            float r = n * 0.5f - 1.5f;
+            const float t = 7f;
+            return Make(frame ? "diamond_frame" : "diamond", n, n, (x, y) =>
+            {
+                float d = (Mathf.Abs(x - n * 0.5f) + Mathf.Abs(y - n * 0.5f) - r) * 0.7071f;   // расстояние до края
+                float inside = Mathf.Clamp01(0.5f - d);
+                return frame ? inside * Mathf.Clamp01(0.5f + d + t) : inside;
+            });
+        }
+
         /// <summary>Тонкая черта-«линза»: толще в середине, сходит на нет к концам, края мягкие (черта под названием системы).</summary>
         public static Sprite TaperLine()
         {
