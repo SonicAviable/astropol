@@ -7404,3 +7404,6 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 Против {0}	Against {0}
 ЭФИР	LIVE
 Все последние новости галактики	All the latest galactic news
+СТРОЙКИ	BUILDS
+ЗОНДЫ	PROBES
+Все разделы планировщика	All planner sections

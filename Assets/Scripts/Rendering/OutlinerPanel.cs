@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
     public class OutlinerPanel : MonoBehaviour
     {
         // Сверху — на одном уровне с портретом правителя (панель ресурсов по центру до правого края не доходит)
-        private const float Width = 300f, Top = 10f, Bottom = 284f, RowH = 42f, HeadH = 32f;
+        private const float Width = 300f, Top = 10f, Bottom = 284f, RowH = 42f, HeadH = 32f, TabH = 40f;
 
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
@@ -76,12 +76,21 @@ namespace StellarisClone.Rendering
             public Color Accent;
         }
         private readonly List<SecView> _secViews = new List<SecView>();
+
+        // ---- вкладки: -1 — все секции, иначе только одна
+        private static string[] TabNames => new[] { Loc.T("ВСЕ"), Loc.T("НАУКА"), Loc.T("СТРОЙКИ"), Loc.T("ФЛОТЫ"), Loc.T("ЗОНДЫ"), Loc.T("СТРОИТЕЛИ") };
+        private int _tab = -1;
+        private RectTransform _tabBar;
+        private readonly Image[] _tabBg = new Image[6], _tabLine = new Image[6], _tabIcon = new Image[6];
+        private readonly Text[] _tabCount = new Text[6], _tabLabel = new Text[6];
+        private bool InTab(int sec) => _tab < 0 || _tab == sec;
         private readonly List<RowView> _rowViews = new List<RowView>();
 
         public void Init(Canvas hud)
         {
             _collapsed = PlayerPrefs.GetInt("outliner.collapsed", 0) == 1;
             for (int i = 0; i < _secClosed.Length; i++) _secClosed[i] = PlayerPrefs.GetInt("outliner.sec" + i, 0) == 1;
+            _tab = Mathf.Clamp(PlayerPrefs.GetInt("outliner.tab", -1), -1, 4);
 
             _root = LGBuild.Rect(hud.transform, "[UI] Outliner");
             _root.anchorMin = new Vector2(1, 0);
@@ -95,6 +104,7 @@ namespace StellarisClone.Rendering
             mo.delay = 0.15f;
 
             BuildHeader();
+            BuildTabs();
 
             // Тело: высота подстраивается под содержимое
             var body = LGBuild.Panel(_root, "Body", new Color(0.012f, 0.026f, 0.040f, 0.94f), raycast: true);
@@ -102,7 +112,7 @@ namespace StellarisClone.Rendering
             _body.anchorMin = new Vector2(0, 1);
             _body.anchorMax = new Vector2(1, 1);
             _body.pivot = new Vector2(0.5f, 1);
-            _body.anchoredPosition = new Vector2(0, -(HeadH + 4f));
+            _body.anchoredPosition = new Vector2(0, -(HeadH + TabH + 8f));
             _body.sizeDelta = new Vector2(0, 60f);
             var bfx = LG.Platter(body.gameObject, 8f);
             bfx.FillMultiplier = 3f;
@@ -199,9 +209,74 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(head.gameObject, Loc.T("Свернуть или развернуть планировщик"));
         }
 
+        /// <summary>
+        /// Вкладки под шапкой: «Все» и по одной на секцию — значок, счётчик, подпись.
+        /// Выбранная — подсвечена с линией снизу; при простое/бое в секции значок золотой.
+        /// </summary>
+        private void BuildTabs()
+        {
+            _tabBar = LGBuild.Rect(_root, "Tabs");
+            _tabBar.TopBand(HeadH + 4f, TabH);
+            LG.Ignore(_tabBar.gameObject);
+            float w = Width / 6f;
+            for (int i = 0; i < 6; i++)
+            {
+                int sec = i - 1;
+                var bg = LGBuild.Panel(_tabBar, "Tab" + i, new Color(0.020f, 0.045f, 0.065f, 0.94f), raycast: true);
+                bg.rectTransform.anchorMin = new Vector2(i / 6f, 0f);
+                bg.rectTransform.anchorMax = new Vector2((i + 1) / 6f, 1f);
+                bg.rectTransform.offsetMin = new Vector2(i == 0 ? 0f : 1f, 0f);
+                bg.rectTransform.offsetMax = new Vector2(i == 5 ? 0f : -1f, 0f);
+                var col = sec < 0 ? Cyan : SecColors[sec];
+                _tabBg[i] = bg;
+                _tabLine[i] = LGBuild.Panel(bg.transform, "Line", col);
+                _tabLine[i].rectTransform.anchorMin = new Vector2(0f, 0f);
+                _tabLine[i].rectTransform.anchorMax = new Vector2(1f, 0f);
+                _tabLine[i].rectTransform.pivot = new Vector2(0.5f, 0f);
+                _tabLine[i].rectTransform.sizeDelta = new Vector2(0f, 2f);
+                _tabIcon[i] = LGIcons.Create(bg.transform, sec < 0 ? LGIcon.Menu : SecIcons[sec], 13f, col);
+                _tabIcon[i].rectTransform.At(new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(2f, -6f), new Vector2(13f, 13f));
+                _tabCount[i] = LGBuild.Label(bg.transform, "", 11, Primary, TextAnchor.UpperLeft, bold: true);
+                _tabCount[i].rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(4f, -5f), new Vector2(24f, 14f));
+                _tabLabel[i] = LGBuild.Label(bg.transform, TabNames[i], 8, Muted, TextAnchor.LowerCenter, bold: true);
+                _tabLabel[i].rectTransform.Stretch(2f, 5f, 2f, 0f);
+                _tabLabel[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+                _tabLabel[i].resizeTextForBestFit = true;
+                _tabLabel[i].resizeTextMinSize = 6;
+                _tabLabel[i].resizeTextMaxSize = 8;
+                var b = bg.gameObject.AddComponent<Button>();
+                b.transition = Selectable.Transition.None;
+                b.onClick.AddListener(() =>
+                {
+                    _tab = sec;
+                    PlayerPrefs.SetInt("outliner.tab", _tab);
+                    SFXManager.Play(Sfx.UiTab, 0.6f);
+                    ApplyTabs();
+                    _shape = "";
+                    _timer = 0f;
+                });
+                TooltipHelper.Attach(bg.gameObject, sec < 0 ? Loc.T("Все разделы планировщика") : SecNames[sec]);
+            }
+            ApplyTabs();
+        }
+
+        private void ApplyTabs()
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                if (_tabBg[i] == null) continue;
+                bool on = _tab == i - 1;
+                var col = i == 0 ? Cyan : SecColors[i - 1];
+                _tabBg[i].color = on ? new Color(col.r * 0.22f, col.g * 0.22f + 0.02f, col.b * 0.22f + 0.03f, 0.96f) : new Color(0.020f, 0.045f, 0.065f, 0.94f);
+                _tabLine[i].enabled = on;
+                _tabLabel[i].color = on ? Primary : Muted;
+            }
+        }
+
         private void ApplyCollapsed()
         {
             _body.gameObject.SetActive(!_collapsed);
+            if (_tabBar != null) _tabBar.gameObject.SetActive(!_collapsed);
             _toggleLabel.text = _collapsed ? "▾" : "▴";
             _shape = "";
             _timer = 0f;
@@ -258,12 +333,24 @@ namespace StellarisClone.Rendering
             foreach (var s in sections) foreach (var r in s) if (r.Warn || r.Danger) alerts++;
             _alertChip.SetActive(alerts > 0);
             _alertText.text = alerts.ToString();
+            int total = 0;
+            for (int s = 0; s < 5; s++)
+            {
+                total += sections[s].Count;
+                bool warn = sections[s].Exists(r => r.Warn || r.Danger);
+                _tabCount[s + 1].text = sections[s].Count.ToString();
+                _tabIcon[s + 1].color = warn ? Gold : SecColors[s];
+            }
+            _tabCount[0].text = total.ToString();
+            _tabIcon[0].color = alerts > 0 ? Gold : Cyan;
             if (_collapsed) return;
 
             // Форма списка: секции, их состояние и число строк (и есть ли у строки полоса)
             var sb = new StringBuilder(64);
+            sb.Append(_tab).Append(':');
             for (int s = 0; s < 5; s++)
             {
+                if (!InTab(s)) { sb.Append('-'); continue; }
                 sb.Append(_secClosed[s] ? 'c' : 'o');
                 if (_secClosed[s]) continue;
                 if (sections[s].Count == 0) sb.Append('e');
@@ -282,6 +369,7 @@ namespace StellarisClone.Rendering
             for (int s = 0; s < 5; s++)
             {
                 var sv = _secViews[s];
+                if (sv == null) continue;
                 bool warn = sections[s].Exists(r => r.Warn || r.Danger);
                 sv.Count.text = sections[s].Count.ToString();
                 sv.Icon.color = warn ? Gold : SecColors[s];
@@ -494,6 +582,7 @@ namespace StellarisClone.Rendering
             _rowViews.Clear();
             for (int s = 0; s < 5; s++)
             {
+                if (!InTab(s)) { _secViews.Add(null); continue; }
                 _secViews.Add(SectionHeader(s));
                 if (_secClosed[s]) continue;
                 if (sections[s].Count == 0) Empty(s);
@@ -667,7 +756,7 @@ namespace StellarisClone.Rendering
             if (_collapsed) return;
 
             // высота тела подстраивается плавно и замирает, когда дошла до цели
-            float avail = Mathf.Max(60f, _root.rect.height - HeadH - 4f);
+            float avail = Mathf.Max(60f, _root.rect.height - HeadH - TabH - 8f);
             float target = Mathf.Min(_bodyTarget, avail);
             if (Mathf.Abs(_bodyH - target) > 0.5f)
             {
@@ -678,6 +767,7 @@ namespace StellarisClone.Rendering
 
             foreach (var sv in _secViews)
             {
+                if (sv == null) continue;
                 var col = SecColors[sv.Sec];
                 float h = sv.Hover.Amount(dt);
                 sv.Bg.color = new Color(col.r * 0.10f + 0.04f * h, col.g * 0.10f + 0.02f + 0.05f * h, col.b * 0.10f + 0.03f + 0.06f * h, 0.96f);
