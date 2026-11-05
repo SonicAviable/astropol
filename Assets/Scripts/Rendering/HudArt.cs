@@ -145,6 +145,24 @@ namespace StellarisClone.Rendering
             }, new Vector4(cut + 2, cut + 2, cut + 2, cut + 2));
         }
 
+        /// <summary>Рамка плашки со срезанными углами (тот же силуэт, что CutPanel) толщиной thickness px.</summary>
+        public static Sprite CutFrame(int cut = 10, float thickness = 1.5f)
+        {
+            int n = cut * 2 + 8;
+            return Make($"cutframe_{cut}_{thickness:0.0}", n, n, (x, y) =>
+            {
+                bool Inside(float px, float py, float inset)
+                {
+                    if (px < inset || py < inset || px > n - inset || py > n - inset) return false;
+                    float c = cut + inset * 0.4142f;                  // срез смещается на inset·(√2−1)
+                    if (px + py < c) return false;
+                    if ((n - px) + (n - py) < c) return false;
+                    return true;
+                }
+                return Inside(x, y, 0f) && !Inside(x, y, thickness) ? 1f : 0f;
+            }, new Vector4(cut + 2, cut + 2, cut + 2, cut + 2));
+        }
+
         /// <summary>Горизонтальная полоса, гаснущая к обоим краям (фон и линии баннера, бегущей строки).</summary>
         public static Sprite EdgeFade(float edge = 0.18f)
         {

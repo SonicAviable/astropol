@@ -44,9 +44,8 @@ namespace StellarisClone.Rendering
             public RectTransform Rt;
             public CanvasGroup Group;
             public Image Bg, Icon;
-            public LiquidGlassEffect Fx;
+            public Image Rim, Glow, RippleImg;
             public RectTransform Ripple;
-            public LiquidGlassEffect RippleFx;
             public Text Count;
             public TooltipTrigger Tip;
             public System.Action Action;
@@ -183,22 +182,37 @@ namespace StellarisClone.Rendering
             v.Group = rt.gameObject.AddComponent<CanvasGroup>();
             v.Group.alpha = 0f;
 
-            // Волна-кольцо при появлении (под значком)
-            var ripple = LGBuild.Panel(rt, "Ripple", new Color(0, 0, 0, 0));
-            ripple.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size, Size));
-            v.RippleFx = LG.Border(ripple.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
-            v.RippleFx.Radius = 10f;   // та же форма, что у плитки
-            v.Ripple = ripple.rectTransform;
+            LG.Ignore(rt.gameObject);
 
-            // Плитка в стиле HUD: тёмное тело, кромка и срезанные углы цвета алерта, снизу — полоска важности
-            v.Bg = LGBuild.Panel(rt, "Bg", new Color(a.Color.r * 0.28f, a.Color.g * 0.28f, a.Color.b * 0.28f, 1f), raycast: true);
+            // Свечение цвета алерта под плиткой (пульсирует, пока алерт свежий)
+            v.Glow = LGBuild.Panel(rt, "Glow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.25f));
+            v.Glow.sprite = FactionSelectScreen.RadialSprite();
+            v.Glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size + 34f, Size + 34f));
+
+            // Волна-рамка при появлении (та же форма, что у плитки)
+            v.RippleImg = LGBuild.Panel(rt, "Ripple", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
+            v.RippleImg.sprite = HudArt.CutFrame(9, 1.5f);
+            v.RippleImg.type = Image.Type.Sliced;
+            v.RippleImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size, Size));
+            v.Ripple = v.RippleImg.rectTransform;
+
+            // Плитка в стиле верхнего меню: тёмное тело со срезанными углами, рамка цвета алерта, снизу — полоска важности
+            v.Bg = LGBuild.Panel(rt, "Bg", new Color(0.030f, 0.068f, 0.095f, 0.96f), raycast: true);
+            v.Bg.sprite = HudArt.CutPanel(9);
+            v.Bg.type = Image.Type.Sliced;
             v.Bg.rectTransform.Stretch();
+            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.12f));
+            tint.sprite = HudArt.CutPanel(9);
+            tint.type = Image.Type.Sliced;
+            tint.rectTransform.Stretch();
+            v.Rim = LGBuild.Panel(v.Bg.transform, "Rim", new Color(a.Color.r, a.Color.g, a.Color.b, 0.85f));
+            v.Rim.sprite = HudArt.CutFrame(9, 1.5f);
+            v.Rim.type = Image.Type.Sliced;
+            v.Rim.rectTransform.Stretch();
             var btn = v.Bg.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => { v.Action?.Invoke(); SFXManager.Play("ui_click", 1f, 1.05f); });
             v.Bg.gameObject.AddComponent<AlertRightClick>().OnRight = () => Dismiss(v.Id);
-            v.Fx = LG.Button(v.Bg.gameObject, new Color(a.Color.r, a.Color.g, a.Color.b, 0.85f), 10f);
-            v.Fx.GlowMultiplier = 0.8f;
-            v.Fx.GetComponent<LGInteractive>().hoverScale = 1.04f;
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
 
             v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 20f, Color.Lerp(a.Color, Color.white, 0.2f));
@@ -210,13 +224,11 @@ namespace StellarisClone.Rendering
             sev.rectTransform.sizeDelta = new Vector2(0f, 2f);
             sev.rectTransform.anchoredPosition = new Vector2(0f, 4f);
             sev.raycastTarget = false;
-            LG.Ignore(sev.gameObject);
 
-            // Счётчик (например, число простаивающих кораблей)
-            var badge = LGBuild.Panel(v.Bg.transform, "Badge", new Color(0.9f, 0.25f, 0.28f, 1f));
-            badge.rectTransform.At(new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(-6, 6), new Vector2(18, 18));
-            var bFx = LG.Apply(badge.gameObject, LiquidGlassEffect.Role.Fill, 9f);
-            bFx.GlowMultiplier = 0.4f;
+            // Счётчик (например, число простаивающих кораблей) — кружок в правом верхнем углу
+            var badge = LGBuild.Panel(rt, "Badge", new Color(0.92f, 0.26f, 0.28f, 1f));
+            badge.sprite = HudArt.Disc();
+            badge.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-3, -3), new Vector2(17, 17));
             v.Count = LGBuild.Label(badge.transform, "", 10, Color.white, TextAnchor.MiddleCenter, bold: true);
             badge.gameObject.SetActive(false);
 
@@ -284,14 +296,16 @@ namespace StellarisClone.Rendering
                     if (tr < 1f)
                     {
                         v.Ripple.localScale = Vector3.one * Mathf.Lerp(1f, 2.1f, LGEase.OutCubic(tr)) / Mathf.Max(0.2f, s);
-                        v.RippleFx.SetRim(new Color(v.Color.r, v.Color.g, v.Color.b, 0.9f * (1f - tr)));
+                        v.RippleImg.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.9f * (1f - tr));
                     }
                     else if (v.Ripple.gameObject.activeSelf) v.Ripple.gameObject.SetActive(false);
                 }
 
                 // Пока свежий — пульсирует, затем спокойно светится
                 float attention = Mathf.Clamp01(1f - (v.Age - 0.5f) / 3.5f);
-                v.Fx.SetPulse(attention * (0.35f + 0.35f * Mathf.Sin(v.Age * 6f)));
+                float pulse = attention * (0.35f + 0.35f * Mathf.Sin(v.Age * 6f));
+                v.Glow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.18f + 0.35f * pulse);
+                v.Rim.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.75f + 0.25f * pulse);
             }
 
             for (int i = _views.Count - 1; i >= 0; i--)

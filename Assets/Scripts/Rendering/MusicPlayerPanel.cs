@@ -36,8 +36,17 @@ namespace StellarisClone.Rendering
             var host = new GameObject("[UI] MusicPlayer").AddComponent<MusicPlayerPanel>();
             host.Build(canvas, panelTop);
 
-            var btn = LGBuild.Button(timeBar, "MusicBtn", DS.BgVisor, new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.55f), host.Toggle, null, null, 11, 15f);
-            ((RectTransform)btn.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(30, 30));
+            // Круглая голо-кнопка в стиле верхнего меню: тёмный диск, бирюзовое кольцо
+            var bg = LGBuild.Panel(timeBar, "MusicBtn", new Color(0.030f, 0.068f, 0.095f, 0.96f), raycast: true);
+            bg.sprite = HudArt.Disc();
+            bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(30, 30));
+            LG.Ignore(bg.gameObject);
+            var ring = LGBuild.Panel(bg.transform, "Ring", new Color(0.37f, 0.82f, 0.75f, 0.6f));
+            ring.sprite = HudArt.Ring(0.88f, 1f);
+            ring.rectTransform.Stretch();
+            var btn = bg.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(host.Toggle);
             host._toggleIcon = LGIcons.Create(btn.transform, LGIcon.Speaker, 15f, DS.TextMuted);
             host._toggleIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
             host._toggleIcon.raycastTarget = false;
