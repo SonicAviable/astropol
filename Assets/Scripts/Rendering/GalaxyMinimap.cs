@@ -320,6 +320,18 @@ public static void ShowGlobal()
             _viewRect.sizeDelta = new Vector2(viewSize, viewSize);
         }
 
+        /// <summary>
+        /// Щелчок по экрану → точка в системе координат точек миникарты (от центра области точек).
+        /// Раньше бралась точка относительно корня, у которого опора в левом нижнем углу, — щелчок
+        /// уводил камеру на полкарты вправо-вверх от нужного места.
+        /// </summary>
+        public void HandleScreen(Vector2 screen, Camera eventCam)
+        {
+            if (_dotsArea == null) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_dotsArea, screen, eventCam, out var local)) return;
+            HandleClick(local - _dotsArea.rect.center);
+        }
+
         public void HandleClick(Vector2 localPos)
         {
             if (_cam == null) return;
@@ -347,10 +359,7 @@ public static void ShowGlobal()
         private void Move(PointerEventData e)
         {
             if (e.button != PointerEventData.InputButton.Left) return;
-            var rt = transform as RectTransform;
-            Vector2 local;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, e.position, e.pressEventCamera, out local);
-            _map?.HandleClick(local);
+            _map?.HandleScreen(e.position, e.pressEventCamera);
         }
     }
 }
