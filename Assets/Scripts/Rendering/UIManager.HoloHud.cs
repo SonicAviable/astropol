@@ -26,7 +26,7 @@ namespace StellarisClone.Rendering
 
         private Text _diskMonth, _diskDay, _diskYear, _speedCaption;
         private Image _monthRing, _stabRing, _stabTicks;
-        private Image _moon, _moonGlow;
+        private Image _moon, _moonNext, _moonGlow;   // _moonNext — следующий шаг фазы поверх, с долей прозрачности
         private float _moonPhase = -1f;
         private Text _empireName, _empireRuler;
         private int _arcShown = -1;
@@ -339,6 +339,8 @@ namespace StellarisClone.Rendering
             _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 1.02f));
             _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), new Color(1f, 1f, 1f, 0.95f));
             _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
+            _moonNext = HoloImage(disk, "MoonNext", MoonPhase.GetStep(1), new Color(1f, 1f, 1f, 0f));
+            _moonNext.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
             // Мягкая тёмная подложка под цифрами — дата читается и на полной луне
             var plate = HoloImage(disk, "DatePlate", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0.62f));
             plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), Vector2.one * (DiskD * 0.80f));
@@ -508,12 +510,20 @@ namespace StellarisClone.Rendering
             float d = frac - cur;
             if (d < -0.5f) d += 1f;          // 30-е → 1-е: доворачиваем вперёд
             else if (d > 0.5f) d -= 1f;
-            _moonPhase += d * (1f - Mathf.Exp(-dt * 5f));
+            _moonPhase += d * (1f - Mathf.Exp(-dt * 2.5f));   // мягче догоняет дату
             _moonPhase -= Mathf.Floor(_moonPhase);
 
-            var sp = MoonPhase.Get(_moonPhase);
-            if (_moon.sprite != sp) _moon.sprite = sp;
-            _moon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 3f * Mathf.Sin(t * 0.25f));
+            // Между двумя соседними шагами фазы — плавное смешивание: граница света ползёт без рывков
+            float steps = _moonPhase * MoonPhase.Steps;
+            int i0 = Mathf.FloorToInt(steps);
+            float f = steps - i0;
+            var a = MoonPhase.GetStep(i0);
+            var b = MoonPhase.GetStep(i0 + 1);
+            if (_moon.sprite != a) _moon.sprite = a;
+            if (_moonNext.sprite != b) _moonNext.sprite = b;
+            _moonNext.color = new Color(1f, 1f, 1f, f);
+            var rot = Quaternion.Euler(0f, 0f, 3f * Mathf.Sin(t * 0.25f));
+            _moon.rectTransform.localRotation = _moonNext.rectTransform.localRotation = rot;
             float ill = MoonPhase.Illumination(_moonPhase);
             _moonGlow.color = new Color(0.85f, 0.95f, 1f, (0.02f + 0.09f * ill) * (0.85f + 0.15f * Mathf.Sin(t * 1.1f)));
         }

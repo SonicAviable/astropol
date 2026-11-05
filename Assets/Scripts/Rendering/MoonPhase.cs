@@ -9,12 +9,20 @@ namespace StellarisClone.Rendering
     /// </summary>
     public static class MoonPhase
     {
-        private const int N = 160, Steps = 96;
+        public const int Steps = 96;
+        private const int N = 160;
         private const int TW = 512, TH = 256;                // копия текстуры для чтения на CPU
         private static Color32[] s_tex;
         private static bool s_texTried;
         private static readonly Sprite[] s_cache = new Sprite[Steps];
         private static float[] s_albedo;
+
+        /// <summary>Спрайт шага фазы (0..Steps-1, по кругу) — для плавного перехода между соседними шагами.</summary>
+        public static Sprite GetStep(int i)
+        {
+            i = ((i % Steps) + Steps) % Steps;
+            return s_cache[i] != null ? s_cache[i] : (s_cache[i] = Make(i / (float)Steps));
+        }
 
         public static Sprite Get(float phase)
         {
