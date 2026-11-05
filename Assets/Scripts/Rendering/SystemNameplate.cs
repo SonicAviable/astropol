@@ -115,6 +115,7 @@ namespace StellarisClone.Rendering
             _titleMr = mrTitle;
 
             var resRow = new GameObject("Resources");
+            _resRow = resRow.transform;
             resRow.transform.SetParent(_plateRoot.transform, false);
             resRow.transform.localPosition = new Vector3(0, -1.15f, 0);
             _chipMin = WorldChip.Create(resRow.transform, "Titan", 46, false, true);
@@ -162,6 +163,7 @@ namespace StellarisClone.Rendering
         }
 
         private SpriteRenderer _underGlow, _underLine;
+        private Transform _resRow;
         private Color _ownerCol = new Color(0.62f, 0.69f, 0.72f, 1f);
 
         private SpriteRenderer UnderlineSprite(string name, Sprite sp, float w, float h, int order)
@@ -238,9 +240,12 @@ namespace StellarisClone.Rendering
         {
             Color g = UIManager.DS.Green, o = new Color(1f, 0.66f, 0.30f);
             EnsureStatusRow();
-            _chipPop = WorldChip.Create(_statusRow, "ColonyPop", 51, false, true);
+            // Жители — в одной строке с ресурсами и в том же стиле: зелёный значок и число, без плашки
+            _chipPop = WorldChip.Create(_resRow != null ? _resRow : _statusRow, "ColonyPop", 51, false, true);
             _chipPop.SetIcon(LGIcon.Population);
-            _chipPop.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.88f), new Color(g.r, g.g, g.b, 0.75f), g, g, Color.white);
+            _chipPop.GlowStrength = 0f;
+            _chipPop.SetColors(new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0f), g, g,
+                               new Color(Mathf.Lerp(g.r, 1f, 0.55f), Mathf.Lerp(g.g, 1f, 0.55f), Mathf.Lerp(g.b, 1f, 0.55f), 1f));
             _chipPop.SetAlpha(0f);
             _chipJob = WorldChip.Create(_statusRow, "ColonyJob", 51, false, true);
             _chipJob.SetIcon(LGIcon.Construction);
@@ -259,7 +264,7 @@ namespace StellarisClone.Rendering
             if (_statusRow != null) return;
             _statusRow = new GameObject("StatusRow").transform;
             _statusRow.SetParent(_plateRoot.transform, false);
-            _statusRow.localPosition = new Vector3(0, -2.3f, -0.02f);
+            _statusRow.localPosition = new Vector3(0, -2.0f, -0.02f);
         }
 
         private float _popVis, _buildVis, _jobVis;
@@ -274,13 +279,23 @@ namespace StellarisClone.Rendering
             _popVis = Mathf.MoveTowards(_popVis, _popOn && _alpha > 0.01f ? 1f : 0f, k);
             _jobVis = Mathf.MoveTowards(_jobVis, _jobOn && _alpha > 0.01f ? 1f : 0f, k);
             _buildVis = Mathf.MoveTowards(_buildVis, _buildOn && _buildAlpha > 0.01f ? 1f : 0f, k);
+            // Строка ресурсов: титан · гелий-3 · жители (по центру, без плашек)
+            if (_chipMin != null)
+            {
+                const float rg = 0.32f;
+                float wm = _hasMin ? _chipMin.Width : 0f, we = _hasEn ? _chipEn.Width : 0f;
+                float wpp = _chipPop != null ? _chipPop.Width * _popVis : 0f;
+                float tot = wm + we + wpp + (wm > 0f && we > 0f ? rg : 0f) + (wpp > 0f && (wm + we) > 0f ? rg * _popVis : 0f);
+                float rx = -tot * 0.5f;
+                if (_hasMin) { _chipMin.CenterOn(rx + wm * 0.5f, 0f); rx += wm + rg; }
+                if (_hasEn) { _chipEn.CenterOn(rx + we * 0.5f, 0f); rx += we + rg; }
+                if (_chipPop != null) _chipPop.Root.localPosition = new Vector3(rx + _chipPop.Width * 0.5f, 0f, 0f);
+            }
+
             const float gap = 0.3f;
-            float wp = _chipPop != null ? (_chipPop.Width + gap) * _popVis : 0f;
             float wb = _chipBuild != null ? (_chipBuild.Width + gap) * _buildVis : 0f;
             float wj = _chipJob != null ? (_chipJob.Width + gap) * _jobVis : 0f;
-            float x = -(wp + wb + wj - gap * Mathf.Max(_popVis, Mathf.Max(_buildVis, _jobVis))) * 0.5f;
-            if (_chipPop != null) _chipPop.Root.localPosition = new Vector3(x + _chipPop.Width * 0.5f, 0f, 0f);
-            x += wp;
+            float x = -(wb + wj - gap * Mathf.Max(_buildVis, _jobVis)) * 0.5f;
             if (_chipBuild != null) _chipBuild.Root.localPosition = new Vector3(x + _chipBuild.Width * 0.5f, 0f, 0f);
             x += wb;
             if (_chipJob != null) _chipJob.Root.localPosition = new Vector3(x + _chipJob.Width * 0.5f, 0f, 0f);
@@ -575,12 +590,9 @@ namespace StellarisClone.Rendering
             StyleChip(_chipMin, cyan, dim);
             StyleChip(_chipEn, gold, dim);
 
-            float gap = 0.14f, total = 0f;
-            if (min > 0) { _chipMin.Set(min.ToString(), 0.38f); total += _chipMin.Width; }
-            if (en > 0) { _chipEn.Set(en.ToString(), 0.38f); total += (total > 0f ? gap : 0f) + _chipEn.Width; }
-            float x = -total * 0.5f;
-            if (min > 0) { _chipMin.CenterOn(x + _chipMin.Width * 0.5f, 0f); x += _chipMin.Width + gap; }
-            if (en > 0) _chipEn.CenterOn(x + _chipEn.Width * 0.5f, 0f);
+            if (min > 0) _chipMin.Set(min.ToString(), 0.38f);
+            if (en > 0) _chipEn.Set(en.ToString(), 0.38f);
+            // раскладка строки (титан · гелий · жители) — в LayoutStatusRow, жители появляются плавно
             ApplyAlpha();
         }
 
