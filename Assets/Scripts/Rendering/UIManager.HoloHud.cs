@@ -337,7 +337,7 @@ namespace StellarisClone.Rendering
             // Луна за датой: фаза — ход месяца (1-е — новолуние, середина — полнолуние), приглушена под текстом
             _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.85f, 0.95f, 1f, 0.08f));
             _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 1.02f));
-            _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), new Color(1f, 1f, 1f, 0.95f));
+            _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), Color.white);   // непрозрачна, как и верхний слой при f → 1 — без щелчка на смене шага
             _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
             _moonNext = HoloImage(disk, "MoonNext", MoonPhase.GetStep(1), new Color(1f, 1f, 1f, 0f));
             _moonNext.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
