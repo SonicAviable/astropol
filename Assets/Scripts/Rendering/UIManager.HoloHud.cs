@@ -40,18 +40,18 @@ namespace StellarisClone.Rendering
         {
             switch (m)
             {
-                case 1: return Loc.T("ЯНВАРЬ");
-                case 2: return Loc.T("ФЕВРАЛЬ");
-                case 3: return Loc.T("МАРТ");
-                case 4: return Loc.T("АПРЕЛЬ");
+                case 1: return Loc.T("ЯНВ");
+                case 2: return Loc.T("ФЕВ");
+                case 3: return Loc.T("МАР");
+                case 4: return Loc.T("АПР");
                 case 5: return Loc.T("МАЙ");
-                case 6: return Loc.T("ИЮНЬ");
-                case 7: return Loc.T("ИЮЛЬ");
-                case 8: return Loc.T("АВГУСТ");
-                case 9: return Loc.T("СЕНТЯБРЬ");
-                case 10: return Loc.T("ОКТЯБРЬ");
-                case 11: return Loc.T("НОЯБРЬ");
-                default: return Loc.T("ДЕКАБРЬ");
+                case 6: return Loc.T("ИЮН");
+                case 7: return Loc.T("ИЮЛ");
+                case 8: return Loc.T("АВГ");
+                case 9: return Loc.T("СЕН");
+                case 10: return Loc.T("ОКТ");
+                case 11: return Loc.T("НОЯ");
+                default: return Loc.T("ДЕК");
             }
         }
 
@@ -184,22 +184,26 @@ namespace StellarisClone.Rendering
             var edge = HoloImage(disk, "Edge", HudArt.Ring(0.975f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.45f));
             edge.rectTransform.Stretch();
 
-            _diskMonth = CreateText(disk, "", 10, FontStyle.Bold, HoloLine, TextAnchor.MiddleCenter);
-            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 34f), new Vector2(DiskD, 16f));
-            _diskMonth.Track(2.6f);
-            _diskDay = CreateText(disk, "", 40, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
+            // Дата: месяц коротко сверху (цвет HUD), крупный день двумя цифрами, под чертой — год
+            _diskMonth = CreateText(disk, "", 13, FontStyle.Normal, HoloLine, TextAnchor.MiddleCenter);
+            _diskMonth.font = GameFont.Display;
+            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 36f), new Vector2(DiskD, 18f));
+            _diskMonth.Track(4f);
+            _diskDay = CreateText(disk, "", 46, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
             _diskDay.font = GameFont.Display;
-            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 4f), new Vector2(DiskD, 46f));
+            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 5f), new Vector2(DiskD, 52f));
             var dayGlow = _diskDay.gameObject.AddComponent<Outline>();
-            dayGlow.effectColor = new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.18f);
+            dayGlow.effectColor = new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.22f);
             dayGlow.effectDistance = new Vector2(1.5f, -1.5f);
-            _diskYear = CreateText(disk, "", 13, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
-            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -28f), new Vector2(DiskD, 18f));
-            _diskYear.Track(3.4f);
+            var rule = HoloImage(disk, "Rule", HudArt.EdgeFade(0.35f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.6f));
+            rule.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -24f), new Vector2(70f, 1f));
+            _diskYear = CreateText(disk, "", 12, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
+            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -36f), new Vector2(DiskD, 16f));
+            _diskYear.Track(5f);
 
             BuildSpeedArc(disk);
 
-            _speedCaption = CreateText(disk, "", 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
+            _speedCaption = CreateText(disk, "", 10, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
             _speedCaption.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -(DiskD * 0.5f + 62f)), new Vector2(200f, 14f));
             _speedCaption.Track(1.8f);
 
@@ -265,7 +269,7 @@ namespace StellarisClone.Rendering
             var tm = TimeManager.Instance;
             if (tm != null && _diskDay != null)
             {
-                string day = tm.Day.ToString();
+                string day = tm.Day.ToString("00");
                 if (_diskDay.text != day) _diskDay.text = day;
                 string month = MonthName(tm.Month);
                 if (_diskMonth.text != month) _diskMonth.text = month;

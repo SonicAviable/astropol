@@ -495,6 +495,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             mRt.anchoredPosition = new Vector2(TopBarMargin, -HoloTopBottom);
             UIAnchors.Register(UIAnchors.NavMenu, mRt);
             LG.Motion(menu, LGAppear.Kind.SlideLeft).distance = 22f;
+            // Соты — в своём контейнере (его сворачивает кнопка под колонкой), кнопка — рядом, в самом меню
+            var items = LGBuild.Rect(menu.transform, "Items");
+            items.Stretch();
+            LG.Ignore(items.gameObject, includeChildren: false);
+            _navItemsGroup = items.gameObject.AddComponent<CanvasGroup>();
+            _navItemsRt = items;
 
             // Пункт меню — шестиугольная сота со значком; название и клавиша — во флажке справа (наведение / окно открыто).
             // group = true — пункт открывает новую группу (перед ним зазор с чёрточкой).
@@ -502,7 +508,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip, string key,
                       System.Func<bool> isOpen = null, bool group = false)
             {
-                var root = LGBuild.Rect(menu.transform, name);
+                var root = LGBuild.Rect(items, name);
                 root.At(new Vector2(0, 1), new Vector2(0.5f, 1f), new Vector2(hexX, 0f), new Vector2(NavHexW, NavHexH));
                 LG.Ignore(root.gameObject);
 
@@ -563,7 +569,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 Image divider = null;
                 if (group)
                 {
-                    divider = HoloImage(menu.transform, name + "Divider", null, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.35f));
+                    divider = HoloImage(items, name + "Divider", null, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.35f));
                     divider.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(hexX, 0f), new Vector2(26f, 1f));
                 }
                 _navOrder.Add(root);
@@ -578,7 +584,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavLaws", LGIcon.Menu, Loc.T("Законы и решения"), new Color(0.95f, 0.62f, 0.36f), () => ToggleWindow(NavWindow.Laws), UIAnchors.Laws,
                  Loc.T("<b>Законы и решения</b>\nЗаконы — постоянные правила империи с платой влиянием.\nРешения — проекты за титан и другие ресурсы: особые для вашей фракции, по обстоятельствам (война, кризис, эпоха) и редкие возможности с таймером. Кружок на значке — сколько решений можно принять прямо сейчас (золотой — появились новые)"), "L", () => IsWindowOpen(NavWindow.Laws));
             // Счётчик решений, которые можно принять, — кружок в углу значка (золотой — есть новые); виден и в свёрнутом меню
-            var lawsTile = menu.transform.Find("NavLaws/IconTile");
+            var lawsTile = items.Find("NavLaws/IconTile");
             if (lawsTile != null)
             {
                 _navDecisionPill = LGBuild.Panel(lawsTile, "DecisionBadge", DS.Green);
@@ -603,11 +609,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                  Loc.T("<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников"), "U", () => IsWindowOpen(NavWindow.Wonder));
             Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, UIAnchors.LogHelp,
                  Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O", () => NotificationLog.IsOpenNow);
-            NotificationLog.AttachBadge(menu.transform.Find("NavLog/IconTile"));
+            NotificationLog.AttachBadge(items.Find("NavLog/IconTile"));
             // «Справка» — маленькая кнопка «?» в шапке планировщика справа (OutlinerPanel), клавиша F1
 
-            _navDiplo = menu.transform.Find("NavDiplo")?.GetComponent<RectTransform>();
+            _navDiplo = items.Find("NavDiplo")?.GetComponent<RectTransform>();
             _navDiploShown = true;
+            BuildNavFoldButton(menu.transform, hexX);
             RefreshDiplomacyNav(force: true);
         }
 
@@ -646,6 +653,68 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 sl.Rt.anchoredPosition = new Vector2(ap.x, -y);
                 y += NavStep;
             }
+            _navColumnH = y;
+            ApplyNavFold(true);
+        }
+
+        // ---------- Свернуть / развернуть левое меню ----------
+
+        private CanvasGroup _navItemsGroup;
+        private RectTransform _navItemsRt, _navFoldRt;
+        private Image _navFoldIcon;
+        private Text _navFoldLabel;
+        private float _navColumnH, _navFold, _navFoldV;
+        private bool _navCollapsed;
+
+        /// <summary>Кнопка под колонкой сот: свернуть меню (соты уезжают влево и тают) или развернуть обратно.</summary>
+        private void BuildNavFoldButton(Transform menu, float x)
+        {
+            _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
+            _navFold = _navCollapsed ? 1f : 0f;
+            _navFoldRt = LGBuild.Rect(menu, "NavFold");
+            _navFoldRt.At(new Vector2(0, 1), new Vector2(0.5f, 1f), new Vector2(x, 0f), new Vector2(44f, 22f));
+            var bg = HoloImage(_navFoldRt, "Bg", HudArt.CutPanel(6), new Color(0.030f, 0.070f, 0.098f, 0.95f));
+            bg.type = Image.Type.Sliced;
+            bg.raycastTarget = true;
+            bg.rectTransform.Stretch();
+            var rim = HoloImage(_navFoldRt, "Rim", null, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.55f));
+            rim.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(30f, 1f));
+            _navFoldIcon = LGIcons.Create(_navFoldRt, LGIcon.Back, 11f, DS.TextMuted);
+            _navFoldIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(11f, 11f));
+            _navFoldIcon.raycastTarget = false;
+            _navFoldLabel = CreateText(_navFoldRt, Loc.T("МЕНЮ"), 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleLeft);
+            _navFoldLabel.rectTransform.At(new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(60f, 16f));
+            _navFoldLabel.Track(1.6f);
+            var b = bg.gameObject.AddComponent<Button>();
+            b.transition = Selectable.Transition.None;
+            b.onClick.AddListener(() =>
+            {
+                _navCollapsed = !_navCollapsed;
+                PlayerPrefs.SetInt("nav.collapsed", _navCollapsed ? 1 : 0);
+                SFXManager.Play(Sfx.PanelSlide);
+            });
+            TooltipHelper.Attach(bg.gameObject, Loc.T("Свернуть или развернуть меню"));
+        }
+
+        /// <summary>Пружина сворачивания: соты уезжают влево и тают, кнопка поднимается к верху колонки.</summary>
+        private void ApplyNavFold(bool instant, float dt = 0f)
+        {
+            if (_navItemsGroup == null || _navFoldRt == null) return;
+            float target = _navCollapsed ? 1f : 0f;
+            if (instant) { _navFold = target; _navFoldV = 0f; }
+            else
+            {
+                if (Mathf.Abs(_navFold - target) < 0.001f && Mathf.Abs(_navFoldV) < 0.001f) return;
+                _navFold = LGEase.Spring(_navFold, target, ref _navFoldV, 3.2f, 0.8f, dt);
+            }
+            float k = Mathf.Clamp01(_navFold);
+            _navItemsGroup.alpha = 1f - k;
+            _navItemsGroup.blocksRaycasts = _navItemsGroup.interactable = k < 0.5f;
+            _navItemsRt.anchoredPosition = new Vector2(-70f * _navFold, 0f);
+            var p = _navFoldRt.anchoredPosition;
+            _navFoldRt.anchoredPosition = new Vector2(p.x, -Mathf.Lerp(_navColumnH + 2f, 0f, k));
+            _navFoldIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(0f, 180f, k));   // ◀ — свернуть, ▶ — развернуть
+            _navFoldLabel.color = new Color(DS.TextMuted.r, DS.TextMuted.g, DS.TextMuted.b, k);
         }
 
         private Image _navDecisionPill;
@@ -1557,6 +1626,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             UpdateStarbaseWindow(dt);
             UpdateHoloTop();
             UpdateDecisionBadge(dt);
+            ApplyNavFold(false, dt);
             RefreshDiplomacyNav(dt: dt);
             OutlinerPanel.Yield = _inspTargetAlpha > 0.5f;
         }

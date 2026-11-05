@@ -7407,3 +7407,15 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 СТРОЙКИ	BUILDS
 ЗОНДЫ	PROBES
 Все разделы планировщика	All planner sections
+ЯНВ	JAN
+ФЕВ	FEB
+МАР	MAR
+АПР	APR
+ИЮН	JUN
+ИЮЛ	JUL
+АВГ	AUG
+СЕН	SEP
+ОКТ	OCT
+НОЯ	NOV
+ДЕК	DEC
+МЕНЮ	MENU

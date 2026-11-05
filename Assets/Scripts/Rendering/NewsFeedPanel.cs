@@ -58,7 +58,7 @@ namespace StellarisClone.Rendering
         public void Init(Canvas hud)
         {
             s_instance = this;
-            _expanded = PlayerPrefs.GetInt("news.expanded", 0) == 1;
+            _expanded = PlayerPrefs.GetInt("news.list", 0) == 1;
             GalacticNews.Attach();
             GalacticNews.OnPosted += OnPosted;
 
@@ -174,7 +174,7 @@ namespace StellarisClone.Rendering
         private void Toggle()
         {
             _expanded = !_expanded;
-            PlayerPrefs.SetInt("news.expanded", _expanded ? 1 : 0);
+            PlayerPrefs.SetInt("news.list", _expanded ? 1 : 0);
             _unread = 0;
             Rebuild();
         }
