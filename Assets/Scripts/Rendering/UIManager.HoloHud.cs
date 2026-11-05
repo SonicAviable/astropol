@@ -77,6 +77,7 @@ namespace StellarisClone.Rendering
             _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.92f, 1f), new Color(0.94f, 0.56f, 0.86f, 1f));
             _stabRing.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 18f));
             RadialFill(_stabRing, 0f);
+            track.raycastTarget = true;
             TooltipHelper.Attach(track.gameObject, Loc.T("<b>Кольцо стабильности</b>\nСредняя стабильность колоний (по числу жителей)."));
 
             RulerBadge.Create(root, new Vector2(20f, -18f), OpenEmpireOverviewModal);

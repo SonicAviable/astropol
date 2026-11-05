@@ -28,7 +28,7 @@ namespace StellarisClone.Rendering
         public static void Create(Transform canvas, float top)
         {
             if (s_instance != null) return;
-            var go = new GameObject("[UI] HudBanner");
+            var go = new GameObject("[UI] HudBanner", typeof(RectTransform));
             go.transform.SetParent(canvas, false);
             var b = go.AddComponent<HudBanner>();
             b.Build(top);
