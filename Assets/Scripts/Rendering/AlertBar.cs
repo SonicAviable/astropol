@@ -628,16 +628,12 @@ namespace StellarisClone.Rendering
             UIManager.Instance?.ShowSystemPanel(sys);
         }
 
-        /// <summary>Сразу к планете: вход в систему (если ещё не в ней) и обзор планеты с её действиями.</summary>
+        /// <summary>Сразу к планете: обзор планеты с её действиями, без входа в систему.</summary>
         private static void OpenPlanet(StarSystem sys, PlanetData planet)
         {
             if (sys == null || planet == null) return;
             var svm = SystemViewManager.Instance;
-            if (svm != null && !svm.IsInSystemView)
-            {
-                Focus(sys);
-                svm.EnterSystemView(sys);
-            }
+            if (svm == null || !svm.IsInSystemView) Focus(sys);
             UIManager.Instance?.ShowPlanetInspector(planet, sys);
         }
 
