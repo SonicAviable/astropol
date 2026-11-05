@@ -325,7 +325,7 @@ namespace StellarisClone.Rendering
             BuildSpeedArc(disk);
 
             _speedCaption = CreateText(disk, "", 10, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
-            _speedCaption.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -(DiskD * 0.5f + 70f)), new Vector2(200f, 14f));
+            _speedCaption.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -(SpeedROut + 12f)), new Vector2(200f, 14f));
             _speedCaption.Track(1.8f);
 
             // Музыка — кнопка справа под диском, панель плеера — под ней
@@ -334,11 +334,15 @@ namespace StellarisClone.Rendering
             MusicPlayerPanel.CreateToggle(music, 0f, _canvas, -(DiskCenterY + DiskD * 0.5f + 70f));
         }
 
+        /// <summary>
+        /// Скорость — дуга-шкала под диском из четырёх сегментов (пауза, ×1, ×2, ×4): сегменты — части кольца,
+        /// активный залит цветом (пауза — золотом) и светится, значки — цвета HUD со свечением.
+        /// </summary>
         private void BuildSpeedArc(RectTransform disk)
         {
             var arc = LGBuild.Rect(disk, "SpeedArc");
-            arc.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -(DiskD * 0.5f + 28f)), new Vector2(170f, 44f));
-            UIAnchors.Register(UIAnchors.Speed, arc);
+            arc.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (SpeedROut * 2f));
+            LG.Ignore(arc.gameObject);
 
             LGIcon[] icons = { LGIcon.Pause, LGIcon.Play, LGIcon.Fast, LGIcon.Fastest };
             string[] tips =
@@ -348,28 +352,64 @@ namespace StellarisClone.Rendering
                 Loc.T("<b>Быстро</b>\nКлавиша: 2"),
                 Loc.T("<b>Очень быстро</b>\nКлавиша: 3")
             };
-            int[] speeds = { 0, 1, 2, 4 };      // как клавиши: 3 — самая быстрая скорость ×4
-            float[] deg = { 124f, 102f, 78f, 56f }; // углы от +X по часовой (экранные: вниз — 90°)
-            const float r = 110f;
+            int[] speeds = { 0, 1, 2, 4 };       // как клавиши: 3 — самая быстрая скорость ×4
+            var band = HudArt.Ring(SpeedRIn / SpeedROut, 1f);
+            var edge = HudArt.Ring(0.975f, 1f);
+            var inner = HudArt.Ring(SpeedRIn / SpeedROut, SpeedRIn / SpeedROut + 0.02f);
             for (int i = 0; i < 4; i++)
             {
                 int captured = speeds[i];
-                float a = deg[i] * Mathf.Deg2Rad;
-                var pos = new Vector2(Mathf.Cos(a) * r, -Mathf.Sin(a) * r) - arc.anchoredPosition;
-                var chip = HoloImage(arc, $"Speed_{i}", HudArt.CutPanel(6), new Color(0.05f, 0.11f, 0.15f, 0.96f));
-                chip.type = Image.Type.Sliced;
-                chip.raycastTarget = true;
-                chip.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(40f, 26f));
-                chip.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f - deg[i]);
-                var b = chip.gameObject.AddComponent<Button>();
+                float center = SpeedArcCenter(i);                     // по часовой от верха: 180° — низ
+                float start = center - SpeedSegDeg * 0.5f;
+
+                var seg = HoloImage(arc, $"Seg_{i}", band, SegIdle);
+                seg.rectTransform.Stretch();
+                RadialFill(seg, SpeedSegDeg / 360f);
+                seg.rectTransform.localRotation = Quaternion.Euler(0, 0, -start);
+                var segEdge = HoloImage(arc, $"SegEdge_{i}", edge, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.55f));
+                segEdge.rectTransform.Stretch();
+                RadialFill(segEdge, SpeedSegDeg / 360f);
+                segEdge.rectTransform.localRotation = Quaternion.Euler(0, 0, -start);
+                var segIn = HoloImage(arc, $"SegIn_{i}", inner, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.25f));
+                segIn.rectTransform.Stretch();
+                RadialFill(segIn, SpeedSegDeg / 360f);
+                segIn.rectTransform.localRotation = Quaternion.Euler(0, 0, -start);
+
+                float a = center * Mathf.Deg2Rad, rm = (SpeedRIn + SpeedROut) * 0.5f;
+                var pos = new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * rm;
+                var glow = HoloImage(arc, $"Glow_{i}", FactionSelectScreen.RadialSprite(), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0f));
+                glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(64f, 64f));
+
+                // Невидимая кнопка над сегментом (кольца перекрывают друг друга прямоугольниками)
+                var hit = HoloImage(arc, $"Speed_{i}", null, new Color(0f, 0f, 0f, 0f));
+                hit.raycastTarget = true;
+                hit.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(34f, 30f));
+                var b = hit.gameObject.AddComponent<Button>();
                 b.transition = Selectable.Transition.None;
                 b.onClick.AddListener(() => SetSpeed(captured));
-                TooltipHelper.Attach(chip.gameObject, tips[i]);
-                _arcChips[i] = chip;
-                _arcIcons[i] = LGIcons.Create(chip.transform, icons[i], i == 3 ? 15f : 13f, DS.TextMuted);
-                _arcIcons[i].raycastTarget = false;
+                TooltipHelper.Attach(hit.gameObject, tips[i]);
+
+                var ic = LGIcons.Create(arc, icons[i], i == 3 ? 15f : 13f, HoloLine);
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(15f, 15f));
+                ic.raycastTarget = false;
+                var sh = ic.gameObject.AddComponent<Shadow>();
+                sh.effectColor = new Color(0f, 0f, 0f, 0.6f);
+                sh.effectDistance = new Vector2(0f, -1f);
+
+                _arcChips[i] = seg;
+                _arcEdges[i] = segEdge;
+                _arcGlows[i] = glow;
+                _arcIcons[i] = ic;
             }
+            UIAnchors.Register(UIAnchors.Speed, arc);
         }
+
+        private const float SpeedRIn = 94f, SpeedROut = 116f, SpeedSegDeg = 23f, SpeedSegStep = 26f;
+        private static readonly Color SegIdle = new Color(0.040f, 0.090f, 0.120f, 0.95f);
+        private readonly Image[] _arcEdges = new Image[4], _arcGlows = new Image[4];
+
+        /// <summary>Центр сегмента скорости (градусы по часовой от верха): пауза слева внизу, ×4 — справа.</summary>
+        private static float SpeedArcCenter(int i) => 180f + SpeedSegStep * 1.5f - i * SpeedSegStep;
 
         private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
 
@@ -407,8 +447,11 @@ namespace StellarisClone.Rendering
                     for (int i = 0; i < 4; i++)
                     {
                         bool on = i == idx;
-                        _arcChips[i].color = on ? (i == 0 ? DS.Gold : HoloLine) : new Color(0.05f, 0.11f, 0.15f, 0.96f);
-                        _arcIcons[i].color = on ? new Color(0.01f, 0.06f, 0.08f, 1f) : DS.TextMuted;
+                        Color acc = i == 0 ? DS.Gold : HoloLine;
+                        _arcChips[i].color = on ? new Color(acc.r * 0.85f, acc.g * 0.85f, acc.b * 0.85f, 0.95f) : SegIdle;
+                        _arcEdges[i].color = on ? Color.Lerp(acc, Color.white, 0.4f) : new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.55f);
+                        _arcGlows[i].color = new Color(acc.r, acc.g, acc.b, on ? 0.55f : 0f);
+                        _arcIcons[i].color = on ? new Color(0.02f, 0.07f, 0.09f, 1f) : HoloLine;
                     }
                     _speedCaption.text = idx == 0 ? Loc.T("ПАУЗА · ПРОБЕЛ") : Loc.F("СКОРОСТЬ ×{0}", speed);
                     _speedCaption.color = idx == 0 ? DS.Gold : DS.TextMuted;

@@ -174,6 +174,13 @@ namespace StellarisClone.Rendering
             SFXManager.Play(a.Color == UIManager.DS.Red ? Sfx.AlertUrgent : Sfx.AlertPop);
         }
 
+        /// <summary>Цвет значка: насыщеннее и чуть светлее исходного цвета алерта.</summary>
+        private static Color Saturate(Color c)
+        {
+            Color.RGBToHSV(c, out float h, out float sat, out float val);
+            return Color.HSVToRGB(h, Mathf.Clamp01(sat * 1.25f + 0.1f), Mathf.Clamp01(val * 1.05f));
+        }
+
         private int IndexOf(string id)
         {
             for (int i = 0; i < _current.Count; i++) if (_current[i].Id == id) return i;
@@ -210,10 +217,13 @@ namespace StellarisClone.Rendering
             v.Bg.sprite = HudArt.CutPanel(9);
             v.Bg.type = Image.Type.Sliced;
             v.Bg.rectTransform.Stretch();
-            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.05f));
-            tint.sprite = HudArt.CutPanel(9);
-            tint.type = Image.Type.Sliced;
-            tint.rectTransform.Stretch();
+            // Отсвет цвета алерта снизу плитки и мягкое свечение за значком
+            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.32f));
+            tint.sprite = MenuArt.VerticalFade;
+            tint.rectTransform.Stretch(2f, 2f, 2f, 2f);
+            var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.40f));
+            iconGlow.sprite = FactionSelectScreen.RadialSprite();
+            iconGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(Size + 6f, Size + 6f));
             v.Rim = LGBuild.Panel(v.Bg.transform, "Rim", new Color(a.Color.r, a.Color.g, a.Color.b, 0.85f));
             v.Rim.sprite = HudArt.CutFrame(9, 1.5f);
             v.Rim.type = Image.Type.Sliced;
@@ -224,7 +234,11 @@ namespace StellarisClone.Rendering
             v.Bg.gameObject.AddComponent<AlertRightClick>().OnRight = () => Dismiss(v.Id);
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
 
-            v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 20f, Color.Lerp(a.Color, Color.white, 0.2f));
+            // Значок насыщенного цвета алерта с тёмной подложкой-тенью (не белёсый)
+            v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 21f, Saturate(a.Color));
+            var ish = v.Icon.gameObject.AddComponent<Shadow>();
+            ish.effectColor = new Color(0f, 0f, 0f, 0.7f);
+            ish.effectDistance = new Vector2(0f, -1.5f);
             v.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(20f, 20f));
             var sev = LGBuild.Panel(v.Bg.transform, "Severity", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
             sev.sprite = FactionSelectScreen.RadialSprite();
