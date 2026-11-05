@@ -25,7 +25,7 @@ namespace StellarisClone.Rendering
         private Mesh _mesh;
         private MeshRenderer _mr;
         private Transform _capRoot;
-        private WorldChip _cap;
+        private RingCapsule _cap;
         private SpriteRenderer _head, _core;
         private float _headK = 1f, _coreK = 1f;   // приведение спрайтов разного размера к 1 ед. мира
         private static Material s_mat;
@@ -55,10 +55,7 @@ namespace StellarisClone.Rendering
             string key = text + "|" + (int)icon + "|" + ColorUtility.ToHtmlStringRGB(col);
             if (key == _capKey) return;
             _capKey = key;
-            _cap.SetIcon(icon);
-            _cap.SetColors(new Color(0.02f, 0.05f, 0.09f, 0.94f), new Color(col.r, col.g, col.b, 0.85f), col, col, Color.white);
-            _cap.Set(text, 0.40f);
-            _cap.CenterOn(0f, 0f);
+            _cap.Set(icon, text, col);
         }
 
         public void Hide() { if (_go != null && _go.activeSelf) _go.SetActive(false); _alpha = 0f; _progress = -1f; }
@@ -132,9 +129,7 @@ namespace StellarisClone.Rendering
 
             _capRoot = new GameObject("Capsule").transform;
             _capRoot.SetParent(_go.transform, false);
-            _cap = WorldChip.Create(_capRoot, "Chip", 56, true, true);
-            _cap.GlowStrength = 0.5f;
-            _cap.SetAlpha(0f);
+            _cap = new RingCapsule(_capRoot, 54);
 
             _head = HeadSprite("Head", WorldChip.GlowSprite(), 55, out _headK);
             _core = HeadSprite("Core", HudArt.Disc(), 57, out _coreK);
@@ -222,6 +217,147 @@ namespace StellarisClone.Rendering
                 _t.Add(a0); _t.Add(b0); _t.Add(a1);
                 _t.Add(a1); _t.Add(b0); _t.Add(b1);
             }
+        }
+    }
+
+    /// <summary>
+    /// Капсула на кольце работы: тёмная «таблетка» с контуром цвета задачи и мягким свечением,
+    /// слева — значок в цветном кружке, затем задача жирным и приглушённое значение («31% · 52 дня»).
+    /// Текст «ЗАДАЧА · значение» делится по первой « · ». Корень — по центру капсулы.
+    /// </summary>
+    public sealed class RingCapsule
+    {
+        private const float H = 0.56f;            // высота: при ней концы «таблетки» — ровные полукруги
+        private const int FontSize = 64;
+        private static readonly Color PlateCol = new Color(0.02f, 0.045f, 0.08f, 0.93f);
+        private static readonly Color ValueCol = new Color(0.70f, 0.79f, 0.85f, 1f);
+
+        private readonly Transform _body;
+        private readonly SpriteRenderer _glow, _plate, _frame, _disc, _icon;
+        private readonly TextMesh _label, _value;
+        private Color _col = Color.white;
+        private float _alpha = -1f, _pulse = 1f;
+
+        public float Width { get; private set; }
+
+        public RingCapsule(Transform parent, int order)
+        {
+            _body = new GameObject("Capsule").transform;
+            _body.SetParent(parent, false);
+            _glow = Sprite("Glow", WorldChip.GlowSprite(), order, true);
+            _plate = Sprite("Plate", HudArt.Pill(false), order + 1, true);
+            _frame = Sprite("Frame", HudArt.Pill(true), order + 2, true);
+            _disc = Sprite("Disc", HudArt.Disc(), order + 3, false);
+            _icon = Sprite("Icon", null, order + 4, false);
+            _label = Text("Label", order + 4);
+            _value = Text("Value", order + 4);
+            SetAlpha(0f);
+        }
+
+        public void Set(LGIcon icon, string text, Color col)
+        {
+            _col = col;
+            string label = text ?? "", val = "";
+            int cut = label.IndexOf(" · ", System.StringComparison.Ordinal);
+            if (cut > 0) { val = label.Substring(cut + 3); label = label.Substring(0, cut); }
+            _label.text = label;
+            _value.text = val;
+
+            float cs = 0.25f / (FontSize * 0.1f) * 1.25f;          // высота строки ≈ 0.25 ед.
+            _label.characterSize = _value.characterSize = cs;
+            float x = H * 0.5f;                                    // центр кружка — в центре левого полукруга
+            float d = H * 0.74f;
+            _disc.transform.localPosition = new Vector3(x - H * 0.5f + H * 0.13f + d * 0.5f, 0f, -0.01f);
+            Fit(_disc, d);
+            _icon.sprite = LGIcons.Get(icon);
+            _icon.transform.localPosition = _disc.transform.localPosition + new Vector3(0f, 0f, -0.002f);
+            Fit(_icon, d * 0.62f);
+            x = H * 0.13f + d + H * 0.24f;
+            _label.transform.localPosition = new Vector3(x, 0.005f, -0.01f);
+            x += WorldChip.MeasureLine(label, FontSize, cs, FontStyle.Normal, GameFont.Bold);
+            if (val.Length > 0)
+            {
+                x += H * 0.22f;
+                _value.transform.localPosition = new Vector3(x, 0.005f, -0.01f);
+                x += WorldChip.MeasureLine(val, FontSize, cs, FontStyle.Normal, GameFont.Regular);
+            }
+            x += H * 0.42f;
+            Width = x;
+
+            _plate.size = _frame.size = new Vector2(Width, H);
+            _plate.transform.localPosition = new Vector3(Width * 0.5f, 0f, 0f);
+            _frame.transform.localPosition = new Vector3(Width * 0.5f, 0f, -0.004f);
+            float gp = 0.34f;
+            _glow.size = new Vector2(Width + gp * 2f, H + gp * 2f);
+            _glow.transform.localPosition = new Vector3(Width * 0.5f, 0f, 0.004f);
+            _body.localPosition = new Vector3(-Width * 0.5f, 0f, 0f);
+            Apply();
+        }
+
+        public void SetAlpha(float a)
+        {
+            if (Mathf.Approximately(a, _alpha)) return;
+            _alpha = a;
+            Apply();
+        }
+
+        /// <summary>Мягкое «дыхание» свечения, пока работа идёт.</summary>
+        public void Pulse(float time)
+        {
+            float k = 0.75f + 0.25f * Mathf.Sin(time * 2.4f);
+            if (Mathf.Abs(k - _pulse) < 0.01f) return;
+            _pulse = k;
+            _glow.color = new Color(_col.r, _col.g, _col.b, 0.32f * _pulse * _alpha);
+        }
+
+        private void Apply()
+        {
+            float a = Mathf.Max(0f, _alpha);
+            Color lit = Color.Lerp(_col, Color.white, 0.25f);
+            _plate.color = new Color(PlateCol.r, PlateCol.g, PlateCol.b, PlateCol.a * a);
+            _frame.color = new Color(_col.r, _col.g, _col.b, 0.85f * a);
+            _glow.color = new Color(_col.r, _col.g, _col.b, 0.32f * _pulse * a);
+            _disc.color = new Color(lit.r, lit.g, lit.b, a);
+            _icon.color = new Color(PlateCol.r, PlateCol.g, PlateCol.b, a);
+            _label.color = new Color(1f, 1f, 1f, a);
+            _value.color = new Color(ValueCol.r, ValueCol.g, ValueCol.b, a);
+            bool on = a > 0.01f;
+            if (_body.gameObject.activeSelf != on) _body.gameObject.SetActive(on);
+        }
+
+        private static void Fit(SpriteRenderer r, float size)
+        {
+            float w = r.sprite != null ? r.sprite.bounds.size.x : 1f;
+            r.transform.localScale = Vector3.one * (size / Mathf.Max(0.0001f, w));
+        }
+
+        private SpriteRenderer Sprite(string name, Sprite sp, int order, bool sliced)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(_body, false);
+            var r = go.AddComponent<SpriteRenderer>();
+            r.sprite = sp;
+            r.sortingOrder = order;
+            if (sliced) r.drawMode = SpriteDrawMode.Sliced;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return r;
+        }
+
+        private TextMesh Text(string name, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(_body, false);
+            var t = go.AddComponent<TextMesh>();
+            t.font = name == "Value" ? GameFont.Regular : GameFont.Bold;
+            t.fontSize = FontSize;
+            t.anchor = TextAnchor.MiddleLeft;
+            t.alignment = TextAlignment.Left;
+            t.richText = false;
+            var mr = go.GetComponent<MeshRenderer>();
+            if (t.font != null) mr.sharedMaterial = t.font.material;
+            mr.sortingOrder = order;
+            return t;
         }
     }
 }

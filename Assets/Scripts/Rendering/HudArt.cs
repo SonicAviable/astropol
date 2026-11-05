@@ -242,6 +242,21 @@ namespace StellarisClone.Rendering
             });
         }
 
+        /// <summary>«Таблетка» (полностью скруглённый прямоугольник), девятисрезная: при высоте 0.56 ед. концы — полукруги.
+        /// frame — только контур толщиной ~2.5 px.</summary>
+        public static Sprite Pill(bool frame)
+        {
+            const int w = 112, h = 56, r = 28;
+            const float t = 2.5f;
+            return Make(frame ? "pill_frame" : "pill", w, h, (x, y) =>
+            {
+                float dx = Mathf.Max(Mathf.Abs(x - w * 0.5f) - (w * 0.5f - r), 0f), dy = Mathf.Abs(y - h * 0.5f);
+                float d = Mathf.Sqrt(dx * dx + dy * dy) - (r - 0.5f);
+                float inside = Mathf.Clamp01(0.5f - d);
+                return frame ? inside * Mathf.Clamp01(0.5f + d + t) : inside;
+            }, new Vector4(r, r, r, r));
+        }
+
         /// <summary>Тонкая черта-«линза»: толще в середине, сходит на нет к концам, края мягкие (черта под названием системы).</summary>
         public static Sprite TaperLine()
         {
