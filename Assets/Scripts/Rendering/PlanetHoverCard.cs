@@ -68,12 +68,25 @@ namespace StellarisClone.Rendering
 
         private void Build()
         {
-            var card = LGBuild.Panel(transform, "Card", UIManager.DS.BgDeep);
+            // Кино-карта (как подсказки, вариант B): тёмная панель с тонкой рамкой, сверху — цветная шапка
+            var card = LGBuild.Panel(transform, "Card", new Color(0.022f, 0.052f, 0.074f, 0.97f));
             _card = card.rectTransform;
             _card.anchorMin = _card.anchorMax = Vector2.zero;
             _card.pivot = new Vector2(0f, 0.5f);
-            _card.sizeDelta = new Vector2(W, 262f);
-            LG.Glass(card.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.40f));
+            _card.sizeDelta = new Vector2(W, 272f);
+            LG.Ignore(card.gameObject, includeChildren: false);
+            var shadow = card.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
+            shadow.effectDistance = new Vector2(4f, -6f);
+
+            _band = LGBuild.Panel(_card, "Band", Color.white);
+            _band.sprite = MenuArt.HorizontalFade;
+            _band.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(W, 66f));
+            _bandGlow = LGBuild.Panel(_card, "BandGlow", Color.white);
+            _bandGlow.sprite = FactionSelectScreen.RadialSprite();
+            _bandGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(37f, -33f), new Vector2(110f, 110f));
+            _bandLine = LGBuild.Panel(_card, "BandLine", Color.white);
+            _bandLine.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0f, -66f), new Vector2(W, 1f));
             _group = card.gameObject.AddComponent<CanvasGroup>();
             _group.blocksRaycasts = false;
             _group.interactable = false;
@@ -84,42 +97,68 @@ namespace StellarisClone.Rendering
             sph.transform.SetParent(_card, false);
             sph.raycastTarget = false;
             sph.preserveAspect = true;
-            sph.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -12), new Vector2(46, 46));
+            sph.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -10), new Vector2(46, 46));
             LG.Ignore(sph.gameObject);
             _sphere = sph;
 
-            _name = LGBuild.Label(_card, "", 16, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
-            _name.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, -13), new Vector2(134, 22));
+            _name = LGBuild.Label(_card, "", 16, UIManager.DS.TextPrimary, TextAnchor.UpperLeft);
+            _name.font = GameFont.Display;
+            _name.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, -14), new Vector2(140, 22));
             _sub = LGBuild.Label(_card, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
-            _sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, -36), new Vector2(W - 84, 18));
+            _sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, -38), new Vector2(W - 84, 18));
 
-            _popBg = LGBuild.Panel(_card, "Pop", UIManager.DS.BgSlot);
-            _popBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -12), new Vector2(76, 24));
-            LG.Chip(_popBg.gameObject, new Color(0.45f, 0.95f, 0.90f, 0.45f));
+            _popBg = LGBuild.Panel(_card, "Pop", new Color(0.03f, 0.08f, 0.11f, 0.95f));
+            _popBg.sprite = HudArt.CutPanel(5);
+            _popBg.type = Image.Type.Sliced;
+            _popBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -10), new Vector2(76, 22));
+            var popFr = LGBuild.Panel(_popBg.transform, "Frame", new Color(0.37f, 0.82f, 0.75f, 0.6f));
+            popFr.sprite = HudArt.CutFrame(5, 1f);
+            popFr.type = Image.Type.Sliced;
+            popFr.rectTransform.Stretch();
             _popIcon = LGIcons.Create(_popBg.transform, LGIcon.Population, 14, UIManager.DS.NeonCyan);
             _popIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(14, 14));
             _pop = LGBuild.Label(_popBg.transform, "", 12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, bold: true);
             _pop.rectTransform.Stretch(26, 0, 6, 0);
 
             // Характеристики
-            var head = LGBuild.Label(_card, Loc.T("ХАРАКТЕРИСТИКИ"), 10, UIManager.DS.Gold, TextAnchor.UpperLeft, bold: true);
-            head.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -70), new Vector2(200, 14));
+            var head = LGBuild.Label(_card, Loc.T("ХАРАКТЕРИСТИКИ"), 10, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft, bold: true);
+            head.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -78), new Vector2(200, 14));
+            head.Track(2.2f);
             _rows = new Row[4];
             string[] labels = { Loc.T("Размер"), Loc.T("Пригодность"), Loc.T("Титан"), Loc.T("Гелий-3") };
-            for (int i = 0; i < _rows.Length; i++) _rows[i] = MakeRow(labels[i], -88 - i * 22);
+            for (int i = 0; i < _rows.Length; i++) _rows[i] = MakeRow(labels[i], -100 - i * 22);
 
-            var sep = LGBuild.Panel(_card, "Sep", new Color(0.45f, 0.95f, 0.90f, 0.22f));
-            sep.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -182), new Vector2(W - 28, 1));
+            // Разделитель-шкала, как в подсказках
+            var sep = LGBuild.Panel(_card, "Sep", new Color(0.37f, 0.82f, 0.75f, 0.45f));
+            sep.sprite = HudArt.TickRow();
+            sep.type = Image.Type.Tiled;
+            sep.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -190), new Vector2(W - 28, 5));
             LG.Ignore(sep.gameObject);
 
             _state = LGBuild.Label(_card, "", 11, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
-            _state.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -190), new Vector2(W - 28, 40));
+            _state.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -202), new Vector2(W - 28, 40));
             _state.lineSpacing = 1.15f;
 
             _hint = LGBuild.Label(_card, "", 10, UIManager.DS.NeonCyan, TextAnchor.LowerLeft, bold: true);
             _hint.rectTransform.Stretch(14, 10, 14, 0);
 
+            var frame = LGBuild.Panel(_card, "Frame", new Color(0.45f, 0.95f, 0.90f, 0.5f));
+            frame.sprite = HudArt.CutFrame(3, 1.2f);
+            frame.type = Image.Type.Sliced;
+            frame.rectTransform.Stretch();
+
             LG.Skin(transform);
+        }
+
+        private Image _band, _bandGlow, _bandLine;
+
+        /// <summary>Шапка карточки — цвета владельца планеты (своя — бирюза, ничья — холодный серый).</summary>
+        private void TintBand(Color c)
+        {
+            if (_band == null) return;
+            _band.color = new Color(c.r * 0.50f, c.g * 0.45f, c.b * 0.40f, 0.92f);
+            _bandGlow.color = new Color(c.r, c.g, c.b, 0.40f);
+            _bandLine.color = new Color(c.r, c.g, c.b, 0.65f);
         }
 
         private Row MakeRow(string label, float y)
@@ -157,10 +196,11 @@ namespace StellarisClone.Rendering
             var sys = p.ParentSystem;
             int owner = p.OwnerId;
             string m = LGBuild.Hex(UIManager.DS.TextMuted);
-            _name.text = PlanetNames.Title(p.Name);
+            _name.text = PlanetNames.Title(p.Name).ToUpper();
             string ownerName = owner == 0 ? Loc.T("ваша система") : owner > 0 ? AIEmpireManager.NameOf(owner) : Loc.T("ничья");
             Color oc = owner >= 0 ? FleetIndicator.OwnerColor(owner) : UIManager.DS.TextMuted;
             _sub.text = $"{p.ClassDisplayName}  ·  <color={LGBuild.Hex(oc)}>{ownerName}</color>";
+            TintBand(owner >= 0 ? oc : new Color(0.45f, 0.60f, 0.68f));
 
             bool colony = p.Population > 0;
             _popBg.gameObject.SetActive(colony);

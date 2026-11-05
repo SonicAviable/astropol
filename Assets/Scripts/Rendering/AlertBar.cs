@@ -44,7 +44,9 @@ namespace StellarisClone.Rendering
             public RectTransform Rt;
             public CanvasGroup Group;
             public Image Bg, Icon;
-            public Image Rim, Glow, RippleImg;
+            public Image Rim, Glow, RippleImg, IconGlow;
+            public AlertHoverFlag HoverFlag;
+            public float Hover;
             public RectTransform Ripple;
             public Text Count;
             public TooltipTrigger Tip;
@@ -223,6 +225,8 @@ namespace StellarisClone.Rendering
             btn.onClick.AddListener(() => { v.Action?.Invoke(); SFXManager.Play("ui_click", 1f, 1.05f); });
             v.Bg.gameObject.AddComponent<AlertRightClick>().OnRight = () => Dismiss(v.Id);
             v.Tip = v.Bg.gameObject.AddComponent<TooltipTrigger>();
+            v.HoverFlag = v.Bg.gameObject.AddComponent<AlertHoverFlag>();
+            v.IconGlow = iconGlow;
 
             v.Icon = LGIcons.Create(v.Bg.transform, a.Icon, 26f, Saturate(a.Color));
             var ish = v.Icon.gameObject.AddComponent<Shadow>();
@@ -318,8 +322,15 @@ namespace StellarisClone.Rendering
                 // Пока свежий — пульсирует, затем спокойно светится
                 float attention = Mathf.Clamp01(1f - (v.Age - 0.5f) / 3.5f);
                 float pulse = attention * (0.35f + 0.35f * Mathf.Sin(v.Age * 6f));
-                v.Glow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.18f + 0.35f * pulse);
-                v.Rim.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.75f + 0.25f * pulse);
+                // Наведение: значок подрастает и всплывает, свечение ярче, черта шире
+                v.Hover = Mathf.MoveTowards(v.Hover, v.HoverFlag != null && v.HoverFlag.On ? 1f : 0f, dt * 8f);
+                float hv = LGEase.OutCubic(v.Hover);
+                v.Glow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.18f + 0.35f * pulse + 0.30f * hv);
+                v.Rim.color = new Color(v.Color.r, v.Color.g, v.Color.b, Mathf.Max(0.75f + 0.25f * pulse, hv));
+                v.Rim.rectTransform.sizeDelta = new Vector2(26f + 12f * hv, 3f);
+                v.Icon.rectTransform.localScale = Vector3.one * (1f + 0.16f * hv);
+                v.Icon.rectTransform.anchoredPosition = new Vector2(0f, 4f + 2f * hv);
+                if (v.IconGlow != null) v.IconGlow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.45f + 0.40f * hv);
             }
 
             for (int i = _views.Count - 1; i >= 0; i--)
@@ -648,5 +659,18 @@ namespace StellarisClone.Rendering
         {
             if (e.button == UnityEngine.EventSystems.PointerEventData.InputButton.Right) OnRight?.Invoke();
         }
+    }
+
+    /// <summary>Курсор над алертом (для эффекта наведения).</summary>
+    public sealed class AlertHoverFlag : MonoBehaviour, UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler
+    {
+        public bool On;
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e)
+        {
+            On = true;
+            SFXManager.Play(StellarisClone.Core.Audio.Sfx.UiHover, 0.4f);
+        }
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) => On = false;
+        private void OnDisable() => On = false;
     }
 }
