@@ -26,6 +26,8 @@ namespace StellarisClone.Rendering
 
         private Text _diskMonth, _diskDay, _diskYear, _speedCaption;
         private Image _monthRing, _stabRing, _stabTicks;
+        private Image _moon, _moonGlow;
+        private float _moonPhase = -1f;
         private Text _empireName, _empireRuler;
         private int _arcShown = -1;
         private float _avgStability = -1f;
@@ -328,9 +330,15 @@ namespace StellarisClone.Rendering
             var faceBtn = face.gameObject.AddComponent<Button>();
             faceBtn.transition = Selectable.Transition.None;
             faceBtn.onClick.AddListener(TogglePauseFromDisk);
-            TooltipHelper.Attach(face.gameObject, Loc.T("<b>Дата</b>\nКольцо — ход текущего месяца.\nЩелчок — пауза / продолжить  <color=#8AA2A8>(ПРОБЕЛ)</color>"));
+            TooltipHelper.Attach(face.gameObject, Loc.T("<b>Дата</b>\nКольцо и фаза луны — ход текущего месяца (1-е — новолуние, середина — полнолуние).\nЩелчок — пауза / продолжить  <color=#8AA2A8>(ПРОБЕЛ)</color>"));
             var edge = HoloImage(disk, "Edge", HudArt.Ring(0.975f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.45f));
             edge.rectTransform.Stretch();
+
+            // Луна за датой: фаза — ход месяца (1-е — новолуние, середина — полнолуние), приглушена под текстом
+            _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.85f, 0.95f, 1f, 0.08f));
+            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), Vector2.one * (DiskD * 0.92f));
+            _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), new Color(0.80f, 0.90f, 0.93f, 0.50f));
+            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), Vector2.one * (DiskD * 0.60f));
 
             // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
             _diskMonth = CreateText(disk, "", 11, FontStyle.Bold, HoloLine, TextAnchor.MiddleCenter);
@@ -485,6 +493,28 @@ namespace StellarisClone.Rendering
             else SetSpeed(Mathf.Max(1, _lastRunSpeed));
         }
 
+        // ---------- Луна ----------
+
+        /// <summary>Фаза плавно догоняет ход месяца (на смене месяца — вперёд через новолуние), лёгкое покачивание и ореол.</summary>
+        private void UpdateMoon(float frac)
+        {
+            if (_moon == null) return;
+            float dt = Time.unscaledDeltaTime, t = Time.unscaledTime;
+            if (_moonPhase < 0f) _moonPhase = frac;
+            float cur = _moonPhase - Mathf.Floor(_moonPhase);
+            float d = frac - cur;
+            if (d < -0.5f) d += 1f;          // 30-е → 1-е: доворачиваем вперёд
+            else if (d > 0.5f) d -= 1f;
+            _moonPhase += d * (1f - Mathf.Exp(-dt * 5f));
+            _moonPhase -= Mathf.Floor(_moonPhase);
+
+            var sp = MoonPhase.Get(_moonPhase);
+            if (_moon.sprite != sp) _moon.sprite = sp;
+            _moon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 4f * Mathf.Sin(t * 0.25f));
+            float ill = MoonPhase.Illumination(_moonPhase);
+            _moonGlow.color = new Color(0.85f, 0.95f, 1f, (0.03f + 0.10f * ill) * (0.85f + 0.15f * Mathf.Sin(t * 1.1f)));
+        }
+
         // ---------- Обновление ----------
 
         private void UpdateHoloTop()
@@ -500,6 +530,7 @@ namespace StellarisClone.Rendering
                 if (_diskYear.text != year) _diskYear.text = year;
                 float frac = Mathf.Clamp01((tm.Day - 1 + tm.DayFraction) / 30f);
                 if (Mathf.Abs(_monthRing.fillAmount - frac) > 0.0005f) _monthRing.fillAmount = frac;
+                UpdateMoon(frac);
 
                 int speed = tm.CurrentSpeed;
                 int idx = Mathf.Clamp(speed >= 3 ? 3 : speed, 0, 3);
