@@ -98,7 +98,7 @@ namespace StellarisClone.Rendering
                 Vector3 hp = c + new Vector3(Mathf.Sin(a) * Radius, 0.06f, Mathf.Cos(a) * Radius);
                 _head.transform.position = _core.transform.position = hp;
                 if (cam != null) _head.transform.rotation = _core.transform.rotation = cam.rotation;
-                _head.transform.localScale = Vector3.one * (_headK * scale * 1.5f * pulse);
+                _head.transform.localScale = Vector3.one * (_headK * scale * 2.2f * pulse);
                 _core.transform.localScale = Vector3.one * (_coreK * scale * 0.4f);
                 _head.color = new Color(_col.r, _col.g, _col.b, 0.75f * alpha);
                 _core.color = new Color(1f, 1f, 1f, 0.95f * alpha);
@@ -131,7 +131,7 @@ namespace StellarisClone.Rendering
             _capRoot.SetParent(_go.transform, false);
             _cap = new RingCapsule(_capRoot, 54);
 
-            _head = HeadSprite("Head", WorldChip.GlowSprite(), 55, out _headK);
+            _head = HeadSprite("Head", FactionSelectScreen.RadialSprite(), 55, out _headK);   // круглое свечение (у WorldChip — прямоугольное)
             _core = HeadSprite("Core", HudArt.Disc(), 57, out _coreK);
             foreach (var t in _go.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = _owner.gameObject.layer;
             _go.SetActive(false);

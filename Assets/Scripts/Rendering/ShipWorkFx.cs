@@ -25,8 +25,8 @@ namespace StellarisClone.Rendering
         private static Color SurveyCol => SystemWorkRing.SurveyCol;
         private static Color BuildCol => SystemWorkRing.BuildCol;
 
-        /// <summary>Рисовать ли своё кольцо прогресса разведки вокруг системы. У кораблей игрока — нет:
-        /// это кольцо с капсулой рисует подпись системы (SystemWorkRing).</summary>
+        /// <summary>Рисовать ли свой прогресс работы. У кораблей игрока — нет: кольцо с капсулой рисует подпись
+        /// системы (SystemWorkRing), поэтому у них нет кольца разведки и голограммы монтажа.</summary>
         public bool SystemRing = true;
 
         private Mode _mode, _lastMode = Mode.Survey;
@@ -63,7 +63,12 @@ namespace StellarisClone.Rendering
         public void Survey(Vector3 center, float progress) => Set(Mode.Survey, center, progress, SurveyCol);
 
         /// <summary>Монтаж станции на площадке site; progress 0..1.</summary>
-        public void Construct(Vector3 site, float progress) => Set(Mode.Construct, site, progress, BuildCol);
+        public void Construct(Vector3 site, float progress)
+        {
+            // У ваших строителей прогресс монтажа уже показывает кольцо системы — голограмма каркаса не нужна
+            if (!SystemRing) { Stop(); return; }
+            Set(Mode.Construct, site, progress, BuildCol);
+        }
 
         /// <summary>Работа закончена или прервана — эффекты гаснут.</summary>
         public void Stop() => _mode = Mode.None;
