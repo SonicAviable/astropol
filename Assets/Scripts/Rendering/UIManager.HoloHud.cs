@@ -179,7 +179,8 @@ namespace StellarisClone.Rendering
         private float _statsTimer;
         private static readonly Color StabPink = new Color(0.94f, 0.56f, 0.86f, 1f);
         private Image _stabGlow;
-        private bool _textFitted;
+        private float _fitTimer;
+        private RectTransform _leftWing;
 
         /// <summary>
         /// Название империи и строка правителя — не шире места до левого крыла ресурсов (иначе текст уходит под него);
@@ -187,13 +188,15 @@ namespace StellarisClone.Rendering
         /// </summary>
         private void FitRulerText()
         {
-            if (_textFitted || _empireName == null || _canvas == null) return;
+            if (_empireName == null || _canvas == null || _leftWing == null) return;
+            if ((_fitTimer -= Time.unscaledDeltaTime) > 0f) return;
+            _fitTimer = 0.5f;                                     // размер канваса может смениться (окно, разрешение)
             float canvasW = ((RectTransform)_canvas.transform).rect.width;
             if (canvasW <= 0f) return;
-            _textFitted = true;
-            float wingLeft = canvasW * 0.5f - (DiskD * 0.5f + WingGap) - (3f * CellStep + 38f - 4f);
+            // Левый край левого крыла в координатах от левого края экрана (крыло привязано к центру, опора справа)
+            float wingLeft = canvasW * 0.5f + _leftWing.anchoredPosition.x - _leftWing.rect.width;
             float x = _empireName.rectTransform.anchoredPosition.x;
-            float avail = Mathf.Clamp(wingLeft - x - 12f, 120f, 300f);
+            float avail = Mathf.Clamp(wingLeft - x - 14f, 90f, 320f);
             _empireName.rectTransform.sizeDelta = new Vector2(avail, _empireName.rectTransform.sizeDelta.y);
             _empireRuler.rectTransform.sizeDelta = new Vector2(avail, _empireRuler.rectTransform.sizeDelta.y);
         }
@@ -248,6 +251,7 @@ namespace StellarisClone.Rendering
             float half = DiskD * 0.5f + WingGap;
 
             var left = Wing("WingLeft", true, -half);
+            _leftWing = (RectTransform)left;
             float lx = 30f;
             _energyVal    = CreateResourceBadge(left, LGIcon.Energy, Loc.T("ГЕЛИЙ-3"), DS.Gold, ref lx, out _energyTip, false);
             _mineralsVal  = CreateResourceBadge(left, LGIcon.Minerals, Loc.T("ТИТАН"), DS.NeonCyan, ref lx, out _mineralsTip, true);

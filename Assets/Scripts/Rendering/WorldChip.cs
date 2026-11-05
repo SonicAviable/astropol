@@ -287,9 +287,12 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Ширина строки TextMesh в его локальных единицах (для подписей с другим кеглем и начертанием).</summary>
-        public static float MeasureLine(string s, int fontSize, float charSize, FontStyle style)
+        public static float MeasureLine(string s, int fontSize, float charSize, FontStyle style) =>
+            MeasureLine(s, fontSize, charSize, style, GameFont.Bold);
+
+        /// <summary>То же для заданного шрифта (например, акцидентного Russo One у названий систем).</summary>
+        public static float MeasureLine(string s, int fontSize, float charSize, FontStyle style, Font font)
         {
-            var font = GameFont.Bold;
             if (font == null || string.IsNullOrEmpty(s)) return 0f;
             font.RequestCharactersInTexture(s, fontSize, style);
             float adv = 0f;

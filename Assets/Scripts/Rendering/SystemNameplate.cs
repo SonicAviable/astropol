@@ -72,8 +72,10 @@ namespace StellarisClone.Rendering
             _plateRoot.transform.SetParent(transform, false);
             _plateRoot.transform.localPosition = new Vector3(0, -3.2f, 0);
 
-            // Шрифт игры (Play), как во всём интерфейсе; запасной — встроенный
-            Font font = GameFont.Bold ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // Голо-ярлык (вариант A): название акцидентным шрифтом HUD (Russo One) капслоком,
+            // под ним — светящаяся черта цвета владельца, ресурсы — значки с числами без плашек
+            Font font = GameFont.Display ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            string title = _data.Name.ToUpper();
 
             var shadowObj = new GameObject("TitleShadow");
             shadowObj.transform.SetParent(_plateRoot.transform, false);
@@ -83,10 +85,10 @@ namespace StellarisClone.Rendering
             _titleShadow.font = font;
             _titleShadow.fontSize = 52;
             _titleShadow.characterSize = 0.16f;
-            _titleShadow.fontStyle = FontStyle.Bold;
+            _titleShadow.fontStyle = FontStyle.Normal;
             _titleShadow.anchor = TextAnchor.MiddleCenter;
             _titleShadow.alignment = TextAlignment.Center;
-            _titleShadow.text = _data.Name;
+            _titleShadow.text = title;
             _titleShadow.color = new Color(0f, 0f, 0f, 0.95f);
 
             var mrShadow = shadowObj.GetComponent<MeshRenderer>();
@@ -102,10 +104,10 @@ namespace StellarisClone.Rendering
             _titleMesh.font = font;
             _titleMesh.fontSize = 52;
             _titleMesh.characterSize = 0.16f;
-            _titleMesh.fontStyle = FontStyle.Bold;
+            _titleMesh.fontStyle = FontStyle.Normal;
             _titleMesh.anchor = TextAnchor.MiddleCenter;
             _titleMesh.alignment = TextAlignment.Center;
-            _titleMesh.text = _data.Name;
+            _titleMesh.text = title;
 
             var mrTitle = titleObj.GetComponent<MeshRenderer>();
             if (font != null) mrTitle.sharedMaterial = font.material;
@@ -148,10 +150,34 @@ namespace StellarisClone.Rendering
             _scrim.sortingOrder = 48;
             _scrim.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _scrim.receiveShadows = false;
-            float w = font != null ? WorldChip.MeasureLine(_data.Name, 52, 0.16f, FontStyle.Bold) : _data.Name.Length * 0.45f;
+            string title = _data.Name.ToUpper();
+            float w = font != null ? WorldChip.MeasureLine(title, 52, 0.16f, FontStyle.Normal, font) : title.Length * 0.5f;
             _titleW = w;
             _scrim.size = new Vector2(w + 2.4f, 1.5f);
             _scrim.color = new Color(0f, 0f, 0f, 0f);
+
+            // Черта цвета владельца под названием: тонкая линия и мягкое свечение вокруг неё
+            _underGlow = UnderlineSprite("UnderGlow", HudArt.EdgeFade(0.35f), w * 0.95f, 0.30f, 47);
+            _underLine = UnderlineSprite("UnderLine", HudArt.EdgeFade(0.30f), w * 0.72f, 0.065f, 51);
+        }
+
+        private SpriteRenderer _underGlow, _underLine;
+        private Color _ownerCol = new Color(0.62f, 0.69f, 0.72f, 1f);
+
+        private SpriteRenderer UnderlineSprite(string name, Sprite sp, float w, float h, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(_plateRoot.transform, false);
+            go.transform.localPosition = new Vector3(0f, -0.62f, 0.01f);
+            var r = go.AddComponent<SpriteRenderer>();
+            r.sprite = sp;
+            r.sortingOrder = order;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            var sz = sp.bounds.size;
+            go.transform.localScale = new Vector3(w / Mathf.Max(0.001f, sz.x), h / Mathf.Max(0.001f, sz.y), 1f);
+            r.color = new Color(1f, 1f, 1f, 0f);
+            return r;
         }
 
         private void CreateFortChip()
@@ -560,8 +586,9 @@ namespace StellarisClone.Rendering
 
         private static void StyleChip(WorldChip c, Color col, float dim)
         {
-            c.SetColors(new Color(0.015f, 0.04f, 0.055f, 0.80f * dim),
-                        new Color(col.r, col.g, col.b, 0.45f * dim),
+            // Без плашки и рамки — только значок и число (голо-ярлык)
+            c.SetColors(new Color(0f, 0f, 0f, 0f),
+                        new Color(0f, 0f, 0f, 0f),
                         col,
                         new Color(col.r, col.g, col.b, dim),
                         new Color(Mathf.Lerp(col.r, 1f, 0.55f), Mathf.Lerp(col.g, 1f, 0.55f), Mathf.Lerp(col.b, 1f, 0.55f), dim));
@@ -571,21 +598,21 @@ namespace StellarisClone.Rendering
         {
             if (_titleMesh == null) return;
 
+            // Название — светлое (выделенная — золотом, неизведанная — блёклая); цвет владельца — у черты под ним
+            bool known = GalaxyView.IsKnownToPlayer(_data);
+            if (_data.OwnerId == 0) _ownerCol = UIManager.DS.NeonCyan;
+            else if (_data.OwnerId > 0) _ownerCol = FleetIndicator.OwnerColor(_data.OwnerId);
+            else if (_data.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(_data.Id) != null) _ownerCol = NeutralWorlds.ColorOf(NeutralWorlds.At(_data.Id).Kind);
+            else _ownerCol = new Color(0.62f, 0.69f, 0.72f, known ? 0.55f : 0f);
+
             if (_isSelected)
                 _titleBase = UIManager.DS.Gold;
-            else if (_data.OwnerId == 0)
-                _titleBase = UIManager.DS.NeonCyan;
+            else if (!known)
+                _titleBase = new Color(0.58f, 0.64f, 0.72f, 0.8f);
             else if (_data.OwnerId > 0)
-                _titleBase = Color.Lerp(FleetIndicator.OwnerColor(_data.OwnerId), Color.white, 0.12f);
-            else if (_data.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(_data.Id) != null)
-                _titleBase = Color.Lerp(NeutralWorlds.ColorOf(NeutralWorlds.At(_data.Id).Kind), Color.white, 0.15f);   // вольный мир — цвет характера
-            else if (!GalaxyView.IsKnownToPlayer(_data))
-                _titleBase = new Color(0.58f, 0.64f, 0.72f, 0.8f);   // неизведанная — блёклая
+                _titleBase = Color.Lerp(FleetIndicator.OwnerColor(_data.OwnerId), Color.white, 0.72f);   // чужая — светлый оттенок владельца
             else
-            {
-                var nc = UIManager.DS.TextPrimary;
-                _titleBase = new Color(nc.r, nc.g, nc.b, 0.95f);
-            }
+                _titleBase = new Color(0.94f, 0.97f, 0.98f, 0.97f);
 
             RefreshLandmarkColors();
             UpdateResourceBadge();
@@ -618,6 +645,14 @@ namespace StellarisClone.Rendering
             var t = _titleBase; t.a *= _alpha;
             _titleMesh.color = t;
             if (_titleShadow != null) _titleShadow.color = new Color(0f, 0f, 0f, 0.8f * _alpha);
+            if (_underLine != null)
+            {
+                float oa = _ownerCol.a * _alpha;
+                _underLine.color = new Color(_ownerCol.r, _ownerCol.g, _ownerCol.b, 0.95f * oa);
+                _underGlow.color = new Color(_ownerCol.r, _ownerCol.g, _ownerCol.b, 0.35f * oa);
+                bool uon = oa > 0.01f;
+                if (_underLine.enabled != uon) { _underLine.enabled = uon; _underGlow.enabled = uon; }
+            }
             if (_scrim != null)
             {
                 _scrim.color = new Color(0.005f, 0.012f, 0.025f, 0.5f * _alpha);
