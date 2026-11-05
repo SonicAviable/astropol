@@ -66,7 +66,7 @@ namespace StellarisClone.Rendering
 
         public FactionInfo SelectedFaction => _selectedFaction;
 
-        private Text _dateText, _energyVal, _mineralsVal, _alloysVal, _influenceVal, _researchVal, _stabilityVal;
+        private Text _energyVal, _mineralsVal, _alloysVal, _influenceVal, _researchVal, _stabilityVal;
         private TooltipTrigger _energyTip, _mineralsTip, _alloysTip, _influenceTip, _researchTip, _stabilityTip;
 
 
@@ -478,74 +478,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         ///   • сверху по центру — рамка ресурсов: подпись над значением;
         ///   • под ней — рамка с датой и скоростью времени.
         /// </summary>
-        private void BuildTopBar()
-        {
-            // Правитель империи — живой портрет; клик открывает обзор империи
-            RulerBadge.Create(_canvas.transform, new Vector2(TopBarMargin, -TopBarMargin), OpenEmpireOverviewModal);
-
-            // Ресурсы — единая рамка по центру сверху
-            const float cellW = 148f, resH = 64f;
-            var bar = new GameObject("TopBar");
-            bar.transform.SetParent(_canvas.transform, false);
-            var rt = bar.AddComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.sizeDelta = new Vector2(cellW * 6f + 24f, resH);
-            rt.anchoredPosition = new Vector2(0f, -8f);
-            var bg = bar.AddComponent<Image>();
-            bg.color = DS.BgDeep;
-            bg.raycastTarget = false;
-            LG.Glass(bar, 14f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.55f));
-            var barMotion = LG.Motion(bar, LGAppear.Kind.SlideDown);
-            barMotion.distance = 22f;
-            barMotion.inDuration = 0.55f;
-
-            float startX = 12f;
-            _energyVal    = CreateResourceBadge(bar.transform, LGIcon.Energy, Loc.T("ГЕЛИЙ-3"), DS.Gold,     ref startX, out _energyTip);
-            _mineralsVal  = CreateResourceBadge(bar.transform, LGIcon.Minerals, Loc.T("ТИТАН"), DS.NeonCyan, ref startX, out _mineralsTip);
-            _alloysVal    = CreateResourceBadge(bar.transform, LGIcon.Alloys, Loc.T("СПЛАВЫ"), new Color(0.95f, 0.62f, 0.36f), ref startX, out _alloysTip);
-            _influenceVal = CreateResourceBadge(bar.transform, LGIcon.Influence, Loc.T("ВЛИЯНИЕ"), new Color(1.00f, 0.48f, 0.58f), ref startX, out _influenceTip);
-            _researchVal  = CreateResourceBadge(bar.transform, LGIcon.Research, Loc.T("НАУКА"), DS.Green,    ref startX, out _researchTip);
-            _stabilityVal = CreateResourceBadge(bar.transform, LGIcon.Society, Loc.T("СТАБИЛЬНОСТЬ"), new Color(0.98f, 0.55f, 0.85f), ref startX, out _stabilityTip);
-            // Клик по стабильности — управление колониями (там видно, где неспокойно)
-            var stabBtn = _stabilityTip.gameObject.AddComponent<Button>();
-            stabBtn.transition = Selectable.Transition.None;
-            stabBtn.onClick.AddListener(ColonyManagerWindow.Toggle);
-
-            // Дата и скорость — рамка под ресурсами
-            var time = new GameObject("TimeBar");
-            time.transform.SetParent(_canvas.transform, false);
-            var tRt = time.AddComponent<RectTransform>();
-            tRt.anchorMin = tRt.anchorMax = new Vector2(0.5f, 1f);
-            tRt.pivot = new Vector2(0.5f, 1f);
-            tRt.sizeDelta = new Vector2(300f, 38f);   // дата, скорость и кнопка музыки
-            tRt.anchoredPosition = new Vector2(0f, -8f - resH - 4f);
-            var tBg = time.AddComponent<Image>();
-            tBg.color = DS.BgDeep;
-            tBg.raycastTarget = false;
-            LG.Glass(time, 10f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.45f));
-            LG.Motion(time, LGAppear.Kind.SlideDown).distance = 18f;
-
-            var dateChip = new GameObject("DateChip");
-            dateChip.transform.SetParent(time.transform, false);
-            var dcRt = dateChip.AddComponent<RectTransform>();
-            dcRt.anchorMin = dcRt.anchorMax = new Vector2(0, 0.5f);
-            dcRt.pivot = new Vector2(0, 0.5f);
-            dcRt.sizeDelta = new Vector2(112, 28);
-            dcRt.anchoredPosition = new Vector2(8, 0);
-            var dcImg = dateChip.AddComponent<Image>();
-            dcImg.color = DS.BgVisor;
-            dcImg.raycastTarget = false;
-            LG.Chip(dateChip, LG.Palette.GlassRimSoft);
-            _dateText = LGIcons.IconLabel(dateChip.transform, LGIcon.Calendar, "01.01.2200", 13, DS.TextMuted, DS.TextPrimary, 13f);
-
-            BuildSpeedControl(time.transform, 128f);
-            // Плеер музыки: кнопка справа от скорости, панель — под датой
-            MusicPlayerPanel.CreateToggle(time.transform, 262f, _canvas, -8f - resH - 4f - 38f - 6f);
-
-            BuildNavMenu();
-        }
-
         /// <summary>Вертикальное меню экранов слева (как в референсе): значок и название, золотая кромка у «Путь к победе».</summary>
         private void BuildNavMenu()
         {
@@ -557,62 +489,94 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var mRt = menu.AddComponent<RectTransform>();
             mRt.anchorMin = mRt.anchorMax = new Vector2(0, 1);
             mRt.pivot = new Vector2(0, 1);
-            mRt.sizeDelta = new Vector2(NavMenuW, 11 * 46f + 30f);
-            _navCollapsed = PlayerPrefs.GetInt("nav.collapsed", 0) == 1;
-            _navW = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
-            _navItems.Clear();
+            mRt.sizeDelta = new Vector2(NavMenuW, 11 * NavStep + 4 * NavGroupGap);
             _navOrder.Clear();
-            mRt.anchoredPosition = new Vector2(TopBarMargin, -(TopBarMargin + RulerBadge.Height + 10f));
+            _navSlots.Clear();
+            mRt.anchoredPosition = new Vector2(TopBarMargin, -HoloTopBottom);
             UIAnchors.Register(UIAnchors.NavMenu, mRt);
             LG.Motion(menu, LGAppear.Kind.SlideLeft).distance = 22f;
 
-            // Пункт меню: тёмное стекло, светящаяся планка слева, значок в своей «ячейке», подпись капслоком с разрядкой
-            float y = 0f;
-            void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip, string key)
+            // Пункт меню — шестиугольная сота со значком; название и клавиша — во флажке справа (наведение / окно открыто).
+            // group = true — пункт открывает новую группу (перед ним зазор с чёрточкой).
+            float hexX = RulerCenter.x - TopBarMargin;     // соты — ровно под центром портрета
+            void Item(string name, LGIcon icon, string label, Color accent, System.Action act, string anchorId, string tip, string key,
+                      System.Func<bool> isOpen = null, bool group = false)
             {
-                var b = CreateButton(menu.transform, name, new Vector2(_navW, 40), new Color(0.012f, 0.040f, 0.055f, 0.92f), accent, act);
-                var bRt = b.GetComponent<RectTransform>();
-                bRt.anchorMin = bRt.anchorMax = new Vector2(0, 1);
-                bRt.pivot = new Vector2(0, 1);
-                bRt.anchoredPosition = new Vector2(0, -y);
-                y += 46f;
-                _navOrder.Add(bRt);
+                var root = LGBuild.Rect(menu.transform, name);
+                root.At(new Vector2(0, 1), new Vector2(0.5f, 1f), new Vector2(hexX, 0f), new Vector2(NavHexW, NavHexH));
+                LG.Ignore(root.gameObject);
 
-                var tile = LGBuild.Panel(b.transform, "IconTile", new Color(accent.r * 0.16f, accent.g * 0.16f, accent.b * 0.16f, 0.95f));
-                tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(28, 28));
-                LG.Chip(tile.gameObject, new Color(accent.r, accent.g, accent.b, 0.45f));
-                var ic = LGIcons.Create(tile.transform, icon, 15f, accent);
-                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
+                var glow = HoloImage(root, "Glow", FactionSelectScreen.RadialSprite(), new Color(accent.r, accent.g, accent.b, 0f));
+                glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(NavHexW + 40f, NavHexH + 40f));
+                var fill = HoloImage(root, "Fill", HudArt.Hex(), new Color(0.030f, 0.070f, 0.098f, 0.95f));
+                fill.rectTransform.Stretch();
+                fill.raycastTarget = true;
+                fill.alphaHitTestMinimumThreshold = 0.5f;   // наведение — по форме соты
+                var rim = HoloImage(root, "Rim", HudArt.Hex(4f), new Color(accent.r, accent.g, accent.b, 0.55f));
+                rim.rectTransform.Stretch();
 
-                var t = CreateText(b.transform, label.ToUpper(), 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
-                t.rectTransform.anchorMin = Vector2.zero;
-                t.rectTransform.anchorMax = Vector2.one;
-                t.rectTransform.offsetMin = new Vector2(50, 0);
-                t.rectTransform.offsetMax = new Vector2(-6, 0);
-                t.Track(1.0f);
-                t.enabled = !_navCollapsed;
-                _navItems.Add((bRt, t));
-                // Клавиша пункта — справа, приглушённо (в свёрнутом меню прячется вместе с подписью)
+                var tile = LGBuild.Rect(root, "IconTile");      // сюда же встают кружки-счётчики (решения, журнал)
+                tile.Stretch();
+                LG.Ignore(tile.gameObject);
+                var ic = LGIcons.Create(tile, icon, 22f, accent);
+                ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22, 22));
+                ic.raycastTarget = false;
+
+                var btn = root.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                btn.targetGraphic = fill;
+                btn.onClick.AddListener(() => { SFXManager.Play(Sfx.UiTab, 0.7f); act?.Invoke(); });
+
+                // Флажок: тёмная плашка со срезанными углами, цветная кромка слева, название и клавиша
+                var flag = LGBuild.Rect(root, "Flag");
+                flag.At(new Vector2(1, 0.5f), new Vector2(0, 0.5f), new Vector2(8f, 0f), new Vector2(160f, 34f));
+                var fg = flag.gameObject.AddComponent<CanvasGroup>();
+                fg.alpha = 0f;
+                fg.blocksRaycasts = false;
+                fg.interactable = false;
+                var fbg = HoloImage(flag, "Bg", HudArt.CutPanel(10), new Color(0.025f, 0.060f, 0.085f, 0.95f));
+                fbg.type = Image.Type.Sliced;
+                fbg.rectTransform.Stretch();
+                var fedge = HoloImage(flag, "Edge", null, accent);
+                fedge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(3f, 34f));
+                var ft = CreateText(flag, label.ToUpper(), 13, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleLeft);
+                ft.font = GameFont.Display;
+                ft.Track(1.2f);
+                ft.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14f, 0f), new Vector2(200f, 30f));
+                float w = 14f + ft.preferredWidth + 14f;
                 if (!string.IsNullOrEmpty(key))
                 {
-                    var kc = CreateText(b.transform, key, 10, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleRight);
-                    kc.rectTransform.anchorMin = Vector2.zero;
-                    kc.rectTransform.anchorMax = Vector2.one;
-                    kc.rectTransform.offsetMin = new Vector2(50, 0);
-                    kc.rectTransform.offsetMax = new Vector2(-12, 0);
-                    kc.enabled = !_navCollapsed;
-                    _navItems.Add((bRt, kc));
+                    var kb = HoloImage(flag, "Key", null, accent);
+                    var kt = CreateText(kb.transform, key, 10, FontStyle.Bold, new Color(0.01f, 0.05f, 0.07f), TextAnchor.MiddleCenter);
+                    kt.rectTransform.Stretch();
+                    float kw = Mathf.Max(18f, kt.preferredWidth + 8f);
+                    kb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(w - 4f, 0f), new Vector2(kw, 16f));
+                    w += kw + 10f;
                     tip += "  <color=#8AA2A8>(" + key + ")</color>";
                 }
-                if (anchorId != null) UIAnchors.Register(anchorId, bRt);
-                TooltipHelper.Attach(b, tip);
+                flag.sizeDelta = new Vector2(w, 34f);
+
+                var hx = root.gameObject.AddComponent<HexNavItem>();
+                hx.Fill = fill; hx.Rim = rim; hx.Icon = ic; hx.Glow = glow;
+                hx.Flag = flag; hx.FlagGroup = fg; hx.Accent = accent; hx.IsOpen = isOpen;
+
+                Image divider = null;
+                if (group)
+                {
+                    divider = HoloImage(menu.transform, name + "Divider", null, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.35f));
+                    divider.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(hexX, 0f), new Vector2(26f, 1f));
+                }
+                _navOrder.Add(root);
+                _navSlots.Add(new NavSlot { Rt = root, Group = group, Divider = divider });
+                if (anchorId != null) UIAnchors.Register(anchorId, root);
+                TooltipHelper.Attach(root.gameObject, tip);
             }
 
-            Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, () => ToggleWindow(NavWindow.Empire), null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"), "I");
+            Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, () => ToggleWindow(NavWindow.Empire), null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"), "I", () => IsWindowOpen(NavWindow.Empire));
             Item("NavColonies", LGIcon.Population, Loc.T("Колонии"), DS.Green, ColonyManagerWindow.Toggle, UIAnchors.Colonies,
-                 Loc.T("<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»"), "C");
+                 Loc.T("<b>Управление колониями</b>\nВсе колонии одной таблицей: жители, стабильность, производство, стройка и «Купить»"), "C", () => IsWindowOpen(NavWindow.Colonies));
             Item("NavLaws", LGIcon.Menu, Loc.T("Законы и решения"), new Color(0.95f, 0.62f, 0.36f), () => ToggleWindow(NavWindow.Laws), UIAnchors.Laws,
-                 Loc.T("<b>Законы и решения</b>\nЗаконы — постоянные правила империи с платой влиянием.\nРешения — проекты за титан и другие ресурсы: особые для вашей фракции, по обстоятельствам (война, кризис, эпоха) и редкие возможности с таймером. Кружок на значке — сколько решений можно принять прямо сейчас (золотой — появились новые)"), "L");
+                 Loc.T("<b>Законы и решения</b>\nЗаконы — постоянные правила империи с платой влиянием.\nРешения — проекты за титан и другие ресурсы: особые для вашей фракции, по обстоятельствам (война, кризис, эпоха) и редкие возможности с таймером. Кружок на значке — сколько решений можно принять прямо сейчас (золотой — появились новые)"), "L", () => IsWindowOpen(NavWindow.Laws));
             // Счётчик решений, которые можно принять, — кружок в углу значка (золотой — есть новые); виден и в свёрнутом меню
             var lawsTile = menu.transform.Find("NavLaws/IconTile");
             if (lawsTile != null)
@@ -626,65 +590,64 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _navDecisionBadge.rectTransform.offsetMin = _navDecisionBadge.rectTransform.offsetMax = Vector2.zero;
                 _navDecisionPill.gameObject.SetActive(false);
             }
-            Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, () => ToggleWindow(NavWindow.Tech), UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"), "T");
-            Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => ToggleWindow(NavWindow.Diplomacy), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"), "P");
+            Item("NavTech", LGIcon.Research, Loc.T("Технологии"), DS.NeonCyan, () => ToggleWindow(NavWindow.Tech), UIAnchors.Tech, Loc.T("<b>Технологии</b>\nИсследования и очереди"), "T", () => IsWindowOpen(NavWindow.Tech));
+            Item("NavDiplo", LGIcon.Diplomacy, Loc.T("Дипломатия"), DS.Gold, () => ToggleWindow(NavWindow.Diplomacy), UIAnchors.Diplomacy, Loc.T("<b>Дипломатия</b>\nПереговоры, сделки, договоры"), "P", () => IsWindowOpen(NavWindow.Diplomacy), true);
             Item("NavSpy", LGIcon.Betrayal, Loc.T("Шпионаж"), new Color(0.74f, 0.56f, 1f), () => ToggleWindow(NavWindow.Espionage), UIAnchors.Spy,
-                 Loc.T("<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов"), "K");
-            Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ToggleWindow(NavWindow.Designer), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"), "N");
+                 Loc.T("<b>Тайные операции</b>\nАгенты, внедрение в чужие империи, кража технологий, диверсии. Защита от чужих агентов"), "K", () => IsWindowOpen(NavWindow.Espionage));
+            Item("NavDesign", LGIcon.Gear, Loc.T("Конструктор судов"), DS.NeonCyan, () => ToggleWindow(NavWindow.Designer), UIAnchors.Designer, Loc.T("<b>Конструктор судов</b>\nПроекты кораблей"), "N", () => IsWindowOpen(NavWindow.Designer), true);
             Item("NavArmy", LGIcon.Swords, Loc.T("Арсенал"), new Color(0.95f, 0.45f, 0.35f), () => ToggleWindow(NavWindow.Army), UIAnchors.Army,
-                 Loc.T("<b>Арсенал</b>\nСостав армии для штурма и обороны колоний. Империя сама производит и пополняет карты, в бой они идут из общего резерва"), "J");
+                 Loc.T("<b>Арсенал</b>\nСостав армии для штурма и обороны колоний. Империя сама производит и пополняет карты, в бой они идут из общего резерва"), "J", () => IsWindowOpen(NavWindow.Army));
             // «Флот» убран из меню: все военные флоты по-прежнему выделяет клавиша G
-            Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, UIAnchors.Victory, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V");
+            Item("NavVictory", LGIcon.Trophy, Loc.T("Путь к победе"), DS.Gold, VictoryPathWindow.Toggle, UIAnchors.Victory, Loc.T("<b>Путь к победе</b>\nВсе условия победы и кто к ним ближе"), "V", () => IsWindowOpen(NavWindow.Victory), true);
             Item("NavWonder", LGIcon.Wonder, Loc.T("Чудо фракции"), new Color(1f, 0.78f, 0.35f), () => ToggleWindow(NavWindow.Wonder), UIAnchors.Wonder,
-                 Loc.T("<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников"), "U");
+                 Loc.T("<b>Чудо фракции</b>\nМегаструктура вашей фракции: этапы, место стройки, Сеть Врат, чудеса соперников"), "U", () => IsWindowOpen(NavWindow.Wonder));
             Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, UIAnchors.LogHelp,
-                 Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O");
+                 Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O", () => NotificationLog.IsOpenNow);
             NotificationLog.AttachBadge(menu.transform.Find("NavLog/IconTile"));
             // «Справка» — маленькая кнопка «?» в шапке планировщика справа (OutlinerPanel), клавиша F1
 
-            // Свернуть / развернуть меню: в свёрнутом виде остаются только значки (подсказки — при наведении)
-            var tg = CreateButton(menu.transform, "NavToggle", new Vector2(_navW, 24), new Color(0.010f, 0.030f, 0.042f, 0.85f), DS.TextMuted, ToggleNavMenu);
-            var tgRt = tg.GetComponent<RectTransform>();
-            tgRt.anchorMin = tgRt.anchorMax = new Vector2(0, 1);
-            tgRt.pivot = new Vector2(0, 1);
-            tgRt.anchoredPosition = new Vector2(0, -y);
-            _navOrder.Add(tgRt);
             _navDiplo = menu.transform.Find("NavDiplo")?.GetComponent<RectTransform>();
             _navDiploShown = true;
             RefreshDiplomacyNav(force: true);
-            _navToggleIcon =LGIcons.Create(tg.transform, LGIcon.Back, 11f, DS.TextMuted);
-            _navToggleIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(NavMenuCollapsedW * 0.5f, 0), new Vector2(11, 11));
-            _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
-            var tt = CreateText(tg.transform, Loc.T("СВЕРНУТЬ"), 9, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleLeft);
-            tt.rectTransform.anchorMin = Vector2.zero;
-            tt.rectTransform.anchorMax = Vector2.one;
-            tt.rectTransform.offsetMin = new Vector2(50, 0);
-            tt.rectTransform.offsetMax = new Vector2(-6, 0);
-            tt.Track(1.4f);
-            tt.enabled = !_navCollapsed;
-            _navItems.Add((tgRt, tt));
-            TooltipHelper.Attach(tg, Loc.T("Свернуть или развернуть меню"));
         }
 
-        // ---------- Сворачиваемое левое меню ----------
+        // ---------- Левое меню: соты ----------
 
-        private const float NavMenuCollapsedW = 52f;
-        private readonly List<(RectTransform rt, Text label)> _navItems = new List<(RectTransform, Text)>();
-        private bool _navCollapsed;
-        private float _navW = NavMenuW;
-        private Image _navToggleIcon;
+        private const float NavHexW = 54f, NavHexH = 48f, NavStep = 52f, NavGroupGap = 12f;
 
-        private void ToggleNavMenu()
+        private struct NavSlot { public RectTransform Rt; public bool Group; public Image Divider; }
+        private readonly List<NavSlot> _navSlots = new List<NavSlot>();
+
+        /// <summary>Раскладка сот сверху вниз без пустот (скрытый пункт отдаёт свой зазор группы следующему).</summary>
+        private void LayoutNavMenu()
         {
-            _navCollapsed = !_navCollapsed;
-            PlayerPrefs.SetInt("nav.collapsed", _navCollapsed ? 1 : 0);
-            SFXManager.Play(Sfx.PanelSlide);
-            if (_navToggleIcon != null) _navToggleIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, _navCollapsed ? 180f : 0f);
-            // Подписи прячем сразу при сворачивании и показываем, когда меню уже раскрылось (см. UpdateNavMenu)
-            if (_navCollapsed) foreach (var it in _navItems) it.label.enabled = false;
+            float y = 0f;
+            bool pendingGap = false;
+            Image pendingDivider = null;
+            for (int i = 0; i < _navSlots.Count; i++)
+            {
+                var sl = _navSlots[i];
+                if (sl.Divider != null) sl.Divider.enabled = false;
+                if (sl.Group) { pendingGap = true; if (pendingDivider == null) pendingDivider = sl.Divider; }
+                if (sl.Rt == null || !sl.Rt.gameObject.activeSelf) continue;
+                if (pendingGap && y > 0f)
+                {
+                    if (pendingDivider != null)
+                    {
+                        pendingDivider.enabled = true;
+                        var p = pendingDivider.rectTransform.anchoredPosition;
+                        pendingDivider.rectTransform.anchoredPosition = new Vector2(p.x, -(y + (NavGroupGap - (NavStep - NavHexH)) * 0.5f));
+                    }
+                    y += NavGroupGap;
+                }
+                pendingGap = false;
+                pendingDivider = null;
+                var ap = sl.Rt.anchoredPosition;
+                sl.Rt.anchoredPosition = new Vector2(ap.x, -y);
+                y += NavStep;
+            }
         }
 
-        /// <summary>Плавная смена ширины меню (только пока идёт анимация — в покое канвас не трогаем).</summary>
         private Image _navDecisionPill;
         private Text _navDecisionBadge;
         private float _navBadgeTimer;
@@ -733,30 +696,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bool appeared = show && !_navDiploShown && !force;
             _navDiploShown = show;
             _navDiplo.gameObject.SetActive(show);
-            float y = 0f;
-            foreach (var rt in _navOrder)
-            {
-                if (rt == null || !rt.gameObject.activeSelf) continue;
-                rt.anchoredPosition = new Vector2(0, -y);
-                y += 46f;
-            }
+            LayoutNavMenu();
             if (appeared)
             {
                 _navDiploFresh = true;
                 LGFx.Pulse(_navDiplo.gameObject, true);
-            }
-        }
-
-        private void UpdateNavMenu(float dt)
-        {
-            float target = _navCollapsed ? NavMenuCollapsedW : NavMenuW;
-            if (Mathf.Approximately(_navW, target)) return;
-            _navW = Mathf.MoveTowards(_navW, target, dt * 900f);
-            foreach (var it in _navItems)
-            {
-                if (it.rt == null) continue;
-                it.rt.sizeDelta = new Vector2(_navW, it.rt.sizeDelta.y);
-                if (!_navCollapsed && Mathf.Approximately(_navW, target) && it.label != null) it.label.enabled = true;
             }
         }
 
@@ -917,7 +861,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         /// Ячейка рамки ресурсов: значок в круглом «гнезде» со свечением цвета ресурса, подпись с разрядкой,
         /// крупное значение (прирост — мельче), снизу — светящаяся черта цвета ресурса, гаснущая к краям.
         /// </summary>
-        private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip)
+        private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip, bool separator)
         {
             const float w = 144f, h = 54f;
             var badge = new GameObject($"Badge_{label}");
@@ -937,7 +881,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             UIAnchors.Register(UIAnchors.Resources, rt);
 
             // Разделитель между ячейками — гаснет к концам
-            if (xPos > 20f)
+            if (separator)
             {
                 var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.45f, 0.95f, 0.90f, 0.35f));
                 sep.rectTransform.anchorMin = new Vector2(0, 0.08f);
@@ -1044,103 +988,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             return sp;
         }
 
-        // ---------- Скорость времени: сегментный контрол с "жидким" ползунком ----------
-
-        private RectTransform _speedThumb;
-        private readonly Graphic[] _speedLabels = new Graphic[4];
-        private float _speedThumbX, _speedThumbV;
-        private bool _speedLabelsReady;
-        private const float SpeedSegW = 28f;
-        private const float SpeedSegPad = 3f;
-
-        private void BuildSpeedControl(Transform parent, float xPos)
-        {
-            var track = new GameObject("SpeedControl");
-            track.transform.SetParent(parent, false);
-            var tRt = track.AddComponent<RectTransform>();
-            tRt.anchorMin = tRt.anchorMax = new Vector2(0, 0.5f);
-            tRt.pivot = new Vector2(0, 0.5f);
-            tRt.sizeDelta = new Vector2(SpeedSegW * 4f + SpeedSegPad * 2f, 30f);
-            tRt.anchoredPosition = new Vector2(xPos, 0);
-            UIAnchors.Register(UIAnchors.Speed, tRt);
-            var tImg = track.AddComponent<Image>();
-            tImg.color = DS.BgVisor;
-            tImg.raycastTarget = false;
-            LG.Chip(track, LG.Palette.GlassRimSoft);
-
-            var thumb = new GameObject("Thumb");
-            thumb.transform.SetParent(track.transform, false);
-            _speedThumb = thumb.AddComponent<RectTransform>();
-            _speedThumb.anchorMin = _speedThumb.anchorMax = new Vector2(0, 0.5f);
-            _speedThumb.pivot = new Vector2(0, 0.5f);
-            _speedThumb.sizeDelta = new Vector2(SpeedSegW, 24f);
-            _speedThumbX = SpeedSegPad + SpeedSegW;
-            _speedThumb.anchoredPosition = new Vector2(_speedThumbX, 0);
-            var thImg = thumb.AddComponent<Image>();
-            thImg.color = DS.BtnPrimary;
-            thImg.raycastTarget = false;
-            var thFx = LG.Chip(thumb, new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.85f));
-            thFx.FillMultiplier = 1.9f;
-            thFx.GlowMultiplier = 2.5f;
-
-            LGIcon[] icons = { LGIcon.Pause, LGIcon.Play, LGIcon.Fast, LGIcon.Fastest };
-            string[] tips =
-            {
-                Loc.T("<b>Пауза</b>\nКлавиша: ПРОБЕЛ"),
-                Loc.T("<b>Нормальная скорость</b>\nКлавиша: 1"),
-                Loc.T("<b>Быстро</b>\nКлавиша: 2"),
-                Loc.T("<b>Очень быстро</b>\nКлавиша: 3")
-            };
-            int[] speeds = { 0, 1, 2, 4 };   // как клавиши: 3 — самая быстрая скорость ×4
-            for (int i = 0; i < 4; i++)
-            {
-                int captured = speeds[i];
-                var seg = new GameObject($"Speed_{i}");
-                seg.transform.SetParent(track.transform, false);
-                var sRt = seg.AddComponent<RectTransform>();
-                sRt.anchorMin = sRt.anchorMax = new Vector2(0, 0.5f);
-                sRt.pivot = new Vector2(0, 0.5f);
-                sRt.sizeDelta = new Vector2(SpeedSegW, 26f);
-                sRt.anchoredPosition = new Vector2(SpeedSegPad + i * SpeedSegW, 0);
-
-                var hit = seg.AddComponent<Image>();
-                hit.color = new Color(0, 0, 0, 0);   // невидимая зона клика
-                var b = seg.AddComponent<Button>();
-                b.transition = Selectable.Transition.None;
-                b.onClick.AddListener(() => SetSpeed(captured));
-
-                _speedLabels[i] = LGIcons.Create(seg.transform, icons[i], i == 3 ? 14f : 12f, DS.TextMuted);
-                TooltipHelper.Attach(seg, tips[i]);
-            }
-        }
-
-        private void SetSpeed(int s) { if (TimeManager.Instance != null) TimeManager.Instance.SetSpeedByPlayer(s); }
-
-        private void UpdateSpeedControl()
-        {
-            if (_speedThumb == null) return;
-            int speed = TimeManager.Instance != null ? TimeManager.Instance.CurrentSpeed : 1;
-            int idx = Mathf.Clamp(speed >= 3 ? 3 : speed, 0, 3);
-
-            float target = SpeedSegPad + idx * SpeedSegW;
-            bool settled = Mathf.Abs(_speedThumbX - target) < 0.01f && Mathf.Abs(_speedThumbV) < 0.01f;
-            if (settled && _speedLabelsReady) return; // в покое — не трогаем канвас
-            _speedLabelsReady = true;
-
-            _speedThumbX = LGEase.Spring(_speedThumbX, target, ref _speedThumbV, 4.2f, 0.62f, Time.unscaledDeltaTime);
-            _speedThumb.anchoredPosition = new Vector2(_speedThumbX, 0);
-
-            // "Жидкая" капля: растягивается по ходу движения
-            float stretch = Mathf.Clamp(Mathf.Abs(_speedThumbV) * 0.012f, 0f, 0.35f);
-            _speedThumb.localScale = new Vector3(1f + stretch, 1f - stretch * 0.35f, 1f);
-
-            for (int i = 0; i < 4; i++)
-            {
-                if (_speedLabels[i] == null) continue;
-                float closeness = 1f - Mathf.Clamp01(Mathf.Abs(_speedThumbX - (SpeedSegPad + i * SpeedSegW)) / SpeedSegW);
-                _speedLabels[i].color = Color.Lerp(DS.TextMuted, Color.white, closeness);
-            }
-        }
                 // ==================== ИНСПЕКТОР ====================
 
         private void BuildStellarisLeftInspector()
@@ -1679,8 +1526,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private const float InspectorWidth = 430f;
         /// <summary>Под панелью режимов карты (она стоит на 66…108 px от верха).</summary>
         private const float InspectorTop = 118f;
-        /// <summary>Ширина левого меню экранов (в развёрнутом виде).</summary>
-        public const float NavMenuW = 200f;
+        /// <summary>Ширина левого меню экранов (колонка сот).</summary>
+        public const float NavMenuW = 76f;
         /// <summary>Панель системы — у правого края, в колонке планировщика.</summary>
         private static readonly Vector2 InspectorRestPos = new Vector2(-TopBarMargin, -InspectorTop);
 
@@ -1708,14 +1555,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             UpdateStarbaseWindow(dt);
-            UpdateSpeedControl();
-            UpdateNavMenu(dt);
+            UpdateHoloTop();
             UpdateDecisionBadge(dt);
             RefreshDiplomacyNav(dt: dt);
             OutlinerPanel.Yield = _inspTargetAlpha > 0.5f;
-
-            if (TimeManager.Instance != null && _dateText != null)
-                _dateText.text = TimeManager.Instance.GetFormattedDate();
         }
 
         private void PulseInspectorContent()
@@ -1878,10 +1721,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         if (colonies.Count == 0)
         {
             _stabilityVal.text = "—";
+            _avgStability = -1f;
             _stabilityTip?.SetText(Loc.T("<b>Стабильность</b>\nПоявится, когда у империи будут колонии."));
             return;
         }
         float avg = sum / Mathf.Max(1, pop);
+        _avgStability = avg;
         var tier = PlanetStability.TierOf(avg);
         string hex = PlanetStability.Hex(PlanetStability.TierColor(tier));
         int unstable = colonies.FindAll(p => p.Tier <= StabilityTier.Strike).Count;

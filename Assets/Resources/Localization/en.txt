@@ -7382,3 +7382,19 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 \n<color={0}>ЧУДО ПРИРОДЫ · {1}</color>\n	\n<color={0}>NATURAL WONDER · {1}</color>\n
 В системе {0}\n	In the system, {0}\n
 <color=#8AA2A8>Действует на всех, кто здесь находится</color>\n	<color=#8AA2A8>Affects everyone present here</color>\n
+ЯНВАРЬ	JANUARY
+ФЕВРАЛЬ	FEBRUARY
+МАРТ	MARCH
+АПРЕЛЬ	APRIL
+МАЙ	MAY
+ИЮНЬ	JUNE
+ИЮЛЬ	JULY
+АВГУСТ	AUGUST
+СЕНТЯБРЬ	SEPTEMBER
+ОКТЯБРЬ	OCTOBER
+НОЯБРЬ	NOVEMBER
+ДЕКАБРЬ	DECEMBER
+ПАУЗА · ПРОБЕЛ	PAUSED · SPACE
+СКОРОСТЬ ×{0}	SPEED ×{0}
+<b>Кольцо стабильности</b>\nСредняя стабильность колоний (по числу жителей).	<b>Stability ring</b>\nAverage colony stability (weighted by population).
+<b>Дата</b>\nКольцо — ход текущего месяца.\nЩелчок — пауза / продолжить  <color=#8AA2A8>(ПРОБЕЛ)</color>	<b>Date</b>\nThe ring shows progress through the current month.\nClick to pause / resume  <color=#8AA2A8>(SPACE)</color>

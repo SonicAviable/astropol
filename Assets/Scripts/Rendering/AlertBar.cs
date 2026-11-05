@@ -72,8 +72,9 @@ namespace StellarisClone.Rendering
         {
             Instance = this;
             _root = LGBuild.Rect(hud, "[UI] AlertBar");
-            // Под рамкой даты (она кончается на 114 px от верха) с зазором — не наезжает и при «выпрыгивании»
-            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -126), new Vector2(10, Size));
+            // Под правым крылом ресурсов (оно кончается на 72 px от верха; центр крыла — +331 от середины экрана),
+            // правее диска времени — ряд не наезжает на кнопки скорости и при «выпрыгивании»
+            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(331f, -84f), new Vector2(10, Size));
             _root.gameObject.SetActive(false);
         }
 
