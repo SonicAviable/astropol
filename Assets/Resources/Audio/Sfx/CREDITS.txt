@@ -25,3 +25,7 @@ Servo, Radio, ElecZap) и фон Audio/CardBattle/battle_wind сведены с�
 NotifySuccess, NotifyWarning, ResearchComplete, OutpostBuilt, BuildQueued, ColonyFounded, FtlJump, DealAccepted,
 SurveyComplete, Anomaly, WarDeclared, WeaponEnergy, HitShield, WeaponMissile, ExplosionSmall, SystemEnter) —
 Epic Stock Media, «Sci-fi Evolution Gift Pack» (royalty-free), обрезаны, сведены в моно и выровнены по громкости.
+
+Щелчки интерфейса (UiHover, UiTab, UiBack, MapHover, DealPlace, DealRemove, AlertDismiss, OrderQueue, OrderStop,
+TimeSpeed, TimePause, TimeResume, SystemSelect, ResearchStart) — FC Audio, «FC User Interface SFX [Lite]» (fcaudio.co.uk),
+по одному щелчку на действие, громкость выровнена под прежний звук.
