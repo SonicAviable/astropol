@@ -218,9 +218,11 @@ namespace StellarisClone.Rendering
             v.Bg.type = Image.Type.Sliced;
             v.Bg.rectTransform.Stretch();
             // Отсвет цвета алерта снизу плитки и мягкое свечение за значком
-            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.32f));
-            tint.sprite = MenuArt.VerticalFade;
-            tint.rectTransform.Stretch(2f, 2f, 2f, 2f);
+            // (той же формы, что плитка, — без прямоугольника, торчащего из срезанных углов)
+            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.13f));
+            tint.sprite = HudArt.CutPanel(9);
+            tint.type = Image.Type.Sliced;
+            tint.rectTransform.Stretch();
             var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.40f));
             iconGlow.sprite = FactionSelectScreen.RadialSprite();
             iconGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(Size + 6f, Size + 6f));

@@ -17,7 +17,7 @@ namespace StellarisClone.Rendering
         private const float DiskCenterY = 62f;     // центр диска от верха экрана
         private const float WingH = 64f;
         private const float WingGap = 18f;          // зазор между диском и крылом
-        private const float CellStep = 148f;        // ширина ячейки ресурса (144) + зазор
+        private const float CellStep = 154f;        // ширина ячейки ресурса (150) + зазор
         private const float RulerD = RulerBadge.Width;
         private static readonly Vector2 RulerCenter = new Vector2(20f + RulerD * 0.5f, -(18f + RulerD * 0.5f));
 
@@ -93,7 +93,8 @@ namespace StellarisClone.Rendering
             track.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 22f));
             var stabGlow = HoloImage(root, "StabGlow", FactionSelectScreen.RadialSprite(), new Color(StabPink.r, StabPink.g, StabPink.b, 0.16f));
             stabGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 70f));
-            _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.90f, 1f), StabPink);
+            _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.90f, 1f), DS.NeonCyan);
+            _stabGlow = stabGlow;
             _stabRing.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 22f));
             RadialFill(_stabRing, 0f);
             track.raycastTarget = true;
@@ -120,7 +121,6 @@ namespace StellarisClone.Rendering
             _empireName.resizeTextMinSize = 11;
             _empireName.resizeTextMaxSize = 19;
             _empireName.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _empireName.Track(1.0f);
 
             _empireRuler = CreateText(root, "", 12, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleLeft);
             _empireRuler.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -46f), new Vector2(240f, 16f));
@@ -180,6 +180,25 @@ namespace StellarisClone.Rendering
         }
         private float _statsTimer;
         private static readonly Color StabPink = new Color(0.94f, 0.56f, 0.86f, 1f);
+        private Image _stabGlow;
+        private bool _textFitted;
+
+        /// <summary>
+        /// Название империи и строка правителя — не шире места до левого крыла ресурсов (иначе текст уходит под него);
+        /// лишнее ужимается подбором размера шрифта.
+        /// </summary>
+        private void FitRulerText()
+        {
+            if (_textFitted || _empireName == null || _canvas == null) return;
+            float canvasW = ((RectTransform)_canvas.transform).rect.width;
+            if (canvasW <= 0f) return;
+            _textFitted = true;
+            float wingLeft = canvasW * 0.5f - (DiskD * 0.5f + WingGap) - (3f * CellStep + 38f - 4f);
+            float x = _empireName.rectTransform.anchoredPosition.x;
+            float avail = Mathf.Clamp(wingLeft - x - 12f, 120f, 300f);
+            _empireName.rectTransform.sizeDelta = new Vector2(avail, _empireName.rectTransform.sizeDelta.y);
+            _empireRuler.rectTransform.sizeDelta = new Vector2(avail, _empireRuler.rectTransform.sizeDelta.y);
+        }
 
         /// <summary>Плашка-показатель под названием империи: значок и число в тёмной рамке.</summary>
         private Text StatChip(Transform root, LGIcon icon, ref float x, string tip)
@@ -330,7 +349,8 @@ namespace StellarisClone.Rendering
 
             // Музыка — кнопка справа под диском, панель плеера — под ней
             var music = LGBuild.Rect(disk, "MusicHolder");
-            music.At(new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(DiskD * 0.5f + 34f, -(DiskD * 0.5f + 20f)), new Vector2(30f, 30f));
+            // слева от дуги скорости — справа под крылом стоят алерты
+            music.At(new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-(SpeedROut + 14f), -(DiskD * 0.5f + 6f)), new Vector2(30f, 30f));
             MusicPlayerPanel.CreateToggle(music, 0f, _canvas, -(DiskCenterY + DiskD * 0.5f + 70f));
         }
 
@@ -468,6 +488,8 @@ namespace StellarisClone.Rendering
                 UpdateResourceBars();
             }
 
+            FitRulerText();
+
             // Название империи и правитель (фракция выбирается уже после постройки HUD)
             var f = SelectedFaction;
             string key = f != null ? f.Name : "";
@@ -478,6 +500,9 @@ namespace StellarisClone.Rendering
                 Color accent = leader != null ? leader.Accent : f != null ? f.EmpireColor : DS.NeonCyan;
                 _empireName.text = f != null ? f.Name.ToUpper() : "";
                 _empireName.color = Color.Lerp(accent, Color.white, 0.15f);
+                // Кольцо вокруг портрета — цвета фракции (как рамка портрета и название)
+                if (_stabRing != null) _stabRing.color = Color.Lerp(accent, Color.white, 0.1f);
+                if (_stabGlow != null) _stabGlow.color = new Color(accent.r, accent.g, accent.b, 0.16f);
                 _empireRuler.text = leader != null ? $"{leader.Name} · {leader.Title}" : (f != null ? f.Title : "");
             }
         }

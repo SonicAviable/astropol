@@ -964,7 +964,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         /// </summary>
         private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip, bool separator)
         {
-            const float w = 144f, h = 54f;
+            const float w = 150f, h = 54f;
             var badge = new GameObject($"Badge_{label}");
             badge.transform.SetParent(parent, false);
             var rt = badge.AddComponent<RectTransform>();
@@ -1784,7 +1784,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_researchVal != null && TechnologyManager.Instance != null)
     {
         var tm = TechnologyManager.Instance;
-        ShowText(_researchVal, $"{StatFormat.Colored(tm.MonthlyResearchIncome, Loc.T(" / мес"))}", tm.MonthlyResearchIncome);
+        ShowText(_researchVal, $"{StatFormat.Colored(tm.MonthlyResearchIncome, "")}<size=11><color=#8AA2A8>{Loc.T(" / мес")}</color></size>", tm.MonthlyResearchIncome);
         if (_researchTip != null)
         {
             int active = 0;
@@ -1847,7 +1847,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         var tier = PlanetStability.TierOf(avg);
         string hex = PlanetStability.Hex(PlanetStability.TierColor(tier));
         int unstable = colonies.FindAll(p => p.Tier <= StabilityTier.Strike).Count;
-        ShowText(_stabilityVal, $"<color=#{hex}>{avg:0}</color>  <size=11><color=#{hex}>{PlanetStability.TierName(tier)}</color></size>" +
+        ShowText(_stabilityVal, $"<color=#{hex}>{avg:0}</color>  <size=10><color=#{hex}>{PlanetStability.TierName(tier)}</color></size>" +
                              (unstable > 0 ? $" <size=11><color=#FF6B6B>!{unstable}</color></size>" : ""), avg);
         if (_stabilityTip == null) return;
         colonies.Sort((a, b) => a.Stability.CompareTo(b.Stability));
