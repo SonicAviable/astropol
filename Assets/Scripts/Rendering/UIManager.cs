@@ -533,34 +533,51 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 btn.targetGraphic = fill;
                 btn.onClick.AddListener(() => { SFXManager.Play(Sfx.UiTab, 0.7f); act?.Invoke(); });
 
-                // Флажок: тёмная плашка со срезанными углами, цветная кромка слева, название и клавиша
+                // Флажок вместо подсказки: тёмная плашка со срезанными углами, цветная кромка слева,
+                // сверху — название и клавиша, снизу — короткое описание (первая фраза подсказки)
+                string desc = ShortNavDesc(tip);
+                float fh = string.IsNullOrEmpty(desc) ? 34f : 48f;
                 var flag = LGBuild.Rect(root, "Flag");
-                flag.At(new Vector2(1, 0.5f), new Vector2(0, 0.5f), new Vector2(8f, 0f), new Vector2(160f, 34f));
+                flag.At(new Vector2(1, 0.5f), new Vector2(0, 0.5f), new Vector2(8f, 0f), new Vector2(160f, fh));
                 var fg = flag.gameObject.AddComponent<CanvasGroup>();
                 fg.alpha = 0f;
                 fg.blocksRaycasts = false;
                 fg.interactable = false;
-                var fbg = HoloImage(flag, "Bg", HudArt.CutPanel(10), new Color(0.025f, 0.060f, 0.085f, 0.95f));
+                var fbg = HoloImage(flag, "Bg", HudArt.CutPanel(10), new Color(0.025f, 0.060f, 0.085f, 0.96f));
                 fbg.type = Image.Type.Sliced;
                 fbg.rectTransform.Stretch();
                 var fedge = HoloImage(flag, "Edge", null, accent);
-                fedge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(3f, 34f));
-                var ft = CreateText(flag, label.ToUpper(), 13, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleLeft);
+                fedge.rectTransform.anchorMin = new Vector2(0, 0.12f);
+                fedge.rectTransform.anchorMax = new Vector2(0, 0.88f);
+                fedge.rectTransform.pivot = new Vector2(0, 0.5f);
+                fedge.rectTransform.sizeDelta = new Vector2(3f, 0f);
+                fedge.rectTransform.anchoredPosition = Vector2.zero;
+
+                string title = label.ToUpper();
+                float nameY = string.IsNullOrEmpty(desc) ? 0f : 8f;
+                var ft = CreateText(flag, title, 13, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleLeft);
                 ft.font = GameFont.Display;
                 ft.Track(1.2f);
-                ft.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14f, 0f), new Vector2(200f, 30f));
-                float w = 14f + ft.preferredWidth + 14f;
+                // preferredWidth не учитывает разрядку (LGTracking) — добавляем её на каждый символ
+                float nameW = ft.preferredWidth + title.Length * 1.3f;
+                ft.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14f, nameY), new Vector2(nameW + 4f, 20f));
+                float w = 14f + nameW + 12f;
                 if (!string.IsNullOrEmpty(key))
                 {
                     var kb = HoloImage(flag, "Key", null, accent);
                     var kt = CreateText(kb.transform, key, 10, FontStyle.Bold, new Color(0.01f, 0.05f, 0.07f), TextAnchor.MiddleCenter);
                     kt.rectTransform.Stretch();
                     float kw = Mathf.Max(18f, kt.preferredWidth + 8f);
-                    kb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(w - 4f, 0f), new Vector2(kw, 16f));
-                    w += kw + 10f;
-                    tip += "  <color=#8AA2A8>(" + key + ")</color>";
+                    kb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(w, nameY), new Vector2(kw, 16f));
+                    w += kw + 12f;
                 }
-                flag.sizeDelta = new Vector2(w, 34f);
+                if (!string.IsNullOrEmpty(desc))
+                {
+                    var fd = CreateText(flag, desc, 11, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleLeft);
+                    fd.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14f, -11f), new Vector2(fd.preferredWidth + 4f, 16f));
+                    w = Mathf.Max(w, 14f + fd.preferredWidth + 14f);
+                }
+                flag.sizeDelta = new Vector2(w, fh);
 
                 var hx = root.gameObject.AddComponent<HexNavItem>();
                 hx.Fill = fill; hx.Rim = rim; hx.Icon = ic; hx.Glow = glow;
@@ -575,7 +592,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _navOrder.Add(root);
                 _navSlots.Add(new NavSlot { Rt = root, Group = group, Divider = divider });
                 if (anchorId != null) UIAnchors.Register(anchorId, root);
-                TooltipHelper.Attach(root.gameObject, tip);
+                // Отдельной подсказки нет: её роль играет флажок (подсказка у курсора закрывала бы его)
             }
 
             Item("NavEmpire", LGIcon.Globe, Loc.T("Империя"), DS.NeonCyan, () => ToggleWindow(NavWindow.Empire), null, Loc.T("<b>Обзор империи</b>\nСистемы, колонии, лидеры, статистика"), "I", () => IsWindowOpen(NavWindow.Empire));
@@ -619,6 +636,20 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
 
         // ---------- Левое меню: соты ----------
+
+        /// <summary>Короткое описание пункта для флажка: текст подсказки после заголовка до первой точки или двоеточия.</summary>
+        private static string ShortNavDesc(string tip)
+        {
+            if (string.IsNullOrEmpty(tip)) return "";
+            int nl = tip.IndexOf('\n');
+            string body = nl >= 0 ? tip.Substring(nl + 1) : "";
+            body = System.Text.RegularExpressions.Regex.Replace(body, "<[^>]+>", "");
+            int cut = body.IndexOfAny(new[] { '.', ':', '\n' });
+            if (cut > 0) body = body.Substring(0, cut);
+            body = body.Trim();
+            if (body.Length > 64) body = body.Substring(0, 62).TrimEnd() + "…";
+            return body;
+        }
 
         private const float NavHexW = 54f, NavHexH = 48f, NavStep = 52f, NavGroupGap = 12f;
 

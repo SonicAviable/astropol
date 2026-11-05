@@ -91,7 +91,7 @@ namespace StellarisClone.Rendering
             // CanvasGroup — для возможного fade в будущем
             _group = root.AddComponent<CanvasGroup>();
 
-            // Режимы карты — круглые значки дугой вокруг круглой мини-карты слева внизу (как в референсе).
+            // Режимы карты — круглые значки дугой справа от круглой мини-карты слева внизу (верх свободен под подпись режима).
             // Корень совпадает с мини-картой (240 × 240, отступ 22 — как в GalaxyMinimap).
             var rt = root.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0);
@@ -112,15 +112,15 @@ namespace StellarisClone.Rendering
             _modeCaption.alignment = TextAnchor.MiddleCenter;
             _modeCaption.raycastTarget = false;
             _modeCaption.horizontalOverflow = HorizontalWrapMode.Overflow;
-            _modeCaption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(240f, 16f));
+            _modeCaption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(-14f, 30f), new Vector2(240f, 16f));
             _modeCaption.Track(2.4f);
 
-            CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 100f);
-            CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  75f);
-            CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      50f);
-            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", Loc.T("КОРИДОРЫ"), AccentOrange,           25f);
-            CreateModeButton(root.transform, MapMode.Explored,   "◉", Loc.T("РАЗВЕДКА"), UIManager.DS.Green,     0f);
-            CreateModeButton(root.transform, MapMode.Intel,      "✦", Loc.T("ШПИОНАЖ"),  SpyPurple,             -25f);
+            CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 56f);
+            CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  35f);
+            CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      14f);
+            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", Loc.T("КОРИДОРЫ"), AccentOrange,           -7f);
+            CreateModeButton(root.transform, MapMode.Explored,   "◉", Loc.T("РАЗВЕДКА"), UIManager.DS.Green,     -28f);
+            CreateModeButton(root.transform, MapMode.Intel,      "✦", Loc.T("ШПИОНАЖ"),  SpyPurple,             -49f);
         }
 
         /// <summary>Круглая кнопка режима на дуге вокруг мини-карты; angleDeg — угол от центра карты (0 — вправо, 90 — вверх).</summary>
