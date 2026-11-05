@@ -6,8 +6,8 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// Фон галактической карты в духе Stellaris:
-    ///   • скайбокс (яркая розовая туманность) на карте приглушён и охлаждён — он больше не спорит
-    ///     со звёздами и границами; в режиме системы возвращается ярче, за планетами он красив;
+    ///   • скайбокс (яркая розовая туманность) на карте погашен — фон чёрный, вместо него далёкие звёзды
+    ///     и виньетка к краям; в режиме системы скайбокс возвращается, за планетами он красив;
     ///   • под картой — «диск галактики»: текстура, построенная по реальным позициям систем.
     ///     Рукава спирали, кольцо или эллипс светятся звёздной пылью сами собой, в центре — тёплое
     ///     ядро, вокруг систем — тысячи мелких неразрешённых звёзд.
@@ -32,7 +32,7 @@ namespace StellarisClone.Rendering
         private readonly List<(Material mat, float baseIntensity, int layer)> _nebulaMats = new List<(Material, float, int)>();
         private readonly List<Material> _darkDustMats = new List<Material>();
         private readonly List<float> _darkDustBase = new List<float>();
-        private Material _skyInstance;
+        private Material _skyInstance, _deepStarsMat;
         private float _skyExposure = 1f;
         private Color _skyTint = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
@@ -55,12 +55,15 @@ namespace StellarisClone.Rendering
             RenderSettings.skybox = _skyInstance;
         }
 
-        /// <summary>Галактика — тёмный холодный фон; система — исходная туманность чуть мягче.</summary>
+        /// <summary>
+        /// Галактика (вариант C «Туманности») — чёрный космос: скайбокс погашен, светятся только сама галактика,
+        /// туманности регионов и далёкие звёзды. Система — исходная туманность скайбокса чуть мягче.
+        /// </summary>
         private void ApplySkyMood(bool systemView)
         {
             if (_skyInstance == null) return;
             if (_skyInstance.HasProperty("_Exposure"))
-                _skyInstance.SetFloat("_Exposure", _skyExposure * (systemView ? 0.85f : 0.38f));
+                _skyInstance.SetFloat("_Exposure", _skyExposure * (systemView ? 0.85f : 0f));
             if (_skyInstance.HasProperty("_Tint"))
             {
                 var cold = new Color(0.36f, 0.38f, 0.48f, _skyTint.a);
@@ -267,11 +270,64 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            Layer(0, 4, -R * 0.32f, -R * 0.2f, 0.55f, 0.8f, 0.5f, 1.0f, 0.09f, 0.14f);
-            Layer(1, 5, -6f, -1.5f, 0.3f, 0.5f, 0.6f, 1.05f, 0.14f, 0.24f);
+            // На чёрном фоне туманности — главная «картинка» карты: ярче и крупнее, чем при подсвеченном скайбоксе
+            Layer(0, 5, -R * 0.32f, -R * 0.2f, 0.6f, 0.9f, 0.5f, 1.05f, 0.17f, 0.25f);
+            Layer(1, 6, -6f, -1.5f, 0.32f, 0.55f, 0.55f, 1.05f, 0.22f, 0.34f);
             Layer(2, 5, R * 0.05f, R * 0.11f, 0.16f, 0.3f, 0.3f, 1.0f, 0.08f, 0.14f);
 
             BuildDarkDust(R, rng);
+            BuildVignette(R);
+            BuildDeepStars(R, rng);
+        }
+
+        /// <summary>Виньетка вокруг галактики: туманности и фон к краям карты уходят в черноту (над туманностями, под диском).</summary>
+        private void BuildVignette(float R)
+        {
+            const int n = 256;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "GalaxyVignette" };
+            var px = new Color32[n * n];
+            float inner = 0.75f / 2.6f, outer = 1.9f / 2.6f;      // доли полуразмера квада (2.6 R)
+            for (int j = 0; j < n; j++)
+            for (int i = 0; i < n; i++)
+            {
+                float dx = (i + 0.5f) / n * 2f - 1f, dy = (j + 0.5f) / n * 2f - 1f;
+                float t = Mathf.InverseLerp(inner, outer, Mathf.Sqrt(dx * dx + dy * dy));
+                px[j * n + i] = new Color(0f, 0f, 0f, 0.88f * t * t * (3f - 2f * t));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+            var q = Quad("GalaxyVignette", _nebulaRoot.transform, new Vector3(0f, -1.2f, 0f), 0f, new Vector2(R * 5.2f, R * 5.2f));
+            var m = new Material(GetSpriteShader()) { mainTexture = tex, renderQueue = 2955 };
+            q.GetComponent<MeshRenderer>().sharedMaterial = m;
+        }
+
+        /// <summary>Далёкие звёзды фона — вместо скайбокса: тусклые точки глубоко под картой (медленно плывут при движении камеры).</summary>
+        private void BuildDeepStars(float R, System.Random rng)
+        {
+            int count = 3500;
+            var verts = new Vector3[count];
+            var cols = new Color32[count];
+            var idx = new int[count];
+            for (int k = 0; k < count; k++)
+            {
+                verts[k] = new Vector3(((float)rng.NextDouble() - 0.5f) * R * 7f, -R * (0.6f + (float)rng.NextDouble() * 0.5f), ((float)rng.NextDouble() - 0.5f) * R * 7f);
+                float b = 0.12f + Mathf.Pow((float)rng.NextDouble(), 4f) * 0.6f;   // почти все тусклые, редкие яркие
+                Color c = Color.Lerp(new Color(0.75f, 0.82f, 1f), new Color(1f, 0.92f, 0.82f), (float)rng.NextDouble());
+                cols[k] = new Color(c.r, c.g, c.b, b);
+                idx[k] = k;
+            }
+            var mesh = new Mesh { name = "GalaxyDeepStars", vertices = verts, colors32 = cols };
+            mesh.SetIndices(idx, MeshTopology.Points, 0);
+            mesh.bounds = new Bounds(new Vector3(0f, -R * 0.85f, 0f), new Vector3(R * 7f, R * 0.6f, R * 7f));
+            var go = new GameObject("GalaxyDeepStars");
+            go.transform.SetParent(_nebulaRoot.transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            var twinkle = Resources.Load<Shader>("Shaders/TwinklePoints");
+            _deepStarsMat = new Material(twinkle != null ? twinkle : GetSpriteShader()) { renderQueue = 2930 };
+            mr.sharedMaterial = _deepStarsMat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
         }
 
         /// <summary>Тёмные пылевые облака над диском и ядром, вытянуты вдоль рукавов (по касательной).</summary>
@@ -279,7 +335,7 @@ namespace StellarisClone.Rendering
         {
             var shader = Resources.Load<Shader>("Shaders/GalaxyDarkDust");
             if (shader == null) return;
-            int count = 5;
+            int count = 9;
             for (int k = 0; k < count; k++)
             {
                 float ang = (k + (float)rng.NextDouble() * 0.8f) / count * Mathf.PI * 2f;
@@ -291,7 +347,7 @@ namespace StellarisClone.Rendering
                     new Vector3(Mathf.Cos(ang) * dist, -0.25f + k * 0.02f, Mathf.Sin(ang) * dist), yaw, new Vector2(len, len * 0.32f));
                 var m = new Material(shader);
                 m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
-                m.SetFloat("_Opacity", 0.22f + (float)rng.NextDouble() * 0.12f);
+                m.SetFloat("_Opacity", 0.32f + (float)rng.NextDouble() * 0.14f);
                 m.SetColor("_Tint", Color.Lerp(new Color(0.05f, 0.03f, 0.035f), new Color(0.02f, 0.025f, 0.05f), (float)rng.NextDouble()));
                 m.renderQueue = 2963;    // над диском (2960) и ядром (2962), под коридорами и звёздами
                 _darkDustMats.Add(m);
@@ -390,6 +446,7 @@ namespace StellarisClone.Rendering
             float t = Time.unscaledTime;
             if (_diskMat != null) _diskMat.SetFloat("_T", t);
             if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
+            if (_deepStarsMat != null) _deepStarsMat.SetFloat("_T", t);
             float nebK = Mathf.Lerp(0.5f, 1f, far);
             // клочья над картой близко к камере — вблизи растворяются, чтобы не мешать
             float wispK = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(55f, 130f, h));
