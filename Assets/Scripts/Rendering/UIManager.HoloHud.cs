@@ -13,8 +13,8 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class UIManager
     {
-        private const float DiskD = 148f;          // диаметр диска времени
-        private const float DiskCenterY = 62f;     // центр диска от верха экрана
+        private const float DiskD = 136f;          // диаметр диска времени
+        private const float DiskCenterY = 89f;     // центр диска от верха экрана: риски (DiskD + 34) целиком на экране
         private const float WingH = 64f;
         private const float WingGap = 18f;          // зазор между диском и крылом
         private const float CellStep = 154f;        // ширина ячейки ресурса (150) + зазор

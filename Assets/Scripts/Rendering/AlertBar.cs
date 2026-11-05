@@ -180,7 +180,7 @@ namespace StellarisClone.Rendering
         private static Color Saturate(Color c)
         {
             Color.RGBToHSV(c, out float h, out float sat, out float val);
-            return Color.HSVToRGB(h, Mathf.Clamp01(sat * 1.25f + 0.1f), Mathf.Clamp01(val * 1.05f));
+            return Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.85f), Mathf.Clamp01(val * 0.80f));   // приглушённо: значки не перебивают HUD
         }
 
         private int IndexOf(string id)
@@ -217,7 +217,7 @@ namespace StellarisClone.Rendering
             // Bg — невидимая зона клика на всю ячейку.
             v.Bg = LGBuild.Panel(rt, "Hit", new Color(0f, 0f, 0f, 0f), raycast: true);
             v.Bg.rectTransform.Stretch();
-            var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.45f));
+            var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.16f));
             iconGlow.sprite = FactionSelectScreen.RadialSprite();
             iconGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(Size + 4f, Size + 4f));
             var btn = v.Bg.gameObject.AddComponent<Button>();
@@ -235,7 +235,7 @@ namespace StellarisClone.Rendering
             v.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(26f, 26f));
 
             // Черта под значком (она же «рамка» для пульса свежего алерта) и её свечение
-            var barGlow = LGBuild.Panel(v.Bg.transform, "BarGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.5f));
+            var barGlow = LGBuild.Panel(v.Bg.transform, "BarGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.25f));
             barGlow.sprite = FactionSelectScreen.RadialSprite();
             barGlow.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), new Vector2(44f, 14f));
             v.Rim = LGBuild.Panel(v.Bg.transform, "Bar", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
@@ -325,12 +325,12 @@ namespace StellarisClone.Rendering
                 // Наведение: значок подрастает и всплывает, свечение ярче, черта шире
                 v.Hover = Mathf.MoveTowards(v.Hover, v.HoverFlag != null && v.HoverFlag.On ? 1f : 0f, dt * 8f);
                 float hv = LGEase.OutCubic(v.Hover);
-                v.Glow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.18f + 0.35f * pulse + 0.30f * hv);
-                v.Rim.color = new Color(v.Color.r, v.Color.g, v.Color.b, Mathf.Max(0.75f + 0.25f * pulse, hv));
+                v.Glow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.05f + 0.10f * pulse + 0.25f * hv);
+                v.Rim.color = new Color(v.Color.r, v.Color.g, v.Color.b, Mathf.Max(0.45f + 0.15f * pulse, hv));
                 v.Rim.rectTransform.sizeDelta = new Vector2(26f + 12f * hv, 3f);
                 v.Icon.rectTransform.localScale = Vector3.one * (1f + 0.16f * hv);
                 v.Icon.rectTransform.anchoredPosition = new Vector2(0f, 4f + 2f * hv);
-                if (v.IconGlow != null) v.IconGlow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.45f + 0.40f * hv);
+                if (v.IconGlow != null) v.IconGlow.color = new Color(v.Color.r, v.Color.g, v.Color.b, 0.16f + 0.35f * hv);
             }
 
             for (int i = _views.Count - 1; i >= 0; i--)
