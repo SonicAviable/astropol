@@ -35,30 +35,53 @@ namespace StellarisClone.Rendering
         /// <summary>Доля освещённого диска 0..1 (для яркости ореола).</summary>
         public static float Illumination(float phase) => (1f - Mathf.Cos(phase * Mathf.PI * 2f)) * 0.5f;
 
-        private static Sprite Make(float phase)
+        // Геометрия и цвета шара не зависят от фазы — считаются один раз; на фазу остаётся одно скалярное
+        // произведение на пиксель (раньше каждый новый шаг фазы стоил несколько мс и давал рывок кадра)
+        private static float[] s_u, s_v, s_z, s_edge;
+        private static Color[] s_lit, s_dark;
+
+        private static void EnsureLut()
         {
+            if (s_u != null) return;
             if (s_albedo == null) s_albedo = BuildAlbedo();
-            float th = phase * Mathf.PI * 2f;
-            Vector3 L = new Vector3(Mathf.Sin(th), 0.12f * Mathf.Sin(th), -Mathf.Cos(th)).normalized;
-            var px = new Color32[N * N];
-            float r = N * 0.5f - 1f;
             LoadTexture();
+            int n = N * N;
+            s_u = new float[n]; s_v = new float[n]; s_z = new float[n]; s_edge = new float[n];
+            s_lit = new Color[n]; s_dark = new Color[n];
+            float r = N * 0.5f - 1f;
             Color lit = new Color(1.08f, 1.08f, 1.06f), ash = new Color(0.025f, 0.045f, 0.06f);
             for (int y = 0; y < N; y++)
             for (int x = 0; x < N; x++)
             {
+                int i = y * N + x;
                 float u = (x + 0.5f - N * 0.5f) / r, v = (y + 0.5f - N * 0.5f) / r;
                 float d2 = u * u + v * v;
-                float edge = Mathf.Clamp01((1f - Mathf.Sqrt(d2)) * r + 0.5f);   // сглаженный край диска
-                if (edge <= 0f) { px[y * N + x] = new Color32(0, 0, 0, 0); continue; }
+                s_edge[i] = Mathf.Clamp01((1f - Mathf.Sqrt(d2)) * r + 0.5f);   // сглаженный край диска
+                if (s_edge[i] <= 0f) continue;
                 float z = Mathf.Sqrt(Mathf.Max(0f, 1f - d2));
-                float ndl = u * L.x + v * L.y + z * L.z;
-                float day = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.06f, 0.10f, ndl));
+                s_u[i] = u; s_v[i] = v; s_z[i] = z;
                 Color alb = Albedo(u, v, z, x, y);
                 float limb = 0.45f + 0.55f * Mathf.Pow(z, 0.35f);
-                Color c = Color.Lerp(ash + alb * 0.06f, lit * limb * alb, day);
-                float a = edge;
-                px[y * N + x] = new Color(c.r, c.g, c.b, a);
+                s_lit[i] = lit * limb * alb;
+                s_dark[i] = ash + alb * 0.06f;
+            }
+        }
+
+        private static Sprite Make(float phase)
+        {
+            EnsureLut();
+            float th = phase * Mathf.PI * 2f;
+            Vector3 L = new Vector3(Mathf.Sin(th), 0.12f * Mathf.Sin(th), -Mathf.Cos(th)).normalized;
+            var px = new Color32[N * N];
+            for (int i = 0; i < px.Length; i++)
+            {
+                float e = s_edge[i];
+                if (e <= 0f) continue;
+                float ndl = s_u[i] * L.x + s_v[i] * L.y + s_z[i] * L.z;
+                float t = Mathf.Clamp01((ndl + 0.06f) / 0.16f);
+                float day = t * t * (3f - 2f * t);
+                Color d = s_dark[i], l = s_lit[i];
+                px[i] = new Color(d.r + (l.r - d.r) * day, d.g + (l.g - d.g) * day, d.b + (l.b - d.b) * day, e);
             }
             var tex = new Texture2D(N, N, TextureFormat.RGBA32, false)
             { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Moon", hideFlags = HideFlags.DontSave };

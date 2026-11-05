@@ -146,13 +146,30 @@ namespace StellarisClone.Core
                 else ApplyDisplay();
             }
             GraphicsQuality.Apply();
-            QualitySettings.vSyncCount = VSync ? 1 : 0;
-            Application.targetFrameRate = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
+            ApplyFrameRate();
             ApplyGlass();
             ApplyAudio();
             ApplyUIScale();
             StrategyCameraController.EdgeScrollingSetting = EdgeScroll;
             StrategyCameraController.PanSpeedSetting = CameraSpeed;
+        }
+
+        /// <summary>
+        /// Частота кадров. При вертикальной синхронизации Unity не смотрит на targetFrameRate, и на экранах 120 Гц
+        /// (MacBook Pro ProMotion, игровые мониторы) игра рисует 120–144 кадра вместо выбранных 60 — ноутбук греется
+        /// и сбрасывает частоты. Поэтому синхронизация идёт через кадр, когда частота экрана кратна выбранному пределу.
+        /// </summary>
+        private static void ApplyFrameRate()
+        {
+            int fps = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
+            int interval = 1;
+            if (VSync && fps > 0)
+            {
+                double hz = Screen.currentResolution.refreshRateRatio.value;
+                if (hz > fps * 1.5) interval = Mathf.Clamp(Mathf.RoundToInt((float)(hz / fps)), 1, 4);
+            }
+            QualitySettings.vSyncCount = VSync ? interval : 0;
+            Application.targetFrameRate = fps;
         }
 
         /// <summary>Сколько секунд после запуска игры не менять окно (см. ApplyAll).</summary>
@@ -217,13 +234,13 @@ namespace StellarisClone.Core
             Commit();
         }
 
-        public static void SetVSync(bool v) { VSync = v; PlayerPrefs.SetInt("set.vsync", v ? 1 : 0); QualitySettings.vSyncCount = v ? 1 : 0; Commit(); }
+        public static void SetVSync(bool v) { VSync = v; PlayerPrefs.SetInt("set.vsync", v ? 1 : 0); ApplyFrameRate(); Commit(); }
 
         public static void SetFps(int i)
         {
             FpsIndex = Mathf.Clamp(i, 0, FpsOptions.Length - 1);
             PlayerPrefs.SetInt("set.fps", FpsIndex);
-            Application.targetFrameRate = FpsOptions[FpsIndex];
+            ApplyFrameRate();
             Commit();
         }
 
@@ -231,7 +248,7 @@ namespace StellarisClone.Core
         public static void GraphicsChanged(System.Action apply)
         {
             apply?.Invoke();
-            QualitySettings.vSyncCount = VSync ? 1 : 0;
+            ApplyFrameRate();
             Commit();
         }
 

@@ -55,6 +55,8 @@ namespace StellarisClone.Rendering
             if (Instance == this) Instance = null;
         }
 
+        private int _scanCursor = -1;
+
         private void Update()
         {
             float dt = Time.unscaledDeltaTime;
@@ -73,14 +75,17 @@ namespace StellarisClone.Rendering
 
             _scanTimer -= dt;
             if (_scanTimer > 0f) return;
-            _scanTimer = scanInterval;
+            _scanTimer = Mathf.Min(scanInterval, 0.1f);   // один холст за проход — проходы чаще, но каждый лёгкий
 
-            for (int i = 0; i < _canvases.Count; i++)
+            // По одному корневому холсту за проход: полный обход всех окон разом давал рывок кадра каждые 0,25 с
+            // (заметно на Mac и слабых машинах). Новые окна всё равно стилизуются сами при показе (LG.Skin).
+            for (int n = 0; n < _canvases.Count; n++)
             {
-                var c = _canvases[i];
-                if (c == null || !c.isRootCanvas) continue;
-                if (c.renderMode == RenderMode.WorldSpace) continue;
+                _scanCursor = (_scanCursor + 1) % _canvases.Count;
+                var c = _canvases[_scanCursor];
+                if (c == null || !c.isRootCanvas || c.renderMode == RenderMode.WorldSpace) continue;
                 LG.Skin(c.transform);
+                break;
             }
         }
 

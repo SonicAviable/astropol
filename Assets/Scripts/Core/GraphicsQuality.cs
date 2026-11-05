@@ -132,7 +132,8 @@ namespace StellarisClone.Core
                               || gpu.Contains("radeon(tm) graphics") || gpu.Contains("radeon graphics") || gpu.Contains("vega 8")
                               || gpu.Contains("microsoft basic") || gpu.Contains("llvmpipe");
             if (integrated || vram > 0 && vram < 2000) return 0;
-            if (gpu.Contains("apple")) return 2;   // память общая с системой — объём ничего не говорит о мощности
+            // Apple: память общая с системой — объём ничего не говорит о мощности. Базовые M1–M4 — «Среднее», Pro/Max/Ultra — «Высокое»
+            if (gpu.Contains("apple")) return gpu.Contains("pro") || gpu.Contains("max") || gpu.Contains("ultra") ? 2 : 1;
             if (vram > 0 && vram < 3900) return 1;
             if (vram <= 0 || vram < 9900) return 2;
             return 3;
@@ -172,9 +173,9 @@ namespace StellarisClone.Core
             int top = QualitySettings.names.Length - 1;
             if (top >= 0 && QualitySettings.GetQualityLevel() != top)
             {
-                bool vsync = QualitySettings.vSyncCount > 0;
+                int vsync = QualitySettings.vSyncCount;
                 QualitySettings.SetQualityLevel(top, true);
-                QualitySettings.vSyncCount = vsync ? 1 : 0;   // смена уровня сбрасывает выбор игрока
+                QualitySettings.vSyncCount = vsync;   // смена уровня сбрасывает выбор игрока
             }
             QualitySettings.globalTextureMipmapLimit = FullTextures ? 0 : 1;
             QualitySettings.anisotropicFiltering = FullTextures ? AnisotropicFiltering.Enable : AnisotropicFiltering.Disable;
@@ -187,7 +188,8 @@ namespace StellarisClone.Core
             var asset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             if (asset == null) return;
             Remember(asset);
-            asset.renderScale = RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)];
+            asset.renderScale = RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] * PlatformScale();
+            s_lastPixels = Screen.width * Screen.height;
             asset.msaaSampleCount = AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
             // FSR 1.0 — фильтр масштабирования URP; через отражение, как и тени: если в версии URP поле зовут иначе,
             // игра не падает, остаётся обычное растяжение и предупреждение в логе
@@ -238,6 +240,20 @@ namespace StellarisClone.Core
             = new System.Collections.Generic.Dictionary<Volume, float>();
 
         private static Camera _lastCamera;
+        private static int s_lastPixels;
+
+        /// <summary>
+        /// На Mac экраны Retina дают 5–8 Мп (3456×2234, 5120×2880): 3D-сцена в полном разрешении — главная причина лагов.
+        /// Здесь сцена рендерится не больше чем ~2560×1600 (4 Мп) и растягивается до экрана; интерфейс остаётся чётким.
+        /// Множитель к масштабу из настроек; на других платформах — 1.
+        /// </summary>
+        public static float PlatformScale()
+        {
+            if (Application.platform != RuntimePlatform.OSXPlayer) return 1f;
+            float px = Mathf.Max(1f, Screen.width * (float)Screen.height);
+            return Mathf.Clamp(Mathf.Sqrt(MacMaxPixels / px), 0.5f, 1f);
+        }
+        private const float MacMaxPixels = 2560f * 1600f;
 
         /// <summary>Вызывается раз в секунду: новая сцена или новая камера получают текущие настройки.</summary>
         internal static void Watch()
@@ -245,6 +261,8 @@ namespace StellarisClone.Core
             if (!s_loaded) return;
             var cam = Camera.main;
             if (cam != null && cam != _lastCamera) ApplyScene();
+            // Окно сменило размер (полный экран, другой монитор) — пересчитать ограничение рендера на Mac
+            if (Screen.width * Screen.height != s_lastPixels) ApplyAsset();
         }
 
         // ------------------------------------------------------------------ Свойства ассета, закрытые в URP
