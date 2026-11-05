@@ -1947,6 +1947,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 ApplyPlayerIdentity();
                 HideModalDim();
                 Time.timeScale = 1f;
+                if (!IsGameStarted) FindAnyObjectByType<StrategyCameraController>()?.ResetToCapital();
                 SpawnInGameHUD();
                 if (GameSession.Settings.Tutorial) TutorialManager.Instance?.BeginTutorial();
             },

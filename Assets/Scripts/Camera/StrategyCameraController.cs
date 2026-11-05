@@ -111,6 +111,31 @@ namespace StellarisClone.Cam
             _targetHeight = Mathf.Clamp(pos.y, minHeight, maxHeight);
         }
 
+        /// <summary>Стартовая поза новой партии: над столицей, обычный наклон по высоте (а не поза облёта из меню).</summary>
+        public void ResetToCapital(float height = 70f)
+        {
+            var gen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            var cap = StellarisClone.Core.EmpireStats.GetSystem(StellarisClone.Core.EconomyManager.PlayerCapitalId);
+            Vector3 center = cap != null ? cap.Position : (gen != null && gen.Systems.Count > 0 ? gen.Systems[0].Position : Vector3.zero);
+            center.y = 0f;
+
+            float h = Mathf.Clamp(height, minHeight, maxHeight);
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(minHeight, maxHeight, h));
+            var rot = Quaternion.Euler(Mathf.Lerp(nearPitch, farPitch, k), 0f, 0f);
+            Vector3 f = rot * Vector3.forward;
+            Vector3 pos = center - f * (h / -f.y);
+
+            IsSystemMode = false;
+            IsReturningFromSystem = false;
+            IsTransitioning = false;
+            _isFocusing = false;
+            _panVelocity = Vector3.zero;
+            _glideVel = Vector3.zero;
+            _zoomShift = Vector3.zero;
+            transform.SetPositionAndRotation(pos, rot);
+            _targetHeight = h;
+        }
+
         private void Update()
         {
             // 0. Идёт загрузка — камера не слушает мышь и клавиши
@@ -469,7 +494,7 @@ namespace StellarisClone.Cam
 
         private void UpdateFocus()
         {
-            _focusTimer += Time.deltaTime;
+            _focusTimer += Time.unscaledDeltaTime;   // на паузе тоже долетает
             float t = Mathf.Clamp01(_focusTimer / focusDuration);
             float smooth = Mathf.SmoothStep(0f, 1f, t);
             transform.position = Vector3.Lerp(_focusStartPos, _focusTargetPos, smooth);
