@@ -2301,6 +2301,24 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 });
             var sel = card.GetComponent<Selectable>();
             if (sel != null) sel.interactable = available;
+
+            // Фон карточки: крупный бледный значок главного ресурса варианта (что даёт, иначе — что требует), срезан краем
+            var main = ParseEffects(opt.ResultTooltip);
+            int best = main.FindIndex(f => f.Sign > 0);
+            if (best < 0 && special) { var rq = ParseEffects(opt.Requirement); if (rq.Count > 0) { main = rq; best = 0; } }
+            if (best < 0 && main.Count > 0) best = 0;
+            if (best >= 0)
+            {
+                card.AddComponent<RectMask2D>();
+                var wm = LGIcons.Create(card.transform, main[best].Icon, 118f, new Color(main[best].Tint.r, main[best].Tint.g, main[best].Tint.b, available ? 0.09f : 0.04f), "Watermark");
+                var wrt = wm.rectTransform;
+                wrt.anchorMin = wrt.anchorMax = new Vector2(1, 0.5f);
+                wrt.pivot = new Vector2(0.5f, 0.5f);
+                wrt.anchoredPosition = new Vector2(-34f, -8f);
+                wrt.localRotation = Quaternion.Euler(0, 0, -14f);
+                wm.raycastTarget = false;
+                LG.Ignore(wm.gameObject);
+            }
             if (primary)
             {
                 var ol = card.AddComponent<Outline>();

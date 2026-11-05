@@ -3,13 +3,16 @@ using UnityEngine;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Процедурная луна для диска даты: фаза 0 — новолуние, 0.5 — полнолуние, 1 — снова новолуние
-    /// (растущая освещена справа). Сфера с мягким терминатором, затемнением к краю, «морями» и кратерами;
-    /// тёмная сторона чуть видна пепельным светом. Спрайты по шагам фазы рисуются по запросу и кэшируются.
+    /// Луна для диска даты (вариант A «Полная луна»): шар с текстурой Planets/Real/moon_albedo, фаза 0 — новолуние,
+    /// 0.5 — полнолуние, 1 — снова новолуние (растущая освещена справа); мягкий терминатор, затемнение к краю,
+    /// тёмная сторона едва видна. Нет текстуры — процедурные «моря» и кратеры. Спрайты по шагам фазы кэшируются.
     /// </summary>
     public static class MoonPhase
     {
-        private const int N = 96, Steps = 96;
+        private const int N = 160, Steps = 96;
+        private const int TW = 512, TH = 256;                // копия текстуры для чтения на CPU
+        private static Color32[] s_tex;
+        private static bool s_texTried;
         private static readonly Sprite[] s_cache = new Sprite[Steps];
         private static float[] s_albedo;
 
@@ -31,7 +34,8 @@ namespace StellarisClone.Rendering
             Vector3 L = new Vector3(Mathf.Sin(th), 0.12f * Mathf.Sin(th), -Mathf.Cos(th)).normalized;
             var px = new Color32[N * N];
             float r = N * 0.5f - 1f;
-            Color lit = new Color(0.93f, 0.96f, 0.97f), ash = new Color(0.16f, 0.30f, 0.33f);
+            LoadTexture();
+            Color lit = new Color(1.08f, 1.08f, 1.06f), ash = new Color(0.025f, 0.045f, 0.06f);
             for (int y = 0; y < N; y++)
             for (int x = 0; x < N; x++)
             {
@@ -42,10 +46,10 @@ namespace StellarisClone.Rendering
                 float z = Mathf.Sqrt(Mathf.Max(0f, 1f - d2));
                 float ndl = u * L.x + v * L.y + z * L.z;
                 float day = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.06f, 0.10f, ndl));
-                float alb = s_albedo[y * N + x];
-                float limb = 0.55f + 0.45f * Mathf.Sqrt(z);
-                Color c = Color.Lerp(ash * (0.6f + 0.4f * alb), lit * alb * limb, day);
-                float a = edge * Mathf.Lerp(0.55f, 1f, day);
+                Color alb = Albedo(u, v, z, x, y);
+                float limb = 0.45f + 0.55f * Mathf.Pow(z, 0.35f);
+                Color c = Color.Lerp(ash + alb * 0.06f, lit * limb * alb, day);
+                float a = edge;
                 px[y * N + x] = new Color(c.r, c.g, c.b, a);
             }
             var tex = new Texture2D(N, N, TextureFormat.RGBA32, false)
@@ -57,7 +61,37 @@ namespace StellarisClone.Rendering
             return sp;
         }
 
-        // Поверхность: светлый фон, тёмные «моря» (мягкие пятна) и кратеры с ободком; одна на все фазы
+        /// <summary>Цвет поверхности в точке шара: из текстуры (долгота/широта) или процедурный.</summary>
+        private static Color Albedo(float u, float v, float z, int x, int y)
+        {
+            if (s_tex == null) { float k = s_albedo[y * N + x]; return new Color(k * 0.85f, k * 0.86f, k * 0.86f); }
+            float lon = Mathf.Atan2(u, z) + 0.2f, lat = Mathf.Asin(Mathf.Clamp(v, -1f, 1f));
+            float fx = lon / (Mathf.PI * 2f); fx -= Mathf.Floor(fx);
+            int tx = Mathf.Clamp((int)(fx * TW), 0, TW - 1), ty = Mathf.Clamp((int)((0.5f + lat / Mathf.PI) * TH), 0, TH - 1);
+            return s_tex[ty * TW + tx];
+        }
+
+        /// <summary>Текстура в Resources может быть нечитаемой — копируем через RenderTexture один раз.</summary>
+        private static void LoadTexture()
+        {
+            if (s_texTried) return;
+            s_texTried = true;
+            var src = Resources.Load<Texture2D>("Planets/Real/moon_albedo");
+            if (src == null) return;
+            var rt = RenderTexture.GetTemporary(TW, TH, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            var prev = RenderTexture.active;
+            Graphics.Blit(src, rt);
+            RenderTexture.active = rt;
+            var tmp = new Texture2D(TW, TH, TextureFormat.RGBA32, false);
+            tmp.ReadPixels(new Rect(0, 0, TW, TH), 0, 0);
+            tmp.Apply(false);
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(rt);
+            s_tex = tmp.GetPixels32();
+            Object.Destroy(tmp);
+        }
+
+        // Поверхность (запасная, без текстуры): светлый фон, тёмные «моря» (мягкие пятна) и кратеры с ободком; одна на все фазы
         private static float[] BuildAlbedo()
         {
             var a = new float[N * N];

@@ -336,9 +336,12 @@ namespace StellarisClone.Rendering
 
             // Луна за датой: фаза — ход месяца (1-е — новолуние, середина — полнолуние), приглушена под текстом
             _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.85f, 0.95f, 1f, 0.08f));
-            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), Vector2.one * (DiskD * 0.92f));
-            _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), new Color(0.80f, 0.90f, 0.93f, 0.50f));
-            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), Vector2.one * (DiskD * 0.60f));
+            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 1.02f));
+            _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), new Color(1f, 1f, 1f, 0.95f));
+            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
+            // Мягкая тёмная подложка под цифрами — дата читается и на полной луне
+            var plate = HoloImage(disk, "DatePlate", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0.62f));
+            plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), Vector2.one * (DiskD * 0.80f));
 
             // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
             _diskMonth = CreateText(disk, "", 11, FontStyle.Bold, HoloLine, TextAnchor.MiddleCenter);
@@ -510,9 +513,9 @@ namespace StellarisClone.Rendering
 
             var sp = MoonPhase.Get(_moonPhase);
             if (_moon.sprite != sp) _moon.sprite = sp;
-            _moon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 4f * Mathf.Sin(t * 0.25f));
+            _moon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 3f * Mathf.Sin(t * 0.25f));
             float ill = MoonPhase.Illumination(_moonPhase);
-            _moonGlow.color = new Color(0.85f, 0.95f, 1f, (0.03f + 0.10f * ill) * (0.85f + 0.15f * Mathf.Sin(t * 1.1f)));
+            _moonGlow.color = new Color(0.85f, 0.95f, 1f, (0.02f + 0.09f * ill) * (0.85f + 0.15f * Mathf.Sin(t * 1.1f)));
         }
 
         // ---------- Обновление ----------
