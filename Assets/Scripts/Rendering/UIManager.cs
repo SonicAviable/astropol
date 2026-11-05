@@ -604,9 +604,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var lawsTile = items.Find("NavLaws/IconTile");
             if (lawsTile != null)
             {
+                // Бейдж-«флажок» со скосом (как в референсе) у правого верхнего угла соты
                 _navDecisionPill = LGBuild.Panel(lawsTile, "DecisionBadge", DS.Green);
-                _navDecisionPill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-1, -1), new Vector2(16, 14));
-                LG.Platter(_navDecisionPill.gameObject, 7f);
+                _navDecisionPill.sprite = HudArt.CutPanel(4);
+                _navDecisionPill.type = Image.Type.Sliced;
+                _navDecisionPill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-4, -2), new Vector2(18, 15));
                 _navDecisionBadge = CreateText(_navDecisionPill.transform, "", 9, FontStyle.Bold, new Color(0.02f, 0.06f, 0.05f), TextAnchor.MiddleCenter);
                 _navDecisionBadge.rectTransform.anchorMin = Vector2.zero;
                 _navDecisionBadge.rectTransform.anchorMax = Vector2.one;
@@ -1023,15 +1025,23 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             vs.effectDistance = new Vector2(0f, -1f);
 
             // Светящаяся черта цвета ресурса под ячейкой
-            var under = HudSprite(badge.transform, "Underline", FactionSelectScreen.RadialSprite(), new Color(accentCol.r, accentCol.g, accentCol.b, 0.65f));
-            under.rectTransform.anchorMin = new Vector2(0.06f, 0f);
-            under.rectTransform.anchorMax = new Vector2(0.94f, 0f);
-            under.rectTransform.sizeDelta = new Vector2(0f, 2f);
-            under.rectTransform.anchoredPosition = new Vector2(0f, 2f);
+            // Полоска под ячейкой (как в референсе): тусклая дорожка и заливка цвета ресурса
+            var under = HudSprite(badge.transform, "BarTrack", null, new Color(1f, 1f, 1f, 0.08f));
+            under.rectTransform.anchorMin = new Vector2(0f, 0f);
+            under.rectTransform.anchorMax = new Vector2(1f, 0f);
+            under.rectTransform.pivot = new Vector2(0f, 0f);
+            under.rectTransform.offsetMin = new Vector2(10f, 3f);
+            under.rectTransform.offsetMax = new Vector2(-10f, 5f);
+            var barFill = HudSprite(under.transform, "Fill", null, new Color(accentCol.r, accentCol.g, accentCol.b, 0.95f));
+            barFill.rectTransform.anchorMin = Vector2.zero;
+            barFill.rectTransform.anchorMax = new Vector2(0f, 1f);
+            barFill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            barFill.rectTransform.offsetMin = barFill.rectTransform.offsetMax = Vector2.zero;
+            _resBarFills.Add(barFill.rectTransform);
 
             // Живая ячейка: докрутка чисел, всплывающая разница, вспышка, «дыхание», наведение
             var fx = badge.AddComponent<ResourceBadgeFx>();
-            fx.Halo = halo; fx.Ring = null; fx.Icon = ic; fx.Underline = under; fx.Value = val; fx.Accent = accentCol;
+            fx.Halo = halo; fx.Ring = null; fx.Icon = ic; fx.Underline = null; fx.Value = val; fx.Accent = accentCol;
 
             xPos += w + 4f;
             return val;

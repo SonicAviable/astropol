@@ -40,18 +40,18 @@ namespace StellarisClone.Rendering
         {
             switch (m)
             {
-                case 1: return Loc.T("ЯНВ");
-                case 2: return Loc.T("ФЕВ");
-                case 3: return Loc.T("МАР");
-                case 4: return Loc.T("АПР");
+                case 1: return Loc.T("ЯНВАРЬ");
+                case 2: return Loc.T("ФЕВРАЛЬ");
+                case 3: return Loc.T("МАРТ");
+                case 4: return Loc.T("АПРЕЛЬ");
                 case 5: return Loc.T("МАЙ");
-                case 6: return Loc.T("ИЮН");
-                case 7: return Loc.T("ИЮЛ");
-                case 8: return Loc.T("АВГ");
-                case 9: return Loc.T("СЕН");
-                case 10: return Loc.T("ОКТ");
-                case 11: return Loc.T("НОЯ");
-                default: return Loc.T("ДЕК");
+                case 6: return Loc.T("ИЮНЬ");
+                case 7: return Loc.T("ИЮЛЬ");
+                case 8: return Loc.T("АВГУСТ");
+                case 9: return Loc.T("СЕНТЯБРЬ");
+                case 10: return Loc.T("ОКТЯБРЬ");
+                case 11: return Loc.T("НОЯБРЬ");
+                default: return Loc.T("ДЕКАБРЬ");
             }
         }
 
@@ -62,6 +62,23 @@ namespace StellarisClone.Rendering
             BuildTimeDisk();
             BuildNavMenu();
             HudBanner.Create(_canvas.transform, DiskCenterY + DiskD * 0.5f + 84f);
+            BuildScreenCorners();
+        }
+
+        /// <summary>Уголки по краям экрана — рамка голо-HUD.</summary>
+        private void BuildScreenCorners()
+        {
+            var c = new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.5f);
+            for (int i = 0; i < 4; i++)
+            {
+                var anchor = new Vector2(i % 2, i / 2);                 // (0,0) (1,0) (0,1) (1,1)
+                var dir = new Vector2(anchor.x < 0.5f ? 1f : -1f, anchor.y < 0.5f ? 1f : -1f);
+                var off = new Vector2(6f * dir.x, 6f * dir.y);
+                var h = HoloImage(_canvas.transform, "Corner", null, c);
+                h.rectTransform.At(anchor, anchor, off, new Vector2(26f, 1f));
+                var v = HoloImage(_canvas.transform, "Corner", null, c);
+                v.rectTransform.At(anchor, anchor, off, new Vector2(1f, 26f));
+            }
         }
 
         // ---------- Правитель ----------
@@ -70,31 +87,141 @@ namespace StellarisClone.Rendering
         {
             var root = _canvas.transform;
             // Шкала и кольцо стабильности — под портретом (портрет поверх, он ловит клики)
-            _stabTicks = HoloImage(root, "RulerTicks", HudArt.Ticks(60, 5, 0.95f, 0.90f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.35f));
-            _stabTicks.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 32f));
-            var track = HoloImage(root, "StabTrack", HudArt.Ring(0.92f, 1f), new Color(1f, 1f, 1f, 0.07f));
-            track.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 18f));
-            _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.92f, 1f), new Color(0.94f, 0.56f, 0.86f, 1f));
-            _stabRing.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 18f));
+            _stabTicks = HoloImage(root, "RulerTicks", HudArt.Ticks(60, 0, 0.955f, 0.955f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.4f));
+            _stabTicks.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 34f));
+            var track = HoloImage(root, "StabTrack", HudArt.Ring(0.90f, 1f), new Color(1f, 1f, 1f, 0.08f));
+            track.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 22f));
+            var stabGlow = HoloImage(root, "StabGlow", FactionSelectScreen.RadialSprite(), new Color(StabPink.r, StabPink.g, StabPink.b, 0.16f));
+            stabGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 70f));
+            _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.90f, 1f), StabPink);
+            _stabRing.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 22f));
             RadialFill(_stabRing, 0f);
             track.raycastTarget = true;
             TooltipHelper.Attach(track.gameObject, Loc.T("<b>Кольцо стабильности</b>\nСредняя стабильность колоний (по числу жителей)."));
 
             RulerBadge.Create(root, new Vector2(20f, -18f), OpenEmpireOverviewModal);
 
-            float x = 20f + RulerD + 26f;
-            _empireName = CreateText(root, "", 17, FontStyle.Normal, DS.NeonCyan, TextAnchor.LowerLeft);
+            // Значок места империи в рейтинге — кружок у правого нижнего края портрета
+            var rank = HoloImage(root, "RankBadge", HudArt.Disc(), new Color(0.02f, 0.06f, 0.09f, 1f));
+            rank.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter + new Vector2(34f, -34f), new Vector2(26f, 26f));
+            var rankRing = HoloImage(rank.transform, "Ring", HudArt.Ring(0.86f, 1f), DS.NeonCyan);
+            rankRing.rectTransform.Stretch();
+            _rankText = CreateText(rank.transform, "", 12, FontStyle.Normal, DS.NeonCyan, TextAnchor.MiddleCenter);
+            _rankText.font = GameFont.Display;
+            _rankText.rectTransform.Stretch();
+            rank.raycastTarget = true;
+            TooltipHelper.Attach(rank.gameObject, Loc.T("<b>Место в галактике</b>\nПо очкам империи: системы, население, технологии, флот и чудеса."));
+
+            float x = 20f + RulerD + 28f;
+            _empireName = CreateText(root, "", 19, FontStyle.Normal, DS.NeonCyan, TextAnchor.LowerLeft);
             _empireName.font = GameFont.Display;
-            _empireName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -24f), new Vector2(230f, 24f));
+            _empireName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -18f), new Vector2(240f, 26f));
             _empireName.resizeTextForBestFit = true;
             _empireName.resizeTextMinSize = 11;
-            _empireName.resizeTextMaxSize = 17;
+            _empireName.resizeTextMaxSize = 19;
             _empireName.horizontalOverflow = HorizontalWrapMode.Wrap;
             _empireName.Track(1.0f);
 
-            _empireRuler = CreateText(root, "", 12, FontStyle.Normal, DS.TextMuted, TextAnchor.UpperLeft);
-            _empireRuler.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -52f), new Vector2(230f, 34f));
+            _empireRuler = CreateText(root, "", 12, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleLeft);
+            _empireRuler.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -46f), new Vector2(240f, 16f));
             _empireRuler.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _empireRuler.verticalOverflow = VerticalWrapMode.Truncate;
+            _empireRuler.resizeTextForBestFit = true;
+            _empireRuler.resizeTextMinSize = 9;
+            _empireRuler.resizeTextMaxSize = 12;
+
+            // Три плашки-показателя: системы, мощь флота, место в рейтинге
+            float cx = x;
+            _chipSystems = StatChip(root, LGIcon.Planet, ref cx, Loc.T("<b>Системы</b>\nСколько систем у вашей империи"));
+            _chipPower = StatChip(root, LGIcon.Fleet, ref cx, Loc.T("<b>Мощь флота</b>\nСуммарная боевая мощь ваших военных кораблей"));
+            _chipRank = StatChip(root, LGIcon.Trophy, ref cx, Loc.T("<b>Место в галактике</b>\nПо очкам империи среди всех империй"));
+        }
+
+        private Text _chipSystems, _chipPower, _chipRank, _rankText;
+        /// <summary>Заливки полосок под ячейками ресурсов: гелий, титан, сплавы, влияние, наука, стабильность.</summary>
+        private readonly System.Collections.Generic.List<RectTransform> _resBarFills = new System.Collections.Generic.List<RectTransform>();
+
+        /// <summary>
+        /// Полоски под ресурсами. Титан — заполненность складов; стабильность — средняя стабильность;
+        /// наука — доля занятых слотов исследований; гелий, сплавы и влияние — запас относительно
+        /// двухлетнего дохода (пустая — запас на исходе, полная — с большим заделом).
+        /// </summary>
+        private void UpdateResourceBars()
+        {
+            if (_resBarFills.Count < 6) return;
+            var eco = EconomyManager.Instance;
+            if (eco == null) return;
+            float Reserve(float stock, float income) => Mathf.Clamp01(stock / (stock + 24f * Mathf.Max(1f, income) + 1f) * 2f);
+            float research = 0f;
+            var tm = TechnologyManager.Instance;
+            if (tm != null && tm.Slots.Count > 0)
+            {
+                int active = 0;
+                foreach (var sl in tm.Slots) if (sl.CurrentTech != null && !sl.IsPaused) active++;
+                research = active / (float)tm.Slots.Count;
+            }
+            float[] f =
+            {
+                Reserve(eco.EnergyCredits, eco.MonthlyEnergyIncome),
+                eco.MineralStorage > 0f ? Mathf.Clamp01(eco.Minerals / eco.MineralStorage) : 0f,
+                Reserve(eco.Alloys, eco.MonthlyAlloysIncome),
+                Reserve(eco.Influence, eco.MonthlyInfluenceIncome),
+                research,
+                _avgStability < 0f ? 0f : Mathf.Clamp01(_avgStability / 100f)
+            };
+            for (int i = 0; i < 6; i++)
+            {
+                var rt = _resBarFills[i];
+                if (rt == null) continue;
+                float cur = rt.anchorMax.x;
+                float v = Mathf.MoveTowards(cur, f[i], Time.unscaledDeltaTime * 0.6f);
+                if (Mathf.Abs(v - cur) > 0.0005f) rt.anchorMax = new Vector2(v, 1f);
+            }
+        }
+        private float _statsTimer;
+        private static readonly Color StabPink = new Color(0.94f, 0.56f, 0.86f, 1f);
+
+        /// <summary>Плашка-показатель под названием империи: значок и число в тёмной рамке.</summary>
+        private Text StatChip(Transform root, LGIcon icon, ref float x, string tip)
+        {
+            var bg = HoloImage(root, "Chip_" + icon, null, new Color(0.035f, 0.08f, 0.11f, 0.92f));
+            bg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -62f), new Vector2(56f, 22f));
+            bg.raycastTarget = true;
+            var fr = HoloImage(bg.transform, "Frame", HudArt.CutFrame(2, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.4f));
+            fr.type = Image.Type.Sliced;
+            fr.rectTransform.Stretch();
+            var ic = LGIcons.Create(bg.transform, icon, 12f, DS.TextMuted);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(7f, 0f), new Vector2(12f, 12f));
+            ic.raycastTarget = false;
+            var t = CreateText(bg.transform, "", 12, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleLeft);
+            t.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(23f, 0f), new Vector2(40f, 20f));
+            TooltipHelper.Attach(bg.gameObject, tip);
+            x += 56f + 6f;
+            return t;
+        }
+
+        /// <summary>Раз в секунду: системы, мощь флота, место по очкам; ширина плашек — по тексту.</summary>
+        private void UpdateRulerStats()
+        {
+            if (_chipSystems == null || (_statsTimer -= Time.unscaledDeltaTime) > 0f) return;
+            _statsTimer = 1f;
+            int sys = EmpireStats.SystemCount(0);
+            float pw = EmpireStats.MilitaryPower(0);
+            int mine = EmpireStats.Score(0).Total, place = 1;
+            foreach (var ai in AIEmpireManager.Alive) if (EmpireStats.Score(ai.OwnerId).Total > mine) place++;
+            _chipSystems.text = sys.ToString();
+            _chipPower.text = pw >= 1000f ? $"{pw / 1000f:0.0}K" : $"{pw:0}";
+            _chipRank.text = "#" + place;
+            _rankText.text = place.ToString();
+            float x = _chipSystems.transform.parent.GetComponent<RectTransform>().anchoredPosition.x;
+            foreach (var t in new[] { _chipSystems, _chipPower, _chipRank })
+            {
+                var bg = (RectTransform)t.transform.parent;
+                float w = 23f + t.preferredWidth + 9f;
+                bg.anchoredPosition = new Vector2(x, bg.anchoredPosition.y);
+                bg.sizeDelta = new Vector2(w, 22f);
+                x += w + 6f;
+            }
         }
 
         // ---------- Крылья ресурсов ----------
@@ -184,24 +311,21 @@ namespace StellarisClone.Rendering
             var edge = HoloImage(disk, "Edge", HudArt.Ring(0.975f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.45f));
             edge.rectTransform.Stretch();
 
-            // Дата: месяц коротко сверху (цвет HUD), крупный день двумя цифрами, под чертой — год
-            _diskMonth = CreateText(disk, "", 13, FontStyle.Normal, HoloLine, TextAnchor.MiddleCenter);
-            _diskMonth.font = GameFont.Display;
-            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 36f), new Vector2(DiskD, 18f));
-            _diskMonth.Track(4f);
-            _diskDay = CreateText(disk, "", 46, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
+            // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
+            _diskMonth = CreateText(disk, "", 11, FontStyle.Bold, HoloLine, TextAnchor.MiddleCenter);
+            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 36f), new Vector2(DiskD, 16f));
+            _diskMonth.Track(3f);
+            _diskDay = CreateText(disk, "", 42, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
             _diskDay.font = GameFont.Display;
-            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 5f), new Vector2(DiskD, 52f));
-            var rule = HoloImage(disk, "Rule", HudArt.EdgeFade(0.35f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.6f));
-            rule.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -24f), new Vector2(70f, 1f));
-            _diskYear = CreateText(disk, "", 12, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
-            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -36f), new Vector2(DiskD, 16f));
-            _diskYear.Track(5f);
+            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 5f), new Vector2(DiskD, 50f));
+            _diskYear = CreateText(disk, "", 13, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
+            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -30f), new Vector2(DiskD, 18f));
+            _diskYear.Track(4.5f);
 
             BuildSpeedArc(disk);
 
             _speedCaption = CreateText(disk, "", 10, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
-            _speedCaption.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -(DiskD * 0.5f + 62f)), new Vector2(200f, 14f));
+            _speedCaption.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -(DiskD * 0.5f + 70f)), new Vector2(200f, 14f));
             _speedCaption.Track(1.8f);
 
             // Музыка — кнопка справа под диском, панель плеера — под ней
@@ -226,7 +350,7 @@ namespace StellarisClone.Rendering
             };
             int[] speeds = { 0, 1, 2, 4 };      // как клавиши: 3 — самая быстрая скорость ×4
             float[] deg = { 124f, 102f, 78f, 56f }; // углы от +X по часовой (экранные: вниз — 90°)
-            const float r = 104f;
+            const float r = 110f;
             for (int i = 0; i < 4; i++)
             {
                 int captured = speeds[i];
@@ -235,14 +359,14 @@ namespace StellarisClone.Rendering
                 var chip = HoloImage(arc, $"Speed_{i}", HudArt.CutPanel(6), new Color(0.05f, 0.11f, 0.15f, 0.96f));
                 chip.type = Image.Type.Sliced;
                 chip.raycastTarget = true;
-                chip.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(36f, 22f));
+                chip.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(40f, 26f));
                 chip.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f - deg[i]);
                 var b = chip.gameObject.AddComponent<Button>();
                 b.transition = Selectable.Transition.None;
                 b.onClick.AddListener(() => SetSpeed(captured));
                 TooltipHelper.Attach(chip.gameObject, tips[i]);
                 _arcChips[i] = chip;
-                _arcIcons[i] = LGIcons.Create(chip.transform, icons[i], i == 3 ? 13f : 11f, DS.TextMuted);
+                _arcIcons[i] = LGIcons.Create(chip.transform, icons[i], i == 3 ? 15f : 13f, DS.TextMuted);
                 _arcIcons[i].raycastTarget = false;
             }
         }
@@ -266,7 +390,7 @@ namespace StellarisClone.Rendering
             var tm = TimeManager.Instance;
             if (tm != null && _diskDay != null)
             {
-                string day = tm.Day.ToString("00");
+                string day = tm.Day.ToString();
                 if (_diskDay.text != day) _diskDay.text = day;
                 string month = MonthName(tm.Month);
                 if (_diskMonth.text != month) _diskMonth.text = month;
@@ -297,8 +421,8 @@ namespace StellarisClone.Rendering
             {
                 float target = _avgStability < 0f ? 0f : Mathf.Clamp01(_avgStability / 100f);
                 _stabRing.fillAmount = Mathf.MoveTowards(_stabRing.fillAmount, target, Time.unscaledDeltaTime * 0.8f);
-                if (_avgStability >= 0f)
-                    _stabRing.color = PlanetStability.TierColor(PlanetStability.TierOf(_avgStability));
+                UpdateRulerStats();
+                UpdateResourceBars();
             }
 
             // Название империи и правитель (фракция выбирается уже после постройки HUD)

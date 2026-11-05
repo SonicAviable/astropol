@@ -7421,3 +7421,7 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 МЕНЮ	MENU
 РЕЖИМ · {0}	MODE · {0}
 Ваша	Yours
+<b>Место в галактике</b>\nПо очкам империи: системы, население, технологии, флот и чудеса.	<b>Galactic rank</b>\nBy empire score: systems, population, technologies, fleet and wonders.
+<b>Системы</b>\nСколько систем у вашей империи	<b>Systems</b>\nHow many systems your empire holds
+<b>Мощь флота</b>\nСуммарная боевая мощь ваших военных кораблей	<b>Fleet power</b>\nCombined combat power of your warships
+<b>Место в галактике</b>\nПо очкам империи среди всех империй	<b>Galactic rank</b>\nBy empire score among all empires

@@ -71,14 +71,14 @@ namespace StellarisClone.Rendering
         {
             Instance = this;
             _root = LGBuild.Rect(hud, "[UI] AlertBar");
-            // Под правым крылом ресурсов (оно кончается на 72 px от верха; центр крыла — +331 от середины экрана),
-            // правее диска времени — ряд не наезжает на кнопки скорости и при «выпрыгивании»
-            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(331f, -84f), new Vector2(10, Size));
+            // Под правым крылом ресурсов (оно кончается на 72 px от верха), от его левого края (+106 от середины
+            // экрана) вправо; над рядом — подпись «Требует внимания»
+            _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(106f, -96f), new Vector2(10, Size));
             _root.gameObject.SetActive(false);
 
             // Подпись над рядом — видна, пока есть хотя бы один алерт
-            _caption = LGBuild.Label(_root, Loc.T("ТРЕБУЕТ ВНИМАНИЯ"), 9, new Color(0.56f, 0.66f, 0.71f, 1f), TextAnchor.MiddleCenter, bold: true);
-            _caption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(240f, 12f));
+            _caption = LGBuild.Label(_root, Loc.T("ТРЕБУЕТ ВНИМАНИЯ"), 9, new Color(0.56f, 0.66f, 0.71f, 1f), TextAnchor.MiddleLeft, bold: true);
+            _caption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(0f, 6f), new Vector2(240f, 12f));
             _caption.Track(2.4f);
             _caption.enabled = false;
         }
@@ -264,8 +264,8 @@ namespace StellarisClone.Rendering
 
         private static float TargetX(int index, int count)
         {
-            float width = count * Size + Mathf.Max(0, count - 1) * Gap;
-            return -width * 0.5f + Size * 0.5f + index * (Size + Gap);
+            // Ряд растёт вправо от левого края правого крыла (как в референсе)
+            return Size * 0.5f + index * (Size + Gap);
         }
 
         private void Animate(float dt)

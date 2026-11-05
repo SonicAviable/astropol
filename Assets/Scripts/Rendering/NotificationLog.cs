@@ -41,8 +41,9 @@ namespace StellarisClone.Rendering
         {
             if (tile == null) return;
             s_pill = LGBuild.Panel(tile, "LogBadge", UIManager.DS.Gold);
-            s_pill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-1, -1), new Vector2(18, 14));
-            LG.Platter(s_pill.gameObject, 7f);
+            s_pill.sprite = HudArt.CutPanel(4);
+            s_pill.type = UnityEngine.UI.Image.Type.Sliced;
+            s_pill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-4, -2), new Vector2(20, 15));
             s_badge = LGBuild.Label(s_pill.transform, "", 9, new Color(0.08f, 0.05f, 0.0f), TextAnchor.MiddleCenter, bold: true);
             s_badge.rectTransform.Stretch();
             NotificationCenter.OnLogged -= RefreshBadge;
