@@ -75,7 +75,15 @@ namespace StellarisClone.Rendering
             // правее диска времени — ряд не наезжает на кнопки скорости и при «выпрыгивании»
             _root.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(331f, -84f), new Vector2(10, Size));
             _root.gameObject.SetActive(false);
+
+            // Подпись над рядом — видна, пока есть хотя бы один алерт
+            _caption = LGBuild.Label(_root, Loc.T("ТРЕБУЕТ ВНИМАНИЯ"), 9, new Color(0.56f, 0.66f, 0.71f, 1f), TextAnchor.MiddleCenter, bold: true);
+            _caption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(240f, 12f));
+            _caption.Track(2.4f);
+            _caption.enabled = false;
         }
+
+        private Text _caption;
 
         public void SetVisible(bool v)
         {
@@ -103,6 +111,7 @@ namespace StellarisClone.Rendering
                 _dismissed.RemoveWhere(id => !_current.Exists(a => a.Id == id));
                 _current.RemoveAll(a => _dismissed.Contains(a.Id));
                 Sync();
+                if (_caption != null) _caption.enabled = _current.Count > 0;
             }
             Animate(dt);
         }
@@ -187,7 +196,7 @@ namespace StellarisClone.Rendering
             // Свечение цвета алерта под плиткой (пульсирует, пока алерт свежий)
             v.Glow = LGBuild.Panel(rt, "Glow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.25f));
             v.Glow.sprite = FactionSelectScreen.RadialSprite();
-            v.Glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size + 34f, Size + 34f));
+            v.Glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size + 44f, Size + 44f));
 
             // Волна-рамка при появлении (та же форма, что у плитки)
             v.RippleImg = LGBuild.Panel(rt, "Ripple", new Color(a.Color.r, a.Color.g, a.Color.b, 0.9f));
@@ -201,7 +210,7 @@ namespace StellarisClone.Rendering
             v.Bg.sprite = HudArt.CutPanel(9);
             v.Bg.type = Image.Type.Sliced;
             v.Bg.rectTransform.Stretch();
-            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.12f));
+            var tint = LGBuild.Panel(v.Bg.transform, "Tint", new Color(a.Color.r, a.Color.g, a.Color.b, 0.05f));
             tint.sprite = HudArt.CutPanel(9);
             tint.type = Image.Type.Sliced;
             tint.rectTransform.Stretch();
@@ -226,10 +235,11 @@ namespace StellarisClone.Rendering
             sev.raycastTarget = false;
 
             // Счётчик (например, число простаивающих кораблей) — кружок в правом верхнем углу
-            var badge = LGBuild.Panel(rt, "Badge", new Color(0.92f, 0.26f, 0.28f, 1f));
+            // кружок цвета алерта, чуть за углом плитки (как в референсе)
+            var badge = LGBuild.Panel(rt, "Badge", Color.Lerp(a.Color, Color.white, 0.15f));
             badge.sprite = HudArt.Disc();
-            badge.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-3, -3), new Vector2(17, 17));
-            v.Count = LGBuild.Label(badge.transform, "", 10, Color.white, TextAnchor.MiddleCenter, bold: true);
+            badge.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(1, 1), new Vector2(17, 17));
+            v.Count = LGBuild.Label(badge.transform, "", 10, new Color(0.01f, 0.05f, 0.07f), TextAnchor.MiddleCenter, bold: true);
             badge.gameObject.SetActive(false);
 
             // стартовая позиция — там, где появится

@@ -996,17 +996,24 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             disc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(36, 36));
             var ring = HudSprite(badge.transform, "Ring", SocketSprite(false), new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f));
             ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(36, 36));
-            var ic = LGIcons.Create(badge.transform, icon, 17, accentCol);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(17, 17));
+            // Как в референсе голо-HUD: без гнезда — крупный значок со свечением цвета ресурса
+            disc.enabled = false;
+            ring.enabled = false;
+            var ic = LGIcons.Create(badge.transform, icon, 26, accentCol);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(26, 26));
+            var icGlow = ic.gameObject.AddComponent<Shadow>();
+            icGlow.effectColor = new Color(accentCol.r, accentCol.g, accentCol.b, 0.35f);
+            icGlow.effectDistance = new Vector2(0f, 0f);
 
-            var cap = CreateText(badge.transform, label, 10, FontStyle.Bold, new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f), TextAnchor.UpperLeft);
+            var cap = CreateText(badge.transform, label, 9, FontStyle.Bold, DS.TextMuted, TextAnchor.UpperLeft);
             cap.rectTransform.anchorMin = Vector2.zero;
             cap.rectTransform.anchorMax = Vector2.one;
             cap.rectTransform.offsetMin = new Vector2(56, 0);
             cap.rectTransform.offsetMax = new Vector2(-4, -8);
             cap.Track(1.4f);
 
-            var val = CreateText(badge.transform, "0", 17, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
+            var val = CreateText(badge.transform, "0", 19, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
+            val.font = GameFont.Display;
             val.rectTransform.anchorMin = Vector2.zero;
             val.rectTransform.anchorMax = Vector2.one;
             val.rectTransform.offsetMin = new Vector2(56, 9);
@@ -1024,7 +1031,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Живая ячейка: докрутка чисел, всплывающая разница, вспышка, «дыхание», наведение
             var fx = badge.AddComponent<ResourceBadgeFx>();
-            fx.Halo = halo; fx.Ring = ring; fx.Icon = ic; fx.Underline = under; fx.Value = val; fx.Accent = accentCol;
+            fx.Halo = halo; fx.Ring = null; fx.Icon = ic; fx.Underline = under; fx.Value = val; fx.Accent = accentCol;
 
             xPos += w + 4f;
             return val;
