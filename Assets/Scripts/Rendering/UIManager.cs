@@ -72,7 +72,7 @@ namespace StellarisClone.Rendering
 
         private GameObject _eventPopupModal;
         private Transform _eventOptionsHolder;
-        private RectTransform _eventDescBox, _eventOptionsRt;
+        private RectTransform _eventDescBox, _eventOptionsRt;   // окно события — см. BuildEventPopupModal
         private Text _eventTitleText;
         private Text _eventDescText;
         private Image _eventAccentBar;
@@ -2052,6 +2052,15 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         // ==================== ИВЕНТЫ ====================
 
+        // Окно события, вариант B «Кино»: иллюстрация на всё окно сверху и тает в тёмный низ, поверх неё —
+        // плашка типа, крупный заголовок и подзаголовок по центру, ниже текст; варианты ответа — карточки в ряд.
+        private const float EventW = 1040f, EventArtHeight = 430f, EventCardH = 118f, EventCardGap = 14f;
+        private Text _eventKindText, _eventSubText;
+        private RectTransform _eventKindRt, _eventTitleRt, _eventBodyRt;
+        private GridLayoutGroup _eventGrid;
+        private LiquidGlassEffect _eventWindowFx;
+        private EventPopupFX _eventFx;
+
         private void BuildEventPopupModal()
         {
             _eventPopupModal = new GameObject("EventPopupModal");
@@ -2060,70 +2069,90 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var rt = _eventPopupModal.AddComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(650f, 420f);
+            rt.sizeDelta = new Vector2(EventW, 640f);
 
             _eventPopupModal.AddComponent<Image>().color = DS.BgDeep;
             _eventWindowFx = LG.Glass(_eventPopupModal);
             LG.Motion(_eventPopupModal, LGAppear.Kind.Pop);
 
-            var header = new GameObject("Header");
-            header.transform.SetParent(_eventPopupModal.transform, false);
-            var hRt = header.AddComponent<RectTransform>();
-            hRt.anchorMin = new Vector2(0, 1);
-            hRt.anchorMax = new Vector2(1, 1);
-            hRt.pivot = new Vector2(0.5f, 1);
-            hRt.sizeDelta = new Vector2(0, 52);
-            header.AddComponent<Image>().color = DS.BgHeader;
-            LG.Header(header);
+            // Тело (заголовок + текст) — отдельный блок: EventPopupFX проявляет его после картинки
+            var body = new GameObject("Body");
+            body.transform.SetParent(_eventPopupModal.transform, false);
+            _eventBodyRt = body.AddComponent<RectTransform>();
+            _eventBodyRt.anchorMin = Vector2.zero;
+            _eventBodyRt.anchorMax = Vector2.one;
+            _eventBodyRt.offsetMin = _eventBodyRt.offsetMax = Vector2.zero;
 
-            // Акцент цвета аномалии — светящаяся линия под шапкой
-            var accentBarObj = new GameObject("AccentBar");
-            accentBarObj.transform.SetParent(header.transform, false);
-            var aRt = accentBarObj.AddComponent<RectTransform>();
-            aRt.anchorMin = new Vector2(0, 0);
-            aRt.anchorMax = new Vector2(1, 0);
-            aRt.pivot = new Vector2(0.5f, 0.5f);
-            aRt.sizeDelta = new Vector2(-60, 2f);
-            aRt.anchoredPosition = Vector2.zero;
-            _eventAccentBar = accentBarObj.AddComponent<Image>();
-            _eventAccentBar.color = DS.NeonCyan;
-            LG.Line(accentBarObj, hairline: true);
+            // Иллюстрация — во всю ширину от самого верха, под телом и кнопками
+            _eventFx = EventPopupFX.Create(rt, 0f, 0f, EventArtHeight, _eventBodyRt);
+            body.transform.SetAsLastSibling();
 
-            _eventTitleText = CreateText(header.transform, Loc.T("◆  АНОМАЛИЯ"), 15, FontStyle.Bold, DS.Gold, TextAnchor.MiddleLeft);
-            _eventTitleText.rectTransform.anchorMin = Vector2.zero;
-            _eventTitleText.rectTransform.anchorMax = Vector2.one;
-            _eventTitleText.rectTransform.offsetMin = new Vector2(22, 0);
-            _eventTitleText.rectTransform.offsetMax = new Vector2(-60, 0);
+            // Верхняя строка поверх картинки: где и кто нашёл (слева) и закрыть (справа)
+            _eventSubText = CreateText(_eventPopupModal.transform, "", 11, FontStyle.Bold, new Color(0.74f, 0.86f, 0.82f, 1f), TextAnchor.MiddleLeft);
+            var sRt = _eventSubText.rectTransform;
+            sRt.anchorMin = new Vector2(0, 1); sRt.anchorMax = new Vector2(1, 1); sRt.pivot = new Vector2(0.5f, 1f);
+            sRt.offsetMin = new Vector2(30, -54); sRt.offsetMax = new Vector2(-70, -16);
+            _eventSubText.Track(2.5f);
+            var sh = _eventSubText.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(0, 0, 0, 0.8f); sh.effectDistance = new Vector2(1, -1);
 
-            var closeBtn = CreateCloseButton(header.transform, 28f, () => CloseEventPopup());
+            var closeBtn = CreateCloseButton(_eventPopupModal.transform, 30f, () => CloseEventPopup());
             var cRt = closeBtn.GetComponent<RectTransform>();
-            cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
-            cRt.pivot = new Vector2(1, 0.5f);
-            cRt.anchoredPosition = new Vector2(-14, 0);
+            cRt.anchorMin = cRt.anchorMax = new Vector2(1, 1);
+            cRt.pivot = new Vector2(1, 1);
+            cRt.anchoredPosition = new Vector2(-18, -18);
 
-            var descBox = new GameObject("DescriptionBox");
-            descBox.transform.SetParent(_eventPopupModal.transform, false);
-            var dRt = descBox.AddComponent<RectTransform>();
-            _eventDescBox = dRt;
-            dRt.anchorMin = new Vector2(0, 0);
-            dRt.anchorMax = new Vector2(1, 1);
-            dRt.offsetMin = new Vector2(20, 170);
-            dRt.offsetMax = new Vector2(-20, -62);
-            descBox.AddComponent<Image>().color = DS.BgVisor;
-            LG.Platter(descBox, 16f);
+            // Плашка типа события («◆ АНОМАЛИЯ» или глава цепочки) — по центру над заголовком
+            var kind = new GameObject("Kind");
+            kind.transform.SetParent(body.transform, false);
+            _eventKindRt = kind.AddComponent<RectTransform>();
+            _eventKindRt.anchorMin = _eventKindRt.anchorMax = new Vector2(0.5f, 1f);
+            _eventKindRt.pivot = new Vector2(0.5f, 1f);
+            var kImg = kind.AddComponent<Image>();
+            kImg.sprite = HudArt.Pill(false); kImg.type = Image.Type.Sliced;
+            kImg.color = new Color(0f, 0f, 0f, 0.55f);
+            kImg.raycastTarget = false;
+            var kFrame = new GameObject("Frame").AddComponent<Image>();
+            kFrame.transform.SetParent(kind.transform, false);
+            kFrame.sprite = HudArt.Pill(true); kFrame.type = Image.Type.Sliced;
+            kFrame.raycastTarget = false;
+            kFrame.rectTransform.Stretch();
+            _eventAccentBar = kFrame;
+            _eventKindText = CreateText(kind.transform, "", 10, FontStyle.Bold, DS.Gold, TextAnchor.MiddleCenter);
+            _eventKindText.rectTransform.Stretch();
+            _eventKindText.Track(3.5f);
+            LG.Ignore(kind);
 
-            _eventDescText = CreateText(descBox.transform, "", 11, FontStyle.Normal, DS.TextPrimary, TextAnchor.UpperLeft);
-            _eventDescText.rectTransform.anchorMin = Vector2.zero;
-            _eventDescText.rectTransform.anchorMax = Vector2.one;
-            _eventDescText.rectTransform.offsetMin = new Vector2(14, 10);
-            _eventDescText.rectTransform.offsetMax = new Vector2(-14, -10);
+            // Крупный заголовок с мягким свечением цвета аномалии
+            _eventTitleText = CreateText(body.transform, "", 34, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
+            _eventTitleText.font = GameFont.Display;
+            _eventTitleRt = _eventTitleText.rectTransform;
+            _eventTitleRt.anchorMin = _eventTitleRt.anchorMax = new Vector2(0.5f, 1f);
+            _eventTitleRt.pivot = new Vector2(0.5f, 1f);
+            _eventTitleRt.sizeDelta = new Vector2(EventW - 120f, 50f);
+            _eventTitleText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _eventTitleText.resizeTextForBestFit = true;
+            _eventTitleText.resizeTextMinSize = 20;
+            _eventTitleText.resizeTextMaxSize = 34;
+            _eventTitleText.gameObject.AddComponent<Outline>().effectDistance = new Vector2(2f, -2f);
+            var tsh = _eventTitleText.gameObject.AddComponent<Shadow>();
+            tsh.effectColor = new Color(0, 0, 0, 0.9f); tsh.effectDistance = new Vector2(0, -2);
+
+            // Описание — по центру, под заголовком
+            var descRt = new GameObject("Description").AddComponent<RectTransform>();
+            descRt.SetParent(body.transform, false);
+            descRt.anchorMin = descRt.anchorMax = new Vector2(0.5f, 1f);
+            descRt.pivot = new Vector2(0.5f, 1f);
+            descRt.sizeDelta = new Vector2(EventW - 260f, 100f);
+            _eventDescBox = descRt;
+            _eventDescText = CreateText(descRt, "", 14, FontStyle.Normal, new Color(0.83f, 0.89f, 0.91f, 1f), TextAnchor.UpperCenter);
+            _eventDescText.rectTransform.Stretch();
             _eventDescText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _eventDescText.verticalOverflow = VerticalWrapMode.Truncate;
-            _eventDescText.lineSpacing = 1.15f;
+            _eventDescText.verticalOverflow = VerticalWrapMode.Overflow;
+            _eventDescText.lineSpacing = 1.2f;
+            _eventDescText.supportRichText = true;
 
-            // Иллюстрация события — между шапкой и описанием (показывается, если у события есть арт)
-            _eventFx = EventPopupFX.Create(rt, 62f, 20f, EventArtHeight, dRt);
-
+            // Варианты ответа — карточки в ряд (4 — сеткой 2×2, 5+ — по три в ряд)
             var optionsBox = new GameObject("Options");
             optionsBox.transform.SetParent(_eventPopupModal.transform, false);
             var oRt = optionsBox.AddComponent<RectTransform>();
@@ -2131,25 +2160,16 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             oRt.anchorMin = new Vector2(0, 0);
             oRt.anchorMax = new Vector2(1, 0);
             oRt.pivot = new Vector2(0.5f, 0);
-            oRt.sizeDelta = new Vector2(0, 150);
-            oRt.anchoredPosition = new Vector2(0, 12);
-
-            var vlg = optionsBox.AddComponent<VerticalLayoutGroup>();
-            vlg.childForceExpandWidth = true;
-            vlg.childForceExpandHeight = false;
-            vlg.childControlWidth = true;
-            vlg.childControlHeight = false;
-            vlg.spacing = 8f;
-            vlg.padding = new RectOffset(16, 16, 8, 8);
-
+            oRt.sizeDelta = new Vector2(-60f, EventCardH);
+            oRt.anchoredPosition = new Vector2(0, 30f);
+            _eventGrid = optionsBox.AddComponent<GridLayoutGroup>();
+            _eventGrid.spacing = new Vector2(EventCardGap, EventCardGap);
+            _eventGrid.childAlignment = TextAnchor.LowerCenter;
+            _eventGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             _eventOptionsHolder = optionsBox.transform;
 
             _eventPopupModal.SetActive(false);
         }
-
-        private LiquidGlassEffect _eventWindowFx;
-        private EventPopupFX _eventFx;
-        private const float EventArtHeight = 220f;
 
         private void CloseEventPopup()
         {
@@ -2165,112 +2185,73 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (_eventPopupModal == null || ev == null) return;
 
             Color accent = AnomalyEventSystem.GetAnomalyAccent(ev.Anomaly);
-            if (_eventAccentBar != null) _eventAccentBar.color = accent;
             _eventWindowFx?.SetRim(new Color(accent.r, accent.g, accent.b, 0.55f));
-            if (_eventTitleText != null)
-            {
-                _eventTitleText.text = $"◆  {ev.Title}";
-                _eventTitleText.color = accent;
-            }
-            if (_eventDescText != null)
-            {
-                // Глава цепочки — золотой строкой над подзаголовком: игрок видит, что история продолжается
-                string chain = string.IsNullOrEmpty(ev.Chain) ? ""
-                    : Loc.F("<color=#F2C747><b>ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}</b></color>\n", ev.Chain.ToUpper(), Roman(ev.Step));
-                _eventDescText.text = string.IsNullOrEmpty(ev.Subtitle)
-                    ? (chain.Length > 0 ? chain + "\n" : "") + ev.Description
-                    : $"{chain}<color=#8AA2A8><b>{ev.Subtitle}</b></color>\n\n{ev.Description}";
-            }
+            if (_eventAccentBar != null) _eventAccentBar.color = new Color(accent.r, accent.g, accent.b, 0.7f);
+
+            // Плашка: глава цепочки (золотом) или тип события
+            bool chain = !string.IsNullOrEmpty(ev.Chain);
+            string kind = chain ? Loc.F("ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}", ev.Chain.ToUpper(), Roman(ev.Step)) : Loc.T("◆  АНОМАЛИЯ");
+            _eventKindText.text = kind;
+            _eventKindText.color = chain ? DS.Gold : Color.Lerp(accent, Color.white, 0.25f);
+            float kindW = kind.Length * 10.5f + 40f;   // 10 px жирным с разрядкой 3.5
+            _eventKindRt.sizeDelta = new Vector2(Mathf.Max(140f, kindW), 24f);
+
+            _eventTitleText.text = (ev.Title ?? "").ToUpper();
+            var glow = _eventTitleText.GetComponent<Outline>();
+            if (glow != null) glow.effectColor = new Color(accent.r, accent.g, accent.b, 0.35f);
+            _eventSubText.text = string.IsNullOrEmpty(ev.Subtitle) ? "" : "◆  " + ev.Subtitle.ToUpper();
+            _eventDescText.text = ev.Description ?? "";
 
             bool hasArt = _eventFx != null && _eventFx.SetArt(ev.Art, accent);
-            float artH = hasArt ? EventArtHeight + 10f : 0f;
 
             // Нет ни одного доступного варианта (например, все требуют учёного) — окно не должно запирать игру
-            bool anyAvailable = false, needScientist = false;
+            bool anyAvailable = false;
             if (ev.Options != null)
-                foreach (var o in ev.Options)
-                {
-                    if (o == null) continue;
-                    if (o.Available) anyAvailable = true;
-                    else if (IsScientistRequirement(o.Requirement)) needScientist = true;
-                }
+                foreach (var o in ev.Options) if (o != null && o.Available) anyAvailable = true;
             if (!anyAvailable)
             {
                 ev.Options ??= new List<EventOption>();
                 ev.Options.Add(new EventOption(Loc.T("ОСТАВИТЬ КАК ЕСТЬ"), Loc.T("Ничего не делать: подходящих вариантов сейчас нет"), null));
             }
-            // Пояснение, кто такие учёные и где их взять — прямо в окне, не только в подсказке
-            if (needScientist && _eventDescText != null)
-                _eventDescText.text += "\n\n" + ScientistHint;
 
-            // Высота блока вариантов — по их числу, описание занимает остальное
+            // Сетка карточек: до трёх — в один ряд, четыре — 2×2, больше — по три
             int optCount = 0;
             if (ev.Options != null) foreach (var o in ev.Options) if (o != null) optCount++;
-            float optsH = Mathf.Max(1, optCount) * 44f + Mathf.Max(0, optCount - 1) * 8f + 16f;
-            if (_eventOptionsRt != null) _eventOptionsRt.sizeDelta = new Vector2(0, optsH);
-            if (_eventDescBox != null)
-            {
-                _eventDescBox.offsetMin = new Vector2(20, 12 + optsH + 8);
-                _eventDescBox.offsetMax = new Vector2(-20, -62 - artH);
-            }
-            var popupRt = _eventPopupModal.GetComponent<RectTransform>();
-            popupRt.sizeDelta = new Vector2(650f, Mathf.Max(420f, 52f + 10f + 190f + 20f + optsH) + artH);
+            optCount = Mathf.Max(1, optCount);
+            int cols = optCount <= 3 ? optCount : optCount == 4 ? 2 : 3;
+            int rows = Mathf.CeilToInt(optCount / (float)cols);
+            float gridW = EventW - 60f;
+            float cardW = Mathf.Min(420f, (gridW - (cols - 1) * EventCardGap) / cols);
+            _eventGrid.constraintCount = cols;
+            _eventGrid.cellSize = new Vector2(cardW, EventCardH);
+            float optsH = rows * EventCardH + (rows - 1) * EventCardGap;
+            _eventOptionsRt.sizeDelta = new Vector2(-60f, optsH);
+
+            // Вертикаль: заголовок — на нижней части картинки, без картинки — сверху
+            float y = hasArt ? EventArtHeight - 150f : 64f;
+            _eventKindRt.anchoredPosition = new Vector2(0, -y);
+            _eventTitleRt.anchoredPosition = new Vector2(0, -(y + 34f));
+            float descTop = y + 34f + 56f;
+            float descH = Mathf.Ceil(_eventDescText.preferredHeight) + 4f;
+            _eventDescBox.sizeDelta = new Vector2(EventW - 260f, descH);
+            _eventDescBox.anchoredPosition = new Vector2(0, -descTop);
+            float h = descTop + descH + 34f + optsH + 30f;
+            _eventPopupModal.GetComponent<RectTransform>().sizeDelta = new Vector2(EventW, Mathf.Max(hasArt ? 640f : 400f, h));
             _eventFx?.ClearOptions();
 
-            if (_eventOptionsHolder != null)
-            {
-                for (int i = _eventOptionsHolder.childCount - 1; i >= 0; i--)
-                    Destroy(_eventOptionsHolder.GetChild(i).gameObject);
-            }
+            for (int i = _eventOptionsHolder.childCount - 1; i >= 0; i--)
+                Destroy(_eventOptionsHolder.GetChild(i).gameObject);
 
             if (ev.Options != null)
             {
                 int idx = 0;
+                bool first = true;
                 foreach (var opt in ev.Options)
                 {
                     if (opt == null) continue;
                     idx++;
-                    bool available = opt.Available;
-                    bool special = !string.IsNullOrEmpty(opt.Requirement);
-                    Color optHover = !available ? DS.BtnDisabled : special ? DS.Gold : idx == 1 ? DS.BtnSuccess : idx == 2 ? DS.BtnPrimaryHi : DS.NeonCyan;
-                    var capturedOpt = opt;
-
-                    var btnGo = CreateButton(_eventOptionsHolder, $"Opt_{idx}", new Vector2(0, 44),
-                        available ? DS.BgSlot : new Color(DS.BgSlot.r, DS.BgSlot.g, DS.BgSlot.b, 0.45f), optHover, () =>
-                        {
-                            if (!capturedOpt.Available) return;
-                            try { capturedOpt.OnSelect?.Invoke(); }
-                            catch (System.Exception e) { Debug.LogWarning($"[Event] OnSelect: {e.Message}"); }
-                            CloseEventPopup();
-                        });
-                    var le = btnGo.GetComponent<LayoutElement>();
-                    if (le == null) le = btnGo.AddComponent<LayoutElement>();
-                    le.preferredHeight = 44f;
-                    var sel = btnGo.GetComponent<Selectable>();
-                    if (sel != null) sel.interactable = available;
-
-                    // Особые варианты (черта лидера, ресурсы) помечены золотой плашкой, недоступные — приглушены
-                    string tag = !special ? "" : available
-                        ? $"<color=#F2C747>[{opt.Requirement}]</color>  "
-                        : $"<color=#8AA2A8>[{opt.Requirement}]</color>  ";
-                    string text = available ? opt.OptionText : $"<color=#6F8790>{opt.OptionText}</color>";
-                    var label = CreateText(btnGo.transform, tag + text, 11, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
-                    label.rectTransform.anchorMin = Vector2.zero;
-                    label.rectTransform.anchorMax = Vector2.one;
-                    label.rectTransform.offsetMin = new Vector2(12, 0);
-                    label.rectTransform.offsetMax = new Vector2(-12, 0);
-                    label.supportRichText = true;
-                    _eventFx?.AddOption(btnGo, label.rectTransform);
-
-                    string tip = opt.ResultTooltip ?? "";
-                    if (special) tip = (available ? Loc.T("<color=#F2C747>Особый вариант: ") : Loc.T("<color=#FF8A8A>Недоступно — требуется: ")) + opt.Requirement + "</color>\n" + tip;
-                    if (!available && IsScientistRequirement(opt.Requirement)) tip += "\n\n" + ScientistHint;
-                    if (!string.IsNullOrEmpty(tip))
-                    {
-                        var tt = btnGo.GetComponent<TooltipTrigger>();
-                        if (tt == null) TooltipHelper.Attach(btnGo, tip);
-                        else tt.SetText(tip);
-                    }
+                    BuildEventCard(opt, idx, accent, first && opt.Available);
+                    if (opt.Available) first = false;
                 }
             }
 
@@ -2278,6 +2259,110 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventPopupModal.transform.SetAsLastSibling();
             LG.Skin(_eventPopupModal.transform);
             _eventFx?.Play();
+        }
+
+        /// <summary>
+        /// Карточка варианта ответа: значок (номер, звезда особого варианта или замок), текст варианта жирным,
+        /// под ним — первая строка последствий или чего не хватает; подробности — в подсказке.
+        /// </summary>
+        private void BuildEventCard(EventOption opt, int idx, Color accent, bool primary)
+        {
+            bool available = opt.Available;
+            bool special = !string.IsNullOrEmpty(opt.Requirement);
+            Color edge = !available ? DS.BtnDisabled : special ? DS.Gold : primary ? accent : DS.NeonCyan;
+            var capturedOpt = opt;
+
+            var card = CreateButton(_eventOptionsHolder, $"Opt_{idx}", new Vector2(300f, EventCardH),
+                available ? new Color(0.045f, 0.085f, 0.105f, 0.92f) : new Color(0.045f, 0.085f, 0.105f, 0.55f), edge, () =>
+                {
+                    if (!capturedOpt.Available) return;
+                    try { capturedOpt.OnSelect?.Invoke(); }
+                    catch (System.Exception e) { Debug.LogWarning($"[Event] OnSelect: {e.Message}"); }
+                    CloseEventPopup();
+                });
+            var sel = card.GetComponent<Selectable>();
+            if (sel != null) sel.interactable = available;
+            if (primary)
+            {
+                var ol = card.AddComponent<Outline>();
+                ol.effectColor = new Color(accent.r, accent.g, accent.b, 0.55f);
+                ol.effectDistance = new Vector2(1.5f, -1.5f);
+            }
+
+            // Значок в левом верхнем углу
+            var ic = new GameObject("Mark").AddComponent<RectTransform>();
+            ic.SetParent(card.transform, false);
+            ic.anchorMin = ic.anchorMax = new Vector2(0, 1);
+            ic.pivot = new Vector2(0, 1);
+            ic.anchoredPosition = new Vector2(18, -16);
+            ic.sizeDelta = new Vector2(26, 26);
+            Color icCol = !available ? new Color(0.55f, 0.64f, 0.68f, 1f) : special ? DS.Gold : primary ? accent : DS.NeonCyan;
+            if (!available || special)
+                LGIcons.Create(ic, available ? LGIcon.Star : LGIcon.Lock, 20f, icCol);
+            else
+            {
+                var ring = ic.gameObject.AddComponent<Image>();
+                ring.sprite = HudArt.Ring(0.86f, 1f);
+                ring.color = icCol;
+                ring.raycastTarget = false;
+                var n = CreateText(ic, idx.ToString(), 12, FontStyle.Bold, icCol, TextAnchor.MiddleCenter);
+                n.rectTransform.Stretch();
+            }
+
+            // Особый вариант — что он требует, мелко справа от значка
+            if (special)
+            {
+                var req = CreateText(card.transform, opt.Requirement.ToUpper(), 9, FontStyle.Bold,
+                    available ? DS.Gold : new Color(0.55f, 0.64f, 0.68f, 1f), TextAnchor.MiddleLeft);
+                var rr = req.rectTransform;
+                rr.anchorMin = new Vector2(0, 1); rr.anchorMax = new Vector2(1, 1); rr.pivot = new Vector2(0, 1);
+                rr.offsetMin = new Vector2(52, -42); rr.offsetMax = new Vector2(-14, -16);
+                req.Track(1.5f);
+            }
+
+            var label = CreateText(card.transform, opt.OptionText, 13, FontStyle.Bold,
+                available ? DS.TextPrimary : new Color(0.56f, 0.64f, 0.68f, 1f), TextAnchor.UpperLeft);
+            var lr = label.rectTransform;
+            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
+            lr.offsetMin = new Vector2(18, 30); lr.offsetMax = new Vector2(-16, -50);
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+            label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.supportRichText = true;
+
+            // Нижняя строка: чего не хватает (недоступно) или первая строка последствий
+            string hint = !available
+                ? (IsScientistRequirement(opt.Requirement) ? Loc.T("Нанять учёного: Империя (I) → Лидеры") : Loc.F("Требуется: {0}", opt.Requirement))
+                : FirstLine(opt.ResultTooltip);
+            if (!string.IsNullOrEmpty(hint))
+            {
+                var sub = CreateText(card.transform, hint, 10, FontStyle.Normal, new Color(0.56f, 0.64f, 0.68f, 1f), TextAnchor.LowerLeft);
+                var sr = sub.rectTransform;
+                sr.anchorMin = Vector2.zero; sr.anchorMax = new Vector2(1, 0); sr.pivot = new Vector2(0.5f, 0);
+                sr.offsetMin = new Vector2(18, 12); sr.offsetMax = new Vector2(-16, 30);
+                sub.horizontalOverflow = HorizontalWrapMode.Wrap;
+                sub.verticalOverflow = VerticalWrapMode.Truncate;
+                sub.supportRichText = true;
+            }
+            _eventFx?.AddOption(card, label.rectTransform);
+
+            string tip = opt.ResultTooltip ?? "";
+            if (special) tip = (available ? Loc.T("<color=#F2C747>Особый вариант: ") : Loc.T("<color=#FF8A8A>Недоступно — требуется: ")) + opt.Requirement + "</color>\n" + tip;
+            if (!available && IsScientistRequirement(opt.Requirement)) tip += "\n\n" + ScientistHint;
+            if (!string.IsNullOrEmpty(tip))
+            {
+                var tt = card.GetComponent<TooltipTrigger>();
+                if (tt == null) TooltipHelper.Attach(card, tip);
+                else tt.SetText(tip);
+            }
+        }
+
+        /// <summary>Первая строка текста без пустых строк в начале.</summary>
+        private static string FirstLine(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return null;
+            s = s.TrimStart('\n', ' ');
+            int n = s.IndexOf('\n');
+            return n > 0 ? s.Substring(0, n) : s;
         }
 
         /// <summary>Вариант события требует учёного (лидера-исследователя).</summary>

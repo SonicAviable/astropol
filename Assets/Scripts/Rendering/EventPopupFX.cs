@@ -40,7 +40,7 @@ namespace StellarisClone.Rendering
         }
         private readonly List<Item> _items = new List<Item>();
 
-        /// <summary>Рамка иллюстрации — под шапкой окна (отступ top), во всю ширину с полями inset.</summary>
+        /// <summary>Рамка иллюстрации: отступ top от верха окна, во всю ширину с полями inset; снизу тает в фон окна.</summary>
         public static EventPopupFX Create(RectTransform window, float top, float inset, float height, RectTransform descBox)
         {
             var fx = window.gameObject.AddComponent<EventPopupFX>();
@@ -73,8 +73,10 @@ namespace StellarisClone.Rendering
             _fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
 
             // Снизу картинка растворяется в фоне окна, сверху — лёгкое затемнение под шапку
-            var bottom = Layer("FadeBottom", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 0.92f));
-            bottom.rectTransform.anchorMax = new Vector2(1, 0.55f);
+            var bottom = Layer("FadeBottom", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 1f));
+            bottom.rectTransform.anchorMax = new Vector2(1, 0.62f);
+            var under = Layer("FadeTitle", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 0.55f));   // подложка под заголовок
+            under.rectTransform.anchorMax = new Vector2(1, 0.85f);
             var topShade = Layer("FadeTop", VerticalSprite(), new Color(0.030f, 0.062f, 0.088f, 0.45f));
             topShade.rectTransform.anchorMin = new Vector2(0, 0.75f);
             topShade.rectTransform.localScale = new Vector3(1, -1, 1);
@@ -233,7 +235,7 @@ namespace StellarisClone.Rendering
             else _sweep.color = Color.clear;
 
             // Кромка цвета аномалии: вспыхивает вместе с проявлением и тихо пульсирует
-            float edge = reveal * (0.55f + 0.15f * Mathf.Sin(t * 1.6f));
+            float edge = 0f;   // картинка тает в фон окна — кромки снизу нет
             _edge.color = new Color(_accent.r, _accent.g, _accent.b, edge);
         }
 
