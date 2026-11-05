@@ -668,15 +668,20 @@ namespace StellarisClone.Rendering
                 var sb = cm.GetStarbase(_data.Id);
                 if (sb != null)
                 {
+                    // Раздел «Оборона» (кино-карта): мощь базы, сколько это ваших кораблей, уровень укрепления
                     float pw = cm.StarbasePower(_data.Id);
-                    string cmpText = CombatManager.PowerInShips(pw);
-                    tip += sb.Disabled ? Loc.T("<color=#FF7A7A>Звёздная база выведена из строя</color>\n")
-                                       : Loc.F("<color=#AAB4C0>Звёздная база:</color> мощь {0:N0}", pw) + (cmpText.Length > 0 ? $" ({cmpText})" : "") + "\n";
+                    float avg = CombatManager.PlayerAverageShipPower();
                     int lv = Mathf.Clamp(_data.Fortification, 0, Fortifications.MaxLevel);
                     var pips = new System.Text.StringBuilder();
                     for (int i = 1; i <= Fortifications.MaxLevel; i++) pips.Append(i <= lv ? "◆" : "◇");
-                    tip += Loc.F("<color=#AAB4C0>Укрепление:</color> {0} <color=#F2C747>{1}</color>", Fortifications.Name(lv), pips) +
-                           (lv > 0 ? Loc.F(" · <color=#8AA2A8>осада ×{0:0.##} дольше</color>", Fortifications.SiegeMult(lv)) : "") + "\n";
+                    tip += $"[[sec|{Loc.T("Оборона")}|#8FA9B6]]\n";
+                    if (sb.Disabled) tip += Loc.T("<color=#FF7A7A>Звёздная база выведена из строя</color>\n");
+                    else
+                        tip += $"[[big|{pw:N0}|{Loc.T("мощь базы")}|" +
+                               (avg > 0f && pw > 0f ? $"{pw / avg:0.#}×|{Loc.T("ваших кораблей")}|" : "||") +
+                               $"<color=#F2C747>{pips}</color>|{Fortifications.Name(lv).ToLower()}]]\n";
+                    if (lv > 0) tip += Loc.F("<color=#8AA2A8>Осада идёт ×{0:0.##} дольше</color>\n", Fortifications.SiegeMult(lv));
+                    tip += "[[ticks]]\n";
                 }
             }
 
@@ -702,9 +707,9 @@ namespace StellarisClone.Rendering
                 bool harvest = _data.HarvestedMinerals > 0 || _data.HarvestedEnergy > 0;
                 int tmin = harvest ? _data.HarvestedMinerals : _data.PotentialMinerals;
                 int ten = harvest ? _data.HarvestedEnergy : _data.PotentialEnergy;
-                tip += (harvest ? Loc.T("\n<color=#66FF88>ДОБЫЧА</color>\n") : Loc.T("\n<color=#66FF88>ЗАЛЕЖИ</color> <color=#8AA2A8>(пока не добываются)</color>\n")) +
-                       "[[Minerals:#4DE6CC]]" + Loc.F("<color=#4DE6CC>Титан</color>: +{0}\n", tmin) +
-                       "[[Energy:#F2C747]]" + Loc.F("<color=#F2C747>Гелий-3</color>: +{0}\n", ten);
+                tip += $"[[sec|{(harvest ? Loc.T("Добыча") : Loc.T("Залежи · не добываются"))}|#66FF88]]\n" +
+                       $"[[kv|Minerals|#4DE6CC|{Loc.T("Титан")}|+{tmin}]]\n" +
+                       $"[[kv|Energy|#F2C747|{Loc.T("Гелий-3")}|+{ten}]]\n";
             }
             else
             {

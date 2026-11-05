@@ -5,7 +5,7 @@ using StellarisClone.Core;
 
 namespace StellarisClone.Rendering
 {
-    public class TooltipSystem : MonoBehaviour
+    public partial class TooltipSystem : MonoBehaviour
     {
         public static TooltipSystem Instance { get; private set; }
 
@@ -101,7 +101,7 @@ namespace StellarisClone.Rendering
             _bandBg = Img(_band, "Bg", MenuArt.HorizontalFade, Color.white);
             _bandBg.rectTransform.Stretch();
             _orbGlow = Img(_band, "OrbGlow", FactionSelectScreen.RadialSprite(), Color.white);
-            _orb = Img(_band, "Orb", HudArt.Disc(), Color.white);
+            _orb = Img(_band, "Orb", HudArt.Sphere(), Color.white);
             _orbIcon = Img(_band, "OrbIcon", null, Color.white);
             _orbIcon.preserveAspect = true;
             _bandLine = Img(_band, "Line", null, Color.white);
@@ -230,9 +230,11 @@ namespace StellarisClone.Rendering
         private readonly System.Collections.Generic.List<Image> _iconPool = new System.Collections.Generic.List<Image>();
 
         /// <summary>Заменить метки значков местом под них и запомнить, где они стоят (с тегами и без).</summary>
-        private string ParseIcons(string text)
+        private string ParseIcons(string text) => ParseIcons(text, _iconMarks);
+
+        private static string ParseIcons(string text, System.Collections.Generic.List<(int full, int visible, LGIcon icon, Color c)> marks)
         {
-            _iconMarks.Clear();
+            marks.Clear();
             if (text.IndexOf("[[", System.StringComparison.Ordinal) < 0) return text;
             var sb = new System.Text.StringBuilder();
             int last = 0;
@@ -245,7 +247,7 @@ namespace StellarisClone.Rendering
                 if (m.Groups[2].Success) ColorUtility.TryParseHtmlString(m.Groups[2].Value, out c);
                 int full = sb.Length;
                 int visible = RichTag.Replace(sb.ToString(), "").Length;
-                _iconMarks.Add((full, visible, icon, c));
+                marks.Add((full, visible, icon, c));
                 sb.Append(IconGap);
             }
             sb.Append(text, last, text.Length - last);
@@ -256,7 +258,10 @@ namespace StellarisClone.Rendering
         /// Поставить значки на места меток. Позиции символов — из генератора текста под итоговый размер; в разных
         /// версиях Unity он считает символы с тегами разметки или без, поэтому берётся тот индекс, что подходит по длине.
         /// </summary>
-        private void PlaceIcons(Vector2 textSize)
+        private void PlaceIcons(Vector2 textSize) => PlaceIcons(_text, _iconMarks, _iconPool, textSize);
+
+        private static void PlaceIcons(Text _text, System.Collections.Generic.List<(int full, int visible, LGIcon icon, Color c)> _iconMarks,
+                                       System.Collections.Generic.List<Image> _iconPool, Vector2 textSize)
         {
             int used = 0;
             if (_iconMarks.Count > 0)
@@ -354,7 +359,7 @@ namespace StellarisClone.Rendering
             float bandH = visual ? 60f : (sub ? 48f : 36f);
             _band.sizeDelta = new Vector2(0f, bandH);
             _band.anchoredPosition = Vector2.zero;
-            _bandBg.color = new Color(a.r * 0.42f, a.g * 0.42f, a.b * 0.42f, 0.9f);
+            _bandBg.color = new Color(a.r * 0.50f, a.g * 0.45f, a.b * 0.40f, 0.92f);
             _bandLine.color = new Color(a.r, a.g, a.b, 0.65f);
 
             float x = 14f;
@@ -369,7 +374,7 @@ namespace StellarisClone.Rendering
                 if (h.Orb)
                 {
                     _orb.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(40f, 40f));
-                    _orb.color = Color.Lerp(a, Color.white, 0.25f);
+                    _orb.color = Color.Lerp(a, Color.white, 0.1f);
                 }
                 else
                 {
@@ -448,6 +453,17 @@ namespace StellarisClone.Rendering
             _root.gameObject.SetActive(true);
 
             float bandH = LayoutHeader(head, out float headW);
+            if (HasBlocks(body))
+            {
+                _text.gameObject.SetActive(false);
+                float topB = head.On ? bandH + 8f : Pad;
+                LayoutBlocks(body, topB, headW, out float bw, out float bh);
+                _root.sizeDelta = new Vector2(bw, bh);
+                PlaceIcons(new Vector2(1f, 1f));      // основной текст скрыт — его значки тоже
+                FinishOpen(lockInPlace);
+                return;
+            }
+            HideBlocks();
             bool hasBody = body.Trim().Length > 0;
             _text.gameObject.SetActive(hasBody);
             float preferredW = (hasBody ? _text.preferredWidth : 0f) + Pad * 2f + 16f;
@@ -460,7 +476,11 @@ namespace StellarisClone.Rendering
             float h = hasBody ? top + bodyH + Pad + 4f : bandH + 2f;
             _root.sizeDelta = new Vector2(w, h);
             PlaceIcons(new Vector2(w - Pad * 2f, h - top - Pad));
+            FinishOpen(lockInPlace);
+        }
 
+        private void FinishOpen(bool lockInPlace)
+        {
             UpdatePosition();
 
             bool wasHidden = _group.alpha < 0.05f;

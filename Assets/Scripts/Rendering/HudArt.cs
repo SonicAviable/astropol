@@ -163,6 +163,51 @@ namespace StellarisClone.Rendering
             }, new Vector4(cut + 2, cut + 2, cut + 2, cut + 2));
         }
 
+        /// <summary>
+        /// Объёмный шар (превью звезды/планеты): освещён слева сверху, с бликом и тёмным краем.
+        /// Цвет — оттенки серого, Image.color окрашивает шар.
+        /// </summary>
+        public static Sprite Sphere()
+        {
+            const string key = "sphere";
+            if (s_cache.TryGetValue(key, out var cached) && cached != null) return cached;
+            const int n = 128;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, true)
+            { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, name = "Hud_sphere", hideFlags = HideFlags.DontSave };
+            var px = new Color32[n * n];
+            var light = new Vector3(-0.45f, 0.55f, 0.70f).normalized;
+            float r = n * 0.5f;
+            for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float u = (x + 0.5f - r) / r, v = (y + 0.5f - r) / r;
+                float d2 = u * u + v * v;
+                float a = Mathf.Clamp01((1f - Mathf.Sqrt(d2)) * r * 0.9f);        // сглаженный край
+                if (a <= 0f) { px[y * n + x] = new Color32(0, 0, 0, 0); continue; }
+                float z = Mathf.Sqrt(Mathf.Max(0f, 1f - d2));
+                var nrm = new Vector3(u, v, z);
+                float diff = Mathf.Max(0f, Vector3.Dot(nrm, light));
+                float spec = Mathf.Pow(Mathf.Max(0f, Vector3.Dot(Vector3.Reflect(-light, nrm), Vector3.forward)), 18f);
+                float rim = Mathf.Pow(1f - z, 3f) * 0.35f;                          // свечение по краю
+                float c = Mathf.Clamp01(0.18f + 0.82f * diff + rim) ;
+                float sw = Mathf.Clamp01(spec * 0.9f);
+                byte g = (byte)Mathf.RoundToInt(Mathf.Lerp(c, 1f, sw) * 255f);
+                px[y * n + x] = new Color32(g, g, g, (byte)Mathf.RoundToInt(a * 255f));
+            }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            var sp = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+            sp.hideFlags = HideFlags.DontSave;
+            s_cache[key] = sp;
+            return sp;
+        }
+
+        /// <summary>Шкала-разделитель: повторяемая риска (Image.Type.Tiled), шаг 8 px.</summary>
+        public static Sprite TickRow()
+        {
+            return Make("tickrow", 8, 6, (x, y) => x < 1f ? 1f : 0f);
+        }
+
         /// <summary>Горизонтальная полоса, гаснущая к обоим краям (фон и линии баннера, бегущей строки).</summary>
         public static Sprite EdgeFade(float edge = 0.18f)
         {
