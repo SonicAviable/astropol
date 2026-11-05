@@ -13,8 +13,12 @@ namespace StellarisClone.Rendering
         private CanvasGroup _group;
         private Text _text;
         private Image _bgImage;
-        private Outline _outline;
+        private Image _frame;
         private LiquidGlassEffect _fx;
+        private RectTransform _textRt, _band;
+        private Image _bandBg, _bandLine, _orb, _orbGlow, _orbIcon, _badge;
+        private Text _title, _sub, _badgeText;
+        private static readonly Color PanelTint = new Color(0.022f, 0.052f, 0.074f, 0.97f);
 
         private static readonly Color TipRim = new Color(0.45f, 0.95f, 0.90f, 0.50f);
 
@@ -81,20 +85,45 @@ namespace StellarisClone.Rendering
             _group.alpha = 0f;
             _group.blocksRaycasts = false;
 
+            // Кино-карта (вариант B): тёмная панель с тонкой рамкой, сверху — цветная шапка
             _bgImage = panelObj.AddComponent<Image>();
-            _bgImage.color = UIManager.DS.BgDeep;
+            _bgImage.color = PanelTint;
             _bgImage.raycastTarget = true;
+            LG.Ignore(panelObj);
+            var shadow = panelObj.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.55f);
+            shadow.effectDistance = new Vector2(4f, -6f);
 
-            // Outline — источник цвета неоновой кромки (бирюза / золото при фиксации)
-            _outline = panelObj.AddComponent<Outline>();
-            _outline.effectColor = TipRim;
-            _outline.effectDistance = new Vector2(1.5f, -1.5f);
-            _fx = LG.Glass(panelObj, 14f);
-            _fx.ShadowMultiplier = 0.8f;
+            _band = Rt(panelObj.transform, "Band");
+            _band.anchorMin = new Vector2(0f, 1f);
+            _band.anchorMax = new Vector2(1f, 1f);
+            _band.pivot = new Vector2(0.5f, 1f);
+            _bandBg = Img(_band, "Bg", MenuArt.HorizontalFade, Color.white);
+            _bandBg.rectTransform.Stretch();
+            _orbGlow = Img(_band, "OrbGlow", FactionSelectScreen.RadialSprite(), Color.white);
+            _orb = Img(_band, "Orb", HudArt.Disc(), Color.white);
+            _orbIcon = Img(_band, "OrbIcon", null, Color.white);
+            _orbIcon.preserveAspect = true;
+            _bandLine = Img(_band, "Line", null, Color.white);
+            _bandLine.rectTransform.anchorMin = new Vector2(0f, 0f);
+            _bandLine.rectTransform.anchorMax = new Vector2(1f, 0f);
+            _bandLine.rectTransform.pivot = new Vector2(0.5f, 0f);
+            _bandLine.rectTransform.sizeDelta = new Vector2(0f, 1f);
+            _title = Txt(_band, GameFont.Display, 16, UIManager.DS.TextPrimary, FontStyle.Normal);
+            _sub = Txt(_band, GameFont.Bold, 10, Color.white, FontStyle.Bold);
+            _badge = Img(_band, "Badge", null, Color.white);
+            _badgeText = Txt(_badge.transform, GameFont.Bold, 10, new Color(0.01f, 0.06f, 0.08f), FontStyle.Bold);
+            _badgeText.alignment = TextAnchor.MiddleCenter;
+            _badgeText.rectTransform.Stretch();
+
+            _frame = Img(panelObj.transform, "Frame", HudArt.CutFrame(3, 1.2f), TipRim);
+            _frame.type = Image.Type.Sliced;
+            _frame.rectTransform.Stretch();
 
             var textObj = new GameObject("Text");
             textObj.transform.SetParent(panelObj.transform, false);
             var tRt = textObj.AddComponent<RectTransform>();
+            _textRt = tRt;
             tRt.anchorMin = Vector2.zero;
             tRt.anchorMax = Vector2.one;
             tRt.offsetMin = new Vector2(Pad, Pad);
@@ -270,17 +299,167 @@ namespace StellarisClone.Rendering
             for (int i = used; i < _iconPool.Count; i++) _iconPool[i].gameObject.SetActive(false);
         }
 
+        // ---------- Шапка подсказки (кино-карта) ----------
+        // Первая строка «<b>Заголовок</b>» (можно со значком перед ней: [[Energy:#F2C747]]<b>Гелий-3</b>) становится шапкой.
+        // Необязательная метка в самом начале добавляет превью и подробности:
+        //   [[hdr|#RRGGBB|подзаголовок|метка справа|orb]]   (orb — светящийся шар цвета #RRGGBB, «-» — без шара)
+
+        private struct Head
+        {
+            public bool On, Orb, HasIcon;
+            public string Title, Sub, Badge;
+            public Color Accent;
+            public LGIcon Icon;
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex HeadToken =
+            new System.Text.RegularExpressions.Regex(@"^\[\[hdr\|(#[0-9A-Fa-f]{6})\|([^|\]]*)\|([^|\]]*)\|(orb|-)\]\]\n?");
+        private static readonly System.Text.RegularExpressions.Regex TitleLine =
+            new System.Text.RegularExpressions.Regex(@"^(?:\[\[(\w+)(?::(#[0-9A-Fa-f]{6}))?\]\])?<b>([^<\n]+)</b>[ \t]*(?:\n|$)");
+
+        private static string SplitHeader(string text, out Head h)
+        {
+            h = new Head { Accent = new Color(0.37f, 0.82f, 0.75f, 1f), Sub = "", Badge = "" };
+            var m = HeadToken.Match(text);
+            if (m.Success)
+            {
+                if (ColorUtility.TryParseHtmlString(m.Groups[1].Value, out var c)) h.Accent = c;
+                h.Sub = m.Groups[2].Value;
+                h.Badge = m.Groups[3].Value;
+                h.Orb = m.Groups[4].Value == "orb";
+                text = text.Substring(m.Length);
+            }
+            var t = TitleLine.Match(text);
+            if (!t.Success) return text;
+            h.On = true;
+            h.Title = t.Groups[3].Value.Trim();
+            if (t.Groups[1].Success && System.Enum.TryParse(t.Groups[1].Value, out LGIcon icon))
+            {
+                h.HasIcon = true;
+                h.Icon = icon;
+                if (t.Groups[2].Success && ColorUtility.TryParseHtmlString(t.Groups[2].Value, out var ic) && !m.Success) h.Accent = ic;
+            }
+            return text.Substring(t.Length).TrimStart('\n');
+        }
+
+        /// <summary>Расставить шапку; вернуть её высоту и нужную ей ширину панели.</summary>
+        private float LayoutHeader(Head h, out float needW)
+        {
+            needW = 0f;
+            _band.gameObject.SetActive(h.On);
+            if (!h.On) return 0f;
+            var a = h.Accent;
+            bool visual = h.Orb || h.HasIcon;
+            bool sub = !string.IsNullOrEmpty(h.Sub);
+            float bandH = visual ? 60f : (sub ? 48f : 36f);
+            _band.sizeDelta = new Vector2(0f, bandH);
+            _band.anchoredPosition = Vector2.zero;
+            _bandBg.color = new Color(a.r * 0.42f, a.g * 0.42f, a.b * 0.42f, 0.9f);
+            _bandLine.color = new Color(a.r, a.g, a.b, 0.65f);
+
+            float x = 14f;
+            _orb.gameObject.SetActive(h.Orb);
+            _orbGlow.gameObject.SetActive(visual);
+            _orbIcon.gameObject.SetActive(!h.Orb && h.HasIcon);
+            if (visual)
+            {
+                var c = new Vector2(x + 20f, -bandH * 0.5f);
+                _orbGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(96f, 96f));
+                _orbGlow.color = new Color(a.r, a.g, a.b, 0.45f);
+                if (h.Orb)
+                {
+                    _orb.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(40f, 40f));
+                    _orb.color = Color.Lerp(a, Color.white, 0.25f);
+                }
+                else
+                {
+                    _orbIcon.sprite = LGIcons.Get(h.Icon);
+                    _orbIcon.color = Color.Lerp(a, Color.white, 0.2f);
+                    _orbIcon.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(30f, 30f));
+                }
+                x += 40f + 12f;
+            }
+
+            _title.text = h.Title.ToUpper();
+            float titleY = sub ? -bandH * 0.5f + 8f : -bandH * 0.5f;
+            float tw = _title.preferredWidth + _title.text.Length * 1.0f;
+            _title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(x, titleY), new Vector2(tw + 4f, 22f));
+            _sub.gameObject.SetActive(sub);
+            float sw = 0f;
+            if (sub)
+            {
+                _sub.text = h.Sub.ToUpper();
+                _sub.color = Color.Lerp(a, Color.white, 0.45f);
+                sw = _sub.preferredWidth + _sub.text.Length * 1.8f;
+                _sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(x, -bandH * 0.5f - 11f), new Vector2(sw + 4f, 14f));
+            }
+
+            bool badge = !string.IsNullOrEmpty(h.Badge);
+            _badge.gameObject.SetActive(badge);
+            float bw = 0f;
+            if (badge)
+            {
+                _badgeText.text = h.Badge.ToUpper();
+                bw = _badgeText.preferredWidth + 14f;
+                _badge.color = new Color(0.37f, 0.82f, 0.75f, 1f);
+                _badge.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10f, -9f), new Vector2(bw, 16f));
+            }
+            needW = x + Mathf.Max(tw, sw) + (badge ? bw + 24f : 18f);
+            return bandH;
+        }
+
+        private static RectTransform Rt(Transform parent, string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            return (RectTransform)go.transform;
+        }
+
+        private static Image Img(Transform parent, string name, Sprite sp, Color c)
+        {
+            var im = Rt(parent, name).gameObject.AddComponent<Image>();
+            im.sprite = sp;
+            im.color = c;
+            im.raycastTarget = false;
+            return im;
+        }
+
+        private static Text Txt(Transform parent, Font f, int size, Color c, FontStyle st)
+        {
+            var t = Rt(parent, "Txt").gameObject.AddComponent<Text>();
+            t.font = f;
+            t.fontSize = size;
+            t.fontStyle = st;
+            t.color = c;
+            t.alignment = TextAnchor.MiddleLeft;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.raycastTarget = false;
+            t.supportRichText = false;
+            t.Track(1.2f);
+            return t;
+        }
+
         private void TriggerOpen(string text, bool lockInPlace = false)
         {
             _shownRaw = text;
-            _text.text = ParseIcons(text);
+            string body = SplitHeader(text, out var head);
+            _text.text = ParseIcons(body);
             _root.gameObject.SetActive(true);
 
-            float preferredW = _text.preferredWidth + Pad * 2f + 16f;
-            float w = Mathf.Clamp(preferredW, 240f, 400f);
-            float h = _text.preferredHeight + Pad * 2f + 12f;
+            float bandH = LayoutHeader(head, out float headW);
+            bool hasBody = body.Trim().Length > 0;
+            _text.gameObject.SetActive(hasBody);
+            float preferredW = (hasBody ? _text.preferredWidth : 0f) + Pad * 2f + 16f;
+            float w = Mathf.Clamp(Mathf.Max(preferredW, headW), 240f, 400f);
+            float top = head.On ? bandH + 10f : Pad;
+            _textRt.offsetMin = new Vector2(Pad, Pad);
+            _textRt.offsetMax = new Vector2(-Pad, -top);
+            _root.sizeDelta = new Vector2(w, 400f);                 // ширина задана — высота текста считается с переносами
+            float bodyH = hasBody ? _text.preferredHeight : 0f;
+            float h = hasBody ? top + bodyH + Pad + 4f : bandH + 2f;
             _root.sizeDelta = new Vector2(w, h);
-            PlaceIcons(new Vector2(w - Pad * 2f, h - Pad * 2f - 4f));
+            PlaceIcons(new Vector2(w - Pad * 2f, h - top - Pad));
 
             UpdatePosition();
 
@@ -297,8 +476,8 @@ namespace StellarisClone.Rendering
             _isLocked = lockInPlace;
             _group.blocksRaycasts = _isLocked;
 
-            _outline.effectColor = _isLocked
-                ? new Color(UIManager.DS.Gold.r, UIManager.DS.Gold.g, UIManager.DS.Gold.b, 0.85f)
+            _frame.color = _isLocked
+                ? new Color(UIManager.DS.Gold.r, UIManager.DS.Gold.g, UIManager.DS.Gold.b, 0.9f)
                 : TipRim;
             if (_isLocked) _lockPulse = 1f;
         }

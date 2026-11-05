@@ -655,9 +655,12 @@ namespace StellarisClone.Rendering
                          : _data.OwnerId == NeutralWorlds.Owner ? Loc.T("Вольный мир")
                          : Loc.T("Нейтральная");
 
-            string tip = $"<b>{_data.Name}</b>\n" +
-                         Loc.F("<color=#AAB4C0>Класс:</color> {0}{1}\n", EmpireOverviewWindow.StarClass(_data.SpectralClass), PreviewNote()) +
-                         Loc.F("<color=#AAB4C0>Владелец:</color> {0}\n", owner);
+            // Шапка подсказки: светящийся шар цвета звезды, класс звезды подзаголовком, «ВАША» — метка своей системы
+            var starCol = _data.SpectralClass == StarSpectralClass.BlackHole ? new Color(0.62f, 0.45f, 1f) : GalaxyView.StarColor(_data.SpectralClass);
+            string head = $"[[hdr|{LGBuild.Hex(starCol)}|{EmpireOverviewWindow.StarClass(_data.SpectralClass)}|{(_data.OwnerId == 0 ? Loc.T("Ваша") : "")}|orb]]";
+            string tip = head + $"<b>{_data.Name}</b>\n" +
+                         (PreviewNote().Length > 0 ? PreviewNote().TrimStart() + "\n" : "") +
+                         (_data.OwnerId == 0 ? "" : Loc.F("<color=#AAB4C0>Владелец:</color> {0}\n", owner));
             // Звёздная база: её мощь в привычных единицах — сколько ваших боевых кораблей она стоит
             var cm = CombatManager.Instance;
             if (cm != null && _data.HasStarbase && _data.OwnerId >= 0 && (_data.OwnerId == 0 || Vision.PlayerSees(_data.Id)))

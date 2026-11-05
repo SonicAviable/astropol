@@ -7420,3 +7420,4 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 ДЕК	DEC
 МЕНЮ	MENU
 РЕЖИМ · {0}	MODE · {0}
+Ваша	Yours
