@@ -8,10 +8,11 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Выбор цивилизации. Фон — зал фракции (Resources/Factions/bg_&lt;ключ&gt; или Diplomacy/bg_&lt;ключ&gt;),
-    /// плавно сменяется при выборе. Слева — досье фракции; справа — правитель в рамке «канала связи»
-    /// (целый портрет с живыми эффектами, угловые скобы, развёртка, индикатор эфира);
-    /// внизу по центру — карточки фракций, по краям — «Назад», «Случайная империя», «Дальше».
+    /// Выбор цивилизации (вариант C «Гербы и досье»). Фон — зал фракции (Resources/Factions/bg_&lt;ключ&gt;
+    /// или Diplomacy/bg_&lt;ключ&gt;), плавно сменяется при выборе. Сверху — ряд гербов (выбранный крупнее и светится,
+    /// листается стрелками); ниже одна панель: слева правитель в рамке «канала связи», справа досье с вкладками
+    /// «Обзор / История / Правитель» — плитки бонусов, сложности и сильной стороны, особенности, шкалы стиля игры, цитата.
+    /// Внизу — «Назад», «Случайная», «Дальше».
     /// </summary>
     public class FactionSelectScreen : MonoBehaviour
     {
@@ -26,15 +27,41 @@ namespace StellarisClone.Rendering
         private RawImage _bgA, _bgB;
         private bool _bgFront;
         private float _bgMix = 1f;
+        private static readonly Color Good = new Color(0.44f, 0.88f, 0.60f);
+        private static readonly Color Bad = new Color(0.91f, 0.55f, 0.52f);
+
         private RectTransform _frame, _portraitHost, _traits, _cards;
         private LiquidGlassEffect _frameFx, _infoFx;
-        private Image _accentBar, _emblem, _emblemIcon, _liveDot;
+        private Image _divider, _crestMark, _liveDot, _tabMark, _quoteLine;
         private readonly List<Image> _brackets = new List<Image>();
         private RawImage _scan;
-        private Text _name, _leader, _tagline, _desc, _quote, _frameTitle, _frameSub;
-        private readonly List<(Image bg, LiquidGlassEffect fx, Text name, FactionInfo f, RectTransform rt)> _cardUi =
-            new List<(Image, LiquidGlassEffect, Text, FactionInfo, RectTransform)>();
+        private Text _name, _leader, _desc, _quote, _frameTitle, _frameSub, _ldName, _ldTitle, _ldQuote;
         private CanvasGroup _infoGroup, _frameGroup;
+
+        // Гербы фракций сверху: выбранный крупнее и светится
+        private sealed class Medal
+        {
+            public FactionInfo F;
+            public RectTransform Disc, NameRt;
+            public Image Glow, Back, Ring, Crest;
+            public Text Name;
+            public float Scale;
+
+            public void Place(float scale)
+            {
+                Scale = scale;
+                Disc.localScale = Vector3.one * scale;
+                NameRt.anchoredPosition = new Vector2(0f, -(MedalY + MedalD * 0.5f * scale + 12f));
+            }
+        }
+        private readonly List<Medal> _medals = new List<Medal>();
+
+        // Досье: вкладки, плитки, шкалы стиля игры
+        private readonly List<(Text t, RectTransform rt)> _tabs = new List<(Text, RectTransform)>();
+        private RectTransform[] _pages;
+        private int _tab;
+        private readonly List<(Text val, Text lbl, GameObject go)> _tiles = new List<(Text, Text, GameObject)>();
+        private readonly Image[,] _bars = new Image[4, 5];
 
         // Эффекты: пылинки в воздухе, свечение за рамкой, блик по рамке, вспышка «приёма сигнала»
         private struct Mote { public RectTransform Rt; public Image Img; public Vector2 Pos, Vel; public float Size, Phase; }
@@ -53,12 +80,16 @@ namespace StellarisClone.Rendering
             public LGIcon Emblem;
             public (LGIcon icon, string text)[] Traits;
             public string Story;
+            public int Difficulty;      // 1 — лёгкая, 2 — средняя, 3 — сложная
+            public int[] Style;         // экономика, наука, флот, дипломатия: 0..5
+            public string Strength;     // сильная сторона одним словом
         }
 
         private static readonly Dictionary<string, Lore> LoreByKey = new Dictionary<string, Lore>
         {
             ["xarn"] = new Lore
             {
+                Difficulty = 2, Style = new[] { 3, 2, 5, 1 }, Strength = Loc.T("ФЛОТ"),
                 Tagline = Loc.T("Дисциплинированы, воинственны, непреклонны"),
                 Emblem = LGIcon.Swords,
                 Traits = new[]
@@ -75,6 +106,7 @@ namespace StellarisClone.Rendering
             },
             ["astrea"] = new Lore
             {
+                Difficulty = 1, Style = new[] { 3, 5, 2, 5 }, Strength = Loc.T("НАУКА"),
                 Tagline = Loc.T("Миролюбивы, любознательны, принципиальны"),
                 Emblem = LGIcon.Star,
                 Traits = new[]
@@ -91,6 +123,7 @@ namespace StellarisClone.Rendering
             },
             ["aquila"] = new Lore
             {
+                Difficulty = 1, Style = new[] { 5, 3, 2, 3 }, Strength = Loc.T("ЭКОНОМИКА"),
                 Tagline = Loc.T("Расчётливы, предприимчивы, неуловимы"),
                 Emblem = LGIcon.Trade,
                 Traits = new[]
@@ -107,6 +140,7 @@ namespace StellarisClone.Rendering
             },
             ["iridia"] = new Lore
             {
+                Difficulty = 2, Style = new[] { 2, 4, 3, 4 }, Strength = Loc.T("ВЛИЯНИЕ"),
                 Tagline = Loc.T("Загадочны, прозорливы, терпеливы"),
                 Emblem = LGIcon.Sensors,
                 Traits = new[]
@@ -123,6 +157,7 @@ namespace StellarisClone.Rendering
             },
             ["terraan"] = new Lore
             {
+                Difficulty = 3, Style = new[] { 2, 3, 4, 3 }, Strength = Loc.T("ОБОРОНА"),
                 Tagline = Loc.T("Древни, терпеливы, неуступчивы"),
                 Emblem = LGIcon.Planet,
                 Traits = new[]
@@ -139,6 +174,7 @@ namespace StellarisClone.Rendering
             },
             ["nol"] = new Lore
             {
+                Difficulty = 3, Style = new[] { 4, 3, 4, 1 }, Strength = Loc.T("ИНДУСТРИЯ"),
                 Tagline = Loc.T("Едины, расчётливы, неутомимы"),
                 Emblem = LGIcon.Gear,
                 Traits = new[]
@@ -174,38 +210,47 @@ namespace StellarisClone.Rendering
             // Фон: два слоя для плавной смены зала
             _bgA = BgLayer(rt, "BgA");
             _bgB = BgLayer(rt, "BgB");
-            // Затемнение слева (под текст) и снизу (под карточки) — фон остаётся красивым, текст читается
-            var shadeL = LGBuild.Panel(rt, "ShadeLeft", Color.white);
-            shadeL.sprite = GradientSprite(true);
-            shadeL.color = new Color(0.004f, 0.008f, 0.016f, 0.92f);
-            shadeL.rectTransform.anchorMin = new Vector2(0, 0);
-            shadeL.rectTransform.anchorMax = new Vector2(0.62f, 1);
-            shadeL.rectTransform.offsetMin = shadeL.rectTransform.offsetMax = Vector2.zero;
-            LG.Ignore(shadeL.gameObject);
+            // Общее затемнение, плотнее сверху (под гербы) и снизу (под кнопки)
+            var shade = LGBuild.Panel(rt, "Shade", new Color(0.004f, 0.008f, 0.016f, 0.6f));
+            shade.rectTransform.Stretch();
+            LG.Ignore(shade.gameObject);
+            var shadeT = LGBuild.Panel(rt, "ShadeTop", Color.white);
+            shadeT.sprite = GradientSprite(false, true);
+            shadeT.color = new Color(0.004f, 0.008f, 0.016f, 0.95f);
+            shadeT.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 330f));
+            shadeT.rectTransform.anchorMin = new Vector2(0f, 1f);
+            shadeT.rectTransform.anchorMax = new Vector2(1f, 1f);
+            LG.Ignore(shadeT.gameObject);
             var shadeB = LGBuild.Panel(rt, "ShadeBottom", Color.white);
             shadeB.sprite = GradientSprite(false);
-            shadeB.color = new Color(0.004f, 0.008f, 0.016f, 0.9f);
+            shadeB.color = new Color(0.004f, 0.008f, 0.016f, 0.75f);
             shadeB.rectTransform.anchorMin = new Vector2(0, 0);
             shadeB.rectTransform.anchorMax = new Vector2(1, 0);
             shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
-            shadeB.rectTransform.sizeDelta = new Vector2(0, 300);
+            shadeB.rectTransform.sizeDelta = new Vector2(0, 200);
             LG.Ignore(shadeB.gameObject);
 
             BuildMotes(rt);
+            // Свечение за портретом (центр рамки: левый край панели + половина рамки, середина панели по высоте)
             _halo = LGBuild.Panel(rt, "Halo", Color.white);
             _halo.sprite = RadialSprite();
-            _halo.rectTransform.anchorMin = _halo.rectTransform.anchorMax = new Vector2(1f, 0.5f);
-            _halo.rectTransform.sizeDelta = new Vector2(1250f, 1250f);
-            _halo.rectTransform.anchoredPosition = new Vector2(-420f, 70f);
+            _halo.rectTransform.anchorMin = _halo.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+            _halo.rectTransform.sizeDelta = new Vector2(1100f, 1100f);
+            _halo.rectTransform.anchoredPosition = new Vector2(PanelL + FrameW * 0.5f, (PanelB - PanelT) * 0.5f);
             LG.Ignore(_halo.gameObject);
 
-            BuildInfo(rt);
-            BuildFrame(rt);
-            BuildCards(rt);
+            var title = LGBuild.Label(rt, Loc.T("НОВАЯ ИГРА  ·  ВЫБОР ИМПЕРИИ"), 15, Muted, TextAnchor.UpperLeft, bold: true);
+            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(64, -40), new Vector2(700, 22));
+
+            BuildMedals(rt);
+            BuildMain(rt);
             BuildButtons(rt);
 
             Select(0, instant: true);
         }
+
+        private const float PanelL = 64f, PanelB = 120f, PanelT = 326f, FrameW = 520f;
+        private const float MedalY = 64f, MedalD = 120f, MedalOff = 0.7f;
 
         private static RawImage BgLayer(RectTransform rt, string name)
         {
@@ -217,71 +262,234 @@ namespace StellarisClone.Rendering
             return img;
         }
 
-        // ---------- Досье слева ----------
+        // ---------- Гербы фракций сверху ----------
 
-        private void BuildInfo(RectTransform rt)
+        private void BuildMedals(RectTransform rt)
         {
-            var title = LGBuild.Label(rt, Loc.T("НОВАЯ ИГРА  ·  ВЫБОР ИМПЕРИИ"), 15, Muted, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(64, -40), new Vector2(700, 22));
+            var factions = FactionRegistry.AvailableFactions;
+            int n = factions.Length;
+            float step = Mathf.Min(230f, 1500f / Mathf.Max(1, n));
+            _cards = LGBuild.Rect(rt, "Medals");
+            _cards.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -88f), new Vector2(n * step, 220f));
 
-            var panel = LGBuild.Panel(rt, "Info", PanelBg, raycast: true);
-            var pr = panel.rectTransform;
-            pr.anchorMin = new Vector2(0, 0);
-            pr.anchorMax = new Vector2(0, 1);
-            pr.pivot = new Vector2(0, 0.5f);
-            pr.offsetMin = new Vector2(64f, 190f);
-            pr.offsetMax = new Vector2(724f, -76f);
+            var line = LGBuild.Panel(_cards, "Line", new Color(0.47f, 0.86f, 0.84f, 0.3f));
+            line.sprite = HudArt.EdgeFade(0.3f);
+            line.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -MedalY), new Vector2(n * step + 300f, 1f));
+            LG.Ignore(line.gameObject);
+
+            for (int i = 0; i < n; i++)
+            {
+                var f = factions[i];
+                int idx = i;
+                Color ec = f.EmpireColor;
+                var root = LGBuild.Panel(_cards, "Medal_" + i, Color.clear, raycast: true);
+                root.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(step * (i + 0.5f), 0f), new Vector2(step - 10f, 210f));
+                LG.Ignore(root.gameObject);
+
+                var m = new Medal { F = f };
+                m.Disc = LGBuild.Rect(root.transform, "Disc");
+                m.Disc.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -MedalY), new Vector2(MedalD, MedalD));
+                m.Glow = LGBuild.Panel(m.Disc, "Glow", new Color(ec.r, ec.g, ec.b, 0f));
+                m.Glow.sprite = RadialSprite();
+                m.Glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MedalD * 2.2f, MedalD * 2.2f));
+                m.Back = LGBuild.Panel(m.Disc, "Back", Color.white);
+                m.Back.sprite = HudArt.Disc();
+                m.Back.rectTransform.Stretch();
+                m.Ring = LGBuild.Panel(m.Disc, "Ring", ec);
+                m.Ring.sprite = HudArt.Ring(0.955f, 1f);
+                m.Ring.rectTransform.Stretch();
+                m.Crest = FactionEmblems.Create(m.Disc, FactionEmblems.ForFaction(f), MedalD * 0.78f, Color.white, "Crest")
+                          ?? LGIcons.Create(m.Disc, LGIcon.Leader, MedalD * 0.4f, ec);
+
+                m.Name = LGBuild.Label(root.transform, f.Name.ToUpper(), 13, Muted, TextAnchor.UpperCenter, bold: true, wrap: true);
+                FitText(m.Name, 10);
+                m.NameRt = m.Name.rectTransform;
+                m.NameRt.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(step - 14f, 40f));
+                m.Place(MedalOff);
+
+                var btn = root.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                btn.onClick.AddListener(() => { if (idx != _index) { SFXManager.Play(Sfx.UiTab); Select(idx); } });
+                _medals.Add(m);
+            }
+        }
+
+        // ---------- Общая панель: канал связи слева, досье справа ----------
+
+        private void BuildMain(RectTransform rt)
+        {
+            var panel = LGBuild.Panel(rt, "Main", PanelBg, raycast: true);
+            var mr = panel.rectTransform;
+            mr.Stretch(PanelL, PanelB, PanelL, PanelT);
             _infoFx = LG.Platter(panel.gameObject, 6f);
             _infoFx.FillMultiplier = 2.8f;
             _infoFx.SpecularMultiplier = 0.2f;
-            _infoGroup = panel.gameObject.AddComponent<CanvasGroup>();
 
-            _accentBar = LGBuild.Panel(pr, "Accent", Color.white);
-            _accentBar.rectTransform.anchorMin = new Vector2(0, 0);
-            _accentBar.rectTransform.anchorMax = new Vector2(0, 1);
-            _accentBar.rectTransform.offsetMin = new Vector2(0, 18);
-            _accentBar.rectTransform.offsetMax = new Vector2(4, -18);
-            LG.Ignore(_accentBar.gameObject);
+            // Водяной знак — крупный герб справа, обрезан краем панели
+            var wm = LGBuild.Rect(mr, "Watermark");
+            wm.Stretch(FrameW, 0, 0, 0);
+            wm.gameObject.AddComponent<RectMask2D>();
+            LG.Ignore(wm.gameObject);
+            _crestMark = LGBuild.Panel(wm, "Crest", Color.clear);
+            _crestMark.preserveAspect = true;
+            _crestMark.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(60f, 40f), new Vector2(520f, 520f));
 
-            _emblem = LGBuild.Panel(pr, "Emblem", Color.white);
-            _emblem.sprite = HexSprite();
-            _emblem.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(30, -28), new Vector2(70, 70));
-            LG.Ignore(_emblem.gameObject);
-            _emblemIcon = LGIcons.Create(_emblem.transform, LGIcon.Leader, 36, Color.white);
+            BuildFrame(mr);
+            _divider = LGBuild.Panel(mr, "Divider", Color.white);
+            _divider.rectTransform.anchorMin = new Vector2(0, 0);
+            _divider.rectTransform.anchorMax = new Vector2(0, 1);
+            _divider.rectTransform.offsetMin = new Vector2(FrameW, 0);
+            _divider.rectTransform.offsetMax = new Vector2(FrameW + 1f, 0);
+            LG.Ignore(_divider.gameObject);
 
-            _name = LGBuild.Label(pr, "", 34, Primary, TextAnchor.UpperLeft, bold: true);
-            FitText(_name, 22);
-            _name.rectTransform.TopBand(26, 42, 118, 24);
-            _leader = LGBuild.Label(pr, "", 15, Primary, TextAnchor.UpperLeft);
-            _leader.rectTransform.TopBand(72, 22, 120, 24);
-            _tagline = LGBuild.Label(pr, "", 15, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft);
-            _tagline.fontStyle = FontStyle.Italic;
-            _tagline.rectTransform.TopBand(120, 22, 32, 24);
+            var d = LGBuild.Rect(mr, "Dossier");
+            d.Stretch(FrameW + 44f, 28f, 44f, 34f);
+            _infoGroup = d.gameObject.AddComponent<CanvasGroup>();
 
-            Heading(pr, Loc.T("ОСОБЕННОСТИ"), 160f);
-            _traits = LGBuild.Rect(pr, "Traits");
-            _traits.TopBand(196, 196, 32, 24);
+            _name = LGBuild.Label(d, "", 40, Primary, TextAnchor.UpperLeft);
+            _name.font = GameFont.Display;
+            FitText(_name, 24);
+            _name.rectTransform.TopBand(0, 50);
+            _leader = LGBuild.Label(d, "", 16, Muted, TextAnchor.UpperLeft);
+            _leader.rectTransform.TopBand(56, 24);
 
-            Heading(pr, Loc.T("ИСТОРИЯ"), 400f);
-            _desc = LGBuild.Label(pr, "", 14, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
-            _desc.lineSpacing = 1.18f;
-            _desc.rectTransform.Stretch(32, 74, 28, 436);
-            _quote = LGBuild.Label(pr, "", 14, Muted, TextAnchor.LowerLeft, wrap: true);
+            // Вкладки
+            var tabs = LGBuild.Rect(d, "Tabs");
+            tabs.TopBand(96, 44);
+            var tl = LGBuild.Panel(tabs, "Line", new Color(1f, 1f, 1f, 0.10f));
+            tl.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 1f));
+            tl.rectTransform.anchorMin = new Vector2(0f, 0f);
+            tl.rectTransform.anchorMax = new Vector2(1f, 0f);
+            LG.Ignore(tl.gameObject);
+            string[] names = { Loc.T("ОБЗОР"), Loc.T("ИСТОРИЯ"), Loc.T("ПРАВИТЕЛЬ") };
+            float x = 0f;
+            for (int i = 0; i < names.Length; i++)
+            {
+                float w = 30f + names[i].Length * 11f;
+                var tb = LGBuild.Panel(tabs, "Tab_" + i, Color.clear, raycast: true);
+                tb.rectTransform.At(Vector2.zero, Vector2.zero, new Vector2(x, 0f), new Vector2(w, 44f));
+                LG.Ignore(tb.gameObject);
+                var t = LGBuild.Label(tb.transform, names[i], 14, Muted, TextAnchor.MiddleLeft, bold: true);
+                t.rectTransform.Stretch(0, 2, 0, 0);
+                int k = i;
+                var btn = tb.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                btn.onClick.AddListener(() => { if (k != _tab) { SFXManager.Play(Sfx.UiTab); ShowTab(k); } });
+                _tabs.Add((t, tb.rectTransform));
+                x += w + 22f;
+            }
+            _tabMark = LGBuild.Panel(tabs, "Mark", Color.white);
+            _tabMark.rectTransform.At(Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(10f, 2f));
+            LG.Ignore(_tabMark.gameObject);
+
+            _pages = new RectTransform[names.Length];
+            for (int i = 0; i < _pages.Length; i++)
+            {
+                _pages[i] = LGBuild.Rect(d, "Page_" + i);
+                _pages[i].Stretch(0, 62, 0, 164);
+            }
+            BuildOverview(_pages[0]);
+            _desc = LGBuild.Label(_pages[1], "", 16, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
+            _desc.lineSpacing = 1.25f;
+            _desc.rectTransform.Stretch(0, 0, 160, 4);
+            _ldName = LGBuild.Label(_pages[2], "", 26, Primary, TextAnchor.UpperLeft, bold: true);
+            _ldName.rectTransform.TopBand(4, 34);
+            _ldTitle = LGBuild.Label(_pages[2], "", 16, Muted, TextAnchor.UpperLeft);
+            _ldTitle.rectTransform.TopBand(42, 22);
+            _ldQuote = LGBuild.Label(_pages[2], "", 22, new Color(0.86f, 0.91f, 0.94f), TextAnchor.UpperLeft, wrap: true);
+            _ldQuote.fontStyle = FontStyle.Italic;
+            _ldQuote.lineSpacing = 1.2f;
+            _ldQuote.rectTransform.Stretch(0, 0, 160, 92);
+
+            _quoteLine = LGBuild.Panel(d, "QuoteLine", new Color(1f, 1f, 1f, 0.08f));
+            _quoteLine.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 50f), new Vector2(0f, 1f));
+            _quoteLine.rectTransform.anchorMin = new Vector2(0f, 0f);
+            _quoteLine.rectTransform.anchorMax = new Vector2(1f, 0f);
+            LG.Ignore(_quoteLine.gameObject);
+            _quote = LGBuild.Label(d, "", 16, new Color(0.79f, 0.85f, 0.87f), TextAnchor.LowerLeft, wrap: true);
             _quote.fontStyle = FontStyle.Italic;
             _quote.rectTransform.anchorMin = new Vector2(0, 0);
             _quote.rectTransform.anchorMax = new Vector2(1, 0);
             _quote.rectTransform.pivot = new Vector2(0.5f, 0);
-            _quote.rectTransform.offsetMin = new Vector2(32, 18);
-            _quote.rectTransform.offsetMax = new Vector2(-28, 62);
+            _quote.rectTransform.offsetMin = new Vector2(0, 0);
+            _quote.rectTransform.offsetMax = new Vector2(0, 40);
+
+            ShowTab(0);
         }
 
-        private static void Heading(RectTransform parent, string text, float top)
+        private void BuildOverview(RectTransform p)
+        {
+            var row = LGBuild.Rect(p, "Tiles");
+            row.TopBand(0, 84);
+            for (int i = 0; i < 4; i++)
+            {
+                var tile = LGBuild.Panel(row, "Tile_" + i, new Color(1f, 1f, 1f, 0.045f));
+                var tr = tile.rectTransform;
+                tr.anchorMin = new Vector2(i / 4f, 0f);
+                tr.anchorMax = new Vector2((i + 1) / 4f, 1f);
+                tr.offsetMin = new Vector2(i == 0 ? 0f : 8f, 0f);
+                tr.offsetMax = new Vector2(i == 3 ? 0f : -8f, 0f);
+                LG.Ignore(tile.gameObject);
+                var v = LGBuild.Label(tile.transform, "", 30, Primary, TextAnchor.UpperLeft);
+                v.font = GameFont.Display;
+                FitText(v, 16);
+                v.rectTransform.Stretch(18, 34, 12, 12);
+                var l = LGBuild.Label(tile.transform, "", 12, Muted, TextAnchor.LowerLeft, bold: true);
+                l.rectTransform.Stretch(18, 12, 12, 50);
+                _tiles.Add((v, l, tile.gameObject));
+            }
+
+            var left = LGBuild.Rect(p, "Traits");
+            left.anchorMin = new Vector2(0f, 0f);
+            left.anchorMax = new Vector2(0.5f, 1f);
+            left.offsetMin = Vector2.zero;
+            left.offsetMax = new Vector2(-20f, -112f);
+            ColHeading(left, Loc.T("ОСОБЕННОСТИ"));
+            _traits = LGBuild.Rect(left, "List");
+            _traits.Stretch(0, 0, 0, 40);
+
+            var right = LGBuild.Rect(p, "Style");
+            right.anchorMin = new Vector2(0.5f, 0f);
+            right.anchorMax = new Vector2(1f, 1f);
+            right.offsetMin = new Vector2(20f, 0f);
+            right.offsetMax = new Vector2(0f, -112f);
+            ColHeading(right, Loc.T("СТИЛЬ ИГРЫ"));
+            string[] sn = { Loc.T("ЭКОНОМИКА"), Loc.T("НАУКА"), Loc.T("ФЛОТ"), Loc.T("ДИПЛОМАТИЯ") };
+            for (int j = 0; j < 4; j++)
+            {
+                var lbl = LGBuild.Label(right, sn[j], 13, Muted, TextAnchor.MiddleLeft);
+                lbl.rectTransform.TopBand(44 + j * 32, 24);
+                for (int s = 0; s < 5; s++)
+                {
+                    var seg = LGBuild.Panel(right, "Seg", Color.white);
+                    seg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(150f + s * 40f, -(56f + j * 32f)), new Vector2(34f, 8f));
+                    LG.Ignore(seg.gameObject);
+                    _bars[j, s] = seg;
+                }
+            }
+        }
+
+        private static void ColHeading(RectTransform parent, string text)
         {
             var t = LGBuild.Label(parent, text, 13, Muted, TextAnchor.UpperLeft, bold: true);
-            t.rectTransform.TopBand(top, 18, 32, 24);
+            t.rectTransform.TopBand(0, 18);
             var l = LGBuild.Panel(parent, "Line", new Color(1f, 1f, 1f, 0.10f));
-            l.rectTransform.TopBand(top + 24, 1, 32, 24);
+            l.rectTransform.TopBand(24, 1);
             LG.Ignore(l.gameObject);
+        }
+
+        private void ShowTab(int k)
+        {
+            _tab = k;
+            for (int i = 0; i < _pages.Length; i++) _pages[i].gameObject.SetActive(i == k);
+            for (int i = 0; i < _tabs.Count; i++) _tabs[i].t.color = i == k ? Primary : Muted;
+            var r = _tabs[k].rt;
+            _tabMark.rectTransform.anchoredPosition = r.anchoredPosition;
+            _tabMark.rectTransform.sizeDelta = new Vector2(r.sizeDelta.x - 26f, 2f);
+            // На вкладке правителя цитата — главное содержимое, нижняя строка не нужна
+            bool q = k != 2;
+            _quote.gameObject.SetActive(q);
+            _quoteLine.gameObject.SetActive(q);
         }
 
         private static void FitText(Text t, int min)
@@ -295,13 +503,14 @@ namespace StellarisClone.Rendering
 
         // ---------- Правитель: рамка канала связи ----------
 
-        private void BuildFrame(RectTransform rt)
+        private void BuildFrame(RectTransform parent)
         {
-            _frame = LGBuild.Rect(rt, "Frame");
-            _frame.anchorMin = _frame.anchorMax = new Vector2(1, 0.5f);
-            _frame.pivot = new Vector2(1, 0.5f);
-            _frame.sizeDelta = new Vector2(540f, 780f);
-            _frame.anchoredPosition = new Vector2(-150f, 70f);
+            _frame = LGBuild.Rect(parent, "Frame");
+            _frame.anchorMin = new Vector2(0f, 0f);
+            _frame.anchorMax = new Vector2(0f, 1f);
+            _frame.pivot = new Vector2(0.5f, 0.5f);
+            _frame.sizeDelta = new Vector2(FrameW, 0f);
+            _frame.anchoredPosition = new Vector2(FrameW * 0.5f, 0f);
             _frameGroup = _frame.gameObject.AddComponent<CanvasGroup>();
 
             var back = LGBuild.Panel(_frame, "Back", new Color(0.01f, 0.02f, 0.03f, 0.95f));
@@ -378,60 +587,6 @@ namespace StellarisClone.Rendering
             }
         }
 
-        // ---------- Карточки фракций ----------
-
-        private void BuildCards(RectTransform rt)
-        {
-            _cards = LGBuild.Rect(rt, "Cards");
-            _cards.anchorMin = _cards.anchorMax = new Vector2(0.5f, 0f);
-            _cards.pivot = new Vector2(0.5f, 0f);
-            var factions = FactionRegistry.AvailableFactions;
-            bool compact = factions.Length > 3;
-            bool tight = factions.Length > 4;
-            bool crowded = factions.Length > 5;   // шесть фракций — карточки уже, чтобы не задеть кнопки по краям
-            _cards.anchoredPosition = new Vector2(crowded ? -140f : -150f, 30f);
-            float w = crowded ? 180f : tight ? 214f : compact ? 236f : 270f,
-                  gap = crowded ? 8f : tight ? 10f : compact ? 12f : 16f,
-                  thumbSize = crowded ? 60f : tight ? 72f : compact ? 80f : 96f;
-            float textX = 10f + thumbSize + 12f;
-            const float h = 116f;
-            _cards.sizeDelta = new Vector2(factions.Length * (w + gap) - gap, h + 12f);
-            for (int i = 0; i < factions.Length; i++)
-            {
-                var f = factions[i];
-                int idx = i;
-                var card = LGBuild.Panel(_cards, "Card_" + i, PanelBg, raycast: true);
-                card.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(i * (w + gap), 0f), new Vector2(w, h));
-                var fx = LG.Platter(card.gameObject, 6f);
-                fx.FillMultiplier = 2.8f;
-                fx.SpecularMultiplier = 0.2f;
-
-                // Водяной знак — герб фракции в правой части карточки
-                var crestMark = FactionEmblems.Create(card.transform, FactionEmblems.ForFaction(f), h - 18f,
-                    new Color(f.EmpireColor.r, f.EmpireColor.g, f.EmpireColor.b, 0.16f), "Crest");
-                if (crestMark != null)
-                    crestMark.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-6, 0), new Vector2(h - 18f, h - 18f));
-
-                var thumb = LGBuild.Panel(card.transform, "Thumb", new Color(0f, 0f, 0f, 0.6f));
-                thumb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(thumbSize, thumbSize));
-                LG.Platter(thumb.gameObject, 4f).FillMultiplier = 3f;
-                var tm = LG.RoundedMask(thumb.transform, 4f, 1f);
-                LeaderPortraitView.Create(tm, LeaderPortraits.ForFaction(f), 2.1f, Vector4.zero, false, true, false);
-
-                var name = LGBuild.Label(card.transform, f.Name.ToUpper(), crowded ? 13 : compact ? 14 : 15, Primary, TextAnchor.UpperLeft, bold: true, wrap: true);
-                FitText(name, crowded ? 9 : 10);
-                name.rectTransform.Stretch(textX, 46, 10, 14);
-                var title = LGBuild.Label(card.transform, f.Title, compact ? 11 : 12, Muted, TextAnchor.LowerLeft, wrap: true);
-                FitText(title, 9);
-                title.rectTransform.Stretch(textX, 14, 10, 70);
-
-                var btn = card.gameObject.AddComponent<Button>();
-                btn.transition = Selectable.Transition.None;
-                btn.onClick.AddListener(() => { if (idx != _index) { SFXManager.Play(Sfx.UiTab); Select(idx); } });
-                _cardUi.Add((card, fx, name, f, card.rectTransform));
-            }
-        }
-
         private EmpireCustomizePanel _customize;
 
         private void BuildButtons(RectTransform rt)
@@ -479,15 +634,18 @@ namespace StellarisClone.Rendering
             Color ec = f.EmpireColor;
             Color light = Color.Lerp(ec, Color.white, 0.25f);
 
-            for (int i = 0; i < _cardUi.Count; i++)
+            for (int i = 0; i < _medals.Count; i++)
             {
                 bool on = i == _index;
-                var c = _cardUi[i];
-                Color cc = c.f.EmpireColor;
-                c.bg.color = on ? new Color(0.02f + cc.r * 0.10f, 0.04f + cc.g * 0.10f, 0.06f + cc.b * 0.10f, 0.94f) : PanelBg;
-                c.fx.SetRim(on ? new Color(cc.r, cc.g, cc.b, 0.95f) : new Color(1f, 1f, 1f, 0.10f));
-                c.fx.GlowMultiplier = on ? 1f : 0f;
-                c.name.color = on ? Color.Lerp(cc, Color.white, 0.3f) : Primary;
+                var m = _medals[i];
+                Color cc = m.F.EmpireColor;
+                m.Ring.color = new Color(cc.r, cc.g, cc.b, on ? 1f : 0.35f);
+                m.Back.color = on ? new Color(0.02f + cc.r * 0.12f, 0.04f + cc.g * 0.12f, 0.07f + cc.b * 0.12f, 0.95f)
+                                  : new Color(0.016f, 0.04f, 0.08f, 0.88f);
+                if (m.Crest != null) m.Crest.color = on ? Color.Lerp(cc, Color.white, 0.6f) : new Color(0.75f, 0.80f, 0.85f, 0.55f);
+                m.Name.color = on ? Color.Lerp(cc, Color.white, 0.55f) : Muted;
+                m.Name.resizeTextMaxSize = on ? 14 : 13;
+                if (instant) m.Place(on ? 1f : MedalOff);
             }
 
             // Фон-зал фракции со сменой через затухание
@@ -501,7 +659,6 @@ namespace StellarisClone.Rendering
             var front = _bgFront ? _bgA : _bgB;
             front.texture = tex;
             if (tex != null) Cover(front, tex);
-            front.transform.SetSiblingIndex(_bgFront ? 1 : 0);
             (_bgFront ? _bgB : _bgA).transform.SetSiblingIndex(0);
             front.transform.SetSiblingIndex(1);
             _bgFront = !_bgFront;
@@ -514,40 +671,54 @@ namespace StellarisClone.Rendering
             _frameFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.7f));
             foreach (var b in _brackets) b.color = light;
             _liveDot.color = ec;
-            _frameTitle.text = leader != null ? Loc.F("ПРЯМАЯ СВЯЗЬ  ·  {0}", leader.Name.ToUpper()) : Loc.T("ПРЯМАЯ СВЯЗЬ");
+            _frameTitle.text = Loc.T("ПРЯМАЯ СВЯЗЬ");
             _frameSub.text = leader != null ? $"<b>{leader.Name}</b>\n<color=#9FB2BC>{leader.Title}</color>" : f.Title;
 
             // Досье
-            _accentBar.color = ec;
+            _divider.color = new Color(ec.r, ec.g, ec.b, 0.45f);
             _infoFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.25f));
-            // Герб фракции (если есть картинка) вместо шестигранника со значком
             var crest = FactionEmblems.ForFaction(f);
-            if (crest != null)
-            {
-                _emblem.color = Color.clear;
-                _emblemIcon.sprite = crest;
-                _emblemIcon.rectTransform.sizeDelta = new Vector2(72, 72);
-                _emblemIcon.color = light;
-            }
-            else
-            {
-                _emblem.color = Color.Lerp(ec, new Color(0.6f, 0.2f, 0.05f), 0.2f);
-                _emblemIcon.sprite = LGIcons.Get(lore?.Emblem ?? LGIcon.Leader);
-                _emblemIcon.rectTransform.sizeDelta = new Vector2(36, 36);
-                _emblemIcon.color = new Color(0.05f, 0.04f, 0.03f, 0.9f);
-            }
+            _crestMark.sprite = crest;
+            _crestMark.color = crest != null ? new Color(light.r, light.g, light.b, 0.07f) : Color.clear;
+            _tabMark.color = ec;
             _name.text = f.Name.ToUpper();
             _name.color = light;
-            _leader.text = leader != null ? Loc.F("<color=#8AA2A8>{0}  ·  правитель:</color> <b>{1}</b>", f.Title, leader.Name) : f.Title;
-            _tagline.text = lore?.Tagline ?? "";
+            _leader.text = lore != null ? $"{f.Title}  ·  <i><color=#C9D8DE>{lore.Tagline}</color></i>" : f.Title;
+
+            // Плитки: два главных бонуса, сложность, сильная сторона
+            var res = new List<(float pct, string shortName, LGIcon icon, string text)>(ResourceBonuses(f));
+            var top = res.FindAll(b => b.pct > 0f);
+            top.Sort((a, b) => b.pct.CompareTo(a.pct));
+            if (top.Count > 2) top.RemoveRange(2, top.Count - 2);
+            for (int i = 0; i < 2; i++)
+            {
+                bool has = i < top.Count;
+                _tiles[i].go.SetActive(has);
+                if (has) SetTile(i, string.Format("+{0:0}%", top[i].pct), top[i].shortName, Good);
+            }
+            int diff = lore?.Difficulty ?? 0;
+            SetTile(2, diff == 1 ? Loc.T("ЛЁГКАЯ") : diff == 2 ? Loc.T("СРЕДНЯЯ") : diff == 3 ? Loc.T("СЛОЖНАЯ") : "—", Loc.T("СЛОЖНОСТЬ"),
+                diff == 1 ? Good : diff == 2 ? UIManager.DS.Gold : diff == 3 ? Bad : Primary);
+            SetTile(3, lore?.Strength ?? "—", Loc.T("СИЛЬНАЯ СТОРОНА"), light);
 
             LGBuild.Clear(_traits);
             float y = 0f;
-            foreach (var (icon, text) in BonusTraits(f)) Trait(ref y, icon, text, new Color(0.44f, 0.88f, 0.60f));
+            foreach (var b in res) if (!top.Contains(b)) Trait(ref y, b.icon, b.text, b.pct > 0f ? Good : Bad);
+            foreach (var (icon, text) in SpecialTraits(f)) Trait(ref y, icon, text, Good);
             if (lore != null) foreach (var (icon, text) in lore.Traits) Trait(ref y, icon, text, light);
+
+            for (int j = 0; j < 4; j++)
+            {
+                int lvl = lore?.Style != null && j < lore.Style.Length ? lore.Style[j] : 0;
+                for (int s = 0; s < 5; s++)
+                    _bars[j, s].color = s < lvl ? new Color(light.r, light.g, light.b, 0.95f) : new Color(1f, 1f, 1f, 0.09f);
+            }
 
             _desc.text = lore?.Story ?? StripBonuses(f.Description);
             _quote.text = leader != null ? $"«{leader.Quote}»" : "";
+            _ldName.text = leader != null ? leader.Name : "";
+            _ldTitle.text = leader != null ? leader.Title : f.Title;
+            _ldQuote.text = leader != null ? $"«{leader.Quote}»" : "";
 
             _accent = ec;
             _halo.color = new Color(ec.r, ec.g, ec.b, 0.0f);
@@ -555,6 +726,14 @@ namespace StellarisClone.Rendering
             foreach (var m in _motes) m.Img.color = new Color(light.r, light.g, light.b, 0f);
 
             _fade = instant ? 1f : 0f;
+        }
+
+        private void SetTile(int i, string value, string label, Color col)
+        {
+            _tiles[i].go.SetActive(true);
+            _tiles[i].val.text = value;
+            _tiles[i].val.color = col;
+            _tiles[i].lbl.text = label;
         }
 
         private void BuildMotes(RectTransform rt)
@@ -619,12 +798,16 @@ namespace StellarisClone.Rendering
             }
             else _frame.localScale = Vector3.one;
 
-            // Выбранная карточка мерцает рамкой
-            for (int i = 0; i < _cardUi.Count; i++)
+            // Гербы: выбранный плавно растёт и светится, остальные уменьшаются
+            float ease = 1f - Mathf.Exp(-dt * 12f);
+            for (int i = 0; i < _medals.Count; i++)
             {
-                if (i != _index) continue;
-                Color cc = _cardUi[i].f.EmpireColor;
-                _cardUi[i].fx.SetRim(new Color(cc.r, cc.g, cc.b, 0.6f + 0.35f * Mathf.Sin(t * 3f)));
+                var m = _medals[i];
+                bool on = i == _index;
+                m.Place(Mathf.Lerp(m.Scale, on ? 1f : MedalOff, ease));
+                float k = Mathf.Clamp01((m.Scale - MedalOff) / (1f - MedalOff));
+                Color cc = m.F.EmpireColor;
+                m.Glow.color = new Color(cc.r, cc.g, cc.b, k * (0.42f + 0.12f * Mathf.Sin(t * 2.2f)));
             }
         }
 
@@ -647,16 +830,28 @@ namespace StellarisClone.Rendering
             return s_band;
         }
 
-        private static IEnumerable<(LGIcon, string)> BonusTraits(FactionInfo f)
+        /// <summary>Бонусы к ресурсам: процент, короткое имя для плитки, значок и строка для списка.</summary>
+        private static IEnumerable<(float pct, string shortName, LGIcon icon, string text)> ResourceBonuses(FactionInfo f)
         {
-            if (f.EnergyBonus > 1.001f) yield return (LGIcon.Energy, Loc.F("+{0:0}% к добыче гелия-3", (f.EnergyBonus - 1f) * 100f));
-            if (f.MineralBonus > 1.001f) yield return (LGIcon.Minerals, Loc.F("+{0:0}% к добыче титана", (f.MineralBonus - 1f) * 100f));
-            if (f.AlloyBonus > 1.001f) yield return (LGIcon.Alloys, Loc.F("+{0:0}% к производству сплавов", (f.AlloyBonus - 1f) * 100f));
-            if (f.InfluenceBonus > 1.001f) yield return (LGIcon.Influence, Loc.F("+{0:0}% к влиянию", (f.InfluenceBonus - 1f) * 100f));
+            var list = new[]
+            {
+                (f.EnergyBonus, Loc.T("ГЕЛИЙ-3"), LGIcon.Energy, Loc.T("+{0:0}% к добыче гелия-3"), Loc.T("−{0:0}% к добыче гелия-3")),
+                (f.MineralBonus, Loc.T("ТИТАН"), LGIcon.Minerals, Loc.T("+{0:0}% к добыче титана"), Loc.T("−{0:0}% к добыче титана")),
+                (f.AlloyBonus, Loc.T("СПЛАВЫ"), LGIcon.Alloys, Loc.T("+{0:0}% к производству сплавов"), Loc.T("−{0:0}% к производству сплавов")),
+                (f.InfluenceBonus, Loc.T("ВЛИЯНИЕ"), LGIcon.Influence, Loc.T("+{0:0}% к влиянию"), Loc.T("−{0:0}% к влиянию")),
+            };
+            foreach (var (mult, shortName, icon, plus, minus) in list)
+            {
+                float pct = (mult - 1f) * 100f;
+                if (Mathf.Abs(pct) < 0.1f) continue;
+                yield return (pct, shortName, icon, string.Format(pct > 0f ? plus : minus, Mathf.Abs(pct)));
+            }
+        }
+
+        private static IEnumerable<(LGIcon, string)> SpecialTraits(FactionInfo f)
+        {
             if (FactionRegistry.IsTerraan(f)) yield return (LGIcon.Defense, Loc.T("+15% корпус, +10% щиты (биокора)"));
             if (FactionRegistry.IsMachine(f)) yield return (LGIcon.Defense, Loc.T("+10% корпус (машинный флот)"));
-            if (f.MineralBonus < 0.999f) yield return (LGIcon.Minerals, Loc.F("−{0:0}% к добыче титана", (1f - f.MineralBonus) * 100f));
-            if (f.InfluenceBonus < 0.999f) yield return (LGIcon.Influence, Loc.F("−{0:0}% к влиянию", (1f - f.InfluenceBonus) * 100f));
         }
 
         private void Trait(ref float y, LGIcon icon, string text, Color col)
@@ -704,6 +899,12 @@ namespace StellarisClone.Rendering
 
             if (_scan != null) _scan.uvRect = new Rect(0f, -t * 0.08f, 1f, 260f);
             if (_motesLayer != null) AnimateEffects(dt, t);
+            // Стрелки ← → листают фракции (пока не открыто оформление империи)
+            if (_medals.Count > 1 && (_customize == null || !_customize.IsOpen))
+            {
+                int dir = Input.GetKeyDown(KeyCode.LeftArrow) ? -1 : Input.GetKeyDown(KeyCode.RightArrow) ? 1 : 0;
+                if (dir != 0) { SFXManager.Play(Sfx.UiTab); Select((_index + dir + _medals.Count) % _medals.Count); }
+            }
             if (_liveDot != null) { var c = _liveDot.color; c.a = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(t * 2.2f)); _liveDot.color = c; }
 
             if (_fade >= 1f) return;
@@ -711,7 +912,7 @@ namespace StellarisClone.Rendering
             float k = Mathf.SmoothStep(0f, 1f, _fade);
             if (_frameGroup != null) _frameGroup.alpha = k;
             if (_infoGroup != null) _infoGroup.alpha = Mathf.Lerp(0.3f, 1f, k);
-            _frame.anchoredPosition = new Vector2(-150f + (1f - k) * 24f, 70f);
+            _frame.anchoredPosition = new Vector2(FrameW * 0.5f - (1f - k) * 18f, 0f);
         }
 
         private void OnEnable()
@@ -723,7 +924,7 @@ namespace StellarisClone.Rendering
         // ==================== ТЕКСТУРЫ ====================
 
         private static Texture2D s_scan;
-        private static readonly Dictionary<bool, Sprite> s_grad = new Dictionary<bool, Sprite>();
+        private static readonly Dictionary<int, Sprite> s_grad = new Dictionary<int, Sprite>();
 
         /// <summary>Тонкие горизонтальные линии развёртки (повторяется по вертикали).</summary>
         private static Texture2D ScanTexture()
@@ -735,29 +936,30 @@ namespace StellarisClone.Rendering
             return s_scan;
         }
 
-        /// <summary>Градиент прозрачности: horizontal — слева направо, иначе снизу вверх.</summary>
-        private static Sprite GradientSprite(bool horizontal)
+        /// <summary>Градиент прозрачности: horizontal — слева направо, иначе снизу вверх; flip — в обратную сторону.</summary>
+        private static Sprite GradientSprite(bool horizontal, bool flip = false)
         {
-            if (s_grad.TryGetValue(horizontal, out var sp) && sp != null) return sp;
+            int key = (horizontal ? 1 : 0) + (flip ? 2 : 0);
+            if (s_grad.TryGetValue(key, out var sp) && sp != null) return sp;
             const int n = 64;
             var tex = new Texture2D(horizontal ? n : 2, horizontal ? 2 : n, TextureFormat.RGBA32, false)
                 { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
             for (int i = 0; i < n; i++)
             {
-                float a = Mathf.Pow(1f - i / (n - 1f), 1.4f);
+                float a = Mathf.Pow(1f - (flip ? n - 1 - i : i) / (n - 1f), 1.4f);
                 var c = new Color(1f, 1f, 1f, a);
                 if (horizontal) { tex.SetPixel(i, 0, c); tex.SetPixel(i, 1, c); }
                 else { tex.SetPixel(0, i, c); tex.SetPixel(1, i, c); }
             }
             tex.Apply();
             sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            s_grad[horizontal] = sp;
+            s_grad[key] = sp;
             return sp;
         }
 
         // ==================== ПРОЦЕДУРНЫЕ СПРАЙТЫ ====================
 
-        private static Sprite s_radial, s_hex;
+        private static Sprite s_radial;
 
         public static Sprite RadialSprite()
         {
@@ -777,28 +979,6 @@ namespace StellarisClone.Rendering
             tex.Apply(true, true);
             s_radial = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f));
             return s_radial;
-        }
-
-        /// <summary>Шестиугольник для герба и значков особенностей.</summary>
-        private static Sprite HexSprite()
-        {
-            if (s_hex != null) return s_hex;
-            const int n = 96;
-            var tex = new Texture2D(n, n, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
-            var px = new Color32[n * n];
-            for (int y = 0; y < n; y++)
-            for (int x = 0; x < n; x++)
-            {
-                float px0 = Mathf.Abs((x + 0.5f) / n * 2f - 1f), py0 = Mathf.Abs((y + 0.5f) / n * 2f - 1f);
-                // Шестиугольник «на ребре»: |y| ≤ 0.866 и |x|·0.866 + |y|·0.5 ≤ 0.866
-                float d = Mathf.Max(py0 - 0.86f, px0 * 0.866f + py0 * 0.5f - 0.86f);
-                float a = Mathf.Clamp01(0.5f - d * n * 0.5f);
-                px[y * n + x] = new Color32(255, 255, 255, (byte)(a * 255f));
-            }
-            tex.SetPixels32(px);
-            tex.Apply(true, true);
-            s_hex = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f));
-            return s_hex;
         }
     }
 }

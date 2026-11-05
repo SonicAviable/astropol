@@ -242,6 +242,31 @@ namespace StellarisClone.Rendering
             });
         }
 
+        /// <summary>Тонкая черта-«линза»: толще в середине, сходит на нет к концам, края мягкие (черта под названием системы).</summary>
+        public static Sprite TaperLine()
+        {
+            const int w = 256, h = 16;
+            return Make("taperline", w, h, (x, y) =>
+            {
+                float u = x / w * 2f - 1f;
+                float half = 0.42f * Mathf.Pow(Mathf.Clamp01(1f - u * u), 0.8f);   // полутолщина в долях высоты
+                float d = Mathf.Abs(y / h - 0.5f);
+                return Mathf.Clamp01((half - d) * h * 0.5f + 0.5f);
+            });
+        }
+
+        /// <summary>Мягкое пятно-эллипс: гаснет и по горизонтали, и по вертикали (свечение без жёстких краёв).</summary>
+        public static Sprite SoftGlow()
+        {
+            const int w = 128, h = 32;
+            return Make("softglow", w, h, (x, y) =>
+            {
+                float u = x / w * 2f - 1f, v = y / h * 2f - 1f;
+                float r2 = u * u * 0.9f + v * v;
+                return Mathf.Clamp01(Mathf.Exp(-r2 * 3.2f) - 0.04f) / 0.96f;
+            });
+        }
+
         /// <summary>Расстояние от точки до границы выпуклого многоугольника (по часовой), &lt; 0 — снаружи.</summary>
         private static float InsideDistance(Vector2[] pts, float x, float y)
         {

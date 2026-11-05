@@ -157,9 +157,9 @@ namespace StellarisClone.Rendering
             _scrim.size = new Vector2(w + 2.4f, 1.5f);
             _scrim.color = new Color(0f, 0f, 0f, 0f);
 
-            // Черта цвета владельца под названием: тонкая линия и мягкое свечение вокруг неё
-            _underGlow = UnderlineSprite("UnderGlow", HudArt.EdgeFade(0.35f), w * 0.95f, 0.30f, 47);
-            _underLine = UnderlineSprite("UnderLine", HudArt.EdgeFade(0.30f), w * 0.72f, 0.065f, 51);
+            // Черта цвета владельца под названием: тонкая «линза», сходящая на нет к концам, и размытое свечение без краёв
+            _underGlow = UnderlineSprite("UnderGlow", HudArt.SoftGlow(), w * 0.9f, 0.34f, 47);
+            _underLine = UnderlineSprite("UnderLine", HudArt.TaperLine(), w * 0.66f, 0.06f, 51);
         }
 
         private SpriteRenderer _underGlow, _underLine;
@@ -615,7 +615,7 @@ namespace StellarisClone.Rendering
             if (_data.OwnerId == 0) _ownerCol = UIManager.DS.NeonCyan;
             else if (_data.OwnerId > 0) _ownerCol = FleetIndicator.OwnerColor(_data.OwnerId);
             else if (_data.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(_data.Id) != null) _ownerCol = NeutralWorlds.ColorOf(NeutralWorlds.At(_data.Id).Kind);
-            else _ownerCol = new Color(0.62f, 0.69f, 0.72f, known ? 0.55f : 0f);
+            else _ownerCol = new Color(0.62f, 0.69f, 0.72f, 0f);   // ничья система — без черты (серая полоса выглядела заглушкой)
 
             if (_isSelected)
                 _titleBase = UIManager.DS.Gold;
@@ -660,8 +660,9 @@ namespace StellarisClone.Rendering
             if (_underLine != null)
             {
                 float oa = _ownerCol.a * _alpha;
-                _underLine.color = new Color(_ownerCol.r, _ownerCol.g, _ownerCol.b, 0.95f * oa);
-                _underGlow.color = new Color(_ownerCol.r, _ownerCol.g, _ownerCol.b, 0.35f * oa);
+                Color lc = Color.Lerp(_ownerCol, Color.white, 0.25f);
+                _underLine.color = new Color(lc.r, lc.g, lc.b, 0.9f * oa);
+                _underGlow.color = new Color(_ownerCol.r, _ownerCol.g, _ownerCol.b, 0.22f * oa);
                 bool uon = oa > 0.01f;
                 if (_underLine.enabled != uon) { _underLine.enabled = uon; _underGlow.enabled = uon; }
             }
