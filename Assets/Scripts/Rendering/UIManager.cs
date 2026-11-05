@@ -2209,7 +2209,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Плашка: глава цепочки (золотом) или тип события
             bool chain = !string.IsNullOrEmpty(ev.Chain);
-            string kind = chain ? Loc.F("ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}", ev.Chain.ToUpper(), Roman(ev.Step)) : Loc.T("◆  АНОМАЛИЯ");
+            string kind = chain ? Loc.F("ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}", ev.Chain.ToUpper(), Roman(ev.Step)) : "◆  " + EventKindName(ev);
             _eventKindText.text = kind;
             _eventKindText.color = chain ? DS.Gold : Color.Lerp(accent, Color.white, 0.25f);
             float kindW = kind.Length * 10.5f + 40f;   // 10 px жирным с разрядкой 3.5
@@ -2323,14 +2323,24 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var n = CreateText(ic, idx.ToString(), 12, FontStyle.Bold, icCol, TextAnchor.MiddleCenter);
             n.rectTransform.Stretch();
 
-            // Особый вариант — что он требует, мелко справа от значка
+            // Особый вариант — что он требует, мелко справа от номера (ресурс — со значком)
             if (special)
             {
+                float rx = 52f;
+                var reqRes = ParseEffects(opt.Requirement);
+                if (reqRes.Count > 0)
+                {
+                    var ri = LGIcons.Create(card.transform, reqRes[0].Icon, 14f, reqRes[0].Tint);
+                    var rit = ri.rectTransform;
+                    rit.anchorMin = rit.anchorMax = new Vector2(0, 1); rit.pivot = new Vector2(0, 0.5f);
+                    rit.anchoredPosition = new Vector2(rx, -29f);
+                    rx += 19f;
+                }
                 var req = CreateText(card.transform, opt.Requirement.ToUpper(), 9, FontStyle.Bold,
                     available ? DS.Gold : new Color(0.55f, 0.64f, 0.68f, 1f), TextAnchor.MiddleLeft);
                 var rr = req.rectTransform;
                 rr.anchorMin = new Vector2(0, 1); rr.anchorMax = new Vector2(1, 1); rr.pivot = new Vector2(0, 1);
-                rr.offsetMin = new Vector2(52, -42); rr.offsetMax = new Vector2(-14, -16);
+                rr.offsetMin = new Vector2(rx, -42); rr.offsetMax = new Vector2(-14, -16);
                 req.Track(1.5f);
             }
 
@@ -2343,8 +2353,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             label.verticalOverflow = VerticalWrapMode.Truncate;
             label.supportRichText = true;
 
-            // Нижняя строка: чего не хватает (недоступно) или первая строка последствий
-            string hint = !available
+            // Нижняя строка: ресурсы из последствий — значками с числами; иначе текстом
+            var fx = available ? ParseEffects(opt.ResultTooltip) : new List<EventFx>();
+            if (fx.Count > 0) BuildEffectChips(card.transform, fx);
+            string hint = fx.Count > 0 ? null : !available
                 ? (IsScientistRequirement(opt.Requirement) ? Loc.T("Нанять учёного: Империя (I) → Лидеры") : Loc.F("Требуется: {0}", opt.Requirement))
                 : FirstLine(opt.ResultTooltip);
             if (!string.IsNullOrEmpty(hint))
@@ -2367,6 +2379,89 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 var tt = card.GetComponent<TooltipTrigger>();
                 if (tt == null) TooltipHelper.Attach(card, tip);
                 else tt.SetText(tip);
+            }
+        }
+
+        // ---------- Последствия вариантов: ресурсы значками ----------
+
+        private struct EventFx { public LGIcon Icon; public Color Tint; public string Value; public int Sign; }
+
+        private static readonly System.Text.RegularExpressions.Regex s_fxRx = new System.Text.RegularExpressions.Regex(
+            @"([+−\-]?)\s*(\d+)\s*(гели[йяю]-3|титан\w*|сплав\w*|влияни\w*|наук\w*|стабильност\w*|helium-3|titanium|alloys?|influence|science|research|stability)(\s*(?:в месяц|/мес|per month|a month))?",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        /// <summary>Числа с ресурсами из текста последствий («+6 титана и +3 гелия-3 в месяц», «−40 гелия-3»).</summary>
+        private static List<EventFx> ParseEffects(string text)
+        {
+            var list = new List<EventFx>();
+            if (string.IsNullOrEmpty(text)) return list;
+            string plain = System.Text.RegularExpressions.Regex.Replace(text, "<.*?>", "");
+            foreach (System.Text.RegularExpressions.Match m in s_fxRx.Matches(plain))
+            {
+                if (list.Count >= 4) break;
+                string res = m.Groups[3].Value.ToLowerInvariant();
+                LGIcon icon; Color tint;
+                if (res.StartsWith("гели") || res.StartsWith("helium")) { icon = LGIcon.Energy; tint = DS.Gold; }
+                else if (res.StartsWith("титан") || res.StartsWith("titan")) { icon = LGIcon.Minerals; tint = DS.NeonCyan; }
+                else if (res.StartsWith("сплав") || res.StartsWith("alloy")) { icon = LGIcon.Alloys; tint = new Color(0.95f, 0.62f, 0.36f); }
+                else if (res.StartsWith("влия") || res.StartsWith("influ")) { icon = LGIcon.Influence; tint = new Color(1.00f, 0.48f, 0.58f); }
+                else if (res.StartsWith("стаб") || res.StartsWith("stab")) { icon = LGIcon.Population; tint = new Color(0.94f, 0.56f, 0.86f); }
+                else { icon = LGIcon.Research; tint = DS.Green; }
+                string sg = m.Groups[1].Value;
+                int sign = sg == "+" ? 1 : sg.Length > 0 ? -1 : 0;
+                string val = (sign > 0 ? "+" : sign < 0 ? "−" : "") + m.Groups[2].Value + (m.Groups[4].Success ? Loc.T("/мес") : "");
+                list.Add(new EventFx { Icon = icon, Tint = tint, Value = val, Sign = sign });
+            }
+            return list;
+        }
+
+        /// <summary>Ряд плашек «значок + число» внизу карточки: плюс — зелёным, минус — красным.</summary>
+        private void BuildEffectChips(Transform card, List<EventFx> fx)
+        {
+            var row = new GameObject("Effects").AddComponent<RectTransform>();
+            row.SetParent(card, false);
+            row.anchorMin = Vector2.zero; row.anchorMax = new Vector2(1, 0); row.pivot = new Vector2(0, 0);
+            row.offsetMin = new Vector2(18, 12); row.offsetMax = new Vector2(-16, 34);
+            var h = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            h.spacing = 6f; h.childAlignment = TextAnchor.MiddleLeft;
+            h.childControlWidth = h.childControlHeight = true;
+            h.childForceExpandWidth = h.childForceExpandHeight = false;
+            foreach (var f in fx)
+            {
+                Color vc = f.Sign > 0 ? new Color(0.49f, 0.94f, 0.66f) : f.Sign < 0 ? new Color(1f, 0.60f, 0.54f) : DS.TextPrimary;
+                var chip = new GameObject("Fx").AddComponent<Image>();
+                chip.transform.SetParent(row, false);
+                chip.sprite = HudArt.Pill(false); chip.type = Image.Type.Sliced;
+                chip.color = new Color(vc.r, vc.g, vc.b, 0.10f);
+                chip.raycastTarget = false;
+                var ch = chip.gameObject.AddComponent<HorizontalLayoutGroup>();
+                ch.padding = new RectOffset(7, 9, 2, 2); ch.spacing = 4f; ch.childAlignment = TextAnchor.MiddleLeft;
+                ch.childControlWidth = ch.childControlHeight = true;
+                ch.childForceExpandWidth = ch.childForceExpandHeight = false;
+                var ic = LGIcons.Create(chip.transform, f.Icon, 13f, f.Tint);
+                var le = ic.gameObject.AddComponent<LayoutElement>();
+                le.preferredWidth = le.preferredHeight = 13f;
+                var t = CreateText(chip.transform, f.Value, 11, FontStyle.Bold, vc, TextAnchor.MiddleLeft);
+                t.horizontalOverflow = HorizontalWrapMode.Overflow;
+                LG.Ignore(chip.gameObject);
+            }
+        }
+
+        /// <summary>Подпись типа события на плашке: решение фракции, аномалия (с видом) или событие империи.</summary>
+        private static string EventKindName(GameEventData ev)
+        {
+            if (ev.EventId != null && ev.EventId.StartsWith("decision_")) return Loc.T("РЕШЕНИЕ СОВЕТА");
+            switch (ev.Anomaly)
+            {
+                case AnomalyType.AncientDerelict: return Loc.T("АНОМАЛИЯ · ДРЕВНИЙ КОРАБЛЬ");
+                case AnomalyType.DistressSignal: return Loc.T("АНОМАЛИЯ · СИГНАЛ БЕДСТВИЯ");
+                case AnomalyType.AlienFauna: return Loc.T("АНОМАЛИЯ · ЖИЗНЬ");
+                case AnomalyType.PrecursorRelic: return Loc.T("АНОМАЛИЯ · РЕЛИКВИЯ");
+                case AnomalyType.SpatialRift: return Loc.T("АНОМАЛИЯ · РАЗЛОМ");
+                case AnomalyType.LeaderStory: return Loc.T("СОБЫТИЕ · ЛИДЕРЫ");
+                case AnomalyType.ColonyIncident: return Loc.T("СОБЫТИЕ · КОЛОНИЯ");
+                case AnomalyType.MilitaryIncident: return Loc.T("СОБЫТИЕ · ФЛОТ");
+                default: return Loc.T("СОБЫТИЕ · ПОЛИТИКА");
             }
         }
 
