@@ -394,7 +394,7 @@ namespace StellarisClone.Rendering
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Escape)) Back();
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Back(); }
             else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) Confirm();
             else if (Input.GetKeyDown(KeyCode.Space)) CompleteTyping();
 

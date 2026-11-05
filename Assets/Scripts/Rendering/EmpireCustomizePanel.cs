@@ -94,7 +94,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (!IsOpen) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) { Back(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Back(); return; }
             if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && !Typing()) Confirm();
         }
 

@@ -55,7 +55,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (!IsOpen) { WonderStudio.Instance?.Hide(); return; }
-            if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); return; }
             if ((_refresh -= Time.unscaledDeltaTime) <= 0f) { _refresh = 0.5f; Refresh(); }
         }
 

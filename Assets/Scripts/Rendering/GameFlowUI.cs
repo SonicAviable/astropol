@@ -103,7 +103,7 @@ namespace StellarisClone.Rendering
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape)) HandleEscape();
+            if (Input.GetKeyDown(KeyCode.Escape)) _escPending = true;
 
             if (_restartArmed > 0f) { _restartArmed -= Time.unscaledDeltaTime; if (_restartArmed <= 0f) ResetConfirmLabels(); }
             if (_quitArmed > 0f) { _quitArmed -= Time.unscaledDeltaTime; if (_quitArmed <= 0f) ResetConfirmLabels(); }
@@ -122,6 +122,17 @@ namespace StellarisClone.Rendering
             }
 
             UpdateTracker();
+        }
+
+        // Esc разбирается после Update всех окон: окно, закрывшееся по Esc в этом кадре, помечает это (UIEsc.Consume),
+        // и пауза поверх него уже не открывается (раньше пауза срабатывала первой — порядок выполнения −200)
+        private bool _escPending;
+
+        private void LateUpdate()
+        {
+            if (!_escPending) return;
+            _escPending = false;
+            HandleEscape();
         }
 
         private static Vector2 PageSize(Page p) => p switch

@@ -70,7 +70,7 @@ namespace StellarisClone.Cards
             if (EventSystem.current == null)
             {
                 var es = new GameObject("EventSystem");
-                es.AddComponent<EventSystem>();
+                es.AddComponent<EventSystem>().sendNavigationEvents = false;
                 es.AddComponent<StandaloneInputModule>();
             }
             BattleScreen.Ensure();

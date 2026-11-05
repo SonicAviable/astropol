@@ -220,7 +220,7 @@ namespace StellarisClone.Rendering
         {
             if (!_isOpen) return;
             if (BuildMenuModal.IsOpenNow) return;   // меню строительства поверх — клавиши его
-            if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); return; }
             if (Input.GetKeyDown(KeyCode.B) && Owned) { BuildMenuModal.Open(_planet); return; }
             if (Input.GetKeyDown(KeyCode.Tab))
             {

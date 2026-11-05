@@ -250,7 +250,7 @@ namespace StellarisClone.Rendering
             if (LoadingScreen.IsActive) return;
             bool alive = false;
             foreach (var a in EspionageManager.PlayerAgents()) if (a == _pickAgent) { alive = true; break; }
-            if (!alive || Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) { EndPick(); return; }
+            if (!alive || Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) { if (Input.GetKeyDown(KeyCode.Escape)) UIEsc.Consume(); EndPick(); return; }
 
             if (_cam == null) _cam = Camera.main;
             float k = Screen.height / 1080f;

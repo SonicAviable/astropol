@@ -62,6 +62,11 @@ namespace StellarisClone.Core
             var flow = StellarisClone.Rendering.GameFlowUI.Instance;
             if (flow != null && flow.BlocksTimeHotkeys) return;
 
+            // Пока печатают в поле ввода (название, поиск), пробел и цифры — это текст, а не управление временем
+            var sel = UnityEngine.EventSystems.EventSystem.current != null ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
+            var field = sel != null ? sel.GetComponent<UnityEngine.UI.InputField>() : null;
+            if (field != null && field.isFocused) return;
+
             if (Input.GetKeyDown(KeyCode.Space)) SetSpeedByPlayer(_currentSpeed == 0 ? 1 : 0);
             if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeedByPlayer(1);
             if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeedByPlayer(2);

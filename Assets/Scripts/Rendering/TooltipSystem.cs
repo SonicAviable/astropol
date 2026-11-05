@@ -553,6 +553,7 @@ namespace StellarisClone.Rendering
                 Vector2 mousePos = Input.mousePosition;
                 if (!RectTransformUtility.RectangleContainsScreenPoint(_root, mousePos))
                 {
+                    if (Input.GetKeyDown(KeyCode.Escape)) UIEsc.Consume();   // Esc закрыл закреплённую подсказку — паузу не открываем
                     _isLocked = false;
                     _pendingText = "";
                     StartClosingAnimation();

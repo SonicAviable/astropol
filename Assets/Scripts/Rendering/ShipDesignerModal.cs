@@ -182,6 +182,7 @@ namespace StellarisClone.Rendering
             if (!IsOpen) return;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                UIEsc.Consume();
                 if (_picker != null && _picker.activeSelf) LG.Hide(_picker);
                 else Close();
             }

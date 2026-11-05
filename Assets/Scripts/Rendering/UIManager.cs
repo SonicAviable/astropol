@@ -274,9 +274,12 @@ namespace StellarisClone.Rendering
             if (es == null)
             {
                 var go = new GameObject("EventSystem");
-                go.AddComponent<EventSystem>();
+                es = go.AddComponent<EventSystem>();
                 go.AddComponent<StandaloneInputModule>();
             }
+            // Без навигации с клавиатуры: иначе пробел/Enter («Submit») повторно нажимают последнюю кликнутую кнопку
+            // и открывают окна, а пробел должен только ставить паузу. Поля ввода текст принимают и так.
+            es.sendNavigationEvents = false;
         }
 
         private void SetupCanvas()
