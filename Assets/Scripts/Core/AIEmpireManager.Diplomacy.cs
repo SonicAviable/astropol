@@ -344,6 +344,8 @@ namespace StellarisClone.Core
             NotificationCenter.Show(broke ? Loc.T("ВЕРОЛОМНОЕ НАПАДЕНИЕ") : Loc.T("ВОЙНА ОБЪЯВЛЕНА"),
                 Loc.F("{0} объявляет вам войну. Причины: {1}", AIName, string.Join(", ", reasons)),
                 NotificationCenter.Kind.Danger, 10f);
+            StellarisClone.Rendering.HudBanner.Show(broke ? Loc.T("ВЕРОЛОМНОЕ НАПАДЕНИЕ") : Loc.T("ВОЙНА ОБЪЯВЛЕНА"),
+                Loc.F("{0} объявляет вам войну", AIName), StellarisClone.Rendering.LGIcon.Swords, StellarisClone.Rendering.UIManager.DS.Red);
             OnAttackedPlayer(broke);
         }
 

@@ -145,6 +145,18 @@ namespace StellarisClone.Rendering
             }, new Vector4(cut + 2, cut + 2, cut + 2, cut + 2));
         }
 
+        /// <summary>Горизонтальная полоса, гаснущая к обоим краям (фон и линии баннера, бегущей строки).</summary>
+        public static Sprite EdgeFade(float edge = 0.18f)
+        {
+            const int w = 256, h = 4;
+            return Make($"efade_{edge:0.00}", w, h, (x, y) =>
+            {
+                float u = x / w;
+                float k = Mathf.Min(u, 1f - u) / Mathf.Max(0.001f, edge);
+                return Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k));
+            });
+        }
+
         /// <summary>Расстояние от точки до границы выпуклого многоугольника (по часовой), &lt; 0 — снаружи.</summary>
         private static float InsideDistance(Vector2[] pts, float x, float y)
         {

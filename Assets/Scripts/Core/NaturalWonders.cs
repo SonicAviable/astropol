@@ -324,6 +324,9 @@ namespace StellarisClone.Core
                 NotificationCenter.Show(Loc.T("Открыто чудо природы"),
                     Loc.F("{0} · система {1}: {2}.", NaturalWonders.Name(s.Phenomenon), s.Name, NaturalWonders.Rule(s.Phenomenon)),
                     NotificationCenter.Kind.Info, 8f, s.Id);
+                StellarisClone.Rendering.HudBanner.Show(Loc.T("Открыто чудо природы"),
+                    Loc.F("{0} · система {1}", NaturalWonders.Name(s.Phenomenon), s.Name),
+                    StellarisClone.Rendering.LGIcon.Star, new Color(0.72f, 0.52f, 1f), s.Id);
             }
             _init = true;
         }

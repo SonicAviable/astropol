@@ -287,6 +287,8 @@ namespace StellarisClone.Core
             NotificationCenter.Show(Loc.T("Вы вступили в коалицию"),
                 Loc.F("Вы вместе с союзниками выступаете против {0}. Союзники начнут войну, когда накопят силы", TargetPhrase),
                 NotificationCenter.Kind.Success, 9f);
+            StellarisClone.Rendering.HudBanner.Show(Loc.T("Вы вступили в коалицию"), Loc.F("Против {0}", TargetPhrase),
+                StellarisClone.Rendering.LGIcon.Handshake, StellarisClone.Rendering.UIManager.DS.Gold);
             Refresh();
             return true;
         }

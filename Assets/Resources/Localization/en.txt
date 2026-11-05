@@ -7398,3 +7398,9 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 СКОРОСТЬ ×{0}	SPEED ×{0}
 <b>Кольцо стабильности</b>\nСредняя стабильность колоний (по числу жителей).	<b>Stability ring</b>\nAverage colony stability (weighted by population).
 <b>Дата</b>\nКольцо — ход текущего месяца.\nЩелчок — пауза / продолжить  <color=#8AA2A8>(ПРОБЕЛ)</color>	<b>Date</b>\nThe ring shows progress through the current month.\nClick to pause / resume  <color=#8AA2A8>(SPACE)</color>
+{0} · система {1}	{0} · {1} system
+{0} объявляет вам войну	{0} declares war on you
+Враг блокирует {0}	The enemy is blockading {0}
+Против {0}	Against {0}
+ЭФИР	LIVE
+Все последние новости галактики	All the latest galactic news

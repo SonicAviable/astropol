@@ -172,8 +172,12 @@ namespace StellarisClone.Core
             if (sys.OwnerId == 0) { SFXManager.Play(Sfx.RedAlert); AlarmFeedback.Attack(); }
             else if (attacker == 0) SFXManager.Play(Sfx.SiegeStart);
             if (sys.OwnerId == 0)
+            {
                 NotificationCenter.Show(Loc.T("Осада!"), Loc.F("Враг блокирует {0}. Пришлите военный флот, чтобы снять осаду", sys.Name),
                     NotificationCenter.Kind.Danger, 7f);
+                StellarisClone.Rendering.HudBanner.Show(Loc.T("Осада!"), Loc.F("Враг блокирует {0}", sys.Name),
+                    StellarisClone.Rendering.LGIcon.Siege, StellarisClone.Rendering.UIManager.DS.Red, sys.Id);
+            }
             else if (attacker == 0)
                 NotificationCenter.Show(Loc.T("Осада началась"), Loc.F("{0}: держите флот на орбите до захвата ({1:0} дн.)", sys.Name, RequiredDays(sys)),
                     NotificationCenter.Kind.Info, 5f);

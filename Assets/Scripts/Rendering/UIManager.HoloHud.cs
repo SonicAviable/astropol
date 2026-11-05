@@ -61,6 +61,7 @@ namespace StellarisClone.Rendering
             BuildResourceWings();
             BuildTimeDisk();
             BuildNavMenu();
+            HudBanner.Create(_canvas.transform, DiskCenterY + DiskD * 0.5f + 84f);
         }
 
         // ---------- Правитель ----------
