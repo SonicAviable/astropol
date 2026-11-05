@@ -21,7 +21,6 @@ Servo, Radio, ElecZap) и фон Audio/CardBattle/battle_wind сведены с�
   • Kenney: Casino Audio (карты), Impact Sounds — kenney.nl (CC0).
 Переработка: нарезка, сдвиг высоты, слои (хлопок + раскат + суббас + обломки), зал, мягкое ограничение.
 
-Звуки интерфейса, уведомлений и космоса (UiClick, UiConfirm, UiDenied, WindowOpen, WindowClose, AlertPop,
-NotifySuccess, NotifyWarning, ResearchComplete, OutpostBuilt, BuildQueued, ColonyFounded, FtlJump, DealAccepted,
-SurveyComplete, Anomaly, WarDeclared, WeaponEnergy, HitShield, WeaponMissile, ExplosionSmall, SystemEnter) —
-Epic Stock Media, «Sci-fi Evolution Gift Pack» (royalty-free), обрезаны, сведены в моно и выровнены по громкости.
+Звуки интерфейса, уведомлений, времени, карты и флотов, стройки и науки, космического боя и стингеры
+(Ui*, Window*, Notify*, Time*, System*, Select*, Order*, Ftl*, Weapon*, Hit*, Explosion*, Battle*, War*, Game* и др.) —
+собственный синтез, Tools/sfx_design (numpy/scipy), без сторонних записей.
