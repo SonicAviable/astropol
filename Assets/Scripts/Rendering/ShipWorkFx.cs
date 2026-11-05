@@ -22,8 +22,12 @@ namespace StellarisClone.Rendering
         private const int Spokes = 8;
         private const float MaxCameraDistance = 170f;
 
-        private static readonly Color SurveyCol = new Color(0.36f, 1f, 0.66f);
-        private static readonly Color BuildCol = new Color(1f, 0.74f, 0.30f);
+        private static Color SurveyCol => SystemWorkRing.SurveyCol;
+        private static Color BuildCol => SystemWorkRing.BuildCol;
+
+        /// <summary>Рисовать ли своё кольцо прогресса разведки вокруг системы. У кораблей игрока — нет:
+        /// это кольцо с капсулой рисует подпись системы (SystemWorkRing).</summary>
+        public bool SystemRing = true;
 
         private Mode _mode, _lastMode = Mode.Survey;
         private Color[] _fanColors;
@@ -200,8 +204,11 @@ namespace StellarisClone.Rendering
             return tex;
         }
 
+        private bool _allOn = true;   // флаг включённых рендереров (кольцо разведки у кораблей игрока выключено отдельно)
+
         private void SetAll(bool on)
         {
+            _allOn = on;
             foreach (var r in GetComponentsInChildren<Renderer>(true)) r.enabled = on;
             if (_light != null) _light.enabled = on && _light.intensity > 0.01f;
         }
@@ -218,11 +225,11 @@ namespace StellarisClone.Rendering
             _fade = Mathf.MoveTowards(_fade, want, dt * (want > 0f ? 1.6f : 2.4f));
             if (_fade <= 0f)
             {
-                if (_built && _ringBg.enabled) SetAll(false);
+                if (_built && _allOn) SetAll(false);
                 return;
             }
             if (!_built) Build();
-            if (!_ringBg.enabled) SetAll(true);
+            if (!_allOn) SetAll(true);
             if (_ship != null && gameObject.layer != _ship.gameObject.layer)
                 foreach (var t in GetComponentsInChildren<Transform>(true)) t.gameObject.layer = _ship.gameObject.layer;
 
@@ -270,7 +277,8 @@ namespace StellarisClone.Rendering
             _fanRenderer.enabled = _scanLine.enabled = true;
 
             Vector3 ship = _ship != null ? _ship.position : transform.position;
-            DrawProgress(_center, 6.2f, 0.11f, _shown, face);
+            if (SystemRing) DrawProgress(_center, SystemWorkRing.Radius, 0.11f, _shown, face);
+            else _ringBg.enabled = _ringFill.enabled = _head.enabled = false;
 
             // Веер сенсоров: направлен на центр системы и плавно прочёсывает её из стороны в сторону
             Vector3 toCenter = _center - ship;

@@ -249,7 +249,7 @@ namespace StellarisClone.Rendering
             Select(0, instant: true);
         }
 
-        private const float PanelL = 64f, PanelB = 120f, PanelT = 326f, FrameW = 520f;
+        private const float PanelL = 64f, PanelB = 120f, PanelT = 326f, FrameW = 520f, FrameInset = 16f;
         private const float MedalY = 64f, MedalD = 120f, MedalOff = 0.7f;
 
         private static RawImage BgLayer(RectTransform rt, string name)
@@ -509,7 +509,7 @@ namespace StellarisClone.Rendering
             _frame.anchorMin = new Vector2(0f, 0f);
             _frame.anchorMax = new Vector2(0f, 1f);
             _frame.pivot = new Vector2(0.5f, 0.5f);
-            _frame.sizeDelta = new Vector2(FrameW, 0f);
+            _frame.sizeDelta = new Vector2(FrameW - FrameInset * 2f, -FrameInset * 2f);   // внутри панели: уголки и вспышка не вылезают за край
             _frame.anchoredPosition = new Vector2(FrameW * 0.5f, 0f);
             _frameGroup = _frame.gameObject.AddComponent<CanvasGroup>();
 
@@ -794,7 +794,7 @@ namespace StellarisClone.Rendering
                 _flashT = Mathf.MoveTowards(_flashT, 1f, dt * 2.2f);
                 float f = 1f - _flashT;
                 _flash.color = new Color(Mathf.Lerp(1f, _accent.r, 0.4f), Mathf.Lerp(1f, _accent.g, 0.4f), Mathf.Lerp(1f, _accent.b, 0.4f), f * f * 0.45f);
-                _frame.localScale = Vector3.one * (1f + 0.025f * f * f);
+                _frame.localScale = Vector3.one * (1f + 0.01f * f * f);
             }
             else _frame.localScale = Vector3.one;
 
@@ -912,7 +912,7 @@ namespace StellarisClone.Rendering
             float k = Mathf.SmoothStep(0f, 1f, _fade);
             if (_frameGroup != null) _frameGroup.alpha = k;
             if (_infoGroup != null) _infoGroup.alpha = Mathf.Lerp(0.3f, 1f, k);
-            _frame.anchoredPosition = new Vector2(FrameW * 0.5f - (1f - k) * 18f, 0f);
+            _frame.anchoredPosition = new Vector2(FrameW * 0.5f + (1f - k) * 10f, 0f);   // въезжает справа, не за край панели
         }
 
         private void OnEnable()

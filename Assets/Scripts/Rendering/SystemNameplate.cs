@@ -26,7 +26,6 @@ namespace StellarisClone.Rendering
         private float _phAlpha;
         private float _lmAlpha;
         // Форпост, который строит (или летит строить) ваш строительный корабль: сколько дней до готовности
-        private WorldChip _chipBuild;
         private float _buildAlpha, _buildScan;
         private bool _buildOn;
         private string _buildKey = "";
@@ -224,15 +223,12 @@ namespace StellarisClone.Rendering
             if (was != _fortOn) ApplyAlpha();
         }
 
+        // Работа в системе (разведка, форпост, колония) — кольцо вокруг звезды с капсулой сверху, а не плашка под названием
+        private SystemWorkRing _work;
+
         private void CreateBuildChip()
         {
-            EnsureStatusRow();
-            _chipBuild = WorldChip.Create(_statusRow, "OutpostChip", 53, true, true);
-            _chipBuild.SetIcon(LGIcon.Starbase);
-            Color g = UIManager.DS.Green;
-            _chipBuild.GlowStrength = 0.5f;   // активная стройка — главный ярлык системы
-            _chipBuild.SetColors(new Color(0.02f, 0.07f, 0.05f, 0.90f), new Color(g.r, g.g, g.b, 0.85f), g, g, Color.white);
-            _chipBuild.SetAlpha(0f);
+            _work = new SystemWorkRing(transform);
             _buildScan = Random.value * 0.25f;   // подписи обновляются вразнобой, не все в один кадр
         }
 
@@ -267,7 +263,7 @@ namespace StellarisClone.Rendering
             _statusRow.localPosition = new Vector3(0, -2.0f, -0.02f);
         }
 
-        private float _popVis, _buildVis, _jobVis;
+        private float _popVis, _jobVis;
 
         /// <summary>
         /// Раскладка строки состояния по центру: видимые плашки встык с зазором, исчезающая плавно отдаёт место.
@@ -278,7 +274,6 @@ namespace StellarisClone.Rendering
             float k = Time.unscaledDeltaTime * 6f;
             _popVis = Mathf.MoveTowards(_popVis, _popOn && _alpha > 0.01f ? 1f : 0f, k);
             _jobVis = Mathf.MoveTowards(_jobVis, _jobOn && _alpha > 0.01f ? 1f : 0f, k);
-            _buildVis = Mathf.MoveTowards(_buildVis, _buildOn && _buildAlpha > 0.01f ? 1f : 0f, k);
             // Строка ресурсов: титан · гелий-3 · жители (по центру, без плашек)
             if (_chipMin != null)
             {
@@ -293,11 +288,9 @@ namespace StellarisClone.Rendering
             }
 
             const float gap = 0.3f;
-            float wb = _chipBuild != null ? (_chipBuild.Width + gap) * _buildVis : 0f;
+            // Плашки стройки форпоста/колонии под названием больше нет — эта работа показана кольцом вокруг звезды
             float wj = _chipJob != null ? (_chipJob.Width + gap) * _jobVis : 0f;
-            float x = -(wb + wj - gap * Mathf.Max(_buildVis, _jobVis)) * 0.5f;
-            if (_chipBuild != null) _chipBuild.Root.localPosition = new Vector3(x + _chipBuild.Width * 0.5f, 0f, 0f);
-            x += wb;
+            float x = -(wj - gap * _jobVis) * 0.5f;
             if (_chipJob != null) _chipJob.Root.localPosition = new Vector3(x + _chipJob.Width * 0.5f, 0f, 0f);
         }
 
@@ -453,28 +446,60 @@ namespace StellarisClone.Rendering
             _buildScan = 0.25f;
             string text;
             LGIcon icon;
-            float progress = -1f;   // полоска снизу: только когда работа идёт (строитель ещё в пути — без неё)
-            if (PlayerOutpostEta(_data.Id, out bool building, out float days))
+            Color col;
+            float progress = 0f;
+            bool wait = false;
+            bool outpost = PlayerOutpostEta(_data.Id, out bool building, out float days);
+            if (outpost && building)
             {
-                text = building ? Loc.F("ФОРПОСТ · {0}", FleetRoute.FormatDays(days)) : Loc.F("ФОРПОСТ · ~{0}", FleetRoute.FormatDays(days));
-                icon = LGIcon.Starbase;
                 float total = FactionTraits.OutpostDays(0);
-                if (building && total > 0f) progress = 1f - days / total;
+                progress = total > 0f ? 1f - days / total : 0f;
+                text = Loc.F("ФОРПОСТ · {0}", FleetRoute.FormatDays(days));
+                icon = LGIcon.Starbase;
+                col = SystemWorkRing.BuildCol;
+            }
+            else if (PlayerSurvey(_data.Id, out float sp, out float sdays))
+            {
+                progress = sp;
+                text = Loc.F("РАЗВЕДКА · {0:0}% · {1}", sp * 100f, FleetRoute.FormatDays(sdays));
+                icon = LGIcon.Sensors;
+                col = SystemWorkRing.SurveyCol;
+            }
+            else if (outpost)
+            {
+                wait = true;   // строитель ещё летит — пунктирное кольцо
+                text = Loc.F("ФОРПОСТ · ~{0}", FleetRoute.FormatDays(days));
+                icon = LGIcon.Starbase;
+                col = SystemWorkRing.BuildCol;
             }
             else if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
             {
+                progress = job.Progress;
                 text = $"{ProjectName(job.Kind)} · {FleetRoute.FormatDays(jdays)}";
                 icon = job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe;
-                progress = job.Progress;
+                col = SystemWorkRing.ColonyCol;
             }
             else { _buildOn = false; return; }
             _buildOn = true;
-            _chipBuild.SetProgress(progress);
-            if (text == _buildKey) return;
-            _buildKey = text;
-            _chipBuild.SetIcon(icon);
-            _chipBuild.Set(text, 0.40f);
-            _chipBuild.CenterOn(0f, 0f);
+            _work.Set(col, progress, wait, icon, text);
+        }
+
+        /// <summary>Ваш научный корабль разведывает эту систему: прогресс 0..1 и сколько дней осталось.</summary>
+        public static bool PlayerSurvey(int systemId, out float progress, out float days)
+        {
+            progress = 0f;
+            days = 0f;
+            var fm = FleetManager.Instance;
+            if (fm == null) return false;
+            foreach (var f in fm.AllFleets)
+            {
+                var d = f != null ? f.Data : null;
+                if (d == null || d.Destroyed || d.OwnerId != 0 || d.State != FleetState.Surveying || d.SurveyTargetSystemId != systemId) continue;
+                progress = Mathf.Clamp01(1f - d.DaysRemainingSurvey / Mathf.Max(0.01f, d.TotalSurveyDays));
+                days = Mathf.Max(0f, d.DaysRemainingSurvey);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -649,6 +674,7 @@ namespace StellarisClone.Rendering
         {
             _hiddenByIsolation = !visible;
             if (_plateRoot != null) _plateRoot.SetActive(visible);
+            if (!visible) _work?.Hide();
         }
 
         private void ApplyAlpha()
@@ -682,7 +708,6 @@ namespace StellarisClone.Rendering
             _chipLm?.SetAlpha(_lmAlpha);
             _chipPh?.SetAlpha(_phAlpha);
             _chipFort?.SetAlpha(_fortOn ? _alpha : 0f);
-            _chipBuild?.SetAlpha(_buildAlpha);
             _chipPop?.SetAlpha(_popOn ? _alpha : 0f);
             _chipJob?.SetAlpha(_jobOn ? _alpha : 0f);
         }
@@ -879,14 +904,13 @@ namespace StellarisClone.Rendering
             float resTarget = known ? (1f - Smooth(ResFrom, ResTo, dist)) : 0f;
             if (_isSelected && known) resTarget = Mathf.Max(resTarget, near);
 
-            // Плашка форпоста: видна издалека, пока ваш строитель работает или летит сюда
-            if (_chipBuild != null)
+            // Кольцо работы: видно издалека, пока ваш корабль работает в системе или строитель летит сюда
+            if (_work != null)
             {
                 UpdateBuildChip();
                 float bTarget = _buildOn ? Mathf.Max(1f - Smooth(MidFrom + 90f, MidTo + 160f, dist), _isSelected || _isHovered ? 1f : 0f) : 0f;
-                float nb = Mathf.MoveTowards(_buildAlpha, bTarget, Time.unscaledDeltaTime * 5f);
-                if (Mathf.Abs(nb - _buildAlpha) > 0.0005f) { _buildAlpha = nb; _chipBuild.SetAlpha(_buildAlpha); }
-                if (_buildAlpha > 0.01f) _chipBuild.Pulse(Time.unscaledTime);
+                _buildAlpha = Mathf.MoveTowards(_buildAlpha, bTarget, Time.unscaledDeltaTime * 5f);
+                _work.Tick(_cam, _buildAlpha, scale, Time.unscaledTime);
             }
             if (_jobOn && _alpha > 0.01f) _chipJob?.Pulse(Time.unscaledTime + 1.3f);
 

@@ -91,7 +91,11 @@ namespace StellarisClone.Rendering
             CreateStatusBadge();
             CreateTypeIcon();
             CreateWorkVFX();
-            if (Data.Type != FleetType.Military) _work = ShipWorkFx.Attach(transform);
+            if (Data.Type != FleetType.Military)
+            {
+                _work = ShipWorkFx.Attach(transform);
+                _work.SystemRing = Data.OwnerId != 0;   // у ваших кораблей кольцо разведки — у подписи системы
+            }
             SnapToCurrentSystem();
             SetupTooltip();
 
