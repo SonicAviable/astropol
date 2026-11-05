@@ -9,7 +9,11 @@ namespace StellarisClone.Rendering
     ///   [[sec|ЗАГОЛОВОК|#RRGGBB]]                     — подзаголовок раздела (мелко, с разрядкой, цветом);
     ///   [[big|значение|подпись|значение|подпись|…]]   — до трёх крупных чисел с подписями в ряд;
     ///   [[kv|Значок|#RRGGBB|название|значение]]       — строка: значок и название слева, значение справа (Значок «-» — без значка);
-    ///   [[ticks]]                                     — разделитель-шкала.
+    ///   [[ticks]]                                     — разделитель-шкала;
+    ///   [[meter|#RRGGBB|доля 0..1|подпись слева|подпись справа]] — шкала заполнения (склад) с подписями под ней;
+    ///   [[src|Значок|#RRGGBB|название|значение|доля 0..1]]   — источник: значок, название, полоска доли и значение;
+    ///                                                   доля 0 — строка приглушена (источника пока нет);
+    ///   [[total|подпись|значение|#RRGGBB]]           — итог: выделенная полоса во всю ширину.
     /// Остальные строки идут обычным текстом (со значками [[Icon:#hex]]). Подсказки без меток рисуются как раньше.
     /// </summary>
     public partial class TooltipSystem
@@ -29,10 +33,15 @@ namespace StellarisClone.Rendering
         private readonly List<(RectTransform rt, Text[] values, Text[] caps)> _bigPool = new List<(RectTransform, Text[], Text[])>();
         private readonly List<(RectTransform rt, Image icon, Text label, Text value)> _kvPool = new List<(RectTransform, Image, Text, Text)>();
         private readonly List<Image> _tickPool = new List<Image>();
-        private int _usedText, _usedSec, _usedBig, _usedKv, _usedTick;
+        private int _usedText, _usedSec, _usedBig, _usedKv, _usedTick, _usedMeter, _usedSrc, _usedTotal;
+        private readonly List<(RectTransform rt, Image track, Image fill, Text left, Text right)> _meterPool = new List<(RectTransform, Image, Image, Text, Text)>();
+        private readonly List<(RectTransform rt, Image icon, Text label, Image track, Image fill, Text value)> _srcPool = new List<(RectTransform, Image, Text, Image, Image, Text)>();
+        private readonly List<(RectTransform rt, Image bg, Text label, Text value)> _totalPool = new List<(RectTransform, Image, Text, Text)>();
+        private const float SrcBarW = 86f, SrcValueW = 52f;
 
         private static bool HasBlocks(string body) =>
-            body.Contains("[[sec|") || body.Contains("[[big|") || body.Contains("[[kv|") || body.Contains("[[ticks]]");
+            body.Contains("[[sec|") || body.Contains("[[big|") || body.Contains("[[kv|") || body.Contains("[[ticks]]")
+            || body.Contains("[[meter|") || body.Contains("[[src|") || body.Contains("[[total|");
 
         private void EnsureBlocksRoot()
         {
@@ -51,7 +60,7 @@ namespace StellarisClone.Rendering
             if (_blocks != null) _blocks.gameObject.SetActive(false);
         }
 
-        private struct Line { public int Kind; public string[] F; public string Text; }   // 0 текст, 1 sec, 2 big, 3 kv, 4 ticks
+        private struct Line { public int Kind; public string[] F; public string Text; }   // 0 текст, 1 sec, 2 big, 3 kv, 4 ticks, 5 meter, 6 src, 7 total
 
         private static List<Line> ParseBlocks(string body)
         {
@@ -70,7 +79,10 @@ namespace StellarisClone.Rendering
                 int kind = l == "[[ticks]]" ? 4
                          : l.StartsWith("[[sec|") && l.EndsWith("]]") ? 1
                          : l.StartsWith("[[big|") && l.EndsWith("]]") ? 2
-                         : l.StartsWith("[[kv|") && l.EndsWith("]]") ? 3 : 0;
+                         : l.StartsWith("[[kv|") && l.EndsWith("]]") ? 3
+                         : l.StartsWith("[[meter|") && l.EndsWith("]]") ? 5
+                         : l.StartsWith("[[src|") && l.EndsWith("]]") ? 6
+                         : l.StartsWith("[[total|") && l.EndsWith("]]") ? 7 : 0;
                 if (kind == 0) { if (plain.Length > 0) plain.Append('\n'); plain.Append(raw); continue; }
                 Flush();
                 string inner = kind == 4 ? "" : l.Substring(2, l.Length - 4);
@@ -86,7 +98,7 @@ namespace StellarisClone.Rendering
         {
             EnsureBlocksRoot();
             _blocks.gameObject.SetActive(true);
-            _usedText = _usedSec = _usedBig = _usedKv = _usedTick = 0;
+            _usedText = _usedSec = _usedBig = _usedKv = _usedTick = _usedMeter = _usedSrc = _usedTotal = 0;
             var lines = ParseBlocks(body);
 
             // 1) содержимое и нужная ширина
@@ -153,6 +165,57 @@ namespace StellarisClone.Rendering
                         built.Add((3, r.rt, 22f, null));
                         break;
                     }
+                    case 5:
+                    {
+                        var m = TakeMeter();
+                        Color c = UIManager.DS.NeonCyan;
+                        if (ln.F.Length > 1) ColorUtility.TryParseHtmlString(ln.F[1], out c);
+                        float k = ln.F.Length > 2 ? Mathf.Clamp01(ParseF(ln.F[2])) : 0f;
+                        m.fill.color = c;
+                        m.fill.rectTransform.anchorMax = new Vector2(Mathf.Max(0.004f, k), 1f);
+                        m.left.text = ln.F.Length > 3 ? ln.F[3] : "";
+                        m.right.text = ln.F.Length > 4 ? ln.F[4] : "";
+                        need = Mathf.Max(need, m.left.preferredWidth + m.right.preferredWidth + 30f + Pad * 2f);
+                        built.Add((5, m.rt, 28f, null));
+                        break;
+                    }
+                    case 6:
+                    {
+                        var r = TakeSrc();
+                        Color c = UIManager.DS.TextPrimary;
+                        if (ln.F.Length > 2) ColorUtility.TryParseHtmlString(ln.F[2], out c);
+                        float k = ln.F.Length > 5 ? Mathf.Clamp01(ParseF(ln.F[5])) : 0f;
+                        bool on = k > 0.0001f;
+                        Color dim = new Color(0.33f, 0.40f, 0.43f, 1f);
+                        bool hasIcon = ln.F.Length > 1 && ln.F[1] != "-" && System.Enum.TryParse(ln.F[1], out LGIcon icon);
+                        r.icon.gameObject.SetActive(hasIcon);
+                        if (hasIcon) { System.Enum.TryParse(ln.F[1], out LGIcon ic2); r.icon.sprite = LGIcons.Get(ic2); r.icon.color = on ? c : dim; }
+                        r.label.text = ln.F.Length > 3 ? ln.F[3] : "";
+                        r.label.color = on ? UIManager.DS.TextPrimary : dim;
+                        r.value.text = ln.F.Length > 4 ? ln.F[4] : "";
+                        r.value.color = on ? c : dim;
+                        r.fill.color = c;
+                        r.fill.gameObject.SetActive(on);
+                        r.fill.rectTransform.anchorMax = new Vector2(Mathf.Max(0.02f, k), 1f);
+                        r.label.rectTransform.offsetMin = new Vector2(hasIcon ? 22f : 0f, 0f);
+                        r.label.rectTransform.offsetMax = new Vector2(-(SrcBarW + SrcValueW + 14f), 0f);
+                        need = Mathf.Max(need, (hasIcon ? 22f : 0f) + r.label.preferredWidth + SrcBarW + SrcValueW + 24f + Pad * 2f);
+                        built.Add((6, r.rt, 22f, null));
+                        break;
+                    }
+                    case 7:
+                    {
+                        var t = TakeTotal();
+                        Color c = UIManager.DS.Green;
+                        if (ln.F.Length > 3) ColorUtility.TryParseHtmlString(ln.F[3], out c);
+                        t.label.text = ln.F.Length > 1 ? ln.F[1] : "";
+                        t.value.text = ln.F.Length > 2 ? ln.F[2] : "";
+                        t.value.color = c;
+                        t.bg.color = new Color(c.r, c.g, c.b, 0.08f);
+                        need = Mathf.Max(need, t.label.preferredWidth + t.value.preferredWidth + 40f + Pad * 2f);
+                        built.Add((7, t.rt, 34f, null));
+                        break;
+                    }
                     default:
                     {
                         var t = TakeTick();
@@ -172,6 +235,8 @@ namespace StellarisClone.Rendering
                 float gap = prev < 0 ? 0f : b.kind == 1 ? 10f : b.kind == 4 || prev == 4 ? 8f : BlockGap;
                 if (prev == 1) gap = 4f;
                 if (prev == 3 && b.kind == 3) gap = 0f;
+                if (prev == 6 && b.kind == 6) gap = 0f;
+                if (b.kind == 7) gap = 10f;
                 y += gap;
                 float bh = b.h;
                 if (b.kind == 0)
@@ -192,6 +257,86 @@ namespace StellarisClone.Rendering
             for (int i = _usedBig; i < _bigPool.Count; i++) _bigPool[i].rt.gameObject.SetActive(false);
             for (int i = _usedKv; i < _kvPool.Count; i++) _kvPool[i].rt.gameObject.SetActive(false);
             for (int i = _usedTick; i < _tickPool.Count; i++) _tickPool[i].gameObject.SetActive(false);
+            for (int i = _usedMeter; i < _meterPool.Count; i++) _meterPool[i].rt.gameObject.SetActive(false);
+            for (int i = _usedSrc; i < _srcPool.Count; i++) _srcPool[i].rt.gameObject.SetActive(false);
+            for (int i = _usedTotal; i < _totalPool.Count; i++) _totalPool[i].rt.gameObject.SetActive(false);
+        }
+
+        private static float ParseF(string s)
+            => float.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : 0f;
+
+        private (RectTransform rt, Image track, Image fill, Text left, Text right) TakeMeter()
+        {
+            if (_usedMeter >= _meterPool.Count)
+            {
+                var rt = Rt(_blocks, "Meter");
+                var track = Img(rt, "Track", null, new Color(1f, 1f, 1f, 0.07f));
+                track.rectTransform.anchorMin = new Vector2(0f, 1f); track.rectTransform.anchorMax = new Vector2(1f, 1f);
+                track.rectTransform.pivot = new Vector2(0.5f, 1f); track.rectTransform.sizeDelta = new Vector2(0f, 7f);
+                track.rectTransform.anchoredPosition = Vector2.zero;
+                var fill = Img(track.rectTransform, "Fill", null, Color.white);
+                fill.rectTransform.anchorMin = Vector2.zero; fill.rectTransform.anchorMax = new Vector2(0.1f, 1f);
+                fill.rectTransform.offsetMin = fill.rectTransform.offsetMax = Vector2.zero;
+                var l = Txt(rt, GameFont.Regular, 11, UIManager.DS.TextMuted, FontStyle.Normal);
+                l.supportRichText = true;
+                l.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), Vector2.zero, new Vector2(300f, 14f));
+                var r = Txt(rt, GameFont.Regular, 11, UIManager.DS.TextMuted, FontStyle.Normal);
+                r.supportRichText = true;
+                r.alignment = TextAnchor.MiddleRight;
+                r.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(300f, 14f));
+                _meterPool.Add((rt, track, fill, l, r));
+            }
+            var m = _meterPool[_usedMeter++];
+            m.rt.gameObject.SetActive(true);
+            return m;
+        }
+
+        private (RectTransform rt, Image icon, Text label, Image track, Image fill, Text value) TakeSrc()
+        {
+            if (_usedSrc >= _srcPool.Count)
+            {
+                var rt = Rt(_blocks, "Src");
+                var ic = Img(rt, "Icon", null, Color.white);
+                ic.preserveAspect = true;
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(15f, 15f));
+                var l = Txt(rt, GameFont.Regular, 13, UIManager.DS.TextPrimary, FontStyle.Normal);
+                l.supportRichText = true;
+                l.rectTransform.Stretch();
+                var track = Img(rt, "Track", null, new Color(1f, 1f, 1f, 0.06f));
+                track.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-(SrcValueW + 8f), 0f), new Vector2(SrcBarW, 6f));
+                var fill = Img(track.rectTransform, "Fill", null, Color.white);
+                fill.rectTransform.anchorMin = Vector2.zero; fill.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+                fill.rectTransform.offsetMin = fill.rectTransform.offsetMax = Vector2.zero;
+                var v = Txt(rt, GameFont.Bold, 13, Color.white, FontStyle.Bold);
+                v.supportRichText = true;
+                v.alignment = TextAnchor.MiddleRight;
+                v.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(SrcValueW, 18f));
+                _srcPool.Add((rt, ic, l, track, fill, v));
+            }
+            var r = _srcPool[_usedSrc++];
+            r.rt.gameObject.SetActive(true);
+            return r;
+        }
+
+        private (RectTransform rt, Image bg, Text label, Text value) TakeTotal()
+        {
+            if (_usedTotal >= _totalPool.Count)
+            {
+                var rt = Rt(_blocks, "Total");
+                var bg = Img(rt, "Bg", null, Color.white);
+                bg.rectTransform.Stretch(-Pad, 0f, -Pad, 0f);   // во всю ширину панели, за поля
+                var l = Txt(rt, GameFont.Bold, 13, UIManager.DS.TextPrimary, FontStyle.Bold);
+                l.supportRichText = true;
+                l.rectTransform.Stretch();
+                var v = Txt(rt, GameFont.Display, 18, Color.white, FontStyle.Normal);
+                v.supportRichText = true;
+                v.alignment = TextAnchor.MiddleRight;
+                v.rectTransform.Stretch();
+                _totalPool.Add((rt, bg, l, v));
+            }
+            var t = _totalPool[_usedTotal++];
+            t.rt.gameObject.SetActive(true);
+            return t;
         }
 
         // ---------- пулы элементов ----------

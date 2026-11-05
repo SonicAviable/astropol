@@ -1698,87 +1698,28 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         float net = eco.MonthlyEnergyIncome;
         ShowRes(_energyVal, eco.EnergyCredits, $"  <size=12>{StatFormat.Colored(net, "")}</size>");
 
-        if (_energyTip != null)
-        {
-            string netColor = net >= 0f ? StatFormat.GreenHex : StatFormat.RedHex;
-            string warn = eco.IsBankrupt
-                ? Loc.T("<color=#FF5555><b>БАНКРОТСТВО</b> — производство урезано вдвое</color>\n\n")
-                : eco.BankruptcyLooming
-                    ? Loc.F("<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{0} мес.</color>\n\n", Mathf.Max(1, Mathf.CeilToInt(eco.MonthsUntilEmpty)))
-                    : "";
-            var rep = eco.Report;
-            string overCap = rep.NavalUsed > rep.NavalCapacity
-                ? Loc.F("  <color=#FF8888>(перебор лимита: ×{0:0.##})</color>", rep.OverCapacityMult) : "";
-
-            _energyTip.SetText(
-                "[[Energy:#F2C747]]" + Loc.T("<b>Гелий-3</b>\n") +
-                warn +
-                "[[Energy:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.EnergyCredits) +
-                "[[Globe:#8AA2A8]]" + Loc.F("<color=#8AA2A8>База империи:</color> {0:+0;-0;0} / мес\n", eco.BaseEnergyIncome) +
-                "[[Power:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Районы-генераторы:</color> {0:+0;-0;0} / мес\n", eco.PlanetEnergyOutput) +
-                "[[Starbase:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Добывающие станции:</color> {0:+0;-0;0} / мес\n", eco.StationEnergyOutput) +
-                (eco.TechEnergyOutput > 0f ? "[[Reactor:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Реакторные технологии:</color> {0:+0;-0;0} / мес\n", eco.TechEnergyOutput) : "") +
-                "[[Fleet:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Военный флот:</color> <color=#FF8888>-{0:0.#}</color> / мес{1}\n", rep.FleetUpkeep, overCap) +
-                "[[ConstructorShip:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Гражданские суда:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", rep.CivilianUpkeep) +
-                "[[Starbase:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Форпосты ({0} × {1:0.#}):</color> <color=#FF8888>-{2:0.#}</color> / мес\n", rep.Outposts, EmpireEconomy.OutpostUpkeep, rep.Outposts * EmpireEconomy.OutpostUpkeep) +
-                (Fortifications.Upkeep(0) > 0f ? "[[ShieldDome:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Укрепления баз:</color> <color=#FF8888>-{0:0.#}</color> / мес\n", Fortifications.Upkeep(0)) : "") +
-                (rep.ArmyUpkeep > 0.01f ? "[[Swords:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Армия (карты):</color> <color=#FF8888>-{0:0.#}</color> / мес\n", rep.ArmyUpkeep) : "") +
-                $"<color=#8AA2A8>──────────────</color>\n" +
-                "[[Energy:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Чистый доход:</color> <color={0}><b>{1:+0.#;-0.#;0} / мес</b></color>\n\n", netColor, net) +
-                "[[Fleet:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Флотский лимит: {0} / {1} (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). ", rep.NavalUsed, rep.NavalCapacity, EmpireEconomy.NavalCapacityPerColony) +
-                Loc.T("Сверх лимита содержание всего военного флота растёт.</color>")
-            );
-        }
+        if (_energyTip != null) _energyTip.SetText(EnergyTip(eco));
     }
 
     // === МИНЕРАЛЫ ===
     if (_mineralsVal != null)
     {
         ShowRes(_mineralsVal, eco.Minerals, $"  <size=12>{StatFormat.Colored(eco.MonthlyMineralsIncome, "")}</size>");
-        if (_mineralsTip != null)
-            _mineralsTip.SetText(
-                "[[Minerals:#4DE6CC]]" + Loc.T("<b>Титан</b>\n") +
-                "[[Minerals:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b> / {1:N0}\n", (int)eco.Minerals, eco.MineralStorage) +
-                "[[Globe:#8AA2A8]]" + Loc.F("<color=#8AA2A8>База:</color> {0:+0;-0;0} / мес\n", eco.BaseMineralsIncome) +
-                "[[Minerals:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Горные районы:</color> {0:+0;-0;0} / мес\n", eco.PlanetMineralsOutput) +
-                "[[Starbase:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Добывающие станции:</color> {0:+0;-0;0} / мес\n", eco.StationMineralsOutput) +
-                "[[Industry:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Переработка на заводах:</color> {0:+0;-0;0} / мес\n", -eco.RefiningMinerals) +
-                "[[Construction:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Склады вмещают {0:N0} титана (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>\n", eco.MineralStorage, EmpireEconomy.MineralStoragePerColony) +
-                $"<color=#8AA2A8>──────────────</color>\n" +
-                "[[Minerals:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Итого:</color> {0}", StatFormat.Income(eco.MonthlyMineralsIncome))
-            );
+        if (_mineralsTip != null) _mineralsTip.SetText(MineralsTip(eco));
     }
 
     // === СПЛАВЫ ===
     if (_alloysVal != null)
     {
         ShowRes(_alloysVal, eco.Alloys, $"  <size=12>{StatFormat.Colored(eco.MonthlyAlloysIncome, "")}</size>");
-        if (_alloysTip != null)
-            _alloysTip.SetText(
-                "[[Alloys:#F29E5C]]" + Loc.T("<b>Сплавы</b>\n") +
-                "[[Alloys:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Alloys) +
-                "[[Globe:#8AA2A8]]" + Loc.F("<color=#8AA2A8>База:</color> {0:+0;-0;0} / мес\n", eco.BaseAlloysIncome) +
-                "[[Planet:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Планеты:</color> {0:+0;-0;0} / мес\n", eco.PlanetAlloysOutput) +
-                $"<color=#8AA2A8>──────────────</color>\n" +
-                "[[Alloys:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Итого:</color> {0}", StatFormat.Income(eco.MonthlyAlloysIncome))
-            );
+        if (_alloysTip != null) _alloysTip.SetText(AlloysTip(eco));
     }
 
     // === ВЛИЯНИЕ ===
     if (_influenceVal != null)
     {
         ShowRes(_influenceVal, eco.Influence, $"  <size=12>{StatFormat.Colored(eco.MonthlyInfluenceIncome, "")}</size>");
-        if (_influenceTip != null)
-            _influenceTip.SetText(
-                "[[Influence:#FF7A94]]" + Loc.T("<b>Влияние</b>\n") +
-                "[[Influence:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Запас:</color> <b>{0}</b>\n", (int)eco.Influence) +
-                "[[Influence:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Доход:</color> {0}\n", StatFormat.Income(eco.MonthlyInfluenceIncome)) +
-                (EmpireLaws.InfluenceUpkeep > 0.01f ? "[[Menu:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Из них законы:</color> −{0:0.#} в месяц  <color=#8AA2A8>(L)</color>\n", EmpireLaws.InfluenceUpkeep) : "") + "\n" +
-                Loc.F("<color=#8AA2A8><i>Расходуется на форпосты ({0:0}), колонии ({1:0}), ", FleetManager.OutpostInfluenceCost(0), PlanetData.ColonyInfluenceCost) +
-                (FleetManager.SprawlInfluence(0) > 0f ? Loc.F("<color=#8AA2A8>(форпост дороже на {0:0} — империя разрослась: +{1:0.#} за каждую систему сверх {2})</color> ",
-                    FleetManager.SprawlInfluence(0), FleetManager.SprawlInfluencePerSystem, FleetManager.SprawlFreeSystems) : "") +
-                Loc.F("пакты ({0:0}), мирные предложения ({1:0}) и терраформинг.</i></color>", AIEmpireManager.PactInfluenceCost, AIEmpireManager.PeaceInfluenceCost)
-            );
+        if (_influenceTip != null) _influenceTip.SetText(InfluenceTip(eco));
     }
 
     UpdateStabilityBadge();
@@ -1788,35 +1729,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     {
         var tm = TechnologyManager.Instance;
         ShowText(_researchVal, $"{StatFormat.Colored(tm.MonthlyResearchIncome, "")}<size=11><color=#8AA2A8>{Loc.T(" / мес")}</color></size>", tm.MonthlyResearchIncome);
-        if (_researchTip != null)
-        {
-            int active = 0;
-            foreach (var s in tm.Slots) if (s.CurrentTech != null && !s.IsPaused) active++;
-
-            float mult = tm.GlobalResearchSpeedMultiplier;
-            _researchTip.SetText(
-                "[[Research:#5CF59A]]" + Loc.T("<b>Наука</b>\n") +
-                "[[Globe:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Администрация:</color> +{0:0.#}\n", TechnologyManager.BaseScience) +
-                "[[Population:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Население ({0} жит.; виды и стабильность):</color> +{1:0.#}\n", tm.Population, tm.ScienceFromPopulation) +
-                (tm.FlatScience > 0f ? "[[Star:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Открытия и события:</color> +{0:0.#}\n", tm.FlatScience) : "") +
-                AssistLine() +
-                (Mathf.Abs(mult - 1f) > 0.01f ? "[[Research:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Множитель технологий и событий:</color> ×{0:0.##}\n", mult) : "") +
-                $"<color=#8AA2A8>──────────────</color>\n" +
-                "[[Research:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Итого:</color> <b>+{0:0.#} / мес</b>\n", tm.MonthlyResearchIncome) +
-                "[[Clock:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Активных слотов:</color> {0} / {1}\n\n", active, tm.Slots.Count) +
-                Loc.T("<color=#8AA2A8><i>Наука растёт вместе с населением — заселяйте планеты и стройте жильё. ") +
-                Loc.T("Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</i></color>")
-            );
-        }
+        if (_researchTip != null) _researchTip.SetText(ResearchTip(tm));
     }
 }
-
-        /// <summary>Строка подсказки науки: научные корабли у колоний помогают исследованиям.</summary>
-        private static string AssistLine()
-        {
-            float s = ResearchAssist.Science(0, out int ships);
-            return ships > 0 ? "[[ScienceShip:#8AA2A8]]" + Loc.F("<color=#8AA2A8>Научные корабли у колоний ({0}):</color> +{1:0.#}\n", ships, s) : "";
-        }
 
 // ==================== ХЕЛПЕРЫ ДЛЯ ТУЛТИПОВ ====================
 
@@ -1854,19 +1769,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                              (unstable > 0 ? $" <size=11><color=#FF6B6B>!{unstable}</color></size>" : ""), avg);
         if (_stabilityTip == null) return;
         colonies.Sort((a, b) => a.Stability.CompareTo(b.Stability));
-        var sb = new System.Text.StringBuilder();
-        sb.Append(Loc.F("<b>Средняя стабильность: <color=#{0}>{1:0}</color></b> · {2}\n", hex, avg, PlanetStability.TierName(tier)));
-        sb.Append(Loc.F("<color=#8AA2A8>{0}</color>\n", PlanetStability.TierEffect(tier)));
-        sb.Append("<color=#8AA2A8>──────────────</color>\n");
-        for (int i = 0; i < colonies.Count && i < 6; i++)
-        {
-            var p = colonies[i];
-            string ph = PlanetStability.Hex(PlanetStability.TierColor(p.Tier));
-            sb.Append($"{PlanetNames.Title(p.Name)}: <color=#{ph}>{p.Stability:0} · {PlanetStability.TierName(p.Tier)}</color>\n");
-        }
-        if (colonies.Count > 6) sb.Append(Loc.F("<color=#8AA2A8>…и ещё {0}</color>\n", colonies.Count - 6));
-        sb.Append(Loc.T("\n<color=#8AA2A8><i>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</i></color>"));
-        _stabilityTip.SetText(sb.ToString());
+        _stabilityTip.SetText(StabilityTip(colonies, avg, tier, hex));
     }
 
 
