@@ -88,9 +88,10 @@ def v_plasma(s):
     out += lp(brown(80 + s), 90) * 1.2
     r = np.random.default_rng(90 + s)
     imp = np.zeros(NT)
-    idx = r.integers(0, NT, int(DUR * 6))
+    idx = r.integers(0, NT, int(DUR * 2))
     imp[idx] = r.uniform(-1, 1, len(idx))
-    crack = bp(imp, 1800, 6000) * 2.5 * lfo(0.2, 0, 1, 95 + s) ** 2
+    # треск — редкий и тихий, чтобы не резал слух вблизи
+    crack = lp(bp(imp, 1500, 4500), 3500) * 0.6 * lfo(0.2, 0, 1, 95 + s) ** 3
     return out * 0.9 + crack
 
 
@@ -158,5 +159,6 @@ def render(name, fn, out_dir):
 
 if __name__ == "__main__":
     out = sys.argv[1]
-    for k, f in VARIANTS.items():
-        render(k, f, out)
+    names = sys.argv[2:] or list(VARIANTS)
+    for k in names:
+        render(k, VARIANTS[k], out)

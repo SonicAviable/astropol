@@ -915,6 +915,16 @@ namespace StellarisClone.Rendering
 
             float dist = Vector3.Distance(_cam.position, transform.position);
             float scale = Mathf.Clamp(dist * 0.012f, 1.1f, 3.2f);
+
+            // Вблизи видны планеты мини-системы — подпись уходит под внешнюю орбиту и мельчает, чтобы их не закрывать
+            float close = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(52f, 18f, _cam.position.y));
+            if (close > 0f && _data.Planets != null && _data.Planets.Count > 0)
+            {
+                float outer = 2.1f + 0.82f * (_data.Planets.Count - 1) + 1.3f;   // как MiniInnerOrbit / MiniOrbitStep в GalaxyView
+                scale = Mathf.Lerp(scale, 0.75f, close);
+                _plateRoot.transform.position = transform.position + Vector3.down * 3.2f * (1f - close) - _cam.up * (outer * close);
+            }
+            else _plateRoot.transform.localPosition = new Vector3(0, -3.2f, 0);
             _plateRoot.transform.localScale = Vector3.one * scale;
 
             // Видимость подписи по зуму
