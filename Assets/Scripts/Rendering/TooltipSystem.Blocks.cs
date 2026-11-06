@@ -172,7 +172,7 @@ namespace StellarisClone.Rendering
                         if (ln.F.Length > 1) ColorUtility.TryParseHtmlString(ln.F[1], out c);
                         float k = ln.F.Length > 2 ? Mathf.Clamp01(ParseF(ln.F[2])) : 0f;
                         m.fill.color = c;
-                        m.fill.rectTransform.anchorMax = new Vector2(Mathf.Max(0.004f, k), 1f);
+                        m.rt.GetComponent<MeterAnim>().SetTarget(k);
                         m.left.text = ln.F.Length > 3 ? ln.F[3] : "";
                         m.right.text = ln.F.Length > 4 ? ln.F[4] : "";
                         need = Mathf.Max(need, m.left.preferredWidth + m.right.preferredWidth + 30f + Pad * 2f);
@@ -284,6 +284,7 @@ namespace StellarisClone.Rendering
                 r.supportRichText = true;
                 r.alignment = TextAnchor.MiddleRight;
                 r.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(300f, 14f));
+                rt.gameObject.AddComponent<MeterAnim>().Fill = fill;
                 _meterPool.Add((rt, track, fill, l, r));
             }
             var m = _meterPool[_usedMeter++];
