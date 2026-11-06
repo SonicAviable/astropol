@@ -455,45 +455,151 @@ namespace StellarisClone.Rendering
             _worldTooltip = gameObject.GetComponent<WorldTooltipTrigger>();
             if (_worldTooltip == null)
                 _worldTooltip = gameObject.AddComponent<WorldTooltipTrigger>();
-
-            _worldTooltip.text = Data.Type switch
-            {
-                FleetType.Science =>
-                    $"<b>{Data.Name}</b>\n" +
-                    Loc.T("<color=#66FF88>Научный корабль</color>\n\n") +
-                    Loc.T("ЛКМ — выбрать\n") +
-                    Loc.T("ПКМ по системе — исследовать\n\n") +
-                    Loc.F("<i>Состояние: {0}</i>", Data.State),
-
-                FleetType.Constructor =>
-                    $"<b>{Data.Name}</b>\n" +
-                    Loc.T("<color=#FFAA44>Строительный корабль</color>\n\n") +
-                    Loc.T("ЛКМ — выбрать\n") +
-                    Loc.T("ПКМ по изученной системе — построить аванпост\n\n") +
-                    Loc.F("<i>Состояние: {0}</i>", Data.State),
-
-                _ =>
-                    $"<b>{Data.Name}</b>\n" +
-                    Loc.F("<color=#66E0FF>Боевой корабль</color> · ⚔ {0}\n", Data.MilitaryPower) +
-                    Loc.F("Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n\n", Data.HullPoints, Data.MaxHullPoints, Data.ArmorPoints, Data.ShieldPoints) +
-                    Loc.T("ЛКМ — выбрать\n") +
-                    Loc.T("ПКМ по системе — двигаться\n\n") +
-                    Loc.F("<i>Состояние: {0}</i>", Data.State)
-            };
-            // У боевых кораблей подсказка живая: прочность и десант на борту меняются
-            _worldTooltip.Dynamic = Data.Type == FleetType.Military ? (System.Func<string>)MilitaryTooltip : null;
+            // Подсказка живая у всех кораблей: состояние, цель и прогресс меняются
+            _worldTooltip.Dynamic = BuildTooltip;
         }
 
-        private string MilitaryTooltip()
+        /// <summary>Вариант оформления подсказки корабля (0 — карточка, 1 — компакт, 2 — тактика). F6 — переключить.</summary>
+        public static int TooltipStyle = 0;
+        public const int TooltipStyleCount = 3;
+        public static readonly string[] TooltipStyleNames = { "Карточка", "Компакт", "Тактика" };
+
+        private string TypeName() => Data.Type switch
+        {
+            FleetType.Science => Loc.T("Научный корабль"),
+            FleetType.Constructor => Loc.T("Строительный корабль"),
+            _ => Loc.T("Боевой корабль")
+        };
+
+        private string TypeHex() => Data.Type switch
+        {
+            FleetType.Science => "#66FF88",
+            FleetType.Constructor => "#FFAA44",
+            _ => "#66E0FF"
+        };
+
+        private string TypeIcon() => Data.Type switch
+        {
+            FleetType.Science => "ScienceShip",
+            FleetType.Constructor => "ConstructorShip",
+            _ => "Ship"
+        };
+
+        private string StateName() => Data.State switch
+        {
+            FleetState.InHyperlane => Loc.T("В пути"),
+            FleetState.Constructing => Loc.T("Строит"),
+            FleetState.Surveying => Loc.T("Исследует"),
+            _ => Loc.T("На орбите")
+        };
+
+        private static string SysName(int id)
+        {
+            var s = EmpireStats.GetSystem(id);
+            return s != null ? s.Name : "—";
+        }
+
+        /// <summary>Цель текущего действия и его прогресс 0..1 (-1 — действия нет).</summary>
+        private float Progress(out string target)
+        {
+            var d = Data;
+            switch (d.State)
+            {
+                case FleetState.InHyperlane:
+                    target = SysName(d.TargetSystemId);
+                    return 1f - d.DaysRemainingInTransit / Mathf.Max(0.01f, d.TotalDaysForTransit);
+                case FleetState.Constructing:
+                    target = SysName(d.BuildTargetSystemId);
+                    return 1f - d.DaysRemainingConstruction / Mathf.Max(0.01f, d.TotalConstructionDays);
+                case FleetState.Surveying:
+                    target = SysName(d.SurveyTargetSystemId);
+                    return 1f - d.DaysRemainingSurvey / Mathf.Max(0.01f, d.TotalSurveyDays);
+            }
+            target = null;
+            return -1f;
+        }
+
+        private string RmbHint() => Data.Type switch
+        {
+            FleetType.Science => Loc.T("исследовать систему"),
+            FleetType.Constructor => Loc.T("построить аванпост"),
+            _ => Loc.T("двигаться")
+        };
+
+        private float DaysLeft() => Data.State switch
+        {
+            FleetState.InHyperlane => Data.DaysRemainingInTransit,
+            FleetState.Constructing => Data.DaysRemainingConstruction,
+            FleetState.Surveying => Data.DaysRemainingSurvey,
+            _ => 0f
+        };
+
+        private static string Inv(float v) => Mathf.Clamp01(v).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+        private string BuildTooltip()
         {
             var d = Data;
             if (d == null) return "";
-            string troops = StellarisClone.Cards.ArmyManager.TroopSummary(d);
-            return $"<b>{d.Name}</b>\n" +
-                   Loc.F("<color=#66E0FF>Боевой корабль</color> · ⚔ {0}\n", d.MilitaryPower) +
-                   Loc.F("Корпус {0:0}/{1:0}  Броня {2:0}  Щиты {3:0}\n", d.HullPoints, d.MaxHullPoints, d.ArmorPoints, d.ShieldPoints) +
-                   (troops != null ? "\n" + troops + "\n" : "") +
-                   (d.OwnerId == 0 ? Loc.T("\nЛКМ — выбрать\nПКМ по системе — двигаться") : "");
+            var sb = new System.Text.StringBuilder(256);
+            string hex = TypeHex();
+            bool mine = d.OwnerId == 0;
+            bool mil = d.Type == FleetType.Military;
+            float p = Progress(out string target);
+            string troops = mil ? StellarisClone.Cards.ArmyManager.TroopSummary(d) : null;
+
+            switch (TooltipStyle)
+            {
+                case 1: // Компакт: имя, одна строка статуса, крупные числа у боевых
+                    sb.Append($"[[{TypeIcon()}:{hex}]]<b>{d.Name}</b>\n");
+                    sb.Append($"<color={hex}>{TypeName()}</color>  <color=#8AA2A8>·</color>  {StateName()}");
+                    if (target != null) sb.Append($" <color=#8AA2A8>→</color> {target}");
+                    sb.Append('\n');
+                    if (mil)
+                        sb.Append($"[[big|{d.MilitaryPower}|{Loc.T("мощь")}|{d.HullPoints:0}|{Loc.T("корпус")}|{d.ShieldPoints:0}|{Loc.T("щиты")}]]\n");
+                    else if (p >= 0f)
+                        sb.Append($"[[meter|{hex}|{Inv(p)}|{Mathf.RoundToInt(p * 100f)}%|{Loc.F("{0:0} дн.", DaysLeft())}]]\n");
+                    if (troops != null) sb.Append(troops).Append('\n');
+                    if (mine) sb.Append($"<color=#8AA2A8><size=11>{Loc.T("ЛКМ")} · {Loc.T("ПКМ")} — {RmbHint()}</size></color>");
+                    break;
+
+                case 2: // Тактика: шапка со светящимся шаром, разделы «Статус» и «Приказы»
+                    sb.Append($"[[hdr|{hex}|{TypeName()}|{StateName().ToUpper()}|orb]]\n<b>{d.Name}</b>\n");
+                    sb.Append($"[[sec|{Loc.T("СТАТУС")}|{hex}]]\n");
+                    sb.Append($"[[kv|Star|#8AA2A8|{Loc.T("Система")}|{SysName(d.CurrentSystemId)}]]\n");
+                    if (target != null) sb.Append($"[[kv|Target|{hex}|{Loc.T("Цель")}|{target}]]\n");
+                    if (mil)
+                    {
+                        sb.Append($"[[kv|Swords|#FF7A6B|{Loc.T("Мощь")}|{d.MilitaryPower}]]\n");
+                        sb.Append($"[[meter|#66E0FF|{Inv(d.IntegrityNormalized)}|{Loc.T("Корпус")} {d.HullPoints:0}/{d.MaxHullPoints:0}|{Loc.F("Броня {0:0} · Щиты {1:0}", d.ArmorPoints, d.ShieldPoints)}]]\n");
+                    }
+                    else if (p >= 0f)
+                        sb.Append($"[[meter|{hex}|{Inv(p)}|{Mathf.RoundToInt(p * 100f)}%|{Loc.F("осталось {0:0} дн.", DaysLeft())}]]\n");
+                    if (troops != null) sb.Append(troops).Append('\n');
+                    if (mine)
+                    {
+                        sb.Append($"[[sec|{Loc.T("ПРИКАЗЫ")}|#8AA2A8]]\n");
+                        sb.Append($"[[kv|Check|#8AA2A8|{Loc.T("ЛКМ")}|{Loc.T("выбрать")}]]\n");
+                        sb.Append($"[[kv|Target|#8AA2A8|{Loc.T("ПКМ")}|{RmbHint()}]]");
+                    }
+                    break;
+
+                default: // Карточка: шапка с иконкой и бейджем состояния, строки «ключ — значение»
+                    sb.Append($"[[hdr|{hex}|{TypeName()}|{StateName()}|-]]\n[[{TypeIcon()}:{hex}]]<b>{d.Name}</b>\n");
+                    sb.Append($"[[kv|Star|#8AA2A8|{Loc.T("Местоположение")}|{SysName(d.CurrentSystemId)}]]\n");
+                    if (target != null)
+                        sb.Append($"[[kv|Target|{hex}|{Loc.T("Цель")}|{target} · {Mathf.RoundToInt(p * 100f)}%]]\n");
+                    if (mil)
+                    {
+                        sb.Append($"[[kv|Swords|#FF7A6B|{Loc.T("Мощь")}|{d.MilitaryPower}]]\n");
+                        sb.Append($"[[kv|ArmorPlate|#C8D2D6|{Loc.T("Корпус / броня")}|{d.HullPoints:0}/{d.MaxHullPoints:0} · {d.ArmorPoints:0}]]\n");
+                        sb.Append($"[[kv|ShieldDome|#66E0FF|{Loc.T("Щиты")}|{d.ShieldPoints:0}]]\n");
+                    }
+                    if (troops != null) sb.Append(troops).Append('\n');
+                    if (mine)
+                        sb.Append($"[[ticks]]\n<color=#8AA2A8>{Loc.T("ЛКМ — выбрать")}</color>\n<color=#8AA2A8>{Loc.T("ПКМ")} — {RmbHint()}</color>");
+                    break;
+            }
+            return sb.ToString().TrimEnd('\n');
         }
 
         public bool IsSelected => _isSelected;
@@ -967,8 +1073,18 @@ namespace StellarisClone.Rendering
             }
         }
 
+        private static int s_StyleKeyFrame = -1;
+
         private void Update()
         {
+            // F6 — перебрать варианты подсказки корабля (временно, для выбора оформления)
+            if (s_StyleKeyFrame != Time.frameCount && Input.GetKeyDown(KeyCode.F6))
+            {
+                s_StyleKeyFrame = Time.frameCount;
+                TooltipStyle = (TooltipStyle + 1) % TooltipStyleCount;
+                TooltipSystem.ForceHide();
+                NotificationCenter.Show(Loc.F("Подсказка корабля: {0}", TooltipStyleNames[TooltipStyle]), "", NotificationCenter.Kind.Info, 2f);
+            }
             ApplyFogVisibility();
             TickDamageFx();
             _animTime += Time.deltaTime;
