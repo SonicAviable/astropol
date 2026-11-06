@@ -145,7 +145,7 @@ namespace StellarisClone.Rendering
         {
             GameObject go;
             // Пытаемся загрузить процедурный префаб как в SystemViewManager
-            var prefab = PlanetModelLibrary.Template(planet) ?? RealPlanetModel.Template(planet) ?? LoadPlanetPrefabFor(planet);
+            var prefab = AstroPlanetModel.Template(planet) ?? PlanetModelLibrary.Template(planet) ?? RealPlanetModel.Template(planet) ?? LoadPlanetPrefabFor(planet);
             if (prefab != null)
             {
                 go = Instantiate(prefab, parent);

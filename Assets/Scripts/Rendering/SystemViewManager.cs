@@ -152,6 +152,13 @@ namespace StellarisClone.Rendering
                 GalaxyView.Instance?.SetStarBodyVisible(system.Id, false);
                 _hiddenStarId = system.Id;
             }
+            else if (AstroStarModel.Build(_systemContainer.transform, system) != null)
+            {
+                // Объёмная звезда вместо спрайта карты; свет чуть окрашен её классом
+                starLight.color = Color.Lerp(Color.white, GalaxyView.StarColor(system.SpectralClass), 0.3f);
+                GalaxyView.Instance?.SetStarBodyVisible(system.Id, false);
+                _hiddenStarId = system.Id;
+            }
 
             Shader litShader = GetLitShader();
 
@@ -239,8 +246,8 @@ namespace StellarisClone.Rendering
             int seed = system.Id * 100 + index;
             PlanetVisualType visualType = (PlanetVisualType)(index % Enum.GetValues(typeof(PlanetVisualType)).Length);
 
-            // Детальные модели (часть планет каждого типа), Земля / Марс / Луна по настоящим картам, иначе — процедурный префаб
-            GameObject prefab = PlanetModelLibrary.Template(planet) ?? RealPlanetModel.Template(planet) ?? LoadPlanetPrefabFor(planet.Type, system.Id, index);
+            // Фото-карты с обликами по имени (AstroPlanetModel), иначе детальные модели, Земля / Марс / Луна, процедурный префаб
+            GameObject prefab = AstroPlanetModel.Template(planet) ?? PlanetModelLibrary.Template(planet) ?? RealPlanetModel.Template(planet) ?? LoadPlanetPrefabFor(planet.Type, system.Id, index);
             GameObject planetObj;
             bool isProcedural = false;
             MeshRenderer rend = null;
