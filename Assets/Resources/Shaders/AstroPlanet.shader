@@ -49,6 +49,7 @@ Shader "Astropolity/Planet/Astro"
             #include "AstroNoise.cginc"
 
             sampler2D _MainTex, _AuxTex, _CloudTex;
+            float4 _MainTex_TexelSize;
             float _Kind, _Seed, _Spin, _Cloud, _City, _Hue, _Sat, _Off, _Flip, _Bump, _Cap, _Sea, _Temp, _AtmK, _Exposure;
             float4 _A, _B, _C, _D, _Atm, _Tint, _CloudCol, _CityCol, _SunDir;
 
@@ -89,7 +90,9 @@ Shader "Astropolity/Planet/Astro"
             }
             float3 BumpN(float2 uv, Grad g, float3 p, float k)
             {
-                const float e = 1.0 / 1024.0;
+                // Шаг — полтора текселя карты (2k…4k), сила рельефа приведена к шагу 1/1024
+                float e = max(_MainTex_TexelSize.x * 1.5, 1e-4);
+                k *= (1.0 / 1024.0) / e;
                 float h0 = Lum(Tx(_MainTex, uv, g)), hu = Lum(Tx(_MainTex, uv + float2(e, 0), g)), hv = Lum(Tx(_MainTex, uv + float2(0, e), g));
                 float3 east = normalize(float3(p.z, 0, -p.x) + float3(1e-5, 0, 0));
                 float3 north = cross(p, east);

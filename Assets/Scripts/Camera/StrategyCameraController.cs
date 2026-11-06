@@ -82,6 +82,8 @@ namespace StellarisClone.Cam
 
         private void Awake()
         {
+            // Ближе к системе, чем в старой сцене: планеты мини-систем разглядываются вблизи
+            minHeight = Mathf.Min(minHeight, 4.5f);
             _targetHeight = transform.position.y;
         }
 

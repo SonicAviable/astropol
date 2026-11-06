@@ -350,7 +350,9 @@ namespace StellarisClone.Rendering
                 var local = new Vector3(Mathf.Cos(ang) * m.Radius[i], 0.1f, Mathf.Sin(ang) * m.Radius[i]);
                 var sr = m.Planets[i];
                 sr.transform.localPosition = local;
-                float size = Mathf.Max(m.Size[i], wpp * 12f);   // издалека — не меньше 12 пикселей
+                // издалека — не меньше 12 пикселей; у самой системы планеты крупнее (до ×1,5) — видны детали
+                float near = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(22f, 5f, camPos.y));
+                float size = Mathf.Max(m.Size[i] * (1f + 0.5f * near), wpp * 12f);
                 sr.transform.localScale = Vector3.one * (size / 0.64f);
 
                 // освещённая сторона — к звезде (в плоскости экрана)
