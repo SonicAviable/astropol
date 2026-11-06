@@ -163,7 +163,9 @@ go.transform.localScale = Vector3.one * scale;
                 // Убираем коллайдеры префаба
                 foreach (var c in go.GetComponentsInChildren<Collider>())
                     Destroy(c);
-                FitToFrame(go.transform, diameter);
+                // Фото-планета — радиус 1 точно; по рамкам вписывать нельзя (повёрнутая сфера, дымка и кольца раздувают их)
+                if (AstroPlanetModel.IsTemplate(prefab)) go.transform.localScale = Vector3.one * (diameter * 0.5f);
+                else FitToFrame(go.transform, diameter);
             }
             else
             {

@@ -42,12 +42,7 @@ private void OnMouseDown()
     // 2. Отправляем событие выбора для UI-панели информации
     OnSystemSelected?.Invoke(Data);
 
-    // 3. Проверка на двойной клик для входа внутрь звёздной системы к планетам
-    if (Time.time - _lastClickTime < DoubleClickThreshold)
-    {
-        OnSystemEntered?.Invoke(Data);
-    }
-
+    // Вход внутрь системы убран: планеты и звезда видны на карте при приближении (мини-системы GalaxyView)
     _lastClickTime = Time.time;
 }
     }

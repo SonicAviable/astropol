@@ -29,7 +29,14 @@ namespace StellarisClone.Rendering
             public float Alpha;
             public bool Wanted;
             public TextMesh[] PopTags;
+            public GameObject[] Models;       // фото-планеты (AstroPlanetModel); null — остаётся шарик-спрайт
+            public Renderer[][] ModelRends;
+            public GameObject Star;           // объёмная звезда (AstroStarModel); пока видна — спрайты звезды спрятаны
+            public bool StarSpritesHidden;
         }
+
+        private static readonly int MiniSunDirId = Shader.PropertyToID("_SunDir");
+        private static MaterialPropertyBlock s_miniMpb;
 
         /// <summary>Планета мини-системы под курсором (null — нет). Звёзды и выбор флотов уступают ей клик.</summary>
         public static PlanetData HoveredMiniPlanet { get; private set; }
@@ -102,6 +109,7 @@ namespace StellarisClone.Rendering
                 m.Alpha = Mathf.MoveTowards(m.Alpha, target, dt * 1.8f);
                 if (m.Alpha <= 0.001f && target <= 0f)
                 {
+                    SetMiniStarSprites(m, true);
                     m.Root.SetActive(false);
                     _miniLive.RemoveAt(i);
                     continue;
@@ -250,7 +258,8 @@ namespace StellarisClone.Rendering
                 Planets = new SpriteRenderer[n],
                 Tints = new Color[n],
                 Radius = new float[n], Speed = new float[n], Phase = new float[n], Size = new float[n],
-                PopTags = new TextMesh[n]
+                PopTags = new TextMesh[n],
+                Models = new GameObject[n], ModelRends = new Renderer[n][]
             };
             m.Root = new GameObject($"Mini_{s.Id}");
             m.Root.transform.SetParent(_miniRoot.transform, false);
@@ -296,7 +305,24 @@ namespace StellarisClone.Rendering
                 sr.sortingOrder = 12;
                 m.Planets[i] = sr;
                 m.Tints[i] = p.Type == PlanetType.Barren ? new Color(0.78f, 0.78f, 0.82f) : Color.white;
+
+                // Фото-планета вместо шарика: та же, что на экране колонии; свет — от звезды (_SunDir в AnimateMini)
+                var tpl = AstroPlanetModel.Template(p);
+                if (tpl != null)
+                {
+                    var mg = Instantiate(tpl, m.Root.transform, false);
+                    mg.name = "Planet3D";
+                    var link = mg.GetComponent<PlanetSunLink>();
+                    if (link != null) Destroy(link);
+                    foreach (var col in mg.GetComponentsInChildren<Collider>()) Destroy(col);
+                    m.Models[i] = mg;
+                    m.ModelRends[i] = mg.GetComponentsInChildren<Renderer>(true);
+                    sr.enabled = false;   // объект спрайта остаётся — по нему считаются наведение и подписи
+                }
             }
+
+            m.Star = AstroStarModel.Build(m.Root.transform, s, 0.75f * StarFx.SizeMul(s.SpectralClass));
+            if (m.Star != null) m.Star.transform.localScale = Vector3.zero;
             return m;
         }
 
@@ -335,8 +361,38 @@ namespace StellarisClone.Rendering
                 tint.a = a;
                 sr.color = tint;
 
+                var model = m.Models[i];
+                if (model != null)
+                {
+                    model.transform.localPosition = local;
+                    model.transform.localScale = Vector3.one * (size * 0.5f * a);
+                    if (s_miniMpb == null) s_miniMpb = new MaterialPropertyBlock();
+                    Vector3 sun = (c - model.transform.position).normalized;
+                    foreach (var r in m.ModelRends[i])
+                    {
+                        if (r == null) continue;
+                        r.GetPropertyBlock(s_miniMpb);
+                        s_miniMpb.SetVector(MiniSunDirId, sun);
+                        r.SetPropertyBlock(s_miniMpb);
+                    }
+                }
+
                 PopTag(m, i, local, size, wpp, camRot, a);
             }
+
+            if (m.Star != null)
+            {
+                m.Star.transform.localScale = Vector3.one * a;
+                SetMiniStarSprites(m, a < 0.35f);
+            }
+        }
+
+        /// <summary>Спрайты звезды карты (корона, ядро, блики) — прячем, пока вблизи видна объёмная звезда.</summary>
+        private void SetMiniStarSprites(MiniSys m, bool visible)
+        {
+            if (m.Star == null || m.StarSpritesHidden == !visible) return;
+            m.StarSpritesHidden = !visible;
+            SetStarBodyVisible(m.Sys.Id, visible);
         }
 
         /// <summary>У колонии — число жителей справа сверху от шарика, цветом хозяина, постоянного экранного размера.</summary>

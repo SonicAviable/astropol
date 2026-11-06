@@ -49,12 +49,12 @@ namespace StellarisClone.Rendering
         /// <summary>Радиус звезды в виде системы.</summary>
         public static float Radius(StarSpectralClass c) => 2.6f * StarFx.SizeMul(c);
 
-        /// <summary>Строит звезду в центре parent; null — шейдера нет или это чёрная дыра.</summary>
-        public static GameObject Build(Transform parent, StarSystem system)
+        /// <summary>Строит звезду в центре parent (radius &lt;= 0 — как в виде системы); null — шейдера нет или это чёрная дыра.</summary>
+        public static GameObject Build(Transform parent, StarSystem system, float radius = -1f)
         {
             if (system == null || system.SpectralClass == StarSpectralClass.BlackHole || !Available()) return null;
             Palette(system.SpectralClass, out var cool, out var hot);
-            float radius = Radius(system.SpectralClass);
+            if (radius <= 0f) radius = Radius(system.SpectralClass);
             float seed = (system.Id * 37 % 997) * 0.173f;
 
             var root = new GameObject(ModelName);

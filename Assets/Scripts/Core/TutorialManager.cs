@@ -263,11 +263,11 @@ namespace StellarisClone.Core
             {
                 Title = Loc.T("Столица"),
                 Voice = "tut_11",
-                Text = Loc.T("Внутри системы видны планеты, станции и флоты. Столица — сердце империи: здесь строятся районы."),
-                Task = Loc.T("Двойной щелчок по звезде столицы"),
+                Text = Loc.T("Приблизьте камеру — планеты и звезда видны прямо на карте. Столица — сердце империи: здесь строятся районы."),
+                Task = Loc.T("Приблизьте камеру к столице колесом мыши"),
                 World = () => SystemPos(Capital()),
                 Focus = () => FocusSystem(Capital()),
-                Done = () => SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView
+                Done = () => Camera.main != null && Camera.main.transform.position.y < 60f
             });
 
             _steps.Add(new Step

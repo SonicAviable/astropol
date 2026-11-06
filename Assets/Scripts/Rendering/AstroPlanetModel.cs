@@ -48,6 +48,9 @@ namespace StellarisClone.Rendering
             return t;
         }
 
+        /// <summary>Шаблон собран здесь (радиус ровно 1 — вписывать по рамкам не нужно, оболочки и кольца раздувают их).</summary>
+        public static bool IsTemplate(GameObject t) => t != null && s_templates.ContainsValue(t);
+
         /// <summary>Облик планеты (для подписей и подсказок).</summary>
         public static Look LookOf(PlanetData planet) => LookFor(planet.Type, StableHash(planet.Name));
 
