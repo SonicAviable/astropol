@@ -61,6 +61,7 @@ namespace StellarisClone.Rendering
             bool off = zoomK <= 0.001f || MenuAtmosphere.IsActive
                        || (SystemViewManager.Instance != null && SystemViewManager.Instance.IsInSystemView);
 
+            UpdateSystemHum(cam, off, dt);
             if (off && _miniLive.Count == 0) { ClearMiniHover(); return; }
             if (_miniRoot == null)
             {
@@ -385,6 +386,56 @@ namespace StellarisClone.Rendering
                 m.Star.transform.localScale = Vector3.one * a;
                 SetMiniStarSprites(m, a < 0.35f);
             }
+        }
+
+        // ==================== ГУЛ СИСТЕМЫ ====================
+        // Плазменный гул звезды (Tools/system_hum, вариант «Плазма»): нарастает при подлёте к системе,
+        // издалека глухой (низкие частоты), вблизи раскрывается; панорама — по положению звезды на экране.
+
+        private AudioSource _hum;
+        private AudioLowPassFilter _humLp;
+        private bool _humMissing;
+
+        private void UpdateSystemHum(Camera cam, bool off, float dt)
+        {
+            if (_humMissing) return;
+            if (_hum == null)
+            {
+                var clip = Resources.Load<AudioClip>("Audio/Ambient/system_hum");
+                if (clip == null) { _humMissing = true; return; }
+                var go = new GameObject("SystemHum");
+                go.transform.SetParent(transform, false);
+                _hum = go.AddComponent<AudioSource>();
+                _hum.clip = clip;
+                _hum.loop = true;
+                _hum.playOnAwake = false;
+                _hum.spatialBlend = 0f;
+                _hum.volume = 0f;
+                _hum.time = Random.Range(0f, clip.length * 0.9f);
+                _humLp = go.AddComponent<AudioLowPassFilter>();
+            }
+
+            // Самая «близкая» система: насколько видна мини-система и насколько она в центре экрана
+            float k = 0f, pan = 0f;
+            if (!off && cam != null)
+            {
+                foreach (var m in _miniLive)
+                {
+                    var vp = cam.WorldToViewportPoint(m.Sys.Position);
+                    if (vp.z <= 0f) continue;
+                    float centre = 1f - Mathf.Clamp01(new Vector2(vp.x - 0.5f, vp.y - 0.5f).magnitude / 0.75f);
+                    float v = m.Alpha * centre;
+                    if (v > k) { k = v; pan = Mathf.Clamp((vp.x - 0.5f) * 1.2f, -0.6f, 0.6f); }
+                }
+            }
+            k = k * k * (3f - 2f * k);
+
+            float target = 0.55f * k * GameSettings.SfxVolume;
+            _hum.volume = Mathf.MoveTowards(_hum.volume, target, dt * 0.35f);
+            _hum.panStereo = Mathf.MoveTowards(_hum.panStereo, pan, dt * 0.8f);
+            _humLp.cutoffFrequency = Mathf.Lerp(_humLp.cutoffFrequency, 350f + 14000f * k * k, 1f - Mathf.Exp(-3f * dt));
+            if (_hum.volume > 0.001f) { if (!_hum.isPlaying) _hum.Play(); }
+            else if (_hum.isPlaying && target <= 0f) _hum.Pause();
         }
 
         /// <summary>Спрайты звезды карты (корона, ядро, блики) — прячем, пока вблизи видна объёмная звезда.</summary>
