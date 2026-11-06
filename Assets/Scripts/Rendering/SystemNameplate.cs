@@ -458,7 +458,7 @@ namespace StellarisClone.Rendering
                 float total = FactionTraits.OutpostDays(0);
                 progress = total > 0f ? 1f - days / total : 0f;
                 text = DaysNum(days);
-                tip = Loc.F("<b>Форпост · {0}</b>\nСтроительство: {1:0}% · осталось {2}", _data.Name, progress * 100f, FleetRoute.FormatDays(days));
+                tip = WorkTip(Loc.T("Форпост"), Loc.T("Строительство"), LGIcon.Starbase, SystemWorkRing.BuildCol, progress, days, false);
                 icon = LGIcon.Starbase;
                 col = SystemWorkRing.BuildCol;
             }
@@ -466,7 +466,7 @@ namespace StellarisClone.Rendering
             {
                 progress = sp;
                 text = DaysNum(sdays);
-                tip = Loc.F("<b>Разведка · {0}</b>\nНаучный корабль изучает систему: {1:0}% · осталось {2}", _data.Name, sp * 100f, FleetRoute.FormatDays(sdays));
+                tip = WorkTip(Loc.T("Разведка"), Loc.T("Научный корабль изучает систему"), LGIcon.Sensors, SystemWorkRing.SurveyCol, sp, sdays, false);
                 icon = LGIcon.Sensors;
                 col = SystemWorkRing.SurveyCol;
             }
@@ -474,7 +474,7 @@ namespace StellarisClone.Rendering
             {
                 wait = true;   // строитель ещё летит — пунктирное кольцо
                 text = "~" + DaysNum(days);
-                tip = Loc.F("<b>Форпост · {0}</b>\nСтроитель в пути — форпост будет готов примерно через {1}", _data.Name, FleetRoute.FormatDays(days));
+                tip = WorkTip(Loc.T("Форпост"), Loc.T("Строитель в пути"), LGIcon.Starbase, SystemWorkRing.BuildCol, 0f, days, true);
                 icon = LGIcon.Starbase;
                 col = SystemWorkRing.BuildCol;
             }
@@ -482,15 +482,30 @@ namespace StellarisClone.Rendering
             {
                 progress = job.Progress;
                 text = DaysNum(jdays);
-                tip = Loc.F("<b>{0} · {1}</b>\nВыполнено {2:0}% · осталось {3}", job.Kind == JobKind.Colony ? Loc.T("Колонизация") : Loc.T("Терраформинг"),
-                    _data.Name, job.Progress * 100f, FleetRoute.FormatDays(jdays));
+                tip = WorkTip(job.Kind == JobKind.Colony ? Loc.T("Колонизация") : Loc.T("Терраформинг"), null,
+                    job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe, SystemWorkRing.ColonyCol, job.Progress, jdays, false);
                 icon = job.Kind == JobKind.Colony ? LGIcon.Planet : LGIcon.Globe;
                 col = SystemWorkRing.ColonyCol;
             }
             else { _buildOn = false; _workTip = null; return; }
             _buildOn = true;
-            _workTip = tip + Loc.T("\n<color=#8AA2A8>Значок: ромб заливается по мере работы, число — дней до завершения</color>");
+            _workTip = tip;
             _work.Set(col, progress, wait, icon, text);
+        }
+
+        /// <summary>Карточка работы в системе: шапка цвета работы, крупные «% / дней», шкала и пояснение значка.</summary>
+        private string WorkTip(string kind, string sub, LGIcon icon, Color col, float progress, float days, bool wait)
+        {
+            string hex = ColorUtility.ToHtmlStringRGB(col);
+            string head = string.IsNullOrEmpty(sub) ? _data.Name : _data.Name + " · " + sub;
+            int d = Mathf.Max(1, Mathf.CeilToInt(days));
+            string pct = wait ? Loc.T("в пути") : $"{Mathf.Clamp01(progress) * 100f:0}%";
+            string k = (wait ? 0f : Mathf.Clamp01(progress)).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            return $"[[hdr|#{hex}|{head}||-]]\n[[{icon}]]<b>{kind}</b>\n"
+                 + $"[[big|<color=#{hex}>{pct}</color>|{(wait ? Loc.T("строитель") : Loc.T("выполнено"))}|{(wait ? "~" : "")}{d}|{Loc.T("дней осталось")}]]\n"
+                 + $"[[meter|#{hex}|{k}|{(wait ? Loc.T("ожидает прибытия") : Loc.T("ход работ"))}|{FleetRoute.FormatDays(days)}]]\n"
+                 + "[[ticks]]\n"
+                 + Loc.T("<color=#8AA2A8>Ромб на карте заливается, число — дни до конца</color>");
         }
 
         private static string DaysNum(float days) => Mathf.Max(1, Mathf.CeilToInt(days)).ToString();
