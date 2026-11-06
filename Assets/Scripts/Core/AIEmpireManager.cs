@@ -445,7 +445,7 @@ namespace StellarisClone.Core
         private FleetView CreateCivilian(FleetType type)
         {
             if (FleetManager.Instance == null || SpawnSystem < 0) return null;
-            string name = type == FleetType.Science ? Loc.F("{0} · Разведчик", AIName) : Loc.F("{0} · Строитель", AIName);
+            string name = ShipNames.Civilian(type, OwnerId);
             return FleetManager.Instance.CreateOwnedFleet(name, SpawnSystem, type, OwnerId);
         }
 

@@ -190,8 +190,8 @@ namespace StellarisClone.Core
             }
 
             CreateFleetObject(Loc.T("1-й Корветный Флот"), 0, FleetType.Military);
-            CreateFleetObject(Loc.T("НИС «Первопроходец»"), 0, FleetType.Science);
-            CreateFleetObject(Loc.T("СК «Фундамент»"), 0, FleetType.Constructor);
+            CreateFleetObject(ShipNames.Civilian(FleetType.Science, 0), 0, FleetType.Science);
+            CreateFleetObject(ShipNames.Civilian(FleetType.Constructor, 0), 0, FleetType.Constructor);
 
             GalaxyView.Instance?.RefreshTerritoryVisuals();
         }
@@ -340,11 +340,11 @@ namespace StellarisClone.Core
             {
                 case FleetType.Science:
                     costAlloys = ScienceShipAlloys; costEnergy = ScienceShipEnergy;
-                    shipName = Loc.F("НИС «Академик {0}»", AllFleets.Count + 1);
+                    shipName = Loc.T("Научный корабль");
                     break;
                 case FleetType.Constructor:
                     costAlloys = ConstructorAlloys; costEnergy = ConstructorEnergy;
-                    shipName = Loc.F("Строитель {0}", AllFleets.Count + 1);
+                    shipName = Loc.T("Строительный корабль");
                     break;
                 case FleetType.Military:
                     costAlloys = 60f; costEnergy = WarshipEnergy;
@@ -402,7 +402,7 @@ namespace StellarisClone.Core
             }
             else
             {
-                string name = job.ShipType == FleetType.Science ? Loc.F("НИС «Академик {0}»", AllFleets.Count + 1) : Loc.F("Строитель {0}", AllFleets.Count + 1);
+                string name = ShipNames.Civilian(job.ShipType, 0);
                 created = CreateFleetObject(name, yard, job.ShipType);
             }
             NotificationCenter.Show(Loc.T("Корабль спущен на воду"), $"{created.Data.Name} · {_generator.Systems[yard].Name}", NotificationCenter.Kind.Success, 4f);
