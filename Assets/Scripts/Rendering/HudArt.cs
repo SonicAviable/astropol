@@ -242,6 +242,17 @@ namespace StellarisClone.Rendering
             });
         }
 
+        /// <summary>Вертикальный градиент: снизу непрозрачно, кверху гаснет (плавная, без ступенек). top — доля высоты, где альфа доходит до нуля.</summary>
+        public static Sprite VFade(float top = 1f)
+        {
+            const int w = 4, h = 256;
+            return Make($"vfade_{top:0.00}", w, h, (x, y) =>
+            {
+                float v = Mathf.Clamp01(y / (h * Mathf.Max(0.01f, top)));
+                return 1f - Mathf.SmoothStep(0f, 1f, v);
+            });
+        }
+
         /// <summary>«Таблетка» (полностью скруглённый прямоугольник), девятисрезная: при высоте 0.56 ед. концы — полукруги.
         /// frame — только контур толщиной ~2.5 px.</summary>
         public static Sprite Pill(bool frame)

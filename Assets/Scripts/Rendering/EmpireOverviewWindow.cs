@@ -72,7 +72,6 @@ namespace StellarisClone.Rendering
         private static readonly Color CInfluence = new Color(1.00f, 0.48f, 0.58f);
         private static readonly Color CResearch = new Color(0.40f, 0.96f, 0.62f);
         private static readonly Color CGold = new Color(1.00f, 0.80f, 0.32f);
-        private static readonly Color WindowRim = new Color(0.60f, 0.92f, 0.95f, 0.30f);
 
         public bool IsOpen => _root != null && LG.IsVisible(_root);
 
@@ -132,10 +131,10 @@ namespace StellarisClone.Rendering
             var rootRt = LGBuild.Rect(host, "EmpireOverviewWindow");
             rootRt.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1520, 900));
             _root = rootRt.gameObject;
+            // Фон окна — сплошной, в тон HUD-плашкам (не стекло: стекло подсвечивает фон серым и спорит с плашками)
             var bg = _root.AddComponent<Image>();
-            bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(_root).SetRim(WindowRim);
+            HudSkin(bg, WinBg, new Color(HudLine.r, HudLine.g, HudLine.b, 0.45f), 16);
             LG.Motion(_root, LGAppear.Kind.Pop).inDuration = 0.45f;
 
             // «Медальон»: сверху панорама мира фракции, в центре правитель в круглом медальоне с гербом,
@@ -171,6 +170,7 @@ namespace StellarisClone.Rendering
             main.Stretch(SideW + 18, 0, VictoryW + 18, 0);
             BuildTabs(tabsRt, main);
 
+            _root.transform.Find("Frame")?.SetAsLastSibling();   // рамка окна — поверх арта шапки
             LG.Skin(_root.transform);
             _root.SetActive(false);
         }
@@ -195,6 +195,7 @@ namespace StellarisClone.Rendering
         private static readonly Color HudLine = new Color(0.37f, 0.82f, 0.75f, 1f);
         private static readonly Color HudTint = new Color(0.030f, 0.068f, 0.095f, 0.95f);
         private static readonly Color HudRim = new Color(0.37f, 0.82f, 0.75f, 0.40f);
+        private static readonly Color WinBg = new Color(0.020f, 0.044f, 0.062f, 1f);   // фон окна; в него же гаснет шапка
 
         /// <summary>Сделать картинку HUD-плашкой: срезанные углы, тёмная заливка tint и кромка frame (дочерний «Frame»).</summary>
         private static Image HudSkin(Image img, Color tint, Color frame, int cut = 8)
@@ -318,20 +319,28 @@ namespace StellarisClone.Rendering
             banner.TopBand(0, BannerH);
 
             // Панорама фракции (Factions/bg_ или Diplomacy/bg_ правителя) — задаётся в RefreshHeader
-            var artMask = LG.RoundedMask(banner, 24f);
+            // Маска по силуэту окна (срезанный угол справа сверху совпадает с рамкой окна)
+            var maskImg = LGBuild.Panel(banner, "ArtMask", Color.white);
+            maskImg.sprite = HudArt.CutPanel(16);
+            maskImg.type = Image.Type.Sliced;
+            maskImg.rectTransform.Stretch(1, 0, 1, 1);
+            maskImg.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+            var artMask = maskImg.rectTransform;
             _bannerArt = LGBuild.Rect(artMask, "Art").gameObject.AddComponent<RawImage>();
             _bannerArt.rectTransform.Stretch();
             _bannerArt.raycastTarget = false;
             _bannerArt.color = new Color(0.75f, 0.75f, 0.75f, 0f);
             LG.Ignore(artMask.gameObject);
             // Затемнение книзу: шапка перетекает в тело окна
-            for (int i = 0; i < 6; i++)
-            {
-                var shade = LGBuild.Panel(artMask, "Shade", new Color(UIManager.DS.BgDeep.r, UIManager.DS.BgDeep.g, UIManager.DS.BgDeep.b, 0.16f + i * 0.13f));
-                shade.rectTransform.anchorMin = new Vector2(0, 0);
-                shade.rectTransform.anchorMax = new Vector2(1, 0.12f + (5 - i) * 0.1f);
-                shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
-            }
+            // Плавный градиент в цвет фона окна: внизу шапки арт исчезает полностью, края нет
+            var shade = LGBuild.Panel(artMask, "Shade", WinBg);
+            shade.sprite = HudArt.VFade(0.75f);
+            shade.rectTransform.Stretch();
+            // Лёгкое общее затемнение, чтобы цифры и название читались поверх арта
+            var dim = LGBuild.Panel(artMask, "Dim", new Color(WinBg.r, WinBg.g, WinBg.b, 0.30f));
+            dim.sprite = HudArt.VFade(1f);
+            dim.rectTransform.Stretch();
+            dim.rectTransform.localScale = new Vector3(1f, -1f, 1f);   // сверху темнее, к середине светлее
 
             // Медальон: свечение, кольцо в цвете фракции, круглый портрет
             var medal = LGBuild.Rect(banner, "Medal");
@@ -598,7 +607,6 @@ namespace StellarisClone.Rendering
             AddTab(strip.rectTransform, Tab.Effects, LGIcon.Clock, Loc.T("ЭФФЕКТЫ"), 5);
 
             var table = Block(right, "Table");
-            table.color = UIManager.DS.BgVisor;
             table.rectTransform.Stretch();
 
             _tableHeader = LGBuild.Rect(table.transform, "TableHeader");
