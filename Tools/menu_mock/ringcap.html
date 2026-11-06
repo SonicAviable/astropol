@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты значка работы на кольце системы: три варианта × (вблизи / издалека). Рендер: node Tools/menu_mock/render_ringcap.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #02050B; font-family: Play, sans-serif; color: #EAF6FA; }
+svg { position: absolute; inset: 0; }
+</style></head>
+<body>
+<script>
+const GOLD = '#FFC24D', CY = '#6FE6DA', GREEN = '#5CE08F', SCI = '#5FB8FF';
+let defs = '', uid = 0;
+const id = () => 'g' + (uid++);
+const radial = (c, a = 1) => { const k = id(); defs += `<radialGradient id="${k}"><stop offset="0" stop-color="${c}" stop-opacity="${a}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`; return `url(#${k})`; };
+const P = (x, y, r, a) => [x + r * Math.sin(a * 2 * Math.PI), y - r * Math.cos(a * 2 * Math.PI)];
+const arc = (x, y, r, a0, a1) => { const [sx, sy] = P(x, y, r, a0), [ex, ey] = P(x, y, r, a1);
+  return `M${sx.toFixed(1)} ${sy.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > 0.5 ? 1 : 0} 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`; };
+const T = (x, y, t, o = {}) => `<text x="${x}" y="${y}" font-family="${o.f || 'Play'}" font-size="${o.s || 14}" font-weight="${o.w || 400}" fill="${o.c || '#EAF6FA'}" text-anchor="${o.a || 'middle'}" letter-spacing="${o.ls || 0}" ${o.op != null ? `opacity="${o.op}"` : ''}>${t}</text>`;
+const star = (x, y, c, r) => `<circle cx="${x}" cy="${y}" r="${r * 6}" fill="${radial(c, 0.3)}"/><circle cx="${x}" cy="${y}" r="${r * 2}" fill="${radial(c, 0.9)}"/><circle cx="${x}" cy="${y}" r="${r * 0.7}" fill="#fff"/>`;
+
+// Значок форпоста (шестигранная станция)
+const outpostIco = (x, y, s, c) => {
+  let p = ''; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; p += (i ? 'L' : 'M') + (x + Math.cos(a) * s).toFixed(1) + ' ' + (y + Math.sin(a) * s).toFixed(1); }
+  return `<path d="${p}Z" fill="none" stroke="${c}" stroke-width="${s * 0.22}"/><circle cx="${x}" cy="${y}" r="${s * 0.32}" fill="${c}"/>
+    <line x1="${x}" y1="${y - s * 1.45}" x2="${x}" y2="${y - s}" stroke="${c}" stroke-width="${s * 0.18}"/><line x1="${x}" y1="${y + s}" x2="${x}" y2="${y + s * 1.45}" stroke="${c}" stroke-width="${s * 0.18}"/>`;
+};
+
+// Кольцо системы (как в игре: эллипс в перспективе, прогресс-дуга)
+const ring = (x, y, R, prog, c) => {
+  const ry = R * 0.55;
+  let s = `<ellipse cx="${x}" cy="${y}" rx="${R}" ry="${ry}" fill="none" stroke="${c}" stroke-opacity="0.22" stroke-width="${R * 0.07}"/>`;
+  // дуга прогресса по эллипсу
+  let d = ''; const n = 60;
+  for (let i = 0; i <= n; i++) { const a = prog * i / n * Math.PI * 2; d += (i ? 'L' : 'M') + (x + Math.sin(a) * R).toFixed(1) + ' ' + (y + Math.cos(a) * ry).toFixed(1); }
+  s += `<path d="${d}" fill="none" stroke="${c}" stroke-width="${R * 0.07}" stroke-linecap="round" opacity="0.95"/>`;
+  const ha = prog * Math.PI * 2, hx = x + Math.sin(ha) * R, hy = y + Math.cos(ha) * ry;
+  s += `<circle cx="${hx}" cy="${hy}" r="${R * 0.16}" fill="${radial(c, 0.8)}"/><circle cx="${hx}" cy="${hy}" r="${R * 0.035}" fill="#fff"/>`;
+  return s;
+};
+
+// ---- Вариант A: «Циферблат» — значок в круге, вокруг дуга прогресса, под ним цифра дней
+const capA = (x, y, k, c, prog, days, far) => {
+  const r = 20 * k; let s = '';
+  s += `<circle cx="${x}" cy="${y}" r="${r * 2.1}" fill="${radial(c, 0.28)}"/>`;
+  s += `<circle cx="${x}" cy="${y}" r="${r}" fill="#081018" fill-opacity="0.92" stroke="${c}" stroke-opacity="0.35" stroke-width="${2 * k}"/>`;
+  s += `<path d="${arc(x, y, r, 0, prog)}" fill="none" stroke="${c}" stroke-width="${3.4 * k}" stroke-linecap="round"/>`;
+  const [hx, hy] = P(x, y, r, prog); s += `<circle cx="${hx}" cy="${hy}" r="${3 * k}" fill="#fff"/>`;
+  s += outpostIco(x, y, 8 * k, c);
+  if (!far) s += `<rect x="${x - 22 * k}" y="${y + r + 4 * k}" width="${44 * k}" height="${18 * k}" rx="${9 * k}" fill="#081018" fill-opacity="0.9" stroke="${c}" stroke-opacity="0.5"/>` +
+    T(x, y + r + 17.5 * k, days, { s: 13 * k, w: 700, c });
+  return s;
+};
+
+// ---- Вариант B: «Шестигранный жетон» — гекс с сегментами-делениями (10 штук), дни в «хвосте» сбоку
+const capB = (x, y, k, c, prog, days, far) => {
+  const r = 22 * k; let s = '';
+  s += `<circle cx="${x}" cy="${y}" r="${r * 2}" fill="${radial(c, 0.25)}"/>`;
+  let hex = ''; for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i; hex += (i ? 'L' : 'M') + (x + Math.cos(a) * r).toFixed(1) + ' ' + (y + Math.sin(a) * r).toFixed(1); }
+  if (!far) {
+    s += `<path d="M${x + r * 0.6} ${y - 11 * k} H${x + r + 50 * k} L${x + r + 58 * k} ${y} L${x + r + 50 * k} ${y + 11 * k} H${x + r * 0.6} Z" fill="#081018" fill-opacity="0.9" stroke="${c}" stroke-opacity="0.55"/>`;
+    s += T(x + r + 30 * k, y + 5 * k, days, { s: 14 * k, w: 700, c });
+  }
+  s += `<path d="${hex}Z" fill="#081018" fill-opacity="0.95" stroke="${c}" stroke-width="${2 * k}"/>`;
+  // 10 сегментов по кругу внутри гекса
+  for (let i = 0; i < 10; i++) {
+    const on = i / 10 < prog; const a0 = i / 10 + 0.012, a1 = (i + 1) / 10 - 0.012;
+    s += `<path d="${arc(x, y, r * 0.78, a0, a1)}" fill="none" stroke="${c}" stroke-opacity="${on ? 1 : 0.18}" stroke-width="${3.2 * k}"/>`;
+  }
+  s += outpostIco(x, y, 7 * k, c);
+  return s;
+};
+
+// ---- Вариант C: «Маяк» — значок на тонкой ножке над кольцом, под ним шкала-полоска с точками-днями
+const capC = (x, y, k, c, prog, days, far) => {
+  let s = '';
+  const top = y - 26 * k;
+  s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${top + 18 * k}" stroke="${c}" stroke-opacity="0.6" stroke-width="${1.5 * k}" stroke-dasharray="${3 * k} ${2 * k}"/>`;
+  s += `<circle cx="${x}" cy="${y}" r="${3 * k}" fill="${c}"/>`;
+  s += `<circle cx="${x}" cy="${top}" r="${36 * k}" fill="${radial(c, 0.3)}"/>`;
+  // ромб
+  const r = 19 * k;
+  s += `<path d="M${x} ${top - r} L${x + r} ${top} L${x} ${top + r} L${x - r} ${top} Z" fill="#081018" fill-opacity="0.95" stroke="${c}" stroke-width="${2 * k}"/>`;
+  // заполнение ромба снизу вверх — прогресс
+  const k2 = id(); defs += `<clipPath id="${k2}"><rect x="${x - r}" y="${top + r - 2 * r * prog}" width="${2 * r}" height="${2 * r * prog}"/></clipPath>`;
+  s += `<path d="M${x} ${top - r + 3 * k} L${x + r - 3 * k} ${top} L${x} ${top + r - 3 * k} L${x - r + 3 * k} ${top} Z" fill="${c}" fill-opacity="0.35" clip-path="url(#${k2})"/>`;
+  s += outpostIco(x, top, 6.5 * k, '#fff');
+  if (!far) s += T(x + r + 8 * k, top + 5 * k, days, { s: 14 * k, w: 700, c, a: 'start' }) + T(x + r + 8 * k, top + 18 * k, 'дн.', { s: 10 * k, c: '#9FB2BC', a: 'start' });
+  return s;
+};
+
+// Сцена: сетка 3 × 2 (варианты × вблизи/издалека)
+let s = '';
+for (let i = 0; i < 300; i++) { const x = (i * 733) % 1920, y = (i * 389 + i * i * 7) % 1080; s += `<circle cx="${x}" cy="${y}" r="${i % 7 ? 0.8 : 1.5}" fill="#fff" opacity="${0.12 + (i % 5) * 0.07}"/>`; }
+const cols = [320, 960, 1600], names = ['A · ЦИФЕРБЛАТ', 'B · ГЕКС-ЖЕТОН', 'C · МАЯК'];
+const notes = [
+  'Значок задачи в круге, дуга прогресса вокруг него; дни — в маленькой «таблетке» под значком. Издалека остаётся только круг с дугой.',
+  'Шестигранный жетон: 10 делений по кругу загораются по мере работы; дни — в «хвосте» справа. Издалека — только жетон с делениями.',
+  'Ромб-маяк на пунктирной ножке над кольцом заливается снизу вверх; рядом крупно число дней. Издалека — ромб без цифры.'];
+const capF = [capA, capB, capC];
+cols.forEach((x, i) => {
+  s += T(x, 70, names[i], { f: 'Russo', s: 24, c: GOLD, ls: 2 });
+  s += `<foreignObject x="${x - 260}" y="86" width="520" height="70"><div xmlns="http://www.w3.org/1999/xhtml" style="font:14px Play;color:#9FB2BC;text-align:center;line-height:1.4">${notes[i]}</div></foreignObject>`;
+  // вблизи
+  s += T(x, 200, 'ВБЛИЗИ', { s: 12, c: '#6F8794', ls: 3 });
+  const cy = 420, R = 150;
+  s += star(x, cy, '#FFD8A0', 9) + ring(x, cy, R, 0.42, GOLD);
+  s += capF[i](x, cy - R * 0.55, 1.35, GOLD, 0.42, '131', false);
+  s += T(x, cy + R * 0.55 + 46, 'ХАМАЛЬ', { f: 'Russo', s: 22 });
+  // издалека: кольцо маленькое, значок держит минимальный экранный размер
+  s += T(x, 690, 'ИЗДАЛЕКА (значок не меньше 32 px)', { s: 12, c: '#6F8794', ls: 3 });
+  const fy = 850, fR = 34;
+  s += star(x - 120, fy + 40, '#B8D4FF', 3) + star(x + 140, fy - 20, '#FF8A70', 3);
+  s += `<line x1="${x - 120}" y1="${fy + 40}" x2="${x}" y2="${fy}" stroke="#9FB8D0" stroke-opacity="0.3" stroke-width="1.5"/><line x1="${x}" y1="${fy}" x2="${x + 140}" y2="${fy - 20}" stroke="#9FB8D0" stroke-opacity="0.3" stroke-width="1.5"/>`;
+  s += star(x, fy, '#FFD8A0', 3.5) + ring(x, fy, fR, 0.42, GOLD);
+  s += capF[i](x, fy - fR * 0.55 - 6, 0.85, GOLD, 0.42, '131', true);
+  s += T(x, fy + 46, 'ХАМАЛЬ', { f: 'Russo', s: 13, op: 0.8 });
+  // другие цвета задач — для сравнения
+  s += capF[i](x - 190, 560, 0.9, SCI, 0.7, '12', false) + capF[i](x + 190, 560, 0.9, GREEN, 0.15, '240', false);
+  s += T(x - 190, 610, 'разведка', { s: 11, c: '#6F8794' }) + T(x + 190, 610, 'колония', { s: 11, c: '#6F8794' });
+});
+s += `<line x1="640" y1="40" x2="640" y2="1040" stroke="#1C2A33"/><line x1="1280" y1="40" x2="1280" y2="1040" stroke="#1C2A33"/>`;
+document.body.innerHTML = `<svg width="1920" height="1080"><defs>${defs}</defs>${s}</svg>`;
+</script>
+</body></html>

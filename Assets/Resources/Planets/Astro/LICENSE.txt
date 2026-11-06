@@ -1,0 +1,4 @@
+Карты планет: Solar System Scope — https://www.solarsystemscope.com/textures/
+Лицензия: Creative Commons Attribution 4.0 International (CC BY 4.0).
+В титрах игры укажите: «Текстуры планет: Solar System Scope (solarsystemscope.com), CC BY 4.0».
+Файлы переименованы (без префикса 2k_), содержимое не изменено.

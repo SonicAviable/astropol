@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты фона галактической карты: три варианта. Рендер: node Tools/menu_mock/render_space.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { margin: 0; box-sizing: border-box; }
+body { width: 1920px; height: 1080px; background: #111; font-family: Play; color: #EAF6FA; overflow: hidden; }
+.p { position: absolute; top: 0; width: 640px; height: 1080px; }
+canvas { position: absolute; left: 4px; top: 150px; }
+h2 { position: absolute; top: 28px; width: 100%; text-align: center; font: 24px Russo; color: #FFC24D; letter-spacing: 2px; }
+p { position: absolute; top: 66px; left: 30px; right: 30px; text-align: center; font-size: 14px; line-height: 1.45; color: #9FB2BC; }
+.now { position: absolute; left: 4px; top: 150px; padding: 4px 10px; font-size: 12px; color: #ccc; }
+</style></head><body>
+<div class="p" style="left:0"><h2>A · ГЛУБОКИЙ КОСМОС</h2><p>Скайбокс на карте выключен — фон чисто чёрный. Галактика светится сама: рукава, ядро, звёздная пыль. Туманности тише, только в рукавах. Максимальный контраст.</p><canvas id="A" width="632" height="920"></canvas></div>
+<div class="p" style="left:640px"><h2>B · ЗВЁЗДНОЕ ПОЛЕ</h2><p>Фон — почти чёрный с холодной синевой и плотным полем далёких звёзд разной яркости (вместо розовой туманности скайбокса). Ядро меньше и теплее, туманности по краям рукавов.</p><canvas id="B" width="632" height="920"></canvas></div>
+<div class="p" style="left:1280px"><h2>C · ТУМАННОСТИ</h2><p>Чёрный фон и виньетка к краям, зато регионы — насыщенные цветные туманности, по рукавам — тёмные пылевые прожилки. Больше «картинки», как в Stellaris.</p><canvas id="C" width="632" height="920"></canvas></div>
+<script>
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const W = 632, H = 920, CX = 316, CY = 470, R = 270;
+function glow(ctx, x, y, r, c, a) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${c},${a})`); g.addColorStop(1, `rgba(${c},0)`); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
+function stars(ctx, n, maxR, alpha, tintCold) {
+  for (let i = 0; i < n; i++) { const x = rnd() * W, y = rnd() * H, b = Math.pow(rnd(), 3); ctx.fillStyle = `rgba(${tintCold ? '200,215,255' : '255,250,240'},${alpha * (0.25 + 0.75 * b)})`; ctx.beginPath(); ctx.arc(x, y, 0.4 + b * maxR, 0, 7); ctx.fill(); }
+}
+function arms(ctx, k, warmCore) {
+  // спиральная звёздная пыль
+  for (let i = 0; i < 9000; i++) {
+    const arm = i % 2, t = Math.pow(rnd(), 0.8), ang = arm * Math.PI + t * 3.6 + (rnd() - 0.5) * 0.55;
+    const r = 18 + t * R, x = CX + Math.cos(ang) * r * 1.0 + (rnd() - 0.5) * 22, y = CY + Math.sin(ang) * r * 0.82 + (rnd() - 0.5) * 22;
+    const warm = Math.exp(-t * 4);
+    ctx.fillStyle = `rgba(${Math.round(160 + 95 * warm)},${Math.round(175 + 50 * warm)},${Math.round(255 - 120 * warm)},${0.25 * k})`;
+    ctx.fillRect(x, y, 1.2, 1.2);
+  }
+  for (let i = 0; i < 160; i++) { const arm = i % 2, t = rnd(), ang = arm * Math.PI + t * 3.6 + (rnd() - 0.5) * 0.4, r = 18 + t * R;
+    glow(ctx, CX + Math.cos(ang) * r, CY + Math.sin(ang) * r * 0.82, 30 + rnd() * 30, '120,140,230', 0.05 * k); }
+  glow(ctx, CX, CY, warmCore ? 90 : 120, '255,215,150', 0.55 * k);
+  glow(ctx, CX, CY, 26, '255,245,220', 0.9);
+}
+function nebula(ctx, x, y, r, c, a) { for (let i = 0; i < 14; i++) glow(ctx, x + (rnd() - 0.5) * r, y + (rnd() - 0.5) * r, r * (0.35 + rnd() * 0.5), c, a); }
+function darkLanes(ctx) {
+  ctx.globalCompositeOperation = 'multiply';
+  for (let i = 0; i < 260; i++) { const arm = i % 2, t = 0.12 + (i / 260) * 0.85, ang = arm * Math.PI + t * 3.6 - 0.22, r = 18 + t * R;
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 18); g.addColorStop(0, 'rgba(60,40,40,0.18)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save(); ctx.translate(CX + Math.cos(ang) * r, CY + Math.sin(ang) * r * 0.82); ctx.fillStyle = g; ctx.fillRect(-18, -18, 36, 36); ctx.restore(); }
+  ctx.globalCompositeOperation = 'source-over';
+}
+function systems(ctx) {   // системы игрока и коридоры, как на карте
+  const pts = [[470, 640], [500, 610], [520, 655], [490, 690], [455, 600], [540, 620]];
+  ctx.strokeStyle = 'rgba(150,180,210,.35)'; ctx.lineWidth = 1;
+  for (let i = 1; i < pts.length; i++) { ctx.beginPath(); ctx.moveTo(...pts[i - 1]); ctx.lineTo(...pts[i]); ctx.stroke(); }
+  for (const [x, y] of pts) { glow(ctx, x, y, 8, '255,230,180', 0.8); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1, y - 1, 2, 2); }
+  ctx.strokeStyle = '#E8475B'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(495, 640, 16, 0, 7); ctx.stroke();
+}
+const V = {
+  A: ctx => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); stars(ctx, 500, 0.9, 0.5, true); arms(ctx, 1, false);
+    nebula(ctx, 200, 380, 90, '90,110,220', 0.035); nebula(ctx, 430, 560, 80, '200,90,180', 0.03); systems(ctx); },
+  B: ctx => { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#03050c'); g.addColorStop(1, '#05070f'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    stars(ctx, 2600, 1.2, 0.75, true); for (let i = 0; i < 40; i++) glow(ctx, rnd() * W, rnd() * H, 3 + rnd() * 3, '210,225,255', 0.5);
+    arms(ctx, 0.9, true); nebula(ctx, 120, 300, 120, '70,120,255', 0.04); nebula(ctx, 560, 720, 110, '255,120,80', 0.035); systems(ctx); },
+  C: ctx => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); stars(ctx, 900, 1, 0.55, true);
+    nebula(ctx, 170, 330, 150, '40,190,200', 0.06); nebula(ctx, 470, 300, 140, '170,60,210', 0.06); nebula(ctx, 180, 650, 130, '255,120,50', 0.05); nebula(ctx, 480, 700, 140, '230,60,100', 0.055);
+    arms(ctx, 1, false); darkLanes(ctx);
+    const v = ctx.createRadialGradient(CX, CY, R * 0.7, CX, CY, R * 1.9); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.85)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H); systems(ctx); },
+};
+document.fonts.ready.then(() => { for (const k of ['A', 'B', 'C']) { seed = 7; V[k](document.getElementById(k).getContext('2d')); } document.body.dataset.ready = 1; });
+</script></body></html>

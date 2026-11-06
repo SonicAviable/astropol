@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты экрана «Выбор империи» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_faction.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.abs { position: absolute; }
+.mut { color: #8DA6AE; } .cy { color: #6FE6DA; } .ok { color: #6FE09A; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 13px; color: #8DA6AE; }
+.ttl { font-family: Russo; letter-spacing: 1px; }
+.cut { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+.b { height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: 3px;
+  background: #13223D; color: #D2E1FF; border-left: 4px solid #4F74C8; }
+.p { background: #80F0E1; color: #03141A; border-left: 0; height: 58px; font-size: 17px; box-shadow: 0 0 30px rgba(110,240,225,0.45); }
+.glass { background: linear-gradient(180deg, rgba(10,22,36,0.86), rgba(4,10,20,0.9)); border: 1px solid rgba(120,220,215,0.2);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+.ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; flex: none; }
+.tr { display: flex; align-items: center; gap: 12px; font-size: 15px; height: 36px; }
+.chip { padding: 7px 12px; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 1px; background: rgba(111,224,154,0.12); color: #8FF0B4; border: 1px solid rgba(111,224,154,0.3); }
+.bar { display: flex; gap: 4px; } .bar i { width: 26px; height: 8px; border-radius: 2px; background: rgba(255,255,255,0.1); }
+.port { background-size: cover; background-position: 50% 14%; }
+.em { background-size: contain; background-repeat: no-repeat; background-position: center; }
+.tab { padding: 12px 0; margin-right: 34px; font-weight: 700; font-size: 14px; letter-spacing: 2.5px; color: #8DA6AE; border-bottom: 2px solid transparent; }
+.tab.on { color: #EAF6FA; border-color: #1ACCF2; }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const R = '../../Assets/Resources/';
+const F = [
+  { k: 'astrea', n: 'Республика Астрея', t: 'Свободная Федерация', c: '#1ACCF2', l: 'Элина Сорель', lt: 'Председатель Совета Республики', d: 1, s: [3,5,2,5] },
+  { k: 'xarn', n: 'Доминион Ксарн', t: 'Военная Иерархия', c: '#F24033', l: 'Ардан Ворх', lt: 'Верховный маршал', d: 2, s: [3,2,5,1] },
+  { k: 'aquila', n: 'Синдикат Аквила', t: 'Корпоративный Альянс', c: '#FFBF26', l: 'Лукан Вейл', lt: 'Генеральный директор', d: 1, s: [5,3,2,3] },
+  { k: 'iridia', n: 'Иридийский Оракул', t: 'Теократия Провидцев', c: '#A86BFF', l: 'Аурэлия', lt: 'Верховная Оракул', d: 2, s: [2,4,3,4] },
+  { k: 'terraan', n: 'Хлорофиловый Конклав Тэрра\'ан', t: 'Живой Конклав Корней', c: '#70DB57', l: 'Исинна Кральтэр', lt: 'Хранительница Корней', d: 3, s: [2,3,4,3] },
+  { k: 'nol', n: 'Машинный Консенсус «Ноль»', t: 'Единый Разум', c: '#DBE8F7', l: 'Голос Нуля', lt: 'Аватар Консенсуса', d: 3, s: [4,3,4,1] },
+];
+const A = F[0], AC = A.c;
+const leader = k => `url(${R}Leaders/leader_${k}.jpg)`, emb = k => `url(${R}Factions/emblem_${k}.png)`;
+const BG = `<div class="abs" style="inset:0;background:url(${R}Diplomacy/bg_astrea.jpg) center/cover"></div>`;
+const TAG = 'Миролюбивы, любознательны, принципиальны';
+const QUOTE = '«Любой спор можно решить словами. Почти любой.»';
+const STORY = 'Республика выросла из союза первых колоний, которые отказались подчиняться метрополии и решили править собой сами. Её Совет выбирают все граждане, а решения принимаются открыто.';
+const STORY2 = 'Астрейцы верят, что знание сильнее оружия, а договор прочнее страха. Но за мягкими словами Председателя стоит флот, который умеет защищать то, во что верит Республика.';
+const BON = [['⚡', '+10% к добыче гелия-3'], ['✦', '+15% к влиянию']];
+const TRAITS = [['⚛', 'Учёные: наука — главный приоритет'], ['★', 'Республика: сильное влияние'], ['◍', 'Колонисты: ценят новые миры'], ['⚭', 'Дипломатия: опытные переговорщики']];
+const ic = (g, c, bg) => `<div class="ic" style="color:${c};background:${bg}">${g}</div>`;
+const bonus = () => BON.map(([g, t]) => `<div class="tr">${ic(g, '#8FF0B4', 'rgba(111,224,154,0.14)')}<span class="ok">${t}</span></div>`).join('');
+const traits = () => TRAITS.map(([g, t]) => `<div class="tr">${ic(g, AC, 'rgba(26,204,242,0.12)')}<span>${t}</span></div>`).join('');
+const STATN = ['ЭКОНОМИКА', 'НАУКА', 'ФЛОТ', 'ДИПЛОМАТИЯ'];
+const bars = (s, c, w = 26) => `<div class="bar">${[1,2,3,4,5].map(i => `<i style="width:${w}px;${i <= s ? `background:${c};box-shadow:0 0 8px ${c}88` : ''}"></i>`).join('')}</div>`;
+const diff = d => ['', 'ЛЁГКАЯ', 'СРЕДНЯЯ', 'СЛОЖНАЯ'][d];
+const diffC = d => ['', '#6FE09A', '#FFD27A', '#FF8A73'][d];
+const BTNS = (y = 40) => `
+  <div class="b cut abs" style="left:64px;bottom:${y}px;width:190px">‹&nbsp; НАЗАД</div>
+  <div class="b cut abs" style="right:300px;bottom:${y}px;width:230px">⚄&nbsp; СЛУЧАЙНАЯ</div>
+  <div class="b p cut abs" style="right:64px;bottom:${y - 2}px;width:220px">ДАЛЬШЕ &nbsp;›</div>`;
+const crumbs = (x = 64, y = 40) => `<div class="abs h" style="left:${x}px;top:${y}px;color:#9FB2BC">НОВАЯ ИГРА &nbsp;·&nbsp; <span style="color:#EAF6FA">ВЫБОР ИМПЕРИИ</span> &nbsp;·&nbsp; ОФОРМЛЕНИЕ &nbsp;·&nbsp; ГАЛАКТИКА</div>`;
+
+const T = {
+// ---------- A: галерея правителей — шесть вертикальных полос, выбранная раскрыта ----------
+a: () => {
+  const W = 1920 - 128, gap = 10, wide = 900, narrow = (W - wide - gap * 5) / 5;
+  let x = 64;
+  const strips = F.map((f, i) => {
+    const on = i === 0, w = on ? wide : narrow, left = x; x += w + gap;
+    if (!on) return `<div class="abs" style="left:${left}px;top:110px;bottom:120px;width:${w}px;overflow:hidden;border:1px solid rgba(255,255,255,0.08)">
+      <div class="abs port" style="inset:0;background-image:${leader(f.k)};filter:saturate(0.55) brightness(0.62)"></div>
+      <div class="abs" style="inset:0;background:linear-gradient(0deg,rgba(3,7,15,0.98) 8%,rgba(3,7,15,0) 55%)"></div>
+      <div class="abs" style="left:0;right:0;top:0;height:4px;background:${f.c};opacity:0.7"></div>
+      <div class="abs em" style="left:50%;bottom:150px;width:86px;height:86px;margin-left:-43px;background-image:${emb(f.k)};opacity:0.85"></div>
+      <div class="abs" style="left:16px;right:16px;bottom:62px;text-align:center;font-weight:700;font-size:15px;letter-spacing:1.5px;line-height:1.25">${f.n.toUpperCase()}</div>
+      <div class="abs mut" style="left:12px;right:12px;bottom:26px;text-align:center;font-size:12px">${f.t}</div>
+      <div class="abs" style="left:0;right:0;bottom:8px;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;color:${diffC(f.d)}">${'●'.repeat(f.d)}${'○'.repeat(3 - f.d)}</div></div>`;
+    return `<div class="abs" style="left:${left}px;top:96px;bottom:106px;width:${w}px;overflow:hidden;border:1px solid ${f.c}aa;box-shadow:0 0 50px ${f.c}55">
+      <div class="abs port" style="left:380px;right:0;top:0;bottom:0;background-image:${leader(f.k)};background-position:50% 10%"></div>
+      <div class="abs" style="inset:0;background:linear-gradient(90deg,rgba(3,8,16,1) 38%,rgba(3,8,16,0.75) 52%,rgba(3,8,16,0) 72%)"></div>
+      <div class="abs" style="inset:0;background:linear-gradient(0deg,rgba(3,8,16,0.9),rgba(3,8,16,0) 30%)"></div>
+      <div class="abs" style="left:0;right:0;top:0;height:4px;background:${f.c}"></div>
+      <div class="abs" style="left:40px;top:40px;width:470px">
+        <div style="display:flex;gap:18px;align-items:center"><div class="em" style="width:84px;height:84px;background-image:${emb(f.k)}"></div>
+          <div><div class="ttl" style="font-size:34px;color:#7FE3F7;line-height:1.05">РЕСПУБЛИКА<br>АСТРЕЯ</div></div></div>
+        <div class="mut" style="font-size:15px;margin-top:14px">Свободная Федерация &nbsp;·&nbsp; сложность: <b style="color:${diffC(f.d)}">${diff(f.d)}</b></div>
+        <div style="font-style:italic;font-size:16px;margin-top:8px;color:#C9D8DE">${TAG}</div>
+        <div class="h" style="margin-top:28px">БОНУСЫ</div><div style="margin-top:8px">${bonus()}</div>
+        <div class="h" style="margin-top:20px">ОСОБЕННОСТИ</div><div style="margin-top:8px">${traits()}</div>
+        <div class="h" style="margin-top:22px">СТИЛЬ ИГРЫ</div>
+        <div style="display:grid;grid-template-columns:130px 1fr;row-gap:10px;margin-top:12px;font-size:13px;letter-spacing:1px" class="mut">
+          ${STATN.map((n, j) => `<span>${n}</span>${bars(f.s[j], f.c)}`).join('')}</div>
+      </div>
+      <div class="abs" style="right:34px;bottom:30px;text-align:right">
+        <div style="font-weight:700;font-size:22px">${f.l}</div><div class="mut" style="font-size:14px">${f.lt}</div>
+        <div style="font-style:italic;font-size:15px;color:#C9D8DE;margin-top:10px;max-width:360px">${QUOTE}</div></div>
+    </div>`;
+  }).join('');
+  return `<div class="lbl2">ВАРИАНТ A · ГАЛЕРЕЯ ПРАВИТЕЛЕЙ</div>${BG}
+    <div class="abs" style="inset:0;background:rgba(2,5,12,0.78)"></div>${crumbs(64, 50)}${strips}${BTNS(34)}
+    <div class="abs mut" style="left:0;right:0;bottom:52px;text-align:center;font-size:13px;letter-spacing:2px">◀ ▶ &nbsp;листать &nbsp;·&nbsp; ●○○ сложность</div>`;
+},
+
+// ---------- B: командный зал — список слева, правитель по центру, досье справа ----------
+b: () => {
+  const list = F.map((f, i) => {
+    const on = i === 0;
+    return `<div class="cut" style="display:flex;align-items:center;gap:14px;height:94px;padding:0 16px;margin-bottom:10px;position:relative;
+      background:${on ? `linear-gradient(90deg,${f.c}40,rgba(8,18,30,0.9))` : 'rgba(6,12,22,0.78)'};border-left:4px solid ${on ? f.c : f.c + '55'}">
+      <div class="port" style="width:62px;height:62px;border-radius:6px;background-image:${leader(f.k)};background-position:50% 12%;flex:none;${on ? '' : 'filter:saturate(0.6) brightness(0.8)'}"></div>
+      <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px;letter-spacing:1px;line-height:1.2;color:${on ? '#BDF2FC' : '#EAF6FA'}">${f.n.toUpperCase()}</div>
+        <div class="mut" style="font-size:12px;margin-top:3px">${f.t}</div></div>
+      <div class="em" style="width:54px;height:54px;background-image:${emb(f.k)};opacity:${on ? 0.9 : 0.35};flex:none"></div>
+      ${on ? `<div class="abs" style="right:-14px;top:50%;margin-top:-9px;width:0;height:0;border:9px solid transparent;border-left-color:${f.c}"></div>` : ''}</div>`;
+  }).join('');
+  return `<div class="lbl2">ВАРИАНТ B · КОМАНДНЫЙ ЗАЛ</div>${BG}
+    <div class="abs" style="inset:0;background:linear-gradient(90deg,rgba(2,5,12,0.92) 0,rgba(2,5,12,0.35) 30%,rgba(2,5,12,0.35) 62%,rgba(2,5,12,0.94) 76%)"></div>
+    <div class="abs" style="inset:0;background:linear-gradient(0deg,rgba(2,5,12,0.95),rgba(2,5,12,0) 28%)"></div>
+    ${crumbs()}
+    <div class="abs" style="left:64px;top:96px;width:440px">${list}</div>
+    <div class="abs" style="left:640px;top:70px;width:640px;height:1010px;border-radius:50%;background:radial-gradient(closest-side,${AC}55,transparent)"></div>
+    <div class="abs port" style="left:600px;top:60px;width:700px;height:1020px;background-image:${leader('astrea')};background-position:50% 0;
+      -webkit-mask-image:linear-gradient(0deg,transparent 2%,#000 30%),linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);-webkit-mask-composite:source-in"></div>
+    <div class="abs" style="left:640px;width:620px;bottom:120px;text-align:center">
+      <div style="font-weight:700;font-size:26px">${A.l}</div><div class="mut" style="font-size:15px">${A.lt}</div>
+      <div style="font-style:italic;font-size:16px;color:#C9D8DE;margin-top:10px">${QUOTE}</div></div>
+    <div class="abs" style="right:64px;top:96px;width:520px">
+      <div style="display:flex;align-items:center;gap:16px"><div class="em" style="width:76px;height:76px;background-image:${emb('astrea')}"></div>
+        <div><div class="ttl" style="font-size:32px;color:#7FE3F7">РЕСПУБЛИКА АСТРЕЯ</div><div class="mut" style="font-size:15px">Свободная Федерация</div></div></div>
+      <div style="font-style:italic;font-size:16px;margin-top:14px;color:#C9D8DE">${TAG}</div>
+      <div style="display:flex;gap:10px;margin-top:18px"><span class="chip">+10% ГЕЛИЙ-3</span><span class="chip">+15% ВЛИЯНИЕ</span>
+        <span class="chip" style="background:rgba(111,224,154,0.06);color:${diffC(1)}">СЛОЖНОСТЬ: ЛЁГКАЯ</span></div>
+      <div class="h" style="margin-top:26px">СТИЛЬ ИГРЫ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin-top:12px">
+        ${STATN.map((n, j) => `<div><div class="mut" style="font-size:12px;letter-spacing:1.5px;margin-bottom:6px">${n}</div>${bars(A.s[j], AC, 40)}</div>`).join('')}</div>
+      <div class="h" style="margin-top:26px">ОСОБЕННОСТИ</div><div style="margin-top:8px">${traits()}</div>
+      <div class="h" style="margin-top:22px">ИСТОРИЯ</div>
+      <div style="font-size:14px;line-height:1.55;color:#C9D8DE;margin-top:10px">${STORY}</div>
+      <div class="cy" style="font-size:13px;margin-top:8px;letter-spacing:1px">ЧИТАТЬ ДАЛЬШЕ ›</div>
+    </div>${BTNS()}`;
+},
+
+// ---------- C: гербы сверху, канал связи + досье с вкладками ----------
+c: () => {
+  const step = 230, x0 = 960 - step * 2.5;
+  const medals = F.map((f, i) => {
+    const on = i === 0, s = on ? 120 : 84, cx = x0 + i * step;
+    return `<div class="abs" style="left:${cx - 110}px;top:${on ? 92 : 110}px;width:220px;text-align:center">
+      <div style="width:${s}px;height:${s}px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+        background:radial-gradient(circle,${f.c}${on ? '33' : '14'},rgba(4,10,20,0.85) 70%);border:${on ? 2 : 1}px solid ${f.c}${on ? 'ff' : '55'};${on ? `box-shadow:0 0 40px ${f.c}88` : ''}">
+        <div class="em" style="width:${s * 0.78}px;height:${s * 0.78}px;background-image:${emb(f.k)};opacity:${on ? 1 : 0.6}"></div></div>
+      <div style="font-weight:700;font-size:${on ? 14 : 12}px;letter-spacing:1px;margin-top:10px;line-height:1.25;color:${on ? '#BDF2FC' : '#9FB2BC'}">${f.n.toUpperCase()}</div></div>`;
+  }).join('');
+  return `<div class="lbl2">ВАРИАНТ C · ГЕРБЫ И ДОСЬЕ</div>${BG}
+    <div class="abs" style="inset:0;background:rgba(2,5,12,0.62)"></div>
+    <div class="abs" style="left:0;right:0;top:0;height:320px;background:linear-gradient(180deg,rgba(2,5,12,0.95),rgba(2,5,12,0))"></div>
+    ${crumbs(64, 50)}
+    <div class="abs" style="left:${x0 - 150}px;width:${step * 5 + 300}px;top:152px;height:1px;background:linear-gradient(90deg,transparent,rgba(120,220,215,0.35),transparent)"></div>
+    <div class="abs mut" style="left:${x0 - 170}px;top:134px;font-size:30px">‹</div><div class="abs mut" style="left:${x0 + step * 5 + 150}px;top:134px;font-size:30px">›</div>
+    ${medals}
+    <div class="abs glass" style="left:64px;right:64px;top:326px;bottom:120px;border-radius:4px;overflow:hidden;display:flex">
+      <div style="width:520px;position:relative;flex:none;border-right:1px solid ${AC}44">
+        <div class="abs port" style="inset:0;background-image:${leader('astrea')};background-position:50% 8%"></div>
+        <div class="abs" style="inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,0.03) 0 1px,transparent 1px 4px)"></div>
+        <div class="abs" style="left:0;right:0;top:0;height:42px;background:rgba(0,0,0,0.55);display:flex;align-items:center;padding-left:18px;gap:10px;font-weight:700;font-size:12px;letter-spacing:2px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${AC};box-shadow:0 0 10px ${AC}"></span>ПРЯМАЯ СВЯЗЬ</div>
+        <div class="abs" style="left:0;right:0;bottom:0;height:160px;background:linear-gradient(0deg,rgba(0,0,0,0.9),transparent)"></div>
+        <div class="abs" style="left:24px;bottom:20px"><div style="font-weight:700;font-size:22px">${A.l}</div><div class="mut" style="font-size:14px">${A.lt}</div></div>
+      </div>
+      <div style="flex:1;padding:34px 44px;position:relative">
+        <div class="abs em" style="right:-60px;top:-40px;width:520px;height:520px;background-image:${emb('astrea')};opacity:0.06"></div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div><div class="ttl" style="font-size:40px;color:#7FE3F7">РЕСПУБЛИКА АСТРЕЯ</div>
+            <div class="mut" style="font-size:16px;margin-top:4px">Свободная Федерация &nbsp;·&nbsp; <i style="color:#C9D8DE">${TAG}</i></div></div>
+          </div>
+        <div style="display:flex;margin-top:22px;border-bottom:1px solid rgba(255,255,255,0.1)">
+          <div class="tab on">ОБЗОР</div><div class="tab">ИСТОРИЯ</div><div class="tab">ПРАВИТЕЛЬ</div><div class="tab">СТАРТ</div></div>
+        <div style="display:flex;gap:16px;margin-top:24px">
+          ${[['+10%', 'ГЕЛИЙ-3', '#8FF0B4'], ['+15%', 'ВЛИЯНИЕ', '#8FF0B4'], ['ЛЁГКАЯ', 'СЛОЖНОСТЬ', '#6FE09A'], ['НАУКА', 'ПУТЬ К ПОБЕДЕ', '#7FE3F7']].map(([a, b, c]) =>
+            `<div style="flex:1;padding:16px 18px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
+              <div style="font-weight:700;font-size:30px;color:${c}">${a}</div><div class="mut" style="font-size:12px;letter-spacing:1.5px;font-weight:700">${b}</div></div>`).join('')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:26px">
+          <div><div class="h">ОСОБЕННОСТИ</div><div style="margin-top:8px">${traits()}</div></div>
+          <div><div class="h">СТИЛЬ ИГРЫ</div>
+            <div style="display:grid;grid-template-columns:130px 1fr;row-gap:14px;margin-top:16px;font-size:13px;letter-spacing:1px" class="mut">
+              ${STATN.map((n, j) => `<span>${n}</span>${bars(A.s[j], AC, 34)}`).join('')}</div></div></div>
+        <div class="abs" style="left:44px;right:44px;bottom:28px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);font-style:italic;font-size:16px;color:#C9D8DE">${QUOTE}</div>
+      </div>
+    </div>${BTNS()}`;
+},
+};
+document.getElementById('s').innerHTML = T[v]();
+</script></body></html>

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using StellarisClone.Core;
@@ -88,11 +88,11 @@ namespace StellarisClone.Rendering
 
             bool surveyed = _system != null && _system.IsSurveyed;
             string sov = _system == null || _system.OwnerId < 0
-                ? "Нейтральный фронтир"
-                : _system.OwnerId == 0 ? "Суверенитет империи"
-                : "Оккупация соперника";
+                ? Loc.T("Нейтральный фронтир")
+                : _system.OwnerId == 0 ? Loc.T("Суверенитет империи")
+                : Loc.T("Оккупация соперника");
 
-            _title.text = _planet.Name.ToUpper();
+            _title.text = PlanetNames.Title(_planet.Name);
             _subtitle.text = $"{_planet.ClassDisplayName}  ·  {sov}";
 
             float dist = _planet.OrbitRadius;
@@ -100,18 +100,18 @@ namespace StellarisClone.Rendering
             _grid.text = $"ORBITAL DISTANCE  {dist:0.0} AU\nROTATION PERIOD   {rot:0.0} h";
 
             string station = _planet.HasMiningStation
-                ? "Орбитальный комплекс: <color=#5F5>активен</color>"
-                : "Орбитальный комплекс: <color=#AAA>отсутствует</color>";
+                ? Loc.T("Орбитальный комплекс: <color=#5F5>активен</color>")
+                : Loc.T("Орбитальный комплекс: <color=#AAA>отсутствует</color>");
 
             _body.text =
-                $"<color=#F2C747><b>КЛИМАТ И БИОСФЕРА</b></color>\n" +
-                $"Пригодность: Habitability {_planet.HabitabilityPercent}%\n" +
-                $"Размер мира: Planet Size {_planet.PlanetSize}\n\n" +
-                $"<color=#F2C747><b>ЗАЛЕЖИ И РАЗРАБОТКА</b></color>\n" +
-                $"<color=#33E6CC>◆ Титан</color>  {_planet.MineralDeposit}\n" +
-                $"<color=#F2C747>⚡ Гелий-3</color>  {_planet.EnergyDeposit}\n" +
+                Loc.T("<color=#F2C747><b>КЛИМАТ И БИОСФЕРА</b></color>\n") +
+                Loc.F("Пригодность: Habitability {0}%\n", _planet.HabitabilityPercent) +
+                Loc.F("Размер мира: Planet Size {0}\n\n", _planet.PlanetSize) +
+                Loc.T("<color=#F2C747><b>ЗАЛЕЖИ И РАЗРАБОТКА</b></color>\n") +
+                Loc.F("<color=#33E6CC>◆ Титан</color>  {0}\n", _planet.MineralDeposit) +
+                Loc.F("<color=#F2C747>⚡ Гелий-3</color>  {0}\n", _planet.EnergyDeposit) +
                 $"{station}\n" +
-                (surveyed ? "Сенсорный архив: полный" : "<color=#FFAA88>Требуется разведка системы</color>");
+                (surveyed ? Loc.T("Сенсорный архив: полный") : Loc.T("<color=#FFAA88>Требуется разведка системы</color>"));
 
             ConfigureActions(surveyed);
         }
@@ -123,18 +123,18 @@ namespace StellarisClone.Rendering
             bool canMine = surveyed && owned && !_planet.HasMiningStation;
             _btnMine.interactable = canMine;
             _btnMineTxt.text = _planet.HasMiningStation
-                ? "✓  ДОБЫВАЮЩИЙ КОМПЛЕКС АКТИВЕН"
-                : "▶  ПОСТРОИТЬ ДОБЫВАЮЩИЙ КОМПЛЕКС";
+                ? Loc.T("✓  ДОБЫВАЮЩИЙ КОМПЛЕКС АКТИВЕН")
+                : Loc.T("▶  ПОСТРОИТЬ ДОБЫВАЮЩИЙ КОМПЛЕКС");
 
             bool canCol = surveyed && owned && _planet.CanColonize;
             _btnColony.interactable = canCol;
             _btnColonyTxt.text = _planet.Population > 0
-                ? "✓  КОЛОНИЯ ОСНОВАНА"
-                : "▶  ОСНОВАТЬ КОЛОНИЮ";
+                ? Loc.T("✓  КОЛОНИЯ ОСНОВАНА")
+                : Loc.T("▶  ОСНОВАТЬ КОЛОНИЮ");
 
             bool canTerra = surveyed && owned && _planet.CanTerraform && _planet.HabitabilityPercent < 70;
             _btnTerra.interactable = canTerra;
-            _btnTerraTxt.text = "▶  НАЧАТЬ ТЕРРАФОРМИРОВАНИЕ";
+            _btnTerraTxt.text = Loc.T("▶  НАЧАТЬ ТЕРРАФОРМИРОВАНИЕ");
 
             // Кнопка «Осмотреть» — всегда активна
             if (_btnExpand != null) _btnExpand.interactable = true;
@@ -145,7 +145,6 @@ namespace StellarisClone.Rendering
             if (_planet == null) return;
             if (FleetManager.Instance != null && FleetManager.Instance.BuildMiningStationOnPlanet(_planet))
             {
-                SystemViewManager.Instance?.SpawnStationOnActivePlanet(_planet);
                 Refresh();
             }
         }
@@ -201,7 +200,7 @@ namespace StellarisClone.Rendering
             header.AddComponent<Image>().color = UIManager.DS.BgHeader;
             LG.Header(header);
 
-            _title = MakeText(header.transform, "ПЛАНЕТА", 18, FontStyle.Bold,
+            _title = MakeText(header.transform, Loc.T("ПЛАНЕТА"), 18, FontStyle.Bold,
                 UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
             _title.rectTransform.anchorMin = new Vector2(0, 0.38f);
             _title.rectTransform.anchorMax = new Vector2(1, 1);
@@ -283,22 +282,22 @@ namespace StellarisClone.Rendering
             _body.lineSpacing = 1.25f;
 
             // === КНОПКА «ОСМОТРЕТЬ» — самая верхняя ===
-            _btnExpand = MakeBtn(_root.transform, "◇  ОСМОТРЕТЬ ПЛАНЕТУ",
+            _btnExpand = MakeBtn(_root.transform, Loc.T("◇  ОСМОТРЕТЬ ПЛАНЕТУ"),
                 new Vector2(430, 32), UIManager.DS.BtnPrimary, OnExpand).GetComponent<Button>();
             PlaceBtn(_btnExpand.GetComponent<RectTransform>(), 96);
 
             // Кнопки действий
-            _btnMine = MakeBtn(_root.transform, "▶  ПОСТРОИТЬ ДОБЫВАЮЩИЙ КОМПЛЕКС",
+            _btnMine = MakeBtn(_root.transform, Loc.T("▶  ПОСТРОИТЬ ДОБЫВАЮЩИЙ КОМПЛЕКС"),
                 new Vector2(430, 32), UIManager.DS.BtnSuccess, OnMine).GetComponent<Button>();
             PlaceBtn(_btnMine.GetComponent<RectTransform>(), 52);
             _btnMineTxt = _btnMine.GetComponentInChildren<Text>();
 
-            _btnColony = MakeBtn(_root.transform, "▶  ОСНОВАТЬ КОЛОНИЮ",
+            _btnColony = MakeBtn(_root.transform, Loc.T("▶  ОСНОВАТЬ КОЛОНИЮ"),
                 new Vector2(430, 32), UIManager.DS.BtnPrimary, OnColony).GetComponent<Button>();
             PlaceBtn(_btnColony.GetComponent<RectTransform>(), 16);
             _btnColonyTxt = _btnColony.GetComponentInChildren<Text>();
 
-            _btnTerra = MakeBtn(_root.transform, "▶  НАЧАТЬ ТЕРРАФОРМИРОВАНИЕ",
+            _btnTerra = MakeBtn(_root.transform, Loc.T("▶  НАЧАТЬ ТЕРРАФОРМИРОВАНИЕ"),
                 new Vector2(430, 32), UIManager.DS.BtnNeutral, OnTerra).GetComponent<Button>();
             PlaceBtn(_btnTerra.GetComponent<RectTransform>(), -20);
             _btnTerraTxt = _btnTerra.GetComponentInChildren<Text>();

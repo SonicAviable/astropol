@@ -47,11 +47,26 @@ namespace StellarisClone.Rendering
             }
         }
 
+        private static Font _display;
+
+        /// <summary>Акцидентный шрифт (Russo One) — крупные числа и заголовки HUD. Нет файла — жирный Play.</summary>
+        public static Font Display
+        {
+            get
+            {
+                if (_display != null) return _display;
+                _display = Resources.Load<Font>("Fonts/RussoOne-Regular");
+                if (_display == null) _display = Bold;
+                return _display;
+            }
+        }
+
         /// <summary>Сбросить кэш (на случай, если менял файлы во время игры).</summary>
         public static void Reload()
         {
             _regular = null;
             _bold = null;
+            _display = null;
         }
     }
 }

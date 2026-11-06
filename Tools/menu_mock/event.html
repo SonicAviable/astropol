@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты окна события (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_event.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; font-family: Play, sans-serif; color: #EAF6FA;
+  background: radial-gradient(ellipse at 60% 50%, #1a2026 0%, #07090c 70%); }
+.map { position: absolute; inset: 0; opacity: .35;
+  background-image: radial-gradient(circle, #fff 1px, transparent 1.5px); background-size: 97px 83px; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+.tag { position: absolute; left: 40px; top: 30px; font: 700 18px Russo; letter-spacing: 3px; color: #FFD27A; }
+.G { --c: #5CE08F; }
+b.k { color: #fff; }
+.muted { color: #8FA3AD; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; font: 700 13px Play; margin: 0 6px 0 0; white-space: nowrap; }
+.pos { background: rgba(92,224,143,.12); color: #7CF0A8; border: 1px solid rgba(92,224,143,.35); }
+.neg { background: rgba(255,110,90,.12); color: #FF9A8A; border: 1px solid rgba(255,110,90,.35); }
+.neu { background: rgba(111,230,218,.10); color: #8FE9E0; border: 1px solid rgba(111,230,218,.30); }
+.lock { background: rgba(255,255,255,.05); color: #8FA3AD; border: 1px solid rgba(255,255,255,.15); }
+
+/* ---------- A · ДОСЬЕ ---------- */
+.A { position: absolute; left: 260px; top: 170px; width: 1400px; height: 740px; display: flex;
+  background: #0b1318; border: 1px solid rgba(92,224,143,.45); border-radius: 6px; box-shadow: 0 0 60px rgba(92,224,143,.12), 0 30px 80px rgba(0,0,0,.6); overflow: hidden; }
+.A .art { width: 560px; position: relative; background: url(../../Assets/Resources/UI/Events/Amoeba.jpg) 38% center / cover; }
+.A .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 60%, #0b1318 100%), linear-gradient(0deg, rgba(5,10,12,.85) 0%, transparent 35%); }
+.A .art .meta { position: absolute; left: 28px; bottom: 26px; z-index: 2; font-size: 14px; line-height: 1.7; }
+.A .art .meta div { display: flex; gap: 10px; } .A .art .meta span:first-child { color: #6F8794; width: 90px; letter-spacing: 1.5px; font-size: 12px; text-transform: uppercase; padding-top: 2px; }
+.A .body { flex: 1; padding: 40px 44px 34px 30px; display: flex; flex-direction: column; }
+.A .kind { font: 700 12px Play; letter-spacing: 4px; color: #5CE08F; }
+.A h1 { font: 30px Russo; margin: 10px 0 18px; letter-spacing: .5px; }
+.A p { font-size: 17px; line-height: 1.6; color: #CFDDE3; }
+.A .q { margin-top: 18px; padding: 12px 16px; border-left: 3px solid #5CE08F; background: rgba(92,224,143,.06); font-size: 15px; font-style: italic; color: #A9C4BB; }
+.A .opts { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+.A .opt { display: flex; align-items: center; gap: 18px; padding: 14px 18px; border: 1px solid rgba(111,230,218,.28); border-radius: 6px; background: rgba(255,255,255,.02); }
+.A .opt.hl { border-color: #5CE08F; background: rgba(92,224,143,.08); box-shadow: inset 4px 0 0 #5CE08F; }
+.A .opt .n { width: 34px; height: 34px; border-radius: 50%; border: 1px solid currentColor; display: grid; place-items: center; font: 700 15px Play; color: #6FE6DA; flex: none; }
+.A .opt .t { font: 700 17px Play; } .A .opt .s { font-size: 13px; color: #8FA3AD; margin-top: 3px; }
+.A .opt .fx { margin-left: auto; display: flex; }
+.A .opt.off { opacity: .55; border-style: dashed; }
+
+/* ---------- B · КИНО ---------- */
+.B { position: absolute; left: 310px; top: 110px; width: 1300px; height: 860px; border-radius: 4px; overflow: hidden;
+  background: #05080a url(../../Assets/Resources/UI/Events/Amoeba.jpg) center top / 100% auto no-repeat; box-shadow: 0 30px 90px rgba(0,0,0,.7); }
+.B::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.35) 0%, transparent 20%, transparent 32%, rgba(5,8,10,.92) 58%, #05080a 72%); }
+.B > * { position: relative; }
+.B .top { display: flex; justify-content: space-between; padding: 26px 34px; font: 700 13px Play; letter-spacing: 3px; color: #B9D6CC; }
+.B .top .x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); display: grid; place-items: center; letter-spacing: 0; }
+.B .head { position: absolute; left: 60px; right: 60px; top: 300px; text-align: center; }
+.B .head .kind { display: inline-block; padding: 5px 16px; border: 1px solid rgba(92,224,143,.6); border-radius: 14px; font: 700 12px Play; letter-spacing: 4px; color: #7CF0A8; background: rgba(0,0,0,.4); }
+.B h1 { font: 46px Russo; margin: 16px 0 6px; text-shadow: 0 0 30px rgba(92,224,143,.45), 0 2px 0 #000; letter-spacing: 1px; }
+.B .sub { font-size: 15px; color: #9FB8B0; letter-spacing: 1px; }
+.B .txt { position: absolute; left: 150px; right: 150px; top: 470px; text-align: center; font-size: 18px; line-height: 1.6; color: #D3E2E6; }
+.B .row { position: absolute; left: 50px; right: 50px; bottom: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.B .card { height: 170px; border-radius: 8px; padding: 18px 20px; background: rgba(12,22,26,.85); border: 1px solid rgba(111,230,218,.3); display: flex; flex-direction: column; }
+.B .card.hl { border-color: #5CE08F; box-shadow: 0 0 30px rgba(92,224,143,.25), inset 0 0 0 1px #5CE08F; transform: translateY(-6px); }
+.B .card .ic { font-size: 26px; height: 32px; }
+.B .card .t { font: 700 17px Play; margin: 8px 0 4px; } .B .card .s { font-size: 13px; color: #8FA3AD; }
+.B .card .fx { margin-top: auto; }
+.B .card.off { background: rgba(12,22,26,.6); border-style: dashed; }
+.B .card.off .t { color: #8FA3AD; }
+
+/* ---------- C · ПЕРЕХВАТ ---------- */
+.C { position: absolute; left: 440px; top: 120px; width: 1040px; height: 840px; }
+.C .frame { position: absolute; inset: 0; background: rgba(6,14,16,.94); clip-path: polygon(28px 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%, 0 28px); }
+.C .edge { position: absolute; inset: 0; border: 1px solid rgba(92,224,143,.5); clip-path: inherit; }
+.C svg.cn { position: absolute; inset: 0; }
+.C .hdr { position: absolute; left: 0; right: 0; top: 0; height: 54px; display: flex; align-items: center; gap: 14px; padding: 0 26px 0 44px; border-bottom: 1px solid rgba(92,224,143,.25);
+  font: 700 12px Play; letter-spacing: 3px; color: #7CF0A8; background: linear-gradient(90deg, rgba(92,224,143,.14), transparent 60%); }
+.C .hdr .dot { width: 9px; height: 9px; border-radius: 50%; background: #5CE08F; box-shadow: 0 0 10px #5CE08F; }
+.C .hdr .r { margin-left: auto; color: #6F8794; }
+.C .vp { position: absolute; left: 26px; right: 26px; top: 76px; height: 330px; background: url(../../Assets/Resources/UI/Events/Amoeba.jpg) center 40% / cover; border: 1px solid rgba(92,224,143,.35); }
+.C .vp::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.6)); }
+.C .vp .hud { position: absolute; z-index: 2; font: 700 11px Play; letter-spacing: 2px; color: #7CF0A8; text-shadow: 0 0 6px #000; }
+.C .ret { position: absolute; z-index: 2; left: 300px; top: 70px; width: 180px; height: 180px; border: 1.5px solid rgba(124,240,168,.8); border-radius: 50%; }
+.C .ret::before, .C .ret::after { content: ''; position: absolute; background: rgba(124,240,168,.8); }
+.C .ret::before { left: -14px; right: -14px; top: 50%; height: 1px; } .C .ret::after { top: -14px; bottom: -14px; left: 50%; width: 1px; }
+.C h1 { position: absolute; left: 26px; top: 424px; font: 28px Russo; letter-spacing: .5px; }
+.C .txt { position: absolute; left: 26px; right: 26px; top: 470px; font-size: 16px; line-height: 1.6; color: #CFDDE3; }
+.C .opts { position: absolute; left: 26px; right: 26px; bottom: 30px; display: flex; flex-direction: column; gap: 8px; }
+.C .opt { display: flex; align-items: center; gap: 16px; height: 56px; padding: 0 18px; background: rgba(255,255,255,.025); border: 1px solid rgba(111,230,218,.22);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
+.C .opt.hl { background: linear-gradient(90deg, rgba(92,224,143,.18), rgba(92,224,143,.03)); border-color: #5CE08F; }
+.C .opt .key { width: 28px; height: 28px; border: 1px solid #6FE6DA; color: #6FE6DA; display: grid; place-items: center; font: 700 13px Play; border-radius: 4px; }
+.C .opt .t { font: 700 16px Play; letter-spacing: .5px; }
+.C .opt .fx { margin-left: auto; display: flex; }
+.C .opt.off { opacity: .6; }
+.C .opt.off .key { border-color: #5a6b73; color: #5a6b73; }
+</style></head>
+<body><div class="map"></div><div class="dim"></div><div id="s"></div>
+<script>
+const v = new URLSearchParams(location.search).get('v') || 'a';
+const name = { a: 'A · ДОСЬЕ', b: 'B · КИНО', c: 'C · ПЕРЕХВАТ' }[v];
+const TXT = 'В поясе астероидов обнаружена колония кремниевых амёбоподобных форм. Они поглощают силикаты и выделяют в метаболические пузырьки чистый гелий-3. Нейросканеры показывают реакцию на фононные колебания — возможно, колония способна к обучению.';
+const html = {
+a: `<div class="A"><div class="art"><div class="meta">
+  <div><span>Система</span><b class="k">Акрукс</b></div><div><span>Корабль</span><b class="k">НИС «Первопроходец»</b></div><div><span>Дата</span><b class="k">14.03.2201</b></div></div></div>
+  <div class="body"><div class="kind">◆ АНОМАЛИЯ · ЖИЗНЬ</div><h1>Космическая амёба в астероидном поясе</h1><p>${TXT}</p>
+  <div class="q">«Они реагируют на наш сканер, как на пищу. Или как на голос», — отчёт научного офицера.</div>
+  <div class="opts">
+   <div class="opt hl"><div class="n">1</div><div><div class="t">Оставить в покое и наблюдать</div><div class="s">Безопасно. Изучение продолжится само.</div></div><div class="fx"><span class="chip pos">⚛ +40 науки</span><span class="chip neu">☰ +1 запись</span></div></div>
+   <div class="opt"><div class="n">2</div><div><div class="t">Уничтожить и собрать биоматериал</div><div class="s">Колония погибнет.</div></div><div class="fx"><span class="chip pos">⚡ +120 гелия-3</span><span class="chip neg">☹ −5 стабильности</span></div></div>
+   <div class="opt off"><div class="n">🔒</div><div><div class="t">Приручить колонию</div><div class="s">Нужен учёный-ксенолог на борту — Империя (I) → Лидеры → Нанять</div></div><div class="fx"><span class="chip lock">⚛ Учёный-ксенолог</span></div></div>
+  </div></div></div>`,
+b: `<div class="B"><div class="top"><span>◆ АКРУКС · НИС «ПЕРВОПРОХОДЕЦ»</span><span class="x">✕</span></div>
+  <div class="head"><span class="kind">АНОМАЛИЯ · ЖИЗНЬ</span><h1>КОСМИЧЕСКАЯ АМЁБА</h1><div class="sub">в астероидном поясе</div></div>
+  <div class="txt">${TXT}</div>
+  <div class="row">
+   <div class="card hl"><div class="ic">👁</div><div class="t">Оставить в покое и наблюдать</div><div class="s">Безопасно, изучение идёт само</div><div class="fx"><span class="chip pos">⚛ +40 науки</span></div></div>
+   <div class="card"><div class="ic">☄</div><div class="t">Уничтожить и собрать биоматериал</div><div class="s">Колония погибнет</div><div class="fx"><span class="chip pos">⚡ +120</span><span class="chip neg">☹ −5</span></div></div>
+   <div class="card off"><div class="ic">🔒</div><div class="t">Приручить колонию</div><div class="s">Нужен учёный-ксенолог на борту</div><div class="fx"><span class="chip lock">Нанять: Империя → Лидеры</span></div></div>
+  </div></div>`,
+c: `<div class="C"><div class="frame"></div><div class="edge"></div>
+  <svg class="cn" width="1040" height="840"><path d="M0 60 V28 L28 0 H90" fill="none" stroke="#5CE08F" stroke-width="2"/><path d="M1040 780 V812 L1012 840 H950" fill="none" stroke="#5CE08F" stroke-width="2"/></svg>
+  <div class="hdr"><span class="dot"></span>ВХОДЯЩИЙ ОТЧЁТ · АНОМАЛИЯ<span class="r">АКРУКС · НИС «ПЕРВОПРОХОДЕЦ» · 14.03.2201 ✕</span></div>
+  <div class="vp"><div class="hud" style="left:14px;top:12px">СКАН 3/3 · ЖИЗНЬ ОБНАРУЖЕНА</div><div class="hud" style="right:14px;top:12px">Δ 0.42 а.е.</div>
+   <div class="hud" style="left:14px;bottom:12px">СИЛИКАТЫ · ГЕЛИЙ-3 ▲</div><div class="hud" style="right:14px;bottom:12px">ОБУЧАЕМОСТЬ: ВЕРОЯТНА</div><div class="ret"></div></div>
+  <h1>Космическая амёба в астероидном поясе</h1><div class="txt">${TXT}</div>
+  <div class="opts">
+   <div class="opt hl"><div class="key">1</div><div class="t">Оставить в покое и наблюдать</div><div class="fx"><span class="chip pos">⚛ +40 науки</span></div></div>
+   <div class="opt"><div class="key">2</div><div class="t">Уничтожить и собрать биоматериал</div><div class="fx"><span class="chip pos">⚡ +120 гелия-3</span><span class="chip neg">☹ −5 стаб.</span></div></div>
+   <div class="opt off"><div class="key">3</div><div class="t">🔒 Приручить колонию</div><div class="fx"><span class="chip lock">нужен учёный-ксенолог · Империя → Лидеры</span></div></div>
+  </div></div>`
+}[v];
+document.getElementById('s').innerHTML = `<div class="tag">${name}</div>` + html;
+</script></body></html>

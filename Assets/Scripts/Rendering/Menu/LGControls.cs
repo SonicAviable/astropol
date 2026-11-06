@@ -257,7 +257,7 @@ namespace StellarisClone.Rendering
             _trackFx.SetRim(_value ? new Color(on.r, on.g, on.b, _hover ? 0.95f : 0.75f)
                                    : new Color(1f, 1f, 1f, _hover ? 0.32f : 0.18f));
             _trackFx.SetHover(_hover ? 0.5f : 0f);
-            _label.text = _value ? "ВКЛ" : "ВЫКЛ";
+            _label.text = _value ? Loc.T("ВКЛ") : Loc.T("ВЫКЛ");
             _label.color = _value ? on : UIManager.DS.TextMuted;
             if (instant) { _t = _value ? 1f : 0f; _v = 0f; PlaceKnob(); }
         }

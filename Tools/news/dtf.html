@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Обложка поста на DTF (1920×1080): логотип и подзаголовок слева, шесть лидеров фракций в косых полосах справа.
+     Рендер: node Tools/news/render.js dtf  (PNG в VKPlay/news/dtf.png) -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/LoadingArt.jpg) 30% 50%/cover; filter: brightness(0.6) saturate(1.1); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.95) 0%, rgba(3,7,15,0.85) 40%, rgba(3,7,15,0.2) 70%, rgba(3,7,15,0.1) 100%); }
+.strips { position: absolute; top: 0; bottom: 0; left: 1110px; right: -200px; display: flex; transform: skewX(-12deg); }
+.strip { flex: 1; overflow: hidden; border-left: 3px solid rgba(143,245,234,0.7); box-shadow: -6px 0 20px rgba(0,0,0,0.6); position: relative; }
+.strip div { position: absolute; inset: 0 -80px; background-size: cover; background-position: center 22%; transform: skewX(12deg); }
+.strip::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(3,7,15,0.85), rgba(3,7,15,0) 45%); }
+.left { position: absolute; left: 120px; top: 230px; width: 820px; }
+.logo { font-family: Russo; font-size: 104px; letter-spacing: 7px; line-height: 1;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(242,199,102,0.35)); }
+.kick { font-weight: 700; font-size: 25px; letter-spacing: 11px; color: #8FE3DA; margin-top: 22px; }
+.rule { height: 1px; width: 700px; margin: 36px 0 32px; background: linear-gradient(90deg, rgba(242,199,102,0.8), rgba(242,199,102,0)); }
+.lead { font-weight: 700; font-size: 44px; line-height: 1.2; }
+.lead em { font-style: normal; color: #F2C766; }
+.sub { font-size: 24px; color: #9DB6C1; margin-top: 20px; line-height: 1.4; }
+.tags { display: flex; gap: 12px; margin-top: 36px; }
+.tags span { padding: 10px 18px; border: 1px solid rgba(102,219,209,0.4); border-radius: 5px; background: rgba(6,16,30,0.8); font-weight: 700; font-size: 18px; letter-spacing: 3px; color: #CFE8EC; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="fade"></div>
+  <div class="strips">
+    <div class="strip"><div style="background-image:url(../../Assets/Resources/Leaders/leader_astrea.jpg)"></div></div>
+    <div class="strip"><div style="background-image:url(../../Assets/Resources/Leaders/leader_xarn.jpg)"></div></div>
+    <div class="strip"><div style="background-image:url(../../Assets/Resources/Leaders/leader_iridia.jpg)"></div></div>
+    <div class="strip"><div style="background-image:url(../../Assets/Resources/Leaders/leader_nol.jpg)"></div></div>
+    <div class="strip"><div style="background-image:url(../../Assets/Resources/Leaders/leader_terraan.jpg)"></div></div>
+    <div class="strip"><div style="background-image:url(../../Assets/Resources/Leaders/leader_aquila.jpg)"></div></div>
+  </div>
+  <div class="left">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="kick">КОСМИЧЕСКАЯ 4X-СТРАТЕГИЯ</div>
+    <div class="rule"></div>
+    <div class="lead">«Российский Stellaris»<br><em>с амбициями</em></div>
+    <div class="sub">Шесть империй, дипломатия, флоты и карточные штурмы колоний.<br>Игровая студия SmartBiz · Россия и Казахстан.</div>
+    <div class="tags"><span>VK PLAY · РАННИЙ ДОСТУП</span><span>STEAM · КОНЕЦ 2026</span></div>
+  </div>
+</div></body></html>

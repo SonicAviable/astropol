@@ -278,7 +278,7 @@ MonoBehaviour:
   middleMouseDragSensitivity: 1.2
   zoomSpeed: 25
   zoomSmooth: 12
-  minHeight: 15
+  minHeight: 9
   maxHeight: 220
   zoomToCursorStrength: 0.85
   rotationSpeed: 90
@@ -286,7 +286,7 @@ MonoBehaviour:
   galaxyBoundsRadius: 160
   focusDuration: 0.5
   systemZoomSpeed: 35
-  minSystemDistance: 20
+  minSystemDistance: 13
   maxSystemDistance: 140
   systemTransitionSpeed: 6
   returnFromSystemDuration: 0.45
@@ -568,7 +568,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e406cb888d1b2141b9bf4494d8d8518, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StellarisClone.Core.TimeManager
-  baseSecondsPerDay: 1
+  secondsPerDay: 0.75
 --- !u!114 &699953281
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,0 +1,49 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<!-- Варианты стиля кнопок (без яркого свечения). Рендер: node Tools/menu_mock/render_buttons_v.js -->
+<style>
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 700px; background: radial-gradient(ellipse at 40% 20%, #0D1C33, #03070F 70%); font-family: Play; color: #EAF6FA; padding: 44px 60px; }
+h1 { font-size: 30px; letter-spacing: 2px; } .sub { color: #8DA6AE; margin: 6px 0 30px; font-size: 15px; }
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
+.col { background: linear-gradient(180deg, rgba(12,24,44,0.9), rgba(6,12,24,0.95)); border: 1px solid rgba(120,220,215,0.2); border-radius: 16px; padding: 26px 28px; }
+.col h2 { font-size: 22px; letter-spacing: 2px; } .col .d { color: #8DA6AE; font-size: 13px; margin: 6px 0 22px; line-height: 1.4; }
+.b { height: 52px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; letter-spacing: 3px; margin-bottom: 12px; position: relative; overflow: hidden; }
+.k { font-size: 11px; color: #6E868E; letter-spacing: 2px; font-weight: 700; margin: 16px 0 8px; }
+/* 1 — Стекло */
+.v1 { border-radius: 8px; background: rgba(20,36,64,0.55); border: 1px solid rgba(130,170,240,0.35); color: #D6E4FF; }
+.v1.p { background: linear-gradient(180deg, #6FE3D6, #4CC8BC); border: none; color: #04161A; }
+.v1.g { border-color: rgba(90,220,140,0.5); color: #C9F5DA; } .v1.r { border-color: rgba(255,120,100,0.5); color: #FFD0C8; }
+.v1.q { background: transparent; border-color: rgba(255,255,255,0.12); color: #9FB2BE; }
+/* 2 — Приборная панель (срезанные углы и полоса цвета слева) */
+.v2 { clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); background: #16243C; color: #D6E4FF; }
+.v2::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 0; width: 3px; background: #6E9BFF; }
+.v2.p { background: #6FE3D6; color: #04161A; } .v2.p::before { display: none; }
+.v2.g::before { background: #4FD98A; } .v2.r::before { background: #FF7564; } .v2.q { background: #0F1828; color: #9FB2BE; } .v2.q::before { background: #3A4A5E; }
+/* 3 — Мягкий объём */
+.v3 { border-radius: 10px; background: linear-gradient(180deg, #213656, #15233B); color: #DCE8FF; box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 4px 10px rgba(0,0,0,0.35); }
+.v3.p { background: linear-gradient(180deg, #8AF2E6, #4CC8BC); color: #04161A; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 14px rgba(0,0,0,0.35), 0 0 12px rgba(110,240,225,0.18); }
+.v3.g { background: linear-gradient(180deg, #1F4A31, #163724); color: #CFF7DD; } .v3.r { background: linear-gradient(180deg, #4E2622, #3A1A17); color: #FFD3CC; }
+.v3.q { background: linear-gradient(180deg, #172233, #111A28); color: #A9BACB; }
+.hov { outline: 2px dashed rgba(255,255,255,0.0); }
+.note { font-size: 12px; color: #8DA6AE; margin-top: 4px; }
+</style></head><body>
+<h1>СТИЛЬ КНОПОК · ВАРИАНТЫ</h1><div class="sub">Без яркого свечения. Форма и цвета одинаковые во всей игре; главная кнопка — одна на экран</div>
+<div class="cols">
+ <div class="col"><h2>1 · СТЕКЛО</h2><div class="d">Полупрозрачное тёмно-синее стекло с тонкой кромкой цвета действия. Главная — сплошная бирюза без ореола. Самый лёгкий и «воздушный».</div>
+  <div class="k">ГЛАВНАЯ</div><div class="b v1 p">ПРОДОЛЖИТЬ</div>
+  <div class="k">ОБЫЧНАЯ · УСПЕХ · ОПАСНАЯ · НЕЙТРАЛЬНАЯ</div>
+  <div class="b v1">ЗАГРУЗИТЬ</div><div class="b v1 g">ПРИНЯТЬ · 25 ВЛИЯНИЯ</div><div class="b v1 r">ВЫЙТИ ИЗ ИГРЫ</div><div class="b v1 q">НАЗАД</div>
+  <div class="note">Наведение: кромка ярче, стекло светлее</div></div>
+ <div class="col"><h2>2 · ПРИБОРНАЯ ПАНЕЛЬ</h2><div class="d">Плотная тёмно-синяя плашка со срезанными углами и полосой цвета действия слева — как кнопки на пульте корабля. Самый «научно-фантастический».</div>
+  <div class="k">ГЛАВНАЯ</div><div class="b v2 p">ПРОДОЛЖИТЬ</div>
+  <div class="k">ОБЫЧНАЯ · УСПЕХ · ОПАСНАЯ · НЕЙТРАЛЬНАЯ</div>
+  <div class="b v2">ЗАГРУЗИТЬ</div><div class="b v2 g">ПРИНЯТЬ · 25 ВЛИЯНИЯ</div><div class="b v2 r">ВЫЙТИ ИЗ ИГРЫ</div><div class="b v2 q">НАЗАД</div>
+  <div class="note">Наведение: полоса расширяется, плашка светлеет</div></div>
+ <div class="col"><h2>3 · МЯГКИЙ ОБЪЁМ</h2><div class="d">Заливка с мягким градиентом сверху вниз, тонкий блик по верхнему краю и тень — кнопки «выпуклые». Главная почти без свечения.</div>
+  <div class="k">ГЛАВНАЯ</div><div class="b v3 p">ПРОДОЛЖИТЬ</div>
+  <div class="k">ОБЫЧНАЯ · УСПЕХ · ОПАСНАЯ · НЕЙТРАЛЬНАЯ</div>
+  <div class="b v3">ЗАГРУЗИТЬ</div><div class="b v3 g">ПРИНЯТЬ · 25 ВЛИЯНИЯ</div><div class="b v3 r">ВЫЙТИ ИЗ ИГРЫ</div><div class="b v3 q">НАЗАД</div>
+  <div class="note">Наведение: заливка светлеет, при нажатии вдавливается</div></div>
+</div></body></html>
