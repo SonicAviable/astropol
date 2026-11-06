@@ -104,12 +104,14 @@ namespace StellarisClone.Rendering
                         RebuildList();
                     }, null, assigned ? Loc.T("СНЯТЬ") : Loc.T("НАЗНАЧИТЬ"), 10);
                 ((RectTransform)main.transform).Stretch(0, 8, 40, 8);
+                Hudify(main, col);
                 var dismiss = LGBuild.Button(actions, "Dismiss", UIManager.DS.BtnDanger, UIManager.DS.Red, () =>
                 {
                     lm.Dismiss(l);
                     RebuildList();
                 }, LGIcon.Close, null, 10);
                 ((RectTransform)dismiss.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(32, 32));
+                Hudify(dismiss, UIManager.DS.Red);
                 TooltipHelper.Attach(dismiss.gameObject, Loc.T("<b>Уволить</b>\nЛидер покинет службу навсегда; содержание перестанет списываться."));
             }
             else
@@ -123,6 +125,7 @@ namespace StellarisClone.Rendering
                     }, null, Loc.F("НАНЯТЬ  ★{0:0}", LeaderManager.HireInfluence), 10);
                 ((RectTransform)hire.transform).Stretch(0, 8, 0, 8);
                 hire.interactable = can;
+                Hudify(hire, col);
                 if (!can) TooltipHelper.Attach(hire.gameObject, why);
             }
 

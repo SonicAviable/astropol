@@ -41,10 +41,10 @@ namespace StellarisClone.Rendering
         private const float GaugeSize = 76f;
         // Строки — полупрозрачные светлые слои поверх панели (а не плотный тёмный цвет: панели шейдер подсвечивает,
         // и непрозрачные строки на их фоне выглядели чёрными провалами)
-        private static readonly Color RowA = new Color(0.60f, 0.85f, 0.95f, 0.06f);
-        private static readonly Color RowB = new Color(0.60f, 0.85f, 0.95f, 0.045f);
-        private static readonly Color RowSub = new Color(0.60f, 0.85f, 0.95f, 0.015f);
-        private static readonly Color RowHover = new Color(0.55f, 0.92f, 1f, 0.13f);
+        private static readonly Color RowA = new Color(0.045f, 0.095f, 0.125f, 0.92f);
+        private static readonly Color RowB = new Color(0.038f, 0.082f, 0.110f, 0.92f);
+        private static readonly Color RowSub = new Color(0.030f, 0.066f, 0.090f, 0.85f);
+        private static readonly Color RowHover = new Color(0.07f, 0.17f, 0.19f, 0.95f);
         private readonly Dictionary<Tab, string> _tabNames = new Dictionary<Tab, string>();
         private Image _portrait, _portraitIcon;
         private RectTransform _portraitHost;
@@ -137,7 +137,6 @@ namespace StellarisClone.Rendering
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(WindowRim);
             LG.Motion(_root, LGAppear.Kind.Pop).inDuration = 0.45f;
-            LGBuild.Nebula(rootRt, 24f, 0.35f, bg: "empire");   // задник — туманность
 
             // «Медальон»: сверху панорама мира фракции, в центре правитель в круглом медальоне с гербом,
             // по бокам кольца ресурсов и мощи флота; ниже вкладки по центру и три колонки:
@@ -191,11 +190,83 @@ namespace StellarisClone.Rendering
             return t;
         }
 
-        /// <summary>Блок левой колонки / вкладок: ровная пластина.</summary>
+        // Стиль верхней панели карты (крылья ресурсов, плашки показателей): тёмная плашка со срезанными углами
+        // и тонкая бирюзовая кромка — без стекла
+        private static readonly Color HudLine = new Color(0.37f, 0.82f, 0.75f, 1f);
+        private static readonly Color HudTint = new Color(0.030f, 0.068f, 0.095f, 0.95f);
+        private static readonly Color HudRim = new Color(0.37f, 0.82f, 0.75f, 0.40f);
+
+        /// <summary>Сделать картинку HUD-плашкой: срезанные углы, тёмная заливка tint и кромка frame (дочерний «Frame»).</summary>
+        private static Image HudSkin(Image img, Color tint, Color frame, int cut = 8)
+        {
+            img.sprite = HudArt.CutPanel(cut);
+            img.type = Image.Type.Sliced;
+            img.color = tint;
+            LG.Ignore(img.gameObject, includeChildren: false);
+            var f = LGBuild.Panel(img.transform, "Frame", frame);
+            f.sprite = HudArt.CutFrame(cut, 1f);
+            f.type = Image.Type.Sliced;
+            f.raycastTarget = false;
+            f.rectTransform.Stretch();
+            LG.Ignore(f.gameObject);
+            return f;
+        }
+
+        private static void SetFrame(Image plate, Color c)
+        {
+            var f = plate != null ? plate.transform.Find("Frame") : null;
+            if (f != null) f.GetComponent<Image>().color = c;
+        }
+
+        /// <summary>Блок колонок / таблицы: HUD-плашка.</summary>
         private static Image Block(Transform parent, string name)
         {
-            var b = LGBuild.Panel(parent, name, UIManager.DS.BgSlot);
-            LG.Platter(b.gameObject, 10f);
+            var b = LGBuild.Panel(parent, name, HudTint);
+            HudSkin(b, HudTint, HudRim, 10);
+            return b;
+        }
+
+        /// <summary>
+        /// Перевести кнопку из LGBuild.Button в стиль HUD: снять стекло и «приборную» отрисовку, дать плашку
+        /// со срезанными углами и кромкой цвета accent; подпись и значок — в цвет кромки. Недоступная — серая.
+        /// Вызывать после того, как выставлено interactable.
+        /// </summary>
+        private static void Hudify(Button b, Color accent)
+        {
+            if (b == null) return;
+            var img = b.GetComponent<Image>();
+            var glass = b.GetComponent<LiquidGlassEffect>();
+            if (glass != null) Object.Destroy(glass);
+            var game = b.GetComponent<LGGameButton>();
+            if (game != null) Object.Destroy(game);
+            b.transition = Selectable.Transition.None;
+            bool on = b.interactable;
+            Color c = on ? accent : new Color(0.45f, 0.52f, 0.56f, 1f);
+            var frame = HudSkin(img, HudTint, new Color(c.r, c.g, c.b, on ? 0.6f : 0.3f), 6);
+            Color ink = on ? Color.Lerp(c, Color.white, 0.35f) : new Color(0.55f, 0.62f, 0.66f, 1f);
+            foreach (var t in b.GetComponentsInChildren<Text>(true)) t.color = ink;
+            foreach (var im in b.GetComponentsInChildren<Image>(true))
+                if (im != img && im != frame) im.color = ink;
+            if (!on) return;
+            var hv = b.gameObject.AddComponent<UIHover>();
+            hv.Enter = () => { img.color = new Color(c.r * 0.22f, c.g * 0.22f, c.b * 0.22f, 0.95f); frame.color = c; };
+            hv.Exit = () => { img.color = HudTint; frame.color = new Color(c.r, c.g, c.b, 0.6f); };
+        }
+
+        /// <summary>Кнопка в стиле HUD: плашка со срезанными углами, кромка цвета rim, подпись; при наведении светлеет.</summary>
+        private static Button HudButton(Transform parent, string name, string label, Color rim, System.Action act)
+        {
+            var img = LGBuild.Panel(parent, name, HudTint, raycast: true);
+            var frame = HudSkin(img, HudTint, new Color(rim.r, rim.g, rim.b, 0.55f), 6);
+            var t = LGBuild.Label(img.transform, label, 11, rim, TextAnchor.MiddleCenter, bold: true);
+            t.rectTransform.Stretch();
+            t.Track(1.6f);
+            var hv = img.gameObject.AddComponent<UIHover>();
+            hv.Enter = () => { img.color = new Color(rim.r * 0.25f, rim.g * 0.25f, rim.b * 0.25f, 0.95f); frame.color = rim; };
+            hv.Exit = () => { img.color = HudTint; frame.color = new Color(rim.r, rim.g, rim.b, 0.55f); };
+            var b = img.gameObject.AddComponent<Button>();
+            b.transition = Selectable.Transition.None;
+            b.onClick.AddListener(() => act());
             return b;
         }
 
@@ -348,8 +419,7 @@ namespace StellarisClone.Rendering
                     _powerRing = ring;
                     _leaderPower = value;
                     // Законы — под кольцом мощи: правая сторона шапки — «управление империей»
-                    var laws = LGBuild.Button(root, "Laws", UIManager.DS.BtnNeutral, new Color(CGold.r, CGold.g, CGold.b, 0.55f),
-                        () => { Close(); LawsWindow.Toggle(); }, null, Loc.T("ЗАКОНЫ"), 11);
+                    var laws = HudButton(root, "Laws", Loc.T("ЗАКОНЫ"), CGold, () => { Close(); LawsWindow.Toggle(); });
                     TooltipHelper.Attach(laws.gameObject, "");
                     _lawsTip = laws.GetComponent<TooltipTrigger>();
                     var lrt = (RectTransform)laws.transform;
@@ -402,7 +472,7 @@ namespace StellarisClone.Rendering
         {
             var block = Block(left, "Attention");
             block.rectTransform.Stretch(0, 0, 0, 282);
-            block.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.20f));
+            SetFrame(block, new Color(CGold.r, CGold.g, CGold.b, 0.40f));
             var row = TopRow(block.transform, 10, 18, 16, 16);
             var ic = LGIcons.Create(row, LGIcon.Warning, 13, CGold);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(13, 13));
@@ -477,7 +547,7 @@ namespace StellarisClone.Rendering
         {
             var block = Block(col, "Victory");
             block.rectTransform.TopBand(0, 250);
-            block.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.22f));
+            SetFrame(block, new Color(CGold.r, CGold.g, CGold.b, 0.40f));
 
             var titleRow = TopRow(block.transform, 8, 22, 16, 12);
             var tIcon = LGIcons.Create(titleRow, LGIcon.Trophy, 13, CGold);
@@ -517,7 +587,8 @@ namespace StellarisClone.Rendering
         /// <summary>Вкладки — полоса по центру под шапкой (активная залита), «Законы» — справа от шапки; ниже — таблица.</summary>
         private void BuildTabs(RectTransform tabsRow, RectTransform right)
         {
-            var strip = Block(tabsRow, "Tabs");
+            var strip = LGBuild.Panel(tabsRow, "Tabs", Color.clear);
+            LG.Ignore(strip.gameObject, includeChildren: false);
             strip.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6 * 148f, TabsH));
             AddTab(strip.rectTransform, Tab.Systems, LGIcon.Star, Loc.T("СИСТЕМЫ"), 0);
             AddTab(strip.rectTransform, Tab.Fleets, LGIcon.Fleet, Loc.T("ФЛОТЫ"), 1);
@@ -548,14 +619,31 @@ namespace StellarisClone.Rendering
         {
             const int TabCount = 6;
             var hit = LGBuild.Panel(strip, "Tab_" + tab, new Color(1f, 1f, 1f, 0f), raycast: true);
-            hit.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, index == 0 ? 6 : 2, index == TabCount - 1 ? 6 : 2);
-            HoverArea(hit, () => SwitchTab(tab), new Color(1f, 1f, 1f, 0.05f));
-            // Активная вкладка — подсвеченная плашка (как сегментный переключатель в меню)
-            var line = LGBuild.Panel(hit.transform, "Plate", new Color(0.17f, 0.38f, 0.40f, 0.95f));
+            hit.rectTransform.Column(index / (float)TabCount, (index + 1) / (float)TabCount, 3, 3);
+            // Каждая вкладка — HUD-плашка, как показатели верхней панели; при наведении кромка ярче
+            var frame = HudSkin(hit, HudTint, HudRim, 6);
+            var hv = hit.gameObject.AddComponent<UIHover>();
+            hv.Enter = () => { if (_tab != tab) frame.color = new Color(HudLine.r, HudLine.g, HudLine.b, 0.75f); };
+            hv.Exit = () => { if (_tab != tab) frame.color = HudRim; };
+            var btn = hit.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() => SwitchTab(tab));
+            // Активная вкладка — бирюзовая заливка, яркая кромка и черта снизу
+            var line = LGBuild.Panel(hit.transform, "Active", new Color(HudLine.r, HudLine.g, HudLine.b, 0.18f));
+            line.sprite = HudArt.CutPanel(6);
+            line.type = Image.Type.Sliced;
             line.raycastTarget = false;
-            line.rectTransform.Stretch(2, 5, 2, 5);
-            var pfx = LG.Chip(line.gameObject, new Color(0.44f, 0.90f, 0.85f, 0.75f), 9f);
-            pfx.FillMultiplier = 1.8f;
+            line.rectTransform.Stretch();
+            LG.Ignore(line.gameObject);
+            var lf = LGBuild.Panel(line.transform, "Frame", HudLine);
+            lf.sprite = HudArt.CutFrame(6, 1f);
+            lf.type = Image.Type.Sliced;
+            lf.raycastTarget = false;
+            lf.rectTransform.Stretch();
+            var under = LGBuild.Panel(line.transform, "Under", HudLine);
+            under.raycastTarget = false;
+            under.rectTransform.anchorMin = new Vector2(0.2f, 0); under.rectTransform.anchorMax = new Vector2(0.8f, 0);
+            under.rectTransform.offsetMin = new Vector2(0, 2); under.rectTransform.offsetMax = new Vector2(0, 4);
             var t = LGIcons.IconLabel(hit.transform, icon, label, 12, UIManager.DS.TextMuted, UIManager.DS.TextMuted, 14f);
             var iconImg = t.transform.parent.GetChild(0).GetComponent<Image>();
             _tabs[tab] = (hit, line, t, iconImg);
@@ -787,7 +875,7 @@ namespace StellarisClone.Rendering
             {
                 bool active = kv.Key == _tab;
                 var v = kv.Value;
-                v.line.enabled = active;
+                v.line.gameObject.SetActive(active);
                 v.label.color = active ? Color.white : UIManager.DS.TextMuted;
                 if (v.icon != null) v.icon.color = active ? UIManager.DS.NeonCyan : UIManager.DS.TextMuted;
                 int n = TabCount(kv.Key);
@@ -880,7 +968,12 @@ namespace StellarisClone.Rendering
         {
             var img = LGBuild.Panel(_list, "Row", (_rowIndex++ & 1) == 0 ? RowA : RowB, raycast: true);
             LGBuild.Height(img.gameObject, 46);
+            var frame = HudSkin(img, img.color, new Color(HudLine.r, HudLine.g, HudLine.b, 0.18f), 6);
             HoverArea(img, onClick, RowHover);
+            var hv = img.gameObject.GetComponent<UIHover>();
+            var enter = hv.Enter; var exit = hv.Exit;
+            hv.Enter = () => { enter?.Invoke(); frame.color = new Color(HudLine.r, HudLine.g, HudLine.b, 0.6f); };
+            hv.Exit = () => { exit?.Invoke(); frame.color = new Color(HudLine.r, HudLine.g, HudLine.b, 0.18f); };
             var accent = LGBuild.Panel(img.transform, "Accent", new Color(rim.r, rim.g, rim.b, Mathf.Clamp01(rim.a * 2.4f)));
             accent.raycastTarget = false;
             accent.rectTransform.anchorMin = new Vector2(0, 0); accent.rectTransform.anchorMax = new Vector2(0, 1);
@@ -1099,6 +1192,7 @@ namespace StellarisClone.Rendering
             }, LGIcon.Construction, null, 11);
             ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(34, 30));
             btn.interactable = can;
+            Hudify(btn, UIManager.DS.Green);
             string tip = Loc.F("<b>Улучшить до «{0}»</b>\n{1:0} минералов, {2:0} сплавов, {3:0} дней.\nБаза крепче и бьёт сильнее, осада идёт дольше; содержание +{4:0.#} гелия-3 в месяц",
                 Fortifications.Name(to), Fortifications.Minerals(to), Fortifications.Alloys(to), Fortifications.Days(to), Fortifications.UpkeepPerLevel);
             if (blocker != null) tip += $"\n<color=#FF8080>{blocker}</color>";
@@ -1343,9 +1437,9 @@ namespace StellarisClone.Rendering
         private void BuildRivalCard(AIEmpireManager ai)
         {
             Color ac = ai.MapColor;
-            var card = LGBuild.Panel(_list, "RivalCard", UIManager.DS.BgSlot);
+            var card = LGBuild.Panel(_list, "RivalCard", HudTint);
             LGBuild.Height(card.gameObject, 300);
-            LG.Platter(card.gameObject, 18f).SetRim(new Color(ac.r, ac.g, ac.b, 0.4f));
+            HudSkin(card, HudTint, new Color(ac.r, ac.g, ac.b, 0.5f), 12);
 
             // Живой портрет правителя слева (как в дипломатии); без портрета — эмблема
             var leader = LeaderPortraits.ForFaction(ai.Faction);
@@ -1421,6 +1515,8 @@ namespace StellarisClone.Rendering
             var trade = LGBuild.Button(btnRow, "Trade", UIManager.DS.BtnPrimary, UIManager.DS.NeonCyan,
                 () => { Close(); TradeModal.Instance?.Open(ai.OwnerId); }, LGIcon.Trade, Loc.T("ТОРГОВЛЯ"), 11);
             ((RectTransform)trade.transform).Column(0.51f, 1f);
+            Hudify(dip, CGold);
+            Hudify(trade, UIManager.DS.NeonCyan);
         }
 
         private static void CompareRow(Transform parent, float top, string label, float value, Color col, string valueText, float left = 20f)
