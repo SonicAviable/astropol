@@ -299,6 +299,20 @@ namespace StellarisClone.Rendering
             var q = Quad("GalaxyVignette", _nebulaRoot.transform, new Vector3(0f, -1.2f, 0f), 0f, new Vector2(R * 5.2f, R * 5.2f));
             var m = new Material(GetSpriteShader()) { mainTexture = tex, renderQueue = 2955 };
             q.GetComponent<MeshRenderer>().sharedMaterial = m;
+            // В главном меню камера облетает галактику под низким углом — край квада виньетки виден тёмной полосой
+            // через весь экран; виньетка нужна только на карте (вид сверху)
+            q.AddComponent<HideInMainMenu>();
+        }
+
+        /// <summary>Выключает рендер объекта, пока открыто главное меню.</summary>
+        private sealed class HideInMainMenu : MonoBehaviour
+        {
+            private MeshRenderer _r;
+            private void Awake() => _r = GetComponent<MeshRenderer>();
+            private void LateUpdate()
+            {
+                if (_r != null) _r.enabled = MainMenuUI.Instance == null;
+            }
         }
 
         /// <summary>Далёкие звёзды фона — вместо скайбокса: тусклые точки глубоко под картой (медленно плывут при движении камеры).</summary>
