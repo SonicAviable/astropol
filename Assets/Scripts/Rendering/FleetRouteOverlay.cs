@@ -168,7 +168,9 @@ namespace StellarisClone.Rendering
             _drawn.Add((f, pts, nodes));
 
             // Пунктир и стрелки вдоль всей ломаной; фаза едет вперёд — линия «течёт» к цели
-            float along = 0f;   // пройдено в пикселях от начала
+            // Фаза привязана к концу маршрута: движение корабля не сдвигает штрихи
+            float along = 0f;
+            for (int i = 0; i < pts.Count - 1; i++) along -= (pts[i + 1] - pts[i]).magnitude / Wpp((pts[i] + pts[i + 1]) * 0.5f);
             for (int i = 0; i < pts.Count - 1; i++)
             {
                 Vector3 a = pts[i], b = pts[i + 1];
@@ -192,7 +194,7 @@ namespace StellarisClone.Rendering
                 }
 
                 // Стрелки
-                float aPhase = Mathf.Repeat(along - _flow * 1.6f, ArrowSpacingPx);
+                float aPhase = Mathf.Repeat(along - _flow, ArrowSpacingPx);
                 for (float s = ArrowSpacingPx - aPhase; s < lenPx - ArrowPx; s += ArrowSpacingPx)
                     Arrow(a + dir * (s * wpp), dir, ArrowPx * wpp, Color.Lerp(col, Color.white, 0.35f));
 
