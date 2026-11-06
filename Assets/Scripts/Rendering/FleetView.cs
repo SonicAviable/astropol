@@ -19,11 +19,9 @@ namespace StellarisClone.Rendering
         private Light _workLight;
         private float _animTime;
 
-        // Ярлык над кораблём: пластина со значком класса и именем, рядом — «+N» выделенных в строю
+        // Плашка над кораблём: капсула со значком класса, именем и «+N» выделенных в строю
         private Transform _tagRoot;
-        private WorldChip _tag, _tagExtra;
-        private string _tagName;
-        private int _tagCount = -1;
+        private FleetPill _tag;
         private Transform _camTransform;
 
         private WorldTooltipTrigger _worldTooltip;
@@ -379,18 +377,9 @@ namespace StellarisClone.Rendering
             _tagRoot = badgeObj.transform;
 
             Color oc = Data.OwnerId == 0 ? UIManager.DS.NeonCyan : FleetIndicator.OwnerColor(Data.OwnerId);
-            _tag = WorldChip.Create(_tagRoot, "Tag", 60, true, true);
-            _tag.Height = 0.5f;
-            _tag.SetIcon(Data.Type == FleetType.Science ? LGIcon.ScienceShip
+            _tag = FleetPill.Create(_tagRoot, oc, Data.Type == FleetType.Science ? LGIcon.ScienceShip
                        : Data.Type == FleetType.Constructor ? LGIcon.ConstructorShip
-                       : ModuleVisuals.HullIcon(Data.HullClass));
-            _tag.SetColors(new Color(0.015f, 0.04f, 0.055f, 0.86f), new Color(oc.r, oc.g, oc.b, 0.55f), oc, oc, new Color(0.92f, 0.97f, 1f));
-            _tag.SetAlpha(0f);
-
-            _tagExtra = WorldChip.Create(_tagRoot, "Extra", 60, false, false);
-            _tagExtra.Height = 0.42f;
-            _tagExtra.SetColors(new Color(oc.r * 0.25f, oc.g * 0.25f, oc.b * 0.25f, 0.9f), new Color(oc.r, oc.g, oc.b, 0.7f), oc, oc, oc);
-            _tagExtra.SetAlpha(0f);
+                       : ModuleVisuals.HullIcon(Data.HullClass), 60);
         }
 
         private void CreateTypeIcon()
@@ -785,27 +774,14 @@ namespace StellarisClone.Rendering
             return true;
         }
 
-        /// <summary>Ярлык над кораблём: пересобирается только при смене текста, по центру над кораблём.</summary>
+        /// <summary>Плашка над кораблём: пересобирается только при смене текста; появление и исчезновение анимирует сама.</summary>
         private void UpdateTag(string label, int more, bool near)
         {
             if (_tag == null) return;
             bool show = near && !string.IsNullOrEmpty(label);
-            if (show && (label != _tagName || more != _tagCount))
-            {
-                _tagName = label;
-                _tagCount = more;
-                _tag.Set(label, 0.27f);
-                float total = _tag.Width;
-                if (more > 0)
-                {
-                    _tagExtra.Set($"+{more}", 0.24f);
-                    total += 0.08f + _tagExtra.Width;
-                    _tagExtra.CenterOn(total * 0.5f - _tagExtra.Width * 0.5f, 0f);
-                }
-                _tag.CenterOn(-total * 0.5f + _tag.Width * 0.5f, 0f);
-            }
-            _tag.SetAlpha(show ? 1f : 0f);
-            _tagExtra.SetAlpha(show && more > 0 ? 1f : 0f);
+            if (show) _tag.Set(label, more);
+            _tag.Show(show, _selAge < 0.3f ? 0.12f : 0f);
+            _tag.Tick(Time.unscaledDeltaTime);
         }
 
         /// <summary>Эффекты прыжка видны на карте галактики — для своих флотов и тех чужих, кого мы видим.</summary>
@@ -934,23 +910,31 @@ namespace StellarisClone.Rendering
             CombatFx.Instance.ShipDamage(transform, _damageAnchors[Random.Range(0, fires)], severity, size);
         }
 
-        // ==================== ПРИЦЕЛ ВЫБОРА ====================
-        // Под выбранным кораблём — плоское голографическое кольцо и четыре скобки захвата (лежат горизонтально,
-        // не кренятся вместе с корпусом). При выборе прицел «схлопывается» к кораблю, потом медленно вращается и дышит.
+        // ==================== ПРИЦЕЛ ВЫБОРА («Орбита») ====================
+        // Под выбранным кораблём — плоское кольцо (лежит горизонтально, не кренится вместе с корпусом).
+        // При выборе кольцо прорисовывается по кругу, дуги «встают» пружиной, по кольцу бегает огонёк,
+        // шевроны показывают курс в полёте. От плашки к кораблю тянется тонкий стебель.
 
-        private Transform _selMarker, _selBrackets;
-        private LineRenderer _selRing, _selRingGlow;
-        private float _selAge;
+        private Transform _selMarker, _selArcs, _selArc1, _selArc2, _selOrb, _selChev;
+        private LineRenderer _selRing, _selStem;
+        private readonly List<(LineRenderer lr, Color c, int g)> _selParts = new List<(LineRenderer, Color, int)>();
+        private float _selAge, _selOut = -1f, _selMove;
         private static Material s_selMat;
         private static readonly Color SelColor = new Color(0.45f, 0.95f, 1f);
         private const float SelRadius = 1.3f;
+        private const int SelRingPts = 97;
 
         private void SetSelectionMarker(bool on)
         {
             if (on && _selMarker == null) BuildSelectionMarker();
             if (_selMarker == null) return;
-            _selMarker.gameObject.SetActive(on);
-            if (on) _selAge = 0f;
+            if (on)
+            {
+                _selMarker.gameObject.SetActive(true);
+                _selAge = 0f;
+                _selOut = -1f;
+            }
+            else if (_selMarker.gameObject.activeSelf && _selOut < 0f) _selOut = 0f;   // короткое затухание
         }
 
         private void BuildSelectionMarker()
@@ -960,63 +944,198 @@ namespace StellarisClone.Rendering
                 var add = Resources.Load<Shader>("Shaders/CombatAdditive") ?? ShaderCache.Sprite;
                 s_selMat = new Material(add) { name = "ShipSelection", hideFlags = HideFlags.DontSave, renderQueue = 3050 };
             }
+            float R = SelRadius;
+            Color c = SelColor;
+            _selParts.Clear();
             _selMarker = new GameObject("SelectionMarker").transform;
             _selMarker.SetParent(transform, false);
-            _selRingGlow = SelArc(_selMarker, "RingGlow", 0f, 360f, SelRadius, 0.22f, new Color(SelColor.r, SelColor.g, SelColor.b, 0.18f));
-            _selRing = SelArc(_selMarker, "Ring", 0f, 360f, SelRadius, 0.05f, new Color(SelColor.r, SelColor.g, SelColor.b, 0.9f));
-            _selBrackets = new GameObject("Brackets").transform;
-            _selBrackets.SetParent(_selMarker, false);
-            for (int i = 0; i < 4; i++)
-                SelArc(_selBrackets, "Bracket", i * 90f - 16f, i * 90f + 16f, SelRadius * 1.22f, 0.09f, SelColor);
+
+            // 0 — подложка и кольцо
+            SelPart(SelArc(_selMarker, "Fill", 0f, 360f, R * 0.5f, R, Color.white), new Color(c.r, c.g, c.b, 0.06f), 0);
+            SelPart(SelArc(_selMarker, "RingGlow", 0f, 360f, R, 0.2f, Color.white), new Color(c.r, c.g, c.b, 0.12f), 0);
+            _selRing = SelArc(_selMarker, "Ring", 90f, -270f, R, 0.05f, Color.white, SelRingPts);
+            SelPart(_selRing, new Color(c.r, c.g, c.b, 0.95f), 0);
+
+            // 1 — вращающиеся дуги: пара сверху/снизу и пара тоньше по бокам
+            _selArcs = SelGroup(_selMarker, "Arcs");
+            _selArc1 = SelGroup(_selArcs, "Arc1");
+            _selArc2 = SelGroup(_selArcs, "Arc2");
+            SelPart(SelArc(_selArc1, "A", 60f, 120f, R * 1.19f, 0.09f, Color.white), c, 1);
+            SelPart(SelArc(_selArc1, "B", 240f, 300f, R * 1.19f, 0.09f, Color.white), c, 1);
+            SelPart(SelArc(_selArc2, "C", -10f, 10f, R * 1.29f, 0.05f, Color.white), new Color(c.r, c.g, c.b, 0.5f), 1);
+            SelPart(SelArc(_selArc2, "D", 170f, 190f, R * 1.29f, 0.05f, Color.white), new Color(c.r, c.g, c.b, 0.5f), 1);
+
+            // 2 — огонёк на орбите: хвост гаснет назад, голова ярче и толще
+            _selOrb = SelGroup(_selMarker, "Orbit");
+            var comet = SelArc(_selOrb, "Comet", 114f, 90f, R, 0.1f, Color.white, 14);
+            comet.widthCurve = new AnimationCurve(new Keyframe(0f, 0.15f), new Keyframe(0.85f, 0.6f), new Keyframe(1f, 1f));
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(c, 0f), new GradientColorKey(Color.white, 1f) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 1f) });
+            comet.colorGradient = g;
+            SelPart(comet, Color.white, 2);
+
+            // 3/4 — шевроны курса (снаружи кольца, по направлению полёта)
+            _selChev = SelGroup(_selMarker, "Heading");
+            for (int i = 0; i < 2; i++)
+            {
+                float tip = R * (i == 0 ? 1.45f : 1.565f), hw = R * 0.097f;
+                var lr = SelLine(_selChev, "Chevron", new[] { new Vector3(-hw, tip - hw, 0f), new Vector3(0f, tip, 0f), new Vector3(hw, tip - hw, 0f) }, 0.045f);
+                SelPart(lr, c, 3 + i);
+            }
+
+            // Стебель от плашки к кораблю — в мировых координатах, сверху ярче
+            _selStem = SelLine(_selMarker, "Stem", new[] { Vector3.zero, Vector3.up }, 0.02f);
+            _selStem.useWorldSpace = true;
+            _selStem.alignment = LineAlignment.View;
+            _selStem.transform.localRotation = Quaternion.identity;
+            var sg = new Gradient();
+            sg.SetKeys(new[] { new GradientColorKey(c, 0f), new GradientColorKey(c, 1f) },
+                       new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0f, 1f) });
+            _selStem.colorGradient = sg;
+
             _selMarker.gameObject.SetActive(false);
         }
 
-        private static LineRenderer SelArc(Transform parent, string name, float fromDeg, float toDeg, float r, float width, Color col)
+        private void SelPart(LineRenderer lr, Color c, int group) => _selParts.Add((lr, c, group));
+
+        private static Transform SelGroup(Transform parent, string name)
+        {
+            var t = new GameObject(name).transform;
+            t.SetParent(parent, false);
+            return t;
+        }
+
+        private static LineRenderer SelArc(Transform parent, string name, float fromDeg, float toDeg, float r, float width, Color col, int n = 0)
+        {
+            bool full = Mathf.Abs(toDeg - fromDeg) >= 359f && n == 0;
+            if (n == 0) n = full ? 72 : 12;
+            var pts = new Vector3[n];
+            for (int i = 0; i < n; i++)
+            {
+                float a = Mathf.Deg2Rad * Mathf.Lerp(fromDeg, toDeg, full ? i / (float)n : i / (float)(n - 1));
+                pts[i] = new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f);
+            }
+            var lr = SelLine(parent, name, pts, width);
+            lr.loop = full;
+            lr.startColor = lr.endColor = col;
+            return lr;
+        }
+
+        /// <summary>Лента в плоскости XY объекта; объект повёрнут на 90° по X — фигура лежит горизонтально.</summary>
+        private static LineRenderer SelLine(Transform parent, string name, Vector3[] pts, float width)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             var lr = go.AddComponent<LineRenderer>();
             lr.useWorldSpace = false;
-            bool full = toDeg - fromDeg >= 359f;
-            int n = full ? 72 : 12;
-            lr.loop = full;
-            lr.positionCount = n;
-            // Лента лежит в плоскости XY объекта, а объект повёрнут на 90° — кольцо получается горизонтальным
-            for (int i = 0; i < n; i++)
-            {
-                float a = Mathf.Deg2Rad * Mathf.Lerp(fromDeg, toDeg, full ? i / (float)n : i / (float)(n - 1));
-                lr.SetPosition(i, new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f));
-            }
+            lr.positionCount = pts.Length;
+            lr.SetPositions(pts);
             lr.alignment = LineAlignment.TransformZ;
             go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             lr.widthMultiplier = width;
-            lr.startColor = lr.endColor = col;
             lr.numCapVertices = 2;
+            lr.numCornerVertices = 2;
             lr.sharedMaterial = s_selMat;
             lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             lr.receiveShadows = false;
             return lr;
         }
 
+        private static float BackOut(float t)
+        {
+            const float c1 = 1.9f, c3 = c1 + 1f;
+            float u = t - 1f;
+            return 1f + c3 * u * u * u + c1 * u * u;
+        }
+
         private void LateUpdate()
         {
             if (_selMarker == null || !_selMarker.gameObject.activeSelf) return;
-            _selAge += Time.unscaledDeltaTime;
+            float dt = Time.unscaledDeltaTime;
+            _selAge += dt;
+            float t = _selAge;
+
+            // Исчезновение: всё гаснет и чуть сжимается
+            float master = 1f, shrink = 1f;
+            if (_selOut >= 0f)
+            {
+                _selOut += dt;
+                float k = Mathf.Clamp01(_selOut / 0.22f);
+                master = 1f - k;
+                shrink = 1f - 0.08f * k;
+                if (k >= 1f) { _selMarker.gameObject.SetActive(false); _selOut = -1f; return; }
+            }
+
             // Горизонтально под кораблём, независимо от крена и тангажа
             _selMarker.position = transform.position + Vector3.down * 0.35f;
-            _selMarker.rotation = Quaternion.Euler(0f, _selAge * 18f, 0f);
-            float snap = 1f + 0.6f * Mathf.Exp(-_selAge * 7f);
-            float breathe = 1f + 0.035f * Mathf.Sin(_selAge * 2.6f);
-            _selMarker.localScale = Vector3.one * snap;
-            if (_selBrackets != null)
+            _selMarker.rotation = Quaternion.identity;
+            _selMarker.localScale = Vector3.one * shrink;
+
+            // Кольцо прорисовывается от верхней точки по часовой
+            float rp = Mathf.Clamp01(t / 0.5f);
+            float re = 1f - Mathf.Pow(1f - rp, 3f);
+            int cnt = Mathf.Clamp(Mathf.RoundToInt(re * SelRingPts), 2, SelRingPts);
+            if (_selRing.positionCount != cnt) _selRing.positionCount = cnt;
+            float baseA = Mathf.Clamp01(t / 0.3f);
+
+            // Дуги — пружиной из уменьшенного и повёрнутого состояния
+            float ap = Mathf.Clamp01((t - 0.12f) / 0.45f);
+            float ae = BackOut(ap);
+            _selArcs.localScale = Vector3.one * (0.7f + 0.3f * ae);
+            _selArcs.localRotation = Quaternion.Euler(0f, -60f * (1f - ae), 0f);
+            _selArc1.localRotation = Quaternion.Euler(0f, t * 40f, 0f);
+            _selArc2.localRotation = Quaternion.Euler(0f, -t * 27.7f, 0f);
+            float arcsA = Mathf.Clamp01(ap * 2f);
+
+            _selOrb.localRotation = Quaternion.Euler(0f, t * 106f, 0f);
+            float orbA = Mathf.Clamp01((t - 0.4f) / 0.3f);
+
+            // Шевроны — только в полёте, по направлению носа
+            Vector3 fwd = transform.forward; fwd.y = 0f;
+            bool moving = Data != null && Data.State == FleetState.InHyperlane && fwd.sqrMagnitude > 0.0001f;
+            _selMove = Mathf.MoveTowards(_selMove, moving ? 1f : 0f, dt * 4f);
+            if (fwd.sqrMagnitude > 0.0001f) _selChev.rotation = Quaternion.LookRotation(fwd.normalized, Vector3.up);
+            float chev0 = 0.15f + 0.85f * (0.5f - 0.5f * Mathf.Cos((t / 1.2f) * Mathf.PI * 2f));
+            float chev1 = 0.15f + 0.85f * (0.5f - 0.5f * Mathf.Cos(((t - 0.2f) / 1.2f) * Mathf.PI * 2f));
+
+            foreach (var p in _selParts)
             {
-                _selBrackets.localRotation = Quaternion.Euler(0f, -_selAge * 40f, 0f);
-                _selBrackets.localScale = Vector3.one * breathe;
+                float a = (p.g switch { 0 => baseA, 1 => arcsA, 2 => orbA, 3 => chev0 * _selMove, _ => chev1 * _selMove }) * master;
+                if (p.g == 2) continue;
+                var col = new Color(p.c.r, p.c.g, p.c.b, p.c.a * a);
+                p.lr.startColor = p.lr.endColor = col;
             }
-            if (_selRingGlow != null)
+            SetCometAlpha(orbA * master);
+
+            // Стебель: от кончика уголка плашки вниз к кораблю, вырастает после появления плашки
+            bool stem = _tag != null && _tag.Shown && _tag.Alpha > 0.01f && _tagRoot != null;
+            _selStem.enabled = stem;
+            if (stem)
             {
-                float a = 0.14f + 0.08f * (0.5f + 0.5f * Mathf.Sin(_selAge * 2.6f));
-                _selRingGlow.startColor = _selRingGlow.endColor = new Color(SelColor.r, SelColor.g, SelColor.b, a);
+                Vector3 tip = _tag.Root.TransformPoint(_tag.TipLocal);
+                Vector3 shipTop = transform.position + Vector3.up * 0.5f;
+                float gp = Mathf.Clamp01((t - 0.3f) / 0.22f);
+                _selStem.SetPosition(0, tip);
+                _selStem.SetPosition(1, Vector3.Lerp(tip, shipTop, gp));
+                _selStem.widthMultiplier = 0.02f * _tagRoot.localScale.x;
+                var sg = _selStem.colorGradient;
+                sg.SetKeys(sg.colorKeys, new[] { new GradientAlphaKey(0.9f * _tag.Alpha * master, 0f), new GradientAlphaKey(0f, 1f) });
+                _selStem.colorGradient = sg;
+            }
+        }
+
+        private float _cometA = -1f;
+        private void SetCometAlpha(float a)
+        {
+            if (Mathf.Abs(a - _cometA) < 0.01f) return;
+            _cometA = a;
+            foreach (var p in _selParts)
+            {
+                if (p.g != 2) continue;
+                var g = p.lr.colorGradient;
+                g.SetKeys(g.colorKeys, new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(a, 1f) });
+                p.lr.colorGradient = g;
             }
         }
 
