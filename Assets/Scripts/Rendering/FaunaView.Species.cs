@@ -42,6 +42,7 @@ namespace StellarisClone.Rendering
                     _sc[i] = i == 0 ? 2.4f : R(1.8f, 2.1f);
                     go.transform.localScale = Vector3.one * _sc[i];
                     _rays[i] = go.transform;
+                    Hits.Add((go.transform, 1.4f));
                 }
                 _tails = new Lines(n * (TailPts - 1), v._lineMat, Root.transform, "RayTails");
                 Track(_tails.R);
@@ -127,6 +128,7 @@ namespace StellarisClone.Rendering
                     body.SetParent(Root.transform, false);
                     float size = R(1f, 1.6f);
                     body.localScale = Vector3.one * size;
+                    Hits.Add((body, 1.3f));
                     foreach (var mesh in new[] { Res.BellMesh, Res.CoreMesh })
                     {
                         var go = MeshObj(mesh.name, mesh, v._bellMat, body);
@@ -230,6 +232,9 @@ namespace StellarisClone.Rendering
 
             protected override Vector3 LabelPoint => _center;
 
+            public override float HitTest(FaunaView v, Vector2 mouse) =>
+                Mathf.Min(base.HitTest(v, mouse), ScreenDist(v._cam, _center, 9f, mouse));
+
             public override void Tick(FaunaView v, float t, float dt, Vector3 anchor)
             {
                 _center = Follow(anchor, dt, 4f);
@@ -320,6 +325,7 @@ namespace StellarisClone.Rendering
                     var go = MeshObj("Crystal" + i, Res.CrystalMesh(Rng), v._crystalMat, Root.transform);
                     go.transform.localScale = Vector3.one * R(0.8f, 1.15f);
                     var b = Track(go.GetComponent<MeshRenderer>());
+                    Hits.Add((go.transform, 2.2f));
                     var halo = MeshObj("Halo", Res.Quad, v._glowMat, Root.transform);
                     halo.transform.localScale = Vector3.one * 3f * go.transform.localScale.x;
                     var hb = Track(halo.GetComponent<MeshRenderer>());
@@ -435,6 +441,7 @@ namespace StellarisClone.Rendering
                     var b = Track(go.GetComponent<MeshRenderer>());
                     b.SetFloat(IdK, i / (float)(S - 1));
                     _seg[i] = go.transform;
+                    if (i % 3 == 0) Hits.Add((go.transform, 1.1f));
                 }
                 _fin = Fin(v, "Fins", 8.5f, 0.9f);
                 _fluke = Fin(v, "Fluke", 4.2f, 1.3f);

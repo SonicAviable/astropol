@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Core;
 using StellarisClone.Cam;
+using UnityEngine.EventSystems;
 
 namespace StellarisClone.Rendering
 {
@@ -103,6 +104,32 @@ namespace StellarisClone.Rendering
             }
             _trails.Simulate(dt);
             _trails.Upload(_shown);
+            UpdateHover();
+        }
+
+        private string _tip;
+
+        /// <summary>Курсор над существом или его плашкой — подсказка «что это и что с ним делать».</summary>
+        private void UpdateHover()
+        {
+            Vis hit = null;
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            if (!overUi && _shown > 0.5f)
+            {
+                Vector2 mouse = Input.mousePosition;
+                float best = float.MaxValue;
+                foreach (var v in _vis)
+                {
+                    if (v.H.Gone || v.Alpha < 0.2f || !v.Root.activeSelf) continue;
+                    float d = v.HitTest(this, mouse);
+                    if (d < best) { best = d; hit = v; }
+                }
+            }
+            string tip = hit != null ? SpaceFauna.Tooltip(hit.H) : null;
+            if (tip == _tip) return;
+            if (tip != null) TooltipSystem.Show(tip);
+            else TooltipSystem.HideIf(_tip);
+            _tip = tip;
         }
 
         private void Rebuild(SpaceFauna sf)
@@ -184,6 +211,31 @@ namespace StellarisClone.Rendering
                     b.SetFloat(IdAlpha, Alpha);
                     r.SetPropertyBlock(b);
                 }
+            }
+
+            /// <summary>Точки тела для наведения: позиция и радиус в мире.</summary>
+            protected readonly List<(Transform t, float r)> Hits = new List<(Transform, float)>();
+
+            /// <summary>Расстояние от курсора до существа в пикселях (MaxValue — мимо).</summary>
+            public virtual float HitTest(FaunaView v, Vector2 mouse)
+            {
+                var cam = v._cam;
+                if (_chip != null && _labelRoot != null && _labelRoot.gameObject.activeSelf && _chip.ContainsScreenPoint(cam, mouse)) return 0f;
+                float best = float.MaxValue;
+                foreach (var (t, r) in Hits)
+                    if (t != null && t.gameObject.activeInHierarchy) best = Mathf.Min(best, ScreenDist(cam, t.position, r * t.lossyScale.x, mouse));
+                return best;
+            }
+
+            /// <summary>Пиксели от курсора до круга радиуса r (мир) вокруг p; не меньше 14 px, чтобы попадать издалека.</summary>
+            protected static float ScreenDist(Camera cam, Vector3 p, float r, Vector2 mouse)
+            {
+                var sp = cam.WorldToScreenPoint(p);
+                if (sp.z <= 0f) return float.MaxValue;
+                float wpp = 2f * sp.z * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+                float rad = Mathf.Max(14f, r / Mathf.Max(1e-5f, wpp));
+                float d = Vector2.Distance(new Vector2(sp.x, sp.y), mouse);
+                return d <= rad ? d : float.MaxValue;
             }
 
             public void CreateLabel(Transform parent)

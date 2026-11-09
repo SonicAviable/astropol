@@ -7557,3 +7557,24 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 \n<color={0}>ФАУНА · {1}</color> · {2}\n	\n<color={0}>FAUNA · {1}</color> · {2}\n
 \n<color={0}>ФАУНА · {1}</color>\n	\n<color={0}>FAUNA · {1}</color>\n
 Проходит рядом: +{0:0} науки владельцу, колонии волнуются (−{1:0} стабильности)\n	Passing nearby: +{0:0} Research to the owner, colonies are restless (−{1:0} stability)\n
+Существа-крылья питаются светом звёзд. Стая кочует кольцом по галактике и подолгу отдыхает у звёзд.	Wing-like creatures that feed on starlight. The flock roams the galaxy in a ring and rests at stars for long stretches.
+Колонии простых организмов ведут себя как одно существо. Их щупальца тянут гравитационные нити.	Colonies of simple organisms that act as one creature. Their tentacles pull gravitational threads.
+Тысяча светящихся искр кочует от звезды к звезде и пьёт свет из короны. Под роем звезда тускнеет.	A thousand glowing sparks roam from star to star, drinking light from the corona. A star dims under the swarm.
+Гранёные кристаллы растут из пыли у пульсара и вспыхивают, когда их проходит луч. Решётка звучит, как песня.	Faceted crystals grow from the dust around a pulsar and flare when the beam sweeps over them. The lattice sounds like a song.
+Существо длиной в несколько звёздных систем. Раз в эпоху пересекает галактику и уходит за её край.	A creature several star systems long. Once an era it crosses the galaxy and leaves beyond its edge.
+Пришлите научный корабль к отдыхающей стае — изучение даст науку. 	Send a science ship to the resting flock: studying it gives Research. 
+Когда стая отдыхает в вашей системе, можно беречь её или охотиться.	When the flock rests in your system, you can protect it or hunt it.
+Пришлите научный корабль — изучение даст науку. 	Send a science ship: studying gives Research. 
+Колония приручена.	The colony is tamed.
+Изученную колонию в вашей системе (нужен форпост) можно приручить.	A studied colony in your system (outpost required) can be tamed.
+Пришлите военный флот — рой улетит. Научные и строительные корабли держите подальше.	Send a military fleet and the swarm will leave. Keep science and construction ships away.
+Постройте форпост в системе: бонус к науке и цепочка «Песня решётки».	Build an outpost in the system: a Research bonus and the "Song of the Lattice" chain.
+Вы следуете за ним: +10 науки в месяц.	You are following it: +10 Research per month.
+Вы изучили его вблизи.	You have studied it up close.
+Вы атаковали его. Соседи этого не забыли.	You attacked it. The neighbours have not forgotten.
+Когда он подойдёт к вашим границам, решите: следовать, изучать или атаковать.	When it nears your borders, decide: follow, study or attack.
+пройдено {0:0}% пути	{0:0}% of the way travelled
+в пути между системами	travelling between systems
+<color=#8AA2A8>Космическая фауна · {0}</color>\n\n	<color=#8AA2A8>Space fauna · {0}</color>\n\n
+<color={0}>Эффект:</color> {1}\n	<color={0}>Effect:</color> {1}\n
+\n<color=#5CE68A>Изучено</color>	\n<color=#5CE68A>Studied</color>
