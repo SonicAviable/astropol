@@ -18,9 +18,9 @@ namespace StellarisClone.Rendering
         private const float BloomThreshold = 1.0f;     // ниже — светятся и яркие спрайты; выше — только HDR-звёзды и ядро
         private const float BloomIntensity = 0.85f;
         private const float BloomScatter = 0.72f;
-        private const float PostExposure = 0.15f;
+        private const float PostExposure = 0.3f;
         private const float Contrast = 12f;
-        private const float Saturation = 8f;
+        private const float Saturation = 12f;
         private const float VignetteIntensity = 0.28f;
         private const float VignetteSmoothness = 0.45f;
         private const float Chromatic = 0.07f;

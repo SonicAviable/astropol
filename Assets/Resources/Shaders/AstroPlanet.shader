@@ -214,10 +214,14 @@ Shader "Astropolity/Planet/Astro"
 
                 float3 nW = normalize(mul((float3x3)unity_ObjectToWorld, RotY(nb, -ang)));
                 float lt = saturate(dot(nW, L) * 0.95 + 0.05) * lit;
-                float3 col = surf * lt * _Exposure + surf * 0.004 + emis;
+                // Холодный отражённый свет туманностей: ночная сторона не проваливается в чёрное, рельеф читается
+                float3 amb = float3(0.018, 0.024, 0.045) * (0.6 + 0.4 * saturate(dot(nW, -L) * 0.5 + 0.5));
+                float3 col = surf * lt * _Exposure + surf * amb + emis;
                 float3 atm = Lin(_Atm.rgb);
                 float fres = pow(1 - nv, 4);
                 col += atm * fres * smoothstep(-0.2, 0.5, diff) * 0.75 * atmK;
+                // Тонкий холодный контур по краю тени — силуэт планеты отделяется от тёмного космоса
+                col += lerp(float3(0.10, 0.16, 0.32), atm, 0.35) * pow(1 - nv, 6) * (1 - lit) * 0.22 * atmK;
                 col += float3(1, 0.4, 0.15) * exp(-abs(diff) * 28) * pow(1 - nv, 2) * 0.15 * scat;
                 return fixed4(col, 1);
             }

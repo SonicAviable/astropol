@@ -463,7 +463,7 @@ namespace StellarisClone.Rendering
                 coronaObj.transform.SetParent(node.transform, false);
                 var coronaSr = coronaObj.AddComponent<SpriteRenderer>();
                 coronaSr.sprite = blackHole ? _accretionSprite : _starCoronaSprite;
-                if (spriteShader != null) coronaSr.material = new Material(spriteShader);
+                if (spriteShader != null) coronaSr.material = HdrSprite(spriteShader, 1.4f);
                 coronaSr.color = blackHole ? new Color(1f, 0.62f, 0.3f, 0.9f) : new Color(starCol.r, starCol.g, starCol.b, 0.4f);
                 coronaSr.sortingOrder = 14;
 
@@ -473,7 +473,7 @@ namespace StellarisClone.Rendering
                 coreObj.transform.localScale = Vector3.one * baseScale;
                 var coreSr = coreObj.AddComponent<SpriteRenderer>();
                 coreSr.sprite = _starCoreSprite;
-                if (spriteShader != null) coreSr.material = new Material(spriteShader);
+                if (spriteShader != null) coreSr.material = HdrSprite(spriteShader, 1.8f);
                 coreSr.color = starCol;
                 coreSr.sortingOrder = 15;
                 coreObj.AddComponent<BillboardLookAt>();
@@ -495,7 +495,7 @@ namespace StellarisClone.Rendering
                 hotObj.transform.SetParent(node.transform, false);
                 var hotSr = hotObj.AddComponent<SpriteRenderer>();
                 hotSr.sprite = _starHotSprite;
-                if (spriteShader != null) hotSr.material = new Material(spriteShader);
+                if (spriteShader != null) hotSr.material = HdrSprite(spriteShader, 3.2f);
                 hotSr.sortingOrder = 17;
                 hotObj.AddComponent<BillboardLookAt>();
 
@@ -507,7 +507,7 @@ namespace StellarisClone.Rendering
                     flareObj.transform.SetParent(node.transform, false);
                     flareSr = flareObj.AddComponent<SpriteRenderer>();
                     flareSr.sprite = _starFlareSprite;
-                    if (spriteShader != null) flareSr.material = new Material(spriteShader);
+                    if (spriteShader != null) flareSr.material = HdrSprite(spriteShader, 2.2f);
                     flareSr.sortingOrder = 18;
                 }
 
@@ -711,6 +711,17 @@ namespace StellarisClone.Rendering
         }
 
         private Color GetStellarisColor(StarSpectralClass c) => StarColor(c);
+
+        /// <summary>
+        /// Материал спрайта звезды с HDR-множителем: цвет вершин спрайта ограничен 1, а _Color материала — нет,
+        /// поэтому звезда выходит ярче 1 и светится под Bloom (CinematicPost). Альфа не меняется.
+        /// </summary>
+        private static Material HdrSprite(Shader shader, float gain)
+        {
+            var m = new Material(shader);
+            if (m.HasProperty("_Color")) m.SetColor("_Color", new Color(gain, gain, gain, 1f));
+            return m;
+        }
 
         /// <summary>Цвет звезды по спектральному классу (карта, студии окон).</summary>
         public static Color StarColor(StarSpectralClass c) => c switch

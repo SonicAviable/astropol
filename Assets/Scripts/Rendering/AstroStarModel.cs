@@ -89,6 +89,7 @@ namespace StellarisClone.Rendering
                 cr.receiveShadows = false;
                 corona.AddComponent<BillboardLookAt>();
             }
+            StarFlare.Attach(root, hot, radius);   // блик объектива, раскрывается вблизи
             return root;
         }
 
