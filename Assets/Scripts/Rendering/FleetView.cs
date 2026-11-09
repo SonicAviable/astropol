@@ -705,6 +705,8 @@ namespace StellarisClone.Rendering
                     Data.DaysRemainingConstruction = Data.TotalConstructionDays;
                     if (Data.OwnerId == 0) SFXManager.Play(Sfx.Construction);
                 }
+                else if (Data.Type == FleetType.Constructor && Data.Path.Count == 0)
+                    FleetManager.Instance?.ClearStaleBuildTarget(Data);   // увели в другую систему — стройка отменена
 
                 if (Data.Type == FleetType.Science && Data.SurveyTargetSystemId == Data.CurrentSystemId)
                 {

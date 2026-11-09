@@ -7578,3 +7578,5 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 <color=#8AA2A8>Космическая фауна · {0}</color>\n\n	<color=#8AA2A8>Space fauna · {0}</color>\n\n
 <color={0}>Эффект:</color> {1}\n	<color={0}>Effect:</color> {1}\n
 \n<color=#5CE68A>Изучено</color>	\n<color=#5CE68A>Studied</color>
+Стройка отменена	Construction cancelled
+Форпост в системе {0} не построен: корабль ушёл. Сплавы возвращены	Outpost in {0} not built: the ship left. Alloys refunded

@@ -734,8 +734,12 @@ namespace StellarisClone.Core
                 }
             }
 
+            ClearStaleSurveyTarget(scienceShip.Data);
+            if (scienceShip.Data.SurveyTargetSystemId == targetSystemId) return true;   // уже летит/изучает
             if (!CanReach(scienceShip, targetSystemId)) return false;
 
+            // Прерываем текущую разведку: иначе корабль доизучал бы на месте, а засчиталась бы новая система издалека
+            if (scienceShip.Data.State == FleetState.Surveying) scienceShip.Data.State = FleetState.Orbiting;
             scienceShip.Data.SurveyTargetSystemId = targetSystemId;
 
             if (scienceShip.Data.CurrentSystemId == targetSystemId
@@ -764,6 +768,23 @@ namespace StellarisClone.Core
             if (!done && !lost) return;
             d.SurveyTargetSystemId = -1;
             if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting;
+        }
+
+        /// <summary>
+        /// Строительный корабль игрока, которого увели в другую систему, больше не строит старый форпост:
+        /// цель снимается, сплавы возвращаются. Раньше корабль навсегда считался занятым, а оплата пропадала.
+        /// </summary>
+        public void ClearStaleBuildTarget(FleetData d)
+        {
+            if (d == null || d.Type != FleetType.Constructor || d.OwnerId != 0 || d.BuildTargetSystemId < 0) return;
+            if (d.State != FleetState.Orbiting || d.Path.Count > 0 || d.OrderQueue.Count > 0 || d.CurrentSystemId == d.BuildTargetSystemId) return;
+            var sys = _generator != null && d.BuildTargetSystemId < _generator.Systems.Count ? _generator.Systems[d.BuildTargetSystemId] : null;
+            d.BuildTargetSystemId = -1;
+            var eco = EconomyManager.Instance;
+            if (eco != null) { eco.Alloys += FactionTraits.StarbaseAlloys(0); eco.RaiseResourcesChanged(); }
+            NotificationCenter.Show(Loc.T("Стройка отменена"),
+                Loc.F("Форпост в системе {0} не построен: корабль ушёл. Сплавы возвращены", sys != null ? sys.Name : ""),
+                NotificationCenter.Kind.Info, 4f);
         }
 
         public void CompleteSystemSurvey(int systemId) => CompleteSystemSurvey(systemId, 0);
@@ -841,8 +862,9 @@ namespace StellarisClone.Core
                 || builder.Data.Type != FleetType.Constructor
                 || builder.Data.OwnerId != 0)
             {
+                foreach (var f in _allFleets) if (f != null) ClearStaleBuildTarget(f.Data);
                 builder = _allFleets.Find(f =>
-                    f.Data != null
+                    f != null && f.Data != null && !f.Data.Destroyed
                     && f.Data.Type == FleetType.Constructor
                     && f.Data.OwnerId == 0
                     && f.Data.BuildTargetSystemId == -1
@@ -850,9 +872,15 @@ namespace StellarisClone.Core
             }
 
             if (builder == null) return false;
+            ClearStaleBuildTarget(builder.Data);
+            if (builder.Data.BuildTargetSystemId == targetSystemId) return true;   // уже строит здесь — второй раз не платим
             if (!CanReach(builder, targetSystemId)) return false;
 
+            // Корабль перенацелили с другой (уже оплаченной) стройки — сплавы за неё возвращаются
+            if (builder.Data.BuildTargetSystemId >= 0) { eco.Alloys += alloys; eco.RaiseResourcesChanged(); }
             eco.TrySpend(0f, 0f, alloys, influence);
+            // Прерываем текущую стройку: иначе корабль остался бы «строить» на месте и достроил бы форпост в новой системе издалека
+            if (builder.Data.State == FleetState.Constructing) builder.Data.State = FleetState.Orbiting;
             builder.Data.BuildTargetSystemId = targetSystemId;
 
             if (builder.Data.CurrentSystemId == targetSystemId
