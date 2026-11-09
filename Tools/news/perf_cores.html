@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Картинка новости «Оптимизация: игра задействует все ядра» (1920×1080). Рендер: node Tools/news/render.js perf_cores -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/LoadingArt_3.jpg) 70% 50%/cover; filter: brightness(0.5) saturate(1.05); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.96) 0%, rgba(3,7,15,0.88) 55%, rgba(3,7,15,0.6) 100%); }
+.wrap { position: absolute; left: 120px; top: 90px; right: 120px; }
+.logo { font-family: Russo; font-size: 60px; letter-spacing: 5px;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent; }
+.tag { display: inline-block; margin-top: 26px; padding: 8px 18px; border: 1px solid rgba(102,219,209,0.6); border-radius: 5px;
+  background: rgba(6,30,34,0.7); font-weight: 700; font-size: 20px; letter-spacing: 6px; color: #8FE3DA; }
+.title { font-weight: 700; font-size: 60px; margin-top: 16px; line-height: 1.1; }
+.sub { font-size: 26px; color: #9DB6C1; margin-top: 12px; }
+
+.cpu { display: flex; gap: 30px; margin-top: 44px; }
+.panel { flex: 1; padding: 26px 30px 24px; border-radius: 8px; border: 1px solid rgba(102,219,209,0.25);
+  background: linear-gradient(160deg, rgba(14,30,52,0.92), rgba(6,14,26,0.92)); }
+.panel.before { border-color: rgba(255,120,90,0.35); }
+.ph { display: flex; justify-content: space-between; align-items: baseline; }
+.ph b { font-weight: 700; font-size: 30px; }
+.before .ph b { color: #FF9A7A; }
+.after .ph b { color: #6BE6B0; }
+.ph span { font-size: 19px; color: #7F98A3; letter-spacing: 1px; }
+.bars { display: flex; gap: 14px; height: 170px; align-items: flex-end; margin-top: 20px; }
+.bar { flex: 1; height: 100%; border-radius: 5px; background: rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+.bar i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 5px; }
+.before .bar i { background: linear-gradient(0deg, #7A3A2E, #C8644A); }
+.before .bar.hot i { background: linear-gradient(0deg, #C8402A, #FF7A4A); box-shadow: 0 0 22px rgba(255,110,70,0.7); }
+.after .bar i { background: linear-gradient(0deg, #1F7A66, #4FD6A8); box-shadow: 0 0 14px rgba(80,220,170,0.35); }
+.lbl { display: flex; gap: 14px; margin-top: 10px; }
+.lbl div { flex: 1; text-align: center; font-size: 16px; color: #6F8893; }
+.cap { margin-top: 14px; font-size: 21px; color: #B9CDD5; }
+
+.items { display: flex; gap: 22px; margin-top: 30px; }
+.item { flex: 1; padding: 22px 26px; border-radius: 8px; border: 1px solid rgba(242,199,102,0.25); background: rgba(8,16,28,0.88); }
+.item b { display: block; font-weight: 700; font-size: 26px; color: #F2C766; }
+.item span { display: block; font-size: 20px; color: #A9C0CA; margin-top: 8px; line-height: 1.35; }
+.note { position: absolute; left: 120px; bottom: 34px; font-size: 17px; color: #6F8893; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="fade"></div>
+  <div class="wrap">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="tag">ОПТИМИЗАЦИЯ</div>
+    <div class="title">Игра больше не упирается в одно ядро</div>
+    <div class="sub">Работа, которая раньше висела на одном ядре процессора, теперь делится между всеми</div>
+    <div class="cpu">
+      <div class="panel before">
+        <div class="ph"><b>Было</b><span>ЯДРА ПРОЦЕССОРА</span></div>
+        <div class="bars">
+          <div class="bar hot"><i style="height:98%"></i></div>
+          <div class="bar"><i style="height:22%"></i></div>
+          <div class="bar"><i style="height:14%"></i></div>
+          <div class="bar"><i style="height:9%"></i></div>
+          <div class="bar"><i style="height:12%"></i></div>
+          <div class="bar"><i style="height:7%"></i></div>
+          <div class="bar"><i style="height:10%"></i></div>
+          <div class="bar"><i style="height:6%"></i></div>
+        </div>
+        <div class="lbl"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div></div>
+        <div class="cap">Одно ядро работает за всех, остальные почти отдыхают</div>
+      </div>
+      <div class="panel after">
+        <div class="ph"><b>Стало</b><span>ЯДРА ПРОЦЕССОРА</span></div>
+        <div class="bars">
+          <div class="bar"><i style="height:62%"></i></div>
+          <div class="bar"><i style="height:48%"></i></div>
+          <div class="bar"><i style="height:44%"></i></div>
+          <div class="bar"><i style="height:40%"></i></div>
+          <div class="bar"><i style="height:42%"></i></div>
+          <div class="bar"><i style="height:38%"></i></div>
+          <div class="bar"><i style="height:41%"></i></div>
+          <div class="bar"><i style="height:36%"></i></div>
+        </div>
+        <div class="lbl"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div></div>
+        <div class="cap">Нагрузка распределена, у главного ядра есть запас</div>
+      </div>
+    </div>
+    <div class="items">
+      <div class="item"><b>Картинка — отдельно</b><span>Подготовка кадра для видеокарты ушла на другие ядра</span></div>
+      <div class="item"><b>Анимации — на всех ядрах</b><span>Рой Искр, шлейфы фауны и астероидные пояса</span></div>
+      <div class="item"><b>ИИ думает быстрее</b><span>Убрали миллионы лишних проверок в каждом ходе империй</span></div>
+    </div>
+  </div>
+  <div class="note">Схема для наглядности, а не замер</div>
+</div></body></html>
