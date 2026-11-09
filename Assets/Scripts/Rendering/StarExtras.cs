@@ -28,7 +28,7 @@ namespace StellarisClone.Rendering
         private bool _map;
         private StarAnimator _anim;
         private StarSystem _sys;
-        private Transform _bill, _spin, _companion;
+        private Transform _bill, _companion;
         private readonly List<Part> _parts = new List<Part>();
         private readonly List<Part> _shells = new List<Part>();
         private readonly List<Part> _loops = new List<Part>();
@@ -141,19 +141,27 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.Magnetar:
                 {
-                    _spin = new GameObject("Spin").transform;
-                    _spin.SetParent(_bill, false);
-                    for (int i = 0; i < 8; i++)
+                    // Как на визуализациях NASA/ESA: нейтронная звезда в плотном клубке скрученных силовых линий
+                    // сверхсильного поля, горячие пятна на магнитных полюсах и вспышки при «звездотрясениях»
+                    _glow = Quad(_bill, Tex.Glow, R * 8f, new Color(0.62f, 0.5f, 1f), 0.3f);
+                    _burst = Quad(_bill, Tex.Shell, R * 2f, new Color(0.8f, 0.6f, 1f), 0f);
+                    // Поле — в плоскости экрана (ось вертикальна для зрителя), вращается объёмно: так видно классический
+                    // «боковой» вид диполя с любого ракурса; сверху вдоль оси петли сливались в «цветок»
+                    _magnet = new GameObject("Magnet").transform;
+                    _magnet.SetParent(_bill, false);
+                    // Три слоя петель: внутренние короткие, яркие и сильно закрученные, внешние — длинные и бледные
+                    (float L, int n, float twist, Color c, float a)[] shells =
                     {
-                        var holder = new GameObject("Loop").transform;
-                        holder.SetParent(_spin, false);
-                        holder.localRotation = Quaternion.Euler(0f, 0f, i * 45f);
-                        var col = Color.Lerp(new Color(0.69f, 0.42f, 1f), new Color(1f, 0.35f, 0.82f), (i % 3) / 2f);
-                        var l = Quad(holder, Tex.Ring, 1f, col, 0.45f);
-                        _loops.Add(l);
-                    }
-                    _glow = Quad(_bill, Tex.Glow, R * 11f, new Color(0.7f, 0.42f, 1f), 0.4f);
-                    _burst = Quad(_bill, Tex.Ring, R * 2f, new Color(1f, 0.55f, 0.95f), 0f);
+                        (4f, 9, 22f, new Color(0.88f, 0.75f, 1f), 0.42f),
+                        (6.5f, 8, 14f, new Color(0.72f, 0.5f, 1f), 0.28f),
+                        (10.5f, 6, 8f, new Color(0.58f, 0.4f, 1f), 0.15f),
+                    };
+                    for (int sh = 0; sh < shells.Length; sh++)
+                        for (int k = 0; k < shells[sh].n; k++)
+                            _lines.Add(FieldLine(_magnet, R, R * shells[sh].L, k * 360f / shells[sh].n + sh * 17f,
+                                                 shells[sh].c, shells[sh].a, shells[sh].twist));
+                    // Горячие пятна на полюсах
+                    for (int i = 0; i < 2; i++) _shells.Add(Quad(_bill, Tex.Glow, R * 2.6f, new Color(0.92f, 0.85f, 1f), 0.85f));
                     break;
                 }
 
@@ -221,7 +229,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Силовая линия диполя (магнитная ось — локальная Y) в плоскости, повёрнутой на azimuth вокруг оси.</summary>
-        private Part FieldLine(Transform parent, float R, float L, float azimuth, Color col, float alpha)
+        private Part FieldLine(Transform parent, float R, float L, float azimuth, Color col, float alpha, float twist = 0f)
         {
             var go = new GameObject("FieldLine");
             go.transform.SetParent(parent, false);
@@ -239,7 +247,9 @@ namespace StellarisClone.Rendering
             {
                 float th = Mathf.Lerp(th0, Mathf.PI - th0, i / (N - 1f));
                 float r = L * Mathf.Sin(th) * Mathf.Sin(th);
-                lr.SetPosition(i, new Vector3(r * Mathf.Sin(th), r * Mathf.Cos(th), 0f));
+                // Скрутка: от одного основания петли к другому она поворачивается вокруг оси на twist градусов
+                float ph = twist * Mathf.Deg2Rad * (th - Mathf.PI * 0.5f) / (Mathf.PI * 0.5f - th0 + 1e-4f);
+                lr.SetPosition(i, new Vector3(r * Mathf.Sin(th) * Mathf.Cos(ph), r * Mathf.Cos(th), r * Mathf.Sin(th) * Mathf.Sin(ph)));
             }
             lr.widthMultiplier = R * 0.12f;
             var p = new Part { T = go.transform, R = lr, Col = col, A = alpha };
@@ -361,21 +371,29 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.Magnetar:
                 {
-                    _spin.localRotation = Quaternion.Euler(0f, 0f, t * 12f);
-                    for (int i = 0; i < _loops.Count; i++)
+                    // Поле медленно вращается вместе со звездой (ось наклонена на 20°, оборот за 9 с)
+                    _magnet.localRotation = Quaternion.Euler(0f, t / 9f * 360f, 0f) * Quaternion.Euler(0f, 0f, 20f);
+                    // Звездотрясение: раз в ~7 с — вспышка, ударная волна расходится, линии поля вспыхивают
+                    float q = Mathf.Repeat(t, 7.3f) / 7.3f;
+                    float burst = q < 0.14f ? Mathf.Pow(1f - q / 0.14f, 1.5f) : 0f;
+                    float shock = Mathf.Clamp01(q / 0.3f);
+                    _burst.T.localScale = Vector3.one * R * Mathf.Lerp(2f, 30f, shock);
+                    Set(_burst, q < 0.3f ? (1f - shock) * 0.45f : 0f);
+                    _glow.T.localScale = Vector3.one * R * (8f + 10f * burst);
+                    Set(_glow, 0.28f + 0.6f * burst);
+                    for (int i = 0; i < _lines.Count; i++)
                     {
-                        var l = _loops[i];
-                        float h = R * (6f + 2.4f * Mathf.Sin(t * 1.7f + i * 2f));
-                        l.T.localScale = new Vector3(h, h * 0.5f, 1f);
-                        l.T.localPosition = new Vector3(h * 0.5f, 0f, 0f);
-                        Set(l, 0.3f + 0.25f * Mathf.Sin(t * 3f + i));
+                        var l = _lines[i];
+                        float flick = 0.8f + 0.2f * Mathf.Sin(t * 2.3f + i * 1.7f);
+                        Set(l, l.A * flick * (1f + 1.6f * burst));
                     }
-                    float q = Mathf.Repeat(t, 3.2f) / 3.2f;
-                    float burst = q < 0.45f ? 1f - q / 0.45f : 0f;
-                    _burst.T.localScale = Vector3.one * R * Mathf.Lerp(2f, 22f, Mathf.Clamp01(q / 0.45f));
-                    Set(_burst, 0.8f * burst);
-                    _glow.T.localScale = Vector3.one * R * (11f + 5f * burst);
-                    Set(_glow, 0.35f + 0.35f * burst);
+                    Vector3 axis = _magnet.localRotation * Vector3.up;
+                    for (int i = 0; i < _shells.Count; i++)
+                    {
+                        var spot = _shells[i];
+                        spot.T.localPosition = (i == 0 ? axis : -axis) * R * 1.02f;
+                        Set(spot, spot.A * (0.85f + 0.15f * Mathf.Sin(t * 4f + i)) * (1f + burst));
+                    }
                     break;
                 }
 
