@@ -6,7 +6,7 @@
 @cover Menu/News/cover_1.6.7
 @art 0.5,0.45,0.62
 @thumb 0.5,0.4,0.5
-@tile Menu/News/cover_1.6.7 | 0.5,0.5,1 | Hyperlanes
+@tile Menu/News/1.6.7_map | 0.5,0.5,1 | Hyperlanes
 @tile Menu/News/1.6.7_resources | 0.5,0.5,1 | Resource summary
 @tile Menu/News/1.6.7_storage | 0.5,0.5,1 | Storage
 @tile Menu/News/1.6.7_systems | 0.5,0.5,1 | Work in a system
