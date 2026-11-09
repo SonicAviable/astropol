@@ -49,7 +49,7 @@ namespace StellarisClone.Rendering
             camGo.transform.localPosition = new Vector3(0f, 0f, -30f);
             _cam = camGo.AddComponent<Camera>();
             _cam.orthographic = true;
-            _cam.orthographicSize = ModelRadius * 2.1f;   // корона выходит за диск, но к краю кадра гаснет
+            _cam.orthographicSize = ModelRadius * 1.04f;   // в кадре только шар; свечение вокруг рисует сам интерфейс
             _cam.clearFlags = CameraClearFlags.SolidColor;
             _cam.backgroundColor = new Color(0f, 0f, 0f, 0f);
             _cam.nearClipPlane = 0.1f;
@@ -118,9 +118,20 @@ namespace StellarisClone.Rendering
             if (_cam.enabled != on) _cam.enabled = on;
         }
 
-        /// <summary>Убрать то, что завязано на главную камеру: поворот короны к ней и блик объектива.</summary>
+        /// <summary>
+        /// Убрать то, что завязано на главную камеру (поворот короны, блик объектива), и саму корону:
+        /// это квадрат-билборд, в маленьком кадре его края видны квадратом. Свечение вокруг шара рисует интерфейс.
+        /// </summary>
         private static void Strip(GameObject model)
         {
+            var corona = model.transform.Find("Corona");
+            if (corona != null)
+            {
+                var cr = corona.GetComponent<Renderer>();
+                if (cr != null && cr.sharedMaterial != null) Destroy(cr.sharedMaterial);
+                corona.gameObject.SetActive(false);
+                Destroy(corona.gameObject);
+            }
             foreach (var b in model.GetComponentsInChildren<BillboardLookAt>(true)) Destroy(b);
             foreach (var f in model.GetComponentsInChildren<StarFlare>(true)) Destroy(f);
             foreach (var f in model.GetComponentsInChildren<UnityEngine.Rendering.LensFlareComponentSRP>(true)) Destroy(f);

@@ -389,7 +389,7 @@ namespace StellarisClone.Rendering
                     _orb.color = Color.Lerp(a, Color.white, 0.15f);
                     _orbCore.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(16f, 16f));
                     _orbCore.color = new Color(1f, 1f, 1f, 0.95f);
-                    if (live) _starPic.Image.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(84f, 84f));
+                    if (live) _starPic.Image.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(46f, 46f));
                 }
                 else
                 {

@@ -158,7 +158,7 @@ namespace StellarisClone.Rendering
             _inspStarFlare = Layer("Flare", StarFlare, 104f, new Color(1f, 0.97f, 0.9f, 0.85f));
             // Живая звезда системы — та же модель, что на карте; нарисованная остаётся запасной (чёрная дыра, нет шейдера)
             _inspStarLive = StarPortrait.Create(_inspPortrait, "Inspector");
-            _inspStarLive.Image.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(128, 128));
+            _inspStarLive.Image.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(66, 66));
             StellarisClone.Cards.HoloSpin.Add(_inspStarCorona, 3f, 0.12f, 0.04f);
             StellarisClone.Cards.HoloSpin.Add(_inspStarFlare, 0f, 0.18f, 0.05f, 0.4f);
             // Картинка планеты — главная планета системы (или выбранная); звезда тогда светит из-за неё ореолом
@@ -240,7 +240,7 @@ namespace StellarisClone.Rendering
             if (_inspStarCore != null) { _inspStarCore.gameObject.SetActive(star && !live); _inspStarCore.color = new Color(tint.r, tint.g, tint.b, 1f); }
             if (_inspStarHot != null) _inspStarHot.gameObject.SetActive(star && !live);
             if (_inspDisc != null) _inspDisc.gameObject.SetActive(!star);
-            if (_inspStarCorona != null) { _inspStarCorona.gameObject.SetActive(star && !live); _inspStarCorona.color = new Color(tint.r, tint.g, tint.b, 0.85f); }
+            if (_inspStarCorona != null) { _inspStarCorona.gameObject.SetActive(star); _inspStarCorona.color = new Color(tint.r, tint.g, tint.b, 0.85f); }
             Color flare = Color.Lerp(tint, Color.white, 0.65f);
             if (_inspStarFlare != null) { _inspStarFlare.gameObject.SetActive(star && !live); _inspStarFlare.color = new Color(flare.r, flare.g, flare.b, 0.85f); }
             if (_inspStarFlare2 != null) { _inspStarFlare2.gameObject.SetActive(star && !live); _inspStarFlare2.color = new Color(flare.r, flare.g, flare.b, 0.35f); }

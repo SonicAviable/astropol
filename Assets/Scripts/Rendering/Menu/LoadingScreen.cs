@@ -29,7 +29,7 @@ namespace StellarisClone.Rendering
         private static int s_lastArt = -1;
         private Text _title, _subtitle, _stage, _percent, _tip, _detail;
         private RectTransform _titleRt, _accent, _ringRt, _ringDash, _ringSat, _ringHead, _infoRt, _stageRt, _tipRt, _tipLine, _tipTextRt, _dustRoot;
-        private Image _ringFill, _ringFillGlow, _ringGlow, _ringHeadImg;
+        private Image _ringFill, _ringFillGlow, _ringGlow, _ringHeadImg, _capStart, _capEnd;
         private CanvasGroup _tipGroup, _titleGroup, _subtitleGroup, _ringGroup, _infoGroup, _tipBlockGroup;
 
         private const int MaxSteps = 8, TipDots = 5, DustCount = 36;
@@ -232,6 +232,14 @@ namespace StellarisClone.Rendering
             _ringFill.sprite = ringSpr;
             Radial(_ringFill);
             Center(_ringFill.rectTransform, 200);
+
+            // Скруглённые концы дуги: кружки толщиной с кольцо в начале (сверху) и на конце заполнения
+            _capStart = NewImage(_ringRt, "CapStart", Cyan);
+            _capStart.sprite = circle;
+            Place(_capStart.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 92f), new Vector2(4.6f, 4.6f));
+            _capEnd = NewImage(_ringRt, "CapEnd", Cyan);
+            _capEnd.sprite = circle;
+            Center(_capEnd.rectTransform, 4.6f);
 
             var dash = NewImage(_ringRt, "Dash", new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f));
             dash.sprite = DashedRingSprite();
@@ -579,10 +587,13 @@ namespace StellarisClone.Rendering
             _ringRt.localScale = Vector3.one * (Mathf.LerpUnclamped(0.75f, 1f, OutBack(r)) + burst * 0.07f);
             _ringFill.fillAmount = _shown;
             _ringFillGlow.fillAmount = _shown;
-            _ringFillGlow.color = new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f + 0.25f * pulse + burst * 0.4f);
+            _ringFillGlow.color = new Color(Cyan.r, Cyan.g, Cyan.b, 0.18f + 0.14f * pulse + burst * 0.4f);
             _ringGlow.color = new Color(Cyan.r, Cyan.g, Cyan.b, 0.07f + 0.05f * pulse + burst * 0.3f);
             float ang = (90f - _shown * 360f) * Mathf.Deg2Rad;
             _ringHead.anchoredPosition = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * 92f;
+            bool arc = _shown > 0.004f;
+            _capStart.enabled = _capEnd.enabled = arc;
+            _capEnd.rectTransform.anchoredPosition = _ringHead.anchoredPosition;
             _ringHead.localScale = Vector3.one * (0.85f + 0.3f * pulse + burst * 0.6f);
             _ringHeadImg.color = new Color(0.8f, 1f, 1f, _shown > 0.004f ? 0.65f + 0.35f * pulse : 0f);
             _ringDash.localRotation = Quaternion.Euler(0f, 0f, -t * 12f);
@@ -820,7 +831,7 @@ namespace StellarisClone.Rendering
             float c = (N - 1) * 0.5f;
             return MakeSprite(N, N, (x, y) =>
             {
-                float d = (Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c - r) / 0.07f;
+                float d = (Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c - r) / 0.045f;
                 return Mathf.Exp(-d * d);
             });
         }
