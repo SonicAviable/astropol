@@ -56,7 +56,12 @@ namespace StellarisClone.Core
 
         private static void EnsureCamera()
         {
-            var cam = Object.FindFirstObjectByType<Camera>();
+            // Главная камера — по тегу; иначе первая, что рисует на экран. Камеры студий (портреты звёзд,
+            // голограммы планет) рисуют в текстуру — им управление картой вешать нельзя
+            var cam = Camera.main;
+            if (cam == null)
+                foreach (var c in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
+                    if (c.targetTexture == null) { cam = c; break; }
             if (cam == null)
             {
                 var camGo = new GameObject("Main Camera");

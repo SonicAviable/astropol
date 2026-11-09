@@ -742,6 +742,13 @@ namespace StellarisClone.Rendering
             img.fillAmount = 0f;
         }
 
+        /// <summary>Классический smoothstep по краям e0→e1 (Mathf.SmoothStep — это интерполяция, не он).</summary>
+        private static float Edge(float e0, float e1, float x)
+        {
+            float t = Mathf.Clamp01((x - e0) / (e1 - e0));
+            return t * t * (3f - 2f * t);
+        }
+
         private static Sprite MakeSprite(int w, int h, Func<float, float, float> alpha)
         {
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
@@ -762,7 +769,7 @@ namespace StellarisClone.Rendering
             {
                 float u = x / (float)(W - 1), v = y / (float)(H - 1);
                 float dx = (u - 0.5f) * 1.6f, dy = (v - 0.6f) * 1.4f;
-                float vig = Mathf.SmoothStep(0.45f, 1.25f, Mathf.Sqrt(dx * dx + dy * dy)) * 0.75f;
+                float vig = Edge(0.45f, 1.25f, Mathf.Sqrt(dx * dx + dy * dy)) * 0.75f;
                 float bottom = Mathf.Pow(1f - Mathf.Clamp01(v / 0.4f), 1.8f) * 0.85f;
                 float cx = u / 0.35f, cy = (1f - v) / 0.25f;
                 float corner = Mathf.Exp(-(cx * cx + cy * cy) * 1.2f) * 0.5f;
@@ -780,7 +787,7 @@ namespace StellarisClone.Rendering
             return MakeSprite(N, N, (x, y) =>
             {
                 float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;
-                return Mathf.Exp(-d * d * 5f) * (1f - Mathf.SmoothStep(0.85f, 1f, d));
+                return Mathf.Exp(-d * d * 5f) * (1f - Edge(0.85f, 1f, d));
             });
         }
 
@@ -803,7 +810,7 @@ namespace StellarisClone.Rendering
             return MakeSprite(N, N, (x, y) =>
             {
                 float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;
-                return 1f - Mathf.SmoothStep(w - aa, w + aa, Mathf.Abs(d - r));
+                return 1f - Edge(w - aa, w + aa, Mathf.Abs(d - r));
             });
         }
 
@@ -826,9 +833,9 @@ namespace StellarisClone.Rendering
             {
                 float dx = x - c, dy = y - c;
                 float d = Mathf.Sqrt(dx * dx + dy * dy) / c;
-                float ring = 1f - Mathf.SmoothStep(0.012f - aa, 0.012f + aa, Mathf.Abs(d - 0.92f));
+                float ring = 1f - Edge(0.012f - aa, 0.012f + aa, Mathf.Abs(d - 0.92f));
                 float f = Mathf.Repeat((Mathf.Atan2(dy, dx) / (2f * Mathf.PI) + 0.5f) * 48f, 1f);
-                float dash = Mathf.SmoothStep(0f, 0.06f, f) * (1f - Mathf.SmoothStep(0.34f, 0.4f, f));
+                float dash = Edge(0f, 0.06f, f) * (1f - Edge(0.34f, 0.4f, f));
                 return ring * dash;
             });
         }
