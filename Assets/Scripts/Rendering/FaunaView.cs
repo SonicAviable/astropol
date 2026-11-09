@@ -272,7 +272,13 @@ namespace StellarisClone.Rendering
 
             public virtual void Destroy()
             {
-                if (Root != null) Object.Destroy(Root);
+                if (Root != null)
+                {
+                    // Свои меши (искры, линии, кристаллы) создаются на каждую пересборку — без этого текут
+                    foreach (var mf in Root.GetComponentsInChildren<MeshFilter>(true))
+                        if (mf.sharedMesh != null && !Res.IsShared(mf.sharedMesh)) Object.Destroy(mf.sharedMesh);
+                    Object.Destroy(Root);
+                }
                 if (_labelRoot != null) Object.Destroy(_labelRoot.gameObject);
             }
 
@@ -457,6 +463,9 @@ namespace StellarisClone.Rendering
         {
             private static Mesh s_ray, s_bell, s_core, s_sphere, s_quad, s_beam;
             private static Texture2D s_glow, s_ring, s_beamTex;
+
+            /// <summary>Общий меш из кэша (его не уничтожаем вместе со стаей).</summary>
+            public static bool IsShared(Mesh m) => m == s_ray || m == s_bell || m == s_core || m == s_sphere || m == s_quad || m == s_beam;
 
             /// <summary>Сетка 28×16 для ската: форму задаёт шейдер по uv.</summary>
             public static Mesh RayMesh

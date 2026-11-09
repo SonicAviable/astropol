@@ -598,7 +598,7 @@ namespace StellarisClone.Core
             if (!h.Moving)
             {
                 var fm = FleetManager.Instance;
-                bool dispersed = false;
+                FleetData disperser = null;
                 bool hurtPlayer = false;
                 if (fm != null)
                     foreach (var f in fm.AllFleets)
@@ -607,10 +607,7 @@ namespace StellarisClone.Core
                         if (d == null || d.Destroyed || d.State == FleetState.InHyperlane || d.CurrentSystemId != h.Home) continue;
                         if (d.Type == FleetType.Military && !Threats.IsThreat(d.OwnerId) && d.OwnerId >= 0)
                         {
-                            dispersed = true;
-                            if (d.OwnerId == 0)
-                                NotificationCenter.Show(Loc.T("Рой Искр разогнан"),
-                                    Loc.F("{0} спугнул рой у звезды {1}.", d.Name, EmpireStats.GetSystem(h.Home)?.Name), NotificationCenter.Kind.Success, 5f, h.Home);
+                            disperser = d;
                             break;
                         }
                         if (d.Type != FleetType.Military)
@@ -630,7 +627,14 @@ namespace StellarisClone.Core
                         Loc.F("Гражданские корабли у звезды {0} теряют корпус. Уведите их или пришлите военный флот.", EmpireStats.GetSystem(h.Home)?.Name),
                         NotificationCenter.Kind.Warning, 6f, h.Home);
                 }
-                if (dispersed || h.Days >= h.PhaseDays) StartSwarmFlight(h);
+                if (disperser != null || h.Days >= h.PhaseDays)
+                {
+                    int at = h.Home;
+                    StartSwarmFlight(h);
+                    if (disperser != null && disperser.OwnerId == 0 && h.Moving)
+                        NotificationCenter.Show(Loc.T("Рой Искр разогнан"),
+                            Loc.F("{0} спугнул рой у звезды {1}.", disperser.Name, EmpireStats.GetSystem(at)?.Name), NotificationCenter.Kind.Success, 5f, at);
+                }
             }
             else if (h.Days >= h.PhaseDays)
             {
@@ -640,6 +644,7 @@ namespace StellarisClone.Core
                 if (h.Lure == h.Home) h.Lure = -1;
                 StartFeed(h);
                 _playerFleetHurtNote = -1;
+                if (h.Lure >= 0) { StartSwarmFlight(h); return; }
                 var sys = EmpireStats.GetSystem(h.Home);
                 if (sys != null && sys.OwnerId == 0) OfferSwarm(h, sys);
             }
@@ -833,7 +838,9 @@ namespace StellarisClone.Core
                     {
                         Eco?.TrySpend(0f, 0f, 0f, LureInfluence);
                         int t = NearestRivalSystem(h.Home);
-                        if (t >= 0) { h.Lure = t; StartSwarmFlight(h); }
+                        if (t < 0) return;
+                        h.Lure = t;
+                        if (!h.Moving) StartSwarmFlight(h);   // в полёте — свернёт к цели по прилёте
                     },
                     Loc.F("Нужно {0:0} влияния", LureInfluence),
                     () => Eco != null && Eco.CanAfford(0f, 0f, 0f, LureInfluence) && NearestRivalSystem(h.Home) >= 0));
@@ -943,12 +950,16 @@ namespace StellarisClone.Core
                         foreach (var ai in AIEmpireManager.Alive) if (Contacts.PlayerMet(ai.OwnerId)) ai.AddMemory("incident", -8f);
                         var fm = FleetManager.Instance;
                         FleetData best = null;
+                        float bestD = float.MaxValue;
+                        Vector3 head = Anchor(h);
                         if (fm != null)
                             foreach (var f in fm.AllFleets)
                             {
                                 var d = f?.Data;
-                                if (d == null || d.Destroyed || d.OwnerId != 0 || d.Type != FleetType.Military) continue;
-                                if (best == null || d.MaxHullPoints > best.MaxHullPoints) best = d;
+                                if (f == null || d == null || d.Destroyed || d.OwnerId != 0 || d.Type != FleetType.Military) continue;
+                                Vector3 fp = f.transform.position;
+                                float dd = (fp.x - head.x) * (fp.x - head.x) + (fp.z - head.z) * (fp.z - head.z);
+                                if (dd < bestD) { bestD = dd; best = d; }
                             }
                         if (best != null) best.HullPoints = Mathf.Max(1f, best.HullPoints - best.MaxHullPoints * 0.4f);
                     }));
