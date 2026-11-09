@@ -78,7 +78,6 @@ namespace StellarisClone.Cam
         // ---- Плавная панорама ----
         private Vector3 _panVelocity;
         private const float PanAcceleration = 10f;
-        private bool _boundsFromGalaxy;
 
         private void Awake()
         {
@@ -519,20 +518,36 @@ namespace StellarisClone.Cam
             return camPos + f * t;
         }
 
-        /// <summary>Граница камеры — по реальному радиусу галактики (+ небольшой запас).</summary>
+        private float _fitRadius = -1f;
+        private int _fitCount = -1;
+        private StellarisClone.Generation.GalaxyGenerator _fitGen;
+
+        /// <summary>
+        /// Граница камеры — по самой дальней звезде галактики (+ запас). Пересчитывается при любой смене галактики:
+        /// раньше бралась один раз в первом кадре, когда генератор мог быть ещё с радиусом по умолчанию (120),
+        /// и на больших картах камера упиралась в невидимую стену задолго до края.
+        /// </summary>
         private void FitBoundsToGalaxy()
         {
-            if (_boundsFromGalaxy) return;
-            var gen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            if (_fitGen == null) _fitGen = FindFirstObjectByType<StellarisClone.Generation.GalaxyGenerator>();
+            var gen = _fitGen;
             if (gen == null || gen.GalaxyRadius <= 1f) return;
-            galaxyBoundsRadius = gen.GalaxyRadius + 20f;
+            int count = gen.Systems != null ? gen.Systems.Count : 0;
+            if (Mathf.Approximately(_fitRadius, gen.GalaxyRadius) && _fitCount == count) return;
+            _fitRadius = gen.GalaxyRadius;
+            _fitCount = count;
+
+            float far = gen.GalaxyRadius;
+            if (gen.Systems != null)
+                foreach (var s in gen.Systems)
+                    far = Mathf.Max(far, new Vector2(s.Position.x, s.Position.z).magnitude);
+            galaxyBoundsRadius = far + 40f;
             // Большая галактика целиком помещается на экран с самой дальней высоты
-            maxHeight = Mathf.Max(maxHeight, gen.GalaxyRadius * 1.5f);
+            maxHeight = Mathf.Max(maxHeight, far * 1.5f);
             // Дальность отрисовки — под размер галактики: с максимальной высоты под наклоном дальний край
             // карты лежит дальше дальней плоскости из сцены, и всё, кроме фона, пропадало в черноту
             var cam = GetComponent<Camera>();
-            if (cam != null) cam.farClipPlane = Mathf.Max(cam.farClipPlane, maxHeight * 2f + gen.GalaxyRadius * 2.5f);
-            _boundsFromGalaxy = true;
+            if (cam != null) cam.farClipPlane = Mathf.Max(cam.farClipPlane, maxHeight * 2f + far * 2.5f);
         }
 
         /// <summary>

@@ -707,15 +707,33 @@ namespace StellarisClone.Core
             }
             else
             {
-                scienceShip = _allFleets.Find(f =>
-                    f.Data != null
-                    && f.Data.Type == FleetType.Science
-                    && f.Data.OwnerId == 0
-                    && f.Data.SurveyTargetSystemId == -1
-                    && f.Data.State == FleetState.Orbiting);
+                // Ближайший свободный корабль (по числу прыжков). Свободен и тот, чья цель разведки устарела:
+                // её уже изучили или корабль увели в другую систему — раньше такой корабль навсегда считался занятым,
+                // и кнопка «Направить научный корабль» молча ничего не делала
+                int bestJumps = int.MaxValue;
+                bool anyScience = false;
+                foreach (var f in _allFleets)
+                {
+                    var d = f != null ? f.Data : null;
+                    if (d == null || d.Destroyed || d.Type != FleetType.Science || d.OwnerId != 0) continue;
+                    anyScience = true;
+                    ClearStaleSurveyTarget(d);
+                    if (d.SurveyTargetSystemId != -1 || d.State != FleetState.Orbiting || d.Path.Count > 0) continue;
+                    var path = d.CurrentSystemId == targetSystemId ? null
+                             : GalaxyPathfinder.FindPath(d.CurrentSystemId, targetSystemId, _generator, 0);
+                    int jumps = d.CurrentSystemId == targetSystemId ? 0 : path != null ? path.Count : int.MaxValue;
+                    if (jumps < bestJumps) { bestJumps = jumps; scienceShip = f; }
+                }
+                if (scienceShip == null)
+                {
+                    NotificationCenter.Show(Loc.T("Нет свободного научного корабля"),
+                        anyScience ? Loc.T("Все научные корабли заняты разведкой — дождитесь, пока один освободится, или постройте новый на верфи.")
+                                   : Loc.T("Научных кораблей нет — постройте его на орбитальной верфи."),
+                        NotificationCenter.Kind.Warning, 5f, targetSystemId);
+                    return false;
+                }
             }
 
-            if (scienceShip == null) return false;
             if (!CanReach(scienceShip, targetSystemId)) return false;
 
             scienceShip.Data.SurveyTargetSystemId = targetSystemId;
@@ -731,6 +749,21 @@ namespace StellarisClone.Core
                 IssueMoveOrder(scienceShip, targetSystemId);
             }
             return true;
+        }
+
+        /// <summary>
+        /// Снять устаревшую цель разведки: систему уже изучили (или заняли), либо корабль стоит на орбите
+        /// без пути в другой системе — его увели вручную. Иначе корабль навсегда остаётся «занятым».
+        /// </summary>
+        public void ClearStaleSurveyTarget(FleetData d)
+        {
+            if (d == null || d.SurveyTargetSystemId < 0 || _generator == null) return;
+            int t = d.SurveyTargetSystemId;
+            bool done = t >= _generator.Systems.Count || _generator.Systems[t].IsSurveyedBy(d.OwnerId);
+            bool lost = d.State == FleetState.Orbiting && d.Path.Count == 0 && d.CurrentSystemId != t;
+            if (!done && !lost) return;
+            d.SurveyTargetSystemId = -1;
+            if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting;
         }
 
         public void CompleteSystemSurvey(int systemId) => CompleteSystemSurvey(systemId, 0);

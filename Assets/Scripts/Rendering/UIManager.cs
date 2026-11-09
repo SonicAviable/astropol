@@ -1448,9 +1448,16 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
                 if (!system.IsSurveyed)
                 {
-                    _inspActionBtn.interactable = true;
-                    _inspActionBtnBg.color = DS.BtnSuccess;
-                    _inspActionBtnText.text = Loc.T("▶  НАПРАВИТЬ НАУЧНЫЙ КОРАБЛЬ");
+                    // Корабль уже летит сюда или ведёт разведку — не предлагаем отправить ещё один
+                    bool enRoute = false;
+                    var fm = FleetManager.Instance;
+                    if (fm != null)
+                        foreach (var f in fm.AllFleets)
+                            if (f != null && f.Data != null && !f.Data.Destroyed && f.Data.OwnerId == 0
+                                && f.Data.Type == FleetType.Science && f.Data.SurveyTargetSystemId == system.Id) { enRoute = true; break; }
+                    _inspActionBtn.interactable = !enRoute;
+                    _inspActionBtnBg.color = enRoute ? new Color(0.10f, 0.25f, 0.20f) : DS.BtnSuccess;
+                    _inspActionBtnText.text = enRoute ? Loc.T("◎  СУДНО В ПУТИ") : Loc.T("▶  НАПРАВИТЬ НАУЧНЫЙ КОРАБЛЬ");
                 }
                 else
                 {

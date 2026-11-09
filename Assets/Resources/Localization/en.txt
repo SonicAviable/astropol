@@ -7465,3 +7465,6 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 титан +20%	titanium +20%
 титан +30% · обитаемых миров нет	titanium +30% · no habitable worlds
 только раскалённые миры	molten worlds only
+Нет свободного научного корабля	No free science ship
+Все научные корабли заняты разведкой — дождитесь, пока один освободится, или постройте новый на верфи.	All science ships are busy surveying — wait for one to free up or build a new one at the shipyard.
+Научных кораблей нет — постройте его на орбитальной верфи.	You have no science ships — build one at the orbital shipyard.

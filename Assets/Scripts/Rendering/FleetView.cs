@@ -711,6 +711,8 @@ namespace StellarisClone.Rendering
                     Data.State = FleetState.Surveying;
                     Data.DaysRemainingSurvey = Data.TotalSurveyDays;
                 }
+                else if (Data.Type == FleetType.Science && Data.Path.Count == 0)
+                    FleetManager.Instance?.ClearStaleSurveyTarget(Data);   // прилетел не туда (увели вручную) — цель снята
 
                 if (Data.State == FleetState.Orbiting)
                 {
