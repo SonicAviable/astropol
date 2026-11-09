@@ -752,6 +752,19 @@ namespace StellarisClone.Rendering
             Data.State = FleetState.Orbiting;
             Data.DaysRemainingInTransit = 0f;
             SnapToCurrentSystem(instant: false);
+            // Выбит из коридора прямо у цели — работа начинается, как при обычном прибытии (иначе корабль навсегда «занят»)
+            if (Data.Path.Count == 0 && Data.Type == FleetType.Constructor && Data.BuildTargetSystemId == Data.CurrentSystemId)
+            {
+                Data.State = FleetState.Constructing;
+                Data.DaysRemainingConstruction = Data.TotalConstructionDays;
+                return;
+            }
+            if (Data.Path.Count == 0 && Data.Type == FleetType.Science && Data.SurveyTargetSystemId == Data.CurrentSystemId)
+            {
+                Data.State = FleetState.Surveying;
+                Data.DaysRemainingSurvey = Data.TotalSurveyDays;
+                return;
+            }
             if (Data.Path.Count == 0 && Data.OrderQueue.Count > 0) FleetManager.Instance?.AdvanceQueue(this);
             else if (Data.Path.Count == 0 && Data.OwnerId == 0) Data.HasPlayerOrder = false;
         }

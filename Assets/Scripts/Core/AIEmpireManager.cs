@@ -496,6 +496,13 @@ namespace StellarisClone.Core
                 {
                     var t = EmpireStats.GetSystem(d.SurveyTargetSystemId);
                     if (t == null || t.IsSurveyedBy(OwnerId)) { d.SurveyTargetSystemId = -1; if (d.State == FleetState.Surveying) d.State = FleetState.Orbiting; }
+                    else if (IsIdle(d) && d.CurrentSystemId != d.SurveyTargetSystemId)
+                    {
+                        // Маршрут оборвался (граница, перехват) — снова в путь, иначе цель снимается, а не держит корабль вечно
+                        if (FleetManager.Instance != null && FleetManager.Instance.IssueMoveOrder(ship, d.SurveyTargetSystemId)) continue;
+                        claimed.Remove(d.SurveyTargetSystemId);
+                        d.SurveyTargetSystemId = -1;
+                    }
                     else continue;
                 }
                 if (!IsIdle(d)) continue;
@@ -558,6 +565,13 @@ namespace StellarisClone.Core
                         if (t != null && t.OwnerId != OwnerId) Alloys += FactionTraits.StarbaseAlloys(OwnerId) * 0.5f;
                         d.BuildTargetSystemId = -1;
                         if (d.State == FleetState.Constructing) d.State = FleetState.Orbiting;
+                    }
+                    else if (d.State == FleetState.Orbiting && d.Path.Count == 0 && d.CurrentSystemId != d.BuildTargetSystemId && !d.InCombat)
+                    {
+                        // Маршрут оборвался (граница закрылась, перехват) — снова в путь, а если пути нет, стройка отменяется
+                        if (FleetManager.Instance != null && FleetManager.Instance.IssueMoveOrder(ship, d.BuildTargetSystemId)) continue;
+                        Alloys += FactionTraits.StarbaseAlloys(OwnerId);
+                        d.BuildTargetSystemId = -1;
                     }
                     else continue;
                 }
