@@ -83,6 +83,8 @@ namespace StellarisClone.Cam
         {
             // Ближе к системе, чем в старой сцене: планеты мини-систем разглядываются вблизи
             minHeight = Mathf.Min(minHeight, 4.5f);
+            // Вблизи взгляд положе: дальние системы уходят к горизонту, слои фона сильнее расходятся — видна глубина
+            nearPitch = Mathf.Min(nearPitch, 50f);
             _targetHeight = transform.position.y;
         }
 
