@@ -1281,9 +1281,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private const float InspHeaderH = 96f;
 
         /// <summary>Плитка и полоса шапки: значок объекта, его цвет и цвет владельца.</summary>
-        private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor, Sprite planet = null)
+        private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor, Sprite planet = null, StarSystem star = null)
         {
-            PaintInspectorPortrait(icon == LGIcon.Star, icon, iconColor, ownerColor, planet);
+            PaintInspectorPortrait(icon == LGIcon.Star, icon, iconColor, ownerColor, planet, star);
             if (_inspAccent != null) _inspAccent.color = new Color(ownerColor.r, ownerColor.g, ownerColor.b, 0.9f);
         }
 
@@ -1430,7 +1430,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspTitle.text = system.Name.ToUpper();
             SetInspectorBadge(LGIcon.Star, StarTint(system.SpectralClass),
                 system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.45f, 0.55f, 0.62f),
-                GalaxyView.PlanetPortrait(system, HeaderPlanet(system)));
+                GalaxyView.PlanetPortrait(system, HeaderPlanet(system)), system);
 
             string owner = system.OwnerId == 0
                 ? Loc.F("<color=#33E6CC>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))

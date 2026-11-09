@@ -16,6 +16,7 @@ namespace StellarisClone.Rendering
         private Image _frame;
         private LiquidGlassEffect _fx;
         private RectTransform _textRt, _band;
+        private StarPortrait _starPic;
         private Image _bandBg, _bandLine, _orb, _orbGlow, _orbIcon, _badge, _orbCore;
         private Text _title, _sub, _badgeText;
         private static readonly Color PanelTint = new Color(0.022f, 0.052f, 0.074f, 0.97f);
@@ -105,6 +106,7 @@ namespace StellarisClone.Rendering
             _orbCore = Img(_band, "OrbCore", FactionSelectScreen.RadialSprite(), Color.white);
             _orbIcon = Img(_band, "OrbIcon", null, Color.white);
             _orbIcon.preserveAspect = true;
+            _starPic = StarPortrait.Create(_band, "Tooltip");
             _bandLine = Img(_band, "Line", null, Color.white);
             _bandLine.rectTransform.anchorMin = new Vector2(0f, 0f);
             _bandLine.rectTransform.anchorMax = new Vector2(1f, 0f);
@@ -308,31 +310,35 @@ namespace StellarisClone.Rendering
         // ---------- Шапка подсказки (кино-карта) ----------
         // Первая строка «<b>Заголовок</b>» (можно со значком перед ней: [[Energy:#F2C747]]<b>Гелий-3</b>) становится шапкой.
         // Необязательная метка в самом начале добавляет превью и подробности:
-        //   [[hdr|#RRGGBB|подзаголовок|метка справа|orb]]   (orb — светящийся шар цвета #RRGGBB, «-» — без шара)
+        //   [[hdr|#RRGGBB|подзаголовок|метка справа|orb]]   (orb — светящийся шар цвета #RRGGBB, «-» — без шара;
+        //   orb:Id — живая звезда системы Id, как на карте)
 
         private struct Head
         {
             public bool On, Orb, HasIcon;
+            public int StarId;
             public string Title, Sub, Badge;
             public Color Accent;
             public LGIcon Icon;
         }
 
         private static readonly System.Text.RegularExpressions.Regex HeadToken =
-            new System.Text.RegularExpressions.Regex(@"^\[\[hdr\|(#[0-9A-Fa-f]{6})\|([^|\]]*)\|([^|\]]*)\|(orb|-)\]\]\n?");
+            new System.Text.RegularExpressions.Regex(@"^\[\[hdr\|(#[0-9A-Fa-f]{6})\|([^|\]]*)\|([^|\]]*)\|(orb(?::\d+)?|-)\]\]\n?");
         private static readonly System.Text.RegularExpressions.Regex TitleLine =
             new System.Text.RegularExpressions.Regex(@"^(?:\[\[(\w+)(?::(#[0-9A-Fa-f]{6}))?\]\])?<b>([^<\n]+)</b>[ \t]*(?:\n|$)");
 
         private static string SplitHeader(string text, out Head h)
         {
-            h = new Head { Accent = new Color(0.37f, 0.82f, 0.75f, 1f), Sub = "", Badge = "" };
+            h = new Head { StarId = -1, Accent = new Color(0.37f, 0.82f, 0.75f, 1f), Sub = "", Badge = "" };
             var m = HeadToken.Match(text);
             if (m.Success)
             {
                 if (ColorUtility.TryParseHtmlString(m.Groups[1].Value, out var c)) h.Accent = c;
                 h.Sub = m.Groups[2].Value;
                 h.Badge = m.Groups[3].Value;
-                h.Orb = m.Groups[4].Value == "orb";
+                var orb = m.Groups[4].Value;
+                h.Orb = orb.StartsWith("orb");
+                if (orb.Length > 4 && int.TryParse(orb.Substring(4), out int sid)) h.StarId = sid;
                 text = text.Substring(m.Length);
             }
             var t = TitleLine.Match(text);
@@ -364,8 +370,11 @@ namespace StellarisClone.Rendering
             _bandLine.color = new Color(a.r, a.g, a.b, 0.65f);
 
             float x = 14f;
-            _orb.gameObject.SetActive(h.Orb);
-            _orbCore.gameObject.SetActive(h.Orb);
+            // Живая звезда системы (та же модель, что на карте); нет её — нарисованная
+            bool live = h.Orb && h.StarId >= 0 && _starPic != null && _starPic.Show(EmpireStats.GetSystem(h.StarId));
+            if (!live && _starPic != null) _starPic.Hide();
+            _orb.gameObject.SetActive(h.Orb && !live);
+            _orbCore.gameObject.SetActive(h.Orb && !live);
             _orbGlow.gameObject.SetActive(visual);
             _orbIcon.gameObject.SetActive(!h.Orb && h.HasIcon);
             if (visual)
@@ -380,6 +389,7 @@ namespace StellarisClone.Rendering
                     _orb.color = Color.Lerp(a, Color.white, 0.15f);
                     _orbCore.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(16f, 16f));
                     _orbCore.color = new Color(1f, 1f, 1f, 0.95f);
+                    if (live) _starPic.Image.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(84f, 84f));
                 }
                 else
                 {

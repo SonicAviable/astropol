@@ -156,6 +156,9 @@ namespace StellarisClone.Rendering
             _inspStarFlare2 = Layer("Flare2", StarFlare, 70f, new Color(1f, 0.95f, 0.85f, 0.35f));
             _inspStarFlare2.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
             _inspStarFlare = Layer("Flare", StarFlare, 104f, new Color(1f, 0.97f, 0.9f, 0.85f));
+            // Живая звезда системы — та же модель, что на карте; нарисованная остаётся запасной (чёрная дыра, нет шейдера)
+            _inspStarLive = StarPortrait.Create(_inspPortrait, "Inspector");
+            _inspStarLive.Image.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(128, 128));
             StellarisClone.Cards.HoloSpin.Add(_inspStarCorona, 3f, 0.12f, 0.04f);
             StellarisClone.Cards.HoloSpin.Add(_inspStarFlare, 0f, 0.18f, 0.05f, 0.4f);
             // Картинка планеты — главная планета системы (или выбранная); звезда тогда светит из-за неё ореолом
@@ -223,20 +226,24 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Цвета портрета: звезда (свет — её цвета) или значок объекта; кольца — цвета владельца.</summary>
-        private void PaintInspectorPortrait(bool star, LGIcon icon, Color tint, Color owner, Sprite planet = null)
+        private StarPortrait _inspStarLive;
+
+        private void PaintInspectorPortrait(bool star, LGIcon icon, Color tint, Color owner, Sprite planet = null, StarSystem system = null)
         {
             if (_inspPortrait == null) return;
+            bool live = star && system != null && _inspStarLive != null && _inspStarLive.Show(system);
+            if (!live && _inspStarLive != null) _inspStarLive.Hide();
             PaintInspectorBanner(tint, planet, planet != null ? planet.GetHashCode() : Mathf.RoundToInt(tint.r * 1000 + tint.b * 37));
             bool hasPlanet = planet != null && !star;
             if (_inspPlanet != null) { _inspPlanet.sprite = planet; _inspPlanet.gameObject.SetActive(hasPlanet); }
             if (hasPlanet) icon = LGIcon.Planet;
-            if (_inspStarCore != null) { _inspStarCore.gameObject.SetActive(star); _inspStarCore.color = new Color(tint.r, tint.g, tint.b, 1f); }
-            if (_inspStarHot != null) _inspStarHot.gameObject.SetActive(star);
+            if (_inspStarCore != null) { _inspStarCore.gameObject.SetActive(star && !live); _inspStarCore.color = new Color(tint.r, tint.g, tint.b, 1f); }
+            if (_inspStarHot != null) _inspStarHot.gameObject.SetActive(star && !live);
             if (_inspDisc != null) _inspDisc.gameObject.SetActive(!star);
-            if (_inspStarCorona != null) { _inspStarCorona.gameObject.SetActive(star); _inspStarCorona.color = new Color(tint.r, tint.g, tint.b, 0.85f); }
+            if (_inspStarCorona != null) { _inspStarCorona.gameObject.SetActive(star && !live); _inspStarCorona.color = new Color(tint.r, tint.g, tint.b, 0.85f); }
             Color flare = Color.Lerp(tint, Color.white, 0.65f);
-            if (_inspStarFlare != null) { _inspStarFlare.gameObject.SetActive(star); _inspStarFlare.color = new Color(flare.r, flare.g, flare.b, 0.85f); }
-            if (_inspStarFlare2 != null) { _inspStarFlare2.gameObject.SetActive(star); _inspStarFlare2.color = new Color(flare.r, flare.g, flare.b, 0.35f); }
+            if (_inspStarFlare != null) { _inspStarFlare.gameObject.SetActive(star && !live); _inspStarFlare.color = new Color(flare.r, flare.g, flare.b, 0.85f); }
+            if (_inspStarFlare2 != null) { _inspStarFlare2.gameObject.SetActive(star && !live); _inspStarFlare2.color = new Color(flare.r, flare.g, flare.b, 0.35f); }
             if (_inspStarHalo != null) _inspStarHalo.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.55f : 0.3f);
             if (_inspTileIcon != null)
             {

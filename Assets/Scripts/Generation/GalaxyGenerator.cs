@@ -229,7 +229,8 @@ namespace StellarisClone.Generation
             var pos = new Vector3[n];
             for (int i = 0; i < n; i++) pos[i] = Systems[i].Position;
 
-            float connect = maxConnectionDistance;
+            // Дальность коридоров растёт вместе с разносом систем (база — минимум 12 ед.)
+            float connect = maxConnectionDistance * Mathf.Max(1f, minStarDistance / 12f * 0.83f);
             if (n > 2)
             {
                 var nn = new float[n];

@@ -755,7 +755,7 @@ namespace StellarisClone.Rendering
 
             // Шапка подсказки: светящийся шар цвета звезды, класс звезды подзаголовком, «ВАША» — метка своей системы
             var starCol = _data.SpectralClass == StarSpectralClass.BlackHole ? new Color(0.62f, 0.45f, 1f) : GalaxyView.StarColor(_data.SpectralClass);
-            string head = $"[[hdr|{LGBuild.Hex(starCol)}|{EmpireOverviewWindow.StarClass(_data.SpectralClass)}|{(_data.OwnerId == 0 ? Loc.T("Ваша") : "")}|orb]]";
+            string head = $"[[hdr|{LGBuild.Hex(starCol)}|{EmpireOverviewWindow.StarClass(_data.SpectralClass)}|{(_data.OwnerId == 0 ? Loc.T("Ваша") : "")}|orb:{_data.Id}]]";
             string tip = head + $"<b>{_data.Name}</b>\n" +
                          (PreviewNote().Length > 0 ? PreviewNote().TrimStart() + "\n" : "") +
                          (_data.OwnerId == 0 ? "" : Loc.F("<color=#AAB4C0>Владелец:</color> {0}\n", owner));

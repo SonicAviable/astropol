@@ -32,8 +32,10 @@ namespace StellarisClone.Core
         // Под шесть империй и вольные миры: на средней ~55 систем на империю — к 40-й минуте ещё есть куда расти
         // (на прежних 210 звёздах империи упирались друг в друга уже к середине партии).
         public int StarCount => GalaxySize == 0 ? 160 : GalaxySize == 2 ? 480 : 330;
-        public float Radius => GalaxySize == 0 ? 222f : GalaxySize == 2 ? 372f : 318f;
-        public float MinStarDistance => GalaxySize == 2 ? 11f : 12f;
+        // Системы разнесены шире: мини-система со всеми орбитами занимает ~14 ед. в поперечнике, и при прежнем
+        // минимуме 11–12 соседние системы налезали друг на друга орбитами. Радиус вырос на 25% — плотность ниже.
+        public float Radius => GalaxySize == 0 ? 278f : GalaxySize == 2 ? 465f : 398f;
+        public float MinStarDistance => GalaxySize == 2 ? 17f : 18f;
         /// <summary>Доминирование — около 55% систем галактики (160 / 330 / 480 звёзд); порог ещё нужно удерживать год.</summary>
         public int DominationTarget => GalaxySize == 0 ? 88 : GalaxySize == 2 ? 264 : 182;
 
