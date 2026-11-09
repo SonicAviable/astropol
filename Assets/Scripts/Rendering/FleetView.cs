@@ -686,6 +686,7 @@ namespace StellarisClone.Rendering
             Data.CurrentSystemId = Data.TargetSystemId;
             Data.TargetSystemId = -1;
             Data.State = FleetState.Orbiting;
+            FleetManager.Instance?.InvalidatePowerIndex();   // флот появился в новой системе
             if (Data.Path.Count > 0 && Pinned())
             {
                 // Враг в системе — флот останавливается и принимает бой, маршрут продолжит после
@@ -751,6 +752,7 @@ namespace StellarisClone.Rendering
             Data.TargetSystemId = -1;
             Data.State = FleetState.Orbiting;
             Data.DaysRemainingInTransit = 0f;
+            FleetManager.Instance?.InvalidatePowerIndex();
             SnapToCurrentSystem(instant: false);
             // Выбит из коридора прямо у цели — работа начинается, как при обычном прибытии (иначе корабль навсегда «занят»)
             if (Data.Path.Count == 0 && Data.Type == FleetType.Constructor && Data.BuildTargetSystemId == Data.CurrentSystemId)
@@ -786,6 +788,7 @@ namespace StellarisClone.Rendering
             Data.HasPlayerOrder = false;
             Data.CurrentSystemId = systemId;
             Data.TargetSystemId = -1;
+            FleetManager.Instance?.InvalidatePowerIndex();
             SnapToCurrentSystem(instant: true);
             if (ShowJumpFx()) JumpFx.Arrival(transform.position, dir, c);
             return true;

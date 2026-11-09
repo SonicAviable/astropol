@@ -91,6 +91,30 @@ namespace StellarisClone.Rendering
         private readonly List<Rock> _rocks = new List<Rock>();
         private Matrix4x4[][] _buffers;
         private int[] _counts;
+        private int[] _slot;
+        private int _slotRocks = -1, _meshes;
+        private Matrix4x4[] _pivots;
+        private Matrix4x4 _l2w;
+        private float _time;
+        private System.Action<int> _rockBody;
+
+        /// <summary>Матрица одного камня (только своя ячейка буфера — безопасно для параллельного расчёта).</summary>
+        private void RockOne(int i)
+        {
+            int slot = _slot[i];
+            if (slot < 0) return;
+            var r = _rocks[i];
+            int m = r.Mesh % _meshes;
+            float t = _time;
+            Vector3 pos = r.Pos;
+            if (r.Orbit != 0f)
+            {
+                float a = r.Pos.z + r.Orbit * t;
+                pos = new Vector3(Mathf.Cos(a) * r.Pos.x, r.Pos.y, Mathf.Sin(a) * r.Pos.x);
+            }
+            var rot = Quaternion.AngleAxis(r.Spin * t, r.Axis) * r.Rot0;
+            _buffers[m][slot] = _l2w * Matrix4x4.TRS(pos, rot, Vector3.one * r.Scale) * _pivots[m];
+        }
 
         /// <summary>Рисовать ли сейчас (например, только при приближении камеры). null — всегда.</summary>
         public System.Func<bool> VisibleWhen;
@@ -165,30 +189,28 @@ namespace StellarisClone.Rendering
             if (VisibleWhen != null && !VisibleWhen()) return;
 
             int meshes = AsteroidAssets.Count;
-            if (_buffers == null || _buffers.Length != meshes)
+            if (_buffers == null || _buffers.Length != meshes || _slotRocks != _rocks.Count)
             {
                 _buffers = new Matrix4x4[meshes][];
                 for (int i = 0; i < meshes; i++) _buffers[i] = new Matrix4x4[1023];
                 _counts = new int[meshes];
-            }
-            for (int i = 0; i < meshes; i++) _counts[i] = 0;
-
-            float t = Time.time;
-            var l2w = transform.localToWorldMatrix;
-            for (int i = 0; i < _rocks.Count; i++)
-            {
-                var r = _rocks[i];
-                int m = r.Mesh % meshes;
-                if (_counts[m] >= 1023) continue;
-                Vector3 pos = r.Pos;
-                if (r.Orbit != 0f)
+                _pivots = new Matrix4x4[meshes];
+                // Каждому камню — постоянная ячейка в буфере своего меша: тогда камни считаются независимо, на всех ядрах
+                _slot = new int[_rocks.Count];
+                for (int i = 0; i < _rocks.Count; i++)
                 {
-                    float a = r.Pos.z + r.Orbit * t;
-                    pos = new Vector3(Mathf.Cos(a) * r.Pos.x, r.Pos.y, Mathf.Sin(a) * r.Pos.x);
+                    int m = _rocks[i].Mesh % meshes;
+                    _slot[i] = _counts[m] < 1023 ? _counts[m]++ : -1;
                 }
-                var rot = Quaternion.AngleAxis(r.Spin * t, r.Axis) * r.Rot0;
-                _buffers[m][_counts[m]++] = l2w * Matrix4x4.TRS(pos, rot, Vector3.one * r.Scale) * AsteroidAssets.PivotAt(m);
+                _slotRocks = _rocks.Count;
             }
+            for (int m = 0; m < meshes; m++) _pivots[m] = AsteroidAssets.PivotAt(m);
+
+            _time = Time.time;
+            _l2w = transform.localToWorldMatrix;
+            _meshes = meshes;
+            _rockBody ??= RockOne;
+            StellarisClone.Core.Threaded.For(_rocks.Count, _rockBody);
 
             int layer = gameObject.layer;
             for (int m = 0; m < meshes; m++)

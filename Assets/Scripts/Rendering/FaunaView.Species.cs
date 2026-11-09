@@ -262,9 +262,23 @@ namespace StellarisClone.Rendering
                     if (an != null) an.Drain = _feed * Alpha;
                 }
 
-                Vector3 side = new Vector3(-dir.z, 0f, dir.x);
-                int n = _sp.Cap;
-                for (int i = 0; i < n; i++)
+                _side = new Vector3(-dir.z, 0f, dir.x);
+                _dir = dir; _t = t; _dt = dt; _travel = travel;
+                _body ??= SparkOne;
+                Threaded.For(_sp.Cap, _body);   // тысяча искр — на всех ядрах
+                _init = true;
+                _sp.Upload(1f);
+            }
+
+            private Vector3 _side, _dir;
+            private float _t, _dt, _travel;
+            private System.Action<int> _body;
+
+            /// <summary>Одна искра роя: пишет только свои ячейки — безопасно для параллельного расчёта.</summary>
+            private void SparkOne(int i)
+            {
+                float t = _t, dt = _dt, travel = _travel;
+                Vector3 dir = _dir, side = _side;
                 {
                     float ang = _a[i] + t * _w[i] * (1f + _feed * 0.6f);
                     float r = _r[i] * (1f + 0.35f * Mathf.Sin(t * 0.9f + _h[i] * 9f + Mathf.Cos(t * 0.37f) * 3f)) * (1f + _feed * 0.5f) * (1f - travel * 0.55f);
@@ -279,8 +293,6 @@ namespace StellarisClone.Rendering
                     c.a = Alpha;
                     _sp.Col[i] = c;
                 }
-                _init = true;
-                _sp.Upload(1f);
             }
 
             public override void Destroy()

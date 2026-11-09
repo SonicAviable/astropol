@@ -207,6 +207,7 @@ namespace StellarisClone.Core
             var view = fleetObj.AddComponent<FleetView>();
             view.Initialize(data, _generator);
             _allFleets.Add(view);
+            InvalidatePowerIndex();
             return view;
         }
 
@@ -222,19 +223,24 @@ namespace StellarisClone.Core
             var view = fleetObj.AddComponent<FleetView>();
             view.Initialize(data, _generator);
             _allFleets.Add(view);
+            InvalidatePowerIndex();
             return view;
         }
 
         public void RegisterExternalFleet(FleetView view)
         {
             if (view != null && !_allFleets.Contains(view))
+            {
                 _allFleets.Add(view);
+                InvalidatePowerIndex();
+            }
         }
 
         public void NotifyFleetDestroyed(FleetView view)
         {
             if (view == null) return;
             _allFleets.Remove(view);
+            InvalidatePowerIndex();
             if (_selection.Contains(view))
             {
                 var next = new List<FleetView>(_selection);
@@ -266,13 +272,42 @@ namespace StellarisClone.Core
         }
 
         /// <summary>Боевая мощь владельца в конкретной системе (на орбите, не в пути).</summary>
-        public float GetMilitaryPowerInSystem(int ownerId, int systemId)
+        // Индекс «владелец + система → военные корабли на орбите». ИИ, пираты и вольные миры спрашивают силу в системе
+        // тысячи раз за ход; раньше каждый вопрос перебирал все флоты галактики. Индекс строится одним проходом
+        // за кадр (и заново после прибытия/появления/гибели флота), при ответе условия перепроверяются.
+        private readonly Dictionary<long, List<FleetData>> _powerIndex = new Dictionary<long, List<FleetData>>();
+        private readonly Stack<List<FleetData>> _powerPool = new Stack<List<FleetData>>();
+        private int _powerFrame = -1;
+
+        /// <summary>Флот появился, исчез или прибыл в систему — индекс силы пересоберётся при следующем запросе.</summary>
+        public void InvalidatePowerIndex() => _powerFrame = -1;
+
+        private static long PowerKey(int owner, int system) => ((long)owner << 32) | (uint)system;
+
+        private void RebuildPowerIndex()
         {
-            float sum = 0f;
+            foreach (var l in _powerIndex.Values) { l.Clear(); _powerPool.Push(l); }
+            _powerIndex.Clear();
             foreach (var f in _allFleets)
             {
                 var d = f?.Data;
-                if (d == null || d.Destroyed || d.OwnerId != ownerId || d.Type != FleetType.Military) continue;
+                if (d == null || d.Destroyed || d.Type != FleetType.Military || d.State == FleetState.InHyperlane) continue;
+                long k = PowerKey(d.OwnerId, d.CurrentSystemId);
+                if (!_powerIndex.TryGetValue(k, out var list))
+                    _powerIndex[k] = list = _powerPool.Count > 0 ? _powerPool.Pop() : new List<FleetData>();
+                list.Add(d);
+            }
+            _powerFrame = Time.frameCount;
+        }
+
+        public float GetMilitaryPowerInSystem(int ownerId, int systemId)
+        {
+            if (_powerFrame != Time.frameCount) RebuildPowerIndex();
+            if (!_powerIndex.TryGetValue(PowerKey(ownerId, systemId), out var list)) return 0f;
+            float sum = 0f;
+            foreach (var d in list)
+            {
+                if (d.Destroyed || d.OwnerId != ownerId || d.Type != FleetType.Military) continue;
                 if (d.State == FleetState.InHyperlane || d.CurrentSystemId != systemId) continue;
                 sum += CombatMath.Power(d);
             }

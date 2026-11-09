@@ -372,39 +372,53 @@ namespace StellarisClone.Rendering
                 P[i] = p; Vel[i] = vel; Col[i] = c; Size[i] = size; Life[i] = Max[i] = life; A0[i] = a;
             }
 
+            // Расчёт по искрам — на всех ядрах (Threaded.For): каждая искра пишет только свои ячейки массивов.
+            // Делегаты созданы один раз, чтобы не мусорить памятью каждый кадр.
+            private float _stepDt, _stepAlpha;
+            private System.Action<int> _simBody, _uploadBody;
+
             public void Simulate(float dt)
             {
-                for (int i = 0; i < Cap; i++)
+                _stepDt = dt;
+                _simBody ??= SimOne;
+                StellarisClone.Core.Threaded.For(Cap, _simBody);
+            }
+
+            private void SimOne(int i)
+            {
+                if (Life[i] <= 0f) return;
+                Life[i] -= _stepDt;
+                P[i] += Vel[i] * _stepDt;
+            }
+
+            private void UploadOne(int i)
+            {
+                float alpha = _stepAlpha;
+                float a;
+                if (_fade)
                 {
-                    if (Life[i] <= 0f) continue;
-                    Life[i] -= dt;
-                    P[i] += Vel[i] * dt;
+                    float k = Life[i] > 0f ? Life[i] / Mathf.Max(0.01f, Max[i]) : 0f;
+                    a = A0[i] * k * k * alpha;
                 }
+                else a = Col[i].a * alpha;
+                var c = Col[i];
+                c.a = a;
+                int v = i * 4;
+                Vector3 p = P[i];
+                float s = a > 0f ? Size[i] : 0f;
+                _v[v] = p; _v[v + 1] = p; _v[v + 2] = p; _v[v + 3] = p;
+                _uv[v] = new Vector4(-1f, -1f, s, 0f);
+                _uv[v + 1] = new Vector4(1f, -1f, s, 0f);
+                _uv[v + 2] = new Vector4(1f, 1f, s, 0f);
+                _uv[v + 3] = new Vector4(-1f, 1f, s, 0f);
+                _c[v] = c; _c[v + 1] = c; _c[v + 2] = c; _c[v + 3] = c;
             }
 
             public void Upload(float alpha)
             {
-                for (int i = 0; i < Cap; i++)
-                {
-                    float a;
-                    if (_fade)
-                    {
-                        float k = Life[i] > 0f ? Life[i] / Mathf.Max(0.01f, Max[i]) : 0f;
-                        a = A0[i] * k * k * alpha;
-                    }
-                    else a = Col[i].a * alpha;
-                    var c = Col[i];
-                    c.a = a;
-                    int v = i * 4;
-                    Vector3 p = P[i];
-                    float s = a > 0f ? Size[i] : 0f;
-                    _v[v] = p; _v[v + 1] = p; _v[v + 2] = p; _v[v + 3] = p;
-                    _uv[v] = new Vector4(-1f, -1f, s, 0f);
-                    _uv[v + 1] = new Vector4(1f, -1f, s, 0f);
-                    _uv[v + 2] = new Vector4(1f, 1f, s, 0f);
-                    _uv[v + 3] = new Vector4(-1f, 1f, s, 0f);
-                    _c[v] = c; _c[v + 1] = c; _c[v + 2] = c; _c[v + 3] = c;
-                }
+                _stepAlpha = alpha;
+                _uploadBody ??= UploadOne;
+                StellarisClone.Core.Threaded.For(Cap, _uploadBody);
                 _mesh.vertices = _v;
                 _mesh.SetUVs(0, _uv);
                 _mesh.colors = _c;
