@@ -202,6 +202,10 @@ namespace StellarisClone.Rendering
             q.transform.localScale = new Vector3(R * 1.2f, R * 1.2f, 1f);
             _coreMat = new Material(shader);
             _coreMat.renderQueue = 2962;
+            // Рукава ядра — свои (не совпадают с рукавами систем): почти бесцветные, чтобы не рисовать
+            // оранжевую спираль на пол-экрана; тёплым остаётся только самый центр
+            _coreMat.SetColor("_Warm", new Color(1f, 0.9f, 0.74f));
+            _coreMat.SetColor("_Outer", new Color(0.42f, 0.42f, 0.5f));
             var mr = q.GetComponent<MeshRenderer>();
             mr.sharedMaterial = _coreMat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -442,7 +446,7 @@ namespace StellarisClone.Rendering
                 verts[k] = new Vector3(x, y - 0.6f, z);
                 float r = new Vector2(x, z).magnitude / R;
                 float b = 0.25f + (float)(rng.NextDouble() * rng.NextDouble()) * 0.75f;   // больше тусклых, мало ярких
-                if (arm) b = 0.1f + (float)(rng.NextDouble() * rng.NextDouble() * rng.NextDouble()) * 0.65f;   // рукава — россыпь тусклых точек
+                if (arm) b = 0.05f + (float)(rng.NextDouble() * rng.NextDouble() * rng.NextDouble()) * 0.45f;   // рукава — россыпь тусклых точек
                 Color c = Color.Lerp(new Color(0.78f, 0.84f, 1f), new Color(1f, 0.9f, 0.76f), Mathf.Exp(-r * r / 0.08f));
                 cols[k] = new Color(c.r, c.g, c.b, b);
                 idx[k] = k;
@@ -517,7 +521,7 @@ namespace StellarisClone.Rendering
         /// <summary>Общая яркость фона карты (туманности, диск, звёздная пыль) и плотность тёмных пылевых полос.</summary>
         // Как в Stellaris: фон тихий и почти бесцветный, цвет на карте дают границы империй; форму галактики
         // рисуют звёзды (DustStarsBright), а не заливка. Пылевые полосы плотнее — у рукавов есть рельеф.
-        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.45f;
+        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.35f;
 
         private void UpdateBackdropZoom(Camera cam)
         {
@@ -527,7 +531,7 @@ namespace StellarisClone.Rendering
             // территории заливаются гуще и обводятся толще, а фон диска приглушается — карта читается целиком
             float overview = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(220f, 600f, h));
             if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.24f, 1f, far) * Mathf.Lerp(1f, 0.6f, overview));
-            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.8f, 1f, far) * DustStarsBright));
+            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.8f, 1f, far) * Mathf.Lerp(1f, 0.6f, overview) * DustStarsBright));
 
             // Живой фон: время для шейдеров, туманности чуть тише вблизи
             float t = Time.unscaledTime;
@@ -535,7 +539,7 @@ namespace StellarisClone.Rendering
             if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
             if (_deepStarsMat != null) _deepStarsMat.SetFloat("_T", t);
             // Вблизи космос не должен проваливаться в черноту: галактика большая, ядро и рукава далеко
-            float nebK = Mathf.Lerp(0.85f, 1f, far);
+            float nebK = Mathf.Lerp(1.8f, 1f, far);
             // клочья над картой близко к камере — вблизи растворяются, чтобы не мешать
             float wispK = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(55f, 130f, h));
             float dustK = Mathf.Lerp(0.15f, 1f, far);
