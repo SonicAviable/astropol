@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using StellarisClone.Core;
+using StellarisClone.Generation;
 
 namespace StellarisClone.Rendering
 {
@@ -116,7 +117,7 @@ namespace StellarisClone.Rendering
             // 2. Цвет: холодная пыль рукавов × облачный шум + тёплое ядро
             var px = new Color32[N * N];
             var cool = new Color(0.50f, 0.58f, 0.95f);
-            var warm = new Color(1.00f, 0.82f, 0.55f);
+            var warm = new Color(1.00f, 0.90f, 0.75f);
             float noiseScale = 1f / (N / 640f * 28f);
             for (int j = 0; j < N; j++)
             {
@@ -131,7 +132,7 @@ namespace StellarisClone.Rendering
                     float t = Mathf.Exp(-r * r / (2f * 0.3f * 0.3f));
                     Color dc = Color.Lerp(cool, warm, t);
 
-                    float dA = dust * 0.38f, cA = core * 0.9f;
+                    float dA = dust * 0.38f, cA = core * 0.45f;
                     float a = Mathf.Clamp01(dA + cA);
                     Color c = a > 0.0001f ? (dc * dA + warm * cA) / a : Color.black;
                     // Мягкое затухание к краю текстуры — никаких видимых границ квада
@@ -220,6 +221,13 @@ namespace StellarisClone.Rendering
 
         // ==================== ТУМАННОСТИ РЕГИОНОВ ====================
 
+        /// <summary>Приглушённый цвет туманности: на 45% к серому той же яркости.</summary>
+        private static Color Muted(Color c)
+        {
+            float l = c.r * 0.3f + c.g * 0.59f + c.b * 0.11f;
+            return Color.Lerp(c, new Color(l, l, l), 0.45f) * 0.9f;
+        }
+
         private static readonly Color[] NebulaPalette =
         {
             new Color(0.15f, 0.75f, 0.80f),   // бирюза
@@ -260,8 +268,8 @@ namespace StellarisClone.Rendering
 
                     var m = new Material(shader);
                     int ci = pal + k + layer * 2;
-                    m.SetColor("_ColorA", NebulaPalette[ci % NebulaPalette.Length]);
-                    m.SetColor("_ColorB", NebulaPalette[(ci + 1 + rng.Next(2)) % NebulaPalette.Length]);
+                    m.SetColor("_ColorA", Muted(NebulaPalette[ci % NebulaPalette.Length]));
+                    m.SetColor("_ColorB", Muted(NebulaPalette[(ci + 1 + rng.Next(2)) % NebulaPalette.Length]));
                     m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
                     m.SetFloat("_Scale", (layer == 2 ? 3.6f : 2.4f) + (float)rng.NextDouble() * 1.4f);
                     m.renderQueue = layer == 0 ? 2940 : layer == 1 ? 2950 : 2996;
@@ -270,10 +278,10 @@ namespace StellarisClone.Rendering
                 }
             }
 
-            // На чёрном фоне туманности — главная «картинка» карты: ярче и крупнее, чем при подсвеченном скайбоксе
-            Layer(0, 5, -R * 0.32f, -R * 0.2f, 0.6f, 0.9f, 0.5f, 1.05f, 0.17f, 0.25f);
-            Layer(1, 6, -6f, -1.5f, 0.32f, 0.55f, 0.55f, 1.05f, 0.22f, 0.34f);
-            Layer(2, 5, R * 0.05f, R * 0.11f, 0.16f, 0.3f, 0.3f, 1.0f, 0.08f, 0.14f);
+            // Туманности — фон, а не картинка: тусклые и приглушённые, главное на карте — звёзды и границы
+            Layer(0, 5, -R * 0.32f, -R * 0.2f, 0.6f, 0.9f, 0.5f, 1.05f, 0.09f, 0.14f);
+            Layer(1, 6, -6f, -1.5f, 0.32f, 0.55f, 0.55f, 1.05f, 0.12f, 0.19f);
+            Layer(2, 5, R * 0.05f, R * 0.11f, 0.16f, 0.3f, 0.3f, 1.0f, 0.05f, 0.09f);
 
             BuildDarkDust(R, rng);
             BuildVignette(R);
@@ -396,24 +404,34 @@ namespace StellarisClone.Rendering
         {
             int count = Mathf.Min(60000, _generator.Systems.Count * 70);
             int coreCount = Mathf.Min(9000, count / 2);         // плотное звёздное скопление ядра
-            count += coreCount;
+            // Звёзды рукавов по форме галактики (как у генератора систем): форму рисуют тысячи тусклых точек
+            int armCount = Mathf.Clamp(_generator.Systems.Count * 110, 25000, 50000);
+            int armStart = coreCount + count;
+            count += coreCount + armCount;
             var verts = new Vector3[count];
             var cols = new Color32[count];
             var idx = new int[count];
             for (int k = 0; k < count; k++)
             {
                 float x, z;
+                bool arm = k >= armStart;
                 if (k < coreCount)
                 {
                     float sg = rng.NextDouble() < 0.6 ? 0.06f : 0.14f;
                     x = Gauss(rng) * sg * R;
                     z = Gauss(rng) * sg * R;
                 }
+                else if (arm)
+                {
+                    var p = ShapePoint(_generator.Shape, rng);
+                    x = p.x * R;
+                    z = p.y * R;
+                }
                 else
                 {
                     var s = _generator.Systems[rng.Next(_generator.Systems.Count)];
-                    x = s.Position.x + Gauss(rng) * 0.12f * R;
-                    z = s.Position.z + Gauss(rng) * 0.12f * R;
+                    x = s.Position.x + Gauss(rng) * 0.08f * R;
+                    z = s.Position.z + Gauss(rng) * 0.08f * R;
                 }
                 // Толщина: диск тоньше к краю, ядро — вздутый шар (балдж)
                 float rr = new Vector2(x, z).magnitude / R;
@@ -424,7 +442,8 @@ namespace StellarisClone.Rendering
                 verts[k] = new Vector3(x, y - 0.6f, z);
                 float r = new Vector2(x, z).magnitude / R;
                 float b = 0.25f + (float)(rng.NextDouble() * rng.NextDouble()) * 0.75f;   // больше тусклых, мало ярких
-                Color c = Color.Lerp(new Color(0.78f, 0.84f, 1f), new Color(1f, 0.88f, 0.7f), Mathf.Exp(-r * r / 0.08f));
+                if (arm) b = 0.1f + (float)(rng.NextDouble() * rng.NextDouble() * rng.NextDouble()) * 0.65f;   // рукава — россыпь тусклых точек
+                Color c = Color.Lerp(new Color(0.78f, 0.84f, 1f), new Color(1f, 0.9f, 0.76f), Mathf.Exp(-r * r / 0.08f));
                 cols[k] = new Color(c.r, c.g, c.b, b);
                 idx[k] = k;
             }
@@ -448,11 +467,57 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
+        /// Точка галактики той же формы, что у генератора систем (GalaxyGenerator.SamplePosition), в долях радиуса:
+        /// рукава спирали (угол рукава — тот же, без случайного сдвига), эллипс или кольцо; ~15% — тусклое межрукавье.
+        /// </summary>
+        private static Vector2 ShapePoint(GalaxyShape shape, System.Random rng)
+        {
+            float U() => (float)rng.NextDouble();
+            if (U() < 0.15f)
+            {
+                // Межрукавье: редкие звёзды по всему диску, гуще к центру
+                float a0 = U() * Mathf.PI * 2f, r0 = Mathf.Lerp(0.12f, 1.05f, Mathf.Sqrt(U()));
+                var q = new Vector2(Mathf.Cos(a0), Mathf.Sin(a0)) * r0;
+                if (shape == GalaxyShape.Elliptical) q.y *= 0.65f;
+                return q;
+            }
+            switch (shape)
+            {
+                case GalaxyShape.Elliptical:
+                {
+                    var p = new Vector2(Gauss(rng), Gauss(rng)) * 0.42f;
+                    if (p.magnitude > 1.05f) p = p.normalized * Mathf.Lerp(0.55f, 1.05f, U());
+                    p.y *= 0.65f;
+                    return p;
+                }
+                case GalaxyShape.Ring:
+                {
+                    float a = U() * Mathf.PI * 2f, r = Mathf.Clamp(0.74f + Gauss(rng) * 0.09f, 0.45f, 1.05f);
+                    return new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                }
+                default:
+                {
+                    int arms = shape == GalaxyShape.Spiral4 ? 4 : 2;
+                    int arm = rng.Next(arms);
+                    float t = Mathf.Pow(U(), 0.85f);
+                    float rr = Mathf.Lerp(0.14f, 1.05f, t);
+                    float twist = arms == 2 ? 3.3f : 2.4f;
+                    float ang = arm * Mathf.PI * 2f / arms + t * twist;
+                    // Хребет рукава плотный и узкий, к краям рукав рыхлеет
+                    float spread = Mathf.Lerp(0.03f, 0.09f, t) * (arms == 2 ? 1f : 0.8f) * (0.5f + U());
+                    return new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * rr + new Vector2(Gauss(rng), Gauss(rng)) * spread;
+                }
+            }
+        }
+
+        /// <summary>
         /// Пыль и ядро — для обзора: вблизи растянутая текстура превращается в муть, поэтому гаснет.
         /// Заливка территорий вблизи тоже почти исчезает — остаётся только кромка.
         /// </summary>
         /// <summary>Общая яркость фона карты (туманности, диск, звёздная пыль) и плотность тёмных пылевых полос.</summary>
-        private const float BackdropBright = 1.25f, DarkDustK = 0.8f;
+        // Как в Stellaris: фон тихий и почти бесцветный, цвет на карте дают границы империй; форму галактики
+        // рисуют звёзды (DustStarsBright), а не заливка. Пылевые полосы плотнее — у рукавов есть рельеф.
+        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.45f;
 
         private void UpdateBackdropZoom(Camera cam)
         {
@@ -462,7 +527,7 @@ namespace StellarisClone.Rendering
             // территории заливаются гуще и обводятся толще, а фон диска приглушается — карта читается целиком
             float overview = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(220f, 600f, h));
             if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.24f, 1f, far) * Mathf.Lerp(1f, 0.6f, overview));
-            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.8f, 1f, far) * BackdropBright));
+            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.8f, 1f, far) * DustStarsBright));
 
             // Живой фон: время для шейдеров, туманности чуть тише вблизи
             float t = Time.unscaledTime;
@@ -482,12 +547,12 @@ namespace StellarisClone.Rendering
             if (_coreMat != null)
             {
                 _coreMat.SetFloat("_T", t);
-                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.08f, 1f, far) * BackdropBright);   // вблизи ядро не заливает карту
+                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.08f, 1f, far) * BackdropBright * CoreK);   // вблизи ядро не заливает карту
             }
             if (_coreBulge != null)
             {
                 float pulse = 1f + 0.2f * Mathf.Sin(t * 0.9f);
-                _coreBulge.color = new Color(1f, 0.86f, 0.62f, Mathf.Lerp(0.03f, 0.5f, far) * pulse);
+                _coreBulge.color = new Color(1f, 0.94f, 0.86f, Mathf.Lerp(0.02f, 0.22f, far) * pulse);   // ядро белее и тише — не спорит с картой
                 _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
             foreach (var (m, k, layer) in _nebulaMats)
