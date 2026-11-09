@@ -456,7 +456,10 @@ namespace StellarisClone.Rendering
         {
             float h = cam.transform.position.y;
             float far = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(45f, 170f, h));
-            if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.08f, 1f, far));
+            // Обзор (галактика разнесена шире — камера уходит на 400–1000 ед.): системы мельчают, поэтому
+            // территории заливаются гуще и обводятся толще, а фон диска приглушается — карта читается целиком
+            float overview = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(220f, 600f, h));
+            if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.08f, 1f, far) * Mathf.Lerp(1f, 0.6f, overview));
             if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.45f, 1f, far) * BackdropBright));
 
             // Живой фон: время для шейдеров, туманности чуть тише вблизи
@@ -494,10 +497,13 @@ namespace StellarisClone.Rendering
                 // Линейное цветовое пространство: малая альфа на чёрном выглядит намного плотнее,
                 // поэтому заливка вблизи — едва заметная дымка, остаётся тонкая кромка
                 // Режим карты усиливает (политика) или приглушает (простой, ресурсы…) границы — GalaxyView.MapModes
-                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(0.008f, 0.07f, far) * _borderFillK);
-                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(0.02f, 0.07f, far) * _borderFillK);
-                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 2.2f, far) * Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(_borderK - 0.2f)));
-                _borderMat.SetFloat("_LineAlpha", Mathf.Clamp01(Mathf.Lerp(0.5f, 0.85f, far) * _borderK));
+                // В обзоре заливка не тоньше 0,14–0,2 в любом режиме карты — иначе в «Простом» территорий не видно
+                float fill = Mathf.Lerp(0.008f, 0.07f, far) * _borderFillK;
+                float band = Mathf.Lerp(0.02f, 0.07f, far) * _borderFillK;
+                _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(fill, Mathf.Max(fill, 0.14f), overview));
+                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(band, Mathf.Max(band, 0.2f), overview));
+                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 2.2f, far) * Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(_borderK - 0.2f)) + 1.6f * overview);
+                _borderMat.SetFloat("_LineAlpha", Mathf.Clamp01(Mathf.Lerp(Mathf.Lerp(0.5f, 0.85f, far) * _borderK, 1f, overview)));
             }
         }
 
