@@ -73,7 +73,6 @@ namespace StellarisClone.Rendering
 
             _bill = new GameObject("Billboard").transform;
             _bill.SetParent(transform, false);
-            var tint = StarTypes.MapColor(cls);
             float R = radius;
 
             switch (cls)
@@ -110,8 +109,11 @@ namespace StellarisClone.Rendering
                     break;
 
                 case StarSpectralClass.WolfRayet:
-                    _glow = Quad(_bill, Tex.Glow, R * 6f, new Color(0.4f, 0.95f, 1f), 0.3f);
-                    for (int i = 0; i < 4; i++) _shells.Add(Quad(_bill, Tex.Shell, R * 2f, tint, 0.6f));
+                    // Как WR 124 / M1-67 на снимках «Хаббла»: ослепительная голубая звезда в рваном облаке
+                    // сгустков и радиальных струй раскалённого газа (розово-красное свечение водорода).
+                    // Два слоя облака медленно расширяются и сменяют друг друга — газ всё время истекает наружу
+                    for (int i = 0; i < 2; i++) _shells.Add(Quad(_bill, Tex.Wind, R * 24f, Color.white, 0.8f));
+                    _glow = Quad(_bill, Tex.Glow, R * 5f, new Color(0.62f, 0.85f, 1f), 0.45f);
                     break;
 
                 case StarSpectralClass.Pulsar:
@@ -317,15 +319,15 @@ namespace StellarisClone.Rendering
                 }
 
                 case StarSpectralClass.WolfRayet:
-                    Set(_glow, _glow.A * (0.8f + 0.2f * pulse));
+                    Set(_glow, _glow.A * (0.9f + 0.1f * pulse));
                     for (int i = 0; i < _shells.Count; i++)
                     {
-                        float k = Mathf.Repeat(t * 0.16f + i / (float)_shells.Count, 1f);
+                        // Цикл ~25 с: слой растёт 0,8 → 1,2, проявляется и гаснет; второй — в противофазе
+                        float k = Mathf.Repeat(t * 0.04f + i * 0.5f, 1f);
                         var p = _shells[i];
-                        p.T.localScale = Vector3.one * R * Mathf.Lerp(2f, 11f, k);
-                        p.T.localRotation = Quaternion.Euler(0f, 0f, (i % 2 == 0 ? 1f : -1f) * t * 9f + i * 40f);
-                        var c = Color.Lerp(new Color(0.36f, 0.95f, 0.92f), new Color(0.69f, 0.42f, 1f), k);
-                        Set(p, Mathf.Pow(1f - k, 1.4f) * 0.7f * Mathf.Clamp01(k * 8f), c);
+                        p.T.localScale = Vector3.one * R * 24f * Mathf.Lerp(0.8f, 1.2f, k);
+                        p.T.localRotation = Quaternion.Euler(0f, 0f, i * 137f + (i == 0 ? 1f : -1f) * t * 0.8f);
+                        Set(p, p.A * Mathf.Sin(k * Mathf.PI));
                     }
                     break;
 
@@ -467,7 +469,7 @@ namespace StellarisClone.Rendering
         /// <summary>Процедурные формы слоёв: строятся один раз, линейные (цвет приводит шейдер).</summary>
         private static class Tex
         {
-            private static Texture2D s_line, s_glow, s_beam, s_ring, s_shell, s_cross, s_disk, s_dust, s_nebula;
+            private static Texture2D s_wind, s_line, s_glow, s_beam, s_ring, s_shell, s_cross, s_disk, s_dust, s_nebula;
 
             private static Texture2D Get(ref Texture2D field, System.Func<Texture2D> make)
             {
@@ -475,7 +477,7 @@ namespace StellarisClone.Rendering
                 return field;
             }
 
-            public static void Reset() { s_line = null; s_glow = s_beam = s_ring = s_shell = s_cross = s_disk = s_dust = s_nebula = null; }
+            public static void Reset() { s_wind = null; s_line = null; s_glow = s_beam = s_ring = s_shell = s_cross = s_disk = s_dust = s_nebula = null; }
 
             public static Texture2D Glow => Get(ref s_glow, () => Make("Glow", 128, 128, (u, v) =>
             {
@@ -490,6 +492,77 @@ namespace StellarisClone.Rendering
                 float x = u / w;
                 return A(Mathf.Exp(-x * x * 3f) * Mathf.Pow(1f - y, 1.3f) * Edge(0f, 0.06f, y));
             }));
+
+            /// <summary>
+            /// Облако ветра звезды Вольфа-Райе (как M1-67 вокруг WR 124): сотни узелков газа, слегка вытянутых
+            /// по радиусу, гуще в рваной оболочке, на подложке крупных тусклых облаков. Цвет запечён.
+            /// Сгустки рисуются по своим рамкам — быстро даже при сотнях штук.
+            /// </summary>
+            public static Texture2D Wind => Get(ref s_wind, () =>
+            {
+                const int N = 256;
+                var rgb = new Vector3[N * N];
+                var alpha = new float[N * N];
+                var rnd = new System.Random(777);
+                float Rnd() => (float)rnd.NextDouble();
+                // Сгусток — гауссово пятно, вытянутое по радиусу; рисуется только в своей рамке
+                void Blob(float cx, float cy, float dx, float dy, float len, float wid, float bright, Vector3 col)
+                {
+                    float ext = Mathf.Max(len, wid) * 2.6f;
+                    int x0 = Mathf.Max(0, (int)((cx - ext + 1f) * 0.5f * (N - 1))), x1 = Mathf.Min(N - 1, (int)((cx + ext + 1f) * 0.5f * (N - 1)) + 1);
+                    int y0 = Mathf.Max(0, (int)((cy - ext + 1f) * 0.5f * (N - 1))), y1 = Mathf.Min(N - 1, (int)((cy + ext + 1f) * 0.5f * (N - 1)) + 1);
+                    for (int y = y0; y <= y1; y++)
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        float u = x / (N - 1f) * 2f - 1f - cx, v = y / (N - 1f) * 2f - 1f - cy;
+                        float along = u * dx + v * dy, across = -u * dy + v * dx;
+                        float g = Mathf.Exp(-(along * along) / (len * len) - (across * across) / (wid * wid)) * bright;
+                        int k = y * N + x;
+                        rgb[k] += col * g;
+                        alpha[k] += g;
+                    }
+                }
+                // Оболочка рваная: её радиус гуляет по углу
+                float Shell(float a) => 0.5f + 0.12f * Mathf.Sin(a * 3f + 1.3f) + 0.06f * Mathf.Sin(a * 7f);
+                // Крупные тусклые облака — подложка оболочки
+                for (int c = 0; c < 46; c++)
+                {
+                    float a = Rnd() * Mathf.PI * 2f;
+                    float r = Mathf.Clamp(Shell(a) + (Rnd() - 0.5f) * 0.3f, 0.15f, 0.85f);
+                    Blob(Mathf.Cos(a) * r, Mathf.Sin(a) * r, Mathf.Cos(a), Mathf.Sin(a),
+                         0.08f + Rnd() * 0.08f, 0.06f + Rnd() * 0.07f, 0.12f + Rnd() * 0.12f, new Vector3(1f, 0.42f, 0.42f));
+                }
+                // Узелки газа: в основном розово-красные (водород), часть — жёлто-оранжевые; яркость с длинным хвостом
+                for (int c = 0; c < 420; c++)
+                {
+                    float a = Rnd() * Mathf.PI * 2f;
+                    float r = Rnd() < 0.85f ? Shell(a) + (Rnd() - 0.5f) * 0.36f : 0.18f + Rnd() * 0.3f;
+                    r = Mathf.Clamp(r, 0.12f, 0.88f);
+                    float len = 0.012f + Rnd() * 0.035f, wid = 0.009f + Rnd() * 0.016f;
+                    float bright = 0.15f + Mathf.Pow(Rnd(), 2.2f) * 0.9f;
+                    float tone = Rnd();
+                    Vector3 col = tone < 0.65f ? new Vector3(1f, 0.36f + 0.1f * tone, 0.4f) : new Vector3(1f, 0.62f + 0.15f * Rnd(), 0.45f);
+                    Blob(Mathf.Cos(a) * r, Mathf.Sin(a) * r, Mathf.Cos(a), Mathf.Sin(a), len, wid, bright, col);
+                }
+                var tex = new Texture2D(N, N, TextureFormat.RGBA32, true, true)
+                { name = "StarFxWind", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, hideFlags = HideFlags.DontSave };
+                var px = new Color[N * N];
+                for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    int i = y * N + x;
+                    float u = x / (N - 1f) * 2f - 1f, v = y / (N - 1f) * 2f - 1f, d = Len(u, v);
+                    // Слабая диффузная дымка под сгустками, к краю кадра — в ноль
+                    float haze = Mathf.Exp(-(d - 0.5f) * (d - 0.5f) / 0.05f) * 0.1f;
+                    float aSum = alpha[i] + haze;
+                    Vector3 c = aSum > 1e-5f ? (rgb[i] + new Vector3(1f, 0.45f, 0.45f) * haze) / aSum : Vector3.one;
+                    float a = (1f - Mathf.Exp(-aSum * 1.4f)) * (1f - Edge(0.8f, 1f, d));
+                    px[i] = new Color(c.x, c.y, c.z, a);
+                }
+                tex.SetPixels(px);
+                tex.Apply(true, true);
+                return tex;
+            });
 
             /// <summary>Линия поля: яркая середина поперёк, гаснет к концам вдоль.</summary>
             public static Texture2D Line => Get(ref s_line, () => Make("Line", 64, 32, (u, v) =>
