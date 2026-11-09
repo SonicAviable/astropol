@@ -449,12 +449,15 @@ namespace StellarisClone.Rendering
         /// Пыль и ядро — для обзора: вблизи растянутая текстура превращается в муть, поэтому гаснет.
         /// Заливка территорий вблизи тоже почти исчезает — остаётся только кромка.
         /// </summary>
+        /// <summary>Общая яркость фона карты (туманности, диск, звёздная пыль) и плотность тёмных пылевых полос.</summary>
+        private const float BackdropBright = 1.25f, DarkDustK = 0.8f;
+
         private void UpdateBackdropZoom(Camera cam)
         {
             float h = cam.transform.position.y;
             float far = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(45f, 170f, h));
-            if (_diskMat != null) _diskMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.08f, 1f, far));
-            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.45f, 1f, far));
+            if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.08f, 1f, far));
+            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.45f, 1f, far) * BackdropBright));
 
             // Живой фон: время для шейдеров, туманности чуть тише вблизи
             float t = Time.unscaledTime;
@@ -468,12 +471,12 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < _darkDustMats.Count; i++)
             {
                 _darkDustMats[i].SetFloat("_T", t);
-                _darkDustMats[i].SetFloat("_Opacity", _darkDustBase[i] * dustK);
+                _darkDustMats[i].SetFloat("_Opacity", _darkDustBase[i] * dustK * DarkDustK);
             }
             if (_coreMat != null)
             {
                 _coreMat.SetFloat("_T", t);
-                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.08f, 1f, far));   // вблизи ядро не заливает карту
+                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.08f, 1f, far) * BackdropBright);   // вблизи ядро не заливает карту
             }
             if (_coreBulge != null)
             {
@@ -484,7 +487,7 @@ namespace StellarisClone.Rendering
             foreach (var (m, k, layer) in _nebulaMats)
             {
                 m.SetFloat("_T", t);
-                m.SetFloat("_Intensity", k * (layer == 2 ? wispK : nebK));
+                m.SetFloat("_Intensity", k * (layer == 2 ? wispK : nebK) * BackdropBright);
             }
             if (_borderMat != null)
             {
