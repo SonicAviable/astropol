@@ -381,7 +381,7 @@ namespace StellarisClone.Rendering
             foreach (var l in _generator.Hyperlanes)
                 lens.Add(Vector3.Distance(_generator.Systems[l.SystemA].Position, _generator.Systems[l.SystemB].Position));
             lens.Sort();
-            return Mathf.Clamp(lens[lens.Count / 2] * 0.7f, 10f, 24f);
+            return Mathf.Clamp(lens[lens.Count / 2] * 0.7f, 10f, 48f);   // карты разнесены шире — территории не должны рваться на пятна
         }
 
         private void UpdateEmpireLabel(List<StarSystem> playerSystems)
