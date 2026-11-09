@@ -11,6 +11,7 @@
 @tile Menu/News/1.6.7_storage | 0.5,0.5,1 | Storage
 @tile Menu/News/1.6.7_systems | 0.5,0.5,1 | Work in a system
 @tile Menu/News/1.6.7_stars | 0.5,0.5,1 | Magnetar
+@tile Menu/News/1.6.7_loading | 0.5,0.5,1 | Loading screen
 The galaxy map comes alive: 3D stars and planets, flowing hyperlanes and ten new kinds of stars. The interface is rebuilt from the top bar to the event window.
 # GALAXY
 - Up close, systems show real 3D stars and photo-textured planets on elliptical orbits with fading trails.
@@ -29,7 +30,8 @@ The galaxy map comes alive: 3D stars and planets, flowing hyperlanes and ten new
 # WINDOWS
 - "Cinema" events: full-width artwork, answer options as cards with their consequences.
 - New empire selection: faction crests, a comm link with the ruler and a dossier.
-- "Medallion" empire overview, a new "Orbit" loading screen and new interface sounds.
+- New "Orbit" loading screen: full-screen artwork, a progress ring with percent, loading stages and tips.
+- "Medallion" empire overview and new interface sounds.
 # CARD BATTLE
 - Faction doctrines, a once-per-battle hero order, turn-5 battle events and a win chance forecast for every sector.
 - Hit-stop on impacts, slow motion on big kills and kill streaks: "Double strike", "Rout", "Slaughter".
