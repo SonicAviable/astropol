@@ -32,7 +32,12 @@ namespace StellarisClone.Rendering
         private readonly List<Part> _parts = new List<Part>();
         private readonly List<Part> _shells = new List<Part>();
         private readonly List<Part> _loops = new List<Part>();
-        private Part _glow, _cross, _beamA, _beamB, _burst, _jetA, _jetB, _cloud, _neb, _compGlow;
+        private Part _glow, _cross, _beamA, _beamB, _burst, _jetA, _jetB, _cloud, _neb, _compGlow, _ring;
+        private Transform _magnet;
+        private readonly List<Part> _lines = new List<Part>();
+
+        // Пульсар: магнитная ось наклонена к оси вращения и медленно описывает конус — лучи-маяк обходят небо
+        private const float PulsarTilt = 35f, PulsarPeriod = 5f;
         private float _fade = 1f;
 
         /// <summary>Эффекты у объёмной звезды (вид системы, мини-система). Обычным звёздам ничего не добавляется.</summary>
@@ -111,20 +116,24 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.Pulsar:
                 {
-                    // Магнитные линии — два вытянутых кольца по бокам
-                    for (int s = -1; s <= 1; s += 2)
+                    // Мягкое свечение вокруг нейтронной звезды; вспыхивает, когда луч проходит мимо камеры
+                    _glow = Quad(_bill, Tex.Glow, R * 9f, new Color(0.62f, 0.85f, 1f), 0.28f);
+                    // Туманность ветра пульсара — слабое кольцо в плоскости экватора вращения
+                    var eq = new GameObject("Equator").transform;
+                    eq.SetParent(transform, false);
+                    eq.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    _ring = Quad(eq, Tex.Shell, R * 15f, new Color(0.45f, 0.7f, 1f), 0.12f);
+                    // Дипольное поле: петли r = L·sin²θ в плоскостях через магнитную ось, вращаются вместе с ней
+                    _magnet = new GameObject("Magnet").transform;
+                    _magnet.SetParent(transform, false);
+                    for (int k = 0; k < 6; k++)
                     {
-                        var l = Quad(_bill, Tex.Ring, 1f, new Color(0.5f, 0.78f, 1f), 0.16f);
-                        l.T.localScale = new Vector3(R * 8f, R * 4.4f, 1f);
-                        l.T.localPosition = new Vector3(s * R * 3.6f, 0f, 0f);
-                        _loops.Add(l);
+                        _lines.Add(FieldLine(_magnet, R, R * 5f, k * 60f, new Color(0.5f, 0.75f, 1f), 0.22f));
+                        _lines.Add(FieldLine(_magnet, R, R * 9f, k * 60f + 30f, new Color(0.45f, 0.65f, 1f), 0.1f));
                     }
-                    _spin = new GameObject("Spin").transform;
-                    _spin.SetParent(_bill, false);
-                    _beamA = Beam(_spin, R * 3f, R * 17f, new Color(0.7f, 0.92f, 1f), 0.85f, 0f);
-                    _beamB = Beam(_spin, R * 3f, R * 17f, new Color(0.7f, 0.92f, 1f), 0.85f, 180f);
-                    _glow = Quad(_bill, Tex.Glow, R * 12f, new Color(0.62f, 0.88f, 1f), 0.4f);
-                    _cross = Quad(_bill, Tex.Cross, R * 14f, new Color(0.88f, 0.97f, 1f), 0.6f);
+                    // Лучи — вдоль магнитной оси в обе стороны, повёрнуты к камере вокруг своей оси (объёмный конус)
+                    _beamA = Quad(transform, Tex.Beam, 1f, new Color(0.72f, 0.92f, 1f), 0.7f);
+                    _beamB = Quad(transform, Tex.Beam, 1f, new Color(0.72f, 0.92f, 1f), 0.7f);
                     break;
                 }
 
@@ -191,6 +200,46 @@ namespace StellarisClone.Rendering
             _parts.Add(p);
             Set(p, alpha);
             return p;
+        }
+
+        /// <summary>Силовая линия диполя (магнитная ось — локальная Y) в плоскости, повёрнутой на azimuth вокруг оси.</summary>
+        private Part FieldLine(Transform parent, float R, float L, float azimuth, Color col, float alpha)
+        {
+            var go = new GameObject("FieldLine");
+            go.transform.SetParent(parent, false);
+            go.transform.localRotation = Quaternion.Euler(0f, azimuth, 0f);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = false;
+            lr.sharedMaterial = Mat(Tex.Line);
+            lr.textureMode = LineTextureMode.Stretch;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            const int N = 48;
+            float th0 = Mathf.Asin(Mathf.Sqrt(Mathf.Clamp01(R * 1.05f / L)));
+            lr.positionCount = N;
+            for (int i = 0; i < N; i++)
+            {
+                float th = Mathf.Lerp(th0, Mathf.PI - th0, i / (N - 1f));
+                float r = L * Mathf.Sin(th) * Mathf.Sin(th);
+                lr.SetPosition(i, new Vector3(r * Mathf.Sin(th), r * Mathf.Cos(th), 0f));
+            }
+            lr.widthMultiplier = R * 0.12f;
+            var p = new Part { T = go.transform, R = lr, Col = col, A = alpha };
+            _parts.Add(p);
+            Set(p, alpha);
+            return p;
+        }
+
+        /// <summary>Луч вдоль оси dir (локальные координаты), повёрнутый плоскостью к камере — выглядит объёмным конусом.</summary>
+        private static void AimBeam(Transform beam, Vector3 dir, Vector3 toCam, float width, float length)
+        {
+            Vector3 right = Vector3.Cross(dir, toCam);
+            if (right.sqrMagnitude < 1e-6f) right = Vector3.Cross(dir, Vector3.right);
+            right.Normalize();
+            Vector3 fwd = Vector3.Cross(right, dir);
+            beam.localRotation = Quaternion.LookRotation(fwd, dir);
+            beam.localPosition = dir * (length * 0.5f);
+            beam.localScale = new Vector3(width, length, 1f);
         }
 
         /// <summary>Луч от центра наружу (основание в центре звезды), повёрнутый на angle градусов.</summary>
@@ -282,22 +331,25 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.Pulsar:
                 {
-                    float ang = t * 2.6f;
-                    _spin.localRotation = Quaternion.Euler(0f, 0f, -ang * Mathf.Rad2Deg + 20f);
-                    // Ширина луча «дышит» — будто конус поворачивается к зрителю; вспышка, когда смотрит на нас
-                    float w = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(ang));
-                    float flash = Mathf.Pow(Mathf.Max(0f, Mathf.Cos(ang * 2f)), 16f);
-                    foreach (var b in new[] { _beamA, _beamB })
+                    // Магнитная ось обходит конус вокруг оси вращения (локальная Y) — спокойно, раз в 5 с
+                    _magnet.localRotation = Quaternion.Euler(0f, t / PulsarPeriod * 360f, 0f) * Quaternion.Euler(0f, 0f, PulsarTilt);
+                    Vector3 axis = _magnet.localRotation * Vector3.up;
+                    Vector3 toCam = transform.InverseTransformDirection(cam.transform.position - transform.position).normalized;
+                    float flash = 0f;
+                    for (int b = 0; b < 2; b++)
                     {
-                        var s = b.T.localScale;
-                        b.T.localScale = new Vector3(R * 3f * w, s.y, 1f);
-                        Set(b, b.A * (0.7f + 0.3f * w));
+                        var beam = b == 0 ? _beamA : _beamB;
+                        Vector3 dir = b == 0 ? axis : -axis;
+                        float face = Mathf.Max(0f, Vector3.Dot(dir, toCam));
+                        flash = Mathf.Max(flash, Mathf.Pow(face, 24f));
+                        AimBeam(beam.T, dir, toCam, R * 3.2f, R * 16f);
+                        Set(beam, beam.A * (0.75f + 0.25f * face));
                     }
-                    _glow.T.localScale = Vector3.one * R * (10f + 14f * flash);
-                    Set(_glow, 0.35f + 0.6f * flash);
-                    _cross.T.localScale = Vector3.one * R * (10f + 22f * flash);
-                    Set(_cross, 0.4f + 0.6f * flash);
-                    foreach (var l in _loops) Set(l, l.A * (0.8f + 0.2f * pulse));
+                    _glow.T.localScale = Vector3.one * R * (9f + 9f * flash);
+                    Set(_glow, 0.28f + 0.55f * flash);
+                    _ring.T.localRotation = Quaternion.Euler(0f, 0f, t * 4f);
+                    Set(_ring, _ring.A);
+                    foreach (var l in _lines) Set(l, l.A * (0.85f + 0.15f * pulse));
                     break;
                 }
 
@@ -415,7 +467,7 @@ namespace StellarisClone.Rendering
         /// <summary>Процедурные формы слоёв: строятся один раз, линейные (цвет приводит шейдер).</summary>
         private static class Tex
         {
-            private static Texture2D s_glow, s_beam, s_ring, s_shell, s_cross, s_disk, s_dust, s_nebula;
+            private static Texture2D s_line, s_glow, s_beam, s_ring, s_shell, s_cross, s_disk, s_dust, s_nebula;
 
             private static Texture2D Get(ref Texture2D field, System.Func<Texture2D> make)
             {
@@ -423,7 +475,7 @@ namespace StellarisClone.Rendering
                 return field;
             }
 
-            public static void Reset() { s_glow = s_beam = s_ring = s_shell = s_cross = s_disk = s_dust = s_nebula = null; }
+            public static void Reset() { s_line = null; s_glow = s_beam = s_ring = s_shell = s_cross = s_disk = s_dust = s_nebula = null; }
 
             public static Texture2D Glow => Get(ref s_glow, () => Make("Glow", 128, 128, (u, v) =>
             {
@@ -438,6 +490,10 @@ namespace StellarisClone.Rendering
                 float x = u / w;
                 return A(Mathf.Exp(-x * x * 3f) * Mathf.Pow(1f - y, 1.3f) * Edge(0f, 0.06f, y));
             }));
+
+            /// <summary>Линия поля: яркая середина поперёк, гаснет к концам вдоль.</summary>
+            public static Texture2D Line => Get(ref s_line, () => Make("Line", 64, 32, (u, v) =>
+                A(Mathf.Exp(-v * v * 5f) * (1f - Mathf.Pow(Mathf.Abs(u), 6f)))));
 
             public static Texture2D Ring => Get(ref s_ring, () => Make("Ring", 256, 256, (u, v) =>
             {
