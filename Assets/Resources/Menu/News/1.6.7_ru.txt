@@ -4,8 +4,8 @@
 @title Обновление 1.6.7
 @headline Живая галактика, новый HUD и десять новых видов звёзд
 @cover Menu/News/cover_1.6.7
-@art 0.5,0.45,0.62
-@thumb 0.5,0.4,0.5
+@art 0.77,0.5,0.46
+@thumb 0.745,0.21,0.3
 @tile Menu/News/1.6.7_map | 0.5,0.5,1 | Гиперкоридоры
 @tile Menu/News/1.6.7_resources | 0.5,0.5,1 | Сводка ресурса
 @tile Menu/News/1.6.7_storage | 0.5,0.5,1 | Склады
