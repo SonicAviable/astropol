@@ -332,7 +332,7 @@ namespace StellarisClone.Rendering
     /// <summary>Медленное вращение диска чёрной дыры вокруг её оси (и на паузе — это декор).</summary>
     public class BlackHoleSpin : MonoBehaviour
     {
-        private const float DegPerSecond = 5f;
+        private const float DegPerSecond = 14f;   // заметно глазу; течение по диску добавляет шейдер (_Flow)
 
         private void Update()
         {

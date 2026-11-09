@@ -16,7 +16,9 @@ namespace StellarisClone.Rendering
     {
         private const float MiniShowHeight = 90f;    // выше — мини-систем нет
         private const float MiniFullHeight = 52f;    // ниже — видны полностью
-        private const float MiniInnerOrbit = 2.1f, MiniOrbitStep = 0.82f;
+        // Орбиты просторные (галактика разнесена шире): первая — 4,2 ед., шаг 1,7; внешняя не дальше 12,5 ед. —
+        // при минимуме 28 ед. между звёздами соседние мини-системы не налезают друг на друга
+        private const float MiniInnerOrbit = 4.2f, MiniOrbitStep = 1.7f, MiniOuterMax = 12.5f;
 
         private class MiniSys
         {
@@ -269,19 +271,20 @@ namespace StellarisClone.Rendering
             m.Root.transform.position = s.Position;
             var rng = new System.Random(s.Id * 7919 + 13);
 
+            float step = n > 1 ? Mathf.Min(MiniOrbitStep, (MiniOuterMax - MiniInnerOrbit) / (n - 1)) : MiniOrbitStep;
             for (int i = 0; i < n; i++)
             {
                 var p = s.Planets[i];
-                float r = MiniInnerOrbit + i * MiniOrbitStep;
+                float r = MiniInnerOrbit + i * step;
                 m.Radius[i] = r;
                 m.Speed[i] = Mathf.Clamp(p.OrbitSpeed, 4f, 25f) * 0.22f / Mathf.Sqrt(i + 1f);   // град/с
                 m.Phase[i] = (float)rng.NextDouble() * 360f;
                 // Лёгкий эллипс: сдвиг орбиты не больше трети шага между соседними — орбиты не пересекаются
-                m.Ecc[i] = Mathf.Min(0.02f + (float)rng.NextDouble() * 0.06f, 0.33f * MiniOrbitStep / r);
+                m.Ecc[i] = Mathf.Min(0.02f + (float)rng.NextDouble() * 0.06f, 0.33f * step / r);
                 m.Peri[i] = (float)rng.NextDouble() * Mathf.PI * 2f;
                 // Планеты крупные — видно тип мира без захода в систему (газовые гиганты заметно больше)
-                m.Size[i] = p.Type == PlanetType.GasGiant ? Mathf.Clamp(p.Size * 0.32f, 0.72f, 0.98f)
-                                                          : Mathf.Clamp(p.Size * 0.36f, 0.40f, 0.62f);
+                m.Size[i] = p.Type == PlanetType.GasGiant ? Mathf.Clamp(p.Size * 0.24f, 0.54f, 0.74f)
+                                                          : Mathf.Clamp(p.Size * 0.27f, 0.30f, 0.46f);
 
                 // орбита
                 var og = new GameObject("Orbit");

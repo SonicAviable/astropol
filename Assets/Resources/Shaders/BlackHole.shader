@@ -20,6 +20,7 @@ Shader "Astropolity/FX/BlackHole"
         _Detail ("Band detail", Range(0, 1)) = 0.6
         _TexColor ("Use texture colour", Range(0, 1)) = 0
         _Fade ("Fade", Range(0, 1)) = 1
+        _Flow ("Flow (turns/s at the horizon)", Float) = 0.06
     }
     SubShader
     {
@@ -39,7 +40,7 @@ Shader "Astropolity/FX/BlackHole"
 
             sampler2D _MainTex;
             float4 _Hot, _Warm, _Deep, _Tint;
-            float _Intensity, _DomeGain, _RimPow, _Detail, _TexColor, _Fade;
+            float _Intensity, _DomeGain, _RimPow, _Detail, _TexColor, _Fade, _Flow;
 
             struct v2f
             {
@@ -62,7 +63,14 @@ Shader "Astropolity/FX/BlackHole"
             float4 frag(v2f i) : SV_Target
             {
                 float v = i.uv.y;
-                float4 tx = tex2D(_MainTex, i.uv);
+                // Течение вещества по диску: u — угол поверхности вращения; у горизонта (v → 0,5) быстрее,
+                // чем у внешнего края — дифференциальное вращение, полосы закручиваются. tex2Dgrad — без шва на frac
+                float flow = _Time.y * _Flow * (0.3 + 1.4 * saturate(v * 2.0));
+                float2 uvf = float2(frac(i.uv.x + flow), v);
+                float4 tx = tex2Dgrad(_MainTex, uvf, ddx(i.uv), ddy(i.uv));
+                // Бегущие яркие сгустки — диск «кипит», даже если текстура почти однородна по кругу
+                float clumps = 0.78 + 0.22 * sin((i.uv.x + flow * 1.6) * 6.2831853 * 7.0 + v * 38.0)
+                                     * sin((i.uv.x - flow * 0.7) * 6.2831853 * 3.0 + _Time.y * 0.8);
                 float lum = dot(tx.rgb, float3(0.3, 0.59, 0.11));
                 float detail = (1.0 - _Detail + _Detail * lum * 1.6) * tx.a;
 
@@ -74,7 +82,7 @@ Shader "Astropolity/FX/BlackHole"
                 float3 ramp = lerp(_Deep.rgb, _Warm.rgb, smoothstep(0.0, 0.55, t));
                 ramp = lerp(ramp, _Hot.rgb, smoothstep(0.55, 1.0, t));
 
-                float3 disk = ramp * (1.0 - dome) * smoothstep(0.0, 0.2, t) * _Intensity;
+                float3 disk = ramp * (1.0 - dome) * smoothstep(0.0, 0.2, t) * _Intensity * clumps;
                 float3 lens = _Hot.rgb * dome * rim * _DomeGain;
                 float3 col = (disk + lens) * detail;
                 col = lerp(col, tx.rgb * tx.a * _Intensity, _TexColor);
