@@ -206,7 +206,7 @@ namespace StellarisClone.Rendering
                 var cam = v._cam.transform;
                 Vector3 p = LabelPoint;
                 float dist = Vector3.Distance(cam.position, p);
-                float scale = Mathf.Clamp(dist * 0.012f, 0.9f, 3.2f);
+                float scale = Mathf.Max(0.9f, dist * 0.013f);   // постоянный экранный размер — и на дальней карте
                 _labelRoot.rotation = cam.rotation;
                 _labelRoot.localScale = Vector3.one * scale;
                 _labelRoot.position = p + cam.up * (2.2f + scale * 1.1f);
@@ -222,6 +222,18 @@ namespace StellarisClone.Rendering
             }
 
             /// <summary>Плавное следование за точкой (без рывков при смене фазы стаи).</summary>
+            /// <summary>
+            /// Увеличение издалека: тело размером bodySize (в мире) не меньше minPx пикселей на экране — как у звёзд,
+            /// иначе на дальней карте существа превращаются в точки. Вблизи — 1 (настоящий размер).
+            /// </summary>
+            protected static float Boost(FaunaView v, Vector3 p, float bodySize, float minPx)
+            {
+                var cam = v._cam;
+                float dist = Vector3.Distance(cam.transform.position, p);
+                float wpp = 2f * dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+                return Mathf.Max(1f, minPx * wpp / Mathf.Max(0.01f, bodySize));
+            }
+
             protected Vector3 Follow(Vector3 target, float dt, float rate)
             {
                 if (!HasLead) { Lead = target; HasLead = true; }

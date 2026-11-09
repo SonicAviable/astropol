@@ -16,7 +16,7 @@ namespace StellarisClone.Rendering
             };
             private const int TailPts = 10;
             private Transform[] _rays;
-            private float[] _ph;
+            private float[] _ph, _sc;
             private Color[] _glow;
             private Lines _tails;
             private Vector3 _tg = Vector3.forward, _prevLead;
@@ -27,6 +27,7 @@ namespace StellarisClone.Rendering
                 int n = Mathf.Clamp(H.Count, 0, Offs.Length);
                 _rays = new Transform[n];
                 _ph = new float[n];
+                _sc = new float[n];
                 _glow = new Color[n];
                 for (int i = 0; i < n; i++)
                 {
@@ -38,7 +39,8 @@ namespace StellarisClone.Rendering
                     b.SetColor(IdBody, new Color(0.05f, 0.125f, 0.22f));
                     b.SetFloat(IdPhase, _ph[i]);
                     b.SetFloat(IdFlap, 2.1f);
-                    go.transform.localScale = Vector3.one * (i == 0 ? 2.4f : R(1.8f, 2.1f));
+                    _sc[i] = i == 0 ? 2.4f : R(1.8f, 2.1f);
+                    go.transform.localScale = Vector3.one * _sc[i];
                     _rays[i] = go.transform;
                 }
                 _tails = new Lines(n * (TailPts - 1), v._lineMat, Root.transform, "RayTails");
@@ -64,15 +66,17 @@ namespace StellarisClone.Rendering
                 if (vel.sqrMagnitude > 0.0004f) _tg = Vector3.Slerp(_tg, vel.normalized, Mathf.Min(1f, dt * 3f));
                 Vector3 side = new Vector3(-_tg.z, 0f, _tg.x).normalized;
                 var flat = Quaternion.LookRotation(_tg, Vector3.up);
+                float boost = Boost(v, Lead, 4.5f, 18f);
 
                 int seg = 0;
                 for (int i = 0; i < _rays.Length; i++)
                 {
                     float ph = _ph[i];
-                    Vector2 o = Offs[i] * 1.45f;
+                    Vector2 o = Offs[i] * 1.45f * boost;
                     Vector3 pos = Lead + side * (o.x + Mathf.Sin(t * 0.4f + ph) * 0.8f) + _tg * o.y + Vector3.up * (Mathf.Sin(t * 0.7f + ph) * 1.2f);
                     var tr = _rays[i];
                     tr.position = pos;
+                    tr.localScale = Vector3.one * (_sc[i] * boost);
                     tr.rotation = flat * Quaternion.Euler(0f, 0f, Mathf.Sin(t * 0.5f + ph) * 14f);
 
                     Vector3 prev = tr.TransformPoint(new Vector3(0f, 0f, -0.8f));
@@ -100,7 +104,7 @@ namespace StellarisClone.Rendering
             private sealed class J
             {
                 public Transform T;
-                public float Rad, A, W, Y, Ph;
+                public float Rad, A, W, Y, Ph, Size;
                 public Color Rim;
                 public Vector3 Pos, Prev;
                 public bool Init;
@@ -121,7 +125,8 @@ namespace StellarisClone.Rendering
                     float ph = R(0f, 6f);
                     var body = new GameObject("Jelly" + i).transform;
                     body.SetParent(Root.transform, false);
-                    body.localScale = Vector3.one * R(1f, 1.6f);
+                    float size = R(1f, 1.6f);
+                    body.localScale = Vector3.one * size;
                     foreach (var mesh in new[] { Res.BellMesh, Res.CoreMesh })
                     {
                         var go = MeshObj(mesh.name, mesh, v._bellMat, body);
@@ -131,7 +136,7 @@ namespace StellarisClone.Rendering
                         b.SetColor(IdRim, rim);
                         b.SetFloat(IdPhase, ph);
                     }
-                    _j[i] = new J { T = body, Rad = R(5f, 15f), A = R(0f, 6.28f), W = R(0.05f, 0.11f) * (i % 2 == 0 ? -1f : 1f), Y = R(-2f, 4f), Ph = ph, Rim = rim };
+                    _j[i] = new J { T = body, Rad = R(5f, 15f), A = R(0f, 6.28f), W = R(0.05f, 0.11f) * (i % 2 == 0 ? -1f : 1f), Y = R(-2f, 4f), Ph = ph, Rim = rim, Size = size };
                 }
                 _tent = new Lines(n * Tent * (Pts - 1), v._lineMat, Root.transform, "Tentacles");
                 Track(_tent.R);
@@ -142,6 +147,7 @@ namespace StellarisClone.Rendering
             public override void Tick(FaunaView v, float t, float dt, Vector3 anchor)
             {
                 _center = anchor + Vector3.up * 3f;
+                float boost = Boost(v, _center, 2.6f, 12f);
                 int seg = 0;
                 foreach (var J in _j)
                 {
@@ -150,6 +156,7 @@ namespace StellarisClone.Rendering
                     J.Prev = J.Init ? J.Pos : _center;
                     J.Pos = _center + new Vector3(Mathf.Cos(J.A) * J.Rad, J.Y + Mathf.Sin(t * 0.3f + J.Ph) * 1.5f, Mathf.Sin(J.A) * J.Rad * 0.8f);
                     J.T.position = J.Pos;
+                    J.T.localScale = Vector3.one * (J.Size * boost);
                     Vector3 dir = J.Pos - J.Prev;
                     if (dir.sqrMagnitude > 1e-8f)
                     {
@@ -287,7 +294,7 @@ namespace StellarisClone.Rendering
             {
                 public Transform T, Halo;
                 public MaterialPropertyBlock B, HB;
-                public float Rad, A, W, Incl, Flash, Cd;
+                public float Rad, A, W, Incl, Flash, Cd, Size;
                 public Vector3 Spin;
             }
             private sealed class Ring { public Transform T; public MaterialPropertyBlock B; public float Life; }
@@ -318,7 +325,7 @@ namespace StellarisClone.Rendering
                     var hb = Track(halo.GetComponent<MeshRenderer>());
                     _c[i] = new C
                     {
-                        T = go.transform, Halo = halo.transform, B = b, HB = hb,
+                        T = go.transform, Halo = halo.transform, B = b, HB = hb, Size = go.transform.localScale.x,
                         Rad = 8f + i * 2.6f + R(-0.8f, 0.8f), A = i * 1.3f + R(0f, 1f), W = R(0.07f, 0.14f), Incl = R(-0.25f, 0.25f),
                         Spin = new Vector3(R(-0.4f, 0.4f), R(-0.5f, 0.5f), R(-0.3f, 0.3f)) * Mathf.Rad2Deg
                     };
@@ -357,12 +364,14 @@ namespace StellarisClone.Rendering
                 _beamB.SetColor(IdColor, new Color(0.65f, 0.85f, 1f, 0.35f));
 
                 var cam = v._cam.transform;
+                float boost = Boost(v, _star, 4f, 14f);
                 for (int i = 0; i < _c.Length; i++)
                 {
                     var c = _c[i];
                     c.A += dt * c.W;
                     var p = new Vector3(_star.x + Mathf.Cos(c.A) * c.Rad, _star.y + Mathf.Sin(c.A) * c.Rad * c.Incl + 1f, _star.z - Mathf.Sin(c.A) * c.Rad);
                     c.T.position = p;
+                    c.T.localScale = Vector3.one * (c.Size * boost);
                     c.T.Rotate(c.Spin * dt, Space.Self);
                     float phi = Mathf.Atan2(p.z - _star.z, p.x - _star.x);
                     float d = Mathf.Repeat(phi - psi, Mathf.PI);
@@ -381,6 +390,7 @@ namespace StellarisClone.Rendering
                     c.Flash = Mathf.Max(0f, c.Flash - dt * 1.6f);
                     c.B.SetFloat(IdFlash, c.Flash * c.Flash);
                     c.Halo.position = p;
+                    c.Halo.localScale = Vector3.one * (3f * c.Size * boost);
                     c.Halo.rotation = cam.rotation;
                     c.HB.SetColor(IdColor, new Color(0.56f, 0.78f, 1f, 0.18f + c.Flash * 0.7f));
                 }
@@ -398,7 +408,7 @@ namespace StellarisClone.Rendering
                     r.Life -= dt;
                     if (r.Life <= 0f) { r.T.gameObject.SetActive(false); continue; }
                     float q = 1f - r.Life / 1.3f;
-                    r.T.localScale = Vector3.one * (1f + q * 7f);
+                    r.T.localScale = Vector3.one * ((1f + q * 7f) * boost);
                     r.T.rotation = cam.rotation;
                     r.B.SetColor(IdColor, new Color(0.75f, 0.9f, 1f, (1f - q) * 0.45f));
                 }

@@ -1,6 +1,6 @@
 // Космическая фауна: искры (Рой Искр, шлейфы). Один меш из квадов: у каждой вершины — центр искры (POSITION, мир),
 // угол квада uv.xy (−1..1) и размер в мировых единицах uv.z. Квад разворачивается к камере в вершинном шейдере;
-// издалека искра не меньше ~1,6 пикселя, чтобы рой не пропадал на дальней карте. Аддитивно, мягкая точка.
+// издалека искра не меньше ~2,6 пикселя, чтобы рой не пропадал на дальней карте. Аддитивно, мягкая точка.
 Shader "Astropolity/FaunaSpark"
 {
     Properties
@@ -31,7 +31,7 @@ Shader "Astropolity/FaunaSpark"
                 float4 vc = mul(UNITY_MATRIX_V, float4(wc, 1.0));
                 float depth = max(0.01, -vc.z);
                 float wpp = 2.0 * depth / (UNITY_MATRIX_P[1][1] * _ScreenParams.y);
-                float size = max(v.uv.z, 1.6 * wpp);
+                float size = max(v.uv.z, 2.6 * wpp);
                 vc.xy += v.uv.xy * size * 0.5;
                 o.pos = mul(UNITY_MATRIX_P, vc);
                 o.uv = v.uv.xy;
