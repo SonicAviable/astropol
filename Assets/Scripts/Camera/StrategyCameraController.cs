@@ -528,6 +528,10 @@ namespace StellarisClone.Cam
             galaxyBoundsRadius = gen.GalaxyRadius + 20f;
             // Большая галактика целиком помещается на экран с самой дальней высоты
             maxHeight = Mathf.Max(maxHeight, gen.GalaxyRadius * 1.5f);
+            // Дальность отрисовки — под размер галактики: с максимальной высоты под наклоном дальний край
+            // карты лежит дальше дальней плоскости из сцены, и всё, кроме фона, пропадало в черноту
+            var cam = GetComponent<Camera>();
+            if (cam != null) cam.farClipPlane = Mathf.Max(cam.farClipPlane, maxHeight * 2f + gen.GalaxyRadius * 2.5f);
             _boundsFromGalaxy = true;
         }
 
