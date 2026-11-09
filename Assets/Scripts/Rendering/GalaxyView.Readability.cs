@@ -102,6 +102,7 @@ namespace StellarisClone.Rendering
                 }
                 ModeLaneStyle(a, b, ka, kb, ref c, ref alphaA, ref alphaB, ref px);   // режим карты
                 _laneWidthPx[i] = px;
+                SetLanePortalColor(i, c, alphaA, alphaB);
 
                 var g = new Gradient();
                 g.SetKeys(
@@ -336,21 +337,8 @@ namespace StellarisClone.Rendering
             _markerDataTimer -= dt;
             if (_markerDataTimer <= 0f) { _markerDataTimer = 1f; RefreshMarkerData(); }
 
-            // Коридоры: толщина в пикселях экрана, отдельно для каждого конца (камера наклонена)
-            if (_hyperlanesParent != null && _hyperlanesParent.activeInHierarchy)
-            {
-                for (int i = 0; i < _hyperlaneRenderers.Count; i++)
-                {
-                    var lr = _hyperlaneRenderers[i];
-                    if (lr == null) continue;
-                    float px = i < _laneWidthPx.Count ? _laneWidthPx[i] : 1.8f;
-                    var lane = _hyperlaneData[i];
-                    float da = Vector3.Distance(camPos, _generator.Systems[lane.SystemA].Position);
-                    float db = Vector3.Distance(camPos, _generator.Systems[lane.SystemB].Position);
-                    lr.startWidth = WorldPerPixel(cam, da) * px;
-                    lr.endWidth = WorldPerPixel(cam, db) * px;
-                }
-            }
+            // Коридоры: дуги от края до края систем, толщина в пикселях экрана, порталы на концах
+            UpdateLanes(cam);
 
             // Значки поселений: постоянный размер на экране, мелкие гаснут при отдалении
             if (_markersRoot == null || !_markersRoot.activeInHierarchy) return;

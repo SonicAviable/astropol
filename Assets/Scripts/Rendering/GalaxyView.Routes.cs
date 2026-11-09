@@ -56,7 +56,7 @@ namespace StellarisClone.Rendering
                     Color col = mine ? UIManager.DS.NeonCyan : FleetIndicator.OwnerColor(d.OwnerId);
                     // Текущий отрезок — от корабля (первый флот строя задаёт начало)
                     if (_routeKeys.Add(RouteKey(d.CurrentSystemId, d.TargetSystemId, d.OwnerId)))
-                        PlaceRoute(ref used, f.transform.position, _generator.Systems[d.TargetSystemId].Position, col, mine ? 1f : 0.75f);
+                        PlaceRoute(ref used, d.CurrentSystemId, d.TargetSystemId, f.transform.position, col, mine ? 1f : 0.75f);
                     if (!mine) continue;
 
                     // Дальше по маршруту — только у своих
@@ -65,7 +65,7 @@ namespace StellarisClone.Rendering
                     {
                         if (step < 0 || step >= _generator.Systems.Count || step == from) continue;
                         if (_routeKeys.Add(RouteKey(from, step, 0)))
-                            PlaceRoute(ref used, _generator.Systems[from].Position, _generator.Systems[step].Position, col, 0.7f);
+                            PlaceRoute(ref used, from, step, null, col, 0.7f);
                         from = step;
                     }
                 }
@@ -77,11 +77,38 @@ namespace StellarisClone.Rendering
 
         private static long RouteKey(int a, int b, int owner) => ((long)owner << 40) | ((long)(a & 0xFFFFF) << 20) | (uint)(b & 0xFFFFF);
 
-        private void PlaceRoute(ref int used, Vector3 a, Vector3 b, Color col, float strength)
+        private const int RouteSegs = 16;
+        private static readonly Vector3[] s_routeBuf = new Vector3[RouteSegs];
+
+        /// <summary>
+        /// Маршрут по дуге коридора (LaneCurve) от системы from к to; ship — позиция корабля в пути:
+        /// линия начинается от ближайшей к нему точки дуги.
+        /// </summary>
+        private void PlaceRoute(ref int used, int from, int to, Vector3? ship, Color col, float strength)
         {
-            a.y = 0.02f;
-            b.y = 0.02f;
-            float len = Vector3.Distance(a, b);
+            if (from < 0 || to < 0 || from >= _generator.Systems.Count || to >= _generator.Systems.Count || from == to) return;
+            var sa = _generator.Systems[from];
+            var sb = _generator.Systems[to];
+            float t0 = 0f;
+            if (ship.HasValue)
+            {
+                float best = float.MaxValue;
+                for (int k = 0; k <= 24; k++)
+                {
+                    float tk = k / 24f;
+                    Vector3 q = LaneCurve.Point(sa, sb, tk) - ship.Value;
+                    q.y = 0f;
+                    if (q.sqrMagnitude < best) { best = q.sqrMagnitude; t0 = tk; }
+                }
+            }
+            float len = 0f;
+            for (int k = 0; k < RouteSegs; k++)
+            {
+                Vector3 p = LaneCurve.Point(sa, sb, Mathf.Lerp(t0, 1f, k / (RouteSegs - 1f)));
+                p.y = 0.02f;
+                if (k > 0) len += Vector3.Distance(p, s_routeBuf[k - 1]);
+                s_routeBuf[k] = p;
+            }
             if (len < 0.3f) return;
 
             LineRenderer lr;
@@ -92,7 +119,7 @@ namespace StellarisClone.Rendering
                 go.transform.SetParent(_hyperlanesParent.transform, false);
                 lr = go.AddComponent<LineRenderer>();
                 lr.useWorldSpace = true;
-                lr.positionCount = 2;
+                lr.positionCount = RouteSegs;
                 lr.textureMode = LineTextureMode.Stretch;
                 lr.numCapVertices = 0;
                 lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -103,8 +130,7 @@ namespace StellarisClone.Rendering
             }
             used++;
 
-            lr.SetPosition(0, a);
-            lr.SetPosition(1, b);
+            lr.SetPositions(s_routeBuf);
             // Тонкая линия: сердцевина — волосок по центру ширины, остальное — мягкий ореол
             float w = 0.16f + 0.08f * strength;
             lr.startWidth = lr.endWidth = w;

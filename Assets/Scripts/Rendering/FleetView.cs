@@ -1249,8 +1249,8 @@ namespace StellarisClone.Rendering
         /// </summary>
         private void Fly()
         {
-            Vector3 origin = _generator.Systems[Data.CurrentSystemId].Position;
-            Vector3 destination = _generator.Systems[Data.TargetSystemId].Position;
+            var sysFrom = _generator.Systems[Data.CurrentSystemId];
+            var sysTo = _generator.Systems[Data.TargetSystemId];
             float total = Mathf.Max(0.01f, Data.TotalDaysForTransit);
 
             float frac = 0f;
@@ -1258,11 +1258,13 @@ namespace StellarisClone.Rendering
             if (tm != null && !Data.InCombat) frac = tm.DayFraction * JumpRate();   // на паузе доля дня замирает
             float t = Mathf.Clamp01((total - Data.DaysRemainingInTransit + frac) / total);
 
-            Vector3 targetPos = Vector3.Lerp(origin, destination, TravelDistance(t));
+            // По дуге коридора (LaneCurve) — та же форма, что у линии на карте
+            float s = TravelDistance(t);
+            Vector3 targetPos = LaneCurve.Point(sysFrom, sysTo, s);
             targetPos.y += 0.5f;
 
-            // Разворот на курс: нос — по коридору, крен — в сторону поворота
-            Vector3 dir = destination - origin;
+            // Разворот на курс: нос — по касательной к дуге, крен — в сторону поворота
+            Vector3 dir = LaneCurve.Tangent(sysFrom, sysTo, s);
             dir.y = 0f;
 
             // Попутчики по коридору идут клином за ведущим, а не друг в друге

@@ -321,7 +321,7 @@ namespace StellarisClone.Rendering
                 int steps = Mathf.FloorToInt(Vector3.Distance(a.Position, b.Position) / (_claimRadius * 0.9f));
                 for (int k = 1; k <= steps && count < MaxSys; k++)
                 {
-                    Vector3 m = Vector3.Lerp(a.Position, b.Position, k / (float)(steps + 1));
+                    Vector3 m = LaneCurve.Point(a, b, k / (float)(steps + 1));   // по той же дуге, что и коридор
                     sys[count++] = new Vector4(m.x, m.z, owner, 0f);
                 }
             }
@@ -553,32 +553,17 @@ namespace StellarisClone.Rendering
             _hyperlanesParent = new GameObject("Hyperlanes");
             _hyperlanesParent.transform.SetParent(transform, false);
 
-            // Шейдер спрайтов: учитывает цвет вершин и прозрачность (URP Unlit непрозрачен
-            // и игнорирует градиент — коридоры получались одинаково белыми)
-            Shader lineShader = GetSpriteShader();
-            Material lineMat = lineShader != null ? new Material(lineShader) : null;
-
             foreach (var lane in _generator.Hyperlanes)
             {
                 StarSystem a = _generator.Systems[lane.SystemA];
                 StarSystem b = _generator.Systems[lane.SystemB];
 
-                Vector3 startPoint = a.Position; startPoint.y = -0.05f;
-                Vector3 endPoint   = b.Position; endPoint.y   = -0.05f;
-
                 GameObject lineObj = new GameObject($"Lane_{a.Id}_{b.Id}");
                 lineObj.transform.SetParent(_hyperlanesParent.transform, false);
 
+                // «Гиперпоток»: дуга от края до края системы, точки ставит RebuildLaneGeometry (GalaxyView.Lanes)
                 LineRenderer lr = lineObj.AddComponent<LineRenderer>();
-                lr.useWorldSpace = true;
-                lr.positionCount = 2;
-                lr.SetPosition(0, startPoint);
-                lr.SetPosition(1, endPoint);
-                lr.startWidth = 0.12f;
-                lr.endWidth = 0.12f;
-                lr.numCapVertices = 2;
-                lr.sortingOrder = 3;
-                if (lineMat != null) lr.material = new Material(lineMat);
+                BuildLaneVisuals(lr);
 
                 _hyperlaneRenderers.Add(lr);
                 _hyperlaneData.Add(lane);
