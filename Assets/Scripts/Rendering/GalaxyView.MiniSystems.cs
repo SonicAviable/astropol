@@ -26,6 +26,7 @@ namespace StellarisClone.Rendering
             public SpriteRenderer[] Planets;
             public Color[] Tints;
             public float[] Radius, Speed, Phase, Size;
+            public float[] Ecc, Peri;         // эксцентриситет и направление перицентра (звезда — в фокусе)
             public float Alpha;
             public bool Wanted;
             public TextMesh[] PopTags;
@@ -259,6 +260,7 @@ namespace StellarisClone.Rendering
                 Planets = new SpriteRenderer[n],
                 Tints = new Color[n],
                 Radius = new float[n], Speed = new float[n], Phase = new float[n], Size = new float[n],
+                Ecc = new float[n], Peri = new float[n],
                 PopTags = new TextMesh[n],
                 Models = new GameObject[n], ModelRends = new Renderer[n][]
             };
@@ -274,6 +276,9 @@ namespace StellarisClone.Rendering
                 m.Radius[i] = r;
                 m.Speed[i] = Mathf.Clamp(p.OrbitSpeed, 4f, 25f) * 0.22f / Mathf.Sqrt(i + 1f);   // град/с
                 m.Phase[i] = (float)rng.NextDouble() * 360f;
+                // Лёгкий эллипс: сдвиг орбиты не больше трети шага между соседними — орбиты не пересекаются
+                m.Ecc[i] = Mathf.Min(0.02f + (float)rng.NextDouble() * 0.06f, 0.33f * MiniOrbitStep / r);
+                m.Peri[i] = (float)rng.NextDouble() * Mathf.PI * 2f;
                 // Планеты крупные — видно тип мира без захода в систему (газовые гиганты заметно больше)
                 m.Size[i] = p.Type == PlanetType.GasGiant ? Mathf.Clamp(p.Size * 0.32f, 0.72f, 0.98f)
                                                           : Mathf.Clamp(p.Size * 0.36f, 0.40f, 0.62f);
@@ -284,12 +289,8 @@ namespace StellarisClone.Rendering
                 var lr = og.AddComponent<LineRenderer>();
                 lr.useWorldSpace = false;
                 lr.loop = true;
-                lr.positionCount = 72;
-                for (int k = 0; k < 72; k++)
-                {
-                    float a = k / 72f * Mathf.PI * 2f;
-                    lr.SetPosition(k, new Vector3(Mathf.Cos(a) * r, 0.05f, Mathf.Sin(a) * r));
-                }
+                lr.positionCount = OrbitSegs;
+                lr.widthCurve = s_orbitWidth;   // у планеты линия чуть толще — «след»
                 lr.sharedMaterial = _miniLineMat;
                 lr.numCapVertices = 0;
                 lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -327,6 +328,36 @@ namespace StellarisClone.Rendering
             return m;
         }
 
+        private const int OrbitSegs = 96;
+        private static readonly Vector3[] s_orbitBuf = new Vector3[OrbitSegs];
+        private static readonly AnimationCurve s_orbitWidth = new AnimationCurve(
+            new Keyframe(0f, 2.2f), new Keyframe(0.2f, 1.1f), new Keyframe(1f, 0.9f));
+        private static readonly Gradient s_orbitGrad = new Gradient();
+        private static readonly GradientColorKey[] s_orbitCK = new GradientColorKey[2];
+        private static readonly GradientAlphaKey[] s_orbitAK = new GradientAlphaKey[5];
+
+        /// <summary>Точка эллиптической орбиты (звезда в фокусе) по истинной аномалии theta; средний радиус сохраняется.</summary>
+        private static Vector3 OrbitPoint(MiniSys m, int i, float theta, float y)
+        {
+            float e = m.Ecc[i];
+            float rr = m.Radius[i] * (1f - e * e) / (1f + e * Mathf.Cos(theta - m.Peri[i]));
+            return new Vector3(Mathf.Cos(theta) * rr, y, Mathf.Sin(theta) * rr);
+        }
+
+        /// <summary>Градиент орбиты: у планеты ярко (с белёсым ядром), назад — затухающий след, перед планетой тускло.</summary>
+        private static Gradient OrbitGradient(Color c, float a)
+        {
+            s_orbitCK[0] = new GradientColorKey(Color.Lerp(c, Color.white, 0.55f), 0f);
+            s_orbitCK[1] = new GradientColorKey(c, 0.3f);
+            s_orbitAK[0] = new GradientAlphaKey(0.60f * a, 0f);
+            s_orbitAK[1] = new GradientAlphaKey(0.32f * a, 0.06f);
+            s_orbitAK[2] = new GradientAlphaKey(0.13f * a, 0.35f);
+            s_orbitAK[3] = new GradientAlphaKey(0.08f * a, 0.85f);
+            s_orbitAK[4] = new GradientAlphaKey(0.03f * a, 1f);
+            s_orbitGrad.SetKeys(s_orbitCK, s_orbitAK);
+            return s_orbitGrad;
+        }
+
         private void AnimateMini(MiniSys m, Camera cam, Vector3 camPos, Quaternion camRot, float time)
         {
             Vector3 c = m.Sys.Position;
@@ -342,12 +373,16 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < m.Planets.Length; i++)
             {
                 var lr = m.Orbits[i];
-                // Орбиты — фон, а не главное на карте: тонкие и полупрозрачные, чтобы не спорить с коридорами и ярлыками
-                lr.startWidth = lr.endWidth = wpp * 1.0f;
-                lr.startColor = lr.endColor = new Color(orbitCol.r, orbitCol.g, orbitCol.b, 0.10f * a);
-
                 float ang = (m.Phase[i] + time * m.Speed[i]) * Mathf.Deg2Rad;
-                var local = new Vector3(Mathf.Cos(ang) * m.Radius[i], 0.1f, Mathf.Sin(ang) * m.Radius[i]);
+                var local = OrbitPoint(m, i, ang, 0.1f);
+
+                // Орбита — эллипс, первая точка у планеты, дальше назад по ходу движения: позади планеты яркий след,
+                // который тает в тонкую линию; впереди линия почти не видна. Фон, а не главное — не спорит с коридорами
+                for (int k = 0; k < OrbitSegs; k++)
+                    s_orbitBuf[k] = OrbitPoint(m, i, ang - k / (float)OrbitSegs * Mathf.PI * 2f, 0.05f);
+                lr.SetPositions(s_orbitBuf);
+                lr.widthMultiplier = wpp * 1.1f;
+                lr.colorGradient = OrbitGradient(orbitCol, a);
                 var sr = m.Planets[i];
                 sr.transform.localPosition = local;
                 // издалека — не меньше 12 пикселей; у самой системы планеты крупнее (до ×1,5) — видны детали
