@@ -195,6 +195,7 @@ namespace StellarisClone.Core
             if (siege != null && siege.Active) Add(Loc.T("Осада системы"), -15f * hardship);
             if (p.Unrest > 0.5f) Add(Loc.T("Недавнее завоевание"), -p.Unrest * hardship);
             if (Bankrupt(owner)) Add(Loc.T("Казна пуста"), -10f);
+            if (sys != null && SpaceFauna.WandererNearSystem(sys.Id)) Add(Loc.T("Странник рядом"), -SpaceFauna.WandererUnrest);
 
             if (p.PropagandaMonths > 0) Add(Loc.F("Пропаганда ({0} мес.)", p.PropagandaMonths), PropagandaBonus);
             if (p.MartialLawMonths > 0) Add(Loc.F("Военное положение ({0} мес.)", p.MartialLawMonths), MartialLawBonus);

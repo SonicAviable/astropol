@@ -7468,3 +7468,92 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 Нет свободного научного корабля	No free science ship
 Все научные корабли заняты разведкой — дождитесь, пока один освободится, или постройте новый на верфи.	All science ships are busy surveying — wait for one to free up or build a new one at the shipyard.
 Научных кораблей нет — постройте его на орбитальной верфи.	You have no science ships — build one at the orbital shipyard.
+Солнечные скаты	Solar Rays
+Пустотные медузы	Void Jellyfish
+Рой Искр	Spark Swarm
+Кристаллиды	Crystallids
+Странник	The Wanderer
+Фауна	Fauna
+стая · {0}	flock · {0}
+колония · {0}	colony · {0}
+≈1000 особей	≈1000 creatures
+решётка · {0}	lattice · {0}
+один на партию	one per game
+стая в пути между системами	flock travelling between systems
+стая отдыхает у звезды: станции системы +{0:0}% гелия-3	flock resting at the star: system stations +{0:0}% Helium-3
+колония приручена: враги владельца уходят из системы на {0:0}% медленнее	colony tamed: the owner's enemies leave the system {0:0}% slower
+флоты уходят из системы на {0:0}% медленнее	fleets leave the system {0:0}% slower
+; научный корабль на орбите — +{0:0} науки в месяц	; a science ship in orbit gives +{0:0} Research per month
+рой летит к новой звезде	swarm flying to a new star
+рой пьёт корону: станции −{0:0}% гелия-3, гражданские корабли теряют корпус; военный флот разгонит рой	swarm drinking the corona: stations −{0:0}% Helium-3, civilian ships lose hull; a military fleet will drive the swarm away
+владелец системы получает +{0:0}% к науке	system owner gets +{0:0}% Research
+системы рядом дают +{0:0} науки владельцу, колонии рядом волнуются (−{1:0} стабильности)	nearby systems give their owner +{0:0} Research, nearby colonies are restless (−{1:0} stability)
+На окраине галактики замечен Странник — существо длиной в несколько звёздных систем. Он движется к центру.	The Wanderer has been sighted at the edge of the galaxy, a creature several star systems long. It is heading for the core.
+Странник вошёл в галактику	The Wanderer has entered the galaxy
+Гигантское существо медленно пересекает галактику. Системы рядом с ним дают науку, колонии волнуются.	A giant creature is slowly crossing the galaxy. Systems near it give Research, colonies grow restless.
+Один на всю партию · пересечёт галактику за 16 лет	One per game · will cross the galaxy in 16 years
+Рой Искр разогнан	Spark Swarm driven away
+{0} спугнул рой у звезды {1}.	{0} scared the swarm away from {1}.
+Рой Искр жжёт корабли	Spark Swarm is burning ships
+Гражданские корабли у звезды {0} теряют корпус. Уведите их или пришлите военный флот.	Civilian ships at {0} are losing hull. Move them away or send a military fleet.
+Странник ушёл за край галактики. Учёные ещё долго будут спорить, куда он направлялся.	The Wanderer has left beyond the edge of the galaxy. Scientists will long argue where it was heading.
+Изучены: {0}	Studied: {0}
+Занести в архив	Add to the archive
++{0:0} очков науки сразу	+{0:0} Research points now
+Скаты питаются светом и не боятся кораблей. Их крылья — живые солнечные паруса толщиной в несколько атомов. Когда стая отдыхает у звезды, её поле рассеивает излучение прямо на наши станции.	Rays feed on light and do not fear ships. Their wings are living solar sails a few atoms thick. When the flock rests at a star, its field scatters radiation right onto our stations.
+Медузы — колонии простых организмов, которые вместе ведут себя как одно существо. Их щупальца тянут гравитационные нити: корабли, уходящие из системы, будто вязнут в сиропе.	The jellyfish are colonies of simple organisms that act together as one creature. Their tentacles pull gravitational threads: ships leaving the system seem to wade through syrup.
+Кристаллиды растут из пыли вокруг пульсара. Каждый проход луча заставляет их звенеть, и решётка отвечает ему эхом, складывающимся в сложный ритм.	Crystallids grow from the dust around a pulsar. Every pass of the beam makes them ring, and the lattice answers with an echo that adds up to a complex rhythm.
+Обнаружена космическая фауна	Space fauna discovered
+Скаты у нашей звезды	Rays at our star
+Стая солнечных скатов ({0}) опустилась отдохнуть у звезды {1}. Пока они здесь, станции системы ловят больше света. Охотники уже спрашивают разрешения: панцирь ската — отличный материал для сплавов.	A flock of solar rays ({0}) has come down to rest at {1}. While they are here, the system's stations catch more light. Hunters are already asking for permission: ray shell makes an excellent alloy feedstock.
+Беречь стаю	Protect the flock
+Станции системы +{0:0}% гелия-3, пока стая отдыхает	System stations +{0:0}% Helium-3 while the flock rests
+Охотиться	Hunt them
++{0:0} сплавов; стая уменьшится на 2; «Мистические» и «Терпеливые» империи осудят охоту	+{0:0} Alloys; the flock shrinks by 2; Mystic and Patient empires will condemn the hunt
+Последние солнечные скаты погибли от рук охотников.	The last solar rays have died at the hands of hunters.
+Рой Искр у нашей звезды	Spark Swarm at our star
+Тысяча светящихся искр закружилась в короне звезды {0}. Свет тускнеет, станции теряют гелий-3, а гражданские корабли рядом обгорают. Военный флот разгонит рой. Или его можно увести к соседям.	A thousand glowing sparks are circling in the corona of {0}. The light dims, stations lose Helium-3 and civilian ships nearby get scorched. A military fleet will drive the swarm away. Or it can be lured to the neighbours.
+Пришлём флот	We will send a fleet
+Рой уйдёт, как только в систему прилетит военный флот	The swarm leaves as soon as a military fleet arrives in the system
+Заманить к соседям	Lure it to the neighbours
+−{0:0} влияния; рой сразу улетит к ближайшей системе другой империи	−{0:0} Influence; the swarm immediately flies to the nearest system of another empire
+Приручение медуз	Taming the jellyfish
+Наши ксенобиологи научились говорить с колонией медуз у звезды {0} на языке гравитационных импульсов. Колонию можно приручить: она перестанет держать наши флоты и будет вязать корабли врагов.	Our xenobiologists have learned to talk to the jellyfish colony at {0} in the language of gravitational pulses. The colony can be tamed: it will stop holding our fleets and will snare enemy ships instead.
+Приручить	Tame them
+−{0:0} влияния; наши флоты уходят без задержки, враги — на {1:0}% медленнее	−{0:0} Influence; our fleets leave without delay, enemies {1:0}% slower
+Оставить их в покое	Leave them be
+Колония продолжит задерживать все флоты	The colony will keep holding all fleets
+Решётка кристаллидов	Crystallid lattice
+Вокруг звезды {0} кружат кристаллиды. Когда луч пульсара проходит по ним, они вспыхивают, и наши приборы ловят странный ритм. Шахтёры предлагают разбить один кристалл: такого чистого сырья нет нигде.	Crystallids circle the star {0}. When the pulsar beam sweeps over them they flare, and our instruments pick up a strange rhythm. The miners propose breaking one crystal: there is no purer ore anywhere.
+Слушать решётку	Listen to the lattice
+Наука +{0:0}%, пока система наша	Research +{0:0}% while the system is ours
+Разбить один кристаллид	Break one crystallid
++{0:0} титана, +{1:0} сплавов; бонус к науке упадёт на {2:0}%	+{0:0} Titanium, +{1:0} Alloys; the Research bonus drops by {2:0}%
+Песня решётки	Song of the Lattice
+Песня решётки · I	Song of the Lattice · I
+Год наблюдений у звезды {0}: ритм решётки не случаен. Вспышки складываются в повторяющиеся фразы, будто кристаллиды разучивают мелодию.	A year of observations at {0}: the lattice's rhythm is not random. The flashes form repeating phrases, as if the crystallids were learning a melody.
+Записать всё	Record everything
++200 очков науки сразу	+200 Research points now
+Песня решётки · II	Song of the Lattice · II
+Фразы решётки совпадают с сигналами, которые наши первые радиотелескопы приняли века назад и сочли шумом. Кто-то учил кристаллиды задолго до нас.	The lattice's phrases match signals our first radio telescopes received centuries ago and dismissed as noise. Someone taught the crystallids long before us.
+Ответить сигналом	Answer with a signal
++50 влияния: соседи восхищены	+50 Influence: the neighbours are impressed
+Молчать и слушать	Stay silent and listen
++300 очков науки сразу	+300 Research points now
+Песня решётки · III	Song of the Lattice · III
+Решётка допела. Последняя фраза оказалась схемой: так древний разум записывал свои уравнения в живой кристалл. Наши учёные расшифровали первые строки.	The lattice has finished its song. The last phrase turned out to be a schematic: this is how an ancient mind wrote its equations into living crystal. Our scientists have deciphered the first lines.
+Расшифровать	Decipher
++600 очков науки и +25% к скорости исследований на полгода	+600 Research points and +25% research speed for half a year
+Странник у наших границ	The Wanderer at our borders
+Странник проходит рядом с системой {0}. Его тело тянется на несколько звёздных систем, по спине бегут волны света. Флот ждёт приказа.	The Wanderer is passing near {0}. Its body stretches across several star systems, waves of light run along its back. The fleet awaits orders.
+Следовать за ним	Follow it
++{0:0} науки в месяц, пока Странник в галактике	+{0:0} Research per month while the Wanderer is in the galaxy
+Изучить вблизи	Study it up close
++800 очков науки сразу	+800 Research points now
+Атаковать	Attack
++150 сплавов из обломков панциря; ближайший военный флот теряет 40% корпуса; репутация −15, соседи осудят	+150 Alloys from shell fragments; the nearest military fleet loses 40% hull; reputation −15, neighbours will condemn it
+Нападение на Странника	Attack on the Wanderer
+Странник рядом	Wanderer nearby
+\n<color={0}>ФАУНА · {1}</color> · {2}\n	\n<color={0}>FAUNA · {1}</color> · {2}\n
+\n<color={0}>ФАУНА · {1}</color>\n	\n<color={0}>FAUNA · {1}</color>\n
+Проходит рядом: +{0:0} науки владельцу, колонии волнуются (−{1:0} стабильности)\n	Passing nearby: +{0:0} Research to the owner, colonies are restless (−{1:0} stability)\n

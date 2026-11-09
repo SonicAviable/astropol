@@ -1223,6 +1223,7 @@ namespace StellarisClone.Rendering
             float rate = EmpireBonuses.For(Data.OwnerId).HyperlaneSpeed * Landmarks.HyperSpeedMult(Data.OwnerId);
             rate *= Mathf.Max(0.5f, Data.HyperSpeed);
             rate *= LeaderManager.HyperSpeedMult(Data);
+            rate *= SpaceFauna.LeaveSpeedMult(Data);   // пустотные медузы держат уходящие флоты
             // Пробуждение сада: мицелий Конклава опутывает вражеские корабли, уходящие из его системы
             var cm = CombatManager.Instance;
             if (cm != null && Data.CurrentSystemId >= 0 && cm.IsGardenAwake(Data.CurrentSystemId))

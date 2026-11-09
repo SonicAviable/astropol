@@ -126,6 +126,7 @@ namespace StellarisClone.Core
             EnsureComp<VictoryManager>("[Managers] VictoryManager");
             EnsureComp<LandmarkWatcher>("[Managers] LandmarkWatcher");
             EnsureComp<NaturalWondersWatcher>("[Managers] NaturalWonders");
+            EnsureComp<SpaceFauna>("[Managers] SpaceFauna");
             EnsureComp<EspionageManager>("[Managers] EspionageManager");
             EnsureComp<StellarisClone.Cards.ArmyManager>("[Managers] ArmyManager");
             EnsureComp<GameChronicle>("[Managers] GameChronicle");

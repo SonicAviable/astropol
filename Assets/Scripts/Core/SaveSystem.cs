@@ -101,6 +101,8 @@ namespace StellarisClone.Core
         /// <summary>Летопись для «Итогов партии» и цели империи (null — старое сохранение).</summary>
         public ChronicleSave Chronicle;
         public ObjectivesSave Objectives;
+        /// <summary>Космическая фауна (Placed = false — старое сохранение: фауна расселится заново).</summary>
+        public FaunaSave Fauna;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -508,6 +510,7 @@ namespace StellarisClone.Core
             if (StellarisClone.Cards.ArmyManager.Instance != null) s.Army = StellarisClone.Cards.ArmyManager.Instance.CaptureState();
             if (GameChronicle.Instance != null) s.Chronicle = GameChronicle.Instance.CaptureState();
             if (EmpireObjectives.Instance != null) s.Objectives = EmpireObjectives.Instance.CaptureState();
+            if (SpaceFauna.Instance != null) s.Fauna = SpaceFauna.Instance.CaptureState();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -906,6 +909,7 @@ namespace StellarisClone.Core
             StellarisClone.Cards.ArmyManager.Instance?.RestoreState(s.Army);
             GameChronicle.Instance?.RestoreState(s.Chronicle);
             EmpireObjectives.Instance?.RestoreState(s.Objectives);
+            SpaceFauna.Instance?.RestoreState(s.Fauna);
             if (s.Neutrals == null) BorderRules.GrandfatherOldSave();   // до границ: открыть их, где нет вражды
             if (s.Victory != null) VictoryManager.Instance?.RestoreState(s.Victory);
             // После технологий и ИИ: множители чудес накладываются на уже пересобранные бонусы

@@ -68,7 +68,8 @@ namespace StellarisClone.Core
                     if (p.HasMiningStation)
                     {
                         float k = NaturalWonders.StationMult(sys);   // кристаллическое кольцо: станции вдвое
-                        stE += Mathf.RoundToInt(p.EnergyDeposit * k); stM += Mathf.RoundToInt(p.MineralDeposit * k);
+                        stE += Mathf.RoundToInt(p.EnergyDeposit * k * SpaceFauna.StationEnergyMult(sys.Id));   // скаты +10%, Рой Искр −30%
+                        stM += Mathf.RoundToInt(p.MineralDeposit * k);
                     }
                     if (p.Type == PlanetType.GasGiant || p.Type == PlanetType.Molten) continue;
                     if (p.Population <= 0) continue;

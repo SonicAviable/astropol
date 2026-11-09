@@ -70,6 +70,7 @@ namespace StellarisClone.Rendering
             RenderGalaxy();
             gameObject.AddComponent<SpyNetworkView>();     // разведсеть на карте (зона, пунктир, значки агентов)
             CreateBackdrop();
+            gameObject.AddComponent<FaunaView>();          // космическая фауна: стаи, колонии, рой, решётки, Странник
             CreateHolographicBeacon();
             RefreshTerritoryVisuals();
             UIManager.Instance?.RefreshOutliner();
@@ -642,6 +643,9 @@ namespace StellarisClone.Rendering
 
         // ==================== РЕЖИМЫ ====================
 
+        /// <summary>Анимация звезды системы (по номеру системы) — для эффектов фауны.</summary>
+        public StarAnimator AnimatorOf(int systemId) => systemId >= 0 && systemId < _starAnims.Count ? _starAnims[systemId] : null;
+
         public void SetMapMode(MapModeController.MapMode mode)
         {
             _currentMapMode = mode;
@@ -802,6 +806,8 @@ namespace StellarisClone.Rendering
         public float Dim = 1f;
         /// <summary>0..1 — насколько спрайты звезды уступили место объёмной модели (чёрная дыра вблизи, MapBlackHole).</summary>
         public float BodyHidden;
+        /// <summary>0..1 — Рой Искр пьёт корону: звезда тускнеет (FaunaView).</summary>
+        public float Drain;
         private float _dimShown = 1f;
         private float _scale, _near;
 
@@ -852,7 +858,8 @@ namespace StellarisClone.Rendering
             // Неизведанная звезда — блёклая, ближе к серому
             Color c = IsBlackHole ? _baseColor : Color.Lerp(new Color(0.62f, 0.66f, 0.74f), _baseColor, Mathf.Lerp(0.35f, 1f, _dimShown));
             float vis = 1f - BodyHidden;
-            c.a = Mathf.Clamp01(alphaBreathe) * Mathf.Lerp(0.45f, 1f, _dimShown) * vis;
+            float drain = 1f - Drain * 0.6f;
+            c.a = Mathf.Clamp01(alphaBreathe) * Mathf.Lerp(0.45f, 1f, _dimShown) * vis * drain;
             _core.color = c;
 
             // Белое ядро: постоянный экранный размер, лёгкий оттенок класса звезды
@@ -862,7 +869,7 @@ namespace StellarisClone.Rendering
                 float hs = Mathf.Max(_baseScale * 0.35f, w * HotPx * Mathf.Sqrt(SizeMul) / HotSpriteWorld) * Mathf.Lerp(0.8f, 1f, _dimShown);
                 Hot.transform.localScale = Vector3.one * hs;
                 var hc = Color.Lerp(Color.white, _baseColor, 0.22f);
-                hc.a = Mathf.Lerp(0.7f, 1f, _dimShown) * vis;
+                hc.a = Mathf.Lerp(0.7f, 1f, _dimShown) * vis * Mathf.Lerp(1f, drain, 0.7f);
                 Hot.color = hc;
             }
 
@@ -872,7 +879,7 @@ namespace StellarisClone.Rendering
                 float cb = 1f + Mathf.Sin(t * 0.6f + 1.3f) * 0.07f;
                 Corona.transform.localScale = Vector3.one * scale * (IsBlackHole ? 1.5f : 1.35f) * cb;
                 var cc = IsBlackHole ? new Color(1f, 0.62f, 0.3f) : _baseColor;
-                cc.a = (IsBlackHole ? 0.85f : 0.20f + 0.22f * _near) * Mathf.Lerp(0.35f, 1f, _dimShown) * (0.9f + 0.1f * cb) * vis;
+                cc.a = (IsBlackHole ? 0.85f : 0.20f + 0.22f * _near) * Mathf.Lerp(0.35f, 1f, _dimShown) * (0.9f + 0.1f * cb) * vis * drain;
                 Corona.color = cc;
             }
 
@@ -882,7 +889,7 @@ namespace StellarisClone.Rendering
                 float fb = 1f + Mathf.Sin(t * 0.7f + 2.1f) * 0.06f;
                 Flare.transform.localScale = Vector3.one * scale * 1.25f * fb;
                 var fc = Color.Lerp(Color.white, _baseColor, 0.45f);
-                fc.a = (0.18f + 0.42f * _near) * _dimShown * _dimShown * vis;
+                fc.a = (0.18f + 0.42f * _near) * _dimShown * _dimShown * vis * drain;
                 Flare.color = fc;
             }
         }

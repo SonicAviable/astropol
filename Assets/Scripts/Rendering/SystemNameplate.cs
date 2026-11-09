@@ -836,6 +836,16 @@ namespace StellarisClone.Rendering
                        Loc.T("<color=#8AA2A8>Действует на всех, кто здесь находится</color>\n");
             }
 
+            foreach (var h in SpaceFauna.In(_data.Id))
+            {
+                string c = LGBuild.Hex(SpaceFauna.Color(h.Kind));
+                tip += Loc.F("\n<color={0}>ФАУНА · {1}</color> · {2}\n", c, SpaceFauna.Name(h.Kind), SpaceFauna.CountText(h)) +
+                       SpaceFauna.Rule(h) + "\n";
+            }
+            if (SpaceFauna.WandererNearSystem(_data.Id))
+                tip += Loc.F("\n<color={0}>ФАУНА · {1}</color>\n", LGBuild.Hex(SpaceFauna.Color((int)FaunaKind.Wanderer)), SpaceFauna.Name((int)FaunaKind.Wanderer)) +
+                       Loc.F("Проходит рядом: +{0:0} науки владельцу, колонии волнуются (−{1:0} стабильности)\n", SpaceFauna.WandererScience, SpaceFauna.WandererUnrest);
+
             if (PlayerOutpostEta(_data.Id, out bool building, out float bdays))
                 tip += building
                     ? Loc.F("\n<color=#5CE68A>Форпост строится · готов через {0}</color>\n", FleetRoute.FormatDays(bdays))

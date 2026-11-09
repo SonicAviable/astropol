@@ -160,8 +160,8 @@ namespace StellarisClone.Core
         public bool HasTech(string id) => _researched.Contains(id);
 
         public float MonthlyScience =>
-            (TechnologyManager.BaseScience + EmpireStats.ResearchPops(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId) + NaturalWonders.Science(OwnerId))
-            * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult * NeutralWorlds.ResearchMult(OwnerId);
+            (TechnologyManager.BaseScience + EmpireStats.ResearchPops(OwnerId) * TechnologyManager.SciencePerPop + Landmarks.Science(OwnerId) + NaturalWonders.Science(OwnerId) + SpaceFauna.Science(OwnerId))
+            * SpaceFauna.ResearchMult(OwnerId) * Profile.ScienceMult * Bonuses.ResearchMult * IncomeMult * TreatyResearchMult * NeutralWorlds.ResearchMult(OwnerId);
 
         /// <summary>Параллельные исследования дают тот же выигрыш, что и у игрока: N^0.3.</summary>
         private float ResearchThroughput => Mathf.Pow(_researchSlots, 1f - TechnologyManager.SlotSplitExponent);
