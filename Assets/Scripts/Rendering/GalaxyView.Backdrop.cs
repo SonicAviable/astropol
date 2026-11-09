@@ -339,6 +339,8 @@ namespace StellarisClone.Rendering
             var mr = go.AddComponent<MeshRenderer>();
             var twinkle = Resources.Load<Shader>("Shaders/TwinklePoints");
             _deepStarsMat = new Material(twinkle != null ? twinkle : GetSpriteShader()) { renderQueue = 2930 };
+            // Дальние звёзды чуть ярче — вблизи между системами не пустая чернота
+            _deepStarsMat.color = new Color(1.35f, 1.35f, 1.4f, 1f);
             mr.sharedMaterial = _deepStarsMat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
@@ -459,18 +461,19 @@ namespace StellarisClone.Rendering
             // Обзор (галактика разнесена шире — камера уходит на 400–1000 ед.): системы мельчают, поэтому
             // территории заливаются гуще и обводятся толще, а фон диска приглушается — карта читается целиком
             float overview = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(220f, 600f, h));
-            if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.08f, 1f, far) * Mathf.Lerp(1f, 0.6f, overview));
-            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.45f, 1f, far) * BackdropBright));
+            if (_diskMat != null) _diskMat.color = new Color(BackdropBright, BackdropBright, BackdropBright, Mathf.Lerp(0.24f, 1f, far) * Mathf.Lerp(1f, 0.6f, overview));
+            if (_dustStarsMat != null) _dustStarsMat.color = new Color(1f, 1f, 1f, Mathf.Min(1f, Mathf.Lerp(0.8f, 1f, far) * BackdropBright));
 
             // Живой фон: время для шейдеров, туманности чуть тише вблизи
             float t = Time.unscaledTime;
             if (_diskMat != null) _diskMat.SetFloat("_T", t);
             if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
             if (_deepStarsMat != null) _deepStarsMat.SetFloat("_T", t);
-            float nebK = Mathf.Lerp(0.5f, 1f, far);
+            // Вблизи космос не должен проваливаться в черноту: галактика большая, ядро и рукава далеко
+            float nebK = Mathf.Lerp(0.85f, 1f, far);
             // клочья над картой близко к камере — вблизи растворяются, чтобы не мешать
             float wispK = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(55f, 130f, h));
-            float dustK = Mathf.Lerp(0.25f, 1f, far);
+            float dustK = Mathf.Lerp(0.15f, 1f, far);
             for (int i = 0; i < _darkDustMats.Count; i++)
             {
                 _darkDustMats[i].SetFloat("_T", t);
