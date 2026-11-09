@@ -1,0 +1,39 @@
+@order 42
+@tag UPDATE
+@chip NEW · 1.6.7
+@title Update 1.6.7
+@headline A living galaxy, a new HUD and ten new kinds of stars
+@cover Menu/News/cover_1.6.7
+@art 0.5,0.45,0.62
+@thumb 0.5,0.4,0.5
+@tile Menu/News/cover_1.6.7 | 0.5,0.5,1 | Hyperlanes
+@tile Menu/News/1.6.7_resources | 0.5,0.5,1 | Resource summary
+@tile Menu/News/1.6.7_storage | 0.5,0.5,1 | Storage
+@tile Menu/News/1.6.7_systems | 0.5,0.5,1 | Work in a system
+@tile Menu/News/1.6.7_stars | 0.5,0.5,1 | Magnetar
+The galaxy map comes alive: 3D stars and planets, flowing hyperlanes and ten new kinds of stars. The interface is rebuilt from the top bar to the event window.
+# GALAXY
+- Up close, systems show real 3D stars and photo-textured planets on elliptical orbits with fading trails.
+- "Hyperflow" lanes: gentle arcs from system edge to system edge, energy flowing along them, portals at both ends. Your lanes are teal, your neighbours' take their empire colour.
+- A roomier galaxy with nebulae and dust lanes for a backdrop; zooming out no longer fades the map to black.
+- A cinematic look: glowing stars, lens flares, softer planet night sides. Stars hum with plasma as you approach.
+# NEW STARS
+- 10 new types: blue supergiant, red giant, white and brown dwarfs, binary star, Wolf-Rayet, pulsar, magnetar, protostar, planetary nebula.
+- The star shapes the number of planets, world types and deposits. Its effect is shown in the system tooltip.
+- Natural wonders, 3 to 8 per galaxy: a magnetar disables shields, an ion storm eats hulls, the Shroud hides fleets, stellar nurseries boost population growth.
+# NEW HUD
+- Top bar: big resource numbers, a date disc with the real Moon phase and a speed scale, the ruler's portrait with a stability ring.
+- Resource tooltips: stock and monthly income, income sources and expenses with each one's share, a monthly total and storage fill.
+- "Broadcast" galactic news ticker at the bottom, hex menu at the side, a minimap with a scale, and the planner.
+- Work in a system is a ring around the star and a beacon with days left, so you see when an outpost or colony is ready.
+# WINDOWS
+- "Cinema" events: full-width artwork, answer options as cards with their consequences.
+- New empire selection: faction crests, a comm link with the ruler and a dossier.
+- "Medallion" empire overview, a new "Orbit" loading screen and new interface sounds.
+# CARD BATTLE
+- Faction doctrines, a once-per-battle hero order, turn-5 battle events and a win chance forecast for every sector.
+- Hit-stop on impacts, slow motion on big kills and kill streaks: "Double strike", "Rout", "Slaughter".
+# FIXES
+- Space and Esc no longer open windows on their own. Clicking the minimap moves the camera exactly there.
+- The camera reaches the edge of large galaxies; science ships no longer stick to an old target.
+- No more lag on Retina Macs. Asteroids no longer vanish in builds.
