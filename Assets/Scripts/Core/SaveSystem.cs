@@ -803,6 +803,9 @@ namespace StellarisClone.Core
         {
             foreach (var f in FactionRegistry.AvailableFactions)
                 if (f.Name == name) return f;
+            // Старое сохранение без ключа фракции, сделанное на другом языке игры: название не совпадёт — ищем по ключу
+            var byKey = FactionRegistry.ByKey(FactionRegistry.KeyOfName(name));
+            if (byKey != null) return byKey;
             return FactionRegistry.AvailableFactions.Length > 0 ? FactionRegistry.AvailableFactions[0] : null;
         }
 

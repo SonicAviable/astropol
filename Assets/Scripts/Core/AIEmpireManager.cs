@@ -131,6 +131,8 @@ namespace StellarisClone.Core
 
         private EmpireEconomy.Report _report;
         private bool _bankrupt;
+        /// <summary>Месяцев подряд с пустой казной (в сохранение не пишется: после загрузки счёт идёт заново).</summary>
+        private int _lowEnergyMonths;
 
         /// <summary>Множитель доходов ИИ от сложности.</summary>
         private static float IncomeMult => GameSession.Settings.AIIncome;
@@ -347,11 +349,16 @@ namespace StellarisClone.Core
             if (EnergyCredits < 0f)
             {
                 EnergyCredits = 0f;
-                _bankrupt = true;
+                // Как у игрока: банкротство (производство ×0,5) — на второй месяц пустой казны подряд, а не сразу
+                if (++_lowEnergyMonths >= 2) _bankrupt = true;
                 // Казна пуста — распускаем самый дорогой в содержании корабль
                 if (MonthlyEnergyIncome < 0f) DisbandCostliestShip();
             }
-            else if (_bankrupt && EnergyCredits > 60f) _bankrupt = false;
+            else
+            {
+                if (EnergyCredits > 5f) _lowEnergyMonths = 0;
+                if (_bankrupt && EnergyCredits > 60f) _bankrupt = false;
+            }
 
             MonthlyDiplomacy();
             MonthlyTactics();
@@ -1094,8 +1101,21 @@ namespace StellarisClone.Core
         public void RestoreFaction(AISave s)
         {
             if (s == null) return;
+            var f = FactionFromSave(s.Name);
+            if (f != null) SetFaction(f);
+        }
+
+        /// <summary>
+        /// Фракция ИИ по названию из сохранения. Названия фракций переведены, поэтому сохранение, сделанное на другом
+        /// языке игры, по названию не находилось: империя теряла бонусы фракции и характер (становилась «милитаристом»).
+        /// Если точного совпадения нет — ищем по ключу фракции, он от языка не зависит.
+        /// </summary>
+        private static FactionInfo FactionFromSave(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
             foreach (var f in FactionRegistry.AvailableFactions)
-                if (f.Name == s.Name) { SetFaction(f); return; }
+                if (f.Name == name) return f;
+            return FactionRegistry.ByKey(FactionRegistry.KeyOfName(name));
         }
 
         public void RestoreState(AISave s, int version)
@@ -1104,8 +1124,7 @@ namespace StellarisClone.Core
             if (_generator == null) _generator = FindFirstObjectByType<GalaxyGenerator>();
             CapitalSystemId = s.Capital;
 
-            FactionInfo faction = null;
-            foreach (var f in FactionRegistry.AvailableFactions) if (f.Name == s.Name) faction = f;
+            FactionInfo faction = FactionFromSave(s.Name);
             if (faction != null) SetFaction(faction);
             else if (!string.IsNullOrEmpty(s.Name)) AIName = s.Name;
             AITitle = s.Title ?? AITitle;
