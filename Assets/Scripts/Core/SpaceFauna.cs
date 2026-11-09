@@ -90,6 +90,12 @@ namespace StellarisClone.Core
             Instance = this;
         }
 
+        /// <summary>Расселить фауну сразу после старта партии, не дожидаясь первого игрового дня (игра может стоять на паузе).</summary>
+        private void Update()
+        {
+            if (!_s.Placed && UIManager.IsGameStarted && EmpireStats.Systems.Count >= 12) Place();
+        }
+
         private void Start()
         {
             if (TimeManager.Instance != null) TimeManager.Instance.OnDayPassed += HandleDay;
@@ -429,6 +435,11 @@ namespace StellarisClone.Core
                     _s.Herds.Add(h);
                 }
             }
+
+            var log = new List<string>();
+            foreach (var h in _s.Herds)
+                log.Add($"{(FaunaKind)h.Kind} — {EmpireStats.GetSystem(StaySystem(h) >= 0 ? StaySystem(h) : h.Home)?.Name}");
+            Debug.Log($"[SpaceFauna] Фауна расселена ({_s.Herds.Count}): {string.Join(", ", log)}; Странник придёт в {_s.WandererYear} г.");
         }
 
         private static void Shuffle<T>(List<T> l)

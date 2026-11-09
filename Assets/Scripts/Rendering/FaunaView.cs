@@ -36,6 +36,7 @@ namespace StellarisClone.Rendering
         private readonly List<Vis> _vis = new List<Vis>();
         private Sparks _trails;
         private float _shown = 1f;
+        private const float UnknownAlpha = 0.45f;
 
         private void Start()
         {
@@ -130,6 +131,7 @@ namespace StellarisClone.Rendering
                 v.CreateLabel(_root.transform);
                 _vis.Add(v);
             }
+            Debug.Log($"[FaunaView] Визуал фауны собран: {_vis.Count} стай.");
         }
 
         // ==================================================================== общая часть визуала
@@ -163,7 +165,8 @@ namespace StellarisClone.Rendering
                 _knownTimer = 0.5f;
                 if (H.Kind == (int)FaunaKind.Wanderer) { Known = 1f; return; }
                 int sys = VisionSystem;
-                Known = !Vision.Active || (sys >= 0 && (Vision.PlayerKnows(sys) || EmpireStats.GetSystem(sys)?.OwnerId == 0)) ? 1f : 0f;
+                // Неизведанные края — приглушённо, как звёзды там (туман войны не прячет карту целиком)
+                Known = !Vision.Active || (sys >= 0 && (Vision.PlayerKnows(sys) || EmpireStats.GetSystem(sys)?.OwnerId == 0)) ? 1f : UnknownAlpha;
             }
 
             protected MaterialPropertyBlock Track(Renderer r)
