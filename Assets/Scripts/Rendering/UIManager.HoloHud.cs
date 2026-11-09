@@ -63,6 +63,42 @@ namespace StellarisClone.Rendering
             BuildNavMenu();
             HudBanner.Create(_canvas.transform, DiskCenterY + DiskD * 0.5f + 84f);
             BuildScreenCorners();
+            BuildEdgeScrims();
+        }
+
+        /// <summary>
+        /// Затемнение по краям экрана под HUD: коридоры, орбиты и подписи систем под шапкой империи, левым меню
+        /// и бегущей строкой уходят в тень и не спорят с текстом. Лежит под всеми элементами HUD, клики не ловит.
+        /// </summary>
+        private void BuildEdgeScrims()
+        {
+            // Линейное цветовое пространство: чёрная вуаль гасит свет слабее, чем обещает альфа, — берём плотнее
+            var ink = new Color(0.004f, 0.012f, 0.02f, 1f);
+
+            // Верх: градиент HudArt.VFade непрозрачен снизу — переворачиваем вокруг нижней кромки, прижатой к верху экрана
+            var top = HoloImage(_canvas.transform, "ScrimTop", HudArt.VFade(), new Color(ink.r, ink.g, ink.b, 0.9f));
+            top.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 200f));
+            top.rectTransform.anchorMin = new Vector2(0f, 1f);
+            top.rectTransform.anchorMax = new Vector2(1f, 1f);
+            top.rectTransform.sizeDelta = new Vector2(0f, 200f);
+            top.rectTransform.localScale = new Vector3(1f, -1f, 1f);
+
+            var left = HoloImage(_canvas.transform, "ScrimLeft", MenuArt.HorizontalFade, new Color(ink.r, ink.g, ink.b, 0.7f));
+            left.rectTransform.At(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(190f, 0f));
+            left.rectTransform.anchorMin = new Vector2(0f, 0f);
+            left.rectTransform.anchorMax = new Vector2(0f, 1f);
+            left.rectTransform.sizeDelta = new Vector2(190f, 0f);
+
+            var bottom = HoloImage(_canvas.transform, "ScrimBottom", HudArt.VFade(), new Color(ink.r, ink.g, ink.b, 0.85f));
+            bottom.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 130f));
+            bottom.rectTransform.anchorMin = new Vector2(0f, 0f);
+            bottom.rectTransform.anchorMax = new Vector2(1f, 0f);
+            bottom.rectTransform.sizeDelta = new Vector2(0f, 130f);
+
+            // Под всем остальным в HUD
+            bottom.transform.SetAsFirstSibling();
+            left.transform.SetAsFirstSibling();
+            top.transform.SetAsFirstSibling();
         }
 
         /// <summary>Уголки по краям экрана — рамка голо-HUD.</summary>
