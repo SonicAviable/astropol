@@ -155,7 +155,7 @@ namespace StellarisClone.Rendering
             else if (AstroStarModel.Build(_systemContainer.transform, system) != null)
             {
                 // Объёмная звезда вместо спрайта карты; свет чуть окрашен её классом
-                starLight.color = Color.Lerp(Color.white, GalaxyView.StarColor(system.SpectralClass), 0.3f);
+                starLight.color = Color.Lerp(Color.white, GalaxyView.StarColor(system.SpectralClass), 0.55f);
                 GalaxyView.Instance?.SetStarBodyVisible(system.Id, false);
                 _hiddenStarId = system.Id;
             }
