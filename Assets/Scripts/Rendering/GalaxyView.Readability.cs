@@ -55,6 +55,14 @@ namespace StellarisClone.Rendering
         // ==================== ТУМАН ВОЙНЫ И КОРИДОРЫ ====================
 
         /// <summary>Звёзды и коридоры по знаниям игрока. Вызывается при каждом изменении территорий и разведки.</summary>
+        /// <summary>Цвет и яркость конца коридора по владельцу системы.</summary>
+        private static void LaneEndStyle(StarSystem s, bool known, out Color c, out float alpha)
+        {
+            if (s.OwnerId == 0) { c = new Color(0.30f, 1.00f, 0.95f); alpha = 0.9f; }                  // ваша империя
+            else if (s.OwnerId > 0) { c = Color.Lerp(FleetIndicator.OwnerColor(s.OwnerId), Color.white, 0.18f); alpha = known ? 0.7f : 0.45f; }
+            else { c = known ? new Color(0.80f, 0.88f, 1.00f) : new Color(0.72f, 0.76f, 0.84f); alpha = known ? 0.62f : 0.3f; }
+        }
+
         private void UpdateHyperlaneColors()
         {
             if (_generator == null) return;
@@ -77,36 +85,19 @@ namespace StellarisClone.Rendering
                 StarSystem b = _generator.Systems[lane.SystemB];
                 bool ka = IsKnownToPlayer(a), kb = IsKnownToPlayer(b);
 
-                Color c;
-                float alphaA, alphaB, px;
-                if (a.OwnerId == 0 && b.OwnerId == 0)
-                {
-                    c = new Color(0.30f, 1.00f, 0.95f);          // внутренние коридоры империи игрока
-                    alphaA = alphaB = 0.9f;
-                    px = 2.2f;
-                }
-                else if (a.OwnerId > 0 && a.OwnerId == b.OwnerId)
-                {
-                    c = Color.Lerp(FleetIndicator.OwnerColor(a.OwnerId), Color.white, 0.18f);   // коридоры чужой империи — её цветом
-                    alphaA = ka ? 0.7f : 0.45f;
-                    alphaB = kb ? 0.7f : 0.45f;
-                    px = 2.0f;
-                }
-                else
-                {
-                    // Нейтральные: светлые, почти белые; к неизведанному концу — серее и тише
-                    c = ka && kb ? new Color(0.80f, 0.88f, 1.00f) : new Color(0.72f, 0.76f, 0.84f);
-                    alphaA = ka ? 0.62f : 0.3f;
-                    alphaB = kb ? 0.62f : 0.3f;
-                    px = 1.6f;
-                }
-                ModeLaneStyle(a, b, ka, kb, ref c, ref alphaA, ref alphaB, ref px);   // режим карты
+                // Цвет у каждого конца — по владельцу его системы, вдоль коридора — перелив: от вашей системы
+                // коридор бирюзовый и переходит в цвет соседа (чужая империя — её цвет, ничья — бело-голубой)
+                LaneEndStyle(a, ka, out Color cA, out float alphaA);
+                LaneEndStyle(b, kb, out Color cB, out float alphaB);
+                float px = a.OwnerId == 0 && b.OwnerId == 0 ? 2.2f
+                         : a.OwnerId == 0 || b.OwnerId == 0 || (a.OwnerId > 0 && a.OwnerId == b.OwnerId) ? 2.0f : 1.6f;
+                ModeLaneStyle(a, b, ka, kb, ref cA, ref cB, ref alphaA, ref alphaB, ref px);   // режим карты
                 _laneWidthPx[i] = px;
-                SetLanePortalColor(i, c, alphaA, alphaB);
+                SetLanePortalColor(i, cA, cB, alphaA, alphaB);
 
                 var g = new Gradient();
                 g.SetKeys(
-                    new[] { new GradientColorKey(c, 0f), new GradientColorKey(c, 1f) },
+                    new[] { new GradientColorKey(cA, 0f), new GradientColorKey(cA, 0.2f), new GradientColorKey(cB, 0.8f), new GradientColorKey(cB, 1f) },
                     new[] { new GradientAlphaKey(alphaA, 0f), new GradientAlphaKey(alphaB, 1f) });
                 lr.colorGradient = g;
             }

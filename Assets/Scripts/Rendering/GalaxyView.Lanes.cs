@@ -13,15 +13,15 @@ namespace StellarisClone.Rendering
     {
         private const int LaneSegs = 24;
         /// <summary>Лента шире сердцевины — место под ореол (сердцевина ≈ заданной толщины в пикселях).</summary>
-        private const float LaneGlowK = 4.5f;
-        private const float PortalPx = 22f;
+        private const float LaneGlowK = 7f;
+        private const float PortalPx = 34f;
 
         private Material _laneMat, _portalMat;
         private static Mesh s_portalQuad;
         private static Texture2D s_portalTex;
         private readonly List<Renderer[]> _lanePortals = new List<Renderer[]>();
         private readonly List<Vector3[]> _laneEnds = new List<Vector3[]>();
-        private readonly List<Color> _laneCol = new List<Color>();
+        private readonly List<Color> _laneCol = new List<Color>(), _laneColB = new List<Color>();
         private readonly List<Vector2> _laneAlpha = new List<Vector2>();
         private float _laneZoomK = -1f, _laneGeomTimer;
         private MaterialPropertyBlock _laneMpb;
@@ -84,6 +84,7 @@ namespace StellarisClone.Rendering
             _lanePortals.Add(pm != null ? portals : null);
             _laneEnds.Add(new Vector3[2]);
             _laneCol.Add(Color.white);
+            _laneColB.Add(Color.white);
             _laneAlpha.Add(new Vector2(0.6f, 0.6f));
         }
 
@@ -175,7 +176,7 @@ namespace StellarisClone.Rendering
                     float pulse = 0.88f + 0.12f * Mathf.Sin(t * 2f + i + e * 1.3f);
                     r.transform.SetPositionAndRotation(p + Vector3.up * 0.03f, rot * Quaternion.Euler(0f, 0f, t * 70f + i * 37f + e * 90f));
                     r.transform.localScale = Vector3.one * (wpp * PortalPx * pulse);
-                    var c = _laneCol[i];
+                    var c = e == 0 ? _laneCol[i] : _laneColB[i];
                     _laneMpb.Clear();
                     _laneMpb.SetVector(IdFxColor, new Vector4(c.r, c.g, c.b, alpha));
                     r.SetPropertyBlock(_laneMpb);
@@ -184,10 +185,11 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Цвет и прозрачность концов коридора — для порталов (задаёт UpdateHyperlaneColors).</summary>
-        private void SetLanePortalColor(int i, Color c, float alphaA, float alphaB)
+        private void SetLanePortalColor(int i, Color cA, Color cB, float alphaA, float alphaB)
         {
             if (i >= _laneCol.Count) return;
-            _laneCol[i] = c;
+            _laneCol[i] = cA;
+            _laneColB[i] = cB;
             _laneAlpha[i] = new Vector2(alphaA, alphaB);
         }
 

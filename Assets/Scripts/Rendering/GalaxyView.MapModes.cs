@@ -203,23 +203,26 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Коридоры в режиме: (цвет, альфа концов, толщина) с учётом владельцев — см. UpdateHyperlaneColors.</summary>
-        private void ModeLaneStyle(StarSystem a, StarSystem b, bool ka, bool kb, ref Color c, ref float alphaA, ref float alphaB, ref float px)
+        private void ModeLaneStyle(StarSystem a, StarSystem b, bool ka, bool kb, ref Color cA, ref Color cB, ref float alphaA, ref float alphaB, ref float px)
         {
+            var soft = new Color(0.78f, 0.86f, 1.00f);
             switch (_currentMapMode)
             {
                 case MapModeController.MapMode.Simple:
-                    c = new Color(0.78f, 0.86f, 1.00f);
-                    alphaA = ka ? 0.45f : 0.22f;
-                    alphaB = kb ? 0.45f : 0.22f;
-                    px = 1.4f;
+                    // Спокойнее, но цвета владельцев остаются: свои коридоры по-прежнему бирюзовые
+                    cA = Color.Lerp(cA, soft, 0.25f);
+                    cB = Color.Lerp(cB, soft, 0.25f);
+                    alphaA = a.OwnerId == 0 ? 0.75f : ka ? 0.45f : 0.22f;
+                    alphaB = b.OwnerId == 0 ? 0.75f : kb ? 0.45f : 0.22f;
+                    px = a.OwnerId == 0 || b.OwnerId == 0 ? 1.8f : 1.4f;
                     break;
                 case MapModeController.MapMode.Resources:
-                    c = new Color(0.72f, 0.78f, 0.88f);
+                    cA = cB = new Color(0.72f, 0.78f, 0.88f);
                     alphaA = alphaB = 0.25f;
                     px = 1.2f;
                     break;
                 case MapModeController.MapMode.Hyperlanes:
-                    if (a.OwnerId < 0 || a.OwnerId != b.OwnerId) c = new Color(0.86f, 0.92f, 1.00f);
+                    if (a.OwnerId < 0 || a.OwnerId != b.OwnerId) cA = cB = new Color(0.86f, 0.92f, 1.00f);
                     alphaA = Mathf.Max(alphaA, ka ? 0.9f : 0.5f);
                     alphaB = Mathf.Max(alphaB, kb ? 0.9f : 0.5f);
                     px *= 1.9f;
