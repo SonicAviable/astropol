@@ -1473,18 +1473,7 @@ namespace StellarisClone.Rendering
             return rt;
         }
 
-        private static Color StarColor(StarSpectralClass c)
-        {
-            switch (c)
-            {
-                case StarSpectralClass.ClassM: return new Color(1f, 0.55f, 0.42f);
-                case StarSpectralClass.ClassK: return new Color(1f, 0.76f, 0.46f);
-                case StarSpectralClass.ClassG: return new Color(1f, 0.94f, 0.66f);
-                case StarSpectralClass.ClassA: return new Color(0.86f, 0.93f, 1f);
-                case StarSpectralClass.ClassB: return new Color(0.62f, 0.78f, 1f);
-                default: return new Color(0.70f, 0.50f, 1f);
-            }
-        }
+        private static Color StarColor(StarSpectralClass c) => StarTypes.Tint(c);
     }
 
     // ====================================================================== Облёт камеры в меню

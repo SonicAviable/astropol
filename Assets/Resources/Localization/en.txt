@@ -7430,3 +7430,38 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 <color=#8AA2A8>Осада идёт ×{0:0.##} дольше</color>\n	<color=#8AA2A8>Sieges take ×{0:0.##} longer</color>\n
 Добыча	Mining
 Залежи · не добываются	Deposits · not mined
++2 планеты	+2 planets
+×2	×2
+Белый карлик	White dwarf
+Гигант	Giant
+Голубой сверхгигант (O)	Blue supergiant (O)
+Двойная звезда	Binary star
+Звезда Вольфа-Райе	Wolf-Rayet star
+Коричневый карлик	Brown dwarf
+Красный гигант	Red giant
+Магнетар	Magnetar
+ПРОЦЕНТОВ	PERCENT
+Планетарная туманность	Planetary nebula
+Прото	Proto
+Протозвезда	Protostar
+Пульсар	Pulsar
+СОВЕТ	TIP
+белый карлик	white dwarf
+гелий-3 +25% · обитаемых миров нет	helium-3 +25% · no habitable worlds
+гелий-3 +50% · обитаемых миров нет	helium-3 +50% · no habitable worlds
+гелий-3 ×2 · обитаемых миров нет	helium-3 ×2 · no habitable worlds
+голубой сверхгигант	blue supergiant
+двойная звезда	binary star
+залежи +50% · обитаемых миров нет	deposits +50% · no habitable worlds
+залежи ×2 · обитаемых миров нет	deposits ×2 · no habitable worlds
+звезда Вольфа-Райе	Wolf-Rayet star
+коричневый карлик	brown dwarf
+красный гигант	red giant
+магнетар	magnetar
+мало планет	few planets
+планетарная туманность	planetary nebula
+протозвезда	protostar
+пульсар	pulsar
+титан +20%	titanium +20%
+титан +30% · обитаемых миров нет	titanium +30% · no habitable worlds
+только раскалённые миры	molten worlds only

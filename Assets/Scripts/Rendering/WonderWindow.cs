@@ -661,14 +661,6 @@ namespace StellarisClone.Rendering
 
         private static string Roman(int n) => n switch { 1 => "I", 2 => "II", 3 => "III", _ => n.ToString() };
 
-        private static string StarClassName(StarSpectralClass c) => c switch
-        {
-            StarSpectralClass.ClassM => Loc.T("красный карлик (M)"),
-            StarSpectralClass.ClassK => Loc.T("оранжевая звезда (K)"),
-            StarSpectralClass.ClassG => Loc.T("жёлтая звезда (G)"),
-            StarSpectralClass.ClassA => Loc.T("белая звезда (A)"),
-            StarSpectralClass.ClassB => Loc.T("голубой гигант (B)"),
-            _ => Loc.T("чёрная дыра")
-        };
+        private static string StarClassName(StarSpectralClass c) => StarTypes.Hint(c);
     }
 }

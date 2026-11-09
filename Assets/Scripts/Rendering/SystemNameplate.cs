@@ -759,6 +759,9 @@ namespace StellarisClone.Rendering
             string tip = head + $"<b>{_data.Name}</b>\n" +
                          (PreviewNote().Length > 0 ? PreviewNote().TrimStart() + "\n" : "") +
                          (_data.OwnerId == 0 ? "" : Loc.F("<color=#AAB4C0>Владелец:</color> {0}\n", owner));
+            // Необычная звезда — чем она особенна для системы
+            string starFx = StarTypes.EffectText(_data.SpectralClass);
+            if (starFx.Length > 0) tip += $"<color=#{ColorUtility.ToHtmlStringRGB(StarTypes.Tint(_data.SpectralClass))}>• {starFx}</color>\n";
             // Звёздная база: её мощь в привычных единицах — сколько ваших боевых кораблей она стоит
             var cm = CombatManager.Instance;
             if (cm != null && _data.HasStarbase && _data.OwnerId >= 0 && (_data.OwnerId == 0 || Vision.PlayerSees(_data.Id)))

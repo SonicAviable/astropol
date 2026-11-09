@@ -149,21 +149,9 @@ namespace StellarisClone.Rendering
 
         // ==================== СИСТЕМА ====================
 
-        private static string StarClassLabel(StarSpectralClass c) => c switch
-        {
-            StarSpectralClass.BlackHole => Loc.T("Дыра"),
-            _ => c.ToString().Replace("Class", "")
-        };
+        private static string StarClassLabel(StarSpectralClass c) => StarTypes.Label(c);
 
-        private static string StarClassHint(StarSpectralClass c) => c switch
-        {
-            StarSpectralClass.ClassM => Loc.T("красный карлик"),
-            StarSpectralClass.ClassK => Loc.T("оранжевая звезда"),
-            StarSpectralClass.ClassG => Loc.T("жёлтая звезда"),
-            StarSpectralClass.ClassA => Loc.T("белая звезда"),
-            StarSpectralClass.ClassB => Loc.T("голубой гигант"),
-            _ => Loc.T("чёрная дыра")
-        };
+        private static string StarClassHint(StarSpectralClass c) => StarTypes.Hint(c);
 
         private void BuildSystemCards(StarSystem system)
         {

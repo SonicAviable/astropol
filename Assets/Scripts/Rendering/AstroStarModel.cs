@@ -31,44 +31,46 @@ namespace StellarisClone.Rendering
             return s_surface != null && s_surface.isSupported && RealPlanetModel.UnitSphere != null;
         }
 
-        /// <summary>Тёмный и горячий цвета поверхности (sRGB) по классу.</summary>
-        private static void Palette(StarSpectralClass c, out Color cool, out Color hot)
-        {
-            switch (c)
-            {
-                case StarSpectralClass.ClassM: cool = Hex(0x6e1a06); hot = Hex(0xff7434); break;
-                case StarSpectralClass.ClassK: cool = Hex(0x9c3a0b); hot = Hex(0xffb05e); break;
-                case StarSpectralClass.ClassA: cool = Hex(0xc98a30); hot = Hex(0xfff4dc); break;
-                case StarSpectralClass.ClassB: cool = Hex(0x2f5fc8); hot = Hex(0xd2e6ff); break;
-                default: cool = Hex(0xb8530e); hot = Hex(0xffe4a0); break;
-            }
-        }
-
-        private static Color Hex(int v) => new Color((v >> 16 & 255) / 255f, (v >> 8 & 255) / 255f, (v & 255) / 255f, 1f);
-
         /// <summary>Радиус звезды в виде системы.</summary>
         public static float Radius(StarSpectralClass c) => 2.6f * StarFx.SizeMul(c);
 
-        /// <summary>Строит звезду в центре parent (radius &lt;= 0 — как в виде системы); null — шейдера нет или это чёрная дыра.</summary>
+        /// <summary>
+        /// Строит звезду в центре parent (radius &lt;= 0 — как в виде системы); null — шейдера нет или это чёрная дыра.
+        /// Необычным звёздам добавляются эффекты (StarExtras): лучи пульсара, оболочки, туманность, вторая звезда и т. п.
+        /// </summary>
         public static GameObject Build(Transform parent, StarSystem system, float radius = -1f)
         {
             if (system == null || system.SpectralClass == StarSpectralClass.BlackHole || !Available()) return null;
-            Palette(system.SpectralClass, out var cool, out var hot);
-            if (radius <= 0f) radius = Radius(system.SpectralClass);
+            var cls = system.SpectralClass;
+            StarTypes.Palette(cls, out var cool, out var hot);
+            if (radius <= 0f) radius = Radius(cls);
             float seed = (system.Id * 37 % 997) * 0.173f;
 
             var root = new GameObject(ModelName);
             root.transform.SetParent(parent, false);
+            BuildBody(root.transform, cool, hot, radius, seed, StarTypes.SurfaceIntensity(cls), system.Id);
+            StarFlare.Attach(root, hot, radius);   // блик объектива, раскрывается вблизи
+            StarExtras.Attach(root.transform, cls, radius, system.Id, false);
+            return root;
+        }
+
+        /// <summary>Шар звезды с короной (без блика) — основа звезды и спутник двойной.</summary>
+        public static GameObject BuildBody(Transform parent, Color cool, Color hot, float radius, float seed, float intensity, int id)
+        {
+            if (!Available()) return null;
+            var holder = new GameObject("Body");
+            holder.transform.SetParent(parent, false);
 
             var body = new GameObject("Surface");
-            body.transform.SetParent(root.transform, false);
+            body.transform.SetParent(holder.transform, false);
             body.transform.localScale = Vector3.one * radius;
             body.AddComponent<MeshFilter>().sharedMesh = RealPlanetModel.UnitSphere;
             var mr = body.AddComponent<MeshRenderer>();
-            var m = new Material(s_surface) { name = "AstroStar_" + system.Id, hideFlags = HideFlags.DontSave };
+            var m = new Material(s_surface) { name = "AstroStar_" + id, hideFlags = HideFlags.DontSave };
             m.SetVector("_A", (Vector4)cool);
             m.SetVector("_B", (Vector4)hot);
             m.SetFloat("_Seed", seed);
+            if (m.HasProperty("_Intensity")) m.SetFloat("_Intensity", intensity);
             mr.sharedMaterial = m;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
@@ -76,11 +78,11 @@ namespace StellarisClone.Rendering
             if (s_corona != null && s_corona.isSupported)
             {
                 var corona = new GameObject("Corona");
-                corona.transform.SetParent(root.transform, false);
+                corona.transform.SetParent(holder.transform, false);
                 corona.transform.localScale = Vector3.one * (2f * CoronaExtent * radius);
                 corona.AddComponent<MeshFilter>().sharedMesh = Quad();
                 var cr = corona.AddComponent<MeshRenderer>();
-                var cm = new Material(s_corona) { name = "AstroCorona_" + system.Id, hideFlags = HideFlags.DontSave };
+                var cm = new Material(s_corona) { name = "AstroCorona_" + id, hideFlags = HideFlags.DontSave };
                 cm.SetVector("_Color", (Vector4)hot);
                 cm.SetFloat("_Extent", CoronaExtent);
                 cm.SetFloat("_Seed", seed);
@@ -89,9 +91,9 @@ namespace StellarisClone.Rendering
                 cr.receiveShadows = false;
                 corona.AddComponent<BillboardLookAt>();
             }
-            StarFlare.Attach(root, hot, radius);   // блик объектива, раскрывается вблизи
-            return root;
+            return holder;
         }
+
 
         private static Mesh Quad()
         {

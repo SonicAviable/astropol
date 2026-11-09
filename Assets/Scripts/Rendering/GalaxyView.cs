@@ -523,6 +523,8 @@ namespace StellarisClone.Rendering
                 _starAnims.Add(anim);
                 // Вблизи вместо спрайта — объёмная модель чёрной дыры
                 if (blackHole) node.AddComponent<MapBlackHole>().Init(anim);
+                // Необычные звёзды: лучи пульсара, оболочки, туманности, спутник двойной — и на дальней карте
+                else StarExtras.AttachMap(node.transform, system, baseScale * 0.42f, anim);
 
                 // Плашка с именем
                 var plate = node.AddComponent<SystemNameplate>();
@@ -724,15 +726,7 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Цвет звезды по спектральному классу (карта, студии окон).</summary>
-        public static Color StarColor(StarSpectralClass c) => c switch
-        {
-            StarSpectralClass.ClassM => new Color(1.00f, 0.35f, 0.25f),
-            StarSpectralClass.ClassK => new Color(1.00f, 0.65f, 0.30f),
-            StarSpectralClass.ClassG => new Color(1.00f, 0.92f, 0.55f),
-            StarSpectralClass.ClassA => new Color(0.95f, 0.98f, 1.00f),
-            StarSpectralClass.ClassB => new Color(0.45f, 0.75f, 1.00f),
-            _ => Color.white
-        };
+        public static Color StarColor(StarSpectralClass c) => StarTypes.MapColor(c);
     }
 
     // ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
@@ -826,6 +820,12 @@ namespace StellarisClone.Rendering
         private float _dimShown = 1f;
         private float _scale, _near;
 
+        /// <summary>Текущий масштаб ядра (с дыханием и минимальным экранным размером) и базовый — для эффектов StarExtras.</summary>
+        public float Scale => _scale;
+        public float BaseScale => _baseScale;
+        /// <summary>Видимость спрайтов звезды 0..1: туман войны и уступка объёмной модели.</summary>
+        public float Visibility => Mathf.Lerp(0.35f, 1f, _dimShown) * (1f - BodyHidden);
+
         public void Initialize(SpriteRenderer core, SpriteRenderer ring, float baseScale, Color starColor)
         {
             _core = core;
@@ -918,15 +918,7 @@ namespace StellarisClone.Rendering
     /// <summary>Процедурные спрайты «живых звёзд»: корона, блик с лучами, аккреционный диск; размеры по классам.</summary>
     public static class StarFx
     {
-        public static float SizeMul(StarSpectralClass c) => c switch
-        {
-            StarSpectralClass.ClassM => 0.80f,
-            StarSpectralClass.ClassK => 0.90f,
-            StarSpectralClass.ClassG => 1.00f,
-            StarSpectralClass.ClassA => 1.12f,
-            StarSpectralClass.ClassB => 1.32f,
-            _ => 1.1f
-        };
+        public static float SizeMul(StarSpectralClass c) => StarTypes.SizeMul(c);
 
         private static Sprite Make(int res, System.Func<float, float, float> alpha, string name)
         {

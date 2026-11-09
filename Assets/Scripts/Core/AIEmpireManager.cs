@@ -263,7 +263,7 @@ namespace StellarisClone.Core
             {
                 var s = _generator.Systems[i];
                 if (s.OwnerId != -1 || s.ConnectedSystemIds.Count == 0 || s.Landmark >= 0 || s.Phenomenon >= 0
-                    || s.SpectralClass == StarSpectralClass.BlackHole) continue;
+                    || !StarTypes.Habitable(s.SpectralClass)) continue;
                 float d = float.MaxValue;
                 foreach (var c in capitals) d = Mathf.Min(d, Vector3.Distance(c, s.Position));
                 if (d > maxDist) { maxDist = d; bestSysId = i; }
@@ -627,7 +627,7 @@ namespace StellarisClone.Core
                 StarSpectralClass.ClassK => 1f,
                 StarSpectralClass.ClassB => 1.5f,
                 StarSpectralClass.BlackHole => 3f,
-                _ => 0f
+                _ => StarTypes.IsExotic(sys.SpectralClass) ? 2f : 0f
             };
             v += Mathf.Max(0, sys.ConnectedSystemIds.Count - 2) * 1.2f;
             v += Landmarks.AIValue(sys);

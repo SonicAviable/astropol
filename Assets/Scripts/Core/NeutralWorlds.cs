@@ -336,7 +336,7 @@ namespace StellarisClone.Core
                 {
                     foreach (var sys in systems)
                     {
-                        if (sys.OwnerId != -1 || sys.Landmark >= 0 || sys.SpectralClass == StarSpectralClass.BlackHole) continue;
+                        if (sys.OwnerId != -1 || sys.Landmark >= 0 || !StarTypes.Habitable(sys.SpectralClass)) continue;
                         if (sys.ConnectedSystemIds.Count < 2 || chosen.Contains(sys.Id) || ThreatIn(sys.Id)) continue;
                         int d1 = 99, d2 = 99;
                         foreach (var cd in capDist)

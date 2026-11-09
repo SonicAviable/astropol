@@ -1321,19 +1321,7 @@ namespace StellarisClone.Rendering
             SectionRow(Loc.F("НАЙДЕНО {0} ИЗ {1}  ·  ПОД ВАШИМ КОНТРОЛЕМ {2}  ·  КЛИК — ПЕРЕЙТИ К СИСТЕМЕ", known, total, mine), UIManager.DS.TextMuted);
         }
 
-        internal static string StarClass(StarSpectralClass c)
-        {
-            switch (c)
-            {
-                case StarSpectralClass.ClassM: return Loc.T("Красный карлик (M)");
-                case StarSpectralClass.ClassK: return Loc.T("Оранжевая (K)");
-                case StarSpectralClass.ClassG: return Loc.T("Жёлтая (G)");
-                case StarSpectralClass.ClassA: return Loc.T("Белая (A)");
-                case StarSpectralClass.ClassB: return Loc.T("Голубой гигант (B)");
-                case StarSpectralClass.BlackHole: return Loc.T("Чёрная дыра");
-            }
-            return c.ToString();
-        }
+        internal static string StarClass(StarSpectralClass c) => StarTypes.Name(c);
 
         // ---------- Эффекты и угрозы ----------
 

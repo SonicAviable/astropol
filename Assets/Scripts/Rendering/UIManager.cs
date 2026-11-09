@@ -1287,15 +1287,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (_inspAccent != null) _inspAccent.color = new Color(ownerColor.r, ownerColor.g, ownerColor.b, 0.9f);
         }
 
-        private static Color StarTint(StarSpectralClass c) => c switch
-        {
-            StarSpectralClass.ClassM => new Color(1f, 0.55f, 0.42f),
-            StarSpectralClass.ClassK => new Color(1f, 0.76f, 0.46f),
-            StarSpectralClass.ClassG => new Color(1f, 0.94f, 0.66f),
-            StarSpectralClass.ClassA => new Color(0.86f, 0.93f, 1f),
-            StarSpectralClass.ClassB => new Color(0.62f, 0.78f, 1f),
-            _ => new Color(0.70f, 0.50f, 1f)
-        };
+        private static Color StarTint(StarSpectralClass c) => StarTypes.Tint(c);
 
         /// <summary>
         /// Кнопки инспектора складываются снизу вверх (только видимые), над ними — ряд районов,

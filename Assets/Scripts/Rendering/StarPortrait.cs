@@ -124,18 +124,20 @@ namespace StellarisClone.Rendering
         /// </summary>
         private static void Strip(GameObject model)
         {
-            var corona = model.transform.Find("Corona");
-            if (corona != null)
+            // Эффекты необычных звёзд (лучи, оболочки, спутник двойной) в маленький кадр не помещаются
+            var extras = model.transform.Find(StarExtras.NodeName);
+            if (extras != null) { extras.gameObject.SetActive(false); Destroy(extras.gameObject); }
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
             {
-                var cr = corona.GetComponent<Renderer>();
+                if (t == null || t.name != "Corona") continue;
+                var cr = t.GetComponent<Renderer>();
                 if (cr != null && cr.sharedMaterial != null) Destroy(cr.sharedMaterial);
-                corona.gameObject.SetActive(false);
-                Destroy(corona.gameObject);
+                t.gameObject.SetActive(false);
+                Destroy(t.gameObject);
             }
             foreach (var b in model.GetComponentsInChildren<BillboardLookAt>(true)) Destroy(b);
             foreach (var f in model.GetComponentsInChildren<StarFlare>(true)) Destroy(f);
             foreach (var f in model.GetComponentsInChildren<UnityEngine.Rendering.LensFlareComponentSRP>(true)) Destroy(f);
-            foreach (Transform t in model.transform) t.localRotation = Quaternion.identity;   // корона — лицом к камере студии
         }
 
         private void Clear()

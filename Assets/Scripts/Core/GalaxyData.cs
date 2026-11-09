@@ -4,7 +4,16 @@ using UnityEngine;
 
 namespace StellarisClone.Core
 {
-    public enum StarSpectralClass { ClassM, ClassK, ClassG, ClassA, ClassB, BlackHole }
+    /// <summary>
+    /// Тип звезды системы. Новые значения только дописываются в конец — в сохранениях хранится номер.
+    /// Описания, цвета, размеры и правила генерации — в <see cref="StarTypes"/>.
+    /// </summary>
+    public enum StarSpectralClass
+    {
+        ClassM, ClassK, ClassG, ClassA, ClassB, BlackHole,
+        ClassO, RedGiant, WhiteDwarf, BrownDwarf, Binary, WolfRayet,
+        Pulsar, Magnetar, Protostar, PlanetaryNebula
+    }
 
     [Serializable]
     public class StarSystem
@@ -66,7 +75,11 @@ namespace StellarisClone.Core
         {
             if (HasGeneratedPlanets) return;
 
-            int count = UnityEngine.Random.Range(3, 7);
+            // Число планет и их типы зависят от звезды (StarTypes): у двойной больше, у пульсара меньше,
+            // у необитаемых звёзд жилые миры становятся пустошами и раскалёнными
+            int count = Mathf.Max(1, UnityEngine.Random.Range(3, 7) + StarTypes.PlanetDelta(SpectralClass));
+            bool habitable = StarTypes.Habitable(SpectralClass);
+            StarTypes.DepositMul(SpectralClass, out float energyMul, out float mineralMul);
             float currentRadius = 8f;
 
             TotalEnergy = 0;
@@ -78,10 +91,11 @@ namespace StellarisClone.Core
 
                 // Тип планеты: с гарантией хотя бы одной жилой
                 PlanetType type;
-                if (i == 0)
+                if (i == 0 && habitable)
                     type = UnityEngine.Random.value < 0.5f ? PlanetType.Continental : PlanetType.Desert;
                 else
                     type = (PlanetType)UnityEngine.Random.Range(0, 5);
+                type = StarTypes.AdjustPlanet(SpectralClass, type, i);
 
                 float speed = UnityEngine.Random.Range(8f, 22f) / (i + 1);
                 float size = type == PlanetType.GasGiant
@@ -99,6 +113,8 @@ namespace StellarisClone.Core
 
                 int energy   = UnityEngine.Random.value > 0.4f ? UnityEngine.Random.Range(2, 6) : 0;
                 int minerals = UnityEngine.Random.value > 0.3f ? UnityEngine.Random.Range(2, 8) : 0;
+                energy = Mathf.RoundToInt(energy * energyMul);
+                minerals = Mathf.RoundToInt(minerals * mineralMul);
 
                 TotalEnergy += energy;
                 TotalMinerals += minerals;
