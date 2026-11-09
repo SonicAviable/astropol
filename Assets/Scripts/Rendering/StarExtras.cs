@@ -28,11 +28,11 @@ namespace StellarisClone.Rendering
         private bool _map;
         private StarAnimator _anim;
         private StarSystem _sys;
-        private Transform _bill, _spin, _companion, _disk;
+        private Transform _bill, _spin, _companion;
         private readonly List<Part> _parts = new List<Part>();
         private readonly List<Part> _shells = new List<Part>();
         private readonly List<Part> _loops = new List<Part>();
-        private Part _glow, _cross, _beamA, _beamB, _burst, _jetA, _jetB, _cloud, _neb, _compGlow, _ring;
+        private Part _glow, _cross, _beamA, _beamB, _burst, _cloud, _neb, _compGlow, _ring;
         private Transform _magnet;
         private readonly List<Part> _lines = new List<Part>();
 
@@ -159,16 +159,32 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.Protostar:
                 {
-                    _cloud = Quad(_bill, Tex.Dust, R * 30f, Color.white, 0.75f);
-                    _glow = Quad(_bill, Tex.Glow, R * 7f, new Color(1f, 0.6f, 0.3f), 0.45f);
-                    var holder = new GameObject("DiskTilt").transform;
-                    holder.SetParent(_bill, false);
-                    holder.localScale = new Vector3(1f, 0.3f, 1f);
-                    _disk = new GameObject("Disk").transform;
-                    _disk.SetParent(holder, false);
-                    Quad(_disk, Tex.Disk, R * 9f, new Color(1f, 0.62f, 0.32f), 0.8f);
-                    _jetA = Beam(_bill, R * 1.3f, R * 11f, new Color(0.75f, 0.88f, 1f), 0.7f, 0f);
-                    _jetB = Beam(_bill, R * 1.3f, R * 11f, new Color(0.75f, 0.88f, 1f), 0.7f, 180f);
+                    // Как L1527 / HH 30 на снимках JWST и «Хаббла»: звезду прячет пылевой диск, видимый ребром
+                    // (тёмная перемычка), вверх и вниз раскрываются воронки отражательной туманности — оранжевые
+                    // у центра, голубые к краям; вдоль оси бьют тонкие джеты с узлами, на концах — ударные дуги.
+                    // Ось наклонена по-своему у каждой системы
+                    var tilt = new GameObject("Axis").transform;
+                    tilt.SetParent(_bill, false);
+                    tilt.localRotation = Quaternion.Euler(0f, 0f, (_phase * 7.3f) % 70f - 35f);
+                    _cloud = Quad(tilt, Tex.Hourglass, R * 30f, Color.white, 0.95f);
+                    _glow = Quad(tilt, Tex.Glow, R * 3.5f, new Color(1f, 0.62f, 0.34f), 0.45f);
+                    for (int sgn = -1; sgn <= 1; sgn += 2)
+                    {
+                        var jet = Quad(tilt, Tex.Line, 1f, new Color(1f, 0.45f, 0.58f), 0.32f);
+                        jet.T.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                        jet.T.localScale = new Vector3(R * 25f, R * 0.45f, 1f);
+                        jet.T.localPosition = new Vector3(0f, sgn * R * 13.5f, 0f);
+                        var bow = Quad(tilt, Tex.Bow, R * 4.5f, new Color(1f, 0.45f, 0.6f), 0.55f);
+                        bow.T.localPosition = new Vector3(0f, sgn * R * 26f, 0f);
+                        bow.T.localRotation = Quaternion.Euler(0f, 0f, sgn > 0 ? 0f : 180f);
+                        _shells.Add(bow);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            var knot = Quad(tilt, Tex.Glow, R * 1.4f, new Color(1f, 0.5f, 0.62f), 0f);
+                            knot.Col.a = sgn;                         // направление полёта узла
+                            _loops.Add(knot);
+                        }
+                    }
                     break;
                 }
 
@@ -242,18 +258,6 @@ namespace StellarisClone.Rendering
             beam.localRotation = Quaternion.LookRotation(fwd, dir);
             beam.localPosition = dir * (length * 0.5f);
             beam.localScale = new Vector3(width, length, 1f);
-        }
-
-        /// <summary>Луч от центра наружу (основание в центре звезды), повёрнутый на angle градусов.</summary>
-        private Part Beam(Transform parent, float width, float length, Color col, float alpha, float angle)
-        {
-            var holder = new GameObject("Beam").transform;
-            holder.SetParent(parent, false);
-            holder.localRotation = Quaternion.Euler(0f, 0f, angle);
-            var p = Quad(holder, Tex.Beam, 1f, col, alpha);
-            p.T.localScale = new Vector3(width, length, 1f);
-            p.T.localPosition = new Vector3(0f, length * 0.5f, 0f);
-            return p;
         }
 
         // ==================== АНИМАЦИЯ ====================
@@ -377,17 +381,19 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.Protostar:
                 {
-                    _cloud.T.localRotation = Quaternion.Euler(0f, 0f, t * 1.5f);
-                    Set(_cloud, _cloud.A);
-                    _disk.localRotation = Quaternion.Euler(0f, 0f, -t * 40f);
-                    float j = 1f + 0.12f * Mathf.Sin(t * 4f);
-                    foreach (var p in new[] { _jetA, _jetB })
+                    Set(_cloud, _cloud.A * (0.93f + 0.07f * Mathf.Sin(t * 0.4f)));
+                    Set(_glow, _glow.A * (0.85f + 0.15f * pulse));
+                    // Узлы Хербига-Аро летят по джетам наружу и гаснут к ударной дуге
+                    for (int i = 0; i < _loops.Count; i++)
                     {
-                        p.T.localScale = new Vector3(R * 1.3f, R * 11f * j, 1f);
-                        p.T.localPosition = new Vector3(0f, R * 11f * j * 0.5f, 0f);
-                        Set(p, p.A);
+                        var k = _loops[i];
+                        float q = Mathf.Repeat(t * 0.035f + (i % 4) / 4f + (i / 4) * 0.13f, 1f);
+                        k.T.localPosition = new Vector3(0f, k.Col.a * R * Mathf.Lerp(2f, 25f, q), 0f);
+                        float b = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(i * 1.7f + 0.4f));
+                        Set(k, Mathf.Sin(q * Mathf.PI) * 0.75f * b, new Color(k.Col.r, k.Col.g, k.Col.b));
                     }
-                    foreach (var p in _parts) if (p != _cloud && p != _jetA && p != _jetB) Set(p, p.A);
+                    foreach (var bw in _shells) Set(bw, bw.A * (0.8f + 0.2f * Mathf.Sin(t * 0.7f)));
+                    foreach (var p in _parts) if (p != _cloud && p != _glow && !_loops.Contains(p) && !_shells.Contains(p)) Set(p, p.A);
                     break;
                 }
 
@@ -469,7 +475,7 @@ namespace StellarisClone.Rendering
         /// <summary>Процедурные формы слоёв: строятся один раз, линейные (цвет приводит шейдер).</summary>
         private static class Tex
         {
-            private static Texture2D s_wind, s_line, s_glow, s_beam, s_ring, s_shell, s_cross, s_disk, s_dust, s_nebula;
+            private static Texture2D s_hour, s_bow, s_wind, s_line, s_glow, s_beam, s_ring, s_shell, s_cross, s_nebula;
 
             private static Texture2D Get(ref Texture2D field, System.Func<Texture2D> make)
             {
@@ -477,7 +483,7 @@ namespace StellarisClone.Rendering
                 return field;
             }
 
-            public static void Reset() { s_wind = null; s_line = null; s_glow = s_beam = s_ring = s_shell = s_cross = s_disk = s_dust = s_nebula = null; }
+            public static void Reset() { s_hour = s_bow = null; s_wind = null; s_line = null; s_glow = s_beam = s_ring = s_shell = s_cross = s_nebula = null; }
 
             public static Texture2D Glow => Get(ref s_glow, () => Make("Glow", 128, 128, (u, v) =>
             {
@@ -564,6 +570,53 @@ namespace StellarisClone.Rendering
                 return tex;
             });
 
+            /// <summary>
+            /// «Песочные часы» протозвезды (как L1527): две воронки отражательной туманности вверх и вниз,
+            /// со светлыми стенками и клочковатым светом внутри; тёмная перемычка пылевого диска посередине;
+            /// у центра оранжевые, к краям голубые; нижняя (от нас) тусклее. Цвет запечён.
+            /// </summary>
+            public static Texture2D Hourglass => Get(ref s_hour, () =>
+            {
+                var rnd = new System.Random(5);
+                var waves = new Vector4[9];
+                for (int k = 0; k < waves.Length; k++)
+                {
+                    float a = (float)rnd.NextDouble() * Mathf.PI;
+                    waves[k] = new Vector4(Mathf.Cos(a), Mathf.Sin(a), 2f + (float)rnd.NextDouble() * 9f, (float)rnd.NextDouble() * 6.28f);
+                }
+                return Make("Hourglass", 256, 256, (u, v) =>
+                {
+                    float n = 0f, nMax = 0f;
+                    for (int k = 0; k < waves.Length; k++)
+                    {
+                        float amp = 1f / (1f + k * 0.4f);
+                        n += Mathf.Sin((u * waves[k].x + v * waves[k].y) * waves[k].z + waves[k].w) * amp;
+                        nMax += amp;
+                    }
+                    n = n / nMax * 0.5f + 0.5f;
+                    float V = Mathf.Abs(v);
+                    float w = 0.06f + 0.62f * Mathf.Pow(V, 0.75f);           // полуширина воронки
+                    float xr = Mathf.Abs(u) / w;
+                    float wall = Mathf.Exp(-((xr - 0.9f) / 0.22f) * ((xr - 0.9f) / 0.22f));
+                    float fill = Mathf.Exp(-xr * xr * 0.9f) * 0.6f * (1f - Edge(0.75f, 1.2f, xr));
+                    float lobe = (wall * 1.1f + fill) * (Mathf.Exp(-V * 1.3f) + Mathf.Exp(-V * 7f) * 0.8f)
+                                 * Edge(0f, 0.08f, V) * (0.45f + 0.9f * n) * 1.3f;
+                    if (v < 0f) lobe *= 0.6f;
+                    lobe *= 1f - Mathf.Exp(-(v / 0.07f) * (v / 0.07f)) * Mathf.Exp(-(u / 0.55f) * (u / 0.55f)) * 0.95f;
+                    lobe *= 1f - Edge(0.8f, 1f, Len(u, v));
+                    var c = Color.Lerp(new Color(1f, 0.62f, 0.32f), new Color(0.5f, 0.65f, 1f), Edge(0.12f, 0.75f, V));
+                    c.a = Mathf.Clamp01(lobe);
+                    return c;
+                });
+            });
+
+            /// <summary>Ударная дуга на конце джета: выпуклая наружу (вверх по текстуре), края гаснут.</summary>
+            public static Texture2D Bow => Get(ref s_bow, () => Make("Bow", 128, 128, (u, v) =>
+            {
+                float r = Len(u, v + 0.55f), x = (r - 0.95f) / 0.1f;
+                return A(Mathf.Exp(-x * x) * Edge(-0.35f, 0.25f, v) * (1f - Edge(0.55f, 0.95f, Mathf.Abs(u))));
+            }));
+
             /// <summary>Линия поля: яркая середина поперёк, гаснет к концам вдоль.</summary>
             public static Texture2D Line => Get(ref s_line, () => Make("Line", 64, 32, (u, v) =>
                 A(Mathf.Exp(-v * v * 5f) * (1f - Mathf.Pow(Mathf.Abs(u), 6f)))));
@@ -588,32 +641,6 @@ namespace StellarisClone.Rendering
                 float h = Mathf.Exp(-(v / 0.012f) * (v / 0.012f)) * Mathf.Pow(Mathf.Max(0f, 1f - Mathf.Abs(u)), 2.2f);
                 float vv = Mathf.Exp(-(u / 0.012f) * (u / 0.012f)) * Mathf.Pow(Mathf.Max(0f, 1f - Mathf.Abs(v)), 2.2f);
                 return A(Mathf.Clamp01(h + vv + Mathf.Exp(-d * d * 60f) * 0.6f));
-            }));
-
-            public static Texture2D Disk => Get(ref s_disk, () => Make("Disk", 256, 256, (u, v) =>
-            {
-                float d = Len(u, v), an = Mathf.Atan2(v, u);
-                float band = Edge(0.18f, 0.32f, d) * (1f - Edge(0.78f, 1f, d));
-                float stripes = 0.55f + 0.45f * Mathf.Sin(d * 46f + Mathf.Sin(an * 2f) * 1.5f);
-                float lump = 0.6f + 0.4f * Mathf.Sin(an * 3f + d * 9f);
-                return A(band * stripes * lump);
-            }));
-
-            /// <summary>Пылевое облако протозвезды: бурые и лиловые сгустки, цвет запечён в текстуру.</summary>
-            public static Texture2D Dust => Get(ref s_dust, () => MakeColored("Dust", 256, 1234, (u, v, blobs) =>
-            {
-                float wa = 0f, wb = 0f;
-                foreach (var b in blobs)
-                {
-                    float dx = u - b.x, dy = v - b.y, g = Mathf.Exp(-(dx * dx + dy * dy) / (b.z * b.z));
-                    if (b.w > 0.5f) wa += g; else wb += g;
-                }
-                float sum = wa + wb, d = Len(u, v);
-                float a = Mathf.Clamp01(sum * 0.55f) * (1f - Edge(0.55f, 1f, d));
-                var cA = new Color(0.62f, 0.34f, 0.2f); var cB = new Color(0.38f, 0.22f, 0.46f);
-                var c = sum > 1e-4f ? Color.Lerp(cB, cA, wa / sum) : cA;
-                c.a = a;
-                return c;
             }));
 
             /// <summary>Кольцо планетарной туманности: бирюза внутри, синее посередине, красное снаружи.</summary>
