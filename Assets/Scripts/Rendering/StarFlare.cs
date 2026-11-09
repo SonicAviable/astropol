@@ -50,10 +50,8 @@ namespace StellarisClone.Rendering
             d.hideFlags = HideFlags.DontSave;
             d.elements = new[]
             {
-                // Мягкий ореол вокруг звезды
-                Circle(0f, 0.55f, Vector2.one, hot, 0.55f, 0.35f),
-                // Анаморфная полоса — фирменный «киношный» блик
-                Circle(0f, 1f, new Vector2(7f, 0.045f), Color.Lerp(hot, cool, 0.6f), 0.35f, 0.6f),
+                // Слабый мягкий ореол (сильнее — ложится белым пятном поверх поверхности звезды)
+                Circle(0f, 0.7f, Vector2.one, hot, 0.12f, 0.1f),
                 // Призраки вдоль оси к центру экрана
                 Hex(0.55f, 0.10f, Color.Lerp(hot, cool, 0.3f), 0.10f),
                 Hex(1.10f, 0.18f, Color.Lerp(hot, cool, 0.7f), 0.06f),
