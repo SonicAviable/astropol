@@ -174,21 +174,21 @@ namespace StellarisClone.Rendering
                     var tilt = new GameObject("Axis").transform;
                     tilt.SetParent(_bill, false);
                     tilt.localRotation = Quaternion.Euler(0f, 0f, (_phase * 7.3f) % 70f - 35f);
-                    _cloud = Quad(tilt, Tex.Hourglass, R * 30f, Color.white, 0.95f);
+                    _cloud = Quad(tilt, Tex.Hourglass, R * 20f, Color.white, 0.55f);
                     _glow = Quad(tilt, Tex.Glow, R * 3.5f, new Color(1f, 0.62f, 0.34f), 0.45f);
                     for (int sgn = -1; sgn <= 1; sgn += 2)
                     {
-                        var jet = Quad(tilt, Tex.Line, 1f, new Color(1f, 0.45f, 0.58f), 0.32f);
+                        var jet = Quad(tilt, Tex.Line, 1f, new Color(1f, 0.72f, 0.8f), 0.13f);
                         jet.T.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                        jet.T.localScale = new Vector3(R * 25f, R * 0.45f, 1f);
-                        jet.T.localPosition = new Vector3(0f, sgn * R * 13.5f, 0f);
-                        var bow = Quad(tilt, Tex.Bow, R * 4.5f, new Color(1f, 0.45f, 0.6f), 0.55f);
-                        bow.T.localPosition = new Vector3(0f, sgn * R * 26f, 0f);
+                        jet.T.localScale = new Vector3(R * 16f, R * 0.3f, 1f);
+                        jet.T.localPosition = new Vector3(0f, sgn * R * 9f, 0f);
+                        var bow = Quad(tilt, Tex.Bow, R * 3f, new Color(1f, 0.72f, 0.82f), 0.22f);
+                        bow.T.localPosition = new Vector3(0f, sgn * R * 16.5f, 0f);
                         bow.T.localRotation = Quaternion.Euler(0f, 0f, sgn > 0 ? 0f : 180f);
                         _shells.Add(bow);
                         for (int i = 0; i < 4; i++)
                         {
-                            var knot = Quad(tilt, Tex.Glow, R * 1.4f, new Color(1f, 0.5f, 0.62f), 0f);
+                            var knot = Quad(tilt, Tex.Glow, R * 0.8f, new Color(1f, 0.75f, 0.82f), 0f);
                             knot.Col.a = sgn;                         // направление полёта узла
                             _loops.Add(knot);
                         }
@@ -406,9 +406,9 @@ namespace StellarisClone.Rendering
                     {
                         var k = _loops[i];
                         float q = Mathf.Repeat(t * 0.035f + (i % 4) / 4f + (i / 4) * 0.13f, 1f);
-                        k.T.localPosition = new Vector3(0f, k.Col.a * R * Mathf.Lerp(2f, 25f, q), 0f);
+                        k.T.localPosition = new Vector3(0f, k.Col.a * R * Mathf.Lerp(1.5f, 16f, q), 0f);
                         float b = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(i * 1.7f + 0.4f));
-                        Set(k, Mathf.Sin(q * Mathf.PI) * 0.75f * b, new Color(k.Col.r, k.Col.g, k.Col.b));
+                        Set(k, Mathf.Sin(q * Mathf.PI) * 0.35f * b, new Color(k.Col.r, k.Col.g, k.Col.b));
                     }
                     foreach (var bw in _shells) Set(bw, bw.A * (0.8f + 0.2f * Mathf.Sin(t * 0.7f)));
                     foreach (var p in _parts) if (p != _cloud && p != _glow && !_loops.Contains(p) && !_shells.Contains(p)) Set(p, p.A);
@@ -554,7 +554,7 @@ namespace StellarisClone.Rendering
                     float a = Rnd() * Mathf.PI * 2f;
                     float r = Mathf.Clamp(Shell(a) + (Rnd() - 0.5f) * 0.3f, 0.15f, 0.85f);
                     Blob(Mathf.Cos(a) * r, Mathf.Sin(a) * r, Mathf.Cos(a), Mathf.Sin(a),
-                         0.08f + Rnd() * 0.08f, 0.06f + Rnd() * 0.07f, 0.12f + Rnd() * 0.12f, new Vector3(1f, 0.42f, 0.42f));
+                         0.08f + Rnd() * 0.08f, 0.06f + Rnd() * 0.07f, 0.12f + Rnd() * 0.12f, new Vector3(1f, 0.66f, 0.66f));
                 }
                 // Узелки газа: в основном розово-красные (водород), часть — жёлто-оранжевые; яркость с длинным хвостом
                 for (int c = 0; c < 420; c++)
@@ -565,7 +565,8 @@ namespace StellarisClone.Rendering
                     float len = 0.012f + Rnd() * 0.035f, wid = 0.009f + Rnd() * 0.016f;
                     float bright = 0.15f + Mathf.Pow(Rnd(), 2.2f) * 0.9f;
                     float tone = Rnd();
-                    Vector3 col = tone < 0.65f ? new Vector3(1f, 0.36f + 0.1f * tone, 0.4f) : new Vector3(1f, 0.62f + 0.15f * Rnd(), 0.45f);
+                    // Цвета светлее нужного: шейдер переводит их в линейные (возводит в 2,2)
+                    Vector3 col = tone < 0.65f ? new Vector3(1f, 0.6f + 0.08f * tone, 0.63f) : new Vector3(1f, 0.8f + 0.1f * Rnd(), 0.66f);
                     Blob(Mathf.Cos(a) * r, Mathf.Sin(a) * r, Mathf.Cos(a), Mathf.Sin(a), len, wid, bright, col);
                 }
                 var tex = new Texture2D(N, N, TextureFormat.RGBA32, true, true)
@@ -579,7 +580,7 @@ namespace StellarisClone.Rendering
                     // Слабая диффузная дымка под сгустками, к краю кадра — в ноль
                     float haze = Mathf.Exp(-(d - 0.5f) * (d - 0.5f) / 0.05f) * 0.1f;
                     float aSum = alpha[i] + haze;
-                    Vector3 c = aSum > 1e-5f ? (rgb[i] + new Vector3(1f, 0.45f, 0.45f) * haze) / aSum : Vector3.one;
+                    Vector3 c = aSum > 1e-5f ? (rgb[i] + new Vector3(1f, 0.68f, 0.68f) * haze) / aSum : Vector3.one;
                     float a = (1f - Mathf.Exp(-aSum * 1.4f)) * (1f - Edge(0.8f, 1f, d));
                     px[i] = new Color(c.x, c.y, c.z, a);
                 }
@@ -618,11 +619,12 @@ namespace StellarisClone.Rendering
                     float wall = Mathf.Exp(-((xr - 0.9f) / 0.22f) * ((xr - 0.9f) / 0.22f));
                     float fill = Mathf.Exp(-xr * xr * 0.9f) * 0.6f * (1f - Edge(0.75f, 1.2f, xr));
                     float lobe = (wall * 1.1f + fill) * (Mathf.Exp(-V * 1.3f) + Mathf.Exp(-V * 7f) * 0.8f)
-                                 * Edge(0f, 0.08f, V) * (0.45f + 0.9f * n) * 1.3f;
+                                 * Edge(0f, 0.08f, V) * (0.25f + 1.15f * n) * 1.2f;
                     if (v < 0f) lobe *= 0.6f;
                     lobe *= 1f - Mathf.Exp(-(v / 0.07f) * (v / 0.07f)) * Mathf.Exp(-(u / 0.55f) * (u / 0.55f)) * 0.95f;
                     lobe *= 1f - Edge(0.8f, 1f, Len(u, v));
-                    var c = Color.Lerp(new Color(1f, 0.62f, 0.32f), new Color(0.5f, 0.65f, 1f), Edge(0.12f, 0.75f, V));
+                    // Цвета светлые: шейдер переводит их в линейные (возводит в 2,2), насыщенные выходили бы кислотными
+                    var c = Color.Lerp(new Color(1f, 0.8f, 0.6f), new Color(0.74f, 0.82f, 1f), Edge(0.12f, 0.75f, V));
                     c.a = Mathf.Clamp01(lobe);
                     return c;
                 });
@@ -669,8 +671,8 @@ namespace StellarisClone.Rendering
                 float clump = 0.6f + 0.25f * Mathf.Sin(an * 7f + Mathf.Sin(an * 2f) * 3f) + 0.15f * Mathf.Sin(an * 19f);
                 float a = Mathf.Exp(-x * x) * clump + Mathf.Exp(-d * d * 6f) * 0.12f;
                 a *= 1f - Edge(0.88f, 1f, d);
-                Color c = d < 0.55f ? Color.Lerp(new Color(0.36f, 0.95f, 0.92f), new Color(0.42f, 0.62f, 1f), Edge(0.3f, 0.55f, d))
-                                    : Color.Lerp(new Color(0.42f, 0.62f, 1f), new Color(1f, 0.36f, 0.42f), Edge(0.55f, 0.8f, d));
+                Color c = d < 0.55f ? Color.Lerp(new Color(0.64f, 0.98f, 0.96f), new Color(0.68f, 0.8f, 1f), Edge(0.3f, 0.55f, d))
+                                    : Color.Lerp(new Color(0.68f, 0.8f, 1f), new Color(1f, 0.62f, 0.66f), Edge(0.55f, 0.8f, d));
                 c.a = Mathf.Clamp01(a);
                 return c;
             }));
