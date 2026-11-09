@@ -21,6 +21,9 @@ namespace StellarisClone.Rendering
             public Renderer R;
             public Color Col;
             public float A;
+            /// <summary>Большая туманность: гаснет, когда камера подлетает вплотную (иначе заливает весь экран).</summary>
+            public bool Big;
+            public float BigSize;
         }
 
         private StarSpectralClass _cls;
@@ -34,11 +37,12 @@ namespace StellarisClone.Rendering
         private readonly List<Part> _loops = new List<Part>();
         private Part _glow, _cross, _beamA, _beamB, _burst, _cloud, _neb, _compGlow, _ring;
         private Transform _magnet;
+        private float _bigSize;
         private readonly List<Part> _lines = new List<Part>();
 
         // Пульсар: магнитная ось наклонена к оси вращения и медленно описывает конус — лучи-маяк обходят небо
         private const float PulsarTilt = 35f, PulsarPeriod = 5f;
-        private float _fade = 1f;
+        private float _fade = 1f, _nearK = 1f;
 
         /// <summary>Эффекты у объёмной звезды (вид системы, мини-система). Обычным звёздам ничего не добавляется.</summary>
         public static StarExtras Attach(Transform starRoot, StarSpectralClass cls, float radius, int seed, bool map)
@@ -112,7 +116,7 @@ namespace StellarisClone.Rendering
                     // Как WR 124 / M1-67 на снимках «Хаббла»: ослепительная голубая звезда в рваном облаке
                     // сгустков и радиальных струй раскалённого газа (розово-красное свечение водорода).
                     // Два слоя облака медленно расширяются и сменяют друг друга — газ всё время истекает наружу
-                    for (int i = 0; i < 2; i++) _shells.Add(Quad(_bill, Tex.Wind, R * 24f, Color.white, 0.8f));
+                    for (int i = 0; i < 2; i++) _shells.Add(BigQuad(_bill, Tex.Wind, R * 13f, Color.white, 0.7f));
                     _glow = Quad(_bill, Tex.Glow, R * 5f, new Color(0.62f, 0.85f, 1f), 0.45f);
                     break;
 
@@ -174,16 +178,16 @@ namespace StellarisClone.Rendering
                     var tilt = new GameObject("Axis").transform;
                     tilt.SetParent(_bill, false);
                     tilt.localRotation = Quaternion.Euler(0f, 0f, (_phase * 7.3f) % 70f - 35f);
-                    _cloud = Quad(tilt, Tex.Hourglass, R * 20f, Color.white, 0.55f);
+                    _cloud = BigQuad(tilt, Tex.Hourglass, R * 14f, Color.white, 0.55f);
                     _glow = Quad(tilt, Tex.Glow, R * 3.5f, new Color(1f, 0.62f, 0.34f), 0.45f);
                     for (int sgn = -1; sgn <= 1; sgn += 2)
                     {
                         var jet = Quad(tilt, Tex.Line, 1f, new Color(1f, 0.72f, 0.8f), 0.13f);
                         jet.T.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                        jet.T.localScale = new Vector3(R * 16f, R * 0.3f, 1f);
-                        jet.T.localPosition = new Vector3(0f, sgn * R * 9f, 0f);
+                        jet.T.localScale = new Vector3(R * 11f, R * 0.3f, 1f);
+                        jet.T.localPosition = new Vector3(0f, sgn * R * 6.2f, 0f);
                         var bow = Quad(tilt, Tex.Bow, R * 3f, new Color(1f, 0.72f, 0.82f), 0.22f);
-                        bow.T.localPosition = new Vector3(0f, sgn * R * 16.5f, 0f);
+                        bow.T.localPosition = new Vector3(0f, sgn * R * 11.5f, 0f);
                         bow.T.localRotation = Quaternion.Euler(0f, 0f, sgn > 0 ? 0f : 180f);
                         _shells.Add(bow);
                         for (int i = 0; i < 4; i++)
@@ -202,7 +206,7 @@ namespace StellarisClone.Rendering
                     holder.SetParent(_bill, false);
                     holder.localScale = new Vector3(1f, 0.78f, 1f);
                     holder.localRotation = Quaternion.Euler(0f, 0f, 24f + _phase * 20f);
-                    _neb = Quad(holder, Tex.Nebula, R * 26f, Color.white, 0.95f);
+                    _neb = BigQuad(holder, Tex.Nebula, R * 14f, Color.white, 0.85f);
                     _glow = Quad(_bill, Tex.Glow, R * 8f, new Color(0.8f, 0.92f, 1f), 0.5f);
                     break;
                 }
@@ -210,6 +214,15 @@ namespace StellarisClone.Rendering
 
             int layer = transform.parent != null ? transform.parent.gameObject.layer : 0;
             SetLayer(gameObject, layer);
+        }
+
+        /// <summary>Слой большой туманности: помечается для затухания вблизи (см. LateUpdate).</summary>
+        private Part BigQuad(Transform parent, Texture2D tex, float size, Color col, float alpha)
+        {
+            var p = Quad(parent, tex, size, col, alpha);
+            p.Big = true;
+            _bigSize = Mathf.Max(_bigSize, size);
+            return p;
         }
 
         private Part Quad(Transform parent, Texture2D tex, float size, Color col, float alpha)
@@ -282,7 +295,9 @@ namespace StellarisClone.Rendering
             // На дальней карте — размер и видимость как у спрайтов звезды; вблизи уступаем мини-системе
             if (_map && _anim != null)
             {
-                float k = _anim.BaseScale > 0f ? _anim.Scale / _anim.BaseScale : 0f;
+                // Спрайт звезды издалека держит минимальный экранный размер и растёт в разы — эффекты за ним
+                // не тянем (туманности раздувались на полкарты), растут максимум в 1,6 раза
+                float k = _anim.BaseScale > 0f ? Mathf.Min(_anim.Scale / _anim.BaseScale, 1.6f) : 0f;
                 transform.localScale = Vector3.one * k;
                 float near = 1f;
                 if (_sys != null && GalaxyView.IsKnownToPlayer(_sys))
@@ -295,6 +310,13 @@ namespace StellarisClone.Rendering
             }
 
             _bill.rotation = cam.transform.rotation;
+            // Большие туманности вблизи: камера внутри облака — оно почти прозрачно, видны звезда и планеты
+            if (_bigSize > 0f)
+            {
+                float size = _bigSize * transform.lossyScale.x;
+                float dist = Vector3.Distance(cam.transform.position, transform.position);
+                _nearK = Mathf.Lerp(0.12f, 1f, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(size * 0.6f, size * 1.8f, dist)));
+            }
             float pulse = 0.5f + 0.5f * Mathf.Sin(t * 1.3f);
 
             switch (_cls)
@@ -339,7 +361,7 @@ namespace StellarisClone.Rendering
                         // Цикл ~25 с: слой растёт 0,8 → 1,2, проявляется и гаснет; второй — в противофазе
                         float k = Mathf.Repeat(t * 0.04f + i * 0.5f, 1f);
                         var p = _shells[i];
-                        p.T.localScale = Vector3.one * R * 24f * Mathf.Lerp(0.8f, 1.2f, k);
+                        p.T.localScale = Vector3.one * R * 13f * Mathf.Lerp(0.8f, 1.2f, k);
                         p.T.localRotation = Quaternion.Euler(0f, 0f, i * 137f + (i == 0 ? 1f : -1f) * t * 0.8f);
                         Set(p, p.A * Mathf.Sin(k * Mathf.PI));
                     }
@@ -406,7 +428,7 @@ namespace StellarisClone.Rendering
                     {
                         var k = _loops[i];
                         float q = Mathf.Repeat(t * 0.035f + (i % 4) / 4f + (i / 4) * 0.13f, 1f);
-                        k.T.localPosition = new Vector3(0f, k.Col.a * R * Mathf.Lerp(1.5f, 16f, q), 0f);
+                        k.T.localPosition = new Vector3(0f, k.Col.a * R * Mathf.Lerp(1.5f, 11f, q), 0f);
                         float b = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(i * 1.7f + 0.4f));
                         Set(k, Mathf.Sin(q * Mathf.PI) * 0.35f * b, new Color(k.Col.r, k.Col.g, k.Col.b));
                     }
@@ -417,7 +439,7 @@ namespace StellarisClone.Rendering
 
                 case StarSpectralClass.PlanetaryNebula:
                     _neb.T.localRotation = Quaternion.Euler(0f, 0f, t * 1.2f);
-                    _neb.T.localScale = Vector3.one * R * 26f * (1f + 0.025f * Mathf.Sin(t * 0.5f));
+                    _neb.T.localScale = Vector3.one * R * 14f * (1f + 0.025f * Mathf.Sin(t * 0.5f));
                     Set(_neb, _neb.A);
                     Set(_glow, _glow.A * (0.85f + 0.15f * pulse));
                     break;
@@ -463,7 +485,7 @@ namespace StellarisClone.Rendering
             if (s_mpb == null) s_mpb = new MaterialPropertyBlock();
             var c = col ?? p.Col;
             s_mpb.Clear();
-            s_mpb.SetVector(ColorId, new Vector4(c.r, c.g, c.b, Mathf.Max(0f, alpha) * _fade));
+            s_mpb.SetVector(ColorId, new Vector4(c.r, c.g, c.b, Mathf.Max(0f, alpha) * _fade * (p.Big ? _nearK : 1f)));
             p.R.SetPropertyBlock(s_mpb);
         }
 
@@ -663,19 +685,76 @@ namespace StellarisClone.Rendering
                 return A(Mathf.Clamp01(h + vv + Mathf.Exp(-d * d * 60f) * 0.6f));
             }));
 
-            /// <summary>Кольцо планетарной туманности: бирюза внутри, синее посередине, красное снаружи.</summary>
-            public static Texture2D Nebula => Get(ref s_nebula, () => MakeColored("Nebula", 256, 4321, (u, v, blobs) =>
+            /// <summary>
+            /// Планетарная туманность как M57 / Улитка: кольцо из сотен клочковатых сгустков — бирюза внутри,
+            /// жёлто-зелёное кольцо, красно-оранжевый край; снаружи слабые радиальные волокна, внутри дымка.
+            /// Цвет запечён (светлее нужного — шейдер возводит его в 2,2).
+            /// </summary>
+            public static Texture2D Nebula => Get(ref s_nebula, () =>
             {
-                float d = Len(u, v), an = Mathf.Atan2(v, u);
-                float x = (d - 0.6f) / 0.2f;
-                float clump = 0.6f + 0.25f * Mathf.Sin(an * 7f + Mathf.Sin(an * 2f) * 3f) + 0.15f * Mathf.Sin(an * 19f);
-                float a = Mathf.Exp(-x * x) * clump + Mathf.Exp(-d * d * 6f) * 0.12f;
-                a *= 1f - Edge(0.88f, 1f, d);
-                Color c = d < 0.55f ? Color.Lerp(new Color(0.64f, 0.98f, 0.96f), new Color(0.68f, 0.8f, 1f), Edge(0.3f, 0.55f, d))
-                                    : Color.Lerp(new Color(0.68f, 0.8f, 1f), new Color(1f, 0.62f, 0.66f), Edge(0.55f, 0.8f, d));
-                c.a = Mathf.Clamp01(a);
-                return c;
-            }));
+                const int N = 256;
+                var rgb = new Vector3[N * N];
+                var alpha = new float[N * N];
+                var rnd = new System.Random(4321);
+                float Rnd() => (float)rnd.NextDouble();
+                float Gauss() => Mathf.Sqrt(-2f * Mathf.Log(Mathf.Max(1e-6f, Rnd()))) * Mathf.Cos(2f * Mathf.PI * Rnd());
+                Vector3 ColAt(float r)
+                {
+                    var c0 = new Vector3(0.5f, 0.95f, 0.9f); var c1 = new Vector3(0.82f, 0.95f, 0.62f);
+                    var c2 = new Vector3(1f, 0.62f, 0.45f); var c3 = new Vector3(1f, 0.5f, 0.5f);
+                    if (r <= 0.35f) return c0;
+                    if (r <= 0.52f) return Vector3.Lerp(c0, c1, (r - 0.35f) / 0.17f);
+                    if (r <= 0.66f) return Vector3.Lerp(c1, c2, (r - 0.52f) / 0.14f);
+                    if (r <= 0.8f) return Vector3.Lerp(c2, c3, (r - 0.66f) / 0.14f);
+                    return c3;
+                }
+                void Blob(float cx, float cy, float sx, float sy, float ang, float bright, Vector3 col)
+                {
+                    float ext = Mathf.Max(sx, sy) * 2.6f, ca = Mathf.Cos(ang), sa = Mathf.Sin(ang);
+                    int x0 = Mathf.Max(0, (int)((cx - ext + 1f) * 0.5f * (N - 1))), x1 = Mathf.Min(N - 1, (int)((cx + ext + 1f) * 0.5f * (N - 1)) + 1);
+                    int y0 = Mathf.Max(0, (int)((cy - ext + 1f) * 0.5f * (N - 1))), y1 = Mathf.Min(N - 1, (int)((cy + ext + 1f) * 0.5f * (N - 1)) + 1);
+                    for (int y = y0; y <= y1; y++)
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        float u = x / (N - 1f) * 2f - 1f - cx, v = y / (N - 1f) * 2f - 1f - cy;
+                        float a1 = u * ca + v * sa, b1 = -u * sa + v * ca;
+                        float g = Mathf.Exp(-(a1 * a1) / (sx * sx) - (b1 * b1) / (sy * sy)) * bright;
+                        int k = y * N + x;
+                        rgb[k] += col * g;
+                        alpha[k] += g;
+                    }
+                }
+                for (int i = 0; i < 520; i++)
+                {
+                    float a = Rnd() * Mathf.PI * 2f;
+                    float r = 0.56f + Gauss() * 0.07f + 0.04f * Mathf.Sin(a * 2f + 0.7f);
+                    float br = 0.06f + Rnd() * Rnd() * 0.28f, sz = 0.02f + Rnd() * 0.05f;
+                    Blob(Mathf.Cos(a) * r, Mathf.Sin(a) * r, sz * (1f + Rnd()), sz, a + (Rnd() < 0.5f ? Mathf.PI * 0.5f : 0f), br, ColAt(r));
+                }
+                for (int i = 0; i < 70; i++)
+                {
+                    float a = Rnd() * Mathf.PI * 2f, r = 0.68f + Rnd() * 0.14f;
+                    Blob(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0.06f, 0.012f, a, 0.06f + Rnd() * 0.08f, new Vector3(1f, 0.5f, 0.5f));
+                }
+                var tex = new Texture2D(N, N, TextureFormat.RGBA32, true, true)
+                { name = "StarFxNebula", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, hideFlags = HideFlags.DontSave };
+                var px = new Color[N * N];
+                for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    int i = y * N + x;
+                    float u = x / (N - 1f) * 2f - 1f, v = y / (N - 1f) * 2f - 1f, d = Len(u, v);
+                    float inner = Mathf.Exp(-(d / 0.42f) * (d / 0.42f) * 2f) * 0.1f;
+                    float halo = Mathf.Exp(-((d - 0.78f) / 0.12f) * ((d - 0.78f) / 0.12f)) * 0.05f;
+                    float sum = alpha[i] + inner + halo;
+                    Vector3 c = sum > 1e-5f ? (rgb[i] + new Vector3(0.5f, 0.95f, 0.9f) * inner + new Vector3(1f, 0.5f, 0.5f) * halo) / sum : Vector3.one;
+                    float a = (1f - Mathf.Exp(-sum * 1.5f)) * (1f - Edge(0.85f, 1f, d));
+                    px[i] = new Color(c.x, c.y, c.z, a);
+                }
+                tex.SetPixels(px);
+                tex.Apply(true, true);
+                return tex;
+            });
 
             private static Color A(float a) => new Color(1f, 1f, 1f, Mathf.Clamp01(a));
             private static float Len(float u, float v) => Mathf.Sqrt(u * u + v * v);
@@ -700,17 +779,6 @@ namespace StellarisClone.Rendering
                 return tex;
             }
 
-            private static Texture2D MakeColored(string name, int n, int seed, System.Func<float, float, Vector4[], Color> f)
-            {
-                var rnd = new System.Random(seed);
-                var blobs = new Vector4[34];
-                for (int i = 0; i < blobs.Length; i++)
-                {
-                    float a = (float)(rnd.NextDouble() * Mathf.PI * 2), r = (float)Mathf.Sqrt((float)rnd.NextDouble()) * 0.7f;
-                    blobs[i] = new Vector4(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0.12f + (float)rnd.NextDouble() * 0.22f, (float)rnd.NextDouble());
-                }
-                return Make(name, n, n, (u, v) => f(u, v, blobs));
-            }
         }
     }
 }
