@@ -560,6 +560,70 @@ def triplanar_brick(nt, pos, nrm, scale, w, h, mortar, seed=0.0):
     return seam, tone
 
 
+def brick(nt, vec, w, h, mortar, offset=0.0, smooth=0.1):
+    b = nt.nodes.new('ShaderNodeTexBrick')
+    b.offset = offset; b.squash = 1.0
+    b.inputs['Scale'].default_value = 1.0
+    b.inputs['Mortar Size'].default_value = mortar
+    b.inputs['Mortar Smooth'].default_value = smooth
+    b.inputs['Brick Width'].default_value = w
+    b.inputs['Row Height'].default_value = h
+    b.inputs['Bias'].default_value = 0.0
+    b.inputs['Color1'].default_value = (0, 0, 0, 1); b.inputs['Color2'].default_value = (1, 1, 1, 1)
+    b.inputs['Mortar'].default_value = (1, 1, 1, 1)
+    nt.links.new(vec, b.inputs['Vector'])
+    return b
+
+
+def triplanar_panels(nt, pos, nrm):
+    """Обшивка как у кораблей стратегий: крупные листы, часть которых поделена на средние и мелкие плиты
+    (иерархия кратных сеток со случайным делением), лючки из мелких плиток, решётки, светлая маркировка.
+    -> dict масок (шов, тон, решётка, лючок, маркировка), выбор проекции по доминирующей оси нормали."""
+    sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(pos, sep.inputs[0])
+    sn = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(nrm, sn.inputs[0])
+    ax = [node_math(nt, 'ABSOLUTE', sn.outputs[i]) for i in range(3)]
+    M_ = lambda a, b: node_math(nt, 'MULTIPLY', a, b)
+    GT = lambda a, b: node_math(nt, 'GREATER_THAN', a, b)
+    LT = lambda a, b: node_math(nt, 'LESS_THAN', a, b)
+    outs = []
+    for (u, v) in ((1, 2), (0, 2), (1, 0)):   # X-грани: (y,z); Y-грани: (x,z); Z-грани: (y,x) — листы вдоль корабля
+        c = nt.nodes.new('ShaderNodeCombineXYZ')
+        nt.links.new(sep.outputs[u], c.inputs[0]); nt.links.new(sep.outputs[v], c.inputs[1])
+        vec = c.outputs[0]
+        L = brick(nt, vec, 1.2, 0.45, 0.012, 0.5)
+        Mb = brick(nt, vec, 0.3, 0.15, 0.008)
+        S = brick(nt, vec, 0.15, 0.075, 0.006)
+        X = brick(nt, vec, 0.0375, 0.01875, 0.004)
+        lab = brick(nt, vec, 0.3, 0.15, 0.1, smooth=0.0)
+        wave = nt.nodes.new('ShaderNodeTexWave'); wave.wave_type = 'BANDS'; wave.bands_direction = 'X'
+        wave.inputs['Scale'].default_value = 11.0; wave.inputs['Distortion'].default_value = 0.0
+        wave.inputs['Detail'].default_value = 0.0
+        nt.links.new(vec, wave.inputs['Vector'])
+        # случайные значения ячеек — с тех же сеток, но без швов (иначе пороги срабатывают на краях шва)
+        rL = brick(nt, vec, 1.2, 0.45, 0.0, 0.5, 0.0).outputs['Color']
+        rM = brick(nt, vec, 0.3, 0.15, 0.0, 0.0, 0.0).outputs['Color']
+        rS = brick(nt, vec, 0.15, 0.075, 0.0, 0.0, 0.0).outputs['Color']
+        mM = GT(rL, 0.25)                     # лист поделён на плиты
+        mS = M_(mM, GT(rM, 0.5))              # плита поделена на мелкие
+        vent = M_(mS, GT(rS, 0.92))
+        hatch = M_(mS, M_(GT(rS, 0.82), LT(rS, 0.92)))
+        label = M_(M_(mM, node_math(nt, 'SUBTRACT', 1.0, mS)), M_(LT(rM, 0.08), node_math(nt, 'SUBTRACT', 1.0, lab.outputs['Fac'])))
+        seam = node_math(nt, 'MAXIMUM', L.outputs['Fac'], M_(Mb.outputs['Fac'], mM))
+        seam = node_math(nt, 'MAXIMUM', seam, M_(S.outputs['Fac'], M_(mS, 0.8)))
+        seam = node_math(nt, 'MAXIMUM', seam, M_(X.outputs['Fac'], M_(hatch, 0.6)))
+        tone = node_math(nt, 'MULTIPLY_ADD', M_(rM, mM), 0.35, M_(rL, 0.65))
+        stripes = M_(vent, GT(wave.outputs['Fac'], 0.5))
+        outs.append(dict(seam=seam, tone=tone, vent=stripes, hatch=hatch, label=label))
+    isx = M_(GT(ax[0], ax[1]), GT(ax[0], ax[2]))
+    isy = M_(node_math(nt, 'SUBTRACT', 1.0, isx), GT(ax[1], ax[2]))
+
+    def sel(k):
+        a, b, c = outs[0][k], outs[1][k], outs[2][k]
+        r = node_math(nt, 'MULTIPLY_ADD', isx, node_math(nt, 'SUBTRACT', a, c), c)
+        return node_math(nt, 'MULTIPLY_ADD', isy, node_math(nt, 'SUBTRACT', b, r), r)
+    return {k: sel(k) for k in outs[0]}
+
+
 def build_material(name, spec):
     m = bpy.data.materials.new(name)
     m.use_nodes = True
@@ -588,15 +652,17 @@ def build_material(name, spec):
     rough = node_math(nt, 'MULTIPLY_ADD', fine.outputs['Fac'], 0.16, spec['rough'] - 0.08)
     height = None
     if spec['panels'] > 0:
-        seam, tone = triplanar_brick(nt, pos, nrm, 1.0, 0.62, 0.26, 0.012)
-        seam2, tone2 = triplanar_brick(nt, pos, nrm, 1.0, 1.9, 0.78, 0.016, seed=0.37)
-        t = node_math(nt, 'MULTIPLY_ADD', tone, 0.22 * spec['panels'], 1.0 - 0.11 * spec['panels'])
-        t2 = node_math(nt, 'MULTIPLY_ADD', tone2, 0.12 * spec['panels'], 1.0 - 0.06 * spec['panels'])
-        col = mix(nt, 1.0, col, t, 'MULTIPLY'); col = mix(nt, 1.0, col, t2, 'MULTIPLY')
-        anyseam = node_math(nt, 'MAXIMUM', seam, seam2)
-        col = mix(nt, node_math(nt, 'MULTIPLY', anyseam, 0.75), col, (0.01, 0.01, 0.012))
-        rough = node_math(nt, 'MULTIPLY_ADD', tone, 0.12, rough)
-        height = node_math(nt, 'SUBTRACT', 1.0, anyseam)
+        pn = triplanar_panels(nt, pos, nrm)
+        k = spec['panels']
+        t = node_math(nt, 'MULTIPLY_ADD', pn['tone'], 0.18 * k, 1.0 - 0.09 * k)   # тон листов — едва заметно
+        col = mix(nt, 1.0, col, t, 'MULTIPLY')
+        col = mix(nt, node_math(nt, 'MULTIPLY', pn['hatch'], 0.25), col, (0.0, 0.0, 0.0))
+        col = mix(nt, node_math(nt, 'MULTIPLY', pn['seam'], 0.55), col, (0.008, 0.008, 0.01))
+        col = mix(nt, node_math(nt, 'MULTIPLY', pn['vent'], 0.85), col, (0.006, 0.006, 0.007))
+        if name != 'accent':
+            col = mix(nt, node_math(nt, 'MULTIPLY', pn['label'], 0.8), col, (0.42, 0.4, 0.36))
+        rough = node_math(nt, 'MULTIPLY_ADD', pn['tone'], 0.1, rough)
+        height = node_math(nt, 'SUBTRACT', 1.0, node_math(nt, 'MAXIMUM', pn['seam'], node_math(nt, 'MAXIMUM', node_math(nt, 'MULTIPLY', pn['vent'], 0.7), node_math(nt, 'MULTIPLY', pn['hatch'], 0.25))))
 
     if name == 'vent':   # решётка: частые прорези вдоль корабля
         wave = nt.nodes.new('ShaderNodeTexWave'); wave.wave_type = 'BANDS'; wave.bands_direction = 'Z'
@@ -927,7 +993,7 @@ def render_shots(outdir, samples=96, res=(1600, 1000), only=None):
     try: sc.view_settings.look = 'AgX - Medium High Contrast'
     except TypeError: pass
     shots = {'three_quarter': ((7.5, 7.0, 5.0), 34), 'top': ((0.0, 0.0, 15.0), 40), 'side': ((11.0, 0.0, 0.6), 40),
-             'rear': ((-5.0, -8.5, 3.2), 34), 'front': ((-6.0, 7.8, 1.6), 30)}
+             'rear': ((-5.0, -8.5, 3.2), 34), 'front': ((-6.0, 7.8, 1.6), 30), 'close': ((3.2, 1.2, 2.0), 30)}
     for name, (loc, lens) in shots.items():
         if only and name not in only: continue
         cam.location = loc; cam_d.lens = lens
