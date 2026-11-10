@@ -96,6 +96,12 @@ namespace StellarisClone.Rendering
             // Научные корабли — готовая модель зонда «Марс-3», если она есть в проекте
             if (type == FleetType.Science)
             {
+                // У Астреи — своё научное судно AS/07
+                if (FactionRegistry.KeyOf(FactionTraits.FactionOf(ownerId)) == "astrea")
+                {
+                    var astrea = AstreaScienceModel.Build(parent, owner);
+                    if (astrea != null) return astrea;
+                }
                 var model = Mars3Model.Build(parent, owner);
                 if (model != null) return model;
             }
