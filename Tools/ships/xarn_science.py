@@ -899,13 +899,11 @@ def preview(ob, maps, outdir, size, accent=(0.75, 0.13, 0.11)):
     gm = {'hull': game_mat('G_hull'), 'accent': game_mat('G_accent', accent), 'beacon': game_mat('G_beacon', beacon=True)}
     me = ob.data
     names = [m.name for m in me.materials]
+    mi = np.empty(len(me.polygons), np.int32); me.polygons.foreach_get('material_index', mi)   # до clear(): он обнуляет индексы
     me.materials.clear()
     for k in ('hull', 'accent', 'beacon'): me.materials.append(gm[k])
     remap = [('hull', 'accent', 'beacon').index(LAYER_OF.get(n, 'hull')) for n in names]
-    mi = np.empty(len(me.polygons), np.int32); me.polygons.foreach_get('material_index', mi)
-    mi = np.array(remap, np.int32)[mi]
-    if 'material_index' not in me.attributes: me.attributes.new('material_index', 'INT', 'FACE')
-    me.attributes['material_index'].data.foreach_set('value', mi)
+    me.polygons.foreach_set('material_index', np.array(remap, np.int32)[mi])
     me.update()
     render_shots(outdir)
 
@@ -951,7 +949,6 @@ def main():
     ap.add_argument('--samples', type=int, default=16)
     ap.add_argument('--render', default='')
     ap.add_argument('--no-bake', action='store_true')
-    ap.add_argument('--cache', default='', help='npz с запечёнными картами: есть — берём, нет — сохраняем')
     ap.add_argument('--quick', default='', help='быстрый рендер процедурных материалов без запекания')
     a = ap.parse_args()
 
@@ -970,11 +967,7 @@ def main():
     unwrap(ob)
     if a.no_bake: return
     t = time.time()
-    if a.cache and os.path.exists(a.cache):
-        maps = dict(np.load(a.cache))
-    else:
-        maps = bake(ob, mats, a.tex, a.samples)
-        if a.cache: np.savez(a.cache, **maps)
+    maps = bake(ob, mats, a.tex, a.samples)   # развёртка недетерминирована — карты всегда пекутся заново вместе с мешем
     print('запекание %.0fs' % (time.time() - t))
     export(ob, maps, a.out)
     if a.render: preview(ob, maps, a.render, a.tex)
