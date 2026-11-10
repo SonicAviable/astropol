@@ -108,6 +108,12 @@ namespace StellarisClone.Rendering
                     var xarn = XarnScienceModel.Build(parent, owner);
                     if (xarn != null) return xarn;
                 }
+                // Иридийский Оракул — капля с гироскопом-оракулом (кольца и кристалл анимированы)
+                if (IridiaScienceModel.IsIridia(ownerId))
+                {
+                    var iridia = IridiaScienceModel.Build(parent, owner);
+                    if (iridia != null) return iridia;
+                }
                 var model = Mars3Model.Build(parent, owner);
                 if (model != null) return model;
             }

@@ -832,8 +832,10 @@ def text_meta(path):
             'fileFormatVersion: 2\nguid: %s\nTextScriptImporter:\n  externalObjects: {}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n' % uuid.uuid4().hex)
 
 
-def extract_layers(ob):
-    """Меш -> слои {имя: (pos, nrm, uv, idx)} в осях Unity, вершины расщеплены по нормали/UV."""
+def extract_layers(ob, layer_of=None, order=('hull', 'accent', 'beacon'), pivots=None):
+    """Меш -> слои {имя: (pos, nrm, uv, idx)} в осях Unity, вершины расщеплены по нормали/UV.
+    layer_of: материал -> слой (по умолчанию «hull»); pivots: слой -> точка Blender, вокруг которой слой
+    вращается в игре (его вершины пишутся относительно неё)."""
     me = ob.data
     me.calc_loop_triangles()
     co = np.array([v.co[:] for v in me.vertices], np.float64)
@@ -844,7 +846,8 @@ def extract_layers(ob):
     tl = np.empty(len(me.loop_triangles) * 3, np.int32); me.loop_triangles.foreach_get('loops', tl); tl = tl.reshape(-1, 3)
     tm = np.empty(len(me.loop_triangles), np.int32); me.loop_triangles.foreach_get('material_index', tm)
     names = [m.name for m in me.materials]
-    layer_of_tri = np.array([LAYER_OF.get(names[i], 'hull') for i in tm])
+    layer_of = LAYER_OF if layer_of is None else layer_of
+    layer_of_tri = np.array([layer_of.get(names[i], 'hull') for i in tm])
 
     # Blender (x, y, z) -> Unity (x, z, y); длина по Z -> 1, центр габарита — в нуле
     P = co[:, [0, 2, 1]]
@@ -853,7 +856,7 @@ def extract_layers(ob):
     P = (P - center) / length
     N = cn[:, [0, 2, 1]]
     layers = {}
-    for name in ('hull', 'accent', 'beacon'):
+    for name in order:
         loops = tl[layer_of_tri == name]
         if len(loops) == 0: continue
         flat = loops.reshape(-1)
@@ -861,7 +864,10 @@ def extract_layers(ob):
         uniq, inv = np.unique(key, axis=0, return_inverse=True)
         first = np.zeros(len(uniq), np.int64); first[inv[::-1]] = np.arange(len(flat))[::-1]
         src = flat[first]
-        pos = P[lv[src]].astype(np.float32)
+        pos = P[lv[src]]
+        if pivots and name in pivots:
+            pos = pos - (np.array(pivots[name], np.float64)[[0, 2, 1]] - center) / length
+        pos = pos.astype(np.float32)
         nrm = N[src]; nrm = nrm / np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-9)
         idx = inv.reshape(-1, 3)[:, [0, 2, 1]]   # левая СК Unity: обход наоборот
         # проверка: геометрическая нормаль cross(b−a, c−a) должна смотреть вдоль нормали вершин
@@ -980,13 +986,19 @@ def render_shots(outdir, samples=96, res=(1600, 1000), only=None):
     w = sc.world or bpy.data.worlds.new('W'); sc.world = w; w.use_nodes = True
     w.node_tree.nodes['Background'].inputs['Color'].default_value = (0.004, 0.006, 0.012, 1)
     w.node_tree.nodes['Background'].inputs['Strength'].default_value = 1.0
+    fresh = 'Key' not in bpy.data.objects   # повторные вызовы (кадры анимации) — те же свет и камера
+
     def light(name, rot, energy, color):
+        if not fresh: return
         ld = bpy.data.lights.new(name, 'SUN'); ld.energy = energy; ld.color = color; ld.angle = math.radians(2)
         lo = bpy.data.objects.new(name, ld); lo.rotation_euler = [math.radians(a) for a in rot]; sc.collection.objects.link(lo)
     light('Key', (50, 10, 35), 4.0, (1.0, 0.95, 0.88))
     light('Rim', (-60, 0, 200), 2.5, (0.55, 0.7, 1.0))
     light('Fill', (120, 0, -60), 0.5, (0.8, 0.85, 1.0))
-    cam_d = bpy.data.cameras.new('Cam'); cam = bpy.data.objects.new('Cam', cam_d); sc.collection.objects.link(cam); sc.camera = cam
+    if fresh:
+        cam_d = bpy.data.cameras.new('Cam'); cam = bpy.data.objects.new('Cam', cam_d); sc.collection.objects.link(cam); sc.camera = cam
+    else:
+        cam = bpy.data.objects['Cam']; cam_d = cam.data
     sc.render.engine = 'CYCLES'; sc.cycles.samples = samples; sc.cycles.use_denoising = True
     sc.render.resolution_x, sc.render.resolution_y = res
     sc.view_settings.view_transform = 'AgX'
