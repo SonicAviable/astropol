@@ -7715,4 +7715,3 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 их ресурсы — справа	their resources — on the right
 ваши ресурсы — слева	your resources — on the left
 <b>Характер: {0}</b>\n{1}	<b>Personality: {0}</b>\n{1}
-{0} / мес	{0} / mo
