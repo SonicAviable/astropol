@@ -7703,15 +7703,3 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 ГЛАВА ЧЕТВЁРТАЯ	CHAPTER FOUR
 ПРОПУСТИТЬ  ›	SKIP  ›
 Ваше правление	Your reign
-ВАШИ РЕСУРСЫ	YOUR RESOURCES
-ИХ РЕСУРСЫ	THEIR RESOURCES
-СОГЛАШЕНИЯ	AGREEMENTS
-ОТНОШЕНИЯ	RELATIONS
-СТАТУС	STATUS
-РЕПУТАЦИЯ	REPUTATION
-ВОЙНА	WAR
-ПЕРЕМИРИЕ	TRUCE
-системы  ›	systems  ›
-их ресурсы — справа	their resources — on the right
-ваши ресурсы — слева	your resources — on the left
-<b>Характер: {0}</b>\n{1}	<b>Personality: {0}</b>\n{1}
