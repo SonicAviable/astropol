@@ -234,13 +234,12 @@ namespace StellarisClone.Rendering
 
         private static readonly Color[] NebulaPalette =
         {
-            // Холодная гамма как в Stellaris: глубокий синий, индиго, бирюза, фиолет — без тёплых «пятен»
-            new Color(0.12f, 0.55f, 0.75f),   // бирюза
-            new Color(0.45f, 0.25f, 0.80f),   // фиолет
-            new Color(0.20f, 0.30f, 0.90f),   // синий
-            new Color(0.30f, 0.20f, 0.65f),   // индиго
-            new Color(0.15f, 0.40f, 0.85f),   // лазурь
-            new Color(0.55f, 0.25f, 0.60f)    // сливовый
+            new Color(0.15f, 0.75f, 0.80f),   // бирюза
+            new Color(0.70f, 0.25f, 0.85f),   // фиолет
+            new Color(1.00f, 0.50f, 0.22f),   // янтарь
+            new Color(0.25f, 0.40f, 1.00f),   // синий
+            new Color(0.95f, 0.25f, 0.40f),   // малиновый
+            new Color(0.35f, 0.90f, 0.55f)    // зелёный
         };
 
         /// <summary>
@@ -277,11 +276,6 @@ namespace StellarisClone.Rendering
                     m.SetColor("_ColorB", Muted(NebulaPalette[(ci + 1 + rng.Next(2)) % NebulaPalette.Length]));
                     m.SetFloat("_Seed", (float)rng.NextDouble() * 100f);
                     m.SetFloat("_Scale", (layer == 2 ? 3.6f : 2.4f) + (float)rng.NextDouble() * 1.4f);
-                    // Объём: слой вокруг квада; рельеф подсвечен со стороны ядра галактики (направление — в координатах квада)
-                    m.SetFloat("_Thickness", size * (layer == 0 ? 0.22f : layer == 1 ? 0.16f : 0.2f));
-                    Vector3 toCore = Quaternion.Inverse(q.transform.rotation) * new Vector3(-q.transform.position.x, 0f, -q.transform.position.z);
-                    var ld = new Vector2(toCore.x / q.transform.localScale.x, toCore.y / q.transform.localScale.y);
-                    if (ld.sqrMagnitude > 1e-10f) m.SetVector("_LightDir", ld.normalized);
                     m.renderQueue = layer == 0 ? 2940 : layer == 1 ? 2950 : 2996;
                     _nebulaMats.Add((m, iMin + (float)rng.NextDouble() * (iMax - iMin), layer));
                     q.GetComponent<MeshRenderer>().sharedMaterial = m;
@@ -296,7 +290,6 @@ namespace StellarisClone.Rendering
             BuildDarkDust(R, rng);
             BuildVignette(R);
             BuildDeepStars(R, rng);
-            BuildDeepSky(R);
         }
 
         /// <summary>Виньетка вокруг галактики: туманности и фон к краям карты уходят в черноту (над туманностями, под диском).</summary>
@@ -545,8 +538,6 @@ namespace StellarisClone.Rendering
             if (_diskMat != null) _diskMat.SetFloat("_T", t);
             if (_dustStarsMat != null) _dustStarsMat.SetFloat("_T", t);
             if (_deepStarsMat != null) _deepStarsMat.SetFloat("_T", t);
-            if (_midStarsMat != null) _midStarsMat.SetFloat("_T", t);
-            if (_farSkyMat != null) _farSkyMat.SetFloat("_T", t);
             // Вблизи космос не должен проваливаться в черноту: галактика большая, ядро и рукава далеко
             float nebK = Mathf.Lerp(1.8f, 1f, far);
             // клочья над картой близко к камере — вблизи растворяются, чтобы не мешать
@@ -568,11 +559,9 @@ namespace StellarisClone.Rendering
                 _coreBulge.color = new Color(0.9f, 0.92f, 1f, Mathf.Lerp(0.01f, 0.07f, far) * pulse);   // ядро белее и тише — не спорит с картой
                 _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
-            float nebulaSteps = NebulaSteps();
             foreach (var (m, k, layer) in _nebulaMats)
             {
                 m.SetFloat("_T", t);
-                m.SetFloat("_Steps", nebulaSteps);
                 m.SetFloat("_Intensity", k * (layer == 2 ? wispK : nebK) * BackdropBright);
             }
             if (_borderMat != null)
