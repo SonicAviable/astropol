@@ -494,7 +494,12 @@ namespace StellarisClone.Rendering
             _music.volume = 0f;
             _musicFade = 0f;
             _musicTarget = 1f;
-            if (_music.clip != null) _music.Play();
+            if (_music.clip == null) Debug.LogWarning("[Летопись] Нет музыки Resources/" + _entry.Music);
+            else
+            {
+                if (_music.clip.loadState == AudioDataLoadState.Unloaded) _music.clip.LoadAudioData();
+                _music.Play();
+            }
 
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
@@ -736,6 +741,8 @@ namespace StellarisClone.Rendering
         private void TickMusic(float dt)
         {
             if (_music.clip == null) return;
+            // Клип ещё грузился в момент старта — запускаем, как только готов
+            if (!_music.isPlaying && !_closing && _musicTarget > 0f && _music.clip.loadState == AudioDataLoadState.Loaded) _music.Play();
             _musicFade = Mathf.MoveTowards(_musicFade, _musicTarget, dt / (_musicTarget > _musicFade ? 3f : 1.4f));
             bool talking = _voice.isPlaying && !_closing;
             _duck = Mathf.MoveTowards(_duck, talking ? 0.5f : 1f, dt * (talking ? 2.5f : 0.8f));

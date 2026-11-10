@@ -56,6 +56,9 @@ private void LoadTracksFromResources()
     if (tracks != null && tracks.Length > 0) return; // уже заданы вручную
 
     var loaded = Resources.LoadAll<AudioClip>("Music");
+    // Темы летописи фракций (Music/Chronicle) играют только в FactionHistoryWindow — в общий плейлист не берём
+    var chronicle = new System.Collections.Generic.HashSet<AudioClip>(Resources.LoadAll<AudioClip>("Music/Chronicle"));
+    if (loaded != null) loaded = System.Array.FindAll(loaded, c => !chronicle.Contains(c));
     if (loaded != null && loaded.Length > 0)
     {
         tracks = loaded;

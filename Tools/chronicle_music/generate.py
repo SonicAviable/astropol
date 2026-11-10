@@ -70,7 +70,7 @@ AudioImporter:
   serializedVersion: 8
   defaultSettings:
     serializedVersion: 2
-    loadType: 2
+    loadType: 1
     sampleRateSetting: 0
     sampleRateOverride: 44100
     compressionFormat: 1
@@ -80,7 +80,7 @@ AudioImporter:
   platformSettingOverrides: {{}}
   forceToMono: 0
   normalize: 0
-  loadInBackground: 1
+  loadInBackground: 0
   ambisonic: 0
   3D: 0
   userData:
@@ -147,9 +147,14 @@ def main():
             continue
         dst = os.path.join(OUT, name + ".ogg")
         master(generate(text), dst)
-        if not os.path.exists(dst + ".meta"):
-            with open(dst + ".meta", "w") as f:
-                f.write(META.format(guid=uuid.uuid4().hex))
+        # Настройки импорта: сжатый клип в памяти, загрузка сразу (фоновая не успевает к старту летописи); GUID сохраняется
+        guid = uuid.uuid4().hex
+        if os.path.exists(dst + ".meta"):
+            for line in open(dst + ".meta"):
+                if line.startswith("guid:"):
+                    guid = line.split(":", 1)[1].strip()
+        with open(dst + ".meta", "w", newline="\n") as f:
+            f.write(META.format(guid=guid))
         print("ok", dst)
 
 
