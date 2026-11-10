@@ -181,6 +181,7 @@ namespace StellarisClone.Rendering
             if (_root == null || !IsOpen) return;
             if (_picker != null) _picker.SetActive(false);
             LG.Hide(_root);
+            if (_voice != null) _voice.Stop();
             _backdrop.SetActive(false);
             UIManager.Instance?.SetOverlayMode(false);
             MapModeController.ShowGlobal();
@@ -243,11 +244,11 @@ namespace StellarisClone.Rendering
             if (_speechShown < _speechFull.Length)
             {
                 int before = Mathf.FloorToInt(_speechShown);
-                _speechShown = Mathf.Min(_speechFull.Length, _speechShown + Time.unscaledDeltaTime * 55f);
+                _speechShown = Mathf.Min(_speechFull.Length, _speechShown + Time.unscaledDeltaTime * _speechRate);
                 int now = Mathf.FloorToInt(_speechShown);
                 _speechText.text = _speechFull.Substring(0, now);
                 // Телетайп: тихий тик на каждую третью букву (пробелы молчат)
-                if (now / 3 != before / 3 && now > 0 && !char.IsWhiteSpace(_speechFull[now - 1])) SFXManager.Play(Sfx.TextTick);
+                if (!_speechVoiced && now / 3 != before / 3 && now > 0 && !char.IsWhiteSpace(_speechFull[now - 1])) SFXManager.Play(Sfx.TextTick);
             }
 
             if (_confirmAction != null && Time.unscaledTime > _confirmUntil) { _confirmAction = null; RefreshActions(); }
@@ -283,6 +284,33 @@ namespace StellarisClone.Rendering
             _speechFull = line ?? "";
             _speechShown = 0f;
             if (_speechText != null) _speechText.text = "";
+            PlayVoice(DiplomacyLines.TakeVoice());
+        }
+
+        // --- голос правителя (Resources/Audio/Diplomacy, см. Tools/diplomacy_voice) ---
+        private AudioSource _voice;
+        private float _speechRate = 55f;
+        private bool _speechVoiced;
+
+        private void PlayVoice(string path)
+        {
+            if (_voice == null)
+            {
+                _voice = gameObject.AddComponent<AudioSource>();
+                _voice.playOnAwake = false;
+                _voice.ignoreListenerPause = true;
+                _voice.spatialBlend = 0f;
+            }
+            _voice.Stop();
+            // Озвучка только русская: в английской версии — текст с телетайпом
+            var clip = Loc.English || path == null ? null : Resources.Load<AudioClip>(path);
+            _speechVoiced = clip != null;
+            // Текст печатается в такт речи
+            _speechRate = clip != null ? Mathf.Clamp(_speechFull.Length / Mathf.Max(0.5f, clip.length - 0.6f), 30f, 110f) : 55f;
+            if (clip == null) return;
+            _voice.clip = clip;
+            _voice.volume = Mathf.Clamp01(GameSettings.SfxVolume * 1.25f);
+            _voice.Play();
         }
 
         // ================================================================ Каркас

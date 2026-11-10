@@ -136,8 +136,19 @@ namespace StellarisClone.Rendering
                       : leader == LeaderPortraits.Nol ? Nol
                       : Astrea;
             var lines = table[(int)kind];
-            return lines[Random.Range(0, lines.Length)];
+            int i = Random.Range(0, lines.Length);
+            string key = table == Xarn ? "xarn" : table == Aquila ? "aquila" : table == Iridia ? "iridia"
+                       : table == Terraan ? "terraan" : table == Nol ? "nol" : "astrea";
+            _voice = $"{VoicePath}{key}_{kind}_{i}";
+            return lines[i];
         }
+
+        /// <summary>Озвучка правителей: Resources/Audio/Diplomacy/&lt;фракция&gt;_&lt;Kind&gt;_&lt;номер&gt; (Tools/diplomacy_voice).</summary>
+        public const string VoicePath = "Audio/Diplomacy/";
+        private static string _voice;
+
+        /// <summary>Путь к озвучке последней выданной Get реплики (один раз; затем null).</summary>
+        public static string TakeVoice() { var v = _voice; _voice = null; return v; }
 
         /// <summary>Приветствие по текущему состоянию отношений.</summary>
         public static Kind GreetingFor(AIEmpireManager ai)

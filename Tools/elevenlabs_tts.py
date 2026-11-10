@@ -27,7 +27,7 @@ BASE = "https://api.elevenlabs.io/v1"
 MODEL = "eleven_v3"
 FORMAT = "mp3_44100_192"
 CACHE = os.path.expanduser("~/.cache/astropol_elevenlabs")
-TAKES = 3          # максимум дублей на фразу
+TAKES = 5          # максимум дублей на фразу
 ACCEPT = 0.96      # доля совпавших слов, при которой дубль принимается сразу
 
 # Голоса. Русские — носители языка из библиотеки ElevenLabs (доступны на платном тарифе);
@@ -41,6 +41,12 @@ VOICES = {
     "gleb": "aJC9di73GYKqRpVCR663",       # глубокий, тёмный, кинематографичный
     "aleksandr": "JMT0QtVym2S8gHCkBqMp",  # документальный диктор
     "lexa": "7VsVlkgkPKhWAimu09u0",       # ровный, бесстрастный женский
+    # Правители (дипломатия)
+    "evelon": "mOTbMAOniC3yoEvgo4bi",     # угрожающий, энергичный
+    "marina": "CsT9glYAgw8L02hu9od2",     # тёплый, выразительный женский
+    "pavel": "VlCYpQzyafIQIhmvxR2w",      # обаятельный баритон
+    "moriana": "ahuwlnygfGOZ2gufNQh7",    # тёмный, бархатный женский
+    "marina_soul": "7CPD49d3y4krj7MKJYOV",  # глубокий, медитативный женский
     "sarah": "EXAVITQu4vr4xnSDxMaL",
     "george": "JBFqnCBsd6RMkjVDRZzb",
     "eric": "cjVigY5qzO86Huf0OWal",
@@ -55,7 +61,7 @@ def accent(text):
 
 
 def _words(text):
-    text = re.sub(r"\[[^\]]*\]", " ", text).replace(ACUTE, "").replace("+", "").lower().replace("ё", "е")
+    text = re.sub(r"\[[^\]]*\]", " ", text).replace(ACUTE, "").replace("+", "").lower().replace("ё", "е").replace("э", "е").replace("'", "").replace("-", "")
     return re.findall(r"[a-zа-я0-9]+", text)
 
 
