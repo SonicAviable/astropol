@@ -82,6 +82,12 @@ namespace StellarisClone.Rendering
                     var pirate = PirateShipModel.Build(parent, owner, length * 0.6f);
                     if (pirate != null) return pirate;
                 }
+                // Эсминцы Доминиона Ксарн — тяжёлый «Валиант» с десятью башнями
+                if (ValiantModel.Applies(hull, ownerId))
+                {
+                    var valiant = ValiantModel.Build(parent, owner, length);
+                    if (valiant != null) return valiant;
+                }
                 var sparrow = StarSparrowModel.Build(parent, owner, hull, ownerId, length * 0.62f);   // крылатые корпуса шире — заметно короче
                 if (sparrow != null) return sparrow;
                 var model = HarbingerModel.Build(parent, owner, length);
