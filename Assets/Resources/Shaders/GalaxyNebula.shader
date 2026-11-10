@@ -62,20 +62,26 @@ Shader "Astropolity/GalaxyNebula"
             {
                 float2 c = i.uv - 0.5;
                 float r = length(c) * 2.0;
+                // Вне облака — сразу ноль (Blend One One: ноль ничего не меняет). Fbm ∈ [0; 0.97],
+                // поэтому при r > 1.28 край заведомо за маской — шум не считаем вовсе
+                [branch] if (r > 1.28 || _Intensity <= 0.0005) return fixed4(0, 0, 0, 1);
                 float2 p = i.uv * _Scale + _Seed;
+
+                // рваный край — первым: за маской остальные четыре Fbm не нужны
+                float edge = r + (Fbm(p * 0.8 + 7.0) - 0.5) * 0.55;
+                float mask = 1.0 - smoothstep(0.35, 1.0, edge);
+                [branch] if (mask <= 0.0) return fixed4(0, 0, 0, 1);
 
                 // течение: координаты медленно искажаются
                 float2 q = float2(Fbm(p + float2(0.0, _T * 0.012)), Fbm(p + float2(5.2, 1.3) - _T * 0.010));
                 float2 w = p + 2.2 * q + float2(_T * 0.006, -_T * 0.004);
                 float n = Fbm(w);
-                float m = Fbm(w * 1.7 + 3.1);
-
-                // рваный край
-                float edge = r + (Fbm(p * 0.8 + 7.0) - 0.5) * 0.55;
-                float mask = 1.0 - smoothstep(0.35, 1.0, edge);
 
                 float dens = saturate(n * 1.6 - 0.45) * mask;
+                // без плотности и прожилки (они умножаются на dens) — пусто
+                [branch] if (dens <= 0.0) return fixed4(0, 0, 0, 1);
                 dens = dens * dens * (3.0 - 2.0 * dens);
+                float m = Fbm(w * 1.7 + 3.1);
                 // прожилки ярче
                 float vein = pow(saturate(1.0 - abs(m - 0.5) * 3.0), 3.0) * mask * 0.5;
 
