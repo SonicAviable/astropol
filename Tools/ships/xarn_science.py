@@ -781,21 +781,30 @@ def bake(ob, mats, size, samples):
         bpy.ops.object.bake(type=typ, **kw)
         print('  bake', key, '%.0fs' % (time.time() - t), flush=True)
 
-    run('albedo', 'DIFFUSE', pass_filter={'COLOR'})
+    def via_emission(key, input_name, noncolor):
+        """Значение входа BSDF (с его нодами) напрямую в Emission и запечь EMIT: проход DIFFUSE COLOR
+        умножает цвет на (1 − металличность), и металл выходил бы почти чёрным."""
+        for m in mats.values():
+            nt = m.node_tree; b = nt.nodes[m['bsdf']]; o = nt.nodes[m['out']]
+            em = nt.nodes.new('ShaderNodeEmission'); em.name = 'TMP'
+            src = b.inputs[input_name]
+            if src.links:
+                nt.links.new(src.links[0].from_socket, em.inputs['Color'])
+            else:
+                v = src.default_value
+                em.inputs['Color'].default_value = (tuple(v)[:3] if hasattr(v, '__len__') else (v, v, v)) + (1.0,)
+            nt.links.new(em.outputs[0], o.inputs['Surface'])
+        run(key, 'EMIT', noncolor=noncolor)
+        for m in mats.values():
+            nt = m.node_tree
+            nt.links.new(nt.nodes[m['bsdf']].outputs[0], nt.nodes[m['out']].inputs['Surface'])
+            nt.nodes.remove(nt.nodes['TMP'])
+
+    via_emission('albedo', 'Base Color', False)
     run('rough', 'ROUGHNESS', noncolor=True)
     run('emit', 'EMIT')
     run('normal', 'NORMAL', noncolor=True, normal_space='TANGENT')
-    # металл: временно выводим значение Metallic через Emission
-    for m in mats.values():
-        nt = m.node_tree; b = nt.nodes[m['bsdf']]; o = nt.nodes[m['out']]
-        em = nt.nodes.new('ShaderNodeEmission'); em.name = 'TMP'
-        em.inputs['Color'].default_value = (b.inputs['Metallic'].default_value,) * 3 + (1.0,)
-        nt.links.new(em.outputs[0], o.inputs['Surface'])
-    run('metal', 'EMIT', noncolor=True)
-    for m in mats.values():
-        nt = m.node_tree
-        nt.links.new(nt.nodes[m['bsdf']].outputs[0], nt.nodes[m['out']].inputs['Surface'])
-        nt.nodes.remove(nt.nodes['TMP'])
+    via_emission('metal', 'Metallic', True)
     sc.cycles.samples = max(64, samples * 4)
     sc.world = sc.world or bpy.data.worlds.new('W')
     run('ao', 'AO', noncolor=True)

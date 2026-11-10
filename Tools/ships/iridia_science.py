@@ -399,8 +399,15 @@ def game_preview(ob, maps, size, accent=(0.55, 0.3, 0.85)):
     names = [m.name for m in me.materials]
     mi = np.empty(len(me.polygons), np.int32); me.polygons.foreach_get('material_index', mi)
     me.materials.clear()
-    for m in (gmat('G_hull'), gmat('G_accent', accent), gmat('G_glow', glow=5.0)): me.materials.append(m)
-    remap = [1 if n == 'accent' else 2 if n in ('crystal', 'gem') else 0 for n in names]
+    for m in bpy.data.materials:   # имена слоёв достаются превью-материалам: по ним split_animated режет кольца
+        if m.name in ('ring0', 'ring1', 'ring2', 'crystal'): m.name = 'src_' + m.name
+    hull, glow = gmat('G_hull'), gmat('G_glow', glow=5.0)
+    slots = [hull, gmat('G_accent', accent), glow]
+    for k, src in (('ring0', hull), ('ring1', hull), ('ring2', hull), ('crystal', glow)):
+        c = src.copy(); c.name = k; slots.append(c)
+    for m in slots: me.materials.append(m)
+    order = ['hull', 'accent', 'glow', 'ring0', 'ring1', 'ring2', 'crystal']
+    remap = [order.index(n) if n in order[3:] else 1 if n == 'accent' else 2 if n == 'gem' else 0 for n in names]
     me.polygons.foreach_set('material_index', np.array(remap, np.int32)[mi]); me.update()
 
 
@@ -470,7 +477,9 @@ def main():
     ob = K.join_all(objs)
     print('треугольников:', sum(len(p.vertices) - 2 for p in ob.data.polygons))
     if a.quick:
-        K.render_shots(a.quick, samples=24, res=(1000, 625)); return
+        if a.gif: gif(ob, a.gif)
+        else: K.render_shots(a.quick, samples=24, res=(1000, 625))
+        return
     K.unwrap(ob)
     t = time.time()
     maps = K.bake(ob, mats, a.tex, a.samples)
