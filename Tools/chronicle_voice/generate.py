@@ -6,7 +6,7 @@
 поправили фразу там — перезапустите скрипт. Ударения в именах и редких словах — словарь STRESS ниже
 («+» перед ударной гласной).
 
-Синтез — Vosk TTS (нейросетевая русская модель vosk-model-tts-ru-0.9-multi, лицензия Apache 2.0,
+Синтез — ElevenLabs (Tools/elevenlabs_tts.py, голоса — ELEVEN ниже); с флагом --vosk — Vosk TTS (нейросетевая русская модель vosk-model-tts-ru-0.9-multi, лицензия Apache 2.0,
 5 голосов: female_0..2 = 0..2, male_0..1 = 3..4). У каждой фракции свой рассказчик и своя обработка
 через ffmpeg: тёплый «трейлерный» голос (EQ, компрессия, зал), для Ксарн ниже и тяжелее, для Иридии —
 эфирный хор, для «Ноля» — машинный блеск. Громкость выравнивается к −16 LUFS.
@@ -23,6 +23,7 @@
     venv/bin/python Tools/chronicle_voice/generate.py xarn_1_0   # одна фраза
     venv/bin/python Tools/chronicle_voice/generate.py --sfx      # только звуки
     venv/bin/python Tools/chronicle_voice/generate.py --stress   # проверка ударений
+    venv/bin/python Tools/chronicle_voice/generate.py --vosk     # офлайн-синтез Vosk вместо ElevenLabs
 """
 import os
 import re
@@ -60,6 +61,16 @@ NARRATORS = {
     "terraan": (1, 0.85, f"{pitch(0.95)},{WARM},aecho=0.85:0.6:80|170|300:0.2|0.12|0.07"),
     "nol":     (4, 0.90, f"{pitch(0.97)},{WARM},chorus=0.6:0.9:9|14:0.32|0.26:0.6|0.5:2.1|1.7,"
                          "aecho=0.8:0.45:18|36:0.2|0.1"),
+}
+
+# Голоса ElevenLabs по фракциям: (голос, стабильность, выразительность)
+ELEVEN = {
+    "astrea":  ("sarah", 0.55, 0.15),
+    "xarn":    ("adam", 0.45, 0.25),
+    "aquila":  ("george", 0.5, 0.2),
+    "iridia":  ("lily", 0.45, 0.2),
+    "terraan": ("river", 0.55, 0.1),
+    "nol":     ("daniel", 0.7, 0.0),
 }
 
 # Ударения и произношение («+» перед ударной гласной). Проверка: generate.py --stress — все слова летописей
@@ -190,9 +201,13 @@ def dic_path(name):
     raise FileNotFoundError(name)
 
 
-def synth_all(keys):
-    from vosk_tts import Model, Synth
-    synth = Synth(Model(model_name=MODEL))
+def synth_all(keys, vosk=False):
+    if vosk:
+        from vosk_tts import Model, Synth
+        synth = Synth(Model(model_name=MODEL))
+    else:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+        import elevenlabs_tts
     data = parse_lines()
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -205,7 +220,15 @@ def synth_all(keys):
                         continue
                     raw = os.path.join(tmp, "raw.wav")
                     txt = voice_text(line)
-                    synth.synth(txt, raw, speaker_id=spk, speech_rate=rate)
+                    if vosk:
+                        synth.synth(txt, raw, speaker_id=spk, speech_rate=rate)
+                    else:
+                        txt = txt.replace("+", "")
+                        voice, stab, style = ELEVEN[key]
+                        elevenlabs_tts.synth(txt, voice, raw, speed=min(1.0, rate + 0.05), stability=stab,
+                                             style=style, sr=22050,
+                                             previous_text=lines[i - 1] if i else None,
+                                             next_text=lines[i + 1] if i + 1 < len(lines) else None)
                     out = os.path.join(OUT, f"{key}_{ch}_{i}.ogg")
                     render(raw, chain, out)
                     print(f"{out}  ←  {txt}")
@@ -297,7 +320,9 @@ def main():
     if "--sfx" in args:
         make_sfx()
         return
-    synth_all(set(args))
+    vosk = "--vosk" in args
+    args = [a for a in args if a != "--vosk"]
+    synth_all(set(args), vosk)
     if not args:
         make_sfx()
 

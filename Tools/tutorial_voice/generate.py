@@ -2,7 +2,7 @@
 """
 Озвучка обучения: голос ИИ-советника ОРАКУЛ-7.
 
-Синтез — RHVoice (голос artemiy), затем мягкая обработка «бортового ИИ» через ffmpeg:
+Синтез — ElevenLabs (Tools/elevenlabs_tts.py, голос ELEVEN_VOICE); с флагом --rhvoice — RHVoice (голос artemiy). Затем мягкая обработка «бортового ИИ» через ffmpeg:
 компрессия, едва заметный синтетический блеск (очень короткое эхо), лёгкое
 пространство отсека, разборчивость в верхней середине и тихий сигнал связи
 перед фразой. Без кольцевой модуляции и «битого» звука — голос звучит живо.
@@ -23,6 +23,7 @@ import tempfile
 import uuid
 
 VOICE = "artemiy"
+ELEVEN_VOICE = "eric"   # имя из Tools/elevenlabs_tts.py VOICES или voice_id
 RATE = 92         # % скорости речи RHVoice (artemiy по умолчанию говорит бодро)
 OUT = "Assets/Resources/Audio/Tutorial"
 
@@ -127,12 +128,20 @@ def run(cmd, **kw):
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
-        only = set(sys.argv[1:])
+        rhvoice = "--rhvoice" in sys.argv
+        only = set(sys.argv[1:]) - {"--rhvoice"}
+        if not rhvoice:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+            import elevenlabs_tts
         for name, text in LINES.items():
             if only and name not in only:
                 continue
             raw = os.path.join(tmp, name + ".wav")
-            run(["RHVoice-test", "-p", VOICE, "-r", str(RATE), "-q", "max", "-o", raw], input=text.encode("utf-8"))
+            if rhvoice:
+                run(["RHVoice-test", "-p", VOICE, "-r", str(RATE), "-q", "max", "-o", raw],
+                    input=text.encode("utf-8"))
+            else:
+                elevenlabs_tts.synth(text, ELEVEN_VOICE, raw, stability=0.6)
             dst = os.path.join(OUT, name + ".ogg")
             beep = not name.startswith("tut_ok")
             graph = (f"{BEEP};[0:a]{ROBOT}[v];[beep][v]concat=n=2:v=0:a=1,loudnorm=I=-16:TP=-1.5[out]"
