@@ -182,8 +182,9 @@ namespace StellarisClone.Rendering
         // ==================== ЯДРО ГАЛАКТИКИ ====================
 
         /// <summary>
-        /// Ядро: плоский квад с шейдером GalaxyCore (раскалённый центр, балдж, закрученные рукава с
-        /// пылевыми прожилками) + объёмное свечение-билборд, чтобы ядро читалось шаром при наклоне камеры.
+        /// Ядро: плоский квад с шейдером GalaxyCore (раскалённое ядро, балдж и перемычка, внутренние рукава
+        /// в продолжение звёздных, пылевые полосы, затеняющие диск под ними, области звездообразования)
+        /// + объёмное свечение-билборд, чтобы ядро читалось шаром при наклоне камеры.
         /// </summary>
         private void BuildGalaxyCore(float R)
         {
@@ -201,11 +202,16 @@ namespace StellarisClone.Rendering
             q.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             q.transform.localScale = new Vector3(R * 1.2f, R * 1.2f, 1f);
             _coreMat = new Material(shader);
-            _coreMat.renderQueue = 2962;
-            // Рукава ядра — свои (не совпадают с рукавами систем): почти бесцветные, чтобы не рисовать
-            // оранжевую спираль на пол-экрана; тёплым остаётся только самый центр
-            _coreMat.SetColor("_Warm", new Color(0.78f, 0.8f, 0.95f));
-            _coreMat.SetColor("_Outer", new Color(0.42f, 0.42f, 0.5f));
+            // Над звёздной пылью (2965): пылевые полосы ядра затеняют и её; под территориями (2980)
+            _coreMat.renderQueue = 2966;
+            // Форма — как у звёзд генератора (ShapePoint): рукава ядра продолжают звёздные рукава
+            var shape = _generator.Shape;
+            bool spiral = shape == GalaxyShape.Spiral2 || shape == GalaxyShape.Spiral4;
+            _coreMat.SetFloat("_Arms", shape == GalaxyShape.Spiral4 ? 4f : spiral ? 2f : 0f);
+            _coreMat.SetFloat("_Twist", shape == GalaxyShape.Spiral4 ? 2.4f : 3.3f);
+            _coreMat.SetFloat("_Bar", shape == GalaxyShape.Spiral2 ? 1f : shape == GalaxyShape.Elliptical ? 0f : 0.55f);
+            _coreMat.SetFloat("_Elliptical", shape == GalaxyShape.Elliptical ? 1f : 0f);
+            _coreMat.SetFloat("_Scale", 0.6f);   // квад R·1,2 → радиус 0,6 R
             var mr = q.GetComponent<MeshRenderer>();
             mr.sharedMaterial = _coreMat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -521,7 +527,7 @@ namespace StellarisClone.Rendering
         /// <summary>Общая яркость фона карты (туманности, диск, звёздная пыль) и плотность тёмных пылевых полос.</summary>
         // Как в Stellaris: фон тихий и почти бесцветный, цвет на карте дают границы империй; форму галактики
         // рисуют звёзды (DustStarsBright), а не заливка. Пылевые полосы плотнее — у рукавов есть рельеф.
-        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.1f;
+        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.9f;
 
         private void UpdateBackdropZoom(Camera cam)
         {
@@ -551,12 +557,13 @@ namespace StellarisClone.Rendering
             if (_coreMat != null)
             {
                 _coreMat.SetFloat("_T", t);
-                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.08f, 1f, far) * BackdropBright * CoreK);   // вблизи ядро не заливает карту
+                _coreMat.SetFloat("_Intensity", Mathf.Lerp(0.3f, 1f, far) * BackdropBright * CoreK);   // вблизи ядро не заливает карту
+                _coreMat.SetFloat("_Opacity", Mathf.Lerp(0.4f, 1f, far));
             }
             if (_coreBulge != null)
             {
                 float pulse = 1f + 0.2f * Mathf.Sin(t * 0.9f);
-                _coreBulge.color = new Color(0.9f, 0.92f, 1f, Mathf.Lerp(0.01f, 0.07f, far) * pulse);   // ядро белее и тише — не спорит с картой
+                _coreBulge.color = new Color(1f, 0.88f, 0.7f, Mathf.Lerp(0.02f, 0.1f, far) * pulse);   // тёплый объём балджа при наклоне камеры
                 _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
             foreach (var (m, k, layer) in _nebulaMats)
