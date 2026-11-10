@@ -745,7 +745,8 @@ namespace StellarisClone.Rendering
             if (!_music.isPlaying && !_closing && _musicTarget > 0f && _music.clip.loadState == AudioDataLoadState.Loaded) _music.Play();
             _musicFade = Mathf.MoveTowards(_musicFade, _musicTarget, dt / (_musicTarget > _musicFade ? 3f : 1.4f));
             bool talking = _voice.isPlaying && !_closing;
-            _duck = Mathf.MoveTowards(_duck, talking ? 0.5f : 1f, dt * (talking ? 2.5f : 0.8f));
+            // Под голосом музыка уходит на ~4,4 дБ: темы сведены к громкости рассказчика (-16 LUFS)
+            _duck = Mathf.MoveTowards(_duck, talking ? 0.6f : 1f, dt * (talking ? 2.5f : 0.8f));
             _music.volume = GameSettings.MusicVolume * _entry.MusicGain * _musicFade * _duck * 1.15f;
         }
 
