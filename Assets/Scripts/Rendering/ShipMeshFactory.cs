@@ -102,6 +102,12 @@ namespace StellarisClone.Rendering
                     var astrea = AstreaScienceModel.Build(parent, owner);
                     if (astrea != null) return astrea;
                 }
+                // Доминион Ксарн — свой бронированный разведчик «Око Доминиона»
+                if (XarnScienceModel.IsXarn(ownerId))
+                {
+                    var xarn = XarnScienceModel.Build(parent, owner);
+                    if (xarn != null) return xarn;
+                }
                 var model = Mars3Model.Build(parent, owner);
                 if (model != null) return model;
             }
