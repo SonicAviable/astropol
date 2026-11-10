@@ -75,7 +75,7 @@ namespace StellarisClone.Rendering
         {
             var shader = Resources.Load<Shader>("Shaders/GalaxyFarSprites");
             if (shader == null) return;
-            const int stars = 70, galaxies = 16;
+            const int stars = 70, galaxies = 3;      // далёкие галактики — лишь намёк, не россыпь спрайтов
             const float SpikeAngle = 0.26f;      // лучи у всех звёзд под одним углом — как на снимке телескопа
             int n = stars + galaxies;
             var verts = new List<Vector3>(n * 4);
@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
                 // По кругу с разбросом — видны сквозь карту в разных её частях, а не кучей
                 float ang = (k + U() * 0.8f) / galaxies * Mathf.PI * 2f, dist = R * (0.25f + 1.45f * Mathf.Sqrt(U()));
                 Color c = Color.Lerp(new Color(0.7f, 0.8f, 1f), new Color(1f, 0.86f, 0.7f), U());
-                c.a = 0.12f + U() * 0.18f;
+                c.a = 0.04f + U() * 0.06f;
                 Add(new Vector3(Mathf.Cos(ang) * dist, -R * (0.9f + U() * 0.5f), Mathf.Sin(ang) * dist),
                     R * (0.05f + U() * 0.08f), 1f, U() * Mathf.PI, 0.25f + U() * 0.75f, c);
             }

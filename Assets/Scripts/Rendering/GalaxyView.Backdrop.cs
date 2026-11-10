@@ -204,7 +204,7 @@ namespace StellarisClone.Rendering
             _coreMat.renderQueue = 2962;
             // Рукава ядра — свои (не совпадают с рукавами систем): почти бесцветные, чтобы не рисовать
             // оранжевую спираль на пол-экрана; тёплым остаётся только самый центр
-            _coreMat.SetColor("_Warm", new Color(1f, 0.9f, 0.74f));
+            _coreMat.SetColor("_Warm", new Color(0.78f, 0.8f, 0.95f));
             _coreMat.SetColor("_Outer", new Color(0.42f, 0.42f, 0.5f));
             var mr = q.GetComponent<MeshRenderer>();
             mr.sharedMaterial = _coreMat;
@@ -234,12 +234,13 @@ namespace StellarisClone.Rendering
 
         private static readonly Color[] NebulaPalette =
         {
-            new Color(0.15f, 0.75f, 0.80f),   // бирюза
-            new Color(0.70f, 0.25f, 0.85f),   // фиолет
-            new Color(1.00f, 0.50f, 0.22f),   // янтарь
-            new Color(0.25f, 0.40f, 1.00f),   // синий
-            new Color(0.95f, 0.25f, 0.40f),   // малиновый
-            new Color(0.35f, 0.90f, 0.55f)    // зелёный
+            // Холодная гамма как в Stellaris: глубокий синий, индиго, бирюза, фиолет — без тёплых «пятен»
+            new Color(0.12f, 0.55f, 0.75f),   // бирюза
+            new Color(0.45f, 0.25f, 0.80f),   // фиолет
+            new Color(0.20f, 0.30f, 0.90f),   // синий
+            new Color(0.30f, 0.20f, 0.65f),   // индиго
+            new Color(0.15f, 0.40f, 0.85f),   // лазурь
+            new Color(0.55f, 0.25f, 0.60f)    // сливовый
         };
 
         /// <summary>
@@ -527,7 +528,7 @@ namespace StellarisClone.Rendering
         /// <summary>Общая яркость фона карты (туманности, диск, звёздная пыль) и плотность тёмных пылевых полос.</summary>
         // Как в Stellaris: фон тихий и почти бесцветный, цвет на карте дают границы империй; форму галактики
         // рисуют звёзды (DustStarsBright), а не заливка. Пылевые полосы плотнее — у рукавов есть рельеф.
-        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.35f;
+        private const float BackdropBright = 0.8f, DarkDustK = 1.3f, DustStarsBright = 1f, CoreK = 0.1f;
 
         private void UpdateBackdropZoom(Camera cam)
         {
@@ -564,7 +565,7 @@ namespace StellarisClone.Rendering
             if (_coreBulge != null)
             {
                 float pulse = 1f + 0.2f * Mathf.Sin(t * 0.9f);
-                _coreBulge.color = new Color(1f, 0.94f, 0.86f, Mathf.Lerp(0.02f, 0.22f, far) * pulse);   // ядро белее и тише — не спорит с картой
+                _coreBulge.color = new Color(0.9f, 0.92f, 1f, Mathf.Lerp(0.01f, 0.07f, far) * pulse);   // ядро белее и тише — не спорит с картой
                 _coreBulge.transform.localScale = Vector3.one * (_coreBulgeBase * (1f + 0.08f * Mathf.Sin(t * 0.9f)));
             }
             float nebulaSteps = NebulaSteps();
