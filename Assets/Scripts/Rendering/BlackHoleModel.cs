@@ -95,7 +95,7 @@ namespace StellarisClone.Rendering
     /// </summary>
     public class BlackHoleFacing : MonoBehaviour
     {
-        public const float DefaultElevation = 17f;
+        public const float DefaultElevation = 8f;   // почти с ребра: диск перечёркивает тень, дуги линзы обнимают её
         /// <summary>Угол камеры над плоскостью диска, градусы.</summary>
         public float Elevation = DefaultElevation;
         private Camera _cam;
@@ -135,7 +135,7 @@ namespace StellarisClone.Rendering
         /// крупнее короны обычной звезды, ядро с дугами линзы хорошо читается вблизи.
         /// </summary>
         private const float Radius = 3.4f;
-        private const float Elevation = 20f;
+        private const float Elevation = 11f;
         private const float ShowHeight = 90f, FullHeight = 52f;   // как у мини-систем
 
         /// <summary>Отладочный предпросмотр (F8) на обычной звезде.</summary>

@@ -14,7 +14,7 @@ Shader "Astropolity/FX/BlackHole"
         _Brightness ("Brightness", Float) = 1.7
         _InnerR ("Disk inner radius (rs)", Float) = 2.6
         _OuterR ("Disk outer radius (rs)", Float) = 8.5
-        _Spin ("Rotation speed", Float) = 1
+        _Spin ("Rotation speed", Float) = 2.5
         _Doppler ("Doppler beaming", Range(0, 1)) = 0.7
         _Fade ("Fade", Range(0, 1)) = 1
     }
@@ -74,11 +74,11 @@ Shader "Astropolity/FX/BlackHole"
                                  lerp(hash(i + float3(0, 1, 1)), hash(i + float3(1, 1, 1)), f.x), f.y), f.z);
             }
 
-            // Турбулентность диска: по углу частота низкая, по радиусу высокая — сгустки вытянуты вдоль орбит.
+            // Турбулентность диска: по углу частота низкая, по радиусу высокая — тонкие струи вдоль орбит (как в «Интерстелларе»).
             // Угол — через cos/sin, без шва
             float diskNoise(float rd, float ang, float seed)
             {
-                float3 p = float3(cos(ang) * 2.2, sin(ang) * 2.2, rd * 1.7 + seed);
+                float3 p = float3(cos(ang) * 1.6, sin(ang) * 1.6, rd * 4.5 + seed);
                 float s = 0.0, a = 0.5;
                 [unroll] for (int o = 0; o < 4; o++)
                 {
@@ -176,7 +176,7 @@ Shader "Astropolity/FX/BlackHole"
                     // Фотонное кольцо: лучи, обходящие дыру у фотонной сферы (1,5 rs), чуть светятся
                     // (только вырвавшиеся — упавшие в горизонт остаются тенью)
                     float pr = r - 1.5;
-                    ring += (1.0 - alpha) * 0.045 * dt * exp(-pr * pr * 30.0);
+                    ring += (1.0 - alpha) * 0.12 * dt * exp(-pr * pr * 60.0);
 
                     if (prev.y * pos.y < 0.0)
                     {
