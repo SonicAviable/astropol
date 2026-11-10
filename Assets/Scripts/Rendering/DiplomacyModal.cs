@@ -300,6 +300,10 @@ namespace StellarisClone.Rendering
                 _voice.playOnAwake = false;
                 _voice.ignoreListenerPause = true;
                 _voice.spatialBlend = 0f;
+                // Высший приоритет: иначе при 32 реальных голосах Unity отдаёт канал звукам интерфейса и карты
+                // (у них приоритет выше 128 по умолчанию), и реплика обрывается на полуслове
+                _voice.priority = 0;
+                _voice.bypassReverbZones = true;
             }
             _voice.Stop();
             // Озвучка только русская: в английской версии — текст с телетайпом

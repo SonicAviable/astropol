@@ -191,6 +191,9 @@ namespace StellarisClone.Rendering
                 s.spatialBlend = 0f;
                 s.ignoreListenerPause = true;
             }
+            // Голос и музыка летописи не уступают канал звукам интерфейса (32 реальных голоса Unity)
+            _voice.priority = 0;
+            _music.priority = 8;
         }
 
         /// <summary>Рамка в 1 пиксель с отступом inset от краёв экрана.</summary>
