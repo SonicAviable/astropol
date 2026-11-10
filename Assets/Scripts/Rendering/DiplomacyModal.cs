@@ -41,11 +41,11 @@ namespace StellarisClone.Rendering
         private const float SideW = 290f, Edge = 20f;
         private const float TableY = 215f, TableA = 600f, TableB = 165f, TableSkirt = 34f;
         // Договоры по дальней кромке (эллипс чуть шире крышки)
-        private const float RimA = 565f, RimB = 182f;
+        private const float RimA = 560f, RimB = 176f;
         // Голограмма правителя: стоит за столом, крышка перекрывает её низ
         private const float LeaderW = 600f, LeaderH = 860f;
         // Сделка на крышке, «Предложить» у переднего края, реплика под голограммой
-        private const float DealW = 720f, DealH = 270f, DealBottom = 95f, ProposeBottom = 22f, SpeechBottom = 418f;
+        private const float DealW = 720f, DealH = 270f, DealBottom = 95f, ProposeBottom = 24f, SpeechBottom = 456f;
         // Боковые панели ресурсов: строки по RowH
         private const float GridTop = 110f, GridH = 432f, ResRowH = 44f, ResRowGap = 3f;
         private const int ChanceSegs = 16, SlotCount = 8;
@@ -379,8 +379,8 @@ namespace StellarisClone.Rendering
             _padCrestAI = Holo(rt, "PadCrestAI", null, new Vector2(0f, TableY + TableB * 0.55f), new Vector2(150f, 34f), new Vector2(0.5f, 0.5f));
             _padPlayer = Holo(rt, "PadPlayer", PadSprite(), new Vector2(-600f, TableY), new Vector2(10f, 10f), new Vector2(0.5f, 0.5f));
             _padCrestPlayer = Holo(rt, "PadCrestPlayer", null, new Vector2(-600f, TableY), new Vector2(10f, 10f), new Vector2(0.5f, 0.5f));
-            _padPlayer.gameObject.SetActive(false);
-            _padCrestPlayer.gameObject.SetActive(false);
+            // Площадка и герб на столе закрывали бы шанс согласия — герб уже есть в карточке империи
+            foreach (var go in new[] { _padAI.gameObject, _padCrestAI.gameObject, _padPlayer.gameObject, _padCrestPlayer.gameObject }) go.SetActive(false);
 
             BuildDealHolo(rt);
             BuildActions(rt);
@@ -441,7 +441,7 @@ namespace StellarisClone.Rendering
             _tableRingA = Holo(_tableSpinA, "RingA", DashRingSprite(), Vector2.zero, new Vector2(w * 0.90f, w * 0.90f), new Vector2(0.5f, 0.5f), true);
             _tableSpinB = LGBuild.Rect(table, "SpinB");
             _tableSpinB.Stretch();
-            _tableRingB = Holo(_tableSpinB, "RingB", PadSprite(), Vector2.zero, new Vector2(w * 0.30f, w * 0.30f), new Vector2(0.5f, 0.5f), true);
+            _tableRingB = Holo(_tableSpinB, "RingB", DashRingSprite(), Vector2.zero, new Vector2(w * 0.62f, w * 0.62f), new Vector2(0.5f, 0.5f), true);
         }
 
         /// <summary>Сделка на крышке стола: шанс согласия по центру, ваша половина слева, их — справа.</summary>
@@ -502,7 +502,7 @@ namespace StellarisClone.Rendering
         {
             var p = LGBuild.Panel(rt, "Empire", PanelBg, raycast: true);
             var r = p.rectTransform;
-            r.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Edge, -Edge), new Vector2(SideW + 80f, 74f));
+            r.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Edge, -Edge), new Vector2(630f, 74f));
             LG.Glass(p.gameObject, 14f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f));
             var crt = LGBuild.Rect(r, "Crest");
             crt.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(46, 46));
@@ -515,7 +515,11 @@ namespace StellarisClone.Rendering
             _empireTitle.font = GameFont.Display;
             _empireTitle.rectTransform.TopBand(10, 28, 72, 12);
             _empireSub = LGBuild.Label(r, "", 12, Muted, TextAnchor.MiddleLeft);
-            _empireSub.rectTransform.TopBand(40, 20, 72, 12);
+            _empireSub.rectTransform.TopBand(40, 20, 72, 14);
+            _empireSub.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _empireSub.resizeTextForBestFit = true;
+            _empireSub.resizeTextMinSize = 9;
+            _empireSub.resizeTextMaxSize = 12;
             _empireSub.raycastTarget = true;
         }
 
@@ -609,24 +613,44 @@ namespace StellarisClone.Rendering
             _dialogPortrait.raycastTarget = false;
             pm.gameObject.SetActive(false);
 
-            (_btnBalance, _imgBalance, _lblBalance) = Pill(d, new Vector2(-135f, 0f), new Vector2(256f, 32f), LGIcon.Diplomacy, OnBalanceClicked);
-            (_btnBack, _imgBack, _lblBack) = Pill(d, new Vector2(135f, 0f), new Vector2(256f, 32f), LGIcon.Back, OnBackClicked);
-
-            (_btnPropose, _imgPropose, _lblPropose) = Pill(rt, new Vector2(0f, ProposeBottom), new Vector2(300f, 44f), LGIcon.Handshake, OnProposeClicked);
+            Image ic;
+            (_btnBalance, _imgBalance, ic, _lblBalance) = Capsule(d, new Vector2(-140f, 16f), new Vector2(260f, 32f), LGIcon.Diplomacy, Cyan, OnBalanceClicked);
+            (_btnBack, _imgBack, ic, _lblBack) = Capsule(d, new Vector2(140f, 16f), new Vector2(260f, 32f), LGIcon.Back, Cyan, OnBackClicked);
+            // У переднего края стола
+            (_btnPropose, _imgPropose, ic, _lblPropose) = Capsule(rt, new Vector2(0f, ProposeBottom + 22f), new Vector2(320f, 44f), LGIcon.Handshake, Cyan, OnProposeClicked);
+            _lblPropose.fontSize = 14;
         }
 
-        /// <summary>Кнопка-«пилюля» с иконкой и подписью (низ по центру родителя).</summary>
-        private static (Button, Image, Text) Pill(RectTransform parent, Vector2 pos, Vector2 size, LGIcon icon, System.Action onClick)
+        /// <summary>
+        /// Кнопка-капсула зала переговоров: тёмное стекло со скруглёнными краями, светящаяся кромка, значок и подпись.
+        /// Своя, а не <see cref="LGBuild.Button"/>: та превращается в «полосу» общего стиля игры (срезанные углы),
+        /// а голографическому залу нужны капсулы. pos — центр кнопки относительно низа-центра родителя.
+        /// </summary>
+        private static (Button, Image, Image, Text) Capsule(RectTransform parent, Vector2 pos, Vector2 size, LGIcon icon, Color rim, System.Action onClick)
         {
-            var b = LGBuild.Button(parent, "Reply", RowBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f), onClick, null, null, 13, size.y * 0.5f);
-            ((RectTransform)b.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, size);
-            var fx = b.GetComponent<LiquidGlassEffect>();
-            if (fx != null) { fx.SpecularMultiplier = 0.25f; fx.GlowMultiplier = 0.5f; fx.FillMultiplier = 2.4f; }
-            var t = LGBuild.Label(b.transform, "", 13, Color.white, TextAnchor.MiddleCenter, bold: true);
-            t.rectTransform.Stretch(30, 0, 14, 0);
-            var ic = LGIcons.Create(b.transform, icon, 13, Color.white);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(13, 13));
-            return (b, b.GetComponent<Image>(), t);
+            var img = LGBuild.Panel(parent, "Capsule", new Color(0.02f, 0.07f, 0.09f, 0.88f), raycast: true);
+            img.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), pos, size);
+            var fx = LG.Platter(img.gameObject, size.y * 0.5f);
+            fx.SetRim(new Color(rim.r, rim.g, rim.b, 0.5f));
+            fx.FillMultiplier = 2.4f;
+            var btn = img.gameObject.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var cb = btn.colors;
+            cb.highlightedColor = cb.selectedColor = new Color(1.25f, 1.35f, 1.4f, 1f);
+            cb.pressedColor = new Color(0.8f, 0.9f, 0.95f, 1f);
+            cb.disabledColor = new Color(0.7f, 0.7f, 0.7f, 0.6f);
+            cb.fadeDuration = 0.1f;
+            btn.colors = cb;
+            btn.onClick.AddListener(() => onClick?.Invoke());
+            var ic = LGIcons.Create(img.transform, icon, 15, rim);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(15, 15));
+            var t = LGBuild.Label(img.transform, "", 12, Color.white, TextAnchor.MiddleCenter, bold: true);
+            t.rectTransform.Stretch(34, 0, 14, 0);
+            t.resizeTextForBestFit = true;
+            t.resizeTextMinSize = 9;
+            t.resizeTextMaxSize = 12;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            return (btn, img, ic, t);
         }
 
         /// <summary>Договоры по дальней кромке стола: дуга слева направо через «верх» эллипса, наклон — по касательной.</summary>
@@ -636,19 +660,9 @@ namespace StellarisClone.Rendering
             {
                 float th = Mathf.PI * (0.94f - 0.88f * i / (SlotCount - 1));
                 float x = Mathf.Cos(th) * RimA, y = TableY + Mathf.Sin(th) * RimB;
-                float slope = Mathf.Atan2(-RimB * Mathf.Cos(th), RimA * Mathf.Sin(th)) * Mathf.Rad2Deg;
-
                 var slot = new Slot();
                 int idx = i;
-                slot.Btn = LGBuild.Button(rt, "Action", SlotBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f), () => _slots[idx].Act?.Invoke(), null, null, 12, 17f);
-                var r = (RectTransform)slot.Btn.transform;
-                r.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(150f, 34f));
-                r.localRotation = Quaternion.Euler(0f, 0f, slope * 0.3f);
-                slot.Bg = slot.Btn.GetComponent<Image>();
-                slot.Icon = LGIcons.Create(slot.Btn.transform, LGIcon.Handshake, 14, Color.white);
-                slot.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(14, 14));
-                slot.Label = LGBuild.Label(slot.Btn.transform, "", 11, Color.white, TextAnchor.MiddleCenter, bold: true, wrap: true);
-                slot.Label.rectTransform.Stretch(30, 0, 10, 0);
+                (slot.Btn, slot.Bg, slot.Icon, slot.Label) = Capsule(rt, new Vector2(x, y), new Vector2(138f, 32f), LGIcon.Handshake, Cyan, () => _slots[idx].Act?.Invoke());
                 _slots.Add(slot);
             }
         }
@@ -1462,7 +1476,8 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(c.transform, DealCatalog.Icon(k), 22, new Color(tint.r, tint.g, tint.b, a));
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10f, 0f), new Vector2(22, 22));
             bool payment = !DealCatalog.IsResource(k);
-            var cap = LGBuild.Label(c.transform, payment ? DealCatalog.Name(k) : caption, payment ? 13 : 16,
+            string label = payment ? Loc.F("{0} / мес", DealCatalog.Name(DealCatalog.ResourceBase(k))) : caption;
+            var cap = LGBuild.Label(c.transform, label, payment ? 12 : 16,
                 new Color(Primary.r, Primary.g, Primary.b, a), TextAnchor.MiddleLeft, bold: payment);
             if (!payment) cap.font = GameFont.Display;
             cap.rectTransform.Stretch(42, 0, onTable ? 56 : 12, 0);
@@ -1470,11 +1485,6 @@ namespace StellarisClone.Rendering
             {
                 var name = LGBuild.Label(c.transform, DealCatalog.Name(k).ToLower(), 11, new Color(Muted.r, Muted.g, Muted.b, a), TextAnchor.MiddleRight);
                 name.rectTransform.Stretch(110, 0, 12, 0);
-            }
-            else if (payment && !onTable)
-            {
-                var name = LGBuild.Label(c.transform, Loc.T("в месяц"), 11, new Color(Muted.r, Muted.g, Muted.b, a), TextAnchor.MiddleRight);
-                name.rectTransform.Stretch(150, 0, 12, 0);
             }
 
             if (onTable)
@@ -1702,7 +1712,7 @@ namespace StellarisClone.Rendering
             }
 
             bool alive = !ai.IsEliminated;
-            SetButton(_btnPropose, _imgPropose, _lblPropose, d.IsGift ? Loc.T("Подарить") : Loc.T("Предложить сделку"), new Color(0.30f, 0.22f, 0.05f, 0.96f), alive && !d.IsEmpty);
+            SetButton(_btnPropose, _imgPropose, _lblPropose, d.IsGift ? Loc.T("Подарить") : Loc.T("Предложить сделку"), new Color(0.08f, 0.36f, 0.34f, 0.96f), alive && !d.IsEmpty);
             SetButton(_btnBalance, _imgBalance, _lblBalance, Loc.T("Что вас устроит?"), RowBg, alive);
             SetButton(_btnBack, _imgBack, _lblBack, d.IsEmpty ? Loc.T("Завершить переговоры") : Loc.T("Очистить стол"), RowBg, true);
         }
