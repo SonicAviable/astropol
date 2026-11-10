@@ -1,34 +1,30 @@
-// Чёрная дыра в виде системы (модель Resources/Models/BlackHole, сборка — BlackHoleModel.cs).
-// Слои светящегося диска — поверхности вращения: v < 0,5 — плоский диск (v = 0 у внешнего края, 0,5 — у горизонта),
-// v ≥ 0,5 — «купол», изогнутый над горизонтом. Диск светится по радиальной палитре (_Deep → _Warm → _Hot),
-// купол — только у силуэта (френель): под низким углом камеры это дуги гравитационной линзы над и под горизонтом,
-// сверху купол прозрачен и виден чёрный горизонт. Полосы исходной текстуры — яркостью (_Detail).
-// _TexColor = 1 — вместо палитры цвет самой текстуры (внешнее кольцо, обломки). _Tint.a — общая яркость слоя,
-// _Fade — проявление модели (на карте задаётся каждому экземпляру через MaterialPropertyBlock).
+// Чёрная дыра (сборка — BlackHoleModel.cs): трассировка лучей в искривлённом пространстве внутри сферы-оболочки.
+// Единицы шейдера — радиусы Шварцшильда (rs = 1), оболочка — радиус 10 (примитив-сфера Unity радиуса 0,5 ×20).
+// Луч гнётся приближённым уравнением геодезической (a = −1,5·h²·r/|r|⁵): диск за дырой встаёт дугой над и под
+// горизонтом, вокруг тени — фотонное кольцо. Диск — в плоскости XZ объекта: турбулентная плазма с кеплеровским
+// вращением (внутри быстрее), доплеровским усилением набегающей стороны и гравитационным красным смещением.
+// Время — _BHTime (unscaledTime, задаёт BlackHoleFacing): дыра живёт и на паузе. _Fade — проявление на карте.
 Shader "Astropolity/FX/BlackHole"
 {
     Properties
     {
-        _MainTex ("Bands", 2D) = "white" {}
-        _Hot ("Hot", Color) = (1, 0.86, 0.62, 1)
-        _Warm ("Warm", Color) = (1, 0.55, 0.2, 1)
-        _Deep ("Deep", Color) = (0.5, 0.1, 0.03, 1)
-        _Tint ("Tint", Color) = (1, 1, 1, 1)
-        _Intensity ("Disk intensity", Float) = 1
-        _DomeGain ("Lens arc gain", Float) = 1.4
-        _RimPow ("Lens arc sharpness", Float) = 3
-        _Detail ("Band detail", Range(0, 1)) = 0.6
-        _TexColor ("Use texture colour", Range(0, 1)) = 0
+        _Hot ("Hot", Color) = (1, 0.9, 0.72, 1)
+        _Warm ("Warm", Color) = (1, 0.48, 0.12, 1)
+        _Deep ("Deep", Color) = (0.6, 0.1, 0.02, 1)
+        _Brightness ("Brightness", Float) = 1.7
+        _InnerR ("Disk inner radius (rs)", Float) = 2.6
+        _OuterR ("Disk outer radius (rs)", Float) = 8.5
+        _Spin ("Rotation speed", Float) = 1
+        _Doppler ("Doppler beaming", Range(0, 1)) = 0.7
         _Fade ("Fade", Range(0, 1)) = 1
-        _Flow ("Flow (turns/s at the horizon)", Float) = 0.06
     }
     SubShader
     {
         Tags { "Queue"="Transparent+20" "RenderType"="Transparent" "IgnoreProjector"="True" }
-        Blend One One
+        Blend One OneMinusSrcAlpha
         ZWrite Off
         ZTest LEqual
-        Cull Off
+        Cull Front
         Lighting Off
 
         Pass
@@ -36,57 +32,168 @@ Shader "Astropolity/FX/BlackHole"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
             #include "UnityCG.cginc"
 
-            sampler2D _MainTex;
-            float4 _Hot, _Warm, _Deep, _Tint;
-            float _Intensity, _DomeGain, _RimPow, _Detail, _TexColor, _Fade, _Flow;
+            float4 _Hot, _Warm, _Deep;
+            float _Brightness, _InnerR, _OuterR, _Spin, _Doppler, _Fade;
+            float _BHTime;
+
+            static const float Bound = 10.0;
+            static const float Scale = 20.0;   // объект → rs
 
             struct v2f
             {
                 float4 pos : SV_POSITION;
-                float2 uv  : TEXCOORD0;
-                float3 wn  : TEXCOORD1;
-                float3 wv  : TEXCOORD2;
+                float3 obj : TEXCOORD0;
             };
 
             v2f vert(appdata_base v)
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.uv = v.texcoord.xy;
-                o.wn = UnityObjectToWorldNormal(v.normal);
-                o.wv = WorldSpaceViewDir(v.vertex);
+                o.obj = v.vertex.xyz * Scale;
                 return o;
+            }
+
+            float hash(float3 p)
+            {
+                p = frac(p * 0.3183099 + 0.1);
+                p *= 17.0;
+                return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+            }
+
+            float vnoise(float3 x)
+            {
+                float3 i = floor(x);
+                float3 f = frac(x);
+                f = f * f * (3.0 - 2.0 * f);
+                return lerp(lerp(lerp(hash(i), hash(i + float3(1, 0, 0)), f.x),
+                                 lerp(hash(i + float3(0, 1, 0)), hash(i + float3(1, 1, 0)), f.x), f.y),
+                            lerp(lerp(hash(i + float3(0, 0, 1)), hash(i + float3(1, 0, 1)), f.x),
+                                 lerp(hash(i + float3(0, 1, 1)), hash(i + float3(1, 1, 1)), f.x), f.y), f.z);
+            }
+
+            // Турбулентность диска: по углу частота низкая, по радиусу высокая — сгустки вытянуты вдоль орбит.
+            // Угол — через cos/sin, без шва
+            float diskNoise(float rd, float ang, float seed)
+            {
+                float3 p = float3(cos(ang) * 2.2, sin(ang) * 2.2, rd * 1.7 + seed);
+                float s = 0.0, a = 0.5;
+                [unroll] for (int o = 0; o < 4; o++)
+                {
+                    s += a * vnoise(p);
+                    p = p * 2.03 + float3(1.7, 9.2, 3.1);
+                    a *= 0.5;
+                }
+                return s;
+            }
+
+            void shadeDisk(float3 hp, float3 rayDir, inout float3 col, inout float alpha)
+            {
+                float rd = length(hp.xz);
+                if (rd < _InnerR || rd > _OuterR) return;
+                float x = (rd - _InnerR) / (_OuterR - _InnerR);
+
+                // Кеплеровское вращение: ω ∝ r^−3/2. Узор вращается двумя фазами со сдвигом и перетекает
+                // из одной в другую — иначе за минуты дифференциальное вращение закрутит его в мелкую рябь
+                float omega = _Spin * 1.1 * pow(rd, -1.5);
+                const float P = 14.0;
+                float ph = frac(_BHTime / P);
+                float ang = atan2(hp.z, hp.x);
+                float n1 = diskNoise(rd, ang - omega * ph * P, 0.0);
+                float n2 = diskNoise(rd, ang - omega * frac(ph + 0.5) * P, 37.0);
+                float w = 1.0 - abs(2.0 * ph - 1.0);
+                float n = lerp(n2, n1, w);
+                float streak = 0.35 + 1.3 * smoothstep(0.25, 0.85, n);
+
+                // Температура: горячо у внутреннего края, к внешнему остывает
+                float edge = smoothstep(0.0, 0.05, x) * smoothstep(1.0, 0.55, x);
+                float temp = pow(_InnerR / rd, 0.9);
+
+                // Доплер: вещество летит по орбите против часовой стрелки (если смотреть с +Y);
+                // к наблюдателю фотон летит против направления луча
+                float beta = sqrt(0.5 / rd) * 0.75;
+                float3 tdir = normalize(float3(-hp.z, 0.0, hp.x));
+                float cosT = dot(tdir, -rayDir);
+                float D = sqrt(1.0 - beta * beta) / (1.0 - beta * cosT);
+                float beam = lerp(1.0, D * D * D, _Doppler);
+                float grav = 1.0 - 1.0 / rd;   // гравитационное красное смещение (квадрат)
+
+                float t = saturate(temp * lerp(1.0, D, _Doppler * 0.6));
+                float3 c = lerp(_Deep.rgb, _Warm.rgb, smoothstep(0.25, 0.6, t));
+                c = lerp(c, _Hot.rgb, smoothstep(0.6, 1.0, t));
+
+                float3 emit = c * (temp * streak * beam * grav * edge);
+                float a = edge * saturate(0.55 + 0.6 * n);
+                col += (1.0 - alpha) * emit;
+                alpha += (1.0 - alpha) * a;
             }
 
             float4 frag(v2f i) : SV_Target
             {
-                float v = i.uv.y;
-                // Течение вещества по диску: u — угол поверхности вращения; у горизонта (v → 0,5) быстрее,
-                // чем у внешнего края — дифференциальное вращение, полосы закручиваются. tex2Dgrad — без шва на frac
-                float flow = _Time.y * _Flow * (0.3 + 1.4 * saturate(v * 2.0));
-                float2 uvf = float2(frac(i.uv.x + flow), v);
-                float4 tx = tex2Dgrad(_MainTex, uvf, ddx(i.uv), ddy(i.uv));
-                // Бегущие яркие сгустки — диск «кипит», даже если текстура почти однородна по кругу
-                float clumps = 0.78 + 0.22 * sin((i.uv.x + flow * 1.6) * 6.2831853 * 7.0 + v * 38.0)
-                                     * sin((i.uv.x - flow * 0.7) * 6.2831853 * 3.0 + _Time.y * 0.8);
-                float lum = dot(tx.rgb, float3(0.3, 0.59, 0.11));
-                float detail = (1.0 - _Detail + _Detail * lum * 1.6) * tx.a;
+                float3 camO = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1.0)).xyz * Scale;
+                float3 dir, ro;
+                if (unity_OrthoParams.w > 0.5)
+                {
+                    float3 fwdW = -UNITY_MATRIX_V[2].xyz;
+                    dir = normalize(mul((float3x3)unity_WorldToObject, fwdW));
+                    ro = i.obj - dir * (Bound * 3.0);
+                }
+                else
+                {
+                    dir = normalize(i.obj - camO);
+                    ro = camO;
+                }
 
-                float facing = abs(dot(normalize(i.wn), normalize(i.wv)));
-                float rim = pow(1.0 - saturate(facing), _RimPow);
+                // Вход в оболочку (камера может быть и внутри)
+                float b = dot(ro, dir);
+                float c = dot(ro, ro) - Bound * Bound;
+                float h = b * b - c;
+                if (h < 0.0) discard;
+                ro += dir * max(-b - sqrt(h), 0.0);
 
-                float dome = step(0.5, v);
-                float t = saturate(v * 2.0);
-                float3 ramp = lerp(_Deep.rgb, _Warm.rgb, smoothstep(0.0, 0.55, t));
-                ramp = lerp(ramp, _Hot.rgb, smoothstep(0.55, 1.0, t));
+                float3 pos = ro, vel = dir;
+                float3 L = cross(pos, vel);
+                float h2 = dot(L, L);
+                float3 col = 0;
+                float alpha = 0.0;
+                float rmin = Bound;
+                float ring = 0.0;
 
-                float3 disk = ramp * (1.0 - dome) * smoothstep(0.0, 0.2, t) * _Intensity * clumps;
-                float3 lens = _Hot.rgb * dome * rim * _DomeGain;
-                float3 col = (disk + lens) * detail;
-                col = lerp(col, tx.rgb * tx.a * _Intensity, _TexColor);
-                return float4(col * _Tint.rgb * (_Tint.a * _Fade), 1.0);
+                [loop] for (int s = 0; s < 180; s++)
+                {
+                    float r2 = dot(pos, pos);
+                    float r = sqrt(r2);
+                    rmin = min(rmin, r);
+                    if (r < 1.0) { alpha = 1.0; break; }   // за горизонтом — тень
+
+                    float dt = clamp(0.09 * r, 0.03, 0.8);
+                    float3 prev = pos;
+                    vel += (-1.5 * h2 / (r2 * r2 * r)) * pos * dt;
+                    pos += vel * dt;
+
+                    // Фотонное кольцо: лучи, обходящие дыру у фотонной сферы (1,5 rs), чуть светятся
+                    // (только вырвавшиеся — упавшие в горизонт остаются тенью)
+                    float pr = r - 1.5;
+                    ring += (1.0 - alpha) * 0.045 * dt * exp(-pr * pr * 30.0);
+
+                    if (prev.y * pos.y < 0.0)
+                    {
+                        float f = prev.y / (prev.y - pos.y);
+                        shadeDisk(lerp(prev, pos, f), normalize(vel), col, alpha);
+                    }
+                    if (alpha > 0.995) break;
+                    if (r > Bound + 0.5 && dot(pos, vel) > 0.0) break;
+                }
+
+                col += _Hot.rgb * ring * (1.0 - alpha);
+                // Мягкое тёплое гало вокруг тени
+                col += (1.0 - alpha) * _Warm.rgb * 0.06 * exp(-(rmin - 1.0) * 0.6) * smoothstep(Bound, Bound * 0.6, rmin);
+
+                col *= _Brightness;
+                col = 1.0 - exp(-col);   // мягкий тонмаппинг: без плоских пересветов
+                return float4(col, alpha) * _Fade;
             }
             ENDCG
         }
