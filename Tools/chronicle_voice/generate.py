@@ -63,14 +63,26 @@ NARRATORS = {
                          "aecho=0.8:0.45:18|36:0.2|0.1"),
 }
 
-# Голоса ElevenLabs по фракциям: (голос, стабильность, выразительность)
+# ElevenLabs (eleven_v3): у каждой фракции свой русский голос из библиотеки, режиссёрский тег и чистая
+# «студийная» обработка — де-эссер, мягкая компрессия, присутствие и своё пространство (без питч-шифта:
+# характер даёт сам актёр). Ключ: (голос из Tools/elevenlabs_tts.py VOICES, тег v3, цепочка ffmpeg)
+STUDIO = ("highpass=f=75,deesser=i=0.35,equalizer=f=200:t=q:w=1:g=1.5,equalizer=f=350:t=q:w=1.5:g=-1.5,"
+          "equalizer=f=3200:t=q:w=1.4:g=1.5,equalizer=f=11000:t=q:w=1:g=1,"
+          "acompressor=threshold=-21dB:ratio=2.5:attack=6:release=150:makeup=1.5")
 ELEVEN = {
-    "astrea":  ("sarah", 0.55, 0.15),
-    "xarn":    ("adam", 0.45, 0.25),
-    "aquila":  ("george", 0.5, 0.2),
-    "iridia":  ("lily", 0.45, 0.2),
-    "terraan": ("river", 0.55, 0.1),
-    "nol":     ("daniel", 0.7, 0.0),
+    "astrea":  ("victoria", "warm, hopeful, cinematic narration",
+                f"{STUDIO},aecho=0.85:0.5:40|85:0.10|0.05"),
+    "xarn":    ("nester", "grim, low voice, slow and heavy",
+                f"{STUDIO},equalizer=f=110:t=q:w=1:g=2,aecho=0.85:0.5:55|120:0.12|0.07"),
+    "aquila":  ("egor", "confident, smooth, slightly ironic",
+                f"{STUDIO},aecho=0.8:0.4:30|65:0.08|0.04"),
+    "iridia":  ("elen", "mysterious, dreamy, unhurried",
+                f"{STUDIO},chorus=0.85:0.9:24|33:0.08|0.06:0.25|0.2:1.2|0.9,"
+                "aecho=0.85:0.6:70|150|260:0.16|0.10|0.06"),
+    "terraan": ("tatyana", "ancient, slow, deep and earthy",
+                f"{STUDIO},aecho=0.85:0.6:80|170|300:0.14|0.09|0.05"),
+    "nol":     ("gleb", "cold, emotionless, precise",
+                f"{STUDIO},chorus=0.6:0.9:9|14:0.22|0.18:0.6|0.5:2.1|1.7,aecho=0.8:0.45:18|36:0.14|0.07"),
 }
 
 # Ударения и произношение («+» перед ударной гласной). Проверка: generate.py --stress — все слова летописей
@@ -209,6 +221,7 @@ def synth_all(keys, vosk=False):
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         import elevenlabs_tts
     data = parse_lines()
+    bad = []
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         for key, chapters in data.items():
@@ -223,15 +236,13 @@ def synth_all(keys, vosk=False):
                     if vosk:
                         synth.synth(txt, raw, speaker_id=spk, speech_rate=rate)
                     else:
-                        txt = txt.replace("+", "")
-                        voice, stab, style = ELEVEN[key]
-                        elevenlabs_tts.synth(txt, voice, raw, speed=min(1.0, rate + 0.05), stability=stab,
-                                             style=style, sr=22050,
-                                             previous_text=lines[i - 1] if i else None,
-                                             next_text=lines[i + 1] if i + 1 < len(lines) else None)
+                        voice, direction, chain = ELEVEN[key]
+                        elevenlabs_tts.synth(txt, voice, raw, direction=direction, log=bad)
                     out = os.path.join(OUT, f"{key}_{ch}_{i}.ogg")
                     render(raw, chain, out)
                     print(f"{out}  ←  {txt}")
+    if bad:
+        print("\nНеточные дубли (лучший из попыток) — проверьте на слух:\n" + "\n".join(bad))
 
 
 # ---------------------------------------------------------------- Кинематографичные звуки

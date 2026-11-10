@@ -23,7 +23,8 @@ import tempfile
 import uuid
 
 VOICE = "artemiy"
-ELEVEN_VOICE = "eric"   # имя из Tools/elevenlabs_tts.py VOICES или voice_id
+ELEVEN_VOICE = "aleksandr"   # имя из Tools/elevenlabs_tts.py VOICES или voice_id
+ELEVEN_DIRECTION = "calm, clear, attentive"   # тег eleven_v3 (для коротких откликов tut_ok — «pleased»)
 RATE = 92         # % скорости речи RHVoice (artemiy по умолчанию говорит бодро)
 OUT = "Assets/Resources/Audio/Tutorial"
 
@@ -128,6 +129,7 @@ def run(cmd, **kw):
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
+        bad = []
         rhvoice = "--rhvoice" in sys.argv
         only = set(sys.argv[1:]) - {"--rhvoice"}
         if not rhvoice:
@@ -141,7 +143,8 @@ def main():
                 run(["RHVoice-test", "-p", VOICE, "-r", str(RATE), "-q", "max", "-o", raw],
                     input=text.encode("utf-8"))
             else:
-                elevenlabs_tts.synth(text, ELEVEN_VOICE, raw, stability=0.6)
+                direction = "pleased, warm" if name.startswith("tut_ok") else ELEVEN_DIRECTION
+                elevenlabs_tts.synth(text, ELEVEN_VOICE, raw, direction=direction, log=bad)
             dst = os.path.join(OUT, name + ".ogg")
             beep = not name.startswith("tut_ok")
             graph = (f"{BEEP};[0:a]{ROBOT}[v];[beep][v]concat=n=2:v=0:a=1,loudnorm=I=-16:TP=-1.5[out]"
@@ -153,6 +156,8 @@ def main():
                 with open(meta, "w") as f:
                     f.write(META.format(guid=uuid.uuid4().hex))
             print("ok", dst)
+        if bad:
+            print("\nНеточные дубли — проверьте на слух:\n" + "\n".join(bad))
 
 
 if __name__ == "__main__":
