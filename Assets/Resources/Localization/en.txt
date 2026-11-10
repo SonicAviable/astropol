@@ -3235,7 +3235,7 @@ Shift + ПКМ добавляет точку в маршрут флота, Backs
 Готово	Done
 звёздных систем {0}   ·   гиперкоридоров {1}   ·   	star systems {0}   ·   hyperlanes {1}   ·   
 звуков синтезировано {0:0}%	sounds synthesized {0:0}%
-   ·   шейдеров {0}/48	   ·   shaders {0}/48
+   ·   шейдеров {0}/{1}	   ·   shaders {0}/{1}
 ГАЛАКТИЧЕСКАЯ СТРАТЕГИЯ	GALACTIC STRATEGY
 Исследуйте  ·  Расширяйтесь  ·  Развивайтесь  ·  Побеждайте	Explore  ·  Expand  ·  Develop  ·  Conquer
 Создать галактику и выбрать цивилизацию	Create a galaxy and choose a civilization
