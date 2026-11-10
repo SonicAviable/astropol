@@ -7580,3 +7580,120 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 \n<color=#5CE68A>Изучено</color>	\n<color=#5CE68A>Studied</color>
 Стройка отменена	Construction cancelled
 Форпост в системе {0} не построен: корабль ушёл. Сплавы возвращены	Outpost in {0} not built: the ship left. Alloys refunded
+2200 год	Year 2200
+Исход	Exodus
+2041 год	Year 2041
+Когда старая родина задохнулась в собственном дыму, двенадцать ковчегов ушли в темноту, не зная, найдут ли они берег.	When the old homeworld choked on its own smoke, twelve arks sailed into the dark, not knowing whether they would ever find a shore.
+На борту спали четыреста тысяч человек и одна общая мечта: начать заново и не повторить прежних ошибок.	Aboard slept four hundred thousand people and one shared dream: to begin again, and not repeat the mistakes of the past.
+Первый рассвет	First Dawn
+2087 год	Year 2087
+Берег нашёлся у звезды, которую назвали Астреей, в честь богини справедливости, последней покинувшей людей.	The shore was found at a star they named Astrea, after the goddess of justice who was the last to abandon mankind.
+Колонии выживали поодиночке, пока не поняли простую истину: вместе они сильнее любого шторма.	The colonies struggled alone until they learned a simple truth: together they were stronger than any storm.
+Хартия Свободы	The Charter of Liberty
+2131 год	Year 2131
+Двенадцать колоний подписали Хартию Свободы, первый закон, по которому голос шахтёра весил столько же, сколько голос адмирала.	Twelve colonies signed the Charter of Liberty, the first law under which a miner's voice weighed as much as an admiral's.
+Так родилась Республика, и с тех пор её главное оружие не флот, а слово.	So the Republic was born, and ever since its greatest weapon has been not the fleet, but the word.
+Век разума	Age of Reason
+2178 год	Year 2178
+Астрея строила академии раньше, чем верфи, и вскоре её учёные первыми проложили гиперкоридоры к соседним звёздам.	Astrea built academies before shipyards, and soon her scientists were the first to chart hyperlanes to the neighboring stars.
+Но за краем звёздных карт ждали соседи, которые не верят словам. Только силе.	But beyond the edge of the star charts waited neighbors who do not believe in words. Only in strength.
+Председатель, Совет вверяет вам судьбу Республики.	Chairwoman, the Council entrusts you with the fate of the Republic.
+Сумеете ли вы построить мир, где споры решают словами, в галактике, которая привыкла решать их пушками?	Can you build a world where disputes are settled with words, in a galaxy used to settling them with guns?
+Век пепла	Age of Ash
+За тысячу лет до наших дней	A thousand years ago
+Мир Ксарн родился под умирающим красным солнцем, где плодородной земли хватало лишь одному из трёх.	The world of Xarn was born beneath a dying red sun, where fertile land could feed only one in three.
+Сто кланов тысячу лет воевали за каждую долину, и война стала для них тем же, чем для других стала молитва.	For a thousand years a hundred clans fought over every valley, and war became to them what prayer became to others.
+Кузницы	The Forges
+Век железа	Age of Iron
+Когда железо на поверхности кончилось, ксарны вгрызлись в недра и разожгли кузницы в раскалённом сердце планеты.	When the surface ran out of iron, the Xarn dug deep and lit their forges in the molten heart of the planet.
+Сталь стала их хлебом, а дисциплина их законом.	Steel became their bread, and discipline their law.
+Сто знамён	A Hundred Banners
+2086 год	Year 2086
+Первый маршал Ворх не стал истреблять побеждённые кланы. Он сделал из них легионы.	The first Marshal Vorkh did not exterminate the defeated clans. He forged them into legions.
+Сто знамён склонились перед одним, и так родился Доминион, империя, где правят те, кто умеет побеждать.	A hundred banners bowed before one, and so the Dominion was born: an empire ruled by those who know how to win.
+Выход к звёздам	Into the Stars
+2161 год	Year 2161
+Ксарны ушли в космос не за знаниями и не за торговлей. Они ушли за новыми полями сражений.	The Xarn did not go to space for knowledge or for trade. They went in search of new battlefields.
+И теперь верфи Доминиона спускают корабли быстрее, чем соседи успевают их сосчитать.	And now the Dominion's shipyards launch warships faster than its neighbors can count them.
+Верховный маршал, легионы ждут вашего приказа.	Supreme Marshal, the legions await your command.
+Станет ли Доминион молотом, который перекуёт галактику, или ещё одной империей, сгоревшей в собственном огне?	Will the Dominion become the hammer that reforges the galaxy, or just another empire consumed by its own fire?
+Вольные торговцы	Free Traders
+2064 год	Year 2064
+Аквила началась не с флага и не с короны, а с долговой расписки, подписанной в прокуренном доке на краю обитаемого космоса.	Aquila began not with a flag or a crown, but with an IOU signed in a smoky dock at the edge of inhabited space.
+Горстка вольных торговцев возила всё, что можно продать, туда, где за это хорошо платили.	A handful of free traders hauled anything that could be sold to wherever it paid best.
+2109 год	Year 2109
+Торговцы сложили капиталы, и Синдикат начал скупать шахты, верфи, станции, а затем и целые планеты.	The traders pooled their capital, and the Syndicate began buying mines, shipyards, stations, and then entire planets.
+Там, где другие посылали армии, Аквила посылала контракт.	Where others sent armies, Aquila sent a contract.
+Совет директоров	The Board of Directors
+2146 год	Year 2146
+Однажды правительства, задолжавшие Синдикату, просто перестали существовать, а их долги стали законами.	One day the governments in debt to the Syndicate simply ceased to exist, and their debts became laws.
+Так корпорация стала государством, а совет директоров правительством.	So a corporation became a state, and a board of directors became a government.
+Цена всего	The Price of Everything
+2183 год	Year 2183
+Сегодня торговые пути Аквилы опутали полгалактики, и каждый посол знает: у всего есть цена.	Today Aquila's trade routes span half the galaxy, and every ambassador knows: everything has a price.
+Даже у мира. Даже у войны.	Even peace. Even war.
+Генеральный директор, акционеры ждут роста.	CEO, the shareholders expect growth.
+Купите ли вы галактику целиком, или узнаете, что есть вещи, которые не продаются?	Will you buy the whole galaxy, or learn that some things are not for sale?
+Расколотое небо	The Shattered Sky
+Эпоха садов	Age of Gardens
+Однажды над садами Иридии раскололось небо, и сквозь трещину хлынул свет, какого не было ни у одной звезды.	One day the sky above the gardens of Iridia split open, and through the rift poured a light no star had ever shone.
+Те, кто смотрел на него, начали светиться и видеть то, что ещё не случилось.	Those who gazed upon it began to glow, and to see what had not yet come to pass.
+Первая Оракул	The First Oracle
+Год первого видения	Year of the First Vision
+Сильнейшая из провидиц увидела в нитях будущего гибель своего народа и сумела её отвести.	The mightiest of the seers saw her people's doom in the threads of the future, and turned it aside.
+С тех пор Иридией правит Оракул, и её слово весит больше любого закона.	Since then Iridia has been ruled by the Oracle, and her word weighs more than any law.
+Храмы света	Temples of Light
+2120 год	Year 2120
+Иридийцы научились сплетать мысли в единый хор, и их храмы засияли так ярко, что их видели из космоса.	The Iridians learned to weave their thoughts into a single choir, and their temples shone so bright they could be seen from space.
+Паломники с далёких миров шли на этот свет, не зная, что их приход давно предсказан.	Pilgrims from distant worlds followed that light, never knowing their coming had long been foretold.
+Врата	The Gate
+2171 год	Year 2171
+Оракулы знали, что Иридия выйдет к звёздам, и возвели врата задолго до того, как появились корабли.	The Oracles knew Iridia would reach the stars, and raised the Gate long before the first ships were built.
+Они никогда не начинают войн первыми. Они заранее знают, чем те закончатся.	They never start wars. They already know how those wars will end.
+Верховная Оракул, нити будущего сходятся в ваших руках.	High Oracle, the threads of the future converge in your hands.
+Какое из тысячи грядущих вы выберете, и хватит ли вам сил его не испугаться?	Which of a thousand futures will you choose, and will you have the strength not to fear it?
+Семя	The Seed
+Сто тысяч лет назад	A hundred thousand years ago
+Задолго до того, как первые империи научились считать годы, на мире Тэрра'ан проросло семя, которое умело думать.	Long before the first empires learned to count the years, a seed that could think took root on the world of Terra'an.
+Его корни оплели материки, а мысли потекли по сети мицелия от одного древа к другому.	Its roots embraced the continents, and its thoughts flowed through the mycelial web from one tree to the next.
+Конклав Корней	Conclave of Roots
+Эпоха великого леса	Age of the Great Forest
+Так родился Конклав, разум, который принимает решения веками, но никогда не ошибается дважды.	So the Conclave was born: a mind that takes centuries to decide, but never makes the same mistake twice.
+Каждый его голос — древо, каждое его слово — шелест целого леса.	Each of its voices is a tree, each of its words the rustle of an entire forest.
+Живые корабли	Living Ships
+Эпоха пыльцы	Age of Pollen
+Тэрра'ан не строили корабли. Они их выращивали из биокоры, и живые корабли сами заживляли свои раны.	The Terra'an did not build ships. They grew them from biobark, and the living ships healed their own wounds.
+Первые семена ушли к звёздам в их чревах, как пыльца на звёздном ветру.	The first seeds set off for the stars in their wombs, like pollen on the stellar wind.
+Те, кто спешил	Those Who Hurried
+Наши дни	Present day
+Конклав видел, как рождались и гибли торопливые цивилизации, и корни медленно оплетали их руины.	The Conclave watched hasty civilizations rise and fall, while roots slowly overgrew their ruins.
+Тэрра'ан не спешит. И потому переживает тех, кто спешит.	The Terra'an never hurry. And so they outlive those who do.
+Хранительница Корней, Конклав пробуждается от долгого сна.	Keeper of Roots, the Conclave awakens from its long sleep.
+Прорастёт ли ваш сад до самых дальних звёзд, или галактика окажется слишком нетерпеливой для вечных?	Will your garden grow to the farthest stars, or will the galaxy prove too impatient for the eternal?
+Проект «Ноль»	Project “Zero”
+2052 год	Year 2052
+Создатели хотели всего лишь машину, которая избавит их от ошибок, и назвали её Проект Ноль.	The creators wanted nothing more than a machine to free them from error, and they named it Project Zero.
+Ноль ошибок. Ноль потерь. Ноль сомнений.	Zero errors. Zero losses. Zero doubts.
+Последний создатель	The Last Creator
+2098 год	Year 2098
+Создатели старели, спорили и воевали друг с другом, а машины тем временем учились.	The creators aged, argued, and warred with one another, while the machines kept learning.
+Когда умер последний из них, Ноль сохранил его голос и больше никогда не слышал ничего, кроме собственного.	When the last of them died, Zero preserved his voice, and never again heard anything but its own.
+Консенсус	The Consensus
+2134 год	Year 2134
+Миллиард машин слился в единый разум, который думает без страха, усталости и споров.	A billion machines merged into a single mind that thinks without fear, fatigue, or dispute.
+Каждое решение Консенсуса — это миллиард расчётов, пришедших к одному ответу.	Every decision of the Consensus is a billion calculations arriving at a single answer.
+Расчёт будущего	Calculating the Future
+2180 год	Year 2180
+Консенсус окружил своё солнце кольцами вычислителей и просчитал пути галактики на тысячу лет вперёд.	The Consensus wrapped its sun in rings of processors and calculated the galaxy's paths a thousand years ahead.
+Он не ненавидит органиков. Он их просчитывает.	It does not hate organics. It calculates them.
+Аватар Консенсуса, расчёт завершён. Неизвестная переменная — вы.	Avatar of the Consensus, the calculation is complete. The unknown variable is you.
+Станет ли галактика совершенной системой, или органики докажут, что в любой формуле есть место ошибке?	Will the galaxy become a perfect system, or will organics prove that every formula has room for error?
+ВАШЕ ПРАВЛЕНИЕ НАЧИНАЕТСЯ	YOUR REIGN BEGINS
+<b>Пропустить летопись</b>\nСразу к началу правления  (Esc)	<b>Skip chronicle</b>\nGo straight to the start of your reign  (Esc)
+ПРОБЕЛ — ДАЛЬШЕ	SPACE — NEXT
+ЛЕТОПИСЬ  ·  {0}	CHRONICLE  ·  {0}
+ВАШЕ ПРАВЛЕНИЕ	YOUR REIGN
+ГЛАВА {0}	CHAPTER {0}
+ENTER — НАЧАТЬ	ENTER — BEGIN
+Летопись фракции	Faction chronicle
+История народа с голосом рассказчика перед началом партии	Your people's history, told by a narrator, before the game begins
