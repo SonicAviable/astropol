@@ -20,7 +20,9 @@
 Запуск из корня репозитория:
     venv/bin/python Tools/chronicle_voice/generate.py            # всё
     venv/bin/python Tools/chronicle_voice/generate.py xarn nol   # только эти фракции
+    venv/bin/python Tools/chronicle_voice/generate.py xarn_1_0   # одна фраза
     venv/bin/python Tools/chronicle_voice/generate.py --sfx      # только звуки
+    venv/bin/python Tools/chronicle_voice/generate.py --stress   # проверка ударений
 """
 import os
 import re
@@ -60,7 +62,10 @@ NARRATORS = {
                          "aecho=0.8:0.45:18|36:0.2|0.1"),
 }
 
-# Ударения и произношение («+» перед ударной гласной)
+# Ударения и произношение («+» перед ударной гласной). Проверка: generate.py --stress — все слова летописей
+# с ударением, которое прочитает модель (ударная гласная заглавная); «*» — омограф (у слова в словаре модели
+# несколько произношений, выбрано самое частое — проверьте по смыслу), «!» — слова нет в словаре (ударение
+# не будет поставлено вовсе — допишите его сюда).
 STRESS = {
     "Тэрра'ан": "Тэрра+ан",
     "Астреей": "Астр+еей", "Астрея": "Астр+ея", "Астреи": "Астр+еи",
@@ -70,13 +75,15 @@ STRESS = {
     "Оракул": "Ор+акул", "Оракулы": "Ор+акулы",
     "Консенсус": "Консенс+ус", "Консенсуса": "Консенс+уса",
     "Синдикат": "Синдик+ат", "Синдикату": "Синдик+ату",
-    "мицелия": "миц+елия", "биокоры": "биок+оры", "гиперкоридоры": "гиперкорид+оры",
-    "ковчегов": "ковчег+ов", "органиков": "орг+аников", "полгалактики": "полгал+актики",
+    "мицелия": "миц+елия", "биокоры": "биокор+ы", "гиперкоридоры": "гиперкорид+оры",
+    "ковчегов": "ковч+егов", "органиков": "орг+аников", "полгалактики": "полгал+актики",
     "вычислителей": "вычисл+ителей", "чревах": "чр+евах", "Хартию": "Х+артию", "Хартия": "Х+артия",
-    "провидиц": "провид+иц", "грядущих": "гряд+ущих", "древа": "др+ева", "древо": "др+ево",
+    "провидиц": "пров+идиц", "грядущих": "гряд+ущих", "древа": "др+ева", "древо": "др+ево",
     "шелест": "ш+елест", "Председатель": "Председ+атель", "директор": "дир+ектор",
     "Хранительница": "Хран+ительница", "Аватар": "Ават+ар", "переменная": "перем+енная",
-    "заживляли": "заживл+яли", "оплели": "опл+ели", "оплетали": "оплет+али", "опутали": "опут+али",
+    "заживляли": "заживл+яли", "оплели": "оплел+и", "оплетали": "оплет+али", "опутали": "опут+али",
+    # Омографы: словарь модели выбирает самое частое произношение без учёта смысла — задаём по контексту
+    "дыму": "дым+у", "звезды": "звезд+ы", "краю": "кра+ю", "Купите": "К+упите", "другом": "др+угом",
     "легионы": "леги+оны", "Доминион": "Домини+он", "Доминиона": "Домини+она",
 }
 
@@ -141,6 +148,48 @@ def render(raw, chain, out):
              "afade=t=in:d=0.01", "-c:a", "libvorbis", "-q:a", "5", out])
 
 
+def stress_report():
+    """Все слова летописей с ударением, которое прочитает модель (см. комментарий к STRESS)."""
+    from vosk_tts import Model
+    dic = Model(model_name=MODEL).dic
+    variants = {}
+    for line in open(os.path.join(os.path.dirname(dic_path(MODEL)), "dictionary"), encoding="utf-8"):
+        w, _, ph = line.split(maxsplit=2)
+        variants.setdefault(w, set()).add(tuple(x for x in ph.split() if x[-1] in "01"))
+    vowels = "аеёиоуыэюя"
+    seen, out = set(), []
+    for chapters in parse_lines().values():
+        for _, lines in chapters:
+            for line in lines:
+                for w in re.split(r"[ ,.?!;:\"()]+", voice_text(line).lower()):
+                    if not w or w in seen or sum(c in vowels for c in w) < 2:
+                        continue
+                    seen.add(w)
+                    if "+" in w:
+                        out.append(re.sub(r"\+(.)", lambda m: m.group(1).upper(), w))
+                        continue
+                    if w not in dic:
+                        out.append("!" + w)
+                        continue
+                    stress = [i for i, p in enumerate(x for x in dic[w].split() if x[-1] in "01") if p[-1] == "1"]
+                    vi, mark = 0, ""
+                    for c in w:
+                        if c in vowels:
+                            mark += c.upper() if vi in stress else c
+                            vi += 1
+                        else:
+                            mark += c
+                    out.append(("*" if len(variants.get(w, ())) > 1 else "") + mark)
+    print(" ".join(out))
+
+
+def dic_path(name):
+    for d in (os.getenv("VOSK_MODEL_PATH"), "/usr/share/vosk", os.path.expanduser("~/.cache/vosk")):
+        if d and os.path.exists(os.path.join(d, name, "dictionary")):
+            return os.path.join(d, name, "dictionary")
+    raise FileNotFoundError(name)
+
+
 def synth_all(keys):
     from vosk_tts import Model, Synth
     synth = Synth(Model(model_name=MODEL))
@@ -148,11 +197,12 @@ def synth_all(keys):
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         for key, chapters in data.items():
-            if keys and key not in keys:
-                continue
             spk, rate, chain = NARRATORS[key]
             for ch, lines in chapters:
                 for i, line in enumerate(lines):
+                    # Отбор: ключ фракции (xarn) или отдельная фраза (xarn_1_0)
+                    if keys and key not in keys and f"{key}_{ch}_{i}" not in keys:
+                        continue
                     raw = os.path.join(tmp, "raw.wav")
                     txt = voice_text(line)
                     synth.synth(txt, raw, speaker_id=spk, speech_rate=rate)
@@ -241,6 +291,9 @@ def make_sfx():
 
 def main():
     args = sys.argv[1:]
+    if "--stress" in args:
+        stress_report()
+        return
     if "--sfx" in args:
         make_sfx()
         return
