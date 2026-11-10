@@ -12,10 +12,12 @@ namespace StellarisClone.Rendering
     /// Летопись фракции — кинематографичное вступление перед партией в духе Civilization VI.
     ///   • 4 главы истории народа и финальное обращение к правителю (данные — FactionHistory), голос рассказчика,
     ///     своя музыкальная тема фракции, приглушаемая под голосом;
-    ///   • иллюстрации глав в медленном движении камеры (Ken Burns) со сменой через наплыв, виньетка, плёночное зерно,
-    ///     пылинки в луче, кинокаше сверху и снизу;
-    ///   • титр главы: номер, название с «разъезжающейся» разрядкой, дата, анаморфная вспышка и низкий удар;
-    ///   • субтитры проявляются по словам синхронно с голосом; внизу — лента эпох с прогрессом;
+    ///   • иллюстрации глав в медленном движении камеры (Ken Burns) со сменой через наплыв, тёплая виньетка, плёночное зерно,
+    ///     пылинки в луче; кадр обведён двойной золотой рамкой, как страница манускрипта;
+    ///   • титр главы по центру: «Глава вторая» между золотыми орнаментами, название книжным шрифтом с засечками
+    ///     (PT Serif) с «разъезжающейся» разрядкой, дата, анаморфная вспышка и низкий удар;
+    ///   • субтитры курсивом в кавычках проявляются по словам синхронно с голосом; внизу — римские цифры глав в ромбах;
+    ///   • музыка — оркестровая тема фракции (Resources/Music/Chronicle, Tools/chronicle_music);
     ///   • финал — панорама фракции, правитель в полный рост в своей сцене, герб и кнопка «Начать правление».
     /// Пробел / Enter / щелчок — следующая глава; Esc или «Пропустить» — сразу к финалу (в финале — начать).
     /// Всё на unscaled time: до старта партии время стоит.
@@ -23,7 +25,12 @@ namespace StellarisClone.Rendering
     public sealed class FactionHistoryWindow : MonoBehaviour, IPointerClickHandler
     {
         private const float CrossFade = 1.6f, FirstLineDelay = 1.7f, LineGap = 0.55f, ChapterHold = 1.4f;
-        private const float BarFrac = 0.085f;
+        /// <summary>Золото орнаментов, рамки и ленты глав — общее для всех фракций (цвет фракции — во вспышке и гербе).</summary>
+        private static readonly Color Gold = new Color(0.90f, 0.79f, 0.54f);
+        /// <summary>Тёплый тон иллюстраций — «старая бумага».</summary>
+        private static readonly Color Warm = new Color(1f, 0.97f, 0.9f);
+        /// <summary>Центр титра главы относительно середины экрана.</summary>
+        private const float TitleY = -150f;
 
         private System.Action _onDone;
         private FactionHistoryEntry _entry;
@@ -31,18 +38,18 @@ namespace StellarisClone.Rendering
         private LeaderPortraits.Entry _leader;
         private Color _accent = UIManager.DS.Gold;
 
-        private RectTransform _rt, _artRoot, _barTop, _barBottom, _titleBlock, _titleLine, _flare, _flareCore;
+        private RectTransform _rt, _artRoot, _titleBlock, _ornL, _ornR, _ornDiamondL, _ornDiamondR, _flare, _flareCore;
         private RectTransform _leaderHost, _finaleBlock, _timeline, _timelineFill, _subtitleRt;
         private CanvasGroup _group, _titleGroup, _finaleGroup, _leaderGroup, _buttonGroup, _chromeGroup, _subGroup;
         private Text _chapterNo, _chapterTitle, _chapterDate, _subtitle, _header, _hint;
         private Text _finaleName, _finaleTitle, _finaleLeader;
-        private Image _flareImg, _flareCoreImg, _leaderGlow, _tint;
+        private Image _flareImg, _flareCoreImg, _leaderGlow, _tint, _sideShade, _centerShade;
         private RawImage _grain;
         private MenuPrimaryButton _startBtn;
         private readonly ArtLayer[] _layers = new ArtLayer[2];
         private int _front;
         private readonly List<Mote> _motes = new List<Mote>();
-        private readonly List<(Image dot, Image halo, Text label)> _nodes = new List<(Image, Image, Text)>();
+        private readonly List<Node> _nodes = new List<Node>();
 
         private AudioSource _music, _voice, _fx;
         private float _musicFade, _musicTarget;
@@ -64,6 +71,13 @@ namespace StellarisClone.Rendering
             public RawImage Img;
             public float Born, Duration, S0, S1;
             public Vector2 P0, P1;
+        }
+
+        /// <summary>Глава на ленте: ромб с римской цифрой (рамка, заливка, ореол текущей).</summary>
+        private class Node
+        {
+            public Image Border, Inner, Glow;
+            public Text Num;
         }
 
         private class Mote
@@ -123,11 +137,15 @@ namespace StellarisClone.Rendering
             shade.rectTransform.anchorMin = Vector2.zero;
             shade.rectTransform.anchorMax = new Vector2(1f, 0.5f);
             shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
-            var side = LGBuild.Panel(rt, "SideShade", new Color(0f, 0f, 0f, 0.75f));
-            side.sprite = MenuArt.HorizontalFade;
-            side.rectTransform.anchorMin = Vector2.zero;
-            side.rectTransform.anchorMax = new Vector2(0.55f, 1f);
-            side.rectTransform.offsetMin = side.rectTransform.offsetMax = Vector2.zero;
+            // Слева — только в финале (под текстом обращения); в главах — мягкое пятно тени под титром по центру
+            _sideShade = LGBuild.Panel(rt, "SideShade", new Color(0f, 0f, 0f, 0f));
+            _sideShade.sprite = MenuArt.HorizontalFade;
+            _sideShade.rectTransform.anchorMin = Vector2.zero;
+            _sideShade.rectTransform.anchorMax = new Vector2(0.55f, 1f);
+            _sideShade.rectTransform.offsetMin = _sideShade.rectTransform.offsetMax = Vector2.zero;
+            _centerShade = LGBuild.Panel(rt, "CenterShade", new Color(0f, 0f, 0f, 0.6f));
+            _centerShade.sprite = MenuArt.SoftDisc;
+            _centerShade.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, TitleY + 10f), new Vector2(1500, 560));
 
             // Правитель (финал) — стоит в своей сцене
             var leaderRoot = LGBuild.Rect(rt, "Leader");
@@ -146,7 +164,7 @@ namespace StellarisClone.Rendering
 
             var vig = LGBuild.Panel(rt, "Vignette", new Color(0f, 0f, 0f, 0.9f));
             vig.sprite = MenuArt.Vignette;
-            vig.rectTransform.Stretch(-60, -60, -60, -60);
+            vig.rectTransform.Stretch(-30, -30, -30, -30);
 
             _grain = LGBuild.Rect(rt, "Grain").gameObject.AddComponent<RawImage>();
             _grain.rectTransform.Stretch();
@@ -154,11 +172,15 @@ namespace StellarisClone.Rendering
             _grain.color = new Color(1f, 1f, 1f, 0.055f);
             _grain.raycastTarget = false;
 
+            // Двойная золотая рамка страницы
+            Frame(rt, 28f, new Color(Gold.r, Gold.g, Gold.b, 0.25f));
+            Frame(rt, 36f, new Color(Gold.r, Gold.g, Gold.b, 0.11f));
+
             BuildFlare(rt);
             BuildTitle(rt);
             BuildFinale(rt);
             BuildSubtitles(rt);
-            BuildBars(rt);
+            BuildChrome(rt);
 
             _music = gameObject.AddComponent<AudioSource>();
             _voice = gameObject.AddComponent<AudioSource>();
@@ -168,6 +190,23 @@ namespace StellarisClone.Rendering
                 s.playOnAwake = false;
                 s.spatialBlend = 0f;
                 s.ignoreListenerPause = true;
+            }
+        }
+
+        /// <summary>Рамка в 1 пиксель с отступом inset от краёв экрана.</summary>
+        private static void Frame(RectTransform rt, float inset, Color c)
+        {
+            var root = LGBuild.Rect(rt, "Frame");
+            root.Stretch(inset, inset, inset, inset);
+            for (int i = 0; i < 4; i++)
+            {
+                var l = LGBuild.Panel(root, "Edge", c).rectTransform;
+                bool horizontal = i < 2;
+                l.anchorMin = horizontal ? new Vector2(0f, i) : new Vector2(i - 2, 0f);
+                l.anchorMax = horizontal ? new Vector2(1f, i) : new Vector2(i - 2, 1f);
+                l.pivot = new Vector2(0.5f, 0.5f);
+                l.anchoredPosition = Vector2.zero;
+                l.sizeDelta = horizontal ? new Vector2(0f, 1f) : new Vector2(1f, 0f);
             }
         }
 
@@ -197,7 +236,7 @@ namespace StellarisClone.Rendering
             _flareImg = LGBuild.Panel(rt, "Flare", Color.white);
             _flareImg.sprite = MenuArt.SoftDisc;
             _flare = _flareImg.rectTransform;
-            _flare.anchorMin = _flare.anchorMax = new Vector2(0f, 0.5f);
+            _flare.anchorMin = _flare.anchorMax = new Vector2(0.5f, 0.5f);
             _flare.pivot = new Vector2(0.5f, 0.5f);
             _flareCoreImg = LGBuild.Panel(_flare, "Core", Color.white);
             _flareCoreImg.sprite = MenuArt.SoftDisc;
@@ -206,31 +245,57 @@ namespace StellarisClone.Rendering
             _flareImg.color = _flareCoreImg.color = Color.clear;
         }
 
+        /// <summary>Титр по центру: орнамент «◇ ГЛАВА ВТОРАЯ ◇» между золотыми линиями, название с засечками, дата.</summary>
         private void BuildTitle(RectTransform rt)
         {
             _titleBlock = LGBuild.Rect(rt, "Title");
-            _titleBlock.At(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(150, -40), new Vector2(1100, 220));
+            _titleBlock.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, TitleY), new Vector2(1500, 240));
             _titleGroup = _titleBlock.gameObject.AddComponent<CanvasGroup>();
             _titleGroup.blocksRaycasts = false;
 
-            _chapterNo = LGBuild.Label(_titleBlock, "", 17, Color.white, TextAnchor.LowerLeft, bold: true).Track(7f);
-            _chapterNo.rectTransform.TopBand(0, 30);
-            _chapterTitle = LGBuild.Label(_titleBlock, "", 68, Color.white, TextAnchor.MiddleLeft);
-            _chapterTitle.font = GameFont.Display;
-            _chapterTitle.rectTransform.TopBand(34, 100);
-            _chapterTitle.Track(4f);
+            _chapterNo = LGBuild.Label(_titleBlock, "", 21, Gold, TextAnchor.MiddleCenter).Track(9f);
+            _chapterNo.font = GameFont.Serif;
+            _chapterNo.rectTransform.TopBand(0, 34);
+            Deepen(_chapterNo, 2f);
+            _ornL = Ornament(_chapterNo.rectTransform, true);
+            _ornR = Ornament(_chapterNo.rectTransform, false);
+            _ornDiamondL = Diamond(_chapterNo.rectTransform);
+            _ornDiamondR = Diamond(_chapterNo.rectTransform);
+
+            _chapterTitle = LGBuild.Label(_titleBlock, "", 96, Color.white, TextAnchor.MiddleCenter);
+            _chapterTitle.font = GameFont.Serif;
+            _chapterTitle.rectTransform.TopBand(40, 124);
+            _chapterTitle.Track(3f);
             Deepen(_chapterTitle, 3f);
 
-            var line = LGBuild.Panel(_titleBlock, "Line", Color.white);
-            line.sprite = MenuArt.HorizontalFade;
-            _titleLine = line.rectTransform;
-            _titleLine.anchorMin = _titleLine.anchorMax = _titleLine.pivot = new Vector2(0f, 1f);
-            _titleLine.anchoredPosition = new Vector2(0, -146);
-            _titleLine.sizeDelta = new Vector2(520, 2);
+            _chapterDate = LGBuild.Label(_titleBlock, "", 26, new Color(1f, 1f, 1f, 0.7f), TextAnchor.MiddleCenter).Track(9f);
+            _chapterDate.font = GameFont.Serif;
+            _chapterDate.rectTransform.TopBand(176, 36);
+            Deepen(_chapterDate, 2f);
+        }
 
-            _chapterDate = LGBuild.Label(_titleBlock, "", 20, new Color(0.86f, 0.84f, 0.80f), TextAnchor.UpperLeft).Track(3f);
-            _chapterDate.fontStyle = FontStyle.Italic;
-            _chapterDate.rectTransform.TopBand(160, 30);
+        /// <summary>Золотая линия орнамента — гаснет к краю, от подписи наружу.</summary>
+        private static RectTransform Ornament(RectTransform host, bool left)
+        {
+            var img = LGBuild.Panel(host, left ? "OrnL" : "OrnR", Gold);
+            img.sprite = MenuArt.HorizontalFade;
+            var r = img.rectTransform;
+            r.anchorMin = r.anchorMax = new Vector2(0.5f, 0.5f);
+            r.pivot = new Vector2(0f, 0.5f);
+            r.sizeDelta = new Vector2(0f, 1f);
+            if (left) r.localScale = new Vector3(-1f, 1f, 1f);   // яркий край — у подписи
+            return r;
+        }
+
+        /// <summary>Маленький контурный ромб орнамента.</summary>
+        private static RectTransform Diamond(RectTransform host)
+        {
+            var outer = LGBuild.Panel(host, "Diamond", Gold).rectTransform;
+            outer.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(9, 9));
+            outer.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            var inner = LGBuild.Panel(outer, "Hole", new Color(0.02f, 0.02f, 0.02f, 0.9f)).rectTransform;
+            inner.Stretch(1.4f, 1.4f, 1.4f, 1.4f);
+            return outer;
         }
 
         private void BuildFinale(RectTransform rt)
@@ -240,17 +305,20 @@ namespace StellarisClone.Rendering
             _finaleGroup = _finaleBlock.gameObject.AddComponent<CanvasGroup>();
             _finaleGroup.blocksRaycasts = false;
 
-            var tag = LGBuild.Label(_finaleBlock, Loc.T("ВАШЕ ПРАВЛЕНИЕ НАЧИНАЕТСЯ"), 16, Color.white, TextAnchor.LowerLeft, bold: true).Track(7f);
+            var tag = LGBuild.Label(_finaleBlock, Loc.T("ВАШЕ ПРАВЛЕНИЕ НАЧИНАЕТСЯ"), 19, Gold, TextAnchor.LowerLeft).Track(8f);
+            tag.font = GameFont.Serif;
             tag.rectTransform.TopBand(0, 26);
             tag.name = "Tag";
-            _finaleName = LGBuild.Label(_finaleBlock, "", 60, Color.white, TextAnchor.UpperLeft, wrap: true);
-            _finaleName.font = GameFont.Display;
+            _finaleName = LGBuild.Label(_finaleBlock, "", 72, Color.white, TextAnchor.UpperLeft, wrap: true);
+            _finaleName.font = GameFont.Serif;
             _finaleName.lineSpacing = 0.92f;
             _finaleName.rectTransform.TopBand(40, 150);
             Deepen(_finaleName, 3f);
-            _finaleTitle = LGBuild.Label(_finaleBlock, "", 22, new Color(0.88f, 0.86f, 0.82f), TextAnchor.UpperLeft).Track(4f);
+            _finaleTitle = LGBuild.Label(_finaleBlock, "", 26, new Color(0.92f, 0.89f, 0.83f), TextAnchor.UpperLeft);
+            _finaleTitle.font = GameFont.SerifItalic;
             _finaleTitle.rectTransform.TopBand(200, 30);
-            _finaleLeader = LGBuild.Label(_finaleBlock, "", 18, Color.white, TextAnchor.UpperLeft, bold: true);
+            _finaleLeader = LGBuild.Label(_finaleBlock, "", 19, Gold, TextAnchor.UpperLeft).Track(2f);
+            _finaleLeader.font = GameFont.Serif;
             _finaleLeader.rectTransform.TopBand(240, 26);
 
             _startBtn = MenuPrimaryButton.Create(rt, Loc.T("НАЧАТЬ ПРАВЛЕНИЕ  ›"), 17, Finish);
@@ -261,61 +329,75 @@ namespace StellarisClone.Rendering
         private void BuildSubtitles(RectTransform rt)
         {
             _subtitleRt = LGBuild.Rect(rt, "Subtitles");
-            _subtitleRt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(1240, 120));
+            _subtitleRt.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(1260, 120));
             _subGroup = _subtitleRt.gameObject.AddComponent<CanvasGroup>();
             _subGroup.blocksRaycasts = false;
-            _subtitle = LGBuild.Label(_subtitleRt, "", 27, new Color(0.97f, 0.95f, 0.90f), TextAnchor.LowerCenter, wrap: true);
-            _subtitle.lineSpacing = 1.12f;
+            _subtitle = LGBuild.Label(_subtitleRt, "", 33, new Color(0.96f, 0.93f, 0.86f), TextAnchor.LowerCenter, wrap: true);
+            _subtitle.font = GameFont.SerifItalic;
+            _subtitle.lineSpacing = 1.08f;
             Deepen(_subtitle, 2f);
         }
 
-        /// <summary>Кинокаше, шапка с гербом, «Пропустить», лента эпох и подсказка.</summary>
-        private void BuildBars(RectTransform rt)
+        /// <summary>Герб и заголовок по центру сверху, «Пропустить», лента глав из ромбов и подсказка.</summary>
+        private void BuildChrome(RectTransform rt)
         {
-            _barTop = LGBuild.Panel(rt, "BarTop", Color.black).rectTransform;
-            _barTop.anchorMin = new Vector2(0, 1); _barTop.anchorMax = new Vector2(1, 1); _barTop.pivot = new Vector2(0.5f, 1f);
-            _barBottom = LGBuild.Panel(rt, "BarBottom", Color.black).rectTransform;
-            _barBottom.anchorMin = new Vector2(0, 0); _barBottom.anchorMax = new Vector2(1, 0); _barBottom.pivot = new Vector2(0.5f, 0f);
-
             var chrome = LGBuild.Rect(rt, "Chrome");
             chrome.Stretch();
             _chromeGroup = chrome.gameObject.AddComponent<CanvasGroup>();
 
-            _header = LGBuild.Label(chrome, "", 13, new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft, bold: true).Track(5f);
-            _header.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(110, -46), new Vector2(900, 30));
+            // Герб ставит Play (под фракцию) — над заголовком
+            _header = LGBuild.Label(chrome, "", 12, new Color(1f, 1f, 1f, 0.68f), TextAnchor.MiddleCenter, bold: true).Track(6f);
+            _header.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -142), new Vector2(1000, 24));
+            Deepen(_header, 1.5f);
 
-            var skip = LGBuild.Button(chrome, "Skip", new Color(0.06f, 0.06f, 0.07f), new Color(1f, 1f, 1f, 0.5f), Skip, LGIcon.Fast, Loc.T("ПРОПУСТИТЬ"), 12);
-            ((RectTransform)skip.transform).At(new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-60, -46), new Vector2(170, 36));
+            // «Пропустить» — тихая надпись в углу; светлеет под курсором
+            var skip = LGBuild.Label(chrome, Loc.T("ПРОПУСТИТЬ  ›"), 12, new Color(1f, 1f, 1f, 0.55f), TextAnchor.MiddleRight, bold: true).Track(4f);
+            skip.name = "Skip";
+            skip.raycastTarget = true;
+            skip.rectTransform.At(new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-80, -78), new Vector2(240, 34));
+            var skipBtn = skip.gameObject.AddComponent<Button>();
+            skipBtn.targetGraphic = skip;
+            var cb = skipBtn.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = cb.selectedColor = new Color(1f, 0.92f, 0.72f, 1.8f);
+            cb.pressedColor = new Color(0.9f, 0.8f, 0.6f, 1.6f);
+            cb.fadeDuration = 0.12f;
+            skipBtn.colors = cb;
+            skipBtn.onClick.AddListener(Skip);
             TooltipHelper.Attach(skip.gameObject, Loc.T("<b>Пропустить летопись</b>\nСразу к началу правления  (Esc)"));
 
-            _hint = LGBuild.Label(chrome, Loc.T("ПРОБЕЛ — ДАЛЬШЕ"), 11, new Color(1f, 1f, 1f, 0.38f), TextAnchor.MiddleRight, bold: true).Track(3f);
-            _hint.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0.5f), new Vector2(-60, 46), new Vector2(300, 24));
+            _hint = LGBuild.Label(chrome, Loc.T("ПРОБЕЛ — ДАЛЬШЕ"), 11, new Color(1f, 1f, 1f, 0.4f), TextAnchor.MiddleRight, bold: true).Track(4f);
+            _hint.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0.5f), new Vector2(-80, 80), new Vector2(300, 24));
 
+            // Лента глав: тонкая линия, золотая заливка до текущей главы, ромбы с римскими цифрами I…V
             _timeline = LGBuild.Rect(chrome, "Timeline");
-            _timeline.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0, 54), new Vector2(860, 40));
-            var track = LGBuild.Panel(_timeline, "Track", new Color(1f, 1f, 1f, 0.16f));
-            track.rectTransform.anchorMin = new Vector2(0, 1); track.rectTransform.anchorMax = new Vector2(1, 1);
+            _timeline.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0, 82), new Vector2(560, 48));
+            var track = LGBuild.Panel(_timeline, "Track", new Color(1f, 1f, 1f, 0.15f));
+            track.rectTransform.anchorMin = new Vector2(0, 0.5f); track.rectTransform.anchorMax = new Vector2(1, 0.5f);
             track.rectTransform.pivot = new Vector2(0, 0.5f);
-            track.rectTransform.anchoredPosition = new Vector2(0, -8);
+            track.rectTransform.anchoredPosition = Vector2.zero;
             track.rectTransform.sizeDelta = new Vector2(0, 1);
-            var fill = LGBuild.Panel(_timeline, "Fill", Color.white);
+            var fill = LGBuild.Panel(_timeline, "Fill", Gold);
             _timelineFill = fill.rectTransform;
-            _timelineFill.anchorMin = _timelineFill.anchorMax = new Vector2(0, 1);
+            _timelineFill.anchorMin = _timelineFill.anchorMax = new Vector2(0, 0.5f);
             _timelineFill.pivot = new Vector2(0, 0.5f);
-            _timelineFill.anchoredPosition = new Vector2(0, -8);
-            _timelineFill.sizeDelta = new Vector2(0, 2);
+            _timelineFill.anchoredPosition = Vector2.zero;
+            _timelineFill.sizeDelta = new Vector2(0, 1);
             for (int i = 0; i < 5; i++)
             {
-                float x = i / 4f;
-                var halo = LGBuild.Panel(_timeline, "Halo", Color.clear);
-                halo.sprite = MenuArt.SoftDisc;
-                halo.rectTransform.At(new Vector2(x, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -8), new Vector2(34, 34));
-                var dot = LGBuild.Panel(_timeline, "Dot", Color.white);
-                dot.sprite = MenuArt.SoftDisc;
-                dot.rectTransform.At(new Vector2(x, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -8), new Vector2(9, 9));
-                var label = LGBuild.Label(_timeline, "", 10, Color.white, TextAnchor.UpperCenter, bold: true).Track(2f);
-                label.rectTransform.At(new Vector2(x, 1), new Vector2(0.5f, 1f), new Vector2(0, -18), new Vector2(200, 18));
-                _nodes.Add((dot, halo, label));
+                var at = new Vector2(i / 4f, 0.5f);
+                var glow = LGBuild.Panel(_timeline, "Glow", Color.clear);
+                glow.sprite = MenuArt.SoftDisc;
+                glow.rectTransform.At(at, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110, 110));
+                var border = LGBuild.Panel(_timeline, "Diamond", Color.white);
+                border.rectTransform.At(at, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(33, 33));
+                border.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                var inner = LGBuild.Panel(border.rectTransform, "Fill", Color.black);
+                inner.rectTransform.Stretch(1.5f, 1.5f, 1.5f, 1.5f);
+                var num = LGBuild.Label(_timeline, Roman(i + 1), 17, Color.white, TextAnchor.MiddleCenter);
+                num.font = GameFont.Serif;
+                num.rectTransform.At(at, new Vector2(0.5f, 0.5f), new Vector2(0f, 1f), new Vector2(48, 48));
+                _nodes.Add(new Node { Border = border, Inner = inner, Glow = glow, Num = num });
             }
         }
 
@@ -359,34 +441,36 @@ namespace StellarisClone.Rendering
             _accent = _leader != null ? _leader.Accent : faction != null ? faction.EmpireColor : UIManager.DS.Gold;
 
             Color soft = Color.Lerp(_accent, Color.white, 0.35f);
-            _tint.color = new Color(_accent.r, _accent.g, _accent.b, 0.16f);
-            _chapterNo.color = soft;
-            _titleLine.GetComponent<Image>().color = soft;
+            _tint.color = new Color(_accent.r, _accent.g, _accent.b, 0.1f);
             _flareImg.color = _flareCoreImg.color = Color.clear;
-            _timelineFill.GetComponent<Image>().color = soft;
-            _finaleBlock.Find("Tag").GetComponent<Text>().color = soft;
-            _finaleLeader.color = soft;
             _leaderGlow.color = new Color(_accent.r, _accent.g, _accent.b, 0.22f);
             foreach (var m in _motes) m.Img.color = Color.Lerp(_accent, Color.white, 0.6f);
 
             string name = faction != null ? faction.Name : "";
             _header.text = Loc.F("ЛЕТОПИСЬ  ·  {0}", name.ToUpper());
             for (int i = 0; i < _nodes.Count; i++)
-                _nodes[i].label.text = i < 4 ? _entry.Chapters[i].Title.ToUpper() : Loc.T("ВАШЕ ПРАВЛЕНИЕ");
+                TooltipHelper.Attach(_nodes[i].Border.gameObject, i < 4 ? _entry.Chapters[i].Title : Loc.T("Ваше правление"));
 
-            _finaleName.text = name.ToUpper();
-            _finaleTitle.text = faction != null ? faction.Title.ToUpper() : "";
+            _finaleName.text = name;
+            _finaleTitle.text = faction != null ? faction.Title : "";
             _finaleLeader.text = _leader != null ? $"{_leader.Name}  ·  {_leader.Title}" : "";
 
             LGBuild.Clear(_leaderHost);
             var portrait = LeaderPortraitView.Create(_leaderHost, _leader, 1f, new Vector4(0.06f, 0.04f, 0.26f, 0f), false, true, true);
             if (portrait != null) portrait.Glow = 0.35f;
 
-            // Эмблема в шапке
-            var oldEmblem = _header.transform.parent.Find("HeaderEmblem");
-            if (oldEmblem != null) Destroy(oldEmblem.gameObject);
-            var em = FactionEmblems.Create(_header.transform.parent, FactionEmblems.ForFaction(faction), 30, soft, "HeaderEmblem");
-            if (em != null) em.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(62, -46), new Vector2(30, 30));
+            // Герб по центру над заголовком, с мягким ореолом цвета фракции
+            var chrome = _header.transform.parent;
+            foreach (var n in new[] { "HeaderEmblem", "HeaderGlow" })
+            {
+                var old = chrome.Find(n);
+                if (old != null) Destroy(old.gameObject);
+            }
+            var halo = LGBuild.Panel(chrome, "HeaderGlow", new Color(_accent.r, _accent.g, _accent.b, 0.32f));
+            halo.sprite = MenuArt.SoftDisc;
+            halo.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -92), new Vector2(130, 130));
+            var em = FactionEmblems.Create(chrome, FactionEmblems.ForFaction(faction), 56, soft, "HeaderEmblem");
+            if (em != null) em.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -92), new Vector2(56, 56));
 
             foreach (var l in _layers) { l.Img.texture = null; l.Img.color = new Color(1f, 1f, 1f, 0f); }
             _titleGroup.alpha = _finaleGroup.alpha = _leaderGroup.alpha = _subGroup.alpha = 0f;
@@ -436,9 +520,9 @@ namespace StellarisClone.Rendering
 
             if (!IsFinale)
             {
-                _chapterNo.text = Loc.F("ГЛАВА {0}", Roman(seg + 1));
-                _chapterTitle.text = c.Title.ToUpper();
-                _chapterDate.text = c.Date;
+                _chapterNo.text = ChapterWord(seg + 1);
+                _chapterTitle.text = c.Title;
+                _chapterDate.text = "—   " + c.Date + "   —";
                 PlayFx(Cine(Clip.Impact), 0.85f);
             }
             else
@@ -479,7 +563,7 @@ namespace StellarisClone.Rendering
             var c = Current;
             _line = i;
             _lineStart = _segT;
-            _lineText = c.Lines[i];
+            _lineText = "«" + c.Lines[i] + "»";
             var clip = FactionHistory.Voice(_entry.Key, IsFinale ? -1 : _seg, i);
             _lineVoiced = clip != null;
             if (_lineVoiced)
@@ -523,7 +607,7 @@ namespace StellarisClone.Rendering
                 else
                 {
                     byte al = (byte)Mathf.RoundToInt(a * 255f);
-                    sb.Append("<color=#F7F2E6").Append(al.ToString("X2")).Append('>').Append(_lineText, st, len).Append("</color>");
+                    sb.Append("<color=#F5EDDB").Append(al.ToString("X2")).Append('>').Append(_lineText, st, len).Append("</color>");
                 }
                 pos = st + len;
             }
@@ -684,10 +768,10 @@ namespace StellarisClone.Rendering
                 if (i == _front)
                 {
                     float a = Mathf.Clamp01(age / CrossFade);
-                    l.Img.color = new Color(1f, 1f, 1f, a * a * (3f - 2f * a));
+                    l.Img.color = new Color(Warm.r, Warm.g, Warm.b, a * a * (3f - 2f * a));
                 }
                 else if (_layers[_front].Img.color.a >= 0.999f && l.Img.color.a > 0f)
-                    l.Img.color = new Color(1f, 1f, 1f, 0f);
+                    l.Img.color = new Color(Warm.r, Warm.g, Warm.b, 0f);
             }
         }
 
@@ -699,17 +783,25 @@ namespace StellarisClone.Rendering
                 float a = Mathf.Clamp01((_segT - 0.25f) / 0.9f);
                 float fadeOut = _segEndAt > 0f ? Mathf.Clamp01((_segEndAt - _segT) / 0.8f) : 1f;
                 _titleGroup.alpha = Mathf.SmoothStep(0f, 1f, a) * fadeOut;
-                float tr = Mathf.Lerp(16f, 4f, 1f - Mathf.Pow(1f - Mathf.Clamp01((_segT - 0.25f) / 2.6f), 3f));
+                float tr = Mathf.Lerp(14f, 3f, 1f - Mathf.Pow(1f - Mathf.Clamp01((_segT - 0.25f) / 2.6f), 3f));
                 _chapterTitle.GetComponent<LGTracking>().Spacing = tr;
-                float lk = Mathf.Clamp01((_segT - 0.6f) / 1.1f);
-                _titleLine.sizeDelta = new Vector2(560f * (1f - Mathf.Pow(1f - lk, 3f)), 2f);
-                _chapterDate.color = new Color(0.86f, 0.84f, 0.80f, Mathf.Clamp01((_segT - 1.0f) / 0.8f));
-                _titleBlock.anchoredPosition = new Vector2(150 + Mathf.Lerp(-30f, 0f, Mathf.SmoothStep(0, 1, a)), -40);
+                // Орнамент расходится от подписи «Глава …» в обе стороны
+                float lk = Mathf.Clamp01((_segT - 0.5f) / 1.3f);
+                float ornW = 190f * (1f - Mathf.Pow(1f - lk, 3f));
+                float half = (_chapterNo.preferredWidth + Mathf.Max(0, _chapterNo.text.Length - 1) * 9f) * 0.5f + 22f;   // + разрядка LGTracking
+                _ornDiamondL.anchoredPosition = new Vector2(-half, 0f);
+                _ornDiamondR.anchoredPosition = new Vector2(half, 0f);
+                _ornL.anchoredPosition = new Vector2(-half - 12f, 0f);
+                _ornR.anchoredPosition = new Vector2(half + 12f, 0f);
+                _ornL.sizeDelta = _ornR.sizeDelta = new Vector2(ornW, 1f);
+                _chapterDate.color = new Color(1f, 1f, 1f, 0.7f * Mathf.Clamp01((_segT - 1.0f) / 0.8f));
+                _titleBlock.anchoredPosition = new Vector2(0f, TitleY + Mathf.Lerp(-18f, 0f, Mathf.SmoothStep(0, 1, a)));
                 _finaleGroup.alpha = Mathf.MoveTowards(_finaleGroup.alpha, 0f, Time.unscaledDeltaTime * 3f);
                 _leaderGroup.alpha = Mathf.MoveTowards(_leaderGroup.alpha, 0f, Time.unscaledDeltaTime * 3f);
             }
             else
             {
+                // Финал: обращение слева, правитель справа — тень переезжает с центра налево
                 _titleGroup.alpha = Mathf.MoveTowards(_titleGroup.alpha, 0f, Time.unscaledDeltaTime * 3f);
                 float la = Mathf.Clamp01((_segT - 0.5f) / 2.2f);
                 _leaderGroup.alpha = la * la * (3f - 2f * la);
@@ -722,6 +814,10 @@ namespace StellarisClone.Rendering
                 _finaleName.GetComponent<RectTransform>().anchoredPosition = new Vector2(Mathf.Lerp(-24f, 0f, fa), -40f);
             }
 
+            float fin = IsFinale ? 1f : 0f;
+            _sideShade.color = new Color(0f, 0f, 0f, Mathf.MoveTowards(_sideShade.color.a, 0.75f * fin, Time.unscaledDeltaTime * 1.5f));
+            _centerShade.color = new Color(0f, 0f, 0f, Mathf.MoveTowards(_centerShade.color.a, 0.6f * (1f - fin), Time.unscaledDeltaTime * 1.5f));
+
             // Субтитры гаснут в конце главы
             float subTarget = _line >= 0 && (_segEndAt < 0f || _segT < _segEndAt - 0.6f || IsFinale) ? 1f : 0f;
             _subGroup.alpha = Mathf.MoveTowards(_subGroup.alpha, subTarget, Time.unscaledDeltaTime * 2.5f);
@@ -733,42 +829,37 @@ namespace StellarisClone.Rendering
             // Анаморфная вспышка на титре
             _flareT += Time.unscaledDeltaTime;
             float f = _flareT < 0.12f ? _flareT / 0.12f : Mathf.Exp(-(_flareT - 0.12f) * 2.6f);
-            float y = IsFinale ? 30f + 100f : -40f + 26f;
             float w = Mathf.Lerp(900f, 2600f, Mathf.Clamp01(_flareT / 1.5f));
-            _flare.anchoredPosition = new Vector2(IsFinale ? 560f : 520f, y);
+            _flare.anchoredPosition = IsFinale ? new Vector2(560f - _rt.rect.width * 0.5f, 130f) : new Vector2(0f, TitleY + 22f);
             _flare.sizeDelta = new Vector2(w, 46f);
             _flareCore.sizeDelta = new Vector2(w * 0.55f, 3f);
-            _flareImg.color = new Color(_accent.r, _accent.g, _accent.b, 0.35f * f);
+            var fc = Color.Lerp(_accent, Gold, 0.5f);
+            _flareImg.color = new Color(fc.r, fc.g, fc.b, 0.35f * f);
             _flareCoreImg.color = new Color(1f, 1f, 1f, 0.8f * f);
         }
 
         private void AnimateChrome()
         {
-            var size = _rt.rect.size;
-            float barK = 1f - Mathf.Pow(1f - Mathf.Clamp01(_t / 1.3f), 3f);
-            float barH = size.y * BarFrac * barK;
-            _barTop.sizeDelta = new Vector2(0, barH);
-            _barBottom.sizeDelta = new Vector2(0, barH);
             _chromeGroup.alpha = Mathf.Clamp01((_t - 0.8f) / 1f);
-            _subtitleRt.anchoredPosition = new Vector2(0, size.y * BarFrac + 26f);
-            ((RectTransform)_startBtn.transform).anchoredPosition = new Vector2(150, size.y * BarFrac + 160f);
+            ((RectTransform)_startBtn.transform).anchoredPosition = new Vector2(150, 250f);
             _hint.text = IsFinale && _finaleReady ? Loc.T("ENTER — НАЧАТЬ") : Loc.T("ПРОБЕЛ — ДАЛЬШЕ");
 
-            // Лента эпох: заливка до текущей точки, текущая точка пульсирует
+            // Лента глав: золото до текущего ромба, текущий залит золотом и мерцает ореолом
             float segProgress = IsFinale ? 0f : Mathf.Clamp01(_segT / Mathf.Max(6f, _segEndAt > 0f ? _segEndAt : _segT + 6f));
             float target = Mathf.Clamp01((_seg + segProgress) / 4f);
             float width = _timeline.rect.width;
             float cur = _timelineFill.sizeDelta.x;
-            _timelineFill.sizeDelta = new Vector2(Mathf.Lerp(cur, target * width, Time.unscaledDeltaTime * 3f), 2f);
+            _timelineFill.sizeDelta = new Vector2(Mathf.Lerp(cur, target * width, Time.unscaledDeltaTime * 3f), 1f);
+            var ink = new Color(0.03f, 0.03f, 0.03f);
             for (int i = 0; i < _nodes.Count; i++)
             {
-                var (dot, halo, label) = _nodes[i];
+                var n = _nodes[i];
                 bool now = i == _seg, past = i < _seg;
-                Color soft = Color.Lerp(_accent, Color.white, 0.35f);
-                dot.color = now ? Color.white : past ? soft : new Color(1f, 1f, 1f, 0.3f);
-                dot.rectTransform.sizeDelta = Vector2.one * (now ? 11f : 8f);
-                halo.color = now ? new Color(_accent.r, _accent.g, _accent.b, 0.55f + Mathf.Sin(_t * 3f) * 0.2f) : Color.clear;
-                label.color = now ? Color.white : past ? new Color(soft.r, soft.g, soft.b, 0.75f) : new Color(1f, 1f, 1f, 0.3f);
+                n.Border.color = now || past ? new Color(Gold.r, Gold.g, Gold.b, now ? 1f : 0.6f) : new Color(1f, 1f, 1f, 0.18f);
+                n.Inner.color = now ? Gold : new Color(ink.r, ink.g, ink.b, past ? 0.82f : 0.6f);
+                n.Num.color = now ? ink : past ? Gold : new Color(1f, 1f, 1f, 0.38f);
+                n.Glow.color = now ? new Color(Gold.r, Gold.g, Gold.b, 0.32f + Mathf.Sin(_t * 2.4f) * 0.1f) : Color.clear;
+                n.Border.rectTransform.localScale = Vector3.one * Mathf.MoveTowards(n.Border.rectTransform.localScale.x, now ? 1.08f : 1f, Time.unscaledDeltaTime);
             }
         }
 
@@ -813,6 +904,15 @@ namespace StellarisClone.Rendering
             if (_closing || _seg >= 0) SFXManager.ExternalDuck = 0f;
         }
 
-        private static string Roman(int n) => n switch { 1 => "I", 2 => "II", 3 => "III", 4 => "IV", _ => n.ToString() };
+        private static string Roman(int n) => n switch { 1 => "I", 2 => "II", 3 => "III", 4 => "IV", 5 => "V", _ => n.ToString() };
+
+        private static string ChapterWord(int n) => n switch
+        {
+            1 => Loc.T("ГЛАВА ПЕРВАЯ"),
+            2 => Loc.T("ГЛАВА ВТОРАЯ"),
+            3 => Loc.T("ГЛАВА ТРЕТЬЯ"),
+            4 => Loc.T("ГЛАВА ЧЕТВЁРТАЯ"),
+            _ => Loc.F("ГЛАВА {0}", Roman(n))
+        };
     }
 }

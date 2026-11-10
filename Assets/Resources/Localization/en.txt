@@ -7697,3 +7697,9 @@ Enter — начать · Esc — оставить как есть	Enter — sta
 ENTER — НАЧАТЬ	ENTER — BEGIN
 Летопись фракции	Faction chronicle
 История народа с голосом рассказчика перед началом партии	Your people's history, told by a narrator, before the game begins
+ГЛАВА ПЕРВАЯ	CHAPTER ONE
+ГЛАВА ВТОРАЯ	CHAPTER TWO
+ГЛАВА ТРЕТЬЯ	CHAPTER THREE
+ГЛАВА ЧЕТВЁРТАЯ	CHAPTER FOUR
+ПРОПУСТИТЬ  ›	SKIP  ›
+Ваше правление	Your reign
