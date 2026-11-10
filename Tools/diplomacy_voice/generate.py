@@ -38,7 +38,7 @@ COMM = ("highpass=f=95,deesser=i=0.35,equalizer=f=250:t=q:w=1.2:g=1,equalizer=f=
 
 RULERS = {
     # массив в DiplomacyLines.cs: (ключ, голос, характер для eleven_v3, цепочка ffmpeg)
-    "Xarn":    ("xarn", "evelon", "commanding, menacing",
+    "Xarn":    ("xarn", "roderich", "gruff, rough, menacing",
                 f"{COMM},equalizer=f=120:t=q:w=1:g=2,aecho=0.8:0.45:35|70:0.10|0.05"),
     "Astrea":  ("astrea", "marina", "warm, diplomatic", f"{COMM},aecho=0.8:0.4:30|60:0.07|0.04"),
     "Aquila":  ("aquila", "pavel", "charming, persuasive, sly", f"{COMM},aecho=0.8:0.4:25|50:0.06|0.03"),

@@ -43,6 +43,7 @@ VOICES = {
     "lexa": "7VsVlkgkPKhWAimu09u0",       # ровный, бесстрастный женский
     # Правители (дипломатия)
     "evelon": "mOTbMAOniC3yoEvgo4bi",     # угрожающий, энергичный
+    "roderich": "BDqe1qZiwPi7xspRxTgh",   # грубый, хриплый, циничный
     "marina": "CsT9glYAgw8L02hu9od2",     # тёплый, выразительный женский
     "pavel": "VlCYpQzyafIQIhmvxR2w",      # обаятельный баритон
     "moriana": "ahuwlnygfGOZ2gufNQh7",    # тёмный, бархатный женский
