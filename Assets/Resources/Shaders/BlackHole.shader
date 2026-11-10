@@ -130,6 +130,25 @@ Shader "Astropolity/FX/BlackHole"
                 alpha += (1.0 - alpha) * a;
             }
 
+            // Водоворот внутри тени (художественный, в реальности там чернота): спиральные рукава тусклого вещества
+            // закручиваются к центру и тонут в черноте; у края тени — тлеющий ободок. Координаты экранные:
+            // угол вокруг центра дыры и доля прицельного параметра от радиуса тени (≈ 2,6 rs)
+            float3 shadowVortex(float3 dir, float3 camO, float b)
+            {
+                float3 c0 = unity_OrthoParams.w > 0.5 ? dir : normalize(-camO);
+                float3 rt = normalize(cross(float3(0, 1, 0), c0));
+                float3 up = cross(c0, rt);
+                float3 o = dir - dot(dir, c0) * c0;
+                float phi = atan2(dot(o, up), dot(o, rt));
+                float sb = clamp(b / 2.6, 0.001, 1.0);
+                float ls = log(sb);
+                float sp = phi * 3.0 + ls * 5.0 - _BHTime * 1.5;
+                float nz = vnoise(float3(cos(sp) * 1.5, sin(sp) * 1.5, ls * 3.0 - _BHTime * 0.4));
+                float band = 0.5 + 0.5 * cos(sp + nz * 3.0);
+                float I = pow(sb, 5.0) * (0.1 + 0.9 * band * band * nz) * 0.5 + exp(-(1.0 - sb) * 30.0) * 0.35;
+                return lerp(_Deep.rgb * 0.7, _Warm.rgb, pow(sb, 6.0)) * I;
+            }
+
             float4 frag(v2f i) : SV_Target
             {
                 float3 camO = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1.0)).xyz * Scale;
@@ -166,7 +185,12 @@ Shader "Astropolity/FX/BlackHole"
                     float r2 = dot(pos, pos);
                     float r = sqrt(r2);
                     rmin = min(rmin, r);
-                    if (r < 1.0) { alpha = 1.0; break; }   // за горизонтом — тень
+                    if (r < 1.0)   // за горизонтом — тень с водоворотом падающего вещества
+                    {
+                        col += (1.0 - alpha) * shadowVortex(dir, camO, sqrt(h2));
+                        alpha = 1.0;
+                        break;
+                    }
 
                     float dt = clamp(0.09 * r, 0.03, 0.8);
                     float3 prev = pos;

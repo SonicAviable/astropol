@@ -16,7 +16,7 @@ namespace StellarisClone.Rendering
     public static class BlackHoleModel
     {
         /// <summary>Радиус оболочки в мире (диск выходит на ~0,85 её) — внутри первой орбиты (не ближе 13).</summary>
-        public const float DefaultRadius = 9f;
+        public const float DefaultRadius = 11f;
 
         private static Shader s_shader;
         private static Material s_material;
@@ -134,7 +134,7 @@ namespace StellarisClone.Rendering
         /// Масштаб модели (радиус внешнего кольца, которого на карте нет): светящийся диск выходит на ~2,4 —
         /// крупнее короны обычной звезды, ядро с дугами линзы хорошо читается вблизи.
         /// </summary>
-        private const float Radius = 3.4f;
+        private const float Radius = 4.2f;
         private const float Elevation = 11f;
         private const float ShowHeight = 90f, FullHeight = 52f;   // как у мини-систем
 
