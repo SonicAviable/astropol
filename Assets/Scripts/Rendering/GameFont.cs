@@ -47,11 +47,53 @@ namespace StellarisClone.Rendering
             }
         }
 
+        private static Font _display;
+
+        /// <summary>Акцидентный шрифт (Russo One) — крупные числа и заголовки HUD. Нет файла — жирный Play.</summary>
+        public static Font Display
+        {
+            get
+            {
+                if (_display != null) return _display;
+                _display = Resources.Load<Font>("Fonts/RussoOne-Regular");
+                if (_display == null) _display = Bold;
+                return _display;
+            }
+        }
+
+        private static Font _serif, _serifItalic;
+
+        /// <summary>Книжный шрифт с засечками (PT Serif) — летопись фракций. Нет файла — обычный Play.</summary>
+        public static Font Serif
+        {
+            get
+            {
+                if (_serif != null) return _serif;
+                _serif = Resources.Load<Font>("Fonts/PTSerif-Regular");
+                if (_serif == null) _serif = Regular;
+                return _serif;
+            }
+        }
+
+        /// <summary>Курсив PT Serif — субтитры летописи. Нет файла — прямой Serif.</summary>
+        public static Font SerifItalic
+        {
+            get
+            {
+                if (_serifItalic != null) return _serifItalic;
+                _serifItalic = Resources.Load<Font>("Fonts/PTSerif-Italic");
+                if (_serifItalic == null) _serifItalic = Serif;
+                return _serifItalic;
+            }
+        }
+
         /// <summary>Сбросить кэш (на случай, если менял файлы во время игры).</summary>
         public static void Reload()
         {
             _regular = null;
             _bold = null;
+            _display = null;
+            _serif = _serifItalic = null;
         }
     }
 }

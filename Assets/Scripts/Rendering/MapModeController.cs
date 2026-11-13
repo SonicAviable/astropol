@@ -10,16 +10,23 @@ namespace StellarisClone.Rendering
     {
         public static MapModeController Instance { get; private set; }
 
-        public enum MapMode { Simple, Political, Resources, Hyperlanes, Explored }
+        public enum MapMode { Simple, Political, Resources, Hyperlanes, Explored, Intel }
+
+        /// <summary>Цвет шпионажа (как в окне шпионажа).</summary>
+        public static readonly Color SpyPurple = new Color(0.74f, 0.56f, 1f);
 
         private Canvas _canvas;
         private Font _font;
         private GalaxyView _galaxyView;
         private MapMode _active = MapMode.Simple;
+        public MapMode Active => _active;
         private readonly Dictionary<MapMode, Image> _buttonBgs = new Dictionary<MapMode, Image>();
         private readonly Dictionary<MapMode, Image> _buttonAccents = new Dictionary<MapMode, Image>();
-        private readonly Dictionary<MapMode, LiquidGlassEffect> _buttonFx = new Dictionary<MapMode, LiquidGlassEffect>();
         private readonly Dictionary<MapMode, Color> _buttonAccentColors = new Dictionary<MapMode, Color>();
+        private readonly Dictionary<MapMode, Image> _buttonIcons = new Dictionary<MapMode, Image>();
+        private readonly Dictionary<MapMode, string> _modeNames = new Dictionary<MapMode, string>();
+        private Text _modeCaption;
+        private static readonly Color BtnIdle = new Color(0.030f, 0.070f, 0.098f, 0.95f);
         private bool _built;
 
         // === Поля для скрытия при открытых модалках ===
@@ -84,62 +91,75 @@ namespace StellarisClone.Rendering
             // CanvasGroup — для возможного fade в будущем
             _group = root.AddComponent<CanvasGroup>();
 
+            // Режимы карты — круглые значки дугой справа от круглой мини-карты слева внизу (верх свободен под подпись режима).
+            // Корень совпадает с мини-картой (240 × 240, отступ 22 — как в GalaxyMinimap).
             var rt = root.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0, 1);
-            rt.anchorMax = new Vector2(0, 1);
-            rt.pivot = new Vector2(0, 1);
-            rt.sizeDelta = new Vector2(424, 42);
-            rt.anchoredPosition = new Vector2(20, -66);
-
-            var bg = root.AddComponent<Image>();
-            bg.color = UIManager.DS.BgDeep;
-            bg.raycastTarget = false;
-            LG.Glass(root, 21f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.30f));
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 0);
+            rt.pivot = new Vector2(0, 0);
+            rt.sizeDelta = new Vector2(240, 240);
+            rt.anchoredPosition = new Vector2(22, 22);
+            UIAnchors.Register(UIAnchors.MapModes, rt);
             var motion = LG.Motion(root, LGAppear.Kind.SlideUp);
             motion.distance = 16f;
 
-            CreateModeButton(root.transform, MapMode.Simple,     "★", "ПРОСТОЙ",  new Color(0.80f, 0.88f, 0.92f), 6);
-            CreateModeButton(root.transform, MapMode.Political,  "◆", "ПОЛИТИКА", UIManager.DS.NeonCyan,  89);
-            CreateModeButton(root.transform, MapMode.Resources,  "⬢", "РЕСУРСЫ",  UIManager.DS.Gold,      172);
-            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", "КОРИДОРЫ", AccentOrange,           255);
-            CreateModeButton(root.transform, MapMode.Explored,   "◉", "РАЗВЕДКА", UIManager.DS.Green,     338);
+            // Подпись текущего режима над мини-картой (как у диска времени)
+            var capGo = new GameObject("ModeCaption");
+            capGo.transform.SetParent(root.transform, false);
+            _modeCaption = capGo.AddComponent<Text>();
+            _modeCaption.font = GameFont.Display;
+            _modeCaption.fontSize = 10;
+            _modeCaption.color = UIManager.DS.TextMuted;
+            _modeCaption.alignment = TextAnchor.MiddleCenter;
+            _modeCaption.raycastTarget = false;
+            _modeCaption.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _modeCaption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(-14f, 30f), new Vector2(240f, 16f));
+            _modeCaption.Track(2.4f);
+
+            CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 56f);
+            CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  35f);
+            CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      14f);
+            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", Loc.T("КОРИДОРЫ"), AccentOrange,           -7f);
+            CreateModeButton(root.transform, MapMode.Explored,   "◉", Loc.T("РАЗВЕДКА"), UIManager.DS.Green,     -28f);
+            CreateModeButton(root.transform, MapMode.Intel,      "✦", Loc.T("ШПИОНАЖ"),  SpyPurple,             -49f);
         }
 
-        private void CreateModeButton(Transform parent, MapMode mode, string icon, string label, Color accent, float xPos)
+        /// <summary>Круглая кнопка режима на дуге вокруг мини-карты; angleDeg — угол от центра карты (0 — вправо, 90 — вверх).</summary>
+        private void CreateModeButton(Transform parent, MapMode mode, string icon, string label, Color accent, float angleDeg)
         {
             var btnObj = new GameObject($"MapModeBtn_{mode}");
             btnObj.transform.SetParent(parent, false);
 
+            const float R = 156f, D = 34f;   // снаружи безеля мини-карты (радиус 127)
             var rt = btnObj.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0, 0.5f);
-            rt.anchorMax = new Vector2(0, 0.5f);
-            rt.pivot = new Vector2(0, 0.5f);
-            rt.sizeDelta = new Vector2(80, 30);
-            rt.anchoredPosition = new Vector2(xPos, 0);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(D, D);
+            float a = angleDeg * Mathf.Deg2Rad;
+            rt.anchoredPosition = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * R;
 
+            // Круглая голо-кнопка: тёмный диск и кольцо цвета режима (активный — залит цветом)
             var bg = btnObj.AddComponent<Image>();
-            bg.color = UIManager.DS.BtnNeutral;
+            bg.sprite = HudArt.Disc();
+            bg.color = BtnIdle;
             bg.raycastTarget = true;
+            LG.Ignore(btnObj);
 
             var btn = btnObj.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
             var captured = mode;
             btn.onClick.AddListener(() => ApplyMode(captured));
-            _buttonFx[mode] = LG.Button(btnObj, new Color(accent.r, accent.g, accent.b, 0.3f));
             _buttonAccentColors[mode] = accent;
+            _modeNames[mode] = label;
 
-            // Светящаяся "капля"-индикатор под активным режимом
-            var accentStrip = new GameObject("Accent");
-            accentStrip.transform.SetParent(btnObj.transform, false);
-            var sRt = accentStrip.AddComponent<RectTransform>();
-            sRt.anchorMin = new Vector2(0.5f, 0);
-            sRt.anchorMax = new Vector2(0.5f, 0);
-            sRt.pivot = new Vector2(0.5f, 0.5f);
-            sRt.sizeDelta = new Vector2(26f, 2.2f);
-            sRt.anchoredPosition = new Vector2(0, 3.5f);
-            var sImg = accentStrip.AddComponent<Image>();
-            sImg.color = accent;
+            var ringGo = new GameObject("Ring");
+            ringGo.transform.SetParent(btnObj.transform, false);
+            var sImg = ringGo.AddComponent<Image>();
+            sImg.sprite = HudArt.Ring(0.88f, 1f);
+            sImg.color = new Color(accent.r, accent.g, accent.b, 0.45f);
             sImg.raycastTarget = false;
-            LG.Line(accentStrip);
+            sImg.rectTransform.anchorMin = Vector2.zero;
+            sImg.rectTransform.anchorMax = Vector2.one;
+            sImg.rectTransform.offsetMin = sImg.rectTransform.offsetMax = Vector2.zero;
 
             LGIcon iconId = mode switch
             {
@@ -147,34 +167,28 @@ namespace StellarisClone.Rendering
                 MapMode.Resources  => LGIcon.MapResources,
                 MapMode.Hyperlanes => LGIcon.MapLanes,
                 MapMode.Explored   => LGIcon.MapExplored,
+                MapMode.Intel      => LGIcon.Betrayal,
                 _                  => LGIcon.MapSimple
             };
-            var iconImg = LGIcons.Create(btnObj.transform, iconId, 15f, accent);
-            iconImg.rectTransform.anchorMin = iconImg.rectTransform.anchorMax = new Vector2(0, 0.5f);
-            iconImg.rectTransform.pivot = new Vector2(0, 0.5f);
-            iconImg.rectTransform.anchoredPosition = new Vector2(11, 1);
-
-            var lbl = MakeText(btnObj.transform, label, 9, FontStyle.Bold, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
-            lbl.rectTransform.anchorMin = new Vector2(0, 0.5f);
-            lbl.rectTransform.anchorMax = new Vector2(1, 0.5f);
-            lbl.rectTransform.pivot = new Vector2(0, 0.5f);
-            lbl.rectTransform.offsetMin = new Vector2(32, 0);
-            lbl.rectTransform.offsetMax = new Vector2(-4, 0);
-            lbl.rectTransform.sizeDelta = new Vector2(-36, 20);
+            var iconImg = LGIcons.Create(btnObj.transform, iconId, 17f, accent);
+            iconImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(17, 17));
+            iconImg.raycastTarget = false;
+            _buttonIcons[mode] = iconImg;
 
             _buttonBgs[mode] = bg;
             _buttonAccents[mode] = sImg;
 
             string tip = mode switch
             {
-                MapMode.Simple     => "Простой режим — чистая карта со спиральными галактиками и тонкими линиями",
-                MapMode.Political  => "Политический режим — границы и принадлежность систем",
-                MapMode.Resources  => "Режим ресурсов — подсветка залежей энергии и минералов",
-                MapMode.Hyperlanes => "Режим коридоров — выделенные гиперлинии",
-                MapMode.Explored   => "Режим разведки — изученные и неизученные секторы",
+                MapMode.Simple     => Loc.T("Простой режим — чистая карта: мягкий контур территорий, без названий империй, коридоры одного цвета"),
+                MapMode.Political  => Loc.T("Политический режим — яркие границы и заливка территорий, названия империй, коридоры цветом владельца"),
+                MapMode.Resources  => Loc.T("Режим ресурсов — сияние под изученными системами: чем больше, тем богаче; золото — гелий-3, бирюза — титан"),
+                MapMode.Hyperlanes => Loc.T("Режим коридоров — яркие толстые гиперкоридоры, оранжевые кольца — узлы с 4 и более коридорами"),
+                MapMode.Explored   => Loc.T("Режим разведки — зелёные кольца: системы изучены; янтарные: встречены, но не изучены — туда стоит отправить научный корабль"),
+                MapMode.Intel      => Loc.T("Режим шпионажа — кольцо вокруг звезды показывает силу вашей разведсети в системе (полный круг — 100 %), потоки — куда сеть расползается. В остальных режимах на карте видны только портреты агентов"),
                 _ => ""
             };
-            TooltipHelper.Attach(btnObj, tip);
+            TooltipHelper.Attach(btnObj, $"<b>{label}</b>\n{tip}");
         }
 
         private Text MakeText(Transform parent, string txt, int size, FontStyle style, Color col, TextAnchor anchor)
@@ -198,6 +212,9 @@ namespace StellarisClone.Rendering
             return t;
         }
 
+        /// <summary>Переключить режим карты (как кнопкой).</summary>
+        public void SetMode(MapMode mode) => ApplyMode(mode);
+
         private void ApplyMode(MapMode mode)
         {
             _active = mode;
@@ -205,22 +222,13 @@ namespace StellarisClone.Rendering
             foreach (var kv in _buttonBgs)
             {
                 bool active = kv.Key == mode;
-                kv.Value.color = active ? UIManager.DS.BtnPrimary : UIManager.DS.BtnNeutral;
-                if (_buttonAccents.TryGetValue(kv.Key, out var acc))
-                {
-                    var c = acc.color;
-                    c.a = active ? 1f : 0.25f;
-                    acc.color = c;
-                }
-                if (_buttonFx.TryGetValue(kv.Key, out var fx) && fx != null
-                    && _buttonAccentColors.TryGetValue(kv.Key, out var ac))
-                {
-                    // Активный режим — яркая неоновая кромка со свечением, остальные — приглушённое стекло
-                    fx.SetRim(new Color(ac.r, ac.g, ac.b, active ? 0.85f : 0.22f));
-                    fx.GlowMultiplier = active ? 2.2f : 0.6f;
-                    fx.FillMultiplier = active ? 1.2f : 0.7f;
-                }
+                var ac = _buttonAccentColors.TryGetValue(kv.Key, out var c0) ? c0 : UIManager.DS.NeonCyan;
+                kv.Value.color = active ? new Color(ac.r * 0.40f, ac.g * 0.40f, ac.b * 0.40f, 0.96f) : BtnIdle;
+                if (_buttonAccents.TryGetValue(kv.Key, out var ring)) ring.color = new Color(ac.r, ac.g, ac.b, active ? 1f : 0.45f);
+                if (_buttonIcons.TryGetValue(kv.Key, out var ic)) ic.color = active ? Color.white : ac;
             }
+            if (_modeCaption != null && _modeNames.TryGetValue(mode, out var name))
+                _modeCaption.text = Loc.F("РЕЖИМ · {0}", name);
 
             _galaxyView?.SetMapMode(mode);
         }

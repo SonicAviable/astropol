@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Картинка новости «Временное решение: вылет при запуске из VK Play» (1920×1080). Рендер: node Tools/news/render.js fix_launch -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/LoadingArt_2.jpg) 70% 50%/cover; filter: brightness(0.55) saturate(1.05); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.96) 0%, rgba(3,7,15,0.88) 55%, rgba(3,7,15,0.55) 100%); }
+.wrap { position: absolute; left: 120px; top: 96px; right: 120px; }
+.logo { font-family: Russo; font-size: 64px; letter-spacing: 5px;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent; }
+.tag { display: inline-block; margin-top: 30px; padding: 8px 18px; border: 1px solid rgba(255,170,90,0.6); border-radius: 5px;
+  background: rgba(40,18,8,0.7); font-weight: 700; font-size: 20px; letter-spacing: 6px; color: #FFB27A; }
+.title { font-weight: 700; font-size: 60px; margin-top: 18px; line-height: 1.1; }
+.sub { font-size: 26px; color: #9DB6C1; margin-top: 14px; }
+.steps { display: flex; gap: 22px; margin-top: 52px; }
+.step { flex: 1; padding: 30px 30px 32px; border: 1px solid rgba(102,219,209,0.28); border-radius: 8px;
+  background: linear-gradient(160deg, rgba(14,30,52,0.92), rgba(6,14,26,0.92)); }
+.num { font-family: Russo; font-size: 54px; color: #F2C766; line-height: 1; }
+.step b { display: block; font-weight: 700; font-size: 30px; margin-top: 16px; }
+.step span { display: block; font-size: 21px; color: #A9C0CA; margin-top: 10px; line-height: 1.35; }
+.step code { font-family: Play; font-weight: 700; color: #8FE3DA; }
+.path { margin-top: 18px; padding: 10px 14px; border-radius: 5px; background: rgba(0,0,0,0.45); font-weight: 700; font-size: 19px; color: #DFF6F8; letter-spacing: 0.5px; }
+.note { position: absolute; left: 120px; right: 120px; bottom: 80px; display: flex; align-items: center; gap: 18px;
+  font-size: 24px; color: #CFE3E8; }
+.note i { width: 12px; height: 12px; border-radius: 50%; background: #5BE38A; box-shadow: 0 0 12px #5BE38A; flex: none; }
+.note b { color: #F2C766; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="fade"></div>
+  <div class="wrap">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="tag">ВРЕМЕННОЕ РЕШЕНИЕ</div>
+    <div class="title">Игра вылетает сразу после заставки<br>при запуске из VK Play?</div>
+    <div class="sub">Похоже, в оконном режиме игра конфликтует с оверлеем Игрового центра. Помогают три шага:</div>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><b>Запустите игру из папки</b>
+        <span>Откройте папку игры и запустите <code>AstDev.exe</code> напрямую</span>
+        <div class="path">C:\VK Play\Astropolity\</div></div>
+      <div class="step"><div class="num">2</div><b>Выберите «Эксклюзивный»</b>
+        <span>Настройки → Графика → Экран → <code>Режим экрана</code> → <code>Эксклюзивный</code></span></div>
+      <div class="step"><div class="num">3</div><b>Запускайте как обычно</b>
+        <span>Закройте игру и снова запускайте её из VK Play — она запустится, а достижения будут засчитываться</span></div>
+    </div>
+  </div>
+  <div class="note"><i></i><span>Полное исправление — <b>в ближайшем обновлении</b>.</span></div>
+</div></body></html>

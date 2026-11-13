@@ -1,0 +1,162 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Play;src:url(../../Assets/Resources/Fonts/Play-Regular.ttf)}
+@font-face{font-family:Play;font-weight:700;src:url(../../Assets/Resources/Fonts/Play-Bold.ttf)}
+@font-face{font-family:Russo;src:url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf)}
+:root{--teal:#5fe0d0;--gold:#f2c35c;--ti:#4fd6a8;--he:#ecc14e;--al:#ef8a5c;--sci:#7fcfff;--st:#c99cff;--red:#ff6b6b;--txt:#e4ecf1;--dim:#8296a4;--line:rgba(120,220,215,.22)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1920px;height:1080px;overflow:hidden;position:relative;font-family:Play,sans-serif;color:var(--txt);background:#02050a}
+.R{font-family:Russo;letter-spacing:1px}
+.cap{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);font-weight:700}
+.dim{color:var(--dim)}
+.I{width:20px;height:20px;vertical-align:-4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 24px;font-weight:700;font-size:13px;letter-spacing:2px;background:#0b1d2e;color:var(--txt);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));box-shadow:inset 3px 0 0 var(--teal)}
+.btn.p{background:linear-gradient(90deg,#5fe0d0,#8ff0e2);color:#04211f;box-shadow:none}
+.btn.s{height:34px;font-size:11px;padding:0 14px}
+.glass{background:linear-gradient(160deg,rgba(18,40,56,.70),rgba(6,16,26,.80));border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+.bar{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.pop{width:24px;height:26px;display:inline-block;background:url(../../Assets/Resources/UI/Icons/population.png) center/contain no-repeat;filter:drop-shadow(0 0 5px var(--c)) drop-shadow(0 0 2px var(--c))}
+.pop.e{opacity:.2;filter:grayscale(1)}
+/* фон */
+.stars{position:absolute;inset:0;background-image:radial-gradient(1px 1px at 10% 20%,#fff8,transparent),radial-gradient(1px 1px at 30% 70%,#fff6,transparent),radial-gradient(1.5px 1.5px at 80% 15%,#fffa,transparent),radial-gradient(1px 1px at 65% 85%,#fff5,transparent),radial-gradient(1px 1px at 90% 60%,#fff7,transparent),radial-gradient(1px 1px at 45% 10%,#fff6,transparent),radial-gradient(1px 1px at 20% 90%,#fff5,transparent);background-size:420px 380px}
+/* планета */
+.planet{position:absolute;left:700px;top:150px;width:520px;height:520px;border-radius:50%;overflow:hidden;box-shadow:0 0 160px rgba(240,120,60,.35)}
+.planet svg{width:100%;height:100%;display:block}
+.planet .sh{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 28%,rgba(255,215,170,.28),transparent 38%),linear-gradient(115deg,transparent 48%,rgba(0,0,0,.55) 66%,rgba(0,0,0,.92) 82%);box-shadow:inset -30px -20px 80px rgba(0,0,0,.7),inset 10px 8px 30px rgba(255,190,130,.3)}
+.planet .grid{position:absolute;inset:0;border-radius:50%;background:repeating-linear-gradient(0deg,rgba(95,224,208,.045) 0 1px,transparent 1px 3px);mix-blend-mode:screen;mask:radial-gradient(circle,#000 60%,transparent 72%)}
+.atm{position:absolute;left:688px;top:138px;width:544px;height:544px;border-radius:50%;background:radial-gradient(circle,transparent 46%,rgba(255,150,80,.22) 48%,transparent 52%)}
+/* карты районов */
+.card{position:absolute;width:236px;height:290px;padding:18px 18px 16px;text-align:center;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));background:linear-gradient(180deg,rgba(24,52,70,.92),rgba(6,16,26,.96));box-shadow:inset 0 3px 0 var(--c)}
+.card:before{content:"";position:absolute;left:0;right:0;top:0;height:120px;background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--c) 30%,transparent),transparent 70%)}
+.card>*{position:relative}
+.card .ico{width:66px;height:66px;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--c) 70%,transparent))}
+.card .num{font-family:Russo;font-size:38px;color:var(--c);margin-top:4px;text-shadow:0 0 18px color-mix(in srgb,var(--c) 50%,transparent)}
+.card .nm{font-weight:700;font-size:16px}
+.card .lv{position:absolute;right:14px;top:12px;font-size:11px;letter-spacing:1.5px;color:var(--dim)}
+.card .slots{margin-top:12px;display:flex;justify-content:center;gap:4px}
+.card .foot{position:absolute;left:16px;right:16px;bottom:14px;display:flex;justify-content:space-between;font-size:12px;color:var(--dim);border-top:1px solid rgba(255,255,255,.08);padding-top:9px}
+.proj{flex:1;height:76px;display:flex;align-items:center;gap:12px;padding:0 14px}
+.proj img{width:34px;height:34px}
+.proj b{display:block;font-size:14px}.proj span{font-size:12px}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+ <filter id="surf"><feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="6" seed="7"/><feColorMatrix values="0 0 0 0 .78  0 0 0 0 .34  0 0 0 0 .16  0 0 0 -2.4 2"/></filter>
+ <filter id="surf2"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="4" seed="3"/><feColorMatrix values="0 0 0 0 .33 0 0 0 0 .11 0 0 0 0 .05 0 0 0 -3 1.5"/></filter>
+ <filter id="caps"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="3" seed="11"/><feColorMatrix values="0 0 0 0 1 0 0 0 0 .93 0 0 0 0 .86 0 0 0 -6 3.2"/></filter>
+</defs></svg>
+
+<!-- фон -->
+<div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 40%,#2a150a 0%,transparent 60%),radial-gradient(ellipse 40% 50% at 92% 20%,rgba(80,40,140,.25),transparent 70%),radial-gradient(ellipse 50% 40% at 5% 85%,rgba(20,90,100,.22),transparent 70%)"></div>
+<div class="stars"></div>
+<!-- голо-постамент и лучи -->
+<svg style="position:absolute;left:0;top:0" width="1920" height="1080">
+ <defs>
+  <radialGradient id="pad"><stop offset="0" stop-color="rgba(95,224,208,.35)"/><stop offset=".7" stop-color="rgba(95,224,208,.06)"/><stop offset="1" stop-color="rgba(95,224,208,0)"/></radialGradient>
+  <linearGradient id="beam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="rgba(95,224,208,.20)"/><stop offset="1" stop-color="rgba(95,224,208,0)"/></linearGradient>
+  <linearGradient id="ringB" x1="0" x2="1"><stop offset="0" stop-color="rgba(242,195,92,0)"/><stop offset=".5" stop-color="rgba(242,195,92,.55)"/><stop offset="1" stop-color="rgba(242,195,92,0)"/></linearGradient>
+ </defs>
+ <polygon points="560,700 1360,700 1180,180 740,180" fill="url(#beam)" opacity=".5"/>
+ <ellipse cx="960" cy="702" rx="600" ry="96" fill="url(#pad)"/>
+ <ellipse cx="960" cy="702" rx="540" ry="84" fill="none" stroke="rgba(95,224,208,.55)" stroke-width="2"/>
+ <ellipse cx="960" cy="702" rx="470" ry="72" fill="none" stroke="rgba(95,224,208,.3)" stroke-dasharray="2 10"/>
+ <ellipse cx="960" cy="702" rx="380" ry="58" fill="none" stroke="rgba(95,224,208,.18)"/>
+ <g transform="rotate(-12 960 410)"><ellipse cx="960" cy="410" rx="430" ry="104" fill="none" stroke="rgba(242,195,92,.35)" stroke-width="2"/></g>
+ <!-- орбитальная шкала -->
+ <circle cx="960" cy="410" r="318" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="8" stroke-dasharray="1.5 16"/>
+ <circle cx="960" cy="410" r="300" fill="none" stroke="rgba(95,224,208,.55)" stroke-width="3" stroke-dasharray="300 2000" transform="rotate(200 960 410)"/>
+</svg>
+<div class="atm"></div>
+<div class="planet"><svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#d0703c"/><rect width="400" height="400" filter="url(#surf)"/><rect width="400" height="400" filter="url(#surf2)" opacity=".75"/></svg><div class="grid"></div><div class="sh"></div></div>
+<!-- передняя половина кольца поверх планеты + выноски -->
+<svg style="position:absolute;left:0;top:0" width="1920" height="1080">
+ <defs><clipPath id="front"><rect x="400" y="410" width="1200" height="200"/></clipPath></defs>
+ <g transform="rotate(-12 960 410)"><ellipse cx="960" cy="410" rx="430" ry="104" fill="none" stroke="rgba(242,195,92,.85)" stroke-width="2.5" clip-path="url(#front)"/>
+  <circle cx="1300" cy="474" r="6" fill="#f2c35c" style="filter:drop-shadow(0 0 6px #f2c35c)"/><text x="1314" y="496" fill="#f2c35c" font-size="12" font-family="Play" letter-spacing="1.5">ЗВЁЗДНАЯ БАЗА</text></g>
+ <g fill="none" stroke-width="1.2">
+  <path d="M742 290 L600 220 L430 220" stroke="rgba(242,195,92,.7)"/>
+  <path d="M1190 300 L1330 230 L1500 230" stroke="rgba(201,156,255,.7)"/>
+  <path d="M1200 540 L1340 600 L1500 600" stroke="rgba(79,214,168,.7)"/>
+ </g>
+ <circle cx="742" cy="290" r="4" fill="#f2c35c"/><circle cx="742" cy="290" r="10" fill="none" stroke="#f2c35c" opacity=".4"/>
+ <circle cx="1190" cy="300" r="4" fill="#c99cff"/><circle cx="1190" cy="300" r="10" fill="none" stroke="#c99cff" opacity=".4"/>
+ <circle cx="1200" cy="540" r="4" fill="#4fd6a8"/><circle cx="1200" cy="540" r="10" fill="none" stroke="#4fd6a8" opacity=".4"/>
+</svg>
+
+<!-- шапка -->
+<span class="btn" style="position:absolute;left:48px;top:40px">✕ ESC</span>
+<div style="position:absolute;left:0;right:0;top:26px;text-align:center;pointer-events:none">
+ <div class="cap" style="color:var(--gold)">Пустынный мир · система Альфа Водолея</div>
+ <div class="R" style="font-size:58px;margin-top:2px;text-shadow:0 0 34px rgba(242,195,92,.35)">ГИПЕРИОН</div>
+ <div style="font-size:13px;margin-top:2px"><img class="I" src="../../Assets/Resources/UI/Icons/globe.png"> <span style="color:var(--teal)">Иридийский Оракул</span> <span class="dim">· основана 19.01.2200</span></div></div>
+<div style="position:absolute;right:48px;top:40px;display:flex;gap:8px;align-items:center"><span class="btn" style="padding:0 16px">◀</span><span class="dim" style="font-size:13px;letter-spacing:2px;padding:0 8px">КОЛОНИЯ 1 / 1</span><span class="btn" style="padding:0 16px">▶</span></div>
+
+<!-- выноски -->
+<div style="position:absolute;left:150px;top:166px;width:280px;text-align:right">
+ <div class="cap" style="color:var(--gold)">Пригодность</div>
+ <div class="R" style="font-size:44px;color:var(--gold);line-height:1.1">54%</div>
+ <div class="bar" style="--c:var(--gold);margin:6px 0 8px 60px"><i style="width:54%"></i></div>
+ <div class="dim" style="font-size:13px">0,75 g · −5 °C · атмосфера разрежённая</div></div>
+<div style="position:absolute;left:1500px;top:178px;width:330px">
+ <div class="cap" style="color:var(--st)">Стабильность</div>
+ <div class="R" style="font-size:44px;color:var(--st);line-height:1.1">65 <span style="font-family:Play;font-size:16px;font-weight:700">Спокойствие ▲</span></div>
+ <div class="bar" style="--c:var(--st);margin:6px 60px 8px 0"><i style="width:65%"></i></div>
+ <div class="dim" style="font-size:13px">Иридийцы · 6 · без бонусов и штрафов</div>
+ <span class="btn s" style="margin-top:10px">ПРОПАГАНДА · 25 <img class="I" src="../../Assets/Resources/UI/Icons/res_influence.png"></span></div>
+<div style="position:absolute;left:1500px;top:548px;width:340px">
+ <div class="cap" style="color:var(--ti)">Недра</div>
+ <div style="display:flex;gap:18px;margin-top:6px">
+  <div><div class="R" style="font-size:30px;color:var(--ti)">4</div><div class="dim" style="font-size:12px">месторожд. титана</div></div>
+  <div><div class="R" style="font-size:30px;color:var(--he)">2</div><div class="dim" style="font-size:12px">гелия-3</div></div>
+  <div><div class="R" style="font-size:30px">6<span class="dim" style="font-size:16px">/6</span></div><div class="dim" style="font-size:12px">мест под районы</div></div></div></div>
+
+<!-- доход -->
+<div class="glass" style="position:absolute;left:48px;top:330px;width:340px;padding:18px 20px">
+ <div style="display:flex;justify-content:space-between"><div class="cap">Доход колонии</div><div class="dim" style="font-size:12px">в месяц</div></div>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;margin-top:14px">
+  <div><div class="dim" style="font-size:11px;letter-spacing:1.5px"><img class="I" src="../../Assets/Resources/UI/Icons/res_minerals.png"> ТИТАН</div><div class="R" style="font-size:28px;color:var(--ti)">+7,2</div></div>
+  <div><div class="dim" style="font-size:11px;letter-spacing:1.5px"><img class="I" src="../../Assets/Resources/UI/Icons/res_energy.png"> ГЕЛИЙ-3</div><div class="R" style="font-size:28px;color:var(--he)">+7,6</div></div>
+  <div><div class="dim" style="font-size:11px;letter-spacing:1.5px"><img class="I" src="../../Assets/Resources/UI/Icons/res_alloys.png"> СПЛАВЫ</div><div class="R" style="font-size:28px;color:var(--al)">+5,4</div></div>
+  <div><div class="dim" style="font-size:11px;letter-spacing:1.5px"><img class="I" src="../../Assets/Resources/UI/Icons/res_research.png"> НАУКА</div><div class="R" style="font-size:28px;color:var(--sci)">+6,6</div></div></div>
+ <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+  <div style="display:flex;justify-content:space-between;font-size:13px"><span>Жители</span><b>6 / 6 <span class="dim">· занятость 6/9</span></b></div>
+  <div class="cap dim" style="margin-top:12px;font-size:10px">Приоритет</div>
+  <div style="display:flex;gap:6px;margin-top:6px"><span class="btn p s" style="flex:1">РАВНОМЕРНО ▾</span><span class="btn s" style="flex:1">АВТО · ВКЛ</span></div></div></div>
+<!-- предупреждение -->
+<div style="position:absolute;left:48px;top:654px;width:340px;padding:12px 16px;border-radius:10px;background:linear-gradient(90deg,rgba(242,195,92,.18),rgba(242,195,92,.03));border-left:3px solid var(--gold);font-size:13px">
+ <b style="color:var(--gold)">⚠ Рост населения остановлен</b><div class="dim" style="margin-top:3px">Нет свободного жилья — постройте жилой район</div></div>
+
+<!-- районы-карты (веер) -->
+<div class="card" style="--c:var(--ti);left:404px;top:722px;transform:rotate(-5deg)">
+ <span class="lv">УР. 1</span><img class="ico" src="../../Assets/Resources/UI/Icons/res_minerals.png"><div class="num">+7,2</div><div class="nm">Горнодобывающий</div>
+ <div class="slots"><span class="pop"></span><span class="pop"></span></div><div class="dim" style="font-size:12px;margin-top:4px">работают 2 из 2</div>
+ <div class="foot"><span>3,6 / житель</span><span style="color:var(--teal)">▲ улучшить</span></div></div>
+<div class="card" style="--c:var(--he);left:640px;top:704px;transform:rotate(-2deg)">
+ <span class="lv">УР. 1</span><img class="ico" src="../../Assets/Resources/UI/Icons/res_energy.png"><div class="num">+7,6</div><div class="nm">Энергетический</div>
+ <div class="slots"><span class="pop"></span><span class="pop"></span></div><div class="dim" style="font-size:12px;margin-top:4px">работают 2 из 2</div>
+ <div class="foot"><span>3,8 / житель</span><span style="color:var(--teal)">▲ улучшить</span></div></div>
+<!-- выбранная карта — приподнята -->
+<div class="card" style="--c:var(--al);left:878px;top:672px;transform:rotate(1deg) scale(1.04);box-shadow:inset 0 3px 0 var(--c),0 0 0 1px var(--c)">
+ <span class="lv">УР. 1</span><img class="ico" src="../../Assets/Resources/UI/Icons/res_alloys.png"><div class="num">+5,4</div><div class="nm">Промышленный</div>
+ <div class="slots"><span class="pop"></span><span class="pop"></span></div><div class="dim" style="font-size:12px;margin-top:4px">работают 2 из 2</div>
+ <div class="foot"><span>2,7 / житель</span><span style="color:var(--teal)">▲ улучшить</span></div></div>
+<div class="card" style="--c:var(--gold);left:1116px;top:704px;transform:rotate(3deg);background:linear-gradient(180deg,rgba(60,46,14,.92),rgba(10,14,20,.96))">
+ <span class="lv" style="color:var(--gold)">ПОЛНО</span><img class="ico" src="../../Assets/Resources/UI/Icons/housing.png"><div class="num" style="color:var(--teal)">6</div><div class="nm">Жильё</div>
+ <div class="slots"><span class="pop e"></span><span class="pop e"></span><span class="pop e"></span></div><div style="font-size:12px;margin-top:4px;color:var(--gold)">служащих 0 из 3</div>
+ <div class="foot"><span>1,1 / житель</span><span style="color:var(--gold)">мест нет</span></div></div>
+<div style="position:absolute;left:1352px;top:740px;width:170px;height:270px;border:2px dashed rgba(95,224,208,.45);border-radius:14px;transform:rotate(6deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(95,224,208,.04)">
+ <img src="../../Assets/Resources/UI/Icons/construction.png" style="width:50px;opacity:.85"><div class="cap">Строить</div><div class="dim" style="font-size:12px;text-align:center;padding:0 12px">мест нет — нужен терраформинг</div></div>
+
+<!-- проекты -->
+<div style="position:absolute;left:1560px;top:700px;width:312px">
+ <div class="cap" style="margin-bottom:10px">Проекты планеты</div>
+ <div style="display:flex;flex-direction:column;gap:8px">
+  <div class="glass proj"><img src="../../Assets/Resources/UI/Icons/industry.png"><div style="flex:1"><b>Добывающий комплекс</b><span class="dim">50 <img class="I" style="width:14px;height:14px" src="../../Assets/Resources/UI/Icons/res_minerals.png"> · 60 дн. · +6,1 в мес.</span></div></div>
+  <div class="glass proj" style="border-color:rgba(242,195,92,.5)"><img src="../../Assets/Resources/UI/Icons/globe.png"><div style="flex:1"><b>Терраформинг <span style="color:var(--gold);font-size:11px">· идёт</span></b><div class="bar" style="--c:var(--gold);margin:6px 0 4px"><i style="width:35%"></i></div><span class="dim">→ континентальный · 234 дн.</span></div></div>
+  <div class="glass proj"><img src="../../Assets/Resources/UI/Icons/population.png"><div style="flex:1"><b>Генная адаптация</b><span class="dim">120 гел. · 40 вл. · 240 дн.</span></div></div>
+  <div class="glass proj" style="opacity:.42"><img src="../../Assets/Resources/UI/Icons/reactor.png"><div style="flex:1"><b>Сборка роботов</b><span class="dim">нет свободного жилья</span></div></div></div></div>
+
+<!-- низ -->
+<div style="position:absolute;left:48px;bottom:40px;display:flex;gap:10px;align-items:center">
+ <div class="glass" style="width:340px;height:52px;display:flex;align-items:center;gap:12px;padding:0 16px"><img src="../../Assets/Resources/UI/Icons/construction.png" style="width:28px"><div style="flex:1"><b style="font-size:13px">Автостройка выберет сама</b><div class="bar" style="--c:var(--teal);margin-top:5px"><i style="width:18%"></i></div></div></div></div>
+<span class="btn p" style="position:absolute;right:48px;bottom:40px;width:312px;height:52px;font-size:15px">ГОТОВО</span>
+</body></html>

@@ -1,0 +1,17 @@
+Текстуры интерфейса карточного боя — сгенерированы для Astropolity (scratchpad/hs/gen.py).
+Использованы материалы с открытой лицензией:
+  • Kenney Particle Pack 1.1 (k_*.png) — Kenney Vleugels, kenney.nl — CC0 1.0
+  • ambientCG: Metal046B, Leather026, MetalPlates006 (детали металла и кожи) — ambientcg.com — CC0 1.0
+  • Unity Particle Pack (fx_explosion, fx_smoke, fx_energy — перекрашенные флипбуки) — Unity Technologies, Asset Store EULA
+  • Unity Labs «Free VFX image sequences & flipbooks» (fx_boom_hd, fx_boom, fx_fireball, fx_flame, fx_wisp — взрывы, огненный шар,
+    пламя, дым, сделаны в Houdini) — Thomas Iché, Unity Technologies — CC0 1.0 — unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks
+  • «Hit Animation», «Hit Animation 2», «Animations - Blood, Hit and Both» (fx_hit_bolt, fx_hit_ring, fx_hit_cross — переведены в белый
+    для подкраски) — Sinestesia, opengameart.org — CC0 1.0
+Шрифт Russo One (Fonts/RussoOne-Regular.ttf) — Jovanny Lemonad, SIL Open Font License 1.1
+
+Оформление карт по редкостям (cardframe_*, card_shade_*, card_plate_*, card_cost_*, card_atk_*, card_def_*, card_gem_*,
+card_mask, card_foil, card_crest, cardback_bg) — нарисованы для игры (HTML/SVG-макет промо набора карт, отрисован в PNG).
+
+Эффекты fx2_* (удар, дуга, ударная волна, лучи, рунный круг, столб света, молнии, блёстки, сотовый щит) — нарисованы кодом
+для игры: Tools/card_fx/gen_fx.py; шейдер окраски — Resources/Shaders/UIFxRamp.shader.
+Поле на весь экран (board_screen, board_lines) и голограммы (holo_ring_a, holo_ring_b, holo_rays) — нарисованы для игры: Tools/card_board/board.html.

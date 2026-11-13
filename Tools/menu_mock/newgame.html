@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты экрана «Новая игра» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_ng.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center/cover; filter: brightness(0.6); }
+.planet { position: absolute; right: -300px; top: 380px; width: 1100px; height: 700px; background: url(../../Assets/Resources/Menu/menu_planet.png) center/contain no-repeat; opacity: 0.8; }
+.dim { position: absolute; inset: 0; background: rgba(2,6,14,0.55); }
+.glass { background: linear-gradient(180deg, rgba(10,22,40,0.88), rgba(5,12,24,0.92)); border: 1px solid rgba(120,220,215,0.25);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); border-radius: 22px; }
+.cy { color: #6FE6DA; } .gold { color: #FFD27A; } .mut { color: #8DA6AE; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 14px; color: #6FE6DA; }
+.big { font-weight: 700; font-size: 34px; letter-spacing: 2px; }
+.seg { display: flex; gap: 6px; padding: 5px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.seg div { flex: 1; text-align: center; padding: 10px 6px; border-radius: 10px; font-weight: 700; font-size: 15px; color: #9DB3BA; }
+.seg div small { display: block; font-weight: 400; font-size: 12px; color: #6E868E; margin-top: 3px; }
+.seg div.on { background: linear-gradient(180deg, rgba(95,230,218,0.30), rgba(95,230,218,0.12)); color: #fff; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.7), 0 0 18px rgba(95,230,218,0.25); }
+.seg div.on small { color: #A9E9E2; }
+.lbl { font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.desc { font-size: 13px; color: #7F97A0; margin-bottom: 10px; line-height: 1.35; }
+.btn { text-align: center; padding: 20px; border-radius: 16px; font-weight: 700; font-size: 20px; letter-spacing: 4px; color: #03141A;
+  background: linear-gradient(180deg, #8FF5EA, #4FD6CA); box-shadow: 0 0 30px rgba(95,230,218,0.45); }
+.ghost { text-align: center; padding: 16px 26px; border-radius: 14px; font-weight: 700; font-size: 15px; letter-spacing: 3px; color: #CFE2E6; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); }
+.tog { width: 56px; height: 30px; border-radius: 15px; background: rgba(95,230,218,0.55); position: relative; box-shadow: 0 0 14px rgba(95,230,218,0.4); }
+.tog::after { content: ''; position: absolute; right: 4px; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+.vic { display: flex; gap: 12px; }
+.vic div { flex: 1; padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.07); }
+.vic b { display: block; font-size: 22px; } .vic span { font-size: 12px; letter-spacing: 1.5px; font-weight: 700; color: #8DA6AE; } .vic i { display:block; font-style: normal; font-size: 12px; color: #7F97A0; margin-top: 4px; }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+canvas { display: block; }
+.dots { display: flex; gap: 10px; }
+.dots div { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; color: #8DA6AE; border: 1px solid rgba(255,255,255,0.12); }
+.dots div.on { color: #fff; border-color: transparent; }
+.shape { display: flex; gap: 10px; }
+.shape div { flex: 1; border-radius: 14px; padding: 8px 8px 10px; text-align: center; font-size: 13px; font-weight: 700; color: #9DB3BA; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.07); }
+.shape div.on { color: #fff; border-color: rgba(111,230,218,0.75); box-shadow: 0 0 18px rgba(95,230,218,0.25); background: rgba(95,230,218,0.10); }
+.diff { display: flex; gap: 4px; align-items: flex-end; }
+.diff div { flex: 1; text-align: center; font-size: 12px; font-weight: 700; color: #7F97A0; }
+.diff div i { display: block; margin: 0 auto 8px; border-radius: 4px; background: rgba(255,255,255,0.1); width: 100%; }
+.diff div.on { color: #fff; } .diff div.on i { background: linear-gradient(180deg, #FFD27A, #E8A040); box-shadow: 0 0 14px rgba(255,190,80,0.5); }
+.diff div.f i { background: rgba(255,210,122,0.45); }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const s = document.getElementById('s');
+const RIV = [['#FF5A4E','Ксарн'],['#E8B640','Аквила'],['#B07CFF','Иридия'],['#6FDB6A',"Тэрра'ан"],['#9FC4D0','«Ноль»']];
+const VIC = `<div><span>ДОМИНИРОВАНИЕ</span><b class="cy">264</b><i>систем с форпостами</i></div><div><span>НАУКА</span><b style="color:#5CF599">66</b><i>технологий и «Вознесение»</i></div><div><span>ЭКОНОМИКА</span><b style="color:#7FD8FF">40%</b><i>продукта галактики · 5 лет</i></div><div><span>ПО ОЧКАМ</span><b class="gold">2260</b><i>больше всех очков к году</i></div>`;
+function rand(seed){ let x = seed; return () => (x = (x * 16807) % 2147483647) / 2147483647; }
+// Галактика: спираль из звёзд, гиперкоридоры к ближайшим соседям, метки империй
+function galaxy(id, W, H, opt = {}) {
+  const c = document.getElementById(id), g = c.getContext('2d'); c.width = W; c.height = H;
+  const r = rand(opt.seed || 108703), cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.44, arms = opt.arms || 2, N = opt.n || 380, shape = opt.shape || 'spiral';
+  const glow = g.createRadialGradient(cx, cy, 0, cx, cy, R * 1.1); glow.addColorStop(0, 'rgba(90,120,255,0.25)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  const P = [];
+  for (let i = 0; i < N; i++) {
+    const t = r(), tilt = opt.tilt || 0.82;
+    if (shape === 'ellipse') { const a = r() * 6.283, rr = R * Math.sqrt(r()); P.push([cx + Math.cos(a) * rr * 1.25, cy + Math.sin(a) * rr * tilt * 0.8]); continue; }
+    if (shape === 'ring') { const a = r() * 6.283, rr = R * (0.72 + 0.26 * r()); P.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * tilt]); continue; }
+    const a = (i % arms) * Math.PI * 2 / arms + t * 4.2, rr = R * (0.18 + 0.82 * t);
+    const j = (r() - 0.5) * R * 0.16;
+    P.push([cx + Math.cos(a) * rr + j, cy + Math.sin(a) * rr * tilt + (r() - 0.5) * R * 0.12]);
+  }
+  g.strokeStyle = 'rgba(150,200,255,0.22)'; g.lineWidth = 1;
+  P.forEach((p, i) => { const d = P.map((q, k) => [k, (q[0]-p[0])**2 + (q[1]-p[1])**2]).sort((x, y) => x[1] - y[1]);
+    for (let k = 1; k <= 2; k++) if (d[k][1] < (R * 0.09) ** 2) { g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(P[d[k][0]][0], P[d[k][0]][1]); g.stroke(); } });
+  const cols = ['#FFE7A8', '#9FD8FF', '#FFFFFF', '#FFB880', '#C8B8FF'];
+  P.forEach(p => { g.fillStyle = cols[Math.floor(r() * cols.length)]; g.beginPath(); g.arc(p[0], p[1], 1.4 + r() * 1.4, 0, 7); g.fill(); });
+  const marks = (opt.rivals === 0 ? [] : [['#6FE6DA', 'ВЫ', P[Math.floor(N * 0.93)]]]).concat(RIV.slice(0, opt.rivals ?? 4).map((x, i) => [x[0], (opt.names ? x[1] : 'СОПЕРНИК').toUpperCase(), P[Math.floor(N * (0.15 + i * 0.19))]]));
+  g.font = '700 12px Play'; g.textAlign = 'center';
+  marks.forEach(([col, name, p]) => { g.strokeStyle = col; g.lineWidth = 2; g.shadowColor = col; g.shadowBlur = 12;
+    g.beginPath(); g.arc(p[0], p[1], 10, 0, 7); g.stroke(); g.shadowBlur = 0; g.fillStyle = col; g.fillText(name, p[0], p[1] - 16); });
+}
+const T = {
+a: `<div class="lbl2">ВАРИАНТ A · КАРТА ВО ВЕСЬ ЭКРАН</div><div class="bg"></div><div class="dim"></div>
+  <canvas id="g" style="position:absolute;left:560px;top:40px"></canvas>
+  <div style="position:absolute;left:60px;top:56px;font-weight:700;font-size:15px;letter-spacing:3px;color:#9DB3BA">‹  НАЗАД</div>
+  <div class="glass" style="position:absolute;left:60px;top:110px;width:520px;bottom:60px;padding:30px 32px">
+    <div class="h">ШАГ 1 ИЗ 2</div><div class="big" style="margin:6px 0 22px">НОВАЯ ИГРА</div>
+    <div class="lbl">Размер галактики</div>
+    <div class="seg" style="margin-bottom:20px"><div>Малая<small>160 систем</small></div><div>Средняя<small>330 систем</small></div><div class="on">Большая<small>480 систем</small></div></div>
+    <div class="lbl">Форма</div>
+    <div class="seg" style="margin-bottom:20px"><div>Эллипс</div><div class="on">Спираль·2</div><div>Спираль·4</div><div>Кольцо</div></div>
+    <div class="lbl">Соперники</div>
+    <div class="seg" style="margin-bottom:20px"><div>1</div><div>2</div><div>3</div><div class="on">4</div><div>5</div></div>
+    <div class="lbl">Вольные миры</div>
+    <div class="seg" style="margin-bottom:20px"><div>2</div><div>3</div><div class="on">4</div><div>5</div><div>6</div></div>
+    <div class="lbl">Сложность</div>
+    <div class="seg" style="margin-bottom:8px"><div>Новичок</div><div>Лёгкая</div><div class="on">Норм.</div><div>Сложная</div><div>Безжал.</div></div>
+    <div class="desc">Честная игра: равные доходы, ИИ готовится к войнам и охотится за флотами.</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><div><div class="lbl">Обучение</div><div class="desc" style="margin:0">Подсказки советника в начале</div></div><div class="tog"></div></div>
+  </div>
+  <div style="position:absolute;left:640px;top:70px" class="h">ПРЕДПРОСМОТР · СИД 108703  <span style="margin-left:14px;padding:4px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#CFE2E6">⟳ ДРУГАЯ КАРТА</span></div>
+  <div style="position:absolute;right:60px;top:70px;text-align:right" class="mut">480 систем · 829 гиперкоридоров</div>
+  <div class="vic" style="position:absolute;left:640px;right:520px;bottom:60px">${VIC}</div>
+  <div class="btn" style="position:absolute;right:60px;bottom:60px;width:420px">ДАЛЕЕ — ЦИВИЛИЗАЦИЯ  ›</div>`,
+b: `<div class="lbl2">ВАРИАНТ B · ПАНЕЛИ С КАРТИНКАМИ</div><div class="bg"></div><div class="planet"></div><div class="dim"></div>
+  <div style="position:absolute;left:80px;top:60px"><div class="h">НОВАЯ ИГРА · ШАГ 1 ИЗ 2</div><div class="big" style="margin-top:6px;font-size:40px">НАСТРОЙТЕ ГАЛАКТИКУ</div></div>
+  <div style="position:absolute;right:80px;top:76px" class="ghost">‹  НАЗАД</div>
+  <div style="position:absolute;left:80px;top:170px;width:1060px">
+    <div class="lbl" style="margin-bottom:12px">Размер</div>
+    <div style="display:flex;gap:16px;margin-bottom:26px">
+      <div class="glass" style="flex:1;padding:12px;text-align:center"><canvas id="s1"></canvas><div class="lbl" style="margin-top:6px">Малая</div><div class="mut" style="font-size:13px">160 систем</div></div>
+      <div class="glass" style="flex:1;padding:12px;text-align:center"><canvas id="s2"></canvas><div class="lbl" style="margin-top:6px">Средняя</div><div class="mut" style="font-size:13px">330 систем</div></div>
+      <div class="glass" style="flex:1;padding:12px;text-align:center;border-color:rgba(111,230,218,0.8);box-shadow:0 0 30px rgba(95,230,218,0.3)"><canvas id="s3"></canvas><div class="lbl" style="margin-top:6px">Большая</div><div class="cy" style="font-size:13px">480 систем</div></div>
+    </div>
+    <div class="lbl" style="margin-bottom:12px">Форма</div>
+    <div class="shape" style="margin-bottom:26px"><div><canvas id="f1"></canvas>Эллипс</div><div class="on"><canvas id="f2"></canvas>Спираль · 2 рукава</div><div><canvas id="f3"></canvas>Спираль · 4 рукава</div><div><canvas id="f4"></canvas>Кольцо</div></div>
+    <div style="display:flex;gap:40px">
+      <div><div class="lbl" style="margin-bottom:12px">Соперники</div><div class="dots">${[1,2,3,4,5].map(i => `<div class="${i<=4?'on':''}" style="${i<=4?`background:${RIV[i-1][0]}33;box-shadow:inset 0 0 0 2px ${RIV[i-1][0]}`:''}">${i}</div>`).join('')}</div></div>
+      <div><div class="lbl" style="margin-bottom:12px">Вольные миры</div><div class="dots">${[2,3,4,5,6].map(i => `<div class="${i==4?'on':''}" style="${i==4?'background:rgba(95,230,218,0.25);box-shadow:inset 0 0 0 2px #6FE6DA':''}">${i}</div>`).join('')}</div></div>
+      <div style="flex:1"><div class="lbl" style="margin-bottom:12px">Сложность · <span class="gold">Нормальная</span></div>
+        <div class="diff">${[['Новичок',14],['Лёгкая',22],['Нормальная',30],['Сложная',38],['Безжалостная',46]].map(([n,h],i)=>`<div class="${i==2?'on':i<2?'f':''}"><i style="height:${h}px"></i>${n}</div>`).join('')}</div></div>
+    </div>
+  </div>
+  <div class="glass" style="position:absolute;right:80px;top:170px;width:600px;bottom:60px;padding:22px">
+    <canvas id="g"></canvas>
+    <div class="mut" style="font-size:13px;margin:10px 0 16px;text-align:center">Спираль · 2 рукава · 480 систем · сид 108703  <span class="cy" style="font-weight:700">⟳</span></div>
+    <div class="h" style="margin-bottom:10px">ПУТИ К ПОБЕДЕ</div>
+    <div class="vic" style="flex-wrap:wrap">${VIC.replace(/<div>/g,'<div style="flex:1 1 40%">')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 4px"><div class="lbl" style="margin:0">Обучение для новичков</div><div class="tog"></div></div>
+    <div class="btn">ДАЛЕЕ — ЦИВИЛИЗАЦИЯ  ›</div>
+  </div>`,
+c: `<div class="lbl2">ВАРИАНТ C · КОМАНДНЫЙ БРИФИНГ</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:80px;top:54px;right:80px;display:flex;align-items:center;gap:22px">
+    <div class="ghost" style="padding:12px 20px">‹  НАЗАД</div>
+    <div style="display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:3px;font-size:15px">
+      <span style="padding:8px 16px;border-radius:20px;background:rgba(95,230,218,0.2);box-shadow:inset 0 0 0 1px #6FE6DA">1 · ГАЛАКТИКА</span><span class="mut">———</span><span class="mut" style="padding:8px 16px;border-radius:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15)">2 · ЦИВИЛИЗАЦИЯ</span><span class="mut">———</span><span class="mut" style="padding:8px 16px;border-radius:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15)">3 · ПРАВЛЕНИЕ</span></div></div>
+  <div class="glass" style="position:absolute;left:80px;top:130px;width:900px;bottom:60px;padding:0;overflow:hidden">
+    <canvas id="g" style="position:absolute;left:0;top:0"></canvas>
+    <div style="position:absolute;left:28px;top:24px" class="h">ГОЛОКАРТА СЕКТОРА</div>
+    <div style="position:absolute;left:28px;bottom:24px;right:28px;display:flex;gap:12px">
+      ${[['480','СИСТЕМ'],['829','КОРИДОРОВ'],['5','ИМПЕРИЙ'],['4','ВОЛЬНЫХ МИРА']].map(([a,b])=>`<div style="flex:1;padding:12px;border-radius:12px;background:rgba(3,10,20,0.75);border:1px solid rgba(255,255,255,0.08);text-align:center"><b style="display:block;font-size:26px" class="cy">${a}</b><span class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px">${b}</span></div>`).join('')}</div>
+    <div style="position:absolute;right:24px;top:20px" class="ghost">⟳  СИД 108703</div>
+  </div>
+  <div style="position:absolute;left:1010px;right:80px;top:130px;bottom:60px;display:flex;flex-direction:column;gap:16px">
+    <div class="glass" style="padding:22px 26px">
+      <div class="h" style="margin-bottom:14px">КАРТА</div>
+      <div style="display:grid;grid-template-columns:150px 1fr;gap:14px 18px;align-items:center">
+        <div class="lbl" style="margin:0">Размер</div><div class="seg"><div>Малая</div><div>Средняя</div><div class="on">Большая</div></div>
+        <div class="lbl" style="margin:0">Форма</div><div class="seg"><div>Эллипс</div><div class="on">Спираль·2</div><div>Спираль·4</div><div>Кольцо</div></div>
+        <div class="lbl" style="margin:0">Соперники</div><div class="seg"><div>1</div><div>2</div><div>3</div><div class="on">4</div><div>5</div></div>
+        <div class="lbl" style="margin:0">Вольные миры</div><div class="seg"><div>2</div><div>3</div><div class="on">4</div><div>5</div><div>6</div></div>
+      </div></div>
+    <div class="glass" style="padding:22px 26px">
+      <div class="h" style="margin-bottom:12px">ПРОТИВНИК</div>
+      ${[['Новичок','доходы ×0,6 · нападает не раньше 15-го года'],['Лёгкая','доходы ×0,8 · иногда ошибается'],['Нормальная','честная игра · охотится за флотами'],['Сложная','доходы ×1,25 · перехват в пути'],['Безжалостная','доходы ×1,5 · почти не выдаёт планы']].map(([n,d],i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-radius:10px;margin-bottom:4px;${i==2?'background:rgba(255,210,122,0.12);box-shadow:inset 0 0 0 1px rgba(255,210,122,0.6)':''}"><b style="font-size:16px;${i==2?'color:#FFD27A':'color:#B9CBD2'}">${n}</b><span class="mut" style="font-size:13px">${d}</span></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:0 14px"><b style="font-size:16px">Обучение</b><div class="tog"></div></div></div>
+    <div class="btn" style="margin-top:auto">ДАЛЕЕ — ВЫБОР ЦИВИЛИЗАЦИИ  ›</div>
+  </div>`
+};
+s.innerHTML = T[v];
+document.fonts.load('700 12px Play').then(() => {
+if (v === 'a') galaxy('g', 1300, 860, { n: 460, rivals: 4, names: true });
+if (v === 'b') { galaxy('g', 556, 420, { n: 300, rivals: 4 }); [['s1',120],['s2',220],['s3',320]].forEach(([id,n])=>galaxy(id, 320, 150, { n, rivals: 0 }));
+  galaxy('f1', 240, 90, { n: 140, shape: 'ellipse', rivals: 0, tilt: 0.55 }); galaxy('f2', 240, 90, { n: 140, rivals: 0, tilt: 0.55 }); galaxy('f3', 240, 90, { n: 140, arms: 4, rivals: 0, tilt: 0.55 }); galaxy('f4', 240, 90, { n: 140, shape: 'ring', rivals: 0, tilt: 0.55 }); }
+if (v === 'c') galaxy('g', 900, 890, { n: 460, rivals: 4, names: true });
+document.body.dataset.ready = 1;
+});
+</script></body></html>

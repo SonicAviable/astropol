@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Картинка новости «Оптимизация: игра задействует все ядра» (1920×1080). Рендер: node Tools/news/render.js perf_cores -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/UI/LoadingArt_3.jpg) 70% 50%/cover; filter: brightness(0.5) saturate(1.05); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.96) 0%, rgba(3,7,15,0.88) 55%, rgba(3,7,15,0.6) 100%); }
+.wrap { position: absolute; left: 120px; top: 70px; right: 120px; }
+.logo { font-family: Russo; font-size: 60px; letter-spacing: 5px;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent; }
+.tag { display: inline-block; margin-top: 26px; padding: 8px 18px; border: 1px solid rgba(102,219,209,0.6); border-radius: 5px;
+  background: rgba(6,30,34,0.7); font-weight: 700; font-size: 20px; letter-spacing: 6px; color: #8FE3DA; }
+.title { font-weight: 700; font-size: 60px; margin-top: 16px; line-height: 1.1; }
+.sub { font-size: 26px; color: #9DB6C1; margin-top: 12px; }
+
+.chart { margin-top: 34px; padding: 24px 32px 18px; border-radius: 10px; border: 1px solid rgba(102,219,209,0.22);
+  background: linear-gradient(160deg, rgba(14,30,52,0.94), rgba(6,14,26,0.94)); }
+.chead { display: flex; justify-content: space-between; align-items: center; }
+.chead b { font-weight: 700; font-size: 28px; }
+.legend { display: flex; gap: 28px; font-size: 22px; color: #CFE3E8; }
+.legend span { display: flex; align-items: center; gap: 10px; }
+.sw { width: 18px; height: 18px; border-radius: 4px; display: inline-block; }
+.sw.before { background: #D9622F; } .sw.after { background: #1F9E9E; }
+.cbody { display: flex; align-items: center; gap: 40px; margin-top: 8px; }
+.hero { flex: 1; padding-left: 36px; border-left: 1px solid rgba(255,255,255,0.08); }
+.hk { font-size: 20px; color: #8FA7B1; }
+.hv { display: flex; align-items: baseline; gap: 16px; margin-top: 6px; font-family: Russo; font-size: 64px; line-height: 1; }
+.hv em { font-style: normal; font-size: 40px; color: #6F8893; }
+.hb { color: #EAF6FA; opacity: 0.55; } .ha { color: #EAF6FA; }
+.items { display: flex; gap: 22px; margin-top: 24px; }
+.item { flex: 1; padding: 18px 26px; border-radius: 8px; border: 1px solid rgba(242,199,102,0.25); background: rgba(8,16,28,0.88); }
+.item b { display: block; font-weight: 700; font-size: 26px; color: #F2C766; }
+.item span { display: block; font-size: 20px; color: #A9C0CA; margin-top: 8px; line-height: 1.35; }
+.note { position: absolute; left: 120px; bottom: 26px; font-size: 18px; color: #8FA7B1; }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="fade"></div>
+  <div class="wrap">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="tag">ОПТИМИЗАЦИЯ</div>
+    <div class="title">Игра больше не упирается в одно ядро</div>
+    <div class="sub">Работа, которая раньше висела на одном ядре процессора, теперь делится между всеми</div>
+    <div class="chart">
+      <div class="chead">
+        <b>Загрузка ядер процессора</b>
+        <div class="legend"><span><i class="sw before"></i>Было</span><span><i class="sw after"></i>Стало</span></div>
+      </div>
+      <div class="cbody">
+        <svg id="plot" width="1220" height="380"></svg>
+        <div class="hero">
+          <div class="hk">Ядро 1 — самое нагруженное</div>
+          <div class="hv"><span class="hb" id="h1b"></span><em>→</em><span class="ha" id="h1a"></span></div>
+          <div class="hk" style="margin-top:34px">Средняя загрузка остальных ядер</div>
+          <div class="hv"><span class="hb" id="h2b"></span><em>→</em><span class="ha" id="h2a"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="items">
+      <div class="item"><b>Картинка — отдельно</b><span>Подготовка кадра для видеокарты ушла на другие ядра</span></div>
+      <div class="item"><b>Анимации — на всех ядрах</b><span>Рой Искр, шлейфы фауны и астероидные пояса</span></div>
+      <div class="item"><b>ИИ думает быстрее</b><span>Убрали миллионы лишних проверок в каждом ходе империй</span></div>
+    </div>
+  </div>
+  <div class="note" id="note"></div>
+</div>
+<script>
+// ДАННЫЕ ГРАФИКА. Подставьте свой замер (средняя загрузка каждого ядра, %), а в source — чем и на чём мерили,
+// например: "Замер: Ryzen 7 5800X, галактика 600 систем, 2260 год, ×4". Пока source пустой — на картинке пишется «схема».
+const DATA = {
+  before: [98, 22, 14, 9, 12, 7, 10, 6],
+  after:  [62, 48, 44, 40, 42, 38, 41, 36],
+  source: ""
+};
+(function () {
+  const svg = document.getElementById('plot'), NS = 'http://www.w3.org/2000/svg';
+  const W = 1220, H = 380, L = 64, R = 10, T = 22, B = 46, ph = H - T - B, n = DATA.before.length;
+  const el = (t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+  const y = v => T + ph * (1 - v / 100);
+  for (const v of [0, 25, 50, 75, 100]) {
+    el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.22)', 'stroke-width': 1 });
+    el('text', { x: L - 14, y: y(v) + 6, 'text-anchor': 'end', fill: '#6F8893', 'font-size': 17, 'font-family': 'Play' }, v + '%');
+  }
+  const gw = (W - L - R) / n, bw = Math.min(46, gw * 0.34), gap = 2;
+  const bar = (x, v, c) => { const h = ph * v / 100, r = Math.min(4, h / 2);
+    el('path', { d: `M${x},${y(0)} V${y(v) + r} Q${x},${y(v)} ${x + r},${y(v)} H${x + bw - r} Q${x + bw},${y(v)} ${x + bw},${y(v) + r} V${y(0)} Z`, fill: c }); };
+  for (let i = 0; i < n; i++) {
+    const cx = L + gw * (i + 0.5);
+    bar(cx - bw - gap / 2, DATA.before[i], '#D9622F');
+    bar(cx + gap / 2, DATA.after[i], '#1F9E9E');
+    el('text', { x: cx, y: H - 14, 'text-anchor': 'middle', fill: '#8FA7B1', 'font-size': 18, 'font-family': 'Play' }, 'Ядро ' + (i + 1));
+  }
+  // подписи значений — только у самого нагруженного ядра
+  const c0 = L + gw * 0.5;
+  el('text', { x: c0 - bw / 2 - gap / 2, y: y(DATA.before[0]) - 8, 'text-anchor': 'middle', fill: '#EAF6FA', 'font-size': 19, 'font-weight': 700, 'font-family': 'Play' }, DATA.before[0] + '%');
+  el('text', { x: c0 + bw / 2 + gap / 2, y: y(DATA.after[0]) - 8, 'text-anchor': 'middle', fill: '#EAF6FA', 'font-size': 19, 'font-weight': 700, 'font-family': 'Play' }, DATA.after[0] + '%');
+  const avg = a => Math.round(a.slice(1).reduce((s, v) => s + v, 0) / (a.length - 1));
+  document.getElementById('h1b').textContent = DATA.before[0] + '%';
+  document.getElementById('h1a').textContent = DATA.after[0] + '%';
+  document.getElementById('h2b').textContent = avg(DATA.before) + '%';
+  document.getElementById('h2a').textContent = avg(DATA.after) + '%';
+  document.getElementById('note').textContent = DATA.source || 'Схема для наглядности, а не замер';
+})();
+</script></body></html>

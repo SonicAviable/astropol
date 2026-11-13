@@ -15,7 +15,7 @@ namespace StellarisClone.Core
         public static event Action Changed;
 
         // ------------------------------------------------------------------ Графика
-        public static readonly string[] ScreenModeNames = { "Полный экран", "Эксклюзивный", "В окне" };
+        public static string[] ScreenModeNames => new[] { Loc.T("Полный экран"), Loc.T("Эксклюзивный"), Loc.T("В окне") };
         public static readonly int[] FpsOptions = { 30, 60, 120, 144, 240, -1 };
         public static readonly int[] AutosaveOptions = { 0, 1, 3, 6, 12 };
         public static readonly float[] UIScaleOptions = { 0.8f, 0.9f, 1f, 1.1f, 1.25f };
@@ -24,19 +24,24 @@ namespace StellarisClone.Core
         public static int ResolutionIndex { get; private set; }
         public static bool VSync { get; private set; }
         public static int FpsIndex { get; private set; }
-        public static int Quality { get; private set; }
-        public static bool GlassBlur { get; private set; }
         public static float Glow { get; private set; }
+        public static float UIBrightness { get; private set; }
 
         // ------------------------------------------------------------------ Звук
         public static float MasterVolume { get; private set; }
         public static float MusicVolume { get; private set; }
         public static float SfxVolume { get; private set; }
         public static bool MuteInBackground { get; private set; }
+        /// <summary>Вспышка краёв экрана и вибрация геймпада при атаке и банкротстве.</summary>
+        public static bool AlarmFx { get; private set; }
 
         // ------------------------------------------------------------------ Интерфейс / игра
         public static int UIScaleIndex { get; private set; }
         public static bool Tooltips { get; private set; }
+        /// <summary>Советы ОРАКУЛА-7 по ходу партии (Advisor).</summary>
+        public static bool Advisor { get; private set; }
+        /// <summary>Летопись фракции с голосом рассказчика перед партией (FactionHistoryWindow).</summary>
+        public static bool FactionHistory { get; private set; }
         public static int AutosaveIndex { get; private set; }
         public static bool EdgeScroll { get; private set; }
         public static float CameraSpeed { get; private set; }
@@ -105,17 +110,20 @@ namespace StellarisClone.Core
                 : CurrentResolutionIndex();
             VSync = PlayerPrefs.GetInt("set.vsync", 1) == 1;
             FpsIndex = PlayerPrefs.GetInt("set.fps", 1);
-            Quality = PlayerPrefs.GetInt("set.quality", QualitySettings.GetQualityLevel());
-            GlassBlur = PlayerPrefs.GetInt("set.blur", 1) == 1;
-            Glow = PlayerPrefs.GetFloat("set.glow", 0.35f);
+            GraphicsQuality.EnsureLoaded();
+            Glow = PlayerPrefs.GetFloat("set.glow", 0.2f);
+            UIBrightness = PlayerPrefs.GetFloat("set.uibright", 0.5f);
 
             MasterVolume = PlayerPrefs.GetFloat("set.master", 1f);
             MusicVolume = PlayerPrefs.GetFloat("set.music", 0.45f);
             SfxVolume = PlayerPrefs.GetFloat("set.sfx", 0.7f);
             MuteInBackground = PlayerPrefs.GetInt("set.bgmute", 1) == 1;
+            AlarmFx = PlayerPrefs.GetInt("set.alarmfx", 1) == 1;
 
             UIScaleIndex = PlayerPrefs.GetInt("set.uiscale", 2);
             Tooltips = PlayerPrefs.GetInt("set.tooltips", 1) == 1;
+            Advisor = PlayerPrefs.GetInt("set.advisor", 1) == 1;
+            FactionHistory = PlayerPrefs.GetInt("set.history", 1) == 1;
             AutosaveIndex = PlayerPrefs.GetInt("set.autosave", 2);
             EdgeScroll = PlayerPrefs.GetInt("set.edge", 0) == 1;
             CameraSpeed = PlayerPrefs.GetFloat("set.camspeed", 1f);
@@ -133,15 +141,46 @@ namespace StellarisClone.Core
         {
             EnsureLoaded();
             SettingsRunner.Ensure();
-            if (includeDisplay) ApplyDisplay();
-            QualitySettings.vSyncCount = VSync ? 1 : 0;
-            Application.targetFrameRate = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
+            if (includeDisplay)
+            {
+                // Сразу после запуска окно не трогаем: смена размера/режима в первые кадры, пока к окну цепляются
+                // оверлеи лаунчеров (VK Play), роняла игру в оконном режиме. Режим применится через пару секунд.
+                if (Time.realtimeSinceStartup < StartupDisplayDelay) DisplayAt = StartupDisplayDelay;
+                else ApplyDisplay();
+            }
+            GraphicsQuality.Apply();
+            ApplyFrameRate();
             ApplyGlass();
             ApplyAudio();
             ApplyUIScale();
             StrategyCameraController.EdgeScrollingSetting = EdgeScroll;
             StrategyCameraController.PanSpeedSetting = CameraSpeed;
         }
+
+        /// <summary>
+        /// Частота кадров. При вертикальной синхронизации Unity не смотрит на targetFrameRate, и на экранах 120 Гц
+        /// (MacBook Pro ProMotion, игровые мониторы) игра рисует 120–144 кадра вместо выбранных 60 — ноутбук греется
+        /// и сбрасывает частоты. Поэтому синхронизация идёт через кадр, когда частота экрана кратна выбранному пределу.
+        /// </summary>
+        private static void ApplyFrameRate()
+        {
+            int fps = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
+            int interval = 1;
+            if (VSync && fps > 0)
+            {
+                double hz = Screen.currentResolution.refreshRateRatio.value;
+                if (hz > fps * 1.5) interval = Mathf.Clamp(Mathf.RoundToInt((float)(hz / fps)), 1, 4);
+            }
+            QualitySettings.vSyncCount = VSync ? interval : 0;
+            Application.targetFrameRate = fps;
+        }
+
+        /// <summary>Сколько секунд после запуска игры не менять окно (см. ApplyAll).</summary>
+        private const float StartupDisplayDelay = 3f;
+        /// <summary>Отложенное применение режима экрана: время с запуска игры, когда применить (≤ 0 — нечего).</summary>
+        internal static float DisplayAt;
+
+        internal static void ApplyDisplayDeferred() { DisplayAt = 0f; ApplyDisplay(); }
 
         private static void ApplyDisplay()
         {
@@ -150,18 +189,19 @@ namespace StellarisClone.Core
             var mode = ScreenMode == 1 ? FullScreenMode.ExclusiveFullScreen
                      : ScreenMode == 2 ? FullScreenMode.Windowed : FullScreenMode.FullScreenWindow;
             if (Screen.width != r.x || Screen.height != r.y || Screen.fullScreenMode != mode)
+            {
+                Debug.Log($"[Settings] Режим экрана: {Screen.width}×{Screen.height} {Screen.fullScreenMode} → {r.x}×{r.y} {mode}");
                 Screen.SetResolution(r.x, r.y, mode);
+            }
 #endif
-            if (Quality >= 0 && Quality < QualitySettings.names.Length && QualitySettings.GetQualityLevel() != Quality)
-                QualitySettings.SetQualityLevel(Quality, true);
         }
 
         private static void ApplyGlass()
         {
             var lg = LiquidGlassSystem.Ensure();
             if (lg == null) return;
-            lg.backdropEnabled = GlassBlur;
             lg.glowStrength = Glow;
+            lg.brightness = UIBrightness;
         }
 
         private static void ApplyAudio()
@@ -197,45 +237,106 @@ namespace StellarisClone.Core
             Commit();
         }
 
-        public static void SetVSync(bool v) { VSync = v; PlayerPrefs.SetInt("set.vsync", v ? 1 : 0); QualitySettings.vSyncCount = v ? 1 : 0; Commit(); }
+        public static void SetVSync(bool v) { VSync = v; PlayerPrefs.SetInt("set.vsync", v ? 1 : 0); ApplyFrameRate(); Commit(); }
 
         public static void SetFps(int i)
         {
             FpsIndex = Mathf.Clamp(i, 0, FpsOptions.Length - 1);
             PlayerPrefs.SetInt("set.fps", FpsIndex);
-            Application.targetFrameRate = FpsOptions[FpsIndex];
+            ApplyFrameRate();
             Commit();
         }
 
-        public static void SetQuality(int i)
+        /// <summary>Пункты качества графики — в GraphicsQuality; здесь только запись на диск и событие изменения.</summary>
+        public static void GraphicsChanged(System.Action apply)
         {
-            Quality = Mathf.Clamp(i, 0, QualitySettings.names.Length - 1);
-            PlayerPrefs.SetInt("set.quality", Quality);
-            QualitySettings.SetQualityLevel(Quality, true);
-            // Смена уровня качества сбрасывает vSync — возвращаем выбор игрока
-            QualitySettings.vSyncCount = VSync ? 1 : 0;
+            apply?.Invoke();
+            ApplyFrameRate();
             Commit();
         }
 
-        public static void SetGlassBlur(bool v) { GlassBlur = v; PlayerPrefs.SetInt("set.blur", v ? 1 : 0); ApplyGlass(); Commit(); }
         public static void SetGlow(float v) { Glow = Mathf.Clamp(v, 0f, 0.8f); PlayerPrefs.SetFloat("set.glow", Glow); ApplyGlass(); Commit(); }
+        public static void SetUIBrightness(float v) { UIBrightness = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.uibright", UIBrightness); ApplyGlass(); Commit(); }
 
         public static void SetMaster(float v) { MasterVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.master", MasterVolume); ApplyAudio(); Commit(); }
         public static void SetMusic(float v) { MusicVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.music", MusicVolume); ApplyAudio(); Commit(); }
         public static void SetSfx(float v) { SfxVolume = Mathf.Clamp01(v); PlayerPrefs.SetFloat("set.sfx", SfxVolume); ApplyAudio(); Commit(); }
         public static void SetMuteInBackground(bool v) { MuteInBackground = v; PlayerPrefs.SetInt("set.bgmute", v ? 1 : 0); Commit(); }
+        public static void SetAlarmFx(bool v) { AlarmFx = v; PlayerPrefs.SetInt("set.alarmfx", v ? 1 : 0); Commit(); }
 
         public static void SetUIScale(int i) { UIScaleIndex = Mathf.Clamp(i, 0, UIScaleOptions.Length - 1); PlayerPrefs.SetInt("set.uiscale", UIScaleIndex); ApplyUIScale(); Commit(); }
+        public static void SetAdvisor(bool v) { Advisor = v; PlayerPrefs.SetInt("set.advisor", v ? 1 : 0); Commit(); }
+        public static void SetFactionHistory(bool v) { FactionHistory = v; PlayerPrefs.SetInt("set.history", v ? 1 : 0); Commit(); }
         public static void SetTooltips(bool v) { Tooltips = v; PlayerPrefs.SetInt("set.tooltips", v ? 1 : 0); if (!v) TooltipSystem.Hide(); Commit(); }
         public static void SetAutosave(int i) { AutosaveIndex = Mathf.Clamp(i, 0, AutosaveOptions.Length - 1); PlayerPrefs.SetInt("set.autosave", AutosaveIndex); Commit(); }
         public static void SetEdgeScroll(bool v) { EdgeScroll = v; PlayerPrefs.SetInt("set.edge", v ? 1 : 0); StrategyCameraController.EdgeScrollingSetting = v; Commit(); }
         public static void SetCameraSpeed(float v) { CameraSpeed = Mathf.Clamp(v, 0.4f, 2.5f); PlayerPrefs.SetFloat("set.camspeed", CameraSpeed); StrategyCameraController.PanSpeedSetting = CameraSpeed; Commit(); }
 
+        // ------------------------------------------------------------------ Первый запуск
+
+        private const string FirstRunKey = "set.firstrun", ExperienceKey = "set.experience";
+        private const string NgTutorialKey = "ng.tutorial", NgLevelKey = "ng.level";
+
+        /// <summary>
+        /// Окно первого запуска уже пройдено. Игроки прежних версий (есть сохранения или менялись настройки) его не видят.
+        /// </summary>
+        public static bool FirstRunDone
+        {
+            get
+            {
+                if (PlayerPrefs.HasKey(FirstRunKey)) return PlayerPrefs.GetInt(FirstRunKey) == 1;
+                foreach (var k in new[] { "set.master", "set.music", "set.uiscale", "set.lang", "set.screenMode", "set.resW", "gfx.scale", "set.advisor" })
+                    if (PlayerPrefs.HasKey(k)) return true;
+                try { return SaveSystem.Latest() != null; }
+                catch (Exception) { return false; }
+            }
+        }
+
+        /// <summary>Окно открыто: до «Начать» оно покажется снова (и после перезагрузки меню при смене языка).</summary>
+        public static void BeginFirstRun()
+        {
+            if (PlayerPrefs.HasKey(FirstRunKey)) return;
+            PlayerPrefs.SetInt(FirstRunKey, 0);
+            PlayerPrefs.Save();
+        }
+
+        public static void MarkFirstRunDone()
+        {
+            PlayerPrefs.SetInt(FirstRunKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Опыт игрока из окна первого запуска: 0 впервые · 1 немного · 2 ветеран; −1 — не спрашивали.</summary>
+        public static int Experience => PlayerPrefs.GetInt(ExperienceKey, -1);
+
+        /// <summary>
+        /// Опыт задаёт советника и параметры новой партии по умолчанию: впервые — обучение и уровень «Новичок»,
+        /// немного — обучение и «Лёгкая», ветеран — без обучения и советника, «Нормальная».
+        /// </summary>
+        public static void SetExperience(int v)
+        {
+            v = Mathf.Clamp(v, 0, 2);
+            PlayerPrefs.SetInt(ExperienceKey, v);
+            PlayerPrefs.SetInt(NgTutorialKey, v < 2 ? 1 : 0);
+            PlayerPrefs.SetInt(NgLevelKey, v);
+            Advisor = v < 2;
+            PlayerPrefs.SetInt("set.advisor", Advisor ? 1 : 0);
+            Commit();
+        }
+
+        /// <summary>Обучение и сложность новой партии по умолчанию — из ответа об опыте в окне первого запуска.</summary>
+        public static void ApplyNewGameDefaults(NewGameSettings ng)
+        {
+            if (ng == null) return;
+            if (PlayerPrefs.HasKey(NgTutorialKey)) ng.Tutorial = PlayerPrefs.GetInt(NgTutorialKey, 1) == 1;
+            if (PlayerPrefs.HasKey(NgLevelKey)) ng.SetLevel(PlayerPrefs.GetInt(NgLevelKey, 2));
+        }
+
         /// <summary>Сбросить вкладку к значениям по умолчанию.</summary>
         public static void ResetDefaults()
         {
             foreach (var k in new[] { "set.vsync", "set.fps", "set.blur", "set.glow", "set.master", "set.music", "set.sfx",
-                                      "set.bgmute", "set.uiscale", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
+                                      "set.bgmute", "set.alarmfx", "set.uiscale", "set.uibright", "set.tooltips", "set.autosave", "set.edge", "set.camspeed" })
                 PlayerPrefs.DeleteKey(k);
             s_loaded = false;
             EnsureLoaded();
@@ -282,8 +383,14 @@ namespace StellarisClone.Core
             s_instance = go.AddComponent<SettingsRunner>();
         }
 
+        private float _gfxWatch;
+
         private void LateUpdate()
         {
+            // Новая сцена или камера — те же настройки графики
+            if ((_gfxWatch -= Time.unscaledDeltaTime) <= 0f) { _gfxWatch = 1f; GraphicsQuality.Watch(); }
+            if (GameSettings.DisplayAt > 0f && Time.realtimeSinceStartup >= GameSettings.DisplayAt) GameSettings.ApplyDisplayDeferred();
+
             if (!GameSettings.Dirty || Input.GetMouseButton(0)) return;
             GameSettings.Dirty = false;
             PlayerPrefs.Save();
