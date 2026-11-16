@@ -838,6 +838,7 @@ namespace StellarisClone.Rendering
 
             foreach (var h in SpaceFauna.In(_data.Id))
             {
+                if (!h.Announced) continue;   // необнаруженная фауна не раскрывается в подсказке
                 string c = LGBuild.Hex(SpaceFauna.Color(h.Kind));
                 tip += Loc.F("\n<color={0}>ФАУНА · {1}</color> · {2}\n", c, SpaceFauna.Name(h.Kind), SpaceFauna.CountText(h)) +
                        SpaceFauna.Rule(h) + "\n";

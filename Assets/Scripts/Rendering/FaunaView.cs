@@ -209,8 +209,10 @@ namespace StellarisClone.Rendering
                 _knownTimer = 0.5f;
                 if (H.Kind == (int)FaunaKind.Wanderer) { Known = 1f; return; }
                 int sys = VisionSystem;
-                // Неизведанные края — приглушённо, как звёзды там (туман войны не прячет карту целиком)
-                Known = !Vision.Active || (sys >= 0 && (Vision.PlayerKnows(sys) || EmpireStats.GetSystem(sys)?.OwnerId == 0)) ? 1f : UnknownAlpha;
+                if (!Vision.Active) { Known = 1f; return; }
+                bool known = sys >= 0 && (Vision.PlayerKnows(sys) || EmpireStats.GetSystem(sys)?.OwnerId == 0);
+                // Пока игрок не обнаружил стаю — её не видно; потом в неизведанных краях она приглушена
+                Known = known && H.Announced ? 1f : H.Announced ? UnknownAlpha : 0f;
             }
 
             protected MaterialPropertyBlock Track(Renderer r)
