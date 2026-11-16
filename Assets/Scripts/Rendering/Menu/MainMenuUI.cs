@@ -20,8 +20,8 @@ namespace StellarisClone.Rendering
 
         private enum Panel { None, NewGame, Load, Settings, About, News }
 
-        /// <summary>Подпись сборки в меню: вместо номера версии — «Dev Build» (номер остаётся в GameVersion для отзывов и статистики).</summary>
-        public static string Version => "Dev Build · " + Loc.T("ранний доступ");
+        /// <summary>Подпись сборки в меню: номер версии и «ранний доступ».</summary>
+        public static string Version => "v" + GameVersion.Current + " · " + Loc.T("ранний доступ");
 
         private RectTransform _root;
 
