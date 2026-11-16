@@ -35,6 +35,7 @@ namespace StellarisClone.Core
             EnsureGameManagers();
             EnsureUI();
             EnsureExtras();
+            ShaderPrewarm.Begin();   // компиляция шейдеров — пока на экране загрузка, а не посреди партии
 
             new GameObject("[Save] Runtime").AddComponent<SaveRuntime>();
             if (GameSession.IsLoading)

@@ -62,6 +62,8 @@ namespace StellarisClone.Rendering
         private GameObject _factionSelectionModal;
         private GameObject _advisorIntroModal;
         private AdvisorIntroWindow _advisorIntro;
+        private FactionHistoryWindow _history;
+        private string _historyShownKey;
         private FactionInfo _selectedFaction;
 
         public FactionInfo SelectedFaction => _selectedFaction;
@@ -123,6 +125,7 @@ namespace StellarisClone.Rendering
 
             BuildFactionSelectionModal();
             BuildAdvisorIntroModal();
+            _history = FactionHistoryWindow.Create(_modalCanvas.transform, () => OpenAdvisorIntroModal(_selectedFaction));
             BuildTopBar();
             BuildStellarisLeftInspector();
             BuildShipyardModal();
@@ -209,6 +212,7 @@ namespace StellarisClone.Rendering
             ApplyPlayerIdentity();
             if (_factionSelectionModal != null) _factionSelectionModal.SetActive(false);
             if (_advisorIntroModal != null) _advisorIntroModal.SetActive(false);
+            if (_history != null) _history.gameObject.SetActive(false);
             HideModalDim();
             Time.timeScale = 1f;
             SpawnInGameHUD();
@@ -343,6 +347,7 @@ namespace StellarisClone.Rendering
         public bool IsBlockingFlowOpen =>
             (_factionSelectionModal != null && LG.IsVisible(_factionSelectionModal)) ||
             (_advisorIntroModal != null && LG.IsVisible(_advisorIntroModal)) ||
+            (_history != null && _history.gameObject.activeSelf) ||
             (_eventPopupModal != null && LG.IsVisible(_eventPopupModal));
 
         public void ShowModalDimPublic() => ShowModalDim();
@@ -1835,8 +1840,17 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         {
             _selectedFaction = faction;
             LG.Hide(_factionSelectionModal);
-            // Бонусы применяются при вступлении в должность: из передачи можно вернуться и выбрать другую
-            OpenAdvisorIntroModal(faction);
+            // Бонусы применяются при вступлении в должность: из передачи можно вернуться и выбрать другую.
+            // Перед передачей — летопись фракции с голосом рассказчика (если включена в настройках)
+            // (после «Назад» из передачи та же фракция идёт сразу к передаче — летопись уже видели)
+            string key = FactionRegistry.KeyOf(faction);
+            if (_history != null && FactionHistoryWindow.Available(faction) && key != _historyShownKey)
+            {
+                _historyShownKey = key;
+                ShowModalDim();
+                _history.Play(faction);
+            }
+            else OpenAdvisorIntroModal(faction);
         }
 
         private void BuildAdvisorIntroModal()

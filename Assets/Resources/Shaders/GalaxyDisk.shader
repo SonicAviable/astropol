@@ -76,6 +76,8 @@ Shader "Astropolity/GalaxyDisk"
                 fixed4 tex = tex2D(_MainTex, i.uv);
                 float2 p = (i.uv - 0.5) / _RadiusUv;      // 1 = край галактики
                 float r = length(p);
+                // Пустой пиксель диска вдали от ядра — без шума (8 октав на пиксель на весь экран вблизи)
+                [branch] if (tex.a <= 0.001 && r > 0.6) return fixed4(0, 0, 0, 0);
 
                 // два слоя со сдвигом на полпериода — рисунок течёт без бесконечной накрутки
                 const float Period = 45.0;

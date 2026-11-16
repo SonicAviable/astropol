@@ -100,6 +100,7 @@ namespace StellarisClone.Rendering
                 Vector3 anchor = SpaceFauna.Anchor(v.H, v.H.Kind == (int)FaunaKind.Wanderer || v.H.Moving ? frac : 0f);
                 v.Tick(this, t, dt, anchor);
                 v.ApplyAlpha();
+                AmbientCall(v, t);
                 v.ShowLabel(this, v.Alpha);
             }
             _trails.Simulate(dt);
@@ -108,6 +109,18 @@ namespace StellarisClone.Rendering
         }
 
         private string _tip;
+        private Vis _hovered;
+
+        /// <summary>Редкий голос видимого существа: громче вблизи, тише при отдалённой камере, за экраном молчит.</summary>
+        private void AmbientCall(Vis v, float t)
+        {
+            bool wanderer = v.H.Kind == (int)FaunaKind.Wanderer;
+            if (v.NextCall < 0f) { v.NextCall = t + Random.Range(6f, 30f); return; }
+            if (t < v.NextCall) return;
+            v.NextCall = t + (wanderer ? Random.Range(25f, 50f) : Random.Range(18f, 40f));
+            if (v.Alpha < 0.5f || _shown < 0.9f || Time.timeScale <= 0f) return;
+            SFXManager.PlayAt(SpaceFauna.CallOf(v.H.Kind), v.Root.transform.position, wanderer ? 0.75f : 0.5f);
+        }
 
         /// <summary>Курсор над существом или его плашкой — подсказка «что это и что с ним делать».</summary>
         private void UpdateHover()
@@ -126,6 +139,9 @@ namespace StellarisClone.Rendering
                 }
             }
             string tip = hit != null ? SpaceFauna.Tooltip(hit.H) : null;
+            // Навели на существо — оно отзывается (не чаще раза в несколько секунд — кулдаун в SfxLibrary)
+            if (hit != _hovered && hit != null) SFXManager.PlayAt(SpaceFauna.CallOf(hit.H.Kind), hit.Root.transform.position, 0.8f);
+            _hovered = hit;
             if (tip == _tip) return;
             if (tip != null) TooltipSystem.Show(tip);
             else TooltipSystem.HideIf(_tip);
@@ -169,6 +185,7 @@ namespace StellarisClone.Rendering
             public GameObject Root;
             public System.Random Rng;
             public float Alpha, Known;
+            public float NextCall = -1f;   // время следующего голоса существа (Time.time)
             private float _knownTimer;
             private Transform _labelRoot;
             private WorldChip _chip;

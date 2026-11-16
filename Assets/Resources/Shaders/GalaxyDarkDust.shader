@@ -54,11 +54,14 @@ Shader "Astropolity/GalaxyDarkDust"
                 float2 c = i.uv - 0.5;
                 // вытянутая форма: длинная ось — x
                 float r = length(c * float2(2.0, 4.2));
+                // Fbm ∈ [0; 0.97]: при r > 1.35 край заведомо за маской — пиксель прозрачный, шум не нужен
+                [branch] if (r > 1.35 || _Opacity <= 0.0005) return fixed4(_Tint.rgb, 0);
                 float2 p = float2(i.uv.x * 3.0, i.uv.y * 9.0) + _Seed;   // волокна вдоль x
-                float2 w = p + float2(Fbm(p + _T * 0.01), Fbm(p + 4.3 - _T * 0.008)) * 1.6;
-                float n = Fbm(w);
                 float edge = r + (Fbm(p * 0.6 + 2.0) - 0.5) * 0.7;
                 float mask = 1.0 - smoothstep(0.45, 1.0, edge);
+                [branch] if (mask <= 0.0) return fixed4(_Tint.rgb, 0);
+                float2 w = p + float2(Fbm(p + _T * 0.01), Fbm(p + 4.3 - _T * 0.008)) * 1.6;
+                float n = Fbm(w);
                 float dens = saturate(n * 1.9 - 0.6) * mask;
                 // тонкие прожилки плотнее
                 float fil = pow(saturate(1.0 - abs(Fbm(w * 1.8 + 1.7) - 0.5) * 4.0), 2.0) * mask;

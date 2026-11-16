@@ -263,6 +263,8 @@ namespace StellarisClone.Rendering
             y = LGControls.Section(_content, y, Loc.T("СОВЕТНИК"), LGIcon.Info);
             LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Советы по ходу партии"), Loc.T("ОРАКУЛ-7 подскажет: простаивающие корабли, дефицит, угроза колонии, шанс на штурм")),
                 GameSettings.Advisor, GameSettings.SetAdvisor);
+            LGControls.Switch(LGControls.Row(_content, ref y, Loc.T("Летопись фракции"), Loc.T("История народа с голосом рассказчика перед началом партии")),
+                GameSettings.FactionHistory, GameSettings.SetFactionHistory);
             y += 6f;
 
             y = LGControls.Section(_content, y, Loc.T("СОХРАНЕНИЯ"), LGIcon.Save);

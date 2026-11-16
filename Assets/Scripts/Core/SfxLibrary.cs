@@ -43,6 +43,8 @@ namespace StellarisClone.Core.Audio
         // вверх/вниз по высоте, разряды, «вжух» задом наперёд, низкие взрывы, стекло, огонь и пар, с залом и суббасом
         FxCast, FxShowcase, FxStinger, FxBuff, FxHeal, FxShieldUp, FxDebuff, FxShatter, FxBurn, FxPsi, FxSpores,
         FxCapture, FxLost,
+        // Космическая фауна: записи Resources/Audio/Sfx/Fauna<Вид>_N.ogg (Tools/fauna_sfx, ElevenLabs Sound Effects)
+        FaunaRays, FaunaJelly, FaunaSwarm, FaunaCrystal, FaunaWanderer,
     }
 
     public enum SfxBus { Ui, World, Stinger }
@@ -258,6 +260,12 @@ namespace StellarisClone.Core.Audio
             S(Sfx.FxSpores, 0.42f, 2, 0.15f, 0.04f, 1, 1, SfxBus.World);
             S(Sfx.FxCapture, 0.48f, 1, 0.30f, 0.01f, 1, 2, SfxBus.World, 0.2f);
             S(Sfx.FxLost, 0.48f, 1, 0.30f, 0.01f, 1, 2, SfxBus.World, 0.2f);
+            // Фауна: редкие голоса существ — по одному, не чаще раза в несколько секунд
+            S(Sfx.FaunaRays, 0.50f, 1, 3f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.FaunaJelly, 0.50f, 1, 3f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.FaunaSwarm, 0.45f, 1, 3f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.FaunaCrystal, 0.45f, 1, 3f, 0.04f, 1, 1, SfxBus.World);
+            S(Sfx.FaunaWanderer, 0.65f, 1, 6f, 0.02f, 1, 2, SfxBus.World, 0.25f);
             return d;
         }
 
@@ -1555,6 +1563,7 @@ namespace StellarisClone.Core.Audio
                 case Sfx.FxDebuff: case Sfx.FxLost: return Sfx.NotifyWarning;
                 case Sfx.FxShatter: return Sfx.HitShield;
                 case Sfx.FxBurn: case Sfx.FxSpores: return Sfx.PanelSlide;
+                case Sfx.FaunaRays: case Sfx.FaunaJelly: case Sfx.FaunaSwarm: case Sfx.FaunaCrystal: case Sfx.FaunaWanderer: return Sfx.Anomaly;
                 default: return id;
             }
         }

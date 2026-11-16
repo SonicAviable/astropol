@@ -69,6 +69,11 @@ namespace StellarisClone.Rendering
             _root.pivot = new Vector2(0.5f, 0f);
             _root.offsetMin = new Vector2(TickerLeft, TickerBottom);
             _root.offsetMax = new Vector2(-TickerRight, TickerBottom + TickerH);
+            // Свой холст: строка прокручивается и точка «в эфире» пульсирует каждый кадр — без него
+            // каждый кадр перестраивался бы весь HUD (пересборка батчей и отсечение маской всех элементов)
+            var tickerCanvas = _root.gameObject.AddComponent<Canvas>();
+            tickerCanvas.additionalShaderChannels = hud.additionalShaderChannels;
+            _root.gameObject.AddComponent<GraphicRaycaster>();
             LG.Ignore(_root.gameObject);
             LG.Motion(_root.gameObject, LGAppear.Kind.SlideUp).distance = 20f;
             _hover = _root.gameObject.AddComponent<Hover>();

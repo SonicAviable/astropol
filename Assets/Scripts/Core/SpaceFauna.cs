@@ -517,6 +517,7 @@ namespace StellarisClone.Core
                 Loc.T("Гигантское существо медленно пересекает галактику. Системы рядом с ним дают науку, колонии волнуются."),
                 NotificationCenter.Kind.Warning, 9f);
             HudBanner.Show(Loc.T("Странник вошёл в галактику"), Loc.T("Один на всю партию · пересечёт галактику за 16 лет"), LGIcon.Globe, Color((int)FaunaKind.Wanderer));
+            SFXManager.PlayDelayed(CallOf((int)FaunaKind.Wanderer), 0.5f);
         }
 
         // ==================== ЖИЗНЬ ====================
@@ -626,6 +627,7 @@ namespace StellarisClone.Core
                     NotificationCenter.Show(Loc.T("Рой Искр жжёт корабли"),
                         Loc.F("Гражданские корабли у звезды {0} теряют корпус. Уведите их или пришлите военный флот.", EmpireStats.GetSystem(h.Home)?.Name),
                         NotificationCenter.Kind.Warning, 6f, h.Home);
+                    SFXManager.PlayDelayed(Audio.Sfx.FaunaSwarm, 0.35f);
                 }
                 if (disperser != null || h.Days >= h.PhaseDays)
                 {
@@ -777,7 +779,18 @@ namespace StellarisClone.Core
             NotificationCenter.Show(Loc.T("Обнаружена космическая фауна"),
                 Loc.F("{0} · система {1}: {2}.", Name(h.Kind), sys?.Name, Rule(h)), NotificationCenter.Kind.Info, 8f, sysId);
             HudBanner.Show(Loc.T("Обнаружена космическая фауна"), Loc.F("{0} · система {1}", Name(h.Kind), sys?.Name), Icon(h.Kind), Color(h.Kind), sysId);
+            SFXManager.PlayDelayed(CallOf(h.Kind), 0.4f);
         }
+
+        /// <summary>Голос вида (Resources/Audio/Sfx/Fauna*, см. Tools/fauna_sfx).</summary>
+        public static Audio.Sfx CallOf(int kind) => kind switch
+        {
+            (int)FaunaKind.Rays => Audio.Sfx.FaunaRays,
+            (int)FaunaKind.Jelly => Audio.Sfx.FaunaJelly,
+            (int)FaunaKind.Swarm => Audio.Sfx.FaunaSwarm,
+            (int)FaunaKind.Crystal => Audio.Sfx.FaunaCrystal,
+            _ => Audio.Sfx.FaunaWanderer
+        };
 
         // ==================== СОБЫТИЯ ====================
 

@@ -497,7 +497,8 @@ namespace StellarisClone.Rendering
             float save = !loadingSave ? 1f : (_booted && !GameSession.IsLoading ? 1f : 0f);
             float sfx = SFXManager.PrewarmProgress;
             float warm = _booted ? Mathf.Clamp01(_framesSinceBoot / 12f) : 0f;
-            float target = scene * 0.2f + boot * 0.15f + galaxy * 0.15f + save * 0.12f + sfx * 0.3f + warm * 0.08f;
+            float shaders = _booted ? ShaderPrewarm.Progress : 0f;
+            float target = scene * 0.2f + boot * 0.15f + galaxy * 0.15f + save * 0.12f + sfx * 0.25f + warm * 0.05f + shaders * 0.08f;
 
             // Полоса идёт по «живой» кривой времени, но не обгоняет реальную загрузку
             float elapsed = Time.unscaledTime - _startTime;
@@ -549,7 +550,7 @@ namespace StellarisClone.Rendering
                 }
             }
             sb.Append(Loc.F("звуков синтезировано {0:0}%", sfx * 100f));
-            if (_kind != Kind.Menu) sb.Append(Loc.F("   ·   шейдеров {0}/48", Mathf.RoundToInt(Mathf.Clamp01(_shown * 1.3f) * 48)));
+            if (ShaderPrewarm.Total > 0) sb.Append(Loc.F("   ·   шейдеров {0}/{1}", ShaderPrewarm.Running ? ShaderPrewarm.Done : ShaderPrewarm.Total, ShaderPrewarm.Total));
             return sb.ToString();
         }
 

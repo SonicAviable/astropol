@@ -82,6 +82,12 @@ namespace StellarisClone.Rendering
                     var pirate = PirateShipModel.Build(parent, owner, length * 0.6f);
                     if (pirate != null) return pirate;
                 }
+                // Эсминцы Доминиона Ксарн — тяжёлый «Валиант» с десятью башнями
+                if (ValiantModel.Applies(hull, ownerId))
+                {
+                    var valiant = ValiantModel.Build(parent, owner, length);
+                    if (valiant != null) return valiant;
+                }
                 var sparrow = StarSparrowModel.Build(parent, owner, hull, ownerId, length * 0.62f);   // крылатые корпуса шире — заметно короче
                 if (sparrow != null) return sparrow;
                 var model = HarbingerModel.Build(parent, owner, length);
@@ -101,6 +107,18 @@ namespace StellarisClone.Rendering
                 {
                     var astrea = AstreaScienceModel.Build(parent, owner);
                     if (astrea != null) return astrea;
+                }
+                // Доминион Ксарн — свой бронированный разведчик «Око Доминиона»
+                if (XarnScienceModel.IsXarn(ownerId))
+                {
+                    var xarn = XarnScienceModel.Build(parent, owner);
+                    if (xarn != null) return xarn;
+                }
+                // Иридийский Оракул — капля с гироскопом-оракулом (кольца и кристалл анимированы)
+                if (IridiaScienceModel.IsIridia(ownerId))
+                {
+                    var iridia = IridiaScienceModel.Build(parent, owner);
+                    if (iridia != null) return iridia;
                 }
                 var model = Mars3Model.Build(parent, owner);
                 if (model != null) return model;

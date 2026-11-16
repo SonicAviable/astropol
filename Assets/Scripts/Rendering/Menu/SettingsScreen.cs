@@ -329,6 +329,8 @@ namespace StellarisClone.Rendering
             float ly = Section(left, 0f, Loc.T("СОВЕТНИК"));
             LGControls.Switch(LGControls.Row(left, ref ly, Loc.T("Советы по ходу партии"), Loc.T("ОРАКУЛ-7 подскажет: простаивающие корабли, дефицит, угроза колонии, шанс на штурм"), ControlW),
                 GameSettings.Advisor, GameSettings.SetAdvisor);
+            LGControls.Switch(LGControls.Row(left, ref ly, Loc.T("Летопись фракции"), Loc.T("История народа с голосом рассказчика перед началом партии"), ControlW),
+                GameSettings.FactionHistory, GameSettings.SetFactionHistory);
 
             float ry = Section(right, 0f, Loc.T("СОХРАНЕНИЯ"));
             var auto = new List<string>();
