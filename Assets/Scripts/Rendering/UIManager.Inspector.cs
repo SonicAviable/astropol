@@ -178,6 +178,9 @@ namespace StellarisClone.Rendering
                 InspStarbaseRow(system, sb);
             }
 
+            // Снабжение своей системы: связь с хабом, склад, коридоры, депо
+            if (system.OwnerId == 0) BuildSupplyCards(system);
+
             // Осада
             var siege = SiegeManager.Instance?.GetSiege(system.Id);
             if (siege != null && system.OwnerId >= 0)

@@ -12,7 +12,9 @@ namespace StellarisClone.Rendering
     ///     (гелий-3 — золото, титан — бирюза); у неизученных — тусклый знак вопроса-кольцо;
     ///   • Коридоры — толстые яркие гиперкоридоры, узлы (4+ коридора) отмечены оранжевыми кольцами;
     ///   • Разведка — изученные системы в зелёных кольцах, встреченные, но не изученные — в пульсирующих янтарных;
-    ///   • Шпионаж — кольца силы разведсети у систем и потоки данных (SpyNetworkView).
+    ///   • Шпионаж — кольца силы разведсети у систем и потоки данных (SpyNetworkView);
+    ///   • Снабжение — груз по коридорам (SupplyNetwork): толщина — объём, цвет — загрузка; хабы — золотые кольца,
+    ///     отрезанные и блокированные системы — красные, склады с грузом — оранжевое сияние.
     /// Метки систем лежат на плоскости карты под звёздами, учитывают туман войны и обновляются раз в 1,5 с.
     /// </summary>
     public partial class GalaxyView
@@ -28,6 +30,13 @@ namespace StellarisClone.Rendering
         private static readonly Color ModeHub = new Color(1.00f, 0.62f, 0.25f);
         private static readonly Color ModeSurveyed = new Color(0.44f, 0.88f, 0.60f);
         private static readonly Color ModeUnsurveyed = new Color(1.00f, 0.72f, 0.30f);
+        private static readonly Color SupplyFree = new Color(0.45f, 0.95f, 0.45f);
+        private static readonly Color SupplyBusy = new Color(1.00f, 0.85f, 0.30f);
+        private static readonly Color SupplyJam = new Color(1.00f, 0.30f, 0.25f);
+        private static readonly Color SupplyHub = new Color(1.00f, 0.82f, 0.35f);
+        private static readonly Color SupplyStock = new Color(1.00f, 0.60f, 0.25f);
+        private int _supplyVersion = -1;
+        private float _supplyRefresh;
 
         private bool IsMode(MapModeController.MapMode m) => _currentMapMode == m;
 
@@ -73,6 +82,19 @@ namespace StellarisClone.Rendering
 
             _modeScan -= Time.unscaledDeltaTime;
             if (_modeScan <= 0f) RefreshModeMarks();
+
+            // Снабжение: сеть пересчитана — перекрасить коридоры (не чаще двух раз в секунду)
+            if (IsMode(MapModeController.MapMode.Supply))
+            {
+                _supplyRefresh -= Time.unscaledDeltaTime;
+                if (_supplyRefresh <= 0f && _supplyVersion != SupplyNetwork.Version)
+                {
+                    _supplyRefresh = 0.5f;
+                    _supplyVersion = SupplyNetwork.Version;
+                    UpdateHyperlaneColors();
+                    RefreshModeMarks();
+                }
+            }
 
             // Пульс янтарных колец «не изучено»
             if (IsMode(MapModeController.MapMode.Explored))
@@ -171,6 +193,28 @@ namespace StellarisClone.Rendering
                     }
                     return true;
                 }
+                case MapModeController.MapMode.Supply:
+                {
+                    var f = SupplyNetwork.Get(0)?.Of(s.Id);
+                    if (f == null) return false;
+                    sprite = _modeRing;
+                    if (f.State == SupplyNetwork.NodeState.Hub)
+                    {
+                        color = SupplyHub; color.a = 0.9f; size = 7f;
+                        return true;
+                    }
+                    if (f.State == SupplyNetwork.NodeState.CutOff || f.State == SupplyNetwork.NodeState.Blockaded)
+                    {
+                        color = SupplyJam; color.a = 0.9f; size = 6f;
+                        return true;
+                    }
+                    float stock = SupplyState.StockOf(s.Id).Total;
+                    if (stock < 10f) return false;
+                    sprite = _modeGlow;
+                    color = SupplyStock; color.a = 0.55f;
+                    size = Mathf.Clamp(4f + Mathf.Sqrt(stock) * 0.5f, 4f, 14f);
+                    return true;
+                }
                 default:
                     return false;
             }
@@ -231,7 +275,50 @@ namespace StellarisClone.Rendering
                     alphaA = ka ? Mathf.Max(alphaA, 0.6f) : 0.15f;
                     alphaB = kb ? Mathf.Max(alphaB, 0.6f) : 0.15f;
                     break;
+                case MapModeController.MapMode.Supply:
+                    SupplyLaneStyle(a, b, ka, kb, ref cA, ref cB, ref alphaA, ref alphaB, ref px);
+                    break;
             }
+        }
+
+        /// <summary>Коридор в режиме снабжения: толщина — груз за месяц, цвет — загрузка.</summary>
+        private static void SupplyLaneStyle(StarSystem a, StarSystem b, bool ka, bool kb, ref Color cA, ref Color cB, ref float alphaA, ref float alphaB, ref float px)
+        {
+            var lane = SupplyNetwork.Get(0)?.Lane(a.Id, b.Id);
+            if (lane == null)
+            {
+                cA = cB = new Color(0.62f, 0.68f, 0.78f);
+                alphaA = ka ? 0.18f : 0.08f;
+                alphaB = kb ? 0.18f : 0.08f;
+                px = 1.1f;
+                return;
+            }
+            if (lane.Blockaded)
+            {
+                cA = cB = SupplyJam;
+                alphaA = alphaB = 0.85f;
+                px = 2.2f;
+                return;
+            }
+            if (lane.Capacity <= 0f)
+            {
+                cA = cB = new Color(0.55f, 0.35f, 0.35f);
+                alphaA = alphaB = 0.3f;
+                px = 1.2f;
+                return;
+            }
+            if (lane.Flow < 0.5f)
+            {
+                cA = cB = new Color(0.40f, 0.85f, 0.90f);
+                alphaA = alphaB = 0.35f;
+                px = 1.4f;
+                return;
+            }
+            float load = lane.Load;
+            Color c = load < 0.6f ? Color.Lerp(SupplyFree, SupplyBusy, load / 0.6f) : Color.Lerp(SupplyBusy, SupplyJam, (load - 0.6f) / 0.4f);
+            cA = cB = c;
+            alphaA = alphaB = 0.9f;
+            px = 1.6f + 3.2f * Mathf.Clamp01(lane.Flow / (SupplyNetwork.BaseLaneCapacity * 2f));
         }
     }
 }

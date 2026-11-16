@@ -7703,3 +7703,58 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 ГЛАВА ЧЕТВЁРТАЯ	CHAPTER FOUR
 ПРОПУСТИТЬ  ›	SKIP  ›
 Ваше правление	Your reign
+Депо снабжения	Supply Depot
+Транзитный узел	Transit Relay
+СНАБЖЕНИЕ	SUPPLY
+Режим снабжения — как титан и сплавы идут к хабам: толщина коридора — объём груза, цвет — загрузка (зелёный — свободно, красный — забит). Золотые кольца — хабы, красные — отрезанные и блокированные системы, оранжевое сияние — груз на складах	Supply mode — how titanium and alloys travel to hubs: lane thickness is cargo volume, color is load (green — free, red — jammed). Gold rings are hubs, red rings are cut-off and blockaded systems, orange glow is cargo in local stockpiles
+депо снабжения	supply depot
+транзитный узел	transit relay
+Депо и транзитные узлы	Depots and transit relays
+<color=#FFAA55>Без снабжения кораблей: {0} — содержание +{1:0.#}/мес, износ корпуса</color>	<color=#FFAA55>Ships out of supply: {0} — upkeep +{1:0.#}/mo, hull attrition</color>
+строительство · корабли · районы	construction · ships · districts
+Переработка на заводах	Refining at factories
+корабли · станции · укрепления	ships · stations · fortifications
+Планеты и заводы	Planets and factories
+<color=#8AA2A8>Заводы промышленных районов перерабатывают титан в сплавы.</color>	<color=#8AA2A8>Industrial district factories refine titanium into alloys.</color>
+Снабжение: не дошло до хабов	Supply: did not reach hubs
+Снабжение: со складов систем	Supply: from system stockpiles
+, отрезано систем: {0}	, systems cut off: {0}
+<color=#FFB84D>До хабов доходит {0:0}% груза{1}. Подробно — режим карты «Снабжение».</color>	<color=#FFB84D>{0:0}% of cargo reaches hubs{1}. Details — the “Supply” map mode.</color>
+Хаб снабжения: титан и сплавы систем вокруг попадают в казну здесь, а не только в столице. Отсюда же везут сырьё заводам.	Supply hub: titanium and alloys from nearby systems enter the treasury here, not only at the capital. Factories are also supplied with raw materials from here.
+Коридоры этой системы пропускают в {0:0.##} раза больше груза, склад системы +{1:0}.	Lanes of this system carry {0:0.##}× more cargo, system stockpile +{1:0}.
+Уже построено	Already built
+Столица и так хаб снабжения	The capital is already a supply hub
+{0}: построено. Сеть снабжения пересчитана	{0}: built. Supply network recalculated
+Трофейные склады	Captured stockpiles
+{0}: захвачено {1:0} титана и {2:0} сплавов — уйдут в казну, когда система подключится к хабу	{0}: captured {1:0} titanium and {2:0} alloys — they will reach the treasury once the system connects to a hub
+Склады потеряны	Stockpiles lost
+{0}: враг забрал {1:0} титана и {2:0} сплавов	{0}: the enemy took {1:0} titanium and {2:0} alloys
+Снабжение прервано	Supply disrupted
+Отрезаны от хабов: {0}. Груз копится на местных складах — уберите блокаду, восстановите коридор или постройте депо	Cut off from hubs: {0}. Cargo piles up in local stockpiles — lift the blockade, restore the lane or build a depot
+Коридоры перегружены	Lanes overloaded
+{0}. Груз не успевает: стройте транзитные узлы или депо ближе к добыче (режим карты «Снабжение»)	{0}. Cargo can’t keep up: build transit relays or a depot closer to production (“Supply” map mode)
+Склады систем переполнены	System stockpiles full
+Пропало {0:0} груза: он не дошёл до хаба. Расширьте коридоры или постройте депо	{0:0} cargo lost: it never reached a hub. Widen the lanes or build a depot
+Флот без снабжения	Fleet out of supply
+{0}: дальше {1} прыжков от снабжаемой территории — содержание ×{2:0.#}, корабли изнашиваются и не чинятся	{0}: more than {1} jumps from supplied territory — upkeep ×{2:0.#}, ships wear down and cannot repair
+Временный хаб: столица потеряна — груз собирается здесь	Temporary hub: the capital is lost — cargo gathers here
+Хаб снабжения: депо принимает груз окрестных систем	Supply hub: the depot receives cargo from nearby systems
+Хаб снабжения: столица принимает груз империи	Supply hub: the capital receives the empire’s cargo
+Блокада: на орбите враг — груз не уходит и не приходит. Прогоните его флотом	Blockade: enemy in orbit — no cargo leaves or arrives. Drive them off with a fleet
+Отрезана от хабов: груз копится на складе. Нужен открытый коридор или депо	Cut off from hubs: cargo piles up in the stockpile. Needs an open lane or a depot
+Подключена к хабу: весь груз доходит до казны	Connected to a hub: all cargo reaches the treasury
+Коридоры забиты: до хаба доходит {0:0}% груза	Lanes jammed: {0:0}% of cargo reaches the hub
+титан на складе	titanium stored
+сплавы на складе	alloys stored
+доходит до хаба	reaches hub
+Склад системы	System stockpile
+Груз на вывоз: <b>{0:0.#}</b>/мес (титан {1:0.#}, сплавы {2:0.#})	Outgoing cargo: <b>{0:0.#}</b>/mo (titanium {1:0.#}, alloys {2:0.#})
+<color=#FFB84D>Застревает: {0:0.#}/мес — ляжет на склад</color>	<color=#FFB84D>Stuck: {0:0.#}/mo — goes to the stockpile</color>
+Со склада уходит: {0:0.#}/мес	Leaving the stockpile: {0:0.#}/mo
+Заводам не хватает своего титана: {0:0.#}/мес (со склада {1:0.#}, подвоз {2:0.#})	Factories lack local titanium: {0:0.#}/mo (from stockpile {1:0.#}, shipped in {2:0.#})
+<color=#FF6B5C>Не довезли {0:0.#} титана — потеряно {1:0.#} сплавов</color>	<color=#FF6B5C>{0:0.#} titanium not delivered — {1:0.#} alloys lost</color>
+Транзит через систему: {0:0}/мес	Transit through system: {0:0}/mo
+<color=#FF6B5C>⇄ {0}: блокада</color>	<color=#FF6B5C>⇄ {0}: blockade</color>
+<color=#8AA2A8>⇄ {0}: закрыт</color>	<color=#8AA2A8>⇄ {0}: closed</color>
+Строится: {0}	Under construction: {0}
+<b>{0}</b>\n{1}\n<color=#8AA2A8>{2:0} титана, {3:0} сплавов · {4:0} дн. · содержание {5:0} гелия-3/мес</color>	<b>{0}</b>\n{1}\n<color=#8AA2A8>{2:0} titanium, {3:0} alloys · {4:0} days · upkeep {5:0} helium-3/mo</color>

@@ -122,6 +122,7 @@ namespace StellarisClone.Core
             if (day != 1) return;
 
             EnergyCredits += MonthlyEnergyIncome;
+            SupplyState.ApplyMonth(0);   // склады систем: застрявший груз, ушедший в казну
             float mineralIncome = MonthlyMineralsIncome;
             float lostMinerals = EmpireEconomy.ApplyMonthlyMinerals(_report, ref Minerals, ref Alloys, mineralIncome, MonthlyAlloysIncome);
             Influence     += MonthlyInfluenceIncome;

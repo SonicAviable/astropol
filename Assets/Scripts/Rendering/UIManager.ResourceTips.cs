@@ -108,6 +108,9 @@ namespace StellarisClone.Rendering
              .Expense(LGIcon.Starbase, Loc.F("Форпосты ({0})", rep.Outposts), rep.Outposts * EmpireEconomy.OutpostUpkeep);
             if (Fortifications.Upkeep(0) > 0f) t.Expense(LGIcon.ShieldDome, Loc.T("Укрепления баз"), Fortifications.Upkeep(0));
             if (rep.ArmyUpkeep > 0.01f) t.Expense(LGIcon.Swords, Loc.T("Армия (карты)"), rep.ArmyUpkeep);
+            if (rep.SupplyUpkeep > 0.01f) t.Expense(LGIcon.Trade, Loc.T("Депо и транзитные узлы"), rep.SupplyUpkeep);
+            if (rep.UnsuppliedFleets > 0)
+                t.Text(Loc.F("<color=#FFAA55>Без снабжения кораблей: {0} — содержание +{1:0.#}/мес, износ корпуса</color>", rep.UnsuppliedFleets, rep.UnsuppliedUpkeep));
             return t.Rows(net)
                 .Text(Loc.F("<color=#8AA2A8>Флотский лимит <b>{0} / {1}</b> (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). Сверх лимита содержание всего флота растёт.</color>",
                     rep.NavalUsed, rep.NavalCapacity, EmpireEconomy.NavalCapacityPerColony))
@@ -117,29 +120,49 @@ namespace StellarisClone.Rendering
         private string MineralsTip(EconomyManager eco)
         {
             float net = eco.MonthlyMineralsIncome, cap = eco.MineralStorage;
-            return new ResTip(LGIcon.Minerals, "#4DE6CC", Loc.T("Титан"), Loc.T("строительство · корабли · районы"))
+            var rep = eco.Report;
+            var t = new ResTip(LGIcon.Minerals, "#4DE6CC", Loc.T("Титан"), Loc.T("строительство · корабли · районы"))
                 .Big(Num(eco.Minerals), Loc.T("запас"), net)
                 .Meter(cap > 0f ? eco.Minerals / cap : 0f, Loc.F("Склад {0} / {1}", Num(eco.Minerals), Num(cap)), StorageEta(eco.Minerals, cap, net))
                 .Income(LGIcon.Globe, Loc.T("База империи"), eco.BaseMineralsIncome)
                 .Income(LGIcon.Minerals, Loc.T("Горные районы"), eco.PlanetMineralsOutput)
                 .Income(LGIcon.Starbase, Loc.T("Добывающие станции"), eco.StationMineralsOutput)
-                .Expense(LGIcon.Industry, Loc.T("Переработка на заводах"), eco.RefiningMinerals)
-                .Rows(net)
+                .Expense(LGIcon.Industry, Loc.T("Переработка на заводах"), eco.RefiningMinerals);
+            SupplyRow(t, rep.SupplyMinerals);
+            t.Rows(net)
                 .Text(Loc.F("<color=#8AA2A8>Склады вмещают <b>{0}</b> (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>",
-                    Num(cap), EmpireEconomy.MineralStoragePerColony))
-                .Build();
+                    Num(cap), EmpireEconomy.MineralStoragePerColony));
+            SupplyNote(t, rep.Supply);
+            return t.Build();
         }
 
         private string AlloysTip(EconomyManager eco)
         {
             float net = eco.MonthlyAlloysIncome;
-            return new ResTip(LGIcon.Alloys, "#F29E5C", Loc.T("Сплавы"), Loc.T("корабли · станции · укрепления"))
+            var rep = eco.Report;
+            var t = new ResTip(LGIcon.Alloys, "#F29E5C", Loc.T("Сплавы"), Loc.T("корабли · станции · укрепления"))
                 .Big(Num(eco.Alloys), Loc.T("запас"), net)
                 .Income(LGIcon.Globe, Loc.T("База империи"), eco.BaseAlloysIncome)
-                .Income(LGIcon.Planet, Loc.T("Планеты и заводы"), eco.PlanetAlloysOutput)
-                .Rows(net)
-                .Text(Loc.T("<color=#8AA2A8>Заводы промышленных районов перерабатывают титан в сплавы.</color>"))
-                .Build();
+                .Income(LGIcon.Planet, Loc.T("Планеты и заводы"), eco.PlanetAlloysOutput);
+            SupplyRow(t, rep.SupplyAlloys);
+            t.Rows(net)
+                .Text(Loc.T("<color=#8AA2A8>Заводы промышленных районов перерабатывают титан в сплавы.</color>"));
+            SupplyNote(t, rep.Supply);
+            return t.Build();
+        }
+
+        /// <summary>Строка логистики в подсказке ресурса: минус — застряло в пути, плюс — пришло со складов систем.</summary>
+        private static void SupplyRow(ResTip t, float delta)
+        {
+            if (delta < -0.05f) t.Expense(LGIcon.Trade, Loc.T("Снабжение: не дошло до хабов"), -delta);
+            else if (delta > 0.05f) t.Income(LGIcon.Trade, Loc.T("Снабжение: со складов систем"), delta);
+        }
+
+        private static void SupplyNote(ResTip t, SupplyNetwork.Result net)
+        {
+            if (net == null || (net.Efficiency >= 0.995f && net.CutOff == 0 && net.Blockaded == 0)) return;
+            string cut = net.CutOff + net.Blockaded > 0 ? Loc.F(", отрезано систем: {0}", net.CutOff + net.Blockaded) : "";
+            t.Text(Loc.F("<color=#FFB84D>До хабов доходит {0:0}% груза{1}. Подробно — режим карты «Снабжение».</color>", net.Efficiency * 100f, cut));
         }
 
         private string InfluenceTip(EconomyManager eco)

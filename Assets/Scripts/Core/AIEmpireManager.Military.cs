@@ -356,6 +356,8 @@ namespace StellarisClone.Core
                 foreach (var p in s.Planets) if (p.Population > 0) score += 15f + p.Population * 2f;
                 var owner = For(s.OwnerId);
                 if (s.OwnerId == 0 ? s.Id == EconomyManager.PlayerCapitalId : owner != null && s.Id == owner.CapitalSystemId) score -= 10f;
+                // Хабы и узлы снабжения врага: захват или блокада режет его экономику
+                score += SupplyNetwork.StrategicValue(s.OwnerId, s.Id) * 0.8f;
                 candidates.Add((s.Id, score));
             }
             if (candidates.Count == 0) return -1;

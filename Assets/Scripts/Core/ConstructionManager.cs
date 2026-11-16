@@ -6,7 +6,7 @@ using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
-    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt, Fortify, Troop }
+    public enum JobKind { District, MiningStation, Colony, Terraform, Ship, Robot, GeneAdapt, Fortify, Troop, SupplyDepot, SupplyRelay }
 
     /// <summary>Строительный заказ: оплачен сразу, готов через несколько дней.</summary>
     [Serializable]
@@ -388,6 +388,7 @@ namespace StellarisClone.Core
             if (j.Kind == JobKind.Ship) { CompleteShip(j); OnJobCompleted?.Invoke(j); return; }
             if (j.Kind == JobKind.Fortify) { Fortifications.Complete(j); OnJobCompleted?.Invoke(j); return; }
             if (j.Kind == JobKind.Troop) { StellarisClone.Cards.ArmyManager.Instance?.CompleteJob(j); OnJobCompleted?.Invoke(j); return; }
+            if (j.Kind == JobKind.SupplyDepot || j.Kind == JobKind.SupplyRelay) { SupplyState.Complete(j); OnJobCompleted?.Invoke(j); return; }
 
             var p = PlanetOf(j);
             if (p == null || p.OwnerId != j.Owner) return;

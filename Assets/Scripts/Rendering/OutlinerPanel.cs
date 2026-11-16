@@ -461,6 +461,8 @@ namespace StellarisClone.Rendering
             JobKind.Robot => FactionTraits.IsMachine(0) ? Loc.T("Сборка синтетов") : Loc.T("Сборка роботов"),
             JobKind.GeneAdapt => Loc.T("Генная адаптация"),
             JobKind.Fortify => Loc.T("Укрепление базы"),
+            JobKind.SupplyDepot => Loc.T("Депо снабжения"),
+            JobKind.SupplyRelay => Loc.T("Транзитный узел"),
             JobKind.Troop => StellarisClone.Cards.CardCatalog.Get(j.DesignId)?.Name ?? Loc.T("Отряд"),
             _ => j.ShipType == FleetType.Science ? Loc.T("Научный корабль")
                : j.ShipType == FleetType.Constructor ? Loc.T("Строительный корабль")
@@ -476,6 +478,7 @@ namespace StellarisClone.Rendering
             JobKind.Robot => LGIcon.Industry,
             JobKind.GeneAdapt => LGIcon.Research,
             JobKind.Fortify => LGIcon.Starbase,
+            JobKind.SupplyDepot or JobKind.SupplyRelay => LGIcon.Trade,
             JobKind.Troop => LGIcon.Swords,
             _ => j.ShipType == FleetType.Science ? LGIcon.ScienceShip
                : j.ShipType == FleetType.Constructor ? LGIcon.ConstructorShip : ModuleVisuals.HullIcon(j.Hull)

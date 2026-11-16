@@ -103,6 +103,8 @@ namespace StellarisClone.Core
         public ObjectivesSave Objectives;
         /// <summary>Космическая фауна (Placed = false — старое сохранение: фауна расселится заново).</summary>
         public FaunaSave Fauna;
+        /// <summary>Логистика: склады систем, депо и транзитные узлы (null — сохранение до снабжения).</summary>
+        public SupplySave Supply;
         public List<SystemSave> Systems = new List<SystemSave>();
         public List<FleetSave> Fleets = new List<FleetSave>();
         public List<DesignSave> Designs = new List<DesignSave>();
@@ -511,6 +513,7 @@ namespace StellarisClone.Core
             if (GameChronicle.Instance != null) s.Chronicle = GameChronicle.Instance.CaptureState();
             if (EmpireObjectives.Instance != null) s.Objectives = EmpireObjectives.Instance.CaptureState();
             if (SpaceFauna.Instance != null) s.Fauna = SpaceFauna.Instance.CaptureState();
+            s.Supply = SupplyState.Capture();
 
             int colonies = 0, pop = 0, owned = 0;
             if (gen != null)
@@ -856,6 +859,8 @@ namespace StellarisClone.Core
             var time = TimeManager.Instance;
             if (time != null) { time.SetDate(s.Day, s.Month, s.Year); time.SetSpeed(0); }
 
+            // Склады и постройки снабжения — до пересчёта экономики
+            SupplyState.Restore(s.Supply);
             // Технологии раньше экономики: от них зависят бонусы и перевод старых сохранений
             if (s.Tech != null) TechnologyManager.Instance?.RestoreState(s.Tech, version);
             if (s.Economy != null) EconomyManager.Instance?.RestoreState(s.Economy, version);
@@ -925,6 +930,7 @@ namespace StellarisClone.Core
             }
 
             UIManager.Instance?.BeginLoadedGame(SaveSystem.RestorePlayerFaction(s));
+            SupplyNetwork.MarkDirty();   // флоты уже на местах — блокады пересчитать
             EconomyManager.Instance?.RecalculateAll();
             GalaxyView.Instance?.RefreshTerritoryVisuals();
             NotificationCenter.Show(Loc.T("Игра загружена"), time != null ? time.GetFormattedDate() : "", NotificationCenter.Kind.Info, 3.5f);

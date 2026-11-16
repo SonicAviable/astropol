@@ -61,6 +61,7 @@ namespace StellarisClone.Core
             if (capital) want = years >= 40 ? 3 : years >= 22 ? 2 : years >= 8 ? 1 : 0;
             else if (border && colonies > 0) want = years >= 30 ? 2 : years >= 12 ? 1 : 0;
             else if (border && Landmarks.AIValue(sys) > 0f) want = years >= 15 ? 1 : 0;   // узлы силы на границе
+            else if (border && SupplyState.IsDepot(sys.Id)) want = years >= 12 ? 1 : 0;   // депо снабжения на границе
             if (threatened && (capital || border) && want < Fortifications.MaxLevel) want++;
             return Mathf.Min(want, Fortifications.MaxLevel);
         }
@@ -81,7 +82,7 @@ namespace StellarisClone.Core
                 if (sys.OwnerId != OwnerId) continue;
                 int gap = WantedFortification(sys, threatened) - sys.Fortification;
                 if (gap <= 0 || Fortifications.Blocker(sys, OwnerId) != null) continue;
-                float score = gap * 10f + (sys.Id == CapitalSystemId ? 15f : 0f);
+                float score = gap * 10f + (sys.Id == CapitalSystemId ? 15f : 0f) + SupplyNetwork.StrategicValue(OwnerId, sys.Id) * 0.3f;
                 foreach (var p in sys.Planets) if (p.Population > 0) score += 3f + p.Population * 0.3f;
                 if (score > bestScore) { bestScore = score; best = sys; }
             }

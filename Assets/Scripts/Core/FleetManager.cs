@@ -116,6 +116,8 @@ namespace StellarisClone.Core
                 }
 
                 if (d.State == FleetState.InHyperlane) continue;
+                // Без снабжения: износ вместо ремонта (FleetSupply)
+                if (FleetSupply.DailyTick(d)) continue;
                 float rate = RepairRateAt(d.CurrentSystemId, d.OwnerId);
                 if (rate <= 0f) continue;
                 d.HullPoints = Mathf.Min(d.MaxHullPoints, d.HullPoints + d.MaxHullPoints * rate);

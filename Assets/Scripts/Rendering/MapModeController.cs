@@ -10,7 +10,7 @@ namespace StellarisClone.Rendering
     {
         public static MapModeController Instance { get; private set; }
 
-        public enum MapMode { Simple, Political, Resources, Hyperlanes, Explored, Intel }
+        public enum MapMode { Simple, Political, Resources, Hyperlanes, Explored, Intel, Supply }
 
         /// <summary>Цвет шпионажа (как в окне шпионажа).</summary>
         public static readonly Color SpyPurple = new Color(0.74f, 0.56f, 1f);
@@ -115,13 +115,16 @@ namespace StellarisClone.Rendering
             _modeCaption.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(-14f, 30f), new Vector2(240f, 16f));
             _modeCaption.Track(2.4f);
 
-            CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 56f);
-            CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  35f);
-            CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      14f);
-            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", Loc.T("КОРИДОРЫ"), AccentOrange,           -7f);
-            CreateModeButton(root.transform, MapMode.Explored,   "◉", Loc.T("РАЗВЕДКА"), UIManager.DS.Green,     -28f);
-            CreateModeButton(root.transform, MapMode.Intel,      "✦", Loc.T("ШПИОНАЖ"),  SpyPurple,             -49f);
+            CreateModeButton(root.transform, MapMode.Simple,     "★", Loc.T("ПРОСТОЙ"),  new Color(0.80f, 0.88f, 0.92f), 63f);
+            CreateModeButton(root.transform, MapMode.Political,  "◆", Loc.T("ПОЛИТИКА"), UIManager.DS.NeonCyan,  45f);
+            CreateModeButton(root.transform, MapMode.Resources,  "⬢", Loc.T("РЕСУРСЫ"),  UIManager.DS.Gold,      27f);
+            CreateModeButton(root.transform, MapMode.Hyperlanes, "⌁", Loc.T("КОРИДОРЫ"), AccentOrange,           9f);
+            CreateModeButton(root.transform, MapMode.Explored,   "◉", Loc.T("РАЗВЕДКА"), UIManager.DS.Green,     -9f);
+            CreateModeButton(root.transform, MapMode.Intel,      "✦", Loc.T("ШПИОНАЖ"),  SpyPurple,             -27f);
+            CreateModeButton(root.transform, MapMode.Supply,     "⇄", Loc.T("СНАБЖЕНИЕ"), SupplyGreen,          -45f);
         }
+
+        public static readonly Color SupplyGreen = new Color(0.55f, 0.95f, 0.45f);
 
         /// <summary>Круглая кнопка режима на дуге вокруг мини-карты; angleDeg — угол от центра карты (0 — вправо, 90 — вверх).</summary>
         private void CreateModeButton(Transform parent, MapMode mode, string icon, string label, Color accent, float angleDeg)
@@ -168,6 +171,7 @@ namespace StellarisClone.Rendering
                 MapMode.Hyperlanes => LGIcon.MapLanes,
                 MapMode.Explored   => LGIcon.MapExplored,
                 MapMode.Intel      => LGIcon.Betrayal,
+                MapMode.Supply     => LGIcon.Trade,
                 _                  => LGIcon.MapSimple
             };
             var iconImg = LGIcons.Create(btnObj.transform, iconId, 17f, accent);
@@ -186,6 +190,7 @@ namespace StellarisClone.Rendering
                 MapMode.Hyperlanes => Loc.T("Режим коридоров — яркие толстые гиперкоридоры, оранжевые кольца — узлы с 4 и более коридорами"),
                 MapMode.Explored   => Loc.T("Режим разведки — зелёные кольца: системы изучены; янтарные: встречены, но не изучены — туда стоит отправить научный корабль"),
                 MapMode.Intel      => Loc.T("Режим шпионажа — кольцо вокруг звезды показывает силу вашей разведсети в системе (полный круг — 100 %), потоки — куда сеть расползается. В остальных режимах на карте видны только портреты агентов"),
+                MapMode.Supply     => Loc.T("Режим снабжения — как титан и сплавы идут к хабам: толщина коридора — объём груза, цвет — загрузка (зелёный — свободно, красный — забит). Золотые кольца — хабы, красные — отрезанные и блокированные системы, оранжевое сияние — груз на складах"),
                 _ => ""
             };
             TooltipHelper.Attach(btnObj, $"<b>{label}</b>\n{tip}");

@@ -36,6 +36,8 @@ namespace StellarisClone.Core
             EmpireEffects.Reset();
             EmpireLaws.Reset();
             EmpireDecisions.Reset();
+            SupplyState.Reset();
+            FleetSupply.Reset();
             if (GetComponent<ThreatManager>() == null) gameObject.AddComponent<ThreatManager>();
             if (GetComponent<AutoExplore>() == null) gameObject.AddComponent<AutoExplore>();
             if (GetComponent<StarbaseVisuals>() == null) gameObject.AddComponent<StarbaseVisuals>();

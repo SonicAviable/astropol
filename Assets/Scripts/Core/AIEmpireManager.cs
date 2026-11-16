@@ -342,6 +342,7 @@ namespace StellarisClone.Core
         private void MonthlyTick()
         {
             EnergyCredits += MonthlyEnergyIncome;
+            SupplyState.ApplyMonth(OwnerId);
             EmpireEconomy.ApplyMonthlyMinerals(_report, ref Minerals, ref Alloys, MonthlyMineralsIncome, MonthlyAlloysIncome);
             Influence += MonthlyInfluenceIncome;
             SellSurplus();
@@ -407,6 +408,7 @@ namespace StellarisClone.Core
             ThinkShipbuilding();
             ThinkRetrofit();
             ThinkFortify();
+            ThinkLogistics();
             ThinkMilitary();
         }
 
