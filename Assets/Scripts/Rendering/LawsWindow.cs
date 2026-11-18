@@ -312,6 +312,9 @@ namespace StellarisClone.Rendering
             }
             var desc = LGBuild.Label(card, law.Desc, 11, Primary, TextAnchor.UpperLeft, wrap: true);
             desc.lineSpacing = 1.05f;
+            // Сначала ширина, потом замер: иначе высота считается по ширине «по умолчанию»,
+            // описание оказывается выше расчётного и эффекты наезжают на его последнюю строку
+            desc.rectTransform.TopBand(y, 48f, 14, 14);
             float descH = Mathf.Clamp(desc.preferredHeight, 14f, 48f);
 
             // Текст не должен заезжать на строку платы: при тесноте эффекты мельче, затем описание короче

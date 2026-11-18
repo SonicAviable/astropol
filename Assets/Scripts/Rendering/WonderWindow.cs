@@ -144,6 +144,13 @@ namespace StellarisClone.Rendering
             _sceneShade.anchorMin = Vector2.zero;
             _sceneShade.anchorMax = new Vector2(1, 0.48f);
             _sceneShade.offsetMin = _sceneShade.offsetMax = Vector2.zero;
+            // Второй, плотный слой прямо под текстом: на светлых иллюстрациях предание иначе не читается
+            var textShade = LGBuild.Panel(sceneMask, "TextShade", new Color(0.004f, 0.01f, 0.018f, 0.8f));
+            textShade.sprite = MenuArt.VerticalFade;
+            textShade.rectTransform.anchorMin = Vector2.zero;
+            textShade.rectTransform.anchorMax = new Vector2(1, 0);
+            textShade.rectTransform.offsetMin = Vector2.zero;
+            textShade.rectTransform.offsetMax = new Vector2(0, 200);
 
             _tagline = LGBuild.Label(sceneMask, "", 11, Gold, TextAnchor.LowerLeft, bold: true);
             _tagline.rectTransform.anchorMin = new Vector2(0, 0); _tagline.rectTransform.anchorMax = new Vector2(1, 0);

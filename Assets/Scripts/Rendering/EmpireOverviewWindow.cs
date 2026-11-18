@@ -31,7 +31,7 @@ namespace StellarisClone.Rendering
         private Text _leaderName, _leaderTitle, _leaderPower;
         private TooltipTrigger _portraitTip, _lawsTip;
         private RectTransform _attention;
-        private string _attentionKey = "";
+        private string _attentionKey;   // null — список ещё не рисовался (пустой список даёт ключ "")
         private int _rowIndex;
         private const float SideW = 280f;          // ширина левой колонки (цифры и внимание)
         private const float VictoryW = 300f;       // ширина правой колонки (путь к победе)
@@ -490,6 +490,7 @@ namespace StellarisClone.Rendering
             t.Track(1.4f);
             _attention = LGBuild.Rect(block.transform, "List");
             _attention.Stretch(10, 10, 10, 36);
+            _attentionKey = null;   // новый контейнер — нарисовать заново, даже если оповещения те же
         }
 
         private const int AttentionMax = 5;

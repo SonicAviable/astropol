@@ -146,6 +146,23 @@ namespace StellarisClone.Rendering
 
         public Role ResolvedRole => ResolveRole();
 
+        /// <summary>
+        /// Открыто ли крупное окно (явно оформленное как Glass и шире заданной доли экрана) —
+        /// например, чтобы уведомления не закрывали его шапку и кнопку закрытия.
+        /// </summary>
+        public static bool AnyLargeWindowOpen(float screenFraction = 0.55f)
+        {
+            float minW = Screen.width * screenFraction;
+            for (int i = s_All.Count - 1; i >= 0; i--)
+            {
+                var fx = s_All[i];
+                if (fx == null || fx.role != Role.Glass || !fx.isActiveAndEnabled) continue;
+                var rt = (RectTransform)fx.transform;
+                if (rt.rect.width * rt.lossyScale.x >= minW) return true;
+            }
+            return false;
+        }
+
         // ---------------------------------------------------------------- Lifecycle
 
         protected override void OnEnable()

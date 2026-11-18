@@ -992,7 +992,8 @@ namespace StellarisClone.Rendering
                 var ic = LGIcons.Create(node.transform, m.Icon, 16, Purple);
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(16, 16));
                 Txt(col, $"<color=#BD8FFF>{m.Cover:0}%</color>  {m.Title}", 13, Color.white, y - 1, 18, In + 42, In, bold: true);
-                Txt(col, m.Desc, 11, UIManager.DS.TextMuted, y + 17, 16, In + 42, In);
+                // Перенос на вторую строку вместо выхода за край карточки (место до следующей вехи есть)
+                Txt(col, m.Desc, 11, UIManager.DS.TextMuted, y + 17, 30, In + 42, In, wrap: true);
                 y += 52;
             }
         }

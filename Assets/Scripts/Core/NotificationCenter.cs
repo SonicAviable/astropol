@@ -110,6 +110,28 @@ namespace StellarisClone.Core
             csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
 
+        private float _placeCheck;
+        private bool _atBottom;
+
+        /// <summary>
+        /// Пока открыто крупное окно, стопка уходит в правый нижний угол: справа сверху у окон шапка,
+        /// поиск и кнопка закрытия, и уведомления их закрывали.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (_stack == null) return;
+            _placeCheck -= Time.unscaledDeltaTime;
+            if (_placeCheck > 0f) return;
+            _placeCheck = 0.25f;
+
+            bool bottom = LiquidGlassEffect.AnyLargeWindowOpen();
+            if (bottom == _atBottom) return;
+            _atBottom = bottom;
+            float y = bottom ? 0f : 1f;
+            _stack.anchorMin = _stack.anchorMax = _stack.pivot = new Vector2(1, y);
+            _stack.anchoredPosition = bottom ? new Vector2(-18, 64) : new Vector2(-18, -70);
+        }
+
         /// <param name="systemId">Где случилось (клик по уведомлению — камера туда). −1 — найти систему по названию в тексте.</param>
         public static void Show(string title, string body = "", Kind kind = Kind.Info, float duration = 5f, int systemId = -1)
         {
