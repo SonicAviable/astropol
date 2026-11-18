@@ -293,7 +293,7 @@ namespace StellarisClone.Rendering
 
             var close = LGControls.IconButton(head, LGIcon.Close, 40, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), Close);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-20, 0), new Vector2(40, 40));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc)</color>"));
         }
 
         private void BuildSearch(RectTransform head)
@@ -471,7 +471,7 @@ namespace StellarisClone.Rendering
                               Loc.F("  ·  В ПЛАНЕ {0}", tm.Plan.Count);
             _scienceChip.text = Loc.F("Наука <color={0}>+{1:0.#} / мес</color>", LGBuild.Hex(Green), tm.MonthlyResearchIncome);
             _victoryRing.fillAmount = Mathf.Clamp01(tm.ResearchedCount / (float)Mathf.Max(1, need));
-            _victoryText.text = Loc.F("<size=11><color={0}><b>НАУЧНАЯ ПОБЕДА</b></color></size>\n<b>{1}</b> из {2} технологий  <color=#8AA2A8>· {3:0}%</color>",
+            _victoryText.text = Loc.F("<size=11><color={0}><b>НАУЧНАЯ ПОБЕДА</b></color></size>\n<b>{1}</b> из {2} технологий  <color=#A9A392>· {3:0}%</color>",
                 LGBuild.Hex(Gold), tm.ResearchedCount, need, Mathf.Clamp01(tm.ResearchedCount / (float)Mathf.Max(1, need)) * 100f);
         }
 
@@ -1055,7 +1055,7 @@ namespace StellarisClone.Rendering
                 St.Planned => Loc.F("<color={0}>В плане · №{1}</color> · {2}", LGBuild.Hex(PathBlue), qpos + 1, tm.PlanBlocker(t) ?? Loc.T("начнётся, как освободится слот")),
                 St.Avail => Loc.F("<color={0}>Доступно</color> · изучение {1}", LGBuild.Hex(Cyan), eta),
                 St.Early => Loc.F("<color={0}>Ждёт эпохи {1}</color> · можно начать раньше, но дольше", LGBuild.Hex(Orange), t.YearAvailable),
-                _ => Loc.F("<color=#8AA2A8>Закрыто · {0}</color>", tm.PlanBlocker(t) ?? "")
+                _ => Loc.F("<color=#A9A392>Закрыто · {0}</color>", tm.PlanBlocker(t) ?? "")
             };
         }
 
@@ -1094,7 +1094,7 @@ namespace StellarisClone.Rendering
             _slotUis.Clear();
             int busy = 0;
             foreach (var s in tm.Slots) if (s.CurrentTech != null) busy++;
-            _slotsCap.text = Loc.F("СЛОТЫ НАУКИ  <color=#8AA2A8><size=11>{0} из {1} заняты</size></color>", busy, tm.Slots.Count);
+            _slotsCap.text = Loc.F("СЛОТЫ НАУКИ  <color=#A9A392><size=11>{0} из {1} заняты</size></color>", busy, tm.Slots.Count);
 
             var openers = new List<Technology>();
             foreach (var t in tm.AllTechs)
@@ -1212,7 +1212,7 @@ namespace StellarisClone.Rendering
         private void RebuildPlan(TechnologyManager tm)
         {
             LGBuild.Clear(_planList);
-            _planCap.text = Loc.F("ПЛАН ИССЛЕДОВАНИЙ  <color=#8AA2A8><size=11>{0}</size></color>", tm.Plan.Count);
+            _planCap.text = Loc.F("ПЛАН ИССЛЕДОВАНИЙ  <color=#A9A392><size=11>{0}</size></color>", tm.Plan.Count);
             if (tm.Plan.Count == 0)
             {
                 var e = LGBuild.Label(_planList, Loc.T("План пуст. Выберите на карте технологию — даже закрытую — и нажмите «Весь путь в план». Свободные слоты сами возьмут технологии по порядку, как только они откроются."),
@@ -1399,8 +1399,8 @@ namespace StellarisClone.Rendering
                 St.Early => Loc.T("Щелчок — подробности, двойной — в план"),
                 _ => Loc.T("Щелчок — подробности")
             };
-            return $"<b>{t.Name}</b>\n<color=#8AA2A8>{TechCategoryInfo.Name(t.Category)} · {tier} · {t.YearAvailable}</color>\n" +
-                   $"{TechConfirmDialog.ColorizeModifiers(t.Description)}\n\n<color=#8AA2A8>{hint}</color>";
+            return $"<b>{t.Name}</b>\n<color=#A9A392>{TechCategoryInfo.Name(t.Category)} · {tier} · {t.YearAvailable}</color>\n" +
+                   $"{TechConfirmDialog.ColorizeModifiers(t.Description)}\n\n<color=#A9A392>{hint}</color>";
         }
 
         private static Image TechIcon(Transform parent, Technology t, float size, Color col)

@@ -20,7 +20,7 @@ namespace StellarisClone.Rendering
         {
             var eco = EconomyManager.Instance;
             float ti = eco != null ? eco.Minerals : 0f, cap = eco != null ? eco.MineralStorage : 0f;
-            _subtitle.text = Loc.F("Титан: <b><color=#33E6CC>{0:0}</color></b> / {1:N0}   ·   идёт решений: <b>{2}</b> из {3}   ·   цены растут с размером империи: ×{4:0.00}",
+            _subtitle.text = Loc.F("Титан: <b><color=#79D0BF>{0:0}</color></b> / {1:N0}   ·   идёт решений: <b>{2}</b> из {3}   ·   цены растут с размером империи: ×{4:0.00}",
                 ti, cap, EmpireDecisions.ActiveCount, EmpireDecisions.MaxActive, EmpireDecisions.Scale);
 
             var sb = new System.Text.StringBuilder("dec|");
@@ -299,7 +299,7 @@ namespace StellarisClone.Rendering
             sb.Append('\n').Append(d.Desc).Append('\n');
             if (d.IsOffer && !active)
                 sb.Append(Loc.F("<color=#FF9E4D>Редкая возможность: исчезнет через {0} дн., если не принять.</color>", EmpireDecisions.OfferLeft(d))).Append('\n');
-            if (!string.IsNullOrEmpty(d.Note)) sb.Append("<color=#8AA2A8>◆ ").Append(d.Note).Append("</color>\n");
+            if (!string.IsNullOrEmpty(d.Note)) sb.Append("<color=#A9A392>◆ ").Append(d.Note).Append("</color>\n");
             foreach (var (text, good) in d.Effects)
                 sb.Append(good ? "<color=#66F29E>▲ " : "<color=#FF7A73>▼ ").Append(text()).Append("</color>\n");
 
@@ -308,15 +308,15 @@ namespace StellarisClone.Rendering
             if (d.EnergyCost > 0f) parts.Add(Loc.F("{0:0} гелия-3", d.EnergyCost));
             if (d.AlloysCost > 0f) parts.Add(Loc.F("{0:0} сплавов", d.AlloysCost));
             if (d.Influence > 0f) parts.Add(Loc.F("{0:0} влияния", d.Influence));
-            if (parts.Count > 0) sb.Append(Loc.F("<color=#8AA2A8>Цена:</color> {0}", string.Join(", ", parts))).Append('\n');
-            sb.Append("<color=#8AA2A8>");
+            if (parts.Count > 0) sb.Append(Loc.F("<color=#A9A392>Цена:</color> {0}", string.Join(", ", parts))).Append('\n');
+            sb.Append("<color=#A9A392>");
             sb.Append(d.Days > 0 ? Loc.F("Срок: {0} дн.", d.Days) : Loc.T("Срабатывает сразу."));
             sb.Append(d.Once ? Loc.T("  Принимается один раз за партию.") : Loc.F("  Перезарядка: {0} дн.", d.Cooldown));
             sb.Append("</color>\n");
 
             if (done) sb.Append(Loc.T("<color=#FFCC5C>Построено — бонусы действуют до конца партии.</color>"));
-            else if (active) sb.Append(Loc.F("<color=#8AA2A8>Идёт: ещё {0} дн.</color>", EmpireDecisions.DaysLeft(d)));
-            else if (blocker != null) sb.Append("<color=#FF8A8A>").Append(blocker).Append("</color>");
+            else if (active) sb.Append(Loc.F("<color=#A9A392>Идёт: ещё {0} дн.</color>", EmpireDecisions.DaysLeft(d)));
+            else if (blocker != null) sb.Append("<color=#FF7F6B>").Append(blocker).Append("</color>");
             else sb.Append(Loc.T("<color=#66F29E>Можно принять.</color>"));
             return sb.ToString();
         }

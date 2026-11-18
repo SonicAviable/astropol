@@ -527,17 +527,17 @@ namespace StellarisClone.Core
             int productive = Mathf.Max(1, size - Mathf.CeilToInt(size / 3f));
             int potential = productive * 4;
             return
-                Loc.T("<color=#8AA2A8>Сразу после основания:</color>\n") +
+                Loc.T("<color=#A9A392>Сразу после основания:</color>\n") +
                 Loc.T("  • 2 жителя, городской и горнодобывающий районы\n") +
-                Loc.F("  • <color=#4DF2DB>+{0} титана/мес</color>\n", ColonyStartMineralsPerMonth) +
+                Loc.F("  • <color=#79D0BF>+{0} титана/мес</color>\n", ColonyStartMineralsPerMonth) +
                 Loc.F("  • +{0} к лимиту флота\n", EmpireEconomy.NavalCapacityPerColony) +
-                Loc.T("<color=#8AA2A8>Дальше:</color>\n") +
+                Loc.T("<color=#A9A392>Дальше:</color>\n") +
                 Loc.F("  • место под {0} районов; каждый рабочий район добычи даёт +4 титана или гелия-3/мес, завод +3 сплава\n", size) +
-                Loc.F("  • при полной застройке ~<color=#4DF2DB>+{0}/мес</color> ресурсов\n", potential) +
+                Loc.F("  • при полной застройке ~<color=#79D0BF>+{0}/мес</color> ресурсов\n", potential) +
                 (HabitabilityPercent >= ComfortHabitability ? Loc.F("  • комфортный мир: рост населения +{0:0}%\n", (ComfortGrowthBonus - 1f) * 100f) : "") +
-                Loc.T("<color=#8AA2A8>Цена:</color> ") +
+                Loc.T("<color=#A9A392>Цена:</color> ") +
                 Loc.F("{0:0} титана, {1:0} сплавов, {2:0} влияния · {3:0} дн.\n", ColonyMineralsCost, ColonyAlloysCost, ColonyInfluenceCost, ConstructionManager.ColonyDays) +
-                Loc.F("<color=#8AA2A8>Окупаемость по титану:</color> ~{0} мес., потом чистая прибыль", payback);
+                Loc.F("<color=#A9A392>Окупаемость по титану:</color> ~{0} мес., потом чистая прибыль", payback);
         }
 
         /// <summary>Что даст следующий шаг терраформинга — для подсказок.</summary>
@@ -547,10 +547,10 @@ namespace StellarisClone.Core
             if (!next.HasValue) return Loc.T("Этот мир терраформировать нельзя.");
             int habNow = HabitabilityPercent, habNext = HabitabilityOf(next.Value);
             string head = Loc.F("{0} → <b>{1}</b>  ·  пригодность {2}% → <b>{3}%</b>\n", ClassName(Type), ClassName(next.Value), habNow, habNext);
-            string price = Loc.F("\n<color=#8AA2A8>Цена шага:</color> {0:0} гелия-3, {1:0} титана, {2:0} влияния · {3:0} дн.", TerraformEnergyCost, TerraformMineralsCost, TerraformInfluenceCost, ConstructionManager.TerraformDays);
+            string price = Loc.F("\n<color=#A9A392>Цена шага:</color> {0:0} гелия-3, {1:0} титана, {2:0} влияния · {3:0} дн.", TerraformEnergyCost, TerraformMineralsCost, TerraformInfluenceCost, ConstructionManager.TerraformDays);
             string what;
             if (habNow < 40 && habNext >= 40)
-                what = Loc.F("<color=#5CE68A>Откроет колонизацию:</color> место под {0} районов, колония сразу даст +{1} титана/мес.", MaxDistricts, ColonyStartMineralsPerMonth);
+                what = Loc.F("<color=#8CD3A0>Откроет колонизацию:</color> место под {0} районов, колония сразу даст +{1} титана/мес.", MaxDistricts, ColonyStartMineralsPerMonth);
             else if (habNext < 40)
             {
                 int left = TerraformStepsToColonize;
@@ -558,7 +558,7 @@ namespace StellarisClone.Core
                        Loc.F("(всего ~{0:0} дн. и {1:0} титана). Выгодно, если планета большая ({2} районов).", left * ConstructionManager.TerraformDays, left * TerraformMineralsCost, MaxDistricts);
             }
             else if (habNext >= ComfortHabitability)
-                what = Loc.F("<color=#5CE68A>Комфортный мир:</color> рост населения <b>+{0:0}%</b> — колония быстрее заполнит районы.", (ComfortGrowthBonus - 1f) * 100f) +
+                what = Loc.F("<color=#8CD3A0>Комфортный мир:</color> рост населения <b>+{0:0}%</b> — колония быстрее заполнит районы.", (ComfortGrowthBonus - 1f) * 100f) +
                        (Population > 0 ? "" : Loc.T("\nКолонию можно основать и без этого шага."));
             else
                 what = Loc.T("Пригодность вырастет.");

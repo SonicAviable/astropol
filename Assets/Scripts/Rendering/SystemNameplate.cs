@@ -312,7 +312,7 @@ namespace StellarisClone.Rendering
         {
             var sb = new System.Text.StringBuilder();
             sb.Append(Loc.F("<b>Население системы {0}</b>", _data.Name));
-            sb.Append(Loc.T("\n<color=#8AA2A8>Число — жители всех колоний; срок — когда появится новый житель в самой большой колонии</color>"));
+            sb.Append(Loc.T("\n<color=#A9A392>Число — жители всех колоний; срок — когда появится новый житель в самой большой колонии</color>"));
             foreach (var p in _data.Planets)
             {
                 if (p.Population <= 0) continue;
@@ -321,15 +321,15 @@ namespace StellarisClone.Rendering
                 if (months > 0)
                     sb.Append(Loc.F("\nРост +{0:0.#}% в месяц · новый житель через ~{1} мес.", p.PopGrowthBaseSpeedPctPerMonth, months));
                 else if (p.Population >= p.HousingCapacity)
-                    sb.Append(Loc.T("\n<color=#F2C747>Рост остановлен: нет жилья — постройте городской район</color>"));
+                    sb.Append(Loc.T("\n<color=#E7C170>Рост остановлен: нет жилья — постройте городской район</color>"));
                 else
-                    sb.Append(Loc.T("\n<color=#F2C747>Рост остановлен</color>"));
+                    sb.Append(Loc.T("\n<color=#E7C170>Рост остановлен</color>"));
                 var tier = p.Tier;
                 sb.Append(Loc.F("\nСтабильность {0:0} · <color=#{1}>{2}</color>", p.Stability,
                     PlanetStability.Hex(PlanetStability.TierColor(tier)), PlanetStability.TierName(tier)));
-                if (p.IdlePops > 0) sb.Append(Loc.F("\n<color=#FF9A8A>Без работы: {0}</color>", p.IdlePops));
+                if (p.IdlePops > 0) sb.Append(Loc.F("\n<color=#FF7F6B>Без работы: {0}</color>", p.IdlePops));
             }
-            sb.Append(Loc.T("\n\n<color=#8AA2A8>Нажмите на систему, чтобы открыть колонию</color>"));
+            sb.Append(Loc.T("\n\n<color=#A9A392>Нажмите на систему, чтобы открыть колонию</color>"));
             return sb.ToString();
         }
 
@@ -347,7 +347,7 @@ namespace StellarisClone.Rendering
                 foreach (var o in cm.Jobs)
                     if (o != null && o != j && o.Owner == 0 && o.SystemId == _data.Id && o.Kind != JobKind.Colony && o.Kind != JobKind.Terraform) more++;
             if (more > 0) sb.Append(Loc.F("\nЕщё в очереди системы: {0}", more));
-            sb.Append(Loc.T("\n<color=#8AA2A8>На ярлыке — стройка, которая закончится раньше всех</color>"));
+            sb.Append(Loc.T("\n<color=#A9A392>На ярлыке — стройка, которая закончится раньше всех</color>"));
             return sb.ToString();
         }
 
@@ -505,7 +505,7 @@ namespace StellarisClone.Rendering
                  + $"[[big|<color=#{hex}>{pct}</color>|{(wait ? Loc.T("строитель") : Loc.T("выполнено"))}|{(wait ? "~" : "")}{d}|{Loc.T("дней осталось")}]]\n"
                  + $"[[meter|#{hex}|{k}|{(wait ? Loc.T("ожидает прибытия") : Loc.T("ход работ"))}|{FleetRoute.FormatDays(days)}]]\n"
                  + "[[ticks]]\n"
-                 + Loc.T("<color=#8AA2A8>Ромб на карте заливается, число — дни до конца</color>");
+                 + Loc.T("<color=#A9A392>Ромб на карте заливается, число — дни до конца</color>");
         }
 
         private static string DaysNum(float days) => Mathf.Max(1, Mathf.CeilToInt(days)).ToString();
@@ -758,7 +758,7 @@ namespace StellarisClone.Rendering
             string head = $"[[hdr|{LGBuild.Hex(starCol)}|{EmpireOverviewWindow.StarClass(_data.SpectralClass)}|{(_data.OwnerId == 0 ? Loc.T("Ваша") : "")}|orb:{_data.Id}]]";
             string tip = head + $"<b>{_data.Name}</b>\n" +
                          (PreviewNote().Length > 0 ? PreviewNote().TrimStart() + "\n" : "") +
-                         (_data.OwnerId == 0 ? "" : Loc.F("<color=#AAB4C0>Владелец:</color> {0}\n", owner));
+                         (_data.OwnerId == 0 ? "" : Loc.F("<color=#A9A392>Владелец:</color> {0}\n", owner));
             // Необычная звезда — чем она особенна для системы
             string starFx = StarTypes.EffectText(_data.SpectralClass);
             if (starFx.Length > 0) tip += $"<color=#{ColorUtility.ToHtmlStringRGB(StarTypes.Tint(_data.SpectralClass))}>• {starFx}</color>\n";
@@ -776,12 +776,12 @@ namespace StellarisClone.Rendering
                     var pips = new System.Text.StringBuilder();
                     for (int i = 1; i <= Fortifications.MaxLevel; i++) pips.Append(i <= lv ? "◆" : "◇");
                     tip += $"[[sec|{Loc.T("Оборона")}|#8FA9B6]]\n";
-                    if (sb.Disabled) tip += Loc.T("<color=#FF7A7A>Звёздная база выведена из строя</color>\n");
+                    if (sb.Disabled) tip += Loc.T("<color=#FF7F6B>Звёздная база выведена из строя</color>\n");
                     else
                         tip += $"[[big|{pw:N0}|{Loc.T("мощь базы")}|" +
                                (avg > 0f && pw > 0f ? $"{pw / avg:0.#}×|{Loc.T("ваших кораблей")}|" : "||") +
-                               $"<color=#F2C747>{pips}</color>|{Fortifications.Name(lv).ToLower()}]]\n";
-                    if (lv > 0) tip += Loc.F("<color=#8AA2A8>Осада идёт ×{0:0.##} дольше</color>\n", Fortifications.SiegeMult(lv));
+                               $"<color=#E7C170>{pips}</color>|{Fortifications.Name(lv).ToLower()}]]\n";
+                    if (lv > 0) tip += Loc.F("<color=#A9A392>Осада идёт ×{0:0.##} дольше</color>\n", Fortifications.SiegeMult(lv));
                     tip += "[[ticks]]\n";
                 }
             }
@@ -791,14 +791,14 @@ namespace StellarisClone.Rendering
             {
                 string c = LGBuild.Hex(NeutralWorlds.ColorOf(nw.Kind));
                 tip += Loc.F("\n<color={0}>◆ {1} · {2}</color>\n", c, NeutralWorlds.Title(nw), NeutralWorlds.CharacterName(nw.Kind).ToLower()) +
-                       $"<color=#AAB4C0>{NeutralWorlds.Description(nw.Kind)}</color>\n";
-                if (nw.SystemId != _data.Id) tip += Loc.T("<color=#8AA2A8>Присоединённая система вольного мира</color>\n");
+                       $"<color=#A9A392>{NeutralWorlds.Description(nw.Kind)}</color>\n";
+                if (nw.SystemId != _data.Id) tip += Loc.T("<color=#A9A392>Присоединённая система вольного мира</color>\n");
                 if (!nw.Met(0)) tip += Loc.T("<color=#FFAA88>Нет контакта: подведите корабль или границу ближе</color>\n");
-                else if (nw.AtWarWith(0)) tip += Loc.T("<color=#FF7A7A>Война</color>\n");
-                else tip += Loc.F("<color=#AAB4C0>Ваше расположение:</color> {0:+0;-0;0}\n", nw.FavorOf(0));
+                else if (nw.AtWarWith(0)) tip += Loc.T("<color=#FF7F6B>Война</color>\n");
+                else tip += Loc.F("<color=#A9A392>Ваше расположение:</color> {0:+0;-0;0}\n", nw.FavorOf(0));
                 if (nw.Patron >= 0)
-                    tip += Loc.F("<color=#AAB4C0>Покровитель:</color> {0}\n", nw.Patron == 0 ? Loc.T("вы") : Contacts.NameForPlayer(nw.Patron, Loc.T("другая империя")));
-                tip += Loc.T("<color=#8AA2A8>Выберите систему — торговля, посольства и просьбы</color>\n");
+                    tip += Loc.F("<color=#A9A392>Покровитель:</color> {0}\n", nw.Patron == 0 ? Loc.T("вы") : Contacts.NameForPlayer(nw.Patron, Loc.T("другая империя")));
+                tip += Loc.T("<color=#A9A392>Выберите систему — торговля, посольства и просьбы</color>\n");
                 return tip + FleetsLine() + EtaLine();
             }
 
@@ -810,7 +810,7 @@ namespace StellarisClone.Rendering
                 int ten = harvest ? _data.HarvestedEnergy : _data.PotentialEnergy;
                 tip += $"[[sec|{(harvest ? Loc.T("Добыча") : Loc.T("Залежи · не добываются"))}|#66FF88]]\n" +
                        $"[[kv|Minerals|#4DE6CC|{Loc.T("Титан")}|+{tmin}]]\n" +
-                       $"[[kv|Energy|#F2C747|{Loc.T("Гелий-3")}|+{ten}]]\n";
+                       $"[[kv|Energy|#E7C170|{Loc.T("Гелий-3")}|+{ten}]]\n";
             }
             else
             {
@@ -825,7 +825,7 @@ namespace StellarisClone.Rendering
                        $"{Landmarks.Effect(_data.Landmark)}\n" +
                        (mine ? Loc.T("<color=#66FF88>Под вашим контролем</color>\n")
                              : _data.HasStarbase && _data.OwnerId >= 0 ? Loc.T("<color=#FF8866>Удерживает ") + AIEmpireManager.NameOf(_data.OwnerId, Loc.T("другая империя")) + "</color>\n"
-                             : Loc.T("<color=#8AA2A8>Постройте здесь форпост, чтобы получить бонус</color>\n"));
+                             : Loc.T("<color=#A9A392>Постройте здесь форпост, чтобы получить бонус</color>\n"));
             }
 
             if (_data.Phenomenon >= 0)
@@ -833,7 +833,7 @@ namespace StellarisClone.Rendering
                 string c = LGBuild.Hex(NaturalWonders.Color(_data.Phenomenon));
                 tip += Loc.F("\n<color={0}>ЧУДО ПРИРОДЫ · {1}</color>\n", c, NaturalWonders.Name(_data.Phenomenon)) +
                        Loc.F("В системе {0}\n", NaturalWonders.Rule(_data.Phenomenon)) +
-                       Loc.T("<color=#8AA2A8>Действует на всех, кто здесь находится</color>\n");
+                       Loc.T("<color=#A9A392>Действует на всех, кто здесь находится</color>\n");
             }
 
             foreach (var h in SpaceFauna.In(_data.Id))
@@ -849,14 +849,14 @@ namespace StellarisClone.Rendering
 
             if (PlayerOutpostEta(_data.Id, out bool building, out float bdays))
                 tip += building
-                    ? Loc.F("\n<color=#5CE68A>Форпост строится · готов через {0}</color>\n", FleetRoute.FormatDays(bdays))
-                    : Loc.F("\n<color=#5CE68A>Строитель летит сюда · форпост будет через ~{0}</color>\n", FleetRoute.FormatDays(bdays)) +
-                      Loc.F("<color=#8AA2A8>полёт + {0:0} дн. стройки</color>\n", FactionTraits.OutpostDays(0));
+                    ? Loc.F("\n<color=#8CD3A0>Форпост строится · готов через {0}</color>\n", FleetRoute.FormatDays(bdays))
+                    : Loc.F("\n<color=#8CD3A0>Строитель летит сюда · форпост будет через ~{0}</color>\n", FleetRoute.FormatDays(bdays)) +
+                      Loc.F("<color=#A9A392>полёт + {0:0} дн. стройки</color>\n", FactionTraits.OutpostDays(0));
 
             if (PlayerPlanetProject(_data.Id, out var job, out float jdays))
                 tip += job.Kind == JobKind.Colony
-                    ? Loc.F("\n<color=#5CE68A>Колония «{0}» основывается · готова через {1}</color>\n", PlanetName(job), FleetRoute.FormatDays(jdays))
-                    : Loc.F("\n<color=#5CE68A>Терраформинг «{0}» · завершится через {1}</color>\n", PlanetName(job), FleetRoute.FormatDays(jdays));
+                    ? Loc.F("\n<color=#8CD3A0>Колония «{0}» основывается · готова через {1}</color>\n", PlanetName(job), FleetRoute.FormatDays(jdays))
+                    : Loc.F("\n<color=#8CD3A0>Терраформинг «{0}» · завершится через {1}</color>\n", PlanetName(job), FleetRoute.FormatDays(jdays));
 
             tip += FleetsLine() + EtaLine();
             return tip;
@@ -871,7 +871,7 @@ namespace StellarisClone.Rendering
             foreach (var f in fm.GetFleetsInSystem(_data.Id))
                 if (f.Data.OwnerId == 0) own++; else enemy++;
             if (own == 0 && enemy == 0) return "";
-            return Loc.T("\n<color=#AAB4C0>Флоты:</color> ") +
+            return Loc.T("\n<color=#A9A392>Флоты:</color> ") +
                    (own > 0 ? Loc.F("<color=#39EBDB>ваши {0}</color>", own) : "") +
                    (own > 0 && enemy > 0 ? "  ·  " : "") +
                    (enemy > 0 ? Loc.F("<color=#FF6666>чужие {0}</color>", enemy) : "") + "\n";
@@ -895,8 +895,8 @@ namespace StellarisClone.Rendering
             }
             float days = path.Count * FleetRoute.DaysPerJump(f.Data);
             if (f.Data.State == FleetState.InHyperlane) days += f.Data.DaysRemainingInTransit / FleetRoute.JumpSpeed(f.Data);
-            return Loc.F("\n<color=#4DF2DB>{0}: ~{1} ({2} прыжк.)</color>\n", f.Data.Name, FleetRoute.FormatDays(days), path.Count) +
-                   Loc.T("<color=#8AA2A8>ПКМ — лететь, Shift+ПКМ — в очередь</color>");
+            return Loc.F("\n<color=#79D0BF>{0}: ~{1} ({2} прыжк.)</color>\n", f.Data.Name, FleetRoute.FormatDays(days), path.Count) +
+                   Loc.T("<color=#A9A392>ПКМ — лететь, Shift+ПКМ — в очередь</color>");
         }
 
         private void UpdateHoverTooltip()

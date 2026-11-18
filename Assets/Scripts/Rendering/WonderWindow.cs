@@ -110,7 +110,7 @@ namespace StellarisClone.Rendering
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / U)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / U)</color>"));
 
             // ---- Сцена слева ----
             var scene = LGBuild.Panel(rt, "Scene", new Color(0.004f, 0.01f, 0.018f, 1f));
@@ -412,9 +412,9 @@ namespace StellarisClone.Rendering
             if (site != null && def.SiteYield != null)
             {
                 float y = locked ? st.Yield : def.SiteYield(site);
-                extra = Loc.F("  ·  отдача <color={0}>×{1:0.##}</color>", (y >= 1f ? "#7CF29A" : "#FF9A8A"), y);
+                extra = Loc.F("  ·  отдача <color={0}>×{1:0.##}</color>", (y >= 1f ? "#7CF29A" : "#FF7F6B"), y);
             }
-            var t = LGBuild.Label(card, $"<b>{name}</b>   <color=#8AA2A8>{star}{extra}</color>", 16, Color.white, TextAnchor.UpperLeft);
+            var t = LGBuild.Label(card, $"<b>{name}</b>   <color=#A9A392>{star}{extra}</color>", 16, Color.white, TextAnchor.UpperLeft);
             t.rectTransform.Stretch(18, 0, 120, 32);
             var rule = LGBuild.Label(card, (locked ? Loc.T("Место закреплено после закладки первого этапа. ") : "") + def.Site + ".",
                                      11, Muted, TextAnchor.UpperLeft, wrap: true);
@@ -466,14 +466,14 @@ namespace StellarisClone.Rendering
             title.rectTransform.Stretch(70, 0, 160, 14);
             title.Track(0.8f);
             string state = done ? Loc.T("<color=#7CF29A>ЗАВЕРШЁН</color>") : building ? Loc.F("<color={0}>СТРОИТСЯ</color>", LGBuild.Hex(def.Color))
-                         : next ? Loc.T("<color=#F2C747>СЛЕДУЮЩИЙ</color>") : Loc.T("<color=#6F8790>ВПЕРЕДИ</color>");
+                         : next ? Loc.T("<color=#E7C170>СЛЕДУЮЩИЙ</color>") : Loc.T("<color=#6F8790>ВПЕРЕДИ</color>");
             var stLbl = LGBuild.Label(card, state, 10, Color.white, TextAnchor.UpperRight, bold: true);
             stLbl.rectTransform.Stretch(0, 0, 18, 16);
             stLbl.Track(1.6f);
 
             var desc = LGBuild.Label(card, stage.Desc, 11, Muted, TextAnchor.UpperLeft, wrap: true);
             desc.rectTransform.Stretch(70, 0, 18, 36);
-            var eff = LGBuild.Label(card, $"<color=#F2C747>▸</color> {stage.Effect}", 12, new Color(1f, 0.9f, 0.62f), TextAnchor.UpperLeft, wrap: true);
+            var eff = LGBuild.Label(card, $"<color=#E7C170>▸</color> {stage.Effect}", 12, new Color(1f, 0.9f, 0.62f), TextAnchor.UpperLeft, wrap: true);
             eff.rectTransform.Stretch(70, 0, 18, 70);
 
             if (done) return;
@@ -543,7 +543,7 @@ namespace StellarisClone.Rendering
             go.interactable = can;
             if (!can)
             {
-                var reason = LGBuild.Label(card, $"<color=#FF9A8A>{why}</color>", 11, Color.white, TextAnchor.LowerLeft, wrap: true);
+                var reason = LGBuild.Label(card, $"<color=#FF7F6B>{why}</color>", 11, Color.white, TextAnchor.LowerLeft, wrap: true);
                 reason.rectTransform.anchorMin = new Vector2(0, 0); reason.rectTransform.anchorMax = new Vector2(1, 0);
                 reason.rectTransform.pivot = new Vector2(0, 0);
                 reason.rectTransform.offsetMin = new Vector2(70, 16); reason.rectTransform.offsetMax = new Vector2(-200, 52);
@@ -561,8 +561,8 @@ namespace StellarisClone.Rendering
                 LGBuild.SetBar(bar, p);
                 if (label != null)
                     label.text = paused
-                        ? Loc.T("<color=#FF9A8A>ОСТАНОВЛЕНО — система потеряна</color>")
-                        : Loc.F("{0:0}%   <color=#8AA2A8>осталось {1}</color>", p * 100f, WonderManager.FormatDays(st.DaysLeft));
+                        ? Loc.T("<color=#FF7F6B>ОСТАНОВЛЕНО — система потеряна</color>")
+                        : Loc.F("{0:0}%   <color=#A9A392>осталось {1}</color>", p * 100f, WonderManager.FormatDays(st.DaysLeft));
             }
         }
 
@@ -639,11 +639,11 @@ namespace StellarisClone.Rendering
                 var crest = FactionEmblems.Create(row, met ? FactionEmblems.ForOwner(ai.OwnerId) : null, 30, ac);
                 if (crest != null) crest.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(30, 30));
                 string who = met ? $"<b>{ai.AIName}</b>" : Loc.T("<color=#6F8790>Неизвестная империя</color>");
-                string what = met && def != null ? $"<color=#8AA2A8>{def.Name}</color>" : "<color=#6F8790>—</color>";
+                string what = met && def != null ? $"<color=#A9A392>{def.Name}</color>" : "<color=#6F8790>—</color>";
                 var name = LGBuild.Label(row, $"{who}\n{what}", 11, Color.white, TextAnchor.MiddleLeft);
                 name.rectTransform.Stretch(40, 0, 180, 0);
 
-                string prog = !met || st == null ? "?" : st.Built >= 3 ? Loc.T("<color=#F2C747>ЗАВЕРШЕНО</color>")
+                string prog = !met || st == null ? "?" : st.Built >= 3 ? Loc.T("<color=#E7C170>ЗАВЕРШЕНО</color>")
                             : st.InProgress ? Loc.F("этап {0} из 3 · {1:0}%", st.Built + 1, wm.Progress(st) * 100f)
                             : st.Built > 0 ? Loc.F("этапов: {0} из 3", st.Built) : Loc.T("не начато");
                 var p = LGBuild.Label(row, prog, 11, Color.white, TextAnchor.MiddleRight, bold: true);

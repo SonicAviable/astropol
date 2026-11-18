@@ -193,7 +193,7 @@ namespace StellarisClone.Rendering
             _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -88), new Vector2(1100, 20));
             var close = LGControls.IconButton(rt, LGIcon.Close, 40, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), Close);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -20), new Vector2(40, 40));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / C)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / C)</color>"));
 
             BuildSide(rt);
 
@@ -371,7 +371,7 @@ namespace StellarisClone.Rendering
             _sumStab.text = avg.ToString("0");
             _sumStab.color = PlanetStability.TierColor(PlanetStability.TierOf(avg));
 
-            string Inc(float stock, float inc) => $"{stock:0} <color={(inc >= 0f ? "#5CF599" : "#FF8A8A")}>{(inc >= 0f ? "+" : "")}{inc:0}</color>";
+            string Inc(float stock, float inc) => $"{stock:0} <color={(inc >= 0f ? "#5CF599" : "#FF7F6B")}>{(inc >= 0f ? "+" : "")}{inc:0}</color>";
             int i = 0;
             _sideValues[i++].text = eco != null ? Inc(eco.EnergyCredits, eco.MonthlyEnergyIncome) : "—";
             _sideValues[i++].text = eco != null ? Inc(eco.Minerals, eco.MonthlyMineralsIncome) : "—";
@@ -631,10 +631,10 @@ namespace StellarisClone.Rendering
             r.AutoChip.anchoredPosition = new Vector2(20 + fw + 8, -72);
 
             bool full = NoHousing(p);
-            r.Pop.text = $"{p.Population}<size=12><color=#8AA2A8> / {p.HousingCapacity}</color></size>";
+            r.Pop.text = $"{p.Population}<size=12><color=#A9A392> / {p.HousingCapacity}</color></size>";
             LGBuild.SetBar(r.PopBar, p.HousingCapacity > 0 ? p.Population / (float)p.HousingCapacity : 1f, full ? Gold : UIManager.DS.Green);
             int months = p.MonthsToNextPop;
-            r.Growth.text = full ? Loc.T("<color=#F2C46B>нет жилья</color>")
+            r.Growth.text = full ? Loc.T("<color=#E7C170>нет жилья</color>")
                           : months < 0 ? Loc.T("рост остановлен")
                           : Loc.F("+1 через {0} мес.", months);
             var dom = SpeciesRegistry.Get(p.DominantOrganic);
@@ -659,8 +659,8 @@ namespace StellarisClone.Rendering
             {
                 r.JobIcon.sprite = LGIcons.Get(BuildMenuModal.JobIcon(job));
                 r.JobIcon.color = Cyan;
-                r.Job.text = BuildMenuModal.JobTitle(job) + Loc.F("  <color=#8AA2A8>· {0} дн.</color>", Mathf.CeilToInt(job.DaysLeft))
-                           + (queue.Count > 1 ? Loc.F("  <color=#8AA2A8>+{0} в очереди</color>", queue.Count - 1) : "");
+                r.Job.text = BuildMenuModal.JobTitle(job) + Loc.F("  <color=#A9A392>· {0} дн.</color>", Mathf.CeilToInt(job.DaysLeft))
+                           + (queue.Count > 1 ? Loc.F("  <color=#A9A392>+{0} в очереди</color>", queue.Count - 1) : "");
                 LGBuild.SetBar(r.JobBar, job.Progress, Cyan);
                 var sbq = new System.Text.StringBuilder(Loc.T("<b>Очередь планеты</b>"));
                 foreach (var j in queue) sbq.Append($"\n• {BuildMenuModal.JobTitle(j)} — {Mathf.CeilToInt(cm.DaysUntilDone(j))} " + Loc.T("дн."));
@@ -670,7 +670,7 @@ namespace StellarisClone.Rendering
             {
                 r.JobIcon.sprite = LGIcons.Get(p.AutoBuild ? LGIcon.Gear : LGIcon.Warning);
                 r.JobIcon.color = p.AutoBuild ? Muted : Gold;
-                r.Job.text = p.AutoBuild ? Loc.T("<color=#8AA2A8>Автостройка выберет сама</color>") : Loc.T("<color=#F2C46B>Ничего не строится</color>");
+                r.Job.text = p.AutoBuild ? Loc.T("<color=#A9A392>Автостройка выберет сама</color>") : Loc.T("<color=#E7C170>Ничего не строится</color>");
                 LGBuild.SetBar(r.JobBar, 0f, Cyan);
                 r.JobTip.SetText(Loc.T("Очередь пуста. Нажмите «Строить…», чтобы выбрать постройку."));
             }

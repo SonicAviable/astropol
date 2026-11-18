@@ -134,7 +134,7 @@ namespace StellarisClone.Rendering
             _count.rectTransform.At(new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-56, -26), new Vector2(140, 20));
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 11);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -12), new Vector2(30, 30));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / O)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / O)</color>"));
             var hint = LGBuild.Label(rt, Loc.T("Все сообщения партии. Клик по записи с прицелом — камера к месту события"), 11, UIManager.DS.TextMuted, TextAnchor.MiddleLeft, wrap: true);
             hint.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(20, -54), new Vector2(W - 40, 30));
 

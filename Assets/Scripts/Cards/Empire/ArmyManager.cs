@@ -824,8 +824,8 @@ namespace StellarisClone.Cards
             int ready = 0;
             foreach (var c in am._cards) if (c.Owner == d.OwnerId && !c.Wounded && !c.DefenseOnly) ready++;
             var sb = new System.Text.StringBuilder();
-            if (header) sb.Append(Loc.F("<color=#F2C766><b>Десант</b> · мест {0}</color>\n", cap));
-            sb.Append(Loc.F("<color=#8AA2A8>При штурме корабль сам берёт лучшие карты из резерва империи (готово: {0}). Погрузка не нужна</color>", ready));
+            if (header) sb.Append(Loc.F("<color=#E7C170><b>Десант</b> · мест {0}</color>\n", cap));
+            sb.Append(Loc.F("<color=#A9A392>При штурме корабль сам берёт лучшие карты из резерва империи (готово: {0}). Погрузка не нужна</color>", ready));
             return sb.ToString();
         }
 

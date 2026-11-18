@@ -837,7 +837,7 @@ namespace StellarisClone.Cards
             _endLabel = _endButton.GetComponentInChildren<Text>();
             _endLabel.lineSpacing = 0.9f;
             _endLabel.Track(2f);
-            TooltipHelper.Attach(_endButton.gameObject, Loc.T("Закончить ход  <color=#8AA2A8>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно"));
+            TooltipHelper.Attach(_endButton.gameObject, Loc.T("Закончить ход  <color=#A9A392>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно"));
             var enter = Caption(_board, "ENTER", 10, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleCenter, 2f);
             enter.rectTransform.At(Mid, Mid, new Vector2(RX, 52), new Vector2(Inner, 14));
 
@@ -945,7 +945,7 @@ namespace StellarisClone.Cards
             _endLabel = _endButton.GetComponentInChildren<Text>();
             _endLabel.lineSpacing = 0.9f;
             _endLabel.Track(2f);
-            TooltipHelper.Attach(_endButton.gameObject, Loc.T("Пас / закончить ход  <color=#8AA2A8>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно"));
+            TooltipHelper.Attach(_endButton.gameObject, Loc.T("Пас / закончить ход  <color=#A9A392>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно"));
 
             // Очки приказов — кристаллы по нижней дуге паза, число под гнездом
             for (int k = 0; k < 10; k++)
@@ -1682,10 +1682,10 @@ namespace StellarisClone.Cards
         {
             var me = _state.Sides[_P];
             var en = _state.Sides[_E];
-            _turnText.text = string.Format("{0}<size=22><color=#8AA2A8> / {1}</color></size>", Mathf.Clamp(_state.Turn, 1, BattleState.Turns), BattleState.Turns);
+            _turnText.text = string.Format("{0}<size=22><color=#A9A392> / {1}</color></size>", Mathf.Clamp(_state.Turn, 1, BattleState.Turns), BattleState.Turns);
             int mine = 0, theirs = 0;
             for (int i = 0; i < 3; i++) { if (_state.Sectors[i].Control == _P) mine++; else theirs++; }
-            _scoreText.text = Loc.F("СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF8A80>{1}</color>", mine, theirs) + "\n" +
+            _scoreText.text = Loc.F("СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF7F6B>{1}</color>", mine, theirs) + "\n" +
                               Loc.T("<size=11><color=#9AA6B0>нужно 2 из 3</color></size>");
             if (_scoreMine != null)
             {
@@ -1707,7 +1707,7 @@ namespace StellarisClone.Cards
             _weatherText.text = _state.WeatherActive ? _state.WeatherText : Loc.T("откроется на 3-м ходу");
 
             int total = Mathf.Max(me.Points, _state.Turn + me.PointsPerTurn);
-            _pointsText.text = string.Format("{0}<size=22><color=#8AA2A8>/{1}</color></size>", me.Points, total);
+            _pointsText.text = string.Format("{0}<size=22><color=#A9A392>/{1}</color></size>", me.Points, total);
             if (_pointsShown >= 0 && me.Points > _pointsShown && _pointsGlow != null) _pointsGlow.color = new Color(0.45f, 0.75f, 1f, 0.9f);   // прибавились — вспышка
             _pointsShown = me.Points;
             for (int i = 0; i < _crystals.Count; i++)
@@ -1764,7 +1764,7 @@ namespace StellarisClone.Cards
             var col = c == _P ? CardSkin.Teal : CardSkin.Red;
             if (s.ChipText != null)
             {
-                s.ChipText.text = string.Format("<color=#7CF2D8>{0}</color>:<color=#FF8A80>{1}</color>", pp, pe);
+                s.ChipText.text = string.Format("<color=#7CF2D8>{0}</color>:<color=#FF7F6B>{1}</color>", pp, pe);
                 if (s.ChipFx != null) s.ChipFx.SetRim(new Color(col.r, col.g, col.b, 0.7f));
             }
             if (s.LastControl != c)

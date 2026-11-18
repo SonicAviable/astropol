@@ -183,7 +183,7 @@ namespace StellarisClone.Cards
             _subtitle.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(43, -54), new Vector2(1100, 18));
             var close = LGBuild.Button(_rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / J)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / J)</color>"));
 
             BuildSide();
 
@@ -446,14 +446,14 @@ namespace StellarisClone.Cards
             foreach (var c in mine) if (c.D != null && c.D.Site == ProdSite.City && c.D.Has(Kw.Infantry)) infantry++;
             foreach (var j in jobs) { var d = CardCatalog.Get(j.Def); if (d != null && d.Site == ProdSite.City && d.Has(Kw.Infantry)) infantry++; }
             _baseInfo.text = b.Colonies == 0
-                ? Loc.T("<color=#FF8080>Нет колоний с жителями — производить армию негде</color>")
-                : Loc.F("Линий производства: <b>{0}</b> <color=#8AA2A8>(районы {1} + {2})</color>\nПризывников: <b>{3}/{4}</b> <color=#8AA2A8>(половина жителей)</color>\nСооружений обороны: до <b>{5}</b>",
+                ? Loc.T("<color=#FF7F6B>Нет колоний с жителями — производить армию негде</color>")
+                : Loc.F("Линий производства: <b>{0}</b> <color=#A9A392>(районы {1} + {2})</color>\nПризывников: <b>{3}/{4}</b> <color=#A9A392>(половина жителей)</color>\nСооружений обороны: до <b>{5}</b>",
                     b.Lines, b.Urban, b.Industrial, infantry, b.InfantryCap, b.StructureCap);
 
             // Военный бюджет: доля дохода в месяц и накопленный фонд
             var bud = am.PlayerBudget;
-            if (bud == ArmyBudget.Stop) _budgetInfo.text = Loc.T("<color=#FF8080>Армия не пополняется</color>\n<color=#8AA2A8>Фонд не копится, заказы не уходят</color>");
-            else if (bud == ArmyBudget.Mobilize) _budgetInfo.text = Loc.T("<color=#FFB080>Мобилизация:</color> заказы из запасов\n<color=#8AA2A8>до четверти склада на каждую карту</color>");
+            if (bud == ArmyBudget.Stop) _budgetInfo.text = Loc.T("<color=#FF7F6B>Армия не пополняется</color>\n<color=#A9A392>Фонд не копится, заказы не уходят</color>");
+            else if (bud == ArmyBudget.Mobilize) _budgetInfo.text = Loc.T("<color=#FFB080>Мобилизация:</color> заказы из запасов\n<color=#A9A392>до четверти склада на каждую карту</color>");
             else
             {
                 var mb = am.MonthlyBudget(0);
@@ -824,11 +824,11 @@ namespace StellarisClone.Cards
 
             string tip = $"<b>{d.Name}</b>\n{d.Text}";
             tip += Loc.F("\n\nВ составе армии: <b>{0}</b> · в резерве {1} · строится {2}", target, have, queued);
-            if (d.Upkeep > 0f) tip += Loc.F("\n<color=#8AA2A8>Содержание: {0:0.#} гелия в месяц</color>", d.Upkeep);
-            if (d.Size > 0 && d.Site != ProdSite.Garrison) tip += Loc.F("\n<color=#8AA2A8>Мест на кораблях: {0}</color>", d.Size);
-            if (site != null) tip += $"\n<color=#FF8080>{site}</color>";
+            if (d.Upkeep > 0f) tip += Loc.F("\n<color=#A9A392>Содержание: {0:0.#} гелия в месяц</color>", d.Upkeep);
+            if (d.Size > 0 && d.Site != ProdSite.Garrison) tip += Loc.F("\n<color=#A9A392>Мест на кораблях: {0}</color>", d.Size);
+            if (site != null) tip += $"\n<color=#FF7F6B>{site}</color>";
             else if (wait != null) tip += $"\n<color=#FFB080>{wait}</color>";
-            tip += Loc.T("\n<color=#8AA2A8>−/+ — сколько держать в армии (Shift — по 5)</color>");
+            tip += Loc.T("\n<color=#A9A392>−/+ — сколько держать в армии (Shift — по 5)</color>");
             TooltipHelper.Attach(val.gameObject, tip);
             TooltipHelper.Attach(plus.gameObject, tip);
             TooltipHelper.Attach(minus.gameObject, tip);

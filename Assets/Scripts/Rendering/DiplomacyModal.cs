@@ -378,7 +378,7 @@ namespace StellarisClone.Rendering
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.5f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Edge, -16f), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc)</color>"));
 
             _root.SetActive(false);
         }
@@ -1097,7 +1097,7 @@ namespace StellarisClone.Rendering
                 btn.onClick.AddListener(() => { if (owner != _owner) { SFXManager.Play(Sfx.UiTab); SwitchTo(owner); } });
                 string st = ai.IsEliminated ? Loc.T("повержена") : ai.AtWar ? Loc.T("война") : ai.HasAlliance ? Loc.T("союз") : ai.HasPact ? Loc.T("пакт") : Loc.T("мир");
                 TooltipHelper.Attach(b.gameObject, Loc.F("<b>{0}</b>\n{1} · отношение {2:+0;-0;0}", ai.AIName, st, ai.Opinion) +
-                    (ai.PendingOffer != AIEmpireManager.OfferKind.None ? Loc.T("\n<color=#F2C747>Ждёт ответа на предложение</color>") : ""));
+                    (ai.PendingOffer != AIEmpireManager.OfferKind.None ? Loc.T("\n<color=#E7C170>Ждёт ответа на предложение</color>") : ""));
                 if (ai.PendingOffer != AIEmpireManager.OfferKind.None)
                 {
                     var dot = LGBuild.Panel(b.transform, "Dot", Gold);
@@ -1136,10 +1136,10 @@ namespace StellarisClone.Rendering
             sb.Append(Loc.F("<b>Отношение {0:+0;-0;0}</b>  ·  {1}\n", ai.Opinion, AIEmpireManager.OpinionLabel(ai.Opinion)));
             foreach (var m in ai.OpinionBreakdown)
             {
-                string c = m.Value >= 0 ? "#6FE09A" : "#FF8080";
+                string c = m.Value >= 0 ? "#8CD3A0" : "#FF7F6B";
                 sb.Append($"<color={c}>{m.Value:+0;-0;0}</color>  {m.Label}\n");
             }
-            sb.Append(Loc.T("<color=#8AA2A8>Чем лучше отношение, тем охотнее они идут на сделки</color>"));
+            sb.Append(Loc.T("<color=#A9A392>Чем лучше отношение, тем охотнее они идут на сделки</color>"));
             return sb.ToString();
         }
 
@@ -1202,10 +1202,10 @@ namespace StellarisClone.Rendering
             string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
             string mine = TreatyForYou(k, ai);
             if (mine != null) tip += "\n" + mine;
-            if (active) tip += Loc.T("\n<color=#6FE09A>Договор действует</color>");
-            else if (block != null) tip += $"\n<color=#FF8080>{block}</color>";
-            else if (_viewingOffer) tip += Loc.T("\n<color=#8AA2A8>Сначала ответьте на их предложение</color>");
-            else tip += on ? Loc.T("\n<color=#F2C747>Лежит на столе — щёлкните, чтобы убрать</color>") : Loc.T("\nЩелчок — положить на стол переговоров");
+            if (active) tip += Loc.T("\n<color=#8CD3A0>Договор действует</color>");
+            else if (block != null) tip += $"\n<color=#FF7F6B>{block}</color>";
+            else if (_viewingOffer) tip += Loc.T("\n<color=#A9A392>Сначала ответьте на их предложение</color>");
+            else tip += on ? Loc.T("\n<color=#E7C170>Лежит на столе — щёлкните, чтобы убрать</color>") : Loc.T("\nЩелчок — положить на стол переговоров");
             if (active && !on)
             {
                 SetSlot(s, label, LGIcon.Check, Green, new Color(0.04f, 0.14f, 0.09f, 0.96f), false, tip, null, lit: true);
@@ -1217,7 +1217,7 @@ namespace StellarisClone.Rendering
         /// <summary>Что договор даст именно вам — в цифрах вашей империи.</summary>
         private static string TreatyForYou(DealItemKind k, AIEmpireManager ai)
         {
-            const string G = "#6FE09A";
+            const string G = "#8CD3A0";
             int years = DealCatalog.TreatyMonths / 12;
             switch (k)
             {
@@ -1237,7 +1237,7 @@ namespace StellarisClone.Rendering
                     if (e.Blocker != null || e.Reasons == null) return null;
                     var sb = new StringBuilder(Loc.F("<color={0}>Их готовность:</color> {1:+0;-0;0}", G, e.Score));
                     foreach (var r in e.Reasons)
-                        sb.Append($"\n<color={(r.Value >= 0 ? "#6FE09A" : "#FF8080")}>{r.Value:+0;-0;0}</color>  {r.Label}");
+                        sb.Append($"\n<color={(r.Value >= 0 ? "#8CD3A0" : "#FF7F6B")}>{r.Value:+0;-0;0}</color>  {r.Label}");
                     return sb.ToString();
                 }
                 case DealItemKind.Borders:
@@ -1246,7 +1246,7 @@ namespace StellarisClone.Rendering
                     int open = BorderRules.BlockedFrontier(0, ai.OwnerId);
                     string mine = Loc.F("<color={0}>Для вас:</color> ваши корабли пройдут через их территорию", G);
                     if (open > 0) mine += Loc.F(" — откроется путь к {0} ничейным системам", open);
-                    return mine + Loc.T("\n<color=#8AA2A8>Их корабли тоже смогут ходить через ваши системы</color>");
+                    return mine + Loc.T("\n<color=#A9A392>Их корабли тоже смогут ходить через ваши системы</color>");
                 }
                 case DealItemKind.Charts:
                 {
@@ -1288,7 +1288,7 @@ namespace StellarisClone.Rendering
             Color bg = confirming ? new Color(tone.r * 0.45f, tone.g * 0.45f, tone.b * 0.45f, 0.97f)
                                   : new Color(tone.r * 0.18f, tone.g * 0.18f, tone.b * 0.18f, 0.96f);
             SetSlot(s, confirming ? Loc.T("ТОЧНО? ЕЩЁ РАЗ") : label, icon, tone, bg, act != null,
-                $"<b>{label}</b>\n{tip}" + (act != null ? Loc.T("\n<color=#8AA2A8>Нужно подтвердить повторным щелчком</color>") : ""), click);
+                $"<b>{label}</b>\n{tip}" + (act != null ? Loc.T("\n<color=#A9A392>Нужно подтвердить повторным щелчком</color>") : ""), click);
         }
 
         /// <summary>Коалиция: вступить в действующую, собрать свою против этой империи или выйти.</summary>
@@ -1398,8 +1398,8 @@ namespace StellarisClone.Rendering
             string tip = Loc.T("<b>Звёздные системы</b>\n") + DealCatalog.Hint(DealItemKind.System) +
                          (fromAI ? Loc.T("\nСвои системы отдают неохотно: территория дороже ресурсов. Системы, отнятые у вас (повод «Вернуть утраченное»), уступают легче")
                                  : Loc.T("\nСоседу интереснее системы у его границы"));
-            tip += !enabled && _viewingOffer ? Loc.T("\n<color=#8AA2A8>Сначала ответьте на их предложение или измените его</color>")
-                 : Loc.T("\n<color=#8AA2A8>Щелчок — открыть список систем</color>");
+            tip += !enabled && _viewingOffer ? Loc.T("\n<color=#A9A392>Сначала ответьте на их предложение или измените его</color>")
+                 : Loc.T("\n<color=#A9A392>Щелчок — открыть список систем</color>");
             TooltipHelper.Attach(c.gameObject, tip);
         }
 
@@ -1458,10 +1458,10 @@ namespace StellarisClone.Rendering
             btn.onClick.AddListener(() => AddToTable(k, fromAI));
             string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
             if (DealCatalog.IsResource(k)) tip += $"\n{(fromAI ? Loc.T("У них") : Loc.T("У вас"))}: {caption}";
-            if (onTable) tip += Loc.F("\n<color=#F2C747>На столе: {0}</color>", DealCatalog.Describe(put));
-            if (blocker != null) tip += $"\n<color=#FF8080>{blocker}</color>";
-            else if (!enabled && _viewingOffer) tip += Loc.T("\n<color=#8AA2A8>Сначала ответьте на их предложение или измените его</color>");
-            else tip += Loc.F("\n<color=#8AA2A8>Щелчок — положить на стол (+{0:0})</color>", DealCatalog.Step(k));
+            if (onTable) tip += Loc.F("\n<color=#E7C170>На столе: {0}</color>", DealCatalog.Describe(put));
+            if (blocker != null) tip += $"\n<color=#FF7F6B>{blocker}</color>";
+            else if (!enabled && _viewingOffer) tip += Loc.T("\n<color=#A9A392>Сначала ответьте на их предложение или измените его</color>");
+            else tip += Loc.F("\n<color=#A9A392>Щелчок — положить на стол (+{0:0})</color>", DealCatalog.Step(k));
             TooltipHelper.Attach(c.gameObject, tip);
         }
 
@@ -1576,7 +1576,7 @@ namespace StellarisClone.Rendering
             float a = block == null && !frozen ? 1f : 0.45f;
             var ic = LGIcons.Create(row.transform, colonies > 0 ? LGIcon.Planet : LGIcon.Starbase, 16, new Color(1f, 0.85f, 0.55f, a));
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(16, 16));
-            var name = LGBuild.Label(row.transform, sys.Name + (claimed ? Loc.T("  <color=#F2C747>· ваша бывшая</color>") : ""), 13, new Color(1f, 1f, 1f, a), TextAnchor.UpperLeft, bold: true);
+            var name = LGBuild.Label(row.transform, sys.Name + (claimed ? Loc.T("  <color=#E7C170>· ваша бывшая</color>") : ""), 13, new Color(1f, 1f, 1f, a), TextAnchor.UpperLeft, bold: true);
             name.rectTransform.Stretch(34, 18, 64, 3);
             string info = colonies > 0 ? Loc.F("колоний {0} · население {1}", colonies, pop) : Loc.T("форпост");
             if (border) info += Loc.T(" · у границы");
@@ -1587,9 +1587,9 @@ namespace StellarisClone.Rendering
 
             string tip = $"<b>{sys.Name}</b>\n" + (colonies > 0 ? Loc.F("Колоний: {0}, население {1}", colonies, pop) : Loc.T("Форпост без колоний")) +
                          Loc.F("\nЦенность ≈ {0:0} гелия-3", worth) +
-                         (fromAI ? Loc.T("\n<color=#8AA2A8>Свою систему отдадут примерно за полторы её цены</color>") : (border ? Loc.T("\n<color=#8AA2A8>Граничит с ними — для них это ценно</color>") : Loc.T("\n<color=#8AA2A8>Далеко от их границ — для них стоит вдвое меньше</color>"))) +
-                         (claimed ? Loc.T("\n<color=#F2C747>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>") : "") +
-                         (block != null ? $"\n<color=#FF8080>{block}</color>" : on ? Loc.T("\n<color=#F2C747>На столе — щёлкните, чтобы убрать</color>") : Loc.T("\nЩелчок — положить на стол"));
+                         (fromAI ? Loc.T("\n<color=#A9A392>Свою систему отдадут примерно за полторы её цены</color>") : (border ? Loc.T("\n<color=#A9A392>Граничит с ними — для них это ценно</color>") : Loc.T("\n<color=#A9A392>Далеко от их границ — для них стоит вдвое меньше</color>"))) +
+                         (claimed ? Loc.T("\n<color=#E7C170>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>") : "") +
+                         (block != null ? $"\n<color=#FF7F6B>{block}</color>" : on ? Loc.T("\n<color=#E7C170>На столе — щёлкните, чтобы убрать</color>") : Loc.T("\nЩелчок — положить на стол"));
             TooltipHelper.Attach(row.gameObject, tip);
             if (frozen || (block != null && !on)) return;
             var btn = row.gameObject.AddComponent<Button>();
@@ -1634,7 +1634,7 @@ namespace StellarisClone.Rendering
                 _tableTitle.text = kind == AIEmpireManager.OfferKind.Demand ? Loc.T("ТРЕБОВАНИЕ") : Loc.T("ИХ ПРЕДЛОЖЕНИЕ");
                 _tableTitle.color = kind == AIEmpireManager.OfferKind.Demand ? Red : Gold;
                 _reaction.text = Loc.F("<color={0}>Ответ ждут ещё {1} дн.</color>  ·  {2}", LGBuild.Hex(Gold), ai.PendingOfferDays, ai.PendingOfferReason);
-                _fee.text = kind == AIEmpireManager.OfferKind.Demand ? Loc.T("<color=#FF8080>Отказ ухудшит отношение</color>") : "";
+                _fee.text = kind == AIEmpireManager.OfferKind.Demand ? Loc.T("<color=#FF7F6B>Отказ ухудшит отношение</color>") : "";
                 SetChance(-1f, Muted);
 
                 SetButton(_btnPropose, _imgPropose, _lblPropose, Loc.T("Принять"), new Color(0.10f, 0.32f, 0.20f, 0.96f), true);
@@ -1650,7 +1650,7 @@ namespace StellarisClone.Rendering
 
             if (d.IsEmpty)
             {
-                _reaction.text = Loc.T("<color=#8AA2A8>Положите на стол то, что хотите получить или отдать, или выберите договор на краю стола</color>");
+                _reaction.text = Loc.T("<color=#A9A392>Положите на стол то, что хотите получить или отдать, или выберите договор на краю стола</color>");
                 SetChance(-1f, Muted);
             }
             else
@@ -1718,7 +1718,7 @@ namespace StellarisClone.Rendering
             string text = treaty ? DealCatalog.Name(item.Kind) : DealCatalog.Describe(item);
             var t = LGBuild.Label(row.transform, text, 12, Primary, TextAnchor.MiddleLeft);
             t.rectTransform.Stretch(28, 0, readOnly ? 8 : (treaty || system ? 32 : 82), 0);
-            TooltipHelper.Attach(row.gameObject, $"<b>{DealCatalog.Name(item.Kind)}</b>\n{DealCatalog.Hint(item.Kind)}" + (treaty ? Loc.T("\n<color=#8AA2A8>Договор взаимный — действует для обеих сторон</color>") : ""));
+            TooltipHelper.Attach(row.gameObject, $"<b>{DealCatalog.Name(item.Kind)}</b>\n{DealCatalog.Hint(item.Kind)}" + (treaty ? Loc.T("\n<color=#A9A392>Договор взаимный — действует для обеих сторон</color>") : ""));
             row.raycastTarget = true;
             if (readOnly) return;
 

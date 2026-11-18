@@ -625,7 +625,7 @@ namespace StellarisClone.Rendering
         private void BuildControlsPage()
         {
             var sb = new StringBuilder();
-            void Line(string key, string act) => sb.Append($"<color=#4DF2DB><b>{key}</b></color>   {act}\n");
+            void Line(string key, string act) => sb.Append($"<color=#79D0BF><b>{key}</b></color>   {act}\n");
             Line(Loc.T("ЛКМ"), Loc.T("выбрать систему, флот или кнопку"));
             Line(Loc.T("ПКМ по системе"), Loc.T("приказ выбранному флоту лететь туда"));
             Line(Loc.T("Двойной клик по звезде"), Loc.T("войти в звёздную систему"));
@@ -775,11 +775,11 @@ namespace StellarisClone.Rendering
             string date = TimeManager.Instance != null ? TimeManager.Instance.GetFormattedDate() : "";
             string empire = UIManager.Instance?.SelectedFaction?.Name ?? Loc.T("Империя");
             return
-                Loc.F("<color=#8AA2A8>Империя:</color>  <b>{0}</b>\n", empire) +
-                Loc.F("<color=#8AA2A8>Дата:</color>  {0}   ·   <color=#8AA2A8>лет у власти:</color> {1}\n", date, (vm != null ? vm.YearsElapsed : 0)) +
-                Loc.F("<color=#8AA2A8>Систем:</color>  {0}   ·   <color=#8AA2A8>колоний:</color> {1}   ·   <color=#8AA2A8>население:</color> {2}\n", systems, colonies, pop) +
-                Loc.F("<color=#8AA2A8>Технологий изучено:</color>  {0}   ·   <color=#8AA2A8>мощь флота:</color> {1:N0}\n", (vm != null ? vm.ScienceProgress : 0), power) +
-                Loc.F("<color=#8AA2A8>Очки:</color>  <b>{0}</b>   ·   <color=#8AA2A8>у лучшего соперника:</color> {1}", (vm != null ? vm.PlayerScore : 0), (vm != null ? vm.RivalScore : 0));
+                Loc.F("<color=#A9A392>Империя:</color>  <b>{0}</b>\n", empire) +
+                Loc.F("<color=#A9A392>Дата:</color>  {0}   ·   <color=#A9A392>лет у власти:</color> {1}\n", date, (vm != null ? vm.YearsElapsed : 0)) +
+                Loc.F("<color=#A9A392>Систем:</color>  {0}   ·   <color=#A9A392>колоний:</color> {1}   ·   <color=#A9A392>население:</color> {2}\n", systems, colonies, pop) +
+                Loc.F("<color=#A9A392>Технологий изучено:</color>  {0}   ·   <color=#A9A392>мощь флота:</color> {1:N0}\n", (vm != null ? vm.ScienceProgress : 0), power) +
+                Loc.F("<color=#A9A392>Очки:</color>  <b>{0}</b>   ·   <color=#A9A392>у лучшего соперника:</color> {1}", (vm != null ? vm.PlayerScore : 0), (vm != null ? vm.RivalScore : 0));
         }
 
         // ================================================================ Трекер целей
@@ -796,7 +796,7 @@ namespace StellarisClone.Rendering
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(() => { OpenPause(); ShowPage(Page.Goals); });
             LG.Glass(_tracker, 18f).SetRim(new Color(1f, 0.85f, 0.5f, 0.22f));
-            TooltipHelper.Attach(_tracker, Loc.T("<b>Цели империи</b>\nПрогресс к победе.\n\n<color=#8AA2A8>ЛКМ — подробнее</color>"));
+            TooltipHelper.Attach(_tracker, Loc.T("<b>Цели империи</b>\nПрогресс к победе.\n\n<color=#A9A392>ЛКМ — подробнее</color>"));
             var mo = LG.Motion(_tracker, LGAppear.Kind.SlideRight);
             mo.distance = 30f;
             mo.delay = 0.2f;
@@ -856,7 +856,7 @@ namespace StellarisClone.Rendering
             int me = vm.PlayerScore, rival = vm.RivalScore;
             _domVal.text = $"{d} / {vm.DominationRequired}";
             _sciVal.text = $"{s} / {vm.ScienceRequired}";
-            _survVal.text = me >= rival ? $"{me} : {rival}" : $"<color=#FF6A6A>{me} : {rival}</color>";
+            _survVal.text = me >= rival ? $"{me} : {rival}" : $"<color=#FF6B57>{me} : {rival}</color>";
             LGBuild.SetBar(_domBar, d / (float)Mathf.Max(1, vm.DominationRequired));
             LGBuild.SetBar(_sciBar, s / (float)Mathf.Max(1, vm.ScienceRequired));
             LGBuild.SetBar(_survBar, me / (float)Mathf.Max(1, me + rival));
@@ -868,7 +868,7 @@ namespace StellarisClone.Rendering
                     Loc.F("Доминирование: вы {0}, соперник {1} из {2} систем\n", d, vm.RivalDominationProgress, vm.DominationRequired) +
                     Loc.F("Наука: вы {0}, соперник {1} из {2} технологий\n", s, vm.RivalScienceProgress, vm.ScienceRequired) +
                     Loc.F("Очки: {0} против {1}; подсчёт через {2} {3} ({4})\n\n", me, rival, vm.YearsLeft, VictoryManager.YearsWord(vm.YearsLeft), VictoryManager.EndYear) +
-                    Loc.T("<color=#8AA2A8>Если любой из соперников первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>"));
+                    Loc.T("<color=#A9A392>Если любой из соперников первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>"));
         }
 
         // ================================================================ Перезапуск / выход

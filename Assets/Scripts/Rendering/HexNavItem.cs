@@ -5,9 +5,9 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Пункт левого меню голо-HUD: шестиугольная сота со значком. При наведении сота чуть растёт и
-    /// выдвигает справа флажок с названием и клавишей; пока окно пункта открыто — сота залита цветом
-    /// пункта и флажок виден постоянно.
+    /// Пункт левого меню HUD «Атласа»: круглая кнопка со значком. При наведении кнопка чуть растёт и
+    /// выдвигает справа флажок с названием и клавишей; пока окно пункта открыто — кольцо и значок коралловые
+    /// и флажок виден постоянно.
     /// </summary>
     public sealed class HexNavItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
@@ -17,7 +17,12 @@ namespace StellarisClone.Rendering
         public Color Accent;
         public System.Func<bool> IsOpen;
 
-        private static readonly Color FillIdle = new Color(0.030f, 0.070f, 0.098f, 0.95f);
+        // «Атлас»: все пункты одного вида — приглушённый значок без кольца; наведение — кремовое кольцо,
+        // открытое окно — коралловое кольцо и коралловый значок. Цвет пункта (Accent) остаётся только у флажка.
+        private static readonly Color FillIdle = new Color(0.035f, 0.067f, 0.118f, 0.85f);
+        private static readonly Color IconIdle = new Color(0.55f, 0.53f, 0.48f, 1f);
+        private static readonly Color Cream = new Color(0.925f, 0.898f, 0.827f, 1f);
+        private static readonly Color Coral = new Color(1f, 0.42f, 0.341f, 1f);
 
         private float _hover, _hoverTarget, _open;
         private float _checkTimer;
@@ -47,14 +52,15 @@ namespace StellarisClone.Rendering
 
             float hi = Mathf.Max(_hover, _open);
             transform.localScale = Vector3.one * (1f + 0.06f * LGEase.OutCubic(_hover));
-            if (Fill != null)
+            if (Fill != null) Fill.color = FillIdle;
+            if (Rim != null)
             {
-                var tint = new Color(Accent.r * 0.45f, Accent.g * 0.45f, Accent.b * 0.45f, 0.96f);
-                Fill.color = Color.Lerp(FillIdle, tint, _open * 0.85f + _hover * 0.15f);
+                var rc = Color.Lerp(Cream, Coral, _open);
+                rc.a = Mathf.Max(_hover * 0.45f, _open);
+                Rim.color = rc;
             }
-            if (Rim != null) Rim.color = new Color(Accent.r, Accent.g, Accent.b, Mathf.Lerp(0.55f, 1f, hi));
-            if (Icon != null) Icon.color = Color.Lerp(Accent, Color.white, _open * 0.8f);
-            if (Glow != null) Glow.color = new Color(Accent.r, Accent.g, Accent.b, 0.30f * hi);
+            if (Icon != null) Icon.color = Color.Lerp(Color.Lerp(IconIdle, Cream, _hover), Coral, _open);
+            if (Glow != null) Glow.color = new Color(0f, 0f, 0f, 0f);
             if (FlagGroup != null)
             {
                 FlagGroup.alpha = LGEase.OutCubic(hi);

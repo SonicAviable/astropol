@@ -172,10 +172,10 @@ namespace StellarisClone.Core
                 sb.Append(Loc.T("<b>Поводы для войны</b>"));
                 foreach (var c in list)
                 {
-                    sb.Append($"\n<color=#F2C747>{c.Name}</color> — {c.Detail}");
-                    if (c.MonthsLeft > 0) sb.Append(Loc.F(" <color=#8AA2A8>· ещё {0}</color>", DealCatalog.Months(c.MonthsLeft)));
+                    sb.Append($"\n<color=#E7C170>{c.Name}</color> — {c.Detail}");
+                    if (c.MonthsLeft > 0) sb.Append(Loc.F(" <color=#A9A392>· ещё {0}</color>", DealCatalog.Months(c.MonthsLeft)));
                 }
-                sb.Append(Loc.T("\n<color=#8AA2A8>С поводом война не портит репутацию, а утраченные системы проще вернуть в мирном договоре</color>"));
+                sb.Append(Loc.T("\n<color=#A9A392>С поводом война не портит репутацию, а утраченные системы проще вернуть в мирном договоре</color>"));
             }
             return sb.ToString();
         }

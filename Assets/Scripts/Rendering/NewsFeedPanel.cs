@@ -265,7 +265,7 @@ namespace StellarisClone.Rendering
             var ic = LGIcons.Create(rt, it != null ? IconOf(it.Kind) : LGIcon.Globe, 13f, c);
             ic.rectTransform.At(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(13f, 13f));
             ic.raycastTarget = false;
-            string text = overrideText ?? (it.AboutPlayer ? $"<color=#F2C766>{it.Text}</color>" : it.Text);
+            string text = overrideText ?? (it.AboutPlayer ? $"<color=#E7C170>{it.Text}</color>" : it.Text);
             var t = LGBuild.Label(rt, text, 12, DS.TextPrimary, TextAnchor.MiddleLeft);
             t.rectTransform.At(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(10f, TickerH));
             float tw = t.preferredWidth;

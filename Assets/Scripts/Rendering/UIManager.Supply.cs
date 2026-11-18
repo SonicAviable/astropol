@@ -85,8 +85,8 @@ namespace StellarisClone.Rendering
                 if (lane == null) continue;
                 string name = EmpireStats.GetSystem(nb)?.Name ?? "?";
                 string line = lane.Blockaded ? Loc.F("<color=#FF6B5C>⇄ {0}: блокада</color>", name)
-                            : lane.Capacity <= 0f ? Loc.F("<color=#8AA2A8>⇄ {0}: закрыт</color>", name)
-                            : Loc.F("<color={0}>⇄ {1}: {2:0} / {3:0} ({4:0}%)</color>", lane.Load >= 0.95f ? "#FF6B5C" : lane.Load >= 0.6f ? "#FFB84D" : "#8AA2A8",
+                            : lane.Capacity <= 0f ? Loc.F("<color=#A9A392>⇄ {0}: закрыт</color>", name)
+                            : Loc.F("<color={0}>⇄ {1}: {2:0} / {3:0} ({4:0}%)</color>", lane.Load >= 0.95f ? "#FF6B5C" : lane.Load >= 0.6f ? "#FFB84D" : "#A9A392",
                                 name, lane.Flow, lane.Capacity, lane.Load * 100f);
                 sb.Append(sb.Length > 0 ? "\n" : "").Append(line);
             }
@@ -111,7 +111,7 @@ namespace StellarisClone.Rendering
             string block = SupplyState.Blocker(system, 0, b);
             var eco = EconomyManager.Instance;
             if (block == null && (eco == null || !eco.CanAfford(0f, m, a, 0f))) block = CostCheck.Full(0f, m, a);
-            string tip = Loc.F("<b>{0}</b>\n{1}\n<color=#8AA2A8>{2:0} титана, {3:0} сплавов · {4:0} дн. · содержание {5:0} гелия-3/мес</color>",
+            string tip = Loc.F("<b>{0}</b>\n{1}\n<color=#A9A392>{2:0} титана, {3:0} сплавов · {4:0} дн. · содержание {5:0} гелия-3/мес</color>",
                 SupplyState.NameOf(b), SupplyState.DescriptionOf(b), m, a, SupplyState.DaysOf(b), SupplyState.UpkeepOf(b));
             InspButton(Loc.F("{0}  · {1:0} ◆ {2:0} ⬢", SupplyState.NameOf(b).ToUpper(), m, a), LGIcon.Trade,
                 b == SupplyState.Building.Depot ? DS.BtnPrimary : DS.BtnNeutral, block, tip,

@@ -600,7 +600,7 @@ namespace StellarisClone.Core
         public static string OpPreview(Leader a, SpyOp op, AIEmpireManager ai)
         {
             if (a == null || ai == null) return SpyInfo.Desc(op);
-            const string M = "#8AA2A8", Good = "#5CE68A", Bad = "#FF8888";
+            const string M = "#A9A392", Good = "#8CD3A0", Bad = "#FF7F6B";
             float p = SuccessChance(a, op, ai);
             var sb = new System.Text.StringBuilder();
             sb.Append(Loc.F("<b>{0}</b> против {1}\n", SpyInfo.Name(op), ai.AIName));

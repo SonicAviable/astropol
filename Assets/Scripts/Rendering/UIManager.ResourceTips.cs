@@ -13,7 +13,7 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class UIManager
     {
-        private const string TipGreen = "#5CE08F", TipRed = "#FF8A7A", TipMuted = "#8AA2A8";
+        private const string TipGreen = "#5CE08F", TipRed = "#FF8A7A", TipMuted = "#A9A392";
 
         /// <summary>Сборщик одной подсказки ресурса: источники копятся, доли считаются от самой крупной статьи.</summary>
         private sealed class ResTip
@@ -81,7 +81,7 @@ namespace StellarisClone.Rendering
         /// <summary>Когда склад заполнится / опустеет при текущем доходе.</summary>
         private static string StorageEta(float stock, float cap, float net)
         {
-            if (cap > 0f && stock >= cap - 0.5f) return $"<color=#F2C747>{Loc.T("склад полон — излишки пропадают")}</color>";
+            if (cap > 0f && stock >= cap - 0.5f) return $"<color=#E7C170>{Loc.T("склад полон — излишки пропадают")}</color>";
             if (net > 0.05f && cap > 0f) return Loc.F("заполнится через ~{0} мес", Mathf.CeilToInt((cap - stock) / net));
             if (net < -0.05f) return $"<color={TipRed}>{Loc.F("кончится через ~{0} мес", Mathf.Max(1, Mathf.CeilToInt(stock / -net)))}</color>";
             return "";
@@ -96,7 +96,7 @@ namespace StellarisClone.Rendering
                 : eco.BankruptcyLooming
                     ? Loc.F("<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{0} мес.</color>", Mathf.Max(1, Mathf.CeilToInt(eco.MonthsUntilEmpty)))
                     : null;
-            var t = new ResTip(LGIcon.Energy, "#F2C747", Loc.T("Гелий-3"), Loc.T("энергия империи · содержание флота"))
+            var t = new ResTip(LGIcon.Energy, "#E7C170", Loc.T("Гелий-3"), Loc.T("энергия империи · содержание флота"))
                 .Text(warn)
                 .Big(Num(eco.EnergyCredits), Loc.T("запас"), net)
                 .Income(LGIcon.Globe, Loc.T("База империи"), eco.BaseEnergyIncome)
@@ -112,7 +112,7 @@ namespace StellarisClone.Rendering
             if (rep.UnsuppliedFleets > 0)
                 t.Text(Loc.F("<color=#FFAA55>Без снабжения кораблей: {0} — содержание +{1:0.#}/мес, износ корпуса</color>", rep.UnsuppliedFleets, rep.UnsuppliedUpkeep));
             return t.Rows(net)
-                .Text(Loc.F("<color=#8AA2A8>Флотский лимит <b>{0} / {1}</b> (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). Сверх лимита содержание всего флота растёт.</color>",
+                .Text(Loc.F("<color=#A9A392>Флотский лимит <b>{0} / {1}</b> (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). Сверх лимита содержание всего флота растёт.</color>",
                     rep.NavalUsed, rep.NavalCapacity, EmpireEconomy.NavalCapacityPerColony))
                 .Build();
         }
@@ -130,7 +130,7 @@ namespace StellarisClone.Rendering
                 .Expense(LGIcon.Industry, Loc.T("Переработка на заводах"), eco.RefiningMinerals);
             SupplyRow(t, rep.SupplyMinerals);
             t.Rows(net)
-                .Text(Loc.F("<color=#8AA2A8>Склады вмещают <b>{0}</b> (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>",
+                .Text(Loc.F("<color=#A9A392>Склады вмещают <b>{0}</b> (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>",
                     Num(cap), EmpireEconomy.MineralStoragePerColony));
             SupplyNote(t, rep.Supply);
             return t.Build();
@@ -146,7 +146,7 @@ namespace StellarisClone.Rendering
                 .Income(LGIcon.Planet, Loc.T("Планеты и заводы"), eco.PlanetAlloysOutput);
             SupplyRow(t, rep.SupplyAlloys);
             t.Rows(net)
-                .Text(Loc.T("<color=#8AA2A8>Заводы промышленных районов перерабатывают титан в сплавы.</color>"));
+                .Text(Loc.T("<color=#A9A392>Заводы промышленных районов перерабатывают титан в сплавы.</color>"));
             SupplyNote(t, rep.Supply);
             return t.Build();
         }
@@ -177,7 +177,7 @@ namespace StellarisClone.Rendering
                     FleetManager.SprawlInfluence(0), FleetManager.SprawlInfluencePerSystem, FleetManager.SprawlFreeSystems)
                 : "";
             return t.Rows(net)
-                .Text(Loc.F("<color=#8AA2A8>Тратится на форпосты ({0:0}), колонии ({1:0}), пакты ({2:0}), мирные предложения ({3:0}) и терраформинг.{4}</color>",
+                .Text(Loc.F("<color=#A9A392>Тратится на форпосты ({0:0}), колонии ({1:0}), пакты ({2:0}), мирные предложения ({3:0}) и терраформинг.{4}</color>",
                     FleetManager.OutpostInfluenceCost(0), PlanetData.ColonyInfluenceCost, AIEmpireManager.PactInfluenceCost, AIEmpireManager.PeaceInfluenceCost, sprawl))
                 .Build();
         }
@@ -188,15 +188,15 @@ namespace StellarisClone.Rendering
             foreach (var s in tm.Slots) if (s.CurrentTech != null && !s.IsPaused) active++;
             float mult = tm.GlobalResearchSpeedMultiplier;
             float assist = ResearchAssist.Science(0, out int ships);
-            var t = new ResTip(LGIcon.Research, "#5CF59A", Loc.T("Наука"), Loc.T("исследования технологий"))
+            var t = new ResTip(LGIcon.Research, "#8CD3A0", Loc.T("Наука"), Loc.T("исследования технологий"))
                 .Big($"{active} / {tm.Slots.Count}", Loc.T("активных слотов"), tm.MonthlyResearchIncome)
                 .Income(LGIcon.Globe, Loc.T("Администрация"), TechnologyManager.BaseScience)
                 .Income(LGIcon.Population, Loc.F("Население ({0} жит.)", tm.Population), tm.ScienceFromPopulation);
             if (tm.FlatScience > 0f) t.Income(LGIcon.Star, Loc.T("Открытия и события"), tm.FlatScience);
             if (ships > 0) t.Income(LGIcon.ScienceShip, Loc.F("Научные корабли у колоний ({0})", ships), assist);
             t.Rows(tm.MonthlyResearchIncome);
-            if (Mathf.Abs(mult - 1f) > 0.01f) t.Text(Loc.F("<color=#8AA2A8>Множитель технологий и событий: <b>×{0:0.##}</b></color>", mult));
-            return t.Text(Loc.T("<color=#8AA2A8>Наука растёт с населением — заселяйте планеты и стройте жильё. Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</color>"))
+            if (Mathf.Abs(mult - 1f) > 0.01f) t.Text(Loc.F("<color=#A9A392>Множитель технологий и событий: <b>×{0:0.##}</b></color>", mult));
+            return t.Text(Loc.T("<color=#A9A392>Наука растёт с населением — заселяйте планеты и стройте жильё. Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</color>"))
                 .Build();
         }
 
@@ -207,7 +207,7 @@ namespace StellarisClone.Rendering
             sb.Append($"[[hdr|#F08CDB|{PlanetStability.TierName(tier)}||-]]\n[[Society:#F08CDB]]<b>{Loc.T("Стабильность")}</b>\n");
             sb.Append($"[[big|<color=#{hex}>{avg:0}</color>|{Loc.T("средняя")}|{colonies.Count}|{Loc.T("колоний")}]]\n");
             sb.Append($"[[meter|#{hex}|{(avg / 100f).ToString("0.###", CultureInfo.InvariantCulture)}|{PlanetStability.TierName(tier)}|{avg:0} / 100]]\n");
-            sb.Append($"<color=#8AA2A8>{PlanetStability.TierEffect(tier)}</color>\n");
+            sb.Append($"<color=#A9A392>{PlanetStability.TierEffect(tier)}</color>\n");
             sb.Append($"[[sec|{Loc.T("САМЫЕ НЕСПОКОЙНЫЕ")}|#6F8794]]\n");
             for (int i = 0; i < colonies.Count && i < 6; i++)
             {
@@ -215,8 +215,8 @@ namespace StellarisClone.Rendering
                 string ph = PlanetStability.Hex(PlanetStability.TierColor(p.Tier));
                 sb.Append($"[[src|Planet|#{ph}|{PlanetNames.Title(p.Name)}|{p.Stability:0}|{Mathf.Max(0.02f, p.Stability / 100f).ToString("0.###", CultureInfo.InvariantCulture)}]]\n");
             }
-            if (colonies.Count > 6) sb.Append(Loc.F("<color=#8AA2A8>…и ещё {0}</color>\n", colonies.Count - 6));
-            sb.Append(Loc.T("<color=#8AA2A8>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</color>"));
+            if (colonies.Count > 6) sb.Append(Loc.F("<color=#A9A392>…и ещё {0}</color>\n", colonies.Count - 6));
+            sb.Append(Loc.T("<color=#A9A392>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</color>"));
             return sb.ToString();
         }
     }

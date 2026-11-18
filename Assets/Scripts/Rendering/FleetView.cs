@@ -523,7 +523,7 @@ namespace StellarisClone.Rendering
 
             // Карточка: шапка с иконкой и бейджем состояния, строки «ключ — значение»
             sb.Append($"[[hdr|{hex}|{TypeName()}|{StateName()}|-]]\n[[{TypeIcon()}:{hex}]]<b>{d.Name}</b>\n");
-            sb.Append($"[[kv|Star|#8AA2A8|{Loc.T("Местоположение")}|{SysName(d.CurrentSystemId)}]]\n");
+            sb.Append($"[[kv|Star|#A9A392|{Loc.T("Местоположение")}|{SysName(d.CurrentSystemId)}]]\n");
             if (target != null)
                 sb.Append($"[[kv|Target|{hex}|{Loc.T("Цель")}|{target} · {Mathf.RoundToInt(p * 100f)}%]]\n");
             if (mil)
@@ -534,7 +534,7 @@ namespace StellarisClone.Rendering
             }
             if (troops != null) sb.Append(troops).Append('\n');
             if (mine)
-                sb.Append($"[[ticks]]\n<color=#8AA2A8>{Loc.T("ЛКМ — выбрать")}</color>\n<color=#8AA2A8>{Loc.T("ПКМ")} — {RmbHint()}</color>");
+                sb.Append($"[[ticks]]\n<color=#A9A392>{Loc.T("ЛКМ — выбрать")}</color>\n<color=#A9A392>{Loc.T("ПКМ")} — {RmbHint()}</color>");
             return sb.ToString().TrimEnd('\n');
         }
 

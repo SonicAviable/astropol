@@ -78,7 +78,7 @@ namespace StellarisClone.Rendering
             if (!show || lead == null) return;
 
             _icon.sprite = LGIcons.Get(ShipIcon(lead));
-            _title.text = $"{ShipName(lead)}  <color=#4DF2DB>{Mathf.RoundToInt(lead.Progress * 100f)}%</color>";
+            _title.text = $"{ShipName(lead)}  <color=#79D0BF>{Mathf.RoundToInt(lead.Progress * 100f)}%</color>";
             LGBuild.SetBar(_bar, lead.Progress);
             _more.text = total > 1 ? $"+{total - 1}" : "";
         }

@@ -143,7 +143,7 @@ namespace StellarisClone.Rendering
                     PlayAlertSound(a);
                 }
                 view.Action = a.Action;
-                view.Tip.SetText(Loc.F("<b>{0}</b>\n{1}\n\n<color=#8AA2A8>ЛКМ — {2}  ·  ПКМ — скрыть</color>", a.Title, a.Body, a.ActionHint));
+                view.Tip.SetText(Loc.F("<b>{0}</b>\n{1}\n\n<color=#A9A392>ЛКМ — {2}  ·  ПКМ — скрыть</color>", a.Title, a.Body, a.ActionHint));
                 view.Count.text = a.Count > 1 ? a.Count.ToString() : "";
                 view.Count.transform.parent.gameObject.SetActive(a.Count > 1);
             }

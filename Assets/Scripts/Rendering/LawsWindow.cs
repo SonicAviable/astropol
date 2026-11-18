@@ -134,7 +134,7 @@ namespace StellarisClone.Rendering
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / L)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / L)</color>"));
 
             _cols = LGBuild.Rect(rt, "Columns");
             _cols.Stretch(20, 20, 20, 112);
@@ -391,9 +391,9 @@ namespace StellarisClone.Rendering
             foreach (var (text, good) in law.Effects)
                 sb.Append(good ? "<color=#66F29E>▲ " : "<color=#FF7A73>▼ ").Append(text).Append("</color>\n");
             if (law.Upkeep > 0.01f) sb.Append(Loc.F("Плата: {0:0.#} влияния в месяц", law.Upkeep)).Append('\n');
-            if (active) sb.Append(Loc.T("<color=#8AA2A8>Действует сейчас.</color>"));
-            else if (blocker != null) sb.Append("<color=#FF8A8A>").Append(blocker).Append("</color>");
-            else sb.Append(Loc.F("<color=#8AA2A8>Принять за {0:0} влияния; направление закроется на {1} дней.</color>", EmpireLaws.SwitchCost, EmpireLaws.CooldownDays));
+            if (active) sb.Append(Loc.T("<color=#A9A392>Действует сейчас.</color>"));
+            else if (blocker != null) sb.Append("<color=#FF7F6B>").Append(blocker).Append("</color>");
+            else sb.Append(Loc.F("<color=#A9A392>Принять за {0:0} влияния; направление закроется на {1} дней.</color>", EmpireLaws.SwitchCost, EmpireLaws.CooldownDays));
             return sb.ToString();
         }
 

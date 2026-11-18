@@ -191,7 +191,7 @@ namespace StellarisClone.Rendering
         private void MarkDirty()
         {
             ShipDesignManager.Instance?.Recalc(_draft);
-            _statusText.text = Loc.T("<color=#F2C747>Есть несохранённые изменения.</color>");
+            _statusText.text = Loc.T("<color=#E7C170>Есть несохранённые изменения.</color>");
         }
 
         // ==================== КАРКАС ЭКРАНА ====================
@@ -258,7 +258,7 @@ namespace StellarisClone.Rendering
             {
                 if (_draft == null) return;
                 _draft.Name = string.IsNullOrWhiteSpace(v) ? _draft.Name : v.Trim();
-                _statusText.text = Loc.T("<color=#F2C747>Есть несохранённые изменения.</color>");
+                _statusText.text = Loc.T("<color=#E7C170>Есть несохранённые изменения.</color>");
             });
 
             // Модель корабля
@@ -335,7 +335,7 @@ namespace StellarisClone.Rendering
             escBg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), new Vector2(26, 0), new Vector2(32, 18));
             escBg.transform.SetAsFirstSibling();
             LG.Chip(escBg.gameObject, new Color(1f, 1f, 1f, 0.25f), 4f);
-            TooltipHelper.Attach(done.gameObject, Loc.T("Вернуться на карту  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(done.gameObject, Loc.T("Вернуться на карту  <color=#A9A392>(Esc)</color>"));
         }
 
         /// <summary>Главная кнопка: тёмное стекло, неоновая кромка, светящаяся полоса слева, подпись с разрядкой.</summary>
@@ -892,7 +892,7 @@ namespace StellarisClone.Rendering
             var d = _draft;
             float load = d.PowerProduce > 0f ? d.PowerDraw / d.PowerProduce : (d.PowerDraw > 0f ? 2f : 0f);
             Color pc = d.IsPowerValid ? (load > 0.85f ? Gold : UIManager.DS.Green) : UIManager.DS.Red;
-            _energyText.text = $"{d.PowerDraw:0}<size=16><color=#8AA2A8>/{d.PowerProduce:0}</color></size>";
+            _energyText.text = $"{d.PowerDraw:0}<size=16><color=#A9A392>/{d.PowerProduce:0}</color></size>";
             _energyFill.fillAmount = Mathf.Clamp01(load);
             _energyFill.color = pc;
             _energyIcon.color = pc;
@@ -963,12 +963,12 @@ namespace StellarisClone.Rendering
             y = RowText(Loc.T("Содержание"), Loc.F("{0:0.#} гелия-3/мес", FleetData.UpkeepFor(FleetType.Military, d.HullClass)), y);
             y = RowText(Loc.T("Флотский лимит"), EmpireEconomy.NavalSize(d.HullClass).ToString(), y);
 
-            _warnText.text = !d.IsPowerValid ? Loc.T("<color=#FF5A5A>Перегрузка энергосети — поставьте реактор или снимите прожорливые модули.</color>")
-                           : d.Mounts.Count == 0 ? Loc.T("<color=#FFCC52>Без оружия корабль не участвует в перестрелке.</color>")
-                           : vsShields > vsArmor * 1.4f ? Loc.T("<color=#8AA2A8>Уклон в кинетику: силён против щитов, слабее против брони.</color>")
-                           : vsArmor > vsShields * 1.4f ? Loc.T("<color=#8AA2A8>Уклон в энергию: силён против брони, щиты отражают часть урона.</color>")
-                           : Loc.T("<color=#5CF59A>Сбалансированное вооружение.</color>");
-            if (cmp) _warnText.text += Loc.F("  <color=#8AA2A8>· ▲▼ — к «{0}»</color>", cur.Name);
+            _warnText.text = !d.IsPowerValid ? Loc.T("<color=#FF6B57>Перегрузка энергосети — поставьте реактор или снимите прожорливые модули.</color>")
+                           : d.Mounts.Count == 0 ? Loc.T("<color=#E7C170>Без оружия корабль не участвует в перестрелке.</color>")
+                           : vsShields > vsArmor * 1.4f ? Loc.T("<color=#A9A392>Уклон в кинетику: силён против щитов, слабее против брони.</color>")
+                           : vsArmor > vsShields * 1.4f ? Loc.T("<color=#A9A392>Уклон в энергию: силён против брони, щиты отражают часть урона.</color>")
+                           : Loc.T("<color=#8CD3A0>Сбалансированное вооружение.</color>");
+            if (cmp) _warnText.text += Loc.F("  <color=#A9A392>· ▲▼ — к «{0}»</color>", cur.Name);
         }
 
         private float Section(string title, float y)
@@ -1137,7 +1137,7 @@ namespace StellarisClone.Rendering
         {
             if (Mathf.Abs(dv) < 0.05f) return y;
             bool good = lowerIsBetter ? dv < 0f : dv > 0f;
-            string col = good ? "#5CF59A" : "#FF7A7A";
+            string col = good ? "#8CD3A0" : "#FF7F6B";
             return CardStatRaw(y, label, $"<color={col}>{(dv > 0f ? "▲ +" : "▼ ")}{dv:0.#}</color>");
         }
 
@@ -1272,7 +1272,7 @@ namespace StellarisClone.Rendering
             float dv = now - before;
             if (Mathf.Abs(dv) < 0.5f) return "";
             bool good = lowerIsBetter ? dv < 0f : dv > 0f;
-            return $" <size=10><color={(good ? "#5CF59A" : "#FF7A7A")}>{(dv > 0f ? "▲" : "▼")}{Mathf.Abs(dv):0}</color></size>";
+            return $" <size=10><color={(good ? "#8CD3A0" : "#FF7F6B")}>{(dv > 0f ? "▲" : "▼")}{Mathf.Abs(dv):0}</color></size>";
         }
 
 
@@ -1317,13 +1317,13 @@ namespace StellarisClone.Rendering
             var fm = FleetManager.Instance;
             if (dm == null || fm == null || _draft == null) return;
             var saved = dm.GetDesign(_draft.Id);
-            if (saved == null) { _statusText.text = Loc.T("<color=#FFCC52>Сначала сохраните проект.</color>"); return; }
+            if (saved == null) { _statusText.text = Loc.T("<color=#E7C170>Сначала сохраните проект.</color>"); return; }
             if (fm.BuildShipFromDesign(saved))
             {
                 SFXManager.Play(Sfx.BuildQueued);
-                _statusText.text = Loc.F("<color=#5CF59A>«{0}» заложен на верфи.</color>", saved.Name);
+                _statusText.text = Loc.F("<color=#8CD3A0>«{0}» заложен на верфи.</color>", saved.Name);
             }
-            else _statusText.text = Loc.T("<color=#FF5A5A>Не хватает ресурсов на постройку.</color>");
+            else _statusText.text = Loc.T("<color=#FF6B57>Не хватает ресурсов на постройку.</color>");
             RefreshFooter();
         }
 
@@ -1332,8 +1332,8 @@ namespace StellarisClone.Rendering
             var dm = ShipDesignManager.Instance;
             if (dm == null) return;
             int n = dm.TryRetrofitAll();
-            _statusText.text = n > 0 ? Loc.F("<color=#5CF59A>Модернизировано кораблей: {0}.</color>", n)
-                                     : Loc.T("<color=#FFCC52>Не хватает сплавов на модернизацию.</color>");
+            _statusText.text = n > 0 ? Loc.F("<color=#8CD3A0>Модернизировано кораблей: {0}.</color>", n)
+                                     : Loc.T("<color=#E7C170>Не хватает сплавов на модернизацию.</color>");
             if (n > 0) SFXManager.Play(Sfx.UiConfirm);
             RefreshFooter();
         }
@@ -1573,7 +1573,7 @@ namespace StellarisClone.Rendering
         private static string ModuleTooltip(ShipModule m)
         {
             string power = m.PowerProduce > 0f ? Loc.F("Выработка энергии +{0:0}", m.PowerProduce) : m.PowerDraw > 0f ? Loc.F("Потребление энергии {0:0}", m.PowerDraw) : Loc.T("Не требует энергии");
-            return $"<b>{m.Name}</b>\n{m.Description}\n<color=#8AA2A8>{ModuleVisuals.StatLine(m)}</color>\n{power} · " +
+            return $"<b>{m.Name}</b>\n{m.Description}\n<color=#A9A392>{ModuleVisuals.StatLine(m)}</color>\n{power} · " +
                    Loc.F("{0:0} сплавов", FleetManager.ShipAlloyCost(m.AlloyCost, 0));
         }
 
@@ -1597,7 +1597,7 @@ namespace StellarisClone.Rendering
             dm.Recalc(_draft);
             if (!_draft.IsPowerValid)
             {
-                _statusText.text = Loc.T("<color=#FF5A5A>Невозможно сохранить: потребление энергии больше выработки.</color>");
+                _statusText.text = Loc.T("<color=#FF6B57>Невозможно сохранить: потребление энергии больше выработки.</color>");
                 return;
             }
             // В архив кладём копию: черновик остаётся редактируемым, сохранённый проект не меняется без «Сохранить»
@@ -1606,7 +1606,7 @@ namespace StellarisClone.Rendering
             Achievements.Unlock(Ach.FirstDesign);
             StarterGoals.MarkDesigned();
             SFXManager.Play(Sfx.UiConfirm, 0.7f);
-            _statusText.text = Loc.F("<color=#5CF59A>«{0}» сохранён — верфь строит по этому проекту.</color>", copy.Name);
+            _statusText.text = Loc.F("<color=#8CD3A0>«{0}» сохранён — верфь строит по этому проекту.</color>", copy.Name);
             RebuildAll();
             LG.Skin(_root.transform);
         }

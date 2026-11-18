@@ -14,9 +14,9 @@ namespace StellarisClone.Rendering
     {
         public const string GreenHex = "#4DF08C";
         public const string RedHex   = "#FF5555";
-        public const string GoldHex  = "#F2C747";
-        public const string CyanHex  = "#33E6CC";
-        public const string MutedHex = "#8AA2A8";
+        public const string GoldHex  = "#E7C170";
+        public const string CyanHex  = "#79D0BF";
+        public const string MutedHex = "#A9A392";
 
         // ==================== ОКРАСКА СТРОК ====================
 

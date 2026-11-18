@@ -260,7 +260,7 @@ namespace StellarisClone.Rendering
             foreach (var _ in EspionageManager.PlayerAgents()) agents++;
             _subtitle.text = Loc.F("Агентов {0}   ·   защита вашей империи <color=#66E0D0>{1:0}%</color>", agents, EspionageManager.PlayerCounter() * 100f) +
                              (es != null
-                                ? Loc.F("   ·   операции: <color=#66F59E>{0}</color> удачных, <color=#FF7A7A>{1}</color> провальных", es.Succeeded, es.Failed) +
+                                ? Loc.F("   ·   операции: <color=#8CD3A0>{0}</color> удачных, <color=#FF7F6B>{1}</color> провальных", es.Succeeded, es.Failed) +
                                   Loc.F("   ·   чужих попыток сорвано: {0}   ·   прорывов к вам: {1}", es.Foiled, es.Breaches)
                                 : "");
         }
@@ -489,7 +489,7 @@ namespace StellarisClone.Rendering
         {
             Color oc = FleetIndicator.OwnerColor(a.TargetOwner);
             var sys = EmpireStats.GetSystem(a.TargetSystem);
-            string rel = ai == null ? "" : ai.AtWar ? Loc.T("<color=#FF7A7A>война</color>") : ai.HasPact ? Loc.T("<color=#66F59E>пакт</color>") : Loc.T("мир");
+            string rel = ai == null ? "" : ai.AtWar ? Loc.T("<color=#FF7F6B>война</color>") : ai.HasPact ? Loc.T("<color=#8CD3A0>пакт</color>") : Loc.T("мир");
             string where = Loc.T("система не выбрана");
             if (sys != null)
             {
@@ -509,8 +509,8 @@ namespace StellarisClone.Rendering
 
             // Разведсеть: подпись, цифра, рост и шкала наград
             Caption(col, Loc.T("РАЗВЕДСЕТЬ"), Body + 32, In);
-            string grow = a.OpKind >= 0 ? Loc.T("<color=#F2C766>заморожена</color>")
-                                        : Loc.F("<color=#66F59E>+{0:0.#}</color> / мес", EspionageManager.BuildRate(a).Total);
+            string grow = a.OpKind >= 0 ? Loc.T("<color=#E7C170>заморожена</color>")
+                                        : Loc.F("<color=#8CD3A0>+{0:0.#}</color> / мес", EspionageManager.BuildRate(a).Total);
             Txt(col, $"<color=#BD8FFF><b>{a.Cover:0}%</b></color>   {grow}", 13, UIManager.DS.TextPrimary, Body + 28, 20, In, In, TextAnchor.UpperRight);
             Track(col, a.Cover, Body + 54);
             NextMilestoneLine(col, a.Cover, Body + 94);
@@ -625,7 +625,7 @@ namespace StellarisClone.Rendering
                 var ic = LGIcons.Create(node.transform, m.Icon, 14, got ? Color.white : isNext ? Purple : new Color(0.6f, 0.66f, 0.72f, 0.55f));
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14, 14));
                 TooltipHelper.Attach(node.gameObject, Loc.F("<b>{0}</b> — при сети {1:0}%\n{2}\n\n", m.Title, m.Cover, m.Desc) +
-                    (got ? Loc.T("<color=#66F59E>Открыто</color>") : Loc.F("<color=#8AA2A8>Ещё {0:0.#}%</color>", m.Cover - cover)));
+                    (got ? Loc.T("<color=#8CD3A0>Открыто</color>") : Loc.F("<color=#A9A392>Ещё {0:0.#}%</color>", m.Cover - cover)));
             }
         }
 
@@ -634,8 +634,8 @@ namespace StellarisClone.Rendering
             Milestone? next = null;
             foreach (var m in Milestones) if (cover < m.Cover) { next = m; break; }
             string line = next.HasValue
-                ? Loc.F("<color=#8AA2A8>Следующее:</color>  <color=#BD8FFF><b>{0}</b></color> при {1:0}%  <color=#8AA2A8>(ещё {2:0.#}%)</color>", next.Value.Title, next.Value.Cover, next.Value.Cover - cover)
-                : Loc.T("<color=#66F59E>Все награды разведки открыты</color>");
+                ? Loc.F("<color=#A9A392>Следующее:</color>  <color=#BD8FFF><b>{0}</b></color> при {1:0}%  <color=#A9A392>(ещё {2:0.#}%)</color>", next.Value.Title, next.Value.Cover, next.Value.Cover - cover)
+                : Loc.T("<color=#8CD3A0>Все награды разведки открыты</color>");
             Txt(col, line, 12, UIManager.DS.TextPrimary, top, 18, In, In);
         }
 
@@ -682,7 +682,7 @@ namespace StellarisClone.Rendering
             {
                 float chance = EspionageManager.SuccessChance(a, op, ai);
                 Color cc = chance >= 0.6f ? UIManager.DS.Green : chance >= 0.4f ? UIManager.DS.Gold : UIManager.DS.Red;
-                info = Loc.F("<color={0}><b>{1:0}%</b></color> успех   <color=#F2C766>★{2:0}</color>   {3} мес.", LGBuild.Hex(cc), chance * 100f, SpyInfo.Cost(op), SpyInfo.Months(op));
+                info = Loc.F("<color={0}><b>{1:0}%</b></color> успех   <color=#E7C170>★{2:0}</color>   {3} мес.", LGBuild.Hex(cc), chance * 100f, SpyInfo.Cost(op), SpyInfo.Months(op));
             }
             else info = Loc.F("нужна сеть {0:0}%  ·  ещё {1:0.#}%", SpyInfo.MinCover(op), SpyInfo.MinCover(op) - a.Cover);
             Txt(rrt, info, 11, netOk ? UIManager.DS.TextPrimary : Muted, 34, 18, 66, 140);
@@ -698,7 +698,7 @@ namespace StellarisClone.Rendering
             btn.interactable = can;
             // Что даст операция и чем рискуете; если кнопка серая — сначала причина
             string preview = EspionageManager.OpPreview(a, op, ai);
-            TooltipHelper.Attach(btn.gameObject, can || reason == null ? preview : $"<color=#FF8888>{reason}</color>\n\n{preview}");
+            TooltipHelper.Attach(btn.gameObject, can || reason == null ? preview : $"<color=#FF7F6B>{reason}</color>\n\n{preview}");
         }
 
         private void ActiveOp(RectTransform col, Leader a, AIEmpireManager ai, float top)
@@ -764,7 +764,7 @@ namespace StellarisClone.Rendering
                 ((RectTransform)b.transform).TopBand(top + 22 + i * 52, 46, In, In);
             }
             if (n <= 3)
-                Txt(col, Loc.F("<color=#F2C766>★{0:0}</color> · {1} мес. · {2}", SpyInfo.Cost(SpyOp.Discord), SpyInfo.Months(SpyOp.Discord), SpyInfo.Desc(SpyOp.Discord)),
+                Txt(col, Loc.F("<color=#E7C170>★{0:0}</color> · {1} мес. · {2}", SpyInfo.Cost(SpyOp.Discord), SpyInfo.Months(SpyOp.Discord), SpyInfo.Desc(SpyOp.Discord)),
                     11, UIManager.DS.TextMuted, top + 26 + n * 52, 48, In, In, wrap: true);
         }
 
@@ -777,12 +777,12 @@ namespace StellarisClone.Rendering
             {
                 var lockIc = LGIcons.Create(col, LGIcon.Lock, 34, new Color(0.6f, 0.66f, 0.72f, 0.5f));
                 lockIc.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -top - 44), new Vector2(34, 34));
-                Txt(col, Loc.F("Досье закрыто\n<size=12><color=#8AA2A8>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>", EspionageManager.DeepIntelCover, a.Cover),
+                Txt(col, Loc.F("Досье закрыто\n<size=12><color=#A9A392>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>", EspionageManager.DeepIntelCover, a.Cover),
                     15, UIManager.DS.TextPrimary, top + 90, 80, In, In, TextAnchor.UpperCenter, bold: true);
                 return;
             }
             string m = LGBuild.Hex(UIManager.DS.TextMuted);
-            string Inc(float v) => v >= 0f ? $"<color=#66F59E>+{v:0.#}</color>" : $"<color=#FF7A7A>{v:0.#}</color>";
+            string Inc(float v) => v >= 0f ? $"<color=#8CD3A0>+{v:0.#}</color>" : $"<color=#FF7F6B>{v:0.#}</color>";
             var res = Txt(col,
                 Loc.F("<color={0}>Гелий-3</color>   {1:0}  ({2})\n", m, ai.EnergyCredits, Inc(ai.MonthlyEnergyIncome)) +
                 Loc.F("<color={0}>Титан</color>   {1:0}  ({2})\n", m, ai.Minerals, Inc(ai.MonthlyMineralsIncome)) +
@@ -868,7 +868,7 @@ namespace StellarisClone.Rendering
                 shown++;
                 AssignRow(list, a, ai.OwnerId, Contacts.NameForPlayer(ai.OwnerId),
                     Loc.F("отношение {0:+0;-0;0}  ·  защита {1:0}%  ·  сеть {2:0}%", ai.Opinion, EspionageManager.TargetCounter(ai) * 100f, EspionageManager.NetworkStrength(ai.OwnerId)) +
-                    (ai.AtWar ? Loc.T("  ·  <color=#FF7A7A>война</color>") : ""),
+                    (ai.AtWar ? Loc.T("  ·  <color=#FF7F6B>война</color>") : ""),
                     lm?.SpyOn(0, ai.OwnerId));
             }
             if (shown == 0)
@@ -923,7 +923,7 @@ namespace StellarisClone.Rendering
             {
                 var ic = LGIcons.Create(col, LGIcon.Leader, 54, new Color(Purple.r, Purple.g, Purple.b, 0.4f));
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 50), new Vector2(54, 54));
-                var t = LGBuild.Label(col, Loc.T("Кандидатов в агенты нет\n<size=12><color=#8AA2A8>Список кандидатов обновляется каждый год.</color></size>"), 15, UIManager.DS.TextPrimary, TextAnchor.UpperCenter, bold: true, wrap: true);
+                var t = LGBuild.Label(col, Loc.T("Кандидатов в агенты нет\n<size=12><color=#A9A392>Список кандидатов обновляется каждый год.</color></size>"), 15, UIManager.DS.TextPrimary, TextAnchor.UpperCenter, bold: true, wrap: true);
                 t.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 1f), new Vector2(0, 6), new Vector2(ColW - 2 * In, 80));
                 return;
             }
@@ -944,7 +944,7 @@ namespace StellarisClone.Rendering
             }
             if (traits == 0) { Txt(col, Loc.T("без особых черт"), 13, Muted, y, 20, In, In); y += 30; }
 
-            Txt(col, Loc.F("<color=#F2C766>★{0:0}</color> найм   ·   {1:0.#} гелия-3 в месяц   ·   лидеров {2}/{3}",
+            Txt(col, Loc.F("<color=#E7C170>★{0:0}</color> найм   ·   {1:0.#} гелия-3 в месяц   ·   лидеров {2}/{3}",
                 LeaderManager.HireInfluence, LeaderManager.UpkeepEnergy, lm.CountFor(0), LeaderManager.MaxLeaders),
                 12, UIManager.DS.TextPrimary, y + 6, 18, In, In);
 
@@ -1077,7 +1077,7 @@ namespace StellarisClone.Rendering
 
                 TooltipHelper.Attach(row.gameObject,
                     Loc.F("<b>{0}</b>\nСеть {1:0}%   ·   защита {2:0}%   ·   отношение {3:+0;-0;0}", Contacts.NameForPlayer(ai.OwnerId), net, EspionageManager.TargetCounter(ai) * 100f, ai.Opinion) +
-                    (ai.AtWar ? Loc.T("   ·   <color=#FF7A7A>война</color>") : ai.HasPact ? Loc.T("   ·   <color=#66F59E>пакт</color>") : ""));
+                    (ai.AtWar ? Loc.T("   ·   <color=#FF7F6B>война</color>") : ai.HasPact ? Loc.T("   ·   <color=#8CD3A0>пакт</color>") : ""));
             }
             if (n == 0)
             {
@@ -1106,12 +1106,12 @@ namespace StellarisClone.Rendering
         private static string AgentTooltip(Leader l)
         {
             var sb = new StringBuilder();
-            sb.Append(Loc.F("<b>{0}</b>\nАгент · уровень {1}\n<color=#8AA2A8>Уровень:</color> {2}", l.Name, l.Level, LeaderManager.LevelBonusText(l)));
-            if (l.Level < LeaderManager.MaxLevel) sb.Append(Loc.F("\n<color=#8AA2A8>До следующего уровня:</color> {0:0} опыта", l.XpToNext));
+            sb.Append(Loc.F("<b>{0}</b>\nАгент · уровень {1}\n<color=#A9A392>Уровень:</color> {2}", l.Name, l.Level, LeaderManager.LevelBonusText(l)));
+            if (l.Level < LeaderManager.MaxLevel) sb.Append(Loc.F("\n<color=#A9A392>До следующего уровня:</color> {0:0} опыта", l.XpToNext));
             foreach (var id in l.Traits)
             {
                 var t = LeaderManager.Trait(id);
-                if (t != null) sb.Append($"\n<color=#FFCC52>{t.Name}</color> — {t.Desc}");
+                if (t != null) sb.Append($"\n<color=#E7C170>{t.Name}</color> — {t.Desc}");
             }
             return sb.ToString();
         }

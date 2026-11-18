@@ -90,13 +90,15 @@ namespace StellarisClone.Rendering
         /// </summary>
         public static Sprite Hex(float thickness = 0f)
         {
-            const int w = 108, h = 96;
-            var pts = new[] { new Vector2(1, 48), new Vector2(27.5f, 95), new Vector2(80.5f, 95), new Vector2(107, 48), new Vector2(80.5f, 1), new Vector2(27.5f, 1) };
-            return Make($"hex_{thickness:0.0}", w, h, (x, y) =>
+            // «Атлас»: вместо сот — круг (кнопки меню как кольца навигационного прибора); thickness > 0 — кольцо
+            const int n = 96;
+            const float r = n * 0.5f - 1f;
+            return Make($"atlas_circle_{thickness:0.0}", n, n, (x, y) =>
             {
-                float d = InsideDistance(pts, x, y);
+                float d = r - Mathf.Sqrt((x - n * 0.5f) * (x - n * 0.5f) + (y - n * 0.5f) * (y - n * 0.5f));
                 if (d < 0f) return 0f;
-                return thickness <= 0f || d <= thickness ? 1f : 0f;
+                float a = Mathf.Clamp01(d + 0.5f);
+                return thickness <= 0f ? a : (d <= thickness * 0.5f ? a : 0f);
             });
         }
 
@@ -106,8 +108,8 @@ namespace StellarisClone.Rendering
         /// </summary>
         public static Sprite Wing(bool slantLeft)
         {
-            const int w = 96, h = 64, slant = 26;
-            return Make($"wing_{(slantLeft ? "l" : "r")}", w, h, (x, y) =>
+            const int w = 96, h = 64, slant = 0;   // «Атлас»: прямой край вместо скоса
+            return Make($"atlas_wing_{(slantLeft ? "l" : "r")}", w, h, (x, y) =>
             {
                 // y = 0 — низ; скос: сверху на всю ширину, снизу отступ slant
                 float t = y / h;                    // 0 низ … 1 верх
@@ -120,8 +122,8 @@ namespace StellarisClone.Rendering
         /// <summary>Тонкая светлая кромка по верху крыла (тот же скос), рисуется поверх Wing.</summary>
         public static Sprite WingRim(bool slantLeft)
         {
-            const int w = 96, h = 64, slant = 26;
-            return Make($"wingrim_{(slantLeft ? "l" : "r")}", w, h, (x, y) =>
+            const int w = 96, h = 64, slant = 0;   // «Атлас»: прямой край вместо скоса
+            return Make($"atlas_wingrim_{(slantLeft ? "l" : "r")}", w, h, (x, y) =>
             {
                 float t = y / h;
                 float cut = slant * (1f - t);
@@ -133,14 +135,28 @@ namespace StellarisClone.Rendering
             }, slantLeft ? new Vector4(slant + 4, 0, 4, 2) : new Vector4(4, 0, slant + 4, 2));
         }
 
+        /// <summary>«Атлас»: капсула (кнопки). thickness = 0 — заливка, иначе обводка; 9-slice по полукругам.</summary>
+        public static Sprite Pill(float thickness = 0f)
+        {
+            const int w = 72, h = 48;
+            const float r = h * 0.5f;
+            return Make($"atlas_pill_{thickness:0.0}", w, h, (x, y) =>
+            {
+                float cx = Mathf.Clamp(x, r, w - r);
+                float d = r - 0.5f - Mathf.Sqrt((x - cx) * (x - cx) + (y - r) * (y - r));
+                if (d < 0f) return 0f;
+                float a = Mathf.Clamp01(d + 0.5f);
+                return thickness <= 0f ? a : (d <= thickness ? a : 0f);
+            }, new Vector4(r, r, r, r));
+        }
+
         /// <summary>Плашка со срезанными углами (левый нижний и правый верхний) — подписи, тултипы, флажки.</summary>
         public static Sprite CutPanel(int cut = 10)
         {
             int n = cut * 2 + 8;
-            return Make($"cut_{cut}", n, n, (x, y) =>
+            // «Атлас»: прямые углы (срезов нет); размер и 9-slice прежние, чтобы не менять вёрстку
+            return Make($"atlas_rect_{cut}", n, n, (x, y) =>
             {
-                if (x + y < cut) return 0f;                       // левый нижний
-                if ((n - x) + (n - y) < cut) return 0f;           // правый верхний
                 return 1f;
             }, new Vector4(cut + 2, cut + 2, cut + 2, cut + 2));
         }
@@ -149,15 +165,12 @@ namespace StellarisClone.Rendering
         public static Sprite CutFrame(int cut = 10, float thickness = 1.5f)
         {
             int n = cut * 2 + 8;
-            return Make($"cutframe_{cut}_{thickness:0.0}", n, n, (x, y) =>
+            // «Атлас»: прямоугольная тонкая рамка (срезов нет)
+            return Make($"atlas_frame_{cut}_{thickness:0.0}", n, n, (x, y) =>
             {
                 bool Inside(float px, float py, float inset)
                 {
-                    if (px < inset || py < inset || px > n - inset || py > n - inset) return false;
-                    float c = cut + inset * 0.4142f;                  // срез смещается на inset·(√2−1)
-                    if (px + py < c) return false;
-                    if ((n - px) + (n - py) < c) return false;
-                    return true;
+                    return !(px < inset || py < inset || px > n - inset || py > n - inset);
                 }
                 return Inside(x, y, 0f) && !Inside(x, y, thickness) ? 1f : 0f;
             }, new Vector4(cut + 2, cut + 2, cut + 2, cut + 2));

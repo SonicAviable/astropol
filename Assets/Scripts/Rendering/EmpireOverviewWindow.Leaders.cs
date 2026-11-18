@@ -58,7 +58,7 @@ namespace StellarisClone.Rendering
                 SectionRow(Loc.T("Лидеров пока нет. Наймите учёного для разведки, адмирала для флота, губернатора для колонии или агента для тайных операций."), UIManager.DS.TextMuted);
 
             SectionRow(Loc.F("КАНДИДАТЫ  ·  найм <color=#FF7A94>★{0:0}</color> влияния  ·  содержание ", LeaderManager.HireInfluence) +
-                       Loc.F("<color=#FFCC52>⚡{0:0.#}</color>/мес  ·  лидеров {1}/{2}  ·  кандидаты обновляются каждый год", LeaderManager.UpkeepEnergy, mine, LeaderManager.MaxLeaders),
+                       Loc.F("<color=#E7C170>⚡{0:0.#}</color>/мес  ·  лидеров {1}/{2}  ·  кандидаты обновляются каждый год", LeaderManager.UpkeepEnergy, mine, LeaderManager.MaxLeaders),
                        UIManager.DS.TextMuted);
             foreach (var c in lm.Candidates) LeaderRow(lm, c, false);
         }
@@ -87,7 +87,7 @@ namespace StellarisClone.Rendering
                 var t = LeaderManager.Trait(id);
                 if (t == null) continue;
                 if (traits.Length > 0) traits.Append(", ");
-                traits.Append(t.Negative ? $"<color=#FF7A7A>{t.Name}</color>" : t.Name);
+                traits.Append(t.Negative ? $"<color=#FF7F6B>{t.Name}</color>" : t.Name);
             }
             TextCell(row, 0.42f, 0.60f, traits.ToString(), CGold, TextAnchor.MiddleLeft, 11, true);
             TextCell(row, 0.60f, 0.78f, hired ? PostText(l) : "—", UIManager.DS.TextPrimary, TextAnchor.MiddleLeft, 11);
@@ -153,7 +153,7 @@ namespace StellarisClone.Rendering
             switch (l.Post)
             {
                 case LeaderPost.Council:
-                    return Loc.F("<color=#66F59E>Научный совет</color> · наука +{0:0}%", (LeaderManager.ResearchMult(0) - 1f) * 100f);
+                    return Loc.F("<color=#8CD3A0>Научный совет</color> · наука +{0:0}%", (LeaderManager.ResearchMult(0) - 1f) * 100f);
                 case LeaderPost.Spy:
                 {
                     if (l.TargetOwner == 0) return Loc.T("<color=#BD8FFF>Контрразведка</color> · дома");
@@ -185,13 +185,13 @@ namespace StellarisClone.Rendering
             var sb = new StringBuilder();
             sb.Append(Loc.F("<b>{0}</b>\n{1} · уровень {2}", l.Name, LeaderManager.ClassName(l.Class), l.Level));
             if (l.Level < LeaderManager.MaxLevel) sb.Append(Loc.F(" · до следующего {0} опыта", Mathf.CeilToInt(l.XpToNext)));
-            sb.Append(Loc.F("\n<color=#8AA2A8>Уровень:</color> {0}", LeaderManager.LevelBonusText(l)));
+            sb.Append(Loc.F("\n<color=#A9A392>Уровень:</color> {0}", LeaderManager.LevelBonusText(l)));
             foreach (var id in l.Traits)
             {
                 var t = LeaderManager.Trait(id);
-                if (t != null) sb.Append($"\n<color={(t.Negative ? "#FF7A7A" : "#FFCC52")}>{t.Name}</color> — {t.Desc}");
+                if (t != null) sb.Append($"\n<color={(t.Negative ? "#FF7F6B" : "#E7C170")}>{t.Name}</color> — {t.Desc}");
             }
-            sb.Append("\n\n<color=#8AA2A8>");
+            sb.Append("\n\n<color=#A9A392>");
             sb.Append(l.Class switch
             {
                 LeaderClass.Scientist => Loc.T("Пост: научный корабль (разведка быстрее, трофеи больше) или научный совет (+к науке). Опыт — за разведку."),

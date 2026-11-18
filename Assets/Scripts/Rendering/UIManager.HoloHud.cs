@@ -129,7 +129,7 @@ namespace StellarisClone.Rendering
             track.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 22f));
             var stabGlow = HoloImage(root, "StabGlow", FactionSelectScreen.RadialSprite(), new Color(StabPink.r, StabPink.g, StabPink.b, 0.16f));
             stabGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 70f));
-            _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.90f, 1f), DS.NeonCyan);
+            _stabRing = HoloImage(root, "StabRing", HudArt.Ring(0.955f, 1f), DS.Gold);
             _stabGlow = stabGlow;
             _stabRing.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter, Vector2.one * (RulerD + 22f));
             RadialFill(_stabRing, 0f);
@@ -141,7 +141,7 @@ namespace StellarisClone.Rendering
             // Значок места империи в рейтинге — кружок у правого нижнего края портрета
             var rank = HoloImage(root, "RankBadge", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 1f));
             rank.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter + new Vector2(34f, -34f), new Vector2(26f, 26f));
-            var rankRing = HoloImage(rank.transform, "Ring", HudArt.Ring(0.86f, 1f), DS.NeonCyan);
+            var rankRing = HoloImage(rank.transform, "Ring", HudArt.Ring(0.90f, 1f), DS.Gold);
             rankRing.rectTransform.Stretch();
             _rankText = CreateText(rank.transform, "", 12, FontStyle.Normal, DS.NeonCyan, TextAnchor.MiddleCenter);
             _rankText.font = GameFont.Display;
@@ -150,15 +150,16 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(rank.gameObject, Loc.T("<b>Место в галактике</b>\nПо очкам империи: системы, население, технологии, флот и чудеса."));
 
             float x = 20f + RulerD + 28f;
-            _empireName = CreateText(root, "", 19, FontStyle.Normal, DS.NeonCyan, TextAnchor.LowerLeft);
+            _empireName = CreateText(root, "", 21, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
             _empireName.font = GameFont.Display;
             _empireName.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -18f), new Vector2(240f, 26f));
             _empireName.resizeTextForBestFit = true;
             _empireName.resizeTextMinSize = 11;
-            _empireName.resizeTextMaxSize = 19;
+            _empireName.resizeTextMaxSize = 21;
             _empireName.horizontalOverflow = HorizontalWrapMode.Wrap;
 
-            _empireRuler = CreateText(root, "", 12, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleLeft);
+            _empireRuler = CreateText(root, "", 11, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleLeft);
+            _empireRuler.font = GameFont.Mono;
             _empireRuler.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -46f), new Vector2(240f, 16f));
             _empireRuler.horizontalOverflow = HorizontalWrapMode.Wrap;
             _empireRuler.verticalOverflow = VerticalWrapMode.Truncate;
@@ -328,7 +329,7 @@ namespace StellarisClone.Rendering
             bg.raycastTarget = false;
             LG.Ignore(go, includeChildren: false);
 
-            var rim = HoloImage(go.transform, "Rim", HudArt.WingRim(slantLeft), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.55f));
+            var rim = HoloImage(go.transform, "Rim", HudArt.WingRim(slantLeft), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.28f));
             rim.type = Image.Type.Sliced;
             rim.rectTransform.Stretch();
 
@@ -366,7 +367,7 @@ namespace StellarisClone.Rendering
             var faceBtn = face.gameObject.AddComponent<Button>();
             faceBtn.transition = Selectable.Transition.None;
             faceBtn.onClick.AddListener(TogglePauseFromDisk);
-            TooltipHelper.Attach(face.gameObject, Loc.T("<b>Дата</b>\nКольцо и фаза луны — ход текущего месяца (1-е — новолуние, середина — полнолуние).\nЩелчок — пауза / продолжить  <color=#8AA2A8>(ПРОБЕЛ)</color>"));
+            TooltipHelper.Attach(face.gameObject, Loc.T("<b>Дата</b>\nКольцо и фаза луны — ход текущего месяца (1-е — новолуние, середина — полнолуние).\nЩелчок — пауза / продолжить  <color=#A9A392>(ПРОБЕЛ)</color>"));
             var edge = HoloImage(disk, "Edge", HudArt.Ring(0.975f, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.45f));
             edge.rectTransform.Stretch();
 
@@ -382,13 +383,15 @@ namespace StellarisClone.Rendering
             plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), Vector2.one * (DiskD * 0.80f));
 
             // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
-            _diskMonth = CreateText(disk, "", 11, FontStyle.Bold, HoloLine, TextAnchor.MiddleCenter);
+            _diskMonth = CreateText(disk, "", 10, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleCenter);
+            _diskMonth.font = GameFont.Mono;
             _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 31f), new Vector2(DiskD, 16f));
             _diskMonth.Track(3f);
-            _diskDay = CreateText(disk, "", 36, FontStyle.Normal, DS.TextPrimary, TextAnchor.MiddleCenter);
+            _diskDay = CreateText(disk, "", 36, FontStyle.Normal, DS.Gold, TextAnchor.MiddleCenter);
             _diskDay.font = GameFont.Display;
             _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 4f), new Vector2(DiskD, 44f));
-            _diskYear = CreateText(disk, "", 13, FontStyle.Bold, DS.TextMuted, TextAnchor.MiddleCenter);
+            _diskYear = CreateText(disk, "", 12, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleCenter);
+            _diskYear.font = GameFont.Mono;
             _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -26f), new Vector2(DiskD, 18f));
             _diskYear.Track(4.5f);
 
@@ -622,11 +625,11 @@ namespace StellarisClone.Rendering
                 _empireKey = key;
                 var leader = LeaderPortraits.ForFaction(f);
                 Color accent = leader != null ? leader.Accent : f != null ? f.EmpireColor : DS.NeonCyan;
-                _empireName.text = f != null ? f.Name.ToUpper() : "";
-                _empireName.color = Color.Lerp(accent, Color.white, 0.15f);
-                // Кольцо вокруг портрета — цвета фракции (как рамка портрета и название)
-                if (_stabRing != null) _stabRing.color = Color.Lerp(accent, Color.white, 0.1f);
-                if (_stabGlow != null) _stabGlow.color = new Color(accent.r, accent.g, accent.b, 0.16f);
+                // «Атлас»: название — Spectral обычным регистром, кремовое; кольцо портрета — золотое, без ореола
+                _empireName.text = f != null ? f.Name : "";
+                _empireName.color = DS.TextPrimary;
+                if (_stabRing != null) _stabRing.color = DS.Gold;
+                if (_stabGlow != null) _stabGlow.color = new Color(0f, 0f, 0f, 0f);
                 _empireRuler.text = leader != null ? $"{leader.Name} · {leader.Title}" : (f != null ? f.Title : "");
             }
         }

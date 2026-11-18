@@ -175,7 +175,7 @@ namespace StellarisClone.Cards
                     RefreshPanels();
                     yield return Banner(e.Amount >= BattleState.Turns ? Loc.T("ПОСЛЕДНИЙ ХОД") : Loc.F("ХОД {0}", e.Amount),
                         Loc.F("Очки приказов: {0}", _state.Sides[_P].Points), new Color(1f, 0.85f, 0.5f), 0.9f);
-                    AddLog(Loc.F("<color=#F2C766>— Ход {0} —</color>", e.Amount));
+                    AddLog(Loc.F("<color=#E7C170>— Ход {0} —</color>", e.Amount));
                     break;
 
                 case EvType.Draw:
@@ -300,7 +300,7 @@ namespace StellarisClone.Cards
                 {
                     RefreshSector(e.Sector);
                     var name = CardArt.SectorName(_state.Sectors[e.Sector].Type);
-                    AddLog(e.Side == _P ? Loc.F("<color=#7CF29A>Сектор «{0}» ваш</color>", name) : Loc.F("<color=#FF8A80>Сектор «{0}» у врага</color>", name));
+                    AddLog(e.Side == _P ? Loc.F("<color=#7CF29A>Сектор «{0}» ваш</color>", name) : Loc.F("<color=#FF7F6B>Сектор «{0}» у врага</color>", name));
                     SFXManager.Play(e.Side == _P ? Sfx.FxCapture : Sfx.FxLost, 1f, 1f, Pan(_fx.Local(_sec[e.Sector].PowerBar)));
                     SFXManager.Play(Sfx.Radio, 0.5f, e.Side == _P ? 1f : 0.92f);
                     SFXManager.Play(Sfx.CardSlam, 0.6f, 0.7f);
@@ -454,7 +454,7 @@ namespace StellarisClone.Cards
                 _fx.Ring(p, new Color(1f, 0.35f, 0.25f, 1f), 30f, 420f, 0.5f);
                 _fx.Shake(14f, 0.4f);
                 SFXManager.Play(Sfx.Boom, 0.85f);
-                AddLog(Loc.F("<color=#FF8A80>Ловушка «{0}» сработала</color>", e.Def != null ? e.Def.Name : "?"));
+                AddLog(Loc.F("<color=#FF7F6B>Ловушка «{0}» сработала</color>", e.Def != null ? e.Def.Name : "?"));
                 yield return Banner(Loc.T("ЛОВУШКА!"), e.Def != null ? e.Def.Name : "", new Color(1f, 0.4f, 0.3f), 0.8f);
             }
             if (trap != null) StartCoroutine(Dissolve(trap, new Color(1f, 0.45f, 0.35f)));
@@ -893,7 +893,7 @@ namespace StellarisClone.Cards
                 SFXManager.Play(Sfx.ImpactFlesh, 0.9f, 0.8f, Pan(p));
                 SFXManager.Play(Sfx.UnitDown, 0.45f, 1.15f, Pan(p));
             }
-            AddLog(Loc.F("{0} — <color=#FF8A80>{1} погиб</color>", SideName(v.Side), def.Name));
+            AddLog(Loc.F("{0} — <color=#FF7F6B>{1} погиб</color>", SideName(v.Side), def.Name));
             StartCoroutine(Shatter(v, hard));
             yield return W(0.22f);
         }
@@ -965,7 +965,7 @@ namespace StellarisClone.Cards
             {
                 // Артподготовка с орбиты перед первым ходом: снаряды по укреплениям колонии, дальше — числа урона
                 bool mine = e.Side == _P;
-                AddLog(Loc.F("<color=#F2C766>Артподготовка с орбиты: укрепления −{0} брони</color>", e.Amount));
+                AddLog(Loc.F("<color=#E7C170>Артподготовка с орбиты: укрепления −{0} брони</color>", e.Amount));
                 SFXManager.Play(Sfx.ShellWhistle, 1f);
                 _fx.Flash(new Color(1f, 0.55f, 0.25f), 0.2f, 1.2f);
                 yield return Banner(Loc.T("АРТПОДГОТОВКА"),
@@ -994,7 +994,7 @@ namespace StellarisClone.Cards
                 var hq = _sec[e.Sector];
                 hq.HighC = new Color(1f, 0.35f, 0.3f);
                 hq.HighA = 1f;
-                AddLog(Loc.T("<color=#FF8A80>Штаб под угрозой: ещё ход — и прорыв</color>"));
+                AddLog(Loc.T("<color=#FF7F6B>Штаб под угрозой: ещё ход — и прорыв</color>"));
                 SFXManager.Play(Sfx.Radio, 1f, 0.9f);
                 yield return Banner(Loc.T("ШТАБ ПОД УГРОЗОЙ"),
                     e.Side == _P ? Loc.T("Удержите перевес ещё ход — и прорыв") : Loc.T("Ещё ход — и враг прорвётся. Усильте Штаб!"),

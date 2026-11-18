@@ -137,7 +137,7 @@ namespace StellarisClone.Cards
             _subtitle.supportRichText = true;
             var close = LGBuild.Button(_rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Отменить штурм  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Отменить штурм  <color=#A9A392>(Esc)</color>"));
 
             // Полоса состояния: места, приказы, колода, разведка
             var bar = LGBuild.Panel(_rt, "Status", CPanel);
@@ -208,10 +208,10 @@ namespace StellarisClone.Cards
             var fight = MenuPrimaryButton.Create(foot, Loc.T("В БОЙ  ›"), 17, () => Launch(false), MenuPrimaryButton.Red);
             ((RectTransform)fight.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(210, 52));
             fight.Label.Track(2f);
-            TooltipHelper.Attach(fight.Label.transform.parent.gameObject, Loc.T("<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#8AA2A8>(Enter)</color>"));
+            TooltipHelper.Attach(fight.Label.transform.parent.gameObject, Loc.T("<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#A9A392>(Enter)</color>"));
             FootButton(foot, Loc.T("АВТОБОЙ"), LGIcon.Fast, UIManager.DS.BtnNeutral, false, 220f, 160f, () => Launch(true),
                 Loc.T("Тот же десант, но без экрана боя: исход рассчитают правила, решения примет ИИ"));
-            FootButton(foot, Loc.T("ОТМЕНА"), null, UIManager.DS.BtnNeutral, false, 390f, 130f, Close, Loc.T("Не штурмовать  <color=#8AA2A8>(Esc)</color>"));
+            FootButton(foot, Loc.T("ОТМЕНА"), null, UIManager.DS.BtnNeutral, false, 390f, 130f, Close, Loc.T("Не штурмовать  <color=#A9A392>(Esc)</color>"));
 
             _previewRoot = LGBuild.Rect(_rt, "Preview");
             _previewRoot.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, BigCard);
@@ -309,7 +309,7 @@ namespace StellarisClone.Cards
             {
                 _fcSig = sig; _fcDone = 0; _fcWins = 0;
                 _fcStart = Time.unscaledTime + 0.25f;
-                _forecast.text = Loc.T("<color=#8AA2A8>Прогноз: считаем…</color>");
+                _forecast.text = Loc.T("<color=#A9A392>Прогноз: считаем…</color>");
                 LGBuild.SetBar(_forecastFill, 0f);
                 return;
             }

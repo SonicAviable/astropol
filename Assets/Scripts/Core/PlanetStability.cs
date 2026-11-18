@@ -218,13 +218,13 @@ namespace StellarisClone.Core
             var t = p.Tier;
             var sb = new System.Text.StringBuilder();
             sb.Append(Loc.F("<b>Стабильность: {0:0}</b> · <color=#{1}>{2}</color>\n", p.Stability, Hex(TierColor(t)), TierName(t)));
-            sb.Append(Loc.F("<color=#8AA2A8>{0}</color>\n", TierEffect(t)));
+            sb.Append(Loc.F("<color=#A9A392>{0}</color>\n", TierEffect(t)));
             if (Mathf.Abs(target - p.Stability) >= 1f)
-                sb.Append(Loc.F("<color=#8AA2A8>Движется к {0:0} (до {1} в месяц)</color>\n", target, MonthlyDrift));
-            sb.Append("<color=#8AA2A8>──────────────</color>\n");
+                sb.Append(Loc.F("<color=#A9A392>Движется к {0:0} (до {1} в месяц)</color>\n", target, MonthlyDrift));
+            sb.Append("<color=#A9A392>──────────────</color>\n");
             foreach (var f in list)
             {
-                string col = f.Value >= 0f ? "#9EF0C8" : "#FF9A8A";
+                string col = f.Value >= 0f ? "#8CD3A0" : "#FF7F6B";
                 sb.Append($"{f.Name}: <color={col}>{(f.Value >= 0f ? "+" : "−")}{Mathf.Abs(f.Value):0}</color>\n");
             }
             if (p.RiotMonths > 0)

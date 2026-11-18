@@ -593,7 +593,7 @@ namespace StellarisClone.Rendering
                     SetChip(c++, LGIcon.Wrench, UIManager.DS.Gold, gain > 0.005f ? Loc.F("устарел +{0:0}%", gain * 100f) : Loc.T("устарел"),
                         Loc.F("<b>Устаревший проект</b>\nКорабль построен не по актуальному проекту корпуса «{0}». ", dm.GetLatestDesign(d.HullClass)?.Name) +
                         Loc.F("Модернизация на верфи: мощь {0}{1:0}%, стоимость {2:0} сплавов.\n", (gain >= 0f ? "+" : ""), gain * 100f, dm.RetrofitCost(d)) +
-                        Loc.T("<color=#8AA2A8>Верфь → «Модернизация эскадры»: «Выделенный» или «Все устаревшие».</color>"));
+                        Loc.T("<color=#A9A392>Верфь → «Модернизация эскадры»: «Выделенный» или «Все устаревшие».</color>"));
                 }
                 else
                     SetChip(c++, LGIcon.Thruster, new Color(0.6f, 0.85f, 1f), $"{d.Evasion:0}%",
@@ -622,7 +622,7 @@ namespace StellarisClone.Rendering
                 // Десантные места вместо скорости (скорость — в подсказке)
                 int cap = StellarisClone.Cards.ArmyManager.Capacity(d);
                 SetChip(c++, LGIcon.Population, new Color(1f, 0.82f, 0.4f), Loc.F("десант {0}", cap),
-                    troops + Loc.F("\n\n<color=#8AA2A8>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>", FleetRoute.DaysPerJump(d), d.UpkeepEnergy));
+                    troops + Loc.F("\n\n<color=#A9A392>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>", FleetRoute.DaysPerJump(d), d.UpkeepEnergy));
             }
             else
                 SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), Loc.F("{0:0} дн/прыжок", FleetRoute.DaysPerJump(d)),
@@ -639,9 +639,9 @@ namespace StellarisClone.Rendering
                 float left = cm.FtlReadyIn(d);
                 SetProgress(1f - left / CombatManager.FtlSpoolDays, left > 0f ? UIManager.DS.NeonCyan : UIManager.DS.Green);
                 _route.text = cm.IsRetreating(d)
-                    ? (left > 0f ? Loc.F("<color=#F2C747>Отступление:</color> прыжок через {0:0.0} дн.", left) : Loc.T("<color=#F2C747>Отступление:</color> гиперпривод готов — прыжок"))
+                    ? (left > 0f ? Loc.F("<color=#E7C170>Отступление:</color> прыжок через {0:0.0} дн.", left) : Loc.T("<color=#E7C170>Отступление:</color> гиперпривод готов — прыжок"))
                     : left > 0f ? Loc.F("Разгон гиперпривода: {0:0.0} дн. до возможности экстренного прыжка", left)
-                                : Loc.T("<color=#5CF59A>Гиперпривод готов</color> — можно отступить экстренным прыжком");
+                                : Loc.T("<color=#8CD3A0>Гиперпривод готов</color> — можно отступить экстренным прыжком");
                 return;
             }
             switch (d.State)
@@ -706,7 +706,7 @@ namespace StellarisClone.Rendering
                 if (fm != null && fm.NeedsRepair(d))
                 {
                     float r = fm.RepairRateAt(d.CurrentSystemId, d.OwnerId);
-                    return r > 0f ? Loc.F("Ремонт: {0:0}% в день", r * 100f) : Loc.T("<color=#F2C747>Повреждён</color> — ремонт только на своей территории");
+                    return r > 0f ? Loc.F("Ремонт: {0:0}% в день", r * 100f) : Loc.T("<color=#E7C170>Повреждён</color> — ремонт только на своей территории");
                 }
                 return Loc.T("ПКМ по системе — лететь   ·   Shift+ПКМ — добавить в очередь");
             }

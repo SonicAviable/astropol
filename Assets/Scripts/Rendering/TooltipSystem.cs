@@ -221,7 +221,7 @@ namespace StellarisClone.Rendering
             if (_text != null && _shownRaw == text && _targetAlpha > 0.1f) StartClosingAnimation();
         }
 
-        // ---------- значки в тексте: [[Minerals]] или [[Energy:#F2C747]] → настоящий значок интерфейса ----------
+        // ---------- значки в тексте: [[Minerals]] или [[Energy:#E7C170]] → настоящий значок интерфейса ----------
         private const string IconGap = "\u2002\u2002\u2002";   // место под значок: три полукруглые шпации
         private static readonly System.Text.RegularExpressions.Regex IconToken =
             new System.Text.RegularExpressions.Regex(@"\[\[(\w+)(?::(#[0-9A-Fa-f]{6}))?\]\]");
@@ -309,7 +309,7 @@ namespace StellarisClone.Rendering
         }
 
         // ---------- Шапка подсказки (кино-карта) ----------
-        // Первая строка «<b>Заголовок</b>» (можно со значком перед ней: [[Energy:#F2C747]]<b>Гелий-3</b>) становится шапкой.
+        // Первая строка «<b>Заголовок</b>» (можно со значком перед ней: [[Energy:#E7C170]]<b>Гелий-3</b>) становится шапкой.
         // Необязательная метка в самом начале добавляет превью и подробности:
         //   [[hdr|#RRGGBB|подзаголовок|метка справа|orb]]   (orb — светящийся шар цвета #RRGGBB, «-» — без шара;
         //   orb:Id — живая звезда системы Id, как на карте)

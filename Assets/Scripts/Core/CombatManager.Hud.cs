@@ -213,7 +213,7 @@ namespace StellarisClone.Core
                                        () => SetPlayerStance(_hudSystem, st), sIcons[i], StanceName(st).ToUpper(), 9, 8f);
                 ((RectTransform)b.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(64 + i * 100, 0), new Vector2(96, 30));
                 _stanceBg[i] = b.GetComponent<Image>();
-                TooltipHelper.Attach(b.gameObject, Loc.F("<b>{0}</b>\n{1}\n<color=#8AA2A8>Выбор запоминается для следующих боёв.</color>", StanceName(st), StanceDesc(st)));
+                TooltipHelper.Attach(b.gameObject, Loc.F("<b>{0}</b>\n{1}\n<color=#A9A392>Выбор запоминается для следующих боёв.</color>", StanceName(st), StanceDesc(st)));
             }
 
             var plbl = LGBuild.Label(row, Loc.T("ЦЕЛИ"), 10, UIManager.DS.TextMuted, TextAnchor.MiddleRight, bold: true);
@@ -292,8 +292,8 @@ namespace StellarisClone.Core
             string enemyName = enemy.Owner > 0 ? AIEmpireManager.NameOf(enemy.Owner, Loc.T("Противник")) : Loc.T("Противник");
             Color ec = enemy.Owner >= 0 ? FleetIndicator.OwnerColor(enemy.Owner) : UIManager.DS.Red;
             string myName = UIManager.Instance?.SelectedFaction?.Name ?? Loc.T("Ваш флот");
-            _hudMe.Name.text = $"<color={LGBuild.Hex(FleetIndicator.OwnColor)}>{myName}</color>  <size=10><color=#F2C747>{StanceName(StanceOf(b, 0)).ToUpper()}</color></size>";
-            _hudEnemy.Name.text = $"<size=10><color=#F2C747>{StanceName(StanceOf(b, enemy.Owner)).ToUpper()}</color></size>  <color={LGBuild.Hex(Color.Lerp(ec, Color.white, 0.2f))}>{enemyName}</color>";
+            _hudMe.Name.text = $"<color={LGBuild.Hex(FleetIndicator.OwnColor)}>{myName}</color>  <size=10><color=#E7C170>{StanceName(StanceOf(b, 0)).ToUpper()}</color></size>";
+            _hudEnemy.Name.text = $"<size=10><color=#E7C170>{StanceName(StanceOf(b, enemy.Owner)).ToUpper()}</color></size>  <color={LGBuild.Hex(Color.Lerp(ec, Color.white, 0.2f))}>{enemyName}</color>";
 
             FillSide(_hudMe, me, me.Hp, me.StartHp, me.Shields, me.MaxShields, dt, FleetIndicator.OwnColor);
             FillSide(_hudEnemy, enemy, enemyHp, enemyStartHp, enemySh, enemyShMax, dt, ec);
@@ -305,9 +305,9 @@ namespace StellarisClone.Core
             float share = total > 0f ? me.Power / total : 0.5f;
             LGBuild.SetBar(_balanceBar, share, Color.Lerp(UIManager.DS.Red, UIManager.DS.Green, share));
             float ratio = me.Power / Mathf.Max(1f, enemyPower);
-            _balanceText.text = ratio >= 1.1f ? Loc.F("<color=#5CF59A>ПЕРЕВЕС ×{0:0.0}</color>", ratio)
-                              : ratio <= 0.9f ? Loc.F("<color=#FF6A6A>ВРАГ СИЛЬНЕЕ ×{0:0.0}</color>", 1f / Mathf.Max(0.01f, ratio))
-                              : Loc.T("<color=#F2C747>РАВНЫЕ СИЛЫ</color>");
+            _balanceText.text = ratio >= 1.1f ? Loc.F("<color=#8CD3A0>ПЕРЕВЕС ×{0:0.0}</color>", ratio)
+                              : ratio <= 0.9f ? Loc.F("<color=#FF6B57>ВРАГ СИЛЬНЕЕ ×{0:0.0}</color>", 1f / Mathf.Max(0.01f, ratio))
+                              : Loc.T("<color=#E7C170>РАВНЫЕ СИЛЫ</color>");
 
             // Прогноз: за сколько дней каждая сторона снесёт другую при нынешнем темпе
             bool losing = false;
@@ -316,14 +316,14 @@ namespace StellarisClone.Core
             {
                 float tKill = enemyHp / Mathf.Max(1f, me.Dps);
                 float tDie = me.Hp / Mathf.Max(1f, enemyDps);
-                if (tKill > 60f && tDie > 60f) _forecastText.text = Loc.T("<color=#F2C747>Прогноз: затяжной бой</color>");
-                else if (tKill < tDie * 0.9f) _forecastText.text = Loc.F("<color=#5CF59A>Прогноз: победа\nпримерно через {0}</color>", FmtDays(tKill));
+                if (tKill > 60f && tDie > 60f) _forecastText.text = Loc.T("<color=#E7C170>Прогноз: затяжной бой</color>");
+                else if (tKill < tDie * 0.9f) _forecastText.text = Loc.F("<color=#8CD3A0>Прогноз: победа\nпримерно через {0}</color>", FmtDays(tKill));
                 else if (tDie < tKill * 0.9f)
                 {
                     losing = true;
-                    _forecastText.text = Loc.F("<color=#FF6A6A>Прогноз: поражение\nпримерно через {0}</color>", FmtDays(tDie));
+                    _forecastText.text = Loc.F("<color=#FF6B57>Прогноз: поражение\nпримерно через {0}</color>", FmtDays(tDie));
                 }
-                else _forecastText.text = Loc.T("<color=#F2C747>Прогноз: исход неясен</color>");
+                else _forecastText.text = Loc.T("<color=#E7C170>Прогноз: исход неясен</color>");
             }
             if (_retreatFx != null) _retreatFx.SetPulse(losing ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f) : 0f);
 
@@ -354,7 +354,7 @@ namespace StellarisClone.Core
                 if (i == 3) { alive = s.HasStarbase ? 1 : 0; start = s.HasStarbase ? 1 : 0; }
                 else { alive = s.ClassAlive[i]; start = Mathf.Max(alive, s.ClassStart[i]); }
                 bool any = start > 0;
-                ui.ClassText[i].text = !any ? "—" : i == 3 ? Loc.T("в строю") : alive == start ? $"{alive}" : $"{alive}<color=#FF6A6A>/{start}</color>";
+                ui.ClassText[i].text = !any ? "—" : i == 3 ? Loc.T("в строю") : alive == start ? $"{alive}" : $"{alive}<color=#FF6B57>/{start}</color>";
                 ui.ClassText[i].color = any ? Color.white : UIManager.DS.TextMuted;
                 ui.ClassIcon[i].color = any ? (alive > 0 ? Color.Lerp(col, Color.white, 0.35f) : new Color(1f, 0.4f, 0.4f, 0.8f))
                                             : new Color(1f, 1f, 1f, 0.18f);
@@ -417,9 +417,9 @@ namespace StellarisClone.Core
             }
             if (ships == 0) return "";
             if (retreating > 0)
-                return slowest > 0f ? Loc.F("<color=#F2C747>Отступление: прыжок через {0:0.0} дн. ({1} кор.)</color>", slowest, retreating)
-                                    : Loc.F("<color=#F2C747>Отступление: корабли уходят прыжком ({0} кор.)</color>", retreating);
-            return slowest > 0f ? Loc.F("<color=#7FD8FF>ГПД: разгон {0:0.0} дн.</color>", slowest) : Loc.T("<color=#5CF59A>ГПД готов к экстренному прыжку</color>");
+                return slowest > 0f ? Loc.F("<color=#E7C170>Отступление: прыжок через {0:0.0} дн. ({1} кор.)</color>", slowest, retreating)
+                                    : Loc.F("<color=#E7C170>Отступление: корабли уходят прыжком ({0} кор.)</color>", retreating);
+            return slowest > 0f ? Loc.F("<color=#7FD8FF>ГПД: разгон {0:0.0} дн.</color>", slowest) : Loc.T("<color=#8CD3A0>ГПД готов к экстренному прыжку</color>");
         }
 
         private void FocusBattle()

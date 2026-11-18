@@ -172,9 +172,9 @@ namespace StellarisClone.Core
             {
                 Title = Loc.T("Ресурсы"),
                 Voice = "tut_03",
-                Text = Loc.T("<color=#F2C747>Гелий-3</color> питает флот и станции, <color=#4DE6CC>титан</color> идёт на стройку, ") +
+                Text = Loc.T("<color=#E7C170>Гелий-3</color> питает флот и станции, <color=#4DE6CC>титан</color> идёт на стройку, ") +
                        Loc.T("<color=#F29E5C>сплавы</color> — на корабли, <color=#FF7A94>влияние</color> — на форпосты и лидеров, ") +
-                       Loc.T("<color=#5CF59A>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы."),
+                       Loc.T("<color=#8CD3A0>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы."),
                 Anchor = UIAnchors.Resources
             });
 
@@ -479,7 +479,7 @@ namespace StellarisClone.Core
 
         private void SetTask(string text, bool done)
         {
-            _taskText.text = done ? $"<color=#5CF59A>{text}</color>" : text;
+            _taskText.text = done ? $"<color=#8CD3A0>{text}</color>" : text;
             _taskIcon.sprite = LGIcons.Get(done ? LGIcon.Check : LGIcon.Target);
             _taskIcon.color = done ? UIManager.DS.Green : UIManager.DS.Gold;
         }

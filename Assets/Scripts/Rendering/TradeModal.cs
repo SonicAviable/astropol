@@ -201,9 +201,9 @@ namespace StellarisClone.Core
             _getInfluenceTxt.text = $"{_getInfluence} / {(int)ai.Influence}";
 
             _aiStockText.text =
-                Loc.F("<color=#8AA2A8>Запасы {0}:</color>  ", ai.AIName) +
-                $"<color=#F2C747>⚡{(int)ai.EnergyCredits}</color>  " +
-                $"<color=#33E6CC>◆{(int)ai.Minerals}</color>  " +
+                Loc.F("<color=#A9A392>Запасы {0}:</color>  ", ai.AIName) +
+                $"<color=#E7C170>⚡{(int)ai.EnergyCredits}</color>  " +
+                $"<color=#79D0BF>◆{(int)ai.Minerals}</color>  " +
                 $"<color=#E59A55>⬢{(int)ai.Alloys}</color>  " +
                 $"<color=#FF7A8A>★{(int)ai.Influence}</color>";
 
@@ -220,7 +220,7 @@ namespace StellarisClone.Core
 
             if (requestV <= 0.01f && offerV <= 0.01f)
             {
-                _fairnessText.text = Loc.T("<color=#8AA2A8>Задайте условия сделки</color>");
+                _fairnessText.text = Loc.T("<color=#A9A392>Задайте условия сделки</color>");
                 _fairnessTargetColor = UIManager.DS.TextMuted;
             }
             else if (offerV >= threshold)
@@ -232,7 +232,7 @@ namespace StellarisClone.Core
             else
             {
                 float need = threshold - offerV;
-                _fairnessText.text = Loc.F("<color=#FF8888>AI откажет · нужно +{0:0} ценности</color>", need);
+                _fairnessText.text = Loc.F("<color=#FF7F6B>AI откажет · нужно +{0:0} ценности</color>", need);
                 _fairnessTargetColor = UIManager.DS.Red;
             }
         }

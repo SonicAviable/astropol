@@ -131,7 +131,7 @@ namespace StellarisClone.Rendering
         private void Refresh(EmpireObjectives obj)
         {
             var d = obj.Data;
-            _head.text = d.Completed > 0 ? Loc.F("ЦЕЛЬ ИМПЕРИИ  <color=#8AA2A8>· выполнено {0}</color>", d.Completed) : Loc.T("ЦЕЛЬ ИМПЕРИИ");
+            _head.text = d.Completed > 0 ? Loc.F("ЦЕЛЬ ИМПЕРИИ  <color=#A9A392>· выполнено {0}</color>", d.Completed) : Loc.T("ЦЕЛЬ ИМПЕРИИ");
             if (!obj.HasActive)
             {
                 _icon.sprite = LGIcons.Get(LGIcon.Target);
@@ -293,7 +293,7 @@ namespace StellarisClone.Rendering
 
             var later = LGBuild.Button(_rt, "Later", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Later, null, Loc.T("ПОЗЖЕ"), 13);
             ((RectTransform)later.transform).At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 26), new Vector2(200, 46));
-            TooltipHelper.Attach(later.gameObject, Loc.T("Не выбирать сейчас — новые цели предложат через год  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(later.gameObject, Loc.T("Не выбирать сейчас — новые цели предложат через год  <color=#A9A392>(Esc)</color>"));
             _root.SetActive(false);
         }
 

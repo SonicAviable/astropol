@@ -339,7 +339,7 @@ namespace StellarisClone.Rendering
             LGControls.Selector(LGControls.Row(right, ref ry, Loc.T("Автосохранение"), Loc.T("По игровому календарю, в слот «Автосохранение»"), ControlW),
                 auto, GameSettings.AutosaveIndex, GameSettings.SetAutosave);
             var keys = LGControls.Row(right, ref ry, Loc.T("Быстрое сохранение"), Loc.T("F5 — сохранить, F9 — загрузить"), ControlW);
-            var k = LGBuild.Label(keys, "<color=#4DF2DB><b>F5</b></color>  /  <color=#4DF2DB><b>F9</b></color>", 15,
+            var k = LGBuild.Label(keys, "<color=#79D0BF><b>F5</b></color>  /  <color=#79D0BF><b>F9</b></color>", 15,
                                   UIManager.DS.TextPrimary, TextAnchor.MiddleRight);
             k.rectTransform.offsetMax = new Vector2(-8, 0);
             var folder = LGControls.Row(right, ref ry, Loc.T("Папка сохранений"), SaveSystem.Folder.Replace('\\', '/'), ControlW, 70f);

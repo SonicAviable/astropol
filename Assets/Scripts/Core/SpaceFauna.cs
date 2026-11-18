@@ -204,12 +204,12 @@ namespace StellarisClone.Core
                          : h.Kind == (int)FaunaKind.Wanderer ? Loc.F("пройдено {0:0}% пути", h.Progress * 100f)
                          : Loc.T("в пути между системами");
             string tip = Loc.F("<b><color={0}>{1}</color></b> · {2}\n", c, Name(h.Kind), CountText(h)) +
-                         Loc.F("<color=#8AA2A8>Космическая фауна · {0}</color>\n\n", where) +
+                         Loc.F("<color=#A9A392>Космическая фауна · {0}</color>\n\n", where) +
                          Lore(h.Kind) + "\n\n" +
                          Loc.F("<color={0}>Эффект:</color> {1}\n", c, Rule(h));
             string hint = Hint(h);
-            if (!string.IsNullOrEmpty(hint)) tip += Loc.F("\n<color=#8AA2A8>{0}</color>", hint);
-            if (h.Studied) tip += Loc.T("\n<color=#5CE68A>Изучено</color>");
+            if (!string.IsNullOrEmpty(hint)) tip += Loc.F("\n<color=#A9A392>{0}</color>", hint);
+            if (h.Studied) tip += Loc.T("\n<color=#8CD3A0>Изучено</color>");
             return tip;
         }
 

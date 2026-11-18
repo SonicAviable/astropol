@@ -104,12 +104,12 @@ namespace StellarisClone.Rendering
                 : Loc.T("Орбитальный комплекс: <color=#AAA>отсутствует</color>");
 
             _body.text =
-                Loc.T("<color=#F2C747><b>КЛИМАТ И БИОСФЕРА</b></color>\n") +
+                Loc.T("<color=#E7C170><b>КЛИМАТ И БИОСФЕРА</b></color>\n") +
                 Loc.F("Пригодность: Habitability {0}%\n", _planet.HabitabilityPercent) +
                 Loc.F("Размер мира: Planet Size {0}\n\n", _planet.PlanetSize) +
-                Loc.T("<color=#F2C747><b>ЗАЛЕЖИ И РАЗРАБОТКА</b></color>\n") +
-                Loc.F("<color=#33E6CC>◆ Титан</color>  {0}\n", _planet.MineralDeposit) +
-                Loc.F("<color=#F2C747>⚡ Гелий-3</color>  {0}\n", _planet.EnergyDeposit) +
+                Loc.T("<color=#E7C170><b>ЗАЛЕЖИ И РАЗРАБОТКА</b></color>\n") +
+                Loc.F("<color=#79D0BF>◆ Титан</color>  {0}\n", _planet.MineralDeposit) +
+                Loc.F("<color=#E7C170>⚡ Гелий-3</color>  {0}\n", _planet.EnergyDeposit) +
                 $"{station}\n" +
                 (surveyed ? Loc.T("Сенсорный архив: полный") : Loc.T("<color=#FFAA88>Требуется разведка системы</color>"));
 

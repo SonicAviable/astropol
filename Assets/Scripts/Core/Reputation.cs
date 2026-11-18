@@ -94,15 +94,15 @@ namespace StellarisClone.Core
             var sb = new System.Text.StringBuilder();
             sb.Append(Loc.F("<b>Репутация: {0} ({1:+0;-0;0})</b>\n", Current, Value));
             sb.Append(Loc.T("Её видят все знакомые империи: она меняет их отношение к вам, цену сделок и согласие на пакты и союзы.\n"));
-            sb.Append(Loc.T("<color=#8AA2A8>Падает за войну без повода, нарушенный пакт, брошенного союзника. Растёт за соблюдённые договоры. Дурная слава со временем забывается.</color>"));
+            sb.Append(Loc.T("<color=#A9A392>Падает за войну без повода, нарушенный пакт, брошенного союзника. Растёт за соблюдённые договоры. Дурная слава со временем забывается.</color>"));
             if (_history.Count > 0)
             {
                 sb.Append(Loc.T("\n\n<b>Последние события</b>"));
                 foreach (var e in _history)
                 {
-                    string c = e.Delta >= 0f ? "#6FE09A" : "#FF8080";
+                    string c = e.Delta >= 0f ? "#8CD3A0" : "#FF7F6B";
                     sb.Append($"\n<color={c}>{e.Delta:+0;-0}</color>  {e.Label}");
-                    if (e.Year > 0) sb.Append($" <color=#8AA2A8>· {e.Year}</color>");
+                    if (e.Year > 0) sb.Append($" <color=#A9A392>· {e.Year}</color>");
                 }
             }
             return sb.ToString();

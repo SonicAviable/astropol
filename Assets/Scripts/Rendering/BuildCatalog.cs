@@ -230,7 +230,7 @@ namespace StellarisClone.Rendering
             float mult = FactionTraits.BuildTimeMult(0);
             int queued = Builds != null ? Builds.ShipQueue(0).Count : 0;
             string yardNote = queued >= ConstructionManager.ShipyardSlots
-                ? Loc.F("\n<color=#F2C46B>Стапели заняты ({0} в очереди): корабль встанет в очередь верфи.</color>", queued) : "";
+                ? Loc.F("\n<color=#E7C170>Стапели заняты ({0} в очереди): корабль встанет в очередь верфи.</color>", queued) : "";
 
             void Civil(string id, FleetType type, LGIcon icon, string title, string effect, string detail, float alloys, float energy)
             {
@@ -324,9 +324,9 @@ namespace StellarisClone.Rendering
             }
             s += Loc.F("Районов {0} из {1} · жителей {2} · рабочих мест {3}", p.BuiltDistricts, p.MaxDistricts, p.Population, p.WorkerSlots);
             if (t != DistrictType.Urban && p.Population > 0 && p.IdlePops == 0)
-                s += Loc.T("\n<color=#F2C46B>Свободных жителей нет: район заработает, когда колония вырастет.</color>");
+                s += Loc.T("\n<color=#E7C170>Свободных жителей нет: район заработает, когда колония вырастет.</color>");
             else if (t != DistrictType.Urban && p.IdlePops > 0)
-                s += Loc.F("\n<color=#9EF0C8>Безработных {0} — они сразу выйдут на смену.</color>", p.IdlePops);
+                s += Loc.F("\n<color=#8CD3A0>Безработных {0} — они сразу выйдут на смену.</color>", p.IdlePops);
             return s;
         }
     }

@@ -104,19 +104,7 @@ namespace StellarisClone.Rendering
             _inspHeaderGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2(60, -40), new Vector2(520, 260));
             LG.Ignore(_inspHeaderGlow.gameObject);
 
-            // Уголки-скобы цвета интерфейса
-            Color cc = new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.75f);
-            foreach (var corner in new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) })
-            {
-                float sx = corner.x < 0.5f ? 1f : -1f, sy = corner.y < 0.5f ? 1f : -1f;
-                var h = LGBuild.Panel(insp, "Bracket", cc);
-                h.raycastTarget = false;
-                h.rectTransform.At(corner, new Vector2(corner.x, corner.y), new Vector2(sx * 3f, sy * 3f), new Vector2(18, 2));
-                var v = LGBuild.Panel(insp, "Bracket", cc);
-                v.raycastTarget = false;
-                v.rectTransform.At(corner, new Vector2(corner.x, corner.y), new Vector2(sx * 3f, sy * 3f), new Vector2(2, 18));
-                LG.Ignore(h.gameObject); LG.Ignore(v.gameObject);
-            }
+            // «Атлас»: бирюзовых скоб по углам нет — углы отмечают золотые перекрестья окна (шейдер)
         }
 
         /// <summary>
@@ -142,11 +130,9 @@ namespace StellarisClone.Rendering
 
             var radial = FactionSelectScreen.RadialSprite();
             _inspStarHalo = Layer("Halo", radial, 150f, new Color(1f, 0.9f, 0.6f, 0.55f));
-            var holo = StellarisClone.Cards.UIFx.HoloMat;
-            var ringB = ResSprite("UI/CardBattle/holo_ring_b");
-            var ringA = ResSprite("UI/CardBattle/holo_ring_a");
-            if (ringB != null) { _inspRingB = Layer("RingB", ringB, 96f, new Color(0.3f, 0.95f, 0.85f, 0.7f), holo); StellarisClone.Cards.HoloSpin.Add(_inspRingB, -10f, 0.18f); }
-            if (ringA != null) { _inspRingA = Layer("RingA", ringA, 80f, new Color(1f, 1f, 1f, 0.5f), holo); StellarisClone.Cards.HoloSpin.Add(_inspRingA, 16f, 0.18f, 0f, 1.7f); }
+            // «Атлас»: вместо вращающихся голо-колец — тонкое кремовое кольцо и пунктирная орбита
+            _inspRingB = Layer("RingB", HudArt.Ring(0.975f, 1f), 92f, new Color(0.925f, 0.898f, 0.827f, 0.22f));
+            _inspRingA = Layer("RingA", HudArt.Ring(0.96f, 1f), 74f, new Color(0.906f, 0.757f, 0.439f, 0.45f));
             // Тёмная подложка — только под значком планеты/объекта; звезда светит прямо в космосе
             _inspDisc = Layer("Disc", FleetIndicator.GetDiscSprite(), 58f, new Color(0.01f, 0.02f, 0.035f, 0.92f));
             // Звезда как на карте: неровная корона, светило с потемнением к краю и «зерном», раскалённое ядро, блик-лучи
@@ -187,7 +173,7 @@ namespace StellarisClone.Rendering
             skyGo.transform.SetParent(_inspBanner, false);
             _inspBannerSky = skyGo.AddComponent<RawImage>();
             _inspBannerSky.texture = skyTex;
-            _inspBannerSky.color = skyTex != null ? new Color(0.75f, 0.8f, 0.9f, 1f) : new Color(0f, 0f, 0f, 0f);
+            _inspBannerSky.color = new Color(0f, 0f, 0f, 0f);   // «Атлас»: шапка без картинки туманности — ровный чернильный фон
             _inspBannerSky.raycastTarget = false;
             _inspBannerSky.rectTransform.Stretch();
 
@@ -221,7 +207,7 @@ namespace StellarisClone.Rendering
                 _inspBannerSky.uvRect = new Rect(u, v, 0.4f, 0.4f * 96f / InspectorWidth * 2.2f);
             }
             // Фон шапки — только туманность и свет звезды; планеты в кадре нет
-            if (_inspBannerStar != null) _inspBannerStar.color = new Color(star.r, star.g, star.b, 0.6f);
+            if (_inspBannerStar != null) _inspBannerStar.color = new Color(star.r, star.g, star.b, 0.22f);
             if (_inspBannerPlanet != null) _inspBannerPlanet.gameObject.SetActive(false);
         }
 
@@ -251,7 +237,7 @@ namespace StellarisClone.Rendering
                 _inspTileIcon.sprite = LGIcons.Get(icon);
                 _inspTileIcon.color = tint;
             }
-            if (_inspRingB != null) _inspRingB.color = new Color(owner.r, owner.g, owner.b, 0.7f);
+            if (_inspRingB != null) _inspRingB.color = new Color(0.925f, 0.898f, 0.827f, 0.22f);
             // Звезда — просто светило в космосе, без голографических колец: кольца с эмблемой — знак звёздной базы,
             // и звезда в кольцах путалась с ней. Кольца остаются у планет и прочих объектов
             if (_inspRingA != null) _inspRingA.gameObject.SetActive(!star);

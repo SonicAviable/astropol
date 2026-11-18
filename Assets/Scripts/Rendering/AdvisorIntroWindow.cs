@@ -227,7 +227,7 @@ namespace StellarisClone.Rendering
             _objectiveGroup = obj.gameObject.AddComponent<CanvasGroup>();
             var oic = LGIcons.Create(obj, LGIcon.Target, 15, UIManager.DS.Gold);
             oic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(15, 15));
-            var ot = LGBuild.Label(obj, Loc.T("<color=#FFCC52><b>Первая задача:</b></color>  отправьте научный корабль на разведку приграничных систем"),
+            var ot = LGBuild.Label(obj, Loc.T("<color=#E7C170><b>Первая задача:</b></color>  отправьте научный корабль на разведку приграничных систем"),
                                    12, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
             ot.rectTransform.Stretch(24, 0, 0, 0);
 

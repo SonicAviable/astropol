@@ -105,7 +105,7 @@ namespace StellarisClone.Cards
             if (_heroTip != null)
                 _heroTip.text = "<b>" + (BattleState.HeroPowerName(def) ?? Loc.T("Приказ героя")) + "</b>\n" + (BattleState.HeroPowerText(def) ?? "") +
                                 (reason != null && !me.HeroPowerQueued ? "\n<color=#FF9A7A>" + reason + "</color>" : "") +
-                                "\n<color=#8AA2A8>" + Loc.T("Сработает при подведении хода, после раскрытия карт. Клавиша H") + "</color>";
+                                "\n<color=#A9A392>" + Loc.T("Сработает при подведении хода, после раскрытия карт. Клавиша H") + "</color>";
         }
 
         /// <summary>Каждый кадр: пересчитать прогноз, когда изменился расклад игрока (с небольшой задержкой).</summary>
@@ -120,7 +120,7 @@ namespace StellarisClone.Cards
 
             var me = _state.Sides[_P];
             string sig = _state.Turn + ":" + me.Points + ":" + me.Pending.Count + ":" + me.HeroPowerQueued + ":" + _state.Events.Count;
-            if (sig != _fcSig) { _fcSig = sig; _fcDelay = 0.12f; _fc = null; for (int i = 0; i < 3; i++) _fcText[i].text = "<color=#8AA2A8>…</color>"; }
+            if (sig != _fcSig) { _fcSig = sig; _fcDelay = 0.12f; _fc = null; for (int i = 0; i < 3; i++) _fcText[i].text = "<color=#A9A392>…</color>"; }
             if (_fc != null) return;
             _fcDelay -= dt;
             if (_fcDelay > 0f) return;
@@ -129,7 +129,7 @@ namespace StellarisClone.Cards
             {
                 int pct = Mathf.RoundToInt(_fc.Hold[i] * 100f);
                 string col = pct >= 65 ? "7CF29A" : pct >= 35 ? "F2C766" : "FF8A80";
-                _fcText[i].text = Loc.F("<color=#{0}><b>{1}%</b></color> <color=#9AA6B0>удержать</color>  <color=#8AA2A8>потери {2:0.#}:{3:0.#}</color>",
+                _fcText[i].text = Loc.F("<color=#{0}><b>{1}%</b></color> <color=#9AA6B0>удержать</color>  <color=#A9A392>потери {2:0.#}:{3:0.#}</color>",
                                          col, pct, _fc.MyLoss[i], _fc.EnemyLoss[i]);
             }
             if (_fc.WinNow >= 0.5f) Hint(Loc.F("Прогноз: этот ход может решить бой в вашу пользу ({0:0}%)", _fc.WinNow * 100f));

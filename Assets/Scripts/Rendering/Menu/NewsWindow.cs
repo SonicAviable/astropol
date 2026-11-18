@@ -162,11 +162,11 @@ namespace StellarisClone.Rendering
                 var prev = LGControls.IconButton(_tabsRow, LGIcon.Back, 44, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), () => Step(-1));
                 ((RectTransform)prev.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-edge, 14), new Vector2(44, 44));
                 KeyCap(_tabsRow, "Q", new Vector2(-edge, -32));
-                TooltipHelper.Attach(prev.gameObject, Loc.T("Предыдущая  <color=#8AA2A8>(Q)</color>"));
+                TooltipHelper.Attach(prev.gameObject, Loc.T("Предыдущая  <color=#A9A392>(Q)</color>"));
                 var next = LGControls.IconButton(_tabsRow, LGIcon.Back, 44, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.3f), () => Step(1), 180f);
                 ((RectTransform)next.transform).At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(edge, 14), new Vector2(44, 44));
                 KeyCap(_tabsRow, "E", new Vector2(edge, -32));
-                TooltipHelper.Attach(next.gameObject, Loc.T("Следующая  <color=#8AA2A8>(E)</color>"));
+                TooltipHelper.Attach(next.gameObject, Loc.T("Следующая  <color=#A9A392>(E)</color>"));
             }
 
             // Основная панель

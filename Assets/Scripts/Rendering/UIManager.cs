@@ -524,11 +524,11 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
                 var glow = HoloImage(root, "Glow", FactionSelectScreen.RadialSprite(), new Color(accent.r, accent.g, accent.b, 0f));
                 glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(NavHexW + 40f, NavHexH + 40f));
-                var fill = HoloImage(root, "Fill", HudArt.Hex(), new Color(0.030f, 0.070f, 0.098f, 0.95f));
+                var fill = HoloImage(root, "Fill", HudArt.Hex(), new Color(0.035f, 0.067f, 0.118f, 0.85f));
                 fill.rectTransform.Stretch();
                 fill.raycastTarget = true;
                 fill.alphaHitTestMinimumThreshold = 0.5f;   // наведение — по форме соты
-                var rim = HoloImage(root, "Rim", HudArt.Hex(4f), new Color(accent.r, accent.g, accent.b, 0.55f));
+                var rim = HoloImage(root, "Rim", HudArt.Hex(2.5f), new Color(accent.r, accent.g, accent.b, 0.55f));
                 rim.rectTransform.Stretch();
 
                 var tile = LGBuild.Rect(root, "IconTile");      // сюда же встают кружки-счётчики (решения, журнал)
@@ -553,7 +553,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 fg.alpha = 0f;
                 fg.blocksRaycasts = false;
                 fg.interactable = false;
-                var fbg = HoloImage(flag, "Bg", HudArt.CutPanel(10), new Color(0.025f, 0.060f, 0.085f, 0.96f));
+                var fbg = HoloImage(flag, "Bg", HudArt.CutPanel(10), new Color(0.055f, 0.094f, 0.157f, 0.97f));
                 fbg.type = Image.Type.Sliced;
                 fbg.rectTransform.Stretch();
                 var fedge = HoloImage(flag, "Edge", null, accent);
@@ -663,7 +663,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             return body;
         }
 
-        private const float NavHexW = 54f, NavHexH = 48f, NavStep = 52f, NavGroupGap = 12f;
+        private const float NavHexW = 44f, NavHexH = 44f, NavStep = 52f, NavGroupGap = 12f;   // «Атлас»: круглые кнопки
 
         private struct NavSlot { public RectTransform Rt; public bool Group; public Image Divider; }
         private readonly List<NavSlot> _navSlots = new List<NavSlot>();
@@ -716,7 +716,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _navFold = 0f;
             _navFoldRt = LGBuild.Rect(menu, "NavFold");
             _navFoldRt.At(new Vector2(0, 1), new Vector2(0.5f, 1f), new Vector2(x, 0f), new Vector2(44f, 22f));
-            var bg = HoloImage(_navFoldRt, "Bg", HudArt.CutPanel(6), new Color(0.030f, 0.070f, 0.098f, 0.95f));
+            var bg = HoloImage(_navFoldRt, "Bg", HudArt.CutPanel(6), new Color(0.055f, 0.094f, 0.157f, 0.95f));
             bg.type = Image.Type.Sliced;
             bg.raycastTarget = true;
             bg.rectTransform.Stretch();
@@ -994,7 +994,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             // Разделитель между ячейками — гаснет к концам
             if (separator)
             {
-                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.475f, 0.816f, 0.749f, 0.35f));
+                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.925f, 0.898f, 0.827f, 0.16f));
                 sep.rectTransform.anchorMin = new Vector2(0, 0.08f);
                 sep.rectTransform.anchorMax = new Vector2(0, 0.92f);
                 sep.rectTransform.sizeDelta = new Vector2(2f, 0f);
@@ -1002,30 +1002,30 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             // Гнездо значка: мягкое свечение, тёмный диск, кольцо цвета ресурса
-            var halo = HudSprite(badge.transform, "Halo", FactionSelectScreen.RadialSprite(), new Color(accentCol.r, accentCol.g, accentCol.b, 0.22f));
+            var halo = HudSprite(badge.transform, "Halo", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0f));   // «Атлас»: без ореола
             halo.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(60, 60));
-            var disc = HudSprite(badge.transform, "Socket", SocketSprite(true), new Color(0.015f, 0.04f, 0.055f, 0.95f));
-            disc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(36, 36));
-            var ring = HudSprite(badge.transform, "Ring", SocketSprite(false), new Color(accentCol.r, accentCol.g, accentCol.b, 0.85f));
-            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(36, 36));
+            var disc = HudSprite(badge.transform, "Socket", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 0.95f));
+            disc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(32, 32));
+            var ring = HudSprite(badge.transform, "Ring", HudArt.Ring(0.94f, 1f), new Color(0.925f, 0.898f, 0.827f, 0.30f));
+            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(32, 32));
             // Как в референсе голо-HUD: без гнезда — крупный значок со свечением цвета ресурса
-            disc.enabled = false;
-            ring.enabled = false;
-            var ic = LGIcons.Create(badge.transform, icon, 26, accentCol);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(26, 26));
+            // «Атлас»: значок — золотой, в тонком кремовом круге
+            var ic = LGIcons.Create(badge.transform, icon, 16, DS.Gold);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(16, 16));
             var icGlow = ic.gameObject.AddComponent<Shadow>();
-            icGlow.effectColor = new Color(accentCol.r, accentCol.g, accentCol.b, 0.35f);
+            icGlow.effectColor = new Color(0f, 0f, 0f, 0f);
             icGlow.effectDistance = new Vector2(0f, 0f);
 
-            var cap = CreateText(badge.transform, label, 9, FontStyle.Bold, DS.TextMuted, TextAnchor.UpperLeft);
+            var cap = CreateText(badge.transform, label, 9, FontStyle.Normal, DS.TextMuted, TextAnchor.UpperLeft);
+            cap.font = GameFont.Mono;
             cap.rectTransform.anchorMin = Vector2.zero;
             cap.rectTransform.anchorMax = Vector2.one;
             cap.rectTransform.offsetMin = new Vector2(56, 0);
             cap.rectTransform.offsetMax = new Vector2(-4, -8);
-            cap.Track(1.4f);
+            cap.Track(0.8f);
 
-            var val = CreateText(badge.transform, "0", 19, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
-            val.font = GameFont.Display;
+            var val = CreateText(badge.transform, "0", 16, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
+            val.font = GameFont.MonoMedium;
             val.rectTransform.anchorMin = Vector2.zero;
             val.rectTransform.anchorMax = Vector2.one;
             val.rectTransform.offsetMin = new Vector2(56, 9);
@@ -1036,13 +1036,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Светящаяся черта цвета ресурса под ячейкой
             // Полоска под ячейкой (как в референсе): тусклая дорожка и заливка цвета ресурса
-            var under = HudSprite(badge.transform, "BarTrack", null, new Color(1f, 1f, 1f, 0.08f));
+            var under = HudSprite(badge.transform, "BarTrack", null, new Color(0.925f, 0.898f, 0.827f, 0.07f));
             under.rectTransform.anchorMin = new Vector2(0f, 0f);
             under.rectTransform.anchorMax = new Vector2(1f, 0f);
             under.rectTransform.pivot = new Vector2(0f, 0f);
             under.rectTransform.offsetMin = new Vector2(10f, 3f);
             under.rectTransform.offsetMax = new Vector2(-10f, 5f);
-            var barFill = HudSprite(under.transform, "Fill", null, new Color(accentCol.r, accentCol.g, accentCol.b, 0.95f));
+            var barFill = HudSprite(under.transform, "Fill", null, new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.75f));
             barFill.rectTransform.anchorMin = Vector2.zero;
             barFill.rectTransform.anchorMax = new Vector2(0f, 1f);
             barFill.rectTransform.pivot = new Vector2(0f, 0.5f);
@@ -1051,7 +1051,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             // Живая ячейка: докрутка чисел, всплывающая разница, вспышка, «дыхание», наведение
             var fx = badge.AddComponent<ResourceBadgeFx>();
-            fx.Halo = halo; fx.Ring = null; fx.Icon = ic; fx.Underline = null; fx.Value = val; fx.Accent = accentCol;
+            halo.enabled = false;
+            fx.Halo = null; fx.Ring = null; fx.Icon = ic; fx.Underline = null; fx.Value = val; fx.Accent = accentCol;
 
             xPos += w + 4f;
             return val;
@@ -1192,22 +1193,21 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             // Портрет: живая звезда (или значок планеты) в голографических кольцах цвета владельца
             BuildInspectorPortrait(header.transform);
 
-            _inspTitle = CreateText(header.transform, "SOL STATION", 23, FontStyle.Bold, DS.TextPrimary, TextAnchor.LowerLeft);
+            _inspTitle = CreateText(header.transform, "SOL STATION", 27, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
+            _inspTitle.font = GameFont.Display;   // «Атлас»: Spectral обычным регистром
             _inspTitle.rectTransform.anchorMin = new Vector2(0, 0.5f);
             _inspTitle.rectTransform.anchorMax = new Vector2(1, 1);
             _inspTitle.rectTransform.offsetMin = new Vector2(104, 2);
             _inspTitle.rectTransform.offsetMax = new Vector2(-48, -8);
-            _inspTitle.Track(2f);
             var tsh = _inspTitle.gameObject.AddComponent<Shadow>();
             tsh.effectColor = new Color(0f, 0f, 0f, 0.6f);
             tsh.effectDistance = new Vector2(0f, -2f);
 
-            _inspStatus = CreateText(header.transform, "Starbase  ·  Outpost", 11, FontStyle.Bold, DS.NeonCyan, TextAnchor.UpperLeft);
+            _inspStatus = CreateText(header.transform, "Starbase  ·  Outpost", 12, FontStyle.Normal, DS.NeonCyan, TextAnchor.UpperLeft);
             _inspStatus.rectTransform.anchorMin = new Vector2(0, 0);
             _inspStatus.rectTransform.anchorMax = new Vector2(1, 0.5f);
             _inspStatus.rectTransform.offsetMin = new Vector2(104, 0);
             _inspStatus.rectTransform.offsetMax = new Vector2(-48, -5);
-            _inspStatus.Track(1.2f);
 
             var closeBtn = CreateCloseButton(header.transform, 26f, HideInspector);
             var cRt = closeBtn.GetComponent<RectTransform>();
@@ -1412,7 +1412,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
                 t.text = $"<color=#{ColorUtility.ToHtmlStringRGB(dc)}>{status}</color> " +
                          $"{nameShort}\n" +
-                         $"<color=#8AA2A8>×{count}</color>";
+                         $"<color=#A9A392>×{count}</color>";
             }
         }
 
@@ -1426,18 +1426,18 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _activeSystem = system;
             _activePlanet = null;
 
-            _inspTitle.text = system.Name.ToUpper();
+            _inspTitle.text = system.Name;
             SetInspectorBadge(LGIcon.Star, StarTint(system.SpectralClass),
                 system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.45f, 0.55f, 0.62f),
                 GalaxyView.PlanetPortrait(system, HeaderPlanet(system)), system);
 
             string owner = system.OwnerId == 0
-                ? Loc.F("<color=#33E6CC>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))
+                ? Loc.F("<color=#79D0BF>◆  Под контролем {0}</color>", _selectedFaction?.Name ?? Loc.T("Империи"))
                 : system.OwnerId > 0
                     ? Loc.F("<color={0}>◆  Территория: {1}</color>", LGBuild.Hex(FleetIndicator.OwnerColor(system.OwnerId)), AIEmpireManager.NameOf(system.OwnerId, Loc.T("соперник")))
                     : system.OwnerId == NeutralWorlds.Owner && NeutralWorlds.At(system.Id) != null
                         ? Loc.F("<color={0}>◆  Вольный мир · {1}</color>", LGBuild.Hex(NeutralWorlds.ColorOf(NeutralWorlds.At(system.Id).Kind)), NeutralWorlds.CharacterName(NeutralWorlds.At(system.Id).Kind))
-                        : Loc.T("<color=#8AA2A8>◆  Нейтральный фронтир</color>");
+                        : Loc.T("<color=#A9A392>◆  Нейтральный фронтир</color>");
             _inspStatus.text = owner.Replace("◆  ", "");
 
             PulseInspectorContent();
@@ -1526,9 +1526,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else
             {
                 AddBodyHeader(Loc.T("ОБЗОР КОЛОНИИ"));
-                AddBodyLine(Loc.F("<color=#8AA2A8>Класс:</color> {0}", planet.Type));
-                AddBodyLine(Loc.F("<color=#8AA2A8>Районы:</color> {0} / {1}", planet.BuiltDistricts, planet.MaxDistricts));
-                AddBodyLine(Loc.F("<color=#8AA2A8>Залежи:</color> ◆ {0}  ⚡ {1}", planet.MineralDeposit, planet.EnergyDeposit));
+                AddBodyLine(Loc.F("<color=#A9A392>Класс:</color> {0}", planet.Type));
+                AddBodyLine(Loc.F("<color=#A9A392>Районы:</color> {0} / {1}", planet.BuiltDistricts, planet.MaxDistricts));
+                AddBodyLine(Loc.F("<color=#A9A392>Залежи:</color> ◆ {0}  ⚡ {1}", planet.MineralDeposit, planet.EnergyDeposit));
 
                 AddBodyHeader(Loc.T("НАСЕЛЕНИЕ"));
                 int pop = planet.Population;
@@ -1537,17 +1537,17 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 int idle = planet.IdlePops;
 
                 string popColor = housing >= pop ? "#4DF08C" : "#FF6666";
-                AddBodyLine(Loc.F("<color=#8AA2A8>Население:</color> <color={0}>{1}</color> / {2} жилья", popColor, pop, housing));
-                AddBodyLine(Loc.F("<color=#8AA2A8>Рабочие:</color> {0}   ", employed) +
-                            Loc.F("<color=#8AA2A8>Безработные:</color> {0}", StatFormat.Colored(idle, "", "0;0;0")));
+                AddBodyLine(Loc.F("<color=#A9A392>Население:</color> <color={0}>{1}</color> / {2} жилья", popColor, pop, housing));
+                AddBodyLine(Loc.F("<color=#A9A392>Рабочие:</color> {0}   ", employed) +
+                            Loc.F("<color=#A9A392>Безработные:</color> {0}", StatFormat.Colored(idle, "", "0;0;0")));
 
                 float growthPct = Mathf.Clamp(planet.PopGrowthProgress, 0f, 100f);
                 float speedPct = planet.PopGrowthBaseSpeedPctPerMonth;
-                AddBodyLine(Loc.F("<color=#8AA2A8>Рост:</color> {0}   ", StatFormat.Colored(speedPct, Loc.T("%/мес"))) +
+                AddBodyLine(Loc.F("<color=#A9A392>Рост:</color> {0}   ", StatFormat.Colored(speedPct, Loc.T("%/мес"))) +
                             Loc.F("Прогресс: {0:F1}%", growthPct));
 
                 AddBodyHeader(Loc.T("ПРОИЗВОДСТВО / МЕСЯЦ"));
-                AddBodyLine(Loc.F("<color=#33E6CC>◆ Титан:</color> {0}", StatFormat.Positive("+" + planet.ProducedMineralsPerMonth)));
+                AddBodyLine(Loc.F("<color=#79D0BF>◆ Титан:</color> {0}", StatFormat.Positive("+" + planet.ProducedMineralsPerMonth)));
                 AddBodyLine(Loc.F("<color=#E5B842>⚡ Гелий-3:</color> {0}", StatFormat.Positive("+" + planet.ProducedEnergyPerMonth)));
                 AddBodyLine(Loc.F("<color=#20EBB0>⬢ Сплавы:</color> {0}", StatFormat.Positive("+" + planet.ProducedAlloysPerMonth)));
             }
@@ -1734,7 +1734,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
     if (_researchVal != null && TechnologyManager.Instance != null)
     {
         var tm = TechnologyManager.Instance;
-        ShowText(_researchVal, $"{StatFormat.Colored(tm.MonthlyResearchIncome, "")}<size=11><color=#8AA2A8>{Loc.T(" / мес")}</color></size>", tm.MonthlyResearchIncome);
+        ShowText(_researchVal, $"{StatFormat.Colored(tm.MonthlyResearchIncome, "")}<size=11><color=#A9A392>{Loc.T(" / мес")}</color></size>", tm.MonthlyResearchIncome);
         if (_researchTip != null) _researchTip.SetText(ResearchTip(tm));
     }
 }
@@ -2308,7 +2308,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventFx?.AddOption(card, label.rectTransform);
 
             string tip = opt.ResultTooltip ?? "";
-            if (special) tip = (available ? Loc.T("<color=#F2C747>Особый вариант: ") : Loc.T("<color=#FF8A8A>Недоступно — требуется: ")) + opt.Requirement + "</color>\n" + tip;
+            if (special) tip = (available ? Loc.T("<color=#E7C170>Особый вариант: ") : Loc.T("<color=#FF7F6B>Недоступно — требуется: ")) + opt.Requirement + "</color>\n" + tip;
             if (!available && IsScientistRequirement(opt.Requirement)) tip += "\n\n" + ScientistHint;
             if (!string.IsNullOrEmpty(tip))
             {
@@ -2416,7 +2416,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                                                || req.IndexOf("cientist", System.StringComparison.OrdinalIgnoreCase) >= 0);
 
         /// <summary>Кто такие учёные и где их взять.</summary>
-        private static string ScientistHint => Loc.T("<color=#8AA2A8><b>Учёный</b> — лидер-исследователь. Он служит на борту научного корабля (тогда события аномалий учитывают его черты) или в научном совете. Нанять учёного: окно «Империя» (I) → вкладка «Лидеры» → «НАНЯТЬ», затем «НАЗНАЧИТЬ» — на научный корабль или в совет.</color>");
+        private static string ScientistHint => Loc.T("<color=#A9A392><b>Учёный</b> — лидер-исследователь. Он служит на борту научного корабля (тогда события аномалий учитывают его черты) или в научном совете. Нанять учёного: окно «Империя» (I) → вкладка «Лидеры» → «НАНЯТЬ», затем «НАЗНАЧИТЬ» — на научный корабль или в совет.</color>");
 
         private static string Roman(int n) => n switch
         {

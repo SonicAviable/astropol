@@ -388,20 +388,20 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < pts.Count - 1; i++) dist += Vector3.Distance(pts[i], pts[i + 1]);
             var sb = new StringBuilder();
             sb.Append(Loc.F("<b>Маршрут: {0}</b>\n", fleet.Data.Name));
-            sb.Append(Loc.F("<color=#8AA2A8>В пути:</color> ~{0}\n", FleetRoute.FormatDays(nodes[nodes.Count - 1].Days)));
-            sb.Append(Loc.F("<color=#8AA2A8>Расстояние:</color> {0:0} св. лет · прыжков: {1}\n", dist, nodes.Count));
+            sb.Append(Loc.F("<color=#A9A392>В пути:</color> ~{0}\n", FleetRoute.FormatDays(nodes[nodes.Count - 1].Days)));
+            sb.Append(Loc.F("<color=#A9A392>Расстояние:</color> {0:0} св. лет · прыжков: {1}\n", dist, nodes.Count));
             if (fleet.Data.OrderQueue.Count > 0)
-                sb.Append(Loc.F("<color=#8AA2A8>Пунктов в очереди:</color> {0}\n", fleet.Data.OrderQueue.Count + 1));
+                sb.Append(Loc.F("<color=#A9A392>Пунктов в очереди:</color> {0}\n", fleet.Data.OrderQueue.Count + 1));
             sb.Append('\n');
             int shown = 0;
             foreach (var nd in nodes)
             {
                 if (shown++ >= 10) { sb.Append("…\n"); break; }
                 string name = _gen.Systems[nd.SystemId].Name;
-                string mark = nd.OrderIndex > 0 ? $"<color=#4DF2DB>{nd.OrderIndex}.</color> <b>{name}</b>" : $"<color=#8AA2A8>·</color> {name}";
+                string mark = nd.OrderIndex > 0 ? $"<color=#79D0BF>{nd.OrderIndex}.</color> <b>{name}</b>" : $"<color=#A9A392>·</color> {name}";
                 sb.Append(Loc.F("{0} — {1} дн.\n", mark, Mathf.CeilToInt(nd.Days)));
             }
-            sb.Append(Loc.T("\n<color=#8AA2A8>Shift+ПКМ — добавить пункт · Backspace — очистить очередь</color>"));
+            sb.Append(Loc.T("\n<color=#A9A392>Shift+ПКМ — добавить пункт · Backspace — очистить очередь</color>"));
             return sb.ToString();
         }
     }

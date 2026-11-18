@@ -78,7 +78,7 @@ namespace StellarisClone.Rendering
             sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(33, -58), new Vector2(900, 20));
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / F1)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / F1)</color>"));
 
             // ---- Слева: клавиши ----
             var keys = Panel(rt, "Keys", new Vector2(20, 20), new Vector2(W * 0.5f - 10f, H - 96f));

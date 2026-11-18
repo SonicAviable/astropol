@@ -19,12 +19,12 @@ namespace StellarisClone.Rendering
             Color tone = NeutralWorlds.ColorOf(kind);
             InspSection(Loc.T("ВОЛЬНЫЙ МИР"), NeutralWorlds.IconOf(kind));
             InspNote(NeutralWorlds.IconOf(kind), $"<b>{NeutralWorlds.Title(w)}</b>  ·  {NeutralWorlds.CharacterName(kind)}", tone);
-            InspText($"<color=#AAB4C0>{NeutralWorlds.Description(kind)}</color>");
+            InspText($"<color=#A9A392>{NeutralWorlds.Description(kind)}</color>");
             var home = EmpireStats.GetSystem(w.SystemId);
             int size = 1 + (w.Territory != null ? w.Territory.Count : 0);
             InspText(system.Id != w.SystemId
-                ? Loc.F("<color=#8AA2A8>Присоединённая система. Родная система мира — {0}. Территория: {1} из {2}</color>", home != null ? home.Name : "?", size, 1 + NeutralWorlds.MaxTerritory)
-                : Loc.F("<color=#8AA2A8>Территория: {0} из {1} систем. Вольный мир очень медленно растёт — раз в 10–15 лет</color>", size, 1 + NeutralWorlds.MaxTerritory));
+                ? Loc.F("<color=#A9A392>Присоединённая система. Родная система мира — {0}. Территория: {1} из {2}</color>", home != null ? home.Name : "?", size, 1 + NeutralWorlds.MaxTerritory)
+                : Loc.F("<color=#A9A392>Территория: {0} из {1} систем. Вольный мир очень медленно растёт — раз в 10–15 лет</color>", size, 1 + NeutralWorlds.MaxTerritory));
 
             float favor = w.FavorOf(0);
             Color fc = favor >= NeutralWorlds.FriendFavor ? DS.Green : favor < 0f ? DS.Red : DS.TextMuted;
@@ -33,14 +33,14 @@ namespace StellarisClone.Rendering
                 (LGIcon.Population, NeutralWorlds.TotalPop(w).ToString(), Loc.T("жителей"), DS.NeonCyan),
                 (LGIcon.Fleet, $"{guards.Count}/{NeutralWorlds.GarrisonTarget(w)}", Loc.T("стража"), DS.Red),
                 (LGIcon.Handshake, w.AtWarWith(0) ? Loc.T("война") : $"{favor:+0;-0;0}", Loc.T("расположение"), fc));
-            InspText(Loc.F("<color=#8AA2A8>Звёздная база здесь:</color> мощь {0:N0}   <color=#8AA2A8>Флот стражи:</color> мощь {1:N0}\n<color=#8AA2A8>Колоний:</color> {2} из {3}",
+            InspText(Loc.F("<color=#A9A392>Звёздная база здесь:</color> мощь {0:N0}   <color=#A9A392>Флот стражи:</color> мощь {1:N0}\n<color=#A9A392>Колоний:</color> {2} из {3}",
                 NeutralWorlds.StationDefense(w, system.Id), NeutralWorlds.GarrisonPower(w), NeutralWorlds.ColonyCount(w), NeutralWorlds.MaxColonies));
 
             // Покровитель и что он получает
             string patron = w.Patron < 0 ? Loc.T("нет")
-                          : w.Patron == 0 ? Loc.T("<color=#6FE09A>вы</color>")
+                          : w.Patron == 0 ? Loc.T("<color=#8CD3A0>вы</color>")
                           : Contacts.NameForPlayer(w.Patron, Loc.T("другая империя"));
-            InspText(Loc.F("<color=#8AA2A8>Покровитель:</color> {0}\n<color=#8AA2A8>Покровителю:</color> {1}\n<color=#8AA2A8>Другу (от {2:0}):</color> 40% этого и проход через систему",
+            InspText(Loc.F("<color=#A9A392>Покровитель:</color> {0}\n<color=#A9A392>Покровителю:</color> {1}\n<color=#A9A392>Другу (от {2:0}):</color> 40% этого и проход через систему",
                 patron, NeutralWorlds.PatronBonus(w), NeutralWorlds.FriendFavor));
 
             // Расположение знакомых империй — с кем идёт борьба за влияние
@@ -49,11 +49,11 @@ namespace StellarisClone.Rendering
             {
                 if (!Contacts.PlayerMet(ai.OwnerId) || !w.Met(ai.OwnerId)) continue;
                 float f = w.FavorOf(ai.OwnerId);
-                string c = w.AtWarWith(ai.OwnerId) ? "#FF7A7A" : f >= NeutralWorlds.FriendFavor ? "#6FE09A" : "#C8D4DA";
+                string c = w.AtWarWith(ai.OwnerId) ? "#FF7F6B" : f >= NeutralWorlds.FriendFavor ? "#8CD3A0" : "#C8D4DA";
                 rivals.Append(rivals.Length > 0 ? "   " : "")
                       .Append($"<color={LGBuild.Hex(FleetIndicator.OwnerColor(ai.OwnerId))}>■</color> {ai.AIName} <color={c}>{(w.AtWarWith(ai.OwnerId) ? Loc.T("война") : f.ToString("+0;-0;0"))}</color>");
             }
-            if (rivals.Length > 0) InspText(Loc.T("<color=#8AA2A8>Соперники:</color> ") + rivals);
+            if (rivals.Length > 0) InspText(Loc.T("<color=#A9A392>Соперники:</color> ") + rivals);
 
             if (!w.Met(0))
             {
@@ -124,10 +124,10 @@ namespace StellarisClone.Rendering
                          : g != null && g.Besieger == 0 ? Loc.F("Блокада идёт: {0:0} из {1:0} дн.", g.Days, need)
                          : g != null && g.Besieger > 0 ? Loc.T("Систему уже блокирует другая империя")
                          : Loc.T("Блокада начинается");
-            InspText($"<color=#8AA2A8>{state}</color>");
+            InspText($"<color=#A9A392>{state}</color>");
             InspText(system.Id == w.SystemId
-                ? Loc.T("<color=#8AA2A8>Родная система: с ней перейдёт всё, что осталось от мира</color>")
-                : Loc.T("<color=#8AA2A8>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>"));
+                ? Loc.T("<color=#A9A392>Родная система: с ней перейдёт всё, что осталось от мира</color>")
+                : Loc.T("<color=#A9A392>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>"));
             InspButton(Loc.F("Заключить мир  · {0:0} влияния", NeutralWorlds.PeaceInfluence), LGIcon.Peace, DS.BtnPrimary,
                 NeutralWorlds.PeaceBlocker(w, 0), Loc.F("Перемирие на {0} мес.; расположение останется низким", NeutralWorlds.TruceMonths),
                 () => NeutralWorlds.MakePeace(w, 0), system);
@@ -146,7 +146,7 @@ namespace StellarisClone.Rendering
                     if (_activeSystem == system && !_isInSystemMode) ShowSystemPanel(system);
                 }, new Vector2(InspectorWidth - 46f, 40f));
             LGBuild.Height(btn.gameObject, 40);
-            TooltipHelper.Attach(btn.gameObject, can ? tip : $"{tip}\n<color=#FF8080>{blocker}</color>");
+            TooltipHelper.Attach(btn.gameObject, can ? tip : $"{tip}\n<color=#FF7F6B>{blocker}</color>");
         }
     }
 }

@@ -117,7 +117,7 @@ namespace StellarisClone.Core
             {
                 var parts = new List<string>();
                 foreach (var t in Traits)
-                    parts.Add(TraitInfo.IsNegative(t) ? $"<color=#FF9A8A>{TraitInfo.Name(t)}</color>" : $"<color=#9EF0C8>{TraitInfo.Name(t)}</color>");
+                    parts.Add(TraitInfo.IsNegative(t) ? $"<color=#FF7F6B>{TraitInfo.Name(t)}</color>" : $"<color=#8CD3A0>{TraitInfo.Name(t)}</color>");
                 return string.Join(", ", parts);
             }
         }

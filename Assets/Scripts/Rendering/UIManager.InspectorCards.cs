@@ -226,12 +226,12 @@ namespace StellarisClone.Rendering
             sb.Append(Loc.F("<b>{0}</b> · уровень {1} из {2}", Fortifications.Name(lvl), lvl, Fortifications.MaxLevel));
             for (int i = 1; i <= Fortifications.MaxLevel; i++)
             {
-                string c = i <= lvl ? "#F2C766" : "#8AA2A8";
+                string c = i <= lvl ? "#E7C170" : "#A9A392";
                 sb.Append(Loc.F("\n<color={0}>{1}</color>: прочность ×{2:0.##}, урон ×{3:0.##}, осада дольше ×{4:0.##}",
                     c, Fortifications.Name(i), Fortifications.DurabilityMult(i), Fortifications.DamageMult(i), Fortifications.SiegeMult(i)));
             }
-            sb.Append(Loc.T("\n<color=#8AA2A8>При штурме колонии: с 1-го уровня — щит Штаба, на каждый уровень — турель и +2 места для карт резерва в обороне.</color>"));
-            sb.Append(Loc.F("\n<color=#8AA2A8>Содержание +{0:0} гелия-3 за уровень. Штурм разрушает один уровень, передача по договору — нет.</color>",
+            sb.Append(Loc.T("\n<color=#A9A392>При штурме колонии: с 1-го уровня — щит Штаба, на каждый уровень — турель и +2 места для карт резерва в обороне.</color>"));
+            sb.Append(Loc.F("\n<color=#A9A392>Содержание +{0:0} гелия-3 за уровень. Штурм разрушает один уровень, передача по договору — нет.</color>",
                 Fortifications.UpkeepPerLevel));
             return sb.ToString();
         }
@@ -274,7 +274,7 @@ namespace StellarisClone.Rendering
                     if (Fortifications.TryStartPlayer(system)) ShowSystemPanel(system);
                 }, new Vector2(300f, 40f));
             Place((RectTransform)btn.transform, 0f, 1f, y, 40f, 14f, 14f);
-            TooltipHelper.Attach(btn.gameObject, FortTooltip(to) + (can ? "" : $"\n<color=#FF8888>{block}</color>"));
+            TooltipHelper.Attach(btn.gameObject, FortTooltip(to) + (can ? "" : $"\n<color=#FF7F6B>{block}</color>"));
             y += 46f;
 
             // Цена значками: титан, сплавы, срок, содержание

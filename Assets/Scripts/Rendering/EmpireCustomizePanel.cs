@@ -239,12 +239,12 @@ namespace StellarisClone.Rendering
         {
             var back = LGBuild.Button(c, "Back", new Color(0.05f, 0.10f, 0.13f), new Color(1f, 1f, 1f, 0.25f), Back, LGIcon.Back, Loc.T("НАЗАД"), 13);
             ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(24, 24), new Vector2(180, 48));
-            TooltipHelper.Attach(back.gameObject, Loc.T("К выбору фракции  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(back.gameObject, Loc.T("К выбору фракции  <color=#A9A392>(Esc)</color>"));
             var rnd = LGBuild.Button(c, "RandomAll", new Color(0.05f, 0.10f, 0.13f), new Color(0.74f, 0.56f, 1f, 0.5f), RandomAll, LGIcon.Dice, Loc.T("СЛУЧАЙНО ВСЁ"), 13);
             ((RectTransform)rnd.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24 - 300 - 14, 24), new Vector2(220, 48));
             var go = MenuPrimaryButton.Create(c, Loc.T("НАЧАТЬ ПРАВЛЕНИЕ  ›"), 16, Confirm);
             ((RectTransform)go.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 24), new Vector2(300, 50));
-            TooltipHelper.Attach(go.gameObject, Loc.T("Принять оформление и начать  <color=#8AA2A8>(Enter)</color>"));
+            TooltipHelper.Attach(go.gameObject, Loc.T("Принять оформление и начать  <color=#A9A392>(Enter)</color>"));
         }
 
         // ================================================================ Действия

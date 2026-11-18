@@ -267,7 +267,7 @@ namespace StellarisClone.Rendering
             var yardSys = EmpireStats.GetSystem(yard);
             _subtitle.text = yardSys != null
                 ? Loc.F("Верфь в системе {0}  ·  одновременно строится {1} корабля  ·  готовые корабли появляются у верфи", yardSys.Name, ConstructionManager.ShipyardSlots)
-                : Loc.T("<color=#FF6A6A>У вас нет систем для верфи</color>");
+                : Loc.T("<color=#FF6B57>У вас нет систем для верфи</color>");
 
             foreach (var o in _options) RefreshOption(o, fm, eco, yard >= 0);
             RefreshQueue();
@@ -283,13 +283,13 @@ namespace StellarisClone.Rendering
             {
                 alloys = FleetManager.ScienceShipAlloys; energy = FleetManager.ScienceShipEnergy;
                 o.Sub.text = Loc.T("Разведка систем и аномалий");
-                o.Stats.text = Loc.T("<color=#8AA2A8>Изучает системы, открывает их для форпостов. Учёный на борту ускоряет разведку.</color>");
+                o.Stats.text = Loc.T("<color=#A9A392>Изучает системы, открывает их для форпостов. Учёный на борту ускоряет разведку.</color>");
             }
             else if (o.Type == FleetType.Constructor)
             {
                 alloys = FleetManager.ConstructorAlloys; energy = FleetManager.ConstructorEnergy;
                 o.Sub.text = Loc.T("Форпосты и добывающие станции");
-                o.Stats.text = Loc.T("<color=#8AA2A8>Строит звёздные базы в изученных системах — так растёт территория.</color>");
+                o.Stats.text = Loc.T("<color=#A9A392>Строит звёздные базы в изученных системах — так растёт территория.</color>");
             }
             else
             {
@@ -336,7 +336,7 @@ namespace StellarisClone.Rendering
         /// <summary>Подсказка кнопки «Заложить»: что даст корабль, во что обойдётся, как скажется на лимите флота.</summary>
         private static string BuildTip(Option o, ShipDesign design, float alloys, float energy, float upkeep, EconomyManager eco, string why)
         {
-            const string M = "#8AA2A8", Bad = "#FF8888", Warn = "#FFB070";
+            const string M = "#A9A392", Bad = "#FF7F6B", Warn = "#FFB070";
             var sb = new System.Text.StringBuilder();
             sb.Append($"<b>{o.Name}</b>\n");
             if (o.Type == FleetType.Science)
@@ -399,7 +399,7 @@ namespace StellarisClone.Rendering
                 LGBuild.SetBar(ui.Bar, active ? q[i].Progress : 0f);
                 ui.State.text = active
                     ? Loc.F("<b>{0}%</b>  ·  готов через ~{1} дн.", Mathf.RoundToInt(q[i].Progress * 100f), Mathf.CeilToInt(cm.DaysUntilDone(q[i])))
-                    : Loc.F("<color=#8AA2A8>в очереди  ·  готов через ~{0} дн.</color>", Mathf.CeilToInt(cm.DaysUntilDone(q[i])));
+                    : Loc.F("<color=#A9A392>в очереди  ·  готов через ~{0} дн.</color>", Mathf.CeilToInt(cm.DaysUntilDone(q[i])));
             }
         }
 
@@ -471,30 +471,30 @@ namespace StellarisClone.Rendering
             if (allLabel != null) allLabel.text = outdated.Count > 0 ? Loc.F("ВСЕ УСТАРЕВШИЕ ({0})", outdated.Count) : Loc.T("ВСЕ УСТАРЕВШИЕ");
 
             string all = outdated.Count == 0
-                ? Loc.T("<color=#5CF59A>Все военные корабли соответствуют актуальным проектам.</color>")
-                : Loc.F("Устаревших кораблей: <color=#F2C747>{0}</color> · на всех нужно <color=#F2C747>{1:0} сплавов</color>.", outdated.Count, total);
+                ? Loc.T("<color=#8CD3A0>Все военные корабли соответствуют актуальным проектам.</color>")
+                : Loc.F("Устаревших кораблей: <color=#E7C170>{0}</color> · на всех нужно <color=#E7C170>{1:0} сплавов</color>.", outdated.Count, total);
 
             var fleet = FleetManager.Instance?.SelectedFleet;
             var d = fleet?.Data;
             if (d == null || d.OwnerId != 0 || d.Type != FleetType.Military)
             {
                 _retrofitBtn.interactable = false;
-                _retrofitText.text = all + Loc.T("\n<color=#8AA2A8>Новый проект в конструкторе делает старые корабли устаревшими; выделите корабль на карте, чтобы модернизировать только его.</color>");
+                _retrofitText.text = all + Loc.T("\n<color=#A9A392>Новый проект в конструкторе делает старые корабли устаревшими; выделите корабль на карте, чтобы модернизировать только его.</color>");
                 return;
             }
             if (!dm.IsOutdated(d))
             {
                 _retrofitBtn.interactable = false;
-                _retrofitText.text = Loc.F("{0}: <color=#5CF59A>актуальный проект.</color>\n", d.Name) + all;
+                _retrofitText.text = Loc.F("{0}: <color=#8CD3A0>актуальный проект.</color>\n", d.Name) + all;
                 return;
             }
             float cost = dm.RetrofitCost(d);
             float gain = dm.RetrofitGain(d);
             bool can = dm.CanRetrofit(d);
             _retrofitBtn.interactable = can;
-            string g = gain >= 0f ? Loc.F("<color=#5CF59A>+{0:0}% мощи</color>", gain * 100f) : Loc.F("<color=#FF9F7A>{0:0}% мощи</color>", gain * 100f);
+            string g = gain >= 0f ? Loc.F("<color=#8CD3A0>+{0:0}% мощи</color>", gain * 100f) : Loc.F("<color=#FF9F7A>{0:0}% мощи</color>", gain * 100f);
             _retrofitText.text = $"{d.Name} → «{dm.GetLatestDesign(d.HullClass)?.Name}»  ·  {g}  ·  " +
-                                 (can ? Loc.F("<color=#F2C747>{0:0} сплавов</color>", cost) : Loc.F("<color=#FF6A6A>нужно {0:0} сплавов</color>", cost)) + "\n" + all;
+                                 (can ? Loc.F("<color=#E7C170>{0:0} сплавов</color>", cost) : Loc.F("<color=#FF6B57>нужно {0:0} сплавов</color>", cost)) + "\n" + all;
         }
 
         private void OnRetrofit()

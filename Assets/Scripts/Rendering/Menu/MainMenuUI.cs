@@ -563,7 +563,7 @@ namespace StellarisClone.Rendering
 
             var close = LGControls.IconButton(header, LGIcon.Close, 40, UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.3f), Close);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(0, -4), new Vector2(40, 40));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc)</color>"));
 
             var sep = LGBuild.Panel(w, "Sep", new Color(0.475f, 0.816f, 0.749f, 0.22f));
             sep.rectTransform.TopBand(100, 1, 36, 36);
@@ -933,11 +933,11 @@ namespace StellarisClone.Rendering
             keys.rectTransform.TopBand(ry, 128);
             LG.Platter(keys.gameObject, 16f).GlowMultiplier = 0f;
             var kt = LGBuild.Label(keys.transform,
-                Loc.T("<color=#4DF2DB><b>ЛКМ</b></color>  выбор      <color=#4DF2DB><b>ПКМ</b></color>  приказ флоту\n") +
-                Loc.T("<color=#4DF2DB><b>WASD</b></color>  камера      <color=#4DF2DB><b>Колесо</b></color>  масштаб\n") +
-                Loc.T("<color=#4DF2DB><b>Пробел</b></color>  пауза      <color=#4DF2DB><b>1 2 3</b></color>  скорость\n") +
-                Loc.T("<color=#4DF2DB><b>F5 / F9</b></color>  быстрое сохранение / загрузка\n") +
-                Loc.T("<color=#4DF2DB><b>Esc</b></color>  меню паузы"),
+                Loc.T("<color=#79D0BF><b>ЛКМ</b></color>  выбор      <color=#79D0BF><b>ПКМ</b></color>  приказ флоту\n") +
+                Loc.T("<color=#79D0BF><b>WASD</b></color>  камера      <color=#79D0BF><b>Колесо</b></color>  масштаб\n") +
+                Loc.T("<color=#79D0BF><b>Пробел</b></color>  пауза      <color=#79D0BF><b>1 2 3</b></color>  скорость\n") +
+                Loc.T("<color=#79D0BF><b>F5 / F9</b></color>  быстрое сохранение / загрузка\n") +
+                Loc.T("<color=#79D0BF><b>Esc</b></color>  меню паузы"),
                 12, UIManager.DS.TextPrimary, TextAnchor.UpperLeft, wrap: true);
             kt.rectTransform.Stretch(18, 8, 14, 10);
             kt.lineSpacing = 1.25f;

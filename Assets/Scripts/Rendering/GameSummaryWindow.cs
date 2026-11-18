@@ -106,7 +106,7 @@ namespace StellarisClone.Rendering
             _subtitle.supportRichText = true;
             var close = LGBuild.Button(_rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc)</color>"));
 
             // ---- График слева
             var chartPanel = LGBuild.Panel(_rt, "ChartPanel", CPanel);
@@ -202,7 +202,7 @@ namespace StellarisClone.Rendering
             int years = tm != null && d != null ? Mathf.Max(0, tm.Year - d.StartYear) : 0;
             var vm = VictoryManager.Instance;
             string outcome = vm != null && vm.Result != VictoryManager.Outcome.None
-                ? (VictoryManager.IsVictory(vm.Result) ? Loc.T("  ·  <color=#F2C766><b>Победа</b></color>") : Loc.T("  ·  <color=#FF8080><b>Поражение</b></color>"))
+                ? (VictoryManager.IsVictory(vm.Result) ? Loc.T("  ·  <color=#E7C170><b>Победа</b></color>") : Loc.T("  ·  <color=#FF7F6B><b>Поражение</b></color>"))
                 : "";
             _subtitle.text = Loc.F("<b>{0}</b>  ·  {1} — {2}  ·  лет у власти: {3}{4}", GameChronicle.PlayerName(),
                 d != null ? d.StartYear.ToString() : "—", date, years, outcome);

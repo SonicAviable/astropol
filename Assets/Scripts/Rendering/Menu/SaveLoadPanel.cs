@@ -137,7 +137,7 @@ namespace StellarisClone.Rendering
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 26), new Vector2(40, 40));
                 var t = LGBuild.Label(empty.transform, _mode == Mode.Save
                         ? Loc.T("Сохранений пока нет — введите название и нажмите «Сохранить»")
-                        : Loc.T("Сохранений пока нет\n<size=11><color=#8AA2A8>Сохранить партию можно в меню паузы (Esc) или клавишей F5</color></size>"),
+                        : Loc.T("Сохранений пока нет\n<size=11><color=#A9A392>Сохранить партию можно в меню паузы (Esc) или клавишей F5</color></size>"),
                     14, UIManager.DS.TextMuted, TextAnchor.MiddleCenter, wrap: true);
                 t.rectTransform.Stretch(30, 10, 30, 70);
                 return;

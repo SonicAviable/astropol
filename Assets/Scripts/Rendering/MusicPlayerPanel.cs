@@ -50,7 +50,7 @@ namespace StellarisClone.Rendering
             host._toggleIcon = LGIcons.Create(btn.transform, LGIcon.Speaker, 15f, DS.TextMuted);
             host._toggleIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
             host._toggleIcon.raycastTarget = false;
-            TooltipHelper.Attach(btn.gameObject, Loc.T("<b>Музыка</b>\nТекущий трек, пауза, следующий, громкость  <color=#8AA2A8>(M)</color>"));
+            TooltipHelper.Attach(btn.gameObject, Loc.T("<b>Музыка</b>\nТекущий трек, пауза, следующий, громкость  <color=#A9A392>(M)</color>"));
         }
 
         private void Awake() => Instance = this;

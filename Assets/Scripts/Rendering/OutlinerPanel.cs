@@ -197,7 +197,7 @@ namespace StellarisClone.Rendering
             var help = LGBuild.Button(head.transform, "Help", UIManager.DS.BtnNeutral, new Color(Cyan.r, Cyan.g, Cyan.b, 0.45f),
                 () => UIManager.Instance?.ToggleWindowPublic(UIManager.NavWindow.Help), null, "?", 14, 15f);
             ((RectTransform)help.transform).At(new Vector2(0, 0.5f), new Vector2(1f, 0.5f), new Vector2(-8, 0), new Vector2(30, 30));
-            TooltipHelper.Attach(help.gameObject, Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#8AA2A8>(F1)</color>"));
+            TooltipHelper.Attach(help.gameObject, Loc.T("<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#A9A392>(F1)</color>"));
             UIAnchors.Register(UIAnchors.Help, (RectTransform)help.transform);
 
             _toggleLabel = LGBuild.Label(head.transform, "", 14, Muted, TextAnchor.MiddleRight, bold: true);

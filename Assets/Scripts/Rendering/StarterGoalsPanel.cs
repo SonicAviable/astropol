@@ -349,7 +349,7 @@ namespace StellarisClone.Rendering
             _reward.text = Loc.F("Награда: {0}", g.RewardText);
             _fill.parent.gameObject.SetActive(true);
             _count.enabled = true;
-            TooltipHelper.Attach(_bodyTip, $"<b>{g.Title}</b>\n{g.Hint}\n\n<color=#8AA2A8>" + Loc.T("Щелчок — показать, с чего начать") + "</color>");
+            TooltipHelper.Attach(_bodyTip, $"<b>{g.Title}</b>\n{g.Hint}\n\n<color=#A9A392>" + Loc.T("Щелчок — показать, с чего начать") + "</color>");
         }
 
         private void SetChapter(int done)

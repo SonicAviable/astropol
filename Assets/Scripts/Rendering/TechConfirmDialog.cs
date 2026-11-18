@@ -115,9 +115,9 @@ namespace StellarisClone.Rendering
                 : Loc.T("<color=#FFAA88>Все слоты заняты — технология встанет в очередь</color>");
 
             _costText.text =
-                Loc.T("<color=#F2C747><b>СТОИМОСТЬ</b></color>\n") +
+                Loc.T("<color=#E7C170><b>СТОИМОСТЬ</b></color>\n") +
                 Loc.F("Время исследования: <b>~{0}</b>{1}\n", TechnologyManager.FormatDays(days), penaltyNote) +
-                Loc.F("<color=#8AA2A8>{0:0} очков науки · наука {1:0.#}/мес</color>\n", tech.Cost, (tm != null ? tm.MonthlyResearchIncome : 0f)) +
+                Loc.F("<color=#A9A392>{0:0} очков науки · наука {1:0.#}/мес</color>\n", tech.Cost, (tm != null ? tm.MonthlyResearchIncome : 0f)) +
                 $"{slotNote}";
         }
 

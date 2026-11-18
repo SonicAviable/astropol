@@ -194,7 +194,7 @@ namespace StellarisClone.Rendering
                              : siege.Contested ? Loc.T("Приостановлена: на орбите флот защитника")
                              : siege.Active ? Loc.F("Идёт: {0:0} из {1:0} дн.", siege.Progress, need)
                              : Loc.T("Осаждающие ушли — прогресс спадает");
-                InspText($"<color=#8AA2A8>{state}</color>");
+                InspText($"<color=#A9A392>{state}</color>");
 
                 // Наземный штурм колонии: десант из резерва империи, сколько поместится на корабли на орбите
                 if (mine && StellarisClone.Cards.AssaultLink.IsColony(system) && StellarisClone.Cards.ArmyManager.Instance != null)
@@ -205,7 +205,7 @@ namespace StellarisClone.Rendering
                     InspNote(LGIcon.Weapons, deck > 0
                         ? Loc.F("Десант: до {0} карт из резерва империи (мест на кораблях: {1}). Карты выбираются перед штурмом", deck, places)
                         : Loc.T("Резерв армии пуст — в бой пойдут только экипажи. Состав армии — в «Арсенале» (J)"), deck > 0 ? DS.Gold : DS.TextMuted);
-                    string tip = Loc.F("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт.\n<color=#8AA2A8>Сначала откроется «Сбор десанта» — выберите, какими картами нападать</color>", StellarisClone.Cards.BattleState.Turns);
+                    string tip = Loc.F("<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт.\n<color=#A9A392>Сначала откроется «Сбор десанта» — выберите, какими картами нападать</color>", StellarisClone.Cards.BattleState.Turns);
                     InspButton(Loc.T("ШТУРМ"), LGIcon.Target, new Color(0.55f, 0.16f, 0.12f, 0.95f), blocker, tip,
                         () => StellarisClone.Cards.AssaultDeckWindow.Open(system), system);
                     InspButton(Loc.T("АВТОБОЙ"), LGIcon.Fast, DS.BtnNeutral, blocker, Loc.T("Быстрый штурм без экрана боя и без выбора карт: в десант пойдут лучшие карты резерва, исход рассчитают правила"),

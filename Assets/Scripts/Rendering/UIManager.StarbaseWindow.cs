@@ -410,7 +410,7 @@ namespace StellarisClone.Rendering
             }
             var hit = LGBuild.Panel(host, "Tip", new Color(0, 0, 0, 0), raycast: true);
             hit.rectTransform.Stretch();
-            TooltipHelper.Attach(hit.gameObject, FortTooltip(lvl) + Loc.T("\n<color=#8AA2A8>Под ступенью: прочность × · урон ×</color>"));
+            TooltipHelper.Attach(hit.gameObject, FortTooltip(lvl) + Loc.T("\n<color=#A9A392>Под ступенью: прочность × · урон ×</color>"));
             y += 100f;
         }
 

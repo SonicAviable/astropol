@@ -128,7 +128,7 @@ namespace StellarisClone.Rendering
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc / V)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / V)</color>"));
 
             // Шкала времени партии
             var tl = LGBuild.Rect(rt, "Timeline");
@@ -265,7 +265,7 @@ namespace StellarisClone.Rendering
             int year = tm != null ? tm.Year : 2200;
             int left = Mathf.Max(0, VictoryManager.EndYear - year);
             _subtitle.text = Loc.T("Сравните свои успехи с соперниками. Незнакомые империи скрыты, пока вы их не встретите.");
-            _timelineText.text = Loc.F("{0}   ·   до подсчёта очков: <color=#F2C747>{1} {2}</color> ({3})", (tm != null ? tm.GetFormattedDate() : ""), left, VictoryManager.YearsWord(left), VictoryManager.EndYear);
+            _timelineText.text = Loc.F("{0}   ·   до подсчёта очков: <color=#E7C170>{1} {2}</color> ({3})", (tm != null ? tm.GetFormattedDate() : ""), left, VictoryManager.YearsWord(left), VictoryManager.EndYear);
             float span = VictoryManager.EndYear - 2200f;
             float now = tm != null ? (tm.Year - 2200f) + (tm.Month - 1) / 12f : 0f;
             LGBuild.SetBar(_timelineBar, Mathf.Clamp01(now / span), Color.Lerp(UIManager.DS.Green, UIManager.DS.Red, Mathf.Clamp01(now / span)));
@@ -398,17 +398,17 @@ namespace StellarisClone.Rendering
                 }
                 case Kind.Domination:
                     if (vm == null) return "";
-                    if (vm.DomMonths > 0) return Loc.F("<color=#5CF59A>Вы удерживаете порог: {0} из {1} мес.</color>", vm.DomMonths, VictoryManager.DominationHoldMonths);
-                    if (vm.RivalDomMonths > 0) return Loc.F("<color=#FF6A6A>{0}: {1} из {2} мес.!</color>", NameOf(vm.RivalDomOwner), vm.RivalDomMonths, VictoryManager.DominationHoldMonths);
+                    if (vm.DomMonths > 0) return Loc.F("<color=#8CD3A0>Вы удерживаете порог: {0} из {1} мес.</color>", vm.DomMonths, VictoryManager.DominationHoldMonths);
+                    if (vm.RivalDomMonths > 0) return Loc.F("<color=#FF6B57>{0}: {1} из {2} мес.!</color>", NameOf(vm.RivalDomOwner), vm.RivalDomMonths, VictoryManager.DominationHoldMonths);
                     return Loc.T("Порог удерживается год — его можно сбросить, отбив системы");
                 case Kind.Tech:
                     return VictoryManager.HasAscension(0)
-                        ? Loc.T("<color=#5CF59A>Проект «Вознесение» завершён</color>")
+                        ? Loc.T("<color=#8CD3A0>Проект «Вознесение» завершён</color>")
                         : Loc.T("Проект «Вознесение» (Общество, уровень IV) ещё не изучен");
                 case Kind.Economy:
                     if (vm == null) return "";
-                    if (vm.EconMonths > 0) return Loc.F("<color=#5CF59A>Вы удерживаете долю: {0} из {1} мес.</color>", vm.EconMonths, VictoryManager.EconomyMonths);
-                    if (vm.RivalEconMonths > 0) return Loc.F("<color=#FF6A6A>{0}: {1} из {2} мес.!</color>", NameOf(vm.RivalEconOwner), vm.RivalEconMonths, VictoryManager.EconomyMonths);
+                    if (vm.EconMonths > 0) return Loc.F("<color=#8CD3A0>Вы удерживаете долю: {0} из {1} мес.</color>", vm.EconMonths, VictoryManager.EconomyMonths);
+                    if (vm.RivalEconMonths > 0) return Loc.F("<color=#FF6B57>{0}: {1} из {2} мес.!</color>", NameOf(vm.RivalEconOwner), vm.RivalEconMonths, VictoryManager.EconomyMonths);
                     return Loc.T("Никто не держит нужную долю");
                 case Kind.Diplomacy:
                 {

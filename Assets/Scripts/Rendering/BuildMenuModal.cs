@@ -185,7 +185,7 @@ namespace StellarisClone.Rendering
 
             var close = LGBuild.Button(rt, "Close", UIManager.DS.BtnNeutral, new Color(1f, 1f, 1f, 0.25f), Close, LGIcon.Close, null, 12);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-18, -20), new Vector2(38, 38));
-            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
+            TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc)</color>"));
 
             // Левая часть: вкладки и сетка
             var left = LGBuild.Panel(rt, "Catalog", CPanel);
@@ -424,7 +424,7 @@ namespace StellarisClone.Rendering
             var o = c.Opt;
             bool avail = o.Available;
             c.Title.text = o.Title;
-            c.Effect.text = o.Done ? Loc.F("<color=#9EF0C8>✓ {0}</color>", o.Effect) : o.Effect;
+            c.Effect.text = o.Done ? Loc.F("<color=#8CD3A0>✓ {0}</color>", o.Effect) : o.Effect;
             c.Days.text = o.Instant ? Loc.T("сразу") : Loc.F("{0} дн.", Mathf.CeilToInt(o.Days));
             c.Queued.text = o.Queued > 0 ? Loc.F("в очереди: {0}", o.Queued) : "";
             c.Lock.enabled = !avail && !o.Done;
@@ -439,7 +439,7 @@ namespace StellarisClone.Rendering
                 CostStrip(c.Cost, o.Energy, o.Minerals, o.Alloys, o.Influence, 11, TextAnchor.MiddleRight);
             }
             var tip = c.Go.GetComponent<TooltipTrigger>();
-            string t = $"<b>{o.Title}</b>\n{o.Effect}" + (o.Blocker != null && !o.Done ? $"\n<color=#FF8888>{o.Blocker}</color>" : "");
+            string t = $"<b>{o.Title}</b>\n{o.Effect}" + (o.Blocker != null && !o.Done ? $"\n<color=#FF7F6B>{o.Blocker}</color>" : "");
             if (tip == null) TooltipHelper.Attach(c.Go, t); else tip.SetText(t);
         }
 
@@ -637,10 +637,10 @@ namespace StellarisClone.Rendering
         public static string BuyTip(ConstructionJob j, string block)
         {
             return Loc.F("<b>Купить за {0} гелия-3</b>\nСтройка завершится сегодня же.\n", ConstructionManager.BuyCost(j)) +
-                   Loc.F("<color=#8AA2A8>Цена: оставшиеся {0} дн. × {1:0.#} гелия-3", Mathf.CeilToInt(j.DaysLeft),
+                   Loc.F("<color=#A9A392>Цена: оставшиеся {0} дн. × {1:0.#} гелия-3", Mathf.CeilToInt(j.DaysLeft),
                          j.Kind == JobKind.Ship ? ConstructionManager.BuyPerDayShip : ConstructionManager.BuyPerDayPlanet) +
                    (j.Progress < 0.01f ? Loc.F(", ×{0:0.#} — работа ещё не начата", ConstructionManager.BuyUnstartedMult) : "") + "</color>" +
-                   (block != null ? $"\n<color=#FF8888>{block}</color>" : "");
+                   (block != null ? $"\n<color=#FF7F6B>{block}</color>" : "");
         }
 
         public static LGIcon JobIcon(ConstructionJob j) => j.Kind switch
