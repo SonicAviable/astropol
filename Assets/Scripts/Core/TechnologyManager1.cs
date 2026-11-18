@@ -568,6 +568,98 @@ namespace StellarisClone.Core
             return false;
         }
 
+        // ==================== ПЛАН ИССЛЕДОВАНИЙ ====================
+        // Общий упорядоченный список целей. В план можно ставить и закрытые технологии — целым путём
+        // с предпосылками. Свободный слот сам берёт первую технологию плана, которая уже доступна и чья
+        // эпоха наступила; изученные и начатые из плана уходят.
+
+        private readonly List<Technology> _plan = new List<Technology>();
+        public IReadOnlyList<Technology> Plan => _plan;
+        public bool InPlan(Technology tech) => tech != null && _plan.Contains(tech);
+
+        /// <summary>
+        /// Путь к технологии: все неизученные предпосылки (по всем веткам) в порядке изучения и сама цель.
+        /// Уже изучаемые в слотах тоже входят — они часть пути.
+        /// </summary>
+        public List<Technology> PathTo(Technology target)
+        {
+            var path = new List<Technology>();
+            var seen = new HashSet<Technology>();
+            void Walk(Technology t)
+            {
+                if (t == null || t.IsResearched || !seen.Add(t)) return;
+                foreach (var id in t.RequiredTechIds) Walk(FindTech(id));
+                path.Add(t);   // после предпосылок — топологический порядок
+            }
+            Walk(target);
+            return path;
+        }
+
+        /// <summary>Поставить в план весь путь к технологии. Возвращает, сколько технологий добавлено.</summary>
+        public int PlanPath(Technology target)
+        {
+            int added = 0;
+            foreach (var t in PathTo(target))
+            {
+                if (_plan.Contains(t) || IsBeingResearched(t)) continue;
+                _plan.Add(t);
+                added++;
+            }
+            if (added > 0) { FillFromPlan(); OnTechProgressUpdated?.Invoke(); }
+            return added;
+        }
+
+        public void RemoveFromPlan(Technology tech)
+        {
+            if (!_plan.Remove(tech)) return;
+            OnTechProgressUpdated?.Invoke();
+        }
+
+        /// <summary>Сдвинуть технологию в плане (−1 — выше, +1 — ниже).</summary>
+        public void MovePlan(Technology tech, int delta)
+        {
+            int i = _plan.IndexOf(tech), j = i + delta;
+            if (i < 0 || j < 0 || j >= _plan.Count) return;
+            _plan.RemoveAt(i);
+            _plan.Insert(j, tech);
+            FillFromPlan();
+            OnTechProgressUpdated?.Invoke();
+        }
+
+        /// <summary>Причина, по которой технология плана ещё не начата (null — можно начинать).</summary>
+        public string PlanBlocker(Technology tech)
+        {
+            if (tech == null || tech.IsResearched) return null;
+            foreach (var id in tech.RequiredTechIds)
+            {
+                var r = FindTech(id);
+                if (r != null && !r.IsResearched) return Loc.F("после: {0}", r.Name);
+            }
+            if (tech.YearAvailable > GetCurrentYear()) return Loc.F("ждёт эпохи {0}", tech.YearAvailable);
+            return null;
+        }
+
+        /// <summary>Свободные слоты (без своей очереди) берут первые готовые технологии плана.</summary>
+        public bool FillFromPlan()
+        {
+            _plan.RemoveAll(t => t == null || t.IsResearched);
+            bool changed = false;
+            foreach (var s in _slots)
+            {
+                if (s.CurrentTech != null || s.Queue.Count > 0) continue;
+                Technology pick = null;
+                foreach (var t in _plan)
+                    if (IsTechAvailable(t) && !IsBeingResearched(t) && t.YearAvailable <= GetCurrentYear()) { pick = t; break; }
+                if (pick == null) break;
+                _plan.Remove(pick);
+                s.CurrentTech = pick;
+                s.Progress = pick.Progress;
+                s.IsPaused = false;
+                changed = true;
+            }
+            return changed;
+        }
+
         public void RemoveFromQueue(Technology tech)
         {
             foreach (var s in _slots) s.Queue.Remove(tech);
@@ -699,6 +791,7 @@ namespace StellarisClone.Core
                     bootstrapped = true;
                 }
             }
+            if (FillFromPlan()) bootstrapped = true;
             if (bootstrapped) OnTechProgressUpdated?.Invoke();
 
             int activeSlots = ActiveSlotCount;
@@ -721,6 +814,8 @@ namespace StellarisClone.Core
                 changed = true;
             }
 
+            // Освободившиеся за день слоты — сразу из плана, без простоя до завтра
+            if (FillFromPlan()) changed = true;
             if (changed) OnTechProgressUpdated?.Invoke();
         }
 
@@ -766,6 +861,7 @@ namespace StellarisClone.Core
         {
             if (_slots.Count >= maxSlots) return;
             _slots.Add(new ResearchSlot());
+            FillFromPlan();
             OnSlotsChanged?.Invoke(_slots.Count);
             OnTechProgressUpdated?.Invoke();
         }
@@ -798,6 +894,7 @@ namespace StellarisClone.Core
                 foreach (var q in slot.Queue) ss.Queue.Add(q.Id);
                 s.Slots.Add(ss);
             }
+            foreach (var t in _plan) s.Plan.Add(t.Id);
             return s;
         }
 
@@ -850,6 +947,14 @@ namespace StellarisClone.Core
             }
             int wanted = Mathf.Min(maxSlots, initialSlots + slotTechs);
             while (_slots.Count < wanted) _slots.Add(new ResearchSlot());
+
+            _plan.Clear();
+            if (s.Plan != null)
+                foreach (var id in s.Plan)
+                {
+                    var t = FindTech(id);
+                    if (t != null && !t.IsResearched && !_plan.Contains(t)) _plan.Add(t);
+                }
 
             RecountPopulation();
             OnSlotsChanged?.Invoke(_slots.Count);

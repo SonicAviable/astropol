@@ -225,6 +225,8 @@ namespace StellarisClone.Core
         public float FlatScience;
         public float TempBoost = 1f;
         public int TempBoostDays;
+        /// <summary>План исследований (null — сохранение до плана).</summary>
+        public List<string> Plan = new List<string>();
     }
 
     [Serializable]

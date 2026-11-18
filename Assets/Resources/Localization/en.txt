@@ -7758,3 +7758,79 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 <color=#8AA2A8>⇄ {0}: закрыт</color>	<color=#8AA2A8>⇄ {0}: closed</color>
 Строится: {0}	Under construction: {0}
 <b>{0}</b>\n{1}\n<color=#8AA2A8>{2:0} титана, {3:0} сплавов · {4:0} дн. · содержание {5:0} гелия-3/мес</color>	<b>{0}</b>\n{1}\n<color=#8AA2A8>{2:0} titanium, {3:0} alloys · {4:0} days · upkeep {5:0} helium-3/mo</color>
+<b>Научная победа</b>\nИзучите нужное число технологий — любых, из любых веток.	<b>Science Victory</b>\nResearch the required number of technologies — any, from any branch.
+пауза	paused
+ИЗУЧЕНО {0} ИЗ {1}	RESEARCHED {0} OF {1}
+  ·  В ПЛАНЕ {0}	  ·  PLANNED {0}
+Наука <color={0}>+{1:0.#} / мес</color>	Science <color={0}>+{1:0.#} / mo</color>
+<size=11><color={0}><b>НАУЧНАЯ ПОБЕДА</b></color></size>\n<b>{1}</b> из {2} технологий  <color=#8AA2A8>· {3:0}%</color>	<size=11><color={0}><b>SCIENCE VICTORY</b></color></size>\n<b>{1}</b> of {2} technologies  <color=#8AA2A8>· {3:0}%</color>
+Доступно {0}	Available {0}
+В работе {0}	In progress {0}
+Изучено {0}	Researched {0}
+Все {0}	All {0}
+через {0} {1}	in {0} {1}
+эпоха наступила	era has come
+<b>{0} · {1}</b>\nСтоимость ×{2:0.#} к базовой.\n	<b>{0} · {1}</b>\nCost ×{2:0.#} of base.\n
+Технологию можно начать и раньше её эпохи, но изучение будет дольше. План ждёт наступления эпохи.	A technology can be started before its era, but research takes longer. The plan waits for the era.
+СЕЙЧАС {0}	NOW {0}
+очер.	queue
+Изучено	Researched
+Исследуется	Researching
+В плане	Planned
+Доступно	Available
+Ждёт эпохи	Awaiting era
+Закрыто	Locked
+путь к выбранной технологии · двойной щелчок — сразу в работу	path to the selected technology · double-click — start right away
+Эпоха {0} · {1:0} очков	Era {0} · {1:0} points
+  <color={0}>· рано ×{1:0.0}</color>	  <color={0}>· early ×{1:0.0}</color>
+ПУТЬ К ЦЕЛИ · {0} {1}	PATH TO GOAL · {0} {1}
+ · {0} ВЕТКИ	 · {0} BRANCHES
+… и ещё {0}	… and {0} more
+В ОЧЕРЕДИ СЛОТА	IN SLOT QUEUE
+НАЧАТЬ СЕЙЧАС	START NOW
+В ПЛАНЕ · №{0}	PLANNED · #{0}
+УБРАТЬ ИЗ ПЛАНА	REMOVE FROM PLAN
+В ПЛАН	ADD TO PLAN
+В ПЛАН — ДОЖДАТЬСЯ ЭПОХИ	PLAN — WAIT FOR ERA
+НАЧАТЬ РАНО · СРОК ×{0:0.0}	START EARLY · TIME ×{0:0.0}
+ПУТЬ УЖЕ В ПЛАНЕ	PATH ALREADY PLANNED
+ВЕСЬ ПУТЬ В ПЛАН · {0}	PLAN WHOLE PATH · {0}
+Слоты сами возьмут технологии пути по мере открытия	Slots will pick up the path technologies as they unlock
+Займёт свободный научный слот	Will take a free research slot
+<color={0}>✔ Изучено</color>	<color={0}>✔ Researched</color>
+<color={0}>Исследуется · {1:0}%</color> · {2}	<color={0}>Researching · {1:0}%</color> · {2}
+<color={0}>В очереди слота · №{1}</color> · {2}	<color={0}>In slot queue · #{1}</color> · {2}
+<color={0}>В плане · №{1}</color> · {2}	<color={0}>Planned · #{1}</color> · {2}
+начнётся, как освободится слот	starts when a slot frees up
+<color={0}>Доступно</color> · изучение {1}	<color={0}>Available</color> · research {1}
+<color={0}>Ждёт эпохи {1}</color> · можно начать раньше, но дольше	<color={0}>Awaiting era {1}</color> · can start earlier, but slower
+<color=#8AA2A8>Закрыто · {0}</color>	<color=#8AA2A8>Locked · {0}</color>
+изучено	researched
+в плане №{0}	planned #{0}
+доступно	available
+ждёт эпохи	awaiting era
+закрыто	locked
+научный слот	research slot
+корпус «эсминец»	destroyer hull
+модуль 	module 
+<color={0}>Открывает:</color> {1}	<color={0}>Unlocks:</color> {1}
+СЛОТЫ НАУКИ  <color=#8AA2A8><size=11>{0} из {1} заняты</size></color>	RESEARCH SLOTS  <color=#8AA2A8><size=11>{0} of {1} busy</size></color>
+Свободен — займётся из плана	Free — will take from the plan
+Свободен — выберите технологию на карте	Free — pick a technology on the map
+<b>{0}</b>\nНажмите, чтобы показать на карте	<b>{0}</b>\nClick to show on the map
+ПЛАН ИССЛЕДОВАНИЙ  <color=#8AA2A8><size=11>{0}</size></color>	RESEARCH PLAN  <color=#8AA2A8><size=11>{0}</size></color>
+План пуст. Выберите на карте технологию — даже закрытую — и нажмите «Весь путь в план». Свободные слоты сами возьмут технологии по порядку, как только они откроются.	The plan is empty. Pick a technology on the map — even a locked one — and press “Plan whole path”. Free slots will take the technologies in order as soon as they unlock.
+Слоты сами берут первую готовую технологию плана — наука не простаивает.	Slots take the first ready technology from the plan — science never idles.
+готова к старту	ready to start
+Выше в плане	Move up
+Ниже в плане	Move down
+Убрать из плана	Remove from plan
+План исследований	Research plan
+Путь к «{0}»: добавлено технологий — {1}	Path to “{0}”: {1} technologies added
+Щелчок — подробности, двойной — исследовать	Click — details, double-click — research
+Щелчок — путь к технологии, двойной — весь путь в план	Click — path to the technology, double-click — plan the whole path
+Щелчок — подробности, двойной — в план	Click — details, double-click — add to plan
+Щелчок — подробности	Click — details
+ТЕХНОЛОГИЯ	TECH
+после: {0}	after: {0}
+ждёт эпохи {0}	awaiting era {0}
