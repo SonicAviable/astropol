@@ -155,7 +155,7 @@ namespace StellarisClone.Rendering
         /// <summary>Высота шапки: со схемой системы — высокая, у планеты — обычная.</summary>
         private float InspHeaderH => _inspSchemaMode ? 184f : 96f;
 
-        private static readonly string[] Roman = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII" };
+        private static readonly string[] RomanNums = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII" };
 
         /// <summary>Слой схемы в шапке — над фоном, под звездой и надписями.</summary>
         private void BuildInspectorSchema(Transform header)
@@ -252,7 +252,7 @@ namespace StellarisClone.Rendering
                 if (!on) continue;
                 var b = sc.Bodies[i];
                 var pos = sc.OnOrbit(r, b.Orbit, b.Angle) - r.min;
-                lab.text = i < Roman.Length ? Roman[i] : (i + 1).ToString();
+                lab.text = i < RomanNums.Length ? RomanNums[i] : (i + 1).ToString();
                 lab.rectTransform.At(Vector2.zero, new Vector2(0, 0.5f), pos + new Vector2(b.Radius + 5f, b.Radius + 3f), new Vector2(36, 12));
             }
             if (_inspSchemaNote != null) _inspSchemaNote.gameObject.SetActive(!s.IsSurveyed);

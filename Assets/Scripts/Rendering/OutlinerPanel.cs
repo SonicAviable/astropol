@@ -31,19 +31,20 @@ namespace StellarisClone.Rendering
         /// <summary>Тон плашек голо-HUD (как у крыльев ресурсов и диска времени).</summary>
         private static readonly Color HoloTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
         private static readonly Color RowBg = new Color(0.055f, 0.094f, 0.157f, 0.92f);
-        private static readonly Color RowWarnBg = new Color(0.120f, 0.085f, 0.030f, 0.92f);
-        private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
+        private static readonly Color RowWarnBg = new Color(0.110f, 0.105f, 0.120f, 0.92f);
+        private static readonly Color RowDangerBg = new Color(0.130f, 0.075f, 0.090f, 0.92f);
 
         private enum Sec { Research, Build, Military, Science, Constructor }
         private static string[] SecNames => new[] { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ") };
         private static readonly LGIcon[] SecIcons = { LGIcon.Research, LGIcon.Construction, LGIcon.Fleet, LGIcon.Sensors, LGIcon.Wrench };
         private static readonly Color[] SecColors =
         {
-            new Color(0.62f, 0.58f, 1.00f),
-            new Color(0.44f, 0.88f, 0.60f),
+            // «Атлас»: исследования — синий атласа, стройка — золото, флоты — коралл, наука — морская зелень, строители — терракота
+            new Color(0.435f, 0.639f, 0.847f),
+            new Color(0.906f, 0.757f, 0.439f),
+            new Color(1.00f, 0.42f, 0.341f),
             new Color(0.475f, 0.816f, 0.749f),
-            new Color(0.42f, 0.66f, 1.00f),
-            new Color(1.00f, 0.70f, 0.36f)
+            new Color(0.93f, 0.60f, 0.42f)
         };
 
         /// <summary>Правую колонку заняла панель выбранной системы — планировщик плавно уходит и возвращается после.</summary>
@@ -121,7 +122,7 @@ namespace StellarisClone.Rendering
             LG.Ignore(body.gameObject, includeChildren: false);
 
             // мягкое свечение у верхнего края
-            var glow = LGBuild.Panel(_body, "TopGlow", new Color(Cyan.r, Cyan.g, Cyan.b, 0.10f));
+            var glow = LGBuild.Panel(_body, "TopGlow", new Color(Cyan.r, Cyan.g, Cyan.b, 0f));   // «Атлас»: без свечения
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.rectTransform.anchorMin = new Vector2(0, 1);
             glow.rectTransform.anchorMax = new Vector2(1, 1);
@@ -146,7 +147,7 @@ namespace StellarisClone.Rendering
             _headRt = head.rectTransform;
             _headRt.TopBand(0, HeadH);
             LG.Ignore(head.gameObject, includeChildren: false);
-            var hrim = LGBuild.Panel(head.transform, "Rim", new Color(0.475f, 0.816f, 0.749f, 0.55f));
+            var hrim = LGBuild.Panel(head.transform, "Rim", new Color(0.925f, 0.898f, 0.827f, 0.22f));
             hrim.sprite = HudArt.WingRim(true);
             hrim.type = Image.Type.Sliced;
             hrim.raycastTarget = false;
@@ -156,7 +157,7 @@ namespace StellarisClone.Rendering
             var clip = LGBuild.Rect(head.transform, "Clip");
             clip.Stretch(2, 2, 2, 2);
             clip.gameObject.AddComponent<RectMask2D>();
-            var sw = LGBuild.Panel(clip, "Sweep", new Color(0.475f, 0.816f, 0.749f, 0.10f));
+            var sw = LGBuild.Panel(clip, "Sweep", new Color(0.475f, 0.816f, 0.749f, 0f));   // «Атлас»: без бегущего блика
             sw.sprite = FactionSelectScreen.RadialSprite();
             sw.raycastTarget = false;
             _sweep = sw.rectTransform;
@@ -165,8 +166,7 @@ namespace StellarisClone.Rendering
             _sweep.offsetMin = _sweep.offsetMax = Vector2.zero;
 
             // светящаяся линия под шапкой
-            var line = LGBuild.Panel(head.transform, "Line", new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f));
-            line.sprite = FactionSelectScreen.RadialSprite();
+            var line = LGBuild.Panel(head.transform, "Line", new Color(0.925f, 0.898f, 0.827f, 0.18f));
             line.raycastTarget = false;
             line.rectTransform.anchorMin = new Vector2(0.04f, 0);
             line.rectTransform.anchorMax = new Vector2(0.96f, 0);
@@ -604,7 +604,7 @@ namespace StellarisClone.Rendering
         private SecView SectionHeader(int s)
         {
             var col = SecColors[s];
-            var row = LGBuild.Panel(_list, "Sec_" + s, new Color(col.r * 0.10f, col.g * 0.10f + 0.02f, col.b * 0.10f + 0.03f, 0.96f), raycast: true);
+            var row = LGBuild.Panel(_list, "Sec_" + s, new Color(0.075f, 0.118f, 0.200f, 0.96f), raycast: true);
             LGBuild.Height(row.gameObject, 28f);
             LG.Ignore(row.gameObject, includeChildren: false);
             var v = new SecView { Sec = s, Bg = row };
@@ -613,11 +613,10 @@ namespace StellarisClone.Rendering
             v.Accent = LGBuild.Panel(row.transform, "Accent", col);
             v.Accent.rectTransform.anchorMin = new Vector2(0, 0.18f);
             v.Accent.rectTransform.anchorMax = new Vector2(0, 0.82f);
-            v.Accent.rectTransform.sizeDelta = new Vector2(3, 0);
+            v.Accent.rectTransform.sizeDelta = new Vector2(2, 0);
             v.Accent.rectTransform.anchoredPosition = new Vector2(2.5f, 0);
-            var line = LGBuild.Panel(row.transform, "Line", new Color(col.r, col.g, col.b, 0.35f));
-            line.sprite = FactionSelectScreen.RadialSprite();
-            line.rectTransform.anchorMin = new Vector2(-0.3f, 0);
+            var line = LGBuild.Panel(row.transform, "Line", new Color(0.925f, 0.898f, 0.827f, 0.10f));
+            line.rectTransform.anchorMin = new Vector2(0f, 0);
             line.rectTransform.anchorMax = new Vector2(0.9f, 0);
             line.rectTransform.sizeDelta = new Vector2(0, 1.5f);
             line.rectTransform.anchoredPosition = new Vector2(0, 0.75f);
@@ -710,7 +709,7 @@ namespace StellarisClone.Rendering
                 v.BarHost = barHost.gameObject;
                 v.Fill = LGBuild.Bar(barHost, Cyan, 0f, 4f);
                 v.Fill.gameObject.AddComponent<RectMask2D>();
-                var shine = LGBuild.Panel(v.Fill, "Shine", new Color(1f, 1f, 1f, 0.28f));
+                var shine = LGBuild.Panel(v.Fill, "Shine", new Color(1f, 1f, 1f, 0f));   // «Атлас»: без блика
                 shine.sprite = FactionSelectScreen.RadialSprite();
                 shine.raycastTarget = false;
                 v.Shine = shine.rectTransform;
@@ -778,7 +777,8 @@ namespace StellarisClone.Rendering
                 if (sv == null) continue;
                 var col = SecColors[sv.Sec];
                 float h = sv.Hover.Amount(dt);
-                sv.Bg.color = new Color(col.r * 0.10f + 0.04f * h, col.g * 0.10f + 0.02f + 0.05f * h, col.b * 0.10f + 0.03f + 0.06f * h, 0.96f);
+                // «Атлас»: строка раздела — чернила, при наведении чуть светлее (цвет раздела — только в черте слева и значке)
+                sv.Bg.color = new Color(0.075f + 0.04f * h, 0.118f + 0.05f * h, 0.200f + 0.07f * h, 0.96f);
                 sv.Accent.color = Color.Lerp(col, Color.white, 0.4f * h);
                 sv.Chevron.color = Color.Lerp(Muted, Primary, h);
             }
@@ -790,9 +790,7 @@ namespace StellarisClone.Rendering
                 v.Bg.color = new Color(bg.r + 0.05f * h, bg.g + 0.07f * h, bg.b + 0.08f * h, bg.a);
                 var a = v.Accent;
                 v.Stripe.color = new Color(a.r, a.g, a.b, (v.Warn || v.Danger) ? 0.95f : 0.55f + 0.45f * h);
-                v.Glow.color = new Color(a.r, a.g, a.b, 0.14f + 0.12f * h);
-                float sc = 1f + 0.08f * h;
-                v.Icon.rectTransform.localScale = new Vector3(sc, sc, 1f);
+                v.Glow.color = Color.clear;   // «Атлас»: без ореола под значком
 
                 // блик по полосе прогресса — медленный, тусклый, раз в ~7 с
                 if (v.Shine != null)

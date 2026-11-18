@@ -484,7 +484,7 @@ namespace StellarisClone.Rendering
             }
 
             // Бегунок: светлая точка со свечением
-            var kglow = HoloImage(arc, "KnobGlow", FactionSelectScreen.RadialSprite(), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.7f));
+            var kglow = HoloImage(arc, "KnobGlow", FactionSelectScreen.RadialSprite(), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.16f));
             kglow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(40f, 40f));
             _knob = kglow.rectTransform;
             _knobGlow = kglow;
@@ -598,8 +598,8 @@ namespace StellarisClone.Rendering
                         _gaugeTicks[i].color = on ? Color.white : new Color(HoloLine.r, HoloLine.g, HoloLine.b, i < idx ? 0.9f : 0.55f);
                     }
                     _gaugeFill.color = acc;
-                    _gaugeGlow.color = new Color(acc.r, acc.g, acc.b, 0.18f);
-                    _knobGlow.color = new Color(acc.r, acc.g, acc.b, 0.7f);
+                    _gaugeGlow.color = new Color(acc.r, acc.g, acc.b, 0.06f);   // «Атлас»: свечение едва заметно
+                    _knobGlow.color = new Color(acc.r, acc.g, acc.b, 0.16f);
                     _speedCaption.text = idx == 0 ? Loc.T("ПАУЗА · ПРОБЕЛ") : Loc.F("СКОРОСТЬ ×{0}", speed);
                     _speedCaption.color = idx == 0 ? DS.Gold : DS.TextMuted;
                     if (speed > 0) _lastRunSpeed = speed;

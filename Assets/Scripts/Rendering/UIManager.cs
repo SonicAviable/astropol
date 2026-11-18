@@ -2149,7 +2149,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _eventKindRt.sizeDelta = new Vector2(Mathf.Max(140f, kindW), 24f);
 
             _eventTitleText.text = (ev.Title ?? "").ToUpper();
-            _eventTitleGlow.color = new Color(accent.r, accent.g, accent.b, 0.22f);
+            _eventTitleGlow.color = new Color(accent.r, accent.g, accent.b, 0.08f);
             _eventSubText.text = string.IsNullOrEmpty(ev.Subtitle) ? "" : "◆  " + ev.Subtitle.ToUpper();
             _eventDescText.text = ev.Description ?? "";
 

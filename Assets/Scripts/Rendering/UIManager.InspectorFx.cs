@@ -244,7 +244,7 @@ namespace StellarisClone.Rendering
             if (_inspRingA != null) _inspRingA.gameObject.SetActive(!star);
             if (_inspRingB != null) _inspRingB.gameObject.SetActive(!star);
             if (_inspHeaderGlow != null) _inspHeaderGlow.color = new Color(tint.r, tint.g, tint.b, star || hasPlanet ? 0.16f : 0.08f);
-            if (_inspOwnerGlow != null) _inspOwnerGlow.color = new Color(owner.r, owner.g, owner.b, 0.35f);
+            if (_inspOwnerGlow != null) _inspOwnerGlow.color = new Color(owner.r, owner.g, owner.b, 0f);   // «Атлас»: без цветного свечения сверху
         }
 
         /// <summary>Главная планета системы для шапки: колония с наибольшим населением, иначе самая крупная планета.</summary>
