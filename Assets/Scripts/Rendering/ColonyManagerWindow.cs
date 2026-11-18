@@ -414,11 +414,15 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < shown; i++)
             {
                 var it = items[i];
-                var b = LGBuild.Panel(_attention, "Item", new Color(it.col.r, it.col.g, it.col.b, 0.07f), raycast: true);
+                // «Атлас»: строка без заливки — тонкая метка цвета слева и линия-разделитель снизу
+                var b = LGBuild.Panel(_attention, "Item", new Color(0f, 0f, 0f, 0f), raycast: true);
                 b.rectTransform.TopBand(i * (H + 6f), H);
                 LG.Ignore(b.gameObject);
                 var bar = LGBuild.Panel(b.transform, "Bar", it.col);
-                bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(3, H));
+                bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(2, H - 14f));
+                var sep = LGBuild.Panel(b.transform, "Sep", new Color(0.925f, 0.898f, 0.827f, 0.10f));
+                sep.rectTransform.anchorMin = new Vector2(0, 0); sep.rectTransform.anchorMax = new Vector2(1, 0);
+                sep.rectTransform.offsetMin = Vector2.zero; sep.rectTransform.offsetMax = new Vector2(0, 1);
                 var ic = LGIcons.Create(b.transform, it.icon, 14, it.col);
                 ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(14, 14));
                 var t = LGBuild.Label(b.transform, it.text, 13, Color.white, TextAnchor.MiddleLeft, bold: true);

@@ -643,15 +643,14 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Форма кнопки «Атласа»: обычная кнопка — капсула (как кнопки навигационных приборов), квадратная кнопка-значок — круг,
-        /// высокие плитки (карточки, которые нажимаются) — почти прямые углы. Явно заданный круг остаётся кругом.
+        /// Форма кнопки «Атласа»: прямоугольник с почти прямыми углами (рамку-скобы рисует шейдер),
+        /// явно заданный круг (кнопки-значки) остаётся кругом.
         /// </summary>
         private float ButtonRadius(Rect r)
         {
             float minS = Mathf.Min(r.width, r.height);
             if (radius >= minS * 0.45f) return minS * 0.5f;
-            if (r.height <= 60f) return minS * 0.5f;
-            return 3f;
+            return 2f;
         }
 
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }

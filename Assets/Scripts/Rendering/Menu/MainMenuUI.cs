@@ -171,7 +171,7 @@ namespace StellarisClone.Rendering
 
             // Слова строятся слева направо — ширину узнаём после сборки и центрируем контейнер
             var word = LGBuild.Rect(logo, "Title");
-            float tw = BuildTrackedWord(word, "ASTROPOLITY", GameFont.Bold, 124, FontStyle.Bold, 16f, _title, 0.35f, 0.055f);
+            float tw = BuildTrackedWord(word, "ASTROPOLITY", GameFont.Display, 124, FontStyle.Normal, 16f, _title, 0.35f, 0.055f);   // «Атлас»: логотип — Spectral
             word.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, 0), new Vector2(tw, 150));
 
             var sub = LGBuild.Rect(logo, "Subtitle");
@@ -179,7 +179,7 @@ namespace StellarisClone.Rendering
             sub.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -160), new Vector2(sw, 26));
             foreach (var l in _subtitle) l.Text.color = new Color(0.475f, 0.816f, 0.749f, 0f);
 
-            var line = LGBuild.Panel(logo, "Underline", new Color(0.475f, 0.816f, 0.749f, 0.75f));
+            var line = LGBuild.Panel(logo, "Underline", new Color(0.906f, 0.757f, 0.439f, 0.55f));
             _underline = line.rectTransform;
             _underline.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -200), new Vector2(0, 2));
             LG.Line(line.gameObject, hairline: true);
@@ -246,7 +246,8 @@ namespace StellarisClone.Rendering
                 float u = _title.Count > 1 ? i / (float)(_title.Count - 1) : 0f;
                 float shine = sweep >= 0f && sweep <= 1.4f ? Mathf.Exp(-Mathf.Pow((u - (sweep - 0.2f)) / 0.09f, 2f)) : 0f;
                 var flash = Color.Lerp(Color.white, primary, Mathf.Clamp01(k * 1.6f));
-                var c = Color.Lerp(flash, Color.Lerp(neon, Color.white, 0.55f), shine * 0.85f);
+                // «Атлас»: блик по буквам — тёплое золото, едва заметно
+                var c = Color.Lerp(flash, new Color(0.906f, 0.757f, 0.439f), shine * 0.35f);
                 c.a = e;
                 l.Text.color = c;
             }
@@ -255,7 +256,7 @@ namespace StellarisClone.Rendering
             {
                 var l = _subtitle[i];
                 float k = Mathf.Clamp01((_t - l.Delay) / 0.3f);
-                var c = neon;
+                var c = new Color(0.906f, 0.757f, 0.439f);   // «Атлас»: подзаголовок — золото
                 c.a = 0.85f * LGEase.OutCubic(k);
                 l.Text.color = c;
                 l.Rt.anchoredPosition = l.Rest + new Vector2(-8f * (1f - LGEase.OutCubic(k)), 0f);

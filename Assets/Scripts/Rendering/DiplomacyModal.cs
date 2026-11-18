@@ -625,22 +625,24 @@ namespace StellarisClone.Rendering
             var p = LGBuild.Panel(rt, name, PanelBg, raycast: true);
             var r = p.rectTransform;
             r.At(anchor, anchor, pos, size);
-            LG.Glass(p.gameObject, 16f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f));
-            var head = LGBuild.Panel(r, "HeadBg", HeadBg);
+            // «Атлас»: панель — тонкая кремовая кромка, заголовок — моноширинное золото без плашки, линия под ним
+            LG.Glass(p.gameObject, 2f).SetRim(new Color(0.925f, 0.898f, 0.827f, 0.28f));
+            var head = LGBuild.Panel(r, "HeadBg", new Color(0f, 0f, 0f, 0f));
             head.rectTransform.TopBand(4, 32, 4, 4);
-            LG.Platter(head.gameObject, 12f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.15f));
-            var t = LGBuild.Label(r, title, 14, Primary, TextAnchor.MiddleLeft, bold: true);
-            t.rectTransform.TopBand(4, 32, 16, 40);
-            t.Track(1.5f);
-            var mark = LGIcons.Create(r, LGIcon.Diplomacy, 14, new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f));
-            mark.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -13), new Vector2(14, 14));
+            LG.Ignore(head.gameObject);
+            var t = LGBuild.Label(r, title, 11, UIManager.DS.Gold, TextAnchor.MiddleLeft);
+            t.font = GameFont.Mono;
+            t.rectTransform.TopBand(6, 30, 16, 40);
+            t.Track(1.6f);
+            var mark = LGIcons.Create(r, LGIcon.Diplomacy, 13, new Color(0.906f, 0.757f, 0.439f, 0.6f));
+            mark.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -14), new Vector2(13, 13));
             Line(r, 37f, 0.45f, 4f);
             return (r, t);
         }
 
         private static void Line(RectTransform parent, float y, float alpha, float pad)
         {
-            var l = LGBuild.Panel(parent, "Line", new Color(Cyan.r, Cyan.g, Cyan.b, alpha));
+            var l = LGBuild.Panel(parent, "Line", new Color(0.925f, 0.898f, 0.827f, alpha * 0.4f));
             l.rectTransform.TopBand(y, 1, pad, pad);
             LG.Ignore(l.gameObject);
         }
