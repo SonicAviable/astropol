@@ -36,7 +36,7 @@ namespace StellarisClone.Rendering
             UIAnchors.Register(UIAnchors.Ruler, rt);
 
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             bg.raycastTarget = true;
             var btn = rt.gameObject.AddComponent<Button>();
             btn.onClick.AddListener(() => onClick?.Invoke());

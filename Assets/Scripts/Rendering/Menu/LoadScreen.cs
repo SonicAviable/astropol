@@ -55,7 +55,7 @@ namespace StellarisClone.Rendering
         {
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
             _cg.alpha = 0f;
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.5f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.055f, 0.094f, 0.157f, 0.5f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 

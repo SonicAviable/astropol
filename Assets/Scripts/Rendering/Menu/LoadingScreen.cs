@@ -142,7 +142,7 @@ namespace StellarisClone.Rendering
             var root = (RectTransform)transform;
 
             // Фон: чёрная подложка + арт «на весь экран с обрезкой» (cover)
-            var black = NewImage(root, "Black", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var black = NewImage(root, "Black", new Color(0.055f, 0.094f, 0.157f, 1f));
             Stretch(black.rectTransform);
             black.raycastTarget = true;   // ловит все клики и наведение, пока идёт загрузка — сквозь экран ничего не нажать
 
@@ -206,7 +206,7 @@ namespace StellarisClone.Rendering
             _ringGlow.sprite = dot;
             Center(_ringGlow.rectTransform, 380);
 
-            var disk = NewImage(_ringRt, "Disk", new Color(0.035f, 0.067f, 0.118f, 0.62f));
+            var disk = NewImage(_ringRt, "Disk", new Color(0.055f, 0.094f, 0.157f, 0.62f));
             disk.sprite = circle;
             Center(disk.rectTransform, 186);
 

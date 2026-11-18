@@ -69,7 +69,7 @@ namespace StellarisClone.Rendering
         private void Build()
         {
             // Кино-карта (как подсказки, вариант B): тёмная панель с тонкой рамкой, сверху — цветная шапка
-            var card = LGBuild.Panel(transform, "Card", new Color(0.035f, 0.067f, 0.118f, 0.97f));
+            var card = LGBuild.Panel(transform, "Card", new Color(0.055f, 0.094f, 0.157f, 0.97f));
             _card = card.rectTransform;
             _card.anchorMin = _card.anchorMax = Vector2.zero;
             _card.pivot = new Vector2(0f, 0.5f);

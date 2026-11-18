@@ -185,7 +185,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < n; i++)
             {
                 int idx = i;
-                var b = LGBuild.Button(_root, "Track_" + i, new Color(0.035f, 0.067f, 0.118f, 0.9f), new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.35f),
+                var b = LGBuild.Button(_root, "Track_" + i, new Color(0.055f, 0.094f, 0.157f, 0.9f), new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.35f),
                                        () => MusicManager.Instance?.PlayTrack(idx), null, null, 11, 8f);
                 ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, top - i * (RowH + 4f)), new Vector2(W - 28, RowH));
                 var t = LGBuild.Label(b.transform, "", 11, DS.TextMuted, TextAnchor.MiddleLeft);
@@ -219,7 +219,7 @@ namespace StellarisClone.Rendering
                 bool on = i == cur;
                 _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? Loc.T("  <color=#E07A6E>· война</color>") : "");
                 _rows[i].label.color = on ? DS.NeonCyan : DS.TextMuted;
-                _rows[i].bg.color = on ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.035f, 0.067f, 0.118f, 0.9f);
+                _rows[i].bg.color = on ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.9f);
             }
             RefreshTime();
         }

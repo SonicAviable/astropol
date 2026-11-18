@@ -775,7 +775,7 @@ namespace StellarisClone.Rendering
                     int lv = Mathf.Clamp(_data.Fortification, 0, Fortifications.MaxLevel);
                     var pips = new System.Text.StringBuilder();
                     for (int i = 1; i <= Fortifications.MaxLevel; i++) pips.Append(i <= lv ? "◆" : "◇");
-                    tip += $"[[sec|{Loc.T("Оборона")}|#8FA9B6]]\n";
+                    tip += $"[[sec|{Loc.T("Оборона")}|#A9A392]]\n";
                     if (sb.Disabled) tip += Loc.T("<color=#FF7F6B>Звёздная база выведена из строя</color>\n");
                     else
                         tip += $"[[big|{pw:N0}|{Loc.T("мощь базы")}|" +
@@ -809,7 +809,7 @@ namespace StellarisClone.Rendering
                 int tmin = harvest ? _data.HarvestedMinerals : _data.PotentialMinerals;
                 int ten = harvest ? _data.HarvestedEnergy : _data.PotentialEnergy;
                 tip += $"[[sec|{(harvest ? Loc.T("Добыча") : Loc.T("Залежи · не добываются"))}|#66FF88]]\n" +
-                       $"[[kv|Minerals|#4DE6CC|{Loc.T("Титан")}|+{tmin}]]\n" +
+                       $"[[kv|Minerals|#79D0BF|{Loc.T("Титан")}|+{tmin}]]\n" +
                        $"[[kv|Energy|#E7C170|{Loc.T("Гелий-3")}|+{ten}]]\n";
             }
             else
@@ -872,7 +872,7 @@ namespace StellarisClone.Rendering
                 if (f.Data.OwnerId == 0) own++; else enemy++;
             if (own == 0 && enemy == 0) return "";
             return Loc.T("\n<color=#A9A392>Флоты:</color> ") +
-                   (own > 0 ? Loc.F("<color=#39EBDB>ваши {0}</color>", own) : "") +
+                   (own > 0 ? Loc.F("<color=#79D0BF>ваши {0}</color>", own) : "") +
                    (own > 0 && enemy > 0 ? "  ·  " : "") +
                    (enemy > 0 ? Loc.F("<color=#FF6666>чужие {0}</color>", enemy) : "") + "\n";
         }

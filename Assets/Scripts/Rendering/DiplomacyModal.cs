@@ -30,12 +30,12 @@ namespace StellarisClone.Rendering
         private static Color Gold => UIManager.DS.Gold;
         private static Color Green => UIManager.DS.Green;
         private static Color Red => UIManager.DS.Red;
-        private static readonly Color PanelBg = new Color(0.035f, 0.067f, 0.118f, 0.84f);
+        private static readonly Color PanelBg = new Color(0.055f, 0.094f, 0.157f, 0.84f);
         private static readonly Color HeadBg = new Color(0.075f, 0.125f, 0.220f, 0.80f);
         private static readonly Color CellBg = new Color(0.055f, 0.094f, 0.157f, 0.94f);
         private static readonly Color RowBg = new Color(0.055f, 0.094f, 0.157f, 0.92f);
         private static readonly Color SlotBg = new Color(0.055f, 0.094f, 0.157f, 0.96f);
-        private static readonly Color MetalDark = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+        private static readonly Color MetalDark = new Color(0.055f, 0.094f, 0.157f, 0.97f);
         private static readonly Color CoalitionTone = new Color(1f, 0.62f, 0.36f);
 
         // Раскладка (в единицах эталонного экрана 1920×1080)
@@ -326,7 +326,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             bg.raycastTarget = true;
             LG.Ignore(_root, includeChildren: false);
             LG.Motion(_root, LGAppear.Kind.Fade);
@@ -342,7 +342,7 @@ namespace StellarisClone.Rendering
             _scene = sc.gameObject.AddComponent<RawImage>();
             _scene.raycastTarget = false;
             LG.Ignore(sc.gameObject);
-            _sceneShade = LGBuild.Panel(rt, "SceneShade", new Color(0.035f, 0.067f, 0.118f, 0.45f));
+            _sceneShade = LGBuild.Panel(rt, "SceneShade", new Color(0.055f, 0.094f, 0.157f, 0.45f));
             _sceneShade.rectTransform.Stretch();
             LG.Ignore(_sceneShade.gameObject);
 

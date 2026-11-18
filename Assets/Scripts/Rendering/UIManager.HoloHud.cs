@@ -73,7 +73,7 @@ namespace StellarisClone.Rendering
         private void BuildEdgeScrims()
         {
             // Линейное цветовое пространство: чёрная вуаль гасит свет слабее, чем обещает альфа, — берём плотнее
-            var ink = new Color(0.035f, 0.067f, 0.118f, 1f);
+            var ink = new Color(0.055f, 0.094f, 0.157f, 1f);
 
             // Верх: градиент HudArt.VFade непрозрачен снизу — переворачиваем вокруг нижней кромки, прижатой к верху экрана
             var top = HoloImage(_canvas.transform, "ScrimTop", HudArt.VFade(), new Color(ink.r, ink.g, ink.b, 0.9f));

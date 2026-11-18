@@ -70,7 +70,7 @@ namespace StellarisClone.Rendering
             _rt = rt;
             _group = rt.gameObject.AddComponent<CanvasGroup>();
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.97f);
             bg.raycastTarget = true;
             _fx = LG.Glass(rt.gameObject, 22f);
 
@@ -128,7 +128,7 @@ namespace StellarisClone.Rendering
 
         private void BuildPortrait()
         {
-            var frame = LGBuild.Panel(_content, "PortraitFrame", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var frame = LGBuild.Panel(_content, "PortraitFrame", new Color(0.055f, 0.094f, 0.157f, 1f));
             frame.rectTransform.anchorMin = new Vector2(0, 0);
             frame.rectTransform.anchorMax = new Vector2(0, 1);
             frame.rectTransform.pivot = new Vector2(0, 0.5f);
@@ -149,7 +149,7 @@ namespace StellarisClone.Rendering
             _scanlines.raycastTarget = false;
 
             // Снизу затемнение под имя
-            var shade = LGBuild.Panel(mask, "Shade", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.055f, 0.094f, 0.157f, 1f));
             shade.sprite = MenuArt.VerticalFade;
             shade.rectTransform.anchorMin = Vector2.zero;
             shade.rectTransform.anchorMax = new Vector2(1, 0.42f);
@@ -453,7 +453,7 @@ namespace StellarisClone.Rendering
             {
                 _shown = n;
                 bool caret = typing && Mathf.Repeat(_t, 0.5f) < 0.3f;
-                _body.text = VisibleSubstring(_fullText, n) + (typing ? (caret ? "<color=#7FF5EA>▌</color>" : " ") : "");
+                _body.text = VisibleSubstring(_fullText, n) + (typing ? (caret ? "<color=#79D0BF>▌</color>" : " ") : "");
             }
 
             if (!typing && _doneAt < 0f)
@@ -504,7 +504,7 @@ namespace StellarisClone.Rendering
                 c.a = lvl > 0.25f + i * 0.08f ? 1f : 0.2f;
                 _bars[i].color = c;
             }
-            _signalText.text = Loc.F("ВХОДЯЩАЯ ПЕРЕДАЧА   ·   КАНАЛ ПРАВИТЕЛЬСТВА   ·   <color=#7FF5EA>{0:000}</color>", (int)(_t * 37.3f) % 1000);
+            _signalText.text = Loc.F("ВХОДЯЩАЯ ПЕРЕДАЧА   ·   КАНАЛ ПРАВИТЕЛЬСТВА   ·   <color=#79D0BF>{0:000}</color>", (int)(_t * 37.3f) % 1000);
 
             // Блик бежит по разделителю
             float sx = Mathf.Repeat(_t * 0.35f, 1.4f) - 0.2f;

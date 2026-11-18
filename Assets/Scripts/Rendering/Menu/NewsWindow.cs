@@ -139,7 +139,7 @@ namespace StellarisClone.Rendering
         private void Build(RectTransform rt)
         {
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.72f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.055f, 0.094f, 0.157f, 0.72f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
@@ -173,7 +173,7 @@ namespace StellarisClone.Rendering
             _panel = LGBuild.Rect(rt, "Panel");
             _panel.Stretch(Side, PanelBottom, Side, PanelTop);
             _panelPos = _panel.anchoredPosition;
-            var bg = LGBuild.Panel(_panel, "Bg", new Color(0.035f, 0.067f, 0.118f, 0.96f), raycast: true);
+            var bg = LGBuild.Panel(_panel, "Bg", new Color(0.055f, 0.094f, 0.157f, 0.96f), raycast: true);
             bg.rectTransform.Stretch();
             LG.Glass(bg.gameObject, 24f).SetRim(new Color(1f, 0.82f, 0.48f, 0.35f));
 
@@ -186,13 +186,13 @@ namespace StellarisClone.Rendering
             var mask = LG.RoundedMask(artHost, 16f);
             _artA = Art(mask, "ArtA");
             _artB = Art(mask, "ArtB");
-            var edgeFade = LGBuild.Panel(mask, "Fade", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var edgeFade = LGBuild.Panel(mask, "Fade", new Color(0.055f, 0.094f, 0.157f, 1f));
             edgeFade.sprite = MenuArt.HorizontalFade;
             edgeFade.rectTransform.anchorMin = Vector2.zero;
             edgeFade.rectTransform.anchorMax = new Vector2(0.28f, 1);
             edgeFade.rectTransform.offsetMin = edgeFade.rectTransform.offsetMax = Vector2.zero;
             LG.Ignore(edgeFade.gameObject);
-            var bottomFade = LGBuild.Panel(mask, "FadeBottom", new Color(0.035f, 0.067f, 0.118f, 0.8f));
+            var bottomFade = LGBuild.Panel(mask, "FadeBottom", new Color(0.055f, 0.094f, 0.157f, 0.8f));
             bottomFade.sprite = MenuArt.VerticalFade;
             bottomFade.rectTransform.anchorMin = Vector2.zero;
             bottomFade.rectTransform.anchorMax = new Vector2(1, 0.3f);
@@ -316,7 +316,7 @@ namespace StellarisClone.Rendering
                     LGBuild.Height(gap.gameObject, 4f);
                     LGBuild.Label(_content, line.Substring(2), 18, gold, TextAnchor.UpperLeft, bold: true, wrap: true);
                 }
-                else if (line.StartsWith("- ")) Para("<color=#6FE6DA>•</color>   " + line.Substring(2), 15, new Color(0.925f, 0.898f, 0.827f));
+                else if (line.StartsWith("- ")) Para("<color=#79D0BF>•</color>   " + line.Substring(2), 15, new Color(0.925f, 0.898f, 0.827f));
                 else Para(line, 15, new Color(0.74f, 0.82f, 0.86f));
             }
         }

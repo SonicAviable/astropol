@@ -32,7 +32,7 @@ namespace StellarisClone.Rendering
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.92f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.92f);
         private static readonly Color CEnergy = new Color(1f, 0.85f, 0.3f), CMinerals = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color CAlloys = new Color(0.85f, 0.7f, 1f), CInfluence = new Color(0.75f, 0.6f, 1f);
 
@@ -95,7 +95,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(1f, 0.8f, 0.4f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -113,7 +113,7 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / U)</color>"));
 
             // ---- Сцена слева ----
-            var scene = LGBuild.Panel(rt, "Scene", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var scene = LGBuild.Panel(rt, "Scene", new Color(0.055f, 0.094f, 0.157f, 1f));
             _sceneFrame = scene;
             scene.rectTransform.anchorMin = new Vector2(0, 0);
             scene.rectTransform.anchorMax = new Vector2(0.56f, 1);
@@ -138,14 +138,14 @@ namespace StellarisClone.Rendering
             fullFit.aspectRatio = 4f / 3f;
 
             // Затемнение снизу под название и предание
-            var shade = LGBuild.Panel(sceneMask, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.96f));
+            var shade = LGBuild.Panel(sceneMask, "Shade", new Color(0.055f, 0.094f, 0.157f, 0.96f));
             shade.sprite = MenuArt.VerticalFade;
             _sceneShade = shade.rectTransform;
             _sceneShade.anchorMin = Vector2.zero;
             _sceneShade.anchorMax = new Vector2(1, 0.48f);
             _sceneShade.offsetMin = _sceneShade.offsetMax = Vector2.zero;
             // Второй, плотный слой прямо под текстом: на светлых иллюстрациях предание иначе не читается
-            var textShade = LGBuild.Panel(sceneMask, "TextShade", new Color(0.035f, 0.067f, 0.118f, 0.8f));
+            var textShade = LGBuild.Panel(sceneMask, "TextShade", new Color(0.055f, 0.094f, 0.157f, 0.8f));
             textShade.sprite = MenuArt.VerticalFade;
             textShade.rectTransform.anchorMin = Vector2.zero;
             textShade.rectTransform.anchorMax = new Vector2(1, 0);
@@ -168,7 +168,7 @@ namespace StellarisClone.Rendering
             _lore.lineSpacing = 1.12f;
 
             // Голограмма-вставка в правом верхнем углу сцены (поверх иллюстрации)
-            var hf = LGBuild.Panel(scene.transform, "HoloInset", new Color(0.035f, 0.067f, 0.118f, 0.78f));
+            var hf = LGBuild.Panel(scene.transform, "HoloInset", new Color(0.055f, 0.094f, 0.157f, 0.78f));
             _holoFrame = hf.rectTransform;
             _holoFrame.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-16, -16), new Vector2(300, 225));
             LG.Platter(hf.gameObject, 14f).SetRim(new Color(1f, 0.8f, 0.4f, 0.4f));
@@ -345,7 +345,7 @@ namespace StellarisClone.Rendering
                 LG.Ignore(ic.gameObject);
             }
 
-            var shade = LGBuild.Panel(host, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.6f));
+            var shade = LGBuild.Panel(host, "Shade", new Color(0.055f, 0.094f, 0.157f, 0.6f));
             shade.sprite = UIManager.FadeRightSprite;
             shade.raycastTarget = false;
             shade.rectTransform.anchorMin = Vector2.zero;
@@ -383,7 +383,7 @@ namespace StellarisClone.Rendering
             light.raycastTarget = false;
             light.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-90, 0), new Vector2(420, 260));
 
-            var shade = LGBuild.Panel(host, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.85f));
+            var shade = LGBuild.Panel(host, "Shade", new Color(0.055f, 0.094f, 0.157f, 0.85f));
             shade.sprite = UIManager.FadeRightSprite;
             shade.raycastTarget = false;
             shade.rectTransform.anchorMin = Vector2.zero;
@@ -466,7 +466,7 @@ namespace StellarisClone.Rendering
             title.rectTransform.Stretch(70, 0, 160, 14);
             title.Track(0.8f);
             string state = done ? Loc.T("<color=#7CF29A>ЗАВЕРШЁН</color>") : building ? Loc.F("<color={0}>СТРОИТСЯ</color>", LGBuild.Hex(def.Color))
-                         : next ? Loc.T("<color=#E7C170>СЛЕДУЮЩИЙ</color>") : Loc.T("<color=#6F8790>ВПЕРЕДИ</color>");
+                         : next ? Loc.T("<color=#E7C170>СЛЕДУЮЩИЙ</color>") : Loc.T("<color=#6F6C64>ВПЕРЕДИ</color>");
             var stLbl = LGBuild.Label(card, state, 10, Color.white, TextAnchor.UpperRight, bold: true);
             stLbl.rectTransform.Stretch(0, 0, 18, 16);
             stLbl.Track(1.6f);
@@ -638,8 +638,8 @@ namespace StellarisClone.Rendering
                 Color ac = ai.MapColor;
                 var crest = FactionEmblems.Create(row, met ? FactionEmblems.ForOwner(ai.OwnerId) : null, 30, ac);
                 if (crest != null) crest.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(30, 30));
-                string who = met ? $"<b>{ai.AIName}</b>" : Loc.T("<color=#6F8790>Неизвестная империя</color>");
-                string what = met && def != null ? $"<color=#A9A392>{def.Name}</color>" : "<color=#6F8790>—</color>";
+                string who = met ? $"<b>{ai.AIName}</b>" : Loc.T("<color=#6F6C64>Неизвестная империя</color>");
+                string what = met && def != null ? $"<color=#A9A392>{def.Name}</color>" : "<color=#6F6C64>—</color>";
                 var name = LGBuild.Label(row, $"{who}\n{what}", 11, Color.white, TextAnchor.MiddleLeft);
                 name.rectTransform.Stretch(40, 0, 180, 0);
 

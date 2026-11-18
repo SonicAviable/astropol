@@ -20,7 +20,7 @@ namespace StellarisClone.Rendering
         private Image _bandBg, _bandLine, _orb, _orbGlow, _orbIcon, _badge, _orbCore;
         private Text _title, _sub, _badgeText;
         // Непрозрачно: в линейном пространстве даже 3% просвета дают заметный «призрак» яркой подписи системы под подсказкой
-        private static readonly Color PanelTint = new Color(0.035f, 0.067f, 0.118f, 1f);
+        private static readonly Color PanelTint = new Color(0.055f, 0.094f, 0.157f, 1f);
 
         private static readonly Color TipRim = new Color(0.475f, 0.816f, 0.749f, 0.50f);
 

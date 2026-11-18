@@ -57,7 +57,7 @@ namespace StellarisClone.Rendering
                 void Section(string cap, List<(LGIcon icon, string name, float v, bool expense)> rows)
                 {
                     if (rows.Count == 0) return;
-                    _sb.Append($"[[sec|{cap}|#6F8794]]\n");
+                    _sb.Append($"[[sec|{cap}|#6F6C64]]\n");
                     foreach (var r in rows)
                     {
                         string val = Mathf.Abs(r.v) < 0.05f ? "0" : r.expense ? "−" + r.v.ToString("0.#", CultureInfo.CurrentCulture) : Signed(r.v);
@@ -121,7 +121,7 @@ namespace StellarisClone.Rendering
         {
             float net = eco.MonthlyMineralsIncome, cap = eco.MineralStorage;
             var rep = eco.Report;
-            var t = new ResTip(LGIcon.Minerals, "#4DE6CC", Loc.T("Титан"), Loc.T("строительство · корабли · районы"))
+            var t = new ResTip(LGIcon.Minerals, "#79D0BF", Loc.T("Титан"), Loc.T("строительство · корабли · районы"))
                 .Big(Num(eco.Minerals), Loc.T("запас"), net)
                 .Meter(cap > 0f ? eco.Minerals / cap : 0f, Loc.F("Склад {0} / {1}", Num(eco.Minerals), Num(cap)), StorageEta(eco.Minerals, cap, net))
                 .Income(LGIcon.Globe, Loc.T("База империи"), eco.BaseMineralsIncome)
@@ -208,7 +208,7 @@ namespace StellarisClone.Rendering
             sb.Append($"[[big|<color=#{hex}>{avg:0}</color>|{Loc.T("средняя")}|{colonies.Count}|{Loc.T("колоний")}]]\n");
             sb.Append($"[[meter|#{hex}|{(avg / 100f).ToString("0.###", CultureInfo.InvariantCulture)}|{PlanetStability.TierName(tier)}|{avg:0} / 100]]\n");
             sb.Append($"<color=#A9A392>{PlanetStability.TierEffect(tier)}</color>\n");
-            sb.Append($"[[sec|{Loc.T("САМЫЕ НЕСПОКОЙНЫЕ")}|#6F8794]]\n");
+            sb.Append($"[[sec|{Loc.T("САМЫЕ НЕСПОКОЙНЫЕ")}|#6F6C64]]\n");
             for (int i = 0; i < colonies.Count && i < 6; i++)
             {
                 var p = colonies[i];

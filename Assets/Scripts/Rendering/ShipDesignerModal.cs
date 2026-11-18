@@ -131,7 +131,7 @@ namespace StellarisClone.Rendering
         private static Color Gold => UIManager.DS.Gold;
         private static readonly Color CAtk = new Color(1f, 0.42f, 0.36f);
         private static readonly Color CDef = new Color(0.45f, 0.76f, 1f);
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.88f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.88f);
 
         private void Awake() => Instance = this;
 
@@ -204,7 +204,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             bg.raycastTarget = true;
             LG.Scrim(_root).FillMultiplier = 2.2f;
             var mo = LG.Motion(_root, LGAppear.Kind.Fade);
@@ -433,7 +433,7 @@ namespace StellarisClone.Rendering
             _energyFill.fillOrigin = (int)Image.Origin360.Bottom;
             _energyFill.fillClockwise = true;
             _energyFill.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G, G));
-            var ticks = LGBuild.Panel(energy.transform, "Ticks", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var ticks = LGBuild.Panel(energy.transform, "Ticks", new Color(0.055f, 0.094f, 0.157f, 1f));
             ticks.sprite = TickSprite();
             ticks.raycastTarget = false;
             ticks.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G, G));
@@ -469,7 +469,7 @@ namespace StellarisClone.Rendering
         /// с установленным модулем, «Установить» и «Снять». Оформлена общим стилем окон и кнопок игры.</summary>
         private void BuildPicker(RectTransform rt)
         {
-            var img = LGBuild.Panel(rt, "Arsenal", new Color(0.035f, 0.067f, 0.118f, 0.97f), raycast: true);
+            var img = LGBuild.Panel(rt, "Arsenal", new Color(0.055f, 0.094f, 0.157f, 0.97f), raycast: true);
             var r = img.rectTransform;
             r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
             r.offsetMin = new Vector2(Pad + LeftW + 20, SlotsH + 8); r.offsetMax = new Vector2(-(Pad + RightW + 20), -84);
@@ -525,7 +525,7 @@ namespace StellarisClone.Rendering
             sr.viewport = gridHost;
 
             // Подробности справа
-            var pane = LGBuild.Panel(img.transform, "Detail", new Color(0.035f, 0.067f, 0.118f, 1f), raycast: true);
+            var pane = LGBuild.Panel(img.transform, "Detail", new Color(0.055f, 0.094f, 0.157f, 1f), raycast: true);
             var pr = pane.rectTransform;
             pr.anchorMin = new Vector2(1, 0); pr.anchorMax = new Vector2(1, 1);
             pr.pivot = new Vector2(1, 0.5f);
@@ -613,7 +613,7 @@ namespace StellarisClone.Rendering
         private static void SetTile(Button b, bool on, Color c)
         {
             b.interactable = on;
-            b.GetComponent<Image>().color = on ? new Color(c.r * 0.08f, c.g * 0.08f, c.b * 0.08f, 0.85f) : new Color(0.035f, 0.067f, 0.118f, 0.6f);
+            b.GetComponent<Image>().color = on ? new Color(c.r * 0.08f, c.g * 0.08f, c.b * 0.08f, 0.85f) : new Color(0.055f, 0.094f, 0.157f, 0.6f);
             foreach (var t in b.GetComponentsInChildren<Text>(true))
                 t.color = new Color(t.color.r, t.color.g, t.color.b, on ? 1f : 0.45f);
         }
@@ -841,7 +841,7 @@ namespace StellarisClone.Rendering
                 glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(W + 40, W + 40));
                 LG.Ignore(glow.gameObject);
 
-                var fill = LGBuild.Panel(r, "Socket", mod != null ? new Color(tint.r * 0.16f, tint.g * 0.16f, tint.b * 0.16f, 0.96f) : new Color(0.035f, 0.067f, 0.118f, 0.9f), raycast: true);
+                var fill = LGBuild.Panel(r, "Socket", mod != null ? new Color(tint.r * 0.16f, tint.g * 0.16f, tint.b * 0.16f, 0.96f) : new Color(0.055f, 0.094f, 0.157f, 0.9f), raycast: true);
                 fill.sprite = HexSprite(true);
                 fill.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(W, H));
                 var rim = LGBuild.Panel(r, "SocketRim", new Color(tint.r, tint.g, tint.b, mod != null ? 0.85f : 0.30f));
@@ -868,7 +868,7 @@ namespace StellarisClone.Rendering
                     {
                         bool prod = mod.PowerProduce > 0f;
                         Color pc = prod ? UIManager.DS.Green : Gold;
-                        var chip = LGBuild.Panel(r, "Pw", new Color(0.035f, 0.067f, 0.118f, 0.95f));
+                        var chip = LGBuild.Panel(r, "Pw", new Color(0.055f, 0.094f, 0.157f, 0.95f));
                         chip.raycastTarget = false;
                         chip.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, -H * 0.5f - 2), new Vector2(38, 15));
                         LG.Chip(chip.gameObject, new Color(pc.r, pc.g, pc.b, 0.6f), 7f);
@@ -998,7 +998,7 @@ namespace StellarisClone.Rendering
 
         private void BuildModuleCard(RectTransform rt)
         {
-            var card = LGBuild.Panel(rt, "ModuleCard", new Color(0.035f, 0.067f, 0.118f, 0.97f));
+            var card = LGBuild.Panel(rt, "ModuleCard", new Color(0.055f, 0.094f, 0.157f, 0.97f));
             card.raycastTarget = false;
             card.rectTransform.anchorMin = card.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             card.rectTransform.pivot = new Vector2(0, 0);
@@ -1449,7 +1449,7 @@ namespace StellarisClone.Rendering
             bool unlocked = m.IsUnlocked();
             bool sel = _pickSel != null && _pickSel.Id == m.Id;
             Color tint = ModuleVisuals.Tint(m);
-            Color bg = sel ? new Color(tint.r * 0.15f, tint.g * 0.15f, tint.b * 0.15f, 1f) : new Color(0.035f, 0.067f, 0.118f, 1f);
+            Color bg = sel ? new Color(tint.r * 0.15f, tint.g * 0.15f, tint.b * 0.15f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f);
             Color rim = sel ? new Color(tint.r, tint.g, tint.b, 0.95f) : new Color(1f, 1f, 1f, 0.08f);
             var b = FlatButton(_pickGrid, "Tile", bg, rim, () => OnTileClick(m));
             var t = b.transform;
@@ -1547,7 +1547,7 @@ namespace StellarisClone.Rendering
             bool isInst = _pickSel != null && installed != null && installed.Id == _pickSel.Id;
             bool can = unlocked && !isInst;
             _pickInstall.interactable = can;
-            _pickInstall.GetComponent<Image>().color = can ? new Color(0.04f, 0.20f, 0.15f, 1f) : new Color(0.035f, 0.067f, 0.118f, 1f);
+            _pickInstall.GetComponent<Image>().color = can ? new Color(0.04f, 0.20f, 0.15f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f);
             _pickInstall.GetComponent<LiquidGlassEffect>()?.SetRim(can ? new Color(0.36f, 0.96f, 0.68f, 0.9f) : new Color(1f, 1f, 1f, 0.10f));
             _pickInstallText.text = _pickSel == null || can ? Loc.T("УСТАНОВИТЬ") : isInst ? Loc.T("УЖЕ УСТАНОВЛЕН") : Loc.T("НЕ ИЗУЧЕН");
             _pickInstallText.color = can ? Color.white : Muted;

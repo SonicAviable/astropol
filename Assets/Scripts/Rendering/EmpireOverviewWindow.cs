@@ -1506,7 +1506,7 @@ namespace StellarisClone.Rendering
             if (leader != null && leader.Texture != null)
             {
                 const float PortW = 128f, PortH = 214f;
-                var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.035f, 0.067f, 0.118f, 1f));
+                var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.055f, 0.094f, 0.157f, 1f));
                 frame.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(PortW, PortH));
                 var ffx = LG.Platter(frame.gameObject, 12f);
                 ffx.SetRim(new Color(ac.r, ac.g, ac.b, 0.6f));
@@ -1515,7 +1515,7 @@ namespace StellarisClone.Rendering
                 var portrait = LeaderPortraitView.Create(portHost, leader, zoom: 1.35f);
                 if (portrait != null && ai.AtWar) portrait.GetComponent<RawImage>().color = new Color(1f, 0.86f, 0.84f, 1f);
 
-                var nameShade = LGBuild.Panel(portHost, "Shade", new Color(0.035f, 0.067f, 0.118f, 1f));
+                var nameShade = LGBuild.Panel(portHost, "Shade", new Color(0.055f, 0.094f, 0.157f, 1f));
                 nameShade.sprite = MenuArt.VerticalFade;
                 nameShade.rectTransform.anchorMin = Vector2.zero;
                 nameShade.rectTransform.anchorMax = new Vector2(1, 0.35f);

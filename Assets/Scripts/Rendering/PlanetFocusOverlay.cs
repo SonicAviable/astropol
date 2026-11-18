@@ -107,7 +107,7 @@ namespace StellarisClone.Rendering
         private static readonly Color CEnergy = new Color(0.95f, 0.78f, 0.28f);
         private static readonly Color CAlloys = new Color(0.95f, 0.62f, 0.36f);
         private static readonly Color CScience = new Color(0.50f, 0.92f, 0.62f);
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.88f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.88f);
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.09f);
 
         // Раскладка (в единицах канваса 1920×1080)
@@ -642,7 +642,7 @@ namespace StellarisClone.Rendering
                 else LGBuild.SetBar(r.Bar, 0f);
 
                 r.Rim.color = focused ? new Color(dc.r, dc.g, dc.b, 0.9f) : new Color(dc.r, dc.g, dc.b, 0.25f);
-                r.Bg.color = focused ? new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.92f) : new Color(0.035f, 0.067f, 0.118f, 0.82f);
+                r.Bg.color = focused ? new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.92f) : new Color(0.055f, 0.094f, 0.157f, 0.82f);
                 r.InfoTip.SetText(t == DistrictType.Urban
                     ? Loc.T("<b>Город</b>\nЖильё для двух жителей и место служащего в каждом районе: служащий даёт +1 науки. Сюда идут те, кому не хватило мест на производстве. Нажмите, чтобы производство делилось поровну.")
                     : Loc.F("<b>{0}</b>\n{1}\nКаждое занятое место даёт ≈ {2:0.#} в месяц.\n", DistrictName(t), DistrictEffect(t), PerWorker(t)) +
@@ -653,7 +653,7 @@ namespace StellarisClone.Rendering
             }
 
             int idle = _planet.IdlePops;
-            string sum = Loc.F("<color=#7FCFFF>Наука +{0:0.#}</color>  ·  работают {1} из {2} мест\n", ScienceOut(), _planet.EmployedPops, _planet.WorkerSlots);
+            string sum = Loc.F("<color=#79D0BF>Наука +{0:0.#}</color>  ·  работают {1} из {2} мест\n", ScienceOut(), _planet.EmployedPops, _planet.WorkerSlots);
             _idleText.text = sum + (idle > 0
                 ? Loc.F("<color=#E7C170>Безработных {0}</color> — нет свободных мест: постройте районы («СТРОИТЬ»).", idle)
                 : _planet.BuiltDistricts >= _planet.MaxDistricts ? Loc.F("<color=#A9A392>Все {0} мест под районы застроены.</color>", _planet.MaxDistricts)
@@ -924,7 +924,7 @@ namespace StellarisClone.Rendering
             _root = _rootRt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             bg.raycastTarget = true;
             LG.Scrim(_root).FillMultiplier = 2.2f;
             var motion = LG.Motion(_root, LGAppear.Kind.Fade);
@@ -1036,7 +1036,7 @@ namespace StellarisClone.Rendering
             _resetPlanBtn = reset.gameObject;
 
             // Выпадающий список приоритетов
-            var list = LGBuild.Panel(rt, "FocusList", new Color(0.035f, 0.067f, 0.118f, 0.98f), raycast: true);
+            var list = LGBuild.Panel(rt, "FocusList", new Color(0.055f, 0.094f, 0.157f, 0.98f), raycast: true);
             list.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 54), new Vector2(260, ColonyFocusInfo.All.Length * 36 + 8));
             LG.Platter(list.gameObject, 10f).SetRim(new Color(CCyan.r, CCyan.g, CCyan.b, 0.45f));
             _focusList = list.gameObject;
@@ -1078,7 +1078,7 @@ namespace StellarisClone.Rendering
                 var t = RowOrder[i];
                 Color dc = DistrictInfo.Color(t);
                 var r = new JobRow { Type = t, Focus = FocusOf(t) };
-                r.Bg = LGBuild.Panel(host, "Card_" + t, new Color(0.035f, 0.067f, 0.118f, 0.82f), raycast: false);
+                r.Bg = LGBuild.Panel(host, "Card_" + t, new Color(0.055f, 0.094f, 0.157f, 0.82f), raycast: false);
                 var br = r.Bg.rectTransform;
                 br.anchorMin = br.anchorMax = new Vector2(0, 0);
                 br.pivot = new Vector2(0.5f, 0);

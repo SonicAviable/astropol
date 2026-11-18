@@ -58,7 +58,7 @@ namespace StellarisClone.Cards
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.90f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.90f);
         private static readonly Color CTile = new Color(0.055f, 0.094f, 0.157f, 0.92f);
         private static readonly Color Accent = new Color(0.95f, 0.45f, 0.35f);
         private static readonly Color Warn = new Color(1f, 0.62f, 0.42f);
@@ -169,7 +169,7 @@ namespace StellarisClone.Cards
             _root = _rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -752,7 +752,7 @@ namespace StellarisClone.Cards
             if (locked)
             {
                 // Замок с названием технологии поверх карты
-                var lk = LGBuild.Panel(tile.rectTransform, "Lock", new Color(0.035f, 0.067f, 0.118f, 0.88f));
+                var lk = LGBuild.Panel(tile.rectTransform, "Lock", new Color(0.055f, 0.094f, 0.157f, 0.88f));
                 lk.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -ShopCard.y * 0.5f - 10), new Vector2(TileW - 20, 64));
                 LG.Chip(lk.gameObject, new Color(Gold.r, Gold.g, Gold.b, 0.45f), 12f);
                 var li = LGIcons.Create(lk.transform, LGIcon.Lock, 16, Gold);
@@ -816,7 +816,7 @@ namespace StellarisClone.Cards
                 canAdd ? UIManager.DS.BtnPrimaryHi : new Color(1, 1, 1, 0.12f), () => Change(d, 1), null, "+", 18);
             ((RectTransform)plus.transform).At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(58, 12), new Vector2(40, 32));
             plus.interactable = canAdd;
-            var val = LGBuild.Panel(tile.rectTransform, "Target", new Color(0.035f, 0.067f, 0.118f, 0.9f), raycast: true);
+            var val = LGBuild.Panel(tile.rectTransform, "Target", new Color(0.055f, 0.094f, 0.157f, 0.9f), raycast: true);
             val.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 12), new Vector2(66, 32));
             LG.Chip(val.gameObject, target > 0 ? new Color(Gold.r, Gold.g, Gold.b, 0.5f) : new Color(1f, 1f, 1f, 0.12f), 10f);
             var vt = LGBuild.Label(val.transform, target.ToString(), 16, target > 0 ? Color.white : Muted, TextAnchor.MiddleCenter, bold: true);

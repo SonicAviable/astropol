@@ -120,7 +120,7 @@ namespace StellarisClone.Rendering
             sub.sortingOrder = 850;   // под всплывающими уведомлениями (900)
             _root.AddComponent<GraphicRaycaster>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.96f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.96f);
             bg.raycastTarget = true;
             LG.Glass(_root, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.SlideLeft).distance = 26f;

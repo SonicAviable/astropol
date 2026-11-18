@@ -23,7 +23,7 @@ namespace StellarisClone.Rendering
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.92f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.92f);
 
         private enum Metric { Score, Systems, Population, Techs, Power }
         private static readonly string[] MetricNames = { "ОЧКИ", "СИСТЕМЫ", "НАСЕЛЕНИЕ", "ТЕХНОЛОГИИ", "МОЩЬ ФЛОТА" };
@@ -378,7 +378,7 @@ namespace StellarisClone.Rendering
                 dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(14, 0), new Vector2(7, 7));
                 var date = LGBuild.Label(row.transform, $"{e.Month:00}.{e.Year}", 12, Muted, TextAnchor.MiddleLeft);
                 date.rectTransform.Stretch(28, 0, 0, 0);
-                var txt = LGBuild.Label(row.transform, e.Text + (e.SystemId >= 0 ? "  <color=#66DBD1>›</color>" : ""), 13, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
+                var txt = LGBuild.Label(row.transform, e.Text + (e.SystemId >= 0 ? "  <color=#79D0BF>›</color>" : ""), 13, UIManager.DS.TextPrimary, TextAnchor.MiddleLeft);
                 txt.supportRichText = true;
                 txt.rectTransform.Stretch(110, 0, 10, 0);
                 if (e.SystemId >= 0)

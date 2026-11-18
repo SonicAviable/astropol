@@ -53,7 +53,7 @@ namespace StellarisClone.Rendering
         private static readonly Color Orange = new Color(1f, 0.66f, 0.50f);
         private static readonly Color PathBlue = new Color(0.561f, 0.706f, 0.949f);   // #8FB4F2
         private static readonly Color Dim = new Color(0.50f, 0.49f, 0.45f, 1f);
-        private static readonly Color PanelBg = new Color(0.035f, 0.067f, 0.118f, 0.94f);
+        private static readonly Color PanelBg = new Color(0.055f, 0.094f, 0.157f, 0.94f);
         private static readonly Color ChipBg = new Color(0.075f, 0.125f, 0.220f, 0.96f);
 
         // ==================== СОСТОЯНИЕ ====================
@@ -209,7 +209,7 @@ namespace StellarisClone.Rendering
 
         private void Build()
         {
-            _dimmer = LGBuild.Panel(_canvas.transform, "TechTreeDimmer", new Color(0.035f, 0.067f, 0.118f, 0.88f), raycast: true).gameObject;
+            _dimmer = LGBuild.Panel(_canvas.transform, "TechTreeDimmer", new Color(0.055f, 0.094f, 0.157f, 0.88f), raycast: true).gameObject;
             ((RectTransform)_dimmer.transform).Stretch();
             LG.Scrim(_dimmer);
             LG.Motion(_dimmer, LGAppear.Kind.Fade).outDuration = 0.26f;
@@ -233,7 +233,7 @@ namespace StellarisClone.Rendering
             bd.Stretch();
             _backdrop = bd.gameObject.AddComponent<TechTreeBackdrop>();
             _backdrop.Initialize(bd);
-            var shade = LGBuild.Panel(mask, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.70f));
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.055f, 0.094f, 0.157f, 0.70f));
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
 
@@ -322,7 +322,7 @@ namespace StellarisClone.Rendering
 
         private void BuildMatrix()
         {
-            var panel = LGBuild.Panel(_window.transform, "Matrix", new Color(0.035f, 0.067f, 0.118f, 0.82f), raycast: true);
+            var panel = LGBuild.Panel(_window.transform, "Matrix", new Color(0.055f, 0.094f, 0.157f, 0.82f), raycast: true);
             _matrix = panel.rectTransform;
             _matrix.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -BodyTop), new Vector2(MatrixW, MatrixH));
             var fx = LG.Platter(panel.gameObject, 16f);
@@ -1190,7 +1190,7 @@ namespace StellarisClone.Rendering
 
         private void BuildLockedSlot(int i, float top, Technology opener)
         {
-            var rt = SlotRow("Locked" + i, top, new Color(0.035f, 0.067f, 0.118f, 0.7f), new Color(1f, 1f, 1f, 0.05f));
+            var rt = SlotRow("Locked" + i, top, new Color(0.055f, 0.094f, 0.157f, 0.7f), new Color(1f, 1f, 1f, 0.05f));
             var ic = LGIcons.Create(rt, LGIcon.Lock, 12, Dim);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(12, 12));
             var t = LGBuild.Label(rt, opener != null ? Loc.F("Откроет: {0}", opener.Name) : Loc.T("Откроется технологией"), 12,

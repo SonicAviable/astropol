@@ -329,7 +329,7 @@ namespace StellarisClone.Rendering
             srs[1].color = string.IsNullOrEmpty(number) ? new Color(col.r * 0.25f, col.g * 0.25f, col.b * 0.25f, 0.6f) : col;
             var t = m.GetComponentInChildren<TextMesh>();
             if (t.text != number) t.text = number;
-            t.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            t.color = new Color(0.055f, 0.094f, 0.157f, 1f);
         }
 
         // ==================== ПОДСКАЗКА ====================

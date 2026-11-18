@@ -208,7 +208,7 @@ namespace StellarisClone.Rendering
             olight.sprite = FactionSelectScreen.RadialSprite();
             olight.raycastTarget = false;
             olight.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(70, 0), new Vector2(360, 260));
-            var shade = LGBuild.Panel(clip, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.55f));
+            var shade = LGBuild.Panel(clip, "Shade", new Color(0.055f, 0.094f, 0.157f, 0.55f));
             shade.sprite = FadeRightSprite;
             shade.raycastTarget = false;
             shade.rectTransform.Stretch();
@@ -383,7 +383,7 @@ namespace StellarisClone.Rendering
                     glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70, 70));
                     if (current) StellarisClone.Cards.HoloSpin.Add(glow, 0f, 0.3f, 0.06f);
                 }
-                var disc = LGBuild.Panel(node, "Disc", built ? new Color(g.r * 0.3f, g.g * 0.24f, g.b * 0.08f, 1f) : new Color(0.035f, 0.067f, 0.118f, 1f));
+                var disc = LGBuild.Panel(node, "Disc", built ? new Color(g.r * 0.3f, g.g * 0.24f, g.b * 0.08f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f));
                 disc.raycastTarget = false;
                 disc.rectTransform.Stretch();
                 LG.Chip(disc.gameObject, built ? new Color(g.r, g.g, g.b, current ? 0.95f : 0.6f) : next ? new Color(g.r, g.g, g.b, 0.35f) : new Color(1f, 1f, 1f, 0.12f), 17f);

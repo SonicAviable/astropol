@@ -247,7 +247,7 @@ namespace StellarisClone.Rendering
             badge.sprite = HudArt.CutPanel(4);
             badge.type = Image.Type.Sliced;
             badge.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-4, -2), new Vector2(18, 14));
-            v.Count = LGBuild.Label(badge.transform, "", 10, new Color(0.035f, 0.067f, 0.118f), TextAnchor.MiddleCenter, bold: true);
+            v.Count = LGBuild.Label(badge.transform, "", 10, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter, bold: true);
             badge.gameObject.SetActive(false);
 
             // стартовая позиция — там, где появится

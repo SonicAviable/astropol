@@ -110,11 +110,11 @@ namespace StellarisClone.Rendering
 
         private void Build(RectTransform rt)
         {
-            var scrim = LGBuild.Panel(rt, "Scrim", new Color(0.035f, 0.067f, 0.118f, 0.82f), raycast: true);
+            var scrim = LGBuild.Panel(rt, "Scrim", new Color(0.055f, 0.094f, 0.157f, 0.82f), raycast: true);
             scrim.rectTransform.Stretch();
             LG.Ignore(scrim.gameObject, includeChildren: false);
 
-            var card = LGBuild.Panel(rt, "Card", new Color(0.035f, 0.067f, 0.118f, 0.97f), raycast: true);
+            var card = LGBuild.Panel(rt, "Card", new Color(0.055f, 0.094f, 0.157f, 0.97f), raycast: true);
             card.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(W, H));
             LG.Glass(card.gameObject).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(card.gameObject, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -133,7 +133,7 @@ namespace StellarisClone.Rendering
 
         private void BuildPreview(RectTransform c)
         {
-            var pv = LGBuild.Panel(c, "Preview", new Color(0.035f, 0.067f, 0.118f, 0.9f));
+            var pv = LGBuild.Panel(c, "Preview", new Color(0.055f, 0.094f, 0.157f, 0.9f));
             pv.rectTransform.anchorMin = new Vector2(0, 0); pv.rectTransform.anchorMax = new Vector2(0, 1);
             pv.rectTransform.pivot = new Vector2(0, 0.5f);
             pv.rectTransform.offsetMin = new Vector2(24, 92); pv.rectTransform.offsetMax = new Vector2(24 + PreviewW, -96);

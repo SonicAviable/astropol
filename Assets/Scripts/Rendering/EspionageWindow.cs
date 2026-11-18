@@ -33,7 +33,7 @@ namespace StellarisClone.Rendering
         private static readonly Color Cyan = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color Orange = new Color(1f, 0.67f, 0.33f);
         private static readonly Color Rim = new Color(0.74f, 0.56f, 1f, 0.34f);
-        private static readonly Color CardTint = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+        private static readonly Color CardTint = new Color(0.055f, 0.094f, 0.157f, 0.97f);
         private static readonly Color RowTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
         private static readonly Color Muted = new Color(0.663f, 0.639f, 0.573f, 1f);
 
@@ -258,7 +258,7 @@ namespace StellarisClone.Rendering
             if (_subtitle == null) return;
             int agents = 0;
             foreach (var _ in EspionageManager.PlayerAgents()) agents++;
-            _subtitle.text = Loc.F("Агентов {0}   ·   защита вашей империи <color=#66E0D0>{1:0}%</color>", agents, EspionageManager.PlayerCounter() * 100f) +
+            _subtitle.text = Loc.F("Агентов {0}   ·   защита вашей империи <color=#79D0BF>{1:0}%</color>", agents, EspionageManager.PlayerCounter() * 100f) +
                              (es != null
                                 ? Loc.F("   ·   операции: <color=#8CD3A0>{0}</color> удачных, <color=#FF7F6B>{1}</color> провальных", es.Succeeded, es.Failed) +
                                   Loc.F("   ·   чужих попыток сорвано: {0}   ·   прорывов к вам: {1}", es.Foiled, es.Breaches)
@@ -459,7 +459,7 @@ namespace StellarisClone.Rendering
             var col = NewColumn(index, accent, 0.40f, a.Id == _focusId);
             var banner = Banner(col, a, false, AgentTooltip(a));
             string traits = TraitsText(a, "  ·  ");
-            BannerTitle(banner, a.Name + Loc.F("  <size=14><color=#8DA2B4>· ур. {0}</color></size>", a.Level),
+            BannerTitle(banner, a.Name + Loc.F("  <size=14><color=#A9A392>· ур. {0}</color></size>", a.Level),
                         traits.Length > 0 ? traits : Loc.T("без особых черт"), UIManager.DS.Gold);
             XpLine(banner, a, Purple);
 
@@ -496,7 +496,7 @@ namespace StellarisClone.Rendering
                 string role = Role(sys, a.TargetOwner).TrimEnd(' ', '·');
                 where = role.Length > 0 ? $"{sys.Name} ({role})" : sys.Name;
             }
-            Txt(col, $"<b><color={LGBuild.Hex(oc)}>{Contacts.NameForPlayer(a.TargetOwner)}</color></b>  <color=#8DA2B4>·  {where}  ·</color>  {rel}",
+            Txt(col, $"<b><color={LGBuild.Hex(oc)}>{Contacts.NameForPlayer(a.TargetOwner)}</color></b>  <color=#A9A392>·  {where}  ·</color>  {rel}",
                 13, UIManager.DS.TextPrimary, Body, 20, In, In);
             if (ai != null)
             {
@@ -814,7 +814,7 @@ namespace StellarisClone.Rendering
             Txt(col, Loc.T("Контрразведка дома"), 14, Cyan, Body, 20, In, In, bold: true);
             Txt(col, $"{total * 100f:0}%", 46, Cyan, Body + 30, 56, In, In, bold: true);
             Caption(col, Loc.T("ЗАЩИТА ИМПЕРИИ"), Body + 88, In);
-            Txt(col, Loc.F("Агент  <color=#66E0D0><b>+{0:0}%</b></color>\nБазовая  {1:0}%\nТехнологии  +{2:0}%", own * 100f, 10f, tech * 100f),
+            Txt(col, Loc.F("Агент  <color=#79D0BF><b>+{0:0}%</b></color>\nБазовая  {1:0}%\nТехнологии  +{2:0}%", own * 100f, 10f, tech * 100f),
                 13, UIManager.DS.TextPrimary, Body + 34, 70, 170, In).lineSpacing = 1.25f;
             var bh = LGBuild.Rect(col, "Bar");
             bh.TopBand(Body + 112, 10, In, In);

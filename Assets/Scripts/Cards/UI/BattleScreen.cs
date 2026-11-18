@@ -247,7 +247,7 @@ namespace StellarisClone.Cards
             var bgRt = LGBuild.Rect(croot, "Bg");
             bgRt.Stretch();
             var bgBlock = bgRt.gameObject.AddComponent<Image>();
-            bgBlock.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            bgBlock.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             bgBlock.raycastTarget = true;   // клики не проходят на карту галактики
             var table = CardArt.Table(_setup.Terrain);
             _bg = Raw(bgRt, "Terrain", table, BoardSkin ? new Color(0.8f, 0.8f, 0.84f, 1f) : new Color(0.5f, 0.5f, 0.55f, 1f));
@@ -270,7 +270,7 @@ namespace StellarisClone.Cards
 
             _hintText = Caption(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 0.8f);
             var hol = _hintText.gameObject.AddComponent<Outline>();
-            hol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.85f);
+            hol.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.85f);
             hol.effectDistance = new Vector2(1.5f, -1.5f);
             _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, BoardSkin ? -336 : -255), new Vector2(900, 30));
 
@@ -320,8 +320,8 @@ namespace StellarisClone.Cards
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color PanelTint = new Color(0.035f, 0.067f, 0.118f, 0.92f);
-        private static readonly Color SubTint = new Color(0.035f, 0.067f, 0.118f, 0.90f);
+        private static readonly Color PanelTint = new Color(0.055f, 0.094f, 0.157f, 0.92f);
+        private static readonly Color SubTint = new Color(0.055f, 0.094f, 0.157f, 0.90f);
         private static readonly Color RimCyan = new Color(0.475f, 0.816f, 0.749f, 0.42f);
         private static readonly Color RimSoft = new Color(0.475f, 0.816f, 0.749f, 0.18f);
 
@@ -368,7 +368,7 @@ namespace StellarisClone.Cards
         {
             var t = Caption(parent, "", size, new Color(1, 1, 1, 0), TextAnchor.MiddleCenter, 4f);
             var ol = t.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.9f);
+            ol.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.9f);
             ol.effectDistance = new Vector2(2.5f, -2.5f);
             return t;
         }
@@ -517,7 +517,7 @@ namespace StellarisClone.Cards
             art.rectTransform.Stretch();
             Cover(art, (PlaqueW - 6) / (PlaqueH - 6));
             // Затемнение слева направо: текст читается, справа видна картинка
-            var dim = LGBuild.Panel(am, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.74f));
+            var dim = LGBuild.Panel(am, "Dim", new Color(0.055f, 0.094f, 0.157f, 0.74f));
             dim.raycastTarget = false;
             dim.rectTransform.Stretch();
             s.Header = s.PowerBar = plate.rectTransform;
@@ -533,7 +533,7 @@ namespace StellarisClone.Cards
             s.Rule.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 1f), new Vector2(20, 4), new Vector2(PlaqueW - 150, 52));
             s.Rule.lineSpacing = 0.92f;
             var rol = s.Rule.gameObject.AddComponent<Outline>();
-            rol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.8f);
+            rol.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.8f);
             rol.effectDistance = new Vector2(1f, -1f);
             s.Rule.raycastTarget = false;
 
@@ -807,7 +807,7 @@ namespace StellarisClone.Cards
             _scoreText.supportRichText = true;
 
             // Погода — одна строка со значком; полный текст — в подсказке
-            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.035f, 0.067f, 0.118f, 0.85f), raycast: true);
+            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.055f, 0.094f, 0.157f, 0.85f), raycast: true);
             wrow.sprite = CardSprites.Round;
             wrow.type = Image.Type.Sliced;
             wrow.rectTransform.At(Mid, Mid, new Vector2(RX, 236), new Vector2(Inner, 40));
@@ -914,7 +914,7 @@ namespace StellarisClone.Cards
             _scoreText.gameObject.SetActive(false);
 
             // Погода — строка над ходом
-            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.035f, 0.067f, 0.118f, 0.85f), raycast: true);
+            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.055f, 0.094f, 0.157f, 0.85f), raycast: true);
             wrow.sprite = CardSprites.Round;
             wrow.type = Image.Type.Sliced;
             wrow.rectTransform.At(Mid, Mid, c0 + new Vector2(0, 238), new Vector2(176, 40));
@@ -1685,8 +1685,8 @@ namespace StellarisClone.Cards
             _turnText.text = string.Format("{0}<size=22><color=#A9A392> / {1}</color></size>", Mathf.Clamp(_state.Turn, 1, BattleState.Turns), BattleState.Turns);
             int mine = 0, theirs = 0;
             for (int i = 0; i < 3; i++) { if (_state.Sectors[i].Control == _P) mine++; else theirs++; }
-            _scoreText.text = Loc.F("СЕКТОРЫ  <color=#7CF2D8>{0}</color> : <color=#FF7F6B>{1}</color>", mine, theirs) + "\n" +
-                              Loc.T("<size=11><color=#9AA6B0>нужно 2 из 3</color></size>");
+            _scoreText.text = Loc.F("СЕКТОРЫ  <color=#79D0BF>{0}</color> : <color=#FF7F6B>{1}</color>", mine, theirs) + "\n" +
+                              Loc.T("<size=11><color=#A9A392>нужно 2 из 3</color></size>");
             if (_scoreMine != null)
             {
                 // Счёт изменился — цифра «подпрыгивает»
@@ -1764,7 +1764,7 @@ namespace StellarisClone.Cards
             var col = c == _P ? CardSkin.Teal : CardSkin.Red;
             if (s.ChipText != null)
             {
-                s.ChipText.text = string.Format("<color=#7CF2D8>{0}</color>:<color=#FF7F6B>{1}</color>", pp, pe);
+                s.ChipText.text = string.Format("<color=#79D0BF>{0}</color>:<color=#FF7F6B>{1}</color>", pp, pe);
                 if (s.ChipFx != null) s.ChipFx.SetRim(new Color(col.r, col.g, col.b, 0.7f));
             }
             if (s.LastControl != c)

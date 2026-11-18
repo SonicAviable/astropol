@@ -30,7 +30,7 @@ namespace StellarisClone.Rendering
 
         /// <summary>Тон плашек голо-HUD (как у крыльев ресурсов и диска времени).</summary>
         private static readonly Color HoloTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
-        private static readonly Color RowBg = new Color(0.035f, 0.067f, 0.118f, 0.92f);
+        private static readonly Color RowBg = new Color(0.055f, 0.094f, 0.157f, 0.92f);
         private static readonly Color RowWarnBg = new Color(0.120f, 0.085f, 0.030f, 0.92f);
         private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
 

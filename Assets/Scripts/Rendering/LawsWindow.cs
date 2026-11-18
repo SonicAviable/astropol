@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -177,7 +177,7 @@ namespace StellarisClone.Rendering
                 int tab = i;
                 bool on = _tab == i;
                 var b = LGBuild.Button(_tabs, i == 0 ? "TabLaws" : "TabDecisions",
-                    on ? new Color(0.075f, 0.125f, 0.220f) : new Color(0.035f, 0.067f, 0.118f),
+                    on ? new Color(0.075f, 0.125f, 0.220f) : new Color(0.055f, 0.094f, 0.157f),
                     on ? new Color(0.475f, 0.816f, 0.749f, 0.85f) : new Color(1f, 1f, 1f, 0.14f),
                     () => SetTab(tab), null, labels[i], 12);
                 var br = (RectTransform)b.transform;
@@ -289,7 +289,7 @@ namespace StellarisClone.Rendering
             bool active = EmpireLaws.IsActive(law);
             // «Атлас»: действующий закон — золотая кромка и лёгкий золотой отсвет, остальные — тонкая кремовая линия
             var gold = UIManager.DS.Gold;
-            var bg = LGBuild.Panel(card, "Bg", active ? new Color(0.095f, 0.115f, 0.150f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.6f));
+            var bg = LGBuild.Panel(card, "Bg", active ? new Color(0.055f, 0.094f, 0.157f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.6f));
             bg.rectTransform.Stretch();
             LG.Platter(bg.gameObject, 2f).SetRim(active ? new Color(gold.r, gold.g, gold.b, 0.85f) : new Color(0.925f, 0.898f, 0.827f, 0.12f));
 
@@ -361,7 +361,7 @@ namespace StellarisClone.Rendering
             else
             {
                 bool can = blocker == null;
-                btn = LGBuild.Button(card, "Enact", can ? new Color(0.05f, 0.20f, 0.15f) : new Color(0.035f, 0.067f, 0.118f),
+                btn = LGBuild.Button(card, "Enact", can ? new Color(0.05f, 0.20f, 0.15f) : new Color(0.055f, 0.094f, 0.157f),
                     can ? new Color(0.36f, 0.96f, 0.68f, 0.8f) : new Color(1f, 1f, 1f, 0.12f), () => Enact(law), null,
                     can ? Loc.F("ПРИНЯТЬ · {0:0} влияния", EmpireLaws.SwitchCost) : blocker, 10);
                 btn.interactable = can;

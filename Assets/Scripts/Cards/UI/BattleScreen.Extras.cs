@@ -77,7 +77,7 @@ namespace StellarisClone.Cards
                 bool on = n >= need;
                 _docText[i].text = on
                     ? "<color=#FFD36B>" + BattleState.DoctrineName(_state.Sides[_P].Faction).ToUpper() + "</color>"
-                    : Loc.F("<color=#9AA6B0>доктрина {0}/{1}</color>", n, need);
+                    : Loc.F("<color=#A9A392>доктрина {0}/{1}</color>", n, need);
             }
             RefreshHeroButton();
         }
@@ -129,7 +129,7 @@ namespace StellarisClone.Cards
             {
                 int pct = Mathf.RoundToInt(_fc.Hold[i] * 100f);
                 string col = pct >= 65 ? "7CF29A" : pct >= 35 ? "F2C766" : "FF8A80";
-                _fcText[i].text = Loc.F("<color=#{0}><b>{1}%</b></color> <color=#9AA6B0>удержать</color>  <color=#A9A392>потери {2:0.#}:{3:0.#}</color>",
+                _fcText[i].text = Loc.F("<color=#{0}><b>{1}%</b></color> <color=#A9A392>удержать</color>  <color=#A9A392>потери {2:0.#}:{3:0.#}</color>",
                                          col, pct, _fc.MyLoss[i], _fc.EnemyLoss[i]);
             }
             if (_fc.WinNow >= 0.5f) Hint(Loc.F("Прогноз: этот ход может решить бой в вашу пользу ({0:0}%)", _fc.WinNow * 100f));

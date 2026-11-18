@@ -273,7 +273,7 @@ namespace StellarisClone.Core
             foreach (var x in _battles.Values) if (x.PlayerInvolved && x != b) others++;
             _hudTitle.text = Loc.F("СРАЖЕНИЕ ПРИ {0}", sys.Name.ToUpper());
             _hudDays.text = Loc.F("день {0}", Mathf.Max(1, Mathf.CeilToInt(b.Days))) + (others > 0 ? Loc.F("  ·  ещё боёв: {0}", others) : "");
-            _hudPhase.text = b.Approach ? Loc.T("<color=#7FD8FF>СБЛИЖЕНИЕ</color>") : Loc.T("<color=#FF8A6A>ОГНЕВОЙ КОНТАКТ</color>");
+            _hudPhase.text = b.Approach ? Loc.T("<color=#79D0BF>СБЛИЖЕНИЕ</color>") : Loc.T("<color=#FF8A6A>ОГНЕВОЙ КОНТАКТ</color>");
 
             // Стороны: мы и сильнейший противник (остальные враги — в его мощь и прочность)
             var me = Side(b, 0);
@@ -419,7 +419,7 @@ namespace StellarisClone.Core
             if (retreating > 0)
                 return slowest > 0f ? Loc.F("<color=#E7C170>Отступление: прыжок через {0:0.0} дн. ({1} кор.)</color>", slowest, retreating)
                                     : Loc.F("<color=#E7C170>Отступление: корабли уходят прыжком ({0} кор.)</color>", retreating);
-            return slowest > 0f ? Loc.F("<color=#7FD8FF>ГПД: разгон {0:0.0} дн.</color>", slowest) : Loc.T("<color=#8CD3A0>ГПД готов к экстренному прыжку</color>");
+            return slowest > 0f ? Loc.F("<color=#79D0BF>ГПД: разгон {0:0.0} дн.</color>", slowest) : Loc.T("<color=#8CD3A0>ГПД готов к экстренному прыжку</color>");
         }
 
         private void FocusBattle()

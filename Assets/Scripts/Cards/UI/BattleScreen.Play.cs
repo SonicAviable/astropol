@@ -188,7 +188,7 @@ namespace StellarisClone.Cards
                             SFXManager.Play(Sfx.CardDraw, 0.8f);
                             if (e.Text == "reinforce")
                             {
-                                AddLog(Loc.F("<color=#7CF2D8>Подкрепления: {0}</color>", e.Def.Name));
+                                AddLog(Loc.F("<color=#79D0BF>Подкрепления: {0}</color>", e.Def.Name));
                                 SFXManager.Play(Sfx.Radio, 0.7f);
                             }
                             yield return W(0.14f);
@@ -330,7 +330,7 @@ namespace StellarisClone.Cards
                         SFXManager.PlayDelayed(Sfx.BoomSmall, 0.1f, 0.8f, 0.8f);
                         SFXManager.Play(Sfx.ImpactShield, 0.7f, 0.7f);
                     }
-                    AddLog(Loc.T("<color=#8FD3FF>Щит Штаба пал</color>"));
+                    AddLog(Loc.T("<color=#79D0BF>Щит Штаба пал</color>"));
                     yield return Banner(Loc.T("ЩИТ ШТАБА ПАЛ"), _P == BattleState.Attacker ? Loc.T("Теперь возможен прорыв: 9+ силы в Штабе") : Loc.T("Враг может прорваться в Штаб"),
                         new Color(0.475f, 0.816f, 0.749f), 1.1f);
                     break;
@@ -1219,7 +1219,7 @@ namespace StellarisClone.Cards
 
         private IEnumerator Banner(string title, string sub, Color c, float dur)
         {
-            var band = LGBuild.Panel(_overlay, "Banner", new Color(0.035f, 0.067f, 0.118f, 0f));
+            var band = LGBuild.Panel(_overlay, "Banner", new Color(0.055f, 0.094f, 0.157f, 0f));
             band.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(2400, 0));
             band.sprite = CardSprites.RoundGlow;
             band.type = Image.Type.Sliced;
@@ -1234,7 +1234,7 @@ namespace StellarisClone.Cards
             var t = Caption(band.rectTransform, title, 54, new Color(c.r, c.g, c.b, 0f), TextAnchor.MiddleCenter, 5f);
             t.rectTransform.Stretch(0, 22, 0, 0);
             var tol = t.gameObject.AddComponent<Outline>();
-            tol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.8f);
+            tol.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.8f);
             tol.effectDistance = new Vector2(2f, -2f);
             var s = Caption(band.rectTransform, sub, 16, new Color(1, 1, 1, 0f), TextAnchor.LowerCenter, 1.2f);
             s.rectTransform.Stretch(0, 12, 0, 0);
@@ -1326,11 +1326,11 @@ namespace StellarisClone.Cards
 
             // Непрозрачная подложка под весь блок итогов: стол (плашки секторов, карты) не просвечивает сквозь цифры и
             // текст; лучи остаются ореолом вокруг. Сверху — стеклянная кромка цвета исхода
-            var back = LGBuild.Panel(_overlay, "ResultBack", new Color(0.035f, 0.067f, 0.118f, 0f), raycast: true);
+            var back = LGBuild.Panel(_overlay, "ResultBack", new Color(0.055f, 0.094f, 0.157f, 0f), raycast: true);
             back.sprite = CardSprites.Round;
             back.type = Image.Type.Sliced;
             back.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -6), new Vector2(1340, 680));
-            var backRim = GlassAt(_overlay, "ResultFrame", new Vector2(0, -6), new Vector2(1340, 680), new Color(0.035f, 0.067f, 0.118f, 0f), new Color(accent.r, accent.g, accent.b, 0.5f), false, 24f);
+            var backRim = GlassAt(_overlay, "ResultFrame", new Vector2(0, -6), new Vector2(1340, 680), new Color(0.055f, 0.094f, 0.157f, 0f), new Color(accent.r, accent.g, accent.b, 0.5f), false, 24f);
 
             // Лента-заголовок
             string head;
@@ -1362,7 +1362,7 @@ namespace StellarisClone.Cards
             {
                 var tl = tiles[i];
                 // Плитка — плотная (под стеклом сплошная заливка), иначе сквозь неё читается стол
-                var solid = LGBuild.Panel(_overlay, "TileBack", new Color(0.035f, 0.067f, 0.118f, 1f));
+                var solid = LGBuild.Panel(_overlay, "TileBack", new Color(0.055f, 0.094f, 0.157f, 1f));
                 solid.sprite = CardSprites.Round;
                 solid.type = Image.Type.Sliced;
                 solid.rectTransform.At(Mid, Mid, new Vector2((i - 1.5f) * 210f, 70), new Vector2(192, 124));

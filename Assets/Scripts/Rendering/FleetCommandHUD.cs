@@ -115,7 +115,7 @@ namespace StellarisClone.Rendering
             var glow = LGBuild.Panel(rt, "MedalGlow", new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.12f));
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(64, 2), new Vector2(150, 150));
-            var medal = LGBuild.Panel(rt, "Medallion", new Color(0.035f, 0.067f, 0.118f, 1f));
+            var medal = LGBuild.Panel(rt, "Medallion", new Color(0.055f, 0.094f, 0.157f, 1f));
             medal.sprite = HudArt.Disc();
             medal.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 2), new Vector2(88, 88));
             _medalRing = LGBuild.Panel(medal.transform, "Edge", HoloLine);
@@ -557,7 +557,7 @@ namespace StellarisClone.Rendering
         private static void SetGauge(Gauge g, float v, float max, Color c)
         {
             bool has = max > 0.5f;
-            g.Value.text = has ? $"{v:0}<color=#8FA6B2>/{max:0}</color>" : "<color=#8FA6B2>—</color>";
+            g.Value.text = has ? $"{v:0}<color=#A9A392>/{max:0}</color>" : "<color=#A9A392>—</color>";
             LGBuild.SetBar(g.Fill, has ? Mathf.Clamp01(v / max) : 0f, c);
         }
 
@@ -710,7 +710,7 @@ namespace StellarisClone.Rendering
                 }
                 return Loc.T("ПКМ по системе — лететь   ·   Shift+ПКМ — добавить в очередь");
             }
-            var sb = new StringBuilder(Loc.T("<color=#66DBD1>Маршрут</color>   "));
+            var sb = new StringBuilder(Loc.T("<color=#79D0BF>Маршрут</color>   "));
             int shown = 0;
             foreach (var nd in nodes)
             {

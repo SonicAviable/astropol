@@ -139,7 +139,7 @@ namespace StellarisClone.Rendering
             shade.Stretch();
             LG.Ignore(shade.gameObject);
 
-            var ink = new Color(0.035f, 0.067f, 0.118f, 1f);
+            var ink = new Color(0.055f, 0.094f, 0.157f, 1f);
 
             // Низ — под карточками и полосой новостей
             var bottom = LGBuild.Panel(shade, "Bottom", ink);
@@ -215,7 +215,7 @@ namespace StellarisClone.Rendering
                 t.raycastTarget = false;
                 t.color = new Color(1, 1, 1, 0);
                 var sh = rt.gameObject.AddComponent<Shadow>();
-                sh.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.6f);
+                sh.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.6f);
                 sh.effectDistance = new Vector2(0f, -2f);
 
                 output.Add(new Letter { Text = t, Rt = rt, Delay = baseDelay + i * stagger, Rest = rest });
@@ -729,7 +729,7 @@ namespace StellarisClone.Rendering
             _ngScreen.Stretch();
             _ngCg = _ngScreen.gameObject.AddComponent<CanvasGroup>();
             _ngCg.alpha = 0f;
-            var dim = LGBuild.Panel(_ngScreen, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.45f), raycast: true);
+            var dim = LGBuild.Panel(_ngScreen, "Dim", new Color(0.055f, 0.094f, 0.157f, 0.45f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 

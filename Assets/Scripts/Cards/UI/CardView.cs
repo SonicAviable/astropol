@@ -162,7 +162,7 @@ namespace StellarisClone.Cards
             shadow.raycastTarget = false;
             shadow.rectTransform.Stretch(-20 * u, -42 * u, -26 * u, -6 * u);
 
-            _body = CardSkin.Simple(_content, "Body", "card_mask", new Color(0.035f, 0.067f, 0.118f, 1f));
+            _body = CardSkin.Simple(_content, "Body", "card_mask", new Color(0.055f, 0.094f, 0.157f, 1f));
             _body.rectTransform.Stretch();
 
             var maskImg = CardSkin.Simple(_content, "ArtMask", "card_mask", Color.white);

@@ -575,7 +575,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 if (!string.IsNullOrEmpty(key))
                 {
                     var kb = HoloImage(flag, "Key", null, accent);
-                    var kt = CreateText(kb.transform, key, 10, FontStyle.Bold, new Color(0.035f, 0.067f, 0.118f), TextAnchor.MiddleCenter);
+                    var kt = CreateText(kb.transform, key, 10, FontStyle.Bold, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter);
                     kt.rectTransform.Stretch();
                     float kw = Mathf.Max(18f, kt.preferredWidth + 8f);
                     kb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(w, nameY), new Vector2(kw, 16f));
@@ -619,7 +619,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _navDecisionPill.sprite = HudArt.CutPanel(4);
                 _navDecisionPill.type = Image.Type.Sliced;
                 _navDecisionPill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-4, -2), new Vector2(18, 15));
-                _navDecisionBadge = CreateText(_navDecisionPill.transform, "", 9, FontStyle.Bold, new Color(0.035f, 0.067f, 0.118f), TextAnchor.MiddleCenter);
+                _navDecisionBadge = CreateText(_navDecisionPill.transform, "", 9, FontStyle.Bold, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter);
                 _navDecisionBadge.rectTransform.anchorMin = Vector2.zero;
                 _navDecisionBadge.rectTransform.anchorMax = Vector2.one;
                 _navDecisionBadge.rectTransform.offsetMin = _navDecisionBadge.rectTransform.offsetMax = Vector2.zero;
@@ -1549,7 +1549,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 AddBodyHeader(Loc.T("ПРОИЗВОДСТВО / МЕСЯЦ"));
                 AddBodyLine(Loc.F("<color=#79D0BF>◆ Титан:</color> {0}", StatFormat.Positive("+" + planet.ProducedMineralsPerMonth)));
                 AddBodyLine(Loc.F("<color=#E5B842>⚡ Гелий-3:</color> {0}", StatFormat.Positive("+" + planet.ProducedEnergyPerMonth)));
-                AddBodyLine(Loc.F("<color=#20EBB0>⬢ Сплавы:</color> {0}", StatFormat.Positive("+" + planet.ProducedAlloysPerMonth)));
+                AddBodyLine(Loc.F("<color=#79D0BF>⬢ Сплавы:</color> {0}", StatFormat.Positive("+" + planet.ProducedAlloysPerMonth)));
             }
 
             CommitBody();

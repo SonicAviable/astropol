@@ -50,7 +50,7 @@ namespace StellarisClone.Rendering
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.90f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.90f);
         public static readonly Color CMinerals = new Color(0.475f, 0.816f, 0.749f);
         public static readonly Color CEnergy = new Color(0.95f, 0.78f, 0.28f);
         public static readonly Color CAlloys = new Color(0.95f, 0.62f, 0.36f);
@@ -149,7 +149,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.98f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.98f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.96f;
@@ -431,7 +431,7 @@ namespace StellarisClone.Rendering
             float a = avail ? 1f : 0.45f;
             c.Icon.color = new Color(o.Color.r, o.Color.g, o.Color.b, a);
             c.Title.color = new Color(1f, 1f, 1f, avail || o.Done ? 1f : 0.55f);
-            c.Bg.color = avail ? new Color(0.055f, 0.094f, 0.157f, 0.95f) : new Color(0.035f, 0.067f, 0.118f, 0.92f);
+            c.Bg.color = avail ? new Color(0.055f, 0.094f, 0.157f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.92f);
             string key = $"{o.Energy}|{o.Minerals}|{o.Alloys}|{o.Influence}|{CostCheck.Affordable(o.Energy, o.Minerals, o.Alloys, o.Influence)}";
             if (key != c.CostKey)
             {

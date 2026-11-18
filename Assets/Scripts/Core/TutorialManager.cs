@@ -172,7 +172,7 @@ namespace StellarisClone.Core
             {
                 Title = Loc.T("Ресурсы"),
                 Voice = "tut_03",
-                Text = Loc.T("<color=#E7C170>Гелий-3</color> питает флот и станции, <color=#4DE6CC>титан</color> идёт на стройку, ") +
+                Text = Loc.T("<color=#E7C170>Гелий-3</color> питает флот и станции, <color=#79D0BF>титан</color> идёт на стройку, ") +
                        Loc.T("<color=#F29E5C>сплавы</color> — на корабли, <color=#FF7A94>влияние</color> — на форпосты и лидеров, ") +
                        Loc.T("<color=#8CD3A0>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы."),
                 Anchor = UIAnchors.Resources

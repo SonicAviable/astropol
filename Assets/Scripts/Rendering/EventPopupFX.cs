@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
         private const float LabelShift = 18f;
 
         /// <summary>Фон окна события: в него тает картинка (окно кладёт под картинку подложку этого же цвета).</summary>
-        public static readonly Color Bg = new Color(0.035f, 0.067f, 0.118f, 1f);
+        public static readonly Color Bg = new Color(0.055f, 0.094f, 0.157f, 1f);
 
         private static readonly Dictionary<string, Texture2D> s_Art = new Dictionary<string, Texture2D>();
         private static Sprite s_Vertical, s_Horizontal;

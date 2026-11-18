@@ -46,7 +46,7 @@ namespace StellarisClone.Rendering
             img.rectTransform.anchorMin = Vector2.zero;
             img.rectTransform.anchorMax = Vector2.one;
             img.rectTransform.offsetMin = img.rectTransform.offsetMax = Vector2.zero;
-            img.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            img.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             img.raycastTarget = true;
 
             _group = gameObject.AddComponent<CanvasGroup>();

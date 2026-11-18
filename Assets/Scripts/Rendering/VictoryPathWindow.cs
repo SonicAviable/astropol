@@ -27,7 +27,7 @@ namespace StellarisClone.Rendering
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
-        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.90f);
+        private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.90f);
         private const int Rows = 6;
 
         private enum Kind { Score, Domination, Military, Tech, Economy, Diplomacy }
@@ -113,7 +113,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;

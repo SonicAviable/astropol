@@ -18,7 +18,7 @@ namespace StellarisClone.Rendering
     {
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
-        private static readonly Color PanelBg = new Color(0.035f, 0.067f, 0.118f, 0.82f);
+        private static readonly Color PanelBg = new Color(0.055f, 0.094f, 0.157f, 0.82f);
 
         private Action<FactionInfo> _onChoose;
         private Action _onBack;
@@ -202,7 +202,7 @@ namespace StellarisClone.Rendering
             rt.Stretch();
             gameObject.AddComponent<CanvasGroup>();
             var bgImg = gameObject.AddComponent<Image>();
-            bgImg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            bgImg.color = new Color(0.055f, 0.094f, 0.157f, 1f);
             bgImg.raycastTarget = true;
             LG.Ignore(gameObject, includeChildren: false);
             LG.Motion(gameObject, LGAppear.Kind.Fade);
@@ -211,19 +211,19 @@ namespace StellarisClone.Rendering
             _bgA = BgLayer(rt, "BgA");
             _bgB = BgLayer(rt, "BgB");
             // Общее затемнение, плотнее сверху (под гербы) и снизу (под кнопки)
-            var shade = LGBuild.Panel(rt, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.6f));
+            var shade = LGBuild.Panel(rt, "Shade", new Color(0.055f, 0.094f, 0.157f, 0.6f));
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
             var shadeT = LGBuild.Panel(rt, "ShadeTop", Color.white);
             shadeT.sprite = GradientSprite(false, true);
-            shadeT.color = new Color(0.035f, 0.067f, 0.118f, 0.95f);
+            shadeT.color = new Color(0.055f, 0.094f, 0.157f, 0.95f);
             shadeT.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 330f));
             shadeT.rectTransform.anchorMin = new Vector2(0f, 1f);
             shadeT.rectTransform.anchorMax = new Vector2(1f, 1f);
             LG.Ignore(shadeT.gameObject);
             var shadeB = LGBuild.Panel(rt, "ShadeBottom", Color.white);
             shadeB.sprite = GradientSprite(false);
-            shadeB.color = new Color(0.035f, 0.067f, 0.118f, 0.75f);
+            shadeB.color = new Color(0.055f, 0.094f, 0.157f, 0.75f);
             shadeB.rectTransform.anchorMin = new Vector2(0, 0);
             shadeB.rectTransform.anchorMax = new Vector2(1, 0);
             shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
@@ -513,7 +513,7 @@ namespace StellarisClone.Rendering
             _frame.anchoredPosition = new Vector2(FrameW * 0.5f, 0f);
             _frameGroup = _frame.gameObject.AddComponent<CanvasGroup>();
 
-            var back = LGBuild.Panel(_frame, "Back", new Color(0.035f, 0.067f, 0.118f, 0.95f));
+            var back = LGBuild.Panel(_frame, "Back", new Color(0.055f, 0.094f, 0.157f, 0.95f));
             back.rectTransform.Stretch();
             _frameFx = LG.Platter(back.gameObject, 8f);
             _frameFx.FillMultiplier = 3f;
@@ -672,7 +672,7 @@ namespace StellarisClone.Rendering
             foreach (var b in _brackets) b.color = light;
             _liveDot.color = ec;
             _frameTitle.text = Loc.T("ПРЯМАЯ СВЯЗЬ");
-            _frameSub.text = leader != null ? $"<b>{leader.Name}</b>\n<color=#9FB2BC>{leader.Title}</color>" : f.Title;
+            _frameSub.text = leader != null ? $"<b>{leader.Name}</b>\n<color=#A9A392>{leader.Title}</color>" : f.Title;
 
             // Досье
             _divider.color = new Color(ec.r, ec.g, ec.b, 0.45f);

@@ -154,7 +154,7 @@ namespace StellarisClone.Rendering
 
         private void BuildBody()
         {
-            var body = LGBuild.Panel(_root, "Body", new Color(0.035f, 0.067f, 0.118f, 0.94f), raycast: true);
+            var body = LGBuild.Panel(_root, "Body", new Color(0.055f, 0.094f, 0.157f, 0.94f), raycast: true);
             _body = body.rectTransform;
             _body.TopBand(HeadH + 4f, BodyH);
             var fx = LG.Platter(body.gameObject, 10f);

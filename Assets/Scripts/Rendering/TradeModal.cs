@@ -484,7 +484,7 @@ namespace StellarisClone.Core
             trRt.anchorMin = new Vector2(0.02f, 0.14f);
             trRt.anchorMax = new Vector2(0.98f, 0.38f);
             trRt.offsetMin = trRt.offsetMax = Vector2.zero;
-            track.AddComponent<Image>().color = new Color(0.035f, 0.067f, 0.118f, 1f);
+            track.AddComponent<Image>().color = new Color(0.055f, 0.094f, 0.157f, 1f);
 
             var fill = new GameObject("Fill");
             fill.transform.SetParent(track.transform, false);

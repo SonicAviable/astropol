@@ -11,7 +11,7 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class UIManager
     {
-        private static readonly Color InspCardBg = new Color(0.035f, 0.067f, 0.118f, 0.96f);
+        private static readonly Color InspCardBg = new Color(0.055f, 0.094f, 0.157f, 0.96f);
         private static readonly Color InspLabelCol = new Color(0.663f, 0.639f, 0.573f);
         private static readonly Color ShieldCol = new Color(0.45f, 0.76f, 1f);
         private static readonly Color ArmorCol = new Color(0.88f, 0.76f, 0.56f);

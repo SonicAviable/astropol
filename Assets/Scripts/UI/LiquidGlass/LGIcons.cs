@@ -162,7 +162,7 @@ namespace StellarisClone.Rendering
             img.raycastTarget = false;
             img.preserveAspect = true;
             var sh = go.AddComponent<Shadow>();
-            sh.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.55f);
+            sh.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.55f);
             sh.effectDistance = new Vector2(0f, -1f);
             return img;
         }

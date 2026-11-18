@@ -78,7 +78,7 @@ namespace StellarisClone.Rendering
             LG.Motion(_root.gameObject, LGAppear.Kind.SlideUp).distance = 20f;
             _hover = _root.gameObject.AddComponent<Hover>();
 
-            var bg = LGBuild.Panel(_root, "Bg", new Color(0.035f, 0.067f, 0.118f, 0.92f), raycast: true);
+            var bg = LGBuild.Panel(_root, "Bg", new Color(0.055f, 0.094f, 0.157f, 0.92f), raycast: true);
             bg.sprite = HudArt.EdgeFade(0.05f);
             bg.rectTransform.Stretch();
             var line = LGBuild.Panel(_root, "Line", new Color(0.475f, 0.816f, 0.749f, 0.45f));
@@ -122,7 +122,7 @@ namespace StellarisClone.Rendering
             _list.pivot = new Vector2(1f, 0f);
             _list.anchoredPosition = new Vector2(0f, 8f);
             var lbg = _list.gameObject.AddComponent<Image>();
-            lbg.color = new Color(0.035f, 0.067f, 0.118f, 0.92f);
+            lbg.color = new Color(0.055f, 0.094f, 0.157f, 0.92f);
             lbg.raycastTarget = true;
             LG.Glass(_list.gameObject, 12f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
 
@@ -210,7 +210,7 @@ namespace StellarisClone.Rendering
                 if (items.Count == 0)
                 {
                     r.Item = null;
-                    r.Text.text = Loc.T("<color=#7F98A3>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>");
+                    r.Text.text = Loc.T("<color=#A9A392>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>");
                     r.Icon.sprite = LGIcons.Get(LGIcon.Globe);
                     r.Icon.color = DS.TextMuted;
                     r.Edge.enabled = false;
@@ -219,7 +219,7 @@ namespace StellarisClone.Rendering
                 var it = items[i];
                 r.Item = it;
                 string date = $"{it.Day:00}.{it.Month:00}.{it.Year}";
-                r.Text.text = $"<color=#6F8C97><size=9>{date}</size></color>  {it.Text}";
+                r.Text.text = $"<color=#6F6C64><size=9>{date}</size></color>  {it.Text}";
                 r.Icon.sprite = LGIcons.Get(IconOf(it.Kind));
                 r.Icon.color = ColorOf(it.Kind);
                 r.Edge.enabled = it.AboutPlayer;
@@ -239,7 +239,7 @@ namespace StellarisClone.Rendering
             float x = 0f;
             if (n == 0)
             {
-                x = AddTickerItem(null, x, Loc.T("<color=#7F98A3>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>"));
+                x = AddTickerItem(null, x, Loc.T("<color=#A9A392>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>"));
                 _contentW = 0f;
                 _scroll = 0f;
                 _content.anchoredPosition = Vector2.zero;

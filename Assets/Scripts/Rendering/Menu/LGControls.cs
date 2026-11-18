@@ -141,7 +141,7 @@ namespace StellarisClone.Rendering
 
         public static InputField Input(RectTransform host, string value, string placeholder, int maxLength = 40)
         {
-            var bg = LGBuild.Panel(host, "Input", new Color(0.035f, 0.067f, 0.118f, 0.95f), raycast: true);
+            var bg = LGBuild.Panel(host, "Input", new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             bg.rectTransform.Stretch();
             var fx = LG.Apply(bg.gameObject, LiquidGlassEffect.Role.Field, 14f);
             fx.SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.35f));
@@ -316,7 +316,7 @@ namespace StellarisClone.Rendering
             _area = LGBuild.Rect(transform, "Area");
             _area.Stretch(10, 0, 74, 0);
 
-            var track = LGBuild.Panel(_area, "Track", new Color(0.035f, 0.067f, 0.118f, 0.9f));
+            var track = LGBuild.Panel(_area, "Track", new Color(0.055f, 0.094f, 0.157f, 0.9f));
             track.rectTransform.anchorMin = new Vector2(0, 0.5f);
             track.rectTransform.anchorMax = new Vector2(1, 0.5f);
             track.rectTransform.sizeDelta = new Vector2(0, 6);
@@ -406,7 +406,7 @@ namespace StellarisClone.Rendering
             var rt = gameObject.AddComponent<RectTransform>();
             rt.Stretch();
             var bg = gameObject.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.9f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.9f);
             bg.raycastTarget = true;
             var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Field, 18f);
             fx.SetRim(new Color(1f, 1f, 1f, 0.16f));
@@ -506,7 +506,7 @@ namespace StellarisClone.Rendering
             var rt = gameObject.AddComponent<RectTransform>();
             rt.Stretch();
             var bg = gameObject.AddComponent<Image>();
-            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.85f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.85f);
             var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Field, 20f);
             fx.SetRim(new Color(1f, 1f, 1f, 0.14f));
 

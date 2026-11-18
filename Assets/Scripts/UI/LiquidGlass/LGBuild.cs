@@ -200,7 +200,7 @@ namespace StellarisClone.Rendering
         /// <summary>Полоса прогресса: стеклянный жёлоб + светящаяся заливка. Возвращает заливку.</summary>
         public static RectTransform Bar(Transform parent, Color fill, float value, float height = 6f)
         {
-            var track = Panel(parent, "BarTrack", new Color(0.035f, 0.067f, 0.118f, 0.8f));
+            var track = Panel(parent, "BarTrack", new Color(0.055f, 0.094f, 0.157f, 0.8f));
             track.rectTransform.anchorMin = new Vector2(0, 0.5f);
             track.rectTransform.anchorMax = new Vector2(1, 0.5f);
             track.rectTransform.sizeDelta = new Vector2(0, height);

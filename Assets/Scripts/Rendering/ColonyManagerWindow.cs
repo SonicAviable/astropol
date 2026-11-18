@@ -39,7 +39,7 @@ namespace StellarisClone.Rendering
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
         private static readonly Color CCard = new Color(0.055f, 0.094f, 0.157f, 0.95f);
-        private static readonly Color CHead = new Color(0.035f, 0.067f, 0.118f, 1f);
+        private static readonly Color CHead = new Color(0.055f, 0.094f, 0.157f, 1f);
         private static readonly Color CSci = new Color(0.5f, 0.92f, 0.62f);
         private static readonly Color CRed = new Color(1f, 0.54f, 0.45f);
 
@@ -694,7 +694,7 @@ namespace StellarisClone.Rendering
             }
         }
 
-        private static string Num(float v) => v <= 0.05f ? "<color=#5C7480>—</color>" : $"+{v:0.#}";
+        private static string Num(float v) => v <= 0.05f ? "<color=#6F6C64>—</color>" : $"+{v:0.#}";
 
         /// <summary>Выпадающий список приоритетов под кнопкой (или над ней, если внизу нет места). Клик мимо — закрыть.</summary>
         private void OpenFocusMenu(PlanetData p, RectTransform anchor)
@@ -719,7 +719,7 @@ namespace StellarisClone.Rendering
             Vector3 top = root.InverseTransformPoint(corners[1]);
             bool up = bottom.y - h < root.rect.yMin + 12f;
 
-            var list = LGBuild.Panel(blocker.transform, "FocusMenu", new Color(0.035f, 0.067f, 0.118f, 0.98f), raycast: true);
+            var list = LGBuild.Panel(blocker.transform, "FocusMenu", new Color(0.055f, 0.094f, 0.157f, 0.98f), raycast: true);
             var lr = list.rectTransform;
             lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.5f);   // координаты корня — от центра
             lr.pivot = up ? new Vector2(0, 0) : new Vector2(0, 1);
