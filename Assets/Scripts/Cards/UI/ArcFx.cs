@@ -481,7 +481,7 @@ namespace StellarisClone.Cards
                     _ambientAcc -= 1f;
                     var p = new Vector2(Random.Range(AmbientArea.xMin, AmbientArea.xMax), Random.Range(AmbientArea.yMin, AmbientArea.yMax));
                     var v = new Vector2(Random.Range(-12f, 30f), Random.Range(14f, 42f));
-                    var hot = Random.value < 0.8f ? new Color(1f, 0.72f, 0.32f, 0.55f) : new Color(0.55f, 0.9f, 1f, 0.45f);
+                    var hot = Random.value < 0.8f ? new Color(1f, 0.72f, 0.32f, 0.55f) : new Color(0.475f, 0.816f, 0.749f, 0.45f);
                     AddStreak(p, v, Random.Range(3f, 5.5f), Random.Range(3f, 7f), Random.Range(1.6f, 2.8f), hot, new Color(hot.r, hot.g * 0.5f, hot.b * 0.4f, 0f), 0f, 0f, Random.Range(3f, 9f));
                 }
                 any = true;

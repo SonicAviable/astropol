@@ -120,7 +120,7 @@ namespace StellarisClone.Rendering
                     {
                         var t = TakeSec();
                         t.text = ln.F.Length > 1 ? ln.F[1].ToUpper() : "";
-                        Color c = new Color(0.56f, 0.66f, 0.71f);
+                        Color c = new Color(0.663f, 0.639f, 0.573f);
                         if (ln.F.Length > 2) ColorUtility.TryParseHtmlString(ln.F[2], out c);
                         t.color = c;
                         need = Mathf.Max(need, t.preferredWidth + t.text.Length * 2f + Pad * 2f);
@@ -186,7 +186,7 @@ namespace StellarisClone.Rendering
                         if (ln.F.Length > 2) ColorUtility.TryParseHtmlString(ln.F[2], out c);
                         float k = ln.F.Length > 5 ? Mathf.Clamp01(ParseF(ln.F[5])) : 0f;
                         bool on = k > 0.0001f;
-                        Color dim = new Color(0.33f, 0.40f, 0.43f, 1f);
+                        Color dim = new Color(0.663f, 0.639f, 0.573f, 1f);
                         bool hasIcon = ln.F.Length > 1 && ln.F[1] != "-" && System.Enum.TryParse(ln.F[1], out LGIcon icon);
                         r.icon.gameObject.SetActive(hasIcon);
                         if (hasIcon) { System.Enum.TryParse(ln.F[1], out LGIcon ic2); r.icon.sprite = LGIcons.Get(ic2); r.icon.color = on ? c : dim; }
@@ -427,7 +427,7 @@ namespace StellarisClone.Rendering
         {
             if (_usedTick >= _tickPool.Count)
             {
-                var im = Img(_blocks, "Ticks", HudArt.TickRow(), new Color(0.37f, 0.82f, 0.75f, 0.45f));
+                var im = Img(_blocks, "Ticks", HudArt.TickRow(), new Color(0.475f, 0.816f, 0.749f, 0.45f));
                 im.type = Image.Type.Tiled;
                 _tickPool.Add(im);
             }

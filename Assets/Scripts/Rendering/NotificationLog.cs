@@ -120,9 +120,9 @@ namespace StellarisClone.Rendering
             sub.sortingOrder = 850;   // под всплывающими уведомлениями (900)
             _root.AddComponent<GraphicRaycaster>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.010f, 0.025f, 0.038f, 0.96f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.96f);
             bg.raycastTarget = true;
-            LG.Glass(_root, 16f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.40f));
+            LG.Glass(_root, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.SlideLeft).distance = 26f;
 
             var ic = LGIcons.Create(rt, LGIcon.Calendar, 16, UIManager.DS.NeonCyan);
@@ -156,7 +156,7 @@ namespace StellarisClone.Rendering
 
         private float Chip(RectTransform parent, string text, Filter f, float x, float w)
         {
-            var bg = LGBuild.Panel(parent, "Chip_" + f, new Color(0.05f, 0.11f, 0.14f, 0.9f), raycast: true);
+            var bg = LGBuild.Panel(parent, "Chip_" + f, new Color(0.055f, 0.094f, 0.157f, 0.9f), raycast: true);
             bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w, 28));
             LG.Chip(bg.gameObject, new Color(1f, 1f, 1f, 0.14f), 14f);
             var t = LGBuild.Label(bg.transform, text, 11, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
@@ -190,7 +190,7 @@ namespace StellarisClone.Rendering
             foreach (var c in _chips)
             {
                 bool on = c.f == _filter;
-                c.bg.color = on ? new Color(0.10f, 0.38f, 0.42f, 0.95f) : new Color(0.05f, 0.11f, 0.14f, 0.9f);
+                c.bg.color = on ? new Color(0.10f, 0.38f, 0.42f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.9f);
                 c.t.color = on ? Color.white : UIManager.DS.TextMuted;
             }
             LGBuild.Clear(_list);
@@ -218,7 +218,7 @@ namespace StellarisClone.Rendering
             bool located = e.SystemId >= 0;
             bool hasBody = !string.IsNullOrEmpty(e.Body);
             Color accent = KindColor(e.Kind);
-            var bg = LGBuild.Panel(_list, "Entry", new Color(0.60f, 0.85f, 0.95f, 0.045f), raycast: true);
+            var bg = LGBuild.Panel(_list, "Entry", new Color(0.475f, 0.816f, 0.749f, 0.045f), raycast: true);
             LGBuild.Height(bg.gameObject, hasBody ? 58f : 36f);
             var edge = LGBuild.Panel(bg.transform, "Edge", new Color(accent.r, accent.g, accent.b, 0.85f));
             edge.rectTransform.anchorMin = new Vector2(0, 0); edge.rectTransform.anchorMax = new Vector2(0, 1);

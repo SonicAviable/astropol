@@ -66,7 +66,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.014f, 0.030f, 0.044f, 0.97f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -140,7 +140,7 @@ namespace StellarisClone.Rendering
 
         private static RectTransform Panel(RectTransform parent, string name, Vector2 pos, Vector2 size)
         {
-            var p = LGBuild.Panel(parent, name, new Color(0.020f, 0.045f, 0.065f, 0.88f));
+            var p = LGBuild.Panel(parent, name, new Color(0.035f, 0.067f, 0.118f, 0.88f));
             p.rectTransform.anchorMin = p.rectTransform.anchorMax = new Vector2(0, 0);
             p.rectTransform.pivot = new Vector2(0, 0);
             p.rectTransform.anchoredPosition = pos;

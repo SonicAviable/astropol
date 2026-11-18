@@ -139,7 +139,7 @@ namespace StellarisClone.Rendering
         private void Build(RectTransform rt)
         {
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.005f, 0.012f, 0.022f, 0.72f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.72f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
@@ -173,7 +173,7 @@ namespace StellarisClone.Rendering
             _panel = LGBuild.Rect(rt, "Panel");
             _panel.Stretch(Side, PanelBottom, Side, PanelTop);
             _panelPos = _panel.anchoredPosition;
-            var bg = LGBuild.Panel(_panel, "Bg", new Color(0.02f, 0.04f, 0.07f, 0.96f), raycast: true);
+            var bg = LGBuild.Panel(_panel, "Bg", new Color(0.035f, 0.067f, 0.118f, 0.96f), raycast: true);
             bg.rectTransform.Stretch();
             LG.Glass(bg.gameObject, 24f).SetRim(new Color(1f, 0.82f, 0.48f, 0.35f));
 
@@ -186,13 +186,13 @@ namespace StellarisClone.Rendering
             var mask = LG.RoundedMask(artHost, 16f);
             _artA = Art(mask, "ArtA");
             _artB = Art(mask, "ArtB");
-            var edgeFade = LGBuild.Panel(mask, "Fade", new Color(0.02f, 0.04f, 0.07f, 1f));
+            var edgeFade = LGBuild.Panel(mask, "Fade", new Color(0.035f, 0.067f, 0.118f, 1f));
             edgeFade.sprite = MenuArt.HorizontalFade;
             edgeFade.rectTransform.anchorMin = Vector2.zero;
             edgeFade.rectTransform.anchorMax = new Vector2(0.28f, 1);
             edgeFade.rectTransform.offsetMin = edgeFade.rectTransform.offsetMax = Vector2.zero;
             LG.Ignore(edgeFade.gameObject);
-            var bottomFade = LGBuild.Panel(mask, "FadeBottom", new Color(0.02f, 0.04f, 0.07f, 0.8f));
+            var bottomFade = LGBuild.Panel(mask, "FadeBottom", new Color(0.035f, 0.067f, 0.118f, 0.8f));
             bottomFade.sprite = MenuArt.VerticalFade;
             bottomFade.rectTransform.anchorMin = Vector2.zero;
             bottomFade.rectTransform.anchorMax = new Vector2(1, 0.3f);
@@ -209,7 +209,7 @@ namespace StellarisClone.Rendering
             _textPos = _textHost.anchoredPosition;
 
             // Подсказка снизу
-            var hint = MenuLink.Create(rt, Loc.T("ESC  ·  ЗАКРЫТЬ"), new Color(0.80f, 0.88f, 0.92f), () => _onClose?.Invoke());
+            var hint = MenuLink.Create(rt, Loc.T("ESC  ·  ЗАКРЫТЬ"), new Color(0.925f, 0.898f, 0.827f), () => _onClose?.Invoke());
             ((RectTransform)hint.transform).At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 30), new Vector2(200, 30));
             var ht = hint.GetComponentInChildren<Text>();
             if (ht != null) ht.alignment = TextAnchor.MiddleCenter;
@@ -223,10 +223,10 @@ namespace StellarisClone.Rendering
         /// <summary>Клавиша-подсказка: светлая «клавиша» с буквой.</summary>
         private static void KeyCap(RectTransform parent, string key, Vector2 pos)
         {
-            var cap = LGBuild.Panel(parent, "Key_" + key, new Color(0.80f, 0.86f, 0.90f, 0.92f));
+            var cap = LGBuild.Panel(parent, "Key_" + key, new Color(0.925f, 0.898f, 0.827f, 0.92f));
             cap.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(26, 26));
             LG.Chip(cap.gameObject, new Color(1f, 1f, 1f, 0.5f), 5f);
-            var t = LGBuild.Label(cap.transform, key, 14, new Color(0.04f, 0.07f, 0.10f), TextAnchor.MiddleCenter, bold: true);
+            var t = LGBuild.Label(cap.transform, key, 14, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter, bold: true);
             t.rectTransform.Stretch();
         }
 
@@ -303,7 +303,7 @@ namespace StellarisClone.Rendering
             int body = 0;
             // Вступление — абзацы до первого раздела
             for (; body < item.Body.Count && !item.Body[body].StartsWith("# "); body++)
-                Para(item.Body[body], 17, new Color(0.84f, 0.90f, 0.93f));
+                Para(item.Body[body], 17, new Color(0.925f, 0.898f, 0.827f));
 
             if (item.Tiles.Count > 0) BuildTiles(item);
 
@@ -316,7 +316,7 @@ namespace StellarisClone.Rendering
                     LGBuild.Height(gap.gameObject, 4f);
                     LGBuild.Label(_content, line.Substring(2), 18, gold, TextAnchor.UpperLeft, bold: true, wrap: true);
                 }
-                else if (line.StartsWith("- ")) Para("<color=#6FE6DA>•</color>   " + line.Substring(2), 15, new Color(0.80f, 0.87f, 0.90f));
+                else if (line.StartsWith("- ")) Para("<color=#6FE6DA>•</color>   " + line.Substring(2), 15, new Color(0.925f, 0.898f, 0.827f));
                 else Para(line, 15, new Color(0.74f, 0.82f, 0.86f));
             }
         }
@@ -347,7 +347,7 @@ namespace StellarisClone.Rendering
             {
                 var (path, crop, label) = item.Tiles[i];
                 var tile = LGBuild.Rect(row, "Tile");
-                var frame = LGBuild.Panel(tile, "Frame", new Color(0.03f, 0.06f, 0.10f, 1f));
+                var frame = LGBuild.Panel(tile, "Frame", new Color(0.055f, 0.094f, 0.157f, 1f));
                 frame.rectTransform.anchorMin = new Vector2(0, 0);
                 frame.rectTransform.anchorMax = new Vector2(1, 1);
                 frame.rectTransform.offsetMin = new Vector2(0, 30);
@@ -369,7 +369,7 @@ namespace StellarisClone.Rendering
                 LG.Ignore(badge.gameObject);
                 var no = LGBuild.Label(badge.transform, (i + 1).ToString(), 13, new Color(0.08f, 0.05f, 0.01f), TextAnchor.MiddleCenter, bold: true);
                 no.rectTransform.Stretch();
-                var cap = LGBuild.Label(tile, label, 13, new Color(0.84f, 0.90f, 0.93f), TextAnchor.LowerLeft, bold: true);
+                var cap = LGBuild.Label(tile, label, 13, new Color(0.925f, 0.898f, 0.827f), TextAnchor.LowerLeft, bold: true);
                 cap.rectTransform.anchorMin = Vector2.zero;
                 cap.rectTransform.anchorMax = new Vector2(1, 0);
                 cap.rectTransform.pivot = new Vector2(0.5f, 0);
@@ -448,7 +448,7 @@ namespace StellarisClone.Rendering
             t._cg = root.gameObject.AddComponent<CanvasGroup>();
             t._accent = n.IsUpdate ? new Color(1f, 0.82f, 0.48f) : UIManager.DS.NeonCyan;
 
-            var body = LGBuild.Panel(root, "Body", new Color(0.03f, 0.05f, 0.09f, 0.96f), raycast: true);
+            var body = LGBuild.Panel(root, "Body", new Color(0.055f, 0.094f, 0.157f, 0.96f), raycast: true);
             body.rectTransform.Stretch();
             t._fx = LG.Glass(body.gameObject, 16f);
             var m = LG.RoundedMask(body.transform, 15f, 2f);
@@ -465,7 +465,7 @@ namespace StellarisClone.Rendering
                 img.raycastTarget = false;
                 img.uvRect = MenuNews.Crop(tex, n.Thumb, size.x * 0.55f / size.y);
             }
-            var ink = new Color(0.03f, 0.05f, 0.09f, 1f);
+            var ink = new Color(0.055f, 0.094f, 0.157f, 1f);
             var solid = LGBuild.Panel(m, "Solid", ink);
             solid.rectTransform.anchorMin = Vector2.zero;
             solid.rectTransform.anchorMax = new Vector2(0.45f, 1);
@@ -486,7 +486,7 @@ namespace StellarisClone.Rendering
             var title = LGBuild.Label(body.transform, n.Title, 20, Color.white, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.Stretch(18, 38, size.x * 0.4f, 44);
             title.resizeTextForBestFit = true; title.resizeTextMinSize = 14; title.resizeTextMaxSize = 20;
-            var head = LGBuild.Label(body.transform, n.Headline, 12, new Color(0.78f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
+            var head = LGBuild.Label(body.transform, n.Headline, 12, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             head.rectTransform.Stretch(18, 8, size.x * 0.4f, 76);
             head.verticalOverflow = VerticalWrapMode.Truncate;
             head.lineSpacing = 0.95f;

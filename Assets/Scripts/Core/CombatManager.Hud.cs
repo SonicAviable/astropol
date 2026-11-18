@@ -28,7 +28,7 @@ namespace StellarisClone.Core
         private RectTransform _feedRoot;
         private int _feedSeen;
 
-        private static readonly Color CHudDark = new Color(0.07f, 0.11f, 0.14f);
+        private static readonly Color CHudDark = new Color(0.055f, 0.094f, 0.157f);
         private static readonly Color CHudOn = new Color(0.62f, 0.20f, 0.18f);
 
         private class HudSide
@@ -102,7 +102,7 @@ namespace StellarisClone.Core
             row.pivot = new Vector2(1, 0);
             row.sizeDelta = new Vector2(230, 32);
             row.anchoredPosition = new Vector2(-14, 10);
-            var cam = LGBuild.Button(row, "Camera", UIManager.DS.BtnNeutral, new Color(0.6f, 0.9f, 1f, 0.5f), FocusBattle, LGIcon.Target, Loc.T("КАМЕРА"), 10);
+            var cam = LGBuild.Button(row, "Camera", UIManager.DS.BtnNeutral, new Color(0.475f, 0.816f, 0.749f, 0.5f), FocusBattle, LGIcon.Target, Loc.T("КАМЕРА"), 10);
             ((RectTransform)cam.transform).Column(0f, 0.42f, 0, 3);
             var retreat = LGBuild.Button(row, "Retreat", UIManager.DS.BtnDanger, UIManager.DS.Red, RetreatAll, LGIcon.Warning, Loc.T("ОТСТУПИТЬ"), 10);
             ((RectTransform)retreat.transform).Column(0.42f, 1f, 3, 0);
@@ -385,8 +385,8 @@ namespace StellarisClone.Core
                     LogKind.Kill => e.Owner == 0 ? new Color(1f, 0.45f, 0.40f) : new Color(0.45f, 1f, 0.62f),
                     LogKind.Shield => e.Owner == 0 ? new Color(1f, 0.70f, 0.45f) : new Color(1f, 0.85f, 0.45f),
                     LogKind.Disengage => new Color(0.95f, 0.80f, 0.45f),
-                    LogKind.Phase => new Color(0.50f, 0.85f, 1f),
-                    _ => new Color(0.85f, 0.92f, 1f)
+                    LogKind.Phase => new Color(0.475f, 0.816f, 0.749f),
+                    _ => new Color(0.925f, 0.898f, 0.827f)
                 };
                 float fade = Mathf.Clamp01((9f - age) / 2f);
                 float flash = Mathf.Clamp01(1f - age / 0.35f);

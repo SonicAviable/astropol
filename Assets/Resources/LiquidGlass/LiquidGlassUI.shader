@@ -321,6 +321,19 @@ Shader "Astropolity/UI/LiquidGlass"
                     float crossBR = max(step(abs(qBR.x), 0.6) * step(abs(qBR.y), 9.0), step(abs(qBR.y), 0.6) * step(abs(qBR.x), 9.0));
                     float ca = max(crossTL, crossBR) * 0.85;
                     acc = float4(gold * ca, ca) + acc * (1.0 - ca);
+
+                    // Бледная роза ветров у правого нижнего угла крупных окон
+                    if (b.x * pxPerUnit > 320.0 && b.y * pxPerUnit > 220.0)
+                    {
+                        float2 cq = (p - float2(b.x, -b.y)) * pxPerUnit + float2(70.0, -70.0);
+                        float rr2 = length(cq);
+                        float ring = max(max(step(abs(rr2 - 150.0), 0.6), step(abs(rr2 - 96.0), 0.6)),
+                                         step(abs(rr2 - 138.0), 0.6) * step(0.5, frac(atan2(cq.y, cq.x) * 9.549)));
+                        float spokes = step(rr2, 160.0) * max(max(step(abs(cq.x), 0.5), step(abs(cq.y), 0.5)),
+                                                              step(abs(abs(cq.x) - abs(cq.y)), 0.7) * step(rr2, 110.0));
+                        float wa = max(ring, spokes) * 0.06 * cov;
+                        acc = float4(tc * wa, wa) + acc * (1.0 - wa);
+                    }
                 }
 
                 // Дизеринг — без ступенек на плавных градиентах тёмных панелей

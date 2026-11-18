@@ -58,7 +58,7 @@ namespace StellarisClone.Rendering
             Name = Loc.T("Элина Сорель"),
             Title = Loc.T("Председатель Совета Республики"),
             Quote = Loc.T("Любой спор можно решить словами. Почти любой."),
-            Accent = new Color(0.30f, 0.90f, 0.86f),
+            Accent = new Color(0.475f, 0.816f, 0.749f),
             EyeL = Eye(590, 402, 42, 15),
             EyeR = Eye(740, 399, 42, 15),
             Face = Uv(665, 460)
@@ -195,7 +195,7 @@ namespace StellarisClone.Rendering
         private static readonly int IdHolo = Shader.PropertyToID("_Holo");
         private static readonly int IdHoloColor = Shader.PropertyToID("_HoloColor");
         private float _holo;
-        private Color _holoColor = new Color(0.35f, 0.9f, 1f, 1f);
+        private Color _holoColor = new Color(0.475f, 0.816f, 0.749f, 1f);
 
         /// <summary>Голограмма: amount 0..1 и цвет проектора (комната переговоров).</summary>
         public void SetHologram(float amount, Color color)

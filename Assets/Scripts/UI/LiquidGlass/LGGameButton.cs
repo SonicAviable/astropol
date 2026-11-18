@@ -4,14 +4,12 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Единый дизайн кнопок игры — «приборная панель»: плотная тёмно-синяя плашка со срезанными углами
-    /// (слева сверху и справа снизу), полоса цвета действия по левому краю, светлая подпись капслоком по центру,
-    /// без свечения. Цвет полосы — смысл действия: синяя — обычное, зелёная — успех, красная — опасное,
-    /// серая — нейтральное («Назад», неактивная вкладка). Недоступная — тусклая. При наведении плашка светлеет,
-    /// полоса расширяется. Главная кнопка экрана (<see cref="MenuPrimaryButton"/>) той же формы, но сплошь бирюзовая.
+    /// Единый дизайн кнопок игры, стиль «Атлас»: капсула с чернильным телом и тонкой кромкой, подпись моноширинным
+    /// шрифтом в исходном регистре, без полос и свечения. Цвет кромки — смысл действия: кремовая — обычное и нейтральное,
+    /// морская зелень — успех, коралл — опасное. Недоступная — тусклая. При наведении тело светлеет, кромка ярче.
     /// Вешается сам на кнопки из <see cref="LGBuild.Button"/> (кнопки-полосы с подписью: ширина от 150, высота 28…58 px);
     /// круглые, маленькие и кнопки-значки остаются как были. Если код потом перекрашивает кнопку (например, «удалить?» —
-    /// красным), новый цвет становится цветом полосы — дизайн не ломается.
+    /// красным), новый цвет становится цветом кромки — дизайн не ломается.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LGGameButton : MonoBehaviour, UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler
@@ -19,21 +17,23 @@ namespace StellarisClone.Rendering
         /// <summary>Размер среза углов у всех кнопок.</summary>
         public const float Cut = 10f;
 
-        private static readonly Color Plate = new Color(0.086f, 0.141f, 0.235f, 0.97f);      // #16243C
-        private static readonly Color PlateLit = new Color(0.13f, 0.21f, 0.34f, 0.97f);
-        private static readonly Color PlateQuiet = new Color(0.059f, 0.094f, 0.157f, 0.95f); // #0F1828
-        private static readonly Color PlateOff = new Color(0.05f, 0.07f, 0.10f, 0.85f);
-        private static readonly Color Ink = new Color(0.84f, 0.89f, 1f);
-        private static readonly Color InkQuiet = new Color(0.62f, 0.70f, 0.75f);
+        // «Атлас»: тело — чернильное (тёмное, без насыщенности: кромку задаёт цвет действия)
+        private static readonly Color Plate = new Color(0.055f, 0.094f, 0.157f, 0.96f);
+        private static readonly Color PlateLit = new Color(0.055f, 0.094f, 0.157f, 0.97f);
+        private static readonly Color PlateQuiet = new Color(0.055f, 0.094f, 0.157f, 0.94f);
+        private static readonly Color PlateOff = new Color(0.055f, 0.094f, 0.157f, 0.70f);
+        private static readonly Color Ink = new Color(0.925f, 0.898f, 0.827f);
+        private static readonly Color InkQuiet = new Color(0.663f, 0.639f, 0.573f);
 
         /// <summary>Узкая кнопка (от 60 px) тоже в общем стиле — для тесных мест вроде карточек.</summary>
         public bool Compact;
 
-        private Color _accent = new Color(0.40f, 0.86f, 0.82f);
+        private Color _accent = new Color(0.475f, 0.816f, 0.749f);
         private Color _set;
         private bool _done, _applied, _over;
         private float _h, _hv;
         private Image _img, _bar;
+        private LiquidGlassEffect _fx;
         private Button _btn;
         private Text _label;
 
@@ -58,14 +58,16 @@ namespace StellarisClone.Rendering
             return s < 0.3f;
         }
 
-        /// <summary>Цвет полосы: красный (опасное), зелёный (успех), серый (нейтральное), остальное — синий.</summary>
+        /// <summary>Цвет кромки: коралл (опасное), морская зелень (успех), золото (жёлтые/оранжевые), остальное — крем.</summary>
         private static Color BarOf(Color accent)
         {
-            if (Quiet(accent)) return new Color(0.23f, 0.29f, 0.37f);                // #3A4A5E
+            var cream = new Color(0.925f, 0.898f, 0.827f);
+            if (Quiet(accent)) return cream;
             Color.RGBToHSV(accent, out float h, out _, out _);
-            if (h < 0.05f || h > 0.93f) return new Color(1f, 0.46f, 0.39f);         // #FF7564
-            if (h > 0.25f && h < 0.42f) return new Color(0.31f, 0.85f, 0.54f);      // #4FD98A
-            return new Color(0.43f, 0.61f, 1f);                                      // #6E9BFF
+            if (h < 0.05f || h > 0.93f) return new Color(1f, 0.42f, 0.341f);        // коралл
+            if (h > 0.25f && h < 0.52f) return new Color(0.475f, 0.816f, 0.749f);   // морская зелень
+            if (h >= 0.05f && h <= 0.17f) return new Color(0.906f, 0.757f, 0.439f); // золото
+            return cream;
         }
 
         public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e) => _over = true;
@@ -103,15 +105,11 @@ namespace StellarisClone.Rendering
             var fill = !on ? PlateOff : Color.Lerp(quiet ? PlateQuiet : Plate, PlateLit, h);
             if (fill != _img.color) _img.color = fill;
             _set = fill;
-            if (_bar != null)
-            {
-                var bc = on ? BarOf(_accent) : new Color(0.2f, 0.24f, 0.28f);
-                if (_bar.color != bc) _bar.color = bc;
-                _bar.rectTransform.sizeDelta = new Vector2(3f + 3f * h, -Cut);
-            }
+            var bc = on ? BarOf(_accent) : new Color(0.45f, 0.44f, 0.40f);
+            if (_fx != null) _fx.SetRim(new Color(bc.r, bc.g, bc.b, !on ? 0.22f : Mathf.Lerp(quiet ? 0.34f : 0.55f, 0.9f, h)));
             if (_label != null)
             {
-                var lc = !on ? new Color(0.45f, 0.52f, 0.56f, 0.8f) : quiet ? Color.Lerp(InkQuiet, Ink, h) : Ink;
+                var lc = !on ? new Color(0.50f, 0.49f, 0.45f, 0.8f) : quiet ? Color.Lerp(InkQuiet, Ink, h) : Color.Lerp(bc, Ink, 0.35f + 0.4f * h);
                 if (_label.color != lc) _label.color = lc;
             }
         }
@@ -137,17 +135,6 @@ namespace StellarisClone.Rendering
                 Destroy(c.gameObject);
             }
 
-            // Полоса цвета действия по левому краю (ниже среза верхнего левого угла)
-            _bar = LGBuild.Panel(transform, "Bar", BarOf(_accent));
-            var br = _bar.rectTransform;
-            br.anchorMin = new Vector2(0, 0);
-            br.anchorMax = new Vector2(0, 1);
-            br.pivot = new Vector2(0, 0);
-            br.anchoredPosition = Vector2.zero;
-            br.sizeDelta = new Vector2(3f, -Cut);
-            _bar.raycastTarget = false;
-            LG.Ignore(_bar.gameObject);
-
             const float textLeft = 16f;
             var t = old;
             _label = t;
@@ -162,18 +149,18 @@ namespace StellarisClone.Rendering
             t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
             t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = size;
-            t.fontStyle = FontStyle.Bold;
+            t.fontStyle = FontStyle.Normal;
             if (!t.TryGetComponent<LGButtonLabel>(out _)) t.gameObject.AddComponent<LGButtonLabel>();
 
-            // Плотная плашка со срезанными углами, без свечения
-            var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Fill, Cut);
+            // «Атлас»: капсула (форму и кромку рисует LiquidGlassEffect в роли кнопки), без свечения
+            var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Button, -1f);
             if (fx != null)
             {
-                fx.Radius = Cut;
-                fx.Chamfer = true;
+                fx.Chamfer = false;
                 fx.GlowMultiplier = 0f;
                 fx.SpecularMultiplier = 0.2f;
             }
+            _fx = fx;
             var sweep = GetComponent<InspSweep>();
             if (sweep != null) Destroy(sweep);
             if (_img != null) _img.color = _set = Plate;

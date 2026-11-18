@@ -247,7 +247,7 @@ namespace StellarisClone.Cards
             var bgRt = LGBuild.Rect(croot, "Bg");
             bgRt.Stretch();
             var bgBlock = bgRt.gameObject.AddComponent<Image>();
-            bgBlock.color = new Color(0.01f, 0.012f, 0.02f, 1f);
+            bgBlock.color = new Color(0.035f, 0.067f, 0.118f, 1f);
             bgBlock.raycastTarget = true;   // клики не проходят на карту галактики
             var table = CardArt.Table(_setup.Terrain);
             _bg = Raw(bgRt, "Terrain", table, BoardSkin ? new Color(0.8f, 0.8f, 0.84f, 1f) : new Color(0.5f, 0.5f, 0.55f, 1f));
@@ -270,7 +270,7 @@ namespace StellarisClone.Cards
 
             _hintText = Caption(_board, "", 15, new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleCenter, 0.8f);
             var hol = _hintText.gameObject.AddComponent<Outline>();
-            hol.effectColor = new Color(0f, 0.02f, 0.04f, 0.85f);
+            hol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.85f);
             hol.effectDistance = new Vector2(1.5f, -1.5f);
             _hintText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, BoardSkin ? -336 : -255), new Vector2(900, 30));
 
@@ -320,8 +320,8 @@ namespace StellarisClone.Cards
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color PanelTint = new Color(0.010f, 0.025f, 0.038f, 0.92f);
-        private static readonly Color SubTint = new Color(0.020f, 0.045f, 0.065f, 0.90f);
+        private static readonly Color PanelTint = new Color(0.035f, 0.067f, 0.118f, 0.92f);
+        private static readonly Color SubTint = new Color(0.035f, 0.067f, 0.118f, 0.90f);
         private static readonly Color RimCyan = new Color(0.475f, 0.816f, 0.749f, 0.42f);
         private static readonly Color RimSoft = new Color(0.475f, 0.816f, 0.749f, 0.18f);
 
@@ -368,7 +368,7 @@ namespace StellarisClone.Cards
         {
             var t = Caption(parent, "", size, new Color(1, 1, 1, 0), TextAnchor.MiddleCenter, 4f);
             var ol = t.gameObject.AddComponent<Outline>();
-            ol.effectColor = new Color(0f, 0.02f, 0.04f, 0.9f);
+            ol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.9f);
             ol.effectDistance = new Vector2(2.5f, -2.5f);
             return t;
         }
@@ -445,7 +445,7 @@ namespace StellarisClone.Cards
                     lines.material = UIFx.HoloMat;
                 }
                 // По линии фронта время от времени пробегает импульс энергии
-                var pulse = LGBuild.Panel(_board, "FrontPulse", new Color(0.55f, 1f, 0.95f, 0f));
+                var pulse = LGBuild.Panel(_board, "FrontPulse", new Color(0.475f, 0.816f, 0.749f, 0f));
                 pulse.sprite = CardSprites.Spark;
                 pulse.material = UIFx.GlowMat;
                 pulse.raycastTarget = false;
@@ -495,7 +495,7 @@ namespace StellarisClone.Cards
             for (int r = 0; r < 2; r++)
                 for (int k = 0; k < 3; k++)
                 {
-                    var sl = LGBuild.Panel(col, "Slot", new Color(0.03f, 0.09f, 0.12f, 0.5f));
+                    var sl = LGBuild.Panel(col, "Slot", new Color(0.055f, 0.094f, 0.157f, 0.5f));
                     sl.raycastTarget = false;
                     sl.rectTransform.At(Mid, Mid, new Vector2((k - 1) * (BoardCard.x + 10f), r == 0 ? RowOff : -RowOff), BoardCard);
                     LG.Chip(sl.gameObject, new Color(RimCyan.r, RimCyan.g, RimCyan.b, 0.32f), 12f);
@@ -513,11 +513,11 @@ namespace StellarisClone.Cards
             s.Plate = plate;
             s.PlateFx = plate.GetComponent<LiquidGlassEffect>();
             var am = LG.RoundedMask(plate.rectTransform, 14f, 3f);
-            var art = Raw(am, "Art", CardArt.Sector(type), new Color(0.62f, 0.66f, 0.7f, 0.9f));
+            var art = Raw(am, "Art", CardArt.Sector(type), new Color(0.663f, 0.639f, 0.573f, 0.9f));
             art.rectTransform.Stretch();
             Cover(art, (PlaqueW - 6) / (PlaqueH - 6));
             // Затемнение слева направо: текст читается, справа видна картинка
-            var dim = LGBuild.Panel(am, "Dim", new Color(0.01f, 0.025f, 0.04f, 0.74f));
+            var dim = LGBuild.Panel(am, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.74f));
             dim.raycastTarget = false;
             dim.rectTransform.Stretch();
             s.Header = s.PowerBar = plate.rectTransform;
@@ -529,11 +529,11 @@ namespace StellarisClone.Cards
             var acc = LGBuild.Panel(plate.rectTransform, "Accent", new Color(Gold.r, Gold.g, Gold.b, 0.85f));
             acc.raycastTarget = false;
             acc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 10), new Vector2(36, 2));
-            s.Rule = LGBuild.Label(plate.rectTransform, CardArt.SectorRule(type), 14, new Color(0.88f, 0.93f, 0.95f, 0.95f), TextAnchor.UpperLeft, wrap: true);
+            s.Rule = LGBuild.Label(plate.rectTransform, CardArt.SectorRule(type), 14, new Color(0.925f, 0.898f, 0.827f, 0.95f), TextAnchor.UpperLeft, wrap: true);
             s.Rule.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 1f), new Vector2(20, 4), new Vector2(PlaqueW - 150, 52));
             s.Rule.lineSpacing = 0.92f;
             var rol = s.Rule.gameObject.AddComponent<Outline>();
-            rol.effectColor = new Color(0f, 0.02f, 0.04f, 0.8f);
+            rol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.8f);
             rol.effectDistance = new Vector2(1f, -1f);
             s.Rule.raycastTarget = false;
 
@@ -568,10 +568,10 @@ namespace StellarisClone.Cards
 
                 // Табличка на своде купола: что это и почему держится
                 float apex = baseY + (defRow == 0 ? domeH - 2f : -domeH + 2f);
-                s.DomeBadge = ChipAt(col, "DomeBadge", new Vector2(0, apex), new Vector2(172, 28), SubTint, new Color(0.55f, 0.85f, 1f, 0.6f), raycast: true);
-                var bic = LGIcons.Create(s.DomeBadge.rectTransform, LGIcon.ShieldDome, 13, new Color(0.6f, 0.88f, 1f));
+                s.DomeBadge = ChipAt(col, "DomeBadge", new Vector2(0, apex), new Vector2(172, 28), SubTint, new Color(0.475f, 0.816f, 0.749f, 0.6f), raycast: true);
+                var bic = LGIcons.Create(s.DomeBadge.rectTransform, LGIcon.ShieldDome, 13, new Color(0.475f, 0.816f, 0.749f));
                 bic.rectTransform.At(new Vector2(0, 0.5f), Mid, new Vector2(18, 0), new Vector2(13, 13));
-                s.DomeText = Caption(s.DomeBadge.rectTransform, Loc.T("ЩИТ ШТАБА"), 11, new Color(0.7f, 0.92f, 1f), TextAnchor.MiddleCenter, 1.4f);
+                s.DomeText = Caption(s.DomeBadge.rectTransform, Loc.T("ЩИТ ШТАБА"), 11, new Color(0.475f, 0.816f, 0.749f), TextAnchor.MiddleCenter, 1.4f);
                 s.DomeText.rectTransform.Stretch(26, 0, 8, 0);
                 TooltipHelper.Attach(s.DomeBadge.gameObject, Loc.T("<b>Щит Штаба</b>\nЭнергетический купол над защитниками Штаба. Пока он стоит, прорыв в Штаб невозможен.\nКупол держится, пока электростанция у защитника. Снять его: захватить сектор «Электростанция» или применить «Диверсию» / ЭМИ."));
             }
@@ -669,7 +669,7 @@ namespace StellarisClone.Cards
         {
             _scoreTheirs = SocketGem(new Vector2(LX, 78), CardSkin.Red, Loc.T("ВРАГ"), true);
             _scoreMine = SocketGem(new Vector2(LX, -78), CardSkin.Teal, Loc.T("ВЫ"), false);
-            var need = Caption(_board, Loc.T("2 ИЗ 3"), 10, new Color(0.02f, 0.08f, 0.09f), TextAnchor.MiddleCenter, 1f);
+            var need = Caption(_board, Loc.T("2 ИЗ 3"), 10, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter, 1f);
             need.rectTransform.At(Mid, Mid, new Vector2(LX, 0), new Vector2(60, 12));
         }
 
@@ -782,7 +782,7 @@ namespace StellarisClone.Cards
             _turnText.rectTransform.At(Mid, Mid, new Vector2(RX, 386), new Vector2(Inner, 56));
             _turnText.supportRichText = true;
             var tol = _turnText.gameObject.AddComponent<Outline>();
-            tol.effectColor = new Color(0f, 0.08f, 0.1f, 0.8f);
+            tol.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.8f);
             tol.effectDistance = new Vector2(1.5f, -1.5f);
             _turnPips.Clear();
             for (int i = 0; i < BattleState.Turns; i++)
@@ -807,7 +807,7 @@ namespace StellarisClone.Cards
             _scoreText.supportRichText = true;
 
             // Погода — одна строка со значком; полный текст — в подсказке
-            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.02f, 0.05f, 0.07f, 0.85f), raycast: true);
+            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.035f, 0.067f, 0.118f, 0.85f), raycast: true);
             wrow.sprite = CardSprites.Round;
             wrow.type = Image.Type.Sliced;
             wrow.rectTransform.At(Mid, Mid, new Vector2(RX, 236), new Vector2(Inner, 40));
@@ -894,7 +894,7 @@ namespace StellarisClone.Cards
             _turnText.rectTransform.At(Mid, Mid, c0 + new Vector2(0, 160), new Vector2(200, 48));
             _turnText.supportRichText = true;
             var tol = _turnText.gameObject.AddComponent<Outline>();
-            tol.effectColor = new Color(0f, 0.05f, 0.08f, 0.9f);
+            tol.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.9f);
             tol.effectDistance = new Vector2(2f, -2f);
             _turnPips.Clear();
             for (int i = 0; i < BattleState.Turns; i++)
@@ -914,7 +914,7 @@ namespace StellarisClone.Cards
             _scoreText.gameObject.SetActive(false);
 
             // Погода — строка над ходом
-            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.02f, 0.05f, 0.07f, 0.85f), raycast: true);
+            var wrow = LGBuild.Panel(_board, "Weather", new Color(0.035f, 0.067f, 0.118f, 0.85f), raycast: true);
             wrow.sprite = CardSprites.Round;
             wrow.type = Image.Type.Sliced;
             wrow.rectTransform.At(Mid, Mid, c0 + new Vector2(0, 238), new Vector2(176, 40));
@@ -932,7 +932,7 @@ namespace StellarisClone.Cards
             _weatherTip = wrow.GetComponent<TooltipTrigger>();
 
             // Большая круглая кнопка хода в гнезде; снаружи гнезда медленно вращается голографическое кольцо
-            HoloLayer(_board, "holo_ring_b", c0, 366f, new Color(0.3f, 0.95f, 0.85f, 0.4f), 5f);
+            HoloLayer(_board, "holo_ring_b", c0, 366f, new Color(0.475f, 0.816f, 0.749f, 0.4f), 5f);
             _endGlow = CardSkin.Simple(_board, "EndGlow", "glow", new Color(0.3f, 1f, 0.6f, 0f));
             _endGlow.rectTransform.At(Mid, Mid, c0, new Vector2(340, 340));
             _endButton = LGBuild.Button(_board, "EndTurn", UIManager.DS.BtnPrimary, new Color(Cyan.r, Cyan.g, Cyan.b, 0.9f), OnEndTurn, null, Loc.T("ЗАКОНЧИТЬ\nХОД"), 20, 76f);
@@ -1278,15 +1278,15 @@ namespace StellarisClone.Cards
                 var pv = CardView.Create(_rows[sec, 1], v.Card, _P, FactionOf(_P), BoardCard, true);
                 pv.Rt.position = pos;
                 pv.SetAlpha(0.85f);
-                pv.SetStatus(Loc.T("ПРИКАЗ ОТДАН · клик — отменить"), new Color(0.5f, 0.85f, 1f));
+                pv.SetStatus(Loc.T("ПРИКАЗ ОТДАН · клик — отменить"), new Color(0.475f, 0.816f, 0.749f));
                 Hook(pv);
                 pv.OnClick = UnplayView;
                 _pending[v.Card] = pv;
                 pv.Punch(0.25f);
-                FlyFx(pv, new Color(0.45f, 0.85f, 1f));
+                FlyFx(pv, new Color(0.475f, 0.816f, 0.749f));
                 var p = _fx.Local(pv.Rt);
                 _fx.Dust(p + new Vector2(0, -60), 0.7f);
-                _fx.Ring(p, new Color(0.5f, 0.85f, 1f, 0.7f), 40f, 220f, 0.35f);
+                _fx.Ring(p, new Color(0.475f, 0.816f, 0.749f, 0.7f), 40f, 220f, 0.35f);
                 // Карта легла на стол — приказ уходит по рации
                 SFXManager.Play(Sfx.CardPlace, 0.5f, 1f, Pan(p));
                 SFXManager.Play(Sfx.RadioOrder, 1f, UnityEngine.Random.Range(0.97f, 1.03f));
@@ -1494,7 +1494,7 @@ namespace StellarisClone.Cards
                     {
                         s.DomeWasUp = up;
                         s.DomeText.text = up ? Loc.T("ЩИТ ШТАБА") : Loc.T("ЩИТ СНЯТ");
-                        s.DomeText.color = up ? new Color(0.7f, 0.92f, 1f) : new Color(1f, 0.55f, 0.48f);
+                        s.DomeText.color = up ? new Color(0.475f, 0.816f, 0.749f) : new Color(1f, 0.55f, 0.48f);
                     }
                     float a = up ? 0.8f + 0.2f * Mathf.Sin(Time.unscaledTime * 2.2f) : 0f;
                     s.Dome.color = new Color(0.6f, 0.85f, 1f, Mathf.MoveTowards(s.Dome.color.a, a, dt * 1.5f));
@@ -1540,7 +1540,7 @@ namespace StellarisClone.Cards
                 case Terrain.Desert: return new Color(0.85f, 0.65f, 0.42f, 0.13f);
                 case Terrain.Molten: return new Color(0.55f, 0.3f, 0.2f, 0.16f);
                 case Terrain.Barren: return new Color(0.7f, 0.72f, 0.78f, 0.1f);
-                default: return new Color(0.62f, 0.68f, 0.72f, 0.12f);
+                default: return new Color(0.663f, 0.639f, 0.573f, 0.12f);
             }
         }
 
@@ -1668,7 +1668,7 @@ namespace StellarisClone.Cards
                     break;
                 case Terrain.Continental:
                     if (_state.WeatherActive) _fx.Burst(pos, 4, CardSprites.Spark, new Color(0.75f, 0.85f, 1f, 0.28f), 1400f, 1800f, 0.9f, 1.2f, 2.5f, 2.5f, 0f, 0f, 255f, 4f, align: true, stretch: 40f);
-                    else Haze(r, new Color(0.7f, 0.75f, 0.8f, 0.07f));
+                    else Haze(r, new Color(0.663f, 0.639f, 0.573f, 0.07f));
                     break;
                 default:
                     Haze(r, new Color(0.75f, 0.75f, 0.78f, 0.06f));

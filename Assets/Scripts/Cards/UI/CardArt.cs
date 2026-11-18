@@ -110,12 +110,12 @@ namespace StellarisClone.Cards
         {
             switch (key)
             {
-                case "astrea": return new Color(0.45f, 0.86f, 0.92f);
+                case "astrea": return new Color(0.475f, 0.816f, 0.749f);
                 case "xarn": return new Color(0.92f, 0.30f, 0.30f);
                 case "aquila": return new Color(0.98f, 0.78f, 0.32f);
                 case "iridia": return new Color(0.72f, 0.48f, 1f);
                 case "terraan": return new Color(0.45f, 0.92f, 0.45f);
-                case "nol": return new Color(0.88f, 0.92f, 0.98f);
+                case "nol": return new Color(0.925f, 0.898f, 0.827f);
                 default: return new Color(0.70f, 0.78f, 0.86f);
             }
         }
@@ -134,7 +134,7 @@ namespace StellarisClone.Cards
                 case CardKind.Order: return new Color(0.78f, 0.55f, 1f);
                 case CardKind.Structure: return new Color(0.45f, 0.70f, 0.95f);
                 case CardKind.Trap: return new Color(1f, 0.45f, 0.35f);
-                default: return new Color(0.62f, 0.70f, 0.78f);
+                default: return new Color(0.663f, 0.639f, 0.573f);
             }
         }
 
@@ -173,11 +173,11 @@ namespace StellarisClone.Cards
         {
             switch (r)
             {
-                case CardRarity.Rare: return new Color(0.37f, 0.78f, 1f);
+                case CardRarity.Rare: return new Color(0.475f, 0.816f, 0.749f);
                 case CardRarity.Epic: return new Color(0.77f, 0.55f, 1f);
                 case CardRarity.Legendary: return new Color(1f, 0.81f, 0.35f);
                 case CardRarity.Commander: return new Color(1f, 0.36f, 0.29f);
-                default: return new Color(0.66f, 0.72f, 0.78f);
+                default: return new Color(0.663f, 0.639f, 0.573f);
             }
         }
 

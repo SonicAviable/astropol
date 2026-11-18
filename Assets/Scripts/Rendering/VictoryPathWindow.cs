@@ -27,7 +27,7 @@ namespace StellarisClone.Rendering
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
-        private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.90f);
+        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.90f);
         private const int Rows = 6;
 
         private enum Kind { Score, Domination, Military, Tech, Economy, Diplomacy }
@@ -113,7 +113,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.010f, 0.025f, 0.038f, 0.97f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -195,7 +195,7 @@ namespace StellarisClone.Rendering
             // Лидер направления: портрет, имя, значение
             var lead = LGBuild.Rect(p, "Leader");
             lead.TopBand(140, 96, 12, 12);
-            var frame = LGBuild.Panel(lead, "Frame", new Color(0.04f, 0.08f, 0.10f, 1f));
+            var frame = LGBuild.Panel(lead, "Frame", new Color(0.055f, 0.094f, 0.157f, 1f));
             frame.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(84, 84));
             LG.Platter(frame.gameObject, 8f).SetRim(new Color(accent.r, accent.g, accent.b, 0.6f));
             c.LeaderRing = frame;
@@ -370,7 +370,7 @@ namespace StellarisClone.Rendering
                 bool me = e.Owner == 0, known = Known(e.Owner), alive = Alive(e.Owner);
                 r.Rank.text = (i + 1).ToString();
                 r.Rank.color = i == 0 ? c.Accent : Muted;
-                r.Dot.color = known ? OwnerCol(e.Owner) : new Color(0.5f, 0.55f, 0.6f);
+                r.Dot.color = known ? OwnerCol(e.Owner) : new Color(0.663f, 0.639f, 0.573f);
                 var crest = known ? FactionEmblems.ForOwner(e.Owner) : null;
                 r.Crest.sprite = crest;
                 r.Crest.enabled = crest != null;

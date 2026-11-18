@@ -23,7 +23,7 @@ namespace StellarisClone.Rendering
         private const float W = 300f, CollapsedW = 96f, HeadH = 28f, BodyH = 130f, Gap = 8f;
 
         private static readonly Color Gold = new Color(1f, 0.82f, 0.38f);
-        private static readonly Color Cyan = new Color(0.36f, 0.95f, 0.88f);
+        private static readonly Color Cyan = new Color(0.475f, 0.816f, 0.749f);
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Primary => UIManager.DS.TextPrimary;
 
@@ -154,7 +154,7 @@ namespace StellarisClone.Rendering
 
         private void BuildBody()
         {
-            var body = LGBuild.Panel(_root, "Body", new Color(0.016f, 0.024f, 0.034f, 0.94f), raycast: true);
+            var body = LGBuild.Panel(_root, "Body", new Color(0.035f, 0.067f, 0.118f, 0.94f), raycast: true);
             _body = body.rectTransform;
             _body.TopBand(HeadH + 4f, BodyH);
             var fx = LG.Platter(body.gameObject, 10f);

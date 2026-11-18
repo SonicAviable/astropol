@@ -53,11 +53,11 @@ namespace StellarisClone.Rendering
         {
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
             _cg.alpha = 0f;
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.005f, 0.012f, 0.022f, 0.6f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.6f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
-            var panel = LGBuild.Panel(rt, "Panel", new Color(0.03f, 0.06f, 0.10f, 0.95f), raycast: true);
+            var panel = LGBuild.Panel(rt, "Panel", new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             _panel = panel.rectTransform;
             _panel.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MaxW, MaxH));
             LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.3f));
@@ -69,7 +69,7 @@ namespace StellarisClone.Rendering
             var title = LGBuild.Label(_panel, Loc.T("Нашли баг или есть идея?"), 30, Color.white, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.TopBand(60, 40, Pad, Pad);
             var sub = LGBuild.Label(_panel, Loc.T("Сообщение придёт разработчику на почту. Опишите, что делали и что пошло не так — так баг найдётся быстрее."),
-                                    14, new Color(0.60f, 0.70f, 0.74f), TextAnchor.UpperLeft, wrap: true);
+                                    14, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, wrap: true);
             sub.rectTransform.TopBand(106, 40, Pad, Pad);
 
             var close = LGControls.IconButton(_panel, LGIcon.Close, 40, UIManager.DS.BtnNeutral, new Color(1, 1, 1, 0.3f), Close);

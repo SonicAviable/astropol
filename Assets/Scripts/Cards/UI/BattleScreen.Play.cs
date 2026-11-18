@@ -226,7 +226,7 @@ namespace StellarisClone.Cards
                     if (v != null)
                     {
                         var p = _fx.Local(v.Rt);
-                        _fx.Number(p + new Vector2(0, 30), Loc.F("−{0} укр.", e.Amount), new Color(0.55f, 0.85f, 1f), 22, 0.8f);
+                        _fx.Number(p + new Vector2(0, 30), Loc.F("−{0} укр.", e.Amount), new Color(0.475f, 0.816f, 0.749f), 22, 0.8f);
                         _fx.Ring(p, new Color(0.5f, 0.8f, 1f, 0.8f), 40f, 150f, 0.3f);
                         SFXManager.Play(Sfx.ImpactShield, 0.5f);
                     }
@@ -254,8 +254,8 @@ namespace StellarisClone.Cards
                     var v = ViewOf(e.Uid);
                     if (v != null && e.Text == "cover")
                     {
-                        _fx.Number(_fx.Local(v.Rt, new Vector2(0, 40)), Loc.T("+2 укрытие"), new Color(0.55f, 0.85f, 1f), 26, 1f);
-                        v.EdgeFlash(new Color(0.5f, 0.82f, 1f), 0.9f);
+                        _fx.Number(_fx.Local(v.Rt, new Vector2(0, 40)), Loc.T("+2 укрытие"), new Color(0.475f, 0.816f, 0.749f), 26, 1f);
+                        v.EdgeFlash(new Color(0.475f, 0.816f, 0.749f), 0.9f);
                         ShieldFx(_fx.Local(v.Rt), new Color(0.45f, 0.8f, 1f), 230f);
                         SFXManager.Play(Sfx.FxShieldUp, 0.9f, Random.Range(0.97f, 1.04f), Pan(_fx.Local(v.Rt)));
                     }
@@ -317,11 +317,11 @@ namespace StellarisClone.Cards
                     if (hq >= 0)
                     {
                         var p = _fx.Local(_rows[hq, _P == BattleState.Defender ? 1 : 0]);
-                        _fx.Energy(p, new Color(0.55f, 0.85f, 1f), 2f);
-                        ShieldFx(p, new Color(0.5f, 0.82f, 1f), 640f);
-                        _fx.Play(UIFx.Fx2.Lightning, p, new Color(0.55f, 0.85f, 1f), 520f, 0.7f, 600f, Random.Range(0f, 360f));
-                        _arc?.RingWave(p, new Color(0.55f, 0.9f, 1f, 1f), 60f, 620f, 12f, 0.7f, 0.6f);
-                        _arc?.Spikes(p, new Color(0.6f, 0.9f, 1f), 14, 320f, 9f, 0.4f);
+                        _fx.Energy(p, new Color(0.475f, 0.816f, 0.749f), 2f);
+                        ShieldFx(p, new Color(0.475f, 0.816f, 0.749f), 640f);
+                        _fx.Play(UIFx.Fx2.Lightning, p, new Color(0.475f, 0.816f, 0.749f), 520f, 0.7f, 600f, Random.Range(0f, 360f));
+                        _arc?.RingWave(p, new Color(0.475f, 0.816f, 0.749f, 1f), 60f, 620f, 12f, 0.7f, 0.6f);
+                        _arc?.Spikes(p, new Color(0.475f, 0.816f, 0.749f), 14, 320f, 9f, 0.4f);
                         _fx.Sparks(p, new Color(0.6f, 0.85f, 1f), 50, 1.6f);
                         _fx.Flash(new Color(0.6f, 0.85f, 1f), 0.4f);
                         _fx.Shake(12f, 0.5f);
@@ -332,7 +332,7 @@ namespace StellarisClone.Cards
                     }
                     AddLog(Loc.T("<color=#8FD3FF>Щит Штаба пал</color>"));
                     yield return Banner(Loc.T("ЩИТ ШТАБА ПАЛ"), _P == BattleState.Attacker ? Loc.T("Теперь возможен прорыв: 9+ силы в Штабе") : Loc.T("Враг может прорваться в Штаб"),
-                        new Color(0.55f, 0.85f, 1f), 1.1f);
+                        new Color(0.475f, 0.816f, 0.749f), 1.1f);
                     break;
                 }
                 case EvType.Weather: yield return OnWeather(e); break;
@@ -488,7 +488,7 @@ namespace StellarisClone.Cards
             SFXManager.Play(Sfx.OrderCast, 0.4f);
             AddLog(Loc.F("{0}: приказ «{1}»", SideName(e.Side), e.Def.Name));
             // Рунный круг над сектором, куда отдан приказ: свои — бирюзой, врага — красным
-            var oc = e.Side == _P ? new Color(0.4f, 0.9f, 1f) : new Color(1f, 0.45f, 0.35f);
+            var oc = e.Side == _P ? new Color(0.475f, 0.816f, 0.749f) : new Color(1f, 0.45f, 0.35f);
             _fx.Play(UIFx.Fx2.Circle, RowCenter(e.Sector, BattleState.Enemy(e.Side)), oc, 300f, 1.3f, 340f);
             yield return W(0.45f);
             yield return OrderCinematic(e.Def, e.Side, e.Sector);
@@ -518,7 +518,7 @@ namespace StellarisClone.Cards
                     }
                     _fx.Particles?.Play(CardParticles.Fx.Plasma, target, 1.5f);
                     _fx.Line(top, target, new Color(1f, 1f, 1f, 1f), 160f, 0.55f);
-                    _fx.Line(top, target, new Color(0.6f, 0.9f, 1f, 0.9f), 280f, 0.8f);
+                    _fx.Line(top, target, new Color(0.475f, 0.816f, 0.749f, 0.9f), 280f, 0.8f);
                     _fx.Flash(Color.white, 0.95f, 2.2f);
                     _fx.Shake(26f, 0.8f);
                     Kick(0.025f);
@@ -549,7 +549,7 @@ namespace StellarisClone.Cards
                     yield return Pod(own, 1f);
                     break;
                 case "O5":
-                    for (int i = 0; i < 4; i++) { _fx.Smoke(target + Random.insideUnitCircle * 140f, 2.4f, new Color(0.65f, 0.67f, 0.7f, 0.7f)); _fx.Smoke(own + Random.insideUnitCircle * 140f, 2.4f, new Color(0.65f, 0.67f, 0.7f, 0.7f)); }
+                    for (int i = 0; i < 4; i++) { _fx.Smoke(target + Random.insideUnitCircle * 140f, 2.4f, new Color(0.663f, 0.639f, 0.573f, 0.7f)); _fx.Smoke(own + Random.insideUnitCircle * 140f, 2.4f, new Color(0.663f, 0.639f, 0.573f, 0.7f)); }
                     SFXManager.Play(Sfx.Servo, 0.8f, 0.8f);
                     SFXManager.Play(Sfx.Whoosh, 0.8f, 0.7f);
                     yield return W(0.6f);
@@ -566,11 +566,11 @@ namespace StellarisClone.Cards
                     for (int i = 0; i < 6; i++)
                     {
                         var p = target + new Vector2(Random.Range(-180f, 180f), Random.Range(-60f, 60f));
-                        _fx.Sparks(p, new Color(0.5f, 0.95f, 1f), 14, 0.8f);
-                        _fx.Line(p - new Vector2(80, 0), p + new Vector2(80, 0), new Color(0.4f, 1f, 1f, 0.7f), 6f, 0.12f);
+                        _fx.Sparks(p, new Color(0.475f, 0.816f, 0.749f), 14, 0.8f);
+                        _fx.Line(p - new Vector2(80, 0), p + new Vector2(80, 0), new Color(0.475f, 0.816f, 0.749f, 0.7f), 6f, 0.12f);
                         yield return W(0.07f);
                     }
-                    _fx.Flash(new Color(0.4f, 0.9f, 1f), 0.25f);
+                    _fx.Flash(new Color(0.475f, 0.816f, 0.749f), 0.25f);
                     SFXManager.Play(Sfx.ElecZap);
                     yield return W(0.3f);
                     break;
@@ -578,8 +578,8 @@ namespace StellarisClone.Cards
                     _fx.Energy(target, new Color(0.45f, 0.8f, 1f), 1.6f);
                     _fx.Particles?.Play(CardParticles.Fx.Electric, target, 1.3f);
                     _fx.Ring(target, new Color(0.4f, 0.75f, 1f, 1f), 40f, 900f, 0.7f);
-                    _fx.Ring(target, new Color(0.7f, 0.9f, 1f, 0.8f), 20f, 600f, 0.5f);
-                    _fx.Sparks(target, new Color(0.55f, 0.85f, 1f), 40, 1.4f);
+                    _fx.Ring(target, new Color(0.475f, 0.816f, 0.749f, 0.8f), 20f, 600f, 0.5f);
+                    _fx.Sparks(target, new Color(0.475f, 0.816f, 0.749f), 40, 1.4f);
                     _fx.Flash(new Color(0.45f, 0.75f, 1f), 0.45f);
                     SFXManager.Play(Sfx.ElecZap, 1f, 0.8f);
                     SFXManager.Play(Sfx.ImpactShield, 1f, 0.6f);
@@ -623,8 +623,8 @@ namespace StellarisClone.Cards
                     break;
                 case "N3":
                 case "N4":
-                    _fx.Ring(target, new Color(0.9f, 0.95f, 1f, 0.9f), 30f, 360f, 0.5f);
-                    _fx.Burst(target, 30, CardSprites.Spark, new Color(0.9f, 0.95f, 1f), 100f, 300f, 0.4f, 0.8f, 12f, 4f, 0f, 2f, align: true, stretch: 2f);
+                    _fx.Ring(target, new Color(0.925f, 0.898f, 0.827f, 0.9f), 30f, 360f, 0.5f);
+                    _fx.Burst(target, 30, CardSprites.Spark, new Color(0.925f, 0.898f, 0.827f), 100f, 300f, 0.4f, 0.8f, 12f, 4f, 0f, 2f, align: true, stretch: 2f);
                     SFXManager.Play(Sfx.Servo);
                     SFXManager.Play(Sfx.FxBuff, 0.6f, 0.85f);
                     yield return W(0.5f);
@@ -649,7 +649,7 @@ namespace StellarisClone.Cards
         {
             string f = FactionOf(side);
             if (f == "iridia") return new Color(0.8f, 0.55f, 1f);
-            if (f == "nol" || f == "astrea") return new Color(0.5f, 0.9f, 1f);
+            if (f == "nol" || f == "astrea") return new Color(0.475f, 0.816f, 0.749f);
             if (src != null && src.Card.Def.Has(Kw.Flame)) return new Color(1f, 0.5f, 0.1f);
             return new Color(1f, 0.78f, 0.4f);
         }
@@ -868,7 +868,7 @@ namespace StellarisClone.Cards
             var p = _fx.Local(v.Rt);
             var def = v.Card.Def;
             bool hard = def.Has(Kw.Vehicle) || def.Kind == CardKind.Structure;
-            KillFx(p, hard, def.Cost >= 5, def.Has(Kw.Drone) ? new Color(0.6f, 0.9f, 1f) : v.Side == _P ? new Color(1f, 0.5f, 0.35f) : new Color(1f, 0.75f, 0.4f));
+            KillFx(p, hard, def.Cost >= 5, def.Has(Kw.Drone) ? new Color(0.475f, 0.816f, 0.749f) : v.Side == _P ? new Color(1f, 0.5f, 0.35f) : new Color(1f, 0.75f, 0.4f));
             if (hard)
             {
                 _fx.Explosion(p, def.Cost >= 5 ? 1.6f : 1.1f);
@@ -880,7 +880,7 @@ namespace StellarisClone.Cards
             }
             else if (def.Has(Kw.Drone))
             {
-                _fx.Sparks(p, new Color(0.85f, 0.95f, 1f), 24, 1.1f);
+                _fx.Sparks(p, new Color(0.925f, 0.898f, 0.827f), 24, 1.1f);
                 _fx.Smoke(p, 0.6f);
                 SFXManager.Play(Sfx.BoomSmall, 0.45f, 1.4f, Pan(p));
                 SFXManager.Play(Sfx.ImpactMetal, 0.6f, 1.3f, Pan(p));
@@ -1007,7 +1007,7 @@ namespace StellarisClone.Cards
             switch (e.Text)
             {
                 case "suppress": txt = Loc.T("ПОДАВЛЕН"); c = new Color(1f, 0.6f, 0.3f); break;
-                case "disable": txt = Loc.T("ОТКЛЮЧЁН"); c = new Color(0.5f, 0.85f, 1f); break;
+                case "disable": txt = Loc.T("ОТКЛЮЧЁН"); c = new Color(0.475f, 0.816f, 0.749f); break;
                 case "immobile": txt = Loc.T("СКОВАН"); c = new Color(0.5f, 1f, 0.4f); break;
                 case "immune": txt = Loc.T("ЭЛИТА: НЕ ДРОГНУЛА"); c = new Color(1f, 0.85f, 0.4f); break;
                 case "foresight": txt = Loc.T("ВИДИТ РУКУ ВРАГА"); c = new Color(0.8f, 0.55f, 1f); break;
@@ -1219,7 +1219,7 @@ namespace StellarisClone.Cards
 
         private IEnumerator Banner(string title, string sub, Color c, float dur)
         {
-            var band = LGBuild.Panel(_overlay, "Banner", new Color(0.01f, 0.02f, 0.04f, 0f));
+            var band = LGBuild.Panel(_overlay, "Banner", new Color(0.035f, 0.067f, 0.118f, 0f));
             band.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(2400, 0));
             band.sprite = CardSprites.RoundGlow;
             band.type = Image.Type.Sliced;
@@ -1234,7 +1234,7 @@ namespace StellarisClone.Cards
             var t = Caption(band.rectTransform, title, 54, new Color(c.r, c.g, c.b, 0f), TextAnchor.MiddleCenter, 5f);
             t.rectTransform.Stretch(0, 22, 0, 0);
             var tol = t.gameObject.AddComponent<Outline>();
-            tol.effectColor = new Color(0f, 0.02f, 0.04f, 0.8f);
+            tol.effectColor = new Color(0.035f, 0.067f, 0.118f, 0.8f);
             tol.effectDistance = new Vector2(2f, -2f);
             var s = Caption(band.rectTransform, sub, 16, new Color(1, 1, 1, 0f), TextAnchor.LowerCenter, 1.2f);
             s.rectTransform.Stretch(0, 12, 0, 0);
@@ -1326,11 +1326,11 @@ namespace StellarisClone.Cards
 
             // Непрозрачная подложка под весь блок итогов: стол (плашки секторов, карты) не просвечивает сквозь цифры и
             // текст; лучи остаются ореолом вокруг. Сверху — стеклянная кромка цвета исхода
-            var back = LGBuild.Panel(_overlay, "ResultBack", new Color(0.012f, 0.028f, 0.042f, 0f), raycast: true);
+            var back = LGBuild.Panel(_overlay, "ResultBack", new Color(0.035f, 0.067f, 0.118f, 0f), raycast: true);
             back.sprite = CardSprites.Round;
             back.type = Image.Type.Sliced;
             back.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -6), new Vector2(1340, 680));
-            var backRim = GlassAt(_overlay, "ResultFrame", new Vector2(0, -6), new Vector2(1340, 680), new Color(0.02f, 0.05f, 0.07f, 0f), new Color(accent.r, accent.g, accent.b, 0.5f), false, 24f);
+            var backRim = GlassAt(_overlay, "ResultFrame", new Vector2(0, -6), new Vector2(1340, 680), new Color(0.035f, 0.067f, 0.118f, 0f), new Color(accent.r, accent.g, accent.b, 0.5f), false, 24f);
 
             // Лента-заголовок
             string head;
@@ -1354,7 +1354,7 @@ namespace StellarisClone.Cards
             {
                 (Loc.T("ВАШИ ПОТЕРИ"), myLost, new Color(1f, 0.5f, 0.45f), LGIcon.Warning),
                 (Loc.T("ПОТЕРИ ВРАГА"), enLost, new Color(1f, 0.82f, 0.4f), LGIcon.Target),
-                (Loc.T("ВЕТЕРАНЫ ★"), veterans, new Color(0.45f, 0.9f, 1f), LGIcon.Star),
+                (Loc.T("ВЕТЕРАНЫ ★"), veterans, new Color(0.475f, 0.816f, 0.749f), LGIcon.Star),
                 (r.MilitiaKilled > 0 ? Loc.T("ПОГИБЛО ЖИТЕЛЕЙ") : Loc.T("РАНЕНЫ"), r.MilitiaKilled > 0 ? r.MilitiaKilled : wounded, new Color(0.85f, 0.85f, 0.85f), LGIcon.Population),
             };
             var counters = new List<(Text t, int v)>();
@@ -1362,7 +1362,7 @@ namespace StellarisClone.Cards
             {
                 var tl = tiles[i];
                 // Плитка — плотная (под стеклом сплошная заливка), иначе сквозь неё читается стол
-                var solid = LGBuild.Panel(_overlay, "TileBack", new Color(0.025f, 0.055f, 0.078f, 1f));
+                var solid = LGBuild.Panel(_overlay, "TileBack", new Color(0.035f, 0.067f, 0.118f, 1f));
                 solid.sprite = CardSprites.Round;
                 solid.type = Image.Type.Sliced;
                 solid.rectTransform.At(Mid, Mid, new Vector2((i - 1.5f) * 210f, 70), new Vector2(192, 124));
@@ -1400,7 +1400,7 @@ namespace StellarisClone.Cards
                 cv.Rt.anchoredPosition = new Vector2((i - (all.Count - 1) * 0.5f) * (mini.x + 12f), 0);
                 Hook(cv);
                 if (all[i].lost) { cv.SetAlpha(0.45f); cv.SetStatus(Loc.T("ПОГИБ"), new Color(1f, 0.35f, 0.3f)); }
-                else cv.SetStatus(Loc.T("+★ ОПЫТ"), new Color(0.45f, 0.9f, 1f));
+                else cv.SetStatus(Loc.T("+★ ОПЫТ"), new Color(0.475f, 0.816f, 0.749f));
                 cv.Punch(0.3f);
             }
             if (r.Trophy != null && _P == BattleState.Attacker && r.AttackerWon)

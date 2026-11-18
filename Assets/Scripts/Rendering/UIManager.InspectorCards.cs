@@ -11,11 +11,11 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class UIManager
     {
-        private static readonly Color InspCardBg = new Color(0.015f, 0.04f, 0.06f, 0.96f);
-        private static readonly Color InspLabelCol = new Color(0.56f, 0.67f, 0.73f);
+        private static readonly Color InspCardBg = new Color(0.035f, 0.067f, 0.118f, 0.96f);
+        private static readonly Color InspLabelCol = new Color(0.663f, 0.639f, 0.573f);
         private static readonly Color ShieldCol = new Color(0.45f, 0.76f, 1f);
         private static readonly Color ArmorCol = new Color(0.88f, 0.76f, 0.56f);
-        private static readonly Color HullCol = new Color(0.78f, 0.86f, 0.90f);
+        private static readonly Color HullCol = new Color(0.925f, 0.898f, 0.827f);
 
         /// <summary>Поставить элемент в полосу карточки: доли ширины x0…x1, отступ сверху и высота в пикселях.</summary>
         private static RectTransform Place(RectTransform rt, float x0, float x1, float top, float h, float padL = 0f, float padR = 0f)
@@ -174,7 +174,7 @@ namespace StellarisClone.Rendering
                     pg.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0), new Vector2(26, 26));
                     StellarisClone.Cards.HoloSpin.Add(pg, 0f, 0.25f, 0f, i * 0.9f);
                 }
-                var pip = LGBuild.Panel(pips, "Pip", on ? gold : new Color(0.04f, 0.07f, 0.09f, 1f));
+                var pip = LGBuild.Panel(pips, "Pip", on ? gold : new Color(0.055f, 0.094f, 0.157f, 1f));
                 pip.raycastTarget = false;
                 pip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0), new Vector2(9, 9));
                 pip.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);

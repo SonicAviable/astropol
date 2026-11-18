@@ -29,8 +29,8 @@ namespace StellarisClone.Rendering
         private static Color Red => UIManager.DS.Red;
 
         /// <summary>Тон плашек голо-HUD (как у крыльев ресурсов и диска времени).</summary>
-        private static readonly Color HoloTint = new Color(0.030f, 0.068f, 0.095f, 0.95f);
-        private static readonly Color RowBg = new Color(0.030f, 0.055f, 0.075f, 0.92f);
+        private static readonly Color HoloTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
+        private static readonly Color RowBg = new Color(0.035f, 0.067f, 0.118f, 0.92f);
         private static readonly Color RowWarnBg = new Color(0.120f, 0.085f, 0.030f, 0.92f);
         private static readonly Color RowDangerBg = new Color(0.140f, 0.040f, 0.045f, 0.92f);
 
@@ -41,7 +41,7 @@ namespace StellarisClone.Rendering
         {
             new Color(0.62f, 0.58f, 1.00f),
             new Color(0.44f, 0.88f, 0.60f),
-            new Color(0.40f, 0.86f, 0.82f),
+            new Color(0.475f, 0.816f, 0.749f),
             new Color(0.42f, 0.66f, 1.00f),
             new Color(1.00f, 0.70f, 0.36f)
         };
@@ -146,7 +146,7 @@ namespace StellarisClone.Rendering
             _headRt = head.rectTransform;
             _headRt.TopBand(0, HeadH);
             LG.Ignore(head.gameObject, includeChildren: false);
-            var hrim = LGBuild.Panel(head.transform, "Rim", new Color(0.37f, 0.82f, 0.75f, 0.55f));
+            var hrim = LGBuild.Panel(head.transform, "Rim", new Color(0.475f, 0.816f, 0.749f, 0.55f));
             hrim.sprite = HudArt.WingRim(true);
             hrim.type = Image.Type.Sliced;
             hrim.raycastTarget = false;
@@ -156,7 +156,7 @@ namespace StellarisClone.Rendering
             var clip = LGBuild.Rect(head.transform, "Clip");
             clip.Stretch(2, 2, 2, 2);
             clip.gameObject.AddComponent<RectMask2D>();
-            var sw = LGBuild.Panel(clip, "Sweep", new Color(0.6f, 1f, 1f, 0.10f));
+            var sw = LGBuild.Panel(clip, "Sweep", new Color(0.475f, 0.816f, 0.749f, 0.10f));
             sw.sprite = FactionSelectScreen.RadialSprite();
             sw.raycastTarget = false;
             _sweep = sw.rectTransform;

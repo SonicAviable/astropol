@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
             _key = key;
             _live.Clear();
 
-            _title.text = Loc.T("РЕШЕНИЯ ИМПЕРИИ");
+            _title.text = LGBuild.Sentence(Loc.T("РЕШЕНИЯ ИМПЕРИИ"));
             _hint.text = Loc.F("Цена — в основном титан; одновременно до {0} решений. По ходу игры появляются новые решения, а старые уходят.",
                 EmpireDecisions.MaxActive);
             BuildTabs();
@@ -163,7 +163,7 @@ namespace StellarisClone.Rendering
             bool active = EmpireDecisions.IsActive(d), done = EmpireDecisions.IsDone(d);
             Color accent = d.Once ? GreatGold : cc;
             var bg = LGBuild.Panel(card, "Bg", active || done ? new Color(accent.r * 0.13f, accent.g * 0.13f, accent.b * 0.13f, 0.95f)
-                                                             : new Color(0.03f, 0.055f, 0.075f, 0.9f));
+                                                             : new Color(0.035f, 0.067f, 0.118f, 0.9f));
             bg.rectTransform.Stretch();
             LG.Platter(bg.gameObject, 8f).SetRim(active || done ? new Color(accent.r, accent.g, accent.b, 0.85f)
                                                  : d.IsOffer ? new Color(OfferOrange.r, OfferOrange.g, OfferOrange.b, 0.55f)
@@ -261,7 +261,7 @@ namespace StellarisClone.Rendering
                 else
                 {
                     bool can = blocker == null;
-                    btn = LGBuild.Button(card, "Take", can ? new Color(0.05f, 0.20f, 0.15f) : new Color(0.04f, 0.05f, 0.06f),
+                    btn = LGBuild.Button(card, "Take", can ? new Color(0.05f, 0.20f, 0.15f) : new Color(0.035f, 0.067f, 0.118f),
                         can ? new Color(0.36f, 0.96f, 0.68f, 0.8f) : new Color(1f, 1f, 1f, 0.12f), () => Take(d), null,
                         can ? (d.Once ? Loc.T("НАЧАТЬ ПРОЕКТ") : Loc.T("ПРИНЯТЬ РЕШЕНИЕ")) : blocker, 10);
                     btn.interactable = can;

@@ -45,7 +45,7 @@ namespace StellarisClone.Rendering
         /// <summary>Строка настройки: подпись и пояснение слева, контрол справа. Возвращает хост контрола.</summary>
         public static RectTransform Row(RectTransform parent, ref float top, string label, string desc, float controlWidth = 300f, float height = 62f)
         {
-            var bg = LGBuild.Panel(parent, "Row_" + label, new Color(0.05f, 0.10f, 0.135f, 0.55f), raycast: true);
+            var bg = LGBuild.Panel(parent, "Row_" + label, new Color(0.055f, 0.094f, 0.157f, 0.55f), raycast: true);
             bg.rectTransform.TopBand(top, height);
             var fx = LG.Platter(bg.gameObject, 14f);
             fx.FillMultiplier = 0.7f;
@@ -141,7 +141,7 @@ namespace StellarisClone.Rendering
 
         public static InputField Input(RectTransform host, string value, string placeholder, int maxLength = 40)
         {
-            var bg = LGBuild.Panel(host, "Input", new Color(0.02f, 0.05f, 0.07f, 0.95f), raycast: true);
+            var bg = LGBuild.Panel(host, "Input", new Color(0.035f, 0.067f, 0.118f, 0.95f), raycast: true);
             bg.rectTransform.Stretch();
             var fx = LG.Apply(bg.gameObject, LiquidGlassEffect.Role.Field, 14f);
             fx.SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.35f));
@@ -219,7 +219,7 @@ namespace StellarisClone.Rendering
             _track.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(W, H));
             _trackFx = LG.Apply(_track.gameObject, LiquidGlassEffect.Role.Chip, H * 0.5f);
 
-            var k = LGBuild.Panel(_track.transform, "Knob", new Color(0.85f, 0.95f, 1f, 1f));
+            var k = LGBuild.Panel(_track.transform, "Knob", new Color(0.925f, 0.898f, 0.827f, 1f));
             _knob = k.rectTransform;
             _knob.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Knob, Knob));
             _knobFx = LG.Platter(k.gameObject, Knob * 0.5f);
@@ -253,7 +253,7 @@ namespace StellarisClone.Rendering
         private void Apply(bool instant)
         {
             var on = UIManager.DS.NeonCyan;
-            _track.color = _value ? new Color(on.r * 0.35f, on.g * 0.35f, on.b * 0.35f, 1f) : new Color(0.04f, 0.07f, 0.09f, 1f);
+            _track.color = _value ? new Color(on.r * 0.35f, on.g * 0.35f, on.b * 0.35f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f);
             _trackFx.SetRim(_value ? new Color(on.r, on.g, on.b, _hover ? 0.95f : 0.75f)
                                    : new Color(1f, 1f, 1f, _hover ? 0.32f : 0.18f));
             _trackFx.SetHover(_hover ? 0.5f : 0f);
@@ -316,7 +316,7 @@ namespace StellarisClone.Rendering
             _area = LGBuild.Rect(transform, "Area");
             _area.Stretch(10, 0, 74, 0);
 
-            var track = LGBuild.Panel(_area, "Track", new Color(0f, 0.02f, 0.04f, 0.9f));
+            var track = LGBuild.Panel(_area, "Track", new Color(0.035f, 0.067f, 0.118f, 0.9f));
             track.rectTransform.anchorMin = new Vector2(0, 0.5f);
             track.rectTransform.anchorMax = new Vector2(1, 0.5f);
             track.rectTransform.sizeDelta = new Vector2(0, 6);
@@ -330,7 +330,7 @@ namespace StellarisClone.Rendering
             _fill.offsetMax = new Vector2(-1, -1);
             LG.Fill(fill.gameObject);
 
-            var knob = LGBuild.Panel(_area, "Knob", new Color(0.85f, 0.97f, 1f, 1f));
+            var knob = LGBuild.Panel(_area, "Knob", new Color(0.925f, 0.898f, 0.827f, 1f));
             _knob = knob.rectTransform;
             _knob.anchorMin = _knob.anchorMax = new Vector2(_shown, 0.5f);
             _knob.pivot = new Vector2(0.5f, 0.5f);
@@ -406,7 +406,7 @@ namespace StellarisClone.Rendering
             var rt = gameObject.AddComponent<RectTransform>();
             rt.Stretch();
             var bg = gameObject.AddComponent<Image>();
-            bg.color = new Color(0.02f, 0.05f, 0.07f, 0.9f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.9f);
             bg.raycastTarget = true;
             var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Field, 18f);
             fx.SetRim(new Color(1f, 1f, 1f, 0.16f));
@@ -506,7 +506,7 @@ namespace StellarisClone.Rendering
             var rt = gameObject.AddComponent<RectTransform>();
             rt.Stretch();
             var bg = gameObject.AddComponent<Image>();
-            bg.color = new Color(0.02f, 0.05f, 0.07f, 0.85f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.85f);
             var fx = LG.Apply(gameObject, LiquidGlassEffect.Role.Field, 20f);
             fx.SetRim(new Color(1f, 1f, 1f, 0.14f));
 

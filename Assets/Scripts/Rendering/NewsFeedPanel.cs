@@ -78,10 +78,10 @@ namespace StellarisClone.Rendering
             LG.Motion(_root.gameObject, LGAppear.Kind.SlideUp).distance = 20f;
             _hover = _root.gameObject.AddComponent<Hover>();
 
-            var bg = LGBuild.Panel(_root, "Bg", new Color(0.020f, 0.048f, 0.068f, 0.92f), raycast: true);
+            var bg = LGBuild.Panel(_root, "Bg", new Color(0.035f, 0.067f, 0.118f, 0.92f), raycast: true);
             bg.sprite = HudArt.EdgeFade(0.05f);
             bg.rectTransform.Stretch();
-            var line = LGBuild.Panel(_root, "Line", new Color(0.37f, 0.82f, 0.75f, 0.45f));
+            var line = LGBuild.Panel(_root, "Line", new Color(0.475f, 0.816f, 0.749f, 0.45f));
             line.sprite = HudArt.EdgeFade(0.12f);
             line.rectTransform.anchorMin = new Vector2(0f, 1f);
             line.rectTransform.anchorMax = new Vector2(1f, 1f);
@@ -122,9 +122,9 @@ namespace StellarisClone.Rendering
             _list.pivot = new Vector2(1f, 0f);
             _list.anchoredPosition = new Vector2(0f, 8f);
             var lbg = _list.gameObject.AddComponent<Image>();
-            lbg.color = new Color(0.012f, 0.026f, 0.040f, 0.92f);
+            lbg.color = new Color(0.035f, 0.067f, 0.118f, 0.92f);
             lbg.raycastTarget = true;
-            LG.Glass(_list.gameObject, 12f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.40f));
+            LG.Glass(_list.gameObject, 12f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
 
             var head = LGBuild.Rect(_list, "Head").TopBand(0f, HeadH);
             var ic = LGIcons.Create(head, LGIcon.Globe, 14f, DS.NeonCyan);

@@ -140,9 +140,9 @@ namespace StellarisClone.Cards
         }
 
         public static readonly Color Gold = new Color(1f, 0.82f, 0.45f);
-        public static readonly Color Steel = new Color(0.85f, 0.88f, 0.92f);
+        public static readonly Color Steel = new Color(0.925f, 0.898f, 0.827f);
         public static readonly Color Bronze = new Color(0.9f, 0.62f, 0.4f);
-        public static readonly Color Teal = new Color(0.3f, 0.95f, 0.85f);
+        public static readonly Color Teal = new Color(0.475f, 0.816f, 0.749f);
         public static readonly Color Red = new Color(1f, 0.35f, 0.28f);
         public static readonly Color Parchment = new Color(1f, 0.93f, 0.8f);
     }

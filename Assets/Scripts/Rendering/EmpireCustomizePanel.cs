@@ -21,9 +21,9 @@ namespace StellarisClone.Rendering
         /// <summary>Цвета империи на карте: первый — привычная бирюза игрока.</summary>
         public static readonly Color[] Palette =
         {
-            new Color(0.22f, 0.92f, 0.86f), new Color(0.25f, 0.62f, 1f), new Color(0.62f, 0.45f, 1f), new Color(0.95f, 0.42f, 0.85f),
+            new Color(0.475f, 0.816f, 0.749f), new Color(0.25f, 0.62f, 1f), new Color(0.62f, 0.45f, 1f), new Color(0.95f, 0.42f, 0.85f),
             new Color(0.95f, 0.30f, 0.32f), new Color(1f, 0.56f, 0.22f), new Color(1f, 0.82f, 0.30f), new Color(0.58f, 0.95f, 0.32f),
-            new Color(0.22f, 0.85f, 0.52f), new Color(0.84f, 0.88f, 0.94f)
+            new Color(0.22f, 0.85f, 0.52f), new Color(0.925f, 0.898f, 0.827f)
         };
 
         private static readonly string[] EmblemKeys = { "astrea", "xarn", "aquila", "iridia", "terraan", "nol" };
@@ -110,11 +110,11 @@ namespace StellarisClone.Rendering
 
         private void Build(RectTransform rt)
         {
-            var scrim = LGBuild.Panel(rt, "Scrim", new Color(0.004f, 0.008f, 0.014f, 0.82f), raycast: true);
+            var scrim = LGBuild.Panel(rt, "Scrim", new Color(0.035f, 0.067f, 0.118f, 0.82f), raycast: true);
             scrim.rectTransform.Stretch();
             LG.Ignore(scrim.gameObject, includeChildren: false);
 
-            var card = LGBuild.Panel(rt, "Card", new Color(0.014f, 0.030f, 0.044f, 0.97f), raycast: true);
+            var card = LGBuild.Panel(rt, "Card", new Color(0.035f, 0.067f, 0.118f, 0.97f), raycast: true);
             card.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(W, H));
             LG.Glass(card.gameObject).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(card.gameObject, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -133,7 +133,7 @@ namespace StellarisClone.Rendering
 
         private void BuildPreview(RectTransform c)
         {
-            var pv = LGBuild.Panel(c, "Preview", new Color(0.020f, 0.045f, 0.065f, 0.9f));
+            var pv = LGBuild.Panel(c, "Preview", new Color(0.035f, 0.067f, 0.118f, 0.9f));
             pv.rectTransform.anchorMin = new Vector2(0, 0); pv.rectTransform.anchorMax = new Vector2(0, 1);
             pv.rectTransform.pivot = new Vector2(0, 0.5f);
             pv.rectTransform.offsetMin = new Vector2(24, 92); pv.rectTransform.offsetMax = new Vector2(24 + PreviewW, -96);
@@ -210,7 +210,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < EmblemKeys.Length; i++)
             {
                 string key = EmblemKeys[i];
-                var b = LGBuild.Button(c, "Emblem", new Color(0.03f, 0.06f, 0.08f, 0.95f), new Color(1f, 1f, 1f, 0.12f), () => PickEmblem(key));
+                var b = LGBuild.Button(c, "Emblem", new Color(0.055f, 0.094f, 0.157f, 0.95f), new Color(1f, 1f, 1f, 0.12f), () => PickEmblem(key));
                 ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0 + i * 92f, -y), new Vector2(80, 80));
                 var em = FactionEmblems.Create(b.transform, FactionEmblems.ForKey(key), 56f, Color.white);
                 if (em != null) { em.raycastTarget = false; em.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(56, 56)); }
@@ -228,7 +228,7 @@ namespace StellarisClone.Rendering
             host.offsetMin = new Vector2(x0, -y - 20f - 44f); host.offsetMax = new Vector2(-24f - 56f, -y - 20f);
             var input = LGControls.Input(host, "", placeholder, max);
             input.onValueChanged.AddListener(v => onChange(v));
-            var d = LGBuild.Button(c, "Dice", new Color(0.05f, 0.10f, 0.13f), new Color(0.74f, 0.56f, 1f, 0.5f), () => { dice(); SFXManager.Play(Sfx.UiTab, 0.5f); }, LGIcon.Dice, null, 14);
+            var d = LGBuild.Button(c, "Dice", new Color(0.055f, 0.094f, 0.157f), new Color(0.74f, 0.56f, 1f, 0.5f), () => { dice(); SFXManager.Play(Sfx.UiTab, 0.5f); }, LGIcon.Dice, null, 14);
             ((RectTransform)d.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-24f, -y - 20f), new Vector2(44, 44));
             TooltipHelper.Attach(d.gameObject, Loc.T("Случайный вариант"));
             y += 20f + 44f + 18f;
@@ -237,10 +237,10 @@ namespace StellarisClone.Rendering
 
         private void BuildButtons(RectTransform c)
         {
-            var back = LGBuild.Button(c, "Back", new Color(0.05f, 0.10f, 0.13f), new Color(1f, 1f, 1f, 0.25f), Back, LGIcon.Back, Loc.T("НАЗАД"), 13);
+            var back = LGBuild.Button(c, "Back", new Color(0.055f, 0.094f, 0.157f), new Color(1f, 1f, 1f, 0.25f), Back, LGIcon.Back, Loc.T("НАЗАД"), 13);
             ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(24, 24), new Vector2(180, 48));
             TooltipHelper.Attach(back.gameObject, Loc.T("К выбору фракции  <color=#A9A392>(Esc)</color>"));
-            var rnd = LGBuild.Button(c, "RandomAll", new Color(0.05f, 0.10f, 0.13f), new Color(0.74f, 0.56f, 1f, 0.5f), RandomAll, LGIcon.Dice, Loc.T("СЛУЧАЙНО ВСЁ"), 13);
+            var rnd = LGBuild.Button(c, "RandomAll", new Color(0.055f, 0.094f, 0.157f), new Color(0.74f, 0.56f, 1f, 0.5f), RandomAll, LGIcon.Dice, Loc.T("СЛУЧАЙНО ВСЁ"), 13);
             ((RectTransform)rnd.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24 - 300 - 14, 24), new Vector2(220, 48));
             var go = MenuPrimaryButton.Create(c, Loc.T("НАЧАТЬ ПРАВЛЕНИЕ  ›"), 16, Confirm);
             ((RectTransform)go.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 24), new Vector2(300, 50));

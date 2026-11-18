@@ -227,9 +227,9 @@ namespace StellarisClone.Rendering
             eBt.anchoredPosition = new Vector2(0, -112);
 
             var eBg = effectBox.AddComponent<Image>();
-            eBg.color = new Color(0.02f, 0.06f, 0.08f, 0.9f);
+            eBg.color = new Color(0.055f, 0.094f, 0.157f, 0.9f);
             var eOl = effectBox.AddComponent<Outline>();
-            eOl.effectColor = new Color(0.18f, 0.65f, 0.60f, 0.4f);
+            eOl.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.4f);
             eOl.effectDistance = new Vector2(0.8f, -0.8f);
 
             _effectText = MakeText(effectBox.transform, "", 13, FontStyle.Normal,
@@ -268,13 +268,13 @@ namespace StellarisClone.Rendering
             fBt.anchoredPosition = new Vector2(0, -208);
 
             var fBg = flavorBox.AddComponent<Image>();
-            fBg.color = new Color(0.02f, 0.06f, 0.08f, 0.75f);
+            fBg.color = new Color(0.055f, 0.094f, 0.157f, 0.75f);
             var fOl = flavorBox.AddComponent<Outline>();
-            fOl.effectColor = new Color(0.18f, 0.65f, 0.60f, 0.4f);
+            fOl.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.4f);
             fOl.effectDistance = new Vector2(0.8f, -0.8f);
 
             _flavorText = MakeText(flavorBox.transform, "", 12, FontStyle.Normal,
-                new Color(0.78f, 0.85f, 0.88f), TextAnchor.UpperLeft);
+                new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft);
             var ffRt = _flavorText.rectTransform;
             ffRt.anchorMin = Vector2.zero;
             ffRt.anchorMax = Vector2.one;
@@ -342,7 +342,7 @@ namespace StellarisClone.Rendering
             rt.sizeDelta = new Vector2(-40, 1);
             rt.anchoredPosition = new Vector2(0, yFromTop);
             var img = sep.AddComponent<Image>();
-            img.color = new Color(0.18f, 0.65f, 0.60f, 0.35f);
+            img.color = new Color(0.475f, 0.816f, 0.749f, 0.35f);
             img.raycastTarget = false;
         }
 

@@ -215,7 +215,7 @@ namespace StellarisClone.Rendering
             _subtitle.rectTransform.offsetMax = new Vector2(-48, 0);
 
             var close = MakeBtn(_root.transform, "✕", new Vector2(30, 30),
-                new Color(0.16f, 0.20f, 0.24f), Close);
+                new Color(0.075f, 0.125f, 0.220f), Close);
             LG.Button(close, new Color(1f, 0.45f, 0.48f, 0.55f), 15f);
             var cRt = close.GetComponent<RectTransform>();
             cRt.anchorMin = cRt.anchorMax = new Vector2(1, 1);

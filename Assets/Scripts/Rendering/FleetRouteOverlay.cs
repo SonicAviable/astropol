@@ -213,7 +213,7 @@ namespace StellarisClone.Rendering
                 if (nd.OrderIndex == 0)
                 {
                     Diamond(p, DotPx * wpp, new Color(col.r, col.g, col.b, 0.95f));
-                    Label(p + _cam.transform.up * (11f * wpp), $"{Mathf.CeilToInt(nd.Days)}", new Color(0.85f, 0.92f, 0.98f, 0.9f), LabelPx * 0.85f);
+                    Label(p + _cam.transform.up * (11f * wpp), $"{Mathf.CeilToInt(nd.Days)}", new Color(0.925f, 0.898f, 0.827f, 0.9f), LabelPx * 0.85f);
                 }
                 else
                 {
@@ -329,7 +329,7 @@ namespace StellarisClone.Rendering
             srs[1].color = string.IsNullOrEmpty(number) ? new Color(col.r * 0.25f, col.g * 0.25f, col.b * 0.25f, 0.6f) : col;
             var t = m.GetComponentInChildren<TextMesh>();
             if (t.text != number) t.text = number;
-            t.color = new Color(0.02f, 0.05f, 0.07f, 1f);
+            t.color = new Color(0.035f, 0.067f, 0.118f, 1f);
         }
 
         // ==================== ПОДСКАЗКА ====================

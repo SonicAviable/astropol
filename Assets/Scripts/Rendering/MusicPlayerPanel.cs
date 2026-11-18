@@ -37,11 +37,11 @@ namespace StellarisClone.Rendering
             host.Build(canvas, panelTop);
 
             // Круглая голо-кнопка в стиле верхнего меню: тёмный диск, бирюзовое кольцо
-            var bg = LGBuild.Panel(timeBar, "MusicBtn", new Color(0.030f, 0.068f, 0.095f, 0.96f), raycast: true);
+            var bg = LGBuild.Panel(timeBar, "MusicBtn", new Color(0.055f, 0.094f, 0.157f, 0.96f), raycast: true);
             bg.sprite = HudArt.Disc();
             bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(30, 30));
             LG.Ignore(bg.gameObject);
-            var ring = LGBuild.Panel(bg.transform, "Ring", new Color(0.37f, 0.82f, 0.75f, 0.6f));
+            var ring = LGBuild.Panel(bg.transform, "Ring", new Color(0.475f, 0.816f, 0.749f, 0.6f));
             ring.sprite = HudArt.Ring(0.88f, 1f);
             ring.rectTransform.Stretch();
             var btn = bg.gameObject.AddComponent<Button>();
@@ -112,7 +112,7 @@ namespace StellarisClone.Rendering
             var bg = _root.gameObject.AddComponent<Image>();
             bg.color = DS.BgDeep;
             bg.raycastTarget = true;   // клики по панели не уходят в карту
-            LG.Glass(_root.gameObject, 14f).SetRim(new Color(0.55f, 0.95f, 0.92f, 0.5f));
+            LG.Glass(_root.gameObject, 14f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.5f));
             LG.Motion(_root.gameObject, LGAppear.Kind.SlideDown).distance = 12f;
 
             // Значок, название, автор
@@ -185,7 +185,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < n; i++)
             {
                 int idx = i;
-                var b = LGBuild.Button(_root, "Track_" + i, new Color(0.02f, 0.05f, 0.07f, 0.9f), new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.35f),
+                var b = LGBuild.Button(_root, "Track_" + i, new Color(0.035f, 0.067f, 0.118f, 0.9f), new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.35f),
                                        () => MusicManager.Instance?.PlayTrack(idx), null, null, 11, 8f);
                 ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, top - i * (RowH + 4f)), new Vector2(W - 28, RowH));
                 var t = LGBuild.Label(b.transform, "", 11, DS.TextMuted, TextAnchor.MiddleLeft);
@@ -219,7 +219,7 @@ namespace StellarisClone.Rendering
                 bool on = i == cur;
                 _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? Loc.T("  <color=#E07A6E>· война</color>") : "");
                 _rows[i].label.color = on ? DS.NeonCyan : DS.TextMuted;
-                _rows[i].bg.color = on ? new Color(0.05f, 0.16f, 0.18f, 0.95f) : new Color(0.02f, 0.05f, 0.07f, 0.9f);
+                _rows[i].bg.color = on ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.035f, 0.067f, 0.118f, 0.9f);
             }
             RefreshTime();
         }

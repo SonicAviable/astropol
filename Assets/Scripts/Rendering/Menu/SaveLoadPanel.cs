@@ -24,7 +24,7 @@ namespace StellarisClone.Rendering
         private bool _armedOverwrite;
         private string _highlight;
 
-        private static readonly Color RowTint = new Color(0.05f, 0.10f, 0.135f, 0.80f);
+        private static readonly Color RowTint = new Color(0.055f, 0.094f, 0.157f, 0.80f);
 
         public static SaveLoadPanel Build(RectTransform host, Mode mode, bool confirmLoad)
         {
@@ -130,7 +130,7 @@ namespace StellarisClone.Rendering
 
             if (saves.Count == 0)
             {
-                var empty = LGBuild.Panel(_list, "Empty", new Color(0.04f, 0.08f, 0.11f, 0.6f));
+                var empty = LGBuild.Panel(_list, "Empty", new Color(0.055f, 0.094f, 0.157f, 0.6f));
                 LGBuild.Height(empty.gameObject, 180);
                 LG.Platter(empty.gameObject, 18f).GlowMultiplier = 0f;
                 var ic = LGIcons.Create(empty.transform, LGIcon.Load, 40, new Color(1, 1, 1, 0.25f));
@@ -201,7 +201,7 @@ namespace StellarisClone.Rendering
             sub.rectTransform.offsetMax = new Vector2(0, -2);
             var stats = LGBuild.Label(body,
                 Loc.F("Систем <b>{0}</b>   ·   колоний <b>{1}</b>   ·   технологий <b>{2}</b>   ·   в игре {3}", m.Systems, m.Colonies, m.Techs, SaveSystem.FormatPlayTime(m.PlayTime)),
-                11, new Color(0.78f, 0.88f, 0.92f), TextAnchor.LowerLeft);
+                11, new Color(0.925f, 0.898f, 0.827f), TextAnchor.LowerLeft);
 
             // Справа: время и кнопки
             var right = LGBuild.Rect(row.transform, "Right");

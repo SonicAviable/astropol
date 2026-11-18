@@ -112,7 +112,7 @@ namespace StellarisClone.Cards
                     var def = v.Card.Def;
                     bool big = def.Cost >= 5 || def.Kind == CardKind.Hero;
                     bool mine = v.Side == _P;
-                    var c = mine ? new Color(1f, 0.3f, 0.22f) : new Color(0.4f, 1f, 0.85f);
+                    var c = mine ? new Color(1f, 0.3f, 0.22f) : new Color(0.475f, 0.816f, 0.749f);
                     _fx.Ring(p, new Color(1f, 1f, 1f, 0.95f), 40f, big ? 720f : 420f, big ? 0.45f : 0.3f, CardSkin.Spr("glow"));
                     _fx.Ring(p, new Color(c.r, c.g, c.b, 0.9f), 30f, big ? 900f : 520f, big ? 0.6f : 0.42f);
                     _arc?.RingWave(p, new Color(c.r, c.g, c.b, 1f), 40f, big ? 640f : 380f, big ? 14f : 9f, big ? 0.6f : 0.4f, 0.6f);
@@ -127,7 +127,7 @@ namespace StellarisClone.Cards
                         _fx.Number(p + new Vector2(0, 90), Loc.T("УНИЧТОЖЕН"), c, 34, 1.4f);
                         SFXManager.Play(Sfx.BoomFar, 0.7f, 0.8f);
                     }
-                    Vignette(mine ? new Color(1f, 0.1f, 0.08f) : new Color(0.2f, 1f, 0.8f), big ? 0.75f : 0.4f);
+                    Vignette(mine ? new Color(1f, 0.1f, 0.08f) : new Color(0.475f, 0.816f, 0.749f), big ? 0.75f : 0.4f);
 
                     // Серия убийств одной стороны подряд
                     if (_chain > 0 && _chainVictim == v.Side && Time.unscaledTime <= _chainUntil) _chain++;
@@ -136,9 +136,9 @@ namespace StellarisClone.Cards
                     string streak = _chain == 2 ? Loc.T("ДВОЙНОЙ УДАР") : _chain == 3 ? Loc.T("ТРОЙНОЙ УДАР") : _chain == 4 ? Loc.T("РАЗГРОМ") : _chain >= 5 ? Loc.T("БОЙНЯ") : null;
                     if (streak != null)
                     {
-                        StartCoroutine(Callout(streak, mine ? new Color(1f, 0.42f, 0.36f) : new Color(0.45f, 1f, 0.85f), 1f));
+                        StartCoroutine(Callout(streak, mine ? new Color(1f, 0.42f, 0.36f) : new Color(0.475f, 0.816f, 0.749f), 1f));
                         SFXManager.Play(Sfx.CardSlam, 0.8f, 0.75f + _chain * 0.05f);
-                        if (_chain >= 4) { _fx.Flash(mine ? new Color(1f, 0.2f, 0.15f) : new Color(0.3f, 1f, 0.8f), 0.3f, 2f); Kick(0.025f); }
+                        if (_chain >= 4) { _fx.Flash(mine ? new Color(1f, 0.2f, 0.15f) : new Color(0.475f, 0.816f, 0.749f), 0.3f, 2f); Kick(0.025f); }
                     }
                     break;
                 }
@@ -161,7 +161,7 @@ namespace StellarisClone.Cards
                     HitStop(0.1f);
                     SlowMo(0.5f, 0.45f);
                     Kick(0.026f);
-                    Vignette(mine ? new Color(0.2f, 1f, 0.75f) : new Color(1f, 0.15f, 0.1f), 0.7f);
+                    Vignette(mine ? new Color(0.475f, 0.816f, 0.749f) : new Color(1f, 0.15f, 0.1f), 0.7f);
                     break;
                 }
                 case EvType.Breach:
@@ -170,7 +170,7 @@ namespace StellarisClone.Cards
                     break;
                 case EvType.ShieldDown:
                     HitStop(0.14f);
-                    Vignette(new Color(0.4f, 0.8f, 1f), 0.8f);
+                    Vignette(new Color(0.475f, 0.816f, 0.749f), 0.8f);
                     break;
                 case EvType.HeroPower:
                     HitStop(0.1f);

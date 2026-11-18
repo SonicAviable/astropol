@@ -30,12 +30,12 @@ namespace StellarisClone.Rendering
         private static Color Gold => UIManager.DS.Gold;
         private static Color Green => UIManager.DS.Green;
         private static Color Red => UIManager.DS.Red;
-        private static readonly Color PanelBg = new Color(0.012f, 0.045f, 0.060f, 0.84f);
-        private static readonly Color HeadBg = new Color(0.05f, 0.17f, 0.20f, 0.80f);
-        private static readonly Color CellBg = new Color(0.030f, 0.075f, 0.095f, 0.94f);
-        private static readonly Color RowBg = new Color(0.040f, 0.090f, 0.110f, 0.92f);
-        private static readonly Color SlotBg = new Color(0.035f, 0.100f, 0.120f, 0.96f);
-        private static readonly Color MetalDark = new Color(0.025f, 0.040f, 0.050f, 0.97f);
+        private static readonly Color PanelBg = new Color(0.035f, 0.067f, 0.118f, 0.84f);
+        private static readonly Color HeadBg = new Color(0.075f, 0.125f, 0.220f, 0.80f);
+        private static readonly Color CellBg = new Color(0.055f, 0.094f, 0.157f, 0.94f);
+        private static readonly Color RowBg = new Color(0.055f, 0.094f, 0.157f, 0.92f);
+        private static readonly Color SlotBg = new Color(0.055f, 0.094f, 0.157f, 0.96f);
+        private static readonly Color MetalDark = new Color(0.035f, 0.067f, 0.118f, 0.97f);
         private static readonly Color CoalitionTone = new Color(1f, 0.62f, 0.36f);
 
         // Раскладка (в единицах эталонного экрана 1920×1080)
@@ -326,7 +326,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.008f, 0.014f, 0.022f, 1f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
             bg.raycastTarget = true;
             LG.Ignore(_root, includeChildren: false);
             LG.Motion(_root, LGAppear.Kind.Fade);
@@ -342,7 +342,7 @@ namespace StellarisClone.Rendering
             _scene = sc.gameObject.AddComponent<RawImage>();
             _scene.raycastTarget = false;
             LG.Ignore(sc.gameObject);
-            _sceneShade = LGBuild.Panel(rt, "SceneShade", new Color(0.005f, 0.012f, 0.020f, 0.45f));
+            _sceneShade = LGBuild.Panel(rt, "SceneShade", new Color(0.035f, 0.067f, 0.118f, 0.45f));
             _sceneShade.rectTransform.Stretch();
             LG.Ignore(_sceneShade.gameObject);
 
@@ -410,7 +410,7 @@ namespace StellarisClone.Rendering
             side.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, TableY - TableSkirt), new Vector2(w, TableSkirt));
             LG.Ignore(side.gameObject);
             _tableBaseRim = Ellipse(rt, "TableBaseRim", RimSprite(), new Vector2(0f, TableY - TableSkirt), new Vector2(w, h), Color.clear);
-            Ellipse(rt, "TableTop", DiscSprite(), new Vector2(0f, TableY), new Vector2(w, h), new Color(0.030f, 0.085f, 0.100f, 0.97f));
+            Ellipse(rt, "TableTop", DiscSprite(), new Vector2(0f, TableY), new Vector2(w, h), new Color(0.055f, 0.094f, 0.157f, 0.97f));
             _tableGlow = Ellipse(rt, "TableGlow", FactionSelectScreen.RadialSprite(), new Vector2(0f, TableY), new Vector2(w * 0.96f, h * 0.96f), Color.clear);
             _tableRim = Ellipse(rt, "TableRim", RimSprite(), new Vector2(0f, TableY), new Vector2(w, h), Color.clear);
 
@@ -431,7 +431,7 @@ namespace StellarisClone.Rendering
         {
             _beam = Holo(rt, "Beam", ConeSprite(), new Vector2(0f, TableY - 10f), new Vector2(DealW + 40f, 170f), new Vector2(0.5f, 0f));
 
-            var p = LGBuild.Panel(rt, "Deal", new Color(0.02f, 0.10f, 0.12f, 0.62f), raycast: true);
+            var p = LGBuild.Panel(rt, "Deal", new Color(0.055f, 0.094f, 0.157f, 0.62f), raycast: true);
             _centerPanel = p.rectTransform;
             _centerPanel.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, TableY + 136f), new Vector2(DealW, DealH));
             LG.Glass(p.gameObject, 14f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f));
@@ -550,13 +550,13 @@ namespace StellarisClone.Rendering
             ht.rectTransform.TopBand(4, 26, 0, 0);
             ht.Track(2.5f);
 
-            _speechStateBg = LGBuild.Panel(b, "State", new Color(0.1f, 0.2f, 0.2f, 1f));
+            _speechStateBg = LGBuild.Panel(b, "State", new Color(0.075f, 0.125f, 0.220f, 1f));
             _speechStateBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-12, -7), new Vector2(120, 20));
             var sfx = LG.Platter(_speechStateBg.gameObject, 4f);
             sfx.FillMultiplier = 2.6f;
             _speechState = LGBuild.Label(_speechStateBg.transform, "", 11, Primary, TextAnchor.MiddleCenter, bold: true);
 
-            var pf = LGBuild.Panel(b, "PortraitFrame", new Color(0.03f, 0.07f, 0.09f, 1f));
+            var pf = LGBuild.Panel(b, "PortraitFrame", new Color(0.055f, 0.094f, 0.157f, 1f));
             pf.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -38), new Vector2(136, 136));
             LG.Platter(pf.gameObject, 8f).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f));
             var pm = LGBuild.Rect(pf.transform, "Mask");
@@ -568,7 +568,7 @@ namespace StellarisClone.Rendering
 
             _speechName = LGBuild.Label(b, "", 13, Gold, TextAnchor.UpperLeft, bold: true);
             _speechName.rectTransform.TopBand(38, 18, 162, 16);
-            _speechText = LGBuild.Label(b, "", 14, new Color(0.90f, 0.95f, 0.97f), TextAnchor.UpperLeft, wrap: true);
+            _speechText = LGBuild.Label(b, "", 14, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             _speechText.supportRichText = false;
             _speechText.rectTransform.TopBand(58, 40, 162, 16);
 
@@ -1568,7 +1568,7 @@ namespace StellarisClone.Rendering
             bool claimed = fromAI && CasusBelli.IsClaimed(sys.Id, ai.OwnerId);
             float worth = AIEmpireManager.SystemWorth(sys);
 
-            var row = LGBuild.Panel(_pickerList, "Sys", on ? new Color(0.22f, 0.16f, 0.04f, 0.96f) : new Color(0.03f, 0.10f, 0.12f, 0.85f), raycast: true);
+            var row = LGBuild.Panel(_pickerList, "Sys", on ? new Color(0.22f, 0.16f, 0.04f, 0.96f) : new Color(0.055f, 0.094f, 0.157f, 0.85f), raycast: true);
             LGBuild.Height(row.gameObject, 40f);
             var fx = LG.Platter(row.gameObject, 4f);
             fx.SetRim(on ? new Color(Gold.r, Gold.g, Gold.b, 0.85f) : new Color(1f, 1f, 1f, 0.10f));
@@ -1705,7 +1705,7 @@ namespace StellarisClone.Rendering
         private void TableRow(RectTransform list, DealItem item, bool fromAI, bool readOnly, bool treaty)
         {
             Color tint = DealCatalog.Tint(item.Kind);
-            var row = LGBuild.Panel(list, "Row", new Color(0.03f, 0.10f, 0.12f, 0.85f));
+            var row = LGBuild.Panel(list, "Row", new Color(0.055f, 0.094f, 0.157f, 0.85f));
             LGBuild.Height(row.gameObject, 30f);
             var fx = LG.Platter(row.gameObject, 4f);
             fx.SetRim(new Color(tint.r, tint.g, tint.b, 0.35f));

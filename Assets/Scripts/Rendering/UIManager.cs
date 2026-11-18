@@ -25,13 +25,13 @@ namespace StellarisClone.Rendering
         public static class DS
         {
             // Поверхности (чернильно-синие)
-            public static readonly Color BgDeep        = new Color(0.035f, 0.067f, 0.118f, 1.00f);   // #09111E
+            public static readonly Color BgDeep        = new Color(0.055f, 0.094f, 0.157f, 1.00f);   // #09111E
             public static readonly Color BgPanel       = new Color(0.055f, 0.094f, 0.157f, 1.00f);   // #0E1828
             public static readonly Color BgHeader      = new Color(0.075f, 0.125f, 0.220f, 0.95f);   // #132038
-            public static readonly Color BgSlot        = new Color(0.070f, 0.118f, 0.205f, 0.90f);
-            public static readonly Color BgRowEven     = new Color(0.062f, 0.105f, 0.180f, 0.75f);
-            public static readonly Color BgRowOdd      = new Color(0.075f, 0.125f, 0.215f, 0.75f);
-            public static readonly Color BgVisor       = new Color(0.035f, 0.067f, 0.118f, 0.95f);
+            public static readonly Color BgSlot        = new Color(0.075f, 0.125f, 0.220f, 0.90f);
+            public static readonly Color BgRowEven     = new Color(0.075f, 0.125f, 0.220f, 0.75f);
+            public static readonly Color BgRowOdd      = new Color(0.075f, 0.125f, 0.220f, 0.75f);
+            public static readonly Color BgVisor       = new Color(0.055f, 0.094f, 0.157f, 0.95f);
 
             // Акценты: NeonCyan — «доступно / активно» (морская зелень), Gold — изучено, заголовки шкал,
             // Green — рост, Red — тревога и потери (коралл)
@@ -44,15 +44,15 @@ namespace StellarisClone.Rendering
             // Текст (кремовый)
             public static readonly Color TextPrimary   = new Color(0.925f, 0.898f, 0.827f, 1.00f);   // #ECE5D3
             public static readonly Color TextMuted     = new Color(0.663f, 0.639f, 0.573f, 1.00f);   // #A9A392
-            public static readonly Color TextShadow    = new Color(0.020f, 0.040f, 0.080f, 0.55f);
+            public static readonly Color TextShadow    = new Color(0.055f, 0.094f, 0.157f, 0.55f);
 
             // Оттенки кнопок: по цвету тела кнопка получает цвет кромки (см. LiquidGlassEffect.TacticalButton)
             public static readonly Color BtnPrimary    = new Color(0.450f, 0.370f, 0.200f, 1.00f);   // золото
             public static readonly Color BtnPrimaryHi  = new Color(0.906f, 0.757f, 0.439f, 1.00f);
             public static readonly Color BtnSuccess    = new Color(0.200f, 0.420f, 0.380f, 1.00f);   // морская зелень
             public static readonly Color BtnDanger     = new Color(0.600f, 0.220f, 0.180f, 1.00f);   // коралл
-            public static readonly Color BtnNeutral    = new Color(0.055f, 0.094f, 0.150f, 1.00f);   // тёмная — кнопка получает кремовую кромку
-            public static readonly Color BtnDisabled   = new Color(0.050f, 0.085f, 0.140f, 0.60f);
+            public static readonly Color BtnNeutral    = new Color(0.055f, 0.094f, 0.157f, 1.00f);   // тёмная — кнопка получает кремовую кромку
+            public static readonly Color BtnDisabled   = new Color(0.055f, 0.094f, 0.157f, 0.60f);
         }
 
         private Canvas _canvas;
@@ -524,7 +524,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
                 var glow = HoloImage(root, "Glow", FactionSelectScreen.RadialSprite(), new Color(accent.r, accent.g, accent.b, 0f));
                 glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(NavHexW + 40f, NavHexH + 40f));
-                var fill = HoloImage(root, "Fill", HudArt.Hex(), new Color(0.035f, 0.067f, 0.118f, 0.85f));
+                var fill = HoloImage(root, "Fill", HudArt.Hex(), new Color(0.055f, 0.094f, 0.157f, 0.85f));
                 fill.rectTransform.Stretch();
                 fill.raycastTarget = true;
                 fill.alphaHitTestMinimumThreshold = 0.5f;   // наведение — по форме соты
@@ -575,7 +575,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 if (!string.IsNullOrEmpty(key))
                 {
                     var kb = HoloImage(flag, "Key", null, accent);
-                    var kt = CreateText(kb.transform, key, 10, FontStyle.Bold, new Color(0.01f, 0.05f, 0.07f), TextAnchor.MiddleCenter);
+                    var kt = CreateText(kb.transform, key, 10, FontStyle.Bold, new Color(0.035f, 0.067f, 0.118f), TextAnchor.MiddleCenter);
                     kt.rectTransform.Stretch();
                     float kw = Mathf.Max(18f, kt.preferredWidth + 8f);
                     kb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(w, nameY), new Vector2(kw, 16f));
@@ -619,7 +619,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 _navDecisionPill.sprite = HudArt.CutPanel(4);
                 _navDecisionPill.type = Image.Type.Sliced;
                 _navDecisionPill.rectTransform.At(new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(-4, -2), new Vector2(18, 15));
-                _navDecisionBadge = CreateText(_navDecisionPill.transform, "", 9, FontStyle.Bold, new Color(0.02f, 0.06f, 0.05f), TextAnchor.MiddleCenter);
+                _navDecisionBadge = CreateText(_navDecisionPill.transform, "", 9, FontStyle.Bold, new Color(0.035f, 0.067f, 0.118f), TextAnchor.MiddleCenter);
                 _navDecisionBadge.rectTransform.anchorMin = Vector2.zero;
                 _navDecisionBadge.rectTransform.anchorMax = Vector2.one;
                 _navDecisionBadge.rectTransform.offsetMin = _navDecisionBadge.rectTransform.offsetMax = Vector2.zero;
@@ -1004,7 +1004,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             // Гнездо значка: мягкое свечение, тёмный диск, кольцо цвета ресурса
             var halo = HudSprite(badge.transform, "Halo", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0f));   // «Атлас»: без ореола
             halo.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(60, 60));
-            var disc = HudSprite(badge.transform, "Socket", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 0.95f));
+            var disc = HudSprite(badge.transform, "Socket", HudArt.Disc(), new Color(0.055f, 0.094f, 0.157f, 0.95f));
             disc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(32, 32));
             var ring = HudSprite(badge.transform, "Ring", HudArt.Ring(0.94f, 1f), new Color(0.925f, 0.898f, 0.827f, 0.30f));
             ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(32, 32));
@@ -1168,7 +1168,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             hlRt.pivot = new Vector2(0.5f, 0.5f);
             hlRt.sizeDelta = new Vector2(-32, 1.2f);
             hlRt.anchoredPosition = Vector2.zero;
-            hLine.AddComponent<Image>().color = new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.55f);
+            hLine.AddComponent<Image>().color = new Color(DS.TextPrimary.r, DS.TextPrimary.g, DS.TextPrimary.b, 0.18f);
             LG.Line(hLine, hairline: true);
 
             // Полоса владельца по верхнему краю и плитка со звездой (планетой) — «паспорт» объекта, как в больших стратегиях
@@ -1291,7 +1291,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor, Sprite planet = null, StarSystem star = null)
         {
             PaintInspectorPortrait(icon == LGIcon.Star, icon, iconColor, ownerColor, planet, star);
-            if (_inspAccent != null) _inspAccent.color = new Color(ownerColor.r, ownerColor.g, ownerColor.b, 0.9f);
+            if (_inspAccent != null) _inspAccent.color = new Color(0f, 0f, 0f, 0f);   // «Атлас»: полосы цвета владельца сверху нет — шкала и перекрестья окна
         }
 
         private static Color StarTint(StarSpectralClass c) => StarTypes.Tint(c);
@@ -1382,7 +1382,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 btnGo.transform.SetParent(_districtRowRoot.transform, false);
 
                 var img = btnGo.AddComponent<Image>();
-                img.color = interactable ? DS.BgVisor : new Color(0.04f, 0.07f, 0.09f, 0.7f);
+                img.color = interactable ? DS.BgVisor : new Color(0.055f, 0.094f, 0.157f, 0.7f);
                 img.raycastTarget = true;
 
                 var btn = btnGo.AddComponent<Button>();
@@ -1428,7 +1428,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _inspTitle.text = system.Name;
             SetInspectorBadge(LGIcon.Star, StarTint(system.SpectralClass),
-                system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.45f, 0.55f, 0.62f),
+                system.OwnerId >= 0 ? FleetIndicator.OwnerColor(system.OwnerId) : new Color(0.663f, 0.639f, 0.573f),
                 GalaxyView.PlanetPortrait(system, HeaderPlanet(system)), system);
 
             string owner = system.OwnerId == 0
@@ -1474,7 +1474,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     bool canAfford = eco != null && eco.Alloys >= outpostAlloys && eco.Influence >= finalInfluenceCost;
 
                     _inspActionBtn.interactable = canAfford;
-                    _inspActionBtnBg.color = canAfford ? DS.BtnPrimary : new Color(0.15f, 0.20f, 0.25f);
+                    _inspActionBtnBg.color = canAfford ? DS.BtnPrimary : new Color(0.075f, 0.125f, 0.220f);
                     _inspActionBtnText.text = canAfford
                         ? Loc.F("▶  ФОРПОСТ ({0} ⬢ · {1} ★)", (int)outpostAlloys, (int)finalInfluenceCost)
                         : Loc.T("✕  НЕДОСТАТОЧНО РЕСУРСОВ");
@@ -1503,7 +1503,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
             _inspTitle.text = PlanetNames.Title(planet.Name);
             SetInspectorBadge(LGIcon.Planet, parentSystem != null ? StarTint(parentSystem.SpectralClass) : DS.NeonCyan,
-                parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.45f, 0.55f, 0.62f),
+                parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.663f, 0.639f, 0.573f),
                 GalaxyView.PlanetPortrait(parentSystem, planet));
             _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>").Replace("◆  ", "");
 
@@ -1566,13 +1566,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 if (!isSurveyed)
                 {
                     _inspActionBtn.interactable = false;
-                    _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
+                    _inspActionBtnBg.color = new Color(0.075f, 0.125f, 0.220f);
                     _inspActionBtnText.text = Loc.T("✕  ТРЕБУЕТСЯ РАЗВЕДКА СИСТЕМЫ");
                 }
                 else if (!planet.IsPlayerOwned)
                 {
                     _inspActionBtn.interactable = false;
-                    _inspActionBtnBg.color = new Color(0.15f, 0.20f, 0.25f);
+                    _inspActionBtnBg.color = new Color(0.075f, 0.125f, 0.220f);
                     _inspActionBtnText.text = Loc.T("✕  СИСТЕМА НЕ ПРИНАДЛЕЖИТ ВАМ");
                 }
                 else
@@ -1580,7 +1580,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     var eco = EconomyManager.Instance;
                     bool canAfford = eco != null && eco.Minerals >= 50f;
                     _inspActionBtn.interactable = canAfford;
-                    _inspActionBtnBg.color = canAfford ? DS.BtnSuccess : new Color(0.15f, 0.20f, 0.25f);
+                    _inspActionBtnBg.color = canAfford ? DS.BtnSuccess : new Color(0.075f, 0.125f, 0.220f);
                     _inspActionBtnText.text = canAfford
                         ? Loc.T("▶  ДОБЫВАЮЩАЯ СТАНЦИЯ (50 ◆)")
                         : Loc.T("✕  НЕДОСТАТОЧНО ТИТАНА (50 ◆)");
@@ -2082,7 +2082,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             descRt.pivot = new Vector2(0.5f, 1f);
             descRt.sizeDelta = new Vector2(EventW - 260f, 100f);
             _eventDescBox = descRt;
-            _eventDescText = CreateText(descRt, "", 14, FontStyle.Normal, new Color(0.83f, 0.89f, 0.91f, 1f), TextAnchor.UpperCenter);
+            _eventDescText = CreateText(descRt, "", 14, FontStyle.Normal, new Color(0.925f, 0.898f, 0.827f, 1f), TextAnchor.UpperCenter);
             _eventDescText.rectTransform.Stretch();
             _eventDescText.horizontalOverflow = HorizontalWrapMode.Wrap;
             _eventDescText.verticalOverflow = VerticalWrapMode.Overflow;
@@ -2210,7 +2210,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var capturedOpt = opt;
 
             var card = CreateButton(_eventOptionsHolder, $"Opt_{idx}", new Vector2(300f, EventCardH),
-                available ? new Color(0.045f, 0.085f, 0.105f, 0.92f) : new Color(0.045f, 0.085f, 0.105f, 0.55f), edge, () =>
+                available ? new Color(0.055f, 0.094f, 0.157f, 0.92f) : new Color(0.055f, 0.094f, 0.157f, 0.55f), edge, () =>
                 {
                     if (!capturedOpt.Available) return;
                     try { capturedOpt.OnSelect?.Invoke(); }
@@ -2251,7 +2251,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             ic.pivot = new Vector2(0, 1);
             ic.anchoredPosition = new Vector2(18, -16);
             ic.sizeDelta = new Vector2(26, 26);
-            Color icCol = !available ? new Color(0.40f, 0.47f, 0.51f, 1f) : special ? DS.Gold : primary ? accent : DS.NeonCyan;
+            Color icCol = !available ? new Color(0.663f, 0.639f, 0.573f, 1f) : special ? DS.Gold : primary ? accent : DS.NeonCyan;
             var ring = ic.gameObject.AddComponent<Image>();
             ring.sprite = HudArt.Ring(0.86f, 1f);
             ring.color = icCol;
@@ -2273,7 +2273,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                     rx += 19f;
                 }
                 var req = CreateText(card.transform, opt.Requirement.ToUpper(), 9, FontStyle.Bold,
-                    available ? DS.Gold : new Color(0.55f, 0.64f, 0.68f, 1f), TextAnchor.MiddleLeft);
+                    available ? DS.Gold : new Color(0.663f, 0.639f, 0.573f, 1f), TextAnchor.MiddleLeft);
                 var rr = req.rectTransform;
                 rr.anchorMin = new Vector2(0, 1); rr.anchorMax = new Vector2(1, 1); rr.pivot = new Vector2(0, 1);
                 rr.offsetMin = new Vector2(rx, -42); rr.offsetMax = new Vector2(-14, -16);
@@ -2281,7 +2281,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             }
 
             var label = CreateText(card.transform, opt.OptionText, 13, FontStyle.Bold,
-                available ? DS.TextPrimary : new Color(0.56f, 0.64f, 0.68f, 1f), TextAnchor.UpperLeft);
+                available ? DS.TextPrimary : new Color(0.663f, 0.639f, 0.573f, 1f), TextAnchor.UpperLeft);
             var lr = label.rectTransform;
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
             lr.offsetMin = new Vector2(18, 30); lr.offsetMax = new Vector2(-16, -50);
@@ -2297,7 +2297,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 : FirstLine(opt.ResultTooltip);
             if (!string.IsNullOrEmpty(hint))
             {
-                var sub = CreateText(card.transform, hint, 10, FontStyle.Normal, new Color(0.56f, 0.64f, 0.68f, 1f), TextAnchor.LowerLeft);
+                var sub = CreateText(card.transform, hint, 10, FontStyle.Normal, new Color(0.663f, 0.639f, 0.573f, 1f), TextAnchor.LowerLeft);
                 var sr = sub.rectTransform;
                 sr.anchorMin = Vector2.zero; sr.anchorMax = new Vector2(1, 0); sr.pivot = new Vector2(0.5f, 0);
                 sr.offsetMin = new Vector2(18, 12); sr.offsetMax = new Vector2(-16, 30);
@@ -2476,7 +2476,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         private GameObject CreateCloseButton(Transform parent, float size, System.Action onClick)
         {
             var go = CreateButton(parent, "CloseBtn", new Vector2(size, size),
-                new Color(0.16f, 0.20f, 0.24f, 1f), DS.Red, onClick);
+                new Color(0.075f, 0.125f, 0.220f, 1f), DS.Red, onClick);
             LG.Button(go, new Color(1f, 0.45f, 0.48f, 0.55f), size * 0.5f);
             LGIcons.Create(go.transform, LGIcon.Close, size * 0.4f, Color.white);
             return go;

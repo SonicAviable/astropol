@@ -38,9 +38,9 @@ namespace StellarisClone.Rendering
             _group.interactable = false;
 
             var bg = _root.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.02f, 0.07f, 0.09f, 0.92f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.92f);
             bg.raycastTarget = false;
-            LG.Platter(_root.gameObject, H * 0.5f).SetRim(new Color(0.30f, 0.95f, 0.86f, 0.55f));
+            LG.Platter(_root.gameObject, H * 0.5f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.55f));
 
             _icon = LGIcons.Create(_root, LGIcon.Corvette, 20, UIManager.DS.NeonCyan);
             _icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(20, 20));
@@ -58,7 +58,7 @@ namespace StellarisClone.Rendering
             _more.rectTransform.Stretch(0, 0, 12, 0);
 
             // Ножка-указатель вниз к системе
-            var stem = LGBuild.Panel(_root, "Stem", new Color(0.30f, 0.95f, 0.86f, 0.55f));
+            var stem = LGBuild.Panel(_root, "Stem", new Color(0.475f, 0.816f, 0.749f, 0.55f));
             stem.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(1.5f, 14f));
         }
 

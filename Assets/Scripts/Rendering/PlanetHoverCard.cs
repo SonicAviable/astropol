@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
             public Image[] Segs;
         }
 
-        private static readonly Color CMinerals = new Color(0.20f, 0.90f, 0.80f);
+        private static readonly Color CMinerals = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color CEnergy = new Color(0.95f, 0.78f, 0.28f);
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.10f);
 
@@ -69,7 +69,7 @@ namespace StellarisClone.Rendering
         private void Build()
         {
             // Кино-карта (как подсказки, вариант B): тёмная панель с тонкой рамкой, сверху — цветная шапка
-            var card = LGBuild.Panel(transform, "Card", new Color(0.022f, 0.052f, 0.074f, 0.97f));
+            var card = LGBuild.Panel(transform, "Card", new Color(0.035f, 0.067f, 0.118f, 0.97f));
             _card = card.rectTransform;
             _card.anchorMin = _card.anchorMax = Vector2.zero;
             _card.pivot = new Vector2(0f, 0.5f);
@@ -107,11 +107,11 @@ namespace StellarisClone.Rendering
             _sub = LGBuild.Label(_card, "", 11, UIManager.DS.TextMuted, TextAnchor.UpperLeft);
             _sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, -38), new Vector2(W - 84, 18));
 
-            _popBg = LGBuild.Panel(_card, "Pop", new Color(0.03f, 0.08f, 0.11f, 0.95f));
+            _popBg = LGBuild.Panel(_card, "Pop", new Color(0.055f, 0.094f, 0.157f, 0.95f));
             _popBg.sprite = HudArt.CutPanel(5);
             _popBg.type = Image.Type.Sliced;
             _popBg.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -10), new Vector2(76, 22));
-            var popFr = LGBuild.Panel(_popBg.transform, "Frame", new Color(0.37f, 0.82f, 0.75f, 0.6f));
+            var popFr = LGBuild.Panel(_popBg.transform, "Frame", new Color(0.475f, 0.816f, 0.749f, 0.6f));
             popFr.sprite = HudArt.CutFrame(5, 1f);
             popFr.type = Image.Type.Sliced;
             popFr.rectTransform.Stretch();
@@ -121,7 +121,7 @@ namespace StellarisClone.Rendering
             _pop.rectTransform.Stretch(26, 0, 6, 0);
 
             // Характеристики
-            var head = LGBuild.Label(_card, Loc.T("ХАРАКТЕРИСТИКИ"), 10, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft, bold: true);
+            var head = LGBuild.Label(_card, Loc.T("ХАРАКТЕРИСТИКИ"), 10, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, bold: true);
             head.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -78), new Vector2(200, 14));
             head.Track(2.2f);
             _rows = new Row[4];
@@ -129,7 +129,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < _rows.Length; i++) _rows[i] = MakeRow(labels[i], -100 - i * 22);
 
             // Разделитель-шкала, как в подсказках
-            var sep = LGBuild.Panel(_card, "Sep", new Color(0.37f, 0.82f, 0.75f, 0.45f));
+            var sep = LGBuild.Panel(_card, "Sep", new Color(0.475f, 0.816f, 0.749f, 0.45f));
             sep.sprite = HudArt.TickRow();
             sep.type = Image.Type.Tiled;
             sep.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, -190), new Vector2(W - 28, 5));
@@ -200,7 +200,7 @@ namespace StellarisClone.Rendering
             string ownerName = owner == 0 ? Loc.T("ваша система") : owner > 0 ? AIEmpireManager.NameOf(owner) : Loc.T("ничья");
             Color oc = owner >= 0 ? FleetIndicator.OwnerColor(owner) : UIManager.DS.TextMuted;
             _sub.text = $"{p.ClassDisplayName}  ·  <color={LGBuild.Hex(oc)}>{ownerName}</color>";
-            TintBand(owner >= 0 ? oc : new Color(0.45f, 0.60f, 0.68f));
+            TintBand(owner >= 0 ? oc : new Color(0.475f, 0.816f, 0.749f));
 
             bool colony = p.Population > 0;
             _popBg.gameObject.SetActive(colony);

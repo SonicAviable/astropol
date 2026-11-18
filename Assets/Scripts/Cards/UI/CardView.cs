@@ -162,7 +162,7 @@ namespace StellarisClone.Cards
             shadow.raycastTarget = false;
             shadow.rectTransform.Stretch(-20 * u, -42 * u, -26 * u, -6 * u);
 
-            _body = CardSkin.Simple(_content, "Body", "card_mask", new Color(0.027f, 0.043f, 0.07f, 1f));
+            _body = CardSkin.Simple(_content, "Body", "card_mask", new Color(0.035f, 0.067f, 0.118f, 1f));
             _body.rectTransform.Stretch();
 
             var maskImg = CardSkin.Simple(_content, "ArtMask", "card_mask", Color.white);
@@ -274,7 +274,7 @@ namespace StellarisClone.Cards
             var g = CardSkin.Simple(_content, "RarityGem", "card_gem_" + _rk, Color.white);
             g.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 20f * u), new Vector2(gem, gem));
             if (!label) return;
-            var t = Lbl(_content, CardArt.RarityName(_rarity), Mathf.RoundToInt(9f * u), new Color(0.56f, 0.63f, 0.68f), TextAnchor.MiddleCenter, true);
+            var t = Lbl(_content, CardArt.RarityName(_rarity), Mathf.RoundToInt(9f * u), new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleCenter, true);
             t.rectTransform.At(new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 38f * u), new Vector2(200f * u, 14f * u));
             t.Track(2.5f * u);
         }

@@ -43,7 +43,7 @@ namespace StellarisClone.Cards
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.90f);
+        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.90f);
         private static readonly Color Accent = new Color(0.95f, 0.45f, 0.35f);
 
         /// <summary>Открыть выбор десанта для штурма системы (кнопка «ШТУРМ»).</summary>
@@ -122,7 +122,7 @@ namespace StellarisClone.Cards
             _root = _rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.010f, 0.025f, 0.038f, 0.97f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.95f, 0.55f, 0.45f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;

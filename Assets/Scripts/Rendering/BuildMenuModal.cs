@@ -50,8 +50,8 @@ namespace StellarisClone.Rendering
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.90f);
-        public static readonly Color CMinerals = new Color(0.20f, 0.90f, 0.80f);
+        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.90f);
+        public static readonly Color CMinerals = new Color(0.475f, 0.816f, 0.749f);
         public static readonly Color CEnergy = new Color(0.95f, 0.78f, 0.28f);
         public static readonly Color CAlloys = new Color(0.95f, 0.62f, 0.36f);
         public static readonly Color CInfluence = new Color(0.78f, 0.60f, 1f);
@@ -149,7 +149,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.010f, 0.025f, 0.038f, 0.98f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.98f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.96f;
@@ -172,7 +172,7 @@ namespace StellarisClone.Rendering
             string[] tips = { Loc.T("Гелий-3: им же оплачивается «Купить»"), Loc.T("Титан"), Loc.T("Сплавы"), Loc.T("Влияние") };
             for (int i = 0; i < 4; i++)
             {
-                var chip = LGBuild.Panel(stockRow, "Chip" + i, new Color(0.02f, 0.06f, 0.08f, 0.9f), raycast: true);
+                var chip = LGBuild.Panel(stockRow, "Chip" + i, new Color(0.055f, 0.094f, 0.157f, 0.9f), raycast: true);
                 chip.rectTransform.anchorMin = new Vector2(i / 4f, 0); chip.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
                 chip.rectTransform.offsetMin = new Vector2(3, 0); chip.rectTransform.offsetMax = new Vector2(-3, 0);
                 LG.Chip(chip.gameObject, new Color(cols[i].r, cols[i].g, cols[i].b, 0.45f));
@@ -250,7 +250,7 @@ namespace StellarisClone.Rendering
             body.offsetMin = new Vector2(18, 0); body.offsetMax = new Vector2(-18, -16);
             _detailBody = body.gameObject;
 
-            _dIconBg = LGBuild.Panel(body, "IconBg", new Color(0.05f, 0.1f, 0.12f));
+            _dIconBg = LGBuild.Panel(body, "IconBg", new Color(0.055f, 0.094f, 0.157f));
             _dIconBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, new Vector2(64, 64));
             LG.Platter(_dIconBg.gameObject, 18f);
             _dIcon = LGIcons.Create(_dIconBg.transform, LGIcon.Construction, 34, Color.white);
@@ -375,7 +375,7 @@ namespace StellarisClone.Rendering
         private Card MakeCard(BuildOption o)
         {
             var c = new Card { Opt = o };
-            var bg = LGBuild.Panel(_grid, "Card_" + o.Id, new Color(0.04f, 0.08f, 0.11f, 0.95f), raycast: true);
+            var bg = LGBuild.Panel(_grid, "Card_" + o.Id, new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             c.Go = bg.gameObject;
             c.Bg = bg;
             LG.Platter(bg.gameObject, 14f).SetRim(new Color(o.Color.r, o.Color.g, o.Color.b, 0.30f));
@@ -431,7 +431,7 @@ namespace StellarisClone.Rendering
             float a = avail ? 1f : 0.45f;
             c.Icon.color = new Color(o.Color.r, o.Color.g, o.Color.b, a);
             c.Title.color = new Color(1f, 1f, 1f, avail || o.Done ? 1f : 0.55f);
-            c.Bg.color = avail ? new Color(0.04f, 0.09f, 0.12f, 0.95f) : new Color(0.03f, 0.05f, 0.07f, 0.92f);
+            c.Bg.color = avail ? new Color(0.055f, 0.094f, 0.157f, 0.95f) : new Color(0.035f, 0.067f, 0.118f, 0.92f);
             string key = $"{o.Energy}|{o.Minerals}|{o.Alloys}|{o.Influence}|{CostCheck.Affordable(o.Energy, o.Minerals, o.Alloys, o.Influence)}";
             if (key != c.CostKey)
             {

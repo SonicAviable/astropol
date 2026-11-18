@@ -23,7 +23,7 @@ namespace StellarisClone.Rendering
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CPanel = new Color(0.020f, 0.042f, 0.075f, 0.92f);
+        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.92f);
 
         private enum Metric { Score, Systems, Population, Techs, Power }
         private static readonly string[] MetricNames = { "ОЧКИ", "СИСТЕМЫ", "НАСЕЛЕНИЕ", "ТЕХНОЛОГИИ", "МОЩЬ ФЛОТА" };
@@ -124,7 +124,7 @@ namespace StellarisClone.Rendering
             {
                 var m = (Metric)i;
                 float w = 30f + MetricNames[i].Length * 9.5f;
-                var tb = LGBuild.Panel(tabs, "Tab", new Color(0.05f, 0.11f, 0.16f, 0.9f), raycast: true);
+                var tb = LGBuild.Panel(tabs, "Tab", new Color(0.075f, 0.125f, 0.220f, 0.9f), raycast: true);
                 tb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w, 30));
                 LG.Chip(tb.gameObject, new Color(1f, 1f, 1f, 0.14f), 15f);
                 var tt = LGBuild.Label(tb.transform, Loc.T(MetricNames[i]), 11, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
@@ -235,7 +235,7 @@ namespace StellarisClone.Rendering
             foreach (var (bg, t, m) in _tabs)
             {
                 bool on = m == _metric;
-                bg.color = on ? new Color(0.10f, 0.26f, 0.30f, 0.95f) : new Color(0.05f, 0.11f, 0.16f, 0.9f);
+                bg.color = on ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.075f, 0.125f, 0.220f, 0.9f);
                 t.color = on ? Color.white : Muted;
             }
 
@@ -340,7 +340,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < tiles.Length; i++)
             {
                 var (icon, label, value, col) = tiles[i];
-                var tile = LGBuild.Panel(_tiles, "Tile", new Color(0.03f, 0.07f, 0.11f, 0.92f));
+                var tile = LGBuild.Panel(_tiles, "Tile", new Color(0.055f, 0.094f, 0.157f, 0.92f));
                 var rt = tile.rectTransform;
                 rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
                 rt.pivot = new Vector2(0, 1);

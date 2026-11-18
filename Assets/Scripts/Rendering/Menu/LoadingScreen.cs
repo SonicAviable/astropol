@@ -60,7 +60,7 @@ namespace StellarisClone.Rendering
         private string[] _stages;
         private StellarisClone.Generation.GalaxyGenerator _gen;
 
-        private static readonly Color Cyan = new Color(0.36f, 0.95f, 0.92f);
+        private static readonly Color Cyan = new Color(0.475f, 0.816f, 0.749f);
 
         private static readonly string[] Tips =
         {
@@ -142,7 +142,7 @@ namespace StellarisClone.Rendering
             var root = (RectTransform)transform;
 
             // Фон: чёрная подложка + арт «на весь экран с обрезкой» (cover)
-            var black = NewImage(root, "Black", new Color(0.01f, 0.015f, 0.03f, 1f));
+            var black = NewImage(root, "Black", new Color(0.035f, 0.067f, 0.118f, 1f));
             Stretch(black.rectTransform);
             black.raycastTarget = true;   // ловит все клики и наведение, пока идёт загрузка — сквозь экран ничего не нажать
 
@@ -158,7 +158,7 @@ namespace StellarisClone.Rendering
             _artFit = fitter;
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             fitter.aspectRatio = tex != null ? tex.width / (float)tex.height : 16f / 9f;
-            if (tex == null) art.color = new Color(0.02f, 0.05f, 0.09f);
+            if (tex == null) art.color = new Color(0.055f, 0.094f, 0.157f);
 
             // Виньетка: края, низ и левый верх (под названием) — арт в центре остаётся открытым
             var shade = NewImage(root, "Shade", Color.white);
@@ -187,7 +187,7 @@ namespace StellarisClone.Rendering
             _title.horizontalOverflow = HorizontalWrapMode.Overflow;
             _titleRt = Place(_title.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(96, -72), new Vector2(1000, 60));
             var glow = _title.gameObject.AddComponent<Shadow>();
-            glow.effectColor = new Color(0.2f, 0.9f, 0.95f, 0.3f);
+            glow.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.3f);
             glow.effectDistance = new Vector2(0, -2);
             _titleGroup = _title.gameObject.AddComponent<CanvasGroup>();
 
@@ -206,7 +206,7 @@ namespace StellarisClone.Rendering
             _ringGlow.sprite = dot;
             Center(_ringGlow.rectTransform, 380);
 
-            var disk = NewImage(_ringRt, "Disk", new Color(0.01f, 0.03f, 0.055f, 0.62f));
+            var disk = NewImage(_ringRt, "Disk", new Color(0.035f, 0.067f, 0.118f, 0.62f));
             disk.sprite = circle;
             Center(disk.rectTransform, 186);
 
@@ -214,7 +214,7 @@ namespace StellarisClone.Rendering
             orbit.sprite = RingSprite(0.98f, 0.006f);
             Center(orbit.rectTransform, 244);
             _ringSat = Center(NewRect(_ringRt, "Satellite"), 244);
-            var sat = NewImage(_ringSat, "Dot", new Color(0.85f, 1f, 1f, 0.95f));
+            var sat = NewImage(_ringSat, "Dot", new Color(0.925f, 0.898f, 0.827f, 0.95f));
             sat.sprite = dot;
             Place(sat.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -2), new Vector2(14, 14));
 
@@ -251,7 +251,7 @@ namespace StellarisClone.Rendering
 
             _percent = NewText(_ringRt, "", 54, Color.white, TextAnchor.MiddleCenter, true);
             Place(_percent.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(180, 66));
-            var lbl = NewText(_ringRt, Loc.T("ПРОЦЕНТОВ"), 11, new Color(0.56f, 0.73f, 0.75f), TextAnchor.MiddleCenter, false);
+            var lbl = NewText(_ringRt, Loc.T("ПРОЦЕНТОВ"), 11, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleCenter, false);
             Place(lbl.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -30), new Vector2(180, 18));
 
             // ---- Этап, счётчики и шаги (слева от кольца) ----
@@ -262,7 +262,7 @@ namespace StellarisClone.Rendering
             _stage = NewText(_infoRt, "", 22, Color.white, TextAnchor.LowerRight, true);
             _stageRt = Place(_stage.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(0, 62), new Vector2(1000, 30));
 
-            _detail = NewText(_infoRt, "", 13, new Color(0.54f, 0.64f, 0.67f, 0.9f), TextAnchor.UpperRight, false);
+            _detail = NewText(_infoRt, "", 13, new Color(0.663f, 0.639f, 0.573f, 0.9f), TextAnchor.UpperRight, false);
             Place(_detail.rectTransform, new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 52), new Vector2(1000, 20));
 
             for (int i = 0; i < MaxSteps; i++)
@@ -289,7 +289,7 @@ namespace StellarisClone.Rendering
             var tipLbl = NewText(_tipRt, Loc.T("СОВЕТ"), 12, Cyan, TextAnchor.UpperLeft, true);
             Place(tipLbl.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(22, 0), new Vector2(300, 18));
 
-            _tip = NewText(_tipRt, "", 19, new Color(0.89f, 0.93f, 0.94f, 1f), TextAnchor.UpperLeft, false);
+            _tip = NewText(_tipRt, "", 19, new Color(0.925f, 0.898f, 0.827f, 1f), TextAnchor.UpperLeft, false);
             _tipTextRt = Place(_tip.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(22, -24), new Vector2(660, 70));
             _tipGroup = _tip.gameObject.AddComponent<CanvasGroup>();
 

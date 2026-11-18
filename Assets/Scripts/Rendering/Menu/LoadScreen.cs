@@ -55,7 +55,7 @@ namespace StellarisClone.Rendering
         {
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
             _cg.alpha = 0f;
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.005f, 0.012f, 0.022f, 0.5f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.5f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
@@ -76,7 +76,7 @@ namespace StellarisClone.Rendering
             _list = LGBuild.ScrollList(listHost, 14f, 4);
 
             // Справа — хроника
-            var panel = LGBuild.Panel(rt, "Chronicle", new Color(0.03f, 0.06f, 0.10f, 0.92f), raycast: true);
+            var panel = LGBuild.Panel(rt, "Chronicle", new Color(0.055f, 0.094f, 0.157f, 0.92f), raycast: true);
             _panel = panel.rectTransform;
             _panel.Stretch(680, 60, 80, 130);
             LG.Glass(panel.gameObject, 22f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.3f));
@@ -89,10 +89,10 @@ namespace StellarisClone.Rendering
             tl.Stretch(36, 60, 36, 170);
             _timeline = LGBuild.ScrollList(tl, 14f, 4);
             var hint = LGBuild.Label(_panel, Loc.T("Сохранения сгруппированы по партиям: выберите империю слева, затем точку в её истории."),
-                                     13, new Color(0.50f, 0.60f, 0.65f), TextAnchor.LowerLeft);
+                                     13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.LowerLeft);
             hint.rectTransform.Stretch(36, 24, 36, 0);
 
-            _empty = LGBuild.Label(rt, Loc.T("Сохранений пока нет — начните новую партию."), 20, new Color(0.62f, 0.72f, 0.76f), TextAnchor.MiddleCenter);
+            _empty = LGBuild.Label(rt, Loc.T("Сохранений пока нет — начните новую партию."), 20, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleCenter);
             _empty.rectTransform.Stretch();
         }
 
@@ -172,7 +172,7 @@ namespace StellarisClone.Rendering
             name.rectTransform.Stretch(0, 0, 470, 24);
             name.resizeTextForBestFit = true; name.resizeTextMinSize = 24; name.resizeTextMaxSize = 40;
             name.rectTransform.offsetMin = new Vector2(0, 40);
-            var sub = LGBuild.Label(_head, Subtitle(m), 15, new Color(0.62f, 0.72f, 0.76f), TextAnchor.LowerLeft);
+            var sub = LGBuild.Label(_head, Subtitle(m), 15, new Color(0.663f, 0.639f, 0.573f), TextAnchor.LowerLeft);
             sub.rectTransform.Stretch(0, 8, 470, 0);
 
             (int v, string k, Color col)[] stats =
@@ -183,12 +183,12 @@ namespace StellarisClone.Rendering
             };
             for (int i = 0; i < stats.Length; i++)
             {
-                var tile = LGBuild.Panel(_head, "Stat", new Color(0.04f, 0.08f, 0.12f, 0.9f));
+                var tile = LGBuild.Panel(_head, "Stat", new Color(0.055f, 0.094f, 0.157f, 0.9f));
                 tile.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-(2 - i) * 148f, 0), new Vector2(136, 76));
                 LG.Platter(tile.gameObject, 12f).SetRim(new Color(1f, 1f, 1f, 0.08f));
                 var n = LGBuild.Label(tile.transform, stats[i].v.ToString(), 26, stats[i].col, TextAnchor.UpperCenter, bold: true);
                 n.rectTransform.Stretch(0, 0, 0, 10);
-                var l = LGBuild.Label(tile.transform, stats[i].k, 11, new Color(0.56f, 0.66f, 0.71f), TextAnchor.LowerCenter, bold: true);
+                var l = LGBuild.Label(tile.transform, stats[i].k, 11, new Color(0.663f, 0.639f, 0.573f), TextAnchor.LowerCenter, bold: true);
                 l.rectTransform.Stretch(0, 12, 0, 0);
             }
         }
@@ -226,14 +226,14 @@ namespace StellarisClone.Rendering
                 var line = LGBuild.Panel(row, "Line", new Color(0.44f, 0.90f, 0.85f, i == c.Saves.Count - 1 ? 0.1f : 0.35f));
                 line.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(10, -14), new Vector2(2, 106));
                 LG.Ignore(line.gameObject);
-                var dot = LGBuild.Panel(row, "Dot", on ? new Color(0.44f, 0.95f, 0.88f) : new Color(0.17f, 0.24f, 0.28f));
+                var dot = LGBuild.Panel(row, "Dot", on ? new Color(0.475f, 0.816f, 0.749f) : new Color(0.075f, 0.125f, 0.220f));
                 dot.sprite = MenuArt.SoftDisc;
                 dot.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(10, 0), new Vector2(on ? 26 : 16, on ? 26 : 16));
                 LG.Ignore(dot.gameObject);
 
-                var body = LGBuild.Panel(row, "Body", on ? new Color(0.06f, 0.20f, 0.22f, 0.9f) : new Color(1f, 1f, 1f, 0.03f), raycast: true);
+                var body = LGBuild.Panel(row, "Body", on ? new Color(0.075f, 0.125f, 0.220f, 0.9f) : new Color(1f, 1f, 1f, 0.03f), raycast: true);
                 body.rectTransform.Stretch(36, 0, 0, 0);
-                LG.Platter(body.gameObject, 16f).SetRim(on ? new Color(0.44f, 0.95f, 0.88f, 0.7f) : new Color(1f, 1f, 1f, 0.07f));
+                LG.Platter(body.gameObject, 16f).SetRim(on ? new Color(0.475f, 0.816f, 0.749f, 0.7f) : new Color(1f, 1f, 1f, 0.07f));
                 string slot = e.Slot;
                 body.gameObject.AddComponent<RowClick>().Init(() => { if (_selSlot != slot) { _selSlot = slot; _armedDelete = _armedLoad = null; BuildTimeline(c, false); } },
                                                              () => LoadOrArm(slot, c));
@@ -244,14 +244,14 @@ namespace StellarisClone.Rendering
                 string kind = e.Meta.Auto ? Loc.T("Автосохранение") : Loc.T("Ручное сохранение");
                 var t = LGBuild.Label(body.transform, kind, 17, Color.white, TextAnchor.LowerLeft, bold: true);
                 t.rectTransform.Stretch(236, 48, 330, 14);
-                var chip = LGBuild.Panel(body.transform, "Chip", e.Meta.Auto ? new Color(0.25f, 0.18f, 0.05f, 0.9f) : new Color(0.05f, 0.20f, 0.20f, 0.9f));
+                var chip = LGBuild.Panel(body.transform, "Chip", e.Meta.Auto ? new Color(0.25f, 0.18f, 0.05f, 0.9f) : new Color(0.075f, 0.125f, 0.220f, 0.9f));
                 chip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(236 + t.preferredWidth + 12, -20), new Vector2(76, 22));
-                var cc = e.Meta.Auto ? new Color(1f, 0.82f, 0.48f) : new Color(0.56f, 0.94f, 0.90f);
+                var cc = e.Meta.Auto ? new Color(1f, 0.82f, 0.48f) : new Color(0.475f, 0.816f, 0.749f);
                 LG.Chip(chip.gameObject, new Color(cc.r, cc.g, cc.b, 0.55f), 6f);
                 var ct = LGBuild.Label(chip.transform, e.Meta.Auto ? Loc.T("АВТО") : Loc.T("РУЧНОЕ"), 11, cc, TextAnchor.MiddleCenter, bold: true);
                 ct.rectTransform.Stretch();
                 var w = LGBuild.Label(body.transform, Loc.F("{0}  ·  в игре {1}", SaveSystem.FormatSavedAt(e.SavedAtLocal), SaveSystem.FormatPlayTime(e.Meta.PlayTime)),
-                                      13, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft);
+                                      13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft);
                 w.rectTransform.Stretch(236, 0, 330, 52);
 
                 // Выбранное сохранение — яркая главная кнопка, остальные — обычные
@@ -362,7 +362,7 @@ namespace StellarisClone.Rendering
             var leader = LoadScreen.LeaderOf(m);
             c._accent = leader != null ? leader.Accent : UIManager.DS.NeonCyan;
 
-            var body = LGBuild.Panel(root, "Body", new Color(0.03f, 0.06f, 0.10f, 0.95f), raycast: true);
+            var body = LGBuild.Panel(root, "Body", new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             c._body = body.rectTransform;
             c._body.Stretch();
             c._fx = LG.Glass(body.gameObject, 18f);
@@ -375,7 +375,7 @@ namespace StellarisClone.Rendering
                 c._art.raycastTarget = false;
                 c._art.uvRect = LeaderPortraits.FaceUv(leader, 0.9f, 560f / 150f);
             }
-            var fade = LGBuild.Panel(mask, "Fade", new Color(0.02f, 0.04f, 0.08f, 1f));
+            var fade = LGBuild.Panel(mask, "Fade", new Color(0.055f, 0.094f, 0.157f, 1f));
             fade.sprite = MenuArt.HorizontalFade;
             fade.rectTransform.anchorMin = Vector2.zero;
             fade.rectTransform.anchorMax = new Vector2(0.85f, 1);

@@ -53,8 +53,8 @@ namespace StellarisClone.Rendering
         private static readonly Color Orange = new Color(1f, 0.66f, 0.50f);
         private static readonly Color PathBlue = new Color(0.561f, 0.706f, 0.949f);   // #8FB4F2
         private static readonly Color Dim = new Color(0.50f, 0.49f, 0.45f, 1f);
-        private static readonly Color PanelBg = new Color(0.025f, 0.045f, 0.062f, 0.94f);
-        private static readonly Color ChipBg = new Color(0.062f, 0.105f, 0.180f, 0.96f);
+        private static readonly Color PanelBg = new Color(0.035f, 0.067f, 0.118f, 0.94f);
+        private static readonly Color ChipBg = new Color(0.075f, 0.125f, 0.220f, 0.96f);
 
         // ==================== СОСТОЯНИЕ ====================
 
@@ -209,7 +209,7 @@ namespace StellarisClone.Rendering
 
         private void Build()
         {
-            _dimmer = LGBuild.Panel(_canvas.transform, "TechTreeDimmer", new Color(0.005f, 0.015f, 0.020f, 0.88f), raycast: true).gameObject;
+            _dimmer = LGBuild.Panel(_canvas.transform, "TechTreeDimmer", new Color(0.035f, 0.067f, 0.118f, 0.88f), raycast: true).gameObject;
             ((RectTransform)_dimmer.transform).Stretch();
             LG.Scrim(_dimmer);
             LG.Motion(_dimmer, LGAppear.Kind.Fade).outDuration = 0.26f;
@@ -233,7 +233,7 @@ namespace StellarisClone.Rendering
             bd.Stretch();
             _backdrop = bd.gameObject.AddComponent<TechTreeBackdrop>();
             _backdrop.Initialize(bd);
-            var shade = LGBuild.Panel(mask, "Shade", new Color(0.012f, 0.022f, 0.032f, 0.70f));
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.70f));
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
 
@@ -322,7 +322,7 @@ namespace StellarisClone.Rendering
 
         private void BuildMatrix()
         {
-            var panel = LGBuild.Panel(_window.transform, "Matrix", new Color(0.015f, 0.028f, 0.045f, 0.82f), raycast: true);
+            var panel = LGBuild.Panel(_window.transform, "Matrix", new Color(0.035f, 0.067f, 0.118f, 0.82f), raycast: true);
             _matrix = panel.rectTransform;
             _matrix.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -BodyTop), new Vector2(MatrixW, MatrixH));
             var fx = LG.Platter(panel.gameObject, 16f);
@@ -566,14 +566,16 @@ namespace StellarisClone.Rendering
                     BuildLane(tm, cat, bc, y);
                     y += _rowH;
                 }
-                var band = LGBuild.Panel(_staticLayer, "Band", new Color(bc.r, bc.g, bc.b, 0.13f));
+                // «Атлас»: группа — без заливки, золотая моноширинная подпись по вертикали и тонкая линия
+                var band = LGBuild.Panel(_staticLayer, "Band", new Color(0f, 0f, 0f, 0f));
                 band.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -top), new Vector2(BandW, y - top));
                 LG.Ignore(band.gameObject);
-                var bl = LGBuild.Label(band.transform, TechBranchInfo.Name(b).ToUpper(), 10, bc, TextAnchor.MiddleCenter, bold: true);
+                var bl = LGBuild.Label(band.transform, TechBranchInfo.Name(b).ToUpper(), 10, Gold, TextAnchor.MiddleCenter);
+                bl.font = GameFont.Mono;
                 bl.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(y - top, BandW));
                 bl.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f);
                 bl.Track(3f);
-                var line = LGBuild.Panel(_staticLayer, "GroupLine", new Color(1f, 1f, 1f, 0.07f));
+                var line = LGBuild.Panel(_staticLayer, "GroupLine", new Color(0.925f, 0.898f, 0.827f, 0.20f));
                 line.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -(y + GroupGap * 0.5f)), new Vector2(MatrixW, 1));
                 LG.Ignore(line.gameObject);
                 y += GroupGap;
@@ -591,17 +593,23 @@ namespace StellarisClone.Rendering
             // Подпись направления: рисунок, название, полоса «изучено / всего»
             var lbl = LGBuild.Panel(_staticLayer, "Lane_" + cat, new Color(0, 0, 0, 0), raycast: true);
             lbl.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(BandW + 6f, -y), new Vector2(LabelW - BandW - 10f, _rowH));
-            var art = LGIcons.TechArt(cat);
-            var ic = LGIcons.Create(lbl.transform, LGIcons.ForTechCategory(cat), art != null ? 28f : 20f, bc);
-            if (art != null) { ic.sprite = art; ic.preserveAspect = true; }
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 8), new Vector2(28, 28));
-            var nm = LGBuild.Label(lbl.transform, TechCategoryInfo.Name(cat).ToUpper(), 13, Primary, TextAnchor.MiddleLeft, bold: true);
+            // «Атлас»: линейный значок в тонком кремовом круге, название — Spectral обычным регистром, полоса — золото
+            var ring = LGBuild.Panel(lbl.transform, "IconRing", new Color(0.925f, 0.898f, 0.827f, 0.26f));
+            ring.sprite = HudArt.Ring(0.94f, 1f);
+            ring.raycastTarget = false;
+            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(30, 30));
+            LG.Ignore(ring.gameObject);
+            var ic = LGIcons.Create(lbl.transform, LGIcons.ForTechCategory(cat), 15f, Muted);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(11.5f, 0), new Vector2(15, 15));
+            var nm = LGBuild.Label(lbl.transform, TechCategoryInfo.Name(cat), 15, Primary, TextAnchor.MiddleLeft);
+            nm.font = GameFont.Display;
             nm.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(40, 8), new Vector2(LabelW - BandW - 54f, 22));
             FitText(nm, 10);
             var barHost = LGBuild.Rect(lbl.transform, "Bar");
             barHost.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(40, -12), new Vector2(LabelW - BandW - 100f, 6));
-            LGBuild.Bar(barHost, bc, done / (float)Mathf.Max(1, total), 4f);
-            var cnt = LGBuild.Label(lbl.transform, $"{done}/{total}", 11, Dim, TextAnchor.MiddleRight, bold: true);
+            LGBuild.Bar(barHost, Gold, done / (float)Mathf.Max(1, total), 3f);
+            var cnt = LGBuild.Label(lbl.transform, $"{done}/{total}", 11, Dim, TextAnchor.MiddleRight);
+            cnt.font = GameFont.Mono;
             cnt.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-6, -12), new Vector2(50, 16));
             TooltipHelper.Attach(lbl.gameObject, Loc.F("<b>{0}</b>\nИзучено {1} из {2}", TechCategoryInfo.Name(cat), done, total));
 
@@ -847,7 +855,7 @@ namespace StellarisClone.Rendering
             if (unlocks != null) h += 24f;
             h += 12f + 42f + 38f + 14f;
 
-            var pop = LGBuild.Panel(_popLayer, "Popover", new Color(0.04f, 0.07f, 0.11f, 0.98f), raycast: true);
+            var pop = LGBuild.Panel(_popLayer, "Popover", new Color(0.055f, 0.094f, 0.157f, 0.98f), raycast: true);
             var prt = pop.rectTransform;
             var pfx = LG.Platter(pop.gameObject, 14f);
             pfx.SetRim(new Color(PathBlue.r, PathBlue.g, PathBlue.b, 0.6f));
@@ -1022,7 +1030,7 @@ namespace StellarisClone.Rendering
             var pb = MenuPrimaryButton.Create(prt, primary, 14, () => pAct?.Invoke(), pcol);
             ((RectTransform)pb.transform).TopBand(y, 42f, 16, 16);
             pb.Interactable = enabled;
-            pb.Label.color = enabled ? new Color(0.01f, 0.08f, 0.10f) : new Color(0.85f, 0.92f, 0.94f, 0.75f);
+            pb.Label.color = enabled ? new Color(0.055f, 0.094f, 0.157f) : new Color(0.925f, 0.898f, 0.827f, 0.75f);
             y += 50f;
 
             if (secondary != null)
@@ -1182,7 +1190,7 @@ namespace StellarisClone.Rendering
 
         private void BuildLockedSlot(int i, float top, Technology opener)
         {
-            var rt = SlotRow("Locked" + i, top, new Color(0.035f, 0.050f, 0.065f, 0.7f), new Color(1f, 1f, 1f, 0.05f));
+            var rt = SlotRow("Locked" + i, top, new Color(0.035f, 0.067f, 0.118f, 0.7f), new Color(1f, 1f, 1f, 0.05f));
             var ic = LGIcons.Create(rt, LGIcon.Lock, 12, Dim);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(12, 12));
             var t = LGBuild.Label(rt, opener != null ? Loc.F("Откроет: {0}", opener.Name) : Loc.T("Откроется технологией"), 12,

@@ -211,7 +211,7 @@ namespace StellarisClone.Rendering
             HeaderCols((0.06f, 0.60f, Loc.F("НАЗНАЧЕНИЕ: {0} {1}", LeaderManager.ClassName(l.Class).ToUpper(), l.Name.ToUpper()), TextAnchor.MiddleLeft),
                        (0.60f, 1f, Loc.T("ТЕКУЩИЙ ЛИДЕР НА ПОСТУ"), TextAnchor.MiddleRight));
 
-            var back = Row(() => { _assignLeaderId = -1; RebuildList(); }, new Color(0.6f, 0.8f, 0.9f, 0.25f));
+            var back = Row(() => { _assignLeaderId = -1; RebuildList(); }, new Color(0.475f, 0.816f, 0.749f, 0.25f));
             IconCell(back, 0f, 0.06f, LGIcon.Back, UIManager.DS.TextMuted);
             TextCell(back, 0.06f, 1f, Loc.T("Назад к списку лидеров"), UIManager.DS.TextMuted, TextAnchor.MiddleLeft, 12, true);
 

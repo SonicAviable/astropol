@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.014f, 0.030f, 0.044f, 0.97f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -177,7 +177,7 @@ namespace StellarisClone.Rendering
                 int tab = i;
                 bool on = _tab == i;
                 var b = LGBuild.Button(_tabs, i == 0 ? "TabLaws" : "TabDecisions",
-                    on ? new Color(0.06f, 0.20f, 0.22f) : new Color(0.03f, 0.05f, 0.07f),
+                    on ? new Color(0.075f, 0.125f, 0.220f) : new Color(0.035f, 0.067f, 0.118f),
                     on ? new Color(0.475f, 0.816f, 0.749f, 0.85f) : new Color(1f, 1f, 1f, 0.14f),
                     () => SetTab(tab), null, labels[i], 12);
                 var br = (RectTransform)b.transform;
@@ -212,7 +212,7 @@ namespace StellarisClone.Rendering
             _key = key;
             _live.Clear();
 
-            _title.text = Loc.T("ЗАКОНЫ ИМПЕРИИ");
+            _title.text = LGBuild.Sentence(Loc.T("ЗАКОНЫ ИМПЕРИИ"));
             _hint.text = Loc.F("Смена закона — {0:0} влияния, после неё направление закрыто на {1} дней. Законы действуют, пока вы их не смените.",
                 EmpireLaws.SwitchCost, EmpireLaws.CooldownDays);
             BuildTabs();
@@ -254,7 +254,7 @@ namespace StellarisClone.Rendering
             head.TopBand(0, 40);
             var catArt = LGIcons.LawCategoryArt(cat);
             float csz = catArt != null ? 28f : 20f;
-            var ic = LGIcons.Create(head, CategoryIcon(cat), csz, cc);
+            var ic = LGIcons.Create(head, CategoryIcon(cat), csz, UIManager.DS.Gold);   // «Атлас»: значки направлений — золото
             if (catArt != null) ic.sprite = catArt;
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(csz, csz));
             var name = LGBuild.Label(head, EmpireLaws.CategoryName(cat).ToUpper(), 15, Color.white, TextAnchor.MiddleLeft, bold: true);
@@ -268,7 +268,7 @@ namespace StellarisClone.Rendering
                 int left = EmpireLaws.CooldownLeft(cat);
                 cdText.text = left > 0 ? Loc.F("закрыто {0} дн.", left) : "";
             });
-            var line = LGBuild.Panel(col, "Line", new Color(cc.r, cc.g, cc.b, 0.5f));
+            var line = LGBuild.Panel(col, "Line", new Color(0.925f, 0.898f, 0.827f, 0.26f));
             line.rectTransform.TopBand(42, 2);
 
             var laws = new List<LawDef>();
@@ -287,9 +287,11 @@ namespace StellarisClone.Rendering
         private void BuildCard(RectTransform card, LawDef law, Color cc)
         {
             bool active = EmpireLaws.IsActive(law);
-            var bg = LGBuild.Panel(card, "Bg", active ? new Color(cc.r * 0.14f, cc.g * 0.14f, cc.b * 0.14f, 0.95f) : new Color(0.03f, 0.055f, 0.075f, 0.9f));
+            // «Атлас»: действующий закон — золотая кромка и лёгкий золотой отсвет, остальные — тонкая кремовая линия
+            var gold = UIManager.DS.Gold;
+            var bg = LGBuild.Panel(card, "Bg", active ? new Color(0.095f, 0.115f, 0.150f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.6f));
             bg.rectTransform.Stretch();
-            LG.Platter(bg.gameObject, 8f).SetRim(active ? new Color(cc.r, cc.g, cc.b, 0.85f) : new Color(1f, 1f, 1f, 0.10f));
+            LG.Platter(bg.gameObject, 2f).SetRim(active ? new Color(gold.r, gold.g, gold.b, 0.85f) : new Color(0.925f, 0.898f, 0.827f, 0.12f));
 
             float y = 12f;
             // Рисованный значок закона — крупный бледный водяной знак справа, под текстом
@@ -297,7 +299,7 @@ namespace StellarisClone.Rendering
             if (art != null)
             {
                 float side = Mathf.Min(card.rect.height > 10f ? card.rect.height - 24f : 130f, 130f);
-                var li = LGIcons.Create(card, CategoryIcon(law.Category), side, new Color(cc.r, cc.g, cc.b, active ? 0.24f : 0.16f), "Watermark");
+                var li = LGIcons.Create(card, CategoryIcon(law.Category), side, new Color(0.925f, 0.898f, 0.827f, active ? 0.10f : 0.06f), "Watermark");
                 li.sprite = art;
                 Destroy(li.GetComponent<Shadow>());
                 li.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8f, 6f), new Vector2(side, side));
@@ -353,13 +355,13 @@ namespace StellarisClone.Rendering
             Button btn;
             if (active)
             {
-                btn = LGBuild.Button(card, "Active", new Color(cc.r * 0.25f, cc.g * 0.25f, cc.b * 0.25f), new Color(cc.r, cc.g, cc.b, 0.8f), null, LGIcon.Check, Loc.T("ДЕЙСТВУЕТ"), 11);
+                btn = LGBuild.Button(card, "Active", new Color(0.30f, 0.25f, 0.14f), new Color(gold.r, gold.g, gold.b, 0.8f), null, LGIcon.Check, Loc.T("Действует"), 11);
                 btn.interactable = false;
             }
             else
             {
                 bool can = blocker == null;
-                btn = LGBuild.Button(card, "Enact", can ? new Color(0.05f, 0.20f, 0.15f) : new Color(0.04f, 0.05f, 0.06f),
+                btn = LGBuild.Button(card, "Enact", can ? new Color(0.05f, 0.20f, 0.15f) : new Color(0.035f, 0.067f, 0.118f),
                     can ? new Color(0.36f, 0.96f, 0.68f, 0.8f) : new Color(1f, 1f, 1f, 0.12f), () => Enact(law), null,
                     can ? Loc.F("ПРИНЯТЬ · {0:0} влияния", EmpireLaws.SwitchCost) : blocker, 10);
                 btn.interactable = can;

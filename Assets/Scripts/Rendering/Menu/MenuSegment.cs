@@ -8,12 +8,14 @@ using StellarisClone.Core;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Сегментный переключатель: все варианты видны сразу, выбранный подсвечен «плашкой»,
-    /// которая на пружине переезжает к новому варианту. Под названием варианта может быть подпись.
+    /// Сегментный переключатель «Атласа»: все варианты видны сразу подписями (моноширинный шрифт), под выбранным —
+    /// коралловая черта, которая на пружине переезжает к новому варианту. Под названием варианта может быть подпись.
     /// </summary>
     public sealed class MenuSegment : MonoBehaviour
     {
-        private static readonly Color Neon = new Color(0.44f, 0.90f, 0.85f);
+        private static readonly Color Coral = new Color(1f, 0.42f, 0.341f);
+        private static readonly Color Cream = new Color(0.925f, 0.898f, 0.827f);
+        private static readonly Color MutedC = new Color(0.663f, 0.639f, 0.573f);
 
         private readonly List<Option> _opts = new List<Option>();
         private RectTransform _rt, _plate;
@@ -48,23 +50,25 @@ namespace StellarisClone.Rendering
 
         public static MenuSegment Create(RectTransform parent, IList<string> labels, IList<string> subs, int value, Action<int> onChange)
         {
-            var bg = LGBuild.Panel(parent, "Segment", new Color(1f, 1f, 1f, 0.035f));
+            var bg = LGBuild.Panel(parent, "Segment", new Color(0f, 0f, 0f, 0f));
             var s = bg.gameObject.AddComponent<MenuSegment>();
             s._rt = bg.rectTransform;
             s._onChange = onChange;
             s._value = Mathf.Clamp(value, 0, labels.Count - 1);
-            var fx = LG.Platter(bg.gameObject, 14f);
-            fx.SetRim(new Color(1f, 1f, 1f, 0.08f));
-
-            // Плашка выбранного варианта: насыщенная бирюза с яркой кромкой и свечением (как в макетах)
-            var plate = LGBuild.Panel(bg.transform, "Plate", new Color(Neon.r * 0.62f, Neon.g * 0.62f, Neon.b * 0.62f, 1f));
+            LG.Ignore(bg.gameObject, includeChildren: false);
+            // Тонкая линия-основание и коралловая черта под выбранным вариантом
+            var baseLine = LGBuild.Panel(bg.transform, "BaseLine", new Color(Cream.r, Cream.g, Cream.b, 0.12f));
+            baseLine.raycastTarget = false;
+            baseLine.rectTransform.anchorMin = new Vector2(0, 0); baseLine.rectTransform.anchorMax = new Vector2(1, 0);
+            baseLine.rectTransform.offsetMin = new Vector2(0, 0); baseLine.rectTransform.offsetMax = new Vector2(0, 1);
+            LG.Ignore(baseLine.gameObject);
+            var plate = LGBuild.Panel(bg.transform, "Plate", Coral);
+            plate.raycastTarget = false;
             s._plate = plate.rectTransform;
             s._plate.anchorMin = new Vector2(0, 0);
-            s._plate.anchorMax = new Vector2(0, 1);
-            s._plate.pivot = new Vector2(0, 0.5f);
-            var pfx = LG.Chip(plate.gameObject, new Color(Neon.r, Neon.g, Neon.b, 0.95f), 10f);
-            pfx.FillMultiplier = 1.9f;
-            pfx.GlowMultiplier = 2.2f;
+            s._plate.anchorMax = new Vector2(0, 0);
+            s._plate.pivot = new Vector2(0, 0);
+            LG.Ignore(plate.gameObject);
 
             int n = labels.Count;
             for (int i = 0; i < n; i++)
@@ -80,7 +84,8 @@ namespace StellarisClone.Rendering
                 opt.Owner = s;
                 opt.Index = i;
                 bool hasSub = subs != null && i < subs.Count && !string.IsNullOrEmpty(subs[i]);
-                opt.Title = LGBuild.Label(o, labels[i], 15, Color.white, hasSub ? TextAnchor.LowerCenter : TextAnchor.MiddleCenter, bold: true);
+                opt.Title = LGBuild.Label(o, labels[i], 14, Cream, hasSub ? TextAnchor.LowerCenter : TextAnchor.MiddleCenter);
+                opt.Title.font = GameFont.Mono;
                 opt.Title.rectTransform.Stretch(4, hasSub ? 0 : 0, 4, hasSub ? 0 : 0);
                 if (hasSub)
                 {
@@ -93,7 +98,7 @@ namespace StellarisClone.Rendering
                 }
                 opt.Title.resizeTextForBestFit = true;
                 opt.Title.resizeTextMinSize = 10;
-                opt.Title.resizeTextMaxSize = 15;
+                opt.Title.resizeTextMaxSize = 14;
                 s._opts.Add(opt);
             }
             return s;
@@ -127,17 +132,17 @@ namespace StellarisClone.Rendering
             float target = pad + w * _value;
             if (!_placed) { _x = target; _placed = true; }
             _x = LGEase.Spring(_x, target, ref _xv, 5f, 0.8f, dt);
-            _plate.anchoredPosition = new Vector2(_x, 0f);
-            _plate.sizeDelta = new Vector2(w, -pad * 2f);
+            _plate.anchoredPosition = new Vector2(_x + w * 0.18f, 0f);
+            _plate.sizeDelta = new Vector2(w * 0.64f, 2f);
 
             for (int i = 0; i < _opts.Count; i++)
             {
                 var o = _opts[i];
                 o.H = LGEase.Spring(o.H, o.Over ? 1f : 0f, ref o.Hv, 4f, 0.7f, dt);
                 bool on = i == _value;
-                var c = on ? Color.white : Color.Lerp(new Color(0.62f, 0.72f, 0.76f), new Color(0.90f, 0.96f, 0.98f), Mathf.Clamp01(o.H));
+                var c = on ? Cream : Color.Lerp(MutedC, Cream, Mathf.Clamp01(o.H) * 0.7f);
                 o.Title.color = c;
-                if (o.Sub != null) o.Sub.color = on ? new Color(0.66f, 0.92f, 0.88f) : new Color(0.45f, 0.54f, 0.58f);
+                if (o.Sub != null) o.Sub.color = on ? new Color(0.906f, 0.757f, 0.439f) : new Color(0.43f, 0.42f, 0.39f);
             }
         }
     }
@@ -195,9 +200,10 @@ namespace StellarisClone.Rendering
     public sealed class MenuPrimaryButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler,
                                             IPointerDownHandler, IPointerUpHandler
     {
-        public static readonly Color Cyan = new Color(0.50f, 0.94f, 0.88f);
-        public static readonly Color Green = new Color(0.45f, 0.95f, 0.62f);
-        public static readonly Color Red = new Color(1f, 0.50f, 0.42f);
+        // «Атлас»: главная кнопка — сплошная капсула; «Cyan» — кремовая (основное действие), Green — морская зелень, Red — коралл
+        public static readonly Color Cyan = new Color(0.925f, 0.898f, 0.827f);
+        public static readonly Color Green = new Color(0.475f, 0.816f, 0.749f);
+        public static readonly Color Red = new Color(1f, 0.42f, 0.341f);
 
         private Color _base = Cyan;
         private RectTransform _inner;
@@ -234,13 +240,13 @@ namespace StellarisClone.Rendering
             b._body.rectTransform.Stretch();
             // Та же форма, что у всех кнопок: срезанные углы, без свечения (единый дизайн «приборной панели»)
             var fx = LG.Fill(b._body.gameObject);
-            fx.Radius = LGGameButton.Cut;
-            fx.Chamfer = true;
+            fx.Radius = 999f;      // «Атлас»: капсула
+            fx.Chamfer = false;
             fx.GlowMultiplier = 0f;
-            fx.SpecularMultiplier = 0.3f;
-            InspSweep.Add(b._body.gameObject, 5.5f, 0.18f);
+            fx.SpecularMultiplier = 0f;
 
-            b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.01f, 0.08f, 0.10f), TextAnchor.MiddleCenter, bold: true);
+            b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter);
+            b._label.font = GameFont.MonoMedium;
             b._label.rectTransform.Stretch(12, 0, 12, 0);
             b._label.resizeTextForBestFit = true;
             b._label.resizeTextMinSize = 10;
@@ -290,9 +296,9 @@ namespace StellarisClone.Rendering
             _p = LGEase.Spring(_p, _down ? 1f : 0f, ref _pv, 7f, 0.75f, dt);
             float h = Mathf.Clamp01(_h);
             float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 2.2f);
-            var lit = Color.Lerp(_base, Color.white, 0.35f);
+            var lit = Color.Lerp(_base, Color.white, 0.25f);
             _body.color = _interactable ? Color.Lerp(_base, lit, h * 0.6f) : new Color(_base.r * 0.4f, _base.g * 0.4f, _base.b * 0.4f, 0.8f);
-            _halo.color = new Color(_base.r, _base.g, _base.b, _interactable ? 0.05f * breathe + 0.08f * h : 0f);   // ореол едва заметен
+            _halo.color = new Color(0f, 0f, 0f, 0f);   // «Атлас»: без ореола
             float sc = 1f + 0.025f * _h - 0.04f * _p;
             _inner.localScale = new Vector3(sc, sc, 1f);
         }
@@ -303,7 +309,7 @@ namespace StellarisClone.Rendering
     {
         public static void Sheen(RectTransform panel, float alpha = 0.07f)
         {
-            var top = LGBuild.Panel(panel, "Sheen", new Color(0.55f, 0.95f, 0.92f, alpha));
+            var top = LGBuild.Panel(panel, "Sheen", new Color(0.925f, 0.898f, 0.827f, alpha * 0.4f));
             top.sprite = MenuArt.VerticalFade;
             top.rectTransform.anchorMin = new Vector2(0, 0.55f);
             top.rectTransform.anchorMax = Vector2.one;

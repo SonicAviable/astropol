@@ -56,22 +56,13 @@ namespace StellarisClone.Rendering
         {
             var row = LGBuild.Rect(_inspStack, "Section");
             LGBuild.Height(row.gameObject, 30);
+            // «Атлас»: заголовок раздела — моноширинная золотая подпись с разрядкой и тонкая кремовая линия под ней
             Color g = DS.Gold;
-            var glow = LGBuild.Panel(row, "Glow", new Color(g.r, g.g, g.b, 0.35f));
-            glow.sprite = FactionSelectScreen.RadialSprite();
-            glow.raycastTarget = false;
-            glow.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(6, 10), new Vector2(26, 26));
-            var dia = LGBuild.Panel(row, "Diamond", g);
-            dia.raycastTarget = false;
-            dia.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(6, 10), new Vector2(7, 7));
-            dia.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
-            var ic = LGIcons.Create(row, icon, 13, new Color(g.r, g.g, g.b, 0.85f));
-            ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(16, 4), new Vector2(13, 13));
-            var t = LGBuild.Label(row, title, 11, g, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.Stretch(34, 2, 0, 0);
-            t.Track(2.2f);
-            var line = LGBuild.Panel(row, "Line", new Color(g.r, g.g, g.b, 0.55f));
-            line.sprite = UIManager.FadeRightSprite;
+            var t = LGBuild.Label(row, title, 11, g, TextAnchor.LowerLeft);
+            t.font = GameFont.Mono;
+            t.rectTransform.Stretch(2, 4, 0, 0);
+            t.Track(1.6f);
+            var line = LGBuild.Panel(row, "Line", new Color(DS.TextPrimary.r, DS.TextPrimary.g, DS.TextPrimary.b, 0.16f));
             line.raycastTarget = false;
             line.rectTransform.anchorMin = new Vector2(0, 0);
             line.rectTransform.anchorMax = new Vector2(1, 0);
@@ -137,7 +128,7 @@ namespace StellarisClone.Rendering
             var bar = LGBuild.Panel(row.transform, "Accent", new Color(col.r, col.g, col.b, 0.9f));
             bar.raycastTarget = false;
             bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(3, 0), new Vector2(2.5f, 22));
-            var cg = LGBuild.Panel(row.transform, "IconGlow", new Color(col.r, col.g, col.b, 0.28f));
+            var cg = LGBuild.Panel(row.transform, "IconGlow", new Color(0f, 0f, 0f, 0f));   // «Атлас»: без ореола
             cg.sprite = FactionSelectScreen.RadialSprite();
             cg.raycastTarget = false;
             cg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(34, 34));

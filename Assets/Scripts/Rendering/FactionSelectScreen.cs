@@ -18,7 +18,7 @@ namespace StellarisClone.Rendering
     {
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
-        private static readonly Color PanelBg = new Color(0.016f, 0.03f, 0.044f, 0.82f);
+        private static readonly Color PanelBg = new Color(0.035f, 0.067f, 0.118f, 0.82f);
 
         private Action<FactionInfo> _onChoose;
         private Action _onBack;
@@ -202,7 +202,7 @@ namespace StellarisClone.Rendering
             rt.Stretch();
             gameObject.AddComponent<CanvasGroup>();
             var bgImg = gameObject.AddComponent<Image>();
-            bgImg.color = new Color(0.005f, 0.01f, 0.02f, 1f);
+            bgImg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
             bgImg.raycastTarget = true;
             LG.Ignore(gameObject, includeChildren: false);
             LG.Motion(gameObject, LGAppear.Kind.Fade);
@@ -211,19 +211,19 @@ namespace StellarisClone.Rendering
             _bgA = BgLayer(rt, "BgA");
             _bgB = BgLayer(rt, "BgB");
             // Общее затемнение, плотнее сверху (под гербы) и снизу (под кнопки)
-            var shade = LGBuild.Panel(rt, "Shade", new Color(0.004f, 0.008f, 0.016f, 0.6f));
+            var shade = LGBuild.Panel(rt, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.6f));
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
             var shadeT = LGBuild.Panel(rt, "ShadeTop", Color.white);
             shadeT.sprite = GradientSprite(false, true);
-            shadeT.color = new Color(0.004f, 0.008f, 0.016f, 0.95f);
+            shadeT.color = new Color(0.035f, 0.067f, 0.118f, 0.95f);
             shadeT.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 330f));
             shadeT.rectTransform.anchorMin = new Vector2(0f, 1f);
             shadeT.rectTransform.anchorMax = new Vector2(1f, 1f);
             LG.Ignore(shadeT.gameObject);
             var shadeB = LGBuild.Panel(rt, "ShadeBottom", Color.white);
             shadeB.sprite = GradientSprite(false);
-            shadeB.color = new Color(0.004f, 0.008f, 0.016f, 0.75f);
+            shadeB.color = new Color(0.035f, 0.067f, 0.118f, 0.75f);
             shadeB.rectTransform.anchorMin = new Vector2(0, 0);
             shadeB.rectTransform.anchorMax = new Vector2(1, 0);
             shadeB.rectTransform.pivot = new Vector2(0.5f, 0);
@@ -272,7 +272,7 @@ namespace StellarisClone.Rendering
             _cards = LGBuild.Rect(rt, "Medals");
             _cards.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -88f), new Vector2(n * step, 220f));
 
-            var line = LGBuild.Panel(_cards, "Line", new Color(0.47f, 0.86f, 0.84f, 0.3f));
+            var line = LGBuild.Panel(_cards, "Line", new Color(0.475f, 0.816f, 0.749f, 0.3f));
             line.sprite = HudArt.EdgeFade(0.3f);
             line.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -MedalY), new Vector2(n * step + 300f, 1f));
             LG.Ignore(line.gameObject);
@@ -389,14 +389,14 @@ namespace StellarisClone.Rendering
                 _pages[i].Stretch(0, 62, 0, 164);
             }
             BuildOverview(_pages[0]);
-            _desc = LGBuild.Label(_pages[1], "", 16, new Color(0.80f, 0.86f, 0.90f), TextAnchor.UpperLeft, wrap: true);
+            _desc = LGBuild.Label(_pages[1], "", 16, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             _desc.lineSpacing = 1.25f;
             _desc.rectTransform.Stretch(0, 0, 160, 4);
             _ldName = LGBuild.Label(_pages[2], "", 26, Primary, TextAnchor.UpperLeft, bold: true);
             _ldName.rectTransform.TopBand(4, 34);
             _ldTitle = LGBuild.Label(_pages[2], "", 16, Muted, TextAnchor.UpperLeft);
             _ldTitle.rectTransform.TopBand(42, 22);
-            _ldQuote = LGBuild.Label(_pages[2], "", 22, new Color(0.86f, 0.91f, 0.94f), TextAnchor.UpperLeft, wrap: true);
+            _ldQuote = LGBuild.Label(_pages[2], "", 22, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             _ldQuote.fontStyle = FontStyle.Italic;
             _ldQuote.lineSpacing = 1.2f;
             _ldQuote.rectTransform.Stretch(0, 0, 160, 92);
@@ -406,7 +406,7 @@ namespace StellarisClone.Rendering
             _quoteLine.rectTransform.anchorMin = new Vector2(0f, 0f);
             _quoteLine.rectTransform.anchorMax = new Vector2(1f, 0f);
             LG.Ignore(_quoteLine.gameObject);
-            _quote = LGBuild.Label(d, "", 16, new Color(0.79f, 0.85f, 0.87f), TextAnchor.LowerLeft, wrap: true);
+            _quote = LGBuild.Label(d, "", 16, new Color(0.925f, 0.898f, 0.827f), TextAnchor.LowerLeft, wrap: true);
             _quote.fontStyle = FontStyle.Italic;
             _quote.rectTransform.anchorMin = new Vector2(0, 0);
             _quote.rectTransform.anchorMax = new Vector2(1, 0);
@@ -513,7 +513,7 @@ namespace StellarisClone.Rendering
             _frame.anchoredPosition = new Vector2(FrameW * 0.5f, 0f);
             _frameGroup = _frame.gameObject.AddComponent<CanvasGroup>();
 
-            var back = LGBuild.Panel(_frame, "Back", new Color(0.01f, 0.02f, 0.03f, 0.95f));
+            var back = LGBuild.Panel(_frame, "Back", new Color(0.035f, 0.067f, 0.118f, 0.95f));
             back.rectTransform.Stretch();
             _frameFx = LG.Platter(back.gameObject, 8f);
             _frameFx.FillMultiplier = 3f;
@@ -610,7 +610,7 @@ namespace StellarisClone.Rendering
 
         private static void Btn(RectTransform rt, string name, LGIcon icon, string label, Vector2 anchor, Vector2 pivot, Vector2 pos, float w, Action act)
         {
-            var b = LGBuild.Button(rt, name, new Color(0.05f, 0.10f, 0.13f, 0.95f), new Color(1f, 1f, 1f, 0.25f), act, icon, label, 15, 4f);
+            var b = LGBuild.Button(rt, name, new Color(0.055f, 0.094f, 0.157f, 0.95f), new Color(1f, 1f, 1f, 0.25f), act, icon, label, 15, 4f);
             ((RectTransform)b.transform).At(anchor, pivot, pos, new Vector2(w, 50f));
             var fx = b.GetComponent<LiquidGlassEffect>();
             if (fx != null) { fx.SpecularMultiplier = 0.3f; fx.FillMultiplier = 2.6f; }
@@ -641,7 +641,7 @@ namespace StellarisClone.Rendering
                 Color cc = m.F.EmpireColor;
                 m.Ring.color = new Color(cc.r, cc.g, cc.b, on ? 1f : 0.35f);
                 m.Back.color = on ? new Color(0.02f + cc.r * 0.12f, 0.04f + cc.g * 0.12f, 0.07f + cc.b * 0.12f, 0.95f)
-                                  : new Color(0.016f, 0.04f, 0.08f, 0.88f);
+                                  : new Color(0.055f, 0.094f, 0.157f, 0.88f);
                 if (m.Crest != null) m.Crest.color = on ? Color.Lerp(cc, Color.white, 0.6f) : new Color(0.75f, 0.80f, 0.85f, 0.55f);
                 m.Name.color = on ? Color.Lerp(cc, Color.white, 0.55f) : Muted;
                 m.Name.resizeTextMaxSize = on ? 14 : 13;
@@ -860,7 +860,7 @@ namespace StellarisClone.Rendering
             row.TopBand(y, 30);
             var ic = LGIcons.Create(row, icon, 24, col);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(24, 24));
-            var t = LGBuild.Label(row, text, 15, new Color(0.86f, 0.91f, 0.94f), TextAnchor.MiddleLeft);
+            var t = LGBuild.Label(row, text, 15, new Color(0.925f, 0.898f, 0.827f), TextAnchor.MiddleLeft);
             t.rectTransform.Stretch(36, 0, 0, 0);
             y += 32f;
         }

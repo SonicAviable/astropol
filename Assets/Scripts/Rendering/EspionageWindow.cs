@@ -30,12 +30,12 @@ namespace StellarisClone.Rendering
         private const float Body = BannerH + 16f;     // где в колонке начинается содержимое
 
         private static readonly Color Purple = new Color(0.74f, 0.56f, 1f);
-        private static readonly Color Cyan = new Color(0.40f, 0.88f, 0.82f);
+        private static readonly Color Cyan = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color Orange = new Color(1f, 0.67f, 0.33f);
         private static readonly Color Rim = new Color(0.74f, 0.56f, 1f, 0.34f);
-        private static readonly Color CardTint = new Color(0.035f, 0.04f, 0.075f, 0.97f);
-        private static readonly Color RowTint = new Color(0.05f, 0.055f, 0.10f, 0.95f);
-        private static readonly Color Muted = new Color(0.55f, 0.63f, 0.70f, 1f);
+        private static readonly Color CardTint = new Color(0.035f, 0.067f, 0.118f, 0.97f);
+        private static readonly Color RowTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
+        private static readonly Color Muted = new Color(0.663f, 0.639f, 0.573f, 1f);
 
         private GameObject _root;
         private RectTransform _fit;
@@ -151,7 +151,7 @@ namespace StellarisClone.Rendering
             _subtitle = LGBuild.Label(titleRt, "", 12, UIManager.DS.TextMuted, TextAnchor.LowerLeft);
             _subtitle.rectTransform.offsetMin = new Vector2(0, 14);
 
-            var close = LGBuild.Button(header.transform, "Close", new Color(0.16f, 0.20f, 0.24f),
+            var close = LGBuild.Button(header.transform, "Close", new Color(0.075f, 0.125f, 0.220f),
                 new Color(1f, 0.45f, 0.48f, 0.5f), Close, LGIcon.Close, null, 12, 17f);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-22, 0), new Vector2(34, 34));
 
@@ -622,7 +622,7 @@ namespace StellarisClone.Rendering
                 LG.Platter(node.gameObject, 13f).SetRim(got ? new Color(Purple.r, Purple.g, Purple.b, 1f)
                                                              : isNext ? new Color(Purple.r, Purple.g, Purple.b, 0.7f)
                                                              : new Color(1f, 1f, 1f, 0.18f));
-                var ic = LGIcons.Create(node.transform, m.Icon, 14, got ? Color.white : isNext ? Purple : new Color(0.6f, 0.66f, 0.72f, 0.55f));
+                var ic = LGIcons.Create(node.transform, m.Icon, 14, got ? Color.white : isNext ? Purple : new Color(0.663f, 0.639f, 0.573f, 0.55f));
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14, 14));
                 TooltipHelper.Attach(node.gameObject, Loc.F("<b>{0}</b> — при сети {1:0}%\n{2}\n\n", m.Title, m.Cover, m.Desc) +
                     (got ? Loc.T("<color=#8CD3A0>Открыто</color>") : Loc.F("<color=#A9A392>Ещё {0:0.#}%</color>", m.Cover - cover)));
@@ -775,7 +775,7 @@ namespace StellarisClone.Rendering
             Caption(col, Loc.F("ДОСЬЕ  ·  {0}", ai.AIName.ToUpper()), top, In, FleetIndicator.OwnerColor(ai.OwnerId));
             if (a.Cover < EspionageManager.DeepIntelCover)
             {
-                var lockIc = LGIcons.Create(col, LGIcon.Lock, 34, new Color(0.6f, 0.66f, 0.72f, 0.5f));
+                var lockIc = LGIcons.Create(col, LGIcon.Lock, 34, new Color(0.663f, 0.639f, 0.573f, 0.5f));
                 lockIc.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -top - 44), new Vector2(34, 34));
                 Txt(col, Loc.F("Досье закрыто\n<size=12><color=#A9A392>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>", EspionageManager.DeepIntelCover, a.Cover),
                     15, UIManager.DS.TextPrimary, top + 90, 80, In, In, TextAnchor.UpperCenter, bold: true);

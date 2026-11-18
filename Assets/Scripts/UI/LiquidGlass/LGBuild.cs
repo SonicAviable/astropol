@@ -90,7 +90,9 @@ namespace StellarisClone.Rendering
             float k = 1f - Mathf.Clamp01(dim);
             img.color = new Color(k, k, k * 1.05f, 1f);
             img.raycastTarget = false;
-            img.gameObject.AddComponent<WindowBgFx>().Init(img, FxTint(bg));
+            // «Атлас»: окна без фоновых картинок — ровный чернильный фон и роза ветров шейдера; объект остаётся
+            // (на него ссылается код окон), но невидим
+            img.enabled = false;
             return img;
         }
 
@@ -101,7 +103,7 @@ namespace StellarisClone.Rendering
             {
                 case "espionage":    return new Color(0.85f, 0.60f, 1.00f);
                 case "empire":       return new Color(1.00f, 0.86f, 0.55f);
-                case "shipdesigner": return new Color(0.55f, 0.90f, 1.00f);
+                case "shipdesigner": return new Color(0.475f, 0.816f, 0.749f);
                 case "colonies":     return new Color(0.60f, 1.00f, 0.85f);
                 default:             return new Color(0.75f, 0.90f, 1.00f);
             }
@@ -116,6 +118,31 @@ namespace StellarisClone.Rendering
             return img;
         }
 
+        /// <summary>
+        /// «Атлас»: заголовок, набранный целиком заглавными («ЗАКОНЫ ИМПЕРИИ»), — обычным регистром («Законы империи»);
+        /// заглавная остаётся у первой буквы и после «. Текст с тегами и смешанным регистром не меняется.
+        /// </summary>
+        public static string Sentence(string s)
+        {
+            if (string.IsNullOrEmpty(s) || s.IndexOf('<') >= 0) return s;
+            int letters = 0;
+            foreach (char ch in s)
+            {
+                if (!char.IsLetter(ch)) continue;
+                if (char.IsLower(ch)) return s;
+                letters++;
+            }
+            if (letters < 4) return s;
+            var sb = new System.Text.StringBuilder(s.Length);
+            bool cap = true;
+            foreach (char ch in s)
+            {
+                if (char.IsLetter(ch)) { sb.Append(cap ? ch : char.ToLowerInvariant(ch)); cap = false; }
+                else { sb.Append(ch); if (ch == '«' || ch == '.' || ch == '!' || ch == '?') cap = true; }
+            }
+            return sb.ToString();
+        }
+
         public static Text Label(Transform parent, string text, int size, Color color,
                                  TextAnchor anchor = TextAnchor.MiddleLeft, bool bold = false, bool wrap = false)
         {
@@ -127,6 +154,9 @@ namespace StellarisClone.Rendering
             t.font = bold ? (size >= 20 ? GameFont.Display : GameFont.Bold) : GameFont.Regular;
             t.fontSize = size;
             t.fontStyle = FontStyle.Normal;
+            if (bold && size >= 20) text = Sentence(text);
+            // «Атлас»: белый текст окон — кремовый
+            if (color.r > 0.95f && color.g > 0.95f && color.b > 0.95f) color = new Color(0.925f, 0.898f, 0.827f, color.a);
             t.color = color;
             t.text = text;
             t.alignment = anchor;
@@ -135,7 +165,7 @@ namespace StellarisClone.Rendering
             t.horizontalOverflow = wrap ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             var sh = rt.gameObject.AddComponent<Shadow>();
-            sh.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.5f);
+            sh.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.5f);
             sh.effectDistance = new Vector2(0f, -1f);
             return t;
         }
@@ -170,7 +200,7 @@ namespace StellarisClone.Rendering
         /// <summary>Полоса прогресса: стеклянный жёлоб + светящаяся заливка. Возвращает заливку.</summary>
         public static RectTransform Bar(Transform parent, Color fill, float value, float height = 6f)
         {
-            var track = Panel(parent, "BarTrack", new Color(0f, 0.02f, 0.04f, 0.8f));
+            var track = Panel(parent, "BarTrack", new Color(0.035f, 0.067f, 0.118f, 0.8f));
             track.rectTransform.anchorMin = new Vector2(0, 0.5f);
             track.rectTransform.anchorMax = new Vector2(1, 0.5f);
             track.rectTransform.sizeDelta = new Vector2(0, height);

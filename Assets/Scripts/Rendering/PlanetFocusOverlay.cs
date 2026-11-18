@@ -103,11 +103,11 @@ namespace StellarisClone.Rendering
         private static readonly Color CGold = UIManager.DS.Gold;
         private static readonly Color CMuted = UIManager.DS.TextMuted;
         private static readonly Color CCyan = UIManager.DS.NeonCyan;
-        private static readonly Color CMinerals = new Color(0.20f, 0.90f, 0.80f);
+        private static readonly Color CMinerals = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color CEnergy = new Color(0.95f, 0.78f, 0.28f);
         private static readonly Color CAlloys = new Color(0.95f, 0.62f, 0.36f);
         private static readonly Color CScience = new Color(0.50f, 0.92f, 0.62f);
-        private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.88f);
+        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.88f);
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.09f);
 
         // Раскладка (в единицах канваса 1920×1080)
@@ -279,7 +279,7 @@ namespace StellarisClone.Rendering
         /// <summary>Цвет мира: свечение атмосферы, акценты шапки и колец.</summary>
         private static Color WorldColor(PlanetType t) => t switch
         {
-            PlanetType.Continental => new Color(0.32f, 0.86f, 0.92f),
+            PlanetType.Continental => new Color(0.475f, 0.816f, 0.749f),
             PlanetType.Desert => new Color(0.98f, 0.72f, 0.38f),
             PlanetType.Molten => new Color(1.00f, 0.42f, 0.20f),
             PlanetType.GasGiant => new Color(0.74f, 0.58f, 1.00f),
@@ -434,9 +434,9 @@ namespace StellarisClone.Rendering
             if (!show) { _focusList.SetActive(false); return; }
             _focusText.text = ColonyFocusInfo.Name(_planet.Focus).ToUpper();
             for (int i = 0; i < _focusOptBg.Length; i++)
-                _focusOptBg[i].color = ColonyFocusInfo.All[i] == _planet.Focus ? new Color(0.16f, 0.52f, 0.56f) : new Color(0.03f, 0.07f, 0.09f, 0.98f);
+                _focusOptBg[i].color = ColonyFocusInfo.All[i] == _planet.Focus ? new Color(0.475f, 0.816f, 0.749f) : new Color(0.055f, 0.094f, 0.157f, 0.98f);
             bool auto = _planet.AutoBuild;
-            _autoBg.color = auto ? new Color(0.14f, 0.46f, 0.30f) : new Color(0.07f, 0.13f, 0.17f);
+            _autoBg.color = auto ? new Color(0.14f, 0.46f, 0.30f) : new Color(0.075f, 0.125f, 0.220f);
             _autoIcon.sprite = LGIcons.Get(auto ? LGIcon.Check : LGIcon.Construction);
             _autoIcon.color = auto ? UIManager.DS.Green : CMuted;
             _autoText.text = auto ? Loc.T("АВТОСТРОЙКА ВКЛ.") : Loc.T("АВТОСТРОЙКА ВЫКЛ.");
@@ -642,7 +642,7 @@ namespace StellarisClone.Rendering
                 else LGBuild.SetBar(r.Bar, 0f);
 
                 r.Rim.color = focused ? new Color(dc.r, dc.g, dc.b, 0.9f) : new Color(dc.r, dc.g, dc.b, 0.25f);
-                r.Bg.color = focused ? new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.92f) : new Color(0.02f, 0.045f, 0.065f, 0.82f);
+                r.Bg.color = focused ? new Color(dc.r * 0.10f, dc.g * 0.10f, dc.b * 0.10f, 0.92f) : new Color(0.035f, 0.067f, 0.118f, 0.82f);
                 r.InfoTip.SetText(t == DistrictType.Urban
                     ? Loc.T("<b>Город</b>\nЖильё для двух жителей и место служащего в каждом районе: служащий даёт +1 науки. Сюда идут те, кому не хватило мест на производстве. Нажмите, чтобы производство делилось поровну.")
                     : Loc.F("<b>{0}</b>\n{1}\nКаждое занятое место даёт ≈ {2:0.#} в месяц.\n", DistrictName(t), DistrictEffect(t), PerWorker(t)) +
@@ -760,7 +760,7 @@ namespace StellarisClone.Rendering
                 string block = Builds.BuyBlocker(job);
                 _buyBtn.gameObject.SetActive(true);
                 _buyBtn.interactable = block == null;
-                _buyBg.color = block == null ? new Color(0.36f, 0.28f, 0.06f) : new Color(0.08f, 0.10f, 0.12f);
+                _buyBg.color = block == null ? new Color(0.36f, 0.28f, 0.06f) : new Color(0.055f, 0.094f, 0.157f);
                 _buyText.text = Loc.F("КУПИТЬ  {0}", ConstructionManager.BuyCost(job));
                 _buyText.color = block == null ? Color.white : CMuted;
                 _buyTip.SetText(BuildMenuModal.BuyTip(job, block));
@@ -769,7 +769,7 @@ namespace StellarisClone.Rendering
             {
                 _curIcon.sprite = LGIcons.Get(LGIcon.Construction);
                 _curIcon.color = new Color(CGold.r, CGold.g, CGold.b, 0.35f);
-                _curTileBg.color = new Color(0.03f, 0.06f, 0.08f, 0.95f);
+                _curTileBg.color = new Color(0.055f, 0.094f, 0.157f, 0.95f);
                 _curDays.text = "";
                 _curName.text = _planet.Population > 0 && _planet.AutoBuild ? Loc.T("Автостройка выберет сама") : Loc.T("Выберите производство");
                 _curSub.text = _planet.Population > 0 && _planet.AutoBuild ? Loc.T("закажет нужный район в начале месяца")
@@ -924,7 +924,7 @@ namespace StellarisClone.Rendering
             _root = _rootRt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.004f, 0.012f, 0.020f, 1f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
             bg.raycastTarget = true;
             LG.Scrim(_root).FillMultiplier = 2.2f;
             var motion = LG.Motion(_root, LGAppear.Kind.Fade);
@@ -1020,7 +1020,7 @@ namespace StellarisClone.Rendering
             chev.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f);
             TooltipHelper.Attach(drop.gameObject, Loc.T("<b>Приоритет колонии</b>\nКуда жители идут работать в первую очередь и что заказывает автостройка. Также — клик по ряду работ."));
 
-            var auto = LGBuild.Button(row, "Auto", new Color(0.07f, 0.13f, 0.17f), new Color(0.36f, 0.88f, 0.60f, 0.5f), ToggleAutoBuild, null, null, 11, 8f);
+            var auto = LGBuild.Button(row, "Auto", new Color(0.075f, 0.125f, 0.220f), new Color(0.36f, 0.88f, 0.60f, 0.5f), ToggleAutoBuild, null, null, 11, 8f);
             ((RectTransform)auto.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(208, -20), new Vector2(172, 32));
             _autoBg = auto.GetComponent<Image>();
             _autoIcon = LGIcons.Create(auto.transform, LGIcon.Construction, 13, CMuted);
@@ -1036,7 +1036,7 @@ namespace StellarisClone.Rendering
             _resetPlanBtn = reset.gameObject;
 
             // Выпадающий список приоритетов
-            var list = LGBuild.Panel(rt, "FocusList", new Color(0.02f, 0.05f, 0.07f, 0.98f), raycast: true);
+            var list = LGBuild.Panel(rt, "FocusList", new Color(0.035f, 0.067f, 0.118f, 0.98f), raycast: true);
             list.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -PriorityTop - 54), new Vector2(260, ColonyFocusInfo.All.Length * 36 + 8));
             LG.Platter(list.gameObject, 10f).SetRim(new Color(CCyan.r, CCyan.g, CCyan.b, 0.45f));
             _focusList = list.gameObject;
@@ -1044,7 +1044,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < ColonyFocusInfo.All.Length; i++)
             {
                 var f = ColonyFocusInfo.All[i];
-                var opt = LGBuild.Button(list.transform, "Opt", new Color(0.03f, 0.07f, 0.09f, 0.98f), new Color(CCyan.r, CCyan.g, CCyan.b, 0.3f), () => PickFocus(f), null, null, 12, 6f);
+                var opt = LGBuild.Button(list.transform, "Opt", new Color(0.055f, 0.094f, 0.157f, 0.98f), new Color(CCyan.r, CCyan.g, CCyan.b, 0.3f), () => PickFocus(f), null, null, 12, 6f);
                 ((RectTransform)opt.transform).TopBand(4 + i * 36, 34, 4, 4);
                 var t = LGBuild.Label(opt.transform, ColonyFocusInfo.Name(f), 13, Color.white, TextAnchor.MiddleCenter, bold: true);
                 _focusOptBg[i] = opt.GetComponent<Image>();
@@ -1078,7 +1078,7 @@ namespace StellarisClone.Rendering
                 var t = RowOrder[i];
                 Color dc = DistrictInfo.Color(t);
                 var r = new JobRow { Type = t, Focus = FocusOf(t) };
-                r.Bg = LGBuild.Panel(host, "Card_" + t, new Color(0.02f, 0.045f, 0.065f, 0.82f), raycast: false);
+                r.Bg = LGBuild.Panel(host, "Card_" + t, new Color(0.035f, 0.067f, 0.118f, 0.82f), raycast: false);
                 var br = r.Bg.rectTransform;
                 br.anchorMin = br.anchorMax = new Vector2(0, 0);
                 br.pivot = new Vector2(0.5f, 0);
@@ -1137,7 +1137,7 @@ namespace StellarisClone.Rendering
             }
 
             // Пятая карта — «Строить»: меню строительства
-            var build = LGBuild.Button(host, "Card_Build", new Color(0.03f, 0.10f, 0.12f, 0.6f), new Color(CCyan.r, CCyan.g, CCyan.b, 0.45f), OpenBuildMenu, null, null, 12, 14f);
+            var build = LGBuild.Button(host, "Card_Build", new Color(0.055f, 0.094f, 0.157f, 0.6f), new Color(CCyan.r, CCyan.g, CCyan.b, 0.45f), OpenBuildMenu, null, null, 12, 14f);
             var bt = (RectTransform)build.transform;
             bt.anchorMin = bt.anchorMax = new Vector2(0, 0);
             bt.pivot = new Vector2(0.5f, 0);
@@ -1170,7 +1170,7 @@ namespace StellarisClone.Rendering
             title.Track(1.4f);
 
             // Текущая стройка — квадратная плитка
-            _curTileBg = LGBuild.Panel(host, "Current", new Color(0.03f, 0.06f, 0.08f, 0.95f), raycast: true);
+            _curTileBg = LGBuild.Panel(host, "Current", new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             _curTileBg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -24), new Vector2(ProdTileS, ProdTileS));
             LG.Platter(_curTileBg.gameObject, 12f).SetRim(new Color(CGold.r, CGold.g, CGold.b, 0.45f));
             TooltipHelper.Attach(_curTileBg.gameObject, "");
@@ -1339,7 +1339,7 @@ namespace StellarisClone.Rendering
             host.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-Pad, -30), new Vector2(300, 40));
             LG.Motion(host.gameObject, LGAppear.Kind.Fade).delay = 0.12f;
 
-            _prevBtn = LGBuild.Button(host, "Prev", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(-1), LGIcon.Back, null, 12, 8f);
+            _prevBtn = LGBuild.Button(host, "Prev", new Color(0.075f, 0.125f, 0.220f), CCyan, () => StepColony(-1), LGIcon.Back, null, 12, 8f);
             ((RectTransform)_prevBtn.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(48, 40));
             TooltipHelper.Attach(_prevBtn.gameObject, Loc.T("<b>Предыдущая колония</b>\nShift+Tab"));
 
@@ -1347,7 +1347,7 @@ namespace StellarisClone.Rendering
             _navText.rectTransform.Stretch(54, 0, 54, 0);
             _navText.Track(1.2f);
 
-            _nextBtn = LGBuild.Button(host, "Next", new Color(0.08f, 0.24f, 0.28f), CCyan, () => StepColony(1), null, null, 12, 8f);
+            _nextBtn = LGBuild.Button(host, "Next", new Color(0.075f, 0.125f, 0.220f), CCyan, () => StepColony(1), null, null, 12, 8f);
             ((RectTransform)_nextBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), Vector2.zero, new Vector2(48, 40));
             var ni = LGIcons.Create(_nextBtn.transform, LGIcon.Back, 14, Color.white);
             ni.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
@@ -1564,7 +1564,7 @@ namespace StellarisClone.Rendering
             a.Status.color = done ? new Color(0.62f, 0.92f, 0.72f) : interactable ? Color.white : CMuted;
             a.Icon.sprite = LGIcons.Get(icon);
             a.Icon.color = done ? UIManager.DS.Green : interactable ? Color.white : CMuted;
-            a.Bg.color = done ? new Color(0.04f, 0.12f, 0.09f) : interactable ? a.Tint : new Color(0.05f, 0.08f, 0.11f);
+            a.Bg.color = done ? new Color(0.04f, 0.12f, 0.09f) : interactable ? a.Tint : new Color(0.055f, 0.094f, 0.157f);
             Color ac = done ? UIManager.DS.Green : interactable ? a.Accent : CMuted;
             a.Badge.color = new Color(ac.r * 0.22f, ac.g * 0.22f, ac.b * 0.22f, 1f);
         }
@@ -1827,7 +1827,7 @@ namespace StellarisClone.Rendering
             _title = LGBuild.Label(rt, "", 46, Color.white, TextAnchor.UpperCenter, bold: true);
             _title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -52), new Vector2(900, 56));
             var glow = _title.gameObject.AddComponent<Outline>();
-            glow.effectColor = new Color(0.30f, 0.90f, 0.85f, 0.18f);
+            glow.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.18f);
             glow.effectDistance = new Vector2(1.5f, -1.5f);
             _subtitle = LGBuild.Label(rt, "", 13, CGold, TextAnchor.UpperCenter, bold: true);
             _subtitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -32), new Vector2(900, 20));
@@ -2030,7 +2030,7 @@ namespace StellarisClone.Rendering
             bool can = owned && !running && eco != null && eco.Influence >= PlanetStability.PropagandaInfluence;
             _propBtn.gameObject.SetActive(owned);
             _propBtn.interactable = can;
-            _propBg.color = can ? new Color(0.30f, 0.14f, 0.30f) : new Color(0.05f, 0.08f, 0.11f);
+            _propBg.color = can ? new Color(0.30f, 0.14f, 0.30f) : new Color(0.055f, 0.094f, 0.157f);
             _propText.text = running ? Loc.F("ПРОПАГАНДА ИДЁТ · {0} мес.", _planet.PropagandaMonths)
                                      : Loc.F("ПРОПАГАНДА · {0:0} влияния", PlanetStability.PropagandaInfluence);
             _propText.color = can || running ? Color.white : CMuted;
@@ -2152,7 +2152,7 @@ namespace StellarisClone.Rendering
             r.offsetMin = new Vector2(0, index == ProjectCount - 1 ? 0 : 3);
             r.offsetMax = new Vector2(0, index == 0 ? 0 : -3);
 
-            var badge = LGBuild.Panel(b.transform, "Badge", new Color(0.05f, 0.1f, 0.12f));
+            var badge = LGBuild.Panel(b.transform, "Badge", new Color(0.055f, 0.094f, 0.157f));
             badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(28, 28));
             LG.Platter(badge.gameObject, 15f).SetRim(new Color(accent.r, accent.g, accent.b, 0.6f));
             var ic = LGIcons.Create(badge.transform, LGIcon.Check, 15, Color.white);

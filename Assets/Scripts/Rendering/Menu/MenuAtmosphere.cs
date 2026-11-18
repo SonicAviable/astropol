@@ -42,7 +42,7 @@ namespace StellarisClone.Rendering
 
         private static readonly Color[] Palette =
         {
-            new Color(0.20f, 0.85f, 0.80f),   // бирюза
+            new Color(0.475f, 0.816f, 0.749f),   // бирюза
             new Color(0.45f, 0.30f, 1.00f),   // фиолет
             new Color(1.00f, 0.55f, 0.25f),   // янтарь
             new Color(0.25f, 0.45f, 1.00f)    // синий
@@ -140,8 +140,8 @@ namespace StellarisClone.Rendering
 
             // Свет на освещённом крае и полярные сияния — мягкие пятна, медленно дышат (координаты — доли картинки)
             _limb = Glow(rt, new Vector2(0.60f, 0.70f), new Vector2(0.20f, 0.30f), new Color(0.75f, 0.92f, 1f, 0f));
-            _auroraHigh = Glow(rt, new Vector2(0.70f, 0.74f), new Vector2(0.10f, 0.10f), new Color(0.35f, 1f, 0.8f, 0f));
-            _auroraLow = Glow(rt, new Vector2(0.82f, 0.09f), new Vector2(0.16f, 0.14f), new Color(0.35f, 1f, 0.8f, 0f));
+            _auroraHigh = Glow(rt, new Vector2(0.70f, 0.74f), new Vector2(0.10f, 0.10f), new Color(0.475f, 0.816f, 0.749f, 0f));
+            _auroraLow = Glow(rt, new Vector2(0.82f, 0.09f), new Vector2(0.16f, 0.14f), new Color(0.475f, 0.816f, 0.749f, 0f));
         }
 
         private static Image Glow(RectTransform parent, Vector2 uv, Vector2 size, Color col)

@@ -70,7 +70,7 @@ namespace StellarisClone.Rendering
             _rt = rt;
             _group = rt.gameObject.AddComponent<CanvasGroup>();
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.008f, 0.022f, 0.032f, 0.97f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
             bg.raycastTarget = true;
             _fx = LG.Glass(rt.gameObject, 22f);
 
@@ -128,7 +128,7 @@ namespace StellarisClone.Rendering
 
         private void BuildPortrait()
         {
-            var frame = LGBuild.Panel(_content, "PortraitFrame", new Color(0.01f, 0.03f, 0.04f, 1f));
+            var frame = LGBuild.Panel(_content, "PortraitFrame", new Color(0.035f, 0.067f, 0.118f, 1f));
             frame.rectTransform.anchorMin = new Vector2(0, 0);
             frame.rectTransform.anchorMax = new Vector2(0, 1);
             frame.rectTransform.pivot = new Vector2(0, 0.5f);
@@ -149,7 +149,7 @@ namespace StellarisClone.Rendering
             _scanlines.raycastTarget = false;
 
             // Снизу затемнение под имя
-            var shade = LGBuild.Panel(mask, "Shade", new Color(0.005f, 0.015f, 0.022f, 1f));
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.035f, 0.067f, 0.118f, 1f));
             shade.sprite = MenuArt.VerticalFade;
             shade.rectTransform.anchorMin = Vector2.zero;
             shade.rectTransform.anchorMax = new Vector2(1, 0.42f);
@@ -237,7 +237,7 @@ namespace StellarisClone.Rendering
             _buttonGroup = _startBtn.gameObject.AddComponent<CanvasGroup>();
 
             // Назад — к выбору цивилизации (доступно сразу, не ждёт конца текста)
-            var back = LGBuild.Button(right, "BackBtn", new Color(0.10f, 0.22f, 0.26f), UIManager.DS.NeonCyan, Back, LGIcon.Back, Loc.T("НАЗАД"), 12);
+            var back = LGBuild.Button(right, "BackBtn", new Color(0.075f, 0.125f, 0.220f), UIManager.DS.NeonCyan, Back, LGIcon.Back, Loc.T("НАЗАД"), 12);
             ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(0, 0), Vector2.zero, new Vector2(150, 46));
             TooltipHelper.Attach(back.gameObject, Loc.T("<b>Назад</b>\nВернуться к выбору цивилизации  (Esc)"));
         }

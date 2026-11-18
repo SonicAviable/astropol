@@ -32,8 +32,8 @@ namespace StellarisClone.Rendering
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
-        private static readonly Color CPanel = new Color(0.020f, 0.045f, 0.065f, 0.92f);
-        private static readonly Color CEnergy = new Color(1f, 0.85f, 0.3f), CMinerals = new Color(0.55f, 0.85f, 1f);
+        private static readonly Color CPanel = new Color(0.035f, 0.067f, 0.118f, 0.92f);
+        private static readonly Color CEnergy = new Color(1f, 0.85f, 0.3f), CMinerals = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color CAlloys = new Color(0.85f, 0.7f, 1f), CInfluence = new Color(0.75f, 0.6f, 1f);
 
         public static void Toggle() => Toggle(null);
@@ -95,7 +95,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.010f, 0.025f, 0.038f, 0.97f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(1f, 0.8f, 0.4f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -113,7 +113,7 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#A9A392>(Esc / U)</color>"));
 
             // ---- Сцена слева ----
-            var scene = LGBuild.Panel(rt, "Scene", new Color(0.004f, 0.01f, 0.018f, 1f));
+            var scene = LGBuild.Panel(rt, "Scene", new Color(0.035f, 0.067f, 0.118f, 1f));
             _sceneFrame = scene;
             scene.rectTransform.anchorMin = new Vector2(0, 0);
             scene.rectTransform.anchorMax = new Vector2(0.56f, 1);
@@ -138,14 +138,14 @@ namespace StellarisClone.Rendering
             fullFit.aspectRatio = 4f / 3f;
 
             // Затемнение снизу под название и предание
-            var shade = LGBuild.Panel(sceneMask, "Shade", new Color(0.004f, 0.01f, 0.018f, 0.96f));
+            var shade = LGBuild.Panel(sceneMask, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.96f));
             shade.sprite = MenuArt.VerticalFade;
             _sceneShade = shade.rectTransform;
             _sceneShade.anchorMin = Vector2.zero;
             _sceneShade.anchorMax = new Vector2(1, 0.48f);
             _sceneShade.offsetMin = _sceneShade.offsetMax = Vector2.zero;
             // Второй, плотный слой прямо под текстом: на светлых иллюстрациях предание иначе не читается
-            var textShade = LGBuild.Panel(sceneMask, "TextShade", new Color(0.004f, 0.01f, 0.018f, 0.8f));
+            var textShade = LGBuild.Panel(sceneMask, "TextShade", new Color(0.035f, 0.067f, 0.118f, 0.8f));
             textShade.sprite = MenuArt.VerticalFade;
             textShade.rectTransform.anchorMin = Vector2.zero;
             textShade.rectTransform.anchorMax = new Vector2(1, 0);
@@ -161,14 +161,14 @@ namespace StellarisClone.Rendering
             _name.rectTransform.anchorMin = new Vector2(0, 0); _name.rectTransform.anchorMax = new Vector2(1, 0);
             _name.rectTransform.pivot = new Vector2(0, 0);
             _name.rectTransform.offsetMin = new Vector2(26, 126); _name.rectTransform.offsetMax = new Vector2(-28, 172);
-            _lore = LGBuild.Label(sceneMask, "", 12, new Color(0.82f, 0.88f, 0.92f), TextAnchor.UpperLeft, wrap: true);
+            _lore = LGBuild.Label(sceneMask, "", 12, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             _lore.rectTransform.anchorMin = new Vector2(0, 0); _lore.rectTransform.anchorMax = new Vector2(1, 0);
             _lore.rectTransform.pivot = new Vector2(0, 0);
             _lore.rectTransform.offsetMin = new Vector2(28, 18); _lore.rectTransform.offsetMax = new Vector2(-28, 122);
             _lore.lineSpacing = 1.12f;
 
             // Голограмма-вставка в правом верхнем углу сцены (поверх иллюстрации)
-            var hf = LGBuild.Panel(scene.transform, "HoloInset", new Color(0.004f, 0.016f, 0.026f, 0.78f));
+            var hf = LGBuild.Panel(scene.transform, "HoloInset", new Color(0.035f, 0.067f, 0.118f, 0.78f));
             _holoFrame = hf.rectTransform;
             _holoFrame.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-16, -16), new Vector2(300, 225));
             LG.Platter(hf.gameObject, 14f).SetRim(new Color(1f, 0.8f, 0.4f, 0.4f));
@@ -208,7 +208,7 @@ namespace StellarisClone.Rendering
             int siteId = st.SystemId >= 0 ? st.SystemId : _candidate;
             var site = EmpireStats.GetSystem(siteId);
 
-            _title.text = Loc.T("ЧУДО ФРАКЦИИ");
+            _title.text = LGBuild.Sentence(Loc.T("ЧУДО ФРАКЦИИ"));
             _subtitle.text = Loc.F("<color={0}>{1}</color>  ·  {2}  ·  этапов завершено: {3} из 3", LGBuild.Hex(def.Color), def.Name, def.Title.ToLower(), st.Built) +
                              (st.InProgress ? Loc.F("  ·  строится этап {0}", Roman(st.Built + 1)) : "");
             _name.text = def.Name.ToUpper();
@@ -345,7 +345,7 @@ namespace StellarisClone.Rendering
                 LG.Ignore(ic.gameObject);
             }
 
-            var shade = LGBuild.Panel(host, "Shade", new Color(0.01f, 0.02f, 0.03f, 0.6f));
+            var shade = LGBuild.Panel(host, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.6f));
             shade.sprite = UIManager.FadeRightSprite;
             shade.raycastTarget = false;
             shade.rectTransform.anchorMin = Vector2.zero;
@@ -374,7 +374,7 @@ namespace StellarisClone.Rendering
             var raw = go.AddComponent<RawImage>();
             raw.texture = tex;
             raw.raycastTarget = false;
-            raw.color = new Color(0.6f, 0.66f, 0.78f, 0.6f);
+            raw.color = new Color(0.663f, 0.639f, 0.573f, 0.6f);
             raw.rectTransform.Stretch();
             raw.uvRect = new Rect((seed % 53) / 100f, (seed / 53 % 47) / 100f, 0.45f, 0.18f);
 
@@ -383,7 +383,7 @@ namespace StellarisClone.Rendering
             light.raycastTarget = false;
             light.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-90, 0), new Vector2(420, 260));
 
-            var shade = LGBuild.Panel(host, "Shade", new Color(0.01f, 0.02f, 0.03f, 0.85f));
+            var shade = LGBuild.Panel(host, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.85f));
             shade.sprite = UIManager.FadeRightSprite;
             shade.raycastTarget = false;
             shade.rectTransform.anchorMin = Vector2.zero;
@@ -452,7 +452,7 @@ namespace StellarisClone.Rendering
             var card = Card("Stage" + i, building || next ? 178 : 132, rim, numeral: Roman(i + 1));
 
             // Номер этапа
-            var badge = LGBuild.Panel(card, "Badge", done ? new Color(0.1f, 0.3f, 0.16f, 1f) : new Color(0.06f, 0.1f, 0.14f, 1f));
+            var badge = LGBuild.Panel(card, "Badge", done ? new Color(0.1f, 0.3f, 0.16f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f));
             badge.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -14), new Vector2(40, 40));
             LG.Chip(badge.gameObject, rim);
             if (done)
@@ -500,7 +500,7 @@ namespace StellarisClone.Rendering
             Res(LGIcon.Influence, CInfluence, inf, eco != null ? eco.Influence : 0f);
             int techs = EmpireStats.TechCount(0);
             LGIcons.IconLabel(row, LGIcon.Clock, WonderManager.FormatDays(WonderManager.StageDays(stage, 0)), 12, Muted, Color.white, 14);
-            LGIcons.IconLabel(row, LGIcon.Research, Loc.F("{0} техн.", stage.Techs), 12, techs >= stage.Techs ? new Color(0.5f, 0.9f, 1f) : new Color(1f, 0.5f, 0.45f),
+            LGIcons.IconLabel(row, LGIcon.Research, Loc.F("{0} техн.", stage.Techs), 12, techs >= stage.Techs ? new Color(0.475f, 0.816f, 0.749f) : new Color(1f, 0.5f, 0.45f),
                               techs >= stage.Techs ? Color.white : new Color(1f, 0.5f, 0.45f), 14);
 
             if (!building && !next) return;
@@ -575,7 +575,7 @@ namespace StellarisClone.Rendering
                 ? (key ? Loc.T("<color=#E3B8FF>Ключ Строителей</color> — этапы на 25% дешевле и быстрее.   ") : "") +
                   (mind ? Loc.T("<color=#E3B8FF>Архитектура Тессерама</color> — этапы на 20% быстрее.") : "")
                 : Loc.T("Пока нет. Цепочки событий «Сердце Тишины» и «Пробуждённый разум» могут дать скидку на стройку.");
-            var t = LGBuild.Label(card, text, 11, new Color(0.85f, 0.9f, 0.94f), TextAnchor.UpperLeft, wrap: true);
+            var t = LGBuild.Label(card, text, 11, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             t.rectTransform.Stretch(18, 8, 18, 32);
         }
 
@@ -594,7 +594,7 @@ namespace StellarisClone.Rendering
                 ? Loc.F("Врата перезаряжаются: ещё {0} дн.", st.GateCooldown)
                 : fleets > 0 ? Loc.F("У Врат ({0}) стоят флотов: <b>{1}</b>. Выберите систему — все они перейдут туда мгновенно.", gateSys?.Name, fleets)
                              : Loc.F("У Врат ({0}) нет флотов. Приведите флот в систему Врат, чтобы перебросить его.", gateSys?.Name);
-            var t = LGBuild.Label(card, status, 11, new Color(0.85f, 0.9f, 0.94f), TextAnchor.UpperLeft, wrap: true);
+            var t = LGBuild.Label(card, status, 11, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
             t.rectTransform.Stretch(18, 0, 18, 32);
 
             var grid = LGBuild.Rect(card, "Dests");

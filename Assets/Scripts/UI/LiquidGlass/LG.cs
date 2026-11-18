@@ -31,7 +31,7 @@ namespace StellarisClone.Rendering
             public static readonly Color GoldRim       = new Color(0.906f, 0.757f, 0.439f, 0.80f);
             public static readonly Color DangerRim     = new Color(1.000f, 0.420f, 0.341f, 0.80f);
             public static readonly Color SuccessRim    = new Color(0.475f, 0.816f, 0.749f, 0.75f);
-            public static readonly Color ScrimTint     = new Color(0.020f, 0.040f, 0.075f, 1f);
+            public static readonly Color ScrimTint     = new Color(0.035f, 0.067f, 0.118f, 1f);
         }
 
         // ------------------------------------------------------------------ Стили

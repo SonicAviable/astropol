@@ -433,10 +433,10 @@ namespace StellarisClone.Cards
                 return;
             }
             Color c = k == BloodKind.Violet ? new Color(0.55f, 0.18f, 0.85f) : k == BloodKind.Green ? new Color(0.35f, 0.85f, 0.25f)
-                    : k == BloodKind.Coolant ? new Color(0.85f, 0.95f, 1f) : new Color(0.72f, 0.04f, 0.05f);
+                    : k == BloodKind.Coolant ? new Color(0.925f, 0.898f, 0.827f) : new Color(0.72f, 0.04f, 0.05f);
             Burst(pos, Mathf.RoundToInt(22 * scale), CardSprites.Drop, c, 140f, 520f * scale, 0.45f, 0.9f, 14f * scale, 8f, 1400f, 1.2f, 90f, 260f, align: true, end: new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f, 0f), stretch: 1.8f);
             Burst(pos, Mathf.RoundToInt(4 * scale) + 1, K("k_smoke2"), new Color(c.r, c.g, c.b, 0.6f), 20f, 90f, 0.5f, 0.9f, 50f * scale, 120f * scale, 60f, 2f);
-            if (k == BloodKind.Coolant) Sparks(pos, new Color(0.7f, 0.9f, 1f), 14, scale);
+            if (k == BloodKind.Coolant) Sparks(pos, new Color(0.475f, 0.816f, 0.749f), 14, scale);
         }
 
         public static bool GoreOn => PlayerPrefs.GetInt("set.gore", 1) == 1;

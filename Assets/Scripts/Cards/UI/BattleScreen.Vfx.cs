@@ -277,7 +277,7 @@ namespace StellarisClone.Cards
         {
             if (v == null || _arc == null) return;
             var p = _fx.Local(v.Rt);
-            var c = v.Side == _P ? new Color(0.55f, 0.9f, 1f) : new Color(1f, 0.55f, 0.4f);
+            var c = v.Side == _P ? new Color(0.475f, 0.816f, 0.749f) : new Color(1f, 0.55f, 0.4f);
             if (hero) c = new Color(1f, 0.82f, 0.4f);
             _arc.Glint(p, c, heavy || hero ? 640f : 420f, heavy || hero ? 10f : 7f, 0.34f);
             _fx.Play(UIFx.Fx2.Shock, p, c, 80f, 0.5f, heavy ? 380f : 280f);

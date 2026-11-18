@@ -20,7 +20,7 @@ namespace StellarisClone.Rendering
         private Image _bandBg, _bandLine, _orb, _orbGlow, _orbIcon, _badge, _orbCore;
         private Text _title, _sub, _badgeText;
         // Непрозрачно: в линейном пространстве даже 3% просвета дают заметный «призрак» яркой подписи системы под подсказкой
-        private static readonly Color PanelTint = new Color(0.022f, 0.052f, 0.074f, 1f);
+        private static readonly Color PanelTint = new Color(0.035f, 0.067f, 0.118f, 1f);
 
         private static readonly Color TipRim = new Color(0.475f, 0.816f, 0.749f, 0.50f);
 
@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
             _title = Txt(_band, GameFont.Display, 16, UIManager.DS.TextPrimary, FontStyle.Normal);
             _sub = Txt(_band, GameFont.Bold, 10, Color.white, FontStyle.Bold);
             _badge = Img(_band, "Badge", null, Color.white);
-            _badgeText = Txt(_badge.transform, GameFont.Bold, 10, new Color(0.01f, 0.06f, 0.08f), FontStyle.Bold);
+            _badgeText = Txt(_badge.transform, GameFont.Bold, 10, new Color(0.055f, 0.094f, 0.157f), FontStyle.Bold);
             _badgeText.alignment = TextAnchor.MiddleCenter;
             _badgeText.rectTransform.Stretch();
 
@@ -330,7 +330,7 @@ namespace StellarisClone.Rendering
 
         private static string SplitHeader(string text, out Head h)
         {
-            h = new Head { StarId = -1, Accent = new Color(0.37f, 0.82f, 0.75f, 1f), Sub = "", Badge = "" };
+            h = new Head { StarId = -1, Accent = new Color(0.475f, 0.816f, 0.749f, 1f), Sub = "", Badge = "" };
             var m = HeadToken.Match(text);
             if (m.Success)
             {
@@ -422,7 +422,7 @@ namespace StellarisClone.Rendering
             {
                 _badgeText.text = h.Badge.ToUpper();
                 bw = _badgeText.preferredWidth + 14f;
-                _badge.color = new Color(0.37f, 0.82f, 0.75f, 1f);
+                _badge.color = new Color(0.475f, 0.816f, 0.749f, 1f);
                 _badge.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10f, -9f), new Vector2(bw, 16f));
             }
             needW = x + Mathf.Max(tw, sw) + (badge ? bw + 24f : 18f);

@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
         private string _empireKey;
 
         private static readonly Color HoloLine = new Color(0.925f, 0.898f, 0.827f, 1f);   // «Атлас»: кремовые линии
-        private static readonly Color WingTint = new Color(0.035f, 0.067f, 0.118f, 0.95f);
+        private static readonly Color WingTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
 
         private static string MonthName(int m)
         {
@@ -73,7 +73,7 @@ namespace StellarisClone.Rendering
         private void BuildEdgeScrims()
         {
             // Линейное цветовое пространство: чёрная вуаль гасит свет слабее, чем обещает альфа, — берём плотнее
-            var ink = new Color(0.004f, 0.012f, 0.02f, 1f);
+            var ink = new Color(0.035f, 0.067f, 0.118f, 1f);
 
             // Верх: градиент HudArt.VFade непрозрачен снизу — переворачиваем вокруг нижней кромки, прижатой к верху экрана
             var top = HoloImage(_canvas.transform, "ScrimTop", HudArt.VFade(), new Color(ink.r, ink.g, ink.b, 0.9f));
@@ -139,7 +139,7 @@ namespace StellarisClone.Rendering
             RulerBadge.Create(root, new Vector2(20f, -18f), OpenEmpireOverviewModal);
 
             // Значок места империи в рейтинге — кружок у правого нижнего края портрета
-            var rank = HoloImage(root, "RankBadge", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 1f));
+            var rank = HoloImage(root, "RankBadge", HudArt.Disc(), new Color(0.055f, 0.094f, 0.157f, 1f));
             rank.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter + new Vector2(34f, -34f), new Vector2(26f, 26f));
             var rankRing = HoloImage(rank.transform, "Ring", HudArt.Ring(0.90f, 1f), DS.Gold);
             rankRing.rectTransform.Stretch();
@@ -361,7 +361,7 @@ namespace StellarisClone.Rendering
             RadialFill(_monthRing, 0f);
 
             // Сам диск — кнопка паузы
-            var face = HoloImage(disk, "Face", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 0.97f));
+            var face = HoloImage(disk, "Face", HudArt.Disc(), new Color(0.055f, 0.094f, 0.157f, 0.97f));
             face.rectTransform.Stretch();
             face.raycastTarget = true;
             var faceBtn = face.gameObject.AddComponent<Button>();
@@ -372,7 +372,7 @@ namespace StellarisClone.Rendering
             edge.rectTransform.Stretch();
 
             // Луна за датой: фаза — ход месяца (1-е — новолуние, середина — полнолуние), приглушена под текстом
-            _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.85f, 0.95f, 1f, 0.08f));
+            _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.925f, 0.898f, 0.827f, 0.08f));
             _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 1.02f));
             _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), Color.white);   // непрозрачна, как и верхний слой при f → 1 — без щелчка на смене шага
             _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));

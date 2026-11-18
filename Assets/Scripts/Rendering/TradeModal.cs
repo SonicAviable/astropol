@@ -443,7 +443,7 @@ namespace StellarisClone.Core
             _titleText.rectTransform.offsetMin = new Vector2(20, 0);
             _titleText.rectTransform.offsetMax = new Vector2(-60, 0);
 
-            var closeBtn = MakeBtn(header.transform, "✕", new Vector2(30, 30), new Color(0.16f, 0.20f, 0.24f), Close);
+            var closeBtn = MakeBtn(header.transform, "✕", new Vector2(30, 30), new Color(0.075f, 0.125f, 0.220f), Close);
             LG.Button(closeBtn, new Color(1f, 0.45f, 0.48f, 0.55f), 15f);
             var cRt = closeBtn.GetComponent<RectTransform>();
             cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
@@ -484,7 +484,7 @@ namespace StellarisClone.Core
             trRt.anchorMin = new Vector2(0.02f, 0.14f);
             trRt.anchorMax = new Vector2(0.98f, 0.38f);
             trRt.offsetMin = trRt.offsetMax = Vector2.zero;
-            track.AddComponent<Image>().color = new Color(0.01f, 0.03f, 0.05f, 1f);
+            track.AddComponent<Image>().color = new Color(0.035f, 0.067f, 0.118f, 1f);
 
             var fill = new GameObject("Fill");
             fill.transform.SetParent(track.transform, false);
@@ -624,7 +624,7 @@ namespace StellarisClone.Core
             le.preferredHeight = 42f;
             le.minHeight = 42f;
 
-            row.AddComponent<Image>().color = new Color(0.03f, 0.07f, 0.09f, 0.85f);
+            row.AddComponent<Image>().color = new Color(0.055f, 0.094f, 0.157f, 0.85f);
 
             // Иконка слева
             var iconTxt = MakeText(row.transform, icon, 18, FontStyle.Bold, accent, TextAnchor.MiddleCenter);

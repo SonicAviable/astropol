@@ -38,8 +38,8 @@ namespace StellarisClone.Rendering
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color CCard = new Color(0.030f, 0.060f, 0.100f, 0.95f);
-        private static readonly Color CHead = new Color(0.016f, 0.036f, 0.066f, 1f);
+        private static readonly Color CCard = new Color(0.055f, 0.094f, 0.157f, 0.95f);
+        private static readonly Color CHead = new Color(0.035f, 0.067f, 0.118f, 1f);
         private static readonly Color CSci = new Color(0.5f, 0.92f, 0.62f);
         private static readonly Color CRed = new Color(1f, 0.54f, 0.45f);
 
@@ -178,7 +178,7 @@ namespace StellarisClone.Rendering
             _root = rt.gameObject;
             _root.AddComponent<CanvasGroup>();
             var bg = _root.AddComponent<Image>();
-            bg.color = new Color(0.024f, 0.047f, 0.086f, 0.97f);
+            bg.color = new Color(0.055f, 0.094f, 0.157f, 0.97f);
             bg.raycastTarget = true;
             LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.32f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
@@ -602,9 +602,9 @@ namespace StellarisClone.Rendering
             var c = LGBuild.Panel(slot, "NewColony", new Color(1f, 1f, 1f, 0.015f));
             c.rectTransform.Stretch();
             LG.Platter(c.gameObject, 14f).SetRim(new Color(1f, 1f, 1f, 0.06f));
-            var plus = LGBuild.Label(c.transform, "+", 34, new Color(0.55f, 0.66f, 0.70f), TextAnchor.MiddleCenter, bold: true);
+            var plus = LGBuild.Label(c.transform, "+", 34, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleCenter, bold: true);
             plus.rectTransform.Stretch(0, 40, 0, 0);
-            var t = LGBuild.Label(c.transform, Loc.T("Новая колония"), 16, new Color(0.62f, 0.72f, 0.76f), TextAnchor.MiddleCenter, bold: true);
+            var t = LGBuild.Label(c.transform, Loc.T("Новая колония"), 16, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleCenter, bold: true);
             t.rectTransform.Stretch(0, 0, 0, 10);
             var d = LGBuild.Label(c.transform, Loc.T("Выберите пригодную планету в своей системе\nи проект «Колония»"), 12, Muted, TextAnchor.UpperCenter);
             d.rectTransform.Stretch(20, 0, 20, CardH * 0.5f + 18f);
@@ -719,7 +719,7 @@ namespace StellarisClone.Rendering
             Vector3 top = root.InverseTransformPoint(corners[1]);
             bool up = bottom.y - h < root.rect.yMin + 12f;
 
-            var list = LGBuild.Panel(blocker.transform, "FocusMenu", new Color(0.02f, 0.05f, 0.07f, 0.98f), raycast: true);
+            var list = LGBuild.Panel(blocker.transform, "FocusMenu", new Color(0.035f, 0.067f, 0.118f, 0.98f), raycast: true);
             var lr = list.rectTransform;
             lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0.5f);   // координаты корня — от центра
             lr.pivot = up ? new Vector2(0, 0) : new Vector2(0, 1);
@@ -731,7 +731,7 @@ namespace StellarisClone.Rendering
             {
                 var f = opts[i];
                 bool cur = f == p.Focus;
-                var b = LGBuild.Button(list.transform, "Opt", cur ? new Color(0.16f, 0.52f, 0.56f) : new Color(0.03f, 0.07f, 0.09f, 0.98f),
+                var b = LGBuild.Button(list.transform, "Opt", cur ? new Color(0.475f, 0.816f, 0.749f) : new Color(0.055f, 0.094f, 0.157f, 0.98f),
                     new Color(Cyan.r, Cyan.g, Cyan.b, 0.3f), () => PickFocus(p, f), null, null, 12, 6f);
                 ((RectTransform)b.transform).TopBand(4 + i * OptH, OptH - 2, 4, 4);
                 LGBuild.Label(b.transform, ColonyFocusInfo.Name(f), 12, Color.white, TextAnchor.MiddleCenter, bold: true);

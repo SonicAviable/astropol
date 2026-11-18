@@ -41,10 +41,10 @@ namespace StellarisClone.Rendering
         private const float GaugeSize = 44f;
         // Строки — полупрозрачные светлые слои поверх панели (а не плотный тёмный цвет: панели шейдер подсвечивает,
         // и непрозрачные строки на их фоне выглядели чёрными провалами)
-        private static readonly Color RowA = new Color(0.062f, 0.105f, 0.180f, 0.55f);
+        private static readonly Color RowA = new Color(0.075f, 0.125f, 0.220f, 0.55f);
         private static readonly Color RowB = new Color(0.055f, 0.094f, 0.157f, 0.30f);
-        private static readonly Color RowSub = new Color(0.050f, 0.088f, 0.150f, 0.55f);
-        private static readonly Color RowHover = new Color(0.110f, 0.160f, 0.250f, 0.90f);
+        private static readonly Color RowSub = new Color(0.055f, 0.094f, 0.157f, 0.55f);
+        private static readonly Color RowHover = new Color(0.075f, 0.125f, 0.220f, 0.90f);
         private readonly Dictionary<Tab, string> _tabNames = new Dictionary<Tab, string>();
         private Image _portrait, _portraitIcon;
         private RectTransform _portraitHost;
@@ -282,10 +282,10 @@ namespace StellarisClone.Rendering
             if (game != null) Object.Destroy(game);
             b.transition = Selectable.Transition.None;
             bool on = b.interactable;
-            Color c = on ? accent : new Color(0.45f, 0.52f, 0.56f, 1f);
+            Color c = on ? accent : new Color(0.663f, 0.639f, 0.573f, 1f);
             var frame = HudSkin(img, HudTint, new Color(c.r, c.g, c.b, on ? 0.6f : 0.3f), 6);
             Pillify(img, frame);
-            Color ink = on ? Color.Lerp(c, Color.white, 0.35f) : new Color(0.55f, 0.62f, 0.66f, 1f);
+            Color ink = on ? Color.Lerp(c, Color.white, 0.35f) : new Color(0.663f, 0.639f, 0.573f, 1f);
             foreach (var t in b.GetComponentsInChildren<Text>(true)) t.color = ink;
             foreach (var im in b.GetComponentsInChildren<Image>(true))
                 if (im != img && im != frame) im.color = ink;
@@ -333,7 +333,7 @@ namespace StellarisClone.Rendering
         {
             var host = LGBuild.Rect(parent, "Gauge");
             host.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(size, size));
-            var disc = LGBuild.Panel(host, "Disc", new Color(0.035f, 0.067f, 0.118f, 0.9f));
+            var disc = LGBuild.Panel(host, "Disc", new Color(0.055f, 0.094f, 0.157f, 0.9f));
             disc.sprite = HudArt.Ring(0f, 1f);
             disc.rectTransform.Stretch();
             var track = LGBuild.Panel(host, "Track", new Color(0.925f, 0.898f, 0.827f, 0.16f));
@@ -395,7 +395,7 @@ namespace StellarisClone.Rendering
             _emblem = LGBuild.Panel(medal, "Ring", UIManager.DS.Gold);
             _emblem.sprite = HudArt.Ring(0.96f, 1f);
             _emblem.rectTransform.Stretch();
-            _portrait = LGBuild.Panel(medal, "Portrait", new Color(0.035f, 0.067f, 0.118f, 1f), raycast: true);
+            _portrait = LGBuild.Panel(medal, "Portrait", new Color(0.055f, 0.094f, 0.157f, 1f), raycast: true);
             _portrait.sprite = HudArt.Ring(0f, 1f);
             _portrait.rectTransform.Stretch(9, 9, 9, 9);
             _portraitIcon = LGIcons.Create(_portrait.transform, LGIcon.Leader, 64, Color.white);
@@ -1506,7 +1506,7 @@ namespace StellarisClone.Rendering
             if (leader != null && leader.Texture != null)
             {
                 const float PortW = 128f, PortH = 214f;
-                var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.01f, 0.02f, 0.03f, 1f));
+                var frame = LGBuild.Panel(card.transform, "Portrait", new Color(0.035f, 0.067f, 0.118f, 1f));
                 frame.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -20), new Vector2(PortW, PortH));
                 var ffx = LG.Platter(frame.gameObject, 12f);
                 ffx.SetRim(new Color(ac.r, ac.g, ac.b, 0.6f));
@@ -1515,7 +1515,7 @@ namespace StellarisClone.Rendering
                 var portrait = LeaderPortraitView.Create(portHost, leader, zoom: 1.35f);
                 if (portrait != null && ai.AtWar) portrait.GetComponent<RawImage>().color = new Color(1f, 0.86f, 0.84f, 1f);
 
-                var nameShade = LGBuild.Panel(portHost, "Shade", new Color(0.01f, 0.02f, 0.03f, 1f));
+                var nameShade = LGBuild.Panel(portHost, "Shade", new Color(0.035f, 0.067f, 0.118f, 1f));
                 nameShade.sprite = MenuArt.VerticalFade;
                 nameShade.rectTransform.anchorMin = Vector2.zero;
                 nameShade.rectTransform.anchorMax = new Vector2(1, 0.35f);

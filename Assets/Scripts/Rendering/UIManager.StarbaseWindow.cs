@@ -77,7 +77,7 @@ namespace StellarisClone.Rendering
                     g.raycastTarget = false;
                     g.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(30, 30));
                 }
-                var st = LGIcons.Create(row.transform, LGIcon.Star, 15, lit ? DS.Gold : new Color(0.55f, 0.62f, 0.7f, 0.25f));
+                var st = LGIcons.Create(row.transform, LGIcon.Star, 15, lit ? DS.Gold : new Color(0.663f, 0.639f, 0.573f, 0.25f));
                 st.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), pos, new Vector2(15, 15));
             }
             TooltipHelper.Attach(row.gameObject, open ? Loc.T("Скрыть окно звёздной базы") : Loc.T("Открыть звёздную базу: прочность, укрепления и их стройка"));
@@ -208,7 +208,7 @@ namespace StellarisClone.Rendering
             olight.sprite = FactionSelectScreen.RadialSprite();
             olight.raycastTarget = false;
             olight.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(70, 0), new Vector2(360, 260));
-            var shade = LGBuild.Panel(clip, "Shade", new Color(0.01f, 0.02f, 0.03f, 0.55f));
+            var shade = LGBuild.Panel(clip, "Shade", new Color(0.035f, 0.067f, 0.118f, 0.55f));
             shade.sprite = FadeRightSprite;
             shade.raycastTarget = false;
             shade.rectTransform.Stretch();
@@ -383,7 +383,7 @@ namespace StellarisClone.Rendering
                     glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70, 70));
                     if (current) StellarisClone.Cards.HoloSpin.Add(glow, 0f, 0.3f, 0.06f);
                 }
-                var disc = LGBuild.Panel(node, "Disc", built ? new Color(g.r * 0.3f, g.g * 0.24f, g.b * 0.08f, 1f) : new Color(0.03f, 0.05f, 0.07f, 1f));
+                var disc = LGBuild.Panel(node, "Disc", built ? new Color(g.r * 0.3f, g.g * 0.24f, g.b * 0.08f, 1f) : new Color(0.035f, 0.067f, 0.118f, 1f));
                 disc.raycastTarget = false;
                 disc.rectTransform.Stretch();
                 LG.Chip(disc.gameObject, built ? new Color(g.r, g.g, g.b, current ? 0.95f : 0.6f) : next ? new Color(g.r, g.g, g.b, 0.35f) : new Color(1f, 1f, 1f, 0.12f), 17f);

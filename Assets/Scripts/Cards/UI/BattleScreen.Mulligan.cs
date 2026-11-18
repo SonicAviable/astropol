@@ -27,7 +27,7 @@ namespace StellarisClone.Cards
 
             var root = LGBuild.Rect(_overlay, "Mulligan");
             root.Stretch();
-            var dim = LGBuild.Panel(root, "Dim", new Color(0.005f, 0.01f, 0.02f, 0f), raycast: true);
+            var dim = LGBuild.Panel(root, "Dim", new Color(0.035f, 0.067f, 0.118f, 0f), raycast: true);
             dim.rectTransform.Stretch();
             var title = Caption(root, Loc.T("НАЧАЛЬНЫЙ РАСКЛАД"), 34, new Color(Gold.r, Gold.g, Gold.b, 0f), TextAnchor.MiddleCenter, 6f);
             title.rectTransform.At(Mid, Mid, new Vector2(0, 340), new Vector2(1400, 50));

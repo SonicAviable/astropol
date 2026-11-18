@@ -36,14 +36,14 @@ namespace StellarisClone.Rendering
             UIAnchors.Register(UIAnchors.Ruler, rt);
 
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.01f, 0.025f, 0.035f, 1f);
+            bg.color = new Color(0.035f, 0.067f, 0.118f, 1f);
             bg.raycastTarget = true;
             var btn = rt.gameObject.AddComponent<Button>();
             btn.onClick.AddListener(() => onClick?.Invoke());
 
             var badge = rt.gameObject.AddComponent<RulerBadge>();
             Instance = badge;
-            badge._fx = LG.Button(rt.gameObject, new Color(0.3f, 0.9f, 0.9f, 0.6f), Width * 0.5f);
+            badge._fx = LG.Button(rt.gameObject, new Color(0.475f, 0.816f, 0.749f, 0.6f), Width * 0.5f);
             if (badge._fx != null) badge._fx.FillMultiplier = 2.6f;
             var motion = LG.Motion(rt.gameObject, LGAppear.Kind.SlideUp);
             motion.distance = 22f;

@@ -37,8 +37,8 @@ namespace StellarisClone.Rendering
         private RectTransform _rootRt, _body, _dockSep;
         private LiquidGlassEffect _glass, _medalFx;
         private Image _frame, _medalRing, _statusFrame;
-        private static readonly Color HoloTint = new Color(0.030f, 0.068f, 0.095f, 0.95f);
-        private static readonly Color HoloLine = new Color(0.37f, 0.82f, 0.75f, 1f);
+        private static readonly Color HoloTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
+        private static readonly Color HoloLine = new Color(0.475f, 0.816f, 0.749f, 1f);
         private Image _accent, _medalIcon, _badgeBg, _badge, _statusDot;
         private Text _badgeCount;
         private LeaderThumb _leaderFace;
@@ -115,7 +115,7 @@ namespace StellarisClone.Rendering
             var glow = LGBuild.Panel(rt, "MedalGlow", new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.12f));
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(64, 2), new Vector2(150, 150));
-            var medal = LGBuild.Panel(rt, "Medallion", new Color(0.02f, 0.05f, 0.07f, 1f));
+            var medal = LGBuild.Panel(rt, "Medallion", new Color(0.035f, 0.067f, 0.118f, 1f));
             medal.sprite = HudArt.Disc();
             medal.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 2), new Vector2(88, 88));
             _medalRing = LGBuild.Panel(medal.transform, "Edge", HoloLine);
@@ -131,7 +131,7 @@ namespace StellarisClone.Rendering
             _leaderFace = LeaderThumb.Create(medal.transform, 44f, 2.5f);
             _leaderFace.Hide();
 
-            _badgeBg = LGBuild.Panel(medal.transform, "TypeBadge", new Color(0.03f, 0.08f, 0.10f));
+            _badgeBg = LGBuild.Panel(medal.transform, "TypeBadge", new Color(0.055f, 0.094f, 0.157f));
             _badgeBg.sprite = HudArt.Disc();
             _badgeBg.rectTransform.At(new Vector2(1, 0), new Vector2(0.5f, 0.5f), new Vector2(-10, 10), new Vector2(28, 28));
             var bRing = LGBuild.Panel(_badgeBg.transform, "Ring", new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.7f));
@@ -157,7 +157,7 @@ namespace StellarisClone.Rendering
             _title.rectTransform.anchorMin = new Vector2(0, 1);
             _title.rectTransform.offsetMin = new Vector2(0, -23);
 
-            var chip = LGBuild.Panel(body, "Status", new Color(0.05f, 0.10f, 0.13f, 0.95f));
+            var chip = LGBuild.Panel(body, "Status", new Color(0.055f, 0.094f, 0.157f, 0.95f));
             chip.sprite = HudArt.CutPanel(7);
             chip.type = Image.Type.Sliced;
             _statusChip = chip.rectTransform;
@@ -179,7 +179,7 @@ namespace StellarisClone.Rendering
             _subtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
             _subtitle.verticalOverflow = VerticalWrapMode.Truncate;
 
-            var sep = LGBuild.Panel(body, "Sep", new Color(0.36f, 0.88f, 0.82f, 0.22f));
+            var sep = LGBuild.Panel(body, "Sep", new Color(0.475f, 0.816f, 0.749f, 0.22f));
             sep.rectTransform.anchorMin = new Vector2(0, 1);
             sep.rectTransform.anchorMax = new Vector2(1, 1);
             sep.rectTransform.offsetMin = new Vector2(0, -45);
@@ -241,11 +241,11 @@ namespace StellarisClone.Rendering
 
         private static Chip MakeChip(RectTransform parent, int col)
         {
-            var cell = LGBuild.Panel(parent, "Chip" + col, new Color(0.05f, 0.11f, 0.14f, 0.92f), raycast: true);
+            var cell = LGBuild.Panel(parent, "Chip" + col, new Color(0.055f, 0.094f, 0.157f, 0.92f), raycast: true);
             cell.sprite = HudArt.CutPanel(6);
             cell.type = Image.Type.Sliced;
             cell.rectTransform.Column(col / 4f, (col + 1) / 4f, col == 0 ? 0 : 3, col == 3 ? 0 : 3);
-            var fr = LGBuild.Panel(cell.transform, "Frame", new Color(0.37f, 0.82f, 0.75f, 0.28f));
+            var fr = LGBuild.Panel(cell.transform, "Frame", new Color(0.475f, 0.816f, 0.749f, 0.28f));
             fr.sprite = HudArt.CutFrame(6, 1f);
             fr.type = Image.Type.Sliced;
             fr.rectTransform.Stretch();
@@ -259,7 +259,7 @@ namespace StellarisClone.Rendering
 
         private void BuildDock(RectTransform rt)
         {
-            var line = LGBuild.Panel(rt, "DockSep", new Color(0.36f, 0.88f, 0.82f, 0.35f));
+            var line = LGBuild.Panel(rt, "DockSep", new Color(0.475f, 0.816f, 0.749f, 0.35f));
             _dockSep = line.rectTransform;
             _dockSep.anchorMin = new Vector2(1, 0);
             _dockSep.anchorMax = new Vector2(1, 1);
@@ -314,7 +314,7 @@ namespace StellarisClone.Rendering
             var img = LGBuild.Panel(parent, name, Color.white, raycast: true);
             img.sprite = HudArt.CutPanel(8);
             img.type = Image.Type.Sliced;
-            var fr = LGBuild.Panel(img.transform, "Frame", new Color(0.37f, 0.82f, 0.75f, 0.5f));
+            var fr = LGBuild.Panel(img.transform, "Frame", new Color(0.475f, 0.816f, 0.749f, 0.5f));
             fr.sprite = HudArt.CutFrame(8, 1.2f);
             fr.type = Image.Type.Sliced;
             fr.rectTransform.Stretch();
@@ -327,11 +327,11 @@ namespace StellarisClone.Rendering
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
             var cb = b.colors;
-            cb.normalColor = new Color(0.050f, 0.110f, 0.150f, 0.96f);
-            cb.highlightedColor = new Color(0.090f, 0.220f, 0.260f, 1f);
+            cb.normalColor = new Color(0.055f, 0.094f, 0.157f, 0.96f);
+            cb.highlightedColor = new Color(0.075f, 0.125f, 0.220f, 1f);
             cb.pressedColor = new Color(0.140f, 0.330f, 0.360f, 1f);
             cb.selectedColor = cb.normalColor;
-            cb.disabledColor = new Color(0.035f, 0.060f, 0.080f, 0.55f);
+            cb.disabledColor = new Color(0.055f, 0.094f, 0.157f, 0.55f);
             cb.colorMultiplier = 1f;
             cb.fadeDuration = 0.08f;
             b.colors = cb;
@@ -625,7 +625,7 @@ namespace StellarisClone.Rendering
                     troops + Loc.F("\n\n<color=#A9A392>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>", FleetRoute.DaysPerJump(d), d.UpkeepEnergy));
             }
             else
-                SetChip(c++, LGIcon.Propulsion, new Color(0.55f, 0.85f, 1f), Loc.F("{0:0} дн/прыжок", FleetRoute.DaysPerJump(d)),
+                SetChip(c++, LGIcon.Propulsion, new Color(0.475f, 0.816f, 0.749f), Loc.F("{0:0} дн/прыжок", FleetRoute.DaysPerJump(d)),
                     Loc.F("<b>Скорость</b>\nДней на один гиперпрыжок · содержание {0:0.#} энергии в месяц", d.UpkeepEnergy));
             for (; c < _chips.Length; c++) _chips[c].Go.SetActive(false);
         }
@@ -686,7 +686,7 @@ namespace StellarisClone.Rendering
             if (!science) return;
             bool on = AutoExplore.AnyOn(sel);
             _autoGlow.gameObject.SetActive(on);
-            Color idle = new Color(0.85f, 0.92f, 0.95f);
+            Color idle = new Color(0.925f, 0.898f, 0.827f);
             _autoIcon.color = on ? CSci : idle;
             _autoLabel.color = on ? CSci : idle;
             _autoLabel.text = on ? Loc.T("АВТО\nВКЛ") : Loc.T("АВТО");

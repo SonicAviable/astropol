@@ -114,7 +114,7 @@ namespace StellarisClone.Rendering
             var header = LGBuild.Panel(rt, "Header", UIManager.DS.BgHeader);
             header.rectTransform.TopBand(0, HeaderH);
             LG.Header(header.gameObject);
-            var badge = LGBuild.Panel(header.transform, "Badge", new Color(0.06f, 0.26f, 0.28f));
+            var badge = LGBuild.Panel(header.transform, "Badge", new Color(0.075f, 0.125f, 0.220f));
             badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(38, 38));
             LG.Platter(badge.gameObject, 19f).FillMultiplier = 2.2f;
             LGIcons.Create(badge.transform, LGIcon.Shipyard, 22, Neon);
@@ -122,7 +122,7 @@ namespace StellarisClone.Rendering
             title.rectTransform.Stretch(66, 0, 60, 11);
             _subtitle = LGBuild.Label(header.transform, "", 11, Muted, TextAnchor.LowerLeft);
             _subtitle.rectTransform.Stretch(66, 10, 60, 0);
-            var close = LGBuild.Button(header.transform, "Close", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
+            var close = LGBuild.Button(header.transform, "Close", new Color(0.075f, 0.125f, 0.220f), new Color(1f, 0.45f, 0.48f, 0.55f),
                 Close, LGIcon.Close, null, 11);
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(32, 32));
 
@@ -225,7 +225,7 @@ namespace StellarisClone.Rendering
             var price = LGBuild.Rect(card.transform, "Price");
             price.anchorMin = new Vector2(1, 1); price.anchorMax = new Vector2(1, 1); price.pivot = new Vector2(1, 1);
             price.sizeDelta = new Vector2(186, 18); price.anchoredPosition = new Vector2(-12, -10);
-            o.Alloys = Chip(price, LGIcon.Alloys, new Color(0.13f, 0.92f, 0.69f), 0f);
+            o.Alloys = Chip(price, LGIcon.Alloys, new Color(0.475f, 0.816f, 0.749f), 0f);
             o.Energy = Chip(price, LGIcon.Energy, new Color(1f, 0.80f, 0.32f), 62f);
             o.Days = Chip(price, LGIcon.Clock, Muted, 124f);
             o.Upkeep = LGBuild.Label(card.transform, "", 10, new Color(1f, 0.55f, 0.55f), TextAnchor.UpperRight);
@@ -415,7 +415,7 @@ namespace StellarisClone.Rendering
                 float top = i * (rowH + gap);
                 if (i >= shown)
                 {
-                    var empty = LGBuild.Panel(_queue, "FreeSlot", new Color(0.03f, 0.07f, 0.09f, 0.7f));
+                    var empty = LGBuild.Panel(_queue, "FreeSlot", new Color(0.055f, 0.094f, 0.157f, 0.7f));
                     empty.rectTransform.TopBand(top, rowH);
                     LG.Platter(empty.gameObject, 12f).SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.12f));
                     var et = LGBuild.Label(empty.transform, Loc.T("свободный стапель"), 10, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleCenter);
@@ -425,7 +425,7 @@ namespace StellarisClone.Rendering
 
                 var job = q[i];
                 bool active = i < ConstructionManager.ShipyardSlots;
-                var row = LGBuild.Panel(_queue, "Job", active ? new Color(0.05f, 0.14f, 0.16f, 0.95f) : new Color(0.04f, 0.08f, 0.1f, 0.85f));
+                var row = LGBuild.Panel(_queue, "Job", active ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.85f));
                 row.rectTransform.TopBand(top, rowH);
                 LG.Platter(row.gameObject, 12f).SetRim(new Color(Neon.r, Neon.g, Neon.b, active ? 0.35f : 0.15f));
                 var ic = LGIcons.Create(row.transform, ShipIcon(job.ShipType, job.Hull), 22, active ? Neon : Muted);

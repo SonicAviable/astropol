@@ -134,7 +134,7 @@ namespace StellarisClone.Rendering
             _inspRingB = Layer("RingB", HudArt.Ring(0.975f, 1f), 92f, new Color(0.925f, 0.898f, 0.827f, 0.22f));
             _inspRingA = Layer("RingA", HudArt.Ring(0.96f, 1f), 74f, new Color(0.906f, 0.757f, 0.439f, 0.45f));
             // Тёмная подложка — только под значком планеты/объекта; звезда светит прямо в космосе
-            _inspDisc = Layer("Disc", FleetIndicator.GetDiscSprite(), 58f, new Color(0.01f, 0.02f, 0.035f, 0.92f));
+            _inspDisc = Layer("Disc", FleetIndicator.GetDiscSprite(), 58f, new Color(0.035f, 0.067f, 0.118f, 0.92f));
             // Звезда как на карте: неровная корона, светило с потемнением к краю и «зерном», раскалённое ядро, блик-лучи
             _inspStarCorona = Layer("Corona", StarCorona, 112f, new Color(1f, 0.9f, 0.6f, 0.75f));
             _inspStarCore = Layer("Star", SunDiscSprite, 70f, new Color(1f, 0.92f, 0.6f, 1f));
@@ -188,7 +188,7 @@ namespace StellarisClone.Rendering
             _inspBannerPlanet.rectTransform.At(new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-70, -18), new Vector2(230, 230));
 
             // Затемнение слева (под названием) — текст читается на любом кадре
-            var shadeL = LGBuild.Panel(_inspBanner, "ShadeLeft", new Color(0.01f, 0.02f, 0.03f, 0.92f));
+            var shadeL = LGBuild.Panel(_inspBanner, "ShadeLeft", new Color(0.035f, 0.067f, 0.118f, 0.92f));
             shadeL.sprite = FadeRightSprite;
             shadeL.raycastTarget = false;
             shadeL.rectTransform.anchorMin = new Vector2(0, 0); shadeL.rectTransform.anchorMax = new Vector2(0.85f, 1);
@@ -265,10 +265,10 @@ namespace StellarisClone.Rendering
         /// </summary>
         private Button InspGameButton(Transform parent, string name, LGIcon icon, string label, Color accent, bool enabled, System.Action act, Vector2 size)
         {
-            var go = CreateButton(parent, name, size, new Color(0.012f, 0.040f, 0.055f, 0.94f), enabled ? accent : new Color(0.5f, 0.55f, 0.6f), act);
+            var go = CreateButton(parent, name, size, new Color(0.035f, 0.067f, 0.118f, 0.94f), enabled ? accent : new Color(0.663f, 0.639f, 0.573f), act);
             var btn = go.GetComponent<Button>();
             btn.interactable = enabled;
-            Color a = enabled ? accent : new Color(0.45f, 0.52f, 0.58f);
+            Color a = enabled ? accent : new Color(0.663f, 0.639f, 0.573f);
 
             var tile = LGBuild.Panel(go.transform, "IconTile", new Color(a.r * 0.16f, a.g * 0.16f, a.b * 0.16f, 0.95f));
             tile.raycastTarget = false;
@@ -334,6 +334,7 @@ namespace StellarisClone.Rendering
         {
             var s = host.GetComponent<InspSweep>() ?? host.AddComponent<InspSweep>();
             s.Period = period; s.Alpha = alpha;
+            s.enabled = false;   // «Атлас»: без бегущих бликов — спокойные плоские поверхности
             return s;
         }
 

@@ -48,7 +48,7 @@ namespace StellarisClone.Rendering
             GraphicsQuality.EnsureLoaded();
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
             _cg.alpha = 0f;
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.005f, 0.012f, 0.022f, 0.55f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.55f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
@@ -95,7 +95,7 @@ namespace StellarisClone.Rendering
                 NotificationCenter.Show(Loc.T("Настройки сброшены"), Loc.T("Восстановлены значения по умолчанию"), NotificationCenter.Kind.Info, 3f);
             }, null, Loc.T("ПО УМОЛЧАНИЮ"), 13);
             ((RectTransform)reset.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(Side, 44), new Vector2(230, 46));
-            var hint = LGBuild.Label(rt, Loc.T("Изменения применяются и сохраняются сразу"), 13, new Color(0.56f, 0.66f, 0.71f), TextAnchor.MiddleRight);
+            var hint = LGBuild.Label(rt, Loc.T("Изменения применяются и сохраняются сразу"), 13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleRight);
             hint.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-Side, 44), new Vector2(600, 46));
         }
 
@@ -398,7 +398,7 @@ namespace StellarisClone.Rendering
             c._cg = root.gameObject.AddComponent<CanvasGroup>();
             c._cg.alpha = 0f;
 
-            var body = LGBuild.Panel(root, "Body", new Color(0.03f, 0.06f, 0.10f, 0.95f), raycast: true);
+            var body = LGBuild.Panel(root, "Body", new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             c._body = body.rectTransform;
             c._body.Stretch();
             c._fx = LG.Glass(body.gameObject, 18f);
@@ -415,20 +415,20 @@ namespace StellarisClone.Rendering
                 // Низкое — блёклое, Ультра — насыщенное
                 c._art.color = index == 0 ? new Color(b, b, b * 1.05f) : new Color(b, b, b);
             }
-            var shade = LGBuild.Panel(mask, "Shade", new Color(0.02f, 0.045f, 0.08f, 1f));
+            var shade = LGBuild.Panel(mask, "Shade", new Color(0.055f, 0.094f, 0.157f, 1f));
             shade.sprite = MenuArt.VerticalFade;
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
 
             var t = LGBuild.Label(body.transform, name, 24, Color.white, TextAnchor.LowerLeft, bold: true);
             t.rectTransform.Stretch(20, 40, 20, 0);
-            var d = LGBuild.Label(body.transform, desc, 13, new Color(0.62f, 0.72f, 0.76f), TextAnchor.LowerLeft);
+            var d = LGBuild.Label(body.transform, desc, 13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.LowerLeft);
             d.rectTransform.Stretch(20, 16, 20, 0);
 
             var badge = LGBuild.Panel(body.transform, "Selected", new Color(0.10f, 0.32f, 0.32f, 0.9f));
             badge.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -14), new Vector2(96, 24));
-            LG.Chip(badge.gameObject, new Color(0.44f, 0.90f, 0.85f, 0.7f), 6f);
-            var bt = LGBuild.Label(badge.transform, Loc.T("ВЫБРАНО"), 11, new Color(0.56f, 0.94f, 0.90f), TextAnchor.MiddleCenter, bold: true);
+            LG.Chip(badge.gameObject, new Color(0.475f, 0.816f, 0.749f, 0.7f), 6f);
+            var bt = LGBuild.Label(badge.transform, Loc.T("ВЫБРАНО"), 11, new Color(0.475f, 0.816f, 0.749f), TextAnchor.MiddleCenter, bold: true);
             bt.rectTransform.Stretch();
             c._badge = badge.gameObject;
             return c;

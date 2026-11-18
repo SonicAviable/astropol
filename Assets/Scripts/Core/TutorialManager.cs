@@ -474,7 +474,7 @@ namespace StellarisClone.Core
         private void RefreshMute()
         {
             if (_muteIcon == null) return;
-            _muteIcon.color = _voiceOn ? UIManager.DS.NeonCyan : new Color(0.55f, 0.6f, 0.62f, 0.55f);
+            _muteIcon.color = _voiceOn ? UIManager.DS.NeonCyan : new Color(0.663f, 0.639f, 0.573f, 0.55f);
         }
 
         private void SetTask(string text, bool done)
@@ -927,12 +927,12 @@ namespace StellarisClone.Core
             _stepLabel = LGBuild.Label(rt, "", 10, UIManager.DS.TextMuted, TextAnchor.UpperRight, bold: true);
             _stepLabel.rectTransform.TopBand(18, 16, x, 78);
 
-            var close = LGBuild.Button(rt, "Close", new Color(0.16f, 0.20f, 0.24f), new Color(1f, 0.45f, 0.48f, 0.55f),
+            var close = LGBuild.Button(rt, "Close", new Color(0.075f, 0.125f, 0.220f), new Color(1f, 0.45f, 0.48f, 0.55f),
                                        SkipTutorial, LGIcon.Close, null, 9, 12f);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -10), new Vector2(28, 26));
             TooltipHelper.Attach(close.gameObject, Loc.T("<b>Закрыть обучение</b>\nПодсказки больше не появятся в этой партии."));
 
-            var mute = LGBuild.Button(rt, "Voice", new Color(0.10f, 0.18f, 0.20f), UIManager.DS.NeonCyan, ToggleVoice, LGIcon.Speaker, null, 9, 12f);
+            var mute = LGBuild.Button(rt, "Voice", new Color(0.075f, 0.125f, 0.220f), UIManager.DS.NeonCyan, ToggleVoice, LGIcon.Speaker, null, 9, 12f);
             ((RectTransform)mute.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-42, -10), new Vector2(28, 26));
             foreach (var img in mute.GetComponentsInChildren<Image>())
                 if (img.gameObject != mute.gameObject) { _muteIcon = img; break; }

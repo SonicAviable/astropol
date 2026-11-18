@@ -58,11 +58,11 @@ namespace StellarisClone.Rendering
 
             _cg = rt.gameObject.AddComponent<CanvasGroup>();
             _cg.alpha = 0f;
-            var dim = LGBuild.Panel(rt, "Dim", new Color(0.005f, 0.012f, 0.022f, 0.5f), raycast: true);
+            var dim = LGBuild.Panel(rt, "Dim", new Color(0.035f, 0.067f, 0.118f, 0.5f), raycast: true);
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
-            var panel = LGBuild.Panel(rt, "Panel", new Color(0.03f, 0.06f, 0.10f, 0.93f), raycast: true);
+            var panel = LGBuild.Panel(rt, "Panel", new Color(0.055f, 0.094f, 0.157f, 0.93f), raycast: true);
             _panel = panel.rectTransform;
             _panel.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MaxW, MaxH));
             LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.3f));
@@ -77,7 +77,7 @@ namespace StellarisClone.Rendering
 
         private void BuildWelcome()
         {
-            var col = LGBuild.Panel(_panel, "Welcome", new Color(0.30f, 0.90f, 0.85f, 0.06f));
+            var col = LGBuild.Panel(_panel, "Welcome", new Color(0.475f, 0.816f, 0.749f, 0.06f));
             var crt = col.rectTransform;
             crt.anchorMin = new Vector2(0, 0);
             crt.anchorMax = new Vector2(0, 1);
@@ -100,7 +100,7 @@ namespace StellarisClone.Rendering
             var title = LGBuild.Label(crt, Loc.T("Настроим игру под вас"), 36, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
             title.rectTransform.TopBand(144, 92, pad, pad);
             var text = LGBuild.Label(crt, Loc.T("Мы уже подобрали параметры по вашему компьютеру. Проверьте их и нажмите «Начать» — всё это можно поменять позже в «Настройках»."),
-                                     16, new Color(0.60f, 0.70f, 0.74f), TextAnchor.UpperLeft, wrap: true);
+                                     16, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, wrap: true);
             text.rectTransform.TopBand(244, 100, pad, pad);
             text.lineSpacing = 1.15f;
 
@@ -108,7 +108,7 @@ namespace StellarisClone.Rendering
             var box = LGBuild.Panel(crt, "PC", new Color(0f, 0f, 0f, 0.25f));
             box.rectTransform.TopBand(370, 212, pad, pad);
             LG.Platter(box.gameObject, 14f).SetRim(new Color(1f, 1f, 1f, 0.08f));
-            var bh = LGBuild.Label(box.transform, Loc.T("ВАШ КОМПЬЮТЕР"), 11, new Color(0.55f, 0.65f, 0.68f), TextAnchor.UpperLeft, bold: true).Track(2f);
+            var bh = LGBuild.Label(box.transform, Loc.T("ВАШ КОМПЬЮТЕР"), 11, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, bold: true).Track(2f);
             bh.rectTransform.TopBand(18, 16, 20, 20);
             string[] keys = { Loc.T("Видеокарта"), Loc.T("Процессор"), Loc.T("Память"), Loc.T("Экран") };
             string[] vals = { Gpu(), Cpu(), Loc.F("{0} ГБ", Mathf.Max(1, Mathf.RoundToInt(SystemInfo.systemMemorySize / 1024f))), Display() };
@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < keys.Length; i++)
             {
                 string k = keys[i], v = vals[i];
-                var kl = LGBuild.Label(box.transform, k, 14, new Color(0.55f, 0.65f, 0.68f), TextAnchor.MiddleLeft);
+                var kl = LGBuild.Label(box.transform, k, 14, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleLeft);
                 kl.rectTransform.TopBand(y, 22, 20, 20);
                 var vl = LGBuild.Label(box.transform, v, 14, Color.white, TextAnchor.MiddleRight, bold: true);
                 vl.rectTransform.TopBand(y, 22, 130, 20);
@@ -132,7 +132,7 @@ namespace StellarisClone.Rendering
 
             _start = MenuPrimaryButton.Create(crt, Loc.T("НАЧАТЬ"), 18, Finish);
             ((RectTransform)_start.transform).At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 88), new Vector2(LeftW - pad * 2, 58));
-            var hint = LGBuild.Label(crt, Loc.T("Enter — начать · Esc — оставить как есть"), 13, new Color(0.50f, 0.60f, 0.64f), TextAnchor.MiddleCenter);
+            var hint = LGBuild.Label(crt, Loc.T("Enter — начать · Esc — оставить как есть"), 13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.MiddleCenter);
             hint.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 50), new Vector2(LeftW - pad * 2, 20));
         }
 
@@ -207,7 +207,7 @@ namespace StellarisClone.Rendering
             y = LGControls.Section(col, y, Loc.T("ВЫ ИГРАЛИ В КОСМИЧЕСКИЕ СТРАТЕГИИ?"));
             host = LGControls.Row(col, ref y, Loc.T("Опыт"), Loc.T("Обучение, советник и сложность первой партии"), ControlW);
             Seg(host, new[] { Loc.T("Впервые"), Loc.T("Немного"), Loc.T("Ветеран") }, 3, _exp, i => { _exp = i; GameSettings.SetExperience(i); SyncExperience(); });
-            _expDesc = LGBuild.Label(col, "", 13, new Color(0.56f, 0.66f, 0.71f), TextAnchor.UpperLeft, wrap: true);
+            _expDesc = LGBuild.Label(col, "", 13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, wrap: true);
             _expDesc.rectTransform.TopBand(y + 2f, 40, 18, 0);
             SyncExperience();
         }
