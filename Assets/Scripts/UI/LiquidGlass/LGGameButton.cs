@@ -18,10 +18,11 @@ namespace StellarisClone.Rendering
         public const float Cut = 10f;
 
         // «Атлас»: тело — чернильное (тёмное, без насыщенности: кромку задаёт цвет действия)
-        private static readonly Color Plate = new Color(0.055f, 0.094f, 0.157f, 0.96f);
-        private static readonly Color PlateLit = new Color(0.055f, 0.094f, 0.157f, 0.97f);
-        private static readonly Color PlateQuiet = new Color(0.055f, 0.094f, 0.157f, 0.94f);
-        private static readonly Color PlateOff = new Color(0.055f, 0.094f, 0.157f, 0.70f);
+        // «Атлас»: тело — сплошная тёмная сине-стальная капсула (цвет действия даёт кромка и подпись)
+        private static readonly Color Plate = new Color(0.133f, 0.196f, 0.310f, 0.97f);
+        private static readonly Color PlateLit = new Color(0.180f, 0.255f, 0.385f, 0.98f);
+        private static readonly Color PlateQuiet = new Color(0.115f, 0.170f, 0.270f, 0.96f);
+        private static readonly Color PlateOff = new Color(0.080f, 0.110f, 0.170f, 0.70f);
         private static readonly Color Ink = new Color(0.925f, 0.898f, 0.827f);
         private static readonly Color InkQuiet = new Color(0.663f, 0.639f, 0.573f);
 
@@ -106,7 +107,7 @@ namespace StellarisClone.Rendering
             if (fill != _img.color) _img.color = fill;
             _set = fill;
             var bc = on ? BarOf(_accent) : new Color(0.45f, 0.44f, 0.40f);
-            if (_fx != null) _fx.SetRim(new Color(bc.r, bc.g, bc.b, !on ? 0.22f : Mathf.Lerp(quiet ? 0.34f : 0.55f, 0.9f, h)));
+            if (_fx != null) _fx.SetRim(new Color(bc.r, bc.g, bc.b, !on ? 0.10f : Mathf.Lerp(quiet ? 0.14f : 0.40f, 0.6f, h)));
             if (_label != null)
             {
                 var lc = !on ? new Color(0.50f, 0.49f, 0.45f, 0.8f) : quiet ? Color.Lerp(InkQuiet, Ink, h) : Color.Lerp(bc, Ink, 0.35f + 0.4f * h);

@@ -147,6 +147,17 @@ namespace StellarisClone.Rendering
         public Role ResolvedRole => ResolveRole();
 
         /// <summary>
+        /// Нажимаемая плашка остаётся плашкой (не превращается в кнопку-капсулу): узлы технологий, строки списков,
+        /// у которых свой цвет состояния.
+        /// </summary>
+        public bool AsSurface
+        {
+            get => _asSurface;
+            set { if (_asSurface == value) return; _asSurface = value; Dirty(); }
+        }
+        private bool _asSurface;
+
+        /// <summary>
         /// Открыто ли крупное окно (явно оформленное как Glass и шире заданной доли экрана) —
         /// например, чтобы уведомления не закрывали его шапку и кнопку закрытия.
         /// </summary>
@@ -285,7 +296,7 @@ namespace StellarisClone.Rendering
             if (role != Role.Auto)
             {
                 // Нажимаемые плашки, чипы и вкладки выглядят как кнопки — один вид для всего, что нажимается
-                if (role == Role.Platter || role == Role.Chip || role == Role.Header)
+                if (!AsSurface && (role == Role.Platter || role == Role.Chip || role == Role.Header))
                 {
                     CacheComponents();
                     if ((_selectable is Button || _selectable is Toggle) && graphic != null && graphic.color.a >= 0.05f)
@@ -616,20 +627,21 @@ namespace StellarisClone.Rendering
         {
             Color tint = c32;
             Color.RGBToHSV(tint, out float h, out float sat, out float val);
-            bool neutral = sat < 0.25f || val < 0.16f;
+            // Тёмно-синие и тёмно-стальные тела тоже нейтральные (обычная кнопка), цветные — смысл действия
+            bool neutral = sat < 0.25f || val < 0.16f || (h >= 0.55f && h <= 0.70f && val < 0.42f);
             float wash = Mathf.Lerp(0.02f, 0.07f, Mathf.Clamp01(val * 1.4f));   // выбранные (более яркие) — чуть заметнее
             if (neutral && useRimOverride)
             {
                 Color.RGBToHSV(rimOverride, out float rh, out float rs, out float rv);
                 if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.05f : 0.025f; }
             }
-            // Кромка — тонкая и сдержанная; выбранная кнопка (яркая кромка) заметнее невыбранной
-            float rimA = neutral ? 0.34f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
+            // «Атлас»: кнопка — сплошная капсула; кромка лишь мягко очерчивает край
+            float rimA = neutral ? 0.16f : useRimOverride ? Mathf.Clamp(rimOverride.a * 0.6f, 0.18f, 0.45f) : 0.30f;
             // «Атлас»: нейтральная кнопка — кремовая кромка; цветная — кромка её оттенка (бирюза старого стиля → морская зелень)
             Color accent = neutral ? LGTone.Cream : LGTone.AtlasFill(Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f));
-            // Тело — тёмно-синее стекло; цветная кнопка мягко светится цветом кромки (как «Укрепить» в окне базы)
-            Color body = Color.Lerp(LGTone.Ink, accent, neutral ? 0.02f : wash);
-            body.a = Mathf.Min(tint.a, 0.94f);   // почти непрозрачное: карта под кнопкой не высветляет тело
+            // Тело — сплошная тёмная сине-стальная заливка; у цветной кнопки — приглушённый цвет действия
+            Color body = neutral ? LGTone.Steel : Color.Lerp(LGTone.Steel * 0.7f, accent, 0.30f + wash);
+            body.a = Mathf.Max(0.9f, Mathf.Min(tint.a, 0.97f));   // плотная: кнопка — предмет, а не стекло
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
             s.Fill = Mathf.Max(s.Fill, 0.94f);
@@ -643,14 +655,15 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Форма кнопки «Атласа»: прямоугольник с почти прямыми углами (рамку-скобы рисует шейдер),
-        /// явно заданный круг (кнопки-значки) остаётся кругом.
+        /// Форма кнопки «Атласа»: сплошная капсула (кнопки до 60 px высотой); квадратная кнопка-значок — круг,
+        /// высокие плитки (карточки, которые нажимаются) — почти прямые углы. Явно заданный круг остаётся кругом.
         /// </summary>
         private float ButtonRadius(Rect r)
         {
             float minS = Mathf.Min(r.width, r.height);
             if (radius >= minS * 0.45f) return minS * 0.5f;
-            return 2f;
+            if (r.height <= 60f) return minS * 0.5f;
+            return 3f;
         }
 
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }
@@ -829,6 +842,8 @@ namespace StellarisClone.Rendering
         public static readonly Color Ink2 = new Color(0.075f, 0.125f, 0.220f, 1f);
         /// <summary>Морская зелень «доступно» — #79D0BF.</summary>
         public static readonly Color Sea = new Color(0.475f, 0.816f, 0.749f, 1f);
+        /// <summary>Заливка обычной кнопки — тёмная сине-стальная #22324F.</summary>
+        public static readonly Color Steel = new Color(0.133f, 0.196f, 0.310f, 1f);
 
         /// <summary>
         /// Кромка в палитре «Атласа»: бирюзовые кромки старого стиля (заданные в окнах вручную) становятся кремовыми

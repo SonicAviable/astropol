@@ -138,21 +138,17 @@ namespace StellarisClone.Rendering
         /// <summary>«Атлас»: капсула (кнопки). thickness = 0 — заливка, иначе обводка; 9-slice по полукругам.</summary>
         public static Sprite Pill(float thickness = 0f)
         {
-            // «Атлас»: кнопка — прямоугольник; рамка (thickness > 0) — скобы по углам и линия снизу на всю ширину.
-            // 9-slice: углы со скобами не растягиваются, середины краёв (пустые сверху и по бокам) тянутся.
-            const int w = 48, h = 40, arm = 9, b = 12;
-            return Make($"atlas_btn_{thickness:0.0}", w, h, (x, y) =>
+            // «Атлас»: кнопка — капсула. thickness = 0 — заливка, иначе обводка; 9-slice по полукругам.
+            const int w = 72, h = 48;
+            const float r = h * 0.5f;
+            return Make($"atlas_pill2_{thickness:0.0}", w, h, (x, y) =>
             {
-                if (thickness <= 0f) return 1f;
-                float t = thickness;
-                bool bottom = y < t;
-                bool top = y > h - t;
-                bool left = x < t, right = x > w - t;
-                if (bottom) return 1f;
-                if (top && (x < arm || x > w - arm)) return 1f;
-                if ((left || right) && (y < arm || y > h - arm)) return 1f;
-                return 0f;
-            }, new Vector4(b, b, b, b));
+                float cx = Mathf.Clamp(x, r, w - r);
+                float d = r - 0.5f - Mathf.Sqrt((x - cx) * (x - cx) + (y - r) * (y - r));
+                if (d < 0f) return 0f;
+                float a = Mathf.Clamp01(d + 0.5f);
+                return thickness <= 0f ? a : (d <= thickness ? a : 0f);
+            }, new Vector4(r, r, r, r));
         }
 
         /// <summary>Плашка со срезанными углами (левый нижний и правый верхний) — подписи, тултипы, флажки.</summary>

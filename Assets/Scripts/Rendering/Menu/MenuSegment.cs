@@ -201,7 +201,7 @@ namespace StellarisClone.Rendering
                                             IPointerDownHandler, IPointerUpHandler
     {
         // «Атлас»: главная кнопка — сплошная капсула; «Cyan» — кремовая (основное действие), Green — морская зелень, Red — коралл
-        public static readonly Color Cyan = new Color(0.906f, 0.757f, 0.439f);   // основное действие — золото
+        public static readonly Color Cyan = new Color(0.925f, 0.898f, 0.827f);   // основное действие — кремовая капсула
         public static readonly Color Green = new Color(0.475f, 0.816f, 0.749f);
         public static readonly Color Red = new Color(1f, 0.42f, 0.341f);
 
@@ -240,14 +240,13 @@ namespace StellarisClone.Rendering
             b._body.rectTransform.Stretch();
             // Та же форма, что у всех кнопок: срезанные углы, без свечения (единый дизайн «приборной панели»)
             var fx = LG.Fill(b._body.gameObject);
-            // «Атлас»: главная кнопка — прямоугольник с золотыми скобами и лёгкой заливкой (скобы рисует шейдер кнопок)
-            fx.StyleRole = LiquidGlassEffect.Role.Button;
-            fx.Radius = 2f;
+            // «Атлас»: главная кнопка — сплошная кремовая капсула с тёмной подписью
+            fx.Radius = 999f;
             fx.Chamfer = false;
             fx.GlowMultiplier = 0f;
             fx.SpecularMultiplier = 0f;
 
-            b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.925f, 0.898f, 0.827f), TextAnchor.MiddleCenter);
+            b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter);
             b._label.font = GameFont.MonoMedium;
             b._label.rectTransform.Stretch(12, 0, 12, 0);
             b._label.resizeTextForBestFit = true;
@@ -298,13 +297,10 @@ namespace StellarisClone.Rendering
             _p = LGEase.Spring(_p, _down ? 1f : 0f, ref _pv, 7f, 0.75f, dt);
             float h = Mathf.Clamp01(_h);
             float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 2.2f);
-            // Тело — затемнённый цвет действия (по нему шейдер берёт цвет скоб и лёгкую заливку), подпись — светлая
-            var dark = new Color(_base.r * 0.42f, _base.g * 0.42f, _base.b * 0.42f, 1f);
-            var lit = new Color(_base.r * 0.60f, _base.g * 0.60f, _base.b * 0.60f, 1f);
-            _body.color = _interactable ? Color.Lerp(dark, lit, h) : new Color(0.06f, 0.09f, 0.14f, 0.7f);
-            var fxb = _body.GetComponent<LiquidGlassEffect>();
-            if (fxb != null) fxb.SetHover(_interactable ? h : 0f);
-            _label.color = _interactable ? Color.Lerp(Color.Lerp(_base, Color.white, 0.45f), Color.white, h * 0.3f) : new Color(0.5f, 0.49f, 0.45f);
+            // Сплошная заливка цветом кнопки, при наведении светлее; подпись — тёмная
+            var lit = Color.Lerp(_base, Color.white, 0.35f);
+            _body.color = _interactable ? Color.Lerp(_base, lit, h * 0.6f) : new Color(_base.r * 0.35f, _base.g * 0.35f, _base.b * 0.35f, 0.75f);
+            _label.color = _interactable ? new Color(0.055f, 0.094f, 0.157f) : new Color(0.55f, 0.53f, 0.48f);
             _halo.color = new Color(0f, 0f, 0f, 0f);   // «Атлас»: без ореола
             float sc = 1f + 0.025f * _h - 0.04f * _p;
             _inner.localScale = new Vector3(sc, sc, 1f);

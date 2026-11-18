@@ -199,6 +199,8 @@ namespace StellarisClone.Rendering
         private static readonly Color HudTint = new Color(0.075f, 0.125f, 0.220f, 0.55f);
         private static readonly Color HudRim = new Color(0.925f, 0.898f, 0.827f, 0.14f);
         private static readonly Color WinBg = new Color(0.055f, 0.094f, 0.157f, 1f);   // фон окна
+        private static readonly Color BtnFill = new Color(0.133f, 0.196f, 0.310f, 0.97f);      // кнопка — сплошная сине-стальная капсула
+        private static readonly Color BtnFillLit = new Color(0.180f, 0.255f, 0.385f, 0.98f);
 
         /// <summary>Сделать картинку HUD-плашкой: срезанные углы, тёмная заливка tint и кромка frame (дочерний «Frame»).</summary>
         private static Image HudSkin(Image img, Color tint, Color frame, int cut = 8)
@@ -283,7 +285,7 @@ namespace StellarisClone.Rendering
             b.transition = Selectable.Transition.None;
             bool on = b.interactable;
             Color c = on ? accent : new Color(0.663f, 0.639f, 0.573f, 1f);
-            var frame = HudSkin(img, HudTint, new Color(c.r, c.g, c.b, on ? 0.6f : 0.3f), 6);
+            var frame = HudSkin(img, on ? BtnFill : HudTint, new Color(c.r, c.g, c.b, on ? 0.30f : 0.15f), 6);
             Pillify(img, frame);
             Color ink = on ? Color.Lerp(c, Color.white, 0.35f) : new Color(0.663f, 0.639f, 0.573f, 1f);
             foreach (var t in b.GetComponentsInChildren<Text>(true)) t.color = ink;
@@ -291,22 +293,22 @@ namespace StellarisClone.Rendering
                 if (im != img && im != frame) im.color = ink;
             if (!on) return;
             var hv = b.gameObject.AddComponent<UIHover>();
-            hv.Enter = () => { img.color = new Color(c.r * 0.22f, c.g * 0.22f, c.b * 0.22f, 0.95f); frame.color = c; };
-            hv.Exit = () => { img.color = HudTint; frame.color = new Color(c.r, c.g, c.b, 0.6f); };
+            hv.Enter = () => { img.color = BtnFillLit; frame.color = new Color(c.r, c.g, c.b, 0.6f); };
+            hv.Exit = () => { img.color = BtnFill; frame.color = new Color(c.r, c.g, c.b, 0.30f); };
         }
 
         /// <summary>Кнопка в стиле HUD: плашка со срезанными углами, кромка цвета rim, подпись; при наведении светлеет.</summary>
         private static Button HudButton(Transform parent, string name, string label, Color rim, System.Action act)
         {
-            var img = LGBuild.Panel(parent, name, HudTint, raycast: true);
-            var frame = HudSkin(img, HudTint, new Color(rim.r, rim.g, rim.b, 0.55f), 6);
+            var img = LGBuild.Panel(parent, name, BtnFill, raycast: true);
+            var frame = HudSkin(img, BtnFill, new Color(rim.r, rim.g, rim.b, 0.30f), 6);
             Pillify(img, frame);
             var t = LGBuild.Label(img.transform, label, 12, rim, TextAnchor.MiddleCenter);
             t.font = GameFont.MonoMedium;
             t.rectTransform.Stretch();
             var hv = img.gameObject.AddComponent<UIHover>();
-            hv.Enter = () => { img.color = new Color(rim.r * 0.25f, rim.g * 0.25f, rim.b * 0.25f, 0.95f); frame.color = rim; };
-            hv.Exit = () => { img.color = HudTint; frame.color = new Color(rim.r, rim.g, rim.b, 0.55f); };
+            hv.Enter = () => { img.color = BtnFillLit; frame.color = new Color(rim.r, rim.g, rim.b, 0.6f); };
+            hv.Exit = () => { img.color = BtnFill; frame.color = new Color(rim.r, rim.g, rim.b, 0.30f); };
             var b = img.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.None;
             b.onClick.AddListener(() => act());

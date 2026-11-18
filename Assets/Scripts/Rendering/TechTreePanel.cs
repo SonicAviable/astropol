@@ -646,6 +646,7 @@ namespace StellarisClone.Rendering
             var c = new ChipUi { Tech = t, Rt = rt, Bg = bg };
             c.Group = bg.gameObject.AddComponent<CanvasGroup>();
             c.Fx = LG.Platter(bg.gameObject, 7f);
+            c.Fx.AsSurface = true;   // узел технологии — плашка с цветом состояния, а не кнопка-капсула
             c.Fx.FillMultiplier = 2.6f;
             c.Fx.SpecularMultiplier = 0.15f;
             c.Hover = bg.gameObject.AddComponent<TechCardFX>();

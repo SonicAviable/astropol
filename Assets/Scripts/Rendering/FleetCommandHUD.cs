@@ -312,7 +312,7 @@ namespace StellarisClone.Rendering
         private static Button HoloButton(RectTransform parent, string name, LGIcon? icon, float iconSize, System.Action onClick)
         {
             var img = LGBuild.Panel(parent, name, Color.white, raycast: true);
-            // «Атлас»: кнопка дока — капсула с тонкой кремовой кромкой
+            // «Атлас»: кнопка дока — сплошная сине-стальная капсула с мягкой кромкой
             img.sprite = HudArt.Pill();
             img.type = Image.Type.Sliced;
             var fr = LGBuild.Panel(img.transform, "Frame", new Color(0.925f, 0.898f, 0.827f, 0.26f));
@@ -328,8 +328,8 @@ namespace StellarisClone.Rendering
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
             var cb = b.colors;
-            cb.normalColor = new Color(0.055f, 0.094f, 0.157f, 0.96f);
-            cb.highlightedColor = new Color(0.075f, 0.125f, 0.220f, 1f);
+            cb.normalColor = new Color(0.133f, 0.196f, 0.310f, 0.97f);
+            cb.highlightedColor = new Color(0.180f, 0.255f, 0.385f, 1f);
             cb.pressedColor = new Color(0.130f, 0.180f, 0.280f, 1f);
             cb.selectedColor = cb.normalColor;
             cb.disabledColor = new Color(0.055f, 0.094f, 0.157f, 0.55f);

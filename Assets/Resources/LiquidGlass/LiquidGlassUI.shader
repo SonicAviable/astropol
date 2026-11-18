@@ -289,21 +289,6 @@ Shader "Astropolity/UI/LiquidGlass"
                 if (fButton)
                 {
                     strokeA *= 0.62 + 0.38 * hover;
-                    // «Атлас»: кнопка — скобы по углам и линия снизу на всю ширину; при наведении рамка дорисовывается.
-                    // Круглые кнопки-значки (радиус ≈ половине стороны) остаются кольцом.
-                    if (r4.z < minB * 0.45)
-                    {
-                        float bxPx = b.x * pxPerUnit, byPx = b.y * pxPerUnit;
-                        float lPx = (p.x + b.x) * pxPerUnit, rPx = bxPx * 2.0 - lPx;
-                        float botPx = (p.y + b.y) * pxPerUnit, tPx = byPx * 2.0 - botPx;
-                        float armX = min(9.0, bxPx * 0.4), armY = min(7.0, byPx * 0.6);
-                        float onTop = step(tPx, bw * pxPerUnit + 1.5);
-                        float onSide = step(min(lPx, rPx), bw * pxPerUnit + 1.5);
-                        float keep = step(botPx, bw * pxPerUnit + 1.5);
-                        keep = max(keep, onTop * step(min(lPx, rPx), armX));
-                        keep = max(keep, onSide * step(min(tPx, botPx), armY));
-                        strokeA *= lerp(keep, 1.0, saturate(hover) * 0.55);
-                    }
                 }
                 if (mode < 0.5) strokeA *= 0.6;                      // у окон кромка тише — акцент даёт верхняя линия
 
