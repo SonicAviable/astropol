@@ -306,6 +306,13 @@ Shader "Astropolity/UI/LiquidGlass"
                     acc.rgb += rim.rgb * exp(-topPx / 18.0) * 0.045 * cov * saturate(rim.a * 2.0);
                 }
 
+                // Окна: едва заметные сканлайны (каждая третья строка пикселей экрана) — «проекция на стекле»
+                if (mode < 0.5)
+                {
+                    float sl = step(1.5, fmod(floor(IN.pos.y), 3.0));
+                    acc.rgb += float3(0.55, 0.85, 1.0) * sl * 0.012 * cov;
+                }
+
                 // Дизеринг — без ступенек на плавных градиентах тёмных панелей
                 float dz = frac(sin(dot(IN.pos.xy, float2(12.9898, 78.233))) * 43758.5453);
                 acc.rgb += (dz - 0.5) / 255.0 * acc.a;

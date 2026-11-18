@@ -190,7 +190,7 @@ namespace StellarisClone.Rendering
             _pause = rt.gameObject;
             var bg = _pause.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
-            LG.Glass(_pause, 26f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.5f));
+            LG.Glass(_pause, 26f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.5f));
             LG.Motion(_pause, LGAppear.Kind.Pop).inDuration = 0.42f;
 
             var header = LGBuild.Panel(rt, "Header", UIManager.DS.BgHeader);
@@ -206,7 +206,7 @@ namespace StellarisClone.Rendering
             // Тонкая светящаяся черта по низу шапки: к краям гаснет
             for (int i = 0; i < 2; i++)
             {
-                var ln = LGBuild.Panel(header.transform, "Accent", new Color(0.45f, 0.95f, 0.90f, i == 0 ? 0.55f : 0.18f));
+                var ln = LGBuild.Panel(header.transform, "Accent", new Color(0.184f, 0.839f, 1.00f, i == 0 ? 0.55f : 0.18f));
                 ln.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0), Vector2.zero, new Vector2(i == 0 ? 180f : 420f, i == 0 ? 2f : 1f));
                 LG.Ignore(ln.gameObject);
             }
@@ -331,7 +331,7 @@ namespace StellarisClone.Rendering
             _sidePanel.pivot = new Vector2(0, 0.5f);
             _sidePanel.offsetMin = new Vector2(-24, -24);
             _sidePanel.offsetMax = new Vector2(580, 24);
-            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.35f));
+            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.35f));
             var mo = LG.Motion(panel.gameObject, LGAppear.Kind.SlideLeft);
             mo.distance = 90f;
             mo.inDuration = 0.45f;

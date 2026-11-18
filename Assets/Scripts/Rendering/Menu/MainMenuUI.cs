@@ -539,7 +539,7 @@ namespace StellarisClone.Rendering
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
             var fx = LG.Glass(w.gameObject, 28f);
-            fx.SetRim(new Color(0.45f, 0.95f, 0.90f, 0.32f));
+            fx.SetRim(new Color(0.184f, 0.839f, 1.00f, 0.32f));
             var mo = LG.Motion(w.gameObject, LGAppear.Kind.SlideUp);
             mo.distance = 60f;
             mo.inDuration = 0.5f;
@@ -552,7 +552,7 @@ namespace StellarisClone.Rendering
             iconBg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, -4), new Vector2(52, 52));
             var ifx = LG.Platter(iconBg.gameObject, 26f);
             ifx.FillMultiplier = 2f;
-            ifx.SetRim(new Color(0.45f, 0.95f, 0.9f, 0.7f));
+            ifx.SetRim(new Color(0.184f, 0.839f, 1.00f, 0.7f));
             _winIcon = LGIcons.Create(iconBg.transform, LGIcon.Globe, 26, UIManager.DS.NeonCyan);
             _winIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(26, 26));
 
@@ -565,7 +565,7 @@ namespace StellarisClone.Rendering
             ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(0, -4), new Vector2(40, 40));
             TooltipHelper.Attach(close.gameObject, Loc.T("Закрыть  <color=#8AA2A8>(Esc)</color>"));
 
-            var sep = LGBuild.Panel(w, "Sep", new Color(0.45f, 0.95f, 0.9f, 0.22f));
+            var sep = LGBuild.Panel(w, "Sep", new Color(0.184f, 0.839f, 1.00f, 0.22f));
             sep.rectTransform.TopBand(100, 1, 36, 36);
             LG.Line(sep.gameObject, hairline: true);
 
@@ -744,7 +744,7 @@ namespace StellarisClone.Rendering
             crt.pivot = new Vector2(0, 0.5f);
             crt.offsetMin = new Vector2(60, 60);
             crt.offsetMax = new Vector2(60 + 540, -110);
-            LG.Glass(col.gameObject, 24f).SetRim(new Color(0.45f, 0.95f, 0.9f, 0.3f));
+            LG.Glass(col.gameObject, 24f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.3f));
             MenuPanelFx.Sheen(crt);
             _ngSlides.Add(MenuSlideIn.Add(col.gameObject, 0.05f, new Vector2(-60f, 0f)));
 
@@ -962,7 +962,7 @@ namespace StellarisClone.Rendering
             ib.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(44, 44));
             var ibfx = LG.Platter(ib.gameObject, 22f);
             ibfx.FillMultiplier = 1.8f;
-            ibfx.SetRim(new Color(0.45f, 0.95f, 0.9f, 0.5f));
+            ibfx.SetRim(new Color(0.184f, 0.839f, 1.00f, 0.5f));
             var ic = LGIcons.Create(ib.transform, icon, 22, UIManager.DS.NeonCyan);
             ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22, 22));
             var text = LGBuild.Rect(row.transform, "Text");

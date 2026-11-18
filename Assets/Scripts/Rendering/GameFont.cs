@@ -11,14 +11,15 @@ namespace StellarisClone.Rendering
         private static Font _regular;
         private static Font _bold;
 
-        /// <summary>Обычный шрифт — для текста, описаний, подписей.</summary>
+        /// <summary>Обычный шрифт (IBM Plex Sans) — для текста, описаний, подписей. Нет файла — Play.</summary>
         public static Font Regular
         {
             get
             {
                 if (_regular != null) return _regular;
 
-                _regular = Resources.Load<Font>("Fonts/Play-Regular");
+                _regular = Resources.Load<Font>("Fonts/IBMPlexSans-Regular");
+                if (_regular == null) _regular = Resources.Load<Font>("Fonts/Play-Regular");
                 if (_regular == null)
                 {
                     Debug.LogWarning("[GameFont] Play-Regular.ttf не найден в Resources/Fonts/. Использую fallback.");
@@ -29,14 +30,15 @@ namespace StellarisClone.Rendering
             }
         }
 
-        /// <summary>Жирный шрифт — для заголовков, кнопок, чисел.</summary>
+        /// <summary>Жирный шрифт (Exo 2 SemiBold) — для заголовков, кнопок, чисел. Нет файла — Play Bold.</summary>
         public static Font Bold
         {
             get
             {
                 if (_bold != null) return _bold;
 
-                _bold = Resources.Load<Font>("Fonts/Play-Bold");
+                _bold = Resources.Load<Font>("Fonts/Exo2-SemiBold");
+                if (_bold == null) _bold = Resources.Load<Font>("Fonts/Play-Bold");
                 if (_bold == null)
                 {
                     // Если Bold нет — используем Regular
@@ -49,15 +51,30 @@ namespace StellarisClone.Rendering
 
         private static Font _display;
 
-        /// <summary>Акцидентный шрифт (Russo One) — крупные числа и заголовки HUD. Нет файла — жирный Play.</summary>
+        /// <summary>Акцидентный шрифт (Exo 2 Bold) — крупные числа и заголовки HUD. Нет файла — Russo One, затем Bold.</summary>
         public static Font Display
         {
             get
             {
                 if (_display != null) return _display;
-                _display = Resources.Load<Font>("Fonts/RussoOne-Regular");
+                _display = Resources.Load<Font>("Fonts/Exo2-Bold");
+                if (_display == null) _display = Resources.Load<Font>("Fonts/RussoOne-Regular");
                 if (_display == null) _display = Bold;
                 return _display;
+            }
+        }
+
+        private static Font _mono;
+
+        /// <summary>Моноширинный шрифт (JetBrains Mono) — координаты, таймеры, служебные цифры. Нет файла — Regular.</summary>
+        public static Font Mono
+        {
+            get
+            {
+                if (_mono != null) return _mono;
+                _mono = Resources.Load<Font>("Fonts/JetBrainsMono-Regular");
+                if (_mono == null) _mono = Regular;
+                return _mono;
             }
         }
 
@@ -93,6 +110,7 @@ namespace StellarisClone.Rendering
             _regular = null;
             _bold = null;
             _display = null;
+            _mono = null;
             _serif = _serifItalic = null;
         }
     }

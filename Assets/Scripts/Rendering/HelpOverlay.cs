@@ -68,7 +68,7 @@ namespace StellarisClone.Rendering
             var bg = _root.AddComponent<Image>();
             bg.color = new Color(0.014f, 0.030f, 0.044f, 0.97f);
             bg.raycastTarget = true;
-            LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.40f));
+            LG.Glass(_root).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.40f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
 
             var title = LGBuild.Label(rt, Loc.T("СПРАВКА"), 26, Color.white, TextAnchor.UpperLeft, bold: true);

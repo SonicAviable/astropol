@@ -106,7 +106,7 @@ namespace StellarisClone.Rendering
             Name = Loc.T("Голос Нуля"),
             Title = Loc.T("Аватар Машинного Консенсуса"),
             Quote = Loc.T("Мы просчитали четырнадцать миллионов исходов этих переговоров. В трёх вы уходите довольными. Давайте найдём их вместе."),
-            Accent = new Color(0.45f, 0.95f, 0.90f),
+            Accent = new Color(0.184f, 0.839f, 1.00f),
             EyeL = Eye(560, 727, 40, 14),
             EyeR = Eye(781, 727, 40, 14),
             Face = Uv(670, 790)

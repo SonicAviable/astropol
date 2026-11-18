@@ -992,7 +992,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             // Разделитель между ячейками — гаснет к концам
             if (separator)
             {
-                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.45f, 0.95f, 0.90f, 0.35f));
+                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.184f, 0.839f, 1.00f, 0.35f));
                 sep.rectTransform.anchorMin = new Vector2(0, 0.08f);
                 sep.rectTransform.anchorMax = new Vector2(0, 0.92f);
                 sep.rectTransform.sizeDelta = new Vector2(2f, 0f);
@@ -1134,7 +1134,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var inspBg = insp.AddComponent<Image>();
             inspBg.color = DS.BgDeep;
             inspBg.raycastTarget = false;
-            LG.Glass(insp, 22f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.34f));
+            LG.Glass(insp, 22f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.34f));
             BuildInspectorDecor(_inspectorRect);
 
             var header = new GameObject("Header");
@@ -1226,7 +1226,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bbBg.color = DS.BgSlot;
             bbBg.raycastTarget = false;
             // Непрозрачная подложка: подписи карты не должны просвечивать сквозь карточки
-            LG.Platter(bodyBox, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            LG.Platter(bodyBox, 16f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.18f));
             _inspBodyGroup = bodyBox.AddComponent<CanvasGroup>();
             // Содержимое — стопка карточек; если не помещается, прокручивается
             _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 10);

@@ -72,7 +72,7 @@ namespace StellarisClone.Rendering
             if (_styled || _text == null) return;
             _styled = true;
             _text.font = GameFont.Bold;
-            _text.fontStyle = FontStyle.Bold;
+            _text.fontStyle = FontStyle.Normal;   // Exo 2 SemiBold уже плотный — без синтетического «жирного» поверх
             int size = _text.fontSize;
             int target = Mathf.Max(size, MinSize);
             // Ужимать длинные подписи под ширину кнопки (кроме подписей внутри раскладки — там ширину задаёт сам текст)

@@ -1108,7 +1108,7 @@ namespace StellarisClone.Rendering
                 }
 
                 var captured = sys;
-                var row = Row(() => FocusSystem(captured), new Color(0.45f, 0.95f, 0.9f, capital ? 0.4f : 0.2f));
+                var row = Row(() => FocusSystem(captured), new Color(0.184f, 0.839f, 1.00f, capital ? 0.4f : 0.2f));
                 IconCell(row, 0f, 0.06f, capital ? LGIcon.Shipyard : LGIcon.Starbase, capital ? CGold : CMinerals);
                 string kind = capital ? Loc.T("Столица · орбитальная верфь")
                             : colonies.Count > 0 ? Loc.F("Колоний: {0}", colonies.Count)

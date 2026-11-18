@@ -142,7 +142,7 @@ namespace StellarisClone.Rendering
             _hint = LGBuild.Label(_card, "", 10, UIManager.DS.NeonCyan, TextAnchor.LowerLeft, bold: true);
             _hint.rectTransform.Stretch(14, 10, 14, 0);
 
-            var frame = LGBuild.Panel(_card, "Frame", new Color(0.45f, 0.95f, 0.90f, 0.5f));
+            var frame = LGBuild.Panel(_card, "Frame", new Color(0.184f, 0.839f, 1.00f, 0.5f));
             frame.sprite = HudArt.CutFrame(3, 1.2f);
             frame.type = Image.Type.Sliced;
             frame.rectTransform.Stretch();

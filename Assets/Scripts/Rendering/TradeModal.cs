@@ -409,7 +409,7 @@ namespace StellarisClone.Core
 
             _group = _root.AddComponent<CanvasGroup>();
             _root.AddComponent<Image>().color = UIManager.DS.BgDeep;
-            LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
+            LG.Glass(_root).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop);
 
             // === HEADER ===

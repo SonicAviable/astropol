@@ -65,7 +65,7 @@ namespace StellarisClone.Rendering
             var panel = LGBuild.Panel(rt, "Panel", new Color(0.03f, 0.06f, 0.10f, 0.93f), raycast: true);
             _panel = panel.rectTransform;
             _panel.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MaxW, MaxH));
-            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.45f, 0.95f, 0.9f, 0.3f));
+            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.3f));
             MenuPanelFx.Sheen(_panel);
             MenuSlideIn.Add(panel.gameObject, 0.05f, new Vector2(0f, -30f));
 
