@@ -892,7 +892,7 @@ namespace StellarisClone.Rendering
             LGBuild.Clear(_infoLeft);
             if (ai == null) return;
 
-            _empireTitle.text = ai.AIName.ToUpper();
+            _empireTitle.text = ai.AIName;
             _empireTitle.color = Color.Lerp(ai.AIEmpireColor, Color.white, 0.25f);
 
             float y = 0f;

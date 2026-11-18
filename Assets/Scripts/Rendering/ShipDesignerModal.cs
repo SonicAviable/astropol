@@ -214,6 +214,7 @@ namespace StellarisClone.Rendering
 
             // Мягкое свечение за кораблём
             var glow = LGBuild.Panel(rt, "Glow", new Color(0.475f, 0.816f, 0.749f, 0.07f));
+            glow.enabled = false;   // «Атлас»: без ореолов
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.raycastTarget = false;
             glow.rectTransform.anchorMin = new Vector2(0.18f, 0.18f);
@@ -418,6 +419,7 @@ namespace StellarisClone.Rendering
             energy.rectTransform.offsetMin = new Vector2(0, 0); energy.rectTransform.offsetMax = new Vector2(170, 0);
             const float G = 150f;
             var halo = LGBuild.Panel(energy.transform, "Halo", new Color(Gold.r, Gold.g, Gold.b, 0.07f));
+            halo.enabled = false;   // «Атлас»: без ореолов
             halo.sprite = FactionSelectScreen.RadialSprite();
             halo.raycastTarget = false;
             halo.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(G + 50, G + 50));
@@ -733,7 +735,7 @@ namespace StellarisClone.Rendering
             LG.Chip(tile.gameObject, new Color(Neon.r, Neon.g, Neon.b, 0.3f), 10f);
             var ic = LGIcons.Create(tile.transform, ModuleVisuals.HullIcon(d.HullClass), 40, editing ? Neon : Primary);
 
-            var name = LGBuild.Label(btn.transform, d.Name.ToUpper(), 13, Color.white, TextAnchor.UpperLeft, bold: true);
+            var name = LGBuild.Label(btn.transform, d.Name, 13, Color.white, TextAnchor.UpperLeft, bold: true);
             name.rectTransform.Stretch(90, 0, isPrimary || isDraft ? 70 : 36, 12);
             var hull = dm.GetHull(d.HullClass);
             var sub = LGBuild.Label(btn.transform, hull != null ? hull.DisplayName : "", 11, Muted, TextAnchor.UpperLeft);
@@ -836,6 +838,7 @@ namespace StellarisClone.Rendering
                 float cx = X0 + i * (W + G) + W * 0.5f;
 
                 var glow = LGBuild.Panel(r, "Glow", new Color(tint.r, tint.g, tint.b, mod != null ? 0.16f : 0f));
+                glow.enabled = false;   // «Атлас»: без ореолов
                 glow.sprite = FactionSelectScreen.RadialSprite();
                 glow.raycastTarget = false;
                 glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(cx, 0), new Vector2(W + 40, W + 40));
@@ -1065,7 +1068,7 @@ namespace StellarisClone.Rendering
             disc.sprite = DiscSprite();
             disc.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0), new Vector2(34, 34));
             ModuleVisuals.CreateIcon(disc.transform, m, 20, Color.white);
-            var name = LGBuild.Label(body, m.Name.ToUpper(), 17, Color.white, TextAnchor.MiddleLeft, bold: true);
+            var name = LGBuild.Label(body, m.Name, 17, Color.white, TextAnchor.MiddleLeft, bold: true);
             name.rectTransform.TopBand(0, 34, 44, 0);
             y += 40f;
             var kind = LGBuild.Label(body, ModuleKind(m), 12, tint, TextAnchor.UpperLeft, bold: true);
@@ -1459,6 +1462,7 @@ namespace StellarisClone.Rendering
             strip.rectTransform.TopBand(1, 2, 12, 12);
 
             var glow = LGBuild.Panel(t, "Glow", new Color(tint.r, tint.g, tint.b, unlocked ? (sel ? 0.42f : 0.18f) : 0.04f));
+            glow.enabled = false;   // «Атлас»: без ореолов
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.raycastTarget = false;
             glow.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -64), new Vector2(124, 124));

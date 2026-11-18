@@ -266,7 +266,7 @@ namespace StellarisClone.Rendering
             _leaderName.color = Color.Lerp(_accent, Color.white, 0.55f);
             _leaderTitle.text = leader != null ? leader.Title.ToUpper() : "";
 
-            _faction.text = faction != null ? faction.Name.ToUpper() : "";
+            _faction.text = faction != null ? faction.Name : "";
             _faction.color = Color.Lerp(_accent, Color.white, 0.25f);
             _title.text = faction != null ? faction.Title : "";
             _sepGlow.color = new Color(_accent.r, _accent.g, _accent.b, 0.9f);

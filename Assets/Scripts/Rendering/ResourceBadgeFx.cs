@@ -21,8 +21,8 @@ namespace StellarisClone.Rendering
         public Text Value;
         public Color Accent;
 
-        private static readonly Color Up = new Color(0.40f, 1f, 0.62f);
-        private static readonly Color Down = new Color(1f, 0.42f, 0.40f);
+        private static readonly Color Up = new Color(0.549f, 0.827f, 0.627f);
+        private static readonly Color Down = new Color(1f, 0.498f, 0.420f);
         private const float TweenTime = 0.6f, FloatTime = 1.3f, HaloMax = 0.62f;
 
         private float _phase, _hover, _hoverTarget, _pulse;

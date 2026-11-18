@@ -27,8 +27,8 @@ namespace StellarisClone.Rendering
         private RawImage _bgA, _bgB;
         private bool _bgFront;
         private float _bgMix = 1f;
-        private static readonly Color Good = new Color(0.44f, 0.88f, 0.60f);
-        private static readonly Color Bad = new Color(0.91f, 0.55f, 0.52f);
+        private static readonly Color Good = new Color(0.549f, 0.827f, 0.627f);
+        private static readonly Color Bad = new Color(1f, 0.498f, 0.420f);
 
         private RectTransform _frame, _portraitHost, _traits, _cards;
         private LiquidGlassEffect _frameFx, _infoFx;

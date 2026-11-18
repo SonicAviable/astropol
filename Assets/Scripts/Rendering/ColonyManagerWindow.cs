@@ -40,8 +40,8 @@ namespace StellarisClone.Rendering
         private static Color Cyan => UIManager.DS.NeonCyan;
         private static readonly Color CCard = new Color(0.055f, 0.094f, 0.157f, 0.95f);
         private static readonly Color CHead = new Color(0.055f, 0.094f, 0.157f, 1f);
-        private static readonly Color CSci = new Color(0.5f, 0.92f, 0.62f);
-        private static readonly Color CRed = new Color(1f, 0.54f, 0.45f);
+        private static readonly Color CSci = new Color(0.561f, 0.706f, 0.949f);
+        private static readonly Color CRed = new Color(1f, 0.498f, 0.420f);
 
         private enum Sort { Population, Stability, Income }
 

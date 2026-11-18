@@ -29,10 +29,10 @@ namespace StellarisClone.Rendering
         private const float In = 18f;                 // внутренний отступ колонки
         private const float Body = BannerH + 16f;     // где в колонке начинается содержимое
 
-        private static readonly Color Purple = new Color(0.74f, 0.56f, 1f);
+        private static readonly Color Purple = new Color(0.906f, 0.757f, 0.439f);   // «Атлас»: акцент разведки — золото
         private static readonly Color Cyan = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color Orange = new Color(1f, 0.67f, 0.33f);
-        private static readonly Color Rim = new Color(0.74f, 0.56f, 1f, 0.34f);
+        private static readonly Color Rim = new Color(0.925f, 0.898f, 0.827f, 0.26f);
         private static readonly Color CardTint = new Color(0.055f, 0.094f, 0.157f, 0.97f);
         private static readonly Color RowTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
         private static readonly Color Muted = new Color(0.663f, 0.639f, 0.573f, 1f);
@@ -352,7 +352,7 @@ namespace StellarisClone.Rendering
             }
             else
             {
-                var plate = LGBuild.Panel(banner, "Plate", new Color(Purple.r * 0.22f, Purple.g * 0.16f, Purple.b * 0.32f, 1f), raycast: tooltip != null);
+                var plate = LGBuild.Panel(banner, "Plate", new Color(0.075f, 0.125f, 0.220f, 1f), raycast: tooltip != null);
                 plate.rectTransform.Stretch();
                 var ic = LGIcons.Create(plate.transform, LGIcon.Betrayal, 90, new Color(Purple.r, Purple.g, Purple.b, 0.55f));
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 16), new Vector2(90, 90));
@@ -511,7 +511,7 @@ namespace StellarisClone.Rendering
             Caption(col, Loc.T("РАЗВЕДСЕТЬ"), Body + 32, In);
             string grow = a.OpKind >= 0 ? Loc.T("<color=#E7C170>заморожена</color>")
                                         : Loc.F("<color=#8CD3A0>+{0:0.#}</color> / мес", EspionageManager.BuildRate(a).Total);
-            Txt(col, $"<color=#BD8FFF><b>{a.Cover:0}%</b></color>   {grow}", 13, UIManager.DS.TextPrimary, Body + 28, 20, In, In, TextAnchor.UpperRight);
+            Txt(col, $"<color=#E7C170><b>{a.Cover:0}%</b></color>   {grow}", 13, UIManager.DS.TextPrimary, Body + 28, 20, In, In, TextAnchor.UpperRight);
             Track(col, a.Cover, Body + 54);
             NextMilestoneLine(col, a.Cover, Body + 94);
 
@@ -634,7 +634,7 @@ namespace StellarisClone.Rendering
             Milestone? next = null;
             foreach (var m in Milestones) if (cover < m.Cover) { next = m; break; }
             string line = next.HasValue
-                ? Loc.F("<color=#A9A392>Следующее:</color>  <color=#BD8FFF><b>{0}</b></color> при {1:0}%  <color=#A9A392>(ещё {2:0.#}%)</color>", next.Value.Title, next.Value.Cover, next.Value.Cover - cover)
+                ? Loc.F("<color=#A9A392>Следующее:</color>  <color=#E7C170><b>{0}</b></color> при {1:0}%  <color=#A9A392>(ещё {2:0.#}%)</color>", next.Value.Title, next.Value.Cover, next.Value.Cover - cover)
                 : Loc.T("<color=#8CD3A0>Все награды разведки открыты</color>");
             Txt(col, line, 12, UIManager.DS.TextPrimary, top, 18, In, In);
         }
@@ -991,7 +991,7 @@ namespace StellarisClone.Rendering
                 LG.Platter(node.gameObject, 15f).SetRim(new Color(Purple.r, Purple.g, Purple.b, 0.6f));
                 var ic = LGIcons.Create(node.transform, m.Icon, 16, Purple);
                 ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(16, 16));
-                Txt(col, $"<color=#BD8FFF>{m.Cover:0}%</color>  {m.Title}", 13, Color.white, y - 1, 18, In + 42, In, bold: true);
+                Txt(col, $"<color=#E7C170>{m.Cover:0}%</color>  {m.Title}", 13, Color.white, y - 1, 18, In + 42, In, bold: true);
                 // Перенос на вторую строку вместо выхода за край карточки (место до следующей вехи есть)
                 Txt(col, m.Desc, 11, UIManager.DS.TextMuted, y + 17, 30, In + 42, In, wrap: true);
                 y += 52;

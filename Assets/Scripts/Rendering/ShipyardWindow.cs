@@ -214,7 +214,7 @@ namespace StellarisClone.Rendering
             LGIcons.Create(badge.transform, icon, 32, tint);
 
             var o = new Option { Type = type, Hull = hull, Name = name, Icon = icon, Tint = tint };
-            var nm = LGBuild.Label(card.transform, name.ToUpper(), 13, Primary, TextAnchor.UpperLeft, bold: true);
+            var nm = LGBuild.Label(card.transform, name, 13, Primary, TextAnchor.UpperLeft, bold: true);
             nm.rectTransform.Stretch(80, 0, 200, 10);
             o.Sub = LGBuild.Label(card.transform, "", 10, Muted, TextAnchor.UpperLeft);
             o.Sub.rectTransform.Stretch(80, 0, 200, 30);

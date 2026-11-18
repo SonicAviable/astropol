@@ -204,6 +204,7 @@ namespace StellarisClone.Rendering
 
             // Свечение цвета алерта под плиткой (пульсирует, пока алерт свежий)
             v.Glow = LGBuild.Panel(rt, "Glow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.25f));
+            v.Glow.enabled = false;   // «Атлас»: без ореолов
             v.Glow.sprite = FactionSelectScreen.RadialSprite();
             v.Glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(Size + 44f, Size + 44f));
 
@@ -218,6 +219,7 @@ namespace StellarisClone.Rendering
             v.Bg = LGBuild.Panel(rt, "Hit", new Color(0f, 0f, 0f, 0f), raycast: true);
             v.Bg.rectTransform.Stretch();
             var iconGlow = LGBuild.Panel(v.Bg.transform, "IconGlow", new Color(a.Color.r, a.Color.g, a.Color.b, 0.16f));
+            iconGlow.enabled = false;   // «Атлас»: без ореолов
             iconGlow.sprite = FactionSelectScreen.RadialSprite();
             iconGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(Size + 4f, Size + 4f));
             var btn = v.Bg.gameObject.AddComponent<Button>();

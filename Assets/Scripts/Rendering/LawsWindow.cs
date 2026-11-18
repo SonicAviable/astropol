@@ -49,8 +49,8 @@ namespace StellarisClone.Rendering
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Cyan => UIManager.DS.NeonCyan;
-        private static readonly Color Good = new Color(0.40f, 0.95f, 0.62f);
-        private static readonly Color Bad = new Color(1f, 0.48f, 0.45f);
+        private static readonly Color Good = new Color(0.549f, 0.827f, 0.627f);
+        private static readonly Color Bad = new Color(1f, 0.498f, 0.420f);
 
         public static void Toggle()
         {

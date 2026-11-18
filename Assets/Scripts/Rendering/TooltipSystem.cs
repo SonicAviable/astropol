@@ -22,7 +22,7 @@ namespace StellarisClone.Rendering
         // Непрозрачно: в линейном пространстве даже 3% просвета дают заметный «призрак» яркой подписи системы под подсказкой
         private static readonly Color PanelTint = new Color(0.055f, 0.094f, 0.157f, 1f);
 
-        private static readonly Color TipRim = new Color(0.475f, 0.816f, 0.749f, 0.50f);
+        private static readonly Color TipRim = new Color(0.925f, 0.898f, 0.827f, 0.32f);   // «Атлас»: тонкая кремовая кромка
 
         private float _targetAlpha = 0f;
         private Vector3 _targetScale = Vector3.one;
@@ -114,7 +114,7 @@ namespace StellarisClone.Rendering
             _bandLine.rectTransform.pivot = new Vector2(0.5f, 0f);
             _bandLine.rectTransform.sizeDelta = new Vector2(0f, 1f);
             _title = Txt(_band, GameFont.Display, 16, UIManager.DS.TextPrimary, FontStyle.Normal);
-            _sub = Txt(_band, GameFont.Bold, 10, Color.white, FontStyle.Bold);
+            _sub = Txt(_band, GameFont.Mono, 10, UIManager.DS.Gold, FontStyle.Normal);
             _badge = Img(_band, "Badge", null, Color.white);
             _badgeText = Txt(_badge.transform, GameFont.Bold, 10, new Color(0.055f, 0.094f, 0.157f), FontStyle.Bold);
             _badgeText.alignment = TextAnchor.MiddleCenter;
@@ -367,8 +367,9 @@ namespace StellarisClone.Rendering
             float bandH = visual ? 60f : (sub ? 48f : 36f);
             _band.sizeDelta = new Vector2(0f, bandH);
             _band.anchoredPosition = Vector2.zero;
-            _bandBg.color = new Color(a.r * 0.50f, a.g * 0.45f, a.b * 0.40f, 0.92f);
-            _bandLine.color = new Color(a.r, a.g, a.b, 0.65f);
+            // «Атлас»: шапка подсказки — ровная чернильная, цвет темы — только тонкая линия снизу
+            _bandBg.color = new Color(0.075f, 0.125f, 0.220f, 0.95f);
+            _bandLine.color = new Color(a.r, a.g, a.b, 0.55f);
 
             float x = 14f;
             // Живая звезда системы (та же модель, что на карте); нет её — нарисованная
@@ -382,7 +383,7 @@ namespace StellarisClone.Rendering
             {
                 var c = new Vector2(x + 20f, -bandH * 0.5f);
                 _orbGlow.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), c, new Vector2(96f, 96f));
-                _orbGlow.color = new Color(a.r, a.g, a.b, 0.45f);
+                _orbGlow.color = new Color(a.r, a.g, a.b, 0.12f);
                 if (h.Orb)
                 {
                     // Нарисованная звезда: корона и лучи цвета звезды, белое ядро
@@ -410,7 +411,7 @@ namespace StellarisClone.Rendering
             if (sub)
             {
                 _sub.text = h.Sub.ToUpper();
-                _sub.color = Color.Lerp(a, Color.white, 0.45f);
+                _sub.color = UIManager.DS.Gold;   // «Атлас»: подпись шапки — золотая, моноширинная
                 sw = _sub.preferredWidth + _sub.text.Length * 1.8f;
                 _sub.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(x, -bandH * 0.5f - 11f), new Vector2(sw + 4f, 14f));
             }

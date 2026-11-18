@@ -211,7 +211,7 @@ namespace StellarisClone.Rendering
             _title.text = LGBuild.Sentence(Loc.T("ЧУДО ФРАКЦИИ"));
             _subtitle.text = Loc.F("<color={0}>{1}</color>  ·  {2}  ·  этапов завершено: {3} из 3", LGBuild.Hex(def.Color), def.Name, def.Title.ToLower(), st.Built) +
                              (st.InProgress ? Loc.F("  ·  строится этап {0}", Roman(st.Built + 1)) : "");
-            _name.text = def.Name.ToUpper();
+            _name.text = def.Name;
             _tagline.text = def.Title;
             _tagline.color = def.Color;
             _lore.text = def.Lore;

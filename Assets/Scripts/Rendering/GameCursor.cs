@@ -25,8 +25,8 @@ namespace StellarisClone.Rendering
         private const float ArrowSize = 40f;
         private const float Scale = 0.7f;           // общий масштаб курсора (стрелка ≈ 28 px при 1080p)
         // Палитра интерфейса (UIManager.DS): неоновый бирюзовый, глубокий бирюзовый, золото — приказы и ПКМ
-        private static readonly Color Teal = new Color(0.40f, 0.86f, 0.82f);
-        private static readonly Color DeepTeal = new Color(0.15f, 0.55f, 0.59f);
+        private static readonly Color Teal = new Color(0.925f, 0.898f, 0.827f);   // «Атлас»: кремовый курсор
+        private static readonly Color DeepTeal = new Color(0.906f, 0.757f, 0.439f);
         private static readonly Color Gold = new Color(0.95f, 0.78f, 0.40f);
 
         private class Mote

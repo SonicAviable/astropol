@@ -89,6 +89,7 @@ namespace StellarisClone.Rendering
             var emb = LGBuild.Rect(parent, "Emblem");
             emb.At(anchor, new Vector2(0.5f, 0.5f), pos, new Vector2(size, size));
             var glow = LGBuild.Panel(emb, "Glow", new Color(owner.r, owner.g, owner.b, disabled ? 0.1f : 0.35f));
+            glow.enabled = false;   // «Атлас»: без ореолов
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.raycastTarget = false;
             glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 1.9f, size * 1.9f));
@@ -229,7 +230,7 @@ namespace StellarisClone.Rendering
             t1.rectTransform.anchorMin = new Vector2(0, 0.62f); t1.rectTransform.anchorMax = new Vector2(1, 0.8f);
             t1.rectTransform.offsetMin = new Vector2(124, 0); t1.rectTransform.offsetMax = new Vector2(-48, 0);
             t1.Track(2f);
-            var t2 = LGBuild.Label(head, system.Name.ToUpper(), 22, Color.white, TextAnchor.MiddleLeft, bold: true);
+            var t2 = LGBuild.Label(head, system.Name, 22, Color.white, TextAnchor.MiddleLeft, bold: true);
             t2.rectTransform.anchorMin = new Vector2(0, 0.36f); t2.rectTransform.anchorMax = new Vector2(1, 0.64f);
             t2.rectTransform.offsetMin = new Vector2(124, 0); t2.rectTransform.offsetMax = new Vector2(-48, 0);
             t2.Track(1.8f);
@@ -289,6 +290,7 @@ namespace StellarisClone.Rendering
             Place(cell.rectTransform, x0, x1, y, 66f, x0 == 0f ? 14f : 4f, x1 >= 1f ? 14f : 4f);
             LG.Platter(cell.gameObject, 10f).SetRim(new Color(glowCol.r, glowCol.g, glowCol.b, 0.3f));
             var g = LGBuild.Panel(cell.transform, "Glow", new Color(glowCol.r, glowCol.g, glowCol.b, 0.14f));
+            g.enabled = false;   // «Атлас»: без ореолов
             g.sprite = FactionSelectScreen.RadialSprite();
             g.raycastTarget = false;
             g.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 0), new Vector2(200, 120));
@@ -315,6 +317,7 @@ namespace StellarisClone.Rendering
             var row = LGBuild.Rect(card, "Section");
             Place(row, 0f, 1f, y, 26f, 14f, 14f);
             var glow = LGBuild.Panel(row, "Glow", new Color(g.r, g.g, g.b, 0.35f));
+            glow.enabled = false;   // «Атлас»: без ореолов
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.raycastTarget = false;
             glow.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(4, 9), new Vector2(24, 24));
@@ -378,6 +381,7 @@ namespace StellarisClone.Rendering
                 if (built || next)
                 {
                     var glow = LGBuild.Panel(node, "Glow", new Color(g.r, g.g, g.b, current ? 0.5f : next ? 0.18f : 0.25f));
+                    glow.enabled = false;   // «Атлас»: без ореолов
                     glow.sprite = FactionSelectScreen.RadialSprite();
                     glow.raycastTarget = false;
                     glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70, 70));

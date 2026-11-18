@@ -17,7 +17,7 @@ namespace StellarisClone.Rendering
         private const float EyeSize = 70f;                       // диаметр свечения в пикселях исходника
         private const int Bars = 14;
 
-        private static readonly Color Cyan = new Color(0.35f, 0.95f, 0.92f);
+        private static readonly Color Cyan = new Color(0.475f, 0.816f, 0.749f);
 
         /// <summary>Пока true — глаза ярче, волна «говорит».</summary>
         public bool Speaking;

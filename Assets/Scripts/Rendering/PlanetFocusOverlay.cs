@@ -106,7 +106,7 @@ namespace StellarisClone.Rendering
         private static readonly Color CMinerals = new Color(0.475f, 0.816f, 0.749f);
         private static readonly Color CEnergy = new Color(0.95f, 0.78f, 0.28f);
         private static readonly Color CAlloys = new Color(0.95f, 0.62f, 0.36f);
-        private static readonly Color CScience = new Color(0.50f, 0.92f, 0.62f);
+        private static readonly Color CScience = new Color(0.561f, 0.706f, 0.949f);
         private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.88f);
         private static readonly Color CSegOff = new Color(1f, 1f, 1f, 0.09f);
 
@@ -1092,6 +1092,7 @@ namespace StellarisClone.Rendering
                 r.Rim.rectTransform.TopBand(0, 3, 14, 14);
                 LG.Ignore(r.Rim.gameObject);
                 var glow = Deco(r.Bg.transform, "Glow", HaloSprite(), new Color(dc.r, dc.g, dc.b, 0.10f));
+                glow.enabled = false;   // «Атлас»: без ореолов
                 glow.rectTransform.anchorMin = new Vector2(0.05f, 0.62f); glow.rectTransform.anchorMax = new Vector2(0.95f, 1.08f);
                 glow.rectTransform.offsetMin = glow.rectTransform.offsetMax = Vector2.zero;
 

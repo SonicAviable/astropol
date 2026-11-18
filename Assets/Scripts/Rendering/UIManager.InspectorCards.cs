@@ -55,6 +55,7 @@ namespace StellarisClone.Rendering
                 cell.anchorMax = new Vector2((i + 1) / (float)n, 1);
                 cell.offsetMin = cell.offsetMax = Vector2.zero;
                 var glow = LGBuild.Panel(cell, "Glow", new Color(it.col.r, it.col.g, it.col.b, 0.3f));
+                glow.enabled = false;   // «Атлас»: без ореолов
                 glow.sprite = FactionSelectScreen.RadialSprite();
                 glow.raycastTarget = false;
                 glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(22, 0), new Vector2(40, 40));
