@@ -353,6 +353,17 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>Разрядка заголовка (px между буквами) — см. LGTracking.</summary>
+        /// <summary>«Атлас»: подпись над заголовком («ПАРАМЕТРЫ», «ЭКРАН») — моноширинная, золотая, 12 px, с разрядкой.</summary>
+        public static Text Eyebrow(this Text t)
+        {
+            if (t == null) return null;
+            t.font = GameFont.MonoMedium;
+            t.fontStyle = FontStyle.Normal;
+            t.fontSize = 12;
+            t.color = new Color(0.906f, 0.757f, 0.439f);
+            return t.Track(1.8f);
+        }
+
         public static Text Track(this Text t, float spacing = 1.6f)
         {
             if (t == null) return null;

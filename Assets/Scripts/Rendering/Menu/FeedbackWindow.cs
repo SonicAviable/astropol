@@ -64,7 +64,7 @@ namespace StellarisClone.Rendering
             MenuPanelFx.Sheen(_panel);
             MenuSlideIn.Add(panel.gameObject, 0.02f, new Vector2(0f, -30f));
 
-            var cap = LGBuild.Label(_panel, Loc.T("ОБРАТНАЯ СВЯЗЬ"), 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true).Track(3f);
+            var cap = LGBuild.Label(_panel, Loc.T("ОБРАТНАЯ СВЯЗЬ"), 13, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow().Track(3f);
             cap.rectTransform.TopBand(36, 18, Pad, Pad);
             var title = LGBuild.Label(_panel, Loc.T("Нашли баг или есть идея?"), 30, Color.white, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.TopBand(60, 40, Pad, Pad);

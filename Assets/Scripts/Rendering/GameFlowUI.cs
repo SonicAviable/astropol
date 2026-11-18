@@ -53,6 +53,40 @@ namespace StellarisClone.Rendering
         private SettingsScreen _setScr;
         private SaveScreen _saveScr;
         private MonoBehaviour _fullOpen;
+        private RectTransform _fullBackdrop;
+
+        /// <summary>
+        /// Плотный фон под полноэкранными окнами поверх игры (настройки, загрузка, сохранение): туманность главного меню
+        /// под чернильной заливкой. Без него сквозь окно просвечивали карта и панели.
+        /// </summary>
+        private void ShowFullBackdrop(MonoBehaviour screen)
+        {
+            if (_modalRoot == null || screen == null) return;
+            if (_fullBackdrop == null)
+            {
+                _fullBackdrop = LGBuild.Rect(_modalRoot, "FullBackdrop");
+                _fullBackdrop.Stretch();
+                var sky = new GameObject("Sky", typeof(RectTransform)).AddComponent<RawImage>();
+                sky.transform.SetParent(_fullBackdrop, false);
+                sky.texture = Resources.Load<Texture2D>("Menu/menu_bg");
+                sky.color = sky.texture != null ? new Color(0.62f, 0.66f, 0.76f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f);
+                sky.raycastTarget = false;
+                sky.rectTransform.Stretch();
+                var ink = LGBuild.Panel(_fullBackdrop, "Ink", new Color(0.040f, 0.068f, 0.118f, 0.62f), raycast: true);
+                ink.rectTransform.Stretch();
+                LG.Ignore(_fullBackdrop.gameObject);
+            }
+            _fullBackdrop.gameObject.SetActive(true);
+            // Сразу под окном: окно рисуется поверх фона
+            int si = screen.transform.GetSiblingIndex(), bi = _fullBackdrop.GetSiblingIndex();
+            _fullBackdrop.SetSiblingIndex(bi < si ? si - 1 : si);
+            LGFx.CascadeIn(_fullBackdrop.gameObject, 0);
+        }
+
+        private void HideFullBackdrop()
+        {
+            if (_fullBackdrop != null) _fullBackdrop.gameObject.SetActive(false);
+        }
 
         private RectTransform _domBar, _sciBar, _survBar;
         private Text _domVal, _sciVal, _survVal;
@@ -529,12 +563,14 @@ namespace StellarisClone.Rendering
                 if (_loadScr == null) { _loadScr = LoadScreen.Create(_modalRoot, CloseFull); _loadScr.ConfirmLoad = true; }
                 _loadScr.Show();
                 _fullOpen = _loadScr;
+                ShowFullBackdrop(_loadScr);
             }
             else
             {
                 if (_setScr == null) _setScr = SettingsScreen.Create(_modalRoot, CloseFull);
                 _setScr.Show();
                 _fullOpen = _setScr;
+                ShowFullBackdrop(_setScr);
             }
         }
 
@@ -547,6 +583,7 @@ namespace StellarisClone.Rendering
             if (_saveScr == null) _saveScr = SaveScreen.Create(_modalRoot, CloseFull);
             _saveScr.Show();
             _fullOpen = _saveScr;
+            ShowFullBackdrop(_saveScr);
         }
 
         private void CloseFull()
@@ -555,6 +592,7 @@ namespace StellarisClone.Rendering
             if (_fullOpen == _loadScr && _loadScr != null) _loadScr.Hide();
             if (_fullOpen == _setScr && _setScr != null) _setScr.Hide();
             _fullOpen = null;
+            HideFullBackdrop();
             SFXManager.Play("ui_click", 0.5f, 0.9f);
             if (!_pauseOpen) return;
             ShowPage(Page.Main);

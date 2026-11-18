@@ -93,9 +93,9 @@ namespace StellarisClone.Rendering
             LG.Ignore(line.gameObject);
 
             const float pad = 44f;
-            var brand = LGBuild.Label(crt, "ASTROPOLITY", 15, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true).Track(4f);
+            var brand = LGBuild.Label(crt, "ASTROPOLITY", 15, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow().Track(4f);
             brand.rectTransform.TopBand(50, 20, pad, pad);
-            var cap = LGBuild.Label(crt, Loc.T("ДОБРО ПОЖАЛОВАТЬ"), 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true).Track(3f);
+            var cap = LGBuild.Label(crt, Loc.T("ДОБРО ПОЖАЛОВАТЬ"), 13, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow().Track(3f);
             cap.rectTransform.TopBand(118, 18, pad, pad);
             var title = LGBuild.Label(crt, Loc.T("Настроим игру под вас"), 36, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
             title.rectTransform.TopBand(144, 92, pad, pad);

@@ -749,7 +749,7 @@ namespace StellarisClone.Rendering
             MenuPanelFx.Sheen(crt);
             _ngSlides.Add(MenuSlideIn.Add(col.gameObject, 0.05f, new Vector2(-60f, 0f)));
 
-            var step = LGBuild.Label(crt, Loc.T("ШАГ 1 ИЗ 2"), 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var step = LGBuild.Label(crt, Loc.T("ШАГ 1 ИЗ 2"), 13, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             step.rectTransform.TopBand(32, 18, 34, 30);
             var title = LGBuild.Label(crt, Loc.T("НОВАЯ ИГРА"), 34, Color.white, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.TopBand(54, 44, 34, 30);

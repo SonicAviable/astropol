@@ -65,7 +65,7 @@ namespace StellarisClone.Rendering
             title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(240, -48), new Vector2(500, 44));
 
             // Слева — партии
-            var cap = LGBuild.Label(rt, Loc.T("ВАШИ ПАРТИИ"), 14, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var cap = LGBuild.Label(rt, Loc.T("ВАШИ ПАРТИИ"), 14, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(80, -130), new Vector2(560, 20));
             var listHost = LGBuild.Rect(rt, "Campaigns");
             listHost.anchorMin = new Vector2(0, 0);
@@ -166,7 +166,7 @@ namespace StellarisClone.Rendering
         {
             LGBuild.Clear(_head);
             var m = c.Latest.Meta;
-            var cap = LGBuild.Label(_head, Loc.T("ХРОНИКА ПАРТИИ"), 14, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var cap = LGBuild.Label(_head, Loc.T("ХРОНИКА ПАРТИИ"), 14, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             cap.rectTransform.Stretch(0, 0, 470, 0);
             var name = LGBuild.Label(_head, m.Empire, 40, Color.white, TextAnchor.UpperLeft, bold: true);
             name.rectTransform.Stretch(0, 0, 470, 24);

@@ -52,7 +52,7 @@ namespace StellarisClone.Rendering
             dim.rectTransform.Stretch();
             LG.Ignore(dim.gameObject);
 
-            var cap = LGBuild.Label(rt, Loc.T("ПАРАМЕТРЫ"), 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var cap = LGBuild.Label(rt, Loc.T("ПАРАМЕТРЫ"), 13, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Side, -56), new Vector2(400, 18));
             var title = LGBuild.Label(rt, Loc.T("НАСТРОЙКИ"), 40, Color.white, TextAnchor.UpperLeft, bold: true);
             title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Side, -76), new Vector2(600, 52));
@@ -151,7 +151,7 @@ namespace StellarisClone.Rendering
 
         private static float Section(RectTransform col, float y, string title)
         {
-            var t = LGBuild.Label(col, title, 13, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var t = LGBuild.Label(col, title, 13, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             t.rectTransform.TopBand(y, 18);
             return y + 30f;
         }
@@ -425,10 +425,13 @@ namespace StellarisClone.Rendering
             var d = LGBuild.Label(body.transform, desc, 13, new Color(0.663f, 0.639f, 0.573f), TextAnchor.LowerLeft);
             d.rectTransform.Stretch(20, 16, 20, 0);
 
-            var badge = LGBuild.Panel(body.transform, "Selected", new Color(0.10f, 0.32f, 0.32f, 0.9f));
+            // «Атлас»: метка выбранного — тонкая золотая капсула на чернилах
+            var badge = LGBuild.Panel(body.transform, "Selected", new Color(0.055f, 0.094f, 0.157f, 0.85f));
             badge.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-14, -14), new Vector2(96, 24));
-            LG.Chip(badge.gameObject, new Color(0.475f, 0.816f, 0.749f, 0.7f), 6f);
-            var bt = LGBuild.Label(badge.transform, Loc.T("ВЫБРАНО"), 11, new Color(0.475f, 0.816f, 0.749f), TextAnchor.MiddleCenter, bold: true);
+            LG.Chip(badge.gameObject, new Color(0.906f, 0.757f, 0.439f, 0.7f), 12f);
+            var bt = LGBuild.Label(badge.transform, Loc.T("ВЫБРАНО"), 10, new Color(0.906f, 0.757f, 0.439f), TextAnchor.MiddleCenter);
+            bt.font = GameFont.MonoMedium;
+            bt.Track(1.6f);
             bt.rectTransform.Stretch();
             c._badge = badge.gameObject;
             return c;

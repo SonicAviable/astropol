@@ -60,7 +60,7 @@ namespace StellarisClone.Rendering
             title.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(240, -48), new Vector2(500, 44));
 
             // ---------------- Слева — текущая партия
-            var cap = LGBuild.Label(rt, Loc.T("ТЕКУЩАЯ ПАРТИЯ"), 14, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            var cap = LGBuild.Label(rt, Loc.T("ТЕКУЩАЯ ПАРТИЯ"), 14, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             cap.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(80, -130), new Vector2(ColW, 20));
 
             var left = LGBuild.Rect(rt, "Current");
@@ -110,7 +110,7 @@ namespace StellarisClone.Rendering
             MenuPanelFx.Sheen(prt);
             _slides.Add(MenuSlideIn.Add(panel.gameObject, 0.12f, new Vector2(50f, 0f)));
 
-            _listCap = LGBuild.Label(prt, "", 14, UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            _listCap = LGBuild.Label(prt, "", 14, UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             _listCap.rectTransform.TopBand(36, 20, 36, 420);
             var hcap = LGBuild.Label(prt, Loc.T("Куда сохранить"), 30, Color.white, TextAnchor.UpperLeft, bold: true);
             hcap.rectTransform.TopBand(60, 40, 36, 420);

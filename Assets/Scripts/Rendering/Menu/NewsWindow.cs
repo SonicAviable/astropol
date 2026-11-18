@@ -294,7 +294,7 @@ namespace StellarisClone.Rendering
             _content = LGBuild.ScrollList(_textHost, 10f, 2);
             var gold = new Color(1f, 0.82f, 0.48f);
 
-            LGBuild.Label(_content, item.Tag, 13, item.IsUpdate ? gold : UIManager.DS.NeonCyan, TextAnchor.UpperLeft, bold: true);
+            LGBuild.Label(_content, item.Tag, 13, item.IsUpdate ? gold : UIManager.DS.Gold, TextAnchor.UpperLeft).Eyebrow();
             var title = LGBuild.Label(_content, item.Title.ToUpperInvariant(), 44, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
             title.lineSpacing = 0.95f;
             if (!string.IsNullOrEmpty(item.Headline))
