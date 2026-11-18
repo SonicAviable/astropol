@@ -1266,7 +1266,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspActionBtnText.rectTransform.sizeDelta = abRt.sizeDelta;
 
             // Кнопки снизу — в стиле пунктов левого меню (планка цвета действия, значок в ячейке, капслок)
-            _inspShipyardBtn = InspGameButton(insp.transform, "ShipyardBtn", LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), DS.NeonCyan, true, OpenShipyardModal, new Vector2(395, 38));
+            _inspShipyardBtn = InspGameButton(insp.transform, "ShipyardBtn", LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), DS.NeonCyan, true, OpenShipyardModal, new Vector2(395, 38), primary: true);
             var sbRt = (RectTransform)_inspShipyardBtn.transform;
             sbRt.anchorMin = new Vector2(0.5f, 0);
             sbRt.anchorMax = new Vector2(0.5f, 0);

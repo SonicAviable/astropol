@@ -263,30 +263,43 @@ namespace StellarisClone.Rendering
         /// Кнопка в стиле пунктов левого меню игры: тёмное стекло, светящаяся планка цвета действия слева, значок в своей
         /// ячейке, подпись капслоком с разрядкой. Недоступная — приглушена (её причина — в подсказке).
         /// </summary>
-        private Button InspGameButton(Transform parent, string name, LGIcon icon, string label, Color accent, bool enabled, System.Action act, Vector2 size)
+        /// <summary>
+        /// Кнопка панели системы в стиле «Атлас»: сплошная капсула, значок и подпись моноширинным шрифтом в обычном регистре.
+        /// Обычная — тёмно-стальная с кромкой цвета действия; главная (<paramref name="primary"/>) — кремовая с тёмной подписью.
+        /// </summary>
+        private Button InspGameButton(Transform parent, string name, LGIcon icon, string label, Color accent, bool enabled, System.Action act, Vector2 size, bool primary = false)
         {
-            var go = CreateButton(parent, name, size, new Color(0.055f, 0.094f, 0.157f, 0.94f), enabled ? accent : new Color(0.663f, 0.639f, 0.573f), act);
+            Color muted = new Color(0.663f, 0.639f, 0.573f);
+            Color cream = new Color(0.925f, 0.898f, 0.827f);
+            Color inkText = new Color(0.086f, 0.125f, 0.184f);
+            var go = CreateButton(parent, name, size, new Color(0.133f, 0.196f, 0.310f, 0.97f), enabled ? accent : muted, act);
             var btn = go.GetComponent<Button>();
             btn.interactable = enabled;
-            Color a = enabled ? accent : new Color(0.663f, 0.639f, 0.573f);
+            if (primary)
+            {
+                var img = go.GetComponent<Image>();
+                img.color = enabled ? cream : new Color(0.45f, 0.44f, 0.40f, 0.6f);
+                var fx = LG.Fill(go);
+                if (fx != null) { fx.Radius = 999f; fx.Chamfer = false; fx.GlowMultiplier = 0f; fx.SpecularMultiplier = 0f; }
+            }
+            Color fg = primary ? inkText : enabled ? cream : muted;
 
-            var tile = LGBuild.Panel(go.transform, "IconTile", new Color(a.r * 0.16f, a.g * 0.16f, a.b * 0.16f, 0.95f));
-            tile.raycastTarget = false;
-            tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(size.y - 12f, size.y - 12f));
-            LG.Chip(tile.gameObject, new Color(a.r, a.g, a.b, enabled ? 0.5f : 0.2f));
-            var ic = LGIcons.Create(tile.transform, icon, 15f, a);
-            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
-
-            // Подпись по центру кнопки (поля симметричны значку слева, чтобы текст стоял ровно посередине)
-            var t = CreateText(go.transform, label.ToUpper(), 11, FontStyle.Bold, enabled ? DS.TextPrimary : DS.TextMuted, TextAnchor.MiddleCenter);
+            // Значок и подпись — единой строкой по центру: значок слева от текста
+            var t = CreateText(go.transform, LGBuild.Sentence(label), 12, FontStyle.Normal, fg, TextAnchor.MiddleCenter);
+            t.font = GameFont.MonoMedium;
             t.rectTransform.anchorMin = Vector2.zero;
             t.rectTransform.anchorMax = Vector2.one;
-            t.rectTransform.offsetMin = new Vector2(size.y + 12f, 0);
-            t.rectTransform.offsetMax = new Vector2(-(size.x >= 260f ? size.y + 12f : 10f), 0);
-            t.Track(1.2f);
+            t.rectTransform.offsetMin = new Vector2(34f, 0);
+            t.rectTransform.offsetMax = new Vector2(-18f, 0);
+            t.Track(0.4f);
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.resizeTextForBestFit = true; t.resizeTextMinSize = 8; t.resizeTextMaxSize = 11;
-            if (enabled) InspSweep.Add(go, 5.5f, 0.12f);
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = 12;
+            float tw = Mathf.Min(t.preferredWidth, size.x - 52f);
+            var ic = LGIcons.Create(go.transform, icon, 15f, primary ? inkText : enabled ? LGTone.AtlasFill(accent) : muted);
+            ic.raycastTarget = false;
+            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(8f - tw * 0.5f - 14f, 0), new Vector2(15, 15));
+            t.rectTransform.offsetMin = new Vector2(Mathf.Max(34f, size.x * 0.5f - tw * 0.5f + 8f), 0);
+            t.rectTransform.offsetMax = new Vector2(-Mathf.Max(18f, size.x * 0.5f - tw * 0.5f - 8f), 0);
             return btn;
         }
 

@@ -109,7 +109,10 @@ namespace StellarisClone.Rendering
             Color gold = DS.Gold;
 
             var card = LGBuild.Panel(_inspStack, "StarbaseCard", InspCardBg).rectTransform;
-            LG.Platter(card.gameObject, 12f).SetRim(new Color(owner.r, owner.g, owner.b, 0.32f));
+            // «Атлас»: карточка базы — тёмная плашка с золотой кромкой (не кнопка: без яркой стальной заливки)
+            var cardFx = LG.Platter(card.gameObject, 3f);
+            cardFx.AsSurface = true;
+            cardFx.SetRim(new Color(gold.r, gold.g, gold.b, 0.30f));
             LGFx.HoverGlow(card.gameObject);
             // Свет цвета владельца из-за эмблемы — карточка «подсвечена» своей станцией
             var cardGlow = LGBuild.Panel(card, "OwnerLight", new Color(owner.r, owner.g, owner.b, 0.14f));

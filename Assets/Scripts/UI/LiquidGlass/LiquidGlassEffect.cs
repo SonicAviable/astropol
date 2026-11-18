@@ -640,7 +640,15 @@ namespace StellarisClone.Rendering
             // «Атлас»: нейтральная кнопка — кремовая кромка; цветная — кромка её оттенка (бирюза старого стиля → морская зелень)
             Color accent = neutral ? LGTone.Cream : LGTone.AtlasFill(Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f));
             // Тело — сплошная тёмная сине-стальная заливка; у цветной кнопки — приглушённый цвет действия
-            Color body = neutral ? LGTone.Steel : Color.Lerp(LGTone.Steel * 0.7f, accent, 0.30f + wash);
+            // (цвет действия лишь чуть подкрашивает сталь — смысл несут кромка и подпись, а не яркая заливка)
+            Color body = neutral ? LGTone.Steel : Color.Lerp(LGTone.Steel, accent, 0.08f + wash);
+            // Круглая кнопка-значок (закрыть, свернуть) — тёмный круг с тонкой кромкой: при наведении не «сереет»
+            var rr = rectTransform.rect;
+            if (Mathf.Abs(rr.width - rr.height) < 2f && rr.width <= 56f)
+            {
+                body = LGTone.Ink2;
+                rimA = neutral ? 0.26f : 0.42f;
+            }
             body.a = Mathf.Max(0.9f, Mathf.Min(tint.a, 0.97f));   // плотная: кнопка — предмет, а не стекло
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
