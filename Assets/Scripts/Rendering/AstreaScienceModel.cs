@@ -125,7 +125,7 @@ namespace StellarisClone.Rendering
 
             if (lods[1].Count > 0 && lods[2].Count > 0)
             {
-                var group = model.GetComponent<LODGroup>() ?? model.AddComponent<LODGroup>();
+                var group = (model.TryGetComponent<LODGroup>(out var existing) ? existing : model.AddComponent<LODGroup>());
                 group.SetLODs(new[]
                 {
                     new LOD(0.32f, lods[0].ToArray()),

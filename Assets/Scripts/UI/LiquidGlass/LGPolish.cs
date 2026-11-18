@@ -34,7 +34,7 @@ namespace StellarisClone.Rendering
         public static void CascadeIn(GameObject go, int index, float step = 0.035f)
         {
             if (go == null) return;
-            var c = go.GetComponent<LGCascadeIn>() ?? go.AddComponent<LGCascadeIn>();
+            var c = (go.TryGetComponent<LGCascadeIn>(out var existing) ? existing : go.AddComponent<LGCascadeIn>());
             c.Delay = Mathf.Min(index * step, 0.5f);
         }
 
@@ -175,7 +175,7 @@ namespace StellarisClone.Rendering
         private void Start()
         {
             _rt = (RectTransform)transform;
-            _cg = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+            _cg = (TryGetComponent<CanvasGroup>(out var existing) ? existing : gameObject.AddComponent<CanvasGroup>());
             // Внутри раскладки позицию задаёт LayoutGroup — двигаем только вне её
             _move = transform.parent == null || transform.parent.GetComponent<LayoutGroup>() == null;
             _rest = _rt.anchoredPosition;

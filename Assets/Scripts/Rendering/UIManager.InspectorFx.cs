@@ -346,7 +346,7 @@ namespace StellarisClone.Rendering
 
         public static InspSweep Add(GameObject host, float period = 6f, float alpha = 0.10f)
         {
-            var s = host.GetComponent<InspSweep>() ?? host.AddComponent<InspSweep>();
+            var s = (host.TryGetComponent<InspSweep>(out var existing) ? existing : host.AddComponent<InspSweep>());
             s.Period = period; s.Alpha = alpha;
             s.enabled = false;   // «Атлас»: без бегущих бликов — спокойные плоские поверхности
             return s;
@@ -399,7 +399,7 @@ namespace StellarisClone.Rendering
         public static void Run(Text t, float value, string format = "N0")
         {
             if (t == null) return;
-            var c = t.GetComponent<InspCountUp>() ?? t.gameObject.AddComponent<InspCountUp>();
+            var c = (t.TryGetComponent<InspCountUp>(out var existing) ? existing : t.gameObject.AddComponent<InspCountUp>());
             c._t = t; c._target = value; c._format = format; c._time = 0f;
             c.enabled = true;
             t.text = 0f.ToString(format);
