@@ -94,29 +94,24 @@ namespace StellarisClone.Rendering
             glow.raycastTarget = false;
             glow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 1.9f, size * 1.9f));
             StellarisClone.Cards.HoloSpin.Add(glow, 0f, 0.2f, 0.04f);
-            var ringB = ResSprite("UI/CardBattle/holo_ring_b");
-            if (ringB != null && size >= 80f)
+            // «Атлас»: вместо голограмм — тонкое кремовое кольцо, пунктирная орбита и золотое кольцо ячейки
+            if (size >= 80f)
             {
-                var rb = LGBuild.Panel(emb, "RingB", new Color(owner.r, owner.g, owner.b, disabled ? 0.2f : 0.6f));
-                rb.sprite = ringB; rb.raycastTarget = false;
-                rb.material = StellarisClone.Cards.UIFx.HoloMat;
-                rb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 1.18f, size * 1.18f));
-                StellarisClone.Cards.HoloSpin.Add(rb, disabled ? 0f : -8f, 0.15f);
+                var rb = LGBuild.Panel(emb, "RingB", new Color(0.925f, 0.898f, 0.827f, disabled ? 0.10f : 0.20f));
+                rb.sprite = HudArt.Ring(0.975f, 1f); rb.raycastTarget = false;
+                rb.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 1.1f, size * 1.1f));
+                LG.Ignore(rb.gameObject);
             }
-            var ringA = ResSprite("UI/CardBattle/holo_ring_a");
-            if (ringA != null)
-            {
-                var ra = LGBuild.Panel(emb, "Ring", new Color(owner.r, owner.g, owner.b, disabled ? 0.25f : 0.8f));
-                ra.sprite = ringA; ra.raycastTarget = false;
-                ra.material = StellarisClone.Cards.UIFx.HoloMat;
-                ra.rectTransform.Stretch();
-                StellarisClone.Cards.HoloSpin.Add(ra, disabled ? 0f : 12f, 0.15f, 0f, 1.3f);
-            }
-            var cell = LGBuild.Panel(emb, "Cell", new Color(owner.r * 0.12f, owner.g * 0.12f, owner.b * 0.12f, 0.96f));
+            var ra = LGBuild.Panel(emb, "Ring", new Color(0.906f, 0.757f, 0.439f, disabled ? 0.2f : 0.55f));
+            ra.sprite = HudArt.Ring(0.955f, 1f); ra.raycastTarget = false;
+            ra.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.8f, size * 0.8f));
+            LG.Ignore(ra.gameObject);
+            var cell = LGBuild.Panel(emb, "Cell", new Color(0.075f, 0.118f, 0.200f, 0.96f));
             cell.raycastTarget = false;
-            cell.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.62f, size * 0.62f));
-            LG.Chip(cell.gameObject, new Color(owner.r, owner.g, owner.b, 0.6f), size * 0.31f);
-            var ic = LGIcons.Create(emb, LGIcon.Starbase, size * 0.34f, disabled ? DS.Red : Color.Lerp(owner, Color.white, 0.4f));
+            cell.sprite = HudArt.Disc();
+            cell.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.74f, size * 0.74f));
+            LG.Ignore(cell.gameObject);
+            var ic = LGIcons.Create(emb, LGIcon.Starbase, size * 0.34f, disabled ? DS.Red : new Color(0.906f, 0.757f, 0.439f));
             ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.34f, size * 0.34f));
             return emb;
         }
@@ -200,12 +195,12 @@ namespace StellarisClone.Rendering
                 sky.transform.SetParent(clip, false);
                 sky.texture = skyTex;
                 sky.raycastTarget = false;
-                sky.color = new Color(0.7f, 0.75f, 0.88f, 1f);
+                sky.color = new Color(0f, 0f, 0f, 0f);   // «Атлас»: ровные чернила вместо туманности
                 sky.rectTransform.Stretch();
                 float u = (system.Id * 37 % 55) / 100f, v = (system.Id * 61 % 50) / 100f;
                 sky.uvRect = new Rect(u, v, 0.42f, 0.12f);
             }
-            var olight = LGBuild.Panel(clip, "OwnerLight", new Color(owner.r, owner.g, owner.b, 0.3f));
+            var olight = LGBuild.Panel(clip, "OwnerLight", new Color(owner.r, owner.g, owner.b, 0f));
             olight.sprite = FactionSelectScreen.RadialSprite();
             olight.raycastTarget = false;
             olight.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(70, 0), new Vector2(360, 260));
@@ -215,29 +210,29 @@ namespace StellarisClone.Rendering
             shade.rectTransform.Stretch();
             shade.rectTransform.localScale = new Vector3(-1f, 1f, 1f);   // зеркально: темнее справа, под названиями
             InspSweep.Add(head.gameObject, 7f, 0.07f);
-            var stripe = LGBuild.Panel(_sbBody, "OwnerStripe", new Color(owner.r, owner.g, owner.b, 0.9f));
+            var stripe = LGBuild.Panel(_sbBody, "OwnerStripe", new Color(owner.r, owner.g, owner.b, 0f));
             stripe.raycastTarget = false;
             stripe.rectTransform.anchorMin = new Vector2(0, 1); stripe.rectTransform.anchorMax = new Vector2(1, 1);
             stripe.rectTransform.pivot = new Vector2(0.5f, 1);
             stripe.rectTransform.offsetMin = new Vector2(10, -3); stripe.rectTransform.offsetMax = new Vector2(-10, 0);
-            var hline = LGBuild.Panel(head, "Line", new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.5f));
+            var hline = LGBuild.Panel(head, "Line", new Color(0.925f, 0.898f, 0.827f, 0.16f));
             hline.raycastTarget = false;
             hline.rectTransform.anchorMin = new Vector2(0, 0); hline.rectTransform.anchorMax = new Vector2(1, 0);
             hline.rectTransform.sizeDelta = new Vector2(-28, 1.2f);
 
             SbEmblem(head, new Vector2(64, -2), 92f, owner, sb.Disabled, new Vector2(0, 0.5f));
-            var t1 = LGBuild.Label(head, Loc.T("ЗВЁЗДНАЯ БАЗА"), 10, InspLabelCol, TextAnchor.LowerLeft, bold: true);
+            var t1 = LGBuild.Label(head, Loc.T("ЗВЁЗДНАЯ БАЗА"), 10, InspLabelCol, TextAnchor.LowerLeft);
+            t1.font = GameFont.Mono;
             t1.rectTransform.anchorMin = new Vector2(0, 0.62f); t1.rectTransform.anchorMax = new Vector2(1, 0.8f);
             t1.rectTransform.offsetMin = new Vector2(124, 0); t1.rectTransform.offsetMax = new Vector2(-48, 0);
             t1.Track(2f);
-            var t2 = LGBuild.Label(head, system.Name, 22, Color.white, TextAnchor.MiddleLeft, bold: true);
+            var t2 = LGBuild.Label(head, system.Name, 26, Color.white, TextAnchor.MiddleLeft, bold: true);
             t2.rectTransform.anchorMin = new Vector2(0, 0.36f); t2.rectTransform.anchorMax = new Vector2(1, 0.64f);
             t2.rectTransform.offsetMin = new Vector2(124, 0); t2.rectTransform.offsetMax = new Vector2(-48, 0);
-            t2.Track(1.8f);
-            var t3 = LGBuild.Label(head, sb.Disabled ? Loc.T("ВЫВЕДЕНА ИЗ СТРОЯ") : Fortifications.Name(lvl).ToUpper(), 11, sb.Disabled ? DS.Red : (lvl > 0 ? gold : DS.NeonCyan), TextAnchor.UpperLeft, bold: true);
+            var t3 = LGBuild.Label(head, sb.Disabled ? Loc.T("ВЫВЕДЕНА ИЗ СТРОЯ") : Fortifications.Name(lvl), 12, sb.Disabled ? DS.Red : (lvl > 0 ? gold : InspLabelCol), TextAnchor.UpperLeft);
             t3.rectTransform.anchorMin = new Vector2(0, 0.15f); t3.rectTransform.anchorMax = new Vector2(1, 0.36f);
             t3.rectTransform.offsetMin = new Vector2(124, 0); t3.rectTransform.offsetMax = new Vector2(-48, 0);
-            t3.Track(1.6f);
+            t3.Track(0.4f);
             var close = CreateCloseButton(head, 26f, () => { CloseStarbaseWindow(); if (_activeSystem != null) ShowSystemPanel(_activeSystem); });
             var crt = close.GetComponent<RectTransform>();
             crt.anchorMin = crt.anchorMax = new Vector2(1, 1); crt.pivot = new Vector2(1, 1);
@@ -288,16 +283,20 @@ namespace StellarisClone.Rendering
         {
             var cell = LGBuild.Panel(card, "Stat", new Color(glowCol.r * 0.06f, glowCol.g * 0.06f, glowCol.b * 0.06f, 0.95f));
             Place(cell.rectTransform, x0, x1, y, 66f, x0 == 0f ? 14f : 4f, x1 >= 1f ? 14f : 4f);
-            LG.Platter(cell.gameObject, 10f).SetRim(new Color(glowCol.r, glowCol.g, glowCol.b, 0.3f));
+            var cellFx = LG.Platter(cell.gameObject, 3f);
+            cellFx.AsSurface = true;
+            cellFx.SetRim(new Color(0.925f, 0.898f, 0.827f, 0.10f));
             var g = LGBuild.Panel(cell.transform, "Glow", new Color(glowCol.r, glowCol.g, glowCol.b, 0.14f));
             g.enabled = false;   // «Атлас»: без ореолов
             g.sprite = FactionSelectScreen.RadialSprite();
             g.raycastTarget = false;
             g.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 0), new Vector2(200, 120));
-            var l = LGBuild.Label(cell.transform, label, 9, InspLabelCol, TextAnchor.UpperLeft, bold: true);
+            var l = LGBuild.Label(cell.transform, label, 10, DS.Gold, TextAnchor.UpperLeft);
+            l.font = GameFont.Mono;
             Place(l.rectTransform, 0f, 1f, 8f, 12f, 12f, 8f);
             l.Track(1.8f);
-            var v = LGBuild.Label(cell.transform, value.ToString(fmt), 26, col, TextAnchor.UpperLeft, bold: true);
+            var v = LGBuild.Label(cell.transform, value.ToString(fmt), 26, col, TextAnchor.UpperLeft);
+            v.font = GameFont.MonoMedium;
             Place(v.rectTransform, 0f, 1f, 19f, 32f, 12f, 8f);
             var sh = v.gameObject.AddComponent<Shadow>();
             sh.effectColor = new Color(0f, 0f, 0f, 0.5f);
@@ -321,17 +320,17 @@ namespace StellarisClone.Rendering
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.raycastTarget = false;
             glow.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(4, 9), new Vector2(24, 24));
-            var dia = LGBuild.Panel(row, "Diamond", g);
+            var dia = LGBuild.Panel(row, "Diamond", new Color(g.r, g.g, g.b, 0f));
             dia.raycastTarget = false;
             dia.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(4, 9), new Vector2(7, 7));
             dia.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
             var ic = LGIcons.Create(row, icon, 12, new Color(g.r, g.g, g.b, 0.85f));
             ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(14, 3), new Vector2(12, 12));
-            var t = LGBuild.Label(row, title, 11, g, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.Stretch(32, 1, 0, 0);
-            t.Track(2.2f);
-            var line = LGBuild.Panel(row, "Line", new Color(g.r, g.g, g.b, 0.55f));
-            line.sprite = FadeRightSprite;
+            var t = LGBuild.Label(row, title, 11, g, TextAnchor.LowerLeft);
+            t.font = GameFont.Mono;
+            t.rectTransform.Stretch(32, 3, 0, 0);
+            t.Track(1.6f);
+            var line = LGBuild.Panel(row, "Line", new Color(0.925f, 0.898f, 0.827f, 0.16f));
             line.raycastTarget = false;
             line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
             line.rectTransform.pivot = new Vector2(0, 0);
@@ -380,7 +379,7 @@ namespace StellarisClone.Rendering
                 node.anchoredPosition = new Vector2(0, -18f);
                 if (built || next)
                 {
-                    var glow = LGBuild.Panel(node, "Glow", new Color(g.r, g.g, g.b, current ? 0.5f : next ? 0.18f : 0.25f));
+                    var glow = LGBuild.Panel(node, "Glow", new Color(g.r, g.g, g.b, 0f));   // «Атлас»: без ореола
                     glow.enabled = false;   // «Атлас»: без ореолов
                     glow.sprite = FactionSelectScreen.RadialSprite();
                     glow.raycastTarget = false;

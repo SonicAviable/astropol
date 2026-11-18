@@ -93,8 +93,9 @@ namespace StellarisClone.Rendering
             if (_text == null) return;
             string s = _text.text;
             if (ReferenceEquals(s, _last)) return;
-            // «Атлас»: регистр подписи сохраняется (заглавные больше не навязываются)
-            string up = s ?? "";
+            // «Атлас»: подпись капслоком («ПРИНЯТЬ РЕШЕНИЕ») — обычным регистром, как «Дальше»; смешанный регистр не трогаем
+            string up = LGBuild.Sentence(s ?? "");
+            if (!ReferenceEquals(up, s) && up != s) _text.text = up;
             _last = _text.text;
 
             // Разрядка — у однострочных подписей без тегов (своя разрядка, заданная в коде, сохраняется)

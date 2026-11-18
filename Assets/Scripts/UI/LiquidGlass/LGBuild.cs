@@ -135,12 +135,31 @@ namespace StellarisClone.Rendering
             if (letters < 4) return s;
             var sb = new System.Text.StringBuilder(s.Length);
             bool cap = true;
-            foreach (char ch in s)
+            for (int i = 0; i < s.Length; i++)
             {
-                if (char.IsLetter(ch)) { sb.Append(cap ? ch : char.ToLowerInvariant(ch)); cap = false; }
+                char ch = s[i];
+                if (char.IsLetter(ch))
+                {
+                    // Отдельная буква («(L)», «Ф1») и слово с цифрами («F10», «T2») — клавиши и обозначения: остаются заглавными
+                    bool keep = !cap && (IsolatedLetter(s, i) || TokenHasDigit(s, i));
+                    sb.Append(cap || keep ? ch : char.ToLowerInvariant(ch));
+                    cap = false;
+                }
                 else { sb.Append(ch); if (ch == '«' || ch == '.' || ch == '!' || ch == '?') cap = true; }
             }
             return sb.ToString();
+        }
+
+        private static bool IsolatedLetter(string s, int i) =>
+            (i == 0 || !char.IsLetterOrDigit(s[i - 1])) && (i == s.Length - 1 || !char.IsLetterOrDigit(s[i + 1]));
+
+        private static bool TokenHasDigit(string s, int i)
+        {
+            int a = i, b = i;
+            while (a > 0 && char.IsLetterOrDigit(s[a - 1])) a--;
+            while (b < s.Length - 1 && char.IsLetterOrDigit(s[b + 1])) b++;
+            for (int k = a; k <= b; k++) if (char.IsDigit(s[k])) return true;
+            return false;
         }
 
         private static readonly int[] TypeScale = { 9, 10, 11, 12, 13, 14, 16, 18, 22, 26, 30, 34, 40, 48 };

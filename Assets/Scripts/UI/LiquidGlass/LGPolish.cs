@@ -26,8 +26,8 @@ namespace StellarisClone.Rendering
         /// <summary>Блик, изредка пробегающий по заливке полосы, — признак того, что процесс идёт.</summary>
         public static void Shimmer(RectTransform fill)
         {
-            if (fill == null || fill.GetComponent<LGShimmer>() != null) return;
-            fill.gameObject.AddComponent<LGShimmer>();
+            // «Атлас»: шкалы спокойные — без бегущего блика
+            if (fill == null) return;
         }
 
         /// <summary>Каскадное появление: index — порядковый номер элемента в окне.</summary>

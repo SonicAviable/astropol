@@ -13,8 +13,9 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class LawsWindow
     {
-        private static readonly Color GreatGold = new Color(1f, 0.80f, 0.36f);
-        private static readonly Color OfferOrange = new Color(1f, 0.62f, 0.30f);
+        // «Атлас»: золото — великие проекты, терракота — предложения; категории — цвета палитры атласа
+        private static readonly Color GreatGold = new Color(0.906f, 0.757f, 0.439f);
+        private static readonly Color OfferOrange = new Color(0.93f, 0.60f, 0.42f);
 
         private void RefreshDecisions()
         {
@@ -93,10 +94,10 @@ namespace StellarisClone.Rendering
         private static Color DecisionCategoryColor(DecisionCategory c) => c switch
         {
             DecisionCategory.Faction => FactionColor(),
-            DecisionCategory.Economy => new Color(0.95f, 0.62f, 0.36f),
-            DecisionCategory.Science => new Color(0.50f, 0.92f, 0.62f),
-            DecisionCategory.Military => new Color(1f, 0.45f, 0.42f),
-            _ => new Color(0.45f, 0.76f, 1f)
+            DecisionCategory.Economy => new Color(0.906f, 0.757f, 0.439f),
+            DecisionCategory.Science => new Color(0.475f, 0.816f, 0.749f),
+            DecisionCategory.Military => new Color(1f, 0.42f, 0.341f),
+            _ => new Color(0.435f, 0.639f, 0.847f)
         };
 
         /// <summary>Цвет фракции игрока, подтянутый к яркости остальных колонок.</summary>
@@ -113,15 +114,20 @@ namespace StellarisClone.Rendering
             Color cc = DecisionCategoryColor(cat);
             var head = LGBuild.Rect(col, "Head");
             head.TopBand(0, 40);
-            var ic = LGIcons.Create(head, DecisionCategoryIcon(cat), 20, cc);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(20, 20));
-            var name = LGBuild.Label(head, EmpireDecisions.CategoryName(cat).ToUpper(), cat == DecisionCategory.Faction ? 13 : 15, Color.white, TextAnchor.MiddleLeft, bold: true);
-            name.rectTransform.Stretch(32, 0, 0, 0);
-            name.Track(1.4f);
+            // «Атлас»: заголовок колонки — значок цвета категории и моноширинная подпись с разрядкой;
+            // под ним тонкая кремовая линия, слева на ней — короткий отрезок цвета категории
+            var ic = LGIcons.Create(head, DecisionCategoryIcon(cat), 16, cc);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(16, 16));
+            var name = LGBuild.Label(head, EmpireDecisions.CategoryName(cat).ToUpper(), 12, new Color(0.925f, 0.898f, 0.827f), TextAnchor.MiddleLeft);
+            name.font = GameFont.MonoMedium;
+            name.rectTransform.Stretch(26, 0, 0, 0);
+            name.Track(1.8f);
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
             name.verticalOverflow = VerticalWrapMode.Truncate;
-            var line = LGBuild.Panel(col, "Line", new Color(cc.r, cc.g, cc.b, 0.5f));
-            line.rectTransform.TopBand(42, 2);
+            var line = LGBuild.Panel(col, "Line", new Color(0.925f, 0.898f, 0.827f, 0.16f));
+            line.rectTransform.TopBand(42, 1);
+            var mark = LGBuild.Panel(col, "Mark", new Color(cc.r, cc.g, cc.b, 0.9f));
+            mark.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -41.5f), new Vector2(36, 2));
             if (cat == DecisionCategory.Faction)
                 TooltipHelper.Attach(head.gameObject, Loc.T("Особые решения вашей фракции — у других империй их нет. Последнее — великий проект."));
 
@@ -162,16 +168,19 @@ namespace StellarisClone.Rendering
         {
             bool active = EmpireDecisions.IsActive(d), done = EmpireDecisions.IsDone(d);
             Color accent = d.Once ? GreatGold : cc;
-            var bg = LGBuild.Panel(card, "Bg", active || done ? new Color(accent.r * 0.13f, accent.g * 0.13f, accent.b * 0.13f, 0.95f)
-                                                             : new Color(0.055f, 0.094f, 0.157f, 0.9f));
+            // «Атлас»: карточка — чернильная плашка; кромка говорит о состоянии (идёт / предложение / проект), иначе едва видна
+            var bg = LGBuild.Panel(card, "Bg", active || done ? new Color(0.090f + accent.r * 0.05f, 0.130f + accent.g * 0.05f, 0.215f + accent.b * 0.05f, 0.97f)
+                                                             : new Color(0.075f, 0.118f, 0.200f, 0.95f));
             bg.rectTransform.Stretch();
-            LG.Platter(bg.gameObject, 8f).SetRim(active || done ? new Color(accent.r, accent.g, accent.b, 0.85f)
-                                                 : d.IsOffer ? new Color(OfferOrange.r, OfferOrange.g, OfferOrange.b, 0.55f)
-                                                 : d.Once ? new Color(accent.r, accent.g, accent.b, 0.30f) : new Color(1f, 1f, 1f, 0.10f));
+            var bgFx = LG.Platter(bg.gameObject, 3f);
+            bgFx.AsSurface = true;
+            bgFx.SetRim(active || done ? new Color(accent.r, accent.g, accent.b, 0.55f)
+                                                 : d.IsOffer ? new Color(OfferOrange.r, OfferOrange.g, OfferOrange.b, 0.45f)
+                                                 : d.Once ? new Color(accent.r, accent.g, accent.b, 0.30f) : new Color(0.925f, 0.898f, 0.827f, 0.10f));
 
             // Значок решения — крупный бледный водяной знак справа
             float side = Mathf.Min(cardH - 20f, 96f);
-            var wm = LGIcons.Create(card, d.Icon, side, new Color(accent.r, accent.g, accent.b, 0.07f), "Watermark");
+            var wm = LGIcons.Create(card, d.Icon, side, new Color(accent.r, accent.g, accent.b, 0.05f), "Watermark");
             var shadow = wm.GetComponent<Shadow>();
             if (shadow != null) Destroy(shadow);
             wm.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8f, 8f), new Vector2(side, side));
@@ -240,8 +249,7 @@ namespace StellarisClone.Rendering
                 lbl.Track(0.8f);
                 var track = LGBuild.Rect(box, "Bar");
                 track.TopBand(18, 10);
-                var fill = LGBuild.Bar(track, accent, EmpireDecisions.Progress(d), 6f);
-                LGFx.Shimmer(fill);
+                var fill = LGBuild.Bar(track, accent, EmpireDecisions.Progress(d), 4f);
                 _live.Add(() =>
                 {
                     if (!EmpireDecisions.IsActive(d)) return;
