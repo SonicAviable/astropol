@@ -114,7 +114,7 @@ namespace StellarisClone.Rendering
             chartPanel.rectTransform.pivot = new Vector2(0, 1);
             chartPanel.rectTransform.anchoredPosition = new Vector2(24, -96);
             chartPanel.rectTransform.sizeDelta = new Vector2(1000, 520);
-            LG.Platter(chartPanel.gameObject, 14f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.18f));
+            LG.Platter(chartPanel.gameObject, 14f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
             var cp = chartPanel.rectTransform;
 
             var tabs = LGBuild.Rect(cp, "Tabs");
@@ -173,7 +173,7 @@ namespace StellarisClone.Rendering
             chron.rectTransform.anchorMin = new Vector2(0, 0); chron.rectTransform.anchorMax = new Vector2(1, 0);
             chron.rectTransform.pivot = new Vector2(0.5f, 0);
             chron.rectTransform.offsetMin = new Vector2(24, 24); chron.rectTransform.offsetMax = new Vector2(-24, 24 + 206);
-            LG.Platter(chron.gameObject, 14f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.18f));
+            LG.Platter(chron.gameObject, 14f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
             var ch = LGBuild.Rect(chron.rectTransform, "Head");
             ch.TopBand(12, 22, 18, 18);
             LGBuild.SectionDecor(ch, Loc.T("ЛЕТОПИСЬ"), LGIcon.Calendar, Cyan);

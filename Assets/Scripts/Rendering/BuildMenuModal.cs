@@ -151,7 +151,7 @@ namespace StellarisClone.Rendering
             var bg = _root.AddComponent<Image>();
             bg.color = new Color(0.010f, 0.025f, 0.038f, 0.98f);
             bg.raycastTarget = true;
-            LG.Glass(_root).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.42f));
+            LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.96f;
 
             // Шапка
@@ -191,7 +191,7 @@ namespace StellarisClone.Rendering
             var left = LGBuild.Panel(rt, "Catalog", CPanel);
             left.rectTransform.anchorMin = new Vector2(0, 0); left.rectTransform.anchorMax = new Vector2(1, 1);
             left.rectTransform.offsetMin = new Vector2(Pad, Pad); left.rectTransform.offsetMax = new Vector2(-Pad - RightW - 14f, -HeaderH - 10f);
-            LG.Platter(left.gameObject, 16f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.18f));
+            LG.Platter(left.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
 
             var tabs = LGBuild.Rect(left.rectTransform, "Tabs");
             tabs.TopBand(12, 32, 14, 14);
@@ -241,7 +241,7 @@ namespace StellarisClone.Rendering
             right.rectTransform.anchorMin = new Vector2(1, 0); right.rectTransform.anchorMax = new Vector2(1, 1);
             right.rectTransform.pivot = new Vector2(1, 0.5f);
             right.rectTransform.offsetMin = new Vector2(-Pad - RightW, Pad); right.rectTransform.offsetMax = new Vector2(-Pad, -HeaderH - 10f);
-            LG.Platter(right.gameObject, 16f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.18f));
+            LG.Platter(right.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
             var r = right.rectTransform;
 
             // Подробности выбранного (верхние ~58%)

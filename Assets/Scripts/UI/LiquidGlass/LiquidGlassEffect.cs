@@ -377,23 +377,7 @@ namespace StellarisClone.Rendering
             Rect r = rectTransform.rect;
             var role = ResolveRole();
             float br = role == Role.Button ? ButtonRadius(r) : BaseRadius(role, r.width, r.height);
-            if (role != Role.Button && ResolvesChamfer(role, r.width, r.height, out float cut)) br = cut;
             return new Vector4(br, br, br, br);
-        }
-
-        /// <summary>
-        /// Срезанные углы: явно заданные (<see cref="Chamfer"/>) или по стилю — у окон верхнего уровня.
-        /// Круги и капсулы, заданные радиусом ≈ половине стороны, не режутся.
-        /// </summary>
-        private bool ResolvesChamfer(Role rr, float w, float h, out float cut)
-        {
-            float minS = Mathf.Min(w, h);
-            if (chamfer) { cut = radius >= 0f ? radius : 10f; return true; }
-            cut = 0f;
-            if (rr != Role.Glass || !LGTone.ChamferWindows || minS < 40f) return false;
-            if (radius >= 0f && radius >= minS * 0.45f) return false;
-            cut = Mathf.Min(Mathf.Max(w, h) >= 500f ? LGTone.WindowCutLarge : LGTone.WindowCut, minS * 0.25f);
-            return true;
         }
 
         private Style Resolve(Rect r, Color tint)
@@ -428,7 +412,7 @@ namespace StellarisClone.Rendering
                     s.Refraction = 1f;
                     s.Border = 1.2f;   // тонкая точная кромка; верх и срезанные углы подсвечивает шейдер
                     s.GlowRadius = 12f;
-                    s.Rim = hasOutline ? outlineCol : WithAlpha(LGTone.Accent, 0.30f);
+                    s.Rim = hasOutline ? outlineCol : new Color(0.45f, 0.95f, 0.90f, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;
                     break;
 
@@ -437,7 +421,7 @@ namespace StellarisClone.Rendering
                     s.Fill = 0.32f;
                     s.Specular = 0.55f;
                     s.Border = 1f;
-                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : WithAlpha(LGTone.Accent, 0.12f);
+                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : new Color(0.45f, 0.95f, 0.90f, 0.12f);
                     s.Glow = hasOutline ? 0.10f * (distBoost - 1f) : 0f;
                     s.GlowRadius = 8f;
                     break;
@@ -533,9 +517,10 @@ namespace StellarisClone.Rendering
                     break;
             }
 
-            if (ResolvesChamfer(rr, w, h, out float cut))
+            if (chamfer)
             {
                 s.Flags |= 16;
+                float cut = radius >= 0f ? radius : 10f;
                 s.Radii = new Vector4(cut, cut, cut, cut);   // размер среза передаётся через радиус
             }
 
@@ -577,9 +562,6 @@ namespace StellarisClone.Rendering
             var prt = parentFx.transform as RectTransform;
             Rect pr = prt.rect;
             Vector4 pRadii = parentFx.ResolveRadii();
-            // У окна со срезанными углами прямые углы скруглять нечем, а срез повторяется на самой пластине (ниже)
-            bool pChamfer = parentFx.ResolvesChamfer(parentFx.ResolveRole(), pr.width, pr.height, out float pCut);
-            if (pChamfer) pRadii = Vector4.zero;
 
             rectTransform.GetWorldCorners(s_Corners); // BL TL TR BR
             for (int i = 0; i < 4; i++) s_ParentCorners[i] = prt.InverseTransformPoint(s_Corners[i]);
@@ -606,12 +588,6 @@ namespace StellarisClone.Rendering
                 s.Specular *= 0.4f;
                 if (rr == Role.Platter) s.Fill *= 0.85f;
             }
-
-            if (pChamfer && ((top && left) || (bottom && right)))
-            {
-                s.Flags |= 16;
-                s.Radii = new Vector4(pCut, pCut, pCut, pCut);
-            }
         }
 
         /// <summary>
@@ -631,11 +607,10 @@ namespace StellarisClone.Rendering
                 if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.05f : 0.025f; }
             }
             // Кромка — тонкая и сдержанная; выбранная кнопка (яркая кромка) заметнее невыбранной
-            // Нейтральная кнопка — контурная циановая (стиль «Тактический голограф»)
-            float rimA = neutral ? 0.42f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
-            Color accent = neutral ? LGTone.Accent : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
-            // Тело — тёмно-синее; нейтральная кнопка чуть подкрашена акцентом, цветная мягко светится цветом кромки
-            Color body = Color.Lerp(LGTone.ButtonBody, accent, neutral ? 0.025f : wash);
+            float rimA = neutral ? 0.30f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
+            Color accent = neutral ? new Color(0.62f, 0.80f, 0.86f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
+            // Тело — тёмно-синее стекло; цветная кнопка мягко светится цветом кромки (как «Укрепить» в окне базы)
+            Color body = Color.Lerp(new Color(0.012f, 0.026f, 0.054f), accent, neutral ? 0f : wash);
             body.a = Mathf.Min(tint.a, 0.94f);   // почти непрозрачное: карта под кнопкой не высветляет тело
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
@@ -645,17 +620,7 @@ namespace StellarisClone.Rendering
             s.Border = 1f;
             s.Flags |= 8;
 
-            Rect br = rectTransform.rect;
-            float bMin = Mathf.Min(br.width, br.height);
-            bool circle = radius >= 0f && radius >= bMin * 0.45f;
-            float rad;
-            if (chamfer) rad = radius >= 0f ? radius : 10f;
-            else if (LGTone.ChamferButtons && !circle && bMin >= 16f)
-            {
-                s.Flags |= 16;
-                rad = Mathf.Min(LGTone.ButtonCut, bMin * 0.3f);
-            }
-            else rad = ButtonRadius(br);
+            float rad = chamfer ? (radius >= 0f ? radius : 10f) : ButtonRadius(rectTransform.rect);
             s.Radii = new Vector4(rad, rad, rad, rad);
         }
 
@@ -699,22 +664,9 @@ namespace StellarisClone.Rendering
                 c32 = first.color;
             }
 
-            var role0 = ResolveRole();
-            if (role0 == Role.Glass || role0 == Role.Platter || role0 == Role.Header || role0 == Role.Field || role0 == Role.Chip)
-                c32 = LGTone.HoloSurface(c32, role0 == Role.Glass);
-
             Style s = Resolve(r, (Color)c32);
             if (s.ForceOpaqueVertex) c32.a = 255;
-            if (role0 == Role.Button) TacticalButton(ref s, ref c32);
-
-            // Единый циан вместо разрозненных бирюзовых оттенков: кромки всех элементов, тела линий/точек/заливок
-            s.Rim = LGTone.HoloAccent(s.Rim);
-            if (s.Mode == 2)
-            {
-                byte a0 = c32.a;
-                c32 = LGTone.HoloAccent(c32);
-                c32.a = a0;
-            }
+            if (ResolveRole() == Role.Button) TacticalButton(ref s, ref c32);
 
             Color rim = s.Rim;
             if (QualitySettings.activeColorSpace == ColorSpace.Linear && !IsGammaVertexCanvas())
@@ -823,56 +775,8 @@ namespace StellarisClone.Rendering
     {
         /// <summary>Множитель скругления углов (кроме линий и точек).</summary>
         public const float RadiusScale = 0.3f;
-        /// <summary>Предельный радиус угла, px (стиль «Тактический голограф» — почти прямые углы).</summary>
-        public const float MaxRadius = 2f;
-        /// <summary>Окна верхнего уровня — со срезанными под 45° углами вместо скругления.</summary>
-        public static readonly bool ChamferWindows = true;
-        /// <summary>Прямоугольные кнопки — со срезанными углами (круглые кнопки-значки остаются круглыми).</summary>
-        public static readonly bool ChamferButtons = true;
-        /// <summary>Размер среза у окон, px (у крупных окон — WindowCutLarge).</summary>
-        public const float WindowCut = 10f;
-        public const float WindowCutLarge = 14f;
-        /// <summary>Предельный размер среза у кнопок, px.</summary>
-        public const float ButtonCut = 8f;
-
-        // Палитра «Тактический голограф» (вариант A)
-        /// <summary>Тело окна — #0E1626.</summary>
-        public static readonly Color Panel = new Color(0.055f, 0.086f, 0.149f, 1f);
-        /// <summary>Вложенные пластины, поля, чипы — #15213A.</summary>
-        public static readonly Color Panel2 = new Color(0.082f, 0.129f, 0.227f, 1f);
-        /// <summary>Тело кнопки — чуть темнее окна.</summary>
-        public static readonly Color ButtonBody = new Color(0.035f, 0.058f, 0.100f, 1f);
-        /// <summary>Главный акцент — циан #2FD6FF.</summary>
-        public static readonly Color Accent = new Color(0.184f, 0.839f, 1f, 1f);
-
-        /// <summary>
-        /// Бирюзовые акценты старого стиля (кромки, линии, заливки, заданные в окнах вручную) сдвигаются в циан палитры;
-        /// яркость и прозрачность сохраняются, зелёные «успехи» и прочие цвета не трогаются.
-        /// </summary>
-        public static Color HoloAccent(Color c)
-        {
-            Color.RGBToHSV(c, out float h, out float s, out float v);
-            if (h < 0.445f || h > 0.525f || s < 0.25f) return c;
-            Color r = Color.HSVToRGB(0.533f, Mathf.Max(s, 0.8f), v);
-            r.a = c.a;
-            return r;
-        }
-
-        /// <summary>
-        /// Тёмные нейтральные и сине-зелёные тела окон/пластин приводятся к единой палитре;
-        /// цветные (фракционные, тревожные) панели сохраняют свой оттенок.
-        /// </summary>
-        public static Color32 HoloSurface(Color32 c, bool window)
-        {
-            Color col = c;
-            Color.RGBToHSV(col, out float h, out float s, out float v);
-            if (v > 0.32f) return c;
-            bool bluish = h >= 0.42f && h <= 0.72f;
-            if (s > 0.45f && !bluish) return c;
-            Color t = window ? Panel : Panel2;
-            t.a = col.a;
-            return t;
-        }
+        /// <summary>Предельный радиус угла, px.</summary>
+        public const float MaxRadius = 4f;
         /// <summary>Множитель бликов (френель, свет сверху, кромка).</summary>
         public const float Specular = 0.4f;
         /// <summary>Множитель неонового свечения вокруг элементов.</summary>

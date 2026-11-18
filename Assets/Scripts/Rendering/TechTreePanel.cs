@@ -219,7 +219,7 @@ namespace StellarisClone.Rendering
             _window = win.gameObject;
             win.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(WinW, WinH));
             _window.AddComponent<CanvasGroup>();
-            LG.Glass(_window, 28f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.42f));
+            LG.Glass(_window, 28f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
             var motion = LG.Motion(_window, LGAppear.Kind.Pop);
             motion.fromScale = 0.96f;
             motion.inDuration = 0.42f;

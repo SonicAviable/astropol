@@ -952,7 +952,7 @@ namespace StellarisClone.Rendering
         {
             var strip = LGBuild.Panel(rt, "Stats", CPanel);
             strip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -StatsTop), new Vector2(LeftW, StatsH));
-            LG.Glass(strip.gameObject, 14f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.28f));
+            LG.Glass(strip.gameObject, 14f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.28f));
             LG.Motion(strip.gameObject, LGAppear.Kind.SlideDown).distance = 20f;
             strip.gameObject.SetActive(false);   // дублировал карты районов и выноски; наука и занятость — в строке под приоритетом
 
@@ -1229,7 +1229,7 @@ namespace StellarisClone.Rendering
             string[] labels = { Loc.T("Пригодность"), Loc.T("Районы · размер"), Loc.T("Титан"), Loc.T("Гелий-3") };
             for (int i = 0; i < _dossier.Length; i++) _dossier[i] = MakeSeg(body, labels[i], 4 + i * 34, 220f);
 
-            var vline = LGBuild.Panel(body, "Split", new Color(0.184f, 0.839f, 1.00f, 0.16f));
+            var vline = LGBuild.Panel(body, "Split", new Color(0.45f, 0.95f, 0.90f, 0.16f));
             vline.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(238, -4), new Vector2(1, 136));
             LG.Ignore(vline.gameObject);
 
@@ -2177,7 +2177,7 @@ namespace StellarisClone.Rendering
         private static Image Glass(RectTransform parent, string name, LGIcon icon, string title, Color accent, LGAppear.Kind appear, float delay, out RectTransform body)
         {
             var card = LGBuild.Panel(parent, name, CPanel);
-            LG.Glass(card.gameObject, 20f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.32f));
+            LG.Glass(card.gameObject, 20f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.32f));
             var mo = LG.Motion(card.gameObject, appear);
             mo.delay = delay;
             mo.distance = 30f;

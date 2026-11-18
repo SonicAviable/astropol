@@ -1,6 +1,0 @@
-Шрифты стиля «Тактический голограф» распространяются по лицензии SIL Open Font License 1.1
-(https://openfontlicense.org). Получены с Google Fonts.
-
-Exo2-SemiBold.ttf, Exo2-Bold.ttf      — Exo 2, Copyright 2013 The Exo 2 Project Authors (https://github.com/NDISCOVER/Exo-2.0)
-IBMPlexSans-Regular.ttf               — IBM Plex Sans, Copyright 2017 IBM Corp. (https://github.com/IBM/plex)
-JetBrainsMono-Regular.ttf             — JetBrains Mono, Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)

@@ -74,12 +74,12 @@ namespace StellarisClone.Cards
             return CardSprites.Glow;
         }
 
-        /// <summary>Шрифт заголовков и цифр — акцидентный шрифт игры (Exo 2 Bold).</summary>
+        /// <summary>Шрифт заголовков и цифр (Russo One); если нет — жирный шрифт игры.</summary>
         public static Font Title
         {
             get
             {
-                if (s_title == null) s_title = GameFont.Display;
+                if (s_title == null) s_title = Resources.Load<Font>("Fonts/RussoOne-Regular");
                 return s_title;
             }
         }

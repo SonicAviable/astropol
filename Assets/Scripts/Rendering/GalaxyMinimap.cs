@@ -109,7 +109,7 @@ public static void ShowGlobal()
             var bg = root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(root, mapSize * 0.5f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.55f));
+            LG.Glass(root, mapSize * 0.5f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.55f));
             var motion = LG.Motion(root, LGAppear.Kind.SlideDown);
             motion.distance = 30f;
 
@@ -122,7 +122,7 @@ public static void ShowGlobal()
             bzRt.sizeDelta = new Vector2(mapSize + 14f, mapSize + 14f);
             var bzImg = bz.AddComponent<Image>();
             bzImg.sprite = BezelSprite();
-            bzImg.color = new Color(0.184f, 0.839f, 1.00f, 0.55f);
+            bzImg.color = new Color(0.45f, 0.95f, 0.90f, 0.55f);
             bzImg.raycastTarget = false;
             LG.Ignore(bz);
 

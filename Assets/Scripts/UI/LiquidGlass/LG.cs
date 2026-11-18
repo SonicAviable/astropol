@@ -25,24 +25,11 @@ namespace StellarisClone.Rendering
         {
             public static readonly Color GlassRim      = new Color(1f, 1f, 1f, 0.22f);
             public static readonly Color GlassRimSoft  = new Color(1f, 1f, 1f, 0.10f);
-            // Стиль «Тактический голограф»: циан #2FD6FF, янтарь #FFB547, опасность #FF4D5E, успех #3DDC97
-            public static readonly Color NeonRim       = new Color(0.184f, 0.839f, 1.00f, 0.70f);
-            public static readonly Color GoldRim       = new Color(1.00f, 0.710f, 0.278f, 0.75f);
-            public static readonly Color DangerRim     = new Color(1.00f, 0.302f, 0.369f, 0.75f);
-            public static readonly Color SuccessRim    = new Color(0.239f, 0.863f, 0.592f, 0.70f);
-            public static readonly Color ScrimTint     = new Color(0.016f, 0.027f, 0.051f, 1f);
-
-            /// <summary>Токены палитры для текста и элементов, которые рисуются вручную.</summary>
-            public static readonly Color Background    = new Color(0.027f, 0.043f, 0.078f, 1f);   // #070B14
-            public static readonly Color Panel         = new Color(0.055f, 0.086f, 0.149f, 1f);   // #0E1626
-            public static readonly Color Panel2        = new Color(0.082f, 0.129f, 0.227f, 1f);   // #15213A
-            public static readonly Color Line          = new Color(0.122f, 0.227f, 0.361f, 1f);   // #1F3A5C
-            public static readonly Color Text          = new Color(0.863f, 0.910f, 0.961f, 1f);   // #DCE8F5
-            public static readonly Color TextDim       = new Color(0.498f, 0.576f, 0.678f, 1f);   // #7F93AD
-            public static readonly Color Accent        = new Color(0.184f, 0.839f, 1.00f, 1f);    // #2FD6FF
-            public static readonly Color Accent2       = new Color(1.00f, 0.710f, 0.278f, 1f);    // #FFB547
-            public static readonly Color Danger        = new Color(1.00f, 0.302f, 0.369f, 1f);    // #FF4D5E
-            public static readonly Color Success       = new Color(0.239f, 0.863f, 0.592f, 1f);   // #3DDC97
+            public static readonly Color NeonRim       = new Color(0.36f, 0.95f, 0.88f, 0.70f);
+            public static readonly Color GoldRim       = new Color(1.00f, 0.82f, 0.36f, 0.75f);
+            public static readonly Color DangerRim     = new Color(1.00f, 0.40f, 0.42f, 0.75f);
+            public static readonly Color SuccessRim    = new Color(0.40f, 1.00f, 0.62f, 0.70f);
+            public static readonly Color ScrimTint     = new Color(0.010f, 0.025f, 0.040f, 1f);
         }
 
         // ------------------------------------------------------------------ Стили

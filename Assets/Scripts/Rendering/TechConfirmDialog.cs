@@ -173,7 +173,7 @@ namespace StellarisClone.Rendering
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
             _fx = LG.Glass(_root);
-            _fx.SetRim(new Color(0.184f, 0.839f, 1.00f, 0.5f));
+            _fx.SetRim(new Color(0.45f, 0.95f, 0.90f, 0.5f));
             LG.Motion(_root, LGAppear.Kind.Pop);
 
             // Заголовок

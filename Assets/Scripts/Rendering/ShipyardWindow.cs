@@ -107,7 +107,7 @@ namespace StellarisClone.Rendering
             var bg = _root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(_root, 24f).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.42f));
+            LG.Glass(_root, 24f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop);
 
             // Шапка

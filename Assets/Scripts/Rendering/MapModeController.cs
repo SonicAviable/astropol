@@ -75,7 +75,8 @@ namespace StellarisClone.Rendering
 
     _galaxyView = FindFirstObjectByType<GalaxyView>();
 
-    _font = GameFont.Regular;
+    _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+            ?? Font.CreateDynamicFontFromOSFont("Consolas", 13);
 
     BuildPanel();
     ApplyMode(MapMode.Simple);

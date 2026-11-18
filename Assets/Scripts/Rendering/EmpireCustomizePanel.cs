@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
 
             var card = LGBuild.Panel(rt, "Card", new Color(0.014f, 0.030f, 0.044f, 0.97f), raycast: true);
             card.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(W, H));
-            LG.Glass(card.gameObject).SetRim(new Color(0.184f, 0.839f, 1.00f, 0.40f));
+            LG.Glass(card.gameObject).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.40f));
             LG.Motion(card.gameObject, LGAppear.Kind.Pop).fromScale = 0.97f;
             var c = card.rectTransform;
 
