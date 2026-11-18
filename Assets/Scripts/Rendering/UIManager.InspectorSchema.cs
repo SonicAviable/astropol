@@ -77,7 +77,7 @@ namespace StellarisClone.Rendering
             foreach (var b in Bodies)
             {
                 var p = c + new Vector2(Mathf.Cos(b.Angle) * b.Orbit, Mathf.Sin(b.Angle) * b.Orbit * Flatten);
-                Disc(vh, p, b.Radius + 2.5f, A(new Color(0.043f, 0.071f, 0.125f), 0.9f));   // тёмный зазор поверх орбиты
+                Disc(vh, p, b.Radius + 2.5f, A(new Color(0.075f, 0.125f, 0.220f), 0.95f));   // тёмный зазор поверх орбиты
                 Disc(vh, p, b.Radius, b.Color);
                 if (b.Colony) Ring(vh, p, b.Radius + 3.5f, 1.2f, A(Sea, 0.9f));
             }
@@ -174,7 +174,7 @@ namespace StellarisClone.Rendering
             LG.Ignore(clip.gameObject);
 
             // Низ схемы уходит в чернила панели — название читается поверх орбит
-            _inspSchemaFade = LGBuild.Panel(header, "SchemaFade", new Color(0.075f, 0.118f, 0.200f, 0.96f));
+            _inspSchemaFade = LGBuild.Panel(header, "SchemaFade", new Color(0.075f, 0.125f, 0.220f, 0.96f));   // цвет шапки (Ink2)
             _inspSchemaFade.sprite = HudArt.VFade(1f);
             _inspSchemaFade.raycastTarget = false;
             _inspSchemaFade.rectTransform.anchorMin = new Vector2(0, 0);

@@ -445,18 +445,21 @@ namespace StellarisClone.Rendering
 
         private static Text Caption(Transform parent, string text)
         {
-            var t = LGBuild.Label(parent, text, 11, Muted, TextAnchor.UpperLeft, bold: true);
-            t.Track(1.5f);
+            var t = LGBuild.Label(parent, text, 10, Muted, TextAnchor.UpperLeft);
+            t.font = GameFont.Mono;
+            t.Track(1.6f);
             return t;
         }
 
         private static RectTransform Chip(Transform parent, Color col, out Text label)
         {
-            var c = LGBuild.Panel(parent, "Tag", new Color(col.r, col.g, col.b, 0.14f));
-            LG.Chip(c.gameObject, new Color(col.r, col.g, col.b, 0.5f), 6f);
-            label = LGBuild.Label(c.transform, "", 11, Color.Lerp(col, Color.white, 0.35f), TextAnchor.MiddleCenter, bold: true);
+            // «Атлас»: метка — тонкая капсула цвета смысла почти без заливки, подпись моноширинная
+            var c = LGBuild.Panel(parent, "Tag", new Color(col.r, col.g, col.b, 0.06f));
+            LG.Chip(c.gameObject, new Color(col.r, col.g, col.b, 0.45f), 11f);
+            label = LGBuild.Label(c.transform, "", 10, Color.Lerp(col, new Color(0.925f, 0.898f, 0.827f), 0.3f), TextAnchor.MiddleCenter);
+            label.font = GameFont.MonoMedium;
             label.rectTransform.Stretch();
-            label.Track(1f);
+            label.Track(1.2f);
             return c.rectTransform;
         }
 
