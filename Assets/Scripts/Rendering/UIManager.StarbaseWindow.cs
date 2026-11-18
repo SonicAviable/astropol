@@ -161,7 +161,7 @@ namespace StellarisClone.Rendering
             var bg = go.AddComponent<Image>();
             bg.color = DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(go, 22f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.34f));
+            LG.Glass(go, 22f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.34f));
             _sbBody = LGBuild.Rect(_sbWin, "Body");
             _sbBody.Stretch();
         }

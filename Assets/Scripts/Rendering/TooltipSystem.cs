@@ -22,7 +22,7 @@ namespace StellarisClone.Rendering
         // Непрозрачно: в линейном пространстве даже 3% просвета дают заметный «призрак» яркой подписи системы под подсказкой
         private static readonly Color PanelTint = new Color(0.022f, 0.052f, 0.074f, 1f);
 
-        private static readonly Color TipRim = new Color(0.45f, 0.95f, 0.90f, 0.50f);
+        private static readonly Color TipRim = new Color(0.475f, 0.816f, 0.749f, 0.50f);
 
         private float _targetAlpha = 0f;
         private Vector3 _targetScale = Vector3.one;

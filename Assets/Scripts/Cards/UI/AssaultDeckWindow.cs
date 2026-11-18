@@ -143,7 +143,7 @@ namespace StellarisClone.Cards
             var bar = LGBuild.Panel(_rt, "Status", CPanel);
             bar.rectTransform.anchorMin = new Vector2(0, 1); bar.rectTransform.anchorMax = new Vector2(1, 1); bar.rectTransform.pivot = new Vector2(0.5f, 1);
             bar.rectTransform.offsetMin = new Vector2(20, -152); bar.rectTransform.offsetMax = new Vector2(-20, -84);
-            LG.Platter(bar.gameObject, 14f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            LG.Platter(bar.gameObject, 14f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.18f));
             var b = bar.rectTransform;
 
             var pi = LGIcons.Create(b, LGIcon.Fleet, 18, Cyan);
@@ -175,7 +175,7 @@ namespace StellarisClone.Cards
             var panel = LGBuild.Panel(_rt, "Content", CPanel);
             panel.rectTransform.anchorMin = Vector2.zero; panel.rectTransform.anchorMax = Vector2.one;
             panel.rectTransform.offsetMin = new Vector2(20f, 92f); panel.rectTransform.offsetMax = new Vector2(-20f, -162f);
-            LG.Platter(panel.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            LG.Platter(panel.gameObject, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.18f));
             var listHost = LGBuild.Rect(panel.rectTransform, "ListHost");
             listHost.Stretch(8, 8, 8, 8);
             _list = LGBuild.ScrollList(listHost, 8f, 8);

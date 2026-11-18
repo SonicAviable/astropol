@@ -122,9 +122,11 @@ namespace StellarisClone.Rendering
             var rt = Rect(parent, "Txt");
             rt.Stretch();
             var t = rt.gameObject.AddComponent<Text>();
-            t.font = bold ? GameFont.Bold : GameFont.Regular;
+            // «Атлас»: крупные жирные подписи (заголовки окон, большие числа) — заголовочным шрифтом Spectral;
+            // жирный шрифт — настоящий SemiBold-файл, синтетический «жирный» поверх не нужен
+            t.font = bold ? (size >= 20 ? GameFont.Display : GameFont.Bold) : GameFont.Regular;
             t.fontSize = size;
-            t.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
+            t.fontStyle = FontStyle.Normal;
             t.color = color;
             t.text = text;
             t.alignment = anchor;
@@ -133,7 +135,7 @@ namespace StellarisClone.Rendering
             t.horizontalOverflow = wrap ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             var sh = rt.gameObject.AddComponent<Shadow>();
-            sh.effectColor = new Color(0f, 0.02f, 0.04f, 0.5f);
+            sh.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.5f);
             sh.effectDistance = new Vector2(0f, -1f);
             return t;
         }

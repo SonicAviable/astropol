@@ -338,7 +338,7 @@ namespace StellarisClone.Rendering
             _knob.anchoredPosition = Vector2.zero;
             _knobFx = LG.Platter(knob.gameObject, 9f);
             _knobFx.FillMultiplier = 2.6f;
-            _knobFx.SetRim(new Color(0.45f, 0.95f, 0.9f, 0.8f));
+            _knobFx.SetRim(new Color(0.475f, 0.816f, 0.749f, 0.8f));
 
             Refresh();
         }
@@ -517,7 +517,7 @@ namespace StellarisClone.Rendering
             _thumb.pivot = new Vector2(0, 0.5f);
             _thumb.offsetMin = new Vector2(0, 4);
             _thumb.offsetMax = new Vector2(0, -4);
-            var tfx = LG.Chip(thumb.gameObject, new Color(0.45f, 0.95f, 0.9f, 0.85f), 16f);
+            var tfx = LG.Chip(thumb.gameObject, new Color(0.475f, 0.816f, 0.749f, 0.85f), 16f);
             tfx.GlowMultiplier = 0.5f;
 
             int n = labels.Count;

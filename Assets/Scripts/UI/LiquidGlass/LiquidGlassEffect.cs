@@ -429,7 +429,7 @@ namespace StellarisClone.Rendering
                     s.Refraction = 1f;
                     s.Border = 1.2f;   // тонкая точная кромка; верх и срезанные углы подсвечивает шейдер
                     s.GlowRadius = 12f;
-                    s.Rim = hasOutline ? outlineCol : new Color(0.45f, 0.95f, 0.90f, 0.30f);
+                    s.Rim = hasOutline ? outlineCol : WithAlpha(LGTone.Cream, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;
                     break;
 
@@ -438,7 +438,7 @@ namespace StellarisClone.Rendering
                     s.Fill = 0.32f;
                     s.Specular = 0.55f;
                     s.Border = 1f;
-                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : new Color(0.45f, 0.95f, 0.90f, 0.12f);
+                    s.Rim = hasOutline ? WithAlpha(outlineCol, outlineCol.a * 0.55f) : WithAlpha(LGTone.Cream, 0.13f);
                     s.Glow = hasOutline ? 0.10f * (distBoost - 1f) : 0f;
                     s.GlowRadius = 8f;
                     break;
@@ -624,10 +624,11 @@ namespace StellarisClone.Rendering
                 if (rs >= 0.25f && rv >= 0.3f) { h = rh; sat = rs; neutral = false; wash = rimOverride.a >= 0.4f ? 0.05f : 0.025f; }
             }
             // Кромка — тонкая и сдержанная; выбранная кнопка (яркая кромка) заметнее невыбранной
-            float rimA = neutral ? 0.30f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
-            Color accent = neutral ? new Color(0.62f, 0.80f, 0.86f) : Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f);
+            float rimA = neutral ? 0.34f : useRimOverride ? Mathf.Clamp(rimOverride.a * 1.15f, 0.26f, 0.72f) : 0.55f;
+            // «Атлас»: нейтральная кнопка — кремовая кромка; цветная — кромка её оттенка (бирюза старого стиля → морская зелень)
+            Color accent = neutral ? LGTone.Cream : LGTone.AtlasFill(Color.HSVToRGB(h, Mathf.Clamp01(sat * 0.72f), 1f));
             // Тело — тёмно-синее стекло; цветная кнопка мягко светится цветом кромки (как «Укрепить» в окне базы)
-            Color body = Color.Lerp(new Color(0.012f, 0.026f, 0.054f), accent, neutral ? 0f : wash);
+            Color body = Color.Lerp(LGTone.Ink, accent, neutral ? 0.02f : wash);
             body.a = Mathf.Min(tint.a, 0.94f);   // почти непрозрачное: карта под кнопкой не высветляет тело
             c32 = body;
             s.Rim = new Color(accent.r, accent.g, accent.b, rimA);
@@ -642,14 +643,15 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Форма кнопки по единому дизайну: прямоугольник со скруглением 8 px, как у главной кнопки (MenuPrimaryButton).
-        /// Капсулы больше не рисуются; круглыми остаются только явно заданные круги — кнопки-значки (радиус ≈ половине стороны).
+        /// Форма кнопки «Атласа»: обычная кнопка — капсула (как кнопки навигационных приборов), квадратная кнопка-значок — круг,
+        /// высокие плитки (карточки, которые нажимаются) — почти прямые углы. Явно заданный круг остаётся кругом.
         /// </summary>
         private float ButtonRadius(Rect r)
         {
             float minS = Mathf.Min(r.width, r.height);
             if (radius >= minS * 0.45f) return minS * 0.5f;
-            return Mathf.Min(8f, minS * 0.5f);
+            if (r.height <= 46f) return minS * 0.5f;
+            return 3f;
         }
 
         private static Color WithAlpha(Color c, float a) { c.a = a; return c; }
@@ -681,9 +683,22 @@ namespace StellarisClone.Rendering
                 c32 = first.color;
             }
 
+            var role0 = ResolveRole();
+            if (role0 == Role.Glass || role0 == Role.Platter || role0 == Role.Header || role0 == Role.Field || role0 == Role.Chip)
+                c32 = LGTone.AtlasSurface(c32, role0 == Role.Glass);
+
             Style s = Resolve(r, (Color)c32);
             if (s.ForceOpaqueVertex) c32.a = 255;
-            if (ResolveRole() == Role.Button) TacticalButton(ref s, ref c32);
+            if (role0 == Role.Button) TacticalButton(ref s, ref c32);
+
+            // «Атлас»: бирюзовые кромки окон и пластин — кремовые, полосы и точки — морская зелень (у кнопок кромку уже задал TacticalButton)
+            if (role0 != Role.Button) s.Rim = LGTone.AtlasRim(s.Rim);
+            if (s.Mode == 2)
+            {
+                byte a0 = c32.a;
+                c32 = LGTone.AtlasFill(c32);
+                c32.a = a0;
+            }
 
             Color rim = s.Rim;
             if (QualitySettings.activeColorSpace == ColorSpace.Linear && !IsGammaVertexCanvas())
@@ -696,6 +711,7 @@ namespace StellarisClone.Rendering
             float pad = 2f;
             if (s.Glow > 0.001f) pad = Mathf.Max(pad, s.GlowRadius * 3.2f + 2f);
             if (s.Shadow > 0.001f) pad = Mathf.Max(pad, s.ShadowRadius * 1.45f + 2f);
+            if (s.Mode == 0) pad = Mathf.Max(pad, 12f);   // место под угловые перекрестья «Атласа»
 
             Vector2 center = r.center;
             Vector2 half = r.size * 0.5f;
@@ -793,17 +809,66 @@ namespace StellarisClone.Rendering
         /// <summary>Множитель скругления углов (кроме линий и точек).</summary>
         public const float RadiusScale = 0.3f;
         /// <summary>Предельный радиус угла, px.</summary>
-        public const float MaxRadius = 4f;
+        public const float MaxRadius = 2f;
         /// <summary>Множитель бликов (френель, свет сверху, кромка).</summary>
-        public const float Specular = 0.4f;
+        public const float Specular = 0.12f;
         /// <summary>Множитель неонового свечения вокруг элементов.</summary>
-        public const float Glow = 0.5f;
+        public const float Glow = 0.2f;
         /// <summary>Множитель преломления и хроматической аберрации стекла.</summary>
-        public const float Refraction = 0.35f;
+        public const float Refraction = 0f;
         /// <summary>Минимальная плотность больших стеклянных окон (меньше просвечивают).</summary>
         public const float GlassFill = 0.62f;
         /// <summary>Множитель плотности вложенных пластин.</summary>
         public const float PlatterFill = 1.3f;
+
+        // ---------------------------------------------------------------- «Атлас»
+        /// <summary>Кремовые линии и текст — #ECE5D3.</summary>
+        public static readonly Color Cream = new Color(0.925f, 0.898f, 0.827f, 1f);
+        /// <summary>Тело окна — #0E1828.</summary>
+        public static readonly Color Ink = new Color(0.055f, 0.094f, 0.157f, 1f);
+        /// <summary>Вложенные пластины, поля, чипы — #132038.</summary>
+        public static readonly Color Ink2 = new Color(0.075f, 0.125f, 0.220f, 1f);
+        /// <summary>Морская зелень «доступно» — #79D0BF.</summary>
+        public static readonly Color Sea = new Color(0.475f, 0.816f, 0.749f, 1f);
+
+        /// <summary>
+        /// Кромка в палитре «Атласа»: бирюзовые кромки старого стиля (заданные в окнах вручную) становятся кремовыми
+        /// с той же прозрачностью; золото, коралл, зелень и прочие цвета не трогаются.
+        /// </summary>
+        public static Color AtlasRim(Color c)
+        {
+            Color.RGBToHSV(c, out float h, out float s, out float v);
+            if (h < 0.44f || h > 0.53f || s < 0.30f) return c;
+            Color r = Cream * Mathf.Clamp01(0.55f + v * 0.5f);
+            r.a = c.a;
+            return r;
+        }
+
+        /// <summary>Бирюзовые заливки (полосы, точки, линии) — в морскую зелень палитры с той же яркостью и прозрачностью.</summary>
+        public static Color AtlasFill(Color c)
+        {
+            Color.RGBToHSV(c, out float h, out float s, out float v);
+            if (h < 0.44f || h > 0.53f || s < 0.25f) return c;
+            Color r = Color.HSVToRGB(0.472f, 0.42f, Mathf.Max(v * 0.86f, 0.3f));
+            r.a = c.a;
+            return r;
+        }
+
+        /// <summary>
+        /// Тёмные нейтральные и сине-бирюзовые тела окон и пластин — в чернильно-синий «Атласа»;
+        /// цветные (фракционные, тревожные) панели сохраняют свой оттенок, прозрачность сохраняется.
+        /// </summary>
+        public static Color32 AtlasSurface(Color32 c, bool window)
+        {
+            Color col = c;
+            Color.RGBToHSV(col, out float h, out float s, out float v);
+            if (v > 0.30f) return c;
+            bool bluish = h >= 0.42f && h <= 0.70f;
+            if (s > 0.45f && !bluish) return c;
+            Color t = window ? Ink : Ink2;
+            t.a = col.a;
+            return t;
+        }
     }
 
     public sealed class LGIgnore : MonoBehaviour

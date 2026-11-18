@@ -33,8 +33,8 @@ namespace StellarisClone.Rendering
         private float _avgStability = -1f;
         private string _empireKey;
 
-        private static readonly Color HoloLine = new Color(0.37f, 0.82f, 0.75f, 1f);
-        private static readonly Color WingTint = new Color(0.030f, 0.068f, 0.095f, 0.95f);
+        private static readonly Color HoloLine = new Color(0.925f, 0.898f, 0.827f, 1f);   // «Атлас»: кремовые линии
+        private static readonly Color WingTint = new Color(0.035f, 0.067f, 0.118f, 0.95f);
 
         private static string MonthName(int m)
         {
@@ -139,7 +139,7 @@ namespace StellarisClone.Rendering
             RulerBadge.Create(root, new Vector2(20f, -18f), OpenEmpireOverviewModal);
 
             // Значок места империи в рейтинге — кружок у правого нижнего края портрета
-            var rank = HoloImage(root, "RankBadge", HudArt.Disc(), new Color(0.02f, 0.06f, 0.09f, 1f));
+            var rank = HoloImage(root, "RankBadge", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 1f));
             rank.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), RulerCenter + new Vector2(34f, -34f), new Vector2(26f, 26f));
             var rankRing = HoloImage(rank.transform, "Ring", HudArt.Ring(0.86f, 1f), DS.NeonCyan);
             rankRing.rectTransform.Stretch();
@@ -242,7 +242,7 @@ namespace StellarisClone.Rendering
         /// <summary>Плашка-показатель под названием империи: значок и число в тёмной рамке.</summary>
         private Text StatChip(Transform root, LGIcon icon, ref float x, string tip)
         {
-            var bg = HoloImage(root, "Chip_" + icon, null, new Color(0.035f, 0.08f, 0.11f, 0.92f));
+            var bg = HoloImage(root, "Chip_" + icon, null, new Color(0.055f, 0.094f, 0.157f, 0.92f));
             bg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -62f), new Vector2(56f, 22f));
             bg.raycastTarget = true;
             var fr = HoloImage(bg.transform, "Frame", HudArt.CutFrame(2, 1f), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.4f));
@@ -360,7 +360,7 @@ namespace StellarisClone.Rendering
             RadialFill(_monthRing, 0f);
 
             // Сам диск — кнопка паузы
-            var face = HoloImage(disk, "Face", HudArt.Disc(), new Color(0.016f, 0.026f, 0.034f, 0.97f));
+            var face = HoloImage(disk, "Face", HudArt.Disc(), new Color(0.035f, 0.067f, 0.118f, 0.97f));
             face.rectTransform.Stretch();
             face.raycastTarget = true;
             var faceBtn = face.gameObject.AddComponent<Button>();

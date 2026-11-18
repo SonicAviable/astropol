@@ -18,39 +18,41 @@ namespace StellarisClone.Rendering
         public static event System.Action OnGameStarted;
 
         /// <summary>
-        /// Дизайн-токены Liquid Glass. Цвет фона = оттенок стекла (не заливка!),
-        /// альфа = общая непрозрачность элемента. Всё стекло рисует LiquidGlassEffect.
+        /// Дизайн-токены стиля «Атлас»: чернильно-синие панели, кремовые линии и текст, золото, коралл,
+        /// морская зелень и голубой. Цвет фона = оттенок поверхности, альфа = непрозрачность элемента.
+        /// Поверхности рисует LiquidGlassEffect. Имена токенов прежние — меняются только значения.
         /// </summary>
         public static class DS
         {
-            // Оттенки стекла (холодный дымчатый сине-бирюзовый, прозрачный Liquid Glass)
-            public static readonly Color BgDeep        = new Color(0.030f, 0.062f, 0.088f, 1.00f);
-            public static readonly Color BgPanel       = new Color(0.040f, 0.080f, 0.110f, 1.00f);
-            public static readonly Color BgHeader      = new Color(0.070f, 0.130f, 0.170f, 0.95f);
-            public static readonly Color BgSlot        = new Color(0.055f, 0.110f, 0.150f, 0.90f);
-            public static readonly Color BgRowEven     = new Color(0.050f, 0.100f, 0.135f, 0.75f);
-            public static readonly Color BgRowOdd      = new Color(0.060f, 0.118f, 0.155f, 0.75f);
-            public static readonly Color BgVisor       = new Color(0.018f, 0.045f, 0.065f, 0.95f);
+            // Поверхности (чернильно-синие)
+            public static readonly Color BgDeep        = new Color(0.035f, 0.067f, 0.118f, 1.00f);   // #09111E
+            public static readonly Color BgPanel       = new Color(0.055f, 0.094f, 0.157f, 1.00f);   // #0E1828
+            public static readonly Color BgHeader      = new Color(0.075f, 0.125f, 0.220f, 0.95f);   // #132038
+            public static readonly Color BgSlot        = new Color(0.070f, 0.118f, 0.205f, 0.90f);
+            public static readonly Color BgRowEven     = new Color(0.062f, 0.105f, 0.180f, 0.75f);
+            public static readonly Color BgRowOdd      = new Color(0.075f, 0.125f, 0.215f, 0.75f);
+            public static readonly Color BgVisor       = new Color(0.035f, 0.067f, 0.118f, 0.95f);
 
-            // Акценты (приглушённый неон)
-            public static readonly Color NeonCyan      = new Color(0.40f, 0.86f, 0.82f, 1.00f);
-            public static readonly Color NeonTeal      = new Color(0.36f, 0.88f, 0.82f, 0.55f);
-            public static readonly Color Gold          = new Color(0.95f, 0.78f, 0.40f, 1.00f);
-            public static readonly Color Green         = new Color(0.44f, 0.88f, 0.60f, 1.00f);
-            public static readonly Color Red           = new Color(0.95f, 0.42f, 0.42f, 1.00f);
+            // Акценты: NeonCyan — «доступно / активно» (морская зелень), Gold — изучено, заголовки шкал,
+            // Green — рост, Red — тревога и потери (коралл)
+            public static readonly Color NeonCyan      = new Color(0.475f, 0.816f, 0.749f, 1.00f);   // #79D0BF
+            public static readonly Color NeonTeal      = new Color(0.475f, 0.816f, 0.749f, 0.55f);
+            public static readonly Color Gold          = new Color(0.906f, 0.757f, 0.439f, 1.00f);   // #E7C170
+            public static readonly Color Green         = new Color(0.520f, 0.835f, 0.620f, 1.00f);
+            public static readonly Color Red           = new Color(1.000f, 0.420f, 0.341f, 1.00f);   // #FF6B57
 
-            // Текст
-            public static readonly Color TextPrimary   = new Color(0.94f, 0.98f, 1.00f, 1.00f);
-            public static readonly Color TextMuted     = new Color(0.72f, 0.82f, 0.88f, 1.00f);
-            public static readonly Color TextShadow    = new Color(0.000f, 0.020f, 0.035f, 0.55f);
+            // Текст (кремовый)
+            public static readonly Color TextPrimary   = new Color(0.925f, 0.898f, 0.827f, 1.00f);   // #ECE5D3
+            public static readonly Color TextMuted     = new Color(0.663f, 0.639f, 0.573f, 1.00f);   // #A9A392
+            public static readonly Color TextShadow    = new Color(0.020f, 0.040f, 0.080f, 0.55f);
 
-            // Оттенки стеклянных кнопок
-            public static readonly Color BtnPrimary    = new Color(0.10f, 0.40f, 0.48f, 1.00f);
-            public static readonly Color BtnPrimaryHi  = new Color(0.30f, 0.80f, 0.86f, 1.00f);
-            public static readonly Color BtnSuccess    = new Color(0.12f, 0.50f, 0.34f, 1.00f);
-            public static readonly Color BtnDanger     = new Color(0.58f, 0.17f, 0.21f, 1.00f);
-            public static readonly Color BtnNeutral    = new Color(0.05f, 0.10f, 0.16f, 1.00f);
-            public static readonly Color BtnDisabled   = new Color(0.04f, 0.07f, 0.11f, 0.60f);
+            // Оттенки кнопок: по цвету тела кнопка получает цвет кромки (см. LiquidGlassEffect.TacticalButton)
+            public static readonly Color BtnPrimary    = new Color(0.450f, 0.370f, 0.200f, 1.00f);   // золото
+            public static readonly Color BtnPrimaryHi  = new Color(0.906f, 0.757f, 0.439f, 1.00f);
+            public static readonly Color BtnSuccess    = new Color(0.200f, 0.420f, 0.380f, 1.00f);   // морская зелень
+            public static readonly Color BtnDanger     = new Color(0.600f, 0.220f, 0.180f, 1.00f);   // коралл
+            public static readonly Color BtnNeutral    = new Color(0.055f, 0.094f, 0.150f, 1.00f);   // тёмная — кнопка получает кремовую кромку
+            public static readonly Color BtnDisabled   = new Color(0.050f, 0.085f, 0.140f, 0.60f);
         }
 
         private Canvas _canvas;
@@ -992,7 +994,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             // Разделитель между ячейками — гаснет к концам
             if (separator)
             {
-                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.45f, 0.95f, 0.90f, 0.35f));
+                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.475f, 0.816f, 0.749f, 0.35f));
                 sep.rectTransform.anchorMin = new Vector2(0, 0.08f);
                 sep.rectTransform.anchorMax = new Vector2(0, 0.92f);
                 sep.rectTransform.sizeDelta = new Vector2(2f, 0f);
@@ -1134,7 +1136,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             var inspBg = insp.AddComponent<Image>();
             inspBg.color = DS.BgDeep;
             inspBg.raycastTarget = false;
-            LG.Glass(insp, 22f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.34f));
+            LG.Glass(insp, 22f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.34f));
             BuildInspectorDecor(_inspectorRect);
 
             var header = new GameObject("Header");
@@ -1226,7 +1228,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bbBg.color = DS.BgSlot;
             bbBg.raycastTarget = false;
             // Непрозрачная подложка: подписи карты не должны просвечивать сквозь карточки
-            LG.Platter(bodyBox, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            LG.Platter(bodyBox, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.18f));
             _inspBodyGroup = bodyBox.AddComponent<CanvasGroup>();
             // Содержимое — стопка карточек; если не помещается, прокручивается
             _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 10);

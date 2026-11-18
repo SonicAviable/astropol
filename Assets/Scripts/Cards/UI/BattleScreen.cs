@@ -322,8 +322,8 @@ namespace StellarisClone.Cards
         private static Color Cyan => UIManager.DS.NeonCyan;
         private static readonly Color PanelTint = new Color(0.010f, 0.025f, 0.038f, 0.92f);
         private static readonly Color SubTint = new Color(0.020f, 0.045f, 0.065f, 0.90f);
-        private static readonly Color RimCyan = new Color(0.45f, 0.95f, 0.90f, 0.42f);
-        private static readonly Color RimSoft = new Color(0.45f, 0.95f, 0.90f, 0.18f);
+        private static readonly Color RimCyan = new Color(0.475f, 0.816f, 0.749f, 0.42f);
+        private static readonly Color RimSoft = new Color(0.475f, 0.816f, 0.749f, 0.18f);
 
         /// <summary>Стеклянная панель (окно) или подложка (platter) с цветной кромкой.</summary>
         private static Image GlassAt(RectTransform parent, string name, Vector2 pos, Vector2 size, Color tint, Color rim, bool platter = false, float radius = -1f, bool raycast = false)
@@ -413,10 +413,10 @@ namespace StellarisClone.Cards
                 _fog.Add((fog, UnityEngine.Random.Range(14f, 30f) * (f % 2 == 0 ? 1f : 0.7f), fogTint.a * UnityEngine.Random.Range(0.6f, 1f), UnityEngine.Random.Range(0f, 10f)));
             }
             // Голосетка: еле заметные соты по всему столу (мерцает волной)
-            _grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.45f, 0.95f, 0.9f, 0.05f));
+            _grid = CardSkin.Simple(mask.rectTransform, "Grid", "hexgrid", new Color(0.475f, 0.816f, 0.749f, 0.05f));
             _grid.rectTransform.Stretch();
             // Полоса «сканера» тактического стола — раз в несколько секунд проходит слева направо
-            _scan = LGBuild.Panel(mask.rectTransform, "Scan", new Color(0.45f, 0.95f, 0.9f, 0f));
+            _scan = LGBuild.Panel(mask.rectTransform, "Scan", new Color(0.475f, 0.816f, 0.749f, 0f));
             _scan.sprite = CardSkin.Spr("glow");
             _scan.raycastTarget = false;
             _scan.rectTransform.At(Mid, Mid, new Vector2(-2000f, 0f), new Vector2(160f, TrayH * 1.6f));
@@ -1563,7 +1563,7 @@ namespace StellarisClone.Cards
                 c.a = f.alpha * (0.65f + 0.35f * Mathf.Sin(t * 0.25f + f.phase));
                 f.img.color = c;
             }
-            if (_grid != null) _grid.color = new Color(0.45f, 0.95f, 0.9f, 0.04f + 0.02f * Mathf.Sin(t * 0.8f));
+            if (_grid != null) _grid.color = new Color(0.475f, 0.816f, 0.749f, 0.04f + 0.02f * Mathf.Sin(t * 0.8f));
             // Сканер: проход ~2,2 с, затем пауза
             if (_scan != null)
             {
@@ -1573,9 +1573,9 @@ namespace StellarisClone.Cards
                 if (k <= 1f)
                 {
                     _scan.rectTransform.anchoredPosition = new Vector2(Mathf.Lerp(-halfW - 120f, halfW + 120f, k), 0f);
-                    _scan.color = new Color(0.45f, 0.95f, 0.9f, 0.07f * Mathf.Sin(k * Mathf.PI));
+                    _scan.color = new Color(0.475f, 0.816f, 0.749f, 0.07f * Mathf.Sin(k * Mathf.PI));
                 }
-                else if (_scan.color.a > 0f) _scan.color = new Color(0.45f, 0.95f, 0.9f, 0f);
+                else if (_scan.color.a > 0f) _scan.color = new Color(0.475f, 0.816f, 0.749f, 0f);
             }
             if (_horizon != null)
             {

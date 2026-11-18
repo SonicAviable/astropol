@@ -297,13 +297,30 @@ Shader "Astropolity/UI/LiquidGlass"
                 acc = float4(bodyCol * bA, bA) + acc * (1.0 - bA);
                 acc = float4(strokeCol * strokeA, strokeA) + acc * (1.0 - strokeA);
 
-                // Окна: неоновая линия по верхнему краю (2 px) и лёгкий отсвет под ней
-                if (mode < 0.5 && b.x * pxPerUnit > 40.0)
+                // «Атлас»: у окон вместо неоновой линии — шкала с делениями по верхнему краю
+                // (мелкое деление каждые 12 px, крупное каждые 60 px) и золотые перекрестья на углах (слева сверху, справа снизу)
+                if (mode < 0.5 && b.x * pxPerUnit > 120.0)
                 {
-                    float3 lc = lerp(rim.rgb, float3(1, 1, 1), 0.15);
-                    float la = (1.0 - smoothstep(1.6, 2.6, topPx)) * cov * saturate(rim.a * 2.4);
-                    acc = float4(lc * la, la) + acc * (1.0 - la);
-                    acc.rgb += rim.rgb * exp(-topPx / 18.0) * 0.045 * cov * saturate(rim.a * 2.0);
+                    float xPx = (p.x + b.x) * pxPerUnit;
+                    float wPx = 2.0 * b.x * pxPerUnit;
+                    float minorT = 1.0 - step(1.0, fmod(xPx, 12.0));
+                    float majorT = 1.0 - step(1.0, fmod(xPx, 60.0));
+                    float tickLen = lerp(4.0, 8.0, majorT);
+                    float inBand = step(topPx, tickLen) * step(16.0, xPx) * step(xPx, wPx - 16.0);
+                    float ta = max(minorT, majorT) * inBand * cov * saturate(rim.a * 1.6) * 0.55;
+                    float3 tc = lerp(rim.rgb, float3(1, 1, 1), 0.1);
+                    acc = float4(tc * ta, ta) + acc * (1.0 - ta);
+
+                    float3 gold = float3(0.906, 0.757, 0.439);
+                    #ifndef UNITY_COLORSPACE_GAMMA
+                    gold = GammaToLinearSpace(gold);
+                    #endif
+                    float2 qTL = (p - float2(-b.x,  b.y)) * pxPerUnit;
+                    float2 qBR = (p - float2( b.x, -b.y)) * pxPerUnit;
+                    float crossTL = max(step(abs(qTL.x), 0.6) * step(abs(qTL.y), 9.0), step(abs(qTL.y), 0.6) * step(abs(qTL.x), 9.0));
+                    float crossBR = max(step(abs(qBR.x), 0.6) * step(abs(qBR.y), 9.0), step(abs(qBR.y), 0.6) * step(abs(qBR.x), 9.0));
+                    float ca = max(crossTL, crossBR) * 0.85;
+                    acc = float4(gold * ca, ca) + acc * (1.0 - ca);
                 }
 
                 // Дизеринг — без ступенек на плавных градиентах тёмных панелей

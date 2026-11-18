@@ -171,7 +171,7 @@ namespace StellarisClone.Cards
             var bg = _root.AddComponent<Image>();
             bg.color = new Color(0.010f, 0.025f, 0.038f, 0.97f);
             bg.raycastTarget = true;
-            LG.Glass(_root).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
+            LG.Glass(_root).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             LG.Motion(_root, LGAppear.Kind.Pop).fromScale = 0.97f;
 
             var accent = LGBuild.Panel(_rt, "Accent", Accent);
@@ -222,7 +222,7 @@ namespace StellarisClone.Cards
             var panel = LGBuild.Panel(_rt, "Content", CPanel);
             panel.rectTransform.anchorMin = Vector2.zero; panel.rectTransform.anchorMax = Vector2.one;
             panel.rectTransform.offsetMin = new Vector2(SideW + 40f, 20f); panel.rectTransform.offsetMax = new Vector2(-20f, -176f);
-            LG.Platter(panel.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            LG.Platter(panel.gameObject, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.18f));
             _content = panel.rectTransform;
             var listHost = LGBuild.Rect(_content, "ListHost");
             listHost.Stretch(8, 8, 8, 8);
@@ -278,7 +278,7 @@ namespace StellarisClone.Cards
             var s = side.rectTransform;
             s.anchorMin = new Vector2(0, 0); s.anchorMax = new Vector2(0, 1); s.pivot = new Vector2(0, 0.5f);
             s.offsetMin = new Vector2(20, 20); s.offsetMax = new Vector2(20 + SideW, -88);
-            LG.Platter(side.gameObject, 16f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.18f));
+            LG.Platter(side.gameObject, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.18f));
 
             var head = LGBuild.Label(s, Loc.T("СОСТАВ АРМИИ"), 11, Gold, TextAnchor.UpperLeft, bold: true);
             head.rectTransform.TopBand(16, 18, 18, 18);

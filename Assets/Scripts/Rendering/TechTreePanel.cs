@@ -47,12 +47,14 @@ namespace StellarisClone.Rendering
         private static Color Cyan => UIManager.DS.NeonCyan;
         private static Color Gold => UIManager.DS.Gold;
         private static Color Green => UIManager.DS.Green;
+        /// <summary>«Атлас»: исследуемое — коралл (активный узел карты).</summary>
+        private static Color Coral => UIManager.DS.Red;
         private static Color Red => UIManager.DS.Red;
         private static readonly Color Orange = new Color(1f, 0.66f, 0.50f);
-        private static readonly Color PathBlue = new Color(0.66f, 0.77f, 1f);
-        private static readonly Color Dim = new Color(0.46f, 0.55f, 0.61f, 1f);
+        private static readonly Color PathBlue = new Color(0.561f, 0.706f, 0.949f);   // #8FB4F2
+        private static readonly Color Dim = new Color(0.50f, 0.49f, 0.45f, 1f);
         private static readonly Color PanelBg = new Color(0.025f, 0.045f, 0.062f, 0.94f);
-        private static readonly Color ChipBg = new Color(0.045f, 0.085f, 0.105f, 0.96f);
+        private static readonly Color ChipBg = new Color(0.062f, 0.105f, 0.180f, 0.96f);
 
         // ==================== СОСТОЯНИЕ ====================
 
@@ -219,7 +221,7 @@ namespace StellarisClone.Rendering
             _window = win.gameObject;
             win.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(WinW, WinH));
             _window.AddComponent<CanvasGroup>();
-            LG.Glass(_window, 28f).SetRim(new Color(0.45f, 0.95f, 0.90f, 0.42f));
+            LG.Glass(_window, 28f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
             var motion = LG.Motion(_window, LGAppear.Kind.Pop);
             motion.fromScale = 0.96f;
             motion.inDuration = 0.42f;
@@ -653,11 +655,10 @@ namespace StellarisClone.Rendering
 
             Color nameCol = st switch
             {
-                St.Done => new Color(0.96f, 0.88f, 0.66f),
-                St.Avail => new Color(0.80f, 1f, 0.96f),
-                St.Active => new Color(0.85f, 1f, 0.91f),
-                St.Planned or St.Queued => new Color(0.86f, 0.91f, 1f),
-                _ => new Color(0.56f, 0.64f, 0.69f)
+                // «Атлас»: изученное — золото, остальное — кремовый текст, закрытое — приглушённое
+                St.Done => new Color(0.906f, 0.757f, 0.439f),
+                St.Avail or St.Active or St.Planned or St.Queued => new Color(0.925f, 0.898f, 0.827f),
+                _ => new Color(0.55f, 0.53f, 0.48f)
             };
             c.Name = LGBuild.Label(rt, t.Name, 12, nameCol, TextAnchor.MiddleLeft, bold: st == St.Active || st == St.Avail);
             c.Name.rectTransform.Stretch(27, 0, 34, 0);
@@ -669,7 +670,7 @@ namespace StellarisClone.Rendering
             {
                 case St.Active:
                 case St.Paused:
-                    c.Pct = LGBuild.Label(rt, $"{(slot != null ? slot.ProgressNormalized : 0f) * 100f:0}%", 10, st == St.Paused ? Gold : Green, TextAnchor.MiddleRight, bold: true);
+                    c.Pct = LGBuild.Label(rt, $"{(slot != null ? slot.ProgressNormalized : 0f) * 100f:0}%", 10, st == St.Paused ? Gold : Coral, TextAnchor.MiddleRight, bold: true);
                     c.Pct.rectTransform.Stretch(0, 0, 6, 0);
                     break;
                 case St.Planned:
@@ -687,7 +688,7 @@ namespace StellarisClone.Rendering
             // Прогресс — тонкая полоса снизу
             if (st == St.Active || st == St.Paused || (t.ProgressNormalized > 0.001f && st != St.Done))
             {
-                var pg = LGBuild.Panel(rt, "Prog", st == St.Paused ? Gold : st == St.Active ? Green : new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f));
+                var pg = LGBuild.Panel(rt, "Prog", st == St.Paused ? Gold : st == St.Active ? Coral : new Color(Cyan.r, Cyan.g, Cyan.b, 0.6f));
                 c.Prog = pg.rectTransform;
                 c.Prog.anchorMin = new Vector2(0, 0);
                 c.Prog.anchorMax = new Vector2(slot != null ? slot.ProgressNormalized : t.ProgressNormalized, 0);
@@ -1048,7 +1049,7 @@ namespace StellarisClone.Rendering
             return st switch
             {
                 St.Done => Loc.F("<color={0}>✔ Изучено</color>", LGBuild.Hex(Gold)),
-                St.Active => Loc.F("<color={0}>Исследуется · {1:0}%</color> · {2}", LGBuild.Hex(Green), slot.ProgressNormalized * 100f, eta),
+                St.Active => Loc.F("<color={0}>Исследуется · {1:0}%</color> · {2}", LGBuild.Hex(Coral), slot.ProgressNormalized * 100f, eta),
                 St.Paused => Loc.F("<color={0}>Пауза · {1:0}%</color>", LGBuild.Hex(Gold), slot.ProgressNormalized * 100f),
                 St.Queued => Loc.F("<color={0}>В очереди слота · №{1}</color> · {2}", LGBuild.Hex(PathBlue), qpos + 1, eta),
                 St.Planned => Loc.F("<color={0}>В плане · №{1}</color> · {2}", LGBuild.Hex(PathBlue), qpos + 1, tm.PlanBlocker(t) ?? Loc.T("начнётся, как освободится слот")),
@@ -1130,7 +1131,7 @@ namespace StellarisClone.Rendering
         private void BuildBusySlot(int i, ResearchSlot s, TechnologyManager tm, float top)
         {
             var t = s.CurrentTech;
-            Color c = s.IsPaused ? Gold : Green;
+            Color c = s.IsPaused ? Gold : Coral;
             var rt = SlotRow("Slot" + i, top, new Color(c.r * 0.08f, c.g * 0.08f, c.b * 0.08f, 0.9f), new Color(c.r, c.g, c.b, 0.45f));
             var sel = rt.gameObject.AddComponent<Button>();
             sel.transition = Selectable.Transition.None;
@@ -1365,12 +1366,12 @@ namespace StellarisClone.Rendering
         private static Color StateColor(St st, Technology t) => st switch
         {
             St.Done => Gold,
-            St.Active => Green,
+            St.Active => Coral,
             St.Paused => Gold,
             St.Queued or St.Planned => PathBlue,
             St.Avail => Cyan,
-            St.Early => new Color(0.70f, 0.62f, 0.45f),
-            _ => new Color(0.36f, 0.43f, 0.48f)
+            St.Early => new Color(0.66f, 0.58f, 0.42f),
+            _ => new Color(0.42f, 0.41f, 0.38f)
         };
 
         private static int IndexOf(TechnologyManager tm, ResearchSlot slot)

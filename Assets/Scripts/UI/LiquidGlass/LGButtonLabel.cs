@@ -6,16 +6,16 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Подпись кнопки в общем стиле игры (как «Предыдущая колония» / «Готово»): заглавные буквы, жирный шрифт,
+    /// Подпись кнопки в общем стиле игры («Атлас»): моноширинный шрифт IBM Plex Mono, лёгкая
     /// разрядка, кегль не меньше 11 — длинная подпись при нехватке места ужимается, а не вылезает.
-    /// Текст можно менять из кода как угодно — заглавными он становится сам (rich-text теги не трогаются).
+    /// Текст можно менять из кода как угодно — регистр сохраняется, разрядка добавляется к однострочным подписям без тегов.
     /// Вешается автоматически на подписи простых кнопок (см. <see cref="Apply"/>), руками добавлять не нужно.
     /// </summary>
     [RequireComponent(typeof(Text))]
     [DisallowMultipleComponent]
     public sealed class LGButtonLabel : MonoBehaviour
     {
-        private const float Tracking = 1.3f;
+        private const float Tracking = 0.4f;   // «Атлас»: моноширинные подписи с лёгкой разрядкой
         private const int MinSize = 11;
 
         private Text _text;
@@ -71,8 +71,8 @@ namespace StellarisClone.Rendering
         {
             if (_styled || _text == null) return;
             _styled = true;
-            _text.font = GameFont.Bold;
-            _text.fontStyle = FontStyle.Bold;
+            _text.font = GameFont.MonoMedium;
+            _text.fontStyle = FontStyle.Normal;
             int size = _text.fontSize;
             int target = Mathf.Max(size, MinSize);
             // Ужимать длинные подписи под ширину кнопки (кроме подписей внутри раскладки — там ширину задаёт сам текст)
@@ -93,8 +93,8 @@ namespace StellarisClone.Rendering
             if (_text == null) return;
             string s = _text.text;
             if (ReferenceEquals(s, _last)) return;
-            string up = Upper(s);
-            if (up != s) _text.text = up;
+            // «Атлас»: регистр подписи сохраняется (заглавные больше не навязываются)
+            string up = s ?? "";
             _last = _text.text;
 
             // Разрядка — у однострочных подписей без тегов (своя разрядка, заданная в коде, сохраняется)

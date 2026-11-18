@@ -901,7 +901,7 @@ namespace StellarisClone.Core
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
             _cardFx = LG.Glass(rt.gameObject, 22f);
-            _cardFx.SetRim(new Color(0.45f, 0.95f, 0.90f, 0.55f));
+            _cardFx.SetRim(new Color(0.475f, 0.816f, 0.749f, 0.55f));
             var motion = LG.Motion(rt.gameObject, LGAppear.Kind.Fade);   // без сдвига: позицию ведёт UpdateHighlight
             motion.inDuration = 0.5f;
 
