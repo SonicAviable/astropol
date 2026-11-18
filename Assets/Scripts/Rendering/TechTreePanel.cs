@@ -446,7 +446,7 @@ namespace StellarisClone.Rendering
                 if (c.Prog == null) continue;
                 var st = StateOf(c.Tech, tm, out var slot, out _);
                 float p = slot != null ? slot.ProgressNormalized : c.Tech.ProgressNormalized;
-                c.Prog.anchorMax = new Vector2(Mathf.Clamp01(p), 1f);
+                c.Prog.anchorMax = new Vector2(Mathf.Clamp01(p), 0f);   // тонкая полоса снизу, не на всю высоту плашки
                 if (c.Pct != null && (st == St.Active || st == St.Paused)) c.Pct.text = $"{p * 100f:0}%";
             }
             foreach (var su in _slotUis)

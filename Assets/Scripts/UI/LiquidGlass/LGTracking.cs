@@ -60,13 +60,28 @@ namespace StellarisClone.Rendering
                 case TextAnchor.UpperRight: case TextAnchor.MiddleRight: case TextAnchor.LowerRight: align = 1f; break;
             }
 
+            float rectW = text.rectTransform.rect.width;
             for (int l = 0; l + 1 < s_LineStart.Count; l++)
             {
                 int from = s_LineStart[l], to = s_LineStart[l + 1];
-                float extra = (to - from - 1) * spacing;
+
+                // Разрядка не должна выталкивать строку за рамку текста (на значки, проценты, соседние элементы):
+                // если места не хватает — шаг уменьшается вплоть до нуля
+                float minX = float.MaxValue, maxX = float.MinValue;
+                for (int i = from * 6; i < to * 6; i++)
+                {
+                    float x = s_Verts[i].position.x;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                }
+                float step = spacing;
+                if (to - from > 1 && spacing > 0f)
+                    step = Mathf.Clamp((rectW - (maxX - minX)) / (to - from - 1), 0f, spacing);
+
+                float extra = (to - from - 1) * step;
                 for (int q = from; q < to; q++)
                 {
-                    float dx = (q - from) * spacing - extra * align;
+                    float dx = (q - from) * step - extra * align;
                     for (int v = 0; v < 6; v++)
                     {
                         int i = q * 6 + v;
