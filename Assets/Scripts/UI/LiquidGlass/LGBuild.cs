@@ -133,6 +133,8 @@ namespace StellarisClone.Rendering
                 letters++;
             }
             if (letters < 4) return s;
+            bool cyr = false;
+            foreach (char ch in s) if (ch >= '\u0400' && ch <= '\u04FF') { cyr = true; break; }
             var sb = new System.Text.StringBuilder(s.Length);
             bool cap = true;
             for (int i = 0; i < s.Length; i++)
@@ -141,7 +143,8 @@ namespace StellarisClone.Rendering
                 if (char.IsLetter(ch))
                 {
                     // Отдельная буква («(L)», «Ф1») и слово с цифрами («F10», «T2») — клавиши и обозначения: остаются заглавными
-                    bool keep = !cap && (IsolatedLetter(s, i) || TokenHasDigit(s, i));
+                    // В русской подписи латинское сокращение («ESC», «HP», «ИИ» не трогаем) тоже остаётся заглавным
+                    bool keep = !cap && (IsolatedLetter(s, i) || TokenHasDigit(s, i) || (cyr && ch < 128 && LatinToken(s, i) <= 4));
                     sb.Append(cap || keep ? ch : char.ToLowerInvariant(ch));
                     cap = false;
                 }
@@ -152,6 +155,14 @@ namespace StellarisClone.Rendering
 
         private static bool IsolatedLetter(string s, int i) =>
             (i == 0 || !char.IsLetterOrDigit(s[i - 1])) && (i == s.Length - 1 || !char.IsLetterOrDigit(s[i + 1]));
+
+        private static int LatinToken(string s, int i)
+        {
+            int a = i, b = i;
+            while (a > 0 && char.IsLetter(s[a - 1]) && s[a - 1] < 128) a--;
+            while (b < s.Length - 1 && char.IsLetter(s[b + 1]) && s[b + 1] < 128) b++;
+            return b - a + 1;
+        }
 
         private static bool TokenHasDigit(string s, int i)
         {

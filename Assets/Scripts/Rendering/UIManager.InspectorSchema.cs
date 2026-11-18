@@ -79,6 +79,18 @@ namespace StellarisClone.Rendering
                 // Угол — стабильный для планеты; нижний левый угол кадра свободен под название
                 uint h = (uint)(p.Name ?? "").GetHashCode();
                 float ang = Mathf.Lerp(-35f, 195f, (h % 1000u) / 999f) * Mathf.Deg2Rad;
+                // Звезда правее центра: тело, ушедшее бы за правый край кадра, ставим зеркально — на левую сторону орбиты
+                float rightRoom = r.width * (1f - sc.Center01.x) - 14f;
+                if (Mathf.Cos(ang) * rx > rightRoom) ang = Mathf.PI - ang;
+                // И не выше верхнего края (там шкала окна и крестик)
+                float topRoom = r.height * (1f - sc.Center01.y) - 12f;
+                float sy = Mathf.Sin(ang) * rx * sc.Flatten;
+                if (sy > topRoom)
+                {
+                    float a2 = Mathf.Asin(Mathf.Clamp(topRoom / Mathf.Max(1f, rx * sc.Flatten), -1f, 1f));
+                    ang = Mathf.Cos(ang) < 0f ? Mathf.PI - a2 : a2;
+                    if (Mathf.Cos(ang) * rx > rightRoom) ang = Mathf.PI - ang;
+                }
                 Color pc = Color.Lerp(p.PlanetColor, cream, 0.22f); pc.a = 1f;
                 sc.Bodies.Add(new SystemSchemaGraphic.Body
                 {

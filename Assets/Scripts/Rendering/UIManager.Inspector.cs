@@ -98,15 +98,19 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < n; i++)
             {
                 var it = items[i];
-                var chip = LGBuild.Panel(row, "Chip", new Color(it.col.r * 0.10f, it.col.g * 0.10f, it.col.b * 0.10f, 0.95f));
+                var chip = LGBuild.Panel(row, "Chip", new Color(0.075f, 0.118f, 0.200f, 0.9f));
                 chip.rectTransform.anchorMin = new Vector2(i / (float)n, 0);
                 chip.rectTransform.anchorMax = new Vector2((i + 1) / (float)n, 1);
                 chip.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : 3, 0);
                 chip.rectTransform.offsetMax = new Vector2(i == n - 1 ? 0 : -3, 0);
-                LG.Platter(chip.gameObject, 12f).SetRim(new Color(it.col.r, it.col.g, it.col.b, 0.3f));
-                var ic = LGIcons.Create(chip.transform, it.icon, 18, it.col);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(18, 18));
-                var v = LGBuild.Label(chip.transform, it.value, 14, DS.TextPrimary, TextAnchor.UpperLeft, bold: true);
+                // «Атлас»: плашка — чернила с едва видной кромкой; цвет смысла — только у значка
+                var chipFx = LG.Platter(chip.gameObject, 3f);
+                chipFx.AsSurface = true;
+                chipFx.SetRim(new Color(0.925f, 0.898f, 0.827f, 0.10f));
+                var ic = LGIcons.Create(chip.transform, it.icon, 16, LGTone.AtlasFill(it.col));
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(16, 16));
+                var v = LGBuild.Label(chip.transform, it.value, 14, DS.TextPrimary, TextAnchor.UpperLeft);
+                v.font = GameFont.MonoMedium;
                 v.rectTransform.Stretch(34, 0, 4, 7);
                 var l = LGBuild.Label(chip.transform, it.label, 9, InspMuted, TextAnchor.LowerLeft);
                 l.rectTransform.Stretch(34, 7, 4, 0);
@@ -115,31 +119,38 @@ namespace StellarisClone.Rendering
 
         private void InspBar(LGIcon icon, string label, float value, float max, Color col)
         {
+            // «Атлас»: как шкала ресурса — значок и подпись слева, тонкая шкала, «значение / предел» моноширинным справа
+            col = LGTone.AtlasFill(col);
             var row = LGBuild.Rect(_inspStack, "Bar_" + label);
-            LGBuild.Height(row.gameObject, 22);
+            LGBuild.Height(row.gameObject, 26);
             var ic = LGIcons.Create(row, icon, 13, col);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(13, 13));
-            var l = LGBuild.Label(row, label, 10, DS.TextPrimary, TextAnchor.MiddleLeft);
+            var l = LGBuild.Label(row, label, 12, DS.TextPrimary, TextAnchor.MiddleLeft);
             l.rectTransform.Stretch(22, 0, 0, 0);
-            var v = LGBuild.Label(row, $"{value:0} / {max:0}", 10, col, TextAnchor.MiddleRight, bold: true);
-            v.rectTransform.anchorMin = new Vector2(0, 0); v.rectTransform.anchorMax = new Vector2(0, 1);
-            v.rectTransform.offsetMin = new Vector2(84, 0); v.rectTransform.offsetMax = new Vector2(176, 0);
+            var v = LGBuild.Label(row, $"<color=#ECE5D3>{value:0}</color> / {max:0}", 11, InspMuted, TextAnchor.MiddleRight);
+            v.font = GameFont.Mono;
+            v.rectTransform.Stretch(0, 0, 2, 0);
             var host = LGBuild.Rect(row, "Track");
-            host.Stretch(186, 0, 2, 0);
-            GrowBar(host, col, max > 0f ? value / max : 0f, 7f, true);
+            host.anchorMin = new Vector2(0, 0.5f); host.anchorMax = new Vector2(1, 0.5f);
+            host.pivot = new Vector2(0.5f, 0.5f);
+            host.offsetMin = new Vector2(132, -2); host.offsetMax = new Vector2(-92, 2);
+            GrowBar(host, col, max > 0f ? value / max : 0f, 4f, false);
         }
 
         /// <summary>Строка с иконкой и текстом (статус, предупреждение, флот на орбите).</summary>
         private void InspNote(LGIcon icon, string text, Color col)
         {
-            var row = LGBuild.Panel(_inspStack, "Note", new Color(col.r * 0.08f, col.g * 0.08f, col.b * 0.08f, 0.92f));
-            LGBuild.Height(row.gameObject, 38);
-            LG.Platter(row.gameObject, 10f).SetRim(new Color(col.r, col.g, col.b, 0.3f));
-            LGFx.HoverGlow(row.gameObject);
+            // «Атлас»: заметка — чернильная строка, цвет смысла у черты слева и значка
+            var row = LGBuild.Panel(_inspStack, "Note", new Color(0.075f, 0.118f, 0.200f, 0.85f));
+            LGBuild.Height(row.gameObject, 40);
+            var noteFx = LG.Platter(row.gameObject, 3f);
+            noteFx.AsSurface = true;
+            noteFx.SetRim(new Color(0.925f, 0.898f, 0.827f, 0.08f));
+            col = LGTone.AtlasFill(col);
             // Полоска цвета слева и значок в круглой ячейке со свечением
             var bar = LGBuild.Panel(row.transform, "Accent", new Color(col.r, col.g, col.b, 0.9f));
             bar.raycastTarget = false;
-            bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(3, 0), new Vector2(2.5f, 22));
+            bar.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(3, 0), new Vector2(2f, 24));
             var cg = LGBuild.Panel(row.transform, "IconGlow", new Color(0f, 0f, 0f, 0f));   // «Атлас»: без ореола
             cg.sprite = FactionSelectScreen.RadialSprite();
             cg.raycastTarget = false;

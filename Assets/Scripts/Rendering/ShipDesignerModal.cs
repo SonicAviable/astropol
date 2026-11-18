@@ -1552,7 +1552,7 @@ namespace StellarisClone.Rendering
             bool can = unlocked && !isInst;
             _pickInstall.interactable = can;
             _pickInstall.GetComponent<Image>().color = can ? new Color(0.04f, 0.20f, 0.15f, 1f) : new Color(0.055f, 0.094f, 0.157f, 1f);
-            _pickInstall.GetComponent<LiquidGlassEffect>()?.SetRim(can ? new Color(0.36f, 0.96f, 0.68f, 0.9f) : new Color(1f, 1f, 1f, 0.10f));
+            if (_pickInstall.TryGetComponent<LiquidGlassEffect>(out var pickFx)) pickFx.SetRim(can ? new Color(0.36f, 0.96f, 0.68f, 0.9f) : new Color(1f, 1f, 1f, 0.10f));
             _pickInstallText.text = _pickSel == null || can ? Loc.T("УСТАНОВИТЬ") : isInst ? Loc.T("УЖЕ УСТАНОВЛЕН") : Loc.T("НЕ ИЗУЧЕН");
             _pickInstallText.color = can ? Color.white : Muted;
             _pickRemove.gameObject.SetActive(installed != null);

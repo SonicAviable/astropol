@@ -745,7 +745,7 @@ namespace StellarisClone.Rendering
             _endIcon.color = col;
             var ib = _endIcon.transform.parent.GetComponent<Image>();
             if (ib != null) ib.color = new Color(col.r * 0.25f, col.g * 0.25f, col.b * 0.25f, 1f);
-            ib?.GetComponent<LiquidGlassEffect>()?.SetRim(new Color(col.r, col.g, col.b, 0.9f));
+            if (ib != null && ib.TryGetComponent<LiquidGlassEffect>(out var ibFx)) ibFx.SetRim(new Color(col.r, col.g, col.b, 0.9f));
 
             _endTitle.text = victory ? Loc.T("ПОБЕДА") : Loc.T("ПОРАЖЕНИЕ");
             _endTitle.color = col;
