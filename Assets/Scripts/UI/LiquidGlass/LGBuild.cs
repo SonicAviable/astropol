@@ -143,6 +143,20 @@ namespace StellarisClone.Rendering
             return sb.ToString();
         }
 
+        private static readonly int[] TypeScale = { 9, 10, 11, 12, 13, 14, 16, 18, 22, 26, 30, 34, 40, 48 };
+
+        /// <summary>
+        /// «Атлас»: единая шкала кеглей интерфейса. Промежуточный размер округляется вниз до ближайшей ступени
+        /// (15 → 14, 17 → 16, 21 → 18, 24 → 22…), поэтому текст не растёт и не вылезает из рамок; крупнее 48 — как есть.
+        /// </summary>
+        public static int SnapSize(int size)
+        {
+            if (size <= TypeScale[0] || size > TypeScale[TypeScale.Length - 1]) return size;
+            int best = TypeScale[0];
+            foreach (int s in TypeScale) if (s <= size) best = s;
+            return best;
+        }
+
         public static Text Label(Transform parent, string text, int size, Color color,
                                  TextAnchor anchor = TextAnchor.MiddleLeft, bool bold = false, bool wrap = false)
         {
@@ -151,10 +165,11 @@ namespace StellarisClone.Rendering
             var t = rt.gameObject.AddComponent<Text>();
             // «Атлас»: крупные жирные подписи (заголовки окон, большие числа) — заголовочным шрифтом Spectral;
             // жирный шрифт — настоящий SemiBold-файл, синтетический «жирный» поверх не нужен
-            t.font = bold ? (size >= 20 ? GameFont.Display : GameFont.Bold) : GameFont.Regular;
+            size = SnapSize(size);
+            t.font = bold ? (size >= 18 ? GameFont.Display : GameFont.Bold) : GameFont.Regular;
             t.fontSize = size;
             t.fontStyle = FontStyle.Normal;
-            if (bold && size >= 20) text = Sentence(text);
+            if (bold && size >= 18) text = Sentence(text);
             // «Атлас»: белый текст окон — кремовый
             if (color.r > 0.95f && color.g > 0.95f && color.b > 0.95f) color = new Color(0.925f, 0.898f, 0.827f, color.a);
             t.color = color;
@@ -165,7 +180,7 @@ namespace StellarisClone.Rendering
             t.horizontalOverflow = wrap ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             var sh = rt.gameObject.AddComponent<Shadow>();
-            sh.effectColor = new Color(0.055f, 0.094f, 0.157f, 0.5f);
+            sh.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.28f);   // «Атлас»: тень едва заметна — текст на ровных панелях чёткий
             sh.effectDistance = new Vector2(0f, -1f);
             return t;
         }
@@ -262,6 +277,29 @@ namespace StellarisClone.Rendering
             content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             sr.viewport = view;
             sr.content = content;
+
+            // «Атлас»: тонкий индикатор прокрутки у правого края — виден, только когда список длиннее окна
+            var sbRt = Rect(view, "ScrollIndicator");
+            sbRt.anchorMin = new Vector2(1, 0); sbRt.anchorMax = new Vector2(1, 1);
+            sbRt.pivot = new Vector2(1, 0.5f);
+            sbRt.sizeDelta = new Vector2(3f, -18f);
+            sbRt.anchoredPosition = new Vector2(-1f, 0f);
+            var track = sbRt.gameObject.AddComponent<Image>();
+            track.color = new Color(0.925f, 0.898f, 0.827f, 0.06f);
+            var area = Rect(sbRt, "Area");
+            area.Stretch();
+            var handle = Rect(area, "Handle");
+            handle.Stretch();
+            var hImg = handle.gameObject.AddComponent<Image>();
+            hImg.color = new Color(0.925f, 0.898f, 0.827f, 0.36f);
+            var sb = sbRt.gameObject.AddComponent<Scrollbar>();
+            sb.direction = Scrollbar.Direction.BottomToTop;
+            sb.handleRect = handle;
+            sb.targetGraphic = hImg;
+            sb.transition = Selectable.Transition.None;
+            sr.verticalScrollbar = sb;
+            sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+            LG.Ignore(sbRt.gameObject);
             return content;
         }
 

@@ -25,15 +25,19 @@ namespace StellarisClone.Rendering
             var row = LGBuild.Rect(parent, "Section_" + title);
             row.TopBand(top, 26);
             float x = 2f;
+            // «Атлас»: заголовок секции — моноширинное золото с разрядкой, значок золотой, линия кремовая
+            var gold = UIManager.DS.Gold;
             if (icon.HasValue)
             {
-                var ic = LGIcons.Create(row, icon.Value, 15, Neon);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(15, 15));
+                var ic = LGIcons.Create(row, icon.Value, 14, gold);
+                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(14, 14));
                 x = 24f;
             }
-            var t = LGBuild.Label(row, title, 12, Neon, TextAnchor.MiddleLeft, bold: true);
+            var t = LGBuild.Label(row, title.ToUpper(), 11, gold, TextAnchor.MiddleLeft);
+            t.font = GameFont.Mono;
+            t.Track(1.6f);
             t.rectTransform.offsetMin = new Vector2(x, 0);
-            var line = LGBuild.Panel(row, "Line", new Color(Neon.r, Neon.g, Neon.b, 0.28f));
+            var line = LGBuild.Panel(row, "Line", new Color(0.925f, 0.898f, 0.827f, 0.16f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
             line.rectTransform.anchorMax = new Vector2(1, 0);
             line.rectTransform.offsetMin = new Vector2(0, 0);
@@ -47,7 +51,7 @@ namespace StellarisClone.Rendering
         {
             var bg = LGBuild.Panel(parent, "Row_" + label, new Color(0.055f, 0.094f, 0.157f, 0.55f), raycast: true);
             bg.rectTransform.TopBand(top, height);
-            var fx = LG.Platter(bg.gameObject, 14f);
+            var fx = LG.Platter(bg.gameObject, 2f);
             fx.FillMultiplier = 0.7f;
             fx.GlowMultiplier = 0f;
             bg.gameObject.AddComponent<RowHover>();

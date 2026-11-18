@@ -88,7 +88,7 @@ namespace StellarisClone.Rendering
 
         private void Render()
         {
-            if (Value != null) Value.text = Mathf.RoundToInt(_shown).ToString() + _suffix;
+            if (Value != null) Value.text = Group(Mathf.RoundToInt(_shown)) + _suffix;
         }
 
         private void Pulse(bool up)
@@ -116,7 +116,7 @@ namespace StellarisClone.Rendering
             t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.color = delta > 0f ? Up : Down;
-            t.text = (delta > 0f ? "+" : "−") + Mathf.RoundToInt(Mathf.Abs(delta));
+            t.text = (delta > 0f ? "+" : "−") + Group(Mathf.RoundToInt(Mathf.Abs(delta)));
             var sh = go.AddComponent<Shadow>();
             sh.effectColor = new Color(0f, 0f, 0f, 0.7f);
             sh.effectDistance = new Vector2(0f, -1f);
@@ -197,6 +197,20 @@ namespace StellarisClone.Rendering
                 f.Text.canvasRenderer.SetAlpha(f.T < 0.35f ? 1f : 1f - (f.T - 0.35f) / 0.65f);
                 f.Rt.localScale = Vector3.one * (0.8f + 0.2f * OutBack(Mathf.Min(1f, f.T * 4f)));
             }
+        }
+
+        /// <summary>«Атлас»: разряды неразрывным пробелом — 12 480, а не 12480 (четырёхзначные — без пробела).</summary>
+        private static string Group(int v)
+        {
+            string s = Mathf.Abs(v).ToString();
+            if (s.Length <= 4) return v < 0 ? "−" + s : s;
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (i > 0 && (s.Length - i) % 3 == 0) sb.Append('\u00A0');
+                sb.Append(s[i]);
+            }
+            return (v < 0 ? "−" : "") + sb;
         }
     }
 }

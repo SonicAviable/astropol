@@ -54,10 +54,11 @@ namespace StellarisClone.Rendering
         public enum Kind { Pop, Fade, SlideLeft, SlideRight, SlideUp, SlideDown }
 
         public Kind kind = Kind.Pop;
-        public float inDuration = 0.38f;
-        public float outDuration = 0.2f;
-        public float distance = 28f;
-        public float fromScale = 0.975f;
+        // «Атлас»: короткие точные появления — окно «встаёт на место», а не выплывает
+        public float inDuration = 0.24f;
+        public float outDuration = 0.14f;
+        public float distance = 14f;
+        public float fromScale = 0.985f;
         [Tooltip("Задержка появления (для каскада панелей).")]
         public float delay = 0f;
         public bool playOnEnable = true;
