@@ -114,6 +114,7 @@ namespace StellarisClone.Rendering
         private void BuildInspectorPortrait(Transform header)
         {
             BuildInspectorBanner(header);
+            BuildInspectorSchema(header);
             _inspPortrait = LGBuild.Rect(header, "Portrait");
             _inspPortrait.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(52, -2), new Vector2(84, 84));
 

@@ -52,6 +52,18 @@ namespace StellarisClone.Rendering
         /// Заголовок секции: золотой ромб-маркер со свечением, значок, надпись с разрядкой и черта,
         /// тающая вправо (как разделы в меню больших игр).
         /// </summary>
+        private void InspGap(float h) => LGBuild.Height(LGBuild.Rect(_inspStack, "Gap").gameObject, h);
+
+        /// <summary>Заголовок раздела с пояснением справа (например, «добыча / залежи»).</summary>
+        private void InspSection(string title, LGIcon icon, string hint)
+        {
+            InspSection(title, icon);
+            var row = _inspStack.GetChild(_inspStack.childCount - 1);
+            var h = LGBuild.Label(row, hint, 10, InspMuted, TextAnchor.LowerRight);
+            h.font = GameFont.Mono;
+            h.rectTransform.Stretch(0, 4, 2, 0);
+        }
+
         private void InspSection(string title, LGIcon icon)
         {
             var row = LGBuild.Rect(_inspStack, "Section");
@@ -146,13 +158,11 @@ namespace StellarisClone.Rendering
 
         private void BuildSystemCards(StarSystem system)
         {
-            InspStatLine(
-                (LGIcon.Star, StarClassLabel(system.SpectralClass), StarClassHint(system.SpectralClass), StarTint(system.SpectralClass)),
-                (LGIcon.Planet, system.Planets.Count.ToString(), Loc.T("орбитальных тел"), DS.NeonCyan),
-                (LGIcon.MapLanes, system.ConnectedSystemIds.Count.ToString(), Loc.T("гиперкоридоров"), new Color(0.62f, 0.78f, 1f)));
+            // «Схема»: факты 2×2 сразу под схемой системы
+            InspFactsGrid(system);
 
             // Ресурсы
-            InspSection(Loc.T("РЕСУРСЫ"), LGIcon.Minerals);
+            InspSection(Loc.T("РЕСУРСЫ"), LGIcon.Minerals, Loc.T("добыча / залежи"));
             if (system.IsSurveyed)
             {
                 system.RecalculateHarvest();
@@ -161,16 +171,10 @@ namespace StellarisClone.Rendering
             }
             else InspNote(LGIcon.Sensors, Loc.T("Состав системы неизвестен — отправьте научный корабль"), new Color(1f, 0.67f, 0.53f));
 
-            // Звёздная база
-            var sb = CombatManager.Instance?.GetStarbase(system.Id);
-            if (sb != null)
-            {
-                // Подробности базы — в отдельном окне: здесь только строка «Звёздная база» (клик — открыть)
-                InspStarbaseRow(system, sb);
-            }
+            // Меню системы: звёздная база (окно), флоты на орбите, снабжение (раскрывается), обзор системы
+            InspGap(6f);
+            InspSystemMenu(system);
 
-            // Снабжение своей системы: связь с хабом, склад, коридоры, депо
-            if (system.OwnerId == 0) BuildSupplyCards(system);
 
             // Осада
             var siege = SiegeManager.Instance?.GetSiege(system.Id);

@@ -84,18 +84,26 @@ namespace StellarisClone.Rendering
         /// <summary>Название и «добыча / залежи» в строку, под ними — тонкая шкала. Пустые залежи — серая строка.</summary>
         private void InspMeter(LGIcon icon, string label, string hint, float value, float max, Color col)
         {
+            // «Атлас»: название слева, тонкая шкала посередине, «добыча / залежи» моноширинным справа
             var row = LGBuild.Rect(_inspStack, "Meter_" + label);
-            LGBuild.Height(row.gameObject, 30);
+            LGBuild.Height(row.gameObject, 26);
             bool empty = max <= 0f;
-            Color c = empty ? InspLabelCol : col;
-            var ic = LGIcons.Create(row, icon, 14, c);
-            ic.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(2, -2), new Vector2(14, 14));
-            CardLabel(row, label, 11, empty ? InspLabelCol : DS.TextPrimary, TextAnchor.MiddleLeft, true, 0f, 0.6f, 0f, 18f, 22f);
-            CardLabel(row, empty ? Loc.T("залежей нет") : $"{value:0} / {max:0}  <color=#{ColorUtility.ToHtmlStringRGB(InspLabelCol)}><size=9>{hint}</size></color>",
-                11, c, TextAnchor.MiddleRight, true, 0.35f, 1f, 0f, 18f, 0f, 2f);
+            Color c = empty ? InspLabelCol : LGTone.AtlasFill(col);
+            var l = LGBuild.Label(row, label, 12, empty ? InspLabelCol : DS.TextPrimary, TextAnchor.MiddleLeft);
+            l.rectTransform.Stretch(2, 0, 0, 0);
+            var v = LGBuild.Label(row, empty ? Loc.T("нет залежей") : $"<color=#ECE5D3>{value:0}</color> / {max:0}", 11, InspLabelCol, TextAnchor.MiddleRight);
+            v.font = GameFont.Mono;
+            v.rectTransform.Stretch(0, 0, 2, 0);
             var track = LGBuild.Rect(row, "Track");
-            Place(track, 0f, 1f, 21f, 6f, 22f, 2f);
-            GrowBar(track, c, empty ? 0f : value / max, 4f, value > 0f);
+            track.anchorMin = new Vector2(0, 0.5f); track.anchorMax = new Vector2(1, 0.5f);
+            track.pivot = new Vector2(0.5f, 0.5f);
+            track.offsetMin = new Vector2(88, -2); track.offsetMax = new Vector2(-92, 2);
+            var bg = LGBuild.Panel(track, "Bg", new Color(0.925f, 0.898f, 0.827f, 0.08f));
+            bg.raycastTarget = false;
+            bg.rectTransform.Stretch();
+            LG.Ignore(bg.gameObject);
+            if (!empty && value > 0f) GrowBar(track, c, value / max, 4f, false);
+            if (!string.IsNullOrEmpty(hint)) TooltipHelper.Attach(row.gameObject, $"{label}: {hint}");
         }
 
         // ==================== ЗВЁЗДНАЯ БАЗА ====================

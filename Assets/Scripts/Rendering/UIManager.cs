@@ -1147,6 +1147,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             hRt.anchorMax = new Vector2(1, 1);
             hRt.pivot = new Vector2(0.5f, 1);
             hRt.sizeDelta = new Vector2(0, InspHeaderH);
+            _inspHeaderRect = hRt;
             var hBg = header.AddComponent<Image>();
             hBg.color = DS.BgHeader;
             hBg.raycastTarget = false;
@@ -1214,6 +1215,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             cRt.anchorMin = cRt.anchorMax = new Vector2(1, 0.5f);
             cRt.pivot = new Vector2(1, 0.5f);
             cRt.anchoredPosition = new Vector2(-14, 0);
+            _inspCloseRect = cRt;
+
 
             var bodyBox = new GameObject("BodyBox");
             bodyBox.transform.SetParent(insp.transform, false);
@@ -1228,7 +1231,8 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             bbBg.color = DS.BgSlot;
             bbBg.raycastTarget = false;
             // Непрозрачная подложка: подписи карты не должны просвечивать сквозь карточки
-            LG.Platter(bodyBox, 16f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.18f));
+            // «Атлас»: содержимое лежит прямо на чернилах окна — подложка без кромки, разделы делят тонкие линии
+            bbBg.color = new Color(0.075f, 0.118f, 0.200f, 0.0f);
             _inspBodyGroup = bodyBox.AddComponent<CanvasGroup>();
             // Содержимое — стопка карточек; если не помещается, прокручивается
             _inspStack = LGBuild.ScrollList(bodyBox.transform, 8f, 10);
@@ -1264,6 +1268,10 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             _inspActionBtn = actionBtn.GetComponent<Button>();
             _inspActionBtnText = CreateText(actionBtn.transform, Loc.T("ДЕЙСТВИЕ"), 11, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
             _inspActionBtnText.rectTransform.sizeDelta = abRt.sizeDelta;
+            // «Атлас»: главное действие панели — кремовая капсула
+            abRt.sizeDelta = new Vector2(395, 38);
+            _inspActionBtnText.rectTransform.sizeDelta = new Vector2(370, 38);
+            LGPrimarySkin.Add(actionBtn, _inspActionBtnText);
 
             // Кнопки снизу — в стиле пунктов левого меню (планка цвета действия, значок в ячейке, капслок)
             _inspShipyardBtn = InspGameButton(insp.transform, "ShipyardBtn", LGIcon.Shipyard, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), DS.NeonCyan, true, OpenShipyardModal, new Vector2(395, 38), primary: true);
@@ -1285,7 +1293,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private RectTransform _inspBodyRect, _inspDistrictRect;
         private Image _inspAccent, _inspTileIcon;
-        private const float InspHeaderH = 96f;
+
 
         /// <summary>Плитка и полоса шапки: значок объекта, его цвет и цвет владельца.</summary>
         private void SetInspectorBadge(LGIcon icon, Color iconColor, Color ownerColor, Sprite planet = null, StarSystem star = null)
@@ -1311,7 +1319,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 rt.anchoredPosition = new Vector2(0, y);
                 y += h + 6f;
             }
-            Stack(_inspActionBtn, 32f);
+            Stack(_inspActionBtn, 38f);
             Stack(_inspShipyardBtn, 38f);
             Stack(_inspExitBtn, 38f);
 
@@ -1439,6 +1447,12 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                         ? Loc.F("<color={0}>◆  Вольный мир · {1}</color>", LGBuild.Hex(NeutralWorlds.ColorOf(NeutralWorlds.At(system.Id).Kind)), NeutralWorlds.CharacterName(NeutralWorlds.At(system.Id).Kind))
                         : Loc.T("<color=#A9A392>◆  Нейтральный фронтир</color>");
             _inspStatus.text = owner.Replace("◆  ", "");
+            // «Схема»: высокая шапка с орбитами; владелец — в таблице фактов под ней, над названием — тип объекта
+            _inspOwnerLine = _inspStatus.text;
+            SetInspectorSchemaMode(true);
+            _inspStatus.text = Loc.T("ЗВЁЗДНАЯ СИСТЕМА");
+            PaintInspectorSchema(system);
+
 
             PulseInspectorContent();
             ClearInspectorBody();
@@ -1501,6 +1515,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             if (parentSystem != null) _activeSystem = parentSystem;
             CloseStarbaseWindow();
 
+            SetInspectorSchemaMode(false);
             _inspTitle.text = PlanetNames.Title(planet.Name);
             SetInspectorBadge(LGIcon.Planet, parentSystem != null ? StarTint(parentSystem.SpectralClass) : DS.NeonCyan,
                 parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.663f, 0.639f, 0.573f),
