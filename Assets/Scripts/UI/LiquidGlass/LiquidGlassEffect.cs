@@ -650,7 +650,7 @@ namespace StellarisClone.Rendering
         {
             float minS = Mathf.Min(r.width, r.height);
             if (radius >= minS * 0.45f) return minS * 0.5f;
-            if (r.height <= 46f) return minS * 0.5f;
+            if (r.height <= 60f) return minS * 0.5f;
             return 3f;
         }
 

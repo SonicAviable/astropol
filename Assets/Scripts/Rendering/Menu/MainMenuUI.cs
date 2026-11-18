@@ -827,8 +827,9 @@ namespace StellarisClone.Rendering
             vic.offsetMax = new Vector2(-520, 166);
             (string k, Color c)[] paths =
             {
-                (Loc.T("ДОМИНИРОВАНИЕ"), UIManager.DS.NeonCyan), (Loc.T("НАУКА"), new Color(0.36f, 0.96f, 0.60f)),
-                (Loc.T("ЭКОНОМИКА"), new Color(0.475f, 0.816f, 0.749f)), (Loc.T("ПО ОЧКАМ"), new Color(1f, 0.82f, 0.48f))
+                // «Атлас»: числа целей — золото, рамки плиток — тонкие кремовые
+                (Loc.T("ДОМИНИРОВАНИЕ"), UIManager.DS.Gold), (Loc.T("НАУКА"), UIManager.DS.Gold),
+                (Loc.T("ЭКОНОМИКА"), UIManager.DS.Gold), (Loc.T("ПО ОЧКАМ"), UIManager.DS.Gold)
             };
             _ngVictory.Clear();
             for (int i = 0; i < paths.Length; i++)
@@ -838,8 +839,10 @@ namespace StellarisClone.Rendering
                 tile.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
                 tile.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : 7, 0);
                 tile.rectTransform.offsetMax = new Vector2(i == 3 ? 0 : -7, 0);
-                LG.Platter(tile.gameObject, 14f).SetRim(new Color(paths[i].c.r, paths[i].c.g, paths[i].c.b, 0.3f));
-                var k = LGBuild.Label(tile.transform, paths[i].k, 11, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, bold: true);
+                LG.Platter(tile.gameObject, 2f).SetRim(new Color(0.925f, 0.898f, 0.827f, 0.16f));
+                var k = LGBuild.Label(tile.transform, paths[i].k, 10, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft);
+                k.font = GameFont.Mono;
+                k.Track(1.2f);
                 k.rectTransform.Stretch(16, 0, 10, 14);
                 var v = LGBuild.Label(tile.transform, "", 26, paths[i].c, TextAnchor.UpperLeft, bold: true);
                 v.rectTransform.Stretch(16, 0, 10, 32);

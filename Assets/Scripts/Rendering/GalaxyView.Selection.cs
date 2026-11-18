@@ -120,7 +120,7 @@ namespace StellarisClone.Rendering
             int n = sys.Planets != null ? sys.Planets.Count : 0;
             _selRadius = n > 0 && IsKnownToPlayer(sys) ? MiniInnerOrbit + (n - 1) * MiniOrbitStep + 1.0f : 2.8f;
 
-            _currentBeaconColor = sys.OwnerId == 0 ? new Color(0.24f, 0.95f, 1f, 1f)
+            _currentBeaconColor = sys.OwnerId == 0 ? new Color(0.906f, 0.757f, 0.439f, 1f)   // «Атлас»: своя система — золото
                                 : sys.OwnerId > 0 ? FleetIndicator.OwnerColor(sys.OwnerId)
                                 : new Color(0.62f, 0.84f, 1f, 1f);
 
@@ -165,27 +165,27 @@ namespace StellarisClone.Rendering
 
             // Основное кольцо и шкала
             DrawSelRing(R * Mathf.Lerp(0.75f, 1f, deploy));
-            _selRing.startWidth = _selRing.endWidth = wpp * 1.7f;
+            _selRing.startWidth = _selRing.endWidth = wpp * 1.1f;
             _selRing.startColor = _selRing.endColor = new Color(c.r, c.g, c.b, 0.9f * fadeIn);
             _selRingGlow.startWidth = _selRingGlow.endWidth = wpp * 7f;
-            _selRingGlow.startColor = _selRingGlow.endColor = new Color(c.r, c.g, c.b, 0.16f * fadeIn);
+            _selRingGlow.startColor = _selRingGlow.endColor = new Color(c.r, c.g, c.b, 0.05f * fadeIn);
             SetRing(_selTicks, R * 1.09f * Mathf.Lerp(0.8f, 1f, deploy), TicksRn);
             _selTicks.transform.Rotate(Vector3.forward, 6f * dt, Space.Self);
-            _selTicks.color = new Color(c.r, c.g, c.b, 0.55f * fadeIn);
+            _selTicks.color = new Color(c.r, c.g, c.b, 0.32f * fadeIn);
 
             // Скобки сходятся снаружи (захват) и затем слегка «дышат»
             float lockOn = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(_deployProgress * 1.4f));
             float breathe = 1f + Mathf.Sin(_animTimer * 2.4f) * 0.012f;
             SetRing(_selBrackets, R * Mathf.Lerp(1.75f, 1.2f, lockOn) * breathe, BracketsRn);
             _selBrackets.transform.localRotation = Quaternion.Euler(90f, 0f, Mathf.Lerp(-35f, 0f, lockOn));
-            _selBrackets.color = new Color(Mathf.Lerp(c.r, 1f, 0.25f), Mathf.Lerp(c.g, 1f, 0.25f), Mathf.Lerp(c.b, 1f, 0.25f), 0.95f * fadeIn);
+            _selBrackets.color = new Color(c.r, c.g, c.b, 0.55f * fadeIn);
 
             // Световое пятно и луч сканера
             SetRing(_selPool, R * 1.35f, 1f);
-            _selPool.color = new Color(c.r, c.g, c.b, (0.10f + Mathf.Sin(_animTimer * 1.6f) * 0.02f) * fadeIn);
+            _selPool.color = new Color(c.r, c.g, c.b, 0.035f * fadeIn);
             SetRing(_selSweep, R * 0.985f, 1f);
             _selSweep.transform.Rotate(Vector3.forward, 70f * dt, Space.Self);   // кромка впереди, хвост позади
-            _selSweep.color = new Color(c.r, c.g, c.b, 0.22f * fadeIn);
+            _selSweep.color = new Color(c.r, c.g, c.b, 0.07f * fadeIn);
 
             // Волна-пинг: расходится от центра за кольцо и гаснет
             if (_selPingT < 0f && _animTimer >= _selNextPing) { _selPingT = 0f; _selNextPing = _animTimer + 3.2f; }

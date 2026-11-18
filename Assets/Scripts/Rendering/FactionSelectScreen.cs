@@ -27,6 +27,8 @@ namespace StellarisClone.Rendering
         private RawImage _bgA, _bgB;
         private bool _bgFront;
         private float _bgMix = 1f;
+        /// <summary>«Атлас»: зал фракции приглушён — на первом плане досье, а не картинка.</summary>
+        private const float BgDim = 0.5f;
         private static readonly Color Good = new Color(0.549f, 0.827f, 0.627f);
         private static readonly Color Bad = new Color(1f, 0.498f, 0.420f);
 
@@ -231,6 +233,7 @@ namespace StellarisClone.Rendering
             LG.Ignore(shadeB.gameObject);
 
             BuildMotes(rt);
+            _motesLayer.gameObject.SetActive(false);   // «Атлас»: без летающих искр
             // Свечение за портретом (центр рамки: левый край панели + половина рамки, середина панели по высоте)
             _halo = LGBuild.Panel(rt, "Halo", Color.white);
             _halo.sprite = RadialSprite();
@@ -643,7 +646,7 @@ namespace StellarisClone.Rendering
                 m.Back.color = on ? new Color(0.02f + cc.r * 0.12f, 0.04f + cc.g * 0.12f, 0.07f + cc.b * 0.12f, 0.95f)
                                   : new Color(0.055f, 0.094f, 0.157f, 0.88f);
                 if (m.Crest != null) m.Crest.color = on ? Color.Lerp(cc, Color.white, 0.6f) : new Color(0.75f, 0.80f, 0.85f, 0.55f);
-                m.Name.color = on ? Color.Lerp(cc, Color.white, 0.55f) : Muted;
+                m.Name.color = on ? UIManager.DS.TextPrimary : Muted;
                 m.Name.resizeTextMaxSize = on ? 14 : 13;
                 if (instant) m.Place(on ? 1f : MedalOff);
             }
@@ -663,26 +666,27 @@ namespace StellarisClone.Rendering
             front.transform.SetSiblingIndex(1);
             _bgFront = !_bgFront;
             _bgMix = instant ? 1f : 0f;
-            front.color = new Color(1f, 1f, 1f, instant ? 1f : 0f);
+            front.color = new Color(BgDim, BgDim, BgDim * 1.06f, instant ? 1f : 0f);
 
             // Правитель — целый портрет с эффектами
             LGBuild.Clear(_portraitHost);
             LeaderPortraitView.Create(_portraitHost, leader, 1.12f, Vector4.zero, true, true, false);
-            _frameFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.7f));
-            foreach (var b in _brackets) b.color = light;
+            // «Атлас»: рамка портрета — тонкая кремовая, скобы по углам — золотые; цвет фракции — только кольцо герба
+            _frameFx.SetRim(new Color(0.925f, 0.898f, 0.827f, 0.30f));
+            foreach (var b in _brackets) b.color = UIManager.DS.Gold;
             _liveDot.color = ec;
             _frameTitle.text = Loc.T("ПРЯМАЯ СВЯЗЬ");
             _frameSub.text = leader != null ? $"<b>{leader.Name}</b>\n<color=#A9A392>{leader.Title}</color>" : f.Title;
 
             // Досье
-            _divider.color = new Color(ec.r, ec.g, ec.b, 0.45f);
-            _infoFx.SetRim(new Color(ec.r, ec.g, ec.b, 0.25f));
+            _divider.color = new Color(0.925f, 0.898f, 0.827f, 0.20f);
+            _infoFx.SetRim(new Color(0.925f, 0.898f, 0.827f, 0.18f));
             var crest = FactionEmblems.ForFaction(f);
             _crestMark.sprite = crest;
             _crestMark.color = crest != null ? new Color(light.r, light.g, light.b, 0.07f) : Color.clear;
-            _tabMark.color = ec;
-            _name.text = f.Name.ToUpper();
-            _name.color = light;
+            _tabMark.color = UIManager.DS.Red;
+            _name.text = f.Name;
+            _name.color = UIManager.DS.TextPrimary;
             _leader.text = lore != null ? $"{f.Title}  ·  <i><color=#C9D8DE>{lore.Tagline}</color></i>" : f.Title;
 
             // Плитки: два главных бонуса, сложность, сильная сторона
@@ -699,7 +703,7 @@ namespace StellarisClone.Rendering
             int diff = lore?.Difficulty ?? 0;
             SetTile(2, diff == 1 ? Loc.T("ЛЁГКАЯ") : diff == 2 ? Loc.T("СРЕДНЯЯ") : diff == 3 ? Loc.T("СЛОЖНАЯ") : "—", Loc.T("СЛОЖНОСТЬ"),
                 diff == 1 ? Good : diff == 2 ? UIManager.DS.Gold : diff == 3 ? Bad : Primary);
-            SetTile(3, lore?.Strength ?? "—", Loc.T("СИЛЬНАЯ СТОРОНА"), light);
+            SetTile(3, lore?.Strength ?? "—", Loc.T("СИЛЬНАЯ СТОРОНА"), UIManager.DS.Gold);
 
             LGBuild.Clear(_traits);
             float y = 0f;
@@ -711,7 +715,7 @@ namespace StellarisClone.Rendering
             {
                 int lvl = lore?.Style != null && j < lore.Style.Length ? lore.Style[j] : 0;
                 for (int s = 0; s < 5; s++)
-                    _bars[j, s].color = s < lvl ? new Color(light.r, light.g, light.b, 0.95f) : new Color(1f, 1f, 1f, 0.09f);
+                    _bars[j, s].color = s < lvl ? new Color(0.906f, 0.757f, 0.439f, 0.95f) : new Color(0.925f, 0.898f, 0.827f, 0.10f);
             }
 
             _desc.text = lore?.Story ?? StripBonuses(f.Description);
@@ -778,14 +782,14 @@ namespace StellarisClone.Rendering
             }
 
             // Свечение за рамкой медленно пульсирует
-            _halo.color = new Color(_accent.r, _accent.g, _accent.b, 0.16f + 0.05f * Mathf.Sin(t * 0.9f));
-            _frameFx.GlowMultiplier = 0.8f + 0.5f * (0.5f + 0.5f * Mathf.Sin(t * 1.6f));
-            foreach (var b in _brackets) { var c = b.color; c.a = 0.65f + 0.35f * Mathf.Sin(t * 2.4f); b.color = c; }
+            // «Атлас»: спокойная рамка — без пульсирующего ореола, свечения и мигающих скоб
+            _halo.color = new Color(0f, 0f, 0f, 0f);
+            _frameFx.GlowMultiplier = 0f;
 
             // Блик проходит по портрету раз в ~7 секунд
             _sweepT += dt;
             float p = Mathf.Repeat(_sweepT, 7f) / 1.4f;
-            _sweep.gameObject.SetActive(p < 1f);
+            _sweep.gameObject.SetActive(false);   // «Атлас»: без бегущего блика
             if (p < 1f) _sweep.anchoredPosition = new Vector2(Mathf.Lerp(-520f, 520f, p), 0f);
 
             // Вспышка «сигнал принят» после смены фракции
@@ -793,7 +797,7 @@ namespace StellarisClone.Rendering
             {
                 _flashT = Mathf.MoveTowards(_flashT, 1f, dt * 2.2f);
                 float f = 1f - _flashT;
-                _flash.color = new Color(Mathf.Lerp(1f, _accent.r, 0.4f), Mathf.Lerp(1f, _accent.g, 0.4f), Mathf.Lerp(1f, _accent.b, 0.4f), f * f * 0.45f);
+                _flash.color = new Color(0f, 0f, 0f, 0f);
                 _frame.localScale = Vector3.one * (1f + 0.01f * f * f);
             }
             else _frame.localScale = Vector3.one;
@@ -807,7 +811,7 @@ namespace StellarisClone.Rendering
                 m.Place(Mathf.Lerp(m.Scale, on ? 1f : MedalOff, ease));
                 float k = Mathf.Clamp01((m.Scale - MedalOff) / (1f - MedalOff));
                 Color cc = m.F.EmpireColor;
-                m.Glow.color = new Color(cc.r, cc.g, cc.b, k * (0.42f + 0.12f * Mathf.Sin(t * 2.2f)));
+                m.Glow.color = new Color(cc.r, cc.g, cc.b, 0f);   // «Атлас»: выбранный герб — крупнее, без свечения
             }
         }
 
@@ -891,7 +895,7 @@ namespace StellarisClone.Rendering
             {
                 _bgMix = Mathf.MoveTowards(_bgMix, 1f, dt * 2f);
                 var front = _bgFront ? _bgB : _bgA;   // последний назначенный слой
-                front.color = new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 1f, _bgMix));
+                front.color = new Color(BgDim, BgDim, BgDim * 1.06f, Mathf.SmoothStep(0f, 1f, _bgMix));
             }
             // Фон чуть «дышит» — медленный наезд
             float zoom = 1.03f + 0.015f * Mathf.Sin(t * 0.07f);

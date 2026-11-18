@@ -38,7 +38,7 @@ namespace StellarisClone.Rendering
         private LiquidGlassEffect _glass, _medalFx;
         private Image _frame, _medalRing, _statusFrame;
         private static readonly Color HoloTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
-        private static readonly Color HoloLine = new Color(0.475f, 0.816f, 0.749f, 1f);
+        private static readonly Color HoloLine = new Color(0.925f, 0.898f, 0.827f, 1f);   // «Атлас»: кремовые линии
         private Image _accent, _medalIcon, _badgeBg, _badge, _statusDot;
         private Text _badgeCount;
         private LeaderThumb _leaderFace;
@@ -112,7 +112,7 @@ namespace StellarisClone.Rendering
         private void BuildMedallion(RectTransform rt)
         {
             // Медальон: свечение, тёмный диск, кольцо цвета типа и тонкая внутренняя окантовка
-            var glow = LGBuild.Panel(rt, "MedalGlow", new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.12f));
+            var glow = LGBuild.Panel(rt, "MedalGlow", new Color(0f, 0f, 0f, 0f));
             glow.sprite = FactionSelectScreen.RadialSprite();
             glow.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(64, 2), new Vector2(150, 150));
             var medal = LGBuild.Panel(rt, "Medallion", new Color(0.055f, 0.094f, 0.157f, 1f));
@@ -179,7 +179,7 @@ namespace StellarisClone.Rendering
             _subtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
             _subtitle.verticalOverflow = VerticalWrapMode.Truncate;
 
-            var sep = LGBuild.Panel(body, "Sep", new Color(0.475f, 0.816f, 0.749f, 0.22f));
+            var sep = LGBuild.Panel(body, "Sep", new Color(0.925f, 0.898f, 0.827f, 0.14f));
             sep.rectTransform.anchorMin = new Vector2(0, 1);
             sep.rectTransform.anchorMax = new Vector2(1, 1);
             sep.rectTransform.offsetMin = new Vector2(0, -45);
@@ -245,7 +245,7 @@ namespace StellarisClone.Rendering
             cell.sprite = HudArt.CutPanel(6);
             cell.type = Image.Type.Sliced;
             cell.rectTransform.Column(col / 4f, (col + 1) / 4f, col == 0 ? 0 : 3, col == 3 ? 0 : 3);
-            var fr = LGBuild.Panel(cell.transform, "Frame", new Color(0.475f, 0.816f, 0.749f, 0.28f));
+            var fr = LGBuild.Panel(cell.transform, "Frame", new Color(0.925f, 0.898f, 0.827f, 0.14f));
             fr.sprite = HudArt.CutFrame(6, 1f);
             fr.type = Image.Type.Sliced;
             fr.rectTransform.Stretch();
@@ -259,7 +259,7 @@ namespace StellarisClone.Rendering
 
         private void BuildDock(RectTransform rt)
         {
-            var line = LGBuild.Panel(rt, "DockSep", new Color(0.475f, 0.816f, 0.749f, 0.35f));
+            var line = LGBuild.Panel(rt, "DockSep", new Color(0.925f, 0.898f, 0.827f, 0.16f));
             _dockSep = line.rectTransform;
             _dockSep.anchorMin = new Vector2(1, 0);
             _dockSep.anchorMax = new Vector2(1, 1);
@@ -306,16 +306,17 @@ namespace StellarisClone.Rendering
         }
 
         /// <summary>
-        /// Кнопка дока в стиле голо-HUD: тёмная плашка со срезанными углами и бирюзовой рамкой, значок по центру.
+        /// Кнопка дока в стиле «Атласа»: тёмная капсула с тонкой кремовой кромкой, значок по центру.
         /// Наведение/нажатие — подсветка тела, выключенная — тусклая.
         /// </summary>
         private static Button HoloButton(RectTransform parent, string name, LGIcon? icon, float iconSize, System.Action onClick)
         {
             var img = LGBuild.Panel(parent, name, Color.white, raycast: true);
-            img.sprite = HudArt.CutPanel(8);
+            // «Атлас»: кнопка дока — капсула с тонкой кремовой кромкой
+            img.sprite = HudArt.Pill();
             img.type = Image.Type.Sliced;
-            var fr = LGBuild.Panel(img.transform, "Frame", new Color(0.475f, 0.816f, 0.749f, 0.5f));
-            fr.sprite = HudArt.CutFrame(8, 1.2f);
+            var fr = LGBuild.Panel(img.transform, "Frame", new Color(0.925f, 0.898f, 0.827f, 0.26f));
+            fr.sprite = HudArt.Pill(1.2f);
             fr.type = Image.Type.Sliced;
             fr.rectTransform.Stretch();
             if (icon.HasValue)
@@ -329,7 +330,7 @@ namespace StellarisClone.Rendering
             var cb = b.colors;
             cb.normalColor = new Color(0.055f, 0.094f, 0.157f, 0.96f);
             cb.highlightedColor = new Color(0.075f, 0.125f, 0.220f, 1f);
-            cb.pressedColor = new Color(0.140f, 0.330f, 0.360f, 1f);
+            cb.pressedColor = new Color(0.130f, 0.180f, 0.280f, 1f);
             cb.selectedColor = cb.normalColor;
             cb.disabledColor = new Color(0.055f, 0.094f, 0.157f, 0.55f);
             cb.colorMultiplier = 1f;
@@ -424,9 +425,10 @@ namespace StellarisClone.Rendering
 
         private void SetTheme(Color c)
         {
-            _accent.color = new Color(c.r, c.g, c.b, 0.85f);
-            if (_frame != null) _frame.color = new Color(c.r, c.g, c.b, 0.45f);
-            if (_medalRing != null) _medalRing.color = new Color(c.r, c.g, c.b, 0.9f);
+            // «Атлас»: рамка панели — тонкая кремовая; цвет типа корабля — только кольцо медальона, приглушённо
+            _accent.color = new Color(0f, 0f, 0f, 0f);
+            if (_frame != null) _frame.color = new Color(0.925f, 0.898f, 0.827f, 0.26f);
+            if (_medalRing != null) _medalRing.color = new Color(c.r, c.g, c.b, 0.55f);
         }
 
         private void ShowSingle(FleetView f)
