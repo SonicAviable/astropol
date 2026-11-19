@@ -55,8 +55,6 @@ namespace StellarisClone.Rendering
 
         // Темп полосы: 8–10 секунд (выход в меню — ~3 с), неравномерно — с рывками и паузами,
         // как при настоящей загрузке. Реальный прогресс полоса никогда не обгоняет.
-        private float _duration;
-        private readonly System.Collections.Generic.List<Vector2> _curve = new System.Collections.Generic.List<Vector2>();
         private string[] _stages;
         private StellarisClone.Generation.GalaxyGenerator _gen;
 
@@ -332,9 +330,7 @@ namespace StellarisClone.Rendering
             _subtitle.text = Subtitle(kind);
             _detail.text = "";
             _gen = null;
-            _duration = kind == Kind.Menu ? UnityEngine.Random.Range(2.8f, 3.4f) : UnityEngine.Random.Range(8f, 10f);
             _stages = StagesFor(kind);
-            BuildCurve();
             _introStart = _stageChangeT = Time.unscaledTime;
             _stageIndex = -1;
             _doneT = -1f;
@@ -395,46 +391,6 @@ namespace StellarisClone.Rendering
                 Loc.T("Сборка интерфейса"), Loc.T("Последние штрихи")
             }
         };
-
-        /// <summary>
-        /// Кривая «время → прогресс» из нескольких отрезков случайной длины и крутизны:
-        /// где-то полоса бежит, где-то «задумывается» — выглядит как реальная загрузка ресурсов.
-        /// </summary>
-        private void BuildCurve()
-        {
-            _curve.Clear();
-            int n = _kind == Kind.Menu ? 3 : 9;
-            var dt = new float[n];
-            var dp = new float[n];
-            float sumT = 0f, sumP = 0f;
-            for (int i = 0; i < n; i++)
-            {
-                dt[i] = UnityEngine.Random.Range(0.5f, 1.5f);
-                dp[i] = UnityEngine.Random.Range(0.2f, 1.4f);
-                sumT += dt[i]; sumP += dp[i];
-            }
-            float t = 0f, p = 0f;
-            _curve.Add(Vector2.zero);
-            for (int i = 0; i < n; i++)
-            {
-                t += dt[i] / sumT;
-                p += dp[i] / sumP;
-                _curve.Add(new Vector2(t, p));
-            }
-        }
-
-        private float CurveAt(float x)
-        {
-            x = Mathf.Clamp01(x);
-            for (int i = 1; i < _curve.Count; i++)
-            {
-                if (x > _curve[i].x) continue;
-                var a = _curve[i - 1]; var b = _curve[i];
-                float k = Mathf.InverseLerp(a.x, b.x, x);
-                return Mathf.Lerp(a.y, b.y, k * k * (3f - 2f * k));   // внутри отрезка — плавный разгон и торможение
-            }
-            return 1f;
-        }
 
         private static string Subtitle(Kind kind)
         {
@@ -500,10 +456,9 @@ namespace StellarisClone.Rendering
             float shaders = _booted ? ShaderPrewarm.Progress : 0f;
             float target = scene * 0.2f + boot * 0.15f + galaxy * 0.15f + save * 0.12f + sfx * 0.25f + warm * 0.05f + shaders * 0.08f;
 
-            // Полоса идёт по «живой» кривой времени, но не обгоняет реальную загрузку
+            // Полоса показывает реальную загрузку (без искусственной кривой и минимального времени), лишь сглаживая рывки
             float elapsed = Time.unscaledTime - _startTime;
-            float goal = Mathf.Min(target, CurveAt(elapsed / _duration));
-            _shown = Mathf.Max(_shown, Mathf.MoveTowards(_shown, goal, dt * 0.9f));
+            _shown = Mathf.Max(_shown, Mathf.MoveTowards(_shown, target, dt * 4f));
 
             int si = Mathf.Clamp(Mathf.FloorToInt(_shown * _stages.Length), 0, _stages.Length - 1);
             if (_shown >= 0.999f && _doneT < 0f) { _doneT = Time.unscaledTime; _stageChangeT = _doneT; }
@@ -512,11 +467,11 @@ namespace StellarisClone.Rendering
             _percent.text = $"{_shown * 100f:0}";
             _detail.text = Detail(sfx);
 
-            bool done = target >= 0.999f && _shown >= 0.995f && elapsed >= _duration;
+            bool done = target >= 0.999f && _shown >= 0.995f;
             if (done) _hiding = true;
             if (_hiding)
             {
-                _alpha = Mathf.MoveTowards(_alpha, 0f, dt / 0.7f);
+                _alpha = Mathf.MoveTowards(_alpha, 0f, dt / 0.35f);
                 if (_alpha <= 0f)
                 {
                     _active = false;

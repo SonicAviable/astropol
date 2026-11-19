@@ -13,7 +13,7 @@ namespace StellarisClone.Rendering
     public static class ShaderPrewarm
     {
         private const int Layer = 31;                 // свободный слой (30 — туман войны)
-        private const int PerFrame = 12;              // квадов за кадр: полоса загрузки не замирает
+        private const int PerFrame = 32;              // квадов за кадр: меньше кадров на прогрев, полоса загрузки не замирает
         private static readonly Vector3 Site = new Vector3(0f, -50000f, 0f);
 
         private static bool s_started, s_finished;

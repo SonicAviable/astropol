@@ -162,7 +162,7 @@ namespace StellarisClone.Core
         /// (MacBook Pro ProMotion, игровые мониторы) игра рисует 120–144 кадра вместо выбранных 60 — ноутбук греется
         /// и сбрасывает частоты. Поэтому синхронизация идёт через кадр, когда частота экрана кратна выбранному пределу.
         /// </summary>
-        private static void ApplyFrameRate()
+        internal static void ApplyFrameRate()
         {
             int fps = FpsOptions[Mathf.Clamp(FpsIndex, 0, FpsOptions.Length - 1)];
             int interval = 1;
@@ -401,8 +401,13 @@ namespace StellarisClone.Core
             if (GameSettings.Dirty) PlayerPrefs.Save();
         }
 
+        /// <summary>Кадров в секунду, пока окно игры в фоне: видеокарта не греется впустую, симуляция идёт дальше.</summary>
+        private const int BackgroundFps = 15;
+
         private void OnApplicationFocus(bool focus)
         {
+            if (focus) GameSettings.ApplyFrameRate();
+            else { QualitySettings.vSyncCount = 0; Application.targetFrameRate = BackgroundFps; }
             if (!GameSettings.MuteInBackground) { AudioListener.pause = false; return; }
             AudioListener.pause = !focus;
         }
