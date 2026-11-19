@@ -1137,13 +1137,13 @@ namespace StellarisClone.Rendering
                     y += 18f;
                     anyNeighbor = true;
                 }
-                string st; Color sc;
-                if (!Contacts.Met(ai.OwnerId, other.OwnerId)) { st = Loc.T("не знакомы"); sc = Muted; }
-                else if (AIRelations.AtWar(ai.OwnerId, other.OwnerId)) { st = Loc.T("война"); sc = Red; }
-                else if (AIRelations.TruceDays(ai.OwnerId, other.OwnerId) > 0) { st = Loc.T("перемирие"); sc = Gold; }
-                else { st = Loc.T("мир"); sc = Green; }
+                string nst; Color nsc;
+                if (!Contacts.Met(ai.OwnerId, other.OwnerId)) { nst = Loc.T("не знакомы"); nsc = Muted; }
+                else if (AIRelations.AtWar(ai.OwnerId, other.OwnerId)) { nst = Loc.T("война"); nsc = Red; }
+                else if (AIRelations.TruceDays(ai.OwnerId, other.OwnerId) > 0) { nst = Loc.T("перемирие"); nsc = Gold; }
+                else { nst = Loc.T("мир"); nsc = Green; }
                 if (nx + 70f > _infoLeft.rect.width && nx > 0f) break;   // в ряд не влезает — остальные не показываем
-                NeighborFace(_infoLeft, nx, y, other, st, sc);
+                NeighborFace(_infoLeft, nx, y, other, nst, nsc);
                 nx += 76f;
             }
             if (anyNeighbor) y += 62f;
