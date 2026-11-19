@@ -923,6 +923,8 @@ namespace StellarisClone.Rendering
             if (_cam == null || _plateRoot == null) return;
 
             if (_hiddenByIsolation) return;
+            // Система за краем экрана — подпись и её значки не пересчитываем
+            if (!_isSelected && !_isHovered && !ScreenCull.Visible(transform.position, 25f)) return;
             if (!_plateRoot.activeSelf) _plateRoot.SetActive(true);
 
             _plateRoot.transform.rotation = _cam.rotation;

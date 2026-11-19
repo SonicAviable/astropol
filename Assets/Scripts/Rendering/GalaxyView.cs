@@ -720,11 +720,57 @@ namespace StellarisClone.Rendering
 
     // ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
 
+    /// <summary>
+    /// Плашка всегда смотрит в камеру. Своего LateUpdate нет: их на карте тысячи, поэтому всех поворачивает
+    /// один общий проход (BillboardDriver) и только когда камера повернулась; новая плашка выравнивается сразу.
+    /// </summary>
     public class BillboardLookAt : MonoBehaviour
     {
-        private Transform _cam;
-        private void Start() { if (Camera.main != null) _cam = Camera.main.transform; }
-        private void LateUpdate() { if (_cam != null) transform.rotation = _cam.rotation; }
+        private static readonly HashSet<Transform> s_all = new HashSet<Transform>();
+        private static Quaternion s_rot;
+        private static bool s_has;
+
+        private void OnEnable()
+        {
+            s_all.Add(transform);
+            BillboardDriver.Ensure();
+            if (s_has) transform.rotation = s_rot;
+            else if (Camera.main != null) transform.rotation = Camera.main.transform.rotation;
+        }
+
+        private void OnDisable() => s_all.Remove(transform);
+
+        internal static void Tick()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            var r = cam.transform.rotation;
+            bool camTurned = !s_has || r != s_rot;
+            s_rot = r;
+            s_has = true;
+            // Камера не повернулась — трогаем только плашки, которые сдвинул или повернул родитель
+            foreach (var t in s_all)
+            {
+                if (t == null || !(camTurned || t.hasChanged)) continue;
+                t.rotation = r;
+                t.hasChanged = false;
+            }
+        }
+    }
+
+    internal class BillboardDriver : MonoBehaviour
+    {
+        private static BillboardDriver s_inst;
+
+        public static void Ensure()
+        {
+            if (s_inst != null) return;
+            var go = new GameObject("[BillboardDriver]") { hideFlags = HideFlags.HideInHierarchy };
+            DontDestroyOnLoad(go);
+            s_inst = go.AddComponent<BillboardDriver>();
+        }
+
+        private void LateUpdate() => BillboardLookAt.Tick();
     }
 
     public class EmpireLabelScaler : MonoBehaviour
@@ -832,6 +878,8 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (_core == null) return;
+            // За краем экрана звезду не анимируем (вернётся в кадр — продолжит с того же места)
+            if (!ScreenCull.Visible(transform.position, CullRadius)) return;
 
             float dt = Time.unscaledDeltaTime;
             float t = Time.unscaledTime * _speed + _phase;
@@ -894,9 +942,13 @@ namespace StellarisClone.Rendering
             }
         }
 
+        /// <summary>Запас отсечения: корона и блик больше самой звезды.</summary>
+        private float CullRadius => Mathf.Max(12f, _scale * 4f);
+
         private void LateUpdate()
         {
             if (_cam == null) return;
+            if (!ScreenCull.Visible(transform.position, CullRadius)) return;
             var rot = _cam.transform.rotation;
             float t = Time.unscaledTime;
             // повороты в плоскости экрана: корона и блик в разные стороны, медленно

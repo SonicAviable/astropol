@@ -109,8 +109,37 @@ namespace StellarisClone.Core
                 _month++;
                 if (_month > 12) { _month = 1; _year++; }
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Каждый подписчик — отдельной строкой в профайлере: видно, чей дневной расчёт тормозит и мусорит
+            var list = OnDayPassed?.GetInvocationList();
+            if (list == null) return;
+            foreach (var d in list)
+            {
+                UnityEngine.Profiling.Profiler.BeginSample(DayMarker(d));
+                try { ((System.Action<int, int, int>)d)(_day, _month, _year); }
+                catch (System.Exception e) { Debug.LogException(e); }
+                finally { UnityEngine.Profiling.Profiler.EndSample(); }
+            }
+#else
             OnDayPassed?.Invoke(_day, _month, _year);
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly System.Collections.Generic.Dictionary<System.Reflection.MethodInfo, string> s_dayMarkers =
+            new System.Collections.Generic.Dictionary<System.Reflection.MethodInfo, string>();
+
+        private static string DayMarker(System.Delegate d)
+        {
+            if (!s_dayMarkers.TryGetValue(d.Method, out var name))
+            {
+                var t = d.Method.DeclaringType;
+                while (t != null && t.Name.StartsWith("<") && t.DeclaringType != null) t = t.DeclaringType;   // лямбда → её класс
+                s_dayMarkers[d.Method] = name = "Day: " + t?.Name + "." + d.Method.Name;
+            }
+            return name;
+        }
+#endif
 
         public string GetFormattedDate() => $"{_day:D2}.{_month:D2}.{_year}";
     }
