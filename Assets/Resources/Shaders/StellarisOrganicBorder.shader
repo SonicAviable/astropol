@@ -83,6 +83,9 @@ Shader "Stellaris/OrganicBorders"
             fixed4 frag (v2f i) : SV_Target
             {
                 float2 p = i.worldPos.xz;
+                // Размер пикселя в мировых единицах — по координатам, а не fwidth(e): на стыке ячеек сетки соседние
+                // пиксели считают e по разным спискам точек, и fwidth(e) давал пунктир по краям ячеек.
+                float px = max((length(ddx(p)) + length(ddy(p))) * 0.6, 1e-4);
                 float d0 = 10000.0, d1 = 10000.0, d2 = 10000.0, d3 = 10000.0, d4 = 10000.0, d5 = 10000.0, d6 = 10000.0;
                 float gw = _GridParams.w;
                 float2 cell = clamp(floor((p - _GridParams.xy) * _GridParams.z), 0.0, gw - 1.0);
@@ -131,7 +134,6 @@ Shader "Stellaris/OrganicBorders"
                 // либо внешний край, либо середина между двумя империями
                 float e = min(-dSelf, (dOther - dSelf) * 0.5);
 
-                float px = max(fwidth(e), 1e-4);
                 float ePx = e / px;                       // то же расстояние, но в пикселях экрана
                 if (ePx < -3.0) discard;
 
