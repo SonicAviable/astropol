@@ -644,25 +644,41 @@ namespace StellarisClone.Rendering
         public void SetNameplate(SystemNameplate plate) => _nameplate = plate;
         public void SetText(string t) => text = t;
 
+        // Один рейкаст на кадр для всех триггеров (их сотни — по одному на звезду)
+        private static int _cacheFrame = -1;
+        private static bool _cacheNoCam, _cacheOverUi;
+        private static WorldTooltipTrigger _cacheHit;
+
+        private static void RefreshCache()
+        {
+            if (_cacheFrame == Time.frameCount) return;
+            _cacheFrame = Time.frameCount;
+            _cacheHit = null;
+            var cam = Camera.main;
+            _cacheNoCam = cam == null;
+            if (_cacheNoCam) return;
+            var es = EventSystem.current;
+            _cacheOverUi = es != null && es.IsPointerOverGameObject();
+            if (_cacheOverUi) return;
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
+                _cacheHit = hit.collider.GetComponentInParent<WorldTooltipTrigger>();
+        }
+
         private void Update()
         {
-            if (Camera.main == null) return;
+            RefreshCache();
+            if (_cacheNoCam) return;
 
-            var es = EventSystem.current;
-            if (es != null && es.IsPointerOverGameObject())
+            if (_cacheOverUi)
             {
                 // Курсор ушёл на интерфейс (например, на значок агента у звезды) — гасим только свою подсказку
                 if (_hovered) { _hovered = false; TooltipSystem.HideIf(_shown); }
                 return;
             }
 
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            bool hitThis = false;
-            if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
-            {
-                var trigger = hit.collider.GetComponentInParent<WorldTooltipTrigger>();
-                if (trigger == this) hitThis = true;
-            }
+            bool hitThis = _cacheHit == this;
+            if (!hitThis && !_hovered) return;
             // Над планетой мини-системы своя карточка — подсказка звезды не нужна
             if (hitThis && GalaxyView.HoveredMiniPlanet != null) hitThis = false;
 
