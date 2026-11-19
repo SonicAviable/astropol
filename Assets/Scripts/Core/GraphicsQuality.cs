@@ -238,6 +238,9 @@ namespace StellarisClone.Core
                                   : AntiAliasing == AASmaa ? AntialiasingMode.SubpixelMorphologicalAntiAliasing
                                   : AntialiasingMode.None;
                 data.antialiasingQuality = AntialiasingQuality.High;
+                // STP копит историю кадров: один NaN/Inf из процедурных шейдеров (туманности, свечение) расползается
+                // по истории и за пару кадров чернит весь экран. Stop NaN заменяет такие пиксели до постобработки.
+                if (StpActive) data.stopNaN = true;
             }
             // «Постобработка выкл» — гасим объёмы (свечение, тонирование, виньетка), даже если камера ведёт проход ради сглаживания
             var gone = new System.Collections.Generic.List<Volume>();
