@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
     public class OutlinerPanel : MonoBehaviour
     {
         // Сверху — на одном уровне с портретом правителя (панель ресурсов по центру до правого края не доходит)
-        private const float Width = 300f, Top = 10f, Bottom = 284f, RowH = 42f, HeadH = 32f, TabH = 40f;
+        private const float Width = 300f, Top = 10f, Bottom = 284f, RowH = 50f, HeadH = 32f, TabH = 40f;
 
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Muted => UIManager.DS.TextMuted;
@@ -33,6 +33,21 @@ namespace StellarisClone.Rendering
         private static readonly Color RowBg = new Color(0.055f, 0.094f, 0.157f, 0.92f);
         private static readonly Color RowWarnBg = new Color(0.110f, 0.105f, 0.120f, 0.92f);
         private static readonly Color RowDangerBg = new Color(0.130f, 0.075f, 0.090f, 0.92f);
+        // «Тихая латунь»
+        private static readonly Color Brass = new Color(0.906f, 0.757f, 0.439f);
+        private static readonly Color Cream = new Color(0.945f, 0.914f, 0.831f);
+        private static readonly Color TimeCol = new Color(0.788f, 0.706f, 0.541f);
+        private static readonly Color GoldBarCol = new Color(0.94f, 0.80f, 0.50f);
+
+        /// <summary>Тонкая латунная черта по низу строки.</summary>
+        private static void Hairline(Transform parent, float alpha, float left = 10f, float right = 10f)
+        {
+            var h = LGBuild.Panel(parent, "Hair", new Color(Brass.r, Brass.g, Brass.b, alpha));
+            h.raycastTarget = false;
+            h.rectTransform.anchorMin = new Vector2(0, 0); h.rectTransform.anchorMax = new Vector2(1, 0);
+            h.rectTransform.offsetMin = new Vector2(left, 0); h.rectTransform.offsetMax = new Vector2(-right, 1);
+            LG.Ignore(h.gameObject);
+        }
 
         private enum Sec { Research, Build, Military, Science, Constructor }
         private static string[] SecNames => new[] { Loc.T("ИССЛЕДОВАНИЯ"), Loc.T("СТРОИТЕЛЬСТВО"), Loc.T("ФЛОТЫ"), Loc.T("НАУЧНЫЕ КОРАБЛИ"), Loc.T("СТРОИТЕЛИ") };
@@ -74,7 +89,7 @@ namespace StellarisClone.Rendering
             public RectTransform Fill, Shine;
             public OutlinerHover Hover;
             public System.Action Click;
-            public bool Warn, Danger;
+            public bool Warn, Danger, GoldBar;
             public float Phase;
             public Color Accent;
         }
@@ -176,10 +191,12 @@ namespace StellarisClone.Rendering
 
             _headIcon = LGIcons.Create(head.transform, LGIcon.Menu, 14, Cyan);
             _headIcon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(14, 14));
-            var ht = LGBuild.Label(head.transform, Loc.T("ПЛАНИРОВЩИК"), 13, Primary, TextAnchor.MiddleLeft);
+            _headIcon.color = Brass;
+            var ht = LGBuild.Label(head.transform, Loc.T("ПЛАНИРОВЩИК"), 15, Color.white, TextAnchor.MiddleLeft);
             ht.font = GameFont.Display;
             ht.rectTransform.Stretch(40, 0, 90, 0);
-            ht.Track(1.8f);
+            ht.Track(3.2f);
+            LGTextGradient.Apply(ht, new Color(1f, 0.973f, 0.902f), new Color(0.79f, 0.63f, 0.35f));   // кремовый → латунь
 
             // плашка «требует внимания»
             var chip = LGBuild.Panel(head.transform, "Alert", new Color(0.30f, 0.20f, 0.04f, 0.95f));
@@ -234,16 +251,18 @@ namespace StellarisClone.Rendering
                 bg.rectTransform.offsetMax = new Vector2(i == 5 ? 0f : -1f, 0f);
                 var col = sec < 0 ? Cyan : SecColors[sec];
                 _tabBg[i] = bg;
-                _tabLine[i] = LGBuild.Panel(bg.transform, "Line", col);
+                _tabLine[i] = LGBuild.Panel(bg.transform, "Line", Brass);   // выбранная — золотое подчёркивание
                 _tabLine[i].rectTransform.anchorMin = new Vector2(0f, 0f);
                 _tabLine[i].rectTransform.anchorMax = new Vector2(1f, 0f);
                 _tabLine[i].rectTransform.pivot = new Vector2(0.5f, 0f);
                 _tabLine[i].rectTransform.sizeDelta = new Vector2(0f, 2f);
                 _tabIcon[i] = LGIcons.Create(bg.transform, sec < 0 ? LGIcon.Menu : SecIcons[sec], 13f, col);
-                _tabIcon[i].rectTransform.At(new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(2f, -6f), new Vector2(13f, 13f));
-                _tabCount[i] = LGBuild.Label(bg.transform, "", 11, Primary, TextAnchor.UpperLeft, bold: true);
-                _tabCount[i].rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(4f, -5f), new Vector2(24f, 14f));
+                _tabIcon[i].rectTransform.At(new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(0f, -6f), new Vector2(13f, 13f));
+                _tabCount[i] = LGBuild.Label(bg.transform, "", 14, Cream, TextAnchor.UpperLeft);
+                _tabCount[i].font = GameFont.Display; _tabCount[i].fontStyle = FontStyle.Normal;
+                _tabCount[i].rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(3f, -3f), new Vector2(26f, 18f));
                 _tabLabel[i] = LGBuild.Label(bg.transform, TabNames[i], 8, Muted, TextAnchor.LowerCenter, bold: true);
+                _tabLabel[i].Track(1.2f);
                 _tabLabel[i].rectTransform.Stretch(2f, 5f, 2f, 0f);
                 _tabLabel[i].horizontalOverflow = HorizontalWrapMode.Wrap;
                 _tabLabel[i].resizeTextForBestFit = true;
@@ -262,6 +281,7 @@ namespace StellarisClone.Rendering
                 });
                 TooltipHelper.Attach(bg.gameObject, sec < 0 ? Loc.T("Все разделы планировщика") : SecNames[sec]);
             }
+            Hairline(_tabBar, 0.25f, 0f, 0f);   // латунная черта под вкладками
             ApplyTabs();
         }
 
@@ -272,9 +292,9 @@ namespace StellarisClone.Rendering
                 if (_tabBg[i] == null) continue;
                 bool on = _tab == i - 1;
                 var col = i == 0 ? Cyan : SecColors[i - 1];
-                _tabBg[i].color = on ? new Color(col.r * 0.22f, col.g * 0.22f + 0.02f, col.b * 0.22f + 0.03f, 0.96f) : HoloTint;
+                _tabBg[i].color = HoloTint;   // «Тихая латунь»: без цветной заливки — только золотая черта и подпись
                 _tabLine[i].enabled = on;
-                _tabLabel[i].color = on ? Primary : Muted;
+                _tabLabel[i].color = on ? new Color(0.957f, 0.851f, 0.584f) : Muted;
             }
         }
 
@@ -604,8 +624,8 @@ namespace StellarisClone.Rendering
         private SecView SectionHeader(int s)
         {
             var col = SecColors[s];
-            var row = LGBuild.Panel(_list, "Sec_" + s, new Color(0.075f, 0.118f, 0.200f, 0.96f), raycast: true);
-            LGBuild.Height(row.gameObject, 28f);
+            var row = LGBuild.Panel(_list, "Sec_" + s, HoloTint, raycast: true);
+            LGBuild.Height(row.gameObject, 32f);
             LG.Ignore(row.gameObject, includeChildren: false);
             var v = new SecView { Sec = s, Bg = row };
 
@@ -613,26 +633,34 @@ namespace StellarisClone.Rendering
             v.Accent = LGBuild.Panel(row.transform, "Accent", col);
             v.Accent.rectTransform.anchorMin = new Vector2(0, 0.18f);
             v.Accent.rectTransform.anchorMax = new Vector2(0, 0.82f);
-            v.Accent.rectTransform.sizeDelta = new Vector2(2, 0);
+            v.Accent.rectTransform.sizeDelta = new Vector2(0, 0);   // «Тихая латунь»: без цветной черты — цвет раздела только в значке
             v.Accent.rectTransform.anchoredPosition = new Vector2(2.5f, 0);
-            var line = LGBuild.Panel(row.transform, "Line", new Color(0.925f, 0.898f, 0.827f, 0.10f));
-            line.rectTransform.anchorMin = new Vector2(0f, 0);
-            line.rectTransform.anchorMax = new Vector2(0.9f, 0);
-            line.rectTransform.sizeDelta = new Vector2(0, 1.5f);
-            line.rectTransform.anchoredPosition = new Vector2(0, 0.75f);
 
             v.Icon = LGIcons.Create(row.transform, SecIcons[s], 13, col);
             v.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(13, 13));
-            var t = LGBuild.Label(row.transform, SecNames[s], 11, Primary, TextAnchor.MiddleLeft, bold: true);
+            // Ярлык раздела — золото с разрядкой, за ним латунная линия до счётчика
+            var t = LGBuild.Label(row.transform, SecNames[s], 10, Brass, TextAnchor.MiddleLeft, bold: true);
             t.rectTransform.Stretch(32, 0, 70, 0);
+            t.Track(2.6f);
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var rule = LGBuild.Panel(row.transform, "Rule", new Color(Brass.r, Brass.g, Brass.b, 0.35f));
+            rule.raycastTarget = false;
+            rule.rectTransform.anchorMin = new Vector2(0, 0.5f); rule.rectTransform.anchorMax = new Vector2(1, 0.5f);
+            rule.rectTransform.offsetMin = new Vector2(Mathf.Min(32f + t.preferredWidth + 10f, Width - 90f), 0f);
+            rule.rectTransform.offsetMax = new Vector2(-52f, 1f);
+            LG.Ignore(rule.gameObject);
 
-            var pill = LGBuild.Panel(row.transform, "Count", new Color(col.r, col.g, col.b, 0.16f));
-            pill.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-28, 0), new Vector2(28, 16));
-            LG.Chip(pill.gameObject, new Color(col.r, col.g, col.b, 0.45f), 8f);
-            v.Count = LGBuild.Label(pill.transform, "0", 10, col, TextAnchor.MiddleCenter, bold: true);
+            // Счётчик — в тонком латунном кольце
+            var pill = LGBuild.Panel(row.transform, "Count", new Color(Brass.r, Brass.g, Brass.b, 0.6f));
+            pill.sprite = HudArt.Ring(0.9f, 1f);
+            pill.raycastTarget = false;
+            pill.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-24, 0), new Vector2(20, 20));
+            LG.Ignore(pill.gameObject);
+            v.Count = LGBuild.Label(pill.transform, "0", 11, new Color(0.906f, 0.827f, 0.639f), TextAnchor.MiddleCenter);
+            v.Count.font = GameFont.Display; v.Count.fontStyle = FontStyle.Normal;
             v.Count.rectTransform.Stretch();
 
-            v.Chevron = LGBuild.Label(row.transform, _secClosed[s] ? "▸" : "▾", 12, Muted, TextAnchor.MiddleRight, bold: true);
+            v.Chevron = LGBuild.Label(row.transform, _secClosed[s] ? "▸" : "▾", 12, Brass, TextAnchor.MiddleRight, bold: true);
             v.Chevron.rectTransform.Stretch(0, 0, 9, 0);
             v.Hover = row.gameObject.AddComponent<OutlinerHover>();
 
@@ -668,11 +696,12 @@ namespace StellarisClone.Rendering
 
         private RowView MakeRow(int s, int index, bool withBar)
         {
-            var v = new RowView { Phase = index * 0.37f, Accent = SecColors[s] };
+            var v = new RowView { Phase = index * 0.37f, Accent = SecColors[s], GoldBar = s == (int)Sec.Research || s == (int)Sec.Build };
             var row = LGBuild.Panel(_list, "Row", RowBg, raycast: true);
             LGBuild.Height(row.gameObject, RowH);
             LG.Ignore(row.gameObject, includeChildren: false);
             v.Bg = row;
+            Hairline(row.transform, 0.12f);
 
             v.Stripe = LGBuild.Panel(row.transform, "Stripe", SecColors[s]);
             v.Stripe.rectTransform.anchorMin = new Vector2(0, 0.12f);
@@ -687,16 +716,19 @@ namespace StellarisClone.Rendering
             v.Icon = LGIcons.Create(row.transform, LGIcon.Fleet, 16, Cyan);
             v.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(21, withBar ? 2 : 0), new Vector2(16, 16));
 
-            v.Title = LGBuild.Label(row.transform, "", 12, Primary, TextAnchor.UpperLeft, bold: true);
+            v.Title = LGBuild.Label(row.transform, "", 14, Cream, TextAnchor.UpperLeft);
+            v.Title.font = GameFont.Display; v.Title.fontStyle = FontStyle.Normal;
             v.Title.horizontalOverflow = HorizontalWrapMode.Wrap;
             v.Title.verticalOverflow = VerticalWrapMode.Truncate;
-            v.Title.rectTransform.Stretch(40, 0, 64, withBar ? 5 : 6);
-            v.Status = LGBuild.Label(row.transform, "", 10, Muted, TextAnchor.UpperLeft);
+            v.Title.rectTransform.Stretch(40, 0, 70, withBar ? 7 : 8);
+            v.Status = LGBuild.Label(row.transform, "", 11, Muted, TextAnchor.UpperLeft);
+            v.Status.font = GameFont.SerifItalic; v.Status.fontStyle = FontStyle.Normal;
             v.Status.horizontalOverflow = HorizontalWrapMode.Wrap;
             v.Status.verticalOverflow = VerticalWrapMode.Truncate;
-            v.Status.rectTransform.Stretch(40, 0, 64, withBar ? 20 : 22);
-            v.Right = LGBuild.Label(row.transform, "", 11, Primary, TextAnchor.UpperRight, bold: true);
-            v.Right.rectTransform.Stretch(0, 0, 10, withBar ? 6 : 13);
+            v.Status.rectTransform.Stretch(40, 0, 70, withBar ? 25 : 27);
+            v.Right = LGBuild.Label(row.transform, "", 12, TimeCol, TextAnchor.UpperRight);
+            v.Right.font = GameFont.SerifItalic; v.Right.fontStyle = FontStyle.Normal;
+            v.Right.rectTransform.Stretch(0, 0, 12, withBar ? 8 : 15);
 
             if (withBar)
             {
@@ -704,10 +736,10 @@ namespace StellarisClone.Rendering
                 barHost.anchorMin = new Vector2(0, 0);
                 barHost.anchorMax = new Vector2(1, 0);
                 barHost.pivot = new Vector2(0.5f, 0);
-                barHost.offsetMin = new Vector2(40, 4);
-                barHost.offsetMax = new Vector2(-10, 8);
+                barHost.offsetMin = new Vector2(40, 7);
+                barHost.offsetMax = new Vector2(-12, 9);
                 v.BarHost = barHost.gameObject;
-                v.Fill = LGBuild.Bar(barHost, Cyan, 0f, 4f);
+                v.Fill = LGBuild.Bar(barHost, GoldBarCol, 0f, 2f);   // тонкая золотая полоска
                 v.Fill.gameObject.AddComponent<RectMask2D>();
                 var shine = LGBuild.Panel(v.Fill, "Shine", new Color(1f, 1f, 1f, 0f));   // «Атлас»: без блика
                 shine.sprite = FactionSelectScreen.RadialSprite();
@@ -744,8 +776,9 @@ namespace StellarisClone.Rendering
             v.Status.color = r.Danger ? Red : r.Warn ? Gold : Muted;
             string right = r.Right ?? "";
             if (v.Right.text != right) v.Right.text = right;
-            v.Right.color = r.Danger ? Red : r.Warn ? Gold : Primary;
-            if (v.Fill != null) LGBuild.SetBar(v.Fill, r.Progress, r.BarCol);
+            v.Right.color = r.Danger ? Red : r.Warn ? Gold : TimeCol;
+            // Исследования и стройки — золотая полоска; у флотов полоса значит своё (корпус, груз) — её цвет остаётся
+            if (v.Fill != null) LGBuild.SetBar(v.Fill, r.Progress, v.GoldBar && !r.Danger && !r.Warn ? GoldBarCol : r.BarCol);
         }
 
         // ==================== АНИМАЦИЯ ====================
@@ -778,7 +811,7 @@ namespace StellarisClone.Rendering
                 var col = SecColors[sv.Sec];
                 float h = sv.Hover.Amount(dt);
                 // «Атлас»: строка раздела — чернила, при наведении чуть светлее (цвет раздела — только в черте слева и значке)
-                sv.Bg.color = new Color(0.075f + 0.04f * h, 0.118f + 0.05f * h, 0.200f + 0.07f * h, 0.96f);
+                sv.Bg.color = new Color(0.055f + 0.03f * h, 0.094f + 0.04f * h, 0.157f + 0.05f * h, 0.95f);   // как фон панели, без отдельной плашки
                 sv.Accent.color = Color.Lerp(col, Color.white, 0.4f * h);
                 sv.Chevron.color = Color.Lerp(Muted, Primary, h);
             }
@@ -789,7 +822,8 @@ namespace StellarisClone.Rendering
                 var bg = v.Danger ? RowDangerBg : v.Warn ? RowWarnBg : RowBg;
                 v.Bg.color = new Color(bg.r + 0.05f * h, bg.g + 0.07f * h, bg.b + 0.08f * h, bg.a);
                 var a = v.Accent;
-                v.Stripe.color = new Color(a.r, a.g, a.b, (v.Warn || v.Danger) ? 0.95f : 0.55f + 0.45f * h);
+                // «Тихая латунь»: цветная черта слева — только у простоя и опасности
+                v.Stripe.color = new Color(a.r, a.g, a.b, (v.Warn || v.Danger) ? 0.95f : 0f);
                 v.Glow.color = Color.clear;   // «Атлас»: без ореола под значком
 
                 // блик по полосе прогресса — медленный, тусклый, раз в ~7 с
