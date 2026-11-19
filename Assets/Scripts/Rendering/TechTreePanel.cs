@@ -27,7 +27,7 @@ namespace StellarisClone.Rendering
         // ==================== РАЗМЕТКА ====================
 
         private const float WinW = 1840f, WinH = 1010f;
-        private const float HeaderH = 80f, Pad = 16f, Gap = 14f, SideW = 360f;
+        private const float HeaderH = 80f, Pad = 16f, Gap = 14f, SideW = 360f, SlotStep = 60f;
         private const float LabelW = 238f, BandW = 22f, EpochHeadH = 58f, LegendH = 28f, GroupGap = 8f;
         private const float ChipH = 22f, ChipGap = 3f;
         private const float PopW = 384f;
@@ -367,7 +367,7 @@ namespace StellarisClone.Rendering
         private void BuildSide()
         {
             float x0 = WinW - Pad - SideW;
-            float slotsH = 46f + 46f * 6f;
+            float slotsH = 46f + SlotStep * 6f;   // до шести слотов; строки просторнее — как в макете «Тихая латунь»
             const float victoryH = 84f;
 
             var slots = SideCard("Slots", x0, BodyTop, slotsH);
@@ -1126,7 +1126,7 @@ namespace StellarisClone.Rendering
 
             for (int i = 0; i < tm.MaxSlots; i++)
             {
-                float top = i * 46f;
+                float top = i * SlotStep;
                 if (i < tm.Slots.Count)
                 {
                     var s = tm.Slots[i];
@@ -1141,7 +1141,7 @@ namespace StellarisClone.Rendering
         {
             // «Тихая латунь»: строка без рамки, снизу тонкая латунная черта
             var bg = LGBuild.Panel(_slotsList, name, new Color(0f, 0f, 0f, 0f), raycast: true);
-            bg.rectTransform.TopBand(top, 44f, 0, 0);
+            bg.rectTransform.TopBand(top, SlotStep - 2f, 0, 0);
             LG.Ignore(bg.gameObject, includeChildren: false);
             var hair = LGBuild.Panel(bg.transform, "Hair", new Color(Gold.r, Gold.g, Gold.b, 0.16f));
             hair.rectTransform.anchorMin = new Vector2(0, 0); hair.rectTransform.anchorMax = new Vector2(1, 0);
@@ -1160,32 +1160,41 @@ namespace StellarisClone.Rendering
             sel.onClick.AddListener(() => Select(t));
 
             NumRing(rt, i, new Color(Gold.r, Gold.g, Gold.b, 0.6f));
-            var ic = TechIcon(rt, t, 24f, Color.Lerp(c, Color.white, 0.2f));
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(30, 0), new Vector2(24, 24));
-            string q = s.Queue.Count > 0 ? $"  <color={LGBuild.Hex(PathBlue)}>+{s.Queue.Count}</color>" : "";
-            var name = LGBuild.Label(rt, t.Name + q, 14, Primary, TextAnchor.UpperLeft, bold: true);
-            name.rectTransform.Stretch(62, 18, 104, 4);
-            FitText(name, 10);
+            var ic = TechIcon(rt, t, 26f, Color.Lerp(c, Color.white, 0.2f));
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(32, 0), new Vector2(26, 26));
 
+            // Название и процент — шрифт заголовков (Spectral), строкой выше полоски
+            string q = s.Queue.Count > 0 ? $"  <color={LGBuild.Hex(PathBlue)}>+{s.Queue.Count}</color>" : "";
+            var name = LGBuild.Label(rt, t.Name + q, 16, new Color(0.945f, 0.914f, 0.831f), TextAnchor.MiddleLeft);
+            name.font = GameFont.Display; name.fontStyle = FontStyle.Normal;
+            name.rectTransform.TopBand(7, 22, 68, 116);
+            FitText(name, 11);
             var su = new SlotUi { Index = i };
+            su.Pct = LGBuild.Label(rt, "", 16, new Color(0.94f, 0.79f, 0.53f), TextAnchor.MiddleRight);
+            su.Pct.font = GameFont.Display; su.Pct.fontStyle = FontStyle.Normal;
+            su.Pct.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-66, -7), new Vector2(50, 22));
+
+            // Тонкая золотая полоска на всю ширину строки (до кнопок), под ней — срок курсивом
             var barHost = LGBuild.Rect(rt, "Bar");
-            barHost.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(62, 9), new Vector2(SideW - 20 - 62 - 150, 5));
-            su.Bar = LGBuild.Bar(barHost, s.IsPaused ? new Color(0.62f, 0.58f, 0.48f) : new Color(0.94f, 0.80f, 0.50f), s.ProgressNormalized, 3f);   // тонкая золотая полоска
-            su.Eta = LGBuild.Label(rt, "", 10, Muted, TextAnchor.MiddleLeft);
-            su.Eta.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-58, 3), new Vector2(86, 16));
-            FitText(su.Eta, 8);
-            su.Pct = LGBuild.Label(rt, "", 13, new Color(0.94f, 0.79f, 0.53f), TextAnchor.MiddleRight, bold: true);
-            su.Pct.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-58, -3), new Vector2(46, 18));
+            barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0); barHost.pivot = new Vector2(0, 0);
+            barHost.offsetMin = new Vector2(68, 22); barHost.offsetMax = new Vector2(-66, 25);
+            su.Bar = LGBuild.Bar(barHost, s.IsPaused ? new Color(0.62f, 0.58f, 0.48f) : new Color(0.94f, 0.80f, 0.50f), s.ProgressNormalized, 3f);
+            su.Eta = LGBuild.Label(rt, "", 12, new Color(0.561f, 0.541f, 0.486f), TextAnchor.MiddleLeft);
+            su.Eta.font = GameFont.SerifItalic; su.Eta.fontStyle = FontStyle.Normal;
+            su.Eta.rectTransform.anchorMin = new Vector2(0, 0); su.Eta.rectTransform.anchorMax = new Vector2(1, 0);
+            su.Eta.rectTransform.pivot = new Vector2(0, 0);
+            su.Eta.rectTransform.offsetMin = new Vector2(68, 4); su.Eta.rectTransform.offsetMax = new Vector2(-66, 20);
+            FitText(su.Eta, 9);
             _slotUis.Add(su);
 
             int idx = i;
-            var pause = LGControls.IconButton(rt, s.IsPaused ? LGIcon.Play : LGIcon.Pause, 20, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.2f),
+            var pause = LGControls.IconButton(rt, s.IsPaused ? LGIcon.Play : LGIcon.Pause, 26, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.2f),
                 () => { TechnologyManager.Instance?.ToggleSlotPause(idx); SFXManager.Play(Sfx.UiClick); });
-            ((RectTransform)pause.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-32, 0), new Vector2(20, 20));
+            ((RectTransform)pause.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-34, 0), new Vector2(26, 26));
             TooltipHelper.Attach(pause.gameObject, s.IsPaused ? Loc.T("Продолжить исследование") : Loc.T("Приостановить слот: наука перейдёт к остальным"));
-            var cancel = LGControls.IconButton(rt, LGIcon.Close, 20, UIManager.DS.BgDeep, new Color(Red.r, Red.g, Red.b, 0.4f),
+            var cancel = LGControls.IconButton(rt, LGIcon.Close, 26, UIManager.DS.BgDeep, new Color(Red.r, Red.g, Red.b, 0.4f),
                 () => { TechnologyManager.Instance?.CancelCurrent(idx); SFXManager.Play(Sfx.UiBack); });
-            ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(20, 20));
+            ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-4, 0), new Vector2(26, 26));
             TooltipHelper.Attach(cancel.gameObject, Loc.T("Отменить. Накопленный прогресс сохранится в технологии."));
             TooltipHelper.Attach(rt.gameObject, SlotsFooter(tm));
         }
@@ -1196,7 +1205,7 @@ namespace StellarisClone.Rendering
             var ring = LGBuild.Panel(row, "Num", c);
             ring.sprite = HudArt.Ring(0.88f, 1f);
             ring.raycastTarget = false;
-            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(20, 20));
+            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(22, 22));
             LG.Ignore(ring.gameObject);
             var n = LGBuild.Label(ring.transform, (i + 1).ToString(), 11, new Color(0.906f, 0.827f, 0.639f), TextAnchor.MiddleCenter, bold: true);
             n.rectTransform.Stretch();
@@ -1219,7 +1228,7 @@ namespace StellarisClone.Rendering
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(12, 12));
             var t = LGBuild.Label(rt, opener != null ? Loc.F("Слот откроет «{0}»", opener.Name) : Loc.T("Откроется технологией"), 12,
                 new Color(Dim.r, Dim.g, Dim.b, 0.9f), TextAnchor.MiddleLeft);
-            t.fontStyle = FontStyle.Italic;
+            t.font = GameFont.SerifItalic; t.fontStyle = FontStyle.Normal;
             t.rectTransform.Stretch(30, 0, 10, 0);
             FitText(t, 9);
             if (opener != null)
