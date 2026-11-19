@@ -40,6 +40,8 @@ namespace StellarisClone.Rendering
         public bool Round;
         /// <summary>Выбранная вкладка: подпись золотая, шкала горит.</summary>
         public bool Selected;
+        /// <summary>Плитка (ячейка сетки): рамка без камней и шкалы — их много рядом, иначе рябит.</summary>
+        public bool Plain;
         /// <summary>Цвет камней — смысл действия.</summary>
         public Color Gem = Pearl;
         /// <summary>Код перекрашивает кнопку (Image.color) — новый цвет читается как смысл действия, рамка не красится.</summary>
@@ -64,12 +66,13 @@ namespace StellarisClone.Rendering
         private Color _setTint = Color.white;
 
         /// <summary>Оформить кнопку. host — объект с обработкой нажатий, frame — её тело (может быть дочерним).</summary>
-        public static LGAstrolabe Attach(GameObject host, Image frame, Text label, bool primary = false, bool round = false)
+        public static LGAstrolabe Attach(GameObject host, Image frame, Text label, bool primary = false, bool round = false, bool plain = false)
         {
             if (host == null || frame == null) return null;
             var a = host.TryGetComponent<LGAstrolabe>(out var e) ? e : host.AddComponent<LGAstrolabe>();
             a.Primary = primary;
             a.Round = round;
+            a.Plain = plain;
             if (primary) a.Gem = Sapphire;
             a._frame = frame;
             a._label = label;
@@ -161,7 +164,7 @@ namespace StellarisClone.Rendering
             _hair.preserveAspect = Round;
             _hair.pixelsPerUnitMultiplier = 1f;
 
-            if (!Round)
+            if (!Round && !Plain)
             {
                 _scale = Layer(_frame.transform, "AB_Scale", Ticks);
                 var srt = _scale.rectTransform;
@@ -219,6 +222,22 @@ namespace StellarisClone.Rendering
             float h = r.height;
             if (h < 1f) return;
 
+            // Медальон — строго квадратный: иначе круг (preserveAspect) прижимается к точке привязки, а кольцо и значок — по центру
+            if (Round)
+            {
+                var frt = _frame.rectTransform;
+                var sd = frt.sizeDelta;
+                if (frt.anchorMin == frt.anchorMax && Mathf.Abs(sd.x - sd.y) > 0.5f)
+                {
+                    float m = Mathf.Min(sd.x, sd.y);
+                    // центр медальона остаётся там же, где был центр кнопки
+                    var shift = new Vector2((sd.x - m) * (0.5f - frt.pivot.x), (sd.y - m) * (0.5f - frt.pivot.y));
+                    frt.sizeDelta = new Vector2(m, m);
+                    frt.anchoredPosition += shift;
+                    return;   // изменение размера снова вызовет Layout
+                }
+            }
+
             float inset = Round ? 3f : h >= 50f ? 4f : h < 34f ? 2.5f : 3f;
             Stretch(_hair.rectTransform, inset);
             if (Round) return;
@@ -231,9 +250,12 @@ namespace StellarisClone.Rendering
                 _halosRt[i].sizeDelta = new Vector2(gs * 3.2f, gs * 3.2f);
             }
 
-            var srt = _scale.rectTransform;
-            srt.sizeDelta = new Vector2(Mathf.Min(96f, r.width * 0.55f), h < 34f ? 2f : 4f);
-            srt.anchoredPosition = new Vector2(0f, h >= 50f ? 6f : h < 34f ? 3f : 4f);
+            if (_scale != null)
+            {
+                var srt = _scale.rectTransform;
+                srt.sizeDelta = new Vector2(Mathf.Min(96f, r.width * 0.55f), h < 34f ? 2f : 4f);
+                srt.anchoredPosition = new Vector2(0f, h >= 50f ? 6f : h < 34f ? 3f : 4f);
+            }
 
             _sweepRt.sizeDelta = new Vector2(h * 1.8f, 0f);
             if (_sw < 0f) _sweepRt.anchoredPosition = new Vector2(-h * 1.8f, 0f);

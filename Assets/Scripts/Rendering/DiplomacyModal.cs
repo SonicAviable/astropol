@@ -587,6 +587,11 @@ namespace StellarisClone.Rendering
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(13, 13));
             var t = LGBuild.Label(b.transform, "", 13, Color.white, TextAnchor.MiddleLeft, bold: true);
             t.rectTransform.Stretch(32, 0, 10, 0);
+            // «Астролябия»: латунная рамка, значок и подпись остаются; цвет, который ставит SetButton, — цвет камней
+            var game = b.GetComponent<LGGameButton>();
+            if (game != null) Object.DestroyImmediate(game);
+            var astro = LGAstrolabe.Attach(b.gameObject, b.GetComponent<Image>(), null);
+            if (astro != null) astro.WatchTint = true;
             return (b, b.GetComponent<Image>(), t);
         }
 
@@ -613,6 +618,10 @@ namespace StellarisClone.Rendering
                 slot.Icon.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
                 slot.Label = LGBuild.Label(slot.Btn.transform, "", 11, Color.white, TextAnchor.MiddleCenter, bold: true, wrap: true);
                 slot.Label.rectTransform.Stretch(28, 0, 8, 0);
+                var game = slot.Btn.GetComponent<LGGameButton>();
+                if (game != null) Object.DestroyImmediate(game);
+                var astro = LGAstrolabe.Attach(slot.Btn.gameObject, slot.Bg, null);   // «Астролябия»; цвет из SetSlot — камни
+                if (astro != null) astro.WatchTint = true;
                 _slots.Add(slot);
             }
         }
@@ -1397,12 +1406,22 @@ namespace StellarisClone.Rendering
             btn.transition = Selectable.Transition.None;
             btn.interactable = enabled;
             btn.onClick.AddListener(() => TogglePicker(fromAI));
+            Tile(c, tint, open || onTable > 0);
             string tip = Loc.T("<b>Звёздные системы</b>\n") + DealCatalog.Hint(DealItemKind.System) +
                          (fromAI ? Loc.T("\nСвои системы отдают неохотно: территория дороже ресурсов. Системы, отнятые у вас (повод «Вернуть утраченное»), уступают легче")
                                  : Loc.T("\nСоседу интереснее системы у его границы"));
             tip += !enabled && _viewingOffer ? Loc.T("\n<color=#A9A392>Сначала ответьте на их предложение или измените его</color>")
                  : Loc.T("\n<color=#A9A392>Щелчок — открыть список систем</color>");
             TooltipHelper.Attach(c.gameObject, tip);
+        }
+
+        /// <summary>Ячейка сетки в стиле «Астролябия»: латунная рамка без камней; то, что уже на столе, — подсвечено.</summary>
+        private static void Tile(Image cell, Color tint, bool lit)
+        {
+            var a = LGAstrolabe.Attach(cell.gameObject, cell, null, plain: true);
+            if (a == null) return;
+            a.Gem = lit ? Gold : LGAstrolabe.GemOf(tint);
+            a.Selected = lit;
         }
 
         private static string Short(float v) => v >= 10000f ? $"{v / 1000f:0.#}k" : $"{v:0}";
@@ -1458,6 +1477,7 @@ namespace StellarisClone.Rendering
             btn.transition = Selectable.Transition.None;
             btn.interactable = enabled;
             btn.onClick.AddListener(() => AddToTable(k, fromAI));
+            Tile(c, tint, onTable);
             string tip = $"<b>{DealCatalog.Name(k)}</b>\n{DealCatalog.Hint(k)}";
             if (DealCatalog.IsResource(k)) tip += $"\n{(fromAI ? Loc.T("У них") : Loc.T("У вас"))}: {caption}";
             if (onTable) tip += Loc.F("\n<color=#E7C170>На столе: {0}</color>", DealCatalog.Describe(put));
