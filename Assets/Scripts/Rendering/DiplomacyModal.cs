@@ -349,7 +349,7 @@ namespace StellarisClone.Rendering
 
             // Затемнение: справа под панелью, снизу под субтитрами, сверху под полосой империй
             Shade(rt, "ShadeRight", new Vector2(0.42f, 0f), new Vector2(1f, 1f), (u, v) => Mathf.SmoothStep(0f, 0.9f, (u + 1f) * 0.5f));
-            Shade(rt, "ShadeBottom", new Vector2(0f, 0f), new Vector2(0.62f, 0.42f), (u, v) => Mathf.Pow(Mathf.Clamp01((1f - v) * 0.5f), 1.4f) * 0.92f);
+            Shade(rt, "ShadeBottom", new Vector2(0f, 0f), new Vector2(1f, 0.42f), (u, v) => Mathf.Pow(Mathf.Clamp01((1f - v) * 0.5f), 1.4f) * 0.92f);
             Shade(rt, "ShadeTop", new Vector2(0f, 0.82f), new Vector2(1f, 1f), (u, v) => Mathf.Pow(Mathf.Clamp01((v + 1f) * 0.5f), 1.6f) * 0.7f);
 
             BuildTopBar(rt);
@@ -749,39 +749,36 @@ namespace StellarisClone.Rendering
                 int idx = i;
                 int row = i == 0 ? SlotCount - 1 : i - 1;   // слот 0 — война/мир — последним, после коалиции
                 float y = row * (rowH + gap) + (row >= SlotCount - 2 ? 26f : 0f);
-                var plate = LGBuild.Panel(v, "Treaty", SlotBg, raycast: true);
+                slot.Btn = LGBuild.Button(v, "Treaty", SlotBg, new Color(Gold.r, Gold.g, Gold.b, 0.3f), () => _slots[idx].Act?.Invoke(), null, null, 12, 4f);
+                var game = slot.Btn.GetComponent<LGGameButton>();
+                if (game != null) Object.DestroyImmediate(game);
+                var plate = slot.Btn.GetComponent<Image>();
                 plate.rectTransform.TopBand(y, rowH, 0, 0);
-                slot.Fx = LG.Platter(plate.gameObject, 2f);
-                slot.Fx.SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.2f));
-                slot.Fx.FillMultiplier = 2.6f;
                 slot.Row = plate.rectTransform;
                 slot.Bg = plate;
 
                 var med = LGBuild.Panel(plate.transform, "Medal", new Color(0.05f, 0.08f, 0.15f, 1f));
-                med.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(38, 38));
-                LG.Platter(med.gameObject, 19f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.65f));
-                slot.Icon = LGIcons.Create(med.transform, LGIcon.Handshake, 18, Color.white);
-                slot.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(18, 18));
+                med.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(36, 36));
+                LG.Platter(med.gameObject, 18f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.65f));
+                slot.Icon = LGIcons.Create(med.transform, LGIcon.Handshake, 17, Color.white);
+                slot.Icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(17, 17));
 
                 slot.Label = LGBuild.Label(plate.transform, "", 16, Ink, TextAnchor.UpperLeft);
                 slot.Label.font = GameFont.Display;
-                slot.Label.rectTransform.Stretch(62, 26, 150, 8);
+                slot.Label.rectTransform.Stretch(62, 26, 120, 8);
                 slot.Sub = LGBuild.Label(plate.transform, "", 11, Muted, TextAnchor.LowerLeft);
-                slot.Sub.rectTransform.Stretch(62, 8, 150, 32);
+                slot.Sub.rectTransform.Stretch(62, 9, 120, 32);
                 slot.Sub.resizeTextForBestFit = true; slot.Sub.resizeTextMinSize = 8; slot.Sub.resizeTextMaxSize = 11;
+                // справа — что сделает щелчок («НА СТОЛ ›») или «ДЕЙСТВУЕТ»
+                slot.Verb = LGBuild.Label(plate.transform, "", 11, Gold, TextAnchor.MiddleRight, bold: true);
+                slot.Verb.font = GameFont.MonoMedium;
+                slot.Verb.Track(1.4f);
+                slot.Verb.rectTransform.Stretch(0, 0, 22, 0);
                 slot.State = LGBuild.Label(plate.transform, "", 10, Green, TextAnchor.MiddleRight, bold: true);
                 slot.State.font = GameFont.MonoMedium;
                 slot.State.Track(1.4f);
-                slot.State.rectTransform.Stretch(0, 0, 18, 0);
-
-                slot.Btn = LGBuild.Button(plate.transform, "Act", SlotBg, new Color(Cyan.r, Cyan.g, Cyan.b, 0.5f), () => _slots[idx].Act?.Invoke(), null, null, 11, 4f);
-                ((RectTransform)slot.Btn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(124, 32));
-                var game = slot.Btn.GetComponent<LGGameButton>();
-                if (game != null) Object.DestroyImmediate(game);
-                slot.Verb = LGBuild.Label(slot.Btn.transform, "", 11, Color.white, TextAnchor.MiddleCenter, bold: true);
-                slot.Verb.rectTransform.Stretch(14, 0, 14, 0);
-                slot.Verb.resizeTextForBestFit = true; slot.Verb.resizeTextMinSize = 8; slot.Verb.resizeTextMaxSize = 11;
-                slot.Astro = LGAstrolabe.Attach(slot.Btn.gameObject, slot.Btn.GetComponent<Image>(), slot.Verb);
+                slot.State.rectTransform.Stretch(0, 0, 22, 0);
+                slot.Astro = LGAstrolabe.Attach(slot.Btn.gameObject, plate, null);
                 _slots.Add(slot);
             }
             var sep = LGBuild.Label(v, Loc.T("ПРОТИВ НИХ"), 11, Red, TextAnchor.MiddleLeft, bold: true);
@@ -1616,16 +1613,17 @@ namespace StellarisClone.Rendering
             s.Label.color = bright ? Ink : new Color(Ink.r, Ink.g, Ink.b, 0.5f);
             s.Icon.sprite = LGIcons.Get(icon);
             s.Icon.color = bright ? tone : new Color(tone.r, tone.g, tone.b, 0.4f);
-            s.Bg.color = lit ? new Color(0.05f, 0.15f, 0.10f, 0.95f) : bg == SlotBg ? SlotBg : Color.Lerp(SlotBg, bg, 0.55f);
-            if (s.Fx != null) s.Fx.SetRim(new Color(tone.r, tone.g, tone.b, lit ? 0.55f : bright ? 0.28f : 0.12f));
             s.State.text = lit ? Loc.T("ДЕЙСТВУЕТ") : "";
-            s.Btn.gameObject.SetActive(!lit);
-            s.Btn.interactable = enabled;
-            if (s.Verb != null) s.Verb.text = verb ?? Loc.T("На стол");
-            if (s.Astro != null) s.Astro.Gem = LGAstrolabe.GemOf(tone);
+            s.Verb.text = lit ? "" : (verb ?? Loc.T("На стол")).ToUpper() + (enabled ? "  ›" : "");
+            s.Verb.color = enabled ? (bg == SlotBg ? Gold : tone) : new Color(Muted.r, Muted.g, Muted.b, 0.6f);
+            s.Btn.interactable = enabled || lit;   // действующий — не патина, но щелчок ничего не делает
+            if (s.Astro != null)
+            {
+                s.Astro.Gem = LGAstrolabe.GemOf(tone);
+                s.Astro.Selected = lit || bg != SlotBg;   // действующий или лежит на столе / ждёт подтверждения — подсвечен
+            }
             s.Act = enabled ? act : null;
             TooltipHelper.Attach(s.Row.gameObject, tip);
-            TooltipHelper.Attach(s.Btn.gameObject, tip);
             if (s.Sub != null) s.Sub.text = TipLine(tip);
         }
 
