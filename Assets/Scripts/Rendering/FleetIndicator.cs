@@ -261,12 +261,19 @@ namespace StellarisClone.Rendering
         /// Раскладка всех значков на кадр: слить стоящие вместе (и летящие вместе по коридору) корабли одного владельца и типа,
         /// затем растолкать пересекающиеся значки на экране.
         /// </summary>
+        // Буферы раскладки — общие на все кадры: раньше словари, список и лямбда создавались каждый кадр (мусор → сборщик)
+        private static readonly System.Predicate<FleetIndicator> s_dead = i => i == null || i._fleet == null;
+        private static readonly Dictionary<long, FleetIndicator> s_groups = new Dictionary<long, FleetIndicator>();
+        private static readonly Dictionary<FleetView, FleetIndicator> s_byFleet = new Dictionary<FleetView, FleetIndicator>();
+        private static readonly List<FleetIndicator> s_leaders = new List<FleetIndicator>();
+
         private static void Layout(Camera cam)
         {
             s_layoutFrame = Time.frameCount;
-            All.RemoveAll(i => i == null || i._fleet == null);
+            All.RemoveAll(s_dead);
 
-            var groups = new Dictionary<long, FleetIndicator>();
+            var groups = s_groups;
+            groups.Clear();
             foreach (var ind in All)
             {
                 ind.Members.Clear();
@@ -301,7 +308,8 @@ namespace StellarisClone.Rendering
             }
 
             // Летящие вместе по одному коридору — тоже один значок (группы те же, что у строя FleetFormation)
-            var byFleet = new Dictionary<FleetView, FleetIndicator>();
+            var byFleet = s_byFleet;
+            byFleet.Clear();
             foreach (var ind in All) byFleet[ind._fleet] = ind;
             foreach (var ind in All)
             {
@@ -320,7 +328,8 @@ namespace StellarisClone.Rendering
             }
 
             // Экранные позиции лидеров
-            var leaders = new List<FleetIndicator>();
+            var leaders = s_leaders;
+            leaders.Clear();
             foreach (var ind in All)
             {
                 ind._anchorWorld = ind._fleet.transform.position + Vector3.up * 2.2f;
@@ -509,6 +518,8 @@ namespace StellarisClone.Rendering
             _pipSr.color = new Color(_owner.r, _owner.g, _owner.b, 0.7f + breathe * 0.3f);
         }
 
+        private int _shownCount = -1, _shownPower = -1;   // строки пересоздаются только при смене числа
+
         /// <summary>Счётчик кораблей, сила и прочность группы.</summary>
         private void RefreshInfo()
         {
@@ -529,15 +540,14 @@ namespace StellarisClone.Rendering
             if (_countRoot.activeSelf != showCount) _countRoot.SetActive(showCount);
             if (showCount)
             {
-                string c = count.ToString();
-                if (_countText.text != c) { _countText.text = c; _countShadow.text = c; }
+                if (count != _shownCount) { _shownCount = count; string c = count.ToString(); _countText.text = c; _countShadow.text = c; }
             }
 
             if (_powerRoot.activeSelf != military) _powerRoot.SetActive(military);
             if (military)
             {
-                string p = Mathf.RoundToInt(power).ToString();
-                if (_powerText.text != p) { _powerText.text = p; _powerShadow.text = p; }
+                int pw = Mathf.RoundToInt(power);
+                if (pw != _shownPower) { _shownPower = pw; string p = pw.ToString(); _powerText.text = p; _powerShadow.text = p; }
                 // Иконка + число по центру под значком
                 float textW = p.Length * 0.10f;
                 float total = 0.2f + textW;
