@@ -22,7 +22,7 @@ namespace StellarisClone.Core
         public const int AAOff = 0, AAFxaa = 1, AASmaa = 2, AAMsaa2 = 3, AAMsaa4 = 4;
         /// <summary>Тени: 0 выкл … 4 ультра — разрешение карты и число каскадов.</summary>
         private static readonly int[] ShadowRes = { 0, 1024, 2048, 2048, 4096 };
-        private static readonly int[] ShadowCascades = { 1, 1, 2, 2, 4 };   // камера стратегии смотрит сверху: на «Высоких» хватает двух каскадов
+        private static readonly int[] ShadowCascades = { 1, 1, 2, 2, 2 };   // камера стратегии смотрит сверху: двух каскадов хватает и на «Ультра» (там они 4096 — чётче, чем было 4 по 4096)
 
         public static string[] PresetNames => new[] { Loc.T("Низкое"), Loc.T("Среднее"), Loc.T("Высокое"), Loc.T("Ультра"), Loc.T("Своё") };
         public static string[] ScaleNames => new[] { "50%", "67%", "75%", "85%", "100%" };

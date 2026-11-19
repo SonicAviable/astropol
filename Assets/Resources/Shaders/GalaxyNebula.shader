@@ -56,7 +56,15 @@ Shader "Astropolity/GalaxyNebula"
             {
                 float v = 0.0, a = 0.5;
                 int oct = max(2, 5 - (int)_GfxOctDrop);
-                [loop] for (int k = 0; k < oct; k++) { v += a * Noise(p); p = p * 2.02 + 13.7; a *= 0.5; }
+                // Октава мельче пикселя видна только рябью — вместо шума берём её среднее (0.5) и дальше не считаем
+                float fw = max(fwidth(p.x), fwidth(p.y));
+                [loop] for (int k = 0; k < oct; k++)
+                {
+                    float w = saturate(1.5 - fw * 3.0);
+                    if (w <= 0.0) { v += a * (1.0 - exp2((float)(k - oct))); break; }
+                    v += a * lerp(0.5, Noise(p), w);
+                    p = p * 2.02 + 13.7; a *= 0.5; fw *= 2.02;
+                }
                 return v;
             }
 

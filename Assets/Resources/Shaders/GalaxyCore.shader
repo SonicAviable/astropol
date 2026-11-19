@@ -61,10 +61,15 @@ Shader "Astropolity/GalaxyCore"
             {
                 float v = 0.0, a = 0.5;
                 oct = max(2, oct - (int)_GfxOctDrop);
+                // Октава мельче пикселя видна только рябью — вместо шума берём её среднее (0.5) и дальше не считаем
+                float fw = max(fwidth(p.x), fwidth(p.y));
                 for (int k = 0; k < 5; k++)
                 {
                     if (k >= oct) break;
-                    v += a * Noise(p); p = p * 2.03 + 7.7; a *= 0.5;
+                    float w = saturate(1.5 - fw * 3.0);
+                    if (w <= 0.0) { v += a * (1.0 - exp2((float)(k - oct))); break; }
+                    v += a * lerp(0.5, Noise(p), w);
+                    p = p * 2.03 + 7.7; a *= 0.5; fw *= 2.03;
                 }
                 return v;
             }
