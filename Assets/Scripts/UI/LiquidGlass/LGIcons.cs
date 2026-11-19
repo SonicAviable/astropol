@@ -36,7 +36,12 @@ namespace StellarisClone.Rendering
     /// </summary>
     public static class LGIcons
     {
-        private const int Res = 96;
+        // Разрешение растеризации векторных иконок: 192 (было 96) — чётко и на крупных значках, и при масштабе интерфейса > 1.
+        // Мировой размер спрайта прежний (как при 96 px и 100 px/ед. = 0.96 ед.) — значки на карте не меняют размер.
+        private const int Res = 192;
+        private const float WorldRes = 96f;
+        /// <summary>Мип-уровень чуть резче: значки почти всегда меньше исходника, тринейная фильтрация иначе мылит края.</summary>
+        private const float MipBias = -0.5f;
         private static readonly Dictionary<LGIcon, Sprite> s_Cache = new Dictionary<LGIcon, Sprite>();
 
         /// <summary>
@@ -77,8 +82,9 @@ namespace StellarisClone.Rendering
             var tex = Resources.Load<Texture2D>("UI/Icons/" + file);
             if (tex == null) return null;
             tex.wrapMode = TextureWrapMode.Clamp;
-            // Тот же мировой размер, что у векторных иконок (Res px при 100 px/ед. = 0.96 ед.), — для значков на карте
-            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
+            tex.mipMapBias = MipBias;
+            // Тот же мировой размер, что у векторных иконок (0.96 ед.), — для значков на карте
+            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / WorldRes);
             sp.hideFlags = HideFlags.DontSave;
             return sp;
         }
@@ -94,7 +100,8 @@ namespace StellarisClone.Rendering
             if (tex != null)
             {
                 tex.wrapMode = TextureWrapMode.Clamp;
-                sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / Res);
+                tex.mipMapBias = MipBias;
+                sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width * 100f / WorldRes);
                 sp.hideFlags = HideFlags.DontSave;
             }
             s_Art[path] = sp;
@@ -237,7 +244,8 @@ namespace StellarisClone.Rendering
             {
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Trilinear,
-                anisoLevel = 2,
+                anisoLevel = 4,
+                mipMapBias = MipBias,
                 hideFlags = HideFlags.DontSave
             };
             var px = new Color32[Res * Res];
@@ -253,7 +261,7 @@ namespace StellarisClone.Rendering
             }
             tex.SetPixels32(px);
             tex.Apply(true, true);
-            var sprite = Sprite.Create(tex, new Rect(0, 0, Res, Res), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, Res, Res), new Vector2(0.5f, 0.5f), Res * 100f / WorldRes, 0, SpriteMeshType.FullRect);
             sprite.hideFlags = HideFlags.DontSave;
             return sprite;
         }
