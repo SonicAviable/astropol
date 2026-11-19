@@ -260,7 +260,7 @@ namespace StellarisClone.Rendering
                 return;
             }
 
-            if (!_chartChecked) TryStarChart();
+            if (!_chartChecked) TryBackdrop();
 
             // Подписи простых кнопок — в общем стиле (заглавные, жирные, с разрядкой)
             if (--_labelCheck <= 0)
@@ -283,8 +283,8 @@ namespace StellarisClone.Rendering
 
         private bool _chartChecked;
 
-        /// <summary>Крупное окно (стекло или плашка без родителя-поверхности) — фон «Звёздная карта», один раз.</summary>
-        private void TryStarChart()
+        /// <summary>Крупное окно (стекло или плашка без родителя-поверхности) — фон «Обсерватория», один раз.</summary>
+        private void TryBackdrop()
         {
             Rect r = rectTransform.rect;
             if (r.width < 1f) return;                 // размер ещё не выставлен
@@ -292,7 +292,7 @@ namespace StellarisClone.Rendering
             var rr = ResolveRole();
             bool window = rr == Role.Glass || (rr == Role.Platter && FindParentSurface() == null);
             if (window && r.width >= 240f && r.height >= 160f && !CoversScreen(r))
-                LGStarChart.Attach(gameObject);
+                LGObservatory.Attach(gameObject, ResolveRadii().x);
         }
 
         // ---------------------------------------------------------------- Style
@@ -456,8 +456,7 @@ namespace StellarisClone.Rendering
                     s.Refraction = 1f;
                     s.Border = 1.2f;   // тонкая точная кромка; верх и срезанные углы подсвечивает шейдер
                     s.GlowRadius = 12f;
-                    // «Звёздная карта»: холодная тонкая кромка; латунь — только линией по верху (LGStarChart)
-                    s.Rim = hasOutline ? outlineCol : new Color(0.62f, 0.71f, 0.85f, 0.16f);
+                    s.Rim = hasOutline ? outlineCol : WithAlpha(LGTone.Cream, 0.30f);
                     s.Glow = hasOutline ? 0.30f * distBoost : 0f;
                     break;
 
