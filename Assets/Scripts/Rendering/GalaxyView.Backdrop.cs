@@ -580,8 +580,8 @@ namespace StellarisClone.Rendering
                 float fill = Mathf.Lerp(0.008f, 0.07f, far) * _borderFillK;
                 float band = Mathf.Lerp(0.02f, 0.07f, far) * _borderFillK;
                 _borderMat.SetFloat("_FillAlpha", Mathf.Lerp(fill, Mathf.Max(fill, 0.14f), overview));
-                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(band, Mathf.Max(band, 0.2f), overview));
-                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 2.2f, far) * Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(_borderK - 0.2f)) + 1.6f * overview);
+                _borderMat.SetFloat("_BandAlpha", Mathf.Lerp(band, Mathf.Max(band, 0.12f), overview));
+                _borderMat.SetFloat("_LinePx", Mathf.Lerp(1.4f, 1.7f, far) * Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(_borderK - 0.2f)) + 0.4f * overview);
                 _borderMat.SetFloat("_LineAlpha", Mathf.Clamp01(Mathf.Lerp(Mathf.Lerp(0.5f, 0.85f, far) * _borderK, 1f, overview)));
             }
         }

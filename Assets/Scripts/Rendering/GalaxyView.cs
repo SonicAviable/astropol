@@ -493,10 +493,10 @@ namespace StellarisClone.Rendering
         tm.fontStyle = FontStyle.Bold;
         tm.anchor = TextAnchor.MiddleCenter;
         tm.alignment = TextAlignment.Center;
-        tm.color = new Color(0.35f, 0.95f, 1.0f, 0.65f);
+        tm.color = new Color(0.55f, 0.97f, 1.0f, 0.95f);
 
         var mr = labelObj.GetComponent<MeshRenderer>();
-        mr.sortingOrder = 6;
+        mr.sortingOrder = 11;
 
         labelObj.AddComponent<EmpireLabelScaler>();
         _empireLabels[0] = labelObj;
@@ -509,7 +509,8 @@ namespace StellarisClone.Rendering
 
     labelObj.transform.position = centerWorld;
     labelObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-    EnsureEmpireEmblem(labelObj, 0, new Color(0.35f, 0.95f, 1.0f, 0.5f));
+    EnsureLabelShadow(labelObj);
+    EnsureEmpireEmblem(labelObj, 0, new Color(0.35f, 0.95f, 1.0f, 0.85f));
 }
 
         // ==================== ОТРИСОВКА ====================
@@ -872,6 +873,14 @@ namespace StellarisClone.Rendering
             var mr = GetComponent<MeshRenderer>();
             if (mr != null) mr.enabled = a > 0.01f;
 
+            if (_shadow == null) { var st = transform.Find("Shadow"); if (st != null && (_shadow = st.GetComponent<TextMesh>()) != null) _shadowBase = _shadow.color; }
+            if (_shadow != null)
+            {
+                var sc = _shadowBase; sc.a *= a;
+                _shadow.color = sc;
+                _shadow.GetComponent<MeshRenderer>().enabled = a > 0.01f;
+            }
+
             // Герб над названием гаснет вместе с ним
             if (_emblem == null)
             {
@@ -888,6 +897,8 @@ namespace StellarisClone.Rendering
 
         private SpriteRenderer _emblem;
         private Color _emblemBase;
+        private TextMesh _shadow;
+        private Color _shadowBase;
     }
 
     /// <summary>

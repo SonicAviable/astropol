@@ -138,18 +138,40 @@ namespace StellarisClone.Rendering
                 tm.fontStyle = FontStyle.Bold;
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.alignment = TextAlignment.Center;
-                var ec = FleetIndicator.OwnerColor(key);
-                tm.color = new Color(ec.r, ec.g, ec.b, 0.6f);
-                labelObj.GetComponent<MeshRenderer>().sortingOrder = 6;
+                var ec = Color.Lerp(FleetIndicator.OwnerColor(key), Color.white, 0.25f);
+                tm.color = new Color(ec.r, ec.g, ec.b, 0.95f);
+                labelObj.GetComponent<MeshRenderer>().sortingOrder = 11;
                 labelObj.AddComponent<EmpireLabelScaler>();
                 _empireLabels[key] = labelObj;
             }
             labelObj.SetActive(true);
             labelObj.GetComponent<TextMesh>().text = text;
+            EnsureLabelShadow(labelObj);
             labelObj.transform.position = center;
             labelObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             var lc = FleetIndicator.OwnerColor(key);
-            EnsureEmpireEmblem(labelObj, key, new Color(lc.r, lc.g, lc.b, 0.45f));
+            EnsureEmpireEmblem(labelObj, key, new Color(lc.r, lc.g, lc.b, 0.85f));
+        }
+
+        /// <summary>Тёмная подложка под названием империи: копия текста чуть ниже и в сторону — читается поверх звёзд и заливки.</summary>
+        private static void EnsureLabelShadow(GameObject label)
+        {
+            var src = label.GetComponent<TextMesh>();
+            var t = label.transform.Find("Shadow");
+            TextMesh tm;
+            if (t == null)
+            {
+                var go = new GameObject("Shadow");
+                go.transform.SetParent(label.transform, false);
+                go.transform.localPosition = new Vector3(0.18f, -0.18f, 0.05f);
+                tm = go.AddComponent<TextMesh>();
+                tm.fontSize = src.fontSize; tm.characterSize = src.characterSize; tm.fontStyle = src.fontStyle;
+                tm.anchor = src.anchor; tm.alignment = src.alignment;
+                tm.color = new Color(0f, 0f, 0f, 0.75f);
+                go.GetComponent<MeshRenderer>().sortingOrder = src.GetComponent<MeshRenderer>().sortingOrder - 1;
+            }
+            else tm = t.GetComponent<TextMesh>();
+            tm.text = src.text;
         }
 
         /// <summary>Герб империи над её названием на карте — лежит в плоскости галактики, масштабируется вместе с подписью.</summary>
@@ -166,7 +188,7 @@ namespace StellarisClone.Rendering
                 go.transform.localPosition = new Vector3(0f, 3.6f, 0f);    // над строкой названия (в плоскости карты — к северу)
                 go.transform.localScale = Vector3.one * 3.4f;
                 sr = go.AddComponent<SpriteRenderer>();
-                sr.sortingOrder = 6;
+                sr.sortingOrder = 11;
                 sr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             else
