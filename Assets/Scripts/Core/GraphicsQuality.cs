@@ -33,7 +33,8 @@ namespace StellarisClone.Core
         /// <summary>Чем растягивать картинку до размера экрана, когда масштаб рендера ниже 100%.</summary>
         public static string[] UpscalerNames => new[] { Loc.T("Обычное"), "AMD FSR 1.0" };
         public static string[] SharpnessNames => new[] { Loc.T("Мягкая"), Loc.T("Средняя"), Loc.T("Высокая") };
-        private static readonly float[] SharpnessValues = { 0.5f, 0.75f, 0.92f };
+        // RCAS (резкость FSR, 0…1): штатные 0,92 у URP при масштабе ниже 75% ещё мылят — шкала сдвинута вверх
+        private static readonly float[] SharpnessValues = { 0.7f, 0.88f, 1f };
         public const int UpscaleLinear = 0, UpscaleFsr = 1;
 
         public static int ScaleIndex { get; private set; } = 4;
@@ -49,7 +50,9 @@ namespace StellarisClone.Core
         public static int Upscaler { get; private set; } = UpscaleLinear;
         public static int Sharpness { get; private set; } = 2;
         /// <summary>FSR сейчас реально работает: выбран и рендер ниже 100%.</summary>
-        public static bool FsrActive => Upscaler == UpscaleFsr && RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] < 0.999f;
+        public static bool FsrActive => Upscaler == UpscaleFsr && EffectiveScale < 0.999f;
+        /// <summary>Итоговая доля разрешения рендера: настройка × ограничение платформы (Retina на Mac).</summary>
+        public static float EffectiveScale => RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] * PlatformScale();
 
         private struct Set
         {
@@ -181,6 +184,7 @@ namespace StellarisClone.Core
             QualitySettings.anisotropicFiltering = FullTextures ? AnisotropicFiltering.Enable : AnisotropicFiltering.Disable;
             ApplyAsset();
             ApplyScene();
+            ApplyMipBias();
             // Процедурные туманности, пыль и ядро галактики: на пресетах ниже «Ультра» мелкие октавы шума
             // не считаются — их почти не видно, а это самые дорогие пиксели кадра (крупные слои наложены друг на друга)
             int preset = CurrentPreset;
@@ -192,7 +196,7 @@ namespace StellarisClone.Core
             var asset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             if (asset == null) return;
             Remember(asset);
-            asset.renderScale = RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] * PlatformScale();
+            asset.renderScale = EffectiveScale;
             s_lastPixels = Screen.width * Screen.height;
             asset.msaaSampleCount = AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
             // FSR 1.0 — фильтр масштабирования URP; через отражение, как и тени: если в версии URP поле зовут иначе,
@@ -264,9 +268,43 @@ namespace StellarisClone.Core
         {
             if (!s_loaded) return;
             var cam = Camera.main;
-            if (cam != null && cam != _lastCamera) ApplyScene();
+            if (cam != null && cam != _lastCamera) { ApplyScene(); ApplyMipBias(); }
             // Окно сменило размер (полный экран, другой монитор) — пересчитать ограничение рендера на Mac
-            if (Screen.width * Screen.height != s_lastPixels) ApplyAsset();
+            if (Screen.width * Screen.height != s_lastPixels)
+            {
+                bool fsr = FsrActive;
+                ApplyAsset();
+                if (FsrActive != fsr) { ApplyScene(); ApplyMipBias(); }
+            }
+        }
+
+        // ------------------------------------------------------------------ Mip bias под FSR
+
+        private static readonly System.Collections.Generic.Dictionary<Texture2D, float> s_origMipBias =
+            new System.Collections.Generic.Dictionary<Texture2D, float>();
+
+        /// <summary>
+        /// Рекомендация AMD для FSR 1.0: отрицательный mip bias = log2(масштаб рендера). Без него текстуры при
+        /// пониженном разрешении берутся с мелких мипов и мылятся ещё до апскейла — RCAS это уже не вернёт.
+        /// Только текстуры с мипами (спрайты интерфейса их не имеют); исходные значения возвращаются при выключении FSR.
+        /// </summary>
+        private static void ApplyMipBias()
+        {
+            float bias = FsrActive ? Mathf.Log(Mathf.Max(EffectiveScale, 0.25f), 2f) : 0f;
+            if (bias == 0f && s_origMipBias.Count == 0) return;
+            foreach (var t in Resources.FindObjectsOfTypeAll<Texture2D>())
+            {
+                if (t == null || t.mipmapCount <= 1) continue;
+                if (!s_origMipBias.TryGetValue(t, out float orig)) s_origMipBias[t] = orig = t.mipMapBias;
+                t.mipMapBias = orig + bias;
+            }
+            if (bias == 0f) RestoreMipBias();
+        }
+
+        private static void RestoreMipBias()
+        {
+            foreach (var kv in s_origMipBias) if (kv.Key != null) kv.Key.mipMapBias = kv.Value;
+            s_origMipBias.Clear();
         }
 
         // ------------------------------------------------------------------ Свойства ассета, закрытые в URP
@@ -358,6 +396,7 @@ namespace StellarisClone.Core
             if (s_origUpscale != null) SetMember(a, "upscalingFilter", "m_UpscalingFilter", s_origUpscale);
             if (s_origFsrOverride != null) SetMember(a, "fsrOverrideSharpness", "m_FsrOverrideSharpness", s_origFsrOverride);
             if (s_origFsrSharp != null) SetMember(a, "fsrSharpness", "m_FsrSharpness", s_origFsrSharp);
+            RestoreMipBias();
             s_remembered = null;
         }
     }
