@@ -238,22 +238,23 @@ namespace StellarisClone.Rendering
 
             b._body = LGBuild.Panel(b._inner, "Body", b._base, raycast: true);
             b._body.rectTransform.Stretch();
-            // Та же форма, что у всех кнопок: срезанные углы, без свечения (единый дизайн «приборной панели»)
-            var fx = LG.Fill(b._body.gameObject);
-            // «Атлас»: главная кнопка — сплошная кремовая капсула с тёмной подписью
-            fx.Radius = 999f;
-            fx.Chamfer = false;
-            fx.GlowMultiplier = 0f;
-            fx.SpecularMultiplier = 0f;
 
             b._label = LGBuild.Label(b._body.transform, label, fontSize, new Color(0.055f, 0.094f, 0.157f), TextAnchor.MiddleCenter);
-            b._label.font = GameFont.MonoMedium;
-            b._label.rectTransform.Stretch(12, 0, 12, 0);
+            b._label.rectTransform.Stretch(26, 0, 26, 0);
             b._label.resizeTextForBestFit = true;
             b._label.resizeTextMinSize = 10;
             b._label.resizeTextMaxSize = fontSize;
+
+            // «Астролябия»: главная кнопка — полированная латунь, камни по цвету действия (кремовая — сапфир)
+            b._astro = LGAstrolabe.Attach(root.gameObject, b._body, b._label, primary: true);
+            b._astro.CanUse = () => b._interactable;
+            b._astro.Gem = GemFor(b._base);
             return b;
         }
+
+        private LGAstrolabe _astro;
+
+        private static Color GemFor(Color c) => c == Cyan ? LGAstrolabe.Sapphire : LGAstrolabe.GemOf(c);
 
         public void OnPointerEnter(PointerEventData e)
         {
@@ -276,7 +277,11 @@ namespace StellarisClone.Rendering
         public void SetLabel(string text) => _label.text = text;
 
         /// <summary>Сменить цвет заливки (например, «Исследовать» — зелёная, «В очередь» — бирюзовая).</summary>
-        public void SetColor(Color c) => _base = c;
+        public void SetColor(Color c)
+        {
+            _base = c;
+            if (_astro != null) _astro.Gem = GemFor(c);
+        }
 
         public void SetAction(System.Action onClick) => _onClick = onClick;
 
@@ -295,14 +300,9 @@ namespace StellarisClone.Rendering
             _t += dt;
             _h = LGEase.Spring(_h, _over ? 1f : 0f, ref _hv, 4f, 0.7f, dt);
             _p = LGEase.Spring(_p, _down ? 1f : 0f, ref _pv, 7f, 0.75f, dt);
-            float h = Mathf.Clamp01(_h);
-            float breathe = 0.5f + 0.5f * Mathf.Sin(_t * 2.2f);
-            // Сплошная заливка цветом кнопки, при наведении светлее; подпись — тёмная
-            var lit = Color.Lerp(_base, Color.white, 0.35f);
-            _body.color = _interactable ? Color.Lerp(_base, lit, h * 0.6f) : new Color(_base.r * 0.35f, _base.g * 0.35f, _base.b * 0.35f, 0.75f);
-            _label.color = _interactable ? new Color(0.055f, 0.094f, 0.157f) : new Color(0.55f, 0.53f, 0.48f);
-            _halo.color = new Color(0f, 0f, 0f, 0f);   // «Атлас»: без ореола
-            float sc = 1f + 0.025f * _h - 0.04f * _p;
+            // Цвета тела и подписи ведёт LGAstrolabe; здесь — только лёгкий масштаб при наведении и нажатии
+            _halo.color = new Color(0f, 0f, 0f, 0f);
+            float sc = 1f + 0.015f * _h - 0.03f * _p;
             _inner.localScale = new Vector3(sc, sc, 1f);
         }
     }

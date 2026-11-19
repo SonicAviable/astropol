@@ -183,6 +183,8 @@ namespace StellarisClone.Rendering
             LG.Button(img.gameObject, rim, size * 0.5f);
             var ic = LGIcons.Create(img.transform, icon, size * 0.5f, Color.white);
             ic.rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
+            // «Астролябия»: круглый латунный медальон (значок — цвета слоновой кости, гаснет у недоступной)
+            LGAstrolabe.Attach(img.gameObject, img, null, round: true);
             return b;
         }
     }
