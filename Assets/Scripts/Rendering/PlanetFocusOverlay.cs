@@ -1086,6 +1086,7 @@ namespace StellarisClone.Rendering
                 br.anchoredPosition = new Vector2(CardW * 0.5f + i * (CardW + CardGap), lift[i]);
                 br.localRotation = Quaternion.Euler(0, 0, tilt[i]);
                 LG.Platter(r.Bg.gameObject, 14f).SetRim(new Color(dc.r, dc.g, dc.b, 0.30f));
+                LGObservatory.Attach(r.Bg.gameObject, 14f);   // фон «Обсерватория», как у окон
 
                 // Верхняя кромка цвета ресурса и свечение под ней
                 r.Rim = LGBuild.Panel(r.Bg.transform, "Edge", dc);
@@ -1145,6 +1146,10 @@ namespace StellarisClone.Rendering
             bt.sizeDelta = new Vector2(CardW, CardH);
             bt.anchoredPosition = new Vector2(CardW * 0.5f + n * (CardW + CardGap), lift[n]);
             bt.localRotation = Quaternion.Euler(0, 0, tilt[n]);
+            var game = build.GetComponent<LGGameButton>();
+            if (game != null) Object.DestroyImmediate(game);
+            var astro = LGAstrolabe.Attach(build.gameObject, build.GetComponent<Image>(), null);   // «Астролябия», как плитки конструктора
+            if (astro != null) astro.Gem = LGAstrolabe.Emerald;
             var bi = LGIcons.Create(build.transform, LGIcon.Construction, 54, CCyan);
             bi.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 30), new Vector2(54, 54));
             var bl = LGBuild.Label(build.transform, Loc.T("+ СТРОИТЬ"), 14, CCyan, TextAnchor.MiddleCenter, bold: true);
