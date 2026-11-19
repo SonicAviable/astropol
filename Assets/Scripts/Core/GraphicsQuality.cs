@@ -31,11 +31,11 @@ namespace StellarisClone.Core
         public static string[] OnOffNames => new[] { Loc.T("Выкл"), Loc.T("Вкл") };
         public static string[] TextureNames => new[] { Loc.T("Половинные"), Loc.T("Полные") };
         /// <summary>Чем растягивать картинку до размера экрана, когда масштаб рендера ниже 100%.</summary>
-        public static string[] UpscalerNames => new[] { Loc.T("Обычное"), "AMD FSR 1.0", "Unity STP" };
+        public static string[] UpscalerNames => new[] { Loc.T("Обычное"), "AMD FSR 1.0" };
         public static string[] SharpnessNames => new[] { Loc.T("Мягкая"), Loc.T("Средняя"), Loc.T("Высокая") };
         // RCAS (резкость FSR, 0…1): штатные 0,92 у URP при масштабе ниже 75% ещё мылят — шкала сдвинута вверх
         private static readonly float[] SharpnessValues = { 0.7f, 0.88f, 1f };
-        public const int UpscaleLinear = 0, UpscaleFsr = 1, UpscaleStp = 2;
+        public const int UpscaleLinear = 0, UpscaleFsr = 1;
 
         public static int ScaleIndex { get; private set; } = 4;
         public static int AntiAliasing { get; private set; } = AASmaa;
@@ -50,12 +50,6 @@ namespace StellarisClone.Core
         public static int Upscaler { get; private set; } = UpscaleLinear;
         public static int Sharpness { get; private set; } = 2;
         /// <summary>FSR сейчас реально работает: выбран и рендер ниже 100%.</summary>
-        /// <summary>
-        /// STP (Spatial-Temporal Post-processing, встроен в URP 17): временной апскейлер — копит детали по кадрам,
-        /// заметно чётче FSR 1.0. Действует и на 100% как временное сглаживание, заменяя FXAA/SMAA/MSAA;
-        /// mip bias под пониженное разрешение URP ставит сам. Нужны compute-шейдеры, иначе URP откатывается на TAA.
-        /// </summary>
-        public static bool StpActive => Upscaler == UpscaleStp;
         public static bool FsrActive => Upscaler == UpscaleFsr && EffectiveScale < 0.999f;
         /// <summary>Итоговая доля разрешения рендера: настройка × ограничение платформы (Retina на Mac).</summary>
         public static float EffectiveScale => RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] * PlatformScale();
@@ -97,7 +91,7 @@ namespace StellarisClone.Core
         {
             if (s_loaded) return;
             s_loaded = true;
-            Upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleLinear), 0, UpscaleStp);
+            Upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleLinear), 0, UpscaleFsr);
             Sharpness = Mathf.Clamp(PlayerPrefs.GetInt("gfx.sharp", 2), 0, SharpnessValues.Length - 1);
             if (!PlayerPrefs.HasKey("gfx.scale"))
             {
@@ -163,7 +157,7 @@ namespace StellarisClone.Core
         public static void SetShadows(int i) { EnsureLoaded(); Shadows = Mathf.Clamp(i, 0, ShadowRes.Length - 1); Changed(); }
         public static void SetPostFx(bool v) { EnsureLoaded(); PostFx = v; Changed(); }
         public static void SetFullTextures(bool v) { EnsureLoaded(); FullTextures = v; Changed(); }
-        public static void SetUpscaler(int i) { EnsureLoaded(); Upscaler = Mathf.Clamp(i, 0, UpscaleStp); Changed(); }
+        public static void SetUpscaler(int i) { EnsureLoaded(); Upscaler = Mathf.Clamp(i, 0, UpscaleFsr); Changed(); }
         public static void SetSharpness(int i) { EnsureLoaded(); Sharpness = Mathf.Clamp(i, 0, SharpnessValues.Length - 1); Changed(); }
 
         private static void Changed()
@@ -204,11 +198,10 @@ namespace StellarisClone.Core
             Remember(asset);
             asset.renderScale = EffectiveScale;
             s_lastPixels = Screen.width * Screen.height;
-            // Временные методы (STP) с MSAA не работают — сглаживает сам STP
-            asset.msaaSampleCount = StpActive ? 1 : AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
+            asset.msaaSampleCount = AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
             // FSR 1.0 — фильтр масштабирования URP; через отражение, как и тени: если в версии URP поле зовут иначе,
             // игра не падает, остаётся обычное растяжение и предупреждение в логе
-            SetMember(asset, "upscalingFilter", "m_UpscalingFilter", StpActive ? "STP" : Upscaler == UpscaleFsr ? "FSR" : "Auto");
+            SetMember(asset, "upscalingFilter", "m_UpscalingFilter", Upscaler == UpscaleFsr ? "FSR" : "Auto");
             SetMember(asset, "fsrOverrideSharpness", "m_FsrOverrideSharpness", true);
             SetMember(asset, "fsrSharpness", "m_FsrSharpness", SharpnessValues[Mathf.Clamp(Sharpness, 0, SharpnessValues.Length - 1)]);
             bool shadows = Shadows > 0;
@@ -232,9 +225,8 @@ namespace StellarisClone.Core
                 // FXAA и SMAA идут проходом постобработки — без неё камера их не сделает
                 // FSR выполняется в финальном проходе постобработки — при пониженном масштабе держим его включённым
                 // (объёмы эффектов при «Постобработка выкл» всё равно погашены ниже)
-                data.renderPostProcessing = PostFx || postAA || FsrActive || StpActive;
-                data.antialiasing = StpActive ? AntialiasingMode.TemporalAntiAliasing
-                                  : AntiAliasing == AAFxaa ? AntialiasingMode.FastApproximateAntialiasing
+                data.renderPostProcessing = PostFx || postAA || FsrActive;
+                data.antialiasing = AntiAliasing == AAFxaa ? AntialiasingMode.FastApproximateAntialiasing
                                   : AntiAliasing == AASmaa ? AntialiasingMode.SubpixelMorphologicalAntiAliasing
                                   : AntialiasingMode.None;
                 data.antialiasingQuality = AntialiasingQuality.High;

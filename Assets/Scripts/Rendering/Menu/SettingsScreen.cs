@@ -215,7 +215,7 @@ namespace StellarisClone.Rendering
             float ry = Section(right, 0f, Loc.T("ТОЧНАЯ НАСТРОЙКА"));
             _qScale = Seg(right, ref ry, Loc.T("Масштаб рендера"), Loc.T("Ниже — быстрее, интерфейс остаётся чётким"),
                 GraphicsQuality.ScaleNames, GraphicsQuality.ScaleIndex, i => QualityItem(() => GraphicsQuality.SetScale(i)));
-            _qUpscale = Seg(right, ref ry, Loc.T("Масштабирование"), Loc.T("FSR и STP чётче растягивают картинку; STP заменяет сглаживание"),
+            _qUpscale = Seg(right, ref ry, Loc.T("Масштабирование"), Loc.T("FSR чётче растягивает картинку при масштабе ниже 100%"),
                 GraphicsQuality.UpscalerNames, GraphicsQuality.Upscaler, i => GameSettings.GraphicsChanged(() => GraphicsQuality.SetUpscaler(i)));
             _qSharp = Seg(right, ref ry, Loc.T("Резкость FSR"), Loc.T("Насколько подчёркивать края после масштабирования"),
                 GraphicsQuality.SharpnessNames, GraphicsQuality.Sharpness, i => GameSettings.GraphicsChanged(() => GraphicsQuality.SetSharpness(i)));
