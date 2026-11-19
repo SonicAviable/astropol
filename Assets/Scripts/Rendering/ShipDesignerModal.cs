@@ -712,12 +712,13 @@ namespace StellarisClone.Rendering
             LGBuild.Height(add.gameObject, 88);
             var tile = LGBuild.Panel(add.transform, "Tile", new Color(0.055f, 0.094f, 0.157f));
             tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(64, 64));
-            LG.Chip(tile.gameObject, new Color(Neon.r, Neon.g, Neon.b, 0.4f), 10f);
+            LG.Chip(tile.gameObject, new Color(0.906f, 0.757f, 0.439f, 0.35f), 4f);
             var plus = LGBuild.Label(tile.transform, "+", 34, Neon, TextAnchor.MiddleCenter, bold: true);
             var nt = LGBuild.Label(add.transform, Loc.T("НОВЫЙ"), 15, Neon, TextAnchor.UpperLeft, bold: true);
             nt.rectTransform.Stretch(90, 0, 10, 16);
             var ns = LGBuild.Label(add.transform, Loc.T("Нажмите, чтобы создать проект"), 11, Muted, TextAnchor.UpperLeft, wrap: true);
             ns.rectTransform.Stretch(90, 0, 10, 40);
+            Astrolabe(add, Neon);   // «Астролябия»: латунная рамка, своё содержимое остаётся
         }
 
         private void DesignCard(ShipDesign d, bool isPrimary, bool isDraft)
@@ -738,17 +739,11 @@ namespace StellarisClone.Rendering
                 }, null, null, 12, 12f);
             LGBuild.Height(btn.gameObject, 96);
 
-            if (editing)
-            {
-                var line = LGBuild.Panel(btn.transform, "Underline", Neon);
-                line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
-                line.rectTransform.offsetMin = new Vector2(6, 0); line.rectTransform.offsetMax = new Vector2(-6, 3);
-                LG.Ignore(line.gameObject);
-            }
+            Astrolabe(btn, Neon, editing);   // «Астролябия»; открытый проект — как выбранная вкладка
 
             var tile = LGBuild.Panel(btn.transform, "Tile", new Color(0.055f, 0.094f, 0.157f));
             tile.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(64, 64));
-            LG.Chip(tile.gameObject, new Color(Neon.r, Neon.g, Neon.b, 0.3f), 10f);
+            LG.Chip(tile.gameObject, new Color(0.906f, 0.757f, 0.439f, editing ? 0.55f : 0.3f), 4f);
             var ic = LGIcons.Create(tile.transform, ModuleVisuals.HullIcon(d.HullClass), 40, editing ? Neon : Primary);
 
             var name = LGBuild.Label(btn.transform, d.Name, 13, Color.white, TextAnchor.UpperLeft, bold: true);
