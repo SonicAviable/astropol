@@ -55,6 +55,7 @@ Shader "Astropolity/UI/MenuNebula"
             float4 _MainTex_TexelSize;
             fixed4 _Color;
             float _T, _Flow, _Twinkle;
+            float _GfxOctDrop;   // глобальная: сколько мелких октав шума отбросить (пресет графики, GraphicsQuality)
 
             v2f vert(appdata v)
             {
@@ -76,7 +77,8 @@ Shader "Astropolity/UI/MenuNebula"
             float Fbm(float2 p)
             {
                 float v = 0.0, a = 0.5;
-                for (int k = 0; k < 4; k++) { v += a * Noise(p); p = p * 2.03 + 17.1; a *= 0.5; }
+                int oct = max(2, 4 - (int)_GfxOctDrop);
+                [loop] for (int k = 0; k < oct; k++) { v += a * Noise(p); p = p * 2.03 + 17.1; a *= 0.5; }
                 return v;
             }
 

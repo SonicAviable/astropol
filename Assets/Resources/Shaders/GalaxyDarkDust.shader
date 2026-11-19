@@ -31,6 +31,7 @@ Shader "Astropolity/GalaxyDarkDust"
 
             fixed4 _Tint;
             float _Seed, _T, _Opacity;
+            float _GfxOctDrop;   // глобальная: сколько мелких октав шума отбросить (пресет графики, GraphicsQuality)
 
             v2f vert(appdata v) { v2f o; o.pos = UnityObjectToClipPos(v.vertex); o.uv = v.uv; return o; }
 
@@ -45,7 +46,8 @@ Shader "Astropolity/GalaxyDarkDust"
             float Fbm(float2 p)
             {
                 float v = 0.0, a = 0.5;
-                for (int k = 0; k < 5; k++) { v += a * Noise(p); p = p * 2.05 + 9.1; a *= 0.5; }
+                int oct = max(2, 5 - (int)_GfxOctDrop);
+                [loop] for (int k = 0; k < oct; k++) { v += a * Noise(p); p = p * 2.05 + 9.1; a *= 0.5; }
                 return v;
             }
 

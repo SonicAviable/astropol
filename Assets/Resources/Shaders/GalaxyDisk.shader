@@ -36,6 +36,7 @@ Shader "Astropolity/GalaxyDisk"
             sampler2D _MainTex;
             fixed4 _Color, _CoreColor;
             float _T, _RadiusUv, _Swirl;
+            float _GfxOctDrop;   // глобальная: сколько мелких октав шума отбросить (пресет графики, GraphicsQuality)
 
             v2f vert(appdata v)
             {
@@ -57,7 +58,8 @@ Shader "Astropolity/GalaxyDisk"
             float Fbm(float2 p)
             {
                 float v = 0.0, a = 0.5;
-                for (int k = 0; k < 4; k++) { v += a * Noise(p); p = p * 2.03 + 11.3; a *= 0.5; }
+                int oct = max(2, 4 - (int)_GfxOctDrop);
+                [loop] for (int k = 0; k < oct; k++) { v += a * Noise(p); p = p * 2.03 + 11.3; a *= 0.5; }
                 return v;
             }
 

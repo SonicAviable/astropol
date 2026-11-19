@@ -44,6 +44,7 @@ Shader "Astropolity/GalaxyCore"
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
 
             float _T, _Intensity, _Opacity, _Arms, _Twist, _Bar, _Elliptical, _Scale;
+            float _GfxOctDrop;   // глобальная: сколько мелких октав шума отбросить (пресет графики, GraphicsQuality)
             float4 _Hot, _Warm, _Outer, _HII;
 
             v2f vert(appdata v) { v2f o; o.pos = UnityObjectToClipPos(v.vertex); o.uv = v.uv; return o; }
@@ -59,6 +60,7 @@ Shader "Astropolity/GalaxyCore"
             float Fbm(float2 p, int oct)
             {
                 float v = 0.0, a = 0.5;
+                oct = max(2, oct - (int)_GfxOctDrop);
                 for (int k = 0; k < 5; k++)
                 {
                     if (k >= oct) break;

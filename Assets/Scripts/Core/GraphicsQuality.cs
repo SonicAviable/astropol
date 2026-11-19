@@ -181,6 +181,10 @@ namespace StellarisClone.Core
             QualitySettings.anisotropicFiltering = FullTextures ? AnisotropicFiltering.Enable : AnisotropicFiltering.Disable;
             ApplyAsset();
             ApplyScene();
+            // Процедурные туманности, пыль и ядро галактики: на пресетах ниже «Ультра» мелкие октавы шума
+            // не считаются — их почти не видно, а это самые дорогие пиксели кадра (крупные слои наложены друг на друга)
+            int preset = CurrentPreset;
+            Shader.SetGlobalFloat("_GfxOctDrop", preset == 3 ? 0f : preset <= 1 ? 2f : 1f);
         }
 
         private static void ApplyAsset()

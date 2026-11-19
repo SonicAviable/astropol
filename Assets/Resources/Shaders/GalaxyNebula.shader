@@ -34,6 +34,7 @@ Shader "Astropolity/GalaxyNebula"
 
             fixed4 _ColorA, _ColorB;
             float _Seed, _T, _Intensity, _Scale;
+            float _GfxOctDrop;   // глобальная: сколько мелких октав шума отбросить (пресет графики, GraphicsQuality)
 
             v2f vert(appdata v)
             {
@@ -54,7 +55,8 @@ Shader "Astropolity/GalaxyNebula"
             float Fbm(float2 p)
             {
                 float v = 0.0, a = 0.5;
-                for (int k = 0; k < 5; k++) { v += a * Noise(p); p = p * 2.02 + 13.7; a *= 0.5; }
+                int oct = max(2, 5 - (int)_GfxOctDrop);
+                [loop] for (int k = 0; k < oct; k++) { v += a * Noise(p); p = p * 2.02 + 13.7; a *= 0.5; }
                 return v;
             }
 

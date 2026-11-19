@@ -385,8 +385,38 @@ namespace StellarisClone.Core
 
         private float _gfxWatch;
 
+        // ---- Простой: нет ввода несколько секунд — до 30 кадров в секунду, при первом движении мыши/клавише — обратно
+        private const float IdleAfter = 4f;
+        private const int IdleFps = 30;
+        private Vector3 _lastMouse;
+        private float _idle;
+        private bool _throttled, _focused = true;
+
+        private void UpdateIdle()
+        {
+            if (!_focused) return;
+            Vector3 m = Input.mousePosition;
+            bool input = Input.anyKey || Input.mouseScrollDelta.sqrMagnitude > 0f || (m - _lastMouse).sqrMagnitude > 0.25f;
+            _lastMouse = m;
+            if (input)
+            {
+                _idle = 0f;
+                if (_throttled) { _throttled = false; GameSettings.ApplyFrameRate(); }
+                return;
+            }
+            _idle += Time.unscaledDeltaTime;
+            if (_throttled || _idle < IdleAfter) return;
+            int fps = GameSettings.FpsOptions[Mathf.Clamp(GameSettings.FpsIndex, 0, GameSettings.FpsOptions.Length - 1)];
+            if (fps > 0 && fps <= IdleFps) return;   // предел и так не выше
+            _throttled = true;
+            double hz = Screen.currentResolution.refreshRateRatio.value;
+            QualitySettings.vSyncCount = GameSettings.VSync && hz > 0 ? Mathf.Clamp(Mathf.RoundToInt((float)(hz / IdleFps)), 1, 4) : 0;
+            Application.targetFrameRate = IdleFps;
+        }
+
         private void LateUpdate()
         {
+            UpdateIdle();
             // Новая сцена или камера — те же настройки графики
             if ((_gfxWatch -= Time.unscaledDeltaTime) <= 0f) { _gfxWatch = 1f; GraphicsQuality.Watch(); }
             if (GameSettings.DisplayAt > 0f && Time.realtimeSinceStartup >= GameSettings.DisplayAt) GameSettings.ApplyDisplayDeferred();
@@ -406,6 +436,9 @@ namespace StellarisClone.Core
 
         private void OnApplicationFocus(bool focus)
         {
+            _focused = focus;
+            _throttled = false;
+            _idle = 0f;
             if (focus) GameSettings.ApplyFrameRate();
             else { QualitySettings.vSyncCount = 0; Application.targetFrameRate = BackgroundFps; }
             if (!GameSettings.MuteInBackground) { AudioListener.pause = false; return; }
