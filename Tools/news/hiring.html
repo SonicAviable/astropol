@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Обложка новости «SmartBiz ищет людей в команду» (1920×1080). Рендер: node Tools/news/render.js hiring -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+:root { --gold: #F2C766; --cyan: #66DBD1; --muted: #93AEBA; }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #03070F; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 40%/cover; filter: brightness(0.5) saturate(1.1); }
+.art { position: absolute; top: 0; bottom: 0; left: 860px; right: 0; background: url(../../Assets/Resources/UI/LoadingArt_2.jpg) center/cover;
+  clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%); filter: brightness(0.72); }
+.fade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,7,15,0.97) 0%, rgba(3,7,15,0.92) 42%, rgba(3,7,15,0.25) 64%, rgba(3,7,15,0.1) 100%),
+  linear-gradient(0deg, rgba(3,7,15,0.8), rgba(3,7,15,0) 35%); }
+.slash { position: absolute; top: -40px; bottom: -40px; left: 1085px; width: 3px; background: linear-gradient(180deg, rgba(120,240,230,0), #8FF5EA 45%, rgba(120,240,230,0));
+  box-shadow: 0 0 16px #5FE6DA, 0 0 36px rgba(95,230,218,0.5); transform: skewX(-12deg); }
+
+.left { position: absolute; left: 120px; top: 84px; width: 900px; }
+.logo { font-family: Russo; font-size: 104px; letter-spacing: 7px; line-height: 1;
+  background: linear-gradient(180deg, #FFF6D8 0%, #F2C766 50%, #B97A2A 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(242,199,102,0.35)); }
+.studio { display: flex; align-items: center; gap: 24px; margin-top: 22px; }
+.studio .t { display: flex; flex-direction: column; gap: 4px; }
+.studio b { font-weight: 700; font-size: 24px; letter-spacing: 7px; color: #E6F1F4; }
+.studio .name { font-family: Russo; font-size: 50px; letter-spacing: 5px; line-height: 1.05; color: #EAFBFA;
+  text-shadow: 0 0 18px rgba(102,219,209,0.55), 0 0 2px rgba(255,255,255,0.6); }
+.studio .name span { background: linear-gradient(180deg, #BFFFF8, #66DBD1 60%, #2E9E95); -webkit-background-clip: text; color: transparent; text-shadow: none;
+  filter: drop-shadow(0 0 14px rgba(102,219,209,0.6)); }
+.studio .t { border-left: 2px solid rgba(242,199,102,0.7); padding-left: 22px; }
+.studio i { font-style: normal; font-size: 17px; letter-spacing: 4px; color: var(--muted); }
+.rule { height: 1px; width: 760px; margin: 34px 0 30px; background: linear-gradient(90deg, rgba(242,199,102,0.8), rgba(242,199,102,0)); }
+.head { font-weight: 700; font-size: 20px; letter-spacing: 8px; color: var(--cyan); }
+.title { font-weight: 700; font-size: 46px; letter-spacing: 2px; margin-top: 8px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; width: 820px; }
+.role { display: flex; gap: 18px; align-items: flex-start; padding: 18px 20px; border: 1px solid rgba(102,219,209,0.22); border-radius: 6px;
+  background: linear-gradient(135deg, rgba(14,30,52,0.85), rgba(6,14,26,0.85)); }
+.role.wide { grid-column: span 2; }
+.role svg { width: 34px; height: 34px; flex: none; margin-top: 2px; stroke: var(--gold); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.role b { display: block; font-weight: 700; font-size: 25px; letter-spacing: 1px; }
+.role span { display: block; font-size: 17px; color: var(--muted); margin-top: 4px; line-height: 1.3; }
+.note { margin-top: 26px; font-size: 21px; color: var(--muted); letter-spacing: 0.5px; }
+.note b { color: var(--gold); font-weight: 700; }
+
+.badges { position: absolute; right: 110px; bottom: 96px; display: flex; flex-direction: column; gap: 14px; align-items: flex-end; }
+.badge { display: flex; align-items: center; gap: 18px; padding: 16px 26px; border-radius: 6px; background: rgba(5,12,24,0.88);
+  border: 1px solid rgba(242,199,102,0.55); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.badge .k { font-weight: 700; font-size: 15px; letter-spacing: 5px; color: var(--muted); }
+.badge .v { font-weight: 700; font-size: 27px; letter-spacing: 3px; color: var(--gold); }
+.badge.steam { border-color: rgba(102,219,209,0.5); } .badge.steam .v { color: #DFF6F8; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #5BE38A; box-shadow: 0 0 10px #5BE38A; }
+.dot.soon { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="art"></div><div class="fade"></div><div class="slash"></div>
+  <div class="left">
+    <div class="logo">ASTROPOLITY</div>
+    <div class="studio">
+      <!-- Общий флаг России и Казахстана, разрезанный по диагонали золотой чертой -->
+      <svg width="156" height="104" viewBox="0 0 150 100">
+        <defs><clipPath id="fa"><polygon points="0,0 150,0 0,100"/></clipPath><clipPath id="fb"><polygon points="150,0 150,100 0,100"/></clipPath>
+          <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.3"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/></linearGradient></defs>
+        <g clip-path="url(#fa)"><rect width="150" height="33.3" fill="#fff"/><rect y="33.3" width="150" height="33.4" fill="#0039A6"/><rect y="66.7" width="150" height="33.3" fill="#D52B1E"/></g>
+        <g clip-path="url(#fb)"><rect width="150" height="100" fill="#00AFCA"/>
+          <circle cx="104" cy="58" r="12" fill="#FEC50C"/>
+          <g stroke="#FEC50C" stroke-width="1.6"><line x1="104" y1="40" x2="104" y2="44"/><line x1="86" y1="58" x2="90" y2="58"/><line x1="118" y1="58" x2="122" y2="58"/><line x1="91.3" y1="45.3" x2="94.1" y2="48.1"/><line x1="113.9" y1="48.1" x2="116.7" y2="45.3"/></g>
+          <path d="M82 82 q22 -9 44 0 q-22 4 -44 0z" fill="#FEC50C"/></g>
+        <line x1="150" y1="0" x2="0" y2="100" stroke="#F2C766" stroke-width="3"/>
+        <rect width="150" height="100" fill="url(#fg)"/><rect x="1" y="1" width="148" height="98" fill="none" stroke="#F2C766" stroke-width="2"/>
+      </svg>
+      <div class="t"><i>ИГРОВАЯ СТУДИЯ</i><div class="name">SMART<span>BIZ</span></div><i>РОССИЯ · КАЗАХСТАН</i></div>
+    </div>
+    <div class="rule"></div>
+    <div class="head">ОТКРЫТ НАБОР</div>
+    <div class="title">Ищем людей в команду</div>
+    <div class="grid">
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5S14 15 15.5 15H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
+        <div><b>Дизайнеры</b><span>интерфейс, иконки, промо-арт</span></div></div>
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/></svg>
+        <div><b>3D-моделлеры</b><span>корабли, станции, планеты</span></div></div>
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
+        <div><b>SMM-менеджеры</b><span>посты, сообщество, продвижение</span></div></div>
+      <div class="role"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 14h9"/></svg>
+        <div><b>Тестировщики</b><span>ошибки, баланс, отчёты</span></div></div>
+      <div class="role wide"><svg viewBox="0 0 24 24"><path d="M4 4h12v16H6a2 2 0 0 1-2-2z"/><path d="M16 8h4v10a2 2 0 0 1-2 2h-2M7 8h6M7 12h6M7 16h4"/></svg>
+        <div><b>Редакторы новостей</b><span>новости обновлений, анонсы, тексты для VK Play и сообщества</span></div></div>
+    </div>
+    <div class="note">Можно без опыта · <b>портфолио на вышедшей игре</b> · удалённо</div>
+  </div>
+  <div class="badges">
+    <div class="badge"><div class="dot"></div><div class="k">VK PLAY</div><div class="v">УЖЕ В ПРОДАЖЕ · В ЛИДЕРАХ</div></div>
+    <div class="badge steam"><div class="dot soon"></div><div class="k">STEAM</div><div class="v">КОНЕЦ 2026 ГОДА</div></div>
+  </div>
+</div></body></html>

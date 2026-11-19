@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -84,11 +84,11 @@ namespace StellarisClone.Rendering
             var catCol = TechCategoryInfo.Color(tech.Category);
             _fx?.SetRim(new Color(catCol.r, catCol.g, catCol.b, 0.55f));
 
-            string tierStr = tech.Tier == 0 ? "Базовый" : $"Tier {tech.Tier}";
+            string tierStr = tech.Tier == 0 ? Loc.T("Базовый") : $"Tier {tech.Tier}";
             _categoryText.text = $"{TechCategoryInfo.Icon(tech.Category)}  {TechCategoryInfo.Name(tech.Category)}  ·  {tierStr}";
 
             // Эффект — короткое техническое описание с авто-окраской модификаторов
-            string desc = string.IsNullOrEmpty(tech.Description) ? "Без описания." : tech.Description;
+            string desc = string.IsNullOrEmpty(tech.Description) ? Loc.T("Без описания.") : tech.Description;
             _effectText.text = ColorizeModifiers(desc);
 
             // Флавор — атмосферное описание
@@ -97,11 +97,11 @@ namespace StellarisClone.Rendering
 
             // Стоимость
             float penalty = tm != null ? tm.GetYearPenalty(tech) : 1f;
-            int days = Mathf.RoundToInt(tech.BaseDays * penalty);
+            int days = tm != null ? tm.EstimateDays(tech) : -1;
 
             string penaltyNote = "";
             if (penalty > 1.01f)
-                penaltyNote = $"  <color=#FFAA88>· штраф за год ×{penalty:0.0}</color>";
+                penaltyNote = Loc.F("  <color=#FFAA88>· опережает время ×{0:0.0}</color>", penalty);
 
             int slotCount = tm != null ? tm.Slots.Count : 0;
             int freeSlots = 0;
@@ -111,12 +111,13 @@ namespace StellarisClone.Rendering
             }
 
             string slotNote = freeSlots > 0
-                ? $"<color=#8EF08C>Свободных слотов: {freeSlots} / {slotCount}</color>"
-                : $"<color=#FFAA88>Все слоты заняты — технология встанет в очередь</color>";
+                ? Loc.F("<color=#8EF08C>Свободных слотов: {0} / {1}</color>", freeSlots, slotCount)
+                : Loc.T("<color=#FFAA88>Все слоты заняты — технология встанет в очередь</color>");
 
             _costText.text =
-                $"<color=#F2C747><b>СТОИМОСТЬ</b></color>\n" +
-                $"Время исследования: <b>{days} дн.</b>{penaltyNote}\n" +
+                Loc.T("<color=#E7C170><b>СТОИМОСТЬ</b></color>\n") +
+                Loc.F("Время исследования: <b>~{0}</b>{1}\n", TechnologyManager.FormatDays(days), penaltyNote) +
+                Loc.F("<color=#A9A392>{0:0} очков науки · наука {1:0.#}/мес</color>\n", tech.Cost, (tm != null ? tm.MonthlyResearchIncome : 0f)) +
                 $"{slotNote}";
         }
 
@@ -124,7 +125,7 @@ namespace StellarisClone.Rendering
         /// Ищет в тексте «+N%», «−N%», «+N» и «−N» и красит их зелёным / красным.
         /// Понимает как дефис «-», так и минус «−».
         /// </summary>
-        private static string ColorizeModifiers(string text)
+        public static string ColorizeModifiers(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
 
@@ -172,7 +173,7 @@ namespace StellarisClone.Rendering
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
             _fx = LG.Glass(_root);
-            _fx.SetRim(new Color(0.45f, 0.95f, 0.90f, 0.5f));
+            _fx.SetRim(new Color(0.475f, 0.816f, 0.749f, 0.5f));
             LG.Motion(_root, LGAppear.Kind.Pop);
 
             // Заголовок
@@ -203,7 +204,7 @@ namespace StellarisClone.Rendering
             MakeSeparator(_root.transform, -76);
 
             // ====== БЛОК «ЭФФЕКТ» ======
-            var effectLabel = MakeText(_root.transform, "▸  ЭФФЕКТ", 11, FontStyle.Bold,
+            var effectLabel = MakeText(_root.transform, Loc.T("▸  ЭФФЕКТ"), 11, FontStyle.Bold,
                 UIManager.DS.Gold, TextAnchor.MiddleLeft);
             var elRt = effectLabel.rectTransform;
             elRt.anchorMin = new Vector2(0, 1);
@@ -226,9 +227,9 @@ namespace StellarisClone.Rendering
             eBt.anchoredPosition = new Vector2(0, -112);
 
             var eBg = effectBox.AddComponent<Image>();
-            eBg.color = new Color(0.02f, 0.06f, 0.08f, 0.9f);
+            eBg.color = new Color(0.055f, 0.094f, 0.157f, 0.9f);
             var eOl = effectBox.AddComponent<Outline>();
-            eOl.effectColor = new Color(0.18f, 0.65f, 0.60f, 0.4f);
+            eOl.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.4f);
             eOl.effectDistance = new Vector2(0.8f, -0.8f);
 
             _effectText = MakeText(effectBox.transform, "", 13, FontStyle.Normal,
@@ -244,7 +245,7 @@ namespace StellarisClone.Rendering
             _effectText.supportRichText = true;
 
             // ====== БЛОК «ОПИСАНИЕ» ======
-            var flavorLabel = MakeText(_root.transform, "▸  ОПИСАНИЕ", 11, FontStyle.Bold,
+            var flavorLabel = MakeText(_root.transform, Loc.T("▸  ОПИСАНИЕ"), 11, FontStyle.Bold,
                 UIManager.DS.Gold, TextAnchor.MiddleLeft);
             var flRt = flavorLabel.rectTransform;
             flRt.anchorMin = new Vector2(0, 1);
@@ -267,13 +268,13 @@ namespace StellarisClone.Rendering
             fBt.anchoredPosition = new Vector2(0, -208);
 
             var fBg = flavorBox.AddComponent<Image>();
-            fBg.color = new Color(0.02f, 0.06f, 0.08f, 0.75f);
+            fBg.color = new Color(0.055f, 0.094f, 0.157f, 0.75f);
             var fOl = flavorBox.AddComponent<Outline>();
-            fOl.effectColor = new Color(0.18f, 0.65f, 0.60f, 0.4f);
+            fOl.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.4f);
             fOl.effectDistance = new Vector2(0.8f, -0.8f);
 
             _flavorText = MakeText(flavorBox.transform, "", 12, FontStyle.Normal,
-                new Color(0.78f, 0.85f, 0.88f), TextAnchor.UpperLeft);
+                new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft);
             var ffRt = _flavorText.rectTransform;
             ffRt.anchorMin = Vector2.zero;
             ffRt.anchorMax = Vector2.one;
@@ -310,7 +311,7 @@ namespace StellarisClone.Rendering
             _costText.supportRichText = true;
 
             // ====== КНОПКИ ======
-            var confirmBtn = MakeButton(_root.transform, "▶  НАЧАТЬ ИССЛЕДОВАНИЕ",
+            var confirmBtn = MakeButton(_root.transform, Loc.T("▶  НАЧАТЬ ИССЛЕДОВАНИЕ"),
                 new Vector2(280, 46), UIManager.DS.BtnSuccess, OnConfirm);
             var cfRt = confirmBtn.GetComponent<RectTransform>();
             cfRt.anchorMin = new Vector2(0.5f, 0);
@@ -318,7 +319,7 @@ namespace StellarisClone.Rendering
             cfRt.pivot = new Vector2(0.5f, 0);
             cfRt.anchoredPosition = new Vector2(-150, 24);
 
-            var cancelBtn = MakeButton(_root.transform, "✕  ОТМЕНА",
+            var cancelBtn = MakeButton(_root.transform, Loc.T("✕  ОТМЕНА"),
                 new Vector2(280, 46), UIManager.DS.BtnNeutral, Close);
             var cnRt = cancelBtn.GetComponent<RectTransform>();
             cnRt.anchorMin = new Vector2(0.5f, 0);
@@ -341,7 +342,7 @@ namespace StellarisClone.Rendering
             rt.sizeDelta = new Vector2(-40, 1);
             rt.anchoredPosition = new Vector2(0, yFromTop);
             var img = sep.AddComponent<Image>();
-            img.color = new Color(0.18f, 0.65f, 0.60f, 0.35f);
+            img.color = new Color(0.475f, 0.816f, 0.749f, 0.35f);
             img.raycastTarget = false;
         }
 
@@ -361,7 +362,7 @@ namespace StellarisClone.Rendering
             t.font = (style == FontStyle.Bold) ? GameFont.Bold : GameFont.Regular;
             t.text = val;
             t.fontSize = size;
-            t.fontStyle = style;
+            t.fontStyle = style == FontStyle.Bold ? FontStyle.Normal : style;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
             t.color = col;
             t.alignment = anchor;
             t.raycastTarget = false;

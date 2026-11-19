@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты карты: ярлык стройки, разведка и монтаж (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_mapwork.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #02050B; font-family: Play, sans-serif; color: #EAF6FA; }
+svg { position: absolute; inset: 0; }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+.note { position: absolute; width: 330px; font-size: 14px; line-height: 1.45; color: #9FB2BC; padding: 14px 16px; border-left: 2px solid #FFD27A; background: rgba(0,0,0,0.55); }
+.note b { color: #FFD27A; letter-spacing: 2px; font-size: 12px; display: block; margin-bottom: 4px; }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const CY = '#6FE6DA', GOLD = '#FFC24D', SCI = '#5FB8FF', GREEN = '#5CE08F', OWN = '#1ACCF2';
+let defs = '', uid = 0;
+const id = () => 'g' + (uid++);
+const radial = (c, a = 1) => { const k = id(); defs += `<radialGradient id="${k}"><stop offset="0" stop-color="${c}" stop-opacity="${a}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`; return `url(#${k})`; };
+const arc = (x, y, r, a0, a1) => { // углы в долях оборота от 12 часов по часовой
+  const p = a => [x + r * Math.sin(a * 2 * Math.PI), y - r * Math.cos(a * 2 * Math.PI)];
+  const [sx, sy] = p(a0), [ex, ey] = p(a1);
+  return `M${sx.toFixed(1)} ${sy.toFixed(1)} A${r} ${r} 0 ${a1 - a0 > 0.5 ? 1 : 0} 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`;
+};
+const star = (x, y, c, r = 10) => `<circle cx="${x}" cy="${y}" r="${r * 7}" fill="${radial(c, 0.35)}"/><circle cx="${x}" cy="${y}" r="${r * 2.2}" fill="${radial(c, 0.9)}"/><circle cx="${x}" cy="${y}" r="${r * 0.7}" fill="#fff"/>`;
+const orbits = (x, y, rs, op = 0.28) => rs.map(r => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.82}" fill="none" stroke="#7FA6C8" stroke-opacity="${op}" stroke-width="1.3"/>`).join('');
+const planet = (x, y, r, c) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${x - r * 0.3}" cy="${y - r * 0.3}" r="${r * 0.6}" fill="#fff" opacity="0.18"/>`;
+const T = (x, y, t, o = {}) => `<text x="${x}" y="${y}" font-family="${o.f || 'Play'}" font-size="${o.s || 14}" font-weight="${o.w || 400}" fill="${o.c || '#EAF6FA'}" text-anchor="${o.a || 'middle'}" letter-spacing="${o.ls || 0}" ${o.op != null ? `opacity="${o.op}"` : ''} ${o.it ? 'font-style="italic"' : ''}>${t}</text>`;
+const lane = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#9FB8D0" stroke-opacity="0.35" stroke-width="2"/>`;
+// Подпись системы (текущий стиль «голо-ярлык»): название + тонкая черта владельца + ресурсы
+const nameplate = (x, y, name, own, res = '') => `
+  <rect x="${x - name.length * 13}" y="${y - 30}" width="${name.length * 26}" height="44" rx="22" fill="${radial('#000', 0.6)}"/>
+  ${T(x, y, name, { f: 'Russo', s: 28, ls: 1 })}
+  ${own ? `<ellipse cx="${x}" cy="${y + 12}" rx="${name.length * 10}" ry="5" fill="${radial(own, 0.35)}"/><path d="M${x - name.length * 8} ${y + 12} Q${x} ${y + 9.6} ${x + name.length * 8} ${y + 12} Q${x} ${y + 14.4} ${x - name.length * 8} ${y + 12}" fill="${own}"/>` : ''}
+  ${res ? T(x, y + 36, res, { s: 15, c: '#B9C9D2' }) : ''}`;
+// Иконки (упрощённо)
+const ico = { outpost: '⬡', colony: '◉', scan: '◎', build: '⚒', ship: '➤', sci: '⚛' };
+const RES = '<tspan fill="#6FE6DA">✦</tspan> 18   <tspan fill="#FFC24D">▮</tspan> 9';
+const RES2 = '<tspan fill="#6FE6DA">✦</tspan> 10   <tspan fill="#FFC24D">▮</tspan> 14';
+
+// Сцена: общие звёзды, коридоры, четыре системы
+const SYS = { kan: [360, 300], psi: [760, 640], saif: [1330, 520], tub: [1600, 230] };
+function scene(extra) {
+  let s = '';
+  for (let i = 0; i < 260; i++) { const x = (i * 733) % 1920, y = (i * 389 + i * i * 7) % 1080, r = (i % 7 === 0) ? 1.6 : 0.8; s += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${0.15 + (i % 5) * 0.08}"/>`; }
+  s += `<ellipse cx="1180" cy="560" rx="700" ry="380" fill="${radial('#2A3E7A', 0.22)}"/>`;
+  s += lane(...SYS.kan, ...SYS.psi) + lane(...SYS.psi, ...SYS.saif) + lane(...SYS.saif, ...SYS.tub) + lane(...SYS.kan, 900, 120) + lane(...SYS.saif, 1880, 900) + lane(...SYS.psi, 300, 1000) + lane(...SYS.tub, 1900, 120);
+  s += orbits(...SYS.kan, [60, 95]) + star(...SYS.kan, '#FFE7A0', 9) + planet(SYS.kan[0] + 70, SYS.kan[1] - 40, 7, '#C77845');
+  s += orbits(...SYS.psi, [55, 90, 125]) + star(...SYS.psi, '#FF6A55', 10) + planet(SYS.psi[0] + 50, SYS.psi[1] - 70, 8, '#B5794B');
+  s += orbits(...SYS.saif, [70, 120], 0.2) + star(...SYS.saif, '#FF7A6A', 11) + planet(SYS.saif[0] - 100, SYS.saif[1] + 60, 6, '#8C9AA8');
+  s += orbits(...SYS.tub, [50, 80], 0.2) + star(...SYS.tub, '#B8D4FF', 8);
+  s += extra;
+  s += nameplate(SYS.kan[0], SYS.kan[1] + 70, 'КАНОПУС', OWN, RES);
+  s += nameplate(SYS.psi[0], SYS.psi[1] + 70, 'ПСИ ИНДЕЙЦА', null, RES2);
+  s += nameplate(SYS.saif[0], SYS.saif[1] + 84, 'САИФ', null);
+  s += nameplate(SYS.tub[0], SYS.tub[1] + 66, 'ТУБАН', null);
+  return s;
+}
+const note = (x, y, h, t) => `<div class="note" style="left:${x}px;top:${y}px"><b>${h}</b>${t}</div>`;
+
+// ================= A: «ТОНКАЯ ГОЛОГРАФИЯ» — без плашек, текст и волоски =================
+function A() {
+  const [kx, ky] = SYS.kan, [px, py] = SYS.psi, [sx, sy] = SYS.saif, [tx, ty] = SYS.tub;
+  // Ярлык стройки: строка без плашки — значок, название, дни; под ней волосок прогресса
+  const task = (x, y, icon, name, days, c, p, wait) => `
+    ${T(x, y, `<tspan fill="${c}" font-size="15">${icon}</tspan>  <tspan font-weight="700" letter-spacing="2">${name}</tspan>  <tspan fill="#9FB2BC">${days}</tspan>`, { s: 14 })}
+    <line x1="${x - 70}" y1="${y + 9}" x2="${x + 70}" y2="${y + 9}" stroke="#fff" stroke-opacity="0.12" stroke-width="2" ${wait ? 'stroke-dasharray="3 5"' : ''}/>
+    ${p != null ? `<line x1="${x - 70}" y1="${y + 9}" x2="${x - 70 + 140 * p}" y2="${y + 9}" stroke="${c}" stroke-width="2"/><circle cx="${x - 70 + 140 * p}" cy="${y + 9}" r="3" fill="#fff"/>` : ''}`;
+  // Значок корабля: маленький ромб цвета задачи, без пурпурного пунктира
+  const shipBadge = (x, y, c, g) => `<circle cx="${x}" cy="${y}" r="26" fill="${radial(c, 0.35)}"/><rect x="${x - 13}" y="${y - 13}" width="26" height="26" transform="rotate(45 ${x} ${y})" fill="#08121E" stroke="${c}" stroke-width="2"/>${T(x, y + 5, g, { s: 14, c })}`;
+  let e = '';
+  // Разведка Саифа: тонкий веер сканера + кольцо прогресса из 24 рисок
+  e += `<path d="M${sx} ${sy} L${sx + 150 * Math.sin(0.9)} ${sy - 150 * Math.cos(0.9)} A150 150 0 0 1 ${sx + 150 * Math.sin(1.6)} ${sy - 150 * Math.cos(1.6)} Z" fill="${radial(SCI, 0.3)}"/>`;
+  e += `<line x1="${sx}" y1="${sy}" x2="${sx + 150 * Math.sin(1.6)}" y2="${sy - 150 * Math.cos(1.6)}" stroke="${SCI}" stroke-opacity="0.8" stroke-width="1.5"/>`;
+  for (let i = 0; i < 48; i++) { const a = i / 48, on = a < 0.62; e += `<path d="${arc(sx, sy, 165, a + 0.003, a + 0.016)}" stroke="${on ? SCI : '#fff'}" stroke-opacity="${on ? 0.95 : 0.14}" stroke-width="${on ? 4 : 3}" fill="none"/>`; }
+  e += T(sx + 165 * Math.sin(0.62 * 6.283) - 6, sy - 165 * Math.cos(0.62 * 6.283) - 10, '62%', { s: 15, w: 700, c: SCI, a: 'end' });
+  [[0.2, 90], [0.45, 70]].forEach(([a, r]) => e += `<circle cx="${sx + r * Math.sin(a * 6.283)}" cy="${sy - r * Math.cos(a * 6.283)}" r="4" fill="none" stroke="${SCI}" stroke-width="1.5"/>`);
+  e += shipBadge(sx + 115, sy - 115, SCI, ico.sci);
+  e += task(sx, sy + 118, ico.scan, 'РАЗВЕДКА', '· 6 дн', SCI, 0.62);
+  // Монтаж форпоста у Пси Индейца: каркас-голограмма, кольцо из сегментов, золотой луч
+  const bx = px + 95, by = py - 40;
+  e += `<line x1="${px + 150}" y1="${py - 120}" x2="${bx}" y2="${by}" stroke="${GOLD}" stroke-opacity="0.7" stroke-width="2" stroke-dasharray="6 6"/>`;
+  e += `<circle cx="${bx}" cy="${by}" r="34" fill="${radial(GOLD, 0.25)}"/>`;
+  for (let i = 0; i < 12; i++) { const a = i / 12, on = a < 0.4; e += `<path d="${arc(bx, by, 26, a + 0.01, a + 0.07)}" stroke="${GOLD}" stroke-opacity="${on ? 1 : 0.2}" stroke-width="4" fill="none"/>`; }
+  e += `<polygon points="${[0, 1, 2, 3, 4, 5].map(i => `${bx + 12 * Math.cos(i * Math.PI / 3)},${by + 12 * Math.sin(i * Math.PI / 3)}`).join(' ')}" fill="none" stroke="${GOLD}" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  e += shipBadge(px + 150, py - 120, GOLD, ico.build);
+  e += task(px, py + 134, ico.outpost, 'ФОРПОСТ', '· 34 дн', GOLD, 0.4);
+  // Канопус: колонизация; Тубан: строитель в пути
+  e += task(kx, ky + 130, ico.colony, 'КОЛОНИЯ', '· 58 дн', GREEN, 0.25);
+  e += task(tx, ty + 102, ico.outpost, 'ФОРПОСТ', '· ~102 дн', GOLD, null, true);
+  return `<div class="lbl2">ВАРИАНТ A · ТОНКАЯ ГОЛОГРАФИЯ</div><svg width="1920" height="1080"><defs>${defs}</defs>${scene(e)}</svg>
+    ${note(60, 820, 'ЯРЛЫК СТРОЙКИ', 'Без плашки: значок, название и дни одной строкой, под ней волосок прогресса с бегунком. Строитель в пути — пунктир без заливки.')}
+    ${note(1520, 820, 'РАЗВЕДКА И МОНТАЖ', 'Кольцо из рисок вокруг системы заполняется голубым, веер сканера и отметки находок. Монтаж — золотой каркас из 12 сегментов. Значки кораблей — ромбы цвета задачи вместо пурпурных кругов.')}`;
+}
+
+// ================= B: «КОЛЬЦО СИСТЕМЫ» — вся работа как кольцо вокруг звезды =================
+function B() {
+  const [kx, ky] = SYS.kan, [px, py] = SYS.psi, [sx, sy] = SYS.saif, [tx, ty] = SYS.tub;
+  const ring = (x, y, r, c, p, wait) => {
+    let s = `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${c}" stroke-opacity="0.16" stroke-width="10"/>`;
+    if (wait) s += `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${c}" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="4 10"/>`;
+    else s += `<path d="${arc(x, y, r, 0, p)}" stroke="${c}" stroke-width="6" fill="none" stroke-linecap="round"/><path d="${arc(x, y, r, 0, p)}" stroke="${c}" stroke-opacity="0.3" stroke-width="16" fill="none"/>`;
+    for (let i = 0; i < 4; i++) s += `<path d="${arc(x, y, r + 12, i / 4 - 0.004, i / 4 + 0.004)}" stroke="${c}" stroke-opacity="0.6" stroke-width="8" fill="none"/>`;
+    return s;
+  };
+  // Капсула на кольце сверху: значок в круге + текст
+  const cap = (x, y, c, icon, name, days) => {
+    const w = 46 + (name.length + days.length) * 9.5;
+    return `<rect x="${x - w / 2}" y="${y - 17}" width="${w}" height="34" rx="17" fill="#07111D" stroke="${c}" stroke-opacity="0.8" stroke-width="1.5"/>
+      <circle cx="${x - w / 2 + 17}" cy="${y}" r="13" fill="${c}"/>${T(x - w / 2 + 17, y + 5, icon, { s: 14, c: '#07111D', w: 700 })}
+      ${T(x - w / 2 + 38, y + 5, `<tspan font-weight="700" letter-spacing="1.5">${name}</tspan>  <tspan fill="#9FB2BC">${days}</tspan>`, { s: 13, a: 'start' })}`;
+  };
+  const shipDot = (x, y, c, g) => `<circle cx="${x}" cy="${y}" r="15" fill="#07111D" stroke="${c}" stroke-width="2"/>${T(x, y + 5, g, { s: 13, c })}`;
+  let e = '';
+  // Разведка: голубое кольцо + радарная заливка сектора внутри
+  e += `<circle cx="${sx}" cy="${sy}" r="150" fill="${radial(SCI, 0.12)}"/>`;
+  e += `<path d="M${sx} ${sy} L${sx} ${sy - 150} ${arc(sx, sy, 150, 0, 0.62).replace(/^M[^A]+/, '')} Z" fill="${SCI}" opacity="0.07"/>`;
+  e += ring(sx, sy, 150, SCI, 0.62);
+  e += cap(sx, sy - 150, SCI, ico.scan, 'РАЗВЕДКА', '62% · 6 дн');
+  e += shipDot(sx + 150 * Math.sin(0.62 * 6.283), sy - 150 * Math.cos(0.62 * 6.283), SCI, ico.sci);
+  // Монтаж: золотое кольцо вокруг Пси Индейца
+  e += ring(px, py, 140, GOLD, 0.4);
+  e += cap(px, py - 140, GOLD, ico.outpost, 'ФОРПОСТ', '34 дн');
+  e += shipDot(px + 140 * Math.sin(0.4 * 6.283), py - 140 * Math.cos(0.4 * 6.283), GOLD, ico.build);
+  // Колония на Канопусе — зелёное кольцо; Тубан — строитель в пути (пунктир)
+  e += ring(kx, ky, 112, GREEN, 0.25);
+  e += cap(kx, ky - 112, GREEN, ico.colony, 'КОЛОНИЯ', '58 дн');
+  e += ring(tx, ty, 98, GOLD, 0, true);
+  e += cap(tx, ty - 98, GOLD, ico.outpost, 'ФОРПОСТ', '~102 дн');
+  e += `<line x1="${tx + 170}" y1="${ty + 150}" x2="${tx + 80}" y2="${ty + 62}" stroke="${GOLD}" stroke-width="2" stroke-dasharray="4 6" opacity="0.8"/>` + shipDot(tx + 170, ty + 150, GOLD, ico.build);
+  return `<div class="lbl2">ВАРИАНТ B · КОЛЬЦО СИСТЕМЫ</div><svg width="1920" height="1080"><defs>${defs}</defs>${scene(e)}</svg>
+    ${note(60, 820, 'ОДНО ПРАВИЛО ДЛЯ ВСЕГО', 'Любая работа в системе — толстое кольцо вокруг звезды цвета задачи: голубое — разведка, золотое — стройка, зелёное — колония. Под названием больше ничего нет.')}
+    ${note(1520, 820, 'КАПСУЛА И КОРАБЛЬ', 'Сверху на кольце капсула: значок, задача, проценты и дни. Корабль — кружок на конце дуги прогресса. Строитель в пути — пунктирное кольцо и пунктир маршрута.')}`;
+}
+
+// ================= C: «КАРТОЧКА ЗАДАЧИ» — компактная карточка с прогрессом и мягкие эффекты =================
+function C() {
+  const [kx, ky] = SYS.kan, [px, py] = SYS.psi, [sx, sy] = SYS.saif, [tx, ty] = SYS.tub;
+  const card = (x, y, c, icon, name, sub, p, wait) => {
+    const w = 210, h = 50, l = x - w / 2;
+    let s = `<path d="M${l + 8} ${y} H${l + w} V${y + h - 8} L${l + w - 8} ${y + h} H${l} V${y + 8} Z" fill="#07111D" fill-opacity="0.92" stroke="${c}" stroke-opacity="0.45"/>`;
+    s += `<rect x="${l}" y="${y}" width="44" height="${h}" fill="${c}" fill-opacity="0.16"/><rect x="${l}" y="${y}" width="3" height="${h}" fill="${c}"/>`;
+    s += T(l + 23, y + 31, icon, { s: 20, c });
+    s += T(l + 56, y + 20, name, { s: 13, w: 700, ls: 2, a: 'start' }) + T(l + 56, y + 37, sub, { s: 12, c: '#9FB2BC', a: 'start' });
+    const segs = 10;
+    for (let i = 0; i < segs; i++) { const on = p != null && i < Math.round(p * segs); s += `<rect x="${l + 56 + i * 14.5}" y="${y + 42}" width="11" height="3" fill="${on ? c : '#fff'}" opacity="${on ? 1 : wait ? 0 : 0.14}"/>`; }
+    if (p != null) s += T(l + w - 8, y + 20, Math.round(p * 100) + '%', { s: 12, w: 700, c, a: 'end' });
+    return s;
+  };
+  const badge = (x, y, c, g, p) => `<rect x="${x - 17}" y="${y - 17}" width="34" height="34" rx="8" fill="#07111D" stroke="${c}" stroke-opacity="0.5" stroke-width="1.5"/>${T(x, y + 6, g, { s: 16, c })}
+    ${p != null ? `<path d="${arc(x, y, 24, 0, p)}" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/>` : ''}`;
+  let e = '';
+  // Разведка: волны сенсора от звезды (мягкие круги) и метки найденного
+  [90, 140, 190].forEach((r, i) => e += `<circle cx="${sx}" cy="${sy}" r="${r}" fill="none" stroke="${SCI}" stroke-opacity="${0.35 - i * 0.1}" stroke-width="${3 - i * 0.7}"/>`);
+  [[0.15, 70], [0.55, 120], [0.8, 95]].forEach(([a, r], i) => e += `<g opacity="${i < 2 ? 1 : 0.35}"><circle cx="${sx + r * Math.sin(a * 6.283)}" cy="${sy - r * Math.cos(a * 6.283)}" r="7" fill="none" stroke="${SCI}" stroke-width="1.5"/>${T(sx + r * Math.sin(a * 6.283), sy - r * Math.cos(a * 6.283) + 4, i < 2 ? '!' : '?', { s: 10, w: 700, c: SCI })}</g>`);
+  e += badge(sx + 120, sy - 120, SCI, ico.sci, 0.62);
+  e += card(sx, sy + 106, SCI, ico.scan, 'РАЗВЕДКА', 'найдено 2 из 3 · 6 дн', 0.62);
+  // Монтаж: тёплое свечение площадки, каркас станции, искры
+  const bx = px + 95, by = py - 40;
+  e += `<circle cx="${bx}" cy="${by}" r="40" fill="${radial(GOLD, 0.35)}"/>`;
+  e += `<circle cx="${bx}" cy="${by}" r="22" fill="none" stroke="${GOLD}" stroke-width="2" stroke-dasharray="${2 * Math.PI * 22 * 0.4} 200" transform="rotate(-90 ${bx} ${by})"/><circle cx="${bx}" cy="${by}" r="22" fill="none" stroke="${GOLD}" stroke-opacity="0.2" stroke-width="2"/>`;
+  for (let i = 0; i < 6; i++) e += `<line x1="${bx}" y1="${by}" x2="${bx + 14 * Math.cos(i * Math.PI / 3)}" y2="${by + 14 * Math.sin(i * Math.PI / 3)}" stroke="${GOLD}" stroke-opacity="${i < 3 ? 0.9 : 0.25}" stroke-width="1.5"/>`;
+  [[8, -26], [26, -6], [-20, 14], [30, 20]].forEach(([dx, dy]) => e += `<circle cx="${bx + dx}" cy="${by + dy}" r="1.8" fill="#FFF1C4"/>`);
+  e += `<line x1="${px + 150}" y1="${py - 120}" x2="${bx + 10}" y2="${by - 10}" stroke="${GOLD}" stroke-opacity="0.5" stroke-width="3"/>`;
+  e += badge(px + 150, py - 120, GOLD, ico.build, 0.4);
+  e += card(px, py + 120, GOLD, ico.outpost, 'ФОРПОСТ', 'монтаж · 34 дн', 0.4);
+  e += card(kx, ky + 120, GREEN, ico.colony, 'КОЛОНИЯ', 'Канопус II · 58 дн', 0.25);
+  e += card(tx, ty + 92, GOLD, ico.outpost, 'ФОРПОСТ', 'строитель в пути · ~102 дн', null, true);
+  return `<div class="lbl2">ВАРИАНТ C · КАРТОЧКА ЗАДАЧИ</div><svg width="1920" height="1080"><defs>${defs}</defs>${scene(e)}</svg>
+    ${note(60, 820, 'КАРТОЧКА ПОД НАЗВАНИЕМ', 'Плашка со срезанными углами в стиле кнопок: цветной столбик со значком, задача, пояснение (что именно, сколько найдено, в пути ли строитель), 10 сегментов прогресса и проценты.')}
+    ${note(1520, 820, 'РАЗВЕДКА И МОНТАЖ', 'Разведка — расходящиеся сенсорные волны и метки находок («!» — найдено, «?» — ещё нет). Монтаж — тёплый каркас с искрами и лучом. Значок корабля — квадрат с дугой прогресса вокруг.')}`;
+}
+
+document.getElementById('s').innerHTML = { a: A, b: B, c: C }[v]();
+</script></body></html>

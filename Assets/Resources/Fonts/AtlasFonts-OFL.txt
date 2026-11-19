@@ -1,0 +1,5 @@
+Шрифты стиля «Атлас» распространяются по лицензии SIL Open Font License 1.1 (https://openfontlicense.org). Получены с Google Fonts.
+
+Spectral-SemiBold.ttf                         — Spectral, Copyright 2017 Production Type
+IBMPlexSans-Regular.ttf, IBMPlexSans-SemiBold.ttf — IBM Plex Sans, Copyright 2017 IBM Corp.
+IBMPlexMono-Regular.ttf, IBMPlexMono-Medium.ttf   — IBM Plex Mono, Copyright 2017 IBM Corp.

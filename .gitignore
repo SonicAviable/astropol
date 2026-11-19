@@ -37,3 +37,5 @@ sysinfo.txt
 *.unitypackage
 *.app
 crashlytics-build.properties
+__pycache__/
+ProfilerDump.txt

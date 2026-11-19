@@ -6,7 +6,8 @@ using StellarisClone.Core;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Liquid Glass — единая дизайн-система интерфейса Astropolity.
+    /// Liquid Glass — движок поверхностей интерфейса Astropolity (стиль «Атлас»: чернильно-синие окна, кремовые линии,
+    /// шкалы с делениями, золотые перекрестья на углах, кнопки-капсулы).
     ///
     ///   LG.Glass(go)    — парящая стеклянная панель с блюром фона, тенью и бликами
     ///   LG.Platter(go)  — вложенная полупрозрачная пластина (секции, строки)
@@ -23,13 +24,14 @@ namespace StellarisClone.Rendering
 
         public static class Palette
         {
-            public static readonly Color GlassRim      = new Color(1f, 1f, 1f, 0.22f);
-            public static readonly Color GlassRimSoft  = new Color(1f, 1f, 1f, 0.10f);
-            public static readonly Color NeonRim       = new Color(0.36f, 0.95f, 0.88f, 0.70f);
-            public static readonly Color GoldRim       = new Color(1.00f, 0.82f, 0.36f, 0.75f);
-            public static readonly Color DangerRim     = new Color(1.00f, 0.40f, 0.42f, 0.75f);
-            public static readonly Color SuccessRim    = new Color(0.40f, 1.00f, 0.62f, 0.70f);
-            public static readonly Color ScrimTint     = new Color(0.010f, 0.025f, 0.040f, 1f);
+            // Палитра «Атласа»: кремовые линии, коралл — выделение и тревога, золото — особое, морская зелень — успех
+            public static readonly Color GlassRim      = new Color(0.925f, 0.898f, 0.827f, 0.26f);
+            public static readonly Color GlassRimSoft  = new Color(0.925f, 0.898f, 0.827f, 0.12f);
+            public static readonly Color NeonRim       = new Color(1.000f, 0.420f, 0.341f, 0.75f);
+            public static readonly Color GoldRim       = new Color(0.906f, 0.757f, 0.439f, 0.80f);
+            public static readonly Color DangerRim     = new Color(1.000f, 0.420f, 0.341f, 0.80f);
+            public static readonly Color SuccessRim    = new Color(0.475f, 0.816f, 0.749f, 0.75f);
+            public static readonly Color ScrimTint     = new Color(0.055f, 0.094f, 0.157f, 1f);
         }
 
         // ------------------------------------------------------------------ Стили

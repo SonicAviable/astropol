@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты экрана «Первый запуск» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_firstrun.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center/cover; filter: brightness(0.6); }
+.dim { position: absolute; inset: 0; background: rgba(2,6,14,0.55); }
+.glass { background: linear-gradient(180deg, rgba(10,22,40,0.9), rgba(5,12,24,0.94)); border: 1px solid rgba(120,220,215,0.22);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); border-radius: 20px; }
+.cy { color: #6FE6DA; } .gold { color: #FFD27A; } .mut { color: #8DA6AE; } .gr { color: #5CF599; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 13px; color: #6FE6DA; }
+.ghost { text-align: center; padding: 15px 26px; border-radius: 14px; font-weight: 700; font-size: 14px; letter-spacing: 3px; color: #CFE2E6; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); }
+.prim { text-align: center; padding: 17px 34px; border-radius: 14px; font-weight: 700; font-size: 16px; letter-spacing: 4px; color: #04161A; background: linear-gradient(180deg,#8FF5EA,#4FD2C5); box-shadow: 0 0 30px rgba(95,230,218,0.45); }
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.seg div { flex: 1; text-align: center; padding: 9px 6px; border-radius: 9px; font-weight: 700; font-size: 13px; color: #9DB3BA; white-space: nowrap; }
+.seg div.on { background: rgba(95,230,218,0.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.7), 0 0 14px rgba(95,230,218,0.2); }
+.tog { width: 52px; height: 28px; border-radius: 14px; background: rgba(95,230,218,0.55); position: relative; box-shadow: 0 0 12px rgba(95,230,218,0.35); flex: none; }
+.tog::after { content: ''; position: absolute; right: 4px; top: 4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; }
+.tog.off { background: rgba(255,255,255,0.12); box-shadow: none; } .tog.off::after { right: auto; left: 4px; background: #9DB3BA; }
+.sl { position: relative; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+.sl i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #3FB6AC, #8FF5EA); box-shadow: 0 0 10px rgba(95,230,218,0.5); }
+.sl b { position: absolute; top: -6px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(95,230,218,0.7); }
+.row { display: flex; align-items: center; gap: 20px; padding: 13px 18px; border-radius: 14px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; }
+.row .t { flex: 1; } .row .t b { font-size: 16px; display: block; } .row .t span { font-size: 12px; color: #7F97A0; }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+.preset { border-radius: 16px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.08); }
+.preset .img { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 40% 40%/220%; }
+.preset .sh { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(4,10,20,0.96) 25%, rgba(4,10,20,0) 75%); }
+.preset .tx { position: absolute; left: 20px; right: 20px; bottom: 18px; }
+.preset.on { border: 2px solid #6FE6DA; box-shadow: 0 0 30px rgba(95,230,218,0.35); }
+.chip { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+.exp { border-radius: 18px; padding: 26px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); position: relative; }
+.exp.on { border: 2px solid #6FE6DA; background: rgba(95,230,218,0.08); box-shadow: 0 0 30px rgba(95,230,218,0.25); }
+.exp ul { list-style: none; padding: 0; margin-top: 16px; } .exp li { font-size: 14px; padding: 5px 0; color: #C7D8DD; } .exp li::before { content: '● '; color: #6FE6DA; font-size: 10px; }
+.exp li.no { color: #7F97A0; } .exp li.no::before { content: '○ '; color: #5A6C74; }
+.ans { padding: 18px 24px; border-radius: 14px; border: 1px solid rgba(111,230,218,0.3); background: rgba(95,230,218,0.05); font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.ans .k { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: rgba(95,230,218,0.18); color: #9EEFE6; font-size: 15px; flex: none; }
+.ans span { display: block; font-size: 13px; font-weight: 400; color: #8DA6AE; margin-top: 3px; }
+.ans.on { border-color: #6FE6DA; background: rgba(95,230,218,0.16); box-shadow: 0 0 24px rgba(95,230,218,0.25); }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const seg = (opts, on, w) => `<div class="seg" style="width:${w||360}px">${opts.map((o, i) => `<div class="${i == on ? 'on' : ''}">${o}</div>`).join('')}</div>`;
+const sl = (p, val, w) => `<div style="display:flex;align-items:center;gap:14px;width:${w||360}px"><div class="sl" style="flex:1"><i style="width:${p}%"></i><b style="left:${p}%"></b></div><b style="width:52px;text-align:right">${val}</b></div>`;
+const row = (t, d, ctl) => `<div class="row"><div class="t"><b>${t}</b>${d ? `<span>${d}</span>` : ''}</div>${ctl}</div>`;
+const PRESETS = [['Низкое','Слабые ноутбуки и встройка','67% · без теней',0.35,'grayscale(0.4) blur(1.5px)'],['Среднее','Большинство ПК','85% · FXAA',0.6,'blur(0.6px)'],['Высокое','Видеокарты GTX 1060 и лучше','100% · SMAA · тени',0.85,'none'],['Ультра','Мощные ПК, 2K–4K','MSAA ×4 · тени 4096',1,'saturate(1.25) contrast(1.08)']];
+const LOGO = (y) => `<div style="position:absolute;left:0;right:0;top:${y}px;text-align:center"><img src="../../Assets/Branding/logo.png" style="height:70px"></div>`;
+
+const T = {
+// ------------------------------------------------------------------ A: пошаговый мастер
+a: `<div class="lbl2">ВАРИАНТ A · ПОШАГОВЫЙ МАСТЕР</div><div class="bg"></div><div class="dim"></div>
+  ${LOGO(70)}
+  <div style="position:absolute;left:0;right:0;top:170px;text-align:center"><div class="h">ПЕРВЫЙ ЗАПУСК · ШАГ 2 ИЗ 4</div><div style="font-weight:700;font-size:40px;letter-spacing:2px;margin-top:8px">Экран и графика</div><div class="mut" style="font-size:16px;margin-top:6px">Всё это можно поменять позже в «Настройках»</div></div>
+  <!-- степпер -->
+  <div style="position:absolute;left:460px;right:460px;top:310px;display:flex;align-items:center">
+   ${[['Язык','✓',2],['Графика','2',1],['Интерфейс и звук','3',0],['Опыт','4',0]].map(([n,k,st],i)=>`${i?`<div style="flex:1;height:2px;margin:0 14px;background:${st==2||st==1?'linear-gradient(90deg,#6FE6DA,#6FE6DA)':'rgba(255,255,255,0.12)'}"></div>`:''}<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;${st==2?'background:#6FE6DA;color:#04161A':st==1?'border:2px solid #6FE6DA;color:#fff;box-shadow:0 0 16px rgba(95,230,218,0.5)':'border:1px solid rgba(255,255,255,0.25);color:#8DA6AE'}">${k}</div><b style="font-size:15px;color:${st?'#fff':'#8DA6AE'}">${n}</b></div>`).join('')}
+  </div>
+  <div class="glass" style="position:absolute;left:260px;right:260px;top:390px;height:480px;padding:34px 40px">
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><div class="h">КАЧЕСТВО ГРАФИКИ</div><div class="mut" style="font-size:13px">Обнаружено: <b style="color:#fff">NVIDIA GeForce RTX 3060 · 12 ГБ</b> · экран 2560 × 1440</div></div>
+   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px">
+    ${PRESETS.map(([n,d,s,b,f],i)=>`<div class="preset ${i==2?'on':''}" style="height:230px"><div class="img" style="filter:brightness(${b}) ${f}"></div><div class="sh"></div>${i==2?'<div class="chip" style="position:absolute;left:16px;top:16px;background:#6FE6DA;color:#04161A">РЕКОМЕНДУЕМ</div>':''}<div class="tx"><div style="font-weight:700;font-size:22px">${n}</div><div class="mut" style="font-size:13px;margin-top:2px">${d}</div><div class="cy" style="font-size:12px;margin-top:6px;font-weight:700">${s}</div></div></div>`).join('')}
+   </div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-top:24px">
+    ${row('Режим экрана','',seg(['Без рамки','Эксклюзивный','В окне'],0,380))}
+    ${row('Разрешение','',seg(['1920×1080','2560×1440','3840×2160'],1,380))}
+   </div>
+   <div class="mut" style="font-size:13px;margin-top:6px">Изменения видны сразу: фон за окном уже рисуется с выбранным качеством.</div>
+  </div>
+  <div style="position:absolute;left:260px;right:260px;bottom:50px;display:flex;align-items:center;gap:16px">
+   <div class="ghost">‹ НАЗАД</div><div style="flex:1"></div><div class="mut" style="font-size:14px;margin-right:12px">Пропустить — оставить рекомендуемые</div><div class="prim" style="width:280px">ДАЛЕЕ ›</div>
+  </div>`,
+
+// ------------------------------------------------------------------ B: одна карточка
+b: `<div class="lbl2">ВАРИАНТ B · ОДИН ЭКРАН</div><div class="bg"></div><div class="dim" style="background:rgba(2,6,14,0.35)"></div>
+  <div class="glass" style="position:absolute;left:210px;right:210px;top:110px;bottom:90px;display:flex;overflow:hidden">
+   <div style="width:520px;flex:none;position:relative;background:linear-gradient(160deg,rgba(95,230,218,0.14),rgba(10,22,40,0) 60%);border-right:1px solid rgba(255,255,255,0.06);padding:50px 44px">
+    <img src="../../Assets/Branding/logo.png" style="height:62px">
+    <div class="h" style="margin-top:46px">ДОБРО ПОЖАЛОВАТЬ</div>
+    <div style="font-weight:700;font-size:38px;line-height:1.15;margin-top:10px">Настроим игру под вас</div>
+    <div class="mut" style="font-size:16px;line-height:1.5;margin-top:16px">Мы уже подобрали параметры по вашему компьютеру. Проверьте их и нажмите «Начать» — всё это можно поменять позже в «Настройках».</div>
+    <div style="margin-top:34px;padding:18px;border-radius:14px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06)">
+     <div class="mut" style="font-size:11px;font-weight:700;letter-spacing:2px">ВАШ КОМПЬЮТЕР</div>
+     ${[['Видеокарта','RTX 3060 · 12 ГБ'],['Процессор','Ryzen 5 5600 · 12 потоков'],['Экран','2560 × 1440 · 144 Гц']].map(([a,b])=>`<div style="display:flex;justify-content:space-between;font-size:14px;margin-top:10px"><span class="mut">${a}</span><b>${b}</b></div>`).join('')}
+     <div style="margin-top:14px;font-size:13px" class="gr">● Рекомендуем: Высокое качество</div>
+    </div>
+    <div style="position:absolute;left:44px;right:44px;bottom:44px"><div class="prim">НАЧАТЬ</div><div class="mut" style="text-align:center;font-size:13px;margin-top:12px">Esc — оставить как есть</div></div>
+   </div>
+   <div style="flex:1;padding:44px 44px 30px">
+    <div class="h">ЯЗЫК</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 26px">
+     ${[['Русский','RU',1],['English','EN',0]].map(([n,c,on])=>`<div class="exp ${on?'on':''}" style="padding:16px 20px;display:flex;align-items:center;gap:14px"><div class="chip" style="background:rgba(255,255,255,0.08);font-size:13px">${c}</div><b style="font-size:18px">${n}</b>${on?'<span class="cy" style="margin-left:auto;font-weight:700">✓</span>':''}</div>`).join('')}
+    </div>
+    <div class="h">ГРАФИКА</div>
+    <div style="margin:12px 0 26px">
+     ${row('Качество','Влияет на тени, сглаживание и масштаб рендера',seg(['Низкое','Среднее','Высокое','Ультра'],2,440))}
+     ${row('Режим экрана','',seg(['Без рамки','Эксклюзивный','В окне'],0,440))}
+    </div>
+    <div class="h">ИНТЕРФЕЙС И ЗВУК</div>
+    <div style="margin:12px 0 26px">
+     ${row('Масштаб интерфейса','Крупнее — удобнее на ноутбуке и ТВ',seg(['80%','90%','100%','110%','125%'],2,440))}
+     ${row('Громкость','Общая · музыка играет тише эффектов',sl(80,'80%',440))}
+    </div>
+    <div class="h">ВЫ ИГРАЛИ В КОСМИЧЕСКИЕ СТРАТЕГИИ?</div>
+    <div style="margin-top:12px">${row('Опыт','Включает обучение, советника и подсказки',seg(['Впервые','Немного','Ветеран'],0,440))}</div>
+   </div>
+  </div>`,
+
+// ------------------------------------------------------------------ C: диалог с ОРАКУЛОМ-7
+c: `<div class="lbl2">ВАРИАНТ C · БРИФИНГ ОРАКУЛА-7</div><div class="bg"></div><div class="dim" style="background:linear-gradient(90deg,rgba(2,6,14,0.2),rgba(2,6,14,0.75) 45%,rgba(2,6,14,0.85))"></div>
+  <div style="position:absolute;left:0;top:0;bottom:0;width:760px;background:url(../../Assets/Resources/UI/Tutor.jpg) center 15%/cover;-webkit-mask:linear-gradient(90deg,#000 55%,transparent)"></div>
+  <div style="position:absolute;left:0;bottom:0;width:760px;height:260px;background:linear-gradient(0deg,rgba(2,6,14,0.95),transparent)"></div><div style="position:absolute;left:70px;bottom:60px"><div class="h">БОРТОВОЙ ИИ</div><div style="font-weight:700;font-size:30px;letter-spacing:2px">ОРАКУЛ-7</div><div style="display:flex;gap:4px;margin-top:10px;align-items:flex-end;height:26px">${[8,16,24,12,20,26,10,18,6,14,22,9].map(h=>`<i style="width:5px;height:${h}px;border-radius:2px;background:#6FE6DA;opacity:0.85"></i>`).join('')}</div></div>
+  <div style="position:absolute;left:720px;top:120px;width:760px">
+   <div class="h">ПЕРВИЧНАЯ КАЛИБРОВКА · 3 / 5</div>
+   <div class="glass" style="margin-top:16px;padding:28px 32px;border-color:rgba(111,230,218,0.45);border-radius:20px 20px 20px 4px">
+    <div style="font-size:24px;line-height:1.45">«Командующий, системы корабля в норме. Осталось подстроить мостик под ваши глаза. <b class="cy">Насколько крупным сделать интерфейс?</b>»</div>
+   </div>
+   <div style="margin-top:28px">
+    ${[['1','Компактный · 90%','Больше карты на экране, мелкий текст',0],['2','Стандартный · 100%','Рекомендуем для экрана 2560 × 1440',1],['3','Крупный · 110%','Для ноутбуков и игры с дивана',0],['4','Очень крупный · 125%','Телевизор или проблемы со зрением',0]].map(([k,t,d,on])=>`<div class="ans ${on?'on':''}"><div class="k">${k}</div><div>${t}<span>${d}</span></div>${on?'<span class="cy" style="margin-left:auto;font-size:14px;font-weight:700;letter-spacing:2px">ПРЕДПРОСМОТР</span>':''}</div>`).join('')}
+   </div>
+   <div style="display:flex;gap:14px;margin-top:22px"><div class="ghost">‹ НАЗАД</div><div style="flex:1"></div><div class="ghost" style="color:#8DA6AE">ПРОПУСТИТЬ КАЛИБРОВКУ</div></div>
+  </div>
+  <div class="glass" style="position:absolute;right:70px;top:120px;width:330px;padding:24px">
+   <div class="h">ЖУРНАЛ НАСТРОЙКИ</div>
+   ${[['Язык','Русский','✓'],['Графика','Высокое · без рамки','✓'],['Интерфейс','100%','…'],['Звук','—',''],['Опыт','—','']].map(([a,b,s],i)=>`<div style="display:flex;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><div style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;${s=='✓'?'background:#6FE6DA;color:#04161A':s=='…'?'border:2px solid #6FE6DA;color:#6FE6DA':'border:1px solid rgba(255,255,255,0.2);color:#5A6C74'}">${s=='✓'?'✓':i+1}</div><div style="flex:1"><div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:${s?'#8DA6AE':'#5A6C74'}">${a.toUpperCase()}</div><div style="font-size:15px;font-weight:700;color:${s?'#fff':'#5A6C74'}">${b}</div></div></div>`).join('')}
+   <div class="mut" style="font-size:12px;margin-top:14px;line-height:1.45">Клавиши 1–4 — выбрать ответ. Голос ОРАКУЛА можно выключить в «Настройках → Звук».</div>
+  </div>`,
+};
+document.getElementById('s').innerHTML = T[v];
+</script></body></html>

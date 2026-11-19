@@ -16,6 +16,14 @@ namespace StellarisClone.Rendering
         private Camera _cam;
         private readonly Dictionary<int, SystemNameplate> _plates = new Dictionary<int, SystemNameplate>();
         private int _hoveredId = -1;
+        private string _chipTip;
+
+        private void ClearChipTip()
+        {
+            if (_chipTip == null) return;
+            TooltipSystem.HideIf(_chipTip);
+            _chipTip = null;
+        }
 
         private void Awake()
         {
@@ -48,8 +56,22 @@ namespace StellarisClone.Rendering
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
                 SetHovered(-1);
+                ClearChipTip();
                 return;
             }
+
+            // Ярлыки колоний у звёзд (жители, стройка) — подсказка с подробностями
+            string tip = null;
+            Vector2 mouse = Input.mousePosition;
+            foreach (var plate in _plates.Values)
+            {
+                if (plate == null) continue;
+                tip = plate.ChipTooltipAt(_cam, mouse);
+                if (tip != null) break;
+            }
+            // Повторный Show сбрасывает задержку появления — зовём только при смене текста
+            if (tip != null) { if (tip != _chipTip) { _chipTip = tip; TooltipSystem.Show(tip); } }
+            else ClearChipTip();
 
             Ray ray = _cam.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, 800f))

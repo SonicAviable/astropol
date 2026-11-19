@@ -1,0 +1,332 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using StellarisClone.Rendering;
+
+namespace StellarisClone.Core
+{
+    /// <summary>
+    /// Отношения между империями ИИ: они спорят за границы, воюют и мирятся без участия игрока.
+    ///   • Отношение складывается из характеров, длины общей границы, перекоса сил и старых обид.
+    ///   • Воинственная империя нападает на соседа, если отношение ниже её порога и флот сильнее.
+    ///   • Война идёт, пока одна из сторон не устанет (потери систем и кораблей ускоряют усталость),
+    ///     затем — мир и перемирие на три года.
+    /// Игрок узнаёт о войнах и мирах соседей из уведомлений и окна дипломатии.
+    /// </summary>
+    public static class AIRelations
+    {
+        public const int TruceLengthDays = 3 * 360;
+        private const int InitialCooldownDays = 3 * 360;
+
+        [Serializable]
+        public class PairState
+        {
+            public int A, B;
+            public bool AtWar;
+            public int TruceDays;
+            public int CooldownDays = InitialCooldownDays;
+            public int WarMonths;
+            public float WearA, WearB;
+            public float Grudge;
+            /// <summary>Сколько месяцев ещё действует договор о границах (0 — границы закрыты).</summary>
+            public int BorderMonths;
+        }
+
+        private static readonly List<PairState> _pairs = new List<PairState>();
+
+        public static void Reset()
+        {
+            _pairs.Clear();
+            NeutralWorlds.Reset();
+            AICoalition.Reset();
+            Reputation.Reset();
+            CasusBelli.Reset();
+        }
+
+        private static PairState Get(int a, int b, bool create)
+        {
+            if (a == b) return null;
+            int lo = Mathf.Min(a, b), hi = Mathf.Max(a, b);
+            foreach (var p in _pairs) if (p.A == lo && p.B == hi) return p;
+            if (!create) return null;
+            var n = new PairState { A = lo, B = hi };
+            _pairs.Add(n);
+            return n;
+        }
+
+        public static bool AtWar(int a, int b)
+        {
+            var p = Get(a, b, false);
+            return p != null && p.AtWar;
+        }
+
+        public static int TruceDays(int a, int b) => Get(a, b, false)?.TruceDays ?? 0;
+
+        /// <summary>Открыты ли границы двух империй ИИ по договору.</summary>
+        public static bool HasBorderAccess(int a, int b)
+        {
+            var p = Get(a, b, false);
+            return p != null && !p.AtWar && p.BorderMonths > 0;
+        }
+
+        /// <summary>Отношение, ниже которого договор о границах рвут, и выше которого — заключают при нужде.</summary>
+        private const float BorderBreakOpinion = -25f, BorderSignOpinion = 0f;
+
+        /// <summary>
+        /// Договор о границах между ИИ: заключают, когда проход через соседа открывает путь к ничейным системам
+        /// (или просто при хороших отношениях), рвут при сильной вражде и перед войной (план войны против соседа).
+        /// </summary>
+        private static void MonthlyBorders(PairState p, AIEmpireManager a, AIEmpireManager b, float opinion)
+        {
+            if (p.BorderMonths > 0)
+            {
+                p.BorderMonths--;
+                bool hostile = opinion < BorderBreakOpinion || a.WarPlanTarget == b.OwnerId || b.WarPlanTarget == a.OwnerId;
+                if (hostile) p.BorderMonths = 0;
+                if (p.BorderMonths == 0 && (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId)))
+                    GalacticNews.Post(NewsKind.Peace, Loc.F("{0} и {1} закрыли границы друг для друга", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)));
+                return;
+            }
+            if (AICoalition.AreAllies(a.OwnerId, b.OwnerId) || !Contacts.Met(a.OwnerId, b.OwnerId)) return;
+            if (opinion < BorderSignOpinion || a.WarPlanTarget == b.OwnerId || b.WarPlanTarget == a.OwnerId) return;
+            int need = BorderRules.BlockedFrontier(a.OwnerId, b.OwnerId) + BorderRules.BlockedFrontier(b.OwnerId, a.OwnerId);
+            float chance = need > 0 ? 0.25f + 0.05f * Mathf.Min(need, 6) : opinion >= 25f ? 0.06f : 0f;
+            if (UnityEngine.Random.value >= chance) return;
+            p.BorderMonths = DealCatalog.TreatyMonths;
+            if (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId))
+                GalacticNews.Post(NewsKind.Peace, Loc.F("{0} и {1} подписали договор о границах", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)));
+        }
+
+        /// <summary>Отношение одной империи ИИ к другой (симметричное), с разбором для подсказки.</summary>
+        public static float Opinion(AIEmpireManager a, AIEmpireManager b, List<string> reasons = null)
+        {
+            if (a == null || b == null) return 0f;
+            var p = Get(a.OwnerId, b.OwnerId, false);
+            float v = 0f;
+            void Add(string label, float x)
+            {
+                if (Mathf.Abs(x) < 0.5f) return;
+                v += x;
+                reasons?.Add($"{label} {x:+0;-0}");
+            }
+
+            Add(Loc.T("характеры"), (a.Profile.BaseOpinion + b.Profile.BaseOpinion) * 0.5f + (a.Personality == b.Personality ? 5f : 0f));
+            if ((a.Personality == AIPersonality.Machine) != (b.Personality == AIPersonality.Machine))
+                Add(Loc.T("машины и органики"), -FactionTraits.MachineDistrust);
+            int border = EmpireStats.SharedBorderCount(a.OwnerId, b.OwnerId);
+            if (border > 0) Add(Loc.F("общая граница ({0})", border), -Mathf.Min(18f, border * 3f));
+            float pa = Mathf.Max(1f, EmpireStats.MilitaryPower(a.OwnerId)), pb = Mathf.Max(1f, EmpireStats.MilitaryPower(b.OwnerId));
+            if (pa / pb > 1.5f || pb / pa > 1.5f) Add(Loc.T("перекос сил"), -6f);
+            if (AICoalition.AreAllies(a.OwnerId, b.OwnerId)) Add(Loc.T("союзники по коалиции"), 20f);
+            else if (AICoalition.IsActive && (AICoalition.IsTarget(a.OwnerId) && AICoalition.IsMember(b.OwnerId)
+                                              || AICoalition.IsTarget(b.OwnerId) && AICoalition.IsMember(a.OwnerId)))
+                Add(Loc.T("коалиция против сильнейшего"), -15f);
+            if (p != null)
+            {
+                if (p.Grudge < -0.5f) Add(Loc.T("старые обиды"), p.Grudge);
+                if (p.AtWar) Add(Loc.T("война"), -40f);
+                else if (p.TruceDays > 0) Add(Loc.T("перемирие"), 5f);
+            }
+            return Mathf.Clamp(v, -100f, 100f);
+        }
+
+        // ==================== ВРЕМЯ ====================
+
+        public static void Tick(int day)
+        {
+            foreach (var p in _pairs)
+            {
+                if (p.TruceDays > 0) p.TruceDays--;
+                if (p.CooldownDays > 0) p.CooldownDays--;
+            }
+            if (day == 1) Monthly();
+            NeutralWorlds.Tick(day);
+        }
+
+        private static void Monthly()
+        {
+            AICoalition.MonthlyUpdate();
+            Reputation.Monthly();
+            CasusBelli.Monthly();
+            var alive = new List<AIEmpireManager>(AIEmpireManager.Alive);
+            for (int i = 0; i < alive.Count; i++)
+            for (int j = i + 1; j < alive.Count; j++)
+            {
+                var a = alive[i];
+                var b = alive[j];
+                var p = Get(a.OwnerId, b.OwnerId, true);
+                p.Grudge *= 0.96f;
+
+                // Союзники по коалиции мирятся и друг на друга не нападают
+                if (AICoalition.AreAllies(a.OwnerId, b.OwnerId))
+                {
+                    if (p.AtWar) MakePeace(p, a, b);
+                    continue;
+                }
+
+                if (p.AtWar)
+                {
+                    p.WarMonths++;
+                    p.WearA = Mathf.Min(100f, p.WearA + 2.5f * a.Profile.WearinessRate);
+                    p.WearB = Mathf.Min(100f, p.WearB + 2.5f * b.Profile.WearinessRate);
+                    bool tired = p.WearA >= a.Profile.PeaceWeariness || p.WearB >= b.Profile.PeaceWeariness;
+                    if ((tired && p.WarMonths >= 6 && UnityEngine.Random.value < 0.5f) || p.WarMonths >= 48)
+                        MakePeace(p, a, b);
+                    continue;
+                }
+
+                p.WearA = Mathf.Max(0f, p.WearA - 5f);
+                p.WearB = Mathf.Max(0f, p.WearB - 5f);
+                MonthlyBorders(p, a, b, Opinion(a, b));
+                // Новые войны между ИИ планирует стратегия каждой империи (AIEmpireManager.Strategy):
+                // выбор цели, подготовка флота у границы, объявление — DeclarePlannedWar
+            }
+        }
+
+        /// <summary>Можно ли сейчас объявить войну: не воюют, нет перемирия и «остывания» после прошлой войны.</summary>
+        public static bool CanDeclare(int a, int b)
+        {
+            var p = Get(a, b, false);
+            return p == null || (!p.AtWar && p.TruceDays <= 0 && p.CooldownDays <= 0);
+        }
+
+        /// <summary>Война по плану: стратегия ИИ подготовилась и объявляет её.</summary>
+        public static bool DeclarePlannedWar(AIEmpireManager attacker, AIEmpireManager defender)
+        {
+            if (attacker == null || defender == null || attacker == defender || attacker.IsBankrupt) return false;
+            if (!CanDeclare(attacker.OwnerId, defender.OwnerId)) return false;
+            var p = Get(attacker.OwnerId, defender.OwnerId, true);
+            StartWar(p, attacker, defender);
+            return true;
+        }
+
+        /// <summary>Вступление в войну по обязательству коалиции: перемирие не мешает, если оно почти истекло.</summary>
+        public static bool CoalitionWar(AIEmpireManager attacker, AIEmpireManager defender)
+        {
+            var p = Get(attacker.OwnerId, defender.OwnerId, true);
+            if (p == null || p.AtWar || p.TruceDays > 360 || attacker.IsBankrupt) return false;
+            p.TruceDays = 0;
+            StartWar(p, attacker, defender);
+            return true;
+        }
+
+        /// <summary>Союзник игрока вступает в войну по союзному долгу (короткое перемирие не мешает).</summary>
+        public static bool JoinWar(AIEmpireManager joiner, AIEmpireManager enemy)
+        {
+            if (joiner == null || enemy == null || joiner == enemy || joiner.IsBankrupt) return false;
+            var p = Get(joiner.OwnerId, enemy.OwnerId, true);
+            if (p == null || p.AtWar) return false;
+            if (p.TruceDays > 360) return false;
+            p.TruceDays = 0;
+            p.CooldownDays = 0;
+            StartWar(p, joiner, enemy, callAllies: false);
+            return true;
+        }
+
+        private static void StartWar(PairState p, AIEmpireManager attacker, AIEmpireManager defender, bool callAllies = true)
+        {
+            p.AtWar = true;
+            p.WarMonths = 0;
+            p.WearA = p.WearB = 0f;
+            p.BorderMonths = 0;   // война рвёт договор о границах (на войне границы и так открыты)
+            if (Contacts.PlayerMet(attacker.OwnerId) || Contacts.PlayerMet(defender.OwnerId))
+                NotificationCenter.Show(Loc.T("Война соседей"),
+                    Loc.F("{0} объявляет войну: {1}", Contacts.NameForPlayer(attacker.OwnerId), Contacts.NameForPlayer(defender.OwnerId)),
+                    NotificationCenter.Kind.Warning, 8f);
+            if (callAllies) CallPlayerToDefend(attacker, defender);
+            AIEmpireManager.NotifyDiplomacyChanged();
+        }
+
+        /// <summary>
+        /// На союзника игрока напали — игрока зовут на помощь (событие с выбором «вступить» или «отказать»).
+        /// Если оба воюющих — союзники игрока, игрок остаётся в стороне без последствий.
+        /// </summary>
+        private static void CallPlayerToDefend(AIEmpireManager attacker, AIEmpireManager defender)
+        {
+            if (!defender.HasAlliance || Diplomacy.AtWar(0, attacker.OwnerId)) return;
+            if (attacker.HasAlliance)
+            {
+                NotificationCenter.Show(Loc.T("Союзники воюют между собой"),
+                    Loc.F("{0} напал на {1}. Оба — ваши союзники: вы можете остаться в стороне", attacker.AIName, defender.AIName),
+                    NotificationCenter.Kind.Warning, 9f);
+                return;
+            }
+            AnomalyEventSystem.Instance?.Schedule("ally_call", 1, new EventContext { Rival = attacker.OwnerId, Ally = defender.OwnerId });
+        }
+
+        private static void MakePeace(PairState p, AIEmpireManager a, AIEmpireManager b)
+        {
+            p.AtWar = false;
+            p.TruceDays = TruceLengthDays;
+            p.CooldownDays = 2 * 360;
+            p.Grudge = Mathf.Max(-40f, p.Grudge - 15f);
+            SiegeManager.Instance?.ClearSieges(a.OwnerId, b.OwnerId);
+            if (Contacts.PlayerMet(a.OwnerId) || Contacts.PlayerMet(b.OwnerId))
+                NotificationCenter.Show(Loc.T("Мир между соседями"),
+                    Loc.F("{0} и {1} заключили мир. Перемирие — 3 года", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)),
+                    NotificationCenter.Kind.Info, 7f);
+            AIEmpireManager.NotifyDiplomacyChanged();
+        }
+
+        /// <summary>Потери в войне двух ИИ ускоряют усталость проигрывающей стороны.</summary>
+        public static void AddWeariness(int loser, int winner, float amount)
+        {
+            var p = Get(loser, winner, false);
+            if (p == null || !p.AtWar) return;
+            if (p.A == loser) p.WearA = Mathf.Min(100f, p.WearA + amount);
+            else p.WearB = Mathf.Min(100f, p.WearB + amount);
+        }
+
+        /// <summary>
+        /// Раздор, посеянный агентами: старая обида между двумя ИИ растёт (отношение падает), а «охлаждение»
+        /// перед войной снимается. Перемирие не отменяется — договор всё ещё держит стороны.
+        /// </summary>
+        public static void AddGrudge(int a, int b, float delta)
+        {
+            var p = Get(a, b, true);
+            if (p == null) return;
+            p.Grudge = Mathf.Clamp(p.Grudge + delta, -80f, 0f);
+            if (delta < 0f) p.CooldownDays = 0;
+        }
+
+        /// <summary>Сохранение прежней версии: соседи, которые не воюют и не враждуют, получают договор о границах.</summary>
+        public static void OpenBordersForOldSave()
+        {
+            var alive = new List<AIEmpireManager>(AIEmpireManager.Alive);
+            for (int i = 0; i < alive.Count; i++)
+            for (int j = i + 1; j < alive.Count; j++)
+            {
+                var p = Get(alive[i].OwnerId, alive[j].OwnerId, true);
+                if (!p.AtWar && Opinion(alive[i], alive[j]) >= -10f) p.BorderMonths = DealCatalog.TreatyMonths;
+            }
+        }
+
+        /// <summary>Империя пала — все её войны окончены.</summary>
+        public static void EndAllWars(int owner)
+        {
+            foreach (var p in _pairs)
+                if ((p.A == owner || p.B == owner) && p.AtWar) { p.AtWar = false; p.WarMonths = 0; }
+        }
+
+        // ==================== СОХРАНЕНИЕ ====================
+
+        public static List<PairState> Capture()
+        {
+            var list = new List<PairState>();
+            foreach (var p in _pairs)
+                list.Add(new PairState
+                {
+                    A = p.A, B = p.B, AtWar = p.AtWar, TruceDays = p.TruceDays, CooldownDays = p.CooldownDays,
+                    WarMonths = p.WarMonths, WearA = p.WearA, WearB = p.WearB, Grudge = p.Grudge,
+                    BorderMonths = p.BorderMonths
+                });
+            return list;
+        }
+
+        public static void Restore(List<PairState> list)
+        {
+            _pairs.Clear();
+            if (list != null) _pairs.AddRange(list);
+        }
+    }
+}

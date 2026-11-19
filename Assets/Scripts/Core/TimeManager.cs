@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Sfx = StellarisClone.Core.Audio.Sfx;
 
 namespace StellarisClone.Core
 {
@@ -8,9 +9,18 @@ namespace StellarisClone.Core
         public static TimeManager Instance { get; private set; }
         public event Action<int, int, int> OnDayPassed;
 
-        [SerializeField] private float baseSecondsPerDay = 1.0f;
+        /// <summary>Реальных секунд на игровой день при скорости ×1 — см. GamePace (партия 2200–2260 ≈ 2,5 ч на ×4).</summary>
+        public const float DefaultSecondsPerDay = GamePace.SecondsPerDay;
+
+        [SerializeField] private float secondsPerDay = DefaultSecondsPerDay;
+
+        public float SecondsPerDay => secondsPerDay;
 
         private float _timer;
+        private float _lastInterval;
+
+        /// <summary>Доля текущего дня (0…1) — для плавной анимации между дневными тиками; на паузе замирает.</summary>
+        public float DayFraction => _lastInterval > 0f ? Mathf.Clamp01(_timer / _lastInterval) : 0f;
         private int _currentSpeed = 1;
         private int _day = 1, _month = 1, _year = 2200;
 
@@ -23,6 +33,8 @@ namespace StellarisClone.Core
         {
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
+            // Темп задаётся в GamePace; старое значение, сохранённое в сцене, не должно его перебивать
+            secondsPerDay = DefaultSecondsPerDay;
         }
 
         private void Update()
@@ -30,7 +42,10 @@ namespace StellarisClone.Core
             HandleInput();
             if (_currentSpeed == 0) return;
 
-            float interval = baseSecondsPerDay / _currentSpeed;
+            float interval = secondsPerDay / _currentSpeed;
+            // При смене скорости сохраняем долю дня, чтобы анимация не прыгала
+            if (_lastInterval > 0f && !Mathf.Approximately(interval, _lastInterval)) _timer *= interval / _lastInterval;
+            _lastInterval = interval;
             _timer += Time.deltaTime;
             if (_timer >= interval)
             {
@@ -42,13 +57,33 @@ namespace StellarisClone.Core
         private void HandleInput()
         {
             if (!StellarisClone.Rendering.UIManager.IsGameStarted) return;   // меню, выбор цивилизации
+            if (StellarisClone.Rendering.LoadingScreen.IsActive) return;     // идёт загрузка — клавиши не работают
+            if (StellarisClone.Cards.BattleScreen.IsOpen) return;            // карточный штурм: время на паузе, клавиши заняты боем
             var flow = StellarisClone.Rendering.GameFlowUI.Instance;
             if (flow != null && flow.BlocksTimeHotkeys) return;
 
-            if (Input.GetKeyDown(KeyCode.Space)) SetSpeed(_currentSpeed == 0 ? 1 : 0);
-            if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeed(1);
-            if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeed(2);
-            if (Input.GetKeyDown(KeyCode.Alpha3)) SetSpeed(4);
+            // Пока печатают в поле ввода (название, поиск), пробел и цифры — это текст, а не управление временем
+            var sel = UnityEngine.EventSystems.EventSystem.current != null ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
+            var field = sel != null ? sel.GetComponent<UnityEngine.UI.InputField>() : null;
+            if (field != null && field.isFocused) return;
+
+            if (Input.GetKeyDown(KeyCode.Space)) SetSpeedByPlayer(_currentSpeed == 0 ? 1 : 0);
+            if (Input.GetKeyDown(KeyCode.Alpha1)) SetSpeedByPlayer(1);
+            if (Input.GetKeyDown(KeyCode.Alpha2)) SetSpeedByPlayer(2);
+            if (Input.GetKeyDown(KeyCode.Alpha3)) SetSpeedByPlayer(4);
+        }
+
+        /// <summary>Смена скорости игроком (клавиши, кнопки) — со звуком паузы/запуска/ускорения.</summary>
+        public void SetSpeedByPlayer(int speed)
+        {
+            int s = Mathf.Clamp(speed, 0, 4);
+            if (s != _currentSpeed)
+            {
+                if (s == 0) SFXManager.Play(Sfx.TimePause);
+                else if (_currentSpeed == 0) SFXManager.Play(Sfx.TimeResume);
+                else SFXManager.Play(Sfx.TimeSpeed, 1f, s > _currentSpeed ? 1.12f : 0.88f);
+            }
+            SetSpeed(s);
         }
 
         public void SetSpeed(int speed)
@@ -74,8 +109,37 @@ namespace StellarisClone.Core
                 _month++;
                 if (_month > 12) { _month = 1; _year++; }
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Каждый подписчик — отдельной строкой в профайлере: видно, чей дневной расчёт тормозит и мусорит
+            var list = OnDayPassed?.GetInvocationList();
+            if (list == null) return;
+            foreach (var d in list)
+            {
+                UnityEngine.Profiling.Profiler.BeginSample(DayMarker(d));
+                try { ((System.Action<int, int, int>)d)(_day, _month, _year); }
+                catch (System.Exception e) { Debug.LogException(e); }
+                finally { UnityEngine.Profiling.Profiler.EndSample(); }
+            }
+#else
             OnDayPassed?.Invoke(_day, _month, _year);
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly System.Collections.Generic.Dictionary<System.Reflection.MethodInfo, string> s_dayMarkers =
+            new System.Collections.Generic.Dictionary<System.Reflection.MethodInfo, string>();
+
+        private static string DayMarker(System.Delegate d)
+        {
+            if (!s_dayMarkers.TryGetValue(d.Method, out var name))
+            {
+                var t = d.Method.DeclaringType;
+                while (t != null && t.Name.StartsWith("<") && t.DeclaringType != null) t = t.DeclaringType;   // лямбда → её класс
+                s_dayMarkers[d.Method] = name = "Day: " + t?.Name + "." + d.Method.Name;
+            }
+            return name;
+        }
+#endif
 
         public string GetFormattedDate() => $"{_day:D2}.{_month:D2}.{_year}";
     }

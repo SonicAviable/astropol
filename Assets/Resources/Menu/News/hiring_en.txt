@@ -1,0 +1,21 @@
+@order 20
+@tag NEWS
+@title Join the team
+@headline SmartBiz game studio is recruiting
+@cover Menu/News/cover_hiring
+@art 0.8,0.5,0.45
+@thumb 0.78,0.42,0.42
+SmartBiz, the Russian-Kazakh game studio behind Astropolity, is looking for people who want gamedev experience and a portfolio built on a real project. The role is unpaid and open to beginners.
+# WHO WE NEED
+- Designers — interface, icons, promo art.
+- 3D artists — ships, stations, planets.
+- SMM managers — posts, community, promotion.
+- News editors — update news and announcements.
+- Testers — finding bugs, checking balance.
+# WHAT YOU GET
+- Work on a released game: Astropolity is on sale on VK Play and among its top sellers.
+- A project for your portfolio and a place in the credits.
+- A part in preparing the Steam release at the end of 2026.
+- Remote work and tasks that fit your level and free time.
+# HOW TO APPLY
+Message our game community: tell us the role, a bit about yourself and attach your work if you have any.

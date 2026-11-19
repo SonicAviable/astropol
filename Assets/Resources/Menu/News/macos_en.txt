@@ -1,0 +1,16 @@
+@order 30
+@tag NEWS
+@title Coming to macOS
+@headline A Mac version is in the works
+@cover Menu/News/cover_macos
+@art 0.8,0.5,0.45
+@thumb 0.8,0.42,0.4
+Good news for Mac owners: we are preparing a macOS version of Astropolity.
+# WHAT THE MAC VERSION INCLUDES
+- The same game as on Windows: the galaxy, six empires, diplomacy, fleets and card assaults on colonies.
+- Updates will ship on both systems at the same time.
+- Support for Macs with Apple silicon (M1 and newer).
+# WHEN
+We will announce the release date once testing is done. Follow the community news.
+# HELP US TEST
+If you have a Mac and want to try the game before release, message our community.

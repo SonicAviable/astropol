@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты окна «Исследования» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_research.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: -20px; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 60%/cover; filter: blur(6px) brightness(0.4); }
+.win { position: absolute; left: 40px; right: 40px; top: 28px; bottom: 22px; background: linear-gradient(180deg, rgba(12,24,44,0.97), rgba(6,12,24,0.98)); border: 1px solid rgba(120,220,215,0.3); border-radius: 18px; box-shadow: 0 30px 70px rgba(0,0,0,0.6); overflow: hidden; }
+.mut { color: #8DA6AE; } .cy { color: #6FE6DA; } .gold { color: #FFD27A; } .gr { color: #5CF599; } .vi { color: #C9A2FF; } .or { color:#FFB15C; } .tl { color:#5FE0C8; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 12px; color: #6FE6DA; }
+.card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; }
+.b { height: 40px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; letter-spacing: 2px; position: relative; clip-path: polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px); background: #16243C; color: #D6E4FF; padding: 0 16px; white-space: nowrap; }
+.b::before { content:''; position:absolute; left:0; top:10px; bottom:0; width:3px; background:#6E9BFF; }
+.b.q { background:#0F1828; color:#9FB2BE; } .b.q::before { background:#3A4A5E; }
+.b.p { background:#6FE3D6; color:#04161A; height: 56px; font-size: 15px; letter-spacing: 3px; } .b.p::before { display:none; }
+.close { position: absolute; right: 22px; top: 20px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.2); font-size: 18px; color: #CFE2E6; }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 6px; padding: 6px 20px; border-radius: 20px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 16px; letter-spacing: 3px; z-index: 50; }
+.bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); } .bar i { display: block; height: 100%; border-radius: 3px; }
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.seg div { flex: 1; text-align: center; padding: 9px 12px; border-radius: 9px; font-weight: 700; font-size: 14px; color: #9DB3BA; letter-spacing: 1px; white-space: nowrap; display:flex; align-items:center; justify-content:center; gap:8px; }
+.seg div.on { background: rgba(95,230,218,0.20); color: #fff; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.7); }
+.ico { width: 22px; height: 22px; object-fit: contain; }
+.search { height: 40px; border-radius: 10px; border: 1px solid rgba(111,230,218,0.35); background: rgba(0,0,0,0.3); display:flex; align-items:center; padding: 0 14px; color:#7F98A0; font-size: 14px; font-style: italic; }
+.node { position:absolute; width: 236px; height: 70px; border-radius: 12px; display:flex; align-items:center; gap: 12px; padding: 0 12px; background: rgba(10,18,32,0.9); border: 1px solid rgba(255,255,255,0.08); }
+.node img { width: 40px; height: 40px; object-fit: contain; flex:none; }
+.node b { display:block; font-size: 14px; } .node span { font-size: 11px; color:#8DA6AE; }
+.node.lock { opacity: 0.55; } .node.av { border-color: rgba(111,230,218,0.5); } .node.sel { border-color: #6FE6DA; box-shadow: 0 0 0 2px rgba(111,230,218,0.35), 0 0 24px rgba(111,230,218,0.25); background: rgba(20,50,60,0.9); }
+.node.res { border-color: rgba(92,245,153,0.6); } .node.done { border-color: rgba(92,245,153,0.25); background: rgba(20,45,35,0.8); }
+.ring { width: 64px; height: 64px; border-radius: 50%; display:grid; place-items:center; flex:none; }
+.tag { display:inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const I = n => `../../Assets/Resources/UI/Icons/Tech/${n}.png`;
+const HEAD = sub => `<div style="position:absolute;left:34px;top:24px;display:flex;gap:16px;align-items:center"><img src="${I('branch_physics')}" style="width:54px;height:54px"><div><div class="h">НАУКА +29 / МЕС · ИЗУЧЕНО 0 ИЗ 89 · НАУЧНАЯ ПОБЕДА 0 / 66</div><div style="font-weight:700;font-size:34px;margin-top:2px">Исследования</div></div></div>${sub||''}<div class="close">✕</div>`;
+const SLOTS = (cols) => [['Термоядерные реакторы I','tech_reactor',38,'4 мес.','vi'],['Сенсорные массивы','tech_sensors',12,'9 мес.','tl'],null,'lock','lock','lock'].slice(0,cols);
+const DETAIL = (top) => `
+  <div style="display:flex;gap:16px;align-items:center"><div style="width:84px;height:84px;border-radius:16px;background:radial-gradient(circle,rgba(201,162,255,0.25),rgba(201,162,255,0.04));border:1px solid rgba(201,162,255,0.45);display:grid;place-items:center"><img src="${I('tech_reactor')}" style="width:62px"></div>
+  <div><div style="font-weight:700;font-size:24px;line-height:1.1">Термоядерные реакторы I</div><div style="font-size:12px;margin-top:6px"><span class="vi" style="font-weight:700">ФИЗИКА</span> <span class="mut">· Энергетика · базовая</span></div><span class="tag" style="margin-top:8px;background:rgba(111,230,218,0.14);color:#9EEFE6">ДОСТУПНО</span></div></div>
+  <div style="margin-top:22px" class="h">ЭФФЕКТ</div><div style="font-size:15px;margin-top:8px;line-height:1.4"><b class="gr">+4 гелия-3</b> в месяц. Открывает термоядерный реактор кораблей.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px">
+    <div class="card" style="padding:12px"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1px">СТОИМОСТЬ</div><div style="font-size:20px;font-weight:700;margin-top:4px">420</div><div class="mut" style="font-size:11px">очков науки</div></div>
+    <div class="card" style="padding:12px"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1px">СРОК</div><div style="font-size:20px;font-weight:700;margin-top:4px">1 г. 2 мес.</div><div class="mut" style="font-size:11px">при 29 / мес</div></div>
+    <div class="card" style="padding:12px"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1px">ЭПОХА</div><div style="font-size:20px;font-weight:700;margin-top:4px">2200</div><div class="mut" style="font-size:11px">время пришло</div></div>
+  </div>
+  <div style="margin-top:20px" class="h">ОТКРЫВАЕТ</div>
+  ${['Модуль: термоядерный реактор','Термоядерные реакторы II  ›','Сверхпроводники  ›'].map(t=>`<div style="display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.03);margin-top:6px;font-size:14px;font-weight:700"><img src="${I('tech_reactor')}" style="width:20px">${t}</div>`).join('')}
+  <div style="margin-top:20px" class="h">ДОСЬЕ</div><div class="mut" style="font-size:13px;margin-top:8px;line-height:1.45;font-style:italic">Термоядерные реакторы с магнитным удержанием плазмы. Гелий-3 из атмосфер газовых гигантов позволяет получать больше энергии, чем все старые станции вместе.</div>`;
+
+const TREE_NODES = (ox, oy, dx, dy) => {
+  const rows = [
+    {c:'vi', ic:'tech_reactor', lane:0, items:[[0,0,'Термоядерные реакторы I','~1 г. 2 мес.','sel'],[1,0,'Термоядерные реакторы II','нужно: Т.Р. I','lock'],[2,0,'Антиматерия','нужно: Т.Р. II','lock'],[3,0,'Энергия нулевой точки','нужно: Антиматерия','lock'],[4,0,'Энергия вакуума','','lock'],[1,1,'Сверхпроводники','нужно: Т.Р. I','lock'],[2,1,'Магнитные ловушки','','lock'],[3,1,'Сфера Дайсона','','lock']]},
+    {c:'tl', ic:'tech_sensors', lane:1, items:[[0,0,'Сенсорные массивы','исследуется · 12%','res'],[1,0,'Гравиметрия','','lock'],[2,0,'Тактические вычислители','','lock'],[1,1,'Простейший ИИ','нужно: Сенсоры','lock'],[2,1,'Продвинутый ИИ','','lock'],[3,1,'Квантовые вычисления','','lock'],[0,2,'Криптография','~1 г.','av'],[1,2,'Агентурные сети','','lock']]},
+  ];
+  return rows;
+};
+
+const T = {
+a: () => `<div class="lbl2">ВАРИАНТ A · ЧЕРТЁЖ</div><div class="bg"></div>
+ <div class="win">${HEAD(`<div style="position:absolute;left:640px;top:34px;width:760px" class="seg"><div class="on"><img class="ico" src="${I('branch_physics')}">Физика <span class="mut">0/27</span></div><div><img class="ico" src="${I('branch_society')}">Общество <span class="mut">0/27</span></div><div><img class="ico" src="${I('branch_engineering')}">Инженерия <span class="mut">0/35</span></div></div><div class="search" style="position:absolute;right:80px;top:34px;width:300px">⌕ Поиск технологии или эффекта…</div>`)}
+  <!-- слоты сверху -->
+  <div style="position:absolute;left:34px;right:500px;top:118px;display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+   ${SLOTS(6).map((s,i)=> s==='lock' ? `<div class="card" style="height:78px;padding:12px 14px;opacity:0.55"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px">🔒 СЛОТ ${i+1}</div><div class="mut" style="font-size:12px;margin-top:6px">${['Администр. системы','Простейший ИИ','Бюрократ. реформа'][i-3]}</div></div>`
+     : s ? `<div class="card" style="height:78px;padding:10px 14px;display:flex;gap:12px;align-items:center;border-color:rgba(92,245,153,0.4)"><div class="ring" style="width:54px;height:54px;background:conic-gradient(#5CF599 ${s[2]}%,rgba(255,255,255,0.08) 0);-webkit-mask:radial-gradient(circle,transparent 22px,#000 23px)"></div><img src="${I(s[1])}" style="width:30px;margin-left:-54px;margin-right:24px"><div><div style="font-size:13px;font-weight:700;line-height:1.15">${s[0]}</div><div class="mut" style="font-size:11px;margin-top:3px">${s[2]}% · ${s[3]}</div></div></div>`
+     : `<div class="card" style="height:78px;padding:12px 14px;border-style:dashed;border-color:rgba(111,230,218,0.4)"><div class="cy" style="font-size:11px;font-weight:700;letter-spacing:1.5px">СЛОТ ${i+1} · СВОБОДЕН</div><div class="mut" style="font-size:12px;margin-top:6px">Двойной клик по технологии</div></div>`).join('')}
+  </div>
+  <!-- дерево -->
+  <div style="position:absolute;left:34px;right:500px;top:214px;bottom:24px;border-radius:14px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.18);overflow:hidden">
+   <div style="display:grid;grid-template-columns:150px repeat(5,1fr);padding:12px 20px;font-size:11px;font-weight:700;letter-spacing:2px;color:#8DA6AE;border-bottom:1px solid rgba(255,255,255,0.06)"><div>ВЕТВЬ</div><div>БАЗОВЫЕ</div><div>УРОВЕНЬ I <span class="gold">· 2208</span></div><div>УРОВЕНЬ II <span class="gold">· 2216</span></div><div>УРОВЕНЬ III <span class="gold">· 2229</span></div><div>УРОВЕНЬ IV <span class="gold">· 2242</span></div></div>
+   ${[['ЭНЕРГЕТИКА','tech_reactor','#C9A2FF',0,'0 / 8'],['СЕНСОРЫ И ИИ','tech_sensors','#5FE0C8',1,'0 / 11'],['ДВИГАТЕЛИ','tech_propulsion','#FFB15C',2,'0 / 8']].map(([n,ic,c,k,p])=>`<div style="position:absolute;left:0;right:0;top:${44+k*260}px;height:250px;background:linear-gradient(90deg,${c}22,transparent 40%);border-top:1px solid ${c}22"><div style="position:absolute;left:20px;top:80px;width:120px;text-align:center"><img src="${I(ic)}" style="width:48px"><div style="font-weight:700;font-size:13px;margin-top:6px">${n}</div><div style="font-size:12px;color:${c}">${p}</div><div class="bar" style="margin-top:6px"><i style="width:2%;background:${c}"></i></div></div></div>`).join('')}
+   ${(()=>{const W=(1840-500-34-170)/5; const out=[]; const L=[
+     [0,0,0,'Термоядерные реакторы I','~1 г. 2 мес.','sel','tech_reactor'],[0,1,0,'Термоядерные реакторы II','нужно: Т.Р. I','lock','tech_reactor'],[0,2,0,'Антиматерия','нужно: Т.Р. II','lock','tech_reactor'],[0,3,0,'Энергия нулевой точки','нужно: Антиматерия','lock','tech_reactor'],[0,4,0,'Энергия вакуума','','lock','tech_reactor'],[0,1,1,'Сверхпроводники','нужно: Т.Р. I','lock','tech_reactor'],[0,2,1,'Магнитные ловушки','','lock','tech_reactor'],[0,3,1,'Сфера Дайсона','','lock','tech_reactor'],
+     [1,0,0,'Сенсорные массивы','исследуется · 12%','res','tech_sensors'],[1,1,0,'Гравиметрия','','lock','tech_sensors'],[1,2,0,'Тактические вычислители','','lock','tech_sensors'],[1,1,1,'Простейший ИИ','нужно: Сенсоры','lock','tech_sensors'],[1,2,1,'Продвинутый ИИ','','lock','tech_sensors'],[1,3,1,'Квантовые вычисления','','lock','tech_sensors'],[1,0,2,'Криптография','~1 г. · доступно','av','tech_sensors'],[1,1,2,'Агентурные сети','','lock','tech_sensors'],
+     [2,0,0,'Гипердвигатели I','~1 г. 2 мес. · доступно','av','tech_propulsion'],[2,1,0,'Гипердвигатели II','','lock','tech_propulsion'],[2,2,0,'Складки пространства','','lock','tech_propulsion'],[2,0,1,'Импульсные двигатели','~1 г. · доступно','av','tech_propulsion'],[2,1,1,'Ионные маневровые','','lock','tech_propulsion']];
+     for(const [lane,col,row,n,s,cl,ic] of L){ const x=170+col*W+10, y=44+lane*260+20+row*76; out.push(`<div class="node ${cl}" style="left:${x}px;top:${y}px;width:${W-26}px">${cl!=='lock'?'':''}<img src="${I(ic)}"><div><b>${n}</b><span>${s}</span></div>${cl==='lock'?'<span style="margin-left:auto">🔒</span>':''}</div>`);
+       if(col>0) out.push(`<div style="position:absolute;left:${x-16}px;top:${y+34}px;width:16px;height:2px;background:rgba(255,255,255,0.15)"></div>`);} return out.join('');})()}
+  </div>
+  <div class="card" style="position:absolute;right:34px;top:118px;width:446px;bottom:24px;padding:24px;background:rgba(5,12,22,0.7)">${DETAIL()}
+   <div style="position:absolute;left:24px;right:24px;bottom:24px"><div class="b p" style="width:100%">ИССЛЕДОВАТЬ</div><div class="mut" style="font-size:12px;text-align:center;margin-top:8px">займёт свободный слот 3 · двойной клик по узлу — то же самое</div></div>
+  </div>
+ </div>`,
+
+b: () => `<div class="lbl2">ВАРИАНТ B · ТРИ НАПРАВЛЕНИЯ</div><div class="bg"></div>
+ <div class="win">${HEAD(`<div style="position:absolute;right:80px;top:34px;display:flex;gap:10px"><div class="search" style="width:300px">⌕ Поиск технологии или эффекта…</div><div class="b q">ПОЛНОЕ ДЕРЕВО</div></div>`)}
+  <div style="position:absolute;left:34px;right:34px;top:116px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;bottom:110px">
+   ${[['ФИЗИКА','branch_physics','#C9A2FF','Энергия, вычисления и движение','0 / 27',['Термоядерные реакторы I','tech_reactor',38,'4 мес.'],[['Сверхпроводники','tech_reactor','+15% к энергии станций','1 г. 4 мес.'],['Гравиметрия','tech_sensors','+1 к дальности сенсоров','11 мес.'],['Импульсные двигатели','tech_propulsion','+10% скорости флотов','1 г.']]],
+      ['ОБЩЕСТВО','branch_society','#5CF599','Наука, экспансия и доктрина флота','0 / 27',null,[['Колониальные модули','tech_colonization','−20% к цене колонии','10 мес.'],['Администр. системы','tech_society','+1 научный слот','1 г. 2 мес.'],['Доктрина обороны','tech_doctrine','+10% к обороне станций','1 г.']]],
+      ['ИНЖЕНЕРИЯ','branch_engineering','#FFB15C','Оружие, броня, промышленность и верфи','0 / 35',['Лазеры I','tech_weapons',64,'2 мес.'],[['Броневые пластины','tech_defense','+15% к броне кораблей','9 мес.'],['Литейные цеха','tech_industry','+2 сплава в месяц','1 г.'],['Орбитальные верфи','tech_construction','−10% к цене кораблей','1 г. 3 мес.']]]
+     ].map(([n,ic,c,d,p,cur,opts])=>`<div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;border-color:${c}44">
+       <div style="position:relative;padding:20px 22px 18px;background:linear-gradient(135deg,${c}33,transparent 70%)"><img src="${I(ic)}" style="position:absolute;right:16px;top:8px;width:96px;opacity:0.9"><div style="font-weight:700;font-size:22px;letter-spacing:2px">${n}</div><div class="mut" style="font-size:13px;margin-top:2px">${d}</div><div style="display:flex;gap:10px;align-items:center;margin-top:12px"><div class="bar" style="width:200px"><i style="width:3%;background:${c}"></i></div><span style="color:${c};font-weight:700;font-size:13px">${p}</span></div></div>
+       <div style="padding:16px 22px 0"><div class="h" style="color:${c}">ИССЛЕДУЕТСЯ</div>
+        ${cur?`<div style="display:flex;gap:14px;align-items:center;margin-top:10px;padding:14px;border-radius:12px;background:${c}14;border:1px solid ${c}66"><img src="${I(cur[1])}" style="width:46px"><div style="flex:1"><div style="font-weight:700;font-size:16px">${cur[0]}</div><div class="bar" style="margin-top:8px"><i style="width:${cur[2]}%;background:${c}"></i></div><div class="mut" style="font-size:12px;margin-top:5px">${cur[2]}% · осталось ${cur[3]}</div></div></div>`
+           :`<div style="margin-top:10px;padding:18px;border-radius:12px;border:1px dashed ${c}88;color:${c};font-weight:700;font-size:14px;text-align:center">Слот свободен — выберите технологию ниже</div>`}
+       </div>
+       <div style="padding:16px 22px 22px;flex:1;display:flex;flex-direction:column;gap:10px"><div class="h mut" style="color:#8DA6AE">ДОСТУПНО СЕЙЧАС</div>
+        ${opts.map((o,i)=>`<div style="display:flex;gap:14px;align-items:center;padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid ${i==0&&!cur?c:'rgba(255,255,255,0.07)'}"><div style="width:58px;height:58px;border-radius:12px;background:${c}18;display:grid;place-items:center;flex:none"><img src="${I(o[1])}" style="width:42px"></div><div style="flex:1"><div style="font-weight:700;font-size:16px">${o[0]}</div><div style="font-size:13px;margin-top:3px;color:${c}">${o[2]}</div><div class="mut" style="font-size:12px;margin-top:3px">⏱ ${o[3]}</div></div><div class="b ${i==0&&!cur?'':'q'}" style="width:118px">${cur?'В ОЧЕРЕДЬ':'ИЗУЧАТЬ'}</div></div>`).join('')}
+       </div></div>`).join('')}
+  </div>
+  <div style="position:absolute;left:34px;right:34px;bottom:24px;height:70px;display:flex;gap:12px;align-items:center" class="card"><div style="padding:0 20px" class="h">НАУЧНЫЕ СЛОТЫ <span class="mut">3 / 6</span></div>
+    ${['Физика · 38%','Свободен','Инженерия · 64%'].map((t,i)=>`<div style="padding:8px 14px;border-radius:10px;background:${i==1?'transparent':'rgba(92,245,153,0.08)'};border:1px ${i==1?'dashed rgba(111,230,218,0.5)':'solid rgba(92,245,153,0.35)'};font-weight:700;font-size:13px">${t}</div>`).join('')}
+    ${['Администр. системы','Простейший ИИ','Бюрократ. реформа'].map(t=>`<div class="mut" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:12px;opacity:0.7">🔒 ${t}</div>`).join('')}
+    <div style="flex:1"></div><div class="mut" style="font-size:13px;padding-right:20px">29 науки / мес делится между активными слотами</div></div>
+ </div>`,
+
+c: () => `<div class="lbl2">ВАРИАНТ C · ВЕТВИ</div><div class="bg"></div>
+ <div class="win">${HEAD(`<div class="search" style="position:absolute;right:80px;top:34px;width:320px">⌕ Поиск технологии или эффекта…</div>`)}
+  <div style="position:absolute;left:34px;top:116px;width:330px;bottom:120px;display:flex;flex-direction:column;gap:6px">
+   ${[['ФИЗИКА','#C9A2FF',[['Энергетика','tech_reactor','0/8',1],['Сенсоры и ИИ','tech_sensors','0/11'],['Двигатели','tech_propulsion','0/8']]],['ОБЩЕСТВО','#5CF599',[['Экспансия','tech_colonization','0/9'],['Управление','tech_society','0/10'],['Доктрина флота','tech_doctrine','0/8']]],['ИНЖЕНЕРИЯ','#FFB15C',[['Оружие','tech_weapons','0/12'],['Броня и щиты','tech_defense','0/9'],['Промышленность','tech_industry','0/8'],['Верфи','tech_construction','0/6']]]].map(([g,c,br])=>`<div style="font-size:11px;font-weight:700;letter-spacing:2.5px;color:${c};margin:10px 0 2px 6px">${g}</div>${br.map(([n,ic,p,on])=>`<div style="display:flex;gap:12px;align-items:center;padding:9px 14px;border-radius:10px;${on?`background:linear-gradient(90deg,${c}33,${c}08);box-shadow:inset 3px 0 0 ${c}`:''}"><img src="${I(ic)}" style="width:28px"><div style="flex:1;font-weight:700;font-size:15px;color:${on?'#fff':'#B6C8CE'}">${n}</div><span class="mut" style="font-size:12px">${p}</span></div>`).join('')}`).join('')}
+  </div>
+  <div style="position:absolute;left:390px;right:510px;top:116px;bottom:120px;border-radius:16px;overflow:hidden;border:1px solid rgba(201,162,255,0.25);background:radial-gradient(ellipse at 30% 40%,rgba(201,162,255,0.16),transparent 60%),rgba(0,0,0,0.2)">
+   <div style="position:absolute;left:30px;top:24px"><div class="h" style="color:#C9A2FF">ФИЗИКА · ВЕТВЬ</div><div style="font-weight:700;font-size:30px">Энергетика</div><div class="mut" style="font-size:13px">Реакторы, антиматерия и мегасооружения · изучено 0 из 8</div></div>
+   ${['БАЗОВЫЕ','УР. I · 2208','УР. II · 2216','УР. III · 2229','УР. IV · 2242'].map((t,i)=>`<div style="position:absolute;top:118px;left:${28+i*180}px;width:170px;text-align:center;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#8DA6AE">${t}</div><div style="position:absolute;top:140px;bottom:20px;left:${110+i*180}px;width:1px;background:rgba(255,255,255,0.04)"></div>`).join('')}
+   <svg style="position:absolute;left:0;top:0" width="1000" height="800"><g stroke="rgba(201,162,255,0.45)" stroke-width="2" fill="none"><path d="M110 250 H830"/><path d="M110 250 C200 250 200 420 290 420 H470 C560 420 560 250 650 250"/><path d="M290 420 C380 420 380 590 470 590"/></g></svg>
+   ${[[0,250,'Термоядерные реакторы I','~1 г. 2 мес.','sel'],[1,250,'Термоядерные реакторы II','нужно: Т.Р. I','lock'],[2,250,'Антиматерия','','lock'],[3,250,'Энергия нулевой точки','','lock'],[4,250,'Энергия вакуума','','lock'],[1,420,'Сверхпроводники','нужно: Т.Р. I','lock'],[2,420,'Магнитные ловушки','','lock'],[2,590,'Сфера Дайсона','мегасооружение','lock']].map(([i,y,n,s,cl])=>`<div style="position:absolute;left:${110+i*180-48}px;top:${y-48}px;width:96px;text-align:center"><div style="width:96px;height:96px;border-radius:50%;display:grid;place-items:center;background:${cl=='sel'?'radial-gradient(circle,rgba(201,162,255,0.45),rgba(60,30,90,0.9))':'rgba(12,16,30,0.95)'};border:2px solid ${cl=='sel'?'#E2CCFF':'rgba(201,162,255,0.3)'};${cl=='sel'?'box-shadow:0 0 30px rgba(201,162,255,0.6)':''}"><img src="${I('tech_reactor')}" style="width:58px;${cl=='lock'?'opacity:0.45;filter:grayscale(0.6)':''}"></div><div style="font-weight:700;font-size:13px;margin-top:8px;width:170px;margin-left:-37px;color:${cl=='lock'?'#9FB0B8':'#fff'}">${n}</div><div class="mut" style="font-size:11px;width:170px;margin-left:-37px">${s}</div></div>`).join('')}
+  </div>
+  <div class="card" style="position:absolute;right:34px;top:116px;width:456px;bottom:120px;padding:24px;background:rgba(5,12,22,0.7)">${DETAIL()}
+   <div style="position:absolute;left:24px;right:24px;bottom:24px"><div class="b p" style="width:100%">ИССЛЕДОВАТЬ</div></div></div>
+  <div style="position:absolute;left:34px;right:34px;bottom:24px;height:80px;display:grid;grid-template-columns:200px repeat(6,1fr);gap:10px;align-items:stretch">
+   <div style="display:flex;flex-direction:column;justify-content:center"><div class="h">НАУЧНЫЕ СЛОТЫ</div><div class="mut" style="font-size:12px;margin-top:4px">3 из 6 · 29 науки / мес</div></div>
+   ${SLOTS(6).map((s,i)=> s==='lock' ? `<div class="card" style="padding:10px 14px;opacity:0.5"><div class="mut" style="font-size:11px;font-weight:700;letter-spacing:1.5px">🔒 СЛОТ ${i+1}</div><div class="mut" style="font-size:12px;margin-top:6px">${['Администр. системы','Простейший ИИ','Бюрократ. реформа'][i-3]}</div></div>`
+     : s ? `<div class="card" style="padding:10px 14px;display:flex;gap:10px;align-items:center;border-color:rgba(92,245,153,0.4)"><img src="${I(s[1])}" style="width:34px"><div style="flex:1"><div style="font-size:13px;font-weight:700">${s[0]}</div><div class="bar" style="margin-top:6px"><i style="width:${s[2]}%;background:#5CF599"></i></div><div class="mut" style="font-size:11px;margin-top:3px">${s[2]}% · ${s[3]}</div></div></div>`
+     : `<div class="card" style="padding:10px 14px;border-style:dashed;border-color:rgba(111,230,218,0.5)"><div class="cy" style="font-size:11px;font-weight:700;letter-spacing:1.5px">СЛОТ ${i+1} · СВОБОДЕН</div><div class="mut" style="font-size:12px;margin-top:6px">выберите технологию</div></div>`).join('')}
+  </div>
+ </div>`,
+};
+document.getElementById('s').innerHTML = T[v]();
+</script></body></html>

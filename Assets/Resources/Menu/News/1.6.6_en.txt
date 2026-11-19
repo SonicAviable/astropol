@@ -1,0 +1,32 @@
+@order 41
+@tag UPDATE
+@chip NEW · 1.6.6
+@title Update 1.6.6
+@headline New colony screen, research and covert operations
+@cover Menu/News/cover_1.6.6
+@art 0.5,0.45,0.62
+@thumb 0.5,0.4,0.5
+@tile Menu/News/cover_1.6.6 | 0.5,0.5,1 | Colony screen
+@tile Menu/News/1.6.6_research | 0.5,0.5,1 | Research
+@tile Menu/News/1.6.6_espionage | 0.5,0.5,1 | Covert operations
+@tile Menu/News/1.6.6_colonies | 0.5,0.5,1 | Colony management
+@tile Menu/News/1.6.6_feedback | 0.5,0.5,1 | Feedback
+@tile Menu/News/1.6.6_firstrun | 0.5,0.5,1 | First launch
+The colony and research screens are rebuilt, covert operations get their own window, and you can now report bugs right from the game.
+# COLONY SCREEN
+- The planet sits in the center with callouts around it: habitability, society and stability, deposits.
+- Districts are cards fanned out below the planet: output, workers in their slots, growth. Click a card to prioritize that resource; drag workers between cards.
+- The fifth card, "+ Build", opens the build menu. Planet projects are listed on the right.
+# RESEARCH
+- New window: science branches on the left, the selected branch's tree with tiers and eras, a detailed tech card on the right.
+- Research slots at the bottom: progress, ETA, pause and cancel.
+- Technologies are getting their own icons instead of shared category icons.
+# COVERT OPERATIONS
+- Agents shown as portrait columns: home counter-intelligence, hiring candidates, operations log and intel on empires.
+# COLONY MANAGEMENT
+- Empire summary, a "Needs attention" list, colony filters and sorting, one-click auto-build everywhere.
+# FEEDBACK
+- Pause menu → "Feedback": bug, idea or other. Optionally attach system info and the game log.
+# INTERFACE
+- Windows are back to translucent "liquid glass"; many have live backdrops with nebulae and shooting stars.
+- First-launch screen: the game picks graphics quality for your PC, and you choose language, screen mode, UI scale, volume and your experience — it sets the tutorial, advisor and first-game difficulty.

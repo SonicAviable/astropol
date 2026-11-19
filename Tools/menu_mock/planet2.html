@@ -1,0 +1,181 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Play;src:url(../../Assets/Resources/Fonts/Play-Regular.ttf)}
+@font-face{font-family:Play;font-weight:700;src:url(../../Assets/Resources/Fonts/Play-Bold.ttf)}
+@font-face{font-family:Russo;src:url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf)}
+:root{--teal:#5fe0d0;--gold:#f2c35c;--ti:#4fd6a8;--he:#ecc14e;--al:#ef8a5c;--sci:#7fcfff;--st:#c99cff;--txt:#e4ecf1;--dim:#8296a4;--line:rgba(120,220,215,.22)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1920px;height:1080px;overflow:hidden;position:relative;font-family:Play,sans-serif;color:var(--txt);background:#03070c}
+.R{font-family:Russo;letter-spacing:1px}
+.cap{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);font-weight:700}
+.dim{color:var(--dim)}
+.ic{width:22px;height:22px;vertical-align:middle;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 26px;font-weight:700;font-size:14px;letter-spacing:2px;background:#0b1d2e;color:var(--txt);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));box-shadow:inset 3px 0 0 var(--teal)}
+.btn.p{background:linear-gradient(90deg,#5fe0d0,#8ff0e2);color:#04211f;box-shadow:none}
+.bar{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--c);box-shadow:0 0 8px var(--c)}
+.seg{display:flex;gap:4px}.seg i{flex:1;height:6px;border-radius:1px;background:rgba(255,255,255,.08)}.seg i.on{background:var(--c);box-shadow:0 0 6px var(--c)}
+.glass{background:linear-gradient(160deg,rgba(18,40,56,.72),rgba(6,16,26,.78));border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+.pop{width:26px;height:30px;display:inline-block;background:url(../../Assets/Resources/UI/Icons/population.png) center/contain no-repeat;filter:drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 2px var(--c))}
+.pop.e{opacity:.22;filter:grayscale(1)}
+.v{display:none;position:absolute;inset:0}
+/* планета */
+.planet{position:absolute;border-radius:50%;overflow:hidden;box-shadow:0 0 140px rgba(240,120,60,.30)}
+.planet svg{width:100%;height:100%;display:block}
+.planet:after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 32% 30%,rgba(255,210,160,.25),transparent 40%),radial-gradient(circle at 70% 70%,rgba(0,0,0,.85),transparent 62%);box-shadow:inset -40px -30px 90px rgba(0,0,0,.8),inset 8px 6px 30px rgba(255,180,120,.25)}
+.atm{position:absolute;border-radius:50%;box-shadow:0 0 0 2px rgba(255,170,100,.25),0 0 40px 6px rgba(255,140,70,.18)}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+ <filter id="surf"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="6" seed="7"/><feColorMatrix values="0 0 0 0 .80  0 0 0 0 .36  0 0 0 0 .17  0 0 0 -2.2 1.9"/></filter>
+ <filter id="surf2"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="4" seed="3"/><feColorMatrix values="0 0 0 0 .35 0 0 0 0 .12 0 0 0 0 .06 0 0 0 -3 1.6"/></filter>
+</defs></svg>
+<template id="pl"><svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#d9773f"/><rect width="400" height="400" filter="url(#surf)"/><rect width="400" height="400" filter="url(#surf2)" opacity=".7"/></svg></template>
+
+<!-- ===================== D — ЭВОЛЮЦИЯ: знакомая раскладка, вылизанная ===================== -->
+<div class="v" id="d" style="background:radial-gradient(ellipse at 72% 50%,#2a1408 0%,#0a0a10 45%,#03070c 75%)">
+ <div class="atm" style="left:1010px;top:150px;width:820px;height:820px"></div>
+ <div class="planet" data-p style="left:1010px;top:150px;width:820px;height:820px"></div>
+ <svg style="position:absolute;left:0;top:0" width="1920" height="1080"><circle cx="1420" cy="560" r="470" fill="none" stroke="rgba(242,195,92,.5)" stroke-width="3" stroke-dasharray="380 2600" transform="rotate(150 1420 560)"/><circle cx="1420" cy="560" r="500" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="10" stroke-dasharray="2 22"/></svg>
+ <!-- шапка -->
+ <div style="position:absolute;left:48px;top:36px;display:flex;align-items:center;gap:26px">
+  <span class="btn">ESC</span>
+  <div style="border-left:3px solid var(--gold);padding-left:18px"><div class="R" style="font-size:46px;line-height:1">ГИПЕРИОН</div><div class="dim" style="margin-top:6px;font-size:15px"><b style="color:var(--gold)">ПУСТЫННЫЙ МИР</b> · система Альфа Водолея · <span style="color:var(--teal)">Иридийский Оракул</span></div></div>
+ </div>
+ <div style="position:absolute;right:48px;top:44px;display:flex;gap:10px"><span class="btn">◀</span><span class="btn" style="padding:0 18px">1 / 1</span><span class="btn">▶</span></div>
+ <!-- ресурсы -->
+ <div class="glass" style="position:absolute;left:48px;top:140px;width:880px;height:96px;display:flex;align-items:center;padding:0 10px">
+  <div style="flex:1;padding:0 14px;border-right:1px solid var(--line)"><div class="cap dim">Жители</div><div class="R" style="font-size:30px"><img class="ic" src="../../Assets/Resources/UI/Icons/population.png"> 6<span class="dim" style="font-size:16px">/6</span></div></div>
+  <div style="flex:1;padding:0 14px;border-right:1px solid var(--line)"><div class="cap" style="color:var(--ti)">Титан</div><div class="R" style="font-size:30px;color:var(--ti)"><img class="ic" src="../../Assets/Resources/UI/Icons/res_minerals.png"> +7,2</div></div>
+  <div style="flex:1;padding:0 14px;border-right:1px solid var(--line)"><div class="cap" style="color:var(--he)">Гелий-3</div><div class="R" style="font-size:30px;color:var(--he)"><img class="ic" src="../../Assets/Resources/UI/Icons/res_energy.png"> +7,6</div></div>
+  <div style="flex:1;padding:0 14px;border-right:1px solid var(--line)"><div class="cap" style="color:var(--al)">Сплавы</div><div class="R" style="font-size:30px;color:var(--al)"><img class="ic" src="../../Assets/Resources/UI/Icons/res_alloys.png"> +5,4</div></div>
+  <div style="flex:1;padding:0 14px;border-right:1px solid var(--line)"><div class="cap" style="color:var(--sci)">Наука</div><div class="R" style="font-size:30px;color:var(--sci)"><img class="ic" src="../../Assets/Resources/UI/Icons/res_research.png"> +6,6</div></div>
+  <div style="flex:1.2;padding:0 14px"><div class="cap" style="color:var(--st)">Стабильность</div><div class="R" style="font-size:30px;color:var(--st)">65 <span style="font-family:Play;font-size:14px">спокойствие</span></div></div>
+ </div>
+ <!-- районы -->
+ <div style="position:absolute;left:48px;top:264px;width:880px;display:flex;justify-content:space-between;align-items:center"><div class="cap">Районы · 6 из 6 мест</div><div style="display:flex;gap:8px"><span class="btn p" style="height:36px;font-size:12px">РАВНОМЕРНО ▾</span><span class="btn" style="height:36px;font-size:12px">АВТОСТРОЙКА · ВКЛ</span></div></div>
+ <div style="position:absolute;left:48px;top:316px;width:880px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  <div class="glass" style="--c:var(--ti);padding:18px 20px;border-left:3px solid var(--c);display:flex;gap:16px;align-items:center"><img src="../../Assets/Resources/UI/Icons/res_minerals.png" style="width:54px"><div style="flex:1"><div class="R" style="font-size:28px;color:var(--c)">+7,2 <span style="font-size:18px">титан</span></div><div class="dim" style="font-size:13px">Горнодобывающий ×1 · работают 2 из 2</div></div><div><span class="pop"></span><span class="pop"></span></div></div>
+  <div class="glass" style="--c:var(--he);padding:18px 20px;border-left:3px solid var(--c);display:flex;gap:16px;align-items:center"><img src="../../Assets/Resources/UI/Icons/res_energy.png" style="width:54px"><div style="flex:1"><div class="R" style="font-size:28px;color:var(--c)">+7,6 <span style="font-size:18px">гелий-3</span></div><div class="dim" style="font-size:13px">Энергетический ×1 · работают 2 из 2</div></div><div><span class="pop"></span><span class="pop"></span></div></div>
+  <div class="glass" style="--c:var(--al);padding:18px 20px;border-left:3px solid var(--c);display:flex;gap:16px;align-items:center"><img src="../../Assets/Resources/UI/Icons/res_alloys.png" style="width:54px"><div style="flex:1"><div class="R" style="font-size:28px;color:var(--c)">+5,4 <span style="font-size:18px">сплавы</span></div><div class="dim" style="font-size:13px">Промышленный ×1 · работают 2 из 2</div></div><div><span class="pop"></span><span class="pop"></span></div></div>
+  <div class="glass" style="--c:var(--gold);padding:18px 20px;border-left:3px solid var(--c);display:flex;gap:16px;align-items:center;background:linear-gradient(160deg,rgba(60,44,12,.55),rgba(6,16,26,.8))"><img src="../../Assets/Resources/UI/Icons/housing.png" style="width:54px"><div style="flex:1"><div class="R" style="font-size:28px;color:var(--teal)">6 <span style="font-size:18px">жильё</span></div><div style="font-size:13px;color:var(--gold)">⚠ нет жилья — рост стоит</div></div><div><span class="pop e"></span><span class="pop e"></span><span class="pop e"></span></div></div>
+ </div>
+ <!-- производство -->
+ <div class="glass" style="position:absolute;left:48px;top:560px;width:880px;height:110px;display:flex;align-items:center;gap:20px;padding:0 20px">
+  <img src="../../Assets/Resources/UI/Icons/construction.png" style="width:60px;opacity:.9"><div style="flex:1"><div class="cap">Производство</div><div style="font-size:20px;font-weight:700;margin-top:4px">Автостройка выберет сама</div><div class="bar" style="--c:var(--teal);margin-top:10px;width:420px"><i style="width:18%"></i></div></div><span class="btn p">СТРОИТЬ</span></div>
+ <!-- проекты -->
+ <div style="position:absolute;left:48px;top:700px" class="cap">Проекты планеты</div>
+ <div style="position:absolute;left:48px;top:732px;width:880px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+  <div class="glass" style="padding:14px;height:150px"><img src="../../Assets/Resources/UI/Icons/industry.png" class="ic" style="width:34px;height:34px"><div style="font-weight:700;margin:10px 0 4px">Добывающий комплекс</div><div class="dim" style="font-size:12px">50 титана · 60 дн.</div></div>
+  <div class="glass" style="padding:14px;height:150px;border-color:rgba(79,214,168,.6)"><img src="../../Assets/Resources/UI/Icons/planet.png" class="ic" style="width:34px;height:34px"><div style="font-weight:700;margin:10px 0 4px;color:var(--ti)">✓ Колония</div><div class="dim" style="font-size:12px">Основана · жителей 6</div></div>
+  <div class="glass" style="padding:14px;height:150px"><img src="../../Assets/Resources/UI/Icons/globe.png" class="ic" style="width:34px;height:34px"><div style="font-weight:700;margin:10px 0 4px">Терраформинг</div><div class="dim" style="font-size:12px">→ континентальный · 360 дн.</div></div>
+  <div class="glass" style="padding:14px;height:150px;opacity:.45"><img src="../../Assets/Resources/UI/Icons/reactor.png" class="ic" style="width:34px;height:34px"><div style="font-weight:700;margin:10px 0 4px">Сборка роботов</div><div class="dim" style="font-size:12px">Нет свободного жилья</div></div>
+  <div class="glass" style="padding:14px;height:150px"><img src="../../Assets/Resources/UI/Icons/population.png" class="ic" style="width:34px;height:34px"><div style="font-weight:700;margin:10px 0 4px">Генная адаптация</div><div class="dim" style="font-size:12px">120 гел. · 240 дн.</div></div>
+ </div>
+ <!-- справа: тонкие HUD-плашки на планете -->
+ <div class="glass" style="position:absolute;right:48px;top:150px;width:360px;padding:20px"><div class="cap" style="color:var(--gold)">Планета</div>
+  <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px"><span>Пригодность</span><b style="color:var(--gold)">54%</b></div><div class="seg" style="--c:var(--gold);margin-top:6px"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+  <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:14px"><span>Титан</span><b style="color:var(--ti)">4</b></div><div class="seg" style="--c:var(--ti);margin-top:6px"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+  <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:14px"><span>Гелий-3</span><b style="color:var(--he)">2</b></div><div class="seg" style="--c:var(--he);margin-top:6px"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+  <div class="dim" style="font-size:13px;margin-top:14px;line-height:1.7">0,75 g · разрежённая атмосфера<br>−5 °C · наклон 12° · 16,8 а.е.</div></div>
+ <div class="glass" style="position:absolute;right:48px;top:470px;width:360px;padding:20px"><div class="cap" style="color:var(--st)">Общество</div>
+  <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px"><span>Стабильность</span><b style="color:var(--st)">65 · Спокойствие ▲</b></div><div class="bar" style="--c:var(--st);margin-top:8px"><i style="width:65%"></i></div>
+  <div class="dim" style="font-size:13px;margin-top:12px">Иридийцы · 6</div><div style="margin-top:16px"><span class="btn" style="height:38px;font-size:12px;width:100%">ПРОПАГАНДА · 25 ВЛИЯНИЯ</span></div></div>
+ <div style="position:absolute;right:48px;bottom:40px"><span class="btn p" style="width:240px;height:52px;font-size:16px">ГОТОВО</span></div>
+</div>
+
+<!-- ===================== E — ГОЛОСТОЛ: планета-голограмма, районы картами снизу ===================== -->
+<div class="v" id="e" style="background:radial-gradient(ellipse at 50% 42%,#1a1410 0%,#070b12 45%,#02050a 80%)">
+ <svg style="position:absolute;left:0;top:0" width="1920" height="1080">
+  <defs><radialGradient id="g1"><stop offset="0" stop-color="rgba(95,224,208,.25)"/><stop offset="1" stop-color="rgba(95,224,208,0)"/></radialGradient></defs>
+  <ellipse cx="960" cy="690" rx="560" ry="90" fill="url(#g1)"/>
+  <ellipse cx="960" cy="690" rx="520" ry="80" fill="none" stroke="rgba(95,224,208,.5)" stroke-width="2"/>
+  <ellipse cx="960" cy="690" rx="440" ry="66" fill="none" stroke="rgba(95,224,208,.25)" stroke-dasharray="3 9"/>
+  <ellipse cx="960" cy="420" rx="420" ry="120" fill="none" stroke="rgba(242,195,92,.45)" stroke-width="2" transform="rotate(-12 960 420)"/>
+  <!-- выноски -->
+  <path d="M700 300 L560 230 L380 230" stroke="rgba(242,195,92,.6)" fill="none"/><circle cx="700" cy="300" r="4" fill="var(--gold)"/>
+  <path d="M1230 330 L1360 250 L1540 250" stroke="rgba(201,156,255,.6)" fill="none"/><circle cx="1230" cy="330" r="4" fill="#c99cff"/>
+  <path d="M1220 520 L1380 560 L1540 560" stroke="rgba(79,214,168,.6)" fill="none"/><circle cx="1220" cy="520" r="4" fill="#4fd6a8"/>
+ </svg>
+ <div class="atm" style="left:690px;top:140px;width:540px;height:540px"></div>
+ <div class="planet" data-p style="left:690px;top:140px;width:540px;height:540px"></div>
+ <!-- шапка по центру -->
+ <div style="position:absolute;left:0;right:0;top:30px;text-align:center"><div class="cap" style="color:var(--gold)">Пустынный мир · Альфа Водолея</div><div class="R" style="font-size:56px;margin-top:4px;text-shadow:0 0 30px rgba(242,195,92,.3)">ГИПЕРИОН</div></div>
+ <span class="btn" style="position:absolute;left:48px;top:40px">ESC</span>
+ <div style="position:absolute;right:48px;top:40px;display:flex;gap:10px"><span class="btn">◀</span><span class="btn">▶</span></div>
+ <!-- выноски-плашки -->
+ <div style="position:absolute;left:150px;top:180px;width:230px;text-align:right"><div class="cap" style="color:var(--gold)">Пригодность</div><div class="R" style="font-size:40px;color:var(--gold)">54%</div><div class="dim" style="font-size:13px">0,75 g · −5 °C · разреж.</div></div>
+ <div style="position:absolute;left:1540px;top:200px;width:300px"><div class="cap" style="color:var(--st)">Стабильность</div><div class="R" style="font-size:40px;color:var(--st)">65</div><div class="dim" style="font-size:13px">Спокойствие · иридийцы 6</div></div>
+ <div style="position:absolute;left:1540px;top:510px;width:300px"><div class="cap" style="color:var(--ti)">Недра</div><div class="R" style="font-size:26px"><span style="color:var(--ti)">Титан 4</span> · <span style="color:var(--he)">Гелий-3 2</span></div><div class="dim" style="font-size:13px">Районы 6 / 6</div></div>
+ <!-- ресурсы — колонка слева -->
+ <div class="glass" style="position:absolute;left:48px;top:340px;width:330px;padding:18px 20px">
+  <div class="cap">Доход колонии</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;margin-top:14px">
+   <div><div class="dim" style="font-size:12px">ТИТАН</div><div class="R" style="font-size:26px;color:var(--ti)">+7,2</div></div>
+   <div><div class="dim" style="font-size:12px">ГЕЛИЙ-3</div><div class="R" style="font-size:26px;color:var(--he)">+7,6</div></div>
+   <div><div class="dim" style="font-size:12px">СПЛАВЫ</div><div class="R" style="font-size:26px;color:var(--al)">+5,4</div></div>
+   <div><div class="dim" style="font-size:12px">НАУКА</div><div class="R" style="font-size:26px;color:var(--sci)">+6,6</div></div></div>
+  <div style="margin-top:16px;display:flex;gap:8px"><span class="btn p" style="height:34px;font-size:11px;padding:0 14px">РАВНОМЕРНО ▾</span><span class="btn" style="height:34px;font-size:11px;padding:0 14px">АВТО · ВКЛ</span></div></div>
+ <!-- районы — карты -->
+ <div style="position:absolute;left:0;right:0;bottom:120px;display:flex;justify-content:center;gap:18px">
+  <div class="glass" style="--c:var(--ti);width:230px;height:250px;padding:18px;text-align:center;border-top:3px solid var(--c);transform:rotate(-3deg) translateY(10px)"><img src="../../Assets/Resources/UI/Icons/res_minerals.png" style="width:64px"><div class="R" style="font-size:34px;color:var(--c);margin-top:6px">+7,2</div><div style="font-weight:700">Горнодобывающий</div><div style="margin-top:12px"><span class="pop"></span><span class="pop"></span></div></div>
+  <div class="glass" style="--c:var(--he);width:230px;height:250px;padding:18px;text-align:center;border-top:3px solid var(--c);transform:rotate(-1deg)"><img src="../../Assets/Resources/UI/Icons/res_energy.png" style="width:64px"><div class="R" style="font-size:34px;color:var(--c);margin-top:6px">+7,6</div><div style="font-weight:700">Энергетический</div><div style="margin-top:12px"><span class="pop"></span><span class="pop"></span></div></div>
+  <div class="glass" style="--c:var(--al);width:230px;height:250px;padding:18px;text-align:center;border-top:3px solid var(--c);transform:rotate(1deg)"><img src="../../Assets/Resources/UI/Icons/res_alloys.png" style="width:64px"><div class="R" style="font-size:34px;color:var(--c);margin-top:6px">+5,4</div><div style="font-weight:700">Промышленный</div><div style="margin-top:12px"><span class="pop"></span><span class="pop"></span></div></div>
+  <div class="glass" style="--c:var(--gold);width:230px;height:250px;padding:18px;text-align:center;border-top:3px solid var(--c);transform:rotate(3deg) translateY(10px)"><img src="../../Assets/Resources/UI/Icons/housing.png" style="width:64px"><div class="R" style="font-size:34px;color:var(--teal);margin-top:6px">6</div><div style="font-weight:700">Жильё</div><div style="font-size:12px;color:var(--gold);margin-top:4px">⚠ рост стоит</div><div style="margin-top:6px"><span class="pop e"></span><span class="pop e"></span><span class="pop e"></span></div></div>
+  <div style="width:180px;height:250px;border:2px dashed rgba(95,224,208,.4);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(4deg) translateY(22px)"><div class="R" style="font-size:48px;color:var(--teal)">+</div><div class="cap">Строить</div></div>
+ </div>
+ <!-- проекты полосой -->
+ <div style="position:absolute;left:48px;right:48px;bottom:36px;display:flex;gap:10px;align-items:center">
+  <div class="cap" style="width:120px">Проекты</div>
+  <div class="glass" style="flex:1;height:52px;display:flex;align-items:center;padding:0 14px;gap:10px;font-size:14px"><b>Добывающий комплекс</b><span class="dim">50 тит.</span></div>
+  <div class="glass" style="flex:1;height:52px;display:flex;align-items:center;padding:0 14px;gap:10px;font-size:14px;border-color:rgba(79,214,168,.6)"><b style="color:var(--ti)">✓ Колония</b></div>
+  <div class="glass" style="flex:1;height:52px;display:flex;align-items:center;padding:0 14px;gap:10px;font-size:14px"><b>Терраформинг</b><span class="dim">360 дн.</span></div>
+  <div class="glass" style="flex:1;height:52px;display:flex;align-items:center;padding:0 14px;gap:10px;font-size:14px;opacity:.45"><b>Сборка роботов</b></div>
+  <div class="glass" style="flex:1;height:52px;display:flex;align-items:center;padding:0 14px;gap:10px;font-size:14px"><b>Генная адаптация</b><span class="dim">240 дн.</span></div>
+  <span class="btn p" style="width:200px;height:52px">ГОТОВО</span></div>
+</div>
+
+<!-- ===================== F — ДОСЬЕ: кинематографичный, планета обрезана слева ===================== -->
+<div class="v" id="f" style="background:#02050a">
+ <div style="position:absolute;inset:0;background:url(../../Assets/Resources/WindowBg/colonies.jpg) center/cover;opacity:.35;filter:hue-rotate(-140deg) saturate(.7)"></div>
+ <div class="atm" style="left:-420px;top:60px;width:1180px;height:1180px"></div>
+ <div class="planet" data-p style="left:-420px;top:60px;width:1180px;height:1180px"></div>
+ <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent 30%,rgba(2,5,10,.85) 52%,#02050a 70%)"></div>
+ <span class="btn" style="position:absolute;left:48px;top:40px">ESC</span>
+ <div style="position:absolute;left:56px;bottom:56px"><div class="R" style="font-size:96px;line-height:.9;text-shadow:0 4px 30px rgba(0,0,0,.8)">ГИПЕРИОН</div><div style="margin-top:12px;font-size:18px"><b style="color:var(--gold)">ПУСТЫННЫЙ МИР</b> · Альфа Водолея · колония 1 из 1</div></div>
+ <!-- правая колонка-досье -->
+ <div style="position:absolute;left:1000px;right:56px;top:48px;bottom:48px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--line);padding-bottom:18px">
+   <div><div class="cap dim">Жители</div><div class="R" style="font-size:52px">6<span class="dim" style="font-size:24px">/6</span></div></div>
+   <div><div class="cap" style="color:var(--ti)">Титан</div><div class="R" style="font-size:40px;color:var(--ti)">+7,2</div></div>
+   <div><div class="cap" style="color:var(--he)">Гелий-3</div><div class="R" style="font-size:40px;color:var(--he)">+7,6</div></div>
+   <div><div class="cap" style="color:var(--al)">Сплавы</div><div class="R" style="font-size:40px;color:var(--al)">+5,4</div></div>
+   <div><div class="cap" style="color:var(--sci)">Наука</div><div class="R" style="font-size:40px;color:var(--sci)">+6,6</div></div>
+   <div><div class="cap" style="color:var(--st)">Стаб.</div><div class="R" style="font-size:40px;color:var(--st)">65</div></div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:26px 0 14px"><div class="cap">Районы</div><div style="display:flex;gap:8px"><span class="btn p" style="height:34px;font-size:11px">РАВНОМЕРНО</span><span class="btn" style="height:34px;font-size:11px">АВТО · ВКЛ</span></div></div>
+  <div style="display:grid;gap:10px">
+   <div style="--c:var(--ti);display:grid;grid-template-columns:44px 1fr 200px 90px;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(90deg,rgba(79,214,168,.12),transparent);border-left:3px solid var(--c)"><img src="../../Assets/Resources/UI/Icons/res_minerals.png" style="width:40px"><div><b style="font-size:18px">Горнодобывающий</b><div class="dim" style="font-size:12px">×1 · 2 из 2 работают</div></div><div><span class="pop"></span><span class="pop"></span></div><div class="R" style="font-size:28px;color:var(--c);text-align:right">+7,2</div></div>
+   <div style="--c:var(--he);display:grid;grid-template-columns:44px 1fr 200px 90px;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(90deg,rgba(236,193,78,.12),transparent);border-left:3px solid var(--c)"><img src="../../Assets/Resources/UI/Icons/res_energy.png" style="width:40px"><div><b style="font-size:18px">Энергетический</b><div class="dim" style="font-size:12px">×1 · 2 из 2 работают</div></div><div><span class="pop"></span><span class="pop"></span></div><div class="R" style="font-size:28px;color:var(--c);text-align:right">+7,6</div></div>
+   <div style="--c:var(--al);display:grid;grid-template-columns:44px 1fr 200px 90px;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(90deg,rgba(239,138,92,.12),transparent);border-left:3px solid var(--c)"><img src="../../Assets/Resources/UI/Icons/res_alloys.png" style="width:40px"><div><b style="font-size:18px">Промышленный</b><div class="dim" style="font-size:12px">×1 · 2 из 2 работают</div></div><div><span class="pop"></span><span class="pop"></span></div><div class="R" style="font-size:28px;color:var(--c);text-align:right">+5,4</div></div>
+   <div style="--c:var(--gold);display:grid;grid-template-columns:44px 1fr 200px 90px;align-items:center;gap:16px;padding:12px 16px;background:linear-gradient(90deg,rgba(242,195,92,.18),transparent);border-left:3px solid var(--c)"><img src="../../Assets/Resources/UI/Icons/housing.png" style="width:40px"><div><b style="font-size:18px">Жильё</b><div style="font-size:12px;color:var(--gold)">⚠ нет жилья — рост стоит</div></div><div><span class="pop e"></span><span class="pop e"></span><span class="pop e"></span></div><div class="R" style="font-size:28px;color:var(--teal);text-align:right">6</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px">
+   <div><div class="cap" style="color:var(--gold)">Планета</div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:14px"><span>Пригодность</span><b style="color:var(--gold)">54%</b></div><div class="seg" style="--c:var(--gold);margin-top:6px"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:14px"><span>Титан · Гелий-3</span><b><span style="color:var(--ti)">4</span> · <span style="color:var(--he)">2</span></b></div>
+    <div class="dim" style="font-size:13px;margin-top:10px">0,75 g · разреж. · −5 °C · 16,8 а.е.</div></div>
+   <div><div class="cap" style="color:var(--st)">Общество</div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:14px"><span>Спокойствие</span><b style="color:var(--st)">65 ▲</b></div><div class="bar" style="--c:var(--st);margin-top:8px"><i style="width:65%"></i></div>
+    <div class="dim" style="font-size:13px;margin-top:10px">Иридийцы · 6</div><div style="margin-top:10px"><span class="btn" style="height:34px;font-size:11px">ПРОПАГАНДА · 25</span></div></div></div>
+  <div class="cap" style="margin-top:28px">Производство и проекты</div>
+  <div style="display:flex;gap:10px;margin-top:12px">
+   <div class="glass" style="flex:1.4;padding:14px;display:flex;flex-direction:column;justify-content:space-between"><b>Автостройка</b><div class="dim" style="font-size:12px">выберет район сама</div><span class="btn p" style="height:34px;font-size:12px;margin-top:8px">СТРОИТЬ</span></div>
+   <div class="glass" style="flex:1;padding:14px"><b style="font-size:14px">Добыв. комплекс</b><div class="dim" style="font-size:12px;margin-top:6px">50 тит. · 60 дн.</div></div>
+   <div class="glass" style="flex:1;padding:14px"><b style="font-size:14px">Терраформинг</b><div class="dim" style="font-size:12px;margin-top:6px">360 дн.</div></div>
+   <div class="glass" style="flex:1;padding:14px"><b style="font-size:14px">Генная адапт.</b><div class="dim" style="font-size:12px;margin-top:6px">240 дн.</div></div>
+   <div class="glass" style="flex:1;padding:14px;opacity:.45"><b style="font-size:14px">Сборка роботов</b><div class="dim" style="font-size:12px;margin-top:6px">нет жилья</div></div></div>
+  <div style="position:absolute;right:0;bottom:0;display:flex;gap:10px"><span class="btn">◀ ПРЕД.</span><span class="btn">СЛЕД. ▶</span><span class="btn p" style="width:200px">ГОТОВО</span></div>
+ </div>
+</div>
+<script>
+document.querySelectorAll('[data-p]').forEach(e=>e.appendChild(document.getElementById('pl').content.cloneNode(true)));
+document.getElementById(location.hash.slice(1)||'d').style.display='block';
+</script></body></html>
