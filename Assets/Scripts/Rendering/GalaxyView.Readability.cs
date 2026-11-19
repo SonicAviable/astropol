@@ -369,10 +369,11 @@ namespace StellarisClone.Rendering
                 // Укреплённая база — важная точка обороны: видна издалека, как колония
                 float target = m.Kind switch
                 {
+                    // Столицы, колонии и укреплённые базы видны на любом отдалении; форпосты гаснут только совсем издалека
                     MarkerKind.Capital => 1f,
-                    MarkerKind.Colony => 1f - Smooth(230f, 290f, dist),
-                    _ when m.Fort > 0 => 1f - Smooth(230f, 290f, dist),
-                    _ => 1f - Smooth(120f, 170f, dist)
+                    MarkerKind.Colony => 1f,
+                    _ when m.Fort > 0 => 1f,
+                    _ => 1f - Smooth(330f, 430f, dist)
                 };
                 m.Alpha = Mathf.MoveTowards(m.Alpha, target, dt * 4f);
                 bool show = m.Alpha > 0.01f;

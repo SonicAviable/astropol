@@ -36,20 +36,18 @@ namespace StellarisClone.Rendering
             var host = new GameObject("[UI] MusicPlayer").AddComponent<MusicPlayerPanel>();
             host.Build(canvas, panelTop);
 
-            // Круглая голо-кнопка в стиле верхнего меню: тёмный диск, бирюзовое кольцо
+            // «Астролябия»: латунный медальон, как остальные круглые кнопки HUD
             var bg = LGBuild.Panel(timeBar, "MusicBtn", new Color(0.055f, 0.094f, 0.157f, 0.96f), raycast: true);
-            bg.sprite = HudArt.Disc();
-            bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(30, 30));
+            bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(34, 34));
             LG.Ignore(bg.gameObject);
-            var ring = LGBuild.Panel(bg.transform, "Ring", new Color(0.475f, 0.816f, 0.749f, 0.6f));
-            ring.sprite = HudArt.Ring(0.88f, 1f);
-            ring.rectTransform.Stretch();
             var btn = bg.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(host.Toggle);
             host._toggleIcon = LGIcons.Create(btn.transform, LGIcon.Speaker, 15f, DS.TextMuted);
             host._toggleIcon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(15, 15));
             host._toggleIcon.raycastTarget = false;
+            var medal = LGAstrolabe.Attach(bg.gameObject, bg, null, round: true);
+            if (medal != null) medal.KeepIconColor = true;   // цвет значка — играет/пауза
             TooltipHelper.Attach(btn.gameObject, Loc.T("<b>Музыка</b>\nТекущий трек, пауза, следующий, громкость  <color=#A9A392>(M)</color>"));
         }
 
@@ -84,7 +82,7 @@ namespace StellarisClone.Rendering
             var mm = MusicManager.Instance;
             if (mm != null && !_subscribed) { mm.OnStateChanged += Refresh; _subscribed = true; }
             if (_toggleIcon != null && mm != null)
-                _toggleIcon.color = mm.IsPaused ? DS.TextMuted : DS.NeonCyan;
+                _toggleIcon.color = mm.IsPaused ? DS.TextMuted : new Color(0.957f, 0.851f, 0.584f);
 
             if (!IsOpen) return;
             _tick -= Time.unscaledDeltaTime;
