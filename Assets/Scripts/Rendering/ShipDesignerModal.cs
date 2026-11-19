@@ -565,11 +565,11 @@ namespace StellarisClone.Rendering
             => LGBuild.Button(parent, name, bg, rim, act);
 
         /// <summary>Плитка или вкладка в стиле «Астролябия»: латунная рамка, своё содержимое (значок, строки) остаётся.</summary>
-        private static LGAstrolabe Astrolabe(Button b, Color gem, bool selected = false)
+        private static LGAstrolabe Astrolabe(Button b, Color gem, bool selected = false, bool plain = false)
         {
             var game = b.GetComponent<LGGameButton>();
             if (game != null) Object.DestroyImmediate(game);
-            var a = LGAstrolabe.Attach(b.gameObject, b.GetComponent<Image>(), null);
+            var a = LGAstrolabe.Attach(b.gameObject, b.GetComponent<Image>(), null, plain: plain);
             if (a == null) return null;
             a.Gem = LGAstrolabe.GemOf(gem);
             a.Selected = selected;
@@ -1424,17 +1424,18 @@ namespace StellarisClone.Rendering
                         RebuildFilters();
                         RebuildArsenal();
                     });
-                ((RectTransform)b.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w, 28));
-                var t = LGBuild.Label(b.transform, names[i], 11, on ? Color.white : Muted, TextAnchor.MiddleCenter, bold: true);
+                ((RectTransform)b.transform).At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w + 20f, 30));
+                Astrolabe(b, c, on);   // вкладка «Астролябия»; выбранный фильтр — как выбранная вкладка
+                var t = LGBuild.Label(b.transform, names[i], 11, on ? new Color(0.957f, 0.851f, 0.584f) : Muted, TextAnchor.MiddleCenter, bold: true);
                 t.Track(1.4f);
                 if (f >= 0)
                 {
-                    t.rectTransform.Stretch(18, 0, 0, 0);
+                    t.rectTransform.Stretch(30, 0, 10, 0);
                     var ic = LGIcons.Create(b.transform, ModuleVisuals.TypeIcon(FilterTypes[f]), 13, on ? c : new Color(c.r, c.g, c.b, 0.6f));
                     ic.raycastTarget = false;
-                    ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(13, 13));
+                    ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(13, 13));
                 }
-                x += w + 8f;
+                x += w + 28f;
             }
         }
 
@@ -1467,6 +1468,8 @@ namespace StellarisClone.Rendering
             Color rim = sel ? new Color(tint.r, tint.g, tint.b, 0.95f) : new Color(1f, 1f, 1f, 0.08f);
             var b = FlatButton(_pickGrid, "Tile", bg, rim, () => OnTileClick(m));
             var t = b.transform;
+            var astro = Astrolabe(b, tint, sel || installed, plain: true);   // плитка «Астролябия»; закрытая — тусклая рамка
+            if (astro != null) astro.CanUse = () => unlocked;
 
             var strip = LGBuild.Panel(t, "Strip", new Color(tint.r, tint.g, tint.b, unlocked ? (sel ? 1f : 0.5f) : 0.12f));
             strip.raycastTarget = false;

@@ -19,7 +19,7 @@ namespace StellarisClone.Rendering
         public static bool IsOpenNow => Instance != null && Instance.IsOpen;
         public bool IsOpen => _root != null && LG.IsVisible(_root);
 
-        private const float W = 1400f, H = 800f, ColGap = 14f, CardGap = 12f;
+        private const float W = 1760f, H = 980f, ColGap = 14f, CardGap = 12f;
 
         private GameObject _root;
         private RectTransform _cols, _tabs;

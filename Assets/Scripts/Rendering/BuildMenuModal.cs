@@ -68,6 +68,8 @@ namespace StellarisClone.Rendering
             public BuildOption Opt;
             public GameObject Go;
             public Image Bg, IconBg, Icon, Lock, Sel;
+            public LGAstrolabe Astro;
+            public bool Avail = true;
             public Text Title, Effect, Days, Queued;
             public RectTransform Cost;
             public string CostKey;
@@ -364,7 +366,7 @@ namespace StellarisClone.Rendering
                 foreach (var o in shown) if (o.Available) { _selectedId = o.Id; break; }
                 if (_selectedId == null && shown.Count > 0) _selectedId = shown[0].Id;
             }
-            foreach (var c in _cards.Values) c.Sel.enabled = c.Opt.Id == _selectedId;
+            foreach (var c in _cards.Values) { c.Sel.enabled = c.Opt.Id == _selectedId; if (c.Astro != null) c.Astro.Selected = c.Sel.enabled; }
             RefreshDetail();
             RefreshQueue();
             if (rebuildCards) LG.Skin(_grid);
@@ -378,11 +380,13 @@ namespace StellarisClone.Rendering
             var bg = LGBuild.Panel(_grid, "Card_" + o.Id, new Color(0.055f, 0.094f, 0.157f, 0.95f), raycast: true);
             c.Go = bg.gameObject;
             c.Bg = bg;
-            LG.Platter(bg.gameObject, 14f).SetRim(new Color(o.Color.r, o.Color.g, o.Color.b, 0.30f));
             var btn = bg.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             string id = o.Id;
             btn.onClick.AddListener(() => Select(id));
+            // Плитка «Астролябия» (без камней — их много рядом); недоступная — тусклая рамка, но щёлкается (подробности)
+            c.Astro = LGAstrolabe.Attach(bg.gameObject, bg, null, plain: true);
+            if (c.Astro != null) { c.Astro.Gem = LGAstrolabe.GemOf(o.Color); c.Astro.CanUse = () => c.Avail || c.Opt.Done; }
 
             c.Sel = LGBuild.Panel(bg.transform, "Selected", new Color(o.Color.r, o.Color.g, o.Color.b, 0.16f));
             c.Sel.rectTransform.Stretch();
@@ -431,7 +435,7 @@ namespace StellarisClone.Rendering
             float a = avail ? 1f : 0.45f;
             c.Icon.color = new Color(o.Color.r, o.Color.g, o.Color.b, a);
             c.Title.color = new Color(1f, 1f, 1f, avail || o.Done ? 1f : 0.55f);
-            c.Bg.color = avail ? new Color(0.055f, 0.094f, 0.157f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.92f);
+            c.Avail = avail;
             string key = $"{o.Energy}|{o.Minerals}|{o.Alloys}|{o.Influence}|{CostCheck.Affordable(o.Energy, o.Minerals, o.Alloys, o.Influence)}";
             if (key != c.CostKey)
             {
@@ -485,7 +489,7 @@ namespace StellarisClone.Rendering
         {
             _selectedId = id;
             SFXManager.Play(Sfx.UiClick, 0.5f);
-            foreach (var c in _cards.Values) c.Sel.enabled = c.Opt.Id == id;
+            foreach (var c in _cards.Values) { c.Sel.enabled = c.Opt.Id == id; if (c.Astro != null) c.Astro.Selected = c.Sel.enabled; }
             RefreshDetail();
         }
 
