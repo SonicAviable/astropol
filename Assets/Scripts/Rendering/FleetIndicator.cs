@@ -549,7 +549,7 @@ namespace StellarisClone.Rendering
                 int pw = Mathf.RoundToInt(power);
                 if (pw != _shownPower) { _shownPower = pw; string p = pw.ToString(); _powerText.text = p; _powerShadow.text = p; }
                 // Иконка + число по центру под значком
-                float textW = p.Length * 0.10f;
+                float textW = _powerText.text.Length * 0.10f;
                 float total = 0.2f + textW;
                 _powerIcon.transform.localPosition = new Vector3(-total * 0.5f + 0.08f, 0f, 0f);
                 _powerText.transform.localPosition = new Vector3(-total * 0.5f + 0.19f, 0f, -0.01f);
