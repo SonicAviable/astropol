@@ -154,9 +154,9 @@ namespace StellarisClone.Rendering
             lRt.anchoredPosition = new Vector2(0, -RingSize * 0.55f - 14f);
 
             var lTxt = labelObj.AddComponent<Text>();
-           lTxt.font = GameFont.Regular;
+            lTxt.font = GameFont.Bold;
             lTxt.fontSize = 12;
-            lTxt.fontStyle = FontStyle.Bold;
+            lTxt.fontStyle = FontStyle.Normal;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
             lTxt.alignment = TextAnchor.MiddleCenter;
             lTxt.raycastTarget = false;
 

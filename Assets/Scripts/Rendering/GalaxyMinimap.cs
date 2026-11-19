@@ -173,7 +173,7 @@ public static void ShowGlobal()
             t.font = GameFont.Bold;
             t.text = Loc.T("◆  КАРТА ГАЛАКТИКИ");
             t.fontSize = 11;
-            t.fontStyle = FontStyle.Bold;
+            t.fontStyle = FontStyle.Normal;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
             t.alignment = TextAnchor.MiddleCenter;
             t.color = new Color(0.906f, 0.757f, 0.439f);
             t.raycastTarget = false;

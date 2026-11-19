@@ -206,7 +206,7 @@ namespace StellarisClone.Rendering
             tm.font = _font;
             tm.fontSize = 64;
             tm.characterSize = charSize;
-            tm.fontStyle = FontStyle.Bold;
+            tm.fontStyle = FontStyle.Normal;   // шрифт уже SemiBold — без синтетического «жирного»
             tm.anchor = anchor;
             tm.alignment = TextAlignment.Center;
             var mr = go.GetComponent<MeshRenderer>();

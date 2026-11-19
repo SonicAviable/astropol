@@ -711,7 +711,7 @@ namespace StellarisClone.Core
             t.font = (style == FontStyle.Bold) ? GameFont.Bold : GameFont.Regular;
             t.text = val;
             t.fontSize = size;
-            t.fontStyle = style;
+            t.fontStyle = style == FontStyle.Bold ? FontStyle.Normal : style;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
             t.color = col;
             t.alignment = anchor;
             t.raycastTarget = false;

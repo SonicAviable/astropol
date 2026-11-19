@@ -504,7 +504,7 @@ namespace StellarisClone.Rendering
                 tag.font = GameFont.Bold;
                 tag.fontSize = 64;
                 tag.characterSize = 0.1f;
-                tag.fontStyle = FontStyle.Bold;
+                tag.fontStyle = FontStyle.Normal;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
                 tag.anchor = TextAnchor.LowerLeft;
                 var mr = go.GetComponent<MeshRenderer>();
                 if (tag.font != null) mr.sharedMaterial = tag.font.material;

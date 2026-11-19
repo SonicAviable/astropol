@@ -378,7 +378,7 @@ namespace StellarisClone.Core
             g.transform.SetParent(p, false);
             var t = g.AddComponent<Text>();
             t.font = st == FontStyle.Bold ? GameFont.Bold : GameFont.Regular;
-            t.text = v; t.fontSize = sz; t.fontStyle = st; t.color = c;
+            t.text = v; t.fontSize = sz; t.fontStyle = st == FontStyle.Bold ? FontStyle.Normal : st; t.color = c;
             t.alignment = a; t.raycastTarget = false; t.supportRichText = true;
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Truncate;

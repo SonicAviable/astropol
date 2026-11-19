@@ -271,7 +271,7 @@ namespace StellarisClone.Rendering
             tm.characterSize = 0.1f;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
-            tm.fontStyle = FontStyle.Bold;
+            tm.fontStyle = FontStyle.Normal;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
             var mr = go.GetComponent<MeshRenderer>();
             if (font != null) mr.sharedMaterial = font.material;
             mr.sortingOrder = order;

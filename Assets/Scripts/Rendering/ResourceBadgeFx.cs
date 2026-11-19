@@ -111,7 +111,7 @@ namespace StellarisClone.Rendering
             var t = go.AddComponent<Text>();
             t.font = GameFont.Bold;
             t.fontSize = 13;
-            t.fontStyle = FontStyle.Bold;
+            t.fontStyle = FontStyle.Normal;  // настоящий SemiBold-файл: синтетический «жирный» поверх него расплывал буквы
             t.alignment = TextAnchor.MiddleLeft;
             t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
