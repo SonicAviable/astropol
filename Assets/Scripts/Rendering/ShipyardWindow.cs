@@ -6,18 +6,22 @@ using StellarisClone.Core;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Орбитальная верфь. Слева — что можно заложить: карточка на каждый тип корабля с иконкой,
-    /// ролью, боевым профилем проекта, ценой (сплавы, гелий-3, дни) и содержанием; кнопка «Заложить»
-    /// с причиной, если нельзя. Справа — стапели: что строится, прогресс, сроки, отмена с возвратом,
-    /// а ниже — модернизация выбранной эскадры и переход в конструктор.
+    /// Орбитальная верфь, раскладка «Сухой док». Сверху — ряд стапелей: в занятом доке строящийся корабль
+    /// проявляется латунным силуэтом по ходу работ, по шву идёт искра, крупно — процент; отмена с возвратом.
+    /// Ниже — пять карточек кораблей: силуэт, назначение, боевой профиль проекта, цена (сплавы, гелий-3, дни),
+    /// содержание и «Заложить» с причиной, если нельзя. Внизу — модернизация эскадры и переход в конструктор.
     /// </summary>
     public class ShipyardWindow : MonoBehaviour
     {
         public static ShipyardWindow Instance { get; private set; }
         public bool IsOpen => _root != null && LG.IsVisible(_root);
 
-        private const float Width = 900f, Height = 610f, HeaderH = 60f;
-        private const float LeftW = 548f;
+        // «Сухой док»: шапка, ряд стапелей (главное в окне), пять карточек кораблей, строка модернизации внизу
+        private const float Width = 1100f, Height = 730f, Pad = 26f;
+        private const float DocksTop = 144f, DocksH = 168f, CardsTop = 350f, CardsH = 280f, FootH = 62f;
+        private static readonly string[] Roman = { "I", "II", "III", "IV", "V", "VI" };
+        private static readonly Color Ink = new Color(0.953f, 0.918f, 0.827f);
+        private static readonly Color Lit = new Color(0.96f, 0.86f, 0.60f);
 
         private class Option
         {
@@ -30,14 +34,17 @@ namespace StellarisClone.Rendering
             public Text BuildLabel, Sub, Stats, Alloys, Energy, Days, Upkeep;
         }
 
+        /// <summary>Док со строящимся кораблём: латунный силуэт проявляется по ходу работ, по шву идёт искра.</summary>
         private class SlotUi
         {
-            public RectTransform Bar;
-            public Text State;
+            public RectTransform Pic, Weld;
+            public RectMask2D Clip;
+            public Text Pct, State;
+            public int Index;
         }
 
         private GameObject _root;
-        private Text _subtitle;
+        private Text _eyebrow, _subtitle, _alloysText, _energyText;
         private RectTransform _queue;
         private Text _queueTitle;
         private Text _retrofitText;
@@ -107,142 +114,168 @@ namespace StellarisClone.Rendering
             var bg = _root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(_root, 24f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.42f));
+            LG.Glass(_root, 24f);   // фон «Обсерватория» вешается сам
             LG.Motion(_root, LGAppear.Kind.Pop);
 
-            // Шапка
-            var header = LGBuild.Panel(rt, "Header", UIManager.DS.BgHeader);
-            header.rectTransform.TopBand(0, HeaderH);
-            LG.Header(header.gameObject);
-            var badge = LGBuild.Panel(header.transform, "Badge", new Color(0.075f, 0.125f, 0.220f));
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(38, 38));
-            LG.Platter(badge.gameObject, 19f).FillMultiplier = 2.2f;
-            LGIcons.Create(badge.transform, LGIcon.Shipyard, 22, Neon);
-            var title = LGBuild.Label(header.transform, Loc.T("ОРБИТАЛЬНАЯ ВЕРФЬ"), 16, Neon, TextAnchor.UpperLeft, bold: true);
-            title.rectTransform.Stretch(66, 0, 60, 11);
-            _subtitle = LGBuild.Label(header.transform, "", 11, Muted, TextAnchor.LowerLeft);
-            _subtitle.rectTransform.Stretch(66, 10, 60, 0);
-            var close = LGBuild.Button(header.transform, "Close", new Color(0.075f, 0.125f, 0.220f), new Color(1f, 0.45f, 0.48f, 0.55f),
-                Close, LGIcon.Close, null, 11);
-            ((RectTransform)close.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(32, 32));
+            // Шапка: верфь и система, название антиквой, строка о стапелях; справа — запас сплавов и гелия-3
+            _eyebrow = LGBuild.Label(rt, "", 11, Gold, TextAnchor.UpperLeft, bold: true);
+            _eyebrow.font = GameFont.MonoMedium;
+            _eyebrow.Track(2f);
+            _eyebrow.rectTransform.TopBand(24, 16, Pad, 380);
+            var title = LGBuild.Label(rt, Loc.T("Орбитальная верфь"), 30, Ink, TextAnchor.UpperLeft);
+            title.font = GameFont.Display;
+            title.rectTransform.TopBand(40, 40, Pad, 380);
+            _subtitle = LGBuild.Label(rt, "", 12, Muted, TextAnchor.UpperLeft);
+            _subtitle.rectTransform.TopBand(82, 18, Pad, 380);
 
-            // Левая колонка — заказ кораблей
-            var left = LGBuild.Rect(rt, "Order");
-            left.anchorMin = new Vector2(0, 0); left.anchorMax = new Vector2(0, 1); left.pivot = new Vector2(0, 0.5f);
-            left.offsetMin = new Vector2(16, 16); left.offsetMax = new Vector2(16 + LeftW, -(HeaderH + 10));
-            Section(left, Loc.T("ЗАЛОЖИТЬ КОРАБЛЬ"), LGIcon.Construction, 0f);
+            var purse = LGBuild.Rect(rt, "Purse");
+            purse.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-74, -28), new Vector2(292, 30));
+            _alloysText = PurseChip(purse, LGIcon.Alloys, new Color(0.475f, 0.816f, 0.749f), 0f, Loc.T("сплавов"));
+            _energyText = PurseChip(purse, LGIcon.Energy, new Color(1f, 0.80f, 0.32f), 150f, Loc.T("гелия-3"));
 
+            var close = LGBuild.Button(rt, "Close", new Color(0.075f, 0.125f, 0.220f), new Color(1f, 0.45f, 0.48f, 0.55f), Close, LGIcon.Close, null, 11);
+            ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-22, -24), new Vector2(34, 34));
+
+            // Линия под шапкой с ромбом посередине
+            var line = LGBuild.Panel(rt, "HeadLine", new Color(Gold.r, Gold.g, Gold.b, 0.35f));
+            line.rectTransform.TopBand(116, 1, Pad + 40, Pad + 40);
+            LG.Ignore(line.gameObject);
+            var dia = LGBuild.Panel(rt, "HeadDiamond", Gold);
+            dia.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -116.5f), new Vector2(7, 7));
+            dia.rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
+            LG.Ignore(dia.gameObject);
+
+            // Стапели — главное в окне
+            var qi = LGIcons.Create(rt, LGIcon.Clock, 13, Gold);
+            qi.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(Pad, -(DocksTop - 15)), new Vector2(13, 13));
+            _queueTitle = LGBuild.Label(rt, "", 11, Gold, TextAnchor.MiddleLeft, bold: true);
+            _queueTitle.font = GameFont.MonoMedium;
+            _queueTitle.Track(1.6f);
+            _queueTitle.rectTransform.TopBand(DocksTop - 24, 18, Pad + 20, Pad);
+            _queue = LGBuild.Rect(rt, "Docks");
+            _queue.TopBand(DocksTop, DocksH, Pad, Pad);
+
+            // Заложить корабль — пять карточек в ряд
+            var sec = LGBuild.Rect(rt, "OrderHead");
+            sec.TopBand(CardsTop - 28, 22, Pad, Pad);
+            LGBuild.SectionDecor(sec, Loc.T("ЗАЛОЖИТЬ КОРАБЛЬ"), LGIcon.Construction, Gold);
+            var cards = LGBuild.Rect(rt, "Order");
+            cards.TopBand(CardsTop, CardsH, Pad, Pad);
             _options.Clear();
-            AddOption(left, FleetType.Science, ShipClass.Corvette, Loc.T("Научный корабль"), LGIcon.Sensors, new Color(0.45f, 1f, 0.62f), 0);
-            AddOption(left, FleetType.Constructor, ShipClass.Corvette, Loc.T("Строительный корабль"), LGIcon.Construction, new Color(1f, 0.82f, 0.36f), 1);
-            AddOption(left, FleetType.Military, ShipClass.Corvette, Loc.T("Корвет"), LGIcon.Corvette, Neon, 2);
-            AddOption(left, FleetType.Military, ShipClass.Frigate, Loc.T("Фрегат"), LGIcon.Frigate, Neon, 3);
-            AddOption(left, FleetType.Military, ShipClass.Destroyer, Loc.T("Эсминец"), LGIcon.Destroyer, Neon, 4);
+            AddOption(cards, FleetType.Science, ShipClass.Corvette, Loc.T("Научный корабль"), LGIcon.ScienceShip, new Color(0.45f, 1f, 0.62f), 0);
+            AddOption(cards, FleetType.Constructor, ShipClass.Corvette, Loc.T("Строительный корабль"), LGIcon.ConstructorShip, new Color(1f, 0.82f, 0.36f), 1);
+            AddOption(cards, FleetType.Military, ShipClass.Corvette, Loc.T("Корвет"), ModuleVisuals.HullIcon(ShipClass.Corvette), new Color(1f, 0.48f, 0.39f), 2);
+            AddOption(cards, FleetType.Military, ShipClass.Frigate, Loc.T("Фрегат"), ModuleVisuals.HullIcon(ShipClass.Frigate), new Color(1f, 0.48f, 0.39f), 3);
+            AddOption(cards, FleetType.Military, ShipClass.Destroyer, Loc.T("Эсминец"), ModuleVisuals.HullIcon(ShipClass.Destroyer), new Color(1f, 0.48f, 0.39f), 4);
 
-            // Правая колонка — стапели и модернизация
-            var right = LGBuild.Rect(rt, "Docks");
-            right.anchorMin = new Vector2(0, 0); right.anchorMax = new Vector2(1, 1);
-            right.offsetMin = new Vector2(16 + LeftW + 16, 16); right.offsetMax = new Vector2(-16, -(HeaderH + 10));
+            // Строка внизу: модернизация эскадры и конструктор
+            var foot = LGBuild.Panel(rt, "Retrofit", new Color(0.047f, 0.078f, 0.137f, 0.92f));
+            var frt = foot.rectTransform;
+            frt.anchorMin = new Vector2(0, 0); frt.anchorMax = new Vector2(1, 0); frt.pivot = new Vector2(0.5f, 0);
+            frt.offsetMin = new Vector2(Pad, 22); frt.offsetMax = new Vector2(-Pad, 22 + FootH);
+            LG.Platter(foot.gameObject, 2f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.2f));
+            var ri = LGIcons.Create(foot.transform, LGIcon.Wrench, 14, Gold);
+            ri.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(14, 14));
+            var rh = LGBuild.Label(foot.transform, Loc.T("МОДЕРНИЗАЦИЯ ЭСКАДРЫ"), 10, Gold, TextAnchor.UpperLeft, bold: true);
+            rh.font = GameFont.MonoMedium;
+            rh.Track(1.6f);
+            rh.rectTransform.Stretch(38, 0, 640, 8);
+            _retrofitText = LGBuild.Label(foot.transform, "", 11, Primary, TextAnchor.UpperLeft, wrap: true);
+            _retrofitText.rectTransform.Stretch(38, 6, 640, 24);
+            _retrofitText.resizeTextForBestFit = true; _retrofitText.resizeTextMinSize = 9; _retrofitText.resizeTextMaxSize = 11;
 
-            var qHead = LGBuild.Rect(right, "QueueHead");
-            qHead.TopBand(0, 24);
-            var qi = LGIcons.Create(qHead, LGIcon.Clock, 14, Gold);
-            qi.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            _queueTitle = LGBuild.Label(qHead, "", 11, Gold, TextAnchor.MiddleLeft, bold: true);
-            _queueTitle.rectTransform.Stretch(22, 0, 0, 0);
-
-            _queue = LGBuild.Rect(right, "Queue");
-            _queue.anchorMin = new Vector2(0, 1); _queue.anchorMax = new Vector2(1, 1); _queue.pivot = new Vector2(0.5f, 1);
-            _queue.offsetMin = new Vector2(0, -330); _queue.offsetMax = new Vector2(0, -30);
-
-            // Модернизация
-            var refit = LGBuild.Panel(right, "Retrofit", UIManager.DS.BgSlot);
-            refit.rectTransform.anchorMin = new Vector2(0, 0); refit.rectTransform.anchorMax = new Vector2(1, 0);
-            refit.rectTransform.pivot = new Vector2(0.5f, 0);
-            refit.rectTransform.offsetMin = new Vector2(0, 50); refit.rectTransform.offsetMax = new Vector2(0, 160);
-            LG.Platter(refit.gameObject, 14f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.25f));
-            var rh = LGBuild.Rect(refit.transform, "Head");
-            rh.TopBand(8, 18, 12, 12);
-            var ri = LGIcons.Create(rh, LGIcon.Wrench, 13, Gold);
-            ri.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(13, 13));
-            var rt2 = LGBuild.Label(rh, Loc.T("МОДЕРНИЗАЦИЯ ЭСКАДРЫ"), 10, Gold, TextAnchor.MiddleLeft, bold: true);
-            rt2.rectTransform.Stretch(20, 0, 0, 0);
-            _retrofitText = LGBuild.Label(refit.transform, "", 10, Primary, TextAnchor.UpperLeft, wrap: true);
-            _retrofitText.rectTransform.Stretch(12, 44, 12, 30);
-            _retrofitBtn = LGBuild.Button(refit.transform, "RetrofitBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofit, LGIcon.Wrench, Loc.T("ВЫДЕЛЕННЫЙ"), 10);
-            var rbRt = (RectTransform)_retrofitBtn.transform;
-            rbRt.anchorMin = new Vector2(0, 0); rbRt.anchorMax = new Vector2(0.5f, 0); rbRt.pivot = new Vector2(0.5f, 0);
-            rbRt.offsetMin = new Vector2(10, 8); rbRt.offsetMax = new Vector2(-4, 38);
-            TooltipHelper.Attach(_retrofitBtn.gameObject, Loc.T("Модернизировать выделенный на карте военный корабль по актуальному проекту его корпуса"));
-            _retrofitAllBtn = LGBuild.Button(refit.transform, "RetrofitAllBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofitAll, LGIcon.Wrench, Loc.T("ВСЕ УСТАРЕВШИЕ"), 10);
-            var raRt = (RectTransform)_retrofitAllBtn.transform;
-            raRt.anchorMin = new Vector2(0.5f, 0); raRt.anchorMax = new Vector2(1, 0); raRt.pivot = new Vector2(0.5f, 0);
-            raRt.offsetMin = new Vector2(4, 8); raRt.offsetMax = new Vector2(-10, 38);
-            TooltipHelper.Attach(_retrofitAllBtn.gameObject, Loc.T("<b>Модернизировать все устаревшие корабли</b>\nКорабли строятся по основному проекту корпуса (последнему сохранённому в конструкторе). ") +
-                                 Loc.T("Новый проект делает старые корабли устаревшими — модернизация перевооружает их за доплату сплавами. Если сплавов не хватит на всех, модернизируются первые по списку."));
-
-            var designer = LGBuild.Button(right, "Designer", UIManager.DS.BtnPrimary, UIManager.DS.BtnPrimaryHi, () =>
+            var designer = LGBuild.Button(foot.transform, "Designer", UIManager.DS.BtnPrimary, UIManager.DS.BtnPrimaryHi, () =>
             {
                 Close();
                 ShipDesignerModal.Instance?.Open();
-            }, LGIcon.Shipyard, Loc.T("КОНСТРУКТОР КОРАБЛЕЙ"), 11);
-            var dRt = (RectTransform)designer.transform;
-            dRt.anchorMin = new Vector2(0, 0); dRt.anchorMax = new Vector2(1, 0); dRt.pivot = new Vector2(0.5f, 0);
-            dRt.offsetMin = new Vector2(0, 0); dRt.offsetMax = new Vector2(0, 40);
+            }, null, Loc.T("КОНСТРУКТОР КОРАБЛЕЙ"), 12);
+            var game = designer.GetComponent<LGGameButton>();
+            if (game != null) DestroyImmediate(game);
+            ((RectTransform)designer.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(250, 40));
+            var dl = designer.GetComponentInChildren<Text>();
+            if (dl != null) dl.rectTransform.Stretch(26, 0, 26, 0);
+            LGPrimarySkin.Add(designer.gameObject, dl);   // главная кнопка окна — латунь
             TooltipHelper.Attach(designer.gameObject, Loc.T("<b>Конструктор кораблей</b>\nСоберите проект из модулей — верфь строит по последнему сохранённому проекту корпуса."));
+
+            _retrofitAllBtn = LGBuild.Button(foot.transform, "RetrofitAllBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofitAll, LGIcon.Wrench, Loc.T("ВСЕ УСТАРЕВШИЕ"), 12);
+            ((RectTransform)_retrofitAllBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-276, 0), new Vector2(200, 36));
+            TooltipHelper.Attach(_retrofitAllBtn.gameObject, Loc.T("<b>Модернизировать все устаревшие корабли</b>\nКорабли строятся по основному проекту корпуса (последнему сохранённому в конструкторе). ") +
+                                 Loc.T("Новый проект делает старые корабли устаревшими — модернизация перевооружает их за доплату сплавами. Если сплавов не хватит на всех, модернизируются первые по списку."));
+            _retrofitBtn = LGBuild.Button(foot.transform, "RetrofitBtn", UIManager.DS.BtnSuccess, Gold, OnRetrofit, LGIcon.Wrench, Loc.T("ВЫДЕЛЕННЫЙ"), 12);
+            ((RectTransform)_retrofitBtn.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-490, 0), new Vector2(160, 36));
+            TooltipHelper.Attach(_retrofitBtn.gameObject, Loc.T("Модернизировать выделенный на карте военный корабль по актуальному проекту его корпуса"));
 
             _root.SetActive(false);
         }
 
-        private static void Section(RectTransform parent, string text, LGIcon icon, float top)
+        private static Text PurseChip(RectTransform parent, LGIcon icon, Color col, float x, string unit)
         {
-            var head = LGBuild.Rect(parent, "Section");
-            head.TopBand(top, 24);
-            LGBuild.SectionDecor(head, text, icon);
+            var c = LGBuild.Panel(parent, "Purse", new Color(0.039f, 0.067f, 0.125f, 0.95f));
+            c.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(142, 30));
+            LG.Platter(c.gameObject, 2f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.22f));
+            var ic = LGIcons.Create(c.transform, icon, 14, col);
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(14, 14));
+            var t = LGBuild.Label(c.transform, "", 13, Ink, TextAnchor.MiddleLeft, bold: true);
+            t.font = GameFont.MonoMedium;
+            t.rectTransform.Stretch(30, 0, 8, 0);
+            var u = LGBuild.Label(c.transform, unit, 10, Muted, TextAnchor.MiddleRight);
+            u.rectTransform.Stretch(30, 0, 10, 0);
+            return t;
         }
 
+        /// <summary>Карточка корабля: цветная черта назначения, силуэт на мягком свете, название, характеристики, цена и «Заложить».</summary>
         private void AddOption(RectTransform parent, FleetType type, ShipClass hull, string name, LGIcon icon, Color tint, int index)
         {
-            const float rowH = 88f, gap = 8f;
-            var card = LGBuild.Panel(parent, "Ship_" + name, UIManager.DS.BgSlot);
-            card.rectTransform.TopBand(30 + index * (rowH + gap), rowH);
-            LG.Platter(card.gameObject, 14f).SetRim(new Color(tint.r, tint.g, tint.b, 0.22f));
+            const float n = 5f;
+            var card = LGBuild.Panel(parent, "Ship_" + name, new Color(0.047f, 0.078f, 0.137f, 0.92f));
+            var crt = card.rectTransform;
+            crt.anchorMin = new Vector2(index / n, 0); crt.anchorMax = new Vector2((index + 1) / n, 1);
+            crt.offsetMin = new Vector2(index == 0 ? 0 : 6, 0); crt.offsetMax = new Vector2(index == 4 ? 0 : -6, 0);
+            LG.Platter(card.gameObject, 2f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.18f));
 
-            var badge = LGBuild.Panel(card.transform, "Badge", new Color(tint.r * 0.16f, tint.g * 0.16f, tint.b * 0.16f, 1f));
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(56, 56));
-            LG.Platter(badge.gameObject, 14f).SetRim(new Color(tint.r, tint.g, tint.b, 0.45f));
-            LGIcons.Create(badge.transform, icon, 32, tint);
+            var accent = LGBuild.Panel(card.transform, "Accent", new Color(tint.r, tint.g, tint.b, 0.85f));
+            accent.rectTransform.TopBand(0, 2, 14, 14);
+            LG.Ignore(accent.gameObject);
+            var glow = LGBuild.Panel(card.transform, "Glow", new Color(0.16f, 0.24f, 0.44f, 0.6f));
+            glow.sprite = MenuArt.SoftDisc;
+            glow.rectTransform.TopBand(4, 76, 16, 16);
+            glow.raycastTarget = false;
+            LG.Ignore(glow.gameObject);
+            var ic = LGIcons.Create(card.transform, icon, 50, Color.Lerp(tint, Color.white, 0.3f));
+            ic.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -16), new Vector2(50, 50));
 
             var o = new Option { Type = type, Hull = hull, Name = name, Icon = icon, Tint = tint };
-            var nm = LGBuild.Label(card.transform, name, 13, Primary, TextAnchor.UpperLeft, bold: true);
-            nm.rectTransform.Stretch(80, 0, 200, 10);
-            o.Sub = LGBuild.Label(card.transform, "", 10, Muted, TextAnchor.UpperLeft);
-            o.Sub.rectTransform.Stretch(80, 0, 200, 30);
+            var nm = LGBuild.Label(card.transform, name, 16, Ink, TextAnchor.UpperLeft);
+            nm.font = GameFont.Display;
+            nm.resizeTextForBestFit = true; nm.resizeTextMinSize = 11; nm.resizeTextMaxSize = 16;
+            nm.horizontalOverflow = HorizontalWrapMode.Wrap;
+            nm.rectTransform.TopBand(80, 22, 14, 10);
+            o.Sub = LGBuild.Label(card.transform, "", 11, Muted, TextAnchor.UpperLeft);
+            o.Sub.rectTransform.TopBand(102, 16, 14, 10);
             o.Stats = LGBuild.Label(card.transform, "", 10, Primary, TextAnchor.UpperLeft, wrap: true);
-            o.Stats.rectTransform.Stretch(80, 6, 200, 48);
+            o.Stats.resizeTextForBestFit = true; o.Stats.resizeTextMinSize = 8; o.Stats.resizeTextMaxSize = 10;
+            o.Stats.rectTransform.TopBand(122, 44, 14, 10);
 
-            // Цена: сплавы, гелий-3, дни — чипами с иконками
-            var price = LGBuild.Rect(card.transform, "Price");
-            price.anchorMin = new Vector2(1, 1); price.anchorMax = new Vector2(1, 1); price.pivot = new Vector2(1, 1);
-            price.sizeDelta = new Vector2(186, 18); price.anchoredPosition = new Vector2(-12, -10);
-            o.Alloys = Chip(price, LGIcon.Alloys, new Color(0.475f, 0.816f, 0.749f), 0f);
-            o.Energy = Chip(price, LGIcon.Energy, new Color(1f, 0.80f, 0.32f), 62f);
-            o.Days = Chip(price, LGIcon.Clock, Muted, 124f);
-            o.Upkeep = LGBuild.Label(card.transform, "", 10, new Color(1f, 0.55f, 0.55f), TextAnchor.UpperRight);
-            o.Upkeep.rectTransform.Stretch(0, 0, 12, 32);
+            o.Alloys = Chip(card.rectTransform, LGIcon.Alloys, new Color(0.475f, 0.816f, 0.749f), 14f, 170f);
+            o.Energy = Chip(card.rectTransform, LGIcon.Energy, new Color(1f, 0.80f, 0.32f), 96f, 170f);
+            o.Days = Chip(card.rectTransform, LGIcon.Clock, Muted, 14f, 188f);
+            o.Upkeep = LGBuild.Label(card.transform, "", 10, new Color(1f, 0.55f, 0.55f), TextAnchor.UpperLeft);
+            o.Upkeep.rectTransform.TopBand(208, 14, 14, 10);
 
-            o.Build = LGBuild.Button(card.transform, "Build", UIManager.DS.BtnPrimary, new Color(tint.r, tint.g, tint.b, 0.6f), () => TryBuild(o), null, Loc.T("ЗАЛОЖИТЬ"), 10);
+            // камни кнопки: изумруд — наука, янтарь — стройка, жемчуг — боевые (коралл означал бы «опасное»)
+            Color gem = type == FleetType.Military ? new Color(1f, 1f, 1f, 0.3f) : new Color(tint.r, tint.g, tint.b, 0.6f);
+            o.Build = LGBuild.Button(card.transform, "Build", UIManager.DS.BtnPrimary, gem, () => TryBuild(o), null, Loc.T("ЗАЛОЖИТЬ"), 12);
             var bRt = (RectTransform)o.Build.transform;
-            bRt.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-12, 10), new Vector2(186, 28));
+            bRt.anchorMin = new Vector2(0, 0); bRt.anchorMax = new Vector2(1, 0); bRt.pivot = new Vector2(0.5f, 0);
+            bRt.offsetMin = new Vector2(12, 12); bRt.offsetMax = new Vector2(-12, 46);
             o.BuildLabel = o.Build.GetComponentInChildren<Text>();
             _options.Add(o);
         }
 
-        private static Text Chip(RectTransform parent, LGIcon icon, Color col, float x)
+        private static Text Chip(RectTransform parent, LGIcon icon, Color col, float x, float top)
         {
             var c = LGBuild.Rect(parent, "Chip");
-            c.anchorMin = new Vector2(0, 0); c.anchorMax = new Vector2(0, 1); c.pivot = new Vector2(0, 0.5f);
-            c.sizeDelta = new Vector2(60, 0); c.anchoredPosition = new Vector2(x, 0);
+            c.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -top), new Vector2(80, 16));
             var ic = LGIcons.Create(c, icon, 12, col);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(12, 12));
             var t = LGBuild.Label(c, "", 11, Primary, TextAnchor.MiddleLeft, bold: true);
@@ -265,9 +298,15 @@ namespace StellarisClone.Rendering
             var eco = EconomyManager.Instance;
             int yard = fm != null ? fm.YardFor(_yardRequest) : -1;
             var yardSys = EmpireStats.GetSystem(yard);
+            _eyebrow.text = yardSys != null ? Loc.F("ВЕРФЬ  ·  {0}", yardSys.Name.ToUpper()) : Loc.T("ВЕРФЬ");
             _subtitle.text = yardSys != null
-                ? Loc.F("Верфь в системе {0}  ·  одновременно строится {1} корабля  ·  готовые корабли появляются у верфи", yardSys.Name, ConstructionManager.ShipyardSlots)
+                ? Loc.F("Одновременно строится {0} корабля  ·  готовые корабли появляются у верфи", ConstructionManager.ShipyardSlots)
                 : Loc.T("<color=#FF6B57>У вас нет систем для верфи</color>");
+            if (eco != null)
+            {
+                _alloysText.text = $"{eco.Alloys:0}";
+                _energyText.text = $"{eco.EnergyCredits:0}";
+            }
 
             foreach (var o in _options) RefreshOption(o, fm, eco, yard >= 0);
             RefreshQueue();
@@ -384,7 +423,7 @@ namespace StellarisClone.Rendering
             _queueTitle.text = q.Count == 0 ? Loc.F("СТАПЕЛИ  ·  свободно {0} из {1}", slots, slots)
                              : Loc.F("СТАПЕЛИ  ·  занято {0} из {1}", Mathf.Min(q.Count, slots), slots) + (q.Count > slots ? Loc.F("  ·  в очереди {0}", q.Count - slots) : "");
 
-            string sig = q.Count.ToString();
+            string sig = slots + ":" + q.Count;
             foreach (var j in q) sig += "|" + j.Id;
             if (sig != _queueSig)
             {
@@ -395,64 +434,103 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < q.Count; i++)
             {
                 if (!_slots.TryGetValue(q[i].Id, out var ui)) continue;
-                bool active = i < slots;
-                LGBuild.SetBar(ui.Bar, active ? q[i].Progress : 0f);
-                ui.State.text = active
-                    ? Loc.F("<b>{0}%</b>  ·  готов через ~{1} дн.", Mathf.RoundToInt(q[i].Progress * 100f), Mathf.CeilToInt(cm.DaysUntilDone(q[i])))
-                    : Loc.F("<color=#A9A392>в очереди  ·  готов через ~{0} дн.</color>", Mathf.CeilToInt(cm.DaysUntilDone(q[i])));
+                float p = Mathf.Clamp01(q[i].Progress);
+                // латунный силуэт проявляется слева направо, искра — на шве
+                ui.Clip.padding = new Vector4(0f, 0f, (1f - p) * ui.Pic.rect.width, 0f);
+                ui.Weld.anchorMin = new Vector2(p, 0.1f);
+                ui.Weld.anchorMax = new Vector2(p, 0.9f);
+                ui.Weld.gameObject.SetActive(p > 0.01f && p < 0.99f);
+                ui.Pct.text = Loc.F("{0}%", Mathf.RoundToInt(p * 100f));
+                ui.State.text = Loc.F("Стапель {0}  ·  готов через ~{1} дн.", Roman[Mathf.Min(ui.Index, Roman.Length - 1)], Mathf.CeilToInt(cm.DaysUntilDone(q[i])));
             }
         }
 
+        /// <summary>Ряд доков: в занятом — корабль в лесах стапеля, в свободном — приглашение заложить.</summary>
         private void RebuildQueue(ConstructionManager cm, List<ConstructionJob> q)
         {
             LGBuild.Clear(_queue);
             _slots.Clear();
-            const float rowH = 54f, gap = 6f;
-            int shown = Mathf.Min(q.Count, 4);
-            int rows = Mathf.Max(shown, ConstructionManager.ShipyardSlots);
-            for (int i = 0; i < rows; i++)
+            int slots = Mathf.Clamp(ConstructionManager.ShipyardSlots, 1, 4);
+            for (int i = 0; i < slots; i++)
             {
-                float top = i * (rowH + gap);
-                if (i >= shown)
+                bool busy = i < q.Count;
+                var dock = LGBuild.Panel(_queue, busy ? "Dock" : "FreeDock", busy ? new Color(0.043f, 0.075f, 0.141f, 0.95f) : new Color(0.035f, 0.059f, 0.110f, 0.6f));
+                var drt = dock.rectTransform;
+                drt.anchorMin = new Vector2(i / (float)slots, 0); drt.anchorMax = new Vector2((i + 1) / (float)slots, 1);
+                drt.offsetMin = new Vector2(i == 0 ? 0 : 7, 0); drt.offsetMax = new Vector2(i == slots - 1 ? 0 : -7, 0);
+                LG.Platter(dock.gameObject, 2f).SetRim(new Color(Gold.r, Gold.g, Gold.b, busy ? 0.32f : 0.14f));
+                if (!busy)
                 {
-                    var empty = LGBuild.Panel(_queue, "FreeSlot", new Color(0.055f, 0.094f, 0.157f, 0.7f));
-                    empty.rectTransform.TopBand(top, rowH);
-                    LG.Platter(empty.gameObject, 12f).SetRim(new Color(Neon.r, Neon.g, Neon.b, 0.12f));
-                    var et = LGBuild.Label(empty.transform, Loc.T("свободный стапель"), 10, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleCenter);
-                    et.fontStyle = FontStyle.Italic;
+                    var ft = LGBuild.Label(dock.transform, Loc.F("<b>Стапель {0} свободен</b>\nвыберите корабль ниже", Roman[i]), 12, Muted, TextAnchor.MiddleCenter, wrap: true);
+                    ft.rectTransform.Stretch(12, 0, 12, 0);
                     continue;
                 }
-
-                var job = q[i];
-                bool active = i < ConstructionManager.ShipyardSlots;
-                var row = LGBuild.Panel(_queue, "Job", active ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.85f));
-                row.rectTransform.TopBand(top, rowH);
-                LG.Platter(row.gameObject, 12f).SetRim(new Color(Neon.r, Neon.g, Neon.b, active ? 0.35f : 0.15f));
-                var ic = LGIcons.Create(row.transform, ShipIcon(job.ShipType, job.Hull), 22, active ? Neon : Muted);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(22, 22));
-                var nm = LGBuild.Label(row.transform, ShipName(job.ShipType, job.Hull), 11, Primary, TextAnchor.UpperLeft, bold: true);
-                nm.rectTransform.Stretch(44, 0, 40, 7);
-                var state = LGBuild.Label(row.transform, "", 10, Primary, TextAnchor.UpperLeft);
-                state.rectTransform.Stretch(44, 0, 40, 24);
-                var barHost = LGBuild.Rect(row.transform, "Bar");
-                barHost.anchorMin = new Vector2(0, 0); barHost.anchorMax = new Vector2(1, 0);
-                barHost.offsetMin = new Vector2(44, 6); barHost.offsetMax = new Vector2(-40, 12);
-                var bar = LGBuild.Bar(barHost, Neon, active ? job.Progress : 0f, 6f);
-                if (active) LGFx.Shimmer(bar);
-
-                var j = job;
-                var cancel = LGBuild.Button(row.transform, "Cancel", new Color(0.24f, 0.08f, 0.1f), new Color(1f, 0.4f, 0.42f, 0.5f),
-                    () => { cm.Cancel(j); _queueSig = ""; Refresh(); }, LGIcon.Close, null, 8);
-                ((RectTransform)cancel.transform).At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(26, 26));
-                TooltipHelper.Attach(cancel.gameObject, Loc.T("<b>Отменить</b>\nРесурсы вернутся полностью."));
-
-                _slots[job.Id] = new SlotUi { Bar = bar, State = state };
+                BuildDock(drt, cm, q[i], i);
             }
-            if (q.Count > shown)
+        }
+
+        private void BuildDock(RectTransform d, ConstructionManager cm, ConstructionJob job, int index)
+        {
+            // Леса стапеля: верхний и нижний рельсы, стойки крана
+            for (int k = 0; k < 2; k++)
             {
-                var more = LGBuild.Label(_queue, Loc.F("… и ещё {0} в очереди", q.Count - shown), 10, Muted, TextAnchor.UpperLeft);
-                more.rectTransform.TopBand(rows * (rowH + gap), 18, 4, 4);
+                var rail = LGBuild.Panel(d, "Rail", new Color(Gold.r, Gold.g, Gold.b, 0.2f));
+                rail.rectTransform.anchorMin = new Vector2(0, k); rail.rectTransform.anchorMax = new Vector2(1, k);
+                rail.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                rail.rectTransform.offsetMin = new Vector2(14, k == 0 ? 40 : -38);
+                rail.rectTransform.offsetMax = new Vector2(-14, k == 0 ? 41 : -37);
+                rail.raycastTarget = false;
+                LG.Ignore(rail.gameObject);
             }
+            for (int k = 1; k < 8; k++)
+            {
+                var post = LGBuild.Panel(d, "Post", new Color(Gold.r, Gold.g, Gold.b, 0.08f));
+                post.rectTransform.anchorMin = new Vector2(k / 8f, 0); post.rectTransform.anchorMax = new Vector2(k / 8f, 1);
+                post.rectTransform.offsetMin = new Vector2(-0.5f, 41); post.rectTransform.offsetMax = new Vector2(0.5f, -38);
+                post.raycastTarget = false;
+                LG.Ignore(post.gameObject);
+            }
+
+            // Силуэт корабля: пунктир-призрак и латунь, которая проявляется по ходу работ
+            var icon = ShipIcon(job.ShipType, job.Hull);
+            var pic = LGBuild.Rect(d, "Pic");
+            pic.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 1), new Vector2(84, 84));
+            var ghost = LGIcons.Create(pic, icon, 84, new Color(Gold.r, Gold.g, Gold.b, 0.16f));
+            ghost.rectTransform.Stretch();
+            var clip = LGBuild.Rect(pic, "Clip");
+            clip.Stretch();
+            var mask = clip.gameObject.AddComponent<RectMask2D>();
+            var lit = LGIcons.Create(clip, icon, 84, Lit);
+            lit.rectTransform.Stretch();
+            var weld = LGBuild.Panel(pic, "Weld", new Color(1f, 0.95f, 0.80f, 0.95f));
+            weld.rectTransform.anchorMin = new Vector2(0, 0.1f); weld.rectTransform.anchorMax = new Vector2(0, 0.9f);
+            weld.rectTransform.sizeDelta = new Vector2(2f, 0f);
+            weld.raycastTarget = false;
+            LG.Ignore(weld.gameObject);
+            var spark = LGBuild.Panel(weld.transform, "Spark", new Color(1f, 0.85f, 0.55f, 0.7f));
+            spark.sprite = MenuArt.SoftDisc;
+            spark.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(30, 30));
+            spark.raycastTarget = false;
+            LG.Ignore(spark.gameObject);
+
+            var nm = LGBuild.Label(d, ShipName(job.ShipType, job.Hull), 15, Ink, TextAnchor.UpperLeft);
+            nm.font = GameFont.Display;
+            nm.rectTransform.TopBand(10, 22, 14, 80);
+            var pct = LGBuild.Label(d, "", 26, Lit, TextAnchor.UpperRight);
+            pct.font = GameFont.Display;
+            pct.rectTransform.TopBand(4, 34, 120, 14);
+            var state = LGBuild.Label(d, "", 11, Muted, TextAnchor.MiddleLeft);
+            var srt = state.rectTransform;
+            srt.anchorMin = new Vector2(0, 0); srt.anchorMax = new Vector2(1, 0); srt.pivot = new Vector2(0.5f, 0);
+            srt.offsetMin = new Vector2(14, 8); srt.offsetMax = new Vector2(-46, 30);
+
+            var j = job;
+            var cancel = LGBuild.Button(d, "Cancel", new Color(0.24f, 0.08f, 0.1f), new Color(1f, 0.4f, 0.42f, 0.5f),
+                () => { cm.Cancel(j); _queueSig = ""; Refresh(); }, LGIcon.Close, null, 8);
+            ((RectTransform)cancel.transform).At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-10, 7), new Vector2(26, 26));
+            TooltipHelper.Attach(cancel.gameObject, Loc.T("<b>Отменить</b>\nРесурсы вернутся полностью."));
+
+            _slots[job.Id] = new SlotUi { Pic = pic, Clip = mask, Weld = weld.rectTransform, Pct = pct, State = state, Index = index };
         }
 
         // ==================== МОДЕРНИЗАЦИЯ ====================
