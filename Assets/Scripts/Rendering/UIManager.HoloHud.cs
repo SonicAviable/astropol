@@ -17,8 +17,9 @@ namespace StellarisClone.Rendering
         private const float DiskCenterY = 78f;     // центр диска от верха экрана: риски (DiskD + 34) целиком на экране
         private const float WingH = 64f;
         private const float WingGap = 18f;          // зазор между диском и крылом
-        private const float ResCellW = 160f, ResCellGap = 6f;   // ячейка ресурса «Медальоны» и зазор между ними
+        private const float ResCellW = 156f, ResCellGap = 4f;   // ячейка ресурса «Медальоны» и зазор между ними
         private const float CellStep = ResCellW + ResCellGap;
+        private const float WingPad = 6f;                       // поля крыла по краям ячеек
         private const float RulerD = RulerBadge.Width;
         private static readonly Vector2 RulerCenter = new Vector2(20f + RulerD * 0.5f, -(18f + RulerD * 0.5f));
 
@@ -291,13 +292,13 @@ namespace StellarisClone.Rendering
 
             var left = Wing("WingLeft", true, -half);
             _leftWing = (RectTransform)left;
-            float lx = 30f;
+            float lx = WingPad;
             _energyVal    = CreateResourceBadge(left, LGIcon.Energy, Loc.T("ГЕЛИЙ-3"), DS.Gold, ref lx, out _energyTip, false);
             _mineralsVal  = CreateResourceBadge(left, LGIcon.Minerals, Loc.T("ТИТАН"), DS.NeonCyan, ref lx, out _mineralsTip, true);
             _alloysVal    = CreateResourceBadge(left, LGIcon.Alloys, Loc.T("СПЛАВЫ"), new Color(0.95f, 0.62f, 0.36f), ref lx, out _alloysTip, true);
 
             var right = Wing("WingRight", false, half);
-            float rx = 8f;
+            float rx = WingPad;
             _influenceVal = CreateResourceBadge(right, LGIcon.Influence, Loc.T("ВЛИЯНИЕ"), new Color(1.00f, 0.48f, 0.58f), ref rx, out _influenceTip, false);
             _researchVal  = CreateResourceBadge(right, LGIcon.Research, Loc.T("НАУКА"), DS.Green, ref rx, out _researchTip, true);
             _stabilityVal = CreateResourceBadge(right, LGIcon.Society, Loc.T("СТАБИЛЬНОСТЬ"), new Color(0.98f, 0.55f, 0.85f), ref rx, out _stabilityTip, true);
@@ -324,7 +325,7 @@ namespace StellarisClone.Rendering
         /// </summary>
         private Transform Wing(string name, bool slantLeft, float x)
         {
-            float w = 3f * CellStep + 30f;
+            float w = 3f * CellStep - ResCellGap + 2f * WingPad;
             var go = new GameObject(name);
             go.transform.SetParent(_canvas.transform, false);
             var rt = go.AddComponent<RectTransform>();
@@ -333,7 +334,13 @@ namespace StellarisClone.Rendering
 
             // Рельс во всю ширину крыла, гаснет к концам (внутренний конец прячется под лентой ячейки у диска)
             var rail = HoloImage(go.transform, "Rail", HudArt.EdgeFade(0.12f), new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.8f));
-            rail.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, 2f));
+            // Внешний конец — у центра крайнего медальона: за ним рельс не торчит
+            float outer = WingPad + 25f;
+            rail.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            rail.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            rail.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rail.rectTransform.offsetMin = new Vector2(slantLeft ? outer : 0f, -1f);
+            rail.rectTransform.offsetMax = new Vector2(slantLeft ? 0f : -(w - (WingPad + 2f * CellStep + 25f)), 1f);
 
             var motion = LG.Motion(go, LGAppear.Kind.SlideDown);
             motion.distance = 22f;
