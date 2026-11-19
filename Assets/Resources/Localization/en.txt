@@ -3452,7 +3452,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 ОЧЕРЕДЬ ПОЛНА	QUEUE FULL
 Сначала изучите систему научным кораблём.	Survey the system with a science ship first.
 Система не ваша: сначала постройте здесь форпост.	Not your system: build an outpost here first.
-Сначала основайте колонию — проект «Колония» справа.	Found a colony first — the “Colony” project on the right.
+Сначала заложите колонию — проект «Колония» справа.	Found a colony first — the “Colony” project on the right.
 Все {0} мест под районы заняты (с учётом очереди).	All {0} district slots are taken (including the queue).
 Очередь планеты заполнена: не больше {0} заказов.	The planet's queue is full: no more than {0} orders.
 В ОЧЕРЕДЬ	ADD TO QUEUE
@@ -4361,7 +4361,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Общество	Society
 Не ваша система — постройте форпост	Not your system — build an outpost
 Очередь планеты заполнена ({0})	Planet queue is full ({0})
-Сначала основайте колонию	Found a colony first
+Сначала заложите колонию	Found a colony first
 Нет места: районов {0} из {1}	No room: {0} of {1} districts
 +{0} титана, +{1} гелия-3 в месяц	+{0} titanium, +{1} Helium-3 per month
 залежей нет	no deposits
@@ -4442,7 +4442,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 СВОДКА ИМПЕРИИ	EMPIRE SUMMARY
 Средняя стабильность	Average stability
 <b>Автостройка</b>\nКолония с пустой очередью сама заказывает нужный район в начале месяца: жильё, когда тесно, рабочие места по приоритету.	<b>Auto-build</b>\nA colony with an empty queue orders the district it needs at the start of the month: housing when crowded, jobs by priority.
-Колоний пока нет. Основайте первую: выберите пригодную планету в своей системе и проект «Колония».	No colonies yet. Found your first: pick a habitable planet in your system and the “Colony” project.
+Колоний пока нет. Заложите первую: выберите пригодную планету в своей системе и проект «Колония».	No colonies yet. Found your first: pick a habitable planet in your system and the “Colony” project.
 {0} · колоний {1} · клик по названию — окно планеты, по заголовку столбца — сортировка	{0} · {1} colonies · click a name to open the planet, a column header to sort
 {0} <color=#8AA2A8>(роботов {1})</color>	{0} <color=#8AA2A8>({1} robots)</color>
 +{0:0} / мес	+{0:0} / mo
@@ -4517,7 +4517,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 ЖИЛЬЁ	HOUSING
 Нет данных о планете — отправьте научный корабль.	No data on this planet — send a science ship.
 Колонисты в пути. Когда колония будет основана, здесь появятся рабочие места.	Colonists are on their way. Jobs will appear here once the colony is founded.
-Колонии нет. Основайте её проектом «Колония» внизу.	No colony yet. Found one with the “Colony” project below.
+Колонии нет. Заложите её проектом «Колония» внизу.	No colony yet. Found one with the “Colony” project below.
 Планета непригодна для жизни. Доход даст только добывающий комплекс.	The planet is uninhabitable. Only a mining complex can make it pay.
 Городских районов {0} · жителей {1} из {2}	Urban districts {0} · pops {1} of {2}
 {0} · работают {1} из {2}	{0} · {1} of {2} working
@@ -4863,7 +4863,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 Флаг на карте	A Flag on the Map
 Постройте первый форпост	Build your first outpost
 Новый дом	A New Home
-Основайте первую колонию	Found your first colony
+Заложите первую колонию	Found your first colony
 Эврика	Eureka
 Завершите первое исследование	Complete your first research
 Мы не одни	We Are Not Alone
@@ -4929,7 +4929,7 @@ F5 — сохранить, F9 — загрузить	F5 — save, F9 — load
 +75 титана	+75 titanium
 Завершите 2 исследования	Complete 2 research projects
 Технологии — клавиша T. В каждом слоте выберите направление: физика, общество или инженерия.	Technologies — T key. Pick a direction in every slot: physics, society or engineering.
-Основайте вторую колонию	Found a second colony
+Заложите вторую колонию	Found a second colony
 Войдите в свою систему с пригодной планетой (двойной клик по звезде) и нажмите «Основать колонию».	Enter your system with a habitable planet (double-click the star) and press "Found colony".
 +100 титана	+100 titanium
 Соберите 3 военных корабля	Assemble 3 warships

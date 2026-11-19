@@ -105,7 +105,7 @@ namespace StellarisClone.Rendering
                     Queued = Count(JobKind.District, t)
                 };
                 o.Detail = DistrictDetail(p, t);
-                o.Blocker = common ?? (!colony ? Loc.T("Сначала основайте колонию")
+                o.Blocker = common ?? (!colony ? Loc.T("Сначала заложите колонию")
                           : p.BuiltDistricts + p.PendingDistricts >= p.MaxDistricts ? Loc.F("Нет места: районов {0} из {1}", p.BuiltDistricts + p.PendingDistricts, p.MaxDistricts)
                           : planetQueue ?? Afford(0f, mi, al, 0f));
                 o.Order = () => p.TryBuildDistrict(t);

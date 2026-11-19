@@ -590,7 +590,7 @@ namespace StellarisClone.Rendering
             _noColonyText.gameObject.SetActive(!colony);
             _noColonyText.text = !Surveyed ? Loc.T("Нет данных о планете — отправьте научный корабль.")
                                : _planet.IsColonizing ? Loc.T("Колонисты в пути. Когда колония будет основана, здесь появятся рабочие места.")
-                               : _planet.CanColonize ? Loc.T("Колонии нет. Основайте её проектом «Колония» внизу.")
+                               : _planet.CanColonize ? Loc.T("Колонии нет. Заложите её проектом «Колония» внизу.")
                                : Loc.T("Планета непригодна для жизни. Доход даст только добывающий комплекс.");
             foreach (var r in _jobs) r.Bg.gameObject.SetActive(colony);
             if (!colony) { _idleText.text = ""; return; }

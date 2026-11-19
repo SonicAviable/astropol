@@ -151,7 +151,7 @@ namespace StellarisClone.Core
             l.Add(new Goal
             {
                 Id = "colony", Icon = LGIcon.Planet, Target = 1,
-                Title = Loc.T("Основайте вторую колонию"),
+                Title = Loc.T("Заложите вторую колонию"),
                 Hint = Loc.T("Войдите в свою систему с пригодной планетой (двойной клик по звезде) и нажмите «Основать колонию»."),
                 Current = () => EmpireStats.Colonies(0) - 1,
                 RewardText = Loc.T("+100 титана"), RewardIcon = LGIcon.Minerals, RewardAmount = 100, Reward = () => Give(minerals: 100f),

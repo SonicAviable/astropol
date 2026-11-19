@@ -81,7 +81,7 @@ namespace StellarisClone.Core
 
             A(Ach.FirstSurvey, LGIcon.Sensors, Loc.T("Картограф"), Loc.T("Изучите 10 звёздных систем"));
             A(Ach.FirstOutpost, LGIcon.Starbase, Loc.T("Флаг на карте"), Loc.T("Постройте первый форпост"));
-            A(Ach.FirstColony, LGIcon.Planet, Loc.T("Новый дом"), Loc.T("Основайте первую колонию"));
+            A(Ach.FirstColony, LGIcon.Planet, Loc.T("Новый дом"), Loc.T("Заложите первую колонию"));
             A(Ach.FirstTech, LGIcon.Research, Loc.T("Эврика"), Loc.T("Завершите первое исследование"));
             A(Ach.FirstContact, LGIcon.Diplomacy, Loc.T("Мы не одни"), Loc.T("Встретьте другую цивилизацию"));
             A(Ach.FirstLaw, LGIcon.Influence, Loc.T("Слово правителя"), Loc.T("Примите первый закон империи"));
