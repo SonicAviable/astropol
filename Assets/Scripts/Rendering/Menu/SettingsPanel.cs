@@ -164,7 +164,7 @@ namespace StellarisClone.Rendering
                 });
             _qScale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштаб рендера"), Loc.T("Ниже — быстрее, но галактика мягче; интерфейс остаётся чётким")),
                 GraphicsQuality.ScaleNames, GraphicsQuality.ScaleIndex, i => QualityItem(() => GraphicsQuality.SetScale(i)));
-            _qUpscale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштабирование"), Loc.T("AMD FSR 1.0 — чётче обычного растяжения при масштабе рендера ниже 100%; на 100% не действует")),
+            _qUpscale = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Масштабирование"), Loc.T("FSR 1.0 — чётче обычного растяжения ниже 100%; STP — ещё чётче (по нескольким кадрам) и сам сглаживает края")),
                 GraphicsQuality.UpscalerNames, GraphicsQuality.Upscaler, i => GameSettings.GraphicsChanged(() => GraphicsQuality.SetUpscaler(i)));
             _qSharp = LGControls.Selector(LGControls.Row(_content, ref y, Loc.T("Резкость FSR"), Loc.T("Насколько подчёркивать края после масштабирования")),
                 GraphicsQuality.SharpnessNames, GraphicsQuality.Sharpness, i => GameSettings.GraphicsChanged(() => GraphicsQuality.SetSharpness(i)));
