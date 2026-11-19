@@ -1371,8 +1371,9 @@ namespace StellarisClone.Rendering
         {
             Color wc = WorldColor(_planet.Type);
             _title.text = PlanetNames.Title(_planet.Name);   // без капса: «Тубан b», а не «ТУБАН B»
-            _subtitle.text = Loc.F("{0}   <color={1}>·   система</color>  {2}", _planet.ClassDisplayName.ToUpper(), LGBuild.Hex(CMuted), (_system != null ? _system.Name : "?"));
-            _titleAccent.color = new Color(wc.r, wc.g, wc.b, 0.9f);
+            string sysName = (_system != null ? _system.Name : "?").ToUpper();
+            _subtitle.text = Loc.F("<color=#E7D3A3>{0}</color><color=#7F6A44>    ◆    </color><color=#C9A96A>СИСТЕМА</color>  <color=#E7D3A3>{1}</color>",
+                _planet.ClassDisplayName.ToUpper(), sysName);
 
             var gov = LeaderManager.Instance?.GovernorOf(_planet);
             _govChip.SetActive(gov != null);
@@ -1390,7 +1391,7 @@ namespace StellarisClone.Rendering
                       : Loc.T("Нейтральный фронтир");
             _ownerText.text = on;
             _ownerText.color = oc;
-            _subtitle.text += $"   <color={LGBuild.Hex(CMuted)}>·</color>   <color={LGBuild.Hex(oc)}>{on}</color>";   // владелец — в строке над названием
+            _subtitle.text += $"<color=#7F6A44>    ◆    </color><color={LGBuild.Hex(Color.Lerp(oc, Color.white, 0.12f))}>{on.ToUpper()}</color>";   // владелец — в строке над названием
             _ownerIcon.color = oc;
             _ownerIcon.sprite = LGIcons.Get(owner >= 0 ? LGIcon.Starbase : LGIcon.Star);
 
@@ -1825,19 +1826,39 @@ namespace StellarisClone.Rendering
             ((RectTransform)close.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -30), new Vector2(170, 40));
             LG.Motion(close.gameObject, LGAppear.Kind.Fade).delay = 0.12f;
 
-            // Акцентная черта цвета мира перед названием
-            _titleAccent = LGBuild.Panel(rt, "TitleAccent", CCyan);
-            _titleAccent.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -114), new Vector2(120, 2));
-            LG.Ignore(_titleAccent.gameObject);
+            // «Латунь»: под названием — тонкая латунная черта с ромбом посередине (к краям гаснет)
+            var orn = LGBuild.Rect(rt, "TitleOrnament");
+            orn.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -116), new Vector2(340, 12));
+            LG.Ignore(orn.gameObject);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var ln = Deco(orn, "Line", UIManager.FadeRightSprite, new Color(CGold.r, CGold.g, CGold.b, 0.75f));
+                ln.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(side * 14f, 0), new Vector2(150, 1));
+                if (side < 0) ln.rectTransform.localScale = new Vector3(-1f, 1f, 1f);   // гаснет наружу с обеих сторон
+                ln.rectTransform.localRotation = Quaternion.identity;
+            }
+            var dOut = Deco(orn, "Diamond", null, new Color(0.906f, 0.757f, 0.439f, 1f));
+            dOut.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(9, 9));
+            dOut.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+            var dIn = Deco(dOut.transform, "Hole", null, new Color(0.035f, 0.055f, 0.09f, 1f));
+            dIn.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6, 6));
+            _titleAccent = dOut;
 
-            _title = LGBuild.Label(rt, "", 46, Color.white, TextAnchor.UpperCenter, bold: true);
-            _title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -52), new Vector2(900, 56));
-            var glow = _title.gameObject.AddComponent<Outline>();
-            glow.effectColor = new Color(0.475f, 0.816f, 0.749f, 0.18f);
-            glow.effectDistance = new Vector2(1.5f, -1.5f);
-            _subtitle = LGBuild.Label(rt, "", 13, CGold, TextAnchor.UpperCenter, bold: true);
-            _subtitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -32), new Vector2(900, 20));
-            _subtitle.Track(1.6f);
+            // Название: заглавные с разрядкой, заливка от кремового к латуни, тёмная тень под буквами
+            _title = LGBuild.Label(rt, "", 50, Color.white, TextAnchor.UpperCenter, bold: true);
+            _title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -50), new Vector2(1100, 62));
+            _title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _title.Track(9f);
+            LGTextGradient.Apply(_title, new Color(0.984f, 0.953f, 0.863f), new Color(0.78f, 0.60f, 0.33f));
+            var sh = _title.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(0f, 0f, 0f, 0.6f);
+            sh.effectDistance = new Vector2(0f, -2f);
+
+            // Подпись над названием: разрядка, ромбы-разделители; владелец — своим цветом (RefreshHeader)
+            _subtitle = LGBuild.Label(rt, "", 12, CGold, TextAnchor.UpperCenter, bold: true);
+            _subtitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -30), new Vector2(1100, 20));
+            _subtitle.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _subtitle.Track(4f);
 
             // Владелец и губернатор — по центру шапки, в одну строку
             var chip = LGBuild.Panel(rt, "Owner", UIManager.DS.BgSlot);
