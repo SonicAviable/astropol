@@ -123,15 +123,15 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < MetricNames.Length; i++)
             {
                 var m = (Metric)i;
-                float w = 30f + MetricNames[i].Length * 9.5f;
+                float w = 54f + MetricNames[i].Length * 9.5f;
                 var tb = LGBuild.Panel(tabs, "Tab", new Color(0.075f, 0.125f, 0.220f, 0.9f), raycast: true);
                 tb.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w, 30));
-                LG.Chip(tb.gameObject, new Color(1f, 1f, 1f, 0.14f), 15f);
                 var tt = LGBuild.Label(tb.transform, Loc.T(MetricNames[i]), 11, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
                 tt.Track(1.4f);
                 var b = tb.gameObject.AddComponent<Button>();
                 b.transition = Selectable.Transition.None;
                 b.onClick.AddListener(() => { _metric = m; SFXManager.Play(Sfx.UiTab, 0.6f); RefreshChart(); });
+                LGAstrolabe.Attach(tb.gameObject, tb, tt);   // вкладка «Астролябия»; выбранная — золотая подпись
                 _tabs.Add((tb, tt, m));
                 x += w + 8f;
             }
@@ -235,8 +235,9 @@ namespace StellarisClone.Rendering
             foreach (var (bg, t, m) in _tabs)
             {
                 bool on = m == _metric;
-                bg.color = on ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.075f, 0.125f, 0.220f, 0.9f);
-                t.color = on ? Color.white : Muted;
+                var a = bg.GetComponent<LGAstrolabe>();
+                if (a != null) a.Selected = on;
+                else t.color = on ? Color.white : Muted;
             }
 
             var c = GameChronicle.Instance;

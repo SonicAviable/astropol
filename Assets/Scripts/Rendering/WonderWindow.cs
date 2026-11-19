@@ -324,16 +324,17 @@ namespace StellarisClone.Rendering
 
             if (numeral != null)
             {
-                var t = LGBuild.Label(host, numeral, 150, new Color(c.r, c.g, c.b, 0.08f), TextAnchor.MiddleRight, bold: true);
+                // Ниже подписи состояния (справа сверху) и бледнее: цифра — фон, а не надпись
+                var t = LGBuild.Label(host, numeral, 130, new Color(c.r, c.g, c.b, 0.05f), TextAnchor.MiddleRight, bold: true);
                 t.rectTransform.anchorMin = new Vector2(0.4f, 0f);
                 t.rectTransform.anchorMax = new Vector2(1f, 1f);
-                t.rectTransform.offsetMin = new Vector2(0, -40);
-                t.rectTransform.offsetMax = new Vector2(-28, 40);
+                t.rectTransform.offsetMin = new Vector2(0, -60);
+                t.rectTransform.offsetMax = new Vector2(-28, 10);
                 t.horizontalOverflow = HorizontalWrapMode.Overflow;
                 t.verticalOverflow = VerticalWrapMode.Overflow;
                 t.raycastTarget = false;
                 var edge = t.gameObject.AddComponent<Outline>();
-                edge.effectColor = new Color(c.r, c.g, c.b, 0.28f);
+                edge.effectColor = new Color(c.r, c.g, c.b, 0.14f);
                 edge.effectDistance = new Vector2(1.5f, -1.5f);
                 LG.Ignore(t.gameObject);
             }

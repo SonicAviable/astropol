@@ -231,9 +231,10 @@ namespace StellarisClone.Rendering
             header.rectTransform.TopBand(0, 86);
             LG.Header(header.gameObject);
             _pauseIcon = LGIcons.Create(header.transform, LGIcon.Pause, 26, UIManager.DS.NeonCyan);
-            _pauseIcon.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(26, 26));
-            var title = LGBuild.Label(header.transform, Loc.T("ПАУЗА"), 22, UIManager.DS.TextPrimary, TextAnchor.UpperCenter, bold: true);
-            title.rectTransform.Stretch(0, 0, 0, 44);
+            _pauseIcon.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -8), new Vector2(24, 24));
+            // Заголовок — своей полосой между значком и подзаголовком: шрифт «Атласа» выше, раньше налезал на подзаголовок
+            var title = LGBuild.Label(header.transform, Loc.T("ПАУЗА"), 22, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
+            title.rectTransform.TopBand(32, 30);
             _pauseTitle = title;
             _pauseSubtitle = LGBuild.Label(header.transform, "", 11, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             _pauseSubtitle.rectTransform.Stretch(0, 8, 0, 0);
