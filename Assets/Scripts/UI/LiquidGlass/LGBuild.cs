@@ -255,8 +255,10 @@ namespace StellarisClone.Rendering
             var frt = f.rectTransform;
             frt.anchorMin = new Vector2(0, 0);
             frt.anchorMax = new Vector2(Mathf.Clamp01(value), 1);
-            frt.offsetMin = new Vector2(1, 1);
-            frt.offsetMax = new Vector2(-1, -1);
+            // Тонкие полоски (до 4 px) — заливка во всю высоту: отступ 1 px съедал её целиком
+            float inset = height <= 4f ? 0f : 1f;
+            frt.offsetMin = new Vector2(inset, inset);
+            frt.offsetMax = new Vector2(-inset, -inset);
             LG.Fill(f.gameObject);
             if (value <= 0.001f) f.enabled = false;
             return frt;
