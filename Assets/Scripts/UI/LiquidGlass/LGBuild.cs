@@ -259,7 +259,8 @@ namespace StellarisClone.Rendering
             float inset = height <= 4f ? 0f : 1f;
             frt.offsetMin = new Vector2(inset, inset);
             frt.offsetMax = new Vector2(-inset, -inset);
-            LG.Fill(f.gameObject);
+            // Тонкие полоски — простая заливка: стеклянный шейдер со скруглением почти не рисовал полосу в 2–3 px
+            if (height <= 4f) LG.Ignore(f.gameObject); else LG.Fill(f.gameObject);
             if (value <= 0.001f) f.enabled = false;
             return frt;
         }

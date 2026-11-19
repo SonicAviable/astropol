@@ -150,7 +150,51 @@ namespace StellarisClone.Rendering
             host.Stretch(4, 4, 4, 4);
             _list = LGBuild.ScrollList(host, 3f, 2);
 
+            BuildFrame();
             ApplyCollapsed();
+        }
+
+        /// <summary>
+        /// Рамка планировщика в стиле окон «Атласа»: двойная латунная кромка вокруг вкладок и списка,
+        /// латунные крестики на двух углах. Висит на теле — растёт вместе с ним и прячется при сворачивании.
+        /// </summary>
+        private void BuildFrame()
+        {
+            var frame = LGBuild.Rect(_body, "Frame");
+            frame.anchorMin = Vector2.zero; frame.anchorMax = Vector2.one;
+            frame.offsetMin = new Vector2(-2f, -2f);
+            frame.offsetMax = new Vector2(2f, TabH + 6f);   // вверх — до верха вкладок
+            LG.Ignore(frame.gameObject);
+
+            Image Line(string n, float inset, float a)
+            {
+                var img = LGBuild.Panel(frame, n, new Color(Brass.r, Brass.g, Brass.b, a));
+                img.sprite = HudArt.CutFrame(7, 1f);
+                img.type = Image.Type.Sliced;
+                img.raycastTarget = false;
+                img.rectTransform.Stretch(inset, inset, inset, inset);
+                return img;
+            }
+            Line("Outer", 0f, 0.55f);
+            Line("Inner", 4f, 0.18f);
+
+            // Крестики-засечки на левом верхнем и правом нижнем углах, как у окон
+            void Cross(Vector2 anchor, Vector2 dir)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    var c = LGBuild.Panel(frame, "Cross", new Color(Brass.r, Brass.g, Brass.b, 0.95f));
+                    c.raycastTarget = false;
+                    var rt = c.rectTransform;
+                    rt.anchorMin = rt.anchorMax = anchor;
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.sizeDelta = k == 0 ? new Vector2(14f, 1.2f) : new Vector2(1.2f, 14f);
+                    rt.anchoredPosition = dir * 1f;
+                }
+            }
+            Cross(new Vector2(0, 1), new Vector2(-1, 1));
+            Cross(new Vector2(1, 0), new Vector2(1, -1));
+            frame.SetAsLastSibling();
         }
 
         private void BuildHeader()
