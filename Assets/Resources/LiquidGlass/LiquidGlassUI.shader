@@ -238,7 +238,9 @@ Shader "Astropolity/UI/LiquidGlass"
                         bodyCol += rim.rgb * pow(saturate(tv), 10.0) * 0.035;
                     }
                     else
-                        bodyCol = tint + 0.018;
+                        // Без прибавки к цвету: в линейном пространстве даже +0.018 превращал тёмно-синие пластины
+                        // внутри окон в серые (0.055,0.094,0.157 → ≈0.16,0.18,0.21 в sRGB)
+                        bodyCol = tint * 1.06;
                     bodyA = fill;
                 }
                 else if (mode < 2.5)
