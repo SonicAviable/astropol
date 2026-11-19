@@ -765,10 +765,14 @@ namespace StellarisClone.Rendering
 
                 slot.Label = LGBuild.Label(plate.transform, "", 16, Ink, TextAnchor.UpperLeft);
                 slot.Label.font = GameFont.Display;
-                slot.Label.rectTransform.Stretch(62, 26, 120, 8);
-                slot.Sub = LGBuild.Label(plate.transform, "", 11, Muted, TextAnchor.LowerLeft);
-                slot.Sub.rectTransform.Stretch(62, 9, 120, 32);
-                slot.Sub.resizeTextForBestFit = true; slot.Sub.resizeTextMinSize = 8; slot.Sub.resizeTextMaxSize = 11;
+                slot.Label.rectTransform.Stretch(62, 30, 120, 6);
+                FitLine(slot.Label);
+                // Пояснение — до двух строк, не залезает под «НА СТОЛ ›»
+                slot.Sub = LGBuild.Label(plate.transform, "", 11, Muted, TextAnchor.UpperLeft, wrap: true);
+                slot.Sub.rectTransform.Stretch(62, 5, 120, 27);
+                slot.Sub.verticalOverflow = VerticalWrapMode.Truncate;
+                slot.Sub.lineSpacing = 0.9f;
+                slot.Sub.resizeTextForBestFit = true; slot.Sub.resizeTextMinSize = 9; slot.Sub.resizeTextMaxSize = 11;
                 // справа — что сделает щелчок («НА СТОЛ ›») или «ДЕЙСТВУЕТ»
                 slot.Verb = LGBuild.Label(plate.transform, "", 11, Gold, TextAnchor.MiddleRight, bold: true);
                 slot.Verb.font = GameFont.MonoMedium;
@@ -1097,14 +1101,16 @@ namespace StellarisClone.Rendering
             st.rectTransform.Stretch(32, 0, 8, 0);
             y += 40f;
 
-            // Ваша репутация и поводы для войны против этой империи
-            InfoLineTip(_infoLeft, ref y, Reputation.Value >= 0f ? LGIcon.Handshake : LGIcon.Betrayal, Reputation.ColorOf(Reputation.Value),
-                Loc.F("Ваша репутация: <b>{0}</b> ({1:+0;-0;0})", Reputation.Current, Reputation.Value), Reputation.Tooltip());
+            // Репутация и поводы для войны — две карточки рядом
             var causes = CasusBelli.For(ai.OwnerId);
-            InfoLineTip(_infoLeft, ref y, LGIcon.Swords, causes.Count > 0 ? Gold : Muted,
-                causes.Count > 0 ? Loc.F("Поводы для войны: {0}", causes.Count == 1 ? causes[0].Name : Loc.F("{0} и ещё {1}", causes[0].Name, causes.Count - 1))
-                                 : Loc.T("Повода для войны нет"),
+            Color rc = Reputation.ColorOf(Reputation.Value);
+            StatCard(_infoLeft, y, 0f, 0.5f, Reputation.Value >= 0f ? LGIcon.Handshake : LGIcon.Betrayal, rc,
+                Loc.T("ВАША РЕПУТАЦИЯ"), Loc.F("{0}  <color=#A9A392>{1:+0;-0;0}</color>", Reputation.Current, Reputation.Value), Reputation.Tooltip());
+            StatCard(_infoLeft, y, 0.5f, 1f, LGIcon.Swords, causes.Count > 0 ? Gold : Muted,
+                Loc.T("ПОВОДЫ ДЛЯ ВОЙНЫ"),
+                causes.Count == 0 ? Loc.T("нет") : causes.Count == 1 ? causes[0].Name : Loc.F("{0} +{1}", causes[0].Name, causes.Count - 1),
                 CasusBelli.Tooltip(ai.OwnerId));
+            y += 52f;
 
             if (AICoalition.IsActive)
             {
@@ -1115,22 +1121,32 @@ namespace StellarisClone.Rendering
             if (!string.IsNullOrEmpty(ai.TacticsNote))
                 InfoLine(_infoLeft, ref y, LGIcon.Target, Muted, ai.TacticsNote);
 
-            // Соседи-ИИ
+            // Соседи-ИИ — портретами: кольцо и подпись — их отношения с этой империей
+            float nx = 0f;
+            bool anyNeighbor = false;
             foreach (var other in AIEmpireManager.All)
             {
                 if (other == ai || other.IsEliminated || ai.IsEliminated) continue;
                 if (!Contacts.PlayerMet(other.OwnerId)) continue;   // о незнакомых нам империях не рассказываем
-                if (!Contacts.Met(ai.OwnerId, other.OwnerId))
+                if (!anyNeighbor)
                 {
-                    InfoLine(_infoLeft, ref y, LGIcon.Diplomacy, Muted, Loc.F("С <color={0}>{1}</color>: не знакомы", LGBuild.Hex(other.MapColor), other.AIName));
-                    continue;
+                    var nh = LGBuild.Label(_infoLeft, Loc.T("С ДРУГИМИ ИМПЕРИЯМИ"), 10, Muted, TextAnchor.MiddleLeft, bold: true);
+                    nh.font = GameFont.MonoMedium;
+                    nh.Track(1.4f);
+                    nh.rectTransform.TopBand(y, 14, 0, 0);
+                    y += 18f;
+                    anyNeighbor = true;
                 }
-                bool war = AIRelations.AtWar(ai.OwnerId, other.OwnerId);
-                int truce = AIRelations.TruceDays(ai.OwnerId, other.OwnerId);
-                string s = war ? Loc.T("воюют") : truce > 0 ? Loc.T("перемирие") : Loc.T("мир");
-                InfoLine(_infoLeft, ref y, war ? LGIcon.Swords : LGIcon.Diplomacy, war ? Red : Muted,
-                    Loc.F("С <color={0}>{1}</color>: {2}", LGBuild.Hex(other.MapColor), other.AIName, s));
+                string st; Color sc;
+                if (!Contacts.Met(ai.OwnerId, other.OwnerId)) { st = Loc.T("не знакомы"); sc = Muted; }
+                else if (AIRelations.AtWar(ai.OwnerId, other.OwnerId)) { st = Loc.T("война"); sc = Red; }
+                else if (AIRelations.TruceDays(ai.OwnerId, other.OwnerId) > 0) { st = Loc.T("перемирие"); sc = Gold; }
+                else { st = Loc.T("мир"); sc = Green; }
+                if (nx + 70f > _infoLeft.rect.width && nx > 0f) break;   // в ряд не влезает — остальные не показываем
+                NeighborFace(_infoLeft, nx, y, other, st, sc);
+                nx += 76f;
             }
+            if (anyNeighbor) y += 62f;
 
             // Как они ведут дела — цитатой
             if (!string.IsNullOrEmpty(ai.Profile.Summary))
@@ -1178,20 +1194,6 @@ namespace StellarisClone.Rendering
             y += 38f;
         }
 
-        /// <summary>Строка с подсказкой при наведении.</summary>
-        private static void InfoLineTip(RectTransform parent, ref float y, LGIcon icon, Color col, string text, string tip)
-        {
-            var row = LGBuild.Panel(parent, "Line", new Color(1f, 1f, 1f, 0f), raycast: true);
-            row.rectTransform.TopBand(y, 20, 0, 0);
-            LG.Ignore(row.gameObject);
-            var ic = LGIcons.Create(row.rectTransform, icon, 14, col);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), Vector2.zero, new Vector2(14, 14));
-            var t = LGBuild.Label(row.rectTransform, text, 12, Primary, TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(22, 0, 0, 0);
-            TooltipHelper.Attach(row.gameObject, tip);
-            y += 22f;
-        }
-
         private static void InfoLine(RectTransform parent, ref float y, LGIcon icon, Color col, string text)
         {
             var row = LGBuild.Rect(parent, "Line");
@@ -1208,22 +1210,96 @@ namespace StellarisClone.Rendering
         private void RefreshAgreements(AIEmpireManager ai)
         {
             LGBuild.Clear(_agreements);
-            float y = 0f;
             if (ai.Agreements.Count == 0 && !ai.HasPact && !ai.HasAlliance)
             {
                 var none = LGBuild.Label(_agreements, Loc.T("Нет действующих договоров"), 12, new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.UpperLeft);
-                none.rectTransform.TopBand(y, 18, 0, 0);
+                none.rectTransform.TopBand(0, 18, 0, 0);
                 return;
             }
-            if (ai.HasAlliance) InfoLine(_agreements, ref y, LGIcon.Defense, DealCatalog.Tint(DealItemKind.Alliance), Loc.T("Оборонительный союз  ·  бессрочно"));
-            if (ai.HasPact) InfoLine(_agreements, ref y, LGIcon.Handshake, Cyan, Loc.T("Пакт о ненападении  ·  бессрочно"));
+            // Плитки в две колонки: медальон со значком, название, срок
+            int n = 0;
+            if (ai.HasAlliance) AgreementTile(n++, LGIcon.Defense, DealCatalog.Tint(DealItemKind.Alliance), Loc.T("Оборонительный союз"), Loc.T("бессрочно"));
+            if (ai.HasPact) AgreementTile(n++, LGIcon.Handshake, Cyan, Loc.T("Пакт о ненападении"), Loc.T("бессрочно"));
             foreach (var a in ai.Agreements)
             {
-                string text = DealCatalog.IsPayment(a.Kind)
-                    ? Loc.F("{0} {1:0} {2}/мес  ·  {3}", (a.PlayerPays ? Loc.T("Вы платите") : Loc.T("Вам платят")), a.Amount, DealCatalog.Name(DealCatalog.ResourceBase(a.Kind)).ToLower(), DealCatalog.Months(a.MonthsLeft))
-                    : $"{DealCatalog.Name(a.Kind)}  ·  {DealCatalog.Months(a.MonthsLeft)}";
-                InfoLine(_agreements, ref y, DealCatalog.Icon(a.Kind), a.PlayerPays ? Red : DealCatalog.Tint(a.Kind), text);
+                if (n >= 4) break;   // в плитки влезает четыре; остальное — в подсказке вкладки «Договоры»
+                bool pay = DealCatalog.IsPayment(a.Kind);
+                string name = pay
+                    ? Loc.F("{0} {1:0}/мес", a.PlayerPays ? Loc.T("Вы платите") : Loc.T("Вам платят"), a.Amount)
+                    : DealCatalog.Name(a.Kind);
+                string sub = pay ? $"{DealCatalog.Name(DealCatalog.ResourceBase(a.Kind)).ToLower()}  ·  {DealCatalog.Months(a.MonthsLeft)}" : DealCatalog.Months(a.MonthsLeft);
+                AgreementTile(n++, DealCatalog.Icon(a.Kind), a.PlayerPays ? Red : DealCatalog.Tint(a.Kind), name, sub);
             }
+        }
+
+        private void AgreementTile(int i, LGIcon icon, Color col, string name, string sub)
+        {
+            int c = i % 2, r = i / 2;
+            var t = LGBuild.Panel(_agreements, "Agreement", new Color(col.r * 0.12f, col.g * 0.12f, col.b * 0.12f, 0.9f));
+            var rt = t.rectTransform;
+            rt.anchorMin = new Vector2(c * 0.5f, 1f); rt.anchorMax = new Vector2((c + 1) * 0.5f, 1f); rt.pivot = new Vector2(0.5f, 1f);
+            rt.offsetMin = new Vector2(c == 0 ? 0f : 4f, -(r * 46f + 42f));
+            rt.offsetMax = new Vector2(c == 0 ? -4f : 0f, -(r * 46f));
+            LG.Platter(t.gameObject, 4f).SetRim(new Color(col.r, col.g, col.b, 0.45f));
+            Medal(rt, icon, col, 28f);
+            var nl = LGBuild.Label(rt, name, 12, Primary, TextAnchor.UpperLeft, bold: true);
+            nl.rectTransform.TopBand(6, 16, 46, 8);
+            FitSingle(nl);
+            var sl = LGBuild.Label(rt, sub, 10, Muted, TextAnchor.UpperLeft);
+            sl.font = GameFont.MonoMedium;
+            sl.rectTransform.TopBand(23, 14, 46, 8);
+            FitSingle(sl);
+        }
+
+        /// <summary>Значок в латунном медальоне у левого края строки/карточки (как у плашек договоров).</summary>
+        private static void Medal(RectTransform parent, LGIcon icon, Color col, float d)
+        {
+            var med = LGBuild.Panel(parent, "Medal", new Color(0.05f, 0.08f, 0.15f, 1f));
+            med.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(d, d));
+            LG.Platter(med.gameObject, d * 0.5f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.65f));
+            var ic = LGIcons.Create(med.transform, icon, d * 0.46f, col);
+            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (d * 0.46f));
+        }
+
+        /// <summary>Карточка-показатель: медальон, подпись капслоком и значение; x0..x1 — доля ширины.</summary>
+        private static void StatCard(RectTransform parent, float y, float x0, float x1, LGIcon icon, Color col, string caption, string value, string tip)
+        {
+            var c = LGBuild.Panel(parent, "Card", new Color(col.r * 0.12f, col.g * 0.12f, col.b * 0.12f, 0.9f), raycast: true);
+            var r = c.rectTransform;
+            r.anchorMin = new Vector2(x0, 1f); r.anchorMax = new Vector2(x1, 1f); r.pivot = new Vector2(0.5f, 1f);
+            r.offsetMin = new Vector2(x0 > 0f ? 4f : 0f, -y - 44f);
+            r.offsetMax = new Vector2(x1 < 1f ? -4f : 0f, -y);
+            LG.Platter(c.gameObject, 4f).SetRim(new Color(col.r, col.g, col.b, 0.45f));
+            Medal(r, icon, col, 30f);
+            var cap = LGBuild.Label(r, caption, 9, Muted, TextAnchor.UpperLeft, bold: true);
+            cap.font = GameFont.MonoMedium;
+            cap.Track(1.2f);
+            cap.rectTransform.TopBand(7, 12, 48, 6);
+            FitSingle(cap);
+            var v = LGBuild.Label(r, value, 13, Primary, TextAnchor.UpperLeft, bold: true);
+            v.rectTransform.TopBand(21, 18, 48, 6);
+            FitSingle(v);
+            if (!string.IsNullOrEmpty(tip)) TooltipHelper.Attach(c.gameObject, tip);
+        }
+
+        /// <summary>Сосед: портрет правителя в кольце цвета их отношений, под ним — короткий статус; подробности — в подсказке.</summary>
+        private static void NeighborFace(RectTransform parent, float x, float y, AIEmpireManager other, string state, Color sc)
+        {
+            var host = LGBuild.Panel(parent, "Neighbor", new Color(1f, 1f, 1f, 0f), raycast: true);
+            host.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -y), new Vector2(70f, 58f));
+            LG.Ignore(host.gameObject, includeChildren: false);
+            var ph = LGBuild.Panel(host.transform, "Face", new Color(0.05f, 0.08f, 0.15f, 1f));
+            ph.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(40, 40));
+            LG.Platter(ph.gameObject, 20f).SetRim(new Color(sc.r, sc.g, sc.b, 0.9f));
+            var mask = LG.RoundedMask(ph.transform, 20f, 1.5f);
+            var v = LeaderPortraitView.Create(mask, LeaderPortraits.ForFaction(other.Faction), 2.2f, Vector4.zero, false, false, false);
+            if (v == null) LGIcons.Create(ph.transform, LGIcon.Leader, 22, other.MapColor);
+            else if (sc == Muted) v.GetComponent<RawImage>().color = new Color(0.45f, 0.45f, 0.45f, 1f);
+            var l = LGBuild.Label(host.transform, state, 10, sc, TextAnchor.UpperCenter);
+            l.font = GameFont.MonoMedium;
+            l.rectTransform.TopBand(43, 14, 0, 0);
+            FitSingle(l);
+            TooltipHelper.Attach(host.gameObject, Loc.F("<b><color={0}>{1}</color></b>\nС этой империей: {2}", LGBuild.Hex(other.MapColor), other.AIName, state));
         }
 
         /// <summary>Кольца: доверие — из отношения, влияние — наш запас (и цена переговоров о сделке на столе).</summary>
@@ -1283,7 +1359,7 @@ namespace StellarisClone.Rendering
                 else if (ai.IsEliminated) v.GetComponent<RawImage>().color = new Color(0.4f, 0.4f, 0.4f, 1f);
                 var nm = LGBuild.Label(b.transform, ai.AIName, 12, on ? Ink : Muted, TextAnchor.UpperLeft, bold: true);
                 nm.rectTransform.TopBand(6, 18, 50, 8);
-                nm.resizeTextForBestFit = true; nm.resizeTextMinSize = 8; nm.resizeTextMaxSize = 12;
+                FitSingle(nm);
                 string st = ai.IsEliminated ? Loc.T("повержена") : ai.AtWar ? Loc.T("война") : ai.HasAlliance ? Loc.T("союз") : ai.HasPact ? Loc.T("пакт") : Loc.T("мир");
                 Color sc = ai.AtWar ? Red : ai.IsEliminated ? Muted : Green;
                 var stl = LGBuild.Label(b.transform, $"{st}  ·  {ai.Opinion:+0;-0;0}", 10, sc, TextAnchor.UpperLeft);
@@ -1407,6 +1483,28 @@ namespace StellarisClone.Rendering
                 var e = LGBuild.Label(_opinionList, Loc.T("Особых причин нет — отношение ровное"), 12, Muted, TextAnchor.UpperLeft);
                 e.rectTransform.TopBand(0, 18);
             }
+        }
+
+        /// <summary>
+        /// Одна строка, которая обязана влезть по ширине: шрифт уменьшается (от resizeTextMaxSize до 8),
+        /// пока текст вместе с разрядкой LGTracking не уместится. Встроенный best fit тут не помогает:
+        /// при Overflow он не ужимает по ширине, а при Wrap переносит слова.
+        /// </summary>
+        private static void FitSingle(Text t)
+        {
+            if (t == null) return;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            int max = t.resizeTextForBestFit ? t.resizeTextMaxSize : t.fontSize;
+            t.resizeTextForBestFit = false;
+            t.resizeTextMaxSize = max;
+            float avail = t.rectTransform.rect.width;
+            if (avail <= 1f) { t.fontSize = max; return; }
+            var tr = t.GetComponent<LGTracking>();
+            int len = System.Text.RegularExpressions.Regex.Replace(t.text ?? "", "<.*?>", "").Length;
+            float extra = tr != null ? tr.Spacing * Mathf.Max(0, len - 1) : 0f;
+            int size = max;
+            t.fontSize = size;
+            while (size > 8 && t.preferredWidth + extra > avail) t.fontSize = --size;
         }
 
         private static void FitLine(Text t)
@@ -1998,6 +2096,7 @@ namespace StellarisClone.Rendering
         private static void SetButton(Button b, Image img, Text lbl, string text, Color tint, bool enabled)
         {
             lbl.text = text;
+            FitSingle(lbl);
             img.color = enabled ? tint : UIManager.DS.BtnDisabled;
             lbl.color = enabled ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             b.interactable = enabled;
