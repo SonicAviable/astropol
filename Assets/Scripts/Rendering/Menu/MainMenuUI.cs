@@ -297,36 +297,52 @@ namespace StellarisClone.Rendering
                 _continueCard = BuildContinueCard(row, latest);
                 SideCard(row, -1, Loc.T("НОВАЯ ИГРА"), Loc.T("Создать галактику\nи выбрать цивилизацию"),
                          Resources.Load<Texture2D>("Menu/menu_planet"), new Rect(0.38f, 0.03f, 0.6f, 0.94f),
-                         UIManager.DS.NeonCyan, () => Open(Panel.NewGame), 0.75f);
+                         UIManager.DS.NeonCyan, () => Open(Panel.NewGame), 0.75f, Loc.T("НАЧАТЬ"), Loc.T("СОЗДАТЬ"));
             }
             else
             {
                 BuildNewGameCard(row);
                 SideCard(row, -1, Loc.T("ОБ ИГРЕ"), Loc.T("Как играть\nи пути к победе"),
                          Resources.Load<Texture2D>("Menu/menu_bg"), new Rect(0.55f, 0.25f, 0.4f, 0.62f),
-                         UIManager.DS.Gold, () => Open(Panel.About), 0.75f);
+                         UIManager.DS.Gold, () => Open(Panel.About), 0.75f, Loc.T("СПРАВКА"), Loc.T("ЧИТАТЬ"));
             }
             _loadCaption = SideCard(row, 1, Loc.T("ЗАГРУЗИТЬ"), LoadCaption(SaveSystem.List().Count),
                                     Resources.Load<Texture2D>("Menu/menu_bg"), new Rect(0.04f, 0.3f, 0.4f, 0.62f),
-                                    LoadAccent, () => Open(Panel.Load), 0.85f);
+                                    LoadAccent, () => Open(Panel.Load), 0.85f, Loc.T("АРХИВ"), Loc.T("ОТКРЫТЬ"));
             BuildNewsStrip();
+        }
+
+        /// <summary>Ярлык «Астролябии»: латунный ромб и заглавные с разрядкой — вместо плашек-чипов.</summary>
+        private static Text Eyebrow(RectTransform parent, string text, Color c)
+        {
+            var t = LGBuild.Label(parent, "◆  " + (text ?? "").ToUpper(), 12, c, TextAnchor.MiddleLeft, bold: true);
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.Track(3f);
+            return t;
         }
 
         /// <summary>Боковая карточка 380×330: арт сверху, название и подпись снизу. side −1 — слева, 1 — справа.</summary>
         private Text SideCard(RectTransform row, int side, string title, string caption, Texture art, Rect uv, Color accent,
-                              System.Action onClick, float delay)
+                              System.Action onClick, float delay, string eyebrow, string action)
         {
             var c = MenuCard.Create(row, title, new Vector2(380, 330), new Vector2(side * 578f, 0f), accent, false, onClick);
             c.AppearDelay = delay;
             c.SetArt(art, uv);
+            // «Астролябия»: золотая надпись-ярлык над названием, кнопка с камнями внизу (вся карточка тоже кликается)
+            var eb = Eyebrow(c.Content, eyebrow, new Color(0.906f, 0.757f, 0.439f));
+            eb.rectTransform.anchorMin = Vector2.zero; eb.rectTransform.anchorMax = new Vector2(1, 0);
+            eb.rectTransform.pivot = new Vector2(0.5f, 0);
+            eb.rectTransform.offsetMin = new Vector2(32, 178); eb.rectTransform.offsetMax = new Vector2(-24, 194);
             var t = LGBuild.Label(c.Content, title, 30, UIManager.DS.TextPrimary, TextAnchor.LowerLeft, bold: true);
-            t.rectTransform.Stretch(32, 92, 24, 0);
-            var cap = LGBuild.Label(c.Content, caption, 16, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, wrap: true);
+            t.rectTransform.Stretch(32, 134, 24, 0);
+            var cap = LGBuild.Label(c.Content, caption, 15, new Color(0.663f, 0.639f, 0.573f), TextAnchor.UpperLeft, wrap: true);
             cap.rectTransform.anchorMin = Vector2.zero;
             cap.rectTransform.anchorMax = new Vector2(1, 0);
             cap.rectTransform.pivot = new Vector2(0.5f, 0);
-            cap.rectTransform.offsetMin = new Vector2(32, 26);
-            cap.rectTransform.offsetMax = new Vector2(-24, 84);
+            cap.rectTransform.offsetMin = new Vector2(32, 84);
+            cap.rectTransform.offsetMax = new Vector2(-24, 130);
+            var btn = LGBuild.Button(c.Content, "Action", UIManager.DS.BtnNeutral, accent, () => c.Click(), null, action, 13);
+            ((RectTransform)btn.transform).At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(32, 26), new Vector2(316, 44));
             c.Title = t;
             return cap;
         }
@@ -355,11 +371,8 @@ namespace StellarisClone.Rendering
                 c.Portrait = LeaderPortraitView.Create(host, leader, 1.55f, new Vector4(0.5f, 0f, 0f, 0f), false, true, false);
             }
 
-            var chip = LGBuild.Panel(c.Content, "Chip", new Color(accent.r * 0.2f, accent.g * 0.2f, accent.b * 0.2f, 0.9f));
-            chip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -40), new Vector2(214, 28));
-            LG.Chip(chip.gameObject, new Color(accent.r, accent.g, accent.b, 0.5f));
-            var ct = LGBuild.Label(chip.transform, Loc.T("ПРОДОЛЖИТЬ ПАРТИЮ"), 12, Color.Lerp(accent, Color.white, 0.35f), TextAnchor.MiddleCenter, bold: true);
-            ct.rectTransform.Stretch();
+            var ct = Eyebrow(c.Content, Loc.T("ПРОДОЛЖИТЬ ПАРТИЮ"), Color.Lerp(accent, Color.white, 0.35f));
+            ct.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -44), new Vector2(340, 20));
 
             var name = LGBuild.Label(c.Content, e.Meta.Empire, 44, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
             name.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -84), new Vector2(340, 112));
@@ -374,6 +387,21 @@ namespace StellarisClone.Rendering
             {
                 (e.Meta.Systems, Loc.T("СИСТЕМ")), (e.Meta.Population, Loc.T("НАСЕЛЕНИЕ")), (e.Meta.Techs, Loc.T("ТЕХНОЛОГИЙ"))
             };
+            // Цифры между двумя латунными линиями, столбцы разделены вертикальными чертами
+            var brass = new Color(0.906f, 0.757f, 0.439f, 0.35f);
+            foreach (float ry in new[] { 104f, 174f })
+            {
+                var rl = LGBuild.Panel(c.Content, "Rule", brass);
+                rl.sprite = UIManager.FadeRightSprite;
+                rl.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0.5f), new Vector2(40, ry), new Vector2(340, 1));
+                LG.Ignore(rl.gameObject);
+            }
+            for (int si = 1; si < stats.Length; si++)
+            {
+                var vl = LGBuild.Panel(c.Content, "Sep", new Color(brass.r, brass.g, brass.b, 0.25f));
+                vl.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0), new Vector2(40f + si * 112f - 12f, 112), new Vector2(1, 54));
+                LG.Ignore(vl.gameObject);
+            }
             float x = 40f;
             foreach (var (v, k) in stats)
             {
@@ -449,12 +477,9 @@ namespace StellarisClone.Rendering
 
             var gold = new Color(1f, 0.82f, 0.48f);
             var accent = item.IsUpdate ? gold : UIManager.DS.NeonCyan;
-            var chip = LGBuild.Panel(c.Content, "Chip", new Color(accent.r * 0.22f, accent.g * 0.22f, accent.b * 0.22f, 0.9f));
-            chip.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(256, -22), new Vector2(150, 26));
-            LG.Chip(chip.gameObject, new Color(accent.r, accent.g, accent.b, 0.55f));
-            var ct = LGBuild.Label(chip.transform, item.Chip, 12, accent, TextAnchor.MiddleCenter, bold: true);
-            ct.rectTransform.Stretch();
-            c.Glow = chip.rectTransform;
+            var ct = Eyebrow(c.Content, item.Chip, accent);
+            ct.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(256, -24), new Vector2(400, 20));
+            c.Glow = ct.rectTransform;
 
             var t = LGBuild.Label(c.Content, string.IsNullOrEmpty(item.Headline) ? item.Title : item.Headline, 20,
                                   UIManager.DS.TextPrimary, TextAnchor.UpperLeft, bold: true, wrap: true);
