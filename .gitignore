@@ -38,3 +38,4 @@ sysinfo.txt
 *.app
 crashlytics-build.properties
 __pycache__/
+ProfilerDump.txt
