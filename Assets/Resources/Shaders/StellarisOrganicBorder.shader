@@ -57,8 +57,13 @@ Shader "Stellaris/OrganicBorders"
             float _BandAlpha;
             float _LineAlpha;
 
-            float _SysCount;
-            float4 _Sys[1023];
+            // Пространственная сетка (строит GalaxyView.UploadBorderGrid): ячейка хранит (начало, число) своего списка
+            // точек в _BorderPts — только тех, что ближе 4×радиуса владения. Дальние точки на результат не влияют,
+            // а перебор всех точек в каждом пикселе съедал видеокарту на больших картах.
+            sampler2D _BorderGrid;
+            sampler2D _BorderPts;
+            float4 _GridParams;   // x, y — угол сетки (мир, xz); z — 1/размер ячейки; w — число ячеек по стороне
+            float4 _PtsParams;    // x — ширина текстуры точек; y — 1/ширина; z — 1/высота
 
             v2f vert (appdata_t v)
             {
@@ -79,13 +84,20 @@ Shader "Stellaris/OrganicBorders"
             {
                 float2 p = i.worldPos.xz;
                 float d0 = 10000.0, d1 = 10000.0, d2 = 10000.0, d3 = 10000.0, d4 = 10000.0, d5 = 10000.0, d6 = 10000.0;
-                int n = (int)_SysCount;
+                float gw = _GridParams.w;
+                float2 cell = clamp(floor((p - _GridParams.xy) * _GridParams.z), 0.0, gw - 1.0);
+                float2 sc = tex2Dlod(_BorderGrid, float4((cell + 0.5) / gw, 0, 0)).xy;
+                int n = (int)sc.y;
+                if (n <= 0) discard;
 
                 [loop]
-                for (int k = 0; k < 1023; k++)
+                for (int k = 0; k < 1024; k++)
                 {
                     if (k >= n) break;
-                    float4 s = _Sys[k];
+                    float idx = sc.x + k;
+                    float row = floor(idx * _PtsParams.y);
+                    float col = idx - row * _PtsParams.x;
+                    float4 s = tex2Dlod(_BorderPts, float4((col + 0.5) * _PtsParams.y, (row + 0.5) * _PtsParams.z, 0, 0));
                     float d = distance(p, s.xy) - _ClaimRadius;
                     if (s.z < 0.5)      d0 = smin(d0, d, _Smooth);
                     else if (s.z < 1.5) d1 = smin(d1, d, _Smooth);

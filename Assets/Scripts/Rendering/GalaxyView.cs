@@ -300,10 +300,10 @@ namespace StellarisClone.Rendering
             // Территории: все системы со звёздной базой, z — слот владельца (BorderSlot: 0 игрок, 1–5 — империи ИИ, 6 — угрозы).
             // Вдоль коридоров между своими системами добавляем промежуточные точки —
             // территория не рвётся на длинных переходах (как в Stellaris).
-            // Столько же, сколько в шейдере границ (1023 — предел массива в шейдерах Unity). Сначала идут сами системы,
+            // Предел точек территорий (уходят в текстуру сетки, см. UploadBorderGrid). Сначала идут сами системы,
             // потом промежуточные точки коридоров: если точек больше предела, пропадут только промежуточные.
-            // Цикл в шейдере идёт до реального числа точек, так что запас не стоит лишнего на маленьких картах.
-            const int MaxSys = 1023;
+            // Шейдер перебирает только точки своей ячейки сетки, так что число точек на карте почти не влияет на FPS.
+            const int MaxSys = 8192;
             var sys = new Vector4[MaxSys];
             int count = 0;
             foreach (var s in playerSystems) if (count < MaxSys) sys[count++] = new Vector4(s.Position.x, s.Position.z, 0f, 0f);
@@ -327,8 +327,7 @@ namespace StellarisClone.Rendering
                 }
             }
             FitBorderPlane();
-            _borderMat.SetVectorArray("_Sys", sys);
-            _borderMat.SetFloat("_SysCount", count);
+            UploadBorderGrid(sys, count);
             _borderMat.SetFloat("_ClaimRadius", _claimRadius);
             _borderMat.SetFloat("_Smooth", _claimRadius);
             _borderMat.SetColor("_PlayerColor", FleetIndicator.OwnColor);
@@ -373,6 +372,78 @@ namespace StellarisClone.Rendering
         }
 
         private float _claimRadius = 15f;
+        private Texture2D _borderGridTex, _borderPtsTex;
+
+        /// <summary>
+        /// Раскладывает точки территорий по сетке над плоскостью границ: в каждой ячейке — только точки ближе
+        /// 4×радиуса владения к ней. Шейдер перебирает список своей ячейки, а не все точки карты.
+        /// Дальше этого радиуса точка не меняет ни заливку (smin со сглаживанием = радиусу), ни кромку.
+        /// </summary>
+        private void UploadBorderGrid(Vector4[] sys, int count)
+        {
+            var t = _organicBorderPlane.transform;
+            float size = t.localScale.x;
+            float ox = t.position.x - size * 0.5f, oz = t.position.z - size * 0.5f;
+            int gw = Mathf.Clamp(Mathf.CeilToInt(size / _claimRadius), 1, 128);
+            float cell = size / gw;
+            float reach = _claimRadius * 4f, reach2 = reach * reach;
+
+            var lists = new List<int>[gw * gw];
+            int total = 0;
+            for (int i = 0; i < count; i++)
+            {
+                Vector4 q = sys[i];
+                int x0 = Mathf.Clamp(Mathf.FloorToInt((q.x - reach - ox) / cell), 0, gw - 1);
+                int x1 = Mathf.Clamp(Mathf.FloorToInt((q.x + reach - ox) / cell), 0, gw - 1);
+                int y0 = Mathf.Clamp(Mathf.FloorToInt((q.y - reach - oz) / cell), 0, gw - 1);
+                int y1 = Mathf.Clamp(Mathf.FloorToInt((q.y + reach - oz) / cell), 0, gw - 1);
+                for (int y = y0; y <= y1; y++)
+                {
+                    float dy = Mathf.Max(0f, Mathf.Max(oz + y * cell - q.y, q.y - (oz + (y + 1) * cell)));
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        float dx = Mathf.Max(0f, Mathf.Max(ox + x * cell - q.x, q.x - (ox + (x + 1) * cell)));
+                        if (dx * dx + dy * dy > reach2) continue;
+                        int c = y * gw + x;
+                        (lists[c] ??= new List<int>()).Add(i);
+                        total++;
+                    }
+                }
+            }
+
+            const int PtsW = 1024;
+            int ptsH = Mathf.Max(1, Mathf.CeilToInt(total / (float)PtsW));
+            var grid = new Color[gw * gw];
+            var pts = new Color[PtsW * ptsH];
+            int at = 0;
+            for (int c = 0; c < grid.Length; c++)
+            {
+                var l = lists[c];
+                int n = l == null ? 0 : Mathf.Min(l.Count, 1024);
+                grid[c] = new Color(at, n, 0f, 0f);
+                for (int k = 0; k < n; k++) pts[at++] = sys[l[k]];
+            }
+
+            _borderGridTex = EnsureDataTex(_borderGridTex, gw, gw);
+            _borderPtsTex = EnsureDataTex(_borderPtsTex, PtsW, ptsH);
+            _borderGridTex.SetPixels(grid); _borderGridTex.Apply(false);
+            _borderPtsTex.SetPixels(pts); _borderPtsTex.Apply(false);
+
+            _borderMat.SetTexture("_BorderGrid", _borderGridTex);
+            _borderMat.SetTexture("_BorderPts", _borderPtsTex);
+            _borderMat.SetVector("_GridParams", new Vector4(ox, oz, 1f / cell, gw));
+            _borderMat.SetVector("_PtsParams", new Vector4(PtsW, 1f / PtsW, 1f / ptsH, 0f));
+        }
+
+        private static Texture2D EnsureDataTex(Texture2D tex, int w, int h)
+        {
+            if (tex != null && tex.width == w && tex.height == h) return tex;
+            if (tex != null) Destroy(tex);
+            return new Texture2D(w, h, TextureFormat.RGBAFloat, false, true)
+            {
+                filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave
+            };
+        }
 
         /// <summary>Радиус «владения» системы: ~70% медианной длины коридора (территория доходит примерно до середины пути).</summary>
         private float ComputeClaimRadius()
