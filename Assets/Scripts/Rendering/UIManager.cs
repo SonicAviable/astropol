@@ -969,12 +969,13 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         }
 
         /// <summary>
-        /// Ячейка рамки ресурсов: значок в круглом «гнезде» со свечением цвета ресурса, подпись с разрядкой,
-        /// крупное значение (прирост — мельче), снизу — светящаяся черта цвета ресурса, гаснущая к краям.
+        /// Ячейка ресурсов «Медальоны»: латунный медальон «Астролябии» со значком цвета ресурса и камнем
+        /// у нижнего края, справа от него — эмалевая лента с подписью и значением; по нижней кромке ленты —
+        /// тонкая полоска запаса цвета ресурса.
         /// </summary>
         private Text CreateResourceBadge(Transform parent, LGIcon icon, string label, Color accentCol, ref float xPos, out TooltipTrigger tip, bool separator)
         {
-            const float w = 150f, h = 54f;
+            const float w = ResCellW, h = 60f, md = 50f;
             var badge = new GameObject($"Badge_{label}");
             badge.transform.SetParent(parent, false);
             var rt = badge.AddComponent<RectTransform>();
@@ -991,70 +992,70 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             tip = badge.AddComponent<TooltipTrigger>();
             UIAnchors.Register(UIAnchors.Resources, rt);
 
-            // Разделитель между ячейками — гаснет к концам
-            if (separator)
-            {
-                var sep = HudSprite(badge.transform, "Sep", FactionSelectScreen.RadialSprite(), new Color(0.925f, 0.898f, 0.827f, 0.16f));
-                sep.rectTransform.anchorMin = new Vector2(0, 0.08f);
-                sep.rectTransform.anchorMax = new Vector2(0, 0.92f);
-                sep.rectTransform.sizeDelta = new Vector2(2f, 0f);
-                sep.rectTransform.anchoredPosition = Vector2.zero;
-            }
+            // Эмалевая лента под медальоном: латунная кромка сверху, полоска запаса снизу
+            var rib = HudSprite(badge.transform, "Ribbon", null, new Color(0.055f, 0.094f, 0.157f, 0.92f));
+            rib.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(md * 0.5f, 0f), new Vector2(w - md * 0.5f, 38f));
+            var rimTop = HudSprite(rib.transform, "RimTop", HudArt.EdgeFade(0.08f), new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.6f));
+            rimTop.rectTransform.anchorMin = new Vector2(0f, 1f);
+            rimTop.rectTransform.anchorMax = new Vector2(1f, 1f);
+            rimTop.rectTransform.pivot = new Vector2(0.5f, 1f);
+            rimTop.rectTransform.offsetMin = new Vector2(0f, -1f);
+            rimTop.rectTransform.offsetMax = Vector2.zero;
 
-            // Гнездо значка: мягкое свечение, тёмный диск, кольцо цвета ресурса
-            var halo = HudSprite(badge.transform, "Halo", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0f));   // «Атлас»: без ореола
-            halo.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(60, 60));
-            var disc = HudSprite(badge.transform, "Socket", HudArt.Disc(), new Color(0.055f, 0.094f, 0.157f, 0.95f));
-            disc.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(32, 32));
-            var ring = HudSprite(badge.transform, "Ring", HudArt.Ring(0.94f, 1f), new Color(0.925f, 0.898f, 0.827f, 0.30f));
-            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(32, 32));
-            // Как в референсе голо-HUD: без гнезда — крупный значок со свечением цвета ресурса
-            // «Атлас»: значок — золотой, в тонком кремовом круге
-            var ic = LGIcons.Create(badge.transform, icon, 16, DS.Gold);
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30, 1), new Vector2(16, 16));
-            var icGlow = ic.gameObject.AddComponent<Shadow>();
-            icGlow.effectColor = new Color(0f, 0f, 0f, 0f);
-            icGlow.effectDistance = new Vector2(0f, 0f);
-
-            var cap = CreateText(badge.transform, label, 9, FontStyle.Normal, DS.TextMuted, TextAnchor.UpperLeft);
-            cap.font = GameFont.Mono;
-            cap.rectTransform.anchorMin = Vector2.zero;
-            cap.rectTransform.anchorMax = Vector2.one;
-            cap.rectTransform.offsetMin = new Vector2(56, 0);
-            cap.rectTransform.offsetMax = new Vector2(-4, -8);
-            cap.Track(0.8f);
-
-            var val = CreateText(badge.transform, "0", 16, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
-            val.font = GameFont.MonoMedium;
-            val.rectTransform.anchorMin = Vector2.zero;
-            val.rectTransform.anchorMax = Vector2.one;
-            val.rectTransform.offsetMin = new Vector2(56, 9);
-            val.rectTransform.offsetMax = new Vector2(-4, 0);
-            var vs = val.gameObject.AddComponent<Shadow>();
-            vs.effectColor = new Color(0f, 0f, 0f, 0.6f);
-            vs.effectDistance = new Vector2(0f, -1f);
-
-            // Светящаяся черта цвета ресурса под ячейкой
-            // Полоска под ячейкой (как в референсе): тусклая дорожка и заливка цвета ресурса
-            var under = HudSprite(badge.transform, "BarTrack", null, new Color(0.925f, 0.898f, 0.827f, 0.07f));
+            var under = HudSprite(rib.transform, "BarTrack", null, new Color(0.925f, 0.898f, 0.827f, 0.08f));
             under.rectTransform.anchorMin = new Vector2(0f, 0f);
             under.rectTransform.anchorMax = new Vector2(1f, 0f);
             under.rectTransform.pivot = new Vector2(0f, 0f);
-            under.rectTransform.offsetMin = new Vector2(10f, 3f);
-            under.rectTransform.offsetMax = new Vector2(-10f, 5f);
-            var barFill = HudSprite(under.transform, "Fill", null, new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.75f));
+            under.rectTransform.offsetMin = new Vector2(md * 0.5f + 6f, 0f);
+            under.rectTransform.offsetMax = new Vector2(-6f, 2f);
+            var barFill = HudSprite(under.transform, "Fill", null, new Color(accentCol.r, accentCol.g, accentCol.b, 0.75f));
             barFill.rectTransform.anchorMin = Vector2.zero;
             barFill.rectTransform.anchorMax = new Vector2(0f, 1f);
             barFill.rectTransform.pivot = new Vector2(0f, 0.5f);
             barFill.rectTransform.offsetMin = barFill.rectTransform.offsetMax = Vector2.zero;
             _resBarFills.Add(barFill.rectTransform);
 
+            // Латунный медальон «Астролябии»; значок — цвета ресурса
+            var med = HudSprite(badge.transform, "Medal", null, Color.white);
+            med.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(md * 0.5f, 0f), new Vector2(md, md));
+            var ic = LGIcons.Create(med.transform, icon, 20, accentCol);
+            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
+            ic.raycastTarget = false;
+            var astro = LGAstrolabe.Attach(badge, med, null, round: true);
+            if (astro != null) astro.KeepIconColor = true;
+            ic.color = accentCol;
+
+            // Камень цвета ресурса у нижнего правого края медальона
+            var gem = LGBuild.Rect(badge.transform, "Gem");
+            gem.At(new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(md * 0.5f + md * 0.34f, -md * 0.34f), new Vector2(13f, 13f));
+            HudSprite(gem, "Mount", LGAstrolabe.GemMount, Color.white).rectTransform.Stretch();
+            _lastGem = HudSprite(gem, "Stone", LGAstrolabe.GemStone, accentCol);
+            _lastGem.rectTransform.Stretch();
+            HudSprite(gem, "Spec", LGAstrolabe.GemSpec, Color.white).rectTransform.Stretch();
+
+            var cap = CreateText(badge.transform, label, 9, FontStyle.Normal, DS.TextMuted, TextAnchor.UpperLeft);
+            cap.font = GameFont.Mono;
+            cap.rectTransform.anchorMin = Vector2.zero;
+            cap.rectTransform.anchorMax = Vector2.one;
+            cap.rectTransform.offsetMin = new Vector2(md + 8f, 0);
+            cap.rectTransform.offsetMax = new Vector2(-4, -14);
+            cap.Track(0.8f);
+
+            var val = CreateText(badge.transform, "0", 16, FontStyle.Normal, DS.TextPrimary, TextAnchor.LowerLeft);
+            val.font = GameFont.MonoMedium;
+            val.rectTransform.anchorMin = Vector2.zero;
+            val.rectTransform.anchorMax = Vector2.one;
+            val.rectTransform.offsetMin = new Vector2(md + 8f, 15);
+            val.rectTransform.offsetMax = new Vector2(-4, 0);
+            var vs = val.gameObject.AddComponent<Shadow>();
+            vs.effectColor = new Color(0f, 0f, 0f, 0.6f);
+            vs.effectDistance = new Vector2(0f, -1f);
+
             // Живая ячейка: докрутка чисел, всплывающая разница, вспышка, «дыхание», наведение
             var fx = badge.AddComponent<ResourceBadgeFx>();
-            halo.enabled = false;
             fx.Halo = null; fx.Ring = null; fx.Icon = ic; fx.Underline = null; fx.Value = val; fx.Accent = accentCol;
 
-            xPos += w + 4f;
+            xPos += w + ResCellGap;
             return val;
         }
 
@@ -1784,6 +1785,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
         float avg = sum / Mathf.Max(1, pop);
         _avgStability = avg;
         var tier = PlanetStability.TierOf(avg);
+        if (_stabGem != null) _stabGem.color = PlanetStability.TierColor(tier);   // камень медальона — цвет уровня
         string hex = PlanetStability.Hex(PlanetStability.TierColor(tier));
         int unstable = colonies.FindAll(p => p.Tier <= StabilityTier.Strike).Count;
         ShowText(_stabilityVal, $"<color=#{hex}>{avg:0}</color>  <size=10><color=#{hex}>{PlanetStability.TierName(tier)}</color></size>" +

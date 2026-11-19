@@ -17,7 +17,8 @@ namespace StellarisClone.Rendering
         private const float DiskCenterY = 78f;     // центр диска от верха экрана: риски (DiskD + 34) целиком на экране
         private const float WingH = 64f;
         private const float WingGap = 18f;          // зазор между диском и крылом
-        private const float CellStep = 154f;        // ширина ячейки ресурса (150) + зазор
+        private const float ResCellW = 160f, ResCellGap = 6f;   // ячейка ресурса «Медальоны» и зазор между ними
+        private const float CellStep = ResCellW + ResCellGap;
         private const float RulerD = RulerBadge.Width;
         private static readonly Vector2 RulerCenter = new Vector2(20f + RulerD * 0.5f, -(18f + RulerD * 0.5f));
 
@@ -34,7 +35,6 @@ namespace StellarisClone.Rendering
         private string _empireKey;
 
         private static readonly Color HoloLine = new Color(0.925f, 0.898f, 0.827f, 1f);   // «Атлас»: кремовые линии
-        private static readonly Color WingTint = new Color(0.055f, 0.094f, 0.157f, 0.95f);
 
         private static string MonthName(int m)
         {
@@ -301,6 +301,7 @@ namespace StellarisClone.Rendering
             _influenceVal = CreateResourceBadge(right, LGIcon.Influence, Loc.T("ВЛИЯНИЕ"), new Color(1.00f, 0.48f, 0.58f), ref rx, out _influenceTip, false);
             _researchVal  = CreateResourceBadge(right, LGIcon.Research, Loc.T("НАУКА"), DS.Green, ref rx, out _researchTip, true);
             _stabilityVal = CreateResourceBadge(right, LGIcon.Society, Loc.T("СТАБИЛЬНОСТЬ"), new Color(0.98f, 0.55f, 0.85f), ref rx, out _stabilityTip, true);
+            _stabGem = _lastGem;
             // Клик по стабильности — управление колониями (там видно, где неспокойно)
             var stabBtn = _stabilityTip.gameObject.AddComponent<Button>();
             stabBtn.transition = Selectable.Transition.None;
@@ -309,29 +310,30 @@ namespace StellarisClone.Rendering
             // Соединители крыльев с диском
             for (int s = -1; s <= 1; s += 2)
             {
-                var ln = HoloImage(_canvas.transform, "WingLink", null, new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.8f));
-                ln.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(s * (DiskD * 0.5f + WingGap * 0.5f), -(8f + WingH * 0.5f)), new Vector2(WingGap, 1f));
+                var ln = HoloImage(_canvas.transform, "WingLink", null, new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.85f));
+                ln.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(s * (DiskD * 0.5f + WingGap * 0.5f), -(8f + WingH * 0.5f)), new Vector2(WingGap, 2f));
             }
         }
 
-        /// <summary>Крыло: скошенная тёмная плашка с кромкой. sign — сторона: x &lt; 0 — левое (растёт влево от диска).</summary>
+        /// <summary>Камень последней созданной ячейки ресурса; у стабильности он красится в цвет уровня.</summary>
+        private Image _lastGem, _stabGem;
+
+        /// <summary>
+        /// Крыло «Медальоны»: без сплошной плашки — латунный рельс от диска, гаснущий к внешнему краю;
+        /// на нём медальоны ресурсов. slantLeft — левое крыло (растёт влево от диска).
+        /// </summary>
         private Transform Wing(string name, bool slantLeft, float x)
         {
-            float w = 3f * CellStep + 38f - 4f;
+            float w = 3f * CellStep + 30f;
             var go = new GameObject(name);
             go.transform.SetParent(_canvas.transform, false);
             var rt = go.AddComponent<RectTransform>();
             rt.At(new Vector2(0.5f, 1f), new Vector2(slantLeft ? 1f : 0f, 1f), new Vector2(x, -8f), new Vector2(w, WingH));
-            var bg = go.AddComponent<Image>();
-            bg.sprite = HudArt.Wing(slantLeft);
-            bg.type = Image.Type.Sliced;
-            bg.color = WingTint;
-            bg.raycastTarget = false;
             LG.Ignore(go, includeChildren: false);
 
-            var rim = HoloImage(go.transform, "Rim", HudArt.WingRim(slantLeft), new Color(HoloLine.r, HoloLine.g, HoloLine.b, 0.28f));
-            rim.type = Image.Type.Sliced;
-            rim.rectTransform.Stretch();
+            // Рельс во всю ширину крыла, гаснет к концам (внутренний конец прячется под лентой ячейки у диска)
+            var rail = HoloImage(go.transform, "Rail", HudArt.EdgeFade(0.12f), new Color(DS.Gold.r, DS.Gold.g, DS.Gold.b, 0.8f));
+            rail.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(w, 2f));
 
             var motion = LG.Motion(go, LGAppear.Kind.SlideDown);
             motion.distance = 22f;

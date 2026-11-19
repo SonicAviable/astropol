@@ -528,7 +528,7 @@ namespace StellarisClone.Rendering
 
         private static float Diamond(int x, int y) => Mathf.Abs(x + 0.5f - 16f) + Mathf.Abs(y + 0.5f - 16f);
 
-        private static Sprite GemMount => s_mount != null ? s_mount : (s_mount = Make(32, 32, (x, y) =>
+        internal static Sprite GemMount => s_mount != null ? s_mount : (s_mount = Make(32, 32, (x, y) =>
         {
             float m = Diamond(x, y);
             const float R = 15.5f;
@@ -539,7 +539,7 @@ namespace StellarisClone.Rendering
             return c;
         }, Vector4.zero, "AB_GemMount"));
 
-        private static Sprite GemStone => s_stone != null ? s_stone : (s_stone = Make(32, 32, (x, y) =>
+        internal static Sprite GemStone => s_stone != null ? s_stone : (s_stone = Make(32, 32, (x, y) =>
         {
             float m = Diamond(x, y);
             float a = Mathf.Clamp01(10.5f - m + 0.5f);
@@ -549,7 +549,7 @@ namespace StellarisClone.Rendering
             return new Color(g, g, g, a);
         }, Vector4.zero, "AB_GemStone"));
 
-        private static Sprite GemSpec => s_spec != null ? s_spec : (s_spec = Make(32, 32, (x, y) =>
+        internal static Sprite GemSpec => s_spec != null ? s_spec : (s_spec = Make(32, 32, (x, y) =>
         {
             float m = Diamond(x, y);
             float a = Mathf.Clamp01(10.5f - m + 0.5f);
