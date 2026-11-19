@@ -13,18 +13,6 @@ namespace StellarisClone.Core
     /// Ассет URP правится на месте: в сборке это лишь память процесса, а в редакторе исходные значения
     /// запоминаются и возвращаются при выходе из Play Mode, чтобы настройки игрока не попали в проект.
     /// </summary>
-    /// <summary>
-    /// Мост к стороннему плагину NVIDIA DLSS (в URP своего DLSS нет). Адаптер плагина регистрирует себя в
-    /// <see cref="GraphicsQuality.Dlss"/>; без него пункт DLSS в настройках не показывается.
-    /// </summary>
-    public interface IDlssBackend
-    {
-        /// <summary>Плагин установлен и видеокарта поддерживает DLSS (NVIDIA RTX).</summary>
-        bool Supported { get; }
-        /// <summary>Включить/выключить DLSS на камере. renderScale — доля разрешения рендера (0,5…1), sharpness 0…1.</summary>
-        void Apply(Camera cam, bool enabled, float renderScale, float sharpness);
-    }
-
     public static class GraphicsQuality
     {
         public const int PresetCustom = 4;
@@ -43,15 +31,10 @@ namespace StellarisClone.Core
         public static string[] OnOffNames => new[] { Loc.T("Выкл"), Loc.T("Вкл") };
         public static string[] TextureNames => new[] { Loc.T("Половинные"), Loc.T("Полные") };
         /// <summary>Чем растягивать картинку до размера экрана, когда масштаб рендера ниже 100%.</summary>
-        public static string[] UpscalerNames => DlssAvailable
-            ? new[] { Loc.T("Обычное"), "AMD FSR 1.0", "NVIDIA DLSS" }
-            : new[] { Loc.T("Обычное"), "AMD FSR 1.0" };
+        public static string[] UpscalerNames => new[] { Loc.T("Обычное"), "AMD FSR 1.0" };
         public static string[] SharpnessNames => new[] { Loc.T("Мягкая"), Loc.T("Средняя"), Loc.T("Высокая") };
         private static readonly float[] SharpnessValues = { 0.5f, 0.75f, 0.92f };
-        public const int UpscaleLinear = 0, UpscaleFsr = 1, UpscaleDlss = 2;
-        /// <summary>Адаптер плагина DLSS; null — плагина нет.</summary>
-        public static IDlssBackend Dlss;
-        public static bool DlssAvailable => Dlss != null && Dlss.Supported;
+        public const int UpscaleLinear = 0, UpscaleFsr = 1;
 
         public static int ScaleIndex { get; private set; } = 4;
         public static int AntiAliasing { get; private set; } = AASmaa;
@@ -63,14 +46,10 @@ namespace StellarisClone.Core
         /// растягивается до экрана с восстановлением краёв и резкостью вместо простого размытия. На 100% не действует.
         /// Отдельно от пресетов: выключен по умолчанию, пресеты его не трогают.
         /// </summary>
-        private static int s_upscaler = UpscaleLinear;
-        /// <summary>Действующий апскейлер: сохранённый DLSS без плагина/карты RTX считается обычным растяжением.</summary>
-        public static int Upscaler => s_upscaler == UpscaleDlss && !DlssAvailable ? UpscaleLinear : s_upscaler;
+        public static int Upscaler { get; private set; } = UpscaleLinear;
         public static int Sharpness { get; private set; } = 2;
         /// <summary>FSR сейчас реально работает: выбран и рендер ниже 100%.</summary>
         public static bool FsrActive => Upscaler == UpscaleFsr && RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] < 0.999f;
-        /// <summary>DLSS выбран и доступен. Работает и на 100% (как DLAA) — заменяет обычное сглаживание.</summary>
-        public static bool DlssActive => Upscaler == UpscaleDlss;
 
         private struct Set
         {
@@ -109,7 +88,7 @@ namespace StellarisClone.Core
         {
             if (s_loaded) return;
             s_loaded = true;
-            s_upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleLinear), 0, UpscaleDlss);
+            Upscaler = Mathf.Clamp(PlayerPrefs.GetInt("gfx.upscaler", UpscaleLinear), 0, UpscaleFsr);
             Sharpness = Mathf.Clamp(PlayerPrefs.GetInt("gfx.sharp", 2), 0, SharpnessValues.Length - 1);
             if (!PlayerPrefs.HasKey("gfx.scale"))
             {
@@ -137,7 +116,7 @@ namespace StellarisClone.Core
             PlayerPrefs.SetInt("gfx.shadows", Shadows);
             PlayerPrefs.SetInt("gfx.post", PostFx ? 1 : 0);
             PlayerPrefs.SetInt("gfx.tex", FullTextures ? 1 : 0);
-            PlayerPrefs.SetInt("gfx.upscaler", s_upscaler);
+            PlayerPrefs.SetInt("gfx.upscaler", Upscaler);
             PlayerPrefs.SetInt("gfx.sharp", Sharpness);
         }
 
@@ -175,7 +154,7 @@ namespace StellarisClone.Core
         public static void SetShadows(int i) { EnsureLoaded(); Shadows = Mathf.Clamp(i, 0, ShadowRes.Length - 1); Changed(); }
         public static void SetPostFx(bool v) { EnsureLoaded(); PostFx = v; Changed(); }
         public static void SetFullTextures(bool v) { EnsureLoaded(); FullTextures = v; Changed(); }
-        public static void SetUpscaler(int i) { EnsureLoaded(); s_upscaler = Mathf.Clamp(i, 0, DlssAvailable ? UpscaleDlss : UpscaleFsr); Changed(); }
+        public static void SetUpscaler(int i) { EnsureLoaded(); Upscaler = Mathf.Clamp(i, 0, UpscaleFsr); Changed(); }
         public static void SetSharpness(int i) { EnsureLoaded(); Sharpness = Mathf.Clamp(i, 0, SharpnessValues.Length - 1); Changed(); }
 
         private static void Changed()
@@ -215,8 +194,7 @@ namespace StellarisClone.Core
             Remember(asset);
             asset.renderScale = RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)] * PlatformScale();
             s_lastPixels = Screen.width * Screen.height;
-            // DLSS сам сглаживает (временное накопление) — MSAA ему только мешает
-            asset.msaaSampleCount = DlssActive ? 1 : AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
+            asset.msaaSampleCount = AntiAliasing == AAMsaa4 ? 4 : AntiAliasing == AAMsaa2 ? 2 : 1;
             // FSR 1.0 — фильтр масштабирования URP; через отражение, как и тени: если в версии URP поле зовут иначе,
             // игра не падает, остаётся обычное растяжение и предупреждение в логе
             SetMember(asset, "upscalingFilter", "m_UpscalingFilter", Upscaler == UpscaleFsr ? "FSR" : "Auto");
@@ -244,14 +222,10 @@ namespace StellarisClone.Core
                 // FSR выполняется в финальном проходе постобработки — при пониженном масштабе держим его включённым
                 // (объёмы эффектов при «Постобработка выкл» всё равно погашены ниже)
                 data.renderPostProcessing = PostFx || postAA || FsrActive;
-                data.antialiasing = DlssActive ? AntialiasingMode.None
-                                  : AntiAliasing == AAFxaa ? AntialiasingMode.FastApproximateAntialiasing
+                data.antialiasing = AntiAliasing == AAFxaa ? AntialiasingMode.FastApproximateAntialiasing
                                   : AntiAliasing == AASmaa ? AntialiasingMode.SubpixelMorphologicalAntiAliasing
                                   : AntialiasingMode.None;
                 data.antialiasingQuality = AntialiasingQuality.High;
-                if (Dlss != null)
-                    Dlss.Apply(cam, DlssActive, RenderScales[Mathf.Clamp(ScaleIndex, 0, RenderScales.Length - 1)],
-                        SharpnessValues[Mathf.Clamp(Sharpness, 0, SharpnessValues.Length - 1)]);
             }
             // «Постобработка выкл» — гасим объёмы (свечение, тонирование, виньетка), даже если камера ведёт проход ради сглаживания
             var gone = new System.Collections.Generic.List<Volume>();

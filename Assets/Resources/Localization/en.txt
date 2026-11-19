@@ -5803,7 +5803,7 @@ VK Play: всё синхронизировано	VK Play: fully synced
 Мягкая	Soft
 Высокая	High
 Масштабирование	Upscaling
-FSR 1.0 — чётче обычного растяжения ниже 100%; DLSS (NVIDIA RTX) — ещё чётче и сам сглаживает края	FSR 1.0 — sharper than plain stretching below 100%; DLSS (NVIDIA RTX) — sharper still and does its own anti-aliasing
+AMD FSR 1.0 — чётче обычного растяжения при масштабе рендера ниже 100%; на 100% не действует	AMD FSR 1.0 — sharper than plain stretching when render scale is below 100%; no effect at 100%
 Резкость FSR	FSR sharpness
 Насколько подчёркивать края после масштабирования	How strongly to sharpen edges after upscaling
 Сердце Тишины	Heart of Silence
@@ -7103,7 +7103,7 @@ Q / E — листать новости	Q / E — browse news
 всё на максимум	everything maxed out
 ТОЧНАЯ НАСТРОЙКА	FINE TUNING
 Ниже — быстрее, интерфейс остаётся чётким	Lower is faster; the interface stays sharp
-FSR и DLSS чётче растягивают картинку при масштабе ниже 100%	FSR and DLSS upscale more sharply below 100% render scale
+FSR чётче растягивает картинку при масштабе ниже 100%	FSR upscales more sharply below 100% render scale
 Половинные экономят видеопамять	Half-size textures save video memory
 ВЫБРАНО	SELECTED
 ДАЛЕЕ — ЦИВИЛИЗАЦИЯ  ›	NEXT — CIVILIZATION  ›
