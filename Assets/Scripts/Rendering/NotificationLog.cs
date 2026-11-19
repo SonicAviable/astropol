@@ -160,10 +160,12 @@ namespace StellarisClone.Rendering
             bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w, 28));
             LG.Chip(bg.gameObject, new Color(1f, 1f, 1f, 0.14f), 14f);
             var t = LGBuild.Label(bg.transform, text, 11, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
-            t.rectTransform.Stretch(6, 0, 6, 0);
+            t.rectTransform.Stretch(12, 0, 12, 0);
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 8; t.resizeTextMaxSize = 11;
             var b = bg.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.None;
             b.onClick.AddListener(() => { _filter = f; _dirty = true; SFXManager.Play(Sfx.UiTab, 0.6f); });
+            LGAstrolabe.Attach(bg.gameObject, bg, t);   // «Астролябия»; выбранный фильтр — как вкладка
             _chips.Add((bg, t, f));
             return w + 8f;
         }
@@ -192,6 +194,7 @@ namespace StellarisClone.Rendering
                 bool on = c.f == _filter;
                 c.bg.color = on ? new Color(0.10f, 0.38f, 0.42f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.9f);
                 c.t.color = on ? Color.white : UIManager.DS.TextMuted;
+                if (c.bg.TryGetComponent<LGAstrolabe>(out var astro)) astro.Selected = on;
             }
             LGBuild.Clear(_list);
             var h = NotificationCenter.History;

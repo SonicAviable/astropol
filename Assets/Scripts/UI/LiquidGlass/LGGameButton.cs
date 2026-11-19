@@ -52,8 +52,18 @@ namespace StellarisClone.Rendering
             _done = true;
             enabled = false;
             if (r.width <= 64f && r.height <= 64f && Mathf.Abs(r.width - r.height) <= 12f) { Medallion(); return; }
+            // Небольшая кнопка только с подписью (фильтр, вкладка) — компактная «Астролябия»
+            if (r.width >= 80f && r.width < 150f && r.height >= 24f && r.height <= 44f && OnlyLabel()) Compact = true;
             if (r.width < (Compact ? 60f : 150f) || r.height < (Compact ? 24f : 28f) || r.height > 58f) return;
             Apply();
+        }
+
+        private bool OnlyLabel()
+        {
+            var gs = GetComponentsInChildren<Graphic>(true);
+            int n = 0;
+            foreach (var g in gs) if (g.gameObject != gameObject) { if (!(g is Text)) return false; n++; }
+            return n == 1;
         }
 
         /// <summary>Маленькая кнопка-значок (или с подписью в 1–2 знака, например «?») — круглый латунный медальон.</summary>

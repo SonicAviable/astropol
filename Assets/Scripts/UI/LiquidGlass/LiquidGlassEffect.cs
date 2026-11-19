@@ -290,7 +290,7 @@ namespace StellarisClone.Rendering
             if (r.width < 1f) return;                 // размер ещё не выставлен
             _chartChecked = true;
             var rr = ResolveRole();
-            bool window = rr == Role.Glass || (rr == Role.Platter && FindParentSurface() == null);
+            bool window = (rr == Role.Glass || rr == Role.Platter) && FindParentSurface() == null;   // колонки и карточки внутри окна — не окна
             if (window && r.width >= 240f && r.height >= 160f && !CoversScreen(r))
                 LGObservatory.Attach(gameObject, ResolveRadii().x);
         }

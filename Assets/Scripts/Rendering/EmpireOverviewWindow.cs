@@ -274,44 +274,37 @@ namespace StellarisClone.Rendering
         /// со срезанными углами и кромкой цвета accent; подпись и значок — в цвет кромки. Недоступная — серая.
         /// Вызывать после того, как выставлено interactable.
         /// </summary>
+        /// <summary>Кнопка окна в стиле «Астролябия»: маленькая квадратная — латунный медальон, остальные — латунная рамка
+        /// со своим содержимым (значок, подпись); камни — цвет действия.</summary>
         private static void Hudify(Button b, Color accent)
         {
             if (b == null) return;
             var img = b.GetComponent<Image>();
-            var glass = b.GetComponent<LiquidGlassEffect>();
-            if (glass != null) Object.Destroy(glass);
             var game = b.GetComponent<LGGameButton>();
-            if (game != null) Object.Destroy(game);
-            b.transition = Selectable.Transition.None;
+            if (game != null) Object.DestroyImmediate(game);
             bool on = b.interactable;
-            Color c = on ? accent : new Color(0.663f, 0.639f, 0.573f, 1f);
-            var frame = HudSkin(img, on ? BtnFill : HudTint, new Color(c.r, c.g, c.b, on ? 0.30f : 0.15f), 6);
-            Pillify(img, frame);
-            Color ink = on ? Color.Lerp(c, Color.white, 0.35f) : new Color(0.663f, 0.639f, 0.573f, 1f);
+            Color ink = on ? Color.Lerp(accent, Color.white, 0.45f) : new Color(0.663f, 0.639f, 0.573f, 1f);
             foreach (var t in b.GetComponentsInChildren<Text>(true)) t.color = ink;
             foreach (var im in b.GetComponentsInChildren<Image>(true))
-                if (im != img && im != frame) im.color = ink;
-            if (!on) return;
-            var hv = b.gameObject.AddComponent<UIHover>();
-            hv.Enter = () => { img.color = BtnFillLit; frame.color = new Color(c.r, c.g, c.b, 0.6f); };
-            hv.Exit = () => { img.color = BtnFill; frame.color = new Color(c.r, c.g, c.b, 0.30f); };
+                if (im != img) im.color = ink;
+            var sz = ((RectTransform)b.transform).rect.size;
+            if (sz.x < 1f) sz = ((RectTransform)b.transform).sizeDelta;
+            bool round = sz.x > 0f && sz.x <= 64f && Mathf.Abs(sz.x - sz.y) <= 12f;
+            var a = LGAstrolabe.Attach(b.gameObject, img, null, round: round);
+            if (a != null) a.Gem = LGAstrolabe.GemOf(accent);
         }
 
         /// <summary>Кнопка в стиле HUD: плашка со срезанными углами, кромка цвета rim, подпись; при наведении светлеет.</summary>
         private static Button HudButton(Transform parent, string name, string label, Color rim, System.Action act)
         {
             var img = LGBuild.Panel(parent, name, BtnFill, raycast: true);
-            var frame = HudSkin(img, BtnFill, new Color(rim.r, rim.g, rim.b, 0.30f), 6);
-            Pillify(img, frame);
-            var t = LGBuild.Label(img.transform, label, 12, rim, TextAnchor.MiddleCenter);
-            t.font = GameFont.MonoMedium;
-            t.rectTransform.Stretch();
-            var hv = img.gameObject.AddComponent<UIHover>();
-            hv.Enter = () => { img.color = BtnFillLit; frame.color = new Color(rim.r, rim.g, rim.b, 0.6f); };
-            hv.Exit = () => { img.color = BtnFill; frame.color = new Color(rim.r, rim.g, rim.b, 0.30f); };
+            var t = LGBuild.Label(img.transform, label, 13, Color.white, TextAnchor.MiddleCenter);
+            t.rectTransform.Stretch(22, 0, 22, 0);
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = 13;
             var b = img.gameObject.AddComponent<Button>();
-            b.transition = Selectable.Transition.None;
             b.onClick.AddListener(() => act());
+            var a = LGAstrolabe.Attach(img.gameObject, img, t);   // «Астролябия»
+            if (a != null) a.Gem = LGAstrolabe.GemOf(rim);
             return b;
         }
 

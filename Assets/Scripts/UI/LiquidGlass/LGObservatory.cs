@@ -6,7 +6,7 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// Фон окон «Обсерватория»: тёмно-синяя эмаль цвета окон игры с лёгкой тенью снизу, двойная латунная линия
-    /// по краю, латунные уголки с ромбами; у крупных окон — едва заметная гравировка астрономического инструмента,
+    /// по краю, латунные уголки с ромбами; у больших окон (от 640×480) — едва заметная гравировка астрономического инструмента,
     /// уходящая за нижний край. Чтобы окна не были одинаковыми, у каждого — своя гравировка
     /// (астролябия, армиллярная сфера, орбиты, роза ветров, небесный глобус), свой нижний угол и наклон;
     /// выбор стабилен для окна (по имени), так что одно и то же окно всегда выглядит одинаково.
@@ -71,10 +71,10 @@ namespace StellarisClone.Rendering
             srt.anchoredPosition = new Vector2(0f, srt.sizeDelta.y);
 
             // Гравировка инструмента — своя у окна, частично за краем; только у крупных окон (на мелких панелях — шум)
-            if (r.width >= 400f && r.height >= 400f)
+            if (r.width >= 640f && r.height >= 480f)
             {
                 int motif = (int)((h / 16) % Motifs);
-                var engr = Layer(clip, "Engraving", Engraving(motif), new Color(Brass.r, Brass.g, Brass.b, 0.07f));
+                var engr = Layer(clip, "Engraving", Engraving(motif), new Color(Brass.r, Brass.g, Brass.b, 0.05f));
                 float es = Mathf.Clamp(Mathf.Min(r.width, r.height) * 0.9f, 300f, 440f);
                 Place(engr.rectTransform, corner, es, 0.28f);
                 engr.rectTransform.localRotation = Quaternion.Euler(0f, 0f, ((h / 80) % 31) - 15f);
