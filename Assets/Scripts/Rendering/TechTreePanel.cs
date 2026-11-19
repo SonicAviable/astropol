@@ -247,18 +247,19 @@ namespace StellarisClone.Rendering
             var head = LGBuild.Rect(_window.transform, "Header");
             head.TopBand(0, HeaderH);
 
+            // «Тихая латунь»: круглый латунный медальон вместо квадратной плашки
             var badge = LGBuild.Panel(head, "Badge", PanelBg);
-            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(46, 46));
-            var bfx = LG.Platter(badge.gameObject, 10f);
-            bfx.SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.4f));
-            bfx.FillMultiplier = 3f;
-            LGIcons.Create(badge.transform, LGIcon.Research, 26, Cyan);
+            badge.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(50, 50));
+            var bic = LGIcons.Create(badge.transform, LGIcon.Research, 24, Cyan);
+            bic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(24, 24));
+            var medal = LGAstrolabe.Attach(badge.gameObject, badge, null, round: true);
+            if (medal != null) medal.KeepIconColor = true;
 
-            _headerSub = LGBuild.Label(head, "", 12, Cyan, TextAnchor.UpperLeft, bold: true);
-            _headerSub.rectTransform.Stretch(78, 0, WinW - 78 - 340, 16);
-            _headerSub.Track(2.2f);
+            _headerSub = LGBuild.Label(head, "", 11, Gold, TextAnchor.UpperLeft, bold: true);
+            _headerSub.rectTransform.Stretch(82, 0, WinW - 82 - 340, 16);
+            _headerSub.Track(3f);
             var title = LGBuild.Label(head, Loc.T("Исследования"), 32, Primary, TextAnchor.LowerLeft, bold: true);
-            title.rectTransform.Stretch(78, 12, 1300, 0);
+            title.rectTransform.Stretch(82, 12, 1300, 0);
 
             // Фильтры: все / доступные / в работе / изученные
             var seg = LGBuild.Rect(head, "Filters");
@@ -281,8 +282,10 @@ namespace StellarisClone.Rendering
                 _filterBtns.Add((f, bg, lbl));
             }
 
-            _scienceChip = LGBuild.Label(head, "", 14, Primary, TextAnchor.MiddleRight, bold: true);
-            _scienceChip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-388, 2), new Vector2(220, 30));
+            // Наука — показатель в две строки: золотой ярлык и крупное значение
+            _scienceChip = LGBuild.Label(head, "", 22, new Color(0.56f, 0.89f, 0.78f), TextAnchor.MiddleRight, bold: true);
+            _scienceChip.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-392, 0), new Vector2(220, 52));
+            _scienceChip.lineSpacing = 0.85f;
 
             var line = LGBuild.Panel(head, "Line", new Color(Cyan.r, Cyan.g, Cyan.b, 0.18f));
             line.rectTransform.anchorMin = new Vector2(0, 0);
@@ -302,9 +305,9 @@ namespace StellarisClone.Rendering
         {
             var box = LGBuild.Panel(head, "SearchBox", UIManager.DS.BgVisor, raycast: true);
             box.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-72, 0), new Vector2(300, 38));
-            LG.Apply(box.gameObject, LiquidGlassEffect.Role.Field).SetRim(new Color(Cyan.r, Cyan.g, Cyan.b, 0.35f));
+            LG.Apply(box.gameObject, LiquidGlassEffect.Role.Field).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.45f));   // латунная кромка
 
-            var ic = LGIcons.Create(box.transform, LGIcon.Target, 14, Muted);
+            var ic = LGIcons.Create(box.transform, LGIcon.Target, 14, Gold);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(14, 14));
 
             var placeholder = LGBuild.Label(box.transform, Loc.T("Поиск технологии или эффекта…"), 13, new Color(Muted.r, Muted.g, Muted.b, 0.7f));
@@ -368,7 +371,7 @@ namespace StellarisClone.Rendering
             const float victoryH = 84f;
 
             var slots = SideCard("Slots", x0, BodyTop, slotsH);
-            _slotsCap = LGBuild.Label(slots, "", 12, Green, TextAnchor.UpperLeft, bold: true);
+            _slotsCap = LGBuild.Label(slots, "", 12, Gold, TextAnchor.UpperLeft, bold: true);
             _slotsCap.rectTransform.TopBand(14, 18, 16, 16);
             _slotsList = LGBuild.Rect(slots, "List");
             _slotsList.Stretch(10, 8, 10, 40);
@@ -470,13 +473,16 @@ namespace StellarisClone.Rendering
         {
             var vm = VictoryManager.Instance;
             int need = vm != null ? vm.ScienceRequired : tm.AllTechs.Count;
-            _headerSub.text = Loc.F("ИЗУЧЕНО {0} ИЗ {1}", tm.ResearchedCount, tm.AllTechs.Count) +
+            _headerSub.text = "◆  " + Loc.F("ИЗУЧЕНО {0} ИЗ {1}", tm.ResearchedCount, tm.AllTechs.Count) +
                               Loc.F("  ·  В ПЛАНЕ {0}", tm.Plan.Count);
-            _scienceChip.text = Loc.F("Наука <color={0}>+{1:0.#} / мес</color>", LGBuild.Hex(Green), tm.MonthlyResearchIncome);
+            _scienceChip.text = Loc.F("<size=10><color=#C9A96A>НАУКА</color></size>\n+{0:0.#} <size=13><color=#8F8A7C><i>/ мес</i></color></size>", tm.MonthlyResearchIncome);
             _victoryRing.fillAmount = Mathf.Clamp01(tm.ResearchedCount / (float)Mathf.Max(1, need));
             _victoryText.text = Loc.F("<size=11><color={0}><b>НАУЧНАЯ ПОБЕДА</b></color></size>\n<b>{1}</b> из {2} технологий  <color=#A9A392>· {3:0}%</color>",
                 LGBuild.Hex(Gold), tm.ResearchedCount, need, Mathf.Clamp01(tm.ResearchedCount / (float)Mathf.Max(1, need)) * 100f);
         }
+
+        /// <summary>Число во вкладке — мельче и приглушённо, отдельно от подписи.</summary>
+        private static string Count(int n) => $"  <size=10><color=#A9A392>{n}</color></size>";
 
         private void RefreshFilters()
         {
@@ -495,10 +501,10 @@ namespace StellarisClone.Rendering
                 if (bg.TryGetComponent<LGAstrolabe>(out var astro)) astro.Selected = on;
                 label.text = f switch
                 {
-                    Filter.Avail => Loc.F("Доступно {0}", avail),
-                    Filter.Work => Loc.F("В работе {0}", work),
-                    Filter.Done => Loc.F("Изучено {0}", tm.ResearchedCount),
-                    _ => Loc.F("Все {0}", tm.AllTechs.Count)
+                    Filter.Avail => Loc.T("Доступно") + Count(avail),
+                    Filter.Work => Loc.T("В работе") + Count(work),
+                    Filter.Done => Loc.T("Изучено") + Count(tm.ResearchedCount),
+                    _ => Loc.T("Все") + Count(tm.AllTechs.Count)
                 };
                 label.color = on ? Cyan : Muted;
                 bg.color = on ? new Color(Cyan.r * 0.18f, Cyan.g * 0.18f, Cyan.b * 0.18f, 0.9f) : new Color(0, 0, 0, 0);
@@ -1108,7 +1114,7 @@ namespace StellarisClone.Rendering
             _slotUis.Clear();
             int busy = 0;
             foreach (var s in tm.Slots) if (s.CurrentTech != null) busy++;
-            _slotsCap.text = Loc.F("СЛОТЫ НАУКИ  <color=#A9A392><size=11>{0} из {1} заняты</size></color>", busy, tm.Slots.Count);
+            _slotsCap.text = "◆  " + Loc.F("СЛОТЫ НАУКИ   <color=#8F8A7C><size=11><i>{0} из {1} заняты</i></size></color>", busy, tm.Slots.Count);
 
             var openers = new List<Technology>();
             foreach (var t in tm.AllTechs)
@@ -1133,15 +1139,14 @@ namespace StellarisClone.Rendering
 
         private RectTransform SlotRow(string name, float top, Color tint, Color rim)
         {
-            var bg = LGBuild.Panel(_slotsList, name, tint, raycast: true);
-            bg.rectTransform.TopBand(top, 40f, 0, 0);
-            var fx = LG.Platter(bg.gameObject, 10f);
-            fx.SetRim(rim);
-            fx.FillMultiplier = 2.6f;
-            fx.SpecularMultiplier = 0.15f;
-            // «Астролябия»: латунная плитка; цвет состояния слота — в подсветке при наведении
-            var astro = LGAstrolabe.Attach(bg.gameObject, bg, null, plain: true);
-            if (astro != null) astro.Gem = LGAstrolabe.GemOf(rim);
+            // «Тихая латунь»: строка без рамки, снизу тонкая латунная черта
+            var bg = LGBuild.Panel(_slotsList, name, new Color(0f, 0f, 0f, 0f), raycast: true);
+            bg.rectTransform.TopBand(top, 44f, 0, 0);
+            LG.Ignore(bg.gameObject, includeChildren: false);
+            var hair = LGBuild.Panel(bg.transform, "Hair", new Color(Gold.r, Gold.g, Gold.b, 0.16f));
+            hair.rectTransform.anchorMin = new Vector2(0, 0); hair.rectTransform.anchorMax = new Vector2(1, 0);
+            hair.rectTransform.offsetMin = new Vector2(4, 0); hair.rectTransform.offsetMax = new Vector2(-4, 1);
+            LG.Ignore(hair.gameObject);
             return bg.rectTransform;
         }
 
@@ -1154,23 +1159,22 @@ namespace StellarisClone.Rendering
             sel.transition = Selectable.Transition.None;
             sel.onClick.AddListener(() => Select(t));
 
-            var n = LGBuild.Label(rt, (i + 1).ToString(), 12, Muted, TextAnchor.MiddleCenter, bold: true);
-            n.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(18, 20));
-            var ic = TechIcon(rt, t, 26f, Color.Lerp(c, Color.white, 0.3f));
-            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(26, 26));
+            NumRing(rt, i, new Color(Gold.r, Gold.g, Gold.b, 0.6f));
+            var ic = TechIcon(rt, t, 24f, Color.Lerp(c, Color.white, 0.2f));
+            ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(30, 0), new Vector2(24, 24));
             string q = s.Queue.Count > 0 ? $"  <color={LGBuild.Hex(PathBlue)}>+{s.Queue.Count}</color>" : "";
-            var name = LGBuild.Label(rt, t.Name + q, 13, Primary, TextAnchor.UpperLeft, bold: true);
-            name.rectTransform.Stretch(58, 18, 104, 5);
+            var name = LGBuild.Label(rt, t.Name + q, 14, Primary, TextAnchor.UpperLeft, bold: true);
+            name.rectTransform.Stretch(62, 18, 104, 4);
             FitText(name, 10);
 
             var su = new SlotUi { Index = i };
             var barHost = LGBuild.Rect(rt, "Bar");
-            barHost.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(58, 8), new Vector2(SideW - 20 - 58 - 150, 6));
-            su.Bar = LGBuild.Bar(barHost, c, s.ProgressNormalized, 4f);
+            barHost.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(62, 9), new Vector2(SideW - 20 - 62 - 150, 5));
+            su.Bar = LGBuild.Bar(barHost, s.IsPaused ? new Color(0.62f, 0.58f, 0.48f) : new Color(0.94f, 0.80f, 0.50f), s.ProgressNormalized, 3f);   // тонкая золотая полоска
             su.Eta = LGBuild.Label(rt, "", 10, Muted, TextAnchor.MiddleLeft);
             su.Eta.rectTransform.At(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-58, 3), new Vector2(86, 16));
             FitText(su.Eta, 8);
-            su.Pct = LGBuild.Label(rt, "", 12, c, TextAnchor.MiddleRight, bold: true);
+            su.Pct = LGBuild.Label(rt, "", 13, new Color(0.94f, 0.79f, 0.53f), TextAnchor.MiddleRight, bold: true);
             su.Pct.rectTransform.At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-58, -3), new Vector2(46, 18));
             _slotUis.Add(su);
 
@@ -1186,11 +1190,22 @@ namespace StellarisClone.Rendering
             TooltipHelper.Attach(rt.gameObject, SlotsFooter(tm));
         }
 
+        /// <summary>Номер слота в тонком латунном кольце.</summary>
+        private static void NumRing(RectTransform row, int i, Color c)
+        {
+            var ring = LGBuild.Panel(row, "Num", c);
+            ring.sprite = HudArt.Ring(0.88f, 1f);
+            ring.raycastTarget = false;
+            ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(20, 20));
+            LG.Ignore(ring.gameObject);
+            var n = LGBuild.Label(ring.transform, (i + 1).ToString(), 11, new Color(0.906f, 0.827f, 0.639f), TextAnchor.MiddleCenter, bold: true);
+            n.rectTransform.Stretch();
+        }
+
         private void BuildFreeSlot(int i, float top, bool planReady)
         {
             var rt = SlotRow("Free" + i, top, new Color(Cyan.r * 0.06f, Cyan.g * 0.06f, Cyan.b * 0.06f, 0.6f), new Color(Cyan.r, Cyan.g, Cyan.b, 0.55f));
-            var n = LGBuild.Label(rt, (i + 1).ToString(), 12, Cyan, TextAnchor.MiddleCenter, bold: true);
-            n.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(4, 0), new Vector2(18, 20));
+            NumRing(rt, i, new Color(Cyan.r, Cyan.g, Cyan.b, 0.7f));
             var t = LGBuild.Label(rt, planReady ? Loc.T("Свободен — займётся из плана") : Loc.T("Свободен — выберите технологию на карте"),
                 13, Cyan, TextAnchor.MiddleLeft, bold: true);
             t.rectTransform.Stretch(30, 0, 10, 0);
@@ -1202,8 +1217,9 @@ namespace StellarisClone.Rendering
             var rt = SlotRow("Locked" + i, top, new Color(0.055f, 0.094f, 0.157f, 0.7f), new Color(1f, 1f, 1f, 0.05f));
             var ic = LGIcons.Create(rt, LGIcon.Lock, 12, Dim);
             ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(12, 12));
-            var t = LGBuild.Label(rt, opener != null ? Loc.F("Откроет: {0}", opener.Name) : Loc.T("Откроется технологией"), 12,
+            var t = LGBuild.Label(rt, opener != null ? Loc.F("Слот откроет «{0}»", opener.Name) : Loc.T("Откроется технологией"), 12,
                 new Color(Dim.r, Dim.g, Dim.b, 0.9f), TextAnchor.MiddleLeft);
+            t.fontStyle = FontStyle.Italic;
             t.rectTransform.Stretch(30, 0, 10, 0);
             FitText(t, 9);
             if (opener != null)
