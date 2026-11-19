@@ -1366,64 +1366,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private void CommitBody() { }
 
-        private void AddDistrictRowFor(PlanetData planet)
-        {
-            if (_districtRowRoot == null || planet == null) return;
-
-            DistrictType[] order = {
-                DistrictType.Urban, DistrictType.Mining,
-                DistrictType.Generator, DistrictType.Industrial
-            };
-
-            foreach (var dt in order)
-            {
-                int count = planet.GetDistrictCount(dt);
-                bool canBuild = planet.CanBuildDistrict(dt);
-                var eco = EconomyManager.Instance;
-                bool canAfford = eco != null
-                    && eco.Minerals >= DistrictInfo.MineralsCost(dt)
-                    && eco.Alloys >= DistrictInfo.AlloysCost(dt);
-                bool interactable = canBuild && canAfford;
-
-                Color dc = DistrictInfo.Color(dt);
-
-                var btnGo = new GameObject($"Dist_{dt}");
-                btnGo.transform.SetParent(_districtRowRoot.transform, false);
-
-                var img = btnGo.AddComponent<Image>();
-                img.color = interactable ? DS.BgVisor : new Color(0.055f, 0.094f, 0.157f, 0.7f);
-                img.raycastTarget = true;
-
-                var btn = btnGo.AddComponent<Button>();
-                btn.interactable = interactable;
-                LG.Button(btnGo, new Color(dc.r, dc.g, dc.b, interactable ? 0.65f : 0.22f), 12f);
-                var capturedDt = dt;
-                btn.onClick.AddListener(() =>
-                {
-                    if (planet.TryBuildDistrict(capturedDt))
-                    {
-                        RefreshResourceBar();
-                        ShowPlanetInspector(planet, _activeSystem, openOverview: false);
-                    }
-                });
-
-                var t = CreateText(btnGo.transform, "", 9, FontStyle.Bold, DS.TextPrimary, TextAnchor.MiddleCenter);
-                t.rectTransform.anchorMin = Vector2.zero;
-                t.rectTransform.anchorMax = Vector2.one;
-                t.rectTransform.offsetMin = new Vector2(2, 2);
-                t.rectTransform.offsetMax = new Vector2(-2, -2);
-
-                string nameShort = DistrictInfo.Name(dt).Split(' ')[0];
-                string status;
-                if (!canBuild) status = "■";
-                else if (!canAfford) status = "✕";
-                else status = "▶";
-
-                t.text = $"<color=#{ColorUtility.ToHtmlStringRGB(dc)}>{status}</color> " +
-                         $"{nameShort}\n" +
-                         $"<color=#A9A392>×{count}</color>";
-            }
-        }
 
         // ==================== СИСТЕМА / ПЛАНЕТА ====================
 
@@ -1507,113 +1449,17 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         private void OnSystemSelected(StarSystem system) => ShowSystemPanel(system);
 
+        /// <summary>
+        /// Планета: сразу полноэкранный обзор (PlanetFocusOverlay). Старое окно-инспектор планеты (обзор колонии,
+        /// кнопки районов, добывающая станция) убрано — в игре оно не работало, всё это есть в обзоре.
+        /// </summary>
         public void ShowPlanetInspector(PlanetData planet, StarSystem parentSystem, bool openOverview = true)
         {
             if (planet == null) return;
-            if (_inspStack == null || _inspTitle == null || _inspStatus == null) return;
-
             _activePlanet = planet;
             if (parentSystem != null) _activeSystem = parentSystem;
             CloseStarbaseWindow();
-
-            SetInspectorSchemaMode(false);
-            _inspTitle.text = PlanetNames.Title(planet.Name);
-            SetInspectorBadge(LGIcon.Planet, parentSystem != null ? StarTint(parentSystem.SpectralClass) : DS.NeonCyan,
-                parentSystem != null && parentSystem.OwnerId >= 0 ? FleetIndicator.OwnerColor(parentSystem.OwnerId) : new Color(0.663f, 0.639f, 0.573f),
-                GalaxyView.PlanetPortrait(parentSystem, planet));
-            _inspStatus.text = Loc.T("<color=#E5B842>◆  Планетарный объект</color>").Replace("◆  ", "");
-
-            bool isSurveyed = _activeSystem != null && _activeSystem.IsSurveyed;
-
-            PulseInspectorContent();
-            ClearInspectorBody();
-
-            if (!isSurveyed)
-            {
-                AddBodyHeader(Loc.T("КОЛОНИЯ"));
-                AddBodyLine(Loc.T("Информация о населении и производстве появится после разведки системы."));
-            }
-            else if (planet.Type == PlanetType.GasGiant || planet.Type == PlanetType.Molten)
-            {
-                AddBodyHeader(Loc.T("КОЛОНИЗАЦИЯ НЕВОЗМОЖНА"));
-                AddBodyLine(Loc.F("<color=#E5B842>Планета типа «{0}» непригодна для проживания.</color>", planet.Type));
-                AddBodyLine(Loc.T("Можно построить только добывающий комплекс."));
-            }
-            else
-            {
-                AddBodyHeader(Loc.T("ОБЗОР КОЛОНИИ"));
-                AddBodyLine(Loc.F("<color=#A9A392>Класс:</color> {0}", planet.Type));
-                AddBodyLine(Loc.F("<color=#A9A392>Районы:</color> {0} / {1}", planet.BuiltDistricts, planet.MaxDistricts));
-                AddBodyLine(Loc.F("<color=#A9A392>Залежи:</color> ◆ {0}  ⚡ {1}", planet.MineralDeposit, planet.EnergyDeposit));
-
-                AddBodyHeader(Loc.T("НАСЕЛЕНИЕ"));
-                int pop = planet.Population;
-                int housing = planet.HousingCapacity;
-                int employed = planet.EmployedPops;
-                int idle = planet.IdlePops;
-
-                string popColor = housing >= pop ? "#4DF08C" : "#FF6666";
-                AddBodyLine(Loc.F("<color=#A9A392>Население:</color> <color={0}>{1}</color> / {2} жилья", popColor, pop, housing));
-                AddBodyLine(Loc.F("<color=#A9A392>Рабочие:</color> {0}   ", employed) +
-                            Loc.F("<color=#A9A392>Безработные:</color> {0}", StatFormat.Colored(idle, "", "0;0;0")));
-
-                float growthPct = Mathf.Clamp(planet.PopGrowthProgress, 0f, 100f);
-                float speedPct = planet.PopGrowthBaseSpeedPctPerMonth;
-                AddBodyLine(Loc.F("<color=#A9A392>Рост:</color> {0}   ", StatFormat.Colored(speedPct, Loc.T("%/мес"))) +
-                            Loc.F("Прогресс: {0:F1}%", growthPct));
-
-                AddBodyHeader(Loc.T("ПРОИЗВОДСТВО / МЕСЯЦ"));
-                AddBodyLine(Loc.F("<color=#79D0BF>◆ Титан:</color> {0}", StatFormat.Positive("+" + planet.ProducedMineralsPerMonth)));
-                AddBodyLine(Loc.F("<color=#E5B842>⚡ Гелий-3:</color> {0}", StatFormat.Positive("+" + planet.ProducedEnergyPerMonth)));
-                AddBodyLine(Loc.F("<color=#79D0BF>⬢ Сплавы:</color> {0}", StatFormat.Positive("+" + planet.ProducedAlloysPerMonth)));
-            }
-
-            CommitBody();
-            InspCascade(-1000 - (_activeSystem != null ? _activeSystem.Id * 16 : 0) - (_activeSystem != null ? _activeSystem.Planets.IndexOf(planet) : 0));
-
-            if (isSurveyed && planet.Type != PlanetType.GasGiant && planet.Type != PlanetType.Molten)
-                AddDistrictRowFor(planet);
-
-            _inspShipyardBtn.gameObject.SetActive(false);
-            _inspActionBtn.gameObject.SetActive(true);
-
-            if (!planet.HasMiningStation)
-            {
-                if (!isSurveyed)
-                {
-                    _inspActionBtn.interactable = false;
-                    _inspActionBtnBg.color = new Color(0.075f, 0.125f, 0.220f);
-                    _inspActionBtnText.text = Loc.T("✕  ТРЕБУЕТСЯ РАЗВЕДКА СИСТЕМЫ");
-                }
-                else if (!planet.IsPlayerOwned)
-                {
-                    _inspActionBtn.interactable = false;
-                    _inspActionBtnBg.color = new Color(0.075f, 0.125f, 0.220f);
-                    _inspActionBtnText.text = Loc.T("✕  СИСТЕМА НЕ ПРИНАДЛЕЖИТ ВАМ");
-                }
-                else
-                {
-                    var eco = EconomyManager.Instance;
-                    bool canAfford = eco != null && eco.Minerals >= 50f;
-                    _inspActionBtn.interactable = canAfford;
-                    _inspActionBtnBg.color = canAfford ? DS.BtnSuccess : new Color(0.075f, 0.125f, 0.220f);
-                    _inspActionBtnText.text = canAfford
-                        ? Loc.T("▶  ДОБЫВАЮЩАЯ СТАНЦИЯ (50 ◆)")
-                        : Loc.T("✕  НЕДОСТАТОЧНО ТИТАНА (50 ◆)");
-                }
-            }
-            else
-            {
-                _inspActionBtn.interactable = false;
-                _inspActionBtnBg.color = new Color(0.10f, 0.25f, 0.18f);
-                _inspActionBtnText.text = Loc.T("✓  КОМПЛЕКС ФУНКЦИОНИРУЕТ");
-            }
-
-            LayoutInspector();
-            _inspTargetAlpha = 1f;
-            _inspectorGroup.blocksRaycasts = true;
-
-            // Клик по планете сразу открывает полноэкранный обзор (без промежуточного окна)
+            HideInspector();
             if (openOverview) PlanetFocusOverlay.Instance?.Open(planet, parentSystem);
         }
 

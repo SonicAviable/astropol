@@ -98,7 +98,10 @@ namespace StellarisClone.Rendering
         public void OnPointerEnter(PointerEventData e)
         {
             _over = true;
-            if (CanUseNow() && _sweep != null) { _sw = 0f; _sweep.enabled = true; }
+            // Блик-«пробег» — только у обычных кнопок: на высоких плитках он огромный, а у повёрнутых RectMask2D
+            // не обрезает его по рамке — на долю секунды мелькал квадрат
+            if (CanUseNow() && _sweep != null && _frame.rectTransform.rect.height <= 80f
+                && Mathf.Abs(Mathf.DeltaAngle(0f, transform.eulerAngles.z)) < 0.5f) { _sw = 0f; _sweep.enabled = true; }
         }
 
         public void OnPointerExit(PointerEventData e) { _over = false; _down = false; }
