@@ -245,8 +245,9 @@ namespace StellarisClone.Rendering
             }
             _eventFlash = Mathf.MoveTowards(_eventFlash, 0f, dt / 1.6f);
 
-            _badge.gameObject.SetActive(IsLeader);
-            _stem.enabled = IsLeader;
+            bool shown = IsLeader && !GalaxyView.CleanPolitical;   // политическая карта — без значков флотов
+            if (_badge.gameObject.activeSelf != shown) _badge.gameObject.SetActive(shown);
+            _stem.enabled = shown;
 
             RefreshStyle();
             Place();

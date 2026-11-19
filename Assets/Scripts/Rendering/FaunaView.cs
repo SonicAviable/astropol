@@ -101,7 +101,7 @@ namespace StellarisClone.Rendering
                 v.Tick(this, t, dt, anchor);
                 v.ApplyAlpha();
                 AmbientCall(v, t);
-                v.ShowLabel(this, v.Alpha);
+                v.ShowLabel(this, GalaxyView.CleanPolitical ? 0f : v.Alpha);
             }
             _trails.Simulate(dt);
             _trails.Upload(_shown);

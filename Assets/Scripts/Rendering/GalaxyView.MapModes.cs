@@ -43,6 +43,10 @@ namespace StellarisClone.Rendering
         /// <summary>Названия империй — только в политическом режиме и в режиме шпионажа.</summary>
         private bool ShowEmpireLabels => IsMode(MapModeController.MapMode.Political) || IsMode(MapModeController.MapMode.Intel);
 
+        /// <summary>Политическая карта: только границы, крупные названия и гербы империй — значки флотов, поселений,
+        /// таблички систем и подписи фауны скрыты.</summary>
+        public static bool CleanPolitical => Instance != null && !Instance._isolated && Instance.IsMode(MapModeController.MapMode.Political);
+
         /// <summary>Применить режим: метки систем, видимость названий; коридоры перекрашивает UpdateHyperlaneColors.</summary>
         private void ApplyMapModeOverlay()
         {
@@ -51,6 +55,13 @@ namespace StellarisClone.Rendering
                 if (kv.Value == null) continue;
                 if (!ShowEmpireLabels) kv.Value.SetActive(false);
                 else if (kv.Key == 0 && !_isolated) kv.Value.SetActive(true);   // название игрока само не возвращается
+            }
+            if (!_isolated)
+            {
+                bool clean = CleanPolitical;
+                if (_markersRoot != null) _markersRoot.SetActive(!clean);
+                foreach (var kvp in _nameplates)
+                    if (kvp.Value != null) kvp.Value.SetVisible(!clean);
             }
             _modeScan = 0f;
             RefreshModeMarks();

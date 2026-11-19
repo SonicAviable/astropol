@@ -861,8 +861,10 @@ namespace StellarisClone.Rendering
         {
             if (_cam == null) return;
             float dist = Vector3.Distance(_cam.position, transform.position);
-            float scale = Mathf.Clamp(dist * 0.008f, 0.85f, 2.6f);
+            // Крупно, как в Stellaris: название читается на всю территорию; поворот — по камере (Q/E), не боком
+            float scale = Mathf.Clamp(dist * 0.028f, 0.85f, 14f);
             transform.localScale = Vector3.one * scale;
+            transform.rotation = Quaternion.Euler(90f, _cam.eulerAngles.y, 0f);
 
             // Как в Stellaris: название империи — для обзора издалека, вблизи плавно исчезает
             if (_text == null) { _text = GetComponent<TextMesh>(); if (_text != null) _baseColor = _text.color; }
