@@ -2494,6 +2494,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 new Color(0.075f, 0.125f, 0.220f, 1f), DS.Red, onClick);
             LG.Button(go, new Color(1f, 0.45f, 0.48f, 0.55f), size * 0.5f);
             LGIcons.Create(go.transform, LGIcon.Close, size * 0.4f, Color.white);
+            LGAstrolabe.Attach(go, go.GetComponent<Image>(), null, round: true);   // латунный медальон
             return go;
         }
     }

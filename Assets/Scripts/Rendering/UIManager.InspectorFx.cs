@@ -270,37 +270,20 @@ namespace StellarisClone.Rendering
         /// </summary>
         private Button InspGameButton(Transform parent, string name, LGIcon icon, string label, Color accent, bool enabled, System.Action act, Vector2 size, bool primary = false)
         {
-            Color muted = new Color(0.663f, 0.639f, 0.573f);
-            Color cream = new Color(0.925f, 0.898f, 0.827f);
-            Color inkText = new Color(0.086f, 0.125f, 0.184f);
-            var go = CreateButton(parent, name, size, new Color(0.133f, 0.196f, 0.310f, 0.97f), enabled ? accent : muted, act);
+            var go = CreateButton(parent, name, size, new Color(0.133f, 0.196f, 0.310f, 0.97f), accent, act);
             var btn = go.GetComponent<Button>();
             btn.interactable = enabled;
-            if (primary)
-            {
-                var img = go.GetComponent<Image>();
-                img.color = enabled ? cream : new Color(0.45f, 0.44f, 0.40f, 0.6f);
-                var fx = LG.Fill(go);
-                if (fx != null) { fx.Radius = 999f; fx.Chamfer = false; fx.GlowMultiplier = 0f; fx.SpecularMultiplier = 0f; }
-            }
-            Color fg = primary ? inkText : enabled ? cream : muted;
 
-            // Значок и подпись — единой строкой по центру: значок слева от текста
-            var t = CreateText(go.transform, LGBuild.Sentence(label), 12, FontStyle.Normal, fg, TextAnchor.MiddleCenter);
-            t.font = GameFont.MonoMedium;
+            // «Астролябия»: подпись по центру, место по бокам — под камни цвета действия
+            var t = CreateText(go.transform, label, 13, FontStyle.Normal, Color.white, TextAnchor.MiddleCenter);
             t.rectTransform.anchorMin = Vector2.zero;
             t.rectTransform.anchorMax = Vector2.one;
-            t.rectTransform.offsetMin = new Vector2(34f, 0);
-            t.rectTransform.offsetMax = new Vector2(-18f, 0);
-            t.Track(0.4f);
+            t.rectTransform.offsetMin = new Vector2(24f, 1f);
+            t.rectTransform.offsetMax = new Vector2(-24f, 0);
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = 12;
-            float tw = Mathf.Min(t.preferredWidth, size.x - 52f);
-            var ic = LGIcons.Create(go.transform, icon, 15f, primary ? inkText : enabled ? LGTone.AtlasFill(accent) : muted);
-            ic.raycastTarget = false;
-            ic.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(8f - tw * 0.5f - 14f, 0), new Vector2(15, 15));
-            t.rectTransform.offsetMin = new Vector2(Mathf.Max(34f, size.x * 0.5f - tw * 0.5f + 8f), 0);
-            t.rectTransform.offsetMax = new Vector2(-Mathf.Max(18f, size.x * 0.5f - tw * 0.5f - 8f), 0);
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 9; t.resizeTextMaxSize = 13;
+            var a = LGAstrolabe.Attach(go, go.GetComponent<Image>(), t, primary);
+            if (a != null && !primary) a.Gem = LGAstrolabe.GemOf(accent);
             return btn;
         }
 

@@ -384,6 +384,7 @@ namespace StellarisClone.Rendering
             sub = LGBuild.Label(b.transform, "", 10, Color.Lerp(c, Color.white, 0.25f), TextAnchor.UpperLeft, wrap: true);
             sub.rectTransform.Stretch(56, 6, 6, 38);
             TooltipHelper.Attach(b.gameObject, tip);
+            Astrolabe(b, c);
             return b;
         }
 
@@ -563,6 +564,18 @@ namespace StellarisClone.Rendering
         private static Button FlatButton(Transform parent, string name, Color bg, Color rim, System.Action act)
             => LGBuild.Button(parent, name, bg, rim, act);
 
+        /// <summary>Плитка или вкладка в стиле «Астролябия»: латунная рамка, своё содержимое (значок, строки) остаётся.</summary>
+        private static LGAstrolabe Astrolabe(Button b, Color gem, bool selected = false)
+        {
+            var game = b.GetComponent<LGGameButton>();
+            if (game != null) Object.DestroyImmediate(game);
+            var a = LGAstrolabe.Attach(b.gameObject, b.GetComponent<Image>(), null);
+            if (a == null) return null;
+            a.Gem = LGAstrolabe.GemOf(gem);
+            a.Selected = selected;
+            return a;
+        }
+
         // ==================== ПЕРЕСТРОЙКА ====================
 
         private void RebuildAll()
@@ -640,8 +653,11 @@ namespace StellarisClone.Rendering
                 r.offsetMin = new Vector2(i == 0 ? 0 : 3, 0); r.offsetMax = new Vector2(i == n - 1 ? 0 : -3, 0);
                 var ic = LGIcons.Create(btn.transform, unlocked ? ModuleVisuals.HullIcon(h.Class) : LGIcon.Lock, 16, unlocked ? (selected ? Neon : Primary) : Muted);
                 ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(16, 16));
-                var t = LGBuild.Label(btn.transform, h.DisplayName.ToUpper(), 11, unlocked ? Color.white : Muted, TextAnchor.MiddleCenter, bold: true);
-                t.rectTransform.Stretch(26, 0, 4, 0);
+                var t = LGBuild.Label(btn.transform, h.DisplayName.ToUpper(), 11, selected ? new Color(0.957f, 0.851f, 0.584f) : unlocked ? Color.white : Muted, TextAnchor.MiddleCenter, bold: true);
+                t.rectTransform.Stretch(26, 0, 10, 0);
+                t.font = GameFont.Display;
+                t.Track(1.6f);
+                Astrolabe(btn, selected ? Neon : Color.gray, selected);
                 TooltipHelper.Attach(btn.gameObject, unlocked
                     ? Loc.F("<b>{0}</b>\nСлотов: оружие {1} · защита {2} · спецмодули {3}\n", h.DisplayName, h.WeaponSlots, h.DefenseSlots, h.UtilitySlots) +
                       Loc.F("Корпус {0:0} · броня {1:0} · щиты {2:0} · уклонение {3:0}\n", h.BaseHull, h.BaseArmor, h.BaseShields, h.BaseEvasion) +

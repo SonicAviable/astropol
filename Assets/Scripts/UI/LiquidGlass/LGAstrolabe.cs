@@ -127,6 +127,7 @@ namespace StellarisClone.Rendering
             LG.Ignore(_frame.gameObject);
 
             _frame.type = Round ? Image.Type.Simple : Image.Type.Sliced;
+            _frame.preserveAspect = Round;   // медальон остаётся кругом и в неквадратной кнопке
             _frame.pixelsPerUnitMultiplier = 1f;
             _frame.color = _setTint = Color.white;
             var drop = _frame.GetComponent<Shadow>();
@@ -140,6 +141,7 @@ namespace StellarisClone.Rendering
 
             _glow = Layer(_frame.transform, "AB_Glow", Round ? MenuArt.SoftDisc : Glow);
             Stretch(_glow.rectTransform, Round ? 4f : 2f);
+            _glow.preserveAspect = Round;
 
             if (!Round)
             {
@@ -156,6 +158,7 @@ namespace StellarisClone.Rendering
 
             _hair = Layer(_frame.transform, "AB_Hair", Round ? Ring : Hair);
             if (!Round) _hair.type = Image.Type.Sliced;
+            _hair.preserveAspect = Round;
             _hair.pixelsPerUnitMultiplier = 1f;
 
             if (!Round)

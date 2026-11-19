@@ -51,8 +51,24 @@ namespace StellarisClone.Rendering
             if (r.width < 1f) return;                                   // размер ещё не выставлен
             _done = true;
             enabled = false;
+            if (r.width <= 64f && r.height <= 64f && Mathf.Abs(r.width - r.height) <= 12f) { Medallion(); return; }
             if (r.width < (Compact ? 60f : 150f) || r.height < (Compact ? 24f : 28f) || r.height > 58f) return;
             Apply();
+        }
+
+        /// <summary>Маленькая кнопка-значок (или с подписью в 1–2 знака, например «?») — круглый латунный медальон.</summary>
+        private void Medallion()
+        {
+            var img = GetComponent<Image>();
+            if (img == null || transform.childCount == 0) return;
+            var t = GetComponentInChildren<Text>(true);
+            if (t != null)
+            {
+                if (t.text != null && t.text.Trim().Length > 2) return;
+                t.font = GameFont.Display;
+                t.fontStyle = FontStyle.Normal;
+            }
+            LGAstrolabe.Attach(gameObject, img, null, round: true);
         }
 
         private void Apply()

@@ -2170,6 +2170,9 @@ namespace StellarisClone.Rendering
             st.rectTransform.offsetMin = new Vector2(46, 2);
             st.rectTransform.offsetMax = new Vector2(-8, -1);
             TooltipHelper.Attach(b.gameObject, title);
+            // «Астролябия»: плитка в латунной рамке, камни — цвет проекта; заливку, которую ставит SetAction, рамка перекрывает
+            var astro = LGAstrolabe.Attach(b.gameObject, b.GetComponent<Image>(), null);
+            if (astro != null) astro.Gem = LGAstrolabe.GemOf(accent);
             return new ActionButton { Btn = b, Bg = b.GetComponent<Image>(), Icon = ic, Badge = badge, Status = st, Tint = tint, Accent = accent,
                                       Tip = b.GetComponent<TooltipTrigger>() };
         }
