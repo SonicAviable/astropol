@@ -291,7 +291,8 @@ namespace StellarisClone.Rendering
             _chartChecked = true;
             var rr = ResolveRole();
             bool window = (rr == Role.Glass || rr == Role.Platter) && FindParentSurface() == null;   // колонки и карточки внутри окна — не окна
-            if (window && r.width >= 240f && r.height >= 160f && !CoversScreen(r))
+            bool round = ResolveRadii().x >= Mathf.Min(r.width, r.height) * 0.4f;   // круглые (мини-карта) — без прямоугольной рамки
+            if (window && !round && r.width >= 240f && r.height >= 160f && !CoversScreen(r))
                 LGObservatory.Attach(gameObject, ResolveRadii().x);
         }
 

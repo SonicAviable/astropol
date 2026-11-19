@@ -24,6 +24,7 @@ namespace StellarisClone.Rendering
         private readonly Dictionary<MapMode, Image> _buttonAccents = new Dictionary<MapMode, Image>();
         private readonly Dictionary<MapMode, Color> _buttonAccentColors = new Dictionary<MapMode, Color>();
         private readonly Dictionary<MapMode, Image> _buttonIcons = new Dictionary<MapMode, Image>();
+        private readonly Dictionary<MapMode, LGAstrolabe> _buttonAstros = new Dictionary<MapMode, LGAstrolabe>();
         private readonly Dictionary<MapMode, string> _modeNames = new Dictionary<MapMode, string>();
         private Text _modeCaption;
         private static readonly Color BtnIdle = new Color(0.030f, 0.070f, 0.098f, 0.95f);
@@ -181,6 +182,10 @@ namespace StellarisClone.Rendering
 
             _buttonBgs[mode] = bg;
             _buttonAccents[mode] = sImg;
+            // «Астролябия»: латунный медальон; значок — цвета режима, активный режим — подсвечен
+            sImg.enabled = false;
+            var astro = LGAstrolabe.Attach(btnObj, bg, null, round: true);
+            if (astro != null) { astro.KeepIconColor = true; astro.Gem = accent; _buttonAstros[mode] = astro; }
 
             string tip = mode switch
             {
@@ -231,6 +236,7 @@ namespace StellarisClone.Rendering
                 kv.Value.color = active ? new Color(ac.r * 0.40f, ac.g * 0.40f, ac.b * 0.40f, 0.96f) : BtnIdle;
                 if (_buttonAccents.TryGetValue(kv.Key, out var ring)) ring.color = new Color(ac.r, ac.g, ac.b, active ? 1f : 0.45f);
                 if (_buttonIcons.TryGetValue(kv.Key, out var ic)) ic.color = active ? Color.white : ac;
+                if (_buttonAstros.TryGetValue(kv.Key, out var astro)) astro.Selected = active;
             }
             if (_modeCaption != null && _modeNames.TryGetValue(mode, out var name))
                 _modeCaption.text = Loc.F("РЕЖИМ · {0}", name);

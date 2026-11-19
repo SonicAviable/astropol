@@ -40,6 +40,8 @@ namespace StellarisClone.Rendering
         public bool Round;
         /// <summary>Выбранная вкладка: подпись золотая, шкала горит.</summary>
         public bool Selected;
+        /// <summary>Медальон не перекрашивает значок — у него свой цвет (например, цвет режима карты).</summary>
+        public bool KeepIconColor;
         /// <summary>Плитка (ячейка сетки): рамка без камней и шкалы — их много рядом, иначе рябит.</summary>
         public bool Plain;
         /// <summary>Цвет камней — смысл действия.</summary>
@@ -295,7 +297,7 @@ namespace StellarisClone.Rendering
             float sel = Selected ? 1f : 0f;
             _glow.color = !can ? Color.clear
                 : Primary ? new Color(1f, 0.98f, 0.9f, 0.10f + 0.28f * h)
-                : new Color(Gem.r, Gem.g, Gem.b, 0.05f + 0.22f * h + 0.15f * sel);
+                : new Color(Gem.r, Gem.g, Gem.b, 0.05f + 0.22f * h + 0.35f * sel);
             _hair.color = !can ? new Color(0.42f, 0.48f, 0.44f, 0.22f)
                 : Primary ? new Color(0.27f, 0.19f, 0.05f, 0.45f)
                 : new Color(Brass.r, Brass.g, Brass.b, Mathf.Lerp(0.26f, 0.55f, Mathf.Max(h, sel)));
@@ -333,7 +335,7 @@ namespace StellarisClone.Rendering
                 _label.rectTransform.offsetMin = _labelMin + shift;
                 _label.rectTransform.offsetMax = _labelMax + shift;
             }
-            if (_icon != null) _icon.color = lc == LabelPrimary ? LabelNormal : lc;
+            if (_icon != null && !KeepIconColor) _icon.color = lc == LabelPrimary ? LabelNormal : lc;
 
             if (_sw >= 0f && _sweep != null)
             {
