@@ -49,10 +49,10 @@ namespace StellarisClone.Rendering
         /// <summary>Строка настройки: подпись и пояснение слева, контрол справа. Возвращает хост контрола.</summary>
         public static RectTransform Row(RectTransform parent, ref float top, string label, string desc, float controlWidth = 300f, float height = 62f)
         {
-            var bg = LGBuild.Panel(parent, "Row_" + label, new Color(0.055f, 0.094f, 0.157f, 0.55f), raycast: true);
+            var bg = LGBuild.Panel(parent, "Row_" + label, new Color(0.055f, 0.094f, 0.157f, 0.88f), raycast: true);
             bg.rectTransform.TopBand(top, height);
             var fx = LG.Platter(bg.gameObject, 2f);
-            fx.FillMultiplier = 0.7f;
+            fx.FillMultiplier = 1f;
             fx.GlowMultiplier = 0f;
             bg.gameObject.AddComponent<RowHover>();
 
