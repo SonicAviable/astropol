@@ -223,6 +223,8 @@ namespace StellarisClone.Rendering
             Color accent = KindColor(e.Kind);
             var bg = LGBuild.Panel(_list, "Entry", new Color(0.475f, 0.816f, 0.749f, 0.045f), raycast: true);
             LGBuild.Height(bg.gameObject, hasBody ? 58f : 36f);
+            // Строка — не кнопка оформления: иначе общий скин превращал строки «с местом» (у них Button) в старые капсулы
+            LG.Ignore(bg.gameObject);
             var edge = LGBuild.Panel(bg.transform, "Edge", new Color(accent.r, accent.g, accent.b, 0.85f));
             edge.rectTransform.anchorMin = new Vector2(0, 0); edge.rectTransform.anchorMax = new Vector2(0, 1);
             edge.rectTransform.offsetMin = new Vector2(0, 6); edge.rectTransform.offsetMax = new Vector2(3, -6);

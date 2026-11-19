@@ -299,8 +299,8 @@ namespace StellarisClone.Rendering
             var rt = (RectTransform)b.transform;
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
             rt.pivot = new Vector2(0, 0.5f);
-            rt.sizeDelta = new Vector2(50, 44);
-            rt.anchoredPosition = new Vector2(col * 56f, row == 0 ? 25f : -25f);
+            rt.sizeDelta = new Vector2(46, 46);
+            rt.anchoredPosition = new Vector2(col * 56f + 2f, row == 0 ? 25f : -25f);
             TooltipHelper.Attach(b.gameObject, $"<b>{title}</b>\n{tip}");
             return b;
         }
@@ -315,10 +315,6 @@ namespace StellarisClone.Rendering
             // «Атлас»: кнопка дока — сплошная сине-стальная капсула с мягкой кромкой
             img.sprite = HudArt.Pill();
             img.type = Image.Type.Sliced;
-            var fr = LGBuild.Panel(img.transform, "Frame", new Color(0.925f, 0.898f, 0.827f, 0.26f));
-            fr.sprite = HudArt.Pill(1.2f);
-            fr.type = Image.Type.Sliced;
-            fr.rectTransform.Stretch();
             if (icon.HasValue)
             {
                 var ic = LGIcons.Create(img.transform, icon.Value, iconSize, UIManager.DS.TextPrimary);
@@ -337,6 +333,9 @@ namespace StellarisClone.Rendering
             cb.fadeDuration = 0.08f;
             b.colors = cb;
             b.onClick.AddListener(() => onClick?.Invoke());
+            // «Астролябия»: кнопки-значки — латунные медальоны, высокий переключатель «Авто» — латунная плитка
+            LG.Ignore(img.gameObject, includeChildren: false);
+            LGAstrolabe.Attach(img.gameObject, img, null, round: icon.HasValue, plain: !icon.HasValue);
             return b;
         }
 
