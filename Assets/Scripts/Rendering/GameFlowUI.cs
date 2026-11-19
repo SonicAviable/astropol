@@ -349,10 +349,14 @@ namespace StellarisClone.Rendering
             mark.offsetMin = new Vector2(620, 0);
             mark.offsetMax = Vector2.zero;
             LG.Ignore(mark.gameObject);
-            var big = LGBuild.Label(mark, Loc.T("ПАУЗА"), 120, new Color(0.92f, 0.97f, 0.98f, 0.12f), TextAnchor.MiddleCenter, bold: true);
+            // Надпись — заглавными с широкой разрядкой, латунью и почти прозрачная: метка поверх карты, а не заголовок
+            var big = LGBuild.Label(mark, "", 96, Color.white, TextAnchor.MiddleCenter, bold: true);
+            big.text = Loc.T("ПАУЗА");   // после создания: Label делает крупные жирные подписи строчными
+            big.color = new Color(1f, 1f, 1f, 0.16f);
             big.rectTransform.Stretch(0, 40, 0, 0);
-            big.Track(30f);
-            _sideMarkDate = LGBuild.Label(mark, "", 18, new Color(0.55f, 0.65f, 0.70f, 0.9f), TextAnchor.MiddleCenter);
+            big.Track(42f);
+            LGTextGradient.Apply(big, new Color(1f, 0.96f, 0.86f), new Color(0.78f, 0.60f, 0.33f));
+            _sideMarkDate = LGBuild.Label(mark, "", 15, new Color(0.906f, 0.757f, 0.439f, 0.75f), TextAnchor.MiddleCenter);
             _sideMarkDate.rectTransform.Stretch(0, 0, 0, 0);
             _sideMarkDate.rectTransform.offsetMax = new Vector2(0, -620);
             _sideMarkDate.rectTransform.offsetMin = new Vector2(0, 360);
@@ -366,7 +370,7 @@ namespace StellarisClone.Rendering
             _sidePanel.pivot = new Vector2(0, 0.5f);
             _sidePanel.offsetMin = new Vector2(-24, -24);
             _sidePanel.offsetMax = new Vector2(580, 24);
-            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.35f));
+            LG.Glass(panel.gameObject, 24f).SetRim(new Color(0.906f, 0.757f, 0.439f, 0.40f));   // латунная кромка
             var mo = LG.Motion(panel.gameObject, LGAppear.Kind.SlideLeft);
             mo.distance = 90f;
             mo.inDuration = 0.45f;
@@ -394,7 +398,8 @@ namespace StellarisClone.Rendering
             shade.sprite = MenuArt.VerticalFade;
             shade.rectTransform.Stretch();
             LG.Ignore(shade.gameObject);
-            var cap = LGBuild.Label(head, Loc.F("ПАУЗА  ·  {0}", date), 13, UIManager.DS.NeonCyan, TextAnchor.LowerLeft, bold: true);
+            var cap = LGBuild.Label(head, "◆  " + Loc.F("ПАУЗА  ·  {0}", date), 12, new Color(0.906f, 0.757f, 0.439f), TextAnchor.LowerLeft, bold: true);
+            cap.Track(2.5f);
             cap.rectTransform.Stretch(40, 82, 20, 0);
             var name = LGBuild.Label(head, faction?.Name ?? Loc.T("Империя"), 34, Color.white, TextAnchor.LowerLeft, bold: true);
             name.rectTransform.Stretch(40, 38, 20, 0);
@@ -412,32 +417,55 @@ namespace StellarisClone.Rendering
                 (EmpireStats.TechCount(0).ToString(), Loc.T("ТЕХНОЛОГИЙ"), new Color(0.62f, 0.72f, 1f)),
                 (Mathf.RoundToInt(EmpireStats.MilitaryPower(0)).ToString(), Loc.T("МОЩЬ ФЛОТА"), new Color(1f, 0.55f, 0.45f)),
             };
+            // «Тихая латунь»: цифры между двумя латунными линиями, столбцы разделены тонкими чертами (без коробок)
+            var brass = new Color(0.906f, 0.757f, 0.439f);
+            foreach (bool top in new[] { true, false })
+            {
+                var rl = LGBuild.Panel(strip, "Rule", new Color(brass.r, brass.g, brass.b, 0.35f));
+                rl.raycastTarget = false;
+                rl.rectTransform.anchorMin = new Vector2(0, top ? 1 : 0); rl.rectTransform.anchorMax = new Vector2(1, top ? 1 : 0);
+                rl.rectTransform.offsetMin = new Vector2(0, top ? -1 : 0); rl.rectTransform.offsetMax = new Vector2(0, top ? 0 : 1);
+                LG.Ignore(rl.gameObject);
+            }
             for (int i = 0; i < stats.Length; i++)
             {
-                var tile = LGBuild.Panel(strip, "Stat", new Color(0.03f, 0.06f, 0.10f, 0.9f));
-                tile.rectTransform.anchorMin = new Vector2(i / 4f, 0);
-                tile.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
-                tile.rectTransform.offsetMin = new Vector2(i == 0 ? 0 : 5, 0);
-                tile.rectTransform.offsetMax = new Vector2(i == 3 ? 0 : -5, 0);
-                LG.Platter(tile.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, 0.08f));
-                var v = LGBuild.Label(tile.transform, stats[i].v, 24, stats[i].c, TextAnchor.UpperCenter, bold: true);
-                v.rectTransform.Stretch(4, 0, 4, 10);
-                var k = LGBuild.Label(tile.transform, stats[i].k, 10, UIManager.DS.TextMuted, TextAnchor.LowerCenter, bold: true);
-                k.rectTransform.Stretch(4, 10, 4, 0);
+                var cell = LGBuild.Rect(strip, "Stat");
+                cell.anchorMin = new Vector2(i / 4f, 0);
+                cell.anchorMax = new Vector2((i + 1) / 4f, 1);
+                cell.offsetMin = cell.offsetMax = Vector2.zero;
+                if (i > 0)
+                {
+                    var sep = LGBuild.Panel(cell, "Sep", new Color(brass.r, brass.g, brass.b, 0.22f));
+                    sep.raycastTarget = false;
+                    sep.rectTransform.anchorMin = new Vector2(0, 0.2f); sep.rectTransform.anchorMax = new Vector2(0, 0.8f);
+                    sep.rectTransform.offsetMin = Vector2.zero; sep.rectTransform.offsetMax = new Vector2(1, 0);
+                    LG.Ignore(sep.gameObject);
+                }
+                Color vc = i == 3 ? new Color(1f, 0.69f, 0.54f) : new Color(0.94f, 0.79f, 0.53f);
+                var v = LGBuild.Label(cell, stats[i].v, 26, vc, TextAnchor.UpperCenter);
+                v.font = GameFont.Display; v.fontStyle = FontStyle.Normal;
+                v.rectTransform.Stretch(4, 0, 4, 9);
+                var k = LGBuild.Label(cell, stats[i].k, 9, UIManager.DS.TextMuted, TextAnchor.LowerCenter, bold: true);
+                k.rectTransform.Stretch(4, 11, 4, 0);
+                k.Track(1.8f);
             }
 
             // Продолжить — главная кнопка
             float y = 372f;
             var cont = MenuPrimaryButton.Create(host, Loc.T("ПРОДОЛЖИТЬ"), 18, () => ClosePause());
             ((RectTransform)cont.transform).TopBand(y, 60f, 40, 40);
-            y += 72f;
+            y += 70f;
 
+            // Кнопки — по группам с золотыми ярлыками: не сплошная стена из девяти одинаковых кнопок
+            Group(ref y, Loc.T("ПАРТИЯ"));
             var save = Item(ref y, Loc.T("СОХРАНИТЬ"), UIManager.DS.Green, OpenSave);
             if (!SaveSystem.CanSaveNow) save.GetComponentInParent<Button>().interactable = false;
             Item(ref y, Loc.T("ЗАГРУЗИТЬ"), new Color(0.55f, 0.8f, 1f), () => OpenFull(true));
-            Item(ref y, Loc.T("ЦЕЛИ И ПОБЕДА"), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Goals));
-            Item(ref y, Loc.F("ДОСТИЖЕНИЯ  ·  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), new Color(0.55f, 0.8f, 1f), () => ShowPage(Page.Achievements));
-            Item(ref y, Loc.T("ИТОГИ ПАРТИИ"), new Color(0.55f, 0.8f, 1f), () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
+            Group(ref y, Loc.T("ИМПЕРИЯ"));
+            Item(ref y, Loc.T("ЦЕЛИ И ПОБЕДА"), new Color(1f, 0.82f, 0.45f), () => ShowPage(Page.Goals));
+            Item(ref y, Loc.F("ДОСТИЖЕНИЯ  ·  {0}/{1}", Achievements.UnlockedCount(), Achievements.Total), new Color(1f, 0.82f, 0.45f), () => ShowPage(Page.Achievements));
+            Item(ref y, Loc.T("ИТОГИ ПАРТИИ"), new Color(1f, 0.82f, 0.45f), () => { ClosePause(resume: false); GameSummaryWindow.Open(); });
+            Group(ref y, Loc.T("ИГРА"));
             Item(ref y, Loc.T("НАСТРОЙКИ"), new Color(0.7f, 0.8f, 0.85f), () => OpenFull(false));
             Item(ref y, Loc.T("УПРАВЛЕНИЕ"), new Color(0.7f, 0.8f, 0.85f), () => ShowPage(Page.Controls));
             Item(ref y, Loc.T("ОБРАТНАЯ СВЯЗЬ"), new Color(0.7f, 0.8f, 0.85f), () => FeedbackWindow.Open(_modalRoot));
@@ -449,7 +477,7 @@ namespace StellarisClone.Rendering
             exitRow.pivot = new Vector2(0.5f, 0);
             exitRow.offsetMin = new Vector2(40, 52);
             exitRow.offsetMax = new Vector2(-40, 104);
-            _restartLabel = Third(exitRow, 0, Loc.T("НАЧАТЬ ЗАНОВО"), new Color(0.7f, 0.8f, 0.85f), () =>
+            _restartLabel = Third(exitRow, 0, Loc.T("ЗАНОВО"), new Color(0.7f, 0.8f, 0.85f), () =>
             {
                 if (_restartArmed > 0f) { RestartGame(); return; }
                 _restartArmed = 3f;
@@ -468,6 +496,8 @@ namespace StellarisClone.Rendering
                 _quitLabel.text = Loc.T("ЕЩЁ РАЗ");
             });
 
+            var rb = _restartLabel != null ? _restartLabel.GetComponentInParent<Button>() : null;
+            if (rb != null) TooltipHelper.Attach(rb.gameObject, Loc.T("<b>Начать заново</b>\nНовая партия с теми же настройками. Нажмите дважды"));
             var hint = LGBuild.Label(host, Loc.T("Esc — вернуться в игру   ·   F5 — быстрое сохранение"), 11, UIManager.DS.TextMuted, TextAnchor.LowerCenter);
             hint.rectTransform.Stretch(40, 18, 40, 0);
             LG.Skin(host);
@@ -486,10 +516,23 @@ namespace StellarisClone.Rendering
 
         private Text Item(ref float y, string label, Color rim, System.Action onClick)
         {
-            var b = LGBuild.Button(_sideHost, "Btn", UIManager.DS.BtnNeutral, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, 14);
-            ((RectTransform)b.transform).TopBand(y, 50f, 40, 40);
-            y += 58f;
+            var b = LGBuild.Button(_sideHost, "Btn", UIManager.DS.BtnNeutral, new Color(rim.r, rim.g, rim.b, 0.7f), onClick, null, label, 13);
+            ((RectTransform)b.transform).TopBand(y, 42f, 40, 40);
+            y += 50f;
             return b.GetComponentInChildren<Text>();
+        }
+
+        /// <summary>Ярлык группы кнопок: латунный ромб, заглавные с разрядкой и линия до края.</summary>
+        private void Group(ref float y, string title)
+        {
+            var t = LGBuild.Label(_sideHost, "◆  " + title, 10, new Color(0.906f, 0.757f, 0.439f), TextAnchor.MiddleLeft, bold: true);
+            t.rectTransform.TopBand(y + 4f, 16f, 42, 40);
+            t.Track(3f);
+            var rule = LGBuild.Panel(_sideHost, "Rule", new Color(0.906f, 0.757f, 0.439f, 0.25f));
+            rule.raycastTarget = false;
+            rule.rectTransform.TopBand(y + 12f, 1f, 42f + t.preferredWidth + t.text.Length * 3f + 12f, 40);   // разрядка не входит в preferredWidth
+            LG.Ignore(rule.gameObject);
+            y += 26f;
         }
 
         private static Text Third(RectTransform row, int i, string label, Color rim, System.Action onClick)
@@ -601,7 +644,7 @@ namespace StellarisClone.Rendering
 
         private void ResetConfirmLabels()
         {
-            if (_restartLabel != null && _restartArmed <= 0f) _restartLabel.text = Loc.T("НАЧАТЬ ЗАНОВО");
+            if (_restartLabel != null && _restartArmed <= 0f) _restartLabel.text = Loc.T("ЗАНОВО");
             if (_menuLabel != null && _menuArmed <= 0f) _menuLabel.text = Loc.T("В МЕНЮ");
             if (_quitLabel != null && _quitArmed <= 0f) _quitLabel.text = Loc.T("ВЫЙТИ");
         }
