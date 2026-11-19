@@ -2236,6 +2236,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 });
             var sel = card.GetComponent<Selectable>();
             if (sel != null) sel.interactable = available;
+            // «Астролябия»: латунная рамка, камни — цвет варианта; первый доступный — как выбранная вкладка
+            var astro = LGAstrolabe.Attach(card, card.GetComponent<Image>(), null);
+            if (astro != null) { astro.Gem = LGAstrolabe.GemOf(edge); astro.Selected = primary; }
 
             // Фон карточки: крупный бледный значок главного ресурса варианта (что даёт, иначе — что требует), срезан краем
             var main = ParseEffects(opt.ResultTooltip);
@@ -2253,12 +2256,6 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 wrt.localRotation = Quaternion.Euler(0, 0, -14f);
                 wm.raycastTarget = false;
                 LG.Ignore(wm.gameObject);
-            }
-            if (primary)
-            {
-                var ol = card.AddComponent<Outline>();
-                ol.effectColor = new Color(accent.r, accent.g, accent.b, 0.55f);
-                ol.effectDistance = new Vector2(1.5f, -1.5f);
             }
 
             // Значок в левом верхнем углу
