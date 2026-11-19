@@ -883,6 +883,7 @@ namespace StellarisClone.Rendering
                 py = below + h <= bottomLimit ? below : Mathf.Max(EpochHeadH, above);
             }
             prt.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(px, -py), new Vector2(PopW, h));
+            LGObservatory.Attach(pop.gameObject, 14f);   // фон «Обсерватория», как у окон: внутри окна сам не ставится
 
             var close = LGControls.IconButton(prt, LGIcon.Close, 24, UIManager.DS.BgDeep, new Color(1f, 1f, 1f, 0.2f), ClearSelection);
             ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -10), new Vector2(24, 24));
