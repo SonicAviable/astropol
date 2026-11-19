@@ -5,10 +5,10 @@ using UnityEngine.UI;
 namespace StellarisClone.Rendering
 {
     /// <summary>
-    /// Фон окон «Обсерватория»: тёмно-синяя эмаль (как у кнопок «Астролябия») с мягким светом сверху,
-    /// двойная латунная линия по краю, латунные уголки с ромбами и едва заметная гравировка астрономического
-    /// инструмента, уходящая за край окна. Чтобы окна не были одинаковыми, у каждого — своя гравировка
-    /// (астролябия, армиллярная сфера, орбиты, роза ветров, небесный глобус), свой угол, наклон и оттенок свечения;
+    /// Фон окон «Обсерватория»: тёмно-синяя эмаль цвета окон игры с лёгкой тенью снизу, двойная латунная линия
+    /// по краю, латунные уголки с ромбами; у крупных окон — едва заметная гравировка астрономического инструмента,
+    /// уходящая за нижний край. Чтобы окна не были одинаковыми, у каждого — своя гравировка
+    /// (астролябия, армиллярная сфера, орбиты, роза ветров, небесный глобус), свой нижний угол и наклон;
     /// выбор стабилен для окна (по имени), так что одно и то же окно всегда выглядит одинаково.
     /// Вешается сам на крупные окна (см. <see cref="LiquidGlassEffect"/>); слои лежат под содержимым,
     /// не ловят клики и не участвуют в раскладке. Гравировки рисуются в коде в высоком разрешении и не растягиваются.
@@ -17,19 +17,12 @@ namespace StellarisClone.Rendering
     public sealed class LGObservatory : MonoBehaviour
     {
         private static readonly Color Brass = new Color(0.906f, 0.757f, 0.439f);
-        private static readonly Color Enamel = new Color(0.067f, 0.094f, 0.176f, 0.9f);
-        private static readonly Color[] Glows =
-        {
-            new Color(0.16f, 0.25f, 0.48f, 0.42f),   // глубокая синь
-            new Color(0.28f, 0.17f, 0.44f, 0.38f),   // фиолет
-            new Color(0.08f, 0.30f, 0.34f, 0.38f),   // бирюза
-            new Color(0.36f, 0.20f, 0.12f, 0.34f),   // ржавь туманности
-        };
+        private static readonly Color Enamel = new Color(0.055f, 0.094f, 0.157f, 0.9f);   // = UIManager.DS.BgDeep
 
         private const int Motifs = 5;
         private static readonly Sprite[] s_engr = new Sprite[Motifs];
         private static readonly Dictionary<int, Sprite> s_body = new Dictionary<int, Sprite>();
-        private static Sprite s_corner, s_light;
+        private static Sprite s_corner, s_light;   // s_light — мягкий градиент для тени снизу
 
         /// <summary>Подсказки и окна, у которых уже свой фон, не трогаются.</summary>
         public static bool Skip(GameObject go)
@@ -67,20 +60,9 @@ namespace StellarisClone.Rendering
             Stretch(clip, 1.5f);
             clip.gameObject.AddComponent<RectMask2D>();
 
-            // Свечение туманности — в углу, противоположном гравировке
-            int corner = (int)(h % 4);
-            var glow = Layer(clip, "Glow", MenuArt.SoftDisc, Glows[(h / 4) % (uint)Glows.Length]);
-            float gs = Mathf.Max(r.width, r.height) * 0.95f;
-            Place(glow.rectTransform, 3 - corner, gs, 0.12f);
-
-            // Мягкий свет сверху и тень снизу
-            var light = Layer(clip, "TopLight", LightSprite, new Color(0.40f, 0.52f, 0.86f, 0.16f));
-            var lrt = light.rectTransform;
-            lrt.anchorMin = new Vector2(0.05f, 1f); lrt.anchorMax = new Vector2(0.95f, 1f);
-            lrt.pivot = new Vector2(0.5f, 1f);
-            lrt.sizeDelta = new Vector2(0f, Mathf.Min(170f, r.height * 0.45f));
-            lrt.anchoredPosition = Vector2.zero;
-            var shade = Layer(clip, "Shade", LightSprite, new Color(0f, 0f, 0f, 0.28f));
+            // Лёгкая тень снизу (без подсветки сверху — шапки окон со своим фоном не должны отличаться от тела)
+            int corner = (int)(h % 2);   // гравировка — в нижнем углу: вверху у окон шапки со своим рисунком
+            var shade = Layer(clip, "Shade", LightSprite, new Color(0f, 0f, 0f, 0.18f));
             var srt = shade.rectTransform;
             srt.anchorMin = new Vector2(0f, 0f); srt.anchorMax = new Vector2(1f, 0f);
             srt.pivot = new Vector2(0.5f, 0f);
@@ -88,12 +70,15 @@ namespace StellarisClone.Rendering
             srt.localScale = new Vector3(1f, -1f, 1f);
             srt.anchoredPosition = new Vector2(0f, srt.sizeDelta.y);
 
-            // Гравировка инструмента — своя у окна, частично за краем
-            int motif = (int)((h / 16) % Motifs);
-            var engr = Layer(clip, "Engraving", Engraving(motif), new Color(Brass.r, Brass.g, Brass.b, 0.11f));
-            float es = Mathf.Clamp(Mathf.Min(r.width, r.height) * 0.95f, 260f, 440f);
-            Place(engr.rectTransform, corner, es, 0.30f);
-            engr.rectTransform.localRotation = Quaternion.Euler(0f, 0f, ((h / 80) % 31) - 15f);
+            // Гравировка инструмента — своя у окна, частично за краем; только у крупных окон (на мелких панелях — шум)
+            if (r.width >= 400f && r.height >= 400f)
+            {
+                int motif = (int)((h / 16) % Motifs);
+                var engr = Layer(clip, "Engraving", Engraving(motif), new Color(Brass.r, Brass.g, Brass.b, 0.07f));
+                float es = Mathf.Clamp(Mathf.Min(r.width, r.height) * 0.9f, 300f, 440f);
+                Place(engr.rectTransform, corner, es, 0.28f);
+                engr.rectTransform.localRotation = Quaternion.Euler(0f, 0f, ((h / 80) % 31) - 15f);
+            }
 
             // Латунные уголки с ромбами
             for (int i = 0; i < 4; i++)
@@ -314,12 +299,6 @@ namespace StellarisClone.Rendering
                 float hw = Mathf.Sqrt(Mathf.Max(0f, R * R - (yy * R) * (yy * R)));
                 float x0 = -hw, x1 = hw, y = yy * R;
                 p.Line(x0 * c - y * s, x0 * s + y * c, x1 * c - y * s, x1 * s + y * c, yy == 0f ? 2f : 1.2f);
-            }
-            var rnd = new System.Random(7);
-            for (int i = 0; i < 9; i++)
-            {
-                float ang = (float)rnd.NextDouble() * Mathf.PI * 2f, rr = 0.15f + (float)rnd.NextDouble() * 0.7f;
-                p.Disc(Mathf.Cos(ang) * rr, Mathf.Sin(ang) * rr, 0.012f + (float)rnd.NextDouble() * 0.014f);
             }
         }
 
