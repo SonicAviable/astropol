@@ -185,12 +185,22 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < n; i++)
             {
                 int idx = i;
-                var b = LGBuild.Button(_root, "Track_" + i, new Color(0.055f, 0.094f, 0.157f, 0.9f), new Color(DS.NeonCyan.r, DS.NeonCyan.g, DS.NeonCyan.b, 0.35f),
-                                       () => MusicManager.Instance?.PlayTrack(idx), null, null, 11, 8f);
-                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, top - i * (RowH + 4f)), new Vector2(W - 28, RowH));
-                var t = LGBuild.Label(b.transform, "", 11, DS.TextMuted, TextAnchor.MiddleLeft);
-                t.rectTransform.Stretch(10, 0, 8, 0);
-                _rows.Add((b.GetComponent<Image>(), t));
+                // «Тихая латунь»: строка трека без капсулы — подпись шрифтом заголовков, снизу тонкая латунная черта
+                var bg = LGBuild.Panel(_root, "Track_" + i, new Color(0f, 0f, 0f, 0f), raycast: true);
+                LG.Ignore(bg.gameObject);
+                bg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(14, top - i * (RowH + 4f)), new Vector2(W - 28, RowH + 4f));
+                var b = bg.gameObject.AddComponent<Button>();
+                b.transition = Selectable.Transition.None;
+                b.onClick.AddListener(() => MusicManager.Instance?.PlayTrack(idx));
+                var hair = LGBuild.Panel(bg.transform, "Hair", new Color(0.906f, 0.757f, 0.439f, 0.14f));
+                hair.raycastTarget = false;
+                hair.rectTransform.anchorMin = new Vector2(0, 0); hair.rectTransform.anchorMax = new Vector2(1, 0);
+                hair.rectTransform.offsetMin = new Vector2(2, 0); hair.rectTransform.offsetMax = new Vector2(-2, 1);
+                var t = LGBuild.Label(bg.transform, "", 13, DS.TextMuted, TextAnchor.MiddleLeft);
+                t.font = GameFont.Display; t.fontStyle = FontStyle.Normal;
+                t.supportRichText = true;
+                t.rectTransform.Stretch(8, 0, 8, 0);
+                _rows.Add((bg, t));
             }
             _root.sizeDelta = new Vector2(W, 140f + (n > 0 ? n * (RowH + 4f) + 8f : 0f));
         }
@@ -217,9 +227,9 @@ namespace StellarisClone.Rendering
             for (int i = 0; i < _rows.Count; i++)
             {
                 bool on = i == cur;
-                _rows[i].label.text = (on ? "▶  " : "     ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? Loc.T("  <color=#E07A6E>· война</color>") : "");
-                _rows[i].label.color = on ? DS.NeonCyan : DS.TextMuted;
-                _rows[i].bg.color = on ? new Color(0.075f, 0.125f, 0.220f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.9f);
+                _rows[i].label.text = (on ? "<color=#E7C170>◆</color>   " : "      ") + mm.TrackTitle(i) + (mm.IsWarTrack(i) ? Loc.T("  <color=#E07A6E><i>· война</i></color>") : "");
+                _rows[i].label.color = on ? new Color(0.957f, 0.851f, 0.584f) : new Color(0.80f, 0.77f, 0.69f);
+                _rows[i].bg.color = on ? new Color(0.906f, 0.757f, 0.439f, 0.06f) : new Color(0f, 0f, 0f, 0f);
             }
             RefreshTime();
         }

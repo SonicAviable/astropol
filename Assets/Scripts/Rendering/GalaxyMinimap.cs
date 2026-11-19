@@ -109,7 +109,7 @@ public static void ShowGlobal()
             var bg = root.AddComponent<Image>();
             bg.color = UIManager.DS.BgDeep;
             bg.raycastTarget = true;
-            LG.Glass(root, mapSize * 0.5f).SetRim(new Color(0.475f, 0.816f, 0.749f, 0.55f));
+            LG.Glass(root, mapSize * 0.5f).SetRim(new Color(0.906f, 0.757f, 0.439f, 0.55f));   // «Астролябия»: латунь вместо бирюзы
             var motion = LG.Motion(root, LGAppear.Kind.SlideDown);
             motion.distance = 30f;
 
@@ -122,7 +122,7 @@ public static void ShowGlobal()
             bzRt.sizeDelta = new Vector2(mapSize + 14f, mapSize + 14f);
             var bzImg = bz.AddComponent<Image>();
             bzImg.sprite = BezelSprite();
-            bzImg.color = new Color(0.475f, 0.816f, 0.749f, 0.55f);
+            bzImg.color = new Color(0.906f, 0.757f, 0.439f, 0.60f);
             bzImg.raycastTarget = false;
             LG.Ignore(bz);
 
@@ -131,7 +131,7 @@ public static void ShowGlobal()
             tk.transform.SetParent(root.transform, false);
             var tkImg = tk.AddComponent<Image>();
             tkImg.sprite = HudArt.Ticks(80, 10, 0.955f, 0.90f, 1f);
-            tkImg.color = new Color(0.37f, 0.82f, 0.75f, 0.55f);
+            tkImg.color = new Color(0.906f, 0.757f, 0.439f, 0.45f);
             tkImg.raycastTarget = false;
             tkImg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(mapSize + 40f, mapSize + 40f));
             LG.Ignore(tk);
@@ -175,7 +175,7 @@ public static void ShowGlobal()
             t.fontSize = 11;
             t.fontStyle = FontStyle.Bold;
             t.alignment = TextAnchor.MiddleCenter;
-            t.color = UIManager.DS.NeonCyan;
+            t.color = new Color(0.906f, 0.757f, 0.439f);
             t.raycastTarget = false;
             var outline = titleGO.AddComponent<Outline>();
             outline.effectColor = UIManager.DS.TextShadow;
@@ -198,8 +198,8 @@ public static void ShowGlobal()
 
             // Рамка обзора камеры — стеклянная линза с неоновой кромкой
             var vBg = v.AddComponent<Image>();
-            var nc = UIManager.DS.NeonCyan;
-            vBg.color = new Color(nc.r * 0.4f, nc.g * 0.4f, nc.b * 0.4f, 0.9f);
+            var nc = new Color(0.957f, 0.894f, 0.749f);   // рамка обзора — кремовая латунь
+            vBg.color = new Color(nc.r * 0.25f, nc.g * 0.25f, nc.b * 0.25f, 0.6f);
             vBg.raycastTarget = false;
             var vFx = LG.Apply(v, LiquidGlassEffect.Role.Chip, 6f);
             vFx.SetRim(new Color(nc.r, nc.g, nc.b, 0.95f));

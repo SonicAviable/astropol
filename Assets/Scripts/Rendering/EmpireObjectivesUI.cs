@@ -53,6 +53,7 @@ namespace StellarisClone.Rendering
             btn.transition = Selectable.Transition.None;
             btn.onClick.AddListener(Click);
             LGFx.HoverGlow(bg.gameObject);
+            LGObservatory.Attach(bg.gameObject, 10f);   // фон «Обсерватория»: эмаль с латунной кромкой, как у окон
 
             var hi = LGIcons.Create(_root, LGIcon.Target, 13, Gold);
             hi.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(12, -15), new Vector2(13, 13));
@@ -78,9 +79,10 @@ namespace StellarisClone.Rendering
 
             var medal = LGBuild.Panel(_root, "Medal", new Color(0.10f, 0.08f, 0.03f, 0.95f));
             medal.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -40), new Vector2(40, 40));
-            LG.Chip(medal.gameObject, new Color(Gold.r, Gold.g, Gold.b, 0.6f), 20f);
             _icon = LGIcons.Create(medal.transform, LGIcon.Starbase, 20, Gold);
             _icon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
+            var medalA = LGAstrolabe.Attach(medal.gameObject, medal, null, round: true);   // латунный медальон
+            if (medalA != null) medalA.KeepIconColor = true;
 
             _title = LGBuild.Label(_root, "", 13, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
             _title.rectTransform.anchorMin = new Vector2(0, 1); _title.rectTransform.anchorMax = new Vector2(1, 1);

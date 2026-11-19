@@ -380,8 +380,8 @@ namespace StellarisClone.Rendering
                 if (!show) continue;
 
                 float wpp = WorldPerPixel(cam, dist);
-                float sizePx = m.Kind == MarkerKind.Outpost ? 13f : m.Kind == MarkerKind.Colony ? 17f : 21f;
-                m.Root.position = m.Sys.Position + up * (wpp * (sizePx * 0.5f + 9f));
+                float sizePx = m.Kind == MarkerKind.Outpost ? 19f : m.Kind == MarkerKind.Colony ? 24f : 29f;   // крупнее: прежние 13–21 px терялись на свечении звезды
+                m.Root.position = m.Sys.Position + up * (wpp * (sizePx * 0.5f + 11f));
                 m.Root.rotation = rot;
                 m.Root.localScale = Vector3.one * (wpp * sizePx);
 
