@@ -261,9 +261,8 @@ namespace StellarisClone.Rendering
             title.rectTransform.Stretch(78, 12, 1300, 0);
 
             // Фильтры: все / доступные / в работе / изученные
-            var seg = LGBuild.Panel(head, "Filters", new Color(0f, 0f, 0f, 0.25f));
-            seg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(440, 0), new Vector2(4 * 130f, 38));
-            LG.Platter(seg.gameObject, 10f).SetRim(new Color(1f, 1f, 1f, 0.12f));
+            var seg = LGBuild.Rect(head, "Filters");
+            seg.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(440, 0), new Vector2(4 * 136f, 36));
             var filters = new[] { Filter.All, Filter.Avail, Filter.Work, Filter.Done };
             for (int i = 0; i < filters.Length; i++)
             {
@@ -272,10 +271,13 @@ namespace StellarisClone.Rendering
                 bg.rectTransform.anchorMin = new Vector2(i / 4f, 0); bg.rectTransform.anchorMax = new Vector2((i + 1) / 4f, 1);
                 bg.rectTransform.offsetMin = new Vector2(3, 3); bg.rectTransform.offsetMax = new Vector2(-3, -3);
                 LG.Ignore(bg.gameObject, includeChildren: false);
-                var lbl = LGBuild.Label(bg.transform, "", 13, Muted, TextAnchor.MiddleCenter, bold: true);
+                var lbl = LGBuild.Label(bg.transform, "", 12, Muted, TextAnchor.MiddleCenter, bold: true);
+                lbl.rectTransform.Stretch(14, 0, 14, 0);
+                lbl.resizeTextForBestFit = true; lbl.resizeTextMinSize = 8; lbl.resizeTextMaxSize = 12;
                 var b = bg.gameObject.AddComponent<Button>();
                 b.transition = Selectable.Transition.None;
                 b.onClick.AddListener(() => { _filter = f; SFXManager.Play(Sfx.UiTab); ApplyFocus(); RefreshFilters(); });
+                LGAstrolabe.Attach(bg.gameObject, bg, lbl);   // «Астролябия»; выбранный фильтр — как вкладка
                 _filterBtns.Add((f, bg, lbl));
             }
 
@@ -326,7 +328,8 @@ namespace StellarisClone.Rendering
             _matrix = panel.rectTransform;
             _matrix.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(Pad, -BodyTop), new Vector2(MatrixW, MatrixH));
             var fx = LG.Platter(panel.gameObject, 16f);
-            fx.SetRim(new Color(1f, 1f, 1f, 0.08f));
+            fx.AsSurface = true;   // кнопка «снять фокус» не делает поле светлой капсулой
+            fx.SetRim(new Color(0.906f, 0.757f, 0.439f, 0.18f));
             fx.SpecularMultiplier = 0.2f;
             // Щелчок по пустому месту — снять фокус
             var bgBtn = panel.gameObject.AddComponent<Button>();
@@ -489,6 +492,7 @@ namespace StellarisClone.Rendering
             foreach (var (f, bg, label) in _filterBtns)
             {
                 bool on = f == _filter;
+                if (bg.TryGetComponent<LGAstrolabe>(out var astro)) astro.Selected = on;
                 label.text = f switch
                 {
                     Filter.Avail => Loc.F("Доступно {0}", avail),
@@ -1134,6 +1138,9 @@ namespace StellarisClone.Rendering
             fx.SetRim(rim);
             fx.FillMultiplier = 2.6f;
             fx.SpecularMultiplier = 0.15f;
+            // «Астролябия»: латунная плитка; цвет состояния слота — в подсветке при наведении
+            var astro = LGAstrolabe.Attach(bg.gameObject, bg, null, plain: true);
+            if (astro != null) astro.Gem = LGAstrolabe.GemOf(rim);
             return bg.rectTransform;
         }
 
@@ -1238,8 +1245,8 @@ namespace StellarisClone.Rendering
         {
             var row = LGBuild.Panel(_planList, "Plan" + i, new Color(1f, 1f, 1f, 0.03f), raycast: true);
             LGBuild.Height(row.gameObject, 42f);
-            var fx = LG.Platter(row.gameObject, 9f);
-            fx.SetRim(new Color(1f, 1f, 1f, t == _selected ? 0.5f : 0.08f));
+            var astro = LGAstrolabe.Attach(row.gameObject, row, null, plain: true);   // «Астролябия»: выбранная — подсвечена
+            if (astro != null) astro.Selected = t == _selected;
             var b = row.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.None;
             b.onClick.AddListener(() => Select(t));

@@ -1613,6 +1613,7 @@ namespace StellarisClone.Rendering
                          (claimed ? Loc.T("\n<color=#E7C170>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>") : "") +
                          (block != null ? $"\n<color=#FF7F6B>{block}</color>" : on ? Loc.T("\n<color=#E7C170>На столе — щёлкните, чтобы убрать</color>") : Loc.T("\nЩелчок — положить на стол"));
             TooltipHelper.Attach(row.gameObject, tip);
+            Tile(row, Gold, on);   // «Астролябия»: строка — латунная плитка, система на столе подсвечена
             if (frozen || (block != null && !on)) return;
             var btn = row.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
