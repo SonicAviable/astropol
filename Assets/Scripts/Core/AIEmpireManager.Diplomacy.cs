@@ -399,6 +399,19 @@ namespace StellarisClone.Core
                              && WarWeariness >= Profile.PeaceWeariness * 0.5f;
             if (!tired && !losing && !_capitalLost && !satisfied) return;
 
+            // Побеждают — мир на своих условиях: пограничная система и/или контрибуция
+            if (satisfied && !tired && !losing && !_capitalLost)
+            {
+                var terms = PeaceTerms();
+                if (terms != null)
+                {
+                    SetPendingDeal(terms, OfferKind.Peace, Loc.T("они побеждают и диктуют условия"));
+                    NotificationCenter.Show(Loc.T("Условия мира"), Loc.F("{0} предлагает мир на своих условиях: {1}. Ответьте в окне дипломатии", AIName, Summary(terms)),
+                        NotificationCenter.Kind.Warning, 9f);
+                    return;
+                }
+            }
+
             string reason = _capitalLost ? Loc.T("их столица пала")
                           : losing ? Loc.T("их флот разбит и уступает вашему")
                           : satisfied && !tired ? Loc.F("они захватили {0} сист. и хотят закрепить успех", _systemsTakenInWar)
@@ -406,6 +419,41 @@ namespace StellarisClone.Core
             Offer(OfferKind.Peace, reason);
             NotificationCenter.Show(Loc.T("Предложение мира"), Loc.F("{0} предлагает мир: {1}. Ответьте в окне дипломатии", AIName, reason),
                 NotificationCenter.Kind.Info, 9f);
+        }
+
+        /// <summary>
+        /// Условия мира победителя: самая ценная ваша система у их границы (не столица, у вас их не меньше четырёх),
+        /// а при разгроме или если системы нет — контрибуция сплавами или гелием-3 (20%, при разгроме — 30% запаса).
+        /// null — требовать нечего, тогда предлагают обычный мир.
+        /// </summary>
+        private Deal PeaceTerms()
+        {
+            var d = new Deal();
+            d.Treaties.Add(new DealItem(DealItemKind.Peace, 0f));
+            bool crushing = PowerRatio >= 1.5f || _systemsTakenInWar >= 3;
+
+            if (EmpireStats.SystemCount(0) >= 4)
+            {
+                StarSystem best = null;
+                float bestWorth = 0f;
+                foreach (var s in EmpireStats.Systems)
+                {
+                    if (s.OwnerId != 0 || SystemBlocker(s.Id, 0) != null || !Borders(s, OwnerId)) continue;
+                    float w = SystemWorth(s);
+                    if (w > bestWorth) { bestWorth = w; best = s; }
+                }
+                if (best != null) d.FromPlayer.Add(new DealItem(DealItemKind.System, best.Id));
+            }
+
+            if (crushing || d.FromPlayer.Count == 0)
+            {
+                bool alloys = PlayerStock("alloys") >= 100f;
+                var kind = alloys ? DealItemKind.Alloys : DealItemKind.Energy;
+                float step = DealCatalog.Step(kind);
+                float amt = Mathf.Floor(PlayerStock(alloys ? "alloys" : "energy") * (crushing ? 0.3f : 0.2f) / step) * step;
+                if (amt >= step) d.FromPlayer.Add(new DealItem(kind, amt));
+            }
+            return d.FromPlayer.Count > 0 ? d : null;
         }
 
         private void ConsiderPactOffer()

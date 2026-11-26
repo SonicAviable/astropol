@@ -166,12 +166,19 @@ namespace StellarisClone.Core
 
                 if (p.AtWar)
                 {
+                    // WearA/WearB привязаны к номерам пары (A — меньший), а не к порядку в списке
+                    var ea = a.OwnerId == p.A ? a : b;
+                    var eb = ea == a ? b : a;
                     p.WarMonths++;
-                    p.WearA = Mathf.Min(100f, p.WearA + 2.5f * a.Profile.WearinessRate);
-                    p.WearB = Mathf.Min(100f, p.WearB + 2.5f * b.Profile.WearinessRate);
-                    bool tired = p.WearA >= a.Profile.PeaceWeariness || p.WearB >= b.Profile.PeaceWeariness;
-                    if ((tired && p.WarMonths >= 6 && UnityEngine.Random.value < 0.5f) || p.WarMonths >= 48)
+                    p.WearA = Mathf.Min(100f, p.WearA + 2.5f * ea.Profile.WearinessRate);
+                    p.WearB = Mathf.Min(100f, p.WearB + 2.5f * eb.Profile.WearinessRate);
+                    bool tiredA = p.WearA >= ea.Profile.PeaceWeariness, tiredB = p.WearB >= eb.Profile.PeaceWeariness;
+                    if (((tiredA || tiredB) && p.WarMonths >= 6 && UnityEngine.Random.value < 0.5f) || p.WarMonths >= 48)
+                    {
+                        var loser = WarLoser(p, ea, eb, tiredA, tiredB);
                         MakePeace(p, a, b);
+                        if (loser != null) CedeOnPeace(loser, loser == ea ? eb : ea);
+                    }
                     continue;
                 }
 
@@ -266,6 +273,42 @@ namespace StellarisClone.Core
                     Loc.F("{0} и {1} заключили мир. Перемирие — 3 года", Contacts.NameForPlayer(a.OwnerId), Contacts.NameForPlayer(b.OwnerId)),
                     NotificationCenter.Kind.Info, 7f);
             AIEmpireManager.NotifyDiplomacyChanged();
+        }
+
+        /// <summary>
+        /// Кто проиграл войну двух ИИ: устала только одна сторона — она; устали обе — та, у которой усталость
+        /// заметно выше (потери её ускоряют, AddWeariness). Ничья — белый мир без уступок.
+        /// </summary>
+        private static AIEmpireManager WarLoser(PairState p, AIEmpireManager ea, AIEmpireManager eb, bool tiredA, bool tiredB)
+        {
+            if (tiredA && !tiredB) return ea;
+            if (tiredB && !tiredA) return eb;
+            if (Mathf.Abs(p.WearA - p.WearB) >= 20f) return p.WearA > p.WearB ? ea : eb;
+            return null;
+        }
+
+        /// <summary>
+        /// Проигравший уступает победителю пограничную систему — самую ценную, кроме столицы, и только если у него
+        /// останется не меньше трёх систем. Так войны соседей меняют карту, а не заканчиваются ничем.
+        /// </summary>
+        private static void CedeOnPeace(AIEmpireManager loser, AIEmpireManager winner)
+        {
+            if (loser == null || winner == null || loser.IsEliminated || winner.IsEliminated) return;
+            if (EmpireStats.SystemCount(loser.OwnerId) < 4) return;
+            StarSystem best = null;
+            float bestWorth = 0f;
+            foreach (var s in EmpireStats.Systems)
+            {
+                if (s.OwnerId != loser.OwnerId || s.Id == loser.CapitalSystemId) continue;
+                if (!AIEmpireManager.Borders(s, winner.OwnerId)) continue;
+                float w = AIEmpireManager.SystemWorth(s);
+                if (w > bestWorth) { bestWorth = w; best = s; }
+            }
+            if (best == null) return;
+            SiegeManager.Transfer(best, winner.OwnerId);
+            if (Contacts.PlayerMet(loser.OwnerId) || Contacts.PlayerMet(winner.OwnerId))
+                GalacticNews.Post(NewsKind.Conquest, Loc.F("По мирному договору {0} уступает систему {1}: {2}",
+                    Contacts.NameForPlayer(loser.OwnerId), best.Name, Contacts.NameForPlayer(winner.OwnerId)), best.Id);
         }
 
         /// <summary>Потери в войне двух ИИ ускоряют усталость проигрывающей стороны.</summary>

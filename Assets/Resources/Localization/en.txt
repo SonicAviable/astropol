@@ -8518,3 +8518,7 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 Монолит	Monolith
 Арка	Arch
 Свод	Vault
+По мирному договору {0} уступает систему {1}: {2}	Under the peace treaty, {0} cedes {1} to {2}
+они побеждают и диктуют условия	they are winning and dictate the terms
+Условия мира	Peace Terms
+{0} предлагает мир на своих условиях: {1}. Ответьте в окне дипломатии	{0} offers peace on its own terms: {1}. Respond in the Diplomacy window
