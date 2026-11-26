@@ -49,7 +49,7 @@ namespace StellarisClone.Core
             // Тэрра'ан — живые корабли из биокоры
             ["terraan"] = new Style
             {
-                SciPrefix = "Спора", ConPrefix = "Семя",
+                SciPrefix = "Спора", ConPrefix = "Саженец",
                 Sci = new[] { "Пыльца", "Усик", "Росток Ветра", "Светолист", "Блуждающий Корень", "Мицелий", "Шёпот Листвы", "Побег", "Почка", "Летучее Семя" },
                 Con = new[] { "Корень", "Древо Жизни", "Перегной", "Грибница", "Колыбель", "Старая Кора", "Лоза", "Плодородие", "Роща", "Сердцевина" }
             },
@@ -67,7 +67,7 @@ namespace StellarisClone.Core
         {
             SciPrefix = "НИС", ConPrefix = "СК",
             Sci = new[] { "Пионер", "Странник", "Компас", "Звездочёт", "Искатель", "Астролябия", "Маяк", "Дальний Путь", "Секстант", "Ориентир" },
-            Con = new[] { "Строитель", "Зодчий", "Кладка", "Причал", "Опорный Пункт", "Каркас", "Форпост", "Монолит", "Арка", "Свод" }
+            Con = new[] { "Созидатель", "Зодчий", "Кладка", "Причал", "Опорный Пункт", "Каркас", "Форпост", "Монолит", "Арка", "Свод" }
         };
 
         private static readonly string[] Roman = { "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
@@ -78,7 +78,7 @@ namespace StellarisClone.Core
             string key = FactionTraits.Key(owner);
             var st = key != null && Styles.TryGetValue(key, out var s) ? s : Default;
             bool sci = type == FleetType.Science;
-            string prefix = sci ? st.SciPrefix : st.ConPrefix;
+            string prefix = Loc.T(sci ? st.SciPrefix : st.ConPrefix);
             string[] pool = sci ? st.Sci : st.Con;
 
             var used = new HashSet<string>();
@@ -91,19 +91,22 @@ namespace StellarisClone.Core
             var free = new List<string>();
             foreach (var n in pool)
             {
-                string full = $"{prefix} «{n}»";
+                string full = Named(prefix, Loc.T(n));
                 if (!used.Contains(full)) free.Add(full);
             }
             if (free.Count > 0) return free[Random.Range(0, free.Count)];
 
             // Набор исчерпан — то же имя с порядковым номером
-            string baseName = pool[Random.Range(0, pool.Length)];
+            string baseName = Loc.T(pool[Random.Range(0, pool.Length)]);
             foreach (var r in Roman)
             {
-                string full = $"{prefix} «{baseName} {r}»";
+                string full = Named(prefix, baseName + " " + r);
                 if (!used.Contains(full)) return full;
             }
-            return $"{prefix} «{baseName} {Random.Range(11, 100)}»";
+            return Named(prefix, baseName + " " + Random.Range(11, 100));
         }
+
+        // Наборы имён хранятся по-русски и переводятся при выдаче (в английской версии — английские кавычки)
+        private static string Named(string prefix, string name) => Loc.F("{0} «{1}»", prefix, name);
     }
 }

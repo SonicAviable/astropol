@@ -7834,3 +7834,687 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 ТЕХНОЛОГИЯ	TECH
 после: {0}	after: {0}
 ждёт эпохи {0}	awaiting era {0}
+<b>Прогноз хода</b>\nНа основе {0} прогонов этого хода с вашими выложенными картами: враг отвечает как ИИ, его карты вам неизвестны.\n	<b>Turn forecast</b>\nBased on {0} simulations of this turn with the cards you have played: the enemy responds like the AI, and its cards are unknown to you.\n
+ВАШ ХОД	YOUR TURN
+Сначала секторы держит гарнизон — так и задумано: за 8 ходов отбейте 2 из 3 · перетащите карты в секторы · Enter — конец хода	At first the garrison holds the sectors — that's intended: take 2 of 3 within 8 turns · drag cards into sectors · Enter — end turn
+РАСКРЫТИЕ	REVEAL
+<color=#E7C170>Артподготовка с орбиты: укрепления −{0} брони</color>	<color=#E7C170>Orbital bombardment: fortifications −{0} armor</color>
+АРТПОДГОТОВКА	BOMBARDMENT
+Флот бьёт с орбиты по укреплениям: −{0} брони каждому	The fleet bombards the fortifications from orbit: −{0} armor to each
+Флот врага бьёт по вашим укреплениям: −{0} брони каждому	The enemy fleet bombards your fortifications: −{0} armor to each
+2 ИЗ 3	2 OF 3
+<b>Секторы</b>\nКто держит больше силы в секторе после хода, тот его и держит; равенство — у защитника.\nПобеда — 2 сектора из 3 после 8-го хода или прорыв в Штаб.	<b>Sectors</b>\nWhoever has more power in a sector after the turn holds it; ties go to the defender.\nVictory — 2 sectors of 3 after turn 8, or a breakthrough into the HQ.
+СЕКТОРЫ	SECTORS
+НУЖНО 2 ИЗ 3	NEED 2 OF 3
+Пас / закончить ход  <color=#A9A392>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно	Pass / end turn  <color=#A9A392>(Enter)</color>\nGreen and pulsing — everything playable has been played
+ПАС	PASS
+В БОЙ!	TO BATTLE!
+РЕДКАЯ	RARE
+ЭПИЧЕСКАЯ	EPIC
+ЛЕГЕНДАРНАЯ	LEGENDARY
+КОМАНДИР	COMMANDER
+ОБЫЧНАЯ	COMMON
+ТЕХНИКА	VEHICLE
+ДРОН	DRONE
+ПЕХОТА	INFANTRY
+ОПОЛЧЕНИЕ	MILITIA
+Не хватает {0} влияния	Not enough influence: {0}
+Осталось {0} дн.	{0} d left
+Приблизьте камеру — планеты и звезда видны прямо на карте. Столица — сердце империи: здесь строятся районы.	Zoom in — planets and the star are visible right on the map. The capital is the heart of the empire: districts are built here.
+Приблизьте камеру к столице колесом мыши	Zoom in on the capital with the mouse wheel
+Континентальная	Continental
+Океаническая	Oceanic
+Тропическая	Tropical
+Саванна	Savanna
+Альпийская	Alpine
+Тундровая	Tundra
+Гайя	Gaia
+Аридная	Arid
+Пустынная	Desert
+Токсичная	Toxic
+Вулканическая	Volcanic
+Ледяная	Frozen
+Безжизненная	Barren
+Опустошённая	Tomb World
+ОТНОШЕНИЯ	RELATIONS
+ДОГОВОРЫ	TREATIES
+СДЕЛКА	DEAL
+Вражда	Hostility
+Мир	Peace
+ПРОТИВ НИХ	AGAINST THEM
+ВАША РЕПУТАЦИЯ	YOUR REPUTATION
+ПОВОДЫ ДЛЯ ВОЙНЫ	CASUS BELLI
+С ДРУГИМИ ИМПЕРИЯМИ	WITH OTHER EMPIRES
+не знакомы	no contact
+бессрочно	indefinite
+{0} {1:0}/мес	{0} {1:0}/mo
+<b><color={0}>{1}</color></b>\nС этой империей: {2}	<b><color={0}>{1}</color></b>\nWith this empire: {2}
+{0} действует	{0} in effect
+нет договоров	no treaties
+Особых причин нет — отношение ровное	No particular reasons — opinion is neutral
+Убрать	Remove
+На стол	To the table
+Точно?	Sure?
+Расторгнуть	Cancel treaty
+Выйти	Leave
+Вступить	Join
+Собрать	Form
+Выполнить	Execute
+их запасы — ниже слева	their stockpiles — below left
+ваши — ниже справа	yours — below right
+Переговоры: −{0:0} влияния из {1:0}	Negotiations: −{0:0} influence of {1:0}
+Запас влияния: {0:0}	Influence reserve: {0:0}
+<color=#A9A392>Положите на стол то, что хотите получить или отдать, или выберите договор на вкладке «Договоры»</color>	<color=#A9A392>Put on the table what you want to get or give, or pick a treaty on the “Treaties” tab</color>
+Завершить	Finish
+стол пуст	table is empty
+шанс {0:0}%	chance {0:0}%
+Лидеры	Leaders
+Узлы	Landmarks
+Эффекты	Effects
+ИНДУСТРИЯ	INDUSTRY
+ОБЗОР	OVERVIEW
+СТИЛЬ ИГРЫ	PLAYSTYLE
+ЛЁГКАЯ	EASY
+СРЕДНЯЯ	MEDIUM
+СЛОЖНАЯ	HARD
+СЛОЖНОСТЬ	DIFFICULTY
+СИЛЬНАЯ СТОРОНА	STRENGTH
+−{0:0}% к добыче гелия-3	−{0:0}% Helium-3 extraction
+−{0:0}% к производству сплавов	−{0:0}% Alloy production
+Боевой корабль	Warship
+В пути	In transit
+Строит	Building
+Исследует	Surveying
+На орбите	In orbit
+исследовать систему	survey the system
+построить аванпост	build an outpost
+двигаться	move
+Местоположение	Location
+Цель	Target
+Мощь	Power
+Корпус / броня	Hull / armor
+ЛКМ — выбрать	LMB — select
+ПКМ	RMB
+ЗАНОВО	RESTART
+<b>Начать заново</b>\nНовая партия с теми же настройками. Нажмите дважды	<b>Restart</b>\nA new game with the same settings. Press twice
+Действует	In effect
+СОЗДАТЬ	CREATE
+ЧИТАТЬ	READ
+АРХИВ	ARCHIVE
+  <color=#E07A6E><i>· война</i></color>	  <color=#E07A6E><i>· war</i></color>
+<b><color=#FFFFFF>Жильё</color></b>\nжителей {0} из {1}	<b><color=#FFFFFF>Housing</color></b>\npops {0} of {1}
+служащих {0} · +{1:0.#} науки	{0} employed · +{1:0.#} research
+служащих 0 из {0}	0 of {0} employed
+<b><color=#FFFFFF>{0}</color></b> ×{1}\nработают {2} из {3}	<b><color=#FFFFFF>{0}</color></b> ×{1}\n{2} of {3} working
+\n<color=#8CD3A0>приоритет</color>	\n<color=#8CD3A0>priority</color>
+{0:0.#} {1} / житель	{0:0.#} {1} / pop
+\n<color=#E7C170>строится, {0} дн.</color>	\n<color=#E7C170>under construction, {0} d</color>
+\n<color=#E7C170>в очереди +{0}</color>	\n<color=#E7C170>queued +{0}</color>
+\n<color=#E7C170>⚠ рост стоит</color>	\n<color=#E7C170>⚠ growth stalled</color>
+\nрост: +1 через {0} мес.	\ngrowth: +1 in {0} mo
+<color=#79D0BF>Наука +{0:0.#}</color>  ·  работают {1} из {2} мест\n	<color=#79D0BF>Research +{0:0.#}</color>  ·  {1} of {2} jobs filled\n
+районов нет — «СТРОИТЬ»	no districts — “BUILD”
+нет данных — нужна разведка	no data — survey needed
+{0} · {1:0.00} g · {2:+#;-#;0} °C · атмосфера {3}	{0} · {1:0.00} g · {2:+#;-#;0} °C · atmosphere {3}
+<size=28><color={0}><b>{1}</b></color></size> титан     	<size=28><color={0}><b>{1}</b></color></size> titanium     
+<size=28><color={0}><b>{1}</b></color></size> гелий-3     	<size=28><color={0}><b>{1}</b></color></size> helium-3     
+<size=28><color=#FFFFFF><b>{0}/{1}</b></color></size> мест	<size=28><color=#FFFFFF><b>{0}/{1}</b></color></size> slots
+ДОХОД КОЛОНИИ	COLONY INCOME
++ СТРОИТЬ	+ BUILD
+районы, постройки, корабли  (B)	districts, buildings, ships  (B)
+ПРИГОДНОСТЬ	HABITABILITY
+НЕДРА	DEPOSITS
+<color=#E7D3A3>{0}</color><color=#7F6A44>    ◆    </color><color=#C9A96A>СИСТЕМА</color>  <color=#E7D3A3>{1}</color>	<color=#E7D3A3>{0}</color><color=#7F6A44>    ◆    </color><color=#C9A96A>SYSTEM</color>  <color=#E7D3A3>{1}</color>
+ОБЩЕСТВО И СТАБИЛЬНОСТЬ	SOCIETY AND STABILITY
+Орбитальная верфь	Orbital Shipyard
+ВЕРФЬ  ·  {0}	SHIPYARD  ·  {0}
+Одновременно строится {0} корабля  ·  готовые корабли появляются у верфи	{0} ships build at once  ·  finished ships appear at the shipyard
+Стапель {0}  ·  готов через ~{1} дн.	Slipway {0}  ·  ready in ~{1} d
+<b>Стапель {0} свободен</b>\nвыберите корабль ниже	<b>Slipway {0} is free</b>\npick a ship below
+Строительство	Construction
+Научный корабль изучает систему	A science ship is surveying the system
+Строитель в пути	Construction ship en route
+Колонизация	Colonization
+строитель	construction ship
+выполнено	done
+дней осталось	days left
+ожидает прибытия	awaiting arrival
+ход работ	progress
+<color=#A9A392>Ромб на карте заливается, число — дни до конца</color>	<color=#A9A392>The diamond on the map fills up; the number shows days left</color>
+<size=10><color=#C9A96A>НАУКА</color></size>\n+{0:0.#} <size=13><color=#8F8A7C><i>/ мес</i></color></size>	<size=10><color=#C9A96A>RESEARCH</color></size>\n+{0:0.#} <size=13><color=#8F8A7C><i>/ mo</i></color></size>
+В работе	In progress
+СЛОТЫ НАУКИ   <color=#8F8A7C><size=11><i>{0} из {1} заняты</i></size></color>	RESEARCH SLOTS   <color=#8F8A7C><size=11><i>{0} of {1} in use</i></size></color>
+Слот откроет «{0}»	Slot unlocked by “{0}”
+<b>Дата</b>\nКольцо и фаза луны — ход текущего месяца (1-е — новолуние, середина — полнолуние).\nЩелчок — пауза / продолжить  <color=#A9A392>(ПРОБЕЛ)</color>	<b>Date</b>\nThe ring and the moon phase show the current month's progress (the 1st is a new moon, mid-month a full moon).\nClick — pause / resume  <color=#A9A392>(SPACE)</color>
+нет залежей	no deposits
+Нет · фронтир	None · frontier
+Владелец	Owner
+Звезда	Star
+Орбитальные тела	Orbital bodies
+Гиперкоридоры	Hyperlanes
+хаб	hub
+блокада	blockade
+отрезана	cut off
+в сети	connected
+{0:0}% доходит	{0:0}% delivered
+Звёздная база «{0}»	Starbase “{0}”
+выведена из строя	disabled
+мощь {0:N0}	power {0:N0}
+Скрыть окно звёздной базы	Hide the starbase window
+Открыть звёздную базу: прочность, укрепления и их стройка	Open the starbase: durability, fortifications and their construction
+<b>Флоты на орбите</b>	<b>Fleets in orbit</b>
+Ваши	Yours
+Чужие	Others
+{0}: {1} · мощь {2:N0}	{0}: {1} · power {2:N0}
+Флоты на орбите	Fleets in orbit
+\n<color=#A9A392>Клик — выбрать свой флот</color>	\n<color=#A9A392>Click — select your fleet</color>
+Снабжение	Supply
+Свернуть снабжение	Collapse supply
+Склад, груз и связь с хабом	Storage, cargo and the link to the hub
+Обзор системы	System overview
+{0} тел	{0} bodies
+Открыть систему: планеты, колонии и станции на орбитах	Open the system: planets, colonies and orbital stations
+Состав не изучен	Composition not surveyed
+ДОХОД	INCOME
+РАСХОД	EXPENSES
+Итого в месяц	Monthly total
+склад полон — излишки пропадают	storage full — surplus is lost
+заполнится через ~{0} мес	full in ~{0} mo
+кончится через ~{0} мес	runs out in ~{0} mo
+<color=#FF5555><b>БАНКРОТСТВО</b> — производство урезано вдвое</color>	<color=#FF5555><b>BANKRUPTCY</b> — production cut in half</color>
+<color=#FFAA55><b>Угроза банкротства</b>: казна опустеет через ~{0} мес.</color>	<color=#FFAA55><b>Bankruptcy threat</b>: the treasury runs dry in ~{0} mo.</color>
+энергия империи · содержание флота	empire energy · fleet upkeep
+запас	stockpile
+База империи	Empire base
+Районы-генераторы	Generator districts
+Добывающие станции	Mining stations
+Реакторные технологии	Reactor technologies
+Военный флот (×{0:0.##})	Military fleet (×{0:0.##})
+Военный флот	Military fleet
+Гражданские суда	Civilian ships
+Форпосты ({0})	Outposts ({0})
+Укрепления баз	Starbase fortifications
+Армия (карты)	Army (cards)
+<color=#A9A392>Флотский лимит <b>{0} / {1}</b> (корвет 1, фрегат 2, эсминец 3; +{2} за колонию). Сверх лимита содержание всего флота растёт.</color>	<color=#A9A392>Naval capacity <b>{0} / {1}</b> (corvette 1, frigate 2, destroyer 3; +{2} per colony). Above the limit, upkeep for the whole fleet goes up.</color>
+Склад {0} / {1}	Storage {0} / {1}
+Горные районы	Mining districts
+<color=#A9A392>Склады вмещают <b>{0}</b> (+{1:0} за колонию) — излишки пропадают. Лишний титан — в решения империи.</color>	<color=#A9A392>Storage holds <b>{0}</b> (+{1:0} per colony) — surplus is lost. Spend spare titanium on empire decisions.</color>
+экспансия · дипломатия · законы	expansion · diplomacy · laws
+Доход империи	Empire income
+Законы (L)	Laws (L)
+ Форпост дороже на {0:0}: империя разрослась (+{1:0.#} за каждую систему сверх {2}).	 Outposts cost {0:0} more: the empire has grown (+{1:0.#} for every system above {2}).
+<color=#A9A392>Тратится на форпосты ({0:0}), колонии ({1:0}), пакты ({2:0}), мирные предложения ({3:0}) и терраформинг.{4}</color>	<color=#A9A392>Spent on outposts ({0:0}), colonies ({1:0}), pacts ({2:0}), peace offers ({3:0}) and terraforming.{4}</color>
+исследования технологий	technology research
+активных слотов	active slots
+Администрация	Administration
+Население ({0} жит.)	Population ({0} pops)
+Открытия и события	Discoveries and events
+Научные корабли у колоний ({0})	Science ships at colonies ({0})
+<color=#A9A392>Множитель технологий и событий: <b>×{0:0.##}</b></color>	<color=#A9A392>Technology and event multiplier: <b>×{0:0.##}</b></color>
+<color=#A9A392>Наука растёт с населением — заселяйте планеты и стройте жильё. Скорость делится между слотами: один слот идёт быстрее, чем каждый из нескольких.</color>	<color=#A9A392>Research grows with population — settle planets and build housing. Speed is split between slots: one slot goes faster than each of several.</color>
+колоний	colonies
+САМЫЕ НЕСПОКОЙНЫЕ	MOST RESTLESS
+<color=#A9A392>Средняя — по числу жителей. Нажмите, чтобы открыть управление колониями.</color>	<color=#A9A392>Average, weighted by population. Click to open colony management.</color>
+ВЫВЕДЕНА ИЗ СТРОЯ	DISABLED
+ЗАЛП	VOLLEY
+урона за раунд	damage per round
+Ремонт {0:0}% из 50% — потом база вернётся в строй	Repairs {0:0}% of 50% — then the starbase returns to service
+УКРЕПЛЕНИЯ	FORTIFICATIONS
+Осада системы дольше ×{0:0.##}	System siege takes ×{0:0.##} longer
+\n<color=#A9A392>Под ступенью: прочность × · урон ×</color>	\n<color=#A9A392>Below each tier: durability × · damage ×</color>
+ЗВЁЗДНАЯ СИСТЕМА	STAR SYSTEM
+ЦЕПОЧКА «{0}»  ·  ГЛАВА {1}	CHAIN “{0}”  ·  CHAPTER {1}
+Нанять учёного: Империя (I) → Лидеры	Hire a scientist: Empire (I) → Leaders
+Требуется: {0}	Requires: {0}
+РЕШЕНИЕ СОВЕТА	COUNCIL DECISION
+АНОМАЛИЯ · ДРЕВНИЙ КОРАБЛЬ	ANOMALY · DERELICT SHIP
+АНОМАЛИЯ · СИГНАЛ БЕДСТВИЯ	ANOMALY · DISTRESS SIGNAL
+АНОМАЛИЯ · ЖИЗНЬ	ANOMALY · LIFE
+АНОМАЛИЯ · РЕЛИКВИЯ	ANOMALY · RELIC
+АНОМАЛИЯ · РАЗЛОМ	ANOMALY · RIFT
+СОБЫТИЕ · ЛИДЕРЫ	EVENT · LEADERS
+СОБЫТИЕ · КОЛОНИЯ	EVENT · COLONY
+СОБЫТИЕ · ФЛОТ	EVENT · FLEET
+СОБЫТИЕ · ПОЛИТИКА	EVENT · POLITICS
+<color=#E7C170><b>Десант</b> · мест {0}</color>\n	<color=#E7C170><b>Troops</b> · {0} slots</color>\n
+<color=#A9A392>При штурме корабль сам берёт лучшие карты из резерва империи (готово: {0}). Погрузка не нужна</color>	<color=#A9A392>In an assault the ship takes the best cards from the empire reserve on its own (ready: {0}). No loading needed</color>
+Закрыть  <color=#A9A392>(Esc / J)</color>	Close  <color=#A9A392>(Esc / J)</color>
+<color=#FF7F6B>Нет колоний с жителями — производить армию негде</color>	<color=#FF7F6B>No populated colonies — nowhere to raise an army</color>
+Линий производства: <b>{0}</b> <color=#A9A392>(районы {1} + {2})</color>\nПризывников: <b>{3}/{4}</b> <color=#A9A392>(половина жителей)</color>\nСооружений обороны: до <b>{5}</b>	Production lines: <b>{0}</b> <color=#A9A392>(districts {1} + {2})</color>\nConscripts: <b>{3}/{4}</b> <color=#A9A392>(half the population)</color>\nDefense structures: up to <b>{5}</b>
+<color=#FF7F6B>Армия не пополняется</color>\n<color=#A9A392>Фонд не копится, заказы не уходят</color>	<color=#FF7F6B>The army is not replenished</color>\n<color=#A9A392>The fund does not grow, no orders are placed</color>
+<color=#FFB080>Мобилизация:</color> заказы из запасов\n<color=#A9A392>до четверти склада на каждую карту</color>	<color=#FFB080>Mobilization:</color> orders from stockpiles\n<color=#A9A392>up to a quarter of storage per card</color>
+\n<color=#A9A392>Содержание: {0:0.#} гелия в месяц</color>	\n<color=#A9A392>Upkeep: {0:0.#} Helium-3 per month</color>
+\n<color=#A9A392>Мест на кораблях: {0}</color>	\n<color=#A9A392>Ship slots: {0}</color>
+\n<color=#A9A392>−/+ — сколько держать в армии (Shift — по 5)</color>	\n<color=#A9A392>−/+ sets how many to keep in the army (Shift: by 5)</color>
+Отменить штурм  <color=#A9A392>(Esc)</color>	Cancel the assault  <color=#A9A392>(Esc)</color>
+<b>Штурм</b>\nКарточный бой за колонию с выбранным десантом  <color=#A9A392>(Enter)</color>	<b>Assault</b>\nA card battle for the colony with the chosen landing force  <color=#A9A392>(Enter)</color>
+Не штурмовать  <color=#A9A392>(Esc)</color>	Don't assault  <color=#A9A392>(Esc)</color>
+<color=#A9A392>Прогноз: считаем…</color>	<color=#A9A392>Forecast: calculating…</color>
+<color=#A9A392>доктрина {0}/{1}</color>	<color=#A9A392>doctrine {0}/{1}</color>
+<color=#{0}><b>{1}%</b></color> <color=#A9A392>удержать</color>  <color=#A9A392>потери {2:0.#}:{3:0.#}</color>	<color=#{0}><b>{1}%</b></color> <color=#A9A392>hold</color>  <color=#A9A392>losses {2:0.#}:{3:0.#}</color>
+<color=#E7C170>— Ход {0} —</color>	<color=#E7C170>— Turn {0} —</color>
+<color=#79D0BF>Подкрепления: {0}</color>	<color=#79D0BF>Reinforcements: {0}</color>
+<color=#FF7F6B>Сектор «{0}» у врага</color>	<color=#FF7F6B>Sector "{0}" is held by the enemy</color>
+<color=#79D0BF>Щит Штаба пал</color>	<color=#79D0BF>The HQ shield has fallen</color>
+<color=#FF7F6B>Ловушка «{0}» сработала</color>	<color=#FF7F6B>Trap "{0}" triggered</color>
+{0} — <color=#FF7F6B>{1} погиб</color>	{0} — <color=#FF7F6B>{1} killed</color>
+<color=#FF7F6B>Штаб под угрозой: ещё ход — и прорыв</color>	<color=#FF7F6B>HQ under threat: one more turn and it falls</color>
+Закончить ход  <color=#A9A392>(Enter)</color>\nЗелёная и пульсирует — всё, что можно, сыграно	End turn  <color=#A9A392>(Enter)</color>\nGreen and pulsing — everything playable has been played
+СЕКТОРЫ  <color=#79D0BF>{0}</color> : <color=#FF7F6B>{1}</color>	SECTORS  <color=#79D0BF>{0}</color> : <color=#FF7F6B>{1}</color>
+<size=11><color=#A9A392>нужно 2 из 3</color></size>	<size=11><color=#A9A392>2 of 3 needed</color></size>
+ <color=#A9A392>· ещё {0}</color>	 <color=#A9A392>· {0} left</color>
+\n<color=#A9A392>С поводом война не портит репутацию, а утраченные системы проще вернуть в мирном договоре</color>	\n<color=#A9A392>With a cause, war does not hurt your reputation, and lost systems are easier to win back in the peace treaty</color>
+<b>{0}</b>\n{1}\n<color=#A9A392>Выбор запоминается для следующих боёв.</color>	<b>{0}</b>\n{1}\n<color=#A9A392>Your choice is remembered for future battles.</color>
+<color=#79D0BF>СБЛИЖЕНИЕ</color>	<color=#79D0BF>CLOSING IN</color>
+<color=#8CD3A0>ПЕРЕВЕС ×{0:0.0}</color>	<color=#8CD3A0>ADVANTAGE ×{0:0.0}</color>
+<color=#FF6B57>ВРАГ СИЛЬНЕЕ ×{0:0.0}</color>	<color=#FF6B57>ENEMY STRONGER ×{0:0.0}</color>
+<color=#E7C170>РАВНЫЕ СИЛЫ</color>	<color=#E7C170>EVEN FORCES</color>
+<color=#E7C170>Прогноз: затяжной бой</color>	<color=#E7C170>Forecast: prolonged battle</color>
+<color=#8CD3A0>Прогноз: победа\nпримерно через {0}</color>	<color=#8CD3A0>Forecast: victory\nin about {0}</color>
+<color=#FF6B57>Прогноз: поражение\nпримерно через {0}</color>	<color=#FF6B57>Forecast: defeat\nin about {0}</color>
+<color=#E7C170>Прогноз: исход неясен</color>	<color=#E7C170>Forecast: outcome uncertain</color>
+<color=#E7C170>Отступление: прыжок через {0:0.0} дн. ({1} кор.)</color>	<color=#E7C170>Retreat: jump in {0:0.0} d ({1} ships)</color>
+<color=#E7C170>Отступление: корабли уходят прыжком ({0} кор.)</color>	<color=#E7C170>Retreat: ships are jumping out ({0} ships)</color>
+<color=#79D0BF>ГПД: разгон {0:0.0} дн.</color>	<color=#79D0BF>Hyperdrive: spool-up {0:0.0} d</color>
+<color=#8CD3A0>ГПД готов к экстренному прыжку</color>	<color=#8CD3A0>Hyperdrive ready for emergency jump</color>
+<color=#A9A392>Сразу после основания:</color>\n	<color=#A9A392>Immediately after founding:</color>\n
+  • <color=#79D0BF>+{0} титана/мес</color>\n	  • <color=#79D0BF>+{0} titanium/mo</color>\n
+<color=#A9A392>Дальше:</color>\n	<color=#A9A392>Later:</color>\n
+  • при полной застройке ~<color=#79D0BF>+{0}/мес</color> ресурсов\n	  • when fully built up: ~<color=#79D0BF>+{0}/mo</color> in resources\n
+<color=#A9A392>Цена:</color> 	<color=#A9A392>Cost:</color> 
+<color=#A9A392>Окупаемость по титану:</color> ~{0} мес., потом чистая прибыль	<color=#A9A392>Titanium payback:</color> ~{0} mo, pure profit after that
+\n<color=#A9A392>Цена шага:</color> {0:0} гелия-3, {1:0} титана, {2:0} влияния · {3:0} дн.	\n<color=#A9A392>Step cost:</color> {0:0} helium-3, {1:0} titanium, {2:0} influence · {3:0} d
+<color=#8CD3A0>Откроет колонизацию:</color> место под {0} районов, колония сразу даст +{1} титана/мес.	<color=#8CD3A0>Unlocks colonization:</color> room for {0} districts, and the colony will immediately yield +{1} titanium/mo.
+<color=#8CD3A0>Комфортный мир:</color> рост населения <b>+{0:0}%</b> — колония быстрее заполнит районы.	<color=#8CD3A0>Comfortable world:</color> population growth <b>+{0:0}%</b> — the colony will fill its districts faster.
+<color=#A9A392>Движется к {0:0} (до {1} в месяц)</color>\n	<color=#A9A392>Moving toward {0:0} (up to {1} per month)</color>\n
+<color=#A9A392>Падает за войну без повода, нарушенный пакт, брошенного союзника. Растёт за соблюдённые договоры. Дурная слава со временем забывается.</color>	<color=#A9A392>Falls for unprovoked wars, broken pacts and abandoned allies. Grows for treaties kept. A bad name fades over time.</color>
+<color=#A9A392>Космическая фауна · {0}</color>\n\n	<color=#A9A392>Space fauna · {0}</color>\n\n
+\n<color=#8CD3A0>Изучено</color>	\n<color=#8CD3A0>Studied</color>
+<color=#E7C170>Гелий-3</color> питает флот и станции, <color=#79D0BF>титан</color> идёт на стройку, 	<color=#E7C170>Helium-3</color> powers fleets and stations, <color=#79D0BF>Titanium</color> goes into construction, 
+<color=#8CD3A0>наука</color> двигает исследования.\n\nНаведите курсор на ресурс — подсказка покажет доходы и расходы.	and <color=#8CD3A0>Research</color> drives your science forward.\n\nHover over a resource to see its income and expenses in the tooltip.
+<color=#E7C170><b>Первая задача:</b></color>  отправьте научный корабль на разведку приграничных систем	<color=#E7C170><b>First task:</b></color>  send the science ship to survey the border systems
+ВХОДЯЩАЯ ПЕРЕДАЧА   ·   КАНАЛ ПРАВИТЕЛЬСТВА   ·   <color=#79D0BF>{0:000}</color>	INCOMING TRANSMISSION   ·   GOVERNMENT CHANNEL   ·   <color=#79D0BF>{0:000}</color>
+<b>{0}</b>\n{1}\n\n<color=#A9A392>ЛКМ — {2}  ·  ПКМ — скрыть</color>	<b>{0}</b>\n{1}\n\n<color=#A9A392>LMB — {2}  ·  RMB — dismiss</color>
+\n<color=#E7C170>Стапели заняты ({0} в очереди): корабль встанет в очередь верфи.</color>	\n<color=#E7C170>Slipways are busy ({0} queued): the ship will join the shipyard queue.</color>
+\n<color=#E7C170>Свободных жителей нет: район заработает, когда колония вырастет.</color>	\n<color=#E7C170>No free pops: the district will start working once the colony grows.</color>
+\n<color=#8CD3A0>Безработных {0} — они сразу выйдут на смену.</color>	\n<color=#8CD3A0>{0} unemployed — they will start working right away.</color>
+Закрыть  <color=#A9A392>(Esc)</color>	Close  <color=#A9A392>(Esc)</color>
+<color=#A9A392>Цена: оставшиеся {0} дн. × {1:0.#} гелия-3	<color=#A9A392>Price: {0} days left × {1:0.#} Helium-3
+Закрыть  <color=#A9A392>(Esc / C)</color>	Close  <color=#A9A392>(Esc / C)</color>
+<color=#E7C170>нет жилья</color>	<color=#E7C170>no housing</color>
+  <color=#A9A392>· {0} дн.</color>	  <color=#A9A392>· {0} d.</color>
+  <color=#A9A392>+{0} в очереди</color>	  <color=#A9A392>+{0} queued</color>
+<color=#A9A392>Автостройка выберет сама</color>	<color=#A9A392>Auto-build will choose</color>
+<color=#E7C170>Ничего не строится</color>	<color=#E7C170>Nothing is being built</color>
+\n<color=#E7C170>Ждёт ответа на предложение</color>	\n<color=#E7C170>Awaiting a reply to a proposal</color>
+<color=#A9A392>Чем лучше отношение, тем охотнее они идут на сделки</color>	<color=#A9A392>The better their opinion, the more willing they are to make deals</color>
+\n<color=#8CD3A0>Договор действует</color>	\n<color=#8CD3A0>Agreement in effect</color>
+\n<color=#A9A392>Сначала ответьте на их предложение</color>	\n<color=#A9A392>Respond to their proposal first</color>
+\n<color=#E7C170>Лежит на столе — щёлкните, чтобы убрать</color>	\n<color=#E7C170>On the table — click to remove</color>
+\n<color=#A9A392>Их корабли тоже смогут ходить через ваши системы</color>	\n<color=#A9A392>Their ships will also be able to pass through your systems</color>
+\n<color=#A9A392>Нужно подтвердить повторным щелчком</color>	\n<color=#A9A392>Click again to confirm</color>
+\n<color=#A9A392>Сначала ответьте на их предложение или измените его</color>	\n<color=#A9A392>First respond to their proposal or modify it</color>
+\n<color=#A9A392>Щелчок — открыть список систем</color>	\n<color=#A9A392>Click to open the list of systems</color>
+\n<color=#E7C170>На столе: {0}</color>	\n<color=#E7C170>On the table: {0}</color>
+\n<color=#A9A392>Щелчок — положить на стол (+{0:0})</color>	\n<color=#A9A392>Click to place on the table (+{0:0})</color>
+  <color=#E7C170>· ваша бывшая</color>	  <color=#E7C170>· formerly yours</color>
+\n<color=#A9A392>Свою систему отдадут примерно за полторы её цены</color>	\n<color=#A9A392>They will give up their own system for about one and a half times its value</color>
+\n<color=#A9A392>Граничит с ними — для них это ценно</color>	\n<color=#A9A392>Borders them — valuable to them</color>
+\n<color=#A9A392>Далеко от их границ — для них стоит вдвое меньше</color>	\n<color=#A9A392>Far from their borders — worth half as much to them</color>
+\n<color=#E7C170>Отнята у вас — по поводу «Вернуть утраченное» уступят дешевле</color>	\n<color=#E7C170>Taken from you — under "Reclaim lost systems" they will cede it for less</color>
+\n<color=#E7C170>На столе — щёлкните, чтобы убрать</color>	\n<color=#E7C170>On the table — click to remove</color>
+<color=#FF7F6B>Отказ ухудшит отношение</color>	<color=#FF7F6B>Refusing will worsen Opinion</color>
+\n<color=#A9A392>Договор взаимный — действует для обеих сторон</color>	\n<color=#A9A392>The treaty is mutual — it applies to both sides</color>
+К выбору фракции  <color=#A9A392>(Esc)</color>	Back to faction choice  <color=#A9A392>(Esc)</color>
+Принять оформление и начать  <color=#A9A392>(Enter)</color>	Accept and start  <color=#A9A392>(Enter)</color>
+ЦЕЛЬ ИМПЕРИИ  <color=#A9A392>· выполнено {0}</color>	EMPIRE GOAL  <color=#A9A392>· completed {0}</color>
+Не выбирать сейчас — новые цели предложат через год  <color=#A9A392>(Esc)</color>	Don't choose now — new goals will be offered in a year  <color=#A9A392>(Esc)</color>
+<color=#E7C170>⚡{0:0.#}</color>/мес  ·  лидеров {1}/{2}  ·  кандидаты обновляются каждый год	<color=#E7C170>⚡{0:0.#}</color>/mo  ·  leaders {1}/{2}  ·  candidates refresh every year
+<color=#8CD3A0>Научный совет</color> · наука +{0:0}%	<color=#8CD3A0>Science Council</color> · Research +{0:0}%
+\n<color=#A9A392>Уровень:</color> {0}	\n<color=#A9A392>Level:</color> {0}
+Закрыть  <color=#A9A392>(Esc / I)</color>	Close  <color=#A9A392>(Esc / I)</color>
+Подробнее о путях к победе  <color=#A9A392>(V)</color>	Paths to victory in detail  <color=#A9A392>(V)</color>
+ГЕЛИЙ-3  <color=#FF6B57>· БАНКРОТ</color>	HELIUM-3  <color=#FF6B57>· BANKRUPT</color>
+НАУКА  <color=#A9A392>· слоты {0}/{1}</color>	RESEARCH  <color=#A9A392>· slots {0}/{1}</color>
+<color=#A9A392>/ мес</color>	<color=#A9A392>/ mo</color>
+{0} <color=#A9A392>/ мес</color>	{0} <color=#A9A392>/ mo</color>
+<color=#FF6B57>Банкротство: {0} из {1} мес. до краха экономики</color>	<color=#FF6B57>Bankruptcy: {0} of {1} months until economic collapse</color>
+<b>Законы империи</b>  <color=#A9A392>(L)</color>\n	<b>Empire laws</b>  <color=#A9A392>(L)</color>\n
+   <color=#E7C170>безраб. {0}</color>	   <color=#E7C170>unempl. {0}</color>
+<color=#8CD3A0>Ремонт · {0:0}% в день</color>	<color=#8CD3A0>Repairing · {0:0}% per day</color>
+<color=#8CD3A0>Осада · {0:0} дн.</color>	<color=#8CD3A0>Siege · {0:0} d</color>
+<color=#E7C170>ПОВЕРЖЕН</color>	<color=#E7C170>DEFEATED</color>
+<color=#FF6B57>ВОЙНА</color>	<color=#FF6B57>WAR</color>
+<color=#79D0BF>Пакт о ненападении</color>	<color=#79D0BF>Non-aggression pact</color>
+<color=#8CD3A0>Перемирие</color>	<color=#8CD3A0>Truce</color>
+<color=#A9A392>Мир</color>	<color=#A9A392>Peace</color>
+Агентов {0}   ·   защита вашей империи <color=#79D0BF>{1:0}%</color>	Agents {0}   ·   your empire's defense <color=#79D0BF>{1:0}%</color>
+   ·   операции: <color=#8CD3A0>{0}</color> удачных, <color=#FF7F6B>{1}</color> провальных	   ·   operations: <color=#8CD3A0>{0}</color> successful, <color=#FF7F6B>{1}</color> failed
+  <size=14><color=#A9A392>· ур. {0}</color></size>	  <size=14><color=#A9A392>· lvl {0}</color></size>
+<color=#FF7F6B>война</color>	<color=#FF7F6B>war</color>
+<color=#8CD3A0>пакт</color>	<color=#8CD3A0>pact</color>
+<color=#E7C170>заморожена</color>	<color=#E7C170>frozen</color>
+<color=#8CD3A0>+{0:0.#}</color> / мес	<color=#8CD3A0>+{0:0.#}</color> / mo
+<color=#8CD3A0>Открыто</color>	<color=#8CD3A0>Unlocked</color>
+<color=#A9A392>Ещё {0:0.#}%</color>	<color=#A9A392>{0:0.#}% to go</color>
+<color=#A9A392>Следующее:</color>  <color=#E7C170><b>{0}</b></color> при {1:0}%  <color=#A9A392>(ещё {2:0.#}%)</color>	<color=#A9A392>Next:</color>  <color=#E7C170><b>{0}</b></color> at {1:0}%  <color=#A9A392>({2:0.#}% to go)</color>
+<color=#8CD3A0>Все награды разведки открыты</color>	<color=#8CD3A0>All intelligence rewards unlocked</color>
+<color={0}><b>{1:0}%</b></color> успех   <color=#E7C170>★{2:0}</color>   {3} мес.	<color={0}><b>{1:0}%</b></color> success   <color=#E7C170>★{2:0}</color>   {3} mo
+<color=#E7C170>★{0:0}</color> · {1} мес. · {2}	<color=#E7C170>★{0:0}</color> · {1} mo · {2}
+Досье закрыто\n<size=12><color=#A9A392>Откроется при сети {0:0}% — сейчас {1:0}%.\nЗапасы, доходы, наука и мощь флота цели.</color></size>	Dossier locked\n<size=12><color=#A9A392>Opens at {0:0}% network — now {1:0}%.\nTarget's stockpiles, income, science and fleet power.</color></size>
+Агент  <color=#79D0BF><b>+{0:0}%</b></color>\nБазовая  {1:0}%\nТехнологии  +{2:0}%	Agent  <color=#79D0BF><b>+{0:0}%</b></color>\nBase  {1:0}%\nTechnologies  +{2:0}%
+  ·  <color=#FF7F6B>война</color>	  ·  <color=#FF7F6B>war</color>
+Кандидатов в агенты нет\n<size=12><color=#A9A392>Список кандидатов обновляется каждый год.</color></size>	No agent candidates\n<size=12><color=#A9A392>The candidate list refreshes every year.</color></size>
+<color=#E7C170>★{0:0}</color> найм   ·   {1:0.#} гелия-3 в месяц   ·   лидеров {2}/{3}	<color=#E7C170>★{0:0}</color> to hire   ·   {1:0.#} helium-3 per month   ·   leaders {2}/{3}
+   ·   <color=#FF7F6B>война</color>	   ·   <color=#FF7F6B>war</color>
+   ·   <color=#8CD3A0>пакт</color>	   ·   <color=#8CD3A0>pact</color>
+<b>{0}</b>\nАгент · уровень {1}\n<color=#A9A392>Уровень:</color> {2}	<b>{0}</b>\nAgent · level {1}\n<color=#A9A392>Level:</color> {2}
+\n<color=#A9A392>До следующего уровня:</color> {0:0} опыта	\n<color=#A9A392>To next level:</color> {0:0} XP
+<color=#A9A392>Верфь → «Модернизация эскадры»: «Выделенный» или «Все устаревшие».</color>	<color=#A9A392>Shipyard → “Squadron Refit”: “Selected” or “All Outdated”.</color>
+\n\n<color=#A9A392>Скорость: {0:0} дн/прыжок · содержание {1:0.#} энергии в месяц</color>	\n\n<color=#A9A392>Speed: {0:0} d/jump · upkeep {1:0.#} energy per month</color>
+<color=#E7C170>Отступление:</color> прыжок через {0:0.0} дн.	<color=#E7C170>Retreat:</color> jumping in {0:0.0} d
+<color=#E7C170>Отступление:</color> гиперпривод готов — прыжок	<color=#E7C170>Retreat:</color> hyperdrive ready — jumping
+<color=#8CD3A0>Гиперпривод готов</color> — можно отступить экстренным прыжком	<color=#8CD3A0>Hyperdrive ready</color> — you can retreat with an emergency jump
+<color=#E7C170>Повреждён</color> — ремонт только на своей территории	<color=#E7C170>Damaged</color> — repairs only in your own territory
+<color=#79D0BF>Маршрут</color>   	<color=#79D0BF>Route</color>   
+<color=#A9A392>В пути:</color> ~{0}\n	<color=#A9A392>Travel time:</color> ~{0}\n
+<color=#A9A392>Расстояние:</color> {0:0} св. лет · прыжков: {1}\n	<color=#A9A392>Distance:</color> {0:0} ly · jumps: {1}\n
+<color=#A9A392>Пунктов в очереди:</color> {0}\n	<color=#A9A392>Queued waypoints:</color> {0}\n
+\n<color=#A9A392>Shift+ПКМ — добавить пункт · Backspace — очистить очередь</color>	\n<color=#A9A392>Shift+RMB — add waypoint · Backspace — clear queue</color>
+<color=#A9A392>Империя:</color>  <b>{0}</b>\n	<color=#A9A392>Empire:</color>  <b>{0}</b>\n
+<color=#A9A392>Дата:</color>  {0}   ·   <color=#A9A392>лет у власти:</color> {1}\n	<color=#A9A392>Date:</color>  {0}   ·   <color=#A9A392>years in power:</color> {1}\n
+<color=#A9A392>Систем:</color>  {0}   ·   <color=#A9A392>колоний:</color> {1}   ·   <color=#A9A392>население:</color> {2}\n	<color=#A9A392>Systems:</color>  {0}   ·   <color=#A9A392>colonies:</color> {1}   ·   <color=#A9A392>population:</color> {2}\n
+<color=#A9A392>Технологий изучено:</color>  {0}   ·   <color=#A9A392>мощь флота:</color> {1:N0}\n	<color=#A9A392>Technologies researched:</color>  {0}   ·   <color=#A9A392>fleet power:</color> {1:N0}\n
+<color=#A9A392>Очки:</color>  <b>{0}</b>   ·   <color=#A9A392>у лучшего соперника:</color> {1}	<color=#A9A392>Score:</color>  <b>{0}</b>   ·   <color=#A9A392>best rival:</color> {1}
+<b>Цели империи</b>\nПрогресс к победе.\n\n<color=#A9A392>ЛКМ — подробнее</color>	<b>Empire Objectives</b>\nProgress toward victory.\n\n<color=#A9A392>LMB — details</color>
+<color=#A9A392>Если любой из соперников первым достигнет цели или наберёт больше очков — поражение.\nЛКМ — подробнее</color>	<color=#A9A392>If any rival reaches a goal first or scores more points, you lose.\nLMB — details</color>
+  ·  <color=#E7C170><b>Победа</b></color>	  ·  <color=#E7C170><b>Victory</b></color>
+  ·  <color=#FF7F6B><b>Поражение</b></color>	  ·  <color=#FF7F6B><b>Defeat</b></color>
+Закрыть  <color=#A9A392>(Esc / F1)</color>	Close  <color=#A9A392>(Esc / F1)</color>
+Титан: <b><color=#79D0BF>{0:0}</color></b> / {1:N0}   ·   идёт решений: <b>{2}</b> из {3}   ·   цены растут с размером империи: ×{4:0.00}	Titanium: <b><color=#79D0BF>{0:0}</color></b> / {1:N0}   ·   decisions in progress: <b>{2}</b> of {3}   ·   costs grow with empire size: ×{4:0.00}
+<color=#A9A392>Цена:</color> {0}	<color=#A9A392>Cost:</color> {0}
+<color=#A9A392>Идёт: ещё {0} дн.</color>	<color=#A9A392>In progress: {0} more days.</color>
+Закрыть  <color=#A9A392>(Esc / L)</color>	Close  <color=#A9A392>(Esc / L)</color>
+<color=#A9A392>Действует сейчас.</color>	<color=#A9A392>In force now.</color>
+<color=#A9A392>Принять за {0:0} влияния; направление закроется на {1} дней.</color>	<color=#A9A392>Enact for {0:0} influence; the area will be locked for {1} days.</color>
+<color=#79D0BF><b>ЛКМ</b></color>  выбор      <color=#79D0BF><b>ПКМ</b></color>  приказ флоту\n	<color=#79D0BF><b>LMB</b></color>  select      <color=#79D0BF><b>RMB</b></color>  fleet order\n
+<color=#79D0BF><b>WASD</b></color>  камера      <color=#79D0BF><b>Колесо</b></color>  масштаб\n	<color=#79D0BF><b>WASD</b></color>  camera      <color=#79D0BF><b>Wheel</b></color>  zoom\n
+<color=#79D0BF><b>Пробел</b></color>  пауза      <color=#79D0BF><b>1 2 3</b></color>  скорость\n	<color=#79D0BF><b>Space</b></color>  pause      <color=#79D0BF><b>1 2 3</b></color>  speed\n
+<color=#79D0BF><b>F5 / F9</b></color>  быстрое сохранение / загрузка\n	<color=#79D0BF><b>F5 / F9</b></color>  quick save / load\n
+<color=#79D0BF><b>Esc</b></color>  меню паузы	<color=#79D0BF><b>Esc</b></color>  pause menu
+Предыдущая  <color=#A9A392>(Q)</color>	Previous  <color=#A9A392>(Q)</color>
+Следующая  <color=#A9A392>(E)</color>	Next  <color=#A9A392>(E)</color>
+Сохранений пока нет\n<size=11><color=#A9A392>Сохранить партию можно в меню паузы (Esc) или клавишей F5</color></size>	No saves yet\n<size=11><color=#A9A392>You can save the game from the pause menu (Esc) or with F5</color></size>
+<b>Музыка</b>\nТекущий трек, пауза, следующий, громкость  <color=#A9A392>(M)</color>	<b>Music</b>\nCurrent track, pause, next, volume  <color=#A9A392>(M)</color>
+<color=#A9A392>В галактике пока тихо. Здесь появятся войны, открытия и слухи соседей.</color>	<color=#A9A392>The galaxy is quiet for now. Wars, discoveries, and rumors from your neighbors will appear here.</color>
+Закрыть  <color=#A9A392>(Esc / O)</color>	Close  <color=#A9A392>(Esc / O)</color>
+<b>Справка</b>\nВсе горячие клавиши, где что находится, обучение заново  <color=#A9A392>(F1)</color>	<b>Help</b>\nAll hotkeys, where things are, replay the tutorial  <color=#A9A392>(F1)</color>
+<color=#E7C170>Рост остановлен — нет жилья. Постройте городской район.</color>	<color=#E7C170>Growth halted — no housing. Build an urban district.</color>
+<color=#E7C170>Безработных {0}: постройте районы — они сразу выйдут на смену.</color>	<color=#E7C170>{0} unemployed: build districts — they will start working right away.</color>
+<color=#8CD3A0>Это приоритет колонии: жители идут сюда первыми.</color>	<color=#8CD3A0>This is the colony priority: pops work here first.</color>
+<color=#E7C170>Безработных {0}</color> — нет свободных мест: постройте районы («СТРОИТЬ»).	<color=#E7C170>{0} unemployed</color> — no free jobs: build districts (“BUILD”).
+<color=#A9A392>Все {0} мест под районы застроены.</color>	<color=#A9A392>All {0} district slots are built.</color>
+<color=#A9A392>Перетаскивайте жителей мышью между рядами · свободных мест под районы: {0} из {1}</color>	<color=#A9A392>Drag pops between rows with the mouse · free district slots: {0} of {1}</color>
+<b>{0}</b>\nВ очереди · готов через ~{1} дн.\n<color=#A9A392>Нажмите, чтобы отменить (ресурсы вернутся)</color>	<b>{0}</b>\nQueued · done in ~{1} d\n<color=#A9A392>Click to cancel (resources are refunded)</color>
+<b>Меню строительства</b>\nВсе постройки, проекты и корабли этой планеты с ценой и сроком  <color=#A9A392>(B)</color>	<b>Construction menu</b>\nEvery build, project and ship for this planet with cost and time  <color=#A9A392>(B)</color>
+Вернуться на карту  <color=#A9A392>(Esc)</color>	Back to the map  <color=#A9A392>(Esc)</color>
+<color=#A9A392>Губернатор</color>  {0} · ур. {1}	<color=#A9A392>Governor</color>  {0} · lvl {1}
+<color=#79D0BF>+{0} титана</color>	<color=#79D0BF>+{0} Titanium</color>
+<color=#E7C170>+{0} гелия-3</color>	<color=#E7C170>+{0} Helium-3</color>
+Даёт в месяц: <color=#79D0BF>+{0} титана</color>, <color=#E7C170>+{1} гелия-3</color>, 	Monthly output: <color=#79D0BF>+{0} Titanium</color>, <color=#E7C170>+{1} Helium-3</color>, 
+\n<color=#A9A392>Колонисты:</color> {0}{1}	\n<color=#A9A392>Colonists:</color> {0}{1}
+ <color=#8CD3A0>(родной климат)</color>	 <color=#8CD3A0>(native climate)</color>
+ <color=#E7C170>(чужой климат)</color>	 <color=#E7C170>(alien climate)</color>
+ <color=#FF7F6B>(чужой вид, интеграция {0}%)</color>	 <color=#FF7F6B>(alien species, integration {0}%)</color>
+\n  <color=#A9A392>Работают: {0}</color>	\n  <color=#A9A392>Work: {0}</color>
+\n<color=#A9A392>За этот год: приехали {0}, уехали {1}</color>	\n<color=#A9A392>This year: {0} arrived, {1} left</color>
+\n<color=#E7C170>Хотят уехать: {0} (нет работы или жилья, беспорядки)</color>	\n<color=#E7C170>Want to leave: {0} (no jobs or housing, unrest)</color>
+\n<color=#8CD3A0>Примет переселенцев: {0} (есть жильё и работа)</color>	\n<color=#8CD3A0>Will accept migrants: {0} (housing and jobs available)</color>
+\n<color=#A9A392>Жители сами переезжают из колоний без работы и жилья туда, где они есть, — охотнее в родной климат. Роботы не переезжают.</color>	\n<color=#A9A392>Inhabitants move on their own from colonies without jobs and housing to those that have them — preferably to their native climate. Robots do not move.</color>
+<color=#A9A392>Цена:</color> {0:0} влияния	<color=#A9A392>Cost:</color> {0:0} influence
+<color=#E7C170><b>КЛИМАТ И БИОСФЕРА</b></color>\n	<color=#E7C170><b>CLIMATE & BIOSPHERE</b></color>\n
+<color=#E7C170><b>ЗАЛЕЖИ И РАЗРАБОТКА</b></color>\n	<color=#E7C170><b>DEPOSITS & MINING</b></color>\n
+<color=#79D0BF>◆ Титан</color>  {0}\n	<color=#79D0BF>◆ Titanium</color>  {0}\n
+<color=#E7C170>⚡ Гелий-3</color>  {0}\n	<color=#E7C170>⚡ Helium-3</color>  {0}\n
+<color=#E7C170>Есть несохранённые изменения.</color>	<color=#E7C170>You have unsaved changes.</color>
+<color=#FF6B57>Перегрузка энергосети — поставьте реактор или снимите прожорливые модули.</color>	<color=#FF6B57>Power grid overloaded — add a reactor or remove power-hungry modules.</color>
+<color=#E7C170>Без оружия корабль не участвует в перестрелке.</color>	<color=#E7C170>Without weapons, the ship won't take part in firefights.</color>
+<color=#A9A392>Уклон в кинетику: силён против щитов, слабее против брони.</color>	<color=#A9A392>Kinetic-heavy: strong against shields, weaker against armor.</color>
+<color=#A9A392>Уклон в энергию: силён против брони, щиты отражают часть урона.</color>	<color=#A9A392>Energy-heavy: strong against armor, shields deflect some of the damage.</color>
+<color=#8CD3A0>Сбалансированное вооружение.</color>	<color=#8CD3A0>Balanced armament.</color>
+  <color=#A9A392>· ▲▼ — к «{0}»</color>	  <color=#A9A392>· ▲▼ vs “{0}”</color>
+<color=#E7C170>Сначала сохраните проект.</color>	<color=#E7C170>Save the design first.</color>
+<color=#8CD3A0>«{0}» заложен на верфи.</color>	<color=#8CD3A0>“{0}” laid down at the shipyard.</color>
+<color=#FF6B57>Не хватает ресурсов на постройку.</color>	<color=#FF6B57>Not enough resources to build.</color>
+<color=#8CD3A0>Модернизировано кораблей: {0}.</color>	<color=#8CD3A0>Ships refitted: {0}.</color>
+<color=#E7C170>Не хватает сплавов на модернизацию.</color>	<color=#E7C170>Not enough alloys to refit.</color>
+<color=#FF6B57>Невозможно сохранить: потребление энергии больше выработки.</color>	<color=#FF6B57>Can't save: energy draw exceeds output.</color>
+<color=#8CD3A0>«{0}» сохранён — верфь строит по этому проекту.</color>	<color=#8CD3A0>“{0}” saved — the shipyard now builds this design.</color>
+<color=#FF6B57>У вас нет систем для верфи</color>	<color=#FF6B57>You have no systems for a shipyard</color>
+<color=#A9A392>Изучает системы, открывает их для форпостов. Учёный на борту ускоряет разведку.</color>	<color=#A9A392>Surveys systems, opening them up for outposts. A scientist on board speeds up surveys.</color>
+<color=#A9A392>Строит звёздные базы в изученных системах — так растёт территория.</color>	<color=#A9A392>Builds starbases in surveyed systems — that's how your territory grows.</color>
+<color=#8CD3A0>Все военные корабли соответствуют актуальным проектам.</color>	<color=#8CD3A0>All warships match their current designs.</color>
+Устаревших кораблей: <color=#E7C170>{0}</color> · на всех нужно <color=#E7C170>{1:0} сплавов</color>.	Outdated ships: <color=#E7C170>{0}</color> · total cost <color=#E7C170>{1:0} Alloys</color>.
+\n<color=#A9A392>Новый проект в конструкторе делает старые корабли устаревшими; выделите корабль на карте, чтобы модернизировать только его.</color>	\n<color=#A9A392>A new design in the Ship Designer makes older ships outdated; select a ship on the map to refit only that one.</color>
+{0}: <color=#8CD3A0>актуальный проект.</color>\n	{0}: <color=#8CD3A0>current design.</color>\n
+<color=#8CD3A0>+{0:0}% мощи</color>	<color=#8CD3A0>+{0:0}% Power</color>
+<color=#E7C170>{0:0} сплавов</color>	<color=#E7C170>{0:0} Alloys</color>
+<color=#FF6B57>нужно {0:0} сплавов</color>	<color=#FF6B57>need {0:0} Alloys</color>
+   <color=#A9A392>ЛКМ — выбрать · ПКМ или Esc — отмена</color>	   <color=#A9A392>LMB — select · RMB or Esc — cancel</color>
+<b><color=#E7C170>{0}</color></b>  ·  агент, уровень {1}\n	<b><color=#E7C170>{0}</color></b>  ·  agent, level {1}\n
+Идёт построение разведсети из системы <color=#E7C170>{0}</color> в империи <color={1}>{2}</color>\n\n	Building a spy network from the <color=#E7C170>{0}</color> system in the <color={1}>{2}</color> empire\n\n
+<color=#E7C170>Идёт операция «{0}», ещё {1} мес. — сеть не растёт</color>\n\n	<color=#E7C170>Operation “{0}” in progress, {1} mo left — the network is not growing</color>\n\n
+Рост сети в системе: <color=#8CD3A0>+{0:0.#}</color> в месяц\n	Network growth in system: <color=#8CD3A0>+{0:0.#}</color> per month\n
+<color=#A9A392>{0:0}% — обзор территории и флотов, {1:0}% — досье. ЛКМ — открыть агента</color>	<color=#A9A392>{0:0}% — view of territory and fleets, {1:0}% — dossier. LMB — open agent</color>
+\n<color=#A9A392>Число — жители всех колоний; срок — когда появится новый житель в самой большой колонии</color>	\n<color=#A9A392>The number is the population of all colonies; the time is when the largest colony gets its next inhabitant</color>
+\n<color=#E7C170>Рост остановлен: нет жилья — постройте городской район</color>	\n<color=#E7C170>Growth stopped: no housing — build an urban district</color>
+\n<color=#E7C170>Рост остановлен</color>	\n<color=#E7C170>Growth stopped</color>
+\n<color=#FF7F6B>Без работы: {0}</color>	\n<color=#FF7F6B>Unemployed: {0}</color>
+\n\n<color=#A9A392>Нажмите на систему, чтобы открыть колонию</color>	\n\n<color=#A9A392>Click the system to open the colony</color>
+\n<color=#A9A392>На ярлыке — стройка, которая закончится раньше всех</color>	\n<color=#A9A392>The label shows the construction that finishes first</color>
+<color=#A9A392>Владелец:</color> {0}\n	<color=#A9A392>Owner:</color> {0}\n
+<color=#FF7F6B>Звёздная база выведена из строя</color>\n	<color=#FF7F6B>Starbase disabled</color>\n
+<color=#A9A392>Осада идёт ×{0:0.##} дольше</color>\n	<color=#A9A392>Sieges take ×{0:0.##} longer</color>\n
+<color=#A9A392>Присоединённая система вольного мира</color>\n	<color=#A9A392>Annexed system of a free world</color>\n
+<color=#FF7F6B>Война</color>\n	<color=#FF7F6B>War</color>\n
+<color=#A9A392>Ваше расположение:</color> {0:+0;-0;0}\n	<color=#A9A392>Your favour:</color> {0:+0;-0;0}\n
+<color=#A9A392>Покровитель:</color> {0}\n	<color=#A9A392>Patron:</color> {0}\n
+<color=#A9A392>Выберите систему — торговля, посольства и просьбы</color>\n	<color=#A9A392>Select the system for trade, embassies and requests</color>\n
+<color=#A9A392>Постройте здесь форпост, чтобы получить бонус</color>\n	<color=#A9A392>Build an outpost here to gain the bonus</color>\n
+<color=#A9A392>Действует на всех, кто здесь находится</color>\n	<color=#A9A392>Affects everyone present here</color>\n
+\n<color=#8CD3A0>Форпост строится · готов через {0}</color>\n	\n<color=#8CD3A0>Outpost under construction · ready in {0}</color>\n
+\n<color=#8CD3A0>Строитель летит сюда · форпост будет через ~{0}</color>\n	\n<color=#8CD3A0>Construction ship en route · outpost in ~{0}</color>\n
+<color=#A9A392>полёт + {0:0} дн. стройки</color>\n	<color=#A9A392>travel + {0:0} d of construction</color>\n
+\n<color=#8CD3A0>Колония «{0}» основывается · готова через {1}</color>\n	\n<color=#8CD3A0>Founding colony “{0}” · ready in {1}</color>\n
+\n<color=#8CD3A0>Терраформинг «{0}» · завершится через {1}</color>\n	\n<color=#8CD3A0>Terraforming “{0}” · complete in {1}</color>\n
+\n<color=#A9A392>Флоты:</color> 	\n<color=#A9A392>Fleets:</color> 
+<color=#79D0BF>ваши {0}</color>	<color=#79D0BF>yours {0}</color>
+\n<color=#79D0BF>{0}: ~{1} ({2} прыжк.)</color>\n	\n<color=#79D0BF>{0}: ~{1} ({2} jumps)</color>\n
+<color=#A9A392>ПКМ — лететь, Shift+ПКМ — в очередь</color>	<color=#A9A392>RMB — move, Shift+RMB — queue</color>
+<color=#E7C170><b>СТОИМОСТЬ</b></color>\n	<color=#E7C170><b>COST</b></color>\n
+<color=#A9A392>{0:0} очков науки · наука {1:0.#}/мес</color>\n	<color=#A9A392>{0:0} Research points · Research {1:0.#}/mo</color>\n
+<size=11><color={0}><b>НАУЧНАЯ ПОБЕДА</b></color></size>\n<b>{1}</b> из {2} технологий  <color=#A9A392>· {3:0}%</color>	<size=11><color={0}><b>SCIENCE VICTORY</b></color></size>\n<b>{1}</b> of {2} technologies  <color=#A9A392>· {3:0}%</color>
+<color=#A9A392>Закрыто · {0}</color>	<color=#A9A392>Locked · {0}</color>
+ПЛАН ИССЛЕДОВАНИЙ  <color=#A9A392><size=11>{0}</size></color>	RESEARCH PLAN  <color=#A9A392><size=11>{0}</size></color>
+<color=#A9A392>Запасы {0}:</color>  	<color=#A9A392>{0} stockpile:</color>  
+<color=#A9A392>Задайте условия сделки</color>	<color=#A9A392>Set the terms of the deal</color>
+<color=#FF7F6B>AI откажет · нужно +{0:0} ценности</color>	<color=#FF7F6B>AI will refuse · needs +{0:0} value</color>
+<b>Наземный штурм</b>\nКарточный бой за колонию: 3 сектора, {0} ходов. Победа — колония ваша сразу, не дожидаясь конца осады. Погибшие карты теряются навсегда, выжившие получают опыт.\n<color=#A9A392>Сначала откроется «Сбор десанта» — выберите, какими картами нападать</color>	<b>Ground assault</b>\nA card battle for the colony: 3 sectors, {0} turns. Victory makes the colony yours at once, without waiting for the siege to end. Fallen cards are lost forever, survivors gain experience.\n<color=#A9A392>"Assemble the landing force" opens first — choose which cards to attack with</color>
+\n<color=#A9A392>При штурме колонии: с 1-го уровня — щит Штаба, на каждый уровень — турель и +2 места для карт резерва в обороне.</color>	\n<color=#A9A392>When the colony is assaulted: from level 1 — the HQ shield, each level — a turret and +2 slots for reserve cards in defense.</color>
+\n<color=#A9A392>Содержание +{0:0} гелия-3 за уровень. Штурм разрушает один уровень, передача по договору — нет.</color>	\n<color=#A9A392>Upkeep +{0:0} Helium-3 per level. An assault destroys one level; a treaty transfer does not.</color>
+<color=#A9A392>Присоединённая система. Родная система мира — {0}. Территория: {1} из {2}</color>	<color=#A9A392>Annexed system. The world's home system is {0}. Territory: {1} of {2}</color>
+<color=#A9A392>Территория: {0} из {1} систем. Вольный мир очень медленно растёт — раз в 10–15 лет</color>	<color=#A9A392>Territory: {0} of {1} systems. A free world grows very slowly — once every 10–15 years</color>
+<color=#A9A392>Звёздная база здесь:</color> мощь {0:N0}   <color=#A9A392>Флот стражи:</color> мощь {1:N0}\n<color=#A9A392>Колоний:</color> {2} из {3}	<color=#A9A392>Starbase here:</color> power {0:N0}   <color=#A9A392>Guard fleet:</color> power {1:N0}\n<color=#A9A392>Colonies:</color> {2} of {3}
+<color=#8CD3A0>вы</color>	<color=#8CD3A0>you</color>
+<color=#A9A392>Покровитель:</color> {0}\n<color=#A9A392>Покровителю:</color> {1}\n<color=#A9A392>Другу (от {2:0}):</color> 40% этого и проход через систему	<color=#A9A392>Patron:</color> {0}\n<color=#A9A392>Patron gets:</color> {1}\n<color=#A9A392>Friend (from {2:0}):</color> 40% of that and passage through the system
+<color=#A9A392>Соперники:</color> 	<color=#A9A392>Rivals:</color> 
+<color=#A9A392>Родная система: с ней перейдёт всё, что осталось от мира</color>	<color=#A9A392>Home system: everything left of the world goes with it</color>
+<color=#A9A392>Присоединённая система: перейдёт к вам отдельно, мир продолжит жить</color>	<color=#A9A392>Annexed system: it passes to you on its own, the world lives on</color>
+<color=#A9A392>Заводы промышленных районов перерабатывают титан в сплавы.</color>	<color=#A9A392>Industrial district factories refine titanium into alloys.</color>
+<color=#A9A392>…и ещё {0}</color>\n	<color=#A9A392>…and {0} more</color>\n
+<color=#A9A392>⇄ {0}: закрыт</color>	<color=#A9A392>⇄ {0}: closed</color>
+<b>{0}</b>\n{1}\n<color=#A9A392>{2:0} титана, {3:0} сплавов · {4:0} дн. · содержание {5:0} гелия-3/мес</color>	<b>{0}</b>\n{1}\n<color=#A9A392>{2:0} titanium, {3:0} alloys · {4:0} days · upkeep {5:0} helium-3/mo</color>
+<color=#79D0BF>◆  Под контролем {0}</color>	<color=#79D0BF>◆  Controlled by {0}</color>
+<color=#A9A392>◆  Нейтральный фронтир</color>	<color=#A9A392>◆  Neutral frontier</color>
+<color=#E7C170>Особый вариант: 	<color=#E7C170>Special option: 
+<color=#FF7F6B>Недоступно — требуется: 	<color=#FF7F6B>Unavailable — requires: 
+<color=#A9A392><b>Учёный</b> — лидер-исследователь. Он служит на борту научного корабля (тогда события аномалий учитывают его черты) или в научном совете. Нанять учёного: окно «Империя» (I) → вкладка «Лидеры» → «НАНЯТЬ», затем «НАЗНАЧИТЬ» — на научный корабль или в совет.</color>	<color=#A9A392>A <b>scientist</b> is a research leader. They serve aboard a science ship (then anomaly events take their traits into account) or on the science council. To hire one: "Empire" window (I) → "Leaders" tab → "HIRE", then "ASSIGN" them to a science ship or the council.</color>
+Закрыть  <color=#A9A392>(Esc / V)</color>	Close  <color=#A9A392>(Esc / V)</color>
+{0}   ·   до подсчёта очков: <color=#E7C170>{1} {2}</color> ({3})	{0}   ·   until scoring: <color=#E7C170>{1} {2}</color> ({3})
+<color=#8CD3A0>Вы удерживаете порог: {0} из {1} мес.</color>	<color=#8CD3A0>You are holding the threshold: {0} of {1} mo.</color>
+<color=#FF6B57>{0}: {1} из {2} мес.!</color>	<color=#FF6B57>{0}: {1} of {2} mo.!</color>
+<color=#8CD3A0>Проект «Вознесение» завершён</color>	<color=#8CD3A0>Ascension project complete</color>
+<color=#8CD3A0>Вы удерживаете долю: {0} из {1} мес.</color>	<color=#8CD3A0>You are holding the share: {0} of {1} mo.</color>
+Закрыть  <color=#A9A392>(Esc / U)</color>	Close  <color=#A9A392>(Esc / U)</color>
+<color=#E7C170>СЛЕДУЮЩИЙ</color>	<color=#E7C170>NEXT</color>
+<color=#6F6C64>ВПЕРЕДИ</color>	<color=#6F6C64>UPCOMING</color>
+<color=#FF7F6B>ОСТАНОВЛЕНО — система потеряна</color>	<color=#FF7F6B>HALTED — system lost</color>
+{0:0}%   <color=#A9A392>осталось {1}</color>	{0:0}%   <color=#A9A392>{1} left</color>
+<color=#6F6C64>Неизвестная империя</color>	<color=#6F6C64>Unknown Empire</color>
+<color=#E7C170>ЗАВЕРШЕНО</color>	<color=#E7C170>COMPLETE</color>
+{0} «{1}»	{0} “{1}”
+НИС	RV
+СК	CS
+РК	RS
+ИК	ES
+Зонд	Probe
+Подрядчик	Contractor
+Взор	Gaze
+Обитель	Abode
+Спора	Spore
+Саженец	Sapling
+Сборщик	Assembler
+Первопроходец	Pathfinder
+Коперник	Copernicus
+Гипатия	Hypatia
+Любопытство	Curiosity
+Горизонт	Horizon
+Кеплер	Kepler
+Открытие	Discovery
+Вояджер	Voyager
+Ломоносов	Lomonosov
+Новая Заря	New Dawn
+Фундамент	Foundation
+Согласие	Concord
+Опора	Pillar
+Мост	Bridge
+Каменщик	Mason
+Новый Дом	New Home
+Свободный Причал	Free Harbor
+Гавань	Haven
+Единство	Unity
+Око Доминиона	Eye of the Dominion
+Следопыт	Tracker
+Клинок Знания	Blade of Knowledge
+Дозорный	Sentinel
+Ищейка	Bloodhound
+Холодный Взор	Cold Gaze
+Предвестник	Harbinger
+Разведчик Кхар	Scout Khar
+Шпора	Spur
+Бдительный	Vigilant
+Молот	Hammer
+Бастион	Bastion
+Наковальня	Anvil
+Твердыня	Stronghold
+Железный Шаг	Iron Stride
+Кузня Ксарн	Xarn Forge
+Оплот	Bulwark
+Плацдарм	Beachhead
+Тяжкий Труд	Hard Labor
+Аудит	Audit
+Котировка	Quotation
+Маркетолог	Marketer
+Прогноз Рынка	Market Forecast
+Инвестор	Investor
+Венчур	Venture
+Актив	Asset
+Оценщик	Appraiser
+Дивиденд	Dividend
+Генподряд	General Contract
+Франшиза	Franchise
+Филиал	Branch Office
+Холдинг	Holding
+Слияние	Merger
+Концессия	Concession
+Монополия	Monopoly
+Сделка Века	Deal of the Century
+Лицензия	License
+Капитал	Capital
+Нить Судьбы	Thread of Fate
+Сияние	Radiance
+Видение	Vision
+Звёздный Шёпот	Starwhisper
+Третий Глаз	Third Eye
+Предзнаменование	Omen
+Прорицание	Prophecy
+Мерцание	Shimmer
+Сон Оракула	Oracle's Dream
+Святилище	Sanctuary
+Храм Зари	Temple of Dawn
+Обет	Vow
+Тихая Келья	Quiet Cell
+Алтарь	Altar
+Светоч	Beacon of Light
+Благодать	Grace
+Купол Безмолвия	Dome of Silence
+Обитель Знамений	Abode of Signs
+Пророчество	Foretelling
+Пыльца	Pollen
+Усик	Tendril
+Росток Ветра	Windsprout
+Светолист	Lightleaf
+Блуждающий Корень	Wandering Root
+Мицелий	Mycelium
+Шёпот Листвы	Leafwhisper
+Побег	Shoot
+Почка	Bud
+Летучее Семя	Drifting Seed
+Корень	Root
+Древо Жизни	Tree of Life
+Перегной	Humus
+Грибница	Fungal Web
+Колыбель	Cradle
+Старая Кора	Old Bark
+Лоза	Vine
+Плодородие	Fertility
+Роща	Grove
+Сердцевина	Heartwood
+Сканер-7	Scanner-7
+Зонд Δ-12	Probe Δ-12
+Анализ-3	Analysis-3
+Сенсор-0x1F	Sensor-0x1F
+Наблюдатель-9	Observer-9
+Индекс-44	Index-44
+Выборка-5	Sample-5
+Ω-Разведка	Ω-Recon
+Протокол-21	Protocol-21
+Датчик-88	Detector-88
+Монтаж-1	Assembly-1
+Сборка-Σ	Build-Σ
+Каркас-6	Frame-6
+Конструктор-30	Constructor-30
+Матрица-2	Matrix-2
+Узел Связи-7	Relay Node-7
+Репликатор-4	Replicator-4
+Модуль-0xA	Module-0xA
+Сегмент-11	Segment-11
+Опора-99	Support-99
+Пионер	Pioneer
+Компас	Compass
+Звездочёт	Stargazer
+Искатель	Seeker
+Астролябия	Astrolabe
+Маяк	Lighthouse
+Дальний Путь	Far Journey
+Секстант	Sextant
+Ориентир	Landmark
+Созидатель	Creator
+Зодчий	Architect
+Кладка	Masonry
+Причал	Pier
+Опорный Пункт	Strongpoint
+Каркас	Framework
+Монолит	Monolith
+Арка	Arch
+Свод	Vault

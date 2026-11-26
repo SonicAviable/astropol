@@ -101,6 +101,25 @@ namespace StellarisClone.Core
             PendingLoad = null;
             PlayTime = 0f;
             s_reloading = false;
+            Application.wantsToQuit -= OnWantsToQuit;
+            Application.wantsToQuit += OnWantsToQuit;
+        }
+
+        // Закрытие окна, Alt+F4 и кнопка «Выйти» (Application.Quit) проходят здесь
+        private static bool OnWantsToQuit()
+        {
+            AutosaveOnExit();
+            return true;
+        }
+
+        /// <summary>
+        /// Автосохранение при выходе из партии — в меню, из игры или закрытием окна, чтобы сыгранное после
+        /// последнего автосейва не терялось. Если автосохранение выключено в настройках — ничего не делает.
+        /// </summary>
+        public static void AutosaveOnExit()
+        {
+            if (GameSettings.AutosaveMonths <= 0 || !SaveSystem.CanSaveNow) return;
+            SaveSystem.Save(null, auto: true, notify: false);
         }
 
         // ------------------------------------------------------------------ Переходы
@@ -136,6 +155,7 @@ namespace StellarisClone.Core
 
         public static void ReturnToMainMenu()
         {
+            AutosaveOnExit();
             Mode = StartMode.MainMenu;
             PendingLoad = null;
             Settings = new NewGameSettings();
