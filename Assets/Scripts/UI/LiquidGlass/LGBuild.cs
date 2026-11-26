@@ -283,7 +283,7 @@ namespace StellarisClone.Rendering
             var view = Rect(parent, "Scroll");
             view.Stretch();
             view.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(0, 12);
-            var sr = view.gameObject.AddComponent<ScrollRect>();
+            var sr = view.gameObject.AddComponent<LGScrollRect>();
             sr.horizontal = false;
             sr.vertical = true;
             sr.movementType = ScrollRect.MovementType.Elastic;

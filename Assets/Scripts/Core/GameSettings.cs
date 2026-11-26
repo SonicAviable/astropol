@@ -385,7 +385,8 @@ namespace StellarisClone.Core
 
         private float _gfxWatch;
 
-        // ---- Простой: нет ввода несколько секунд — до 30 кадров в секунду, при первом движении мыши/клавише — обратно
+        // ---- Простой: нет ввода несколько секунд — до 30 кадров в секунду, при первом движении мыши/клавише — обратно.
+        // Пока в партии идёт время, это не простой: флоты летят, бои и интерфейс живут — частота кадров полная.
         private const float IdleAfter = 4f;
         private const int IdleFps = 30;
         private Vector3 _lastMouse;
@@ -396,7 +397,8 @@ namespace StellarisClone.Core
         {
             if (!_focused) return;
             Vector3 m = Input.mousePosition;
-            bool input = Input.anyKey || Input.mouseScrollDelta.sqrMagnitude > 0f || (m - _lastMouse).sqrMagnitude > 0.25f;
+            bool running = UIManager.IsGameStarted && TimeManager.Instance != null && TimeManager.Instance.CurrentSpeed > 0;
+            bool input = running || Input.anyKey || Input.mouseScrollDelta.sqrMagnitude > 0f || (m - _lastMouse).sqrMagnitude > 0.25f;
             _lastMouse = m;
             if (input)
             {

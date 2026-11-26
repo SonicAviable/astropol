@@ -215,7 +215,7 @@ namespace StellarisClone.Rendering
             var gridHost = LGBuild.Rect(left.rectTransform, "GridHost");
             gridHost.Stretch(10, 10, 10, 54);
             gridHost.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(0, 12);
-            var sr = gridHost.gameObject.AddComponent<ScrollRect>();
+            var sr = gridHost.gameObject.AddComponent<LGScrollRect>();
             sr.horizontal = false; sr.vertical = true; sr.scrollSensitivity = 36f;
             sr.movementType = ScrollRect.MovementType.Clamped;
             var hit = gridHost.gameObject.AddComponent<Image>();

@@ -79,7 +79,7 @@ namespace StellarisClone.Rendering
             _content.pivot = new Vector2(0.5f, 1);
             _content.sizeDelta = Vector2.zero;
             _contentCg = _content.gameObject.AddComponent<CanvasGroup>();
-            _scroll = view.gameObject.AddComponent<ScrollRect>();
+            _scroll = view.gameObject.AddComponent<LGScrollRect>();
             _scroll.horizontal = false;
             _scroll.movementType = ScrollRect.MovementType.Elastic;
             _scroll.elasticity = 0.08f;

@@ -98,7 +98,7 @@ namespace StellarisClone.Rendering
             _deskView.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(14, 0);
             var hit = _deskView.gameObject.AddComponent<Image>();
             hit.color = new Color(0, 0, 0, 0);
-            _deskScroll = _deskView.gameObject.AddComponent<ScrollRect>();
+            _deskScroll = _deskView.gameObject.AddComponent<LGScrollRect>();
             _deskScroll.horizontal = true;
             _deskScroll.vertical = false;
             _deskScroll.movementType = ScrollRect.MovementType.Clamped;

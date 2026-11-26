@@ -507,7 +507,7 @@ namespace StellarisClone.Rendering
             gridHost.Stretch(16, 14, 392, 108);
             LG.Ignore(gridHost.gameObject, false);   // прозрачная подложка прокрутки; плитки оформляются как кнопки
             gridHost.gameObject.AddComponent<RectMask2D>();
-            var sr = gridHost.gameObject.AddComponent<ScrollRect>();
+            var sr = gridHost.gameObject.AddComponent<LGScrollRect>();
             sr.horizontal = false;
             sr.movementType = ScrollRect.MovementType.Clamped;
             sr.scrollSensitivity = 32f;

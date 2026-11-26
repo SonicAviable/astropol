@@ -120,7 +120,7 @@ namespace StellarisClone.Rendering
             sRt.offsetMin = new Vector2(4, 4);
             sRt.offsetMax = new Vector2(-4, -28);
 
-            var scrollRect = scrollObj.AddComponent<ScrollRect>();
+            var scrollRect = scrollObj.AddComponent<LGScrollRect>();
             scrollRect.horizontal = false;
             scrollRect.vertical = true;
             scrollRect.scrollSensitivity = 24f;
