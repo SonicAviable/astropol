@@ -122,19 +122,55 @@ namespace StellarisClone.Core
         };
 
         /// <summary>Нужда в ресурсе: 1.5 — не хватает, 0.7 — избыток.</summary>
-        public float Need(string res)
+        public float Need(string res) => NeedAt(res, Stock(res));
+
+        private static (float low, float high) NeedBounds(string res) => res switch
         {
-            float stock = Stock(res), income = Income(res);
-            (float low, float high) = res switch
-            {
-                "energy" => (120f, 700f),
-                "minerals" => (150f, 900f),
-                "alloys" => (80f, 450f),
-                _ => (40f, 220f)
-            };
+            "energy" => (120f, 700f),
+            "minerals" => (150f, 900f),
+            "alloys" => (80f, 450f),
+            _ => (40f, 220f)
+        };
+
+        /// <summary>Сверх этого запаса ресурс ИИ почти бесполезен: гелий-3 выше потолка и титан на полных складах уходят за бесценок (SellSurplus).</summary>
+        private float WasteAbove(string res) => res switch
+        {
+            "energy" => EnergyCap,
+            "minerals" => _report.MineralStorage * 0.85f,
+            _ => float.MaxValue
+        };
+
+        /// <summary>Нужда в ресурсе при запасе stock: 1.5 — не хватает, 1 — норма, 0.7 — избыток, 0.2 — пропадёт.</summary>
+        private float NeedAt(string res, float stock)
+        {
+            float income = Income(res);
+            (float low, float high) = NeedBounds(res);
+            if (stock >= WasteAbove(res)) return 0.2f;
             if (stock < low || income < 1f) return 1.5f;
             if (stock > high && income > 0f) return 0.7f;
             return 1f;
+        }
+
+        /// <summary>
+        /// Средняя нужда на отрезке запасов [from, to]: каждая следующая единица ценится по запасу, при котором её получают
+        /// или отдают. Иначе пустая казна делала бесценными все 5000 гелия-3, которые им дарят, а за одну сделку можно
+        /// было выкупить весь их склад сплавов по цене «избытка».
+        /// </summary>
+        private float NeedOver(string res, float from, float to)
+        {
+            from = Mathf.Max(0f, from);
+            if (to - from < 1f) return NeedAt(res, from);
+            (float low, float high) = NeedBounds(res);
+            float waste = WasteAbove(res);
+            float sum = 0f, x = from;
+            foreach (float bp in new[] { low, high, waste })
+            {
+                if (bp <= x || bp >= to) continue;
+                sum += NeedAt(res, (x + bp) * 0.5f) * (bp - x);
+                x = bp;
+            }
+            sum += NeedAt(res, (x + to) * 0.5f) * (to - x);
+            return sum / (to - from);
         }
 
         private static float PlayerStock(string res)
@@ -161,7 +197,9 @@ namespace StellarisClone.Core
 
             if (DealCatalog.IsResource(item.Kind))
             {
-                float v = BaseValue(res) * item.Amount * Need(res);
+                float stock = Stock(res);
+                float v = BaseValue(res) * item.Amount
+                        * (aiGives ? NeedOver(res, stock - item.Amount, stock) : NeedOver(res, stock, stock + item.Amount));
                 if (aiGives)
                 {
                     if (item.Amount > Stock(res) + 0.01f) blocker = Loc.F("У них нет столько: {0} {1:0}", DealCatalog.Name(item.Kind).ToLower(), Stock(res));
@@ -223,8 +261,13 @@ namespace StellarisClone.Core
             return null;
         }
 
+        /// <summary>Сколько в гелии-3 стоит основать колонию: титан, сплавы и влияние по их цене в сделках.</summary>
+        private static float ColonyReplacementValue =>
+            PlanetData.ColonyMineralsCost * BaseValue("minerals") + PlanetData.ColonyAlloysCost * BaseValue("alloys")
+            + PlanetData.ColonyInfluenceCost * BaseValue("influence");
+
         /// <summary>
-        /// Ценность системы для ИИ: свою отдают неохотно (×1,6, воинственные — ещё дороже, но систему,
+        /// Ценность системы для ИИ: свою отдают неохотно (×1,6; в мирное время колония — не дешевле новой, воинственные — ещё дороже, но систему,
         /// на которую у игрока есть повод «Вернуть утраченное», — дешевле); чужую берут дороже, если она у их границы.
         /// </summary>
         public float SystemValue(int systemId, bool aiGives, out string blocker)
@@ -234,7 +277,13 @@ namespace StellarisClone.Core
             float worth = SystemWorth(s);
             if (aiGives)
             {
-                float v = worth * 1.6f;
+                float v = worth;
+                // В мирное время обжитую колонию продают не дешевле, чем стоит основать и вырастить такую же:
+                // иначе мир с 15 жителями уходил за ~300 гелия-3 — дешевле одного колониального корабля
+                if (!AtWar && s != null)
+                    foreach (var p in s.Planets)
+                        if (p.Population > 0) v += ColonyReplacementValue + p.Population * 12f;
+                v *= 1.6f;
                 if (Personality == AIPersonality.Militarist) v *= 1.2f;
                 if (CasusBelli.IsClaimed(systemId, OwnerId)) v *= 0.6f;
                 return -v;
@@ -372,25 +421,32 @@ namespace StellarisClone.Core
             float deficit = v.Required - v.Balance + 1f;
             if (deficit <= 0f) return d;
 
-            // 1) Просим ресурсы, которые им нужнее всего и которых у игрока хватает
+            // 1) Просим ресурсы, которые им нужнее всего и которых у игрока хватает.
+            //    Цена единицы падает по мере насыщения (NeedOver), поэтому дефицит пересчитываем после каждого прохода
             var order = new List<DealItemKind>(DealCatalog.Resources);
             order.Sort((a, b) => (BaseValue(DealCatalog.ResourceKey(b)) * Need(DealCatalog.ResourceKey(b)))
                 .CompareTo(BaseValue(DealCatalog.ResourceKey(a)) * Need(DealCatalog.ResourceKey(a))));
-            foreach (var k in order)
+            for (int pass = 0; pass < 4 && deficit > 0f; pass++)
             {
-                if (deficit <= 0f) break;
-                string res = DealCatalog.ResourceKey(k);
-                float unit = BaseValue(res) * Need(res) * (Personality == AIPersonality.Trader ? 1.1f : 1f);
-                var have = d.Find(false, k);
-                float already = have != null ? have.Amount : 0f;
-                float room = PlayerStock(res) - already;
-                if (room < DealCatalog.Step(k)) continue;
-                float step = DealCatalog.Step(k);
-                float add = Mathf.Min(room, Mathf.Ceil(deficit / unit / step) * step);
-                add = Mathf.Floor(add / step) * step;
-                if (add <= 0f) continue;
-                if (have != null) have.Amount += add; else d.FromPlayer.Add(new DealItem(k, add));
-                deficit -= add * unit;
+                foreach (var k in order)
+                {
+                    if (deficit <= 0f) break;
+                    string res = DealCatalog.ResourceKey(k);
+                    var have = d.Find(false, k);
+                    float already = have != null ? have.Amount : 0f;
+                    float unit = BaseValue(res) * (Personality == AIPersonality.Trader ? 1.1f : 1f)
+                               * Mathf.Max(0.2f, NeedAt(res, Stock(res) + already));
+                    float room = PlayerStock(res) - already;
+                    float step = DealCatalog.Step(k);
+                    if (room < step) continue;
+                    float add = Mathf.Min(room, Mathf.Ceil(deficit / unit / step) * step);
+                    add = Mathf.Floor(add / step) * step;
+                    if (add <= 0f) continue;
+                    if (have != null) have.Amount += add; else d.FromPlayer.Add(new DealItem(k, add));
+                    deficit -= add * unit;
+                }
+                var check = Evaluate(d);
+                deficit = check.Required - check.Balance + 1f;
             }
 
             // 2) Урезаем свою часть
@@ -404,11 +460,17 @@ namespace StellarisClone.Core
                 {
                     it.Amount -= step;
                     deficit -= per * step;
+                    // Цена единицы зависит от остатка — сверяемся с точной оценкой, когда по прикидке уже хватает
+                    if (deficit <= 0f && it.Amount > 0f)
+                    {
+                        var check = Evaluate(d);
+                        deficit = check.Required - check.Balance + 1f;
+                    }
                 }
                 if (it.Amount <= 0f) d.FromAI.RemoveAt(i);
             }
 
-            if (deficit > 0f) { reason = Loc.T("Вам нечего добавить — они не видят выгоды"); return null; }
+            if (deficit > 0f || !Evaluate(d).Accept) { reason = Loc.T("Вам нечего добавить — они не видят выгоды"); return null; }
             return d;
         }
 

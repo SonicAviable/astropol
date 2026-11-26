@@ -223,7 +223,7 @@ namespace StellarisClone.Core
                 }
                 _hunting = false;
 
-                if (Mode == ArmyMode.Attack && IsValidSiegeTarget(ArmyTargetSystemId))
+                if (Mode == ArmyMode.Attack && IsValidSiegeTarget(ArmyTargetSystemId) && SiegeStillWorth(ArmyTargetSystemId, armyPower, ships))
                 {
                     MoveAll(ships, ArmyTargetSystemId);
                     return;
@@ -292,6 +292,21 @@ namespace StellarisClone.Core
                 got += CombatMath.Power(f.Data) * edge;
             }
             return got >= need && squad.Count > 0 ? squad : null;
+        }
+
+        /// <summary>
+        /// Начатая осада всё ещё по силам: цель выбирали, когда главного флота врага рядом не было, — если он подошёл,
+        /// флот не идёт на верную гибель, а выбирает цель заново (или ждёт в точке сбора). Запас мягче, чем при выборе
+        /// цели, чтобы флот не метался туда-сюда. Бой уже идёт — решает логика отступления.
+        /// </summary>
+        private bool SiegeStillWorth(int sysId, float armyPower, List<FleetView> ships)
+        {
+            if (CombatManager.Instance?.GetBattle(sysId) != null && MilitaryAt(sysId, false).Count > 0) return true;
+            float edgeArmy = armyPower * MatchupVs(DataOf(ships), sysId);
+            float defense = EnemyFleetPowerIn(sysId) + (CombatManager.Instance != null ? CombatManager.Instance.StarbasePower(sysId) : 0f);
+            if (defense > edgeArmy * 1.1f) return false;
+            if (AIDifficulty.HuntsFleets && EnemyPowerNear(sysId, 1) > edgeArmy * 1.0f) return false;
+            return true;
         }
 
         private bool IsValidSiegeTarget(int sysId)
