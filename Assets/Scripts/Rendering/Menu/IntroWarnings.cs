@@ -10,20 +10,19 @@ namespace StellarisClone.Rendering
     ///   1. предупреждение о светочувствительной эпилепсии;
     ///   2. автосохранение (не выключать компьютер во время сохранения);
     ///   3. «все события вымышлены», совет играть в наушниках и копирайт студии.
-    /// Каждый экран плавно проявляется и гаснет. Пропуск: любая клавиша или клик — к следующему экрану (быстрое
-    /// угасание); Esc или ещё одно нажатие, пока экран гаснет, — пропустить все предупреждения сразу.
+    /// Каждый экран плавно проявляется, держится своё время и гаснет; пропустить предупреждения нельзя.
     ///
     /// Фон — чистый чёрный. Появление экрана: значок мягко проявляется с тёплым ореолом, буквы заголовка сходятся
     /// из широкой разрядки, ромб поворачивается на место и от него вырастает латунная линия, текст плавно поднимается
     /// следом. Уход — плавное угасание. Только плавные кривые, без «пружин» и масштабирования текста (текст не мерцает).
     /// Звук (Resources/Audio/Intro, Tools/intro_sfx/generate.py): тихий эмбиент под всеми экранами,
-    /// мягкое нарастание с глубоким ударом при появлении экрана, стеклянный тон при пропуске клавишей.
+    /// мягкое нарастание с глубоким ударом при появлении экрана.
     /// Пока идут предупреждения, IntroVideo готовит ролик в фоне. Done — все экраны показаны.
     /// Разметка — в «эталонных» 1920×1080 (холст IntroVideo масштабируется CanvasScaler).
     /// </summary>
     public sealed class IntroWarnings : MonoBehaviour
     {
-        private const float FadeIn = 1.1f, FadeOut = 0.9f, SkipFade = 0.4f, MinShow = 0.25f, RuleW = 360f, Gap = 0.4f;
+        private const float FadeIn = 1.1f, FadeOut = 0.9f, RuleW = 360f, Gap = 0.4f;
         private const float BedVolume = 0.8f;
 
         private static readonly Color Gold = new Color(0.906f, 0.757f, 0.439f);
@@ -44,10 +43,8 @@ namespace StellarisClone.Rendering
         private int _index;
         private float _t, _time;
         private float _leave = -1f;
-        private bool _fast, _skipAll;
-        private CanvasGroup _hint;
         private AudioSource _bed, _sfx;
-        private AudioClip _swell, _tick;
+        private AudioClip _swell;
         private bool _swellPlayed;
 
         public bool Done { get; private set; }
@@ -83,16 +80,6 @@ namespace StellarisClone.Rendering
                 Loc.T("Для полного погружения рекомендуем играть в наушниках."),
                 Loc.F("© {0} SmartBiz. Все права защищены.", System.DateTime.Now.Year), 5f));
 
-            // Подсказка внизу: появляется, когда экран уже можно пропустить
-            var hint = Label(transform, Loc.T("Нажмите любую клавишу, чтобы продолжить"), GameFont.MonoMedium, 15, Muted, TextAnchor.MiddleCenter);
-            hint.rectTransform.anchorMin = hint.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            hint.rectTransform.pivot = new Vector2(0.5f, 0f);
-            hint.rectTransform.anchoredPosition = new Vector2(0f, 56f);
-            hint.rectTransform.sizeDelta = new Vector2(1200f, 24f);
-            hint.Track(3f);
-            _hint = hint.gameObject.AddComponent<CanvasGroup>();
-            _hint.alpha = 0f;
-
             for (int i = 0; i < _cards.Count; i++) _cards[i].Group.alpha = 0f;
 
             // Звук
@@ -107,7 +94,6 @@ namespace StellarisClone.Rendering
             _sfx.playOnAwake = false;
             _sfx.spatialBlend = 0f;
             _swell = Resources.Load<AudioClip>("Audio/Intro/warn_swell");
-            _tick = Resources.Load<AudioClip>("Audio/Intro/warn_tick");
         }
 
         private Card BuildCard(LGIcon icon, string title, string body, string footer, float hold)
@@ -182,7 +168,7 @@ namespace StellarisClone.Rendering
         {
             float dt = Time.unscaledDeltaTime;
             _time += dt;
-            bool finishing = Done || _skipAll || (_index >= _cards.Count - 1 && _leave >= 0f);
+            bool finishing = Done || (_index >= _cards.Count - 1 && _leave >= 0f);
 
             // Эмбиент: плавно входит, гаснет вместе с последним экраном
             if (_bed != null)
@@ -196,43 +182,29 @@ namespace StellarisClone.Rendering
             _t += dt;
             if (!_swellPlayed) { _swellPlayed = true; Play(_swell, 0.9f); }
 
-            bool pressed = Input.anyKeyDown || Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
-            bool esc = Input.GetKeyDown(KeyCode.Escape);
-            if (pressed && _t >= MinShow)
-            {
-                if (esc || _leave >= 0f) _skipAll = true;          // Esc или повторное нажатие — пропустить всё
-                if (_leave < 0f) { _leave = 0f; _fast = true; Play(_tick, 0.8f); }
-                else if (_skipAll) _fast = true;
-            }
-            if (_leave < 0f && _t >= FadeIn + card.Hold) { _leave = 0f; _fast = false; }
+            // Предупреждения не пропускаются: каждый экран держится своё время
+            if (_leave < 0f && _t >= FadeIn + card.Hold) _leave = 0f;
 
             AnimateCard(card);
 
             if (_leave >= 0f)
             {
                 _leave += dt;
-                float fade = _fast ? SkipFade : FadeOut;
-                // при пропуске экран гаснет от текущей яркости (если нажали, пока он ещё проявлялся)
-                if (_leave <= dt) card.Group.alpha = Mathf.Max(card.Group.alpha, 0.001f);
-                float k = Mathf.Clamp01(_leave / fade);
-                card.Group.alpha = Mathf.Min(card.Group.alpha, 1f - Ease(k));
-                _hint.alpha = Mathf.Min(_hint.alpha, card.Group.alpha);
-                if (_leave >= fade + (_fast ? 0.15f : Gap))   // короткая пауза в темноте между экранами
+                float k = Mathf.Clamp01(_leave / FadeOut);
+                card.Group.alpha = 1f - Ease(k);
+                if (_leave >= FadeOut + Gap)   // короткая пауза в темноте между экранами
                 {
                     card.Group.alpha = 0f;
                     _index++;
                     _t = 0f;
                     _leave = -1f;
-                    _fast = false;
                     _swellPlayed = false;
-                    if (_skipAll) _index = _cards.Count;
-                    if (_index >= _cards.Count) { Done = true; _hint.alpha = 0f; }
+                    if (_index >= _cards.Count) Done = true;
                 }
                 return;
             }
 
             card.Group.alpha = Ease(Mathf.Clamp01(_t / FadeIn));
-            _hint.alpha = Mathf.MoveTowards(_hint.alpha, _t >= MinShow ? 0.75f : 0f, dt * 1.2f);
         }
 
         /// <summary>Появление элементов карточки по очереди — по времени _t от начала экрана. Только плавные кривые.</summary>
