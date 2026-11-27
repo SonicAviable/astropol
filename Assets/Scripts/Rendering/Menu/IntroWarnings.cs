@@ -10,7 +10,8 @@ namespace StellarisClone.Rendering
     ///   1. предупреждение о светочувствительной эпилепсии;
     ///   2. автосохранение (не выключать компьютер во время сохранения);
     ///   3. «все события вымышлены», совет играть в наушниках и копирайт студии.
-    /// Каждый экран плавно проявляется и гаснет; любая клавиша (не раньше MinShow) — к следующему.
+    /// Каждый экран плавно проявляется и гаснет. Пропуск: любая клавиша или клик — к следующему экрану (быстрое
+    /// угасание); Esc или ещё одно нажатие, пока экран гаснет, — пропустить все предупреждения сразу.
     ///
     /// Фон — чистый чёрный. Появление экрана: значок мягко проявляется с тёплым ореолом, буквы заголовка сходятся
     /// из широкой разрядки, ромб поворачивается на место и от него вырастает латунная линия, текст плавно поднимается
@@ -22,7 +23,7 @@ namespace StellarisClone.Rendering
     /// </summary>
     public sealed class IntroWarnings : MonoBehaviour
     {
-        private const float FadeIn = 1.1f, FadeOut = 0.9f, MinShow = 1.2f, RuleW = 360f, Gap = 0.4f;
+        private const float FadeIn = 1.1f, FadeOut = 0.9f, SkipFade = 0.4f, MinShow = 0.25f, RuleW = 360f, Gap = 0.4f;
         private const float BedVolume = 0.8f;
 
         private static readonly Color Gold = new Color(0.906f, 0.757f, 0.439f);
@@ -43,6 +44,7 @@ namespace StellarisClone.Rendering
         private int _index;
         private float _t, _time;
         private float _leave = -1f;
+        private bool _fast, _skipAll;
         private CanvasGroup _hint;
         private AudioSource _bed, _sfx;
         private AudioClip _swell, _tick;
@@ -180,7 +182,7 @@ namespace StellarisClone.Rendering
         {
             float dt = Time.unscaledDeltaTime;
             _time += dt;
-            bool finishing = Done || (_index >= _cards.Count - 1 && _leave >= 0f);
+            bool finishing = Done || _skipAll || (_index >= _cards.Count - 1 && _leave >= 0f);
 
             // Эмбиент: плавно входит, гаснет вместе с последним экраном
             if (_bed != null)
@@ -195,24 +197,35 @@ namespace StellarisClone.Rendering
             if (!_swellPlayed) { _swellPlayed = true; Play(_swell, 0.9f); }
 
             bool pressed = Input.anyKeyDown || Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
-            if (_leave < 0f && pressed && _t >= MinShow) { _leave = 0f; Play(_tick, 0.8f); }
-            if (_leave < 0f && _t >= FadeIn + card.Hold) _leave = 0f;
+            bool esc = Input.GetKeyDown(KeyCode.Escape);
+            if (pressed && _t >= MinShow)
+            {
+                if (esc || _leave >= 0f) _skipAll = true;          // Esc или повторное нажатие — пропустить всё
+                if (_leave < 0f) { _leave = 0f; _fast = true; Play(_tick, 0.8f); }
+                else if (_skipAll) _fast = true;
+            }
+            if (_leave < 0f && _t >= FadeIn + card.Hold) { _leave = 0f; _fast = false; }
 
             AnimateCard(card);
 
             if (_leave >= 0f)
             {
                 _leave += dt;
-                float k = Mathf.Clamp01(_leave / FadeOut);
-                card.Group.alpha = 1f - Ease(k);
+                float fade = _fast ? SkipFade : FadeOut;
+                // при пропуске экран гаснет от текущей яркости (если нажали, пока он ещё проявлялся)
+                if (_leave <= dt) card.Group.alpha = Mathf.Max(card.Group.alpha, 0.001f);
+                float k = Mathf.Clamp01(_leave / fade);
+                card.Group.alpha = Mathf.Min(card.Group.alpha, 1f - Ease(k));
                 _hint.alpha = Mathf.Min(_hint.alpha, card.Group.alpha);
-                if (_leave >= FadeOut + Gap)   // короткая пауза в темноте между экранами
+                if (_leave >= fade + (_fast ? 0.15f : Gap))   // короткая пауза в темноте между экранами
                 {
                     card.Group.alpha = 0f;
                     _index++;
                     _t = 0f;
                     _leave = -1f;
+                    _fast = false;
                     _swellPlayed = false;
+                    if (_skipAll) _index = _cards.Count;
                     if (_index >= _cards.Count) { Done = true; _hint.alpha = 0f; }
                 }
                 return;

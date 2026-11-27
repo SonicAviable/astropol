@@ -355,15 +355,26 @@ def font(path, size):
     return _fonts[k]
 
 
-def letters(mask, cx, y, text, fnt, spacing, alphas, rise):
-    """Буквы по одной в маску «L»: у каждой своя прозрачность и подъём (появление слева направо)."""
-    d = ImageDraw.Draw(mask)
-    widths = [d.textlength(ch, font=fnt) for ch in text]
+SS = 4   # суперсэмплинг движущегося текста: буквы встают на 1/4 пикселя, а не прыгают по целым
+
+
+def letters(mask, cx, y, text, path, size, spacing, alphas, rise):
+    """Буквы по одной в маску «L»: у каждой своя прозрачность и подъём (появление слева направо).
+    Рисуются в SS× разрешении полосой по строке и уменьшаются — движение и разрядка идут плавно, без дрожи."""
+    top = int(y - rise - 12)
+    h = int(size * 1.6 + rise + 24)
+    big = Image.new("L", (W * SS, h * SS), 0)
+    d = ImageDraw.Draw(big)
+    fnt = font(path, size * SS)
+    widths = [d.textlength(ch, font=fnt) / SS for ch in text]
     x = cx - (sum(widths) + spacing * (len(text) - 1)) / 2
     for ch, w, a in zip(text, widths, alphas):
         if a > 0.003:
-            d.text((x, y + rise * (1 - a)), ch, font=fnt, fill=int(255 * a))
+            d.text(((x) * SS, (y + rise * (1 - a) - top) * SS), ch, font=fnt, fill=int(255 * a))
         x += w + spacing
+    small = big.resize((W, h), Image.BOX)
+    band = mask.crop((0, top, W, top + h))
+    mask.paste(Image.fromarray(np.maximum(np.asarray(band), np.asarray(small))), (0, top))
 
 
 def colored(mask, color, alpha=1.0):
@@ -421,14 +432,22 @@ def rule(mask_draw, cx, y, half, a):
 
 
 _emblem = None
+EMB_SRC = 640   # эмблема заранее уменьшена до этого размера (с премультипликацией — без каймы по краю)
 
 
-def emblem(size):
+def emblem(cx, cy, size):
+    """Эмблема диаметром size (дробным) с центром в (cx, cy) — аффинно и с суперсэмплингом,
+    чтобы медленное приближение шло плавно. Возвращает (RGBA-холст, x, y) для вставки."""
     global _emblem
     if _emblem is None:
-        _emblem = Image.open("Assets/Branding/logo.png").convert("RGBA")
-    s = max(2, int(round(size)))
-    return _emblem.resize((s, s), Image.LANCZOS)
+        _emblem = Image.open("Assets/Branding/logo.png").convert("RGBA").convert("RGBa").resize((EMB_SRC, EMB_SRC), Image.LANCZOS)
+    B = int(size) + 8
+    ox, oy = int(math.floor(cx - B / 2)), int(math.floor(cy - B / 2))
+    scale = EMB_SRC / (size * 2)                    # пикселей источника на пиксель холста двойного размера
+    c = EMB_SRC / 2 - (cx - ox) * 2 * scale
+    f = EMB_SRC / 2 - (cy - oy) * 2 * scale
+    big = _emblem.transform((B * 2, B * 2), Image.AFFINE, (scale, 0, c, 0, scale, f), resample=Image.BICUBIC)
+    return big.resize((B, B), Image.BOX).convert("RGBA"), ox, oy
 
 
 _radial = {}
@@ -479,7 +498,7 @@ def titles(lang, t, im):
         # название по буквам, разрядка медленно сходится
         nm = Image.new("L", (W, H), 0)
         alph = [ease(clamp01((s - 1.0 - i * 0.07) / 0.7)) for i in range(len(name))]
-        letters(nm, cx, cy - 42, name.upper(), font(FONT_TITLE, 70), 34 - 14 * ease_out(s / 3.4), alph, 10)
+        letters(nm, cx, cy - 42, name.upper(), FONT_TITLE, 70, 34 - 14 * ease_out(s / 3.4), alph, 10)
         sm = Image.new("L", (W, H), 0)
         sd = ImageDraw.Draw(sm)
         rule(sd, cx, cy + 66, 170 * ease_out((s - 1.7) / 1.2), ease((s - 1.7) / 0.8))
@@ -506,17 +525,16 @@ def titles(lang, t, im):
     add_light(base, g, cx - 380, ey - 380)
     out = Image.fromarray(base).convert("RGBA")
     # эмблема: проявляется и медленно приближается
-    size = 300 * (0.94 + 0.06 * ease_out(s / 3.0))
-    em = emblem(size)
+    size = 300 * (0.94 + 0.06 * ease_out(s / 3.4))
+    em, ex, eyy = emblem(cx, ey, size)
     ea = np.asarray(em, np.float32)
-    ea[..., 3] *= a2 * ease(s / 1.6)
+    ea[..., 3] *= a2 * ease(s / 1.8)
     em = Image.fromarray(ea.clip(0, 255).astype(np.uint8), "RGBA")
-    ex, eyy = int(cx - em.width / 2), int(ey - em.height / 2)
     out.alpha_composite(em, (ex, eyy))
     # название по буквам
     nm = Image.new("L", (W, H), 0)
     alph = [ease(clamp01((s - 1.3 - i * 0.075) / 0.8)) for i in range(11)]
-    letters(nm, cx, cy + 22, "ASTROPOLITY", font(FONT_TITLE, 118), 30 - 10 * ease_out(s / 3.6), alph, 14)
+    letters(nm, cx, cy + 22, "ASTROPOLITY", FONT_TITLE, 118, 30 - 10 * ease_out(s / 3.6), alph, 14)
     nm_a = Image.fromarray((np.asarray(nm, np.float32) * a2).astype(np.uint8))
     out = Image.alpha_composite(out, glow_of(nm, GOLD, 22, 0.42 * a2))
     out = Image.alpha_composite(out, gold_fill(nm_a, cy + 42, 112))
