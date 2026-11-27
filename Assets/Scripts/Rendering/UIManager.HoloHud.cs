@@ -13,7 +13,7 @@ namespace StellarisClone.Rendering
     /// </summary>
     public partial class UIManager
     {
-        private const float DiskD = 118f;          // диаметр диска времени
+        private const float DiskD = 100f;          // диаметр диска времени
         private const float DiskCenterY = 78f;     // центр диска от верха экрана: риски (DiskD + 34) целиком на экране
         private const float WingH = 64f;
         private const float WingGap = 18f;          // зазор между диском и крылом
@@ -382,11 +382,11 @@ namespace StellarisClone.Rendering
 
             // Луна за датой: фаза — ход месяца (1-е — новолуние, середина — полнолуние), приглушена под текстом
             _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.925f, 0.898f, 0.827f, 0.08f));
-            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.92f));
+            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 1.10f));
             _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), Color.white);   // непрозрачна, как и верхний слой при f → 1 — без щелчка на смене шага
-            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.74f));
+            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.955f));   // луна — на весь диск, до латунной кромки
             _moonNext = HoloImage(disk, "MoonNext", MoonPhase.GetStep(1), new Color(1f, 1f, 1f, 0f));
-            _moonNext.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.74f));
+            _moonNext.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.955f));
             // Мягкая тёмная подложка под цифрами — дата читается и на полной луне
             var plate = HoloImage(disk, "DatePlate", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0.62f));
             plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), Vector2.one * (DiskD * 0.72f));
@@ -394,14 +394,14 @@ namespace StellarisClone.Rendering
             // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
             _diskMonth = CreateText(disk, "", 10, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleCenter);
             _diskMonth.font = GameFont.Mono;
-            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 31f), new Vector2(DiskD, 16f));
+            _diskMonth.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 26f), new Vector2(DiskD, 16f));
             _diskMonth.Track(3f);
-            _diskDay = CreateText(disk, "", 36, FontStyle.Normal, DS.Gold, TextAnchor.MiddleCenter);
+            _diskDay = CreateText(disk, "", 32, FontStyle.Normal, DS.Gold, TextAnchor.MiddleCenter);
             _diskDay.font = GameFont.Display;
-            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 4f), new Vector2(DiskD, 44f));
+            _diskDay.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 3f), new Vector2(DiskD, 40f));
             _diskYear = CreateText(disk, "", 12, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleCenter);
             _diskYear.font = GameFont.Mono;
-            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -26f), new Vector2(DiskD, 18f));
+            _diskYear.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, -22f), new Vector2(DiskD, 18f));
             _diskYear.Track(4.5f);
 
             BuildSpeedArc(disk);
@@ -506,7 +506,7 @@ namespace StellarisClone.Rendering
             UIAnchors.Register(UIAnchors.Speed, arc);
         }
 
-        private const float GaugeR = 94f, GaugeW = 7f, GaugeLeft = 236f, GaugeRight = 124f;
+        private const float GaugeR = 82f, GaugeW = 7f, GaugeLeft = 236f, GaugeRight = 124f;
         private Image _gaugeFill, _gaugeGlow, _knobGlow;
         private RectTransform _knob;
         private readonly Image[] _gaugeTicks = new Image[4];

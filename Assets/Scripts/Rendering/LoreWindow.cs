@@ -21,6 +21,9 @@ namespace StellarisClone.Rendering
         private GameObject _root;
         private RectTransform _list, _textContent, _textPanel;
         private float _textW = -1f;
+        private RawImage _art;
+        private RectTransform _artMask;
+        private string _artPath;
         private const float ReadWidth = 860f;   // колонка чтения: длинные строки на всю ширину читаются плохо
         private Text _subtitle, _eyebrow, _title, _body;
         private readonly List<Image> _shardMarks = new List<Image>();
@@ -136,6 +139,7 @@ namespace StellarisClone.Rendering
             var right = LGBuild.Panel(rt, "TextPanel", CPanel);
             right.rectTransform.Stretch(374, 20, 20, 90);
             LG.Glass(right.gameObject, 10f).SetRim(new Color(Gold.r, Gold.g, Gold.b, 0.25f));
+            BuildArt(right.rectTransform);
             var mo = LG.Motion(right.gameObject, LGAppear.Kind.SlideUp);
             mo.delay = 0.05f;
             mo.distance = 20f;
@@ -160,6 +164,109 @@ namespace StellarisClone.Rendering
             _root.SetActive(false);
         }
 
+        /// <summary>
+        /// Иллюстрация записи на заднем плане панели текста: заполняет панель с обрезкой, приглушена,
+        /// а за колонкой чтения — ещё темнее, чтобы текст читался.
+        /// </summary>
+        private void BuildArt(RectTransform panel)
+        {
+            _artMask = LG.RoundedMask(panel, 10f);
+            _artMask.SetAsFirstSibling();
+            LG.Ignore(_artMask.gameObject);
+            var go = new GameObject("Art", typeof(RectTransform), typeof(RawImage));
+            go.transform.SetParent(_artMask, false);
+            ((RectTransform)go.transform).Stretch();
+            _art = go.GetComponent<RawImage>();
+            _art.color = new Color(0.55f, 0.55f, 0.58f, 1f);
+            _art.raycastTarget = false;
+
+            var shade = LGBuild.Panel(_artMask, "Shade", new Color(0.035f, 0.060f, 0.105f, 0.58f));
+            shade.rectTransform.Stretch();
+            var top = LGBuild.Panel(_artMask, "TopFade", new Color(0.035f, 0.060f, 0.105f, 0.55f));
+            top.sprite = HudArt.VFade(1f);
+            top.rectTransform.localScale = new Vector3(1f, -1f, 1f);   // гаснет книзу: заголовок на тёмном
+            top.rectTransform.Stretch();
+            var band = LGBuild.Panel(_artMask, "ReadBand", new Color(0.020f, 0.040f, 0.075f, 0.62f));
+            band.sprite = HudArt.EdgeFade(0.22f);
+            band.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            band.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            band.rectTransform.sizeDelta = new Vector2(ReadWidth + 240f, 0f);
+            _artMask.gameObject.SetActive(false);
+        }
+
+        private void SetArt(LoreEntry e, bool unlocked)
+        {
+            string path = unlocked ? ArtFor(e) : null;
+            if (path == _artPath) return;
+            _artPath = path;
+            var tex = path != null ? Resources.Load<Texture2D>(path) : null;
+            _art.texture = tex;
+            _artMask.gameObject.SetActive(tex != null);
+            FitArt();
+        }
+
+        /// <summary>Картинка заполняет панель целиком без искажений (лишнее обрезается).</summary>
+        private void FitArt()
+        {
+            if (_art == null || _art.texture == null || _textPanel == null) return;
+            var r = _textPanel.rect;
+            if (r.width < 1f || r.height < 1f) return;
+            float ta = (float)_art.texture.width / _art.texture.height, pa = r.width / r.height;
+            // Портреты режем ближе к верху — в кадре лицо, а не грудь
+            float hy = ta / pa, yBias = _artPath != null && _artPath.StartsWith("Leaders/") ? 0.85f : 0.5f;
+            _art.uvRect = pa > ta
+                ? new Rect(0f, (1f - hy) * yBias, 1f, hy)
+                : new Rect(0.5f - pa / ta * 0.5f, 0f, pa / ta, 1f);
+        }
+
+        /// <summary>Иллюстрация к записи: события (UI/Events) и портреты правителей (Leaders) для народов.</summary>
+        private static string ArtFor(LoreEntry e)
+        {
+            if (e == null) return null;
+            string ev;
+            switch (e.Id)
+            {
+                case "intro_precursors": ev = "PrecursorVault"; break;
+                case "shard_1": ev = "PrecursorSignal"; break;
+                case "shard_2": ev = "PrecursorEcho"; break;
+                case "shard_3": ev = "PrecursorMap"; break;
+                case "shard_4": ev = "PrecursorDecoding"; break;
+                case "shard_5": ev = "PrecursorCore"; break;
+                case "shard_6": ev = "Relic"; break;
+                case "shard_7": ev = "Rift"; break;
+                case "listener": ev = "GhostContact"; break;
+                case "myth_astrea": ev = "ArkDawn"; break;
+                case "myth_xarn": ev = "Battlefield"; break;
+                case "myth_aquila": ev = "Trade"; break;
+                case "myth_iridia": ev = "OracleVisions"; break;
+                case "myth_terraan": ev = "RootCouncil"; break;
+                case "myth_nol": ev = "Wonder_Brain"; break;
+                case "myst_heart": ev = "Heart"; break;
+                case "myst_heart_voice": ev = "HeartVisitors"; break;
+                case "myst_precursor": ev = "PrecursorSignal"; break;
+                case "myst_guardians": ev = "Leviathan"; break;
+                case "myst_ark": ev = "Ark"; break;
+                case "myst_mind": ev = "Mind"; break;
+                case "myst_brood": ev = "Brood"; break;
+                case "myst_pirates": ev = "PirateHaven"; break;
+                case "myst_dreams": ev = "Crystal"; break;
+                case "place_0": ev = "Rift"; break;
+                case "place_1": ev = "GasStorm"; break;
+                case "place_2": ev = "Relic"; break;
+                case "place_3": ev = "Derelict"; break;
+                case "place_4": ev = "Probe"; break;
+                case "place_5": ev = "Quake"; break;
+                case "end_keeper": ev = "PrecursorVault"; break;
+                case "end_singer": ev = "Consensus"; break;
+                case "end_sleeper": ev = "FrozenArk"; break;
+                default:
+                    if (e.Id.StartsWith("people_")) return "Leaders/leader_" + e.Id.Substring(7);
+                    ev = e.Shard > 0 ? "PrecursorCore" : null;
+                    break;
+            }
+            return ev != null ? "UI/Events/" + ev : null;
+        }
+
         /// <summary>Текст записи — колонкой по центру панели, не шире ReadWidth.</summary>
         private void FitReadColumn()
         {
@@ -167,6 +274,7 @@ namespace StellarisClone.Rendering
             float w = _textPanel.rect.width;
             if (Mathf.Abs(w - _textW) < 0.5f) return;
             _textW = w;
+            FitArt();
             int pad = Mathf.RoundToInt(Mathf.Max(32f, (w - ReadWidth) * 0.5f));
             var vlg = _textContent.GetComponent<VerticalLayoutGroup>();
             vlg.padding = new RectOffset(pad, pad, 4, 24);
@@ -250,6 +358,7 @@ namespace StellarisClone.Rendering
         {
             if (e == null) return;
             bool unlocked = Lore.IsUnlocked(e);
+            SetArt(e, unlocked);
             string cat = Lore.CategoryName(e.Cat).ToUpper();
             if (e.Shard > 0) cat += "  ·  " + Loc.F("ОСКОЛОК {0} ИЗ {1}", e.Shard, Lore.ShardTotal);
             _eyebrow.text = cat;
