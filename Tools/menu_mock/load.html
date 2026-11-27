@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты экрана «Загрузка» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_load.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center/cover; filter: brightness(0.6); }
+.dim { position: absolute; inset: 0; background: rgba(2,6,14,0.55); }
+.glass { background: linear-gradient(180deg, rgba(10,22,40,0.88), rgba(5,12,24,0.92)); border: 1px solid rgba(120,220,215,0.22);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); border-radius: 20px; }
+.cy { color: #6FE6DA; } .gold { color: #FFD27A; } .mut { color: #8DA6AE; } .red { color: #FF8A80; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 14px; color: #6FE6DA; }
+.big { font-weight: 700; font-size: 34px; letter-spacing: 2px; }
+.btn { text-align: center; padding: 18px; border-radius: 16px; font-weight: 700; font-size: 20px; letter-spacing: 4px; color: #03141A;
+  background: linear-gradient(180deg, #8FF5EA, #4FD6CA); box-shadow: 0 0 30px rgba(95,230,218,0.45); }
+.ghost { text-align: center; padding: 14px 22px; border-radius: 14px; font-weight: 700; font-size: 14px; letter-spacing: 3px; color: #CFE2E6; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); }
+.chip { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+.auto { background: rgba(255,210,122,0.15); color: #FFD27A; box-shadow: inset 0 0 0 1px rgba(255,210,122,0.5); }
+.man { background: rgba(111,230,218,0.12); color: #8FF0E6; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.4); }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+.port { background-size: cover; background-position: 50% 18%; }
+.stats { display: flex; gap: 10px; }
+.stats div { flex: 1; text-align: center; padding: 12px 0; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.stats b { display: block; font-size: 26px; } .stats span { font-size: 11px; letter-spacing: 1.5px; font-weight: 700; color: #8DA6AE; }
+.tabs { display: flex; gap: 6px; padding: 5px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.tabs div { padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; color: #9DB3BA; }
+.tabs div.on { background: rgba(95,230,218,0.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.7); }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const L = k => `../../Assets/Resources/Leaders/leader_${k}.jpg`;
+const E = k => `../../Assets/Resources/Factions/emblem_${k}.png`;
+const COL = { astrea: '#6FE6DA', xarn: '#FF6B5E', aquila: '#E8B640', iridia: '#B07CFF' };
+const SAVES = [
+  { k: 'astrea', emp: 'Республика Астрея', date: '23.05.2203', when: 'сегодня, 11:59', auto: false, sys: 6, col: 11, tech: 7, play: '14 мин', gal: 'Большая галактика · нормальная' },
+  { k: 'astrea', emp: 'Республика Астрея', date: '01.05.2203', when: 'сегодня, 11:58', auto: true, sys: 5, col: 11, tech: 6, play: '13 мин', gal: 'Большая галактика · нормальная' },
+  { k: 'xarn', emp: 'Доминион Ксарн', date: '14.02.2241', when: 'вчера, 22:40', auto: false, sys: 38, col: 19, tech: 41, play: '6 ч 12 мин', gal: 'Средняя галактика · сложная' },
+  { k: 'aquila', emp: 'Синдикат Аквила', date: '03.11.2219', when: '27.10.2026', auto: false, sys: 17, col: 9, tech: 22, play: '2 ч 05 мин', gal: 'Малая галактика · лёгкая' },
+  { k: 'iridia', emp: 'Иридийский Оракул', date: '19.07.2230', when: '25.10.2026', auto: true, sys: 24, col: 12, tech: 33, play: '3 ч 50 мин', gal: 'Большая галактика · нормальная' },
+];
+const T = {
+a: () => `<div class="lbl2">ВАРИАНТ A · СПИСОК И ПАРТИЯ</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:60px;top:48px;font-weight:700;font-size:15px;letter-spacing:3px;color:#9DB3BA">‹  НАЗАД</div>
+  <div class="glass" style="position:absolute;left:60px;top:110px;width:640px;bottom:60px;padding:28px 26px">
+    <div class="h">СОХРАНЕНИЯ · ${SAVES.length}</div><div class="big" style="margin:6px 0 16px">ЗАГРУЗКА</div>
+    <div class="tabs" style="margin-bottom:18px;display:inline-flex"><div class="on">Все</div><div>Ручные</div><div>Авто</div></div>
+    ${SAVES.map((s, i) => `<div style="display:flex;gap:16px;align-items:center;padding:12px 14px;border-radius:14px;margin-bottom:10px;
+       ${i == 0 ? `background:linear-gradient(90deg,${COL[s.k]}33,${COL[s.k]}08);box-shadow:inset 0 0 0 1px ${COL[s.k]}AA,0 0 20px ${COL[s.k]}33` : 'background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06)'}">
+       <div class="port" style="width:64px;height:64px;border-radius:12px;background-image:url(${L(s.k)});flex:none"></div>
+       <div style="flex:1"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">${s.emp}</b><span class="mut" style="font-size:12px">${s.when}</span></div>
+       <div class="mut" style="font-size:13px;margin-top:4px">${s.date} · систем ${s.sys} · ${s.play}</div>
+       <div style="margin-top:6px"><span class="chip ${s.auto ? 'auto' : 'man'}">${s.auto ? 'АВТО' : 'РУЧНОЕ'}</span></div></div></div>`).join('')}
+  </div>
+  <div class="port" style="position:absolute;right:0;top:0;bottom:0;width:1100px;background-image:url(${L('astrea')});-webkit-mask:linear-gradient(90deg,transparent 0%,#000 40%)"></div>
+  <div style="position:absolute;left:760px;top:120px;width:620px">
+    <span class="chip man">ВЫБРАНО · РУЧНОЕ СОХРАНЕНИЕ</span>
+    <div style="font-weight:700;font-size:56px;line-height:1.05;margin-top:16px;text-shadow:0 4px 20px #000">Республика<br>Астрея</div>
+    <div class="mut" style="font-size:18px;margin-top:12px">Элина Сорель · 23.05.2203 · сохранено сегодня в 11:59</div>
+    <div class="mut" style="font-size:16px;margin-top:6px">Большая галактика · спираль · нормальная сложность</div>
+  </div>
+  <div style="position:absolute;left:760px;width:620px;bottom:150px"><div class="stats">
+    <div><b class="cy">6</b><span>СИСТЕМ</span></div><div><b style="color:#5CF599">11</b><span>КОЛОНИЙ</span></div><div><b style="color:#9FB4FF">7</b><span>ТЕХНОЛОГИЙ</span></div><div><b class="gold">14 мин</b><span>В ИГРЕ</span></div></div></div>
+  <div style="position:absolute;left:760px;bottom:60px;display:flex;gap:14px"><div class="btn" style="width:420px">ЗАГРУЗИТЬ</div><div class="ghost red" style="padding:18px 22px">УДАЛИТЬ</div></div>`,
+b: () => `<div class="lbl2">ВАРИАНТ B · ГАЛЕРЕЯ КАРТОЧЕК</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:80px;top:56px"><div class="h">СОХРАНЕНИЯ · ${SAVES.length}</div><div class="big" style="margin-top:6px;font-size:40px">ЗАГРУЗКА</div></div>
+  <div class="tabs" style="position:absolute;left:50%;transform:translateX(-50%);top:84px"><div class="on">Все</div><div>Ручные</div><div>Автосохранения</div></div>
+  <div style="position:absolute;right:80px;top:76px" class="ghost">‹  НАЗАД</div>
+  <div style="position:absolute;left:80px;right:80px;top:180px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
+    ${SAVES.slice(0, 4).map((s, i) => `<div class="glass" style="height:560px;overflow:hidden;position:relative;${i == 0 ? `border-color:${COL[s.k]};box-shadow:0 0 40px ${COL[s.k]}55,0 20px 50px rgba(0,0,0,0.6);transform:translateY(-8px)` : ''}">
+      <div class="port" style="position:absolute;left:0;right:0;top:0;height:330px;background-image:url(${L(s.k)})"></div>
+      <div style="position:absolute;left:0;right:0;top:180px;height:160px;background:linear-gradient(0deg,rgba(6,13,26,1),rgba(6,13,26,0))"></div>
+      <div style="position:absolute;left:18px;top:16px"><span class="chip ${s.auto ? 'auto' : 'man'}" style="background-color:rgba(0,0,0,0.55)">${s.auto ? 'АВТО' : 'РУЧНОЕ'}</span></div>
+      <img src="${E(s.k)}" style="position:absolute;right:16px;top:12px;width:54px;filter:drop-shadow(0 0 8px #000)">
+      <div style="position:absolute;left:22px;right:22px;top:290px">
+        <b style="font-size:24px;display:block">${s.emp}</b>
+        <div style="font-size:15px;margin-top:6px;color:${COL[s.k]};font-weight:700">${s.date}</div>
+        <div class="mut" style="font-size:13px;margin-top:4px">${s.gal}</div>
+        <div class="stats" style="margin-top:16px"><div><b style="font-size:20px">${s.sys}</b><span>СИСТЕМ</span></div><div><b style="font-size:20px">${s.col}</b><span>КОЛОНИЙ</span></div><div><b style="font-size:20px">${s.tech}</b><span>ТЕХН.</span></div></div>
+        <div class="mut" style="font-size:12px;margin-top:14px;display:flex;justify-content:space-between"><span>в игре ${s.play}</span><span>${s.when}</span></div>
+      </div></div>`).join('')}
+  </div>
+  <div style="position:absolute;left:80px;right:80px;bottom:56px;display:flex;justify-content:space-between;align-items:center">
+    <div class="mut" style="font-size:14px">Колёсико — листать  ·  двойной клик — загрузить  ·  Delete — удалить</div>
+    <div style="display:flex;gap:14px"><div class="ghost red">УДАЛИТЬ</div><div class="btn" style="width:380px">ЗАГРУЗИТЬ</div></div></div>`,
+c: () => `<div class="lbl2">ВАРИАНТ C · ПАРТИИ И ХРОНИКА</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:80px;top:48px;display:flex;align-items:center;gap:22px"><div class="ghost" style="padding:12px 20px">‹  НАЗАД</div><div class="big">ЗАГРУЗКА</div></div>
+  <div style="position:absolute;left:80px;top:130px;width:560px;bottom:60px">
+    <div class="h" style="margin-bottom:14px">ВАШИ ПАРТИИ</div>
+    ${[['astrea','Республика Астрея','2 сохранения · 14 мин',true],['xarn','Доминион Ксарн','1 сохранение · 6 ч 12 мин'],['aquila','Синдикат Аквила','1 сохранение · 2 ч 05 мин'],['iridia','Иридийский Оракул','1 сохранение · 3 ч 50 мин']].map(([k,n,d,on]) => `
+     <div style="position:relative;height:150px;border-radius:18px;overflow:hidden;margin-bottom:14px;${on ? `box-shadow:inset 0 0 0 2px ${COL[k]},0 0 30px ${COL[k]}44` : 'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)'}">
+       <div class="port" style="position:absolute;inset:0;background-image:url(${L(k)});background-position:50% 22%;${on ? '' : 'filter:brightness(0.55) saturate(0.7)'}"></div>
+       <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,10,20,0.95) 0%,rgba(4,10,20,0.6) 55%,rgba(4,10,20,0.1))"></div>
+       <img src="${E(k)}" style="position:absolute;left:22px;top:34px;width:76px">
+       <div style="position:absolute;left:118px;top:42px"><b style="font-size:24px">${n}</b><div class="mut" style="font-size:14px;margin-top:6px">${d}</div></div></div>`).join('')}
+  </div>
+  <div class="glass" style="position:absolute;left:680px;right:80px;top:130px;bottom:60px;padding:30px 36px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="h">ХРОНИКА ПАРТИИ</div><div style="font-weight:700;font-size:40px;margin-top:8px">Республика Астрея</div><div class="mut" style="font-size:15px;margin-top:6px">Элина Сорель · большая галактика · спираль · нормальная</div></div>
+      <div class="stats" style="width:430px"><div><b class="cy">6</b><span>СИСТЕМ</span></div><div><b style="color:#5CF599">11</b><span>КОЛОНИЙ</span></div><div><b style="color:#9FB4FF">7</b><span>ТЕХН.</span></div></div></div>
+    <div style="position:relative;margin-top:40px;padding-left:34px">
+      <div style="position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,#6FE6DA,rgba(111,230,218,0.1))"></div>
+      ${[['23.05.2203','Ручное сохранение','сегодня, 11:59 · в игре 14 мин',false,true],['01.05.2203','Автосохранение','сегодня, 11:58 · в игре 13 мин',true,false]].map(([d,t,w,a,on]) => `
+       <div style="position:relative;display:flex;align-items:center;gap:20px;padding:18px 22px;border-radius:16px;margin-bottom:14px;${on ? 'background:rgba(95,230,218,0.12);box-shadow:inset 0 0 0 1px rgba(111,230,218,0.7)' : 'background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.07)'}">
+         <div style="position:absolute;left:-31px;top:50%;margin-top:-8px;width:16px;height:16px;border-radius:50%;background:${on ? '#6FE6DA' : '#2A3A44'};box-shadow:0 0 12px ${on ? '#6FE6DA' : 'transparent'}"></div>
+         <div style="font-weight:700;font-size:26px;width:170px">${d}</div>
+         <div style="flex:1"><b style="font-size:17px">${t}</b> <span class="chip ${a ? 'auto' : 'man'}" style="margin-left:8px">${a ? 'АВТО' : 'РУЧНОЕ'}</span><div class="mut" style="font-size:13px;margin-top:6px">${w}</div></div>
+         ${on ? '<div class="btn" style="padding:14px 34px;font-size:16px">ЗАГРУЗИТЬ</div>' : '<div class="ghost">ЗАГРУЗИТЬ</div>'}
+         <div class="ghost red" style="padding:14px 16px">✕</div></div>`).join('')}
+    </div>
+    <div class="mut" style="position:absolute;left:36px;bottom:28px;font-size:13px">Сохранения сгруппированы по партиям: выберите империю слева, затем точку в её истории.</div>
+  </div>`
+};
+document.getElementById('s').innerHTML = T[v]();
+</script></body></html>

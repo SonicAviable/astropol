@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- Обложка новости о релизе 1.0.0 (1920×1080) в стиле «Атлас»: латунь, тёмная эмаль, золотой Spectral.
+     Слева название и главное, справа три кадра в латунных рамках. Язык — ?lang=ru|en.
+     Рендер: node Tools/news/render_cover.js cover_1.0.0 ru|en -->
+<style>
+@font-face { font-family: Spectral; src: url(../../Assets/Resources/Fonts/Spectral-SemiBold.ttf); }
+@font-face { font-family: PTSerif; src: url(../../Assets/Resources/Fonts/PTSerif-Regular.ttf); }
+@font-face { font-family: PTSerif; font-style: italic; src: url(../../Assets/Resources/Fonts/PTSerif-Italic.ttf); }
+@font-face { font-family: Mono; src: url(../../Assets/Resources/Fonts/IBMPlexMono-Medium.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #050A14; color: #ECE5D3; }
+#cover { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #050A14; }
+.space { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 45%/cover; filter: brightness(0.6) saturate(1.1); }
+.fade { position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(5,10,20,0.97) 0%, rgba(5,10,20,0.9) 36%, rgba(5,10,20,0.35) 58%, rgba(5,10,20,0.15) 100%),
+              radial-gradient(ellipse at 75% 50%, rgba(231,193,112,0.10), rgba(0,0,0,0) 60%); }
+.frame { position: absolute; inset: 26px; border: 1px solid rgba(231,193,112,0.35); }
+.frame::after { content: ''; position: absolute; inset: 6px; border: 1px solid rgba(231,193,112,0.14); }
+.corner { position: absolute; width: 22px; height: 22px; }
+.corner::before, .corner::after { content: ''; position: absolute; background: #E7C170; }
+.corner::before { left: 10px; top: 0; width: 1.5px; height: 22px; }
+.corner::after { top: 10px; left: 0; height: 1.5px; width: 22px; }
+.c1 { left: 15px; top: 15px; } .c2 { right: 15px; top: 15px; } .c3 { left: 15px; bottom: 15px; } .c4 { right: 15px; bottom: 15px; }
+
+.left { position: absolute; left: 130px; top: 200px; width: 760px; }
+.eyebrow { font-family: Mono; font-size: 22px; letter-spacing: 10px; color: #E7C170; }
+.logo { font-family: Spectral; font-size: 100px; letter-spacing: 10px; line-height: 1.05; margin-top: 18px; white-space: nowrap; display: inline-block; padding-right: 12px;
+  background: linear-gradient(180deg, #FCECBE 15%, #E7C170 55%, #B88A3E 100%); -webkit-background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(231,193,112,0.28)); }
+.rule { display: flex; align-items: center; gap: 14px; margin: 26px 0 26px; width: 560px; }
+.rule i { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(231,193,112,0), rgba(231,193,112,0.7)); }
+.rule i:last-child { background: linear-gradient(90deg, rgba(231,193,112,0.7), rgba(231,193,112,0)); }
+.rule b { width: 10px; height: 10px; background: #E7C170; transform: rotate(45deg); }
+.ver { font-family: Spectral; font-size: 64px; letter-spacing: 4px; color: #ECE5D3; }
+.tag { font-family: PTSerif; font-style: italic; font-size: 30px; color: #B9B19C; margin-top: 10px; }
+.list { margin-top: 44px; display: flex; flex-direction: column; gap: 16px; }
+.list div { font-family: Spectral; font-size: 34px; letter-spacing: 2px; color: #ECE5D3; display: flex; align-items: center; }
+.list div::before { content: ''; width: 9px; height: 9px; background: #E7C170; transform: rotate(45deg); margin-right: 22px; flex: none; }
+
+.shot { position: absolute; z-index: 5; background-size: cover; background-position: center;
+  border: 2px solid #C9A260; box-shadow: 0 0 0 6px rgba(5,10,20,0.85), 0 0 0 7px rgba(231,193,112,0.45), 0 30px 70px rgba(0,0,0,0.75); }
+.shot span { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 22px 14px; font-family: Mono; font-size: 18px; letter-spacing: 6px;
+  color: #F1E3BE; background: linear-gradient(0deg, rgba(5,10,20,0.95), rgba(5,10,20,0)); }
+</style></head>
+<body><div id="cover">
+  <div class="space"></div><div class="fade"></div>
+  <div class="frame"></div>
+  <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+  <div class="left">
+    <div class="eyebrow" data-ru="SMARTBIZ ПРЕДСТАВЛЯЕТ" data-en="SMARTBIZ PRESENTS"></div>
+    <div class="logo">ASTROPOLITY</div>
+    <div class="rule"><i></i><b></b><i></i></div>
+    <div class="ver" data-ru="РЕЛИЗ 1.0" data-en="RELEASE 1.0"></div>
+    <div class="tag" data-ru="Игра вышла из раннего доступа" data-en="The game has left early access"></div>
+    <div class="list">
+      <div data-ru="Летопись и голоса" data-en="Chronicles and voices"></div>
+      <div data-ru="Живой космос" data-en="A living cosmos"></div>
+      <div data-ru="Интерфейс «Атлас»" data-en="The Atlas interface"></div>
+      <div data-ru="До 2,4× больше FPS" data-en="Up to 2.4× more FPS"></div>
+    </div>
+  </div>
+  <div class="shot" style="left:1130px;top:92px;width:600px;height:338px;background-image:url(../../Assets/Resources/UI/Events/Wonder_Gate.jpg)"><span data-ru="ВРАТА СТРОИТЕЛЕЙ" data-en="THE BUILDERS' GATE"></span></div>
+  <div class="shot" style="left:1270px;top:462px;width:540px;height:304px;background-image:url(../../Assets/Resources/UI/Events/Leviathan.jpg)"><span data-ru="ЖИВОЙ КОСМОС" data-en="A LIVING COSMOS"></span></div>
+  <div class="shot" style="left:1050px;top:792px;width:420px;height:236px;background-image:url(../../Assets/Resources/Diplomacy/bg_iridia.jpg)"><span data-ru="ГОЛОСА ПРАВИТЕЛЕЙ" data-en="RULERS SPEAK"></span></div>
+</div>
+<script>
+  const lang = new URLSearchParams(location.search).get('lang') || 'ru';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-ru]').forEach(e => e.textContent = e.dataset[lang] || e.dataset.ru);
+</script>
+</body></html>

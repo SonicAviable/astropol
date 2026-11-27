@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты меню паузы (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_pause.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: -20px; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 30% 60%/cover; filter: blur(6px) brightness(0.45) saturate(0.8); }
+.dim { position: absolute; inset: 0; background: rgba(2,6,14,0.5); }
+.glass { background: linear-gradient(180deg, rgba(12,24,44,0.94), rgba(6,12,24,0.96)); border: 1px solid rgba(120,220,215,0.28);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06); border-radius: 18px; }
+.mut { color: #8DA6AE; } .cy { color: #6FE6DA; } .gold { color: #FFD27A; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 13px; color: #6FE6DA; }
+.b { height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; letter-spacing: 3px; position: relative; overflow: hidden; }
+.p { background: #80F0E1; color: #03141A; box-shadow: 0 0 30px rgba(110,240,225,0.45); height: 60px; font-size: 18px; }
+.p::after { content:''; position:absolute; top:-20px; bottom:-20px; width:60px; left:58%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent); transform: skewX(-18deg); }
+.n { background: #1B2E4D; color: #D2E1FF; box-shadow: 0 0 12px rgba(70,110,200,0.22); }
+.q { background: #141E2E; color: #C7D6E5; }
+.g { background: #1D4D2A; color: #CFFFE0; }
+.r { background: #4D1F1B; color: #FFD3CC; }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+.port { background: url(../../Assets/Resources/Leaders/leader_astrea.jpg) 50% 18%/cover; }
+.stat { flex: 1; padding: 12px 0; text-align: center; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.stat b { display: block; font-size: 26px; } .stat span { font-size: 11px; letter-spacing: 1.5px; font-weight: 700; color: #8DA6AE; }
+.tile { border-radius: 16px; padding: 22px; height: 170px; position: relative; background: linear-gradient(180deg, #1A2C4A, #111D33); border: 1px solid rgba(120,160,230,0.25); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+.tile .ic { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 26px; background: rgba(111,230,218,0.12); color: #6FE6DA; }
+.tile b { display: block; font-size: 19px; letter-spacing: 2px; margin-top: 18px; } .tile span { font-size: 13px; color: #8DA6AE; }
+.hud { position: absolute; left: 50%; transform: translateX(-50%); top: 0; width: 940px; height: 62px; border-radius: 0 0 14px 14px; background: rgba(6,12,24,0.7); border: 1px solid rgba(120,220,215,0.15); opacity: 0.5; }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const STATS = `<div class="stat"><b class="cy">6</b><span>СИСТЕМ</span></div><div class="stat"><b style="color:#5CF599">86</b><span>НАСЕЛЕНИЕ</span></div><div class="stat"><b style="color:#9FB4FF">7</b><span>ТЕХНОЛОГИЙ</span></div><div class="stat"><b style="color:#FF8A73">195</b><span>МОЩЬ ФЛОТА</span></div>`;
+const T = {
+a: `<div class="lbl2">ВАРИАНТ A · БОКОВАЯ ПАНЕЛЬ</div><div class="bg"></div><div class="dim"></div><div class="hud"></div>
+  <div style="position:absolute;left:640px;right:0;top:0;bottom:0;display:grid;place-items:center">
+    <div style="text-align:center"><div style="font-size:120px;font-weight:700;letter-spacing:30px;color:rgba(234,246,250,0.12)">ПАУЗА</div>
+    <div class="mut" style="font-size:18px;letter-spacing:4px;margin-top:6px">ВРЕМЯ ОСТАНОВЛЕНО · 06.01.2200</div></div></div>
+  <div class="glass" style="position:absolute;left:0;top:0;bottom:0;width:580px;border-radius:0 22px 22px 0;padding:0;overflow:hidden">
+    <div class="port" style="height:260px;position:relative"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,12,24,1),rgba(6,12,24,0) 70%)"></div>
+      <div style="position:absolute;left:40px;bottom:16px"><div class="h">ПАУЗА · 06.01.2200</div><div style="font-weight:700;font-size:34px;margin-top:6px">Республика Астрея</div><div class="mut" style="font-size:14px">Элина Сорель · сохранено 2 мин назад</div></div></div>
+    <div style="padding:20px 40px">
+      <div style="display:flex;gap:10px;margin-bottom:22px">${STATS}</div>
+      <div class="b p" style="margin-bottom:12px">ПРОДОЛЖИТЬ</div>
+      ${[['g','СОХРАНИТЬ'],['n','ЗАГРУЗИТЬ'],['n','ЦЕЛИ И ПОБЕДА'],['n','ДОСТИЖЕНИЯ · 4/31'],['n','ИТОГИ ПАРТИИ'],['q','НАСТРОЙКИ'],['q','УПРАВЛЕНИЕ']].map(([c,t])=>`<div class="b ${c}" style="margin-bottom:9px;justify-content:flex-start;padding-left:24px">${t}</div>`).join('')}
+      <div style="display:flex;gap:10px;margin-top:22px"><div class="b q" style="flex:1;font-size:13px">НАЧАТЬ ЗАНОВО</div><div class="b q" style="flex:1;font-size:13px">В МЕНЮ</div><div class="b r" style="flex:1;font-size:13px">ВЫЙТИ</div></div>
+    </div></div>`,
+b: `<div class="lbl2">ВАРИАНТ B · ИМПЕРИЯ И ДЕЙСТВИЯ</div><div class="bg"></div><div class="dim"></div><div class="hud"></div>
+  <div class="glass" style="position:absolute;left:50%;top:50%;width:1180px;height:700px;margin:-330px 0 0 -590px;display:flex;overflow:hidden">
+    <div style="width:520px;position:relative;border-right:1px solid rgba(255,255,255,0.06)">
+      <div class="port" style="position:absolute;inset:0;opacity:0.85"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,12,24,1) 30%,rgba(6,12,24,0.2) 70%,rgba(6,12,24,0.5))"></div>
+      <div style="position:absolute;left:34px;top:30px"><div class="h">ПАУЗА</div></div>
+      <div style="position:absolute;left:34px;right:34px;bottom:30px">
+        <div style="font-weight:700;font-size:36px">Республика Астрея</div>
+        <div class="mut" style="font-size:15px;margin:6px 0 18px">Элина Сорель · 06.01.2200 · в игре 14 мин</div>
+        <div style="display:flex;gap:8px">${STATS}</div>
+        <div style="margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(255,210,122,0.08);border:1px solid rgba(255,210,122,0.35)"><span class="h gold" style="font-size:11px">ЦЕЛЬ ИМПЕРИИ</span><div style="font-weight:700;font-size:16px;margin-top:6px">Владейте 6 колониями · 4 из 6</div></div>
+      </div></div>
+    <div style="flex:1;padding:34px 40px;display:flex;flex-direction:column">
+      <div class="b p">ПРОДОЛЖИТЬ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+        <div class="b g">СОХРАНИТЬ</div><div class="b n">ЗАГРУЗИТЬ</div>
+        <div class="b n">ЦЕЛИ И ПОБЕДА</div><div class="b n">ДОСТИЖЕНИЯ 4/31</div>
+        <div class="b n" style="grid-column:span 2">ИТОГИ ПАРТИИ</div>
+        <div class="b q">НАСТРОЙКИ</div><div class="b q">УПРАВЛЕНИЕ</div></div>
+      <div style="margin-top:auto"><div class="mut" style="text-align:center;font-size:12px;letter-spacing:2px;margin-bottom:10px">ВЫХОД</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px"><div class="b q" style="font-size:13px">НАЧАТЬ ЗАНОВО</div><div class="b q" style="font-size:13px">В ГЛАВНОЕ МЕНЮ</div><div class="b r" style="font-size:13px">ВЫЙТИ</div></div>
+        <div class="mut" style="text-align:center;font-size:12px;margin-top:16px">Esc — вернуться в игру · F5 — быстрое сохранение</div></div>
+    </div></div>`,
+c: `<div class="lbl2">ВАРИАНТ C · ПЛИТКИ</div><div class="bg"></div><div class="dim" style="background:rgba(2,6,14,0.65)"></div><div class="hud"></div>
+  <div style="position:absolute;left:0;right:0;top:120px;text-align:center"><div style="font-size:84px;font-weight:700;letter-spacing:24px">ПАУЗА</div>
+    <div class="mut" style="font-size:17px;letter-spacing:3px;margin-top:4px">РЕСПУБЛИКА АСТРЕЯ · 06.01.2200 · 6 СИСТЕМ · 86 ЖИТЕЛЕЙ</div></div>
+  <div style="position:absolute;left:50%;top:340px;width:1300px;margin-left:-650px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+    ${[['💾','СОХРАНИТЬ','новый слот или поверх'],['📂','ЗАГРУЗИТЬ','партии и их хроника'],['🏆','ЦЕЛИ','пути к победе'],['★','ДОСТИЖЕНИЯ','4 из 31 получено'],['📈','ИТОГИ ПАРТИИ','графики и летопись'],['⚙','НАСТРОЙКИ','графика, звук, интерфейс'],['⌨','УПРАВЛЕНИЕ','горячие клавиши'],['↺','НАЧАТЬ ЗАНОВО','та же галактика с нуля']].map(([i,t,d],k)=>`<div class="tile" ${k==0?'style="border-color:rgba(111,230,218,0.6);box-shadow:0 0 30px rgba(95,230,218,0.25)"':''}><div class="ic">${i}</div><b>${t}</b><span>${d}</span></div>`).join('')}
+  </div>
+  <div style="position:absolute;left:50%;bottom:110px;width:520px;margin-left:-260px"><div class="b p" style="height:66px;font-size:20px">ПРОДОЛЖИТЬ  ›</div><div class="mut" style="text-align:center;font-size:12px;margin-top:12px">Esc — вернуться в игру · F5 — быстрое сохранение</div></div>
+  <div style="position:absolute;left:60px;bottom:60px;display:flex;gap:10px"><div class="b q" style="width:220px;font-size:13px">В ГЛАВНОЕ МЕНЮ</div><div class="b r" style="width:200px;font-size:13px">ВЫЙТИ ИЗ ИГРЫ</div></div>`
+};
+document.getElementById('s').innerHTML = T[v];
+</script></body></html>

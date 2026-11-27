@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты экрана «Настройки» (1920×1080), три варианта: ?v=a|b|c. Рендер: node Tools/menu_mock/render_settings.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: #03070F; font-family: Play, sans-serif; color: #EAF6FA; }
+#s { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.bg { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) center/cover; filter: brightness(0.6); }
+.dim { position: absolute; inset: 0; background: rgba(2,6,14,0.55); }
+.glass { background: linear-gradient(180deg, rgba(10,22,40,0.88), rgba(5,12,24,0.92)); border: 1px solid rgba(120,220,215,0.22);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); border-radius: 20px; }
+.cy { color: #6FE6DA; } .gold { color: #FFD27A; } .mut { color: #8DA6AE; }
+.h { font-weight: 700; letter-spacing: 3px; font-size: 13px; color: #6FE6DA; }
+.big { font-weight: 700; font-size: 34px; letter-spacing: 2px; }
+.ghost { text-align: center; padding: 13px 22px; border-radius: 14px; font-weight: 700; font-size: 14px; letter-spacing: 3px; color: #CFE2E6; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); }
+.seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+.seg div { flex: 1; text-align: center; padding: 8px 6px; border-radius: 9px; font-weight: 700; font-size: 13px; color: #9DB3BA; white-space: nowrap; }
+.seg div.on { background: rgba(95,230,218,0.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(111,230,218,0.7), 0 0 14px rgba(95,230,218,0.2); }
+.tog { width: 52px; height: 28px; border-radius: 14px; background: rgba(95,230,218,0.55); position: relative; box-shadow: 0 0 12px rgba(95,230,218,0.35); flex: none; }
+.tog::after { content: ''; position: absolute; right: 4px; top: 4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; }
+.tog.off { background: rgba(255,255,255,0.12); box-shadow: none; } .tog.off::after { right: auto; left: 4px; background: #9DB3BA; }
+.sl { position: relative; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+.sl i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #3FB6AC, #8FF5EA); box-shadow: 0 0 10px rgba(95,230,218,0.5); }
+.sl b { position: absolute; top: -6px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(95,230,218,0.7); }
+.row { display: flex; align-items: center; gap: 20px; padding: 13px 18px; border-radius: 14px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; }
+.row .t { flex: 1; } .row .t b { font-size: 16px; display: block; } .row .t span { font-size: 12px; color: #7F97A0; }
+.row.hl { background: rgba(95,230,218,0.08); border-color: rgba(111,230,218,0.5); }
+.lbl2 { position: absolute; left: 50%; transform: translateX(-50%); top: 14px; padding: 8px 22px; border-radius: 20px; background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,210,120,0.6); color: #FFD27A; font-weight: 700; font-size: 18px; letter-spacing: 3px; z-index: 50; }
+.nav div { display: flex; align-items: center; gap: 14px; padding: 15px 18px; border-radius: 14px; font-weight: 700; font-size: 17px; color: #9DB3BA; margin-bottom: 6px; }
+.nav div i { font-style: normal; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,0.05); font-size: 16px; }
+.nav div.on { color: #fff; background: linear-gradient(90deg, rgba(95,230,218,0.25), rgba(95,230,218,0.04)); box-shadow: inset 3px 0 0 #6FE6DA; }
+.nav div.on i { background: rgba(95,230,218,0.3); }
+.preset { border-radius: 16px; overflow: hidden; position: relative; height: 200px; border: 1px solid rgba(255,255,255,0.08); }
+.preset .img { position: absolute; inset: 0; background: url(../../Assets/Resources/Menu/menu_bg.jpg) 40% 40%/220%; }
+.preset .sh { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(4,10,20,0.95) 20%, rgba(4,10,20,0) 70%); }
+.preset .tx { position: absolute; left: 18px; right: 18px; bottom: 14px; }
+.preset.on { border: 2px solid #6FE6DA; box-shadow: 0 0 30px rgba(95,230,218,0.35); }
+</style></head>
+<body><div id="s"></div>
+<script>
+const v = (new URLSearchParams(location.search).get('v') || 'a');
+const seg = (opts, on) => `<div class="seg" style="width:360px">${opts.map((o, i) => `<div class="${i == on ? 'on' : ''}">${o}</div>`).join('')}</div>`;
+const sl = (p, val) => `<div style="display:flex;align-items:center;gap:14px;width:360px"><div class="sl" style="flex:1"><i style="width:${p}%"></i><b style="left:${p}%"></b></div><b style="width:52px;text-align:right">${val}</b></div>`;
+const row = (t, d, ctl, hl) => `<div class="row ${hl ? 'hl' : ''}"><div class="t"><b>${t}</b>${d ? `<span>${d}</span>` : ''}</div>${ctl}</div>`;
+const GFX = [
+  ['Режим экрана', 'Полный экран без рамки удобнее для переключения окон', seg(['В окне', 'Без рамки', 'Полный'], 1)],
+  ['Разрешение', '', seg(['1920×1080', '2560×1440', '3840×2160'], 1)],
+  ['Вертикальная синхронизация', 'Убирает разрывы кадра', '<div class="tog"></div>'],
+  ['Ограничение частоты кадров', 'Работает при выключенной синхронизации', seg(['30', '60', '120', '144', '∞'], 1)],
+  ['Качество графики', 'От «Низкого» для слабых ПК до «Ультра»', seg(['Низкое', 'Среднее', 'Высокое', 'Ультра'], 2)],
+  ['Масштаб рендера', 'Ниже — быстрее, интерфейс остаётся чётким', sl(100, '100%')],
+  ['Сглаживание', 'Убирает «лесенку» на краях кораблей', seg(['Нет', '2×', '4×', '8×'], 2)],
+  ['Тени', 'Тени планет и кораблей вблизи', '<div class="tog"></div>'],
+  ['Постобработка', 'Свечение звёзд, тонирование, виньетка', '<div class="tog"></div>'],
+];
+const T = {
+a: `<div class="lbl2">ВАРИАНТ A · РАЗДЕЛЫ И ПОДСКАЗКА</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:60px;top:48px;font-weight:700;font-size:15px;letter-spacing:3px;color:#9DB3BA">‹  НАЗАД</div>
+  <div class="glass" style="position:absolute;left:60px;top:110px;width:330px;bottom:60px;padding:28px 18px">
+    <div class="h" style="padding-left:8px">ПАРАМЕТРЫ</div><div class="big" style="margin:6px 0 24px;padding-left:8px">НАСТРОЙКИ</div>
+    <div class="nav"><div class="on"><i>▣</i>Графика</div><div><i>♪</i>Звук</div><div><i>☰</i>Интерфейс</div><div><i>◎</i>Камера</div><div><i>✦</i>Советник</div><div><i>⛁</i>Сохранения</div></div>
+    <div style="position:absolute;left:26px;right:26px;bottom:26px"><div class="ghost">ПО УМОЛЧАНИЮ</div><div class="mut" style="font-size:12px;text-align:center;margin-top:10px">Изменения применяются сразу</div></div>
+  </div>
+  <div class="glass" style="position:absolute;left:410px;top:110px;width:900px;bottom:60px;padding:28px 30px">
+    <div class="h" style="margin-bottom:14px">ЭКРАН</div>
+    ${GFX.slice(0, 4).map(r => row(...r)).join('')}
+    <div class="h" style="margin:20px 0 14px">КАЧЕСТВО</div>
+    ${GFX.slice(4).map((r, i) => row(...r, i == 0)).join('')}
+  </div>
+  <div class="glass" style="position:absolute;left:1330px;right:60px;top:110px;bottom:60px;padding:0;overflow:hidden">
+    <div style="height:300px;background:url(../../Assets/Resources/Menu/menu_bg.jpg) 60% 40%/200%;position:relative"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,13,26,1),rgba(6,13,26,0) 60%)"></div>
+      <div style="position:absolute;left:24px;bottom:16px" class="chip"><span class="h" style="color:#FFD27A">ПРЕДПРОСМОТР · ВЫСОКОЕ</span></div></div>
+    <div style="padding:22px 26px"><div style="font-weight:700;font-size:24px">Качество графики</div>
+      <div class="mut" style="font-size:15px;line-height:1.5;margin-top:10px">Набор настроек ниже одним выбором. «Высокое» — тени, постобработка и сглаживание 4×. Для слабых ноутбуков выберите «Среднее» или «Низкое».</div>
+      <div style="margin-top:18px;font-size:14px;line-height:1.9">${['Тени планет и кораблей','Постобработка: свечение звёзд','Сглаживание 4×','Текстуры в полном размере'].map(t=>`<div><span class="cy" style="font-weight:700">✓</span>&nbsp;&nbsp;${t}</div>`).join('')}</div>
+      <div class="mut" style="font-size:12px;margin-top:16px">Наведите на любую настройку — здесь появится её описание.</div></div>
+  </div>`,
+b: `<div class="lbl2">ВАРИАНТ B · ПРЕСЕТЫ-КАРТОЧКИ</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:80px;top:56px"><div class="h">ПАРАМЕТРЫ</div><div class="big" style="margin-top:6px;font-size:40px">НАСТРОЙКИ</div></div>
+  <div class="seg" style="position:absolute;left:50%;transform:translateX(-50%);top:84px;width:720px"><div class="on" style="font-size:15px;padding:11px">Графика</div><div style="font-size:15px;padding:11px">Звук</div><div style="font-size:15px;padding:11px">Интерфейс</div><div style="font-size:15px;padding:11px">Игра</div></div>
+  <div style="position:absolute;right:80px;top:76px" class="ghost">‹  НАЗАД</div>
+  <div style="position:absolute;left:80px;right:80px;top:180px">
+    <div class="h" style="margin-bottom:12px">КАЧЕСТВО ГРАФИКИ</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+      ${[['Низкое','для слабых ПК и ноутбуков','0.45','grayscale(0.4) blur(1.2px)'],['Среднее','баланс скорости и вида','0.7','blur(0.5px)'],['Высокое','тени, постобработка, 4×','1','none'],['Ультра','всё на максимум','1.15','saturate(1.3) contrast(1.1)']].map(([n,d,b,f],i)=>`
+        <div class="preset ${i==2?'on':''}"><div class="img" style="filter:brightness(${b}) ${f}"></div><div class="sh"></div>
+        ${i==2?'<div style="position:absolute;right:14px;top:14px;padding:4px 10px;border-radius:8px;background:rgba(95,230,218,0.25);font-size:11px;font-weight:700;letter-spacing:1.5px" class="cy">ВЫБРАНО</div>':''}
+        <div class="tx"><b style="font-size:22px">${n}</b><div class="mut" style="font-size:13px;margin-top:4px">${d}</div></div></div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-top:28px">
+      <div><div class="h" style="margin-bottom:12px">ЭКРАН</div>${GFX.slice(0, 4).map(r => row(...r)).join('')}</div>
+      <div><div class="h" style="margin-bottom:12px">ТОЧНАЯ НАСТРОЙКА</div>${GFX.slice(5).map(r => row(...r)).join('')}</div>
+    </div>
+  </div>
+  <div style="position:absolute;left:80px;right:80px;bottom:50px;display:flex;justify-content:space-between;align-items:center">
+    <div class="ghost">ПО УМОЛЧАНИЮ</div><div class="mut" style="font-size:13px">Изменения применяются и сохраняются сразу</div></div>`,
+c: `<div class="lbl2">ВАРИАНТ C · ВСЁ НА ОДНОМ ЭКРАНЕ</div><div class="bg"></div><div class="dim"></div>
+  <div style="position:absolute;left:60px;top:48px;display:flex;align-items:center;gap:22px"><div class="ghost" style="padding:11px 20px">‹  НАЗАД</div><div class="big">НАСТРОЙКИ</div></div>
+  <div style="position:absolute;right:60px;top:52px;display:flex;gap:14px;align-items:center"><div class="mut" style="font-size:13px">Изменения применяются сразу</div><div class="ghost" style="padding:11px 20px">ПО УМОЛЧАНИЮ</div></div>
+  <div style="position:absolute;left:60px;right:60px;top:126px;bottom:56px;display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:20px">
+    <div class="glass" style="padding:24px 22px"><div class="h" style="margin-bottom:6px">▣  ГРАФИКА</div><div class="mut" style="font-size:12px;margin-bottom:14px">экран и качество</div>
+      ${GFX.map(r => row(r[0], '', r[2].replace(/width:360px/g, 'width:300px'))).join('')}</div>
+    <div class="glass" style="padding:24px 22px"><div class="h" style="margin-bottom:6px">♪  ЗВУК</div><div class="mut" style="font-size:12px;margin-bottom:22px">громкость и поведение</div>
+      <div style="display:flex;justify-content:space-around;height:300px;align-items:flex-end;margin-bottom:22px">
+        ${[['Общая',80],['Музыка',55],['Звуки',70]].map(([n,p])=>`<div style="text-align:center"><div style="position:relative;width:14px;height:240px;border-radius:7px;background:rgba(255,255,255,0.08);margin:0 auto">
+          <div style="position:absolute;left:0;right:0;bottom:0;height:${p}%;border-radius:7px;background:linear-gradient(0deg,#3FB6AC,#8FF5EA);box-shadow:0 0 14px rgba(95,230,218,0.5)"></div>
+          <div style="position:absolute;left:50%;bottom:${p}%;width:26px;height:26px;margin:0 0 -13px -13px;border-radius:50%;background:#fff;box-shadow:0 0 12px rgba(95,230,218,0.8)"></div></div>
+          <b style="display:block;margin-top:14px;font-size:18px">${p}%</b><span class="mut" style="font-size:13px">${n}</span></div>`).join('')}</div>
+      ${row('Тишина в фоне', '', '<div class="tog"></div>')}${row('Вспышка при тревоге', '', '<div class="tog off"></div>')}</div>
+    <div class="glass" style="padding:24px 22px"><div class="h" style="margin-bottom:6px">☰  ИНТЕРФЕЙС И ИГРА</div><div class="mut" style="font-size:12px;margin-bottom:14px">масштаб, камера, советник, сохранения</div>
+      ${row('Масштаб интерфейса', '', sl(50, '100%').replace('width:360px', 'width:220px'))}
+      ${row('Яркость интерфейса', '', sl(40, '40%').replace('width:360px', 'width:220px'))}
+      ${row('Подсказки', '', '<div class="tog"></div>')}
+      ${row('Скорость камеры', '', sl(60, '1.2×').replace('width:360px', 'width:220px'))}
+      ${row('Прокрутка у края', '', '<div class="tog off"></div>')}
+      ${row('Советник ОРАКУЛ-7', '', '<div class="tog"></div>')}
+      ${row('Автосохранение', '', seg(['Выкл', 'Месяц', 'Год'], 1).replace('width:360px', 'width:220px'))}
+      ${row('Папка сохранений', '', '<div class="ghost" style="padding:8px 14px;font-size:12px">ОТКРЫТЬ</div>')}</div>
+  </div>`
+};
+document.getElementById('s').innerHTML = T[v];
+</script></body></html>

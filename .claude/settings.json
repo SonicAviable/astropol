@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./Library/**)",
+      "Read(./Temp/**)",
+      "Read(./Logs/**)",
+      "Read(./obj/**)",
+      "Read(./Build/**)",
+      "Read(./**/*.meta)",
+      "Read(./**/*.unity)",
+      "Read(./**/*.prefab)",
+      "Read(./**/*.mat)",
+      "Read(./**/*.wav)",
+      "Read(./**/*.mp3)",
+      "Read(./**/*.ogg)",
+      "Read(./**/*.fbx)",
+      "Read(./Assets/SpaceSkies Free/**)",
+      "Read(./Assets/ParallelCascades/**)",
+      "Read(./Assets/TutorialInfo/**)"
+    ]
+  }
+}

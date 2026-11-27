@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<!-- Макеты луны в диске даты: три варианта, крупно (×3) и ряд фаз. Текстура — Assets/Resources/Planets/Real/moon_albedo.jpg.
+     Рендер: node Tools/menu_mock/render_moondisk.js -->
+<style>
+@font-face { font-family: Play; src: url(../../Assets/Resources/Fonts/Play-Regular.ttf); }
+@font-face { font-family: Play; font-weight: 700; src: url(../../Assets/Resources/Fonts/Play-Bold.ttf); }
+@font-face { font-family: Russo; src: url(../../Assets/Resources/Fonts/RussoOne-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1920px; height: 1080px; overflow: hidden; background: radial-gradient(ellipse at 50% 30%, #2a2a24 0%, #0c0e10 75%); font-family: Play; color: #EAF6FA; }
+.col { position: absolute; top: 40px; width: 600px; text-align: center; }
+.col h2 { font: 26px Russo; color: #FFC24D; letter-spacing: 2px; }
+.col p { font-size: 15px; color: #9FB2BC; line-height: 1.45; margin: 8px 30px 0; height: 66px; }
+canvas { display: block; margin: 0 auto; }
+.strip { display: flex; justify-content: center; gap: 14px; margin-top: 18px; }
+.strip div { font-size: 12px; color: #6F8794; letter-spacing: 1px; }
+</style></head>
+<body>
+<div class="col" style="left:20px"><h2>A · ПОЛНАЯ ЛУНА</h2><p>Настоящая луна из текстуры проекта во весь диск, фаза — тенью по шару. Под цифрами — мягкая тёмная подложка, чтобы дата читалась.</p><canvas id="A" width="420" height="420"></canvas><div class="strip" id="sA"></div></div>
+<div class="col" style="left:660px"><h2>B · ЛУНА НА ОРБИТЕ</h2><p>Маленькая луна идёт по кольцу месяца, как спутник: где она — такая часть месяца прошла, её фаза меняется по пути. Циферблат чистый.</p><canvas id="B" width="420" height="420"></canvas><div class="strip" id="sB"></div></div>
+<div class="col" style="left:1300px"><h2>C · ГОЛО-ТЕРМИНАТОР</h2><p>Циферблат сам — луна: поверхность едва видна в цвете HUD, освещённый край — яркий бирюзовый серп со свечением вдоль границы света.</p><canvas id="C" width="420" height="420"></canvas><div class="strip" id="sC"></div></div>
+<script>
+const HOLO = [111, 230, 218];
+const img = new Image();
+img.src = '../../Assets/Resources/Planets/Real/moon_albedo.jpg';
+img.onload = async () => {
+  await Promise.all([document.fonts.load('700 12px Play'), document.fonts.load('36px Russo')]);
+  const tc = document.createElement('canvas'); tc.width = img.width; tc.height = img.height;
+  const tx = tc.getContext('2d'); tx.drawImage(img, 0, 0);
+  const T = tx.getImageData(0, 0, img.width, img.height).data, TW = img.width, TH = img.height;
+  const sample = (lon, lat) => {
+    let x = Math.floor(((lon / (2 * Math.PI)) % 1 + 1) % 1 * TW), y = Math.floor((0.5 - lat / Math.PI) * TH);
+    y = Math.min(TH - 1, Math.max(0, y)); const i = (y * TW + x) * 4; return [T[i], T[i + 1], T[i + 2]];
+  };
+  // Шар радиуса R в точке (cx, cy) с фазой ph; mode: 'real' | 'holo'
+  function moon(ctx, cx, cy, R, ph, mode, alpha = 1) {
+    const th = ph * 2 * Math.PI, L = [Math.sin(th), 0.1 * Math.sin(th), -Math.cos(th)];
+    const n = Math.hypot(...L); L[0] /= n; L[1] /= n; L[2] /= n;
+    const S = Math.ceil(R * 2) + 2, x0 = Math.floor(cx - R) - 1, y0 = Math.floor(cy - R) - 1;
+    const id = ctx.getImageData(x0, y0, S, S), d = id.data;
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+      const u = (x0 + i + 0.5 - cx) / R, v = -(y0 + j + 0.5 - cy) / R, r2 = u * u + v * v;
+      const edge = Math.min(1, Math.max(0, (1 - Math.sqrt(r2)) * R + 0.5)); if (edge <= 0) continue;
+      const z = Math.sqrt(Math.max(0, 1 - r2));
+      const lon = Math.atan2(u, z) + 0.2, lat = Math.asin(v);
+      const a = sample(lon, lat), ndl = u * L[0] + v * L[1] + z * L[2];
+      const day = Math.min(1, Math.max(0, (ndl + 0.04) / 0.12)), dd = day * day * (3 - 2 * day);
+      let c, al;
+      if (mode === 'real') {
+        const lum = 0.45 + 0.55 * Math.pow(z, 0.35);
+        const lit = a.map(q => q * 1.15 * lum), dark = a.map((q, k) => q * 0.07 + [6, 12, 16][k]);
+        c = lit.map((q, k) => dark[k] + (q - dark[k]) * dd); al = edge * alpha;
+      } else {
+        const g = (a[0] + a[1] + a[2]) / 765;
+        const term = Math.exp(-Math.pow(ndl / 0.06, 2));               // свечение по границе света
+        const base = HOLO.map(q => q * (0.05 + 0.08 * g));
+        const lit = HOLO.map(q => q * (0.28 + 0.42 * g) + 18 * g);
+        c = base.map((q, k) => q + (lit[k] - q) * dd + HOLO[k] * 0.9 * term * (1 - dd * 0.5));
+        al = edge * alpha;
+      }
+      const p = (j * S + i) * 4;
+      for (let k = 0; k < 3; k++) d[p + k] = d[p + k] * (1 - al) + Math.min(255, c[k]) * al;
+    }
+    ctx.putImageData(id, x0, y0);
+  }
+  // Общий циферблат (как в игре): тёмный диск, риски, кольцо месяца
+  function dial(ctx, cx, cy, k, frac, drawFace) {
+    const R = 59 * k;
+    ctx.save();
+    ctx.fillStyle = 'rgb(4,7,9)'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+    if (drawFace) drawFace();
+    ctx.strokeStyle = 'rgba(111,230,218,.45)'; ctx.lineWidth = 1.5 * k; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 3 * k; ctx.beginPath(); ctx.arc(cx, cy, R + 7 * k, 0, 7); ctx.stroke();
+    ctx.strokeStyle = 'rgb(111,230,218)'; ctx.beginPath(); ctx.arc(cx, cy, R + 7 * k, -Math.PI / 2, -Math.PI / 2 + frac * 2 * Math.PI); ctx.stroke();
+    for (let i = 0; i < 72; i++) {
+      const a = i / 72 * 2 * Math.PI, r0 = (R + 11 * k) + (i % 6 ? 2.5 * k : 0), r1 = R + 16 * k;
+      ctx.strokeStyle = 'rgba(111,230,218,.5)'; ctx.lineWidth = 1 * k; ctx.beginPath();
+      ctx.moveTo(cx + Math.sin(a) * r0, cy - Math.cos(a) * r0); ctx.lineTo(cx + Math.sin(a) * r1, cy - Math.cos(a) * r1); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function text(ctx, cx, cy, k, plate) {
+    if (plate) { const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 46 * k); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 46 * k, 0, 7); ctx.fill(); }
+    ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,.9)'; ctx.shadowBlur = 6 * k;
+    ctx.fillStyle = 'rgb(111,230,218)'; ctx.font = `700 ${11 * k}px Play`; ctx.letterSpacing = `${3 * k}px`; ctx.fillText('ЯНВАРЬ', cx + 1.5 * k, cy - 27 * k);
+    ctx.fillStyle = '#fff'; ctx.font = `${36 * k}px Russo`; ctx.letterSpacing = '0px'; ctx.fillText('14', cx, cy + 13 * k);
+    ctx.fillStyle = '#B8C8D0'; ctx.font = `700 ${13 * k}px Play`; ctx.letterSpacing = `${4.5 * k}px`; ctx.fillText('2201', cx + 2 * k, cy + 32 * k);
+    ctx.shadowBlur = 0; ctx.letterSpacing = '0px';
+  }
+  const V = {
+    A: (ctx, cx, cy, k, ph) => { dial(ctx, cx, cy, k, ph, () => moon(ctx, cx, cy, 50 * k, ph, 'real', 0.95)); text(ctx, cx, cy, k, true); },
+    B: (ctx, cx, cy, k, ph) => {
+      dial(ctx, cx, cy, k, ph); text(ctx, cx, cy, k, false);
+      const a = ph * 2 * Math.PI, rr = 66 * k, mx = cx + Math.sin(a) * rr, my = cy - Math.cos(a) * rr;
+      const g = ctx.createRadialGradient(mx, my, 0, mx, my, 16 * k); g.addColorStop(0, 'rgba(220,240,255,.35)'); g.addColorStop(1, 'rgba(220,240,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(mx, my, 16 * k, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgb(4,7,9)'; ctx.beginPath(); ctx.arc(mx, my, 9.5 * k, 0, 7); ctx.fill();
+      moon(ctx, mx, my, 8.5 * k, ph, 'real');
+    },
+    C: (ctx, cx, cy, k, ph) => { dial(ctx, cx, cy, k, ph, () => moon(ctx, cx, cy, 57 * k, ph, 'holo')); text(ctx, cx, cy, k, true); },
+  };
+  for (const key of ['A', 'B', 'C']) {
+    const c = document.getElementById(key), ctx = c.getContext('2d');
+    V[key](ctx, 210, 210, 3, 0.43);
+    const strip = document.getElementById('s' + key);
+    for (const [ph, nm] of [[0.04, '1-е'], [0.22, '7-е'], [0.5, '15-е'], [0.75, '23-е']]) {
+      const w = document.createElement('div'), cc = document.createElement('canvas'); cc.width = cc.height = 130;
+      V[key](cc.getContext('2d'), 65, 65, 0.85, ph); w.appendChild(cc); w.append(nm); strip.appendChild(w);
+    }
+  }
+  document.body.dataset.ready = '1';
+};
+</script></body></html>

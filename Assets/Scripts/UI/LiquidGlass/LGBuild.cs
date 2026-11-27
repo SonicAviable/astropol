@@ -58,6 +58,57 @@ namespace StellarisClone.Rendering
             return rt;
         }
 
+        private static readonly System.Collections.Generic.Dictionary<string, Texture2D> s_bg =
+            new System.Collections.Generic.Dictionary<string, Texture2D>();
+
+        /// <summary>
+        /// Задник окна — затемнённая туманность (Menu/menu_bg) внутри скруглённой маски окна. Не ловит клики,
+        /// стекло её не размывает (LG.Ignore). dim — сила затемнения, 0..1. bg — картинка из Resources/WindowBg
+        /// (если её нет — туманность меню).
+        /// </summary>
+        public static RawImage Nebula(Transform root, float radius, float dim = 0.55f, Rect? uv = null, string bg = null)
+        {
+            string key = bg ?? "";
+            if (!s_bg.TryGetValue(key, out var tex) || tex == null)
+            {
+                tex = bg != null ? Resources.Load<Texture2D>("WindowBg/" + bg) : null;
+                if (tex != null) uv = uv ?? new Rect(0f, 0f, 1f, 1f);
+                else tex = Resources.Load<Texture2D>("Menu/menu_bg");
+                s_bg[key] = tex;
+            }
+            else if (bg != null && tex.name == bg) uv = uv ?? new Rect(0f, 0f, 1f, 1f);
+            var mask = LG.RoundedMask(root, radius);
+            mask.SetAsFirstSibling();
+            LG.Ignore(mask.gameObject);
+            var go = new GameObject("Nebula", typeof(RectTransform), typeof(RawImage));
+            go.transform.SetParent(mask, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.GetComponent<RawImage>();
+            img.texture = tex;
+            img.uvRect = uv ?? new Rect(0.1f, 0.15f, 0.8f, 0.7f);
+            float k = 1f - Mathf.Clamp01(dim);
+            img.color = new Color(k, k, k * 1.05f, 1f);
+            img.raycastTarget = false;
+            // «Атлас»: окна без фоновых картинок — ровный чернильный фон и роза ветров шейдера; объект остаётся
+            // (на него ссылается код окон), но невидим
+            img.enabled = false;
+            return img;
+        }
+
+        /// <summary>Цвет искр и падающих звёзд под картинку задника.</summary>
+        private static Color FxTint(string bg)
+        {
+            switch (bg)
+            {
+                case "espionage":    return new Color(0.85f, 0.60f, 1.00f);
+                case "empire":       return new Color(1.00f, 0.86f, 0.55f);
+                case "shipdesigner": return new Color(0.475f, 0.816f, 0.749f);
+                case "colonies":     return new Color(0.60f, 1.00f, 0.85f);
+                default:             return new Color(0.75f, 0.90f, 1.00f);
+            }
+        }
+
         public static Image Panel(Transform parent, string name, Color tint, bool raycast = false)
         {
             var rt = Rect(parent, name);
@@ -67,15 +118,90 @@ namespace StellarisClone.Rendering
             return img;
         }
 
+        /// <summary>
+        /// «Атлас»: заголовок, набранный целиком заглавными («ЗАКОНЫ ИМПЕРИИ»), — обычным регистром («Законы империи»);
+        /// заглавная остаётся у первой буквы и после «. Текст с тегами и смешанным регистром не меняется.
+        /// </summary>
+        public static string Sentence(string s)
+        {
+            if (string.IsNullOrEmpty(s) || s.IndexOf('<') >= 0) return s;
+            int letters = 0;
+            foreach (char ch in s)
+            {
+                if (!char.IsLetter(ch)) continue;
+                if (char.IsLower(ch)) return s;
+                letters++;
+            }
+            if (letters < 4) return s;
+            bool cyr = false;
+            foreach (char ch in s) if (ch >= '\u0400' && ch <= '\u04FF') { cyr = true; break; }
+            var sb = new System.Text.StringBuilder(s.Length);
+            bool cap = true;
+            for (int i = 0; i < s.Length; i++)
+            {
+                char ch = s[i];
+                if (char.IsLetter(ch))
+                {
+                    // Отдельная буква («(L)», «Ф1») и слово с цифрами («F10», «T2») — клавиши и обозначения: остаются заглавными
+                    // В русской подписи латинское сокращение («ESC», «HP», «ИИ» не трогаем) тоже остаётся заглавным
+                    bool keep = !cap && (IsolatedLetter(s, i) || TokenHasDigit(s, i) || (cyr && ch < 128 && LatinToken(s, i) <= 4));
+                    sb.Append(cap || keep ? ch : char.ToLowerInvariant(ch));
+                    cap = false;
+                }
+                else { sb.Append(ch); if (ch == '«' || ch == '.' || ch == '!' || ch == '?') cap = true; }
+            }
+            return sb.ToString();
+        }
+
+        private static bool IsolatedLetter(string s, int i) =>
+            (i == 0 || !char.IsLetterOrDigit(s[i - 1])) && (i == s.Length - 1 || !char.IsLetterOrDigit(s[i + 1]));
+
+        private static int LatinToken(string s, int i)
+        {
+            int a = i, b = i;
+            while (a > 0 && char.IsLetter(s[a - 1]) && s[a - 1] < 128) a--;
+            while (b < s.Length - 1 && char.IsLetter(s[b + 1]) && s[b + 1] < 128) b++;
+            return b - a + 1;
+        }
+
+        private static bool TokenHasDigit(string s, int i)
+        {
+            int a = i, b = i;
+            while (a > 0 && char.IsLetterOrDigit(s[a - 1])) a--;
+            while (b < s.Length - 1 && char.IsLetterOrDigit(s[b + 1])) b++;
+            for (int k = a; k <= b; k++) if (char.IsDigit(s[k])) return true;
+            return false;
+        }
+
+        private static readonly int[] TypeScale = { 9, 10, 11, 12, 13, 14, 16, 18, 22, 26, 30, 34, 40, 48 };
+
+        /// <summary>
+        /// «Атлас»: единая шкала кеглей интерфейса. Промежуточный размер округляется вниз до ближайшей ступени
+        /// (15 → 14, 17 → 16, 21 → 18, 24 → 22…), поэтому текст не растёт и не вылезает из рамок; крупнее 48 — как есть.
+        /// </summary>
+        public static int SnapSize(int size)
+        {
+            if (size <= TypeScale[0] || size > TypeScale[TypeScale.Length - 1]) return size;
+            int best = TypeScale[0];
+            foreach (int s in TypeScale) if (s <= size) best = s;
+            return best;
+        }
+
         public static Text Label(Transform parent, string text, int size, Color color,
                                  TextAnchor anchor = TextAnchor.MiddleLeft, bool bold = false, bool wrap = false)
         {
             var rt = Rect(parent, "Txt");
             rt.Stretch();
             var t = rt.gameObject.AddComponent<Text>();
-            t.font = bold ? GameFont.Bold : GameFont.Regular;
+            // «Атлас»: крупные жирные подписи (заголовки окон, большие числа) — заголовочным шрифтом Spectral;
+            // жирный шрифт — настоящий SemiBold-файл, синтетический «жирный» поверх не нужен
+            size = SnapSize(size);
+            t.font = bold ? (size >= 18 ? GameFont.Display : GameFont.Bold) : GameFont.Regular;
             t.fontSize = size;
-            t.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
+            t.fontStyle = FontStyle.Normal;
+            if (bold && size >= 18) text = Sentence(text);
+            // «Атлас»: белый текст окон — кремовый
+            if (color.r > 0.95f && color.g > 0.95f && color.b > 0.95f) color = new Color(0.925f, 0.898f, 0.827f, color.a);
             t.color = color;
             t.text = text;
             t.alignment = anchor;
@@ -84,7 +210,7 @@ namespace StellarisClone.Rendering
             t.horizontalOverflow = wrap ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             var sh = rt.gameObject.AddComponent<Shadow>();
-            sh.effectColor = new Color(0f, 0.02f, 0.04f, 0.5f);
+            sh.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.28f);   // «Атлас»: тень едва заметна — текст на ровных панелях чёткий
             sh.effectDistance = new Vector2(0f, -1f);
             return t;
         }
@@ -97,6 +223,8 @@ namespace StellarisClone.Rendering
             var btn = img.gameObject.AddComponent<UnityEngine.UI.Button>();
             btn.onClick.AddListener(() => onClick?.Invoke());
             LG.Button(img.gameObject, rim, radius);
+            // Кнопки-полосы с подписью — в общем стиле игры (тёмное стекло, подпись по центру, без значка); см. LGGameButton
+            img.gameObject.AddComponent<LGGameButton>().Init(icon, rim, tint);
 
             if (icon.HasValue && string.IsNullOrEmpty(label))
             {
@@ -117,7 +245,7 @@ namespace StellarisClone.Rendering
         /// <summary>Полоса прогресса: стеклянный жёлоб + светящаяся заливка. Возвращает заливку.</summary>
         public static RectTransform Bar(Transform parent, Color fill, float value, float height = 6f)
         {
-            var track = Panel(parent, "BarTrack", new Color(0f, 0.02f, 0.04f, 0.8f));
+            var track = Panel(parent, "BarTrack", new Color(0.055f, 0.094f, 0.157f, 0.8f));
             track.rectTransform.anchorMin = new Vector2(0, 0.5f);
             track.rectTransform.anchorMax = new Vector2(1, 0.5f);
             track.rectTransform.sizeDelta = new Vector2(0, height);
@@ -127,9 +255,12 @@ namespace StellarisClone.Rendering
             var frt = f.rectTransform;
             frt.anchorMin = new Vector2(0, 0);
             frt.anchorMax = new Vector2(Mathf.Clamp01(value), 1);
-            frt.offsetMin = new Vector2(1, 1);
-            frt.offsetMax = new Vector2(-1, -1);
-            LG.Fill(f.gameObject);
+            // Тонкие полоски (до 4 px) — заливка во всю высоту: отступ 1 px съедал её целиком
+            float inset = height <= 4f ? 0f : 1f;
+            frt.offsetMin = new Vector2(inset, inset);
+            frt.offsetMax = new Vector2(-inset, -inset);
+            // Тонкие полоски — простая заливка: стеклянный шейдер со скруглением почти не рисовал полосу в 2–3 px
+            if (height <= 4f) LG.Ignore(f.gameObject); else LG.Fill(f.gameObject);
             if (value <= 0.001f) f.enabled = false;
             return frt;
         }
@@ -137,13 +268,12 @@ namespace StellarisClone.Rendering
         public static void SetBar(RectTransform fill, float value, Color? color = null)
         {
             if (fill == null) return;
-            value = Mathf.Clamp01(value);
-            fill.anchorMax = new Vector2(value, 1);
-            var img = fill.GetComponent<Image>();
-            if (img != null)
+            // Заливка доезжает до нового значения плавно (LGBarFill), цвет меняется сразу
+            LGFx.SmoothBar(fill, value);
+            if (color.HasValue)
             {
-                img.enabled = value > 0.001f;
-                if (color.HasValue) img.color = color.Value;
+                var img = fill.GetComponent<Image>();
+                if (img != null) img.color = color.Value;
             }
         }
 
@@ -153,7 +283,7 @@ namespace StellarisClone.Rendering
             var view = Rect(parent, "Scroll");
             view.Stretch();
             view.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(0, 12);
-            var sr = view.gameObject.AddComponent<ScrollRect>();
+            var sr = view.gameObject.AddComponent<LGScrollRect>();
             sr.horizontal = false;
             sr.vertical = true;
             sr.movementType = ScrollRect.MovementType.Elastic;
@@ -180,6 +310,29 @@ namespace StellarisClone.Rendering
             content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             sr.viewport = view;
             sr.content = content;
+
+            // «Атлас»: тонкий индикатор прокрутки у правого края — виден, только когда список длиннее окна
+            var sbRt = Rect(view, "ScrollIndicator");
+            sbRt.anchorMin = new Vector2(1, 0); sbRt.anchorMax = new Vector2(1, 1);
+            sbRt.pivot = new Vector2(1, 0.5f);
+            sbRt.sizeDelta = new Vector2(3f, -18f);
+            sbRt.anchoredPosition = new Vector2(-1f, 0f);
+            var track = sbRt.gameObject.AddComponent<Image>();
+            track.color = new Color(0.925f, 0.898f, 0.827f, 0.06f);
+            var area = Rect(sbRt, "Area");
+            area.Stretch();
+            var handle = Rect(area, "Handle");
+            handle.Stretch();
+            var hImg = handle.gameObject.AddComponent<Image>();
+            hImg.color = new Color(0.925f, 0.898f, 0.827f, 0.36f);
+            var sb = sbRt.gameObject.AddComponent<Scrollbar>();
+            sb.direction = Scrollbar.Direction.BottomToTop;
+            sb.handleRect = handle;
+            sb.targetGraphic = hImg;
+            sb.transition = Selectable.Transition.None;
+            sr.verticalScrollbar = sb;
+            sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+            LG.Ignore(sbRt.gameObject);
             return content;
         }
 
@@ -200,6 +353,61 @@ namespace StellarisClone.Rendering
             if (le == null) le = go.AddComponent<LayoutElement>();
             le.preferredHeight = le.minHeight = h;
             return le;
+        }
+
+        /// <summary>Разрядка заголовка (px между буквами) — см. LGTracking.</summary>
+        /// <summary>«Атлас»: подпись над заголовком («ПАРАМЕТРЫ», «ЭКРАН») — моноширинная, золотая, 12 px, с разрядкой.</summary>
+        public static Text Eyebrow(this Text t)
+        {
+            if (t == null) return null;
+            t.font = GameFont.MonoMedium;
+            t.fontStyle = FontStyle.Normal;
+            t.fontSize = 12;
+            t.color = new Color(0.906f, 0.757f, 0.439f);
+            return t.Track(1.8f);
+        }
+
+        public static Text Track(this Text t, float spacing = 1.6f)
+        {
+            if (t == null) return null;
+            var tr = t.GetComponent<LGTracking>();
+            if (tr == null) tr = t.gameObject.AddComponent<LGTracking>();
+            tr.Spacing = spacing;
+            return t;
+        }
+
+        /// <summary>
+        /// Заголовок секции в общем стиле игры (как в окне звёздной базы): ромб со свечением, значок, надпись капслоком
+        /// с разрядкой и черта, тающая вправо. Заполняет готовую строку row (её размер и место задаёт вызывающий).
+        /// </summary>
+        public static void SectionDecor(RectTransform row, string title, LGIcon? icon, Color? accent = null, int size = 11)
+        {
+            Color g = accent ?? UIManager.DS.Gold;
+            var glow = Panel(row, "Glow", new Color(g.r, g.g, g.b, 0.35f));
+            glow.sprite = FactionSelectScreen.RadialSprite();
+            glow.raycastTarget = false;
+            glow.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(5, 9), new Vector2(24, 24));
+            var dia = Panel(row, "Diamond", g);
+            dia.raycastTarget = false;
+            dia.rectTransform.At(new Vector2(0, 0), new Vector2(0.5f, 0.5f), new Vector2(5, 9), new Vector2(7, 7));
+            dia.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+            float x = 16f;
+            if (icon.HasValue)
+            {
+                var ic = LGIcons.Create(row, icon.Value, 13, new Color(g.r, g.g, g.b, 0.85f));
+                ic.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(x, 3), new Vector2(13, 13));
+                x += 18f;
+            }
+            var t = Label(row, title.ToUpper(), size, g, TextAnchor.LowerLeft, bold: true);
+            t.rectTransform.Stretch(x, 1, 0, 0);
+            t.Track(2f);
+            var line = Panel(row, "Line", new Color(g.r, g.g, g.b, 0.55f));
+            line.sprite = UIManager.FadeRightSprite;
+            line.raycastTarget = false;
+            line.rectTransform.anchorMin = new Vector2(0, 0); line.rectTransform.anchorMax = new Vector2(1, 0);
+            line.rectTransform.pivot = new Vector2(0, 0);
+            line.rectTransform.sizeDelta = new Vector2(0, 1.5f);
+            line.rectTransform.anchoredPosition = Vector2.zero;
         }
 
         public static string Hex(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c);
