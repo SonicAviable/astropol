@@ -46,7 +46,7 @@ namespace StellarisClone.Rendering
         private Action _back;
 
         private InputField _name, _title, _ruler;
-        private Image _prevEmblem, _prevGlow, _prevOrbit;
+        private Image _prevEmblem, _prevGlow;
         private readonly List<Image> _prevMapTint = new List<Image>();
         private Text _prevName, _prevTitle, _prevRuler, _baseText;
         private readonly List<(Image ring, int idx)> _swatches = new List<(Image, int)>();
@@ -166,16 +166,6 @@ namespace StellarisClone.Rendering
             _prevGlow.raycastTarget = false;
             _prevGlow.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(290, 290));
             LG.Ignore(_prevGlow.gameObject);
-            _prevOrbit = LGBuild.Panel(p, "Orbit", Color.white);
-            _prevOrbit.sprite = Ring();
-            _prevOrbit.raycastTarget = false;
-            _prevOrbit.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(204, 204));
-            LG.Ignore(_prevOrbit.gameObject);
-            var brassRing = LGBuild.Panel(p, "BrassRing", new Color(Brass.r, Brass.g, Brass.b, 0.55f));
-            brassRing.sprite = ThinRing();
-            brassRing.raycastTarget = false;
-            brassRing.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(184, 184));
-            LG.Ignore(brassRing.gameObject);
             _prevEmblem = FactionEmblems.Create(p, FactionEmblems.ForKey(EmblemKeys[0]), 140f, Color.white, "PreviewEmblem");
             if (_prevEmblem != null) _prevEmblem.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(140, 140));
 
@@ -414,7 +404,6 @@ namespace StellarisClone.Rendering
                 _prevEmblem.color = Color.Lerp(col, Color.white, 0.2f);
             }
             _prevGlow.color = new Color(col.r, col.g, col.b, 0.30f);
-            _prevOrbit.color = new Color(col.r, col.g, col.b, 0.55f);
             foreach (var m in _prevMapTint) if (m != null) m.color = col;
             _prevName.text = _f.Name;
             _prevName.color = Color.Lerp(col, Color.white, 0.55f);
