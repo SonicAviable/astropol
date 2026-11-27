@@ -8522,3 +8522,4 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 они побеждают и диктуют условия	they are winning and dictate the terms
 Условия мира	Peace Terms
 {0} предлагает мир на своих условиях: {1}. Ответьте в окне дипломатии	{0} offers peace on its own terms: {1}. Respond in the Diplomacy window
+Нажмите любую клавишу ещё раз, чтобы пропустить	Press any key again to skip
