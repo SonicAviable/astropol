@@ -41,6 +41,20 @@ CACHE = os.path.expanduser("~/.cache/astropol_elevenlabs")
 W, H, FPS = 1920, 1080, 30
 XFADE = 1.0          # наплыв между сценами, с
 LEAD, TAIL = 1.2, 5.0  # тишина до первой фразы и музыка после последней
+FONT_TITLE = RES + "/Fonts/Spectral-SemiBold.ttf"
+FONT_MONO = RES + "/Fonts/IBMPlexMono-Medium.ttf"
+
+# Титры перед прологом (с): «Студия SmartBiz представляет» на чёрном, затем «ASTROPOLITY» над проступающей галактикой
+STUDIO_IN, STUDIO_OUT = 0.6, 5.2
+TITLE_IN, TITLE_OUT = 5.9, 12.2
+GALAXY_IN = 6.4        # первая сцена (галактика) проявляется под названием
+FIRST_LINE = 13.0      # первая фраза рассказчика
+CARDS = {
+    "ru": ("СТУДИЯ", "SmartBiz", "представляет", "ПРОЛОГ  ·  ВЕЛИКОЕ МОЛЧАНИЕ"),
+    "en": ("STUDIO", "SmartBiz", "presents", "PROLOGUE  ·  THE GREAT SILENCE"),
+}
+GOLD = (231, 193, 112)
+CREAM = (236, 229, 211)
 FONT = RES + "/Fonts/PTSerif-Regular.ttf"
 FONT_IT = RES + "/Fonts/PTSerif-Italic.ttf"
 
@@ -206,11 +220,11 @@ def make_music(length_s):
 
 def timeline(voices):
     """Начало каждой сцены и фразы. Сцены идут встык с наплывом XFADE."""
-    t = LEAD
+    t = FIRST_LINE
     starts, speech = [], []
     for i, sc in enumerate(SCENES):
         d = max(voices["ru"][i][1], voices["en"][i][1])
-        scene_start = t - (LEAD if i == 0 else XFADE * 0.5)
+        scene_start = GALAXY_IN if i == 0 else t - XFADE * 0.5
         starts.append(max(0.0, scene_start))
         speech.append((t, d))
         t += d + sc[2] + XFADE * 0.5
@@ -305,6 +319,97 @@ def subtitle_layer(text, italic=False):
     return Image.alpha_composite(shadow, layer)
 
 
+def tracked(draw, cx, text, fnt, spacing, fill, y):
+    """Текст с разрядкой (spacing px между буквами) по центру относительно cx."""
+    widths = [draw.textlength(ch, font=fnt) for ch in text]
+    total = sum(widths) + spacing * (len(text) - 1)
+    x = cx - total / 2
+    for ch, w in zip(text, widths):
+        draw.text((x, y), ch, font=fnt, fill=fill)
+        x += w + spacing
+    return total
+
+
+def card_alpha(t, t0, t1, fin=1.4, fout=1.2):
+    if t < t0 or t > t1:
+        return 0.0
+    return ease(min(1.0, (t - t0) / fin, (t1 - t) / fout))
+
+
+_fonts = {}
+
+
+def font(path, size):
+    k = (path, size)
+    if k not in _fonts:
+        _fonts[k] = ImageFont.truetype(path, size)
+    return _fonts[k]
+
+
+def fade(layer, a):
+    arr = np.asarray(layer).astype(np.float32)
+    arr[..., 3] *= a
+    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
+
+def glow(layer, radius, strength):
+    g = layer.filter(ImageFilter.GaussianBlur(radius))
+    arr = np.asarray(g).astype(np.float32)
+    arr[..., 3] = np.clip(arr[..., 3] * strength, 0, 255)
+    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
+
+_gold_grad = None
+
+
+def gold_gradient(y0, h):
+    """Золото по высоте букв: светлое сверху, тёмное снизу."""
+    global _gold_grad
+    if _gold_grad is None:
+        yy = np.clip((np.arange(H, dtype=np.float32) - y0) / h, 0, 1)[:, None]
+        top, bottom = np.array([252, 236, 190], np.float32), np.array([190, 140, 62], np.float32)
+        col = top[None, :] * (1 - yy) + bottom[None, :] * yy
+        _gold_grad = np.repeat(col[:, None, :], W, axis=1)
+    return _gold_grad
+
+
+def title_card(lang, t):
+    """Титры: «Студия SmartBiz представляет», затем «ASTROPOLITY». None — титров в этот момент нет."""
+    studio, name, presents, eyebrow = CARDS[lang]
+    a1 = card_alpha(t, STUDIO_IN, STUDIO_OUT)
+    a2 = card_alpha(t, TITLE_IN, TITLE_OUT, fin=1.8, fout=1.6)
+    if a1 <= 0.0 and a2 <= 0.0:
+        return None
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    cx, cy = W / 2, H / 2
+    if a1 > 0.0:
+        k = (t - STUDIO_IN) / (STUDIO_OUT - STUDIO_IN)       # разрядка медленно «раскрывается»
+        tracked(d, cx, studio, font(FONT_MONO, 22), 14 + 6 * k, GOLD + (255,), cy - 96)
+        tracked(d, cx, name, font(FONT_TITLE, 96), 4 + 5 * k, CREAM + (255,), cy - 66)
+        lw = 150 + 40 * k
+        d.line([(cx - lw, cy + 62), (cx - 14, cy + 62)], fill=GOLD + (150,), width=1)
+        d.line([(cx + 14, cy + 62), (cx + lw, cy + 62)], fill=GOLD + (150,), width=1)
+        d.polygon([(cx, cy + 56), (cx + 6, cy + 62), (cx, cy + 68), (cx - 6, cy + 62)], fill=GOLD + (230,))
+        tracked(d, cx, presents, font(FONT_IT, 34), 1.5, (200, 192, 172, 255), cy + 80)
+        layer = fade(layer, a1)
+        return Image.alpha_composite(glow(layer, 14, 0.5), layer)
+    k = (t - TITLE_IN) / (TITLE_OUT - TITLE_IN)
+    ty = cy - 128
+    tl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    tracked(ImageDraw.Draw(tl), cx, "ASTROPOLITY", font(FONT_TITLE, 150), 16 + 10 * k, (255, 255, 255, 255), ty)
+    arr = np.asarray(tl).astype(np.float32)
+    arr[..., :3] = gold_gradient(ty + 40, 140)
+    tl = Image.fromarray(arr.astype(np.uint8), "RGBA")
+    lw = 300 + 120 * k
+    d.line([(cx - lw, cy + 74), (cx - 16, cy + 74)], fill=GOLD + (170,), width=1)
+    d.line([(cx + 16, cy + 74), (cx + lw, cy + 74)], fill=GOLD + (170,), width=1)
+    d.polygon([(cx, cy + 67), (cx + 7, cy + 74), (cx, cy + 81), (cx - 7, cy + 74)], fill=GOLD + (240,))
+    tracked(d, cx, eyebrow, font(FONT_MONO, 22), 8, (214, 205, 182, 235), cy + 100)
+    layer = fade(Image.alpha_composite(layer, tl), a2)
+    return Image.alpha_composite(glow(layer, 22, 0.75), layer)
+
+
 def render(lang, starts, ends, speech, total, audio, out):
     vig = vignette()
     subs = [None] * len(SCENES)
@@ -333,7 +438,7 @@ def render(lang, starts, ends, speech, total, audio, out):
             if i > 0 and t < s + XFADE:
                 a = (t - s) / XFADE
             if i == 0:
-                a = min(1.0, t / 2.0)          # проявление из темноты
+                a = min(1.0, max(0.0, (t - s) / 3.0))   # галактика проступает из темноты под названием
             if i == len(SCENES) - 1 and t > total - 3.0:
                 a = max(0.0, (total - t) / 3.0)  # уход в темноту
             a = ease(a)
@@ -342,6 +447,9 @@ def render(lang, starts, ends, speech, total, audio, out):
             weight = 1.0
         frame *= vig
         out_im = Image.fromarray(np.clip(frame, 0, 255).astype(np.uint8), "RGB")
+        card = title_card(lang, t)
+        if card is not None:
+            out_im = Image.alpha_composite(out_im.convert("RGBA"), card).convert("RGB")
         # субтитр фразы: появляется чуть раньше голоса, держится до конца фразы
         for i, (ts, d) in enumerate(speech):
             a0, a1 = ts - 0.25, ts + d + 0.45
@@ -375,11 +483,12 @@ def mix(lang, voices, speech, total, music, tmp):
                     "-ar", "44100", vo], check=True)
     out = os.path.join(tmp, f"mix_{lang}.wav")
     fade = max(0.0, total - 4.0)
-    filt = (f"[1:a]aresample=44100,aformat=channel_layouts=stereo,atrim=0:{total:.2f},volume=-4dB,"
+    filt = (f"[1:a]aresample=44100,aformat=channel_layouts=stereo,atrim=0:{total:.2f},volume=-10dB,"
             f"afade=t=in:d=1.5,afade=t=out:st={fade:.2f}:d=4[m];"
             "[0:a]asplit=2[v1][v2];"
-            "[m][v1]sidechaincompress=threshold=0.03:ratio=5:attack=40:release=600:makeup=1[md];"
-            "[md][v2]amix=inputs=2:normalize=0:weights=1 1.15,loudnorm=I=-18:TP=-1.5:LRA=11[out]")
+            "[m][v1]sidechaincompress=threshold=0.015:ratio=10:attack=30:release=900:makeup=1[md];"
+            "[v2]volume=4dB[vl];"
+            "[md][vl]amix=inputs=2:normalize=0,loudnorm=I=-18:TP=-1.5:LRA=9[out]")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", vo, "-i", music, "-filter_complex", filt,
                     "-map", "[out]", "-ar", "44100", out], check=True)
     return out
@@ -398,6 +507,15 @@ def preview(path):
 
 
 def main():
+    if "--titles" in sys.argv:
+        bg = Image.new("RGB", (W, H), (8, 10, 18))
+        for lang in ("ru", "en"):
+            for t in (3.0, 9.0):
+                im = Image.alpha_composite(bg.convert("RGBA"), title_card(lang, t)).convert("RGB")
+                pth = os.path.join(tempfile.gettempdir(), f"title_{lang}_{int(t)}.jpg")
+                im.save(pth, quality=88)
+                print(pth)
+        return
     if "--preview" in sys.argv:
         preview(os.path.join(tempfile.gettempdir(), "lore_preview.jpg"))
         return

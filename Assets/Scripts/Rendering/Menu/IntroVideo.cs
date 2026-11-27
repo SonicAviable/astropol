@@ -8,10 +8,10 @@ namespace StellarisClone.Rendering
 {
     /// <summary>
     /// Заставка при запуске игры — один раз за запуск, поверх экрана загрузки и главного меню (они готовятся за ней):
-    ///   1. логотип (StreamingAssets/Intro/intro.mp4) заканчивается кадром «Press any key to start» и ждёт клавишу;
-    ///   2. пролог «Великое Молчание» (Intro/lore_&lt;язык&gt;.mp4, Tools/lore_intro/generate.py) — история Строителей
-    ///      под музыку и голос рассказчика; после него — главное меню. Пропуск — повторное нажатие любой клавиши
-    ///      (первое показывает подсказку), чтобы пролог не слетал от случайного клика.
+    /// пролог «Великое Молчание» (Intro/lore_&lt;язык&gt;.mp4, Tools/lore_intro/generate.py) — титры «Студия SmartBiz
+    /// представляет» и «ASTROPOLITY», затем история Строителей под музыку и голос рассказчика; после него — главное меню.
+    /// Пропуск — повторное нажатие любой клавиши (первое показывает подсказку) или Esc.
+    /// Нет файла пролога — играет старый логотип (intro.mp4, ждёт клавишу на кадре «Press any key to start»).
     /// Музыка меню на время заставки приглушена. Нет файла или видео не открылось — этот ролик просто пропускается.
     /// </summary>
     public class IntroVideo : MonoBehaviour
@@ -45,11 +45,13 @@ namespace StellarisClone.Rendering
             s_played = true;
             string dir = Path.Combine(Application.streamingAssetsPath, "Intro");
             var clips = new System.Collections.Generic.List<(string, bool)>();
-            string logo = Path.Combine(dir, FileName);
-            if (Exists(logo)) clips.Add((logo, true));
+            // Пролог начинается с титров «Студия SmartBiz представляет» и «ASTROPOLITY» — он и есть заставка.
+            // Старый логотип (intro.mp4) — запасной вариант, если файла пролога нет.
             string lore = Path.Combine(dir, "lore_" + Loc.Current + ".mp4");
             if (!Exists(lore)) lore = Path.Combine(dir, "lore_ru.mp4");
+            string logo = Path.Combine(dir, FileName);
             if (Exists(lore)) clips.Add((lore, false));
+            else if (Exists(logo)) clips.Add((logo, true));
             if (clips.Count == 0) return;
             var go = new GameObject("[UI] IntroVideo");
             DontDestroyOnLoad(go);
