@@ -639,6 +639,9 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             Item("NavLog", LGIcon.Calendar, Loc.T("Журнал событий"), DS.Gold, NotificationLog.Toggle, UIAnchors.LogHelp,
                  Loc.T("<b>Журнал событий</b>\nВсе всплывающие сообщения партии. Клик по записи — камера к месту события"), "O", () => NotificationLog.IsOpenNow);
             NotificationLog.AttachBadge(items.Find("NavLog/IconTile"));
+            Item("NavLore", LGIcon.Star, Loc.T("Архив"), new Color(0.89f, 0.72f, 1f), () => ToggleWindow(NavWindow.Lore), null,
+                 Loc.T("<b>Архив</b>\nЛетопись Строителей, народы галактики, их легенды и тайны. Записи открываются по ходу партии"), "Y", () => IsWindowOpen(NavWindow.Lore));
+            LoreWindow.AttachBadge(items.Find("NavLore/IconTile"));
             // «Справка» — маленькая кнопка «?» в шапке планировщика справа (OutlinerPanel), клавиша F1
 
             _navDiplo = items.Find("NavDiplo")?.GetComponent<RectTransform>();
@@ -817,7 +820,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
 
         // ---------- Главные окна: клавиши и «одно окно за раз» ----------
 
-        public enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Wonder, Help, Army }
+        public enum NavWindow { Empire, Colonies, Laws, Tech, Diplomacy, Espionage, Designer, Victory, Wonder, Help, Army, Lore }
 
         /// <summary>Открыть главное окно (если уже открыто — оставить), остальные закрыть. Для целей и подсказок.</summary>
         public void OpenNavWindow(NavWindow w)
@@ -837,6 +840,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             NavWindow.Victory => VictoryPathWindow.Instance != null && VictoryPathWindow.Instance.IsOpen,
             NavWindow.Wonder => WonderWindow.Instance != null && WonderWindow.Instance.IsOpen,
             NavWindow.Army => StellarisClone.Cards.ArsenalWindow.IsOpenNow,
+            NavWindow.Lore => LoreWindow.IsOpenNow,
             _ => HelpOverlay.IsOpenNow
         };
 
@@ -855,6 +859,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 case NavWindow.Victory: VictoryPathWindow.Instance.Close(); break;
                 case NavWindow.Wonder: WonderWindow.Instance.Close(); break;
                 case NavWindow.Army: StellarisClone.Cards.ArsenalWindow.Instance.Close(); break;
+                case NavWindow.Lore: LoreWindow.Instance.Close(); break;
                 case NavWindow.Help: HelpOverlay.Instance.Close(); break;
             }
         }
@@ -884,6 +889,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
                 case NavWindow.Victory: VictoryPathWindow.Toggle(); break;
                 case NavWindow.Wonder: WonderWindow.Toggle(_activeSystem); break;
                 case NavWindow.Army: StellarisClone.Cards.ArsenalWindow.Toggle(); break;
+                case NavWindow.Lore: LoreWindow.Toggle(); break;
                 case NavWindow.Help: HelpOverlay.Toggle(); break;
             }
         }
@@ -909,6 +915,7 @@ else TradeModal.Instance.BindHost(_modalCanvas);
             else if (Input.GetKeyDown(KeyCode.N)) ToggleWindow(NavWindow.Designer);
             else if (Input.GetKeyDown(KeyCode.U)) ToggleWindow(NavWindow.Wonder);
             else if (Input.GetKeyDown(KeyCode.J)) ToggleWindow(NavWindow.Army);
+            else if (Input.GetKeyDown(KeyCode.Y)) ToggleWindow(NavWindow.Lore);
             else if (Input.GetKeyDown(KeyCode.G)) { CloseMainWindows(null); SelectAllWarships(); }
             else if (Input.GetKeyDown(KeyCode.C)) CloseMainWindows(NavWindow.Colonies);
             else if (Input.GetKeyDown(KeyCode.V)) CloseMainWindows(NavWindow.Victory);

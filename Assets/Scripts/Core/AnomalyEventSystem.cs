@@ -139,6 +139,7 @@ namespace StellarisClone.Core
         private void Show(GameEventData ev)
         {
             _showing = true;
+            Lore.OnEventShown(ev.EventId);
             OnEventTriggered?.Invoke(ev);
         }
 

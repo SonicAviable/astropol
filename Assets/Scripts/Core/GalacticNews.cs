@@ -265,6 +265,24 @@ namespace StellarisClone.Core
             Loc.T("Художники {0} расписали орбитальную станцию — её видно невооружённым глазом"),
         };
 
+        private static readonly string[] LoreRumors =
+        {
+            Loc.T("Археологи {0} нашли на окраинной луне монету, удар которой не слышен"),
+            Loc.T("Учёные {0} спорят: были ли Предтечи и Строители одним народом"),
+            Loc.T("Экипаж разведчика {0} уверяет, что у Врат Предтеч слышал музыку — в вакууме"),
+            Loc.T("Книга «Почему молчат Строители» раскуплена в столице {0} за один день"),
+            Loc.T("Лингвисты {0} заметили: в языке Строителей нет слова «тишина»"),
+        };
+
+        private static readonly string[] LoreRumorsLate =
+        {
+            Loc.T("Астрономы {0} фиксируют сбои в ритме Пульсара Ирис"),
+            Loc.T("В колониях {0} растёт секта «Тихих»: адепты отказываются от связи и гиперпрыжков"),
+            Loc.T("Пираты у границ {0} перестали выходить в эфир — говорят, «чтобы их не услышали»"),
+            Loc.T("Миллионы жителей {0} видят один и тот же сон о звезде без света"),
+            Loc.T("Генштаб {0} засекретил доклад о левиафанах, которые «не звучат»"),
+        };
+
         private static void PostChronicle()
         {
             var known = new List<AIEmpireManager>();
@@ -284,6 +302,15 @@ namespace StellarisClone.Core
                 else if (smartest != null)
                     Post(NewsKind.Science, Loc.F("{0} лидирует в науке: изучено технологий — {1}", smartest.AIName, smartest.ResearchedCount));
                 return;
+            }
+
+            // Когда летопись Строителей начала складываться — слухи о Предтечах (чем больше осколков, тем тревожнее)
+            if (Lore.ShardCount > 0 && Random.value < 0.25f)
+            {
+                int who = known.Count > 0 ? known[Random.Range(0, known.Count)].OwnerId : 0;
+                var pool2 = Lore.ShardCount >= 4 ? LoreRumorsLate : LoreRumors;
+                string r = string.Format(pool2[Random.Range(0, pool2.Length)], Who(who));
+                if (!RecentlyPosted(r)) { Post(NewsKind.Society, r, -1, who == 0); return; }
             }
 
             // Иначе — бытовая новость случайной знакомой империи (или нашей, если знакомых нет)

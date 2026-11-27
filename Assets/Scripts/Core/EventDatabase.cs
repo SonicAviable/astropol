@@ -340,6 +340,7 @@ namespace StellarisClone.Core
             AddSocietyEvents();
             AddAllianceEvents();
             AddLongChains();
+            AddLoreEvents();
         }
 
         // -------------------- Разведка --------------------
