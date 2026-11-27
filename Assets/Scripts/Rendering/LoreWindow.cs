@@ -19,7 +19,9 @@ namespace StellarisClone.Rendering
         public static bool IsOpenNow => Instance != null && Instance.IsOpen;
 
         private GameObject _root;
-        private RectTransform _list, _textContent;
+        private RectTransform _list, _textContent, _textPanel;
+        private float _textW = -1f;
+        private const float ReadWidth = 860f;   // колонка чтения: длинные строки на всю ширину читаются плохо
         private Text _subtitle, _eyebrow, _title, _body;
         private readonly List<Image> _shardMarks = new List<Image>();
         private string _selected = "intro_precursors";
@@ -27,8 +29,6 @@ namespace StellarisClone.Rendering
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Gold => UIManager.DS.Gold;
         private static readonly Color CPanel = new Color(0.055f, 0.094f, 0.157f, 0.90f);
-        private static readonly Color CRow = new Color(0.09f, 0.14f, 0.22f, 0.85f);
-        private static readonly Color CRowSel = new Color(0.20f, 0.17f, 0.09f, 0.95f);
         private static readonly Color CViolet = new Color(0.89f, 0.72f, 1f);
 
         public static void Toggle()
@@ -46,6 +46,7 @@ namespace StellarisClone.Rendering
         private void Update()
         {
             if (!IsOpen) return;
+            FitReadColumn();
             if (Input.GetKeyDown(KeyCode.Escape)) { UIEsc.Consume(); Close(); }
         }
 
@@ -142,16 +143,34 @@ namespace StellarisClone.Rendering
             accent.rectTransform.TopBand(0, 3, 18, 18);
             LG.Ignore(accent.gameObject);
 
+            _textPanel = right.rectTransform;
             var scrollHost = LGBuild.Rect(right.rectTransform, "Body");
-            scrollHost.Stretch(28, 16, 28, 18);
-            _textContent = LGBuild.ScrollList(scrollHost, 10f, 4);
+            scrollHost.Stretch(0, 16, 0, 30);
+            _textContent = LGBuild.ScrollList(scrollHost, 12f, 4);
             _eyebrow = LGBuild.Label(_textContent, "", 12, Gold, TextAnchor.UpperLeft).Eyebrow();
-            _title = LGBuild.Label(_textContent, "", 26, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
-            _body = LGBuild.Label(_textContent, "", 15, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
-            _body.lineSpacing = 1.15f;
+            _title = LGBuild.Label(_textContent, "", 32, Color.white, TextAnchor.UpperLeft, bold: true, wrap: true);
+            var rule = LGBuild.Panel(_textContent, "Rule", new Color(Gold.r, Gold.g, Gold.b, 0.45f));
+            rule.sprite = HudArt.TaperLine();
+            LGBuild.Height(rule.gameObject, 2f);
+            LG.Ignore(rule.gameObject);
+            _body = LGBuild.Label(_textContent, "", 17, new Color(0.925f, 0.898f, 0.827f), TextAnchor.UpperLeft, wrap: true);
+            _body.lineSpacing = 1.3f;
 
             LG.Skin(_root.transform);
             _root.SetActive(false);
+        }
+
+        /// <summary>Текст записи — колонкой по центру панели, не шире ReadWidth.</summary>
+        private void FitReadColumn()
+        {
+            if (_textPanel == null) return;
+            float w = _textPanel.rect.width;
+            if (Mathf.Abs(w - _textW) < 0.5f) return;
+            _textW = w;
+            int pad = Mathf.RoundToInt(Mathf.Max(32f, (w - ReadWidth) * 0.5f));
+            var vlg = _textContent.GetComponent<VerticalLayoutGroup>();
+            vlg.padding = new RectOffset(pad, pad, 4, 24);
+            LayoutRebuilder.MarkLayoutForRebuild(_textContent);
         }
 
         // ================================================================ Наполнение
@@ -193,11 +212,13 @@ namespace StellarisClone.Rendering
         {
             bool unlocked = Lore.IsUnlocked(e);
             bool sel = e.Id == _selected;
-            var img = LGBuild.Panel(_list, "Row", sel ? CRowSel : CRow, raycast: true);
-            LGBuild.Height(img.gameObject, 34f);
+            var img = LGBuild.Panel(_list, "Row", new Color(1f, 1f, 1f, 0.03f), raycast: true);
+            LGBuild.Height(img.gameObject, 36f);
             var btn = img.gameObject.AddComponent<Button>();
             btn.transition = Selectable.Transition.None;
             btn.targetGraphic = img;
+            var astro = LGAstrolabe.Attach(img.gameObject, img, null, plain: true);   // «Астролябия»: выбранная — подсвечена
+            if (astro != null) astro.Selected = sel;
             string id = e.Id;
             btn.onClick.AddListener(() =>
             {
@@ -205,22 +226,21 @@ namespace StellarisClone.Rendering
                 _selected = id;
                 Refresh();
             });
-            LG.Button(img.gameObject, new Color(Gold.r, Gold.g, Gold.b, sel ? 0.7f : 0.18f), 6f, false);
 
             string label = unlocked ? e.Title : "???";
             if (e.Shard > 0 && !unlocked) label = Loc.F("Осколок {0}  ·  ???", e.Shard);
-            var t = LGBuild.Label(img.transform, label, 12, unlocked ? Color.white : new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleLeft);
-            t.rectTransform.Stretch(14, 0, 24, 0);
+            var t = LGBuild.Label(img.transform, label, 13, unlocked ? (sel ? Gold : Color.white) : new Color(Muted.r, Muted.g, Muted.b, 0.7f), TextAnchor.MiddleLeft);
+            t.rectTransform.Stretch(16, 0, 28, 0);
 
             if (!unlocked)
             {
                 var lk = LGIcons.Create(img.transform, LGIcon.Lock, 11, new Color(Muted.r, Muted.g, Muted.b, 0.6f));
-                lk.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-10, 0), new Vector2(11, 11));
+                lk.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(11, 11));
             }
             else if (!Lore.IsSeen(e))
             {
                 var dot = LGBuild.Panel(img.transform, "New", Gold);
-                dot.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(7, 7));
+                dot.rectTransform.At(new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(7, 7));
                 dot.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
                 LG.Ignore(dot.gameObject);
             }
@@ -245,6 +265,7 @@ namespace StellarisClone.Rendering
                 _body.text = "<color=#A9A392>" + Loc.T("Запись ещё не открыта.") + "</color>\n\n" +
                              (string.IsNullOrEmpty(e.Hint) ? "" : "<color=" + LGBuild.Hex(CViolet) + ">" + e.Hint + "</color>");
             }
+            FitReadColumn();
             _textContent.anchoredPosition = Vector2.zero;
         }
 
