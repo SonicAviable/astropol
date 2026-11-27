@@ -89,6 +89,7 @@ private void LoadTracksFromResources()
                 return;
             }
             _isRunning = true;
+            _menuMode = InMainMenu();
             PlayNextTrack();
         }
 
@@ -268,9 +269,49 @@ private void LoadTracksFromResources()
 
         // ==================== ЛОГИКА ====================
 
+        // ==================== ГЛАВНОЕ МЕНЮ ====================
+        // В главном меню по кругу играет своя тема (MenuTrack); вышли в игру — обычный плейлист по настроению,
+        // вернулись в меню — снова тема меню. Трек, выбранный в плеере вручную, не перебиваем.
+
+        /// <summary>Тема главного меню — имя файла в Resources/Music без расширения.</summary>
+        private const string MenuTrack = "calm__Sci-Fi Ambiances__Atmos 1";
+        private bool _menuMode;
+        private float _menuCheck;
+
+        private int MenuIndex
+        {
+            get
+            {
+                if (tracks != null)
+                    for (int i = 0; i < tracks.Length; i++) if (tracks[i] != null && tracks[i].name == MenuTrack) return i;
+                return -1;
+            }
+        }
+
+        private static bool InMainMenu()
+        {
+            var m = StellarisClone.Rendering.MainMenuUI.Instance;
+            return m != null && m.isActiveAndEnabled;
+        }
+
+        private void CheckMenu()
+        {
+            _menuCheck -= Time.unscaledDeltaTime;
+            if (_menuCheck > 0f) return;
+            _menuCheck = 0.5f;
+            bool menu = InMainMenu();
+            if (menu == _menuMode) return;
+            _menuMode = menu;
+            if (!_isRunning || _paused) return;
+            _manualPick = false;
+            if (menu) { if (MenuIndex >= 0 && _currentIndex != MenuIndex) PlayIndex(MenuIndex, true); }
+            else if (_currentIndex == MenuIndex || IsWarTrack(_currentIndex) != WarMood) PlayNextTrack();
+        }
+
         private void Update()
         {
             CheckMood();
+            CheckMenu();
             if (!_isRunning || _paused) return;
 
             var active = _usingA ? _sourceA : _sourceB;
@@ -291,13 +332,20 @@ private void LoadTracksFromResources()
             // Плавно опускаем громкость неактивного
             var other = _usingA ? _sourceB : _sourceA;
             if (other.isPlaying)
+            {
                 other.volume = Mathf.MoveTowards(other.volume, 0f, Time.unscaledDeltaTime / fadeDuration);
+                if (other.volume <= 0f) other.Stop();   // затихший трек (в том числе зацикленная тема меню) останавливаем
+            }
         }
 
         private void PlayNextTrack()
         {
             if (tracks.Length == 0) return;
             _manualPick = false;
+
+            // В главном меню — его тема (она и так идёт по кругу, сюда попадаем после ручного выбора)
+            int menuIdx = MenuIndex;
+            if (_menuMode && menuIdx >= 0) { PlayIndex(menuIdx, true); return; }
 
             var pool = MoodPool();
             int next;
@@ -333,7 +381,7 @@ private void LoadTracksFromResources()
 
             incoming.clip = tracks[next];
             incoming.volume = 0f;
-            incoming.loop = false;
+            incoming.loop = _menuMode && tracks[next] != null && tracks[next].name == MenuTrack;   // тема меню — по кругу
             incoming.Play();
 
             // Если предыдущий ещё играет — плавно гасим
