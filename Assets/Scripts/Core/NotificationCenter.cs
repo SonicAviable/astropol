@@ -277,7 +277,12 @@ namespace StellarisClone.Core
                     var sys = EmpireStats.GetSystem(toast.SystemId);
                     if (sys != null) UIManager.Instance?.FocusSystem(sys);
                 }
-                if (button != PointerEventData.InputButton.Middle) Dismiss(toast, 0.2f);
+                if (button == PointerEventData.InputButton.Middle) return;
+                Dismiss(toast, 0.2f);
+                // ПКМ при нажатии закрепляет подсказку карточки — карточка уходит, подсказка должна уйти с ней
+                var tt = cardGo != null ? cardGo.GetComponent<TooltipTrigger>() : null;
+                if (tt != null) tt.enabled = false;
+                TooltipSystem.ForceHide();
             };
             string tip = located ? Loc.T("ЛКМ — к месту события · ПКМ — убрать · все сообщения — в журнале (O)")
                                  : Loc.T("ПКМ — убрать · все сообщения — в журнале (O)");

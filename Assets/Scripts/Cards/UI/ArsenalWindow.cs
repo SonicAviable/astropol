@@ -50,7 +50,7 @@ namespace StellarisClone.Cards
         private KindFilter _kind = KindFilter.All;
         private AvailFilter _avail = AvailFilter.All;
         private SortBy _sort = SortBy.Cost;
-        private readonly List<(Image bg, Text t, System.Func<bool> on)> _chips = new List<(Image, Text, System.Func<bool>)>();
+        private readonly List<(LGAstrolabe a, System.Func<bool> on)> _chips = new List<(LGAstrolabe, System.Func<bool>)>();
         // Живые значения без пересборки витрины: цены (хватает ли ресурсов) и прогресс заказов
         private readonly List<(Text t, System.Func<bool> ok)> _prices = new List<(Text, System.Func<bool>)>();
         private readonly List<(ArmyJob j, RectTransform fill, Text days, CardView cv, bool active)> _queueUi = new List<(ArmyJob, RectTransform, Text, CardView, bool)>();
@@ -234,36 +234,35 @@ namespace StellarisClone.Cards
             _root.SetActive(false);
         }
 
-        /// <summary>Чип-переключатель в стиле игры: стекло с кромкой, выбранный — подсвечен бирюзой.</summary>
+        /// <summary>
+        /// Переключатель в общем стиле кнопок игры («Астролябия»): латунная рамка, подпись антиквой капслоком.
+        /// Вкладки и крупные переключатели — с камнями по бокам, тесные фильтры (ниже 34 px) — плиткой без камней.
+        /// Выбранный — золотая подпись, горящая шкала. Значок не рисуем: у кнопок игры только подпись.
+        /// </summary>
         private float Chip(RectTransform parent, string text, LGIcon? icon, float x, float w, System.Func<bool> on, System.Action act, float h = 30f, int font = 11)
         {
-            var bg = LGBuild.Panel(parent, "Chip_" + text, new Color(0.055f, 0.094f, 0.157f, 0.9f), raycast: true);
+            var bg = LGBuild.Panel(parent, "Chip_" + text, Color.white, raycast: true);
             bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(x, 0), new Vector2(w, h));
-            LG.Chip(bg.gameObject, new Color(1f, 1f, 1f, 0.14f), h * 0.5f);
-            float ix = 0f;
-            if (icon.HasValue)
-            {
-                var ic = LGIcons.Create(bg.transform, icon.Value, 13, Cyan);
-                ic.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(13, 13));
-                ix = 18f;
-            }
+            bool plain = h < 34f;
+            float pad = plain ? 8f : 16f;
             var t = LGBuild.Label(bg.transform, text, font, UIManager.DS.TextPrimary, TextAnchor.MiddleCenter, bold: true);
-            t.rectTransform.Stretch(8 + ix, 0, 8, 0);
+            t.rectTransform.Stretch(pad, 1f, pad, 0f);
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            t.resizeTextForBestFit = true;
+            t.resizeTextMinSize = 8;
+            t.resizeTextMaxSize = font;
             var b = bg.gameObject.AddComponent<Button>();
             b.transition = Selectable.Transition.None;
             b.onClick.AddListener(() => { act(); SFXManager.Play(Sfx.UiTab, 0.6f); RefreshChips(); });
-            _chips.Add((bg, t, on));
+            var a = LGAstrolabe.Attach(bg.gameObject, bg, t, plain: plain);
+            if (a != null) _chips.Add((a, on));
             return w + 8f;
         }
 
         private void RefreshChips()
         {
             foreach (var c in _chips)
-            {
-                bool on = c.on();
-                c.bg.color = on ? new Color(0.10f, 0.38f, 0.42f, 0.95f) : new Color(0.055f, 0.094f, 0.157f, 0.9f);
-                c.t.color = on ? Color.white : UIManager.DS.TextMuted;
-            }
+                if (c.a != null) c.a.Selected = c.on();
             if (_filterBar != null) _filterBar.gameObject.SetActive(_tab == Tab.Doctrine);
         }
 

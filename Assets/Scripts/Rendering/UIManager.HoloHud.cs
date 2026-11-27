@@ -382,14 +382,14 @@ namespace StellarisClone.Rendering
 
             // Луна за датой: фаза — ход месяца (1-е — новолуние, середина — полнолуние), приглушена под текстом
             _moonGlow = HoloImage(disk, "MoonGlow", FactionSelectScreen.RadialSprite(), new Color(0.925f, 0.898f, 0.827f, 0.08f));
-            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 1.02f));
+            _moonGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.92f));
             _moon = HoloImage(disk, "Moon", MoonPhase.Get(0f), Color.white);   // непрозрачна, как и верхний слой при f → 1 — без щелчка на смене шага
-            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
+            _moon.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.74f));
             _moonNext = HoloImage(disk, "MoonNext", MoonPhase.GetStep(1), new Color(1f, 1f, 1f, 0f));
-            _moonNext.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.85f));
+            _moonNext.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (DiskD * 0.74f));
             // Мягкая тёмная подложка под цифрами — дата читается и на полной луне
             var plate = HoloImage(disk, "DatePlate", FactionSelectScreen.RadialSprite(), new Color(0f, 0f, 0f, 0.62f));
-            plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), Vector2.one * (DiskD * 0.80f));
+            plate.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), Vector2.one * (DiskD * 0.72f));
 
             // Дата как в референсе: месяц мелко с разрядкой (цвет HUD), крупный день, год под ним
             _diskMonth = CreateText(disk, "", 10, FontStyle.Normal, DS.TextMuted, TextAnchor.MiddleCenter);

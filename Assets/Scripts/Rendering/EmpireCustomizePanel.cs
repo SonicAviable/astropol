@@ -46,16 +46,18 @@ namespace StellarisClone.Rendering
         private Action _back;
 
         private InputField _name, _title, _ruler;
-        private Image _prevEmblem, _prevGlow, _prevStrip;
+        private Image _prevEmblem, _prevGlow, _prevOrbit;
+        private readonly List<Image> _prevMapTint = new List<Image>();
         private Text _prevName, _prevTitle, _prevRuler, _baseText;
         private readonly List<(Image ring, int idx)> _swatches = new List<(Image, int)>();
-        private readonly List<(Image bg, LiquidGlassEffect fx, Image emblem, string key)> _emblems = new List<(Image, LiquidGlassEffect, Image, string)>();
+        private readonly List<(LGAstrolabe tile, Image emblem, string key)> _emblems = new List<(LGAstrolabe, Image, string)>();
         private int _colorIdx;
         private bool _syncing;
 
         private static Color Muted => UIManager.DS.TextMuted;
         private static Color Primary => UIManager.DS.TextPrimary;
         private static Color Cyan => UIManager.DS.NeonCyan;
+        private static readonly Color Brass = new Color(0.906f, 0.757f, 0.439f);
 
         public static EmpireCustomizePanel Create(RectTransform host)
         {
@@ -125,47 +127,100 @@ namespace StellarisClone.Rendering
             title.Track(1.6f);
             _baseText = LGBuild.Label(c, "", 13, Muted, TextAnchor.UpperLeft, wrap: true);
             _baseText.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(33, -60), new Vector2(W - 70, 20));
+            BrassRule(c, 32f, W - 32f, -84f);
 
             BuildPreview(c);
             BuildFields(c);
             BuildButtons(c);
         }
 
+        /// <summary>Латунная линия с ромбом посередине (разделитель в стиле окон игры).</summary>
+        private static void BrassRule(RectTransform parent, float x0, float x1, float y)
+        {
+            var line = LGBuild.Panel(parent, "Rule", new Color(Brass.r, Brass.g, Brass.b, 0.30f));
+            line.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(x0, y), new Vector2(x1 - x0, 1f));
+            LG.Ignore(line.gameObject);
+            var gem = LGBuild.Panel(parent, "RuleGem", new Color(Brass.r, Brass.g, Brass.b, 0.85f));
+            gem.rectTransform.At(new Vector2(0, 1), new Vector2(0.5f, 0.5f), new Vector2((x0 + x1) * 0.5f, y), new Vector2(6f, 6f));
+            gem.rectTransform.localRotation = Quaternion.Euler(0, 0, 45f);
+            LG.Ignore(gem.gameObject);
+        }
+
         private void BuildPreview(RectTransform c)
         {
-            var pv = LGBuild.Panel(c, "Preview", new Color(0.055f, 0.094f, 0.157f, 0.9f));
+            var pv = LGBuild.Panel(c, "Preview", new Color(0.040f, 0.070f, 0.120f, 0.92f));
             pv.rectTransform.anchorMin = new Vector2(0, 0); pv.rectTransform.anchorMax = new Vector2(0, 1);
             pv.rectTransform.pivot = new Vector2(0, 0.5f);
-            pv.rectTransform.offsetMin = new Vector2(24, 92); pv.rectTransform.offsetMax = new Vector2(24 + PreviewW, -96);
-            LG.Platter(pv.gameObject, 10f);
+            pv.rectTransform.offsetMin = new Vector2(24, 92); pv.rectTransform.offsetMax = new Vector2(24 + PreviewW, -100);
+            LG.Platter(pv.gameObject, 10f).SetRim(new Color(Brass.r, Brass.g, Brass.b, 0.38f));
             var p = pv.rectTransform;
+            float pw = PreviewW;
 
+            var eb = LGBuild.Label(p, Loc.T("ГЕРБ И ЗНАМЯ"), 12, Brass, TextAnchor.UpperCenter).Eyebrow();
+            eb.alignment = TextAnchor.UpperCenter;
+            eb.rectTransform.TopBand(16, 16, 12, 12);
+
+            // Медальон герба: свечение цвета империи, орбита, латунное кольцо
             _prevGlow = LGBuild.Panel(p, "Glow", Color.white);
             _prevGlow.sprite = FactionSelectScreen.RadialSprite();
             _prevGlow.raycastTarget = false;
-            _prevGlow.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -110), new Vector2(260, 260));
+            _prevGlow.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(290, 290));
             LG.Ignore(_prevGlow.gameObject);
-            _prevEmblem = FactionEmblems.Create(p, FactionEmblems.ForKey(EmblemKeys[0]), 150f, Color.white, "PreviewEmblem");
-            if (_prevEmblem != null) _prevEmblem.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -110), new Vector2(150, 150));
+            _prevOrbit = LGBuild.Panel(p, "Orbit", Color.white);
+            _prevOrbit.sprite = Ring();
+            _prevOrbit.raycastTarget = false;
+            _prevOrbit.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(204, 204));
+            LG.Ignore(_prevOrbit.gameObject);
+            var brassRing = LGBuild.Panel(p, "BrassRing", new Color(Brass.r, Brass.g, Brass.b, 0.55f));
+            brassRing.sprite = ThinRing();
+            brassRing.raycastTarget = false;
+            brassRing.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(184, 184));
+            LG.Ignore(brassRing.gameObject);
+            _prevEmblem = FactionEmblems.Create(p, FactionEmblems.ForKey(EmblemKeys[0]), 140f, Color.white, "PreviewEmblem");
+            if (_prevEmblem != null) _prevEmblem.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -118), new Vector2(140, 140));
 
             _prevName = LGBuild.Label(p, "", 20, Color.white, TextAnchor.UpperCenter, bold: true, wrap: true);
-            _prevName.rectTransform.TopBand(206, 54, 18, 18);
+            _prevName.rectTransform.TopBand(222, 50, 18, 18);
             _prevTitle = LGBuild.Label(p, "", 13, Muted, TextAnchor.UpperCenter, wrap: true);
-            _prevTitle.rectTransform.TopBand(262, 20, 18, 18);
-            var line = LGBuild.Panel(p, "Line", new Color(1f, 1f, 1f, 0.10f));
-            line.rectTransform.TopBand(294, 1, 30, 30);
-            var rl = LGBuild.Label(p, Loc.T("ПРАВИТЕЛЬ"), 10, Muted, TextAnchor.UpperCenter, bold: true);
-            rl.rectTransform.TopBand(306, 14, 18, 18);
-            rl.Track(1.6f);
-            _prevRuler = LGBuild.Label(p, "", 16, Primary, TextAnchor.UpperCenter, bold: true, wrap: true);
-            _prevRuler.rectTransform.TopBand(324, 40, 18, 18);
+            _prevTitle.fontStyle = FontStyle.Italic;
+            _prevTitle.rectTransform.TopBand(274, 20, 18, 18);
+            BrassRule(p, 40f, pw - 40f, -304f);
+            var rl = LGBuild.Label(p, Loc.T("ПРАВИТЕЛЬ"), 12, Brass, TextAnchor.UpperCenter).Eyebrow();
+            rl.alignment = TextAnchor.UpperCenter;
+            rl.rectTransform.TopBand(316, 16, 18, 18);
+            _prevRuler = LGBuild.Label(p, "", 18, Primary, TextAnchor.UpperCenter, bold: true, wrap: true);
+            _prevRuler.rectTransform.TopBand(334, 28, 18, 18);
 
-            _prevStrip = LGBuild.Panel(p, "ColorStrip", Cyan);
-            _prevStrip.rectTransform.anchorMin = new Vector2(0, 0); _prevStrip.rectTransform.anchorMax = new Vector2(1, 0);
-            _prevStrip.rectTransform.offsetMin = new Vector2(30, 22); _prevStrip.rectTransform.offsetMax = new Vector2(-30, 25);
-            var sc = LGBuild.Label(p, Loc.T("цвет на карте: границы и корабли"), 10, Muted, TextAnchor.LowerCenter);
-            sc.rectTransform.anchorMin = new Vector2(0, 0); sc.rectTransform.anchorMax = new Vector2(1, 0);
-            sc.rectTransform.offsetMin = new Vector2(18, 30); sc.rectTransform.offsetMax = new Vector2(-18, 46);
+            // На карте: в чём виден цвет империи
+            var ml = LGBuild.Label(p, Loc.T("НА КАРТЕ"), 12, Brass, TextAnchor.LowerCenter).Eyebrow();
+            ml.alignment = TextAnchor.LowerCenter;
+            ml.rectTransform.anchorMin = new Vector2(0, 0); ml.rectTransform.anchorMax = new Vector2(1, 0);
+            ml.rectTransform.offsetMin = new Vector2(12, 92); ml.rectTransform.offsetMax = new Vector2(-12, 108);
+            (LGIcon ic, string label)[] marks =
+            {
+                (LGIcon.Border, Loc.T("Границы")), (LGIcon.Fleet, Loc.T("Флоты")), (LGIcon.Starbase, Loc.T("Станции"))
+            };
+            for (int i = 0; i < marks.Length; i++)
+            {
+                float x = (i - 1) * 86f;
+                var disc = LGBuild.Panel(p, "MapDisc", new Color(0.055f, 0.094f, 0.157f, 1f));
+                disc.sprite = Disc();
+                disc.raycastTarget = false;
+                disc.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), new Vector2(x, 60f), new Vector2(42, 42));
+                LG.Ignore(disc.gameObject);
+                var ring = LGBuild.Panel(p, "MapRing", Color.white);
+                ring.sprite = ThinRing();
+                ring.raycastTarget = false;
+                ring.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), new Vector2(x, 60f), new Vector2(42, 42));
+                LG.Ignore(ring.gameObject);
+                var icon = LGIcons.Create(p, marks[i].ic, 20f, Color.white);
+                icon.raycastTarget = false;
+                icon.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), new Vector2(x, 60f), new Vector2(20, 20));
+                _prevMapTint.Add(ring);
+                _prevMapTint.Add(icon);
+                var t = LGBuild.Label(p, marks[i].label, 11, Muted, TextAnchor.MiddleCenter);
+                t.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), new Vector2(x, 22f), new Vector2(84, 16));
+            }
         }
 
         private void BuildFields(RectTransform c)
@@ -180,9 +235,8 @@ namespace StellarisClone.Rendering
                 v => { if (!_syncing) { _f.RulerName = Clean(v, LeaderPortraits.ForFaction(_base)?.Name); RefreshPreview(); } });
 
             // Цвет
-            var cl = LGBuild.Label(c, Loc.T("ЦВЕТ ИМПЕРИИ НА КАРТЕ"), 11, Muted, TextAnchor.UpperLeft, bold: true);
+            var cl = LGBuild.Label(c, Loc.T("ЦВЕТ ИМПЕРИИ"), 12, Brass, TextAnchor.UpperLeft).Eyebrow();
             cl.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0, -y), new Vector2(400, 16));
-            cl.Track(1.4f);
             y += 22f;
             for (int i = 0; i < Palette.Length; i++)
             {
@@ -194,6 +248,11 @@ namespace StellarisClone.Rendering
                 var btn = sw.gameObject.AddComponent<Button>();
                 btn.transition = Selectable.Transition.None;
                 btn.onClick.AddListener(() => PickColor(idx));
+                var baseRing = LGBuild.Panel(c, "BaseRing", new Color(Brass.r, Brass.g, Brass.b, 0.35f));
+                baseRing.sprite = ThinRing();
+                baseRing.raycastTarget = false;
+                baseRing.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(sx, -y), new Vector2(46, 46));
+                LG.Ignore(baseRing.gameObject);
                 var ring = LGBuild.Panel(c, "Ring", Color.white);
                 ring.sprite = Ring();
                 ring.raycastTarget = false;
@@ -203,26 +262,30 @@ namespace StellarisClone.Rendering
             y += 64f;
 
             // Герб
-            var el = LGBuild.Label(c, Loc.T("ГЕРБ"), 11, Muted, TextAnchor.UpperLeft, bold: true);
+            var el = LGBuild.Label(c, Loc.T("ГЕРБ"), 12, Brass, TextAnchor.UpperLeft).Eyebrow();
             el.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0, -y), new Vector2(400, 16));
-            el.Track(1.4f);
             y += 22f;
             for (int i = 0; i < EmblemKeys.Length; i++)
             {
                 string key = EmblemKeys[i];
-                var b = LGBuild.Button(c, "Emblem", new Color(0.055f, 0.094f, 0.157f, 0.95f), new Color(1f, 1f, 1f, 0.12f), () => PickEmblem(key));
-                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0 + i * 92f, -y), new Vector2(80, 80));
-                var em = FactionEmblems.Create(b.transform, FactionEmblems.ForKey(key), 56f, Color.white);
-                if (em != null) { em.raycastTarget = false; em.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(56, 56)); }
-                _emblems.Add((b.GetComponent<Image>(), b.GetComponent<LiquidGlassEffect>(), em, key));
+                var bg = LGBuild.Panel(c, "Emblem", Color.white, raycast: true);
+                bg.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0 + i * 92f, -y), new Vector2(80, 80));
+                var b = bg.gameObject.AddComponent<Button>();
+                b.transition = Selectable.Transition.None;
+                b.onClick.AddListener(() => PickEmblem(key));
+                var em = FactionEmblems.Create(bg.transform, FactionEmblems.ForKey(key), 54f, Color.white);
+                if (em != null) { em.raycastTarget = false; em.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(54, 54)); }
+                var tile = LGAstrolabe.Attach(bg.gameObject, bg, null, plain: true);
+                if (tile != null) tile.KeepIconColor = true;
+                TooltipHelper.Attach(bg.gameObject, FactionRegistry.ByKey(key)?.Name ?? "");
+                _emblems.Add((tile, em, key));
             }
         }
 
         private InputField Field(RectTransform c, float x0, ref float y, string label, string placeholder, int max, Action dice, Action<string> onChange)
         {
-            var l = LGBuild.Label(c, label, 11, Muted, TextAnchor.UpperLeft, bold: true);
+            var l = LGBuild.Label(c, label, 12, Brass, TextAnchor.UpperLeft).Eyebrow();
             l.rectTransform.At(new Vector2(0, 1), new Vector2(0, 1), new Vector2(x0, -y), new Vector2(400, 16));
-            l.Track(1.4f);
             var host = LGBuild.Rect(c, "Field");
             host.anchorMin = new Vector2(0, 1); host.anchorMax = new Vector2(1, 1); host.pivot = new Vector2(0, 1);
             host.offsetMin = new Vector2(x0, -y - 20f - 44f); host.offsetMax = new Vector2(-24f - 56f, -y - 20f);
@@ -329,13 +392,13 @@ namespace StellarisClone.Rendering
         private void RefreshAll()
         {
             for (int i = 0; i < _swatches.Count; i++)
-                _swatches[i].ring.color = _swatches[i].idx == _colorIdx ? Color.white : new Color(1f, 1f, 1f, 0f);
+                _swatches[i].ring.color = _swatches[i].idx == _colorIdx ? new Color(1f, 0.96f, 0.86f, 1f) : new Color(1f, 1f, 1f, 0f);
             Color col = Palette[_colorIdx];
             string emKey = _f.EmblemKey ?? FactionRegistry.KeyOf(_base);
             foreach (var e in _emblems)
             {
                 bool on = e.key == emKey;
-                if (e.fx != null) e.fx.SetRim(on ? new Color(col.r, col.g, col.b, 0.9f) : new Color(1f, 1f, 1f, 0.12f));
+                if (e.tile != null) { e.tile.Selected = on; e.tile.Gem = on ? col : LGAstrolabe.Pearl; }
                 if (e.emblem != null) e.emblem.color = on ? Color.Lerp(col, Color.white, 0.25f) : new Color(1f, 1f, 1f, 0.45f);
             }
             RefreshPreview();
@@ -351,7 +414,8 @@ namespace StellarisClone.Rendering
                 _prevEmblem.color = Color.Lerp(col, Color.white, 0.2f);
             }
             _prevGlow.color = new Color(col.r, col.g, col.b, 0.30f);
-            _prevStrip.color = col;
+            _prevOrbit.color = new Color(col.r, col.g, col.b, 0.55f);
+            foreach (var m in _prevMapTint) if (m != null) m.color = col;
             _prevName.text = _f.Name;
             _prevName.color = Color.Lerp(col, Color.white, 0.55f);
             _prevTitle.text = _f.Title;
@@ -360,10 +424,11 @@ namespace StellarisClone.Rendering
 
         // ================================================================ Спрайты
 
-        private static Sprite s_disc, s_ring;
+        private static Sprite s_disc, s_ring, s_thin;
 
         private static Sprite Disc() => s_disc != null ? s_disc : (s_disc = Circle(64, 0f, 1f));
         private static Sprite Ring() => s_ring != null ? s_ring : (s_ring = Circle(64, 0.84f, 0.96f));
+        private static Sprite ThinRing() => s_thin != null ? s_thin : (s_thin = Circle(128, 0.955f, 0.985f));
 
         /// <summary>Круг (inner = 0) или кольцо с мягкими краями; радиусы — в долях половины стороны.</summary>
         private static Sprite Circle(int size, float inner, float outer)
