@@ -45,10 +45,10 @@ FONT_TITLE = RES + "/Fonts/Spectral-SemiBold.ttf"
 FONT_MONO = RES + "/Fonts/IBMPlexMono-Medium.ttf"
 
 # Титры перед прологом (с): «Студия SmartBiz представляет» на чёрном, затем «ASTROPOLITY» над проступающей галактикой
-STUDIO_IN, STUDIO_OUT = 0.6, 5.2
-TITLE_IN, TITLE_OUT = 5.9, 12.2
-GALAXY_IN = 6.4        # первая сцена (галактика) проявляется под названием
-FIRST_LINE = 13.0      # первая фраза рассказчика
+STUDIO_IN, STUDIO_OUT = 0.5, 6.0
+TITLE_IN, TITLE_OUT = 6.6, 14.0
+GALAXY_IN = 7.2        # первая сцена (галактика) проявляется под названием
+FIRST_LINE = 14.8      # первая фраза рассказчика
 CARDS = {
     "ru": ("СТУДИЯ", "SmartBiz", "представляет", "ПРОЛОГ  ·  ВЕЛИКОЕ МОЛЧАНИЕ"),
     "en": ("STUDIO", "SmartBiz", "presents", "PROLOGUE  ·  THE GREAT SILENCE"),
@@ -336,6 +336,15 @@ def card_alpha(t, t0, t1, fin=1.4, fout=1.2):
     return ease(min(1.0, (t - t0) / fin, (t1 - t) / fout))
 
 
+def clamp01(x):
+    return 0.0 if x < 0 else 1.0 if x > 1 else x
+
+
+def ease_out(x):
+    x = clamp01(x)
+    return 1 - (1 - x) ** 3
+
+
 _fonts = {}
 
 
@@ -346,68 +355,208 @@ def font(path, size):
     return _fonts[k]
 
 
-def fade(layer, a):
-    arr = np.asarray(layer).astype(np.float32)
-    arr[..., 3] *= a
-    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+def letters(mask, cx, y, text, fnt, spacing, alphas, rise):
+    """Буквы по одной в маску «L»: у каждой своя прозрачность и подъём (появление слева направо)."""
+    d = ImageDraw.Draw(mask)
+    widths = [d.textlength(ch, font=fnt) for ch in text]
+    x = cx - (sum(widths) + spacing * (len(text) - 1)) / 2
+    for ch, w, a in zip(text, widths, alphas):
+        if a > 0.003:
+            d.text((x, y + rise * (1 - a)), ch, font=fnt, fill=int(255 * a))
+        x += w + spacing
 
 
-def glow(layer, radius, strength):
-    g = layer.filter(ImageFilter.GaussianBlur(radius))
-    arr = np.asarray(g).astype(np.float32)
-    arr[..., 3] = np.clip(arr[..., 3] * strength, 0, 255)
-    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+def colored(mask, color, alpha=1.0):
+    """RGBA-слой сплошного цвета с прозрачностью из маски «L» — без тёмной каймы по краям."""
+    a = (np.asarray(mask, np.float32) * alpha).clip(0, 255).astype(np.uint8)
+    rgb = np.empty((H, W, 3), np.uint8)
+    rgb[...] = color
+    return Image.fromarray(np.dstack([rgb, a]), "RGBA")
 
 
-_gold_grad = None
+def glow_of(mask, color, radius, strength):
+    """Свечение: размытая маска, залитая одним цветом (размываем только прозрачность, не цвет)."""
+    return colored(mask.filter(ImageFilter.GaussianBlur(radius)), color, strength)
 
 
-def gold_gradient(y0, h):
-    """Золото по высоте букв: светлое сверху, тёмное снизу."""
-    global _gold_grad
-    if _gold_grad is None:
+_gold_grad = {}
+
+
+def gold_fill(mask, y0, h):
+    """Буквы маски, залитые золотом по высоте: светлое сверху, тёмное снизу."""
+    key = (int(y0), int(h))
+    if key not in _gold_grad:
         yy = np.clip((np.arange(H, dtype=np.float32) - y0) / h, 0, 1)[:, None]
-        top, bottom = np.array([252, 236, 190], np.float32), np.array([190, 140, 62], np.float32)
+        top, bottom = np.array([255, 241, 200], np.float32), np.array([186, 136, 58], np.float32)
         col = top[None, :] * (1 - yy) + bottom[None, :] * yy
-        _gold_grad = np.repeat(col[:, None, :], W, axis=1)
-    return _gold_grad
+        _gold_grad[key] = np.repeat(col[:, None, :], W, axis=1).astype(np.uint8)
+    return Image.fromarray(np.dstack([_gold_grad[key], np.asarray(mask, np.uint8)]), "RGBA")
 
 
-def title_card(lang, t):
-    """Титры: «Студия SmartBiz представляет», затем «ASTROPOLITY». None — титров в этот момент нет."""
+def ring(size, r, width, progress, color, ss=4):
+    """Кольцо, прорисованное на долю progress (от верха по часовой), с мягкими краями (суперсэмплинг)."""
+    S = size * ss
+    im = Image.new("L", (S, S), 0)
+    if progress > 0.002:
+        d = ImageDraw.Draw(im)
+        c = S / 2
+        rr = r * ss
+        d.arc([c - rr, c - rr, c + rr, c + rr], start=-90, end=-90 + 360 * progress, fill=255, width=max(1, int(width * ss)))
+    m = im.resize((size, size), Image.LANCZOS)
+    return m
+
+
+def diamond(mask_draw, x, y, r, a):
+    if a > 0.003:
+        mask_draw.polygon([(x, y - r), (x + r, y), (x, y + r), (x - r, y)], fill=int(255 * a))
+
+
+def rule(mask_draw, cx, y, half, a):
+    """Латунная линия от центра в обе стороны (половина длины half) с ромбом посередине."""
+    if a <= 0.003 or half < 1:
+        return
+    v = int(200 * a)
+    mask_draw.rectangle([cx - 14 - half, y - 0.6, cx - 14, y + 0.6], fill=v)
+    mask_draw.rectangle([cx + 14, y - 0.6, cx + 14 + half, y + 0.6], fill=v)
+
+
+_emblem = None
+
+
+def emblem(size):
+    global _emblem
+    if _emblem is None:
+        _emblem = Image.open("Assets/Branding/logo.png").convert("RGBA")
+    s = max(2, int(round(size)))
+    return _emblem.resize((s, s), Image.LANCZOS)
+
+
+_radial = {}
+
+
+def radial(size):
+    if size not in _radial:
+        y, x = np.mgrid[0:size, 0:size].astype(np.float32)
+        d = np.sqrt((x - size / 2) ** 2 + (y - size / 2) ** 2) / (size / 2)
+        _radial[size] = np.clip(1 - d, 0, 1) ** 2.2
+    return _radial[size]
+
+
+def add_light(base, arr_rgb, x0, y0):
+    """Аддитивный свет (массив float RGB) поверх кадра base (uint8 ndarray) в точке x0, y0."""
+    h, w = arr_rgb.shape[:2]
+    xa, ya = max(0, x0), max(0, y0)
+    xb, yb = min(W, x0 + w), min(H, y0 + h)
+    if xa >= xb or ya >= yb:
+        return
+    sub = arr_rgb[ya - y0:yb - y0, xa - x0:xb - x0]
+    base[ya:yb, xa:xb] = np.clip(base[ya:yb, xa:xb].astype(np.float32) + sub, 0, 255).astype(np.uint8)
+
+
+def titles(lang, t, im):
+    """Титры поверх кадра im (RGB): «Студия SmartBiz представляет», затем эмблема и «ASTROPOLITY»."""
     studio, name, presents, eyebrow = CARDS[lang]
-    a1 = card_alpha(t, STUDIO_IN, STUDIO_OUT)
-    a2 = card_alpha(t, TITLE_IN, TITLE_OUT, fin=1.8, fout=1.6)
+    a1 = card_alpha(t, STUDIO_IN, STUDIO_OUT, fin=0.6, fout=1.3)
+    a2 = card_alpha(t, TITLE_IN, TITLE_OUT, fin=0.6, fout=1.8)
     if a1 <= 0.0 and a2 <= 0.0:
-        return None
-    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    cx, cy = W / 2, H / 2
+        return im
+    cx, cy = W // 2, H // 2
+    out = im.convert("RGBA")
+
     if a1 > 0.0:
-        k = (t - STUDIO_IN) / (STUDIO_OUT - STUDIO_IN)       # разрядка медленно «раскрывается»
-        tracked(d, cx, studio, font(FONT_MONO, 22), 14 + 6 * k, GOLD + (255,), cy - 96)
-        tracked(d, cx, name, font(FONT_TITLE, 96), 4 + 5 * k, CREAM + (255,), cy - 66)
-        lw = 150 + 40 * k
-        d.line([(cx - lw, cy + 62), (cx - 14, cy + 62)], fill=GOLD + (150,), width=1)
-        d.line([(cx + 14, cy + 62), (cx + lw, cy + 62)], fill=GOLD + (150,), width=1)
-        d.polygon([(cx, cy + 56), (cx + 6, cy + 62), (cx, cy + 68), (cx - 6, cy + 62)], fill=GOLD + (230,))
-        tracked(d, cx, presents, font(FONT_IT, 34), 1.5, (200, 192, 172, 255), cy + 80)
-        layer = fade(layer, a1)
-        return Image.alpha_composite(glow(layer, 14, 0.5), layer)
-    k = (t - TITLE_IN) / (TITLE_OUT - TITLE_IN)
-    ty = cy - 128
-    tl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    tracked(ImageDraw.Draw(tl), cx, "ASTROPOLITY", font(FONT_TITLE, 150), 16 + 10 * k, (255, 255, 255, 255), ty)
-    arr = np.asarray(tl).astype(np.float32)
-    arr[..., :3] = gold_gradient(ty + 40, 140)
-    tl = Image.fromarray(arr.astype(np.uint8), "RGBA")
-    lw = 300 + 120 * k
-    d.line([(cx - lw, cy + 74), (cx - 16, cy + 74)], fill=GOLD + (170,), width=1)
-    d.line([(cx + 16, cy + 74), (cx + lw, cy + 74)], fill=GOLD + (170,), width=1)
-    d.polygon([(cx, cy + 67), (cx + 7, cy + 74), (cx, cy + 81), (cx - 7, cy + 74)], fill=GOLD + (240,))
-    tracked(d, cx, eyebrow, font(FONT_MONO, 22), 8, (214, 205, 182, 235), cy + 100)
-    layer = fade(Image.alpha_composite(layer, tl), a2)
-    return Image.alpha_composite(glow(layer, 22, 0.75), layer)
+        s = t - STUDIO_IN
+        ry = cy - 178
+        # кольцо-монограмма прорисовывается по кругу, внутри — «SB»
+        ring_mask = Image.new("L", (W, H), 0)
+        rm = ring(150, 62, 1.6, ease_out((s - 0.1) / 1.7), 255)
+        ring_mask.paste(rm, (cx - 75, ry - 75))
+        rm2 = ring(150, 54, 1.0, ease_out((s - 0.7) / 1.5), 255)
+        ring_mask = Image.fromarray(np.maximum(np.asarray(ring_mask), (np.asarray(_pad(rm2, cx - 75, ry - 75)) * 0.45).astype(np.uint8)))
+        dm = ImageDraw.Draw(ring_mask)
+        diamond(dm, cx, ry - 62, 6 * ease_out((s - 1.6) / 0.6), ease_out((s - 1.6) / 0.6))
+        mono = Image.new("L", (W, H), 0)
+        ImageDraw.Draw(mono).text((cx, ry + 2), "SB", font=font(FONT_TITLE, 52), fill=int(255 * ease((s - 0.9) / 1.1)), anchor="mm")
+        # название по буквам, разрядка медленно сходится
+        nm = Image.new("L", (W, H), 0)
+        alph = [ease(clamp01((s - 1.0 - i * 0.07) / 0.7)) for i in range(len(name))]
+        letters(nm, cx, cy - 42, name.upper(), font(FONT_TITLE, 70), 34 - 14 * ease_out(s / 3.4), alph, 10)
+        sm = Image.new("L", (W, H), 0)
+        sd = ImageDraw.Draw(sm)
+        rule(sd, cx, cy + 66, 170 * ease_out((s - 1.7) / 1.2), ease((s - 1.7) / 0.8))
+        diamond(sd, cx, cy + 66, 5, ease((s - 1.9) / 0.6))
+        pm = Image.new("L", (W, H), 0)
+        ImageDraw.Draw(pm).text((cx, cy + 102), presents, font=font(FONT_IT, 32), fill=int(255 * ease((s - 2.1) / 1.1)), anchor="mm")
+        eb = Image.new("L", (W, H), 0)
+        tracked(ImageDraw.Draw(eb), cx, studio, font(FONT_MONO, 18), 14, int(255 * ease((s - 1.3) / 1.0)), cy - 82)
+
+        layers = [
+            glow_of(nm, CREAM, 16, 0.35 * a1), glow_of(ring_mask, GOLD, 10, 0.6 * a1),
+            colored(ring_mask, GOLD, a1), colored(mono, CREAM, a1), colored(nm, CREAM, a1),
+            colored(sm, GOLD, a1), colored(pm, (200, 192, 172), a1), colored(eb, GOLD, 0.85 * a1),
+        ]
+        for L in layers:
+            out = Image.alpha_composite(out, L)
+        return out.convert("RGB")
+
+    s = t - TITLE_IN
+    ey = cy - 160
+    base = np.asarray(out.convert("RGB")).copy()
+    # тёплое свечение за эмблемой
+    g = radial(760)[..., None] * np.array([231, 193, 112], np.float32) * (0.22 * a2 * ease(s / 2.0))
+    add_light(base, g, cx - 380, ey - 380)
+    out = Image.fromarray(base).convert("RGBA")
+    # эмблема: проявляется и медленно приближается
+    size = 300 * (0.94 + 0.06 * ease_out(s / 3.0))
+    em = emblem(size)
+    ea = np.asarray(em, np.float32)
+    ea[..., 3] *= a2 * ease(s / 1.6)
+    em = Image.fromarray(ea.clip(0, 255).astype(np.uint8), "RGBA")
+    ex, eyy = int(cx - em.width / 2), int(ey - em.height / 2)
+    out.alpha_composite(em, (ex, eyy))
+    # название по буквам
+    nm = Image.new("L", (W, H), 0)
+    alph = [ease(clamp01((s - 1.3 - i * 0.075) / 0.8)) for i in range(11)]
+    letters(nm, cx, cy + 22, "ASTROPOLITY", font(FONT_TITLE, 118), 30 - 10 * ease_out(s / 3.6), alph, 14)
+    nm_a = Image.fromarray((np.asarray(nm, np.float32) * a2).astype(np.uint8))
+    out = Image.alpha_composite(out, glow_of(nm, GOLD, 22, 0.42 * a2))
+    out = Image.alpha_composite(out, gold_fill(nm_a, cy + 42, 112))
+    sm = Image.new("L", (W, H), 0)
+    sd = ImageDraw.Draw(sm)
+    rule(sd, cx, cy + 186, 300 * ease_out((s - 2.6) / 1.4), ease((s - 2.6) / 0.8))
+    diamond(sd, cx, cy + 186, 6, ease((s - 2.8) / 0.6))
+    eb = Image.new("L", (W, H), 0)
+    tracked(ImageDraw.Draw(eb), cx, eyebrow, font(FONT_MONO, 21), 9, int(255 * ease((s - 3.1) / 1.1)), cy + 204)
+    out = Image.alpha_composite(out, colored(sm, GOLD, a2))
+    out = Image.alpha_composite(out, colored(eb, (214, 205, 182), 0.9 * a2))
+    base = np.asarray(out.convert("RGB")).copy()
+    # блик по эмблеме: светлая полоса по диагонали, только по самой эмблеме
+    sh = clamp01((s - 1.0) / 1.6)
+    if 0 < sh < 1:
+        hh, ww = ea.shape[:2]
+        yy, xx = np.mgrid[0:hh, 0:ww].astype(np.float32)
+        u = (xx + yy) / (ww + hh)
+        c = -0.25 + 1.5 * sh
+        band = np.exp(-((u - c) / 0.06) ** 2) * (ea[..., 3] / 255.0) * 0.55 * math.sin(sh * math.pi)
+        add_light(base, band[..., None] * np.array([255, 236, 196], np.float32), ex, eyy)
+    # анаморфный луч через название
+    st = (s - 2.0) / 1.8
+    if 0 < st < 1:
+        inten = math.sin(st * math.pi) ** 1.5
+        half = int(900 * ease_out(st * 1.6))
+        if half > 4:
+            xs = np.linspace(-1, 1, 2 * half, dtype=np.float32)
+            hx = np.cos(xs * math.pi / 2) ** 2
+            ys = np.arange(-40, 41, dtype=np.float32)
+            vy = np.exp(-(ys / 1.6) ** 2) + 0.35 * np.exp(-(ys / 12.0) ** 2)
+            beam = (vy[:, None] * hx[None, :])[..., None] * np.array([255, 226, 170], np.float32) * (0.9 * inten * a2)
+            add_light(base, beam, cx - half, cy + 92 - 40)
+    return Image.fromarray(base)
+
+
+def _pad(small, x, y):
+    big = Image.new("L", (W, H), 0)
+    big.paste(small, (x, y))
+    return big
 
 
 def render(lang, starts, ends, speech, total, audio, out):
@@ -423,7 +572,8 @@ def render(lang, starts, ends, speech, total, audio, out):
             subs[i] = subtitle_layer(sc[4], italic=(i == len(SCENES) - 1))
     n = int(math.ceil(total * FPS))
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS),
-           "-i", "-", "-i", audio, "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "25", "-tune", "film",
+           "-i", "-", "-i", audio, "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "20", "-tune", "film",
+           "-x264-params", "aq-mode=3:aq-strength=0.9",
            "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-c:a", "aac", "-b:a", "192k", "-shortest", out]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for f in range(n):
@@ -446,10 +596,9 @@ def render(lang, starts, ends, speech, total, audio, out):
             frame = frame * (1 - a) + img * a if weight > 0 else img * a
             weight = 1.0
         frame *= vig
-        out_im = Image.fromarray(np.clip(frame, 0, 255).astype(np.uint8), "RGB")
-        card = title_card(lang, t)
-        if card is not None:
-            out_im = Image.alpha_composite(out_im.convert("RGBA"), card).convert("RGB")
+        # дизеринг: без него тёмные градиенты (туманности, виньетка) после сжатия идут полосами
+        frame += np.random.uniform(-0.7, 0.7, frame.shape).astype(np.float32)
+        out_im = titles(lang, t, Image.fromarray(np.clip(frame, 0, 255).astype(np.uint8), "RGB"))
         # субтитр фразы: появляется чуть раньше голоса, держится до конца фразы
         for i, (ts, d) in enumerate(speech):
             a0, a1 = ts - 0.25, ts + d + 0.45
@@ -510,9 +659,9 @@ def main():
     if "--titles" in sys.argv:
         bg = Image.new("RGB", (W, H), (8, 10, 18))
         for lang in ("ru", "en"):
-            for t in (3.0, 9.0):
-                im = Image.alpha_composite(bg.convert("RGBA"), title_card(lang, t)).convert("RGB")
-                pth = os.path.join(tempfile.gettempdir(), f"title_{lang}_{int(t)}.jpg")
+            for t in (1.4, 2.4, 4.0, 7.2, 8.4, 10.5):
+                im = titles(lang, t, bg)
+                pth = os.path.join(tempfile.gettempdir(), f"title_{lang}_{t:04.1f}.jpg")
                 im.save(pth, quality=88)
                 print(pth)
         return
