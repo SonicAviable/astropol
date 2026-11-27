@@ -1027,7 +1027,8 @@ namespace StellarisClone.Rendering
         private void BuildFooter()
         {
             var ver = LGBuild.Label(_root, $"<b>ASTROPOLITY</b>   {Version}", 12, new Color(0.663f, 0.639f, 0.573f, 0.8f), TextAnchor.LowerLeft);
-            ver.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(56, 44), new Vector2(500, 20));
+            // У самого края экрана — ниже кнопок страниц (они стоят на высоте 44 и закрывали подпись)
+            ver.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(56, 14), new Vector2(500, 20));
             ver.gameObject.AddComponent<MenuFadeIn>().Delay = 1.4f;
         }
 

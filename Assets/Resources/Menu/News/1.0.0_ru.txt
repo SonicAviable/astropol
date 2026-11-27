@@ -3,9 +3,9 @@
 @chip РЕЛИЗ · 1.0.0
 @title Релиз 1.0.0
 @headline ASTROPOLITY вышла в релиз: летописи и голоса, живой космос, интерфейс «Атлас»
-@cover Menu/News/cover_1.6.7
-@art 0.77,0.5,0.46
-@thumb 0.745,0.21,0.3
+@cover Menu/News/cover_1.0.0
+@art 0.76,0.5,0.5
+@thumb 0.74,0.24,0.34
 @tile UI/Events/Ark | 0.5,0.5,1 | Летопись фракции
 @tile Diplomacy/bg_xarn | 0.5,0.5,1 | Правители говорят
 @tile UI/Events/Leviathan | 0.5,0.5,1 | Живой космос
