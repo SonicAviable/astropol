@@ -27,6 +27,20 @@ namespace StellarisClone.Rendering
         private CanvasGroup _hintGroup;
 
         private static bool s_played;
+        private IntroWarnings _warn;
+        private bool _prepared;
+
+        /// <summary>
+        /// В проекте выключена перезагрузка домена при входе в Play Mode: статический флаг переживал запуски,
+        /// и в редакторе заставка шла только в первый раз. Сбрасываем его в начале каждого запуска —
+        /// вступление показывается всегда.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            s_played = false;
+            IsPlaying = false;
+        }
 
         private VideoPlayer _player;
         private AudioSource _audio;
@@ -77,6 +91,10 @@ namespace StellarisClone.Rendering
             var canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 8000;
+            var scaler = gameObject.AddComponent<CanvasScaler>();   // предупреждения размечены в 1920×1080
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
             gameObject.AddComponent<GraphicRaycaster>();
             _group = gameObject.AddComponent<CanvasGroup>();
 
@@ -122,6 +140,9 @@ namespace StellarisClone.Rendering
             _player.errorReceived += OnError;
             _player.Prepare();
 
+            // Предупреждения (эпилепсия, автосохранение, «события вымышлены») — пока они идут, ролик готовится
+            _warn = IntroWarnings.Create(transform);
+
             // Подсказка пропуска пролога (внизу справа)
             var hintGo = new GameObject("SkipHint");
             hintGo.transform.SetParent(transform, false);
@@ -154,6 +175,7 @@ namespace StellarisClone.Rendering
             _started = _ended = false;
             _age = 0f;
             _player.Stop();
+            _prepared = false;
             _player.url = _clips[_clip].path;
             _player.Prepare();
         }
@@ -167,7 +189,14 @@ namespace StellarisClone.Rendering
 
         private void OnPrepared(VideoPlayer vp)
         {
-            if (_fade >= 0f || _switch >= 0f) return;
+            _prepared = true;
+            TryPlay();
+        }
+
+        /// <summary>Ролик готов и предупреждения позади — запускаем.</summary>
+        private void TryPlay()
+        {
+            if (!_prepared || _started || _fade >= 0f || _switch >= 0f || _warn != null) return;
             _audio.volume = 1f;   // общая громкость уже учтена в AudioListener (GameSettings)
             _player.Play();
             _started = true;
@@ -192,6 +221,16 @@ namespace StellarisClone.Rendering
         {
             _age += Time.unscaledDeltaTime;
             SFXManager.ExternalDuck = 1f;   // музыка меню молчит, пока идёт заставка
+
+            // Сначала — экраны предупреждений (клавиши обрабатывают они сами)
+            if (_warn != null)
+            {
+                if (!_warn.Done) return;
+                Destroy(_warn.gameObject);
+                _warn = null;
+                _age = 0f;
+                TryPlay();
+            }
 
             if (_fade >= 0f)
             {

@@ -8523,3 +8523,15 @@ ENTER — НАЧАТЬ	ENTER — BEGIN
 Условия мира	Peace Terms
 {0} предлагает мир на своих условиях: {1}. Ответьте в окне дипломатии	{0} offers peace on its own terms: {1}. Respond in the Diplomacy window
 Нажмите любую клавишу ещё раз, чтобы пропустить	Press any key again to skip
+ПРЕДУПРЕЖДЕНИЕ О СВЕТОЧУВСТВИТЕЛЬНОЙ ЭПИЛЕПСИИ	PHOTOSENSITIVE SEIZURE WARNING
+У небольшого числа людей вспышки света, мерцающие изображения и световые узоры могут вызывать эпилептические припадки — даже если раньше таких случаев не было.	A very small percentage of people may experience a seizure when exposed to flashing lights, flickering images or light patterns — even if they have no history of seizures or epilepsy.
+Если во время игры вы почувствуете головокружение, нарушение зрения, подёргивание глаз или мышц, потерю ориентации или любые непроизвольные движения, немедленно прекратите игру и обратитесь к врачу.	If you experience dizziness, altered vision, eye or muscle twitching, disorientation or any involuntary movement while playing, stop playing immediately and consult a doctor.
+Играйте в хорошо освещённом помещении, делайте перерывы каждый час и не садитесь слишком близко к экрану.	Play in a well-lit room, take a break every hour and do not sit too close to the screen.
+АВТОСОХРАНЕНИЕ	AUTOSAVE
+Игра автоматически сохраняет прогресс по ходу партии и при выходе.	The game automatically saves your progress during play and when you quit.
+Не закрывайте игру и не выключайте компьютер, пока идёт сохранение: так можно повредить файл сохранения.	Do not close the game or turn off your computer while saving, as this may corrupt your save file.
+ПЕРЕД НАЧАЛОМ	BEFORE YOU BEGIN
+Все персонажи, народы, организации и события этой игры вымышлены. Любые совпадения с реальными лицами и событиями случайны.	All characters, peoples, organizations and events in this game are fictional. Any resemblance to real persons or events is purely coincidental.
+Для полного погружения рекомендуем играть в наушниках.	For the best experience, we recommend playing with headphones.
+© {0} SmartBiz. Все права защищены.	© {0} SmartBiz. All rights reserved.
+Нажмите любую клавишу, чтобы продолжить	Press any key to continue
