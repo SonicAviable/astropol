@@ -97,6 +97,9 @@ namespace StellarisClone.Rendering
             scaler.matchWidthOrHeight = 0.5f;
             gameObject.AddComponent<GraphicRaycaster>();
             _group = gameObject.AddComponent<CanvasGroup>();
+            // Авто-оформление интерфейса (LiquidGlassSystem) превращало чёрный фон в полупрозрачную панель —
+            // сквозь неё было видно меню. Заставка — не окно: оформлять её не нужно.
+            LG.Ignore(gameObject);
 
             var bgGo = new GameObject("Black");
             bgGo.transform.SetParent(transform, false);

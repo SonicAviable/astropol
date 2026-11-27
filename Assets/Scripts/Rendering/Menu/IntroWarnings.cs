@@ -11,6 +11,8 @@ namespace StellarisClone.Rendering
     ///   2. автосохранение (не выключать компьютер во время сохранения);
     ///   3. «все события вымышлены», совет играть в наушниках и копирайт студии.
     /// Каждый экран плавно проявляется и гаснет; любая клавиша (не раньше MinShow) — к следующему.
+    /// Звук (Resources/Audio/Intro, Tools/intro_sfx/generate.py): тихий эмбиент под всеми экранами,
+    /// мягкое нарастание с глубоким ударом при появлении экрана, стеклянный тон при пропуске клавишей.
     /// Пока идут предупреждения, IntroVideo готовит ролик в фоне. Done — все экраны показаны.
     /// Разметка — в «эталонных» 1920×1080 (холст IntroVideo масштабируется CanvasScaler).
     /// </summary>
@@ -33,6 +35,10 @@ namespace StellarisClone.Rendering
         private float _t;
         private float _leave = -1f;
         private CanvasGroup _hint;
+        private AudioSource _bed, _sfx;
+        private AudioClip _swell, _tick;
+        private bool _swellPlayed;
+        private const float BedVolume = 0.8f;
 
         public bool Done { get; private set; }
 
@@ -76,6 +82,25 @@ namespace StellarisClone.Rendering
             _hint.alpha = 0f;
 
             for (int i = 0; i < _cards.Count; i++) _cards[i].Group.alpha = 0f;
+
+            // Звук
+            _bed = gameObject.AddComponent<AudioSource>();
+            _bed.clip = Resources.Load<AudioClip>("Audio/Intro/warn_bed");
+            _bed.loop = true;
+            _bed.playOnAwake = false;
+            _bed.spatialBlend = 0f;
+            _bed.volume = 0f;
+            if (_bed.clip != null) _bed.Play();
+            _sfx = gameObject.AddComponent<AudioSource>();
+            _sfx.playOnAwake = false;
+            _sfx.spatialBlend = 0f;
+            _swell = Resources.Load<AudioClip>("Audio/Intro/warn_swell");
+            _tick = Resources.Load<AudioClip>("Audio/Intro/warn_tick");
+        }
+
+        private void Play(AudioClip clip, float volume)
+        {
+            if (clip != null && _sfx != null) _sfx.PlayOneShot(clip, volume);
         }
 
         private Card BuildCard(LGIcon icon, string title, string body, string footer, float hold)
@@ -126,13 +151,22 @@ namespace StellarisClone.Rendering
 
         private void Update()
         {
-            if (Done || _cards.Count == 0) return;
             float dt = Time.unscaledDeltaTime;
+            // Эмбиент: плавно входит, гаснет вместе с последним экраном
+            if (_bed != null)
+            {
+                bool last = _index >= _cards.Count - 1 && _leave >= 0f;
+                float target = Done || last ? 0f : BedVolume;
+                _bed.volume = Mathf.MoveTowards(_bed.volume, target, dt * (target > _bed.volume ? 0.5f : 1.2f));
+            }
+            if (Done || _cards.Count == 0) return;
             var card = _cards[_index];
             _t += dt;
+            if (!_swellPlayed) { _swellPlayed = true; Play(_swell, 0.9f); }
 
             bool pressed = Input.anyKeyDown || Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1);
-            if (_leave < 0f && (_t >= FadeIn + card.Hold || (pressed && _t >= MinShow))) _leave = 0f;
+            if (_leave < 0f && pressed && _t >= MinShow) { _leave = 0f; Play(_tick, 0.8f); }
+            if (_leave < 0f && _t >= FadeIn + card.Hold) _leave = 0f;
 
             if (_leave >= 0f)
             {
@@ -145,6 +179,7 @@ namespace StellarisClone.Rendering
                     _index++;
                     _t = 0f;
                     _leave = -1f;
+                    _swellPlayed = false;
                     if (_index >= _cards.Count) { Done = true; _hint.alpha = 0f; }
                 }
                 return;
